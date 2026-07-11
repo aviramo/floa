@@ -28,7 +28,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <link rel="preload" as="image" href="assets/hero-flow.webp">
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles.css?v=3">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%230E8C7E'/%3E%3Ctext x='50' y='68' font-family='Arial' font-size='52' font-weight='700' fill='white' text-anchor='middle'%3EF%3C/text%3E%3C/svg%3E">
 
   <script type="application/ld+json">
@@ -230,9 +230,10 @@
       </div>
       <div class="projects-grid">
         <article class="project-card reveal">
-          <div class="project-media" role="img" aria-label="צילום מסך של Once">
-            <span>צילום מסך של Once</span>
-          </div>
+          <a class="project-media" href="https://play.google.com/store/apps/details?id=com.aviramo.once" target="_blank" rel="noopener" aria-label="האפליקציה Once">
+            <img src="assets/project-once.webp" width="1100" height="778" loading="lazy" decoding="async"
+                 alt="צילום מסך של אפליקציית Once">
+          </a>
           <div class="project-body">
             <span class="project-name">Once</span>
             <h3>אפליקציית היכרות בזמן אמת</h3>
@@ -247,12 +248,14 @@
               <li>פאנל ניהול</li>
               <li>תשתית למדידה ושיווק</li>
             </ul>
+            <a class="project-link" href="https://play.google.com/store/apps/details?id=com.aviramo.once" target="_blank" rel="noopener">להורדת האפליקציה</a>
           </div>
         </article>
         <article class="project-card reveal">
-          <div class="project-media" role="img" aria-label="צילום מסך של יוצאים להרפתקה">
-            <span>צילום מסך של יוצאים להרפתקה</span>
-          </div>
+          <a class="project-media" href="https://harpatka.co.il/" target="_blank" rel="noopener" aria-label="האתר יוצאים להרפתקה">
+            <img src="assets/project-harpatka.webp" width="1100" height="778" loading="lazy" decoding="async"
+                 alt="צילום מסך של האתר יוצאים להרפתקה">
+          </a>
           <div class="project-body">
             <span class="project-name">יוצאים להרפתקה</span>
             <h3>מערך דיגיטלי להרשמה ושיווק אירועים</h3>
@@ -267,6 +270,7 @@
               <li>מעקב המרות</li>
               <li>התאמה לקמפיינים ולשיתוף ב־WhatsApp</li>
             </ul>
+            <a class="project-link" href="https://harpatka.co.il/" target="_blank" rel="noopener">לצפייה באתר</a>
           </div>
         </article>
       </div>
@@ -434,8 +438,8 @@
   </div>
 </footer>
 
-<script type="module" src="js/firebase.js"></script>
-<script src="js/flow.js" defer></script>
-<script src="js/main.js" defer></script>
+<script type="module" src="js/firebase.js?v=3"></script>
+<script src="js/flow.js?v=3" defer></script>
+<script src="js/main.js?v=3" defer></script>
 </body>
 </html>
