@@ -39,7 +39,7 @@
 
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: calc(var(--header-h) + 12px);
+  scroll-padding-top: 22px;
   -webkit-text-size-adjust: 100%;
 }
 
@@ -645,14 +645,14 @@ button { font-family: inherit; cursor: pointer; }
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: #25D366;
+  background: var(--teal);
   color: #fff;
   display: none;
   place-items: center;
-  box-shadow: 0 10px 26px rgba(37, 211, 102, .4);
-  transition: transform .2s var(--ease);
+  box-shadow: 0 10px 26px rgba(14, 140, 126, .4);
+  transition: background-color .2s var(--ease);
 }
-.wa-float:hover { transform: scale(1.06); }
+.wa-float:hover { background: var(--teal-dark); }
 .wa-float svg { width: 32px; height: 32px; }
 
 .mobile-cta {
@@ -715,7 +715,7 @@ button { font-family: inherit; cursor: pointer; }
   .hero-grid,
   .custom-grid,
   .about-grid { grid-template-columns: 1fr; gap: 34px; }
-  .hero { padding: 8px 0 44px; }
+  .hero { padding: 26px 0 44px; }
   .hero-media { order: -1; }
   .hero-text { max-width: none; }
 
@@ -839,4 +839,23 @@ body {
   .tl-num { width: 54px; height: 54px; font-size: 1.1rem; }
   .timeline::before { inset-inline-start: 26px; }
   .about-avatar, .about-avatar img { width: 132px; height: 132px; }
+}
+
+/* ==========================================================================
+   HEADERLESS HERO + FORM GUTTERS
+   ========================================================================== */
+/* the brand name now lives in the hero (header removed) */
+.hero-logo {
+  display: inline-block;
+  font-weight: 800;
+  font-size: clamp(1.7rem, 4.5vw, 2.3rem);
+  letter-spacing: .14em;
+  color: var(--teal);
+  line-height: 1;
+  margin-bottom: 18px;
+}
+
+/* contact form floats with side gutters on small screens */
+@media (max-width: 560px) {
+  .contact-inner { margin-inline: 16px; padding: 30px 20px; }
 }

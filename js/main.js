@@ -12,7 +12,7 @@
   var WHATSAPP_URL = WHATSAPP_NUMBER ? "https://wa.me/" + WHATSAPP_NUMBER : "";
 
   // הודעה שמופיעה מוכנה כשלוחצים על כפתור WhatsApp רגיל (לא דרך הטופס)
-  var WA_GREETING = "היי, הגעתי דרך האתר של FLOA ואשמח לשמוע עוד 🙂";
+  var WA_GREETING = "היי, הגעתי דרך האתר של FLOA ואשמח שתעזרו לי";
 
   document.addEventListener("DOMContentLoaded", function () {
     wireWhatsApp();
