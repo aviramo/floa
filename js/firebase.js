@@ -27,6 +27,7 @@ window.floaSaveLead = function (data) {
     name:      (data.name || "").toString().slice(0, 100),
     phone:     (data.phone || "").toString().slice(0, 40),
     business:  (data.business || "").toString().slice(0, 120),
+    help:      (data.help || "").toString().slice(0, 60),
     improve:   (data.improve || "").toString().slice(0, 2000),
     source:    "floa-landing",
     createdAt: serverTimestamp()

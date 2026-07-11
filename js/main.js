@@ -4,14 +4,9 @@
 (function () {
   "use strict";
 
-  /* ---- CONFIG -----------------------------------------------------------
-     מספר ה-WhatsApp של העסק, בפורמט בינלאומי ללא + / רווחים / 0 מוביל.
-     כל קישורי ה-WhatsApp בעמוד (הצף, בטופס ובפוטר) והטופס נבנים ממנו.
-     ---------------------------------------------------------------------- */
+  /* ---- CONFIG ---------------------------------------------------------- */
   var WHATSAPP_NUMBER = "972587078708"; // +972 58-707-8708
   var WHATSAPP_URL = WHATSAPP_NUMBER ? "https://wa.me/" + WHATSAPP_NUMBER : "";
-
-  // הודעה שמופיעה מוכנה כשלוחצים על כפתור WhatsApp רגיל (לא דרך הטופס)
   var WA_GREETING = "היי, הגעתי דרך האתר של FLOA ואשמח שתעזרו לי";
 
   document.addEventListener("DOMContentLoaded", function () {
@@ -19,21 +14,43 @@
     wireMobileMenu();
     wireReveal();
     wireForm();
-    wirePastHero();
+    wireAnalytics();
+    wireHelpPrefill();
   });
 
-  /* ---- reveal the fixed mobile actions only after the hero ------------- */
-  function wirePastHero() {
-    var hero = document.getElementById("hero");
-    if (!hero || !("IntersectionObserver" in window)) {
-      document.body.classList.add("past-hero");
-      return;
+  /* ---- lightweight analytics (only fires if GA/GTM already exists) ------ */
+  function track(name) {
+    try {
+      if (window.dataLayer && typeof window.dataLayer.push === "function") {
+        window.dataLayer.push({ event: name });
+      } else if (typeof window.gtag === "function") {
+        window.gtag("event", name);
+      }
+    } catch (e) { /* no-op */ }
+  }
+  function wireAnalytics() {
+    document.querySelectorAll("[data-analytics]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        track(el.getAttribute("data-analytics"));
+      });
+    });
+  }
+
+  /* ---- prefill the "how can we help" select from the CTA cards ---------- */
+  function wireHelpPrefill() {
+    var select = document.getElementById("help");
+    document.querySelectorAll("[data-help]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        if (!select) return;
+        select.value = el.getAttribute("data-help");
+        select.classList.remove("is-empty");
+      });
+    });
+    if (select) {
+      var refresh = function () { select.classList.toggle("is-empty", !select.value); };
+      select.addEventListener("change", refresh);
+      refresh();
     }
-    var io = new IntersectionObserver(function (entries) {
-      // hero mostly out of view -> show the fixed bar
-      document.body.classList.toggle("past-hero", !entries[0].isIntersecting);
-    }, { rootMargin: "-45% 0px 0px 0px", threshold: 0 });
-    io.observe(hero);
   }
 
   /* ---- WhatsApp links --------------------------------------------------- */
@@ -67,16 +84,12 @@
       toggle.setAttribute("aria-expanded", "true");
       toggle.setAttribute("aria-label", "סגירת תפריט");
     }
-
     toggle.addEventListener("click", function () {
       nav.classList.contains("open") ? close() : open();
     });
-
-    // close after choosing a link
     nav.querySelectorAll("a").forEach(function (a) {
       a.addEventListener("click", close);
     });
-
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") close();
     });
@@ -86,25 +99,28 @@
   function wireReveal() {
     var items = document.querySelectorAll(".reveal");
     var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
     if (reduce || !("IntersectionObserver" in window)) {
       items.forEach(function (el) { el.classList.add("in-view"); });
       return;
     }
-
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry, i) {
         if (entry.isIntersecting) {
           var el = entry.target;
-          // tiny stagger for grouped siblings
           var delay = Math.min(i * 60, 180);
           setTimeout(function () { el.classList.add("in-view"); }, delay);
           io.unobserve(el);
         }
       });
     }, { rootMargin: "0px 0px -8% 0px", threshold: 0.12 });
-
     items.forEach(function (el) { io.observe(el); });
+  }
+
+  /* ---- Israeli phone validation ---------------------------------------- */
+  function validIL(v) {
+    var p = (v || "").replace(/[^\d+]/g, "");
+    p = p.replace(/^\+972/, "0").replace(/^972/, "0");
+    return /^0(?:5\d{8}|[2-489]\d{7})$/.test(p);
   }
 
   /* ---- Contact form ----------------------------------------------------- */
@@ -113,53 +129,70 @@
     var success = document.getElementById("formSuccess");
     if (!form) return;
 
+    var phone = document.getElementById("phone");
+    var submitBtn = form.querySelector('button[type="submit"]');
+
+    // functional error line (created once, shown only on a real failure)
+    var errorEl = document.createElement("p");
+    errorEl.className = "form-error";
+    errorEl.setAttribute("role", "alert");
+    errorEl.hidden = true;
+    errorEl.textContent = "השליחה נכשלה. אפשר לנסות שוב או לכתוב לי בוואטסאפ";
+    form.parentNode.insertBefore(errorEl, form.nextSibling);
+
+    if (phone) {
+      phone.addEventListener("input", function () { phone.setCustomValidity(""); });
+    }
+
     form.addEventListener("submit", function (e) {
       e.preventDefault();
+      errorEl.hidden = true;
 
+      if (phone && !validIL(phone.value)) {
+        phone.setCustomValidity("אנא הזינו מספר טלפון ישראלי תקין");
+      } else if (phone) {
+        phone.setCustomValidity("");
+      }
       if (!form.checkValidity()) {
         form.reportValidity();
         return;
       }
 
-      // בונים הודעת WhatsApp מפרטי הטופס ופותחים צ'אט מול העסק.
+      track("contact_form_submit");
+
       var data = new FormData(form);
       var val = function (k) { return (data.get(k) || "").toString().trim(); };
       var lead = {
-        name: val("name"), phone: val("phone"),
-        business: val("business"), improve: val("improve")
+        name: val("name"),
+        phone: val("phone"),
+        business: val("business"),
+        help: val("help"),
+        improve: val("improve")
       };
 
-      // שמירה ב-Firestore (לא חוסמת; הטופס עובד גם אם השמירה נכשלת/לא מוגדרת)
-      if (typeof window.floaSaveLead === "function") {
-        try {
-          window.floaSaveLead(lead).catch(function (err) {
-            console.warn("FLOA: lead not saved to Firestore —", err && err.message);
-          });
-        } catch (err) { /* no-op */ }
-      }
+      if (submitBtn) submitBtn.disabled = true;
 
-      var lines = [
-        "פנייה חדשה מאתר FLOA:",
-        "שם: " + lead.name,
-        "טלפון: " + lead.phone,
-      ];
-      if (lead.business) lines.push("שם העסק: " + lead.business);
-      if (lead.improve)  lines.push("מה הייתם רוצים לשפר: " + lead.improve);
-      var message = lines.join("\n");
+      var save = (typeof window.floaSaveLead === "function")
+        ? window.floaSaveLead(lead)
+        : Promise.reject(new Error("lead storage unavailable"));
 
-      if (WHATSAPP_URL) {
-        window.open(
-          WHATSAPP_URL + "?text=" + encodeURIComponent(message),
-          "_blank", "noopener"
-        );
-      }
-
-      form.reset();
-      if (success) {
-        success.hidden = false;
-        success.scrollIntoView({ behavior: "smooth", block: "center" });
-        success.focus && success.focus();
-      }
+      Promise.resolve(save).then(function () {
+        // show success ONLY after the send actually succeeded
+        track("contact_form_success");
+        form.reset();
+        var sel = document.getElementById("help");
+        if (sel) sel.classList.add("is-empty");
+        if (submitBtn) submitBtn.disabled = false;
+        if (success) {
+          success.hidden = false;
+          success.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }).catch(function (err) {
+        console.warn("FLOA: lead not sent —", err && err.message);
+        if (submitBtn) submitBtn.disabled = false;
+        errorEl.hidden = false;
+        errorEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
     });
   }
 })();
