@@ -854,9 +854,11 @@ body {
   margin-bottom: 18px;
 }
 
-/* contact form floats with side gutters on small screens */
+/* contact form floats with side gutters on small screens.
+   width:auto (not the inherited 100%) so the margins reduce the width
+   instead of overflowing the page and breaking left/right symmetry. */
 @media (max-width: 560px) {
-  .contact-inner { margin-inline: 16px; padding: 30px 20px; }
+  .contact-inner { width: auto; max-width: none; margin-inline: 16px; padding: 30px 20px; }
 }
 
 /* ==========================================================================
