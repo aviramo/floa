@@ -14,8 +14,8 @@
   var ctx = canvas.getContext("2d", { alpha: true });
   if (!ctx) return;
 
-  var COUNT = 190;                        // currents
-  var TRAIL = 34;                         // points of path kept per current
+  var COUNT = 220;                        // currents
+  var TRAIL = 48;                         // points of path kept per current
   var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   var w = 0, h = 0, dpr = 1;
@@ -51,8 +51,8 @@
       pts: [],                                   // the path it has traced
       speed: 1.0 + Math.random() * 1.8,
       seed: Math.random() * 1000,
-      weight: Math.random() < 0.15 ? 1.3 : 0.75, // a few heavier main currents
-      alpha: 0.16 + Math.random() * 0.26         // depth: some sit further back
+      weight: Math.random() < 0.18 ? 2.0 : 1.1,  // a few heavier main currents
+      alpha: 0.30 + Math.random() * 0.34         // depth: some sit further back
     };
   }
 
@@ -111,6 +111,7 @@
     // the tail is drawn faint and the head solid, so the current has direction
     var head = ctx.createLinearGradient(p.pts[0], p.pts[1], p.x, p.y);
     head.addColorStop(0, "rgba(" + rgb + ", 0)");
+    head.addColorStop(0.35, "rgba(" + rgb + "," + (p.alpha * 0.55).toFixed(3) + ")");
     head.addColorStop(1, "rgba(" + rgb + "," + p.alpha.toFixed(3) + ")");
 
     ctx.strokeStyle = head;
