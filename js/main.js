@@ -15,36 +15,7 @@
     wireForm();
     wireAnalytics();
     wireHelpPrefill();
-    wireMobileBar();
   });
-
-  /* ---- fixed mobile action bar: show after the hero, hide over the form
-     and the footer so it never covers content --------------------------- */
-  function wireMobileBar() {
-    if (!("IntersectionObserver" in window)) {
-      document.body.classList.add("past-hero");
-      return;
-    }
-    var hero = document.getElementById("hero");
-    var contact = document.getElementById("contact");
-    var footer = document.querySelector(".site-footer");
-
-    if (hero) {
-      new IntersectionObserver(function (e) {
-        document.body.classList.toggle("past-hero", !e[0].isIntersecting);
-      }, { rootMargin: "-45% 0px 0px 0px", threshold: 0 }).observe(hero);
-    }
-    if (contact) {
-      new IntersectionObserver(function (e) {
-        document.body.classList.toggle("at-form", e[0].isIntersecting);
-      }, { threshold: 0 }).observe(contact);
-    }
-    if (footer) {
-      new IntersectionObserver(function (e) {
-        document.body.classList.toggle("at-footer", e[0].isIntersecting);
-      }, { threshold: 0 }).observe(footer);
-    }
-  }
 
   /* ---- lightweight analytics (only fires if GA/GTM already exists) ------ */
   function track(name) {
@@ -132,6 +103,7 @@
 
     var phone = document.getElementById("phone");
     var submitBtn = form.querySelector('button[type="submit"]');
+    var controls = form.querySelectorAll("input, select, textarea");
 
     // functional error line (created once, shown only on a real failure)
     var errorEl = document.createElement("p");
@@ -140,6 +112,19 @@
     errorEl.hidden = true;
     errorEl.textContent = "השליחה נכשלה. אפשר לנסות שוב או לכתוב לי בוואטסאפ";
     form.parentNode.insertBefore(errorEl, form.nextSibling);
+
+    /* The error styling is driven by .is-invalid, applied ONLY after a submit
+       attempt. A CSS :invalid rule would paint every required field red while
+       the form is still untouched. */
+    function markValidity() {
+      controls.forEach(function (el) {
+        el.classList.toggle("is-invalid", !el.checkValidity());
+      });
+    }
+    controls.forEach(function (el) {
+      el.addEventListener("input", function () { el.classList.remove("is-invalid"); });
+      el.addEventListener("change", function () { el.classList.remove("is-invalid"); });
+    });
 
     if (phone) {
       phone.addEventListener("input", function () { phone.setCustomValidity(""); });
@@ -155,9 +140,12 @@
         phone.setCustomValidity("");
       }
       if (!form.checkValidity()) {
+        markValidity();
         form.reportValidity();
         return;
       }
+      markValidity();
+      if (success) success.hidden = true;
 
       track("contact_form_submit");
 

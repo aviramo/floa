@@ -22,13 +22,16 @@
   <meta name="twitter:description" content="FLOA מתכננת ובונה אתרים, מערכות, אפליקציות, CRM ואוטומציות שמחברות את השיווק, המכירות והתפעול למערכת אחת פשוטה שעובדת">
   <meta name="twitter:image" content="https://floa.co.il/assets/hero-flow.webp">
 
-  <!-- Fonts -->
+  <!-- Fonts: Rubik (display) + Assistant (body) + JetBrains Mono (technical) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=JetBrains+Mono:wght@400;500&family=Rubik:wght@500;600;700&display=swap" rel="stylesheet">
 
   <link rel="preload" as="image" href="assets/hero-flow.webp">
-  <link rel="stylesheet" href="css/styles.css?v=4">
+  <!-- marks that JS is running, so .reveal may hide content it will bring back -->
+  <script>document.documentElement.className += " js";</script>
+
+  <link rel="stylesheet" href="css/styles.css?v=6">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%230E8C7E'/%3E%3Ctext x='50' y='68' font-family='Arial' font-size='52' font-weight='700' fill='white' text-anchor='middle'%3EF%3C/text%3E%3C/svg%3E">
 
   <script type="application/ld+json">
@@ -48,37 +51,97 @@
 
 <main id="top">
 
-  <!-- ===================== 1. HERO ===================== -->
+  <!-- ===================== HERO ===================== -->
   <section class="hero" id="hero">
-    <div class="container hero-grid">
+    <!-- The flow band: scattered currents enter from both edges, converge, and
+         resolve into a single point directly above the wordmark. It sits in its
+         own band above the copy and never crosses any text. -->
+    <div class="hero-flow-band" aria-hidden="true">
+      <canvas class="hero-flow" id="heroFlow"></canvas>
+    </div>
+
+    <div class="container">
+      <div class="hero-inner">
+        <span class="hero-logo">FLOA</span>
+        <h1 class="hero-title">כל פתרון דיגיטלי שהעסק שלך צריך</h1>
+        <p class="hero-text">מדף נחיתה או אפליקציה ועד אוטומציות ומערכות מורכבות — FLOA מתכננת ובונה את הפתרון שמתאים בדיוק לצורך</p>
+
+        <div class="hero-actions">
+          <a href="#contact" class="btn btn-primary btn-lg" data-analytics="hero_mapping_cta">לתיאום שיחת מיפוי ראשונית</a>
+          <a href="#solutions" class="btn btn-ghost btn-lg" data-analytics="hero_solutions_cta">לראות מה אפשר לפתור</a>
+        </div>
+
+      </div>
+
       <div class="hero-media reveal">
         <img src="assets/hero-flow.webp" width="800" height="600"
              alt="תרשים מופשט של מערכת עסקית: אתר, אפליקציה, WhatsApp, לידים, תשלומים ונתונים מתחברים לזרימה אחת"
              fetchpriority="high" decoding="async">
       </div>
-      <div class="hero-copy reveal">
-        <span class="hero-logo">FLOA</span>
-        <p class="hero-slogan">פתרונות דיגיטליים שמחברים את כל העסק</p>
-        <h1 class="hero-title">כל פתרון דיגיטלי שהעסק שלך צריך</h1>
-        <p class="hero-text">מדף נחיתה או אפליקציה ועד אוטומציות ומערכות מורכבות — FLOA מתכננת ובונה את הפתרון שמתאים בדיוק לצורך</p>
-        <div class="hero-actions">
-          <a href="#contact" class="btn btn-primary btn-lg" data-analytics="hero_mapping_cta">לתיאום שיחת מיפוי ראשונית</a>
-          <a href="#solutions" class="btn btn-ghost btn-lg" data-analytics="hero_solutions_cta">לראות מה אפשר לפתור</a>
-        </div>
-        <p class="hero-services">אתרים • מערכות • אפליקציות • CRM • אוטומציות • שיווק</p>
-        <ul class="hero-trust">
-          <li>15+ שנות ניסיון</li>
-          <li>אפיון, פיתוח וליווי במקום אחד</li>
-          <li>פתרון שמותאם לעסק</li>
-        </ul>
+    </div>
+  </section>
+
+  <!-- ===================== 01. SOLUTIONS ===================== -->
+  <section class="section solutions" id="solutions">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="eyebrow">פתרונות</p>
+        <h2>מה FLOA יכולה לפתור בעסק</h2>
+        <p>לא צריך לדעת מראש אם הפתרון הוא אתר, CRM, אוטומציה או מערכת חדשה. מספיק לדעת מה לא עובד כמו שצריך</p>
+      </div>
+
+      <div class="solutions-grid">
+        <article class="card reveal">
+          <span class="card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M7 6.5h.01M10 6.5h.01"/></svg>
+          </span>
+          <h3>להפוך יותר מבקרים לפניות</h3>
+          <p>אתרים ודפי נחיתה שמחדדים את ההצעה, יוצרים אמון ומובילים את המבקר לפעולה ברורה</p>
+        </article>
+
+        <article class="card reveal">
+          <span class="card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 8h5M16 12h5M16 16h3"/></svg>
+          </span>
+          <h3>להפסיק לאבד לידים</h3>
+          <p>CRM, WhatsApp, טפסים, משימות, תזכורות, הצעות מחיר ומעקב שמחוברים למסלול מכירה אחד</p>
+        </article>
+
+        <article class="card reveal">
+          <span class="card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M4.2 7.5l2.6 1.5M17.2 15l2.6 1.5M4.2 16.5l2.6-1.5M17.2 9l2.6-1.5"/><circle cx="12" cy="12" r="3.2"/></svg>
+          </span>
+          <h3>לחסוך שעות של עבודה ידנית</h3>
+          <p>קליטת מידע, מסמכים, תשלומים, תורים, הודעות ועדכונים שמתרחשים אוטומטית</p>
+        </article>
+
+        <article class="card reveal">
+          <span class="card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>
+          </span>
+          <h3>לבנות מערכת שלא קיימת על המדף</h3>
+          <p>אפליקציות, מערכות ניהול, פורטלים, אזורים אישיים, דשבורדים ופאנלים שנבנים סביב העבודה בעסק</p>
+        </article>
+
+        <article class="card card-wide reveal">
+          <span class="card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9M9 19v-6M14 19v-9M19 19V6"/><path d="M3 21h18"/></svg>
+          </span>
+          <div>
+            <h3>לדעת מה באמת עובד בשיווק</h3>
+            <p>קמפיינים, מעקב המרות ודשבורדים שמחברים בין ההוצאה, הפניות והמכירות</p>
+          </div>
+        </article>
       </div>
     </div>
   </section>
 
-  <!-- ===================== 2. PROBLEM ===================== -->
+
+  <!-- ===================== 02. PROBLEM ===================== -->
   <section class="section problem" id="problem">
     <div class="container">
-      <div class="section-head narrow reveal">
+      <div class="section-head reveal">
+        <p class="eyebrow">המצב היום</p>
         <h2>העסק כבר עובד. עכשיו הגיע הזמן שגם הדיגיטל יעבוד איתו</h2>
         <p>כשהלידים נמצאים ב־WhatsApp, הלקוחות באקסל, המשימות בראש וכל ספק מטפל רק בחלק שלו — העסק משלם בזמן, בכסף ובהזדמנויות שמתפספסות</p>
       </div>
@@ -108,7 +171,7 @@
           <p>WhatsApp, Excel, טפסים, ספקים שונים ומעקב ידני</p>
         </div>
         <div class="ba-arrow" aria-hidden="true">
-          <svg viewBox="0 0 40 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M38 12H2"/><path d="M10 4 2 12l8 8"/></svg>
+          <svg viewBox="0 0 40 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M38 12H2"/><path d="M10 4 2 12l8 8"/></svg>
         </div>
         <div class="ba-side ba-side-after">
           <span class="ba-tag ba-tag-after">עם FLOA</span>
@@ -118,13 +181,22 @@
     </div>
   </section>
 
-  <!-- ===================== 3. APPROACH ===================== -->
-  <section class="section custom" id="approach">
-    <div class="container custom-grid">
-      <div class="custom-copy reveal">
+  <!-- ===================== 03. APPROACH ===================== -->
+  <section class="section approach" id="approach">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="eyebrow">הגישה</p>
         <h2>לא עוד אוסף של כלים. מערכת שעובדת סביב העסק</h2>
         <p>FLOA לא מתחילה בשאלה איזו מערכת אפשר למכור לעסק. קודם מבינים איך העסק עובד, איפה הוא נתקע ומה ייצור את השינוי הגדול ביותר. אחר כך מתכננים, בונים ומחברים רק את מה שבאמת צריך</p>
-        <div class="principles">
+      </div>
+
+      <div class="approach-grid">
+        <div class="approach-media reveal">
+          <img src="assets/systems-devices.webp" width="800" height="600" loading="lazy"
+               alt="מחשב נייד וטלפון עם ממשקים עסקיים נקיים ומודרניים" decoding="async">
+        </div>
+
+        <div class="principles reveal">
           <div class="principle">
             <h3>מבינים לפני שבונים</h3>
             <p>לומדים את העסק, הלקוחות והתהליכים לפני שבוחרים טכנולוגיה</p>
@@ -139,76 +211,28 @@
           </div>
         </div>
       </div>
-      <div class="custom-media reveal">
-        <img src="assets/systems-devices.webp" width="800" height="600" loading="lazy"
-             alt="מחשב נייד וטלפון עם ממשקים עסקיים נקיים ומודרניים" decoding="async">
-      </div>
     </div>
   </section>
-
-  <!-- ===================== 4. SOLUTIONS ===================== -->
-  <section class="section solutions" id="solutions">
-    <div class="container">
-      <div class="section-head reveal">
-        <h2>מה FLOA יכולה לפתור בעסק</h2>
-        <p>לא צריך לדעת מראש אם הפתרון הוא אתר, CRM, אוטומציה או מערכת חדשה. מספיק לדעת מה לא עובד כמו שצריך</p>
-      </div>
-      <div class="solutions-grid">
-        <article class="card reveal">
-          <span class="card-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M7 6.5h.01M10 6.5h.01"/></svg>
-          </span>
-          <h3>להפוך יותר מבקרים לפניות</h3>
-          <p>אתרים ודפי נחיתה שמחדדים את ההצעה, יוצרים אמון ומובילים את המבקר לפעולה ברורה</p>
-        </article>
-        <article class="card reveal">
-          <span class="card-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 8h5M16 12h5M16 16h3"/></svg>
-          </span>
-          <h3>להפסיק לאבד לידים</h3>
-          <p>CRM, WhatsApp, טפסים, משימות, תזכורות, הצעות מחיר ומעקב שמחוברים למסלול מכירה אחד</p>
-        </article>
-        <article class="card reveal">
-          <span class="card-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M4.2 7.5l2.6 1.5M17.2 15l2.6 1.5M4.2 16.5l2.6-1.5M17.2 9l2.6-1.5"/><circle cx="12" cy="12" r="3.2"/></svg>
-          </span>
-          <h3>לחסוך שעות של עבודה ידנית</h3>
-          <p>קליטת מידע, מסמכים, תשלומים, תורים, הודעות ועדכונים שמתרחשים אוטומטית</p>
-        </article>
-        <article class="card reveal">
-          <span class="card-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>
-          </span>
-          <h3>לבנות מערכת שלא קיימת על המדף</h3>
-          <p>אפליקציות, מערכות ניהול, פורטלים, אזורים אישיים, דשבורדים ופאנלים שנבנים סביב העבודה בעסק</p>
-        </article>
-        <article class="card card-wide reveal">
-          <span class="card-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9M9 19v-6M14 19v-9M19 19V6"/><path d="M3 21h18"/></svg>
-          </span>
-          <h3>לדעת מה באמת עובד בשיווק</h3>
-          <p>קמפיינים, מעקב המרות ודשבורדים שמחברים בין ההוצאה, הפניות והמכירות</p>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== 5. CTA BAND ===================== -->
+  <!-- ===================== CTA BAND ===================== -->
   <section class="cta-band" id="cta">
-    <div class="container cta-inner reveal">
-      <h2>לא צריך לדעת איזה פתרון לבקש</h2>
-      <p>בשיחת המיפוי נבין מה מעכב את העסק, מה נכון לפתור קודם ואיזה שילוב של מערכות, תהליכים ואוטומציות ייתן את השינוי המשמעותי ביותר</p>
-      <a href="#contact" class="btn btn-primary btn-lg" data-analytics="cta_mapping_cta">בואו נמפה את העסק</a>
+    <div class="container">
+      <div class="cta-inner reveal">
+        <h2>לא צריך לדעת איזה פתרון לבקש</h2>
+        <p>בשיחת המיפוי נבין מה מעכב את העסק, מה נכון לפתור קודם ואיזה שילוב של מערכות, תהליכים ואוטומציות ייתן את השינוי המשמעותי ביותר</p>
+        <a href="#contact" class="btn btn-primary btn-lg" data-analytics="cta_mapping_cta">בואו נמפה את העסק</a>
+      </div>
     </div>
   </section>
 
-  <!-- ===================== 6. PROJECTS ===================== -->
+  <!-- ===================== 04. PROJECTS ===================== -->
   <section class="section projects" id="projects">
     <div class="container">
       <div class="section-head reveal">
+        <p class="eyebrow">עבודות</p>
         <h2>לא מצגות. דברים שעובדים</h2>
         <p>מוצרים ומערכות שנבנו מקצה לקצה — מהרעיון והמסר ועד המוצר, התשלום והמדידה</p>
       </div>
+
       <div class="projects-grid">
         <article class="project-card reveal">
           <a class="project-media" href="https://play.google.com/store/apps/details?id=com.aviramo.once" target="_blank" rel="noopener" aria-label="האפליקציה Once">
@@ -218,6 +242,7 @@
           <div class="project-body">
             <span class="project-name">Once</span>
             <h3><a href="https://play.google.com/store/apps/details?id=com.aviramo.once" target="_blank" rel="noopener">אפליקציית היכרות בזמן אמת</a></h3>
+
             <div class="project-part">
               <span class="project-label">האתגר</span>
               <p>ליצור חוויית היכרות שמונעת הצפה ופיזור וממקדת את המשתמשים במפגש אחד בכל פעם</p>
@@ -230,9 +255,11 @@
               <span class="project-label">מה נבנה</span>
               <p>אפליקציית Android, הרשמה, פרופילים, הזמנות, צ׳אט בזמן אמת, מנגנוני נעילה, פאנל ניהול ותשתית למדידה ושיווק</p>
             </div>
+
             <a class="project-link" href="https://play.google.com/store/apps/details?id=com.aviramo.once" target="_blank" rel="noopener">להורדת האפליקציה</a>
           </div>
         </article>
+
         <article class="project-card reveal">
           <a class="project-media" href="https://harpatka.co.il/" target="_blank" rel="noopener" aria-label="האתר יוצאים להרפתקה">
             <img src="assets/project-harpatka.webp" width="1100" height="778" loading="lazy" decoding="async"
@@ -241,6 +268,7 @@
           <div class="project-body">
             <span class="project-name">יוצאים להרפתקה</span>
             <h3><a href="https://harpatka.co.il/" target="_blank" rel="noopener">מערך דיגיטלי להרשמה ושיווק אירועים</a></h3>
+
             <div class="project-part">
               <span class="project-label">האתגר</span>
               <p>להפוך קונספט לא שגרתי להצעה ברורה שמסקרנת, יוצרת אמון ומובילה להרשמה</p>
@@ -253,6 +281,7 @@
               <span class="project-label">מה נבנה</span>
               <p>חידוד הקונספט והמסרים, עיצוב ופיתוח דף הנחיתה, התאמה למובייל, טופס הרשמה, תשלום, מעקב המרות והתאמה לקמפיינים ול־WhatsApp</p>
             </div>
+
             <a class="project-link" href="https://harpatka.co.il/" target="_blank" rel="noopener">לצפייה באתר</a>
           </div>
         </article>
@@ -260,12 +289,14 @@
     </div>
   </section>
 
-  <!-- ===================== 7. PROCESS ===================== -->
-  <section class="section how" id="process">
+  <!-- ===================== 05. PROCESS ===================== -->
+  <section class="section process" id="process">
     <div class="container">
       <div class="section-head reveal">
+        <p class="eyebrow">התהליך</p>
         <h2>כך הופכים צורך עסקי לפתרון שעובד</h2>
       </div>
+
       <ol class="timeline">
         <li class="tl-item reveal">
           <span class="tl-num">01</span>
@@ -299,14 +330,16 @@
     </div>
   </section>
 
-  <!-- ===================== 8. ONE ADDRESS ADVANTAGE ===================== -->
-  <section class="section why" id="advantage">
+  <!-- ===================== 06. ADVANTAGE ===================== -->
+  <section class="section advantage" id="advantage">
     <div class="container">
-      <div class="section-head narrow reveal">
+      <div class="section-head reveal">
+        <p class="eyebrow">היתרון</p>
         <h2>כשהכול מחובר, העסק יכול לזוז קדימה</h2>
         <p>FLOA מחזיקה את התמונה המלאה — מהמסר והחוויה של הלקוח ועד המערכת, המכירה והתפעול שמאחוריהם</p>
       </div>
-      <div class="cards-grid cards-3">
+
+      <div class="features-grid">
         <article class="feature reveal">
           <h3>כתובת אחת במקום מספר ספקים</h3>
           <p>לא צריך לתאם בנפרד בין בונה אתרים, מפתח, איש אוטומציות, שיווק וספק מערכות</p>
@@ -323,72 +356,98 @@
     </div>
   </section>
 
-  <!-- ===================== 9. ABOUT ===================== -->
+  <!-- ===================== 07. ABOUT ===================== -->
   <section class="section about" id="about">
-    <div class="container about-grid">
-      <div class="about-avatar reveal">
-        <img src="assets/ofir.webp" width="312" height="312" loading="lazy"
-             alt="אופיר אבירם, מייסד FLOA" decoding="async">
-      </div>
-      <div class="about-copy reveal">
+    <div class="container">
+      <div class="about-inner reveal">
+        <div class="about-avatar">
+          <img src="assets/ofir.webp" width="132" height="132" loading="lazy"
+               alt="אופיר אבירם, מייסד FLOA" decoding="async">
+        </div>
+
+        <p class="eyebrow">אודות</p>
         <h2>אני אופיר אבירם, המייסד של FLOA</h2>
+
         <p>כבר יותר מ־15 שנה אני מתכנן ובונה מערכות, מוצרים ותהליכים דיגיטליים</p>
         <p>הניסיון שלי משלב אפיון, ארכיטקטורה, פיתוח, מוצר ושיווק. השילוב הזה מאפשר ל־FLOA להבין גם את הצורך העסקי, גם את חוויית המשתמש וגם את הדרך להפוך את הרעיון לפתרון שעובד בפועל</p>
         <p>הקמתי את FLOA כדי לתת לעסקים כתובת אחת שרואה את התמונה המלאה, מתכננת את הפתרון ומלווה את הביצוע מקצה לקצה</p>
-        <p class="about-skills">15+ שנות ניסיון • אפיון • ארכיטקטורה • פיתוח • מוצר • שיווק</p>
-        <p class="emphasis">אני לא מתחיל מהטכנולוגיה. אני מתחיל מהעסק</p>
+
+        <ul class="chips">
+          <li>15+ שנות ניסיון</li>
+          <li>אפיון</li>
+          <li>ארכיטקטורה</li>
+          <li>פיתוח</li>
+          <li>מוצר</li>
+          <li>שיווק</li>
+        </ul>
+        <span class="emphasis">אני לא מתחיל מהטכנולוגיה. אני מתחיל מהעסק</span>
       </div>
     </div>
   </section>
 
-  <!-- ===================== 10. CONTACT ===================== -->
+  <!-- ===================== 08. CONTACT ===================== -->
   <section class="section contact" id="contact">
-    <div class="container contact-inner reveal">
-      <div class="section-head narrow">
-        <h2>בואו נמצא את הדבר הבא שיפשט ויצמיח את העסק</h2>
-        <p>בשיחת מיפוי ראשונית נבין מה מעכב את העסק היום, מה נכון לפתור קודם ואיך אפשר לחבר את הכול לתהליך שעובד</p>
-      </div>
+    <div class="container">
+      <div class="contact-panel reveal">
+        <div class="section-head">
+          <p class="eyebrow">יצירת קשר</p>
+          <h2>בואו נמצא את הדבר הבא שיפשט ויצמיח את העסק</h2>
+          <p>בשיחת מיפוי ראשונית נבין מה מעכב את העסק היום, מה נכון לפתור קודם ואיך אפשר לחבר את הכול לתהליך שעובד</p>
+        </div>
 
-      <form class="contact-form" id="contactForm" novalidate>
-        <div class="field">
-          <label for="name">שם מלא</label>
-          <input type="text" id="name" name="name" autocomplete="name" required>
-        </div>
-        <div class="field">
-          <label for="phone">טלפון</label>
-          <input type="tel" id="phone" name="phone" autocomplete="tel" inputmode="tel" required>
-        </div>
-        <div class="field">
-          <label for="business">שם העסק</label>
-          <input type="text" id="business" name="business" autocomplete="organization" required>
-        </div>
-        <div class="field">
-          <label for="help">במה תרצו עזרה?</label>
-          <select id="help" name="help" required>
-            <option value="" disabled selected>בחרו אפשרות</option>
-            <option value="מערך לידים ומכירות">מערך לידים ומכירות</option>
-            <option value="ייעול תהליכים ואוטומציות">ייעול תהליכים ואוטומציות</option>
-            <option value="אתר או דף נחיתה">אתר או דף נחיתה</option>
-            <option value="מערכת או אפליקציה">מערכת או אפליקציה</option>
-            <option value="שיווק וקמפיינים">שיווק וקמפיינים</option>
-            <option value="עדיין לא בטוח">עדיין לא בטוח</option>
-          </select>
-        </div>
-        <div class="field field-full">
-          <label for="improve">מה הייתם רוצים לשפר?</label>
-          <textarea id="improve" name="improve" rows="4" placeholder="לדוגמה: הלידים מגיעים לוואטסאפ ואין לנו דרך מסודרת לעקוב אחריהם"></textarea>
-        </div>
-        <div class="field field-full">
-          <button type="submit" class="btn btn-primary btn-lg btn-block">לתיאום שיחת מיפוי ראשונית</button>
-        </div>
-      </form>
+        <form class="contact-form" id="contactForm" novalidate>
+          <div class="field">
+            <label for="name">שם מלא</label>
+            <input type="text" id="name" name="name" autocomplete="name" required>
+          </div>
+          <div class="field">
+            <label for="phone">טלפון</label>
+            <input type="tel" id="phone" name="phone" autocomplete="tel" inputmode="tel" required>
+          </div>
+          <div class="field">
+            <label for="business">שם העסק</label>
+            <input type="text" id="business" name="business" autocomplete="organization" required>
+          </div>
+          <div class="field">
+            <label for="help">במה תרצו עזרה?</label>
+            <select id="help" name="help" required>
+              <option value="" disabled selected>בחרו אפשרות</option>
+              <option value="מערך לידים ומכירות">מערך לידים ומכירות</option>
+              <option value="ייעול תהליכים ואוטומציות">ייעול תהליכים ואוטומציות</option>
+              <option value="אתר או דף נחיתה">אתר או דף נחיתה</option>
+              <option value="מערכת או אפליקציה">מערכת או אפליקציה</option>
+              <option value="שיווק וקמפיינים">שיווק וקמפיינים</option>
+              <option value="עדיין לא בטוח">עדיין לא בטוח</option>
+            </select>
+          </div>
+          <div class="field field-full">
+            <label for="improve">מה הייתם רוצים לשפר?</label>
+            <textarea id="improve" name="improve" rows="4" placeholder="לדוגמה: הלידים מגיעים לוואטסאפ ואין לנו דרך מסודרת לעקוב אחריהם"></textarea>
+          </div>
 
-      <p class="contact-note">בלי התחייבות ובלי מצגת מכירה. שיחה עניינית על העסק ועל מה שאפשר לשפר</p>
-      <p class="contact-alt">מעדיפים WhatsApp? <a href="#" data-whatsapp data-analytics="whatsapp_cta">אפשר לכתוב לי ישירות</a></p>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-lg btn-block">לתיאום שיחת מיפוי ראשונית</button>
+          </div>
+        </form>
 
-      <div class="form-success" id="formSuccess" role="status" hidden>
-        <strong>תודה, הפרטים התקבלו</strong>
-        <span>אחזור אליכם בהקדם כדי להבין מה העסק צריך ואיך נכון להתקדם</span>
+        <p class="contact-note">בלי התחייבות ובלי מצגת מכירה. שיחה עניינית על העסק ועל מה שאפשר לשפר</p>
+
+        <div class="or-divider" aria-hidden="true">או</div>
+
+        <a href="#" class="btn btn-lg btn-whatsapp" data-whatsapp data-analytics="whatsapp_cta">
+          <span class="wa-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.885 9.885M20.52 3.449C18.24 1.245 15.24 0 12.045 0 5.463 0 .104 5.359.101 11.945c0 2.096.549 4.14 1.595 5.945L0 24l6.335-1.652a11.882 11.882 0 005.71 1.454h.006c6.585 0 11.946-5.358 11.949-11.945a11.9 11.9 0 00-3.495-8.42"/></svg>
+          </span>
+          <span class="btn-stack">
+            <span>לכתוב לי ב־WhatsApp</span>
+            <span class="btn-sub">תשובה מהירה</span>
+          </span>
+        </a>
+
+        <div class="form-success" id="formSuccess" role="status" hidden>
+          <strong>תודה, הפרטים התקבלו</strong>
+          <span>אחזור אליכם בהקדם כדי להבין מה העסק צריך ואיך נכון להתקדם</span>
+        </div>
       </div>
     </div>
   </section>
@@ -417,16 +476,9 @@
   </div>
 </footer>
 
-<!-- Fixed mobile action bar (not a header / not a menu) -->
-<div class="mobile-bar" id="mobileBar">
-  <a href="#contact" class="btn btn-primary mobile-cta" data-analytics="mobile_mapping_cta">לתיאום שיחת מיפוי</a>
-  <a href="#" class="wa-btn" data-whatsapp data-analytics="whatsapp_cta" aria-label="שיחת WhatsApp">
-    <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.885 9.885M20.52 3.449C18.24 1.245 15.24 0 12.045 0 5.463 0 .104 5.359.101 11.945c0 2.096.549 4.14 1.595 5.945L0 24l6.335-1.652a11.882 11.882 0 005.71 1.454h.006c6.585 0 11.946-5.358 11.949-11.945a11.9 11.9 0 00-3.495-8.42"/></svg>
-  </a>
-</div>
-
-<script type="module" src="js/firebase.js?v=4"></script>
-<script src="js/main.js?v=4" defer></script>
+<script type="module" src="js/firebase.js?v=6"></script>
+<script src="js/flow.js?v=6" defer></script>
+<script src="js/main.js?v=6" defer></script>
 <script>
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", function () {
