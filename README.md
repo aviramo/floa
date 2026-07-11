@@ -28,15 +28,50 @@ python3 -m http.server 8000
 
 ופתיחת `http://localhost:8000`.
 
+## טופס יצירת קשר — WhatsApp + Firestore
+
+בשליחת הטופס קורים שני דברים:
+
+1. **שמירה ב-Cloud Firestore** (אוסף `leads`) — ישירות מהדפדפן דרך `js/firebase.js`.
+   השמירה לא חוסמת ולא זורקת: אם Firestore לא זמין, הטופס ממשיך לעבוד.
+2. **פתיחת WhatsApp** אל מספר העסק עם פרטי הפנייה כהודעה מוכנה.
+
+מספר ה-WhatsApp מוגדר ב-`js/main.js` (`WHATSAPP_NUMBER`), וכל קישורי ה-WhatsApp
+בעמוד נבנים ממנו.
+
+### Firestore Security Rule
+
+הכלל שמוגדר ב-Firebase Console (Firestore → Rules) — יצירה בלבד, ללא קריאה:
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /leads/{leadId} {
+      allow read, update, delete: if false;
+      allow create: if
+        request.resource.data.name is string &&
+        request.resource.data.name.size() > 0 &&
+        request.resource.data.name.size() <= 100 &&
+        request.resource.data.phone is string &&
+        request.resource.data.phone.size() > 0 &&
+        request.resource.data.phone.size() <= 40 &&
+        request.resource.data.business is string &&
+        request.resource.data.business.size() <= 120 &&
+        request.resource.data.improve is string &&
+        request.resource.data.improve.size() <= 2000 &&
+        request.resource.data.source == "floa-landing";
+    }
+  }
+}
+```
+
+הפניות נצפות ב-Firebase Console → Firestore → Data → אוסף `leads`.
+
 ## נקודות שדורשות השלמה בהמשך
 
-- **WhatsApp** — יש להגדיר את המספר בקובץ `js/main.js`, במשתנה `WHATSAPP_URL`.
-  כל קישורי ה-WhatsApp בעמוד (הכפתור הצף, הטופס והפוטר) יתעדכנו אוטומטית.
-  כל עוד ריק — הקישורים גוללים לטופס יצירת הקשר.
-- **טופס יצירת קשר** — כרגע מציג אישור בצד הלקוח בלבד
-  (`הפרטים התקבלו. אחזור אליכם בהקדם.`). יש לחבר לשירות טפסים / שרת ב-`wireForm()`.
-- **תמונת אופיר** — כרגע Placeholder נקי. יש להחליף בתמונה אמיתית בסקשן "מי עומד מאחורי FLOA".
 - **קישורי פוטר** — מדיניות פרטיות והצהרת נגישות מפנים כרגע ל-`#`.
+- **דומיין** — לחיבור `floa.co.il` יש להוסיף קובץ `CNAME` ולהגדיר DNS.
 
 ## נגישות ו-SEO
 

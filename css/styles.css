@@ -508,22 +508,15 @@ button { font-family: inherit; cursor: pointer; }
   gap: 50px;
   align-items: center;
 }
-.photo-placeholder {
+.ofir-photo {
+  width: 100%;
   aspect-ratio: 4 / 5;
+  object-fit: cover;
+  object-position: 50% 20%;
   border-radius: var(--radius-lg);
-  background:
-    repeating-linear-gradient(45deg, transparent 0 14px, rgba(14,140,126,.03) 14px 28px),
-    var(--teal-soft);
-  border: 2px dashed rgba(14, 140, 126, .35);
-  display: grid;
-  place-content: center;
-  justify-items: center;
-  gap: 14px;
-  color: var(--teal-dark);
-  text-align: center;
+  background: var(--teal-soft);
+  box-shadow: var(--shadow);
 }
-.photo-placeholder svg { width: 64px; height: 64px; opacity: .7; }
-.photo-placeholder span { font-weight: 700; font-size: 1.05rem; }
 
 .about-copy h2 {
   font-size: clamp(1.8rem, 4.6vw, 2.6rem);
