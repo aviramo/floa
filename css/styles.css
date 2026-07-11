@@ -942,3 +942,7 @@ body {
   background: #FCECEC; color: #A23B3B; font-weight: 600;
   padding: 14px 16px; border-radius: 14px; border: 1px solid #F3CFCF;
 }
+
+/* the success message must stay hidden until an actual successful submit
+   (a display value on .form-success would otherwise override [hidden]) */
+.form-success[hidden] { display: none; }
