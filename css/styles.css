@@ -645,14 +645,14 @@ button { font-family: inherit; cursor: pointer; }
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: var(--teal);
+  background: #25D366;
   color: #fff;
   display: none;
   place-items: center;
-  box-shadow: 0 10px 26px rgba(14, 140, 126, .4);
+  box-shadow: 0 10px 26px rgba(37, 211, 102, .4);
   transition: background-color .2s var(--ease);
 }
-.wa-float:hover { background: var(--teal-dark); }
+.wa-float:hover { background: #1EBE57; }
 .wa-float svg { width: 32px; height: 32px; }
 
 .mobile-cta {
