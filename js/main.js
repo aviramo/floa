@@ -109,13 +109,27 @@
       // בונים הודעת WhatsApp מפרטי הטופס ופותחים צ'אט מול העסק.
       var data = new FormData(form);
       var val = function (k) { return (data.get(k) || "").toString().trim(); };
+      var lead = {
+        name: val("name"), phone: val("phone"),
+        business: val("business"), improve: val("improve")
+      };
+
+      // שמירה ב-Firestore (לא חוסמת; הטופס עובד גם אם השמירה נכשלת/לא מוגדרת)
+      if (typeof window.floaSaveLead === "function") {
+        try {
+          window.floaSaveLead(lead).catch(function (err) {
+            console.warn("FLOA: lead not saved to Firestore —", err && err.message);
+          });
+        } catch (err) { /* no-op */ }
+      }
+
       var lines = [
         "פנייה חדשה מאתר FLOA:",
-        "שם: " + val("name"),
-        "טלפון: " + val("phone"),
+        "שם: " + lead.name,
+        "טלפון: " + lead.phone,
       ];
-      if (val("business")) lines.push("שם העסק: " + val("business"));
-      if (val("improve"))  lines.push("מה הייתם רוצים לשפר: " + val("improve"));
+      if (lead.business) lines.push("שם העסק: " + lead.business);
+      if (lead.improve)  lines.push("מה הייתם רוצים לשפר: " + lead.improve);
       var message = lines.join("\n");
 
       if (WHATSAPP_URL) {
