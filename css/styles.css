@@ -715,10 +715,9 @@ button { font-family: inherit; cursor: pointer; }
   .hero-grid,
   .custom-grid,
   .about-grid { grid-template-columns: 1fr; gap: 34px; }
-  .hero { padding: 34px 0 40px; }
+  .hero { padding: 8px 0 44px; }
   .hero-media { order: -1; }
   .hero-text { max-width: none; }
-  .about-photo { max-width: 340px; margin-inline: auto; }
 
   .ba-grid { grid-template-columns: 1fr; }
 
@@ -769,12 +768,30 @@ button { font-family: inherit; cursor: pointer; }
 }
 
 /* ==========================================================================
-   FLOW ENHANCEMENTS — hero flow canvas, wave dividers, connected steps.
-   Light world, brand-faithful. Subtle motion only.
+   HARPATKA-STYLE PASS
+   Continuous page-long gradient, numbered timeline, floating cards, small
+   round photo. Light/teal brand world. Flowing-dot lines kept, masked off
+   the text.
    ========================================================================== */
 
-/* hero flow canvas behind content — masked to the image side so it never
-   crosses the text column (RTL: text is on the right, image on the left) */
+/* one continuous, subtle gradient down the WHOLE page (replaces the
+   section-cutting wave dividers and the panel alternation) */
+body {
+  background: linear-gradient(180deg,
+      #F7FBFA 0%,
+      #E7F3EF 20%,
+      #E8F1F7 42%,
+      #E5F3EE 62%,
+      #ECF2F8 82%,
+      #F7FBFA 100%);
+}
+/* sections ride transparently on the gradient */
+.problem, .before-after, .what, .custom,
+.solutions, .how, .why, .about, .contact { background: transparent; }
+.contact { background: transparent; }
+
+/* hero flow canvas — flowing dot lanes, masked so they never cross the text
+   (desktop: kept to the image side; RTL text sits on the right) */
 .hero { position: relative; overflow: hidden; }
 #flow {
   position: absolute; inset: 0; width: 100%; max-width: 100%; height: 100%;
@@ -784,46 +801,42 @@ button { font-family: inherit; cursor: pointer; }
 }
 .hero-grid { position: relative; z-index: 1; }
 
-/* clean cream/white alternation so the wave dividers read cleanly */
-.what      { background: var(--surface); }
-.solutions { background: var(--surface); }
-.why       { background: var(--surface); }
-.custom    { background: var(--bg); }
-.how       { background: var(--bg); }
-.about     { background: var(--bg); }
+/* cards float on the gradient */
+.mini-card { background: var(--surface); }
 
-/* wave dividers — the "flow" transition between sections */
-.flow-wave {
-  height: 58px;
-  width: 100%;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 100% 100%;
-  margin-top: -1px;
-  margin-bottom: -1px;
-  position: relative;
-  z-index: 1;
-}
-.flow-wave.to-white   { background-color: var(--bg);      background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%201200%2070'%20preserveAspectRatio='none'%3E%3Cpath%20d='M0,40%20C300,80%20500,10%20700,38%20C900,66%201050,30%201200,44%20L1200,70%20L0,70%20Z'%20fill='%23ffffff'/%3E%3Cpath%20d='M0,40%20C300,80%20500,10%20700,38%20C900,66%201050,30%201200,44'%20fill='none'%20stroke='%230E8C7E'%20stroke-width='2'%20opacity='0.5'/%3E%3C/svg%3E"); }
-.flow-wave.to-cream   { background-color: var(--surface); background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%201200%2070'%20preserveAspectRatio='none'%3E%3Cpath%20d='M0,40%20C300,80%20500,10%20700,38%20C900,66%201050,30%201200,44%20L1200,70%20L0,70%20Z'%20fill='%23F6FAF9'/%3E%3Cpath%20d='M0,40%20C300,80%20500,10%20700,38%20C900,66%201050,30%201200,44'%20fill='none'%20stroke='%230E8C7E'%20stroke-width='2'%20opacity='0.5'/%3E%3C/svg%3E"); }
-.flow-wave.to-contact { background-color: var(--bg);      background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%201200%2070'%20preserveAspectRatio='none'%3E%3Cpath%20d='M0,40%20C300,80%20500,10%20700,38%20C900,66%201050,30%201200,44%20L1200,70%20L0,70%20Z'%20fill='%23E4F2EF'/%3E%3Cpath%20d='M0,40%20C300,80%20500,10%20700,38%20C900,66%201050,30%201200,44'%20fill='none'%20stroke='%230E8C7E'%20stroke-width='2'%20opacity='0.5'/%3E%3C/svg%3E");  }
+/* ---- numbered timeline ("how it works") ---- */
+.timeline { position: relative; max-width: 760px; margin-inline: auto;
+  display: flex; flex-direction: column; }
+.timeline::before { content: ""; position: absolute; top: 40px; bottom: 40px;
+  inset-inline-start: 33px; width: 2px; border-radius: 2px;
+  background: linear-gradient(var(--teal), var(--blue)); opacity: .4; }
+.tl-item { position: relative; display: grid; grid-template-columns: 68px 1fr;
+  gap: 22px; align-items: start; padding-block: 12px; }
+.tl-num { width: 68px; height: 68px; border-radius: 50%; display: grid;
+  place-items: center; font-weight: 800; font-size: 1.35rem; color: #fff;
+  background: linear-gradient(150deg, var(--teal), var(--teal-dark));
+  box-shadow: 0 12px 26px -10px rgba(14,140,126,.65);
+  position: relative; z-index: 1; font-variant-numeric: tabular-nums; }
+.tl-body { background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 22px 26px; box-shadow: var(--shadow-sm); }
+.tl-body h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 7px; }
+.tl-body p { color: var(--muted); font-size: .99rem; }
 
-/* steps become nodes on a flowing connector line */
-.steps { position: relative; }
-.steps-line {
-  position: absolute;
-  top: 53px;
-  inset-inline: 12%;
-  height: 2px;
-  z-index: 0;
-  background: repeating-linear-gradient(90deg, var(--teal) 0 8px, transparent 8px 18px);
-  opacity: .45;
-}
-.step { position: relative; z-index: 1; background: var(--surface); }
+/* ---- about: small round photo, centered ---- */
+.about-grid { display: block; text-align: center; max-width: 700px; margin-inline: auto; }
+.about-avatar { width: 156px; height: 156px; margin: 0 auto 24px; }
+.about-avatar img { width: 156px; height: 156px; border-radius: 50%;
+  object-fit: cover; object-position: 50% 18%; border: 4px solid var(--surface);
+  box-shadow: 0 16px 38px -14px rgba(18,48,60,.35); background: var(--teal-soft); }
+.about-copy h2 { margin-bottom: 16px; }
+.about-copy p { margin-inline: auto; max-width: 60ch; }
+.about-copy .emphasis { font-size: 1.2rem; }
 
-@media (max-width: 1000px) {
-  .steps-line { display: none; }
-}
 @media (max-width: 560px) {
-  .flow-wave { height: 40px; }
+  /* comfortable side gutters so the cards float away from the screen edges */
+  .container { padding-inline: 20px; }
+  .tl-item { grid-template-columns: 54px 1fr; gap: 15px; }
+  .tl-num { width: 54px; height: 54px; font-size: 1.1rem; }
+  .timeline::before { inset-inline-start: 26px; }
+  .about-avatar, .about-avatar img { width: 132px; height: 132px; }
 }

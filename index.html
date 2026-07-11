@@ -54,19 +54,7 @@
       <span class="logo-sub">העסק שלך, פשוט יותר.</span>
     </a>
 
-    <nav class="nav" id="nav" aria-label="ניווט ראשי">
-      <ul class="nav-list">
-        <li><a href="#what">מה אנחנו עושים</a></li>
-        <li><a href="#how">איך זה עובד</a></li>
-        <li><a href="#solutions">פתרונות</a></li>
-        <li><a href="#about">מי אני</a></li>
-      </ul>
-      <a href="#contact" class="btn btn-primary nav-cta">בואו נעשה סדר בעסק</a>
-    </nav>
-
-    <button class="nav-toggle" id="navToggle" aria-label="פתיחת תפריט" aria-expanded="false" aria-controls="nav">
-      <span></span><span></span><span></span>
-    </button>
+    <a href="#contact" class="btn btn-primary nav-cta">בואו נעשה סדר בעסק</a>
   </div>
 </header>
 
@@ -94,8 +82,6 @@
     </div>
   </section>
 
-  <div class="flow-wave to-white" aria-hidden="true"></div>
-
   <!-- ===================== 2. PROBLEM ===================== -->
   <section class="section problem" id="problem">
     <div class="container">
@@ -113,8 +99,6 @@
       </ul>
     </div>
   </section>
-
-  <div class="flow-wave to-cream" aria-hidden="true"></div>
 
   <!-- ===================== 3. BEFORE / AFTER ===================== -->
   <section class="section before-after" id="before-after">
@@ -147,8 +131,6 @@
       </div>
     </div>
   </section>
-
-  <div class="flow-wave to-white" aria-hidden="true"></div>
 
   <!-- ===================== 4. WHAT FLOA BUILDS ===================== -->
   <section class="section what" id="what">
@@ -204,8 +186,6 @@
     </div>
   </section>
 
-  <div class="flow-wave to-cream" aria-hidden="true"></div>
-
   <!-- ===================== 5. CUSTOM APPS ===================== -->
   <section class="section custom" id="custom">
     <div class="container custom-grid">
@@ -228,8 +208,6 @@
       </div>
     </div>
   </section>
-
-  <div class="flow-wave to-white" aria-hidden="true"></div>
 
   <!-- ===================== 6. SOLUTIONS BY SITUATION ===================== -->
   <section class="section solutions" id="solutions">
@@ -257,41 +235,44 @@
     </div>
   </section>
 
-  <div class="flow-wave to-cream" aria-hidden="true"></div>
-
   <!-- ===================== 7. HOW IT WORKS ===================== -->
   <section class="section how" id="how">
     <div class="container">
       <div class="section-head reveal">
         <h2>מתהליך מבולגן למערכת שעובדת.</h2>
       </div>
-      <ol class="steps">
-        <span class="steps-line" aria-hidden="true"></span>
-        <li class="step reveal">
-          <span class="step-num">1</span>
-          <h3>לומדים את העסק</h3>
-          <p>מבינים איך העסק עובד היום, מה כואב ומה באמת צריך להשתנות.</p>
+      <ol class="timeline">
+        <li class="tl-item reveal">
+          <span class="tl-num">01</span>
+          <div class="tl-body">
+            <h3>לומדים את העסק</h3>
+            <p>מבינים איך העסק עובד היום, מה כואב ומה באמת צריך להשתנות.</p>
+          </div>
         </li>
-        <li class="step reveal">
-          <span class="step-num">2</span>
-          <h3>מפשטים את התהליך</h3>
-          <p>מורידים שלבים מיותרים ובונים תהליך ברור וחכם יותר.</p>
+        <li class="tl-item reveal">
+          <span class="tl-num">02</span>
+          <div class="tl-body">
+            <h3>מפשטים את התהליך</h3>
+            <p>מורידים שלבים מיותרים ובונים תהליך ברור וחכם יותר.</p>
+          </div>
         </li>
-        <li class="step reveal">
-          <span class="step-num">3</span>
-          <h3>בונים ומחברים</h3>
-          <p>מקימים את האתר, המערכת, האפליקציה או האוטומציות ומחברים הכול יחד.</p>
+        <li class="tl-item reveal">
+          <span class="tl-num">03</span>
+          <div class="tl-body">
+            <h3>בונים ומחברים</h3>
+            <p>מקימים את האתר, המערכת, האפליקציה או האוטומציות ומחברים הכול יחד.</p>
+          </div>
         </li>
-        <li class="step reveal">
-          <span class="step-num">4</span>
-          <h3>עולים לאוויר ומשפרים</h3>
-          <p>מלווים את ההטמעה, מודדים ומשפרים לפי השימוש האמיתי.</p>
+        <li class="tl-item reveal">
+          <span class="tl-num">04</span>
+          <div class="tl-body">
+            <h3>עולים לאוויר ומשפרים</h3>
+            <p>מלווים את ההטמעה, מודדים ומשפרים לפי השימוש האמיתי.</p>
+          </div>
         </li>
       </ol>
     </div>
   </section>
-
-  <div class="flow-wave to-white" aria-hidden="true"></div>
 
   <!-- ===================== 8. WHY FLOA ===================== -->
   <section class="section why" id="why">
@@ -320,14 +301,12 @@
     </div>
   </section>
 
-  <div class="flow-wave to-cream" aria-hidden="true"></div>
-
   <!-- ===================== 9. ABOUT ===================== -->
   <section class="section about" id="about">
     <div class="container about-grid">
-      <div class="about-photo reveal">
-        <img src="assets/ofir.webp" width="720" height="720" loading="lazy"
-             alt="אופיר אבירם, מייסד FLOA" class="ofir-photo" decoding="async">
+      <div class="about-avatar reveal">
+        <img src="assets/ofir.webp" width="312" height="312" loading="lazy"
+             alt="אופיר אבירם, מייסד FLOA" decoding="async">
       </div>
       <div class="about-copy reveal">
         <h2>אני אופיר אבירם.</h2>
@@ -338,8 +317,6 @@
       </div>
     </div>
   </section>
-
-  <div class="flow-wave to-contact" aria-hidden="true"></div>
 
   <!-- ===================== 10. CONTACT ===================== -->
   <section class="section contact" id="contact">
