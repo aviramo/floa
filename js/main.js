@@ -11,12 +11,40 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     wireWhatsApp();
-    wireMobileMenu();
     wireReveal();
     wireForm();
     wireAnalytics();
     wireHelpPrefill();
+    wireMobileBar();
   });
+
+  /* ---- fixed mobile action bar: show after the hero, hide over the form
+     and the footer so it never covers content --------------------------- */
+  function wireMobileBar() {
+    if (!("IntersectionObserver" in window)) {
+      document.body.classList.add("past-hero");
+      return;
+    }
+    var hero = document.getElementById("hero");
+    var contact = document.getElementById("contact");
+    var footer = document.querySelector(".site-footer");
+
+    if (hero) {
+      new IntersectionObserver(function (e) {
+        document.body.classList.toggle("past-hero", !e[0].isIntersecting);
+      }, { rootMargin: "-45% 0px 0px 0px", threshold: 0 }).observe(hero);
+    }
+    if (contact) {
+      new IntersectionObserver(function (e) {
+        document.body.classList.toggle("at-form", e[0].isIntersecting);
+      }, { threshold: 0 }).observe(contact);
+    }
+    if (footer) {
+      new IntersectionObserver(function (e) {
+        document.body.classList.toggle("at-footer", e[0].isIntersecting);
+      }, { threshold: 0 }).observe(footer);
+    }
+  }
 
   /* ---- lightweight analytics (only fires if GA/GTM already exists) ------ */
   function track(name) {
@@ -65,33 +93,6 @@
         el.setAttribute("target", "_blank");
         el.setAttribute("rel", "noopener");
       }
-    });
-  }
-
-  /* ---- Mobile menu ------------------------------------------------------ */
-  function wireMobileMenu() {
-    var toggle = document.getElementById("navToggle");
-    var nav = document.getElementById("nav");
-    if (!toggle || !nav) return;
-
-    function close() {
-      nav.classList.remove("open");
-      toggle.setAttribute("aria-expanded", "false");
-      toggle.setAttribute("aria-label", "פתיחת תפריט");
-    }
-    function open() {
-      nav.classList.add("open");
-      toggle.setAttribute("aria-expanded", "true");
-      toggle.setAttribute("aria-label", "סגירת תפריט");
-    }
-    toggle.addEventListener("click", function () {
-      nav.classList.contains("open") ? close() : open();
-    });
-    nav.querySelectorAll("a").forEach(function (a) {
-      a.addEventListener("click", close);
-    });
-    document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape") close();
     });
   }
 
