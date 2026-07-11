@@ -676,7 +676,6 @@ button { font-family: inherit; cursor: pointer; }
   opacity: 0;
   transform: translateY(22px);
   transition: opacity .6s var(--ease), transform .6s var(--ease);
-  will-change: opacity, transform;
 }
 .reveal.in-view { opacity: 1; transform: none; }
 

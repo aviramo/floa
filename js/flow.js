@@ -1,7 +1,9 @@
 /* ==========================================================================
    FLOA — hero "flow" animation (light).
    Subtle turquoise flow lanes with traveling dots, drawn on a canvas behind
-   the hero content. Respects prefers-reduced-motion.
+   the hero content. Runs ONLY while the hero is on screen and the canvas is
+   actually displayed (it is hidden on mobile) — so it never competes with
+   scrolling. Respects prefers-reduced-motion.
    ========================================================================== */
 (function () {
   "use strict";
@@ -11,9 +13,11 @@
   var ctx = cv.getContext("2d");
   var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var dpr = Math.min(window.devicePixelRatio || 1, 2);
-  var W = 0, H = 0, lanes = [], t = 0, raf = 0;
+  var W = 0, H = 0, lanes = [], t = 0, raf = 0, running = false;
 
   var TEAL = "14,140,126"; // --teal rgb
+
+  function shown() { return cv.offsetParent !== null; } // false when display:none
 
   function build() {
     var r = cv.parentElement.getBoundingClientRect();
@@ -57,8 +61,8 @@
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fillStyle = "rgba(" + TEAL + "," + a + ")";
-    ctx.shadowColor = "rgba(" + TEAL + ",.55)";
-    ctx.shadowBlur = 12;
+    ctx.shadowColor = "rgba(" + TEAL + ",.5)";
+    ctx.shadowBlur = 10;
     ctx.fill();
     ctx.shadowBlur = 0;
   }
@@ -67,9 +71,8 @@
     ctx.clearRect(0, 0, W, H);
     lanes.forEach(function (seg, li) {
       line(seg, 0.16);
-      var count = 3;
-      for (var k = 0; k < count; k++) {
-        var prog = ((t * 0.00012 * (1 + li * 0.12)) + (k / count) + li * 0.18) % 1;
+      for (var k = 0; k < 3; k++) {
+        var prog = ((t * 0.00012 * (1 + li * 0.12)) + (k / 3) + li * 0.18) % 1;
         var x = W - prog * W;          // flow right -> left (RTL)
         var y = laneY(seg, x);
         dot(x, y, 3, 0.85);
@@ -78,7 +81,6 @@
     });
     dot(W * 0.99, H * 0.5, 4, 0.4);
     t += 16;
-    raf = requestAnimationFrame(frame);
   }
 
   function staticDraw() {
@@ -92,16 +94,45 @@
     });
   }
 
+  function loop() {
+    if (!running) return;
+    frame();
+    raf = window.requestAnimationFrame(loop);
+  }
+  function start() {
+    if (running || reduce || !shown()) return;
+    running = true;
+    raf = window.requestAnimationFrame(loop);
+  }
+  function stop() {
+    running = false;
+    if (raf) window.cancelAnimationFrame(raf);
+    raf = 0;
+  }
+
   build();
-  var ro;
   window.addEventListener("resize", function () {
     build();
-    if (reduce) staticDraw();
+    if (!shown()) stop();
+    else if (reduce) staticDraw();
   });
 
   if (reduce) {
-    staticDraw();
-  } else {
-    raf = requestAnimationFrame(frame);
+    if (shown()) staticDraw();
+    return;
   }
+
+  // animate only while the hero is on screen (and pause otherwise)
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries[0].isIntersecting ? start() : stop();
+    }, { threshold: 0 });
+    io.observe(cv.parentElement);
+  } else {
+    start();
+  }
+  // also pause when the tab is hidden
+  document.addEventListener("visibilitychange", function () {
+    document.hidden ? stop() : start();
+  });
 })();
