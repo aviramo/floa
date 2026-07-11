@@ -138,7 +138,7 @@ def hero():
     # connecting flow lines from hub to satellites (drawn under would be nicer,
     # but thin soft lines over cream read fine)
     conn = [
-        [(300, 300), (250, 260), (200, 190)],       # website
+        [(330, 300), (250, 260), (200, 190)],       # website  (starts on hub edge)
         [(470, 290), (540, 240), (595, 235)],       # phone
         [(470, 320), (560, 340), (620, 340)],       # whatsapp
         [(345, 350), (280, 430), (200, 460)],       # leads

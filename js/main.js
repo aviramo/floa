@@ -19,7 +19,22 @@
     wireMobileMenu();
     wireReveal();
     wireForm();
+    wirePastHero();
   });
+
+  /* ---- reveal the fixed mobile actions only after the hero ------------- */
+  function wirePastHero() {
+    var hero = document.getElementById("hero");
+    if (!hero || !("IntersectionObserver" in window)) {
+      document.body.classList.add("past-hero");
+      return;
+    }
+    var io = new IntersectionObserver(function (entries) {
+      // hero mostly out of view -> show the fixed bar
+      document.body.classList.toggle("past-hero", !entries[0].isIntersecting);
+    }, { rootMargin: "-45% 0px 0px 0px", threshold: 0 });
+    io.observe(hero);
+  }
 
   /* ---- WhatsApp links --------------------------------------------------- */
   function wireWhatsApp() {

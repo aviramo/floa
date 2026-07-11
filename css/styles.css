@@ -722,8 +722,27 @@ button { font-family: inherit; cursor: pointer; }
 
   .ba-grid { grid-template-columns: 1fr; }
 
-  .wa-float, .mobile-cta { display: grid; }
+  /* hero flow animation is desktop-only — on a single-column mobile hero
+     it would cross the text, so we drop it (the wave dividers and the steps
+     connector still carry the flow motif) */
+  #flow { display: none; }
+
+  /* fixed actions appear only after scrolling past the hero, so they never
+     collide with the hero's own CTA — one primary button at a time */
+  .wa-float, .mobile-cta {
+    opacity: 0;
+    transform: translateY(150%);
+    pointer-events: none;
+    transition: opacity .28s var(--ease), transform .28s var(--ease);
+  }
+  .wa-float { display: grid; }
   .mobile-cta { display: inline-flex; }
+  body.past-hero .wa-float,
+  body.past-hero .mobile-cta {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
   body { padding-bottom: 84px; }
 }
 
@@ -754,11 +773,14 @@ button { font-family: inherit; cursor: pointer; }
    Light world, brand-faithful. Subtle motion only.
    ========================================================================== */
 
-/* hero flow canvas behind content */
+/* hero flow canvas behind content — masked to the image side so it never
+   crosses the text column (RTL: text is on the right, image on the left) */
 .hero { position: relative; overflow: hidden; }
 #flow {
-  position: absolute; inset: 0; width: 100%; height: 100%;
+  position: absolute; inset: 0; width: 100%; max-width: 100%; height: 100%;
   z-index: 0; pointer-events: none;
+  -webkit-mask-image: linear-gradient(to right, #000 0%, #000 36%, transparent 58%);
+          mask-image: linear-gradient(to right, #000 0%, #000 36%, transparent 58%);
 }
 .hero-grid { position: relative; z-index: 1; }
 
