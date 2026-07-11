@@ -246,10 +246,10 @@ button { font-family: inherit; cursor: pointer; }
   margin-bottom: 20px;
 }
 .hero-title {
-  font-size: clamp(2.5rem, 6vw, 4rem);
+  font-size: clamp(2.7rem, 7vw, 4.8rem);
   font-weight: 800;
-  line-height: 1.08;
-  letter-spacing: -.02em;
+  line-height: 1.04;
+  letter-spacing: -.025em;
   color: var(--ink);
 }
 .hero-text {
@@ -747,4 +747,61 @@ button { font-family: inherit; cursor: pointer; }
     animation-duration: .001ms !important;
     transition-duration: .001ms !important;
   }
+}
+
+/* ==========================================================================
+   FLOW ENHANCEMENTS — hero flow canvas, wave dividers, connected steps.
+   Light world, brand-faithful. Subtle motion only.
+   ========================================================================== */
+
+/* hero flow canvas behind content */
+.hero { position: relative; overflow: hidden; }
+#flow {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  z-index: 0; pointer-events: none;
+}
+.hero-grid { position: relative; z-index: 1; }
+
+/* clean cream/white alternation so the wave dividers read cleanly */
+.what      { background: var(--surface); }
+.solutions { background: var(--surface); }
+.why       { background: var(--surface); }
+.custom    { background: var(--bg); }
+.how       { background: var(--bg); }
+.about     { background: var(--bg); }
+
+/* wave dividers — the "flow" transition between sections */
+.flow-wave {
+  height: 58px;
+  width: 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
+  margin-top: -1px;
+  margin-bottom: -1px;
+  position: relative;
+  z-index: 1;
+}
+.flow-wave.to-white   { background-color: var(--bg);      background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%201200%2070'%20preserveAspectRatio='none'%3E%3Cpath%20d='M0,40%20C300,80%20500,10%20700,38%20C900,66%201050,30%201200,44%20L1200,70%20L0,70%20Z'%20fill='%23ffffff'/%3E%3Cpath%20d='M0,40%20C300,80%20500,10%20700,38%20C900,66%201050,30%201200,44'%20fill='none'%20stroke='%230E8C7E'%20stroke-width='2'%20opacity='0.5'/%3E%3C/svg%3E"); }
+.flow-wave.to-cream   { background-color: var(--surface); background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%201200%2070'%20preserveAspectRatio='none'%3E%3Cpath%20d='M0,40%20C300,80%20500,10%20700,38%20C900,66%201050,30%201200,44%20L1200,70%20L0,70%20Z'%20fill='%23F6FAF9'/%3E%3Cpath%20d='M0,40%20C300,80%20500,10%20700,38%20C900,66%201050,30%201200,44'%20fill='none'%20stroke='%230E8C7E'%20stroke-width='2'%20opacity='0.5'/%3E%3C/svg%3E"); }
+.flow-wave.to-contact { background-color: var(--bg);      background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%201200%2070'%20preserveAspectRatio='none'%3E%3Cpath%20d='M0,40%20C300,80%20500,10%20700,38%20C900,66%201050,30%201200,44%20L1200,70%20L0,70%20Z'%20fill='%23E4F2EF'/%3E%3Cpath%20d='M0,40%20C300,80%20500,10%20700,38%20C900,66%201050,30%201200,44'%20fill='none'%20stroke='%230E8C7E'%20stroke-width='2'%20opacity='0.5'/%3E%3C/svg%3E");  }
+
+/* steps become nodes on a flowing connector line */
+.steps { position: relative; }
+.steps-line {
+  position: absolute;
+  top: 53px;
+  inset-inline: 12%;
+  height: 2px;
+  z-index: 0;
+  background: repeating-linear-gradient(90deg, var(--teal) 0 8px, transparent 8px 18px);
+  opacity: .45;
+}
+.step { position: relative; z-index: 1; background: var(--surface); }
+
+@media (max-width: 1000px) {
+  .steps-line { display: none; }
+}
+@media (max-width: 560px) {
+  .flow-wave { height: 40px; }
 }
