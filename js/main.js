@@ -5,11 +5,14 @@
   "use strict";
 
   /* ---- CONFIG -----------------------------------------------------------
-     כתובת ה-WhatsApp תימסר בהמשך. כשתהיה מספר, החליפו את הערך למטה, למשל:
-       var WHATSAPP_URL = "https://wa.me/9725XXXXXXXX";
-     כל קישורי ה-WhatsApp בעמוד (הצף, בטופס ובפוטר) יתעדכנו אוטומטית.
+     מספר ה-WhatsApp של העסק, בפורמט בינלאומי ללא + / רווחים / 0 מוביל.
+     כל קישורי ה-WhatsApp בעמוד (הצף, בטופס ובפוטר) והטופס נבנים ממנו.
      ---------------------------------------------------------------------- */
-  var WHATSAPP_URL = ""; // <-- placeholder, to be provided later
+  var WHATSAPP_NUMBER = "972587078708"; // +972 58-707-8708
+  var WHATSAPP_URL = WHATSAPP_NUMBER ? "https://wa.me/" + WHATSAPP_NUMBER : "";
+
+  // הודעה שמופיעה מוכנה כשלוחצים על כפתור WhatsApp רגיל (לא דרך הטופס)
+  var WA_GREETING = "היי, הגעתי דרך האתר של FLOA ואשמח לשמוע עוד 🙂";
 
   document.addEventListener("DOMContentLoaded", function () {
     wireWhatsApp();
@@ -21,14 +24,14 @@
   /* ---- WhatsApp links --------------------------------------------------- */
   function wireWhatsApp() {
     var links = document.querySelectorAll("[data-whatsapp]");
+    var href = WHATSAPP_URL
+      ? WHATSAPP_URL + "?text=" + encodeURIComponent(WA_GREETING)
+      : "#contact";
     links.forEach(function (el) {
+      el.setAttribute("href", href);
       if (WHATSAPP_URL) {
-        el.setAttribute("href", WHATSAPP_URL);
         el.setAttribute("target", "_blank");
         el.setAttribute("rel", "noopener");
-      } else {
-        // No number yet — scroll to the contact form instead of a dead link.
-        el.setAttribute("href", "#contact");
       }
     });
   }
@@ -103,8 +106,25 @@
         return;
       }
 
-      // TODO: חבר לכאן שליחה לשרת / שירות טפסים כשיהיה זמין.
-      // כרגע מוצג אישור בצד הלקוח בלבד.
+      // בונים הודעת WhatsApp מפרטי הטופס ופותחים צ'אט מול העסק.
+      var data = new FormData(form);
+      var val = function (k) { return (data.get(k) || "").toString().trim(); };
+      var lines = [
+        "פנייה חדשה מאתר FLOA:",
+        "שם: " + val("name"),
+        "טלפון: " + val("phone"),
+      ];
+      if (val("business")) lines.push("שם העסק: " + val("business"));
+      if (val("improve"))  lines.push("מה הייתם רוצים לשפר: " + val("improve"));
+      var message = lines.join("\n");
+
+      if (WHATSAPP_URL) {
+        window.open(
+          WHATSAPP_URL + "?text=" + encodeURIComponent(message),
+          "_blank", "noopener"
+        );
+      }
+
       form.reset();
       if (success) {
         success.hidden = false;
