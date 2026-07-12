@@ -1441,4 +1441,63 @@ a.hero-logo:hover { color: var(--teal-dark); }
 @media (max-width: 720px) {
   .checklist { grid-template-columns: 1fr; }
 }
+
+/* --- unique per-solution hero illustration ---------------------------------
+   Each solution page gets its OWN hero image instead of the shared system
+   diagram. They are drawn from one palette and one set of card/line-icon
+   primitives, so the five pages read as a family while each picture is unique. */
+.hero-chip { margin-bottom: var(--s-6); }
+.hero-chip span {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--s-2) var(--s-5);
+  border-radius: var(--r-pill);
+  background: var(--teal-tint);
+  color: var(--teal-dark);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  line-height: 1.4;
+}
+.hero-art { width: 100%; }
+.hero-illust {
+  display: block;
+  width: 100%;
+  max-width: 700px;
+  height: auto;
+  margin: clamp(20px, 2.6vw, 36px) auto clamp(4px, 1vw, 12px);
+  overflow: visible;
+}
+
+/* one shared palette for the whole illustration family */
+.hero-illust .plate      { fill: var(--surface); stroke: var(--hairline); stroke-width: 1; }
+.hero-illust .plate-sunk { fill: var(--surface-sunk); stroke: var(--hairline); stroke-width: 1; }
+.hero-illust .bar        { fill: #E7EDEC; }
+.hero-illust .bar-teal   { fill: var(--teal); }
+.hero-illust .bar-tint   { fill: rgba(14, 140, 126, .22); }
+.hero-illust .bar-blue   { fill: rgba(127, 197, 228, .5); }
+.hero-illust .dot        { fill: #D3E0DD; }
+.hero-illust .fill-teal  { fill: var(--teal); }
+.hero-illust .fill-tint  { fill: var(--teal-tint); }
+.hero-illust .fill-white { fill: #fff; }
+.hero-illust .fill-water { fill: rgba(127, 197, 228, .5); }
+.hero-illust .wire       { fill: none; stroke: var(--water); stroke-width: 2.2; stroke-linecap: round; opacity: .55; }
+.hero-illust .wire-teal  { fill: none; stroke: var(--teal); stroke-width: 2.4; stroke-linecap: round; opacity: .85; }
+.hero-illust .glyph      { fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.hero-illust .glyph-teal { stroke: var(--teal); }
+.hero-illust .glyph-white{ stroke: #fff; }
+.hero-illust .glyph-ink  { stroke: var(--ink-2); }
+.hero-illust .glyph-muted{ stroke: #AFC0C0; }
+
+.hero-illust .lift    { filter: drop-shadow(0 8px 12px rgba(15, 42, 51, .10)); }
+.hero-illust .lift-lg { filter: drop-shadow(0 16px 24px rgba(15, 42, 51, .16)); }
+.hero-illust .hub-glow{ filter: drop-shadow(0 10px 16px rgba(14, 140, 126, .40)); }
+
+/* gentle life — frozen automatically under prefers-reduced-motion (see §12) */
+@keyframes hero-float   { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+@keyframes hero-breathe { 0%, 100% { transform: scale(1); }      50% { transform: scale(1.04); } }
+@keyframes hero-blink   { 0%, 100% { opacity: .5; }              50% { opacity: 1; } }
+.hero-illust .float   { animation: hero-float 5.5s var(--ease) infinite; transform-box: fill-box; transform-origin: center; }
+.hero-illust .float-b { animation: hero-float 5.5s var(--ease) infinite; animation-delay: -2.75s; transform-box: fill-box; transform-origin: center; }
+.hero-illust .breathe { animation: hero-breathe 3.8s var(--ease) infinite; transform-box: fill-box; transform-origin: center; }
+.hero-illust .blink   { animation: hero-blink 2.6s var(--ease) infinite; }
   
