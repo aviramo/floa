@@ -914,15 +914,23 @@ h1, h2, h3, h4 {
   .project-media-duo img { width: 100%; height: auto; max-height: none; }
 }
 
-/* --- testimonial: one clean, prominent quote card ------------------------ */
+/* --- testimonial: balanced quote cards, side by side then stacked -------- */
+.quotes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gap);
+  max-width: 1000px;
+  margin-inline: auto;
+}
 .quote-card {
   position: relative;
-  max-width: 820px;
-  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   background: var(--surface);
   border: 1px solid var(--hairline);
   border-radius: var(--r-lg);
-  padding: clamp(28px, 5vw, 56px);
+  padding: clamp(28px, 4vw, 48px);
   box-shadow: var(--sh-2);
   text-align: center;
 }
@@ -941,7 +949,8 @@ h1, h2, h3, h4 {
   color: var(--ink-2);
 }
 .quote-by {
-  margin-top: var(--s-7);
+  margin-top: auto;
+  padding-top: var(--s-7);
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -953,6 +962,9 @@ h1, h2, h3, h4 {
   color: var(--ink);
 }
 .quote-role { color: var(--muted); font-size: var(--fs-sm); }
+@media (max-width: 640px) {
+  .quotes-grid { grid-template-columns: 1fr; }
+}
 
 /* --- 06 process: numbered timeline --------------------------------------- */
 .timeline {
