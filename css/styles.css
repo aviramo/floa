@@ -1085,8 +1085,11 @@ h1, h2, h3, h4 {
   font-size: var(--fs-sm);
   margin-bottom: var(--s-6);
 }
+/* the WhatsApp button is full-width inside the contact panel; here it sizes to
+   its own content so it sits as a centred pill */
 .legal-cta {
   display: inline-flex;
+  width: auto;
   max-width: 100%;
 }
 
