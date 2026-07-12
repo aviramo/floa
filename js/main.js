@@ -16,7 +16,7 @@
     wireReveal();
     wireForm();
     wireAnalytics();
-    wireHelpPrefill();
+    wireHelpSelect();
     wireAnchors();
   });
 
@@ -99,21 +99,14 @@
     });
   }
 
-  /* ---- prefill the "how can we help" select from the CTA cards ---------- */
-  function wireHelpPrefill() {
+  /* ---- keep the "how can we help" select greyed while it sits on the
+     placeholder option (see .field select.is-empty in the CSS) ------------- */
+  function wireHelpSelect() {
     var select = document.getElementById("help");
-    document.querySelectorAll("[data-help]").forEach(function (el) {
-      el.addEventListener("click", function () {
-        if (!select) return;
-        select.value = el.getAttribute("data-help");
-        select.classList.remove("is-empty");
-      });
-    });
-    if (select) {
-      var refresh = function () { select.classList.toggle("is-empty", !select.value); };
-      select.addEventListener("change", refresh);
-      refresh();
-    }
+    if (!select) return;
+    var refresh = function () { select.classList.toggle("is-empty", !select.value); };
+    select.addEventListener("change", refresh);
+    refresh();
   }
 
   /* ---- WhatsApp links --------------------------------------------------- */
