@@ -23,23 +23,29 @@
    01. TOKENS
    ========================================================================== */
 :root {
-  /* --- colour: one accent, everything else is ink and paper --- */
-  --paper:        #FBFCFC;
+  /* --- colour: one accent, everything else is ink and paper ---------------
+     Paper is a cool tinted ground, cards are pure white. Previously both were
+     effectively the same white (#FBFCFC vs #FFFFFF), so a card had nothing to
+     sit ON and only its hairline separated it from the page. Making white the
+     figure and the tint the ground is what gives the cards their lift. */
+  --paper:        #E9F0EE;
   --surface:      #FFFFFF;
-  --surface-sunk: #F4F8F7;
+  --surface-sunk: #F2F7F5;   /* recessed panels INSIDE a white card */
 
   --ink:          #0F2A33;
   --ink-2:        #24444F;
-  --muted:        #66797F;
-  --muted-2:      #93A3A8;
+  /* darkened to clear AA (4.5:1) against the tinted paper, not just against a
+     white card — the section leads sit on paper, where #66797F fell to 3.94 */
+  --muted:        #586C73;
+  --muted-2:      #63757B;
 
   --teal:         #0E8C7E;
   --teal-dark:    #0A6C61;
   --teal-tint:    #E8F4F1;
   --water:        #7FC5E4;
 
-  --hairline:     #E4EBE9;
-  --hairline-2:   #EFF3F2;
+  --hairline:     #DCE6E3;
+  --hairline-2:   #E9F0EE;
 
   --danger:       #A23B3B;
   --danger-bg:    #FCECEC;
@@ -89,9 +95,9 @@
   --field-h: 56px;           /* every input, select and button agrees */
 
   /* --- depth: soft, water-like, never heavy --- */
-  --sh-1: 0 1px 2px rgba(15, 42, 51, .04);
-  --sh-2: 0 8px 24px -12px rgba(15, 42, 51, .14);
-  --sh-3: 0 24px 60px -28px rgba(15, 42, 51, .22);
+  --sh-1: 0 2px 6px rgba(15, 42, 51, .05);
+  --sh-2: 0 10px 28px -12px rgba(15, 42, 51, .16);
+  --sh-3: 0 26px 64px -28px rgba(15, 42, 51, .24);
   --sh-teal: 0 12px 28px -12px rgba(14, 140, 126, .45);
 
   --container: 1200px;
@@ -329,10 +335,11 @@ h1, h2, h3, h4 {
   font-size: 1.08rem;
   line-height: 1.5;
   color: var(--ink);
-  background-color: var(--surface);
+  background-color: var(--surface-sunk);
   border: 1px solid var(--hairline);
   border-radius: var(--r-sm);
-  transition: border-color .18s var(--ease), box-shadow .18s var(--ease);
+  transition: border-color .18s var(--ease), box-shadow .18s var(--ease),
+              background-color .18s var(--ease);
   appearance: none;
   -webkit-appearance: none;
 }
@@ -361,6 +368,7 @@ h1, h2, h3, h4 {
 .field select:focus,
 .field textarea:focus {
   outline: none;
+  background-color: var(--surface);
   border-color: var(--teal);
   box-shadow: 0 0 0 4px rgba(14, 140, 126, .13);
 }
@@ -412,7 +420,7 @@ h1, h2, h3, h4 {
   gap: var(--s-3);
   padding-block: var(--s-3);
   min-height: 64px;
-  background: var(--surface);
+  background: var(--surface-sunk);
   color: var(--ink);
   border-color: var(--hairline);
   box-shadow: var(--sh-1);
