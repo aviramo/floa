@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>FLOA | אוטומציות שחוסכות לעסק שעות של עבודה ידנית</title>
+  <meta name="description" content="FLOA ממפה את התהליכים שאוכלים לכם את הזמן ובונה אוטומציות שמעבירות מידע, מסמכים, תשלומים ועדכונים בין המערכות — בלי ידיים ובלי טעויות.">
+  <meta name="theme-color" content="#0E8C7E">
+  <link rel="canonical" href="https://aviramo.github.io/floa/automations.html">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="he_IL">
+  <meta property="og:site_name" content="FLOA">
+  <meta property="og:url" content="https://aviramo.github.io/floa/automations.html">
+  <meta property="og:title" content="FLOA | אוטומציות שחוסכות לעסק שעות של עבודה ידנית">
+  <meta property="og:description" content="FLOA ממפה את התהליכים שאוכלים לכם את הזמן ובונה אוטומציות שמעבירות מידע, מסמכים, תשלומים ועדכונים בין המערכות — בלי ידיים ובלי טעויות.">
+  <meta property="og:image" content="https://aviramo.github.io/floa/assets/og-cover.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="FLOA. כל פתרון דיגיטלי שהעסק שלך צריך, מחובר למערכת אחת">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="FLOA | אוטומציות שחוסכות לעסק שעות של עבודה ידנית">
+  <meta name="twitter:description" content="FLOA ממפה את התהליכים שאוכלים לכם את הזמן ובונה אוטומציות שמעבירות מידע, מסמכים, תשלומים ועדכונים בין המערכות — בלי ידיים ובלי טעויות.">
+  <meta name="twitter:image" content="https://aviramo.github.io/floa/assets/og-cover.png">
+
+  <!-- Fonts: Rubik (display) + Assistant (body) + JetBrains Mono (technical) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=JetBrains+Mono:wght@400;500&family=Rubik:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <!-- marks that JS is running, so .reveal may hide content it will bring back -->
+  <script>document.documentElement.className += " js";</script>
+
+  <link rel="stylesheet" href="css/styles.css?v=9">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%230E8C7E'/%3E%3Ctext x='50' y='68' font-family='Arial' font-size='52' font-weight='700' fill='white' text-anchor='middle'%3EF%3C/text%3E%3C/svg%3E">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "serviceType": "אוטומציות וייעול תהליכים",
+    "name": "אוטומציות וייעול תהליכים | FLOA",
+    "description": "FLOA ממפה את התהליכים שאוכלים לכם את הזמן ובונה אוטומציות שמעבירות מידע, מסמכים, תשלומים ועדכונים בין המערכות — בלי ידיים ובלי טעויות.",
+    "areaServed": "IL",
+    "url": "https://aviramo.github.io/floa/automations.html",
+    "provider": {
+      "@type": "ProfessionalService",
+      "name": "FLOA",
+      "url": "https://aviramo.github.io/floa/",
+      "founder": { "@type": "Person", "name": "אופיר אבירם" }
+    }
+  }
+  </script>
+</head>
+<body>
+
+<main id="top">
+
+  <!-- ===================== HERO ===================== -->
+  <section class="hero" id="hero">
+    <div class="container">
+      <div class="hero-inner">
+        <a href="index.html" class="hero-logo">FLOA</a>
+        <h1 class="hero-title">תנו לעבודה החוזרת לקרות מעצמה</h1>
+        <p class="hero-text">FLOA ממפה את התהליכים שאוכלים לכם את הזמן ובונה אוטומציות שמעבירות מידע, מסמכים, תשלומים ועדכונים בין המערכות, בלי ידיים</p>
+
+        <!-- the FLOA system, animated. This page's solution is featured (lit and
+             forward) while every other solution keeps pulsing into the same hub —
+             so the visitor sees their solution at the centre of ONE system. -->
+        <div class="hero-system" id="heroSystem" data-feature="4" data-caption="אוטומציות וייעול תהליכים">
+          <p class="system-caption" id="systemCaption" aria-live="off">
+            <span class="system-caption-text">אוטומציות וייעול תהליכים</span>
+          </p>
+
+          <svg class="system-svg" viewBox="0 0 820 470" role="img"
+               aria-label="תרשים מערכת: אתר, אפליקציה, WhatsApp, תשלומים ונתונים מתחברים כולם למערכת אחת של FLOA">
+            <defs>
+              <linearGradient id="wire" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stop-color="#7FC5E4"/>
+                <stop offset="1" stop-color="#0E8C7E"/>
+              </linearGradient>
+              <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="150%">
+                <feDropShadow dx="0" dy="6" stdDeviation="9" flood-color="#0F2A33" flood-opacity=".10"/>
+              </filter>
+              <filter id="hubGlow" x="-60%" y="-60%" width="220%" height="220%">
+                <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#0E8C7E" flood-opacity=".38"/>
+              </filter>
+            </defs>
+
+            <!-- wires: every solution runs into the hub -->
+            <g class="wires" fill="none" stroke="url(#wire)" stroke-width="2" stroke-linecap="round">
+              <path id="w1" d="M284 150 C 320 176, 344 200, 370 224"/>
+              <path id="w2" d="M592 122 C 545 158, 500 192, 458 222"/>
+              <path id="w3" d="M644 286 C 590 274, 510 258, 460 250"/>
+              <path id="w4" d="M430 384 C 424 342, 420 306, 416 280"/>
+              <path id="w5" d="M236 352 C 288 322, 332 288, 366 262"/>
+            </g>
+
+            <!-- 01 — website / landing page -->
+            <g class="node" data-node="0">
+              <rect class="plate" x="96" y="52" width="188" height="118" rx="16" filter="url(#cardShadow)"/>
+              <circle class="dot" cx="118" cy="74" r="4"/><circle class="dot" cx="132" cy="74" r="4"/><circle class="dot" cx="146" cy="74" r="4"/>
+              <rect class="bar bar-teal" x="116" y="94" width="86" height="10" rx="5"/>
+              <rect class="bar" x="116" y="114" width="148" height="8" rx="4"/>
+              <rect class="bar" x="116" y="132" width="120" height="8" rx="4"/>
+              <rect class="bar bar-blue" x="116" y="150" width="60" height="8" rx="4"/>
+            </g>
+
+            <!-- 02 — app -->
+            <g class="node" data-node="1">
+              <rect class="plate" x="592" y="36" width="86" height="150" rx="16" filter="url(#cardShadow)"/>
+              <rect class="bar bar-teal" x="606" y="56" width="58" height="30" rx="8"/>
+              <rect class="bar" x="606" y="96" width="58" height="8" rx="4"/>
+              <rect class="bar" x="606" y="112" width="44" height="8" rx="4"/>
+              <rect class="bar bar-blue" x="606" y="140" width="58" height="22" rx="8"/>
+            </g>
+
+            <!-- 03 — WhatsApp / leads -->
+            <g class="node" data-node="2">
+              <path class="plate" d="M660 250 h84 a16 16 0 0 1 16 16 v34 a16 16 0 0 1 -16 16 h-56 l-22 20 v-20 h-6 a16 16 0 0 1 -16 -16 v-34 a16 16 0 0 1 16 -16 z" filter="url(#cardShadow)"/>
+              <rect class="bar" x="676" y="272" width="52" height="8" rx="4"/>
+              <rect class="bar bar-teal" x="676" y="288" width="34" height="8" rx="4"/>
+            </g>
+
+            <!-- 04 — payments -->
+            <g class="node" data-node="3">
+              <rect class="plate" x="352" y="384" width="160" height="60" rx="12" filter="url(#cardShadow)"/>
+              <rect class="bar bar-teal" x="368" y="398" width="128" height="12" rx="6"/>
+              <rect class="bar" x="368" y="420" width="70" height="8" rx="4"/>
+              <rect class="bar bar-blue" x="452" y="420" width="44" height="8" rx="4"/>
+            </g>
+
+            <!-- 05 — data / automations -->
+            <g class="node" data-node="4">
+              <rect class="plate" x="86" y="330" width="150" height="72" rx="14" filter="url(#cardShadow)"/>
+              <circle class="dot dot-teal" cx="106" cy="350" r="5"/>
+              <rect class="bar" x="120" y="346" width="98" height="8" rx="4"/>
+              <circle class="dot dot-blue" cx="106" cy="372" r="5"/>
+              <rect class="bar" x="120" y="368" width="76" height="8" rx="4"/>
+              <circle class="dot" cx="106" cy="392" r="5"/>
+              <rect class="bar" x="120" y="388" width="56" height="8" rx="4"/>
+            </g>
+
+            <!-- the hub: everything resolves here -->
+            <g class="hub">
+              <rect x="368" y="212" width="90" height="66" rx="20" fill="#0E8C7E" filter="url(#hubGlow)"/>
+              <g stroke="#fff" stroke-width="2.4" stroke-linecap="round" fill="none">
+                <path d="M386 245 h16"/>
+                <path d="M402 245 L 418 231"/>
+                <path d="M402 245 L 418 259"/>
+                <circle cx="422" cy="231" r="3.4" fill="#fff" stroke="none"/>
+                <circle cx="422" cy="259" r="3.4" fill="#fff" stroke="none"/>
+                <circle cx="402" cy="245" r="4.4" fill="#fff" stroke="none"/>
+              </g>
+            </g>
+
+            <!-- the pulses: data travelling down each wire into the hub -->
+            <g class="pulses">
+              <circle class="pulse" data-wire="0" r="4.5"/>
+              <circle class="pulse" data-wire="1" r="4.5"/>
+              <circle class="pulse" data-wire="2" r="4.5"/>
+              <circle class="pulse" data-wire="3" r="4.5"/>
+              <circle class="pulse" data-wire="4" r="4.5"/>
+            </g>
+          </svg>
+        </div>
+
+        <div class="hero-actions">
+          <a href="#contact" class="btn btn-primary btn-lg" data-analytics="hero_mapping_cta">בואו נדבר על העסק</a>
+          <a href="#" class="btn btn-lg btn-ghost" data-whatsapp data-analytics="whatsapp_cta">לכתוב לי ב־WhatsApp</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PROBLEM ===================== -->
+  <section class="section problem" id="problem">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="eyebrow">אוטומציות וייעול תהליכים</p>
+        <h2>כמה שעות ביום נשרפות על עבודה שאפשר להפוך לאוטומטית</h2>
+        <p>כל העתקה ידנית בין מערכות היא זמן שאבד והזדמנות לטעות</p>
+      </div>
+
+      <ul class="mini-cards">
+        <li class="mini-card reveal">
+          <strong>עבודה ידנית חוזרת</strong>
+          <p>העתקות בין מערכות, הקלדות ועדכונים, שוב ושוב</p>
+        </li>
+        <li class="mini-card reveal">
+          <strong>טעויות אנוש</strong>
+          <p>פרטים שנופלים בין הכיסאות כי הכול נעשה ביד</p>
+        </li>
+        <li class="mini-card reveal">
+          <strong>זמן יקר מתבזבז</strong>
+          <p>שעות על משימות שמערכת יכולה לבצע בשנייה</p>
+        </li>
+        <li class="mini-card reveal">
+          <strong>מערכות שלא מדברות</strong>
+          <p>כל כלי בפינה שלו, ושום דבר לא זורם ביניהם</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===================== WHAT'S INCLUDED ===================== -->
+  <section class="section solutions" id="included">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="eyebrow">מה נבנה בשבילך</p>
+        <h2>תהליך שרץ מעצמו, מקצה לקצה</h2>
+        <p>מחברים את מה שכבר יש, ומוסיפים אוטומציה רק איפה שהיא באמת חוסכת</p>
+      </div>
+
+      <ul class="checklist">
+        <li class="check-item reveal">
+          <span class="check-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <div>
+            <h3>מיפוי התהליכים</h3>
+            <p>מזהים איפה בדיוק נשרפים הזמן והטעויות</p>
+          </div>
+        </li>
+        <li class="check-item reveal">
+          <span class="check-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <div>
+            <h3>חיבור בין המערכות</h3>
+            <p>טפסים, CRM, וואטסאפ, תשלומים ומסמכים מדברים</p>
+          </div>
+        </li>
+        <li class="check-item reveal">
+          <span class="check-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <div>
+            <h3>אוטומציות מבוססות טריגר</h3>
+            <p>פעולה אחת מפעילה אוטומטית את הבאה</p>
+          </div>
+        </li>
+        <li class="check-item reveal">
+          <span class="check-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <div>
+            <h3>מסמכים ותשלומים אוטומטית</h3>
+            <p>חשבוניות, הצעות ואישורים נוצרים ונשלחים לבד</p>
+          </div>
+        </li>
+        <li class="check-item reveal">
+          <span class="check-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <div>
+            <h3>תזכורות והתראות</h3>
+            <p>למי שצריך, מתי שצריך, בלי לעקוב ידנית</p>
+          </div>
+        </li>
+        <li class="check-item reveal">
+          <span class="check-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <div>
+            <h3>בקרות ותיעוד</h3>
+            <p>רואים שכל תהליך רץ כמו שצריך, בזמן אמת</p>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===================== THE FULL PICTURE (core concept) ===================== -->
+  <section class="section solutions" id="ecosystem">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="eyebrow">התמונה המלאה</p>
+        <h2>פתרון אחד הוא ההתחלה. הכוח הוא בחיבור</h2>
+        <p>FLOA היא לא ספק של דבר אחד. אנחנו מתכננים ובונים את כל הפתרונות הדיגיטליים של העסק ומחברים אותם למערכת אחת, כך שכל חלק מזין את השני</p>
+      </div>
+
+      <div class="solutions-grid eco-grid reveal">
+        <a class="card eco-card" href="websites.html">
+          <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M7 6.5h.01M10 6.5h.01"/></svg></span>
+          <h3>אתרים ודפי נחיתה</h3>
+          <p>להפוך מבקרים לפניות</p>
+        </a>
+        <a class="card eco-card" href="leads-crm.html">
+          <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 8h5M16 12h5M16 16h3"/></svg></span>
+          <h3>לידים, מכירות ו-CRM</h3>
+          <p>לרכז כל פנייה ולסגור יותר</p>
+        </a>
+        <div class="card eco-card is-current">
+          <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M4.2 7.5l2.6 1.5M17.2 15l2.6 1.5M4.2 16.5l2.6-1.5M17.2 9l2.6-1.5"/><circle cx="12" cy="12" r="3.2"/></svg></span>
+          <h3>אוטומציות</h3>
+          <p>לחסוך שעות של עבודה ידנית</p>
+          <span class="eco-here">אתם כאן</span>
+        </div>
+        <a class="card eco-card" href="systems-apps.html">
+          <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg></span>
+          <h3>מערכות ואפליקציות</h3>
+          <p>לבנות מה שאין על המדף</p>
+        </a>
+        <a class="card eco-card" href="marketing.html">
+          <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9M9 19v-6M14 19v-9M19 19V6"/><path d="M3 21h18"/></svg></span>
+          <h3>שיווק, קמפיינים ומדידה</h3>
+          <p>לדעת מה באמת עובד בשיווק</p>
+        </a>
+      </div>
+
+      <p class="eco-note">אוטומציות מקבלות משמעות כשהן מחוברות ל<a href="leads-crm.html">מערך הלידים</a> ול<a href="systems-apps.html">מערכות שלכם</a>. אנחנו רואים את התהליך השלם, לא רק חוליה בודדת.</p>
+    </div>
+  </section>
+
+  <!-- ===================== WHY FLOA ===================== -->
+  <section class="section advantage" id="advantage">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="eyebrow">היתרון</p>
+        <h2>למה לבנות את האוטומציות עם FLOA</h2>
+        <p>כי אוטומציה טובה מתחילה בהבנת התהליך, לא בכלי</p>
+      </div>
+
+      <div class="features-grid">
+        <article class="feature reveal">
+          <h3>פחות ידיים, פחות טעויות</h3>
+          <p>מה שרץ אוטומטית לא נשכח ולא מוקלד לא נכון</p>
+        </article>
+        <article class="feature reveal">
+          <h3>תהליך שרץ 24/7 בלעדיכם</h3>
+          <p>העסק ממשיך לעבוד גם כשאתם לא ליד המסך</p>
+        </article>
+        <article class="feature reveal">
+          <h3>חיבור של מה שכבר יש</h3>
+          <p>לא עוד כלי חדש, אלא לגרום לקיים לעבוד יחד</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== CTA BAND ===================== -->
+  <section class="cta-band" id="cta">
+    <div class="container">
+      <div class="cta-inner reveal">
+        <h2>לא צריך לדעת איזה פתרון לבקש</h2>
+        <p>בשיחת המיפוי נבין מה מעכב את העסק ואיזה שילוב של מערכות, תהליכים ואוטומציות ייתן את השינוי המשמעותי ביותר</p>
+        <a href="#contact" class="btn btn-primary btn-lg" data-analytics="cta_mapping_cta">בואו נמפה את העסק</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PROCESS ===================== -->
+  <section class="section process" id="process">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="eyebrow">התהליך</p>
+        <h2>כך הופכים צורך עסקי לפתרון שעובד</h2>
+      </div>
+
+      <ol class="timeline">
+        <li class="tl-item reveal">
+          <span class="tl-num">01</span>
+          <div class="tl-body">
+            <h3>מיפוי</h3>
+            <p>מבינים איך העסק עובד היום, מה מעכב אותו ומה חשוב לשפר קודם</p>
+          </div>
+        </li>
+        <li class="tl-item reveal">
+          <span class="tl-num">02</span>
+          <div class="tl-body">
+            <h3>תכנון</h3>
+            <p>מפשטים את התהליך ומגדירים פתרון ברור לפני שמתחילים לבנות</p>
+          </div>
+        </li>
+        <li class="tl-item reveal">
+          <span class="tl-num">03</span>
+          <div class="tl-body">
+            <h3>בנייה וחיבור</h3>
+            <p>מקימים את האתר, המערכת, האפליקציה או האוטומציות ומחברים הכול יחד</p>
+          </div>
+        </li>
+        <li class="tl-item reveal">
+          <span class="tl-num">04</span>
+          <div class="tl-body">
+            <h3>עלייה וליווי</h3>
+            <p>עולים לאוויר, מטמיעים בעסק ומשפרים לפי השימוש והתוצאות בפועל</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ===================== TESTIMONIAL ===================== -->
+  <section class="section testimonial" id="testimonial">
+    <div class="container">
+      <div class="section-head reveal">
+        <h2>מה אומרים לקוחות</h2>
+      </div>
+
+      <div class="quotes-grid">
+        <figure class="quote-card reveal">
+          <span class="quote-mark" aria-hidden="true">”</span>
+          <blockquote class="quote-text">היום כל פנייה שמגיעה במייל הופכת אוטומטית לכרטיס עבודה ב־Trello ונכנסת לתהליך מסודר וברור. יחד עם הפרסום הישיר מגוגל לוואטסאפ, זה שיפר את קצב הגעת הלקוחות, הגדיל את המכירות ובעיקר יצר סדר שמונע מאיתנו לפספס הזמנות</blockquote>
+          <figcaption class="quote-by">
+            <span class="quote-name">ארז</span>
+            <span class="quote-role">דפוס אאוטלט</span>
+          </figcaption>
+        </figure>
+
+        <figure class="quote-card reveal">
+          <span class="quote-mark" aria-hidden="true">”</span>
+          <blockquote class="quote-text">אופיר אפיין תהליך מקצה לקצה שחיבר בין אגפים שונים בעיריית תל אביב. משימה שנפתחת באגף אחד מפעילה באופן מסודר פעולה באגף אחר, דרך ממשק ברור הכולל בקרות ותהליכי עבודה מובנים. כך נוצר לראשונה תהליך רציף ושיתוף פעולה בין מחלקות שבעבר עבדו בנפרד</blockquote>
+          <figcaption class="quote-by">
+            <span class="quote-name">איציק</span>
+            <span class="quote-role">עיריית תל אביב</span>
+          </figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PROJECTS ===================== -->
+  <section class="section projects" id="projects">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="eyebrow">עבודות</p>
+        <h2>לא מצגות. דברים שעובדים</h2>
+        <p>מוצרים ומערכות שנבנו מקצה לקצה, מהרעיון והמסר ועד המוצר, התשלום והמדידה</p>
+      </div>
+
+      <div class="projects-grid">
+        <article class="project-card reveal">
+          <a class="project-media" href="https://harpatka.co.il/" target="_blank" rel="noopener" aria-label="האתר יוצאים להרפתקה">
+            <img src="assets/project-harpatka.webp" width="1100" height="778" loading="lazy" decoding="async"
+                 alt="צילום מסך של האתר יוצאים להרפתקה">
+          </a>
+          <div class="project-body">
+            <span class="project-name">יוצאים להרפתקה</span>
+            <h3><a href="https://harpatka.co.il/" target="_blank" rel="noopener">מערך דיגיטלי להרשמה ושיווק אירועים</a></h3>
+
+            <div class="project-part">
+              <span class="project-label">האתגר</span>
+              <p>להפוך קונספט לא שגרתי להצעה ברורה שמסקרנת, יוצרת אמון ומובילה להרשמה</p>
+            </div>
+            <div class="project-part">
+              <span class="project-label">הפתרון</span>
+              <p>מערך דיגיטלי שמחבר בין המסר, דף הנחיתה, ההרשמה, התשלום והמדידה</p>
+            </div>
+            <div class="project-part">
+              <span class="project-label">מה נבנה</span>
+              <p>חידוד הקונספט והמסרים, עיצוב ופיתוח דף הנחיתה, התאמה למובייל, טופס הרשמה, תשלום, מעקב המרות והתאמה לקמפיינים ול־WhatsApp</p>
+            </div>
+
+            <a class="project-link" href="https://harpatka.co.il/" target="_blank" rel="noopener">לצפייה באתר</a>
+          </div>
+        </article>
+        <article class="project-card reveal">
+          <div class="project-media project-media-duo">
+            <a class="duo-item" href="https://play.google.com/store/apps/details?id=com.aviramo.once" target="_blank" rel="noopener" aria-label="האפליקציה Once">
+              <img src="assets/project-once.webp" width="1100" height="778" loading="lazy" decoding="async"
+                   alt="צילום מסך של אפליקציית Once">
+            </a>
+            <span class="duo-item">
+              <img src="assets/project-once-admin.webp" width="864" height="1305" loading="lazy" decoding="async"
+                   alt="פאנל הניהול של Once, סקירת פילוח משתמשים ונתוני שימוש">
+            </span>
+          </div>
+          <div class="project-body">
+            <span class="project-name">Once</span>
+            <h3><a href="https://play.google.com/store/apps/details?id=com.aviramo.once" target="_blank" rel="noopener">אפליקציית היכרות בזמן אמת</a></h3>
+
+            <div class="project-part">
+              <span class="project-label">האתגר</span>
+              <p>ליצור חוויית היכרות שמונעת הצפה ופיזור וממקדת את המשתמשים במפגש אחד בכל פעם</p>
+            </div>
+            <div class="project-part">
+              <span class="project-label">הפתרון</span>
+              <p>אפליקציית Android בזמן אמת שמחברת בין משתמשים באמצעות הזמנות, זמני תגובה וצ׳אט ממוקד</p>
+            </div>
+            <div class="project-part">
+              <span class="project-label">מה נבנה</span>
+              <p>אפליקציית Android, הרשמה, פרופילים, הזמנות, צ׳אט בזמן אמת, מנגנוני נעילה, פאנל ניהול ותשתית למדידה ושיווק</p>
+            </div>
+
+            <a class="project-link" href="https://play.google.com/store/apps/details?id=com.aviramo.once" target="_blank" rel="noopener">להורדת האפליקציה</a>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== CONTACT ===================== -->
+  <section class="section contact" id="contact">
+    <div class="container">
+      <div class="contact-panel reveal">
+        <div class="section-head">
+          <p class="eyebrow">יצירת קשר</p>
+          <h2>בואו נמצא את הדבר הבא שיפשט ויצמיח את העסק</h2>
+          <p>בשיחת מיפוי ראשונית נבין מה מעכב את העסק ואיך לחבר את הכול לתהליך אחד שעובד</p>
+        </div>
+
+        <form class="contact-form" id="contactForm" novalidate>
+          <div class="field">
+            <label for="name">שם מלא</label>
+            <input type="text" id="name" name="name" autocomplete="name" required>
+          </div>
+          <div class="field">
+            <label for="phone">טלפון</label>
+            <input type="tel" id="phone" name="phone" autocomplete="tel" inputmode="tel" required>
+          </div>
+          <div class="field">
+            <label for="business">שם העסק</label>
+            <input type="text" id="business" name="business" autocomplete="organization" required>
+          </div>
+          <div class="field">
+            <label for="help">במה תרצו עזרה?</label>
+            <select id="help" name="help" required>
+              <option value="" disabled>בחרו אפשרות</option>
+              <option value="מערך לידים ומכירות">מערך לידים ומכירות</option>
+              <option value="ייעול תהליכים ואוטומציות" selected>ייעול תהליכים ואוטומציות</option>
+              <option value="אתר או דף נחיתה">אתר או דף נחיתה</option>
+              <option value="מערכת או אפליקציה">מערכת או אפליקציה</option>
+              <option value="שיווק וקמפיינים">שיווק וקמפיינים</option>
+              <option value="עדיין לא בטוח">עדיין לא בטוח</option>
+            </select>
+          </div>
+          <div class="field field-full">
+            <label for="improve">מה הבקשה שלכם?</label>
+            <textarea id="improve" name="improve" rows="4"></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-lg btn-block">בואו נדבר על העסק</button>
+          </div>
+        </form>
+
+        <p class="contact-note">בלי התחייבות ובלי מצגת מכירה. שיחה עניינית על העסק ועל מה שאפשר לשפר</p>
+
+        <div class="or-divider" aria-hidden="true">או</div>
+
+        <a href="#" class="btn btn-lg btn-whatsapp" data-whatsapp data-analytics="whatsapp_cta">
+          <span class="wa-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.885 9.885M20.52 3.449C18.24 1.245 15.24 0 12.045 0 5.463 0 .104 5.359.101 11.945c0 2.096.549 4.14 1.595 5.945L0 24l6.335-1.652a11.882 11.882 0 005.71 1.454h.006c6.585 0 11.946-5.358 11.949-11.945a11.9 11.9 0 00-3.495-8.42"/></svg>
+          </span>
+          <span class="btn-stack">
+            <span>לכתוב לי ב־WhatsApp</span>
+            <span class="btn-sub">תשובה מהירה</span>
+          </span>
+        </a>
+
+        <div class="form-success" id="formSuccess" role="status" hidden>
+          <strong>תודה, הפרטים התקבלו</strong>
+          <span>אחזור אליכם בהקדם כדי להבין מה העסק צריך ואיך נכון להתקדם</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div class="footer-brand">
+      <span class="logo-mark">FLOA</span>
+      <span class="logo-sub">פתרונות דיגיטליים שעובדים עם העסק</span>
+    </div>
+    <nav class="footer-links" aria-label="קישורי תחתית">
+      <a href="index.html">דף הבית</a>
+      <a href="index.html#solutions">פתרונות</a>
+      <a href="index.html#projects">עבודות</a>
+      <a href="privacy.html">מדיניות פרטיות</a>
+      <a href="accessibility.html">הצהרת נגישות</a>
+      <a href="#" data-whatsapp data-analytics="whatsapp_cta">WhatsApp</a>
+    </nav>
+  </div>
+  <div class="footer-bottom">
+    <div class="container">© FLOA. כל הזכויות שמורות</div>
+  </div>
+</footer>
+
+<script type="module" src="js/firebase.js?v=7"></script>
+<script src="js/system.js?v=8" defer></script>
+<script src="js/main.js?v=7" defer></script>
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function () {});
+    });
+  }
+</script>
+</body>
+</html>

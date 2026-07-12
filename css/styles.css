@@ -1309,4 +1309,136 @@ h1, h2, h3, h4 {
   .timeline::before { inset-inline-start: 21px; }
 
   .hero-title { max-width: none; }
+}
+
+/* ==========================================================================
+   14. SOLUTION PAGES
+   Per-solution landing pages (for the FB campaigns). They reuse every homepage
+   component as-is; the only additions are a "featured" hero node, a "what's
+   included" checklist, and the "full picture" ecosystem grid — so all five
+   pages stay identical in design and graphic language, differing only in copy.
+   ========================================================================== */
+
+/* --- the featured solution: pinned forward and lit while the rest still pulse,
+   so the visitor sees THEIR solution at the centre, still wired into one system */
+.system-svg .node.is-feature { opacity: 1; }
+.system-svg .node.is-feature .plate { stroke: var(--teal); stroke-width: 2; }
+.system-svg .node.is-feature .bar-teal { fill: var(--teal); }
+/* placed AFTER .node.is-lit so the feature's larger scale wins when both apply */
+.system-svg .node.is-feature { transform: scale(1.07); }
+
+/* the hero wordmark is a link back home on these pages */
+a.hero-logo { transition: color .18s var(--ease); }
+a.hero-logo:hover { color: var(--teal-dark); }
+
+/* a slimmer hero for a single-solution page: the promise, then the system */
+.hero-actions .btn-ghost {
+  background: var(--surface);
+  color: var(--teal-dark);
+  border-color: var(--hairline);
+  box-shadow: var(--sh-1);
+}
+.hero-actions .btn-ghost:hover {
+  border-color: rgba(14, 140, 126, .4);
+  color: var(--teal);
+  transform: translateY(-2px);
+  box-shadow: var(--sh-2);
+}
+
+/* --- "what's included": the solution itemised — one checklist, two columns --- */
+.checklist {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gap);
+  max-width: 940px;
+  margin-inline: auto;
+}
+.check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-4);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r);
+  padding: var(--pad-card);
+  box-shadow: var(--sh-1);
+  transition: transform .25s var(--ease), box-shadow .25s var(--ease),
+              border-color .25s var(--ease);
+}
+.check-item:hover {
+  transform: translateY(-3px);
+  border-color: rgba(14, 140, 126, .28);
+  box-shadow: var(--sh-2);
+}
+.check-ic {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  margin-top: 2px;
+  border-radius: 50%;
+  background: var(--teal-tint);
+  color: var(--teal-dark);
+}
+.check-ic svg { width: 18px; height: 18px; }
+.check-item h3 { font-size: 1.12rem; margin-bottom: var(--s-1); }
+.check-item p { color: var(--muted); font-size: var(--fs-sm); }
+
+/* --- "the full picture": all five solutions as one connected system.
+   Every solution page shows this so the visitor grasps that FLOA is one system,
+   not a single trick — the page's own solution is highlighted, the rest link. */
+.eco-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--gap);
+}
+.eco-card {
+  text-align: start;
+  align-items: flex-start;
+}
+.eco-card .card-icon {
+  width: 42px;
+  height: 42px;
+  margin-bottom: var(--s-4);
+}
+.eco-card h3 { font-size: 1.08rem; margin-bottom: var(--s-1); }
+.eco-card p { color: var(--muted); font-size: var(--fs-xs); }
+/* the current page's card: highlighted, and not a link */
+.eco-card.is-current {
+  border-color: rgba(14, 140, 126, .45);
+  background: var(--teal-tint);
+  box-shadow: var(--sh-2);
+}
+.eco-card.is-current:hover { transform: none; }
+.eco-card.is-current .card-icon { background: var(--teal); color: #fff; }
+.eco-here {
+  margin-top: var(--s-3);
+  display: inline-flex;
+  align-items: center;
+  padding: 3px var(--s-3);
+  border-radius: var(--r-pill);
+  background: var(--teal);
+  color: #fff;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  line-height: 1.4;
+}
+
+/* the "one system" line that closes the ecosystem section */
+.eco-note {
+  margin-top: var(--gap);
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  max-width: 46rem;
+  margin-inline: auto;
+}
+.eco-note a { color: var(--teal-dark); font-weight: 700; }
+.eco-note a:hover { text-decoration: underline; }
+
+@media (max-width: 720px) {
+  .checklist { grid-template-columns: 1fr; }
+}
   

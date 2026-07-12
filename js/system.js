@@ -37,9 +37,22 @@
   var raf = null;
   var running = false;
 
+  /* On a solution landing page one node is "featured": it stays lit and forward
+     while the rest keep pulsing, so the visitor sees THEIR solution at the centre
+     — but still wired into the one FLOA system alongside everything else.
+     No attribute (the homepage) → -1 → the original behaviour, nothing pinned. */
+  var featureAttr = root.getAttribute("data-feature");
+  var feature = (featureAttr === null || featureAttr === "") ? -1 : parseInt(featureAttr, 10);
+  if (isNaN(feature)) feature = -1;
+
+  // the featured node's caption; defaults to the node's own name when unset
+  var featureLabel = root.getAttribute("data-caption") || (feature >= 0 ? SOLUTIONS[feature] : "");
+
   for (var i = 0; i < wires.length; i++) {
     lengths.push(wires[i].getTotalLength());
   }
+
+  if (feature >= 0 && nodes[feature]) nodes[feature].classList.add("is-feature");
 
   /* place a pulse a fraction of the way along its wire */
   function placePulse(index, progress) {
@@ -55,11 +68,13 @@
   /* light one solution: its card, its wire, and its caption */
   function light(index) {
     for (var n = 0; n < nodes.length; n++) {
-      nodes[n].classList.toggle("is-lit", n === index);
+      nodes[n].classList.toggle("is-lit", n === index || n === feature);
     }
     for (var w = 0; w < wires.length; w++) {
-      wires[w].classList.toggle("is-lit", w === index);
+      wires[w].classList.toggle("is-lit", w === index || w === feature);
     }
+    // featured page: the caption names the solution and never swaps away from it
+    if (feature >= 0) return;
     if (textEl && caption) {
       caption.classList.add("is-swapping");
       setTimeout(function () {
@@ -122,8 +137,16 @@
   if (reduce) {
     for (var k = 0; k < nodes.length; k++) nodes[k].classList.add("is-lit");
     for (var m = 0; m < wires.length; m++) wires[m].classList.add("is-lit");
-    if (textEl) textEl.textContent = "הכול מחובר למערכת אחת";
+    if (textEl) textEl.textContent = feature >= 0
+      ? featureLabel
+      : "הכול מחובר למערכת אחת";
     return;
+  }
+
+  /* featured page: pin the caption to the solution and open the cycle on it */
+  if (feature >= 0) {
+    if (textEl) textEl.textContent = featureLabel;
+    current = feature;
   }
 
   // only animate while the hero is actually on screen
