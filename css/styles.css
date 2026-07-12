@@ -41,7 +41,10 @@
 
   --teal:         #0E8C7E;
   --teal-dark:    #0A6C61;
-  --teal-tint:    #E8F4F1;
+  /* deep enough to read on BOTH grounds — chips sit on tinted paper (section
+     heads) and on white (inside the contact panel). The old #E8F4F1 was within
+     1.03 of the new paper, so the chip's fill simply vanished. */
+  --teal-tint:    #C9E6DE;
   --water:        #7FC5E4;
 
   --hairline:     #DCE6E3;
