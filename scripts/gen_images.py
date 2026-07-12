@@ -66,93 +66,6 @@ def finish(img, name, w, h):
 
 
 # ---------------------------------------------------------------------------
-# 1. hero-flow.webp  (4:3)  — a business system flowing into one hub
-# ---------------------------------------------------------------------------
-def hero():
-    W, H = 800, 600
-    img, d = canvas(W, H)
-
-    # central hub
-    hub = (330, 250, 470, 350)
-    img = soft_shadow(img, hub, 26, blur=22, alpha=26, offset=(0, 12))
-    d = ImageDraw.Draw(img)
-    rr(d, hub, 26, fill=TEAL)
-    # simple flow glyph inside hub (three merging dots -> one)
-    circle(d, 360, 285, 7, fill=WHITE)
-    circle(d, 360, 315, 7, fill=WHITE)
-    line(d, [(370, 285), (400, 300)], WHITE, 4)
-    line(d, [(370, 315), (400, 300)], WHITE, 4)
-    line(d, [(400, 300), (440, 300)], WHITE, 4)
-    circle(d, 445, 300, 8, fill=BLUE)
-
-    # satellite cards: website, app(phone), whatsapp, leads, payments, data
-    def card(box, r=18, fill=WHITE, outline=GREY_L):
-        nonlocal img, d
-        img = soft_shadow(img, box, r, blur=16, alpha=20, offset=(0, 8))
-        d = ImageDraw.Draw(img)
-        rr(d, box, r, fill=fill, outline=outline, width=1)
-
-    # website (top-left) : browser bar + lines
-    wb = (95, 70, 275, 190)
-    card(wb)
-    rr(d, (95, 70, 275, 100), 18, fill=BLUE_L)
-    circle(d, 112, 85, 4, fill=BLUE); circle(d, 128, 85, 4, fill=TEAL_L); circle(d, 144, 85, 4, fill=GREY)
-    rr(d, (112, 118, 200, 128), 5, fill=TEAL_L)
-    rr(d, (112, 140, 258, 148), 4, fill=GREY_L)
-    rr(d, (112, 158, 230, 166), 4, fill=GREY_L)
-
-    # app phone (top-right)
-    ph = (560, 55, 660, 235)
-    card(ph, r=20)
-    rr(d, (572, 78, 648, 212), 12, fill=BLUE_L)
-    rr(d, (584, 92, 636, 120), 8, fill=TEAL)
-    rr(d, (584, 132, 636, 142), 4, fill=WHITE)
-    rr(d, (584, 152, 620, 162), 4, fill=WHITE)
-    circle(d, 610, 224, 5, fill=GREY_L)
-
-    # whatsapp bubble (right)
-    wa = (620, 300, 730, 380)
-    card(wa, r=22)
-    circle(d, 675, 340, 26, fill=TEAL)
-    # speech tail
-    d.polygon([(660*S, 362*S), (655*S, 378*S), (676*S, 366*S)], fill=TEAL)
-    rr(d, (663, 332, 688, 338), 3, fill=WHITE)
-    rr(d, (663, 344, 682, 350), 3, fill=WHITE)
-
-    # leads (bottom-left) : funnel-ish dots
-    ld = (110, 420, 270, 530)
-    card(ld)
-    for i, x in enumerate((140, 168, 196, 224)):
-        circle(d, x, 455, 8, fill=BLUE if i % 2 else TEAL_L)
-    line(d, [(140, 480), (232, 480)], GREY_L, 3)
-    rr(d, (150, 498, 232, 508), 5, fill=TEAL_L)
-
-    # payments (bottom-right) : card glyph
-    pm = (330, 430, 480, 540)
-    card(pm)
-    rr(d, (352, 452, 458, 518), 10, fill=TEAL_L)
-    rr(d, (352, 466, 458, 480), 0, fill=TEAL)
-    circle(d, 372, 500, 6, fill=WHITE)
-    rr(d, (388, 498, 440, 504), 3, fill=WHITE)
-
-    # connecting flow lines from hub to satellites (drawn under would be nicer,
-    # but thin soft lines over cream read fine)
-    conn = [
-        [(330, 300), (250, 260), (200, 190)],       # website  (starts on hub edge)
-        [(470, 290), (540, 240), (595, 235)],       # phone
-        [(470, 320), (560, 340), (620, 340)],       # whatsapp
-        [(345, 350), (280, 430), (200, 460)],       # leads
-        [(400, 350), (405, 400), (405, 430)],       # payments
-    ]
-    for c in conn:
-        line(d, c, TEAL_L, 3)
-    for c in conn:
-        circle(d, c[0][0], c[0][1], 4, fill=TEAL)
-
-    finish(img, "hero-flow.webp", W, H)
-
-
-# ---------------------------------------------------------------------------
 # 2. process-before-after.webp  — chaos -> one clean flow
 # ---------------------------------------------------------------------------
 def before_after():
@@ -263,6 +176,5 @@ def devices():
 
 
 if __name__ == "__main__":
-    hero()
     before_after()
     devices()
