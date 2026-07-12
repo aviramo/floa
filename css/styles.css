@@ -50,13 +50,13 @@
   --font-body:    "Assistant", system-ui, "Segoe UI", Arial, sans-serif;
   --font-mono:    "JetBrains Mono", ui-monospace, "Courier New", monospace;
 
-  --fs-hero:  clamp(2.6rem, 6vw, 5rem);
-  --fs-h2:    clamp(2rem, 3.8vw, 3.1rem);
-  --fs-h3:    1.32rem;
-  --fs-lead:  clamp(1.15rem, 1.45vw, 1.35rem);
-  --fs-body:  1.15rem;
-  --fs-sm:    1.05rem;
-  --fs-xs:    .875rem;
+  --fs-hero:  clamp(2.9rem, 6.4vw, 5.5rem);
+  --fs-h2:    clamp(2.2rem, 4.1vw, 3.4rem);
+  --fs-h3:    1.45rem;
+  --fs-lead:  clamp(1.25rem, 1.6vw, 1.5rem);
+  --fs-body:  1.25rem;
+  --fs-sm:    1.14rem;
+  --fs-xs:    .95rem;
 
   /* --- space: one 4px-based scale, used everywhere --- */
   --s-1:  4px;
@@ -526,25 +526,79 @@ h1, h2, h3, h4 {
   overflow: hidden;
 }
 
-/* --- the flow band -------------------------------------------------------
-   Laminar currents drifting right -> left, in their own horizontal band ABOVE
-   the wordmark. It occupies no text space, so nothing ever has to be masked or
-   dimmed to stay readable. */
-.hero-flow-band {
+/* --- the animated system ------------------------------------------------
+   The hero diagram, alive: each solution lights in turn and sends a pulse down
+   its wire into the FLOA hub. SVG, not a video — crisp at any size, no download,
+   and it honours reduced-motion by simply holding still. */
+.hero-system {
   position: relative;
   width: 100%;
-  height: clamp(140px, 15vw, 200px);
-  margin-bottom: clamp(28px, 3vw, 44px);
-  pointer-events: none;
+  max-width: 780px;
+  margin: clamp(28px, 3.5vw, 44px) auto clamp(8px, 1.5vw, 16px);
 }
-.hero-flow {
-  width: 100%;
-  height: 100%;
-  /* the currents dissolve into the page at both ends, with no hard edge */
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 12%, #000 88%, transparent 100%);
-          mask-image: linear-gradient(90deg, transparent 0, #000 12%, #000 88%, transparent 100%);
-}
+.system-svg { width: 100%; height: auto; overflow: visible; }
 
+/* cards */
+.system-svg .plate { fill: var(--surface); stroke: var(--hairline); stroke-width: 1; }
+.system-svg .bar   { fill: #E7EDEC; }
+.system-svg .bar-teal { fill: rgba(14, 140, 126, .28); }
+.system-svg .bar-blue { fill: rgba(127, 197, 228, .45); }
+.system-svg .dot   { fill: #DCE5E3; }
+.system-svg .dot-teal { fill: rgba(14, 140, 126, .55); }
+.system-svg .dot-blue { fill: rgba(127, 197, 228, .75); }
+
+/* a node at rest sits back; the lit one comes forward */
+.system-svg .node {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: .62;
+  transition: opacity .5s var(--ease), transform .5s var(--ease);
+}
+.system-svg .node.is-lit { opacity: 1; transform: scale(1.045); }
+.system-svg .node.is-lit .plate { stroke: rgba(14, 140, 126, .45); }
+.system-svg .node.is-lit .bar-teal { fill: var(--teal); }
+
+/* wires: drawn faint, and the lit one brightens */
+.system-svg .wires path {
+  opacity: .3;
+  transition: opacity .5s var(--ease), stroke-width .5s var(--ease);
+}
+.system-svg .wires path.is-lit { opacity: .95; stroke-width: 2.6; }
+
+/* the pulse riding each wire — positioned by JS along the path */
+.system-svg .pulse { fill: var(--teal); opacity: 0; }
+.system-svg .pulse.is-live { opacity: 1; }
+
+/* the hub breathes, so the system reads as running even between steps */
+.system-svg .hub { transform-box: fill-box; transform-origin: center; }
+@keyframes hub-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.035); }
+}
+.system-svg .hub { animation: hub-breathe 3.4s var(--ease) infinite; }
+
+/* the caption names whichever solution is lit */
+.system-caption {
+  margin-top: var(--s-6);
+  text-align: center;
+  min-height: 2.2em;
+}
+.system-caption-text {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--s-2) var(--s-5);
+  border-radius: var(--r-pill);
+  background: var(--teal-tint);
+  color: var(--teal-dark);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  line-height: 1.4;
+  transition: opacity .35s var(--ease), transform .35s var(--ease);
+}
+.system-caption.is-swapping .system-caption-text {
+  opacity: 0;
+  transform: translateY(6px);
+}
 .hero-inner {
   position: relative;
   z-index: 1;
@@ -586,27 +640,13 @@ h1, h2, h3, h4 {
 }
 
 .hero-actions {
-  margin-top: var(--s-8);
+  margin-top: var(--s-6);
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: var(--s-4);
 }
 
-
-.hero-media {
-  position: relative;
-  z-index: 2;
-  margin: clamp(48px, 6vw, 72px) auto 0;
-  max-width: 760px;
-}
-.hero-media img {
-  width: 100%;
-  border-radius: var(--r-lg);
-  background: var(--surface);
-  border: 1px solid var(--hairline);
-  box-shadow: var(--sh-3);
-}
 
 /* ==========================================================================
    09. SECTIONS
@@ -1153,7 +1193,7 @@ h1, h2, h3, h4 {
   :root {
     --gap: 16px;
     --pad-card: 22px;
-    --fs-body: 1.075rem;
+    --fs-body: 1.16rem;
   }
   .rules { display: none; }
 
