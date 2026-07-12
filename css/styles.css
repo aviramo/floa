@@ -267,18 +267,6 @@ h1, h2, h3, h4 {
 }
 .btn-primary:disabled { opacity: .6; cursor: not-allowed; transform: none; }
 
-.btn-ghost {
-  background: transparent;
-  color: var(--ink);
-  border-color: var(--hairline);
-}
-.btn-ghost:hover {
-  background: var(--surface);
-  border-color: var(--teal);
-  color: var(--teal-dark);
-  transform: translateY(-2px);
-  box-shadow: var(--sh-2);
-}
 
 /* ==========================================================================
    06. FORMS
@@ -1080,9 +1068,27 @@ h1, h2, h3, h4 {
   border-radius: 50%;
   background: var(--teal);
 }
-.legal a { color: var(--teal-dark); font-weight: 600; }
-.legal a:hover { text-decoration: underline; }
-.legal-cta { margin-top: var(--s-9); }
+/* :not(.btn) — a bare `.legal a` rule (0,1,1) outranks `.btn-primary` (0,1,0)
+   and would repaint the CTA's white label teal */
+.legal a:not(.btn) { color: var(--teal-dark); font-weight: 600; }
+.legal a:not(.btn):hover { text-decoration: underline; }
+/* the closing CTA follows the site's centred language and is set off from the
+   text above it, rather than stranded at the edge of the last paragraph */
+.legal-foot {
+  margin-top: var(--s-9);
+  padding-top: var(--s-8);
+  border-top: 1px solid var(--hairline);
+  text-align: center;
+}
+.legal-foot p {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--s-6);
+}
+.legal-cta {
+  display: inline-flex;
+  max-width: 100%;
+}
 
 /* ==========================================================================
    12. MOTION
