@@ -578,8 +578,9 @@ h1, h2, h3, h4 {
 .system-svg .hub { animation: hub-breathe 3.4s var(--ease) infinite; }
 
 /* the caption names whichever solution is lit */
+/* the caption leads: it names the solution, then the diagram lights it */
 .system-caption {
-  margin-top: var(--s-6);
+  margin-bottom: var(--s-5);
   text-align: center;
   min-height: 2.2em;
 }
