@@ -10,7 +10,7 @@ export const projects = {
     /* One capture that already holds both halves of the product: the app screen
        beside the admin panel it is managed from. */
     shots: [
-      { src: "assets/project-once.webp", width: 1400, height: 788, alt: "האפליקציה Once, מסך פרופיל לצד פאנל הניהול עם פילוח המשתמשים, תחת המסר: לא עוד מאצ׳ים, מפגש אחד אמיתי" },
+      { src: "assets/project-once.webp", width: 1200, height: 1200, alt: "האפליקציה Once, מסך פרופיל לצד פאנל הניהול עם פילוח המשתמשים, תחת המסר: לא עוד מאצ׳ים, מפגש אחד אמיתי" },
     ],
     parts: [
       { label: "האתגר", text: "ליצור חוויית היכרות שמונעת הצפה ופיזור וממקדת את המשתמשים במפגש אחד בכל פעם" },
@@ -26,7 +26,7 @@ export const projects = {
     ariaLabel: "האתר יוצאים להרפתקה",
     linkLabel: "לצפייה באתר",
     shots: [
-      { src: "assets/project-harpatka.webp", width: 1400, height: 788, alt: "דף הנחיתה של יוצאים להרפתקה, בתצוגת דסקטופ לצד תצוגת מובייל" },
+      { src: "assets/project-harpatka.webp", width: 1200, height: 1200, alt: "דף הנחיתה של יוצאים להרפתקה, בתצוגת דסקטופ לצד תצוגת מובייל" },
     ],
     parts: [
       { label: "האתגר", text: "להפוך קונספט לא שגרתי להצעה ברורה שמסקרנת, יוצרת אמון ומובילה להרשמה" },

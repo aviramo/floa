@@ -26,12 +26,12 @@
   box-shadow: var(--sh-2);
 }
 
-/* 16/9, because that is the shape of the captures themselves. `cover` would
-   otherwise shave the edges off a wider image, and these are composed frames —
-   the phone sits at one end and the title at the other, so a crop costs content. */
+/* Square, because that is the shape of the captures themselves. `cover` crops
+   whatever does not fit, and these are composed frames — the headline sits in one
+   corner, the phone in another — so any mismatch here costs content, not margin. */
 .project-media {
   display: block;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 1 / 1;
   overflow: hidden;
   border-bottom: 1px solid var(--hairline);
   background: var(--surface-sunk);
