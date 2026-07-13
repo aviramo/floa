@@ -588,6 +588,15 @@ h1, h2, h3, h4 {
 .card-clay,
 .card-amber { border-top: 2px solid var(--accent); }
 
+/* The hover above softens `border-color`, which is all four sides — and that
+   swallowed the accent hairline, the one thing on the card that says what it
+   MEANS. The hue must not fade just because the pointer is over it, so it is
+   restored here, after the hover, at full strength. */
+.card-teal:hover,
+.card-water:hover,
+.card-clay:hover,
+.card-amber:hover { border-top-color: var(--accent); }
+
 /* --- size: tighter type for the dense grids (pains, ecosystem tiles) ------- */
 .card-sm h3 { font-size: 1.08rem; margin-bottom: var(--s-1); }
 .card-sm p  { font-size: var(--fs-xs); }
