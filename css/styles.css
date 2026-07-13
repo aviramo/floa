@@ -10,7 +10,7 @@
    FLOA — "Clear Water": Swiss-precise, light and airy. One teal accent, large
    type, generous air. RTL, mobile-first. */
 :root {
-  /* --- colour: one accent, everything else is ink and paper ---------------
+  /* --- colour: four hues, each with a job ---------------------------------
      Paper is a cool tinted ground, cards are pure white. Previously both were
      effectively the same white (#FBFCFC vs #FFFFFF), so a card had nothing to
      sit ON and only its hairline separated it from the page. Making white the
@@ -26,17 +26,51 @@
   --muted:        #586C73;
   --muted-2:      #63757B;
 
+  /* Colour MEANS something here; it is never decoration. A section is tinted by
+     what it is saying, so the same hue always says the same thing:
+
+       teal   FLOA itself — the offer, the advantage, the ask
+       water  how it works — the ways in, the process, the questions
+       clay   what is broken and what it costs — the pains, the urgency, "before"
+       amber  the payoff — the proof, the work, the clients
+
+     Teal is also the only ACTION colour. Every button, link, focus ring and
+     selection is teal and nothing else, so the three section hues can appear
+     anywhere without ever competing with the thing we want clicked.
+
+     Each hue is a trio and a component may only use the trio:
+       base   the 2px hairline, the rule, the solid mark
+       -dark  ANY text or icon in that hue (all four clear AA 4.5:1 on white,
+              on paper, on sunk panels and on their own tint — checked, not
+              guessed; the light `water` itself can never carry text)
+       -tint  the soft fill behind -dark text (chips, badges, panels). Each one
+              sits ≥1.14 from the paper, or the fill would simply vanish. */
   --teal:         #0E8C7E;
   --teal-dark:    #0A6C61;
-  /* deep enough to read on BOTH grounds — chips sit on tinted paper (section
-     heads) and on white (inside the contact panel). The old #E8F4F1 was within
-     1.03 of the new paper, so the chip's fill simply vanished. */
   --teal-tint:    #C9E6DE;
-  --water:        #7FC5E4;
+
+  /* water carries a fourth weight the others do not need: --water-soft is the
+     pale blue the hero illustrations were drawn with. The base had to leave it
+     behind — at a luminance of .50 against teal's .20 and clay's .19, a 2px
+     hairline in it simply read as grey. */
+  --water:        #358FBC;
+  --water-soft:   #7FC5E4;
+  --water-dark:   #1C6483;
+  --water-tint:   #C7E4F2;
+
+  --clay:         #C1594A;
+  --clay-dark:    #8E3527;
+  --clay-tint:    #F0D7D0;
+
+  --amber:        #D69A2D;
+  --amber-dark:   #845611;
+  --amber-tint:   #F2DDB2;
 
   --hairline:     #DCE6E3;
   --hairline-2:   #E9F0EE;
 
+  /* the form's error state. Deliberately NOT --clay: a pain we are describing
+     and a field the visitor got wrong must not look like the same thing. */
   --danger:       #A23B3B;
   --danger-bg:    #FCECEC;
   --danger-line:  #F0CFCF;
@@ -353,16 +387,19 @@ h1, h2, h3, h4 {
 /* ======================================================================
    components/urgency/urgency.css
    ====================================================================== */
-/* Clear but never aggressive: a softly tinted band, a teal edge, calm ink.
-   Deliberately no danger colours and no motion beyond the shared reveal. */
+/* This band names the cost of waiting, so it is clay — it belongs to the pains
+   it follows, not to the offer. Clear but never aggressive: the colour is spent
+   on a single edge and the faintest wash, the ink stays calm, and there is no
+   warning mark and no motion beyond the shared reveal. It is not an error and
+   must never look like one (see --danger in tokens.css). */
 .urgency { padding-block: var(--s-6); }
 .urgency-line {
   max-width: 720px;
   margin-inline: auto;
   padding: var(--s-5) var(--pad-panel);
-  background: var(--surface-sunk);
-  border: 1px solid var(--hairline);
-  border-inline-start: 4px solid var(--teal);
+  background: color-mix(in srgb, var(--clay-tint) 40%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--clay) 22%, transparent);
+  border-inline-start: 4px solid var(--clay);
   border-radius: var(--r);
   text-align: center;
   color: var(--ink-2);
@@ -451,6 +488,32 @@ h1, h2, h3, h4 {
   line-height: 1;
 }
 
+/* --- the chip takes the colour of what its section is saying ---------------
+   Scrolling the page, the chips read as a legend: clay when it hurts, water
+   when we explain, amber when we prove it, teal when FLOA asks for the job.
+   The tone comes from the section's OWN class or id — the ones it already
+   carries — so no page has to author a colour, and a section can never be
+   tinted against its meaning. Anything not named here stays teal, the default
+   and the safe one. */
+.problem .eyebrow {
+  background: var(--clay-tint);
+  color: var(--clay-dark);
+}
+#outcome .eyebrow,                 /* what comes out the other end */
+#tracks .eyebrow,                  /* the ways in */
+.process .eyebrow,
+.faq-section .eyebrow {            /* the questions */
+  background: var(--water-tint);
+  color: var(--water-dark);
+}
+#proof .eyebrow,                   /* home proves itself in a .solutions band, */
+.proof .eyebrow,                   /* a solution page in a .projects one */
+.projects .eyebrow,
+.testimonial .eyebrow {
+  background: var(--amber-tint);
+  color: var(--amber-dark);
+}
+
 /* ======================================================================
    components/card/card.css
    ====================================================================== */
@@ -461,6 +524,13 @@ h1, h2, h3, h4 {
    and hover are shared and cannot drift apart.
    ========================================================================== */
 .card {
+  /* The card's hue, in one place. A variant below re-points these three and
+     every rule that follows — the top hairline, the icon badge, the hover edge —
+     comes along with it. A card never names a colour twice. */
+  --accent:      var(--teal);
+  --accent-dark: var(--teal-dark);
+  --accent-tint: var(--teal-tint);
+
   height: 100%;                     /* every card in a row ends at the same line */
   display: flex;
   flex-direction: column;
@@ -475,15 +545,24 @@ h1, h2, h3, h4 {
 }
 .card:hover {
   transform: translateY(-4px);
-  border-color: rgba(14, 140, 126, .28);
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
   box-shadow: var(--sh-2);
 }
 .card h3 { font-size: var(--fs-h3); margin-bottom: var(--s-2); }
 .card p  { color: var(--muted); font-size: var(--fs-sm); }
 
-/* --- accents: a hairline of colour along the top -------------------------- */
-.card-teal  { border-top: 2px solid var(--teal); }
-.card-water { border-top: 2px solid var(--water); }
+/* --- accents: a hairline of colour along the top --------------------------
+   Which hue a card wears is not a style choice — it is what the card is SAYING.
+   See the map in tokens.css: water = how it works, clay = what it costs,
+   amber = the proof, teal = FLOA. The badge follows the hairline automatically. */
+.card-water { --accent: var(--water); --accent-dark: var(--water-dark); --accent-tint: var(--water-tint); }
+.card-clay  { --accent: var(--clay);  --accent-dark: var(--clay-dark);  --accent-tint: var(--clay-tint); }
+.card-amber { --accent: var(--amber); --accent-dark: var(--amber-dark); --accent-tint: var(--amber-tint); }
+
+.card-teal,
+.card-water,
+.card-clay,
+.card-amber { border-top: 2px solid var(--accent); }
 
 /* --- size: tighter type for the dense grids (pains, ecosystem tiles) ------- */
 .card-sm h3 { font-size: 1.08rem; margin-bottom: var(--s-1); }
@@ -494,8 +573,8 @@ h1, h2, h3, h4 {
   display: grid;
   place-items: center;
   flex: 0 0 auto;
-  color: var(--teal-dark);
-  background: var(--teal-tint);
+  color: var(--accent-dark);      /* -dark, never the base: the base carries no text */
+  background: var(--accent-tint);
 }
 .card-icon-tile {
   width: 48px;
@@ -526,9 +605,11 @@ h1, h2, h3, h4 {
 /* the wide card (one solution takes the whole row) centres its badge instead */
 .card-wide { align-items: center; gap: var(--s-6); }
 
-/* --- "you are here": the current page's tile in the ecosystem grid --------- */
+/* --- "you are here": the current page's tile in the ecosystem grid ---------
+   Always teal, whatever the grid around it: this tile is FLOA saying where you
+   stand, not a section making a point. */
 .card.is-current {
-  border-color: rgba(14, 140, 126, .45);
+  border-color: color-mix(in srgb, var(--teal) 45%, transparent);
   background: var(--teal-tint);
   box-shadow: var(--sh-2);
 }
@@ -616,6 +697,9 @@ h1, h2, h3, h4 {
   max-width: 1000px;
   margin-inline: auto;
 }
+/* A client saying it worked is the strongest proof on the page, so the card
+   wears the proof hue: amber on the mark and along the top edge. Same 2px
+   hairline the cards use — a quote is evidence, and it is filed as such. */
 .quote-card {
   position: relative;
   display: flex;
@@ -624,6 +708,7 @@ h1, h2, h3, h4 {
   min-width: 0;
   background: var(--surface);
   border: 1px solid var(--hairline);
+  border-top: 2px solid var(--amber);
   border-radius: var(--r-lg);
   padding: clamp(28px, 4vw, 48px);
   box-shadow: var(--sh-2);
@@ -635,7 +720,7 @@ h1, h2, h3, h4 {
   font-size: 4.5rem;
   line-height: .5;
   height: .55em;
-  color: var(--teal);
+  color: var(--amber);
 }
 .quote-text {
   font-size: var(--fs-lead);
@@ -897,6 +982,8 @@ h1, h2, h3, h4 {
   flex-direction: column;
   gap: var(--gap);
 }
+/* The rail runs the same four hues as the numbers beside it, in the same order,
+   so it reads as their legend rather than as decoration. */
 .timeline::before {
   content: "";
   position: absolute;
@@ -904,8 +991,9 @@ h1, h2, h3, h4 {
   top: 28px;
   bottom: 28px;
   width: 1px;
-  background: linear-gradient(180deg, var(--teal), var(--water));
-  opacity: .35;
+  background: linear-gradient(180deg,
+    var(--water) 0%, var(--amber) 34%, var(--clay) 67%, var(--teal) 100%);
+  opacity: .45;
 }
 .tl-item {
   position: relative;
@@ -917,6 +1005,22 @@ h1, h2, h3, h4 {
 }
 .tl-item > * { min-width: 0; }
 
+/* Each step wears the hue of what it IS — the process walks the whole palette
+   and lands on the brand: we map what hurts you (water is the cool, neutral
+   look at it), we plan, we build, and at 04 the system goes live in FLOA's own
+   teal. It is the one place on the site where all four hues appear together,
+   and it earns it: it is the only sequence we ever show.
+     01 map      water
+     02 plan     amber
+     03 build    clay
+     04 live     teal
+   A fifth step would simply start the cycle again — nth-child(4n+1) — so the
+   process can grow without anyone re-authoring a colour. */
+.tl-item:nth-child(4n+1) { --accent: var(--water); --accent-dark: var(--water-dark); }
+.tl-item:nth-child(4n+2) { --accent: var(--amber); --accent-dark: var(--amber-dark); }
+.tl-item:nth-child(4n+3) { --accent: var(--clay);  --accent-dark: var(--clay-dark); }
+.tl-item:nth-child(4n)   { --accent: var(--teal);  --accent-dark: var(--teal-dark); }
+
 .tl-num {
   width: 56px;
   height: 56px;
@@ -926,7 +1030,7 @@ h1, h2, h3, h4 {
   background: var(--surface);
   border: 1px solid var(--hairline);
   box-shadow: var(--sh-1);
-  color: var(--teal-dark);
+  color: var(--accent-dark);
   font-family: var(--font-mono);
   font-size: .95rem;
   font-weight: 500;
@@ -934,9 +1038,11 @@ h1, h2, h3, h4 {
   transition: background-color .25s var(--ease), color .25s var(--ease),
               border-color .25s var(--ease);
 }
+/* fills with the -dark tone, not the base: white on a light `water` would be
+   unreadable, and all four -dark tones clear AA against white. */
 .tl-item:hover .tl-num {
-  background: var(--teal);
-  border-color: var(--teal);
+  background: var(--accent-dark);
+  border-color: var(--accent-dark);
   color: #fff;
 }
 .tl-body {
@@ -968,6 +1074,8 @@ h1, h2, h3, h4 {
   gap: var(--s-3);
 }
 
+/* Questions are water: this section explains, it does not sell. The teal is
+   spent on the answer's links and on nothing else here. */
 .faq-item {
   background: var(--surface);
   border: 1px solid var(--hairline);
@@ -976,7 +1084,7 @@ h1, h2, h3, h4 {
   transition: border-color .25s var(--ease), box-shadow .25s var(--ease);
 }
 .faq-item[open] {
-  border-color: rgba(14, 140, 126, .28);
+  border-color: color-mix(in srgb, var(--water-dark) 30%, transparent);
   box-shadow: var(--sh-2);
 }
 
@@ -995,7 +1103,7 @@ h1, h2, h3, h4 {
   color: var(--ink);
 }
 .faq-q::-webkit-details-marker { display: none; }   /* Safari's own triangle */
-.faq-q:hover { color: var(--teal-dark); }
+.faq-q:hover { color: var(--water-dark); }
 .faq-q:focus-visible {
   outline: 2px solid var(--teal);
   outline-offset: 2px;
@@ -1009,7 +1117,7 @@ h1, h2, h3, h4 {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: var(--teal-tint);
+  background: var(--water-tint);
 }
 .faq-mark::before,
 .faq-mark::after {
@@ -1018,7 +1126,7 @@ h1, h2, h3, h4 {
   inset: 50% 5px auto 5px;
   height: 2px;
   border-radius: 2px;
-  background: var(--teal-dark);
+  background: var(--water-dark);
   transform: translateY(-50%);
   transition: transform .25s var(--ease), opacity .25s var(--ease);
 }
@@ -1053,13 +1161,17 @@ h1, h2, h3, h4 {
 }
 .ba-strip > * { min-width: 0; }
 
+/* The strip is the whole argument in one line: it starts in clay, where it
+   hurts, and ends in teal, where we leave you. The before side is only just
+   tinted — enough to feel warm and wrong beside the after, never enough to look
+   like an error. */
 .ba-side {
   display: flex;
   flex-direction: column;
   gap: var(--s-3);
   padding: var(--s-5);
   border-radius: var(--r-sm);
-  background: var(--surface-sunk);
+  background: color-mix(in srgb, var(--clay-tint) 38%, var(--surface-sunk));
 }
 .ba-side-after { background: var(--teal-tint); }
 .ba-side p { color: var(--muted); font-size: var(--fs-sm); }
@@ -1073,9 +1185,10 @@ h1, h2, h3, h4 {
   padding: var(--s-1) var(--s-3);
   border-radius: var(--r-pill);
 }
-.ba-tag-before { background: #fff; color: var(--muted); border: 1px solid var(--hairline); }
+.ba-tag-before { background: var(--clay-tint); color: var(--clay-dark); }
 .ba-tag-after  { background: var(--teal); color: #fff; }
 
+/* the arrow points AT the outcome, so it belongs to the outcome: teal */
 .ba-arrow { display: grid; place-items: center; color: var(--teal); }
 .ba-arrow svg { width: 40px; height: 24px; }
 
@@ -1503,7 +1616,7 @@ a.hero-logo:hover { color: var(--teal-dark); }
 .hero-illust .fill-tint  { fill: var(--teal-tint); }
 .hero-illust .fill-white { fill: #fff; }
 .hero-illust .fill-water { fill: rgba(127, 197, 228, .5); }
-.hero-illust .wire       { fill: none; stroke: var(--water); stroke-width: 2.2; stroke-linecap: round; opacity: .55; }
+.hero-illust .wire       { fill: none; stroke: var(--water-soft); stroke-width: 2.2; stroke-linecap: round; opacity: .55; }
 .hero-illust .wire-teal  { fill: none; stroke: var(--teal); stroke-width: 2.4; stroke-linecap: round; opacity: .85; }
 .hero-illust .glyph      { fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .hero-illust .glyph-teal { stroke: var(--teal); }

@@ -21,7 +21,7 @@
 .hero-illust .fill-tint  { fill: var(--teal-tint); }
 .hero-illust .fill-white { fill: #fff; }
 .hero-illust .fill-water { fill: rgba(127, 197, 228, .5); }
-.hero-illust .wire       { fill: none; stroke: var(--water); stroke-width: 2.2; stroke-linecap: round; opacity: .55; }
+.hero-illust .wire       { fill: none; stroke: var(--water-soft); stroke-width: 2.2; stroke-linecap: round; opacity: .55; }
 .hero-illust .wire-teal  { fill: none; stroke: var(--teal); stroke-width: 2.4; stroke-linecap: round; opacity: .85; }
 .hero-illust .glyph      { fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .hero-illust .glyph-teal { stroke: var(--teal); }

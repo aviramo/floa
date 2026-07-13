@@ -108,14 +108,20 @@ ${solution.afterHero && section({
 ${solution.afterHero.flow && flow({ steps: solution.afterHero.flow })}`,
 })}
 
-${solution.intro && cardSection(ctx, { id: "tracks", cols: solution.intro.cols, items: solution.intro.items })}
+<!-- the ways in: water, the hue this site uses for how a thing works -->
+${solution.intro && cardSection(ctx, {
+  id: "tracks",
+  cols: solution.intro.cols,
+  items: solution.intro.items.map((i) => ({ ...i, accent: "water" })),
+})}
 
 ${cardSection(ctx, {
   id: "problem",
   className: "problem",
   head: solution.problem.head,
   cols: 4,
-  items: solution.problem.items.map((i) => ({ ...i, accent: "water", size: "sm" })),
+  /* the pains are clay — the one hue on the site that means "this hurts" */
+  items: solution.problem.items.map((i) => ({ ...i, accent: "clay", size: "sm" })),
 })}
 
 ${solution.urgency && urgency({ text: solution.urgency })}

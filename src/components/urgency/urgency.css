@@ -1,13 +1,16 @@
-/* Clear but never aggressive: a softly tinted band, a teal edge, calm ink.
-   Deliberately no danger colours and no motion beyond the shared reveal. */
+/* This band names the cost of waiting, so it is clay — it belongs to the pains
+   it follows, not to the offer. Clear but never aggressive: the colour is spent
+   on a single edge and the faintest wash, the ink stays calm, and there is no
+   warning mark and no motion beyond the shared reveal. It is not an error and
+   must never look like one (see --danger in tokens.css). */
 .urgency { padding-block: var(--s-6); }
 .urgency-line {
   max-width: 720px;
   margin-inline: auto;
   padding: var(--s-5) var(--pad-panel);
-  background: var(--surface-sunk);
-  border: 1px solid var(--hairline);
-  border-inline-start: 4px solid var(--teal);
+  background: color-mix(in srgb, var(--clay-tint) 40%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--clay) 22%, transparent);
+  border-inline-start: 4px solid var(--clay);
   border-radius: var(--r);
   text-align: center;
   color: var(--ink-2);

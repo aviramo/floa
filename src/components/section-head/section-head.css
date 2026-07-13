@@ -28,3 +28,29 @@
   letter-spacing: .06em;
   line-height: 1;
 }
+
+/* --- the chip takes the colour of what its section is saying ---------------
+   Scrolling the page, the chips read as a legend: clay when it hurts, water
+   when we explain, amber when we prove it, teal when FLOA asks for the job.
+   The tone comes from the section's OWN class or id — the ones it already
+   carries — so no page has to author a colour, and a section can never be
+   tinted against its meaning. Anything not named here stays teal, the default
+   and the safe one. */
+.problem .eyebrow {
+  background: var(--clay-tint);
+  color: var(--clay-dark);
+}
+#outcome .eyebrow,                 /* what comes out the other end */
+#tracks .eyebrow,                  /* the ways in */
+.process .eyebrow,
+.faq-section .eyebrow {            /* the questions */
+  background: var(--water-tint);
+  color: var(--water-dark);
+}
+#proof .eyebrow,                   /* home proves itself in a .solutions band, */
+.proof .eyebrow,                   /* a solution page in a .projects one */
+.projects .eyebrow,
+.testimonial .eyebrow {
+  background: var(--amber-tint);
+  color: var(--amber-dark);
+}

@@ -5,6 +5,13 @@
    and hover are shared and cannot drift apart.
    ========================================================================== */
 .card {
+  /* The card's hue, in one place. A variant below re-points these three and
+     every rule that follows — the top hairline, the icon badge, the hover edge —
+     comes along with it. A card never names a colour twice. */
+  --accent:      var(--teal);
+  --accent-dark: var(--teal-dark);
+  --accent-tint: var(--teal-tint);
+
   height: 100%;                     /* every card in a row ends at the same line */
   display: flex;
   flex-direction: column;
@@ -19,15 +26,24 @@
 }
 .card:hover {
   transform: translateY(-4px);
-  border-color: rgba(14, 140, 126, .28);
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
   box-shadow: var(--sh-2);
 }
 .card h3 { font-size: var(--fs-h3); margin-bottom: var(--s-2); }
 .card p  { color: var(--muted); font-size: var(--fs-sm); }
 
-/* --- accents: a hairline of colour along the top -------------------------- */
-.card-teal  { border-top: 2px solid var(--teal); }
-.card-water { border-top: 2px solid var(--water); }
+/* --- accents: a hairline of colour along the top --------------------------
+   Which hue a card wears is not a style choice — it is what the card is SAYING.
+   See the map in tokens.css: water = how it works, clay = what it costs,
+   amber = the proof, teal = FLOA. The badge follows the hairline automatically. */
+.card-water { --accent: var(--water); --accent-dark: var(--water-dark); --accent-tint: var(--water-tint); }
+.card-clay  { --accent: var(--clay);  --accent-dark: var(--clay-dark);  --accent-tint: var(--clay-tint); }
+.card-amber { --accent: var(--amber); --accent-dark: var(--amber-dark); --accent-tint: var(--amber-tint); }
+
+.card-teal,
+.card-water,
+.card-clay,
+.card-amber { border-top: 2px solid var(--accent); }
 
 /* --- size: tighter type for the dense grids (pains, ecosystem tiles) ------- */
 .card-sm h3 { font-size: 1.08rem; margin-bottom: var(--s-1); }
@@ -38,8 +54,8 @@
   display: grid;
   place-items: center;
   flex: 0 0 auto;
-  color: var(--teal-dark);
-  background: var(--teal-tint);
+  color: var(--accent-dark);      /* -dark, never the base: the base carries no text */
+  background: var(--accent-tint);
 }
 .card-icon-tile {
   width: 48px;
@@ -70,9 +86,11 @@
 /* the wide card (one solution takes the whole row) centres its badge instead */
 .card-wide { align-items: center; gap: var(--s-6); }
 
-/* --- "you are here": the current page's tile in the ecosystem grid --------- */
+/* --- "you are here": the current page's tile in the ecosystem grid ---------
+   Always teal, whatever the grid around it: this tile is FLOA saying where you
+   stand, not a section making a point. */
 .card.is-current {
-  border-color: rgba(14, 140, 126, .45);
+  border-color: color-mix(in srgb, var(--teal) 45%, transparent);
   background: var(--teal-tint);
   box-shadow: var(--sh-2);
 }

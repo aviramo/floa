@@ -75,7 +75,8 @@ ${section({
   children: html`${sectionHead(home.problem.head)}
 ${cardGrid({
     cols: 4,
-    children: home.problem.items.map((item) => card(ctx, { ...item, accent: "water", size: "sm" })),
+    /* the pains are clay — the one hue on the site that means "this hurts" */
+    children: home.problem.items.map((item) => card(ctx, { ...item, accent: "clay", size: "sm" })),
   })}
 ${baStrip(home.problem.beforeAfter)}`,
 })}
@@ -101,7 +102,8 @@ ${section({
   children: html`${sectionHead(home.proof.head)}
 ${cardGrid({
     cols: 3,
-    children: home.proof.items.map((item) => card(ctx, { ...item, accent: "teal" })),
+    /* proof is amber, here and on every solution page */
+    children: home.proof.items.map((item) => card(ctx, { ...item, accent: "amber" })),
   })}`,
 })}
 

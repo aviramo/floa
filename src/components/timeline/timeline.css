@@ -6,6 +6,8 @@
   flex-direction: column;
   gap: var(--gap);
 }
+/* The rail runs the same four hues as the numbers beside it, in the same order,
+   so it reads as their legend rather than as decoration. */
 .timeline::before {
   content: "";
   position: absolute;
@@ -13,8 +15,9 @@
   top: 28px;
   bottom: 28px;
   width: 1px;
-  background: linear-gradient(180deg, var(--teal), var(--water));
-  opacity: .35;
+  background: linear-gradient(180deg,
+    var(--water) 0%, var(--amber) 34%, var(--clay) 67%, var(--teal) 100%);
+  opacity: .45;
 }
 .tl-item {
   position: relative;
@@ -26,6 +29,22 @@
 }
 .tl-item > * { min-width: 0; }
 
+/* Each step wears the hue of what it IS — the process walks the whole palette
+   and lands on the brand: we map what hurts you (water is the cool, neutral
+   look at it), we plan, we build, and at 04 the system goes live in FLOA's own
+   teal. It is the one place on the site where all four hues appear together,
+   and it earns it: it is the only sequence we ever show.
+     01 map      water
+     02 plan     amber
+     03 build    clay
+     04 live     teal
+   A fifth step would simply start the cycle again — nth-child(4n+1) — so the
+   process can grow without anyone re-authoring a colour. */
+.tl-item:nth-child(4n+1) { --accent: var(--water); --accent-dark: var(--water-dark); }
+.tl-item:nth-child(4n+2) { --accent: var(--amber); --accent-dark: var(--amber-dark); }
+.tl-item:nth-child(4n+3) { --accent: var(--clay);  --accent-dark: var(--clay-dark); }
+.tl-item:nth-child(4n)   { --accent: var(--teal);  --accent-dark: var(--teal-dark); }
+
 .tl-num {
   width: 56px;
   height: 56px;
@@ -35,7 +54,7 @@
   background: var(--surface);
   border: 1px solid var(--hairline);
   box-shadow: var(--sh-1);
-  color: var(--teal-dark);
+  color: var(--accent-dark);
   font-family: var(--font-mono);
   font-size: .95rem;
   font-weight: 500;
@@ -43,9 +62,11 @@
   transition: background-color .25s var(--ease), color .25s var(--ease),
               border-color .25s var(--ease);
 }
+/* fills with the -dark tone, not the base: white on a light `water` would be
+   unreadable, and all four -dark tones clear AA against white. */
 .tl-item:hover .tl-num {
-  background: var(--teal);
-  border-color: var(--teal);
+  background: var(--accent-dark);
+  border-color: var(--accent-dark);
   color: #fff;
 }
 .tl-body {

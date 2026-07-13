@@ -8,6 +8,8 @@
   gap: var(--s-3);
 }
 
+/* Questions are water: this section explains, it does not sell. The teal is
+   spent on the answer's links and on nothing else here. */
 .faq-item {
   background: var(--surface);
   border: 1px solid var(--hairline);
@@ -16,7 +18,7 @@
   transition: border-color .25s var(--ease), box-shadow .25s var(--ease);
 }
 .faq-item[open] {
-  border-color: rgba(14, 140, 126, .28);
+  border-color: color-mix(in srgb, var(--water-dark) 30%, transparent);
   box-shadow: var(--sh-2);
 }
 
@@ -35,7 +37,7 @@
   color: var(--ink);
 }
 .faq-q::-webkit-details-marker { display: none; }   /* Safari's own triangle */
-.faq-q:hover { color: var(--teal-dark); }
+.faq-q:hover { color: var(--water-dark); }
 .faq-q:focus-visible {
   outline: 2px solid var(--teal);
   outline-offset: 2px;
@@ -49,7 +51,7 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: var(--teal-tint);
+  background: var(--water-tint);
 }
 .faq-mark::before,
 .faq-mark::after {
@@ -58,7 +60,7 @@
   inset: 50% 5px auto 5px;
   height: 2px;
   border-radius: 2px;
-  background: var(--teal-dark);
+  background: var(--water-dark);
   transform: translateY(-50%);
   transition: transform .25s var(--ease), opacity .25s var(--ease);
 }

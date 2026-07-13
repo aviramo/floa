@@ -4,7 +4,7 @@
    FLOA — "Clear Water": Swiss-precise, light and airy. One teal accent, large
    type, generous air. RTL, mobile-first. */
 :root {
-  /* --- colour: one accent, everything else is ink and paper ---------------
+  /* --- colour: four hues, each with a job ---------------------------------
      Paper is a cool tinted ground, cards are pure white. Previously both were
      effectively the same white (#FBFCFC vs #FFFFFF), so a card had nothing to
      sit ON and only its hairline separated it from the page. Making white the
@@ -20,17 +20,51 @@
   --muted:        #586C73;
   --muted-2:      #63757B;
 
+  /* Colour MEANS something here; it is never decoration. A section is tinted by
+     what it is saying, so the same hue always says the same thing:
+
+       teal   FLOA itself — the offer, the advantage, the ask
+       water  how it works — the ways in, the process, the questions
+       clay   what is broken and what it costs — the pains, the urgency, "before"
+       amber  the payoff — the proof, the work, the clients
+
+     Teal is also the only ACTION colour. Every button, link, focus ring and
+     selection is teal and nothing else, so the three section hues can appear
+     anywhere without ever competing with the thing we want clicked.
+
+     Each hue is a trio and a component may only use the trio:
+       base   the 2px hairline, the rule, the solid mark
+       -dark  ANY text or icon in that hue (all four clear AA 4.5:1 on white,
+              on paper, on sunk panels and on their own tint — checked, not
+              guessed; the light `water` itself can never carry text)
+       -tint  the soft fill behind -dark text (chips, badges, panels). Each one
+              sits ≥1.14 from the paper, or the fill would simply vanish. */
   --teal:         #0E8C7E;
   --teal-dark:    #0A6C61;
-  /* deep enough to read on BOTH grounds — chips sit on tinted paper (section
-     heads) and on white (inside the contact panel). The old #E8F4F1 was within
-     1.03 of the new paper, so the chip's fill simply vanished. */
   --teal-tint:    #C9E6DE;
-  --water:        #7FC5E4;
+
+  /* water carries a fourth weight the others do not need: --water-soft is the
+     pale blue the hero illustrations were drawn with. The base had to leave it
+     behind — at a luminance of .50 against teal's .20 and clay's .19, a 2px
+     hairline in it simply read as grey. */
+  --water:        #358FBC;
+  --water-soft:   #7FC5E4;
+  --water-dark:   #1C6483;
+  --water-tint:   #C7E4F2;
+
+  --clay:         #C1594A;
+  --clay-dark:    #8E3527;
+  --clay-tint:    #F0D7D0;
+
+  --amber:        #D69A2D;
+  --amber-dark:   #845611;
+  --amber-tint:   #F2DDB2;
 
   --hairline:     #DCE6E3;
   --hairline-2:   #E9F0EE;
 
+  /* the form's error state. Deliberately NOT --clay: a pain we are describing
+     and a field the visitor got wrong must not look like the same thing. */
   --danger:       #A23B3B;
   --danger-bg:    #FCECEC;
   --danger-line:  #F0CFCF;

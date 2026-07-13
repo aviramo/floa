@@ -13,13 +13,17 @@
 }
 .ba-strip > * { min-width: 0; }
 
+/* The strip is the whole argument in one line: it starts in clay, where it
+   hurts, and ends in teal, where we leave you. The before side is only just
+   tinted — enough to feel warm and wrong beside the after, never enough to look
+   like an error. */
 .ba-side {
   display: flex;
   flex-direction: column;
   gap: var(--s-3);
   padding: var(--s-5);
   border-radius: var(--r-sm);
-  background: var(--surface-sunk);
+  background: color-mix(in srgb, var(--clay-tint) 38%, var(--surface-sunk));
 }
 .ba-side-after { background: var(--teal-tint); }
 .ba-side p { color: var(--muted); font-size: var(--fs-sm); }
@@ -33,9 +37,10 @@
   padding: var(--s-1) var(--s-3);
   border-radius: var(--r-pill);
 }
-.ba-tag-before { background: #fff; color: var(--muted); border: 1px solid var(--hairline); }
+.ba-tag-before { background: var(--clay-tint); color: var(--clay-dark); }
 .ba-tag-after  { background: var(--teal); color: #fff; }
 
+/* the arrow points AT the outcome, so it belongs to the outcome: teal */
 .ba-arrow { display: grid; place-items: center; color: var(--teal); }
 .ba-arrow svg { width: 40px; height: 24px; }
 

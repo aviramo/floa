@@ -5,6 +5,9 @@
   max-width: 1000px;
   margin-inline: auto;
 }
+/* A client saying it worked is the strongest proof on the page, so the card
+   wears the proof hue: amber on the mark and along the top edge. Same 2px
+   hairline the cards use — a quote is evidence, and it is filed as such. */
 .quote-card {
   position: relative;
   display: flex;
@@ -13,6 +16,7 @@
   min-width: 0;
   background: var(--surface);
   border: 1px solid var(--hairline);
+  border-top: 2px solid var(--amber);
   border-radius: var(--r-lg);
   padding: clamp(28px, 4vw, 48px);
   box-shadow: var(--sh-2);
@@ -24,7 +28,7 @@
   font-size: 4.5rem;
   line-height: .5;
   height: .55em;
-  color: var(--teal);
+  color: var(--amber);
 }
 .quote-text {
   font-size: var(--fs-lead);
