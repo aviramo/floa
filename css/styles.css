@@ -204,9 +204,10 @@ h1, h2, h3, h4 {
 /* ======================================================================
    components/button/button.css
    ====================================================================== */
-/* No white-space:nowrap. A nowrap label gives the button a min-content width of
-   the entire unbroken string, which no flex or grid track can shrink below — so
-   a long Hebrew CTA silently forces the whole page wider than the viewport. */
+/* Buttons keep their label on a single line (white-space:nowrap). The labels are
+   deliberately short, and on a phone the CTA row stacks so each button takes the
+   full width (see hero-actions) — so a nowrap label has the whole row to sit on
+   and never forces the page wider than the viewport. */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -214,6 +215,7 @@ h1, h2, h3, h4 {
   gap: var(--s-2);
   min-width: 0;
   max-width: 100%;
+  white-space: nowrap;
   min-height: var(--field-h);
   padding: var(--s-3) var(--s-7);
   border-radius: var(--r-pill);
@@ -231,6 +233,12 @@ h1, h2, h3, h4 {
 
 /* --- size & fit ----------------------------------------------------------- */
 .btn-lg { min-height: 62px; padding-inline: var(--s-8); font-size: 1.18rem; }
+/* On a phone a large button spans the whole row (hero-actions stacks, the
+   WhatsApp CTA fills the panel). With the label kept on one line, trim the side
+   padding so the longest CTA still fits the row instead of spilling past it. */
+@media (max-width: 640px) {
+  .btn-lg { padding-inline: var(--s-5); }
+}
 .btn-block { width: 100%; }
 /* opts a full-width button (the WhatsApp one) back down to its own content, so
    it can sit as a centred pill outside a form panel */
@@ -284,6 +292,12 @@ h1, h2, h3, h4 {
   transform: translateY(-2px);
   box-shadow: 0 12px 28px -14px rgba(37, 211, 102, .5);
 }
+/* On a narrow phone the badge + a single-line (nowrap) label must share one
+   full-width row; tighten the side padding and the badge-to-label gap so the
+   label fits beside the mark instead of spilling past the pill. */
+@media (max-width: 640px) {
+  .btn-whatsapp { padding-inline: var(--s-3); gap: var(--s-2); }
+}
 
 /* the mark sits in its own badge, so it reads as an icon and not as a stray
    glyph floating beside a two-line label */
@@ -313,6 +327,30 @@ h1, h2, h3, h4 {
   font-weight: 400;
   font-size: var(--fs-xs);
   color: var(--muted);
+}
+
+/* The inline WhatsApp mark carried by plain WhatsApp buttons (the ghost hero CTA
+   and the post-submit CTA) — a 20px glyph, 8px from the label via the button's
+   own gap, and on the right in RTL because it is the button's first child. */
+.btn .wa-glyph {
+  flex: 0 0 auto;
+  display: inline-flex;
+}
+.btn .wa-glyph svg { width: 20px; height: 20px; }
+
+/* The solid WhatsApp CTA shown inside the success box after a form is sent. */
+.btn-wa-open {
+  margin-top: var(--s-5);
+  background: #25D366;
+  color: #fff;
+  border-color: #25D366;
+}
+.btn-wa-open:hover {
+  background: #1EBE57;
+  border-color: #1EBE57;
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px -14px rgba(37, 211, 102, .5);
 }
 
 /* ======================================================================

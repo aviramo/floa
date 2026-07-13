@@ -1,6 +1,7 @@
-/* No white-space:nowrap. A nowrap label gives the button a min-content width of
-   the entire unbroken string, which no flex or grid track can shrink below — so
-   a long Hebrew CTA silently forces the whole page wider than the viewport. */
+/* Buttons keep their label on a single line (white-space:nowrap). The labels are
+   deliberately short, and on a phone the CTA row stacks so each button takes the
+   full width (see hero-actions) — so a nowrap label has the whole row to sit on
+   and never forces the page wider than the viewport. */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -8,6 +9,7 @@
   gap: var(--s-2);
   min-width: 0;
   max-width: 100%;
+  white-space: nowrap;
   min-height: var(--field-h);
   padding: var(--s-3) var(--s-7);
   border-radius: var(--r-pill);
@@ -25,6 +27,12 @@
 
 /* --- size & fit ----------------------------------------------------------- */
 .btn-lg { min-height: 62px; padding-inline: var(--s-8); font-size: 1.18rem; }
+/* On a phone a large button spans the whole row (hero-actions stacks, the
+   WhatsApp CTA fills the panel). With the label kept on one line, trim the side
+   padding so the longest CTA still fits the row instead of spilling past it. */
+@media (max-width: 640px) {
+  .btn-lg { padding-inline: var(--s-5); }
+}
 .btn-block { width: 100%; }
 /* opts a full-width button (the WhatsApp one) back down to its own content, so
    it can sit as a centred pill outside a form panel */

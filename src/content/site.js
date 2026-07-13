@@ -48,6 +48,14 @@ export const runtime = {
     greeting: "היי אופיר, הגעתי דרך אתר FLOA ואני רוצה לבדוק מה אפשר לשפר בעסק",
   },
   formError: "השליחה נכשלה. אפשר לנסות שוב או לכתוב לי בוואטסאפ",
+  /* after a lead is saved: the opening line the visitor arrives with on WhatsApp,
+     and the label of the CTA that opens it — mobile also auto-opens it (see
+     contact.client.js), desktop only offers the button */
+  formSuccessWa: {
+    message: "היי, מילאתי עכשיו את הטופס באתר ואשמח שתחזרו אליי 🙂",
+    mobileLabel: "פתיחת וואטסאפ",
+    desktopLabel: "פתיחת WhatsApp Web",
+  },
   /* the captions the hero diagram cycles through, in node order */
   systemLabels: [
     "אתרים ודפי נחיתה",

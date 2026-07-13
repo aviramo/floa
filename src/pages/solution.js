@@ -11,6 +11,7 @@ import { features } from "../components/feature/feature.js";
 import { flow, flowCards } from "../components/flow/flow.js";
 import { hero } from "../components/hero/hero.js";
 import { heroArt } from "../components/hero-art/hero-art.js";
+import { icon } from "../components/icon/icon.js";
 import { miniCards } from "../components/mini-card/mini-card.js";
 import { placeholderPair } from "../components/placeholder/placeholder.js";
 import { projectGrid } from "../components/project-card/project-card.js";
@@ -86,7 +87,8 @@ ${hero(ctx, {
   note: heroNote,
   art: heroArt({ label: solution.hero.artLabel, shapes: solution.hero.shapes }),
   actions: html`${button(ctx, { href: "#contact", label: solution.hero.cta, size: "lg", analytics: "hero_mapping_cta" })}
-          ${button(ctx, { variant: "ghost", size: "lg", whatsapp: true, analytics: "whatsapp_cta", label: "לכתוב לי ב־WhatsApp" })}`,
+          ${button(ctx, { variant: "ghost", size: "lg", whatsapp: true, analytics: "whatsapp_cta",
+            children: html`<span class="wa-glyph" aria-hidden="true">${icon("whatsapp")}</span><span>לכתוב לי ב־WhatsApp</span>` })}`,
 })}
 
 ${trustStrip({ items: trustStripItems })}

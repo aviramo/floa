@@ -1,6 +1,7 @@
 import { attrs, cx, html } from "../../lib/html.js";
 import { button } from "../button/button.js";
 import { divider } from "../divider/divider.js";
+import { icon } from "../icon/icon.js";
 import { sectionHead } from "../section-head/section-head.js";
 import { whatsappButton } from "../whatsapp-button/whatsapp-button.js";
 
@@ -60,6 +61,12 @@ export const contact = (ctx, { head, fields, submitLabel, note, orLabel, whatsap
         <div class="form-success" id="formSuccess" role="status" hidden>
           <strong>${success.title}</strong>
           <span>${success.text}</span>
+          <!-- the backup way to WhatsApp; contact.client.js sets its href and
+               label per device, and on a phone also opens it automatically -->
+          <a class="btn btn-wa-open" id="formSuccessWa" target="_blank" rel="noopener">
+            <span class="wa-glyph" aria-hidden="true">${icon("whatsapp")}</span>
+            <span class="btn-wa-open-label"></span>
+          </a>
         </div>
       </div>`;
 };

@@ -17,6 +17,12 @@
   transform: translateY(-2px);
   box-shadow: 0 12px 28px -14px rgba(37, 211, 102, .5);
 }
+/* On a narrow phone the badge + a single-line (nowrap) label must share one
+   full-width row; tighten the side padding and the badge-to-label gap so the
+   label fits beside the mark instead of spilling past the pill. */
+@media (max-width: 640px) {
+  .btn-whatsapp { padding-inline: var(--s-3); gap: var(--s-2); }
+}
 
 /* the mark sits in its own badge, so it reads as an icon and not as a stray
    glyph floating beside a two-line label */
@@ -46,4 +52,28 @@
   font-weight: 400;
   font-size: var(--fs-xs);
   color: var(--muted);
+}
+
+/* The inline WhatsApp mark carried by plain WhatsApp buttons (the ghost hero CTA
+   and the post-submit CTA) — a 20px glyph, 8px from the label via the button's
+   own gap, and on the right in RTL because it is the button's first child. */
+.btn .wa-glyph {
+  flex: 0 0 auto;
+  display: inline-flex;
+}
+.btn .wa-glyph svg { width: 20px; height: 20px; }
+
+/* The solid WhatsApp CTA shown inside the success box after a form is sent. */
+.btn-wa-open {
+  margin-top: var(--s-5);
+  background: #25D366;
+  color: #fff;
+  border-color: #25D366;
+}
+.btn-wa-open:hover {
+  background: #1EBE57;
+  border-color: #1EBE57;
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px -14px rgba(37, 211, 102, .5);
 }
