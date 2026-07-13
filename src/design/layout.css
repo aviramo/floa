@@ -1,0 +1,32 @@
+/* Layout primitives — the only rules that are not owned by a component. */
+.container {
+  width: 100%;
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* An anchor jump aligns the section's border box to the top of the viewport —
+   which then leaves the section's whole top padding (up to 128px) as dead space
+   above the heading. Pulling the scroll target up by that padding lands the
+   CONTENT a normal ~40px below the fold instead. */
+.section {
+  padding-block: var(--section);
+  scroll-margin-top: calc(var(--s-8) - var(--section));
+  position: relative;
+}
+
+main, .site-footer { position: relative; z-index: 1; }
+
+/* The proof band is the one section that stacks several unrelated blocks — a
+   flow, a project, a screenshot, a quote — so its parts need air between them.
+   The head's own margin collapses with this, so it keeps its larger gap. */
+.proof > .container > * + * { margin-top: var(--s-8); }
+
+/* Long unbroken strings (emails, URLs) must never widen a track — but that is
+   only true of body text. Headings are excluded on purpose: break-word would
+   snap a Hebrew word in half mid-word on a narrow screen. They wrap between
+   words only, and balance so the lines come out even. */
+p, li, label, a, strong, span { overflow-wrap: break-word; }
+h1, h2, h3, h4 { overflow-wrap: break-word; text-wrap: balance; }
+p { text-wrap: pretty; }

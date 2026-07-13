@@ -1,0 +1,137 @@
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gap);
+  min-width: 0;
+}
+.projects-grid > * { min-width: 0; }
+/* one project on a page gets the centre, not half the row */
+.projects-grid:has(> :only-child) { grid-template-columns: 1fr; max-width: 720px; margin-inline: auto; }
+
+.project-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r);
+  overflow: hidden;
+  box-shadow: var(--sh-1);
+  transition: transform .25s var(--ease), box-shadow .25s var(--ease),
+              border-color .25s var(--ease);
+}
+.project-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(14, 140, 126, .28);
+  box-shadow: var(--sh-2);
+}
+
+.project-media {
+  display: block;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-bottom: 1px solid var(--hairline);
+  background: var(--surface-sunk);
+}
+.project-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .5s var(--ease);
+}
+.project-card:hover .project-media img { transform: scale(1.03); }
+
+.project-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: var(--pad-card);
+}
+.project-name {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: .14em;
+  color: var(--teal-dark);
+}
+.project-body h3 {
+  font-size: 1.35rem;
+  margin: var(--s-2) 0 var(--s-6);
+  line-height: 1.25;
+}
+.project-body h3 a { transition: color .18s var(--ease); }
+.project-body h3 a:hover { color: var(--teal-dark); }
+
+/* the parts share one rhythm and a hairline ladder */
+.project-part {
+  padding-block: var(--s-4);
+  border-top: 1px solid var(--hairline-2);
+}
+.project-label {
+  display: block;
+  margin-bottom: var(--s-1);
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: var(--muted-2);
+}
+.project-part p { color: var(--muted); font-size: var(--fs-sm); }
+
+.project-link {
+  margin-top: auto;
+  padding-top: var(--s-6);
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-weight: 700;
+  color: var(--teal-dark);
+  transition: color .18s var(--ease);
+}
+.project-link::after { content: "←"; transition: transform .2s var(--ease); }
+.project-link:hover { color: var(--teal); }
+.project-link:hover::after { transform: translateX(-4px); }
+
+/* --- two shots sharing one media area — side by side, stacked on mobile ---- */
+.project-media-duo {
+  aspect-ratio: auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gap);
+  padding: var(--pad-card);
+  background: var(--surface-sunk);
+}
+.project-media-duo .duo-item {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* only when there are exactly two shots does the first one take more room —
+   with three, they share the strip evenly */
+.project-media-duo .duo-item:first-child:nth-last-child(2) { flex-grow: 1.45; }
+
+/* a held slot inside the media strip sits on white, so its dashed edge reads
+   against the sunk background around it */
+.project-media-duo .placeholder-box { background: var(--surface); }
+.project-media-duo img {
+  max-width: 100%;
+  max-height: clamp(230px, 26vw, 320px);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: var(--r-sm);
+  box-shadow: var(--sh-2);
+  transition: transform .5s var(--ease);
+}
+.project-card:hover .project-media-duo img { transform: none; }
+.project-media-duo a.duo-item:hover img { transform: translateY(-3px); }
+
+@media (max-width: 1080px) { .projects-grid { grid-template-columns: 1fr; } }
+@media (max-width: 640px) {
+  .project-media-duo { flex-direction: column; }
+  .project-media-duo .duo-item { width: 100%; flex: none; }
+  .project-media-duo img { width: 100%; height: auto; max-height: none; }
+}

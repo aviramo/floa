@@ -1,0 +1,77 @@
+.hero {
+  position: relative;
+  padding-block: clamp(24px, 3vw, 40px) clamp(64px, 7vw, 96px);
+  overflow: hidden;
+}
+.hero-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* letter-spacing appends a trailing gap AFTER the final letter, which makes the
+   span's box wider than its glyphs — so a centred wordmark visibly sits off to
+   one side. Force an LTR box and pull that trailing gap back off the end. */
+.hero-logo {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 2.4vw, 1.9rem);
+  font-weight: 700;
+  letter-spacing: .34em;
+  direction: ltr;
+  margin-inline-end: -.34em;
+  color: var(--teal);
+  margin-bottom: var(--s-6);
+}
+/* on every page but home the wordmark is the way back */
+a.hero-logo { transition: color .18s var(--ease); }
+a.hero-logo:hover { color: var(--teal-dark); }
+
+.hero-title {
+  font-size: var(--fs-hero);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -.03em;
+  max-width: 16ch;
+  text-wrap: balance;
+}
+
+.hero-text {
+  margin-top: var(--s-6);
+  font-size: var(--fs-lead);
+  color: var(--muted);
+  max-width: 46ch;
+  text-wrap: pretty;
+}
+
+/* names the solution this page is about */
+.hero-chip { margin-bottom: var(--s-6); }
+.hero-chip span {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--s-2) var(--s-5);
+  border-radius: var(--r-pill);
+  background: var(--teal-tint);
+  color: var(--teal-dark);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.hero-actions {
+  margin-top: var(--s-6);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--s-4);
+}
+
+@media (max-width: 860px) {
+  .hero-actions { width: 100%; flex-direction: column; }
+  .hero-actions .btn { width: 100%; }
+}
+@media (max-width: 640px) {
+  .hero-title { max-width: none; }
+}

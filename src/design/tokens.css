@@ -1,0 +1,99 @@
+/* The design system. Every component below draws from these and nothing else —
+   no component may invent a colour, a radius or a spacing step of its own.
+
+   FLOA — "Clear Water": Swiss-precise, light and airy. One teal accent, large
+   type, generous air. RTL, mobile-first. */
+:root {
+  /* --- colour: one accent, everything else is ink and paper ---------------
+     Paper is a cool tinted ground, cards are pure white. Previously both were
+     effectively the same white (#FBFCFC vs #FFFFFF), so a card had nothing to
+     sit ON and only its hairline separated it from the page. Making white the
+     figure and the tint the ground is what gives the cards their lift. */
+  --paper:        #E9F0EE;
+  --surface:      #FFFFFF;
+  --surface-sunk: #F2F7F5;   /* recessed panels INSIDE a white card */
+
+  --ink:          #0F2A33;
+  --ink-2:        #24444F;
+  /* darkened to clear AA (4.5:1) against the tinted paper, not just against a
+     white card — the section leads sit on paper, where #66797F fell to 3.94 */
+  --muted:        #586C73;
+  --muted-2:      #63757B;
+
+  --teal:         #0E8C7E;
+  --teal-dark:    #0A6C61;
+  /* deep enough to read on BOTH grounds — chips sit on tinted paper (section
+     heads) and on white (inside the contact panel). The old #E8F4F1 was within
+     1.03 of the new paper, so the chip's fill simply vanished. */
+  --teal-tint:    #C9E6DE;
+  --water:        #7FC5E4;
+
+  --hairline:     #DCE6E3;
+  --hairline-2:   #E9F0EE;
+
+  --danger:       #A23B3B;
+  --danger-bg:    #FCECEC;
+  --danger-line:  #F0CFCF;
+
+  /* --- type --- */
+  --font-display: "Rubik", system-ui, "Segoe UI", Arial, sans-serif;
+  --font-body:    "Assistant", system-ui, "Segoe UI", Arial, sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, "Courier New", monospace;
+
+  --fs-hero:  clamp(2.9rem, 6.4vw, 5.5rem);
+  --fs-h2:    clamp(2.2rem, 4.1vw, 3.4rem);
+  --fs-h3:    1.45rem;
+  --fs-lead:  clamp(1.25rem, 1.6vw, 1.5rem);
+  --fs-body:  1.25rem;
+  --fs-sm:    1.14rem;
+  --fs-xs:    .95rem;
+
+  /* --- space: one 4px-based scale, used everywhere --- */
+  --s-1:  4px;
+  --s-2:  8px;
+  --s-3:  12px;
+  --s-4:  16px;
+  --s-5:  20px;
+  --s-6:  24px;
+  --s-7:  32px;
+  --s-8:  40px;
+  --s-9:  56px;
+  --s-10: 72px;
+
+  /* Every inset is fluid. Fixed paddings stack up on narrow screens (container
+     + panel + card) and crush the content column until text wraps one word per
+     line — so each one scales with the viewport instead. */
+  --gutter:   clamp(14px, 4vw, 24px);     /* container side padding */
+  --gap:      clamp(14px, 2vw, 24px);     /* the ONE gap between grid items */
+  --pad-card: clamp(18px, 3vw, 28px);     /* the ONE card padding */
+  --pad-panel: clamp(20px, 5vw, 56px);    /* the ONE panel padding */
+  --section:  clamp(64px, 8vw, 128px);
+  --head-gap: clamp(36px, 4.5vw, 64px);   /* section head -> content */
+
+  /* --- shape --- */
+  --r-sm:  12px;
+  --r:     18px;
+  --r-lg:  24px;
+  --r-pill: 999px;
+
+  --field-h: 56px;           /* every input, select and button agrees */
+
+  /* --- depth: soft, water-like, never heavy --- */
+  --sh-1: 0 2px 6px rgba(15, 42, 51, .05);
+  --sh-2: 0 10px 28px -12px rgba(15, 42, 51, .16);
+  --sh-3: 0 26px 64px -28px rgba(15, 42, 51, .24);
+  --sh-teal: 0 12px 28px -12px rgba(14, 140, 126, .45);
+
+  --container: 1200px;
+  --ease: cubic-bezier(.22, .61, .36, 1);
+}
+
+/* On a phone the scale itself tightens — every component inherits the change,
+   so none of them needs a breakpoint of its own for spacing. */
+@media (max-width: 640px) {
+  :root {
+    --gap: 16px;
+    --pad-card: 22px;
+    --fs-body: 1.16rem;
+  }
+}

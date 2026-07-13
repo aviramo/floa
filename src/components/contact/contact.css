@@ -1,0 +1,131 @@
+/* Every control shares one height, one border, one radius, one focus ring. */
+.contact-panel {
+  max-width: 800px;
+  margin-inline: auto;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
+  padding: var(--pad-panel);
+  box-shadow: var(--sh-3);
+}
+.contact-panel .section-head { margin-bottom: var(--s-8); }
+
+/* minmax(0,1fr), not 1fr: a bare 1fr track refuses to shrink below the
+   min-content width of a select/textarea, which pushes the fields out of the
+   panel on narrow screens. min-width:0 lets the controls actually flex down. */
+.contact-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-5);
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  min-width: 0;
+}
+.field-full { grid-column: 1 / -1; }
+.field label {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+/* the single source of truth for control chrome */
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  min-height: var(--field-h);
+  padding: var(--s-3) var(--s-4);
+  font-family: var(--font-body);
+  font-size: 1.08rem;
+  line-height: 1.5;
+  color: var(--ink);
+  background-color: var(--surface-sunk);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-sm);
+  transition: border-color .18s var(--ease), box-shadow .18s var(--ease),
+              background-color .18s var(--ease);
+  appearance: none;
+  -webkit-appearance: none;
+}
+.field textarea {
+  min-height: 132px;
+  resize: vertical;
+  padding-block: var(--s-3);
+}
+.field input::placeholder,
+.field textarea::placeholder { color: var(--muted-2); }
+
+.field select {
+  cursor: pointer;
+  padding-inline-start: var(--s-8);   /* room for the chevron on the left (RTL) */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2366797F' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: left var(--s-4) center;
+}
+.field select.is-empty { color: var(--muted-2); }
+
+.field input:hover,
+.field select:hover,
+.field textarea:hover { border-color: #D2DEDB; }
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: none;
+  background-color: var(--surface);
+  border-color: var(--teal);
+  box-shadow: 0 0 0 4px rgba(14, 140, 126, .13);
+}
+
+/* invalid state is applied by JS ONLY after a submit attempt — never on load */
+.field input.is-invalid,
+.field select.is-invalid,
+.field textarea.is-invalid {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 4px rgba(162, 59, 59, .10);
+}
+
+/* the submit sits in its own row with real air around it */
+.form-actions {
+  grid-column: 1 / -1;
+  margin-top: var(--s-3);
+}
+
+.contact-note {
+  margin-top: var(--s-5);
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+.form-success,
+.form-error {
+  margin-top: var(--s-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  align-items: center;
+  text-align: center;
+  padding: var(--s-5);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-sm);
+}
+.form-success {
+  background: var(--teal-tint);
+  border: 1px solid rgba(14, 140, 126, .2);
+  color: var(--teal-dark);
+}
+.form-success strong { font-size: 1.05rem; font-weight: 700; }
+.form-error {
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-line);
+  color: var(--danger);
+  font-weight: 600;
+}
+/* [hidden] must always win over the flex display above */
+.form-success[hidden], .form-error[hidden] { display: none; }
+
+@media (max-width: 640px) { .contact-form { grid-template-columns: 1fr; } }

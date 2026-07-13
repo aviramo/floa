@@ -1,0 +1,30 @@
+.section-head {
+  max-width: 46rem;
+  margin-inline: auto;
+  margin-bottom: var(--head-gap);
+  text-align: center;
+}
+.section-head h2 { font-size: var(--fs-h2); }
+.section-head p {
+  margin-top: var(--s-4);
+  margin-inline: auto;
+  max-width: 40rem;
+  font-size: var(--fs-lead);
+  color: var(--muted);
+}
+
+/* eyebrow: a chip. Sets the section's topic before the headline lands.
+   inline-flex, so it is centred by the head's text-align like any inline box. */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: var(--s-5);
+  padding: var(--s-2) var(--s-4);
+  border-radius: var(--r-pill);
+  background: var(--teal-tint);
+  color: var(--teal-dark);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: .06em;
+  line-height: 1;
+}

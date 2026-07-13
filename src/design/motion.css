@@ -1,0 +1,20 @@
+/* Motion. Last in the bundle, so it can freeze anything any component started. */
+
+/* Gated on .js: the reveal must only hide content once we know JS is running to
+   bring it back. Hiding it unconditionally would leave the entire page below the
+   hero invisible if the script ever fails to load. */
+.js .reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity .7s var(--ease), transform .7s var(--ease);
+}
+.js .reveal.in-view { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    transition-duration: .001ms !important;
+  }
+}

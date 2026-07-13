@@ -1,0 +1,51 @@
+.site-footer {
+  margin-top: var(--section);
+  background: var(--ink);
+  color: #C3D3D7;
+}
+/* the whole footer sits on the page's centre axis, like every section head */
+.footer-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-7);
+  padding-block: var(--s-9);
+  text-align: center;
+}
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-1);
+}
+.logo-mark {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: .3em;
+  direction: ltr;
+  margin-inline-end: -.3em;
+  color: #fff;
+}
+.logo-sub { font-size: var(--fs-sm); color: #8FA4A9; }
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--s-3) var(--s-6);
+}
+.footer-links a {
+  font-size: var(--fs-sm);
+  color: #C3D3D7;
+  transition: color .18s var(--ease);
+}
+.footer-links a:hover { color: #fff; }
+
+.footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, .09);
+  padding-block: var(--s-5);
+  font-size: var(--fs-xs);
+  color: #8FA4A9;
+  text-align: center;
+}

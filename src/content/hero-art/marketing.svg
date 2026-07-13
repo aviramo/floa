@@ -1,0 +1,23 @@
+      <g class="float">
+        <rect class="plate lift-lg" x="80" y="92" width="410" height="292" rx="18"/>
+        <rect class="bar-teal" x="110" y="120" width="150" height="14" rx="7"/>
+        <rect class="plate-sunk" x="110" y="150" width="114" height="66" rx="12"/>
+        <rect class="plate-sunk" x="234" y="150" width="114" height="66" rx="12"/>
+        <rect class="plate-sunk" x="358" y="150" width="102" height="66" rx="12"/>
+        <rect class="bar-tint" x="126" y="166" width="42" height="8" rx="4"/><rect class="bar-teal" x="126" y="184" width="62" height="14" rx="7"/>
+        <rect class="bar-tint" x="250" y="166" width="42" height="8" rx="4"/><rect class="bar-teal" x="250" y="184" width="62" height="14" rx="7"/>
+        <rect class="bar-tint" x="374" y="166" width="42" height="8" rx="4"/><rect class="bar-teal" x="374" y="184" width="50" height="14" rx="7"/>
+        <rect class="plate-sunk" x="110" y="232" width="350" height="130" rx="12"/>
+        <rect class="bar-teal" x="134" y="302" width="22" height="36" rx="5"/><rect class="bar-tint" x="176" y="280" width="22" height="58" rx="5"/><rect class="bar-teal" x="218" y="292" width="22" height="46" rx="5"/><rect class="bar-tint" x="260" y="260" width="22" height="78" rx="5"/><rect class="bar-teal" x="302" y="272" width="22" height="66" rx="5"/><rect class="bar-tint" x="344" y="242" width="22" height="96" rx="5"/><rect class="bar-teal" x="386" y="254" width="22" height="84" rx="5"/>
+        <path class="wire-teal" d="M146 306 L 202 288 L 258 298 L 314 262 L 370 274 L 426 240"/>
+        <path class="wire-teal" d="M426 240 l -13 -2 l 5 11 z" fill="#0E8C7E" stroke="none"/>
+      </g>
+      <g class="float-b">
+        <path class="fill-tint" d="M512 158 h168 l-30 44 h-108 z"/>
+        <path class="fill-water" d="M548 210 h96 l-24 40 h-48 z"/>
+        <path class="fill-teal" d="M578 258 h36 l-11 34 h-14 z"/>
+        <circle class="fill-teal hub-glow" cx="596" cy="326" r="24"/>
+        <g class="glyph glyph-white" transform="translate(580,310) scale(1.35)"><path d="M20 6 9 17l-5-5"/></g>
+      </g>
+      <g class="glyph glyph-teal" transform="translate(560,108) scale(1.5)"><path d="M5 3l14 6.5-6.2 2.1L10.5 18z"/></g>
+      <circle cx="566" cy="120" r="16" fill="none" stroke="#0E8C7E" stroke-width="2" opacity=".4" class="blink"/>

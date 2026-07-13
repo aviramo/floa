@@ -1,0 +1,17 @@
+/* no letter-spacing: it visibly splits a two-letter Hebrew word into "א ו" */
+.or-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  margin-block: var(--s-7);
+  color: var(--muted-2);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+.or-divider::before,
+.or-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--hairline);
+}

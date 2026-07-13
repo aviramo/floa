@@ -1,0 +1,18 @@
+.cta-band { padding-block: var(--section); }
+.cta-inner {
+  max-width: 780px;
+  margin-inline: auto;
+  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
+  padding: var(--pad-panel);
+  box-shadow: var(--sh-2);
+}
+.cta-inner h2 { font-size: var(--fs-h2); }
+.cta-inner p {
+  margin: var(--s-4) auto var(--s-8);
+  color: var(--muted);
+  font-size: var(--fs-lead);
+  max-width: 44rem;
+}

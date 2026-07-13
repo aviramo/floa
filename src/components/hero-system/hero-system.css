@@ -1,0 +1,78 @@
+.hero-system {
+  position: relative;
+  width: 100%;
+  max-width: 780px;
+  margin: clamp(28px, 3.5vw, 44px) auto clamp(8px, 1.5vw, 16px);
+}
+.system-svg { width: 100%; height: auto; overflow: visible; }
+
+/* the cards */
+.system-svg .plate { fill: var(--surface); stroke: var(--hairline); stroke-width: 1; }
+.system-svg .bar   { fill: #E7EDEC; }
+.system-svg .bar-teal { fill: rgba(14, 140, 126, .28); }
+.system-svg .bar-blue { fill: rgba(127, 197, 228, .45); }
+.system-svg .dot   { fill: #DCE5E3; }
+.system-svg .dot-teal { fill: rgba(14, 140, 126, .55); }
+.system-svg .dot-blue { fill: rgba(127, 197, 228, .75); }
+
+/* a node at rest sits back; the lit one comes forward */
+.system-svg .node {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: .62;
+  transition: opacity .5s var(--ease), transform .5s var(--ease);
+}
+.system-svg .node.is-lit { opacity: 1; transform: scale(1.045); }
+.system-svg .node.is-lit .plate { stroke: rgba(14, 140, 126, .45); }
+.system-svg .node.is-lit .bar-teal { fill: var(--teal); }
+
+/* the featured solution: pinned forward and lit while the rest still pulse.
+   Placed AFTER .is-lit so its larger scale wins when both apply. */
+.system-svg .node.is-feature { opacity: 1; transform: scale(1.07); }
+.system-svg .node.is-feature .plate { stroke: var(--teal); stroke-width: 2; }
+.system-svg .node.is-feature .bar-teal { fill: var(--teal); }
+
+/* wires: drawn faint, and the lit one brightens */
+.system-svg .wires path {
+  opacity: .3;
+  transition: opacity .5s var(--ease), stroke-width .5s var(--ease);
+}
+.system-svg .wires path.is-lit { opacity: .95; stroke-width: 2.6; }
+
+/* the pulse riding each wire — positioned by JS along the path */
+.system-svg .pulse { fill: var(--teal); opacity: 0; }
+.system-svg .pulse.is-live { opacity: 1; }
+
+/* the hub breathes, so the system reads as running even between steps */
+@keyframes hub-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.035); }
+}
+.system-svg .hub {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hub-breathe 3.4s var(--ease) infinite;
+}
+
+/* the caption leads: it names the solution, then the diagram lights it */
+.system-caption {
+  margin-bottom: var(--s-5);
+  text-align: center;
+  min-height: 2.2em;
+}
+.system-caption-text {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--s-2) var(--s-5);
+  border-radius: var(--r-pill);
+  background: var(--teal-tint);
+  color: var(--teal-dark);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  line-height: 1.4;
+  transition: opacity .35s var(--ease), transform .35s var(--ease);
+}
+.system-caption.is-swapping .system-caption-text {
+  opacity: 0;
+  transform: translateY(6px);
+}

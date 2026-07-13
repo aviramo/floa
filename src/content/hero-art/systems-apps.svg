@@ -1,0 +1,32 @@
+      <g class="float">
+        <rect class="plate lift-lg" x="70" y="84" width="470" height="300" rx="18"/>
+        <rect class="plate-sunk" x="88" y="110" width="104" height="256" rx="12"/>
+        <rect class="bar-tint" x="106" y="132" width="66" height="11" rx="5.5"/>
+        <rect class="bar" x="106" y="160" width="66" height="9" rx="4.5"/>
+        <rect class="bar" x="106" y="182" width="52" height="9" rx="4.5"/>
+        <rect class="bar" x="106" y="204" width="60" height="9" rx="4.5"/>
+        <rect class="bar" x="106" y="226" width="46" height="9" rx="4.5"/>
+        <rect class="bar-teal" x="210" y="118" width="150" height="14" rx="7"/>
+        <rect class="plate-sunk" x="210" y="150" width="96" height="64" rx="12"/>
+        <rect class="plate-sunk" x="316" y="150" width="96" height="64" rx="12"/>
+        <rect class="plate-sunk" x="422" y="150" width="96" height="64" rx="12"/>
+        <rect class="bar-tint" x="226" y="166" width="40" height="8" rx="4"/><rect class="bar-teal" x="226" y="184" width="58" height="12" rx="6"/>
+        <rect class="bar-tint" x="332" y="166" width="40" height="8" rx="4"/><rect class="bar-teal" x="332" y="184" width="58" height="12" rx="6"/>
+        <rect class="bar-tint" x="438" y="166" width="40" height="8" rx="4"/><rect class="bar-teal" x="438" y="184" width="46" height="12" rx="6"/>
+        <rect class="plate-sunk" x="210" y="228" width="308" height="134" rx="12"/>
+        <rect class="bar-teal" x="236" y="296" width="24" height="40" rx="5"/><rect class="bar-tint" x="280" y="270" width="24" height="66" rx="5"/><rect class="bar-teal" x="324" y="284" width="24" height="52" rx="5"/><rect class="bar-tint" x="368" y="248" width="24" height="88" rx="5"/><rect class="bar-teal" x="412" y="262" width="24" height="74" rx="5"/><rect class="bar-tint" x="456" y="232" width="24" height="104" rx="5"/>
+        <path class="wire-teal" d="M248 300 L 308 280 L 368 292 L 428 250 L 488 234"/>
+      </g>
+      <g class="float-b">
+        <rect class="plate lift-lg" x="474" y="168" width="152" height="256" rx="26"/>
+        <rect class="fill-tint" x="538" y="182" width="24" height="7" rx="3.5"/>
+        <rect class="bar-teal" x="496" y="204" width="66" height="12" rx="6"/>
+        <rect class="plate-sunk" x="496" y="230" width="108" height="42" rx="10"/>
+        <circle class="fill-tint" cx="516" cy="251" r="11"/><rect class="bar" x="534" y="245" width="56" height="8" rx="4"/><rect class="bar" x="534" y="257" width="38" height="7" rx="3.5"/>
+        <rect class="plate-sunk" x="496" y="282" width="108" height="42" rx="10"/>
+        <circle class="fill-tint" cx="516" cy="303" r="11"/><rect class="bar" x="534" y="297" width="56" height="8" rx="4"/><rect class="bar" x="534" y="309" width="38" height="7" rx="3.5"/>
+        <rect class="plate-sunk" x="496" y="334" width="108" height="42" rx="10"/>
+        <circle class="fill-tint" cx="516" cy="355" r="11"/><rect class="bar" x="534" y="349" width="56" height="8" rx="4"/><rect class="bar" x="534" y="361" width="38" height="7" rx="3.5"/>
+        <rect class="fill-tint" x="484" y="392" width="132" height="24" rx="8"/>
+        <circle class="fill-teal" cx="512" cy="404" r="5"/><circle class="dot" cx="550" cy="404" r="5"/><circle class="dot" cx="588" cy="404" r="5"/>
+      </g>

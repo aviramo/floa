@@ -1,0 +1,58 @@
+.card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r);
+  padding: var(--pad-card);
+  box-shadow: var(--sh-1);
+  transition: transform .25s var(--ease), box-shadow .25s var(--ease),
+              border-color .25s var(--ease);
+}
+.card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(14, 140, 126, .28);
+  box-shadow: var(--sh-2);
+}
+.card h3 { font-size: var(--fs-h3); margin-bottom: var(--s-2); }
+.card p { color: var(--muted); font-size: var(--fs-sm); }
+
+.card-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: var(--s-5);
+  border-radius: var(--r-sm);
+  background: var(--teal-tint);
+  color: var(--teal-dark);
+  flex: 0 0 auto;
+}
+.card-icon svg { width: 24px; height: 24px; }
+
+/* --- the grid: 2 columns, and one card may take the full width ------------ */
+.solutions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gap);
+  min-width: 0;
+}
+/* tracks must be allowed to shrink below their content's min-content width, or
+   a long unbroken Hebrew string pushes a card out of its column */
+.solutions-grid > * { min-width: 0; }
+.solutions-grid .card-wide { grid-column: 1 / -1; }
+
+/* the wide card lays its icon beside the copy so it never looks stretched */
+.card-wide {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--s-6);
+}
+.card-wide .card-icon { margin-bottom: 0; }
+
+@media (max-width: 860px) {
+  .solutions-grid { grid-template-columns: 1fr; }
+  .card-wide { flex-direction: column; align-items: flex-start; }
+  .card-wide .card-icon { margin-bottom: var(--s-5); }
+}

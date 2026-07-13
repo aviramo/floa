@@ -1,47 +1,73 @@
-# FLOA — עמוד נחיתה
+# FLOA — האתר
 
-עמוד נחיתה יחיד, רספונסיבי ומהיר עבור המותג **FLOA** (floa.co.il).
-בנוי HTML/CSS/JS סטטי בלבד — ללא תלות בבנייה (build) או פריימוורק.
+האתר של **FLOA** (floa.co.il). RTL, מובייל קודם, סטטי לחלוטין (GitHub Pages).
+
+הדפים **אינם נכתבים ביד**. הם נבנים מקומפוננטות: כל אלמנט באתר (כפתור, כרטיס,
+טופס, תמונה, ציטוט, תרשים) הוא קומפוננטה עצמאית שמקבלת פרמטרים, והדף הוא רשימה
+של קומפוננטות שמוזנות מתוכן. קובצי ה-HTML שבשורש הריפו הם **פלט של הבנייה**.
+
+## הרצה
+
+```bash
+npm run build     # בונה את כל האתר לשורש הריפו
+npm run dev       # בונה, מגיש ב-http://localhost:5173, ובונה מחדש בכל שינוי
+npm run watch     # בונה מחדש בכל שינוי, בלי שרת
+```
+
+אין תלויות. Node בלבד.
 
 ## מבנה
 
 ```
-index.html          # העמוד המלא (עמוד אחד, RTL, מובייל קודם)
-css/styles.css       # עיצוב — טורקיז־ירקרק מוביל, רקע שמנת, ללא גרדיאנטים מוגזמים
-js/main.js           # תפריט מובייל, אנימציות כניסה, טופס, קישורי WhatsApp
-assets/              # תמונות WebP (מאוירות, מופשטות, ללא טקסט/אנשים)
-  hero-flow.webp
-  process-before-after.webp
-  systems-devices.webp
-scripts/gen_images.py  # הסקריפט שמייצר את קובצי ה-WebP (Pillow)
+build.mjs                  # הגנרטור: מרנדר דפים, מאחד CSS ו-JS, חותם גרסה
+src/
+  bundle.js                # סדר האיחוד של ה-CSS וה-JS (זהו חוזה ה-cascade)
+  lib/
+    html.js                # מנוע התבניות (html``, escaping, attrs)
+    context.js             # פתרון נתיבים לפי עומק הדף (ctx.url / ctx.home)
+    *.client.js            # התנהגויות רוחביות: reveal, anchors, analytics
+  design/                  # הבסיס: tokens, reset, layout, typography, motion
+  components/<name>/
+    <name>.js              # הרינדור — מקבל פרמטרים, מחזיר HTML
+    <name>.css             # הסגנון של אותה קומפוננטה בלבד
+    <name>.client.js       # ההתנהגות שלה בדפדפן (אם יש)
+  content/                 # התוכן: site, solutions, projects, quotes, legal
+    hero-art/*.svg         # האיור הייחודי של כל דף פתרון
+  layouts/base.js          # מעטפת המסמך: meta, OG, JSON-LD, פוטר, סקריפטים
+  pages/
+    index.js               # מפת האתר — כל דף שנוצר מופיע כאן
+    home.js / solution.js / legal-page.js
 ```
 
-## הרצה מקומית
+### CSS אחיד
 
-כל שרת סטטי, למשל:
+הסגנון נכתב פר־קומפוננטה, אבל נשלח כ**קובץ אחד** — `css/styles.css` — שנבנה
+מאיחוד הקבצים לפי הסדר שב-`src/bundle.js`. אותו דבר ל-JS: `js/main.js`.
+שניהם מקבלים חתימת תוכן (`?v=<hash>`) כדי שמטמון לא יגיש גרסה ישנה.
 
-```bash
-npx serve .
-# או
-python3 -m http.server 8000
-```
+קומפוננטה חדשה שלא נרשמה ב-`bundle.js` עדיין תיכלל (בסוף, עם אזהרה בבנייה),
+כך שאי אפשר "לאבד" סגנון בטעות.
 
-ופתיחת `http://localhost:8000`.
+### להוסיף דף פתרון שישי
 
-## טופס יצירת קשר — WhatsApp + Firestore
+מוסיפים אובייקט ל-`src/content/solutions.js` וקובץ SVG ב-`src/content/hero-art/`.
+זה הכול — הדף עצמו, הכרטיס בדף הבית, והכרטיס ברשת "התמונה המלאה" בכל שאר הדפים
+נוצרים מאותו אובייקט.
 
-בשליחת הטופס קורים שני דברים:
+### מקור אמת אחד
 
-1. **שמירה ב-Cloud Firestore** (אוסף `leads`) — ישירות מהדפדפן דרך `js/firebase.js`.
-   השמירה לא חוסמת ולא זורקת: אם Firestore לא זמין, הטופס ממשיך לעבוד.
-2. **פתיחת WhatsApp** אל מספר העסק עם פרטי הפנייה כהודעה מוכנה.
+מספר ה-WhatsApp, נוסח ההודעה, שדות הטופס והדומיין יושבים ב-`src/content/site.js`.
+גם הדפדפן קורא משם: הבנייה מזריקה את `runtime` ל-`window.FLOA.config`.
 
-מספר ה-WhatsApp מוגדר ב-`js/main.js` (`WHATSAPP_NUMBER`), וכל קישורי ה-WhatsApp
-בעמוד נבנים ממנו.
+## טופס יצירת קשר — Firestore
+
+בשליחה מוצלחת הפנייה נשמרת ב-Cloud Firestore (אוסף `leads`) דרך `js/firebase.js`.
+הודעת ה"תודה" מוצגת רק אחרי שהשמירה באמת הצליחה; אחרת מוצגת שורת שגיאה עם
+הפנייה ל-WhatsApp.
 
 ### Firestore Security Rule
 
-הכלל שמוגדר ב-Firebase Console (Firestore → Rules) — יצירה בלבד, ללא קריאה:
+יצירה בלבד, ללא קריאה:
 
 ```
 rules_version = '2';
@@ -66,17 +92,21 @@ service cloud.firestore {
 }
 ```
 
-הפניות נצפות ב-Firebase Console → Firestore → Data → אוסף `leads`.
+## תמונות שממתינות לצילום אמיתי
 
-## נקודות שדורשות השלמה בהמשך
+האתר לא ממציא צילומי מסך ולא נתונים. במקומות שבהם עדיין אין צילום אמיתי מוצג
+placeholder מעוצב, ובקוד יש הערה מפורשת. חיפוש `Replace with real` יראה את כולם:
 
-- **קישורי פוטר** — מדיניות פרטיות והצהרת נגישות מפנים כרגע ל-`#`.
-- **דומיין** — לחיבור `floa.co.il` יש להוסיף קובץ `CNAME` ולהגדיר DNS.
+- `websites` — צילום האתר במחשב ובמובייל
+- `systems-apps` / `automations` — שני מסכי Android אמיתיים של Once
+  (`assets/project-once.webp` הוא מוקאפ אייפון מזויף ואינו בשימוש)
+- `marketing` — דשבורד מדידה אמיתי
+
+להחלפה: מוסיפים את הקובץ ל-`assets/` ומחליפים ב-`src/content/` את אובייקט ה-
+placeholder ב-`{ src, width, height, alt }`.
 
 ## נגישות ו-SEO
 
-- RTL מלא, `lang="he"`.
-- כותרת `H1` אחת בלבד, היררכיית כותרות תקינה.
+- RTL מלא, `lang="he"`, `H1` אחד לדף, היררכיית כותרות תקינה.
 - `alt` לכל תמונה, ניווט מקלדת, `:focus-visible`, כיבוד `prefers-reduced-motion`.
-- Meta title/description, Open Graph ו-JSON-LD (`ProfessionalService`).
-- תמונות WebP עם `loading="lazy"` (למעט ה-Hero) ו-`width`/`height` למניעת קפיצות פריסה.
+- Canonical, Open Graph ו-JSON-LD לכל דף — כולם נגזרים מ-`site.origin`.

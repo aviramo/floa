@@ -1,0 +1,14 @@
+/* Typography. Component type sizes live with their component; this is the base. */
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.18;
+  letter-spacing: -.015em;
+  color: var(--ink);
+}
+
+/* Mono has no Hebrew glyphs — it is used ONLY for numerals and Latin, never
+   for a Hebrew label, which would silently fall back to a system font. */
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+.emphasis { color: var(--teal-dark); font-weight: 600; }
