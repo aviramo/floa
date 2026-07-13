@@ -43,7 +43,7 @@ export const runtime = {
     /* the fallback opening line. Each page overrides it with one of its own via
        <body data-wa-text> (see whatsapp-button.client.js), so the conversation
        starts on the subject the visitor was actually reading. */
-    greeting: "היי, הגעתי דרך אתר FLOA ואשמח לשיחת מיפוי קצרה",
+    greeting: "היי, הגעתי דרך אתר FLOA ואשמח לשיחה קצרה",
   },
 
   /* The form posts here and nowhere else. A static site has no server of its

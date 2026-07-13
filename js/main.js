@@ -4,7 +4,7 @@
 window.FLOA = { config: {
   "whatsapp": {
     "number": "972587078708",
-    "greeting": "היי, הגעתי דרך אתר FLOA ואשמח לשיחת מיפוי קצרה"
+    "greeting": "היי, הגעתי דרך אתר FLOA ואשמח לשיחה קצרה"
   },
   "leadEndpoint": "https://floa-lead.floa-il.workers.dev/lead",
   "formError": "לא הצלחנו לשלוח את הפרטים. אפשר לנסות שוב או לפנות אלינו ב־WhatsApp",

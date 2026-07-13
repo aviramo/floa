@@ -7,7 +7,7 @@ export const home = {
   },
 
   pageName: "דף הבית",
-  waText: "היי, הגעתי דרך אתר FLOA ואשמח לשיחת מיפוי קצרה",
+  waText: "היי, הגעתי דרך אתר FLOA ואשמח לשיחה קצרה",
   waLabel: "לשיחת WhatsApp",
 
   hero: {
