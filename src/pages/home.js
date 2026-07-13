@@ -33,6 +33,7 @@ import { page } from "../layouts/base.js";
 export const render = (ctx) => page(ctx, {
   path: "",
   meta: home.meta,
+  og: home.og,
   waText: home.waText,
   ctaLabel: home.waLabel,
   jsonLd: {
@@ -42,6 +43,9 @@ export const render = (ctx) => page(ctx, {
     slogan: site.slogan,
     description: home.meta.description,
     url: `${site.origin}/`,
+    /* the image and the logo are what a search result can actually SHOW */
+    image: `${site.origin}/${home.og.image}`,
+    logo: `${site.origin}${site.icons.apple}`,
     areaServed: "IL",
     founder: { "@type": "Person", name: site.founder },
   },

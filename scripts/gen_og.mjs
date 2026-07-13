@@ -1,34 +1,43 @@
 /* ==========================================================================
-   Generate the social-share / Open Graph card (assets/og-cover.png).
+   Generate the share cards — ONE PER PAGE (assets/og-*.png).
 
-   The card mirrors the live site: the "Clear Water" paper, the FLOA wordmark,
-   the hero headline, and the signature "everything resolves into one hub"
-   diagram — the same SVG the hero animates, frozen in its connected state.
+   There used to be a single card for the whole site, and it was doing the job
+   badly: it carried a headline, a paragraph AND a row of pills, so on a phone
+   the sub-line and the pills were a grey smudge nobody could read — and the
+   pills still advertised CRM, a service the site no longer offers.
 
-   Rendered in Chromium via Playwright so Hebrew (RTL) and the brand fonts
-   (Rubik + Assistant) come out exactly as on the page. The fonts are pulled
-   from Google Fonts, subset to just the glyphs used, and embedded as data URIs
-   so the render doesn't depend on network timing.
+   A share card is seen at about 300px wide, for about half a second, usually in
+   a WhatsApp thread. So each card here says exactly ONE thing: the FLOA mark,
+   one short line, and the illustration from that page's own hero. Nothing else.
+   The line is `og.title` in the content — never the <title>, which is written
+   for a search engine and is far too long to read at that size.
 
-   Run:  node scripts/gen_og.mjs
+   The art is not redrawn here: the solution pages' hero SVGs are read straight
+   from src/content/hero-art/, and their palette from the real stylesheets, so a
+   card cannot drift away from the page it advertises.
+
+   Rendered in Chromium so Hebrew (RTL) and the brand fonts come out exactly as
+   they do on the page. The fonts are fetched from Google, subset to just the
+   glyphs used, and inlined as data: URIs so the render never depends on network
+   timing.
+
+   Run:  node scripts/gen_og.mjs        (after changing any og.title or hero art)
    ========================================================================== */
 import { execFileSync } from "node:child_process";
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
-// default to a normal resolve; PW lets a non-standard install be pointed at
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+const read = (p) => readFileSync(join(ROOT, p), "utf8");
+
 const pw = await import(process.env.PW || "playwright");
 const chromium = pw.chromium || pw.default?.chromium;
 
-const OUT = "assets/og-cover.png";
+const { home } = await import(pathToFileURL(join(ROOT, "src/content/home.js")).href);
+const { solutions } = await import(pathToFileURL(join(ROOT, "src/content/solutions.js")).href);
 
-// every character the card renders — text= returns one tight woff2 per face
-const CHARS =
-  "FLOA " +
-  "כל פתרון דיגיטלי שהעסק שלך צריך " +
-  "מערכות, אוטומציות ופתרונות דיגיטליים לעסק " +
-  "אתרים · אפליקציות · CRM · תשלומים " +
-  "הכול מחובר למערכת אחת";
-
+/* --- fonts: subset to exactly the glyphs the cards render ------------------ */
 function curl(url) {
   return execFileSync("curl", [
     "-s", "-A",
@@ -38,25 +47,36 @@ function curl(url) {
   ]);
 }
 
-// Build a CSS block where every url(...woff2) is inlined as a data: URI.
-function embeddedFontCss() {
+function embeddedFontCss(chars) {
   const api =
-    "https://fonts.googleapis.com/css2?" +
-    "family=Rubik:wght@600;700&family=Assistant:wght@600;700" +
-    "&text=" + encodeURIComponent([...new Set(CHARS)].join("")) +
+    "https://fonts.googleapis.com/css2?family=Rubik:wght@700" +
+    "&text=" + encodeURIComponent([...new Set(chars)].join("")) +
     "&display=swap";
   let css = curl(api).toString();
-  const urls = [...new Set(css.match(/https:\/\/[^)]+\.woff2/g) || [])];
-  for (const u of urls) {
-    const b64 = curl(u).toString("base64");
-    css = css.split(u).join(`data:font/woff2;base64,${b64}`);
+  for (const u of [...new Set(css.match(/https:\/\/[^)]+\.woff2/g) || [])]) {
+    css = css.split(u).join(`data:font/woff2;base64,${curl(u).toString("base64")}`);
   }
   return css;
 }
 
-// The hero system diagram, frozen "all connected" (lifted from index.html).
+/* --- the art --------------------------------------------------------------
+   A solution page's card wears that page's own hero illustration. The shapes
+   and the palette both come from the real files, so this is the same picture
+   the visitor lands on. */
+const HERO_ART_CSS = read("src/components/hero-art/hero-art.css");
+const TOKENS_CSS = read("src/design/tokens.css");
+
+const heroArt = (slug) => `
+<svg class="hero-illust" viewBox="-24 -14 768 488" role="img">
+${read(`src/content/hero-art/${slug}.svg`)}
+</svg>`;
+
+/* The homepage has no hero SVG of its own — its hero is the animated system
+   diagram. This is that diagram, frozen in the state it settles into: every
+   solution wired into one hub. Lifted from hero-system.js, with the classes
+   resolved to the colours they compute to, so it needs no stylesheet. */
 const DIAGRAM = `
-<svg class="sys" viewBox="0 0 820 470" role="img" aria-label="תרשים מערכת FLOA">
+<svg class="sys" viewBox="0 0 820 470" role="img">
   <defs>
     <linearGradient id="wire" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#7FC5E4"/><stop offset="1" stop-color="#0E8C7E"/>
@@ -75,7 +95,7 @@ const DIAGRAM = `
     <path d="M430 384 C 424 342, 420 306, 416 280"/>
     <path d="M236 352 C 288 322, 332 288, 366 262"/>
   </g>
-  <g class="node">
+  <g>
     <rect x="96" y="52" width="188" height="118" rx="16" filter="url(#cardShadow)" fill="#fff"/>
     <circle cx="118" cy="74" r="4" fill="#C6D3D6"/><circle cx="132" cy="74" r="4" fill="#C6D3D6"/><circle cx="146" cy="74" r="4" fill="#C6D3D6"/>
     <rect x="116" y="94" width="86" height="10" rx="5" fill="#0E8C7E"/>
@@ -83,25 +103,25 @@ const DIAGRAM = `
     <rect x="116" y="132" width="120" height="8" rx="4" fill="#D9E3E1"/>
     <rect x="116" y="150" width="60" height="8" rx="4" fill="#7FC5E4"/>
   </g>
-  <g class="node">
+  <g>
     <rect x="592" y="36" width="86" height="150" rx="16" filter="url(#cardShadow)" fill="#fff"/>
     <rect x="606" y="56" width="58" height="30" rx="8" fill="#0E8C7E"/>
     <rect x="606" y="96" width="58" height="8" rx="4" fill="#D9E3E1"/>
     <rect x="606" y="112" width="44" height="8" rx="4" fill="#D9E3E1"/>
     <rect x="606" y="140" width="58" height="22" rx="8" fill="#7FC5E4"/>
   </g>
-  <g class="node">
+  <g>
     <path d="M660 250 h84 a16 16 0 0 1 16 16 v34 a16 16 0 0 1 -16 16 h-56 l-22 20 v-20 h-6 a16 16 0 0 1 -16 -16 v-34 a16 16 0 0 1 16 -16 z" filter="url(#cardShadow)" fill="#fff"/>
     <rect x="676" y="272" width="52" height="8" rx="4" fill="#D9E3E1"/>
     <rect x="676" y="288" width="34" height="8" rx="4" fill="#0E8C7E"/>
   </g>
-  <g class="node">
+  <g>
     <rect x="352" y="384" width="160" height="60" rx="12" filter="url(#cardShadow)" fill="#fff"/>
     <rect x="368" y="398" width="128" height="12" rx="6" fill="#0E8C7E"/>
     <rect x="368" y="420" width="70" height="8" rx="4" fill="#D9E3E1"/>
     <rect x="452" y="420" width="44" height="8" rx="4" fill="#7FC5E4"/>
   </g>
-  <g class="node">
+  <g>
     <rect x="86" y="330" width="150" height="72" rx="14" filter="url(#cardShadow)" fill="#fff"/>
     <circle cx="106" cy="350" r="5" fill="#0E8C7E"/><rect x="120" y="346" width="98" height="8" rx="4" fill="#D9E3E1"/>
     <circle cx="106" cy="372" r="5" fill="#7FC5E4"/><rect x="120" y="368" width="76" height="8" rx="4" fill="#D9E3E1"/>
@@ -118,59 +138,65 @@ const DIAGRAM = `
   </g>
 </svg>`;
 
-const html = `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8">
+/* --- the cards ------------------------------------------------------------ */
+const cards = [
+  { out: home.og.image, title: home.og.title, art: DIAGRAM },
+  ...solutions.map((s) => ({ out: s.og.image, title: s.og.title, art: heroArt(s.slug) })),
+];
+
+const page = (card) => `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8">
 <style>
-${embeddedFontCss()}
-* { margin:0; box-sizing:border-box; }
-html,body { width:1200px; height:630px; }
+${embeddedFontCss(cards.map((c) => c.title).join("") + "FLOA")}
+${TOKENS_CSS}
+${HERO_ART_CSS}
+/* a card is a still: nothing may be caught mid-animation */
+*, *::before, *::after { animation: none !important; transition: none !important; }
+
+* { margin: 0; box-sizing: border-box; }
+html, body { width: 1200px; height: 630px; }
 body {
-  display:flex; align-items:center; gap:20px;
-  padding:76px 84px;
+  display: flex; align-items: center; gap: 40px;
+  padding: 72px 84px;
   background:
     radial-gradient(1100px 620px at 88% -10%, rgba(127,197,228,.20), transparent 60%),
     radial-gradient(900px 560px at 6% 118%, rgba(14,140,126,.12), transparent 60%),
     #E9F0EE;
-  font-family:"Assistant", system-ui, sans-serif; color:#0F2A33;
+  color: #0F2A33;
 }
-.copy { flex:1 1 52%; min-width:0; }
+.copy { flex: 1 1 50%; min-width: 0; }
 .logo {
-  font-family:"Rubik", sans-serif; font-weight:700; font-size:40px;
-  letter-spacing:.14em; color:#0E8C7E; margin-bottom:26px;
+  font-family: "Rubik", sans-serif; font-weight: 700; font-size: 42px;
+  letter-spacing: .14em; color: #0E8C7E; margin-bottom: 34px;
 }
+/* ONE line, and it is allowed to be big. Nothing competes with it. */
 h1 {
-  font-family:"Rubik", sans-serif; font-weight:700; font-size:66px;
-  line-height:1.12; letter-spacing:-.01em; margin-bottom:26px;
+  font-family: "Rubik", sans-serif; font-weight: 700; font-size: 68px;
+  line-height: 1.18; letter-spacing: -.01em; text-wrap: balance;
 }
-.sub { font-size:29px; font-weight:600; line-height:1.4; color:#24444F; max-width:15ch; }
-.pills { display:flex; flex-wrap:nowrap; gap:10px; margin-top:34px; }
-.pill {
-  font-size:19px; font-weight:600; color:#0A6C61; white-space:nowrap;
-  background:#C9E6DE; border-radius:999px; padding:8px 15px;
-}
-.art { flex:1 1 48%; display:flex; align-items:center; justify-content:center; }
-.sys { width:100%; height:auto; filter:drop-shadow(0 24px 40px rgba(15,42,51,.10)); }
+.rule { width: 96px; height: 6px; border-radius: 3px; background: #0E8C7E; margin-top: 38px; }
+.art { flex: 1 1 50%; display: flex; align-items: center; justify-content: center; min-width: 0; }
+.art svg { width: 100%; height: auto; filter: drop-shadow(0 24px 40px rgba(15,42,51,.10)); }
 </style></head>
 <body>
   <div class="copy">
     <div class="logo">FLOA</div>
-    <h1>כל פתרון דיגיטלי שהעסק שלך צריך</h1>
-    <p class="sub">מערכות, אוטומציות ופתרונות דיגיטליים שמחברים את כל העסק למערכת אחת</p>
-    <div class="pills">
-      <span class="pill">אתרים</span><span class="pill">אפליקציות</span>
-      <span class="pill">אוטומציות</span><span class="pill">CRM</span>
-    </div>
+    <h1>${card.title}</h1>
+    <div class="rule"></div>
   </div>
-  <div class="art">${DIAGRAM}</div>
+  <div class="art">${card.art}</div>
 </body></html>`;
 
 const browser = await chromium.launch();
-const page = await browser.newPage({
-  viewport: { width: 1200, height: 630 },
-  deviceScaleFactor: 1, // OG spec size; keeps the file light for WhatsApp
-});
-await page.setContent(html, { waitUntil: "load" });
-await page.evaluate(() => document.fonts.ready);
-const buf = await page.screenshot({ type: "png" });
-writeFileSync(OUT, buf);
+for (const card of cards) {
+  const p = await browser.newPage({
+    viewport: { width: 1200, height: 630 },
+    deviceScaleFactor: 1,        // the OG spec size; keeps the file light for WhatsApp
+  });
+  await p.setContent(page(card), { waitUntil: "load" });
+  await p.evaluate(() => document.fonts.ready);
+  const buf = await p.screenshot({ type: "png" });
+  writeFileSync(join(ROOT, card.out), buf);
+  console.log(`  ${card.out}  ${(buf.length / 1024).toFixed(0)} KB  "${card.title}"`);
+  await p.close();
+}
 await browser.close();
-console.log("wrote", OUT, buf.length, "bytes");

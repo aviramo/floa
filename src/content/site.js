@@ -18,15 +18,29 @@ export const site = {
   email: "info@floa.co.il",
   copyright: "© FLOA. כל הזכויות שמורות",
 
+  /* The share card. Every page overrides `image`, `title` and `alt` with one of
+     its own (see og.* in home.js and solutions.js); only the size is shared,
+     because every card is generated at the OG spec size.
+     Cards are built by scripts/gen_og.mjs — not by build.mjs. */
   og: {
-    image: "assets/og-cover.png",
+    image: "assets/og-home.png",
     width: 1200,
     height: 630,
-    alt: "FLOA. כל פתרון דיגיטלי שהעסק שלך צריך, מחובר למערכת אחת",
+    alt: "FLOA. אתרים, אפליקציות ואוטומציות לעסק",
   },
 
   fonts: "https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=JetBrains+Mono:wght@400;500&family=Rubik:wght@500;600;700&display=swap",
-  favicon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%230E8C7E'/%3E%3Ctext x='50' y='68' font-family='Arial' font-size='52' font-weight='700' fill='white' text-anchor='middle'%3EF%3C/text%3E%3C/svg%3E",
+
+  /* Real files at the site root, not a data: URI. Browsers take a data: URI
+     happily; crawlers do not — Google's search-result favicon and WhatsApp's
+     preview both fetch a FILE, so the old inline icon meant the site had no icon
+     in either of the two places anyone would ever see one.
+     Built by scripts/gen_favicon.py. */
+  icons: {
+    ico: "/favicon.ico",                    // 16+32+48; the one Google fetches
+    svg: "/favicon.svg",                    // crisp at any size
+    apple: "/apple-touch-icon.png",         // 180x180, iOS home screen
+  },
 };
 
 /* the reassurance under every hero's buttons */

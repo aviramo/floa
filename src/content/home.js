@@ -2,8 +2,16 @@
    process, the projects, the quotes, the form, the footer — it imports instead. */
 export const home = {
   meta: {
-    title: "FLOA | אתרים, אפליקציות ואוטומציות שעוזרים לעסק לעבוד טוב יותר",
-    description: "מחדדים את המסר, בונים את הממשק ומחברים את התהליכים. FLOA מתכננת ובונה מדף נחיתה ועד מערכת שמנהלת את העבודה, כדי שהעסק יעבוד ברור ומסודר.",
+    title: "FLOA | אתרים, אפליקציות ואוטומציות לעסק",
+    description: "מחדדים את המסר, בונים את הממשק ומחברים את התהליכים. מדף נחיתה ועד מערכת שמנהלת את העבודה, בכתובת אחת.",
+  },
+
+  /* the share card. `title` is the ONLY text on it, so it has to carry the page
+     on its own, at a glance, on a phone. See scripts/gen_og.mjs. */
+  og: {
+    image: "assets/og-home.png",
+    title: "אתרים, אפליקציות ואוטומציות לעסק",
+    alt: "FLOA. אתרים, אפליקציות ואוטומציות לעסק",
   },
 
   pageName: "דף הבית",

@@ -12,13 +12,18 @@ import { footerContent, site } from "../content/site.js";
    whatsapp-button.client.js turns it into the href of every WhatsApp button on
    the page, so all of them open the same, on-topic conversation.
 
+   `og` is the page's OWN share card — { image, alt } — because a shared card
+   cannot say what a particular page is, and in a WhatsApp thread that card IS
+   the page. A page that passes none falls back to the site's.
+
    { path, meta:{title,description}, og, jsonLd, waText, ctaLabel, body }
    ========================================================================== */
-export function page(ctx, { path = "", meta, og = true, jsonLd, waText, ctaLabel, body }) {
+export function page(ctx, { path = "", meta, og = {}, jsonLd, waText, ctaLabel, body }) {
   const url = `${site.origin}/${path}`;
-  const ogImage = `${site.origin}/${site.og.image}`;
+  const card = { ...site.og, ...og };
+  const ogImage = `${site.origin}/${card.image}`;
 
-  const social = og && html`
+  const social = og !== false && html`
   <!-- Open Graph. The image must be an absolute URL on the host that actually
        serves the site. Social crawlers reject a relative path. -->
   <meta property="og:type" content="website">
@@ -28,9 +33,9 @@ export function page(ctx, { path = "", meta, og = true, jsonLd, waText, ctaLabel
   <meta property="og:title" content="${meta.title}">
   <meta property="og:description" content="${meta.description}">
   <meta property="og:image" content="${ogImage}">
-  <meta property="og:image:width" content="${site.og.width}">
-  <meta property="og:image:height" content="${site.og.height}">
-  <meta property="og:image:alt" content="${site.og.alt}">
+  <meta property="og:image:width" content="${card.width}">
+  <meta property="og:image:height" content="${card.height}">
+  <meta property="og:image:alt" content="${card.alt}">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${meta.title}">
   <meta name="twitter:description" content="${meta.description}">
@@ -57,7 +62,12 @@ ${social}
   <script>document.documentElement.className += " js";</script>
 
   <link rel="stylesheet" href="${ctx.url(ctx.assets.css)}">
-  <link rel="icon" href="${raw(site.favicon)}">
+
+  <!-- Real files, root-absolute. A crawler looks for /favicon.ico by convention
+       and will not read a data: URI, which is what this used to be. -->
+  <link rel="icon" href="${site.icons.ico}" sizes="any">
+  <link rel="icon" type="image/svg+xml" href="${site.icons.svg}">
+  <link rel="apple-touch-icon" href="${site.icons.apple}">
 ${jsonLd ? html`
   <script type="application/ld+json">
 ${raw(JSON.stringify(jsonLd, null, 2))}
