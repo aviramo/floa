@@ -42,12 +42,13 @@ export const contact = (ctx, { head, fields, submitLabel, note, or, success }, {
             <input type="text" id="company" name="company" tabindex="-1" autocomplete="off">
           </div>
 
-          <!-- ghost, not primary: WhatsApp is the loud action on every page of the
-               site, and it sits right below this one. Two solid teal pills stacked
-               would be two primaries, so the pair here is the same pair the hero
-               already uses — WhatsApp filled, "leave your details" outlined. -->
+          <!-- The primary, and the only one in this panel. WhatsApp is the loud
+               action everywhere else on the page, but not here: a visitor reading
+               "would you rather we called you back?" came for the callback, and
+               WhatsApp is the alternative offered under the rule below. So the
+               submit is the filled pill and WhatsApp wears the quiet skin. -->
           <div class="form-actions">
-            ${button(ctx, { type: "submit", label: submitLabel, size: "lg", block: true, variant: "ghost" })}
+            ${button(ctx, { type: "submit", label: submitLabel, size: "lg", block: true })}
           </div>
         </form>
 
@@ -60,6 +61,6 @@ export const contact = (ctx, { head, fields, submitLabel, note, or, success }, {
 
         ${waLabel && html`<div class="contact-wa">
           <p class="contact-or">${or}</p>
-          ${waButton(ctx, { label: waLabel, block: true })}
+          ${waButton(ctx, { label: waLabel, variant: "ghost", block: true })}
         </div>`}
       </div>`;
