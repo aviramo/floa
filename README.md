@@ -67,14 +67,26 @@ src/
 
 ### Firestore Security Rule
 
-יצירה בלבד, ללא קריאה:
+הציבור יוצר לידים בלבד; **מנהלים מורשים** (רשימת כתובות ה-Gmail) קוראים ומעדכנים.
+זהו מקור האמת להרשאה — לא הקוד בדפדפן. יש לעדכן את רשימת הכתובות גם כאן וגם
+ב-`js/admin-core.js` (`ADMIN_EMAILS`).
 
 ```
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+          && request.auth.token.email_verified == true
+          && request.auth.token.email in [
+               "ofir.aviram@gmail.com"
+             ];
+    }
+
     match /leads/{leadId} {
-      allow read, update, delete: if false;
+      allow read:   if isAdmin();
+      allow update, delete: if isAdmin();
       allow create: if
         request.resource.data.name is string &&
         request.resource.data.name.size() > 0 &&
@@ -91,6 +103,35 @@ service cloud.firestore {
   }
 }
 ```
+
+## אזור הניהול — `/admin/`
+
+הדף השביעי. אינו נבנה מהקומפוננטות (הוא אפליקציית לקוח דינמית) ולכן יושב ישירות
+תחת `admin/`, עם JS נפרד שאינו נכנס ל-`js/main.js` הציבורי. `noindex`.
+
+```
+admin/index.html      רשימת הלידים: חיפוש חופשי + סינון סוג פתרון + סינון סטטוס
+admin/lead.html?id=…  דף טיפול בליד יחיד: כל השדות + עדכון סטטוס והערות
+js/admin-core.js      אתחול Firebase, שער הזדהות Google, רשימת המנהלים
+js/admin-list.js      לוגיקת הרשימה
+js/admin-lead.js      לוגיקת דף הטיפול
+css/admin.css         סגנון הניהול (נשען על tokens שב-css/styles.css)
+```
+
+**חיפוש וסינון:** חיפוש חופשי סורק שם, טלפון, שם עסק, סוג הפתרון והבקשה (כל מילה
+צריכה להימצא). קומבו-בוקס נוסף מסנן לפי סוג הפתרון (נבנה מהערכים שקיימים בפועל),
+וקומבו סטטוס מסנן חדש/בטיפול/טופל. ברירת המחדל: הלידים הפתוחים (חדש + בטיפול).
+
+**סטטוס:** לידים חדשים מהטופס נשמרים ללא שדה `status` ומוצגים כ"חדש". דף הטיפול
+מעדכן `status` + `notes` + `handledAt` + `handledBy`.
+
+### הפעלה (חד-פעמי, בקונסולת Firebase)
+
+1. **Authentication → Sign-in method** → להפעיל את הספק **Google**.
+2. **Authentication → Settings → Authorized domains** → לוודא ש-`floa.co.il`
+   מופיע (ולהוסיף `localhost` לבדיקות מקומיות).
+3. **Firestore → Rules** → להדביק את הכללים שלמעלה ו-Publish.
+4. את הכתובת המורשית לעדכן בשני מקומות: בכללים למעלה וב-`js/admin-core.js`.
 
 ## תמונות שממתינות לצילום אמיתי
 
