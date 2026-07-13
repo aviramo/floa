@@ -7,24 +7,9 @@ export const projects = {
     href: "https://play.google.com/store/apps/details?id=com.aviramo.once",
     ariaLabel: "האפליקציה Once",
     linkLabel: "להורדת האפליקציה",
-    /* Only real screens of the real product. assets/project-once.webp was a
-       rendered iPhone mockup of an interface that does not exist — it is not
-       shown anywhere. The two Android screens are held open until the real
-       captures land; drop the file in assets/ and swap the placeholder for
-       { src, width, height, alt }. */
+    /* The product, shown twice: the app screen alongside the admin panel. */
     shots: [
-      {
-        placeholder: true,
-        replace: "Replace with real Once screenshot",
-        frame: "mobile",
-        text: "מסך האפליקציה ב-Android",
-      },
-      {
-        placeholder: true,
-        replace: "Replace with real Once screenshot",
-        frame: "mobile",
-        text: "מסך ההזמנה או הצ׳אט",
-      },
+      { src: "assets/project-once.webp", width: 900, height: 1125, alt: "האפליקציה Once — מסך פרופיל עם המסר: לא עוד מאצ׳ים, מפגש אחד אמיתי" },
       { src: "assets/project-once-admin.webp", width: 864, height: 1305, alt: "פאנל הניהול של Once, סקירת פילוח משתמשים ונתוני שימוש" },
     ],
     parts: [
