@@ -14,6 +14,9 @@ import { icon as renderIcon } from "../icon/icon.js";
      row       — lay the badge BESIDE the copy instead of above it
      size      — "sm" tightens the type (the ecosystem tiles, the pains)
      href      — makes the whole card a link
+     cta       — the label of the arrow-link at the foot of a card that HAS an
+                 href. A <span>, not an <a>: the whole card is already the link,
+                 and an anchor inside an anchor is invalid HTML.
      current   — this card is the page you are on: highlighted, not a link
      badge     — the "you are here" pill
      wide      — span the full row, badge beside the copy
@@ -21,7 +24,7 @@ import { icon as renderIcon } from "../icon/icon.js";
    Anything boxed that is NOT one of these is a bug in the content, not a
    missing component.
    ========================================================================== */
-export function card(ctx, { icon, title, text, href, wide, current, badge, accent, shape = "tile", row, size, className, reveal = true }) {
+export function card(ctx, { icon, title, text, href, cta, wide, current, badge, accent, shape = "tile", row, size, className, reveal = true }) {
   const link = href && !current;
   const tag = link ? "a" : "article";
   const beside = row || wide;
@@ -42,7 +45,8 @@ export function card(ctx, { icon, title, text, href, wide, current, badge, accen
 
   const body = html`<h3>${title}</h3>
           ${text && html`<p>${text}</p>`}
-          ${badge && html`<span class="card-badge">${badge}</span>`}`;
+          ${badge && html`<span class="card-badge">${badge}</span>`}
+          ${link && cta && html`<span class="card-cta">${cta}</span>`}`;
 
   return html`<${raw(tag)}${a}>
           ${icon && html`<span class="${cx("card-icon", `card-icon-${shape}`)}" aria-hidden="true">${renderIcon(icon)}</span>`}

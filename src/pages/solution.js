@@ -25,16 +25,17 @@ import { defaultCta, ecosystem, solutions } from "../content/solutions.js";
 import { page } from "../layouts/base.js";
 
 /* ==========================================================================
-   ONE template, five pages.
+   ONE template, two pages.
 
-   A solution page is: the promise, the pain, what gets built, the PROOF that it
-   works, why FLOA, the ask, the process, the objections, the form — and only
-   THEN the links to the other four solutions, so they never compete with the
-   ask above them.
+   A solution page is: the promise, the pain, WHAT can be built, what you get,
+   the PROOF that it works, why FLOA, the ask, the process, the objections, the
+   form — and only THEN the link to the other solution, so it never competes
+   with the ask above it.
 
    Every page differs only through the data in src/content/solutions.js:
-     afterHero — a block straight under the opening (marketing's funnel)
-     intro     — cards straight under the opening (systems-apps' three ways in)
+     afterHero — a block straight under the opening
+     intro     — cards straight under the opening
+     kinds     — the kinds of thing this page builds, after the pain
      proof     — the page proves itself its own way: a flow, a project, a quote
      extras    — the page's own named card sections
      reassure  — a risk-lowering head, right before the CTA band
@@ -126,6 +127,14 @@ ${cardSection(ctx, {
 
 ${solution.urgency && urgency({ text: solution.urgency })}
 
+<!-- what can be built: water, the hue this site uses for how a thing works -->
+${solution.kinds && cardSection(ctx, {
+  id: "kinds",
+  head: solution.kinds.head,
+  cols: solution.kinds.cols,
+  items: solution.kinds.items.map((i) => ({ ...i, accent: "water" })),
+})}
+
 ${section({
   id: "included",
   className: "solutions",
@@ -183,10 +192,10 @@ ${faq({ items: faqContent.items })}`,
 ${section({
   id: "contact",
   className: "contact",
-  children: contact(ctx, contactContent, { page: solution.pageName }),
+  children: contact(ctx, contactContent, { page: solution.pageName, waLabel: solution.waLabel }),
 })}
 
-<!-- the other four solutions: AFTER the ask, never competing with it -->
+<!-- the other solution: AFTER the ask, never competing with it -->
 ${section({
   id: "ecosystem",
   className: "solutions",

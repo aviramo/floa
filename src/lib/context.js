@@ -1,11 +1,12 @@
 /* ==========================================================================
    The render context.
 
-   Pages live at different depths (/index.html vs /websites/index.html), so no
-   component may hardcode a path. Content stores every internal path relative to
-   the SITE root ("assets/ofir.webp", "privacy.html", "websites/"); ctx.url()
-   rewrites it for the page being rendered, and ctx.home() points an anchor at
-   the homepage's section from wherever it is called.
+   Pages live at different depths (/index.html vs /digital-products/index.html),
+   so no component may hardcode a path. Content stores every internal path
+   relative to the SITE root ("assets/ofir.webp", "privacy.html",
+   "digital-products/"); ctx.url() rewrites it for the page being rendered, and
+   ctx.home() points an anchor at the homepage's section from wherever it is
+   called.
    ========================================================================== */
 const ABSOLUTE = /^(?:https?:|mailto:|tel:|data:|#|\/)/;
 

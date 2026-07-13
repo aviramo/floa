@@ -115,4 +115,26 @@
 /* [hidden] must always win over the flex display above */
 .form-success[hidden], .form-error[hidden] { display: none; }
 
+/* --- the faster door, under the form --------------------------------------
+   WhatsApp closes the panel so the visitor who would rather not wait for a call
+   back doesn't have to scroll up to find it. The rule through the label keeps it
+   reading as the ALTERNATIVE to the form above, not as a second submit. */
+.contact-wa { margin-top: var(--s-7); }
+
+.contact-or {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  margin-bottom: var(--s-5);
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+.contact-or::before,
+.contact-or::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--hairline);
+}
+
 @media (max-width: 640px) { .contact-form { grid-template-columns: 1fr; } }

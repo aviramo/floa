@@ -29,7 +29,7 @@ import { page } from "../layouts/base.js";
 
    The order earns the ask: the problem, the approach, the clients who say it
    worked, the proof of what was actually built — and only then the form. The
-   links into the five solutions close the page, under the form. */
+   links into the two solutions close the page, under the form. */
 export const render = (ctx) => page(ctx, {
   path: "",
   meta: home.meta,
@@ -64,7 +64,7 @@ ${section({
 ${cardGrid({
     /* each card is the way into its own solution page */
     children: solutions.map((s) =>
-      card(ctx, { icon: s.icon, title: s.homeTitle, text: s.homeText, wide: s.homeWide, href: `${s.slug}/` })
+      card(ctx, { icon: s.icon, title: s.homeTitle, text: s.homeText, cta: s.homeCta, href: `${s.slug}/` })
     ),
   })}`,
 })}
@@ -74,7 +74,7 @@ ${section({
   className: "problem",
   children: html`${sectionHead(home.problem.head)}
 ${cardGrid({
-    cols: 4,
+    cols: 3,
     /* the pains are clay — the one hue on the site that means "this hurts" */
     children: home.problem.items.map((item) => card(ctx, { ...item, accent: "clay", size: "sm" })),
   })}
@@ -142,10 +142,10 @@ ${section({
 ${section({
   id: "contact",
   className: "contact",
-  children: contact(ctx, contactContent, { page: home.pageName }),
+  children: contact(ctx, contactContent, { page: home.pageName, waLabel: home.waLabel }),
 })}
 
-<!-- the five solutions: AFTER the ask, never competing with it -->
+<!-- the two solutions: AFTER the ask, never competing with it -->
 ${section({
   id: "ecosystem",
   className: "solutions",

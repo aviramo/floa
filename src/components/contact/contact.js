@@ -1,20 +1,22 @@
 import { attrs, html } from "../../lib/html.js";
 import { button } from "../button/button.js";
 import { sectionHead } from "../section-head/section-head.js";
+import { waButton } from "../whatsapp-button/whatsapp-button.js";
 
-/* The secondary way in, for the visitor who would rather not open WhatsApp.
+/* The closing ask, and the last thing on every page above the ecosystem row.
 
-   It asks for a name and a phone number and nothing else — no email, no company,
-   no service picker, no free text. Every extra field is labour, and labour is
-   what a fallback path can least afford. WhatsApp is the primary action and it
-   lives in the hero, the band and the dock; it deliberately does NOT appear
-   inside this panel too.
+   The form asks for a name and a phone number and nothing else — no email, no
+   company, no service picker, no free text. Every extra field is labour, and
+   labour is what a fallback path can least afford. Under it, separated by a
+   rule, sits the page's WhatsApp button: the visitor who does not want to wait
+   for a call back still has the faster door, without scrolling back up.
 
    The page name rides along in a hidden field, so the email that lands in the
-   inbox says which of the six pages the visitor was reading.
+   inbox says which page the visitor was reading.
 
-   content: { head, fields, submitLabel, note, success } */
-export const contact = (ctx, { head, fields, submitLabel, note, success }, { page } = {}) => html`
+   content: { head, fields, submitLabel, note, or, success }
+   { page, waLabel } */
+export const contact = (ctx, { head, fields, submitLabel, note, or, success }, { page, waLabel } = {}) => html`
       <div class="contact-panel reveal">
         ${sectionHead({ ...head, reveal: false })}
 
@@ -51,4 +53,9 @@ export const contact = (ctx, { head, fields, submitLabel, note, success }, { pag
           <strong>${success.title}</strong>
           <span>${success.text}</span>
         </div>
+
+        ${waLabel && html`<div class="contact-wa">
+          <p class="contact-or">${or}</p>
+          ${waButton(ctx, { label: waLabel, block: true })}
+        </div>`}
       </div>`;

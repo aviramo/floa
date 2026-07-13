@@ -8,10 +8,19 @@ const ICONS = {
   leads:      `<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 8h5M16 12h5M16 16h3"/>`,
   automation: `<path d="M12 3v3M12 18v3M4.2 7.5l2.6 1.5M17.2 15l2.6 1.5M4.2 16.5l2.6-1.5M17.2 9l2.6-1.5"/><circle cx="12" cy="12" r="3.2"/>`,
   app:        `<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>`,
-  marketing:  `<path d="M4 19V9M9 19v-6M14 19v-9M19 19V6"/><path d="M3 21h18"/>`,
   /* an admin screen: sidebar beside panels */
   system:     `<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/>`,
   picture:    `<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M21 15.5 16 11 6 20"/>`,
+  /* bars in a panel: the dashboards, controls and reports an admin screen shows */
+  chart:      `<path d="M4 19V9M9 19v-6M14 19v-9M19 19V6"/><path d="M3 21h18"/>`,
+  /* two links of a chain: systems that already exist, joined up */
+  link:       `<path d="M10.5 13.5a4 4 0 0 0 5.7 0l2.6-2.6a4 4 0 0 0-5.7-5.7l-1.2 1.2"/><path d="M13.5 10.5a4 4 0 0 0-5.7 0l-2.6 2.6a4 4 0 0 0 5.7 5.7l1.2-1.2"/>`,
+  /* a page with a folded corner: the forms, documents and invoices in a flow */
+  doc:        `<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/>`,
+  /* concentric rings: one message, one action, nothing else on the page */
+  target:     `<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>`,
+  /* an arrow coming back round: taking something that exists and lifting it */
+  upgrade:    `<path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"/><path d="M19.5 3.5V6.5H16.5"/><path d="M12 15.5V9M9 12l3-3 3 3"/>`,
 
   check:      { strokeWidth: 2.2, body: `<path d="M20 6 9 17l-5-5"/>` },
   arrow:      { viewBox: "0 0 40 24", strokeWidth: 1.6, body: `<path d="M38 12H2"/><path d="M10 4 2 12l8 8"/>` },

@@ -33,17 +33,17 @@ export const site = {
 export const heroNote = "שיחת מיפוי ראשונית, בלי התחייבות ובלי מצגת מכירה";
 
 /* the label of the hero's SECOND button — the way down to the form. The same on
-   all six pages, because it is the same promise on all six. */
+   every page, because it is the same promise on every one. */
 export const formCta = "השארת פרטים";
 
 /* --- what the browser needs, straight from the same source ---------------- */
 export const runtime = {
   whatsapp: {
     number: "972587078708",                                       // +972 58-707-8708
-    /* the fallback opening line. Each of the six pages overrides it with one of
-       its own via <body data-wa-text> (see whatsapp-button.client.js), so the
-       conversation starts on the subject the visitor was actually reading. */
-    greeting: "היי, הגעתי לאתר FLOA ורציתי לבדוק איך אפשר לשפר את התהליכים הדיגיטליים בעסק שלי",
+    /* the fallback opening line. Each page overrides it with one of its own via
+       <body data-wa-text> (see whatsapp-button.client.js), so the conversation
+       starts on the subject the visitor was actually reading. */
+    greeting: "היי, הגעתי דרך אתר FLOA ואשמח לשיחת מיפוי קצרה",
   },
 
   /* The form posts here and nowhere else. A static site has no server of its
@@ -57,17 +57,17 @@ export const runtime = {
   systemLabels: [
     "אתרים ודפי נחיתה",
     "אפליקציות ומערכות",
-    "WhatsApp, לידים ומכירות",
-    "תשלומים וגבייה",
+    "WhatsApp והתראות",
+    "טפסים ותשלומים",
     "אוטומציות, נתונים ודוחות",
   ],
 };
 
-/* --- the ask: IDENTICAL on all six pages ----------------------------------
-   WhatsApp is the primary action. This is the fallback, for the visitor who
-   would rather be called back — so it asks for the two things a call-back
-   actually needs and nothing else. Every extra field is friction on a path the
-   visitor already chose as their second choice. */
+/* --- the ask: IDENTICAL on every page --------------------------------------
+   The form asks for the two things a call-back actually needs and nothing else.
+   Every extra field is friction. WhatsApp — the primary action everywhere else
+   on the page — closes the panel underneath it, so the visitor who would rather
+   not wait for a call still has the faster door open. */
 export const contactContent = {
   head: {
     eyebrow: "השארת פרטים",
@@ -80,6 +80,7 @@ export const contactContent = {
   ],
   submitLabel: "חזרו אליי",
   note: "ללא התחייבות",
+  or: "או פשוט כתבו לנו",
   success: {
     title: "תודה, הפרטים התקבלו",
     text: "נחזור אליך בהקדם",

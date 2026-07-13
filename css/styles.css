@@ -616,6 +616,27 @@ h1, h2, h3, h4 {
 .card.is-current:hover { transform: none; }
 .card.is-current .card-icon { background: var(--teal); color: #fff; }
 
+/* --- the arrow-link at the foot of a card that is itself a link -------------
+   Not a button: pressing anywhere on the card already goes there. It is a
+   signpost — it names the destination and moves when the card is hovered, so
+   the card reads as clickable without a second, competing control inside it.
+   `margin-top: auto` pins it to the floor, so two cards of unequal copy still
+   end on the same line. Same recipe as .project-link. */
+.card-cta {
+  margin-top: auto;
+  padding-top: var(--s-6);
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  color: var(--accent-dark);
+  transition: color .18s var(--ease);
+}
+.card-cta::after { content: "←"; transition: transform .2s var(--ease); }
+.card:hover .card-cta::after { transform: translateX(-4px); }
+
 .card-badge {
   align-self: flex-start;
   margin-top: var(--s-3);
@@ -1415,6 +1436,28 @@ h1, h2, h3, h4 {
 }
 /* [hidden] must always win over the flex display above */
 .form-success[hidden], .form-error[hidden] { display: none; }
+
+/* --- the faster door, under the form --------------------------------------
+   WhatsApp closes the panel so the visitor who would rather not wait for a call
+   back doesn't have to scroll up to find it. The rule through the label keeps it
+   reading as the ALTERNATIVE to the form above, not as a second submit. */
+.contact-wa { margin-top: var(--s-7); }
+
+.contact-or {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  margin-bottom: var(--s-5);
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+.contact-or::before,
+.contact-or::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--hairline);
+}
 
 @media (max-width: 640px) { .contact-form { grid-template-columns: 1fr; } }
 

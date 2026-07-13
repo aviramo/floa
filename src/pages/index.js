@@ -12,8 +12,8 @@ import { render as renderSolution } from "./solution.js";
    The site map. Every page the build emits is one entry here.
 
    `base` is how deep the page sits (for assets and links); `homeHref` is how it
-   points back at the homepage. Add a sixth solution to src/content/solutions.js
-   and its page appears here on its own.
+   points back at the homepage. Add a solution to src/content/solutions.js and
+   its page appears here on its own.
    ========================================================================== */
 const at = (assets, depth) => context({
   assets,

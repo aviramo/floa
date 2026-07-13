@@ -4,7 +4,7 @@
 
 ## הדף נבנה, לא נערך
 
-קבצי ה-HTML בשורש (`index.html`, `websites/index.html`, `privacy.html` וכו') הם **תוצרי בילד**. אין לערוך אותם ישירות — כל עריכה בהם תימחק בבילד הבא.
+קבצי ה-HTML בשורש (`index.html`, `digital-products/index.html`, `privacy.html` וכו') הם **תוצרי בילד**. אין לערוך אותם ישירות — כל עריכה בהם תימחק בבילד הבא.
 
 - **מקור האמת:** `src/` (רכיבים ותוכן הדפים) ו-`css/styles.css`
 - **לבנות:** `node build.mjs`
