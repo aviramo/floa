@@ -101,7 +101,7 @@ ${section({
   className: "solutions",
   children: html`${sectionHead(home.proof.head)}
 ${cardGrid({
-    cols: 3,
+    cols: 4,
     /* proof is amber, here and on every solution page */
     children: home.proof.items.map((item) => card(ctx, { ...item, accent: "amber" })),
   })}`,

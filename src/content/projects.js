@@ -9,7 +9,7 @@ export const projects = {
     linkLabel: "להורדת האפליקציה",
     /* The product, shown twice: the app screen alongside the admin panel. */
     shots: [
-      { src: "assets/project-once.webp", width: 900, height: 1125, alt: "האפליקציה Once — מסך פרופיל עם המסר: לא עוד מאצ׳ים, מפגש אחד אמיתי" },
+      { src: "assets/project-once.webp", width: 900, height: 1125, alt: "האפליקציה Once, מסך פרופיל עם המסר: לא עוד מאצ׳ים, מפגש אחד אמיתי" },
       { src: "assets/project-once-admin.webp", width: 864, height: 1305, alt: "פאנל הניהול של Once, סקירת פילוח משתמשים ונתוני שימוש" },
     ],
     parts: [

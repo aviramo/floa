@@ -36,7 +36,7 @@ export const heroSystem = ({ caption, feature } = {}) => html`
               <path d="M236 352 C 288 322, 332 288, 366 262"/>
             </g>
 
-            <!-- 01 — website / landing page -->
+            <!-- 01. website / landing page -->
             <g class="node" data-node="0">
               <rect class="plate" x="96" y="52" width="188" height="118" rx="16" filter="url(#cardShadow)"/>
               <circle class="dot" cx="118" cy="74" r="4"/><circle class="dot" cx="132" cy="74" r="4"/><circle class="dot" cx="146" cy="74" r="4"/>
@@ -46,7 +46,7 @@ export const heroSystem = ({ caption, feature } = {}) => html`
               <rect class="bar bar-blue" x="116" y="150" width="60" height="8" rx="4"/>
             </g>
 
-            <!-- 02 — app -->
+            <!-- 02. app -->
             <g class="node" data-node="1">
               <rect class="plate" x="592" y="36" width="86" height="150" rx="16" filter="url(#cardShadow)"/>
               <rect class="bar bar-teal" x="606" y="56" width="58" height="30" rx="8"/>
@@ -55,14 +55,14 @@ export const heroSystem = ({ caption, feature } = {}) => html`
               <rect class="bar bar-blue" x="606" y="140" width="58" height="22" rx="8"/>
             </g>
 
-            <!-- 03 — WhatsApp / leads -->
+            <!-- 03. WhatsApp / messages -->
             <g class="node" data-node="2">
               <path class="plate" d="M660 250 h84 a16 16 0 0 1 16 16 v34 a16 16 0 0 1 -16 16 h-56 l-22 20 v-20 h-6 a16 16 0 0 1 -16 -16 v-34 a16 16 0 0 1 16 -16 z" filter="url(#cardShadow)"/>
               <rect class="bar" x="676" y="272" width="52" height="8" rx="4"/>
               <rect class="bar bar-teal" x="676" y="288" width="34" height="8" rx="4"/>
             </g>
 
-            <!-- 04 — payments -->
+            <!-- 04. payments -->
             <g class="node" data-node="3">
               <rect class="plate" x="352" y="384" width="160" height="60" rx="12" filter="url(#cardShadow)"/>
               <rect class="bar bar-teal" x="368" y="398" width="128" height="12" rx="6"/>
@@ -70,7 +70,7 @@ export const heroSystem = ({ caption, feature } = {}) => html`
               <rect class="bar bar-blue" x="452" y="420" width="44" height="8" rx="4"/>
             </g>
 
-            <!-- 05 — data / automations -->
+            <!-- 05. data / automations -->
             <g class="node" data-node="4">
               <rect class="plate" x="86" y="330" width="150" height="72" rx="14" filter="url(#cardShadow)"/>
               <circle class="dot dot-teal" cx="106" cy="350" r="5"/>

@@ -20,7 +20,7 @@ export function page(ctx, { path = "", meta, og = true, jsonLd, waText, ctaLabel
 
   const social = og && html`
   <!-- Open Graph. The image must be an absolute URL on the host that actually
-       serves the site — social crawlers reject a relative path. -->
+       serves the site. Social crawlers reject a relative path. -->
   <meta property="og:type" content="website">
   <meta property="og:locale" content="${site.locale}">
   <meta property="og:site_name" content="${site.brand}">
