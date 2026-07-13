@@ -1,0 +1,13 @@
+# Local state, not source.
+
+# wrangler's own cache: which Cloudflare account you are logged into, and its
+# build scratch. Machine-local, churns on every login and deploy.
+worker/.wrangler/
+.wrangler/
+
+# npm, if a tool ever installs here
+node_modules/
+
+# OS noise
+Thumbs.db
+.DS_Store
