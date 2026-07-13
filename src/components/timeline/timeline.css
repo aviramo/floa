@@ -79,6 +79,18 @@
 .tl-body h3 { font-size: var(--fs-h3); margin-bottom: var(--s-1); }
 .tl-body p { color: var(--muted); font-size: var(--fs-sm); }
 
+/* A step's own line, set off by a rule in that step's hue (--accent comes from
+   the nth-child map above, so it needs no colour of its own). Darker ink than
+   the copy above it, because it is the founder speaking and not a caption. */
+.tl-note {
+  margin-top: var(--s-4);
+  padding-top: var(--s-4);
+  padding-inline-start: var(--s-4);
+  border-top: 1px solid var(--hairline-2);
+  border-inline-start: 2px solid var(--accent);
+}
+.tl-body .tl-note { color: var(--ink-2); }
+
 @media (max-width: 640px) {
   .tl-item { grid-template-columns: 44px 1fr; gap: var(--s-4); }
   .tl-num { width: 44px; height: 44px; font-size: .85rem; }

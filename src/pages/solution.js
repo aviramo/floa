@@ -173,6 +173,10 @@ ${solution.reassure && section({
   children: sectionHead(solution.reassure),
 })}
 
+<!-- the years behind the work, said once, in FLOA's own teal — the last thing
+     read before the ask -->
+${solution.trust && urgency({ text: solution.trust, accent: "teal" })}
+
 ${ctaBand(ctx, { ...(solution.cta ?? defaultCta), cta: solution.waLabel })}
 
 ${section({

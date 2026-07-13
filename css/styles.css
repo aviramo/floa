@@ -395,19 +395,35 @@ h1, h2, h3, h4 {
 /* ======================================================================
    components/urgency/urgency.css
    ====================================================================== */
-/* This band names the cost of waiting, so it is clay — it belongs to the pains
-   it follows, not to the offer. Clear but never aggressive: the colour is spent
-   on a single edge and the faintest wash, the ink stays calm, and there is no
+/* One line in a tinted panel. Clear but never aggressive: the colour is spent on
+   a single edge and the faintest wash, the ink stays calm, and there is no
    warning mark and no motion beyond the shared reveal. It is not an error and
-   must never look like one (see --danger in tokens.css). */
-.urgency { padding-block: var(--s-6); }
+   must never look like one (see --danger in tokens.css).
+
+   The hue is not decoration — it says who is speaking. The band defaults to
+   clay, because it usually names the cost of waiting and so belongs to the pains
+   it follows. Every rule below reads it from --accent, so a variant only ever
+   re-points these two. */
+.urgency {
+  --accent: var(--clay);
+  --accent-tint: var(--clay-tint);
+  padding-block: var(--s-6);
+}
+
+/* teal: FLOA speaking in its own voice — the years behind the work, said once,
+   right before the ask. */
+.urgency-teal {
+  --accent: var(--teal);
+  --accent-tint: var(--teal-tint);
+}
+
 .urgency-line {
   max-width: 720px;
   margin-inline: auto;
   padding: var(--s-5) var(--pad-panel);
-  background: color-mix(in srgb, var(--clay-tint) 40%, var(--surface));
-  border: 1px solid color-mix(in srgb, var(--clay) 22%, transparent);
-  border-inline-start: 4px solid var(--clay);
+  background: color-mix(in srgb, var(--accent-tint) 40%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  border-inline-start: 4px solid var(--accent);
   border-radius: var(--r);
   text-align: center;
   color: var(--ink-2);
@@ -1087,6 +1103,18 @@ h1, h2, h3, h4 {
 .tl-body h3 { font-size: var(--fs-h3); margin-bottom: var(--s-1); }
 .tl-body p { color: var(--muted); font-size: var(--fs-sm); }
 
+/* A step's own line, set off by a rule in that step's hue (--accent comes from
+   the nth-child map above, so it needs no colour of its own). Darker ink than
+   the copy above it, because it is the founder speaking and not a caption. */
+.tl-note {
+  margin-top: var(--s-4);
+  padding-top: var(--s-4);
+  padding-inline-start: var(--s-4);
+  border-top: 1px solid var(--hairline-2);
+  border-inline-start: 2px solid var(--accent);
+}
+.tl-body .tl-note { color: var(--ink-2); }
+
 @media (max-width: 640px) {
   .tl-item { grid-template-columns: 44px 1fr; gap: var(--s-4); }
   .tl-num { width: 44px; height: 44px; font-size: .85rem; }
@@ -1232,6 +1260,19 @@ h1, h2, h3, h4 {
 /* ======================================================================
    components/approach/approach.css
    ====================================================================== */
+/* A line of lead copy above the picture and the principles. Same measure and
+   same type as the lead under any section head (.section-head p), because that
+   is what it is — the section's head continuing to speak, not a new device. */
+.approach-intro {
+  max-width: 40rem;
+  margin-inline: auto;
+  margin-bottom: var(--head-gap);
+  text-align: center;
+  font-size: var(--fs-lead);
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
 .approach-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

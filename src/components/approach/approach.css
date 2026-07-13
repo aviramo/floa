@@ -1,3 +1,16 @@
+/* A line of lead copy above the picture and the principles. Same measure and
+   same type as the lead under any section head (.section-head p), because that
+   is what it is — the section's head continuing to speak, not a new device. */
+.approach-intro {
+  max-width: 40rem;
+  margin-inline: auto;
+  margin-bottom: var(--head-gap);
+  text-align: center;
+  font-size: var(--fs-lead);
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
 .approach-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
