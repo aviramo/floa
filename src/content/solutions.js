@@ -1,6 +1,5 @@
 import { readFileSync } from "node:fs";
 import { html } from "../lib/html.js";
-import { projectsHead } from "./site.js";
 
 /* Each solution's hero shapes live beside this file as plain SVG, so the picture
    can be edited as a picture. */
@@ -9,12 +8,14 @@ const shapes = (slug) => readFileSync(new URL(`./hero-art/${slug}.svg`, import.m
 /* a link to another solution, from inside a line of copy */
 const to = (ctx, slug, text) => html`<a href="${ctx.url(`${slug}/`)}">${text}</a>`;
 
-/* --- shared by all five: the ecosystem section ----------------------------- */
+/* --- shared by all five: the ecosystem row, which now sits BELOW the form ---
+   The links to the other solutions must not compete with the ask, so they wait
+   until after it. */
 export const ecosystem = {
   head: {
     eyebrow: "התמונה המלאה",
-    title: "אפשר להתחיל מפתרון אחד ולחבר רק כשצריך",
-    text: "לא חייבים להחליף הכול. FLOA בונה את הפתרון שהעסק צריך עכשיו ומתכננת אותו כך שיוכל להתחבר בהמשך לשאר הפעילות",
+    title: "אפשר להתחיל מפתרון אחד ולהתחבר לתמונה המלאה",
+    text: "לא חייבים להחליף הכול. בונים את מה שהעסק צריך עכשיו, ומתכננים אותו כך שיוכל להתחבר בהמשך לשאר",
   },
   badge: "אתם כאן",
 };
@@ -22,13 +23,17 @@ export const ecosystem = {
 /* The shared CTA band. A solution may override it with something of its own. */
 export const defaultCta = {
   title: "לא צריך לדעת איזה פתרון לבקש",
-  text: "בשיחת המיפוי נבין מה מעכב את העסק ואיזה שילוב של מערכות, תהליכים ואוטומציות ייתן את השינוי המשמעותי ביותר",
-  cta: "מיפוי העסק",
+  text: "בשיחת המיפוי נבין מה מעכב את העסק ומה ייתן את השינוי המשמעותי ביותר",
 };
 
 /* ==========================================================================
    The five solutions. Each object IS a page: the nav card on the homepage, the
-   card in every ecosystem grid, and the landing page itself — all from here.
+   tile in every ecosystem row, and the landing page itself — all from here.
+
+   Every page carries:
+     pageName  — the name that lands in the lead email's subject and body
+     waText    — the WhatsApp opening line, unique to this page's subject
+     waLabel   — the label on every WhatsApp button on this page
    ========================================================================== */
 export const solutions = [
   {
@@ -39,31 +44,23 @@ export const solutions = [
     /* how the homepage's solutions grid puts it */
     homeTitle: "להפוך יותר מבקרים לפניות",
     homeText: "אתרים ודפי נחיתה שמחדדים את ההצעה, יוצרים אמון ומובילים את המבקר לפעולה ברורה",
-    /* which option the contact form lands on, coming from this page */
-    formValue: "אתר או דף נחיתה",
 
-    /* the line of urgency under the pains, the WhatsApp opening line, the sticky
-       CTA label, and the closing form's own copy — all specific to this page */
+    pageName: "אתרים ודפי נחיתה",
+    waText: "היי, הגעתי מהעמוד על אתרים ודפי נחיתה ורציתי לבדוק איך אפשר לשפר את האתר או דף הנחיתה שלי",
+    waLabel: "לבדיקת האתר ב־WhatsApp",
+
     urgency: "כל מבקר שעוזב בלי להבין למה לבחור בכם ומה לעשות עכשיו הוא הזדמנות שלא חוזרת",
-    waText: "היי אופיר, הגעתי דרך עמוד האתרים של FLOA ואני רוצה לבדוק איך להביא יותר פניות",
-    ctaLabel: "בדיקת האתר",
-    contact: {
-      title: "בואו נבדוק מה עוצר את האתר מלהביא יותר פניות",
-      text: "נבחן את המסר, המבנה, ההנעה לפעולה והחיבור של הפניות להמשך התהליך",
-      submitLabel: "בואו נבדוק את האתר",
-    },
 
     meta: {
-      title: "FLOA | אתרים ודפי נחיתה שהופכים מבקרים ללקוחות",
-      description: "FLOA מתכננת ובונה אתרים ודפי נחיתה שמחדדים את ההצעה, יוצרים אמון ומובילים כל מבקר לפעולה — ומחוברים ישר למערכת הלידים והמכירות של העסק.",
+      title: "FLOA | דפי נחיתה ואתרים שממירים מבקרים לפניות",
+      description: "FLOA מחדדת את ההצעה, בונה היררכיה ברורה ומחברת את הדף ל־CRM, ל־WhatsApp ולמדידה, כדי שכל קליק יקבל סיכוי אמיתי להפוך לפנייה.",
       serviceType: "בניית אתרים ודפי נחיתה",
       serviceName: "בניית אתרים ודפי נחיתה | FLOA",
     },
 
     hero: {
-      title: "אתר שלא רק נראה טוב. אחד שמביא פניות",
-      text: "FLOA מתכננת ובונה אתרים ודפי נחיתה שמחדדים את ההצעה, יוצרים אמון תוך שניות ומובילים כל מבקר לפעולה אחת ברורה",
-      cta: "בדיקת האתר",
+      title: "דפי נחיתה ואתרים שממירים מבקרים לפניות",
+      text: "מחדדים את ההצעה, בונים היררכיה ברורה, ומחברים את הדף ל־CRM, WhatsApp ומדידה כדי שכל קליק יקבל סיכוי אמיתי להפוך לפנייה",
       artLabel: "דף נחיתה שהופך מבקר לפנייה",
       shapes: shapes("websites"),
     },
@@ -100,19 +97,28 @@ export const solutions = [
       types: ["אתר תדמית", "דף נחיתה לקמפיין", "מיני־סייט או אתר שירותים", "שדרוג אתר קיים"],
     },
 
-    /* proof: the site we built, and how it actually looks. It reuses the site's
-       existing "work" heading rather than inventing a new one. */
-    /* TODO: add real harpatka.co.il desktop + mobile screenshots here as a
-       proof.media pair once they exist — no placeholder is shown until then. */
+    /* proof, straight after "what gets built": the landing page we actually did */
     proof: {
-      head: projectsHead,
+      head: { eyebrow: "עבודות", title: "דוגמה אמיתית לדף נחיתה שחובר למסרים, תשלום ומדידה" },
       projects: ["harpatka"],
     },
+
+    extras: [
+      {
+        id: "when",
+        head: { eyebrow: "החלטה", title: "מתי צריך דף נחיתה ולא אתר?" },
+        cols: 3,
+        items: [
+          { title: "קמפיין ממוקד", text: "כשיש שירות, מוצר או אירוע אחד שאליו רוצים להפנות את התנועה" },
+          { title: "בדיקת הצעה", text: "כשרוצים לבדוק מסר או שירות חדש לפני שבונים אתר מלא" },
+          { title: "הגדלת פניות", text: "כשצריך מסלול קצר וברור מהמודעה ועד הטופס או ה־WhatsApp" },
+        ],
+      },
+    ],
 
     cta: {
       title: "האתר שלכם צריך לעשות יותר מלהיראות טוב",
       text: "בואו נבדוק איך להפוך אותו לכלי שמייצר פניות",
-      cta: "בדיקת האתר",
     },
 
     ecoNote: (ctx) => html`אתר או דף נחיתה הם התחלה מצוינת. כשמחברים אליהם גם ${to(ctx, "leads-crm", "לידים ומכירות")} ו${to(ctx, "marketing", "מדידה")}, כל מבקר הופך לתהליך שלם.`,
@@ -130,47 +136,40 @@ export const solutions = [
       ],
     },
 
-    /* harpatka is the proof above — the page closes on the words of a client
-       whose site now feeds a real sales process */
     quotes: ["erez"],
   },
 
   {
     slug: "leads-crm",
     icon: "leads",
-    title: "לידים, מכירות ו-CRM",
+    title: "לידים, מכירות ו־CRM",
     tagline: "לרכז כל פנייה ולסגור יותר",
     homeTitle: "להפסיק לאבד לידים",
     homeText: "CRM, WhatsApp, טפסים, משימות, תזכורות, הצעות מחיר ומעקב שמחוברים למסלול מכירה אחד",
-    formValue: "מערך לידים ומכירות",
+
+    pageName: "לידים, מכירות ו־CRM",
+    waText: "היי, הגעתי מהעמוד על לידים ו־CRM ורציתי לבדוק איך אפשר לעשות סדר בטיפול בלידים בעסק שלי",
+    waLabel: "למיפוי הלידים ב־WhatsApp",
 
     urgency: "ליד שלא מקבל המשך בזמן בדרך כלל לא נשאר לחכות",
-    waText: "היי אופיר, הגעתי דרך עמוד הלידים של FLOA ואני רוצה לעשות סדר בתהליך המכירה",
-    ctaLabel: "מיפוי הלידים",
-    contact: {
-      title: "בואו נעצור את הפנייה הבאה מליפול",
-      text: "נמפה מאיפה הפניות מגיעות, מי מטפל בהן ואיפה תהליך המכירה נעצר",
-      submitLabel: "בואו נמפה את הלידים",
-    },
 
     meta: {
-      title: "FLOA | מערכת לידים, מכירות ו-CRM שלא מפספסת פנייה",
-      description: "FLOA בונה מערך לידים אחד שמרכז כל פנייה מכל ערוץ, מציג סטטוס ברור ומוודא שהטיפול ממשיך עד הסגירה — CRM, וואטסאפ, טפסים ותזכורות במסלול מכירה אחד.",
+      title: "FLOA | מערכת לידים ו־CRM שמונעת מפניות ליפול בין הכיסאות",
+      description: "FLOA מרכזת טפסים, WhatsApp, מייל ושיחות למסלול אחד עם אחראי, סטטוס, תזכורות והמשך ברור עד הסגירה — כדי שאף פנייה לא תיפול בין הכיסאות.",
       serviceType: "מערכת לידים, מכירות ו-CRM",
       serviceName: "מערכת לידים, מכירות ו-CRM | FLOA",
     },
 
     hero: {
-      title: "כל הלידים במקום אחד. כל פנייה מקבלת המשך",
-      text: "מרכזים את הפניות, המשימות והמעקב בתהליך מסודר, כדי שתדעו מי פנה, מי מטפל ומה צריך לקרות עכשיו",
-      cta: "מיפוי הלידים",
+      title: "מערכת לידים ו־CRM שמונעת מפניות ליפול בין הכיסאות",
+      text: "טפסים, WhatsApp, מייל ושיחות נכנסים למסלול אחד עם אחראי, סטטוס, תזכורות והמשך ברור עד סגירה",
       artLabel: "לוח לידים: כל פנייה נכנסת לתהליך עד הסגירה",
       shapes: shapes("leads-crm"),
     },
 
     problem: {
       head: {
-        eyebrow: "לידים, מכירות ו-CRM",
+        eyebrow: "לידים, מכירות ו־CRM",
         title: "כמה לקוחות הולכים לאיבוד בדרך",
         text: "כשאין מקום אחד שמרכז את הפניות, כל ליד שנשכח הוא הזדמנות מכירה שאובדת",
       },
@@ -198,16 +197,32 @@ export const solutions = [
       ],
     },
 
-    /* proof: the mail-to-closure path the client runs — the client's own words
-       move down into the testimonials block below, under "מה אומרים לקוחות" */
+    /* proof: the client whose mail now becomes a work card — the flow first, and
+       then, straight after it, the client who lives that flow */
     proof: {
-      flow: ["מייל נכנס", "כרטיס עבודה נפתח", "אחראי משויך", "הטיפול ממשיך"],
+      head: { eyebrow: "מקרה לקוח", title: "ממייל של לקוח לתהליך עבודה מסודר" },
+      flow: ["מייל נכנס", "כרטיס עבודה ב־Trello", "המשך טיפול", "פחות פספוסי הזמנות"],
+      quotes: ["erez"],
     },
+
+    extras: [
+      {
+        id: "setup",
+        head: { eyebrow: "בפועל", title: "מה מקימים בפועל?" },
+        cols: 3,
+        items: [
+          { title: "תהליך מכירה ו־Pipeline", text: "שלבים ברורים שכל ליד עובר, מהפנייה ועד הסגירה" },
+          { title: "אחראי לכל ליד", text: "לכל פנייה יש שם של מי שמטפל בה, לא רק תור אנונימי" },
+          { title: "סטטוסים ותזכורות", text: "רואים איפה כל ליד עומד, והמערכת מזכירה מה ההמשך" },
+          { title: "מסמכים והצעות מחיר", text: "נשלחים ונשמרים מתוך המערכת, מחוברים לכרטיס הליד" },
+          { title: "מעקב אחר מקור הליד", text: "יודעים מאיזה ערוץ, קמפיין או דף הגיעה כל פנייה" },
+        ],
+      },
+    ],
 
     cta: {
       title: "כמה פניות הולכות לכם לאיבוד בלי שתדעו?",
       text: "נמפה את תהליך המכירה ונראה איפה אפשר לעשות סדר",
-      cta: "מיפוי הלידים",
     },
 
     ecoNote: (ctx) => html`מערך לידים חזק ניזון מ${to(ctx, "websites", "אתר שממיר")} ומ${to(ctx, "marketing", "קמפיינים מדויקים")}, ומתייעל עם ${to(ctx, "automations", "אוטומציות")}. זה כוחה של מערכת אחת.`,
@@ -225,47 +240,41 @@ export const solutions = [
       ],
     },
 
-    projects: ["harpatka"],
-    quotes: ["erez", "itzik"],  // "מה אומרים לקוחות" heads this block — erez first
+    quotes: ["itzik"],          // erez already speaks in the proof, right above
   },
 
   {
     slug: "automations",
     icon: "automation",
     title: "אוטומציות",
-    chip: "אוטומציות וייעול תהליכים",     // the hero names the discipline in full
+    chip: "אוטומציות ושיפור תהליכים",     // the hero names the discipline in full
     tagline: "לחסוך שעות של עבודה ידנית",
     homeTitle: "לחסוך שעות של עבודה ידנית",
     homeText: "קליטת מידע, מסמכים, תשלומים, תורים, הודעות ועדכונים שמתרחשים אוטומטית",
-    formValue: "ייעול תהליכים ואוטומציות",
+
+    pageName: "אוטומציות ושיפור תהליכים",
+    waText: "היי, הגעתי מהעמוד על אוטומציות ורציתי לבדוק אילו תהליכים אפשר להפוך לאוטומטיים בעסק שלי",
+    waLabel: "למיפוי אוטומציות ב־WhatsApp",
 
     urgency: "כל יום של עבודה ידנית ממשיך לצבור שעות מבוזבזות, טעויות ועיכובים",
-    waText: "היי אופיר, הגעתי דרך עמוד האוטומציות של FLOA ואני רוצה לבדוק מה אפשר להפסיק לעשות ידנית",
-    ctaLabel: "מיפוי אוטומציות",
-    contact: {
-      title: "בואו נחזיר לעסק את השעות שנשרפות על עבודה ידנית",
-      text: "נזהה אילו פעולות חוזרות על עצמן ומה אפשר להפוך לתהליך אוטומטי, מסודר ואמין",
-      submitLabel: "בואו נמפה את האוטומציות",
-    },
 
     meta: {
-      title: "FLOA | אוטומציות שחוסכות לעסק שעות של עבודה ידנית",
-      description: "FLOA ממפה את התהליכים שאוכלים לכם את הזמן ובונה אוטומציות שמעבירות מידע, מסמכים, תשלומים ועדכונים בין המערכות — בלי ידיים ובלי טעויות.",
-      serviceType: "אוטומציות וייעול תהליכים",
-      serviceName: "אוטומציות וייעול תהליכים | FLOA",
+      title: "FLOA | אוטומציות שמורידות עבודה ידנית ומונעות נפילות",
+      description: "FLOA מחברת טפסים, CRM, WhatsApp, מייל, מסמכים ותשלומים למסלול אוטומטי, מסודר ואמין — פחות עבודה ידנית, פחות טעויות ופחות פניות שנופלות בין הכיסאות.",
+      serviceType: "אוטומציות ושיפור תהליכים",
+      serviceName: "אוטומציות ושיפור תהליכים | FLOA",
     },
 
     hero: {
-      title: "העבודה שחוזרת כל יום לא צריכה להיעשות ביד",
-      text: "בלי העתקות ידניות, בלי לרדוף אחרי משימות ובלי להזין את אותו מידע פעמיים",
-      cta: "מיפוי אוטומציות",
+      title: "אוטומציות שמורידות עבודה ידנית ומונעות נפילות בין הכיסאות",
+      text: "מחברים טפסים, CRM, WhatsApp, מייל, מסמכים ותשלומים למסלול אוטומטי, מסודר ואמין",
       artLabel: "אוטומציה: טריגר אחד מפעיל מסמכים, הודעות ותשלומים",
       shapes: shapes("automations"),
     },
 
     problem: {
       head: {
-        eyebrow: "אוטומציות וייעול תהליכים",
+        eyebrow: "אוטומציות ושיפור תהליכים",
         title: "כמה שעות ביום נשרפות על עבודה שאפשר להפוך לאוטומטית",
         text: "כל העתקה ידנית בין מערכות היא זמן שאבד והזדמנות לטעות",
       },
@@ -287,29 +296,41 @@ export const solutions = [
         { title: "מיפוי התהליכים", text: "מזהים איפה בדיוק נשרפים הזמן והטעויות" },
         { title: "חיבור בין המערכות", text: "טפסים, CRM, וואטסאפ, תשלומים ומסמכים מדברים" },
         { title: "אוטומציות מבוססות טריגר", text: "פעולה אחת מפעילה אוטומטית את הבאה" },
-        { title: "מסמכים ותשלומים בזמן הנכון", text: "הצעות, אישורים, חשבוניות ותזכורות נוצרים ונשלחים אוטומטית כחלק מהתהליך" },
+        { title: "מסמכים ותשלומים בזמן הנכון", text: "הצעות, אישורים, חשבוניות ותזכורות נוצרים ונשלחים כחלק מהתהליך" },
         { title: "תזכורות והתראות", text: "למי שצריך, מתי שצריך, בלי לעקוב ידנית" },
         { title: "בקרות ותיעוד", text: "רואים שכל תהליך רץ כמו שצריך, בזמן אמת" },
       ],
     },
 
-    /* proof: three automations we actually run, then the two clients who run them */
+    /* proof: the three automations we actually run — each one named — and then,
+       straight after them, the two clients whose day they run */
     proof: {
-      head: { title: "ככה זה נראה בפועל" },
+      head: { eyebrow: "בפועל", title: "ככה זה נראה בפועל" },
       flows: [
-        { steps: ["טופס נשלח", "ליד נפתח", "נשלחת הודעה"] },
-        { steps: ["הזמנה מגיעה במייל", "כרטיס עבודה נוצר ב־Trello"] },
-        { steps: ["משימה מסתיימת במחלקה אחת", "המחלקה הבאה מקבלת פעולה"] },
+        { title: "קליטת ליד", steps: ["טופס", "CRM", "הודעה"] },
+        { title: "פתיחת עבודה", steps: ["מייל", "כרטיס עבודה"] },
+        { title: "מעבר בין צוותים", steps: ["משימה הסתיימה", "המחלקה הבאה מתחילה"] },
       ],
-      /* Erez (Dfus Outlet) first, then Itzik (Tel Aviv municipality) — the two
-         clients whose day-to-day work these automations run. */
       quotes: ["erez", "itzik"],
     },
+
+    extras: [
+      {
+        id: "where",
+        head: { eyebrow: "תחומים", title: "איפה זה פוגש את העסק?" },
+        cols: 4,
+        items: [
+          { title: "מכירות", text: "פניות נקלטות, מקבלות אחראי וממשיכות בלי שיזכירו להן" },
+          { title: "שירות", text: "בקשות נפתחות ככרטיס, מקבלות מענה ולא נשארות פתוחות" },
+          { title: "תפעול", text: "משימות עוברות בין צוותים לפי סדר קבוע, לא לפי זיכרון" },
+          { title: "כספים", text: "הצעות, חשבוניות ותזכורות תשלום נוצרות ונשלחות בזמן" },
+        ],
+      },
+    ],
 
     cta: {
       title: "מה עדיין עושים אצלכם ידנית?",
       text: "נזהה את הפעולות שחוזרות על עצמן ונבדוק מה אפשר להפוך לתהליך אוטומטי",
-      cta: "מיפוי אוטומציות",
     },
 
     ecoNote: (ctx) => html`אוטומציות מקבלות משמעות כשהן מחוברות ל${to(ctx, "leads-crm", "מערך הלידים")} ול${to(ctx, "systems-apps", "מערכות שלכם")}. FLOA רואה את התהליך השלם, לא רק חוליה בודדת.`,
@@ -326,8 +347,6 @@ export const solutions = [
         { title: "חיבור של מה שכבר יש", text: "לא עוד כלי חדש, אלא לגרום לקיים לעבוד יחד" },
       ],
     },
-
-    projects: ["once"],         // both clients already speak in the proof above
   },
 
   {
@@ -337,52 +356,37 @@ export const solutions = [
     tagline: "לבנות מה שאין על המדף",
     homeTitle: "לבנות מערכת שלא קיימת על המדף",
     homeText: "אפליקציות, מערכות ניהול, פורטלים, אזורים אישיים, דשבורדים ופאנלים שנבנים סביב העבודה בעסק",
-    formValue: "מערכת או אפליקציה",
+
+    pageName: "מערכות ואפליקציות",
+    waText: "היי, הגעתי מהעמוד על מערכות ואפליקציות ורציתי לבדוק האם נכון לבנות או להתאים מערכת לעסק שלי",
+    waLabel: "לבדיקת היתכנות ב־WhatsApp",
 
     urgency: "ככל שהעסק גדל על אקסלים ופתרונות זמניים, השינוי הופך יקר ומורכב יותר",
-    waText: "היי אופיר, הגעתי דרך עמוד המערכות של FLOA ויש לי צורך במערכת או אפליקציה",
-    ctaLabel: "בדיקת הרעיון",
-    contact: {
-      title: "בואו נבדוק מה באמת נכון לבנות",
-      text: "נבין את הצורך, את המשתמשים ואת התהליך ונבחר בדרך הנכונה לפני שמתחילים לפתח",
-      submitLabel: "בואו נבדוק את הרעיון",
-    },
-    /* the risk-lowering message, shown as its own reassurance right before the
-       page's focused CTA */
-    reassure: {
-      eyebrow: "בלי לבנות יותר מדי",
-      title: "לא תמיד צריך לבנות הכול מאפס",
-      text: "לפני שמפתחים, בודקים אם נכון לבנות מערכת חדשה, להתאים פתרון קיים או לחבר בין כלים שכבר עובדים",
-    },
 
     meta: {
-      title: "FLOA | מערכות ואפליקציות שנבנות סביב העסק שלך",
-      description: "FLOA מאפיינת, מעצבת ומפתחת מערכות, אפליקציות, פורטלים ודשבורדים שנבנים בדיוק סביב איך שהעסק שלך עובד — מאפיון ועד השקה וליווי.",
+      title: "FLOA | מערכות ואפליקציות שנבנות סביב התהליך העסקי שלכם",
+      description: "לפני שמפתחים, FLOA בודקת אם נכון לבנות חדש, להתאים פתרון קיים או לחבר בין כלים שכבר עובדים — ואז מאפיינת, מעצבת ומפתחת את מה שבאמת צריך.",
       serviceType: "פיתוח מערכות ואפליקציות",
       serviceName: "פיתוח מערכות ואפליקציות | FLOA",
     },
 
     hero: {
-      title: "כשאין פתרון על המדף, בונים אותו נכון",
-      text: "FLOA מאפיינת, מעצבת ומפתחת מערכות, אפליקציות ופורטלים שנבנים בדיוק סביב איך שהעסק שלכם עובד",
-      cta: "בדיקת הרעיון",
+      title: "מערכות ואפליקציות שנבנות סביב התהליך העסקי שלכם",
+      text: "בודקים קודם אם נכון לבנות חדש, להתאים פתרון קיים, או לחבר בין כלים שכבר עובדים",
       artLabel: "מערכת ואפליקציה שנבנות סביב העסק",
       shapes: shapes("systems-apps"),
     },
 
-    /* the two ways in, side by side straight under the opening */
-    tracks: [
-      {
-        icon: "system",
-        title: "מערכת לעסק",
-        text: "ניהול עובדים, לקוחות, תהליכים, הרשאות, משימות ודשבורדים במקום אחד",
-      },
-      {
-        icon: "app",
-        title: "אפליקציה או מוצר דיגיטלי",
-        text: "מרעיון ואפיון ועד מוצר פעיל, ממשקי ניהול והעלאה לחנויות",
-      },
-    ],
+    /* the three ways in, straight under the opening — the decision comes before
+       the pitch, because the honest answer is sometimes "don't build" */
+    intro: {
+      cols: 3,
+      items: [
+        { icon: "app", title: "לבנות חדש", text: "כשאין פתרון קיים שמתאים לתהליך או למוצר" },
+        { icon: "system", title: "להתאים קיים", text: "כשאפשר לקחת מערכת קיימת ולהתאים אותה לצורך" },
+        { icon: "automation", title: "לחבר מערכות", text: "כשכבר קיימים כלים טובים, אבל הם לא עובדים יחד" },
+      ],
+    },
 
     problem: {
       head: {
@@ -400,30 +404,37 @@ export const solutions = [
 
     included: {
       head: {
-        eyebrow: "מה נבנה בשבילך",
-        title: "מערכת שנבנית סביב העבודה, לא ההפך",
+        eyebrow: "התהליך",
+        title: "מה מקבלים בתהליך?",
         text: "מאפיון מדויק ועד מוצר יציב שאפשר לגדול איתו",
       },
       items: [
-        { title: "אפיון ותכנון", text: "מבינים את התהליך והמשתמשים לפני שורת קוד" },
-        { title: "ארכיטקטורה נכונה", text: "מערכת שנשארת יציבה גם כשהעסק גדל" },
-        { title: "אפליקציות ווב ומובייל", text: "לעובדים, ללקוחות או כמוצר לשוק" },
-        { title: "אזורים אישיים ופורטלים", text: "כל משתמש רואה בדיוק את מה שרלוונטי לו" },
-        { title: "דשבורדים ופאנלי ניהול", text: "שליטה, בקרה ונתונים במקום אחד" },
-        { title: "השקה, מדידה וליווי", text: "עולים לאוויר ומשפרים לפי השימוש האמיתי" },
+        { title: "אפיון", text: "מבינים את התהליך ואת המשתמשים לפני שורת קוד" },
+        { title: "ארכיטקטורה", text: "מערכת שנשארת יציבה גם כשהעסק גדל" },
+        { title: "UI/UX", text: "ממשק שברור ונוח למי שיעבוד בו כל יום" },
+        { title: "פיתוח", text: "אפליקציות ווב ומובייל, לעובדים, ללקוחות או כמוצר לשוק" },
+        { title: "פאנל ניהול", text: "שליטה, בקרה והרשאות במקום אחד" },
+        { title: "מדידה וליווי", text: "עולים לאוויר ומשפרים לפי השימוש האמיתי" },
       ],
     },
 
-    /* proof: a product we took from idea to the Play Store */
+    /* proof: a product we took from an idea to a live app and a working admin
+       panel. Once's images and copy are exactly as they were. */
     proof: {
-      head: projectsHead,
+      head: { eyebrow: "עבודות", title: "דוגמה למוצר שנבנה מאפיון ועד ניהול בפועל" },
       projects: ["once"],
+    },
+
+    /* the risk-lowering message, right before the page's focused CTA */
+    reassure: {
+      eyebrow: "בלי לבנות יותר מדי",
+      title: "לא תמיד צריך לבנות הכול מאפס",
+      text: "לפני שמפתחים, בודקים אם נכון לבנות מערכת חדשה, להתאים פתרון קיים או לחבר בין כלים שכבר עובדים",
     },
 
     cta: {
       title: "בואו נבדוק את הרעיון לפני שבונים",
-      text: "נבין את הצורך ואת המשתמשים ונבחר את הדרך הנכונה, לבנות, להתאים או לחבר בין מה שכבר עובד",
-      cta: "בדיקת הרעיון",
+      text: "נבין את הצורך ואת המשתמשים ונבחר את הדרך הנכונה",
     },
 
     ecoNote: (ctx) => html`מערכת חזקה לא חיה לבד. היא מתחברת ל${to(ctx, "leads-crm", "לידים")}, ל${to(ctx, "automations", "אוטומציות")} ול${to(ctx, "marketing", "מדידה")} ונהיית לב המערכת של העסק.`,
@@ -441,7 +452,7 @@ export const solutions = [
       ],
     },
 
-    quotes: ["itzik"],          // Once is the proof above; the city speaks to systems work
+    quotes: ["itzik"],
   },
 
   {
@@ -452,30 +463,36 @@ export const solutions = [
     homeTitle: "לדעת מה באמת עובד בשיווק",
     homeText: "קמפיינים, מעקב המרות ודשבורדים שמחברים בין ההוצאה, הפניות והמכירות",
     homeWide: true,                       // the fifth card takes the full row
-    formValue: "שיווק וקמפיינים",
+
+    pageName: "שיווק, קמפיינים ומדידה",
+    waText: "היי, הגעתי מהעמוד על שיווק ומדידה ורציתי לבדוק איך אפשר לחבר בין הקמפיינים, הלידים והמכירות בעסק שלי",
+    waLabel: "לבדיקת השיווק ב־WhatsApp",
 
     urgency: "כל שקל שמושקע בלי חיבור למכירה ממשיך לעבוד בלי שתדעו אם החזיר את עצמו",
-    waText: "היי אופיר, הגעתי דרך עמוד השיווק של FLOA ואני רוצה לבדוק מה באמת עובד בקמפיינים",
-    ctaLabel: "בדיקת השיווק",
-    contact: {
-      title: "בואו נחבר בין תקציב השיווק למכירות",
-      text: "נבדוק מה מביא פניות, מה מביא לקוחות ואיפה אפשר להפסיק לבזבז תקציב",
-      submitLabel: "בואו נבדוק את השיווק",
-    },
 
     meta: {
-      title: "FLOA | שיווק, קמפיינים ומדידה שמראים מה באמת עובד",
-      description: "FLOA מחברת בין הקמפיין, האתר, הפנייה והמכירה כדי שתראו איזה שקל שיווק חוזר ואיפה כדאי להשקיע יותר — קמפיינים, מעקב המרות ודשבורד אחד.",
+      title: "FLOA | שיווק ומדידה שמראים איזה קמפיין מביא לקוחות",
+      description: "FLOA מחברת בין Google, Meta, דף הנחיתה, ה־CRM ודשבורד אחד, כדי שתמדדו מהקליק ועד הסגירה ותדעו איזה קמפיין מביא לקוחות ולא רק לידים.",
       serviceType: "שיווק, קמפיינים ומדידה",
       serviceName: "שיווק, קמפיינים ומדידה | FLOA",
     },
 
     hero: {
-      title: "לא רק להביא לידים. לדעת אילו מהם הופכים ללקוחות",
-      text: "FLOA מחברת בין הקמפיין, דף הנחיתה ומערכת המכירות, כדי שתדעו איזה קמפיין מייצר לקוחות וכמה כל לקוח באמת עולה",
-      cta: "בדיקת השיווק",
+      title: "שיווק ומדידה שמראים איזה קמפיין מביא לקוחות, לא רק לידים",
+      text: "מחברים Google, Meta, דף נחיתה, CRM ודשבורד אחד כדי למדוד מהקליק ועד הסגירה",
       artLabel: "שיווק ומדידה: מהקליק ועד המכירה, בדשבורד אחד",
       shapes: shapes("marketing"),
+    },
+
+    /* the promise of the page, made immediately: the measurement does not stop
+       at the form. It sits straight under the hero, before the pain. */
+    afterHero: {
+      head: {
+        eyebrow: "המדידה",
+        title: "לא עוצרים בטופס שנשלח",
+        text: "המדידה ממשיכה עד המכירה, כדי להבין מה באמת החזיר את ההשקעה",
+      },
+      flow: ["תקציב", "קליקים", "פניות", "לידים מתאימים", "מכירות"],
     },
 
     problem: {
@@ -488,7 +505,7 @@ export const solutions = [
         { title: "מפרסמים באפלה", text: "הכסף זז, אבל לא באמת ברור מה מביא תוצאות" },
         { title: "אין מעקב המרות", text: "לא יודעים איזה קמפיין הביא את הלקוח בפועל" },
         { title: "נתונים בכלים נפרדים", text: "הוצאה, פניות ומכירות לא מדברים ביניהם" },
-        { title: "לידים לא רלוונטיים", text: "מקבלים פניות, אבל לא יודעים אילו מהן איכותיות ואיזה קמפיין הביא לקוחות אמיתיים" },
+        { title: "לידים לא רלוונטיים", text: "מקבלים פניות, בלי לדעת אילו מהן איכותיות ואיזה קמפיין הביא לקוח אמיתי" },
       ],
     },
 
@@ -500,7 +517,7 @@ export const solutions = [
       },
       items: [
         { title: "דפי נחיתה לקמפיינים", text: "בנויים להמרה ומותאמים בדיוק למסר של המודעה" },
-        { title: "קמפיינים ב־Google וב־Meta", text: "מביאים את הקהל הנכון לדף נחיתה, לטופס או לשיחה ב־WhatsApp ומודדים מה קרה אחר כך" },
+        { title: "קמפיינים ב־Google וב־Meta", text: "מביאים את הקהל הנכון לדף נחיתה, לטופס או לשיחה ב־WhatsApp" },
         { title: "מעקב המרות מלא", text: "מהקליק במודעה ועד המכירה שנסגרה" },
         { title: "דשבורד שיווקי אחד", text: "הוצאה, פניות, לידים ומכירות במקום אחד" },
         { title: "חיבור למערכת הלידים", text: "כל פנייה מגיעה עם המקור המדויק שלה" },
@@ -508,21 +525,31 @@ export const solutions = [
       ],
     },
 
-    /* proof: the funnel does not stop at the form — and the dashboard that shows it */
+    /* proof: the wiring, drawn — and then the campaign we actually wired that way */
     proof: {
-      head: {
-        title: "לא עוצרים בטופס שנשלח",
-        text: "המדידה ממשיכה עד המכירה, כדי להבין מה באמת החזיר את ההשקעה",
-      },
-      /* TODO: add a real marketing-dashboard screenshot here as proof.media once
-         it exists — until then only the funnel is shown, no placeholder. */
-      flow: ["תקציב", "קליקים", "פניות", "לידים מתאימים", "מכירות"],
+      head: { eyebrow: "החיבור", title: "מה מחובר למה?" },
+      flow: ["מודעה", "דף נחיתה", "טופס או WhatsApp", "CRM", "מכירה"],
+      projectsHead: { title: "דוגמה למערך שיווק שחובר מהרשמה ועד תשלום ומדידה" },
+      projects: ["harpatka"],
     },
+
+    extras: [
+      {
+        id: "measure",
+        head: { eyebrow: "מדידה", title: "מה מודדים?" },
+        cols: 4,
+        items: [
+          { title: "מקור הפנייה", text: "מאיזה קמפיין, מודעה או דף הגיעה כל פנייה" },
+          { title: "עלות לפנייה", text: "כמה באמת עולה להביא פנייה אחת בכל ערוץ" },
+          { title: "סטטוס הליד", text: "מה קרה לפנייה אחרי שהיא נכנסה למערכת" },
+          { title: "לקוח שנסגר", text: "אילו קמפיינים הביאו לקוחות, ולא רק לידים" },
+        ],
+      },
+    ],
 
     cta: {
       title: "יודעים כמה עלה כל ליד. אבל כמה עלה כל לקוח?",
       text: "נבדוק איפה תקציב השיווק עובד ואיפה הוא נשרף",
-      cta: "בדיקת השיווק",
     },
 
     ecoNote: (ctx) => html`מדידה טובה מתחילה ב${to(ctx, "websites", "דף נחיתה שממיר")} ונסגרת ב${to(ctx, "leads-crm", "מערכת לידים")} שיודעת מאיפה בא כל לקוח. הכול מחובר.`,
@@ -540,7 +567,6 @@ export const solutions = [
       ],
     },
 
-    projects: ["harpatka"],
     quotes: ["erez"],           // his campaigns run straight into WhatsApp
   },
 ];

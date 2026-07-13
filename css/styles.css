@@ -73,7 +73,9 @@
   --gap:      clamp(14px, 2vw, 24px);     /* the ONE gap between grid items */
   --pad-card: clamp(18px, 3vw, 28px);     /* the ONE card padding */
   --pad-panel: clamp(20px, 5vw, 56px);    /* the ONE panel padding */
-  --section:  clamp(64px, 8vw, 128px);
+  /* the gap BETWEEN two sections. Each one pays half of it as padding, so two
+     neighbours together add up to exactly this. */
+  --section:  80px;
   --head-gap: clamp(36px, 4.5vw, 64px);   /* section head -> content */
 
   /* --- shape --- */
@@ -90,7 +92,7 @@
   --sh-3: 0 26px 64px -28px rgba(15, 42, 51, .24);
   --sh-teal: 0 12px 28px -12px rgba(14, 140, 126, .45);
 
-  --container: 1200px;
+  --container: 1120px;
   --ease: cubic-bezier(.22, .61, .36, 1);
 }
 
@@ -101,9 +103,7 @@
     --gap: 16px;
     --pad-card: 22px;
     --fs-body: 1.16rem;
-    /* tighten the rhythm between long sections by ~15% on a phone, without
-       letting them crowd — the floor drops from 64px to 54px */
-    --section: clamp(54px, 11vw, 96px);
+    --section: 56px;
     --head-gap: clamp(30px, 4.5vw, 64px);
   }
 }
@@ -163,8 +163,8 @@ button { font-family: inherit; cursor: pointer; }
    above the heading. Pulling the scroll target up by that padding lands the
    CONTENT a normal ~40px below the fold instead. */
 .section {
-  padding-block: var(--section);
-  scroll-margin-top: calc(var(--s-8) - var(--section));
+  padding-block: calc(var(--section) / 2);
+  scroll-margin-top: calc(var(--s-8) - var(--section) / 2);
   position: relative;
 }
 
@@ -273,105 +273,53 @@ h1, h2, h3, h4 {
 /* ======================================================================
    components/whatsapp-button/whatsapp-button.css
    ====================================================================== */
-/* Deliberately after button.css: .btn-whatsapp and .btn carry the same
-   specificity, so this file's min-height and padding must land last to win. */
+/* ==========================================================================
+   Deliberately after button.css: .btn-whatsapp and .btn carry the same
+   specificity, so what lands last wins.
+
+   WhatsApp is now the PRIMARY action on every page, so this button is the loud
+   one — WhatsApp's own green, so the visitor knows which app is about to open
+   before they tap. The teal primary steps back to being a secondary.
+   ========================================================================== */
 .btn-whatsapp {
-  width: 100%;
   gap: var(--s-3);
-  padding-block: var(--s-3);
-  min-height: 64px;
-  background: var(--surface-sunk);
-  color: var(--ink);
-  border-color: var(--hairline);
-  box-shadow: var(--sh-1);
+  background: #25D366;
+  color: #fff;
+  border-color: #25D366;
+  box-shadow: 0 12px 28px -12px rgba(37, 211, 102, .55);
 }
 .btn-whatsapp:hover {
-  background: #F6FDF9;
-  border-color: #25D366;
-  color: var(--ink);
-  transform: translateY(-2px);
-  box-shadow: 0 12px 28px -14px rgba(37, 211, 102, .5);
-}
-/* On a narrow phone the badge + a single-line (nowrap) label must share one
-   full-width row; tighten the side padding and the badge-to-label gap so the
-   label fits beside the mark instead of spilling past the pill. */
-@media (max-width: 640px) {
-  .btn-whatsapp { padding-inline: var(--s-3); gap: var(--s-2); }
-}
-
-/* the mark sits in its own badge, so it reads as an icon and not as a stray
-   glyph floating beside a two-line label */
-.btn-whatsapp .wa-mark {
-  flex: 0 0 auto;
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: #25D366;
-  color: #fff;
-}
-.btn-whatsapp .wa-mark svg { width: 22px; height: 22px; }
-
-/* label above sub-label, never side by side */
-.btn-stack {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1px;
-  min-width: 0;
-  line-height: 1.3;
-  text-align: start;
-}
-.btn-whatsapp .btn-sub {
-  font-weight: 400;
-  font-size: var(--fs-xs);
-  color: var(--muted);
-}
-
-/* The inline WhatsApp mark carried by plain WhatsApp buttons (the ghost hero CTA
-   and the post-submit CTA) — a 20px glyph, 8px from the label via the button's
-   own gap, and on the right in RTL because it is the button's first child. */
-.btn .wa-glyph {
-  flex: 0 0 auto;
-  display: inline-flex;
-}
-.btn .wa-glyph svg { width: 20px; height: 20px; }
-
-/* The solid WhatsApp CTA shown inside the success box after a form is sent. */
-.btn-wa-open {
-  margin-top: var(--s-5);
-  background: #25D366;
-  color: #fff;
-  border-color: #25D366;
-}
-.btn-wa-open:hover {
   background: #1EBE57;
   border-color: #1EBE57;
   color: #fff;
   transform: translateY(-2px);
-  box-shadow: 0 12px 28px -14px rgba(37, 211, 102, .5);
+  box-shadow: 0 18px 36px -14px rgba(37, 211, 102, .65);
 }
 
-/* ======================================================================
-   components/divider/divider.css
-   ====================================================================== */
-/* no letter-spacing: it visibly splits a two-letter Hebrew word into "א ו" */
-.or-divider {
-  display: flex;
-  align-items: center;
-  gap: var(--s-4);
-  margin-block: var(--s-7);
-  color: var(--muted-2);
-  font-size: var(--fs-xs);
-  font-weight: 600;
+/* the mark, always before the label (RTL: to its right, as the first child) */
+.btn-whatsapp .wa-mark {
+  flex: 0 0 auto;
+  display: inline-flex;
 }
-.or-divider::before,
-.or-divider::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--hairline);
+.btn-whatsapp .wa-mark svg { width: 22px; height: 22px; }
+
+/* THE ONE-LINE RULE. Every button on the site keeps its label on a single line
+   (.btn sets white-space:nowrap), and these labels are the longest on the site
+   — "לשיחת מיפוי ב־WhatsApp" on a full-width pill inside a 320px phone. So on a
+   phone the mark, the gap and the side padding all give ground before the text
+   does, and the label itself steps down a notch rather than wrapping. */
+.btn-whatsapp .wa-label { min-width: 0; }
+
+@media (max-width: 640px) {
+  .btn-whatsapp {
+    gap: var(--s-2);
+    padding-inline: var(--s-4);
+    font-size: 1.05rem;
+  }
+  .btn-whatsapp .wa-mark svg { width: 20px; height: 20px; }
+}
+@media (max-width: 360px) {
+  .btn-whatsapp { padding-inline: var(--s-3); font-size: .98rem; }
 }
 
 /* ======================================================================
@@ -395,62 +343,6 @@ h1, h2, h3, h4 {
   font-weight: 600;
   line-height: 1;
   box-shadow: var(--sh-1);
-}
-
-/* ======================================================================
-   components/trust-strip/trust-strip.css
-   ====================================================================== */
-/* A quiet band of proof under the hero — not a section, just a hairline strip. */
-.trust-strip {
-  border-block: 1px solid var(--hairline);
-  background: var(--surface);
-}
-.trust-strip-list {
-  display: flex;
-  align-items: stretch;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: var(--s-3) var(--s-7);
-  padding-block: var(--s-4);
-  min-width: 0;
-}
-.trust-strip-item {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-3);
-  color: var(--ink-2);
-  font-family: var(--font-display);
-  font-size: var(--fs-sm);
-  font-weight: 500;
-  line-height: 1.3;
-}
-/* a small teal check before each item, drawn in CSS so no asset is needed */
-.trust-strip-item::before {
-  content: "";
-  flex: none;
-  width: 7px;
-  height: 12px;
-  margin-block: 1px 4px;
-  border: solid var(--teal);
-  border-width: 0 2.5px 2.5px 0;
-  transform: rotate(45deg);
-}
-
-/* On a phone the three items ride in one tight, scrollable row rather than
-   stacking into a tall block. The overflow is owned here, so the page itself
-   never scrolls sideways. */
-@media (max-width: 640px) {
-  .trust-strip-list {
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    gap: var(--s-4);
-    overflow-x: auto;
-    padding-block: var(--s-3);
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-  .trust-strip-list::-webkit-scrollbar { display: none; }
-  .trust-strip-item { flex: none; font-size: var(--fs-xs); }
 }
 
 /* ======================================================================
@@ -557,10 +449,17 @@ h1, h2, h3, h4 {
 /* ======================================================================
    components/card/card.css
    ====================================================================== */
+/* ==========================================================================
+   The one card. Every boxed item on the site is this box — declared once here
+   instead of once per section. The variants below only ever change the accent,
+   the badge and the type scale; the surface, hairline, radius, padding, shadow
+   and hover are shared and cannot drift apart.
+   ========================================================================== */
 .card {
-  height: 100%;
+  height: 100%;                     /* every card in a row ends at the same line */
   display: flex;
   flex-direction: column;
+  min-width: 0;
   background: var(--surface);
   border: 1px solid var(--hairline);
   border-radius: var(--r);
@@ -575,77 +474,64 @@ h1, h2, h3, h4 {
   box-shadow: var(--sh-2);
 }
 .card h3 { font-size: var(--fs-h3); margin-bottom: var(--s-2); }
-.card p { color: var(--muted); font-size: var(--fs-sm); }
+.card p  { color: var(--muted); font-size: var(--fs-sm); }
 
+/* --- accents: a hairline of colour along the top -------------------------- */
+.card-teal  { border-top: 2px solid var(--teal); }
+.card-water { border-top: 2px solid var(--water); }
+
+/* --- size: tighter type for the dense grids (pains, ecosystem tiles) ------- */
+.card-sm h3 { font-size: 1.08rem; margin-bottom: var(--s-1); }
+.card-sm p  { font-size: var(--fs-xs); }
+
+/* --- the badge the icon sits in ------------------------------------------- */
 .card-icon {
   display: grid;
   place-items: center;
+  flex: 0 0 auto;
+  color: var(--teal-dark);
+  background: var(--teal-tint);
+}
+.card-icon-tile {
   width: 48px;
   height: 48px;
   margin-bottom: var(--s-5);
   border-radius: var(--r-sm);
-  background: var(--teal-tint);
-  color: var(--teal-dark);
-  flex: 0 0 auto;
 }
-.card-icon svg { width: 24px; height: 24px; }
+.card-icon-tile svg { width: 24px; height: 24px; }
 
-/* --- the grid: 2 columns, and one card may take the full width ------------ */
-.solutions-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--gap);
-  min-width: 0;
+/* the small circle the checklist uses — the tick beside a line of copy */
+.card-icon-dot {
+  width: 34px;
+  height: 34px;
+  margin-top: 2px;
+  border-radius: 50%;
 }
-/* tracks must be allowed to shrink below their content's min-content width, or
-   a long unbroken Hebrew string pushes a card out of its column */
-.solutions-grid > * { min-width: 0; }
-.solutions-grid .card-wide { grid-column: 1 / -1; }
+.card-icon-dot svg { width: 18px; height: 18px; }
 
-/* the wide card lays its icon beside the copy so it never looks stretched */
-.card-wide {
+/* --- row: the badge sits BESIDE the copy ---------------------------------- */
+.card-row {
   flex-direction: row;
-  align-items: center;
-  gap: var(--s-6);
-}
-.card-wide .card-icon { margin-bottom: 0; }
-
-@media (max-width: 860px) {
-  .solutions-grid { grid-template-columns: 1fr; }
-  .card-wide { flex-direction: column; align-items: flex-start; }
-  .card-wide .card-icon { margin-bottom: var(--s-5); }
-}
-
-/* ======================================================================
-   components/eco-grid/eco-grid.css
-   ====================================================================== */
-/* After card.css on purpose: these rules refine .card for the ecosystem grid. */
-.eco-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: var(--gap);
-}
-.eco-card {
-  text-align: start;
   align-items: flex-start;
+  gap: var(--s-4);
 }
-.eco-card .card-icon {
-  width: 42px;
-  height: 42px;
-  margin-bottom: var(--s-4);
-}
-.eco-card h3 { font-size: 1.08rem; margin-bottom: var(--s-1); }
-.eco-card p { color: var(--muted); font-size: var(--fs-xs); }
+.card-row .card-icon-tile { margin-bottom: 0; }
+.card-row .card-body { min-width: 0; }
 
-/* the current page's card: highlighted, and not a link */
-.eco-card.is-current {
+/* the wide card (one solution takes the whole row) centres its badge instead */
+.card-wide { align-items: center; gap: var(--s-6); }
+
+/* --- "you are here": the current page's tile in the ecosystem grid --------- */
+.card.is-current {
   border-color: rgba(14, 140, 126, .45);
   background: var(--teal-tint);
   box-shadow: var(--sh-2);
 }
-.eco-card.is-current:hover { transform: none; }
-.eco-card.is-current .card-icon { background: var(--teal); color: #fff; }
-.eco-here {
+.card.is-current:hover { transform: none; }
+.card.is-current .card-icon { background: var(--teal); color: #fff; }
+
+.card-badge {
+  align-self: flex-start;
   margin-top: var(--s-3);
   display: inline-flex;
   align-items: center;
@@ -659,120 +545,61 @@ h1, h2, h3, h4 {
   line-height: 1.4;
 }
 
-/* the "one system" line that closes the section */
-.eco-note {
-  margin-top: var(--gap);
-  text-align: center;
-  color: var(--muted);
-  font-size: var(--fs-sm);
-  max-width: 46rem;
-  margin-inline: auto;
-}
-.eco-note a { color: var(--teal-dark); font-weight: 700; }
-.eco-note a:hover { text-decoration: underline; }
-
-/* ======================================================================
-   components/mini-card/mini-card.css
-   ====================================================================== */
-.mini-cards {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--gap);
-  min-width: 0;
-}
-.mini-cards > * { min-width: 0; }
-
-.mini-card {
-  height: 100%;
-  background: var(--surface);
-  border: 1px solid var(--hairline);
-  border-radius: var(--r);
-  padding: var(--pad-card);
-  box-shadow: var(--sh-1);
-  border-top: 2px solid var(--water);
-}
-.mini-card strong {
-  display: block;
-  font-family: var(--font-display);
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: var(--ink);
-  margin-bottom: var(--s-2);
-}
-.mini-card p { color: var(--muted); font-size: var(--fs-sm); }
-
-@media (max-width: 1080px) { .mini-cards { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 640px)  { .mini-cards { grid-template-columns: 1fr; } }
-
-/* ======================================================================
-   components/feature/feature.css
-   ====================================================================== */
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--gap);
-  min-width: 0;
-}
-.features-grid > * { min-width: 0; }
-
-.feature {
-  height: 100%;
-  background: var(--surface);
-  border: 1px solid var(--hairline);
-  border-radius: var(--r);
-  padding: var(--pad-card);
-  box-shadow: var(--sh-1);
-  border-top: 2px solid var(--teal);
-}
-.feature h3 { font-size: var(--fs-h3); margin-bottom: var(--s-2); }
-.feature p { color: var(--muted); font-size: var(--fs-sm); }
-
-@media (max-width: 1080px) { .features-grid { grid-template-columns: 1fr; } }
-
-/* ======================================================================
-   components/checklist/checklist.css
-   ====================================================================== */
-.checklist {
+/* ==========================================================================
+   The grid. `cards-N` is the DESKTOP column count — the two breakpoints below
+   take every one of them down to 2 and then to 1, so a section never writes a
+   media query of its own.
+   ========================================================================== */
+.card-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--gap);
-  max-width: 940px;
-  margin-inline: auto;
-}
-.check-item {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--s-4);
   min-width: 0;
-  background: var(--surface);
-  border: 1px solid var(--hairline);
-  border-radius: var(--r);
-  padding: var(--pad-card);
-  box-shadow: var(--sh-1);
-  transition: transform .25s var(--ease), box-shadow .25s var(--ease),
-              border-color .25s var(--ease);
 }
-.check-item:hover {
-  transform: translateY(-3px);
-  border-color: rgba(14, 140, 126, .28);
-  box-shadow: var(--sh-2);
-}
-.check-ic {
-  flex: 0 0 auto;
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  margin-top: 2px;
-  border-radius: 50%;
-  background: var(--teal-tint);
-  color: var(--teal-dark);
-}
-.check-ic svg { width: 18px; height: 18px; }
-.check-item h3 { font-size: 1.12rem; margin-bottom: var(--s-1); }
-.check-item p { color: var(--muted); font-size: var(--fs-sm); }
+/* a track must be allowed to shrink below its content's min-content width, or a
+   long unbroken Hebrew string pushes a card out of its column */
+.card-grid > * { min-width: 0; }
 
-@media (max-width: 720px) { .checklist { grid-template-columns: 1fr; } }
+.cards-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cards-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+/* one card may span the whole row, whatever the column count */
+.card-grid .card-wide { grid-column: 1 / -1; }
+
+/* the checklist and the ecosystem tiles: a narrower measure, centred */
+.cards-narrow { max-width: 940px; margin-inline: auto; }
+
+@media (max-width: 1080px) {
+  .cards-3, .cards-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 860px) {
+  .card-grid { grid-template-columns: 1fr; }
+  /* stacked, the wide card has a full row to itself — so it stops being wide */
+  .card-wide { flex-direction: column; align-items: flex-start; }
+  .card-wide .card-icon-tile { margin-bottom: var(--s-5); }
+}
+
+/* ======================================================================
+   components/eco-grid/eco-grid.css
+   ====================================================================== */
+/* The ecosystem row owns exactly two things the shared card does not: a row that
+   fits five tiles at any width, and the line of copy that closes it. Everything
+   else about these tiles — the box, the icon badge, the "you are here" state —
+   is card.css, and is not repeated here. */
+.eco-grid {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.eco-note {
+  margin-top: var(--gap);
+  margin-inline: auto;
+  max-width: 46rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+.eco-note a { color: var(--teal-dark); font-weight: 700; }
+.eco-note a:hover { text-decoration: underline; }
 
 /* ======================================================================
    components/quote-card/quote-card.css
@@ -830,73 +657,6 @@ h1, h2, h3, h4 {
 .quotes-grid:has(.quote-card:only-child) { max-width: 720px; grid-template-columns: 1fr; }
 
 @media (max-width: 640px) { .quotes-grid { grid-template-columns: 1fr; } }
-
-/* ======================================================================
-   components/placeholder/placeholder.css
-   ====================================================================== */
-/* A dashed slot, obviously empty on purpose — it must never be mistaken for a
-   real screenshot or for real data. */
-.placeholder { display: flex; flex-direction: column; gap: var(--s-3); min-width: 0; }
-
-.placeholder-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--s-3);
-  width: 100%;
-  padding: var(--pad-card);
-  border: 2px dashed var(--teal-tint);
-  border-radius: var(--r);
-  background: var(--surface-sunk);
-  color: var(--muted);
-  font-size: var(--fs-sm);
-  font-weight: 600;
-  text-align: center;
-}
-.placeholder-icon {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: var(--teal-tint);
-  color: var(--teal-dark);
-}
-.placeholder-icon svg { width: 22px; height: 22px; }
-.placeholder-text { max-width: 32ch; }
-
-.placeholder-caption {
-  text-align: center;
-  color: var(--muted-2);
-  font-size: var(--fs-xs);
-  font-weight: 600;
-}
-
-/* the shape of the thing that is missing */
-.placeholder-desktop .placeholder-box { aspect-ratio: 16 / 10; }
-.placeholder-mobile  .placeholder-box { aspect-ratio: 9 / 16; }
-.placeholder-wide    .placeholder-box { aspect-ratio: 21 / 9; }
-
-/* a site, shown on a desktop beside a phone */
-.placeholder-pair {
-  display: grid;
-  grid-template-columns: 1.9fr 1fr;
-  align-items: center;
-  gap: var(--gap);
-  max-width: 940px;
-  margin-inline: auto;
-  min-width: 0;
-}
-.placeholder-pair > * { min-width: 0; }
-/* on its own (a dashboard), it takes the full column */
-.placeholder-pair:has(> :only-child) { grid-template-columns: 1fr; }
-
-@media (max-width: 720px) {
-  .placeholder-pair { grid-template-columns: 1fr; }
-  .placeholder-mobile { max-width: 280px; margin-inline: auto; }
-  .placeholder-wide .placeholder-box { aspect-ratio: 4 / 3; }
-}
 
 /* ======================================================================
    components/project-card/project-card.css
@@ -1102,7 +862,10 @@ h1, h2, h3, h4 {
   .flow-step:not(:last-child)::after { content: "↓"; align-self: center; }
 }
 
-/* --- several flows, side by side ------------------------------------------ */
+/* --- several flows, side by side ------------------------------------------
+   The box itself is .card (see card.js) — the surface, hairline, radius, padding
+   and shadow are NOT re-declared here. All a flow card adds is a title above the
+   steps and the air between them. */
 .flow-cards {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1110,15 +873,11 @@ h1, h2, h3, h4 {
   min-width: 0;
 }
 .flow-cards > * { min-width: 0; }
-.flow-card {
-  height: 100%;
-  display: flex;
-  background: var(--surface);
-  border: 1px solid var(--hairline);
-  border-radius: var(--r);
-  padding: var(--pad-card);
-  box-shadow: var(--sh-1);
-}
+
+.flow-card { gap: var(--s-5); }
+.flow-card h3 { margin-bottom: 0; text-align: center; font-size: 1.12rem; }
+/* the steps take whatever height is left, so cards in a row stay level */
+.flow-card .flow { flex: 1; justify-content: center; }
 
 @media (max-width: 860px) { .flow-cards { grid-template-columns: 1fr; } }
 
@@ -1189,6 +948,86 @@ h1, h2, h3, h4 {
   .tl-item { grid-template-columns: 44px 1fr; gap: var(--s-4); }
   .tl-num { width: 44px; height: 44px; font-size: .85rem; }
   .timeline::before { inset-inline-start: 21px; }
+}
+
+/* ======================================================================
+   components/faq/faq.css
+   ====================================================================== */
+/* The accordion. Cards, like everything else on the page — the question is the
+   whole hit area, and the mark is the only thing that moves. */
+.faq {
+  max-width: 800px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.faq-item {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r);
+  box-shadow: var(--sh-1);
+  transition: border-color .25s var(--ease), box-shadow .25s var(--ease);
+}
+.faq-item[open] {
+  border-color: rgba(14, 140, 126, .28);
+  box-shadow: var(--sh-2);
+}
+
+/* the question: a real summary, so it is focusable and toggles on Enter/Space */
+.faq-q {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--pad-card);
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--font-display);
+  font-size: var(--fs-h3);
+  font-weight: 600;
+  color: var(--ink);
+}
+.faq-q::-webkit-details-marker { display: none; }   /* Safari's own triangle */
+.faq-q:hover { color: var(--teal-dark); }
+.faq-q:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+  border-radius: var(--r);
+}
+
+/* a + that becomes a − : two bars, one of which rotates away when open */
+.faq-mark {
+  position: relative;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--teal-tint);
+}
+.faq-mark::before,
+.faq-mark::after {
+  content: "";
+  position: absolute;
+  inset: 50% 5px auto 5px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--teal-dark);
+  transform: translateY(-50%);
+  transition: transform .25s var(--ease), opacity .25s var(--ease);
+}
+.faq-mark::after { transform: translateY(-50%) rotate(90deg); }
+.faq-item[open] .faq-mark::after { transform: translateY(-50%) rotate(0deg); opacity: 0; }
+
+.faq-a {
+  padding: 0 var(--pad-card) var(--pad-card);
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+@media (max-width: 640px) {
+  .faq-q { font-size: 1.2rem; }
 }
 
 /* ======================================================================
@@ -1354,9 +1193,9 @@ h1, h2, h3, h4 {
 }
 .contact-panel .section-head { margin-bottom: var(--s-8); }
 
-/* minmax(0,1fr), not 1fr: a bare 1fr track refuses to shrink below the
-   min-content width of a select/textarea, which pushes the fields out of the
-   panel on narrow screens. min-width:0 lets the controls actually flex down. */
+/* Two fields, side by side on a desktop and stacked on a phone. minmax(0,1fr),
+   not 1fr: a bare 1fr track refuses to shrink below its content's min-content
+   width, which pushes the inputs out of the panel on narrow screens. */
 .contact-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1368,17 +1207,26 @@ h1, h2, h3, h4 {
   gap: var(--s-2);
   min-width: 0;
 }
-.field-full { grid-column: 1 / -1; }
 .field label {
   font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--ink-2);
 }
 
+/* The spam trap. Moved off-screen rather than display:none — a bot that filters
+   for visibility still fills it, and a screen reader still skips it (the field
+   sits inside an aria-hidden wrapper and is out of the tab order). */
+.hp {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 /* the single source of truth for control chrome */
-.field input,
-.field select,
-.field textarea {
+.field input {
   width: 100%;
   min-height: var(--field-h);
   padding: var(--s-3) var(--s-4);
@@ -1394,30 +1242,9 @@ h1, h2, h3, h4 {
   appearance: none;
   -webkit-appearance: none;
 }
-.field textarea {
-  min-height: 132px;
-  resize: vertical;
-  padding-block: var(--s-3);
-}
-.field input::placeholder,
-.field textarea::placeholder { color: var(--muted-2); }
-
-.field select {
-  cursor: pointer;
-  padding-inline-start: var(--s-8);   /* room for the chevron on the left (RTL) */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2366797F' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: left var(--s-4) center;
-}
-.field select.is-empty { color: var(--muted-2); }
-
-.field input:hover,
-.field select:hover,
-.field textarea:hover { border-color: #D2DEDB; }
-
-.field input:focus,
-.field select:focus,
-.field textarea:focus {
+.field input::placeholder { color: var(--muted-2); }
+.field input:hover { border-color: #D2DEDB; }
+.field input:focus {
   outline: none;
   background-color: var(--surface);
   border-color: var(--teal);
@@ -1425,9 +1252,7 @@ h1, h2, h3, h4 {
 }
 
 /* invalid state is applied by JS ONLY after a submit attempt — never on load */
-.field input.is-invalid,
-.field select.is-invalid,
-.field textarea.is-invalid {
+.field input.is-invalid {
   border-color: var(--danger);
   box-shadow: 0 0 0 4px rgba(162, 59, 59, .10);
 }
@@ -1438,11 +1263,12 @@ h1, h2, h3, h4 {
   margin-top: var(--s-3);
 }
 
+/* "ללא התחייבות" — the quiet line right under the button */
 .contact-note {
-  margin-top: var(--s-5);
+  margin-top: var(--s-4);
   text-align: center;
   color: var(--muted);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-xs);
 }
 
 .form-success,

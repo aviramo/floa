@@ -1,0 +1,76 @@
+/* The accordion. Cards, like everything else on the page — the question is the
+   whole hit area, and the mark is the only thing that moves. */
+.faq {
+  max-width: 800px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.faq-item {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r);
+  box-shadow: var(--sh-1);
+  transition: border-color .25s var(--ease), box-shadow .25s var(--ease);
+}
+.faq-item[open] {
+  border-color: rgba(14, 140, 126, .28);
+  box-shadow: var(--sh-2);
+}
+
+/* the question: a real summary, so it is focusable and toggles on Enter/Space */
+.faq-q {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--pad-card);
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--font-display);
+  font-size: var(--fs-h3);
+  font-weight: 600;
+  color: var(--ink);
+}
+.faq-q::-webkit-details-marker { display: none; }   /* Safari's own triangle */
+.faq-q:hover { color: var(--teal-dark); }
+.faq-q:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+  border-radius: var(--r);
+}
+
+/* a + that becomes a − : two bars, one of which rotates away when open */
+.faq-mark {
+  position: relative;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--teal-tint);
+}
+.faq-mark::before,
+.faq-mark::after {
+  content: "";
+  position: absolute;
+  inset: 50% 5px auto 5px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--teal-dark);
+  transform: translateY(-50%);
+  transition: transform .25s var(--ease), opacity .25s var(--ease);
+}
+.faq-mark::after { transform: translateY(-50%) rotate(90deg); }
+.faq-item[open] .faq-mark::after { transform: translateY(-50%) rotate(0deg); opacity: 0; }
+
+.faq-a {
+  padding: 0 var(--pad-card) var(--pad-card);
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+@media (max-width: 640px) {
+  .faq-q { font-size: 1.2rem; }
+}

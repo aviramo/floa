@@ -1,9 +1,12 @@
 import { html } from "../../lib/html.js";
 import { card, cardGrid } from "../card/card.js";
 
-/* "The full picture": all five solutions as one connected system. Every
-   solution page shows it, so the visitor grasps that FLOA is one system and not
-   a single trick — the page's own solution is highlighted, the rest link out.
+/* "The full picture": all five solutions as one connected system, shown UNDER
+   the form on every page — so a visitor who has just read one solution can find
+   the rest without those links competing with the ask.
+
+   It owns no box of its own: every tile is the shared card, marked `current` on
+   the page you are already on. All this adds is the row and the closing line.
 
    { solutions, current: slug, note: markup, badge } */
 export const ecoGrid = (ctx, { solutions, current, note, badge }) => html`
@@ -17,7 +20,7 @@ export const ecoGrid = (ctx, { solutions, current, note, badge }) => html`
             href: `${s.slug}/`,
             current: s.slug === current,
             badge: s.slug === current ? badge : null,
-            className: "eco-card",
+            size: "sm",
             reveal: false,          // the grid reveals as one block, not card by card
           })
         ),

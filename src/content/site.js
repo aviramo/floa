@@ -15,7 +15,7 @@ export const site = {
   tagline: "פתרונות דיגיטליים שעובדים עם העסק",
   slogan: "כל העסק. מערכת אחת. כתובת אחת",
   founder: "אופיר אבירם",
-  email: "ofir.aviram@gmail.com",
+  email: "info@floa.co.il",
   copyright: "© FLOA. כל הזכויות שמורות",
 
   og: {
@@ -29,33 +29,30 @@ export const site = {
   favicon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%230E8C7E'/%3E%3Ctext x='50' y='68' font-family='Arial' font-size='52' font-weight='700' fill='white' text-anchor='middle'%3EF%3C/text%3E%3C/svg%3E",
 };
 
-/* the reassurance under every hero's buttons, and the compact trust strip that
-   sits right beneath every opening — shared, so they read the same everywhere */
+/* the reassurance under every hero's buttons */
 export const heroNote = "שיחת מיפוי ראשונית, בלי התחייבות ובלי מצגת מכירה";
 
-export const trustStripItems = [
-  "15+ שנות ניסיון",
-  "אפיון, פיתוח ושיווק במקום אחד",
-  "ליווי אישי מקצה לקצה",
-];
+/* the label of the hero's SECOND button — the way down to the form. The same on
+   all six pages, because it is the same promise on all six. */
+export const formCta = "השארת פרטים";
 
 /* --- what the browser needs, straight from the same source ---------------- */
 export const runtime = {
   whatsapp: {
     number: "972587078708",                                       // +972 58-707-8708
-    /* the fallback message; each page overrides it with its own via
-       <body data-wa-text> (see whatsapp-button.client.js) */
-    greeting: "היי אופיר, הגעתי דרך אתר FLOA ואני רוצה לבדוק מה אפשר לשפר בעסק",
+    /* the fallback opening line. Each of the six pages overrides it with one of
+       its own via <body data-wa-text> (see whatsapp-button.client.js), so the
+       conversation starts on the subject the visitor was actually reading. */
+    greeting: "היי, הגעתי לאתר FLOA ורציתי לבדוק איך אפשר לשפר את התהליכים הדיגיטליים בעסק שלי",
   },
-  formError: "השליחה נכשלה. אפשר לנסות שוב או לכתוב לי בוואטסאפ",
-  /* after a lead is saved: the opening line the visitor arrives with on WhatsApp,
-     and the label of the CTA that opens it — mobile also auto-opens it (see
-     contact.client.js), desktop only offers the button */
-  formSuccessWa: {
-    message: "היי, מילאתי עכשיו את הטופס באתר ואשמח שתחזרו אליי 🙂",
-    mobileLabel: "פתיחת וואטסאפ",
-    desktopLabel: "פתיחת WhatsApp Web",
-  },
+
+  /* The form posts here and nowhere else. A static site has no server of its
+     own, so the send lives in a Cloudflare Worker (see worker/) that validates
+     the lead and hands it to Resend — the API key never reaches the browser. */
+  leadEndpoint: "https://api.floa.co.il/lead",
+
+  formError: "לא הצלחנו לשלוח את הפרטים. אפשר לנסות שוב או לפנות אלינו ב־WhatsApp",
+
   /* the captions the hero diagram cycles through, in node order */
   systemLabels: [
     "אתרים ודפי נחיתה",
@@ -66,42 +63,38 @@ export const runtime = {
   ],
 };
 
-/* --- the ask: identical on every page but for the preselected option ------- */
+/* --- the ask: IDENTICAL on all six pages ----------------------------------
+   WhatsApp is the primary action. This is the fallback, for the visitor who
+   would rather be called back — so it asks for the two things a call-back
+   actually needs and nothing else. Every extra field is friction on a path the
+   visitor already chose as their second choice. */
 export const contactContent = {
   head: {
-    eyebrow: "יצירת קשר",
-    title: "בואו נמצא את הדבר הבא שיפשט ויצמיח את העסק",
-    text: "בשיחת מיפוי ראשונית נבין מה מעכב את העסק ואיך לחבר את הכול לתהליך אחד שעובד",
+    eyebrow: "השארת פרטים",
+    title: "מעדיפים שנחזור אליכם?",
+    text: "השאירו שם וטלפון ונחזור אליכם",
   },
   fields: [
-    { name: "name", label: "שם מלא", type: "text", autocomplete: "name", required: true },
-    { name: "phone", label: "טלפון", type: "tel", autocomplete: "tel", inputmode: "tel", required: true },
-    { name: "business", label: "שם העסק", type: "text", autocomplete: "organization", required: true },
-    {
-      name: "help",
-      label: "במה תרצו עזרה?",
-      type: "select",
-      required: true,
-      placeholder: "בחרו אפשרות",
-      options: [
-        "מערך לידים ומכירות",
-        "ייעול תהליכים ואוטומציות",
-        "אתר או דף נחיתה",
-        "מערכת או אפליקציה",
-        "שיווק וקמפיינים",
-        "עדיין לא בטוח",
-      ],
-    },
-    { name: "improve", label: "מה הבקשה שלכם?", type: "textarea", rows: 4, full: true },
+    { name: "name", label: "שם", type: "text", autocomplete: "name" },
+    { name: "phone", label: "טלפון", type: "tel", autocomplete: "tel", inputmode: "tel" },
   ],
-  submitLabel: "בואו נדבר על העסק",
-  note: "בלי התחייבות ובלי מצגת מכירה. שיחה עניינית על העסק ועל מה שאפשר לשפר",
-  orLabel: "או",
-  whatsapp: { label: "לכתוב לי ב־WhatsApp", sub: "תשובה מהירה" },
+  submitLabel: "חזרו אליי",
+  note: "ללא התחייבות",
   success: {
     title: "תודה, הפרטים התקבלו",
-    text: "אחזור אליכם בהקדם כדי להבין מה העסק צריך ואיך נכון להתקדם",
+    text: "נחזור אליך בהקדם",
   },
+};
+
+/* --- the objections, answered on every solution page just before the ask --- */
+export const faqContent = {
+  head: { eyebrow: "שאלות נפוצות", title: "מה שרוב העסקים שואלים לפני שמתחילים" },
+  items: [
+    { q: "צריך להחליף את המערכות הקיימות?", a: "לא. קודם בודקים מה אפשר להשאיר, לחבר או לשפר" },
+    { q: "איך מתחילים?", a: "בשיחת מיפוי קצרה שבה מגדירים את הבעיה, היעד והשלב הבא" },
+    { q: "כמה זמן זה לוקח?", a: "לאחר המיפוי מקבלים תכנית עבודה ולוחות זמנים בהתאם להיקף" },
+    { q: "אפשר להתחיל מפתרון אחד?", a: "כן. מתחילים במה שהכי משפיע ומרחיבים רק כשיש צורך" },
+  ],
 };
 
 /* --- the sections every page closes with ---------------------------------- */

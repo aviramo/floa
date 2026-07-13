@@ -2,20 +2,23 @@ import { html } from "../../lib/html.js";
 import { button } from "../button/button.js";
 import { icon } from "../icon/icon.js";
 
-/* The WhatsApp CTA: a real button with the mark in its own badge and the label
-   stacked over a sub-label — not a sentence with a link in it. */
-export const whatsappButton = (ctx, { label, sub, inline = false } = {}) =>
+/* THE WhatsApp CTA — the primary action on every page of the site.
+
+   There is exactly ONE of these in the codebase: the hero, the mid-page band
+   and the sticky mobile dock all render this, so the mark, the label and the
+   target can never drift apart. Nothing else may hand-roll a WhatsApp button.
+
+   The href is not written here. whatsapp-button.client.js writes it at runtime
+   from the one number in site config, plus the page's own opening message —
+   wa.me on a phone, WhatsApp Web on a desktop. { label, size, block, inline } */
+export const waButton = (ctx, { label, size = "lg", block, inline, className } = {}) =>
   button(ctx, {
     variant: "whatsapp",
-    size: "lg",
+    size,
+    block,
     inline,
+    className,
     whatsapp: true,
     analytics: "whatsapp_cta",
-    children: html`
-          <span class="wa-mark" aria-hidden="true">${icon("whatsapp")}</span>
-          <span class="btn-stack">
-            <span>${label}</span>
-            ${sub && html`<span class="btn-sub">${sub}</span>`}
-          </span>
-        `,
+    children: html`<span class="wa-mark" aria-hidden="true">${icon("whatsapp")}</span><span class="wa-label">${label}</span>`,
   });

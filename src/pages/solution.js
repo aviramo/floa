@@ -2,29 +2,25 @@ import { html } from "../lib/html.js";
 
 import { button } from "../components/button/button.js";
 import { card, cardGrid } from "../components/card/card.js";
-import { checklist } from "../components/checklist/checklist.js";
 import { chips } from "../components/chips/chips.js";
 import { contact } from "../components/contact/contact.js";
 import { ctaBand } from "../components/cta-band/cta-band.js";
 import { ecoGrid } from "../components/eco-grid/eco-grid.js";
-import { features } from "../components/feature/feature.js";
+import { faq } from "../components/faq/faq.js";
 import { flow, flowCards } from "../components/flow/flow.js";
 import { hero } from "../components/hero/hero.js";
 import { heroArt } from "../components/hero-art/hero-art.js";
-import { icon } from "../components/icon/icon.js";
-import { miniCards } from "../components/mini-card/mini-card.js";
-import { placeholderPair } from "../components/placeholder/placeholder.js";
 import { projectGrid } from "../components/project-card/project-card.js";
 import { quotes } from "../components/quote-card/quote-card.js";
 import { section } from "../components/section/section.js";
 import { sectionHead } from "../components/section-head/section-head.js";
 import { timeline } from "../components/timeline/timeline.js";
-import { trustStrip } from "../components/trust-strip/trust-strip.js";
 import { urgency } from "../components/urgency/urgency.js";
+import { waButton } from "../components/whatsapp-button/whatsapp-button.js";
 
 import { pick as pickProjects } from "../content/projects.js";
 import { pick as pickQuotes } from "../content/quotes.js";
-import { contactContent, heroNote, processContent, projectsHead, site, testimonialsHead, trustStripItems } from "../content/site.js";
+import { contactContent, faqContent, formCta, heroNote, processContent, site, testimonialsHead } from "../content/site.js";
 import { defaultCta, ecosystem, solutions } from "../content/solutions.js";
 import { page } from "../layouts/base.js";
 
@@ -32,37 +28,50 @@ import { page } from "../layouts/base.js";
    ONE template, five pages.
 
    A solution page is: the promise, the pain, what gets built, the PROOF that it
-   works, where it sits in the system, why FLOA, the ask, the process, the work,
-   the form. Everything on it comes from the solution's object in
-   src/content/solutions.js — so a sixth solution is a data entry, not a page.
+   works, why FLOA, the ask, the process, the objections, the form — and only
+   THEN the links to the other four solutions, so they never compete with the
+   ask above them.
 
-   Two slots let each page differ without forking the template:
-     afterHero — an extra block straight under the opening
-     proof     — sits right after "what's included", and each page proves itself
-                 its own way: a flow, a screenshot, a quote, a project
+   Every page differs only through the data in src/content/solutions.js:
+     afterHero — a block straight under the opening (marketing's funnel)
+     intro     — cards straight under the opening (systems-apps' three ways in)
+     proof     — the page proves itself its own way: a flow, a project, a quote
+     extras    — the page's own named card sections
+     reassure  — a risk-lowering head, right before the CTA band
    A section whose data is missing simply does not render.
    ========================================================================== */
 
-/* The proof block: whichever of these the solution supplies, always in this
-   order — first how it works, then the thing we built, then how it really looks,
-   then the client who lived it. */
+/* A row of cards under a head — the shape most of these sections are. */
+const cardSection = (ctx, { id, className, head, cols, items, narrow }) => section({
+  id,
+  className: className ?? "solutions",
+  children: html`${head && sectionHead(head)}
+${cardGrid({
+    cols,
+    className: narrow ? "cards-narrow" : null,
+    children: items.map((item) => card(ctx, item)),
+  })}`,
+});
+
+/* The proof block. Whichever of these the solution supplies, always in this
+   order: first how it works, then the thing we built, then the client who lived
+   it — evidence before words. */
 const proofSection = (ctx, proof) => proof && section({
   id: "proof",
   className: "projects proof",
   children: html`${proof.head && sectionHead(proof.head)}
 ${proof.flow && flow({ steps: proof.flow })}
 ${proof.flows && flowCards({ items: proof.flows })}
+${proof.projectsHead && sectionHead(proof.projectsHead)}
 ${proof.projects && projectGrid(ctx, { items: pickProjects(...proof.projects) })}
-${proof.media && placeholderPair({ items: proof.media })}
 ${proof.quotes && quotes({ items: pickQuotes(...proof.quotes) })}`,
 });
 
 export const render = (ctx, solution) => page(ctx, {
   path: `${solution.slug}/`,
   meta: solution.meta,
-  leadForm: true,
   waText: solution.waText,
-  ctaLabel: solution.ctaLabel,
+  ctaLabel: solution.waLabel,
   jsonLd: {
     "@context": "https://schema.org",
     "@type": "Service",
@@ -86,26 +95,27 @@ ${hero(ctx, {
   chip: solution.chip ?? solution.title,
   note: heroNote,
   art: heroArt({ label: solution.hero.artLabel, shapes: solution.hero.shapes }),
-  actions: html`${button(ctx, { href: "#contact", label: solution.hero.cta, size: "lg", analytics: "hero_mapping_cta" })}
-          ${button(ctx, { variant: "ghost", size: "lg", whatsapp: true, analytics: "whatsapp_cta",
-            children: html`<span class="wa-glyph" aria-hidden="true">${icon("whatsapp")}</span><span>לכתוב לי ב־WhatsApp</span>` })}`,
+  /* WhatsApp first — it is the primary action. The form is the way out for
+     anyone who would rather be called back. */
+  actions: html`${waButton(ctx, { label: solution.waLabel })}
+          ${button(ctx, { href: "#contact", label: formCta, variant: "ghost", size: "lg", analytics: "hero_form_cta" })}`,
 })}
 
-${trustStrip({ items: trustStripItems })}
-
-${solution.tracks && section({
-  id: "tracks",
+${solution.afterHero && section({
+  id: "outcome",
   className: "solutions",
-  children: cardGrid({
-    children: solution.tracks.map((track) => card(ctx, track)),
-  }),
+  children: html`${sectionHead(solution.afterHero.head)}
+${solution.afterHero.flow && flow({ steps: solution.afterHero.flow })}`,
 })}
 
-${section({
+${solution.intro && cardSection(ctx, { id: "tracks", cols: solution.intro.cols, items: solution.intro.items })}
+
+${cardSection(ctx, {
   id: "problem",
   className: "problem",
-  children: html`${sectionHead(solution.problem.head)}
-${miniCards({ items: solution.problem.items })}`,
+  head: solution.problem.head,
+  cols: 4,
+  items: solution.problem.items.map((i) => ({ ...i, accent: "water", size: "sm" })),
 })}
 
 ${solution.urgency && urgency({ text: solution.urgency })}
@@ -114,11 +124,18 @@ ${section({
   id: "included",
   className: "solutions",
   children: html`${sectionHead(solution.included.head)}
-${checklist({ items: solution.included.items })}
+${cardGrid({
+    className: "cards-narrow",
+    children: solution.included.items.map((item) =>
+      card(ctx, { ...item, icon: "check", shape: "dot", row: true })
+    ),
+  })}
 ${solution.included.types && chips({ items: solution.included.types })}`,
 })}
 
 ${proofSection(ctx, solution.proof)}
+
+${(solution.extras ?? []).map((extra) => cardSection(ctx, { ...extra }))}
 
 ${solution.quotes && section({
   id: "testimonial",
@@ -127,18 +144,12 @@ ${solution.quotes && section({
 ${quotes({ items: pickQuotes(...solution.quotes) })}`,
 })}
 
-${solution.projects && section({
-  id: "projects",
-  className: "projects",
-  children: html`${sectionHead(projectsHead)}
-${projectGrid(ctx, { items: pickProjects(...solution.projects) })}`,
-})}
-
-${section({
+${cardSection(ctx, {
   id: "advantage",
   className: "advantage",
-  children: html`${sectionHead(solution.advantage.head)}
-${features({ items: solution.advantage.items })}`,
+  head: solution.advantage.head,
+  cols: 3,
+  items: solution.advantage.items.map((i) => ({ ...i, accent: "teal" })),
 })}
 
 ${solution.reassure && section({
@@ -147,7 +158,7 @@ ${solution.reassure && section({
   children: sectionHead(solution.reassure),
 })}
 
-${ctaBand(ctx, solution.cta ?? defaultCta)}
+${ctaBand(ctx, { ...(solution.cta ?? defaultCta), cta: solution.waLabel })}
 
 ${section({
   id: "process",
@@ -157,25 +168,29 @@ ${timeline({ items: processContent.steps })}`,
 })}
 
 ${section({
-  id: "ecosystem",
-  className: "solutions",
-  children: html`${sectionHead(ecosystem.head)}
-${ecoGrid(ctx, {
-  solutions,
-  current: solution.slug,
-  badge: ecosystem.badge,
-  note: solution.ecoNote(ctx),
-})}`,
+  id: "faq",
+  className: "faq-section",
+  children: html`${sectionHead(faqContent.head)}
+${faq({ items: faqContent.items })}`,
 })}
 
 ${section({
   id: "contact",
   className: "contact",
-  children: contact(ctx, {
-    ...contactContent,
-    head: { ...contactContent.head, title: solution.contact.title, text: solution.contact.text },
-    submitLabel: solution.contact.submitLabel,
-  }, { selected: solution.formValue, hideService: true, minimalRequired: true }),
+  children: contact(ctx, contactContent, { page: solution.pageName }),
+})}
+
+<!-- the other four solutions: AFTER the ask, never competing with it -->
+${section({
+  id: "ecosystem",
+  className: "solutions",
+  children: html`${sectionHead(ecosystem.head)}
+${ecoGrid(ctx, {
+    solutions,
+    current: solution.slug,
+    badge: ecosystem.badge,
+    note: solution.ecoNote(ctx),
+  })}`,
 })}
 </main>`,
 });

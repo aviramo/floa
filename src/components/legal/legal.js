@@ -1,5 +1,5 @@
 import { html } from "../../lib/html.js";
-import { whatsappButton } from "../whatsapp-button/whatsapp-button.js";
+import { waButton } from "../whatsapp-button/whatsapp-button.js";
 
 /* Privacy and accessibility: prose, but still built from blocks rather than a
    hand-written page, so both stay in the site's voice and shape.
@@ -26,7 +26,7 @@ export const legal = (ctx, { title, updated, blocks, foot }) => html`
 
     <div class="legal-foot">
       <p>${foot.text}</p>
-      ${whatsappButton(ctx, { ...foot.whatsapp, inline: true })}
+      ${waButton(ctx, { label: foot.whatsapp.label, inline: true })}
     </div>
   </div>
 </main>`;

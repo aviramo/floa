@@ -67,7 +67,9 @@
   --gap:      clamp(14px, 2vw, 24px);     /* the ONE gap between grid items */
   --pad-card: clamp(18px, 3vw, 28px);     /* the ONE card padding */
   --pad-panel: clamp(20px, 5vw, 56px);    /* the ONE panel padding */
-  --section:  clamp(64px, 8vw, 128px);
+  /* the gap BETWEEN two sections. Each one pays half of it as padding, so two
+     neighbours together add up to exactly this. */
+  --section:  80px;
   --head-gap: clamp(36px, 4.5vw, 64px);   /* section head -> content */
 
   /* --- shape --- */
@@ -84,7 +86,7 @@
   --sh-3: 0 26px 64px -28px rgba(15, 42, 51, .24);
   --sh-teal: 0 12px 28px -12px rgba(14, 140, 126, .45);
 
-  --container: 1200px;
+  --container: 1120px;
   --ease: cubic-bezier(.22, .61, .36, 1);
 }
 
@@ -95,9 +97,7 @@
     --gap: 16px;
     --pad-card: 22px;
     --fs-body: 1.16rem;
-    /* tighten the rhythm between long sections by ~15% on a phone, without
-       letting them crowd — the floor drops from 64px to 54px */
-    --section: clamp(54px, 11vw, 96px);
+    --section: 56px;
     --head-gap: clamp(30px, 4.5vw, 64px);
   }
 }

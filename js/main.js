@@ -4,14 +4,10 @@
 window.FLOA = { config: {
   "whatsapp": {
     "number": "972587078708",
-    "greeting": "היי אופיר, הגעתי דרך אתר FLOA ואני רוצה לבדוק מה אפשר לשפר בעסק"
+    "greeting": "היי, הגעתי לאתר FLOA ורציתי לבדוק איך אפשר לשפר את התהליכים הדיגיטליים בעסק שלי"
   },
-  "formError": "השליחה נכשלה. אפשר לנסות שוב או לכתוב לי בוואטסאפ",
-  "formSuccessWa": {
-    "message": "היי, מילאתי עכשיו את הטופס באתר ואשמח שתחזרו אליי 🙂",
-    "mobileLabel": "פתיחת וואטסאפ",
-    "desktopLabel": "פתיחת WhatsApp Web"
-  },
+  "leadEndpoint": "https://api.floa.co.il/lead",
+  "formError": "לא הצלחנו לשלוח את הפרטים. אפשר לנסות שוב או לפנות אלינו ב־WhatsApp",
   "systemLabels": [
     "אתרים ודפי נחיתה",
     "אפליקציות ומערכות",
@@ -133,160 +129,172 @@ window.FLOA = { config: {
 /* ======================================================================
    components/whatsapp-button/whatsapp-button.client.js
    ====================================================================== */
-/* Every [data-whatsapp] element — button, hero CTA, footer link — gets its href
-   written here, from the one number in site config. Nothing hardcodes wa.me. */
+/* Every [data-whatsapp] element on the page — the hero CTA, the mid-page band,
+   the sticky dock, the footer link — gets its href written here, from the ONE
+   number in site config and the ONE message the page carries. Nothing anywhere
+   else builds a wa.me URL, so every WhatsApp button on a page is guaranteed to
+   open the same conversation.
+
+   The message is per-page: the build writes it onto <body data-wa-text>, so the
+   automations page opens WhatsApp already talking about automations. The shared
+   greeting is the fallback for a page that sets none (the legal pages).
+
+   A phone hands off to the WhatsApp app via wa.me. A desktop has no app to hand
+   off to, so it opens WhatsApp Web directly rather than bouncing through the
+   wa.me interstitial. */
 (function () {
   "use strict";
   var wa = window.FLOA.config.whatsapp;
-  /* each page carries its own opening line on <body data-wa-text>; fall back to
-     the shared greeting when it isn't set (e.g. the legal pages) */
-  var greeting = document.body.getAttribute("data-wa-text") || wa.greeting;
-  var href = wa.number
-    ? "https://wa.me/" + wa.number + "?text=" + encodeURIComponent(greeting)
-    : "#contact";
+  var targets = document.querySelectorAll("[data-whatsapp]");
+  if (!targets.length || !wa.number) return;
 
-  document.querySelectorAll("[data-whatsapp]").forEach(function (el) {
+  var text = encodeURIComponent(document.body.getAttribute("data-wa-text") || wa.greeting);
+
+  var mobile = (window.matchMedia && window.matchMedia("(max-width: 768px)").matches) ||
+               /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  var href = mobile
+    ? "https://wa.me/" + wa.number + "?text=" + text
+    : "https://web.whatsapp.com/send?phone=" + wa.number + "&text=" + text;
+
+  targets.forEach(function (el) {
     el.setAttribute("href", href);
-    if (wa.number) {
-      el.setAttribute("target", "_blank");
-      el.setAttribute("rel", "noopener");
-    }
+    el.setAttribute("target", "_blank");
+    el.setAttribute("rel", "noopener");
   });
 })();
 
 /* ======================================================================
    components/contact/contact.client.js
    ====================================================================== */
-/* The contact form: validate, save the lead, and only then say "thank you". */
+/* The contact form.
+
+   Validate, POST the lead to the email API, and say "thank you" ONLY once the
+   server has confirmed the email actually went out. Nothing is stored in the
+   browser, nothing is written to Firebase, and a successful send never opens
+   WhatsApp — the visitor asked to be called back, so we call back.
+
+   On failure the fields are deliberately left ALONE: the visitor gets the error
+   under the button and can press it again without retyping anything. */
 (function () {
   "use strict";
   var form = document.getElementById("contactForm");
   if (!form) return;
 
   var success = document.getElementById("formSuccess");
+  var name = document.getElementById("name");
   var phone = document.getElementById("phone");
-  var help = document.getElementById("help");
   var submitBtn = form.querySelector('button[type="submit"]');
-  var controls = form.querySelectorAll("input, select, textarea");
-  var errorText = window.FLOA.config.formError;
+  var fields = form.querySelectorAll("input:not([type=hidden]):not(#company)");
 
-  /* the post-submit WhatsApp handoff: same number as the rest of the site, its
-     own opening line, and a device-dependent label (see site.js) */
-  var waCfg = window.FLOA.config.whatsapp || {};
-  var successWaCfg = window.FLOA.config.formSuccessWa || {};
-  var successWa = document.getElementById("formSuccessWa");
-  var successWaLabel = successWa && successWa.querySelector(".btn-wa-open-label");
-  var waTimer = null;
-  var submitting = false;                     // guards against a double send
+  var endpoint = window.FLOA.config.leadEndpoint;
+  var sending = false;              // guards against a double send
+  var lastSentAt = 0;               // and against hammering the button
 
-  function isMobile() {
-    return (window.matchMedia && window.matchMedia("(max-width: 768px)").matches) ||
-           /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  }
-  /* mobile hands off to the app via wa.me; desktop opens WhatsApp Web */
-  function waLink(mobile) {
-    if (!waCfg.number) return "#contact";
-    var msg = encodeURIComponent(successWaCfg.message || "");
-    return mobile
-      ? "https://wa.me/" + waCfg.number + "?text=" + msg
-      : "https://web.whatsapp.com/send?phone=" + waCfg.number + "&text=" + msg;
-  }
-
-  /* Israeli mobile or landline, however it was typed */
-  function validIL(value) {
+  /* an Israeli mobile or landline, however it was typed */
+  function validPhone(value) {
     var p = (value || "").replace(/[^\d+]/g, "").replace(/^\+972/, "0").replace(/^972/, "0");
     return /^0(?:5\d{8}|[2-489]\d{7})$/.test(p);
   }
+  function validName(value) {
+    return (value || "").trim().length >= 2;
+  }
 
-  // functional error line, created once and shown only on a real failure
+  /* the error line, created once and shown only on a real failure — directly
+     under the button, which is where the visitor is looking when it fails */
   var errorEl = document.createElement("p");
   errorEl.className = "form-error";
   errorEl.setAttribute("role", "alert");
   errorEl.hidden = true;
-  errorEl.textContent = errorText;
+  errorEl.textContent = window.FLOA.config.formError;
   form.parentNode.insertBefore(errorEl, form.nextSibling);
 
-  /* keep the "how can we help" select greyed while it sits on the placeholder */
-  if (help) {
-    var refresh = function () { help.classList.toggle("is-empty", !help.value); };
-    help.addEventListener("change", refresh);
-    refresh();
-  }
-
-  /* Error styling is driven by .is-invalid, applied ONLY after a submit attempt.
-     A CSS :invalid rule would paint every required field red while the form is
+  /* Error styling is driven by .is-invalid and applied ONLY after a submit
+     attempt. A CSS :invalid rule would paint both fields red while the form is
      still untouched. */
-  controls.forEach(function (el) {
+  fields.forEach(function (el) {
     ["input", "change"].forEach(function (evt) {
-      el.addEventListener(evt, function () { el.classList.remove("is-invalid"); });
+      el.addEventListener(evt, function () {
+        el.classList.remove("is-invalid");
+        el.setCustomValidity("");
+      });
     });
   });
-  if (phone) phone.addEventListener("input", function () { phone.setCustomValidity(""); });
 
   form.addEventListener("submit", function (e) {
     e.preventDefault();
-    if (submitting) return;                   // never send the same form twice
-    errorEl.hidden = true;
+    if (sending) return;
+    if (Date.now() - lastSentAt < 5000) return;   // no repeat sends on a hot button
 
-    if (phone) phone.setCustomValidity(validIL(phone.value) ? "" : "אנא הזינו מספר טלפון ישראלי תקין");
+    errorEl.hidden = true;
+    if (success) success.hidden = true;
+
+    if (name) name.setCustomValidity(validName(name.value) ? "" : "אנא הזינו שם");
+    if (phone) phone.setCustomValidity(validPhone(phone.value) ? "" : "אנא הזינו מספר טלפון ישראלי תקין");
 
     if (!form.checkValidity()) {
-      controls.forEach(function (el) { el.classList.toggle("is-invalid", !el.checkValidity()); });
+      fields.forEach(function (el) { el.classList.toggle("is-invalid", !el.checkValidity()); });
       form.reportValidity();
       return;
     }
-    clearTimeout(waTimer);                     // cancel a pending auto-open from a prior send
-    if (success) success.hidden = true;
-    window.FLOA.track("contact_form_submit");
 
     var data = new FormData(form);
-    var lead = {};
-    ["name", "phone", "business", "help", "improve"].forEach(function (key) {
-      lead[key] = (data.get(key) || "").toString().trim();
-    });
+    var lead = {
+      name: (data.get("name") || "").toString().trim(),
+      phone: (data.get("phone") || "").toString().trim(),
+      page: (data.get("page") || "").toString(),
+      company: (data.get("company") || "").toString(),   // the honeypot: server drops it if filled
+      url: window.location.href,
+    };
 
-    submitting = true;
+    sending = true;
     if (submitBtn) submitBtn.disabled = true;
+    window.FLOA.track("contact_form_submit");
 
-    var save = typeof window.floaSaveLead === "function"
-      ? window.floaSaveLead(lead)
-      : Promise.reject(new Error("lead storage unavailable"));
+    fetch(endpoint, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(lead),
+    }).then(function (res) {
+      if (!res.ok) throw new Error("lead endpoint returned " + res.status);
+      return res.json().catch(function () { return {}; });
+    }).then(function (body) {
+      /* the server confirms the email left; anything else is a failure, even a 200 */
+      if (body && body.ok === false) throw new Error(body.error || "send failed");
 
-    Promise.resolve(save).then(function () {
-      window.FLOA.track("contact_form_success");     // success ONLY after the send actually succeeded
-      form.reset();
-      if (help) help.classList.add("is-empty");
-      if (submitBtn) submitBtn.disabled = false;
-      submitting = false;
+      window.FLOA.track("contact_form_success");
+      lastSentAt = Date.now();
+      form.reset();                                  // cleared ONLY on success
       if (success) {
-        var mobile = isMobile();
-        if (successWa) {
-          successWa.setAttribute("href", waLink(mobile));
-          if (successWaLabel) {
-            successWaLabel.textContent = mobile
-              ? (successWaCfg.mobileLabel || "פתיחת וואטסאפ")
-              : (successWaCfg.desktopLabel || "פתיחת WhatsApp Web");
-          }
-        }
-        /* the thank-you stays put until the visitor sends again or leaves */
         success.hidden = false;
         success.scrollIntoView({ behavior: "smooth", block: "center" });
-        /* on a phone, hand off to WhatsApp automatically after a beat — in a new
-           tab, so the thank-you and the backup button remain even if the browser
-           blocks the pop-up. Desktop never auto-opens; the button is the way. */
-        if (mobile && successWa) {
-          clearTimeout(waTimer);
-          waTimer = setTimeout(function () {
-            try { window.open(successWa.getAttribute("href"), "_blank", "noopener"); } catch (e) {}
-          }, 1500);
-        }
       }
     }).catch(function (err) {
       console.warn("FLOA: lead not sent —", err && err.message);
-      if (submitBtn) submitBtn.disabled = false;
-      submitting = false;
-      errorEl.hidden = false;
+      errorEl.hidden = false;                        // fields keep what the visitor typed
       errorEl.scrollIntoView({ behavior: "smooth", block: "center" });
+    }).then(function () {
+      sending = false;
+      if (submitBtn) submitBtn.disabled = false;
+    });
+  });
+})();
+
+/* ======================================================================
+   components/faq/faq.client.js
+   ====================================================================== */
+/* One answer open at a time. <details> already does the opening, the keyboard and
+   the announcing — all this adds is closing the others, so the list never grows
+   into a wall of text. No-ops on a page with no accordion. */
+(function () {
+  "use strict";
+  document.querySelectorAll("[data-faq]").forEach(function (group) {
+    var items = group.querySelectorAll("details");
+    items.forEach(function (item) {
+      item.addEventListener("toggle", function () {
+        if (!item.open) return;
+        items.forEach(function (other) { if (other !== item) other.open = false; });
+      });
     });
   });
 })();

@@ -20,22 +20,17 @@ export const css = [
 
   "components/button/button.css",
   "components/whatsapp-button/whatsapp-button.css",   // overrides .btn + .btn-lg
-  "components/divider/divider.css",
   "components/chips/chips.css",
-  "components/trust-strip/trust-strip.css",
   "components/urgency/urgency.css",
   "components/cta-dock/cta-dock.css",
   "components/section-head/section-head.css",
-  "components/card/card.css",
-  "components/eco-grid/eco-grid.css",                 // overrides .card
-  "components/mini-card/mini-card.css",
-  "components/feature/feature.css",
-  "components/checklist/checklist.css",
+  "components/card/card.css",                         // THE box — every boxed item on the site
+  "components/eco-grid/eco-grid.css",                 // refines .card for the ecosystem row
   "components/quote-card/quote-card.css",
-  "components/placeholder/placeholder.css",
   "components/project-card/project-card.css",
   "components/flow/flow.css",
   "components/timeline/timeline.css",
+  "components/faq/faq.css",
   "components/ba-strip/ba-strip.css",
   "components/approach/approach.css",
   "components/about/about.css",
@@ -58,6 +53,7 @@ export const js = [
   "lib/anchors.client.js",
   "components/whatsapp-button/whatsapp-button.client.js",
   "components/contact/contact.client.js",
+  "components/faq/faq.client.js",
   "components/cta-dock/cta-dock.client.js",
   "components/hero-system/hero-system.client.js",
 ];

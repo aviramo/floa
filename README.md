@@ -37,7 +37,24 @@ src/
   pages/
     index.js               # מפת האתר — כל דף שנוצר מופיע כאן
     home.js / solution.js / legal-page.js
+worker/                    # פונקציית השרת ששולחת את הטופס במייל (Cloudflare)
 ```
+
+**ששה דפים בלבד:** דף הבית וחמישה דפי פתרון. אין דף שביעי ואין אזור ניהול.
+
+### קומפוננטה אחת לכל דבר שחוזר על עצמו
+
+**אין שכפול של לוגיקה או של עיצוב.** שני הכללים שאוכפים את זה:
+
+**`card` היא הקופסה היחידה באתר.** כל פריט בקופסה — כרטיס פתרון, כאב, פריט
+ב"מה נבנה", סיבה לבחור ב-FLOA, אריח בתמונה המלאה, כרטיס אוטומציה — הוא אותה
+קומפוננטה עם מתגים (`accent`, `icon`, `shape`, `row`, `size`, `current`). בעבר
+היו חמש קומפוננטות שהצהירו את אותו משטח, hairline, radius, padding וצל מחדש בכל
+פעם. אם צריך קופסה חדשה — מוסיפים לה מתג, לא קובץ.
+
+**`waButton` היא הכפתור היחיד של WhatsApp.** ה-hero, הבאנר באמצע הדף והדוק
+במובייל מרנדרים את אותה קומפוננטה, ולכן הסימן, הטקסט והיעד לא יכולים להתפצל.
+שום מקום אחר בקוד לא בונה כתובת `wa.me`.
 
 ### CSS אחיד
 
@@ -48,106 +65,55 @@ src/
 קומפוננטה חדשה שלא נרשמה ב-`bundle.js` עדיין תיכלל (בסוף, עם אזהרה בבנייה),
 כך שאי אפשר "לאבד" סגנון בטעות.
 
-### להוסיף דף פתרון שישי
-
-מוסיפים אובייקט ל-`src/content/solutions.js` וקובץ SVG ב-`src/content/hero-art/`.
-זה הכול — הדף עצמו, הכרטיס בדף הבית, והכרטיס ברשת "התמונה המלאה" בכל שאר הדפים
-נוצרים מאותו אובייקט.
-
 ### מקור אמת אחד
 
-מספר ה-WhatsApp, נוסח ההודעה, שדות הטופס והדומיין יושבים ב-`src/content/site.js`.
-גם הדפדפן קורא משם: הבנייה מזריקה את `runtime` ל-`window.FLOA.config`.
+מספר ה-WhatsApp, כתובת ה-API של הטופס, שדות הטופס והדומיין יושבים
+ב-`src/content/site.js`. גם הדפדפן קורא משם: הבנייה מזריקה את `runtime`
+ל-`window.FLOA.config`.
 
-## טופס יצירת קשר — Firestore
+## WhatsApp — הפעולה הראשית
 
-בשליחה מוצלחת הפנייה נשמרת ב-Cloud Firestore (אוסף `leads`) דרך `js/firebase.js`.
-הודעת ה"תודה" מוצגת רק אחרי שהשמירה באמת הצליחה; אחרת מוצגת שורת שגיאה עם
-הפנייה ל-WhatsApp.
+WhatsApp הוא ה-CTA הראשי בכל ששת הדפים. הטופס הוא **אפשרות משנית בלבד**.
 
-### Firestore Security Rule
+לכל דף יש הודעת פתיחה משלו. הבנייה כותבת אותה על `<body data-wa-text>`,
+ו-`whatsapp-button.client.js` הופך אותה ל-href של **כל** כפתורי ה-WhatsApp בדף —
+ולכן כולם פותחים בהכרח את אותה שיחה:
 
-הציבור יוצר לידים בלבד; **מנהלים מורשים** (רשימת כתובות ה-Gmail) קוראים ומעדכנים.
-זהו מקור האמת להרשאה — לא הקוד בדפדפן. יש לעדכן את רשימת הכתובות גם כאן וגם
-ב-`js/admin-core.js` (`ADMIN_EMAILS`).
+* **במובייל** — `wa.me`, שמוסר לאפליקציה
+* **במחשב** — `web.whatsapp.com/send`, ישירות ובלי מסך ביניים
 
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
+## הטופס — שליחה במייל, בלי שמירה
 
-    function isAdmin() {
-      return request.auth != null
-          && request.auth.token.email_verified == true
-          && request.auth.token.email in [
-               "ofir.aviram@gmail.com"
-             ];
-    }
+הטופס מבקש **שם וטלפון בלבד**. אין מייל, אין שם חברה, אין בחירת שירות ואין טקסט
+חופשי.
 
-    match /leads/{leadId} {
-      allow read:   if isAdmin();
-      allow update, delete: if isAdmin();
-      allow create: if
-        request.resource.data.name is string &&
-        request.resource.data.name.size() > 0 &&
-        request.resource.data.name.size() <= 100 &&
-        request.resource.data.phone is string &&
-        request.resource.data.phone.size() > 0 &&
-        request.resource.data.phone.size() <= 40 &&
-        request.resource.data.business is string &&
-        request.resource.data.business.size() <= 120 &&
-        request.resource.data.improve is string &&
-        request.resource.data.improve.size() <= 2000 &&
-        request.resource.data.source == "floa-landing";
-    }
-  }
-}
-```
+**שום פנייה אינה נשמרת.** לא ב-Firebase, לא ב-Firestore ולא בשום מסד נתונים אחר.
+בשליחה מוצלחת הפנייה נשלחת כמייל ל-`info@floa.co.il` וזה כל סיפור חייה.
 
-## אזור הניהול — `/admin/`
-
-הדף השביעי. אינו נבנה מהקומפוננטות (הוא אפליקציית לקוח דינמית) ולכן יושב ישירות
-תחת `admin/`, עם JS נפרד שאינו נכנס ל-`js/main.js` הציבורי. `noindex`.
+האתר סטטי ואין לו שרת, לכן השליחה עוברת דרך **Cloudflare Worker** (ראו
+[`worker/`](worker/)) ששולח את המייל דרך **Resend**. מפתח ה-API יושב במשתנה סביבה
+ב-Cloudflare ו**לעולם אינו מגיע לדפדפן**.
 
 ```
-admin/index.html      רשימת הלידים: חיפוש חופשי + סינון סוג פתרון + סינון סטטוס
-admin/lead.html?id=…  דף טיפול בליד יחיד: כל השדות + עדכון סטטוס והערות
-js/admin-core.js      אתחול Firebase, שער הזדהות Google, רשימת המנהלים
-js/admin-list.js      לוגיקת הרשימה
-js/admin-lead.js      לוגיקת דף הטיפול
-css/admin.css         סגנון הניהול (נשען על tokens שב-css/styles.css)
+הדפדפן ──POST──> api.floa.co.il/lead ──> Resend ──> info@floa.co.il
+                 (Cloudflare Worker)
+                 RESEND_API_KEY (secret)
 ```
 
-**חיפוש וסינון:** חיפוש חופשי סורק שם, טלפון, שם עסק, סוג הפתרון והבקשה (כל מילה
-צריכה להימצא). קומבו-בוקס נוסף מסנן לפי סוג הפתרון (נבנה מהערכים שקיימים בפועל),
-וקומבו סטטוס מסנן חדש/בטיפול/טופל. ברירת המחדל: הלידים הפתוחים (חדש + בטיפול).
+הודעת ה"תודה" מוצגת **רק** אחרי ש-Resend אישר שהמייל יצא. אם השליחה נכשלה —
+מוצגת שגיאה מתחת לכפתור, **השדות נשארים מלאים**, ואפשר לנסות שוב. שליחה מוצלחת
+**אינה** פותחת WhatsApp.
 
-**סטטוס:** לידים חדשים מהטופס נשמרים ללא שדה `status` ומוצגים כ"חדש". דף הטיפול
-מעדכן `status` + `notes` + `handledAt` + `handledBy`.
-
-### הפעלה (חד-פעמי, בקונסולת Firebase)
-
-1. **Authentication → Sign-in method** → להפעיל את הספק **Google**.
-2. **Authentication → Settings → Authorized domains** → לוודא ש-`floa.co.il`
-   מופיע (ולהוסיף `localhost` לבדיקות מקומיות).
-3. **Firestore → Rules** → להדביק את הכללים שלמעלה ו-Publish.
-4. את הכתובת המורשית לעדכן בשני מקומות: בכללים למעלה וב-`js/admin-core.js`.
+הגדרת ה-Worker (אימות הדומיין, המפתח, ה-DNS): ראו [`worker/README.md`](worker/README.md).
 
 ## תמונות שממתינות לצילום אמיתי
 
-האתר לא ממציא צילומי מסך ולא נתונים. במקומות שבהם עדיין אין צילום אמיתי מוצג
-placeholder מעוצב, ובקוד יש הערה מפורשת. חיפוש `Replace with real` יראה את כולם:
-
-- `websites` — צילום האתר במחשב ובמובייל
-- `systems-apps` / `automations` — שני מסכי Android אמיתיים של Once
-  (`assets/project-once.webp` הוא מוקאפ אייפון מזויף ואינו בשימוש)
-- `marketing` — דשבורד מדידה אמיתי
-
-להחלפה: מוסיפים את הקובץ ל-`assets/` ומחליפים ב-`src/content/` את אובייקט ה-
-placeholder ב-`{ src, width, height, alt }`.
+האתר לא ממציא צילומי מסך ולא נתונים. כל צילום שמופיע הוא אמיתי; במקום שאין צילום
+אמיתי — פשוט אין תמונה.
 
 ## נגישות ו-SEO
 
 - RTL מלא, `lang="he"`, `H1` אחד לדף, היררכיית כותרות תקינה.
 - `alt` לכל תמונה, ניווט מקלדת, `:focus-visible`, כיבוד `prefers-reduced-motion`.
+- שאלות נפוצות כאקורדיון `<details>` — נגיש מהמקלדת גם בלי JS.
 - Canonical, Open Graph ו-JSON-LD לכל דף — כולם נגזרים מ-`site.origin`.

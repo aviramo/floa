@@ -1,79 +1,48 @@
-/* Deliberately after button.css: .btn-whatsapp and .btn carry the same
-   specificity, so this file's min-height and padding must land last to win. */
+/* ==========================================================================
+   Deliberately after button.css: .btn-whatsapp and .btn carry the same
+   specificity, so what lands last wins.
+
+   WhatsApp is now the PRIMARY action on every page, so this button is the loud
+   one — WhatsApp's own green, so the visitor knows which app is about to open
+   before they tap. The teal primary steps back to being a secondary.
+   ========================================================================== */
 .btn-whatsapp {
-  width: 100%;
   gap: var(--s-3);
-  padding-block: var(--s-3);
-  min-height: 64px;
-  background: var(--surface-sunk);
-  color: var(--ink);
-  border-color: var(--hairline);
-  box-shadow: var(--sh-1);
+  background: #25D366;
+  color: #fff;
+  border-color: #25D366;
+  box-shadow: 0 12px 28px -12px rgba(37, 211, 102, .55);
 }
 .btn-whatsapp:hover {
-  background: #F6FDF9;
-  border-color: #25D366;
-  color: var(--ink);
-  transform: translateY(-2px);
-  box-shadow: 0 12px 28px -14px rgba(37, 211, 102, .5);
-}
-/* On a narrow phone the badge + a single-line (nowrap) label must share one
-   full-width row; tighten the side padding and the badge-to-label gap so the
-   label fits beside the mark instead of spilling past the pill. */
-@media (max-width: 640px) {
-  .btn-whatsapp { padding-inline: var(--s-3); gap: var(--s-2); }
-}
-
-/* the mark sits in its own badge, so it reads as an icon and not as a stray
-   glyph floating beside a two-line label */
-.btn-whatsapp .wa-mark {
-  flex: 0 0 auto;
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: #25D366;
-  color: #fff;
-}
-.btn-whatsapp .wa-mark svg { width: 22px; height: 22px; }
-
-/* label above sub-label, never side by side */
-.btn-stack {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1px;
-  min-width: 0;
-  line-height: 1.3;
-  text-align: start;
-}
-.btn-whatsapp .btn-sub {
-  font-weight: 400;
-  font-size: var(--fs-xs);
-  color: var(--muted);
-}
-
-/* The inline WhatsApp mark carried by plain WhatsApp buttons (the ghost hero CTA
-   and the post-submit CTA) — a 20px glyph, 8px from the label via the button's
-   own gap, and on the right in RTL because it is the button's first child. */
-.btn .wa-glyph {
-  flex: 0 0 auto;
-  display: inline-flex;
-}
-.btn .wa-glyph svg { width: 20px; height: 20px; }
-
-/* The solid WhatsApp CTA shown inside the success box after a form is sent. */
-.btn-wa-open {
-  margin-top: var(--s-5);
-  background: #25D366;
-  color: #fff;
-  border-color: #25D366;
-}
-.btn-wa-open:hover {
   background: #1EBE57;
   border-color: #1EBE57;
   color: #fff;
   transform: translateY(-2px);
-  box-shadow: 0 12px 28px -14px rgba(37, 211, 102, .5);
+  box-shadow: 0 18px 36px -14px rgba(37, 211, 102, .65);
+}
+
+/* the mark, always before the label (RTL: to its right, as the first child) */
+.btn-whatsapp .wa-mark {
+  flex: 0 0 auto;
+  display: inline-flex;
+}
+.btn-whatsapp .wa-mark svg { width: 22px; height: 22px; }
+
+/* THE ONE-LINE RULE. Every button on the site keeps its label on a single line
+   (.btn sets white-space:nowrap), and these labels are the longest on the site
+   — "לשיחת מיפוי ב־WhatsApp" on a full-width pill inside a 320px phone. So on a
+   phone the mark, the gap and the side padding all give ground before the text
+   does, and the label itself steps down a notch rather than wrapping. */
+.btn-whatsapp .wa-label { min-width: 0; }
+
+@media (max-width: 640px) {
+  .btn-whatsapp {
+    gap: var(--s-2);
+    padding-inline: var(--s-4);
+    font-size: 1.05rem;
+  }
+  .btn-whatsapp .wa-mark svg { width: 20px; height: 20px; }
+}
+@media (max-width: 360px) {
+  .btn-whatsapp { padding-inline: var(--s-3); font-size: .98rem; }
 }

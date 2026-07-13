@@ -11,8 +11,8 @@
    above the heading. Pulling the scroll target up by that padding lands the
    CONTENT a normal ~40px below the fold instead. */
 .section {
-  padding-block: var(--section);
-  scroll-margin-top: calc(var(--s-8) - var(--section));
+  padding-block: calc(var(--section) / 2);
+  scroll-margin-top: calc(var(--s-8) - var(--section) / 2);
   position: relative;
 }
 

@@ -1,51 +1,18 @@
-/* After card.css on purpose: these rules refine .card for the ecosystem grid. */
+/* The ecosystem row owns exactly two things the shared card does not: a row that
+   fits five tiles at any width, and the line of copy that closes it. Everything
+   else about these tiles — the box, the icon badge, the "you are here" state —
+   is card.css, and is not repeated here. */
 .eco-grid {
-  display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: var(--gap);
-}
-.eco-card {
-  text-align: start;
-  align-items: flex-start;
-}
-.eco-card .card-icon {
-  width: 42px;
-  height: 42px;
-  margin-bottom: var(--s-4);
-}
-.eco-card h3 { font-size: 1.08rem; margin-bottom: var(--s-1); }
-.eco-card p { color: var(--muted); font-size: var(--fs-xs); }
-
-/* the current page's card: highlighted, and not a link */
-.eco-card.is-current {
-  border-color: rgba(14, 140, 126, .45);
-  background: var(--teal-tint);
-  box-shadow: var(--sh-2);
-}
-.eco-card.is-current:hover { transform: none; }
-.eco-card.is-current .card-icon { background: var(--teal); color: #fff; }
-.eco-here {
-  margin-top: var(--s-3);
-  display: inline-flex;
-  align-items: center;
-  padding: 3px var(--s-3);
-  border-radius: var(--r-pill);
-  background: var(--teal);
-  color: #fff;
-  font-size: .72rem;
-  font-weight: 700;
-  letter-spacing: .04em;
-  line-height: 1.4;
 }
 
-/* the "one system" line that closes the section */
 .eco-note {
   margin-top: var(--gap);
+  margin-inline: auto;
+  max-width: 46rem;
   text-align: center;
   color: var(--muted);
   font-size: var(--fs-sm);
-  max-width: 46rem;
-  margin-inline: auto;
 }
 .eco-note a { color: var(--teal-dark); font-weight: 700; }
 .eco-note a:hover { text-decoration: underline; }

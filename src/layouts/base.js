@@ -8,9 +8,13 @@ import { footerContent, site } from "../content/site.js";
    the stylesheet, the scripts and the footer are written once, here, and can
    never drift between pages.
 
-   { path, meta:{title,description}, og, jsonLd, leadForm, waText, ctaLabel, body }
+   `waText` is the page's own WhatsApp opening line: it rides on <body> and
+   whatsapp-button.client.js turns it into the href of every WhatsApp button on
+   the page, so all of them open the same, on-topic conversation.
+
+   { path, meta:{title,description}, og, jsonLd, waText, ctaLabel, body }
    ========================================================================== */
-export function page(ctx, { path = "", meta, og = true, jsonLd, leadForm = false, waText, ctaLabel, body }) {
+export function page(ctx, { path = "", meta, og = true, jsonLd, waText, ctaLabel, body }) {
   const url = `${site.origin}/${path}`;
   const ogImage = `${site.origin}/${site.og.image}`;
 
@@ -63,8 +67,6 @@ ${raw(JSON.stringify(jsonLd, null, 2))}
 ${body}
 ${ctaLabel ? ctaDock(ctx, { label: ctaLabel }) : ""}
 ${footer(ctx, footerContent(ctx))}
-${leadForm ? html`
-<script type="module" src="${ctx.url("js/firebase.js")}"></script>` : ""}
 <script src="${ctx.url(ctx.assets.js)}" defer></script>
 <script>
   if ("serviceWorker" in navigator) {

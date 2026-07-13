@@ -1,51 +1,44 @@
-import { attrs, cx, html } from "../../lib/html.js";
+import { attrs, html } from "../../lib/html.js";
 import { button } from "../button/button.js";
-import { divider } from "../divider/divider.js";
-import { icon } from "../icon/icon.js";
 import { sectionHead } from "../section-head/section-head.js";
-import { whatsappButton } from "../whatsapp-button/whatsapp-button.js";
 
-/* one field, whatever its control — every one shares the same chrome.
-   `required` is decided by the caller so a page can ask for less. */
-function field(f, selected, required) {
-  const shared = attrs({ id: f.name, name: f.name, autocomplete: f.autocomplete, inputmode: f.inputmode, required });
+/* The secondary way in, for the visitor who would rather not open WhatsApp.
 
-  const control = {
-    select: () => html`<select${shared}>
-              <option value="" disabled${attrs({ selected: !selected })}>${f.placeholder}</option>
-              ${f.options.map((opt) => html`<option value="${opt}"${attrs({ selected: opt === selected })}>${opt}</option>`)}
-            </select>`,
-    textarea: () => html`<textarea${shared} rows="${f.rows ?? 4}"></textarea>`,
-  }[f.type] ?? (() => html`<input type="${f.type}"${shared}>`);
+   It asks for a name and a phone number and nothing else — no email, no company,
+   no service picker, no free text. Every extra field is labour, and labour is
+   what a fallback path can least afford. WhatsApp is the primary action and it
+   lives in the hero, the band and the dock; it deliberately does NOT appear
+   inside this panel too.
 
-  return html`
-          <div class="${cx("field", f.full && "field-full")}">
-            <label for="${f.name}">${f.label}</label>
-            ${control()}
-          </div>`;
-}
+   The page name rides along in a hidden field, so the email that lands in the
+   inbox says which of the six pages the visitor was reading.
 
-/* The whole ask: the panel, the form, the reassurance, and the WhatsApp way out
-   for anyone who would rather not fill a form.
-
-   content: { head, fields, submitLabel, note, orLabel, whatsapp, success }
-   opts:
-     selected         — the preselected "how can we help" option
-     hideService      — drop the service <select> and carry `selected` as a
-                        hidden value, so a solution page arrives pre-scoped
-     minimalRequired  — ask only for name + phone; everything else optional */
-export const contact = (ctx, { head, fields, submitLabel, note, orLabel, whatsapp, success }, { selected, hideService = false, minimalRequired = false } = {}) => {
-  const isRequired = (f) => (minimalRequired ? f.name === "name" || f.name === "phone" : f.required);
-  const service = fields.find((f) => f.type === "select");
-  const visible = hideService ? fields.filter((f) => f.type !== "select") : fields;
-
-  return html`
+   content: { head, fields, submitLabel, note, success } */
+export const contact = (ctx, { head, fields, submitLabel, note, success }, { page } = {}) => html`
       <div class="contact-panel reveal">
         ${sectionHead({ ...head, reveal: false })}
 
         <form class="contact-form" id="contactForm" novalidate>
-          ${visible.map((f) => field(f, selected, isRequired(f)))}
-          ${hideService && service ? html`<input type="hidden" name="${service.name}" value="${selected}">` : ""}
+          ${fields.map((f) => html`
+          <div class="field">
+            <label for="${f.name}">${f.label}</label>
+            <input type="${f.type}"${attrs({
+              id: f.name,
+              name: f.name,
+              autocomplete: f.autocomplete,
+              inputmode: f.inputmode,
+              required: true,
+            })}>
+          </div>`)}
+
+          <input type="hidden" name="page" value="${page}">
+          <!-- the spam trap: a real visitor never sees it, so a filled one is a bot.
+               Named innocuously, off-screen rather than display:none, and never
+               autofilled. contact.client.js drops the submit when it has content. -->
+          <div class="hp" aria-hidden="true">
+            <label for="company">אל תמלאו שדה זה</label>
+            <input type="text" id="company" name="company" tabindex="-1" autocomplete="off">
+          </div>
 
           <div class="form-actions">
             ${button(ctx, { type: "submit", label: submitLabel, size: "lg", block: true })}
@@ -54,19 +47,8 @@ export const contact = (ctx, { head, fields, submitLabel, note, orLabel, whatsap
 
         <p class="contact-note">${note}</p>
 
-        ${divider({ label: orLabel })}
-
-        ${whatsappButton(ctx, whatsapp)}
-
         <div class="form-success" id="formSuccess" role="status" hidden>
           <strong>${success.title}</strong>
           <span>${success.text}</span>
-          <!-- the backup way to WhatsApp; contact.client.js sets its href and
-               label per device, and on a phone also opens it automatically -->
-          <a class="btn btn-wa-open" id="formSuccessWa" target="_blank" rel="noopener">
-            <span class="wa-glyph" aria-hidden="true">${icon("whatsapp")}</span>
-            <span class="btn-wa-open-label"></span>
-          </a>
         </div>
       </div>`;
-};

@@ -1,7 +1,14 @@
+/* ==========================================================================
+   The one card. Every boxed item on the site is this box — declared once here
+   instead of once per section. The variants below only ever change the accent,
+   the badge and the type scale; the surface, hairline, radius, padding, shadow
+   and hover are shared and cannot drift apart.
+   ========================================================================== */
 .card {
-  height: 100%;
+  height: 100%;                     /* every card in a row ends at the same line */
   display: flex;
   flex-direction: column;
+  min-width: 0;
   background: var(--surface);
   border: 1px solid var(--hairline);
   border-radius: var(--r);
@@ -16,43 +23,107 @@
   box-shadow: var(--sh-2);
 }
 .card h3 { font-size: var(--fs-h3); margin-bottom: var(--s-2); }
-.card p { color: var(--muted); font-size: var(--fs-sm); }
+.card p  { color: var(--muted); font-size: var(--fs-sm); }
 
+/* --- accents: a hairline of colour along the top -------------------------- */
+.card-teal  { border-top: 2px solid var(--teal); }
+.card-water { border-top: 2px solid var(--water); }
+
+/* --- size: tighter type for the dense grids (pains, ecosystem tiles) ------- */
+.card-sm h3 { font-size: 1.08rem; margin-bottom: var(--s-1); }
+.card-sm p  { font-size: var(--fs-xs); }
+
+/* --- the badge the icon sits in ------------------------------------------- */
 .card-icon {
   display: grid;
   place-items: center;
+  flex: 0 0 auto;
+  color: var(--teal-dark);
+  background: var(--teal-tint);
+}
+.card-icon-tile {
   width: 48px;
   height: 48px;
   margin-bottom: var(--s-5);
   border-radius: var(--r-sm);
-  background: var(--teal-tint);
-  color: var(--teal-dark);
-  flex: 0 0 auto;
 }
-.card-icon svg { width: 24px; height: 24px; }
+.card-icon-tile svg { width: 24px; height: 24px; }
 
-/* --- the grid: 2 columns, and one card may take the full width ------------ */
-.solutions-grid {
+/* the small circle the checklist uses — the tick beside a line of copy */
+.card-icon-dot {
+  width: 34px;
+  height: 34px;
+  margin-top: 2px;
+  border-radius: 50%;
+}
+.card-icon-dot svg { width: 18px; height: 18px; }
+
+/* --- row: the badge sits BESIDE the copy ---------------------------------- */
+.card-row {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--s-4);
+}
+.card-row .card-icon-tile { margin-bottom: 0; }
+.card-row .card-body { min-width: 0; }
+
+/* the wide card (one solution takes the whole row) centres its badge instead */
+.card-wide { align-items: center; gap: var(--s-6); }
+
+/* --- "you are here": the current page's tile in the ecosystem grid --------- */
+.card.is-current {
+  border-color: rgba(14, 140, 126, .45);
+  background: var(--teal-tint);
+  box-shadow: var(--sh-2);
+}
+.card.is-current:hover { transform: none; }
+.card.is-current .card-icon { background: var(--teal); color: #fff; }
+
+.card-badge {
+  align-self: flex-start;
+  margin-top: var(--s-3);
+  display: inline-flex;
+  align-items: center;
+  padding: 3px var(--s-3);
+  border-radius: var(--r-pill);
+  background: var(--teal);
+  color: #fff;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  line-height: 1.4;
+}
+
+/* ==========================================================================
+   The grid. `cards-N` is the DESKTOP column count — the two breakpoints below
+   take every one of them down to 2 and then to 1, so a section never writes a
+   media query of its own.
+   ========================================================================== */
+.card-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--gap);
   min-width: 0;
 }
-/* tracks must be allowed to shrink below their content's min-content width, or
-   a long unbroken Hebrew string pushes a card out of its column */
-.solutions-grid > * { min-width: 0; }
-.solutions-grid .card-wide { grid-column: 1 / -1; }
+/* a track must be allowed to shrink below its content's min-content width, or a
+   long unbroken Hebrew string pushes a card out of its column */
+.card-grid > * { min-width: 0; }
 
-/* the wide card lays its icon beside the copy so it never looks stretched */
-.card-wide {
-  flex-direction: row;
-  align-items: center;
-  gap: var(--s-6);
+.cards-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cards-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+/* one card may span the whole row, whatever the column count */
+.card-grid .card-wide { grid-column: 1 / -1; }
+
+/* the checklist and the ecosystem tiles: a narrower measure, centred */
+.cards-narrow { max-width: 940px; margin-inline: auto; }
+
+@media (max-width: 1080px) {
+  .cards-3, .cards-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-.card-wide .card-icon { margin-bottom: 0; }
-
 @media (max-width: 860px) {
-  .solutions-grid { grid-template-columns: 1fr; }
+  .card-grid { grid-template-columns: 1fr; }
+  /* stacked, the wide card has a full row to itself — so it stops being wide */
   .card-wide { flex-direction: column; align-items: flex-start; }
-  .card-wide .card-icon { margin-bottom: var(--s-5); }
+  .card-wide .card-icon-tile { margin-bottom: var(--s-5); }
 }

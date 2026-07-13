@@ -10,11 +10,14 @@ export const flow = ({ steps, vertical }) => html`
           ${steps.map((step) => html`<li class="flow-step"><span class="flow-label">${step}</span></li>`)}
         </ol>`;
 
-/* Several flows side by side, each in its own card. { items: [{steps}] } */
+/* Several flows side by side, each NAMED and in its own card — the name says
+   what the automation is for, the flow says what it actually does.
+   { items: [{ title, steps }] } */
 export const flowCards = ({ items }) => html`
       <div class="flow-cards">
         ${items.map((item) => html`
-        <div class="flow-card reveal">
+        <div class="card flow-card reveal">
+          ${item.title && html`<h3>${item.title}</h3>`}
           ${flow({ steps: item.steps, vertical: true })}
         </div>`)}
       </div>`;

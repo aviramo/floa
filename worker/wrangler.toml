@@ -1,0 +1,15 @@
+name = "floa-lead"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+# The endpoint the site's form posts to. It must match runtime.leadEndpoint in
+# src/content/site.js.
+routes = [
+  { pattern = "api.floa.co.il/lead", zone_name = "floa.co.il" }
+]
+
+# Non-secret configuration. The API KEY IS NOT HERE — it is a secret, set with
+# `wrangler secret put` and never committed. See README.md.
+[vars]
+LEAD_TO = "info@floa.co.il"
+LEAD_FROM = "FLOA <no-reply@floa.co.il>"

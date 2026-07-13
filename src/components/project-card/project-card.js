@@ -1,16 +1,15 @@
 import { attrs, html, raw } from "../../lib/html.js";
 import { image } from "../image/image.js";
-import { placeholder } from "../placeholder/placeholder.js";
 
 const external = { target: "_blank", rel: "noopener" };
 
-/* one or more shots sharing the card's media area; each shot may link out, and
-   a shot that has no real capture yet holds its slot instead of faking one */
+/* one or more real shots sharing the card's media area; each shot may link out.
+   Every project on the site has real captures — nothing here fakes one. */
 const media = (ctx, { shots, href, ariaLabel }) => {
   const duo = shots.length > 1;
   const pictures = shots.map((shot) => {
-    const link = shot.placeholder ? null : shot.href ?? (duo ? null : href);
-    const img = shot.placeholder ? placeholder(shot) : image(ctx, shot);
+    const link = shot.href ?? (duo ? null : href);
+    const img = image(ctx, shot);
     return duo
       ? html`
             <${raw(link ? "a" : "span")} class="duo-item"${attrs(link ? { href: link, "aria-label": shot.ariaLabel ?? ariaLabel, ...external } : {})}>
