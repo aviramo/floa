@@ -22,6 +22,9 @@ export const css = [
   "components/whatsapp-button/whatsapp-button.css",   // overrides .btn + .btn-lg
   "components/divider/divider.css",
   "components/chips/chips.css",
+  "components/trust-strip/trust-strip.css",
+  "components/urgency/urgency.css",
+  "components/cta-dock/cta-dock.css",
   "components/section-head/section-head.css",
   "components/card/card.css",
   "components/eco-grid/eco-grid.css",                 // overrides .card
@@ -55,5 +58,6 @@ export const js = [
   "lib/anchors.client.js",
   "components/whatsapp-button/whatsapp-button.client.js",
   "components/contact/contact.client.js",
+  "components/cta-dock/cta-dock.client.js",
   "components/hero-system/hero-system.client.js",
 ];

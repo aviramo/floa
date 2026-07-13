@@ -4,7 +4,7 @@
 window.FLOA = { config: {
   "whatsapp": {
     "number": "972587078708",
-    "greeting": "היי, הגעתי דרך האתר של FLOA ואשמח שתעזרו לי"
+    "greeting": "היי אופיר, הגעתי דרך אתר FLOA ואני רוצה לבדוק מה אפשר לשפר בעסק"
   },
   "formError": "השליחה נכשלה. אפשר לנסות שוב או לכתוב לי בוואטסאפ",
   "systemLabels": [
@@ -133,8 +133,11 @@ window.FLOA = { config: {
 (function () {
   "use strict";
   var wa = window.FLOA.config.whatsapp;
+  /* each page carries its own opening line on <body data-wa-text>; fall back to
+     the shared greeting when it isn't set (e.g. the legal pages) */
+  var greeting = document.body.getAttribute("data-wa-text") || wa.greeting;
   var href = wa.number
-    ? "https://wa.me/" + wa.number + "?text=" + encodeURIComponent(wa.greeting)
+    ? "https://wa.me/" + wa.number + "?text=" + encodeURIComponent(greeting)
     : "#contact";
 
   document.querySelectorAll("[data-whatsapp]").forEach(function (el) {
@@ -235,6 +238,46 @@ window.FLOA = { config: {
       errorEl.scrollIntoView({ behavior: "smooth", block: "center" });
     });
   });
+})();
+
+/* ======================================================================
+   components/cta-dock/cta-dock.client.js
+   ====================================================================== */
+/* The sticky mobile CTA appears only after the visitor has scrolled past the
+   hero, and disappears whenever the contact form is on screen — so it never
+   covers the very ask it points at. No-ops when the dock isn't on the page. */
+(function () {
+  "use strict";
+  var dock = document.querySelector("[data-cta-dock]");
+  if (!dock) return;
+
+  var hero = document.getElementById("hero");
+  var contact = document.getElementById("contact");
+  var pastHero = !hero;      // no hero → treat as already passed
+  var atContact = false;
+
+  function update() {
+    var show = pastHero && !atContact;
+    dock.classList.toggle("is-visible", show);
+    document.body.classList.toggle("cta-dock-active", show);
+  }
+
+  if (!("IntersectionObserver" in window)) { pastHero = true; update(); return; }
+
+  if (hero) {
+    new IntersectionObserver(function (entries) {
+      pastHero = !entries[0].isIntersecting;   // hero fully out of view
+      update();
+    }, { threshold: 0 }).observe(hero);
+  }
+  if (contact) {
+    new IntersectionObserver(function (entries) {
+      atContact = entries[0].isIntersecting;   // form is on screen
+      update();
+    }, { threshold: 0 }).observe(contact);
+  }
+
+  update();
 })();
 
 /* ======================================================================

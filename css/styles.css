@@ -101,6 +101,10 @@
     --gap: 16px;
     --pad-card: 22px;
     --fs-body: 1.16rem;
+    /* tighten the rhythm between long sections by ~15% on a phone, without
+       letting them crowd — the floor drops from 64px to 54px */
+    --section: clamp(54px, 11vw, 96px);
+    --head-gap: clamp(30px, 4.5vw, 64px);
   }
 }
 
@@ -353,6 +357,129 @@ h1, h2, h3, h4 {
   font-weight: 600;
   line-height: 1;
   box-shadow: var(--sh-1);
+}
+
+/* ======================================================================
+   components/trust-strip/trust-strip.css
+   ====================================================================== */
+/* A quiet band of proof under the hero — not a section, just a hairline strip. */
+.trust-strip {
+  border-block: 1px solid var(--hairline);
+  background: var(--surface);
+}
+.trust-strip-list {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--s-3) var(--s-7);
+  padding-block: var(--s-4);
+  min-width: 0;
+}
+.trust-strip-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  color: var(--ink-2);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  line-height: 1.3;
+}
+/* a small teal check before each item, drawn in CSS so no asset is needed */
+.trust-strip-item::before {
+  content: "";
+  flex: none;
+  width: 7px;
+  height: 12px;
+  margin-block: 1px 4px;
+  border: solid var(--teal);
+  border-width: 0 2.5px 2.5px 0;
+  transform: rotate(45deg);
+}
+
+/* On a phone the three items ride in one tight, scrollable row rather than
+   stacking into a tall block. The overflow is owned here, so the page itself
+   never scrolls sideways. */
+@media (max-width: 640px) {
+  .trust-strip-list {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: var(--s-4);
+    overflow-x: auto;
+    padding-block: var(--s-3);
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .trust-strip-list::-webkit-scrollbar { display: none; }
+  .trust-strip-item { flex: none; font-size: var(--fs-xs); }
+}
+
+/* ======================================================================
+   components/urgency/urgency.css
+   ====================================================================== */
+/* Clear but never aggressive: a softly tinted band, a teal edge, calm ink.
+   Deliberately no danger colours and no motion beyond the shared reveal. */
+.urgency { padding-block: var(--s-6); }
+.urgency-line {
+  max-width: 720px;
+  margin-inline: auto;
+  padding: var(--s-5) var(--pad-panel);
+  background: var(--surface-sunk);
+  border: 1px solid var(--hairline);
+  border-inline-start: 4px solid var(--teal);
+  border-radius: var(--r);
+  text-align: center;
+  color: var(--ink-2);
+  font-family: var(--font-display);
+  font-size: var(--fs-lead);
+  font-weight: 500;
+  line-height: 1.4;
+  text-wrap: pretty;
+}
+
+/* ======================================================================
+   components/cta-dock/cta-dock.css
+   ====================================================================== */
+/* The sticky mobile CTA. Hidden on desktop; on a phone it rests just off the
+   bottom edge and slides up when active. It respects the home-indicator inset
+   and keeps a ≥48px tap target. */
+.cta-dock {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 60;
+  padding-block: var(--s-2);
+  padding-bottom: calc(var(--s-2) + env(safe-area-inset-bottom, 0px));
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--hairline);
+  box-shadow: 0 -8px 24px -16px rgba(15, 42, 51, .3);
+  transform: translateY(120%);
+  transition: transform .28s var(--ease);
+  will-change: transform;
+}
+.cta-dock.is-visible { transform: translateY(0); }
+.cta-dock .btn {
+  min-height: 52px;               /* comfortably past the 48px minimum */
+  font-size: 1.12rem;
+}
+
+/* Desktop never sees it. */
+@media (min-width: 769px) {
+  .cta-dock { display: none; }
+}
+
+/* While the dock is up, reserve room at the foot of the page so it can never
+   sit on top of real content. The dock hides again at the form, so this only
+   applies mid-scroll and is toggled off-screen — no visible jump. */
+@media (max-width: 768px) {
+  body.cta-dock-active { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta-dock { transition: none; }
 }
 
 /* ======================================================================
@@ -1380,6 +1507,15 @@ a.hero-logo:hover { color: var(--teal-dark); }
   flex-wrap: wrap;
   justify-content: center;
   gap: var(--s-4);
+}
+
+/* the risk-lowering line under the buttons: small and gentle, but readable */
+.hero-note {
+  margin-top: var(--s-4);
+  font-size: var(--fs-xs);
+  color: var(--muted-2);
+  max-width: 40ch;
+  text-wrap: pretty;
 }
 
 @media (max-width: 860px) {

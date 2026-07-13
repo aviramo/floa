@@ -29,11 +29,23 @@ export const site = {
   favicon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%230E8C7E'/%3E%3Ctext x='50' y='68' font-family='Arial' font-size='52' font-weight='700' fill='white' text-anchor='middle'%3EF%3C/text%3E%3C/svg%3E",
 };
 
+/* the reassurance under every hero's buttons, and the compact trust strip that
+   sits right beneath every opening — shared, so they read the same everywhere */
+export const heroNote = "שיחת מיפוי ראשונית, בלי התחייבות ובלי מצגת מכירה";
+
+export const trustStripItems = [
+  "15+ שנות ניסיון",
+  "אפיון, פיתוח ושיווק במקום אחד",
+  "ליווי אישי מקצה לקצה",
+];
+
 /* --- what the browser needs, straight from the same source ---------------- */
 export const runtime = {
   whatsapp: {
     number: "972587078708",                                       // +972 58-707-8708
-    greeting: "היי, הגעתי דרך האתר של FLOA ואשמח שתעזרו לי",
+    /* the fallback message; each page overrides it with its own via
+       <body data-wa-text> (see whatsapp-button.client.js) */
+    greeting: "היי אופיר, הגעתי דרך אתר FLOA ואני רוצה לבדוק מה אפשר לשפר בעסק",
   },
   formError: "השליחה נכשלה. אפשר לנסות שוב או לכתוב לי בוואטסאפ",
   /* the captions the hero diagram cycles through, in node order */

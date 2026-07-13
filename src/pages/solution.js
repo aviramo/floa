@@ -18,10 +18,12 @@ import { quotes } from "../components/quote-card/quote-card.js";
 import { section } from "../components/section/section.js";
 import { sectionHead } from "../components/section-head/section-head.js";
 import { timeline } from "../components/timeline/timeline.js";
+import { trustStrip } from "../components/trust-strip/trust-strip.js";
+import { urgency } from "../components/urgency/urgency.js";
 
 import { pick as pickProjects } from "../content/projects.js";
 import { pick as pickQuotes } from "../content/quotes.js";
-import { contactContent, processContent, projectsHead, site, testimonialsHead } from "../content/site.js";
+import { contactContent, heroNote, processContent, projectsHead, site, testimonialsHead, trustStripItems } from "../content/site.js";
 import { defaultCta, ecosystem, solutions } from "../content/solutions.js";
 import { page } from "../layouts/base.js";
 
@@ -58,6 +60,8 @@ export const render = (ctx, solution) => page(ctx, {
   path: `${solution.slug}/`,
   meta: solution.meta,
   leadForm: true,
+  waText: solution.waText,
+  ctaLabel: solution.ctaLabel,
   jsonLd: {
     "@context": "https://schema.org",
     "@type": "Service",
@@ -79,10 +83,13 @@ export const render = (ctx, solution) => page(ctx, {
 ${hero(ctx, {
   ...solution.hero,
   chip: solution.chip ?? solution.title,
+  note: heroNote,
   art: heroArt({ label: solution.hero.artLabel, shapes: solution.hero.shapes }),
-  actions: html`${button(ctx, { href: "#contact", label: "בואו נדבר על העסק", size: "lg", analytics: "hero_mapping_cta" })}
+  actions: html`${button(ctx, { href: "#contact", label: solution.hero.cta, size: "lg", analytics: "hero_mapping_cta" })}
           ${button(ctx, { variant: "ghost", size: "lg", whatsapp: true, analytics: "whatsapp_cta", label: "לכתוב לי ב־WhatsApp" })}`,
 })}
+
+${trustStrip({ items: trustStripItems })}
 
 ${solution.tracks && section({
   id: "tracks",
@@ -99,6 +106,8 @@ ${section({
 ${miniCards({ items: solution.problem.items })}`,
 })}
 
+${solution.urgency && urgency({ text: solution.urgency })}
+
 ${section({
   id: "included",
   className: "solutions",
@@ -108,34 +117,6 @@ ${solution.included.types && chips({ items: solution.included.types })}`,
 })}
 
 ${proofSection(ctx, solution.proof)}
-
-${section({
-  id: "ecosystem",
-  className: "solutions",
-  children: html`${sectionHead(ecosystem.head)}
-${ecoGrid(ctx, {
-  solutions,
-  current: solution.slug,
-  badge: ecosystem.badge,
-  note: solution.ecoNote(ctx),
-})}`,
-})}
-
-${section({
-  id: "advantage",
-  className: "advantage",
-  children: html`${sectionHead(solution.advantage.head)}
-${features({ items: solution.advantage.items })}`,
-})}
-
-${ctaBand(ctx, solution.cta ?? defaultCta)}
-
-${section({
-  id: "process",
-  className: "process",
-  children: html`${sectionHead(processContent.head)}
-${timeline({ items: processContent.steps })}`,
-})}
 
 ${solution.quotes && section({
   id: "testimonial",
@@ -152,9 +133,47 @@ ${projectGrid(ctx, { items: pickProjects(...solution.projects) })}`,
 })}
 
 ${section({
+  id: "advantage",
+  className: "advantage",
+  children: html`${sectionHead(solution.advantage.head)}
+${features({ items: solution.advantage.items })}`,
+})}
+
+${solution.reassure && section({
+  id: "reassure",
+  className: "solutions reassure",
+  children: sectionHead(solution.reassure),
+})}
+
+${ctaBand(ctx, solution.cta ?? defaultCta)}
+
+${section({
+  id: "process",
+  className: "process",
+  children: html`${sectionHead(processContent.head)}
+${timeline({ items: processContent.steps })}`,
+})}
+
+${section({
+  id: "ecosystem",
+  className: "solutions",
+  children: html`${sectionHead(ecosystem.head)}
+${ecoGrid(ctx, {
+  solutions,
+  current: solution.slug,
+  badge: ecosystem.badge,
+  note: solution.ecoNote(ctx),
+})}`,
+})}
+
+${section({
   id: "contact",
   className: "contact",
-  children: contact(ctx, { ...contactContent, selected: solution.formValue }),
+  children: contact(ctx, {
+    ...contactContent,
+    head: { ...contactContent.head, title: solution.contact.title, text: solution.contact.text },
+    submitLabel: solution.contact.submitLabel,
+  }, { selected: solution.formValue, hideService: true, minimalRequired: true }),
 })}
 </main>`,
 });

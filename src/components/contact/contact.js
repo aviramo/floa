@@ -4,9 +4,10 @@ import { divider } from "../divider/divider.js";
 import { sectionHead } from "../section-head/section-head.js";
 import { whatsappButton } from "../whatsapp-button/whatsapp-button.js";
 
-/* one field, whatever its control — every one shares the same chrome */
-function field(f, selected) {
-  const shared = attrs({ id: f.name, name: f.name, autocomplete: f.autocomplete, inputmode: f.inputmode, required: f.required });
+/* one field, whatever its control — every one shares the same chrome.
+   `required` is decided by the caller so a page can ask for less. */
+function field(f, selected, required) {
+  const shared = attrs({ id: f.name, name: f.name, autocomplete: f.autocomplete, inputmode: f.inputmode, required });
 
   const control = {
     select: () => html`<select${shared}>
@@ -26,13 +27,24 @@ function field(f, selected) {
 /* The whole ask: the panel, the form, the reassurance, and the WhatsApp way out
    for anyone who would rather not fill a form.
 
-   { head, fields, selected, submitLabel, note, orLabel, whatsapp, success } */
-export const contact = (ctx, { head, fields, selected, submitLabel, note, orLabel, whatsapp, success }) => html`
+   content: { head, fields, submitLabel, note, orLabel, whatsapp, success }
+   opts:
+     selected         — the preselected "how can we help" option
+     hideService      — drop the service <select> and carry `selected` as a
+                        hidden value, so a solution page arrives pre-scoped
+     minimalRequired  — ask only for name + phone; everything else optional */
+export const contact = (ctx, { head, fields, submitLabel, note, orLabel, whatsapp, success }, { selected, hideService = false, minimalRequired = false } = {}) => {
+  const isRequired = (f) => (minimalRequired ? f.name === "name" || f.name === "phone" : f.required);
+  const service = fields.find((f) => f.type === "select");
+  const visible = hideService ? fields.filter((f) => f.type !== "select") : fields;
+
+  return html`
       <div class="contact-panel reveal">
         ${sectionHead({ ...head, reveal: false })}
 
         <form class="contact-form" id="contactForm" novalidate>
-          ${fields.map((f) => field(f, selected))}
+          ${visible.map((f) => field(f, selected, isRequired(f)))}
+          ${hideService && service ? html`<input type="hidden" name="${service.name}" value="${selected}">` : ""}
 
           <div class="form-actions">
             ${button(ctx, { type: "submit", label: submitLabel, size: "lg", block: true })}
@@ -50,3 +62,4 @@ export const contact = (ctx, { head, fields, selected, submitLabel, note, orLabe
           <span>${success.text}</span>
         </div>
       </div>`;
+};

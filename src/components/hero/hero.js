@@ -8,8 +8,11 @@ import { html } from "../../lib/html.js";
 
    The wordmark is plain text at home and a link back home everywhere else.
 
-   { title, text, chip, art, actions } */
-export const hero = (ctx, { title, text, chip, art, actions }) => html`
+   The note sits under the buttons — small and quiet — and, like the actions,
+   comes BEFORE the art so it stays inside the first screen on a phone.
+
+   { title, text, chip, art, actions, note } */
+export const hero = (ctx, { title, text, chip, art, actions, note }) => html`
   <section class="hero" id="hero">
     <div class="container">
       <div class="hero-inner">
@@ -23,6 +26,7 @@ export const hero = (ctx, { title, text, chip, art, actions }) => html`
         <div class="hero-actions">
           ${actions}
         </div>
+        ${note && html`<p class="hero-note">${note}</p>`}
         ${art}
       </div>
     </div>

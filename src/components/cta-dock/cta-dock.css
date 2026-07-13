@@ -1,0 +1,40 @@
+/* The sticky mobile CTA. Hidden on desktop; on a phone it rests just off the
+   bottom edge and slides up when active. It respects the home-indicator inset
+   and keeps a ≥48px tap target. */
+.cta-dock {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 60;
+  padding-block: var(--s-2);
+  padding-bottom: calc(var(--s-2) + env(safe-area-inset-bottom, 0px));
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--hairline);
+  box-shadow: 0 -8px 24px -16px rgba(15, 42, 51, .3);
+  transform: translateY(120%);
+  transition: transform .28s var(--ease);
+  will-change: transform;
+}
+.cta-dock.is-visible { transform: translateY(0); }
+.cta-dock .btn {
+  min-height: 52px;               /* comfortably past the 48px minimum */
+  font-size: 1.12rem;
+}
+
+/* Desktop never sees it. */
+@media (min-width: 769px) {
+  .cta-dock { display: none; }
+}
+
+/* While the dock is up, reserve room at the foot of the page so it can never
+   sit on top of real content. The dock hides again at the form, so this only
+   applies mid-scroll and is toggled off-screen — no visible jump. */
+@media (max-width: 768px) {
+  body.cta-dock-active { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta-dock { transition: none; }
+}

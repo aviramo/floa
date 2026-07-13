@@ -1,4 +1,5 @@
-import { html, raw } from "../lib/html.js";
+import { attrs, html, raw } from "../lib/html.js";
+import { ctaDock } from "../components/cta-dock/cta-dock.js";
 import { footer } from "../components/footer/footer.js";
 import { footerContent, site } from "../content/site.js";
 
@@ -7,9 +8,9 @@ import { footerContent, site } from "../content/site.js";
    the stylesheet, the scripts and the footer are written once, here, and can
    never drift between pages.
 
-   { path, meta:{title,description}, og, jsonLd, leadForm, body }
+   { path, meta:{title,description}, og, jsonLd, leadForm, waText, ctaLabel, body }
    ========================================================================== */
-export function page(ctx, { path = "", meta, og = true, jsonLd, leadForm = false, body }) {
+export function page(ctx, { path = "", meta, og = true, jsonLd, leadForm = false, waText, ctaLabel, body }) {
   const url = `${site.origin}/${path}`;
   const ogImage = `${site.origin}/${site.og.image}`;
 
@@ -58,8 +59,9 @@ ${jsonLd ? html`
 ${raw(JSON.stringify(jsonLd, null, 2))}
   </script>` : ""}
 </head>
-<body>
+<body${attrs({ "data-wa-text": waText })}>
 ${body}
+${ctaLabel ? ctaDock(ctx, { label: ctaLabel }) : ""}
 ${footer(ctx, footerContent(ctx))}
 ${leadForm ? html`
 <script type="module" src="${ctx.url("js/firebase.js")}"></script>` : ""}

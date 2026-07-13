@@ -95,5 +95,9 @@
     --gap: 16px;
     --pad-card: 22px;
     --fs-body: 1.16rem;
+    /* tighten the rhythm between long sections by ~15% on a phone, without
+       letting them crowd — the floor drops from 64px to 54px */
+    --section: clamp(54px, 11vw, 96px);
+    --head-gap: clamp(30px, 4.5vw, 64px);
   }
 }

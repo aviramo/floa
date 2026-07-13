@@ -4,6 +4,8 @@ import { about } from "../components/about/about.js";
 import { approach } from "../components/approach/approach.js";
 import { baStrip } from "../components/ba-strip/ba-strip.js";
 import { button } from "../components/button/button.js";
+import { trustStrip } from "../components/trust-strip/trust-strip.js";
+import { whatsappButton } from "../components/whatsapp-button/whatsapp-button.js";
 import { card, cardGrid } from "../components/card/card.js";
 import { contact } from "../components/contact/contact.js";
 import { ctaBand } from "../components/cta-band/cta-band.js";
@@ -20,7 +22,7 @@ import { timeline } from "../components/timeline/timeline.js";
 import { home } from "../content/home.js";
 import { pick as pickProjects } from "../content/projects.js";
 import { pick as pickQuotes } from "../content/quotes.js";
-import { contactContent, processContent, projectsHead, runtime, site, testimonialsHead } from "../content/site.js";
+import { contactContent, heroNote, processContent, projectsHead, runtime, site, testimonialsHead, trustStripItems } from "../content/site.js";
 import { defaultCta, solutions } from "../content/solutions.js";
 import { page } from "../layouts/base.js";
 
@@ -30,6 +32,8 @@ export const render = (ctx) => page(ctx, {
   path: "",
   meta: home.meta,
   leadForm: true,
+  waText: home.waText,
+  ctaLabel: home.ctaLabel,
   jsonLd: {
     "@context": "https://schema.org",
     "@type": "ProfessionalService",
@@ -45,9 +49,13 @@ export const render = (ctx) => page(ctx, {
 <main id="top">
 ${hero(ctx, {
   ...home.hero,
+  note: heroNote,
   art: heroSystem({ caption: runtime.systemLabels[0] }),
-  actions: button(ctx, { href: "#contact", label: home.hero.cta, size: "lg", analytics: "hero_mapping_cta" }),
+  actions: html`${button(ctx, { href: "#contact", label: home.hero.cta, size: "lg", analytics: "hero_mapping_cta" })}
+          ${whatsappButton(ctx, { label: "לכתוב לי ב־WhatsApp", inline: true })}`,
 })}
+
+${trustStrip({ items: trustStripItems })}
 
 ${section({
   id: "solutions",
@@ -115,7 +123,12 @@ ${section({
 ${section({
   id: "contact",
   className: "contact",
-  children: contact(ctx, contactContent),
+  /* home keeps the service choice visible — the visitor tells us what they need */
+  children: contact(ctx, {
+    ...contactContent,
+    head: { ...contactContent.head, title: home.contact.title, text: home.contact.text },
+    submitLabel: home.contact.submitLabel,
+  }),
 })}
 </main>`,
 });

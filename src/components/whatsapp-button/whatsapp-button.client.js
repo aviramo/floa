@@ -3,8 +3,11 @@
 (function () {
   "use strict";
   var wa = window.FLOA.config.whatsapp;
+  /* each page carries its own opening line on <body data-wa-text>; fall back to
+     the shared greeting when it isn't set (e.g. the legal pages) */
+  var greeting = document.body.getAttribute("data-wa-text") || wa.greeting;
   var href = wa.number
-    ? "https://wa.me/" + wa.number + "?text=" + encodeURIComponent(wa.greeting)
+    ? "https://wa.me/" + wa.number + "?text=" + encodeURIComponent(greeting)
     : "#contact";
 
   document.querySelectorAll("[data-whatsapp]").forEach(function (el) {
