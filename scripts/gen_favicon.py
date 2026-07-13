@@ -6,10 +6,15 @@ crawlers largely do not. Google's search-result favicon and WhatsApp's link
 preview both fetch a FILE, so a data: URI meant the site had no icon anywhere it
 actually mattered.
 
-THE MARK. Not a letter. FLOA's hero diagram already ends in one: the hub every
-wire runs into, the point where the scattered tools become one system. That is
-the business, drawn — so the icon is that glyph, in the brand teal, and it means
-something at 16px in a browser tab in a way an "F" never did.
+THE MARK. Not a letter, and not a share glyph. FLOA is flow — so the mark is
+flow: two currents, moving. The upper one is the brighter, the lower one trails
+it, and both run the same direction, which is what a current looks like when you
+draw it with two strokes instead of one.
+
+It is designed for 16px FIRST. At tab size the glyph is about 14 device pixels
+across, so the strokes are heavy, the waves are shallow (a deep wave folds into
+mush at that size) and there is nothing else in the square. Everything larger
+comes free.
 
 Writes, at the site root (where crawlers look for them by convention):
     favicon.ico            16 + 32 + 48, the one Google fetches
@@ -20,60 +25,81 @@ Run:  python scripts/gen_favicon.py
 """
 from PIL import Image, ImageDraw
 import io
+import math
 import os
 
 TEAL = (14, 140, 126)          # --teal in src/design/tokens.css
 WHITE = (255, 255, 255)
+WASH = (255, 255, 255, 190)    # the trailing current, a step back but
+                               # still legible at 16px, where .6 alpha washes out
 S = 512                        # master; everything below is downscaled from it
 RADIUS = round(S * 0.24)
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 
-# The hub glyph, at 512: a trunk on the right that forks into two nodes on the
-# left. Same shape as the hub in the hero diagram (hero-system.js), scaled up and
-# thickened, because a hairline that reads at 90px vanishes at 16.
-HUB = round(S * 0.38), round(S * 0.50)      # the junction
-UP = round(S * 0.66), round(S * 0.29)
-DOWN = round(S * 0.66), round(S * 0.71)
-TAIL = round(S * 0.20), round(S * 0.50)     # where the wire comes in
 
-# Sized for 16px first, not for 512. At tab size the glyph is ~14 device pixels
-# across: a wire thinner than one of them simply greys out. So the strokes are
-# heavy and the nodes are fat, which costs nothing at any larger size.
-STROKE = round(S * 0.085)
-R_HUB = round(S * 0.105)
-R_NODE = round(S * 0.088)
+SS = 4          # supersample. PIL fills polygons with NO anti-aliasing, so the
+                # smooth edge has to come from drawing big and shrinking down.
 
 
-def dot(d, xy, r):
-    d.ellipse([xy[0] - r, xy[1] - r, xy[0] + r, xy[1] + r], fill=WHITE)
+def stroke(d, cy, amp, width, colour, u):
+    """One current, as a filled outline rather than a thick polyline.
+
+    PIL's thick lines join badly — `joint="curve"` leaves a visibly frayed edge
+    along a curve like this one. So the stroke is built the way a vector renderer
+    builds it: walk the centreline, offset it by half the width along the normal
+    at each step, and fill the band between the two offsets. Round caps are two
+    circles on the ends.
+    """
+    x0, x1 = S * 0.17 * u, S * 0.83 * u
+    n = 240
+    mid = []
+    for i in range(n + 1):
+        t = i / n
+        mid.append((x0 + (x1 - x0) * t, cy * u + amp * u * math.sin(2 * math.pi * t)))
+
+    r = width * u / 2
+    left, right = [], []
+    for i, (x, y) in enumerate(mid):
+        # the tangent, from the neighbours (one-sided at the two ends)
+        px, py = mid[max(i - 1, 0)]
+        nx, ny = mid[min(i + 1, n)]
+        tx, ty = nx - px, ny - py
+        length = math.hypot(tx, ty) or 1
+        ox, oy = -ty / length * r, tx / length * r     # the normal
+        left.append((x + ox, y + oy))
+        right.append((x - ox, y - oy))
+
+    d.polygon(left + right[::-1], fill=colour)
+    for x, y in (mid[0], mid[-1]):
+        d.ellipse([x - r, y - r, x + r, y + r], fill=colour)
 
 
 def master():
-    img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    d.rounded_rectangle([0, 0, S - 1, S - 1], radius=RADIUS, fill=TEAL)
+    u = SS
+    big = Image.new("RGBA", (S * u, S * u), (0, 0, 0, 0))
+    d = ImageDraw.Draw(big)
+    d.rounded_rectangle([0, 0, S * u - 1, S * u - 1], radius=RADIUS * u, fill=TEAL)
 
-    for end in (TAIL, UP, DOWN):
-        d.line([HUB, end], fill=WHITE, width=STROKE)
+    # on its own layer, so the trailing current stays translucent over the teal
+    # instead of the two strokes darkening each other where they run closest
+    layer = Image.new("RGBA", big.size, (0, 0, 0, 0))
+    ld = ImageDraw.Draw(layer)
+    stroke(ld, S * 0.635, S * 0.085, S * 0.10, WASH, u)     # the current behind
+    stroke(ld, S * 0.395, S * 0.095, S * 0.115, WHITE, u)   # the one leading
+    big.alpha_composite(layer)
 
-    dot(d, HUB, R_HUB)
-    dot(d, UP, R_NODE)
-    dot(d, DOWN, R_NODE)
-    return img
+    return big.resize((S, S), Image.LANCZOS)
 
 
+# The same two currents, as vectors. Kept in step with the raster above by hand;
+# they are four numbers, and an SVG that disagreed with the .ico would be worse
+# than either.
 SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <rect width="100" height="100" rx="24" fill="#0E8C7E"/>
-  <g stroke="#fff" stroke-width="8.5" stroke-linecap="round" fill="none">
-    <path d="M38 50H20"/>
-    <path d="M38 50 66 29"/>
-    <path d="M38 50 66 71"/>
-  </g>
-  <g fill="#fff">
-    <circle cx="38" cy="50" r="10.5"/>
-    <circle cx="66" cy="29" r="8.8"/>
-    <circle cx="66" cy="71" r="8.8"/>
+  <g fill="none" stroke="#fff" stroke-linecap="round">
+    <path d="M17 63q16.5-17 33 0t33 0" stroke-width="10" opacity=".75"/>
+    <path d="M17 40q16.5-19 33 0t33 0" stroke-width="11.5"/>
   </g>
 </svg>
 """
@@ -85,8 +111,8 @@ def main():
     ico = os.path.join(ROOT, "favicon.ico")
     m.save(ico, sizes=[(16, 16), (32, 32), (48, 48)])
 
-    # iOS adds no rounding of its own, and a PNG with alpha corners shows them
-    # as black — so flatten onto the teal rather than ship transparency.
+    # iOS adds no rounding of its own, and a PNG with alpha corners shows them as
+    # black — so flatten onto the teal rather than ship transparency.
     touch = os.path.join(ROOT, "apple-touch-icon.png")
     flat = Image.new("RGB", (S, S), TEAL)
     flat.paste(m, (0, 0), m)
@@ -95,7 +121,7 @@ def main():
     svg = os.path.join(ROOT, "favicon.svg")
     io.open(svg, "w", encoding="utf-8", newline="\n").write(SVG)
 
-    # what it will actually look like in a tab
+    # what it will actually look like in a tab, blown up so a human can judge it
     m.resize((16, 16), Image.LANCZOS).resize((128, 128), Image.NEAREST).save(
         os.path.join(ROOT, "scripts", "_favicon-16-preview.png"))
 
