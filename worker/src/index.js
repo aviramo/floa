@@ -5,7 +5,9 @@
    IS the server. It exists for one reason: to hold the Resend API key somewhere
    the browser can never see it, and to email a lead to the inbox.
 
-   POST /lead  { name, phone, page, url, company }  ->  { ok: true }
+   POST /lead  { name, phone, page, url, company, business, need, utm_* }  ->  { ok: true }
+   business, need and the utm_* fields are optional, asked only by the
+   landing-page-offer form.
 
    Nothing is stored. Not here, not in Firebase, not anywhere — the lead becomes
    an email and that is the whole of its life.
@@ -26,7 +28,8 @@ const ALLOWED_ORIGINS = [
    it is validated against this list rather than trusted from the browser —
    otherwise anyone could POST an arbitrary string into our inbox's subject.
 
-   MUST match `pageName` in src/content/home.js and src/content/solutions.js.
+   MUST match `pageName` in src/content/home.js, src/content/solutions.js and
+   src/content/landing-offer.js.
    Rename a page without renaming it here and every lead from it is rejected with
    error "page" — silently, because the visitor only sees "we couldn't send".
    build.mjs compares the two lists and fails the build if they drift apart. */
@@ -34,6 +37,24 @@ const PAGES = [
   "דף הבית",
   "אתרים, אפליקציות ודפי נחיתה",
   "מערכות, אוטומציות וניהול העסק",
+  "דף נחיתה החל מ־500 ₪",
+];
+
+/* the landing-page-offer form asks two extra questions no other page's form
+   does; both are optional here so every other page's lead is unaffected */
+const EXTRA_FIELDS = [
+  ["business", "מה העסק מציע"],
+  ["need", "מה צריך מהדף"],
+];
+
+/* UTM parameters, carried from the ad click through to the lead's inbox so a
+   campaign's source is never lost between the click and the form */
+const UTM_FIELDS = [
+  ["utm_source", "מקור"],
+  ["utm_medium", "מדיום"],
+  ["utm_campaign", "קמפיין"],
+  ["utm_term", "מונח"],
+  ["utm_content", "תוכן"],
 ];
 
 const cors = (origin) => ({
@@ -65,6 +86,10 @@ const prettyPhone = (digits) =>
     ? `${digits.slice(0, 3)}-${digits.slice(3)}`
     : `${digits.slice(0, 2)}-${digits.slice(2)}`;
 
+/* a free-text field, trimmed and capped so a lead can never blow up the email
+   it becomes; empty is fine, these are all optional */
+const freeText = (value, max = 300) => String(value || "").trim().slice(0, max);
+
 function validate(lead) {
   const name = String(lead.name || "").trim();
   const phone = normalizePhone(lead.phone);
@@ -81,7 +106,13 @@ function validate(lead) {
     if (ALLOWED_ORIGINS.includes(u.origin)) url = u.href;
   } catch { /* an unparseable URL is simply not shown */ }
 
-  return { lead: { name, phone, page, url } };
+  const extra = {};
+  for (const [key] of [...EXTRA_FIELDS, ...UTM_FIELDS]) {
+    const value = freeText(lead[key]);
+    if (value) extra[key] = value;
+  }
+
+  return { lead: { name, phone, page, url, ...extra } };
 }
 
 /* HTML-escape: the name is visitor input and it lands inside an email body */
@@ -106,7 +137,9 @@ function email(lead) {
     ["שם", lead.name],
     ["טלפון", prettyPhone(lead.phone)],
     ["תאריך ושעה", when],
+    ...EXTRA_FIELDS.map(([key, label]) => [label, lead[key]]),
     ["כתובת העמוד", lead.url],
+    ...UTM_FIELDS.map(([key, label]) => [label, lead[key]]),
   ].filter(([, v]) => v);
 
   const text = [

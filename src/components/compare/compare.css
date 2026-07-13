@@ -1,0 +1,70 @@
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gap);
+  max-width: 980px;
+  margin-inline: auto;
+}
+.compare-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
+  padding: var(--pad-card);
+  box-shadow: var(--sh-1);
+}
+.compare-card h3 { font-size: var(--fs-h3); margin-bottom: var(--s-5); }
+
+.compare-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  margin-bottom: var(--s-7);
+}
+.compare-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  color: var(--ink-2);
+  font-size: var(--fs-sm);
+}
+.compare-check {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--teal-tint);
+  color: var(--teal-dark);
+}
+.compare-check svg { width: 13px; height: 13px; }
+
+.compare-card .btn { margin-top: auto; }
+
+.compare-badge {
+  align-self: flex-start;
+  margin-bottom: var(--s-4);
+  padding: 3px var(--s-3);
+  border-radius: var(--r-pill);
+  background: var(--teal);
+  color: #fff;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  line-height: 1.4;
+}
+
+/* the richer track: its own accent, not a bigger box */
+.compare-teal {
+  border-color: color-mix(in srgb, var(--teal) 35%, transparent);
+  box-shadow: var(--sh-2);
+}
+.compare-teal h3 { color: var(--teal-dark); }
+
+@media (max-width: 860px) {
+  .compare-grid { grid-template-columns: 1fr; }
+}

@@ -16,9 +16,14 @@ import { footerContent, site } from "../content/site.js";
    cannot say what a particular page is, and in a WhatsApp thread that card IS
    the page. A page that passes none falls back to the site's.
 
-   { path, meta:{title,description}, og, jsonLd, waText, ctaLabel, body }
+   `head` is an escape hatch for markup a single page needs inside <head> that
+   nothing else does (e.g. an analytics snippet gated behind a config id that is
+   empty everywhere else) — omitted, it changes nothing for the pages that don't
+   pass it.
+
+   { path, meta:{title,description}, og, jsonLd, waText, ctaLabel, head, body }
    ========================================================================== */
-export function page(ctx, { path = "", meta, og = {}, jsonLd, waText, ctaLabel, body }) {
+export function page(ctx, { path = "", meta, og = {}, jsonLd, waText, ctaLabel, head, body }) {
   const url = `${site.origin}/${path}`;
   const card = { ...site.og, ...og };
   const ogImage = `${site.origin}/${card.image}`;
@@ -72,6 +77,7 @@ ${jsonLd ? html`
   <script type="application/ld+json">
 ${raw(JSON.stringify(jsonLd, null, 2))}
   </script>` : ""}
+${head ?? ""}
 </head>
 <body${attrs({ "data-wa-text": waText })}>
 ${body}

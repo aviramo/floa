@@ -2,11 +2,13 @@ import { context } from "../lib/context.js";
 import { site } from "../content/site.js";
 import { home } from "../content/home.js";
 import { solutions } from "../content/solutions.js";
+import { landingOffer } from "../content/landing-offer.js";
 import { accessibility, privacy } from "../content/legal.js";
 
 import { render as renderHome } from "./home.js";
 import { render as renderLegal } from "./legal-page.js";
 import { render as renderSolution } from "./solution.js";
+import { render as renderLandingOffer } from "./landing-offer.js";
 
 /* ==========================================================================
    The site map. Every page the build emits is one entry here.
@@ -34,6 +36,14 @@ export const pages = [
     render: (assets) => renderSolution(at(assets, "../"), solution),
   })),
 
+  /* the landing-page-offer campaign page: its own template, not a solution,
+     so it is not linked from the homepage or the ecosystem row on either
+     solution page. */
+  {
+    out: `${landingOffer.slug}/index.html`,
+    render: (assets) => renderLandingOffer(at(assets, "../")),
+  },
+
   ...[privacy, accessibility].map((doc) => ({
     out: doc.out,
     render: (assets) => renderLegal(at(assets, ""), doc),
@@ -47,5 +57,6 @@ export const pages = [
 export const siteMap = [
   { loc: `${site.origin}/`, title: home.meta.title, description: home.meta.description },
   ...solutions.map((s) => ({ loc: `${site.origin}/${s.slug}/`, title: s.meta.title, description: s.meta.description })),
+  { loc: `${site.origin}/${landingOffer.slug}/`, title: landingOffer.meta.title, description: landingOffer.meta.description },
   ...[privacy, accessibility].map((doc) => ({ loc: `${site.origin}/${doc.out}`, title: doc.meta.title, description: doc.meta.description })),
 ];

@@ -36,6 +36,8 @@ const chromium = pw.chromium || pw.default?.chromium;
 
 const { home } = await import(pathToFileURL(join(ROOT, "src/content/home.js")).href);
 const { solutions } = await import(pathToFileURL(join(ROOT, "src/content/solutions.js")).href);
+const { landingOffer } = await import(pathToFileURL(join(ROOT, "src/content/landing-offer.js")).href);
+const { deviceMockSvg } = await import(pathToFileURL(join(ROOT, "src/components/device-mock/device-mock.js")).href);
 
 /* --- fonts: subset to exactly the glyphs the cards render ------------------ */
 function curl(url) {
@@ -142,6 +144,7 @@ const DIAGRAM = `
 const cards = [
   { out: home.og.image, title: home.og.title, art: DIAGRAM },
   ...solutions.map((s) => ({ out: s.og.image, title: s.og.title, art: heroArt(s.slug) })),
+  { out: landingOffer.og.image, title: landingOffer.og.title, art: deviceMockSvg({ label: landingOffer.hero.mockAlt }).toString() },
 ];
 
 const page = (card) => `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8">
@@ -186,7 +189,7 @@ h1 {
   <div class="art">${card.art}</div>
 </body></html>`;
 
-const browser = await chromium.launch();
+const browser = await chromium.launch(process.env.PW_EXECUTABLE ? { executablePath: process.env.PW_EXECUTABLE } : {});
 for (const card of cards) {
   const p = await browser.newPage({
     viewport: { width: 1200, height: 630 },

@@ -15,5 +15,5 @@ export const about = (ctx, { portrait, eyebrow, title, paragraphs, chips, emphas
         ${paragraphs.map((text) => html`<p>${text}</p>`)}
 
         ${chipRow({ items: chips })}
-        <span class="emphasis">${emphasis}</span>
+        ${emphasis && html`<span class="emphasis">${emphasis}</span>`}
       </div>`;

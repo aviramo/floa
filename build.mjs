@@ -113,7 +113,8 @@ async function build() {
 
   const { home } = await load("content/home.js");
   const { solutions } = await load("content/solutions.js");
-  await checkLeadPages([home.pageName, ...solutions.map((s) => s.pageName)]);
+  const { landingOffer } = await load("content/landing-offer.js");
+  await checkLeadPages([home.pageName, ...solutions.map((s) => s.pageName), landingOffer.pageName]);
 
   const styles = await concat(
     await order(bundle.css, (n) => n.endsWith(".css")),
