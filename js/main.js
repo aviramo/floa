@@ -6,7 +6,7 @@ window.FLOA = { config: {
     "number": "972587078708",
     "greeting": "היי, הגעתי דרך אתר FLOA ואשמח לשיחת מיפוי קצרה"
   },
-  "leadEndpoint": "https://api.floa.co.il/lead",
+  "leadEndpoint": "https://floa-lead.floa-il.workers.dev/lead",
   "formError": "לא הצלחנו לשלוח את הפרטים. אפשר לנסות שוב או לפנות אלינו ב־WhatsApp",
   "systemLabels": [
     "אתרים ודפי נחיתה",

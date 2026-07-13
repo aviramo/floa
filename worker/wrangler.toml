@@ -14,8 +14,14 @@ compatibility_date = "2025-01-01"
 # only the target of a background fetch, and the Worker refuses any origin that
 # is not floa.co.il (see ALLOWED_ORIGINS in src/index.js).
 #
-# The deployed URL must match runtime.leadEndpoint in src/content/site.js.
+# Deployed at https://floa-lead.floa-il.workers.dev — this must match
+# runtime.leadEndpoint in src/content/site.js.
 workers_dev = true
+
+# One address, not many. Preview URLs would publish this same endpoint on an
+# extra hostname per version, which buys nothing here (there is one caller, the
+# live site) and only widens what has to be reasoned about.
+preview_urls = false
 
 # Non-secret configuration. The API KEY IS NOT HERE. It is a secret, set with
 # `wrangler secret put` and never committed. See README.md.

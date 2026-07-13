@@ -48,8 +48,15 @@ export const runtime = {
 
   /* The form posts here and nowhere else. A static site has no server of its
      own, so the send lives in a Cloudflare Worker (see worker/) that validates
-     the lead and hands it to Resend — the API key never reaches the browser. */
-  leadEndpoint: "https://api.floa.co.il/lead",
+     the lead and hands it to Resend — the API key never reaches the browser.
+
+     workers.dev, not api.floa.co.il: floa.co.il's DNS is not on Cloudflare (its
+     nameservers are sitesdepot's), so a Cloudflare route could never bind to it,
+     and the old api.floa.co.il host never resolved at all — every lead died in
+     the browser. The address is never seen by a visitor; the Worker refuses any
+     origin that is not floa.co.il. It must match the `name` and workers.dev
+     subdomain in worker/wrangler.toml. */
+  leadEndpoint: "https://floa-lead.floa-il.workers.dev/lead",
 
   formError: "לא הצלחנו לשלוח את הפרטים. אפשר לנסות שוב או לפנות אלינו ב־WhatsApp",
 
