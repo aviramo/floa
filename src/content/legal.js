@@ -5,7 +5,7 @@ const mail = html`<a href="mailto:${site.email}">${site.email}</a>`;
 
 const foot = {
   text: "יש שאלה או משהו שלא ברור? אפשר פשוט לדבר",
-  whatsapp: { label: "לכתוב לי ב־WhatsApp", sub: "תשובה מהירה" },
+  whatsapp: { label: "לשיחת WhatsApp", sub: "תשובה מהירה" },
 };
 
 export const privacy = {
