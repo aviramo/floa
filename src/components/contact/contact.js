@@ -42,8 +42,12 @@ export const contact = (ctx, { head, fields, submitLabel, note, or, success }, {
             <input type="text" id="company" name="company" tabindex="-1" autocomplete="off">
           </div>
 
+          <!-- ghost, not primary: WhatsApp is the loud action on every page of the
+               site, and it sits right below this one. Two solid teal pills stacked
+               would be two primaries, so the pair here is the same pair the hero
+               already uses — WhatsApp filled, "leave your details" outlined. -->
           <div class="form-actions">
-            ${button(ctx, { type: "submit", label: submitLabel, size: "lg", block: true })}
+            ${button(ctx, { type: "submit", label: submitLabel, size: "lg", block: true, variant: "ghost" })}
           </div>
         </form>
 

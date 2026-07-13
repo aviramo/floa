@@ -77,6 +77,31 @@ function llmsTxt(site, entries) {
   return `# ${site.brand}\n\n> ${site.tagline}. ${site.slogan}.\n\n## Pages\n\n${links}\n`;
 }
 
+/* --- the guard ------------------------------------------------------------
+   The Worker validates a lead's page name against a whitelist of its own (it
+   cannot import from src/ — it deploys on its own). So a page renamed here and
+   not there is rejected by the endpoint with error "page", and the visitor is
+   told only that we could not send. That failure is invisible until someone
+   tries the form, which is exactly the kind of thing a build should catch. */
+async function checkLeadPages(pageNames) {
+  const worker = await readFile(join(ROOT, "worker/src/index.js"), "utf8");
+  const block = worker.match(/const PAGES = \[([^\]]*)\]/s);
+  if (!block) throw new Error("build: cannot find PAGES in worker/src/index.js");
+
+  const allowed = [...block[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+  const missing = pageNames.filter((n) => !allowed.includes(n));
+  const stale = allowed.filter((n) => !pageNames.includes(n));
+
+  if (missing.length || stale.length) {
+    throw new Error(
+      "build: worker/src/index.js PAGES is out of step with the site's pageName values.\n" +
+      missing.map((n) => `  the site sends "${n}", the worker would reject it`).join("\n") +
+      (missing.length && stale.length ? "\n" : "") +
+      stale.map((n) => `  the worker still allows "${n}", which no page sends`).join("\n")
+    );
+  }
+}
+
 /* --- the build ------------------------------------------------------------ */
 const load = (mod) => import(pathToFileURL(join(SRC, mod)).href);
 
@@ -85,6 +110,10 @@ async function build() {
   const bundle = await load("bundle.js");
   const { pages, siteMap } = await load("pages/index.js");
   const { runtime, site } = await load("content/site.js");
+
+  const { home } = await load("content/home.js");
+  const { solutions } = await load("content/solutions.js");
+  await checkLeadPages([home.pageName, ...solutions.map((s) => s.pageName)]);
 
   const styles = await concat(
     await order(bundle.css, (n) => n.endsWith(".css")),

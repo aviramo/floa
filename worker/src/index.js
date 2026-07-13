@@ -22,16 +22,18 @@ const ALLOWED_ORIGINS = [
   "http://localhost:5173",          // the dev server (build.mjs --serve)
 ];
 
-/* The six pages that may submit a lead. The page name lands in the subject line,
-   so it is validated against this list rather than trusted from the browser —
-   otherwise anyone could POST an arbitrary string into our inbox's subject. */
+/* The pages that may submit a lead. The page name lands in the subject line, so
+   it is validated against this list rather than trusted from the browser —
+   otherwise anyone could POST an arbitrary string into our inbox's subject.
+
+   MUST match `pageName` in src/content/home.js and src/content/solutions.js.
+   Rename a page without renaming it here and every lead from it is rejected with
+   error "page" — silently, because the visitor only sees "we couldn't send".
+   build.mjs compares the two lists and fails the build if they drift apart. */
 const PAGES = [
   "דף הבית",
-  "אתרים ודפי נחיתה",
-  "לידים, מכירות ו־CRM",
-  "אוטומציות ושיפור תהליכים",
-  "מערכות ואפליקציות",
-  "שיווק, קמפיינים ומדידה",
+  "אתרים, אפליקציות ודפי נחיתה",
+  "מערכות, אוטומציות וניהול העסק",
 ];
 
 const cors = (origin) => ({
