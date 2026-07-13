@@ -117,3 +117,6 @@ WhatsApp הוא ה-CTA הראשי בכל ששת הדפים. הטופס הוא **
 - `alt` לכל תמונה, ניווט מקלדת, `:focus-visible`, כיבוד `prefers-reduced-motion`.
 - שאלות נפוצות כאקורדיון `<details>` — נגיש מהמקלדת גם בלי JS.
 - Canonical, Open Graph ו-JSON-LD לכל דף — כולם נגזרים מ-`site.origin`.
+- `robots.txt`, `sitemap.xml` ו-`llms.txt` נבנים אוטומטית מ-`siteMap`
+  (`src/pages/index.js`) — אותה רשימה שממנה `pages` נבנה, כך שאי אפשר לאזכר
+  בהם דף שהבנייה לא מפיקה, או להשמיט דף שהיא כן מפיקה.
