@@ -6,11 +6,37 @@
    WhatsApp — the visitor asked to be called back, so we call back.
 
    On failure the fields are deliberately left ALONE: the visitor gets the error
-   under the button and can press it again without retyping anything. */
+   under the button and can press it again without retyping anything.
+
+   Any utm_* parameters the visitor arrived with are captured once on load and
+   ride along with the lead, so a campaign's source survives however long they
+   browse before filling the form. A visitor who arrived without them simply
+   sends none. */
 (function () {
   "use strict";
   var form = document.getElementById("contactForm");
   if (!form) return;
+
+  var UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"];
+  var STORE_KEY = "floaUtm";
+
+  (function captureUtm() {
+    var params = new URLSearchParams(window.location.search);
+    var stored = {};
+    try { stored = JSON.parse(sessionStorage.getItem(STORE_KEY) || "{}"); } catch (e) { /* ignore */ }
+    var found = false;
+    UTM_KEYS.forEach(function (key) {
+      var value = params.get(key);
+      if (value) { stored[key] = value; found = true; }
+    });
+    if (found) {
+      try { sessionStorage.setItem(STORE_KEY, JSON.stringify(stored)); } catch (e) { /* ignore */ }
+    }
+  })();
+
+  function storedUtm() {
+    try { return JSON.parse(sessionStorage.getItem(STORE_KEY) || "{}"); } catch (e) { return {}; }
+  }
 
   var success = document.getElementById("formSuccess");
   var name = document.getElementById("name");
@@ -70,6 +96,7 @@
     }
 
     var data = new FormData(form);
+    var utm = storedUtm();
     var lead = {
       name: (data.get("name") || "").toString().trim(),
       phone: (data.get("phone") || "").toString().trim(),
@@ -77,6 +104,7 @@
       company: (data.get("company") || "").toString(),   // the honeypot: server drops it if filled
       url: window.location.href,
     };
+    UTM_KEYS.forEach(function (key) { if (utm[key]) lead[key] = utm[key]; });
 
     sending = true;
     if (submitBtn) submitBtn.disabled = true;

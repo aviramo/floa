@@ -5,9 +5,10 @@
    IS the server. It exists for one reason: to hold the Resend API key somewhere
    the browser can never see it, and to email a lead to the inbox.
 
-   POST /lead  { name, phone, page, url, company, business, need, utm_* }  ->  { ok: true }
-   business, need and the utm_* fields are optional, asked only by the
-   landing-page-offer form.
+   POST /lead  { name, phone, page, url, company, utm_* }  ->  { ok: true }
+   Every page on the site sends the same two fields, a name and a phone. The
+   utm_* fields are optional and ride along only when the visitor arrived from a
+   campaign.
 
    Nothing is stored. Not here, not in Firebase, not anywhere — the lead becomes
    an email and that is the whole of its life.
@@ -38,13 +39,6 @@ const PAGES = [
   "אתרים, אפליקציות ודפי נחיתה",
   "מערכות, אוטומציות וניהול העסק",
   "דף נחיתה החל מ־500 ₪",
-];
-
-/* the landing-page-offer form asks two extra questions no other page's form
-   does; both are optional here so every other page's lead is unaffected */
-const EXTRA_FIELDS = [
-  ["business", "מה העסק מציע"],
-  ["need", "מה צריך מהדף"],
 ];
 
 /* UTM parameters, carried from the ad click through to the lead's inbox so a
@@ -107,7 +101,7 @@ function validate(lead) {
   } catch { /* an unparseable URL is simply not shown */ }
 
   const extra = {};
-  for (const [key] of [...EXTRA_FIELDS, ...UTM_FIELDS]) {
+  for (const [key] of UTM_FIELDS) {
     const value = freeText(lead[key]);
     if (value) extra[key] = value;
   }
@@ -130,6 +124,16 @@ function stamp() {
   return `${at("day")}.${at("month")}.${at("year")}, ${at("hour")}:${at("minute")}`;
 }
 
+/* The email a lead becomes.
+
+   RTL the hard way, on purpose: Gmail throws away <html> and <body> and keeps
+   only what is inside, so a dir="rtl" up there is gone by the time the mail is
+   read — which is why this one used to arrive left-aligned. Every element that
+   holds text therefore carries its own dir="rtl" and its own text-align:right,
+   inline. It costs a few attributes and it survives the mail client.
+
+   The heading already says the mail is a new lead, so nothing under it repeats
+   that. Straight from the heading into the details. */
 function email(lead) {
   const when = stamp();
   const rows = [
@@ -137,32 +141,26 @@ function email(lead) {
     ["שם", lead.name],
     ["טלפון", prettyPhone(lead.phone)],
     ["תאריך ושעה", when],
-    ...EXTRA_FIELDS.map(([key, label]) => [label, lead[key]]),
     ["כתובת העמוד", lead.url],
     ...UTM_FIELDS.map(([key, label]) => [label, lead[key]]),
   ].filter(([, v]) => v);
 
-  const text = [
-    "התקבלה פנייה חדשה מאתר FLOA",
-    "",
-    ...rows.map(([k, v]) => `${k}: ${v}`),
-  ].join("\n");
+  const text = rows.map(([k, v]) => `${k}: ${v}`).join("\n");
 
   const html = `<!doctype html>
 <html lang="he" dir="rtl">
-  <body style="margin:0;padding:24px;background:#E9F0EE;font-family:Arial,Helvetica,sans-serif;color:#0F2A33">
-    <table role="presentation" style="max-width:560px;margin:0 auto;background:#fff;border:1px solid #DCE6E3;border-radius:16px;padding:28px" width="100%">
-      <tr><td>
-        <h1 style="margin:0 0 6px;font-size:20px;color:#0A6C61">פנייה חדשה מאתר FLOA</h1>
-        <p style="margin:0 0 20px;font-size:14px;color:#586C73">התקבלה פנייה חדשה מאתר FLOA</p>
-        <table role="presentation" width="100%" style="font-size:15px;border-collapse:collapse">
+  <body dir="rtl" style="margin:0;padding:24px;background:#E9F0EE;font-family:Arial,Helvetica,sans-serif;color:#0F2A33;direction:rtl;text-align:right">
+    <table role="presentation" dir="rtl" align="center" width="100%" style="max-width:560px;margin:0 auto;background:#fff;border:1px solid #DCE6E3;border-radius:16px;padding:28px;direction:rtl">
+      <tr><td dir="rtl" style="direction:rtl;text-align:right">
+        <h1 style="margin:0 0 20px;font-size:20px;color:#0A6C61;text-align:right">פנייה חדשה מאתר FLOA</h1>
+        <table role="presentation" dir="rtl" width="100%" style="font-size:15px;border-collapse:collapse;direction:rtl">
           ${rows.map(([k, v]) => `
           <tr>
-            <td style="padding:8px 0;color:#586C73;width:120px;vertical-align:top">${esc(k)}</td>
-            <td style="padding:8px 0;font-weight:bold">${esc(v)}</td>
+            <td align="right" style="padding:8px 0;color:#586C73;width:120px;vertical-align:top;text-align:right">${esc(k)}</td>
+            <td align="right" style="padding:8px 0;font-weight:bold;text-align:right">${esc(v)}</td>
           </tr>`).join("")}
         </table>
-        <p style="margin:22px 0 0">
+        <p style="margin:22px 0 0;text-align:right">
           <a href="tel:${esc(lead.phone)}" style="display:inline-block;padding:12px 22px;border-radius:999px;background:#0E8C7E;color:#fff;text-decoration:none;font-weight:bold">חיוג ל־${esc(lead.name)}</a>
         </p>
       </td></tr>
@@ -171,7 +169,7 @@ function email(lead) {
 </html>`;
 
   return {
-    subject: `פנייה חדשה מאתר FLOA – ${lead.page}`,
+    subject: `פנייה חדשה מאתר FLOA: ${lead.page}`,
     text,
     html,
   };

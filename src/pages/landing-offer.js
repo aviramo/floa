@@ -4,10 +4,10 @@ import { button } from "../components/button/button.js";
 import { card, cardGrid } from "../components/card/card.js";
 import { about } from "../components/about/about.js";
 import { compare } from "../components/compare/compare.js";
+import { contact } from "../components/contact/contact.js";
 import { deviceMock } from "../components/device-mock/device-mock.js";
 import { faq } from "../components/faq/faq.js";
 import { hero } from "../components/hero/hero.js";
-import { offerForm } from "../components/offer-form/offer-form.js";
 import { projectGrid } from "../components/project-card/project-card.js";
 import { section } from "../components/section/section.js";
 import { sectionHead } from "../components/section-head/section-head.js";
@@ -16,17 +16,20 @@ import { urgency } from "../components/urgency/urgency.js";
 import { waButton } from "../components/whatsapp-button/whatsapp-button.js";
 
 import { pick as pickProjects } from "../content/projects.js";
-import { site } from "../content/site.js";
+import { contactContent, site } from "../content/site.js";
 import { landingOffer as offer } from "../content/landing-offer.js";
 import { page } from "../layouts/base.js";
 
-/* The landing-page-offer campaign page. A one-off, self-contained template:
-   unlike src/pages/solution.js it shares no section shape with the two
-   solution pages, because the offer it sells (one fixed starting price, with
-   an upsell path instead of a menu of tiers) is not something either of them
-   says. It reuses every component it can from the rest of the site: the card,
-   the timeline, the project grid, the FAQ, the about panel, so it still reads
-   as FLOA, just arranged for this one campaign. */
+/* The landing-page-offer campaign page. Its SECTION ORDER is its own: unlike
+   src/pages/solution.js it sells one starting price with an upsell path instead
+   of a menu of tiers, and neither solution page says that.
+
+   Its PARTS are not its own. Every box, list, panel and button here is a
+   component the rest of the site already ships: the hero, the card, the compare
+   grid, the timeline, the project grid, the FAQ, the about panel, and, at the
+   foot, the site's one contact form, with the same two fields and the same
+   WhatsApp button under it as the homepage. Only the copy is this campaign's.
+   Nothing on this page is hand-rolled markup that a component already renders. */
 
 /* Meta Pixel / GA4 load ONLY if the site owner has filled in a real id in
    src/content/landing-offer.js. Both are empty by default, so by default this
@@ -136,16 +139,12 @@ ${section({
 ${faq({ items: offer.faq.items })}`,
 })}
 
+<!-- the ask: the site's one contact panel, same fields and same WhatsApp button
+     under it as every other page, carrying this campaign's heading -->
 ${section({
   id: "contact",
   className: "contact",
-  children: html`
-      ${sectionHead({ title: offer.closing.title, text: offer.closing.text })}
-      <div class="hero-actions">
-        ${waButton(ctx, { label: offer.closing.waLabel })}
-        ${button(ctx, { href: "#offerForm", label: offer.closing.formCta, variant: "ghost", size: "lg" })}
-      </div>
-${offerForm(ctx, { fields: offer.form.fields, submitLabel: offer.form.submitLabel, success: offer.form.success }, { page: offer.pageName })}`,
+  children: contact(ctx, { ...contactContent, head: offer.closing.head }, { page: offer.pageName, waLabel: offer.closing.waLabel }),
 })}
 </main>`,
 });

@@ -88,7 +88,7 @@ export const landingOffer = {
           "מתאים להצעה ברורה וממוקדת",
         ],
         cta: "זה מה שאני צריך",
-        href: "#offerForm",
+        href: "#contact",
         analytics: "simple_track_select",
       },
       {
@@ -161,25 +161,18 @@ export const landingOffer = {
     ],
   },
 
+  /* The ask. The panel itself, the fields, the submit, the note and the WhatsApp
+     button under the rule are the site's shared contact form (contactContent in
+     site.js), exactly as the homepage and the solution pages render it: a name
+     and a phone number, nothing more. Only the heading above it is this
+     campaign's own. */
   closing: {
-    title: "רוצים לבדוק אם דף החל מ־500 ₪ מתאים לעסק שלכם?",
-    text: "שלחו כמה מילים על העסק ומה אתם רוצים שהדף יעשה. אגיד לכם בצורה ברורה אם המסלול הפשוט מספיק או שכדאי לבנות משהו רחב יותר",
-    waLabel: "לבדיקה קצרה ב־WhatsApp",
-    formCta: "השאירו פרטים",
-  },
-
-  form: {
-    fields: [
-      { name: "name", label: "שם", type: "text", autocomplete: "name" },
-      { name: "phone", label: "טלפון", type: "tel", autocomplete: "tel", inputmode: "tel" },
-      { name: "business", label: "מה העסק מציע?", type: "text" },
-      { name: "need", label: "מה צריך מהדף?", type: "text" },
-    ],
-    submitLabel: "בדקו מה מתאים לי",
-    success: {
-      title: "תודה, הפרטים התקבלו",
-      text: "עוברים עכשיו ל־WhatsApp כדי לבדוק מה מתאים לעסק שלכם",
+    head: {
+      eyebrow: "השארת פרטים",
+      title: "רוצים לבדוק אם דף החל מ־500 ₪ מתאים לעסק שלכם?",
+      text: "השאירו שם וטלפון ואחזור אליכם כדי להבין מה הדף צריך לעשות",
     },
+    waLabel: "לבדיקה קצרה ב־WhatsApp",
   },
 
   /* Meta Pixel / GA4: wired but off. Both stay empty until the site owner

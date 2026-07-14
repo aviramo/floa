@@ -54,7 +54,6 @@ export const js = [
   "lib/anchors.client.js",
   "components/whatsapp-button/whatsapp-button.client.js",
   "components/contact/contact.client.js",
-  "components/offer-form/offer-form.client.js",
   "components/faq/faq.client.js",
   "components/cta-dock/cta-dock.client.js",
   "components/hero-system/hero-system.client.js",
