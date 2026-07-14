@@ -12,9 +12,17 @@ import { html, raw } from "#lib/html.js";
    ad read the homepage first, and it cannot build an audience out of anyone who
    did not land on that one page.
 
-   What the pixel fires here is only PageView. The events that matter — a
-   WhatsApp click, a lead — are fired from core.client.js, at the moment they
-   actually happen. See the note there.
+   autoConfig is turned OFF, and this is the important line. Left on, the pixel
+   downloads a config from Meta and starts inventing events of its own from it:
+   SubscribedButtonClick on every button, inferred events, automatic advanced
+   matching that scrapes form fields. It fires regardless of the Events Manager
+   toggles, because it runs in the browser from a cached config, so turning those
+   toggles off does not reliably stop it. `set autoConfig false` does, from our
+   side, for good: the pixel then sends ONLY what we tell it to.
+
+   What we tell it to is three events and no more: PageView here, and Contact (a
+   WhatsApp click) and Lead (an accepted lead) from core.client.js, each at the
+   moment it happens. See the note there.
    ========================================================================== */
 export const analyticsHead = ({ ga4, metaPixel } = {}) => html`${ga4 ? html`
   <script async src="https://www.googletagmanager.com/gtag/js?id=${ga4}"></script>
@@ -24,6 +32,7 @@ export const analyticsHead = ({ ga4, metaPixel } = {}) => html`${ga4 ? html`
   n.push=n;n.loaded=!0;n.version="2.0";n.queue=[];t=b.createElement(e);t.async=!0;
   t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
   document,"script","https://connect.facebook.net/en_US/fbevents.js");
+  fbq("set","autoConfig",false,"${metaPixel}");
   fbq("init","${metaPixel}");fbq("track","PageView");</script>
   <noscript><img height="1" width="1" style="display:none" alt=""
     src="${raw(`https://www.facebook.com/tr?id=${metaPixel}&ev=PageView&noscript=1`)}"></noscript>` : ""}`;
