@@ -39,11 +39,13 @@
 
     try {
       if (typeof window.fbq !== "function") return;
-      /* GA keeps the specific name (whatsapp_cta / contact_form_success); Meta
-         gets the standard event plus that name as the source, so one optimised
-         event stays two in the report. */
+      /* Meta hears ONLY the events that matter to an advertiser — the ones in the
+         map, i.e. Lead. The rest (hero_form_cta, track selects, any future
+         micro-interaction) are for our own analytics in GA and would only be
+         noise in the ad account, so they are not forwarded. content_category
+         carries which door the lead came through, so one optimised event stays
+         two in the report. */
       if (META[name]) window.fbq("track", META[name], { content_name: document.title, content_category: name });
-      else window.fbq("trackCustom", name, { content_name: document.title });
     } catch (e) { /* nor may Meta */ }
   };
 
