@@ -51,7 +51,13 @@ jobs:
       - name: worker table is in step with the businesses
         run: git diff --exit-code -- worker/src/businesses.js
 
+      # `enablement` is what moves Pages off "serve the main branch as-is" and
+      # onto "serve what this workflow builds". It is the switch that lets the
+      # built pages leave the repo. Harmless once flipped: it simply stays.
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
