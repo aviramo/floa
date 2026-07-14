@@ -46,8 +46,32 @@ async function write(outPath, contents) {
 
 /* A business folder may not be named after something the repo already owns:
    `out` is a real directory at the repo root, so a business called "css" would
-   render its pages straight over the stylesheets. */
+   render its pages straight over the stylesheets. The pages of the business that
+   owns the root are just as vulnerable — "business-systems" is a live page of
+   floa.co.il, not a free name — but those are not listed here: they are worked
+   out from what each business actually emits, in claims() below, so this can
+   never fall behind the pages that exist. */
 const RESERVED = new Set(["assets", "css", "js", "src", "businesses", "worker", "scripts", "node_modules"]);
+
+/* Every top-level name a business writes into: its `out` if it has one, and
+   otherwise every folder its pages land in. Two businesses may not claim the
+   same one — the second to build would silently overwrite the first, and the
+   first would only find out when a live page went missing. */
+const claims = (b) => new Set(
+  b.out ? [b.out] : b.pages.map((p) => p.out.split("/")[0]).filter((n) => n.includes(".") === false)
+);
+
+function checkCollisions(businesses) {
+  const taken = new Map();
+  for (const b of businesses) {
+    for (const name of claims(b)) {
+      if (RESERVED.has(name)) throw new Error(`build: "${b.key}" writes to "${name}/", which the repo already owns`);
+      const owner = taken.get(name);
+      if (owner) throw new Error(`build: "${b.key}" and "${owner}" would both write to "${name}/"`);
+      taken.set(name, b.key);
+    }
+  }
+}
 
 /* --- asset bundling -------------------------------------------------------
    Every *.css / *.client.js under src/ is bundled. The order comes from
@@ -147,7 +171,6 @@ async function load() {
   return Promise.all(keys.map(async (key) => {
     const { business } = await import(pathToFileURL(join(BUSINESSES, key, "index.js")).href);
     if (business.key !== key) throw new Error(`build: businesses/${key} calls itself "${business.key}"`);
-    if (business.out && RESERVED.has(business.out)) throw new Error(`build: "${business.out}" is a reserved directory`);
     return business;
   }));
 }
@@ -195,6 +218,8 @@ async function build(only) {
   const bundle = await import(pathToFileURL(join(SRC, "bundle.js")).href);
 
   const all = await load();
+  checkCollisions(all);                      // all of them, even on a --only build
+
   const chosen = only ? all.filter((b) => b.key === only) : all;
   if (!chosen.length) throw new Error(`build: no business named "${only}" under businesses/`);
 
