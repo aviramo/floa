@@ -1,5 +1,11 @@
 # Local state, not source.
 
+# The built sites. Every business renders into here, and GitHub Actions
+# publishes it (.github/workflows/deploy.yml). It is thrown away and rebuilt on
+# every build, so a copy in git could only ever be a stale one — which is
+# exactly what it used to be, back when the built pages lived in the repo root.
+dist/
+
 # wrangler's own cache: which Cloudflare account you are logged into, and its
 # build scratch. Machine-local, churns on every login and deploy.
 worker/.wrangler/

@@ -1,0 +1,67 @@
+# =============================================================================
+# floa.co.il, published.
+#
+# The repo holds source. This builds it and publishes the result, so no built
+# file has to live in git for the site to exist. Every URL is unchanged: a URL
+# resolves against the PUBLISHED package, and build.mjs writes dist/ with the
+# same layout the repo root used to have.
+#
+# If the build fails, nothing is published and the live site simply stays as it
+# was. That is safer than the arrangement this replaces, where a forgotten
+# `node build.mjs` before a commit meant the site quietly did not update.
+# =============================================================================
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:          # so a deploy can be re-run without an empty commit
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time, and the newest push wins: a queued run for a commit that
+# has already been superseded has nothing to say.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # The lead endpoint decides which inbox a lead lands in. It is the one
+      # thing here that cannot be allowed to break quietly, so it is tested
+      # before anything is published.
+      - run: npm test
+
+      - run: node build.mjs
+
+      # The generated Worker table must match what was committed. If it does
+      # not, someone changed a business and pushed without rebuilding — and the
+      # Worker deployed from this repo would be validating the wrong pages.
+      - name: worker table is in step with the businesses
+        run: git diff --exit-code -- worker/src/businesses.js
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

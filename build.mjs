@@ -25,7 +25,7 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createServer } from "node:http";
-import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { watch } from "node:fs";
 import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -34,14 +34,29 @@ const ROOT = dirname(fileURLToPath(import.meta.url));
 const SRC = join(ROOT, "src");
 const BUSINESSES = join(ROOT, "businesses");
 
+/* Everything the build makes lands here and NOWHERE else. dist/ is not in git:
+   it is thrown away and rebuilt, and GitHub Actions publishes it (see
+   .github/workflows/deploy.yml) — which is what lets the repo hold source only
+   while floa.co.il keeps every URL it has ever had. The published package, not
+   the repo's layout, is what a visitor's URL resolves against. */
+const DIST = join(ROOT, "dist");
+
 const readSrc = (p) => readFile(join(SRC, p), "utf8");
 const fingerprint = (s) => createHash("sha256").update(s).digest("hex").slice(0, 8);
 
 async function write(outPath, contents) {
-  const full = join(ROOT, outPath);
+  const full = join(DIST, outPath);
   await mkdir(dirname(full), { recursive: true });
   await writeFile(full, contents, "utf8");
   return outPath;
+}
+
+/* The one thing the build writes that is NOT part of a site: the Worker's copy
+   of the business table. The Worker deploys from the repo, not from dist/, so
+   this is source — generated source, but source, and it is committed. */
+async function writeRepo(path, contents) {
+  await writeFile(join(ROOT, path), contents, "utf8");
+  return path;
 }
 
 /* A business folder may not be named after something the repo already owns:
@@ -110,6 +125,25 @@ async function theme(key) {
     return [{ name: `businesses/${key}/theme.css`, body: await readFile(join(BUSINESSES, key, "theme.css"), "utf8") }];
   } catch {
     return [];
+  }
+}
+
+/* businesses/<key>/public/ is copied into the business's site verbatim: images,
+   the favicons, sw.js, and — for the business that owns the domain — the CNAME
+   that binds floa.co.il to GitHub. Nothing here is rendered or rewritten. It is
+   simply the part of a site that is a file rather than a page.
+
+   The CNAME matters more than it looks: without it in the published package the
+   custom domain comes undone. It lives with the business that owns the root,
+   because that is whose domain it is. */
+async function statics(key, out) {
+  const from = join(BUSINESSES, key, "public");
+  try {
+    await cp(from, join(DIST, out), { recursive: true });
+    return [`${out || "."}/  (public)`];
+  } catch (err) {
+    if (err.code === "ENOENT") return [];        // a business with no files of its own
+    throw err;
   }
 }
 
@@ -200,7 +234,7 @@ async function renderBusiness(business, bundle) {
     js: `js/main.js?v=${fingerprint(script)}`,
   };
 
-  return Promise.all([
+  const written = await Promise.all([
     write(join(out, "css/styles.css"), styles),
     write(join(out, "js/main.js"), script),
     write(join(out, "sitemap.xml"), sitemapXml(siteMap)),
@@ -211,6 +245,8 @@ async function renderBusiness(business, bundle) {
     ...(root ? [write("robots.txt", robotsTxt(site.origin))] : []),
     ...pages.map(async (page) => write(join(out, page.out), (await page.render(assets)).toString() + "\n")),
   ]);
+
+  return [...written, ...await statics(key, out)];
 }
 
 async function build(only) {
@@ -223,9 +259,14 @@ async function build(only) {
   const chosen = only ? all.filter((b) => b.key === only) : all;
   if (!chosen.length) throw new Error(`build: no business named "${only}" under businesses/`);
 
+  /* A full build starts from nothing, so a page that was deleted or renamed
+     cannot survive in dist/ and go on being published. A --only build must not:
+     it would take every other business's site down with it. */
+  if (!only) await rm(DIST, { recursive: true, force: true });
+
   /* written from ALL of them, never just the one being rendered: the Worker
      serves every business at once, so a --only build must not shrink its table */
-  console.log(`  ${await write("worker/src/businesses.js", workerBusinesses(all))}`);
+  console.log(`  ${await writeRepo("worker/src/businesses.js", workerBusinesses(all))}`);
 
   for (const business of chosen) {
     const written = await renderBusiness(business, bundle);
@@ -238,12 +279,15 @@ async function build(only) {
 /* --- dev ------------------------------------------------------------------ */
 const TYPES = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".json": "application/json", ".svg": "image/svg+xml", ".webp": "image/webp", ".png": "image/png" };
 
+/* Serves dist/, which is exactly what GitHub publishes — so localhost:5173 and
+   floa.co.il resolve a URL against the same tree, and a path that works here
+   works there. */
 function serve(port = 5173) {
   createServer(async (req, res) => {
     let path = decodeURIComponent(new URL(req.url, "http://x").pathname);
     if (path.endsWith("/")) path += "index.html";
-    const file = resolve(ROOT, "." + path);
-    if (!file.startsWith(ROOT)) return res.writeHead(403).end();
+    const file = resolve(DIST, "." + path);
+    if (!file.startsWith(DIST)) return res.writeHead(403).end();
     try {
       const body = await readFile(file);
       res.writeHead(200, { "content-type": TYPES[extname(file)] ?? "application/octet-stream", "cache-control": "no-store" }).end(body);

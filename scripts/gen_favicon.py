@@ -37,6 +37,10 @@ RADIUS = round(S * 0.24)
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 
+# The icons are files of the business, not of the build: they live in its public/
+# folder and are copied into its site verbatim.
+PUBLIC = os.path.join(ROOT, "businesses", "floa", "public")
+
 
 SS = 4          # supersample. PIL fills polygons with NO anti-aliasing, so the
                 # smooth edge has to come from drawing big and shrinking down.
@@ -108,17 +112,17 @@ SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
 def main():
     m = master()
 
-    ico = os.path.join(ROOT, "favicon.ico")
+    ico = os.path.join(PUBLIC, "favicon.ico")
     m.save(ico, sizes=[(16, 16), (32, 32), (48, 48)])
 
     # iOS adds no rounding of its own, and a PNG with alpha corners shows them as
     # black — so flatten onto the teal rather than ship transparency.
-    touch = os.path.join(ROOT, "apple-touch-icon.png")
+    touch = os.path.join(PUBLIC, "apple-touch-icon.png")
     flat = Image.new("RGB", (S, S), TEAL)
     flat.paste(m, (0, 0), m)
     flat.resize((180, 180), Image.LANCZOS).save(touch, "PNG")
 
-    svg = os.path.join(ROOT, "favicon.svg")
+    svg = os.path.join(PUBLIC, "favicon.svg")
     io.open(svg, "w", encoding="utf-8", newline="\n").write(SVG)
 
     # what it will actually look like in a tab, blown up so a human can judge it

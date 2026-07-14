@@ -12,16 +12,21 @@
 
 כל עסק נבנה לאתר משלו: דפים, `css/styles.css`, `js/main.js`, `sitemap.xml` ו-`llms.txt` משלו. עסק אף פעם לא מעורבב בתוצר של אחר.
 
-## הדף נבנה, לא נערך
+## הריפו מחזיק מקור בלבד. האתר נבנה בענן
 
-קבצי ה-HTML (`index.html`, `digital-products/index.html`, וכן תיקיית כל עסק) הם **תוצרי בילד**. אין לערוך אותם ישירות, כל עריכה בהם תימחק בבילד הבא.
+**אין קבצי HTML בנויים בגיט.** הכול נבנה ל-`dist/`, ש-`.gitignore` מתעלם ממנו, ו-GitHub Action (`.github/workflows/deploy.yml`) בונה ומפרסם אותו בכל פוש ל-main. הכתובות לא נגזרות ממבנה הריפו אלא ממבנה החבילה שמתפרסמת, ולכן `floa.co.il/business-systems/` עובד בלי שתהיה תיקייה כזאת בגיט.
 
 - **מקור האמת:** `src/` (המנוע) ו-`businesses/` (העסקים)
 - **לבנות:** `node build.mjs`, או `node build.mjs --only=floa` לעסק אחד
+- **לראות:** `npm run dev` (מגיש את `dist/` על localhost:5173, בדיוק מה שגיטהאב יפרסם)
 - **לבדוק:** `npm test` (ניתוב הלידים ב-Worker)
-- הבילד מייצר גם `robots.txt`, `sitemap.xml`, `llms.txt`, את `worker/src/businesses.js`, ומחשב hash לשבירת קאש (`css/styles.css?v=…`) לתוך כל דף
+- הבילד מייצר גם `robots.txt`, `sitemap.xml`, `llms.txt` ו-`worker/src/businesses.js`, ומחשב hash לשבירת קאש (`css/styles.css?v=…`) לתוך כל דף
 
-אחרי כל שינוי ב-`src/` או ב-`businesses/` צריך להריץ `node build.mjs` לפני קומיט, אחרת האתר החי לא יתעדכן.
+`businesses/<key>/public/` מועתק לאתר כמו שהוא: תמונות, אייקונים, `sw.js`, ואצל בעל הדומיין גם `CNAME`. **בלי `CNAME` בחבילה הדומיין מתנתק.**
+
+`worker/src/businesses.js` נוצר על ידי הבילד אבל **כן מקומט**, כי ה-Worker נפרס מהריפו ולא מהחבילה. ה-Action מוודא שהוא מסונכרן ונופל אם לא.
+
+בילד לפני קומיט הוא לא חובה יותר (ה-Action בונה בכל מקרה), אבל כן כדאי, כדי לראות שהוא עובר ושה-Worker מסונכרן.
 
 ## עסק חדש
 
@@ -52,19 +57,11 @@
 node build.mjs && git add -A && git commit -m "…" && git push origin main
 ```
 
-`main` הוא הענף שממנו GitHub Pages מגיש את האתר, ולכן פוש ל-main = עלייה לאוויר. אין ענפי פיצ'רים ואין PR-ים לשינויים רגילים.
+פוש ל-main מפעיל את ה-Action, שבונה ומפרסם. **עלייה לאוויר לוקחת בערך דקה, לא מיידית.** אם הבילד או `npm test` נופלים, כלום לא מתפרסם והאתר נשאר בגרסה הקודמת. אין ענפי פיצ'רים ואין PR-ים לשינויים רגילים.
 
 לפני פוש תמיד לעשות `git pull --rebase`. סוכנים בענן פותחים לפעמים PR-ים שמתמזגים ל-main ומשאירים את המקומי מאחור.
 
-### התנגשות בקבצי HTML היא כמעט תמיד רעש
-
-אם `git pull` נחסם בגלל קבצי HTML, סביר שההבדל היחיד הוא ה-hash של הקאש. לזרוק את התוצרים ולבנות מחדש:
-
-```
-git checkout -- '*.html' && git pull --rebase && node build.mjs
-```
-
-**לוודא לפני שזורקים** שאין שם עבודה אמיתית: `git diff -- '*.html'`.
+התנגשויות בקבצי HTML בנויים כבר לא קיימות: הם לא בגיט.
 
 ## שפה
 
@@ -89,5 +86,5 @@ git checkout -- '*.html' && git pull --rebase && node build.mjs
 לבדיקה אחרי בילד:
 
 ```
-grep -c "—\|–" *.html */index.html
+grep -rc "—\|–" dist --include='*.html'
 ```

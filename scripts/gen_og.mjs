@@ -29,14 +29,17 @@ import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+/* the share cards are files of the business, not of the build: they land in its
+   public/ folder and are copied into its site verbatim */
+const PUBLIC = join(ROOT, "businesses/floa/public");
 const read = (p) => readFileSync(join(ROOT, p), "utf8");
 
 const pw = await import(process.env.PW || "playwright");
 const chromium = pw.chromium || pw.default?.chromium;
 
-const { home } = await import(pathToFileURL(join(ROOT, "src/content/home.js")).href);
-const { solutions } = await import(pathToFileURL(join(ROOT, "src/content/solutions.js")).href);
-const { landingOffer } = await import(pathToFileURL(join(ROOT, "src/content/landing-offer.js")).href);
+const { home } = await import(pathToFileURL(join(ROOT, "businesses/floa/content/home.js")).href);
+const { solutions } = await import(pathToFileURL(join(ROOT, "businesses/floa/content/solutions.js")).href);
+const { landingOffer } = await import(pathToFileURL(join(ROOT, "businesses/floa/content/landing-offer.js")).href);
 const { deviceMockSvg } = await import(pathToFileURL(join(ROOT, "src/components/device-mock/device-mock.js")).href);
 
 /* --- fonts: subset to exactly the glyphs the cards render ------------------ */
@@ -70,7 +73,7 @@ const TOKENS_CSS = read("src/design/tokens.css");
 
 const heroArt = (slug) => `
 <svg class="hero-illust" viewBox="-24 -14 768 488" role="img">
-${read(`src/content/hero-art/${slug}.svg`)}
+${read(`businesses/floa/content/hero-art/${slug}.svg`)}
 </svg>`;
 
 /* The homepage has no hero SVG of its own — its hero is the animated system
@@ -198,7 +201,7 @@ for (const card of cards) {
   await p.setContent(page(card), { waitUntil: "load" });
   await p.evaluate(() => document.fonts.ready);
   const buf = await p.screenshot({ type: "png" });
-  writeFileSync(join(ROOT, card.out), buf);
+  writeFileSync(join(PUBLIC, card.out), buf);
   console.log(`  ${card.out}  ${(buf.length / 1024).toFixed(0)} KB  "${card.title}"`);
   await p.close();
 }
