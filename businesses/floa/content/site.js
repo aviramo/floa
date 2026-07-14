@@ -39,7 +39,7 @@ export const site = {
      The events that actually matter are fired on the click and on the sent form,
      not deduced from a URL. See the note in src/lib/core.client.js. */
   analytics: {
-    metaPixel: "",                          // Events Manager -> Data sources -> the pixel's id
+    metaPixel: "1729984108015909",          // Events Manager -> Data sources -> "המרות"
     ga4: "",
   },
   themeColor: "#0E8C7E",
