@@ -45,7 +45,7 @@ const analyticsHead = ({ ga4, metaPixel }) => html`${ga4 ? html`
   fbq("init","${metaPixel}");fbq("track","PageView");</script>` : ""}`;
 
 export const render = (ctx) => page(ctx, {
-  path: `${offer.slug}/`,
+  path: `${site.folder}${offer.slug}/`,
   meta: offer.meta,
   og: offer.og,
   waText: offer.waText,
@@ -57,9 +57,9 @@ export const render = (ctx) => page(ctx, {
     serviceType: "בניית דף נחיתה",
     name: offer.meta.title,
     description: offer.meta.description,
-    image: `${site.origin}/${offer.og.image}`,
+    image: `${site.origin}/${site.folder}${offer.og.image}`,
     areaServed: "IL",
-    url: `${site.origin}/${offer.slug}/`,
+    url: `${site.origin}/${site.folder}${offer.slug}/`,
     offers: { "@type": "Offer", price: "500", priceCurrency: "ILS" },
     provider: {
       "@type": "ProfessionalService",

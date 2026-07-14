@@ -1,5 +1,5 @@
 import { runtime, site } from "./content/site.js";
-import { leadPages, pages, siteMap } from "./pages/index.js";
+import { leadPages, pages, redirects, siteMap } from "./pages/index.js";
 
 /* ==========================================================================
    FLOA, as a business the generator can render — the same shape a client gets.
@@ -16,7 +16,17 @@ import { leadPages, pages, siteMap } from "./pages/index.js";
    ========================================================================== */
 export const business = {
   key: "floa",
-  out: "",
+
+  /* FLOA's files live in a folder like everyone else's. What used to be `out: ""`
+     said the opposite: that FLOA WAS the domain, and a client was a guest inside
+     it. Now the root belongs to the domain, /floa/ belongs to FLOA, /dana/ to a
+     client, and the only thing at the root is what a person typing floa.co.il is
+     actually asking for: the homepage (see `root` on that page).
+
+     `root: true` still marks the business that owns the domain: it is the one
+     that gets robots.txt, sitemap.xml and the domain/ folder (favicons, CNAME,
+     the service worker). */
+  out: "floa",
   root: true,
 
   /* Where this business's leads go, and who may send them.
@@ -36,6 +46,7 @@ export const business = {
   site,
   runtime,
   pages,
+  redirects,          // the addresses these pages used to have, kept alive
   siteMap,
   leadPages,
 };

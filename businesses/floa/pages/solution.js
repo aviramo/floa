@@ -69,7 +69,7 @@ ${proof.quotes && quotes({ items: pickQuotes(...proof.quotes) })}`,
 });
 
 export const render = (ctx, solution) => page(ctx, {
-  path: `${solution.slug}/`,
+  path: `${site.folder}${solution.slug}/`,
   meta: solution.meta,
   og: solution.og,
   waText: solution.waText,
@@ -81,9 +81,9 @@ export const render = (ctx, solution) => page(ctx, {
     name: solution.meta.serviceName,
     description: solution.meta.description,
     /* the image a search result can actually SHOW — this page's own card */
-    image: `${site.origin}/${solution.og.image}`,
+    image: `${site.origin}/${site.folder}${solution.og.image}`,
     areaServed: "IL",
-    url: `${site.origin}/${solution.slug}/`,
+    url: `${site.origin}/${site.folder}${solution.slug}/`,
     provider: {
       "@type": "ProfessionalService",
       name: site.brand,

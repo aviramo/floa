@@ -28,9 +28,14 @@ import { footer } from "../components/footer/footer.js";
    ========================================================================== */
 export function page(ctx, { path = "", meta, og = {}, jsonLd, waText, ctaLabel, head, body }) {
   const site = ctx.site;
+
+  /* `path` is where this page sits on the DOMAIN, so the canonical is exact
+     wherever the business lives. `site.dir` is where the business's own files
+     sit, which is not the same thing: FLOA's pages are under /floa/ while its
+     homepage is the domain root, and the share card is one of its files. */
   const url = `${site.origin}/${path}`;
   const card = { ...site.og, ...og };
-  const ogImage = `${site.origin}/${card.image}`;
+  const ogImage = `${site.origin}/${site.folder ?? ""}${card.image}`;
 
   const social = og !== false && html`
   <!-- Open Graph. The image must be an absolute URL on the host that actually
@@ -88,13 +93,16 @@ ${body}
 ${ctaLabel ? ctaDock(ctx, { label: ctaLabel }) : ""}
 ${footer(ctx, ctx.footer(ctx))}
 <script src="${ctx.url(ctx.assets.js)}" defer></script>
-<script>
+${site.sw ? html`<script>
+  /* Root-absolute, deliberately: a service worker only controls pages at or
+     below its own path, so one registered under /floa/ could never control the
+     homepage at /. It is a file of the domain, not of the business. */
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", function () {
-      navigator.serviceWorker.register("${raw(ctx.url("sw.js"))}").catch(function () {});
+      navigator.serviceWorker.register("${raw(site.sw)}").catch(function () {});
     });
   }
-</script>
+</script>` : ""}
 </body>
 </html>`;
 }

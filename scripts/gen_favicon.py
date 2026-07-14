@@ -39,7 +39,7 @@ ROOT = os.path.join(os.path.dirname(__file__), "..")
 
 # The icons are files of the business, not of the build: they live in its public/
 # folder and are copied into its site verbatim.
-PUBLIC = os.path.join(ROOT, "businesses", "floa", "public")
+PUBLIC = os.path.join(ROOT, "businesses", "floa", "domain")
 
 
 SS = 4          # supersample. PIL fills polygons with NO anti-aliasing, so the

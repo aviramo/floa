@@ -44,7 +44,7 @@ export const render = (ctx) => page(ctx, {
     description: home.meta.description,
     url: `${site.origin}/`,
     /* the image and the logo are what a search result can actually SHOW */
-    image: `${site.origin}/${home.og.image}`,
+    image: `${site.origin}/${site.folder}${home.og.image}`,
     logo: `${site.origin}${site.icons.apple}`,
     areaServed: "IL",
     founder: { "@type": "Person", name: site.founder },

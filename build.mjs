@@ -30,6 +30,8 @@ import { watch } from "node:fs";
 import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import { redirectPage } from "./src/layouts/redirect.js";
+
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const SRC = join(ROOT, "src");
 const BUSINESSES = join(ROOT, "businesses");
@@ -68,13 +70,19 @@ async function writeRepo(path, contents) {
    never fall behind the pages that exist. */
 const RESERVED = new Set(["assets", "css", "js", "src", "businesses", "worker", "scripts", "node_modules"]);
 
-/* Every top-level name a business writes into: its `out` if it has one, and
-   otherwise every folder its pages land in. Two businesses may not claim the
-   same one — the second to build would silently overwrite the first, and the
-   first would only find out when a live page went missing. */
-const claims = (b) => new Set(
-  b.out ? [b.out] : b.pages.map((p) => p.out.split("/")[0]).filter((n) => n.includes(".") === false)
-);
+/* Every top-level name a business writes into: its own folder, plus every folder
+   it puts at the domain root — the pages it emits there (FLOA's homepage) and
+   the old addresses it keeps alive (the redirect stubs). Two businesses may not
+   claim the same name: the second to build would silently overwrite the first,
+   and the first would only find out when a live page went missing. */
+const top = (path) => path.split("/")[0];
+const isFolder = (name) => !name.includes(".");
+
+const claims = (b) => new Set([
+  ...(b.out ? [b.out] : []),
+  ...b.pages.filter((p) => b.out === "" || p.root).map((p) => top(p.out)).filter(isFolder),
+  ...(b.redirects ?? []).map((r) => top(r.from)).filter(isFolder),
+]);
 
 function checkCollisions(businesses) {
   const taken = new Map();
@@ -128,23 +136,33 @@ async function theme(key) {
   }
 }
 
-/* businesses/<key>/public/ is copied into the business's site verbatim: images,
-   the favicons, sw.js, and — for the business that owns the domain — the CNAME
-   that binds floa.co.il to GitHub. Nothing here is rendered or rewritten. It is
-   simply the part of a site that is a file rather than a page.
+/* Files, not pages. Two folders, because a site has two kinds of them and they
+   do not belong in the same place:
 
-   The CNAME matters more than it looks: without it in the published package the
-   custom domain comes undone. It lives with the business that owns the root,
-   because that is whose domain it is. */
-async function statics(key, out) {
-  const from = join(BUSINESSES, key, "public");
-  try {
-    await cp(from, join(DIST, out), { recursive: true });
-    return [`${out || "."}/  (public)`];
-  } catch (err) {
-    if (err.code === "ENOENT") return [];        // a business with no files of its own
-    throw err;
+     public/   the BUSINESS's files — its images. Copied into its own folder, so
+               a client's photographs sit under /dana/ and FLOA's under /floa/.
+
+     domain/   the DOMAIN's files — the favicons a crawler fetches from /, the
+               service worker (which only controls pages at or below its own
+               path, so it must sit at the root), .nojekyll, and the CNAME that
+               binds floa.co.il to GitHub. Only the business that owns the root
+               has one, and it is copied to the root.
+
+   The CNAME earns the distinction the hard way: it once lived in the business's
+   public/ folder, which meant it stopped being at the root of what GitHub
+   served, which meant GitHub concluded there was no custom domain and unbound
+   floa.co.il. The site was fine; the domain simply no longer pointed at it. */
+async function statics(key, out, root) {
+  const copied = [];
+  for (const [folder, into] of [["public", out], ...(root ? [["domain", ""]] : [])]) {
+    try {
+      await cp(join(BUSINESSES, key, folder), join(DIST, into), { recursive: true });
+      copied.push(`${into || "."}/  (${folder})`);
+    } catch (err) {
+      if (err.code !== "ENOENT") throw err;      // a business with no files of that kind
+    }
   }
+  return copied;
 }
 
 /* --- crawler-facing files ---------------------------------------------------
@@ -213,7 +231,7 @@ async function load() {
    every path inside it is relative to that — which is why the same folder can be
    served from floa.co.il/<key>/ today and from its own domain tomorrow. */
 async function renderBusiness(business, bundle) {
-  const { key, out, root, site, runtime, pages, siteMap } = business;
+  const { key, out, root, site, runtime, pages, siteMap, redirects = [] } = business;
 
   const styles = await concat(
     await order(bundle.css, (n) => n.endsWith(".css")),
@@ -234,19 +252,30 @@ async function renderBusiness(business, bundle) {
     js: `js/main.js?v=${fingerprint(script)}`,
   };
 
+  /* The crawler-facing files describe an ORIGIN, and they are fetched from the
+     root of one — /robots.txt, /sitemap.xml. So the business that owns the root
+     writes them there. A business still living in a folder of someone else's
+     domain writes them into its folder, where they wait, correct and unread,
+     until it gets a domain of its own and becomes the root of it. */
+  const crawlers = root ? "" : out;
+
   const written = await Promise.all([
     write(join(out, "css/styles.css"), styles),
     write(join(out, "js/main.js"), script),
-    write(join(out, "sitemap.xml"), sitemapXml(siteMap)),
-    write(join(out, "llms.txt"), llmsTxt(site, siteMap)),
-    /* robots.txt exists only at the root of a domain. A business served from a
-       folder of someone else's domain does not get one, because nothing would
-       ever fetch it. */
+    write(join(crawlers, "sitemap.xml"), sitemapXml(siteMap)),
+    write(join(crawlers, "llms.txt"), llmsTxt(site, siteMap)),
     ...(root ? [write("robots.txt", robotsTxt(site.origin))] : []),
-    ...pages.map(async (page) => write(join(out, page.out), (await page.render(assets)).toString() + "\n")),
+
+    /* `root` on a page means its `out` is relative to the DOMAIN, not to the
+       business: it is how the homepage lands at / while all of its files stay
+       under /floa/, and how a moved page's old address stays where it was. */
+    ...pages.map(async (page) =>
+      write(page.root ? page.out : join(out, page.out), (await page.render(assets)).toString() + "\n")),
+
+    ...redirects.map((r) => write(r.from, redirectPage({ to: r.to, lang: site.lang, dir: site.dir, label: "המשך לדף" }).toString() + "\n")),
   ]);
 
-  return [...written, ...await statics(key, out)];
+  return [...written, ...await statics(key, out, root)];
 }
 
 async function build(only) {

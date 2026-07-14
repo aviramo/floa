@@ -8,9 +8,25 @@ export const site = {
   lang: "he",
   dir: "rtl",
   locale: "he_IL",
-  /* the live domain (see CNAME). Every canonical, og:url, og:image and JSON-LD
-     url on the site is derived from this one string. */
+  /* the live domain (see domain/CNAME). Every canonical, og:url, og:image and
+     JSON-LD url on the site is derived from this one string. */
   origin: "https://floa.co.il",
+
+  /* Where FLOA's own files sit on that domain. Every business gets a folder of
+     its own, and FLOA is not exempt: its pages, stylesheet, script and images
+     are all under /floa/, exactly like a client's under /dana/. The root belongs
+     to the DOMAIN, not to any one business.
+
+     The single exception is the homepage, which is the domain root — a visitor
+     typing floa.co.il expects FLOA, not a folder listing. So it is emitted at /
+     while its files still come from /floa/, and its `path` is "" while every
+     other page's starts with this. */
+  folder: "floa/",
+
+  /* The service worker, root-absolute because a service worker only controls
+     pages at or below its own path — one under /floa/ could never control the
+     homepage. It is a file of the domain (domain/sw.js), not of the business. */
+  sw: "/sw.js",
   themeColor: "#0E8C7E",
   tagline: "פתרונות דיגיטליים שעובדים עם העסק",
   slogan: "כל העסק. מערכת אחת. כתובת אחת",
