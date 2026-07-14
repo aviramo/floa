@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { html } from "../lib/html.js";
+import { html } from "#lib/html.js";
 
 /* Each solution's hero shapes live beside this file as plain SVG, so the picture
    can be edited as a picture. */

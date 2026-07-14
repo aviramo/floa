@@ -1,5 +1,5 @@
-import { legal } from "../components/legal/legal.js";
-import { page } from "../layouts/base.js";
+import { legal } from "#components/legal/legal.js";
+import { page } from "#layouts/base.js";
 
 /* Privacy and accessibility: the same shell, no OG card (they are not shared),
    no lead form. */

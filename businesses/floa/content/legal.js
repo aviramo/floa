@@ -1,4 +1,4 @@
-import { html } from "../lib/html.js";
+import { html } from "#lib/html.js";
 import { site } from "./site.js";
 
 const mail = html`<a href="mailto:${site.email}">${site.email}</a>`;

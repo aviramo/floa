@@ -1,28 +1,28 @@
-import { html } from "../lib/html.js";
+import { html } from "#lib/html.js";
 
-import { button } from "../components/button/button.js";
-import { card, cardGrid } from "../components/card/card.js";
-import { chips } from "../components/chips/chips.js";
-import { contact } from "../components/contact/contact.js";
-import { ctaBand } from "../components/cta-band/cta-band.js";
-import { ecoGrid } from "../components/eco-grid/eco-grid.js";
-import { faq } from "../components/faq/faq.js";
-import { flow, flowCards } from "../components/flow/flow.js";
-import { hero } from "../components/hero/hero.js";
-import { heroArt } from "../components/hero-art/hero-art.js";
-import { projectGrid } from "../components/project-card/project-card.js";
-import { quotes } from "../components/quote-card/quote-card.js";
-import { section } from "../components/section/section.js";
-import { sectionHead } from "../components/section-head/section-head.js";
-import { timeline } from "../components/timeline/timeline.js";
-import { urgency } from "../components/urgency/urgency.js";
-import { waButton } from "../components/whatsapp-button/whatsapp-button.js";
+import { button } from "#components/button/button.js";
+import { card, cardGrid } from "#components/card/card.js";
+import { chips } from "#components/chips/chips.js";
+import { contact } from "#components/contact/contact.js";
+import { ctaBand } from "#components/cta-band/cta-band.js";
+import { ecoGrid } from "#components/eco-grid/eco-grid.js";
+import { faq } from "#components/faq/faq.js";
+import { flow, flowCards } from "#components/flow/flow.js";
+import { hero } from "#components/hero/hero.js";
+import { heroArt } from "#components/hero-art/hero-art.js";
+import { projectGrid } from "#components/project-card/project-card.js";
+import { quotes } from "#components/quote-card/quote-card.js";
+import { section } from "#components/section/section.js";
+import { sectionHead } from "#components/section-head/section-head.js";
+import { timeline } from "#components/timeline/timeline.js";
+import { urgency } from "#components/urgency/urgency.js";
+import { waButton } from "#components/whatsapp-button/whatsapp-button.js";
 
 import { pick as pickProjects } from "../content/projects.js";
 import { pick as pickQuotes } from "../content/quotes.js";
 import { contactContent, faqContent, formCta, heroNote, processContent, site, testimonialsHead } from "../content/site.js";
 import { defaultCta, ecosystem, solutions } from "../content/solutions.js";
-import { page } from "../layouts/base.js";
+import { page } from "#layouts/base.js";
 
 /* ==========================================================================
    ONE template, two pages.

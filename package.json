@@ -2,7 +2,21 @@
   "name": "floa",
   "private": true,
   "type": "module",
-  "description": "FLOA — a component-built static site. Pages are assembled from src/components by build.mjs.",
+  "description": "FLOA — the engine in src/, one folder per business in businesses/. build.mjs renders each business into its own site.",
+
+  "//imports": [
+    "The engine's public surface. A business under businesses/ imports the shared",
+    "components, layouts and helpers through these names and NEVER through a",
+    "relative path — a business must not know how deep it sits, or where src/ is.",
+    "Node resolves them natively (package.json subpath imports); there is no",
+    "bundler and no build step behind this."
+  ],
+  "imports": {
+    "#lib/*": "./src/lib/*",
+    "#components/*": "./src/components/*",
+    "#layouts/*": "./src/layouts/*"
+  },
+
   "scripts": {
     "build": "node build.mjs",
     "dev": "node build.mjs --serve",

@@ -1,12 +1,15 @@
 import { attrs, html, raw } from "../lib/html.js";
 import { ctaDock } from "../components/cta-dock/cta-dock.js";
 import { footer } from "../components/footer/footer.js";
-import { footerContent, site } from "../content/site.js";
 
 /* ==========================================================================
    The document. Every page is this shell plus a body — so the meta, the fonts,
    the stylesheet, the scripts and the footer are written once, here, and can
    never drift between pages.
+
+   The business arrives on the context (ctx.site, ctx.footer) and is never
+   imported: this file is the engine, and the engine has no business of its own.
+   Give it FLOA and it renders FLOA; give it a client and it renders the client.
 
    `waText` is the page's own WhatsApp opening line: it rides on <body> and
    whatsapp-button.client.js turns it into the href of every WhatsApp button on
@@ -24,6 +27,7 @@ import { footerContent, site } from "../content/site.js";
    { path, meta:{title,description}, og, jsonLd, waText, ctaLabel, head, body }
    ========================================================================== */
 export function page(ctx, { path = "", meta, og = {}, jsonLd, waText, ctaLabel, head, body }) {
+  const site = ctx.site;
   const url = `${site.origin}/${path}`;
   const card = { ...site.og, ...og };
   const ogImage = `${site.origin}/${card.image}`;
@@ -82,7 +86,7 @@ ${head ?? ""}
 <body${attrs({ "data-wa-text": waText })}>
 ${body}
 ${ctaLabel ? ctaDock(ctx, { label: ctaLabel }) : ""}
-${footer(ctx, footerContent(ctx))}
+${footer(ctx, ctx.footer(ctx))}
 <script src="${ctx.url(ctx.assets.js)}" defer></script>
 <script>
   if ("serviceWorker" in navigator) {

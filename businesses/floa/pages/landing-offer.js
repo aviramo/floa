@@ -1,24 +1,24 @@
-import { html } from "../lib/html.js";
+import { html } from "#lib/html.js";
 
-import { button } from "../components/button/button.js";
-import { card, cardGrid } from "../components/card/card.js";
-import { about } from "../components/about/about.js";
-import { compare } from "../components/compare/compare.js";
-import { contact } from "../components/contact/contact.js";
-import { deviceMock } from "../components/device-mock/device-mock.js";
-import { faq } from "../components/faq/faq.js";
-import { hero } from "../components/hero/hero.js";
-import { projectGrid } from "../components/project-card/project-card.js";
-import { section } from "../components/section/section.js";
-import { sectionHead } from "../components/section-head/section-head.js";
-import { timeline } from "../components/timeline/timeline.js";
-import { urgency } from "../components/urgency/urgency.js";
-import { waButton } from "../components/whatsapp-button/whatsapp-button.js";
+import { button } from "#components/button/button.js";
+import { card, cardGrid } from "#components/card/card.js";
+import { about } from "#components/about/about.js";
+import { compare } from "#components/compare/compare.js";
+import { contact } from "#components/contact/contact.js";
+import { deviceMock } from "#components/device-mock/device-mock.js";
+import { faq } from "#components/faq/faq.js";
+import { hero } from "#components/hero/hero.js";
+import { projectGrid } from "#components/project-card/project-card.js";
+import { section } from "#components/section/section.js";
+import { sectionHead } from "#components/section-head/section-head.js";
+import { timeline } from "#components/timeline/timeline.js";
+import { urgency } from "#components/urgency/urgency.js";
+import { waButton } from "#components/whatsapp-button/whatsapp-button.js";
 
 import { pick as pickProjects } from "../content/projects.js";
 import { contactContent, site } from "../content/site.js";
 import { landingOffer as offer } from "../content/landing-offer.js";
-import { page } from "../layouts/base.js";
+import { page } from "#layouts/base.js";
 
 /* The landing-page-offer campaign page. Its SECTION ORDER is its own: unlike
    src/pages/solution.js it sells one starting price with an upsell path instead

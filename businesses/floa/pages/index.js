@@ -1,5 +1,5 @@
-import { context } from "../lib/context.js";
-import { site } from "../content/site.js";
+import { context } from "#lib/context.js";
+import { footerContent, site } from "../content/site.js";
 import { home } from "../content/home.js";
 import { solutions } from "../content/solutions.js";
 import { landingOffer } from "../content/landing-offer.js";
@@ -11,15 +11,21 @@ import { render as renderSolution } from "./solution.js";
 import { render as renderLandingOffer } from "./landing-offer.js";
 
 /* ==========================================================================
-   The site map. Every page the build emits is one entry here.
+   FLOA's pages. Every page the build emits for this business is one entry here.
+
+   `out` is relative to the BUSINESS's root, never to the repo: FLOA happens to
+   own the domain root, so its "index.html" lands at floa.co.il/, but the same
+   list under a business that sits at /harpatka/ would land there instead. A page
+   never knows which.
 
    `base` is how deep the page sits (for assets and links); `homeHref` is how it
-   points back at the homepage. Add a solution to src/content/solutions.js and
-   its page appears here on its own.
+   points back at this business's homepage. Add a solution to content/solutions.js
+   and its page appears here on its own.
    ========================================================================== */
 const at = (assets, depth) => context({
   assets,
-  brand: site.brand,
+  site,
+  footer: footerContent,
   base: depth,
   homeHref: depth || "index.html",
   isHome: depth === "" && false,       // set explicitly by the home entry below
@@ -28,7 +34,7 @@ const at = (assets, depth) => context({
 export const pages = [
   {
     out: "index.html",
-    render: (assets) => renderHome(context({ assets, brand: site.brand, base: "", homeHref: "", isHome: true })),
+    render: (assets) => renderHome(context({ assets, site, footer: footerContent, base: "", homeHref: "", isHome: true })),
   },
 
   ...solutions.map((solution) => ({
@@ -60,3 +66,8 @@ export const siteMap = [
   { loc: `${site.origin}/${landingOffer.slug}/`, title: landingOffer.meta.title, description: landingOffer.meta.description },
   ...[privacy, accessibility].map((doc) => ({ loc: `${site.origin}/${doc.out}`, title: doc.meta.title, description: doc.meta.description })),
 ];
+
+/* The pages that may send a lead, by the name that lands in the email's subject.
+   The Worker keeps a list of its own and rejects anything else; build.mjs
+   compares the two and fails the build if they drift apart. */
+export const leadPages = [home.pageName, ...solutions.map((s) => s.pageName), landingOffer.pageName];
