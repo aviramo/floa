@@ -112,7 +112,11 @@
 
     sending = true;
     if (submitBtn) submitBtn.disabled = true;
-    window.FLOA.track("contact_form_submit");
+
+    /* No event here. The lead worth counting is the one the server ACCEPTED, and
+       that fires as contact_form_success -> Lead below. An attempt event fired
+       here as well would double every real lead in Meta: one for pressing the
+       button, one for the send that followed. */
 
     fetch(endpoint, {
       method: "POST",
