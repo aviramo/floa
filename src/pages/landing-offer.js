@@ -109,17 +109,11 @@ ${compare(ctx, { tracks: offer.tracks.items })}`,
 })}
 
 ${section({
-  id: "grow",
-  className: "solutions",
-  children: html`${sectionHead(offer.grow.head)}
-${timeline({ items: offer.grow.steps })}`,
-})}
-
-${section({
   id: "work",
   className: "projects",
   children: html`${sectionHead(offer.work.head)}
-${projectGrid(ctx, { items: pickProjects(offer.work.project) })}`,
+${projectGrid(ctx, { items: pickProjects(offer.work.project) })}
+<p class="contact-note">${offer.work.note}</p>`,
 })}
 
 ${section({

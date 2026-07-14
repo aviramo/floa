@@ -3,11 +3,10 @@
    separate from the two solution pages and never linked from the homepage nav
    it exists to answer one ad, not to join the site's own menu.
 
-   The only price on the page is the starting price. No ceiling, no tiers: the
-   brief is deliberately silent on what a bigger job costs, so this file must
-   stay silent too. */
-
-// TODO: להבהיר מול בעל האתר אם 500 ₪ כולל מע"מ, ולעדכן כאן לפני שהדף עולה לפרודקשן.
+   The only price on the page is the starting price, and it is always written
+   "החל מ־500 ₪". No ceiling, no tiers: the brief is deliberately silent on what
+   a bigger job costs, so this file must stay silent too. The business is not
+   VAT-registered, so no price on the page mentions VAT either way. */
 
 export const landingOffer = {
   slug: "landing-page-offer",
@@ -30,8 +29,10 @@ export const landingOffer = {
     chip: "דף נחיתה לעסק",
     title: "דף נחיתה מקצועי החל מ־500 ₪",
     text: "פתרון פשוט לעסק שצריך להציג שירות, לפרסם מבצע או להתחיל לקבל פניות, בלי להיכנס להפקה גדולה ויקרה",
-    waLabel: "בדיקה קצרה ב־WhatsApp",
-    secondaryLabel: "מה כולל דף ב־500 ₪?",
+    /* The primary CTA doubles as the label of the sticky mobile dock, so it has
+       to stay short enough to sit on one line inside the button. */
+    waLabel: "בדקו אם דף ב־500 ₪ מתאים",
+    secondaryLabel: "מה כולל דף החל מ־500 ₪?",
     note: "המחיר תלוי בהיקף הדף ובחומרים הקיימים",
     mockAlt: "מחשב וטלפון עם דף נחיתה לדוגמה: כותרת, תמונה וכפתור יצירת קשר",
   },
@@ -92,17 +93,15 @@ export const landingOffer = {
       },
       {
         title: "דף מותאם לעסק",
+        /* Six lines, no more: the list is a promise of depth, not an inventory.
+           Anything longer stops being read and starts being skimmed. */
         items: [
           "אפיון קהל היעד וההצעה",
-          "חידוד המסרים",
-          "כתיבה שיווקית מלאה",
-          "עיצוב ייחודי",
-          "בחירת תמונות ועיבודן",
+          "חידוד המסרים וכתיבה שיווקית",
+          "עיצוב ייחודי ובחירת תמונות",
           "אנימציות ואינטראקציות",
-          "טפסים מתקדמים",
-          "סליקה, הרשמה או תשלום",
-          "חיבור ל־CRM ולאוטומציות",
-          "מדידת המרות ופיקסלים",
+          "טפסים מתקדמים, הרשמה וסליקה",
+          "חיבור ל־CRM, אוטומציות ומדידת המרות",
         ],
         cta: "אני צריך משהו מתקדם יותר",
         href: "digital-products/",
@@ -112,17 +111,9 @@ export const landingOffer = {
     ],
   },
 
-  grow: {
-    head: {
-      eyebrow: "המחשה",
-      title: "אותו שירות יכול לקבל דף פשוט או חוויה שלמה",
-    },
-    steps: [
-      { title: "מתחילים", text: "כותרת, הסבר קצר, תמונה וכפתור WhatsApp" },
-      { title: "משדרגים", text: "מסר מדויק יותר, אזורי תוכן, שאלות נפוצות וטופס" },
-      { title: "בונים חוויה מלאה", text: "עיצוב ייחודי, אנימציות, תשלום, הרשמה, מדידה ואוטומציות" },
-    ],
-  },
+  /* There is no "grow" section here any more. It walked the visitor from a plain
+     page to a full experience, which is exactly what the two tracks above already
+     say, and saying it twice made the page feel like it was stalling. */
 
   work: {
     head: {
@@ -130,6 +121,9 @@ export const landingOffer = {
       title: "דפי נחיתה שכבר עובדים בפועל",
     },
     project: "harpatka",
+    /* The one example on the page is a full custom build, not a 500 ₪ page.
+       Saying so next to it keeps the starting price honest. */
+    note: "דוגמה לדף במסלול מותאם ומתקדם",
   },
 
   process: {
@@ -157,7 +151,8 @@ export const landingOffer = {
   faq: {
     head: { eyebrow: "שאלות נפוצות", title: "מה שרוב העסקים שואלים לפני שמתחילים" },
     items: [
-      { q: "האם כל דף באמת עולה 500 ₪?", a: "500 ₪ הוא מחיר התחלתי לדף פשוט, המבוסס על מבנה קיים ובתנאי שהטקסטים והתמונות מוכנים. לפני שמתחילים מגדירים בדיוק מה כלול" },
+      { q: "כמה באמת עולה הדף?", a: "המחיר הוא החל מ־500 ₪, לדף פשוט המבוסס על מבנה קיים ובתנאי שהטקסטים והתמונות מוכנים. לפני שמתחילים מגדירים בדיוק מה כלול" },
+      { q: "תוך כמה זמן הדף מוכן?", a: "דף בסיסי יכול להיות מוכן בתוך מספר ימי עבודה, בהתאם לזמינות החומרים והאישורים מצד הלקוח" },
       { q: "מה קורה אם אין לי טקסטים מוכנים?", a: "אפשר להוסיף תהליך של חידוד ההצעה וכתיבת המסרים כך שהלקוחות יבינו במהירות מה אתם מציעים ולמה לפנות אליכם" },
       { q: "אפשר להוסיף אנימציות ועיצוב ייחודי?", a: "כן. אפשר לבנות דף מותאם לחלוטין עם עיצוב ייחודי, תמונות, אנימציות ואינטראקציות" },
       { q: "אפשר לחבר טופס, תשלום או WhatsApp?", a: "כן. בהתאם לצורך אפשר לחבר טפסים, WhatsApp, הרשמה, סליקה, מערכות ניהול ואוטומציות" },
@@ -167,7 +162,7 @@ export const landingOffer = {
   },
 
   closing: {
-    title: "רוצים לבדוק אם דף ב־500 ₪ מתאים לעסק שלכם?",
+    title: "רוצים לבדוק אם דף החל מ־500 ₪ מתאים לעסק שלכם?",
     text: "שלחו כמה מילים על העסק ומה אתם רוצים שהדף יעשה. אגיד לכם בצורה ברורה אם המסלול הפשוט מספיק או שכדאי לבנות משהו רחב יותר",
     waLabel: "לבדיקה קצרה ב־WhatsApp",
     formCta: "השאירו פרטים",
