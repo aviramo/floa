@@ -30,8 +30,6 @@ import { watch } from "node:fs";
 import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { redirectPage } from "./src/layouts/redirect.js";
-
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const SRC = join(ROOT, "src");
 const BUSINESSES = join(ROOT, "businesses");
@@ -71,17 +69,15 @@ async function writeRepo(path, contents) {
 const RESERVED = new Set(["assets", "css", "js", "src", "businesses", "worker", "scripts", "node_modules"]);
 
 /* Every top-level name a business writes into: its own folder, plus every folder
-   it puts at the domain root — the pages it emits there (FLOA's homepage) and
-   the old addresses it keeps alive (the redirect stubs). Two businesses may not
-   claim the same name: the second to build would silently overwrite the first,
-   and the first would only find out when a live page went missing. */
+   it puts at the domain root (FLOA's homepage lands there). Two businesses may
+   not claim the same name: the second to build would silently overwrite the
+   first, and the first would only find out when a live page went missing. */
 const top = (path) => path.split("/")[0];
 const isFolder = (name) => !name.includes(".");
 
 const claims = (b) => new Set([
   ...(b.out ? [b.out] : []),
   ...b.pages.filter((p) => b.out === "" || p.root).map((p) => top(p.out)).filter(isFolder),
-  ...(b.redirects ?? []).map((r) => top(r.from)).filter(isFolder),
 ]);
 
 function checkCollisions(businesses) {
@@ -231,7 +227,7 @@ async function load() {
    every path inside it is relative to that — which is why the same folder can be
    served from floa.co.il/<key>/ today and from its own domain tomorrow. */
 async function renderBusiness(business, bundle) {
-  const { key, out, root, site, runtime, pages, siteMap, redirects = [] } = business;
+  const { key, out, root, site, runtime, pages, siteMap } = business;
 
   const styles = await concat(
     await order(bundle.css, (n) => n.endsWith(".css")),
@@ -267,12 +263,10 @@ async function renderBusiness(business, bundle) {
     ...(root ? [write("robots.txt", robotsTxt(site.origin))] : []),
 
     /* `root` on a page means its `out` is relative to the DOMAIN, not to the
-       business: it is how the homepage lands at / while all of its files stay
-       under /floa/, and how a moved page's old address stays where it was. */
+       business: it is how the homepage lands at / while all of its files still
+       come from /floa/. */
     ...pages.map(async (page) =>
       write(page.root ? page.out : join(out, page.out), (await page.render(assets)).toString() + "\n")),
-
-    ...redirects.map((r) => write(r.from, redirectPage({ to: r.to, lang: site.lang, dir: site.dir, label: "המשך לדף" }).toString() + "\n")),
   ]);
 
   return [...written, ...await statics(key, out, root)];

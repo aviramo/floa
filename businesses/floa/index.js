@@ -1,18 +1,17 @@
 import { runtime, site } from "./content/site.js";
-import { leadPages, pages, redirects, siteMap } from "./pages/index.js";
+import { leadPages, pages, siteMap } from "./pages/index.js";
 
 /* ==========================================================================
    FLOA, as a business the generator can render — the same shape a client gets.
 
-   `out` is where this business's site lands, relative to the repo root. FLOA's
-   is "" because FLOA owns the domain: GitHub Pages serves floa.co.il from the
-   repo root, so its index.html has to BE the repo's index.html. A client's is
-   its own folder, and that folder is the whole of its site — pages, stylesheet,
-   script, sitemap. Nothing of it is ever mixed into anyone else's.
+   `out` is the folder this business's site lands in, and that folder is the whole
+   of it: pages, stylesheet, script, images, sitemap. Nothing of it is ever mixed
+   into anyone else's.
 
-   `root: true` says the same thing in the one place it has a second consequence:
-   robots.txt only exists at the root of a domain, so only the business that owns
-   the root gets one.
+   `root: true` marks the business that owns the DOMAIN. It is not a bigger claim
+   on the address space — its pages sit in /floa/ like everyone else's — but the
+   domain has files of its own (robots.txt, the favicons, the service worker, the
+   CNAME) and someone has to own them.
    ========================================================================== */
 export const business = {
   key: "floa",
@@ -46,7 +45,6 @@ export const business = {
   site,
   runtime,
   pages,
-  redirects,          // the addresses these pages used to have, kept alive
   siteMap,
   leadPages,
 };

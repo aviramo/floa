@@ -81,31 +81,16 @@ export const pages = [
   })),
 ];
 
-/* --- the addresses these pages used to have --------------------------------
-   Every one of them worked, in public, for months. /landing-page-offer/ is the
-   target of a running Facebook campaign; the others are indexed and linked. A
-   URL that once worked has to go on working, so each old address stays alive as
-   a page whose only job is to hand the visitor, and the crawler, to the new one.
-
-   These are emitted at the DOMAIN root — that is where they used to be. */
-const moved = [
-  ...solutions.map((s) => s.slug),
-  landingOffer.slug,
-].map((slug) => ({ from: `${slug}/index.html`, to: `${site.origin}/${site.folder}${slug}/` }));
-
-export const redirects = [
-  ...moved,
-  ...[privacy, accessibility].map((doc) => ({
-    from: doc.out,
-    to: `${site.origin}/${site.folder}${doc.out}`,
-  })),
-];
+/* The old addresses (/digital-products/, /landing-page-offer/ and the rest) are
+   gone, deliberately: they 404 rather than redirect. The site is young enough
+   that a clean address space is worth more than the links pointing at the old
+   one. Anything that advertises them, the Facebook campaign above all, has to be
+   pointed at the new address by hand. */
 
 /* Every page's live URL, title and description — one row per entry above.
    sitemap.xml and llms.txt are generated from this in build.mjs, so a
    crawler-facing file can never list a page the build doesn't emit, or omit one
-   it does. The redirect stubs are deliberately absent: they carry noindex, and a
-   sitemap that advertises them would be asking Google to index a doorway. */
+   it does. */
 export const siteMap = [
   { loc: `${site.origin}/`, title: home.meta.title, description: home.meta.description },
   ...solutions.map((s) => ({ loc: `${site.origin}/${site.folder}${s.slug}/`, title: s.meta.title, description: s.meta.description })),
