@@ -174,11 +174,4 @@ export const landingOffer = {
     },
     waLabel: "לבדיקה קצרה ב־WhatsApp",
   },
-
-  /* Meta Pixel / GA4: wired but off. Both stay empty until the site owner
-     hands over real IDs, so nothing loads and nothing is invented. */
-  analyticsIds: {
-    ga4: "",
-    metaPixel: "",
-  },
 };

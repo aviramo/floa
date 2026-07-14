@@ -27,6 +27,21 @@ export const site = {
      pages at or below its own path — one under /floa/ could never control the
      homepage. It is a file of the domain (domain/sw.js), not of the business. */
   sw: "/sw.js",
+
+  /* Measurement. Empty means nothing loads: no pixel, no third-party script, no
+     cookie. It is per BUSINESS, so a client's pixel is the client's, and it is
+     on every page of that business rather than on a campaign page alone.
+
+     Filling metaPixel in also changes what the privacy policy says — the policy
+     reads this (see content/legal.js), because a page that promises "no
+     third-party analytics" while running a pixel is not a mistake, it is a lie.
+
+     The events that actually matter are fired on the click and on the sent form,
+     not deduced from a URL. See the note in src/lib/core.client.js. */
+  analytics: {
+    metaPixel: "",                          // Events Manager -> Data sources -> the pixel's id
+    ga4: "",
+  },
   themeColor: "#0E8C7E",
   tagline: "פתרונות דיגיטליים שעובדים עם העסק",
   slogan: "כל העסק. מערכת אחת. כתובת אחת",

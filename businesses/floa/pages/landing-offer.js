@@ -31,26 +31,12 @@ import { page } from "#layouts/base.js";
    WhatsApp button under it as the homepage. Only the copy is this campaign's.
    Nothing on this page is hand-rolled markup that a component already renders. */
 
-/* Meta Pixel / GA4 load ONLY if the site owner has filled in a real id in
-   src/content/landing-offer.js. Both are empty by default, so by default this
-   renders nothing at all. */
-const analyticsHead = ({ ga4, metaPixel }) => html`${ga4 ? html`
-  <script async src="https://www.googletagmanager.com/gtag/js?id=${ga4}"></script>
-  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date());gtag("config","${ga4}");</script>` : ""}${metaPixel ? html`
-  <script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-  n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
-  n.push=n;n.loaded=!0;n.version="2.0";n.queue=[];t=b.createElement(e);t.async=!0;
-  t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
-  document,"script","https://connect.facebook.net/en_US/fbevents.js");
-  fbq("init","${metaPixel}");fbq("track","PageView");</script>` : ""}`;
-
 export const render = (ctx) => page(ctx, {
   path: `${site.folder}${offer.slug}/`,
   meta: offer.meta,
   og: offer.og,
   waText: offer.waText,
   ctaLabel: offer.hero.waLabel,
-  head: analyticsHead(offer.analyticsIds),
   jsonLd: {
     "@context": "https://schema.org",
     "@type": "Service",

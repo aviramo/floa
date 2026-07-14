@@ -1,4 +1,5 @@
 import { attrs, html, raw } from "../lib/html.js";
+import { analyticsHead } from "../lib/analytics.js";
 import { ctaDock } from "../components/cta-dock/cta-dock.js";
 import { footer } from "../components/footer/footer.js";
 
@@ -86,6 +87,7 @@ ${jsonLd ? html`
   <script type="application/ld+json">
 ${raw(JSON.stringify(jsonLd, null, 2))}
   </script>` : ""}
+${analyticsHead(site.analytics)}
 ${head ?? ""}
 </head>
 <body${attrs({ "data-wa-text": waText })}>

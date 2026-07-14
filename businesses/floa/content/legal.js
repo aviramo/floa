@@ -3,6 +3,24 @@ import { site } from "./site.js";
 
 const mail = html`<a href="mailto:${site.email}">${site.email}</a>`;
 
+/* What the site actually does about tracking, read from the config rather than
+   remembered. This paragraph used to promise, flatly, that there was no
+   third-party analytics on the site — which was true, and would have quietly
+   become a lie the day a Meta Pixel id was filled in. A privacy policy that says
+   the opposite of what the page does is worse than no policy: it is a statement
+   a regulator, or a visitor, can hold you to.
+
+   So it follows site.analytics. Turn the pixel on and the policy says so, in the
+   same build. */
+/* the same fact, said where the policy lists who else sees anything */
+const processors = site.analytics?.metaPixel
+  ? " נתוני המדידה שתוארו למעלה מגיעים גם ל־Meta, המפעילה את הפיקסל."
+  : "";
+
+const tracking = site.analytics?.metaPixel || site.analytics?.ga4
+  ? "אנו משתמשים בכלי מדידה של צד שלישי כדי להבין איך האתר משמש את המבקרים בו ולמדוד את הפרסום שלנו: Meta Pixel (פייסבוק ואינסטגרם), ובמקרים מסוימים גם Google Analytics. כלים אלה מציבים קובצי Cookie ואוספים נתוני שימוש כגון העמודים שנצפו ולחיצות על כפתורי יצירת קשר, לרבות כתובת ה־IP ומזהה הדפדפן. הם אינם מקבלים את השם או הטלפון שמילאת בטופס. אפשר לחסום אותם בהגדרות הדפדפן או בתוספת חסימה."
+  : "איננו משתמשים באתר זה בקובצי Cookie למעקב, ואיננו מריצים בו מערכות פרסום או ניתוח (Analytics) של צד שלישי.";
+
 const foot = {
   text: "יש שאלה או משהו שלא ברור? אפשר פשוט לדבר",
   whatsapp: { label: "לשיחת WhatsApp", sub: "תשובה מהירה" },
@@ -24,7 +42,7 @@ export const privacy = {
       "לצד הפנייה נרשמים גם שם העמוד שממנו נשלחה, כתובת העמוד ומועד השליחה.",
       "אם תבחר לפנות אלינו בוואטסאפ: מספר הטלפון ותוכן ההודעה שתשלח.",
     ] },
-    { p: "איננו משתמשים באתר זה בקובצי Cookie למעקב, ואיננו מריצים בו מערכות פרסום או ניתוח (Analytics) של צד שלישי." },
+    { p: tracking },
 
     { h2: "כיצד המידע נאסף ונשמר" },
     { p: "המידע נאסף רק כאשר אתה שולח את הטופס או פונה אלינו ישירות. פרטי הטופס אינם נשמרים במסד נתונים כלשהו: הם נשלחים אלינו כהודעת דואר אלקטרוני בלבד, ומשם הם מגיעים לתיבת הדואר שלנו." },
@@ -33,7 +51,7 @@ export const privacy = {
     { p: "אנו משתמשים במידע אך ורק כדי לחזור אליך, להבין את הצורך שלך ולספק את השירות שביקשת. איננו שולחים דיוור פרסומי ללא הסכמתך." },
 
     { h2: "שיתוף מידע עם צד שלישי" },
-    { p: "איננו מוכרים, משכירים או מעבירים את המידע שלך לגורמים חיצוניים למטרות שיווק. לצורך העברת הפנייה אלינו אנו נעזרים בספקי שירות בלבד: Cloudflare, שדרכו עוברת שליחת הטופס, Resend, ששולח את הודעת הדואר האלקטרוני, וכן WhatsApp, אם בחרת לפנות דרכו. השימוש בהם הוא לצורך אספקת השירות בלבד ובכפוף למדיניות הפרטיות שלהם." },
+    { p: `איננו מוכרים, משכירים או מעבירים את המידע שלך לגורמים חיצוניים למטרות שיווק. לצורך העברת הפנייה אלינו אנו נעזרים בספקי שירות בלבד: Cloudflare, שדרכו עוברת שליחת הטופס, Resend, ששולח את הודעת הדואר האלקטרוני, וכן WhatsApp, אם בחרת לפנות דרכו.${processors} השימוש בהם הוא לצורך אספקת השירות בלבד ובכפוף למדיניות הפרטיות שלהם.` },
 
     { h2: "שמירת המידע" },
     { p: "פנייתך נשמרת בתיבת הדואר האלקטרוני שלנו כל עוד היא דרושה לטיפול בפנייה ולשמירה על קשר עסקי. תוכל לבקש את מחיקת המידע בכל עת." },
