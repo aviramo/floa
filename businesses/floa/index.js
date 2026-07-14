@@ -19,6 +19,20 @@ export const business = {
   out: "",
   root: true,
 
+  /* Where this business's leads go, and who may send them.
+
+     `to` is the NAME of a Worker environment variable, never an address: this
+     repo is public, and a client's inbox does not belong in it. The value is set
+     once with wrangler (see worker/README.md).
+
+     `origins` is every origin this business is served from. While a client sits
+     at floa.co.il/<key>/ these are FLOA's own; the day it moves to its own
+     domain, this is the second line that changes (the first is site.origin). */
+  lead: {
+    to: "LEAD_TO",
+    origins: ["https://floa.co.il", "https://www.floa.co.il", "http://localhost:5173"],
+  },
+
   site,
   runtime,
   pages,

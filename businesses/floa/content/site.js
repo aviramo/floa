@@ -52,6 +52,14 @@ export const formCta = "השארת פרטים";
 
 /* --- what the browser needs, straight from the same source ---------------- */
 export const runtime = {
+  /* Who this page belongs to. It rides along with every lead, because one
+     endpoint serves every business and, while they are all served from
+     floa.co.il, the origin cannot tell them apart. The Worker keeps the
+     recipient — a business's leads reach the business, never us. It must match
+     a key in BUSINESSES in worker/src/index.js, and the build checks that it
+     does. */
+  business: "floa",
+
   whatsapp: {
     number: "972587078708",                                       // +972 58-707-8708
     /* the fallback opening line. Each page overrides it with one of its own via

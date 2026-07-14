@@ -98,6 +98,10 @@
     var data = new FormData(form);
     var utm = storedUtm();
     var lead = {
+      /* whose lead this is. The endpoint serves every business, and the origin
+         cannot tell them apart while they are all served from one domain, so the
+         business says who it is and the Worker looks up ITS recipient. */
+      business: window.FLOA.config.business,
       name: (data.get("name") || "").toString().trim(),
       phone: (data.get("phone") || "").toString().trim(),
       page: (data.get("page") || "").toString(),
