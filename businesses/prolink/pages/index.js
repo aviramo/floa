@@ -1,34 +1,19 @@
-import { context } from "#lib/context.js";
-import { footerContent, site } from "../content/site.js";
-import { home } from "../content/home.js";
-import { render as renderHome } from "./home.js";
-
 /* ==========================================================================
-   ProLink's pages, and where they land. One page for now: the homepage of the
-   business, at floa.co.il/prolink/. It is NOT the domain root (FLOA owns that),
-   so it sits in its own folder like any other business, and its files, styles
-   and script all resolve from /prolink/.
-   ========================================================================== */
-export const pages = [
-  {
-    out: "index.html",
-    render: (assets) => renderHome(context({
-      assets,
-      site,
-      footer: footerContent,
-      base: "",              // its files are right here under /prolink/
-      homeHref: "",          // one page, so "home" is this page's own anchors
-      isHome: true,
-    })),
-  },
-];
+   ProLink ships a hand-built site, not engine-rendered pages.
 
-/* Deliberately empty. ProLink is not advertised in any sitemap, and never in
-   FLOA's: the two businesses share a domain but not an SEO surface. Its pages
-   are reached directly, not through a crawler-facing file. */
+   Its whole look is its own — public/index.html, public/en/index.html and
+   public/assets/ are copied verbatim into dist/prolink/. So there are no engine
+   `pages` here: the only thing ProLink shares with the rest of the domain is the
+   Worker that sends its lead email.
+   ========================================================================== */
+
+/* No engine pages: the site is authored by hand and copied from public/. */
+export const pages = [];
+
+/* Not advertised in any sitemap, and never in FLOA's. */
 export const siteMap = [];
 
-/* The pages that may send a lead, by the name that lands in the email subject.
-   The Worker keeps its own copy (generated into worker/src/businesses.js) and
-   rejects anything else. */
-export const leadPages = [home.pageName];
+/* The page name that rides along with a lead and lands in the email subject.
+   The hand-built form (public/assets/main.js) posts exactly this value; the
+   Worker validates it against this list. */
+export const leadPages = ["פרולינק"];

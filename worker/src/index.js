@@ -6,10 +6,15 @@
    somewhere the browser can never see it, and to email a lead to an inbox.
 
    POST /lead  { business, name, phone, page, url, company, utm_* } -> { ok: true }
-   Every page sends the same two fields, a name and a phone. `business` says whose
-   lead it is, and that is the only thing that decides where it lands: a client's
-   lead goes to the client's inbox and never to ours. The utm_* fields are
-   optional and ride along only when the visitor arrived from a campaign.
+   Every page sends the same two required fields, a name and a phone. `business`
+   says whose lead it is, and that is the only thing that decides where it lands:
+   a client's lead goes to the client's inbox and never to ours. The utm_* fields
+   are optional and ride along only when the visitor arrived from a campaign.
+
+   A business whose form asks for more than the two (ProLink asks for a company,
+   a role, an email and a message) may send `org`, `role`, `email` and `message`;
+   each is optional and shown in the email only if filled. `company` is NOT one
+   of them — it is the honeypot, and a filled one means a bot.
 
    Nothing is stored. Not here, not in Firebase, not anywhere — the lead becomes
    an email and that is the whole of its life.
@@ -107,7 +112,16 @@ function validate(body, origin) {
     if (value) extra[key] = value;
   }
 
-  return { business, lead: { name, phone, page, url, ...extra } };
+  /* Optional, business-specific fields. Most sites send only a name and a phone;
+     a business whose form asks for more (ProLink asks for a company, a role, an
+     email and a message) sends them here. An empty one is simply not shown, so a
+     name-and-phone site is unaffected. */
+  const email = freeText(body.email, 120);
+  const org = freeText(body.org, 120);
+  const role = freeText(body.role, 120);
+  const message = freeText(body.message, 1000);
+
+  return { business, lead: { name, phone, page, url, email, org, role, message, ...extra } };
 }
 
 /* HTML-escape: the name is visitor input and it lands inside an email body */
@@ -148,9 +162,13 @@ function email(lead, brand) {
   const rows = [
     ["עמוד", lead.page, lead.url],
     ["שם", lead.name],
+    ["חברה", lead.org],
+    ["תפקיד", lead.role],
     ["טלפון", prettyPhone(lead.phone), `tel:${lead.phone}`, `https://wa.me/${waNumber}`],
+    ["אימייל", lead.email, lead.email && `mailto:${lead.email}`],
     ["תאריך ושעה", when],
     ...UTM_FIELDS.map(([key, label]) => [label, lead[key]]),
+    ["הודעה", lead.message],
   ].filter(([, v]) => v);
 
   /* the plain-text copy has no links, so there the URL still earns its place */
