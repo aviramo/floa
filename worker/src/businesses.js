@@ -20,5 +20,17 @@ export const BUSINESSES = {
       "מערכות, אוטומציות וניהול העסק",
       "דף נחיתה החל מ־500 ₪"
     ]
+  },
+  "prolink": {
+    "brand": "ProLink",
+    "to": "LEAD_TO_PROLINK",
+    "origins": [
+      "https://floa.co.il",
+      "https://www.floa.co.il",
+      "http://localhost:5173"
+    ],
+    "pages": [
+      "פרולינק"
+    ]
   }
 };

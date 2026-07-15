@@ -22,6 +22,17 @@ const ICONS = {
   /* an arrow coming back round: taking something that exists and lifting it */
   upgrade:    `<path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"/><path d="M19.5 3.5V6.5H16.5"/><path d="M12 15.5V9M9 12l3-3 3 3"/>`,
 
+  /* --- identity & access set: for a business whose whole subject is who may
+     reach what. A shield that has been checked, a key, a pair of people, a
+     fingerprint, a mesh of things, a chip, an ID badge. --- */
+  shield:      `<path d="M12 3l7 3v5c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6l7-3Z"/><path d="m9 11.6 2.2 2.2L15.5 9.3"/>`,
+  key:         `<circle cx="8" cy="8" r="3.6"/><path d="m10.6 10.6 8.4 8.4"/><path d="m19 19 1.8-1.8M16.4 16.4l1.8-1.8"/>`,
+  users:       `<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 5.1a3.2 3.2 0 0 1 0 6.1M20.5 19a5.5 5.5 0 0 0-3-3.9"/>`,
+  fingerprint: `<path d="M12 4a7 7 0 0 0-7 7v1"/><path d="M12 8a4 4 0 0 0-4 4v2a2 2 0 0 0 2 2"/><path d="M12 12v3"/><path d="M16 11a4 4 0 0 0-1.2-2.8"/><path d="M19 11a7 7 0 0 0-2-4.9"/>`,
+  network:     `<circle cx="12" cy="12" r="2.4"/><circle cx="5" cy="5.5" r="1.7"/><circle cx="19" cy="5.5" r="1.7"/><circle cx="5" cy="18.5" r="1.7"/><circle cx="19" cy="18.5" r="1.7"/><path d="m6.3 6.7 3.6 3.6M17.7 6.7l-3.6 3.6M6.3 17.3l3.6-3.6M17.7 17.3l-3.6-3.6"/>`,
+  chip:        `<rect x="6.5" y="6.5" width="11" height="11" rx="2"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><path d="M9.5 6.5V3.5M14.5 6.5V3.5M9.5 20.5v-3M14.5 20.5v-3M6.5 9.5h-3M6.5 14.5h-3M20.5 9.5h-3M20.5 14.5h-3"/>`,
+  badge:       `<rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.5" cy="10.5" r="2.2"/><path d="M5.2 16a3.3 3.3 0 0 1 6.6 0"/><path d="M14.5 9.5H19M14.5 13H18"/>`,
+
   check:      { strokeWidth: 2.2, body: `<path d="M20 6 9 17l-5-5"/>` },
   arrow:      { viewBox: "0 0 40 24", strokeWidth: 1.6, body: `<path d="M38 12H2"/><path d="M10 4 2 12l8 8"/>` },
 
