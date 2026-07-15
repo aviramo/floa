@@ -161,6 +161,25 @@ async function statics(key, out, root) {
   return copied;
 }
 
+/* --- hand-built static sites ------------------------------------------------
+   Not every folder the domain serves comes from the engine. A site can be
+   authored by hand — its own HTML, its own stylesheet, its own images — and
+   mounted at the domain under its own name. It is copied into dist/ verbatim, so
+   floa.co.il/<name>/ serves exactly what sits in <name>/ at the repo root. It
+   claims no business manifest and touches no other site's output; the engine
+   simply steps aside and lets the folder through. */
+const STATIC_SITES = ["prolink"];
+
+async function copyStatic(name) {
+  try {
+    await cp(join(ROOT, name), join(DIST, name), { recursive: true });
+    return `${name}/  (static site)`;
+  } catch (err) {
+    if (err.code !== "ENOENT") throw err;      // the folder simply is not there
+    return null;
+  }
+}
+
 /* --- crawler-facing files ---------------------------------------------------
    Generated from the business's own siteMap, so they can never name a page the
    build doesn't produce, or miss one it does — and never name another
@@ -296,6 +315,15 @@ async function build(only) {
     console.log(`✓ ${business.key} — ${written.length} files`);
     for (const f of written) console.log(`  ${f.replaceAll("\\", "/")}`);
   }
+
+  /* Hand-built sites, copied in after the engine's, so they land in the same
+     dist/ the Action publishes. A full build wiped dist/ above; these are put
+     back with everything else. */
+  for (const name of STATIC_SITES) {
+    const copied = await copyStatic(name);
+    if (copied) console.log(`✓ ${copied}`);
+  }
+
   console.log(`  ${Date.now() - started}ms`);
 }
 
