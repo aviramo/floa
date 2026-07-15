@@ -99,15 +99,16 @@
      screen) and offset by the reveal transform (so it does not sit at the top of
      the form). Reveal the target and everything inside it at once, on any anchor
      click and on load/hashchange, so the form is simply there when you arrive. */
-  function revealNow(el) {
-    if (!el) return;
-    if (el.classList) el.classList.add('in');
-    var inner = el.querySelectorAll ? el.querySelectorAll('.reveal') : [];
-    Array.prototype.forEach.call(inner, function (r) { r.classList.add('in'); });
+  /* Reveal EVERYTHING at once. On a jump to a far section the smooth scroll flies
+     past sections that are still opacity:0, and the observer cannot fade them in
+     fast enough to keep up — so the journey (and the landing) shows a blank paper
+     gap. When the visitor navigates by an anchor we stop animating and just show
+     the whole page, so nothing along the way is ever blank. */
+  function revealAll() {
+    reveals.forEach(function (el) { el.classList.add('in'); });
   }
   function revealHashTarget() {
-    var id = location.hash ? location.hash.slice(1) : '';
-    if (id) revealNow(document.getElementById(id));
+    if (location.hash && location.hash.length > 1) revealAll();
   }
   window.addEventListener('hashchange', revealHashTarget);
   revealHashTarget();
@@ -119,8 +120,12 @@
   function scrollToSection(el) {
     var head = document.getElementById('siteHeader');
     var offset = (head ? head.offsetHeight : 0) + 12;
+    /* jump directly, not a long smooth glide across the whole page: over a big
+       distance a smooth scroll is unreliable (it can stall part-way, leaving the
+       viewport on an empty stretch) and slow. Instant lands on the target every
+       time, and revealAll() above means the target is already painted. */
     var y = el.getBoundingClientRect().top + window.pageYOffset - offset;
-    window.scrollTo({ top: y < 0 ? 0 : y, behavior: 'smooth' });
+    window.scrollTo(0, y < 0 ? 0 : y);
   }
   document.addEventListener('click', function (e) {
     var a = e.target && e.target.closest ? e.target.closest('a[href^="#"]') : null;
@@ -134,7 +139,7 @@
       nav.classList.remove('open');
       if (toggle) toggle.setAttribute('aria-expanded', 'false');
     }
-    revealNow(el);
+    revealAll();                              // nothing blank along the scroll
     scrollToSection(el);
   });
 
