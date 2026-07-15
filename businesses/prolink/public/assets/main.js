@@ -49,6 +49,20 @@
         toggle.setAttribute('aria-expanded', 'false');
       }
     });
+    /* click anywhere outside the open menu closes it */
+    document.addEventListener('click', function (e) {
+      if (!nav.classList.contains('open')) return;
+      if (nav.contains(e.target) || toggle.contains(e.target)) return;
+      nav.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
+    });
+    /* and so does Escape */
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && nav.classList.contains('open')) {
+        nav.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
+      }
+    });
   }
 
   /* ---- duplicate marquee content for a seamless loop ---- */
@@ -78,6 +92,31 @@
   } else {
     reveals.forEach(function (el) { el.classList.add('in'); });
   }
+
+  /* Content that fades in on scroll must NOT stay hidden when you jump straight
+     to a section via a hash link: without this, clicking a button to reach the
+     form lands on a section whose reveal items are still opacity:0 (a blank
+     screen) and offset by the reveal transform (so it does not sit at the top of
+     the form). Reveal the target and everything inside it at once, on any anchor
+     click and on load/hashchange, so the form is simply there when you arrive. */
+  function revealNow(el) {
+    if (!el) return;
+    if (el.classList) el.classList.add('in');
+    var inner = el.querySelectorAll ? el.querySelectorAll('.reveal') : [];
+    Array.prototype.forEach.call(inner, function (r) { r.classList.add('in'); });
+  }
+  function revealHashTarget() {
+    var id = location.hash ? location.hash.slice(1) : '';
+    if (id) revealNow(document.getElementById(id));
+  }
+  window.addEventListener('hashchange', revealHashTarget);
+  revealHashTarget();
+  document.addEventListener('click', function (e) {
+    var a = e.target && e.target.closest ? e.target.closest('a[href^="#"]') : null;
+    if (!a) return;
+    var id = a.getAttribute('href').slice(1);
+    if (id) revealNow(document.getElementById(id));
+  });
 
   /* ---- animated stat counters ---- */
   function animateCount(el) {

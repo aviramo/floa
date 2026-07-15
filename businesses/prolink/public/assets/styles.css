@@ -347,7 +347,7 @@ svg{width:100%;height:100%}
      absolute to the sticky header so it follows it on scroll. A light fade and a
      small slide, a hairline top and a soft shadow, clipped shut when closed. */
   .nav{position:absolute;top:100%;inset-inline:0;flex-direction:column;align-items:stretch;
-    background:rgba(255,255,255,.97);backdrop-filter:saturate(160%) blur(12px);
+    background:#fff;
     padding:.4rem 6vw .8rem;gap:0;border-top:1px solid var(--line);
     border-radius:0 0 16px 16px;box-shadow:0 22px 34px -22px rgba(6,54,59,.3);
     opacity:0;visibility:hidden;transform:translateY(-10px);pointer-events:none;
