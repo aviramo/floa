@@ -84,8 +84,8 @@ svg{width:100%;height:100%}
 
 /* ---------- header ---------- */
 .site-header{
-  position:sticky;top:0;z-index:60;background:rgba(255,255,255,.86);
-  backdrop-filter:saturate(160%) blur(12px);border-bottom:1px solid var(--line);
+  position:sticky;top:0;z-index:60;background:#fff;
+  border-bottom:1px solid var(--line);
   transition:box-shadow .3s,background .3s;
 }
 .site-header.scrolled{box-shadow:0 10px 30px -18px rgba(6,54,59,.35)}
@@ -152,7 +152,7 @@ svg{width:100%;height:100%}
 .orbit__ring--2{inset:22%;border-style:solid;border-color:rgba(255,255,255,.07);animation:spin 40s linear infinite reverse}
 @keyframes spin{to{transform:rotate(360deg)}}
 .orbit__node{position:absolute;width:52px;height:52px;border-radius:14px;background:rgba(9,40,44,.82);border:1px solid rgba(35,211,197,.3);
-  display:grid;place-items:center;backdrop-filter:blur(4px);box-shadow:0 12px 26px -12px rgba(0,0,0,.7);animation:floaty 5s var(--ease) infinite;animation-delay:calc(var(--i)*-1.2s)}
+  display:grid;place-items:center;box-shadow:0 12px 26px -12px rgba(0,0,0,.7);animation:floaty 5s var(--ease) infinite;animation-delay:calc(var(--i)*-1.2s)}
 .orbit__node svg{width:24px;height:24px;fill:none;stroke:var(--bright);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .orbit__node.n1{top:-6%;inset-inline-start:32%}
 .orbit__node.n2{top:30%;inset-inline-end:-8%}

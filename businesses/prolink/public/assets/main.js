@@ -111,11 +111,31 @@
   }
   window.addEventListener('hashchange', revealHashTarget);
   revealHashTarget();
+
+  /* In-page navigation with a CLEAN address bar. Every #anchor click is
+     intercepted: we reveal the target, smooth-scroll to it with the sticky
+     header's height as the offset, and never write the #fragment to the URL.
+     (An external link that already carries #… is still honoured above.) */
+  function scrollToSection(el) {
+    var head = document.getElementById('siteHeader');
+    var offset = (head ? head.offsetHeight : 0) + 12;
+    var y = el.getBoundingClientRect().top + window.pageYOffset - offset;
+    window.scrollTo({ top: y < 0 ? 0 : y, behavior: 'smooth' });
+  }
   document.addEventListener('click', function (e) {
     var a = e.target && e.target.closest ? e.target.closest('a[href^="#"]') : null;
     if (!a) return;
-    var id = a.getAttribute('href').slice(1);
-    if (id) revealNow(document.getElementById(id));
+    var href = a.getAttribute('href');
+    if (!href || href === '#') return;
+    var el = document.getElementById(href.slice(1));
+    if (!el) return;
+    e.preventDefault();                       // keep the URL clean: no #fragment
+    if (nav && nav.classList.contains('open')) {
+      nav.classList.remove('open');
+      if (toggle) toggle.setAttribute('aria-expanded', 'false');
+    }
+    revealNow(el);
+    scrollToSection(el);
   });
 
   /* ---- animated stat counters ---- */
