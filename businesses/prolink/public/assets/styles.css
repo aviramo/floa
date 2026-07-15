@@ -41,6 +41,8 @@ body{
   margin:0;font-family:var(--font-body);color:var(--ink);
   background:var(--paper);line-height:1.65;font-size:17px;
   overflow-x:hidden;
+  /* room for the fixed utility row (40) + fixed header (72) */
+  padding-top:112px;
 }
 h1,h2,h3,h4{font-family:var(--font-head);line-height:1.12;margin:0;font-weight:800;letter-spacing:-.01em}
 p{margin:0}
@@ -70,7 +72,8 @@ svg{width:100%;height:100%}
 .btn--light{--bg:#fff;--fg:var(--brand-800);box-shadow:0 16px 40px -16px rgba(0,0,0,.5)}
 
 /* ---------- top bar ---------- */
-.topbar{background:var(--brand-ink);color:#cfeceb;font-size:.86rem}
+.topbar{position:fixed;top:0;left:0;right:0;z-index:70;background:var(--brand-ink);color:#cfeceb;font-size:.86rem;transition:transform .35s var(--ease)}
+.topbar.hide{transform:translateY(-100%)}
 .topbar__inner{display:flex;align-items:center;justify-content:space-between;height:40px;gap:1rem}
 .topbar__left,.topbar__right{display:flex;align-items:center;gap:1.1rem}
 .topbar__link{display:inline-flex;align-items:center;gap:.4rem;color:#cfeceb;transition:color .2s}
@@ -84,10 +87,11 @@ svg{width:100%;height:100%}
 
 /* ---------- header ---------- */
 .site-header{
-  position:sticky;top:0;z-index:60;background:#fff;
+  position:fixed;top:40px;left:0;right:0;z-index:60;background:#fff;
   border-bottom:1px solid var(--line);
-  transition:box-shadow .3s,background .3s;
+  transition:top .35s var(--ease),box-shadow .3s;
 }
+.site-header.raised{top:0}
 .site-header.scrolled{box-shadow:0 10px 30px -18px rgba(6,54,59,.35)}
 .header__inner{display:flex;align-items:center;gap:1.4rem;height:72px}
 

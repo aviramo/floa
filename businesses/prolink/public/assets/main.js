@@ -4,8 +4,10 @@
 
   /* ---- sticky header shadow ---- */
   var header = document.getElementById('siteHeader');
+  var topbar = document.querySelector('.topbar');
   var fab = document.querySelector('.fab');
   var atBottom = false; // true while the contact form or footer is in view
+  var lastY = window.scrollY || window.pageYOffset || 0;
 
   function updateFab() {
     var y = window.scrollY || window.pageYOffset;
@@ -14,6 +16,21 @@
   function onScroll() {
     var y = window.scrollY || window.pageYOffset;
     if (header) header.classList.toggle('scrolled', y > 8);
+    /* The header is fixed and always there. The utility row ABOVE it slides out
+       of the way as you scroll down and returns the instant you scroll up, so
+       the header rises to the very top while reading and drops back under the
+       row when you come back up. */
+    if (y <= 2) {
+      if (topbar) topbar.classList.remove('hide');
+      if (header) header.classList.remove('raised');
+    } else if (y > lastY && y > 50) {          // scrolling down, past the row
+      if (topbar) topbar.classList.add('hide');
+      if (header) header.classList.add('raised');
+    } else if (y < lastY) {                     // scrolling up
+      if (topbar) topbar.classList.remove('hide');
+      if (header) header.classList.remove('raised');
+    }
+    lastY = y;
     updateFab();
   }
   window.addEventListener('scroll', onScroll, { passive: true });
@@ -119,7 +136,9 @@
      (An external link that already carries #… is still honoured above.) */
   function scrollToSection(el) {
     var head = document.getElementById('siteHeader');
-    var offset = (head ? head.offsetHeight : 0) + 12;
+    var tb = document.querySelector('.topbar');
+    var tbH = (tb && !tb.classList.contains('hide')) ? tb.offsetHeight : 0;
+    var offset = (head ? head.offsetHeight : 0) + tbH + 12;
     /* jump directly, not a long smooth glide across the whole page: over a big
        distance a smooth scroll is unreliable (it can stall part-way, leaving the
        viewport on an empty stretch) and slow. Instant lands on the target every
