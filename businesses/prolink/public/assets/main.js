@@ -88,6 +88,20 @@
     track.innerHTML += track.innerHTML;
   }
 
+  /* ---- free heavy GPU layers when off-screen -----------------------------
+     The hero (blurred glows, masked grid, spinning orbit) and the logo marquee
+     run forever. Kept alive on off-screen layers down a very long page, they can
+     exhaust mobile GPU memory and blank the viewport. Pause them the moment they
+     leave the screen, resume when they return. */
+  if ('IntersectionObserver' in window) {
+    var pauseIO = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        en.target.classList.toggle('paused', !en.isIntersecting);
+      });
+    }, { rootMargin: '150px 0px' });
+    document.querySelectorAll('.hero, .marquee').forEach(function (el) { pauseIO.observe(el); });
+  }
+
   /* ---- reveal on scroll + staggered grids ---- */
   document.querySelectorAll('.grid').forEach(function (grid) {
     Array.prototype.forEach.call(grid.children, function (child, i) {
