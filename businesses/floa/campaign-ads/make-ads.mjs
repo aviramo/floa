@@ -2,7 +2,7 @@
    Advantage+ placement), at 2x. Same palette and type as the site. */
 import { writeFile, mkdir } from "node:fs/promises";
 
-const OUT = "C:/Users/ofira/Desktop/floa/campaign-ads";
+const OUT = "C:/Users/ofira/Desktop/floa/businesses/floa/campaign-ads";
 await mkdir(OUT, { recursive: true });
 
 const MARK = `<svg viewBox="0 0 100 100" width="88" height="88" aria-hidden="true">
