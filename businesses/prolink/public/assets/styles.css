@@ -343,10 +343,19 @@ svg{width:100%;height:100%}
   .contact{grid-template-columns:1fr}
 }
 @media(max-width:760px){
-  .nav{position:fixed;inset:112px 0 auto 0;flex-direction:column;background:#fff;padding:1rem 6vw 1.6rem;gap:.2rem;
-    border-bottom:1px solid var(--line);box-shadow:var(--shadow);transform:translateY(-140%);transition:transform .35s var(--ease);z-index:50}
-  .nav.open{transform:translateY(0)}
-  .nav a{width:100%;padding:.85rem .6rem;border-radius:10px}
+  /* the menu drops straight out of the header's bottom edge, part of it, no gap:
+     absolute to the sticky header so it follows it on scroll. A light fade and a
+     small slide, a hairline top and a soft shadow, clipped shut when closed. */
+  .nav{position:absolute;top:100%;inset-inline:0;flex-direction:column;align-items:stretch;
+    background:rgba(255,255,255,.97);backdrop-filter:saturate(160%) blur(12px);
+    padding:.4rem 6vw .8rem;gap:0;border-top:1px solid var(--line);
+    border-radius:0 0 16px 16px;box-shadow:0 22px 34px -22px rgba(6,54,59,.3);
+    opacity:0;visibility:hidden;transform:translateY(-10px);pointer-events:none;
+    transition:opacity .25s var(--ease),transform .25s var(--ease),visibility .25s;z-index:40}
+  .nav.open{opacity:1;visibility:visible;transform:translateY(0);pointer-events:auto}
+  .nav a{width:100%;padding:.95rem .3rem;border-radius:0;font-size:1.05rem;border-bottom:1px solid var(--line)}
+  .nav a:last-child{border-bottom:0}
+  .nav a:hover{background:transparent;color:var(--brand)}
   .nav__toggle{display:flex;margin-inline-start:auto}
   .nav__cta{display:none}
   .header__inner{gap:.8rem}
