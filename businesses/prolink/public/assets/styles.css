@@ -391,6 +391,19 @@ svg{width:100%;height:100%}
   .fab{inset-inline-start:14px;bottom:14px}
   body{font-size:16px}
 }
+
+/* Mobile GPU guard. A phone's GPU has a fraction of a desktop's raster memory,
+   and this page is very long. Too many composited layers (a reveal transform on
+   ~40 elements, the hero/marquee masks, the spinning orbit) can exhaust it and
+   drop the whole viewport to blank. On phones we strip the decorative layers:
+   content shows outright (no reveal transform), the masks go, the orbit and the
+   pulse stop. The logo marquee still scrolls. The look is nearly identical, the
+   compositing far lighter. */
+@media(max-width:760px){
+  .reveal{opacity:1!important;transform:none!important;transition:none!important}
+  .hero__grid,.marquee{-webkit-mask-image:none!important;mask-image:none!important}
+  .orbit__ring,.orbit__node,.eyebrow .dot{animation:none!important}
+}
 @media(prefers-reduced-motion:reduce){
   *{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
   html{scroll-behavior:auto}
