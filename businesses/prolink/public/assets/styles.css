@@ -400,9 +400,14 @@ svg{width:100%;height:100%}
    pulse stop. The logo marquee still scrolls. The look is nearly identical, the
    compositing far lighter. */
 @media(max-width:760px){
+  /* content shown outright, no reveal transform layers */
   .reveal{opacity:1!important;transform:none!important;transition:none!important}
   .hero__grid,.marquee{-webkit-mask-image:none!important;mask-image:none!important}
   .orbit__ring,.orbit__node,.eyebrow .dot{animation:none!important}
+  /* THE key one: the browser skips rendering (and compositing) any section that
+     is off-screen, so a phone GPU only ever holds ~one screen at a time instead
+     of the whole 11k-px page at once. This is what stops the blank. */
+  .clients,.section,.stats,.cta-band,.footer{content-visibility:auto;contain-intrinsic-size:auto 700px}
 }
 @media(prefers-reduced-motion:reduce){
   *{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
