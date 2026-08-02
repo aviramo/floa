@@ -4,9 +4,9 @@ export const projects = {
   once: {
     name: "Once",
     title: "אפליקציית היכרות בזמן אמת",
-    href: "https://play.google.com/store/apps/details?id=com.aviramo.once",
+    href: "https://once-lake.vercel.app/",
     ariaLabel: "האפליקציה Once",
-    linkLabel: "להורדת האפליקציה",
+    linkLabel: "לאתר האפליקציה",
     /* One capture that already holds both halves of the product: the app screen
        beside the admin panel it is managed from. */
     shots: [
