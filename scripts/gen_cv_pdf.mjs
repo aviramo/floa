@@ -17,10 +17,12 @@
    file:// would work for the markup and break quietly on the fonts, and a CV
    set in a substituted font is a CV whose line breaks have moved.
 
-     node scripts/gen_cv_pdf.mjs        (after `node build.mjs`)
+     npm run cv        build, print, build again
 
-   The files land in cv/, which git ignores: they are output, like dist/.
-   Override the browser with CHROME=/path/to/chrome if it is somewhere unusual.
+   Twice, and not by accident: the first build makes the pages this prints from,
+   and the second copies the printed files into the site so the download button
+   on the page actually resolves. Override the browser with CHROME=/path/to/chrome
+   if it is somewhere unusual.
    ========================================================================== */
 import { spawn } from "node:child_process";
 import { createServer } from "node:http";
@@ -30,11 +32,14 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const DIST = join(ROOT, "dist");
-const OUT = join(ROOT, "cv");
+/* The PDFs are files of the BUSINESS, like its share cards (scripts/gen_og.mjs):
+   they land in its public/ folder, the build copies them into its site, and the
+   CV page links to them. So they are committed — generated source, but source. */
+const OUT = join(ROOT, "businesses/floa/public/cv");
 
 const PAGES = [
-  { path: "/floa/cv/", file: "Ofir Aviram - CV (English).pdf" },
-  { path: "/floa/cv/he/", file: "Ofir Aviram - CV (Hebrew).pdf" },
+  { path: "/floa/cv/", file: "ofir-aviram-cv.pdf" },
+  { path: "/floa/cv/he/", file: "ofir-aviram-cv-he.pdf" },
 ];
 
 /* --- the browser ----------------------------------------------------------- */
@@ -105,7 +110,7 @@ try {
   for (const page of PAGES) {
     const out = join(OUT, page.file);
     await print(origin + page.path, out);
-    console.log(`✓ cv/${page.file}`);
+    console.log(`✓ businesses/floa/public/cv/${page.file}`);
   }
 } finally {
   server.close();

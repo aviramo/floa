@@ -14,6 +14,7 @@ import { escape, html, raw } from "../../lib/html.js";
 
      {
        name, roles: [string], contact: [{ icon, text, href }],
+       download: { href, name, label },   a ready PDF, not a print dialog
        altLang: { href, label, lang },
        sections: [
          { type: "text",     icon, title, body: [string] }
@@ -48,6 +49,7 @@ const SOLID = {
   cap: `<path d="M12 3 1.3 8.3 12 13.6l8.6-4.3v5.4h2V8.3L12 3Z"/><path d="M5.4 12.8v3.5c0 1.9 3 3.5 6.6 3.5s6.6-1.6 6.6-3.5v-3.5L12 16l-6.6-3.2Z"/>`,
   shield: `<path d="M12 2.4 4.2 5.5v5.9c0 5.1 3.3 9.3 7.8 10.6 4.5-1.3 7.8-5.5 7.8-10.6V5.5L12 2.4Z"/>`,
   globe: `<path d="M12 2.2a9.8 9.8 0 1 0 0 19.6 9.8 9.8 0 0 0 0-19.6Zm6.9 6.5h-2.6a13.9 13.9 0 0 0-1.6-4.1 8 8 0 0 1 4.2 4.1ZM12 4.1c.8 1.1 1.4 2.6 1.8 4.6h-3.6c.4-2 1-3.5 1.8-4.6ZM4.3 13.8a7.9 7.9 0 0 1 0-3.6h3a19 19 0 0 0 0 3.6h-3Zm.8 2h2.6c.4 1.5.9 2.9 1.6 4.1a8 8 0 0 1-4.2-4.1Zm2.6-7.1H5.1a8 8 0 0 1 4.2-4.1 13.9 13.9 0 0 0-1.6 4.1ZM12 19.9c-.8-1.1-1.4-2.6-1.8-4.6h3.6c-.4 2-1 3.5-1.8 4.6Zm2.1-6.1h-4.2a17 17 0 0 1 0-3.6h4.2a17 17 0 0 1 0 3.6Zm.6 6.1c.7-1.2 1.2-2.6 1.6-4.1h2.6a8 8 0 0 1-4.2 4.1Zm2-6.1a19 19 0 0 0 0-3.6h3a7.9 7.9 0 0 1 0 3.6h-3Z"/>`,
+  download: `<path d="M12 3a1.2 1.2 0 0 1 1.2 1.2v8.9l3.1-3.1a1.2 1.2 0 0 1 1.7 1.7l-5.1 5.2a1.2 1.2 0 0 1-1.8 0L6 11.7a1.2 1.2 0 0 1 1.7-1.7l3.1 3.1V4.2A1.2 1.2 0 0 1 12 3ZM4.6 16.4a1.2 1.2 0 0 1 1.2 1.2v1.6h12.4v-1.6a1.2 1.2 0 0 1 2.4 0v2.2a1.6 1.6 0 0 1-1.6 1.6H5a1.6 1.6 0 0 1-1.6-1.6v-2.2a1.2 1.2 0 0 1 1.2-1.2Z"/>`,
 };
 
 const svg = (glyph) => raw(`<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${glyph}</svg>`);
@@ -163,7 +165,10 @@ export const resume = (ctx, cv) => {
     </header>
 ${cv.sections.map(section(t))}
   </article>
-${cv.altLang ? html`
-  <a class="cv-lang" href="${ctx.url(cv.altLang.href)}" lang="${cv.altLang.lang}" hreflang="${cv.altLang.lang}">${cv.altLang.label}</a>` : ""}
+${cv.download || cv.altLang ? html`
+  <div class="cv-tools">${cv.download ? html`
+    <a class="cv-tool cv-tool--pdf" href="${ctx.url(cv.download.href)}" download="${cv.download.name}">${svg(SOLID.download)}${cv.download.label}</a>` : ""}${cv.altLang ? html`
+    <a class="cv-tool" href="${ctx.url(cv.altLang.href)}" lang="${cv.altLang.lang}" hreflang="${cv.altLang.lang}">${cv.altLang.label}</a>` : ""}
+  </div>` : ""}
 </main>`;
 };
