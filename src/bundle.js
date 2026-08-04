@@ -42,6 +42,7 @@ export const css = [
   "components/hero-art/hero-art.css",
   "components/footer/footer.css",
   "components/legal/legal.css",
+  "components/resume/resume.css",                     // a document, scoped under .cv
 
   "design/motion.css",
 ];

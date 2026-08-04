@@ -4,11 +4,13 @@ import { home } from "../content/home.js";
 import { solutions } from "../content/solutions.js";
 import { landingOffer } from "../content/landing-offer.js";
 import { accessibility, privacy } from "../content/legal.js";
+import { cvPages } from "../content/cv.js";
 
 import { render as renderHome } from "./home.js";
 import { render as renderLegal } from "./legal-page.js";
 import { render as renderSolution } from "./solution.js";
 import { render as renderLandingOffer } from "./landing-offer.js";
+import { render as renderCv } from "./cv.js";
 
 /* ==========================================================================
    FLOA's pages, and where they land.
@@ -78,6 +80,14 @@ export const pages = [
   ...[privacy, accessibility].map((doc) => ({
     out: doc.out,
     render: (assets) => renderLegal(inRoot(assets), doc),
+  })),
+
+  /* The CV, in two languages: /floa/cv/ and /floa/cv/he/. Each one carries its
+     own depth, because they do not sit at the same one — the Hebrew version is a
+     folder deeper and has to climb one level further to reach FLOA's files. */
+  ...cvPages.map((cv) => ({
+    out: cv.out,
+    render: (assets) => renderCv(at(assets, cv.base, cv.homeHref), cv),
   })),
 ];
 

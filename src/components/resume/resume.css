@@ -1,0 +1,346 @@
+/* ==========================================================================
+   resume — a printed page that happens to be on the web.
+
+   Everything is scoped under .cv, and every size is derived from two knobs on
+   .cv-sheet: --cv-fs (the body size) and --cv-gap (the air between sections).
+   That is what makes the document fit a given number of printed pages: you turn
+   two numbers, not forty.
+
+   Millimetres, not pixels, because the target is A4. On screen 1mm resolves to
+   ~3.78px, so the sheet is a true 210mm wide and what you see is what prints.
+   ========================================================================== */
+.cv {
+  --cv-navy: #163a6e;
+  --cv-blue: #1d4e8f;
+  --cv-slate: #4d6f9c;
+  --cv-paper: #eceef2;
+  --cv-rule: #d6dbe3;
+
+  background: var(--cv-paper);
+  padding: 10mm 4mm;
+  min-height: 100vh;
+}
+
+.cv-sheet {
+  /* the two knobs */
+  --cv-fs: 9.4pt;
+  --cv-gap: 4.6mm;
+
+  --cv-pad: 17mm;
+  --cv-badge: 8.4mm;
+  --cv-indent: 11.6mm;              /* badge + its gap: aligns body under the heading text */
+
+  width: 210mm;
+  max-width: 100%;
+  margin-inline: auto;
+  background: #fff;
+  color: #333;
+  padding: 15mm var(--cv-pad) 17mm;
+  box-shadow: 0 2px 24px rgba(20, 40, 80, .14);
+
+  font-family: "Lato", "Assistant", system-ui, sans-serif;
+  font-size: var(--cv-fs);
+  font-weight: 400;
+  line-height: 1.5;
+
+  /* the navy discs are the document, not decoration: they must survive print */
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+[dir="rtl"] .cv-sheet { font-family: "Assistant", "Lato", system-ui, sans-serif; }
+
+/* Latin and numerals held LTR inside an RTL page. Isolated so a date range or a
+   pipe-separated tech list keeps its own order. */
+.cv-ltr { unicode-bidi: isolate; }
+
+/* --- identity -------------------------------------------------------------- */
+.cv-id__name {
+  font-family: inherit;
+  font-size: calc(var(--cv-fs) * 2.85);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: var(--cv-navy);
+  margin-bottom: 2.6mm;
+}
+
+.cv-id__role {
+  font-size: calc(var(--cv-fs) * 1.16);
+  font-weight: 400;
+  line-height: 1.42;
+  color: var(--cv-blue);
+}
+
+.cv-contact {
+  list-style: none;
+  padding: 0;
+  margin-top: 5.4mm;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 10mm;
+  row-gap: 2.8mm;
+  position: relative;
+}
+
+/* the hairline between the two columns, one line rather than four segments */
+.cv-contact::before {
+  content: "";
+  position: absolute;
+  inset-block: -.4mm;
+  inset-inline-start: calc(50% - 5mm);
+  width: 1px;
+  background: var(--cv-rule);
+}
+
+.cv-contact__item {
+  display: flex;
+  align-items: center;
+  gap: 2.6mm;
+  min-width: 0;
+  font-size: calc(var(--cv-fs) * .96);
+}
+
+.cv-contact__item a { color: inherit; }
+.cv-contact__item > span:last-child,
+.cv-contact__item a { overflow-wrap: anywhere; }
+
+.cv-dot,
+.cv-badge {
+  flex: none;
+  border-radius: 50%;
+  background: var(--cv-navy);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cv-dot { width: 6.2mm; height: 6.2mm; }
+.cv-dot svg { width: 3.4mm; height: 3.4mm; }
+.cv-badge { width: var(--cv-badge); height: var(--cv-badge); }
+.cv-badge svg { width: 4.7mm; height: 4.7mm; }
+.cv-dot svg, .cv-badge svg { fill: #fff; display: block; }
+
+/* --- a section ------------------------------------------------------------- */
+.cv-sec {
+  border-top: 1px solid var(--cv-rule);
+  margin-top: var(--cv-gap);
+  padding-top: var(--cv-gap);
+}
+
+.cv-sec__head {
+  display: flex;
+  align-items: center;
+  gap: 3.2mm;
+  font-family: inherit;
+  font-size: calc(var(--cv-fs) * 1.22);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: .045em;
+  text-transform: uppercase;
+  color: var(--cv-navy);
+}
+
+.cv-sec__note {
+  font-size: calc(var(--cv-fs) * .82);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--cv-slate);
+  white-space: nowrap;
+}
+
+.cv-sec__body {
+  padding-inline-start: var(--cv-indent);
+  margin-top: 2.8mm;
+}
+
+.cv-sec__body > p + p { margin-top: 1.8mm; }
+
+/* --- bullets --------------------------------------------------------------- */
+.cv-list {
+  list-style: disc;
+  padding-inline-start: 4.4mm;
+  margin-top: 1.6mm;
+}
+
+.cv-list > li + li { margin-top: 1mm; }
+.cv-list > li::marker { color: var(--cv-slate); }
+
+/* --- core competencies ----------------------------------------------------- */
+.cv-comp {
+  display: flex;
+  align-items: flex-start;
+  gap: 3.4mm;
+}
+
+.cv-comp + .cv-comp { margin-top: 3.4mm; }
+
+.cv-comp__ico {
+  flex: none;
+  width: 7mm;
+  height: 7mm;
+  margin-top: .2mm;
+}
+
+.cv-comp__ico svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  fill: none;
+  stroke: var(--cv-navy);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cv-comp__title {
+  font-family: inherit;
+  font-size: var(--cv-fs);
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+  color: var(--cv-navy);
+  margin-bottom: .4mm;
+}
+
+/* --- one job --------------------------------------------------------------- */
+.cv-job + .cv-job { margin-top: 4.2mm; }
+
+.cv-job__role {
+  font-family: inherit;
+  font-size: calc(var(--cv-fs) * 1.04);
+  font-weight: 700;
+  line-height: 1.32;
+  letter-spacing: 0;
+  color: var(--cv-blue);
+}
+
+.cv-job__dates {
+  color: var(--cv-slate);
+  line-height: 1.5;
+  margin-top: .2mm;
+}
+
+/* --- the technical stack ---------------------------------------------------
+   A flex row, not a grid: the labels are padded to a common width, but the one
+   label that outgrows it pushes its own value across rather than pushing every
+   other row's with it. That is what the source document does. */
+.cv-stack__row {
+  display: flex;
+  align-items: baseline;
+  gap: 3mm;
+}
+
+.cv-stack__row + .cv-stack__row { margin-top: 1.4mm; }
+
+.cv-stack dt {
+  flex: none;
+  min-width: 24mm;
+  font-weight: 700;
+  color: var(--cv-navy);
+  white-space: nowrap;
+}
+
+.cv-stack dd {
+  margin: 0;
+  min-width: 0;
+}
+
+[dir="rtl"] .cv-stack dt { min-width: 28mm; }
+[dir="rtl"] .cv-stack dd { text-align: right; }
+
+/* --- education, military --------------------------------------------------- */
+.cv-entry + .cv-entry { margin-top: 3.4mm; }
+
+.cv-entry__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6mm;
+}
+
+.cv-entry__title {
+  font-family: inherit;
+  font-size: var(--cv-fs);
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: 0;
+  color: var(--cv-blue);
+}
+
+.cv-entry__years {
+  flex: none;
+  color: var(--cv-slate);
+}
+
+.cv-entry__note { font-style: italic; color: #555; }
+
+/* --- the language switch: screen only, never part of the document ---------- */
+.cv-lang {
+  position: fixed;
+  inset-block-start: 6mm;
+  inset-inline-end: 6mm;
+  z-index: 5;
+  padding: 2mm 4mm;
+  border-radius: 999px;
+  background: var(--cv-navy);
+  color: #fff;
+  font-family: "Lato", "Assistant", system-ui, sans-serif;
+  font-size: 10pt;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 2px 10px rgba(20, 40, 80, .25);
+}
+
+/* --- narrower than a sheet ------------------------------------------------- */
+@media (max-width: 218mm) {
+  .cv { padding: 0; }
+  .cv-sheet {
+    --cv-pad: 6mm;
+    --cv-badge: 7.4mm;
+    --cv-indent: 10.2mm;
+    width: 100%;
+    padding: 9mm var(--cv-pad) 10mm;
+    box-shadow: none;
+  }
+  .cv-contact { grid-template-columns: 1fr; row-gap: 2.2mm; }
+  .cv-contact::before { display: none; }
+}
+
+/* --- print -----------------------------------------------------------------
+   A4, and the sheet stops pretending to be a sheet: the paper IS the sheet, so
+   the margins move to @page and the shadow goes. No page breaks are declared
+   yet — the document prints as one continuous flow until the split is chosen. */
+@media print {
+  @page {
+    size: A4;
+    margin: 15mm 17mm;
+  }
+
+  .cv {
+    background: #fff;
+    padding: 0;
+    min-height: 0;
+  }
+
+  .cv-sheet {
+    --cv-pad: 0mm;
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+  }
+
+  .cv-lang { display: none; }
+
+  /* nothing may be cut across a page boundary mid-thought */
+  .cv-sec__head,
+  .cv-comp,
+  .cv-entry { break-inside: avoid; }
+  .cv-job { break-inside: avoid; }
+  .cv-list > li { break-inside: avoid; }
+}
