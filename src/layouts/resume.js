@@ -14,11 +14,14 @@ import { html, raw } from "../lib/html.js";
    { lang, dir, path, meta:{title,description}, alternates:[{lang,href}], body }
    ========================================================================== */
 
-/* Lato draws the Latin document, Assistant the Hebrew one. Both are loaded on
+/* Inter draws the Latin document, Assistant the Hebrew one. Both are loaded on
    both pages: the Hebrew CV still holds Latin (Node.js, PostgreSQL, LinkedIn)
    and the English one still has to render a Hebrew fallback if a glyph is
-   missing. One request, no layout shift. */
-const FONTS = "https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;800&family=Lato:wght@300;400;700;900&display=swap";
+   missing. One request, no layout shift.
+
+   Inter, and Arial behind it, because a résumé is read by parsers as well as by
+   people and both of them want a plain grotesque with unambiguous digits. */
+const FONTS = "https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;800&family=Inter:wght@400;600;700;800&display=swap";
 
 export function resumeDocument(ctx, { lang, dir, path = "", meta, alternates = [], body }) {
   const site = ctx.site;

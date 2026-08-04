@@ -3,36 +3,38 @@ import { html, raw } from "../../lib/html.js";
 /* ==========================================================================
    resume — a CV, as a document.
 
-   Nothing here knows whose CV it is. The name, the roles, the jobs and the
-   dates all arrive as data (see the shape below); this file only knows how a
-   résumé is drawn: a badge and a rule per section, an indented body under the
-   heading, and a small vocabulary of block types that a CV is actually made of.
+   Nothing here knows whose CV it is. The name, the roles and the dates all
+   arrive as data; this file only knows how a résumé is drawn: a badge and a
+   rule per section, an indented body under the heading, and the small
+   vocabulary of block types a CV is actually made of.
 
    It is deliberately NOT built from the marketing components. A hero, a card
    and a section-head describe a page that persuades; a CV is a printed page
    that lists. The two share a palette and nothing else.
 
      {
-       name, roles: [string],
-       contact: [{ icon, text, href }],
+       name, roles: [string], contact: [{ icon, text, href }],
        altLang: { href, label, lang },
        sections: [
-         { type: "text",     icon, title, note, body: [string] }
-         { type: "skills",   icon, title, items: [{ icon, title, text }] }
-         { type: "project",  icon, title, note, lead, bullets: [string] }
-         { type: "jobs",     icon, title, note, jobs: [{ role, dates, bullets }] }
-         { type: "stack",    icon, title, rows: [{ label, value }] }
-         { type: "entries",  icon, title, entries: [{ title, years, lines, note }] }
+         { type: "text",     icon, title, body: [string] }
+         { type: "keywords", icon, title, groups: [{ title, terms: [string] }] }
+         { type: "roles",    icon, title, jobs: [{ role, dates, org, lead, bullets, link, qr }] }
+         { type: "entries",  icon, title, entries: [{ title, dates, lines: [string] }] }
+         { type: "lines",    icon, title, lines: [string] }
        ]
      }
 
-   `note` is the small grey aside next to a heading. `dates`, `years` and a
-   stack row's `value` are wrapped in dir="ltr": they are Latin and numeric, and
-   in an RTL document the bidi algorithm would otherwise reorder "2014 - 2017"
-   into "2017 - 2014".
+   The document is ONE continuous flow. It declares no page boundaries of its
+   own: where the paper ends is the printer's business, and the only thing it
+   insists on is that a single employment entry is never cut in half.
+
+   Dates are right-aligned on the first line of every entry, and every one of
+   them is wrapped in dir="ltr": they are numeric, and in an RTL document the
+   bidi algorithm would otherwise turn "2014 - 2017" into "2017 - 2014".
    ========================================================================== */
 
-/* Solid glyphs: white, inside a filled disc. */
+/* White glyphs, inside a filled navy disc. Small: a CV is read by machines as
+   often as by people, and nothing here may compete with the text. */
 const SOLID = {
   pin: `<path d="M12 2.2a6.6 6.6 0 0 0-6.6 6.6c0 4.9 6.6 12.9 6.6 12.9s6.6-8 6.6-12.9A6.6 6.6 0 0 0 12 2.2Zm0 9.1a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Z"/>`,
   phone: `<path d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.2 11.4 11.4 0 0 0 3.6.5 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.4 11.4 0 0 0 .6 3.6 1 1 0 0 1-.3 1l-2.2 2.2Z"/>`,
@@ -45,76 +47,62 @@ const SOLID = {
   code: `<path d="m8.4 5.9 1.6 1.6-4.5 4.5 4.5 4.5-1.6 1.6L2.3 12l6.1-6.1Zm7.2 0L21.7 12l-6.1 6.1-1.6-1.6 4.5-4.5-4.5-4.5 1.6-1.6Z"/><path d="m13.7 3.4 2.1.6-5.5 16-2.1-.6 5.5-16Z"/>`,
   cap: `<path d="M12 3 1.3 8.3 12 13.6l8.6-4.3v5.4h2V8.3L12 3Z"/><path d="M5.4 12.8v3.5c0 1.9 3 3.5 6.6 3.5s6.6-1.6 6.6-3.5v-3.5L12 16l-6.6-3.2Z"/>`,
   shield: `<path d="M12 2.4 4.2 5.5v5.9c0 5.1 3.3 9.3 7.8 10.6 4.5-1.3 7.8-5.5 7.8-10.6V5.5L12 2.4Z"/>`,
-};
-
-/* Line glyphs: navy strokes, no disc. They label a competency, not a section. */
-const LINE = {
-  architecture: `<path d="M3.5 20.8V6.4l6.2-2.9v17.3M9.7 10.6l6.9 2.7v7.5M2 20.8h20M5.8 8.9h1.9M5.8 12.3h1.9M5.8 15.7h1.9M12.2 15.4h2M12.2 17.9h2"/>`,
-  analysis: `<path d="M10.6 17.1a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13ZM15.3 15.3 21 21M8.3 12.6v-2.1M10.6 12.6V8.9M12.9 12.6v-3.1"/>`,
-  integrations: `<path d="M14.5 4.2v-.5a2 2 0 0 0-4 0v.5H7.4a.9.9 0 0 0-.9.9v3.1h-.5a2 2 0 1 0 0 4h.5v3.1c0 .5.4.9.9.9h3.1v.5a2 2 0 1 0 4 0v-.5h3.1c.5 0 .9-.4.9-.9v-3.1h.5a2 2 0 1 0 0-4h-.5V5.1a.9.9 0 0 0-.9-.9H14.5Z"/>`,
-  ai: `<path d="M12 5.1v13.8M12 5.1a2.7 2.7 0 0 0-5-1.1 2.5 2.5 0 0 0-2.6 3.4 2.6 2.6 0 0 0-.4 4.3 2.7 2.7 0 0 0 1.4 4 2.7 2.7 0 0 0 3.5 2.5A2.6 2.6 0 0 0 12 18.9M12 5.1a2.7 2.7 0 0 1 5-1.1 2.5 2.5 0 0 1 2.6 3.4 2.6 2.6 0 0 1 .4 4.3 2.7 2.7 0 0 1-1.4 4 2.7 2.7 0 0 1-3.5 2.5A2.6 2.6 0 0 1 12 18.9"/>`,
+  globe: `<path d="M12 2.2a9.8 9.8 0 1 0 0 19.6 9.8 9.8 0 0 0 0-19.6Zm6.9 6.5h-2.6a13.9 13.9 0 0 0-1.6-4.1 8 8 0 0 1 4.2 4.1ZM12 4.1c.8 1.1 1.4 2.6 1.8 4.6h-3.6c.4-2 1-3.5 1.8-4.6ZM4.3 13.8a7.9 7.9 0 0 1 0-3.6h3a19 19 0 0 0 0 3.6h-3Zm.8 2h2.6c.4 1.5.9 2.9 1.6 4.1a8 8 0 0 1-4.2-4.1Zm2.6-7.1H5.1a8 8 0 0 1 4.2-4.1 13.9 13.9 0 0 0-1.6 4.1ZM12 19.9c-.8-1.1-1.4-2.6-1.8-4.6h3.6c-.4 2-1 3.5-1.8 4.6Zm2.1-6.1h-4.2a17 17 0 0 1 0-3.6h4.2a17 17 0 0 1 0 3.6Zm.6 6.1c.7-1.2 1.2-2.6 1.6-4.1h2.6a8 8 0 0 1-4.2 4.1Zm2-6.1a19 19 0 0 0 0-3.6h3a7.9 7.9 0 0 1 0 3.6h-3Z"/>`,
 };
 
 const svg = (glyph) => raw(`<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${glyph}</svg>`);
-
 const disc = (name, cls) => html`<span class="${cls}">${svg(SOLID[name] ?? SOLID.star)}</span>`;
 
-/* Latin and numerals inside a possibly-RTL document. Isolated, or "2014 - 2017"
+/* Latin and numerals inside a possibly-RTL document. Isolated, or a date range
    comes out backwards. */
 const ltr = (text) => html`<span class="cv-ltr" dir="ltr">${text}</span>`;
 
-const heading = ({ icon, title, note }) => html`
-      <h2 class="cv-sec__head">${disc(icon, "cv-badge")}<span>${title}${note ? html` <small class="cv-sec__note">${note}</small>` : ""}</span></h2>`;
+/* Every entry opens the same way: a title on the line, its dates hard against
+   the far edge. One shape for a job, a degree and a discharge alike, so the
+   dates form a single column down the whole document. */
+const entryHead = (title, dates, cls) => html`
+        <div class="cv-row">
+          <h3 class="${cls}">${title}</h3>${dates ? html`
+          <span class="cv-row__dates">${ltr(dates)}</span>` : ""}
+        </div>`;
 
 const bullets = (items) => html`
         <ul class="cv-list">${items.map((item) => html`
           <li>${item}</li>`)}
         </ul>`;
 
-/* --- the block types a CV is made of -------------------------------------- */
 const BLOCK = {
   text: (s) => s.body.map((p) => html`
         <p>${p}</p>`),
 
-  skills: (s) => s.items.map((item) => html`
-        <div class="cv-comp">
-          <span class="cv-comp__ico">${raw(`<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${LINE[item.icon] ?? LINE.architecture}</svg>`)}</span>
-          <div class="cv-comp__text">
-            <h3 class="cv-comp__title">${item.title}</h3>
-            <p>${item.text}</p>
-          </div>
+  /* A run-in heading, not a heading of its own: the label and its terms on one
+     flowing paragraph. It reads the way a parser reads it, and it costs four
+     fewer lines than a stacked list — which is four lines of a two-page budget. */
+  keywords: (s) => s.groups.map((group) => html`
+        <p class="cv-kw"><span class="cv-kw__label">${group.title}:</span> ${group.terms.join(", ")}</p>`),
+
+  roles: (s) => s.jobs.map((job) => html`
+        <div class="cv-job">${entryHead(job.role, job.dates, "cv-job__role")}
+          <p class="cv-job__org">${job.org}</p>${job.lead ? html`
+          <p class="cv-job__lead">${job.lead}</p>` : ""}${job.bullets ? bullets(job.bullets) : ""}${job.link ? html`
+          <div class="cv-scan">${job.qr ? html`
+            <svg class="cv-qr" viewBox="${job.qr.viewBox}" role="img" aria-label="${job.qr.alt}">${raw(job.qr.path)}</svg>` : ""}
+            <p class="cv-job__link">${job.link.label} <a href="${job.link.href}">${ltr(job.link.href)}</a></p>
+          </div>` : ""}
         </div>`),
-
-  project: (s) => html`
-        <p>${s.lead}</p>${bullets(s.bullets)}`,
-
-  jobs: (s) => s.jobs.map((job) => html`
-        <div class="cv-job">
-          <h3 class="cv-job__role">${job.role}</h3>
-          <p class="cv-job__dates">${ltr(job.dates)}</p>${bullets(job.bullets)}
-        </div>`),
-
-  stack: (s) => html`
-        <dl class="cv-stack">${s.rows.map((row) => html`
-          <div class="cv-stack__row">
-            <dt>${row.label}</dt>
-            <dd>${ltr(row.value)}</dd>
-          </div>`)}
-        </dl>`,
 
   entries: (s) => s.entries.map((entry) => html`
-        <div class="cv-entry">
-          <div class="cv-entry__top">
-            <h3 class="cv-entry__title">${entry.title}</h3>
-            <span class="cv-entry__years">${ltr(entry.years)}</span>
-          </div>${(entry.lines ?? []).map((line) => html`
-          <p>${line}</p>`)}${entry.note ? html`
-          <p class="cv-entry__note">${entry.note}</p>` : ""}
+        <div class="cv-entry">${entryHead(entry.title, entry.dates, "cv-entry__title")}${entry.lines.map((line) => html`
+          <p>${line}</p>`)}
         </div>`),
+
+  lines: (s) => s.lines.map((line) => html`
+        <p>${line}</p>`),
 };
 
 const section = (s) => html`
-    <section class="cv-sec">${heading(s)}
+    <section class="cv-sec">
+      <h2 class="cv-sec__head">${disc(s.icon, "cv-badge")}<span>${s.title}</span></h2>
       <div class="cv-sec__body">${BLOCK[s.type](s)}
       </div>
     </section>`;

@@ -1,18 +1,24 @@
 /* ==========================================================================
    resume — a printed page that happens to be on the web.
 
-   Everything is scoped under .cv, and every size is derived from two knobs on
-   .cv-sheet: --cv-fs (the body size) and --cv-gap (the air between sections).
-   That is what makes the document fit a given number of printed pages: you turn
-   two numbers, not forty.
+   Everything is scoped under .cv, and the body text hangs off two knobs on
+   .cv-sheet: --cv-fs (the size) and --cv-gap (the air between sections). That
+   is what makes the document land on a given number of printed pages: you turn
+   two numbers, not forty. The name and the section headings are absolute
+   instead, because a résumé's hierarchy is specified in points, not in ratios.
 
    Millimetres, not pixels, because the target is A4. On screen 1mm resolves to
    ~3.78px, so the sheet is a true 210mm wide and what you see is what prints.
+
+   The document declares no page boundaries. It is one continuous flow, and the
+   only thing it insists on is that a single employment entry is never cut in
+   half across a sheet.
    ========================================================================== */
 .cv {
-  --cv-navy: #163a6e;
+  --cv-navy: #16356b;
   --cv-blue: #1d4e8f;
   --cv-slate: #4d6f9c;
+  --cv-ink: #111;
   --cv-paper: #eceef2;
   --cv-rule: #d6dbe3;
 
@@ -22,66 +28,71 @@
 }
 
 .cv-sheet {
-  /* the two knobs. These two numbers are what makes the document land on
-     exactly two A4 pages; nothing below is tuned by hand. */
-  --cv-fs: 8.6pt;
-  --cv-gap: 3.4mm;
+  /* the two knobs */
+  --cv-fs: 7.5pt;
+  --cv-gap: 1mm;
 
-  --cv-pad: 17mm;
-  --cv-badge: 8.4mm;
-  --cv-indent: 11.6mm;              /* badge + its gap: aligns body under the heading text */
+  --cv-pad: 16mm;
+  --cv-badge: 5mm;
+
+  /* The body runs the full width of the page rather than indenting under the
+     heading text. The indent read better, but it cost 10mm of every line for
+     the length of the document, which is worth about six printed lines: the
+     difference between fitting two sheets and not. */
+  --cv-indent: 0mm;
 
   width: 210mm;
   max-width: 100%;
   margin-inline: auto;
   background: #fff;
-  color: #333;
-  padding: 15mm var(--cv-pad) 17mm;
+  color: var(--cv-ink);
+  padding: 14mm var(--cv-pad) 16mm;
   box-shadow: 0 2px 24px rgba(20, 40, 80, .14);
 
-  font-family: "Lato", "Assistant", system-ui, sans-serif;
+  font-family: "Inter", Arial, "Assistant", system-ui, sans-serif;
   font-size: var(--cv-fs);
   font-weight: 400;
-  line-height: 1.45;
+  line-height: 1.34;
 
-  /* the navy discs are the document, not decoration: they must survive print */
+  /* the navy discs and the QR are the document, not decoration: they must
+     survive a print dialog that drops background graphics */
   print-color-adjust: exact;
   -webkit-print-color-adjust: exact;
 }
 
-[dir="rtl"] .cv-sheet { font-family: "Assistant", "Lato", system-ui, sans-serif; }
+[dir="rtl"] .cv-sheet { font-family: "Assistant", "Inter", Arial, system-ui, sans-serif; }
 
 /* Latin and numerals held LTR inside an RTL page. Isolated so a date range or a
-   pipe-separated tech list keeps its own order. */
+   comma-separated tech list keeps its own order. */
 .cv-ltr { unicode-bidi: isolate; }
 
 /* --- identity -------------------------------------------------------------- */
 .cv-id__name {
   font-family: inherit;
-  font-size: calc(var(--cv-fs) * 2.7);
-  font-weight: 900;
-  line-height: 1.05;
-  letter-spacing: 0;
+  font-size: 25pt;
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: -.005em;
   text-transform: uppercase;
   color: var(--cv-navy);
-  margin-bottom: 2.2mm;
+  margin-bottom: 1.4mm;
 }
 
 .cv-id__role {
-  font-size: calc(var(--cv-fs) * 1.16);
+  font-size: calc(var(--cv-fs) * 1.12);
   font-weight: 400;
-  line-height: 1.42;
+  line-height: 1.38;
   color: var(--cv-blue);
 }
 
 .cv-contact {
   list-style: none;
   padding: 0;
-  margin-top: 4.4mm;
+  margin-top: 3mm;
   display: grid;
   grid-template-columns: 1fr 1fr;
   column-gap: 10mm;
-  row-gap: 2.2mm;
+  row-gap: 1.4mm;
   position: relative;
 }
 
@@ -98,7 +109,7 @@
 .cv-contact__item {
   display: flex;
   align-items: center;
-  gap: 2.6mm;
+  gap: 2.4mm;
   min-width: 0;
   font-size: calc(var(--cv-fs) * .96);
 }
@@ -117,10 +128,10 @@
   justify-content: center;
 }
 
-.cv-dot { width: 6.2mm; height: 6.2mm; }
-.cv-dot svg { width: 3.4mm; height: 3.4mm; }
+.cv-dot { width: 5mm; height: 5mm; }
+.cv-dot svg { width: 2.8mm; height: 2.8mm; }
 .cv-badge { width: var(--cv-badge); height: var(--cv-badge); }
-.cv-badge svg { width: 4.7mm; height: 4.7mm; }
+.cv-badge svg { width: 3.1mm; height: 3.1mm; }
 .cv-dot svg, .cv-badge svg { fill: #fff; display: block; }
 
 /* --- a section ------------------------------------------------------------- */
@@ -133,151 +144,101 @@
 .cv-sec__head {
   display: flex;
   align-items: center;
-  gap: 3.2mm;
+  gap: 2.4mm;
   font-family: inherit;
-  font-size: calc(var(--cv-fs) * 1.22);
+  font-size: 12pt;
   font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: .045em;
+  line-height: 1.12;
+  letter-spacing: .03em;
   text-transform: uppercase;
   color: var(--cv-navy);
-}
-
-.cv-sec__note {
-  font-size: calc(var(--cv-fs) * .82);
-  font-weight: 400;
-  letter-spacing: 0;
-  text-transform: none;
-  color: var(--cv-slate);
-  white-space: nowrap;
 }
 
 .cv-sec__body {
   padding-inline-start: var(--cv-indent);
-  margin-top: 2.2mm;
+  margin-top: 1.1mm;
 }
 
-.cv-sec__body > p + p { margin-top: 1.4mm; }
+.cv-sec__body > p + p { margin-top: 1.1mm; }
 
 /* --- bullets --------------------------------------------------------------- */
 .cv-list {
   list-style: disc;
-  padding-inline-start: 4.4mm;
-  margin-top: 1.2mm;
+  padding-inline-start: 4.2mm;
+  margin-top: .8mm;
 }
 
-.cv-list > li + li { margin-top: .7mm; }
+.cv-list > li + li { margin-top: .3mm; }
 .cv-list > li::marker { color: var(--cv-slate); }
 
-/* --- core competencies ----------------------------------------------------- */
-.cv-comp {
-  display: flex;
-  align-items: flex-start;
-  gap: 3.4mm;
-}
-
-.cv-comp + .cv-comp { margin-top: 2.6mm; }
-
-.cv-comp__ico {
-  flex: none;
-  width: 7mm;
-  height: 7mm;
-  margin-top: .2mm;
-}
-
-.cv-comp__ico svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-  fill: none;
-  stroke: var(--cv-navy);
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.cv-comp__title {
-  font-family: inherit;
-  font-size: var(--cv-fs);
-  font-weight: 700;
-  line-height: 1.3;
-  letter-spacing: .035em;
-  text-transform: uppercase;
-  color: var(--cv-navy);
-  margin-bottom: .4mm;
-}
-
-/* --- one job --------------------------------------------------------------- */
-.cv-job + .cv-job { margin-top: 3.1mm; }
-
-.cv-job__role {
-  font-family: inherit;
-  font-size: calc(var(--cv-fs) * 1.04);
-  font-weight: 700;
-  line-height: 1.32;
-  letter-spacing: 0;
-  color: var(--cv-blue);
-}
-
-.cv-job__dates {
-  color: var(--cv-slate);
-  line-height: 1.5;
-  margin-top: .2mm;
-}
-
-/* --- the technical stack ---------------------------------------------------
-   A flex row, not a grid: the labels are padded to a common width, but the one
-   label that outgrows it pushes its own value across rather than pushing every
-   other row's with it. That is what the source document does. */
-.cv-stack__row {
-  display: flex;
-  align-items: baseline;
-  gap: 3mm;
-}
-
-.cv-stack__row + .cv-stack__row { margin-top: 1.1mm; }
-
-.cv-stack dt {
-  flex: none;
-  min-width: 24mm;
-  font-weight: 700;
-  color: var(--cv-navy);
-  white-space: nowrap;
-}
-
-.cv-stack dd {
-  margin: 0;
-  min-width: 0;
-}
-
-[dir="rtl"] .cv-stack dt { min-width: 28mm; }
-[dir="rtl"] .cv-stack dd { text-align: right; }
-
-/* --- education, military --------------------------------------------------- */
-.cv-entry + .cv-entry { margin-top: 2.8mm; }
-
-.cv-entry__top {
+/* --- an entry: a title on the line, its dates hard against the far edge -----
+   One shape for a job, a degree and a discharge alike, so the dates form a
+   single column down the whole document. */
+.cv-row {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 6mm;
 }
 
+.cv-row__dates {
+  flex: none;
+  color: var(--cv-slate);
+  font-size: calc(var(--cv-fs) * .96);
+}
+
+.cv-job__role,
 .cv-entry__title {
   font-family: inherit;
   font-size: var(--cv-fs);
   font-weight: 700;
-  line-height: 1.35;
-  letter-spacing: 0;
+  line-height: 1.3;
+  letter-spacing: .01em;
+  text-transform: uppercase;
   color: var(--cv-blue);
 }
 
-.cv-entry__years {
-  flex: none;
+.cv-job__org {
   color: var(--cv-slate);
+  font-weight: 600;
 }
 
-.cv-entry__note { font-style: italic; color: #555; }
+.cv-job__lead { margin-top: .6mm; }
+.cv-job + .cv-job { margin-top: 1.8mm; }
+.cv-entry + .cv-entry { margin-top: 1.8mm; }
+
+/* --- run-in keyword groups -------------------------------------------------
+   A label and its terms on one flowing paragraph, not a stacked list and not a
+   table. It reads the way a parser reads it, and it costs four fewer lines. */
+.cv-kw + .cv-kw { margin-top: 1mm; }
+.cv-kw__label {
+  font-weight: 700;
+  color: var(--cv-navy);
+  text-transform: uppercase;
+  letter-spacing: .01em;
+}
+
+/* --- the demo link, and the code that opens it ----------------------------- */
+.cv-scan {
+  display: flex;
+  align-items: center;
+  gap: 3mm;
+  margin-top: 1mm;
+}
+
+.cv-qr {
+  flex: none;
+  width: 15mm;
+  height: 15mm;
+  display: block;
+  shape-rendering: crispEdges;      /* modules are squares; never anti-alias them */
+}
+
+.cv-job__link a {
+  color: var(--cv-blue);
+  text-decoration: underline;
+  text-underline-offset: .12em;
+}
 
 /* --- the language switch: screen only, never part of the document ---------- */
 .cv-lang {
@@ -289,7 +250,7 @@
   border-radius: 999px;
   background: var(--cv-navy);
   color: #fff;
-  font-family: "Lato", "Assistant", system-ui, sans-serif;
+  font-family: "Inter", Arial, system-ui, sans-serif;
   font-size: 10pt;
   font-weight: 700;
   line-height: 1;
@@ -305,24 +266,24 @@
   .cv { padding: 0; }
   .cv-sheet {
     --cv-pad: 6mm;
-    --cv-badge: 7.4mm;
-    --cv-indent: 10.2mm;
+    --cv-badge: 7mm;
+    --cv-indent: 9.6mm;
     width: 100%;
     padding: 9mm var(--cv-pad) 10mm;
     box-shadow: none;
   }
-  .cv-contact { grid-template-columns: 1fr; row-gap: 2.2mm; }
+  .cv-contact { grid-template-columns: 1fr; row-gap: 2mm; }
   .cv-contact::before { display: none; }
+  .cv-row { flex-wrap: wrap; gap: 0 4mm; }
 }
 
 /* --- print -----------------------------------------------------------------
    A4, and the sheet stops pretending to be a sheet: the paper IS the sheet, so
-   the margins move to @page and the shadow goes. No page breaks are declared
-   yet — the document prints as one continuous flow until the split is chosen. */
+   the margins move to @page and the shadow goes. */
 @media print {
   @page {
     size: A4;
-    margin: 13mm 16mm;
+    margin: 15mm;
   }
 
   /* The document stops where its text stops, and below that the page showed the
@@ -348,10 +309,22 @@
 
   .cv-lang { display: none; }
 
-  /* nothing may be cut across a page boundary mid-thought */
+  /* What must never be split, and nothing more. Keeping a whole employment
+     entry together sounds right and is ruinous here: the longest one is a third
+     of a sheet, so refusing to break it left that third blank and cost a whole
+     extra page. So the rule is narrower — a title never parts from the lines it
+     introduces, and a bullet is never cut in half. The entry itself may run
+     over the fold. */
+  .cv-entry,
   .cv-sec__head,
-  .cv-comp,
-  .cv-entry { break-inside: avoid; }
-  .cv-job { break-inside: avoid; }
+  .cv-row,
+  .cv-scan,
   .cv-list > li { break-inside: avoid; }
+
+  /* a heading with nothing under it is a heading on the wrong page */
+  .cv-sec__head,
+  .cv-row,
+  .cv-job__org { break-after: avoid; }
+
+  .cv-list { orphans: 2; widows: 2; }
 }
