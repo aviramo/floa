@@ -262,7 +262,7 @@ export const cvEn = {
       type: "lines",
       icon: "globe",
       title: "Languages",
-      lines: ["Hebrew - Native", "English - Working proficiency"],
+      lines: ["Hebrew - Native", "English - Intermediate"],
     },
 
     {
