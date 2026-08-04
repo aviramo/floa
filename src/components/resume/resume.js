@@ -109,12 +109,17 @@ const BLOCK = {
   /* A run-in heading, not a heading of its own: the label and its terms on one
      flowing paragraph. It reads the way a parser reads it, and it costs four
      fewer lines than a stacked list — which is four lines of a two-page budget. */
-  /* dir="auto" on the label, not the isolating span the rest of the copy gets:
-     the colon belongs to the label and has to sit on the label's OWN trailing
-     side. An English label inside a Hebrew page would otherwise render as
-     ":TECHNICAL SKILLS", the colon having drifted to the far end. */
+  /* dir="auto" on the PARAGRAPH, and it is the whole fix. A line of nothing but
+     English — which is what the technical skills are, deliberately, so an ATS
+     reads them — is an English line and has to run left to right, label first
+     and colon behind it. Held in an RTL paragraph it read backwards: the label
+     at the far right and its colon stranded at the very edge of the line.
+
+     Auto means each group decides for itself. The Hebrew competencies above
+     open with a Hebrew word and stay right to left; these open with a Latin one
+     and turn. Nothing here names a language. */
   keywords: (s, t) => s.groups.map((group) => html`
-        <p class="cv-kw"><span class="cv-kw__label" dir="auto">${group.title}:</span> ${t(group.terms.join(", "))}</p>`),
+        <p class="cv-kw" dir="auto"><span class="cv-kw__label">${group.title}:</span> ${t(group.terms.join(", "))}</p>`),
 
   roles: (s, t) => s.jobs.map((job) => html`
         <div class="cv-job">${entryHead(t, job.role, job.dates, "cv-job__role")}
