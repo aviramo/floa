@@ -29,8 +29,8 @@
 
 .cv-sheet {
   /* the two knobs */
-  --cv-fs: 7.5pt;
-  --cv-gap: 1mm;
+  --cv-fs: 7.3pt;
+  --cv-gap: 2.2mm;
 
   --cv-pad: 16mm;
   --cv-badge: 5mm;
