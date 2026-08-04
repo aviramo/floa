@@ -1,4 +1,4 @@
-import { html, raw } from "../../lib/html.js";
+import { escape, html, raw } from "../../lib/html.js";
 
 /* ==========================================================================
    resume — a CV, as a document.
@@ -18,7 +18,7 @@ import { html, raw } from "../../lib/html.js";
        sections: [
          { type: "text",     icon, title, body: [string] }
          { type: "keywords", icon, title, groups: [{ title, terms: [string] }] }
-         { type: "roles",    icon, title, jobs: [{ role, dates, org, lead, bullets, link, qr }] }
+         { type: "roles",    icon, title, jobs: [{ role, dates, org, lead, bullets, link }] }
          { type: "entries",  icon, title, entries: [{ title, dates, lines: [string] }] }
          { type: "lines",    icon, title, lines: [string] }
        ]
@@ -57,71 +57,108 @@ const disc = (name, cls) => html`<span class="${cls}">${svg(SOLID[name] ?? SOLID
    comes out backwards. */
 const ltr = (text) => html`<span class="cv-ltr" dir="ltr">${text}</span>`;
 
+/* ---------------------------------------------------------------------------
+   A Hebrew CV is full of English: company names, technologies, URLs, a degree
+   written "B.Sc.". Left to the bidi algorithm, a run of them inside an RTL
+   paragraph comes out in the wrong order — "SQL, ETL, SSIS" reads SSIS first,
+   and the full stop in "B.Sc." jumps to the far side of the abbreviation.
+
+   The fix is one isolated LTR span per run, and doing that by hand across three
+   hundred strings of copy is how it silently stops being done. So the ENGINE
+   finds the runs: any stretch of Latin letters and digits, together with the
+   punctuation and spaces INSIDE it, so a comma-separated list of technologies
+   stays a single run rather than a row of separately-reversed islands. It ends
+   on a letter, a digit, a bracket or a full stop, which is what keeps "B.Sc."
+   whole and leaves a Hebrew sentence's own punctuation outside.
+
+   It runs only on the RTL document. On the Latin one it would be markup that
+   changes nothing. */
+const LATIN = /[A-Za-z0-9](?:[A-Za-z0-9 .,'’()\/&+#_:-]*[A-Za-z0-9).])?/g;
+
+const isolate = (text) => {
+  const s = String(text);
+  let out = "";
+  let last = 0;
+  for (const m of s.matchAll(LATIN)) {
+    out += escape(s.slice(last, m.index)) + `<span class="cv-ltr">${escape(m[0])}</span>`;
+    last = m.index + m[0].length;
+  }
+  return raw(out + escape(s.slice(last)));
+};
+
+const asis = (text) => text;
+
 /* Every entry opens the same way: a title on the line, its dates hard against
    the far edge. One shape for a job, a degree and a discharge alike, so the
    dates form a single column down the whole document. */
-const entryHead = (title, dates, cls) => html`
+const entryHead = (t, title, dates, cls) => html`
         <div class="cv-row">
-          <h3 class="${cls}">${title}</h3>${dates ? html`
+          <h3 class="${cls}">${t(title)}</h3>${dates ? html`
           <span class="cv-row__dates">${ltr(dates)}</span>` : ""}
         </div>`;
 
-const bullets = (items) => html`
+const bullets = (t, items) => html`
         <ul class="cv-list">${items.map((item) => html`
-          <li>${item}</li>`)}
+          <li>${t(item)}</li>`)}
         </ul>`;
 
 const BLOCK = {
-  text: (s) => s.body.map((p) => html`
-        <p>${p}</p>`),
+  text: (s, t) => s.body.map((p) => html`
+        <p>${t(p)}</p>`),
 
   /* A run-in heading, not a heading of its own: the label and its terms on one
      flowing paragraph. It reads the way a parser reads it, and it costs four
      fewer lines than a stacked list — which is four lines of a two-page budget. */
-  keywords: (s) => s.groups.map((group) => html`
-        <p class="cv-kw"><span class="cv-kw__label">${group.title}:</span> ${group.terms.join(", ")}</p>`),
+  /* dir="auto" on the label, not the isolating span the rest of the copy gets:
+     the colon belongs to the label and has to sit on the label's OWN trailing
+     side. An English label inside a Hebrew page would otherwise render as
+     ":TECHNICAL SKILLS", the colon having drifted to the far end. */
+  keywords: (s, t) => s.groups.map((group) => html`
+        <p class="cv-kw"><span class="cv-kw__label" dir="auto">${group.title}:</span> ${t(group.terms.join(", "))}</p>`),
 
-  roles: (s) => s.jobs.map((job) => html`
-        <div class="cv-job">${entryHead(job.role, job.dates, "cv-job__role")}
-          <p class="cv-job__org">${job.org}</p>${job.lead ? html`
-          <p class="cv-job__lead">${job.lead}</p>` : ""}${job.bullets ? bullets(job.bullets) : ""}${job.link ? html`
-          <div class="cv-scan">${job.qr ? html`
-            <svg class="cv-qr" viewBox="${job.qr.viewBox}" role="img" aria-label="${job.qr.alt}">${raw(job.qr.path)}</svg>` : ""}
-            <p class="cv-job__link">${job.link.label} <a href="${job.link.href}">${ltr(job.link.href)}</a></p>
-          </div>` : ""}
+  roles: (s, t) => s.jobs.map((job) => html`
+        <div class="cv-job">${entryHead(t, job.role, job.dates, "cv-job__role")}
+          <p class="cv-job__org">${t(job.org)}</p>${job.lead ? html`
+          <p class="cv-job__lead">${t(job.lead)}</p>` : ""}${job.bullets ? bullets(t, job.bullets) : ""}${job.link ? html`
+          <p class="cv-job__link">${t(job.link.label)} <a href="${job.link.href}">${ltr(job.link.href)}</a></p>` : ""}
         </div>`),
 
-  entries: (s) => s.entries.map((entry) => html`
-        <div class="cv-entry">${entryHead(entry.title, entry.dates, "cv-entry__title")}${entry.lines.map((line) => html`
-          <p>${line}</p>`)}
+  entries: (s, t) => s.entries.map((entry) => html`
+        <div class="cv-entry">${entryHead(t, entry.title, entry.dates, "cv-entry__title")}${entry.lines.map((line) => html`
+          <p>${t(line)}</p>`)}
         </div>`),
 
-  lines: (s) => s.lines.map((line) => html`
-        <p>${line}</p>`),
+  lines: (s, t) => s.lines.map((line) => html`
+        <p>${t(line)}</p>`),
 };
 
-const section = (s) => html`
+const section = (t) => (s) => html`
     <section class="cv-sec">
-      <h2 class="cv-sec__head">${disc(s.icon, "cv-badge")}<span>${s.title}</span></h2>
-      <div class="cv-sec__body">${BLOCK[s.type](s)}
+      <h2 class="cv-sec__head">${disc(s.icon, "cv-badge")}<span>${t(s.title)}</span></h2>
+      <div class="cv-sec__body">${BLOCK[s.type](s, t)}
       </div>
     </section>`;
 
-export const resume = (ctx, cv) => html`
+export const resume = (ctx, cv) => {
+  /* the one thing that differs between the two documents, and it is not copy */
+  const t = cv.dir === "rtl" ? isolate : asis;
+
+  return html`
 <main class="cv" id="top">
   <article class="cv-sheet">
     <header class="cv-id">
-      <h1 class="cv-id__name">${cv.name}</h1>${cv.roles.map((role) => html`
-      <p class="cv-id__role">${role}</p>`)}
+      <h1 class="cv-id__name">${t(cv.name)}</h1>${cv.roles.map((role) => html`
+      <p class="cv-id__role">${t(role)}</p>`)}
       <ul class="cv-contact">${cv.contact.map((item) => html`
         <li class="cv-contact__item">${disc(item.icon, "cv-dot")}${item.href
           ? html`<a href="${item.href}">${ltr(item.text)}</a>`
-          : html`<span>${item.text}</span>`}
+          : html`<span>${t(item.text)}</span>`}
         </li>`)}
       </ul>
     </header>
-${cv.sections.map(section)}
+${cv.sections.map(section(t))}
   </article>
 ${cv.altLang ? html`
   <a class="cv-lang" href="${ctx.url(cv.altLang.href)}" lang="${cv.altLang.lang}" hreflang="${cv.altLang.lang}">${cv.altLang.label}</a>` : ""}
 </main>`;
+};

@@ -29,7 +29,7 @@
 
 .cv-sheet {
   /* the two knobs */
-  --cv-fs: 7.3pt;
+  --cv-fs: 7.4pt;
   --cv-gap: 2.2mm;
 
   --cv-pad: 16mm;
@@ -64,7 +64,10 @@
 
 /* Latin and numerals held LTR inside an RTL page. Isolated so a date range or a
    comma-separated tech list keeps its own order. */
-.cv-ltr { unicode-bidi: isolate; }
+.cv-ltr {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
 
 /* --- identity -------------------------------------------------------------- */
 .cv-id__name {
@@ -218,21 +221,8 @@
   letter-spacing: .01em;
 }
 
-/* --- the demo link, and the code that opens it ----------------------------- */
-.cv-scan {
-  display: flex;
-  align-items: center;
-  gap: 3mm;
-  margin-top: 1mm;
-}
-
-.cv-qr {
-  flex: none;
-  width: 15mm;
-  height: 15mm;
-  display: block;
-  shape-rendering: crispEdges;      /* modules are squares; never anti-alias them */
-}
+/* --- the demo link --------------------------------------------------------- */
+.cv-job__link { margin-top: .8mm; }
 
 .cv-job__link a {
   color: var(--cv-blue);
@@ -318,7 +308,7 @@
   .cv-entry,
   .cv-sec__head,
   .cv-row,
-  .cv-scan,
+  .cv-job__link,
   .cv-list > li { break-inside: avoid; }
 
   /* a heading with nothing under it is a heading on the wrong page */
