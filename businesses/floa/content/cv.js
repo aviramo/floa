@@ -5,15 +5,14 @@
    is DRAWN lives in src/components/resume/, so the two versions can never drift
    apart in anything but language. Change the layout once and both change.
 
-   The English text is Ofir's, verbatim: nothing here is rewritten, shortened,
-   expanded or invented, and every company and technology keeps its exact
-   spelling. The Hebrew is a translation of that same text and of nothing else.
+   Both texts are Ofir's, verbatim. Nothing here is rewritten, shortened,
+   expanded, translated or invented, and every company and technology keeps its
+   exact spelling. The one liberty is punctuation the repo does not allow on a
+   page: an en dash is written as a plain hyphen in a date range, and as a colon
+   where it separated a language from its level.
 
-   DATES ARE NOT TOUCHED. They were settled by hand earlier and are carried
-   through unchanged, including the ones that differ from the source text
-   (Tidhar, Brillix, Varonis, the military service). Each is written with a
-   plain hyphen and rendered inside a dir="ltr" span, so "2014 - 2017" reads the
-   same way on the RTL page as on the LTR one.
+   Every date range is rendered inside <bdi dir="ltr">, so "2014 - 2017" reads
+   the same way on the RTL page as on the LTR one.
 
    WHERE THEY LAND
      dist/floa/cv/index.html       ->  floa.co.il/floa/cv/       base "../"
@@ -28,7 +27,6 @@ const CONTACT = {
   phoneHref: "tel:+972587078708",
   mailHref: "mailto:ofir.aviram@gmail.com",
   linkedinHref: "https://www.linkedin.com/in/aviramo",
-  phone: "+972-58-707-8708",
   mail: "ofir.aviram@gmail.com",
   linkedin: "linkedin.com/in/aviramo",
 };
@@ -46,7 +44,7 @@ export const cvEn = {
 
   meta: {
     title: "Ofir Aviram | Solution Architect and Senior Systems Analyst",
-    description: "CV of Ofir Aviram. Solution Architect and Senior Systems Analyst with 15+ years designing and delivering enterprise applications, system integrations, Identity and Access Management solutions and AI-assisted products.",
+    description: "CV of Ofir Aviram. Solution Architect and Senior Systems Analyst with 15+ years designing enterprise applications, system integrations, IAM and IDM solutions and business-process automation.",
   },
 
   download: { href: "cv/ofir-aviram-cv.pdf", name: "Ofir Aviram - CV.pdf", label: "Download PDF" },
@@ -56,69 +54,59 @@ export const cvEn = {
   name: "Ofir Aviram",
   roles: [
     "Solution Architect | Senior Systems Analyst",
-    "Enterprise Applications & Integrations | AI-Powered Product Development",
+    "Enterprise Applications, Integrations & AI-Powered Product Delivery",
   ],
   contact: [
-    { icon: "pin", text: "Hod Hasharon, Israel" },
-    { icon: "phone", text: CONTACT.phone, href: CONTACT.phoneHref },
-    { icon: "mail", text: CONTACT.mail, href: CONTACT.mailHref },
-    { icon: "linkedin", text: CONTACT.linkedin, href: CONTACT.linkedinHref },
+    { text: "Hod Hasharon, Israel" },
+    { text: "+972-58-707-8708", href: CONTACT.phoneHref },
+    { text: CONTACT.mail, href: CONTACT.mailHref },
+    { text: CONTACT.linkedin, href: CONTACT.linkedinHref },
   ],
 
   sections: [
     {
       type: "text",
-      icon: "user",
       title: "Professional Summary",
       body: [
-        "Solution Architect and Senior Systems Analyst with 15+ years of experience designing and delivering enterprise applications, system integrations, Identity and Access Management solutions, business process automation and web and mobile products across high-tech, healthcare, finance, insurance, construction and municipal organizations.",
-        "Combines deep systems-analysis experience with hands-on solution design and AI-assisted product development. Experienced in requirements discovery, functional and technical specifications, business logic, data flows, APIs, SQL, ETL, integration architecture, stakeholder management, testing and production delivery.",
-        "Able to take an initial business need or product idea, define the requirements, design the architecture and lead the solution through implementation until it becomes a working production system.",
+        "Solution Architect and Senior Systems Analyst with 15+ years of experience designing enterprise applications, system integrations, IAM and IDM solutions and business-process automation.",
+        "Strong in requirements analysis, functional and technical specifications, business logic, data flows, SQL, ETL, APIs and end-to-end production delivery.",
+        "Combines extensive enterprise systems experience with hands-on product development using Node.js, TypeScript, Supabase and AI-assisted development tools.",
       ],
     },
 
     {
       type: "keywords",
-      icon: "star",
-      title: "Core Competencies",
+      title: "Core Expertise",
       groups: [
         {
-          title: "Solution Architecture",
-          terms: ["End-to-End Solution Design", "Enterprise Applications", "Integration Architecture", "Business Logic Design", "System Interfaces", "Data Flows", "Scalable Solution Design", "Production Delivery"],
+          title: "Solution Design",
+          terms: ["End-to-End Solution Design", "Enterprise Applications", "Integration Architecture", "Business Logic", "System Interfaces", "Data Flows"],
         },
         {
           title: "Systems Analysis",
-          terms: ["Requirements Gathering", "Requirements Analysis", "Functional Specifications", "Technical Specifications", "Business Process Modeling", "Data Modeling", "User Flows", "UAT and Acceptance Criteria"],
+          terms: ["Requirements Gathering", "Functional and Technical Specifications", "Business Process Modeling", "Data Modeling", "UAT"],
         },
         {
-          title: "Integration and Data",
-          terms: ["REST APIs", "System Integrations", "SQL", "ETL", "SSIS", "Workato", "Salesforce", "Priority ERP", "Identity and Access Management", "Identity Management"],
-        },
-        {
-          title: "Product and AI-Assisted Delivery",
-          terms: ["Product Discovery", "Product Requirements", "Product Ownership", "User Experience", "Rapid Prototyping", "AI-Assisted Development", "Automation", "Cross-Functional Leadership", "End-to-End Delivery"],
+          title: "Delivery",
+          terms: ["Stakeholder Management", "Cross-Functional Leadership", "Testing", "Troubleshooting", "Production Deployment", "Agile Delivery"],
         },
       ],
     },
 
     {
       type: "roles",
-      icon: "rocket",
-      title: "Selected Product and Independent Experience",
+      title: "Selected Product Experience",
       jobs: [
         {
           role: "Product Owner & AI-Powered Full-Stack Developer",
+          org: "Once | Self-Employed",
           dates: "2026 - Present",
-          org: "Once, AI-Powered Mobile Product | Self-Employed",
-          lead: "Designed and built Once from initial concept to a production-ready mobile product, owning the complete product and technology lifecycle.",
           bullets: [
-            "Defined the product strategy, requirements, user journeys, user flows and UX",
-            "Designed the solution architecture, database model, business logic, backend workflows and permissions model",
-            "Built a real-time mobile dating product based on one person at a time, immediate invitations, proximity, activity and shared social Circles",
-            "Developed authentication, location services, real-time chat, matching logic, credit mechanisms, social Circles, permissions and notification processes",
-            "Developed the product using Node.js, TypeScript, Supabase, PostgreSQL, Edge Functions, RPC functions and API integrations",
-            "Used Claude and ChatGPT for rapid prototyping, coding, debugging, refactoring, test-data generation, problem-solving and delivery acceleration",
-            "Managed architecture, development, testing, troubleshooting and production releases end to end",
+            "Took Once from concept to a production-ready mobile product, owning product definition, UX, architecture, development, testing and release",
+            "Designed the database model, business logic, backend workflows, permissions and real-time processes",
+            "Built authentication, location services, matching, real-time chat, credit mechanisms, social Circles and notifications",
+            "Developed with Node.js, TypeScript, Supabase, PostgreSQL, Edge Functions, RPC functions and APIs",
+            "Used Claude and ChatGPT for prototyping, coding, debugging, refactoring, problem-solving and test-data generation",
             "Prepared and submitted production releases for Google Play and the Apple App Store",
           ],
           link: { label: "Product demo:", href: DEMO },
@@ -128,90 +116,71 @@ export const cvEn = {
 
     {
       type: "roles",
-      icon: "briefcase",
       title: "Professional Experience",
       jobs: [
         {
           role: "Senior Systems Analyst | Integration & Solution Design",
-          dates: "2025 - 2026",
           org: "Tidhar Group | Israel | Hybrid",
-          lead: "Led end-to-end analysis and delivery of enterprise business processes, automations and system integrations across Salesforce, Priority ERP and Workato.",
+          dates: "2025 - 2026",
           bullets: [
-            "Gathered and refined business requirements and translated them into functional and technical specifications",
-            "Analyzed business processes, system dependencies, data flows and integration requirements",
-            "Designed integration flows, data mappings, business logic, automations and system interfaces",
-            "Worked with SQL, ETL processes and enterprise applications",
-            "Coordinated delivery across business stakeholders, IT teams, vendors and implementation partners",
-            "Supported testing, production deployment, troubleshooting and continuous improvement",
+            "Led the analysis and delivery of enterprise processes, automations and integrations across Salesforce, Priority ERP and Workato",
+            "Translated business requirements into functional and technical specifications",
+            "Designed data mappings, business logic, integration flows, system interfaces and SQL and ETL processes",
+            "Coordinated business stakeholders, IT teams, vendors, testing and production deployment",
           ],
         },
         {
           role: "Senior Systems Analyst | IDM Solution Design",
-          dates: "2021 - 2025",
           org: "Brillix | Israel | Remote",
-          lead: "Designed and implemented enterprise Identity Management solutions for Clalit Health Services, Migdal, Ayalon and LivePerson.",
+          dates: "2021 - 2025",
           bullets: [
-            "Analyzed complex business, identity lifecycle and information-security processes",
-            "Gathered requirements and created functional and technical specifications for IDM workflows, interfaces, data transformations and integrations",
-            "Designed data mappings, ETL processes, business logic and system interfaces",
-            "Worked closely with cybersecurity, DBA, DevOps, infrastructure, IT and business teams",
-            "Led delivery from initial requirements and solution design through testing, troubleshooting and production rollout",
+            "Designed and implemented enterprise Identity Management solutions for Clalit Health Services, Migdal, Ayalon and LivePerson",
+            "Created functional and technical specifications for identity processes, interfaces, data transformations and integrations",
+            "Designed business logic, data mappings, ETL processes and system interfaces",
+            "Led delivery across cybersecurity, DBA, DevOps, infrastructure, IT and business teams",
           ],
         },
         {
+          /* the fold: page one ends with Brillix, page two opens here */
+          breakBefore: true,
           role: "Systems Analyst | Web Solutions & Process Automation",
-          dates: "2020 - 2021",
           org: "Tel Aviv-Yafo Municipality",
-          lead: "Led the analysis and design of an enterprise web solution connecting multiple municipal departments and automating cross-organizational workflows.",
+          dates: "2020 - 2021",
           bullets: [
-            "Conducted requirements discovery with users, managers and business stakeholders",
-            "Modeled business processes, data structures, system workflows and user journeys",
-            "Designed UX and UI flows and wrote functional and technical specifications",
-            "Designed SQL and SSIS-based integrations, data processes and automated workflows",
-            "Coordinated users, development, DBA and QA teams from requirements through user acceptance and rollout",
+            "Led the analysis and design of a web solution connecting municipal departments and automating cross-organizational workflows",
+            "Modeled business processes, data structures, user journeys and UX and UI flows",
+            "Designed SQL and SSIS integrations and coordinated users, development, DBA, QA and UAT",
           ],
         },
         {
           role: "Identity Management Systems Analyst & Technical Lead",
-          dates: "2017 - 2020",
           org: "Amdocs | Israel",
-          lead: "Led the technical implementation of enterprise Identity Management solutions.",
+          dates: "2017 - 2020",
           bullets: [
-            "Translated business and information-security requirements into workflows, interfaces, business logic and technical solutions",
-            "Designed system processes, integrations and data flows",
-            "Guided a development team working with Java and JSP",
-            "Worked with Git, Jira and Agile delivery methodologies",
-            "Coordinated development, cybersecurity, infrastructure, DBA, DevOps and IT teams",
-            "Supported testing, troubleshooting, deployment and production delivery",
+            "Translated business and security requirements into technical processes, business logic, interfaces and integrations",
+            "Designed system workflows and data flows and guided a Java and JSP development team",
+            "Coordinated development, cybersecurity, infrastructure, DBA, DevOps, testing and production delivery",
           ],
         },
         {
           role: "IDM Implementation Consultant & Solution Developer",
-          dates: "2014 - 2017",
           org: "ProLink Identity Management Architects | Israel",
-          lead: "Independently customized and implemented the Aveksa IAM and Identity Governance platform for major organizations, including Harel, Migdal, Phoenix and Amdocs.",
+          dates: "2014 - 2017",
           bullets: [
-            "Owned the complete application-level solution design and implementation, excluding infrastructure",
-            "Analyzed identity lifecycle, access-management, authorization and business requirements",
-            "Designed and developed business logic, workflows, rules, approval processes and authorization processes",
-            "Built integrations between the Aveksa platform and enterprise systems, databases and directories",
-            "Designed data mappings, interfaces and synchronization processes",
-            "Worked directly with customer stakeholders, information-security teams, IT, DBA and infrastructure teams",
-            "Led testing, troubleshooting, deployment and production support",
+            "Independently customized and implemented the Aveksa IAM and Identity Governance platform for Harel, Migdal, Phoenix and Amdocs",
+            "Owned the application-level solution design and implementation, excluding infrastructure",
+            "Designed business logic, workflows, rules, approval processes, data mappings and synchronization processes",
+            "Built integrations with enterprise systems, databases and directories and led testing, deployment and production support",
           ],
         },
         {
           role: "Software Developer | Enterprise Billing Systems",
-          dates: "2008 - 2014",
           org: "Varonis | Israel",
-          lead: "Developed, maintained and supported an enterprise billing platform and finance-related business processes.",
+          dates: "2008 - 2014",
           bullets: [
-            "Developed solutions using Microsoft SQL Server, Microsoft Access and VBA",
-            "Designed database queries, reports and business-process automations",
-            "Analyzed business requirements and translated them into system enhancements",
-            "Investigated production issues and implemented fixes and improvements",
-            "Worked directly with finance and operational stakeholders",
-            "Provided ongoing maintenance and production support",
+            "Developed and maintained an enterprise billing platform using Microsoft SQL Server, Microsoft Access and VBA",
+            "Translated business requirements into database queries, reports, automations and system enhancements",
+            "Investigated production issues and worked directly with finance and operational stakeholders",
           ],
         },
       ],
@@ -219,56 +188,45 @@ export const cvEn = {
 
     {
       type: "keywords",
-      icon: "code",
       title: "Technical Skills",
       groups: [
         {
-          title: "Architecture and Analysis",
-          terms: ["Solution Architecture", "Systems Analysis", "Solution Design", "Requirements Gathering", "Functional Specifications", "Technical Specifications", "Business Process Modeling", "Data Modeling", "Business Logic Design", "UAT", "End-to-End Delivery"],
+          title: "Platforms and Integration",
+          terms: ["Salesforce", "Priority ERP", "Workato", "Aveksa", "IAM", "IDM", "IGA", "REST APIs", "ETL", "SSIS"],
         },
         {
-          title: "Integration and Data",
-          terms: ["REST APIs", "System Integrations", "SQL", "ETL", "SSIS", "Data Mapping", "Workato", "Salesforce", "Priority ERP", "IAM", "IDM", "IGA", "Aveksa"],
+          title: "Data and Development",
+          terms: ["SQL", "Microsoft SQL Server", "PostgreSQL", "Node.js", "TypeScript", "JavaScript", "Supabase", "Edge Functions", "RPC Functions", "Java", "JSP", "Git", "Microsoft Access", "VBA"],
         },
         {
-          title: "Development",
-          terms: ["Node.js", "TypeScript", "JavaScript", "Supabase", "PostgreSQL", "Edge Functions", "RPC Functions", "Java", "JSP", "Git", "Microsoft SQL Server", "Microsoft Access", "VBA"],
-        },
-        {
-          title: "AI and Delivery Tools",
-          terms: ["Claude", "ChatGPT", "AI-Assisted Development", "Rapid Prototyping", "Debugging", "Refactoring", "Test-Data Generation", "Automation", "Agile", "Jira"],
+          title: "AI and Delivery",
+          terms: ["Claude", "ChatGPT", "AI-Assisted Development", "Rapid Prototyping", "Jira", "Agile", "UAT"],
         },
       ],
     },
 
     {
       type: "entries",
-      icon: "cap",
       title: "Education",
       entries: [
         {
-          title: "Product Management Program",
-          dates: "2021",
-          lines: ["Product Experts"],
+          title: "PRODUCT MANAGEMENT PROGRAM",
+          lines: ["Product Experts | 2021"],
         },
         {
-          title: "B.Sc. Industrial Engineering and Management",
-          dates: "2004 - 2008",
-          lines: ["Information Systems Specialization | Ben-Gurion University of the Negev"],
+          title: "B.SC. INDUSTRIAL ENGINEERING AND MANAGEMENT",
+          lines: ["Information Systems Specialization", "Ben-Gurion University of the Negev | 2004 - 2008"],
         },
       ],
     },
 
-
     {
       type: "entries",
-      icon: "shield",
       title: "Military Service",
       entries: [
         {
-          title: "Combat Soldier and Commander",
-          dates: "1999 - 2002",
-          lines: ["Combat Engineering Corps"],
+          title: "COMBAT SOLDIER AND COMMANDER",
+          lines: ["Combat Engineering Corps | 1999 - 2002"],
         },
       ],
     },
@@ -286,7 +244,7 @@ export const cvHe = {
 
   meta: {
     title: "אופיר אבירם | ארכיטקט פתרונות ומנתח מערכות בכיר",
-    description: "קורות החיים של אופיר אבירם. ארכיטקט פתרונות ומנתח מערכות בכיר עם מעל 15 שנות ניסיון בתכנון ובאספקה של אפליקציות ארגוניות, אינטגרציות, פתרונות ניהול זהויות והרשאות ומוצרים מבוססי AI.",
+    description: "קורות החיים של אופיר אבירם. ארכיטקט פתרונות ומנתח מערכות בכיר עם מעל 15 שנות ניסיון בתכנון אפליקציות ארגוניות, אינטגרציות, פתרונות IAM ו-IDM ואוטומציה של תהליכים עסקיים.",
   },
 
   download: { href: "cv/ofir-aviram-cv-he.pdf", name: "אופיר אבירם - קורות חיים.pdf", label: "הורדת PDF" },
@@ -296,69 +254,59 @@ export const cvHe = {
   name: "אופיר אבירם",
   roles: [
     "ארכיטקט פתרונות | מנתח מערכות בכיר",
-    "אפליקציות ואינטגרציות ארגוניות | פיתוח מוצר מבוסס AI",
+    "אפליקציות ארגוניות, אינטגרציות ופיתוח מוצר בעזרת AI",
   ],
   contact: [
-    { icon: "pin", text: "הוד השרון, ישראל" },
-    { icon: "phone", text: CONTACT.phone, href: CONTACT.phoneHref },
-    { icon: "mail", text: CONTACT.mail, href: CONTACT.mailHref },
-    { icon: "linkedin", text: CONTACT.linkedin, href: CONTACT.linkedinHref },
+    { text: "הוד השרון, ישראל" },
+    { text: "058-707-8708", href: CONTACT.phoneHref },
+    { text: CONTACT.mail, href: CONTACT.mailHref },
+    { text: CONTACT.linkedin, href: CONTACT.linkedinHref },
   ],
 
   sections: [
     {
       type: "text",
-      icon: "user",
       title: "תקציר מקצועי",
       body: [
-        "ארכיטקט פתרונות ומנתח מערכות בכיר עם מעל 15 שנות ניסיון בתכנון ובאספקה של אפליקציות ארגוניות, אינטגרציות בין מערכות, פתרונות ניהול זהויות והרשאות, אוטומציה של תהליכים עסקיים ומוצרי web ומובייל, בארגוני הייטק, בריאות, פיננסים, ביטוח, בנייה ורשויות מקומיות.",
-        "משלב ניסיון עמוק בניתוח מערכות עם תכנון פתרונות מעשי ופיתוח מוצר בעזרת בינה מלאכותית. מנוסה בגילוי דרישות, אפיון פונקציונלי וטכני, לוגיקה עסקית, זרימות נתונים, ממשקי API, SQL, ETL, ארכיטקטורת אינטגרציה, ניהול בעלי עניין, בדיקות ואספקה לייצור.",
-        "יודע לקחת צורך עסקי ראשוני או רעיון למוצר, להגדיר את הדרישות, לתכנן את הארכיטקטורה ולהוביל את הפתרון דרך המימוש עד שהוא הופך למערכת עובדת בייצור.",
+        "ארכיטקט פתרונות ומנתח מערכות בכיר עם מעל 15 שנות ניסיון בתכנון אפליקציות ארגוניות, אינטגרציות בין מערכות, פתרונות IAM ו-IDM ואוטומציה של תהליכים עסקיים.",
+        "בעל ניסיון משמעותי בניתוח דרישות, כתיבת אפיונים פונקציונליים וטכניים, תכנון לוגיקה עסקית, זרימות נתונים, SQL, ETL, ממשקי API והובלת פתרונות עד לייצור.",
+        "משלב ניסיון במערכות ארגוניות עם יכולת מעשית לפתח מוצרים באמצעות Node.js, TypeScript, Supabase וכלי פיתוח מבוססי AI.",
       ],
     },
 
     {
       type: "keywords",
-      icon: "star",
       title: "תחומי מומחיות",
       groups: [
         {
-          title: "ארכיטקטורת פתרונות",
-          terms: ["תכנון פתרון מקצה לקצה", "אפליקציות ארגוניות", "ארכיטקטורת אינטגרציה", "תכנון לוגיקה עסקית", "ממשקי מערכת", "זרימות נתונים", "תכנון פתרונות ניתנים להרחבה", "אספקה לייצור"],
+          title: "תכנון פתרונות",
+          terms: ["תכנון פתרון מקצה לקצה", "אפליקציות ארגוניות", "ארכיטקטורת אינטגרציה", "לוגיקה עסקית", "ממשקי מערכת וזרימות נתונים"],
         },
         {
           title: "ניתוח מערכות",
-          terms: ["איסוף דרישות", "ניתוח דרישות", "אפיון פונקציונלי", "אפיון טכני", "מידול תהליכים עסקיים", "מידול נתונים", "מסעות משתמשים", "UAT וקריטריוני קבלה"],
+          terms: ["איסוף דרישות", "אפיון פונקציונלי וטכני", "מידול תהליכים עסקיים", "מידול נתונים ובדיקות קבלה"],
         },
         {
-          title: "אינטגרציה ונתונים",
-          terms: ["REST APIs", "אינטגרציות בין מערכות", "SQL", "ETL", "SSIS", "Workato", "Salesforce", "Priority ERP", "ניהול זהויות והרשאות", "ניהול זהויות"],
-        },
-        {
-          title: "מוצר ואספקה בעזרת AI",
-          terms: ["גילוי מוצר", "דרישות מוצר", "בעלות על מוצר", "חוויית משתמש", "אב טיפוס מהיר", "פיתוח בעזרת AI", "אוטומציה", "הובלה חוצת ארגון", "אספקה מקצה לקצה"],
+          title: "הובלת אספקה",
+          terms: ["ניהול בעלי עניין", "הובלה חוצת ארגון", "בדיקות", "פתרון תקלות", "עלייה לייצור ועבודה במתודולוגיית Agile"],
         },
       ],
     },
 
     {
       type: "roles",
-      icon: "rocket",
-      title: "מוצר וניסיון עצמאי נבחר",
+      title: "ניסיון מוצר נבחר",
       jobs: [
         {
           role: "מנהל מוצר ומפתח Full-Stack מבוסס AI",
+          org: "Once | עצמאי",
           dates: "2026 - היום",
-          org: "Once, מוצר מובייל מבוסס AI | עצמאי",
-          lead: "תכנון ובנייה של Once מרעיון ראשוני ועד מוצר מובייל מוכן לייצור, עם בעלות מלאה על מחזור החיים של המוצר ושל הטכנולוגיה.",
           bullets: [
-            "הגדרת אסטרטגיית המוצר, הדרישות, מסעות המשתמשים, זרימות המשתמש וחוויית השימוש",
-            "תכנון ארכיטקטורת הפתרון, מודל הנתונים, הלוגיקה העסקית, תהליכי הצד השרתי ומודל ההרשאות",
-            "בניית מוצר היכרויות מובייל בזמן אמת המבוסס על אדם אחד בכל רגע, הזמנות מיידיות, קרבה, פעילות ומעגלים חברתיים משותפים",
-            "פיתוח מנגנוני הזדהות, שירותי מיקום, צ'אט בזמן אמת, לוגיקת התאמה, מנגנוני קרדיט, מעגלים חברתיים, הרשאות ותהליכי התראות",
-            "פיתוח המוצר בעזרת Node.js, TypeScript, Supabase, PostgreSQL, Edge Functions, פונקציות RPC ואינטגרציות API",
-            "שימוש ב-Claude וב-ChatGPT לאב טיפוס מהיר, לכתיבת קוד, לניפוי שגיאות, לריפקטורינג, ליצירת נתוני בדיקה, לפתרון בעיות ולהאצת האספקה",
-            "ניהול הארכיטקטורה, הפיתוח, הבדיקות, פתרון התקלות והעלאות לייצור מקצה לקצה",
+            "הובלת Once מרעיון ראשוני למוצר מובייל מוכן לייצור, כולל הגדרת המוצר, חוויית המשתמש, הארכיטקטורה, הפיתוח, הבדיקות והגרסאות",
+            "תכנון מודל הנתונים, הלוגיקה העסקית, תהליכי הצד השרת ומודל ההרשאות",
+            "פיתוח מנגנוני הזדהות, שירותי מיקום, התאמות, צ'אט בזמן אמת, מנגנון קרדיטים, מעגלים חברתיים והתראות",
+            "פיתוח באמצעות Node.js, TypeScript, Supabase, PostgreSQL, Edge Functions, RPC Functions וממשקי API",
+            "שימוש ב-Claude וב-ChatGPT לאב טיפוס, כתיבת קוד, פתרון תקלות, ריפקטורינג ויצירת נתוני בדיקה",
             "הכנה והגשה של גרסאות ייצור ל-Google Play ול-Apple App Store",
           ],
           link: { label: "הדגמת המוצר:", href: DEMO },
@@ -368,90 +316,71 @@ export const cvHe = {
 
     {
       type: "roles",
-      icon: "briefcase",
       title: "ניסיון תעסוקתי",
       jobs: [
         {
           role: "מנתח מערכות בכיר | אינטגרציות ותכנון פתרונות",
-          dates: "2025 - 2026",
           org: "קבוצת תדהר | ישראל | היברידי",
-          lead: "הובלת אפיון ואספקה מקצה לקצה של תהליכים עסקיים ארגוניים, אוטומציות ואינטגרציות בין מערכות על גבי Salesforce, Priority ERP ו-Workato.",
+          dates: "2025 - 2026",
           bullets: [
-            "איסוף וחידוד של דרישות עסקיות ותרגומן לאפיון פונקציונלי וטכני",
-            "ניתוח תהליכים עסקיים, תלויות בין מערכות, זרימות נתונים ודרישות אינטגרציה",
-            "תכנון זרימות אינטגרציה, מיפויי נתונים, לוגיקה עסקית, אוטומציות וממשקי מערכת",
-            "עבודה עם SQL, תהליכי ETL ואפליקציות ארגוניות",
-            "תיאום האספקה מול גורמים עסקיים, צוותי IT, ספקים ושותפי הטמעה",
-            "ליווי בדיקות, עלייה לייצור, פתרון תקלות ושיפור מתמיד",
+            "הובלת ניתוח ואספקה של תהליכים עסקיים, אוטומציות ואינטגרציות על גבי Salesforce, Priority ERP ו-Workato",
+            "תרגום דרישות עסקיות לאפיונים פונקציונליים וטכניים",
+            "תכנון מיפויי נתונים, לוגיקה עסקית, זרימות אינטגרציה, ממשקי מערכת ותהליכי SQL ו-ETL",
+            "תיאום בין גורמים עסקיים, צוותי IT, ספקים, בדיקות ועלייה לייצור",
           ],
         },
         {
           role: "מנתח מערכות בכיר | תכנון פתרונות IDM",
-          dates: "2021 - 2025",
           org: "בריליקס | ישראל | מרחוק",
-          lead: "תכנון והטמעה של פתרונות ניהול זהויות ארגוניים עבור שירותי בריאות כללית, מגדל, איילון ו-LivePerson.",
+          dates: "2021 - 2025",
           bullets: [
-            "ניתוח תהליכים עסקיים מורכבים, מחזור חיי זהות ותהליכי אבטחת מידע",
-            "איסוף דרישות וכתיבת אפיון פונקציונלי וטכני לתהליכי IDM, לממשקים, לטרנספורמציות נתונים ולאינטגרציות",
-            "תכנון מיפויי נתונים, תהליכי ETL, לוגיקה עסקית וממשקי מערכת",
-            "עבודה צמודה מול צוותי סייבר, DBA, DevOps, תשתיות, IT וגורמים עסקיים",
-            "הובלת האספקה מהדרישות הראשוניות ותכנון הפתרון ועד בדיקות, פתרון תקלות ועלייה לייצור",
+            "תכנון והטמעה של פתרונות ניהול זהויות עבור שירותי בריאות כללית, מגדל, איילון ו-LivePerson",
+            "כתיבת אפיונים פונקציונליים וטכניים לתהליכי זהות, ממשקים, טרנספורמציות נתונים ואינטגרציות",
+            "תכנון לוגיקה עסקית, מיפויי נתונים, תהליכי ETL וממשקי מערכת",
+            "הובלת האספקה מול צוותי סייבר, DBA, DevOps, תשתיות, IT וגורמים עסקיים",
           ],
         },
         {
-          role: "מנתח מערכות | פתרונות web ואוטומציית תהליכים",
+          /* the fold: page one ends with Brillix, page two opens here */
+          breakBefore: true,
+          role: "מנתח מערכות | פתרונות Web ואוטומציית תהליכים",
+          org: "עיריית תל אביב-יפו",
           dates: "2020 - 2021",
-          org: "עיריית תל אביב יפו",
-          lead: "הובלת האפיון והתכנון של פתרון web ארגוני שמחבר בין אגפים עירוניים רבים ומבצע אוטומציה של תהליכים חוצי ארגון.",
           bullets: [
-            "גילוי דרישות מול משתמשים, מנהלים וגורמים עסקיים",
-            "מידול תהליכים עסקיים, מבני נתונים, זרימות עבודה ומסעות משתמשים",
-            "תכנון זרימות UX ו-UI וכתיבת אפיון פונקציונלי וטכני",
-            "תכנון אינטגרציות מבוססות SQL ו-SSIS, תהליכי נתונים וזרימות עבודה אוטומטיות",
-            "תיאום בין משתמשים, פיתוח, DBA ו-QA מהדרישות ועד בדיקות הקבלה וההטמעה",
+            "הובלת האפיון והתכנון של פתרון Web שחיבר בין יחידות עירוניות וביצע אוטומציה של תהליכים חוצי ארגון",
+            "מידול תהליכים עסקיים, מבני נתונים, מסעות משתמשים וזרימות UX ו-UI",
+            "תכנון אינטגרציות SQL ו-SSIS ותיאום בין משתמשים, פיתוח, DBA, QA ובדיקות קבלה",
           ],
         },
         {
           role: "מנתח מערכות ניהול זהויות וראש צוות טכני",
-          dates: "2017 - 2020",
           org: "אמדוקס | ישראל",
-          lead: "הובלת המימוש הטכני של פתרונות ניהול זהויות ארגוניים.",
+          dates: "2017 - 2020",
           bullets: [
-            "תרגום דרישות עסקיות ודרישות אבטחת מידע לתהליכי עבודה, לממשקים, ללוגיקה עסקית ולפתרונות טכניים",
-            "תכנון תהליכי מערכת, אינטגרציות וזרימות נתונים",
-            "הנחיית צוות פיתוח שעבד ב-Java וב-JSP",
-            "עבודה עם Git, Jira ומתודולוגיות Agile",
-            "תיאום בין צוותי פיתוח, סייבר, תשתיות, DBA, DevOps ו-IT",
-            "ליווי בדיקות, פתרון תקלות, הטמעה ואספקה לייצור",
+            "תרגום דרישות עסקיות ודרישות אבטחת מידע לתהליכים טכניים, לוגיקה עסקית, ממשקים ואינטגרציות",
+            "תכנון תהליכי מערכת וזרימות נתונים והנחיית צוות פיתוח שעבד ב-Java וב-JSP",
+            "תיאום בין צוותי פיתוח, סייבר, תשתיות, DBA, DevOps, בדיקות ועלייה לייצור",
           ],
         },
         {
           role: "יועץ הטמעה ומפתח פתרונות IDM",
-          dates: "2014 - 2017",
           org: "פרולינק ניהול זהויות | ישראל",
-          lead: "התאמה והטמעה עצמאית של פלטפורמת Aveksa לניהול זהויות והרשאות ולממשל זהויות בארגונים גדולים, ובהם הראל, מגדל, הפניקס ואמדוקס.",
+          dates: "2014 - 2017",
           bullets: [
-            "בעלות מלאה על תכנון הפתרון ועל המימוש בשכבת האפליקציה, למעט תשתיות",
-            "ניתוח מחזור חיי זהות, ניהול הרשאות, תהליכי הרשאה ודרישות עסקיות",
-            "תכנון ופיתוח של לוגיקה עסקית, תהליכי עבודה, חוקים, תהליכי אישור ותהליכי הרשאה",
-            "בניית אינטגרציות בין פלטפורמת Aveksa למערכות ארגוניות, לבסיסי נתונים ולשירותי directory",
-            "תכנון מיפויי נתונים, ממשקים ותהליכי סנכרון",
-            "עבודה ישירה מול בעלי עניין אצל הלקוח, צוותי אבטחת מידע, IT, DBA ותשתיות",
-            "הובלת בדיקות, פתרון תקלות, הטמעה ותמיכה בייצור",
+            "התאמה והטמעה עצמאית של פלטפורמת Aveksa לניהול זהויות וממשל הרשאות בהראל, מגדל, הפניקס ואמדוקס",
+            "אחריות על תכנון הפתרון והמימוש בשכבת האפליקציה, למעט תשתיות",
+            "תכנון לוגיקה עסקית, תהליכי עבודה, חוקים, תהליכי אישור, מיפויי נתונים ותהליכי סנכרון",
+            "בניית אינטגרציות למערכות ארגוניות, בסיסי נתונים ושירותי Directory והובלת בדיקות, הטמעה ותמיכה בייצור",
           ],
         },
         {
           role: "מפתח תוכנה | מערכות חיוב ארגוניות",
-          dates: "2008 - 2014",
           org: "Varonis | ישראל",
-          lead: "פיתוח, תחזוקה ותמיכה בפלטפורמת חיוב ארגונית ובתהליכים עסקיים בתחום הכספים.",
+          dates: "2008 - 2014",
           bullets: [
-            "פיתוח פתרונות בעזרת Microsoft SQL Server, Microsoft Access ו-VBA",
-            "תכנון שאילתות, דוחות ואוטומציות של תהליכים עסקיים",
-            "ניתוח דרישות עסקיות ותרגומן לשיפורים במערכת",
-            "חקירת תקלות בייצור ומימוש תיקונים ושיפורים",
-            "עבודה ישירה מול גורמי כספים ותפעול",
-            "תחזוקה שוטפת ותמיכה בייצור",
+            "פיתוח ותחזוקה של מערכת חיוב ארגונית באמצעות Microsoft SQL Server, Microsoft Access ו-VBA",
+            "תרגום דרישות עסקיות לשאילתות, דוחות, אוטומציות ושיפורים במערכת",
+            "חקירת תקלות בייצור ועבודה ישירה מול גורמי כספים ותפעול",
           ],
         },
       ],
@@ -459,62 +388,51 @@ export const cvHe = {
 
     {
       type: "keywords",
-      icon: "code",
       title: "כישורים טכניים",
       groups: [
         {
-          title: "Architecture and Analysis",
-          terms: ["Solution Architecture", "Systems Analysis", "Solution Design", "Requirements Gathering", "Functional Specifications", "Technical Specifications", "Business Process Modeling", "Data Modeling", "Business Logic Design", "UAT", "End-to-End Delivery"],
+          title: "פלטפורמות ואינטגרציה",
+          terms: ["Salesforce", "Priority ERP", "Workato", "Aveksa", "IAM", "IDM", "IGA", "REST APIs", "ETL", "SSIS"],
         },
         {
-          title: "Integration and Data",
-          terms: ["REST APIs", "System Integrations", "SQL", "ETL", "SSIS", "Data Mapping", "Workato", "Salesforce", "Priority ERP", "IAM", "IDM", "IGA", "Aveksa"],
+          title: "נתונים ופיתוח",
+          terms: ["SQL", "Microsoft SQL Server", "PostgreSQL", "Node.js", "TypeScript", "JavaScript", "Supabase", "Edge Functions", "RPC Functions", "Java", "JSP", "Git", "Microsoft Access", "VBA"],
         },
         {
-          title: "Development",
-          terms: ["Node.js", "TypeScript", "JavaScript", "Supabase", "PostgreSQL", "Edge Functions", "RPC Functions", "Java", "JSP", "Git", "Microsoft SQL Server", "Microsoft Access", "VBA"],
-        },
-        {
-          title: "AI and Delivery Tools",
-          terms: ["Claude", "ChatGPT", "AI-Assisted Development", "Rapid Prototyping", "Debugging", "Refactoring", "Test-Data Generation", "Automation", "Agile", "Jira"],
+          title: "כלי AI ואספקה",
+          terms: ["Claude", "ChatGPT", "AI-Assisted Development", "Rapid Prototyping", "Jira", "Agile", "UAT"],
         },
       ],
     },
 
     {
       type: "entries",
-      icon: "cap",
       title: "השכלה",
       entries: [
         {
           title: "תוכנית ניהול מוצר",
-          dates: "2021",
-          lines: ["Product Experts"],
+          lines: ["Product Experts | 2021"],
         },
         {
           title: "B.Sc. בהנדסת תעשייה וניהול",
-          dates: "2004 - 2008",
-          lines: ["התמחות במערכות מידע | אוניברסיטת בן גוריון בנגב"],
+          lines: ["התמחות במערכות מידע", "אוניברסיטת בן גוריון בנגב | 2004 - 2008"],
         },
       ],
     },
 
     {
       type: "lines",
-      icon: "globe",
       title: "שפות",
       lines: ["עברית: שפת אם", "אנגלית: רמה בינונית, קריאה וכתיבה טכנית"],
     },
 
     {
       type: "entries",
-      icon: "shield",
       title: "שירות צבאי",
       entries: [
         {
           title: "לוחם ומפקד",
-          dates: "1999 - 2002",
-          lines: ["חיל ההנדסה הקרבית"],
+          lines: ["חיל ההנדסה הקרבית | 1999 - 2002"],
         },
       ],
     },
