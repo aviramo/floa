@@ -125,21 +125,21 @@ export const cvEn = {
           ],
         },
         {
-          role: "Senior Systems Analyst | IDM Solution Design | Brillix",
-          dates: "2021 - 2024",
-          bullets: [
-            "Designed and delivered IAM/IGA solutions for large organizations in healthcare, finance and insurance.",
-            "Focused on identity governance, access management and compliance.",
-            "Worked with stakeholders to analyze requirements and design end-to-end solutions.",
-          ],
-        },
-        {
           role: "Senior Systems Analyst | Integration & Solution Design | Tidhar",
-          dates: "2025 - Present",
+          dates: "2025 - 2026",
           bullets: [
             "Design and delivery of enterprise solutions and integrations.",
             "Analyze requirements and implement integrations across enterprise systems.",
             "Work with stakeholders and cross-functional teams to deliver high-quality solutions.",
+          ],
+        },
+        {
+          role: "Senior Systems Analyst | IDM Solution Design | Brillix",
+          dates: "2021 - 2025",
+          bullets: [
+            "Designed and delivered IAM/IGA solutions for large organizations in healthcare, finance and insurance.",
+            "Focused on identity governance, access management and compliance.",
+            "Worked with stakeholders to analyze requirements and design end-to-end solutions.",
           ],
         },
         {
@@ -323,21 +323,21 @@ export const cvHe = {
           ],
         },
         {
-          role: "מנתח מערכות בכיר | עיצוב פתרונות ניהול זהויות | בריליקס",
-          dates: "2021 - 2024",
-          bullets: [
-            "תכנון ואספקה של פתרונות IAM/IGA לארגונים גדולים בתחומי הבריאות, הפיננסים והביטוח.",
-            "התמקדות בממשל זהויות, בניהול הרשאות ובעמידה ברגולציה.",
-            "עבודה מול בעלי עניין לאפיון דרישות ולתכנון פתרונות מקצה לקצה.",
-          ],
-        },
-        {
           role: "מנתח מערכות בכיר | אינטגרציות ועיצוב פתרונות | תדהר",
-          dates: "2025 - היום",
+          dates: "2025 - 2026",
           bullets: [
             "תכנון ואספקה של פתרונות ואינטגרציות ארגוניות.",
             "אפיון דרישות ומימוש אינטגרציות בין מערכות ארגוניות.",
             "עבודה מול בעלי עניין וצוותים חוצי ארגון לאספקת פתרונות באיכות גבוהה.",
+          ],
+        },
+        {
+          role: "מנתח מערכות בכיר | עיצוב פתרונות ניהול זהויות | בריליקס",
+          dates: "2021 - 2025",
+          bullets: [
+            "תכנון ואספקה של פתרונות IAM/IGA לארגונים גדולים בתחומי הבריאות, הפיננסים והביטוח.",
+            "התמקדות בממשל זהויות, בניהול הרשאות ובעמידה ברגולציה.",
+            "עבודה מול בעלי עניין לאפיון דרישות ולתכנון פתרונות מקצה לקצה.",
           ],
         },
         {

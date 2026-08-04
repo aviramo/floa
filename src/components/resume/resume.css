@@ -22,9 +22,10 @@
 }
 
 .cv-sheet {
-  /* the two knobs */
-  --cv-fs: 9.4pt;
-  --cv-gap: 4.6mm;
+  /* the two knobs. These two numbers are what makes the document land on
+     exactly two A4 pages; nothing below is tuned by hand. */
+  --cv-fs: 8.6pt;
+  --cv-gap: 3.4mm;
 
   --cv-pad: 17mm;
   --cv-badge: 8.4mm;
@@ -41,7 +42,7 @@
   font-family: "Lato", "Assistant", system-ui, sans-serif;
   font-size: var(--cv-fs);
   font-weight: 400;
-  line-height: 1.5;
+  line-height: 1.45;
 
   /* the navy discs are the document, not decoration: they must survive print */
   print-color-adjust: exact;
@@ -57,13 +58,13 @@
 /* --- identity -------------------------------------------------------------- */
 .cv-id__name {
   font-family: inherit;
-  font-size: calc(var(--cv-fs) * 2.85);
+  font-size: calc(var(--cv-fs) * 2.7);
   font-weight: 900;
   line-height: 1.05;
   letter-spacing: 0;
   text-transform: uppercase;
   color: var(--cv-navy);
-  margin-bottom: 2.6mm;
+  margin-bottom: 2.2mm;
 }
 
 .cv-id__role {
@@ -76,11 +77,11 @@
 .cv-contact {
   list-style: none;
   padding: 0;
-  margin-top: 5.4mm;
+  margin-top: 4.4mm;
   display: grid;
   grid-template-columns: 1fr 1fr;
   column-gap: 10mm;
-  row-gap: 2.8mm;
+  row-gap: 2.2mm;
   position: relative;
 }
 
@@ -153,19 +154,19 @@
 
 .cv-sec__body {
   padding-inline-start: var(--cv-indent);
-  margin-top: 2.8mm;
+  margin-top: 2.2mm;
 }
 
-.cv-sec__body > p + p { margin-top: 1.8mm; }
+.cv-sec__body > p + p { margin-top: 1.4mm; }
 
 /* --- bullets --------------------------------------------------------------- */
 .cv-list {
   list-style: disc;
   padding-inline-start: 4.4mm;
-  margin-top: 1.6mm;
+  margin-top: 1.2mm;
 }
 
-.cv-list > li + li { margin-top: 1mm; }
+.cv-list > li + li { margin-top: .7mm; }
 .cv-list > li::marker { color: var(--cv-slate); }
 
 /* --- core competencies ----------------------------------------------------- */
@@ -175,7 +176,7 @@
   gap: 3.4mm;
 }
 
-.cv-comp + .cv-comp { margin-top: 3.4mm; }
+.cv-comp + .cv-comp { margin-top: 2.6mm; }
 
 .cv-comp__ico {
   flex: none;
@@ -207,7 +208,7 @@
 }
 
 /* --- one job --------------------------------------------------------------- */
-.cv-job + .cv-job { margin-top: 4.2mm; }
+.cv-job + .cv-job { margin-top: 3.1mm; }
 
 .cv-job__role {
   font-family: inherit;
@@ -234,7 +235,7 @@
   gap: 3mm;
 }
 
-.cv-stack__row + .cv-stack__row { margin-top: 1.4mm; }
+.cv-stack__row + .cv-stack__row { margin-top: 1.1mm; }
 
 .cv-stack dt {
   flex: none;
@@ -253,7 +254,7 @@
 [dir="rtl"] .cv-stack dd { text-align: right; }
 
 /* --- education, military --------------------------------------------------- */
-.cv-entry + .cv-entry { margin-top: 3.4mm; }
+.cv-entry + .cv-entry { margin-top: 2.8mm; }
 
 .cv-entry__top {
   display: flex;
@@ -295,8 +296,12 @@
   box-shadow: 0 2px 10px rgba(20, 40, 80, .25);
 }
 
-/* --- narrower than a sheet ------------------------------------------------- */
-@media (max-width: 218mm) {
+/* --- narrower than a sheet -------------------------------------------------
+   `screen and`, deliberately. Without it this fires when PRINTING too: the
+   printed page box is 210mm minus the @page margins, which is narrower than a
+   sheet by definition — so the phone layout was landing on the paper, stacking
+   the contact row into four lines and stealing a page. */
+@media screen and (max-width: 218mm) {
   .cv { padding: 0; }
   .cv-sheet {
     --cv-pad: 6mm;
@@ -317,8 +322,14 @@
 @media print {
   @page {
     size: A4;
-    margin: 15mm 17mm;
+    margin: 13mm 16mm;
   }
+
+  /* The document stops where its text stops, and below that the page showed the
+     SITE's background colour: a browser paints the body's background across the
+     whole sheet, so the last page ended in a grey slab. Scoped with :has so
+     printing any other page of the site is unaffected. */
+  body:has(.cv) { background: #fff; }
 
   .cv {
     background: #fff;
