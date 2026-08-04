@@ -54,7 +54,7 @@ export const cvEn = {
   name: "Ofir Aviram",
   roles: [
     "Solution Architect | Senior Systems Analyst",
-    "Enterprise Applications, Integrations & AI-Powered Product Delivery",
+    "Enterprise Applications, Integrations & AI-Assisted Product Development",
   ],
   contact: [
     { text: "Hod Hasharon, Israel" },
