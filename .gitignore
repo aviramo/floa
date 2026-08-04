@@ -11,6 +11,10 @@ dist/
 worker/.wrangler/
 .wrangler/
 
+# The printed CVs (scripts/gen_cv_pdf.mjs). Output, like dist/: regenerated
+# from the built pages whenever the CV changes.
+cv/
+
 # npm, if a tool ever installs here
 node_modules/
 
