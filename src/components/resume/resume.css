@@ -228,6 +228,51 @@
 
 .cv-tool:hover { filter: brightness(1.08); }
 
+/* --- on a screen -----------------------------------------------------------
+   Everything above this line is the PAPER setting: 10pt, leading of 1.2,
+   section rules with almost no air, all of it fitted to a fold after Brillix.
+   That setting exists to make two A4 pages and for no other reason, and read on
+   a monitor at arm's length it is far too small.
+
+   So the screen gets its own typography, in the same PROPORTIONS as the paper —
+   the name is still two and a half times the body, the headings still a third
+   above it — just larger, with the leading and the space between sections
+   opened to match. The document still looks like the printed one; it is not
+   pretending to be it at actual size.
+
+   None of this reaches the PDF. `@media screen` does not apply when the media
+   type is print, so the printed files are untouched by every rule below.
+   ========================================================================== */
+@media screen {
+  .cv-sheet {
+    --cv-fs: 16px;
+    --cv-gap: 5mm;
+    line-height: 1.5;
+  }
+
+  .cv-id__name { font-size: 40px; margin-bottom: 3mm; }
+  .cv-id__role { line-height: 1.4; }
+  /* Held below the body size, and tight, so the four items stay on ONE line.
+     They are dividers, not bullets: wrapped, the second line opens with a rule
+     that separates nothing from nothing. This is the one place on the page
+     where the text does NOT grow with the rest. */
+  .cv-contact { margin-top: 4mm; gap: 2mm 3mm; font-size: 14px; }
+  .cv-contact__item + .cv-contact__item { padding-inline-start: 3mm; }
+
+  .cv-sec__head { font-size: 22px; margin-bottom: 3mm; }
+  .cv-sec__body > p + p { margin-top: 3mm; }
+
+  .cv-list { margin-top: 2mm; }
+  .cv-list > li + li { margin-top: 1.6mm; }
+
+  .cv-job + .cv-job { margin-top: 6mm; }
+  .cv-job__org { margin-top: 1mm; }
+  .cv-job__link { margin-top: 2.5mm; }
+
+  .cv-kw + .cv-kw { margin-top: 3mm; }
+  .cv-entry + .cv-entry { margin-top: 3.5mm; }
+}
+
 /* --- narrower than a sheet -------------------------------------------------
    `screen and`, deliberately. Without it this fires when PRINTING too: the
    printed page box is 210mm minus the @page margins, which is narrower than a
@@ -261,30 +306,17 @@
    clearance they need, and it exists only where they overlap. */
 @media screen and (max-width: 700px) {
   .cv-sheet {
-    --cv-fs: 16px;
-    --cv-gap: 5mm;
     --cv-pad: 5mm;
-    line-height: 1.55;
     padding: 26mm var(--cv-pad) 12mm;
   }
 
-  .cv-id__name { font-size: 30px; margin-bottom: 3mm; }
-  .cv-id__role { line-height: 1.4; }
-  .cv-contact { margin-top: 4mm; gap: 2mm 3mm; }
+  /* the name is the one thing that has to come DOWN: at 40px it wrapped */
+  .cv-id__name { font-size: 30px; }
+  .cv-sec__head { font-size: 20px; }
+  .cv-contact { gap: 2mm 3mm; }
 
-  .cv-sec__head { font-size: 20px; margin-bottom: 3mm; }
-  .cv-sec__body > p + p { margin-top: 3mm; }
-
-  .cv-list { padding-inline-start: 5.5mm; margin-top: 2.5mm; }
-  .cv-list > li + li { margin-top: 2mm; }
-
-  .cv-job + .cv-job { margin-top: 6mm; }
-  .cv-job__org { margin-top: 1mm; }
-  .cv-job__link { margin-top: 3mm; }
+  .cv-list { padding-inline-start: 5.5mm; }
   .cv-job__link a { overflow-wrap: anywhere; }
-
-  .cv-kw + .cv-kw { margin-top: 3.5mm; }
-  .cv-entry + .cv-entry { margin-top: 4mm; }
 
   /* a thumb needs more than a pointer does: 48px of height, which is the
      smallest target a phone should ever ask anyone to hit */
