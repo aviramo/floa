@@ -11,5 +11,6 @@ export const render = (ctx, cv) => resumeDocument(ctx, {
   path: cv.path,
   meta: cv.meta,
   alternates: cv.alternates,
+  share: cv.share,
   body: resume(ctx, cv),
 });

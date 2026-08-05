@@ -36,6 +36,26 @@ const CONTACT = {
 
 const DEMO = "https://once-lake.vercel.app/";
 
+/* The name a link to this document shows in a message or a feed. Both scripts,
+   because the same link is shared into Hebrew threads and English ones and a
+   card that guesses wrong is a card nobody recognises. */
+const SHARE_TITLE = "אופיר אבירם | Ofir Aviram";
+
+/* The professional summary, held here rather than inline in the section below,
+   because the share card's description IS its first paragraph. Written twice it
+   would be written differently within a month. */
+const SUMMARY_EN = [
+  "Solution Architect and Senior Systems Analyst with 15+ years of experience designing enterprise applications, system integrations, IAM and IDM solutions and business-process automation.",
+  "Strong in requirements analysis, functional and technical specifications, business logic, data flows, SQL, ETL, APIs and end-to-end production delivery.",
+  "Combines extensive enterprise systems experience with hands-on product development using Node.js, TypeScript, Supabase and AI-assisted development tools.",
+];
+
+const SUMMARY_HE = [
+  "ארכיטקט פתרונות ומנתח מערכות בכיר עם מעל 15 שנות ניסיון בתכנון אפליקציות ארגוניות, אינטגרציות בין מערכות, פתרונות IAM ו-IDM ואוטומציה של תהליכים עסקיים.",
+  "בעל ניסיון משמעותי בניתוח דרישות, כתיבת אפיונים פונקציונליים וטכניים, תכנון לוגיקה עסקית, זרימות נתונים, SQL, ETL, ממשקי API והובלת פתרונות עד לייצור.",
+  "משלב ניסיון במערכות ארגוניות עם יכולת מעשית לפתח מוצרים באמצעות Node.js, TypeScript, Supabase וכלי פיתוח מבוססי AI.",
+];
+
 /* --- English ---------------------------------------------------------------- */
 export const cvEn = {
   out: "cv/architect/index.html",
@@ -50,6 +70,7 @@ export const cvEn = {
     description: "CV of Ofir Aviram. Solution Architect and Senior Systems Analyst with 15+ years designing enterprise applications, system integrations, IAM and IDM solutions and business-process automation.",
   },
 
+  share: { title: SHARE_TITLE, description: SUMMARY_EN[0], locale: "en_US" },
   download: { href: "cv/architect/ofir-aviram-cv.pdf", name: "Ofir Aviram - CV.pdf", label: "Download PDF" },
   altLang: { href: "cv/architect/he/", label: "עברית", lang: "he" },
   alternates: [{ lang: "en", href: "cv/architect/" }, { lang: "he", href: "cv/architect/he/" }],
@@ -70,11 +91,7 @@ export const cvEn = {
     {
       type: "text",
       title: "Professional Summary",
-      body: [
-        "Solution Architect and Senior Systems Analyst with 15+ years of experience designing enterprise applications, system integrations, IAM and IDM solutions and business-process automation.",
-        "Strong in requirements analysis, functional and technical specifications, business logic, data flows, SQL, ETL, APIs and end-to-end production delivery.",
-        "Combines extensive enterprise systems experience with hands-on product development using Node.js, TypeScript, Supabase and AI-assisted development tools.",
-      ],
+      body: SUMMARY_EN,
     },
 
     {
@@ -250,6 +267,7 @@ export const cvHe = {
     description: "קורות החיים של אופיר אבירם. ארכיטקט פתרונות ומנתח מערכות בכיר עם מעל 15 שנות ניסיון בתכנון אפליקציות ארגוניות, אינטגרציות, פתרונות IAM ו-IDM ואוטומציה של תהליכים עסקיים.",
   },
 
+  share: { title: SHARE_TITLE, description: SUMMARY_HE[0], locale: "he_IL" },
   download: { href: "cv/architect/ofir-aviram-cv-he.pdf", name: "אופיר אבירם - קורות חיים.pdf", label: "הורדת PDF" },
   altLang: { href: "cv/architect/", label: "English", lang: "en" },
   alternates: [{ lang: "en", href: "cv/architect/" }, { lang: "he", href: "cv/architect/he/" }],
@@ -270,11 +288,7 @@ export const cvHe = {
     {
       type: "text",
       title: "תקציר מקצועי",
-      body: [
-        "ארכיטקט פתרונות ומנתח מערכות בכיר עם מעל 15 שנות ניסיון בתכנון אפליקציות ארגוניות, אינטגרציות בין מערכות, פתרונות IAM ו-IDM ואוטומציה של תהליכים עסקיים.",
-        "בעל ניסיון משמעותי בניתוח דרישות, כתיבת אפיונים פונקציונליים וטכניים, תכנון לוגיקה עסקית, זרימות נתונים, SQL, ETL, ממשקי API והובלת פתרונות עד לייצור.",
-        "משלב ניסיון במערכות ארגוניות עם יכולת מעשית לפתח מוצרים באמצעות Node.js, TypeScript, Supabase וכלי פיתוח מבוססי AI.",
-      ],
+      body: SUMMARY_HE,
     },
 
     {
