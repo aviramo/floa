@@ -1,0 +1,463 @@
+/* ---------------------------------------------------------------- tokens */
+
+:root {
+  --bg: #fbfaf8;
+  --panel: #ffffff;
+  --ink: #14110f;
+  --muted: #6b6560;
+  --line: #e6e1da;
+  --chord: #e0136c;
+  --chord-soft: #fde5ef;
+  --accent: #14110f;
+  --radius: 10px;
+  --shadow: 0 1px 2px rgba(20, 17, 15, .06), 0 8px 24px rgba(20, 17, 15, .05);
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16140f;
+    --panel: #201d18;
+    --ink: #f2ede5;
+    --muted: #a49c91;
+    --line: #35302a;
+    --chord: #ff5c9d;
+    --chord-soft: #3a1f2c;
+    --accent: #f2ede5;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+  }
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Segoe UI", "Noto Sans Hebrew", "Arial Hebrew", system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+}
+
+a { color: inherit; }
+
+.wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px 16px 80px;
+}
+
+/* ----------------------------------------------------------------- header */
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.top h1 {
+  font-size: 1.35rem;
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.top .sub {
+  display: block;
+  font-size: .82rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.spacer { flex: 1 1 auto; }
+
+/* ---------------------------------------------------------------- buttons */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+  font: inherit;
+  font-size: .9rem;
+  padding: 7px 13px;
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn:hover { border-color: var(--muted); }
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+
+.btn-danger { color: #c62828; }
+
+@media (prefers-color-scheme: dark) {
+  .btn-danger { color: #ff8a80; }
+}
+
+.btn-mini {
+  font-size: .78rem;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.btn:disabled { opacity: .45; cursor: default; }
+
+/* ------------------------------------------------------------ index list */
+
+.search {
+  width: 100%;
+  font: inherit;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+  margin-bottom: 14px;
+}
+
+.songs { list-style: none; margin: 0; padding: 0; }
+
+.songs li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  margin-bottom: 8px;
+}
+
+.songs .name {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.songs .meta {
+  display: block;
+  font-size: .8rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.tag {
+  font-size: .75rem;
+  color: var(--chord);
+  background: var(--chord-soft);
+  border-radius: 999px;
+  padding: 2px 9px;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.empty {
+  color: var(--muted);
+  text-align: center;
+  padding: 40px 10px;
+}
+
+/* ------------------------------------------------------------- the chart */
+
+.chart {
+  font-size: var(--chart-size, 1.15rem);
+  overflow-x: auto;
+}
+
+.sec { margin: 0 0 22px; }
+
+.sec-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: .82rem;
+  color: var(--muted);
+}
+
+.sec-label { font-weight: 600; }
+
+.sec-rep {
+  color: var(--chord);
+  font-weight: 700;
+  unicode-bidi: isolate;
+}
+
+.line {
+  margin: 0 0 .35em;
+  min-height: 2.4em;
+}
+
+/* Chord and lyric ride in the same inline-block, so they cannot drift apart.
+   vertical-align: bottom keeps every slice sitting on one baseline even when
+   some slices carry a chord and others do not. */
+.seg {
+  display: inline-block;
+  vertical-align: bottom;
+}
+
+.ch {
+  display: block;
+  width: fit-content;
+  min-height: 1.25em;
+  line-height: 1.25;
+  font-size: .72em;
+  font-weight: 700;
+  color: var(--chord);
+  direction: ltr;
+  unicode-bidi: isolate;
+  white-space: pre;
+  padding: 0;
+}
+
+/* The label hangs off the first character of its slice: right edge in a
+   right-to-left line, left edge in a left-to-right one. The auto margin pins
+   that edge, and the breathing room goes on the other side, so two chords in
+   a row never touch and neither one drifts off its letter. */
+/* Both sides are stated in both rules on purpose: an LTR chart lives inside
+   an RTL page, so both selectors match there and a leftover auto margin from
+   the other rule would centre the label instead of anchoring it. */
+[dir="rtl"] .ch {
+  text-align: right;
+  margin: 0 0 0 auto;
+  padding: 0 0 0 .45em;
+}
+
+[dir="ltr"] .ch {
+  text-align: left;
+  margin: 0 auto 0 0;
+  padding: 0 .45em 0 0;
+}
+
+/* A slice with no chord contributes nothing but its height. */
+.ch:empty { padding: 0; }
+
+.tx {
+  display: block;
+  white-space: pre;
+  line-height: 1.45;
+}
+
+/* --------------------------------------------------------------- editor */
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.field { display: flex; flex-direction: column; gap: 4px; }
+
+.field label { font-size: .78rem; color: var(--muted); }
+
+.field input,
+.field select,
+textarea {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--ink);
+  min-width: 0;
+}
+
+textarea {
+  width: 100%;
+  min-height: 340px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: .92rem;
+  line-height: 1.7;
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: auto;
+}
+
+.sec-edit {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-bottom: 12px;
+  background: var(--panel);
+}
+
+.sec-edit > header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.sec-edit .label-in { flex: 1 1 140px; }
+.sec-edit .rep-in { width: 74px; }
+
+.line-edit {
+  border-top: 1px dashed var(--line);
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+.line-edit:first-of-type { border-top: 0; }
+
+/* The live line: same markup as the reader sees, with the chords made
+   grabbable. Clicking the lyric drops a chord on the character you clicked. */
+.line-edit .stage {
+  position: relative;
+  font-size: 1.2rem;
+  padding: 4px 2px 2px;
+  border-radius: 8px;
+  overflow-x: auto;
+  cursor: text;
+}
+
+/* Where the chord will land when you let go. */
+.caret {
+  position: absolute;
+  width: 2px;
+  height: 2.3em;
+  background: var(--chord);
+  border-radius: 1px;
+  pointer-events: none;
+}
+
+.line-edit .stage:hover { background: color-mix(in srgb, var(--chord) 5%, transparent); }
+
+.line-edit .stage .ch {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+/* The pill is a grab handle, so it hugs the name and the gap after it.
+   No extra padding on the anchored side: that side is the whole point. */
+.line-edit .stage .ch:not(:empty) {
+  background: var(--chord-soft);
+  border-radius: 5px;
+}
+
+.line-edit .stage .ch:focus-visible {
+  outline: 2px solid var(--chord);
+  outline-offset: 1px;
+}
+
+.line-edit .stage .ch.dragging { cursor: grabbing; opacity: .55; }
+
+.chord-input {
+  font: inherit;
+  font-size: .72em;
+  font-weight: 700;
+  color: var(--chord);
+  direction: ltr;
+  width: 4.5em;
+  border: 1px solid var(--chord);
+  border-radius: 5px;
+  padding: 0 3px;
+  background: var(--panel);
+}
+
+.line-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.line-row .text-in {
+  flex: 1 1 auto;
+  font: inherit;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--ink);
+  min-width: 0;
+}
+
+.hint {
+  font-size: .8rem;
+  color: var(--muted);
+  margin: 6px 0 0;
+}
+
+.bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  position: sticky;
+  bottom: 0;
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter: blur(6px);
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+  margin-top: 18px;
+}
+
+.note {
+  border-inline-start: 3px solid var(--chord);
+  background: var(--chord-soft);
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: .86rem;
+  margin-bottom: 14px;
+}
+
+.note.err {
+  border-color: #c62828;
+  background: color-mix(in srgb, #c62828 10%, transparent);
+}
+
+.drop {
+  border: 2px dashed var(--line);
+  border-radius: var(--radius);
+  padding: 22px 14px;
+  text-align: center;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.drop.hot { border-color: var(--chord); color: var(--chord); }
+
+.preview-img {
+  max-width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  display: block;
+  margin-top: 10px;
+}
+
+.busy { animation: pulse 1.4s ease-in-out infinite; }
+
+@keyframes pulse { 50% { opacity: .45; } }
+
+.hidden { display: none !important; }
+
+@media print {
+  .top, .bar, .no-print { display: none !important; }
+  body { background: #fff; }
+  .chart { font-size: 1.05rem; }
+}

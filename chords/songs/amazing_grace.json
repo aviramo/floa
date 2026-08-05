@@ -1,0 +1,57 @@
+{
+  "slug": "amazing_grace",
+  "title": "Amazing Grace",
+  "artist": "John Newton",
+  "key": "G",
+  "dir": "ltr",
+  "sections": [
+    {
+      "label": "Verse",
+      "repeat": 2,
+      "lines": [
+        {
+          "text": "Amazing grace how sweet the sound that saved a wretch like me",
+          "chords": [
+            {
+              "i": 1,
+              "c": "G"
+            },
+            {
+              "i": 18,
+              "c": "G7"
+            },
+            {
+              "i": 28,
+              "c": "C"
+            },
+            {
+              "i": 39,
+              "c": "G"
+            }
+          ]
+        },
+        {
+          "text": "I once was lost but now am found was blind but now I see",
+          "chords": [
+            {
+              "i": 2,
+              "c": "G"
+            },
+            {
+              "i": 20,
+              "c": "Em"
+            },
+            {
+              "i": 27,
+              "c": "D"
+            },
+            {
+              "i": 47,
+              "c": "G"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

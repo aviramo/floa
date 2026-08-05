@@ -1,0 +1,10 @@
+{
+  "name": "chords",
+  "private": true,
+  "type": "module",
+  "description": "Chord charts: an index of songs, a page per song, and an editor that keeps chords pinned to the exact character they sit above (RTL included).",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "node server.mjs"
+  }
+}
