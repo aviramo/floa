@@ -49,4 +49,6 @@ src.resize((SIZE, SIZE), Image.LANCZOS).save(
     OUT, "JPEG", quality=88, optimize=True, progressive=True
 )
 
-print(f"✓ {OUT.relative_to(ROOT).as_posix()}  {SIZE}x{SIZE}  {OUT.stat().st_size // 1024}KB")
+# ASCII only: a Windows console defaults to cp1252 and a tick mark aborts the
+# script on the last line, after the file it was reporting has been written.
+print(f"OK {OUT.relative_to(ROOT).as_posix()}  {SIZE}x{SIZE}  {OUT.stat().st_size // 1024}KB")
