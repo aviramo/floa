@@ -41,6 +41,17 @@ const DEMO = "https://once-lake.vercel.app/";
    card that guesses wrong is a card nobody recognises. */
 const SHARE_TITLE = "אופיר אבירם | Ofir Aviram";
 
+/* The photograph, square because it is a portrait, and JPEG because a social
+   crawler is not a browser: several of them still do not decode the WebP the
+   site itself serves. Built by scripts/gen_cv_share.mjs from the same source
+   image FLOA uses, so there is one photograph and not two. */
+const SHARE_IMAGE = {
+  src: "assets/ofir-aviram.jpg",
+  width: 1200,
+  height: 1200,
+  alt: "Ofir Aviram",
+};
+
 /* The professional summary, held here rather than inline in the section below,
    because the share card's description IS its first paragraph. Written twice it
    would be written differently within a month. */
@@ -70,7 +81,7 @@ export const cvEn = {
     description: "CV of Ofir Aviram. Solution Architect and Senior Systems Analyst with 15+ years designing enterprise applications, system integrations, IAM and IDM solutions and business-process automation.",
   },
 
-  share: { title: SHARE_TITLE, description: SUMMARY_EN[0], locale: "en_US" },
+  share: { title: SHARE_TITLE, description: SUMMARY_EN[0], locale: "en_US", image: SHARE_IMAGE },
   download: { href: "cv/architect/ofir-aviram-cv.pdf", name: "Ofir Aviram - CV.pdf", label: "Download PDF" },
   altLang: { href: "cv/architect/he/", label: "עברית", lang: "he" },
   alternates: [{ lang: "en", href: "cv/architect/" }, { lang: "he", href: "cv/architect/he/" }],
@@ -267,7 +278,7 @@ export const cvHe = {
     description: "קורות החיים של אופיר אבירם. ארכיטקט פתרונות ומנתח מערכות בכיר עם מעל 15 שנות ניסיון בתכנון אפליקציות ארגוניות, אינטגרציות, פתרונות IAM ו-IDM ואוטומציה של תהליכים עסקיים.",
   },
 
-  share: { title: SHARE_TITLE, description: SUMMARY_HE[0], locale: "he_IL" },
+  share: { title: SHARE_TITLE, description: SUMMARY_HE[0], locale: "he_IL", image: SHARE_IMAGE },
   download: { href: "cv/architect/ofir-aviram-cv-he.pdf", name: "אופיר אבירם - קורות חיים.pdf", label: "הורדת PDF" },
   altLang: { href: "cv/architect/", label: "English", lang: "en" },
   alternates: [{ lang: "en", href: "cv/architect/" }, { lang: "he", href: "cv/architect/he/" }],

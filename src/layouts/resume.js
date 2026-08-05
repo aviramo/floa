@@ -11,16 +11,18 @@ import { html, raw } from "../lib/html.js";
    `lang` and `dir` come from the PAGE, not from the site: the same business
    ships this document in two languages, and one of them is not the site's.
 
-   `share` is the card a link to this document shows in a message or a feed.
-   It carries no image, deliberately: a CV shared into a thread is a link to a
-   person, and a picture in that card would either be a face nobody asked to
-   publish or a logo that belongs to a company. Without one, the card falls back
-   to title and description — which is the whole of what a CV needs to say
-   before it is opened. `twitter:card` is "summary" and not the large variant
-   for the same reason: the large one reserves space for a picture.
+   `share` is the card a link to this document shows in a message or a feed:
+   the name, the opening line of the summary, and the photograph.
+
+   `share.image.src` is relative to the business's folder and is made absolute
+   here. It has to be: a social crawler is not a browser, it has no page to
+   resolve a relative path against, and it drops the image rather than guess.
+
+   `twitter:card` stays "summary" rather than the large variant. The large one
+   crops to roughly 2:1, and the picture is a portrait — it would cut the face.
 
    { lang, dir, path, meta:{title,description}, alternates:[{lang,href}],
-     share:{title,description}, body }
+     share:{title,description,locale,image:{src,width,height,alt}}, body }
    ========================================================================== */
 
 /* Inter draws the Latin document, Assistant the Hebrew one. Both are loaded on
@@ -48,8 +50,7 @@ export function resumeDocument(ctx, { lang, dir, path = "", meta, alternates = [
   <link rel="canonical" href="${url}">
 ${alternates.map((alt) => html`  <link rel="alternate" hreflang="${alt.lang}" href="${ctx.url(alt.href)}">`)}
 ${share ? html`
-  <!-- The share card. No image: this is a link to a person, and the card says
-       who, in both languages, and what they do. -->
+  <!-- The share card: who this is, in both scripts, and what they do. -->
   <meta property="og:type" content="website">
   <meta property="og:locale" content="${share.locale ?? site.locale}">
   <meta property="og:site_name" content="${site.brand}">
@@ -58,7 +59,12 @@ ${share ? html`
   <meta property="og:description" content="${share.description}">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="${share.title}">
-  <meta name="twitter:description" content="${share.description}">` : ""}
+  <meta name="twitter:description" content="${share.description}">${share.image ? html`
+  <meta property="og:image" content="${site.origin}/${site.folder}${share.image.src}">
+  <meta property="og:image:width" content="${share.image.width}">
+  <meta property="og:image:height" content="${share.image.height}">
+  <meta property="og:image:alt" content="${share.image.alt}">
+  <meta name="twitter:image" content="${site.origin}/${site.folder}${share.image.src}">` : ""}` : ""}
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
