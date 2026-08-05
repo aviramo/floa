@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>אקורדים</title>
+<meta name="description" content="אינדקס שירים עם אקורדים, כל שיר בדף משלו והאקורדים בדיוק מעל המילים.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top-in">
+    <a class="brand" href="/chords/">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V6l10-2v12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="18" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="16.5" cy="16" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+      <span>אקורדים</span>
+    </a>
+    <div class="top-actions" id="topActions"></div>
+  </div>
+</header>
+
+<main id="app" class="wrap" aria-live="polite"></main>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<dialog id="authDialog" class="dlg">
+  <form method="dialog" class="dlg-in" id="authForm">
+    <h2>התחברות</h2>
+    <p class="muted">כל אחד רואה את השירים. כדי להוסיף, לערוך או למחוק צריך להתחבר.</p>
+    <label>אימייל<input type="email" name="email" autocomplete="username" required></label>
+    <label>סיסמה<input type="password" name="password" autocomplete="current-password" required></label>
+    <p class="err" id="authErr" hidden></p>
+    <div class="dlg-actions">
+      <button type="button" class="btn ghost" data-close>ביטול</button>
+      <button type="submit" class="btn">התחברות</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="/supabase.js"></script>
+<script src="assets/config.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>

@@ -29,6 +29,15 @@ preview_urls = false
 # LEAD_TO is where a lead lands, and it is also the Reply-To, so answering the
 # email answers the person. LEAD_FROM must stay on floa.co.il: that is the domain
 # verified in Resend (SPF + DKIM), and Resend will refuse to send as any other.
+#
+# SUPABASE_URL and SUPABASE_ANON_KEY are how /transcribe checks that the caller
+# is a signed-in user before it spends money reading a picture. Both are public
+# (the anon key is printed in the page it came from, businesses/floa/domain/
+# supabase.js) and neither grants anything on its own, so they belong here and
+# not in a secret. THE ANTHROPIC KEY IS NOT HERE either:
+#   npx wrangler secret put ANTHROPIC_API_KEY
 [vars]
 LEAD_TO = "ofir.aviram@gmail.com"
 LEAD_FROM = "FLOA <no-reply@floa.co.il>"
+SUPABASE_URL = "https://aexmnaxvahblveejsbup.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleG1uYXh2YWhibHZlZWpzYnVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5NzE5MjMsImV4cCI6MjEwMTU0NzkyM30.oXPojzklAqOl9pvH5R_GNGTda6OvYruDQjMLprcBA0Y"

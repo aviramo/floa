@@ -5,6 +5,11 @@
    Worker IS the server. It exists for one reason: to hold the Resend API key
    somewhere the browser can never see it, and to email a lead to an inbox.
 
+   It answers two paths. /lead is the whole of the paragraph above. /transcribe
+   belongs to the chords app: it holds the Anthropic key for the same reason it
+   holds the Resend one, and turns an uploaded photo of a chord sheet into a
+   song. See transcribe.js, and the /transcribe section further down.
+
    POST /lead  { business, name, phone, page, url, company, utm_* } -> { ok: true }
    Every page sends the same two required fields, a name and a phone. `business`
    says whose lead it is, and that is the only thing that decides where it lands:
@@ -31,6 +36,7 @@
                       its `to` in the table
    ========================================================================== */
 import { BUSINESSES } from "./businesses.js";
+import { MEDIA_TYPES, readChordSheet } from "./transcribe.js";
 
 /* A lead sent before the sites were rebuilt carries no `business` field. It can
    only have come from FLOA, because FLOA is the only business that existed then. */
@@ -51,7 +57,7 @@ const UTM_FIELDS = [
 const cors = (origin) => ({
   "access-control-allow-origin": ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
   "access-control-allow-methods": "POST, OPTIONS",
-  "access-control-allow-headers": "content-type",
+  "access-control-allow-headers": "content-type, authorization",
   "access-control-max-age": "86400",
 });
 
@@ -208,13 +214,138 @@ function email(lead, brand) {
    It is not a hard guarantee (the cache is per-colo), but it stops the obvious
    abuse — a script hammering the endpoint from one address. The honeypot below
    catches the rest. */
-async function rateLimited(ip) {
-  const key = new Request(`https://ratelimit.floa.internal/${encodeURIComponent(ip)}`);
+async function rateLimited(bucket, ip, seconds = 30) {
+  const key = new Request(`https://ratelimit.floa.internal/${bucket}/${encodeURIComponent(ip)}`);
   const cache = caches.default;
   if (await cache.match(key)) return true;
-  await cache.put(key, new Response("1", { headers: { "cache-control": "max-age=30" } }));
+  await cache.put(key, new Response("1", { headers: { "cache-control": `max-age=${seconds}` } }));
   return false;
 }
+
+/* --- /transcribe -----------------------------------------------------------
+   A photo or a PDF of a chord sheet in, a song out. Two things guard it, and
+   both matter more than usual because every call costs real money:
+
+     the origin, as everywhere here, and
+
+     a Supabase access token belonging to a real signed-in user. The chords app
+     is public to READ and signed-in to write, and reading a file is a write in
+     every sense that counts. The token is checked against Supabase itself
+     rather than decoded here: this Worker holds no signing key and has no
+     business pretending it can verify one.
+   ------------------------------------------------------------------------ */
+
+const MAX_BASE64 = 4 * 1024 * 1024;         // roughly 3MB of file
+
+async function signedIn(env, request) {
+  const header = request.headers.get("authorization") || "";
+  const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
+  if (!token || !env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return false;
+
+  const res = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
+    headers: { apikey: env.SUPABASE_ANON_KEY, authorization: `Bearer ${token}` },
+  });
+  return res.ok;
+}
+
+async function handleTranscribe(request, env, origin) {
+  if (!env.ANTHROPIC_API_KEY) {
+    console.error("transcribe dropped: ANTHROPIC_API_KEY is not set on the Worker");
+    return json({ ok: false, error: "config" }, 502, origin);
+  }
+
+  if (!(await signedIn(env, request))) return json({ ok: false, error: "auth" }, 401, origin);
+
+  const ip = request.headers.get("cf-connecting-ip") || "unknown";
+  if (await rateLimited("read", ip, 15)) return json({ ok: false, error: "rate" }, 429, origin);
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ ok: false, error: "body" }, 400, origin);
+  }
+
+  const mediaType = String(body.media_type || "");
+  const data = String(body.data || "");
+
+  if (!MEDIA_TYPES.includes(mediaType)) return json({ ok: false, error: "type" }, 400, origin);
+  if (!data || data.length > MAX_BASE64) return json({ ok: false, error: "size" }, 413, origin);
+
+  try {
+    const song = await readChordSheet(env, mediaType, data);
+    return json({ ok: true, song }, 200, origin);
+  } catch (err) {
+    console.error("transcribe failed", err.message);
+    /* "empty" is the one failure worth naming to the visitor: it means the
+       picture was read and held no song, which a better photo can fix. */
+    const known = err.message === "empty" || err.message === "refusal" ? "empty" : "read";
+    return json({ ok: false, error: known }, 502, origin);
+  }
+}
+
+/* --- /lead ---------------------------------------------------------------- */
+
+async function handleLead(request, env, origin) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ ok: false, error: "body" }, 400, origin);
+  }
+
+  /* the honeypot. A human never sees the field, so a filled one is a bot —
+     answer 200 so the bot believes it succeeded and does not retry. */
+  if (String(body.company || "").trim()) return json({ ok: true }, 200, origin);
+
+  const ip = request.headers.get("cf-connecting-ip") || "unknown";
+  if (await rateLimited("lead", ip)) return json({ ok: false, error: "rate" }, 429, origin);
+
+  const { business, lead, error } = validate(body, origin);
+  if (error) return json({ ok: false, error }, 400, origin);
+
+  /* The business's inbox, from the env var IT names. A business whose var was
+     never set must fail loudly here: the alternative is a lead quietly landing
+     in someone else's inbox, and there is no recovering from that. */
+  const to = env[business.to];
+  if (!to) {
+    console.error(`lead dropped: ${business.to} is not set on the Worker`);
+    return json({ ok: false, error: "send" }, 502, origin);
+  }
+
+  const { subject, text, html } = email(lead, business.brand);
+
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${env.RESEND_API_KEY}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      /* Always FLOA's verified sender: floa.co.il is the domain with SPF and
+         DKIM in Resend, and it is the only one it will send as. The mail is
+         ABOUT the client's business (subject, heading) but it is delivered by
+         ours, which is also what makes a client need no mail setup at all. */
+      from: env.LEAD_FROM,
+      to: [to],
+      reply_to: to,
+      subject,
+      text,
+      html,
+    }),
+  });
+
+  /* The visitor is told "thank you" ONLY if the mail provider accepted it. If
+     Resend refused, the browser gets a failure and keeps the typed fields. */
+  if (!res.ok) {
+    console.error("resend rejected the lead", res.status, await res.text());
+    return json({ ok: false, error: "send" }, 502, origin);
+  }
+
+  return json({ ok: true }, 200, origin);
+}
+
+/* --- the door ------------------------------------------------------------- */
 
 export default {
   async fetch(request, env) {
@@ -224,64 +355,10 @@ export default {
     if (request.method !== "POST") return json({ ok: false, error: "method" }, 405, origin);
     if (!ALLOWED_ORIGINS.includes(origin)) return json({ ok: false, error: "origin" }, 403, origin);
 
-    const url = new URL(request.url);
-    if (url.pathname !== "/lead") return json({ ok: false, error: "not found" }, 404, origin);
-
-    let body;
-    try {
-      body = await request.json();
-    } catch {
-      return json({ ok: false, error: "body" }, 400, origin);
+    switch (new URL(request.url).pathname) {
+      case "/lead": return handleLead(request, env, origin);
+      case "/transcribe": return handleTranscribe(request, env, origin);
+      default: return json({ ok: false, error: "not found" }, 404, origin);
     }
-
-    /* the honeypot. A human never sees the field, so a filled one is a bot —
-       answer 200 so the bot believes it succeeded and does not retry. */
-    if (String(body.company || "").trim()) return json({ ok: true }, 200, origin);
-
-    const ip = request.headers.get("cf-connecting-ip") || "unknown";
-    if (await rateLimited(ip)) return json({ ok: false, error: "rate" }, 429, origin);
-
-    const { business, lead, error } = validate(body, origin);
-    if (error) return json({ ok: false, error }, 400, origin);
-
-    /* The business's inbox, from the env var IT names. A business whose var was
-       never set must fail loudly here: the alternative is a lead quietly landing
-       in someone else's inbox, and there is no recovering from that. */
-    const to = env[business.to];
-    if (!to) {
-      console.error(`lead dropped: ${business.to} is not set on the Worker`);
-      return json({ ok: false, error: "send" }, 502, origin);
-    }
-
-    const { subject, text, html } = email(lead, business.brand);
-
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        authorization: `Bearer ${env.RESEND_API_KEY}`,
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        /* Always FLOA's verified sender: floa.co.il is the domain with SPF and
-           DKIM in Resend, and it is the only one it will send as. The mail is
-           ABOUT the client's business (subject, heading) but it is delivered by
-           ours, which is also what makes a client need no mail setup at all. */
-        from: env.LEAD_FROM,
-        to: [to],
-        reply_to: to,
-        subject,
-        text,
-        html,
-      }),
-    });
-
-    /* The visitor is told "thank you" ONLY if the mail provider accepted it. If
-       Resend refused, the browser gets a failure and keeps the typed fields. */
-    if (!res.ok) {
-      console.error("resend rejected the lead", res.status, await res.text());
-      return json({ ok: false, error: "send" }, 502, origin);
-    }
-
-    return json({ ok: true }, 200, origin);
   },
 };

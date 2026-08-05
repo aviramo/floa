@@ -6,6 +6,16 @@
    allowed to post on its behalf, and the pages that may send.
    ========================================================================== */
 export const BUSINESSES = {
+  "chords": {
+    "brand": "אקורדים",
+    "to": "LEAD_TO",
+    "origins": [
+      "https://floa.co.il",
+      "https://www.floa.co.il",
+      "http://localhost:5173"
+    ],
+    "pages": []
+  },
   "floa": {
     "brand": "FLOA",
     "to": "LEAD_TO",

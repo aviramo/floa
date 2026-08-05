@@ -1,0 +1,307 @@
+/* ==========================================================================
+   Chords.
+
+   The whole look lives here. Nothing is shared with the FLOA design system on
+   purpose: this is an application, not a page, and it wants its own rules.
+
+   The one thing worth reading before changing anything is the .ln block near
+   the bottom. A chord is positioned in pixels, but those pixels are measured
+   from a character index at runtime (see layoutLine in app.js), which is what
+   keeps a chord over the same syllable in Hebrew and in English alike.
+   ========================================================================== */
+
+:root {
+  --ink: #17202a;
+  --ink-soft: #5b6b78;
+  --line: #e2e8ec;
+  --bg: #f7f9fa;
+  --card: #ffffff;
+  --accent: #0e8c7e;
+  --accent-ink: #0a6c61;
+  --chord: #e11d63;
+  --chord-soft: #fde7ef;
+  --danger: #c0392b;
+  --radius: 14px;
+  --shadow: 0 1px 2px rgba(23, 32, 42, .05), 0 8px 24px rgba(23, 32, 42, .06);
+
+  --song-size: 18px;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.6 "Assistant", "Rubik", "Segoe UI", system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+}
+
+.wrap { width: min(880px, 100% - 32px); margin-inline: auto; }
+
+/* --- header ------------------------------------------------------------- */
+
+.top {
+  position: sticky; top: 0; z-index: 20;
+  background: rgba(247, 249, 250, .92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.top-in { display: flex; align-items: center; gap: 16px; min-height: 60px; }
+.brand {
+  display: inline-flex; align-items: center; gap: 9px;
+  font-weight: 700; font-size: 18px; color: var(--ink); text-decoration: none;
+}
+.brand svg { width: 24px; height: 24px; color: var(--accent); }
+.top-actions { margin-inline-start: auto; display: flex; align-items: center; gap: 8px; }
+
+/* --- buttons ------------------------------------------------------------ */
+
+.btn {
+  appearance: none; border: 1px solid transparent; cursor: pointer;
+  background: var(--accent); color: #fff;
+  padding: 9px 16px; border-radius: 999px;
+  font: inherit; font-weight: 600; font-size: 15px; line-height: 1.2;
+  display: inline-flex; align-items: center; gap: 7px;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.btn:hover { background: var(--accent-ink); }
+.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+.btn.ghost:hover { background: #fff; border-color: #cdd8de; }
+.btn.danger { background: transparent; color: var(--danger); border-color: #f0d3cf; }
+.btn.danger:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
+.btn.small { padding: 6px 12px; font-size: 14px; }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn svg { width: 17px; height: 17px; }
+
+.icon-btn {
+  appearance: none; border: 1px solid var(--line); background: #fff; cursor: pointer;
+  width: 30px; height: 30px; border-radius: 8px; padding: 0;
+  display: inline-grid; place-items: center; color: var(--ink-soft);
+}
+.icon-btn:hover { color: var(--ink); border-color: #cdd8de; }
+.icon-btn svg { width: 15px; height: 15px; }
+
+/* --- shared bits -------------------------------------------------------- */
+
+.muted { color: var(--ink-soft); }
+.err { color: var(--danger); font-size: 14px; margin: 4px 0 0; }
+.center { text-align: center; padding: 56px 0; color: var(--ink-soft); }
+
+.card {
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+}
+
+input[type="text"], input[type="email"], input[type="password"], input[type="search"], textarea, select {
+  font: inherit; color: var(--ink);
+  background: #fff; border: 1px solid var(--line); border-radius: 10px;
+  padding: 9px 12px; width: 100%;
+}
+input:focus-visible, textarea:focus-visible, select:focus-visible, .btn:focus-visible, .icon-btn:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+label { display: block; font-size: 14px; font-weight: 600; color: var(--ink-soft); }
+label input, label textarea, label select { margin-top: 5px; font-weight: 400; color: var(--ink); }
+
+/* --- index -------------------------------------------------------------- */
+
+.page-head { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin: 28px 0 18px; }
+.page-head h1 { margin: 0; font-size: 27px; letter-spacing: -.02em; }
+.page-head .count { color: var(--ink-soft); font-size: 15px; }
+
+.search { position: relative; margin-bottom: 18px; }
+.search input { padding-inline-start: 40px; height: 46px; border-radius: 999px; }
+.search svg {
+  position: absolute; inset-inline-start: 14px; top: 50%; transform: translateY(-50%);
+  width: 18px; height: 18px; color: var(--ink-soft); pointer-events: none;
+}
+
+.list { list-style: none; margin: 0 0 64px; padding: 0; display: grid; gap: 10px; }
+.list a {
+  display: flex; align-items: center; gap: 14px; text-decoration: none; color: inherit;
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 14px 18px; transition: border-color .15s, transform .15s;
+}
+.list a:hover { border-color: var(--accent); transform: translateY(-1px); }
+.list .t { font-weight: 700; font-size: 17px; }
+.list .a { color: var(--ink-soft); font-size: 14px; }
+.list .k {
+  margin-inline-start: auto; font-size: 13px; font-weight: 700;
+  color: var(--chord); background: var(--chord-soft); border-radius: 999px; padding: 3px 10px;
+  direction: ltr;
+}
+
+/* --- song page ---------------------------------------------------------- */
+
+.song-head { margin: 28px 0 6px; }
+.song-head h1 { margin: 0 0 2px; font-size: 30px; letter-spacing: -.02em; }
+.song-head .by { color: var(--ink-soft); }
+
+.tools {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin: 16px 0 18px; padding: 10px 12px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 999px;
+}
+.tools .sep { width: 1px; height: 22px; background: var(--line); }
+.tools .lbl { font-size: 13px; color: var(--ink-soft); font-weight: 600; }
+.tools .val { font-size: 14px; font-weight: 700; min-width: 34px; text-align: center; direction: ltr; }
+.tools .grow { margin-inline-start: auto; }
+
+/* A line never wraps (white-space: pre on .ln-t), so a long line overflows and
+   the whole sheet scrolls sideways. That is deliberate: the chord row and the
+   word row have to move together, or a chord stops being over its syllable. */
+.sheet {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 22px 20px 30px; margin-bottom: 64px;
+  overflow-x: auto;
+}
+
+/* --- a line, and the chords above it ------------------------------------
+   .ln is the positioning context. .ln-t renders one span per character so a
+   character index can be turned into a pixel offset; .ln-c is the same width
+   and holds the chords, each one absolutely placed at the offset of the
+   character it belongs to.
+
+   Two details make right-to-left work:
+     the inset is logical (inset-inline-start), so under dir="rtl" it is
+     measured from the right edge, exactly where an RTL line starts;
+     a chord carries dir="ltr" and its own bidi isolation, so "Am" and "G/B"
+     never flip or reorder inside a Hebrew line. That flip is the thing that
+     makes chord sheets in Word and Google Docs come out wrong.
+   ------------------------------------------------------------------------ */
+
+.ln { position: relative; }
+.ln-c { position: relative; height: 1.5em; }
+.ln-t {
+  white-space: pre;
+  font-size: var(--song-size);
+  line-height: 1.55;
+  min-height: 1.55em;
+}
+.ln-t span { display: inline-block; }
+
+.chord {
+  position: absolute; top: 0;
+  direction: ltr; unicode-bidi: isolate;
+  color: var(--chord); font-weight: 700;
+  font-size: calc(var(--song-size) * .86);
+  line-height: 1.5em;
+  white-space: pre;
+}
+
+.ln.is-section { margin: 22px 0 4px; }
+.ln.is-section:first-child { margin-top: 0; }
+.ln-section {
+  font-weight: 800; font-size: calc(var(--song-size) * .82);
+  letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.ln.is-blank .ln-t { min-height: .9em; }
+
+/* --- editor ------------------------------------------------------------- */
+
+.ed-meta { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 16px; }
+.ed-meta .full { grid-column: 1 / -1; }
+@media (max-width: 620px) { .ed-meta { grid-template-columns: 1fr; } }
+
+.ed-bar {
+  position: sticky; top: 60px; z-index: 10;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin: 0 0 16px; padding: 10px 12px;
+  background: rgba(247, 249, 250, .94); backdrop-filter: blur(10px);
+  border: 1px solid var(--line); border-radius: 999px;
+}
+.ed-bar .grow { margin-inline-start: auto; }
+
+/* In the editor a line keeps its own box and the row's buttons sit beside it,
+   never inside it: padding on .ln would shift every offsetLeft the chord
+   positions are measured against. */
+.ln-row { display: flex; align-items: flex-end; gap: 8px; }
+.ln-row > .ln { flex: 1 1 auto; min-width: 0; border-radius: 8px; }
+.ln-row:hover > .ln { background: #f2f6f7; }
+.ln-row > .ln.is-active { background: #eef5f4; }
+.ed .ln-t { cursor: text; }
+.ed .ln-c { cursor: copy; }
+
+.ln-ops { flex: 0 0 auto; display: flex; gap: 4px; visibility: hidden; padding-bottom: 2px; }
+.ln-row:hover .ln-ops, .ln-row:focus-within .ln-ops { visibility: visible; }
+
+.ed .chord {
+  cursor: grab; touch-action: none; user-select: none;
+  padding: 0 4px; border-radius: 6px; margin-inline-start: -4px;
+}
+.ed .chord:hover { background: var(--chord-soft); }
+.ed .chord.is-dragging { cursor: grabbing; background: var(--chord); color: #fff; }
+
+.chord-input {
+  position: absolute; top: 0; width: 8ch; padding: 0 4px; margin-inline-start: -4px;
+  direction: ltr; text-align: left;
+  color: var(--chord); font-weight: 700;
+  font-size: calc(var(--song-size) * .86); line-height: 1.5em;
+  border: 1px solid var(--chord); border-radius: 6px; background: #fff;
+}
+
+.line-input {
+  font-size: var(--song-size); line-height: 1.55;
+  padding: 0 4px; margin-inline-start: -4px;
+  border-color: var(--accent); border-radius: 6px;
+  min-height: 1.55em;
+}
+
+.hint {
+  font-size: 13px; color: var(--ink-soft);
+  background: #eef5f4; border: 1px solid #d7e7e4; border-radius: 10px;
+  padding: 9px 13px; margin: 0 0 14px;
+}
+
+/* --- upload / import ---------------------------------------------------- */
+
+.drop {
+  border: 2px dashed #cfdbe1; border-radius: var(--radius); background: var(--card);
+  padding: 28px 20px; text-align: center; margin-bottom: 16px;
+  transition: border-color .15s, background .15s;
+}
+.drop.is-over { border-color: var(--accent); background: #eef5f4; }
+.drop h3 { margin: 0 0 4px; font-size: 17px; }
+.drop p { margin: 0 0 14px; color: var(--ink-soft); font-size: 14px; }
+
+.busy { display: inline-flex; align-items: center; gap: 9px; color: var(--ink-soft); font-size: 15px; }
+.spin {
+  width: 17px; height: 17px; border-radius: 50%;
+  border: 2px solid var(--line); border-top-color: var(--accent);
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation-duration: 2s; } }
+
+/* --- dialog, toast ------------------------------------------------------ */
+
+.dlg { border: none; border-radius: var(--radius); padding: 0; box-shadow: 0 24px 60px rgba(23, 32, 42, .22); max-width: 380px; width: calc(100% - 32px); }
+.dlg::backdrop { background: rgba(23, 32, 42, .35); }
+.dlg-in { padding: 22px; display: grid; gap: 12px; }
+.dlg-in h2 { margin: 0; font-size: 20px; }
+.dlg-in p { margin: 0; font-size: 14px; }
+.dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+
+.toast {
+  position: fixed; inset-inline: 0; bottom: 22px; margin-inline: auto;
+  width: max-content; max-width: calc(100% - 32px);
+  background: var(--ink); color: #fff; padding: 11px 20px; border-radius: 999px;
+  font-size: 15px; box-shadow: var(--shadow);
+  opacity: 0; transform: translateY(8px); pointer-events: none;
+  transition: opacity .2s, transform .2s; z-index: 60;
+}
+.toast.is-on { opacity: 1; transform: none; }
+.toast.is-bad { background: var(--danger); }
+
+/* --- print -------------------------------------------------------------- */
+
+@media print {
+  .top, .tools, .ed-bar, .toast { display: none !important; }
+  body { background: #fff; }
+  .sheet { border: none; box-shadow: none; padding: 0; overflow: visible; }
+  .wrap { width: 100%; }
+}

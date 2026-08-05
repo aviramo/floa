@@ -305,7 +305,13 @@ const TYPES = { ".html": "text/html", ".css": "text/css", ".js": "text/javascrip
 
 /* Serves dist/, which is exactly what GitHub publishes — so localhost:5173 and
    floa.co.il resolve a URL against the same tree, and a path that works here
-   works there. */
+   works there.
+
+   That fidelity includes the miss: GitHub answers an unknown path with the
+   site's own 404.html, and the domain's 404.html is not only a page, it is
+   also what hands /chords/<song> back to the app that owns it. Answering
+   "not found" here instead would make the one thing you cannot test locally
+   be the routing. */
 function serve(port = 5173) {
   createServer(async (req, res) => {
     let path = decodeURIComponent(new URL(req.url, "http://x").pathname);
@@ -316,7 +322,12 @@ function serve(port = 5173) {
       const body = await readFile(file);
       res.writeHead(200, { "content-type": TYPES[extname(file)] ?? "application/octet-stream", "cache-control": "no-store" }).end(body);
     } catch {
-      res.writeHead(404).end("not found");
+      try {
+        const body = await readFile(join(DIST, "404.html"));
+        res.writeHead(404, { "content-type": "text/html", "cache-control": "no-store" }).end(body);
+      } catch {
+        res.writeHead(404).end("not found");
+      }
     }
   }).listen(port, () => console.log(`  http://localhost:${port}\n`));
 }

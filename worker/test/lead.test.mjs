@@ -18,10 +18,19 @@ const env = {
   LEAD_FROM: "FLOA <no-reply@floa.co.il>",
   LEAD_TO: "ofir.aviram@gmail.com",
   LEAD_TO_DEMO: "dana@example.com",
+  ANTHROPIC_API_KEY: "test",
+  SUPABASE_URL: "https://project.supabase.co",
+  SUPABASE_ANON_KEY: "anon",
 };
 
 let sent = null;
 globalThis.fetch = async (url, init) => {
+  /* Supabase, standing in for the token check /transcribe makes. Only one
+     token is a real signed-in user. */
+  if (String(url).includes("supabase")) {
+    const ok = (init.headers.authorization || "") === "Bearer good";
+    return new Response("{}", { status: ok ? 200 : 401 });
+  }
   sent = JSON.parse(init.body);
   return new Response("{}", { status: 200 });
 };
@@ -74,6 +83,30 @@ check("honeypot: nothing sent, bot told ok", r.status === 200 && r.sent === null
 delete env.LEAD_TO_DEMO;
 r = await post({ ...lead, business: "demo", page: "דף נחיתה" });
 check("unset recipient -> 502, nothing sent", r.status === 502 && r.sent === null, JSON.stringify(r));
+
+/* --- /transcribe -----------------------------------------------------------
+   It costs money per call, so what is tested is the lock, not the reading. */
+
+const call = async (path, headers = {}) => {
+  const res = await worker.fetch(new Request(`https://x${path}`, {
+    method: "POST",
+    headers: { origin: "https://floa.co.il", "content-type": "application/json", ...headers },
+    body: JSON.stringify({ media_type: "image/png", data: "x" }),
+  }), env);
+  return { status: res.status, body: await res.json() };
+};
+
+/* 8. an unknown path is not a lead and not a read */
+r = await call("/nowhere");
+check("unknown path -> 404", r.status === 404, JSON.stringify(r));
+
+/* 9. no token, no reading: the endpoint is not open to the world */
+r = await call("/transcribe");
+check("transcribe without a token -> 401", r.status === 401 && r.body.error === "auth", JSON.stringify(r));
+
+/* 10. a token Supabase does not recognise is no token at all */
+r = await call("/transcribe", { authorization: "Bearer forged" });
+check("transcribe with a rejected token -> 401", r.status === 401 && r.body.error === "auth", JSON.stringify(r));
 
 console.log(failed ? `\n${failed} failed` : "\nall passed");
 process.exit(failed ? 1 : 0);
