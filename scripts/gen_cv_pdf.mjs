@@ -35,11 +35,11 @@ const DIST = join(ROOT, "dist");
 /* The PDFs are files of the BUSINESS, like its share cards (scripts/gen_og.mjs):
    they land in its public/ folder, the build copies them into its site, and the
    CV page links to them. So they are committed — generated source, but source. */
-const OUT = join(ROOT, "businesses/floa/public/cv");
+const OUT = join(ROOT, "businesses/me/public/cv/architect");
 
 const PAGES = [
-  { path: "/floa/cv/", file: "ofir-aviram-cv.pdf" },
-  { path: "/floa/cv/he/", file: "ofir-aviram-cv-he.pdf" },
+  { path: "/me/cv/architect/", file: "ofir-aviram-cv.pdf" },
+  { path: "/me/cv/architect/he/", file: "ofir-aviram-cv-he.pdf" },
 ];
 
 /* --- the browser ----------------------------------------------------------- */
@@ -65,7 +65,7 @@ if (!chrome) {
    actually live rather than from a rehearsal of it. */
 const TYPES = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".svg": "image/svg+xml", ".png": "image/png", ".webp": "image/webp", ".ico": "image/x-icon" };
 
-if (!existsSync(join(DIST, "floa/cv/index.html"))) {
+if (!existsSync(join(DIST, "me/cv/architect/index.html"))) {
   console.error("gen_cv_pdf: dist/ has no CV in it. Run `node build.mjs` first.");
   process.exit(1);
 }
@@ -110,7 +110,7 @@ try {
   for (const page of PAGES) {
     const out = join(OUT, page.file);
     await print(origin + page.path, out);
-    console.log(`✓ businesses/floa/public/cv/${page.file}`);
+    console.log(`✓ businesses/me/public/cv/architect/${page.file}`);
   }
 } finally {
   server.close();

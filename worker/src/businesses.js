@@ -21,6 +21,12 @@ export const BUSINESSES = {
       "דף נחיתה החל מ־500 ₪"
     ]
   },
+  "me": {
+    "brand": "Ofir Aviram",
+    "to": "LEAD_TO_ME",
+    "origins": [],
+    "pages": []
+  },
   "prolink": {
     "brand": "ProLink",
     "to": "LEAD_TO_PROLINK",

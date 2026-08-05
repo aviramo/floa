@@ -15,12 +15,15 @@
    the same way on the RTL page as on the LTR one.
 
    WHERE THEY LAND
-     dist/floa/cv/index.html       ->  floa.co.il/floa/cv/       base "../"
-     dist/floa/cv/he/index.html    ->  floa.co.il/floa/cv/he/    base "../../"
+     dist/me/cv/architect/index.html      ->  floa.co.il/me/cv/architect/
+     dist/me/cv/architect/he/index.html   ->  floa.co.il/me/cv/architect/he/
 
-   `base` is how each page reaches FLOA's stylesheet; every href in this file is
-   written relative to FLOA's folder and ctx.url() rewrites it for the page being
-   rendered (see src/lib/context.js).
+   Nothing is written for /me/ or /me/cv/, so both 404: the document has one
+   address and a shortened guess at it leads nowhere.
+
+   `base` is how each page reaches this business's stylesheet; every href in
+   this file is written relative to the business folder and ctx.url() rewrites
+   it for the page being rendered (see src/lib/context.js).
    ========================================================================== */
 
 const CONTACT = {
@@ -35,9 +38,9 @@ const DEMO = "https://once-lake.vercel.app/";
 
 /* --- English ---------------------------------------------------------------- */
 export const cvEn = {
-  out: "cv/index.html",
-  path: "floa/cv/",
-  base: "../",
+  out: "cv/architect/index.html",
+  path: "me/cv/architect/",
+  base: "../../",
   homeHref: "../../",
   lang: "en",
   dir: "ltr",
@@ -47,9 +50,9 @@ export const cvEn = {
     description: "CV of Ofir Aviram. Solution Architect and Senior Systems Analyst with 15+ years designing enterprise applications, system integrations, IAM and IDM solutions and business-process automation.",
   },
 
-  download: { href: "cv/ofir-aviram-cv.pdf", name: "Ofir Aviram - CV.pdf", label: "Download PDF" },
-  altLang: { href: "cv/he/", label: "עברית", lang: "he" },
-  alternates: [{ lang: "en", href: "cv/" }, { lang: "he", href: "cv/he/" }],
+  download: { href: "cv/architect/ofir-aviram-cv.pdf", name: "Ofir Aviram - CV.pdf", label: "Download PDF" },
+  altLang: { href: "cv/architect/he/", label: "עברית", lang: "he" },
+  alternates: [{ lang: "en", href: "cv/architect/" }, { lang: "he", href: "cv/architect/he/" }],
 
   name: "Ofir Aviram",
   roles: [
@@ -235,9 +238,9 @@ export const cvEn = {
 
 /* --- Hebrew ----------------------------------------------------------------- */
 export const cvHe = {
-  out: "cv/he/index.html",
-  path: "floa/cv/he/",
-  base: "../../",
+  out: "cv/architect/he/index.html",
+  path: "me/cv/architect/he/",
+  base: "../../../",
   homeHref: "../../../",
   lang: "he",
   dir: "rtl",
@@ -247,9 +250,9 @@ export const cvHe = {
     description: "קורות החיים של אופיר אבירם. ארכיטקט פתרונות ומנתח מערכות בכיר עם מעל 15 שנות ניסיון בתכנון אפליקציות ארגוניות, אינטגרציות, פתרונות IAM ו-IDM ואוטומציה של תהליכים עסקיים.",
   },
 
-  download: { href: "cv/ofir-aviram-cv-he.pdf", name: "אופיר אבירם - קורות חיים.pdf", label: "הורדת PDF" },
-  altLang: { href: "cv/", label: "English", lang: "en" },
-  alternates: [{ lang: "en", href: "cv/" }, { lang: "he", href: "cv/he/" }],
+  download: { href: "cv/architect/ofir-aviram-cv-he.pdf", name: "אופיר אבירם - קורות חיים.pdf", label: "הורדת PDF" },
+  altLang: { href: "cv/architect/", label: "English", lang: "en" },
+  alternates: [{ lang: "en", href: "cv/architect/" }, { lang: "he", href: "cv/architect/he/" }],
 
   name: "אופיר אבירם",
   roles: [
