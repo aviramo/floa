@@ -110,6 +110,10 @@ export const cvEn = {
       title: "Core Expertise",
       groups: [
         {
+          title: "End-to-End Full-Stack Product Development",
+          terms: ["Turning an idea or business requirement into a working product, including product definition, analysis, UX, architecture, data modeling, business logic, integrations, development, testing and production deployment"],
+        },
+        {
           title: "Solution Design",
           terms: ["End-to-End Solution Design", "Enterprise Applications", "Integration Architecture", "Business Logic", "System Interfaces", "Data Flows"],
         },
@@ -306,6 +310,10 @@ export const cvHe = {
       type: "keywords",
       title: "תחומי מומחיות",
       groups: [
+        {
+          title: "פיתוח מוצר Full-Stack מקצה לקצה",
+          terms: ["הפיכת רעיון או דרישה עסקית למוצר עובד, כולל הגדרת המוצר, אפיון, חוויית משתמש, ארכיטקטורה, מודל נתונים, לוגיקה עסקית, אינטגרציות, פיתוח, בדיקות ועלייה לייצור"],
+        },
         {
           title: "תכנון פתרונות",
           terms: ["תכנון פתרון מקצה לקצה", "אפליקציות ארגוניות", "ארכיטקטורת אינטגרציה", "לוגיקה עסקית", "ממשקי מערכת וזרימות נתונים"],

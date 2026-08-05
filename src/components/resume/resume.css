@@ -30,7 +30,12 @@
 
 .cv-sheet {
   --cv-fs: 10pt;
-  --cv-gap: 2.4mm;                    /* the air above and below each section rule */
+  /* The air above and below each section rule, on PAPER. The screen sets its
+     own, five times this. It came down from 2.4mm when Core Expertise gained a
+     fourth group: squeezing that section alone recovered six of the eight
+     millimetres needed to keep page one ending at Brillix, and this is the
+     other two. */
+  --cv-gap: 1.6mm;
   --cv-pad: 14mm;
 
   width: 210mm;
@@ -370,6 +375,18 @@
   .cv-kw,
   .cv-sec__head,
   .cv-list > li { break-inside: avoid; }
+
+  /* THE SQUEEZE, and it is confined to the keyword groups. Core Expertise
+     carries a fourth group now, three lines of it, and page one has to end at
+     Brillix — an employment entry is never cut, so anything that does not fit
+     takes the whole entry with it and costs a third sheet. Nothing else is
+     touched: not the summary, not a job, not the leading of the body.
+
+     It reaches Technical Skills too, which shares the class and sits on page
+     two with room to spare. Two keyword sections set differently would read as
+     an accident rather than a decision. */
+  .cv-kw { line-height: 1.1; }
+  .cv-kw + .cv-kw { margin-top: .5mm; }
 
   /* a heading with nothing under it is a heading on the wrong page */
   .cv-sec__head { break-after: avoid; }
