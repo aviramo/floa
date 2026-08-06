@@ -1175,9 +1175,16 @@
       if (song.status && song.status !== "ready") return viewPending(song);
       song.lines = normalizeLines(song.lines);
 
-      var semis = 0;
-      /* the size follows the reader from song to song. Transposing does not:
-         it belongs to the one song it was set on. */
+      /* A song opens on its EASY version: transposed down by whatever capo
+         turns its chords into the fewest barres. So the number differs from
+         song to song, because it is a property of the song rather than a
+         preference, and a negative transposition is exactly what a capo is.
+         Moving it is still one button away, and 0 is the song as written. */
+      var easy = easyVersion(chordsUsed(song.lines));
+      var semis = -easy.capo;
+
+      /* the size follows the reader from song to song. This does not: it
+         belongs to the one song it was worked out for. */
       var size = readingSize();
 
       app.innerHTML = "";
@@ -1215,14 +1222,28 @@
       tools.appendChild(editBtn);
       app.appendChild(tools);
 
+      /* Inside the sheet, so it prints with the song: the shapes below are
+         useless to anyone who does not know where the capo goes. */
+      var capo = el("div", "capo-line");
       var sheet = el("div", "sheet");
       sheet.style.setProperty("--song-size", size + "px");
+      sheet.appendChild(capo);
       app.appendChild(sheet);
 
       function draw() {
         sheet.innerHTML = "";
         sheet.dir = song.dir || "rtl";
         var rtl = (song.dir || "rtl") === "rtl";
+
+        /* A chord shown a fret below what the song is in is a chord you play
+           with a capo there, so the sheet says where the capo goes. Above zero
+           there is no capo, only a different key, and it says that instead. */
+        capo.textContent = semis < 0
+          ? "קפו " + (-semis)
+          : semis > 0 ? "בלי קפו, מוגבה " + semis : "";
+        capo.hidden = !semis;
+        sheet.appendChild(capo);
+
         song.lines.forEach(function (line) {
           sheet.appendChild(viewLine(line, semis));
         });
