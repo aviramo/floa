@@ -267,6 +267,10 @@
 
   var RESERVED_SLUGS = { "new": true, "edit": true };
 
+  /* Two decimals is finer than any eye and any font, and it keeps a stored
+     song readable instead of full of 6.234567901234568 */
+  function round2(value) { return Math.round(value * 100) / 100; }
+
   /* The address of a song is its name with underscores for spaces, in Hebrew
      or in English. Everything that is not a letter, a digit or a dash goes. */
   function slugify(name) {
@@ -336,7 +340,12 @@
       if (l && l.type === "section") return { type: "section", text: text, chords: [] };
       var chords = (l && Array.isArray(l.chords) ? l.chords : [])
         .map(function (c) {
-          return { pos: Math.max(0, Math.min(Math.round(Number(c.pos) || 0), text.length)), chord: String(c.chord || "").trim() };
+          /* NOT rounded to a whole character, and NOT cut off at the last one.
+             A chord dropped by hand sits exactly where it was let go, usually
+             between two letters, and a song's last chords often belong past
+             the words entirely. The ceiling is only there so a stray number
+             cannot put a chord a mile off the page. */
+          return { pos: Math.max(0, Math.min(round2(Number(c.pos) || 0), text.length + 80)), chord: String(c.chord || "").trim() };
         })
         .filter(function (c) { return c.chord; })
         .sort(function (a, b) { return a.pos - b.pos; });
@@ -388,13 +397,19 @@
 
   /* ------------------------------------------------------- rendering a line */
 
-  /* One span per character, so a character index can become a pixel offset.
-     white-space: pre on the parent keeps the spaces, and inline-block gives
-     each one a width worth measuring. */
+  /* One span per character, so a character index can become a place on screen.
+     The spans stay INLINE, not inline-block: this same markup is edited in
+     place with contenteditable, and the browser handles a caret moving through
+     ordinary inline text far better than through a row of blocks. */
   function textSpans(text) {
     var wrap = el("div", "ln-t");
-    for (var i = 0; i < text.length; i++) wrap.appendChild(el("span", null, text[i]));
+    fillSpans(wrap, text);
     return wrap;
+  }
+
+  function fillSpans(wrap, text) {
+    wrap.textContent = "";
+    for (var i = 0; i < text.length; i++) wrap.appendChild(el("span", null, text[i]));
   }
 
   function chordEl(chord, pos, semis) {
@@ -404,35 +419,66 @@
     return c;
   }
 
-  /* The measurement. For a left to right line a chord starts where its
-     character starts, which is offsetLeft. For a right to left line the line
-     itself starts at the container's right edge, so the same distance is
-     measured from there, and inset-inline-start does the rest. */
-  function layoutLine(ln, rtl) {
+  /* Everything needed to turn this line's characters into distances and back.
+
+     `at(i)` is where character number i begins, counted from the line's own
+     start: the left edge going left to right, the right edge going right to
+     left. `unit` is what one character is worth on average, and it is what
+     carries the count PAST the last letter, because a song does not stop
+     needing chords where the words happen to end: an outro, a turnaround, a
+     tail of «נה נה נה» all live out there. Without it every chord past the end
+     of a short line piles up on the same point and cannot be pulled apart. */
+  function metrics(ln, rtl) {
     var t = ln.querySelector(".ln-t");
-    var lane = ln.querySelector(".ln-c");
-    if (!t || !lane) return;
-
+    if (!t) return null;
     var spans = t.children;
-    var width = ln.clientWidth;
-    var placed = [];
+    var line = ln.getBoundingClientRect();
 
-    Array.prototype.forEach.call(lane.querySelectorAll(".chord, .chord-input"), function (node) {
-      /* the chord being typed over is hidden, not removed, so it must not
-         take part in the nudging below or the input drifts sideways */
-      if (node.style.display === "none") return;
-      var pos = Math.max(0, Math.min(Number(node.dataset.pos) || 0, spans.length));
-      var start = 0;
-      if (spans.length) {
-        if (pos < spans.length) {
-          var s = spans[pos];
-          start = rtl ? width - (s.offsetLeft + s.offsetWidth) : s.offsetLeft;
-        } else {
-          var last = spans[spans.length - 1];
-          start = rtl ? width - last.offsetLeft : last.offsetLeft + last.offsetWidth;
-        }
+    var at = function (i) {
+      if (!spans.length) return 0;
+      if (i < spans.length) {
+        var box = spans[i].getBoundingClientRect();
+        return rtl ? line.right - box.right : box.left - line.left;
       }
-      placed.push({ node: node, start: start });
+      var last = spans[spans.length - 1].getBoundingClientRect();
+      return rtl ? line.right - last.left : last.right - line.left;
+    };
+
+    var unit = spans.length ? (at(spans.length) - at(0)) / spans.length : 0;
+    if (!(unit > 0)) unit = (parseFloat(getComputedStyle(t).fontSize) || 18) * 0.5;
+
+    return { spans: spans, count: spans.length, at: at, unit: unit };
+  }
+
+  /* A position is a character index, and it does not have to be a WHOLE one:
+     6.5 is halfway through the seventh character, placed halfway between where
+     that character begins and where the next one does. That fraction is what
+     lets a chord be dragged smoothly instead of hopping from letter to letter,
+     while staying tied to the word underneath rather than to a pixel, so
+     editing the words still carries the chord along with its syllable.
+
+     Past the last character the count simply keeps going, a character at a
+     time, at the width one character has here. */
+  function positionOf(m, pos) {
+    if (pos >= m.count) return m.at(m.count) + (pos - m.count) * m.unit;
+    if (pos <= 0) return m.at(0) + pos * m.unit;
+    var whole = Math.floor(pos);
+    var here = m.at(whole);
+    var fraction = pos - whole;
+    return fraction ? here + (m.at(whole + 1) - here) * fraction : here;
+  }
+
+  /* The measurement. Everything is taken from the LINE's own edges with real
+     rectangles, so right to left is the same arithmetic read from the other
+     side rather than a second code path. */
+  function layoutLine(ln, rtl) {
+    var lane = ln.querySelector(".ln-c");
+    var m = metrics(ln, rtl);
+    if (!lane || !m) return;
+
+    var placed = [];
+    Array.prototype.forEach.call(lane.querySelectorAll(".chord"), function (node) {
+      placed.push({ node: node, start: positionOf(m, Number(node.dataset.pos) || 0) });
     });
 
     /* Two chords over neighbouring syllables would print on top of each other.
@@ -442,33 +488,129 @@
     var floor = 0;
     placed.forEach(function (p) {
       var x = Math.max(p.start, floor);
-      p.node.style.insetInlineStart = x + "px";
-      floor = x + p.node.offsetWidth + 5;
+      /* PHYSICAL left/right, deliberately, not inset-inline-start.
+
+         A chord carries dir="ltr" so its own Latin label cannot flip inside a
+         Hebrew line, and that same attribute is what a logical inset resolves
+         against: `inset-inline-start` on a dir="ltr" chord means the LEFT edge
+         even when the line it belongs to runs right to left, so every chord in
+         a Hebrew song lands at the wrong end of it. The distance above was
+         already measured from the correct edge; name that edge outright. */
+      p.node.style.left = rtl ? "auto" : x + "px";
+      p.node.style.right = rtl ? x + "px" : "auto";
+      floor = x + p.node.getBoundingClientRect().width + 5;
     });
+  }
+
+  /* Moves ONE chord and touches nothing else. While a chord is being dragged
+     the others must hold still: a neighbour that shuffles aside as you pass it
+     makes the line feel like it is rearranging itself under your hand. The
+     tidying pass in layoutLine runs again when the drag ends. */
+  function placeChord(ln, node, rtl) {
+    var m = metrics(ln, rtl);
+    if (!m) return;
+    var x = positionOf(m, Number(node.dataset.pos) || 0);
+    node.style.left = rtl ? "auto" : x + "px";
+    node.style.right = rtl ? x + "px" : "auto";
   }
 
   function layoutAll(root, rtl) {
     Array.prototype.forEach.call(root.querySelectorAll(".ln"), function (ln) { layoutLine(ln, rtl); });
   }
 
-  /* The character index nearest a pointer, used for dropping and for adding. */
+  /* Where the pointer is, said in characters. The exact inverse of positionOf,
+     fraction and all, which is what makes dragging continuous: the chord goes
+     precisely where the hand is instead of snapping to the nearest letter, and
+     it keeps going past the end of the words instead of stopping dead there. */
   function posFromX(ln, clientX, rtl) {
-    var t = ln.querySelector(".ln-t");
-    var spans = t ? t.children : [];
-    if (!spans.length) return 0;
+    var m = metrics(ln, rtl);
+    if (!m) return 0;
 
-    var x = clientX - ln.getBoundingClientRect().left;
-    var best = 0, bestDist = Infinity;
-    for (var i = 0; i < spans.length; i++) {
-      var s = spans[i];
-      var edge = rtl ? ln.clientWidth - (s.offsetLeft + s.offsetWidth) : s.offsetLeft;
-      var d = Math.abs(edge - x);
-      if (d < bestDist) { bestDist = d; best = i; }
+    var line = ln.getBoundingClientRect();
+    var x = rtl ? line.right - clientX : clientX - line.left;
+
+    var starts = [];
+    for (var i = 0; i <= m.count; i++) starts.push(m.at(i));
+
+    if (!m.count) return round2(Math.max(0, x / m.unit));
+    if (x <= starts[0]) return round2(Math.max(0, x / m.unit));
+    if (x >= starts[m.count]) return round2(m.count + (x - starts[m.count]) / m.unit);
+
+    for (var j = 0; j < m.count; j++) {
+      if (x < starts[j + 1]) {
+        var width = starts[j + 1] - starts[j];
+        return round2(j + (width > 0 ? (x - starts[j]) / width : 0));
+      }
     }
-    var last = spans[spans.length - 1];
-    var endEdge = rtl ? ln.clientWidth - last.offsetLeft : last.offsetLeft + last.offsetWidth;
-    if (Math.abs(endEdge - x) < bestDist) best = spans.length;
-    return best;
+    return m.count;
+  }
+
+  /* --- the caret ------------------------------------------------------------
+     Editing happens inside the rendered text itself, and every keystroke
+     rebuilds the spans underneath it, so the caret has to be remembered as a
+     character index and put back afterwards. */
+
+  function caretIndex(root) {
+    var selection = window.getSelection();
+    if (!selection || !selection.rangeCount) return null;
+    var range = selection.getRangeAt(0);
+    if (!root.contains(range.endContainer)) return null;
+    var probe = document.createRange();
+    probe.selectNodeContents(root);
+    probe.setEnd(range.endContainer, range.endOffset);
+    return probe.toString().length;
+  }
+
+  function placeCaret(root, index) {
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+    var seen = 0, node, range = document.createRange();
+
+    while ((node = walker.nextNode())) {
+      var length = node.nodeValue.length;
+      if (seen + length >= index) {
+        range.setStart(node, index - seen);
+        range.collapse(true);
+        select(range);
+        return;
+      }
+      seen += length;
+    }
+
+    range.selectNodeContents(root);
+    range.collapse(false);
+    select(range);
+  }
+
+  function select(range) {
+    var selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+
+  function selectAll(node) {
+    var range = document.createRange();
+    range.selectNodeContents(node);
+    select(range);
+  }
+
+  /* contenteditable="plaintext-only" is what keeps a paste from bringing
+     markup, colours and line breaks into a song line. Where it is not
+     supported the plain kind will do, with the paste cleaned by hand. */
+  function makeEditable(node) {
+    node.spellcheck = false;
+    try {
+      node.contentEditable = "plaintext-only";
+      if (node.contentEditable !== "plaintext-only") node.contentEditable = "true";
+    } catch (e) {
+      node.contentEditable = "true";
+    }
+    if (node.contentEditable === "true") {
+      node.addEventListener("paste", function (event) {
+        event.preventDefault();
+        var text = (event.clipboardData || window.clipboardData).getData("text").replace(/\s+/g, " ");
+        document.execCommand("insertText", false, text);
+      });
+    }
   }
 
   /* ------------------------------------------------------------------ views */
@@ -902,8 +1044,8 @@
     app.appendChild(bar);
 
     app.appendChild(el("p", "hint",
-      "לחיצה על שורת מילים פותחת אותה לעריכה. Enter פותח שורה חדשה מתחת, Escape מבטל. " +
-      "לחיצה על הפס שמעל השורה מוסיפה אקורד במקום שלחצתם, ואת האקורד אפשר לגרור לאורך השורה עד שהוא בדיוק מעל ההברה."));
+      "אפשר להקליד ישר על המילים. Enter פותח שורה חדשה מתחת, Tab עובר לשורה הבאה. " +
+      "לחיצה על הפס שמעל השורה מוסיפה אקורד במקום שלחצתם, גרירה מזיזה אותו לאורך השורה, ולחיצה עליו פותחת אותו להקלדה."));
 
     var sheet = el("div", "sheet ed");
     app.appendChild(sheet);
@@ -912,12 +1054,12 @@
     addRow.appendChild(button("שורה בסוף", ICON.plus, "ghost small", function () {
       song.lines.push(blankLine());
       draw();
-      editText(song.lines.length - 1);
+      focusLine(song.lines.length - 1);
     }));
     addRow.appendChild(button("כותרת קטע", ICON.section, "ghost small", function () {
       song.lines.push({ type: "section", text: "פזמון", chords: [] });
       draw();
-      editText(song.lines.length - 1);
+      focusLine(song.lines.length - 1);
     }));
     app.appendChild(addRow);
 
@@ -930,7 +1072,17 @@
       requestAnimationFrame(function () { layoutAll(sheet, rtl()); });
     }
 
-    /* one editable line: the chord lane, the words, and the row's own buttons */
+    /* One editable line.
+
+       There is no edit mode and no field. The words on screen ARE the input:
+       the same spans the reader sees, made editable in place, so nothing moves,
+       nothing grows a border and nothing changes size when you click into it.
+       Every keystroke re-measures, so a chord stays over its syllable while the
+       words under it are still being typed.
+
+       Chords are held by object, never by index: a chord can be deleted or a
+       line split while a handler from before is still bound, and an index would
+       quietly start pointing at its neighbour. */
     function editRow(line, index) {
       var row = el("div", "ln-row");
 
@@ -938,44 +1090,66 @@
       ln.dataset.index = index;
 
       if (line.type === "section") {
-        var s = el("div", "ln-section", line.text || "קטע");
-        s.addEventListener("click", function () { editText(index); });
-        ln.appendChild(s);
+        var head = el("div", "ln-section", line.text);
+        makeEditable(head);
+        head.addEventListener("input", function () { line.text = head.textContent; });
+        head.addEventListener("keydown", function (event) { lineKeys(event, line, head); });
+        ln.appendChild(head);
       } else {
         var lane = el("div", "ln-c");
-        line.chords.forEach(function (c, ci) {
-          var node = chordEl(c.chord, c.pos, 0);
-          bindChord(node, index, ci);
+        line.chords.forEach(function (chord) {
+          var node = chordEl(chord.chord, chord.pos, 0);
+          bindChord(node, ln, line, chord);
           lane.appendChild(node);
         });
+
+        /* an empty spot in the chord lane is where a chord is born */
         lane.addEventListener("pointerdown", function (event) {
           if (event.target !== lane) return;
-          var pos = posFromX(ln, event.clientX, rtl());
-          line.chords.push({ pos: pos, chord: "" });
-          draw();
-          requestAnimationFrame(function () { editChord(index, line.chords.length - 1, true); });
+          event.preventDefault();
+          var chord = { pos: posFromX(ln, event.clientX, rtl()), chord: "" };
+          line.chords.push(chord);
+          var node = chordEl("", chord.pos, 0);
+          bindChord(node, ln, line, chord);
+          lane.appendChild(node);
+          layoutLine(ln, rtl());
+          openPicker(node, ln, line, chord);
         });
         ln.appendChild(lane);
 
-        var t = textSpans(line.text);
-        t.addEventListener("click", function () { editText(index); });
-        ln.appendChild(t);
+        var text = textSpans(line.text);
+        makeEditable(text);
+        text.addEventListener("input", function () {
+          var caret = caretIndex(text);
+          var next = text.textContent;
+          line.chords = remapChords(line.text, next, line.chords);
+          line.text = next;
+
+          fillSpans(text, next);
+          if (caret !== null) placeCaret(text, caret);
+
+          /* the model moved, so the labels above it move with it */
+          var nodes = ln.querySelectorAll(".ln-c .chord");
+          for (var i = 0; i < nodes.length && i < line.chords.length; i++) {
+            nodes[i].dataset.pos = line.chords[i].pos;
+          }
+          layoutLine(ln, rtl());
+        });
+        text.addEventListener("keydown", function (event) { lineKeys(event, line, text); });
+        ln.appendChild(text);
       }
 
       var ops = el("div", "ln-ops");
-      ops.appendChild(iconBtn(ICON.plus, "שורה חדשה מתחת", function () {
-        song.lines.splice(index + 1, 0, blankLine());
-        draw();
-        editText(index + 1);
-      }));
+      ops.appendChild(iconBtn(ICON.plus, "שורה חדשה מתחת", function () { addLineAfter(line); }));
       ops.appendChild(iconBtn(ICON.section, line.type === "section" ? "להפוך לשורת מילים" : "להפוך לכותרת קטע", function () {
-        song.lines[index] = line.type === "section"
+        var at = song.lines.indexOf(line);
+        song.lines[at] = line.type === "section"
           ? { type: "line", text: line.text, chords: [] }
           : { type: "section", text: line.text, chords: [] };
         draw();
       }));
       ops.appendChild(iconBtn(ICON.trash, "מחיקת השורה", function () {
-        song.lines.splice(index, 1);
+        song.lines.splice(song.lines.indexOf(line), 1);
         if (!song.lines.length) song.lines.push(blankLine());
         draw();
       }));
@@ -985,140 +1159,198 @@
       return row;
     }
 
-    /* dragging a chord: the pointer moves in pixels, the model moves in
-       characters, and the two meet in posFromX */
-    function bindChord(node, lineIndex, chordIndex) {
-      var dragging = false, startX = 0;
+    /* Enter opens the next line, Tab walks, Escape lets go. Nothing here
+       submits anything: the song is saved by the Save button and by nothing
+       else. */
+    function lineKeys(event, line, editable) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        addLineAfter(line);
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        editable.blur();
+      } else if (event.key === "Tab") {
+        event.preventDefault();
+        focusLine(song.lines.indexOf(line) + (event.shiftKey ? -1 : 1));
+      }
+    }
+
+    function addLineAfter(line) {
+      var at = song.lines.indexOf(line);
+      song.lines.splice(at + 1, 0, blankLine());
+      draw();
+      focusLine(at + 1);
+    }
+
+    function focusLine(index) {
+      var ln = sheet.querySelector('.ln[data-index="' + index + '"]');
+      if (!ln) return;
+      var editable = ln.querySelector(".ln-t, .ln-section");
+      if (!editable) return;
+      editable.focus();
+      placeCaret(editable, editable.textContent.length);
+    }
+
+    /* --- a chord ------------------------------------------------------------
+       Two gestures on one element. Dragging slides it along the line, in pixels
+       on the screen and in characters in the model, and moves NOTHING else.
+       Letting go without having moved opens the small list of chords the song
+       already uses. */
+    function bindChord(node, ln, line, chord) {
+      var dragging = false, from = 0;
 
       node.addEventListener("pointerdown", function (event) {
         event.stopPropagation();
         event.preventDefault();
+        closePicker();
         dragging = false;
-        startX = event.clientX;
+        from = event.clientX;
         node.setPointerCapture(event.pointerId);
-        node.classList.add("is-dragging");
       });
 
       node.addEventListener("pointermove", function (event) {
         if (!node.hasPointerCapture(event.pointerId)) return;
-        if (!dragging && Math.abs(event.clientX - startX) < 4) return;
-        dragging = true;
-        var ln = node.closest(".ln");
+        if (!dragging) {
+          if (Math.abs(event.clientX - from) < 4) return;
+          dragging = true;
+          node.classList.add("is-dragging");
+        }
+
         var pos = posFromX(ln, event.clientX, rtl());
-        if (pos !== song.lines[lineIndex].chords[chordIndex].pos) {
-          song.lines[lineIndex].chords[chordIndex].pos = pos;
-          node.dataset.pos = pos;
-          layoutLine(ln, rtl());
+        var previous = chord.pos;
+        if (pos === previous) return;
+
+        /* Run one chord over another and the two change places, so a chord can
+           never be buried under its neighbour with no way to get at it again.
+
+           The test is CROSSING, not nearness: a hand moving quickly can travel
+           several characters between two pointer events, and a chord it passed
+           straight over would otherwise be missed. */
+        var crossed = null;
+        line.chords.forEach(function (other) {
+          if (other === chord) return;
+          var passed = previous < other.pos ? pos >= other.pos : pos <= other.pos;
+          if (!passed) return;
+          if (!crossed || Math.abs(other.pos - previous) < Math.abs(crossed.pos - previous)) crossed = other;
+        });
+
+        chord.pos = pos;
+        node.dataset.pos = pos;
+        placeChord(ln, node, rtl());
+
+        if (crossed) {
+          crossed.pos = previous;
+          /* the lane's children follow line.chords one for one, because they
+             are appended and removed together */
+          var twin = node.parentNode.children[line.chords.indexOf(crossed)];
+          if (twin) { twin.dataset.pos = crossed.pos; placeChord(ln, twin, rtl()); }
         }
       });
 
       node.addEventListener("pointerup", function (event) {
-        node.classList.remove("is-dragging");
         if (node.hasPointerCapture(event.pointerId)) node.releasePointerCapture(event.pointerId);
-        if (dragging) {
-          song.lines[lineIndex].chords.sort(function (a, b) { return a.pos - b.pos; });
-          draw();
-        } else {
-          editChord(lineIndex, chordIndex, false);
-        }
+        node.classList.remove("is-dragging");
+        if (dragging) layoutLine(ln, rtl());
+        else openPicker(node, ln, line, chord);
       });
 
       node.addEventListener("pointercancel", function () {
+        dragging = false;
         node.classList.remove("is-dragging");
       });
     }
 
-    /* typing a chord, in place */
-    function editChord(lineIndex, chordIndex, isNew) {
-      var ln = sheet.querySelector('.ln[data-index="' + lineIndex + '"]');
-      if (!ln) return;
-      var lane = ln.querySelector(".ln-c");
-      var chord = song.lines[lineIndex].chords[chordIndex];
-      var node = lane.querySelectorAll(".chord")[chordIndex];
-      if (node) node.style.display = "none";
+    /* --- picking a chord ------------------------------------------------------
+       A song uses five or six chords, over and over. So a click offers exactly
+       those, taken from the song itself, and the field is there for the one
+       that is not on the list yet. */
 
-      var input = el("input", "chord-input");
-      input.type = "text";
-      input.dir = "ltr";
-      input.value = chord.chord;
-      input.dataset.pos = chord.pos;
-      lane.appendChild(input);
-      layoutLine(ln, rtl());
-      input.focus();
-      input.select();
+    var picker = null;
 
-      var done = false;
-      function finish(commit) {
-        if (done) return;
-        done = true;
-        var value = input.value.trim();
-        input.remove();
-        if (commit) chord.chord = value;
-        if (!chord.chord) song.lines[lineIndex].chords.splice(chordIndex, 1);
-        song.lines[lineIndex].chords.sort(function (a, b) { return a.pos - b.pos; });
-        draw();
-      }
-
-      input.addEventListener("keydown", function (event) {
-        if (event.key === "Enter") { event.preventDefault(); finish(true); }
-        else if (event.key === "Escape") { event.preventDefault(); finish(false); }
-      });
-      input.addEventListener("blur", function () { finish(true); });
+    function closePicker() {
+      if (!picker) return;
+      picker.remove();
+      picker = null;
+      document.removeEventListener("pointerdown", closeOnOutside, true);
+      document.removeEventListener("keydown", closeOnEscape, true);
     }
 
-    /* typing the words of a line, in place */
-    function editText(index) {
-      var ln = sheet.querySelector('.ln[data-index="' + index + '"]');
-      if (!ln) return;
-      var line = song.lines[index];
-      var target = line.type === "section" ? ln.querySelector(".ln-section") : ln.querySelector(".ln-t");
-      if (!target) return;
+    function closeOnOutside(event) { if (picker && !picker.contains(event.target)) closePicker(); }
+    function closeOnEscape(event) { if (event.key === "Escape") closePicker(); }
 
-      ln.classList.add("is-active");
-      target.style.display = "none";
+    /* every chord already in this song, in the order it first appears */
+    function chordsInSong() {
+      var seen = Object.create(null), out = [];
+      song.lines.forEach(function (line) {
+        (line.chords || []).forEach(function (c) {
+          if (c.chord && !seen[c.chord]) { seen[c.chord] = true; out.push(c.chord); }
+        });
+      });
+      return out;
+    }
 
-      var input = el("input", "line-input");
-      input.type = "text";
-      input.dir = song.dir || "rtl";
-      input.value = line.text;
-      ln.appendChild(input);
-      input.focus();
-      var caret = input.value.length;
-      input.setSelectionRange(caret, caret);
+    function openPicker(node, ln, line, chord) {
+      closePicker();
 
-      var done = false;
-      function finish(commit, andThen) {
-        if (done) return;
-        done = true;
-        var value = input.value;
-        input.remove();
-        ln.classList.remove("is-active");
-        if (commit && value !== line.text) {
-          if (line.type !== "section") line.chords = remapChords(line.text, value, line.chords);
-          line.text = value;
+      picker = el("div", "picker");
+      picker.dir = "ltr";
+
+      function commit(value) {
+        chord.chord = String(value || "").trim().slice(0, 16);
+        closePicker();
+        if (!chord.chord) {
+          line.chords.splice(line.chords.indexOf(chord), 1);
+          node.remove();
+        } else {
+          node.textContent = chord.chord;
         }
-        draw();
-        if (andThen) andThen();
+        layoutLine(ln, rtl());
       }
 
-      input.addEventListener("keydown", function (event) {
-        if (event.key === "Enter") {
-          event.preventDefault();
-          finish(true, function () {
-            song.lines.splice(index + 1, 0, blankLine());
-            draw();
-            editText(index + 1);
-          });
-        } else if (event.key === "Escape") {
-          event.preventDefault();
-          finish(false);
-        } else if (event.key === "Tab") {
-          event.preventDefault();
-          var next = event.shiftKey ? index - 1 : index + 1;
-          finish(true, function () { if (song.lines[next]) editText(next); });
-        }
+      var field = el("input", "picker-field");
+      field.type = "text";
+      field.dir = "ltr";
+      field.value = chord.chord;
+      field.placeholder = "Am";
+      field.setAttribute("aria-label", "אקורד");
+      field.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") { event.preventDefault(); commit(field.value); }
       });
-      input.addEventListener("blur", function () { finish(true); });
+      picker.appendChild(field);
+
+      var used = chordsInSong();
+      if (used.length) {
+        var list = el("div", "picker-list");
+        used.forEach(function (name) {
+          var chip = el("button", "picker-chip" + (name === chord.chord ? " is-on" : ""), name);
+          chip.type = "button";
+          chip.addEventListener("click", function () { commit(name); });
+          list.appendChild(chip);
+        });
+        picker.appendChild(list);
+      }
+
+      var drop = el("button", "picker-drop", "הסרה");
+      drop.type = "button";
+      drop.addEventListener("click", function () { commit(""); });
+      picker.appendChild(drop);
+
+      document.body.appendChild(picker);
+
+      /* under the chord, pulled back inside the window if it would hang out */
+      var box = node.getBoundingClientRect();
+      var width = picker.offsetWidth;
+      var left = Math.min(Math.max(8, box.left + box.width / 2 - width / 2), window.innerWidth - width - 8);
+      var top = box.bottom + 6;
+      if (top + picker.offsetHeight > window.innerHeight - 8) top = Math.max(8, box.top - picker.offsetHeight - 6);
+      picker.style.left = left + "px";
+      picker.style.top = top + "px";
+
+      field.focus();
+      field.select();
+
+      document.addEventListener("pointerdown", closeOnOutside, true);
+      document.addEventListener("keydown", closeOnEscape, true);
     }
 
     /* --- saving --- */

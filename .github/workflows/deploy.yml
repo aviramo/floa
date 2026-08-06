@@ -45,6 +45,11 @@ jobs:
 
       - run: node build.mjs
 
+      # A chord that does not sit on its syllable is the one way this can be
+      # broken while every unit test still passes, and reading the code does
+      # not settle it. So a real browser opens the built page and measures.
+      - run: npm run test:layout
+
       # The generated Worker table must match what was committed. If it does
       # not, someone changed a business and pushed without rebuilding — and the
       # Worker deployed from this repo would be validating the wrong pages.

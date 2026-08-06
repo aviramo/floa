@@ -197,22 +197,28 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
      makes chord sheets in Word and Google Docs come out wrong.
    ------------------------------------------------------------------------ */
 
+/* The chord row sits as close to the words as the glyphs allow: a chord that
+   floats is a chord you have to look twice to attach to a syllable. */
 .ln { position: relative; }
-.ln-c { position: relative; height: 1.5em; }
+.ln-c { position: relative; height: 1em; }
 .ln-t {
   white-space: pre;
   font-size: var(--song-size);
   line-height: 1.55;
   min-height: 1.55em;
 }
-.ln-t span { display: inline-block; }
 
+/* left / right are written by layoutLine, never here, and never as a logical
+   inset: this element is dir="ltr" so a logical inset would resolve against
+   ITS direction, not the line's. It also carries no horizontal padding or
+   margin, so the box it occupies is exactly the glyphs and the measured
+   distance needs no compensation. */
 .chord {
   position: absolute; top: 0;
   direction: ltr; unicode-bidi: isolate;
   color: var(--chord); font-weight: 700;
-  font-size: calc(var(--song-size) * .86);
-  line-height: 1.5em;
+  font-size: calc(var(--song-size) * .82);
+  line-height: 1;
   white-space: pre;
 }
 
@@ -241,39 +247,63 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .ed-bar .grow { margin-inline-start: auto; }
 
 /* In the editor a line keeps its own box and the row's buttons sit beside it,
-   never inside it: padding on .ln would shift every offsetLeft the chord
-   positions are measured against. */
+   never inside it: padding on .ln would shift every measurement the chord
+   positions are taken from.
+
+   Nothing here changes how the words LOOK. No box, no border, no highlight, no
+   growing field: the text on screen is the text being edited, so clicking into
+   a line moves a caret and moves nothing else. */
 .ln-row { display: flex; align-items: flex-end; gap: 8px; }
-.ln-row > .ln { flex: 1 1 auto; min-width: 0; border-radius: 8px; }
-.ln-row:hover > .ln { background: #f2f6f7; }
-.ln-row > .ln.is-active { background: #eef5f4; }
-.ed .ln-t { cursor: text; }
+.ln-row > .ln { flex: 1 1 auto; min-width: 0; }
+.ed .ln-t { cursor: text; outline: none; }
+.ed .ln-section { cursor: text; outline: none; }
 .ed .ln-c { cursor: copy; }
 
 .ln-ops { flex: 0 0 auto; display: flex; gap: 4px; visibility: hidden; padding-bottom: 2px; }
 .ln-row:hover .ln-ops, .ln-row:focus-within .ln-ops { visibility: visible; }
 
-.ed .chord {
-  cursor: grab; touch-action: none; user-select: none;
-  padding: 0 4px; border-radius: 6px; margin-inline-start: -4px;
-}
-.ed .chord:hover { background: var(--chord-soft); }
-.ed .chord.is-dragging { cursor: grabbing; background: var(--chord); color: #fff; }
+/* A chord in the editor is the same chord the reader sees, and it stays that
+   way. No border, no box, no highlight, nothing that appears or grows. The
+   only thing the editor adds is the pointer's shape, which costs no pixels:
+   grab over a chord, text while typing into one, copy over the empty lane
+   where a new one can be put down.
 
-.chord-input {
-  position: absolute; top: 0; width: 8ch; padding: 0 4px; margin-inline-start: -4px;
+   min-width on a chord being typed is the single exception, and it is not
+   decoration: an empty chord has no glyphs, so without it there is nowhere for
+   the caret to blink. */
+.ed .chord { cursor: grab; touch-action: none; user-select: none; }
+.ed .chord.is-dragging { cursor: grabbing; }
+.ed .chord:empty { min-width: 2ch; display: inline-block; }
+
+/* The one thing in the editor that is allowed to appear on screen, because it
+   is the answer to a click rather than a change to the song: the chords this
+   song already uses, which is nearly always the chord you are reaching for. */
+.picker {
+  position: fixed; z-index: 50;
+  display: grid; gap: 8px; width: max-content; max-width: min(300px, calc(100vw - 16px));
+  padding: 10px; border-radius: 12px;
+  background: #fff; border: 1px solid var(--line); box-shadow: 0 12px 32px rgba(23, 32, 42, .16);
+}
+.picker-field {
+  width: 100%; padding: 6px 9px; border-radius: 8px;
   direction: ltr; text-align: left;
   color: var(--chord); font-weight: 700;
-  font-size: calc(var(--song-size) * .86); line-height: 1.5em;
-  border: 1px solid var(--chord); border-radius: 6px; background: #fff;
 }
-
-.line-input {
-  font-size: var(--song-size); line-height: 1.55;
-  padding: 0 4px; margin-inline-start: -4px;
-  border-color: var(--accent); border-radius: 6px;
-  min-height: 1.55em;
+.picker-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.picker-chip {
+  appearance: none; cursor: pointer; font: inherit;
+  font-weight: 700; font-size: 14px; direction: ltr;
+  color: var(--chord); background: var(--chord-soft);
+  border: 1px solid transparent; border-radius: 999px; padding: 4px 11px;
 }
+.picker-chip:hover { border-color: var(--chord); }
+.picker-chip.is-on { background: var(--chord); color: #fff; }
+.picker-drop {
+  appearance: none; cursor: pointer; font: inherit; font-size: 13px;
+  color: var(--ink-soft); background: transparent; border: none; padding: 2px;
+  text-align: center;
+}
+.picker-drop:hover { color: var(--danger); }
 
 .hint {
   font-size: 13px; color: var(--ink-soft);
