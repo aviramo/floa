@@ -1342,14 +1342,16 @@ body.on-stage { overflow: hidden; }
   border: 0; box-shadow: none; border-radius: 0;
   overflow: hidden;
 }
-/* TWO COLUMNS OF THE SAME LENGTH. Poured, the first column fills to the bottom
-   of the screen and the second holds whatever was left, which on most songs is
-   three lines against thirty: one full page and one empty one. Balanced, the
-   song is halved and the pair reads as one spread, centred by the flex above
-   in both directions. */
-.stage.is-two .stage-sheet {
+/* COLUMNS OF THE SAME LENGTH, and how many of them is decided by which number
+   sets the song largest (see openStage; the count itself is written on the
+   element). Poured, the first column would fill to the bottom of the screen
+   and the last would hold whatever was left, which on most songs is three
+   lines against thirty: full pages beside an empty one. Balanced, the song is
+   divided evenly and the set reads as one spread, centred both ways by the
+   flex above. */
+.stage.is-multi .stage-sheet {
   width: 100%; height: auto; max-height: 100%;
-  columns: 2; column-gap: calc(var(--song-size) * 2.6); column-fill: balance;
+  column-gap: calc(var(--song-size) * 2.6); column-fill: balance;
 }
 /* a line and the chords over it are one thing, and a column break through the
    middle of it would leave the chords on the other side of the page */

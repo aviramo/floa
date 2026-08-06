@@ -5001,7 +5001,6 @@
       var stage = el("div", "stage");
       var sheetOn = el("div", "sheet stage-sheet");
       var size = 0;
-      var twoUp = false;
 
       stage.appendChild(sheetOn);
       document.body.appendChild(stage);
@@ -5032,10 +5031,10 @@
         song.lines.forEach(function (line) { sheetOn.appendChild(viewLine(line, semis)); });
       }
 
-      function show(px, two) {
+      function show(px, cols) {
         size = px;
-        twoUp = two;
-        stage.classList.toggle("is-two", two);
+        stage.classList.toggle("is-multi", cols > 1);
+        sheetOn.style.columnCount = cols > 1 ? String(cols) : "";
         sheetOn.style.setProperty("--song-size", px + "px");
       }
 
@@ -5057,40 +5056,53 @@
         return wide;
       }
 
-      function fits(two) {
+      function fits(cols) {
         if (sheetOn.scrollHeight > sheetOn.clientHeight + 1) return false;
         var gap = parseFloat(getComputedStyle(sheetOn).columnGap) || 0;
-        var column = two ? (sheetOn.clientWidth - gap) / 2 : sheetOn.clientWidth;
+        var column = (sheetOn.clientWidth - gap * (cols - 1)) / cols;
         return widestLine() <= column + 1;
       }
 
-      function biggestThatFits(two) {
+      function biggestThatFits(cols) {
         var low = SIZE_MIN, high = STAGE_MAX, best = 0;
         while (low <= high) {
           var mid = Math.floor((low + high) / 2);
-          show(mid, two);
-          if (fits(two)) { best = mid; low = mid + 1; } else { high = mid - 1; }
+          show(mid, cols);
+          if (fits(cols)) { best = mid; low = mid + 1; } else { high = mid - 1; }
         }
         return best;
       }
 
+      /* One, two or three, whichever sets the song largest. Three is what a
+         short-lined song on a wide screen wants: a page of four-word lines in
+         one column is a ribbon down the middle with the type kept small by the
+         height, and in three it is a page.
+
+         STRICTLY BIGGER WINS, so a tie keeps the fewest columns: a song that
+         fits down the page at the same size does not want a second column, and
+         two columns of four lines is a page pretending to be full. */
+      var COLUMNS = [1, 2, 3];
+
       function autoFit() {
-        var one = biggestThatFits(false);
-        var two = biggestThatFits(true);
-        /* one column while one column is no worse: a song that fits down the
-           page at the same size does not want a second column, and two columns
-           of four lines is a page pretending to be full */
-        if (one >= two) show(Math.max(one, SIZE_MIN), false);
-        else show(two, true);
+        var best = { size: 0, cols: 1 };
+        COLUMNS.forEach(function (cols) {
+          var px = biggestThatFits(cols);
+          if (px > best.size) best = { size: px, cols: cols };
+        });
+        show(Math.max(best.size, SIZE_MIN), best.cols);
         place();
       }
 
       /* Asked for by hand, and then the column question is asked again from
-         the size rather than the other way about. */
+         the size rather than the other way about: the fewest columns that hold
+         it, and the most there are if none of them do. */
       function nudge(by) {
         var next = Math.max(SIZE_MIN, Math.min(STAGE_MAX, size + by));
-        show(next, false);
-        if (!fits(false)) show(next, true);
+        var cols = COLUMNS.filter(function (n) {
+          show(next, n);
+          return fits(n);
+        })[0] || COLUMNS[COLUMNS.length - 1];
+        show(next, cols);
         place();
       }
 
