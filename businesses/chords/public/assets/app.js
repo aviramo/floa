@@ -237,16 +237,43 @@
     }).filter(function (c) { return c.name; });
   }
 
-  /* What the reading of this song cost, in US cents, as the Worker counted it
-     from the model's own token usage. A song typed by hand has no price and
-     says nothing, which is different from one that cost nothing. */
+  /* What the reading of this song cost, as the Worker counted it from the
+     model's own token usage. A song typed by hand has no price and says
+     nothing, which is different from one that cost nothing.
+
+     IN SHEKELS, AT THE RATE OF THE DAY IT WAS READ. The price is counted in US
+     cents because that is what the bill is in, and it is read in the money the
+     person paying it thinks in. The rate is the one kept on the row, never
+     today's: a price is a fact about a moment, and converting at the rate of
+     whenever the page happens to be open would restate an old reading in this
+     morning's money and change the number under a song for no reason a reader
+     could see. A row from before the rate was kept says its price in dollars,
+     which is at least true. */
+  function rateOf(song) {
+    var rate = Number(song.usd_ils);
+    return isFinite(rate) && rate > 0 ? rate : 0;
+  }
+
   function price(song) {
     if (song.read_cost == null) return "";
     var cents = Number(song.read_cost);
     if (!isFinite(cents)) return "";
-    /* Under a cent is shown as under a cent rather than as $0.00, which reads
-       as free and is a different claim. */
+
+    var rate = rateOf(song);
+    /* Under the smallest coin is shown as under it rather than as 0.00, which
+       reads as free and is a different claim. */
+    if (rate) {
+      var agorot = cents * rate;
+      return agorot < 0.5 ? "פחות מאגורה" : "₪" + (agorot / 100).toFixed(2);
+    }
     return cents < 0.5 ? "פחות מסנט" : "$" + (cents / 100).toFixed(2);
+  }
+
+  function priceWhy(song) {
+    var rate = rateOf(song);
+    var said = "עלות הפענוח של השיר הזה";
+    if (!rate) return said;
+    return said + ", לפי שער " + rate.toFixed(2) + " ביום שבו נקרא";
   }
 
   /* A read runs in the Worker and outlives the request that started it, so if
@@ -301,6 +328,9 @@
     ["status", "status_note"],
     ["lyrics_by", "music_by"],
     ["read_cost"],
+    /* on its own and not with the price, so a table that has the one and not
+       the other still shows a price, in dollars */
+    ["usd_ils"],
     ["review"],
   ].map(function (columns) { return { columns: columns, on: true }; });
 
@@ -1922,7 +1952,7 @@
            worth knowing and it is not what the row is for. */
         if (paid) {
           var cost = el("span", "cost", paid);
-          cost.title = "עלות הפענוח של השיר הזה";
+          cost.title = priceWhy(s);
           keys.appendChild(cost);
         }
         box.appendChild(keys);

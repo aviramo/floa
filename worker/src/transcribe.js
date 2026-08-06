@@ -1104,7 +1104,32 @@ async function patchSong(env, token, id, fields) {
    the new SQL run against it refuses any write that names them. A song is
    worth a great deal more than its credits or its price, so drop those and
    keep the song rather than losing a read that has already been paid for. */
-const LATE_COLUMNS = ["lyrics_by", "music_by", "read_cost", "review"];
+const LATE_COLUMNS = ["lyrics_by", "music_by", "read_cost", "review", "usd_ils"];
+
+/* What a dollar was worth in shekels today, asked once per reading and written
+   onto the row beside the price.
+
+   KEPT RATHER THAN LOOKED UP LATER, because a price is a fact about a moment.
+   Converting at the rate of whenever somebody happens to open the page would
+   restate last year's reading in this morning's money, and the number under a
+   song would drift every day for no reason a reader could see.
+
+   Frankfurter serves the European Central Bank's daily reference rates, needs
+   no key and answers a weekend with the last working day. A reading whose rate
+   could not be fetched is worth far more than the rate: it keeps its price in
+   dollars and nothing waits. */
+async function shekelRate() {
+  try {
+    const response = await fetch("https://api.frankfurter.app/latest?from=USD&to=ILS");
+    if (!response.ok) return null;
+    const body = await response.json();
+    const rate = Number(body?.rates?.ILS);
+    return Number.isFinite(rate) && rate > 0 ? rate : null;
+  } catch (err) {
+    console.error("rate lookup failed", err.message);
+    return null;
+  }
+}
 
 async function saveSong(env, token, id, fields) {
   const failure = await patchSong(env, token, id, fields);
@@ -1299,6 +1324,9 @@ export async function readAndSave(env, token, songId, files) {
     return;
   }
 
+  /* after the reading, so a rate is never fetched for a song that failed */
+  const rate = await shekelRate();
+
   const fields = {
     lyrics_by: song.lyrics_by,
     music_by: song.music_by,
@@ -1310,6 +1338,8 @@ export async function readAndSave(env, token, songId, files) {
        reported. Null means the price was not known here, never that it was
        free. */
     read_cost: song.cost,
+    /* the rate that price is read in, kept with it */
+    usd_ils: rate,
     /* A machine read it, so a person has not. The label stays on the song until
        somebody says they have looked at it, and it is set here rather than by
        the browser because this is the only place that knows the words came off

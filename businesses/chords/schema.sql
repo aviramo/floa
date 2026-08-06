@@ -81,6 +81,16 @@ alter table public.songs add column if not exists music_by    text not null defa
 -- to read: one typed by hand, or one read before this column existed.
 alter table public.songs add column if not exists read_cost   numeric;
 
+-- What a dollar was worth in shekels on the day this song was read, written by
+-- the Worker beside the price.
+--
+-- KEPT RATHER THAN LOOKED UP, because a price is a fact about a moment. Asking
+-- the rate at the time of reading the page would answer with today's, and
+-- restate what a reading cost last year in this morning's money, changing by
+-- itself every day for no reason anybody could see. Null on a row whose rate
+-- was never fetched, and such a row says its price in dollars.
+alter table public.songs add column if not exists usd_ils     numeric;
+
 -- A song that came out of a machine is a song nobody has read yet. True from
 -- the moment the Worker saves a reading, false the moment a person says they
 -- have looked at it, and never true for a song typed by hand: there is nothing
