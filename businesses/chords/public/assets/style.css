@@ -456,6 +456,15 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 .song-meta label, .ev-meta label {
   display: block; font-size: 13px; font-weight: 600; color: var(--ink-soft);
 }
+/* On a screen with room the word sits BESIDE its field rather than over it.
+   Two words of label, each on a line of its own, cost more height than they
+   are worth on a page whose point is the song underneath: the eye is not
+   short of room to the side here, it is short of room downwards. */
+@media (min-width: 621px) {
+  .song-meta label, .ev-meta label { display: flex; align-items: baseline; gap: 8px; }
+  .song-meta label input, .ev-meta label input { flex: 1 1 auto; min-width: 0; }
+  .ev-meta label input[type="date"] { flex: 0 0 auto; }
+}
 .song-meta input[type="text"],
 .ev-meta input[type="text"], .ev-meta input[type="date"] {
   margin-top: 0; padding: 4px 2px; border-radius: 0;
@@ -668,6 +677,48 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 .ln.is-cont.is-tight .ln-c { height: 0; }
 .ln.is-cont .ln-t { padding-inline-start: var(--cont); }
 
+/* Room between two letters of a word that must not be broken. The character is
+   there, it is one of the line's own and a chord can sit on it; what it is not
+   is ink. A space's worth of width, given here rather than left to the font,
+   because the codepoint is a private-use one and what a font draws for one of
+   those is a box, if it draws anything. */
+.ln-t .gap {
+  display: inline-block; width: .34em; overflow: hidden;
+  color: transparent; vertical-align: baseline;
+  position: relative;
+}
+
+/* WHILE IT IS BEING WRITTEN, a gap shows a dash. An invisible thing cannot be
+   counted, moved or deleted on purpose, and the whole business of opening one
+   is aiming: you need to see the room you made and how much of it there is.
+
+   Drawn on top rather than put in the line, so it costs no width and no
+   character: the model has a gap there, not a hyphen, and what the reader
+   opens and what a lyrics sheet prints is the word with nothing between its
+   letters. */
+.ed .ln-t .gap::before {
+  content: "-";
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--chord); opacity: .45; font-weight: 400;
+}
+
+/* The button that opens one. Under the letters, in the air between two lines,
+   because it is the answer to a click and not a thing the page has: out of the
+   way of the words and of the chords over them, and gone the moment anything
+   is typed. Small, for the same reason. */
+.gap-btn {
+  position: fixed; z-index: 50;
+  display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 22px; padding: 0;
+  appearance: none; cursor: pointer;
+  color: var(--ink-soft); background: #fff;
+  border: 1px solid var(--line); border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(23, 32, 42, .12);
+}
+.gap-btn:hover { color: var(--chord); border-color: var(--chord); }
+.gap-btn svg { width: 15px; height: 15px; }
+
 /* A blank line is the gap between two stanzas, and a gap does not need a full
    line of words plus an empty chord lane above it to say so: about half that
    reads as a break without reading as a missing verse. The lane goes entirely,
@@ -875,7 +926,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   /* the label is about the song's state here, not about the song */
   .review-band { display: none !important; }
   /* marking a verse is editing, and a page of ticks is not a song */
-  .block-bar, .ln-pick { display: none !important; }
+  .block-bar, .ln-pick, .gap-btn { display: none !important; }
   .ln.is-marked::before { display: none; }
   body { background: #fff; }
 

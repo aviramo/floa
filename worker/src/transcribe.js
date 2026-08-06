@@ -1115,10 +1115,10 @@ async function patchSong(env, token, id, fields) {
    the new SQL run against it refuses any write that names them. A song is
    worth a great deal more than its credits or its price, so drop those and
    keep the song rather than losing a read that has already been paid for. */
-const LATE_COLUMNS = ["lyrics_by", "music_by", "read_cost", "review", "usd_ils"];
+const LATE_COLUMNS = ["lyrics_by", "music_by", "review"];
 
-/* What a dollar was worth in shekels today, asked once per reading and written
-   onto the row beside the price.
+/* What a dollar was worth in shekels today, asked once per reading and kept
+   beside the price.
 
    KEPT RATHER THAN LOOKED UP LATER, because a price is a fact about a moment.
    Converting at the rate of whenever somebody happens to open the page would
@@ -1139,6 +1139,37 @@ async function shekelRate() {
   } catch (err) {
     console.error("rate lookup failed", err.message);
     return null;
+  }
+}
+
+/* What this reading cost, into a table of its own.
+
+   NOT A COLUMN ON THE SONG any more. The library is public where it is
+   published, and row level security is about rows: a column on a row somebody
+   may read is a column they may read, so the price of a reading sat where
+   anybody holding a published song could pick it up. It is its own table now,
+   written by whoever's reading it was and read by the one account that gets
+   the invoice.
+
+   Best effort, and deliberately last. The song is already saved by the time
+   this runs; a project that has not had the new SQL run against it, or a
+   network that drops this one request, loses a number and keeps the song. */
+async function saveCost(env, token, songId, cost, rate) {
+  if (cost == null && rate == null) return;
+  try {
+    const response = await fetch(`${env.SUPABASE_URL}/rest/v1/song_costs`, {
+      method: "POST",
+      headers: {
+        apikey: env.SUPABASE_ANON_KEY,
+        authorization: `Bearer ${token}`,
+        "content-type": "application/json",
+        prefer: "return=minimal,resolution=merge-duplicates",
+      },
+      body: JSON.stringify({ song_id: songId, read_cost: cost, usd_ils: rate }),
+    });
+    if (!response.ok) console.error("cost not recorded", songId, response.status, (await response.text()).slice(0, 200));
+  } catch (err) {
+    console.error("cost not recorded", songId, err.message);
   }
 }
 
@@ -1345,14 +1376,8 @@ export async function readAndSave(env, token, songId, files) {
     /* the column is called `lines` for historical reasons; what goes in it is
        the whole song as one ChordPro document */
     lines: song.body,
-    /* what it cost, in US cents, from the token counts the API itself
-       reported. Null means the price was not known here, never that it was
-       free. */
-    read_cost: song.cost,
     /* every reading this song has had, for measuring the reader later */
     reads: song.reads || null,
-    /* the rate that price is read in, kept with it */
-    usd_ils: rate,
     /* A machine read it, so a person has not. The label stays on the song until
        somebody says they have looked at it, and it is set here rather than by
        the browser because this is the only place that knows the words came off
@@ -1377,7 +1402,8 @@ export async function readAndSave(env, token, songId, files) {
      as it is too, for the same reason. */
   if (!song.title) {
     const failure = await saveSong(env, token, songId, fields);
-    if (failure) await stop(failure);
+    if (failure) return stop(failure);
+    await saveCost(env, token, songId, song.cost, rate);
     return;
   }
 
@@ -1391,7 +1417,7 @@ export async function readAndSave(env, token, songId, files) {
       ...fields,
       slug: attempt === 1 ? wanted : `${wanted}_${attempt}`,
     });
-    if (!failure) return;
+    if (!failure) return saveCost(env, token, songId, song.cost, rate);
     if (!failure.body.includes("23505")) return stop(failure);
   }
 }

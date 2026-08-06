@@ -76,20 +76,11 @@ alter table public.songs add column if not exists status_note text not null defa
 alter table public.songs add column if not exists lyrics_by   text not null default '';
 alter table public.songs add column if not exists music_by    text not null default '';
 
--- What the reading cost, in US cents, counted from the token usage the model
--- reports and written by the Worker when it saves. Null on a song nobody paid
--- to read: one typed by hand, or one read before this column existed.
-alter table public.songs add column if not exists read_cost   numeric;
-
--- What a dollar was worth in shekels on the day this song was read, written by
--- the Worker beside the price.
---
--- KEPT RATHER THAN LOOKED UP, because a price is a fact about a moment. Asking
--- the rate at the time of reading the page would answer with today's, and
--- restate what a reading cost last year in this morning's money, changing by
--- itself every day for no reason anybody could see. Null on a row whose rate
--- was never fetched, and such a row says its price in dollars.
-alter table public.songs add column if not exists usd_ils     numeric;
+-- The price of a reading used to live here, in two columns on the song, and it
+-- lives in a table of its own now: a column on a row somebody may read is a
+-- column they may read, and row level security has nothing to say about it.
+-- The move, the copy and the drop are all at the BOTTOM of this file, in one
+-- block, in that order. They were not, once, and the drop ran first.
 
 -- A song that came out of a machine is a song nobody has read yet. True from
 -- the moment the Worker saves a reading, false the moment a person says they
@@ -338,3 +329,74 @@ create policy "an evening belongs to its account"
   on public.setlists for all to authenticated
   using (owner = auth.uid())
   with check (owner = auth.uid());
+
+-- ==========================================================================
+-- What the readings cost.
+--
+-- ONE ACCOUNT PAYS FOR ALL OF THEM, and what they cost is that account's
+-- business. It was two columns on the song until the library stopped being
+-- public: row level security is about ROWS, so a column on a row somebody is
+-- allowed to read is a column they are allowed to read, and there is no
+-- policy that can say otherwise. Hiding it in the browser would have hidden
+-- it from the page and from nobody else.
+--
+-- So it is a table, and a table has its own rule. Written by whoever's reading
+-- it was, because the bill happens whoever pressed the button and a cost that
+-- is refused is a cost nobody ever knows about; read by the one address that
+-- gets the invoice.
+-- ==========================================================================
+create table if not exists public.song_costs (
+  song_id    uuid primary key references public.songs (id) on delete cascade,
+
+  -- in US cents, from the token counts the API itself reported
+  read_cost  numeric,
+
+  -- what a dollar was worth in shekels the day it was read. KEPT RATHER THAN
+  -- LOOKED UP: a price is a fact about a moment, and converting at the rate of
+  -- whenever somebody opens the page would restate an old reading in this
+  -- morning's money.
+  usd_ils    numeric,
+
+  created_at timestamptz not null default now()
+);
+
+-- Everything the two old columns held, copied across and THEN dropped, in that
+-- order and in one block. The copy stood at the bottom of this file while the
+-- drop stood at the top once, which is a way of saying the columns were emptied
+-- into nothing: one run of the file and thirteen readings' prices were gone.
+-- The order is the whole of the safety here, so the two live together.
+--
+-- Both halves run only where the old columns are still there, so the file
+-- stays safe to run again on a project that has already moved.
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+     where table_schema = 'public' and table_name = 'songs' and column_name = 'read_cost'
+  ) then
+    insert into public.song_costs (song_id, read_cost, usd_ils)
+    select id, read_cost, usd_ils from public.songs where read_cost is not null
+    on conflict (song_id) do nothing;
+
+    alter table public.songs drop column read_cost;
+    alter table public.songs drop column if exists usd_ils;
+  end if;
+end $$;
+
+alter table public.song_costs enable row level security;
+
+-- The one address that pays. In the file rather than in a settings table
+-- because it is one fact that changes when the person changes, and a table of
+-- one row would be a second place to keep it true.
+drop policy if exists "the bill is the payer's" on public.song_costs;
+create policy "the bill is the payer's"
+  on public.song_costs for select to authenticated
+  using (auth.jwt() ->> 'email' = 'ofir.aviram@gmail.com');
+
+-- Written by whoever did the reading, and never changed afterwards: a price is
+-- what it was. No update policy and no delete policy at all, so there are none
+-- of either; the row goes when its song does, by the cascade above.
+drop policy if exists "a reading records what it cost" on public.song_costs;
+create policy "a reading records what it cost"
+  on public.song_costs for insert to authenticated
+  with check (true);

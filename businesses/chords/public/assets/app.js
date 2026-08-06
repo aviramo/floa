@@ -63,6 +63,8 @@
     up: '<path d="M12 19V5m0 0l-6 6m6-6l6 6"/>',
     down: '<path d="M12 5v14m0 0l-6-6m6 6l6-6"/>',
     copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/>',
+    /* two things moving apart, which is what opening a gap does */
+    gap: '<path d="M10 8l-4 4 4 4M14 8l4 4-4 4"/>',
     undo: '<path d="M4 10h9a4.5 4.5 0 0 1 0 9h-5"/><path d="M8 6l-4 4 4 4"/>',
     print: '<path d="M7 9V4h10v5M7 18H5v-6h14v6h-2M8 14h8v6H8z"/>',
     calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
@@ -292,14 +294,18 @@
 
   /* --- whose bill it is -----------------------------------------------------
      One account pays for the readings, and what they cost is that account's
-     business and nobody else's. Everyone else, signed in or not, gets a
-     library with no prices in it: the columns are not asked for and the chip
-     is not drawn.
+     business and nobody else's.
 
-     By email, because that is what the session has and what a person knows
-     themselves by. It decides what this browser SHOWS; the row underneath is
-     still guarded by the database's own rules, which are about rows and not
-     about columns. */
+     THE PRICES ARE IN A TABLE OF THEIR OWN, and that is not tidiness. They
+     were two columns on the song, and a column on a row somebody may read is a
+     column they may read: row level security is about rows, so no policy on
+     the library could have hidden them, and hiding them in this file would
+     have hidden them from the page and from nobody else. The rule that keeps
+     them is on song_costs, in the database, and this address is the same one
+     written there.
+
+     What the check below decides is only whether to ASK. Somebody else asking
+     anyway gets an empty answer. */
   var ADMIN = "ofir.aviram@gmail.com";
 
   function isAdmin() {
@@ -397,13 +403,6 @@
   var OPTIONAL = [
     { columns: ["status", "status_note"] },
     { columns: ["lyrics_by", "music_by"] },
-    /* THE MONEY, and only for the account that pays it. Not asked for at all
-       on anybody else's page, because a page that never requested a column
-       cannot put it on screen by accident later. */
-    { columns: ["read_cost"], admin: true },
-    /* on its own and not with the price, so a table that has the one and not
-       the other still shows a price, in dollars */
-    { columns: ["usd_ils"], admin: true },
     { columns: ["review"] },
     { columns: ["draft"] },
     { columns: ["published"] },
@@ -411,8 +410,7 @@
 
   function withOptional(fields) {
     OPTIONAL.forEach(function (group) {
-      if (!group.on || (group.admin && !isAdmin())) return;
-      fields += "," + group.columns.join(",");
+      if (group.on) fields += "," + group.columns.join(",");
     });
     return fields;
   }
@@ -464,6 +462,7 @@
      stays inside CFG.table, so another business sharing the same project can
      never be touched from here. */
   var T = CFG.table;
+  var COSTS = CFG.costTable;
 
   var db = {
     list: function () {
@@ -484,9 +483,34 @@
           if (!pa) return String(a.created_at || "") < String(b.created_at || "") ? -1 : 1;
           return 0;
         });
+      }).then(function (rows) {
+        return self.withCosts(rows);
       }).catch(function (error) {
         if (!dropMissing(error)) throw error;
         return self.list();
+      });
+    },
+
+    /* What the readings cost, laid onto the songs they were paid for. A second
+       request and a second table, because the prices are the payer's alone and
+       a column of the library could never have been (see song_costs in
+       schema.sql). Asked for only by that account: everybody else's page skips
+       it, and would be answered with nothing if it did not. */
+    withCosts: function (rows) {
+      if (!isAdmin() || !rows || !rows.length) return rows;
+      return rest(COSTS + "?select=song_id,read_cost,usd_ils").then(function (costs) {
+        var by = {};
+        (costs || []).forEach(function (c) { by[c.song_id] = c; });
+        rows.forEach(function (song) {
+          var c = by[song.id];
+          if (!c) return;
+          song.read_cost = c.read_cost;
+          song.usd_ils = c.usd_ils;
+        });
+        return rows;
+      }).catch(function () {
+        /* a library with no prices on it is still a library */
+        return rows;
       });
     },
     bySlug: function (slug) {
@@ -900,6 +924,37 @@
     return out;
   }
 
+  /* --- a gap that is not a space --------------------------------------------
+     Two chords over one short word have nowhere to sit. A chord label is wider
+     than the syllable it names, so the second one is pushed along and stops
+     pointing at anything, and the answer on paper is to spread the letters
+     out: א  ל  י  ה, with air between them.
+
+     Spaces would do it and would be a lie about the word. The song is stored
+     as its words, they are what a search matches and what a lyrics sheet
+     prints, and "אליה" spelled with spaces in it is not that word any more.
+
+     So the gap is its own character. It is a private-use codepoint, which
+     means it is not a letter, not a digit and NOT WHITESPACE: nothing that
+     trims, breaks or counts words can mistake it for one. On screen its span
+     is given the width of a space and no ink (see .gap in the stylesheet); on
+     the way to anything that wants the words, it comes out (withoutGaps).
+
+     A character rather than a width on the letter beside it, because a chord
+     names a character: five gap characters are five places a chord can sit,
+     which is the whole point of opening the gap. */
+  var GAP = "";
+
+  /* ONE PER PRESS. A press is cheap and an undo of half a gap is not: pressing
+     twice is how you get two, and there is no way to ask for four and mean
+     three. */
+  var GAP_RUN = 1;
+
+  function gapRun() { return new Array(GAP_RUN + 1).join(GAP); }
+
+  /* the words, as words: what a lyrics sheet prints and what a search reads */
+  function withoutGaps(text) { return String(text == null ? "" : text).split(GAP).join(""); }
+
   /* --- the easy version ------------------------------------------------------
      A capo at fret N means the hand plays the song moved N semitones DOWN
      while it still sounds in its own key. So "the easy version" is not a
@@ -1125,7 +1180,12 @@
 
   function fillSpans(wrap, text) {
     wrap.textContent = "";
-    for (var i = 0; i < text.length; i++) wrap.appendChild(el("span", null, text[i]));
+    for (var i = 0; i < text.length; i++) {
+      /* the gap keeps its character, and the character keeps its span: the DOM
+         text and the model's text are the same string, which is what lets the
+         words be read straight back out of the page as they are typed */
+      wrap.appendChild(el("span", text[i] === GAP ? "gap" : null, text[i]));
+    }
   }
 
   function chordEl(chord, pos, semis) {
@@ -2670,6 +2730,9 @@
        decides where the capo chip and the headings sit; each line inside says
        which way IT runs and is laid out by that alone. */
     function draw() {
+      /* every row on screen is about to stop existing, and the little button
+         hanging under one of them with it */
+      hideGap();
       sheet.innerHTML = "";
       song.dir = songDir(song.lines);
       sheet.dir = song.dir;
@@ -2879,6 +2942,93 @@
       document.addEventListener("keydown", onKey, true);
     }
 
+    /* --- room between two letters ---------------------------------------------
+       Two chords over one short word push each other along until the second
+       one is not over anything. The room they need is between two letters of a
+       word that must not be broken, so it is opened with the gap character
+       (see GAP): five of them, invisible, and gone again from anything that
+       wants the words.
+
+       Offered rather than done. Clicking into a line is how you edit it, and a
+       click that quietly inserted anything would be an editor that types back.
+       So the click puts a small button UNDER the letters, at the place it
+       would open, and the button is the only thing that opens it.
+
+       Under and not over, and small: it is standing in the space between one
+       line and the next, where nothing is being read, and it is out of the way
+       of the words and of the chords above them. Typing dismisses it. */
+    var gapBtn = null;
+
+    function hideGap() {
+      if (!gapBtn) return;
+      gapBtn.remove();
+      gapBtn = null;
+      document.removeEventListener("pointerdown", gapOutside, true);
+    }
+
+    function gapOutside(event) {
+      if (gapBtn && !gapBtn.contains(event.target)) hideGap();
+    }
+
+    function offerGap(ln, line, editable) {
+      hideGap();
+
+      var at = caretIndex(editable);
+      /* BETWEEN letters, so not at either end: a gap at the front or the back
+         of a line is padding, and padding is what dragging a chord past the
+         end already does. */
+      if (at == null || at <= 0 || at >= line.text.length) return;
+
+      var letter = editable.children[at];
+      if (!letter) return;
+
+      gapBtn = el("button", "gap-btn");
+      gapBtn.type = "button";
+      gapBtn.title = "לפתוח רווח בין האותיות, בלי לשבור את המילה";
+      gapBtn.setAttribute("aria-label", gapBtn.title);
+      gapBtn.appendChild(svg(ICON.gap));
+      /* the caret is the whole of where this will go, so the press must not
+         take it away first */
+      gapBtn.addEventListener("pointerdown", function (event) { event.preventDefault(); });
+      gapBtn.addEventListener("click", function () { openGap(ln, line, editable, at); });
+      document.body.appendChild(gapBtn);
+
+      var box = letter.getBoundingClientRect();
+      var width = gapBtn.offsetWidth;
+      var left = Math.min(Math.max(4, box.left + box.width / 2 - width / 2), window.innerWidth - width - 4);
+      gapBtn.style.left = left + "px";
+      gapBtn.style.top = (box.bottom + 2) + "px";
+
+      document.addEventListener("pointerdown", gapOutside, true);
+    }
+
+    function openGap(ln, line, editable, at) {
+      var was = line.text;
+      var next = was.slice(0, at) + gapRun() + was.slice(at);
+
+      /* The same three steps typing takes, for the same reason: the chords are
+         written onto the objects the handlers already hold, the caret is put
+         back where the person left it, and the labels catch up with the model
+         they name. The caret is handed to remapChords because a run of
+         identical characters cannot be diffed: five gaps inserted anywhere in
+         a line of gaps gives the same string. */
+      var moved = remapChords(was, next, line.chords, at);
+      line.chords.forEach(function (c, i) { c.pos = moved[i].pos; });
+      line.text = next;
+
+      fillSpans(editable, next);
+      placeCaret(editable, at + GAP_RUN);
+
+      var nodes = ln.querySelectorAll(".ln-c .chord");
+      for (var i = 0; i < nodes.length && i < line.chords.length; i++) {
+        nodes[i].dataset.pos = line.chords[i].pos;
+      }
+      layoutLine(ln);
+
+      hideGap();
+      mark();
+    }
+
     /* --- one editable line ---------------------------------------------------
        There is no edit mode and no field. The words on screen ARE the input:
        the same spans the reader sees, made editable in place, so nothing moves,
@@ -2971,6 +3121,11 @@
           layoutLine(ln);
         });
         text.addEventListener("keydown", function (event) { lineKeys(event, line, text); });
+        /* Clicking between two letters offers to open a gap there, and typing
+           takes the offer away again: it is an answer to standing still, not
+           something to type around. */
+        text.addEventListener("click", function () { offerGap(ln, line, text); });
+        text.addEventListener("keydown", hideGap, true);
         ln.appendChild(text);
       }
 

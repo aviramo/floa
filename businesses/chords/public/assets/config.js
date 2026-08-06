@@ -11,10 +11,12 @@ window.CHORDS_CONFIG = {
   supabaseUrl: window.SUPABASE.url,
   supabaseAnonKey: window.SUPABASE.anonKey,
 
-  /* the tables this app owns inside that project: the library, and the
-     evenings of singing planned out of it */
+  /* The tables this app owns inside that project: the library, the evenings of
+     singing planned out of it, and what the readings cost, which is a table of
+     its own because only the account that pays for them may read it. */
   table: "songs",
   setlistTable: "setlists",
+  costTable: "song_costs",
 
   /* The Worker holds the Anthropic key and reads an uploaded photo or PDF.
      Same deployment that sends the leads for every other business here. */
