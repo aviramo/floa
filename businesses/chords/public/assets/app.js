@@ -76,6 +76,11 @@
     history: '<path d="M12 8.5V12l2.5 2"/><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M3 4v4h4"/>',
     /* two things moving apart, which is what opening a gap does */
     gap: '<path d="M10 8l-4 4 4 4M14 8l4 4-4 4"/>',
+    /* Lines, and an arrow pushing them off the edge they start at. The arrows
+       point the way the words move on THIS page, which runs right to left, so
+       indenting is the one pointing left. */
+    indent: '<path d="M4 5h16M4 19h16M11 12h9M7 9l-3 3 3 3"/>',
+    outdent: '<path d="M4 5h16M4 19h16M4 12h9M17 9l3 3-3 3"/>',
     /* a sheet with an older sheet behind it: the song, and the songs it was */
     versions: '<rect x="8" y="3" width="12" height="14" rx="2"/><path d="M4 7v12a2 2 0 0 0 2 2h9"/>',
     /* --- the three controls over a song, as pictures ---
@@ -3780,6 +3785,8 @@
       blockBar.appendChild(blockCount);
       blockBar.appendChild(iconBtn(ICON.up, "להעלות את המסומן", function () { moveMarked(-1); }));
       blockBar.appendChild(iconBtn(ICON.down, "להוריד את המסומן", function () { moveMarked(1); }));
+      blockBar.appendChild(iconBtn(ICON.indent, "הזחה פנימה", function () { indentMarked(1); }));
+      blockBar.appendChild(iconBtn(ICON.outdent, "הזחה החוצה", function () { indentMarked(-1); }));
       blockBar.appendChild(button("שכפול", ICON.copy, "ghost small", copyMarked));
 
       /* One copy, and the two ways to put it down beside it. Neither of them
@@ -4637,6 +4644,50 @@
       going.forEach(function (line) {
         if (dirOf(line) === dir) return;
         line.dir = dir;
+        moved = true;
+      });
+      if (!moved) return;
+
+      draw();
+      mark();
+    }
+
+    /* --- room at the START of a line ------------------------------------------
+       The same room as between two letters, put where a line begins: one gap
+       character in front of the words, so the line starts a little further in
+       and the chord over its first letter comes with it.
+
+       WHAT IT IS FOR IS THE WHOLE SONG. Mark every line and press it, and the
+       song moves in as one, which is what a sheet wants when a chord over the
+       first letter of every line is hanging off the edge of the page. One line
+       at a time is the same button, on one line.
+
+       A HEADING IS LEFT ALONE. Its text is not laid out character by character
+       (only .ln-t is), so a gap in it would be a codepoint the font has never
+       heard of, drawn as a box, in the middle of the word "פזמון".
+
+       The chords come along, because they name characters and a character has
+       been added in front of all of them. */
+    function indentMarked(by) {
+      var going = song.lines.filter(function (line) {
+        return isMarked(line) && line.type !== "section";
+      });
+      if (!going.length) return;
+
+      var moved = false;
+      going.forEach(function (line) {
+        if (by > 0) {
+          line.text = GAP + line.text;
+          line.chords.forEach(function (c) { c.pos += 1; });
+          moved = true;
+          return;
+        }
+        /* out, and only out of room that was put there: a line that starts
+           with a letter has nothing to take back, and taking the letter would
+           be an indent button that deletes the song a character at a time */
+        if (line.text.charAt(0) !== GAP) return;
+        line.text = line.text.slice(1);
+        line.chords.forEach(function (c) { c.pos = Math.max(0, c.pos - 1); });
         moved = true;
       });
       if (!moved) return;
