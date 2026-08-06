@@ -70,11 +70,31 @@
 
    That last one is what settled it: four settings had been tried and the same
    two errors kept coming back, so the setting was not what was wrong. The
-   question was. Hence the shape above, and the model stays where it is.
+   question was. Hence the shape at the top of this file.
+
+   AND THEN THE LADDER CAN BE CLIMBED BACK DOWN, which is the point of the new
+   shape and the reason this line reads Sonnet again. Look at what the cheap
+   settings actually failed at:
+
+     the ORDER, which no model is asked for any more. Each chord names its own
+     word and this file sorts them, so the reversal is not a thing that can be
+     got right or wrong.
+
+     the DRIFT to the front of a word, which is now caught here rather than
+     asked for. The letter and the count say the same thing twice, and where
+     they disagree the letter wins.
+
+   Both of the failures that made Opus worth its price were structural, and
+   both are gone from the question. What is left is reading Hebrew off a
+   photograph and naming the letter under a symbol, and Sonnet reads the words
+   themselves perfectly well; that was never where it went wrong.
+
+   If this turns out to be false economy, the ONE line to change is the model,
+   back to claude-opus-5, and nothing else in this file moves.
 
    max_tokens is a ceiling and not a target: at 32000 a long song cannot run
    out of room, and nothing is paid for room that goes unused. */
-const MODEL = "claude-opus-5";
+const MODEL = "claude-sonnet-5";
 const EFFORT = "medium";
 const MAX_TOKENS = 32000;
 

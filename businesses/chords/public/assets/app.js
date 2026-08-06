@@ -1079,13 +1079,21 @@
     requireAuth(function () { go(BASE + "/new"); });
   }
 
-  /* "שיר חדש" is shown to everyone, signed in or not. Hiding it until you log
-     in leaves a visitor looking at an empty list with no way forward and no
-     reason given; showing it and asking for the password on the click says
-     what the rule is at the moment it applies. */
+  /* ONLY ON THE INDEX. Adding a song, signing in and signing out belong to the
+     library, and a song open on the screen has buttons of its own about that
+     song. Two rows of buttons an inch apart, one of them about what you are
+     looking at and the other about something else, is a page where you have to
+     read before you can press.
+
+     "שיר חדש" is shown there to everyone, signed in or not. Hiding it until you
+     log in leaves a visitor looking at an empty list with no way forward and no
+     reason given; showing it and asking for the password on the click says what
+     the rule is at the moment it applies. */
   function paintHeader() {
     var bar = document.getElementById("topActions");
     bar.innerHTML = "";
+    if (parts().length) return;
+
     bar.appendChild(button("מתמונה", ICON.upload, "ghost small", uploadSong));
     bar.appendChild(button("שיר חדש", ICON.plus, "small", newSong));
     if (auth.in) {
@@ -2294,6 +2302,8 @@
 
   function route() {
     window.scrollTo(0, 0);
+    /* the header follows the address, because what it offers depends on it */
+    paintHeader();
     var p = parts();
 
     if (!p.length) { document.title = "אקורדים"; return viewIndex(); }
@@ -2317,6 +2327,5 @@
 
   absorbFallback();
   auth.load();
-  paintHeader();
   route();
 })();
