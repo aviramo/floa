@@ -3105,7 +3105,8 @@
         });
         if (song.draft) flagRow.appendChild(tag("draft", "טיוטה", "השיר עוד לא גמור"));
         if (song.published) flagRow.appendChild(tag("published", "פורסם", "השיר פתוח לכולם"));
-        head.appendChild(flagRow);
+        /* on the title's own line, at the far end of it */
+        headTop.appendChild(flagRow);
       }
     }
 
@@ -3167,8 +3168,14 @@
       var ctl = el("span", "ctl");
       ctl.appendChild(el("span", "lbl", label));
       if (valueNode) ctl.appendChild(valueNode);
-      ctl.appendChild(iconBtn('<path d="M5 12h14"/>', "פחות " + label, less));
-      ctl.appendChild(iconBtn(ICON.plus, "יותר " + label, more));
+      /* THE TWO OF THEM IN ONE BOX. They were two bordered squares with air
+         between them, which is two of everything a stepper needs one of, and
+         three controls' worth of that is most of a phone's row. Joined, they
+         read as the one thing they are, and the row fits. */
+      var steps = el("span", "steps");
+      steps.appendChild(iconBtn('<path d="M5 12h14"/>', "פחות " + label, less));
+      steps.appendChild(iconBtn(ICON.plus, "יותר " + label, more));
+      ctl.appendChild(steps);
       return ctl;
     }
 

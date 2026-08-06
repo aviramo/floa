@@ -446,6 +446,12 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 /* --- song page ---------------------------------------------------------- */
 
 .song-head { margin: 28px 0 6px; }
+/* The name, and at the far end of its own line whatever the song says about
+   itself. Under the title those two words cost a line of the page, and on a
+   phone the page is the song. Baseline-aligned, so the label sits on the name
+   rather than in the air over it. */
+.head-top { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.head-top h1 { flex: 1 1 auto; min-width: 0; }
 .song-head h1 { margin: 0; font-size: 30px; letter-spacing: -.02em; outline: none; }
 .song-head .by { color: var(--ink-soft); margin-top: 2px; }
 /* What the reading could not finish. On the song and not instead of it, so it
@@ -599,7 +605,8 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 .draft-btn.is-on { color: var(--draft-ink); background: var(--draft-soft); border-color: currentColor; }
 .pub-btn.is-on { color: var(--published-ink); background: var(--published-soft); border-color: currentColor; }
 
-.head-tags { margin-top: 6px; }
+/* at the far end of the title's line, and never wrapped mid-label */
+.head-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-inline-start: auto; }
 
 /* Two gaps, and the difference between them is what says where one control ends
    and the next begins: the parts of a control sit close enough to read as one
@@ -610,6 +617,16 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   background: var(--card); border: 1px solid var(--line); border-radius: 999px;
 }
 .tools .ctl { display: flex; align-items: center; gap: 5px; }
+/* Less and more are ONE control, so they are one box: two bordered squares
+   with air between them is two of everything a stepper needs one of, and
+   three of those pairs is most of the row on a phone. */
+.tools .steps {
+  display: inline-flex; background: #fff;
+  border: 1px solid var(--line); border-radius: 8px; overflow: hidden;
+}
+.tools .steps .icon-btn { border: 0; border-radius: 0; width: 30px; height: 28px; }
+.tools .steps .icon-btn + .icon-btn { border-inline-start: 1px solid var(--line); }
+.tools .steps .icon-btn:hover { background: var(--bg); }
 .tools .sep { width: 1px; height: 22px; background: var(--line); }
 .tools .lbl { font-size: 13px; color: var(--ink-soft); font-weight: 600; }
 /* wide enough for -11 and no wider, so the number does not stand in a hole of
