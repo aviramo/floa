@@ -204,15 +204,19 @@
   }
 
   var FIELDS = "id,slug,title,artist,song_key,dir,lines,updated_at";
-  var LIST_FIELDS = "id,slug,title,artist,song_key,created_at";
+  var LIST_FIELDS = "id,slug,title,artist,song_key,created_at,updated_at";
 
-  /* A read runs in the Worker, so nothing in the browser can be told that it
-     died. After this long a row that still says `reading` is not reading. */
-  var STALLED_AFTER = 6 * 60 * 1000;
+  /* A read runs in the Worker and outlives the request that started it, so if
+     the runtime cuts it short there is nobody left to say so. What says so is
+     silence: the job writes the elapsed time onto its own row every twenty
+     seconds, and a row that has not been touched in two minutes is not being
+     read any more, whatever it still claims. */
+  var SILENT_TOO_LONG = 2 * 60 * 1000;
 
   function stalled(song) {
-    return song.status === "reading" &&
-      Date.now() - Date.parse(song.created_at || 0) > STALLED_AFTER;
+    if (song.status !== "reading") return false;
+    var last = Date.parse(song.updated_at || song.created_at || 0);
+    return !last || Date.now() - last > SILENT_TOO_LONG;
   }
 
   /* `status` and `status_note` arrived after the table did, and the table is
@@ -879,9 +883,9 @@
     var box2 = el("div");
     box2.appendChild(el("div", "t", s.title));
     box2.appendChild(el("div", "a", reading
-      ? "קורא את השיר, אפשר לסגור את הדף"
+      ? (s.status_note || "קורא את השיר") + ", אפשר לסגור את הדף"
       : stalled(s) ? "הקריאה נתקעה ולא הסתיימה" : "הקריאה נכשלה"));
-    if (s.status === "failed" && s.status_note) box2.appendChild(el("div", "detail", s.status_note));
+    if (s.status !== "reading" && s.status_note) box2.appendChild(el("div", "detail", s.status_note));
     row.appendChild(box2);
 
     if (!reading) {
@@ -1373,7 +1377,9 @@
     function closeOnOutside(event) { if (picker && !picker.contains(event.target)) closePicker(); }
     function closeOnEscape(event) { if (event.key === "Escape") closePicker(); }
 
-    /* every chord already in this song, in the order it first appears */
+    /* every chord in this song, once each, A to Z. Sorted rather than in the
+       order they appear, so the same chord is always in the same place in the
+       row and reaching for it becomes muscle memory. */
     function chordsInSong() {
       var seen = Object.create(null), out = [];
       song.lines.forEach(function (line) {
@@ -1381,7 +1387,7 @@
           if (c.chord && !seen[c.chord]) { seen[c.chord] = true; out.push(c.chord); }
         });
       });
-      return out;
+      return out.sort(function (a, b) { return a.localeCompare(b, "en"); });
     }
 
     /* One small row: the chords this song already uses, a + for one it does

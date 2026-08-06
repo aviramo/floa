@@ -27,7 +27,26 @@
    forces the answer into the one shape the app can use.
    ========================================================================== */
 
-const MODEL = "claude-opus-5";
+/* --- what the read costs --------------------------------------------------
+   These three lines are the whole of it, and they are meant to be easy to
+   change because they are a trade, not a fact.
+
+   Sonnet 5 rather than Opus 5: this is careful reading, not hard reasoning,
+   and Sonnet reaches the same place here for a fraction of the price. `medium`
+   rather than `high`: effort is what decides how long the model thinks, and
+   thinking is where the tokens actually go on a task like this, far more than
+   the picture. `max_tokens` is a ceiling, not a target, and it covers thinking
+   and answer together, so it is set high enough for a long song and no higher.
+
+   Together they also keep a read down to under a minute, which matters for a
+   second reason: the job outlives the request that started it, and the shorter
+   it is the less there is for the runtime to cut short.
+
+   If chords start landing on the wrong syllables, raise the effort before
+   changing anything else. */
+const MODEL = "claude-sonnet-5";
+const EFFORT = "medium";
+const MAX_TOKENS = 16000;
 
 export const MEDIA_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif", "application/pdf"];
 
@@ -119,7 +138,7 @@ const USER_TEXT =
    as thousands of small events, and this Worker has a CPU budget measured in
    milliseconds, so a line is only parsed as JSON once a substring test says it
    could possibly matter. Everything else is skipped without being looked at. */
-async function streamText(env, body) {
+async function streamText(env, body, onProgress) {
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -143,6 +162,7 @@ async function streamText(env, body) {
     const { value, done } = await reader.read();
     if (done) break;
     buffer += value;
+    if (onProgress) onProgress(text.length);
 
     let cut;
     while ((cut = buffer.indexOf("\n")) >= 0) {
@@ -171,7 +191,7 @@ async function streamText(env, body) {
 
 /* Reads one upload, which may be several pages of the same song. Throws an
    Error whose message is safe to store: it is ours, never a key. */
-export async function readChordSheet(env, files) {
+export async function readChordSheet(env, files, onProgress) {
   const pages = files.map((file) => {
     const source = { type: "base64", media_type: file.media_type, data: file.data };
     return file.media_type === "application/pdf"
@@ -181,17 +201,14 @@ export async function readChordSheet(env, files) {
 
   const { text, stopReason } = await streamText(env, {
     model: MODEL,
-    /* Room to think AND to answer: max_tokens caps both together, and a long
-       song at this effort spends a lot on the counting before it writes a
-       word. Streaming is what makes a ceiling this high safe to ask for. */
-    max_tokens: 64000,
+    max_tokens: MAX_TOKENS,
     system: SYSTEM,
     output_config: {
-      effort: "high",
+      effort: EFFORT,
       format: { type: "json_schema", schema: SCHEMA },
     },
     messages: [{ role: "user", content: [...pages, { type: "text", text: USER_TEXT }] }],
-  });
+  }, onProgress);
 
   if (stopReason === "refusal") throw new Error("refusal");
   if (stopReason === "max_tokens") throw new Error("truncated");
@@ -280,14 +297,33 @@ async function patchSong(env, token, id, fields) {
    written onto the row as `failed`, because a row that says why is the only
    thing the person who uploaded the picture can act on. */
 export async function readAndSave(env, token, songId, files) {
+  /* A heartbeat onto the row itself.
+
+     This job outlives the request that started it, so if the runtime cuts it
+     short there is nobody left to say so and the row would simply sit at
+     `reading` for ever. Writing the elapsed time every twenty seconds means the
+     row records how far it got, which is the difference between "it is slow"
+     and "it died after ninety seconds", and it gives the person watching a
+     number instead of a spinner. */
+  const began = Date.now();
+  let beat = 0;
+  const heartbeat = () => {
+    const seconds = Math.round((Date.now() - began) / 1000);
+    if (seconds - beat < 20) return;
+    beat = seconds;
+    /* not awaited: the reading must not wait on the bookkeeping */
+    patchSong(env, token, songId, { status_note: `קורא, ${seconds} שניות` }).catch(() => {});
+  };
+
   let song;
   try {
-    song = await readChordSheet(env, files);
+    song = await readChordSheet(env, files, heartbeat);
   } catch (err) {
-    console.error("transcribe failed", songId, err.message);
+    const seconds = Math.round((Date.now() - began) / 1000);
+    console.error("transcribe failed", songId, seconds + "s", err.message);
     await patchSong(env, token, songId, {
       status: "failed",
-      status_note: String(err.message).slice(0, 300),
+      status_note: `${String(err.message).slice(0, 260)} (${seconds}s)`,
     });
     return;
   }
