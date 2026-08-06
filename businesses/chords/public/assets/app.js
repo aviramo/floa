@@ -76,6 +76,8 @@
     history: '<path d="M12 8.5V12l2.5 2"/><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M3 4v4h4"/>',
     /* two things moving apart, which is what opening a gap does */
     gap: '<path d="M10 8l-4 4 4 4M14 8l4 4-4 4"/>',
+    /* a sheet with an older sheet behind it: the song, and the songs it was */
+    versions: '<rect x="8" y="3" width="12" height="14" rx="2"/><path d="M4 7v12a2 2 0 0 0 2 2h9"/>',
     /* --- the three controls over a song, as pictures ---
        Each has to be recognisable at fifteen pixels by somebody who was not
        told, so each is drawn as the thing itself rather than as an abstraction
@@ -507,13 +509,16 @@
     if (!isFinite(cents)) return "";
 
     var rate = rateOf(song);
-    /* Under the smallest coin is shown as under it rather than as 0.00, which
-       reads as free and is a different claim. */
+    /* UNDER THE SMALLEST COIN, NOTHING IS SHOWN. It used to say "פחות
+       מאגורה", which is true and is three words spent on a number that is
+       nought: a reading that cost less than the smallest coin there is cost
+       nothing anybody is going to think about, and the row is better off
+       saying nothing about it than saying that. */
     if (rate) {
       var agorot = cents * rate;
-      return agorot < 0.5 ? "פחות מאגורה" : "₪" + (agorot / 100).toFixed(2);
+      return agorot < 0.5 ? "" : "₪" + (agorot / 100).toFixed(2);
     }
-    return cents < 0.5 ? "פחות מסנט" : "$" + (cents / 100).toFixed(2);
+    return cents < 0.5 ? "" : "$" + (cents / 100).toFixed(2);
   }
 
   function priceWhy(song) {
@@ -880,6 +885,126 @@
       return rest(SET + "?id=eq." + encodeURIComponent(id), { method: "DELETE" });
     },
   };
+
+  /* --- every version that was published --------------------------------------
+     A song writes itself every few seconds while it is being typed, so its own
+     row is only ever the latest word. This is the other thing: what the song
+     WAS each time somebody pressed פורסם, kept whole and never touched again.
+
+     PUBLISHING IS THE MOMENT AND NOT SAVING, because saving is a keystroke and
+     publishing is a sentence: "this is finished, let people have it". A row per
+     save would be a history of typing, which nobody has ever wanted to read.
+
+     Nothing here is optional-column machinery: this table arrived whole or it
+     did not arrive at all, and a project whose schema.sql has not been run
+     since simply has no history, which every call below answers quietly. A
+     song must go on publishing whether or not its past can be written down.
+
+     See song_versions in schema.sql for the shape and for who may read it,
+     which is its author and nobody else. */
+  var VER = CFG.versionTable;
+  var VER_FIELDS = "id,created_at,title,lyrics_by,music_by,dir,lines,styles";
+
+  var versions = {
+    /* One song's, newest first. Ordered by the database rather than here,
+       because that is the index the table carries. */
+    of: function (songId) {
+      return rest(VER + "?select=" + VER_FIELDS +
+        "&song_id=eq." + encodeURIComponent(songId) + "&order=created_at.desc")
+        .then(function (rows) { return rows || []; })
+        .catch(function () { return []; });
+    },
+
+    one: function (songId, id) {
+      return rest(VER + "?select=" + VER_FIELDS +
+        "&song_id=eq." + encodeURIComponent(songId) +
+        "&id=eq." + encodeURIComponent(id) + "&limit=1")
+        .then(function (rows) { return rows && rows[0]; })
+        .catch(function () { return null; });
+    },
+
+    /* The last one written, for the two questions that only need it: whether
+       anything has moved since, and whether the song on screen is still the
+       version everybody else is reading. */
+    latest: function (songId) {
+      return rest(VER + "?select=" + VER_FIELDS +
+        "&song_id=eq." + encodeURIComponent(songId) + "&order=created_at.desc&limit=1")
+        .then(function (rows) { return rows && rows[0]; })
+        .catch(function () { return null; });
+    },
+
+    /* How many there are, asked by the song page to decide whether to offer a
+       way in at all. Ids only: the way to what is there should not cost the
+       whole of what is there. */
+    count: function (songId) {
+      return rest(VER + "?select=id&song_id=eq." + encodeURIComponent(songId))
+        .then(function (rows) { return (rows || []).length; })
+        .catch(function () { return 0; });
+    },
+
+    /* `owner` is not sent. The database fills it in from the token, which is
+       the whole of why a version cannot be written into somebody else's name. */
+    add: function (row) {
+      return rest(VER, { method: "POST", body: row });
+    },
+  };
+
+  /* The song as it stands, in the shape a version is kept in. Taken from the
+     row the database just handed back rather than from the page, so what is
+     recorded is what was actually written and not what was about to be. */
+  function versionOf(row) {
+    return {
+      song_id: row.id,
+      title: String(row.title || ""),
+      lyrics_by: String(row.lyrics_by || ""),
+      music_by: String(row.music_by || ""),
+      dir: row.dir || "rtl",
+      /* the same jsonb string the song itself holds, straight across */
+      lines: row.lines == null ? "" : row.lines,
+      styles: Array.isArray(row.styles) ? row.styles : [],
+    };
+  }
+
+  /* Two versions of the same song, or a version and the song itself. Compared
+     on everything a version keeps, and on nothing else: `updated_at` moves when
+     a song is published and says nothing about the words. */
+  function sameVersion(a, b) {
+    if (!a || !b) return false;
+    return JSON.stringify(versionKeys(a)) === JSON.stringify(versionKeys(b));
+  }
+
+  function versionKeys(v) {
+    return [
+      String(v.title || ""),
+      String(v.lyrics_by || ""),
+      String(v.music_by || ""),
+      v.dir || "rtl",
+      String(v.lines == null ? "" : v.lines),
+      Array.isArray(v.styles) ? v.styles : [],
+    ];
+  }
+
+  /* Publishing is what writes one, and the press has already been made by the
+     time this runs: the song is in the database, and this is the copy of it
+     going into the shelf beside it.
+
+     A PUBLISH THAT CHANGED NOTHING WRITES NOTHING. Two identical rows an hour
+     apart are not two versions, they are one version and a second press, and a
+     list of them would be a list of presses. What makes a version is the song
+     being different.
+
+     Failure is swallowed. Nothing anybody typed is at stake here: the song was
+     saved before this ran, and a history that could not be written is a shelf
+     that stayed empty, not a word lost. A red message over a successful publish
+     would say the opposite. */
+  function keepVersion(row) {
+    if (!row || !row.id) return;
+    var now = versionOf(row);
+    versions.latest(row.id).then(function (last) {
+      if (last && sameVersion(last, now)) return;
+      return versions.add(now);
+    }).catch(function () { /* the song is published either way */ });
+  }
 
   /* ------------------------------------------------------------------ model */
 
@@ -2934,12 +3059,16 @@
          on, and read right to left like everything else on the page. Each name
          keeps its own direction (see .k), which is what stops "G/B" flipping
          inside itself. */
+      /* THE SHAPES, AND NOT WHERE TO CLAMP. The easy version is worked out
+         from a capo, and the card used to say which fret it assumed; it is a
+         guess about somebody else's hands, and where the capo actually goes is
+         a fact about the player that the song page now carries. What the card
+         is for is "can I play this", and the answer to that is the shapes. */
       var used = chordsUsed(s.lines);
       if (used.length) {
         var easy = easyVersion(used);
         var keys = el("div", "keys");
         keys.title = "השיר עצמו: " + used.join("  ");
-        if (easy.capo) keys.appendChild(el("span", "capo", "קפו " + easy.capo));
         easy.shapes.forEach(function (shape) { keys.appendChild(el("span", "k", shape)); });
         box.appendChild(keys);
       }
@@ -3071,8 +3200,14 @@
     }).catch(fail);
   }
 
-  function renderSong(song) {
-    document.title = (song.title || "שיר חדש") + " | אקורדים";
+  /* `past`, when it is there, means this is not the song but a version of it:
+     {song, version}, the row in the library and the one on the shelf. The page
+     is the same page, drawn from the older words, and it CANNOT BE EDITED. Not
+     as a precaution: an editor here would write today's row from yesterday's
+     song without anybody asking for it, and the way to do that on purpose is
+     the restore button in the band at the top. */
+  function renderSong(song, past) {
+    document.title = (past ? "גרסה של " : "") + (song.title || "שיר חדש") + " | אקורדים";
 
     /* Now there is something on the page to print, and the bar can say so. The
        database answers after the routing has already painted the bar once, so
@@ -3108,7 +3243,7 @@
        true. */
     var coming = song.status === "queued" || (song.status === "reading" && !stalled(song));
 
-    var editing = auth.in && (!onPhone || !!state.editOnPhone);
+    var editing = !past && auth.in && (!onPhone || !!state.editOnPhone);
 
     /* Now there is something on the page to print, and, on a phone, a way into
        the editor and back out. Both are about the page you are on, so both are
@@ -3589,6 +3724,26 @@
         trash.classList.add("quiet");
         mine.push(trash);
       }
+      /* THE DOOR APPEARS WHEN THERE IS A ROOM BEHIND IT, the same way the way
+         to the deleted songs does. A song nobody has published yet has no
+         history, and a button leading to an empty page is a button that has to
+         be pressed to find that out. The answer comes back after the bar is
+         painted, so the button is made hidden and shown when it is earned. */
+      if (song.id) {
+        var pastBtn = iconBtn(ICON.versions, "גרסאות שפורסמו", function () {
+          flush();
+          go(BASE + "/" + encodeURIComponent(song.slug) + "/versions");
+        });
+        pastBtn.classList.add("quiet");
+        pastBtn.hidden = true;
+        mine.push(pastBtn);
+        versions.count(song.id).then(function (many) {
+          if (!many || !pastBtn.isConnected) return;
+          pastBtn.hidden = false;
+          pastBtn.title = "גרסאות שפורסמו (" + many + ")";
+          pastBtn.setAttribute("aria-label", pastBtn.title);
+        });
+      }
       mine.push(revertBtn, undoBtn, stateNode, statusChip);
       mine.forEach(function (node) { topBar.insertBefore(node, topBar.firstChild); });
     }
@@ -3888,6 +4043,11 @@
         song.review = false;
         showState();
         mark();
+        /* AND IT KEEPS WHAT WAS PUBLISHED. Not from here, from the row the
+           save hands back: what goes on the shelf has to be what actually
+           landed in the database, and a moment from now this page may already
+           have been typed into again. */
+        wantVersion = true;
         /* AND IT SAVES, now rather than in a second: this is the press that
            hands the song to everybody else. */
         queueSave(true);
@@ -5176,6 +5336,12 @@
        does on a new song is name it. */
     var saveTimer = null, inFlight = false, again = false;
 
+    /* Set by the one press that publishes, cleared by the save that carries it
+       out. It waits here rather than being acted on at the press because the
+       press does not write anything: the save does, and until it has landed
+       there is nothing true to keep a copy of. */
+    var wantVersion = false;
+
     function note(text, bad) {
       if (!stateNode) return;
       stateNode.textContent = text;
@@ -5257,6 +5423,15 @@
           mark();
           if (wasKey !== draftKey()) {
             try { localStorage.removeItem(wasKey); } catch (e) { /* nothing was kept */ }
+          }
+
+          /* The press that published it has now landed, so the song as it went
+             out goes on the shelf. Only for a save that actually carried
+             `published`, and only once: an ordinary save a minute later is not
+             another publication. */
+          if (wantVersion && payload.published) {
+            wantVersion = false;
+            keepVersion(row);
           }
 
           document.title = name + " | אקורדים";

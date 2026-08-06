@@ -259,6 +259,77 @@ create policy "a song is deleted by its account"
   using (owner = auth.uid());
 
 -- ==========================================================================
+-- Every version of a song that was ever published.
+--
+-- A row is written by the app the moment "פורסם" is pressed and never touched
+-- again: it is what the song WAS at that moment, whole, in the same shape the
+-- song itself is kept in. So it is not a diff and not a log of what changed.
+-- Reading an old version means opening it, not reconstructing it.
+--
+-- WHY PUBLISHING AND NOT SAVING. A song saves itself every second while it is
+-- being typed, and a history of that is a history of keystrokes: hundreds of
+-- rows, no two of them a version of anything. Pressing פורסם is the one moment
+-- somebody says the song is finished, so it is the only moment worth keeping.
+--
+-- The undo inside the editor is a different thing entirely and stays what it
+-- is: it lives in the browser, it goes when the tab does, and it is about the
+-- last few minutes. This is about the last few months.
+--
+-- It carries a copy of the words rather than pointing at anything, which is
+-- the point: the song moves on and the version does not.
+-- ==========================================================================
+create table if not exists public.song_versions (
+  id         uuid primary key default gen_random_uuid(),
+
+  -- Which song. `on delete cascade` because a version of a song that no longer
+  -- exists is not a version of anything, and the songs table already keeps a
+  -- deleted song around (deleted_at); only a purge takes both.
+  song_id    uuid not null references public.songs (id) on delete cascade,
+
+  -- Whose. Filled in by the database from the token the request carried, never
+  -- by the browser, exactly as on the song itself. A HISTORY IS THE AUTHOR'S
+  -- AND NOBODY ELSE'S: the published song is what the world gets, and the
+  -- drafts it passed through on the way are not part of the offer.
+  owner      uuid default auth.uid() references auth.users (id) on delete cascade,
+
+  -- The song as it stood, in the columns it stands in on the songs table and
+  -- in the same formats, so restoring is a copy across and not a translation.
+  title      text not null default '',
+  lyrics_by  text not null default '',
+  music_by   text not null default '',
+  dir        text not null default 'rtl',
+  lines      jsonb not null default '""'::jsonb,
+  styles     text[] not null default '{}',
+
+  created_at timestamptz not null default now()
+);
+
+-- one song's versions, newest first, which is the only question ever asked
+create index if not exists song_versions_song_idx
+  on public.song_versions (song_id, created_at desc);
+
+alter table public.song_versions enable row level security;
+
+-- Read by the account that wrote them. Not by a reader of the published song:
+-- what was published is one song, and how it got there is the author's own
+-- room. Not granted to anon at all, so a visitor is answered as though the
+-- table were empty, which for them it is.
+drop policy if exists "a history belongs to its author" on public.song_versions;
+create policy "a history belongs to its author"
+  on public.song_versions for select to authenticated
+  using (owner = auth.uid());
+
+drop policy if exists "a version is written by its author" on public.song_versions;
+create policy "a version is written by its author"
+  on public.song_versions for insert to authenticated
+  with check (owner = auth.uid());
+
+-- NO UPDATE POLICY AND NO DELETE POLICY, so there is neither. A version that
+-- can be edited is not a record of anything, and one that can be deleted is a
+-- history with a hole in it. They go when their song is purged, by the cascade
+-- above, and that is the only way out.
+
+-- ==========================================================================
 -- Evenings of singing.
 --
 -- A name, a date, and songs in the order they will be sung. A table of its
