@@ -1318,16 +1318,20 @@
         layoutLine(ln, rtl());
       }
 
+      function finish(value) {
+        chord.chord = String(value || "").trim().slice(0, 16);
+        if (!chord.chord) return drop();
+        node.textContent = chord.chord;
+        layoutLine(ln, rtl());
+      }
+
       /* a chord that never got a name does not survive the picker closing */
       pickerDismissed = function () { if (!chord.chord) drop(); };
 
       function commit(value) {
         pickerDismissed = null;
         closePicker();
-        chord.chord = String(value || "").trim().slice(0, 16);
-        if (!chord.chord) return drop();
-        node.textContent = chord.chord;
-        layoutLine(ln, rtl());
+        finish(value);
       }
 
       function chip(cls, label, title, onClick) {
@@ -1351,6 +1355,13 @@
           if (event.key === "Enter") { event.preventDefault(); commit(field.value); }
         });
         picker.appendChild(field);
+
+        /* Enter is one way out of the field, not the only one. Clicking
+           elsewhere, or Escape, keeps what was typed too: a chord typed and
+           then lost to a stray click is the kind of thing you only notice two
+           verses later. */
+        pickerDismissed = function () { finish(field.value); };
+
         place();
         field.focus();
         field.select();
