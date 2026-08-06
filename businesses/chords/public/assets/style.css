@@ -230,7 +230,7 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    already there, and what is ticked is not worth a line of the page of its
    own, least of all one that appears while somebody is busy ticking and pushes
    the rows they are aiming at down. */
-.picking { display: flex; align-items: center; gap: 4px; flex: none; margin-inline-start: auto; }
+.picking { display: flex; align-items: center; gap: 4px; flex: none; }
 .picking .icon-btn { width: 28px; height: 26px; }
 .picking .kill { color: var(--danger); }
 .picking .kill:hover { color: #fff; background: var(--danger); border-color: var(--danger); }
@@ -258,7 +258,10 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 }
 .kinds {
   display: flex; flex-wrap: wrap; gap: 8px;
-  justify-content: flex-start;
+  /* Centred on the page. They are a description of the whole library and the
+     wall of cards under them is the whole width, so a row of two or three
+     chips hard against one edge reads as something that was left there. */
+  flex: 1 1 auto; justify-content: center;
 }
 .kinds:empty { display: none; }
 .tally-style { color: var(--ink-soft); }
@@ -287,21 +290,17 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    see the shape of the library rather than reading down a ledger. */
 .list {
   list-style: none; margin: 0 0 64px; padding: 0;
-  display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px;
+  display: grid; gap: 12px;
+  /* ALL THE SAME WIDTH, and as many across as the window holds. Cards of
+     different widths read as a heap; the same width down a column is a shelf,
+     and what differs between two songs is then what is written on them rather
+     than how much room they took. */
+  grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
+  align-items: start;
 }
-/* A card is the song and, for whoever may delete it, a box to the side of the
-   card. Beside rather than inside, because the card is a link: a box within it
-   would open the song as often as it ticked.
-
-   A floor and a ceiling on the width, and both are about reading rather than
-   about content: under the floor a card is a stamp, and over the ceiling the
-   eye has to travel back across a line of nothing to reach the date. */
-.list li {
-  display: flex; align-items: stretch; gap: 10px;
-  flex: 0 1 auto; min-width: 250px; max-width: 100%;
-}
-.list li > a, .list li > .row { flex: 1 1 auto; min-width: 0; max-width: 560px; }
-.list .pick { flex: none; display: flex; align-items: center; padding-inline-start: 2px; }
+.list li { display: flex; min-width: 0; }
+.list li > a, .list li > .row { flex: 1 1 auto; min-width: 0; }
+.list .pick { flex: none; display: flex; align-items: center; }
 .list .pick input {
   width: 20px; height: 20px; margin: 0; cursor: pointer; accent-color: var(--accent);
 }

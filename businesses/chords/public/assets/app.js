@@ -2694,23 +2694,33 @@
   function songRow(s, refresh, mark, pick) {
     var li = el("li");
 
-    /* Outside the card rather than inside it, because the card is a link and a
-       box inside a link is a box that opens the song half the time. Given to
-       every shape of row: a song that failed to be read is one of the ones you
-       are most likely to be clearing out several of. */
+    /* INSIDE THE CARD, at the start of it, which is where a tick goes in any
+       list of things to choose from. It was outside for a while for a good
+       reason: the card is a link, and a box inside a link is a box that opens
+       the song half the time.
+
+       So the box refuses the link by hand. The press is stopped from reaching
+       the card, the browser's own idea of what a click on a link means is
+       cancelled, and the tick is then turned over here: cancelling the default
+       cancels the tick too, so it has to be done rather than allowed. Space on
+       a focused box arrives here as a click, so the keyboard is the same
+       gesture and not a second one. */
+    var holder = null;
     if (pick) {
-      var holder = el("label", "pick");
+      holder = el("label", "pick");
       var tickBox = el("input");
       tickBox.type = "checkbox";
       tickBox.checked = pick.on;
       tickBox.setAttribute("aria-label", "לבחור את " + s.title);
       li.classList.toggle("is-picked", pick.on);
-      tickBox.addEventListener("change", function () {
+      tickBox.addEventListener("click", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        tickBox.checked = !tickBox.checked;
         li.classList.toggle("is-picked", tickBox.checked);
         pick.set(tickBox.checked);
       });
       holder.appendChild(tickBox);
-      li.appendChild(holder);
     }
 
     /* The name, and where a name is not the only one of itself, the number
@@ -2738,6 +2748,7 @@
       var a = el("a");
       a.href = BASE + "/" + encodeURIComponent(s.slug);
       a.addEventListener("click", function (e) { e.preventDefault(); go(a.getAttribute("href")); });
+      if (holder) a.appendChild(holder);
 
       var box = el("div");
 
@@ -2849,6 +2860,7 @@
        long enough to have stopped. A song still being read is an ordinary row
        now, above, and cancelling it is on its own page. */
     var row = el("div", "row is-failed");
+    if (holder) row.appendChild(holder);
 
     var box2 = el("div");
     box2.appendChild(name());
