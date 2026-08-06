@@ -36,10 +36,15 @@ create table if not exists public.songs (
 
   -- The song itself, as ONE piece of text, in the ChordPro convention:
   --
-  --   "[Am]שלום לך אדו[G]ני\n[F]ואיך היה היום\n\n{פזמון}\n..."
+  --   "ש[Am]לום לך אדו[G]ני\nו[F]איך היה היום\n\n{פזמון}\n..."
   --
-  -- A chord sits in square brackets immediately before the character it is
-  -- printed above; a heading is a line in braces; a newline is a newline.
+  -- A CHORD SITS ON A CHARACTER, and its brackets go immediately AFTER that
+  -- character: ABC[Am]DEF means the Am is on the C. Not on the seam between
+  -- two characters. A printed sheet puts the symbol over a letter and marks
+  -- that letter with a tick, so a position naming a gap was describing the
+  -- drawing rather than the song.
+  --
+  -- A heading is a line in braces; a newline is a newline.
   --
   -- Stored this way rather than as text plus a list of offsets because then
   -- the link between a chord and its syllable is not a number anyone has to

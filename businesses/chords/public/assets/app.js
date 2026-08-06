@@ -626,14 +626,33 @@
      split lives only as long as the page does: what is stored, and what a
      person reads if they ever look at the database, is the line above. */
 
+  /* A CHORD SITS ON A CHARACTER, and `pos` is that character's index. Not the
+     gap before it and not the gap after it: the letter itself.
+
+     Which is what a printed sheet means. A chord symbol is over a letter, and
+     the tick under it points at that letter, so a position that named the seam
+     between two of them was always a description of the drawing rather than of
+     the song.
+
+     In the document the bracket goes immediately AFTER the character it names:
+
+         ABC[Am]DEF        Am is on the C
+         GHI [F]JKL        F is on the space
+         שלום לך אדו[G]ני  G is on the ו
+
+     So writing one means slicing up to and INCLUDING its character, and
+     reading one means the character just before the bracket. A bracket at the
+     very start of a line has no character before it; it lands on the first,
+     which is the nearest thing it can have meant. */
+
   function toChordPro(line) {
     if (line.type === "section") return line.text;
     var chords = line.chords.slice().sort(function (a, b) { return a.pos - b.pos; });
     var out = "", at = 0;
     chords.forEach(function (c) {
-      var pos = Math.max(at, Math.min(c.pos, line.text.length));
-      out += line.text.slice(at, pos) + "[" + c.chord + "]";
-      at = pos;
+      var after = Math.max(at, Math.min(c.pos + 1, line.text.length));
+      out += line.text.slice(at, after) + "[" + c.chord + "]";
+      at = after;
     });
     return out + line.text.slice(at);
   }
@@ -644,7 +663,7 @@
     while ((found = brackets.exec(raw))) {
       text += raw.slice(at, found.index);
       var chord = found[1].trim();
-      if (chord) chords.push({ pos: text.length, chord: chord });
+      if (chord) chords.push({ pos: Math.max(0, text.length - 1), chord: chord });
       at = found.index + found[0].length;
     }
     return { text: text + raw.slice(at), chords: chords };
@@ -722,9 +741,12 @@
      spaces, so the chord still names a character. This is what a printed chord
      sheet does too, and it is what keeps the promise that editing the words
      moves the chords with them. */
+  /* A chord names a CHARACTER, so the line has to be long enough to have one:
+     a chord on character 12 needs thirteen characters, not twelve. */
   function padTo(line, pos) {
-    if (pos <= line.text.length) return false;
-    line.text += new Array(pos - line.text.length + 1).join(" ");
+    var needed = pos + 1;
+    if (needed <= line.text.length) return false;
+    line.text += new Array(needed - line.text.length + 1).join(" ");
     return true;
   }
 
@@ -760,7 +782,7 @@
      called for them has moved back */
   function trimPadding(line) {
     var needed = 0;
-    line.chords.forEach(function (c) { if (c.pos > needed) needed = c.pos; });
+    line.chords.forEach(function (c) { if (c.pos + 1 > needed) needed = c.pos + 1; });
     var words = line.text.replace(/\s+$/, "").length;
     var keep = Math.max(words, needed);
     if (keep >= line.text.length) return false;
@@ -925,9 +947,13 @@
     var m = metrics(ln, rtl);
     if (!lane || !m) return;
 
+    /* THE MIDDLE OF THE CHARACTER, not its leading edge. A chord sits ON a
+       letter, so what its own middle lines up with is the middle of that
+       letter, and half a character is the difference between a chord over the
+       ק and a chord over the seam before it. */
     var placed = [];
     Array.prototype.forEach.call(lane.querySelectorAll(".chord"), function (node) {
-      placed.push({ node: node, start: positionOf(m, Number(node.dataset.pos) || 0) });
+      placed.push({ node: node, start: positionOf(m, (Number(node.dataset.pos) || 0) + 0.5) });
     });
 
     /* Two chords over neighbouring syllables would print on top of each other.
@@ -968,7 +994,7 @@
   function placeChord(ln, node, rtl, at) {
     var m = metrics(ln, rtl);
     if (!m) return;
-    var anchor = at != null ? at : positionOf(m, Number(node.dataset.pos) || 0);
+    var anchor = at != null ? at : positionOf(m, (Number(node.dataset.pos) || 0) + 0.5);
     var x = anchor - node.getBoundingClientRect().width / 2;
     node.style.left = rtl ? "auto" : x + "px";
     node.style.right = rtl ? x + "px" : "auto";
@@ -2013,19 +2039,21 @@
           if (Math.abs(event.clientX - from) < 4) return;
           dragging = true;
           node.classList.add("is-dragging");
-          /* A chord is grabbed somewhere in the middle of its own label, but
-             its position is its anchor edge. Remember the difference at the
-             moment the drag begins and keep it, or the chord snaps that far
-             sideways on the first pixel of movement. */
-          grab = chord.pos - posFromX(ln, event.clientX, rtl());
+          /* A chord is grabbed somewhere in the middle of its own label, and
+             what it is anchored to is the middle of a character. Remember the
+             difference at the moment the drag begins and keep it, or the chord
+             snaps that far sideways on the first pixel of movement. */
+          grab = (chord.pos + 0.5) - posFromX(ln, event.clientX, rtl());
         }
 
         /* The hand moves in pixels, the song moves in characters. The chord is
            DRAWN wherever the hand is, so the drag is smooth, and RECORDED on
-           the nearest character, so what is stored still names a letter. The
-           only visible cost is half a character of settling when you let go. */
+           the character its middle is over, so what is stored still names a
+           letter. `raw` is that middle in character coordinates, so the
+           character carrying it is the one it falls INSIDE: floor, not round.
+           The only visible cost is half a character of settling on release. */
         var raw = Math.max(0, posFromX(ln, event.clientX, rtl()) + grab);
-        var pos = Math.round(raw);
+        var pos = Math.max(0, Math.floor(raw));
         var previous = chord.pos;
 
         /* A chord that has been pulled past the last word: the LINE grows to

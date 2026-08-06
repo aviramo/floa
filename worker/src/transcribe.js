@@ -199,7 +199,7 @@ const CHORD = {
     letter: {
       type: "string",
       description:
-        "The single letter the middle of the chord symbol sits directly above. It must be one of the letters of that word. Empty string only when word is 0.",
+        "The single letter this chord sits on: drop a vertical line from the middle of the chord symbol, and take the letter whose own middle it passes closest to. It must be one of the letters of that word. Empty string only when word is 0.",
     },
     letters_before: {
       type: "integer",
@@ -318,7 +318,9 @@ This is asked separately, and it is not a formality. It is the same fact as "the
 
 WHICH LETTER, EXACTLY
 
-- Take the chord symbol's horizontal MIDDLE, not its left edge and not its right edge, and look straight down. Name the letter under it. If the point falls between two letters, take the one whose own start is nearer.
+- Take the chord symbol's horizontal MIDDLE, not its left edge and not its right edge. Drop a straight vertical line down from it into the words. Then name the letter whose OWN MIDDLE that line passes closest to.
+
+  Middle against middle, both times. A chord sits ON a letter, not in the space between two of them, so what decides which letter is the distance from the middle of the symbol to the middle of each candidate: whichever is smallest is the answer. A symbol that hangs slightly past the end of a letter still belongs to that letter if its middle is nearer to that letter's middle than to the next one's.
 
 - Many sheets print a small mark under each chord: a tick, a comma, an apostrophe, a short slanted stroke. Where there is one it says the same thing more precisely, so use it to settle a close call. Where there is none, nothing changes: the middle of the symbol is the answer either way.
 
@@ -574,7 +576,9 @@ function positionOf(words, chord) {
   const word = words[index - 1];
   let at = Math.round(Number(chord.letters_before));
   if (!Number.isFinite(at)) at = 0;
-  at = Math.max(0, Math.min(word.text.length, at));
+  /* A chord sits ON a letter, so the last one it can reach is the word's last
+     letter, not the gap after it. */
+  at = Math.max(0, Math.min(word.text.length - 1, at));
 
   /* The two answers checked against each other.
 
@@ -663,11 +667,18 @@ export function chordProLine(line) {
     }
   }
 
+  /* The bracket goes immediately AFTER the character the chord sits on, which
+     is what "a chord is on a letter" means written down:
+
+         ABC[Am]DEF     the Am is on the C
+
+     So the slice runs up to and INCLUDING that character. */
   let out = "";
   let at = 0;
   placed.forEach((chord) => {
-    out += text.slice(at, chord.pos) + "[" + chord.name + "]";
-    at = chord.pos;
+    const after = Math.max(at, Math.min(chord.pos + 1, text.length));
+    out += text.slice(at, after) + "[" + chord.name + "]";
+    at = after;
   });
   out += text.slice(at);
 

@@ -60,22 +60,40 @@ eq("clearing the line clamps everything to zero",
 
 /* --- how a song is written down --------------------------------------------
    Brackets in the words themselves, so the link between a chord and the
-   syllable under it is not a number anybody has to keep true. */
+   syllable under it is not a number anybody has to keep true.
 
-eq("a chord goes in front of the letter it sits on",
-  api.toChordPro({ type: "line", text: "שלום לך אדוני", chords: [{ pos: 0, chord: "Am" }, { pos: 11, chord: "G" }] }),
-  "[Am]שלום לך אדו[G]ני");
+   A CHORD SITS ON A CHARACTER, and the bracket goes immediately AFTER it:
+
+       ABC[Am]DEF     Am is on the C
+       GHI [F]JKL     F is on the space
+
+   Not on the seam between two characters. A printed sheet puts a symbol over a
+   letter and marks that letter with a tick, so a position naming a gap was
+   always describing the drawing rather than the song. */
+
+eq("a chord goes right after the letter it sits on",
+  api.toChordPro({ type: "line", text: "ABCDEF GHIJKL", chords: [{ pos: 2, chord: "Am" }, { pos: 6, chord: "F" }] }),
+  "ABC[Am]DEF [F]GHIJKL");
 
 eq("and comes back off it",
-  api.fromChordPro("[Am]שלום לך אדו[G]ני"),
-  { text: "שלום לך אדוני", chords: [{ pos: 0, chord: "Am" }, { pos: 11, chord: "G" }] });
+  api.fromChordPro("ABC[Am]DEF [F]GHIJKL"),
+  { text: "ABCDEF GHIJKL", chords: [{ pos: 2, chord: "Am" }, { pos: 6, chord: "F" }] });
+
+eq("a chord on the last letter of a word",
+  api.toChordPro({ type: "line", text: "שלום לך אדוני", chords: [{ pos: 0, chord: "Am" }, { pos: 10, chord: "G" }] }),
+  "ש[Am]לום לך אדו[G]ני");
 
 eq("a chord over a space stays over that space",
-  api.fromChordPro("שלום לך  [Am]      אדוני").chords, [{ pos: 9, chord: "Am" }]);
+  api.fromChordPro("שלום לך  [Am]      אדוני").chords, [{ pos: 8, chord: "Am" }]);
+
+/* Nothing comes before the first character, so a bracket at the very start of
+   a line lands on it: the nearest thing it can have meant. */
+eq("a bracket with no character before it takes the first one",
+  api.fromChordPro("[Am]שלום").chords, [{ pos: 0, chord: "Am" }]);
 
 eq("brackets survive a round trip untouched",
-  api.songToText(api.textToSong("[Am]שלום לך  [G]  אדוני\n\n{פזמון}\nעוד שורה")),
-  "[Am]שלום לך  [G]  אדוני\n\n{פזמון}\nעוד שורה");
+  api.songToText(api.textToSong("ש[Am]לום לך  [G]  אדוני\n\n{פזמון}\nעוד שורה")),
+  "ש[Am]לום לך  [G]  אדוני\n\n{פזמון}\nעוד שורה");
 
 eq("a heading is a line in braces",
   api.textToSong("{פזמון}")[0], { type: "section", text: "פזמון", chords: [] });
@@ -116,13 +134,13 @@ eq("fractions and overruns are pulled back onto real characters",
   api.normalizeLines([{ type: "line", text: "שלום", chords: [{ pos: 1.7, chord: "Am" }, { pos: 24.3, chord: "D" }] }])[0].chords,
   [{ pos: 2, chord: "Am" }, { pos: 4, chord: "D" }]);
 
-/* room past the last word is made by lengthening the line, not by pointing
-   past it */
+/* Room past the last word is made by lengthening the line, not by pointing
+   past it. A chord ON character 12 needs thirteen characters to sit on. */
 const outro = { type: "line", text: "נה נה נה", chords: [{ pos: 0, chord: "Am" }] };
 api.padTo(outro, 12);
-eq("a chord past the words lengthens the line", outro.text, "נה נה נה    ");
+eq("a chord past the words lengthens the line", outro.text, "נה נה נה     ");
 outro.chords.push({ pos: 12, chord: "G" });
-eq("and the chord then names a real character", api.toChordPro(outro), "[Am]נה נה נה    [G]");
+eq("and the chord then names a real character", api.toChordPro(outro), "נ[Am]ה נה נה     [G]");
 outro.chords.pop();
 api.trimPadding(outro);
 eq("spaces nothing needs any more go back", outro.text, "נה נה נה");
@@ -147,15 +165,15 @@ eq("nothing to play, nothing to say", api.easyVersion([]), { capo: 0, shapes: []
 
 /* --- lines cut and joined, the way a text editor does it --- */
 eq("Enter cuts a line and the chords go with their own characters",
-  api.splitLine({ type: "line", text: "שלום לך אדוני", chords: [{ pos: 0, chord: "Am" }, { pos: 11, chord: "G" }] }, 8)
+  api.splitLine({ type: "line", text: "שלום לך אדוני", chords: [{ pos: 0, chord: "Am" }, { pos: 10, chord: "G" }] }, 8)
     .map(api.toChordPro),
-  ["[Am]שלום לך ", "אדו[G]ני"]);
+  ["ש[Am]לום לך ", "אדו[G]ני"]);
 
 eq("Backspace joins them back",
   api.toChordPro(api.joinLines(
     { type: "line", text: "שלום לך ", chords: [{ pos: 0, chord: "Am" }] },
-    { type: "line", text: "אדוני", chords: [{ pos: 3, chord: "G" }] })),
-  "[Am]שלום לך אדו[G]ני");
+    { type: "line", text: "אדוני", chords: [{ pos: 2, chord: "G" }] })),
+  "ש[Am]לום לך אדו[G]ני");
 
 /* --- pasted text --- */
 const pasted = [

@@ -40,7 +40,7 @@ const REFERENCE = {
   ],
 };
 
-const REFERENCE_WANT = "אי[C]לה מה לי ו[G]לה מה לי ו[Am]לה מה לי ו[E]לה    [G7]";
+const REFERENCE_WANT = "איל[C]ה מה לי ול[G]ה מה לי ול[Am]ה מה לי ול[E]ה    [G7]";
 
 check("the reference line", chordProLine(REFERENCE), REFERENCE_WANT);
 
@@ -65,7 +65,7 @@ check(
 check(
   "the letter wins over a count that contradicts it",
   chordProLine({ words: "בנקיק נסתר", chords: [{ chord: "Am", word: 1, letter: "ק", letters_before: 0 }] }),
-  "בנ[Am]קיק נסתר"
+  "בנק[Am]יק נסתר"
 );
 
 /* בנקיק holds its ק twice, at 2 and at 4. A count of 4 is nearer the second,
@@ -74,7 +74,7 @@ check(
 check(
   "a repeated letter goes to the nearer of the two",
   chordProLine({ words: "בנקיק", chords: [{ chord: "Am", word: 1, letter: "ק", letters_before: 4 }] }),
-  "בנקי[Am]ק"
+  "בנקיק[Am]"
 );
 
 /* A count exactly between the two, which no evidence can settle. The earlier
@@ -83,19 +83,19 @@ check(
 check(
   "a tie between two of the same letter takes the first",
   chordProLine({ words: "בנקיק", chords: [{ chord: "Am", word: 1, letter: "ק", letters_before: 3 }] }),
-  "בנ[Am]קיק"
+  "בנק[Am]יק"
 );
 
 check(
   "a letter the word does not contain leaves the count alone",
   chordProLine({ words: "בנקיק", chords: [{ chord: "Am", word: 1, letter: "ש", letters_before: 2 }] }),
-  "בנ[Am]קיק"
+  "בנק[Am]יק"
 );
 
 check(
   "no letter at all leaves the count alone",
   chordProLine({ words: "בנקיק", chords: [{ chord: "Am", word: 1, letter: "", letters_before: 2 }] }),
-  "בנ[Am]קיק"
+  "בנק[Am]יק"
 );
 
 /* --- the edges ----------------------------------------------------------- */
@@ -169,7 +169,7 @@ check(
       { chord: "C", word: 1, letter: "י", letters_before: 1 },
     ],
   }),
-  "מ[F][C]ים"
+  "מי[F][C]ם"
 );
 
 /* An English sheet is the same code with nothing special about it, which is
@@ -183,7 +183,7 @@ check(
       { chord: "C", word: 1, letter: "l", letters_before: 2 },
     ],
   }),
-  "he[C]llo there wo[G]rld"
+  "hel[C]lo there wor[G]ld"
 );
 
 /* --- the mirror -----------------------------------------------------------
@@ -205,7 +205,7 @@ const MIRRORED = {
 check(
   "a line laid on backwards is turned around",
   chordProLine(MIRRORED),
-  "אי[C]לה מה לי ו[Em]לה אלא אהב[D]תי"
+  "איל[C]ה מה לי ול[Em]ה אלא אהבת[D]י"
 );
 
 check(
@@ -219,7 +219,7 @@ check(
       { chord: "D", word: 6, letter: "ת", letters_before: 4 },
     ],
   }),
-  "אי[C]לה מה לי ו[Em]לה אלא אהב[D]תי"
+  "איל[C]ה מה לי ול[Em]ה אלא אהבת[D]י"
 );
 
 /* The positions are what the model got RIGHT, every time this has happened.
@@ -227,7 +227,7 @@ check(
 check(
   "unmirroring moves names and never positions",
   chordProLine(MIRRORED).replace(/\[[^\]]*\]/g, "|"),
-  "אי|לה מה לי ו|לה אלא אהב|תי"
+  "איל|ה מה לי ול|ה אלא אהבת|י"
 );
 
 /* Said nothing, so nothing is done. A first chord that sits at both ends or at
@@ -243,7 +243,7 @@ check(
       { chord: "F", word: 3, letter: "ל", letters_before: 0 },
     ],
   }),
-  "[Am]מים נסתר [F]לבי"
+  "מ[Am]ים נסתר ל[F]בי"
 );
 
 check(
@@ -257,7 +257,7 @@ check(
       { chord: "Am", word: 3, letter: "ל", letters_before: 0 },
     ],
   }),
-  "[Am]מים [F]נסתר [Am]לבי"
+  "מ[Am]ים נ[F]סתר ל[Am]בי"
 );
 
 check(
@@ -269,7 +269,7 @@ check(
       { chord: "F", word: 2, letter: "נ", letters_before: 0 },
     ],
   }),
-  "[Am]מים [F]נסתר"
+  "מ[Am]ים נ[F]סתר"
 );
 
 /* --- numbering the words for the second question -------------------------

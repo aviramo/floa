@@ -90,9 +90,14 @@ const MEASURE = `(() => {
     const chords = [...ln.querySelectorAll(".chord")];
     chords.forEach((c, i) => {
       const pos = Number(c.dataset.pos);
-      const whole = Math.floor(pos), frac = pos - whole;
+      /* A chord sits ON a character, so where it belongs is that character's
+         MIDDLE: half a character past where the character begins. That half is
+         the difference between a chord over the letter and a chord over the
+         seam in front of it, which is the whole of what pos means. */
+      const anchor = pos + 0.5;
+      const whole = Math.floor(anchor), frac = anchor - whole;
       let want;
-      if (pos >= spans.length) want = at(spans.length) + (pos - spans.length) * unit;
+      if (anchor >= spans.length) want = at(spans.length) + (anchor - spans.length) * unit;
       else {
         want = at(whole);
         if (frac) want += (at(whole + 1) - want) * frac;
