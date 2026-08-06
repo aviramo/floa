@@ -1233,8 +1233,36 @@
       empty.appendChild(emptyText);
       empty.appendChild(emptyActions);
 
+      /* --- two songs of the same name -----------------------------------------
+         Nothing on a row tells them apart. Same title, same credits, often the
+         same chords, because the usual reason to have two is that the same
+         sheet was read twice and the readings are being compared.
+
+         So a name that repeats carries a number, and the number is WHICH ONE
+         CAME FIRST. Not the number in the address, which would leave the first
+         of them unnumbered and can collide once a song has been renamed, and
+         not the date, which is a lot of characters to say "the second one".
+
+         Counted over the whole library rather than over what the search left,
+         so typing in the box does not renumber the songs. */
+      function marksFor(songs) {
+        var byName = {};
+        songs.forEach(function (s) { (byName[s.title] = byName[s.title] || []).push(s); });
+
+        var marks = {};
+        Object.keys(byName).forEach(function (title) {
+          var group = byName[title];
+          if (group.length < 2) return;
+          group.sort(function (a, b) {
+            return (Date.parse(a.created_at) || 0) - (Date.parse(b.created_at) || 0);
+          }).forEach(function (s, index) { marks[s.id] = String(index + 1); });
+        });
+        return marks;
+      }
+
       function paint(filter) {
         list.innerHTML = "";
+        var marks = marksFor(state.songs);
         var q = String(filter || "").trim().toLowerCase();
         var shown = state.songs.filter(function (s) {
           if (!q) return true;
@@ -1250,7 +1278,7 @@
         }
         if (empty.parentNode) empty.remove();
 
-        shown.forEach(function (s) { list.appendChild(songRow(s, refresh)); });
+        shown.forEach(function (s) { list.appendChild(songRow(s, refresh, marks[s.id])); });
         tick(list);
       }
 
@@ -1284,8 +1312,18 @@
 
   /* One line of the index. Three shapes, because a song has three states:
      ready and openable, still being read, or failed with a reason. */
-  function songRow(s, refresh) {
+  function songRow(s, refresh, mark) {
     var li = el("li");
+
+    /* The name, and where a name is not the only one of itself, the number
+       that says which of them this is. Every shape of row uses it, because a
+       song being read and a song that failed to be read are exactly the two
+       you are most likely to have two of. */
+    function name() {
+      var t = el("div", "t", s.title);
+      if (mark) t.appendChild(el("span", "dupe", mark));
+      return t;
+    }
 
     /* A row with no status at all is a song, not a failure. The column may be
        missing from an older table, and the worst thing this page can do with a
@@ -1302,7 +1340,7 @@
          because a label on every one of three would be longer than the row it
          sits in and nobody reads an index that way. */
       var top = el("div", "t-row");
-      top.appendChild(el("div", "t", s.title));
+      top.appendChild(name());
       var by = credits(s);
       if (by.length) {
         top.appendChild(el("div", "by", by.map(function (c) { return c.name; }).join(", ")));
@@ -1347,7 +1385,7 @@
     if (s.status === "queued") {
       var wait = el("div", "row is-queued");
       var waitBox = el("div");
-      waitBox.appendChild(el("div", "t", s.title));
+      waitBox.appendChild(name());
       waitBox.appendChild(el("div", "a", "ממתין בתור"));
       wait.appendChild(waitBox);
 
@@ -1366,7 +1404,7 @@
 
     if (reading) row.appendChild(el("span", "spin"));
     var box2 = el("div");
-    box2.appendChild(el("div", "t", s.title));
+    box2.appendChild(name());
     if (reading) {
       var note = el("div", "a");
       note.dataset.since = Date.parse(s.created_at || "") || Date.now();

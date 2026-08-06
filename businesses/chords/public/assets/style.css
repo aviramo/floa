@@ -164,6 +164,15 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    under the name rather than squeezing it. */
 .list .t-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .list .by { color: var(--ink-soft); font-size: 14px; }
+/* Which of the songs by this name. Only appears where a name repeats, so an
+   index of songs that are each the only one of themselves never grows a column
+   of ones. Quiet, and clearly not part of the name. */
+.list .dupe {
+  display: inline-block; margin-inline-start: 8px; vertical-align: 1px;
+  font-size: 12px; font-weight: 700; line-height: 1.5;
+  color: var(--ink-soft); background: var(--line);
+  border-radius: 999px; padding: 0 8px;
+}
 /* The song's own chords, under its name, in the order it reaches them and in
    the page's own direction: the first one the song plays is the first one you
    read. */
