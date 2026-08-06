@@ -290,6 +290,22 @@
     }).filter(function (c) { return c.name; });
   }
 
+  /* --- whose bill it is -----------------------------------------------------
+     One account pays for the readings, and what they cost is that account's
+     business and nobody else's. Everyone else, signed in or not, gets a
+     library with no prices in it: the columns are not asked for and the chip
+     is not drawn.
+
+     By email, because that is what the session has and what a person knows
+     themselves by. It decides what this browser SHOWS; the row underneath is
+     still guarded by the database's own rules, which are about rows and not
+     about columns. */
+  var ADMIN = "ofir.aviram@gmail.com";
+
+  function isAdmin() {
+    return !!(auth.session && String(auth.session.email || "").toLowerCase() === ADMIN);
+  }
+
   /* What the reading of this song cost, as the Worker counted it from the
      model's own token usage. A song typed by hand has no price and says
      nothing, which is different from one that cost nothing.
@@ -308,6 +324,7 @@
   }
 
   function price(song) {
+    if (!isAdmin()) return "";
     if (song.read_cost == null) return "";
     var cents = Number(song.read_cost);
     if (!isFinite(cents)) return "";
@@ -378,19 +395,24 @@
      showing an empty library and a red error.
    */
   var OPTIONAL = [
-    ["status", "status_note"],
-    ["lyrics_by", "music_by"],
-    ["read_cost"],
+    { columns: ["status", "status_note"] },
+    { columns: ["lyrics_by", "music_by"] },
+    /* THE MONEY, and only for the account that pays it. Not asked for at all
+       on anybody else's page, because a page that never requested a column
+       cannot put it on screen by accident later. */
+    { columns: ["read_cost"], admin: true },
     /* on its own and not with the price, so a table that has the one and not
        the other still shows a price, in dollars */
-    ["usd_ils"],
-    ["review"],
-    ["draft"],
-  ].map(function (columns) { return { columns: columns, on: true }; });
+    { columns: ["usd_ils"], admin: true },
+    { columns: ["review"] },
+    { columns: ["draft"] },
+    { columns: ["published"] },
+  ].map(function (g) { return { columns: g.columns, admin: !!g.admin, on: true }; });
 
   function withOptional(fields) {
     OPTIONAL.forEach(function (group) {
-      if (group.on) fields += "," + group.columns.join(",");
+      if (!group.on || (group.admin && !isAdmin())) return;
+      fields += "," + group.columns.join(",");
     });
     return fields;
   }
@@ -1248,24 +1270,18 @@
 
      So on a narrow screen the song is POURED into rows the width of the
      screen. A line that does not fit is broken at a space, never inside a
-     word, and the leftover starts the next row. And because a leftover is
-     usually one word on an otherwise empty row, the line that comes after it
-     is pulled up onto that same row rather than left waiting under it: three
-     words of empty row in the middle of a song is a verse's worth of screen
-     over a page.
+     word, and the leftover starts the next row, indented, so it reads as the
+     end of the line above rather than as a line of its own.
 
-     What keeps that readable is two marks, and they say different things:
-
-       an arrow at the start of a row, in the margin the row is indented by,
-       means the words after it fell out of the row above;
-
-       a separator INSIDE a row, between the leftover and what follows it,
-       means a new line of the song begins here.
-
-     So a row can hold the end of one line and the start of the next, and the
-     reader can still see exactly where one ends and the other begins. At most
-     two lines share a row: a leftover takes the line after it and then the
-     row closes, or the sheet would stop looking like a song at all.
+     ONE LINE OF THE SONG PER ROW, ALWAYS. Two other things used to happen
+     here and both are gone. A leftover was usually one word on an otherwise
+     empty row, so the line after it was pulled up onto that row to save the
+     screen, and two marks were drawn to say where one line ended and the next
+     began. It saved a line and cost the reading: a row holding the tail of
+     one line, an arrow, and the head of another is three things to take apart
+     before you can sing any of them, and a person playing from a phone is
+     reading a line ahead with their hands full. A row is one line now, and
+     the sheet says nothing about where it broke beyond the indent.
 
      None of this touches the song. Nothing is saved, nothing is reordered,
      and a wider screen or a smaller reading size simply pours it into fewer
@@ -1278,41 +1294,13 @@
      the page.
      ------------------------------------------------------------------------ */
 
-  /* How far a continuation row is pushed in, and how wide the margin holding
-     its arrow is. One number, handed to the stylesheet, so the indent and the
-     mark cannot drift apart. */
+  /* How far the second and later rows of one line are pushed in, so that a
+     line broken in two still reads as one line. */
   var CONT_INDENT = 1.5;
-
-  /* ONE mark for the whole business, pointing the way the words run: down and
-     to the left in Hebrew, down and to the right in English. It is drawn in
-     two places and means the same thing in both, which is why it is the same
-     mark: at the start of a row, the words after it came down from the row
-     above; inside a row, the words before it did, and a new line of the song
-     begins after it. So a leftover is always held between two of them, or
-     between one of them and the end of its row. */
-  var DROP_MARK = { rtl: "↲", ltr: "↳" };
-
-  /* The width of a piece of text, in the sheet's own font, before it is on the
-     page. Summed per character for the same reason the advances are (see
-     below), and taken off a copy so nothing the reader sees ever flickers. */
-  function textWidth(sheet, text) {
-    var probe = el("div", "ln-t");
-    probe.style.position = "absolute";
-    probe.style.visibility = "hidden";
-    fillSpans(probe, text);
-    sheet.appendChild(probe);
-    var total = 0;
-    Array.prototype.forEach.call(probe.children, function (span) {
-      total += span.getBoundingClientRect().width;
-    });
-    sheet.removeChild(probe);
-    return total;
-  }
 
   /* One measured line: its words, its chords, and what every character of it
      costs. A row that has no words to measure (a section heading, the blank
-     line between two stanzas) is carried through untouched, and closes
-     whatever row was open, because neither belongs in the middle of one. */
+     line between two stanzas) is carried through untouched. */
   function measureLine(ln) {
     var t = ln.querySelector(".ln-t");
     var m = t ? metrics(ln) : null;
@@ -1363,46 +1351,27 @@
     if (!sized.length) return;
 
     var indent = CONT_INDENT * sized[0].size;
-    /* the mark stands off the words on both sides, or it reads as a letter of
-       the word it is touching. Its arrow points the way the ROW runs, so it is
-       chosen per row rather than once for the sheet. */
-    function dropMark(rtl) { return " " + (rtl ? DROP_MARK.rtl : DROP_MARK.ltr) + " "; }
-    var sepWidth = textWidth(sheet, dropMark(true));
 
     /* --- pouring ---------------------------------------------------------- */
 
     var out = [];
-    var row = null;
-    /* set when a line ran out of room, so the row after it opens as the one
-       carrying the leftover: indented, and marked with the arrow */
-    var leftover = false;
 
-    function openRow(rtl) {
-      row = { tail: leftover, pieces: [], used: 0, rtl: rtl };
-      row.room = full - (row.tail ? indent : 0);
-      leftover = false;
-      out.push(row);
-      return row;
-    }
-
+    /* A row belongs to ONE line of the song, so it is opened here, inside the
+       line being poured, and closes when that line is done. Nothing carries
+       over between lines any more: no leftover waiting to be joined, and no
+       state outside this loop for the next line to inherit. */
     lines.forEach(function (line) {
-      if (line.keep) { row = null; leftover = false; out.push(line); return; }
-
-      /* A row runs one way. A Hebrew line and an English one cannot share it:
-         they start at opposite edges, and either of them poured into the
-         other's row would read backwards. So a change of direction closes
-         whatever row was open, exactly as a heading does. */
-      if (row && row.rtl !== line.rtl) row = null;
+      if (line.keep) { out.push(line); return; }
 
       var pos = 0;
+      var tail = false;
+
       while (pos < line.cells) {
-        if (!row) openRow(line.rtl);
+        var row = { tail: tail, pieces: [], used: 0, rtl: line.rtl };
+        row.room = full - (tail ? indent : 0);
+        out.push(row);
 
-        /* what this piece has to pay before its first character: a separator,
-           if it is starting a line on a row that already holds one */
-        var lead = row.pieces.length ? sepWidth : 0;
-        var avail = row.room - row.used - lead;
-
+        var avail = row.room;
         var x = 0, at = pos, space = -1;
         while (at < line.cells && x + line.advance[at] <= avail) {
           if (at > pos && at < line.text.length && line.text[at] === " ") space = at;
@@ -1421,14 +1390,8 @@
           if (at > pos && at < line.text.length && line.text[at] === " ") space = at;
           end = space > pos ? space + 1 : at;
 
-          /* A line joining a row that is already carrying something has to
-             bring at least one whole word with it. Anything less and the row
-             it was pulled up onto has cost it a broken word for nothing, so
-             it starts a row of its own instead. */
-          if (row.pieces.length && end <= pos) { row = null; continue; }
-
-          /* Alone on a row and still nothing fits: one character, because a
-             word longer than the whole screen has to be cut somewhere. */
+          /* Nothing fits at all: one character, because a word longer than the
+             whole screen has to be cut somewhere. */
           if (end <= pos) end = pos + 1;
         }
 
@@ -1440,7 +1403,6 @@
            counted: it counted up to where it ran out of room, and the break
            then went back to the last space before that */
         for (var k = pos; k < end; k++) row.used += line.advance[k];
-        row.used += lead;
         pos = end;
 
         /* A row does not begin with the spaces the break left behind, unless a
@@ -1451,17 +1413,10 @@
 
         if (pos < line.cells) {
           row.more = true;
-          row = null;
-          leftover = true;
+          tail = true;
         }
       }
 
-      /* The line is done. A row that was carrying a leftover stays open for
-         it, which is the whole point of it; any other row closes, so a song
-         whose lines all fit is laid out exactly as it was written. And a row
-         that has already taken a second line closes too: two lines to a row is
-         a sheet, three is a paragraph. */
-      if (row && (!row.tail || row.pieces.length > 1)) row = null;
     });
 
     /* Which chords belong to which piece. A piece claims from where it starts
@@ -1481,16 +1436,13 @@
       var ln = el("div", "ln" + (desc.tail ? " is-cont" : "") + (desc.more ? " has-cont" : ""));
       /* the poured row runs the way the line it was poured from runs */
       ln.dir = desc.rtl ? "rtl" : "ltr";
-      var sepText = dropMark(desc.rtl);
       var lane = el("div", "ln-c");
       var text = "";
-      var seps = [];
 
+      /* One piece, always: a row holds one line of the song. Written as a loop
+         because the pieces are what the chords are claimed against, and one of
+         them is still a list of one. */
       desc.pieces.forEach(function (piece) {
-        if (text) {
-          seps.push(text.length);
-          text += sepText;
-        }
         var offset = text.length;
         piece.line.chords.forEach(function (c) {
           if (c.pos < piece.claimFrom || c.pos >= piece.claimTo) return;
@@ -1507,13 +1459,10 @@
       ln.appendChild(lane);
 
       var words = textSpans(text);
-      seps.forEach(function (start) {
-        for (var i = 0; i < sepText.length; i++) words.children[start + i].className = "sp";
-      });
-      if (desc.tail) {
-        ln.style.setProperty("--cont", indent + "px");
-        words.dataset.cont = sepText.trim();
-      }
+      /* Indented and nothing else. There was an arrow drawn in the indent, and
+         it is gone with the joining it went with: a row that is one line of a
+         song needs no punctuation explaining itself. */
+      if (desc.tail) ln.style.setProperty("--cont", indent + "px");
       ln.appendChild(words);
       return ln;
     }
@@ -1837,7 +1786,8 @@
       var TAGS = [
         { key: "review", label: "לסקירה", is: function (s) { return !!s.review; } },
         { key: "draft", label: "טיוטה", is: function (s) { return !!s.draft; } },
-        { key: "kept", label: "שמור", is: function (s) { return !s.review && !s.draft; } },
+        { key: "kept", label: "שמור", is: function (s) { return !s.review && !s.draft && !s.published; } },
+        { key: "published", label: "פורסם", is: function (s) { return !!s.published; } },
       ];
 
       function ready(songs) {
@@ -2130,18 +2080,23 @@
         mine.title = "השיר עוד לא גמור";
         top.appendChild(mine);
       }
+      if (s.published) {
+        var out = el("span", "tag-published", "פורסם");
+        out.title = "השיר פתוח לכולם";
+        top.appendChild(out);
+      }
       if (s.review) {
         var flag = el("span", "tag-review", "לסקירה");
         flag.title = "השיר נקרא מתוך קובץ ועדיין לא נבדק";
         top.appendChild(flag);
       }
-      /* And when it is neither, it says that too. The three numbers over the
-         list count these three things, so every row carries the one it is
-         counted in: a row with nothing on it would leave "שמור" as the label
-         you have to work out from the absence of the other two. */
-      if (!s.review && !s.draft) {
+      /* And when it is none of them, it says that too. The numbers over the
+         list count these states, so every row carries the one it is counted
+         in: a row with nothing on it would leave "שמור" as the label you have
+         to work out from the absence of the others. */
+      if (!s.review && !s.draft && !s.published) {
         var done = el("span", "tag-kept", "שמור");
-        done.title = "השיר גמור ונבדק";
+        done.title = "השיר גמור ונבדק, ופרטי";
         top.appendChild(done);
       }
       box.appendChild(top);
@@ -2363,6 +2318,7 @@
     /* set below, with the buttons they keep in step with the song */
     var showDraft = null;
     var draftBtn = null;
+    var pubBtn = null;
     if (editing) {
       /* Who wrote it, on the song itself. It belongs to it and there is no
          other page to keep it on any more. */
@@ -2413,18 +2369,44 @@
       draftBtn.textContent = "טיוטה";
       draftBtn.addEventListener("click", function () {
         song.draft = !song.draft;
+        /* A song cannot be both unfinished and out in the world. Pressing one
+           of these is choosing, so the other lets go rather than making
+           somebody press it too. */
+        if (song.draft) song.published = false;
         showDraft();
         mark();
       });
       meta.appendChild(draftBtn);
 
+      /* Out in the world, and unlike the other two this one is not a label. It
+         is the whole of who may open the song: an unpublished song is its
+         author's alone, enforced by the database and not by this page. So the
+         button says what it does rather than what it is called. */
+      pubBtn = el("button", "draft-btn pub-btn");
+      pubBtn.type = "button";
+      pubBtn.textContent = "פורסם";
+      pubBtn.addEventListener("click", function () {
+        song.published = !song.published;
+        if (song.published) song.draft = false;
+        showDraft();
+        mark();
+      });
+      meta.appendChild(pubBtn);
+
       showDraft = function () {
-        var on = !!song.draft;
-        draftBtn.classList.toggle("is-on", on);
-        draftBtn.setAttribute("aria-pressed", on ? "true" : "false");
-        draftBtn.title = on
+        var isDraft = !!song.draft;
+        draftBtn.classList.toggle("is-on", isDraft);
+        draftBtn.setAttribute("aria-pressed", isDraft ? "true" : "false");
+        draftBtn.title = isDraft
           ? "השיר מסומן כטיוטה. לחיצה מסירה את הסימון."
           : "לסמן את השיר כטיוטה, כל עוד הוא לא גמור.";
+
+        var out = !!song.published;
+        pubBtn.classList.toggle("is-on", out);
+        pubBtn.setAttribute("aria-pressed", out ? "true" : "false");
+        pubBtn.title = out
+          ? "השיר פתוח לכולם. לחיצה מחזירה אותו להיות פרטי."
+          : "לפרסם: רק שיר מפורסם נפתח למי שלא כתב אותו.";
       };
       showDraft();
 
@@ -2449,9 +2431,10 @@
       /* Reading it rather than writing it, the draft mark is not a button to
          press but something to know before playing from the page: this one is
          not finished. */
-      if (song.draft) {
+      if (song.draft || song.published) {
         var flagRow = el("div", "head-tags");
-        flagRow.appendChild(el("span", "tag-draft", "טיוטה"));
+        if (song.draft) flagRow.appendChild(el("span", "tag-draft", "טיוטה"));
+        if (song.published) flagRow.appendChild(el("span", "tag-published", "פורסם"));
         head.appendChild(flagRow);
       }
     }
@@ -2745,9 +2728,10 @@
         CREDITS.map(function (c) { return String(song[c.field] || "").trim(); }),
         song.dir || "rtl",
         songToText(song.lines),
-        /* in here, so pressing the draft button lights the save button and
-           taking a change back takes the mark back with it */
+        /* in here, so pressing one of these lights the save button and taking
+           a change back takes the mark with it */
         !!song.draft,
+        !!song.published,
       ]);
     }
 
@@ -2807,6 +2791,7 @@
       marked.length = 0;
       song.lines = normalizeLines(was[3], song.dir);
       song.draft = !!was[4];
+      song.published = !!was[5];
 
       if (title.textContent !== song.title) title.textContent = song.title;
       byFields.forEach(function (input, index) { input.value = was[1][index] || ""; });
@@ -3610,6 +3595,7 @@
         dir: songDir(song.lines),
         lines: songToText(song.lines),
         draft: !!song.draft,
+        published: !!song.published,
       };
       CREDITS.forEach(function (c) { payload[c.field] = String(song[c.field] || "").trim(); });
 

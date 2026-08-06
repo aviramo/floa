@@ -116,9 +116,9 @@ const MEASURE = `(() => {
 
 /* --- and what a narrow screen did to it ----------------------------------
    The pour (flowSheet in app.js) is three things at once, and this asks after
-   all three: that it happened at all, that it pulled a line up onto a row
-   carrying a leftover, and that nothing ended up wider than the screen after
-   all that. The chords are checked by MEASURE above, unchanged, because a
+   all three: that it happened at all, that no row ended up carrying two lines
+   of the song, and that nothing ended up wider than the screen after all
+   that. The chords are checked by MEASURE above, unchanged, because a
    chord that moved off its syllable while the words were being poured is the
    one failure that would make the whole thing worse than the scrolling it
    replaced.
@@ -282,6 +282,12 @@ const check = (label, ok, detail) => {
   if (!ok) failed++;
 };
 
+/* Not passed and not failed: nothing was learned. Same answer as a machine
+   with no Chrome on it, for the same reason, and it is worth having as a
+   third state: a check that quietly passes when it could not run is a check
+   that has stopped watching. */
+const unknown = (label, why) => console.log(`  --   ${label}\n       ${why}`);
+
 const { server, port } = await serve();
 const root = join(DIST, "chords/_t");
 await mkdir(join(root, "rtl"), { recursive: true });
@@ -341,11 +347,75 @@ try {
       }
       await sleep(500);
 
-      const poured = await evaluate(POURED);
-      check("narrow: a line that does not fit is broken", poured.conts > 0,
-        `${poured.rows} rows, none of them a continuation (${poured.where})`);
-      check("narrow: the line after a leftover is pulled up behind a mark", poured.seps > 0,
-        `${poured.rows} rows, no separator in any of them`);
+      /* THE POUR RUNS IN AN ANIMATION FRAME, AND A HEADLESS PAGE NOBODY IS
+         LOOKING AT DOES NOT ALWAYS PRODUCE ONE. That is the whole of why this
+         check used to fail every second run: not the pour, the frames. Asking
+         for a screencast, at one pixel square, makes the browser draw, and a
+         browser that draws runs the callback the sheet is waiting on. */
+      await send("Page.startScreencast", { format: "png", maxWidth: 1, maxHeight: 1 });
+
+      /* AND THE WIDTH IS CHANGED ONCE THE PAGE IS UP. The override is in place
+         before the navigation, but whether the media query had settled by the
+         time the sheet first drew is not something this can wait for, and a
+         sheet drawn while the page still believed it was wide is never poured:
+         nothing after it changes the width, so nothing asks again. Narrowing
+         by a pixel and going back is a real resize, and a real resize is what
+         the page listens for. */
+      await send("Emulation.setDeviceMetricsOverride", { width: 359, height: 800, deviceScaleFactor: 1, mobile: false });
+      await sleep(120);
+      await send("Emulation.setDeviceMetricsOverride", { width: 360, height: 800, deviceScaleFactor: 1, mobile: false });
+
+      /* And even then the pour lands a frame after the chords do, and a font
+         arriving late throws the sheet away and draws it again, so there are
+         moments when the sheet is on screen and not yet poured. Sampling it
+         from out here lands in one of them often enough to fail a working
+         page, so the waiting is done INSIDE the page, frame by frame, and
+         what is measured is the first poured frame there is.
+
+         It counts the frames it saw on the way, and that count is the answer
+         to "did this run learn anything": a page that never drew never poured,
+         and failing it for that would be reporting the browser as a bug in the
+         song. */
+      const drew = JSON.parse((await send("Runtime.evaluate", {
+        awaitPromise: true, returnByValue: true,
+        expression: `new Promise((ok) => {
+          let frames = 0;
+          const done = () => ok(JSON.stringify({
+            poured: !!document.querySelector(".sheet .ln.is-cont"), frames: frames,
+          }));
+          const look = () => {
+            frames++;
+            if (document.querySelector(".sheet .ln.is-cont")) return done();
+            requestAnimationFrame(look);
+          };
+          setTimeout(done, 8000);
+          look();
+        })`,
+      })).result.value);
+
+      /* And sampled more than once even so. The sheet is thrown away and drawn
+         again when a font lands, so a sample can fall in the gap where it is
+         on screen and not yet poured, and the answer to "is it ever poured" is
+         yes if any sample says so. */
+      let poured = await evaluate(POURED);
+      for (let i = 0; i < 12 && !poured.conts; i++) {
+        await sleep(250);
+        poured = await evaluate(POURED);
+      }
+
+      if (!poured.conts && drew.frames < 3) {
+        unknown("narrow: a line that does not fit is broken",
+          `the page drew ${drew.frames} frames in eight seconds, so the pour never ran (${poured.where})`);
+      } else {
+        check("narrow: a line that does not fit is broken", poured.conts > 0,
+          `${poured.rows} rows, none of them a continuation (${poured.where})`);
+      }
+      /* One line of the song per row. A leftover used to pull the line after
+         it up onto its own row, with a mark between the two saying where one
+         ended and the other began; a row is one line now and there is nothing
+         to mark. */
+      check("narrow: one row holds one line of the song", poured.seps === 0,
+        `${poured.seps} separators, so a row is carrying two lines`);
       check("narrow: nothing is left wider than the screen", poured.wide.length === 0,
         JSON.stringify(poured.wide));
 

@@ -180,7 +180,8 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .tally.is-on { color: var(--ink); border-color: currentColor; }
 .tally-review.is-on { color: #8a5a12; background: #fdf6ec; }
 .tally-draft.is-on { color: #5b4636; background: #f5f1eb; }
-.tally-kept.is-on { color: var(--accent); background: var(--card); }
+.tally-kept.is-on { color: var(--ink); background: var(--card); }
+.tally-published.is-on { color: #0d5c4a; background: #f2faf7; }
 
 .list { list-style: none; margin: 0 0 64px; padding: 0; display: grid; gap: 10px; }
 /* A row is the card and, for whoever may delete it, a box to the side of the
@@ -407,7 +408,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 }
 .review-said { color: var(--ink-soft); }
 .review-band .btn { margin-inline-start: auto; }
-.review-tag, .tag-review, .tag-draft, .tag-kept {
+.review-tag, .tag-review, .tag-draft, .tag-kept, .tag-published {
   font-size: 12px; font-weight: 700; line-height: 1.6;
   color: #8a5a12; background: #f6e6ca;
   border-radius: 999px; padding: 1px 10px; white-space: nowrap;
@@ -424,6 +425,10 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   color: var(--ink-soft); background: none;
   box-shadow: inset 0 0 0 1px var(--line); font-weight: 600;
 }
+/* Out in the world, and the only one of the four that is not a note to
+   yourself: it says who can open the song. In the accent, because it is the
+   one worth seeing from across the list. */
+.tag-published { color: #0d5c4a; background: #dcf1e9; }
 
 /* Who wrote it and which way it runs, on the song itself: there is no other
    page to keep them on any more. Three things about one song, so one line, and
@@ -484,6 +489,9 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 .draft-btn:hover { color: var(--ink); border-color: var(--ink-soft); }
 .draft-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .draft-btn.is-on { color: #5b4636; background: #f1ece4; border-color: #ded3c4; }
+/* the same button in the other of the two states a song can be put in, and
+   pressed it looks like the label it puts on the row */
+.pub-btn.is-on { color: #0d5c4a; background: #dcf1e9; border-color: #b6ddd0; }
 
 .head-tags { margin-top: 6px; }
 
@@ -641,19 +649,16 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   color: var(--ink-soft);
 }
 /* --- what did not fit on the screen --------------------------------------
-   The two marks a poured sheet needs (see flowSheet in app.js, which is where
-   the width is decided and where --cont is written).
+   .is-cont is a row that BEGINS with the leftover of the line above it (see
+   flowSheet in app.js, which is where the width is decided and where --cont is
+   written). It is indented and the gap over it is closed, so it reads as the
+   end of that line rather than as a line of its own.
 
-   .is-cont is a row that BEGINS with the leftover of the row above it. It is
-   indented and carries an arrow in the space it was indented by, and the gap
-   over it is closed, so it reads as the end of the line above rather than as
-   a line of its own.
-
-   .sp is the same mark INSIDE a row, where the leftover ends and the next line
-   of the song begins. The same mark and the same colour, deliberately: it says
-   the same thing in both places, that a line broke here, and a leftover is
-   held between two of them. Quiet, because it is punctuation and not a word,
-   and never black: a reader looking for the words must be able to skip it.
+   THE INDENT IS THE WHOLE OF WHAT IT SAYS NOW. There was an arrow drawn in the
+   indent, and a second one inside a row where a leftover ended and the next
+   line of the song began on the same row. Both are gone, with the joining they
+   explained: a row is one line of the song, and a row that is one line needs
+   no punctuation about itself.
 
    The indent is padding on .ln-t and never on .ln: the chords are measured
    from the row's own edges, and padding on the row would move every one of
@@ -661,15 +666,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    the letters, and the measuring follows. */
 .ln.has-cont { margin-bottom: 0; }
 .ln.is-cont.is-tight .ln-c { height: 0; }
-.ln.is-cont .ln-t { position: relative; padding-inline-start: var(--cont); }
-.ln.is-cont .ln-t::before {
-  content: attr(data-cont);
-  position: absolute; inset-inline-start: 0; top: 0;
-  width: var(--cont); text-align: center;
-  color: var(--chord); opacity: .5;
-  font-weight: 400;
-}
-.ln-t .sp { color: var(--chord); opacity: .5; font-weight: 400; }
+.ln.is-cont .ln-t { padding-inline-start: var(--cont); }
 
 /* A blank line is the gap between two stanzas, and a gap does not need a full
    line of words plus an empty chord lane above it to say so: about half that

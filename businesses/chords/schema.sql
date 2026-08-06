@@ -108,6 +108,40 @@ alter table public.songs add column if not exists review      boolean not null d
 -- a draft is a decision about the song, made while working on it.
 alter table public.songs add column if not exists draft       boolean not null default false;
 
+-- Out in the world. The third of the three things an author can say about
+-- their own song, after "I am not done" and the silence that means "it is
+-- finished": this one is out, other people may have it.
+--
+-- IT IS ALSO THE ONLY THING THAT MAKES A SONG READABLE BY ANYBODY ELSE (see
+-- the read policy below). Not a label about a song, a fact about who can open
+-- it, which is why it is a column and not a tag in the browser.
+alter table public.songs add column if not exists published   boolean not null default false;
+
+-- WHOSE SONG THIS IS. Filled in by the database from the token the request
+-- carried, never by the browser, so it cannot be claimed: a song belongs to
+-- the account that wrote it the moment it is written, and there is no other
+-- way to write one.
+--
+-- The same shape the evenings have had from the start, and for the same
+-- reason. The difference is what the two do with it: an evening is its
+-- owner's and nobody else's ever, and a song is its owner's until they
+-- publish it.
+alter table public.songs add column if not exists owner uuid
+  default auth.uid() references auth.users (id) on delete cascade;
+
+-- A song written before there was an owner has none, and a row whose owner is
+-- null belongs to nobody: after the policies below it would be invisible to
+-- everyone including the person who wrote it, and unpublished songs are most
+-- of the library. So it goes to the account that has been here longest, which
+-- in a project with one account is that account. This runs BEFORE the policy
+-- for exactly that reason.
+update public.songs
+   set owner = (select id from auth.users order by created_at limit 1)
+ where owner is null;
+
+-- who owns what, asked on every read
+create index if not exists songs_owner_idx on public.songs (owner);
+
 -- EVERY READING THE SONG HAS HAD, kept side by side.
 --
 -- A song is read by two different machines that fail in different ways, and
@@ -153,28 +187,50 @@ create trigger songs_touch_updated_at
 --
 -- Without this every visitor holding the anon key (which is every visitor,
 -- it is printed in the page) could delete the whole library.
+--
+-- THE LIBRARY USED TO BE PUBLIC AND IT IS NOT ANY MORE. A song is its
+-- author's until they publish it: what everybody can read is the published
+-- ones, and everything else, the drafts, the half-corrected readings, the
+-- ones nobody has checked, is visible to the account that wrote it and to
+-- nobody at all besides.
+--
+-- The old policies are dropped by name and the lines stay here forever. On a
+-- project that never had them this does nothing; on the one that did it is
+-- the only thing standing between the rule below and an older, more
+-- permissive one still sitting underneath it. Postgres ORs its policies
+-- together, so a leftover `using (true)` would quietly undo all of this.
 -- --------------------------------------------------------------------------
 alter table public.songs enable row level security;
 
 drop policy if exists "songs are readable by everyone" on public.songs;
-create policy "songs are readable by everyone"
-  on public.songs for select
-  using (true);
-
 drop policy if exists "signed in users may add songs" on public.songs;
-create policy "signed in users may add songs"
-  on public.songs for insert to authenticated
-  with check (true);
-
 drop policy if exists "signed in users may edit songs" on public.songs;
-create policy "signed in users may edit songs"
-  on public.songs for update to authenticated
-  using (true) with check (true);
-
 drop policy if exists "signed in users may delete songs" on public.songs;
-create policy "signed in users may delete songs"
+
+-- Anybody at all, signed in or not, and the published ones only. A visitor
+-- has no uid, so the second half is false for them and the first is the whole
+-- of what they get.
+drop policy if exists "published songs are readable by everyone" on public.songs;
+create policy "published songs are readable by everyone"
+  on public.songs for select
+  using (published or owner = auth.uid());
+
+-- And writing is the author's alone. `with check` is what stops a song being
+-- written into somebody else's name, or handed to them afterwards.
+drop policy if exists "a song is written by its account" on public.songs;
+create policy "a song is written by its account"
+  on public.songs for insert to authenticated
+  with check (owner = auth.uid());
+
+drop policy if exists "a song is edited by its account" on public.songs;
+create policy "a song is edited by its account"
+  on public.songs for update to authenticated
+  using (owner = auth.uid()) with check (owner = auth.uid());
+
+drop policy if exists "a song is deleted by its account" on public.songs;
+create policy "a song is deleted by its account"
   on public.songs for delete to authenticated
-  using (true);
+  using (owner = auth.uid());
 
 -- ==========================================================================
 -- Evenings of singing.
