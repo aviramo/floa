@@ -1139,7 +1139,13 @@ export function bagOf(text) {
   const bag = new Map();
 
   String(text || "")
-    .replace(/\[[^\]]*\]/g, " ")            // chords
+    /* TAKEN OUT, NOT REPLACED BY A SPACE, and the difference is the whole of
+       whether this works. A chord sits INSIDE a word, so putting a space where
+       it was cuts the word in two: ש[Am]ובי becomes "ש ובי". Two correct
+       readings of the same page place their chords a letter apart, break their
+       words in different places, and come out 52% alike when they are the same
+       song. */
+    .replace(/\[[^\]]*\]/g, "")             // chords
     .replace(/[֑-ׇ]/g, "")        // niqqud and cantillation
     .replace(/[^\p{L}\p{N}]+/gu, " ")       // everything that is not a word
     .toLowerCase()
