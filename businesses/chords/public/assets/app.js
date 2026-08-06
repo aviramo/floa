@@ -1289,11 +1289,17 @@
       return out;
     }
 
+    /* One small row: the chords this song uses, an × to take this one off, and
+       a + for the chord that is not on the list yet, which only becomes a field
+       once it is asked for. A song has five chords and one of them is almost
+       always the answer, so the list IS the interface and typing is the way
+       out, not the way in. */
     function openPicker(node, ln, line, chord) {
       closePicker();
 
       picker = el("div", "picker");
       picker.dir = "ltr";
+      document.body.appendChild(picker);
 
       function commit(value) {
         chord.chord = String(value || "").trim().slice(0, 16);
@@ -1307,50 +1313,57 @@
         layoutLine(ln, rtl());
       }
 
-      var field = el("input", "picker-field");
-      field.type = "text";
-      field.dir = "ltr";
-      field.value = chord.chord;
-      field.placeholder = "Am";
-      field.setAttribute("aria-label", "אקורד");
-      field.addEventListener("keydown", function (event) {
-        if (event.key === "Enter") { event.preventDefault(); commit(field.value); }
-      });
-      picker.appendChild(field);
-
-      var used = chordsInSong();
-      if (used.length) {
-        var list = el("div", "picker-list");
-        used.forEach(function (name) {
-          var chip = el("button", "picker-chip" + (name === chord.chord ? " is-on" : ""), name);
-          chip.type = "button";
-          chip.addEventListener("click", function () { commit(name); });
-          list.appendChild(chip);
-        });
-        picker.appendChild(list);
+      function chip(cls, label, title, onClick) {
+        var b = el("button", cls, label);
+        b.type = "button";
+        if (title) b.title = title;
+        b.addEventListener("click", onClick);
+        picker.appendChild(b);
+        return b;
       }
 
-      var drop = el("button", "picker-drop", "הסרה");
-      drop.type = "button";
-      drop.addEventListener("click", function () { commit(""); });
-      picker.appendChild(drop);
+      function typeOne() {
+        picker.textContent = "";
+        var field = el("input", "picker-field");
+        field.type = "text";
+        field.dir = "ltr";
+        field.value = chord.chord;
+        field.placeholder = "Am";
+        field.setAttribute("aria-label", "אקורד");
+        field.addEventListener("keydown", function (event) {
+          if (event.key === "Enter") { event.preventDefault(); commit(field.value); }
+        });
+        picker.appendChild(field);
+        place();
+        field.focus();
+        field.select();
+      }
 
-      document.body.appendChild(picker);
+      var used = chordsInSong();
+      if (!used.length) {
+        typeOne();
+      } else {
+        used.forEach(function (name) {
+          chip("picker-chip" + (name === chord.chord ? " is-on" : ""), name, null, function () { commit(name); });
+        });
+        chip("picker-add", "+", "אקורד אחר", typeOne);
+        if (chord.chord) chip("picker-x", "×", "הסרת האקורד", function () { commit(""); });
+      }
 
-      /* under the chord, pulled back inside the window if it would hang out */
-      var box = node.getBoundingClientRect();
-      var width = picker.offsetWidth;
-      var left = Math.min(Math.max(8, box.left + box.width / 2 - width / 2), window.innerWidth - width - 8);
-      var top = box.bottom + 6;
-      if (top + picker.offsetHeight > window.innerHeight - 8) top = Math.max(8, box.top - picker.offsetHeight - 6);
-      picker.style.left = left + "px";
-      picker.style.top = top + "px";
-
-      field.focus();
-      field.select();
-
+      place();
       document.addEventListener("pointerdown", closeOnOutside, true);
       document.addEventListener("keydown", closeOnEscape, true);
+
+      /* under the chord, pulled back inside the window if it would hang out */
+      function place() {
+        var box = node.getBoundingClientRect();
+        var width = picker.offsetWidth;
+        var left = Math.min(Math.max(6, box.left + box.width / 2 - width / 2), window.innerWidth - width - 6);
+        var top = box.bottom + 4;
+        if (top + picker.offsetHeight > window.innerHeight - 6) top = Math.max(6, box.top - picker.offsetHeight - 4);
+        picker.style.left = left + "px";
+        picker.style.top = top + "px";
+      }
     }
 
     /* --- saving --- */

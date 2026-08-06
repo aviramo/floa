@@ -275,35 +275,33 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .ed .chord.is-dragging { cursor: grabbing; }
 .ed .chord:empty { min-width: 2ch; display: inline-block; }
 
-/* The one thing in the editor that is allowed to appear on screen, because it
-   is the answer to a click rather than a change to the song: the chords this
-   song already uses, which is nearly always the chord you are reaching for. */
+/* The one thing in the editor that appears on screen, because it is the answer
+   to a click rather than a change to the song. One low row of names, and it is
+   meant to be forgettable: no pills, no panel, no colour it did not already
+   have. It should read as a list, not as a dialog. */
 .picker {
   position: fixed; z-index: 50;
-  display: grid; gap: 8px; width: max-content; max-width: min(300px, calc(100vw - 16px));
-  padding: 10px; border-radius: 12px;
-  background: #fff; border: 1px solid var(--line); box-shadow: 0 12px 32px rgba(23, 32, 42, .16);
+  display: flex; align-items: center; flex-wrap: wrap; gap: 1px;
+  max-width: min(260px, calc(100vw - 12px));
+  padding: 3px; border-radius: 8px;
+  background: #fff; border: 1px solid var(--line); box-shadow: 0 4px 14px rgba(23, 32, 42, .12);
 }
+.picker button {
+  appearance: none; cursor: pointer; border: none; background: transparent;
+  font: inherit; font-size: 13px; line-height: 1.4; direction: ltr;
+  padding: 3px 7px; border-radius: 5px;
+}
+.picker-chip { color: var(--chord); font-weight: 700; }
+.picker-chip:hover, .picker-add:hover, .picker-x:hover { background: var(--chord-soft); }
+.picker-chip.is-on { background: var(--chord-soft); }
+.picker-add { color: var(--ink-soft); font-weight: 700; }
+.picker-x { color: var(--ink-soft); font-size: 15px; }
+.picker-x:hover { color: var(--danger); background: #fdf1ef; }
 .picker-field {
-  width: 100%; padding: 6px 9px; border-radius: 8px;
-  direction: ltr; text-align: left;
+  width: 7ch; padding: 3px 6px; border-radius: 5px;
+  direction: ltr; text-align: left; font-size: 13px;
   color: var(--chord); font-weight: 700;
 }
-.picker-list { display: flex; flex-wrap: wrap; gap: 6px; }
-.picker-chip {
-  appearance: none; cursor: pointer; font: inherit;
-  font-weight: 700; font-size: 14px; direction: ltr;
-  color: var(--chord); background: var(--chord-soft);
-  border: 1px solid transparent; border-radius: 999px; padding: 4px 11px;
-}
-.picker-chip:hover { border-color: var(--chord); }
-.picker-chip.is-on { background: var(--chord); color: #fff; }
-.picker-drop {
-  appearance: none; cursor: pointer; font: inherit; font-size: 13px;
-  color: var(--ink-soft); background: transparent; border: none; padding: 2px;
-  text-align: center;
-}
-.picker-drop:hover { color: var(--danger); }
 
 .hint {
   font-size: 13px; color: var(--ink-soft);
