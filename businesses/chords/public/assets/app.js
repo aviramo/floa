@@ -115,11 +115,19 @@
     },
 
     save: function (data) {
+      var meta = (data.user && data.user.user_metadata) || null;
       this.session = {
         access_token: data.access_token,
         refresh_token: data.refresh_token,
         expires_at: Date.now() + (data.expires_in || 3600) * 1000,
         email: (data.user && data.user.email) || (this.session && this.session.email) || "",
+        /* Whatever the account already knows about the person, which right now
+           is one number: the fret they play at. Kept here so a page can be
+           opened without asking the server who is looking at it, and taken
+           from the account rather than from this browser, so it is the same
+           on the phone on the sofa as on the desk it was set at. */
+        capo: meta && typeof meta.capo === "number" ? meta.capo
+          : (this.session && typeof this.session.capo === "number" ? this.session.capo : -1),
       };
       localStorage.setItem(SESSION_KEY, JSON.stringify(this.session));
     },
@@ -130,6 +138,51 @@
     },
 
     get in() { return !!(this.session && this.session.refresh_token); },
+
+    /* --- the fret this person plays at ---------------------------------------
+       A song opens at whatever capo turns ITS chords into the fewest barres,
+       which is a fact about the song. This is a fact about the player: the one
+       fret their voice sits at, or the one their hand is used to, and it beats
+       the arithmetic because the arithmetic never knew what key anybody sings
+       in.
+
+       -1 means no answer, and no answer is not zero: it is "work it out per
+       song", which is what the app did before this existed and what it goes
+       back to when the number is taken off.
+
+       It lives on the ACCOUNT, in the user's own metadata, not in this
+       browser. A capo is a fact about a person, and the person is the same
+       person on the phone they are holding and the desk they set it at. */
+    capo: function () {
+      var value = this.session && this.session.capo;
+      return typeof value === "number" && value >= 0 ? value : -1;
+    },
+
+    setCapo: function (value) {
+      var self = this;
+      var kept = value >= 0 ? value : -1;
+      /* on screen at once, written behind it: the sheet redrawing is the
+         answer to the press, and a fret is not worth waiting on a network for */
+      if (this.session) {
+        this.session.capo = kept;
+        try { localStorage.setItem(SESSION_KEY, JSON.stringify(this.session)); } catch (e) { /* private window */ }
+      }
+      return this.token().then(function (token) {
+        if (!token) return null;
+        return fetch(CFG.supabaseUrl + "/auth/v1/user", {
+          method: "PUT",
+          headers: {
+            apikey: CFG.supabaseAnonKey,
+            authorization: "Bearer " + token,
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({ data: { capo: kept } }),
+        }).then(function (r) {
+          if (!r.ok) throw new Error("capo " + r.status);
+          return null;
+        });
+      });
+    },
 
     signIn: function (email, password) {
       var self = this;
@@ -2267,8 +2320,19 @@
        its chords into the fewest barres. So the number differs from song to
        song, because it is a property of the song rather than a preference, and
        a negative transposition is exactly what a capo is. Moving it is still
-       one button away, and 0 is the song as written. */
-    var semis = -easyVersion(chordsUsed(song.lines)).capo;
+       one button away, and 0 is the song as written.
+
+       Unless the person reading has said where their own capo goes, in which
+       case that wins. The easy version is arithmetic about the chords; a capo
+       somebody actually clamps on is about their voice, and the arithmetic
+       never knew what key they sing in. */
+    var myCapo = auth.capo();
+
+    function openingSemis() {
+      return myCapo >= 0 ? -myCapo : -easyVersion(chordsUsed(song.lines)).capo;
+    }
+
+    var semis = openingSemis();
 
     /* the size follows the reader from song to song. The transposition does
        not: it belongs to the one song it was worked out for. */
@@ -2468,6 +2532,49 @@
       function () { setSize(size - 1); },
       function () { setSize(size + 1); }
     ));
+
+    /* The fret THIS PERSON plays at, which is a different question from the one
+       beside it. Transposition moves this song, now, for as long as it is open.
+       This is an answer about the player: every song opens here from now on,
+       on this screen and on their phone, because it lives on the account.
+
+       Below zero it says "אוטומטי", and that is not a number: it is the app
+       working the capo out per song from the chords, which is what it did
+       before anybody said where their own capo goes.
+
+       Only for somebody signed in. There is no account to keep it on
+       otherwise, and a preference that is silently forgotten is worse than one
+       that was never offered. */
+    var myValue = null;
+    if (auth.in) {
+      tools.appendChild(el("span", "sep"));
+      myValue = el("span", "val");
+      var mine = control(
+        "הקפו שלי", myValue,
+        function () { setMyCapo(myCapo - 1); },
+        function () { setMyCapo(myCapo + 1); }
+      );
+      mine.title = "הקפו שאתם מנגנים בו. כל שיר ייפתח בו, בכל מכשיר.";
+      tools.appendChild(mine);
+      showMyCapo();
+    }
+
+    function showMyCapo() {
+      if (!myValue) return;
+      myValue.textContent = myCapo >= 0 ? String(myCapo) : "אוטו";
+    }
+
+    /* The sheet answers at once and the account is told behind it: a fret is
+       not worth waiting on a network for, and the number is already kept in
+       this browser's copy of the session either way. */
+    function setMyCapo(next) {
+      myCapo = next < 0 ? -1 : Math.min(next, MAX_CAPO);
+      showMyCapo();
+      setSemis(openingSemis());
+      auth.setCapo(myCapo).catch(function () {
+        toast("הקפו נשמר כאן, אבל לא הצליח להישמר בחשבון", true);
+      });
+    }
 
     tools.appendChild(el("span", "grow"));
 
