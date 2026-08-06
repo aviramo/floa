@@ -292,6 +292,11 @@ try {
       await sleep(40);
       let from = (await evaluate(POSITIONS)).chords[0].x;
 
+      /* A chord is grabbed in the middle of its label but positioned by its
+         anchor edge, and beginning the drag must not close that gap for you. */
+      check("beginning a drag does not jerk the chord sideways",
+        Math.abs(from - held.x) <= 7, `${held.x} -> ${from}`);
+
       /* Short of the neighbour: small steps, and after every one of them the
          chord must have moved a little. A continuous position looks like six
          small moves; a snapping one looks like three of nothing and then a

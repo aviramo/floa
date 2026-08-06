@@ -1307,7 +1307,7 @@
        Letting go without having moved opens the small list of chords the song
        already uses. */
     function bindChord(node, ln, line, chord) {
-      var dragging = false, from = 0;
+      var dragging = false, from = 0, grab = 0;
 
       node.addEventListener("pointerdown", function (event) {
         event.stopPropagation();
@@ -1324,9 +1324,14 @@
           if (Math.abs(event.clientX - from) < 4) return;
           dragging = true;
           node.classList.add("is-dragging");
+          /* A chord is grabbed somewhere in the middle of its own label, but
+             its position is its anchor edge. Remember the difference at the
+             moment the drag begins and keep it, or the chord snaps that far
+             sideways on the first pixel of movement. */
+          grab = chord.pos - posFromX(ln, event.clientX, rtl());
         }
 
-        var pos = posFromX(ln, event.clientX, rtl());
+        var pos = round2(Math.max(0, posFromX(ln, event.clientX, rtl()) + grab));
         var previous = chord.pos;
         if (pos === previous) return;
 
