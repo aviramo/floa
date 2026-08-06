@@ -21,16 +21,17 @@
   --chord: #e11d63;
   --chord-soft: #fde7ef;
 
-  /* --- the three states a song can be in ------------------------------------
+  /* --- the four states a song can be in ------------------------------------
      A colour belongs to a STATE, not to a place: the same green means
      published on a row of the library, on the tally counting them and on the
      chip inside the song that puts it there. Three colours learned once and
      read everywhere, which is the whole reason they are named here and not
      written into each of the three places.
 
-     Warm while somebody still owes the song something, cool when nobody does:
-     amber asks to be checked, brown says being worked on, green is out in the
-     world. */
+     Blue while the machine still has it, warm while a person still owes it
+     something, green when it is out in the world: blue is being read, amber
+     asks to be checked, brown says being worked on. */
+  --imported-ink: #2f5d8a;  --imported-soft: #dde9f4;
   --review-ink: #8a5a12;    --review-soft: #f6e6ca;
   --draft-ink: #5b4636;     --draft-soft: #f1ece4;
   --published-ink: #0d5c4a; --published-soft: #dcf1e9;
@@ -261,11 +262,13 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .tally-style { color: var(--ink-soft); }
 .tally-style.is-on { background: var(--bg); color: var(--ink); }
 
+.tally-imported { color: var(--imported-ink); }
 .tally-review { color: var(--review-ink); }
 .tally-draft { color: var(--draft-ink); }
 .tally-published { color: var(--published-ink); }
 .tally:hover { border-color: currentColor; }
 .tally.is-on { border-color: currentColor; }
+.tally-imported.is-on { background: var(--imported-soft); }
 .tally-review.is-on { background: var(--review-soft); }
 .tally-draft.is-on { background: var(--draft-soft); }
 .tally-published.is-on { background: var(--published-soft); }
@@ -367,6 +370,12 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 /* a song that is not in the library any more, and is still every word of what
    it was */
 .list .row.is-gone { opacity: .8; }
+
+/* What stands in the sheet while the machine is still reading the song into
+   it. In the sheet and not over the page, because it is standing exactly where
+   the words will be. */
+.coming { text-align: center; padding: 30px 0 34px; }
+.coming p { margin: 12px 0 0; font-size: 14px; }
 
 /* --- an evening of singing ----------------------------------------------
    A name, a date, and songs in the order they will be sung. The head and the
@@ -516,6 +525,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   border-radius: 999px; padding: 1px 10px; white-space: nowrap;
 }
 .review-tag,
+.tag-imported { color: var(--imported-ink); background: var(--imported-soft); }
 .tag-review { color: var(--review-ink); background: var(--review-soft); }
 .tag-draft { color: var(--draft-ink); background: var(--draft-soft); }
 .tag-published { color: var(--published-ink); background: var(--published-soft); }
@@ -701,7 +711,19 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 .tools .lbl svg { width: 16px; height: 16px; }
 /* wide enough for -11 and no wider, so the number does not stand in a hole of
    its own between the word and the buttons */
-.tools .val { font-size: 15px; font-weight: 700; min-width: 3ch; text-align: center; direction: ltr; font-variant-numeric: tabular-nums; }
+.tools .val {
+  font-size: 15px; font-weight: 700; min-width: 3ch;
+  text-align: center; direction: ltr; font-variant-numeric: tabular-nums;
+}
+/* In the editor the transposition's number is a button: pressing it offers to
+   make the key on screen the song's own. It looks like the number it is until
+   the pointer is on it, because that is what it is most of the time. */
+button.val {
+  appearance: none; cursor: pointer; font-family: inherit; color: inherit;
+  background: none; border: 1px solid transparent; border-radius: 6px;
+  padding: 1px 4px; line-height: 1.1;
+}
+button.val:hover { border-color: var(--line); background: #fff; }
 .tools .grow { margin-inline-start: auto; }
 
 /* A line never wraps by itself (white-space: pre on .ln-t), so a long line

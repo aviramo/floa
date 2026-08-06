@@ -2236,15 +2236,13 @@
          song that is neither published nor waiting to be checked is one
          somebody is working on, which is what a draft is: there is no fourth
          state for "finished and private". */
-      var TAGS = [
-        { key: "review", label: "לסקירה", is: function (s) { return !s.published && !!s.review; } },
-        { key: "draft", label: "טיוטה", is: function (s) { return !s.published && !s.review; } },
-        { key: "published", label: "פורסם", is: function (s) { return !!s.published; } },
-      ];
-
-      function ready(songs) {
-        return songs.filter(function (s) { return !s.status || s.status === "ready"; });
-      }
+      var TAGS = ["imported", "review", "draft", "published"].map(function (key) {
+        return {
+          key: key,
+          label: STATE_WORDS[key],
+          is: function (s) { return rowState(s) === key; },
+        };
+      });
 
       /* --- IN THE SEARCH BOX, at the far end of it -----------------------------
          The states are a filter, the box beside them is a filter, and they had
@@ -2270,9 +2268,8 @@
 
       function paintTallies() {
         tallies.textContent = "";
-        var real = ready(state.songs);
         TAGS.forEach(function (t) {
-          var n = real.filter(t.is).length;
+          var n = state.songs.filter(t.is).length;
           /* A count of nothing is not a fact worth a chip. It is a row of
              states the library is not in, and the only thing pressing one
              could do is empty the list. */
@@ -2298,7 +2295,7 @@
       function paintKinds() {
         kinds.textContent = "";
         var counted = {};
-        ready(state.songs).forEach(function (s) {
+        state.songs.forEach(function (s) {
           styles(s).forEach(function (name) { counted[name] = (counted[name] || 0) + 1; });
         });
 
@@ -2425,7 +2422,7 @@
         var q = String(filter || "").trim().toLowerCase();
         var only = tag && TAGS.filter(function (t) { return t.key === tag; })[0];
         var shown = state.songs.filter(function (s) {
-          if (only && !(ready([s]).length && only.is(s))) return false;
+          if (only && !only.is(s)) return false;
           if (kind && styles(s).indexOf(kind) < 0) return false;
           if (!q) return true;
           /* the style is searched too: it is one of the words on the row, and
@@ -2627,6 +2624,29 @@
       " בשעה " + hourWords(t);
   }
 
+  /* --- the one state a song is in --------------------------------------------
+     Four, and a song is in exactly one of them. They are separate columns in
+     the database because that is what a policy can read, and one word here,
+     because a person should never have to work out a combination.
+
+     Read in the order a song passes through them: still in the machine, read
+     but unchecked, being worked on, out in the world. "Not published and not
+     waiting to be checked" is somebody working on it, which is what a draft
+     is; there is no state for "finished and private". */
+  var STATE_WORDS = {
+    imported: "מיובא",
+    review: "לסקירה",
+    draft: "טיוטה",
+    published: "פורסם",
+  };
+
+  function rowState(s) {
+    if (s.status === "queued" || (s.status === "reading" && !stalled(s))) return "imported";
+    if (s.published) return "published";
+    if (s.review) return "review";
+    return "draft";
+  }
+
   /* One label, in that state's own colour. The colour belongs to the STATE and
      not to the place it is drawn: the same green means published on a row of
      the library, on the tally over it and on the button inside the song, so
@@ -2672,8 +2692,16 @@
 
     /* A row with no status at all is a song, not a failure. The column may be
        missing from an older table, and the worst thing this page can do with a
-       song it holds the words to is refuse to show them. */
-    if (!s.status || s.status === "ready") {
+       song it holds the words to is refuse to show them.
+
+       A song still being READ is an ordinary row too. It has a name, and a
+       page where that name, its credits and its kinds can be set while the
+       machine works; what it does not have is words yet, and its own page says
+       so. It used to be a row with a cancel button on it, which put the one
+       thing you can do to a song in the machine in a different place from
+       everything else you can do to a song. */
+    var busy = s.status === "queued" || (s.status === "reading" && !stalled(s));
+    if (!s.status || s.status === "ready" || busy) {
       var a = el("a");
       a.href = BASE + "/" + encodeURIComponent(s.slug);
       a.addEventListener("click", function (e) { e.preventDefault(); go(a.getAttribute("href")); });
@@ -2748,9 +2776,14 @@
       /* ONE, because a song is in one state. The row says which, the numbers
          over the list count the same three, and the chip inside the song is
          the same word again. */
-      if (s.published) tags.appendChild(tag("published", "פורסם", "השיר פתוח לכולם"));
-      else if (s.review) tags.appendChild(tag("review", "לסקירה", "השיר נקרא מתוך קובץ ועדיין לא נבדק"));
-      else tags.appendChild(tag("draft", "טיוטה", "עוד עובדים עליו, ורק אתם רואים אותו"));
+      var WHY = {
+        imported: "הקובץ נקרא עכשיו. אפשר להיכנס ולמלא שם, מי כתב וסגנון.",
+        review: "השיר נקרא מתוך קובץ ועדיין לא נבדק",
+        draft: "עוד עובדים עליו, ורק אתם רואים אותו",
+        published: "השיר פתוח לכולם",
+      };
+      var was = rowState(s);
+      tags.appendChild(tag(was, STATE_WORDS[was], WHY[was]));
       side.appendChild(tags);
 
       /* `created_at` behind it, because a song that has never been changed
@@ -2767,59 +2800,25 @@
       return li;
     }
 
-    /* Waiting its turn. Nothing has been spent on it yet, which is exactly why
-       it can be called off: deleting the row is the whole of cancelling, and
-       the Workflow holding this song finds it gone and stops. */
-    if (s.status === "queued") {
-      var wait = el("div", "row is-queued");
-      var waitBox = el("div");
-      waitBox.appendChild(name());
-      waitBox.appendChild(el("div", "a", "ממתין בתור"));
-      wait.appendChild(waitBox);
+    /* What is left here is a song whose reading FAILED, or one that went quiet
+       long enough to have stopped. A song still being read is an ordinary row
+       now, above, and cancelling it is on its own page. */
+    var row = el("div", "row is-failed");
 
-      var waitActions = el("div", "row-actions");
-      /* Purged and not deleted, which is the one place that difference is not
-         a kindness: a queued song's row IS its place in the queue, and the
-         Workflow holding it stops when it finds the row gone. A row still
-         sitting there with a date on it is a reading that goes on happening
-         and goes on being paid for. */
-      waitActions.appendChild(button("ביטול", null, "ghost small", function () {
-        db.purge(s.id).then(refresh).catch(function (e) { toast("הביטול נכשל: " + e.message, true); });
-      }));
-      wait.appendChild(waitActions);
-
-      li.appendChild(wait);
-      return li;
-    }
-
-    var reading = s.status === "reading" && !stalled(s);
-    var row = el("div", "row is-" + (reading ? "reading" : "failed"));
-
-    if (reading) row.appendChild(el("span", "spin"));
     var box2 = el("div");
     box2.appendChild(name());
-    if (reading) {
-      var note = el("div", "a");
-      note.dataset.since = Date.parse(s.created_at || "") || Date.now();
-      note.dataset.stage = s.status_note || "ממתין";
-      elapsed(note);
-      box2.appendChild(note);
-    } else {
-      box2.appendChild(el("div", "a", stalled(s) ? "הקריאה נתקעה ולא הסתיימה" : "הקריאה נכשלה"));
-    }
-    if (s.status !== "reading" && s.status_note) box2.appendChild(el("div", "detail", s.status_note));
+    box2.appendChild(el("div", "a", stalled(s) ? "הקריאה נתקעה ולא הסתיימה" : "הקריאה נכשלה"));
+    if (s.status_note) box2.appendChild(el("div", "detail", s.status_note));
     row.appendChild(box2);
 
-    if (!reading) {
-      var actions = el("div", "row-actions");
-      actions.appendChild(button("להקליד ידנית", ICON.pencil, "ghost small", function () {
-        go(BASE + "/" + encodeURIComponent(s.slug));
-      }));
-      actions.appendChild(button("מחיקה", ICON.trash, "danger small", function () {
-        db.remove(s.id).then(refresh).catch(function (e) { toast("המחיקה נכשלה: " + e.message, true); });
-      }));
-      row.appendChild(actions);
-    }
+    var actions = el("div", "row-actions");
+    actions.appendChild(button("להקליד ידנית", ICON.pencil, "ghost small", function () {
+      go(BASE + "/" + encodeURIComponent(s.slug));
+    }));
+    actions.appendChild(button("מחיקה", ICON.trash, "danger small", function () {
+      db.remove(s.id).then(refresh).catch(function (e) { toast("המחיקה נכשלה: " + e.message, true); });
+    }));
+    row.appendChild(actions);
 
     li.appendChild(row);
     return li;
@@ -2854,14 +2853,12 @@
     db.bySlug(slug).then(function (song) {
       if (!song) return notFound(slug);
 
-      /* Only a song that is still coming gets a waiting page. A song whose
-         reading FAILED is a song with a name and no words yet, and the one
-         thing anybody wants to do with it is type it, so it opens as itself.
-         It used to open as a page whose "type it by hand" button led back to
-         the same page, which is no way out of anything. */
-      if (song.status === "queued" || (song.status === "reading" && !stalled(song))) {
-        return viewPending(song);
-      }
+      /* A song whose reading FAILED is a song with a name and no words yet,
+         and the one thing anybody wants to do with it is type it, so it opens
+         as itself. A song still being READ opens as itself too now: it has a
+         name, credits and kinds that can all be set while the machine works,
+         and the only thing that cannot be touched is the one thing that is
+         being written (see `coming` in renderSong). */
       /* the column is what the song ran in before a line could say otherwise,
          so it is what a line that says nothing inherits */
       song.lines = normalizeLines(song.lines, song.dir);
@@ -2894,6 +2891,18 @@
        is one press away. The press is the watching: nothing here changes by
        accident, because getting in was on purpose. */
     var onPhone = NARROW.matches;
+
+    /* --- STILL BEING READ ------------------------------------------------------
+       A song whose picture is still in the machine has a name, and often
+       credits and a kind, and none of those are what the Worker is writing.
+       So the page opens and all of it can be set while the reading runs: the
+       one thing that cannot be touched is the song itself, because it is being
+       written from the other end and a save from here would land on top of it.
+
+       Which is also why the save below never mentions the words while this is
+       true. */
+    var coming = song.status === "queued" || (song.status === "reading" && !stalled(song));
+
     var editing = auth.in && (!onPhone || !!state.editOnPhone);
 
     /* Now there is something on the page to print, and, on a phone, a way into
@@ -2988,9 +2997,15 @@
        it, which is what a draft is. There is no fourth state for "finished and
        private": a song nobody else can open is a song still being worked on,
        whether or not anybody has touched it today. */
-    var STATE_WORDS = { review: "לסקירה", draft: "טיוטה", published: "פורסם" };
+    var STATE_WORDS = {
+      imported: "מיובא",
+      review: "לסקירה",
+      draft: "טיוטה",
+      published: "פורסם",
+    };
 
     function songState() {
+      if (coming) return "imported";
       if (song.published) return "published";
       if (song.review) return "review";
       return "draft";
@@ -3136,6 +3151,8 @@
         statusChip.textContent = STATE_WORDS[was];
         statusChip.title = was === "published"
           ? "השיר פתוח לכולם. כל שינוי בו מחזיר אותו לטיוטה."
+          : was === "imported"
+          ? "השיר נקרא עכשיו מתוך הקובץ. לחיצה מאפשרת לבטל."
           : "לחיצה מפרסמת את השיר: רק שיר מפורסם נפתח למי שלא כתב אותו.";
       };
       showState();
@@ -3225,7 +3242,27 @@
       return ctl;
     }
 
-    var value = el("span", "val", "0");
+    /* --- THE KEY THE SONG IS WRITTEN IN ----------------------------------------
+       Transposing moves the chords on the screen and changes nothing about the
+       song: everybody else still opens it in the key it was written in. Which
+       is right for a reader, and not enough for whoever keeps the song, because
+       "does this start on Am or on Dm" is a decision about the song itself and
+       somebody has to be able to make it.
+
+       So in the editor the number is a button. Press it, press "ברירת מחדל",
+       and what is on the screen becomes what the song IS: every chord is
+       written down as it is being shown, and the transposition drops to zero
+       because there is nothing left to transpose. Nothing on screen moves,
+       which is the point.
+
+       It is not offered at zero. There is nothing to make default when the
+       song is already being shown as itself. */
+    var value = el(editing && !coming ? "button" : "span", "val", "0");
+    if (editing && !coming) {
+      value.type = "button";
+      value.title = "לקבוע את הסולם הזה כברירת המחדל של השיר";
+      value.addEventListener("click", function () { askKey(value); });
+    }
     tools.appendChild(control(
       ICON.pitch, "טרנספוזיציה", value,
       function () { setSemis(semis - 1); },
@@ -3342,7 +3379,7 @@
        second copy inside the song was the same number twice: on screen it is
        an inch from its own control, and on paper it is a note about whoever
        printed the page rather than about the song on it. */
-    var sheet = el("div", "sheet" + (editing ? " ed" : ""));
+    var sheet = el("div", "sheet" + (editing && !coming ? " ed" : ""));
     sheet.style.setProperty("--song-size", size + "px");
     app.appendChild(sheet);
 
@@ -3353,7 +3390,7 @@
     var blockBar = null;
     var blockCount = null;
     var dropBtn = null;
-    if (editing) {
+    if (editing && !coming) {
       blockBar = el("div", "block-bar");
       blockCount = el("div", "block-count");
       blockBar.appendChild(blockCount);
@@ -3387,7 +3424,7 @@
     }
 
     var addRow = null;
-    if (editing) {
+    if (editing && !coming) {
       addRow = el("div", "ed-bar");
       /* A new line runs the way the song's last line runs. Whoever is typing an
          English chorus is typing the next line of it too. */
@@ -3420,6 +3457,27 @@
       sheet.innerHTML = "";
       song.dir = songDir(song.lines);
       sheet.dir = song.dir;
+
+      /* WHAT STANDS WHERE THE SONG WILL BE. A reading takes a minute or two
+         and it is happening somewhere else, so the sheet says how long it has
+         been going and what stage it reached, counted here and ticking every
+         second: a number that only moves when the Worker's heartbeat lands
+         reads as a stuck one. */
+      if (coming) {
+        var waiting = el("div", "coming");
+        var spin = el("span", "busy");
+        spin.appendChild(el("span", "spin"));
+        var howLong = el("span");
+        howLong.dataset.since = Date.parse(song.created_at || "") || Date.now();
+        howLong.dataset.stage = song.status_note || (song.status === "queued" ? "ממתין בתור" : "ממתין");
+        elapsed(howLong);
+        spin.appendChild(howLong);
+        waiting.appendChild(spin);
+        waiting.appendChild(el("p", "muted", "הקריאה ממשיכה גם בלי הדף הזה. השם, מי כתב וסגנון אפשר למלא כבר עכשיו."));
+        sheet.appendChild(waiting);
+        tick(sheet);
+        return;
+      }
 
       song.lines.forEach(function (line, index) {
         sheet.appendChild(editing ? editRow(line, index) : viewLine(line, semis));
@@ -3488,6 +3546,59 @@
       ]);
     }
 
+    /* --- making this key the song's own ---------------------------------------
+       One offer, and only when there is one: the chords as they are on screen,
+       written into the song. */
+    var keyMenu = null;
+
+    function closeKeyMenu() {
+      if (!keyMenu) return;
+      keyMenu.remove();
+      keyMenu = null;
+      document.removeEventListener("pointerdown", keyOutside, true);
+    }
+
+    function keyOutside(event) {
+      if (!keyMenu) return;
+      if (keyMenu.contains(event.target)) return;
+      if (value.contains && value.contains(event.target)) return;
+      closeKeyMenu();
+    }
+
+    function askKey(anchor) {
+      if (keyMenu) return closeKeyMenu();
+      if (!semis) return;
+
+      keyMenu = el("div", "print-menu");
+      keyMenu.appendChild(button("ברירת מחדל", null, "ghost small", function () {
+        closeKeyMenu();
+        bakeKey();
+      }));
+      document.body.appendChild(keyMenu);
+
+      var box = anchor.getBoundingClientRect();
+      var width = keyMenu.offsetWidth;
+      keyMenu.style.top = (box.bottom + 6) + "px";
+      keyMenu.style.left = Math.min(Math.max(6, box.right - width), window.innerWidth - width - 6) + "px";
+
+      document.addEventListener("pointerdown", keyOutside, true);
+    }
+
+    /* The chords are rewritten, the number goes to zero, and between the two
+       of them the sheet does not move a pixel: what was being SHOWN is now
+       what is STORED. Every chord by identity, so the drag handlers and the
+       picker keep holding the same objects they were holding. */
+    function bakeKey() {
+      var by = semis;
+      if (!by) return;
+      song.lines.forEach(function (line) {
+        line.chords.forEach(function (c) { c.chord = transposeChord(c.chord, by); });
+      });
+      setSemis(0);
+      mark();
+      toast("הסולם הזה הוא עכשיו ברירת המחדל של השיר");
+    }
+
     /* --- what it can become ----------------------------------------------------
        One offer, always the same one: פורסם. Everything else about the state
        happens by itself, so there is nothing else here to choose. A song that
@@ -3518,6 +3629,28 @@
       if (songState() === "published") return;
 
       stateMenu = el("div", "print-menu");
+
+      /* A song still in the machine has one thing that can be done to it and
+         it is not publishing: there is nothing to publish yet. Cancelling is
+         deleting the row outright, which is the whole of how a reading is
+         called off, and it is the reason this is not the soft delete the rest
+         of the app uses: the Workflow holding the song stops when it finds the
+         row gone. */
+      if (coming) {
+        stateMenu.appendChild(button("ביטול הייבוא", ICON.close, "ghost small", function () {
+          closeStateMenu();
+          if (!window.confirm('לבטל את הייבוא של "' + (song.title || "השיר") + '"?')) return;
+          db.purge(song.id).then(function () {
+            toast("הייבוא בוטל");
+            go(BASE + "/");
+          }).catch(function (e) { toast("הביטול נכשל: " + e.message, true); });
+        }));
+        document.body.appendChild(stateMenu);
+        placeStateMenu(anchor);
+        document.addEventListener("pointerdown", stateOutside, true);
+        return;
+      }
+
       stateMenu.appendChild(button("פורסם", null, "ghost small", function () {
         closeStateMenu();
         song.published = true;
@@ -3530,13 +3663,15 @@
         queueSave(true);
       }));
       document.body.appendChild(stateMenu);
+      placeStateMenu(anchor);
+      document.addEventListener("pointerdown", stateOutside, true);
+    }
 
+    function placeStateMenu(anchor) {
       var box = anchor.getBoundingClientRect();
       var width = stateMenu.offsetWidth;
       stateMenu.style.top = (box.bottom + 6) + "px";
       stateMenu.style.left = Math.min(Math.max(6, box.right - width), window.innerWidth - width - 6) + "px";
-
-      document.addEventListener("pointerdown", stateOutside, true);
     }
 
     /* --- taking it back ------------------------------------------------------
@@ -3697,7 +3832,7 @@
        split, a line carried up the page: all of them end in a pointer coming up
        or an input landing inside the sheet, and catching them here means a new
        way to change a song cannot quietly arrive without the button noticing. */
-    if (editing) {
+    if (editing && !coming) {
       sheet.addEventListener("input", mark);
       sheet.addEventListener("pointerup", function () { setTimeout(mark, 0); });
 
@@ -4576,22 +4711,30 @@
 
       var payload = {
         title: name,
-        /* the song's direction is its first line's: the sheet is laid out in
-           it, and a line that does not say otherwise inherits it */
-        dir: songDir(song.lines),
-        lines: songToText(song.lines),
-        draft: !!song.draft,
-        published: !!song.published,
-        review: !!song.review,
         styles: styles(song),
       };
       CREDITS.forEach(function (c) { payload[c.field] = String(song[c.field] || "").trim(); });
 
-      /* typing a song by hand is what makes a failed read stop being failed.
-         A column that is not in the table yet is dropped by `shed` on the way
-         out, so naming it here is safe. */
-      payload.status = "ready";
-      payload.status_note = "";
+      /* THE WORDS ARE NOT MENTIONED WHILE THEY ARE BEING WRITTEN. A song still
+         in the machine is being filled in from the other end, and this page
+         holds an empty copy of it: naming the column at all would land that
+         empty copy on top of the reading, and the state would say ready over a
+         song that is still coming. Its name, its credits and its kinds are not
+         what the Worker writes, so those go out as usual. */
+      if (!coming) {
+        /* the song's direction is its first line's: the sheet is laid out in
+           it, and a line that does not say otherwise inherits it */
+        payload.dir = songDir(song.lines);
+        payload.lines = songToText(song.lines);
+        payload.draft = !!song.draft;
+        payload.published = !!song.published;
+        payload.review = !!song.review;
+        /* typing a song by hand is what makes a failed read stop being failed.
+           A column that is not in the table yet is dropped by `shed` on the way
+           out, so naming it here is safe. */
+        payload.status = "ready";
+        payload.status_note = "";
+      }
 
       var going = snapshot();
       inFlight = true;
@@ -4673,7 +4816,16 @@
        have to exist first. Only where they can be written into at all: a phone
        or a signed-out reader is looking at the saved song, and should be told
        the truth about it. */
-    if (editing) takeDraft();
+    /* Looking again while it is still coming, and only while the page is on
+       screen: the sheet is what the reading lands in, and when it does the
+       page opens again as the song. */
+    if (coming) {
+      setTimeout(function () {
+        if (sheet.isConnected) viewSong(song.slug);
+      }, 5000);
+    }
+
+    if (editing && !coming) takeDraft();
     if (editing) {
       note(current === saved ? "נשמר" : "לא נשמר");
       /* whatever is still on the clock when this page is left */
@@ -4735,44 +4887,11 @@
      real address, so it gets a real page rather than being hidden from the one
      person who is waiting for it. While it reads, the page looks again by
      itself; when the Worker finishes, this becomes the song. */
-  function viewPending(song) {
-    app.innerHTML = "";
-    var box = el("div", "center");
-
-    if (song.status === "reading" && !stalled(song)) {
-      var busy = el("span", "busy");
-      busy.appendChild(el("span", "spin"));
-      var note = el("span");
-      note.dataset.since = Date.parse(song.created_at || "") || Date.now();
-      note.dataset.stage = song.status_note || "ממתין";
-      elapsed(note);
-      busy.appendChild(note);
-      box.appendChild(busy);
-      box.appendChild(el("p", "muted", "הקריאה ממשיכה גם בלי הדף הזה."));
-      tick(box);
-      setTimeout(function () { if (box.isConnected) viewSong(song.slug); }, 5000);
-    } else {
-      box.appendChild(el("p", null, stalled(song)
-        ? "הקריאה של " + song.title + " נתקעה ולא הסתיימה."
-        : "הקריאה של " + song.title + " נכשלה."));
-      if (song.status_note) box.appendChild(el("div", "detail", song.status_note));
-      var actions = el("div", "row-actions");
-      actions.appendChild(button("להקליד ידנית", ICON.pencil, "ghost", function () {
-        go(BASE + "/" + encodeURIComponent(song.slug) + "/edit");
-      }));
-      /* A song that is still being read has nothing in it to keep, and its row
-         is what the Workflow reads to know it is still wanted. */
-      actions.appendChild(button("מחיקה", ICON.trash, "danger", function () {
-        db.purge(song.id).then(function () { toast("נמחק"); go(BASE + "/"); })
-          .catch(function (e) { toast("המחיקה נכשלה: " + e.message, true); });
-      }));
-      box.appendChild(actions);
-    }
-
-    box.appendChild(el("p"));
-    box.appendChild(button("לרשימת השירים", ICON.back, "ghost small", function () { go(BASE + "/"); }));
-    app.appendChild(box);
-  }
+  /* There was a waiting page here: a spinner and a clock, for a song that was
+     still in the machine. It is gone, and the song's own page does that job
+     now, with everything about the song that is not its words already
+     editable while the reading runs. A page whose only content is "not yet"
+     is a page that has to be left before anything can be done. */
 
   function notFound(slug) {
     document.title = "לא נמצא | אקורדים";
