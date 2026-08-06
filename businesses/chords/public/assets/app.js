@@ -1887,18 +1887,20 @@
         return state.songs.filter(function (s) { return picked[s.id]; });
       }
 
-      var bar = el("div", "picked-bar");
-      var barCount = el("div", "picked-count");
-      var barActions = el("div", "row-actions");
-      barActions.appendChild(button("מחיקה", ICON.trash, "danger small", removePicked));
-      barActions.appendChild(button("ביטול הבחירה", null, "ghost small", function () {
+      /* IN THE SAME ROW AS THE TALLIES, at the other end of it. They were a bar
+         of their own under the counts, which is a whole line of the page that
+         is empty most of the time and appears under the reader's eye exactly
+         when they are busy ticking. There is room across from the counts and
+         nothing in it, and how many are ticked is a thing the delete button
+         can say itself. */
+      var picking = el("div", "picking");
+      var killBtn = button("מחיקה", ICON.trash, "danger small", removePicked);
+      picking.appendChild(killBtn);
+      picking.appendChild(button("ביטול הבחירה", null, "ghost small", function () {
         picked = {};
         paint(input.value);
       }));
-      bar.appendChild(barCount);
-      bar.appendChild(barActions);
-      bar.hidden = true;
-      app.appendChild(bar);
+      picking.hidden = true;
 
       /* --- what state the library is in ----------------------------------------
          Three numbers under the search box: how many songs are waiting to be
@@ -1927,9 +1929,13 @@
         return songs.filter(function (s) { return !s.status || s.status === "ready"; });
       }
 
-      /* under the search box, above everything the list grows on top of it */
+      /* One row under the search box: what is ticked at one end, what the
+         library is made of at the other. */
+      var counts = el("div", "counts");
       var tallies = el("div", "tallies");
-      app.insertBefore(tallies, bar);
+      counts.appendChild(picking);
+      counts.appendChild(tallies);
+      app.appendChild(counts);
 
       function paintTallies() {
         tallies.textContent = "";
@@ -2021,8 +2027,10 @@
          the list does not quietly unpick what is no longer on screen. */
       function showBar() {
         var n = pickedSongs().length;
-        bar.hidden = !n;
-        barCount.textContent = n === 1 ? "שיר אחד נבחר" : "נבחרו " + n + " שירים";
+        picking.hidden = !n;
+        /* the count is on the button that uses it: "delete" and "how many"
+           are one question, and a sentence saying it twice is a sentence */
+        killBtn.querySelector(".lb").textContent = n > 1 ? "מחיקה (" + n + ")" : "מחיקה";
       }
 
       /* A tick changes one row and the bar, and nothing else on the page is

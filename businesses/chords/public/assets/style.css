@@ -186,8 +186,18 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    AT THE FAR END, over the column of labels they are counting. A number and
    the rows it counts want to be in the same place, or the eye has to travel
    the width of the page to connect them. */
+/* One row: what is ticked at one end of it, what the library is made of at the
+   other. The ticked half was a bar of its own under this one, which is a line
+   of the page standing empty most of the time and arriving under the reader's
+   eye exactly while they are busy ticking. There was room across from the
+   counts and nothing in it. */
+.counts {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 8px; margin: -6px 0 16px;
+}
+.picking { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .tallies {
-  display: flex; flex-wrap: wrap; gap: 8px; margin: -6px 0 16px;
+  display: flex; flex-wrap: wrap; gap: 8px;
   justify-content: flex-end;
 }
 .tally {
@@ -224,15 +234,6 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 /* what has been picked, said on the row itself and not only in the count */
 .list li.is-picked > a, .list li.is-picked > .row { border-color: var(--accent); }
 
-/* Everything picked, and the one thing worth doing to several songs at once.
-   Above the list rather than fixed to the bottom of the screen: it appears
-   where the ticking is happening, and it does not sit over the last row. */
-.picked-bar {
-  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  margin: 0 0 12px; padding: 10px 14px;
-  background: var(--card); border: 1px solid var(--accent); border-radius: var(--radius);
-}
-.picked-count { font-weight: 700; }
 .list a {
   display: flex; align-items: center; gap: 14px; text-decoration: none; color: inherit;
   background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
