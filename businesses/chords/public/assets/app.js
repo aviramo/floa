@@ -60,6 +60,9 @@
     paste: '<rect x="7" y="4" width="10" height="16" rx="2"/><path d="M10 4h4"/>',
     section: '<path d="M5 6h14M5 12h9M5 18h12"/>',
     grip: '<path d="M8 9h8M8 15h8"/>',
+    up: '<path d="M12 19V5m0 0l-6 6m6-6l6 6"/>',
+    down: '<path d="M12 5v14m0 0l-6-6m6 6l6-6"/>',
+    copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/>',
     undo: '<path d="M4 10h9a4.5 4.5 0 0 1 0 9h-5"/><path d="M8 6l-4 4 4 4"/>',
     print: '<path d="M7 9V4h10v5M7 18H5v-6h14v6h-2M8 14h8v6H8z"/>',
     calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
@@ -2257,6 +2260,24 @@
     sheet.style.setProperty("--song-size", size + "px");
     app.appendChild(sheet);
 
+    /* The marked lines, and the two things worth doing to them. It floats over
+       the page instead of sitting in the tools above the sheet, because the
+       verse being moved can be anywhere in a long song: a control that has to
+       be scrolled back to between one press and the next is not there. */
+    var blockBar = null;
+    var blockCount = null;
+    if (editing) {
+      blockBar = el("div", "block-bar");
+      blockCount = el("div", "block-count");
+      blockBar.appendChild(blockCount);
+      blockBar.appendChild(iconBtn(ICON.up, "להעלות את המסומן", function () { moveMarked(-1); }));
+      blockBar.appendChild(iconBtn(ICON.down, "להוריד את המסומן", function () { moveMarked(1); }));
+      blockBar.appendChild(button("שכפול", ICON.copy, "ghost small", copyMarked));
+      blockBar.appendChild(button("ביטול הסימון", null, "ghost small", function () { clearMarks(); }));
+      blockBar.hidden = true;
+      app.appendChild(blockBar);
+    }
+
     var addRow = null;
     if (editing) {
       addRow = el("div", "ed-bar");
@@ -2292,6 +2313,9 @@
       song.lines.forEach(function (line, index) {
         sheet.appendChild(editing ? editRow(line, index) : viewLine(line, semis));
       });
+      /* a marked line that was joined into its neighbour is not a line any
+         more, so what the bar is counting is asked again after every redraw */
+      showMarked();
       /* Breaking first and placing second, because a chord belongs to the row
          its syllable ended up on and there is no telling which that is until
          the words have been broken. */
@@ -2386,6 +2410,9 @@
       song.title = was[0];
       CREDITS.forEach(function (c, index) { song[c.field] = was[1][index] || ""; });
       song.dir = was[2] || "rtl";
+      /* Lines read back out of a string are new objects, so every mark is now
+         held against a line that is not in the song any more. */
+      marked.length = 0;
       song.lines = normalizeLines(was[3]);
 
       if (title.textContent !== song.title) title.textContent = song.title;
@@ -2579,7 +2606,131 @@
       bindGrip(grip, ln);
       ln.appendChild(grip);
 
+      /* The other margin, opposite the grip. Out in the sheet's own padding
+         like the grip is, so it takes no width from the words and no chord
+         moves by a pixel because a line can be marked. */
+      if (isMarked(line)) ln.classList.add("is-marked");
+      var pick = el("label", "ln-pick");
+      var box = el("input");
+      box.type = "checkbox";
+      box.checked = isMarked(line);
+      box.tabIndex = -1;
+      box.setAttribute("aria-label", "לסמן את השורה");
+      box.addEventListener("change", function () {
+        setMark(line, box.checked);
+        ln.classList.toggle("is-marked", box.checked);
+        showMarked();
+      });
+      pick.appendChild(box);
+      ln.appendChild(pick);
+
       return ln;
+    }
+
+    /* --- moving a verse ------------------------------------------------------
+       The grip carries ONE line, which is the right size for a line that ended
+       up in the wrong place and the wrong size for the thing that actually goes
+       wrong in a song: a whole verse in the wrong order, four lines that have
+       to travel together. Dragging those one at a time is four drags, and after
+       the first one they are no longer beside each other.
+
+       So a line can be marked, and what is marked moves as one. Contiguous or
+       not: each marked line steps over the unmarked line next to it, which for
+       a verse is the verse moving a line at a time, and for a scattered set is
+       each of them keeping its distance from the others.
+
+       THE MARKS ARE LINE OBJECTS, NEVER INDICES, for the same reason the chords
+       are: a line can be split, joined or carried up the page by the grip while
+       a mark is still held, and an index would quietly start pointing at the
+       neighbour. */
+    var marked = [];
+
+    function isMarked(line) { return marked.indexOf(line) >= 0; }
+
+    function setMark(line, on) {
+      var at = marked.indexOf(line);
+      if (on && at < 0) marked.push(line);
+      if (!on && at >= 0) marked.splice(at, 1);
+    }
+
+    function clearMarks() {
+      marked.length = 0;
+      showMarked();
+      rowsOf().forEach(function (ln) { ln.classList.remove("is-marked"); });
+      Array.prototype.forEach.call(sheet.querySelectorAll(".ln-pick input"), function (box) {
+        box.checked = false;
+      });
+    }
+
+    function markedCount() {
+      return song.lines.filter(isMarked).length;
+    }
+
+    function showMarked() {
+      if (!blockBar) return;
+      var n = markedCount();
+      blockBar.hidden = !n;
+      blockCount.textContent = n === 1 ? "שורה אחת מסומנת" : n + " שורות מסומנות";
+    }
+
+    /* One step, in whichever direction. Walked from the edge the block is
+       moving towards, so the lines never step on each other, and a marked line
+       whose neighbour is marked too stays where it is: that neighbour is part
+       of the same block and has already moved, or is against the end of the
+       song and nothing can. */
+    function moveMarked(step) {
+      var lines = song.lines;
+      var at = [];
+      lines.forEach(function (line, index) { if (isMarked(line)) at.push(index); });
+      if (!at.length) return;
+      if (step > 0) at.reverse();
+
+      var moved = false;
+      at.forEach(function (index) {
+        var to = index + step;
+        if (to < 0 || to >= lines.length) return;
+        if (isMarked(lines[to])) return;
+        var was = lines[to];
+        lines[to] = lines[index];
+        lines[index] = was;
+        moved = true;
+      });
+      if (!moved) return;
+
+      draw();
+      mark();
+    }
+
+    /* A chorus is the same four lines again, and typing them a second time is
+       typing them a second time. So what is marked can be laid down again,
+       words, chords and headings together, right under the last of it.
+
+       THE COPY IS WHAT STAYS MARKED. Almost every duplication is followed by
+       moving the new verse somewhere, and the thing you want under the arrows
+       afterwards is the one that was just made, not the one it came from. */
+    function copyLine(line) {
+      return {
+        type: line.type,
+        text: line.text,
+        chords: line.chords.map(function (c) { return { pos: c.pos, chord: c.chord }; }),
+      };
+    }
+
+    function copyMarked() {
+      var going = song.lines.filter(isMarked);
+      if (!going.length) return;
+
+      var last = 0;
+      song.lines.forEach(function (line, index) { if (isMarked(line)) last = index; });
+
+      var copies = going.map(copyLine);
+      song.lines.splice.apply(song.lines, [last + 1, 0].concat(copies));
+
+      marked.length = 0;
+      copies.forEach(function (line) { marked.push(line); });
+
+      draw();
+      mark();
     }
 
     /* --- moving a line ------------------------------------------------------

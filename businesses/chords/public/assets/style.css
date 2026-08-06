@@ -673,6 +673,41 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 .ln.is-moving { opacity: .55; }
 @media (prefers-reduced-motion: reduce) { .ln-grip { transition: none; } }
 
+/* The other margin, opposite the grip: the box that makes a line part of the
+   block. Out in the sheet's own padding like the grip is, so no chord moves by
+   a pixel because a line can be marked, and faint until the pointer is on the
+   line or the line is marked: a column of boxes down a song sheet is a column
+   of boxes, not a song. */
+.ln-pick {
+  position: absolute; inset-inline-start: -32px; top: 0; height: 100%;
+  display: flex; align-items: center; justify-content: center; width: 22px;
+  opacity: .22; transition: opacity .12s;
+}
+.ln-pick input { width: 15px; height: 15px; margin: 0; cursor: pointer; accent-color: var(--accent); }
+.ed .ln:hover .ln-pick, .ln.is-marked .ln-pick { opacity: 1; }
+/* A tick is a small thing to find four of down a page, so a marked line also
+   carries a bar in the margin: what is going to move reads as one shape. */
+.ln.is-marked::before {
+  content: ""; position: absolute; inset-inline-start: -7px; top: -1px; bottom: -1px;
+  width: 3px; border-radius: 2px; background: var(--accent);
+}
+@media (prefers-reduced-motion: reduce) { .ln-pick { transition: none; } }
+
+/* What is marked, and what can be done to it. Floating over the page rather
+   than sitting above the sheet or under it, because the verse being moved can
+   be anywhere in a long song: a control that has to be scrolled back to
+   between one press and the next is a control that is not there. */
+.block-bar {
+  position: fixed; z-index: 30;
+  inset-inline: 0; bottom: 18px; margin-inline: auto;
+  width: max-content; max-width: calc(100vw - 24px);
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 8px 8px 8px 14px;
+  background: var(--card); border: 1px solid var(--accent); border-radius: 999px;
+  box-shadow: 0 6px 20px rgba(23, 32, 42, .16);
+}
+.block-count { font-size: 14px; font-weight: 700; padding-inline: 4px; }
+
 /* A chord in the editor is the same chord the reader sees, and it stays that
    way. No border, no box, no highlight, nothing that appears or grows. The
    only thing the editor adds is the pointer's shape, which costs no pixels:
@@ -785,6 +820,9 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 
 @media print {
   .top, .tools, .ed-bar, .song-meta, .toast { display: none !important; }
+  /* marking a verse is editing, and a page of ticks is not a song */
+  .block-bar, .ln-pick { display: none !important; }
+  .ln.is-marked::before { display: none; }
   body { background: #fff; }
 
   /* An evening on paper is the name, the date and the songs in order. The
