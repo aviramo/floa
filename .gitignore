@@ -14,6 +14,17 @@ worker/.wrangler/
 # npm, if a tool ever installs here
 node_modules/
 
+# The keys this machine holds and GitHub must never see. .env is where a token
+# with real power lives (the Supabase personal access token, which may create
+# and drop tables); .env.example is the empty shape of it and IS committed, so
+# a new machine knows what to fill in. This repo is public and every change is
+# pushed to main with `git add -A`, so the line below is load-bearing: see
+# .githooks/pre-commit, which catches the same thing by content, in case this
+# line is ever renamed out from under a file that still holds a key.
+.env
+.env.*
+!.env.example
+
 # OS noise
 Thumbs.db
 .DS_Store

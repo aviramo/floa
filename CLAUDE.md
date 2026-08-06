@@ -64,6 +64,18 @@
 - **טבלה שייכת לעסק אחד.** עסק חדש מוסיף טבלה משלו עם מדיניות משלה (הצורה נמצאת ב-`businesses/chords/schema.sql`) ולא נוגע בשל אחר.
 - אותם ערכים חוזרים ב-`worker/wrangler.toml` כ-`SUPABASE_URL` ו-`SUPABASE_ANON_KEY`, כי `/transcribe` מאמת מולם שהקורא באמת מחובר.
 
+### להריץ SQL מכאן
+
+האתר מדבר עם הדאטהבייס דרך ה-anon key, מבעד ל-RLS. לעבודה על הסכימה עצמה יש דלת שנייה, `scripts/sql.mjs`, שמריצה SQL כבעלים דרך ה-Management API:
+
+```
+node scripts/sql.mjs --table "select id, title from songs limit 5"
+node scripts/sql.mjs < businesses/chords/schema.sql
+```
+
+- הטוקן (`sbp_…`) יושב ב-**`.env` בשורש, שגיט מתעלם ממנו**. `.env.example` מקומט ומתאר מה למלא. **הריפו ציבורי: מפתח לא נכנס לשום קובץ מקומט, אף פעם.**
+- `.githooks/pre-commit` חוסם קומיט שמכיל טוקן, גם אם הוא בקובץ אחר לגמרי. הוא בודק תוכן ולא שם קובץ, ולכן מזהה JWT שה-role שלו אינו `anon` ומרשה את ה-anon key המקומט. `core.hooksPath` נשמר לכל clone בנפרד, אז במכונה חדשה מריצים `npm run hooks` פעם אחת.
+
 ## עסק חדש
 
 לכל עסק, משני הסוגים, יש `index.js` (המניפסט: `key`, `out`, `root`, `lead`) ו-`content/site.js` (הזהות). משם הדרכים נפרדות.

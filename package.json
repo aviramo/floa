@@ -23,8 +23,14 @@
     "that cannot be checked by reading it. It needs a build first, and it passes",
     "with a note where there is no browser to drive."
   ],
+  "//hooks": [
+    "core.hooksPath is stored per clone, not in the repo, so a fresh checkout",
+    "commits with no protection at all. `npm run hooks` turns .githooks on;",
+    "it is one command and it only has to be run once per machine."
+  ],
   "scripts": {
-    "test": "node worker/test/lead.test.mjs && node worker/test/transcribe.test.mjs && node worker/test/geometry.test.mjs && node worker/test/page.test.mjs && node businesses/chords/test/model.test.mjs",
+    "hooks": "git config core.hooksPath .githooks",
+    "test":"node worker/test/lead.test.mjs && node worker/test/transcribe.test.mjs && node worker/test/geometry.test.mjs && node worker/test/page.test.mjs && node businesses/chords/test/model.test.mjs",
     "test:layout": "node businesses/chords/test/layout.test.mjs",
     "build": "node build.mjs",
     "dev": "node build.mjs --serve",

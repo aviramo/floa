@@ -1,0 +1,5 @@
+#!/bin/sh
+# Runs before every commit. See check-secrets.mjs for what it looks for and why.
+# Enabled by `git config core.hooksPath .githooks`, which is per clone: a fresh
+# clone must run it once (npm run hooks).
+exec node "$(dirname "$0")/check-secrets.mjs"
