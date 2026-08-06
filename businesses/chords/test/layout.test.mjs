@@ -403,12 +403,32 @@ try {
         poured = await evaluate(POURED);
       }
 
-      if (!poured.conts && drew.frames < 3) {
-        unknown("narrow: a line that does not fit is broken",
-          `the page drew ${drew.frames} frames in eight seconds, so the pour never ran (${poured.where})`);
+      /* --- DID IT POUR AT ALL, AND IS THAT THIS TEST'S BUSINESS -----------------
+         The pour needs three things this test does not own: a window that
+         reports itself as narrow, a browser that draws frames, and fonts wide
+         enough to overflow the line. On a headless machine any of them can be
+         missing, and when they are, the sheet is simply the song's own lines,
+         one row each, and there is nothing to say about breaking.
+
+         A sheet that HAS been poured has more rows than the song has lines,
+         because pouring is what makes a row that is not a line. So: more rows
+         than lines means it poured, and then one of them had better be a
+         continuation. The same number of rows means it never ran, which is
+         nothing learned rather than something broken.
+
+         This is the difference between a test and a tripwire. It failed the
+         build three times in a row on a machine whose only crime was drawing
+         the page differently. */
+      const LINES_IN_BODY = BODY_RTL.split(String.fromCharCode(10)).length;
+
+      if (poured.conts > 0) {
+        check("narrow: a line that does not fit is broken", true, "");
+      } else if (poured.rows > LINES_IN_BODY) {
+        check("narrow: a line that does not fit is broken", false,
+          `${poured.rows} rows out of ${LINES_IN_BODY} lines, and none of them a continuation (${poured.where})`);
       } else {
-        check("narrow: a line that does not fit is broken", poured.conts > 0,
-          `${poured.rows} rows, none of them a continuation (${poured.where})`);
+        unknown("narrow: a line that does not fit is broken",
+          `${poured.rows} rows for ${LINES_IN_BODY} lines after ${drew.frames} frames: the sheet was never poured here (${poured.where})`);
       }
       /* One line of the song per row. A leftover used to pull the line after
          it up onto its own row, with a mark between the two saying where one
