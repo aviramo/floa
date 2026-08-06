@@ -1777,6 +1777,9 @@
     head.appendChild(title);
 
     var byFields = [];
+    /* set below when there is a direction toggle to keep in step with the song,
+       which is only when the song is being edited */
+    var showDir = null;
     if (editing) {
       /* The credits, and the direction, on the song itself. They belong to it
          and there is no other page to keep them on any more. */
@@ -1809,17 +1812,47 @@
         });
       });
 
-      var dirLabel = el("label", null, "כיוון");
-      var dirSelect = el("select");
-      [["rtl", "עברית, מימין לשמאל"], ["ltr", "אנגלית, משמאל לימין"]].forEach(function (o) {
-        var option = el("option", null, o[1]);
-        option.value = o[0];
-        dirSelect.appendChild(option);
+      /* Two states, so a toggle and not a menu. A menu shows one of the two and
+         hides the other behind a press; here both are on the page and the one
+         that is on is the answer. It sits on the same line as the credits,
+         because which way the song runs is one more thing about the song and
+         not a setting somewhere else. */
+      var dirField = el("div", "fld");
+      dirField.appendChild(el("span", "cap", "כיוון"));
+
+      var seg = el("div", "seg");
+      seg.setAttribute("role", "group");
+      seg.setAttribute("aria-label", "כיוון הכתיבה");
+
+      var dirBtns = [
+        ["rtl", "עברית", "עברית, מימין לשמאל"],
+        ["ltr", "אנגלית", "אנגלית, משמאל לימין"],
+      ].map(function (o) {
+        var b = el("button", "seg-b", o[1]);
+        b.type = "button";
+        b.dataset.dir = o[0];
+        b.title = o[2];
+        b.setAttribute("aria-label", o[2]);
+        b.addEventListener("click", function () {
+          if ((song.dir || "rtl") === o[0]) return;
+          song.dir = o[0];
+          showDir();
+          draw();
+          mark();
+        });
+        seg.appendChild(b);
+        return b;
       });
-      dirSelect.value = song.dir || "rtl";
-      dirSelect.addEventListener("change", function () { song.dir = dirSelect.value; draw(); mark(); });
-      dirLabel.appendChild(dirSelect);
-      meta.appendChild(dirLabel);
+
+      showDir = function () {
+        dirBtns.forEach(function (b) {
+          b.setAttribute("aria-pressed", b.dataset.dir === (song.dir || "rtl") ? "true" : "false");
+        });
+      };
+      showDir();
+
+      dirField.appendChild(seg);
+      meta.appendChild(dirField);
 
       head.appendChild(meta);
     } else {
@@ -2041,7 +2074,7 @@
 
       if (title.textContent !== song.title) title.textContent = song.title;
       byFields.forEach(function (input, index) { input.value = was[1][index] || ""; });
-      if (dirSelect) dirSelect.value = song.dir;
+      if (showDir) showDir();
 
       draw();
       current = snapshot();
@@ -3765,7 +3798,11 @@
     box.appendChild(el("h2", null, "שירים מתמונה או PDF"));
 
     var drop = el("div", "drop");
-    drop.appendChild(el("h3", null, "גררו לכאן צילומים של שירים"));
+    /* on a phone there is nothing to drag from, so the invitation is the one
+       thing a phone can actually do: pick, which is the button underneath. */
+    drop.appendChild(el("h3", null, NARROW.matches
+      ? "בחרו צילומים של שירים"
+      : "גררו לכאן צילומים של שירים"));
     drop.appendChild(el("p", null,
       "אפשר כמה קבצים יחד, וכל קובץ הוא שיר. המערכת קוראת את המילים ואת האקורדים ומציבה כל אקורד מעל ההברה שהוא יושב עליה בתמונה. השירים נכנסים לתור, אפשר לבטל כל אחד מהם כל עוד הוא ממתין."));
 
