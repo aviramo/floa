@@ -435,15 +435,44 @@
   /* A line's text was edited. Chords keep their meaning by riding the common
      prefix and the common suffix; whatever sat inside the part that actually
      changed is pulled to the edge of the change rather than dropped. */
-  function remapChords(oldText, newText, chords) {
-    var max = Math.min(oldText.length, newText.length);
-    var head = 0;
-    while (head < max && oldText[head] === newText[head]) head++;
-    var tail = 0;
-    while (tail < max - head && oldText[oldText.length - 1 - tail] === newText[newText.length - 1 - tail]) tail++;
+  /* Where the change happened, when the caret can say so.
 
+     Comparing the old text with the new one cannot always tell: a run of the
+     same character is completely ambiguous. Type a space into "נה נה נה   "
+     and every possible insertion point produces the identical string, so the
+     comparison picks the far end and every chord sitting out in those spaces,
+     which is exactly where an outro's chords live, stays behind.
+
+     The caret knows. After an insertion of n characters it sits n past where
+     they went in; after a deletion it sits where they were. The strings still
+     have to agree with that story, so a paste or anything stranger falls back
+     to comparing them. */
+  function caretEdit(oldText, newText, caret, delta) {
+    if (caret == null || !delta) return null;
+    var at = delta > 0 ? caret - delta : caret;
+    if (at < 0 || at > oldText.length) return null;
+    if (oldText.slice(0, at) !== newText.slice(0, at)) return null;
+    if (delta > 0 ? oldText.slice(at) !== newText.slice(at + delta)
+                  : oldText.slice(at - delta) !== newText.slice(at)) return null;
+    return at;
+  }
+
+  function remapChords(oldText, newText, chords, caret) {
     var delta = newText.length - oldText.length;
-    var oldTailStart = oldText.length - tail;
+    var head, oldTailStart;
+
+    var at = caretEdit(oldText, newText, caret, delta);
+    if (at !== null) {
+      head = at;
+      oldTailStart = delta > 0 ? at : at - delta;
+    } else {
+      var max = Math.min(oldText.length, newText.length);
+      head = 0;
+      while (head < max && oldText[head] === newText[head]) head++;
+      var tail = 0;
+      while (tail < max - head && oldText[oldText.length - 1 - tail] === newText[newText.length - 1 - tail]) tail++;
+      oldTailStart = oldText.length - tail;
+    }
 
     /* The tail is asked about FIRST, and that order is the whole of it.
 
@@ -1515,7 +1544,7 @@
              fresh array would leave every one of them holding something that is
              no longer part of the line: the chord would appear to move and then
              be gone at the next redraw, and gone from what was saved. */
-          var moved = remapChords(line.text, next, line.chords);
+          var moved = remapChords(line.text, next, line.chords, caret);
           line.chords.forEach(function (c, i) { c.pos = moved[i].pos; });
           line.text = next;
 

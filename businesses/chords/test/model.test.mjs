@@ -92,6 +92,18 @@ eq("and the chords before it stay",
   api.remapChords("שלום", "של ום", [{ pos: 0, chord: "Am" }, { pos: 2, chord: "G" }]),
   [{ pos: 0, chord: "Am" }, { pos: 3, chord: "G" }]);
 
+/* A run of identical characters is ambiguous: inserting a space anywhere in
+   "נה נה נה   " gives the same string every time, so comparing the two
+   texts cannot say where it went. The caret can, and an outro's chords live out
+   in exactly those spaces. */
+eq("a space typed into a run of spaces still carries the chords after it",
+  api.remapChords("נה נה נה   ", "נה נה נה    ", [{ pos: 9, chord: "G" }, { pos: 11, chord: "F" }], 9),
+  [{ pos: 10, chord: "G" }, { pos: 12, chord: "F" }]);
+
+eq("and a backspace in one pulls them back",
+  api.remapChords("נה נה נה    ", "נה נה נה   ", [{ pos: 10, chord: "G" }, { pos: 12, chord: "F" }], 8),
+  [{ pos: 9, chord: "G" }, { pos: 11, chord: "F" }]);
+
 /* the whole point of the format: edit the words, the chord goes with them */
 const before = api.normalizeLines("שלום לך אדו[G]ני")[0];
 eq("inserting a space before the chord carries it along",
