@@ -144,6 +144,20 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   direction: ltr;
 }
 
+/* a song that is not openable yet: being read, or failed. Same box as a link,
+   without the link, so the list keeps its rhythm while one row is busy. */
+.list .row {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 14px 18px;
+}
+.list .row.is-reading { border-style: dashed; }
+.list .row.is-failed { border-color: #f0d3cf; background: #fffaf9; }
+.list .row .a { color: var(--ink-soft); font-size: 14px; }
+.list .row .detail { flex-basis: 100%; }
+
+.row-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-inline-start: auto; }
+
 /* --- song page ---------------------------------------------------------- */
 
 .song-head { margin: 28px 0 6px; }

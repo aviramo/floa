@@ -1,19 +1,30 @@
 /* ==========================================================================
    Reading a chord sheet.
 
-   A photograph or a PDF goes in, a song goes out: the words as printed, and
-   for every chord the index of the character it sits over.
+   Photographs or a PDF go in, a song lands in the database. This lives in the
+   Worker for one reason: the Anthropic key must never reach a browser, exactly
+   like the Resend key next door. Nothing is stored here; the picture is read
+   once and forgotten.
 
-   This lives in the Worker for one reason. The Anthropic key must never reach
-   a browser, exactly like the Resend key next door. Nothing is stored here
-   either; the picture is read once and forgotten.
+   TWO THINGS SHAPE THIS FILE, and both were learned the hard way.
 
-   The hard part is not reading the text, it is the POSITION. A chord printed
-   above a Hebrew line has to come back as an index counted from the start of
-   the line in reading order, which for Hebrew is the right. Getting that wrong
-   is what makes every naive chord sheet in Word come out scrambled, so the
-   prompt below spends most of its words on it, and the schema forces the
-   answer into the one shape the app can use.
+   1. It STREAMS. A careful read of a full page takes minutes, and a plain
+      request that quiet for that long is cut off at a hundred seconds with a
+      524 before a single word comes back. A stream keeps bytes moving, so the
+      time it takes stops being a failure mode.
+
+   2. It FINISHES WITHOUT THE BROWSER. The caller gets an answer immediately
+      and this keeps running (see ctx.waitUntil in index.js), then writes the
+      result to Supabase itself, in the user's own name with the token it just
+      verified. So closing the tab costs nothing, and a half-read song is a
+      visible row rather than a lost minute.
+
+   The hard part of the work itself is not reading the text, it is the
+   POSITION. A chord printed above a Hebrew line has to come back as an index
+   counted from the start of the line in reading order, which for Hebrew is the
+   right. Getting that wrong is what makes every naive chord sheet in Word come
+   out scrambled, so the prompt spends most of its words on it, and the schema
+   forces the answer into the one shape the app can use.
    ========================================================================== */
 
 const MODEL = "claude-opus-5";
@@ -60,7 +71,7 @@ const SCHEMA = {
   },
 };
 
-const SYSTEM = `You read a photograph or a scan of a chord sheet and return the song as structured data.
+const SYSTEM = `You read photographs or scans of a chord sheet and return the song as structured data.
 
 A chord sheet is lyrics with chord symbols printed on their own lines, floating above the words. Recovering the words is the easy half. The half that matters is recovering, for every single chord, WHICH SYLLABLE it was printed above.
 
@@ -74,7 +85,7 @@ Each printed lyric line becomes one entry:
 HOW TO FIND pos, FOR EVERY CHORD
 
 1. Look at where the chord symbol starts horizontally in the image.
-2. Look straight down to the lyric line beneath it and identify the exact word, and within that word the exact syllable, that the chord's left edge sits over.
+2. Look straight down to the lyric line beneath it and identify the exact word, and within that word the exact syllable, that the chord sits over.
 3. Count characters in "text" from the start of the line in reading order up to the first character of that syllable. That count is "pos".
 
 Do this per chord. Do not space chords out evenly, do not give them all the same position, and do not guess from the order alone. If a chord sits in the gap between two words, choose whichever word's start is nearest beneath it. If a chord sits over the middle of a word, "pos" points at the character in the middle of the word, not at the word's start: chords land on syllables, and that is the whole reason this format exists.
@@ -96,22 +107,19 @@ TEXT AND CHORDS
 
 - Copy the lyrics as printed: same words, same spelling, same punctuation, including Hebrew niqqud if it is there. Do not translate, do not transliterate, do not correct.
 - Copy chords as printed, in Latin notation: A to G, with # or b, and whatever follows (m, 7, maj7, sus4, dim, add9) and any slash bass such as G/B.
-- If the sheet is multiple pages, return them as one continuous song.
+- Several images are pages of ONE song, in the order given. Return them as one continuous song.
 - If a part of the image is unreadable, return the lines you can read rather than inventing the rest.`;
 
 const USER_TEXT =
   "This is a chord sheet. Return the whole song. Take particular care with the position of each chord: " +
   "for every chord, find the syllable it is printed above and give the index of that syllable's first character in the line's text.";
 
-/* Reads one file. Throws an Error whose message is safe to log, never to show:
-   the caller decides what the visitor is told. */
-export async function readChordSheet(env, mediaType, data) {
-  const source = { type: "base64", media_type: mediaType, data };
-
-  const document = mediaType === "application/pdf"
-    ? { type: "document", source }
-    : { type: "image", source };
-
+/* --- the model ------------------------------------------------------------
+   Streamed, and read with a deliberately cheap parser. A long answer arrives
+   as thousands of small events, and this Worker has a CPU budget measured in
+   milliseconds, so a line is only parsed as JSON once a substring test says it
+   could possibly matter. Everything else is skipped without being looked at. */
+async function streamText(env, body) {
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -119,37 +127,77 @@ export async function readChordSheet(env, mediaType, data) {
       "anthropic-version": "2023-06-01",
       "content-type": "application/json",
     },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: 24000,
-      system: SYSTEM,
-      /* Thinking is on by default on this model and is left on: the counting
-         above is exactly the kind of work it helps with. `effort` is the knob
-         to turn if this ever needs to be cheaper or faster. */
-      output_config: {
-        effort: "high",
-        format: { type: "json_schema", schema: SCHEMA },
-      },
-      messages: [{ role: "user", content: [document, { type: "text", text: USER_TEXT }] }],
-    }),
+    body: JSON.stringify({ ...body, stream: true }),
   });
 
   if (!response.ok) {
-    throw new Error(`anthropic ${response.status}: ${(await response.text()).slice(0, 400)}`);
+    throw new Error(`anthropic ${response.status}: ${(await response.text()).slice(0, 300)}`);
   }
 
-  const message = await response.json();
+  const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+  let buffer = "";
+  let text = "";
+  let stopReason = null;
 
-  /* A refusal is a normal 200 with an empty or partial body, so it has to be
-     checked before the content is read at all. */
-  if (message.stop_reason === "refusal") throw new Error("refusal");
-  if (message.stop_reason === "max_tokens") throw new Error("truncated");
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += value;
 
-  const text = (message.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
+    let cut;
+    while ((cut = buffer.indexOf("\n")) >= 0) {
+      const line = buffer.slice(0, cut);
+      buffer = buffer.slice(cut + 1);
+      if (!line.startsWith("data:")) continue;
+
+      const payload = line.slice(5).trim();
+      if (
+        payload.indexOf('"text_delta"') < 0 &&
+        payload.indexOf('"stop_reason"') < 0 &&
+        payload.indexOf('"type":"error"') < 0
+      ) continue;
+
+      let event;
+      try { event = JSON.parse(payload); } catch { continue; }
+
+      if (event.type === "content_block_delta" && event.delta?.type === "text_delta") text += event.delta.text;
+      else if (event.type === "message_delta" && event.delta?.stop_reason) stopReason = event.delta.stop_reason;
+      else if (event.type === "error") throw new Error(`anthropic stream: ${event.error?.message || "error"}`);
+    }
+  }
+
+  return { text, stopReason };
+}
+
+/* Reads one upload, which may be several pages of the same song. Throws an
+   Error whose message is safe to store: it is ours, never a key. */
+export async function readChordSheet(env, files) {
+  const pages = files.map((file) => {
+    const source = { type: "base64", media_type: file.media_type, data: file.data };
+    return file.media_type === "application/pdf"
+      ? { type: "document", source }
+      : { type: "image", source };
+  });
+
+  const { text, stopReason } = await streamText(env, {
+    model: MODEL,
+    /* Room to think AND to answer: max_tokens caps both together, and a long
+       song at this effort spends a lot on the counting before it writes a
+       word. Streaming is what makes a ceiling this high safe to ask for. */
+    max_tokens: 64000,
+    system: SYSTEM,
+    output_config: {
+      effort: "high",
+      format: { type: "json_schema", schema: SCHEMA },
+    },
+    messages: [{ role: "user", content: [...pages, { type: "text", text: USER_TEXT }] }],
+  });
+
+  if (stopReason === "refusal") throw new Error("refusal");
+  if (stopReason === "max_tokens") throw new Error("truncated");
   if (!text.trim()) throw new Error("empty");
 
-  const song = JSON.parse(text);
-  return clean(song);
+  return clean(JSON.parse(text));
 }
 
 /* The schema guarantees the shape; this guarantees the meaning. Positions are
@@ -182,4 +230,91 @@ function clean(song) {
     dir: song.dir === "ltr" ? "ltr" : "rtl",
     lines,
   };
+}
+
+/* --- writing it back ------------------------------------------------------
+   In the user's own name, with the access token this Worker verified a moment
+   ago. No service role key is involved and none is wanted: the row level
+   security policies that protect the table from the browser protect it from
+   here too, and this Worker can do exactly what the person who uploaded the
+   picture could have done by hand. */
+
+/* The app's slugify, in the app's words. It lives in two runtimes because the
+   browser names a song when it is created and this names it again when the
+   real title is finally known; keep the two in step (see slugify() in
+   businesses/chords/public/assets/app.js). */
+const RESERVED_SLUGS = new Set(["new", "edit"]);
+
+function slugify(name) {
+  let s = String(name || "").trim()
+    .replace(/[\s ]+/g, "_")
+    .replace(/[^\p{L}\p{N}_'-]/gu, "")
+    .replace(/_+/g, "_")
+    .replace(/^[_-]+|[_-]+$/g, "");
+  if (!s) s = "שיר";
+  if (RESERVED_SLUGS.has(s.toLowerCase())) s += "_";
+  return s;
+}
+
+async function patchSong(env, token, id, fields) {
+  const response = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/songs?id=eq.${encodeURIComponent(id)}`,
+    {
+      method: "PATCH",
+      headers: {
+        apikey: env.SUPABASE_ANON_KEY,
+        authorization: `Bearer ${token}`,
+        "content-type": "application/json",
+        prefer: "return=minimal",
+      },
+      body: JSON.stringify(fields),
+    }
+  );
+
+  if (response.ok) return null;
+  const body = await response.text();
+  return { status: response.status, body };
+}
+
+/* The whole background job: read, name, save. Never throws — a failure is
+   written onto the row as `failed`, because a row that says why is the only
+   thing the person who uploaded the picture can act on. */
+export async function readAndSave(env, token, songId, files) {
+  let song;
+  try {
+    song = await readChordSheet(env, files);
+  } catch (err) {
+    console.error("transcribe failed", songId, err.message);
+    await patchSong(env, token, songId, {
+      status: "failed",
+      status_note: String(err.message).slice(0, 300),
+    });
+    return;
+  }
+
+  const fields = {
+    title: song.title || "שיר בלי שם",
+    artist: song.artist,
+    song_key: song.song_key,
+    dir: song.dir,
+    lines: song.lines,
+    status: "ready",
+    status_note: "",
+  };
+
+  /* The song only gets its real address now, because only now is its name
+     known. 23505 is the unique index on slug: another song already has it. */
+  const wanted = slugify(fields.title);
+  for (let attempt = 1; attempt <= 30; attempt++) {
+    const failure = await patchSong(env, token, songId, {
+      ...fields,
+      slug: attempt === 1 ? wanted : `${wanted}_${attempt}`,
+    });
+    if (!failure) return;
+    if (!failure.body.includes("23505")) {
+      console.error("transcribe could not save", songId, failure.status, failure.body.slice(0, 200));
+      await patchSong(env, token, songId, { status: "failed", status_note: `save ${failure.status}` });
+      return;
+    }
+  }
 }

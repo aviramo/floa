@@ -36,7 +36,7 @@
                       its `to` in the table
    ========================================================================== */
 import { BUSINESSES } from "./businesses.js";
-import { MEDIA_TYPES, readChordSheet } from "./transcribe.js";
+import { MEDIA_TYPES, readAndSave } from "./transcribe.js";
 
 /* A lead sent before the sites were rebuilt carries no `business` field. It can
    only have come from FLOA, because FLOA is the only business that existed then. */
@@ -235,26 +235,33 @@ async function rateLimited(bucket, ip, seconds = 30) {
      business pretending it can verify one.
    ------------------------------------------------------------------------ */
 
-const MAX_BASE64 = 4 * 1024 * 1024;         // roughly 3MB of file
+const MAX_BASE64 = 5 * 1024 * 1024;         // the whole upload, roughly 3.7MB of file
+const MAX_PAGES = 8;
 
-async function signedIn(env, request) {
-  const header = request.headers.get("authorization") || "";
-  const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
+async function signedIn(env, token) {
   if (!token || !env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return false;
-
   const res = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
     headers: { apikey: env.SUPABASE_ANON_KEY, authorization: `Bearer ${token}` },
   });
   return res.ok;
 }
 
-async function handleTranscribe(request, env, origin) {
+/* Answers at once and keeps working.
+
+   The reading takes minutes, and a browser is a bad place to keep a minutes
+   long job: close the tab and it is gone. So the row already exists (the app
+   created it as `reading` before calling), this hands the work to waitUntil,
+   and transcribe.js writes the finished song onto that row itself. The caller
+   is free the moment it gets this 202, and can watch the row instead. */
+async function handleTranscribe(request, env, ctx, origin) {
   if (!env.ANTHROPIC_API_KEY) {
     console.error("transcribe dropped: ANTHROPIC_API_KEY is not set on the Worker");
     return json({ ok: false, error: "config" }, 502, origin);
   }
 
-  if (!(await signedIn(env, request))) return json({ ok: false, error: "auth" }, 401, origin);
+  const header = request.headers.get("authorization") || "";
+  const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
+  if (!(await signedIn(env, token))) return json({ ok: false, error: "auth" }, 401, origin);
 
   const ip = request.headers.get("cf-connecting-ip") || "unknown";
   if (await rateLimited("read", ip, 15)) return json({ ok: false, error: "rate" }, 429, origin);
@@ -266,27 +273,22 @@ async function handleTranscribe(request, env, origin) {
     return json({ ok: false, error: "body" }, 400, origin);
   }
 
-  const mediaType = String(body.media_type || "");
-  const data = String(body.data || "");
+  const songId = String(body.song_id || "");
+  const files = Array.isArray(body.files) ? body.files : [];
 
-  if (!MEDIA_TYPES.includes(mediaType)) return json({ ok: false, error: "type" }, 400, origin);
-  if (!data || data.length > MAX_BASE64) return json({ ok: false, error: "size" }, 413, origin);
+  if (!songId) return json({ ok: false, error: "song" }, 400, origin);
+  if (!files.length || files.length > MAX_PAGES) return json({ ok: false, error: "files" }, 400, origin);
 
-  try {
-    const song = await readChordSheet(env, mediaType, data);
-    return json({ ok: true, song }, 200, origin);
-  } catch (err) {
-    console.error("transcribe failed", err.message);
-    /* "empty" is the one failure worth naming to the visitor: it means the
-       picture was read and held no song, which a better photo can fix.
-
-       `detail` is the reason in our own words, trimmed. It costs nothing to
-       send and it is the difference between "הקריאה נכשלה" and knowing which
-       of five things went wrong. It is our text, never a key and never the
-       visitor's file. */
-    const known = err.message === "empty" || err.message === "refusal" ? "empty" : "read";
-    return json({ ok: false, error: known, detail: String(err.message).slice(0, 300) }, 502, origin);
+  let total = 0;
+  for (const file of files) {
+    if (!MEDIA_TYPES.includes(String(file?.media_type))) return json({ ok: false, error: "type" }, 400, origin);
+    if (!file.data) return json({ ok: false, error: "files" }, 400, origin);
+    total += String(file.data).length;
   }
+  if (total > MAX_BASE64) return json({ ok: false, error: "size" }, 413, origin);
+
+  ctx.waitUntil(readAndSave(env, token, songId, files));
+  return json({ ok: true, reading: true }, 202, origin);
 }
 
 /* --- /lead ---------------------------------------------------------------- */
@@ -353,7 +355,7 @@ async function handleLead(request, env, origin) {
 /* --- the door ------------------------------------------------------------- */
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const origin = request.headers.get("origin") || "";
 
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(origin) });
@@ -362,7 +364,7 @@ export default {
 
     switch (new URL(request.url).pathname) {
       case "/lead": return handleLead(request, env, origin);
-      case "/transcribe": return handleTranscribe(request, env, origin);
+      case "/transcribe": return handleTranscribe(request, env, ctx, origin);
       default: return json({ ok: false, error: "not found" }, 404, origin);
     }
   },

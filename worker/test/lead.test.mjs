@@ -87,13 +87,17 @@ check("unset recipient -> 502, nothing sent", r.status === 502 && r.sent === nul
 /* --- /transcribe -----------------------------------------------------------
    It costs money per call, so what is tested is the lock, not the reading. */
 
-const call = async (path, headers = {}) => {
+let background = [];
+const ctx = { waitUntil: (p) => background.push(p) };
+
+const call = async (path, headers = {}, body = { song_id: "s1", files: [{ media_type: "image/png", data: "x" }] }) => {
+  background = [];
   const res = await worker.fetch(new Request(`https://x${path}`, {
     method: "POST",
     headers: { origin: "https://floa.co.il", "content-type": "application/json", ...headers },
-    body: JSON.stringify({ media_type: "image/png", data: "x" }),
-  }), env);
-  return { status: res.status, body: await res.json() };
+    body: JSON.stringify(body),
+  }), env, ctx);
+  return { status: res.status, body: await res.json(), background: background.length };
 };
 
 /* 8. an unknown path is not a lead and not a read */
@@ -107,6 +111,22 @@ check("transcribe without a token -> 401", r.status === 401 && r.body.error === 
 /* 10. a token Supabase does not recognise is no token at all */
 r = await call("/transcribe", { authorization: "Bearer forged" });
 check("transcribe with a rejected token -> 401", r.status === 401 && r.body.error === "auth", JSON.stringify(r));
+
+/* 11. a real user gets an immediate answer and the work goes to the background,
+       which is the whole point: the browser is free before the reading starts */
+r = await call("/transcribe", { authorization: "Bearer good" });
+check("transcribe with a real token -> 202, work handed off",
+  r.status === 202 && r.body.ok === true && r.background === 1, JSON.stringify(r));
+
+/* 12. nothing is handed off without a row to write the answer onto */
+r = await call("/transcribe", { authorization: "Bearer good" }, { files: [{ media_type: "image/png", data: "x" }] });
+check("transcribe without a song id -> 400, nothing started",
+  r.status === 400 && r.body.error === "song" && r.background === 0, JSON.stringify(r));
+
+/* 13. and not for a file we cannot read */
+r = await call("/transcribe", { authorization: "Bearer good" }, { song_id: "s1", files: [{ media_type: "text/plain", data: "x" }] });
+check("transcribe with a bad file type -> 400, nothing started",
+  r.status === 400 && r.body.error === "type" && r.background === 0, JSON.stringify(r));
 
 console.log(failed ? `\n${failed} failed` : "\nall passed");
 process.exit(failed ? 1 : 0);

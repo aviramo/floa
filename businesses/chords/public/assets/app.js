@@ -204,6 +204,19 @@
   }
 
   var FIELDS = "id,slug,title,artist,song_key,dir,lines,updated_at";
+  var LIST_FIELDS = "id,slug,title,artist,song_key";
+
+  /* `status` and `status_note` arrived after the table did, and the table is
+     not upgraded by deploying this file: someone has to run the SQL. Until
+     they do, ask for the columns once, notice they are missing, and carry on
+     without them rather than showing an empty library and a red error. */
+  var hasStatus = true;
+
+  function withStatus(fields) { return hasStatus ? fields + ",status,status_note" : fields; }
+
+  function missingStatus(error) {
+    return hasStatus && error.status === 400 && /status/.test(error.message || "");
+  }
 
   /* The project is the domain's, the table is this app's. Everything below
      stays inside CFG.table, so another business sharing the same project can
@@ -212,11 +225,30 @@
 
   var db = {
     list: function () {
-      return rest(T + "?select=id,slug,title,artist,song_key&order=title.asc");
+      var self = this;
+      return rest(T + "?select=" + withStatus(LIST_FIELDS) + "&order=title.asc").then(function (rows) {
+        /* a song still being read, or one that failed, goes to the top: it is
+           the only row on the page that is waiting for something */
+        return (rows || []).sort(function (a, b) {
+          var pa = (a.status || "ready") === "ready" ? 1 : 0;
+          var pb = (b.status || "ready") === "ready" ? 1 : 0;
+          return pa - pb;
+        });
+      }).catch(function (error) {
+        if (!missingStatus(error)) throw error;
+        hasStatus = false;
+        return self.list();
+      });
     },
     bySlug: function (slug) {
-      return rest(T + "?select=" + FIELDS + "&slug=eq." + encodeURIComponent(slug) + "&limit=1")
-        .then(function (rows) { return rows && rows[0]; });
+      var self = this;
+      return rest(T + "?select=" + withStatus(FIELDS) + "&slug=eq." + encodeURIComponent(slug) + "&limit=1")
+        .then(function (rows) { return rows && rows[0]; })
+        .catch(function (error) {
+          if (!missingStatus(error)) throw error;
+          hasStatus = false;
+          return self.bySlug(slug);
+        });
     },
     insert: function (song) {
       return rest(T, { method: "POST", body: song, prefer: "return=representation" })
@@ -465,6 +497,7 @@
   function paintHeader() {
     var bar = document.getElementById("topActions");
     bar.innerHTML = "";
+    bar.appendChild(button("מתמונה", ICON.upload, "ghost small", uploadSong));
     bar.appendChild(button("שיר חדש", ICON.plus, "small", newSong));
     if (auth.in) {
       bar.appendChild(button("יציאה", null, "ghost small", function () {
@@ -542,9 +575,11 @@
       /* the empty list carries the way out of itself */
       var empty = el("div", "center");
       var emptyText = el("p");
-      var emptyAction = button("להוסיף את השיר הראשון", ICON.plus, null, newSong);
+      var emptyActions = el("div", "row-actions");
+      emptyActions.appendChild(button("להקליד שיר", ICON.plus, null, newSong));
+      emptyActions.appendChild(button("מתמונה או PDF", ICON.upload, "ghost", uploadSong));
       empty.appendChild(emptyText);
-      empty.appendChild(emptyAction);
+      empty.appendChild(emptyActions);
 
       function paint(filter) {
         list.innerHTML = "";
@@ -556,31 +591,85 @@
         if (!shown.length) {
           if (!empty.parentNode) app.appendChild(empty);
           emptyText.textContent = q ? "לא נמצא שיר שמתאים לחיפוש." : "עוד אין שירים כאן.";
-          emptyAction.hidden = !!q;
+          emptyActions.hidden = !!q;
           return;
         }
         if (empty.parentNode) empty.remove();
 
-        shown.forEach(function (s) {
-          var li = el("li");
-          var a = el("a");
-          a.href = BASE + "/" + encodeURIComponent(s.slug);
-          a.addEventListener("click", function (e) { e.preventDefault(); go(a.getAttribute("href")); });
+        shown.forEach(function (s) { list.appendChild(songRow(s, refresh)); });
+      }
 
-          var box = el("div");
-          box.appendChild(el("div", "t", s.title));
-          if (s.artist) box.appendChild(el("div", "a", s.artist));
-          a.appendChild(box);
-          if (s.song_key) a.appendChild(el("span", "k", s.song_key));
+      /* A song being read is a row that changes on its own, so the list looks
+         again while any of them is still reading, and stops the moment none
+         is. Leaving the page ends it: the list is gone from the document. */
+      function poll() {
+        if (!state.songs.some(function (s) { return s.status === "reading"; })) return;
+        setTimeout(function () {
+          if (!list.isConnected) return;
+          refresh();
+        }, 5000);
+      }
 
-          li.appendChild(a);
-          list.appendChild(li);
-        });
+      function refresh() {
+        return db.list().then(function (rows) {
+          if (!list.isConnected) return;
+          state.songs = rows || [];
+          head.querySelector(".count").textContent = state.songs.length ? state.songs.length + " שירים" : "";
+          paint(input.value);
+          poll();
+        }).catch(function () { /* a failed refresh is not worth a red screen */ });
       }
 
       input.addEventListener("input", function () { paint(input.value); });
       paint("");
+      poll();
     }).catch(fail);
+  }
+
+  /* One line of the index. Three shapes, because a song has three states:
+     ready and openable, still being read, or failed with a reason. */
+  function songRow(s, refresh) {
+    var li = el("li");
+
+    if (s.status === "ready") {
+      var a = el("a");
+      a.href = BASE + "/" + encodeURIComponent(s.slug);
+      a.addEventListener("click", function (e) { e.preventDefault(); go(a.getAttribute("href")); });
+
+      var box = el("div");
+      box.appendChild(el("div", "t", s.title));
+      if (s.artist) box.appendChild(el("div", "a", s.artist));
+      a.appendChild(box);
+      if (s.song_key) a.appendChild(el("span", "k", s.song_key));
+
+      li.appendChild(a);
+      return li;
+    }
+
+    var row = el("div", "row is-" + (s.status === "reading" ? "reading" : "failed"));
+
+    if (s.status === "reading") row.appendChild(el("span", "spin"));
+    var box2 = el("div");
+    box2.appendChild(el("div", "t", s.title));
+    box2.appendChild(el("div", "a", s.status === "reading"
+      ? "קורא את השיר, אפשר לסגור את הדף"
+      : "הקריאה נכשלה"));
+    if (s.status === "failed" && s.status_note) box2.appendChild(el("div", "detail", s.status_note));
+    row.appendChild(box2);
+
+    if (s.status === "failed") {
+      var actions = el("div", "row-actions");
+      actions.appendChild(button("להקליד ידנית", ICON.pencil, "ghost small", function () {
+        go(BASE + "/" + encodeURIComponent(s.slug) + "/edit");
+      }));
+      actions.appendChild(button("מחיקה", ICON.trash, "danger small", function () {
+        db.remove(s.id).then(refresh).catch(function (e) { toast("המחיקה נכשלה: " + e.message, true); });
+      }));
+      row.appendChild(actions);
+    }
+
+    li.appendChild(row);
+    return li;
   }
 
   /* --- one song ----------------------------------------------------------- */
@@ -591,6 +680,7 @@
     db.bySlug(slug).then(function (song) {
       if (!song) return notFound(slug);
       document.title = song.title + " | אקורדים";
+      if (song.status && song.status !== "ready") return viewPending(song);
       song.lines = normalizeLines(song.lines);
 
       var semis = 0;
@@ -685,6 +775,40 @@
     window.addEventListener("resize", onResize);
   }
 
+  /* A song that is still being read, or that failed. It is a real row with a
+     real address, so it gets a real page rather than being hidden from the one
+     person who is waiting for it. While it reads, the page looks again by
+     itself; when the Worker finishes, this becomes the song. */
+  function viewPending(song) {
+    app.innerHTML = "";
+    var box = el("div", "center");
+
+    if (song.status === "reading") {
+      var busy = el("span", "busy");
+      busy.appendChild(el("span", "spin"));
+      busy.appendChild(document.createTextNode("קורא את " + song.title));
+      box.appendChild(busy);
+      box.appendChild(el("p", "muted", "אפשר לסגור את הדף. הקריאה ממשיכה גם בלעדיו."));
+      setTimeout(function () { if (box.isConnected) viewSong(song.slug); }, 5000);
+    } else {
+      box.appendChild(el("p", null, "הקריאה של " + song.title + " נכשלה."));
+      if (song.status_note) box.appendChild(el("div", "detail", song.status_note));
+      var actions = el("div", "row-actions");
+      actions.appendChild(button("להקליד ידנית", ICON.pencil, "ghost", function () {
+        go(BASE + "/" + encodeURIComponent(song.slug) + "/edit");
+      }));
+      actions.appendChild(button("מחיקה", ICON.trash, "danger", function () {
+        db.remove(song.id).then(function () { toast("נמחק"); go(BASE + "/"); })
+          .catch(function (e) { toast("המחיקה נכשלה: " + e.message, true); });
+      }));
+      box.appendChild(actions);
+    }
+
+    box.appendChild(el("p"));
+    box.appendChild(button("לרשימת השירים", ICON.back, "ghost small", function () { go(BASE + "/"); }));
+    app.appendChild(box);
+  }
+
   function notFound(slug) {
     document.title = "לא נמצא | אקורדים";
     app.innerHTML = "";
@@ -759,21 +883,14 @@
     meta.appendChild(dirLabel);
     app.appendChild(meta);
 
-    /* Reading a file can fill in the title, the artist and the direction as
-       well as the words, so the fields above are written back from the model
-       rather than only read into it. */
-    function refreshMeta() {
-      titleField.input.value = song.title || "";
-      artistField.input.value = song.artist || "";
-      keyField.input.value = song.song_key || "";
-      dirSelect.value = song.dir || "rtl";
-    }
+    /* the tools.
 
-    function refreshAll() { refreshMeta(); draw(); }
-
-    /* the tools */
+       Reading a picture is NOT here. It makes a whole song of its own, from
+       the index, and it runs in the background: bolting it onto an open
+       editor would mean holding a form open for a minute over work that no
+       longer needs anyone to wait for it. Pasting stays, because pasting is
+       instant. */
     var bar = el("div", "ed-bar");
-    bar.appendChild(button("מתמונה או PDF", ICON.upload, "ghost small", function () { openUpload(song, refreshAll); }));
     bar.appendChild(button("הדבקת טקסט", ICON.paste, "ghost small", function () { openPaste(song, draw); }));
     bar.appendChild(el("span", "grow"));
     if (song.id) bar.appendChild(button("מחיקה", ICON.trash, "danger small", removeSong));
@@ -1019,6 +1136,9 @@
         lines: normalizeLines(song.lines),
       };
 
+      /* typing a song by hand is what makes a failed read stop being failed */
+      if (hasStatus) { payload.status = "ready"; payload.status_note = ""; }
+
       var wanted = song.id && song.slug ? song.slug : slugify(title);
 
       attempt(wanted, 1);
@@ -1090,6 +1210,7 @@
   /* --- reading a photo or a PDF -------------------------------------------- */
 
   var MAX_BYTES = 12 * 1024 * 1024;
+  var MAX_PAGES = 8;
   var MAX_EDGE = 1800;
   var OK_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif", "application/pdf"];
 
@@ -1128,21 +1249,36 @@
     }).catch(function () { return toBase64(file); });
   }
 
-  function openUpload(song, onChanged) {
+  /* Uploading a picture MAKES a song. It does not fill in a form and wait.
+
+     The row is created first, as `reading`, so the work has somewhere to land.
+     Then the Worker is handed the files and answers 202 at once, keeps reading
+     in the background and writes the finished song onto that row itself. From
+     here on the dialog is done: closing it, or the tab, or the laptop, changes
+     nothing. The index watches the row. */
+  function uploadSong() {
+    /* the whole flow rests on the row being able to say "reading" */
+    if (!hasStatus) return toast("צריך להריץ את schema.sql ב-Supabase לפני קריאה מתמונה", true);
+    requireAuth(openUploadDialog);
+  }
+
+  function openUploadDialog() {
     var dlg = el("dialog", "dlg");
     var box = el("div", "dlg-in");
-    box.appendChild(el("h2", null, "מתמונה או PDF"));
+    box.appendChild(el("h2", null, "שיר מתמונה או PDF"));
 
     var drop = el("div", "drop");
     drop.appendChild(el("h3", null, "גררו לכאן צילום של השיר"));
-    drop.appendChild(el("p", null, "תמונה או PDF. המערכת קוראת את המילים ואת האקורדים ומציבה כל אקורד מעל ההברה שהוא יושב עליה בתמונה."));
+    drop.appendChild(el("p", null,
+      "תמונה, כמה תמונות של אותו שיר, או PDF. המערכת קוראת את המילים ואת האקורדים ומציבה כל אקורד מעל ההברה שהוא יושב עליה בתמונה."));
 
     var input = el("input");
     input.type = "file";
     input.accept = OK_TYPES.join(",");
+    input.multiple = true;
     input.style.display = "none";
     drop.appendChild(input);
-    drop.appendChild(button("בחירת קובץ", ICON.upload, "ghost", function () { input.click(); }));
+    drop.appendChild(button("בחירת קבצים", ICON.upload, "ghost", function () { input.click(); }));
     box.appendChild(drop);
 
     var status = el("p", "muted");
@@ -1165,28 +1301,49 @@
       drop.addEventListener(name, function (e) { e.preventDefault(); drop.classList.remove("is-over"); });
     });
     drop.addEventListener("drop", function (e) {
-      if (e.dataTransfer.files && e.dataTransfer.files[0]) handle(e.dataTransfer.files[0]);
+      if (e.dataTransfer.files && e.dataTransfer.files.length) handle(e.dataTransfer.files);
     });
-    input.addEventListener("change", function () { if (input.files[0]) handle(input.files[0]); });
+    input.addEventListener("change", function () { if (input.files.length) handle(input.files); });
 
-    function handle(file) {
-      if (OK_TYPES.indexOf(file.type) < 0) return toast("אפשר תמונה או PDF בלבד", true);
-      if (file.size > MAX_BYTES) return toast("הקובץ גדול מדי, עד 12MB", true);
+    function fail(message, detail) {
+      close.disabled = false;
+      status.innerHTML = "";
+      status.className = "err";
+      status.appendChild(el("div", null, message));
+      if (detail) status.appendChild(el("div", "detail", detail));
+    }
+
+    function handle(fileList) {
+      var files = Array.prototype.slice.call(fileList, 0, MAX_PAGES);
+      for (var i = 0; i < files.length; i++) {
+        if (OK_TYPES.indexOf(files[i].type) < 0) return fail("אפשר תמונות או PDF בלבד.");
+        if (files[i].size > MAX_BYTES) return fail("הקובץ " + files[i].name + " גדול מדי, עד 12MB.");
+      }
 
       status.innerHTML = "";
+      status.className = "muted";
       var busy = el("span", "busy");
       busy.appendChild(el("span", "spin"));
-      busy.appendChild(document.createTextNode("קורא את השיר, זה לוקח כמה עשרות שניות"));
+      busy.appendChild(document.createTextNode("מכין את הקבצים"));
       status.appendChild(busy);
       close.disabled = true;
 
-      prepare(file).then(function (payload) {
-        if (payload.data.length > 4 * 1024 * 1024) throw new Error("הקובץ גדול מדי. נסו צילום קטן יותר או PDF.");
-        return auth.token().then(function (token) {
+      var created = null;
+
+      Promise.all(files.map(prepare)).then(function (payloads) {
+        var total = payloads.reduce(function (n, p) { return n + p.data.length; }, 0);
+        if (total > 5 * 1024 * 1024) throw new Error("הקבצים גדולים מדי ביחד. נסו פחות עמודים או PDF.");
+
+        /* the row first, so the reading has somewhere to land */
+        var name = files[0].name.replace(/\.[^.]+$/, "").trim();
+        return insertReading(name || "שיר חדש").then(function (row) {
+          created = row;
+          return auth.token();
+        }).then(function (token) {
           return fetch(CFG.transcribeEndpoint, {
             method: "POST",
             headers: { "content-type": "application/json", authorization: "Bearer " + token },
-            body: JSON.stringify(payload),
+            body: JSON.stringify({ song_id: created.id, files: payloads }),
           });
         });
       }).then(function (r) {
@@ -1196,25 +1353,39 @@
             e.detail = body && body.detail;
             throw e;
           }
-          return body.song;
         });
-      }).then(function (read) {
-        var lines = normalizeLines(read.lines);
-        var empty = song.lines.length === 1 && !song.lines[0].text && !song.lines[0].chords.length;
-        song.lines = empty ? lines : song.lines.concat(lines);
-        if (read.dir) song.dir = read.dir;
-        if (read.title && !String(song.title || "").trim()) song.title = read.title;
-        if (read.artist && !String(song.artist || "").trim()) song.artist = read.artist;
-        if (read.song_key && !String(song.song_key || "").trim()) song.song_key = read.song_key;
+      }).then(function () {
         dlg.close();
-        toast("השיר נקרא. כדאי לעבור על המיקומים ולתקן מה שצריך.");
-        onChanged();
+        toast("השיר נקרא ברקע. אפשר לסגור את הדף.");
+        if (parts().length === 0) route(); else go(BASE + "/");
       }).catch(function (error) {
-        close.disabled = false;
-        status.innerHTML = "";
-        status.className = "err";
-        status.appendChild(el("div", null, error.message));
-        if (error.detail) status.appendChild(el("div", "detail", error.detail));
+        /* the row was created but the work never started: it would sit as
+           `reading` forever, so it goes back out */
+        if (created) db.remove(created.id).catch(function () {});
+        fail(error.message, error.detail);
+      });
+    }
+  }
+
+  /* A placeholder row. Its name and its address come from the file for now;
+     the Worker replaces both once it knows what the song is actually called. */
+  function insertReading(name) {
+    var base = slugify(name);
+    return attempt(base, 1);
+
+    function attempt(slug, tries) {
+      return db.insert({
+        slug: slug,
+        title: name,
+        artist: "",
+        song_key: "",
+        dir: "rtl",
+        lines: [],
+        status: "reading",
+        status_note: "",
+      }).catch(function (error) {
+        if (error.code === "23505" && tries < 30) return attempt(base + "_" + (tries + 1), tries + 1);
+        throw error;
       });
     }
   }
@@ -1222,8 +1393,9 @@
   function transcribeError(body, status) {
     if (status === 401) return "צריך להתחבר מחדש כדי לקרוא קובץ.";
     if (status === 429) return "רגע אחד, נסו שוב בעוד כמה שניות.";
+    if (status === 413) return "הקבצים גדולים מדי. נסו פחות עמודים או צילום קטן יותר.";
     if (body && body.error === "empty") return "לא זוהו מילים ואקורדים בקובץ. אולי כדאי צילום ברור יותר.";
-    return "הקריאה נכשלה. אפשר לנסות שוב או להקליד ידנית.";
+    return "לא הצלחנו להתחיל את הקריאה. אפשר לנסות שוב או להקליד ידנית.";
   }
 
   /* ---------------------------------------------------------------- routing */
