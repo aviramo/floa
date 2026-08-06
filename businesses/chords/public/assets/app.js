@@ -299,11 +299,22 @@
     return fields;
   }
 
+  /* Postgres codes for a column that is not there: 42703 when reading one,
+     PGRST204 when writing one PostgREST has never heard of. */
+  var NO_SUCH_COLUMN = { "42703": true, PGRST204: true };
+
   /* PostgREST names the column it could not find, so the complaint itself says
      which group to give up on. True means something was given up and the call
-     is worth making again. */
+     is worth making again.
+
+     THE CODE IS CHECKED FIRST, AND THAT IS NOT A DETAIL. Matching on the words
+     alone once read "violates check constraint \"songs_status_check\"" as
+     "there is no status column", switched the column off, wrote every row
+     without it, and left the whole library looking like a shelf of failed
+     reads. A complaint that merely mentions a column is not a complaint that
+     the column is missing. */
   function dropMissing(error) {
-    if (error.status !== 400) return false;
+    if (!NO_SUCH_COLUMN[String(error.code)]) return false;
     var said = error.message || "";
     var dropped = false;
     OPTIONAL.forEach(function (group) {
@@ -1249,7 +1260,10 @@
   function songRow(s, refresh) {
     var li = el("li");
 
-    if (s.status === "ready") {
+    /* A row with no status at all is a song, not a failure. The column may be
+       missing from an older table, and the worst thing this page can do with a
+       song it holds the words to is refuse to show them. */
+    if (!s.status || s.status === "ready") {
       var a = el("a");
       a.href = BASE + "/" + encodeURIComponent(s.slug);
       a.addEventListener("click", function (e) { e.preventDefault(); go(a.getAttribute("href")); });
