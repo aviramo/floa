@@ -39,22 +39,26 @@
      Opus, high      42 cents,   three and a half minutes, and then truncated
                                  mid-sentence, because max_tokens caps thinking
                                  and answer together and the thinking ate it.
+     Sonnet, high     ~5 cents,  the ORDER came right, which was the structural
+                                 failure, but chords still landed a word off
+                                 and a repeated phrase was dropped.
 
-   Fourteen times the price to fail differently is not a trade, it is a
-   mistake. So: Sonnet again, at HIGH rather than medium.
+   So the rung between them, which is the one combination not yet tried: Opus
+   at MEDIUM. The failures that are left are visual judgements, deciding which
+   Hebrew letter a Latin symbol is printed over, and that is what the bigger
+   model is for; the effort setting, not the model, is what turned into three
+   and a half minutes and forty cents.
 
-   Effort is worth trying before price, because the Sonnet failures came before
-   the prompt was rewritten. That rewrite is aimed at exactly the mistake those
-   reads made, taking one chord at a time by its position instead of reading
-   the chord row as a sequence, and it has never been run at this effort. If it
-   still comes back with two chords exchanged, the next step is Opus at MEDIUM,
-   which is the one combination not yet tried and the one that keeps the model
-   without the effort bill.
+   If this is still not right, the problem is not the settings and stacking
+   more instructions will not fix it either. The next thing to try then is a
+   different shape of question: ask for the chord line and the lyric line
+   transcribed separately with their spacing kept, and do the merging here in
+   code, where a column is a column and nothing has to be judged.
 
    max_tokens is a ceiling and not a target: at 32000 a long song cannot run
    out of room, and nothing is paid for room that goes unused. */
-const MODEL = "claude-sonnet-5";
-const EFFORT = "high";
+const MODEL = "claude-opus-5";
+const EFFORT = "medium";
 const MAX_TOKENS = 32000;
 
 export const MEDIA_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif", "application/pdf"];
