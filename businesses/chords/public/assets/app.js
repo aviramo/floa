@@ -1988,7 +1988,13 @@
       song.lines.forEach(function (line, index) {
         sheet.appendChild(editing ? editRow(line, index) : viewLine(line, semis));
       });
-      requestAnimationFrame(function () { layoutAll(sheet, rtl()); });
+      /* Breaking first and placing second, because a chord belongs to the row
+         its syllable ended up on and there is no telling which that is until
+         the words have been broken. */
+      requestAnimationFrame(function () {
+        if (!editing && NARROW.matches) wrapAll(sheet, rtl());
+        layoutAll(sheet, rtl());
+      });
     }
 
     /* Round, not against a wall. Past the top it comes out at the bottom and
@@ -2000,9 +2006,13 @@
       draw();
     }
 
+    /* Bigger words fit in fewer places, so where the lines break is part of
+       what the size changes. Drawn again rather than measured again, since the
+       rows themselves are different rows. */
     function setSize(next) {
       size = readingSize(next);
       sheet.style.setProperty("--song-size", size + "px");
+      if (!editing && NARROW.matches) return draw();
       requestAnimationFrame(function () { layoutAll(sheet, rtl()); });
     }
 
