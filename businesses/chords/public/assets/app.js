@@ -2042,14 +2042,63 @@
     bar.appendChild(session());
   }
 
+  /* WHO IS LOOKING AT THIS, in the corner where it belongs, and their own name
+     rather than the word "יציאה". The library is one account's until it is
+     published, so which account is holding it is a fact about everything on
+     the screen, and a bar that said only "יציאה" left it unsaid.
+
+     The name is a button, and what it opens is the small panel about the
+     person: change the name, or leave. Signing out lives in there rather than
+     beside it because it is the rarer of the two by a long way, and because a
+     bar with five buttons in it is a bar nobody reads. */
   function session() {
     if (!auth.in) return button("התחברות", null, "ghost small", function () { askSignIn(); });
-    return button("יציאה", null, "ghost small", function () {
+    return button(auth.name() || "החשבון", ICON.person, "ghost small who", askMe);
+  }
+
+  function askMe() {
+    var dlg = document.getElementById("meDialog");
+    var form = document.getElementById("meForm");
+    var err = document.getElementById("meErr");
+    var field = form.elements.name;
+
+    err.hidden = true;
+    document.getElementById("meWho").textContent = (auth.session && auth.session.email) || "";
+    field.value = auth.name();
+
+    form.onsubmit = function (event) {
+      event.preventDefault();
+      var wanted = String(field.value || "").trim().replace(/\s+/g, " ");
+      if (!wanted) {
+        err.textContent = "צריך שם.";
+        err.hidden = false;
+        return;
+      }
+      if (wanted === auth.name()) return dlg.close();
+
+      var submit = form.querySelector('button[type="submit"]');
+      submit.disabled = true;
+      auth.setName(wanted).then(function () {
+        submit.disabled = false;
+        dlg.close();
+        paintHeader();
+        toast("מעכשיו " + auth.name());
+      }).catch(function (e) {
+        submit.disabled = false;
+        err.textContent = e.message || "לא הצלחנו לשמור את השם";
+        err.hidden = false;
+      });
+    };
+
+    document.getElementById("meOut").onclick = function () {
+      dlg.close();
       auth.signOut();
       paintHeader();
       route();
       toast("התנתקת");
-    });
+    };
+    form.querySelector("[data-close]").onclick = function () { dlg.close(); };
+    dlg.showModal();
   }
 
   function askSignIn(after) {
@@ -2058,6 +2107,13 @@
     var err = document.getElementById("authErr");
     err.hidden = true;
     form.reset();
+
+    /* Off to Google and back to a fresh page: nothing after this call runs,
+       and `after` is not carried across. The address the person was on is,
+       which is the part that matters. */
+    document.getElementById("authGoogle").onclick = function () {
+      auth.signInWithGoogle();
+    };
 
     form.onsubmit = function (event) {
       event.preventDefault();
@@ -2069,7 +2125,7 @@
           submit.disabled = false;
           dlg.close();
           paintHeader();
-          toast("שלום");
+          toast(auth.name() ? "שלום, " + auth.name() : "שלום");
           if (after) after(); else route();
         })
         .catch(function (e) {
@@ -5743,6 +5799,59 @@
     history.replaceState(null, "", clean + location.hash);
   }
 
+  /* Back from Google, with the session in the fragment: `#access_token=…`, or
+     `#error=…` if it went wrong or was waved off.
+
+     THE FRAGMENT IS TAKEN OFF THE ADDRESS AT ONCE, and not only because this
+     site keeps its addresses clean. An access token in the bar is a token in
+     the history, in whatever the browser syncs, and in the next thing anybody
+     copies out of that bar.
+
+     What goes back in its place is the page they were on when they pressed
+     the button. Signing in is not a place, and it should not be where you end
+     up standing. */
+  function absorbGoogle() {
+    var hash = String(location.hash || "").replace(/^#/, "");
+    if (!hash || hash.indexOf("=") < 0) return;
+
+    var got = new URLSearchParams(hash);
+    var token = got.get("access_token");
+    var trouble = got.get("error_description") || got.get("error");
+    if (!token && !trouble) return;
+
+    var back = null;
+    try {
+      back = localStorage.getItem(RETURN_KEY);
+      localStorage.removeItem(RETURN_KEY);
+    } catch (e) { /* private window */ }
+
+    if (token) {
+      auth.save({
+        access_token: token,
+        refresh_token: got.get("refresh_token") || "",
+        expires_in: Number(got.get("expires_in")) || 3600,
+      });
+    }
+
+    history.replaceState(null, "", back && back.indexOf(BASE) === 0 ? back : BASE + "/");
+
+    if (trouble) {
+      /* Google's own words, which are English and aimed at whoever wrote the
+         app. The one case worth saying properly is the ordinary one: somebody
+         got to Google's page and changed their mind. */
+      toast(/denied|cancel/i.test(trouble) ? "ההתחברות בוטלה" : "ההתחברות דרך גוגל נכשלה", true);
+      return;
+    }
+
+    /* The tokens said nothing about the person, so ask, and greet them by name
+       once the answer is in. The page does not wait for it: it is already
+       signed in, and the bar simply gets their name a moment later. */
+    auth.whoAmI().then(function () {
+      paintHeader();
+      toast(auth.name() ? "שלום, " + auth.name() : "שלום");
+    });
+  }
+
   window.addEventListener("popstate", function () { route(); });
 
   /* A window dragged across the narrow line changes what the header is allowed
@@ -5753,5 +5862,9 @@
 
   absorbFallback();
   auth.load();
+  /* after the session is loaded, because coming back from Google replaces it,
+     and before the routing, because what the first page draws depends on
+     whether there is one */
+  absorbGoogle();
   route();
 })();
