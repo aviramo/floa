@@ -97,8 +97,11 @@ const MEASURE = `(() => {
         want = at(whole);
         if (frac) want += (at(whole + 1) - want) * frac;
       }
+      /* the label is placed with its MIDDLE on the character it names, and the
+         tick under it is drawn there too, so the middle is what is measured */
       const box = c.getBoundingClientRect();
-      const got = rtl ? line.right - box.right : box.left - line.left;
+      const middle = box.left + box.width / 2;
+      const got = rtl ? line.right - middle : middle - line.left;
       out.push({ line: t.textContent.slice(0, 20), rtl, chord: c.textContent, pos, nudged: i > 0, off: Math.round(got - want) });
     });
   }

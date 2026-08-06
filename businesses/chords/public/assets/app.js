@@ -712,9 +712,14 @@
        Nudge, never overlap: the first one keeps its exact place and the next
        is pushed only as far as it has to be. */
     placed.sort(function (a, b) { return a.start - b.start; });
-    var floor = 0;
+    var floor = -Infinity;
     placed.forEach(function (p) {
-      var x = Math.max(p.start, floor);
+      /* CENTRED on the anchor, not started at it. The chord's middle marks the
+         character, which is where the tick under it is drawn, so what the eye
+         lines up with the letter is the label as a whole rather than one of
+         its edges. */
+      var width = p.node.getBoundingClientRect().width;
+      var x = Math.max(p.start - width / 2, floor);
       /* PHYSICAL left/right, deliberately, not inset-inline-start.
 
          A chord carries dir="ltr" so its own Latin label cannot flip inside a
@@ -725,7 +730,7 @@
          already measured from the correct edge; name that edge outright. */
       p.node.style.left = rtl ? "auto" : x + "px";
       p.node.style.right = rtl ? x + "px" : "auto";
-      floor = x + p.node.getBoundingClientRect().width + 5;
+      floor = x + width + 5;
     });
   }
 
@@ -736,7 +741,8 @@
   function placeChord(ln, node, rtl, at) {
     var m = metrics(ln, rtl);
     if (!m) return;
-    var x = at != null ? at : positionOf(m, Number(node.dataset.pos) || 0);
+    var anchor = at != null ? at : positionOf(m, Number(node.dataset.pos) || 0);
+    var x = anchor - node.getBoundingClientRect().width / 2;
     node.style.left = rtl ? "auto" : x + "px";
     node.style.right = rtl ? x + "px" : "auto";
   }

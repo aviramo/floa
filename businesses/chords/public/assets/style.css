@@ -251,17 +251,17 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    measuring. */
 .chord::after {
   content: "";
-  /* pulled up into the label's own descender space so it touches the letters,
-     and short, so what is left over is the gap down to the words */
-  position: absolute; top: calc(100% - 4px);
+  /* Under the MIDDLE of the label, because the label is placed with its middle
+     on the character it names (see layoutLine). So the tick and the chord mark
+     the same point, and the eye lines the whole label up with the letter.
+
+     Pulled up into the label's own descender space so it touches the letters,
+     and short, so what is left over is the gap down to the words. */
+  position: absolute; top: calc(100% - 4px); left: 50%;
   width: 1.5px; height: .3em;
   background: currentColor; border-radius: 1px;
-  transform: rotate(16deg); transform-origin: top center;
+  transform: translateX(-50%) rotate(16deg); transform-origin: top center;
 }
-/* scoped to the sheet, which always carries the SONG's direction. The chord
-   itself is dir="ltr" so its own attribute must not be the one that decides. */
-.sheet[dir="rtl"] .chord::after { right: 0; }
-.sheet[dir="ltr"] .chord::after { left: 0; }
 
 .ln.is-section { margin: 22px 0 4px; }
 .ln.is-section:first-child { margin-top: 0; }
