@@ -21,11 +21,6 @@
   --chord: #e11d63;
   --chord-soft: #fde7ef;
 
-  /* Barely there. These tint the two lanes in the EDITOR so you can see which
-     strip takes a chord and which takes words, and they have to be faint
-     enough that the song still reads as a song rather than as a form. */
-  --accent-wash: #eef7f5;
-  --chord-wash: #fdf2f6;
   --danger: #c0392b;
   --radius: 14px;
   --shadow: 0 1px 2px rgba(23, 32, 42, .05), 0 8px 24px rgba(23, 32, 42, .06);
@@ -144,9 +139,6 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .page-head { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin: 28px 0 18px; }
 .page-head h1 { margin: 0; font-size: 27px; letter-spacing: -.02em; }
 .page-head .count { color: var(--ink-soft); font-size: 15px; }
-/* what you do to the whole song, on the heading's own line and at the far end
-   of it */
-.page-head .head-actions { margin-inline-start: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
 .search { position: relative; margin-bottom: 18px; }
 .search input { padding-inline-start: 40px; height: 46px; border-radius: 999px; }
@@ -204,8 +196,20 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 /* --- song page ---------------------------------------------------------- */
 
 .song-head { margin: 28px 0 6px; }
-.song-head h1 { margin: 0 0 2px; font-size: 30px; letter-spacing: -.02em; }
-.song-head .by { color: var(--ink-soft); }
+.song-head h1 { margin: 0; font-size: 30px; letter-spacing: -.02em; outline: none; }
+.song-head .by { color: var(--ink-soft); margin-top: 2px; }
+
+/* the way back, then the name, on one line */
+.title-row { display: flex; align-items: center; gap: 6px; }
+.title-row h1 { flex: 1 1 auto; min-width: 0; }
+
+/* who wrote it and which way it runs, on the song itself: there is no other
+   page to keep them on any more */
+.song-meta {
+  display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 12px 0 4px;
+}
+@media (max-width: 620px) { .song-meta { grid-template-columns: 1fr; } }
 
 .tools {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
@@ -335,15 +339,13 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 
 /* --- editor ------------------------------------------------------------- */
 
-.ed-meta { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 16px; }
-.ed-meta .full { grid-column: 1 / -1; }
-@media (max-width: 620px) { .ed-meta { grid-template-columns: 1fr; } }
-
+/* The one bar left, and it sits under the sheet: ways to add a line at the end
+   of the song, at the end of the song. It was sticky when it was a toolbar at
+   the top; a footer that follows you up the page is just something moving. */
 .ed-bar {
-  position: sticky; top: 60px; z-index: 10;
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
   margin: 0 0 16px; padding: 10px 12px;
-  background: rgba(247, 249, 250, .94); backdrop-filter: blur(10px);
+  background: rgba(247, 249, 250, .94);
   border: 1px solid var(--line); border-radius: 999px;
 }
 .ed-bar .grow { margin-inline-start: auto; }
@@ -356,16 +358,13 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    field: the text on screen is the text being edited, so clicking into a line
    moves a caret and moves nothing else.
 
-   What it does add is a wash of colour on each of the two lanes, and only in
-   the editor. Two invisible strips sit on top of one another, one that takes a
-   chord and one that takes words, and until they are tinted the only way to
-   find out which is which is to click and see what happens. The colours are
-   the ones they already mean: the app's own for the words, the chord's own for
-   the lane above them. Backgrounds cost no layout, so every chord position is
-   measured exactly where it was before. */
-.ed .ln-t { cursor: text; outline: none; background: var(--accent-wash); border-radius: 4px; }
-.ed .ln-section { cursor: text; outline: none; background: var(--accent-wash); border-radius: 4px; }
-.ed .ln-c { cursor: copy; background: var(--chord-wash); border-radius: 4px; }
+   The two lanes were tinted for a while so you could see which strip took a
+   chord and which took words. They are not any more: on a page that is always
+   editable, that colour is on the screen all the time and the song stops
+   looking like a song. The pointer says the same thing and costs no ink. */
+.ed .ln-t { cursor: text; outline: none; }
+.ed .ln-section { cursor: text; outline: none; }
+.ed .ln-c { cursor: copy; }
 
 /* A chord in the editor is the same chord the reader sees, and it stays that
    way. No border, no box, no highlight, nothing that appears or grows. The
@@ -469,7 +468,7 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 /* --- print -------------------------------------------------------------- */
 
 @media print {
-  .top, .tools, .ed-bar, .head-actions, .toast { display: none !important; }
+  .top, .tools, .ed-bar, .song-meta, .title-row button, .toast { display: none !important; }
   body { background: #fff; }
   /* a little room at the start of the line, or the first chord of every line
      is centred half off the paper */

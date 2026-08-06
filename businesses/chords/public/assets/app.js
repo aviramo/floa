@@ -1355,7 +1355,7 @@
     if (!reading) {
       var actions = el("div", "row-actions");
       actions.appendChild(button("להקליד ידנית", ICON.pencil, "ghost small", function () {
-        go(BASE + "/" + encodeURIComponent(s.slug) + "/edit");
+        go(BASE + "/" + encodeURIComponent(s.slug));
       }));
       actions.appendChild(button("מחיקה", ICON.trash, "danger small", function () {
         db.remove(s.id).then(refresh).catch(function (e) { toast("המחיקה נכשלה: " + e.message, true); });
@@ -1367,323 +1367,254 @@
     return li;
   }
 
-  /* --- one song ----------------------------------------------------------- */
+  /* --- one song ------------------------------------------------------------
+     ONE SCREEN, NOT TWO. There is no editor to go to and come back from: the
+     song you are looking at is the song you are changing, and signing in is
+     the only difference between reading it and writing it.
+
+     Which is the same idea a line already worked on, one level up. The words
+     on screen are the input; there was never a reason for the page around them
+     to be a different page. */
 
   function viewSong(slug) {
-    setBusy("טוען את השיר");
+    /* a song that does not exist yet is still a song page, with nothing on it */
+    if (slug === null) {
+      return renderSong({
+        id: null, slug: "", title: "", lyrics_by: "", music_by: "",
+        dir: "rtl", lines: [blankLine()],
+      });
+    }
 
+    setBusy("טוען את השיר");
     db.bySlug(slug).then(function (song) {
       if (!song) return notFound(slug);
-      document.title = song.title + " | אקורדים";
       if (song.status && song.status !== "ready") return viewPending(song);
       song.lines = normalizeLines(song.lines);
+      renderSong(song);
+    }).catch(fail);
+  }
 
-      /* A song opens on its EASY version: transposed down by whatever capo
-         turns its chords into the fewest barres. So the number differs from
-         song to song, because it is a property of the song rather than a
-         preference, and a negative transposition is exactly what a capo is.
-         Moving it is still one button away, and 0 is the song as written. */
-      var easy = easyVersion(chordsUsed(song.lines));
-      var semis = -easy.capo;
+  function renderSong(song) {
+    document.title = (song.title || "שיר חדש") + " | אקורדים";
 
-      /* the size follows the reader from song to song. This does not: it
-         belongs to the one song it was worked out for. */
-      var size = readingSize();
+    /* Signed in is the whole of edit mode. Nothing is switched on or off after
+       this: signing in re-runs the route, which comes back through here. */
+    var editing = auth.in;
 
-      app.innerHTML = "";
+    /* A song opens on its EASY version: transposed down by whatever capo turns
+       its chords into the fewest barres. So the number differs from song to
+       song, because it is a property of the song rather than a preference, and
+       a negative transposition is exactly what a capo is. Moving it is still
+       one button away, and 0 is the song as written. */
+    var semis = -easyVersion(chordsUsed(song.lines)).capo;
 
-      var head = el("div", "song-head");
-      head.appendChild(el("h1", null, song.title));
-      /* On the song's own page there is room to say which is which, and it
-         matters: the person who wrote the words is rarely the one you heard. */
+    /* the size follows the reader from song to song. The transposition does
+       not: it belongs to the one song it was worked out for. */
+    var size = readingSize();
+
+    app.innerHTML = "";
+
+    /* --- the head: the way back, the name, and who made it --- */
+
+    var head = el("div", "song-head");
+
+    var titleRow = el("div", "title-row");
+    /* Pointing the way it goes. ICON.back is a chevron for a left-to-right
+       page; here the list is behind you to the right. */
+    titleRow.appendChild(iconBtn('<path d="M9 5l7 7-7 7"/>', "לרשימת השירים", function () {
+      go(BASE + "/");
+    }));
+
+    var title = el("h1", null, song.title);
+    if (editing) {
+      makeEditable(title);
+      title.addEventListener("input", function () { song.title = title.textContent.trim(); mark(); });
+      title.addEventListener("keydown", function (event) {
+        /* one line, so Enter is not a newline here, it is done */
+        if (event.key === "Enter") { event.preventDefault(); title.blur(); }
+      });
+    }
+    titleRow.appendChild(title);
+    head.appendChild(titleRow);
+
+    var byFields = [];
+    if (editing) {
+      /* The credits, and the direction, on the song itself. They belong to it
+         and there is no other page to keep them on any more. */
+      var meta = el("div", "song-meta");
+
+      byFields = CREDITS.map(function (c) {
+        var label = el("label", null, c.label);
+        var input = el("input");
+        input.type = "text";
+        input.value = song[c.field] || "";
+        input.addEventListener("input", function () { song[c.field] = input.value; mark(); });
+        label.appendChild(input);
+        meta.appendChild(label);
+        return input;
+      });
+
+      /* Finished from the names already on the other songs. A plain datalist,
+         so the browser does the filtering, the arrow keys and the touch
+         keyboard, and an unlisted name is still just a name that gets typed. */
+      var known = el("datalist");
+      known.id = "credit-names";
+      byFields.forEach(function (input) { input.setAttribute("list", known.id); });
+      meta.appendChild(known);
+      db.names().then(function (names) {
+        if (!known.isConnected) return;
+        names.forEach(function (name) {
+          var option = el("option");
+          option.value = name;
+          known.appendChild(option);
+        });
+      });
+
+      var dirLabel = el("label", null, "כיוון");
+      var dirSelect = el("select");
+      [["rtl", "עברית, מימין לשמאל"], ["ltr", "אנגלית, משמאל לימין"]].forEach(function (o) {
+        var option = el("option", null, o[1]);
+        option.value = o[0];
+        dirSelect.appendChild(option);
+      });
+      dirSelect.value = song.dir || "rtl";
+      dirSelect.addEventListener("change", function () { song.dir = dirSelect.value; draw(); mark(); });
+      dirLabel.appendChild(dirSelect);
+      meta.appendChild(dirLabel);
+
+      head.appendChild(meta);
+    } else {
+      /* Reading it, the credits are a sentence rather than a form, and it
+         matters which is which: whoever wrote the words is rarely the one you
+         heard sing them. */
       var by = credits(song);
       if (by.length) {
         head.appendChild(el("div", "by", by.map(function (c) {
           return c.label + ": " + c.name;
         }).join("  •  ")));
       }
-      app.appendChild(head);
-
-      var tools = el("div", "tools");
-
-      tools.appendChild(button("לרשימה", ICON.back, "ghost small", function () { go(BASE + "/"); }));
-      tools.appendChild(el("span", "sep"));
-
-      tools.appendChild(el("span", "lbl", "טרנספוזיציה"));
-      var down = iconBtn('<path d="M5 12h14"/>', "הורדת חצי טון", function () { setSemis(semis - 1); });
-      var value = el("span", "val", "0");
-      var up = iconBtn(ICON.plus, "העלאת חצי טון", function () { setSemis(semis + 1); });
-      tools.appendChild(down);
-      tools.appendChild(value);
-      tools.appendChild(up);
-
-      tools.appendChild(el("span", "sep"));
-      tools.appendChild(el("span", "lbl", "גודל"));
-      tools.appendChild(iconBtn('<path d="M5 12h14"/>', "טקסט קטן יותר", function () { setSize(size - 1); }));
-      tools.appendChild(iconBtn(ICON.plus, "טקסט גדול יותר", function () { setSize(size + 1); }));
-
-      var grow = el("span", "grow");
-      tools.appendChild(grow);
-
-      tools.appendChild(iconBtn(ICON.print, "הדפסה", function () { window.print(); }));
-      var editBtn = button("עריכה", ICON.pencil, "small", function () {
-        requireAuth(function () { go(BASE + "/" + encodeURIComponent(song.slug) + "/edit"); });
-      });
-      tools.appendChild(editBtn);
-      app.appendChild(tools);
-
-      /* Inside the sheet, so it prints with the song: the shapes below are
-         useless to anyone who does not know where the capo goes. */
-      var capo = el("div", "capo-line");
-      var sheet = el("div", "sheet");
-      sheet.style.setProperty("--song-size", size + "px");
-      sheet.appendChild(capo);
-      app.appendChild(sheet);
-
-      function draw() {
-        sheet.innerHTML = "";
-        sheet.dir = song.dir || "rtl";
-        var rtl = (song.dir || "rtl") === "rtl";
-
-        /* A chord shown a fret below what the song is in is a chord you play
-           with a capo there, so the sheet says where the capo goes, and says
-           nothing otherwise: raising the key is not a capo, and the control
-           above already shows by how much. */
-        capo.textContent = semis < 0 ? "קפו " + (-semis) : "";
-        capo.hidden = semis >= 0;
-        sheet.appendChild(capo);
-
-        song.lines.forEach(function (line) {
-          sheet.appendChild(viewLine(line, semis));
-        });
-        requestAnimationFrame(function () { layoutAll(sheet, rtl); });
-      }
-
-      /* Round, not against a wall. Past the top it comes out at the bottom and
-         the other way about, so reaching a distant key is never a matter of
-         pressing the other button eleven times. */
-      function setSemis(next) {
-        semis = next > 11 ? -11 : next < -11 ? 11 : next;
-        value.textContent = semis > 0 ? "+" + semis : String(semis);
-        draw();
-      }
-
-      function setSize(next) {
-        size = readingSize(next);
-        sheet.style.setProperty("--song-size", size + "px");
-        requestAnimationFrame(function () { layoutAll(sheet, (song.dir || "rtl") === "rtl"); });
-      }
-
-      /* through setSemis, not straight to draw: the counter is written there
-         and nowhere else, so starting any other way leaves it reading 0 over a
-         song that is being shown seven frets down */
-      setSemis(semis);
-      relayoutOn(sheet, function () { return (song.dir || "rtl") === "rtl"; });
-    }).catch(fail);
-  }
-
-  function viewLine(line, semis) {
-    if (line.type === "section") {
-      var s = el("div", "ln is-section");
-      s.appendChild(el("div", "ln-section", line.text));
-      return s;
-    }
-    var ln = el("div", "ln" + (line.text.trim() || line.chords.length ? "" : " is-blank"));
-    var lane = el("div", "ln-c");
-    line.chords.forEach(function (c) { lane.appendChild(chordEl(c.chord, c.pos, semis)); });
-    ln.appendChild(lane);
-    ln.appendChild(textSpans(line.text));
-    return ln;
-  }
-
-  /* Fonts arrive after the first paint and a window resize changes every
-     offset, so both re-measure. Nothing is re-rendered, only re-placed. */
-  function relayoutOn(root, isRtl) {
-    var run = function () { layoutAll(root, isRtl()); };
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(run);
-    var onResize = function () { if (root.isConnected) run(); else window.removeEventListener("resize", onResize); };
-    window.addEventListener("resize", onResize);
-  }
-
-  /* A song that is still being read, or that failed. It is a real row with a
-     real address, so it gets a real page rather than being hidden from the one
-     person who is waiting for it. While it reads, the page looks again by
-     itself; when the Worker finishes, this becomes the song. */
-  function viewPending(song) {
-    app.innerHTML = "";
-    var box = el("div", "center");
-
-    if (song.status === "reading" && !stalled(song)) {
-      var busy = el("span", "busy");
-      busy.appendChild(el("span", "spin"));
-      var note = el("span");
-      note.dataset.since = Date.parse(song.created_at || "") || Date.now();
-      note.dataset.stage = song.status_note || "ממתין";
-      elapsed(note);
-      busy.appendChild(note);
-      box.appendChild(busy);
-      box.appendChild(el("p", "muted", "הקריאה ממשיכה גם בלי הדף הזה."));
-      tick(box);
-      setTimeout(function () { if (box.isConnected) viewSong(song.slug); }, 5000);
-    } else {
-      box.appendChild(el("p", null, stalled(song)
-        ? "הקריאה של " + song.title + " נתקעה ולא הסתיימה."
-        : "הקריאה של " + song.title + " נכשלה."));
-      if (song.status_note) box.appendChild(el("div", "detail", song.status_note));
-      var actions = el("div", "row-actions");
-      actions.appendChild(button("להקליד ידנית", ICON.pencil, "ghost", function () {
-        go(BASE + "/" + encodeURIComponent(song.slug) + "/edit");
-      }));
-      actions.appendChild(button("מחיקה", ICON.trash, "danger", function () {
-        db.remove(song.id).then(function () { toast("נמחק"); go(BASE + "/"); })
-          .catch(function (e) { toast("המחיקה נכשלה: " + e.message, true); });
-      }));
-      box.appendChild(actions);
     }
 
-    box.appendChild(el("p"));
-    box.appendChild(button("לרשימת השירים", ICON.back, "ghost small", function () { go(BASE + "/"); }));
-    app.appendChild(box);
-  }
-
-  function notFound(slug) {
-    document.title = "לא נמצא | אקורדים";
-    app.innerHTML = "";
-    var box = el("div", "center");
-    box.appendChild(el("p", null, 'אין שיר בשם "' + slug.replace(/_/g, " ") + '".'));
-    box.appendChild(button("לרשימת השירים", ICON.back, "ghost", function () { go(BASE + "/"); }));
-    app.appendChild(box);
-  }
-
-  function fail(error) {
-    app.innerHTML = "";
-    var box = el("div", "center");
-    box.appendChild(el("p", null, "משהו השתבש: " + error.message));
-    box.appendChild(button("לנסות שוב", null, "ghost", function () { route(); }));
-    app.appendChild(box);
-  }
-
-  /* --- the editor --------------------------------------------------------- */
-
-  function viewEditor(slug) {
-    if (!auth.in) return askSignIn(function () { route(); });
-
-    if (!slug) return startEditor({
-      id: null, slug: "", title: "", lyrics_by: "", music_by: "",
-      dir: "rtl", lines: [blankLine()],
-    });
-
-    setBusy("טוען את השיר");
-    db.bySlug(slug).then(function (song) {
-      if (!song) return notFound(slug);
-      song.lines = normalizeLines(song.lines);
-      startEditor(song);
-    }).catch(fail);
-  }
-
-  function startEditor(song) {
-    document.title = (song.id ? "עריכת " + song.title : "שיר חדש") + " | אקורדים";
-    app.innerHTML = "";
-
-    /* The heading, and on the same line the things you do to the whole song.
-       Up here rather than between the details and the sheet, where they used
-       to sit and cut the page in half. */
-    var head = el("div", "page-head");
-    head.appendChild(el("h1", null, song.id ? "עריכת שיר" : "שיר חדש"));
-
-    var bar = el("div", "head-actions");
-    if (song.id) bar.appendChild(button("מחיקה", ICON.trash, "danger small", removeSong));
-    bar.appendChild(button("ביטול", null, "ghost small", function () {
-      go(song.slug ? BASE + "/" + encodeURIComponent(song.slug) : BASE + "/");
-    }));
-    var saveBtn = button("שמירה", null, "small", save);
-    bar.appendChild(saveBtn);
-    head.appendChild(bar);
     app.appendChild(head);
 
-    /* the details */
-    var meta = el("div", "ed-meta");
+    /* --- the tools --- */
 
-    function field(label, value, cls, onInput) {
-      var l = el("label", cls || null, label);
-      var i = el("input");
-      i.type = "text";
-      i.value = value || "";
-      i.addEventListener("input", function () { onInput(i.value); });
-      l.appendChild(i);
-      return { label: l, input: i };
+    var tools = el("div", "tools");
+
+    tools.appendChild(el("span", "lbl", "טרנספוזיציה"));
+    tools.appendChild(iconBtn('<path d="M5 12h14"/>', "הורדת חצי טון", function () { setSemis(semis - 1); }));
+    var value = el("span", "val", "0");
+    tools.appendChild(value);
+    tools.appendChild(iconBtn(ICON.plus, "העלאת חצי טון", function () { setSemis(semis + 1); }));
+
+    tools.appendChild(el("span", "sep"));
+    tools.appendChild(el("span", "lbl", "גודל"));
+    tools.appendChild(iconBtn('<path d="M5 12h14"/>', "טקסט קטן יותר", function () { setSize(size - 1); }));
+    tools.appendChild(iconBtn(ICON.plus, "טקסט גדול יותר", function () { setSize(size + 1); }));
+
+    tools.appendChild(el("span", "grow"));
+    tools.appendChild(iconBtn(ICON.print, "הדפסה", function () { window.print(); }));
+
+    /* THE SAVE BUTTON IS NOT THERE UNTIL THERE IS SOMETHING TO SAVE. On a page
+       that is always editable, a button that is always present says nothing;
+       one that appears the moment something changes says exactly what it is
+       for, and its absence is the answer to "did that get saved". */
+    var saveBtn = button("שמירה", null, "small", save);
+    saveBtn.hidden = true;
+    if (editing) {
+      if (song.id) tools.appendChild(button("מחיקה", ICON.trash, "danger small", removeSong));
+      tools.appendChild(saveBtn);
     }
+    app.appendChild(tools);
 
-    var titleField = field("שם השיר", song.title, "full", function (v) { song.title = v; });
-
-    /* Built from the same list the index and the song page read, so a third
-       credit would be one line there and appear here by itself. */
-    var byFields = CREDITS.map(function (c) {
-      return field(c.label, song[c.field], null, function (v) { song[c.field] = v; });
-    });
-
-    /* Finished from the names already in the library. A plain datalist, so the
-       browser does the filtering, the arrow keys and the touch keyboard, and
-       an unlisted name is still just a name that gets typed. */
-    var known = el("datalist");
-    known.id = "credit-names";
-    byFields.forEach(function (f) { f.input.setAttribute("list", known.id); });
-    app.appendChild(known);
-    db.names().then(function (names) {
-      if (!known.isConnected) return;
-      names.forEach(function (name) {
-        var option = el("option");
-        option.value = name;
-        known.appendChild(option);
-      });
-    });
-
-    var dirLabel = el("label", null, "כיוון");
-    var dirSelect = el("select");
-    [["rtl", "עברית, מימין לשמאל"], ["ltr", "אנגלית, משמאל לימין"]].forEach(function (o) {
-      var opt = el("option", null, o[1]);
-      opt.value = o[0];
-      dirSelect.appendChild(opt);
-    });
-    dirSelect.value = song.dir || "rtl";
-    dirSelect.addEventListener("change", function () { song.dir = dirSelect.value; draw(); });
-    dirLabel.appendChild(dirSelect);
-
-    meta.appendChild(titleField.label);
-    byFields.forEach(function (f) { meta.appendChild(f.label); });
-    meta.appendChild(dirLabel);
-    app.appendChild(meta);
-
-    var sheet = el("div", "sheet ed");
-    /* the same size the reader chose. Editing a song that looks different from
-       the song is editing something else. */
-    sheet.style.setProperty("--song-size", readingSize() + "px");
+    /* Inside the sheet, so it prints with the song: the shapes are useless to
+       anyone who does not know where the capo goes. */
+    var capo = el("div", "capo-line");
+    var sheet = el("div", "sheet" + (editing ? " ed" : ""));
+    sheet.style.setProperty("--song-size", size + "px");
     app.appendChild(sheet);
 
-    var addRow = el("div", "ed-bar");
-    addRow.appendChild(button("שורה בסוף", ICON.plus, "ghost small", function () {
-      song.lines.push(blankLine());
-      draw();
-      focusLine(song.lines.length - 1);
-    }));
-    addRow.appendChild(button("כותרת קטע", ICON.section, "ghost small", function () {
-      song.lines.push({ type: "section", text: "פזמון", chords: [] });
-      draw();
-      focusLine(song.lines.length - 1);
-    }));
-    app.appendChild(addRow);
+    var addRow = null;
+    if (editing) {
+      addRow = el("div", "ed-bar");
+      addRow.appendChild(button("שורה בסוף", ICON.plus, "ghost small", function () {
+        song.lines.push(blankLine());
+        draw();
+        focusLine(song.lines.length - 1);
+        mark();
+      }));
+      addRow.appendChild(button("כותרת קטע", ICON.section, "ghost small", function () {
+        song.lines.push({ type: "section", text: "פזמון", chords: [] });
+        draw();
+        focusLine(song.lines.length - 1);
+        mark();
+      }));
+      app.appendChild(addRow);
+    }
 
     var rtl = function () { return (song.dir || "rtl") === "rtl"; };
 
     function draw() {
       sheet.innerHTML = "";
       sheet.dir = song.dir || "rtl";
-      song.lines.forEach(function (line, index) { sheet.appendChild(editRow(line, index)); });
+
+      /* A chord shown a fret below what the song is in is a chord you play with
+         a capo there, so the sheet says where the capo goes, and says nothing
+         otherwise: raising the key is not a capo, and the control above already
+         shows by how much. */
+      capo.textContent = semis < 0 ? "קפו " + (-semis) : "";
+      capo.hidden = semis >= 0;
+      sheet.appendChild(capo);
+
+      song.lines.forEach(function (line, index) {
+        sheet.appendChild(editing ? editRow(line, index) : viewLine(line, semis));
+      });
       requestAnimationFrame(function () { layoutAll(sheet, rtl()); });
     }
 
-    /* One editable line.
+    /* Round, not against a wall. Past the top it comes out at the bottom and
+       the other way about, so reaching a distant key is never a matter of
+       pressing the other button eleven times. */
+    function setSemis(next) {
+      semis = next > 11 ? -11 : next < -11 ? 11 : next;
+      value.textContent = semis > 0 ? "+" + semis : String(semis);
+      draw();
+    }
 
+    function setSize(next) {
+      size = readingSize(next);
+      sheet.style.setProperty("--song-size", size + "px");
+      requestAnimationFrame(function () { layoutAll(sheet, rtl()); });
+    }
+
+    /* --- what has changed ----------------------------------------------------
+       The song as it would be saved, in one string. Comparing that against the
+       string it was loaded as is the whole of "is there anything to save": it
+       cannot miss a change and cannot invent one, which no counting of events
+       could promise. A song is a few hundred characters, so it costs nothing to
+       ask after every keystroke. */
+    function snapshot() {
+      return JSON.stringify([
+        String(song.title || "").trim(),
+        CREDITS.map(function (c) { return String(song[c.field] || "").trim(); }),
+        song.dir || "rtl",
+        songToText(song.lines),
+      ]);
+    }
+
+    var saved = snapshot();
+    function mark() { saveBtn.hidden = snapshot() === saved; }
+
+    /* The net under the explicit calls. A chord dragged, a chord picked, a line
+       split: all of them end in a pointer coming up or an input landing inside
+       the sheet, and catching them here means a new way to change a song cannot
+       quietly arrive without the button noticing. */
+    if (editing) {
+      sheet.addEventListener("input", mark);
+      sheet.addEventListener("pointerup", function () { setTimeout(mark, 0); });
+    }
+
+    /* --- one editable line ---------------------------------------------------
        There is no edit mode and no field. The words on screen ARE the input:
        the same spans the reader sees, made editable in place, so nothing moves,
        nothing grows a border and nothing changes size when you click into it.
@@ -1702,15 +1633,15 @@
       ln.dataset.index = index;
 
       if (line.type === "section") {
-        var head = el("div", "ln-section", line.text);
-        makeEditable(head);
-        head.addEventListener("input", function () { line.text = head.textContent; });
-        head.addEventListener("keydown", function (event) { lineKeys(event, line, head); });
-        ln.appendChild(head);
+        var heading = el("div", "ln-section", line.text);
+        makeEditable(heading);
+        heading.addEventListener("input", function () { line.text = heading.textContent; });
+        heading.addEventListener("keydown", function (event) { lineKeys(event, line, heading); });
+        ln.appendChild(heading);
       } else {
         var lane = el("div", "ln-c");
         line.chords.forEach(function (chord) {
-          var node = chordEl(chord.chord, chord.pos, 0);
+          var node = chordEl(chord.chord, chord.pos, semis);
           bindChord(node, ln, line, chord);
           lane.appendChild(node);
         });
@@ -1721,7 +1652,7 @@
           event.preventDefault();
           var chord = { pos: posFromX(ln, event.clientX, rtl()), chord: "" };
           line.chords.push(chord);
-          var node = chordEl("", chord.pos, 0);
+          var node = chordEl("", chord.pos, semis);
           bindChord(node, ln, line, chord);
           lane.appendChild(node);
           layoutLine(ln, rtl());
@@ -1801,6 +1732,7 @@
         song.lines.splice(index, 1, halves[0], halves[1]);
         draw();
         focusLine(index + 1, 0);
+        mark();
 
       } else if (event.key === "Backspace" && !spread && at === 0 && index > 0) {
         event.preventDefault();
@@ -1808,6 +1740,7 @@
         song.lines.splice(index - 1, 2, joinLines(song.lines[index - 1], line));
         draw();
         focusLine(index - 1, seam);
+        mark();
 
       } else if (event.key === "Delete" && !spread && at === line.text.length && index < song.lines.length - 1) {
         event.preventDefault();
@@ -1815,6 +1748,7 @@
         song.lines.splice(index, 2, joinLines(line, song.lines[index + 1]));
         draw();
         focusLine(index, end);
+        mark();
 
       } else if (event.key === "Escape") {
         event.preventDefault();
@@ -1917,6 +1851,7 @@
            called for and no longer needs go back */
         if (trimPadding(line)) fillSpans(ln.querySelector(".ln-t"), line.text);
         layoutLine(ln, rtl());
+        mark();
       });
 
       node.addEventListener("pointercancel", function () {
@@ -1928,7 +1863,13 @@
     /* --- picking a chord ------------------------------------------------------
        A song uses five or six chords, over and over. So a click offers exactly
        those, taken from the song itself, and the field is there for the one
-       that is not on the list yet. */
+       that is not on the list yet.
+
+       WHAT IS OFFERED IS WHAT IS ON SCREEN. The sheet may be showing the song
+       several frets down, so the names here are transposed to match it, while
+       what gets STORED is always the song's own. A chord chosen from the list
+       carries its untransposed name with it and needs no arithmetic; only a
+       name typed by hand has to be turned back. */
 
     var picker = null;
     var pickerDismissed = null;
@@ -1951,23 +1892,25 @@
     function closeOnOutside(event) { if (picker && !picker.contains(event.target)) closePicker(); }
     function closeOnEscape(event) { if (event.key === "Escape") closePicker(); }
 
-    /* every chord in this song, once each, A to Z. Sorted here rather than in
-       the order they appear, so the same chord is always in the same place in
-       the row and reaching for it becomes muscle memory. The index sorts them
-       the other way, by first appearance, because there it is describing the
-       song rather than offering a choice. */
+    /* every chord in this song, once each, A to Z by the name being shown.
+       Sorted here rather than in the order they appear, so the same chord is
+       always in the same place in the row and reaching for it becomes muscle
+       memory. The index sorts them the other way, by first appearance, because
+       there it is describing the song rather than offering a choice. */
     function chordsInSong() {
-      return chordsUsed(song.lines).sort(function (a, b) { return a.localeCompare(b, "en"); });
+      return chordsUsed(song.lines).map(function (name) {
+        return { name: name, shown: transposeChord(name, semis) };
+      }).sort(function (a, b) { return a.shown.localeCompare(b.shown, "en"); });
     }
 
     /* One small row: the chords this song already uses, a + for one it does
        not, and an × to take this chord off.
 
        A song has five chords and they usually arrive with it, read from a
-       picture or pasted, so placing one is CHOOSING. The + is the way out
-       rather than the way in: it stays a single character until it is asked
-       for, and only then becomes a field. A song with no chords at all has
-       nothing to choose from, so there the field opens straight away. */
+       picture, so placing one is CHOOSING. The + is the way out rather than the
+       way in: it stays a single character until it is asked for, and only then
+       becomes a field. A song with no chords at all has nothing to choose from,
+       so there the field opens straight away. */
     function openPicker(node, ln, line, chord) {
       closePicker();
 
@@ -1979,23 +1922,33 @@
         line.chords.splice(line.chords.indexOf(chord), 1);
         node.remove();
         layoutLine(ln, rtl());
+        mark();
       }
 
-      function finish(value) {
-        var name = String(value || "").trim().slice(0, 16);
-        if (!name || !isChord(name)) return drop();
-        chord.chord = name;
-        node.textContent = name;
+      /* `name` is the song's own, never the transposed one */
+      function finish(name) {
+        var value = String(name || "").trim().slice(0, 16);
+        if (!value || !isChord(value)) return drop();
+        chord.chord = value;
+        node.textContent = transposeChord(value, semis);
         layoutLine(ln, rtl());
+        mark();
       }
 
       /* a chord that never got a name does not survive the picker closing */
       pickerDismissed = function () { if (!chord.chord) drop(); };
 
-      function commit(value) {
+      function commit(name) {
         pickerDismissed = null;
         closePicker();
-        finish(value);
+        finish(name);
+      }
+
+      /* typed against what is on screen, so it comes back down to the song's
+         own key before it is kept */
+      function untranspose(typed) {
+        var value = String(typed || "").trim();
+        return value && isChord(value) ? transposeChord(value, -semis) : value;
       }
 
       function chip(cls, label, title, onClick) {
@@ -2012,7 +1965,7 @@
         var field = el("input", "picker-field");
         field.type = "text";
         field.dir = "ltr";
-        field.value = chord.chord;
+        field.value = transposeChord(chord.chord, semis);
         field.placeholder = "Am";
         field.setAttribute("aria-label", "אקורד");
         picker.appendChild(field);
@@ -2034,7 +1987,7 @@
           suggestChords(value).slice(0, 18).forEach(function (name) {
             var hit = el("button", "picker-chip" + (name === value ? " is-on" : ""), name);
             hit.type = "button";
-            hit.addEventListener("click", function () { commit(name); });
+            hit.addEventListener("click", function () { commit(untranspose(name)); });
             found.appendChild(hit);
           });
           place();
@@ -2046,17 +1999,17 @@
           event.preventDefault();
           if (field.value.trim() && !isChord(field.value)) {
             /* half a chord with a list under it: Enter takes the first of them */
-            if (found.firstChild) return commit(found.firstChild.textContent);
+            if (found.firstChild) return commit(untranspose(found.firstChild.textContent));
             return refresh();
           }
-          commit(field.value);
+          commit(untranspose(field.value));
         });
 
         /* Enter is one way out of the field, not the only one. Clicking
            elsewhere, or Escape, keeps what was typed too: a chord typed and
            then lost to a stray click is the kind of thing you only notice two
            verses later. */
-        pickerDismissed = function () { finish(field.value); };
+        pickerDismissed = function () { finish(untranspose(field.value)); };
 
         refresh();
         field.focus();
@@ -2067,8 +2020,10 @@
       if (!used.length) {
         typeOne();
       } else {
-        used.forEach(function (name) {
-          chip("picker-chip" + (name === chord.chord ? " is-on" : ""), name, null, function () { commit(name); });
+        used.forEach(function (one) {
+          chip("picker-chip" + (one.name === chord.chord ? " is-on" : ""), one.shown, null, function () {
+            commit(one.name);
+          });
         });
         chip("picker-add", "+", "אקורד אחר", typeOne);
         /* only when there is something to remove: a chord being put down for
@@ -2093,15 +2048,17 @@
       }
     }
 
-    /* --- saving --- */
-
+    /* --- saving ------------------------------------------------------------
+       No navigation afterwards, because there is nowhere to go: this is already
+       the page the saved song lives on. The address follows the name if the
+       name changed, and the button goes away, which is the receipt. */
     function save() {
-      var title = String(song.title || "").trim();
-      if (!title) { titleField.input.focus(); return toast("צריך שם לשיר", true); }
+      var name = String(song.title || "").trim();
+      if (!name) { title.focus(); return toast("צריך שם לשיר", true); }
 
       saveBtn.disabled = true;
       var payload = {
-        title: title,
+        title: name,
         dir: song.dir || "rtl",
         lines: songToText(song.lines),
       };
@@ -2113,14 +2070,24 @@
       payload.status = "ready";
       payload.status_note = "";
 
-      var wanted = song.id && song.slug ? song.slug : slugify(title);
-
-      attempt(wanted, 1);
+      attempt(song.id && song.slug ? song.slug : slugify(name), 1);
 
       function attempt(slug, tries) {
         payload.slug = slug;
         var request = song.id ? db.update(song.id, payload) : db.insert(payload);
-        request.then(function (saved) {
+        request.then(function (row) {
+          saveBtn.disabled = false;
+          song.id = row.id;
+          song.slug = row.slug;
+          saved = snapshot();
+          mark();
+
+          document.title = name + " | אקורדים";
+          var here = BASE + "/" + encodeURIComponent(row.slug);
+          if (decodeURIComponent(location.pathname) !== decodeURIComponent(here)) {
+            history.replaceState(null, "", here);
+          }
+
           /* A column the table does not have yet is dropped on the way out so
              the song itself still lands, and that has to be SAID. A name typed
              into a field and then quietly discarded looks exactly like a bug in
@@ -2133,10 +2100,9 @@
           } else {
             toast("נשמר");
           }
-          go(BASE + "/" + encodeURIComponent(saved.slug));
         }).catch(function (error) {
           /* 23505 is the unique index on slug: two songs with the same name */
-          if (error.code === "23505" && tries < 30) return attempt(slugify(title) + "_" + (tries + 1), tries + 1);
+          if (error.code === "23505" && tries < 30) return attempt(slugify(name) + "_" + (tries + 1), tries + 1);
           saveBtn.disabled = false;
           toast(error.status === 401 || error.status === 403 ? "אין הרשאה. נסו להתחבר שוב." : "השמירה נכשלה: " + error.message, true);
         });
@@ -2153,9 +2119,93 @@
       });
     }
 
-    draw();
+    /* through setSemis, not straight to draw: the counter is written there and
+       nowhere else, so starting any other way leaves it reading 0 over a song
+       that is being shown seven frets down */
+    setSemis(semis);
     relayoutOn(sheet, rtl);
-    if (!song.id) titleField.input.focus();
+    if (editing && !song.id) title.focus();
+  }
+
+  function viewLine(line, semis) {
+    if (line.type === "section") {
+      var s = el("div", "ln is-section");
+      s.appendChild(el("div", "ln-section", line.text));
+      return s;
+    }
+    var ln = el("div", "ln" + (line.text.trim() || line.chords.length ? "" : " is-blank"));
+    var lane = el("div", "ln-c");
+    line.chords.forEach(function (c) { lane.appendChild(chordEl(c.chord, c.pos, semis)); });
+    ln.appendChild(lane);
+    ln.appendChild(textSpans(line.text));
+    return ln;
+  }
+
+  /* Fonts arrive after the first paint and a window resize changes every
+     offset, so both re-measure. Nothing is re-rendered, only re-placed. */
+  function relayoutOn(root, isRtl) {
+    var run = function () { layoutAll(root, isRtl()); };
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(run);
+    var onResize = function () { if (root.isConnected) run(); else window.removeEventListener("resize", onResize); };
+    window.addEventListener("resize", onResize);
+  }
+
+  /* A song that is still being read, or that failed. It is a real row with a
+     real address, so it gets a real page rather than being hidden from the one
+     person who is waiting for it. While it reads, the page looks again by
+     itself; when the Worker finishes, this becomes the song. */
+  function viewPending(song) {
+    app.innerHTML = "";
+    var box = el("div", "center");
+
+    if (song.status === "reading" && !stalled(song)) {
+      var busy = el("span", "busy");
+      busy.appendChild(el("span", "spin"));
+      var note = el("span");
+      note.dataset.since = Date.parse(song.created_at || "") || Date.now();
+      note.dataset.stage = song.status_note || "ממתין";
+      elapsed(note);
+      busy.appendChild(note);
+      box.appendChild(busy);
+      box.appendChild(el("p", "muted", "הקריאה ממשיכה גם בלי הדף הזה."));
+      tick(box);
+      setTimeout(function () { if (box.isConnected) viewSong(song.slug); }, 5000);
+    } else {
+      box.appendChild(el("p", null, stalled(song)
+        ? "הקריאה של " + song.title + " נתקעה ולא הסתיימה."
+        : "הקריאה של " + song.title + " נכשלה."));
+      if (song.status_note) box.appendChild(el("div", "detail", song.status_note));
+      var actions = el("div", "row-actions");
+      actions.appendChild(button("להקליד ידנית", ICON.pencil, "ghost", function () {
+        go(BASE + "/" + encodeURIComponent(song.slug) + "/edit");
+      }));
+      actions.appendChild(button("מחיקה", ICON.trash, "danger", function () {
+        db.remove(song.id).then(function () { toast("נמחק"); go(BASE + "/"); })
+          .catch(function (e) { toast("המחיקה נכשלה: " + e.message, true); });
+      }));
+      box.appendChild(actions);
+    }
+
+    box.appendChild(el("p"));
+    box.appendChild(button("לרשימת השירים", ICON.back, "ghost small", function () { go(BASE + "/"); }));
+    app.appendChild(box);
+  }
+
+  function notFound(slug) {
+    document.title = "לא נמצא | אקורדים";
+    app.innerHTML = "";
+    var box = el("div", "center");
+    box.appendChild(el("p", null, 'אין שיר בשם "' + slug.replace(/_/g, " ") + '".'));
+    box.appendChild(button("לרשימת השירים", ICON.back, "ghost", function () { go(BASE + "/"); }));
+    app.appendChild(box);
+  }
+
+  function fail(error) {
+    app.innerHTML = "";
+    var box = el("div", "center");
+    box.appendChild(el("p", null, "משהו השתבש: " + error.message));
+    box.appendChild(button("לנסות שוב", null, "ghost", function () { route(); }));
+    app.appendChild(box);
   }
 
   /* --- reading a photo or a PDF -------------------------------------------- */
@@ -2411,8 +2461,23 @@
     var p = parts();
 
     if (!p.length) { document.title = "אקורדים"; return viewIndex(); }
-    if (p[0] === "new") return viewEditor(null);
-    if (p.length >= 2 && p[1] === "edit") return viewEditor(p[0]);
+
+    /* A new song is the song page with nothing on it yet, and it needs somebody
+       signed in to be worth opening at all. */
+    if (p[0] === "new") {
+      if (!auth.in) return askSignIn(function () { route(); });
+      return viewSong(null);
+    }
+
+    /* /edit was a page of its own once. The song page IS the editor now, so the
+       address still opens the song, and the one in the bar becomes the song's.
+       Kept rather than dropped because it is written down in bookmarks and in
+       the index's own links from before this. */
+    if (p.length >= 2 && p[1] === "edit") {
+      history.replaceState(null, "", BASE + "/" + encodeURIComponent(p[0]));
+      return viewSong(p[0]);
+    }
+
     return viewSong(p[0]);
   }
 
