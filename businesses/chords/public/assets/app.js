@@ -204,7 +204,10 @@
   }
 
   var FIELDS = "id,slug,title,artist,song_key,dir,lines,updated_at";
-  var LIST_FIELDS = "id,slug,title,artist,song_key,created_at,updated_at";
+  /* `lines` is fetched for the list too, so a row can show which chords the
+     song uses. A song is a few hundred bytes of text; a library of them is
+     still smaller than one photograph. */
+  var LIST_FIELDS = "id,slug,title,artist,song_key,lines,created_at,updated_at";
 
   /* A read runs in the Worker and outlives the request that started it, so if
      the runtime cuts it short there is nobody left to say so. What says so is
@@ -467,6 +470,18 @@
       at = found.index + found[0].length;
     }
     return { text: text + raw.slice(at), chords: chords };
+  }
+
+  /* Every chord a song uses, once each, in the order the song reaches them.
+     Which is the order that means something: a song opens on its home chord. */
+  function chordsUsed(lines) {
+    var seen = Object.create(null), out = [];
+    normalizeLines(lines).forEach(function (line) {
+      (line.chords || []).forEach(function (c) {
+        if (c.chord && !seen[c.chord]) { seen[c.chord] = true; out.push(c.chord); }
+      });
+    });
+    return out;
   }
 
   function blankLine() { return { type: "line", text: "", chords: [] }; }
@@ -1031,7 +1046,17 @@
       box.appendChild(el("div", "t", s.title));
       if (s.artist) box.appendChild(el("div", "a", s.artist));
       a.appendChild(box);
-      if (s.song_key) a.appendChild(el("span", "k", s.song_key));
+
+      /* What you actually want to know before opening a song: whether you can
+         play it. In the order the song reaches them, so the first one is the
+         one it opens on. */
+      var used = chordsUsed(s.lines);
+      if (used.length) {
+        var keys = el("div", "keys");
+        keys.dir = "ltr";
+        used.forEach(function (name) { keys.appendChild(el("span", "k", name)); });
+        a.appendChild(keys);
+      }
 
       li.appendChild(a);
       return li;
@@ -1592,17 +1617,13 @@
     function closeOnOutside(event) { if (picker && !picker.contains(event.target)) closePicker(); }
     function closeOnEscape(event) { if (event.key === "Escape") closePicker(); }
 
-    /* every chord in this song, once each, A to Z. Sorted rather than in the
-       order they appear, so the same chord is always in the same place in the
-       row and reaching for it becomes muscle memory. */
+    /* every chord in this song, once each, A to Z. Sorted here rather than in
+       the order they appear, so the same chord is always in the same place in
+       the row and reaching for it becomes muscle memory. The index sorts them
+       the other way, by first appearance, because there it is describing the
+       song rather than offering a choice. */
     function chordsInSong() {
-      var seen = Object.create(null), out = [];
-      song.lines.forEach(function (line) {
-        (line.chords || []).forEach(function (c) {
-          if (c.chord && !seen[c.chord]) { seen[c.chord] = true; out.push(c.chord); }
-        });
-      });
-      return out.sort(function (a, b) { return a.localeCompare(b, "en"); });
+      return chordsUsed(song.lines).sort(function (a, b) { return a.localeCompare(b, "en"); });
     }
 
     /* One small row: the chords this song already uses, a + for one it does

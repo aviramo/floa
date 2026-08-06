@@ -144,10 +144,15 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .list a:hover { border-color: var(--accent); transform: translateY(-1px); }
 .list .t { font-weight: 700; font-size: 17px; }
 .list .a { color: var(--ink-soft); font-size: 14px; }
+/* the song's own chords, in the order it reaches them */
+.list .keys {
+  margin-inline-start: auto; display: flex; flex-wrap: wrap; gap: 5px;
+  justify-content: flex-end; direction: ltr;
+}
 .list .k {
-  margin-inline-start: auto; font-size: 13px; font-weight: 700;
-  color: var(--chord); background: var(--chord-soft); border-radius: 999px; padding: 3px 10px;
-  direction: ltr;
+  font-size: 13px; font-weight: 700;
+  color: var(--chord); background: var(--chord-soft); border-radius: 999px; padding: 2px 9px;
+  direction: ltr; white-space: nowrap;
 }
 
 /* a song that is not openable yet: being read, or failed. Same box as a link,

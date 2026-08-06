@@ -9,7 +9,7 @@ const end = src.indexOf("/* ----------------------------------------------------
 if (start < 0 || end < 0) throw new Error("could not find the model block");
 
 const block = src.slice(start, end);
-const api = new Function(block + "\nreturn { slugify, transposeChord, remapChords, parsePasted, looksLikeChord, isChord, suggestChords, toChordPro, fromChordPro, songToText, textToSong, normalizeLines, splitLine, joinLines, padTo, trimPadding };")();
+const api = new Function(block + "\nreturn { slugify, transposeChord, remapChords, parsePasted, looksLikeChord, isChord, suggestChords, chordsUsed, toChordPro, fromChordPro, songToText, textToSong, normalizeLines, splitLine, joinLines, padTo, trimPadding };")();
 
 let failed = 0;
 const eq = (label, got, want) => {
@@ -114,6 +114,10 @@ eq("and the chord then names a real character", api.toChordPro(outro), "[Am]נה
 outro.chords.pop();
 api.trimPadding(outro);
 eq("spaces nothing needs any more go back", outro.text, "נה נה נה");
+
+eq("the chords a song uses, once each, in the order it reaches them",
+  api.chordsUsed("[Am]שלום [G]לך\n[F]ואיך [Am]היה [C]היום"),
+  ["Am", "G", "F", "C"]);
 
 /* --- lines cut and joined, the way a text editor does it --- */
 eq("Enter cuts a line and the chords go with their own characters",
