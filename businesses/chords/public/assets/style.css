@@ -426,6 +426,8 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 @media print {
   .top, .tools, .ed-bar, .toast { display: none !important; }
   body { background: #fff; }
-  .sheet { border: none; box-shadow: none; padding: 0; overflow: visible; }
+  /* a little room at the start of the line, or the first chord of every line
+     is centred half off the paper */
+  .sheet { border: none; box-shadow: none; padding: 0 4px; overflow: visible; }
   .wrap { width: 100%; }
 }

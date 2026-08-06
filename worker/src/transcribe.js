@@ -103,9 +103,9 @@ On the printed page that Hebrew line looks like this, with the Am on the RIGHT b
 
 so the Am, being the rightmost, is the first chord of the line and the G is the second.
 
-- THE TICK IS THE ANSWER, WHEN THERE IS ONE. Many printed sheets, and most Hebrew ones, draw a small mark under each chord: a tick, a comma, an apostrophe, a short slanted stroke. That mark is not decoration. It is the sheet telling you the exact point the chord falls on, drawn precisely because the symbol itself is too wide to say it. When a chord has one, look straight down from the MARK and ignore the width of the symbol entirely. It is the most reliable thing on the page.
+- WHICH LETTER, EXACTLY. This is the rule, and it works on every sheet: take the chord symbol's horizontal MIDDLE, not its left edge and not its right edge, and look straight down from that middle. The bracket goes immediately before whichever letter is under it. If the point falls between two letters, choose the one whose own start is nearer to it.
 
-- WHICH LETTER, EXACTLY. With no mark, take the chord symbol's horizontal MIDDLE, not its left or right edge, and look straight down from that. The bracket goes immediately before whichever letter is under it. If the point falls between two letters, choose the one whose own start is nearer to it.
+- Some sheets, and many Hebrew ones, also print a small mark under each chord: a tick, a comma, an apostrophe, a short slanted stroke. Where there is one it says the same thing more precisely, so use it to settle a close call. Where there is none, nothing changes: the middle of the symbol is the answer either way.
 
 - CHORDS DO NOT PREFER THE STARTS OF WORDS. This is a bias worth naming, because it is the mistake that keeps happening: a chord lands wherever the singer changes note, which is inside a word at least as often as at its edge. בנ[Am]קיק is an ordinary thing for a sheet to say and [Am]בנקיק is a different thing, and reading the first as the second is the failure. Do not round a chord to the nearest word boundary. If the mark or the middle sits over the third letter, the bracket goes before the third letter.
 
@@ -146,7 +146,7 @@ The COUNT: the line you wrote has exactly as many brackets as the page has chord
 
 The ORDER: reading your line from its own beginning, the chords come in the same order as they do reading the page from its own beginning, which for Hebrew is from the right.
 
-The LETTER: each bracket sits before the letter you named for it, and not before the start of that letter's word unless that is where you said it was.
+The LETTER: each bracket sits before the letter you named for it, the one under the middle of its symbol, and not before the start of that letter's word unless that is where you said it was.
 
 Two chords exchanged, or one sitting a couple of letters from where it belongs, is the failure this task actually has, and it is invisible unless it is looked for.`;
 
