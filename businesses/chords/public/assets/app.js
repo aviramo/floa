@@ -1244,9 +1244,15 @@
           if (end <= pos) end = pos + 1;
         }
 
-        row.pieces.push({ line: line, from: pos, to: end });
-        line.pieces.push(row.pieces[row.pieces.length - 1]);
-        row.used += lead + x;
+        var piece = { line: line, from: pos, to: end };
+        row.pieces.push(piece);
+        line.pieces.push(piece);
+
+        /* what the piece REALLY takes, which is not what the greedy loop
+           counted: it counted up to where it ran out of room, and the break
+           then went back to the last space before that */
+        for (var k = pos; k < end; k++) row.used += line.advance[k];
+        row.used += lead;
         pos = end;
 
         /* A row does not begin with the spaces the break left behind, unless a
@@ -2114,7 +2120,7 @@
          its syllable ended up on and there is no telling which that is until
          the words have been broken. */
       requestAnimationFrame(function () {
-        if (!editing && NARROW.matches) wrapAll(sheet, rtl());
+        if (!editing && NARROW.matches) flowSheet(sheet, rtl());
         layoutAll(sheet, rtl());
       });
     }

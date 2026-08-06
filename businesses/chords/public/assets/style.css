@@ -426,9 +426,10 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    them together.
 
    On a wide screen that is the end of it, and the scroll is never needed. On a
-   phone the browser is not asked to wrap, but the words ARE broken, by wrapRow
-   in app.js, which cuts the line and its chords together into rows that fit
-   and marks each leftover (see .ln.is-cont below).
+   phone the browser is not asked to wrap, but the song IS poured to the width
+   of the screen, by flowSheet in app.js, which cuts each line and its chords
+   together into rows that fit, fills a leftover row with the line after it,
+   and marks both (see .ln.is-cont and .sp below).
 
    The generous side padding is not decoration. A chord is centred on its
    character, so one over the FIRST character sticks out half a label past the
@@ -556,15 +557,19 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   color: var(--ink-soft);
 }
 /* --- what did not fit on the screen --------------------------------------
-   A row carrying the tail of the line above it (see wrapRow in app.js, which
-   is where the width is decided and where --cont is written).
+   The two marks a poured sheet needs (see flowSheet in app.js, which is where
+   the width is decided and where --cont is written).
 
-   Two things have to be true at once: it must read as a continuation and not
-   as a line of the song, and it must still be clearly attached to the row it
-   fell out of. So it is indented, it carries an arrow in the space it was
-   indented by, and the gap above it is closed while the gap below the group
-   stays the full one. The air between two sung lines is then wider than the
-   air inside one, which is what tells them apart at a glance.
+   .is-cont is a row that BEGINS with the leftover of the row above it. It is
+   indented and carries an arrow in the space it was indented by, and the gap
+   over it is closed, so it reads as the end of the line above rather than as
+   a line of its own.
+
+   .sp is the separator INSIDE a row, where the leftover ends and the next
+   line of the song begins. Quiet, because it is punctuation and not a word,
+   but wide enough not to be taken for a space between two words: without it a
+   row holding the end of one line and the start of another would read as one
+   sentence that never was.
 
    The indent is padding on .ln-t and never on .ln: the chords are measured
    from the row's own edges, and padding on the row would move every one of
@@ -580,6 +585,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   color: var(--chord); opacity: .5;
   font-weight: 400;
 }
+.ln-t .sp { color: var(--ink-soft); opacity: .45; font-weight: 400; }
 
 /* A blank line is the gap between two stanzas, and a gap does not need a full
    line of words plus an empty chord lane above it to say so: about half that
