@@ -81,6 +81,16 @@ alter table public.songs add column if not exists music_by    text not null defa
 -- to read: one typed by hand, or one read before this column existed.
 alter table public.songs add column if not exists read_cost   numeric;
 
+-- A song that came out of a machine is a song nobody has read yet. True from
+-- the moment the Worker saves a reading, false the moment a person says they
+-- have looked at it, and never true for a song typed by hand: there is nothing
+-- to check a song against when the person who typed it is the source.
+--
+-- Not backfilled. Songs read before this column existed have been lived with
+-- for a while already, and labelling them all "unchecked" one morning would
+-- say something about them that nobody knows to be true.
+alter table public.songs add column if not exists review      boolean not null default false;
+
 -- Dropped and recreated rather than added, because 'queued' arrived after the
 -- first version of this constraint and an "add if it is not there" would leave
 -- the old one in place and refuse every queued row.

@@ -301,6 +301,7 @@
     ["status", "status_note"],
     ["lyrics_by", "music_by"],
     ["read_cost"],
+    ["review"],
   ].map(function (columns) { return { columns: columns, on: true }; });
 
   function withOptional(fields) {
@@ -1890,6 +1891,14 @@
       if (by.length) {
         top.appendChild(el("div", "by", by.map(function (c) { return c.name; }).join(", ")));
       }
+      /* A song a machine read and nobody has checked. On the row rather than
+         only inside the song, because the point of it is to be seen without
+         opening anything. */
+      if (s.review) {
+        var flag = el("span", "tag-review", "לסקירה");
+        flag.title = "השיר נקרא מתוך קובץ ועדיין לא נבדק";
+        top.appendChild(flag);
+      }
       box.appendChild(top);
 
       /* Under the name goes what you actually want to know before opening a
@@ -2183,6 +2192,41 @@
        and in both cases the page is the same page and the note is the whole of
        the difference. Saving clears it, because saving makes it untrue. */
     if (song.status_note) app.appendChild(el("div", "song-note", song.status_note));
+
+    /* --- read by a machine, not yet by a person -------------------------------
+       A song that came off a picture is right most of the time and wrong in
+       ways only somebody who knows the song can see: a word misheard, a chord
+       half a syllable along, a verse that came out twice. So it says so, until
+       a person says otherwise.
+
+       Taken off by hand and by nothing else. Saving does not do it, because
+       fixing one line is not the same as having read the whole song, and a
+       label that comes off by itself is a label nobody trusts. */
+    if (song.review) {
+      var band = el("div", "review-band");
+      band.appendChild(el("span", "review-tag", "לסקירה"));
+      band.appendChild(el("span", "review-said", "השיר נקרא מתוך קובץ ועדיין לא נבדק מול המקור."));
+
+      if (editing && song.id) {
+        var done = button("נבדק, להסיר את התווית", null, "ghost small", function () {
+          done.disabled = true;
+          /* Written on its own and at once, not folded into the save button.
+             It is not a change to the song, it is a statement about it, and
+             the song underneath may well be exactly as it was. */
+          db.update(song.id, { review: false }).then(function () {
+            song.review = false;
+            band.remove();
+            toast("התווית הוסרה");
+          }).catch(function (e) {
+            done.disabled = false;
+            toast("לא הצלחתי להסיר: " + e.message, true);
+          });
+        });
+        band.appendChild(done);
+      }
+
+      app.appendChild(band);
+    }
 
     /* --- the tools --- */
 

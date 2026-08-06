@@ -1104,7 +1104,7 @@ async function patchSong(env, token, id, fields) {
    the new SQL run against it refuses any write that names them. A song is
    worth a great deal more than its credits or its price, so drop those and
    keep the song rather than losing a read that has already been paid for. */
-const LATE_COLUMNS = ["lyrics_by", "music_by", "read_cost"];
+const LATE_COLUMNS = ["lyrics_by", "music_by", "read_cost", "review"];
 
 async function saveSong(env, token, id, fields) {
   const failure = await patchSong(env, token, id, fields);
@@ -1310,6 +1310,11 @@ export async function readAndSave(env, token, songId, files) {
        reported. Null means the price was not known here, never that it was
        free. */
     read_cost: song.cost,
+    /* A machine read it, so a person has not. The label stays on the song until
+       somebody says they have looked at it, and it is set here rather than by
+       the browser because this is the only place that knows the words came off
+       a picture instead of a keyboard. */
+    review: true,
     /* READY EVEN WHEN HALF OF IT DID NOT ARRIVE. A song with its words and no
        chords is a song you can open, read, print and finish; a failed row is a
        dead end. What is missing is said in the note instead, and the note goes

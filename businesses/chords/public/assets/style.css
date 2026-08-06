@@ -377,6 +377,24 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   color: var(--ink-soft); font-size: 14px;
 }
 
+/* A song a machine read and nobody has checked yet. The same warm colour as
+   the note above, because both are the machine talking about the song rather
+   than the song itself, and the way to take it off sits inside it: the answer
+   to a label is next to the label. */
+.review-band {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin: 0 0 14px; padding: 8px 10px 8px 14px; border-radius: var(--radius);
+  background: #fdf6ec; border: 1px solid #f0dfc4;
+  font-size: 14px;
+}
+.review-said { color: var(--ink-soft); }
+.review-band .btn { margin-inline-start: auto; }
+.review-tag, .tag-review {
+  font-size: 12px; font-weight: 700; line-height: 1.6;
+  color: #8a5a12; background: #f6e6ca;
+  border-radius: 999px; padding: 1px 10px; white-space: nowrap;
+}
+
 /* Who wrote it and which way it runs, on the song itself: there is no other
    page to keep them on any more. Three things about one song, so one line, and
    the direction last because it is the only one that is chosen rather than
@@ -820,6 +838,8 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 
 @media print {
   .top, .tools, .ed-bar, .song-meta, .toast { display: none !important; }
+  /* the label is about the song's state here, not about the song */
+  .review-band { display: none !important; }
   /* marking a verse is editing, and a page of ticks is not a song */
   .block-bar, .ln-pick { display: none !important; }
   .ln.is-marked::before { display: none; }
