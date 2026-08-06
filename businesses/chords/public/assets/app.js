@@ -1289,11 +1289,14 @@
       return out;
     }
 
-    /* One small row: the chords this song uses, an × to take this one off, and
-       a + for the chord that is not on the list yet, which only becomes a field
-       once it is asked for. A song has five chords and one of them is almost
-       always the answer, so the list IS the interface and typing is the way
-       out, not the way in. */
+    /* One small row: the chords this song already uses, a + for one it does
+       not, and an × to take this chord off.
+
+       A song has five chords and they usually arrive with it, read from a
+       picture or pasted, so placing one is CHOOSING. The + is the way out
+       rather than the way in: it stays a single character until it is asked
+       for, and only then becomes a field. A song with no chords at all has
+       nothing to choose from, so there the field opens straight away. */
     function openPicker(node, ln, line, chord) {
       closePicker();
 
@@ -1347,7 +1350,7 @@
           chip("picker-chip" + (name === chord.chord ? " is-on" : ""), name, null, function () { commit(name); });
         });
         chip("picker-add", "+", "אקורד אחר", typeOne);
-        if (chord.chord) chip("picker-x", "×", "הסרת האקורד", function () { commit(""); });
+        chip("picker-x", "×", "הסרת האקורד", function () { commit(""); });
       }
 
       place();
