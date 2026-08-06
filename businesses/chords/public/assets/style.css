@@ -505,17 +505,22 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 /* The styles of one song, being written. The word, what it already is, and one
    field that adds another: a row of the same shape as the credits above it,
    because it is the same kind of thing, one more fact about the song. */
+/* ONE MORE FIELD IN THE ROW OF THEM, and shaped like the two beside it: a word
+   and a line, and what has been written on it sitting on that line. It had a
+   row of its own underneath, which said it was a different kind of thing from
+   who wrote the song. It is not: it is one more fact about the song. */
 .kinds-field {
   display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px;
-  flex: 1 1 100%; min-width: 0;
+  flex: 1 1 180px; min-width: 0;
 }
 .kinds-label { font-size: 13px; font-weight: 600; color: var(--ink-soft); }
 .kinds-list { display: flex; flex-wrap: wrap; gap: 6px; }
 .song-meta .kinds-field input[type="text"] {
-  flex: 0 1 140px; min-width: 0;
+  flex: 1 1 80px; min-width: 0;
   margin-top: 0; padding: 4px 2px; border-radius: 0;
   background: none; border: 0; border-bottom: 1px solid var(--line);
 }
+.song-meta .kinds-field input[type="text"]:hover { border-bottom-color: var(--ink-soft); }
 
 /* Who wrote it and which way it runs, on the song itself: there is no other
    page to keep them on any more. Three things about one song, so one line, and
@@ -554,16 +559,19 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    onto the row that holds them, and the row is what lights up when the field
    inside it is being typed in. */
 @media (min-width: 621px) {
-  .song-meta label, .ev-meta label {
+  .song-meta label, .ev-meta label, .kinds-field {
     display: flex; align-items: baseline; gap: 8px;
     border-bottom: 1px solid var(--line);
   }
-  .song-meta label input, .ev-meta label input {
+  .song-meta label input, .ev-meta label input,
+  .song-meta .kinds-field input[type="text"] {
     flex: 1 1 auto; min-width: 0; border-bottom: 0;
   }
   .ev-meta label input[type="date"] { flex: 0 0 auto; }
-  .song-meta label:hover, .ev-meta label:hover { border-bottom-color: var(--ink-soft); }
-  .song-meta label:focus-within, .ev-meta label:focus-within {
+  .song-meta label:hover, .ev-meta label:hover, .kinds-field:hover {
+    border-bottom-color: var(--ink-soft);
+  }
+  .song-meta label:focus-within, .ev-meta label:focus-within, .kinds-field:focus-within {
     border-bottom-color: var(--accent); box-shadow: 0 1px 0 var(--accent);
   }
   .song-meta input:focus-visible, .ev-meta input:focus-visible { box-shadow: none; }

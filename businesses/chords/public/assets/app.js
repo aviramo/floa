@@ -2947,7 +2947,9 @@
          Enter adds. It is one field whose whole job is to add one word, and a
          button beside it would be a second thing to aim at for no gain. */
       var kindsRow = el("div", "kinds-field");
-      var kindsLabel = el("div", "kinds-label", "סגנונות");
+      /* One word, like the two beside it, and singular like them: the field
+         takes several and so does "לחן". */
+      var kindsLabel = el("div", "kinds-label", "סגנון");
       var kindsList = el("div", "kinds-list");
       var kindsInput = el("input");
       kindsInput.type = "text";
