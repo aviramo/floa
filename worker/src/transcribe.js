@@ -306,13 +306,29 @@ export async function readAndSave(env, token, songId, files) {
      and "it died after ninety seconds", and it gives the person watching a
      number instead of a spinner. */
   const began = Date.now();
+
+  /* The first mark, before the model is even called, and awaited.
+
+     It proves two things at once that are otherwise indistinguishable from a
+     row that never changes: that this job started at all, and that it can write
+     to the row it is supposed to fill. If it cannot write, there is no point
+     spending a read whose answer has nowhere to go, and no point trying to mark
+     the row as failed either, because writing is exactly what is broken. */
+  const blocked = await patchSong(env, token, songId, { status_note: "מתחיל לקרוא" });
+  if (blocked) {
+    console.error("transcribe cannot write to its row", songId, blocked.status, blocked.body.slice(0, 300));
+    return;
+  }
+
   let beat = 0;
   const heartbeat = () => {
     const seconds = Math.round((Date.now() - began) / 1000);
     if (seconds - beat < 20) return;
     beat = seconds;
     /* not awaited: the reading must not wait on the bookkeeping */
-    patchSong(env, token, songId, { status_note: `קורא, ${seconds} שניות` }).catch(() => {});
+    patchSong(env, token, songId, { status_note: `קורא, ${seconds} שניות` })
+      .then((failure) => { if (failure) console.error("heartbeat refused", songId, failure.status); })
+      .catch((err) => console.error("heartbeat threw", songId, err.message));
   };
 
   let song;

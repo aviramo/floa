@@ -198,9 +198,14 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    ------------------------------------------------------------------------ */
 
 /* The chord row sits as close to the words as the glyphs allow: a chord that
-   floats is a chord you have to look twice to attach to a syllable. */
+   floats is a chord you have to look twice to attach to a syllable.
+
+   The lane is deliberately shorter than the chord in it. A chord is absolutely
+   positioned at the lane's top, so the difference hangs down into the space the
+   text's own line height leaves empty above its letters, which costs nothing
+   and closes the gap. */
 .ln { position: relative; }
-.ln-c { position: relative; height: 1em; }
+.ln-c { position: relative; height: .72em; }
 .ln-t {
   white-space: pre;
   font-size: var(--song-size);

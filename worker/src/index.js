@@ -287,7 +287,14 @@ async function handleTranscribe(request, env, ctx, origin) {
   }
   if (total > MAX_BASE64) return json({ ok: false, error: "size" }, 413, origin);
 
-  ctx.waitUntil(readAndSave(env, token, songId, files));
+  /* The job outlives this response. Anything it throws would otherwise be
+     swallowed by waitUntil and leave the row saying `reading` for ever, so it
+     is caught here and said out loud. */
+  ctx.waitUntil(
+    readAndSave(env, token, songId, files)
+      .catch((err) => console.error("transcribe crashed", songId, err && err.message, err && err.stack))
+  );
+  console.log("transcribe accepted", songId, files.length, "file(s)");
   return json({ ok: true, reading: true }, 202, origin);
 }
 
