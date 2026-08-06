@@ -9,7 +9,7 @@ const end = src.indexOf("/* ----------------------------------------------------
 if (start < 0 || end < 0) throw new Error("could not find the model block");
 
 const block = src.slice(start, end);
-const api = new Function(block + "\nreturn { slugify, transposeChord, remapChords, parsePasted, looksLikeChord, isChord, suggestChords, chordsUsed, toChordPro, fromChordPro, songToText, textToSong, normalizeLines, splitLine, joinLines, padTo, trimPadding };")();
+const api = new Function(block + "\nreturn { slugify, transposeChord, remapChords, parsePasted, looksLikeChord, isChord, suggestChords, chordsUsed, easyVersion, toChordPro, fromChordPro, songToText, textToSong, normalizeLines, splitLine, joinLines, padTo, trimPadding };")();
 
 let failed = 0;
 const eq = (label, got, want) => {
@@ -118,6 +118,20 @@ eq("spaces nothing needs any more go back", outro.text, "נה נה נה");
 eq("the chords a song uses, once each, in the order it reaches them",
   api.chordsUsed("[Am]שלום [G]לך\n[F]ואיך [Am]היה [C]היום"),
   ["Am", "G", "F", "C"]);
+
+/* --- the easy version ------------------------------------------------------
+   A capo at fret N plays the song N semitones down and it still sounds in its
+   own key, so the easiest version is a search over capo positions. */
+eq("a song of open chords needs no capo",
+  api.easyVersion(["Am", "G", "C", "Em"]), { capo: 0, shapes: ["Am", "G", "C", "Em"], hard: 0 });
+
+/* Bm A G D has a barre in it at the open neck, and there is a capo position
+   where every one of the four becomes a shape a beginner already holds. */
+eq("barres become open shapes under a capo",
+  api.easyVersion(["Bm", "A", "G", "D"]), { capo: 7, shapes: ["Em", "D", "C", "G"], hard: 0 });
+
+eq("the lowest capo wins a tie", api.easyVersion(["C", "G"]).capo, 0);
+eq("nothing to play, nothing to say", api.easyVersion([]), { capo: 0, shapes: [], hard: 0 });
 
 /* --- lines cut and joined, the way a text editor does it --- */
 eq("Enter cuts a line and the chords go with their own characters",

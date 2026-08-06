@@ -514,6 +514,35 @@
     return out;
   }
 
+  /* --- the easy version ------------------------------------------------------
+     A capo at fret N means the hand plays the song moved N semitones DOWN
+     while it still sounds in its own key. So "the easy version" is not a
+     matter of taste, it is a search: try every capo position and see which one
+     turns the song's chords into shapes a hand can hold without barring.
+
+     What IS a matter of taste is this list. It is the open position a beginner
+     actually owns: five majors, three minors, and the sevenths that come with
+     them. Widen it and the answer changes. */
+  var OPEN_SHAPES = {};
+  "C D E G A Am Em Dm A7 B7 C7 D7 E7 G7 Am7 Em7 Dm7 Cmaj7 Amaj7 Fmaj7 Dsus2 Dsus4 Asus2 Asus4 Esus4 Cadd9"
+    .split(" ").forEach(function (shape) { OPEN_SHAPES[shape] = true; });
+
+  var MAX_CAPO = 7;
+
+  function easyVersion(chords) {
+    var best = { capo: 0, shapes: chords.slice(), hard: Infinity };
+    if (!chords.length) return { capo: 0, shapes: [], hard: 0 };
+
+    for (var capo = 0; capo <= MAX_CAPO; capo++) {
+      var shapes = chords.map(function (chord) { return transposeChord(chord, -capo); });
+      var hard = shapes.filter(function (shape) { return !OPEN_SHAPES[shape]; }).length;
+      /* strictly fewer, so the lowest capo wins a tie: a capo is a thing to
+         carry and to fit, and the open neck is worth something on its own */
+      if (hard < best.hard) best = { capo: capo, shapes: shapes, hard: hard };
+    }
+    return best;
+  }
+
   function blankLine() { return { type: "line", text: "", chords: [] }; }
 
   /* Cutting a line in two and putting two back together, with the chords going
@@ -1086,8 +1115,14 @@
          inside itself. */
       var used = chordsUsed(s.lines);
       if (used.length) {
+        var easy = easyVersion(used);
         var keys = el("div", "keys");
-        used.forEach(function (name) { keys.appendChild(el("span", "k", name)); });
+        keys.title = "השיר עצמו: " + used.join("  ");
+        if (easy.capo) keys.appendChild(el("span", "capo", "קפו " + easy.capo));
+        easy.shapes.forEach(function (shape, i) {
+          keys.appendChild(el("span", "k" + (OPEN_SHAPES[shape] ? "" : " is-hard"), shape));
+          void i;
+        });
         box.appendChild(keys);
       }
 
