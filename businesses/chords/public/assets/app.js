@@ -2310,6 +2310,7 @@
        be scrolled back to between one press and the next is not there. */
     var blockBar = null;
     var blockCount = null;
+    var dropBtn = null;
     if (editing) {
       blockBar = el("div", "block-bar");
       blockCount = el("div", "block-count");
@@ -2317,6 +2318,11 @@
       blockBar.appendChild(iconBtn(ICON.up, "להעלות את המסומן", function () { moveMarked(-1); }));
       blockBar.appendChild(iconBtn(ICON.down, "להוריד את המסומן", function () { moveMarked(1); }));
       blockBar.appendChild(button("שכפול", ICON.copy, "ghost small", copyMarked));
+      blockBar.appendChild(button("העתקת אקורדים", null, "ghost small", liftChords));
+      /* not there until there is something to put down */
+      dropBtn = button("הדבקת אקורדים", null, "ghost small", dropChords);
+      dropBtn.hidden = true;
+      blockBar.appendChild(dropBtn);
       blockBar.appendChild(button("ביטול הסימון", null, "ghost small", function () { clearMarks(); }));
       blockBar.hidden = true;
       app.appendChild(blockBar);
@@ -2637,22 +2643,9 @@
         ln.appendChild(text);
       }
 
-      /* The one thing beside a line, at the end of it and only under the
-         pointer: the grip that carries the whole line, chords and words
-         together, up and down the song. Everything else a line can have done
-         to it is done from the keyboard, which is why there is one of these
-         and not a row of them. */
-      var grip = el("button", "ln-grip");
-      grip.type = "button";
-      grip.title = "גרירה כדי להזיז את השורה";
-      grip.tabIndex = -1;
-      grip.appendChild(svg(ICON.grip));
-      bindGrip(grip, ln);
-      ln.appendChild(grip);
-
-      /* The other margin, opposite the grip. Out in the sheet's own padding
-         like the grip is, so it takes no width from the words and no chord
-         moves by a pixel because a line can be marked. */
+      /* The one thing beside a line: the box that makes it part of the block.
+         Out in the sheet's own margin, so it takes no width from the words and
+         no chord moves by a pixel because a line can be marked. */
       if (isMarked(line)) ln.classList.add("is-marked");
       var pick = el("label", "ln-pick");
       var box = el("input");
@@ -2715,6 +2708,7 @@
       var n = markedCount();
       blockBar.hidden = !n;
       blockCount.textContent = n === 1 ? "שורה אחת מסומנת" : n + " שורות מסומנות";
+      dropBtn.hidden = !lifted;
     }
 
     /* One step, in whichever direction. Walked from the edge the block is
@@ -2777,76 +2771,70 @@
       mark();
     }
 
-    /* --- moving a line ------------------------------------------------------
-       The row's own element travels, and the song's array travels with it. It
-       is NOT redrawn as it goes, and that is the whole design: a redraw would
-       destroy the element the finger is holding, and the drag would end on its
-       first movement. So the DOM node is moved and the model is spliced to
-       match, and the two stay in step because a line and a row are one to one
-       and always in the same order. */
+    /* --- the chords of one line onto another ---------------------------------
+       A verse and a chorus are usually the same handful of chords in the same
+       places over different words, and setting the second one is putting the
+       same four chords down again by hand, in the same order, over syllables
+       that are nearly but not quite where the first line had them.
+
+       So the chords of the marked lines can be taken and laid on other marked
+       lines. Line for line: the first copied onto the first marked, the second
+       onto the second. One line copied goes onto as many as are marked, which
+       is the same rule with nothing to line up. Any other pair of numbers is
+       refused rather than guessed at, because a wrong guess here is chords
+       silently landing on the wrong words.
+
+       THE POSITIONS COME ACROSS UNCHANGED and the line is padded if it is
+       short. A chord names a character, so a chord on character twelve of a
+       line ten characters long needs two more characters to exist, exactly as
+       it would if it had been dragged there. */
+    var lifted = null;
+
+    function chordLines() {
+      return song.lines.filter(function (line) {
+        return isMarked(line) && line.type !== "section";
+      });
+    }
+
+    function liftChords() {
+      var from = chordLines();
+      if (!from.length) return toast("צריך לסמן שורה של מילים", true);
+
+      lifted = from.map(function (line) {
+        return line.chords.map(function (c) { return { pos: c.pos, chord: c.chord }; });
+      });
+      showMarked();
+      toast(lifted.length === 1 ? "האקורדים של השורה הועתקו" : "האקורדים של " + lifted.length + " שורות הועתקו");
+    }
+
+    function dropChords() {
+      if (!lifted) return;
+      var into = chordLines();
+      if (!into.length) return toast("צריך לסמן שורה של מילים", true);
+
+      if (lifted.length !== 1 && lifted.length !== into.length) {
+        return toast("הועתקו " + lifted.length + " שורות ומסומנות " + into.length + ". צריך אותו מספר.", true);
+      }
+
+      into.forEach(function (line, index) {
+        var from = lifted.length === 1 ? lifted[0] : lifted[index];
+        line.chords = from.map(function (c) { return { pos: c.pos, chord: c.chord }; });
+        line.chords.forEach(function (c) { padTo(line, c.pos); });
+        trimPadding(line);
+      });
+
+      draw();
+      mark();
+    }
+
+    /* There was a grip beside every line that dragged it up and down the song.
+       It is gone, and what replaced it is the block above: marking a line and
+       pressing an arrow does everything the drag did, one line at a time or
+       four together, and it does it without a pointer held steady over a
+       moving page. Two ways to reorder a song is one more than a song needs,
+       and the one that stayed is the one that can move a verse. */
     function rowsOf() {
       return Array.prototype.slice.call(sheet.querySelectorAll(".ln"));
-    }
-
-    function reindex() {
-      rowsOf().forEach(function (ln, index) { ln.dataset.index = index; });
-    }
-
-    function bindGrip(grip, ln) {
-      var held = false;
-
-      grip.addEventListener("pointerdown", function (event) {
-        event.preventDefault();
-        event.stopPropagation();
-        closePicker();
-        held = true;
-        grip.classList.add("is-held");
-        ln.classList.add("is-moving");
-        grip.setPointerCapture(event.pointerId);
-      });
-
-      grip.addEventListener("pointermove", function (event) {
-        if (!held || !grip.hasPointerCapture(event.pointerId)) return;
-
-        var rows = rowsOf();
-        var from = rows.indexOf(ln);
-        if (from < 0) return;
-
-        /* Where the pointer is, said in rows. Going up it is the FIRST row
-           above whose middle has been passed; going down it is the LAST one
-           below. Midpoints rather than edges, so a row swaps when the pointer
-           is properly over it and not the moment it grazes its border. */
-        var to = from;
-        for (var i = 0; i < rows.length; i++) {
-          if (i === from) continue;
-          var box = rows[i].getBoundingClientRect();
-          var middle = box.top + box.height / 2;
-          if (i < from && event.clientY < middle) { to = i; break; }
-          if (i > from && event.clientY > middle) to = i;
-        }
-        if (to === from) return;
-
-        song.lines.splice(to, 0, song.lines.splice(from, 1)[0]);
-        if (to > from) sheet.insertBefore(ln, rows[to].nextSibling);
-        else sheet.insertBefore(ln, rows[to]);
-      });
-
-      grip.addEventListener("pointerup", function (event) {
-        if (grip.hasPointerCapture(event.pointerId)) grip.releasePointerCapture(event.pointerId);
-        stop();
-      });
-      grip.addEventListener("pointercancel", stop);
-
-      function stop() {
-        if (!held) return;
-        held = false;
-        grip.classList.remove("is-held");
-        ln.classList.remove("is-moving");
-        /* the rows moved, so the numbers that Tab and Enter navigate by have
-           to catch up */
-        reindex();
-        mark();
-      }
     }
 
     /* The keys that shape a document, doing what they do everywhere else.

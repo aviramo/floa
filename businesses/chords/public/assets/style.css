@@ -672,35 +672,28 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 .ed .ln-section { cursor: text; outline: none; }
 .ed .ln-c { cursor: copy; }
 
-/* The grip that carries a whole line, chords and words together, up and down
-   the song. At the end of the line and out in the sheet's own margin, so it
-   takes no width from the words, and invisible until the pointer is on the
-   line: one thing appearing under the pointer is a handle, three would be a
-   toolbar. touch-action so a finger dragging it moves the line and not the
-   page. */
-.ln-grip {
-  position: absolute; inset-inline-end: -28px; top: 0; height: 100%;
-  display: flex; align-items: center; justify-content: center;
-  width: 24px; padding: 0; border: 0; background: none;
-  color: var(--ink-soft); opacity: 0; cursor: grab;
-  touch-action: none; transition: opacity .12s;
-}
-.ln-grip svg { width: 18px; height: 18px; }
-.ed .ln:hover .ln-grip, .ln-grip.is-held { opacity: 1; }
-.ln-grip.is-held { cursor: grabbing; color: var(--accent); }
-.ln.is-moving { opacity: .55; }
-@media (prefers-reduced-motion: reduce) { .ln-grip { transition: none; } }
+/* The one thing beside a line: the box that makes it part of the block. Out in
+   the sheet's own margin, so no chord moves by a pixel because a line can be
+   marked, and faint until the pointer is on the line or the line is marked: a
+   column of boxes down a song sheet is a column of boxes, not a song.
 
-/* The other margin, opposite the grip: the box that makes a line part of the
-   block. Out in the sheet's own padding like the grip is, so no chord moves by
-   a pixel because a line can be marked, and faint until the pointer is on the
-   line or the line is marked: a column of boxes down a song sheet is a column
-   of boxes, not a song. */
+   There was a grip in the other margin that dragged a line up and down. It is
+   gone: marking and pressing an arrow does everything it did, including the
+   thing it could not, which is moving four lines at once. */
+/* Level with the WORDS, not with the row. A row is the chord lane and the line
+   under it, so centring on the whole of it puts the box up in the chords,
+   floating above the line it belongs to. It is pinned to the bottom instead
+   and centred over the height of the text itself, which is where the eye
+   expects it. In the song's own size, because the reader can change that. */
 .ln-pick {
-  position: absolute; inset-inline-start: -32px; top: 0; height: 100%;
+  position: absolute; inset-inline-start: -32px;
+  bottom: 0; height: calc(var(--song-size) * 1.55);
   display: flex; align-items: center; justify-content: center; width: 22px;
   opacity: .22; transition: opacity .12s;
 }
+/* a heading is one short line and nothing above it, so the whole row IS the
+   text and the box centres on all of it */
+.ln.is-section .ln-pick { top: 0; height: 100%; }
 .ln-pick input { width: 15px; height: 15px; margin: 0; cursor: pointer; accent-color: var(--accent); }
 .ed .ln:hover .ln-pick, .ln.is-marked .ln-pick { opacity: 1; }
 /* A tick is a small thing to find four of down a page, so a marked line also
