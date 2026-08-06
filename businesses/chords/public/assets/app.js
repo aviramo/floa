@@ -3254,7 +3254,8 @@
        is still on the clock goes out on the way. */
     state.printable = true;
     state.stage = function () { openStage(); };
-    if (auth.in && onPhone) {
+    /* Not on a version: there is nothing here to go into. */
+    if (!past && auth.in && onPhone) {
       state.editToggle = {
         on: editing,
         flip: function () {
@@ -3546,6 +3547,12 @@
        in the library. A band across the page saying "מפענח" is the width of a
        sentence spent on one word. */
     if (song.status_note && !coming) app.appendChild(el("div", "song-note", song.status_note));
+
+    /* A version says so at the top of itself, because everything under it looks
+       exactly like the song and is not it. The two things worth doing from here
+       are in the band rather than under the sheet: the sentence and the answer
+       to it belong together, and a long song would put them a screen apart. */
+    if (past) app.appendChild(pastBand(past));
 
     /* A band used to sit here saying the song had been read by a machine and
        not by a person, with a button to take the label off. Both are the
@@ -5584,6 +5591,212 @@
     app.appendChild(box);
   }
 
+  /* --- what the song was -----------------------------------------------------
+     Every press of פורסם leaves a copy of the song as it went out, and this is
+     where those are read. Two pages:
+
+       /<slug>/versions        the list of them, newest first
+       /<slug>/versions/<id>   one of them, opened as the song it was
+
+     THEY ARE THE AUTHOR'S. A published song is one song and the drafts it
+     passed through on the way are nobody else's business, which is a rule in
+     the database (see song_versions in schema.sql) and not a decision made
+     here. Somebody signed out is told so rather than shown an empty list,
+     because the two look identical from this side and mean different things.
+     --------------------------------------------------------------------- */
+
+  /* A version, wearing the song's identity: the same id and the same address,
+     because this IS that song, at an earlier moment. Everything that says what
+     the song is now comes from the version instead. */
+  function versionSong(song, v) {
+    return {
+      id: song.id,
+      slug: song.slug,
+      title: String(v.title || ""),
+      lyrics_by: String(v.lyrics_by || ""),
+      music_by: String(v.music_by || ""),
+      dir: v.dir || "rtl",
+      lines: normalizeLines(v.lines, v.dir),
+      styles: Array.isArray(v.styles) ? v.styles : [],
+      /* it was published, which is the only reason it exists at all */
+      published: true,
+      status: "ready",
+      status_note: "",
+    };
+  }
+
+  /* How much song there is, for a row that has to say what is in a version
+     without drawing it. Lines with something on them: the blank ones between
+     the verses are the song's shape rather than its size. */
+  function lineCount(v) {
+    return normalizeLines(v.lines, v.dir).filter(function (line) {
+      return String(line.text || "").trim();
+    }).length;
+  }
+
+  function pastBand(past) {
+    var band = el("div", "past-band");
+    band.appendChild(el("span", "past-said",
+      "זו גרסה שפורסמה " + whenWords(past.version.created_at) + ", ולא השיר עצמו. אי אפשר לערוך אותה, אפשר לשחזר אותה."));
+
+    var actions = el("div", "row-actions");
+    actions.appendChild(button("שחזור הגרסה הזאת", ICON.undo, "small", function () {
+      restoreVersion(past.song, past.version);
+    }));
+    actions.appendChild(button("כל הגרסאות", null, "ghost small", function () {
+      go(BASE + "/" + encodeURIComponent(past.song.slug) + "/versions");
+    }));
+    band.appendChild(actions);
+    return band;
+  }
+
+  /* --- putting one back ------------------------------------------------------
+     The words, the chords, the name, the credits and the kinds, written over
+     the song as it stands. Nothing else: whether the song is published is not
+     something a version knows, it is where the song is standing today, and a
+     restore that quietly took a song out of the world would be doing a second
+     thing nobody pressed.
+
+     The versions themselves are untouched, so this can be done again, and the
+     one before it is still there to go back to.
+
+     WHAT IT DOES COST is anything typed since the last publication, because
+     that was never on the shelf: only publishing puts a copy there. The
+     question says so rather than promising a way back that does not exist. */
+  function restoreVersion(song, version) {
+    var when = whenWords(version.created_at);
+    if (!window.confirm('לשחזר את "' + (song.title || "השיר") + '" לגרסה מ' + when +
+      "?\n\nמה שכתוב בשיר עכשיו יוחלף. שינויים שנעשו מאז הפרסום האחרון ולא פורסמו לא נשמרו בשום גרסה, והם ילכו.")) return;
+
+    setBusy("משחזר");
+    db.update(song.id, {
+      title: String(version.title || ""),
+      lyrics_by: String(version.lyrics_by || ""),
+      music_by: String(version.music_by || ""),
+      dir: version.dir || "rtl",
+      lines: version.lines == null ? "" : version.lines,
+      styles: Array.isArray(version.styles) ? version.styles : [],
+    }).then(function (row) {
+      toast("השיר חזר לגרסה מ" + when);
+      go(BASE + "/" + encodeURIComponent((row && row.slug) || song.slug));
+    }).catch(function (error) {
+      /* back to the page that was being read, so the failure is a sentence over
+         a page rather than a word on an empty screen */
+      route();
+      toast("השחזור נכשל: " + error.message, true);
+    });
+  }
+
+  function viewVersions(slug) {
+    document.title = "גרסאות | אקורדים";
+    if (!auth.in) return needSignIn("הגרסאות של שיר שייכות לחשבון שכתב אותו. מה שפורסם פתוח לכולם, והדרך שהשיר עבר עד שם לא.");
+
+    setBusy("טוען את הגרסאות");
+    db.bySlug(slug).then(function (song) {
+      if (!song) return notFound(slug);
+
+      return versions.of(song.id).then(function (rows) {
+        document.title = "גרסאות של " + (song.title || "שיר") + " | אקורדים";
+        app.innerHTML = "";
+
+        function back() { go(BASE + "/" + encodeURIComponent(song.slug)); }
+
+        var head = el("div", "song-head");
+        head.appendChild(el("h1", null, song.title || "שיר"));
+        head.appendChild(el("div", "by",
+          "כל לחיצה על פורסם שומרת כאן את השיר כפי שיצא לעולם באותו רגע. אפשר לפתוח כל גרסה ולשחזר אותה."));
+        app.appendChild(head);
+
+        if (!rows.length) {
+          var empty = el("div", "center");
+          /* True whether nobody has published this song yet or it simply
+             belongs to somebody else, and those two look identical from here:
+             the database answers a stranger with an empty list, which is the
+             right answer and not a fact about the song. */
+          empty.appendChild(el("p", null, "אין כאן גרסאות עדיין. כל לחיצה על פורסם שומרת אחת."));
+          empty.appendChild(button("חזרה לשיר", ICON.back, "ghost", back));
+          app.appendChild(empty);
+          return;
+        }
+
+        var list = el("ul", "list");
+        rows.forEach(function (v) { list.appendChild(versionRow(song, v)); });
+        app.appendChild(list);
+
+        var actions = el("div", "row-actions");
+        actions.appendChild(button("חזרה לשיר", ICON.back, "ghost small", back));
+        actions.appendChild(button("לרשימת השירים", null, "ghost small", function () { go(BASE + "/"); }));
+        var after = el("div", "after-list");
+        after.appendChild(actions);
+        app.appendChild(after);
+      });
+    }).catch(fail);
+  }
+
+  /* One version on the list. When it was published is the whole of what tells
+     two of them apart at a glance, so that is the line in bold; underneath it
+     is enough of what is inside to recognise the one being looked for.
+
+     The one that matches the song as it stands says so. Without it a list of
+     dates gives no answer at all to the question everybody actually arrives
+     with: which of these is what is up there now. */
+  function versionRow(song, v) {
+    var li = el("li");
+    var box = el("div", "row");
+
+    var what = el("div");
+    var top = el("div", "t-row");
+    top.appendChild(el("div", "t", whenWords(v.created_at)));
+    /* the name it went out under, when that is not the name it has now */
+    if (v.title && v.title !== song.title) top.appendChild(el("div", "by", "בשם " + v.title));
+    if (sameVersion(v, song)) top.appendChild(el("span", "tag tag-published", "זה מה שבשיר עכשיו"));
+    what.appendChild(top);
+
+    var said = [];
+    var many = lineCount(v);
+    said.push(many === 1 ? "שורה אחת" : many + " שורות");
+    var by = credits(v);
+    if (by.length) said.push(by.map(function (c) { return c.label + ": " + c.name; }).join(", "));
+    styles(v).forEach(function (kind) { said.push(kind); });
+    what.appendChild(el("div", "a", said.join("  •  ")));
+    box.appendChild(what);
+
+    var buttons = el("div", "row-actions");
+    buttons.appendChild(button("פתיחה", null, "ghost small", function () {
+      go(BASE + "/" + encodeURIComponent(song.slug) + "/versions/" + encodeURIComponent(v.id));
+    }));
+    buttons.appendChild(button("שחזור", ICON.undo, "small", function () { restoreVersion(song, v); }));
+    box.appendChild(buttons);
+
+    li.appendChild(box);
+    return li;
+  }
+
+  function viewVersion(slug, id) {
+    if (!auth.in) return needSignIn("הגרסאות של שיר שייכות לחשבון שכתב אותו. מה שפורסם פתוח לכולם, והדרך שהשיר עבר עד שם לא.");
+
+    setBusy("טוען את הגרסה");
+    db.bySlug(slug).then(function (song) {
+      if (!song) return notFound(slug);
+
+      return versions.one(song.id, id).then(function (v) {
+        if (!v) return noVersion(song);
+        renderSong(versionSong(song, v), { song: song, version: v });
+      });
+    }).catch(fail);
+  }
+
+  function noVersion(song) {
+    document.title = "לא נמצא | אקורדים";
+    app.innerHTML = "";
+    var box = el("div", "center");
+    box.appendChild(el("p", null, "הגרסה הזאת לא נמצאה."));
+    box.appendChild(button("כל הגרסאות", null, "ghost", function () {
+      go(BASE + "/" + encodeURIComponent(song.slug) + "/versions");
+    }));
+    app.appendChild(box);
+  }
+
   /* --- an evening of singing -----------------------------------------------
      A name, a date, and songs in the order they will be sung.
 
@@ -5668,11 +5881,16 @@
      page rather than as a dialog over an empty screen: a dialog that is closed
      leaves nothing behind, and "there are no evenings" is a different sentence
      from "you are not signed in". */
-  function needSignIn() {
-    document.title = "ערבי שירה | אקורדים";
+  /* Three pages send people here now, so the sentence is theirs to write: the
+     evenings, what was deleted, and the versions of a song are three different
+     things that all belong to an account, and "you are not signed in" is not
+     the answer to any of them on its own. The title is the page's own state
+     rather than any of the three. */
+  function needSignIn(said) {
+    document.title = "צריך חשבון | אקורדים";
     app.innerHTML = "";
     var box = el("div", "center");
-    box.appendChild(el("p", null, "ערבי השירה שייכים לחשבון. כל אחד רואה, מתכנן ומוחק רק את שלו."));
+    box.appendChild(el("p", null, said || "ערבי השירה שייכים לחשבון. כל אחד רואה, מתכנן ומוחק רק את שלו."));
     var actions = el("div", "row-actions");
     actions.appendChild(googleButton("התחברות עם גוגל"));
     actions.appendChild(button("לרשימת השירים", null, "ghost", function () { go(BASE + "/"); }));
@@ -6776,6 +6994,19 @@
     if (p.length >= 2 && p[1] === "edit") {
       history.replaceState(null, "", BASE + "/" + encodeURIComponent(p[0]));
       return viewSong(p[0]);
+    }
+
+    /* --- what the song was ---
+       /<slug>/versions        every version of it that was published
+       /<slug>/versions/<id>   one of them, opened as the song it was
+
+       Under the song's own address rather than beside it, because that is what
+       they are: not other songs, this one at earlier moments. Both need an
+       account, and not only to write: a history belongs to the account that
+       wrote it, and the database answers nothing at all without one. */
+    if (p.length >= 2 && p[1] === "versions") {
+      if (p[2]) return viewVersion(p[0], p[2]);
+      return viewVersions(p[0]);
     }
 
     return viewSong(p[0]);

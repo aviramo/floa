@@ -550,18 +550,23 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   color: var(--ink-soft); font-size: 14px;
 }
 
-/* A song a machine read and nobody has checked yet. The same warm colour as
-   the note above, because both are the machine talking about the song rather
-   than the song itself, and the way to take it off sits inside it: the answer
-   to a label is next to the label. */
-.review-band {
+/* A VERSION OF THE SONG RATHER THAN THE SONG. Everything under this band looks
+   exactly like the song and is not it, so the band says so and the two things
+   worth doing about it sit inside the sentence that explains them: the answer
+   to a label belongs next to the label.
+
+   The same warm colour as the note above, because both are the page talking
+   about what is under it rather than being it.
+
+   These rules were a band saying "a machine read this and nobody has checked
+   it", which the status chip says now, in one word, in the top bar. */
+.past-band {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   margin: 0 0 14px; padding: 8px 10px 8px 14px; border-radius: var(--radius);
   background: #fdf6ec; border: 1px solid #f0dfc4;
   font-size: 14px;
 }
-.review-said { color: var(--ink-soft); }
-.review-band .btn { margin-inline-start: auto; }
+.past-said { color: var(--ink-soft); flex: 1 1 240px; }
 /* One shape for all four, and the state decides the colour. Same colour on the
    tally counting them and on the button inside the song that sets them, which
    is why the four pairs are named once at the top of this file. */
@@ -1280,8 +1285,9 @@ button.val:hover { border-color: var(--line); background: #fff; }
   body.print-words .ln-t { line-height: 1.35; min-height: 0; }
   body.print-words .ln.is-blank .ln-t { min-height: .9em; }
   body.print-words .ln.is-section { margin: 16px 0 3px; }
-  /* the label is about the song's state here, not about the song */
-  .review-band { display: none !important; }
+  /* Which version this is, and what to do about it, are about the page rather
+     than about the song. On paper it is the song. */
+  .past-band { display: none !important; }
   /* marking a verse is editing, and a page of ticks is not a song */
   .block-bar, .ln-pick, .gap-btn { display: none !important; }
   .ln.is-marked::before { display: none; }
