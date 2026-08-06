@@ -287,7 +287,35 @@ const MAX_CENTS = 50;
    be kept. High on purpose: the two are reading the same page and ought to
    agree almost exactly, so anything short of that is the measuring having lost
    something, and what it lost is worth more than the forty cents saved. */
-const TRUST_MEASURED = 0.9;
+const TRUST_MEASURED = 0.65;
+
+/* And how alike two LINES must be to count as the same line. Compared line by
+   line rather than song against song, because the judge is fallible too: the
+   words half of the model misread "כי השם" as "כי הוה" on one page, and a
+   whole song's worth of correctly measured chords was thrown away over it.
+
+   A song is not one long string, it is a list of lines, and two readings that
+   agree on eight lines out of nine agree about the song. Measuring it as one
+   bag lets a single word either side pull the total under the bar, which
+   punishes the measuring for a mistake the model made about it. */
+const LINE_ALIKE = 0.8;
+
+/* How much of one reading the other one also found. Every line is matched
+   against its best partner rather than against the line with the same number,
+   because a reader that split one printed line in two has not misread the
+   song, it has counted differently, and the lines it did read are still right.
+   The denominator is the LONGER of the two, so a line that only one of them
+   has still costs. */
+export function agreement(mine, theirs) {
+  const split = (doc) => String(doc).split(String.fromCharCode(10)).map((line) => line.trim()).filter(Boolean);
+  const ours = split(mine).map(bagOf);
+  const yours = split(theirs).map(bagOf);
+  if (!ours.length || !yours.length) return 0;
+
+  const found = ours.filter((line) =>
+    yours.some((other) => likeness(line, other) >= LINE_ALIKE)).length;
+  return found / Math.max(ours.length, yours.length);
+}
 
 /* The budget, split and turned into token counts. The words get a small slice
    because copying lyrics is small work: a long song runs to a couple of
@@ -713,9 +741,9 @@ export async function readChordSheet(env, files, beat) {
      two readings of one page are never the same string, and what does not
      change is which words are in it. */
   if (measured) {
-    const agreement = likeness(bagOf(measured.body), bagOf(lines.join(" ")));
-    if (agreement >= TRUST_MEASURED) {
-      console.log(`measured and read agree ${Math.round(agreement * 100)}%; keeping the measuring`);
+    const agree = agreement(measured.body, lines.join(String.fromCharCode(10)));
+    if (agree >= TRUST_MEASURED) {
+      console.log(`measured and read agree ${Math.round(agree * 100)}%; keeping the measuring`);
       return {
         ...measured,
         /* the model read the title and the credits off the page, which a ruler
@@ -726,7 +754,7 @@ export async function readChordSheet(env, files, beat) {
         cost: Math.round(((measured.cost || 0) + (first.cost || 0)) * 100) / 100,
       };
     }
-    console.log(`measured and read agree only ${Math.round(agreement * 100)}%; reading the chords`);
+    console.log(`measured and read agree only ${Math.round(agree * 100)}%; reading the chords`);
   }
 
   /* --- two: the chords -----------------------------------------------------
