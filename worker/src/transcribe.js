@@ -66,7 +66,18 @@
       question being asked, and the symbol's middle is the fallback for a sheet
       that has none: the mark is a statement about one letter, and the middle
       is an estimate over four.
+
+      AND THEN THE QUESTION WAS TAKEN AWAY FROM IT ALTOGETHER. Everything above
+      is the fallback now. Asking a model where something is on a page is
+      asking it to measure, and it does not measure: it looks and estimates,
+      and an estimate on a letter ten pixels wide lands on the neighbour often
+      enough that four rounds of this could not remove it. An OCR engine
+      measures, for a fifth of a cent, and gives the same answer twice. See
+      ocr.js for the ruler and geometry.js for the arithmetic.
    ========================================================================== */
+
+import { canMeasure, measure } from "./ocr.js";
+import { directionOf, songFrom } from "./geometry.js";
 
 /* --- what the read costs --------------------------------------------------
    Three lines, and they are a trade rather than a fact, so here is what each
@@ -525,6 +536,27 @@ export function numbered(lines) {
   }).join("\n");
 }
 
+/* The measured route, end to end: boxes in, song out, no model anywhere in it.
+
+   WHAT IT DOES NOT BRING BACK is the title and the credits. Those are not on
+   the page as geometry, they are on it as meaning, which is a model's job and
+   not a ruler's; a song read this way keeps the name of the file it came from,
+   the way a song whose sheet never printed a title already does. If measuring
+   turns out to read this well, giving the title back is one cheap question and
+   a separate decision. */
+async function measureSheet(env, files, beat) {
+  if (beat) beat("מודד את הדף");
+
+  const { boxes, cost } = await measure(env, files);
+  if (!boxes.length) return null;
+
+  const dir = directionOf(boxes);
+  const lines = songFrom(boxes, dir);
+  const body = tidy(lines.map((line) => writeLine(line.text, line.placed, line.trailing)).join("\n"));
+
+  return { title: "", lyrics_by: "", music_by: "", dir, body, cost };
+}
+
 /* Reads one upload, which may be several pages of the same song.
 
    TWO QUESTIONS, NOT ONE, and the reason is written out at the top of this
@@ -535,6 +567,28 @@ export function numbered(lines) {
    `beat` is called with the stage in progress, often, so that whoever is
    watching the row sees which half is happening. */
 export async function readChordSheet(env, files, beat) {
+  /* --- nought: measure it, if there is anything here that can ---------------
+
+     Everything below this is a model being asked WHERE things are on a page,
+     and that is the one question it answers by estimating. An OCR engine
+     answers it with a ruler, for a fifth of a cent, and the same picture gives
+     the same answer twice. So it goes first when it can, and the two questions
+     below are the fallback rather than the road.
+
+     A failure here is not a failure of the read. The model route still works
+     and always did, so a key that has expired, a quota that has run out or a
+     page that came back empty drops through to it rather than costing anybody
+     a song. */
+  if (env.GOOGLE_VISION_KEY && canMeasure(files)) {
+    try {
+      const measured = await measureSheet(env, files, beat);
+      if (measured) return measured;
+      console.log("vision found nothing on the page; reading it instead");
+    } catch (err) {
+      console.error("vision failed, reading the page instead:", err.message);
+    }
+  }
+
   const pages = files.map((file) => {
     const source = { type: "base64", media_type: file.media_type, data: file.data };
     return file.media_type === "application/pdf"
@@ -728,12 +782,20 @@ export function chordProLine(line) {
     }
   }
 
-  /* The bracket goes immediately AFTER the character the chord sits on, which
-     is what "a chord is on a letter" means written down:
+  return writeLine(text, placed, trailing);
+}
 
-         ABC[Am]DEF     the Am is on the C
+/* One line written out, given the words and chords that already know where
+   they go. The last step of every route through this reader: the model naming
+   letters, or an OCR engine measuring them, both arrive here.
 
-     So the slice runs up to and INCLUDING that character. */
+   The bracket goes immediately AFTER the character the chord sits on, which is
+   what "a chord is on a letter" means written down:
+
+       ABC[Am]DEF     the Am is on the C
+
+   so the slice runs up to and INCLUDING that character. */
+export function writeLine(text, placed, trailing) {
   let out = "";
   let at = 0;
   placed.forEach((chord) => {
@@ -747,22 +809,29 @@ export function chordProLine(line) {
      the end. The spaces are the spacing: this format has nothing else to say
      how far out a chord sits, and the app reads them back as positions past
      the last character. */
-  trailing.forEach((chord) => { out += TRAIL_GAP + "[" + chord.name + "]"; });
+  (trailing || []).forEach((chord) => { out += TRAIL_GAP + "[" + chord.name + "]"; });
 
   return out;
 }
 
-/* The schema guarantees the shape; this guarantees it is a song. */
-function clean(song) {
-  const lines = Array.isArray(song.lines) ? song.lines : [];
-
-  const body = lines.map(chordProLine).join("\n")
+/* A finished document, made fit to keep. Both routes end here, because both
+   can leave the same untidiness behind and neither of them is a song until it
+   has been swept. */
+function tidy(body) {
+  const swept = String(body || "")
     .replace(/\n{3,}/g, "\n\n")          // no gaps wider than one blank line
     .replace(/[ \t]+$/gm, "")            // trailing space is padding nobody asked for
     .trim()
     .slice(0, 20000);
 
-  if (!body) throw new Error("empty");
+  if (!swept) throw new Error("empty");
+  return swept;
+}
+
+/* The schema guarantees the shape; this guarantees it is a song. */
+function clean(song) {
+  const lines = Array.isArray(song.lines) ? song.lines : [];
+  const body = tidy(lines.map(chordProLine).join("\n"));
 
   const short = (v, max) => String(v ?? "").trim().slice(0, max);
 
