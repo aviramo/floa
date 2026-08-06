@@ -59,6 +59,8 @@
     upload: '<path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>',
     paste: '<rect x="7" y="4" width="10" height="16" rx="2"/><path d="M10 4h4"/>',
     section: '<path d="M5 6h14M5 12h9M5 18h12"/>',
+    grip: '<path d="M8 9h8M8 15h8"/>',
+    undo: '<path d="M4 10h9a4.5 4.5 0 0 1 0 9h-5"/><path d="M8 6l-4 4 4 4"/>',
     print: '<path d="M7 9V4h10v5M7 18H5v-6h14v6h-2M8 14h8v6H8z"/>',
   };
 
@@ -1513,16 +1515,38 @@
     tools.appendChild(iconBtn(ICON.plus, "טקסט גדול יותר", function () { setSize(size + 1); }));
 
     tools.appendChild(el("span", "grow"));
-    tools.appendChild(iconBtn(ICON.print, "הדפסה", function () { window.print(); }));
 
+    /* Printing is what you came to this page to do second, after playing from
+       it, so it is a whole button with its name on it. Deleting is the thing
+       you almost never mean and can never take back, so it is one quiet icon
+       standing on its own, and it asks before it does anything. */
+    tools.appendChild(button("הדפסה", ICON.print, "small", function () { window.print(); }));
+
+    /* Three ways back, each smaller than the last, and none of them there
+       until it has something to undo:
+
+         undo, one step at a time, also on Ctrl+Z
+         back to the original, the whole way, in one press
+         and save, which is the only one that writes anything. */
+    var undoBtn = iconBtn(ICON.undo, "ביטול הפעולה האחרונה", undo);
+    var revertBtn = button("החזרה למקור", null, "ghost small", revert);
     /* THE SAVE BUTTON IS NOT THERE UNTIL THERE IS SOMETHING TO SAVE. On a page
        that is always editable, a button that is always present says nothing;
        one that appears the moment something changes says exactly what it is
        for, and its absence is the answer to "did that get saved". */
     var saveBtn = button("שמירה", null, "small", save);
+    undoBtn.hidden = true;
+    revertBtn.hidden = true;
     saveBtn.hidden = true;
+
     if (editing) {
-      if (song.id) tools.appendChild(button("מחיקה", ICON.trash, "danger small", removeSong));
+      if (song.id) {
+        var trash = iconBtn(ICON.trash, "מחיקת השיר", removeSong);
+        trash.classList.add("quiet");
+        tools.appendChild(trash);
+      }
+      tools.appendChild(undoBtn);
+      tools.appendChild(revertBtn);
       tools.appendChild(saveBtn);
     }
     app.appendChild(tools);
@@ -1602,16 +1626,97 @@
       ]);
     }
 
+    /* --- taking it back ------------------------------------------------------
+       Every state the song has passed through since it was loaded, so that any
+       of them can be come back to. They are the same strings `snapshot` makes,
+       which is why undo can restore chords and line order and not only text:
+       there is nothing about the song that the string leaves out.
+
+       A song is a few hundred characters and this holds one string per change,
+       so the whole history of an evening's editing is smaller than the picture
+       it was read from. */
     var saved = snapshot();
-    function mark() { saveBtn.hidden = snapshot() === saved; }
+    var current = saved;
+    var history = [];
+    var lastPush = 0;
+    var restoring = false;
+
+    /* Typing is not one change per keystroke, and an undo that gives back one
+       letter is not an undo. States arriving within a moment of each other do
+       not each get a place: the one already on the stack is the state before
+       the burst, which is where undo should land. */
+    var BURST = 600;
+
+    function mark() {
+      var now = snapshot();
+
+      if (!restoring && now !== current) {
+        var when = Date.now();
+        if (!history.length || when - lastPush > BURST) {
+          history.push(current);
+          lastPush = when;
+        }
+        current = now;
+      }
+
+      saveBtn.hidden = now === saved;
+      revertBtn.hidden = now === saved;
+      undoBtn.hidden = !history.length;
+    }
+
+    /* Back to a state, whole: the words, the chords, the order of the lines,
+       the credits and the direction. Everything outside the sheet is written
+       back too, because a title that still shows what was undone is a page
+       lying about what it holds. */
+    function restore(state) {
+      var was = JSON.parse(state);
+      restoring = true;
+
+      song.title = was[0];
+      CREDITS.forEach(function (c, index) { song[c.field] = was[1][index] || ""; });
+      song.dir = was[2] || "rtl";
+      song.lines = normalizeLines(was[3]);
+
+      if (title.textContent !== song.title) title.textContent = song.title;
+      byFields.forEach(function (input, index) { input.value = was[1][index] || ""; });
+      if (dirSelect) dirSelect.value = song.dir;
+
+      draw();
+      current = snapshot();
+      restoring = false;
+      mark();
+    }
+
+    function undo() {
+      if (!history.length) return;
+      restore(history.pop());
+    }
+
+    function revert() {
+      if (current === saved) return;
+      history.length = 0;
+      restore(saved);
+    }
 
     /* The net under the explicit calls. A chord dragged, a chord picked, a line
-       split: all of them end in a pointer coming up or an input landing inside
-       the sheet, and catching them here means a new way to change a song cannot
-       quietly arrive without the button noticing. */
+       split, a line carried up the page: all of them end in a pointer coming up
+       or an input landing inside the sheet, and catching them here means a new
+       way to change a song cannot quietly arrive without the button noticing. */
     if (editing) {
       sheet.addEventListener("input", mark);
       sheet.addEventListener("pointerup", function () { setTimeout(mark, 0); });
+
+      /* Ctrl+Z, taken from the browser on purpose. Its own undo knows about the
+         letters in one editable line and nothing about a chord that moved or a
+         verse that changed places, so it would give back half of what it was
+         asked for. Capture, so it never reaches the line at all. */
+      var onKey = function (event) {
+        if (!sheet.isConnected) return document.removeEventListener("keydown", onKey, true);
+        if (!(event.ctrlKey || event.metaKey) || String(event.key).toLowerCase() !== "z") return;
+        event.preventDefault();
+        undo();
+      };
+      document.addEventListener("keydown", onKey, true);
     }
 
     /* --- one editable line ---------------------------------------------------
@@ -1706,11 +1811,92 @@
         ln.appendChild(text);
       }
 
-      /* No buttons alongside the line. Enter makes one, Backspace at the start
-         of an empty one takes it away, and a row of icons that appears when
-         the pointer passes is three things moving on a page whose whole point
-         is that nothing moves but the caret. */
+      /* The one thing beside a line, at the end of it and only under the
+         pointer: the grip that carries the whole line, chords and words
+         together, up and down the song. Everything else a line can have done
+         to it is done from the keyboard, which is why there is one of these
+         and not a row of them. */
+      var grip = el("button", "ln-grip");
+      grip.type = "button";
+      grip.title = "גרירה כדי להזיז את השורה";
+      grip.tabIndex = -1;
+      grip.appendChild(svg(ICON.grip));
+      bindGrip(grip, ln);
+      ln.appendChild(grip);
+
       return ln;
+    }
+
+    /* --- moving a line ------------------------------------------------------
+       The row's own element travels, and the song's array travels with it. It
+       is NOT redrawn as it goes, and that is the whole design: a redraw would
+       destroy the element the finger is holding, and the drag would end on its
+       first movement. So the DOM node is moved and the model is spliced to
+       match, and the two stay in step because a line and a row are one to one
+       and always in the same order. */
+    function rowsOf() {
+      return Array.prototype.slice.call(sheet.querySelectorAll(".ln"));
+    }
+
+    function reindex() {
+      rowsOf().forEach(function (ln, index) { ln.dataset.index = index; });
+    }
+
+    function bindGrip(grip, ln) {
+      var held = false;
+
+      grip.addEventListener("pointerdown", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        closePicker();
+        held = true;
+        grip.classList.add("is-held");
+        ln.classList.add("is-moving");
+        grip.setPointerCapture(event.pointerId);
+      });
+
+      grip.addEventListener("pointermove", function (event) {
+        if (!held || !grip.hasPointerCapture(event.pointerId)) return;
+
+        var rows = rowsOf();
+        var from = rows.indexOf(ln);
+        if (from < 0) return;
+
+        /* Where the pointer is, said in rows. Going up it is the FIRST row
+           above whose middle has been passed; going down it is the LAST one
+           below. Midpoints rather than edges, so a row swaps when the pointer
+           is properly over it and not the moment it grazes its border. */
+        var to = from;
+        for (var i = 0; i < rows.length; i++) {
+          if (i === from) continue;
+          var box = rows[i].getBoundingClientRect();
+          var middle = box.top + box.height / 2;
+          if (i < from && event.clientY < middle) { to = i; break; }
+          if (i > from && event.clientY > middle) to = i;
+        }
+        if (to === from) return;
+
+        song.lines.splice(to, 0, song.lines.splice(from, 1)[0]);
+        if (to > from) sheet.insertBefore(ln, rows[to].nextSibling);
+        else sheet.insertBefore(ln, rows[to]);
+      });
+
+      grip.addEventListener("pointerup", function (event) {
+        if (grip.hasPointerCapture(event.pointerId)) grip.releasePointerCapture(event.pointerId);
+        stop();
+      });
+      grip.addEventListener("pointercancel", stop);
+
+      function stop() {
+        if (!held) return;
+        held = false;
+        grip.classList.remove("is-held");
+        ln.classList.remove("is-moving");
+        /* the rows moved, so the numbers that Tab and Enter navigate by have
+           to catch up */
+        reindex();
+        mark();
+      }
     }
 
     /* The keys that shape a document, doing what they do everywhere else.
@@ -2079,7 +2265,11 @@
           saveBtn.disabled = false;
           song.id = row.id;
           song.slug = row.slug;
+          /* this is the state to come back to now, and the way back to the one
+             before it went out with the write */
           saved = snapshot();
+          current = saved;
+          history.length = 0;
           mark();
 
           document.title = name + " | אקורדים";

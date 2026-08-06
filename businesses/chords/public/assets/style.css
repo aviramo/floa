@@ -102,6 +102,12 @@ body {
 .icon-btn:hover { color: var(--ink); border-color: #cdd8de; }
 .icon-btn svg { width: 15px; height: 15px; }
 
+/* For the one you almost never mean and can never take back. No border and no
+   colour until you are actually on it, so it is reachable without being
+   offered. */
+.icon-btn.quiet { border-color: transparent; background: none; }
+.icon-btn.quiet:hover { color: var(--danger); border-color: #f0d3cf; background: #fff; }
+
 /* --- shared bits -------------------------------------------------------- */
 
 .muted { color: var(--ink-soft); }
@@ -365,6 +371,25 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .ed .ln-t { cursor: text; outline: none; }
 .ed .ln-section { cursor: text; outline: none; }
 .ed .ln-c { cursor: copy; }
+
+/* The grip that carries a whole line, chords and words together, up and down
+   the song. At the end of the line and out in the sheet's own margin, so it
+   takes no width from the words, and invisible until the pointer is on the
+   line: one thing appearing under the pointer is a handle, three would be a
+   toolbar. touch-action so a finger dragging it moves the line and not the
+   page. */
+.ln-grip {
+  position: absolute; inset-inline-end: -28px; top: 0; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  width: 24px; padding: 0; border: 0; background: none;
+  color: var(--ink-soft); opacity: 0; cursor: grab;
+  touch-action: none; transition: opacity .12s;
+}
+.ln-grip svg { width: 18px; height: 18px; }
+.ed .ln:hover .ln-grip, .ln-grip.is-held { opacity: 1; }
+.ln-grip.is-held { cursor: grabbing; color: var(--accent); }
+.ln.is-moving { opacity: .55; }
+@media (prefers-reduced-motion: reduce) { .ln-grip { transition: none; } }
 
 /* A chord in the editor is the same chord the reader sees, and it stays that
    way. No border, no box, no highlight, nothing that appears or grows. The
