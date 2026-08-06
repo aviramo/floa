@@ -165,6 +165,12 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 }
 
 .list { list-style: none; margin: 0 0 64px; padding: 0; display: grid; gap: 10px; }
+/* On the songs the search box holds the list off the bar, so the list itself
+   needs no room above it. On the evenings there is no search box and the list
+   is the first thing on the page, so it takes the same 28px the search would
+   have taken: the gap under the header is one gap, whichever list is under
+   it. */
+#app > .list:first-child { margin-top: 28px; }
 .list a {
   display: flex; align-items: center; gap: 14px; text-decoration: none; color: inherit;
   background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
