@@ -3603,6 +3603,7 @@
     var blockBar = null;
     var blockCount = null;
     var dropBtn = null;
+    var dropLinesBtn = null;
     if (editing && !coming) {
       blockBar = el("div", "block-bar");
       blockCount = el("div", "block-count");
@@ -3610,6 +3611,11 @@
       blockBar.appendChild(iconBtn(ICON.up, "להעלות את המסומן", function () { moveMarked(-1); }));
       blockBar.appendChild(iconBtn(ICON.down, "להוריד את המסומן", function () { moveMarked(1); }));
       blockBar.appendChild(button("שכפול", ICON.copy, "ghost small", copyMarked));
+      blockBar.appendChild(button("העתקת שורות", null, "ghost small", liftLines));
+      /* not there until there is something to put down */
+      dropLinesBtn = button("הדבקת שורות", null, "ghost small", dropLines);
+      dropLinesBtn.hidden = true;
+      blockBar.appendChild(dropLinesBtn);
 
       /* Which way the marked lines run. Two buttons rather than one that
          toggles, because a block can hold both directions at once and there
@@ -4341,6 +4347,7 @@
       blockBar.hidden = !n;
       blockCount.textContent = n === 1 ? "שורה אחת מסומנת" : n + " שורות מסומנות";
       dropBtn.hidden = !lifted;
+      dropLinesBtn.hidden = !heldLines;
     }
 
     /* One step, in whichever direction. Walked from the edge the block is
@@ -4449,6 +4456,50 @@
         moved = true;
       });
       if (!moved) return;
+
+      draw();
+      mark();
+    }
+
+    /* --- whole lines, taken and put down somewhere else ------------------------
+       The chords alone move from line to line, above; this is the other half,
+       which is the lines themselves. A verse that belongs in two songs, a
+       chorus that was typed in the wrong place, four lines that want to be at
+       the end: all of them are "these lines, over there".
+
+       IT PUTS THEM DOWN, IT DOES NOT PUT THEM OVER ANYTHING. Pasting adds the
+       lines after the last marked one and nothing that was in the song stops
+       being in it: this is the one gesture in the editor whose whole purpose
+       is to have more song afterwards than before, and a paste that quietly
+       replaced four lines with four others would be a delete wearing a copy's
+       clothes.
+
+       The copy is held, so it can be put down again in another verse, and the
+       lines that land are what stays marked: what follows a paste is almost
+       always moving what was pasted. */
+    var heldLines = null;
+
+    function liftLines() {
+      var going = song.lines.filter(isMarked);
+      if (!going.length) return;
+
+      heldLines = going.map(copyLine);
+      clearMarks();
+      toast(heldLines.length === 1 ? "שורה הועתקה" : heldLines.length + " שורות הועתקו");
+    }
+
+    function dropLines() {
+      if (!heldLines || !heldLines.length) return;
+
+      var last = -1;
+      song.lines.forEach(function (line, index) { if (isMarked(line)) last = index; });
+      if (last < 0) last = song.lines.length - 1;
+
+      var copies = heldLines.map(copyLine);
+      song.lines.splice.apply(song.lines, [last + 1, 0].concat(copies));
+
+      marked.length = 0;
+      copies.forEach(function (line) { marked.push(line); });
 
       draw();
       mark();
