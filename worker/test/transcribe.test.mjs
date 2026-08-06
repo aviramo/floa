@@ -186,6 +186,92 @@ check(
   "he[C]llo there wo[G]rld"
 );
 
+/* --- the mirror -----------------------------------------------------------
+   Straight off a real read. The model found every letter correctly and then
+   laid the chord NAMES onto them from the wrong end, which no amount of
+   sorting can see, because the positions were never wrong. The line names its
+   own first chord separately, and that is what catches it. */
+
+const MIRRORED = {
+  words: "אילה מה לי ולה אלא אהבתי",
+  first_chord: "C",
+  chords: [
+    { chord: "D", word: 1, letter: "ל", letters_before: 2 },
+    { chord: "Em", word: 4, letter: "ל", letters_before: 1 },
+    { chord: "C", word: 6, letter: "ת", letters_before: 4 },
+  ],
+};
+
+check(
+  "a line laid on backwards is turned around",
+  chordProLine(MIRRORED),
+  "אי[C]לה מה לי ו[Em]לה אלא אהב[D]תי"
+);
+
+check(
+  "the same line the right way round is left alone",
+  chordProLine({
+    words: "אילה מה לי ולה אלא אהבתי",
+    first_chord: "C",
+    chords: [
+      { chord: "C", word: 1, letter: "ל", letters_before: 2 },
+      { chord: "Em", word: 4, letter: "ל", letters_before: 1 },
+      { chord: "D", word: 6, letter: "ת", letters_before: 4 },
+    ],
+  }),
+  "אי[C]לה מה לי ו[Em]לה אלא אהב[D]תי"
+);
+
+/* The positions are what the model got RIGHT, every time this has happened.
+   Turning the names around must not move any of them. */
+check(
+  "unmirroring moves names and never positions",
+  chordProLine(MIRRORED).replace(/\[[^\]]*\]/g, "|"),
+  "אי|לה מה לי ו|לה אלא אהב|תי"
+);
+
+/* Said nothing, so nothing is done. A first chord that sits at both ends or at
+   neither is not evidence, and guessing here would move chords that nobody
+   showed to be wrong. */
+check(
+  "a first chord at neither end changes nothing",
+  chordProLine({
+    words: "מים נסתר לבי",
+    first_chord: "G",
+    chords: [
+      { chord: "Am", word: 1, letter: "מ", letters_before: 0 },
+      { chord: "F", word: 3, letter: "ל", letters_before: 0 },
+    ],
+  }),
+  "[Am]מים נסתר [F]לבי"
+);
+
+check(
+  "the same chord at both ends changes nothing",
+  chordProLine({
+    words: "מים נסתר לבי",
+    first_chord: "Am",
+    chords: [
+      { chord: "Am", word: 1, letter: "מ", letters_before: 0 },
+      { chord: "F", word: 2, letter: "נ", letters_before: 0 },
+      { chord: "Am", word: 3, letter: "ל", letters_before: 0 },
+    ],
+  }),
+  "[Am]מים [F]נסתר [Am]לבי"
+);
+
+check(
+  "no first chord given, nothing to check against",
+  chordProLine({
+    words: "מים נסתר",
+    chords: [
+      { chord: "Am", word: 1, letter: "מ", letters_before: 0 },
+      { chord: "F", word: 2, letter: "נ", letters_before: 0 },
+    ],
+  }),
+  "[Am]מים [F]נסתר"
+);
+
 /* --- numbering the words for the second question -------------------------
    The read is asked in two halves, and this is the handover between them. The
    whole point of doing the counting here is that it cannot be miscounted, so

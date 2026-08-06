@@ -241,9 +241,14 @@ const CHORDS_SCHEMA = {
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["line", "chords"],
+        required: ["line", "first_chord", "chords"],
         properties: {
           line: { type: "integer", description: "The line's number, exactly as given in the numbered list." },
+          first_chord: {
+            type: "string",
+            description:
+              "The chord symbol printed nearest the START of this line: the RIGHTMOST symbol above it on a Hebrew line, the leftmost on an English one. Just the symbol, for example \"Am\". Empty string if the line has no chords.",
+          },
           chords: {
             type: "array",
             description: "Every chord symbol printed above that line, one entry each. The order of this array does not matter and is not used.",
@@ -307,6 +312,10 @@ The C's middle is over the ל of אילה, which is word 1 and its third letter,
 
 THE ORDER OF THE CHORDS DOES NOT MATTER. Every chord names its own word, and they are sorted afterwards by what they name. Do not list them in any particular sequence, and above all do not read the chord line as a row of symbols and then hand them out to the words in the order you read them: Latin symbols read left to right and Hebrew words read right to left, and handing one sequence to the other puts every chord in the middle of the line onto its neighbour's word. Take ONE symbol, look straight down from its middle, find what is under it, write that entry. Then the next symbol. Where you start and how many you have done change nothing.
 
+AND SAY WHICH CHORD COMES FIRST. Every line also asks for first_chord: the symbol printed nearest the START of that line. On a Hebrew line the line starts on the right, so that is the RIGHTMOST symbol above it. On an English line it is the leftmost.
+
+This is asked separately, and it is not a formality. It is the same fact as "the chord over the earliest word", said a second way, and where the two disagree the whole line has been laid out backwards and will be turned around. Answer it by looking at the page, not by looking at what you have already written.
+
 WHICH LETTER, EXACTLY
 
 - Take the chord symbol's horizontal MIDDLE, not its left edge and not its right edge, and look straight down. Name the letter under it. If the point falls between two letters, take the one whose own start is nearer.
@@ -338,7 +347,9 @@ Go over each line once more and check two things.
 
 The COUNT: you gave exactly as many chord entries for that line as the page has chord symbols above it. A missing one and an invented one both read as plausible.
 
-The WORD: each chord names the word its middle is actually over. A chord one word along from where it belongs is the failure this task has, and it is invisible unless it is looked for.`;
+The WORD: each chord names the word its middle is actually over. A chord one word along from where it belongs is the failure this task has, and it is invisible unless it is looked for.
+
+THE DIRECTION: the chord you gave the earliest word is the same one you named as first_chord. If it is the one you named LAST, you have laid the row of symbols onto the words from the wrong end, and every chord on the line is on somebody else's word.`;
 
 const CHORDS_TEXT =
   "Here is the sheet again, and the words that have already been read from it, numbered.\n\n" +
@@ -618,6 +629,39 @@ export function chordProLine(line) {
      under Latin symbols is frequently backwards. What each chord named is not
      backwards, so the sort is the whole answer. */
   placed.sort((a, b) => a.pos - b.pos);
+
+  /* AND THEN UNMIRRORED, WHICH THE SORT CANNOT DO.
+
+     There is a failure the sort has no hold on, and it is the one this task
+     keeps having. The model finds exactly the right letters, every one of
+     them, and then lays the row of chord NAMES onto those letters from the
+     wrong end. On a real sheet:
+
+         wanted   אי[C]לה מה לי ו[Em]לה אלא אהב[D]תי
+         got      אי[D]לה מה לי ו[Em]לה אלא אהב[C]תי
+
+     Identical positions, names reversed, and the middle one unmoved because a
+     mirror always leaves the middle alone. Nothing inside that answer
+     contradicts itself, so nothing could catch it.
+
+     What catches it is asking the same fact twice, the way `letter` and
+     `letters_before` already do for drift. The line separately names the chord
+     printed nearest its start, and if that chord turns out to be sitting at
+     the FAR end, the row went on backwards and the names come back the other
+     way. Positions are not touched: they were right all along.
+
+     Only when the answer is unambiguous. A first_chord that matches both ends,
+     or neither, says nothing, and a guess here would move chords that nobody
+     showed to be wrong. */
+  const first = String(line?.first_chord ?? "").trim();
+  if (first && placed.length > 1) {
+    const atStart = placed[0].name === first;
+    const atEnd = placed[placed.length - 1].name === first;
+    if (atEnd && !atStart) {
+      const names = placed.map((chord) => chord.name).reverse();
+      placed.forEach((chord, index) => { chord.name = names[index]; });
+    }
+  }
 
   let out = "";
   let at = 0;
