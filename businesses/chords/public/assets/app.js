@@ -1052,8 +1052,10 @@
          one it opens on. */
       var used = chordsUsed(s.lines);
       if (used.length) {
+        /* The row is read right to left like everything else on the page, so
+           the first chord of the song is the rightmost one. Each name keeps
+           its own direction (see .k), which is what stops "G/B" flipping. */
         var keys = el("div", "keys");
-        keys.dir = "ltr";
         used.forEach(function (name) { keys.appendChild(el("span", "k", name)); });
         a.appendChild(keys);
       }
