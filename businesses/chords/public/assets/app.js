@@ -1515,8 +1515,20 @@
     document.title = (song.id ? "עריכת " + song.title : "שיר חדש") + " | אקורדים";
     app.innerHTML = "";
 
+    /* The heading, and on the same line the things you do to the whole song.
+       Up here rather than between the details and the sheet, where they used
+       to sit and cut the page in half. */
     var head = el("div", "page-head");
     head.appendChild(el("h1", null, song.id ? "עריכת שיר" : "שיר חדש"));
+
+    var bar = el("div", "head-actions");
+    if (song.id) bar.appendChild(button("מחיקה", ICON.trash, "danger small", removeSong));
+    bar.appendChild(button("ביטול", null, "ghost small", function () {
+      go(song.slug ? BASE + "/" + encodeURIComponent(song.slug) : BASE + "/");
+    }));
+    var saveBtn = button("שמירה", null, "small", save);
+    bar.appendChild(saveBtn);
+    head.appendChild(bar);
     app.appendChild(head);
 
     /* the details */
@@ -1572,28 +1584,6 @@
     meta.appendChild(dirLabel);
     app.appendChild(meta);
 
-    /* the tools.
-
-       Reading a picture is NOT here. It makes a whole song of its own, from
-       the index, and it runs in the background: bolting it onto an open
-       editor would mean holding a form open for a minute over work that no
-       longer needs anyone to wait for it. Pasting stays, because pasting is
-       instant. */
-    var bar = el("div", "ed-bar");
-    bar.appendChild(button("הדבקת טקסט", ICON.paste, "ghost small", function () { openPaste(song, draw); }));
-    bar.appendChild(el("span", "grow"));
-    if (song.id) bar.appendChild(button("מחיקה", ICON.trash, "danger small", removeSong));
-    bar.appendChild(button("ביטול", null, "ghost small", function () {
-      go(song.slug ? BASE + "/" + encodeURIComponent(song.slug) : BASE + "/");
-    }));
-    var saveBtn = button("שמירה", null, "small", save);
-    bar.appendChild(saveBtn);
-    app.appendChild(bar);
-
-    app.appendChild(el("p", "hint",
-      "אפשר להקליד ישר על המילים. Enter פותח שורה חדשה מתחת, Tab עובר לשורה הבאה. " +
-      "לחיצה על הפס שמעל השורה מוסיפה אקורד במקום שלחצתם, גרירה מזיזה אותו לאורך השורה, ולחיצה עליו פותחת אותו להקלדה."));
-
     var sheet = el("div", "sheet ed");
     /* the same size the reader chose. Editing a song that looks different from
        the song is editing something else. */
@@ -1634,7 +1624,11 @@
        line split while a handler from before is still bound, and an index would
        quietly start pointing at its neighbour. */
     function editRow(line, index) {
-      var ln = el("div", "ln" + (line.type === "section" ? " is-section" : ""));
+      /* The same shrunken blank line the reader sees. It is still a full line
+         to type into: the height is a floor, and the first character typed
+         pushes past it. */
+      var blank = line.type !== "section" && !line.text.trim() && !line.chords.length;
+      var ln = el("div", "ln" + (line.type === "section" ? " is-section" : blank ? " is-blank" : ""));
       ln.dataset.index = index;
 
       if (line.type === "section") {
@@ -2050,7 +2044,18 @@
         payload.slug = slug;
         var request = song.id ? db.update(song.id, payload) : db.insert(payload);
         request.then(function (saved) {
-          toast("נשמר");
+          /* A column the table does not have yet is dropped on the way out so
+             the song itself still lands, and that has to be SAID. A name typed
+             into a field and then quietly discarded looks exactly like a bug in
+             the field, and the person who typed it has no way to tell the
+             difference or anything to do about it. */
+          var lost = CREDITS.filter(function (c) { return payload[c.field] && !has(c.field); });
+          if (lost.length) {
+            toast("השיר נשמר, אבל " + lost.map(function (c) { return c.label; }).join(" ו") +
+              " לא. צריך להריץ את schema.sql ב-Supabase.", true);
+          } else {
+            toast("נשמר");
+          }
           go(BASE + "/" + encodeURIComponent(saved.slug));
         }).catch(function (error) {
           /* 23505 is the unique index on slug: two songs with the same name */
@@ -2074,40 +2079,6 @@
     draw();
     relayoutOn(sheet, rtl);
     if (!song.id) titleField.input.focus();
-  }
-
-  /* --- paste --------------------------------------------------------------- */
-
-  function openPaste(song, draw) {
-    var dlg = el("dialog", "dlg");
-    var form = el("form", "dlg-in");
-    form.method = "dialog";
-    form.appendChild(el("h2", null, "הדבקת שיר"));
-    form.appendChild(el("p", "muted", "שורת אקורדים ומתחתיה שורת המילים, כמו שהשיר מופיע בקובץ. המרווחים הם שקובעים איפה כל אקורד יושב."));
-    var area = el("textarea");
-    area.rows = 12;
-    area.dir = "ltr";
-    area.style.whiteSpace = "pre";
-    area.style.fontFamily = "ui-monospace, Menlo, Consolas, monospace";
-    form.appendChild(area);
-    var actions = el("div", "dlg-actions");
-    actions.appendChild(button("ביטול", null, "ghost", function () { dlg.close(); }));
-    actions.appendChild(button("להוסיף לשיר", null, null, function () {
-      var parsed = parsePasted(area.value);
-      if (parsed.length) {
-        var empty = song.lines.length === 1 && !song.lines[0].text && !song.lines[0].chords.length;
-        song.lines = empty ? parsed : song.lines.concat(parsed);
-        draw();
-        toast(parsed.length + " שורות נוספו");
-      }
-      dlg.close();
-    }));
-    form.appendChild(actions);
-    dlg.appendChild(form);
-    document.body.appendChild(dlg);
-    dlg.addEventListener("close", function () { dlg.remove(); });
-    dlg.showModal();
-    area.focus();
   }
 
   /* --- reading a photo or a PDF -------------------------------------------- */

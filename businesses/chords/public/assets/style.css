@@ -127,6 +127,9 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .page-head { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin: 28px 0 18px; }
 .page-head h1 { margin: 0; font-size: 27px; letter-spacing: -.02em; }
 .page-head .count { color: var(--ink-soft); font-size: 15px; }
+/* what you do to the whole song, on the heading's own line and at the far end
+   of it */
+.page-head .head-actions { margin-inline-start: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
 .search { position: relative; margin-bottom: 18px; }
 .search input { padding-inline-start: 40px; height: 46px; border-radius: 999px; }
@@ -297,7 +300,13 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   letter-spacing: .06em; text-transform: uppercase;
   color: var(--ink-soft);
 }
-.ln.is-blank .ln-t { min-height: .9em; }
+/* A blank line is the gap between two stanzas, and a gap does not need a full
+   line of words plus an empty chord lane above it to say so: about half that
+   reads as a break without reading as a missing verse. The lane goes entirely,
+   since a line with no characters has nothing for a chord to sit over. */
+.ln.is-blank { margin-bottom: .22em; }
+.ln.is-blank .ln-c { height: 0; }
+.ln.is-blank .ln-t { min-height: 1em; }
 
 /* --- editor ------------------------------------------------------------- */
 
@@ -427,7 +436,7 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 /* --- print -------------------------------------------------------------- */
 
 @media print {
-  .top, .tools, .ed-bar, .toast { display: none !important; }
+  .top, .tools, .ed-bar, .head-actions, .toast { display: none !important; }
   body { background: #fff; }
   /* a little room at the start of the line, or the first chord of every line
      is centred half off the paper */
