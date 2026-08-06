@@ -435,7 +435,13 @@ export function songFrom(boxes, dir, notes) {
   /* A row has to say something to be a line. One stray letter is what a mark
      read as a character looks like, and a "T:" between two verses shifts every
      line after it and moves every chord in the rest of the song. */
-  const lyrics = rows.filter((row) => !row.isChords && letters(row.text) >= 2);
+  /* A LINE HAS A WORD IN IT. Two letters was not enough of a test: niqqud read
+     as characters comes back as "ז ז :" or "T:", which has letters and no
+     words, and one of those between two verses takes the place of the break
+     and moves every chord in the rest of the song. A line of a song always has
+     at least one word of more than one letter. */
+  const lyrics = rows.filter((row) =>
+    !row.isChords && row.tokens.some((token) => letters(token.text) >= 2));
 
   /* how far apart this page sets two lines of the same verse */
   const usual = median(lyrics.slice(1).map((row, index) => row.middle - lyrics[index].middle));
