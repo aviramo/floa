@@ -90,7 +90,15 @@ Put each chord in square brackets INSIDE the line of words, immediately before t
 
 means the Am is over the ש and the G is over the נ. Do not write the chords on a line of their own. Do not describe positions with numbers. The bracket sits where the chord sits, and that is the whole notation.
 
+On the printed page that Hebrew line looks like this, with the Am on the RIGHT because the words start there:
+
+              G           Am
+        שלום לך אדוני
+
+so the Am, being the rightmost, is the first chord of the line and the G is the second.
+
 - A chord printed over a space stays over that space: שלום לך [Am]אדוני and שלום לך[Am] אדוני are different, and both are things you may need to write.
+- THE CHORDS OF A LINE ARE READ IN THE SAME DIRECTION AS ITS WORDS. This is the single easiest thing to get wrong on a Hebrew sheet and it is worth stopping to check. Chord symbols are Latin, so the eye wants to read a row of them left to right; above a Hebrew line that is backwards. The FIRST chord of a Hebrew line is the RIGHTMOST one on the page, the one above the first word, and each next chord is the next one leftwards. Before writing a line, name its chords out loud from the right and confirm the order, then write them in that order.
 - A chord after the last word goes after it, with spaces before it if the sheet shows it further out: נה נה נה   [G]   [F]
 - Lines are separated by a single newline. A blank line between stanzas is a blank line.
 - A heading that names a part of the song is a line wrapped in braces: {פזמון}, {בית}, {מעבר}, {Chorus}, {Intro}.
@@ -310,7 +318,6 @@ export async function readAndSave(env, token, songId, files) {
   }
 
   const fields = {
-    title: song.title || "שיר בלי שם",
     artist: song.artist,
     song_key: song.song_key,
     dir: song.dir,
@@ -321,19 +328,32 @@ export async function readAndSave(env, token, songId, files) {
     status_note: "",
   };
 
-  /* The song only gets its real address now, because only now is its name
-     known. 23505 is the unique index on slug: another song already has it. */
-  const wanted = slugify(fields.title);
+  const stop = async (failure) => {
+    console.error("transcribe could not save", songId, failure.status, failure.body.slice(0, 200));
+    await patchSong(env, token, songId, { status: "failed", status_note: `save ${failure.status}` });
+  };
+
+  /* A sheet that does not print the song's name leaves the row with the one it
+     already has, taken from the file it was uploaded from. That is a real name
+     somebody chose, and it beats anything this could invent. Its address stays
+     as it is too, for the same reason. */
+  if (!song.title) {
+    const failure = await patchSong(env, token, songId, fields);
+    if (failure) await stop(failure);
+    return;
+  }
+
+  /* Otherwise the song gets its real name and its real address now, because
+     only now is the name known. 23505 is the unique index on slug: another
+     song already has that address. */
+  fields.title = song.title;
+  const wanted = slugify(song.title);
   for (let attempt = 1; attempt <= 30; attempt++) {
     const failure = await patchSong(env, token, songId, {
       ...fields,
       slug: attempt === 1 ? wanted : `${wanted}_${attempt}`,
     });
     if (!failure) return;
-    if (!failure.body.includes("23505")) {
-      console.error("transcribe could not save", songId, failure.status, failure.body.slice(0, 200));
-      await patchSong(env, token, songId, { status: "failed", status_note: `save ${failure.status}` });
-      return;
-    }
+    if (!failure.body.includes("23505")) return stop(failure);
   }
 }
