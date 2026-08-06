@@ -1,5 +1,8 @@
 name = "floa-lead"
-main = "src/index.js"
+# src/worker.js, not src/index.js: it is the one file that imports
+# `cloudflare:workers`, which exists only inside the runtime. Everything else
+# stays loadable by plain node, which is what keeps the tests possible.
+main = "src/worker.js"
 compatibility_date = "2025-01-01"
 
 # The Worker is served from its own workers.dev address, NOT from api.floa.co.il.
@@ -22,6 +25,16 @@ workers_dev = true
 # fact instead of reproduced. Free, and off by default.
 [observability]
 enabled = true
+
+# Reading a photograph of a song takes longer than a request may live, and
+# longer than work handed off with waitUntil is allowed to run. A Workflow is
+# started by a request and then belongs to nobody: it survives the response,
+# the tab and the reload. See worker/src/read-workflow.js for what was tried
+# before this and why each of it failed.
+[[workflows]]
+name = "chords-read-song"
+binding = "READ_SONG"
+class_name = "ReadSong"
 
 # One address, not many. Preview URLs would publish this same endpoint on an
 # extra hostname per version, which buys nothing here (there is one caller, the

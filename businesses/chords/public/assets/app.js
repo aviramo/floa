@@ -900,7 +900,7 @@
     var box2 = el("div");
     box2.appendChild(el("div", "t", s.title));
     box2.appendChild(el("div", "a", reading
-      ? (s.status_note || "קורא את השיר") + ", אל תסגרו את הדף"
+      ? (s.status_note || "קורא את השיר") + ", אפשר לסגור את הדף"
       : stalled(s) ? "הקריאה נתקעה ולא הסתיימה" : "הקריאה נכשלה"));
     if (s.status !== "reading" && s.status_note) box2.appendChild(el("div", "detail", s.status_note));
     row.appendChild(box2);
@@ -1038,7 +1038,7 @@
       busy.appendChild(el("span", "spin"));
       busy.appendChild(document.createTextNode("קורא את " + song.title));
       box.appendChild(busy);
-      box.appendChild(el("p", "muted", "הקריאה רצה כל עוד הדף פתוח. אפשר לעבור בין שירים בינתיים."));
+      box.appendChild(el("p", "muted", "אפשר לסגור את הדף. הקריאה ממשיכה בלעדיו."));
       setTimeout(function () { if (box.isConnected) viewSong(song.slug); }, 5000);
     } else {
       box.appendChild(el("p", null, stalled(song)
@@ -1637,7 +1637,7 @@
 
   var MAX_BYTES = 12 * 1024 * 1024;
   var MAX_PAGES = 8;
-  var MAX_EDGE = 1800;
+  var MAX_EDGE = 1400;
   var OK_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif", "application/pdf"];
 
   function toBase64(file) {
@@ -1670,7 +1670,7 @@
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
       bitmap.close();
-      var url = canvas.toDataURL("image/jpeg", 0.9);
+      var url = canvas.toDataURL("image/jpeg", 0.82);
       return { media_type: "image/jpeg", data: url.slice(url.indexOf(",") + 1) };
     }).catch(function () { return toBase64(file); });
   }
@@ -1758,7 +1758,7 @@
 
       Promise.all(files.map(prepare)).then(function (payloads) {
         var total = payloads.reduce(function (n, p) { return n + p.data.length; }, 0);
-        if (total > 5 * 1024 * 1024) throw new Error("הקבצים גדולים מדי ביחד. נסו פחות עמודים או PDF.");
+        if (total > 700 * 1024) throw new Error("הקבצים גדולים מדי ביחד. נסו פחות עמודים, או צילום במקום PDF.");
 
         /* the row first, so the reading has somewhere to land */
         var name = files[0].name.replace(/\.[^.]+$/, "").trim();
@@ -1773,25 +1773,21 @@
           });
         });
       }).then(function (r) {
-        if (!r.ok) {
-          return r.json().catch(function () { return {}; }).then(function (body) {
+        return r.json().catch(function () { return {}; }).then(function (body) {
+          if (!r.ok || !body.ok) {
             var e = new Error(transcribeError(body, r.status));
             e.detail = body && body.detail;
             throw e;
-          });
-        }
-
-        /* The response stays open for as long as the reading takes, and it has
-           to: the bytes trickling down it are what keep the Worker alive, since
-           Cloudflare cancels work that outlives its request. Nothing here waits
-           for it, because the finished song lands on the ROW rather than in this
-           response, and the list is already watching the row. Reading it to the
-           end is the whole job. */
-        r.text().catch(function () {});
+          }
+        });
+      }).then(function () {
+        /* Accepted. The reading is a Workflow now: it belongs to nobody and
+           outlives this page, so there is nothing left to hold on to. The
+           finished song lands on the row, and the list is watching the row. */
         created = null;                     // handed over; not ours to undo now
 
         dlg.close();
-        toast("קורא את השיר. אפשר להמשיך לעבוד, רק לא לסגור את הדף.");
+        toast("קורא את השיר ברקע. אפשר לסגור את הדף.");
         if (parts().length === 0) route(); else go(BASE + "/");
       }).catch(function (error) {
         /* the row was created but the work never started: it would sit as

@@ -215,7 +215,7 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    air goes BETWEEN the pairs and not inside them: tight above the words, open
    below the line. */
 .ln { position: relative; margin-bottom: .45em; }
-.ln-c { position: relative; height: 1.02em; }
+.ln-c { position: relative; height: .94em; }
 .ln-t {
   white-space: pre;
   font-size: var(--song-size);

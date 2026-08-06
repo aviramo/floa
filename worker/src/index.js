@@ -36,7 +36,7 @@
                       its `to` in the table
    ========================================================================== */
 import { BUSINESSES } from "./businesses.js";
-import { MEDIA_TYPES, readAndSave } from "./transcribe.js";
+import { MEDIA_TYPES } from "./transcribe.js";
 
 /* A lead sent before the sites were rebuilt carries no `business` field. It can
    only have come from FLOA, because FLOA is the only business that existed then. */
@@ -235,7 +235,10 @@ async function rateLimited(bucket, ip, seconds = 30) {
      business pretending it can verify one.
    ------------------------------------------------------------------------ */
 
-const MAX_BASE64 = 5 * 1024 * 1024;         // the whole upload, roughly 3.7MB of file
+/* The whole upload, and it is small on purpose: the files ride to the Workflow
+   inside its parameters, and a Workflow's parameters cap out at a megabyte.
+   The browser shrinks a photograph well below this before sending. */
+const MAX_BASE64 = 700 * 1024;
 const MAX_PAGES = 8;
 
 async function signedIn(env, token) {
@@ -246,20 +249,16 @@ async function signedIn(env, token) {
   return res.ok;
 }
 
-/* Reads the picture while the caller holds the line, and answers in dribs.
+/* Hands the reading to a Workflow and answers at once.
 
-   Two limits shape this, and between them they rule out both obvious designs.
-   A silent request is cut at a hundred seconds with a 524, so the answer
-   cannot simply be waited for. And waitUntil, which is what "answer at once
-   and keep working" would need, is cancelled by the runtime shortly after the
-   response ends: it was tried, and the log said so in as many words.
+   The reading takes longer than a request may live and longer than work handed
+   off with waitUntil is allowed to run, and holding the connection open only
+   moves the problem to the first reload. A Workflow is started here and then
+   belongs to nobody: it survives this response, the tab and the reload. The
+   whole history of what was tried before it is in read-workflow.js.
 
-   So the response is a stream that says nothing until it has something to say,
-   and meanwhile emits a space every five seconds. Bytes on the wire are what
-   keeps both the connection and the invocation alive. The finished song is
-   written onto the row by transcribe.js either way, so the caller can watch the
-   row and never has to read this response at all. What it does have to do is
-   stay open: this is the one thing here that does not survive a closed tab. */
+   So the caller is free the moment it gets this 202. The finished song lands on
+   the row it created, and the list is already watching the row. */
 async function handleTranscribe(request, env, ctx, origin) {
   if (!env.ANTHROPIC_API_KEY) {
     console.error("transcribe dropped: ANTHROPIC_API_KEY is not set on the Worker");
@@ -294,32 +293,19 @@ async function handleTranscribe(request, env, ctx, origin) {
   }
   if (total > MAX_BASE64) return json({ ok: false, error: "size" }, 413, origin);
 
-  console.log("transcribe accepted", songId, files.length, "file(s)");
+  if (!env.READ_SONG) {
+    console.error("transcribe dropped: the READ_SONG workflow is not bound");
+    return json({ ok: false, error: "config" }, 502, origin);
+  }
 
-  const { readable, writable } = new TransformStream();
-  const writer = writable.getWriter();
-  const encode = new TextEncoder();
-  const say = (text) => writer.write(encode.encode(text)).catch(() => {});
-
-  /* a space every five seconds: enough to keep the wire warm, and whitespace
-     the caller trims off before reading what actually came back */
-  const alive = setInterval(() => say(" "), 5000);
-
-  readAndSave(env, token, songId, files)
-    .then(() => say(JSON.stringify({ ok: true, done: true })))
-    .catch((err) => {
-      console.error("transcribe crashed", songId, err && err.message, err && err.stack);
-      return say(JSON.stringify({ ok: false, error: "read", detail: String(err && err.message).slice(0, 300) }));
-    })
-    .finally(() => {
-      clearInterval(alive);
-      writer.close().catch(() => {});
-    });
-
-  return new Response(readable, {
-    status: 200,
-    headers: { "content-type": "text/plain; charset=utf-8", ...cors(origin) },
-  });
+  try {
+    const run = await env.READ_SONG.create({ params: { token, songId, files } });
+    console.log("transcribe queued", songId, run.id, files.length, "file(s)");
+    return json({ ok: true, reading: true }, 202, origin);
+  } catch (err) {
+    console.error("transcribe could not be queued", songId, err && err.message);
+    return json({ ok: false, error: "read", detail: String(err && err.message).slice(0, 300) }, 502, origin);
+  }
 }
 
 /* --- /lead ---------------------------------------------------------------- */

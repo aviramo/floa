@@ -21,7 +21,12 @@ const env = {
   ANTHROPIC_API_KEY: "test",
   SUPABASE_URL: "https://project.supabase.co",
   SUPABASE_ANON_KEY: "anon",
+  /* the Workflow the reading is handed to. Standing in for it here is enough:
+     what this file tests is who is allowed to start one. */
+  READ_SONG: { create: async () => { started++; return { id: "wf_test" }; } },
 };
+
+let started = 0;
 
 let sent = null;
 globalThis.fetch = async (url, init) => {
@@ -90,18 +95,16 @@ check("unset recipient -> 502, nothing sent", r.status === 502 && r.sent === nul
 let background = [];
 const ctx = { waitUntil: (p) => background.push(p) };
 
-/* The reading answers with a STREAM, held open for as long as it takes, padded
-   with spaces so the connection cannot go quiet. So the body is read to the end
-   and trimmed rather than parsed straight off. */
 const call = async (path, headers = {}, body = { song_id: "s1", files: [{ media_type: "image/png", data: "x" }] }) => {
   background = [];
+  started = 0;
   const res = await worker.fetch(new Request(`https://x${path}`, {
     method: "POST",
     headers: { origin: "https://floa.co.il", "content-type": "application/json", ...headers },
     body: JSON.stringify(body),
   }), env, ctx);
   const text = (await res.text()).trim();
-  return { status: res.status, body: text ? JSON.parse(text) : null, background: background.length };
+  return { status: res.status, body: text ? JSON.parse(text) : null, started };
 };
 
 /* 8. an unknown path is not a lead and not a read */
@@ -116,22 +119,21 @@ check("transcribe without a token -> 401", r.status === 401 && r.body.error === 
 r = await call("/transcribe", { authorization: "Bearer forged" });
 check("transcribe with a rejected token -> 401", r.status === 401 && r.body.error === "auth", JSON.stringify(r));
 
-/* 11. a real user gets the reading, on a stream that stays open until it is
-       done. NOT handed to waitUntil: this runtime cancels work that outlives
-       its request, so the request is what has to last. */
+/* 11. a real user gets an immediate answer and the reading becomes a Workflow,
+       which is the whole point: it outlives this request, and the tab. */
 r = await call("/transcribe", { authorization: "Bearer good" });
-check("transcribe with a real token -> a stream, nothing left behind",
-  r.status === 200 && r.body && r.body.done === true && r.background === 0, JSON.stringify(r));
+check("transcribe with a real token -> 202, a workflow started",
+  r.status === 202 && r.body.ok === true && r.started === 1, JSON.stringify(r));
 
 /* 12. nothing is handed off without a row to write the answer onto */
 r = await call("/transcribe", { authorization: "Bearer good" }, { files: [{ media_type: "image/png", data: "x" }] });
 check("transcribe without a song id -> 400, nothing started",
-  r.status === 400 && r.body.error === "song" && r.background === 0, JSON.stringify(r));
+  r.status === 400 && r.body.error === "song" && r.started === 0, JSON.stringify(r));
 
 /* 13. and not for a file we cannot read */
 r = await call("/transcribe", { authorization: "Bearer good" }, { song_id: "s1", files: [{ media_type: "text/plain", data: "x" }] });
 check("transcribe with a bad file type -> 400, nothing started",
-  r.status === 400 && r.body.error === "type" && r.background === 0, JSON.stringify(r));
+  r.status === 400 && r.body.error === "type" && r.started === 0, JSON.stringify(r));
 
 console.log(failed ? `\n${failed} failed` : "\nall passed");
 process.exit(failed ? 1 : 0);
