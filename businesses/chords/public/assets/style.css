@@ -297,11 +297,16 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .picker-add { color: var(--ink-soft); font-weight: 700; }
 .picker-x { color: var(--ink-soft); font-size: 15px; }
 .picker-x:hover { color: var(--danger); background: #fdf1ef; }
-.picker-field {
-  width: 7ch; padding: 3px 6px; border-radius: 5px;
-  direction: ltr; text-align: left; font-size: 13px;
-  color: var(--chord); font-weight: 700;
+/* Two class names deep on purpose. The shared input[type="text"] rule is an
+   attribute selector, so it outranks a single class and would put its own
+   width, padding and radius back on this field. */
+.picker .picker-field {
+  width: 5ch; padding: 3px 5px; border-radius: 5px;
+  border: 1px solid var(--chord-soft);
+  direction: ltr; text-align: left;
+  font-size: 13px; line-height: 1.4; font-weight: 700; color: var(--chord);
 }
+.picker .picker-field:focus-visible { outline: none; border-color: var(--chord); }
 
 .hint {
   font-size: 13px; color: var(--ink-soft);
