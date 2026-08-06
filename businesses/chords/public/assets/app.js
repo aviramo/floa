@@ -2955,6 +2955,12 @@
 
     var title = el("h1", null, song.title);
     if (editing) {
+      /* A name that has not been typed yet is nowhere to click: an empty
+         contenteditable is zero pixels wide. So it says what it wants, the way
+         an evening's name does, and the word goes the moment a letter lands on
+         it. It is also the one field the song cannot be saved without, its
+         address being made from it. */
+      title.dataset.empty = "שם השיר";
       makeEditable(title);
       title.addEventListener("input", function () { song.title = title.textContent.trim(); mark(); });
       title.addEventListener("keydown", function (event) {
