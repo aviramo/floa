@@ -1283,12 +1283,17 @@ body.on-stage { overflow: hidden; }
    middle of it would leave the chords on the other side of the page */
 .stage .ln { break-inside: avoid; }
 
-/* A LITTLE MORE AIR OVER THE WORDS. The lane is deliberately shorter than the
-   chord in it everywhere else, so the symbol hangs down into the space the
-   text's own line height leaves empty and the pair reads as one thing. Across
-   a room that closeness turns into a smudge: at this size the chord wants to
-   be clearly ABOVE the line rather than resting on it. */
-.stage .ln-c { height: 1.25em; }
+/* AIR OVER THE WORDS. The lane is deliberately shorter than the chord in it
+   everywhere else, so the symbol hangs down into the space the text's own line
+   height leaves empty and the pair reads as one thing at arm's length. Across
+   a room that closeness turns into a smudge, and the eye needs to find the
+   chord row without reading the words to do it: here the chord stands clearly
+   ABOVE the line rather than resting on it.
+
+   It costs height, and height is what decides the size the song is set at, so
+   this number is the trade: an em and a half of room over every line is about
+   one line of a long song. */
+.stage .ln-c { height: 1.7em; }
 
 /* The controls, which are not what this screen is for: they fade out and come
    back on a touch or a movement of the mouse. */
