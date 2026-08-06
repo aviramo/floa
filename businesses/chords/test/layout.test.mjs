@@ -102,7 +102,12 @@ const MEASURE = `(() => {
       const box = c.getBoundingClientRect();
       const middle = box.left + box.width / 2;
       const got = rtl ? line.right - middle : middle - line.left;
-      out.push({ line: t.textContent.slice(0, 20), rtl, chord: c.textContent, pos, nudged: i > 0, off: Math.round(got - want) });
+      /* A chord centred on the first letters of a line would hang off the
+         start of the sheet and be clipped, so it stops at the edge instead.
+         That is a deliberate shift and its size is known: half the label. */
+      const half = box.width / 2;
+      out.push({ line: t.textContent.slice(0, 20), rtl, chord: c.textContent, pos,
+        nudged: i > 0, clamped: want < half, off: Math.round(got - want), half: Math.round(half) });
     });
   }
   return JSON.stringify({ chords: out, errors: window.__errors, app: document.getElementById("app").innerHTML.length });
@@ -262,9 +267,15 @@ try {
         /* the first chord of a line is never nudged, so it must be exact; a
            later one may have been pushed forward to clear its neighbour, which
            can only move it away from the start */
+        /* Exact, unless it was moved for a reason the app owns: a later chord
+           pushed forward to clear its neighbour, or one at the very start of a
+           line stopped at the edge so it is not clipped. Both can only move it
+           away from the start, and by a bounded amount. */
         const exact = Math.abs(c.off) <= 1;
+        const allowed = c.clamped ? c.half + 1 : c.nudged ? 60 : 1;
         check(`${dir}: "${c.chord}" at ${c.pos} of «${c.line}»`,
-          c.nudged ? (exact || (c.off > 0 && c.off <= 60)) : exact, `off by ${c.off}px`);
+          exact || (c.off > 0 && c.off <= allowed),
+          `off by ${c.off}px${c.clamped ? " (clamped, half is " + c.half + ")" : ""}`);
       }
     }
 
@@ -274,9 +285,14 @@ try {
       check("the editor rendered its chords", before && before.chords.length >= 3, JSON.stringify(before));
       if (!before || before.chords.length < 3) return;
 
-      const held = before.chords[0];
-      const others = before.chords.slice(1);
-      const gap = Math.abs(held.x - others[0].x);          // to the next chord along
+      /* The SECOND chord of the line, not the first: a chord at the very start
+         is held against the edge so it is not clipped, which is exactly the one
+         place where moving the pointer does not move the chord. */
+      const HELD = 1, NEXT = 2;
+      const held = before.chords[HELD];
+      const neighbour = before.chords[NEXT];
+      const others = before.chords.filter((_, i) => i !== HELD);
+      const gap = Math.abs(held.x - neighbour.x);          // to the next chord along
 
       await mouse(send, "mousePressed", held.cx, held.y);
 
@@ -284,7 +300,7 @@ try {
          measured after this is meant to be movement. */
       await mouse(send, "mouseMoved", held.cx - 6, held.y);
       await sleep(40);
-      let from = (await evaluate(POSITIONS)).chords[0].x;
+      let from = (await evaluate(POSITIONS)).chords[HELD].x;
 
       /* A chord is grabbed in the middle of its label but positioned by its
          anchor edge, and beginning the drag must not close that gap for you. */
@@ -300,17 +316,17 @@ try {
       for (let i = 1; i <= 6; i++) {
         await mouse(send, "mouseMoved", held.cx - 6 - i * step, held.y);
         await sleep(40);
-        seen.push((await evaluate(POSITIONS)).chords[0].x);
+        seen.push((await evaluate(POSITIONS)).chords[HELD].x);
       }
       const near = await evaluate(POSITIONS);
 
-      check("the dragged chord followed the pointer", near.chords[0].x < held.x - step * 4,
-        `moved from ${held.x} to ${near.chords[0].x}`);
+      check("the dragged chord followed the pointer", near.chords[HELD].x < held.x - step * 4,
+        `moved from ${held.x} to ${near.chords[HELD].x}`);
 
       const steps = seen.map((x, i) => Math.abs(x - (i ? seen[i - 1] : from)));
       check("it moved on every step, with no jump", steps.every((d) => d > 0 && d < 20), JSON.stringify(steps));
 
-      const nearOthers = near.chords.slice(1);
+      const nearOthers = near.chords.filter((_, i) => i !== HELD);
       const moved = nearOthers.filter((c, i) => Math.abs(c.x - others[i].x) > 1);
       check("while it stays clear, no other chord moves", moved.length === 0,
         "held " + JSON.stringify(held) + "\n       before " + JSON.stringify(others) +
@@ -324,8 +340,8 @@ try {
       await sleep(120);
 
       check("running over a chord swaps the two",
-        past.chords[1].pos < others[0].pos && past.chords[0].pos > past.chords[1].pos,
-        `held ${held.pos} -> ${past.chords[0].pos}, neighbour ${others[0].pos} -> ${past.chords[1].pos}`);
+        past.chords[NEXT].pos < neighbour.pos && past.chords[HELD].pos > past.chords[NEXT].pos,
+        `held ${held.pos} -> ${past.chords[HELD].pos}, neighbour ${neighbour.pos} -> ${past.chords[NEXT].pos}`);
     });
   });
 } finally {

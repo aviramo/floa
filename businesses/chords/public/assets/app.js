@@ -1123,10 +1123,7 @@
         var keys = el("div", "keys");
         keys.title = "השיר עצמו: " + used.join("  ");
         if (easy.capo) keys.appendChild(el("span", "capo", "קפו " + easy.capo));
-        easy.shapes.forEach(function (shape, i) {
-          keys.appendChild(el("span", "k" + (OPEN_SHAPES[shape] ? "" : " is-hard"), shape));
-          void i;
-        });
+        easy.shapes.forEach(function (shape) { keys.appendChild(el("span", "k", shape)); });
         box.appendChild(keys);
       }
 
@@ -1253,8 +1250,11 @@
         requestAnimationFrame(function () { layoutAll(sheet, rtl); });
       }
 
+      /* Round, not against a wall. Past the top it comes out at the bottom and
+         the other way about, so reaching a distant key is never a matter of
+         pressing the other button eleven times. */
       function setSemis(next) {
-        semis = Math.max(-11, Math.min(11, next));
+        semis = next > 11 ? -11 : next < -11 ? 11 : next;
         value.textContent = semis > 0 ? "+" + semis : String(semis);
         draw();
       }

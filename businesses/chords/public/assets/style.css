@@ -153,8 +153,6 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   color: var(--chord); background: var(--chord-soft); border-radius: 999px; padding: 2px 9px;
   direction: ltr; white-space: nowrap;
 }
-/* a shape that is still a barre even at the best capo: the one hard bit left */
-.list .k.is-hard { background: #f1f5f6; color: var(--ink-soft); }
 /* where to clamp, so the shapes beside it mean something */
 .list .capo {
   font-size: 12px; font-weight: 700; color: var(--ink-soft);
