@@ -1675,6 +1675,54 @@
       bar.hidden = true;
       app.appendChild(bar);
 
+      /* --- what state the library is in ----------------------------------------
+         Three numbers under the search box: how many songs are waiting to be
+         checked, how many their author has not finished, and how many are
+         neither, which is to say done. A library is not only a list of songs,
+         it is also an amount of work outstanding, and that was a thing you
+         could only learn by scrolling the whole of it.
+
+         And they are pressable, because a number worth showing is a number
+         somebody wants the list of. Pressing one narrows the list to it and
+         pressing it again lets it go, which is what a search box that is
+         already there would do if it could search for a label.
+
+         Counted over songs that ARE songs. One still being read is not
+         unchecked, not unfinished and not done; it is not there yet. */
+      var tag = null;
+
+      var TAGS = [
+        { key: "review", label: "לסקירה", is: function (s) { return !!s.review; } },
+        { key: "draft", label: "טיוטה", is: function (s) { return !!s.draft; } },
+        { key: "kept", label: "שמור", is: function (s) { return !s.review && !s.draft; } },
+      ];
+
+      function ready(songs) {
+        return songs.filter(function (s) { return !s.status || s.status === "ready"; });
+      }
+
+      /* under the search box, above everything the list grows on top of it */
+      var tallies = el("div", "tallies");
+      app.insertBefore(tallies, bar);
+
+      function paintTallies() {
+        tallies.textContent = "";
+        var real = ready(state.songs);
+        TAGS.forEach(function (t) {
+          var n = real.filter(t.is).length;
+          var chip = el("button", "tally tally-" + t.key + (tag === t.key ? " is-on" : ""));
+          chip.type = "button";
+          chip.appendChild(el("span", "tally-n", String(n)));
+          chip.appendChild(el("span", "tally-l", t.label));
+          chip.title = tag === t.key ? "לחיצה מחזירה את כל השירים" : "לחיצה מציגה רק את אלה";
+          chip.addEventListener("click", function () {
+            tag = tag === t.key ? null : t.key;
+            paint(input.value);
+          });
+          tallies.appendChild(chip);
+        });
+      }
+
       var list = el("ul", "list");
       app.appendChild(list);
 
@@ -1768,9 +1816,12 @@
       function paint(filter) {
         list.innerHTML = "";
         showBar();
+        paintTallies();
         var marks = marksFor(state.songs);
         var q = String(filter || "").trim().toLowerCase();
+        var only = tag && TAGS.filter(function (t) { return t.key === tag; })[0];
         var shown = state.songs.filter(function (s) {
+          if (only && !(ready([s]).length && only.is(s))) return false;
           if (!q) return true;
           var hay = s.title + " " + credits(s).map(function (c) { return c.name; }).join(" ");
           return hay.toLowerCase().indexOf(q) >= 0;
@@ -1778,8 +1829,10 @@
 
         if (!shown.length) {
           if (!empty.parentNode) app.appendChild(empty);
-          emptyText.textContent = q ? "לא נמצא שיר שמתאים לחיפוש." : "עוד אין שירים כאן.";
-          emptyActions.hidden = !!q;
+          emptyText.textContent = q ? "לא נמצא שיר שמתאים לחיפוש."
+            : only ? "אין שירים בתווית הזאת."
+            : "עוד אין שירים כאן.";
+          emptyActions.hidden = !!q || !!only;
           return;
         }
         if (empty.parentNode) empty.remove();
