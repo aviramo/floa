@@ -1068,32 +1068,42 @@
     Array.prototype.forEach.call(root.querySelectorAll(".ln"), function (ln) { layoutLine(ln, rtl); });
   }
 
-  /* --- a line too long for the screen --------------------------------------
+  /* --- a song too wide for the screen --------------------------------------
      On a desk the sheet scrolls sideways and that is fine: the whole line is
      an arm's reach away. On a phone it is not. A song you have to drag left
      and right to read is a song you cannot play from, and the words that fell
      off the edge are the ones nobody sees at all.
 
-     So on a narrow screen a line that does not fit is BROKEN, at a space,
-     never inside a word, and what is left over goes on a row of its own
-     directly under it. Not merged into the next line of the song: the chords
-     above these words belong to THIS line, and dropping them onto the next
-     one would print them over syllables they were never written for.
+     So on a narrow screen the song is POURED into rows the width of the
+     screen. A line that does not fit is broken at a space, never inside a
+     word, and the leftover starts the next row. And because a leftover is
+     usually one word on an otherwise empty row, the line that comes after it
+     is pulled up onto that same row rather than left waiting under it: three
+     words of empty row in the middle of a song is a verse's worth of screen
+     over a page.
 
-     The break is a fact about the screen, not about the song. Nothing here is
-     saved, nothing changes what is stored, and a wider screen or a smaller
-     font simply breaks it in fewer places or not at all.
+     What keeps that readable is two marks, and they say different things:
 
-     The continuation row is marked (an arrow, in the margin the row is
-     indented by) and pulled tight against the row it fell out of, while the
-     air below the group stays as it was. So what the eye separates is one
-     sung line from the next, and the arrow says the row it is on is a
-     leftover rather than a line of its own. That distinction is the whole
-     point: a reader must never take a broken line for two lines.
+       an arrow at the start of a row, in the margin the row is indented by,
+       means the words after it fell out of the row above;
+
+       a separator INSIDE a row, between the leftover and what follows it,
+       means a new line of the song begins here.
+
+     So a row can hold the end of one line and the start of the next, and the
+     reader can still see exactly where one ends and the other begins. At most
+     two lines share a row: a leftover takes the line after it and then the
+     row closes, or the sheet would stop looking like a song at all.
+
+     None of this touches the song. Nothing is saved, nothing is reordered,
+     and a wider screen or a smaller reading size simply pours it into fewer
+     rows. Every chord travels with the word it was written over, which is why
+     the lines can be moved about at all.
 
      It works off the DOM rather than off the song, so the labels are the ones
-     already on screen, transposed. Called with the rows measured, i.e. after
-     they are in the page.
+     already on screen, transposed, and the widths are the ones the reader's
+     own font gave them. Called with the rows measured, i.e. after they are in
+     the page.
      ------------------------------------------------------------------------ */
 
   /* How far a continuation row is pushed in, and how wide the margin holding
@@ -1101,17 +1111,35 @@
      mark cannot drift apart. */
   var CONT_INDENT = 1.5;
 
-  function wrapAll(root, rtl) {
-    Array.prototype.forEach.call(root.querySelectorAll(".ln"), function (ln) { wrapRow(ln, rtl); });
+  /* Between two lines of the song sharing one row. A dot rather than a bar,
+     because a bar in a chord sheet is a bar of music. */
+  var LINE_SEP = " • ";
+
+  /* The width of a piece of text, in the sheet's own font, before it is on the
+     page. Summed per character for the same reason the advances are (see
+     below), and taken off a copy so nothing the reader sees ever flickers. */
+  function textWidth(sheet, text) {
+    var probe = el("div", "ln-t");
+    probe.style.position = "absolute";
+    probe.style.visibility = "hidden";
+    fillSpans(probe, text);
+    sheet.appendChild(probe);
+    var total = 0;
+    Array.prototype.forEach.call(probe.children, function (span) {
+      total += span.getBoundingClientRect().width;
+    });
+    sheet.removeChild(probe);
+    return total;
   }
 
-  function wrapRow(ln, rtl) {
-    var m = metrics(ln, rtl);
+  /* One measured line: its words, its chords, and what every character of it
+     costs. A row that has no words to measure (a section heading, the blank
+     line between two stanzas) is carried through untouched, and closes
+     whatever row was open, because neither belongs in the middle of one. */
+  function measureLine(ln, rtl) {
     var t = ln.querySelector(".ln-t");
-    if (!m || !t || !m.count) return;
-
-    var width = ln.clientWidth;
-    if (!(width > 0)) return;
+    var m = t ? metrics(ln, rtl) : null;
+    if (!t || !m || !m.count) return { node: ln, keep: true };
 
     var text = t.textContent;
     var chords = Array.prototype.map.call(ln.querySelectorAll(".ln-c .chord"), function (node) {
@@ -1138,78 +1166,175 @@
       advance.push(i < m.count ? m.spans[i].getBoundingClientRect().width : m.unit);
     }
 
-    var indent = CONT_INDENT * (parseFloat(getComputedStyle(t).fontSize) || 18);
+    return {
+      node: ln, text: text, chords: chords, cells: cells, advance: advance,
+      size: parseFloat(getComputedStyle(t).fontSize) || 18,
+      pieces: [],
+    };
+  }
 
-    /* Greedily, so the most words that fit on a row are on it. The break goes
-       back to the last space; a single word longer than the screen has nowhere
-       to go back to, and is cut where it runs out of room. */
-    var segments = [];
-    var start = 0;
-    var room = width;
-    while (start < cells) {
-      var x = 0, at = start, space = -1;
-      while (at < cells && x + advance[at] <= room) {
-        if (at > start && at < text.length && text[at] === " ") space = at;
-        x += advance[at];
-        at++;
-      }
-      if (at >= cells) { segments.push([start, cells]); break; }
+  function flowSheet(sheet, rtl) {
+    var originals = Array.prototype.slice.call(sheet.querySelectorAll(".ln"));
+    if (!originals.length) return;
 
-      /* The space the row breaks ON does not have to fit on it: it is the last
-         thing on the row and there is nothing after it to push off the edge.
-         Without this a line whose words end exactly at the screen's edge loses
-         the whole last word to the row below. */
-      if (at > start && at < text.length && text[at] === " ") space = at;
+    var full = originals[0].clientWidth;
+    if (!(full > 0)) return;
 
-      var end = space > start ? space + 1 : Math.max(at, start + 1);
-      segments.push([start, end]);
-      start = end;
+    var lines = originals.map(function (ln) { return measureLine(ln, rtl); });
+    var sized = lines.filter(function (line) { return !line.keep; });
+    if (!sized.length) return;
 
-      /* A row does not begin with the spaces the break left behind, unless a
-         chord is sitting on one of them: an outro's chords live out in that
-         emptiness, and moving them would be changing the song to fit the
-         screen. */
-      while (start < text.length && text[start] === " " && !chords.some(function (c) { return c.pos === start; })) start++;
-      room = width - indent;
+    var indent = CONT_INDENT * sized[0].size;
+    var sepWidth = textWidth(sheet, LINE_SEP);
+
+    /* --- pouring ---------------------------------------------------------- */
+
+    var out = [];
+    var row = null;
+    /* set when a line ran out of room, so the row after it opens as the one
+       carrying the leftover: indented, and marked with the arrow */
+    var leftover = false;
+
+    function openRow() {
+      row = { tail: leftover, pieces: [], used: 0 };
+      row.room = full - (row.tail ? indent : 0);
+      leftover = false;
+      out.push(row);
+      return row;
     }
 
-    if (segments.length < 2) return;
+    lines.forEach(function (line) {
+      if (line.keep) { row = null; leftover = false; out.push(line); return; }
 
-    var rows = segments.map(function (seg, n) {
-      var cont = n > 0;
-      var more = n < segments.length - 1;
-      var row = el("div", "ln" + (cont ? " is-cont" : "") + (more ? " has-cont" : ""));
+      var pos = 0;
+      while (pos < line.cells) {
+        if (!row) openRow();
 
-      /* EVERY chord lands on exactly one row, so a row claims everything from
-         where it starts up to where the next one does. The spaces a break ate
-         are a gap between the two, and a chord may not fall down it. */
-      var from = cont ? seg[0] : -Infinity;
-      var upto = more ? segments[n + 1][0] : Infinity;
+        /* what this piece has to pay before its first character: a separator,
+           if it is starting a line on a row that already holds one */
+        var lead = row.pieces.length ? sepWidth : 0;
+        var avail = row.room - row.used - lead;
 
-      var lane = el("div", "ln-c");
-      chords.forEach(function (c) {
-        if (c.pos < from || c.pos >= upto) return;
-        /* already transposed on screen, so nothing is shifted a second time */
-        lane.appendChild(chordEl(c.label, Math.max(0, c.pos - seg[0]), 0));
+        var x = 0, at = pos, space = -1;
+        while (at < line.cells && x + line.advance[at] <= avail) {
+          if (at > pos && at < line.text.length && line.text[at] === " ") space = at;
+          x += line.advance[at];
+          at++;
+        }
+
+        var end;
+        if (at >= line.cells) {
+          end = line.cells;
+        } else {
+          /* The space a row breaks ON does not have to fit on it: it is the
+             last thing on the row and there is nothing after it to push off
+             the edge. Without this a line whose words end exactly at the
+             screen's edge loses the whole last word to the row below. */
+          if (at > pos && at < line.text.length && line.text[at] === " ") space = at;
+          end = space > pos ? space + 1 : at;
+
+          /* A line joining a row that is already carrying something has to
+             bring at least one whole word with it. Anything less and the row
+             it was pulled up onto has cost it a broken word for nothing, so
+             it starts a row of its own instead. */
+          if (row.pieces.length && end <= pos) { row = null; continue; }
+
+          /* Alone on a row and still nothing fits: one character, because a
+             word longer than the whole screen has to be cut somewhere. */
+          if (end <= pos) end = pos + 1;
+        }
+
+        row.pieces.push({ line: line, from: pos, to: end });
+        line.pieces.push(row.pieces[row.pieces.length - 1]);
+        row.used += lead + x;
+        pos = end;
+
+        /* A row does not begin with the spaces the break left behind, unless a
+           chord is sitting on one of them: an outro's chords live out in that
+           emptiness, and moving them would be changing the song to fit the
+           screen. */
+        while (pos < line.text.length && line.text[pos] === " " && !line.chords.some(function (c) { return c.pos === pos; })) pos++;
+
+        if (pos < line.cells) {
+          row.more = true;
+          row = null;
+          leftover = true;
+        }
+      }
+
+      /* The line is done. A row that was carrying a leftover stays open for
+         it, which is the whole point of it; any other row closes, so a song
+         whose lines all fit is laid out exactly as it was written. And a row
+         that has already taken a second line closes too: two lines to a row is
+         a sheet, three is a paragraph. */
+      if (row && (!row.tail || row.pieces.length > 1)) row = null;
+    });
+
+    /* Which chords belong to which piece. A piece claims from where it starts
+       up to where the next piece of the SAME line does, so the spaces a break
+       ate are a gap no chord can fall down, and the chords past the end of the
+       words all belong to the piece that ends the line. */
+    sized.forEach(function (line) {
+      line.pieces.forEach(function (piece, n) {
+        piece.claimFrom = n ? piece.from : -Infinity;
+        piece.claimTo = n < line.pieces.length - 1 ? line.pieces[n + 1].from : Infinity;
       });
+    });
+
+    /* --- and drawing it --------------------------------------------------- */
+
+    function buildRow(desc) {
+      var ln = el("div", "ln" + (desc.tail ? " is-cont" : "") + (desc.more ? " has-cont" : ""));
+      var lane = el("div", "ln-c");
+      var text = "";
+      var seps = [];
+
+      desc.pieces.forEach(function (piece) {
+        if (text) {
+          seps.push(text.length);
+          text += LINE_SEP;
+        }
+        var offset = text.length;
+        piece.line.chords.forEach(function (c) {
+          if (c.pos < piece.claimFrom || c.pos >= piece.claimTo) return;
+          /* already transposed on screen, so nothing is shifted a second time */
+          lane.appendChild(chordEl(c.label, offset + Math.max(0, c.pos - piece.from), 0));
+        });
+        text += piece.line.text.slice(piece.from, Math.min(piece.to, piece.line.text.length));
+      });
+
       /* A leftover row with no chords over it needs no lane to hold them, and
          the fifteen pixels it would take are a line of the song further down
          the page. */
-      if (cont && !lane.children.length) row.classList.add("is-tight");
-      row.appendChild(lane);
+      if (desc.tail && !lane.children.length) ln.classList.add("is-tight");
+      ln.appendChild(lane);
 
-      var words = textSpans(text.slice(seg[0], Math.min(seg[1], text.length)));
-      if (cont) {
-        row.style.setProperty("--cont", indent + "px");
+      var words = textSpans(text);
+      seps.forEach(function (start) {
+        for (var i = 0; i < LINE_SEP.length; i++) words.children[start + i].className = "sp";
+      });
+      if (desc.tail) {
+        ln.style.setProperty("--cont", indent + "px");
         /* pointing the way the words run: down and to the left in Hebrew */
         words.dataset.cont = rtl ? "↲" : "↳";
       }
-      row.appendChild(words);
-      return row;
-    });
+      ln.appendChild(words);
+      return ln;
+    }
 
-    rows.forEach(function (row) { ln.parentNode.insertBefore(row, ln); });
-    ln.remove();
+    var nodes = out.map(function (desc) { return desc.keep ? desc.node : buildRow(desc); });
+
+    /* In one place, before the first of the rows being replaced, so the order
+       is the order of `out` whether a row is a new one or one being carried
+       through and moved. */
+    var parent = originals[0].parentNode;
+    var mark = document.createComment("");
+    parent.insertBefore(mark, originals[0]);
+    nodes.forEach(function (node) { parent.insertBefore(node, mark); });
+    parent.removeChild(mark);
+    originals.forEach(function (node) {
+      if (node.parentNode && nodes.indexOf(node) === -1) node.parentNode.removeChild(node);
+    });
   }
 
   /* Where the pointer is, said in characters, fraction and all. The caller
@@ -1734,25 +1859,21 @@
     state.printable = true;
     paintHeader();
 
-    /* TWO ANSWERS, NOT ONE, because the head of a song and the sheet under it
-       ask different things of the hand holding the screen. Nothing is switched
-       on or off after this: signing in re-runs the route, which comes back
-       through here.
+    /* Signed in AND on a screen with room. Nothing is switched on or off after
+       this: signing in re-runs the route, which comes back through here.
 
-       `writing` is the head: the name and who wrote it. Three lines of text,
-       typed into fields the size of fields, which a phone has always been able
-       to do. Whoever is signed in can write them anywhere.
+       ONE ANSWER FOR THE WHOLE PAGE, head and sheet alike. A phone is for
+       playing from, not for editing on: every gesture the editor has is a small
+       one over a small target, dragging a chord onto one letter out of forty,
+       and a finger on a moving page cannot do any of them.
 
-       `editing` is the sheet, and it wants a desk. Every gesture it has is a
-       small one over a small target, dragging a chord onto one letter out of
-       forty, and a finger on a moving page cannot do any of them: what it does
-       instead is scroll the song sideways and drop a chord somewhere nobody
-       asked for. The direction of the song goes with the sheet rather than with
-       the head, because what it changes is the sheet.
-
-       So the phone reads the song and still names it, and the desk writes it. */
-    var writing = auth.in;
-    var editing = writing && !NARROW.matches;
+       The name and the credits are easier to type than that, and they are still
+       not offered here. A page that can be changed is a page that has to be
+       watched, and a page held while walking, or pressed with a hand that is
+       also holding a guitar, is where a change nobody meant gets made. What a
+       phone needs of the credits is to READ them, and it does: they are the
+       sentence under the title. So the phone reads and the desk writes. */
+    var editing = auth.in && !NARROW.matches;
 
     /* A song opens on its EASY version: transposed down by whatever capo turns
        its chords into the fewest barres. So the number differs from song to
@@ -1776,7 +1897,7 @@
     var head = el("div", "song-head");
 
     var title = el("h1", null, song.title);
-    if (writing) {
+    if (editing) {
       makeEditable(title);
       title.addEventListener("input", function () { song.title = title.textContent.trim(); mark(); });
       title.addEventListener("keydown", function (event) {
@@ -1787,10 +1908,9 @@
     head.appendChild(title);
 
     var byFields = [];
-    /* set below when there is a direction button to keep in step with the song,
-       which is only where the sheet can be edited at all */
+    /* set below, with the direction button it keeps in step with the song */
     var showDir = null;
-    if (writing) {
+    if (editing) {
       /* Who wrote it, on the song itself. It belongs to it and there is no
          other page to keep it on any more. */
       var meta = el("div", "song-meta");
@@ -1825,40 +1945,43 @@
       /* Which way the song runs, in ONE BUTTON WITH NO CAPTION. There are two
          states and the button is in one of them, so the three letters on it are
          both the answer and the way to the other one; a caption over them would
-         only name what they already say. It goes with the sheet and not with
-         the credits above it, because what it changes is the sheet.
+         only name what they already say.
 
          RTL and LTR in Latin letters on a Hebrew page on purpose. They are the
          names of the two directions everywhere they are written down, and the
          alternative is a Hebrew sentence too long to sit on a button. */
-      if (editing) {
-        var dirBtn = el("button", "dir-btn");
-        dirBtn.type = "button";
-        dirBtn.dir = "ltr";
-        dirBtn.addEventListener("click", function () {
-          song.dir = (song.dir || "rtl") === "rtl" ? "ltr" : "rtl";
-          showDir();
-          draw();
-          mark();
-        });
-
-        showDir = function () {
-          var isRtl = (song.dir || "rtl") === "rtl";
-          dirBtn.textContent = isRtl ? "RTL" : "LTR";
-          var words = isRtl ? "עברית, מימין לשמאל" : "אנגלית, משמאל לימין";
-          dirBtn.title = words + ". לחיצה מחליפה.";
-          dirBtn.setAttribute("aria-label", "כיוון השיר: " + words + ". לחיצה מחליפה.");
-        };
+      var dirBtn = el("button", "dir-btn");
+      dirBtn.type = "button";
+      dirBtn.dir = "ltr";
+      dirBtn.addEventListener("click", function () {
+        song.dir = (song.dir || "rtl") === "rtl" ? "ltr" : "rtl";
         showDir();
+        draw();
+        mark();
+      });
 
-        meta.appendChild(dirBtn);
-      }
+      showDir = function () {
+        var isRtl = (song.dir || "rtl") === "rtl";
+        dirBtn.textContent = isRtl ? "RTL" : "LTR";
+        var words = isRtl ? "עברית, מימין לשמאל" : "אנגלית, משמאל לימין";
+        dirBtn.title = words + ". לחיצה מחליפה.";
+        dirBtn.setAttribute("aria-label", "כיוון השיר: " + words + ". לחיצה מחליפה.");
+      };
+      showDir();
+
+      meta.appendChild(dirBtn);
 
       head.appendChild(meta);
     } else {
       /* Reading it, the credits are a sentence rather than a form, and it
          matters which is which: whoever wrote the words is rarely the one you
-         heard sing them. */
+         heard sing them.
+
+         A name that is not known is not written down: an empty field is a
+         question the reader was not asked, and a song whose credits are both
+         empty says nothing here at all. Which is why this is a sentence and not
+         a form: a form has to show the rows it has no answers for, and a
+         sentence simply leaves them out. */
       var by = credits(song);
       if (by.length) {
         head.appendChild(el("div", "by", by.map(function (c) {
@@ -1933,17 +2056,8 @@
     revertBtn.hidden = true;
     saveBtn.hidden = true;
 
-    /* `writing` and not `editing`: a phone that can put a name in the head has
-       to be able to keep it, and to take it back.
-
-       Deleting is the exception, and it stays on the desk. It is the one thing
-       here that no undo reaches and no draft holds a copy of, and a phone is
-       where a press is least likely to have been meant: it is held while
-       walking, it is played from with a hand that is also holding a guitar, and
-       the target is the size of a fingertip. A song that has to go can wait for
-       a desk. */
-    if (writing) {
-      if (song.id && editing) {
+    if (editing) {
+      if (song.id) {
         var trash = iconBtn(ICON.trash, "מחיקת השיר", removeSong);
         trash.classList.add("quiet");
         tools.appendChild(trash);
@@ -2784,15 +2898,11 @@
 
     /* last, once the page is whole, because taking a draft back means writing
        into the title, the credits and every line of the sheet, and all of them
-       have to exist first. Only where they can be written into at all: a
-       signed-out reader is looking at the saved song and should be told the
-       truth about it.
-
-       A draft lives in the browser that made it, so the one a phone is offered
-       here is a name the same phone left half-typed, never a sheet it has no
-       way to see the changes in. */
-    if (writing) takeDraft();
-    if (writing && !song.id) title.focus();
+       have to exist first. Only where they can be written into at all: a phone
+       or a signed-out reader is looking at the saved song, and should be told
+       the truth about it. */
+    if (editing) takeDraft();
+    if (editing && !song.id) title.focus();
   }
 
   function viewLine(line, semis) {
