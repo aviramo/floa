@@ -1223,6 +1223,9 @@
        the one that says who you are. An evening that is open has tools of its
        own, and none of these. */
     if (p[0] === "evenings") {
+      /* Nothing here is readable without an account, so the one button that
+         matters is the way in. */
+      if (!auth.in) { bar.appendChild(session()); return; }
       if (p.length === 1) {
         bar.appendChild(button("ערב חדש", ICON.plus, "small", newEvening));
         bar.appendChild(session());
@@ -2735,8 +2738,25 @@
     document.title = "לא נמצא | אקורדים";
     app.innerHTML = "";
     var box = el("div", "center");
-    box.appendChild(el("p", null, "הערב הזה לא נמצא. אולי הוא נמחק."));
+    box.appendChild(el("p", null, "הערב הזה לא נמצא. אולי הוא נמחק, ואולי הוא של חשבון אחר."));
     box.appendChild(button("לרשימת הערבים", null, "ghost", function () { go(BASE + "/evenings"); }));
+    app.appendChild(box);
+  }
+
+  /* An evening belongs to the account that made it, so without one there is
+     nothing here to show and no honest way to pretend otherwise. Said as a
+     page rather than as a dialog over an empty screen: a dialog that is closed
+     leaves nothing behind, and "there are no evenings" is a different sentence
+     from "you are not signed in". */
+  function needSignIn() {
+    document.title = "ערבי שירה | אקורדים";
+    app.innerHTML = "";
+    var box = el("div", "center");
+    box.appendChild(el("p", null, "ערבי השירה שייכים לחשבון. כל אחד רואה, מתכנן ומוחק רק את שלו."));
+    var actions = el("div", "row-actions");
+    actions.appendChild(button("התחברות", null, null, function () { askSignIn(function () { route(); }); }));
+    actions.appendChild(button("לרשימת השירים", null, "ghost", function () { go(BASE + "/"); }));
+    box.appendChild(actions);
     app.appendChild(box);
   }
 
@@ -2893,13 +2913,14 @@
   function renderEvening(evening, library) {
     document.title = (evening.title || "ערב חדש") + " | אקורדים";
 
-    /* Signing in is the difference between reading an evening and planning
-       one, and here that is the ONLY difference.
+    /* Everything here can be changed, and there is no other state for this
+       page to be in: an evening is its account's, so whoever is looking at one
+       is the person whose it is. That is the difference from the song page,
+       which is a library everybody reads and a few people write.
 
-       Unlike the song editor, this page is not shut on a phone. Every gesture
-       it has is a whole row wide, which a finger can do; and an evening gets
+       Unlike the song editor it is also not shut on a phone. Every gesture it
+       has is a whole row wide, which a finger can do, and an evening gets
        planned wherever the person planning it happens to be standing. */
-    var editing = auth.in;
 
     var byId = {};
     library.forEach(function (song) { byId[song.id] = song; });
@@ -2916,21 +2937,17 @@
     }));
 
     var title = el("h1", "ev-title", evening.title);
-    if (editing) {
-      title.dataset.empty = "שם הערב";
-      makeEditable(title);
-      title.addEventListener("input", function () {
-        evening.title = title.textContent.trim();
-        document.title = (evening.title || "ערב חדש") + " | אקורדים";
-        mark();
-      });
-      title.addEventListener("keydown", function (event) {
-        /* one line, so Enter is not a newline here, it is done */
-        if (event.key === "Enter") { event.preventDefault(); title.blur(); }
-      });
-    } else if (!evening.title) {
-      title.textContent = "ערב בלי שם";
-    }
+    title.dataset.empty = "שם הערב";
+    makeEditable(title);
+    title.addEventListener("input", function () {
+      evening.title = title.textContent.trim();
+      document.title = (evening.title || "ערב חדש") + " | אקורדים";
+      mark();
+    });
+    title.addEventListener("keydown", function (event) {
+      /* one line, so Enter is not a newline here, it is done */
+      if (event.key === "Enter") { event.preventDefault(); title.blur(); }
+    });
     titleRow.appendChild(title);
     head.appendChild(titleRow);
 
@@ -2938,39 +2955,36 @@
        that set them on the screen, and the sentence they make on paper. A date
        input prints as an empty-looking box with a calendar icon in it, which
        is the one thing an evening's printout must not be vague about. */
-    var whenWords = el("div", "by ev-when", whenWhere(evening));
+    var whenWords = el("div", "by ev-when on-paper", whenWhere(evening));
 
-    if (editing) {
-      var meta = el("div", "ev-meta");
+    var meta = el("div", "ev-meta");
 
-      var whenLabel = el("label", null, "תאריך");
-      var when = el("input");
-      when.type = "date";
-      when.value = evening.event_date || "";
-      when.addEventListener("change", function () {
-        evening.event_date = when.value || null;
-        whenWords.textContent = whenWhere(evening);
-        mark(true);
-      });
-      whenLabel.appendChild(when);
-      meta.appendChild(whenLabel);
+    var whenLabel = el("label", null, "תאריך");
+    var when = el("input");
+    when.type = "date";
+    when.value = evening.event_date || "";
+    when.addEventListener("change", function () {
+      evening.event_date = when.value || null;
+      whenWords.textContent = whenWhere(evening);
+      mark(true);
+    });
+    whenLabel.appendChild(when);
+    meta.appendChild(whenLabel);
 
-      var whereLabel = el("label", null, "מיקום");
-      var where = el("input");
-      where.type = "text";
-      where.value = evening.venue || "";
-      where.placeholder = "איפה זה קורה";
-      where.addEventListener("input", function () {
-        evening.venue = where.value;
-        whenWords.textContent = whenWhere(evening);
-        mark();
-      });
-      whereLabel.appendChild(where);
-      meta.appendChild(whereLabel);
+    var whereLabel = el("label", null, "מיקום");
+    var where = el("input");
+    where.type = "text";
+    where.value = evening.venue || "";
+    where.placeholder = "איפה זה קורה";
+    where.addEventListener("input", function () {
+      evening.venue = where.value;
+      whenWords.textContent = whenWhere(evening);
+      mark();
+    });
+    whereLabel.appendChild(where);
+    meta.appendChild(whereLabel);
 
-      head.appendChild(meta);
-      whenWords.classList.add("on-paper");
-    }
+    head.appendChild(meta);
     head.appendChild(whenWords);
 
     app.appendChild(head);
@@ -2984,19 +2998,15 @@
 
     /* What the save button used to say, said by a word instead. See mark()
        below for why there is no button. */
-    var stateNode = null;
-    if (editing) {
-      stateNode = el("span", "save-state");
-      tools.appendChild(stateNode);
-    }
+    var stateNode = el("span", "save-state");
+    tools.appendChild(stateNode);
 
     tools.appendChild(button("הדפסה", ICON.print, "small", function () { window.print(); }));
 
-    if (editing) {
-      var trash = iconBtn(ICON.trash, "מחיקת הערב", removeEvening);
-      trash.classList.add("quiet");
-      tools.appendChild(trash);
-    }
+    var trash = iconBtn(ICON.trash, "מחיקת הערב", removeEvening);
+    trash.classList.add("quiet");
+    tools.appendChild(trash);
+
     app.appendChild(tools);
 
     /* --- the songs, in order --- */
@@ -3007,33 +3017,31 @@
     var listEl = el("ol", "set");
     app.appendChild(listEl);
 
-    var emptyNote = el("p", "hint", editing
-      ? "אין עדיין שירים בערב. אפשר להוסיף מהמאגר שלמטה, ואחר כך לגרור בידית כדי לסדר."
-      : "אין עדיין שירים בערב הזה.");
+    var emptyNote = el("p", "hint", "אין עדיין שירים בערב. אפשר להוסיף מהמאגר שלמטה, ואחר כך לגרור בידית כדי לסדר.");
     app.appendChild(emptyNote);
 
-    /* --- the library, to add from --- */
+    /* --- the library, to add from ---
+       The songs are everybody's and the evening is one account's, which is
+       exactly why this panel is here: the evening is a choice out of a shelf
+       that is not itself private. */
 
-    var pool = null, poolList = null, poolInput = null;
-    if (editing) {
-      pool = el("div", "pool card");
-      pool.appendChild(el("h2", null, "מהמאגר"));
-      pool.appendChild(el("p", "muted", "לחיצה על שיר מוסיפה אותו לערב, לחיצה נוספת מוציאה אותו."));
+    var pool = el("div", "pool card");
+    pool.appendChild(el("h2", null, "מהמאגר"));
+    pool.appendChild(el("p", "muted", "לחיצה על שיר מוסיפה אותו לערב, לחיצה נוספת מוציאה אותו."));
 
-      var field = el("div", "search");
-      field.appendChild(svg(ICON.search));
-      poolInput = el("input");
-      poolInput.type = "search";
-      poolInput.placeholder = "חיפוש לפי שם, מילים או לחן";
-      poolInput.setAttribute("aria-label", "חיפוש שיר להוספה");
-      poolInput.addEventListener("input", function () { paintPool(); });
-      field.appendChild(poolInput);
-      pool.appendChild(field);
+    var field = el("div", "search");
+    field.appendChild(svg(ICON.search));
+    var poolInput = el("input");
+    poolInput.type = "search";
+    poolInput.placeholder = "חיפוש לפי שם, מילים או לחן";
+    poolInput.setAttribute("aria-label", "חיפוש שיר להוספה");
+    poolInput.addEventListener("input", function () { paintPool(); });
+    field.appendChild(poolInput);
+    pool.appendChild(field);
 
-      poolList = el("ul", "pool-list");
-      pool.appendChild(poolList);
-      app.appendChild(pool);
-    }
+    var poolList = el("ul", "pool-list");
+    pool.appendChild(poolList);
+    app.appendChild(pool);
 
     /* --- drawing ------------------------------------------------------------ */
 
@@ -3048,15 +3056,13 @@
       var song = byId[item.id];
       var li = el("li", "set-row" + (song ? "" : " is-gone"));
 
-      if (editing) {
-        var grip = el("button", "set-grip");
-        grip.type = "button";
-        grip.title = "גרירה כדי לשנות את הסדר";
-        grip.setAttribute("aria-label", "הזזת " + (song ? song.title : item.title) + " ברשימה");
-        grip.appendChild(svg(ICON.grip));
-        /* nothing is bound to it: the list listens for all of them, see below */
-        li.appendChild(grip);
-      }
+      var grip = el("button", "set-grip");
+      grip.type = "button";
+      grip.title = "גרירה כדי לשנות את הסדר";
+      grip.setAttribute("aria-label", "הזזת " + (song ? song.title : item.title) + " ברשימה");
+      grip.appendChild(svg(ICON.grip));
+      /* nothing is bound to it: the list listens for all of them, see below */
+      li.appendChild(grip);
 
       var box = el("div", "set-main");
       var top = el("div", "t-row");
@@ -3381,11 +3387,26 @@
      travel in ONE request: the Worker brakes uploads rather than files, and a
      folder of sheets should be one action rather than nine refusals. */
   var MAX_SONGS = 10;
-  /* The long edge a picture is sent at, and it is the model's own ceiling
-     rather than a number picked here: anything larger is resized on arrival, so
-     pixels above this line are paid for and then thrown away. Below it they are
-     not free either, and this is where they are worth buying. */
-  var MAX_EDGE = 1568;
+  /* The long edge the WRITING is sent at, once the margin has been cut off it,
+     and it is measured rather than reasoned about. See the note over prepare().
+
+     It used to be 1568, which is the ceiling above which the model resizes a
+     picture itself, on the argument that pixels past that are paid for and
+     thrown away. That argument was about the model and is now about nobody:
+     the page goes to an OCR engine first, which has no such ceiling and reads
+     what it is given. On the sheet this was measured against, sending the
+     writing at 1568 scored 65 and sending it at 2700 scored 92.
+
+     It costs nothing on the other side either, because the model still resizes
+     to its own ceiling on arrival and is billed on what it resized to. So the
+     bigger picture is free and the smaller one was expensive. */
+  var MAX_EDGE = 2700;
+
+  /* And upscaling is allowed, which it was not. A scan of a page is often
+     smaller than this, and enlarging it adds no information; what it adds is
+     pixels for a letter-finder to work with, and that turns out to be most of
+     what it wanted. Capped, because past a point it is only weight. */
+  var MAX_GROW = 3;
   /* What one song may weigh, in the base64 it travels as, under the Worker's
      own limit with room to spare. */
   var MAX_DATA = 640 * 1024;
@@ -3468,26 +3489,72 @@
     return box;
   }
 
-  /* A photo straight off a phone is four thousand pixels wide and several
-     megabytes, and none of that arrives: the model resizes anything past
-     MAX_EDGE itself. So the shrinking happens here, where it can be done well.
+  /* --- COLOUR IS WHAT WAS HIDING THE CHORDS ---------------------------------
+
+     Measured, on one real sheet, against a version of it corrected by hand:
+
+         as it was sent before                 12 of 26 chords
+         the same page in grey, not shrunk     24 of 26
+
+     A chord sheet prints its symbols in pink. To a person that is helpful, it
+     says at a glance which row is chords and which is words. To something
+     looking for letters it is nearly a disaster: pink is a MIDTONE. Measured
+     the way brightness is measured, #e11d63 comes out around 95 of 255, a
+     middling grey on white paper, and two thirds of the symbols on the page
+     were simply not seen. The words, printed in black, were read perfectly the
+     whole time, which is exactly why nothing looked broken.
+
+     So the colour comes out and the contrast goes up, and a symbol that was a
+     midtone becomes ink. Nothing else about this changed and nothing else
+     needed to: it is the difference between a reader that works and one that
+     quietly loses most of a page.
+
+     THE CONTRAST IS THE SETTING TO BE CAREFUL WITH. Too little and the pink
+     stays grey; too much and the thin strokes of the Hebrew letters break up
+     and the words go instead. 2.5 was the best of the ones tried and 2 was
+     markedly worse, which is a narrower window than it looks.
+
      A PDF is passed through as it is, because it is already text. */
+  var CONTRAST = 2.5;
+
+  /* The colour taken out and the range pulled apart, in place. Kept as grey
+     rather than pushed all the way to black and white: a hard threshold was
+     tried and was much worse, because it eats the thin strokes of the small
+     symbols along with the noise. */
+  function grey(ctx, canvas) {
+    var image;
+    /* a picture from another origin taints the canvas and cannot be read back.
+       Nothing to be done but send the colours as they are. */
+    try { image = ctx.getImageData(0, 0, canvas.width, canvas.height); } catch (e) { return; }
+
+    var p = image.data;
+    for (var i = 0; i < p.length; i += 4) {
+      var light = 0.299 * p[i] + 0.587 * p[i + 1] + 0.114 * p[i + 2];
+      light = (light - 128) * CONTRAST + 128;
+      p[i] = p[i + 1] = p[i + 2] = light < 0 ? 0 : light > 255 ? 255 : light;
+    }
+    ctx.putImageData(image, 0, 0);
+  }
+
   function prepare(file) {
     if (file.type === "application/pdf") return toBase64(file);
     if (typeof createImageBitmap !== "function") return toBase64(file);
 
     return createImageBitmap(file).then(function (bitmap) {
       var box = inkBox(bitmap) || { x: 0, y: 0, w: bitmap.width, h: bitmap.height };
-      var scale = Math.min(1, MAX_EDGE / Math.max(box.w, box.h));
+      var scale = Math.min(MAX_GROW, MAX_EDGE / Math.max(box.w, box.h));
 
       var canvas = document.createElement("canvas");
       canvas.width = Math.max(1, Math.round(box.w * scale));
       canvas.height = Math.max(1, Math.round(box.h * scale));
       var ctx = canvas.getContext("2d");
+      ctx.imageSmoothingQuality = "high";
       ctx.fillStyle = "#fff";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(bitmap, box.x, box.y, box.w, box.h, 0, 0, canvas.width, canvas.height);
       bitmap.close();
+
+      grey(ctx, canvas);
 
       /* QUALITY IS GIVEN UP BEFORE PIXELS ARE, and it used to be the other way
          round. What a picture costs to read is decided by its width and height
@@ -3743,12 +3810,15 @@
     /* --- the evenings ---
        /evenings          the list of them
        /evenings/new      one that does not exist yet
-       /evenings/<id>     one that does */
+       /evenings/<id>     one that does
+
+       All three need an account, and not only to write: an evening belongs to
+       one, and the database hands back nothing at all without it. Checked
+       here as well as there so the answer is a sentence rather than an empty
+       list, which is what the same refusal looks like from the other side. */
     if (p[0] === "evenings") {
-      if (p[1] === "new") {
-        if (!auth.in) return askSignIn(function () { route(); });
-        return viewEvening(null);
-      }
+      if (!auth.in) return needSignIn();
+      if (p[1] === "new") return viewEvening(null);
       if (p[1]) return viewEvening(p[1]);
       return viewEvenings();
     }

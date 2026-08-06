@@ -24,7 +24,7 @@
     "with a note where there is no browser to drive."
   ],
   "scripts": {
-    "test": "node worker/test/lead.test.mjs && node worker/test/transcribe.test.mjs && node worker/test/geometry.test.mjs && node businesses/chords/test/model.test.mjs",
+    "test": "node worker/test/lead.test.mjs && node worker/test/transcribe.test.mjs && node worker/test/geometry.test.mjs && node worker/test/page.test.mjs && node businesses/chords/test/model.test.mjs",
     "test:layout": "node businesses/chords/test/layout.test.mjs",
     "build": "node build.mjs",
     "dev": "node build.mjs --serve",

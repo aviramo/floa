@@ -132,18 +132,50 @@ export function rowsOf(boxes) {
 
   /* 5. WHAT IS NOT WRITING. A scan catches the rule down the margin, the edge
         of the paper, the shadow of a staple, and hands each of them over as a
-        character: usually a | or an l, tall and thin and spanning several
-        lines at once. One of those is worse than a stray letter, because a box
-        that tall makes the row it lands in believe it is tall too, and a tall
-        row reaches down and swallows the one beneath it.
+        character. It is worse than a stray letter: it lands in a row, the row
+        takes its height for its own, and a tall row reaches down and swallows
+        the one beneath it. A whole verse can lose its chords to one line of
+        ink nobody drew on purpose.
 
-        Anything far taller than the page's own letters is therefore not a
-        letter. Measured against the median rather than a number, so it holds
-        for a photograph at any size. */
+        Two things give it away, and the second is the one that works. HEIGHT
+        catches a rule that runs the length of the page, measured against the
+        median so it holds at any size. SHAPE catches the rest: the margin rule
+        on this sheet came back sixteen pixels wide and ninety-eight tall, well
+        under the median height of a Hebrew letter and nothing like its
+        proportions.
+
+        Shape alone would be too eager, because ו and ן and a Latin I and l are
+        all narrow letters, so it applies only to characters that are not
+        letters at all. A bar is never part of a word and never part of a
+        chord. */
   const tall = median(kept.map((box) => box.h)) * 2.5;
+  const RULE = /^[|¦‖│┃]+$/;
 
-  kept
+  /* 6. THE SAME GLYPH, FOUND TWICE. An engine reading a page sometimes reports
+        one letter as two boxes lying on top of each other, and the two are not
+        near-misses to be averaged: they are one letter said twice. Left alone
+        they double it, and a doubled letter is not a cosmetic fault. "Am"
+        becomes "AAmm" and stops being a chord at all, so the symbol is dropped
+        in silence; a word becomes "אאייללהה" and every chord after it on the
+        line is four characters out.
+
+        Two boxes are the same glyph when they say the same thing and sit in
+        the same place. Nothing else is touched: two real letters never overlap
+        by half their width. */
+  const seen = [];
+  const once = kept
     .filter((box) => !(tall > 0 && box.h > tall))
+    .filter((box) => !(RULE.test(String(box.text).trim()) && box.h > box.w * 2))
+    .filter((box) => {
+      const twin = seen.some((other) =>
+        other.text === box.text &&
+        Math.abs(midX(other) - midX(box)) < Math.min(other.w, box.w) * 0.5 &&
+        Math.abs(midY(other) - midY(box)) < Math.min(other.h, box.h) * 0.5);
+      if (!twin) seen.push(box);
+      return !twin;
+    });
+
+  once
     .sort((a, b) => midY(a) - midY(b))
     .forEach((box) => {
       const row = rows[rows.length - 1];

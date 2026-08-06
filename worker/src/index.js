@@ -37,6 +37,7 @@
    ========================================================================== */
 import { BUSINESSES } from "./businesses.js";
 import { MEDIA_TYPES } from "./transcribe.js";
+import { measure } from "./ocr.js";          // temporary, for /boxes
 
 /* A lead sent before the sites were rebuilt carries no `business` field. It can
    only have come from FLOA, because FLOA is the only business that existed then. */
@@ -399,32 +400,29 @@ async function handleLead(request, env, origin) {
 
 /* --- the door ------------------------------------------------------------- */
 
-/* --- is the measuring key working -----------------------------------------
-   TEMPORARY, and it is here rather than in a log because a failure that falls
-   back silently is invisible by design and reproducing it costs a real read of
-   a real song. This asks Google the same question the reader asks, about a
-   single white pixel, and repeats the answer word for word.
+/* --- the page as boxes, once ----------------------------------------------
+   TEMPORARY, and it exists so that tuning the reader stops costing anything.
 
-   It spends a fifth of a cent and reveals nothing: the key goes to Google and
-   never into the reply. DELETE IT once the answer is known. */
-async function visionCheck(env) {
+   Measuring a page is the only step of this that needs a key, a network and a
+   supplier. Everything after it, the rows, the direction, which token is a
+   chord, which letter it sits on, is arithmetic on a list of rectangles. Pull
+   that list out once and every version of the arithmetic can be tried against
+   the same page, offline and free, and compared against a song somebody fixed
+   by hand. See worker/test/score.mjs.
+
+   DELETE IT once the arithmetic has settled. */
+async function boxesOf(request, env) {
   if (!env.GOOGLE_VISION_KEY) return json({ ok: false, said: "no GOOGLE_VISION_KEY" }, 200, "");
 
-  const PIXEL = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+  let body;
+  try { body = await request.json(); } catch { return json({ ok: false, said: "bad body" }, 400, ""); }
+  if (!body?.data) return json({ ok: false, said: "no data" }, 400, "");
+
   try {
-    const response = await fetch(
-      `https://vision.googleapis.com/v1/images:annotate?key=${encodeURIComponent(env.GOOGLE_VISION_KEY)}`,
-      {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          requests: [{ image: { content: PIXEL }, features: [{ type: "DOCUMENT_TEXT_DETECTION" }] }],
-        }),
-      }
-    );
-    return json({ ok: response.ok, status: response.status, said: (await response.text()).slice(0, 700) }, 200, "");
+    const { boxes, cost } = await measure(env, [{ media_type: body.media_type || "image/jpeg", data: body.data }]);
+    return json({ ok: true, cost, boxes }, 200, "");
   } catch (err) {
-    return json({ ok: false, threw: String(err.message).slice(0, 300) }, 200, "");
+    return json({ ok: false, threw: String(err.message).slice(0, 400) }, 200, "");
   }
 }
 
@@ -432,8 +430,8 @@ export default {
   async fetch(request, env, ctx) {
     const origin = request.headers.get("origin") || "";
 
-    if (request.method === "GET" && new URL(request.url).pathname === "/vision") {
-      return visionCheck(env);
+    if (request.method === "POST" && new URL(request.url).pathname === "/boxes") {
+      return boxesOf(request, env);
     }
 
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(origin) });

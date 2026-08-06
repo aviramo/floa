@@ -140,10 +140,22 @@ create policy "signed in users may delete songs"
 -- own rather than a column on a song, because the two do not belong to each
 -- other: a song does not know which evenings it is in, and an evening whose
 -- song was deleted from the library is still an evening.
+--
+-- THIS TABLE IS NOT LIKE THE SONGS ONE. The library is public: everyone reads
+-- it and a signed-in user writes it. An evening belongs to the account that
+-- made it and to nobody else, which is the whole of the rule below: it is
+-- read, changed and deleted by its owner alone, and a visitor without an
+-- account does not see that it exists.
 -- ==========================================================================
 
 create table if not exists public.setlists (
   id          uuid primary key default gen_random_uuid(),
+
+  -- Whose evening. Filled in by the database from the token the request
+  -- carried, never by the browser, so it cannot be claimed: an evening is the
+  -- account's the moment it is written and there is no other way to write
+  -- one. The policy below is one line of arithmetic on this column.
+  owner       uuid default auth.uid() references auth.users (id) on delete cascade,
 
   -- May be empty. An evening usually gets its songs before it gets its name,
   -- and refusing to save one until it is named would mean losing the songs.
@@ -177,32 +189,53 @@ create table if not exists public.setlists (
 
 -- added after the first version of this table; safe to re-run
 alter table public.setlists add column if not exists venue text not null default '';
+alter table public.setlists add column if not exists owner uuid
+  default auth.uid() references auth.users (id) on delete cascade;
+
+-- An evening written before there was an owner has none, and a row whose
+-- owner is null is invisible to everybody, because no uid equals null. So it
+-- goes to the account that has been here longest, which in a project with one
+-- account is that account. This is the difference between an evening kept and
+-- an evening lost, and it is why the backfill runs before the policy does.
+update public.setlists
+   set owner = (select id from auth.users order by created_at limit 1)
+ where owner is null;
+
+-- Deliberately not `not null`. The insert policy below already refuses a row
+-- whose owner is not the account writing it, and null is not, so the column
+-- cannot be left empty by anything that comes through the API. A constraint
+-- would only be able to fail this file on a project whose table predates the
+-- column and whose users table is empty.
 
 drop trigger if exists setlists_touch_updated_at on public.setlists;
 create trigger setlists_touch_updated_at
   before update on public.setlists
   for each row execute function public.touch_updated_at();
 
--- Same rule as the songs, for the same reason: the anon key printed in the
--- page may read and nothing else.
 alter table public.setlists enable row level security;
 
+-- The first version of this table was public the way the songs are. Those
+-- policies are dropped by name and the lines stay here forever: on a project
+-- that never had them this does nothing, and on the one that did it is the
+-- only thing standing between "an evening belongs to its account" and an
+-- older, more permissive rule still sitting underneath it. Postgres ORs its
+-- policies together, so a leftover `using (true)` would quietly undo all of
+-- this.
 drop policy if exists "evenings are readable by everyone" on public.setlists;
-create policy "evenings are readable by everyone"
-  on public.setlists for select
-  using (true);
-
 drop policy if exists "signed in users may add evenings" on public.setlists;
-create policy "signed in users may add evenings"
-  on public.setlists for insert to authenticated
-  with check (true);
-
 drop policy if exists "signed in users may edit evenings" on public.setlists;
-create policy "signed in users may edit evenings"
-  on public.setlists for update to authenticated
-  using (true) with check (true);
-
 drop policy if exists "signed in users may delete evenings" on public.setlists;
-create policy "signed in users may delete evenings"
-  on public.setlists for delete to authenticated
-  using (true);
+
+-- One rule for all four verbs, because there is only one thing to say: an
+-- evening is its owner's. `using` decides which rows can be seen, changed and
+-- deleted; `with check` decides what may be written, and it is what stops an
+-- evening from being handed to somebody else.
+--
+-- Not granted to anon at all, so a visitor without an account does not read
+-- an evening, and a link to one answers as though it were not there. Which it
+-- is not, for them.
+drop policy if exists "an evening belongs to its account" on public.setlists;
+create policy "an evening belongs to its account"
+  on public.setlists for all to authenticated
+  using (owner = auth.uid())
+  with check (owner = auth.uid());
