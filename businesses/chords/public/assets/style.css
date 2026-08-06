@@ -42,6 +42,12 @@
      absent. No web font is fetched: these are already on the machine, which is
      why the fallbacks matter. */
   --song-font: David, "David Libre", "Frank Ruehl CLM", FrankRuehl, "Times New Roman", "Noto Serif Hebrew", serif;
+
+  /* The chords are NOT in the song's face, and that is on purpose. They are
+     Latin letters sitting over Hebrew ones, and a sans keeps them reading as
+     symbols rather than as words: the eye should find the chord row without
+     looking for it. */
+  --chord-font: "Arial Hebrew", Arial, "Helvetica Neue", Helvetica, "Segoe UI", sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -264,6 +270,9 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .ln-t {
   white-space: pre;
   font-size: var(--song-size);
+  /* Bold, because the words are what is being read from across a room with a
+     guitar in your hands. */
+  font-weight: 700;
   line-height: 1.55;
   min-height: 1.55em;
 }
@@ -276,6 +285,7 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .chord {
   position: absolute; top: 0;
   direction: ltr; unicode-bidi: isolate;
+  font-family: var(--chord-font);
   color: var(--chord); font-weight: 700;
   font-size: calc(var(--song-size) * .82);
   line-height: 1;
