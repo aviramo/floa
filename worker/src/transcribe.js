@@ -99,6 +99,16 @@
                       past the end of the line was broken up and scattered
                       between the syllables of נה נה נה.
 
+     Opus, medium,    29 cents. Nothing structural left to find: the words
+     the new shape,   right, the order right, every chord over its own word,
+     a sharp picture  the run past the end of the line kept together. And a
+                      third of the chords a single letter out, in both
+                      directions, on a page whose letters were now as sharp as
+                      they were ever going to get.
+
+   Which is what CHORDS_EFFORT going up is buying, and it is the last thing on
+   this list that is not a rewrite. See the note above the constants.
+
    What the sort actually guarantees is narrower than it looked. It makes the
    order impossible to reverse HERE, in the assembling, which was one of the
    two ways the old design could go wrong. It cannot stop a model from naming
@@ -156,18 +166,35 @@
         now a lookup in what it was given.
 
    The image goes twice, which costs about two more cents of input and is worth
-   it several times over. And each half now has its own model and its own
-   effort, so the next experiment is one line rather than a rewrite: the
-   obvious one is CHORDS_MODEL down to Sonnet, which failed as a single call
-   but is being asked something much smaller here.
+   it several times over. And each half has its own model and its own effort,
+   so an experiment is one line rather than a rewrite.
 
-   max_tokens is a ceiling and not a target: at 32000 a long song cannot run
-   out of room, and nothing is paid for room that goes unused. */
+   WHICH IS WHAT CHORDS_EFFORT IS NOW SPENDING. Everything else had been tried:
+   the question was reshaped so the order cannot come out backwards, the mark
+   under the symbol was made the answer rather than a tiebreak, and the picture
+   itself was cropped to the writing and sent at the largest size that is not
+   resized away. Three reads later the structure was right every time and the
+   placing was still a letter out, one way or the other, on about a third of
+   the chords.
+
+   That is not a thing prose fixes. Deciding which of two adjacent Hebrew
+   letters a symbol's middle is over is a judgement about a photograph, made
+   once per chord, and what buys a better judgement is thinking. So the effort
+   goes up, and the price goes up with it, and whether that is worth paying is
+   a question about this song and not about this file.
+
+   max_tokens is a ceiling and not a target, and nothing is paid for room that
+   goes unused, so the two halves get different ceilings for different reasons.
+   The words need room for a long song. The chords need room to THINK: at high
+   effort the reasoning is most of the answer, and the one truly wasted read is
+   the one that reaches the ceiling mid-sentence and has to be thrown away
+   after being paid for in full. That happened once, at 42 cents. */
 const WORDS_MODEL = "claude-sonnet-5";
 const WORDS_EFFORT = "low";
+const WORDS_MAX_TOKENS = 32000;
 const CHORDS_MODEL = "claude-opus-5";
-const CHORDS_EFFORT = "medium";
-const MAX_TOKENS = 32000;
+const CHORDS_EFFORT = "high";
+const CHORDS_MAX_TOKENS = 48000;
 
 /* US dollars per million tokens, so that a read can be priced from the usage
    the API reports rather than guessed at afterwards. A song carries what it
@@ -518,7 +545,7 @@ export async function readChordSheet(env, files, beat) {
   /* --- one: the words --- */
   const first = await ask(env, {
     model: WORDS_MODEL,
-    max_tokens: MAX_TOKENS,
+    max_tokens: WORDS_MAX_TOKENS,
     system: WORDS_SYSTEM,
     output_config: {
       effort: WORDS_EFFORT,
@@ -534,7 +561,7 @@ export async function readChordSheet(env, files, beat) {
   /* --- two: the chords --- */
   const second = await ask(env, {
     model: CHORDS_MODEL,
-    max_tokens: MAX_TOKENS,
+    max_tokens: CHORDS_MAX_TOKENS,
     system: CHORDS_SYSTEM,
     output_config: {
       effort: CHORDS_EFFORT,
