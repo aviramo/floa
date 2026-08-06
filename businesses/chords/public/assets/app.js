@@ -3050,12 +3050,17 @@
       hideGap();
 
       var at = caretIndex(editable);
-      /* BETWEEN letters, so not at either end: a gap at the front or the back
-         of a line is padding, and padding is what dragging a chord past the
-         end already does. */
-      if (at == null || at <= 0 || at >= line.text.length) return;
+      if (at == null) return;
 
-      var letter = editable.children[at];
+      /* WHEREVER THE CARET IS, the front of the line included. A line that
+         opens on a chord needs room before its first letter as much as a word
+         needs room inside itself, and "anywhere except the very start" is a
+         rule nobody can see and everybody would trip over.
+
+         The button hangs under the character the caret is in front of; at the
+         end of a line there is no such character, so it hangs under the last
+         one. A line with no characters at all has nothing to space out. */
+      var letter = editable.children[at] || editable.children[editable.children.length - 1];
       if (!letter) return;
 
       gapBtn = el("button", "gap-btn");
