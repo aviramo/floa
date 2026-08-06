@@ -321,8 +321,12 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 /* what has been picked, said on the row itself and not only in the count */
 .list li.is-picked > a, .list li.is-picked > .row { border-color: var(--accent); }
 
+/* Everything starts at the top of the card. The cards in a row are all the
+   height of the tallest of them, so a song with a short name and no chords
+   centred what little it has in the middle of a card sized for something else,
+   and the wall stopped having a line to read along. */
 .list a {
-  display: flex; align-items: center; gap: 14px; text-decoration: none; color: inherit;
+  display: flex; align-items: flex-start; gap: 14px; text-decoration: none; color: inherit;
   background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
   padding: 14px 18px; transition: border-color .15s, transform .15s;
 }
