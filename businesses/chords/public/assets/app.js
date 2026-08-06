@@ -3201,12 +3201,18 @@
        or listening. */
     function control(icon, label, valueNode, less, more) {
       var ctl = el("span", "ctl");
+
+      /* The number, and under it the picture of what the number is. They are
+         one thing to read and they are read downwards: what it is at, and what
+         "it" is. Beside them, the way to move it. */
+      var dial = el("span", "dial");
+      if (valueNode) dial.appendChild(valueNode);
       var lbl = el("span", "lbl");
       lbl.appendChild(svg(icon));
       lbl.title = label;
       lbl.setAttribute("aria-label", label);
-      ctl.appendChild(lbl);
-      if (valueNode) ctl.appendChild(valueNode);
+      dial.appendChild(lbl);
+      ctl.appendChild(dial);
       /* THE TWO OF THEM IN ONE BOX. They were two bordered squares with air
          between them, which is two of everything a stepper needs one of, and
          three controls' worth of that is most of a phone's row. Joined, they

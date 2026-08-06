@@ -671,7 +671,14 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   margin: 16px 0 18px; padding: 10px 12px;
   background: var(--card); border: 1px solid var(--line); border-radius: 999px;
 }
-.tools .ctl { display: flex; align-items: center; gap: 5px; }
+.tools .ctl { display: flex; align-items: center; gap: 6px; }
+/* The number over the picture of what it is, as one column: read downwards it
+   says what it is at and then what "it" is, and the pair is as wide as the
+   wider of the two rather than as wide as both. */
+.tools .dial {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  line-height: 1;
+}
 /* ONE SHAPE FOR ALL THREE, and it is read in one order: what it is, what it is
    at, and the way to move it. A picture, a number beside it, and less and more
    stacked in one box like the buttons on anything else that counts.
@@ -687,10 +694,14 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 .tools .steps .icon-btn svg { width: 13px; height: 13px; }
 .tools .steps .icon-btn:hover { background: var(--bg); }
 .tools .sep { width: 1px; height: 22px; background: var(--line); }
-.tools .lbl { font-size: 13px; color: var(--ink-soft); font-weight: 600; }
+/* A PICTURE NEEDS A SIZE. An svg with none is not small, it is whatever the
+   box around it happens to allow, which in a flex row is nothing at all: the
+   three pictures were in the page and none of them was on the screen. */
+.tools .lbl { display: flex; color: var(--ink-soft); }
+.tools .lbl svg { width: 16px; height: 16px; }
 /* wide enough for -11 and no wider, so the number does not stand in a hole of
    its own between the word and the buttons */
-.tools .val { font-size: 14px; font-weight: 700; min-width: 3ch; text-align: center; direction: ltr; font-variant-numeric: tabular-nums; }
+.tools .val { font-size: 15px; font-weight: 700; min-width: 3ch; text-align: center; direction: ltr; font-variant-numeric: tabular-nums; }
 .tools .grow { margin-inline-start: auto; }
 
 /* A line never wraps by itself (white-space: pre on .ln-t), so a long line
