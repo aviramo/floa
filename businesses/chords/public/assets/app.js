@@ -216,6 +216,34 @@
      read any more, whatever it still claims. */
   var SILENT_TOO_LONG = 2 * 60 * 1000;
 
+  /* The clock a reader watches is counted HERE, from the moment the row was
+     created, and ticks every second. The Worker's own heartbeat lands every
+     twenty seconds and is what proves the job is still alive (see stalled),
+     but a number that only moves three times a minute reads as a stuck one.
+     Two different jobs, so two different clocks. */
+  /* 1:01, not 61. Past a minute a bare count of seconds stops being a number
+     anyone reads and starts being one they have to work out. */
+  function clock(seconds) {
+    var minutes = Math.floor(seconds / 60);
+    var rest = seconds % 60;
+    return minutes + ":" + (rest < 10 ? "0" : "") + rest;
+  }
+
+  function elapsed(node) {
+    var since = Number(node.dataset.since) || Date.now();
+    var seconds = Math.max(0, Math.round((Date.now() - since) / 1000));
+    node.textContent = "קורא את השיר, אפשר לסגור את הדף. " + clock(seconds);
+  }
+
+  function tick(root) {
+    var timer = setInterval(function () {
+      if (!root.isConnected) return clearInterval(timer);
+      var counting = root.querySelectorAll("[data-since]");
+      if (!counting.length) return clearInterval(timer);
+      Array.prototype.forEach.call(counting, elapsed);
+    }, 1000);
+  }
+
   function stalled(song) {
     if (song.status !== "reading") return false;
     var last = Date.parse(song.updated_at || song.created_at || 0);
@@ -1003,6 +1031,7 @@
         if (empty.parentNode) empty.remove();
 
         shown.forEach(function (s) { list.appendChild(songRow(s, refresh)); });
+        tick(list);
       }
 
       /* A song being read is a row that changes on its own, so the list looks
@@ -1070,9 +1099,14 @@
     if (reading) row.appendChild(el("span", "spin"));
     var box2 = el("div");
     box2.appendChild(el("div", "t", s.title));
-    box2.appendChild(el("div", "a", reading
-      ? (s.status_note || "קורא את השיר") + ", אפשר לסגור את הדף"
-      : stalled(s) ? "הקריאה נתקעה ולא הסתיימה" : "הקריאה נכשלה"));
+    if (reading) {
+      var note = el("div", "a");
+      note.dataset.since = Date.parse(s.created_at || "") || Date.now();
+      elapsed(note);
+      box2.appendChild(note);
+    } else {
+      box2.appendChild(el("div", "a", stalled(s) ? "הקריאה נתקעה ולא הסתיימה" : "הקריאה נכשלה"));
+    }
     if (s.status !== "reading" && s.status_note) box2.appendChild(el("div", "detail", s.status_note));
     row.appendChild(box2);
 
@@ -1207,9 +1241,13 @@
     if (song.status === "reading" && !stalled(song)) {
       var busy = el("span", "busy");
       busy.appendChild(el("span", "spin"));
-      busy.appendChild(document.createTextNode("קורא את " + song.title));
+      var note = el("span");
+      note.dataset.since = Date.parse(song.created_at || "") || Date.now();
+      elapsed(note);
+      busy.appendChild(note);
       box.appendChild(busy);
-      box.appendChild(el("p", "muted", "אפשר לסגור את הדף. הקריאה ממשיכה בלעדיו."));
+      box.appendChild(el("p", "muted", "הקריאה ממשיכה גם בלי הדף הזה."));
+      tick(box);
       setTimeout(function () { if (box.isConnected) viewSong(song.slug); }, 5000);
     } else {
       box.appendChild(el("p", null, stalled(song)
