@@ -931,8 +931,30 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 
 /* --- print -------------------------------------------------------------- */
 
+/* Which of the two pieces of paper. Under the print button, and small: it is
+   two words and a choice, not a dialog. */
+.print-menu {
+  position: fixed; z-index: 60;
+  display: flex; flex-direction: column; align-items: stretch; gap: 2px;
+  padding: 4px;
+  background: #fff; border: 1px solid var(--line); border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(23, 32, 42, .16);
+}
+.print-menu .btn { justify-content: flex-start; }
+
 @media print {
-  .top, .tools, .ed-bar, .song-meta, .toast { display: none !important; }
+  .top, .tools, .ed-bar, .song-meta, .toast, .print-menu { display: none !important; }
+
+  /* THE LYRICS SHEET. The same page with the chords taken off it and the gaps
+     closed up, which is the whole reason a gap is a character of its own and
+     not a run of spaces: the words come back together into words.
+
+     For the people singing, who do not read chords and to whom a pink symbol
+     over every line is a page that is harder to follow. */
+  body.print-words .ln-c { display: none !important; }
+  body.print-words .ln-t .gap { width: 0 !important; }
+  /* where a capo goes is one more thing that is not about singing */
+  body.print-words .capo-line { display: none !important; }
   /* the label is about the song's state here, not about the song */
   .review-band { display: none !important; }
   /* marking a verse is editing, and a page of ticks is not a song */

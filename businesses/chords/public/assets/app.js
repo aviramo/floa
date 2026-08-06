@@ -1679,6 +1679,78 @@
     requireAuth(function () { go(BASE + "/new"); });
   }
 
+  /* --- printing, of which there are two --------------------------------------
+     A chord sheet and a lyrics sheet are two different pieces of paper for two
+     different moments. The chords are for playing from; the words are for the
+     people singing, who do not read chords and to whom a page of pink symbols
+     over every line is a page that is harder to follow.
+
+     So the button asks which. Two lines in a small panel under it rather than
+     two buttons in the bar: printing is one thing you came here to do, and it
+     is the second thing at that, after playing from the page.
+
+     The lyrics sheet is the same page with the chord lane taken out and the
+     gaps closed. Nothing is re-rendered and nothing is re-fetched: the words
+     on paper are the words on screen, which is the only way the two cannot
+     disagree. The gaps closing is what the gap character was for. */
+  var printMenu = null;
+  var printAnchor = null;
+
+  function closePrintMenu() {
+    if (!printMenu) return;
+    printMenu.remove();
+    printMenu = null;
+    document.removeEventListener("pointerdown", printOutside, true);
+    document.removeEventListener("keydown", printEscape, true);
+  }
+
+  /* The button that opened it is not "outside": pressing it again is asking
+     for the panel to go away, and closing here would take it away and let the
+     click that followed open it straight back up. */
+  function printOutside(event) {
+    if (!printMenu) return;
+    if (printMenu.contains(event.target)) return;
+    if (printAnchor && printAnchor.contains(event.target)) return;
+    closePrintMenu();
+  }
+
+  function printEscape(event) {
+    if (event.key === "Escape") closePrintMenu();
+  }
+
+  function printNow(words) {
+    closePrintMenu();
+    document.body.classList.toggle("print-words", !!words);
+    /* Put back afterwards however the printing ended, including cancelled, and
+       on a timer as well: afterprint is not fired by every browser, and a page
+       left in the printing shape is a page with no chords on it. */
+    var back = function () { document.body.classList.remove("print-words"); };
+    window.addEventListener("afterprint", function once() {
+      window.removeEventListener("afterprint", once);
+      back();
+    });
+    setTimeout(back, 60000);
+    window.print();
+  }
+
+  function askPrint(anchor) {
+    if (printMenu) return closePrintMenu();
+
+    printAnchor = anchor;
+    printMenu = el("div", "print-menu");
+    printMenu.appendChild(button("אקורדים", null, "ghost small", function () { printNow(false); }));
+    printMenu.appendChild(button("מילים בלבד", null, "ghost small", function () { printNow(true); }));
+    document.body.appendChild(printMenu);
+
+    var box = anchor.getBoundingClientRect();
+    var width = printMenu.offsetWidth;
+    printMenu.style.top = (box.bottom + 6) + "px";
+    printMenu.style.left = Math.min(Math.max(6, box.right - width), window.innerWidth - width - 6) + "px";
+
+    document.addEventListener("pointerdown", printOutside, true);
+    document.addEventListener("keydown", printEscape, true);
+  }
+
   /* Adding a song, signing in and signing out belong to the library, so they
      are offered on the index and nowhere else. Two rows of buttons an inch
      apart, one of them about what you are looking at and the other about
@@ -1719,7 +1791,8 @@
          is not there at all and one still being read from a photograph are all
          this same address, and none of them is worth paper. */
       if (state.printable) {
-        bar.appendChild(button("הדפסה", ICON.print, "small", function () { window.print(); }));
+        var printBtn = button("הדפסה", ICON.print, "small", function () { askPrint(printBtn); });
+        bar.appendChild(printBtn);
       }
       return;
     }
