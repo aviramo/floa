@@ -75,6 +75,19 @@ body {
 .brand svg { width: 24px; height: 24px; color: var(--accent); }
 .top-actions { margin-inline-start: auto; display: flex; align-items: center; gap: 8px; }
 
+/* On a phone the bar holds four things and the screen holds about two of
+   them. What goes is the WORD on any button that has a picture, because a
+   picture is the part that survives being small; the buttons that are only a
+   word keep it, since there is nothing else left of them.
+
+   Not a second row: the bar is sticky, and a sticky header that grew a row
+   would take that row off the top of every song for good. */
+@media (max-width: 620px) {
+  .top-actions .btn svg + .lb { display: none; }
+  .top-actions .btn.small { padding: 8px; }
+  .top-actions .btn svg { width: 18px; height: 18px; }
+}
+
 /* --- buttons ------------------------------------------------------------ */
 
 .btn {
@@ -129,7 +142,7 @@ body {
   border-radius: var(--radius); box-shadow: var(--shadow);
 }
 
-input[type="text"], input[type="email"], input[type="password"], input[type="search"], textarea, select {
+input[type="text"], input[type="email"], input[type="password"], input[type="search"], input[type="date"], textarea, select {
   font: inherit; color: var(--ink);
   background: #fff; border: 1px solid var(--line); border-radius: 10px;
   padding: 9px 12px; width: 100%;
@@ -175,15 +188,18 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 }
 /* The song's own chords, under its name, in the order it reaches them and in
    the page's own direction: the first one the song plays is the first one you
-   read. */
-.list .keys { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
-.list .k {
+   read.
+
+   The same three on a row of an evening, which is the list somebody is
+   actually holding a guitar over. Two places, one look, one rule. */
+.list .keys, .set-main .keys { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.list .k, .set-main .k {
   font-size: 13px; font-weight: 700;
   color: var(--chord); background: var(--chord-soft); border-radius: 999px; padding: 2px 9px;
   direction: ltr; white-space: nowrap;
 }
 /* where to clamp, so the shapes beside it mean something */
-.list .capo {
+.list .capo, .set-main .capo {
   font-size: 12px; font-weight: 700; color: var(--ink-soft);
   background: #eef2f3; border-radius: 999px; padding: 2px 9px; white-space: nowrap;
 }
@@ -205,6 +221,106 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .list .row .detail { flex-basis: 100%; }
 
 .row-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-inline-start: auto; }
+
+/* --- an evening of singing ----------------------------------------------
+   A name, a date, and songs in the order they will be sung. The head and the
+   tools are the song page's own, because it is the same shape of page: one
+   thing, open, with its controls above it. What is new starts at .set.
+   ------------------------------------------------------------------------ */
+
+/* A name that has not been typed yet still has to be somewhere to click. An
+   empty contenteditable is zero pixels wide, so it says what it is instead. */
+.ev-title:empty::before {
+  content: attr(data-empty);
+  color: var(--ink-soft); font-weight: 400;
+}
+.ev-meta {
+  display: grid; gap: 10px; grid-template-columns: 200px minmax(0, 1fr);
+  margin: 12px 0 4px; max-width: 560px;
+}
+@media (max-width: 620px) { .ev-meta { grid-template-columns: 1fr; } }
+.ev-when:empty { display: none; }
+/* the same date the field above holds, kept back for the printer */
+.on-paper { display: none; }
+
+/* What the save button on the song page says by appearing and disappearing.
+   There is no button here (every change writes itself), so the word carries
+   it alone. */
+.save-state { font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+.save-state.is-bad { color: var(--danger); }
+
+/* The songs. An ol, so the numbers are the browser's own counter: a drag
+   moves one row and never redraws the list, and a number written by hand
+   would have to be rewritten by hand too. */
+.set { list-style: none; counter-reset: song; margin: 0 0 18px; padding: 0; display: grid; gap: 8px; }
+.set-row {
+  counter-increment: song;
+  display: flex; align-items: center; gap: 12px;
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 12px 16px;
+}
+.set-row::before {
+  content: counter(song) ".";
+  flex: none; min-width: 2ch;
+  font-weight: 700; font-size: 15px; color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+.set-row.is-moving { opacity: .55; }
+/* the song was deleted from the library after it was put in the evening */
+.set-row.is-gone { border-style: dashed; color: var(--ink-soft); }
+
+.set-main { flex: 1 1 auto; min-width: 0; }
+.set-main .t-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.set-main .by { color: var(--ink-soft); font-size: 14px; }
+.set-t { font-weight: 700; font-size: 17px; color: inherit; text-decoration: none; }
+a.set-t:hover { color: var(--accent); text-decoration: underline; }
+
+/* Always there, unlike the song editor's grip, which appears under the
+   pointer. A row of an evening is a whole row wide and gets dragged on a
+   phone, where there is no pointer to appear under. */
+.set-grip {
+  flex: none; width: 30px; height: 34px; padding: 0;
+  border: 0; background: none; color: var(--ink-soft);
+  display: inline-grid; place-items: center;
+  cursor: grab; touch-action: none;
+}
+.set-grip svg { width: 20px; height: 20px; }
+.set-grip:hover { color: var(--ink); }
+.set-grip.is-held { cursor: grabbing; color: var(--accent); }
+.set-grip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+
+/* --- the library, to add from ---
+   One list, one click, both ways: a song is in the evening or it is not, and
+   the same row says which and changes it. */
+.pool { padding: 16px 18px 18px; margin-bottom: 64px; }
+.pool h2 { margin: 0; font-size: 17px; }
+.pool p { margin: 4px 0 0; font-size: 14px; }
+.pool .search { margin: 12px 0 10px; }
+.pool .search input { height: 40px; }
+
+/* Tall enough to choose from, short enough that the evening above it stays on
+   the screen while you do. */
+.pool-list {
+  list-style: none; margin: 0; padding: 0;
+  max-height: 46vh; overflow-y: auto;
+  border-top: 1px solid var(--line);
+}
+.pool-row {
+  appearance: none; width: 100%; text-align: start; cursor: pointer;
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  background: none; border: 0; border-bottom: 1px solid var(--line);
+  padding: 10px 4px; font: inherit; color: var(--ink);
+}
+.pool-row:hover { background: #f2f7f6; }
+.pool-row .grow { margin-inline-start: auto; }
+.pool-row .by { color: var(--ink-soft); font-size: 14px; }
+.pool-t { font-weight: 600; }
+.pool-mark { font-size: 13px; font-weight: 700; color: var(--accent); }
+/* already in the evening: the row says so and the click takes it out */
+.pool-row.is-in { background: #eef5f4; }
+.pool-row.is-in .pool-mark { color: var(--ink-soft); }
+.pool-row.is-in:hover .pool-mark { color: var(--danger); }
+.pool-none { padding: 14px 4px; color: var(--ink-soft); font-size: 14px; }
 
 /* --- song page ---------------------------------------------------------- */
 
@@ -532,6 +648,15 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 @media print {
   .top, .tools, .ed-bar, .song-meta, .title-row button, .toast { display: none !important; }
   body { background: #fff; }
+
+  /* An evening on paper is the name, the date and the songs in order. The
+     library it was built from, the grips that reordered it and the buttons
+     that emptied it are all tools, and a tool on a printed page is ink spent
+     on something nobody can press. */
+  .pool, .ev-meta, .hint, .set-grip, .set-row button { display: none !important; }
+  .on-paper { display: block; }
+  .set-row { border: none; padding: 4px 0; break-inside: avoid; }
+  .set { gap: 0; }
   /* a little room at the start of the line, or the first chord of every line
      is centred half off the paper */
   .sheet { border: none; box-shadow: none; padding: 0 26px; overflow: visible; }

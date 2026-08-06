@@ -218,7 +218,21 @@ import { directionOf, songFrom } from "./geometry.js";
    to. */
 const WORDS_MODEL = "claude-sonnet-5";
 const WORDS_EFFORT = "low";
-const CHORDS_MODEL = "claude-opus-5";
+/* THE BIG MODEL CAME OFF THE CHORDS, and what changed was not the evidence but
+   the job. Opus was chosen because every remaining error was a judgement about
+   a photograph and a better judgement was worth paying for, and that was right
+   while this was the only way a song could be read.
+
+   It is not any more. Measuring the page answers the same question with a
+   ruler for a fifth of a cent, and this route is what runs when the ruler is
+   unavailable. What a fallback owes you is a song at a price you would not
+   think twice about, not the best song money can buy: a read that is a letter
+   out is one drag to fix, and a read that costs half a dollar is not.
+
+   Sonnet at the same effort thinks about the same amount and is billed at
+   three fifths of the rate, so the same budget buys it MORE room to think, not
+   less. Which also makes the ceiling less likely to be met. */
+const CHORDS_MODEL = "claude-sonnet-5";
 const CHORDS_EFFORT = "medium";
 
 /* US dollars per million tokens, so that a read can be priced from the usage

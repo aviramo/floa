@@ -153,6 +153,11 @@ create table if not exists public.setlists (
   -- the second, and a timestamp would drag a timezone in behind it.
   event_date  date,
 
+  -- Where. Free text, because the answer is "אצל דנה", "מועדון הזמר" or a
+  -- street address depending on the evening, and a form that insisted on one
+  -- of them would be wrong about the other two.
+  venue       text not null default '',
+
   -- The songs, in order:  [{"id": "…", "title": "…"}, …]
   --
   -- The id is what a row is drawn from: the title, the credits and the chords
@@ -169,6 +174,9 @@ create table if not exists public.setlists (
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
+
+-- added after the first version of this table; safe to re-run
+alter table public.setlists add column if not exists venue text not null default '';
 
 drop trigger if exists setlists_touch_updated_at on public.setlists;
 create trigger setlists_touch_updated_at

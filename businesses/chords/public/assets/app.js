@@ -75,11 +75,16 @@
     return b;
   }
 
+  /* The label is a span rather than a bare text node for one reason: in the
+     top bar of a narrow screen it is the first thing worth dropping, and a
+     text node cannot be hidden. See .top-actions in the stylesheet. */
   function button(label, icon, cls, onClick) {
     var b = el("button", "btn" + (cls ? " " + cls : ""));
     b.type = "button";
     if (icon) b.appendChild(svg(icon));
-    b.appendChild(document.createTextNode(label));
+    b.appendChild(el("span", "lb", label));
+    /* the same words the button shows, kept for where it shows only the icon */
+    b.setAttribute("aria-label", label);
     b.addEventListener("click", onClick);
     return b;
   }
@@ -447,12 +452,14 @@
     return !!(error && NO_SUCH_TABLE[String(error.code)]);
   }
 
+  var SET_FIELDS = "id,title,event_date,venue,songs";
+
   var sets = {
     list: function () {
-      return rest(SET + "?select=id,title,event_date,songs,updated_at");
+      return rest(SET + "?select=" + SET_FIELDS + ",updated_at");
     },
     byId: function (id) {
-      return rest(SET + "?select=id,title,event_date,songs&id=eq." + encodeURIComponent(id) + "&limit=1")
+      return rest(SET + "?select=" + SET_FIELDS + "&id=eq." + encodeURIComponent(id) + "&limit=1")
         .then(function (rows) { return rows && rows[0]; });
     },
     insert: function (evening) {
@@ -1211,6 +1218,11 @@
 
     if (p.length) return;
 
+    /* The way into the other half of the app, first, because it is the only
+       one of these that goes somewhere rather than making something. */
+    bar.appendChild(button("ערבי שירה", ICON.calendar, "ghost small", function () {
+      go(BASE + "/evenings");
+    }));
     bar.appendChild(button("מתמונה", ICON.upload, "ghost small", uploadSong));
     bar.appendChild(button("שיר חדש", ICON.plus, "small", newSong));
     bar.appendChild(session());
@@ -1269,25 +1281,6 @@
     db.list().then(function (songs) {
       state.songs = songs || [];
       app.innerHTML = "";
-
-      /* The way into the other half of the app. It sits above the search
-         rather than in the top bar because the bar is full, and because a
-         fourth button up there would push the three that are already about
-         THIS page onto a second row on every phone.
-
-         It is not the heading this page deliberately does not have: it names
-         somewhere else to go, and it costs one narrow line to say so. */
-      var toEvenings = el("a", "shelf");
-      toEvenings.href = BASE + "/evenings";
-      toEvenings.appendChild(svg(ICON.calendar));
-      toEvenings.appendChild(el("span", "t", "ערבי שירה"));
-      toEvenings.appendChild(el("span", "a", "לתכנן ערב ולסדר את השירים לפי הסדר"));
-      toEvenings.appendChild(svg('<path d="M15 5l-7 7 7 7"/>', ""));
-      toEvenings.addEventListener("click", function (event) {
-        event.preventDefault();
-        go(BASE + "/evenings");
-      });
-      app.appendChild(toEvenings);
 
       var search = el("div", "search");
       search.appendChild(svg(ICON.search));
@@ -2648,6 +2641,665 @@
     app.appendChild(box);
   }
 
+  /* --- an evening of singing -----------------------------------------------
+     A name, a date, and songs in the order they will be sung.
+
+     The library answers "which songs are there". This answers the question
+     that comes next and that nothing else here answers: what are we playing
+     tonight, and in what order. So it is a list of the library's own rows
+     rather than a copy of them, and every row is one tap from the song it
+     names, because the whole reason to write the list down is to play from it.
+     --------------------------------------------------------------------- */
+
+  /* "2026-08-06" as a person says it. Split by hand rather than handed to
+     Date, because a bare date string is parsed as midnight UTC and a browser
+     west of Greenwich would name the day before. */
+  function dateWords(value) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value || ""));
+    if (!m) return "";
+    var day = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    try {
+      return day.toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    } catch (e) {
+      return m[3] + "." + m[2] + "." + m[1];
+    }
+  }
+
+  function todayISO() {
+    var now = new Date();
+    function two(n) { return (n < 10 ? "0" : "") + n; }
+    return now.getFullYear() + "-" + two(now.getMonth() + 1) + "-" + two(now.getDate());
+  }
+
+  /* When and where, as one line, with whichever of the two has been filled in.
+     Two facts about the same evening that are always read together and never
+     mean much apart. */
+  function whenWhere(evening) {
+    var said = [];
+    var when = dateWords(evening.event_date);
+    if (when) said.push(when);
+    var where = String(evening.venue || "").trim();
+    if (where) said.push(where);
+    return said.join("  •  ");
+  }
+
+  function songCount(n) {
+    if (!n) return "עוד בלי שירים";
+    if (n === 1) return "שיר אחד";
+    return n + " שירים";
+  }
+
+  /* Whatever is in the column, as a list of {id, title}. Anything without an
+     id names no song, so it is not one. */
+  function normalizeSet(value) {
+    var raw = value;
+    if (typeof raw === "string") {
+      try { raw = JSON.parse(raw); } catch (e) { raw = []; }
+    }
+    if (!Array.isArray(raw)) return [];
+    return raw.map(function (item) {
+      return item && item.id ? { id: String(item.id), title: String(item.title || "") } : null;
+    }).filter(Boolean);
+  }
+
+  function newEvening() {
+    requireAuth(function () { go(BASE + "/evenings/new"); });
+  }
+
+  /* The table is created by schema.sql, and deploying this file does not run
+     it. Say which one sentence fixes it rather than showing the raw complaint
+     of a database nobody here is looking at. */
+  function needSchema() {
+    app.innerHTML = "";
+    var box = el("div", "center");
+    box.appendChild(el("p", null, "טבלת הערבים עוד לא קיימת. צריך להריץ פעם אחת את schema.sql ב-Supabase."));
+    box.appendChild(button("לרשימת השירים", null, "ghost", function () { go(BASE + "/"); }));
+    app.appendChild(box);
+  }
+
+  function noEvening() {
+    document.title = "לא נמצא | אקורדים";
+    app.innerHTML = "";
+    var box = el("div", "center");
+    box.appendChild(el("p", null, "הערב הזה לא נמצא. אולי הוא נמחק."));
+    box.appendChild(button("לרשימת הערבים", null, "ghost", function () { go(BASE + "/evenings"); }));
+    app.appendChild(box);
+  }
+
+  /* The next evening first, then the one after it, and the ones that already
+     happened underneath in the order they happened. Which is what a list of
+     evenings is for: the one being planned is almost always the nearest one
+     that has not happened yet, and it should not have to be looked for. */
+  function byWhen(evenings) {
+    var now = todayISO();
+    return evenings.slice().sort(function (a, b) {
+      var da = a.event_date || "", db_ = b.event_date || "";
+      /* undated last: it is a sketch, not a plan */
+      if (!da !== !db_) return da ? -1 : 1;
+      if (!da) return String(b.updated_at || "") < String(a.updated_at || "") ? -1 : 1;
+      var ahead = da >= now, bhead = db_ >= now;
+      if (ahead !== bhead) return ahead ? -1 : 1;
+      if (da === db_) return 0;
+      return ahead ? (da < db_ ? -1 : 1) : (da > db_ ? -1 : 1);
+    });
+  }
+
+  function viewEvenings() {
+    document.title = "ערבי שירה | אקורדים";
+    setBusy("טוען ערבים");
+
+    sets.list().then(function (rows) {
+      app.innerHTML = "";
+      var evenings = byWhen(rows || []);
+
+      if (!evenings.length) {
+        var empty = el("div", "center");
+        empty.appendChild(el("p", null, "עוד לא תוכנן כאן ערב. ערב הוא שם, תאריך ורשימת שירים לפי הסדר."));
+        var actions = el("div", "row-actions");
+        actions.appendChild(button("ערב חדש", ICON.plus, null, newEvening));
+        empty.appendChild(actions);
+        app.appendChild(empty);
+        return;
+      }
+
+      var list = el("ul", "list");
+      evenings.forEach(function (evening) {
+        var li = el("li");
+        var a = el("a");
+        a.href = BASE + "/evenings/" + evening.id;
+        a.addEventListener("click", function (event) {
+          event.preventDefault();
+          go(a.getAttribute("href"));
+        });
+
+        var box = el("div");
+        var top = el("div", "t-row");
+        top.appendChild(el("div", "t", evening.title || "ערב בלי שם"));
+        var said = whenWhere(evening);
+        if (said) top.appendChild(el("div", "by", said));
+        box.appendChild(top);
+        box.appendChild(el("div", "a", songCount(normalizeSet(evening.songs).length)));
+
+        a.appendChild(box);
+        li.appendChild(a);
+        list.appendChild(li);
+      });
+      app.appendChild(list);
+    }).catch(function (error) {
+      if (missingTable(error)) return needSchema();
+      fail(error);
+    });
+  }
+
+  function viewEvening(id) {
+    setBusy(id === null ? "טוען את המאגר" : "טוען את הערב");
+
+    var blank = { id: null, title: "", event_date: todayISO(), songs: [] };
+
+    /* The library comes along every time, because every row of an evening is
+       drawn from it: the name a song has NOW, who wrote it, and which chords
+       it needs. An evening that stored those itself would go stale the first
+       time a song was corrected. */
+    Promise.all([
+      id === null ? Promise.resolve(blank) : sets.byId(id),
+      db.list(),
+    ]).then(function (both) {
+      if (!both[0]) return noEvening();
+      var evening = both[0];
+      evening.songs = normalizeSet(evening.songs);
+      renderEvening(evening, both[1] || []);
+    }).catch(function (error) {
+      if (missingTable(error)) return needSchema();
+      /* 22P02: the address is not a uuid at all, so it names nothing */
+      if (String(error.code) === "22P02") return noEvening();
+      fail(error);
+    });
+  }
+
+  function renderEvening(evening, library) {
+    document.title = (evening.title || "ערב חדש") + " | אקורדים";
+
+    /* Signing in is the difference between reading an evening and planning
+       one, and here that is the ONLY difference.
+
+       Unlike the song editor, this page is not shut on a phone. Every gesture
+       it has is a whole row wide, which a finger can do; and an evening gets
+       planned wherever the person planning it happens to be standing. */
+    var editing = auth.in;
+
+    var byId = {};
+    library.forEach(function (song) { byId[song.id] = song; });
+
+    app.innerHTML = "";
+
+    /* --- the head: the way back, the name, the date --- */
+
+    var head = el("div", "song-head");
+
+    var titleRow = el("div", "title-row");
+    titleRow.appendChild(iconBtn('<path d="M9 5l7 7-7 7"/>', "לרשימת הערבים", function () {
+      go(BASE + "/evenings");
+    }));
+
+    var title = el("h1", "ev-title", evening.title);
+    if (editing) {
+      title.dataset.empty = "שם הערב";
+      makeEditable(title);
+      title.addEventListener("input", function () {
+        evening.title = title.textContent.trim();
+        document.title = (evening.title || "ערב חדש") + " | אקורדים";
+        mark();
+      });
+      title.addEventListener("keydown", function (event) {
+        /* one line, so Enter is not a newline here, it is done */
+        if (event.key === "Enter") { event.preventDefault(); title.blur(); }
+      });
+    } else if (!evening.title) {
+      title.textContent = "ערב בלי שם";
+    }
+    titleRow.appendChild(title);
+    head.appendChild(titleRow);
+
+    /* When and where, twice, and only ever one of the two visible: the fields
+       that set them on the screen, and the sentence they make on paper. A date
+       input prints as an empty-looking box with a calendar icon in it, which
+       is the one thing an evening's printout must not be vague about. */
+    var whenWords = el("div", "by ev-when", whenWhere(evening));
+
+    if (editing) {
+      var meta = el("div", "ev-meta");
+
+      var whenLabel = el("label", null, "תאריך");
+      var when = el("input");
+      when.type = "date";
+      when.value = evening.event_date || "";
+      when.addEventListener("change", function () {
+        evening.event_date = when.value || null;
+        whenWords.textContent = whenWhere(evening);
+        mark(true);
+      });
+      whenLabel.appendChild(when);
+      meta.appendChild(whenLabel);
+
+      var whereLabel = el("label", null, "מיקום");
+      var where = el("input");
+      where.type = "text";
+      where.value = evening.venue || "";
+      where.placeholder = "איפה זה קורה";
+      where.addEventListener("input", function () {
+        evening.venue = where.value;
+        whenWords.textContent = whenWhere(evening);
+        mark();
+      });
+      whereLabel.appendChild(where);
+      meta.appendChild(whereLabel);
+
+      head.appendChild(meta);
+      whenWords.classList.add("on-paper");
+    }
+    head.appendChild(whenWords);
+
+    app.appendChild(head);
+
+    /* --- the tools --- */
+
+    var tools = el("div", "tools");
+    var counter = el("span", "lbl", "");
+    tools.appendChild(counter);
+    tools.appendChild(el("span", "grow"));
+
+    /* What the save button used to say, said by a word instead. See mark()
+       below for why there is no button. */
+    var stateNode = null;
+    if (editing) {
+      stateNode = el("span", "save-state");
+      tools.appendChild(stateNode);
+    }
+
+    tools.appendChild(button("הדפסה", ICON.print, "small", function () { window.print(); }));
+
+    if (editing) {
+      var trash = iconBtn(ICON.trash, "מחיקת הערב", removeEvening);
+      trash.classList.add("quiet");
+      tools.appendChild(trash);
+    }
+    app.appendChild(tools);
+
+    /* --- the songs, in order --- */
+
+    /* An ol, so the numbers are the browser's own counter. Which matters: a
+       drag moves one element and never redraws the list, so a number written
+       into each row by hand would have to be rewritten by hand too. */
+    var listEl = el("ol", "set");
+    app.appendChild(listEl);
+
+    var emptyNote = el("p", "hint", editing
+      ? "אין עדיין שירים בערב. אפשר להוסיף מהמאגר שלמטה, ואחר כך לגרור בידית כדי לסדר."
+      : "אין עדיין שירים בערב הזה.");
+    app.appendChild(emptyNote);
+
+    /* --- the library, to add from --- */
+
+    var pool = null, poolList = null, poolInput = null;
+    if (editing) {
+      pool = el("div", "pool card");
+      pool.appendChild(el("h2", null, "מהמאגר"));
+      pool.appendChild(el("p", "muted", "לחיצה על שיר מוסיפה אותו לערב, לחיצה נוספת מוציאה אותו."));
+
+      var field = el("div", "search");
+      field.appendChild(svg(ICON.search));
+      poolInput = el("input");
+      poolInput.type = "search";
+      poolInput.placeholder = "חיפוש לפי שם, מילים או לחן";
+      poolInput.setAttribute("aria-label", "חיפוש שיר להוספה");
+      poolInput.addEventListener("input", function () { paintPool(); });
+      field.appendChild(poolInput);
+      pool.appendChild(field);
+
+      poolList = el("ul", "pool-list");
+      pool.appendChild(poolList);
+      app.appendChild(pool);
+    }
+
+    /* --- drawing ------------------------------------------------------------ */
+
+    function draw() {
+      listEl.innerHTML = "";
+      evening.songs.forEach(function (item) { listEl.appendChild(setRow(item)); });
+      emptyNote.hidden = evening.songs.length > 0;
+      counter.textContent = songCount(evening.songs.length);
+    }
+
+    function setRow(item) {
+      var song = byId[item.id];
+      var li = el("li", "set-row" + (song ? "" : " is-gone"));
+
+      if (editing) {
+        var grip = el("button", "set-grip");
+        grip.type = "button";
+        grip.title = "גרירה כדי לשנות את הסדר";
+        grip.setAttribute("aria-label", "הזזת " + (song ? song.title : item.title) + " ברשימה");
+        grip.appendChild(svg(ICON.grip));
+        /* nothing is bound to it: the list listens for all of them, see below */
+        li.appendChild(grip);
+      }
+
+      var box = el("div", "set-main");
+      var top = el("div", "t-row");
+
+      if (song) {
+        /* One tap to the song itself, which is the point of writing the
+           evening down in the first place. */
+        var a = el("a", "set-t", song.title);
+        a.href = BASE + "/" + encodeURIComponent(song.slug);
+        a.addEventListener("click", function (event) {
+          event.preventDefault();
+          go(a.getAttribute("href"));
+        });
+        top.appendChild(a);
+        var by = credits(song);
+        if (by.length) {
+          top.appendChild(el("div", "by", by.map(function (c) { return c.name; }).join(", ")));
+        }
+      } else {
+        /* The song was deleted from the library after it was put in the
+           evening. Saying which one is gone is the only useful thing left to
+           say, and a silently shorter list is the one answer that is worse. */
+        top.appendChild(el("span", "set-t", item.title || "שיר"));
+        top.appendChild(el("div", "by", "כבר לא במאגר"));
+      }
+      box.appendChild(top);
+
+      /* Where the capo goes and which shapes come out of it, the same way the
+         index says it. On an evening it is worth more than on the index: this
+         is the list somebody is holding a guitar over. */
+      if (song) {
+        var used = chordsUsed(song.lines);
+        if (used.length) {
+          var easy = easyVersion(used);
+          var keys = el("div", "keys");
+          keys.title = "השיר עצמו: " + used.join("  ");
+          if (easy.capo) keys.appendChild(el("span", "capo", "קפו " + easy.capo));
+          easy.shapes.forEach(function (shape) { keys.appendChild(el("span", "k", shape)); });
+          box.appendChild(keys);
+        }
+      }
+
+      li.appendChild(box);
+
+      if (editing) {
+        var out = iconBtn(ICON.trash, "הוצאה מהערב", function () {
+          var at = evening.songs.indexOf(item);
+          if (at < 0) return;
+          evening.songs.splice(at, 1);
+          draw();
+          paintPool();
+          mark(true);
+        });
+        out.classList.add("quiet");
+        li.appendChild(out);
+      }
+
+      return li;
+    }
+
+    /* --- moving a song up and down -------------------------------------------
+       The row's own element travels and the list travels with it, and NOTHING
+       IS REDRAWN while it does: a redraw would destroy the element the finger
+       is holding and end the drag on its first movement. So the node moves,
+       the array is spliced to match, and the two stay in step because a song
+       and a row are one to one and always in the same order.
+
+       Which is the same thing the song editor does to its lines, for the same
+       reason. */
+    function rowsOf() {
+      return Array.prototype.slice.call(listEl.children);
+    }
+
+    function moveRow(li, to) {
+      var rows = rowsOf();
+      var from = rows.indexOf(li);
+      if (from < 0 || to === from || to < 0 || to >= rows.length) return false;
+      evening.songs.splice(to, 0, evening.songs.splice(from, 1)[0]);
+      if (to > from) listEl.insertBefore(li, rows[to].nextSibling);
+      else listEl.insertBefore(li, rows[to]);
+      return true;
+    }
+
+    /* THE POINTER IS HELD BY THE LIST, NOT BY THE GRIP, and that is the whole
+       of making this work.
+
+       Moving a row means insertBefore, which takes the row out of the document
+       for an instant, and an element that leaves the document loses the
+       pointer with it. A grip holding its own pointer therefore lets go the
+       first time it succeeds at anything, and the rest of the drag, including
+       the release that would have saved it, lands somewhere else.
+
+       The list never moves. So it holds the pointer, and it listens: one
+       handler for every row there will ever be, which also means a redrawn
+       list does not have to be rewired. */
+    var dragging = null, dragged = false;
+
+    function gripOf(node) {
+      return node && node.closest ? node.closest(".set-grip") : null;
+    }
+
+    listEl.addEventListener("pointerdown", function (event) {
+      var grip = gripOf(event.target);
+      if (!grip) return;
+      event.preventDefault();
+      dragging = grip.parentNode;
+      dragged = false;
+      grip.classList.add("is-held");
+      dragging.classList.add("is-moving");
+      listEl.setPointerCapture(event.pointerId);
+    });
+
+    listEl.addEventListener("pointermove", function (event) {
+      if (!dragging) return;
+
+      var rows = rowsOf();
+      var from = rows.indexOf(dragging);
+      if (from < 0) return;
+
+      /* Where the pointer is, said in rows. Going up it is the first row above
+         whose middle has been passed, going down the last one below. Midpoints
+         rather than edges, so a row swaps when the pointer is properly over it
+         and not the moment it grazes its border. */
+      var to = from;
+      for (var i = 0; i < rows.length; i++) {
+        if (i === from) continue;
+        var box = rows[i].getBoundingClientRect();
+        var middle = box.top + box.height / 2;
+        if (i < from && event.clientY < middle) { to = i; break; }
+        if (i > from && event.clientY > middle) to = i;
+      }
+      if (moveRow(dragging, to)) dragged = true;
+    });
+
+    function endDrag(event) {
+      if (!dragging) return;
+      if (event && listEl.hasPointerCapture(event.pointerId)) listEl.releasePointerCapture(event.pointerId);
+      var grip = dragging.querySelector(".set-grip");
+      if (grip) grip.classList.remove("is-held");
+      dragging.classList.remove("is-moving");
+      dragging = null;
+      if (dragged) mark(true);
+    }
+
+    listEl.addEventListener("pointerup", endDrag);
+    listEl.addEventListener("pointercancel", endDrag);
+
+    /* The same move for a keyboard, and for anyone who cannot hold a pointer
+       steady over a list that is rearranging itself under it. */
+    listEl.addEventListener("keydown", function (event) {
+      var grip = gripOf(event.target);
+      if (!grip) return;
+      var step = event.key === "ArrowUp" ? -1 : event.key === "ArrowDown" ? 1 : 0;
+      if (!step) return;
+      event.preventDefault();
+      var li = grip.parentNode;
+      if (moveRow(li, rowsOf().indexOf(li) + step)) {
+        grip.focus();
+        mark(true);
+      }
+    });
+
+    /* --- adding and taking out ---------------------------------------------- */
+
+    function paintPool() {
+      if (!pool) return;
+
+      var q = String(poolInput.value || "").trim().toLowerCase();
+      var inside = {};
+      evening.songs.forEach(function (item) { inside[item.id] = true; });
+
+      var shown = library.filter(function (song) {
+        /* a song still being read has no words yet, so it cannot be sung from */
+        if (song.status && song.status !== "ready") return false;
+        if (!q) return true;
+        var hay = song.title + " " + credits(song).map(function (c) { return c.name; }).join(" ");
+        return hay.toLowerCase().indexOf(q) >= 0;
+      });
+
+      /* rebuilt in place, so the box does not jump back to the top every time
+         a song is added from halfway down it */
+      var was = poolList.scrollTop;
+      poolList.innerHTML = "";
+
+      if (!shown.length) {
+        poolList.appendChild(el("li", "pool-none", q ? "לא נמצא שיר שמתאים לחיפוש." : "המאגר עוד ריק."));
+        return;
+      }
+
+      shown.forEach(function (song) {
+        var li = el("li");
+        var b = el("button", "pool-row" + (inside[song.id] ? " is-in" : ""));
+        b.type = "button";
+        b.appendChild(el("span", "pool-t", song.title));
+        var by = credits(song);
+        if (by.length) b.appendChild(el("span", "by", by.map(function (c) { return c.name; }).join(", ")));
+        b.appendChild(el("span", "grow"));
+        b.appendChild(el("span", "pool-mark", inside[song.id] ? "בערב" : "הוספה"));
+        b.addEventListener("click", function () { toggle(song); });
+        li.appendChild(b);
+        poolList.appendChild(li);
+      });
+
+      poolList.scrollTop = was;
+    }
+
+    /* One list, one click, both ways. A song is in the evening or it is not,
+       and the same row says which and changes it: adding from one place and
+       removing from another would be two answers to one question.
+
+       So the same song twice is not offered. An evening that really wants an
+       encore of something can say so in its name. */
+    function toggle(song) {
+      var at = -1;
+      evening.songs.forEach(function (item, i) { if (item.id === song.id) at = i; });
+      if (at >= 0) evening.songs.splice(at, 1);
+      else evening.songs.push({ id: song.id, title: song.title });
+      draw();
+      paintPool();
+      mark(true);
+    }
+
+    /* --- saving --------------------------------------------------------------
+       NO SAVE BUTTON. Every change on this page is a finished gesture: a song
+       tapped in, a row dragged, a date picked. There is nothing to review
+       before it counts, and a button would only be a second click asking
+       whether the first one was meant.
+
+       So a change writes itself, and the word beside the tools says where it
+       got to. A structural change goes at once, because a tap is over the
+       moment it happens; a name being typed waits for the typing to stop. */
+    var timer = null, inFlight = false, again = false;
+
+    function note(text, bad) {
+      if (!stateNode) return;
+      stateNode.textContent = text;
+      stateNode.className = "save-state" + (bad ? " is-bad" : "");
+    }
+
+    function mark(now) {
+      if (!editing) return;
+      note("לא נשמר");
+      clearTimeout(timer);
+      timer = setTimeout(commit, now ? 0 : 900);
+    }
+
+    /* Whatever is still on the clock, now. Registered below as the flush that
+       any navigation and any hidden tab runs, so the last change lands rather
+       than the one before it. */
+    function flush() {
+      if (timer === null) return;
+      clearTimeout(timer);
+      commit();
+    }
+
+    function commit() {
+      timer = null;
+      /* one write at a time, and one more after it if anything moved while it
+         was in the air: two PATCHes racing on one row can land in either
+         order, and the loser would be the newer list */
+      if (inFlight) { again = true; return; }
+
+      inFlight = true;
+      note("שומר");
+
+      var payload = {
+        title: String(evening.title || "").trim(),
+        event_date: evening.event_date || null,
+        venue: String(evening.venue || "").trim(),
+        songs: evening.songs.map(function (item) {
+          var song = byId[item.id];
+          return { id: item.id, title: song ? song.title : item.title };
+        }),
+      };
+
+      var request = evening.id ? sets.update(evening.id, payload) : sets.insert(payload);
+      request.then(function (row) {
+        inFlight = false;
+        var born = !evening.id;
+        evening.id = row.id;
+        /* it exists now, so it has an address of its own, and a refresh from
+           here comes back to it rather than to an empty new evening */
+        if (born) history.replaceState(null, "", BASE + "/evenings/" + row.id);
+        note("נשמר");
+        if (again) { again = false; commit(); }
+      }).catch(function (error) {
+        inFlight = false;
+        again = false;
+        note("לא נשמר", true);
+        toast(missingTable(error) ? "צריך להריץ פעם אחת את schema.sql ב-Supabase"
+          : error.status === 401 || error.status === 403 ? "אין הרשאה. נסו להתחבר שוב."
+          : "השמירה נכשלה: " + error.message, true);
+      });
+    }
+
+    function removeEvening() {
+      if (!window.confirm('למחוק את "' + (evening.title || "הערב הזה") + '" לצמיתות?')) return;
+      clearTimeout(timer);
+      timer = null;
+      flushPending = null;
+      if (!evening.id) return go(BASE + "/evenings");
+      sets.remove(evening.id).then(function () {
+        toast("הערב נמחק");
+        go(BASE + "/evenings");
+      }).catch(function (error) {
+        toast("המחיקה נכשלה: " + error.message, true);
+      });
+    }
+
+    draw();
+    paintPool();
+    if (editing) {
+      flushPending = flush;
+      if (!evening.id) title.focus();
+    }
+  }
+
   /* --- reading a photo or a PDF -------------------------------------------- */
 
   var MAX_BYTES = 12 * 1024 * 1024;
@@ -2982,13 +3634,50 @@
 
   var redrawEditor = null;
 
+  /* A page that saves on its own leaves its flush here, and everything that
+     can end a page runs it: a link, the back button, a tab that goes away. So
+     what lands is the last change and not the one before it.
+
+     A page that has no such thing leaves null, which is most of them: the song
+     editor saves on a button and has nothing waiting on a clock. */
+  var flushPending = null;
+
+  function flushNow() {
+    if (!flushPending) return;
+    var flush = flushPending;
+    flushPending = null;
+    flush();
+  }
+
+  document.addEventListener("visibilitychange", function () {
+    /* Hidden, not unloaded. A tab being closed is already too late for a
+       request to leave; a tab being switched away from is exactly when a phone
+       is about to be put in a pocket, and it still has time. */
+    if (document.visibilityState === "hidden" && flushPending) flushPending();
+  });
+
   function route() {
     window.scrollTo(0, 0);
+    /* whatever the page being left still owed the database */
+    flushNow();
     /* the header follows the address, because what it offers depends on it */
     paintHeader();
     var p = parts();
 
     if (!p.length) { document.title = "אקורדים"; return viewIndex(); }
+
+    /* --- the evenings ---
+       /evenings          the list of them
+       /evenings/new      one that does not exist yet
+       /evenings/<id>     one that does */
+    if (p[0] === "evenings") {
+      if (p[1] === "new") {
+        if (!auth.in) return askSignIn(function () { route(); });
+        return viewEvening(null);
+      }
+      if (p[1]) return viewEvening(p[1]);
+      return viewEvenings();
+    }
 
     /* A new song is the song page with nothing on it yet, and it needs somebody
        signed in to be worth opening at all. */

@@ -399,9 +399,42 @@ async function handleLead(request, env, origin) {
 
 /* --- the door ------------------------------------------------------------- */
 
+/* --- is the measuring key working -----------------------------------------
+   TEMPORARY, and it is here rather than in a log because a failure that falls
+   back silently is invisible by design and reproducing it costs a real read of
+   a real song. This asks Google the same question the reader asks, about a
+   single white pixel, and repeats the answer word for word.
+
+   It spends a fifth of a cent and reveals nothing: the key goes to Google and
+   never into the reply. DELETE IT once the answer is known. */
+async function visionCheck(env) {
+  if (!env.GOOGLE_VISION_KEY) return json({ ok: false, said: "no GOOGLE_VISION_KEY" }, 200, "");
+
+  const PIXEL = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+  try {
+    const response = await fetch(
+      `https://vision.googleapis.com/v1/images:annotate?key=${encodeURIComponent(env.GOOGLE_VISION_KEY)}`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          requests: [{ image: { content: PIXEL }, features: [{ type: "DOCUMENT_TEXT_DETECTION" }] }],
+        }),
+      }
+    );
+    return json({ ok: response.ok, status: response.status, said: (await response.text()).slice(0, 700) }, 200, "");
+  } catch (err) {
+    return json({ ok: false, threw: String(err.message).slice(0, 300) }, 200, "");
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
     const origin = request.headers.get("origin") || "";
+
+    if (request.method === "GET" && new URL(request.url).pathname === "/vision") {
+      return visionCheck(env);
+    }
 
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(origin) });
     if (request.method !== "POST") return json({ ok: false, error: "method" }, 405, origin);
