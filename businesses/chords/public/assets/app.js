@@ -2420,6 +2420,33 @@
         };
       }
 
+      /* --- WHAT THE SEARCH BOX READS -------------------------------------------
+         The name, who wrote it, what kind of song it is, AND THE WORDS. Half
+         the time a song is looked for by a line of it rather than by its name:
+         nobody remembers what "אל נא רפא נא לה" is called, they remember a
+         line they were singing. The library is already in the browser, so this
+         costs a search and no request.
+
+         Without the chords and without the gaps: a chord sits INSIDE a word in
+         the stored text, so searching the raw document would fail to find any
+         word that has one in it, which is most of the words worth searching
+         for. What is searched is the words as they are sung.
+
+         Worked out once per song and kept on the row. A refresh brings new
+         rows, so nothing goes stale, and a keystroke does not re-read a
+         hundred songs. */
+      function hayOf(s) {
+        if (s.hay == null) {
+          s.hay = [
+            s.title,
+            credits(s).map(function (c) { return c.name; }).join(" "),
+            styles(s).join(" "),
+            withoutGaps(normalizeLines(s.lines).map(function (l) { return l.text; }).join(" ")),
+          ].join(" ").toLowerCase();
+        }
+        return s.hay;
+      }
+
       function paint(filter) {
         list.innerHTML = "";
         showBar();
@@ -2432,12 +2459,7 @@
           if (only && !only.is(s)) return false;
           if (kind && styles(s).indexOf(kind) < 0) return false;
           if (!q) return true;
-          /* the style is searched too: it is one of the words on the row, and
-             a box that finds everything else on it and not that is a box that
-             is wrong about what it can find */
-          var hay = s.title + " " + credits(s).map(function (c) { return c.name; }).join(" ") +
-            " " + styles(s).join(" ");
-          return hay.toLowerCase().indexOf(q) >= 0;
+          return hayOf(s).indexOf(q) >= 0;
         });
 
         if (!shown.length) {
@@ -4353,6 +4375,26 @@
       } else if (event.key === "Tab") {
         event.preventDefault();
         focusLine(index + (event.shiftKey ? -1 : 1));
+
+      } else if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+        /* UP AND DOWN GO WHERE THEY GO IN ANY OTHER EDITOR. Every line here is
+           its own editable element, which is what lets a chord be positioned
+           over one character of it, and it is also why the browser has nowhere
+           to take the caret from the top of one: as far as it is concerned
+           there is one line and the arrow has already arrived.
+
+           So they are answered here, into the line above or below, at the same
+           character. Not the same PIXEL: a column that is kept across lines of
+           different lengths is a nicety, and following the character is what
+           the person pressing it just looked at.
+
+           At the ends of the song they do nothing at all, rather than being
+           swallowed: an arrow that answers with silence at the top of a page
+           reads as a page that has stopped listening. */
+        var to = index + (event.key === "ArrowUp" ? -1 : 1);
+        if (to < 0 || to >= song.lines.length) return;
+        event.preventDefault();
+        focusLine(to, at == null ? 0 : at);
       }
     }
 
