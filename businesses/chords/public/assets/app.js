@@ -412,9 +412,19 @@
     var delta = newText.length - oldText.length;
     var oldTailStart = oldText.length - tail;
 
+    /* The tail is asked about FIRST, and that order is the whole of it.
+
+       Type a space with the caret right where a chord sits and nothing was
+       deleted, so the change is zero characters wide: `head` and the start of
+       the tail are the same index, and the chord is standing on both. Asking
+       "is it after the change" first got the answer no, and the chord stayed
+       put while the letter it named slid out from under it. Which is exactly
+       the thing this whole format exists to prevent, and what pressing space
+       fifteen times in a row looks like from the other side. */
     return chords.map(function (c) {
       var pos = c.pos;
-      if (pos > head) pos = pos >= oldTailStart ? pos + delta : Math.max(head, pos + delta);
+      if (pos >= oldTailStart) pos += delta;
+      else if (pos > head) pos = Math.max(head, pos + delta);
       return { pos: Math.max(0, Math.min(pos, newText.length)), chord: c.chord };
     });
   }

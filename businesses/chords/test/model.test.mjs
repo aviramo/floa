@@ -80,6 +80,18 @@ eq("brackets survive a round trip untouched",
 eq("a heading is a line in braces",
   api.textToSong("{פזמון}")[0], { type: "section", text: "פזמון", chords: [] });
 
+/* Typing a space with the caret exactly where a chord sits. Nothing is
+   deleted, so the change is zero characters wide and the chord stands on both
+   its edges at once: the chord must move, or the letter it names slides out
+   from under it and the format has broken its one promise. */
+eq("a space typed right where a chord sits pushes it along",
+  api.remapChords("שלום", "של ום", [{ pos: 2, chord: "Am" }]),
+  [{ pos: 3, chord: "Am" }]);
+
+eq("and the chords before it stay",
+  api.remapChords("שלום", "של ום", [{ pos: 0, chord: "Am" }, { pos: 2, chord: "G" }]),
+  [{ pos: 0, chord: "Am" }, { pos: 3, chord: "G" }]);
+
 /* the whole point of the format: edit the words, the chord goes with them */
 const before = api.normalizeLines("שלום לך אדו[G]ני")[0];
 eq("inserting a space before the chord carries it along",
