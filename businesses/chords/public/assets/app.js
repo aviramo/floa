@@ -1695,6 +1695,13 @@
           fillSpans(text, next);
           if (caret !== null) placeCaret(text, caret);
 
+          /* A blank line has no chord lane, because a line with no characters
+             has nothing for a chord to sit over. The first character typed
+             gives it one, and the last character deleted takes it away again.
+             Without this the lane a line was BORN without never comes back,
+             and there is nowhere to put a chord on it ever again. */
+          ln.classList.toggle("is-blank", !next.trim() && !line.chords.length);
+
           /* the model moved, so the labels above it move with it */
           var nodes = ln.querySelectorAll(".ln-c .chord");
           for (var i = 0; i < nodes.length && i < line.chords.length; i++) {
