@@ -63,9 +63,13 @@ export async function measure(env, files) {
   const requests = files.map((file) => ({
     image: { content: file.data },
     features: [{ type: "DOCUMENT_TEXT_DETECTION" }],
-    /* Hebrew and English together: the words are one and the chord symbols are
-       the other, on the same line, which is exactly the case a hint is for. */
-    imageContext: { languageHints: ["he", "en"] },
+    /* NO LANGUAGE HINT. It seemed obviously right to give one, since a Hebrew
+       chord sheet is Hebrew words under Latin symbols and that is exactly the
+       case a hint is for. It was wrong: hinting Hebrew on a songbook that also
+       holds Portuguese and English songs made the engine find Hebrew where
+       there was none, and a row of chords over "Mãe Divina" came back as a
+       line of Hebrew letters. Left to itself it reads each page for what it
+       is, and the Hebrew pages are no worse for it. */
   }));
 
   const response = await fetch(`${ENDPOINT}?key=${encodeURIComponent(env.GOOGLE_VISION_KEY)}`, {
