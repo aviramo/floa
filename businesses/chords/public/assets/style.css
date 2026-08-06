@@ -1036,9 +1036,6 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 .dlg-in { padding: 22px; display: grid; gap: 12px; }
 .dlg-in h2 { margin: 0; font-size: 20px; }
 .dlg-in p { margin: 0; font-size: 14px; }
-/* the form is one of several things in the panel now, so it carries the
-   spacing the panel used to give its children directly */
-.dlg-in form { display: grid; gap: 12px; }
 .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
 /* The one button in a row that is not the answer to the question the panel is
    asking. Pushed to the other end so it is not pressed on the way to one that
@@ -1047,23 +1044,14 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 
 /* --- signing in --------------------------------------------------------- */
 
-/* The way most people will come in, so it is the width of the panel and the
-   first thing in it. White with a border and the mark in its own colours,
-   which is what Google asks of a button that carries it, and which happens to
-   be right anyway: it belongs to somebody else, so it should not look like
-   this site's own solid button. */
-.btn.wide { width: 100%; justify-content: center; }
+/* THE ONLY WAY IN, so it is one button and it looks like itself everywhere:
+   white with a border and the mark in its own four colours, which is what
+   Google asks of a button that carries it, and which is right anyway. The door
+   belongs to somebody else, so it should not be painted in this site's green
+   like the buttons that do its own work. */
 .btn.google { background: #fff; color: #3c4043; border-color: #dadce0; font-weight: 600; }
 .btn.google:hover { background: #f7f8f8; border-color: #c9ced3; }
 .btn.google svg { width: 18px; height: 18px; }
-
-/* "or", with the line running through it. A separator and not a heading: what
-   is under it is the older way in, still here and no longer the main one. */
-.or {
-  display: flex; align-items: center; gap: 10px;
-  color: var(--ink-soft); font-size: 13px;
-}
-.or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 
 .toast {
   position: fixed; inset-inline: 0; bottom: 22px; margin-inline: auto;

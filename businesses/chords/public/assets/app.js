@@ -95,6 +95,33 @@
     return b;
   }
 
+  /* Google's mark, in Google's own four colours, which is what they ask of a
+     button that carries it. It cannot come from svg() above: that one draws a
+     line in whatever colour the text is, and this is four filled shapes and no
+     line at all.
+
+     The mark is the whole of what makes this button recognisable, so it is on
+     every button that leads to Google and on nothing else. */
+  var GOOGLE_MARK =
+    '<path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.56c2.08-1.92 3.28-4.74 3.28-8.1z"/>' +
+    '<path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.65l-3.56-2.77c-.99.66-2.24 1.06-3.72 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"/>' +
+    '<path fill="#FBBC05" d="M5.84 14.11a6.6 6.6 0 0 1 0-4.22V7.05H2.18a11 11 0 0 0 0 9.9l3.66-2.84z"/>' +
+    '<path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1a11 11 0 0 0-9.82 6.05l3.66 2.84c.87-2.6 3.3-4.51 6.16-4.51z"/>';
+
+  function googleButton(label, cls) {
+    var b = el("button", "btn google" + (cls ? " " + cls : ""));
+    b.type = "button";
+    var mark = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    mark.setAttribute("viewBox", "0 0 24 24");
+    mark.setAttribute("aria-hidden", "true");
+    mark.innerHTML = GOOGLE_MARK;
+    b.appendChild(mark);
+    b.appendChild(el("span", "lb", label));
+    b.setAttribute("aria-label", label);
+    b.addEventListener("click", function () { auth.signInWithGoogle(); });
+    return b;
+  }
+
   var toastTimer;
   function toast(message, bad) {
     var t = document.getElementById("toast");
@@ -252,10 +279,11 @@
       });
     },
 
-    /* Who the token belongs to, asked of the server. Needed on exactly one
-       path: coming back from Google, which hands over tokens and says nothing
-       about the person holding them. Signing in with a password answers both
-       questions in the one response and never comes here. */
+    /* Who the token belongs to, asked of the server. Needed because coming
+       back from Google hands over tokens and says nothing at all about the
+       person holding them, and their name is the first thing the bar wants.
+       Refreshing a token answers both questions in the one response, so it
+       never comes here. */
     whoAmI: function () {
       var self = this;
       return this.token().then(function (token) {
@@ -290,20 +318,6 @@
       var back = location.origin + BASE + "/";
       location.assign(CFG.supabaseUrl + "/auth/v1/authorize?provider=google&redirect_to=" +
         encodeURIComponent(back));
-    },
-
-    signIn: function (email, password) {
-      var self = this;
-      return fetch(CFG.supabaseUrl + "/auth/v1/token?grant_type=password", {
-        method: "POST",
-        headers: { apikey: CFG.supabaseAnonKey, "content-type": "application/json" },
-        body: JSON.stringify({ email: email, password: password }),
-      }).then(function (r) {
-        return r.json().then(function (body) {
-          if (!r.ok) throw new Error(body.error_description || body.msg || "ההתחברות נכשלה");
-          self.save(body);
-        });
-      });
     },
 
     signOut: function () {
@@ -1997,8 +2011,8 @@
 
      "שיר חדש" is shown there to everyone, signed in or not. Hiding it until you
      log in leaves a visitor looking at an empty list with no way forward and no
-     reason given; showing it and asking for the password on the click says what
-     the rule is at the moment it applies. */
+     reason given; showing it and sending the click to Google says what the rule
+     is at the moment it applies. */
   function paintHeader() {
     var bar = document.getElementById("topActions");
     bar.innerHTML = "";
@@ -2052,7 +2066,7 @@
      beside it because it is the rarer of the two by a long way, and because a
      bar with five buttons in it is a bar nobody reads. */
   function session() {
-    if (!auth.in) return button("התחברות", null, "ghost small", function () { askSignIn(); });
+    if (!auth.in) return googleButton("התחברות", "small");
     return button(auth.name() || "החשבון", ICON.person, "ghost small who", askMe);
   }
 
@@ -2101,46 +2115,17 @@
     dlg.showModal();
   }
 
-  function askSignIn(after) {
-    var dlg = document.getElementById("authDialog");
-    var form = document.getElementById("authForm");
-    var err = document.getElementById("authErr");
-    err.hidden = true;
-    form.reset();
+  /* THERE IS ONE WAY IN AND IT IS ONE BUTTON. A panel offering a choice of
+     doors is a panel about signing in, and signing in is not a thing anybody
+     came here to do: pressing it goes to Google and comes back, and the page
+     it comes back to is the one it left.
 
-    /* Off to Google and back to a fresh page: nothing after this call runs,
-       and `after` is not carried across. The address the person was on is,
-       which is the part that matters. */
-    document.getElementById("authGoogle").onclick = function () {
-      auth.signInWithGoogle();
-    };
-
-    form.onsubmit = function (event) {
-      event.preventDefault();
-      var data = new FormData(form);
-      var submit = form.querySelector('button[type="submit"]');
-      submit.disabled = true;
-      auth.signIn(String(data.get("email")), String(data.get("password")))
-        .then(function () {
-          submit.disabled = false;
-          dlg.close();
-          paintHeader();
-          toast(auth.name() ? "שלום, " + auth.name() : "שלום");
-          if (after) after(); else route();
-        })
-        .catch(function (e) {
-          submit.disabled = false;
-          err.textContent = e.message === "Invalid login credentials" ? "אימייל או סיסמה לא נכונים" : e.message;
-          err.hidden = false;
-        });
-    };
-
-    form.querySelector("[data-close]").onclick = function () { dlg.close(); };
-    dlg.showModal();
-  }
-
+     Nothing after this call runs, so nothing can be handed to it to run
+     afterwards. What survives the trip is the address, kept by
+     signInWithGoogle, and that is the part that matters: pressing "התחברות"
+     on a song leaves you on that song. */
   function requireAuth(then) {
-    if (auth.in) then(); else askSignIn(then);
+    if (auth.in) then(); else auth.signInWithGoogle();
   }
 
   /* --- the index ---------------------------------------------------------- */
@@ -4700,7 +4685,7 @@
     var box = el("div", "center");
     box.appendChild(el("p", null, "ערבי השירה שייכים לחשבון. כל אחד רואה, מתכנן ומוחק רק את שלו."));
     var actions = el("div", "row-actions");
-    actions.appendChild(button("התחברות", null, null, function () { askSignIn(function () { route(); }); }));
+    actions.appendChild(googleButton("התחברות עם גוגל"));
     actions.appendChild(button("לרשימת השירים", null, "ghost", function () { go(BASE + "/"); }));
     box.appendChild(actions);
     app.appendChild(box);
@@ -5783,7 +5768,13 @@
        the library from here, because there was no editor on one; there is now,
        so a song can be started wherever somebody happens to be. */
     if (p[0] === "new") {
-      if (!auth.in) return askSignIn(function () { route(); });
+      /* Off to Google, and back to this same address with an account, which is
+         where the song then opens. The page says where it has gone rather than
+         sitting blank while the browser leaves. */
+      if (!auth.in) {
+        setBusy("מעבירים להתחברות");
+        return auth.signInWithGoogle();
+      }
       /* it opens IN the editor, since an empty song is nothing to read */
       state.editOnPhone = true;
       return viewSong(null);

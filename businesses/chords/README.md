@@ -31,19 +31,20 @@
 ## הפעלה ראשונה
 
 1. **הטבלאות.** ב-Supabase: `SQL Editor` ← `New query` ← להדביק את כל `schema.sql` ← `Run`. הקובץ בנוי לרוץ שוב ושוב, ולכן כשנוספת עמודה פשוט מריצים אותו שוב.
-2. **המשתמש שלכם.** `Authentication` ← `Users` ← `Add user` ← `Create new user`, עם אימייל וסיסמה, ו-`Auto Confirm User` מסומן. זה המשתמש שמתחבר באתר. כל אחד רואה את השירים, רק הוא יכול להוסיף, לערוך ולמחוק, וזה נאכף ב-RLS בצד השרת ולא בדפדפן.
-3. **התחברות דרך גוגל**, שהיא הדרך הראשית פנימה. שני צדדים, ובלי שניהם הכפתור נוחת על עמוד שגיאה של Supabase:
+2. **התחברות דרך גוגל.** זו הדרך היחידה פנימה: אין אימייל וסיסמה, ואין משתמש שצריך ליצור מראש. הכניסה הראשונה יוצרת אותו. כל אחד רואה את השירים שפורסמו, רק בעל השיר מוסיף, עורך ומוחק, וזה נאכף ב-RLS בצד השרת ולא בדפדפן.
+
+   צריך להגדיר בשני מקומות, ובלי שניהם הכפתור נוחת על עמוד שגיאה של Supabase:
    - **ב-Google Cloud Console:** `APIs & Services` ← `Credentials` ← `Create credentials` ← `OAuth client ID` ← `Web application`. תחת `Authorized redirect URIs` בדיוק כתובת אחת, זו של Supabase ולא של האתר:
      ```
      https://aexmnaxvahblveejsbup.supabase.co/auth/v1/callback
      ```
    - **ב-Supabase:** `Authentication` ← `Sign In / Providers` ← `Google` ← להדליק ולהדביק את ה-Client ID וה-Client Secret. ואז `Authentication` ← `URL Configuration` ← `Redirect URLs`, ולהוסיף `https://floa.co.il/chords/` (ולפיתוח מקומי גם `http://localhost:5173/chords/`). זו הכתובת היחידה שהאפליקציה חוזרת אליה: לאן להחזיר את הגולש בתוך האתר נשמר בדפדפן, ולא ב-Supabase.
 
-   **חשבון גוגל עם אותו אימייל נכנס לאותו משתמש**, כל עוד האימייל של המשתמש הקיים מאומת. אם הוא לא, גוגל תיצור משתמש שני, והשירים והערבים של הראשון לא יהיו שלו. אפשר לבדוק לפני:
+   **חשבון גוגל עם אותו אימייל נכנס לאותו משתמש** שהיה כאן קודם עם סיסמה, כל עוד האימייל שלו מאומת. אם הוא לא, גוגל תיצור משתמש שני, והשירים והערבים של הראשון לא יהיו שלו. אפשר לבדוק לפני:
    ```
    node scripts/sql.mjs --table "select email, email_confirmed_at is not null as confirmed from auth.users"
    ```
-4. **המפתח של Anthropic**, לקריאת תמונות:
+3. **המפתח של Anthropic**, לקריאת תמונות:
    ```
    cd worker && npx wrangler secret put ANTHROPIC_API_KEY && npx wrangler deploy
    ```

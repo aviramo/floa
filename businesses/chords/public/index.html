@@ -25,32 +25,6 @@
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-<dialog id="authDialog" class="dlg">
-  <div class="dlg-in">
-    <h2>התחברות</h2>
-    <p class="muted">כל אחד רואה את השירים שפורסמו. כדי להוסיף, לערוך או למחוק צריך חשבון.</p>
-    <button type="button" class="btn wide google" id="authGoogle">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.56c2.08-1.92 3.28-4.74 3.28-8.1z"/>
-        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.65l-3.56-2.77c-.99.66-2.24 1.06-3.72 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"/>
-        <path fill="#FBBC05" d="M5.84 14.11a6.6 6.6 0 0 1 0-4.22V7.05H2.18a11 11 0 0 0 0 9.9l3.66-2.84z"/>
-        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1a11 11 0 0 0-9.82 6.05l3.66 2.84c.87-2.6 3.3-4.51 6.16-4.51z"/>
-      </svg>
-      <span class="lb">להמשיך עם גוגל</span>
-    </button>
-    <p class="or"><span>או</span></p>
-    <form id="authForm">
-      <label>אימייל<input type="email" name="email" autocomplete="username" required></label>
-      <label>סיסמה<input type="password" name="password" autocomplete="current-password" required></label>
-      <p class="err" id="authErr" hidden></p>
-      <div class="dlg-actions">
-        <button type="button" class="btn ghost" data-close>ביטול</button>
-        <button type="submit" class="btn">התחברות</button>
-      </div>
-    </form>
-  </div>
-</dialog>
-
 <dialog id="meDialog" class="dlg">
   <form class="dlg-in" id="meForm">
     <h2>החשבון</h2>
