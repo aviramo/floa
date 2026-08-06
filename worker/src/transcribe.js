@@ -39,9 +39,13 @@
       which says the C is over the third letter of the first word. Three things
       follow from that, and they are the whole reason for this file's shape.
 
-      The ORDER cannot be wrong, because there is no order: each chord names
-      its own word, and this code sorts them. The reversal that plagued every
-      earlier version is not fixed here, it is impossible.
+      The ORDER is no longer something this code can get wrong: each chord
+      names its own word and the sort below does the rest, so a line can no
+      longer come out backwards because of the sequence the chords arrived in.
+      That is narrower than it sounds and the difference matters. A model can
+      still name the WRONG word, and a chord named onto its neighbour's word is
+      indistinguishable from a chord swapped with it. What was removed is the
+      mechanism, not the mistake.
 
       The DRIFT has somewhere to catch, because `letter` and `letters_before`
       say the same thing twice. Where they disagree the letter wins, since
@@ -72,29 +76,35 @@
    two errors kept coming back, so the setting was not what was wrong. The
    question was. Hence the shape at the top of this file.
 
-   AND THEN THE LADDER CAN BE CLIMBED BACK DOWN, which is the point of the new
-   shape and the reason this line reads Sonnet again. Look at what the cheap
-   settings actually failed at:
+   THEN THE LADDER WAS CLIMBED BACK DOWN, ON THE ARGUMENT THAT THE NEW SHAPE
+   HAD TAKEN BOTH FAILURES OUT OF THE MODEL'S HANDS, AND IT HAD NOT. Worth
+   recording, because the argument was reasonable and still wrong.
 
-     the ORDER, which no model is asked for any more. Each chord names its own
-     word and this file sorts them, so the reversal is not a thing that can be
-     got right or wrong.
+     Sonnet, medium,  the chorus came out EXACTLY right, every chord on the
+     the new shape    letter it is printed over, which no earlier attempt had
+                      managed. And the rest regressed: the first line had two
+                      chords on each other's words, and a turnaround printed
+                      past the end of the line was broken up and scattered
+                      between the syllables of נה נה נה.
 
-     the DRIFT to the front of a word, which is now caught here rather than
-     asked for. The letter and the count say the same thing twice, and where
-     they disagree the letter wins.
+   What the sort actually guarantees is narrower than it looked. It makes the
+   order impossible to reverse HERE, in the assembling, which was one of the
+   two ways the old design could go wrong. It cannot stop a model from naming
+   the wrong WORD in the first place, and a chord named onto its neighbour's
+   word looks exactly like a chord that was swapped with it. The reversal was
+   not designed out of the problem; it was designed out of this file.
 
-   Both of the failures that made Opus worth its price were structural, and
-   both are gone from the question. What is left is reading Hebrew off a
-   photograph and naming the letter under a symbol, and Sonnet reads the words
-   themselves perfectly well; that was never where it went wrong.
+   And that is what the bigger model is for. Every remaining error is a
+   judgement about a photograph: which word is this symbol above, which letter,
+   is that mark past the end of the line or over the last syllable.
 
-   If this turns out to be false economy, the ONE line to change is the model,
-   back to claude-opus-5, and nothing else in this file moves.
+   So the model goes back up, and the shape stays. It is worth what it costs
+   because the chorus line above is the proof it earned: the shape is what made
+   an exactly correct line possible at all, on any model.
 
    max_tokens is a ceiling and not a target: at 32000 a long song cannot run
    out of room, and nothing is paid for room that goes unused. */
-const MODEL = "claude-sonnet-5";
+const MODEL = "claude-opus-5";
 const EFFORT = "medium";
 const MAX_TOKENS = 32000;
 
