@@ -749,6 +749,46 @@
      very start of a line has no character before it; it lands on the first,
      which is the nearest thing it can have meant. */
 
+  /* --- which way a line runs ------------------------------------------------
+     A DIRECTION BELONGS TO A LINE, NOT TO A SONG. A Hebrew verse and an
+     English chorus are one song and two directions, and a song that had to
+     choose one of them laid the other one out backwards: the chords of the
+     English line landed at the wrong end of it.
+
+     In the document it is a directive of its own, `{dir:ltr}` or `{dir:rtl}`,
+     written ONLY where the direction changes. So a song in one direction
+     carries no markers at all, exactly as it did before this existed, and the
+     `dir` column still says what the song as a whole is: the direction of its
+     first line, which is where a reader starts.
+
+     It is written from the model on every save, so a verse dragged from the
+     middle of an English section into a Hebrew one comes out with the markers
+     in their new places rather than in the ones they were typed at. */
+  var DIR_MARK = /^\s*\{dir:(rtl|ltr)\}\s*$/i;
+
+  function dirOf(line, fallback) {
+    var dir = line && line.dir;
+    return dir === "rtl" || dir === "ltr" ? dir : (fallback || "rtl");
+  }
+
+  /* Every line saying which way it runs, so that nothing further down has to
+     ask a song what one of its lines is doing. */
+  function fillDirs(lines, fallback) {
+    var last = fallback || "rtl";
+    lines.forEach(function (line) {
+      last = dirOf(line, last);
+      line.dir = last;
+    });
+    return lines;
+  }
+
+  /* The song's own direction is its FIRST line's: it is the one the eye lands
+     on, it is what the sheet as a whole is laid out in, and it is what a line
+     with nothing else to go on inherits. */
+  function songDir(lines) {
+    return lines && lines.length ? dirOf(lines[0], "rtl") : "rtl";
+  }
+
   function toChordPro(line) {
     if (line.type === "section") return line.text;
     var chords = line.chords.slice().sort(function (a, b) { return a.pos - b.pos; });
@@ -814,7 +854,10 @@
     return best;
   }
 
-  function blankLine() { return { type: "line", text: "", chords: [] }; }
+  /* A new line runs the way the line before it ran. Whoever is typing an
+     English chorus is typing the second line of it too, and being handed a
+     Hebrew line in the middle of it is being handed the wrong thing. */
+  function blankLine(dir) { return { type: "line", text: "", chords: [], dir: dir || "rtl" }; }
 
   /* Cutting a line in two and putting two back together, with the chords going
      wherever their own characters went. These are what let Enter, Backspace and
@@ -822,8 +865,9 @@
      document, so the keys that shape a document have to work on it. */
   function splitLine(line, at) {
     var cut = Math.max(0, Math.min(at, line.text.length));
-    var before = { type: line.type, text: line.text.slice(0, cut), chords: [] };
-    var after = { type: "line", text: line.text.slice(cut), chords: [] };
+    /* both halves of a line run the way the line ran */
+    var before = { type: line.type, text: line.text.slice(0, cut), chords: [], dir: dirOf(line) };
+    var after = { type: "line", text: line.text.slice(cut), chords: [], dir: dirOf(line) };
     (line.chords || []).forEach(function (c) {
       if (c.pos < cut) before.chords.push({ pos: c.pos, chord: c.chord });
       else after.chords.push({ pos: c.pos - cut, chord: c.chord });
@@ -835,6 +879,8 @@
     var at = first.text.length;
     return {
       type: first.type,
+      /* the one that swallowed the other keeps its own direction */
+      dir: dirOf(first),
       text: first.text + second.text,
       chords: (first.chords || []).map(function (c) { return { pos: c.pos, chord: c.chord }; })
         .concat((second.chords || []).map(function (c) { return { pos: c.pos + at, chord: c.chord }; })),
@@ -868,18 +914,36 @@
      program that speaks ChordPro. A heading is a line in braces; that is the
      only piece of punctuation this format has beyond the brackets. */
   function songToText(lines) {
-    return normalizeLines(lines).map(function (line) {
-      return line.type === "section" ? "{" + line.text + "}" : toChordPro(line);
-    }).join("\n");
+    var out = [];
+    var running = "";
+    normalizeLines(lines).forEach(function (line) {
+      var dir = line.dir === "ltr" || line.dir === "rtl" ? line.dir : running;
+      /* The first line sets the direction without saying so: it IS the song's,
+         and it is in the column. Every later change says so. */
+      if (dir && dir !== running) {
+        if (running) out.push("{dir:" + dir + "}");
+        running = dir;
+      }
+      out.push(line.type === "section" ? "{" + line.text + "}" : toChordPro(line));
+    });
+    return out.join("\n");
   }
 
-  function textToSong(body) {
-    return String(body).replace(/\r\n?/g, "\n").split("\n").map(function (row) {
+  function textToSong(body, fallback) {
+    var dir = fallback === "ltr" ? "ltr" : "rtl";
+    var out = [];
+    String(body).replace(/\r\n?/g, "\n").split("\n").forEach(function (row) {
+      var turn = DIR_MARK.exec(row);
+      /* a directive is not a line of the song, it is a fact about the lines
+         after it */
+      if (turn) { dir = turn[1].toLowerCase(); return; }
+
       var heading = /^\s*\{(.*)\}\s*$/.exec(row);
-      if (heading) return { type: "section", text: heading[1].trim(), chords: [] };
+      if (heading) return out.push({ type: "section", text: heading[1].trim(), chords: [], dir: dir });
       var parsed = fromChordPro(row);
-      return { type: "line", text: parsed.text, chords: parsed.chords };
+      out.push({ type: "line", text: parsed.text, chords: parsed.chords, dir: dir });
     });
+    return out;
   }
 
   /* the other half of padTo: spaces nothing needs any more, once the chord that
@@ -894,16 +958,18 @@
     return true;
   }
 
-  function normalizeLines(lines) {
+  function normalizeLines(lines, fallback) {
     /* The song as it is stored now: one document. Songs written before that,
        as a list of line objects, still open, which is the whole reason this
        function takes both. */
-    if (typeof lines === "string") lines = lines.trim() ? textToSong(lines) : [];
-    if (!Array.isArray(lines) || !lines.length) return [blankLine()];
+    if (typeof lines === "string") lines = lines.trim() ? textToSong(lines, fallback) : [];
+    if (!Array.isArray(lines) || !lines.length) return [blankLine(fallback)];
 
-    return lines.map(function (l) {
+    /* A line that does not say which way it runs runs the way the line before
+       it did, and the first one runs the way the song does. */
+    return fillDirs(lines.map(function (l) {
       var raw = String(l && l.text != null ? l.text : "");
-      if (l && l.type === "section") return { type: "section", text: raw, chords: [] };
+      if (l && l.type === "section") return { type: "section", text: raw, chords: [], dir: l.dir };
 
       /* Written down with brackets. A song saved before that, with a separate
          list of offsets, still opens: its own list is used and the brackets
@@ -924,8 +990,8 @@
         })
         .filter(function (c) { return c.chord; })
         .sort(function (a, b) { return a.pos - b.pos; });
-      return { type: "line", text: text, chords: chords };
-    });
+      return { type: "line", text: text, chords: chords, dir: l && l.dir };
+    }), fallback);
   }
 
   /* Text pasted out of a document, Word or anywhere else: a line of chords,
@@ -1003,7 +1069,18 @@
      needing chords where the words happen to end: an outro, a turnaround, a
      tail of «נה נה נה» all live out there. Without it every chord past the end
      of a short line piles up on the same point and cannot be pulled apart. */
-  function metrics(ln, rtl) {
+  /* WHICH WAY THIS ROW RUNS, ASKED OF THE ROW. Every measurement below used to
+     be handed the song's direction from above, which was fine while a song had
+     one. Now that a line has its own, the row carries it as a `dir` attribute,
+     which is the same thing the browser is laying the words out by: one answer,
+     read in one place, and no way for the arithmetic and the text to disagree
+     about which end a line starts at. */
+  function rowRtl(ln) {
+    return (ln && ln.dir === "ltr") ? false : true;
+  }
+
+  function metrics(ln) {
+    var rtl = rowRtl(ln);
     var t = ln.querySelector(".ln-t");
     if (!t) return null;
     var spans = t.children;
@@ -1046,9 +1123,10 @@
   /* The measurement. Everything is taken from the LINE's own edges with real
      rectangles, so right to left is the same arithmetic read from the other
      side rather than a second code path. */
-  function layoutLine(ln, rtl) {
+  function layoutLine(ln) {
+    var rtl = rowRtl(ln);
     var lane = ln.querySelector(".ln-c");
-    var m = metrics(ln, rtl);
+    var m = metrics(ln);
     if (!lane || !m) return;
 
     /* THE MIDDLE OF THE CHARACTER, not its leading edge. A chord sits ON a
@@ -1095,8 +1173,9 @@
      the others must hold still: a neighbour that shuffles aside as you pass it
      makes the line feel like it is rearranging itself under your hand. The
      tidying pass in layoutLine runs again when the drag ends. */
-  function placeChord(ln, node, rtl, at) {
-    var m = metrics(ln, rtl);
+  function placeChord(ln, node, at) {
+    var rtl = rowRtl(ln);
+    var m = metrics(ln);
     if (!m) return;
     var anchor = at != null ? at : positionOf(m, (Number(node.dataset.pos) || 0) + 0.5);
     var x = anchor - node.getBoundingClientRect().width / 2;
@@ -1104,8 +1183,8 @@
     node.style.right = rtl ? x + "px" : "auto";
   }
 
-  function layoutAll(root, rtl) {
-    Array.prototype.forEach.call(root.querySelectorAll(".ln"), function (ln) { layoutLine(ln, rtl); });
+  function layoutAll(root) {
+    Array.prototype.forEach.call(root.querySelectorAll(".ln"), function (ln) { layoutLine(ln); });
   }
 
   /* --- a song too wide for the screen --------------------------------------
@@ -1181,9 +1260,9 @@
      costs. A row that has no words to measure (a section heading, the blank
      line between two stanzas) is carried through untouched, and closes
      whatever row was open, because neither belongs in the middle of one. */
-  function measureLine(ln, rtl) {
+  function measureLine(ln) {
     var t = ln.querySelector(".ln-t");
-    var m = t ? metrics(ln, rtl) : null;
+    var m = t ? metrics(ln) : null;
     if (!t || !m || !m.count) return { node: ln, keep: true };
 
     var text = t.textContent;
@@ -1213,28 +1292,29 @@
 
     return {
       node: ln, text: text, chords: chords, cells: cells, advance: advance,
+      rtl: rowRtl(ln),
       size: parseFloat(getComputedStyle(t).fontSize) || 18,
       pieces: [],
     };
   }
 
-  function flowSheet(sheet, rtl) {
+  function flowSheet(sheet) {
     var originals = Array.prototype.slice.call(sheet.querySelectorAll(".ln"));
     if (!originals.length) return;
 
     var full = originals[0].clientWidth;
     if (!(full > 0)) return;
 
-    var lines = originals.map(function (ln) { return measureLine(ln, rtl); });
+    var lines = originals.map(function (ln) { return measureLine(ln); });
     var sized = lines.filter(function (line) { return !line.keep; });
     if (!sized.length) return;
 
     var indent = CONT_INDENT * sized[0].size;
-    var mark = rtl ? DROP_MARK.rtl : DROP_MARK.ltr;
     /* the mark stands off the words on both sides, or it reads as a letter of
-       the word it is touching */
-    var sepText = " " + mark + " ";
-    var sepWidth = textWidth(sheet, sepText);
+       the word it is touching. Its arrow points the way the ROW runs, so it is
+       chosen per row rather than once for the sheet. */
+    function dropMark(rtl) { return " " + (rtl ? DROP_MARK.rtl : DROP_MARK.ltr) + " "; }
+    var sepWidth = textWidth(sheet, dropMark(true));
 
     /* --- pouring ---------------------------------------------------------- */
 
@@ -1244,8 +1324,8 @@
        carrying the leftover: indented, and marked with the arrow */
     var leftover = false;
 
-    function openRow() {
-      row = { tail: leftover, pieces: [], used: 0 };
+    function openRow(rtl) {
+      row = { tail: leftover, pieces: [], used: 0, rtl: rtl };
       row.room = full - (row.tail ? indent : 0);
       leftover = false;
       out.push(row);
@@ -1255,9 +1335,15 @@
     lines.forEach(function (line) {
       if (line.keep) { row = null; leftover = false; out.push(line); return; }
 
+      /* A row runs one way. A Hebrew line and an English one cannot share it:
+         they start at opposite edges, and either of them poured into the
+         other's row would read backwards. So a change of direction closes
+         whatever row was open, exactly as a heading does. */
+      if (row && row.rtl !== line.rtl) row = null;
+
       var pos = 0;
       while (pos < line.cells) {
-        if (!row) openRow();
+        if (!row) openRow(line.rtl);
 
         /* what this piece has to pay before its first character: a separator,
            if it is starting a line on a row that already holds one */
@@ -1340,6 +1426,9 @@
 
     function buildRow(desc) {
       var ln = el("div", "ln" + (desc.tail ? " is-cont" : "") + (desc.more ? " has-cont" : ""));
+      /* the poured row runs the way the line it was poured from runs */
+      ln.dir = desc.rtl ? "rtl" : "ltr";
+      var sepText = dropMark(desc.rtl);
       var lane = el("div", "ln-c");
       var text = "";
       var seps = [];
@@ -1370,7 +1459,7 @@
       });
       if (desc.tail) {
         ln.style.setProperty("--cont", indent + "px");
-        words.dataset.cont = mark;
+        words.dataset.cont = sepText.trim();
       }
       ln.appendChild(words);
       return ln;
@@ -1382,10 +1471,10 @@
        is the order of `out` whether a row is a new one or one being carried
        through and moved. */
     var parent = originals[0].parentNode;
-    var mark = document.createComment("");
-    parent.insertBefore(mark, originals[0]);
-    nodes.forEach(function (node) { parent.insertBefore(node, mark); });
-    parent.removeChild(mark);
+    var here = document.createComment("");
+    parent.insertBefore(here, originals[0]);
+    nodes.forEach(function (node) { parent.insertBefore(node, here); });
+    parent.removeChild(here);
     originals.forEach(function (node) {
       if (node.parentNode && nodes.indexOf(node) === -1) node.parentNode.removeChild(node);
     });
@@ -1394,8 +1483,9 @@
   /* Where the pointer is, said in characters, fraction and all. The caller
      rounds it: a stored position is always a whole character, but the fraction
      is what lets a chord follow the hand smoothly while it is being dragged. */
-  function posFromX(ln, clientX, rtl) {
-    var m = metrics(ln, rtl);
+  function posFromX(ln, clientX) {
+    var rtl = rowRtl(ln);
+    var m = metrics(ln);
     if (!m) return 0;
 
     var line = ln.getBoundingClientRect();
@@ -2116,7 +2206,7 @@
     if (slug === null) {
       return renderSong({
         id: null, slug: "", title: "", lyrics_by: "", music_by: "",
-        dir: "rtl", lines: [blankLine()],
+        dir: "rtl", lines: [blankLine("rtl")],
       });
     }
 
@@ -2132,7 +2222,9 @@
       if (song.status === "queued" || (song.status === "reading" && !stalled(song))) {
         return viewPending(song);
       }
-      song.lines = normalizeLines(song.lines);
+      /* the column is what the song ran in before a line could say otherwise,
+         so it is what a line that says nothing inherits */
+      song.lines = normalizeLines(song.lines, song.dir);
       renderSong(song);
     }).catch(fail);
   }
@@ -2196,7 +2288,6 @@
 
     var byFields = [];
     /* set below, with the buttons they keep in step with the song */
-    var showDir = null;
     var showDraft = null;
     var draftBtn = null;
     if (editing) {
@@ -2231,34 +2322,10 @@
         });
       });
 
-      /* Which way the song runs, in ONE BUTTON WITH NO CAPTION. There are two
-         states and the button is in one of them, so the three letters on it are
-         both the answer and the way to the other one; a caption over them would
-         only name what they already say.
-
-         RTL and LTR in Latin letters on a Hebrew page on purpose. They are the
-         names of the two directions everywhere they are written down, and the
-         alternative is a Hebrew sentence too long to sit on a button. */
-      var dirBtn = el("button", "dir-btn");
-      dirBtn.type = "button";
-      dirBtn.dir = "ltr";
-      dirBtn.addEventListener("click", function () {
-        song.dir = (song.dir || "rtl") === "rtl" ? "ltr" : "rtl";
-        showDir();
-        draw();
-        mark();
-      });
-
-      showDir = function () {
-        var isRtl = (song.dir || "rtl") === "rtl";
-        dirBtn.textContent = isRtl ? "RTL" : "LTR";
-        var words = isRtl ? "עברית, מימין לשמאל" : "אנגלית, משמאל לימין";
-        dirBtn.title = words + ". לחיצה מחליפה.";
-        dirBtn.setAttribute("aria-label", "כיוון השיר: " + words + ". לחיצה מחליפה.");
-      };
-      showDir();
-
-      meta.appendChild(dirBtn);
+      /* The direction used to be one button up here, and it belonged to the
+         whole song. It is a property of a LINE now and it is chosen down in the
+         sheet, on the lines it is about (see the block bar): a song with a
+         Hebrew verse and an English chorus has no one answer to give here. */
 
       /* Not finished, and said so by the person writing it. The other label on
          a song is the machine's; this one is the author's, and a song can
@@ -2450,6 +2517,22 @@
       blockBar.appendChild(iconBtn(ICON.up, "להעלות את המסומן", function () { moveMarked(-1); }));
       blockBar.appendChild(iconBtn(ICON.down, "להוריד את המסומן", function () { moveMarked(1); }));
       blockBar.appendChild(button("שכפול", ICON.copy, "ghost small", copyMarked));
+
+      /* Which way the marked lines run. Two buttons rather than one that
+         toggles, because a block can hold both directions at once and there
+         would be no honest state for a toggle to be in; these two say what to
+         BE, which is an answer whatever the lines are now. The Latin names on
+         a Hebrew page on purpose: they are what the two directions are called
+         everywhere they are written down. */
+      var toRtl = button("RTL", null, "ghost small", function () { faceMarked("rtl"); });
+      var toLtr = button("LTR", null, "ghost small", function () { faceMarked("ltr"); });
+      toRtl.title = "השורות המסומנות בעברית, מימין לשמאל";
+      toLtr.title = "השורות המסומנות באנגלית, משמאל לימין";
+      toRtl.dir = "ltr";
+      toLtr.dir = "ltr";
+      blockBar.appendChild(toRtl);
+      blockBar.appendChild(toLtr);
+
       blockBar.appendChild(button("העתקת אקורדים", null, "ghost small", liftChords));
       /* not there until there is something to put down */
       dropBtn = button("הדבקת אקורדים", null, "ghost small", dropChords);
@@ -2463,26 +2546,34 @@
     var addRow = null;
     if (editing) {
       addRow = el("div", "ed-bar");
+      /* A new line runs the way the song's last line runs. Whoever is typing an
+         English chorus is typing the next line of it too. */
       addRow.appendChild(button("שורה בסוף", ICON.plus, "ghost small", function () {
-        song.lines.push(blankLine());
+        song.lines.push(blankLine(lastDir()));
         draw();
         focusLine(song.lines.length - 1);
         mark();
       }));
       addRow.appendChild(button("כותרת קטע", ICON.section, "ghost small", function () {
-        song.lines.push({ type: "section", text: "פזמון", chords: [] });
+        song.lines.push({ type: "section", text: "פזמון", chords: [], dir: lastDir() });
         draw();
         focusLine(song.lines.length - 1);
         mark();
       }));
+      /* Here rather than in the block bar, because the block bar is not on
+         screen until something is marked, and this is how a song with nothing
+         marked gets everything marked. */
+      addRow.appendChild(button("סימון כל השורות", null, "ghost small", markAll));
       app.appendChild(addRow);
     }
 
-    var rtl = function () { return (song.dir || "rtl") === "rtl"; };
-
+    /* The sheet's own direction is the song's, which is its first line's. It
+       decides where the capo chip and the headings sit; each line inside says
+       which way IT runs and is laid out by that alone. */
     function draw() {
       sheet.innerHTML = "";
-      sheet.dir = song.dir || "rtl";
+      song.dir = songDir(song.lines);
+      sheet.dir = song.dir;
 
       /* A chord shown a fret below what the song is in is a chord you play with
          a capo there, so the sheet says where the capo goes, and says nothing
@@ -2502,8 +2593,8 @@
          its syllable ended up on and there is no telling which that is until
          the words have been broken. */
       requestAnimationFrame(function () {
-        if (!editing && NARROW.matches) flowSheet(sheet, rtl());
-        layoutAll(sheet, rtl());
+        if (!editing && NARROW.matches) flowSheet(sheet);
+        layoutAll(sheet);
       });
     }
 
@@ -2523,7 +2614,7 @@
       size = readingSize(next);
       sheet.style.setProperty("--song-size", size + "px");
       if (!editing && NARROW.matches) return draw();
-      requestAnimationFrame(function () { layoutAll(sheet, rtl()); });
+      requestAnimationFrame(function () { layoutAll(sheet); });
     }
 
     /* --- what has changed ----------------------------------------------------
@@ -2598,12 +2689,11 @@
       /* Lines read back out of a string are new objects, so every mark is now
          held against a line that is not in the song any more. */
       marked.length = 0;
-      song.lines = normalizeLines(was[3]);
+      song.lines = normalizeLines(was[3], song.dir);
       song.draft = !!was[4];
 
       if (title.textContent !== song.title) title.textContent = song.title;
       byFields.forEach(function (input, index) { input.value = was[1][index] || ""; });
-      if (showDir) showDir();
       if (showDraft) showDraft();
 
       draw();
@@ -2705,6 +2795,9 @@
       var blank = line.type !== "section" && !line.text.trim() && !line.chords.length;
       var ln = el("div", "ln" + (line.type === "section" ? " is-section" : blank ? " is-blank" : ""));
       ln.dataset.index = index;
+      /* Which way this one runs, said on the row: it is what the browser lays
+         the words out by and what every measurement here asks (see rowRtl). */
+      ln.dir = dirOf(line, song.dir);
 
       if (line.type === "section") {
         var heading = el("div", "ln-section", line.text);
@@ -2724,12 +2817,12 @@
         lane.addEventListener("pointerdown", function (event) {
           if (event.target !== lane) return;
           event.preventDefault();
-          var chord = { pos: posFromX(ln, event.clientX, rtl()), chord: "" };
+          var chord = { pos: posFromX(ln, event.clientX), chord: "" };
           line.chords.push(chord);
           var node = chordEl("", chord.pos, semis);
           bindChord(node, ln, line, chord);
           lane.appendChild(node);
-          layoutLine(ln, rtl());
+          layoutLine(ln);
           openPicker(node, ln, line, chord);
         });
         ln.appendChild(lane);
@@ -2774,7 +2867,7 @@
           for (var i = 0; i < nodes.length && i < line.chords.length; i++) {
             nodes[i].dataset.pos = line.chords[i].pos;
           }
-          layoutLine(ln, rtl());
+          layoutLine(ln);
         });
         text.addEventListener("keydown", function (event) { lineKeys(event, line, text); });
         ln.appendChild(text);
@@ -2833,6 +2926,24 @@
       rowsOf().forEach(function (ln) { ln.classList.remove("is-marked"); });
       Array.prototype.forEach.call(sheet.querySelectorAll(".ln-pick input"), function (box) {
         box.checked = false;
+      });
+    }
+
+    /* The whole song in one press. Turning a song that came out in the wrong
+       direction the right way round, or moving all of it down to make room at
+       the top, is a thing about the song rather than about a verse, and ticking
+       forty boxes to say so is forty presses to say one word.
+
+       Not a toggle: the same bar already carries the way back, and a button
+       that means two different things depending on what is ticked is a button
+       you have to look at what is ticked to press. */
+    function markAll() {
+      marked.length = 0;
+      song.lines.forEach(function (line) { marked.push(line); });
+      showMarked();
+      rowsOf().forEach(function (ln) { ln.classList.add("is-marked"); });
+      Array.prototype.forEach.call(sheet.querySelectorAll(".ln-pick input"), function (box) {
+        box.checked = true;
       });
     }
 
@@ -2903,6 +3014,36 @@
 
       marked.length = 0;
       copies.forEach(function (line) { marked.push(line); });
+
+      draw();
+      mark();
+    }
+
+    /* Which way the last line of the song runs, which is which way the next one
+       will. A song with nothing in it yet runs the way the song says. */
+    function lastDir() {
+      var lines = song.lines;
+      return lines.length ? dirOf(lines[lines.length - 1], song.dir) : (song.dir || "rtl");
+    }
+
+    /* The direction of the marked lines, set to what was asked for rather than
+       flipped: a block can hold both directions at once, and "the other one" is
+       not an answer when there are two of them.
+
+       Drawn again rather than nudged, because a line changing direction changes
+       which edge it starts at, where every chord on it is measured from and,
+       on a phone, where the whole thing breaks. */
+    function faceMarked(dir) {
+      var going = song.lines.filter(isMarked);
+      if (!going.length) return;
+
+      var moved = false;
+      going.forEach(function (line) {
+        if (dirOf(line) === dir) return;
+        line.dir = dir;
+        moved = true;
+      });
+      if (!moved) return;
 
       draw();
       mark();
@@ -3057,7 +3198,7 @@
              what it is anchored to is the middle of a character. Remember the
              difference at the moment the drag begins and keep it, or the chord
              snaps that far sideways on the first pixel of movement. */
-          grab = (chord.pos + 0.5) - posFromX(ln, event.clientX, rtl());
+          grab = (chord.pos + 0.5) - posFromX(ln, event.clientX);
         }
 
         /* The hand moves in pixels, the song moves in characters. The chord is
@@ -3066,7 +3207,7 @@
            letter. `raw` is that middle in character coordinates, so the
            character carrying it is the one it falls INSIDE: floor, not round.
            The only visible cost is half a character of settling on release. */
-        var raw = Math.max(0, posFromX(ln, event.clientX, rtl()) + grab);
+        var raw = Math.max(0, posFromX(ln, event.clientX) + grab);
         var pos = Math.max(0, Math.floor(raw));
         var previous = chord.pos;
 
@@ -3076,7 +3217,7 @@
           fillSpans(ln.querySelector(".ln-t"), line.text);
         }
 
-        placeChord(ln, node, rtl(), positionOf(metrics(ln, rtl()), raw));
+        placeChord(ln, node, positionOf(metrics(ln), raw));
         if (pos === previous) return;
 
         /* Run one chord over another and the two change places, so a chord can
@@ -3101,7 +3242,7 @@
           /* the lane's children follow line.chords one for one, because they
              are appended and removed together */
           var twin = node.parentNode.children[line.chords.indexOf(crossed)];
-          if (twin) { twin.dataset.pos = crossed.pos; placeChord(ln, twin, rtl()); }
+          if (twin) { twin.dataset.pos = crossed.pos; placeChord(ln, twin); }
         }
       });
 
@@ -3113,7 +3254,7 @@
         /* let go: the chord settles onto its character, and any spaces the drag
            called for and no longer needs go back */
         if (trimPadding(line)) fillSpans(ln.querySelector(".ln-t"), line.text);
-        layoutLine(ln, rtl());
+        layoutLine(ln);
         mark();
       });
 
@@ -3188,7 +3329,7 @@
       function drop() {
         line.chords.splice(line.chords.indexOf(chord), 1);
         node.remove();
-        layoutLine(ln, rtl());
+        layoutLine(ln);
         mark();
       }
 
@@ -3198,7 +3339,7 @@
         if (!value || !isChord(value)) return drop();
         chord.chord = value;
         node.textContent = transposeChord(value, semis);
-        layoutLine(ln, rtl());
+        layoutLine(ln);
         mark();
       }
 
@@ -3348,7 +3489,9 @@
       saveBtn.disabled = true;
       var payload = {
         title: name,
-        dir: song.dir || "rtl",
+        /* the song's direction is its first line's: the sheet is laid out in
+           it, and a line that does not say otherwise inherits it */
+        dir: songDir(song.lines),
         lines: songToText(song.lines),
         draft: !!song.draft,
       };
@@ -3424,7 +3567,7 @@
        nowhere else, so starting any other way leaves it reading 0 over a song
        that is being shown seven frets down */
     setSemis(semis);
-    relayoutOn(sheet, rtl, editing ? null : draw);
+    relayoutOn(sheet, editing ? null : draw);
 
     /* last, once the page is whole, because taking a draft back means writing
        into the title, the credits and every line of the sheet, and all of them
@@ -3438,10 +3581,14 @@
   function viewLine(line, semis) {
     if (line.type === "section") {
       var s = el("div", "ln is-section");
+      s.dir = dirOf(line);
       s.appendChild(el("div", "ln-section", line.text));
       return s;
     }
     var ln = el("div", "ln" + (line.text.trim() || line.chords.length ? "" : " is-blank"));
+    /* Said on the row, which is both how the browser lays the words out and
+       where every measurement asks (see rowRtl). One answer, one place. */
+    ln.dir = dirOf(line);
     var lane = el("div", "ln-c");
     line.chords.forEach(function (c) { lane.appendChild(chordEl(c.chord, c.pos, semis)); });
     ln.appendChild(lane);
@@ -3458,8 +3605,8 @@
      actually moved, because a phone fires resize for its own address bar
      sliding away, and redrawing the sheet under a reader's thumb for that is
      the page flinching at nothing. */
-  function relayoutOn(root, isRtl, redraw) {
-    var run = function () { layoutAll(root, isRtl()); };
+  function relayoutOn(root, redraw) {
+    var run = function () { layoutAll(root); };
     var width = root.clientWidth;
 
     /* The font the words were broken with has to be the font they are read in,

@@ -9,7 +9,7 @@ const end = src.indexOf("/* ----------------------------------------------------
 if (start < 0 || end < 0) throw new Error("could not find the model block");
 
 const block = src.slice(start, end);
-const api = new Function(block + "\nreturn { slugify, transposeChord, remapChords, parsePasted, looksLikeChord, isChord, suggestChords, chordsUsed, easyVersion, toChordPro, fromChordPro, songToText, textToSong, normalizeLines, splitLine, joinLines, padTo, trimPadding };")();
+const api = new Function(block + "\nreturn { slugify, transposeChord, remapChords, parsePasted, looksLikeChord, isChord, suggestChords, chordsUsed, easyVersion, toChordPro, fromChordPro, songToText, textToSong, normalizeLines, songDir, splitLine, joinLines, padTo, trimPadding };")();
 
 let failed = 0;
 const eq = (label, got, want) => {
@@ -96,7 +96,37 @@ eq("brackets survive a round trip untouched",
   "ש[Am]לום לך  [G]  אדוני\n\n{פזמון}\nעוד שורה");
 
 eq("a heading is a line in braces",
-  api.textToSong("{פזמון}")[0], { type: "section", text: "פזמון", chords: [] });
+  api.textToSong("{פזמון}")[0], { type: "section", text: "פזמון", chords: [], dir: "rtl" });
+
+/* --- which way each line runs -------------------------------------------
+   A direction belongs to a line, so the document says so where it CHANGES and
+   nowhere else: a song in one direction carries no markers at all. */
+const ONE_WAY = ["ש[Am]לום", "עוד שורה"].join("\n");
+const TURNS = ["שלום", "{dir:ltr}", "Hello", "{dir:rtl}", "עולם"].join("\n");
+const OPENS_LTR = ["Hello", "{dir:rtl}", "שלום"].join("\n");
+
+eq("a song in one direction says nothing about it",
+  api.songToText(api.textToSong(ONE_WAY)), ONE_WAY);
+
+eq("a marker turns the lines after it",
+  api.textToSong(TURNS).map((l) => l.dir), ["rtl", "ltr", "rtl"]);
+
+eq("and it is written back where the direction changes",
+  api.songToText(api.textToSong(TURNS)), TURNS);
+
+eq("the first line needs no marker, it IS the song's direction",
+  api.songToText(api.textToSong(OPENS_LTR, "ltr")), OPENS_LTR);
+
+eq("a line inherits the one before it",
+  api.normalizeLines([{ text: "a", dir: "ltr" }, { text: "b" }, { text: "c", dir: "rtl" }]).map((l) => l.dir),
+  ["ltr", "ltr", "rtl"]);
+
+eq("both halves of a cut line keep its direction",
+  api.splitLine({ type: "line", text: "Hello there", chords: [], dir: "ltr" }, 5).map((l) => l.dir),
+  ["ltr", "ltr"]);
+
+eq("the song runs the way its first line does",
+  api.songDir(api.textToSong(OPENS_LTR, "ltr")), "ltr");
 
 /* Typing a space with the caret exactly where a chord sits. Nothing is
    deleted, so the change is zero characters wide and the chord stands on both
@@ -187,10 +217,10 @@ const pasted = [
 eq("section, chord line over its lyric line, blank, chord-only line",
   api.parsePasted(pasted),
   [
-    { type: "section", text: "פזמון", chords: [] },
-    { type: "line", text: "אני שר לך שיר", chords: [{ pos: 0, chord: "Am" }, { pos: 10, chord: "F" }] },
-    { type: "line", text: "", chords: [] },
-    { type: "line", text: "    ", chords: [{ pos: 0, chord: "C" }, { pos: 3, chord: "G" }] },
+    { type: "section", text: "פזמון", chords: [], dir: "rtl" },
+    { type: "line", text: "אני שר לך שיר", chords: [{ pos: 0, chord: "Am" }, { pos: 10, chord: "F" }], dir: "rtl" },
+    { type: "line", text: "", chords: [], dir: "rtl" },
+    { type: "line", text: "    ", chords: [{ pos: 0, chord: "C" }, { pos: 3, chord: "G" }], dir: "rtl" },
   ]);
 
 eq("a lyric line that happens to start with a capital is not a chord line",
