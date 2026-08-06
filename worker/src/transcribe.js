@@ -746,6 +746,10 @@ export async function readChordSheet(env, files, beat) {
       console.log(`measured and read agree ${Math.round(agree * 100)}%; keeping the measuring`);
       return {
         ...measured,
+        /* both answers kept, and the score that chose between them. See the
+           `reads` column in schema.sql: a losing answer thrown away is a
+           tuning round that has to be paid for twice. */
+        reads: { measured: measured.body, agreement: agree, kept: "measured" },
         /* the model read the title and the credits off the page, which a ruler
            cannot do, so those come from here even when the song does not */
         title: words.title || measured.title,
@@ -803,6 +807,13 @@ export async function readChordSheet(env, files, beat) {
 
   const song = clean(merge(words, lines, report));
   if (lost) song.note = lost;
+
+  song.reads = {
+    measured: measured ? measured.body : null,
+    model: song.body,
+    agreement: measured ? agreement(measured.body, lines.join(String.fromCharCode(10))) : null,
+    kept: "model",
+  };
 
   /* Both halves, because the song was read once however many questions it
      took, and a half that failed was billed like a half that worked. Null only
@@ -1338,6 +1349,8 @@ export async function readAndSave(env, token, songId, files) {
        reported. Null means the price was not known here, never that it was
        free. */
     read_cost: song.cost,
+    /* every reading this song has had, for measuring the reader later */
+    reads: song.reads || null,
     /* the rate that price is read in, kept with it */
     usd_ils: rate,
     /* A machine read it, so a person has not. The label stays on the song until

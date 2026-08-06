@@ -108,6 +108,22 @@ alter table public.songs add column if not exists review      boolean not null d
 -- a draft is a decision about the song, made while working on it.
 alter table public.songs add column if not exists draft       boolean not null default false;
 
+-- EVERY READING THE SONG HAS HAD, kept side by side.
+--
+-- A song is read by two different machines that fail in different ways, and
+-- the only way to know which to trust on which kind of page is to have both
+-- answers and the corrected song beside them. Until now the losing answer was
+-- thrown away the moment it lost, so every tuning round started by paying to
+-- read the same pages again.
+--
+--   { measured: "<chordpro>", model: "<chordpro>", agreement: 0.67,
+--     kept: "measured" | "model" }
+--
+-- Null on a song nobody read. Never shown to anybody: this is for measuring
+-- the reader, and it is dropped the moment the song is saved by hand, because
+-- by then the song IS the answer.
+alter table public.songs add column if not exists reads jsonb;
+
 -- Dropped and recreated rather than added, because 'queued' arrived after the
 -- first version of this constraint and an "add if it is not there" would leave
 -- the old one in place and refuse every queued row.
