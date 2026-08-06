@@ -351,11 +351,14 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    page to keep them on any more. Three things about one song, so one line, and
    the direction last because it is the only one that is chosen rather than
    typed. */
+/* Flex and not a grid, because the row is two fields on a phone and three on a
+   desk: an empty grid track still spends its gap, and the credits would sit
+   short of the edge for a button that is not there. */
 .song-meta {
-  display: grid; align-items: end; gap: 4px 24px;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  display: flex; align-items: flex-end; flex-wrap: wrap; gap: 6px 20px;
   margin: 14px 0 4px;
 }
+.song-meta label { flex: 1 1 140px; min-width: 0; }
 
 /* The head of a song and the head of an evening are written, not filled in.
    The title above them is a bare line of text with no box around it, and a
@@ -367,10 +370,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    Two selectors deep on purpose. The shared field rule is an attribute
    selector, so it outranks a single class and would put the border, the white
    fill and the padding straight back. */
-/* .fld is what a field that cannot be a <label> is wrapped in: a label labels
-   one control, and the direction is two buttons. Its caption is written the
-   same, so the row has one line of captions and not two kinds. */
-.song-meta label, .ev-meta label, .fld .cap {
+.song-meta label, .ev-meta label {
   display: block; font-size: 13px; font-weight: 600; color: var(--ink-soft);
 }
 .song-meta input[type="text"],
@@ -389,26 +389,19 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   border-bottom-color: var(--accent); box-shadow: 0 1px 0 var(--accent);
 }
 
-/* Two states, both on the page, one of them on. Everything that says which is
-   which is inside the one that is on: the white pill, the darker ink and the
-   heavier weight. */
-.seg {
-  display: inline-flex; gap: 2px; padding: 2px;
-  background: var(--bg); border: 1px solid var(--line); border-radius: 999px;
+/* The direction, in one button that says which one it is in. No caption over
+   it: the three letters are the caption. It has no line under it because it is
+   not written on, and it sits on the bottom edge of the row so it lines up with
+   the lines beside it rather than with the words above them. */
+.dir-btn {
+  flex: none; appearance: none; cursor: pointer;
+  font: inherit; font-size: 13px; font-weight: 700; letter-spacing: .06em;
+  color: var(--ink-soft); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 999px;
+  padding: 4px 13px;
 }
-/* as tall as the fields beside it, so the three captions above them sit on one
-   line and the row reads as one row */
-.seg-b {
-  appearance: none; border: 0; background: none; cursor: pointer;
-  font: inherit; font-size: 14px; line-height: 1.4; color: var(--ink-soft);
-  padding: 3px 13px; border-radius: 999px;
-}
-.seg-b:hover { color: var(--ink); }
-.seg-b[aria-pressed="true"] {
-  background: var(--card); color: var(--ink); font-weight: 600;
-  box-shadow: 0 1px 2px rgba(23, 32, 42, .12);
-}
-.seg-b:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.dir-btn:hover { color: var(--ink); border-color: var(--ink-soft); }
+.dir-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .tools {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;

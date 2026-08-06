@@ -1734,15 +1734,25 @@
     state.printable = true;
     paintHeader();
 
-    /* Signed in AND on a screen with room. Nothing is switched on or off after
-       this: signing in re-runs the route, which comes back through here.
+    /* TWO ANSWERS, NOT ONE, because the head of a song and the sheet under it
+       ask different things of the hand holding the screen. Nothing is switched
+       on or off after this: signing in re-runs the route, which comes back
+       through here.
 
-       A phone is for playing from, not for editing on. Every gesture the editor
-       has is a small one over a small target, dragging a chord onto one letter
-       out of forty, and a finger on a moving page cannot do any of them: what
-       it does instead is scroll the song sideways and drop a chord somewhere
-       nobody asked for. So the phone reads, and the desk writes. */
-    var editing = auth.in && !NARROW.matches;
+       `writing` is the head: the name and who wrote it. Three lines of text,
+       typed into fields the size of fields, which a phone has always been able
+       to do. Whoever is signed in can write them anywhere.
+
+       `editing` is the sheet, and it wants a desk. Every gesture it has is a
+       small one over a small target, dragging a chord onto one letter out of
+       forty, and a finger on a moving page cannot do any of them: what it does
+       instead is scroll the song sideways and drop a chord somewhere nobody
+       asked for. The direction of the song goes with the sheet rather than with
+       the head, because what it changes is the sheet.
+
+       So the phone reads the song and still names it, and the desk writes it. */
+    var writing = auth.in;
+    var editing = writing && !NARROW.matches;
 
     /* A song opens on its EASY version: transposed down by whatever capo turns
        its chords into the fewest barres. So the number differs from song to
@@ -1766,7 +1776,7 @@
     var head = el("div", "song-head");
 
     var title = el("h1", null, song.title);
-    if (editing) {
+    if (writing) {
       makeEditable(title);
       title.addEventListener("input", function () { song.title = title.textContent.trim(); mark(); });
       title.addEventListener("keydown", function (event) {
@@ -1777,12 +1787,12 @@
     head.appendChild(title);
 
     var byFields = [];
-    /* set below when there is a direction toggle to keep in step with the song,
-       which is only when the song is being edited */
+    /* set below when there is a direction button to keep in step with the song,
+       which is only where the sheet can be edited at all */
     var showDir = null;
-    if (editing) {
-      /* The credits, and the direction, on the song itself. They belong to it
-         and there is no other page to keep them on any more. */
+    if (writing) {
+      /* Who wrote it, on the song itself. It belongs to it and there is no
+         other page to keep it on any more. */
       var meta = el("div", "song-meta");
 
       byFields = CREDITS.map(function (c) {
@@ -1812,47 +1822,37 @@
         });
       });
 
-      /* Two states, so a toggle and not a menu. A menu shows one of the two and
-         hides the other behind a press; here both are on the page and the one
-         that is on is the answer. It sits on the same line as the credits,
-         because which way the song runs is one more thing about the song and
-         not a setting somewhere else. */
-      var dirField = el("div", "fld");
-      dirField.appendChild(el("span", "cap", "כיוון"));
+      /* Which way the song runs, in ONE BUTTON WITH NO CAPTION. There are two
+         states and the button is in one of them, so the three letters on it are
+         both the answer and the way to the other one; a caption over them would
+         only name what they already say. It goes with the sheet and not with
+         the credits above it, because what it changes is the sheet.
 
-      var seg = el("div", "seg");
-      seg.setAttribute("role", "group");
-      seg.setAttribute("aria-label", "כיוון הכתיבה");
-
-      var dirBtns = [
-        ["rtl", "עברית", "עברית, מימין לשמאל"],
-        ["ltr", "אנגלית", "אנגלית, משמאל לימין"],
-      ].map(function (o) {
-        var b = el("button", "seg-b", o[1]);
-        b.type = "button";
-        b.dataset.dir = o[0];
-        b.title = o[2];
-        b.setAttribute("aria-label", o[2]);
-        b.addEventListener("click", function () {
-          if ((song.dir || "rtl") === o[0]) return;
-          song.dir = o[0];
+         RTL and LTR in Latin letters on a Hebrew page on purpose. They are the
+         names of the two directions everywhere they are written down, and the
+         alternative is a Hebrew sentence too long to sit on a button. */
+      if (editing) {
+        var dirBtn = el("button", "dir-btn");
+        dirBtn.type = "button";
+        dirBtn.dir = "ltr";
+        dirBtn.addEventListener("click", function () {
+          song.dir = (song.dir || "rtl") === "rtl" ? "ltr" : "rtl";
           showDir();
           draw();
           mark();
         });
-        seg.appendChild(b);
-        return b;
-      });
 
-      showDir = function () {
-        dirBtns.forEach(function (b) {
-          b.setAttribute("aria-pressed", b.dataset.dir === (song.dir || "rtl") ? "true" : "false");
-        });
-      };
-      showDir();
+        showDir = function () {
+          var isRtl = (song.dir || "rtl") === "rtl";
+          dirBtn.textContent = isRtl ? "RTL" : "LTR";
+          var words = isRtl ? "עברית, מימין לשמאל" : "אנגלית, משמאל לימין";
+          dirBtn.title = words + ". לחיצה מחליפה.";
+          dirBtn.setAttribute("aria-label", "כיוון השיר: " + words + ". לחיצה מחליפה.");
+        };
+        showDir();
 
-      dirField.appendChild(seg);
-      meta.appendChild(dirField);
+        meta.appendChild(dirBtn);
+      }
 
       head.appendChild(meta);
     } else {
@@ -1932,7 +1932,9 @@
     revertBtn.hidden = true;
     saveBtn.hidden = true;
 
-    if (editing) {
+    /* `writing` and not `editing`: a phone that can put a name in the head has
+       to be able to keep it, and to take it back. */
+    if (writing) {
       if (song.id) {
         var trash = iconBtn(ICON.trash, "מחיקת השיר", removeSong);
         trash.classList.add("quiet");
@@ -2764,11 +2766,15 @@
 
     /* last, once the page is whole, because taking a draft back means writing
        into the title, the credits and every line of the sheet, and all of them
-       have to exist first. Only where they can be written into at all: a phone
-       or a signed-out reader is looking at the saved song, and should be told
-       the truth about it. */
-    if (editing) takeDraft();
-    if (editing && !song.id) title.focus();
+       have to exist first. Only where they can be written into at all: a
+       signed-out reader is looking at the saved song and should be told the
+       truth about it.
+
+       A draft lives in the browser that made it, so the one a phone is offered
+       here is a name the same phone left half-typed, never a sheet it has no
+       way to see the changes in. */
+    if (writing) takeDraft();
+    if (writing && !song.id) title.focus();
   }
 
   function viewLine(line, semis) {
