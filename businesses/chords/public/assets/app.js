@@ -67,11 +67,17 @@
     check: '<path d="M5 13l4 4 10-11"/>',
     /* two things moving apart, which is what opening a gap does */
     gap: '<path d="M10 8l-4 4 4 4M14 8l4 4-4 4"/>',
-    /* the three controls over a song, as pictures: up and down for the key,
-       two letters for the size, a bar across the strings for the capo */
-    pitch: '<path d="M7 9l5-5 5 5M7 15l5 5 5-5"/>',
-    textSize: '<path d="M3 18l5-13 5 13M4.7 14h6.6M14 18l3.2-8 3.2 8M15 15.6h4.4"/>',
-    capo: '<path d="M7 3v18M12 3v18M17 3v18M3 8.5h18"/>',
+    /* --- the three controls over a song, as pictures ---
+       Each has to be recognisable at fifteen pixels by somebody who was not
+       told, so each is drawn as the thing itself rather than as an abstraction
+       of it: a note for the key the song is in, two letters of different sizes
+       for how big the words are, and a capo across the strings of a neck.
+
+       The capo is three strings and a BAR: a thin line across them would be a
+       fret, and a fret is not what you clamp on. */
+    pitch: '<path d="M8 17V6l9-2v9"/><ellipse cx="5.6" cy="17.2" rx="2.6" ry="2.1"/><ellipse cx="14.6" cy="15.2" rx="2.6" ry="2.1"/>',
+    textSize: '<path d="M2 19l5-13 5 13M3.6 15h6.8M14 19l3.3-8.5 3.3 8.5M15.1 16.4h4.4"/>',
+    capo: '<path d="M6 3v18M12 3v18M18 3v18"/><path d="M3 8h18" stroke-width="4"/>',
     undo: '<path d="M4 10h9a4.5 4.5 0 0 1 0 9h-5"/><path d="M8 6l-4 4 4 4"/>',
     print: '<path d="M7 9V4h10v5M7 18H5v-6h14v6h-2M8 14h8v6H8z"/>',
     calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
@@ -3198,8 +3204,9 @@
          three controls' worth of that is most of a phone's row. Joined, they
          read as the one thing they are, and the row fits. */
       var steps = el("span", "steps");
-      steps.appendChild(iconBtn('<path d="M5 12h14"/>', "פחות " + label, less));
+      /* more on top and less under it, which is the direction they mean */
       steps.appendChild(iconBtn(ICON.plus, "יותר " + label, more));
+      steps.appendChild(iconBtn('<path d="M5 12h14"/>', "פחות " + label, less));
       ctl.appendChild(steps);
       return ctl;
     }
@@ -3212,11 +3219,20 @@
     ));
 
     tools.appendChild(el("span", "sep"));
+    /* THE SAME THREE PARTS AS THE OTHER TWO. This one had no number for a
+       while, on the argument that nobody reads a font size, and the argument
+       was about the number rather than about the row: three controls that look
+       alike and one of them missing its middle is a row you have to look at
+       twice to use once. */
+    var sizeValue = el("span", "val");
     tools.appendChild(control(
-      ICON.textSize, "גודל", null,
+      ICON.textSize, "גודל", sizeValue,
       function () { setSize(size - SIZE_STEP); },
       function () { setSize(size + SIZE_STEP); }
     ));
+
+    function showSize() { sizeValue.textContent = String(size); }
+    showSize();
 
     /* WHERE THE CAPO IS, WHICH IS WHEREVER THEY PUT IT. It moves nothing: the
        chords on the page are the transposition's business, and this is a fact
@@ -3407,6 +3423,7 @@
        rows themselves are different rows. */
     function setSize(next) {
       size = readingSize(next);
+      showSize();
       sheet.style.setProperty("--song-size", size + "px");
       if (!editing && NARROW.matches) return draw();
       requestAnimationFrame(function () { layoutAll(sheet); });
