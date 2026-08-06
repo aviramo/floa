@@ -140,6 +140,12 @@ function scriptOf(text) {
 const MARK = /\p{M}/u;
 const base = (text) => [...String(text)].filter((char) => !MARK.test(char)).length;
 
+/* How much of a row is actually writing. Punctuation does not count: a mark
+   read as a character comes back as "T:" or ":ז", which has two characters and
+   one letter, and a row of that between two verses moves every chord after
+   it. */
+const letters = (text) => [...String(text)].filter((char) => /[\p{L}\p{N}]/u.test(char)).length;
+
 const midX = (box) => box.x + box.w / 2;
 const midY = (box) => box.y + box.h / 2;
 
@@ -429,7 +435,7 @@ export function songFrom(boxes, dir, notes) {
   /* A row has to say something to be a line. One stray letter is what a mark
      read as a character looks like, and a "T:" between two verses shifts every
      line after it and moves every chord in the rest of the song. */
-  const lyrics = rows.filter((row) => !row.isChords && base(row.text) >= 2);
+  const lyrics = rows.filter((row) => !row.isChords && letters(row.text) >= 2);
 
   /* how far apart this page sets two lines of the same verse */
   const usual = median(lyrics.slice(1).map((row, index) => row.middle - lyrics[index].middle));
