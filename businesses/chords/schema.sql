@@ -31,9 +31,28 @@ create table if not exists public.songs (
   -- what makes right-to-left no different from left-to-right.
   lines       jsonb not null default '[]'::jsonb,
 
+  -- 'ready' unless a picture of it is still being read.
+  --
+  -- Reading a photo takes a minute or two and it happens in the Worker, not in
+  -- the browser, so the row is created first and filled in when the reading
+  -- lands. That is what lets you close the tab and come back to a finished
+  -- song, and what makes a half-read song visible instead of invisible.
+  status      text not null default 'ready',
+  status_note text not null default '',
+
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
+
+-- added after the first version of this file; safe to re-run
+alter table public.songs add column if not exists status      text not null default 'ready';
+alter table public.songs add column if not exists status_note text not null default '';
+
+do $$ begin
+  alter table public.songs add constraint songs_status_check
+    check (status in ('ready', 'reading', 'failed'));
+exception when duplicate_object then null;
+end $$;
 
 -- the index page sorts by title
 create index if not exists songs_title_idx on public.songs (title);

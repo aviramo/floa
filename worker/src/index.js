@@ -278,9 +278,14 @@ async function handleTranscribe(request, env, origin) {
   } catch (err) {
     console.error("transcribe failed", err.message);
     /* "empty" is the one failure worth naming to the visitor: it means the
-       picture was read and held no song, which a better photo can fix. */
+       picture was read and held no song, which a better photo can fix.
+
+       `detail` is the reason in our own words, trimmed. It costs nothing to
+       send and it is the difference between "הקריאה נכשלה" and knowing which
+       of five things went wrong. It is our text, never a key and never the
+       visitor's file. */
     const known = err.message === "empty" || err.message === "refusal" ? "empty" : "read";
-    return json({ ok: false, error: known }, 502, origin);
+    return json({ ok: false, error: known, detail: String(err.message).slice(0, 300) }, 502, origin);
   }
 }
 

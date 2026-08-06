@@ -18,6 +18,11 @@ compatibility_date = "2025-01-01"
 # runtime.leadEndpoint in src/content/site.js.
 workers_dev = true
 
+# Logs, so a failure that only happens with a real file can be read after the
+# fact instead of reproduced. Free, and off by default.
+[observability]
+enabled = true
+
 # One address, not many. Preview URLs would publish this same endpoint on an
 # extra hostname per version, which buys nothing here (there is one caller, the
 # live site) and only widens what has to be reasoned about.

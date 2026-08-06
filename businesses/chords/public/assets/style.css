@@ -88,6 +88,12 @@ body {
 
 .muted { color: var(--ink-soft); }
 .err { color: var(--danger); font-size: 14px; margin: 4px 0 0; }
+.detail {
+  margin-top: 6px; padding: 7px 10px; border-radius: 8px;
+  background: #fdf1ef; color: #7a3b33;
+  font: 12px/1.5 ui-monospace, Menlo, Consolas, monospace;
+  direction: ltr; text-align: left; word-break: break-word;
+}
 .center { text-align: center; padding: 56px 0; color: var(--ink-soft); }
 .center p { margin: 0 0 18px; }
 

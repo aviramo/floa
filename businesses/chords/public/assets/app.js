@@ -1191,7 +1191,11 @@
         });
       }).then(function (r) {
         return r.json().then(function (body) {
-          if (!r.ok || !body.ok) throw new Error(transcribeError(body, r.status));
+          if (!r.ok || !body.ok) {
+            var e = new Error(transcribeError(body, r.status));
+            e.detail = body && body.detail;
+            throw e;
+          }
           return body.song;
         });
       }).then(function (read) {
@@ -1207,8 +1211,10 @@
         onChanged();
       }).catch(function (error) {
         close.disabled = false;
-        status.textContent = error.message;
+        status.innerHTML = "";
         status.className = "err";
+        status.appendChild(el("div", null, error.message));
+        if (error.detail) status.appendChild(el("div", "detail", error.detail));
       });
     }
   }
