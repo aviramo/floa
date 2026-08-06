@@ -3772,8 +3772,8 @@
        be scrolled back to between one press and the next is not there. */
     var blockBar = null;
     var blockCount = null;
-    var dropBtn = null;
-    var dropLinesBtn = null;
+    var pasteLinesBtn = null;
+    var pasteChordsBtn = null;
     if (editing && !coming) {
       blockBar = el("div", "block-bar");
       blockCount = el("div", "block-count");
@@ -3781,11 +3781,18 @@
       blockBar.appendChild(iconBtn(ICON.up, "להעלות את המסומן", function () { moveMarked(-1); }));
       blockBar.appendChild(iconBtn(ICON.down, "להוריד את המסומן", function () { moveMarked(1); }));
       blockBar.appendChild(button("שכפול", ICON.copy, "ghost small", copyMarked));
-      blockBar.appendChild(button("העתקת שורות", null, "ghost small", liftLines));
-      /* not there until there is something to put down */
-      dropLinesBtn = button("הדבקת שורות", null, "ghost small", dropLines);
-      dropLinesBtn.hidden = true;
-      blockBar.appendChild(dropLinesBtn);
+
+      /* One copy, and the two ways to put it down beside it. Neither of them
+         is there until something has been copied: a button that can only
+         answer "there is nothing to paste" is a button that has to be pressed
+         to find that out. */
+      blockBar.appendChild(button("העתקה", ICON.copy, "ghost small", copyLines));
+      pasteLinesBtn = button("הדבקת שורות", null, "ghost small", pasteLines);
+      pasteChordsBtn = button("הדבקת אקורדים", null, "ghost small", pasteChords);
+      pasteLinesBtn.hidden = true;
+      pasteChordsBtn.hidden = true;
+      blockBar.appendChild(pasteLinesBtn);
+      blockBar.appendChild(pasteChordsBtn);
 
       /* Which way the marked lines run. Two buttons rather than one that
          toggles, because a block can hold both directions at once and there
@@ -3802,11 +3809,6 @@
       blockBar.appendChild(toRtl);
       blockBar.appendChild(toLtr);
 
-      blockBar.appendChild(button("העתקת אקורדים", null, "ghost small", liftChords));
-      /* not there until there is something to put down */
-      dropBtn = button("הדבקת אקורדים", null, "ghost small", dropChords);
-      dropBtn.hidden = true;
-      blockBar.appendChild(dropBtn);
       /* Last, and the only one here in the colour of something that removes:
          a row of things that move and copy, and then the one that takes away. */
       blockBar.appendChild(button("מחיקת השורות", ICON.trash, "danger small", dropMarked));
@@ -4528,8 +4530,8 @@
       var n = markedCount();
       blockBar.hidden = !n;
       blockCount.textContent = n === 1 ? "שורה אחת מסומנת" : n + " שורות מסומנות";
-      dropBtn.hidden = !lifted;
-      dropLinesBtn.hidden = !heldLines;
+      pasteLinesBtn.hidden = !held;
+      pasteChordsBtn.hidden = !held;
     }
 
     /* One step, in whichever direction. Walked from the edge the block is
@@ -4643,68 +4645,28 @@
       mark();
     }
 
-    /* --- whole lines, taken and put down somewhere else ------------------------
-       The chords alone move from line to line, above; this is the other half,
-       which is the lines themselves. A verse that belongs in two songs, a
-       chorus that was typed in the wrong place, four lines that want to be at
-       the end: all of them are "these lines, over there".
+    /* --- ONE COPY, AND TWO WAYS TO PUT IT DOWN ---------------------------------
+       Copying takes the marked lines whole: their words, their chords, and
+       which way they run. What is done with them is chosen when they are put
+       down rather than when they are picked up, because it is the same handful
+       of lines either way and nobody knows, at the moment of copying, which of
+       the two they are going to want.
 
-       IT PUTS THEM DOWN, IT DOES NOT PUT THEM OVER ANYTHING. Pasting adds the
-       lines after the last marked one and nothing that was in the song stops
-       being in it: this is the one gesture in the editor whose whole purpose
-       is to have more song afterwards than before, and a paste that quietly
-       replaced four lines with four others would be a delete wearing a copy's
-       clothes.
+         הדבקת שורות     the lines themselves, ADDED after the marked one.
+                         Nothing that was in the song stops being in it: this
+                         is the one gesture here whose whole point is to have
+                         more song afterwards than before, and a paste that
+                         quietly replaced four lines with four others would be
+                         a delete wearing a copy's clothes.
 
-       The copy is held, so it can be put down again in another verse, and the
-       lines that land are what stays marked: what follows a paste is almost
-       always moving what was pasted. */
-    var heldLines = null;
+         הדבקת אקורדים   the chords off those lines, onto the marked ones, line
+                         for line. This one DOES replace, and that is the whole
+                         of what it is for: the words stay exactly as they are
+                         and the chords over them become the copied ones.
 
-    function liftLines() {
-      var going = song.lines.filter(isMarked);
-      if (!going.length) return;
-
-      heldLines = going.map(copyLine);
-      clearMarks();
-      toast(heldLines.length === 1 ? "שורה הועתקה" : heldLines.length + " שורות הועתקו");
-    }
-
-    function dropLines() {
-      if (!heldLines || !heldLines.length) return;
-
-      var last = -1;
-      song.lines.forEach(function (line, index) { if (isMarked(line)) last = index; });
-      if (last < 0) last = song.lines.length - 1;
-
-      var copies = heldLines.map(copyLine);
-      song.lines.splice.apply(song.lines, [last + 1, 0].concat(copies));
-
-      marked.length = 0;
-      copies.forEach(function (line) { marked.push(line); });
-
-      draw();
-      mark();
-    }
-
-    /* --- the chords of one line onto another ---------------------------------
-       A verse and a chorus are usually the same handful of chords in the same
-       places over different words, and setting the second one is putting the
-       same four chords down again by hand, in the same order, over syllables
-       that are nearly but not quite where the first line had them.
-
-       So the chords of the marked lines can be taken and laid on other marked
-       lines. Line for line: the first copied onto the first marked, the second
-       onto the second. One line copied goes onto as many as are marked, which
-       is the same rule with nothing to line up. Any other pair of numbers is
-       refused rather than guessed at, because a wrong guess here is chords
-       silently landing on the wrong words.
-
-       THE POSITIONS COME ACROSS UNCHANGED and the line is padded if it is
-       short. A chord names a character, so a chord on character twelve of a
-       line ten characters long needs two more characters to exist, exactly as
-       it would if it had been dragged there. */
-    var lifted = null;
+       The copy is held after either of them, so one chorus can be laid over
+       three verses, and it lasts until something else is copied. */
+    var held = null;
 
     function chordLines() {
       return song.lines.filter(function (line) {
@@ -4712,42 +4674,67 @@
       });
     }
 
-    function liftChords() {
-      var from = chordLines();
-      if (!from.length) return toast("צריך לסמן שורה של מילים", true);
+    function copyLines() {
+      var going = song.lines.filter(isMarked);
+      if (!going.length) return;
 
-      lifted = from.map(function (line) {
-        return line.chords.map(function (c) { return { pos: c.pos, chord: c.chord }; });
-      });
-
-      /* AND THE MARKS GO. What follows a copy is always marking the lines to
-         put them on, and every one of those ticks had to be preceded by
-         unticking a line that was only ever the source. The copy is held; the
-         marking is free to be about where it is going. */
+      held = going.map(copyLine);
       clearMarks();
-      toast(lifted.length === 1 ? "האקורדים של השורה הועתקו" : "האקורדים של " + lifted.length + " שורות הועתקו");
+      toast(held.length === 1 ? "שורה הועתקה" : held.length + " שורות הועתקו");
     }
 
-    function dropChords() {
-      if (!lifted) return;
+    function pasteLines() {
+      if (!held || !held.length) return;
+
+      var last = -1;
+      song.lines.forEach(function (line, index) { if (isMarked(line)) last = index; });
+      if (last < 0) last = song.lines.length - 1;
+
+      var copies = held.map(copyLine);
+      song.lines.splice.apply(song.lines, [last + 1, 0].concat(copies));
+
+      /* what lands is what stays marked: after a paste the next thing is
+         almost always moving what was just pasted */
+      marked.length = 0;
+      copies.forEach(function (line) { marked.push(line); });
+
+      draw();
+      mark();
+    }
+
+    /* Line for line: the first copied onto the first marked, the second onto
+       the second. ONE line copied goes onto as many as are marked, which is
+       the same rule with nothing to line up. Any other pair of numbers is
+       refused rather than guessed at, because a wrong guess here is chords
+       landing silently on the wrong words. Headings are in neither count: a
+       heading has no chords and cannot take any.
+
+       THE POSITIONS COME ACROSS UNCHANGED and a short line is padded. A chord
+       names a character, so a chord on character twelve of a line ten
+       characters long needs two more characters to exist, exactly as it would
+       if it had been dragged there. */
+    function pasteChords() {
+      if (!held || !held.length) return;
+
+      var from = held.filter(function (line) { return line.type !== "section"; });
+      if (!from.length) return toast("בשורות שהועתקו אין אקורדים", true);
+
       var into = chordLines();
       if (!into.length) return toast("צריך לסמן שורה של מילים", true);
 
-      if (lifted.length !== 1 && lifted.length !== into.length) {
-        return toast("הועתקו " + lifted.length + " שורות ומסומנות " + into.length + ". צריך אותו מספר.", true);
+      if (from.length !== 1 && from.length !== into.length) {
+        return toast("הועתקו " + from.length + " שורות ומסומנות " + into.length + ". צריך אותו מספר.", true);
       }
 
       into.forEach(function (line, index) {
-        var from = lifted.length === 1 ? lifted[0] : lifted[index];
-        line.chords = from.map(function (c) { return { pos: c.pos, chord: c.chord }; });
+        var source = from.length === 1 ? from[0] : from[index];
+        line.chords = source.chords.map(function (c) { return { pos: c.pos, chord: c.chord }; });
         line.chords.forEach(function (c) { padTo(line, c.pos); });
         trimPadding(line);
       });
 
-      /* Done, so the marking is done: what is left on the page after a paste
-         is a set of lines that have already had the thing done to them, and
-         the next pair of lines starts from nothing marked. The copy stays
-         held, so the same chords can go onto another verse straight after. */
+      /* done, so the marking is done: the next pair starts from nothing
+         marked, and the copy is still held for the verse after this one */
       marked.length = 0;
 
       draw();
