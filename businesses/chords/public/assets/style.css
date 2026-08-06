@@ -290,21 +290,26 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    see the shape of the library rather than reading down a ledger. */
 .list {
   list-style: none; margin: 0 0 64px; padding: 0;
-  display: grid; gap: 12px;
-  /* ALL THE SAME WIDTH, and as many across as the window holds. Cards of
-     different widths read as a heap; the same width down a column is a shelf,
-     and what differs between two songs is then what is written on them rather
-     than how much room they took. */
-  grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
-  /* EVERY CARD IN A ROW IS THE HEIGHT OF THAT ROW. A grid row is as tall as
-     the tallest thing in it either way; what "start" did was leave that height
-     as a hole under every shorter card, so the gaps between cards were 12px in
-     some places and half a card in others. Stretched, the only space between
-     two cards is the gap, and the room a song does not need is inside its own
-     card, where the date drops to the bottom corner and looks deliberate. */
-  align-items: stretch;
+  /* COLUMNS, NOT A GRID, and the difference is what a card is allowed to be.
+     A grid puts its rows in step: every card in a row is the height of the
+     tallest one in it, so either the short ones are stretched or the space
+     under them is a hole, and there is no third answer.
+
+     Columns have no rows. Each card is exactly as tall as what is written on
+     it, the next one starts where the last one ended, and the only space
+     anywhere is the twelve pixels between them. As many columns as the window
+     holds, all one width, and in Hebrew the first is the right hand one, where
+     the page already starts. */
+  columns: auto 340px;
+  column-gap: 12px;
 }
-.list li { display: flex; min-width: 0; position: relative; }
+/* A card is never split down the middle of itself by a column ending, and it
+   carries its own space underneath: in a column layout there is no gap
+   property to do it. */
+.list li {
+  display: flex; min-width: 0; position: relative;
+  break-inside: avoid; margin-bottom: 12px;
+}
 .list li > a, .list li > .row { flex: 1 1 auto; min-width: 0; }
 /* Over the corner of the card, in the gutter the card leaves for it: level
    with the name, which is the thing it is ticking, and outside the link, which
