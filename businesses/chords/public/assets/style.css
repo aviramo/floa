@@ -981,22 +981,23 @@ button.val:hover { border-color: var(--line); background: #fff; }
   font-size: 0;
 }
 
-/* A gap in the editor draws a rule the width of itself, and the rule is the
-   colour of the paper: invisible, and there.
+/* A gap in the editor draws a rule the width of itself, AS FAINT AS SOMETHING
+   CAN BE AND STILL BE THERE. It was the colour of the paper for a while, which
+   is honest about the room being room and leaves the writer with no way to see
+   what they made: a gap they cannot see is a gap they cannot count, aim at or
+   delete on purpose.
 
-   THAT IS DELIBERATE AND IT LOOKS LIKE NOTHING, WHICH IS THE POINT. The room
-   is meant to read as room. What the rule is for is the caret: an inline-block
-   with no ink at all is a box a browser will not always let you land in, and
-   painting it edge to edge means the run is one continuous shape rather than
-   the row of separate dashes this was for an hour, which read as three of
-   something instead of one piece of room.
+   So it is a grey at a tenth strength: from reading distance the line is white
+   paper, and from working distance, when the eye is on the word being spaced,
+   it is there. The reader's page and the printed one have nothing at all.
 
-   Painted rather than written, either way. The model has a gap there, not a
-   hyphen, and what the reader opens and what a lyrics sheet prints is the word
-   with nothing at all between its letters. */
+   Painted edge to edge rather than written, so a run of gaps is one continuous
+   shape instead of a row of separate dashes, and so the caret has a box to
+   land in: an inline-block with no ink at all is one a browser will not always
+   let you into. The model has a gap there, not a hyphen. */
 .ed .ln-t .gap {
   height: calc(var(--song-size) * .5);
-  background-image: linear-gradient(var(--card), var(--card));
+  background-image: linear-gradient(rgba(23, 32, 42, .13), rgba(23, 32, 42, .13));
   background-size: 100% 1px;
   background-position: 0 50%;
   background-repeat: no-repeat;
