@@ -62,6 +62,7 @@
     grip: '<path d="M8 9h8M8 15h8"/>',
     undo: '<path d="M4 10h9a4.5 4.5 0 0 1 0 9h-5"/><path d="M8 6l-4 4 4 4"/>',
     print: '<path d="M7 9V4h10v5M7 18H5v-6h14v6h-2M8 14h8v6H8z"/>',
+    calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
   };
 
   function iconBtn(icon, title, onClick) {
@@ -428,9 +429,51 @@
     },
   };
 
+  /* --- evenings of singing --------------------------------------------------
+     The library's second table, and the only other one this app owns. See the
+     comments over `setlists` in schema.sql for what a row holds and why.
+
+     None of the optional-column machinery above applies here: this table
+     arrived whole or it did not arrive at all, and the one thing that can be
+     missing is the table itself, which is what missingTable answers. */
+  var SET = CFG.setlistTable;
+
+  /* PostgREST names a table it has never heard of two different ways depending
+     on its version, and both mean the same sentence to the person on the page:
+     nobody has run schema.sql yet. */
+  var NO_SUCH_TABLE = { "42P01": true, PGRST205: true, PGRST202: true };
+
+  function missingTable(error) {
+    return !!(error && NO_SUCH_TABLE[String(error.code)]);
+  }
+
+  var sets = {
+    list: function () {
+      return rest(SET + "?select=id,title,event_date,songs,updated_at");
+    },
+    byId: function (id) {
+      return rest(SET + "?select=id,title,event_date,songs&id=eq." + encodeURIComponent(id) + "&limit=1")
+        .then(function (rows) { return rows && rows[0]; });
+    },
+    insert: function (evening) {
+      return rest(SET, { method: "POST", body: evening, prefer: "return=representation" })
+        .then(function (rows) { return rows[0]; });
+    },
+    update: function (id, evening) {
+      return rest(SET + "?id=eq." + encodeURIComponent(id), { method: "PATCH", body: evening, prefer: "return=representation" })
+        .then(function (rows) { return rows[0]; });
+    },
+    remove: function (id) {
+      return rest(SET + "?id=eq." + encodeURIComponent(id), { method: "DELETE" });
+    },
+  };
+
   /* ------------------------------------------------------------------ model */
 
-  var RESERVED_SLUGS = { "new": true, "edit": true };
+  /* Words the app has taken for itself under /chords/. A song may not be
+     called one of them, because the address would be the app's answer rather
+     than the song's. */
+  var RESERVED_SLUGS = { "new": true, "edit": true, "evenings": true };
 
   /* Two decimals is finer than any eye and any font, and it keeps a stored
      song readable instead of full of 6.234567901234568 */
@@ -1152,20 +1195,35 @@
   function paintHeader() {
     var bar = document.getElementById("topActions");
     bar.innerHTML = "";
-    if (parts().length) return;
+    var p = parts();
+
+    /* The evenings are a list like the library is a list, so their page gets
+       the same two buttons the library's does: the one that adds to it, and
+       the one that says who you are. An evening that is open has tools of its
+       own, and none of these. */
+    if (p[0] === "evenings") {
+      if (p.length === 1) {
+        bar.appendChild(button("ערב חדש", ICON.plus, "small", newEvening));
+        bar.appendChild(session());
+      }
+      return;
+    }
+
+    if (p.length) return;
 
     bar.appendChild(button("מתמונה", ICON.upload, "ghost small", uploadSong));
     bar.appendChild(button("שיר חדש", ICON.plus, "small", newSong));
-    if (auth.in) {
-      bar.appendChild(button("יציאה", null, "ghost small", function () {
-        auth.signOut();
-        paintHeader();
-        route();
-        toast("התנתקת");
-      }));
-    } else {
-      bar.appendChild(button("התחברות", null, "ghost small", function () { askSignIn(); }));
-    }
+    bar.appendChild(session());
+  }
+
+  function session() {
+    if (!auth.in) return button("התחברות", null, "ghost small", function () { askSignIn(); });
+    return button("יציאה", null, "ghost small", function () {
+      auth.signOut();
+      paintHeader();
+      route();
+      toast("התנתקת");
+    });
   }
 
   function askSignIn(after) {
@@ -1211,6 +1269,25 @@
     db.list().then(function (songs) {
       state.songs = songs || [];
       app.innerHTML = "";
+
+      /* The way into the other half of the app. It sits above the search
+         rather than in the top bar because the bar is full, and because a
+         fourth button up there would push the three that are already about
+         THIS page onto a second row on every phone.
+
+         It is not the heading this page deliberately does not have: it names
+         somewhere else to go, and it costs one narrow line to say so. */
+      var toEvenings = el("a", "shelf");
+      toEvenings.href = BASE + "/evenings";
+      toEvenings.appendChild(svg(ICON.calendar));
+      toEvenings.appendChild(el("span", "t", "ערבי שירה"));
+      toEvenings.appendChild(el("span", "a", "לתכנן ערב ולסדר את השירים לפי הסדר"));
+      toEvenings.appendChild(svg('<path d="M15 5l-7 7 7 7"/>', ""));
+      toEvenings.addEventListener("click", function (event) {
+        event.preventDefault();
+        go(BASE + "/evenings");
+      });
+      app.appendChild(toEvenings);
 
       var search = el("div", "search");
       search.appendChild(svg(ICON.search));
@@ -1374,6 +1451,10 @@
         box.appendChild(keys);
       }
 
+      /* A finished song may still carry a note: the chords ran out of room and
+         only the words came. Quiet, under everything, because the song works. */
+      if (s.status_note) box.appendChild(el("div", "detail", s.status_note));
+
       a.appendChild(box);
       li.appendChild(a);
       return li;
@@ -1460,7 +1541,15 @@
     setBusy("טוען את השיר");
     db.bySlug(slug).then(function (song) {
       if (!song) return notFound(slug);
-      if (song.status && song.status !== "ready") return viewPending(song);
+
+      /* Only a song that is still coming gets a waiting page. A song whose
+         reading FAILED is a song with a name and no words yet, and the one
+         thing anybody wants to do with it is type it, so it opens as itself.
+         It used to open as a page whose "type it by hand" button led back to
+         the same page, which is no way out of anything. */
+      if (song.status === "queued" || (song.status === "reading" && !stalled(song))) {
+        return viewPending(song);
+      }
       song.lines = normalizeLines(song.lines);
       renderSong(song);
     }).catch(fail);
@@ -1574,6 +1663,13 @@
     }
 
     app.appendChild(head);
+
+    /* What the machine could not do, said on the song rather than instead of
+       it. A read whose chords ran out of room still lands here with its words,
+       and a read that failed altogether lands here with nothing but its name,
+       and in both cases the page is the same page and the note is the whole of
+       the difference. Saving clears it, because saving makes it untrue. */
+    if (song.status_note) app.appendChild(el("div", "song-note", song.status_note));
 
     /* --- the tools --- */
 

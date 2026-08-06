@@ -132,3 +132,69 @@ drop policy if exists "signed in users may delete songs" on public.songs;
 create policy "signed in users may delete songs"
   on public.songs for delete to authenticated
   using (true);
+
+-- ==========================================================================
+-- Evenings of singing.
+--
+-- A name, a date, and songs in the order they will be sung. A table of its
+-- own rather than a column on a song, because the two do not belong to each
+-- other: a song does not know which evenings it is in, and an evening whose
+-- song was deleted from the library is still an evening.
+-- ==========================================================================
+
+create table if not exists public.setlists (
+  id          uuid primary key default gen_random_uuid(),
+
+  -- May be empty. An evening usually gets its songs before it gets its name,
+  -- and refusing to save one until it is named would mean losing the songs.
+  title       text not null default '',
+
+  -- A DAY, not a moment. An evening happens on a date, nobody plans one to
+  -- the second, and a timestamp would drag a timezone in behind it.
+  event_date  date,
+
+  -- The songs, in order:  [{"id": "…", "title": "…"}, …]
+  --
+  -- The id is what a row is drawn from: the title, the credits and the chords
+  -- are read live out of the library, so renaming a song renames it wherever
+  -- it appears. The title stored beside the id is not a copy of that, it is
+  -- what is left when the song itself has been deleted, and "the song that
+  -- was here is gone" reads better than a blank line.
+  --
+  -- An array rather than a row per song with a position column, because the
+  -- order IS the point and an array already has one. A column of positions is
+  -- a set of numbers somebody has to keep true across every drag.
+  songs       jsonb not null default '[]'::jsonb,
+
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+
+drop trigger if exists setlists_touch_updated_at on public.setlists;
+create trigger setlists_touch_updated_at
+  before update on public.setlists
+  for each row execute function public.touch_updated_at();
+
+-- Same rule as the songs, for the same reason: the anon key printed in the
+-- page may read and nothing else.
+alter table public.setlists enable row level security;
+
+drop policy if exists "evenings are readable by everyone" on public.setlists;
+create policy "evenings are readable by everyone"
+  on public.setlists for select
+  using (true);
+
+drop policy if exists "signed in users may add evenings" on public.setlists;
+create policy "signed in users may add evenings"
+  on public.setlists for insert to authenticated
+  with check (true);
+
+drop policy if exists "signed in users may edit evenings" on public.setlists;
+create policy "signed in users may edit evenings"
+  on public.setlists for update to authenticated
+  using (true) with check (true);
+
+drop policy if exists "signed in users may delete evenings" on public.setlists;
+create policy "signed in users may delete evenings"
+  on public.setlists for delete to authenticated
+  using (true);

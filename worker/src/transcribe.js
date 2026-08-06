@@ -547,18 +547,24 @@ async function streamText(env, body, onProgress) {
    never a key. */
 async function ask(env, body, onProgress) {
   const { text, stopReason, usage } = await streamText(env, body, onProgress);
+  const cost = costOf(body.model, usage);
 
-  if (stopReason === "refusal") throw new Error("refusal");
-  if (stopReason === "max_tokens") throw new Error("truncated");
-  if (!text.trim()) throw new Error("empty");
+  /* A FAILURE CARRIES ITS PRICE. An attempt that produced nothing was still
+     billed in full, and a song that quietly forgets what its failed half cost
+     is telling you it was cheaper than it was. */
+  const stop = (message) => Object.assign(new Error(message), { cost });
+
+  if (stopReason === "refusal") throw stop("refusal");
+  if (stopReason === "max_tokens") throw stop("truncated");
+  if (!text.trim()) throw stop("empty");
 
   let answer;
   try {
     answer = JSON.parse(text);
   } catch {
-    throw new Error("empty");
+    throw stop("empty");
   }
-  return { answer, cost: costOf(body.model, usage) };
+  return { answer, cost };
 }
 
 /* The words, handed to step two the way step two needs them: numbered by line,
@@ -659,29 +665,60 @@ export async function readChordSheet(env, files, beat) {
   const lines = Array.isArray(words.lines) ? words.lines.map((line) => String(line ?? "")) : [];
   if (!lines.some((line) => line.trim())) throw new Error("empty");
 
-  /* --- two: the chords --- */
-  const second = await ask(env, {
-    model: CHORDS_MODEL,
-    max_tokens: CHORDS_MAX_TOKENS,
-    system: CHORDS_SYSTEM,
-    output_config: {
-      effort: CHORDS_EFFORT,
-      format: { type: "json_schema", schema: CHORDS_SCHEMA },
-    },
-    messages: [{
-      role: "user",
-      content: [...pages, { type: "text", text: CHORDS_TEXT + numbered(lines) }],
-    }],
-  }, () => beat && beat("מסדר אקורדים"));
+  /* --- two: the chords -----------------------------------------------------
 
-  const song = clean(merge(words, lines, second.answer));
+     AND IF THIS HALF FAILS, THE OTHER HALF IS STILL A SONG. That is the part
+     of splitting the job that was not planned and turns out to matter most.
+
+     The words come back in seconds from a cheap model and they almost never
+     fail. The chords are the slow, expensive, uncertain half, and it is the
+     half that runs out of room. Throwing the whole read away because of it
+     costs a song that was already read and already paid for, and leaves an
+     empty page in place of the one thing nobody wanted to type out by hand.
+
+     So a failure here is not a failure of the read. The words are kept, the
+     song is saved with them, and whoever wanted it puts the chords on
+     themselves, which is a quarter of an hour rather than a lost evening. What
+     went wrong rides along on the row so the page can say so. */
+  let report = { lines: [] };
+  let chords = 0;
+  let lost = "";
+
+  try {
+    const second = await ask(env, {
+      model: CHORDS_MODEL,
+      max_tokens: CHORDS_MAX_TOKENS,
+      system: CHORDS_SYSTEM,
+      output_config: {
+        effort: CHORDS_EFFORT,
+        format: { type: "json_schema", schema: CHORDS_SCHEMA },
+      },
+      messages: [{
+        role: "user",
+        content: [...pages, { type: "text", text: CHORDS_TEXT + numbered(lines) }],
+      }],
+    }, () => beat && beat("מסדר אקורדים"));
+
+    report = second.answer;
+    chords = second.cost || 0;
+  } catch (err) {
+    console.error("the chords failed, keeping the words:", err.message);
+    chords = err.cost || 0;
+    lost = err.message === "truncated"
+      ? `האקורדים עברו את התקרה של ${MAX_CENTS} סנט ולא נקראו. המילים כאן.`
+      : "האקורדים לא נקראו. המילים כאן.";
+  }
+
+  const song = clean(merge(words, lines, report));
+  if (lost) song.note = lost;
 
   /* Both halves, because the song was read once however many questions it
-     took. Null only if neither price was known, which is a missing price list
-     rather than a free read. */
-  song.cost = first.cost === null && second.cost === null
+     took, and a half that failed was billed like a half that worked. Null only
+     if neither price was known, which is a missing price list rather than a
+     free read. */
+  song.cost = first.cost === null && chords === null
     ? null
-    : Math.round(((first.cost || 0) + (second.cost || 0)) * 100) / 100;
+    : Math.round(((first.cost || 0) + (chords || 0)) * 100) / 100;
 
   return song;
 }
@@ -1074,8 +1111,12 @@ export async function readAndSave(env, token, songId, files) {
        reported. Null means the price was not known here, never that it was
        free. */
     read_cost: song.cost,
+    /* READY EVEN WHEN HALF OF IT DID NOT ARRIVE. A song with its words and no
+       chords is a song you can open, read, print and finish; a failed row is a
+       dead end. What is missing is said in the note instead, and the note goes
+       the moment somebody saves the song, because by then it is not true. */
     status: "ready",
-    status_note: "",
+    status_note: song.note || "",
   };
 
   const stop = async (failure) => {
