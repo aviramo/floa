@@ -2100,6 +2100,10 @@
 
   var MAX_BYTES = 12 * 1024 * 1024;
   var MAX_PAGES = 8;
+  /* Several songs go up together, each its own song and its own reading. They
+     travel in ONE request: the Worker brakes uploads rather than files, and a
+     folder of sheets should be one action rather than nine refusals. */
+  var MAX_SONGS = 10;
   var MAX_EDGE = 1400;
   var OK_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif", "application/pdf"];
 
@@ -2154,12 +2158,12 @@
   function openUploadDialog() {
     var dlg = el("dialog", "dlg");
     var box = el("div", "dlg-in");
-    box.appendChild(el("h2", null, "שיר מתמונה או PDF"));
+    box.appendChild(el("h2", null, "שירים מתמונה או PDF"));
 
     var drop = el("div", "drop");
-    drop.appendChild(el("h3", null, "גררו לכאן צילום של השיר"));
+    drop.appendChild(el("h3", null, "גררו לכאן צילומים של שירים"));
     drop.appendChild(el("p", null,
-      "תמונה, כמה תמונות של אותו שיר, או PDF. המערכת קוראת את המילים ואת האקורדים ומציבה כל אקורד מעל ההברה שהוא יושב עליה בתמונה. זה לוקח כחצי דקה."));
+      "אפשר כמה קבצים יחד, וכל קובץ נעשה שיר בפני עצמו ונקרא במקביל. המערכת קוראת את המילים ואת האקורדים ומציבה כל אקורד מעל ההברה שהוא יושב עליה בתמונה. זה לוקח כחצי דקה לשיר."));
 
     var input = el("input");
     input.type = "file";
@@ -2169,6 +2173,20 @@
     drop.appendChild(input);
     drop.appendChild(button("בחירת קבצים", ICON.upload, "ghost", function () { input.click(); }));
     box.appendChild(drop);
+
+    /* The one thing the files themselves cannot say. Two pictures are either
+       two songs or two pages of one, and nothing about them tells which, so it
+       is asked once here instead of guessed at every time. Off by default,
+       because a handful of sheets is the common case and a two-page song is
+       not. */
+    var together = el("input");
+    together.type = "checkbox";
+    together.id = "pagesOfOne";
+    var togetherLabel = el("label", "check");
+    togetherLabel.htmlFor = together.id;
+    togetherLabel.appendChild(together);
+    togetherLabel.appendChild(el("span", null, "כל הקבצים הם עמודים של שיר אחד"));
+    box.appendChild(togetherLabel);
 
     var status = el("p", "muted");
     box.appendChild(status);
@@ -2203,61 +2221,87 @@
     }
 
     function handle(fileList) {
-      var files = Array.prototype.slice.call(fileList, 0, MAX_PAGES);
-      for (var i = 0; i < files.length; i++) {
-        if (OK_TYPES.indexOf(files[i].type) < 0) return fail("אפשר תמונות או PDF בלבד.");
-        if (files[i].size > MAX_BYTES) return fail("הקובץ " + files[i].name + " גדול מדי, עד 12MB.");
+      var picked = Array.prototype.slice.call(fileList);
+      for (var i = 0; i < picked.length; i++) {
+        if (OK_TYPES.indexOf(picked[i].type) < 0) return fail("אפשר תמונות או PDF בלבד.");
+        if (picked[i].size > MAX_BYTES) return fail("הקובץ " + picked[i].name + " גדול מדי, עד 12MB.");
       }
+      if (!picked.length) return;
+
+      /* One group is one song. Either every file is a page of the same one, or
+         each file is a song of its own; nothing in between, because nothing in
+         between could be told apart from these files. */
+      var groups = together.checked
+        ? [picked.slice(0, MAX_PAGES)]
+        : picked.slice(0, MAX_SONGS).map(function (file) { return [file]; });
+
+      var dropped = picked.length - groups.reduce(function (n, g) { return n + g.length; }, 0);
 
       status.innerHTML = "";
       status.className = "muted";
       var busy = el("span", "busy");
       busy.appendChild(el("span", "spin"));
-      busy.appendChild(document.createTextNode("מכין את הקבצים"));
+      busy.appendChild(document.createTextNode(
+        groups.length > 1 ? "מכין " + groups.length + " שירים" : "מכין את הקבצים"));
       status.appendChild(busy);
       close.disabled = true;
 
-      var created = null;
+      /* Every row made along the way. If the reading never starts, every one of
+         them has to go back out: a row left at `reading` waits for something
+         that is never coming. */
+      var created = [];
 
-      Promise.all(files.map(prepare)).then(function (payloads) {
-        var total = payloads.reduce(function (n, p) { return n + p.data.length; }, 0);
-        if (total > 700 * 1024) throw new Error("הקבצים גדולים מדי ביחד. נסו פחות עמודים, או צילום במקום PDF.");
-
-        /* the row first, so the reading has somewhere to land */
-        var name = files[0].name.replace(/\.[^.]+$/, "").trim();
-        return insertReading(name || "שיר חדש").then(function (row) {
-          created = row;
-          return auth.token();
-        }).then(function (token) {
-          return fetch(CFG.transcribeEndpoint, {
-            method: "POST",
-            headers: { "content-type": "application/json", authorization: "Bearer " + token },
-            body: JSON.stringify({ song_id: created.id, files: payloads }),
+      Promise.all(groups.map(function (group) { return Promise.all(group.map(prepare)); }))
+        .then(function (prepared) {
+          prepared.forEach(function (payloads) {
+            var total = payloads.reduce(function (n, p) { return n + p.data.length; }, 0);
+            if (total > 700 * 1024) throw new Error("קובץ אחד גדול מדי. נסו צילום קטן יותר, או פחות עמודים לשיר.");
           });
-        });
-      }).then(function (r) {
-        return r.json().catch(function () { return {}; }).then(function (body) {
-          if (!r.ok || !body.ok) {
-            var e = new Error(transcribeError(body, r.status));
-            e.detail = body && body.detail;
-            throw e;
-          }
-        });
-      }).then(function () {
-        /* Accepted. The reading is a Workflow now: it belongs to nobody and
-           outlives this page, so there is nothing left to hold on to. The
-           finished song lands on the row, and the list is watching the row. */
-        created = null;                     // handed over; not ours to undo now
 
-        dlg.close();
-        toast("קורא את השיר ברקע. אפשר לסגור את הדף.");
-        if (parts().length === 0) route(); else go(BASE + "/");
-      }).catch(function (error) {
-        /* the row was created but the work never started: it would sit as
-           `reading` forever, so it goes back out */
-        if (created) db.remove(created.id).catch(function () {});
-        fail(error.message, error.detail);
-      });
+          /* the rows first, so each reading has somewhere to land */
+          return Promise.all(prepared.map(function (payloads, index) {
+            var name = groups[index][0].name.replace(/\.[^.]+$/, "").trim();
+            return insertReading(name || "שיר חדש").then(function (row) {
+              created.push(row);
+              return { song_id: row.id, files: payloads };
+            });
+          }));
+        })
+        .then(function (songs) {
+          return auth.token().then(function (token) {
+            return fetch(CFG.transcribeEndpoint, {
+              method: "POST",
+              headers: { "content-type": "application/json", authorization: "Bearer " + token },
+              body: JSON.stringify({ songs: songs }),
+            });
+          });
+        })
+        .then(function (r) {
+          return r.json().catch(function () { return {}; }).then(function (body) {
+            if (!r.ok || !body.ok) {
+              var e = new Error(transcribeError(body, r.status));
+              e.detail = body && body.detail;
+              throw e;
+            }
+          });
+        })
+        .then(function () {
+          /* Accepted. Each reading is a Workflow now: it belongs to nobody and
+             outlives this page, so there is nothing left to hold on to. The
+             finished songs land on their rows, and the list is watching them. */
+          created = [];                     // handed over; not ours to undo now
+
+          dlg.close();
+          toast(groups.length > 1
+            ? "קורא " + groups.length + " שירים ברקע. אפשר לסגור את הדף."
+            : "קורא את השיר ברקע. אפשר לסגור את הדף.");
+          if (dropped > 0) toast("נלקחו " + groups.length + " קבצים בלבד. השאר לא נשלחו.", true);
+          if (parts().length === 0) route(); else go(BASE + "/");
+        })
+        .catch(function (error) {
+          created.forEach(function (row) { db.remove(row.id).catch(function () {}); });
+          fail(error.message, error.detail);
+        });
     }
   }
 
@@ -2286,6 +2330,7 @@
     if (status === 401) return "צריך להתחבר מחדש כדי לקרוא קובץ.";
     if (status === 429) return "רגע אחד, נסו שוב בעוד כמה שניות.";
     if (status === 413) return "הקבצים גדולים מדי. נסו פחות עמודים או צילום קטן יותר.";
+    if (body && body.error === "songs") return "אפשר עד " + MAX_SONGS + " שירים בהעלאה אחת.";
     if (body && body.error === "empty") return "לא זוהו מילים ואקורדים בקובץ. אולי כדאי צילום ברור יותר.";
     return "לא הצלחנו להתחיל את הקריאה. אפשר לנסות שוב או להקליד ידנית.";
   }

@@ -418,6 +418,10 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .drop h3 { margin: 0 0 4px; font-size: 17px; }
 .drop p { margin: 0 0 14px; color: var(--ink-soft); font-size: 14px; }
 
+/* the one question the files cannot answer for themselves */
+.check { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink-soft); cursor: pointer; }
+.check input { width: 16px; height: 16px; margin-top: 0; accent-color: var(--accent); flex: 0 0 auto; }
+
 .busy { display: inline-flex; align-items: center; gap: 9px; color: var(--ink-soft); font-size: 15px; }
 .spin {
   width: 17px; height: 17px; border-radius: 50%;

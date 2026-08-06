@@ -235,11 +235,17 @@ async function rateLimited(bucket, ip, seconds = 30) {
      business pretending it can verify one.
    ------------------------------------------------------------------------ */
 
-/* The whole upload, and it is small on purpose: the files ride to the Workflow
-   inside its parameters, and a Workflow's parameters cap out at a megabyte.
-   The browser shrinks a photograph well below this before sending. */
+/* One song's worth, and it is small on purpose: its files ride to the Workflow
+   inside that Workflow's parameters, and those cap out at a megabyte. The
+   browser shrinks a photograph well below this before sending. */
 const MAX_BASE64 = 700 * 1024;
 const MAX_PAGES = 8;
+
+/* One upload may carry several songs, each with its own pages and its own
+   Workflow. It arrives as ONE request rather than one per song, which is what
+   keeps the rate limit below honest: it brakes uploads, not files, so dropping
+   a folder of ten sheets is one action and not nine refusals. */
+const MAX_SONGS = 10;
 
 async function signedIn(env, token) {
   if (!token || !env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return false;
@@ -279,31 +285,53 @@ async function handleTranscribe(request, env, ctx, origin) {
     return json({ ok: false, error: "body" }, 400, origin);
   }
 
-  const songId = String(body.song_id || "");
-  const files = Array.isArray(body.files) ? body.files : [];
+  /* A batch, or a single song written the old way. Both are read as a batch
+     from here on, so there is one path through the checks and one through the
+     queueing. */
+  const songs = Array.isArray(body.songs)
+    ? body.songs
+    : [{ song_id: body.song_id, files: body.files }];
 
-  if (!songId) return json({ ok: false, error: "song" }, 400, origin);
-  if (!files.length || files.length > MAX_PAGES) return json({ ok: false, error: "files" }, 400, origin);
+  if (!songs.length || songs.length > MAX_SONGS) return json({ ok: false, error: "songs" }, 400, origin);
 
-  let total = 0;
-  for (const file of files) {
-    if (!MEDIA_TYPES.includes(String(file?.media_type))) return json({ ok: false, error: "type" }, 400, origin);
-    if (!file.data) return json({ ok: false, error: "files" }, 400, origin);
-    total += String(file.data).length;
+  const queue = [];
+  for (const song of songs) {
+    const songId = String(song?.song_id || "");
+    const files = Array.isArray(song?.files) ? song.files : [];
+
+    if (!songId) return json({ ok: false, error: "song" }, 400, origin);
+    if (!files.length || files.length > MAX_PAGES) return json({ ok: false, error: "files" }, 400, origin);
+
+    let total = 0;
+    for (const file of files) {
+      if (!MEDIA_TYPES.includes(String(file?.media_type))) return json({ ok: false, error: "type" }, 400, origin);
+      if (!file.data) return json({ ok: false, error: "files" }, 400, origin);
+      total += String(file.data).length;
+    }
+    /* per song, because the cap is a Workflow's parameters and each song gets
+       a Workflow of its own */
+    if (total > MAX_BASE64) return json({ ok: false, error: "size" }, 413, origin);
+
+    queue.push({ songId, files });
   }
-  if (total > MAX_BASE64) return json({ ok: false, error: "size" }, 413, origin);
 
   if (!env.READ_SONG) {
     console.error("transcribe dropped: the READ_SONG workflow is not bound");
     return json({ ok: false, error: "config" }, 502, origin);
   }
 
+  /* ALL OR NOTHING, deliberately. A partial answer would leave the browser
+     holding rows it cannot tell apart: some being read, some abandoned at
+     `reading` for ever with nothing coming. Queue them, and if any one refuses,
+     say so and let the caller take every row back. */
   try {
-    const run = await env.READ_SONG.create({ params: { token, songId, files } });
-    console.log("transcribe queued", songId, run.id, files.length, "file(s)");
-    return json({ ok: true, reading: true }, 202, origin);
+    for (const song of queue) {
+      const run = await env.READ_SONG.create({ params: { token, songId: song.songId, files: song.files } });
+      console.log("transcribe queued", song.songId, run.id, song.files.length, "file(s)");
+    }
+    return json({ ok: true, reading: true, songs: queue.length }, 202, origin);
   } catch (err) {
-    console.error("transcribe could not be queued", songId, err && err.message);
+    console.error("transcribe could not be queued", err && err.message);
     return json({ ok: false, error: "read", detail: String(err && err.message).slice(0, 300) }, 502, origin);
   }
 }
