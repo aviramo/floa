@@ -4079,10 +4079,17 @@
 
        A song is a few hundred characters and this holds one string per change,
        so the whole history of an evening's editing is smaller than the picture
-       it was read from. */
+       it was read from.
+
+       IT IS CALLED `trail` AND NOT `history`, WHICH IS NOT A PREFERENCE. It was
+       called history, and a local by that name covers the browser's own for the
+       whole of this function: the save below writes the new song's address with
+       history.replaceState, and it was reaching this array instead. The song
+       landed in the database and the page said the save had failed, every time
+       a song was written from nothing. */
     var saved = snapshot();
     var current = saved;
-    var history = [];
+    var trail = [];
     var lastPush = 0;
     var restoring = false;
 
@@ -4121,15 +4128,15 @@
 
       if (!restoring && now !== current) {
         var when = Date.now();
-        if (!history.length || when - lastPush > BURST) {
-          history.push(current);
+        if (!trail.length || when - lastPush > BURST) {
+          trail.push(current);
           lastPush = when;
         }
         current = now;
       }
 
       revertBtn.hidden = now === saved;
-      undoBtn.hidden = !history.length;
+      undoBtn.hidden = !trail.length;
 
       keepDraft(now);
       if (now !== saved) queueSave(false);
@@ -4171,13 +4178,13 @@
     }
 
     function undo() {
-      if (!history.length) return;
-      restore(history.pop());
+      if (!trail.length) return;
+      restore(trail.pop());
     }
 
     function revert() {
       if (current === saved) return;
-      history.length = 0;
+      trail.length = 0;
       restore(saved);
     }
 
