@@ -73,6 +73,11 @@ const CHORD_REACH = 3.5;
       line of lyrics into chords or the other way round. */
 const CHORD_SHARE = 0.6;
 
+/* 7. WHERE ONE VERSE ENDS. Rows inside a verse are a line apart; the space a
+      sheet leaves between verses is half as much again. Measured in row
+      heights so it holds at any size. */
+const VERSE_GAP = 2.2;
+
 /* A symbol, in Latin notation, as chord sheets print them. Deliberately strict:
    this is the only thing standing between a row of chords and a row of words,
    and a loose pattern would make "F" out of every stray letter on the page. */
@@ -391,8 +396,31 @@ export function songFrom(boxes, dir, notes) {
     };
   });
 
-  const lyrics = rows.filter((row) => !row.isChords);
-  const lines = lyrics.map((row) => ({ text: row.text, placed: [], trailing: [] }));
+  /* A row holding no letters at all is not a line of anything. Niqqud read as
+     characters comes back as rows of colons and stray marks, and one of those
+     between two verses shifts every line after it by one, which moves every
+     chord in the rest of the song. */
+  const lyrics = rows.filter((row) => !row.isChords && /[\p{L}\p{N}]/u.test(row.text));
+
+  const lines = [];
+  /* where each lyric row ended up once the blank lines were put in */
+  const at = [];
+
+  lyrics.forEach((row, index) => {
+    /* THE GAP BETWEEN VERSES IS PART OF THE SONG. A sheet leaves a blank line
+       between stanzas and the reader gave none, so a song came back as one
+       unbroken block. That is not only ugly: the app counts lines, and a
+       missing one puts every line after it out of step with the page.
+
+       Found the way everything else here is found, by measuring. Rows within a
+       verse sit a line apart; a verse break is half as much again. */
+    const before = lyrics[index - 1];
+    if (before && row.middle - before.middle > row.height * VERSE_GAP) {
+      lines.push({ text: "", placed: [], trailing: [] });
+    }
+    at[index] = lines.length;
+    lines.push({ text: row.text, placed: [], trailing: [] });
+  });
 
   say(`${rows.length} rows, ${rows.length - lyrics.length} of chords`);
   rows.forEach((row) => say(`  ${row.isChords ? "chords" : "words "} | ${row.text}`));
@@ -409,7 +437,7 @@ export function songFrom(boxes, dir, notes) {
     });
     if (owner < 0) return say(`  no words under: ${row.text}`);
 
-    const line = lines[owner];
+    const line = lines[at[owner]];
     const cells = lyrics[owner].cells;
 
     row.tokens.forEach((token) => {
