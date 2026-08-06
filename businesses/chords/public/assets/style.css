@@ -565,11 +565,11 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    over it is closed, so it reads as the end of the line above rather than as
    a line of its own.
 
-   .sp is the separator INSIDE a row, where the leftover ends and the next
-   line of the song begins. Quiet, because it is punctuation and not a word,
-   but wide enough not to be taken for a space between two words: without it a
-   row holding the end of one line and the start of another would read as one
-   sentence that never was.
+   .sp is the same mark INSIDE a row, where the leftover ends and the next line
+   of the song begins. The same mark and the same colour, deliberately: it says
+   the same thing in both places, that a line broke here, and a leftover is
+   held between two of them. Quiet, because it is punctuation and not a word,
+   and never black: a reader looking for the words must be able to skip it.
 
    The indent is padding on .ln-t and never on .ln: the chords are measured
    from the row's own edges, and padding on the row would move every one of
@@ -585,7 +585,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   color: var(--chord); opacity: .5;
   font-weight: 400;
 }
-.ln-t .sp { color: var(--ink-soft); opacity: .45; font-weight: 400; }
+.ln-t .sp { color: var(--chord); opacity: .5; font-weight: 400; }
 
 /* A blank line is the gap between two stanzas, and a gap does not need a full
    line of words plus an empty chord lane above it to say so: about half that

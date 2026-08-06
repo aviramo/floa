@@ -73,10 +73,16 @@ const CHORD_REACH = 3.5;
       line of lyrics into chords or the other way round. */
 const CHORD_SHARE = 0.6;
 
-/* 7. WHERE ONE VERSE ENDS. Rows inside a verse are a line apart; the space a
-      sheet leaves between verses is half as much again. Measured in row
-      heights so it holds at any size. */
-const VERSE_GAP = 2.2;
+/* 7. WHERE ONE VERSE ENDS. Measured against the PAGE rather than against a
+      number, because how far apart a sheet sets its lines is a decision its
+      typesetter made and no two make it alike. One sheet set its verses 2.2
+      line-heights apart and another 1.8, and any fixed number that found the
+      breaks in one invented them in the other.
+
+      So the page is asked instead: the ordinary distance between two lines of
+      the same verse is whatever most of this page's lines are apart, and a
+      break is anything meaningfully wider than that. */
+const VERSE_GAP = 1.25;
 
 /* A symbol, in Latin notation, as chord sheets print them. Deliberately strict:
    this is the only thing standing between a row of chords and a row of words,
@@ -128,6 +134,11 @@ function scriptOf(text) {
   if (STRONG_LTR.test(text)) return "ltr";
   return null;
 }
+
+/* A combining mark: printed on the letter before it and taking no width of its
+   own. Hebrew points are these, and so is an accent on a Portuguese vowel. */
+const MARK = /\p{M}/u;
+const base = (text) => [...String(text)].filter((char) => !MARK.test(char)).length;
 
 const midX = (box) => box.x + box.w / 2;
 const midY = (box) => box.y + box.h / 2;
@@ -255,7 +266,15 @@ export function layout(row, rtl) {
      order they are READ in is worked out below; what order they are PRINTED in
      is this, and the two are not the same thing on a Hebrew page. */
   const visual = row.boxes.slice().sort((a, b) => midX(a) - midX(b));
-  const unit = median(visual.map((box) => box.w / Math.max(1, [...String(box.text)].length)));
+  /* A TYPICAL GLYPH WIDTH, and the count underneath it is the whole trick. A
+     pointed Hebrew letter arrives as ONE box holding two or three characters,
+     the letter and the marks under it, and dividing its width by all of them
+     says a glyph is half or a third as wide as it is. Every threshold below
+     rests on this number, so a pointed sheet came back with spaces inside its
+     words: מי האיש read as מ י ה איש.
+
+     Marks take no width. They are printed under the letter, not beside it. */
+  const unit = median(visual.map((box) => box.w / Math.max(1, base(box.text))));
 
   /* spaces put back where the printing left room for them, as items in their
      own right, because a chord can sit on one */
@@ -312,11 +331,18 @@ export function layout(row, rtl) {
          whatever the box holds: an engine that measured a whole word gives the
          word, not the word backwards. Only WHERE each of them sits depends on
          the direction, and that is what the cells are for. */
+      /* Shared out among the characters that actually take room. A mark sits
+         on the letter before it and is given that letter's own place, so a
+         chord matched against it lands where the letter is. */
       const chars = [...item.text];
-      const step = item.w / chars.length;
-      chars.forEach((char, i) => {
+      const step = item.w / Math.max(1, base(item.text));
+      let taken = 0;
+      chars.forEach((char) => {
+        const mark = MARK.test(char);
+        const from = backwards ? item.x + item.w - (taken + 1) * step : item.x + taken * step;
         text += char;
-        cells.push({ x: backwards ? item.x + item.w - (i + 1) * step : item.x + i * step, w: step });
+        cells.push({ x: mark && taken > 0 ? cells[cells.length - 1].x : from, w: step });
+        if (!mark) taken++;
       });
     });
   });
@@ -400,7 +426,13 @@ export function songFrom(boxes, dir, notes) {
      characters comes back as rows of colons and stray marks, and one of those
      between two verses shifts every line after it by one, which moves every
      chord in the rest of the song. */
-  const lyrics = rows.filter((row) => !row.isChords && /[\p{L}\p{N}]/u.test(row.text));
+  /* A row has to say something to be a line. One stray letter is what a mark
+     read as a character looks like, and a "T:" between two verses shifts every
+     line after it and moves every chord in the rest of the song. */
+  const lyrics = rows.filter((row) => !row.isChords && base(row.text) >= 2);
+
+  /* how far apart this page sets two lines of the same verse */
+  const usual = median(lyrics.slice(1).map((row, index) => row.middle - lyrics[index].middle));
 
   const lines = [];
   /* where each lyric row ended up once the blank lines were put in */
@@ -415,7 +447,7 @@ export function songFrom(boxes, dir, notes) {
        Found the way everything else here is found, by measuring. Rows within a
        verse sit a line apart; a verse break is half as much again. */
     const before = lyrics[index - 1];
-    if (before && row.middle - before.middle > row.height * VERSE_GAP) {
+    if (before && row.middle - before.middle > usual * VERSE_GAP) {
       lines.push({ text: "", placed: [], trailing: [] });
     }
     at[index] = lines.length;

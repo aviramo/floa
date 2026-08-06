@@ -114,6 +114,42 @@ const MEASURE = `(() => {
   return JSON.stringify({ chords: out, errors: window.__errors, app: document.getElementById("app").innerHTML.length });
 })()`;
 
+/* --- and what a narrow screen did to it ----------------------------------
+   The pour (flowSheet in app.js) is three things at once, and this asks after
+   all three: that it happened at all, that it pulled a line up onto a row
+   carrying a leftover, and that nothing ended up wider than the screen after
+   all that. The chords are checked by MEASURE above, unchanged, because a
+   chord that moved off its syllable while the words were being poured is the
+   one failure that would make the whole thing worse than the scrolling it
+   replaced.
+
+   It exists because the two lines that CALL the pour were once written over
+   by work on the same function, and the code sat there doing nothing with
+   nobody the wiser. A test that renders it is the only thing that notices. */
+const POURED = `(() => {
+  const rows = [...document.querySelectorAll(".sheet .ln")];
+  const wide = [];
+  for (const ln of rows) {
+    const t = ln.querySelector(".ln-t");
+    if (!t) continue;
+    const pad = parseFloat(getComputedStyle(t).paddingInlineStart) || 0;
+    const words = [...t.children].reduce((a, s) => a + s.getBoundingClientRect().width, 0);
+    if (words + pad > ln.clientWidth + 1) {
+      wide.push({ text: t.textContent.slice(0, 24), needs: Math.round(words + pad), room: ln.clientWidth });
+    }
+  }
+  const sheet = document.querySelector(".sheet");
+  return JSON.stringify({
+    rows: rows.length,
+    conts: rows.filter((l) => l.classList.contains("is-cont")).length,
+    seps: document.querySelectorAll(".sheet .ln-t .sp").length,
+    wide,
+    where: innerWidth + "px wide, narrow=" + matchMedia("(max-width: 620px)").matches +
+      ", song " + (sheet ? getComputedStyle(sheet).getPropertyValue("--song-size") : "?") +
+      ", room " + (rows[0] ? rows[0].clientWidth : "?"),
+  });
+})()`;
+
 /* the on-screen x of every chord in the first line that has any */
 const POSITIONS = `(() => {
   const ln = [...document.querySelectorAll(".sheet .ln")].find(l => l.querySelector(".chord"));
@@ -282,7 +318,52 @@ try {
       }
     }
 
-    /* --- 2. dragging moves one chord and leaves the rest where they are --- */
+    /* --- 2. a phone: the song is poured to the screen, chords and all ----- */
+    await open(`http://127.0.0.1:${port}/chords/_t/rtl/`, async ({ send, evaluate }) => {
+      /* A phone, and a reading size big enough that these short test lines
+         cannot fit on one. The size is the reader's own setting, so it is set
+         the way a reader sets it and the page is opened again. */
+      /* mobile:false on purpose. A page with no viewport meta tag is laid out
+         by a "mobile" Chrome at 980 CSS pixels wide and then scaled down, so
+         asking for 360 would have measured a wide screen shrunk on the glass
+         rather than a narrow one. */
+      await send("Emulation.setDeviceMetricsOverride", { width: 360, height: 800, deviceScaleFactor: 1, mobile: false });
+      await send("Runtime.evaluate", { expression: 'localStorage.setItem("chords.size", "28")' });
+      await send("Page.enable");
+      /* navigate rather than reload: the page put the song's own address in
+         the bar when it opened, and there is no file there to reload */
+      await send("Page.navigate", { url: `http://127.0.0.1:${port}/chords/_t/rtl/` });
+
+      for (let i = 0; i < 40; i++) {
+        await sleep(250);
+        const n = await send("Runtime.evaluate", { expression: 'document.querySelectorAll(".sheet .chord").length', returnByValue: true });
+        if (n.result.value > 0) break;
+      }
+      await sleep(500);
+
+      const poured = await evaluate(POURED);
+      check("narrow: a line that does not fit is broken", poured.conts > 0,
+        `${poured.rows} rows, none of them a continuation (${poured.where})`);
+      check("narrow: the line after a leftover is pulled up behind a mark", poured.seps > 0,
+        `${poured.rows} rows, no separator in any of them`);
+      check("narrow: nothing is left wider than the screen", poured.wide.length === 0,
+        JSON.stringify(poured.wide));
+
+      const report = await evaluate(MEASURE);
+      check("narrow: no page errors", report.errors.length === 0, JSON.stringify(report.errors));
+      for (const c of report.chords) {
+        const exact = Math.abs(c.off) <= 1;
+        check(`narrow: "${c.chord}" at ${c.pos} of «${c.line}»`,
+          exact || (c.off > 0 && c.off <= (c.nudged ? 60 : 1)), `off by ${c.off}px`);
+      }
+
+      /* The reading size is one setting for one reader, and the next page
+         opened here is the same reader. Left behind, it would quietly draw the
+         editor's song a third larger than the drag below expects. */
+      await send("Runtime.evaluate", { expression: 'localStorage.removeItem("chords.size")' });
+    });
+
+    /* --- 3. dragging moves one chord and leaves the rest where they are --- */
     await open(`http://127.0.0.1:${port}/chords/_t/edit/`, async ({ send, evaluate }) => {
       const before = await evaluate(POSITIONS);
       check("the editor rendered its chords", before && before.chords.length >= 3, JSON.stringify(before));

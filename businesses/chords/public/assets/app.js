@@ -1111,9 +1111,14 @@
      mark cannot drift apart. */
   var CONT_INDENT = 1.5;
 
-  /* Between two lines of the song sharing one row. A dot rather than a bar,
-     because a bar in a chord sheet is a bar of music. */
-  var LINE_SEP = " • ";
+  /* ONE mark for the whole business, pointing the way the words run: down and
+     to the left in Hebrew, down and to the right in English. It is drawn in
+     two places and means the same thing in both, which is why it is the same
+     mark: at the start of a row, the words after it came down from the row
+     above; inside a row, the words before it did, and a new line of the song
+     begins after it. So a leftover is always held between two of them, or
+     between one of them and the end of its row. */
+  var DROP_MARK = { rtl: "↲", ltr: "↳" };
 
   /* The width of a piece of text, in the sheet's own font, before it is on the
      page. Summed per character for the same reason the advances are (see
@@ -1185,7 +1190,11 @@
     if (!sized.length) return;
 
     var indent = CONT_INDENT * sized[0].size;
-    var sepWidth = textWidth(sheet, LINE_SEP);
+    var mark = rtl ? DROP_MARK.rtl : DROP_MARK.ltr;
+    /* the mark stands off the words on both sides, or it reads as a letter of
+       the word it is touching */
+    var sepText = " " + mark + " ";
+    var sepWidth = textWidth(sheet, sepText);
 
     /* --- pouring ---------------------------------------------------------- */
 
@@ -1298,7 +1307,7 @@
       desc.pieces.forEach(function (piece) {
         if (text) {
           seps.push(text.length);
-          text += LINE_SEP;
+          text += sepText;
         }
         var offset = text.length;
         piece.line.chords.forEach(function (c) {
@@ -1317,12 +1326,11 @@
 
       var words = textSpans(text);
       seps.forEach(function (start) {
-        for (var i = 0; i < LINE_SEP.length; i++) words.children[start + i].className = "sp";
+        for (var i = 0; i < sepText.length; i++) words.children[start + i].className = "sp";
       });
       if (desc.tail) {
         ln.style.setProperty("--cont", indent + "px");
-        /* pointing the way the words run: down and to the left in Hebrew */
-        words.dataset.cont = rtl ? "↲" : "↳";
+        words.dataset.cont = mark;
       }
       ln.appendChild(words);
       return ln;
