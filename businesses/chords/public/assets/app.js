@@ -1196,10 +1196,11 @@
 
   /* Reading a photograph is the one thing a phone is BETTER at, since the
      camera is already in your hand, so that stays. Typing a song out is the
-     one it is worst at, so it says so rather than opening a page that cannot
-     be typed on. */
+     one it is worst at, and a button that answers a press with a refusal is
+     worse than no button: it asks to be pressed, takes the press, and gives
+     back a sentence. So on a phone it is not offered at all, and "מתמונה"
+     is left standing on its own as the way to add a song. */
   function newSong() {
-    if (NARROW.matches) return toast("שיר נכתב במסך גדול. מתמונה אפשר גם מכאן.", true);
     requireAuth(function () { go(BASE + "/new"); });
   }
 
@@ -1240,8 +1241,10 @@
     bar.appendChild(button("ערבי שירה", ICON.calendar, "ghost small", function () {
       go(BASE + "/evenings");
     }));
-    bar.appendChild(button("מתמונה", ICON.upload, "ghost small", uploadSong));
-    bar.appendChild(button("שיר חדש", ICON.plus, "small", newSong));
+    /* On a phone the reading is the only way in, so it is the one that gets
+       the solid button. On a desk both are open and the typing leads. */
+    bar.appendChild(button("מתמונה", ICON.upload, NARROW.matches ? "small" : "ghost small", uploadSong));
+    if (!NARROW.matches) bar.appendChild(button("שיר חדש", ICON.plus, "small", newSong));
     bar.appendChild(session());
   }
 
@@ -1315,8 +1318,8 @@
       var empty = el("div", "center");
       var emptyText = el("p");
       var emptyActions = el("div", "row-actions");
-      emptyActions.appendChild(button("להקליד שיר", ICON.plus, null, newSong));
-      emptyActions.appendChild(button("מתמונה או PDF", ICON.upload, "ghost", uploadSong));
+      if (!NARROW.matches) emptyActions.appendChild(button("להקליד שיר", ICON.plus, null, newSong));
+      emptyActions.appendChild(button("מתמונה או PDF", ICON.upload, NARROW.matches ? null : "ghost", uploadSong));
       empty.appendChild(emptyText);
       empty.appendChild(emptyActions);
 
@@ -3847,6 +3850,12 @@
   }
 
   window.addEventListener("popstate", function () { route(); });
+
+  /* A window dragged across the narrow line changes what the header is allowed
+     to offer, and a button that was true when it was painted is not true any
+     more. Cheap enough to redraw, and it is the same function the routing
+     calls. */
+  if (NARROW.addEventListener) NARROW.addEventListener("change", function () { paintHeader(); });
 
   absorbFallback();
   auth.load();
