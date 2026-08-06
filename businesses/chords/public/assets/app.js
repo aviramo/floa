@@ -3413,7 +3413,12 @@
       lifted = from.map(function (line) {
         return line.chords.map(function (c) { return { pos: c.pos, chord: c.chord }; });
       });
-      showMarked();
+
+      /* AND THE MARKS GO. What follows a copy is always marking the lines to
+         put them on, and every one of those ticks had to be preceded by
+         unticking a line that was only ever the source. The copy is held; the
+         marking is free to be about where it is going. */
+      clearMarks();
       toast(lifted.length === 1 ? "האקורדים של השורה הועתקו" : "האקורדים של " + lifted.length + " שורות הועתקו");
     }
 
