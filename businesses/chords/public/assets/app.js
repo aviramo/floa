@@ -229,10 +229,12 @@
     return minutes + ":" + (rest < 10 ? "0" : "") + rest;
   }
 
+  /* The stage comes from the Worker, which is the only side that knows it. The
+     seconds are counted here, once a second, which no heartbeat could match. */
   function elapsed(node) {
     var since = Number(node.dataset.since) || Date.now();
     var seconds = Math.max(0, Math.round((Date.now() - since) / 1000));
-    node.textContent = "קורא את השיר  " + clock(seconds);
+    node.textContent = (node.dataset.stage || "ממתין") + "  " + clock(seconds);
   }
 
   function tick(root) {
@@ -1102,6 +1104,7 @@
     if (reading) {
       var note = el("div", "a");
       note.dataset.since = Date.parse(s.created_at || "") || Date.now();
+      note.dataset.stage = s.status_note || "ממתין";
       elapsed(note);
       box2.appendChild(note);
     } else {
@@ -1243,6 +1246,7 @@
       busy.appendChild(el("span", "spin"));
       var note = el("span");
       note.dataset.since = Date.parse(song.created_at || "") || Date.now();
+      note.dataset.stage = song.status_note || "ממתין";
       elapsed(note);
       busy.appendChild(note);
       box.appendChild(busy);

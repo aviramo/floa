@@ -31,38 +31,31 @@
    ========================================================================== */
 
 /* --- what the read costs --------------------------------------------------
-   These three lines are the whole of it, and they are meant to be easy to
-   change because they are a trade, not a fact.
+   Three lines, and they are a trade rather than a fact, so here is what each
+   setting actually did on a real Hebrew sheet:
 
-   Sonnet 5 rather than Opus 5: this is careful reading, not hard reasoning,
-   and Sonnet reaches the same place here for a fraction of the price. `medium`
-   rather than `high`: effort is what decides how long the model thinks, and
-   thinking is where the tokens actually go on a task like this, far more than
-   the picture. `max_tokens` is a ceiling, not a target, and it covers thinking
-   and answer together, so it is set high enough for a long song and no higher.
+     Sonnet, medium   3 cents,   fast, and WRONG: chords exchanged with their
+                                 neighbours and landing a letter or two off.
+     Opus, high      42 cents,   three and a half minutes, and then truncated
+                                 mid-sentence, because max_tokens caps thinking
+                                 and answer together and the thinking ate it.
 
-   Together they also keep a read down to under a minute, which matters for a
-   second reason: the job outlives the request that started it, and the shorter
-   it is the less there is for the runtime to cut short.
+   Fourteen times the price to fail differently is not a trade, it is a
+   mistake. So: Sonnet again, at HIGH rather than medium.
 
-   It started on Sonnet at medium effort, which is the cheap end and was the
-   right first guess: this is careful reading, not hard reasoning. Real sheets
-   said otherwise. Twice, chords came back exchanged with their neighbours and
-   sitting a couple of letters off the syllable they belong on, and there is no
-   version of this app where that is acceptable: a chord on the wrong letter is
-   worse than no chord, because it is wrong quietly.
+   Effort is worth trying before price, because the Sonnet failures came before
+   the prompt was rewritten. That rewrite is aimed at exactly the mistake those
+   reads made, taking one chord at a time by its position instead of reading
+   the chord row as a sequence, and it has never been run at this effort. If it
+   still comes back with two chords exchanged, the next step is Opus at MEDIUM,
+   which is the one combination not yet tried and the one that keeps the model
+   without the effort bill.
 
-   So: Opus at high. Deciding which letter of a Hebrew word a Latin symbol is
-   printed over is a visual judgement, and it is the entire product. The
-   picture is small and a song is read once in its life, so what this costs is
-   a few cents, once, against a correction by hand every time it is wrong.
-
-   To make it cheaper again, move down this list rather than jumping: Opus at
-   medium, then Sonnet at high. Check a Hebrew sheet with four or more chords
-   on a line after each step, because that is where it breaks first. */
-const MODEL = "claude-opus-5";
+   max_tokens is a ceiling and not a target: at 32000 a long song cannot run
+   out of room, and nothing is paid for room that goes unused. */
+const MODEL = "claude-sonnet-5";
 const EFFORT = "high";
-const MAX_TOKENS = 16000;
+const MAX_TOKENS = 32000;
 
 export const MEDIA_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif", "application/pdf"];
 
@@ -277,6 +270,20 @@ function slugify(name) {
   return s;
 }
 
+/* A failure, in words the person who uploaded the picture can act on. The
+   seconds ride along because "it failed" and "it failed after four minutes"
+   call for different next moves. */
+function why(message, seconds) {
+  const said =
+    message === "truncated" ? "הקריאה נקטעה באמצע. השיר ארוך מהמקום שהוקצה לו." :
+    message === "empty" ? "לא זוהו מילים ואקורדים בקובץ." :
+    message === "refusal" ? "הקריאה סורבה." :
+    /^anthropic 4\d\d/.test(message) ? "השירות דחה את הבקשה." :
+    /^anthropic 5\d\d/.test(message) ? "השירות לא היה זמין." :
+    String(message).slice(0, 200);
+  return `${said} (${seconds}s)`;
+}
+
 async function patchSong(env, token, id, fields) {
   const response = await fetch(
     `${env.SUPABASE_URL}/rest/v1/songs?id=eq.${encodeURIComponent(id)}`,
@@ -318,7 +325,7 @@ export async function readAndSave(env, token, songId, files) {
      to the row it is supposed to fill. If it cannot write, there is no point
      spending a read whose answer has nowhere to go, and no point trying to mark
      the row as failed either, because writing is exactly what is broken. */
-  const blocked = await patchSong(env, token, songId, { status_note: "מתחיל לקרוא" });
+  const blocked = await patchSong(env, token, songId, { status_note: "נשלח לקריאה" });
   if (blocked) {
     console.error("transcribe cannot write to its row", songId, blocked.status, blocked.body.slice(0, 300));
     return;
@@ -329,8 +336,12 @@ export async function readAndSave(env, token, songId, files) {
     const seconds = Math.round((Date.now() - began) / 1000);
     if (seconds - beat < 20) return;
     beat = seconds;
-    /* not awaited: the reading must not wait on the bookkeeping */
-    patchSong(env, token, songId, { status_note: `קורא, ${seconds} שניות` })
+    /* The STAGE, not the time. Whoever is watching counts the seconds in their
+       own browser, once a second, which is smoother than anything a heartbeat
+       could send. What only this side knows is which part of the work is
+       happening, so that is what it says. Writing the same word again is not
+       wasted: the row's updated_at is what proves the job is still alive. */
+    patchSong(env, token, songId, { status_note: "קורא את הצילום" })
       .then((failure) => { if (failure) console.error("heartbeat refused", songId, failure.status); })
       .catch((err) => console.error("heartbeat threw", songId, err.message));
   };
@@ -341,10 +352,7 @@ export async function readAndSave(env, token, songId, files) {
   } catch (err) {
     const seconds = Math.round((Date.now() - began) / 1000);
     console.error("transcribe failed", songId, seconds + "s", err.message);
-    await patchSong(env, token, songId, {
-      status: "failed",
-      status_note: `${String(err.message).slice(0, 260)} (${seconds}s)`,
-    });
+    await patchSong(env, token, songId, { status: "failed", status_note: why(err.message, seconds) });
     return;
   }
 
