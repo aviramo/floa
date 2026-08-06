@@ -3438,6 +3438,12 @@
         trimPadding(line);
       });
 
+      /* Done, so the marking is done: what is left on the page after a paste
+         is a set of lines that have already had the thing done to them, and
+         the next pair of lines starts from nothing marked. The copy stays
+         held, so the same chords can go onto another verse straight after. */
+      marked.length = 0;
+
       draw();
       mark();
     }
