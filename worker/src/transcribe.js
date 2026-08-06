@@ -103,7 +103,13 @@ On the printed page that Hebrew line looks like this, with the Am on the RIGHT b
 
 so the Am, being the rightmost, is the first chord of the line and the G is the second.
 
-- WHICH LETTER, EXACTLY. Take the chord symbol's horizontal MIDDLE, not its left or right edge, and look straight down from it. The bracket goes immediately before whichever letter is under that middle. A chord printed over the third letter of a word belongs in the middle of that word: בנ[Am]קיק, not [Am]בנקיק. Being one word out is a mistake; being two letters out is also a mistake, and it is the one that is easy to make without noticing.
+- THE TICK IS THE ANSWER, WHEN THERE IS ONE. Many printed sheets, and most Hebrew ones, draw a small mark under each chord: a tick, a comma, an apostrophe, a short slanted stroke. That mark is not decoration. It is the sheet telling you the exact point the chord falls on, drawn precisely because the symbol itself is too wide to say it. When a chord has one, look straight down from the MARK and ignore the width of the symbol entirely. It is the most reliable thing on the page.
+
+- WHICH LETTER, EXACTLY. With no mark, take the chord symbol's horizontal MIDDLE, not its left or right edge, and look straight down from that. The bracket goes immediately before whichever letter is under it. If the point falls between two letters, choose the one whose own start is nearer to it.
+
+- CHORDS DO NOT PREFER THE STARTS OF WORDS. This is a bias worth naming, because it is the mistake that keeps happening: a chord lands wherever the singer changes note, which is inside a word at least as often as at its edge. בנ[Am]קיק is an ordinary thing for a sheet to say and [Am]בנקיק is a different thing, and reading the first as the second is the failure. Do not round a chord to the nearest word boundary. If the mark or the middle sits over the third letter, the bracket goes before the third letter.
+
+- WORK IT OUT IN WORDS FIRST. For each chord, before writing anything: name the word it is over, and say whether it is over that word's beginning, its middle or its end, and which letter that is. Then write the line. Naming a letter is a judgement you can check; sliding a bracket along a line is not.
 - A chord printed over a space stays over that space: שלום לך [Am]אדוני and שלום לך[Am] אדוני are different, and both are things you may need to write.
 - WORK ONE CHORD AT A TIME, NEVER AS A LIST. This is the failure this task actually has, so it is worth being exact about. For each chord symbol on the page separately: note where it sits horizontally, look straight down from its middle, find the letter under it, and put the bracket in front of that letter. Then go to the next symbol and do the same.
 
@@ -134,7 +140,15 @@ TEXT AND CHORDS
 
 BEFORE YOU ANSWER
 
-Go back over each line once. Read its chords off the page from the right, name the letter under the middle of each one, and check that the line you wrote puts the brackets in that order and in front of those letters. Two chords swapped, or one sitting a couple of letters away from where it belongs, is the failure this task actually has, and it is invisible unless it is looked for.`;
+Go back over each line once and check three things.
+
+The COUNT: the line you wrote has exactly as many brackets as the page has chord symbols above that line. A missing one and an invented one both read as plausible.
+
+The ORDER: reading your line from its own beginning, the chords come in the same order as they do reading the page from its own beginning, which for Hebrew is from the right.
+
+The LETTER: each bracket sits before the letter you named for it, and not before the start of that letter's word unless that is where you said it was.
+
+Two chords exchanged, or one sitting a couple of letters from where it belongs, is the failure this task actually has, and it is invisible unless it is looked for.`;
 
 const USER_TEXT =
   "This is a chord sheet. Return the whole song as one piece of text. For every chord, find the syllable it is " +
