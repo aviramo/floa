@@ -976,8 +976,13 @@ button.val:hover { border-color: var(--line); background: #fff; }
    given in the song's own size rather than in em: an em of a font-size of zero
    is zero. */
 .ln-t .gap {
-  display: inline-block; vertical-align: baseline;
+  display: inline-block; vertical-align: baseline; position: relative;
   width: calc(var(--song-size) * .34);
+  /* WIDTH AND NOTHING ELSE. No size to the character means no height either,
+     so the box sits on the baseline taking up no part of the line: a gap must
+     cost the line the room between two letters and not one pixel of its
+     height. */
+  height: 0;
   font-size: 0;
 }
 
@@ -995,12 +1000,18 @@ button.val:hover { border-color: var(--line); background: #fff; }
    shape instead of a row of separate dashes, and so the caret has a box to
    land in: an inline-block with no ink at all is one a browser will not always
    let you into. The model has a gap there, not a hyphen. */
-.ed .ln-t .gap {
-  height: calc(var(--song-size) * .5);
-  background-image: linear-gradient(rgba(23, 32, 42, .13), rgba(23, 32, 42, .13));
-  background-size: 100% 1px;
-  background-position: 0 50%;
-  background-repeat: no-repeat;
+.ed .ln-t .gap::after {
+  content: "";
+  /* OUT OF THE FLOW, so the mark cannot make the line taller or push it up.
+     It was a background on the span, and a span with a background needs a
+     height to paint it in, and that height was a line's worth of room under
+     every word that had a gap in it.
+
+     Placed a little above the baseline, where the middle of a letter is, so it
+     reads as being on the line rather than under it. */
+  position: absolute; inset-inline: 0;
+  bottom: calc(var(--song-size) * .16);
+  height: 1px; background: rgba(23, 32, 42, .13);
 }
 
 /* The button that opens one. Under the letters, in the air between two lines,
