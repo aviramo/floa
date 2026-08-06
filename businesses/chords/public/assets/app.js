@@ -3356,7 +3356,10 @@
       showState = function () {
         var was = songState();
         statusChip.className = "status-chip tag tag-" + was;
-        statusChip.textContent = STATE_WORDS[was];
+        /* and while it is being read, what it is doing: the state saying more
+           about itself, in the state's own chip */
+        var stage = coming && song.status_note ? "  ·  " + song.status_note : "";
+        statusChip.textContent = STATE_WORDS[was] + stage;
         statusChip.title = was === "published"
           ? "השיר פתוח לכולם. כל שינוי בו מחזיר אותו לטיוטה."
           : was === "imported"
@@ -3402,7 +3405,12 @@
        and a read that failed altogether lands here with nothing but its name,
        and in both cases the page is the same page and the note is the whole of
        the difference. Saving clears it, because saving makes it untrue. */
-    if (song.status_note) app.appendChild(el("div", "song-note", song.status_note));
+    /* Only for a song that is finished. While one is still being read its note
+       is which stage the reading reached, and that belongs to the state: it
+       goes in the chip (see showState), the way it goes in the chip on the row
+       in the library. A band across the page saying "מפענח" is the width of a
+       sentence spent on one word. */
+    if (song.status_note && !coming) app.appendChild(el("div", "song-note", song.status_note));
 
     /* A band used to sit here saying the song had been read by a machine and
        not by a person, with a button to take the label off. Both are the
