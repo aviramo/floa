@@ -67,6 +67,8 @@
     /* a luggage label, which is what a style is: a word tied onto a song */
     tag: '<path d="M12.8 3.6H20v7.2l-9.1 9.1-7.2-7.2 9.1-9.1Z"/><circle cx="16.5" cy="7.1" r="1.2"/>',
     check: '<path d="M5 13l4 4 10-11"/>',
+    /* a box with a tick in it: everything on screen, at once */
+    checkAll: '<rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M7.5 12l3 3 6-6.5"/>',
     /* four corners opening outwards: the song, and nothing else, on the whole
        of the screen */
     stage: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>',
@@ -2365,10 +2367,40 @@
       /* Not a style, and it cannot be mistaken for one whatever anybody types:
          it is not a string at all, so no name can ever equal it. */
       var NO_STYLE = {};
+      /* --- EVERYTHING THE FILTER LEFT ------------------------------------------
+         The ticks are for doing one thing to a handful of songs, and the
+         handful is usually "these", where "these" is what the search box and
+         the chips have already narrowed the wall down to: the songs with no
+         style yet, everything by one writer, the drafts. Ticking forty of
+         those by hand is forty presses to say a word the page already knows.
+
+         It is a toggle against what is SHOWN, not against the library: press
+         it with the shown songs all ticked and they all let go. So it is safe
+         to press twice and it never reaches past what is on screen. */
+      var allBtn = null;
+      var shownNow = [];
+
+      function allShownPicked() {
+        return shownNow.length > 0 && shownNow.every(function (s) { return picked[s.id]; });
+      }
+
+      function pickAll() {
+        var take = !allShownPicked();
+        shownNow.forEach(function (s) {
+          if (take) picked[s.id] = true;
+          else delete picked[s.id];
+        });
+        paint(input.value);
+      }
+
       var kind = null;
       var kindsRow = el("div", "kinds-row");
       var kinds = el("div", "kinds");
       kindsRow.appendChild(kinds);
+      if (auth.in) {
+        allBtn = iconBtn(ICON.checkAll, "סימון כל מה שמוצג", pickAll);
+        kindsRow.appendChild(allBtn);
+      }
       kindsRow.appendChild(picking);
       app.appendChild(kindsRow);
 
@@ -2572,6 +2604,9 @@
           return hayOf(s).indexOf(q) >= 0;
         });
 
+        shownNow = shown;
+        if (allBtn) allBtn.hidden = !shown.length;
+
         if (!shown.length) {
           if (!empty.parentNode) app.appendChild(empty);
           emptyText.textContent = q ? "לא נמצא שיר שמתאים לחיפוש."
@@ -2583,6 +2618,12 @@
         }
         if (empty.parentNode) empty.remove();
 
+        shownNow = shown;
+        if (allBtn) {
+          allBtn.classList.toggle("is-on", allShownPicked());
+          allBtn.title = allShownPicked() ? "ביטול הסימון של כל מה שמוצג" : "סימון כל מה שמוצג";
+          allBtn.setAttribute("aria-label", allBtn.title);
+        }
         shown.forEach(function (s) { list.appendChild(songRow(s, refresh, marks[s.id], tickBox(s))); });
         tick(list);
       }
@@ -2800,33 +2841,32 @@
   function songRow(s, refresh, mark, pick) {
     var li = el("li");
 
-    /* INSIDE THE CARD, at the start of it, which is where a tick goes in any
-       list of things to choose from. It was outside for a while for a good
-       reason: the card is a link, and a box inside a link is a box that opens
-       the song half the time.
+    /* IN THE CARD'S CORNER, AND NOT IN THE CARD. It looks like it is inside,
+       and in the DOM it is a sister of the card, laid over the gutter the card
+       leaves for it.
 
-       So the box refuses the link by hand. The press is stopped from reaching
-       the card, the browser's own idea of what a click on a link means is
-       cancelled, and the tick is then turned over here: cancelling the default
-       cancels the tick too, so it has to be done rather than allowed. Space on
-       a focused box arrives here as a click, so the keyboard is the same
-       gesture and not a second one. */
+       Which is not tidiness, it is the only way it works. The card is a link,
+       so a box inside it is a box the browser also treats as a click on a
+       link. Cancelling that cancels the tick with it: an input's checked state
+       is flipped BEFORE the click is dispatched and put back if the click is
+       cancelled, so a handler that cancels and re-flips by hand ends exactly
+       where it started, which is how ticking a song stopped working at all.
+       Outside the link there is nothing to cancel. */
     var holder = null;
     if (pick) {
+      li.classList.add("can-pick");
       holder = el("label", "pick");
       var tickBox = el("input");
       tickBox.type = "checkbox";
       tickBox.checked = pick.on;
       tickBox.setAttribute("aria-label", "לבחור את " + s.title);
       li.classList.toggle("is-picked", pick.on);
-      tickBox.addEventListener("click", function (event) {
-        event.preventDefault();
-        event.stopPropagation();
-        tickBox.checked = !tickBox.checked;
+      tickBox.addEventListener("change", function () {
         li.classList.toggle("is-picked", tickBox.checked);
         pick.set(tickBox.checked);
       });
       holder.appendChild(tickBox);
+      li.appendChild(holder);
     }
 
     /* The name, and where a name is not the only one of itself, the number
@@ -2854,7 +2894,6 @@
       var a = el("a");
       a.href = BASE + "/" + encodeURIComponent(s.slug);
       a.addEventListener("click", function (e) { e.preventDefault(); go(a.getAttribute("href")); });
-      if (holder) a.appendChild(holder);
 
       var box = el("div");
 
@@ -2970,7 +3009,6 @@
        long enough to have stopped. A song still being read is an ordinary row
        now, above, and cancelling it is on its own page. */
     var row = el("div", "row is-failed");
-    if (holder) row.appendChild(holder);
 
     var box2 = el("div");
     box2.appendChild(name());

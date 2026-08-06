@@ -298,17 +298,17 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
   align-items: start;
 }
-.list li { display: flex; min-width: 0; }
+.list li { display: flex; min-width: 0; position: relative; }
 .list li > a, .list li > .row { flex: 1 1 auto; min-width: 0; }
-/* Level with the NAME, not with the card. A card is as tall as what is in it,
-   so a box centred on the whole of one floats somewhere down among the chords;
-   the tick belongs beside the thing it is ticking, which is the name at the
-   top. align-SELF, because what was wrong was where the box sits in the card
-   and not where its own contents sit in it. */
+/* Over the corner of the card, in the gutter the card leaves for it: level
+   with the name, which is the thing it is ticking, and outside the link, which
+   is the only place a checkbox can be and still work (see songRow). */
 .list .pick {
-  flex: none; align-self: flex-start;
-  display: flex; align-items: flex-start; padding-top: 3px;
+  position: absolute; z-index: 1;
+  top: 16px; inset-inline-start: 16px;
+  display: flex;
 }
+.list li.can-pick > a, .list li.can-pick > .row { padding-inline-start: 46px; }
 .list .pick input {
   width: 20px; height: 20px; margin: 0; cursor: pointer; accent-color: var(--accent);
 }
