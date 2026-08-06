@@ -65,6 +65,8 @@
     copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/>',
     close: '<path d="M6 6l12 12M18 6L6 18"/>',
     check: '<path d="M5 13l4 4 10-11"/>',
+    /* a clock with a hand going backwards: not this change, the whole way back */
+    history: '<path d="M12 8.5V12l2.5 2"/><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M3 4v4h4"/>',
     /* two things moving apart, which is what opening a gap does */
     gap: '<path d="M10 8l-4 4 4 4M14 8l4 4-4 4"/>',
     /* --- the three controls over a song, as pictures ---
@@ -3294,8 +3296,16 @@
          undo, one step at a time, also on Ctrl+Z
          back to the original, the whole way, in one press
          and save, which is the only one that writes anything. */
+    /* Both of them are pictures in the top bar with the rest of what is about
+       this page rather than about the song's key or its size: an arrow back
+       for the last thing done, a clock going backwards for all of it.
+
+       They are made here rather than in the bar because they come and go with
+       what there is to undo, and it is this page that knows: the bar is
+       painted once and these two change on every keystroke. */
     var undoBtn = iconBtn(ICON.undo, "ביטול הפעולה האחרונה", undo);
-    var revertBtn = button("החזרה למקור", null, "ghost small", revert);
+    var revertBtn = iconBtn(ICON.history, "החזרה למקור", revert);
+    revertBtn.classList.add("quiet");
     /* WHERE THE WRITING GOT TO, which is what is left of the save button: the
        song writes itself now (see the saving block below), so the row does not
        need a thing to press, it needs a thing to read. */
@@ -3310,8 +3320,13 @@
         tools.appendChild(trash);
       }
       tools.appendChild(stateNode);
-      tools.appendChild(undoBtn);
-      tools.appendChild(revertBtn);
+
+      /* At the START of the bar, which in a page that runs right to left is
+         its right hand end: the way back stands before the things that make
+         the page do something new. */
+      var topBar = document.getElementById("topActions");
+      topBar.insertBefore(revertBtn, topBar.firstChild);
+      topBar.insertBefore(undoBtn, topBar.firstChild);
     }
     app.appendChild(tools);
 
