@@ -1216,6 +1216,14 @@ button.val:hover { border-color: var(--line); background: #fff; }
      a verse can be seen whole in, the blank line between two verses keeps
      enough to still be a break, and the title gets the room the chords used to
      take: a heading resting on the first line reads as part of it. */
+  /* AND THE WORDS WRAP HERE, which is the difference between the size being
+     respected and the size being obeyed. A chord sheet's lines never wrap,
+     because a chord has to stay over its syllable, so a line wider than the
+     paper makes the browser shrink the whole page to fit it: the reader turns
+     the size up and the print comes out no bigger. There are no chords on this
+     sheet, so a long line can break like any other paragraph, and turning the
+     size up fills the page instead of scaling it down. */
+  body.print-words .ln-t { white-space: pre-wrap; }
   body.print-words .song-head { margin-bottom: 30px; }
   body.print-words .ln { margin-bottom: 0; }
   body.print-words .ln-t { line-height: 1.35; min-height: 0; }
