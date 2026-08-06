@@ -237,28 +237,19 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   white-space: pre;
 }
 
-/* The tick under a chord, the way a printed sheet marks one.
+/* The tick under a chord, the way a printed sheet marks one. Centred under the
+   label and tucked right up against it, so it reads as part of the chord and
+   not as something belonging to the word below.
 
-   It sits at the chord's ANCHOR, the exact point the chord belongs to, which
-   on a right to left line is the label's right edge and on a left to right one
-   its left. So it is not decoration: it is the one place on the page where the
-   thing this whole app is about, which syllable a chord falls on, is drawn
-   rather than implied. Two characters of Hebrew are narrower than the word
-   "Am", and without the tick you cannot tell which of them it means.
-
-   It is a pseudo element, so it adds nothing to the chord's box and nothing to
-   the measuring. */
+   A pseudo element, so it adds nothing to the chord's box and nothing to the
+   measuring. */
 .chord::after {
   content: "";
-  position: absolute; top: 100%;
-  width: 1.5px; height: .38em;
+  position: absolute; top: calc(100% - 1px); left: 50%;
+  width: 1.5px; height: .34em;
   background: currentColor; border-radius: 1px;
-  transform: rotate(16deg); transform-origin: top center;
+  transform: translateX(-50%) rotate(16deg); transform-origin: top center;
 }
-/* scoped to the sheet, which always carries the SONG's direction. The chord
-   itself is dir="ltr" so its own attribute must not be the one that decides. */
-.sheet[dir="rtl"] .chord::after { right: 0; }
-.sheet[dir="ltr"] .chord::after { left: 0; }
 
 .ln.is-section { margin: 22px 0 4px; }
 .ln.is-section:first-child { margin-top: 0; }
