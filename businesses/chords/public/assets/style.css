@@ -1231,6 +1231,15 @@ button.val:hover { border-color: var(--line); background: #fff; }
 }
 .print-menu .btn { justify-content: flex-start; }
 
+/* The same small panel, holding what a handful of songs can be called: every
+   style the library already uses, one press each, and a field for one it has
+   never heard of. */
+.styler { max-width: min(320px, calc(100vw - 24px)); }
+.styler-known { display: flex; flex-wrap: wrap; gap: 4px; }
+.styler input[type="text"] {
+  margin-top: 6px; padding: 6px 10px; border-radius: 8px; font-size: 14px;
+}
+
 @media print {
   .top, .tools, .ed-bar, .song-meta, .toast, .print-menu { display: none !important; }
 

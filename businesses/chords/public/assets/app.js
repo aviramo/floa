@@ -64,6 +64,8 @@
     down: '<path d="M12 5v14m0 0l-6-6m6 6l6-6"/>',
     copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/>',
     close: '<path d="M6 6l12 12M18 6L6 18"/>',
+    /* a luggage label, which is what a style is: a word tied onto a song */
+    tag: '<path d="M12.8 3.6H20v7.2l-9.1 9.1-7.2-7.2 9.1-9.1Z"/><circle cx="16.5" cy="7.1" r="1.2"/>',
     check: '<path d="M5 13l4 4 10-11"/>',
     /* four corners opening outwards: the song, and nothing else, on the whole
        of the screen */
@@ -2218,6 +2220,96 @@
          they had were three times their own width. What is ticked is on the
          rows themselves, in ticks, so the row above them does not need to
          count it out loud; how many is in the question the trash asks. */
+      /* --- a style, onto all of them at once ------------------------------------
+         Naming what kind of song something is happens in batches: a folder of
+         circle songs goes up, and then all of them are circle songs. One at a
+         time is the same word typed fifteen times, in fifteen pages that each
+         have to be opened and left.
+
+         It does not touch anything else about them. A style is a word tied on
+         the outside; it is not the song, so a song that was published stays
+         published and nothing goes back to being a draft. */
+      var styleBtn = iconBtn(ICON.tag, "לתת סגנון", function () { askStyle(styleBtn); });
+      picking.appendChild(styleBtn);
+
+      var styler = null;
+
+      function closeStyler() {
+        if (!styler) return;
+        styler.remove();
+        styler = null;
+        document.removeEventListener("pointerdown", stylerOutside, true);
+      }
+
+      function stylerOutside(event) {
+        if (!styler) return;
+        if (styler.contains(event.target)) return;
+        if (styleBtn.contains(event.target)) return;
+        closeStyler();
+      }
+
+      function askStyle(anchor) {
+        if (styler) return closeStyler();
+
+        styler = el("div", "print-menu styler");
+
+        /* Every style the library already uses, one press each: the second
+           song of a kind should be called what the first one was called, and
+           nobody should have to remember how they spelled it. */
+        var known = {};
+        state.songs.forEach(function (s) {
+          styles(s).forEach(function (name) { known[name] = true; });
+        });
+        var names = Object.keys(known).sort(function (a, b) { return a.localeCompare(b, "he"); });
+        if (names.length) {
+          var row = el("div", "styler-known");
+          names.forEach(function (name) {
+            row.appendChild(button(name, null, "ghost small", function () { giveStyle(name); }));
+          });
+          styler.appendChild(row);
+        }
+
+        /* and one that the library has never heard of */
+        var field = el("input");
+        field.type = "text";
+        field.placeholder = "סגנון חדש";
+        field.setAttribute("aria-label", "סגנון חדש לשירים שנבחרו");
+        field.addEventListener("keydown", function (event) {
+          if (event.key !== "Enter") return;
+          event.preventDefault();
+          giveStyle(field.value);
+        });
+        styler.appendChild(field);
+
+        document.body.appendChild(styler);
+        var box = anchor.getBoundingClientRect();
+        var width = styler.offsetWidth;
+        styler.style.top = (box.bottom + 6) + "px";
+        styler.style.left = Math.min(Math.max(6, box.right - width), window.innerWidth - width - 6) + "px";
+        field.focus();
+
+        document.addEventListener("pointerdown", stylerOutside, true);
+      }
+
+      function giveStyle(raw) {
+        var name = tidyStyles([raw])[0];
+        if (!name) return;
+        var going = pickedSongs();
+        if (!going.length) return closeStyler();
+
+        closeStyler();
+        Promise.all(going.map(function (s) {
+          return db.update(s.id, { styles: tidyStyles(styles(s).concat([name])) });
+        })).then(function () {
+          picked = {};
+          toast(going.length === 1 ? "הסגנון נוסף" : "הסגנון נוסף ל-" + going.length + " שירים");
+          return refresh();
+        }).catch(function (e) {
+          toast("לא הצלחתי: " + e.message, true);
+          return refresh();
+        });
+      }
+
       var killBtn = iconBtn(ICON.trash, "מחיקה", removePicked);
       killBtn.classList.add("kill");
       picking.appendChild(killBtn);
