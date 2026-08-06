@@ -1880,30 +1880,31 @@
 
     var tools = el("div", "tools");
 
-    /* Less and more, side by side, and the same shape for both controls. The
-       count sits with its label rather than between the two buttons, so that
-       transposition and size are laid out identically and neither has to be
-       read differently from the other. */
-    function stepper(label, less, more) {
-      var step = el("span", "step");
-      step.appendChild(iconBtn('<path d="M5 12h14"/>', "פחות " + label, less));
-      step.appendChild(iconBtn(ICON.plus, "יותר " + label, more));
-      return step;
+    /* ONE CONTROL IS ONE THING: its name, what it is at, and the two buttons
+       that move it. So it is one group and not four things standing in a row,
+       and the air goes between the controls rather than through the middle of
+       either of them. Less and more sit side by side, and the count sits with
+       its label rather than between them, so transposition and size are laid
+       out identically and neither has to be read differently from the other. */
+    function control(label, valueNode, less, more) {
+      var ctl = el("span", "ctl");
+      ctl.appendChild(el("span", "lbl", label));
+      if (valueNode) ctl.appendChild(valueNode);
+      ctl.appendChild(iconBtn('<path d="M5 12h14"/>', "פחות " + label, less));
+      ctl.appendChild(iconBtn(ICON.plus, "יותר " + label, more));
+      return ctl;
     }
 
     var value = el("span", "val", "0");
-    tools.appendChild(el("span", "lbl", "טרנספוזיציה"));
-    tools.appendChild(value);
-    tools.appendChild(stepper(
-      "טרנספוזיציה",
+    tools.appendChild(control(
+      "טרנספוזיציה", value,
       function () { setSemis(semis - 1); },
       function () { setSemis(semis + 1); }
     ));
 
     tools.appendChild(el("span", "sep"));
-    tools.appendChild(el("span", "lbl", "גודל"));
-    tools.appendChild(stepper(
-      "גודל",
+    tools.appendChild(control(
+      "גודל", null,
       function () { setSize(size - 1); },
       function () { setSize(size + 1); }
     ));
