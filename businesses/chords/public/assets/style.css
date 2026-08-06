@@ -149,6 +149,11 @@ body {
 /* For the one you almost never mean and can never take back. No border and no
    colour until you are actually on it, so it is reachable without being
    offered. */
+/* the one that is IN a state rather than doing a thing: pressed, it is the
+   editor being open */
+.icon-btn.is-on { color: #fff; background: var(--accent); border-color: var(--accent); }
+.icon-btn.is-on:hover { color: #fff; background: var(--accent-ink); border-color: var(--accent-ink); }
+
 .icon-btn.quiet { border-color: transparent; background: none; }
 .icon-btn.quiet:hover { color: var(--danger); border-color: #f0d3cf; background: #fff; }
 

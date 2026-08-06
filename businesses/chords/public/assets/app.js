@@ -64,6 +64,7 @@
     down: '<path d="M12 5v14m0 0l-6-6m6 6l6-6"/>',
     copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/>',
     close: '<path d="M6 6l12 12M18 6L6 18"/>',
+    check: '<path d="M5 13l4 4 10-11"/>',
     /* two things moving apart, which is what opening a gap does */
     gap: '<path d="M10 8l-4 4 4 4M14 8l4 4-4 4"/>',
     /* the three controls over a song, as pictures: up and down for the key,
@@ -1877,7 +1878,7 @@
   /* ------------------------------------------------------------------ views */
 
   var app = document.getElementById("app");
-  var state = { songs: null, printable: false, printer: null, killer: null };
+  var state = { songs: null, printable: false, printer: null, killer: null, editToggle: null };
 
   /* How big this reader wants the words, kept between songs and between visits.
      Whoever needs a bigger font on one song needs it on the next one too, and
@@ -2053,6 +2054,13 @@
       /* Only once there is a song on the page. A song still loading, one that
          is not there at all and one still being read from a photograph are all
          this same address, and none of them is worth paper. */
+      if (state.editToggle) {
+        var edit = state.editToggle;
+        var editBtn = iconBtn(edit.on ? ICON.check : ICON.pencil,
+          edit.on ? "סיום עריכה" : "עריכה", edit.flip);
+        if (edit.on) editBtn.classList.add("is-on");
+        bar.appendChild(editBtn);
+      }
       if (state.printable) {
         var printBtn = iconBtn(ICON.print, "הדפסה", function () { askPrint(printBtn); });
         bar.appendChild(printBtn);
@@ -2859,8 +2867,6 @@
     /* Now there is something on the page to print, and the bar can say so. The
        database answers after the routing has already painted the bar once, so
        it is painted again here rather than earlier. */
-    state.printable = true;
-    paintHeader();
 
     /* Signed in, and on a phone, asked for.
 
@@ -2881,6 +2887,26 @@
        accident, because getting in was on purpose. */
     var onPhone = NARROW.matches;
     var editing = auth.in && (!onPhone || !!state.editOnPhone);
+
+    /* Now there is something on the page to print, and, on a phone, a way into
+       the editor and back out. Both are about the page you are on, so both are
+       in the top bar with the rest of those, and both are pictures: a pencil
+       to go in and a tick to come out.
+
+       LEAVING IS SAFE, so nothing asks. The song writes itself, and whatever
+       is still on the clock goes out on the way. */
+    state.printable = true;
+    if (auth.in && onPhone) {
+      state.editToggle = {
+        on: editing,
+        flip: function () {
+          flush();
+          state.editOnPhone = !editing;
+          renderSong(song);
+        },
+      };
+    }
+    paintHeader();
 
     /* TWO NUMBERS, AND THEY ARE NOT THE SAME NUMBER.
 
@@ -3254,27 +3280,6 @@
     var stateNode = el("span", "save-state");
     undoBtn.hidden = true;
     revertBtn.hidden = true;
-
-    /* The way in and out of the editor, on the screen that has one. It is the
-       first thing in this half of the row on purpose: on a phone it is the
-       only one of these buttons that is there before anything has been
-       changed.
-
-       IT WILL NOT LEAVE WITH SOMETHING UNSAVED. Leaving redraws the page from
-       the song in memory, which would take the save button away while the
-       change it was offering to write is still only here, and the answer to
-       "did that get saved" would become a lie. Save or take it back first;
-       both are one press away and both are on this row. */
-    if (auth.in && onPhone) {
-      tools.appendChild(button(editing ? "סיום עריכה" : "עריכה", ICON.pencil,
-        editing ? "small" : "ghost small", function () {
-          /* nothing to lose by leaving: the song writes itself, and whatever
-             is still on the clock goes out now */
-          flush();
-          state.editOnPhone = !editing;
-          renderSong(song);
-        }));
-    }
 
     if (editing) {
       if (song.id) {
@@ -5883,6 +5888,7 @@
     state.printable = false;
     state.printer = null;
     state.killer = null;
+    state.editToggle = null;
     paintHeader();
     var p = parts();
 
