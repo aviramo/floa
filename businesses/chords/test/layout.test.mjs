@@ -37,7 +37,7 @@ const BODY_RTL = [
 const BODY_LTR = "[C]Hello [G]there my old [Am]friend[F]";
 
 const song = (dir) => ({
-  id: "test", slug: "s-" + dir, title: "בדיקה " + dir, artist: "", song_key: "Am",
+  id: "test", slug: "s-" + dir, title: "בדיקה " + dir, lyrics_by: "", music_by: "",
   dir, status: "ready", status_note: "", lines: dir === "rtl" ? BODY_RTL : BODY_LTR,
 });
 
@@ -102,12 +102,8 @@ const MEASURE = `(() => {
       const box = c.getBoundingClientRect();
       const middle = box.left + box.width / 2;
       const got = rtl ? line.right - middle : middle - line.left;
-      /* A chord centred on the first letters of a line would hang off the
-         start of the sheet and be clipped, so it stops at the edge instead.
-         That is a deliberate shift and its size is known: half the label. */
-      const half = box.width / 2;
       out.push({ line: t.textContent.slice(0, 20), rtl, chord: c.textContent, pos,
-        nudged: i > 0, clamped: want < half, off: Math.round(got - want), half: Math.round(half) });
+        nudged: i > 0, off: Math.round(got - want) });
     });
   }
   return JSON.stringify({ chords: out, errors: window.__errors, app: document.getElementById("app").innerHTML.length });
@@ -264,18 +260,20 @@ try {
       check(`${dir}: the lines run ${dir}`, report.chords.every((c) => c.rtl === (dir === "rtl")), "direction");
 
       for (const c of report.chords) {
-        /* the first chord of a line is never nudged, so it must be exact; a
-           later one may have been pushed forward to clear its neighbour, which
-           can only move it away from the start */
-        /* Exact, unless it was moved for a reason the app owns: a later chord
-           pushed forward to clear its neighbour, or one at the very start of a
-           line stopped at the edge so it is not clipped. Both can only move it
-           away from the start, and by a bounded amount. */
+        /* Exact, with one exception the app owns: a later chord may have been
+           pushed forward to clear its neighbour, which can only move it away
+           from the start and only so far.
+
+           A chord over the FIRST letter is held to the same exactness as any
+           other. It hangs half a label past the start of the line and the
+           sheet is padded to hold it (see .sheet), because the alternative,
+           nudging it inward, means the page stops showing what the song says.
+           That nudge existed once and this line is what would find it again. */
         const exact = Math.abs(c.off) <= 1;
-        const allowed = c.clamped ? c.half + 1 : c.nudged ? 60 : 1;
+        const allowed = c.nudged ? 60 : 1;
         check(`${dir}: "${c.chord}" at ${c.pos} of «${c.line}»`,
           exact || (c.off > 0 && c.off <= allowed),
-          `off by ${c.off}px${c.clamped ? " (clamped, half is " + c.half + ")" : ""}`);
+          `off by ${c.off}px`);
       }
     }
 
@@ -285,9 +283,8 @@ try {
       check("the editor rendered its chords", before && before.chords.length >= 3, JSON.stringify(before));
       if (!before || before.chords.length < 3) return;
 
-      /* The SECOND chord of the line, not the first: a chord at the very start
-         is held against the edge so it is not clipped, which is exactly the one
-         place where moving the pointer does not move the chord. */
+      /* The SECOND chord of the line, so that there is a neighbour on either
+         side of it to check against: dragging one must move one. */
       const HELD = 1, NEXT = 2;
       const held = before.chords[HELD];
       const neighbour = before.chords[NEXT];

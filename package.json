@@ -17,13 +17,14 @@
   },
   "//test": [
     "`npm test` is everything that needs nothing but node: where a lead lands,",
-    "and the chord model. `npm run test:layout` drives a real Chrome over dist/",
-    "to check that a chord sits on its syllable in both directions, which is the",
-    "one thing about this that cannot be checked by reading it. It needs a build",
-    "first, and it passes with a note where there is no browser to drive."
+    "the chord model, and the assembly of a read sheet into a song.",
+    "`npm run test:layout` drives a real Chrome over dist/ to check that a chord",
+    "sits on its syllable in both directions, which is the one thing about this",
+    "that cannot be checked by reading it. It needs a build first, and it passes",
+    "with a note where there is no browser to drive."
   ],
   "scripts": {
-    "test": "node worker/test/lead.test.mjs && node businesses/chords/test/model.test.mjs",
+    "test": "node worker/test/lead.test.mjs && node worker/test/transcribe.test.mjs && node businesses/chords/test/model.test.mjs",
     "test:layout": "node businesses/chords/test/layout.test.mjs",
     "build": "node build.mjs",
     "dev": "node build.mjs --serve",

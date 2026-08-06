@@ -203,11 +203,28 @@
     });
   }
 
-  var FIELDS = "id,slug,title,artist,song_key,dir,lines,updated_at";
+  var FIELDS = "id,slug,title,dir,lines,updated_at";
   /* `lines` is fetched for the list too, so a row can show which chords the
      song uses. A song is a few hundred bytes of text; a library of them is
      still smaller than one photograph. */
-  var LIST_FIELDS = "id,slug,title,artist,song_key,lines,created_at,updated_at";
+  var LIST_FIELDS = "id,slug,title,lines,created_at,updated_at";
+
+  /* Who made the song, which is two different people as often as it is one.
+     The performer is deliberately not here: a song is one song however many
+     people have recorded it, and the credit that belongs to it is the writing.
+
+     `artist` and `song_key` are still columns, holding whatever was typed into
+     them before this, and nothing here reads or writes them any more. */
+  var CREDITS = [
+    { field: "lyrics_by", label: "מילים" },
+    { field: "music_by", label: "לחן" },
+  ];
+
+  function credits(song) {
+    return CREDITS.map(function (c) {
+      return { label: c.label, name: String(song[c.field] || "").trim() };
+    }).filter(function (c) { return c.name; });
+  }
 
   /* A read runs in the Worker and outlives the request that started it, so if
      the runtime cuts it short there is nobody left to say so. What says so is
@@ -252,16 +269,53 @@
     return !last || Date.now() - last > SILENT_TOO_LONG;
   }
 
-  /* `status` and `status_note` arrived after the table did, and the table is
-     not upgraded by deploying this file: someone has to run the SQL. Until
-     they do, ask for the columns once, notice they are missing, and carry on
-     without them rather than showing an empty library and a red error. */
-  var hasStatus = true;
+  /* Columns that arrived after the table did. Deploying this file does not
+     upgrade the table: someone has to run the SQL. Until they do, ask for the
+     columns, notice they are missing, and carry on without them rather than
+     showing an empty library and a red error.
+   */
+  var OPTIONAL = [
+    ["status", "status_note"],
+    ["lyrics_by", "music_by"],
+  ].map(function (columns) { return { columns: columns, on: true }; });
 
-  function withStatus(fields) { return hasStatus ? fields + ",status,status_note" : fields; }
+  function withOptional(fields) {
+    OPTIONAL.forEach(function (group) {
+      if (group.on) fields += "," + group.columns.join(",");
+    });
+    return fields;
+  }
 
-  function missingStatus(error) {
-    return hasStatus && error.status === 400 && /status/.test(error.message || "");
+  /* PostgREST names the column it could not find, so the complaint itself says
+     which group to give up on. True means something was given up and the call
+     is worth making again. */
+  function dropMissing(error) {
+    if (error.status !== 400) return false;
+    var said = error.message || "";
+    var dropped = false;
+    OPTIONAL.forEach(function (group) {
+      if (!group.on) return;
+      var named = group.columns.some(function (c) { return said.indexOf(c) >= 0; });
+      if (named) { group.on = false; dropped = true; }
+    });
+    return dropped;
+  }
+
+  function has(column) {
+    return OPTIONAL.some(function (group) {
+      return group.on && group.columns.indexOf(column) >= 0;
+    });
+  }
+
+  /* A write must not mention a column that is not there either. */
+  function shed(song) {
+    var gone = {};
+    OPTIONAL.forEach(function (group) {
+      if (!group.on) group.columns.forEach(function (c) { gone[c] = true; });
+    });
+    var out = {};
+    Object.keys(song).forEach(function (k) { if (!gone[k]) out[k] = song[k]; });
+    return out;
   }
 
   /* The project is the domain's, the table is this app's. Everything below
@@ -272,7 +326,7 @@
   var db = {
     list: function () {
       var self = this;
-      return rest(T + "?select=" + withStatus(LIST_FIELDS) + "&order=title.asc").then(function (rows) {
+      return rest(T + "?select=" + withOptional(LIST_FIELDS) + "&order=title.asc").then(function (rows) {
         /* a song still being read, or one that failed, goes to the top: it is
            the only row on the page that is waiting for something */
         return (rows || []).sort(function (a, b) {
@@ -281,31 +335,67 @@
           return pa - pb;
         });
       }).catch(function (error) {
-        if (!missingStatus(error)) throw error;
-        hasStatus = false;
+        if (!dropMissing(error)) throw error;
         return self.list();
       });
     },
     bySlug: function (slug) {
       var self = this;
-      return rest(T + "?select=" + withStatus(FIELDS + ",created_at") + "&slug=eq." + encodeURIComponent(slug) + "&limit=1")
+      return rest(T + "?select=" + withOptional(FIELDS + ",created_at") + "&slug=eq." + encodeURIComponent(slug) + "&limit=1")
         .then(function (rows) { return rows && rows[0]; })
         .catch(function (error) {
-          if (!missingStatus(error)) throw error;
-          hasStatus = false;
+          if (!dropMissing(error)) throw error;
           return self.bySlug(slug);
         });
     },
     insert: function (song) {
-      return rest(T, { method: "POST", body: song, prefer: "return=representation" })
-        .then(function (rows) { return rows[0]; });
+      var self = this;
+      return rest(T, { method: "POST", body: shed(song), prefer: "return=representation" })
+        .then(function (rows) { return rows[0]; })
+        .catch(function (error) {
+          if (!dropMissing(error)) throw error;
+          return self.insert(song);
+        });
     },
     update: function (id, song) {
-      return rest(T + "?id=eq." + encodeURIComponent(id), { method: "PATCH", body: song, prefer: "return=representation" })
-        .then(function (rows) { return rows[0]; });
+      var self = this;
+      return rest(T + "?id=eq." + encodeURIComponent(id), { method: "PATCH", body: shed(song), prefer: "return=representation" })
+        .then(function (rows) { return rows[0]; })
+        .catch(function (error) {
+          if (!dropMissing(error)) throw error;
+          return self.update(id, song);
+        });
     },
     remove: function (id) {
       return rest(T + "?id=eq." + encodeURIComponent(id), { method: "DELETE" });
+    },
+
+    /* Every name that appears on the OTHER songs in the library, read out of
+       their own rows, for the editor to finish a typed one from. Someone who
+       wrote the words of one song has usually written more than one, and
+       spelling their name the same way the second time is the difference
+       between one person and two.
+
+       Both columns pour into one pool, because the person who wrote the words
+       is often the one who wrote the tune. */
+    names: function () {
+      var self = this;
+      var fields = CREDITS.map(function (c) { return c.field; });
+      if (!fields.some(has)) return Promise.resolve([]);
+      return rest(T + "?select=" + fields.join(",")).then(function (rows) {
+        var seen = {};
+        (rows || []).forEach(function (row) {
+          fields.forEach(function (f) {
+            var name = String(row[f] || "").trim();
+            if (name) seen[name] = true;
+          });
+        });
+        return Object.keys(seen).sort(function (a, b) { return a.localeCompare(b, "he"); });
+      }).catch(function (error) {
+        /* a library with no suggestions is a working library */
+        if (!dropMissing(error)) return [];
+        return self.names();
+      });
     },
   };
 
@@ -821,12 +911,13 @@
          character, which is where the tick under it is drawn, so what the eye
          lines up with the letter is the label as a whole rather than one of
          its edges. */
-      /* Centred on the anchor, but never off the front of the line. A chord on
-         the first letter would otherwise hang half its width past the edge of
-         the sheet and be clipped, and half a chord is worse than one sitting a
-         few pixels in from where it belongs. */
+      /* Centred on the anchor and NEVER pulled back from it. A chord over the
+         first letter hangs half its width past the front of the line, which is
+         why the sheet is padded (see .sheet) rather than the chord moved: what
+         is stored has to be what is drawn, or the page and the song stop
+         agreeing and there is no way to tell which one is lying. */
       var width = p.node.getBoundingClientRect().width;
-      var x = Math.max(0, Math.max(p.start - width / 2, floor));
+      var x = Math.max(p.start - width / 2, floor);
       /* PHYSICAL left/right, deliberately, not inset-inline-start.
 
          A chord carries dir="ltr" so its own Latin label cannot flip inside a
@@ -849,7 +940,7 @@
     var m = metrics(ln, rtl);
     if (!m) return;
     var anchor = at != null ? at : positionOf(m, Number(node.dataset.pos) || 0);
-    var x = Math.max(0, anchor - node.getBoundingClientRect().width / 2);
+    var x = anchor - node.getBoundingClientRect().width / 2;
     node.style.left = rtl ? "auto" : x + "px";
     node.style.right = rtl ? x + "px" : "auto";
   }
@@ -1062,7 +1153,7 @@
       search.appendChild(svg(ICON.search));
       var input = el("input");
       input.type = "search";
-      input.placeholder = "חיפוש לפי שם או אמן";
+      input.placeholder = "חיפוש לפי שם, מילים או לחן";
       input.setAttribute("aria-label", "חיפוש שיר");
       search.appendChild(input);
       app.appendChild(search);
@@ -1083,7 +1174,9 @@
         list.innerHTML = "";
         var q = String(filter || "").trim().toLowerCase();
         var shown = state.songs.filter(function (s) {
-          return !q || (s.title + " " + (s.artist || "")).toLowerCase().indexOf(q) >= 0;
+          if (!q) return true;
+          var hay = s.title + " " + credits(s).map(function (c) { return c.name; }).join(" ");
+          return hay.toLowerCase().indexOf(q) >= 0;
         });
 
         if (!shown.length) {
@@ -1136,11 +1229,21 @@
       a.addEventListener("click", function (e) { e.preventDefault(); go(a.getAttribute("href")); });
 
       var box = el("div");
-      box.appendChild(el("div", "t", s.title));
+
+      /* The name, and beside it whoever made it: words, tune, performer, the
+         ones that are filled in, separated by commas. Bare names, no labels,
+         because a label on every one of three would be longer than the row it
+         sits in and nobody reads an index that way. */
+      var top = el("div", "t-row");
+      top.appendChild(el("div", "t", s.title));
+      var by = credits(s);
+      if (by.length) {
+        top.appendChild(el("div", "by", by.map(function (c) { return c.name; }).join(", ")));
+      }
+      box.appendChild(top);
 
       /* Under the name goes what you actually want to know before opening a
-         song: whether you can play it. The artist is not that, and it is still
-         on the song's own page and still searched for from here.
+         song: whether you can play it.
 
          In the order the song reaches them, so the first is the one it opens
          on, and read right to left like everything else on the page. Each name
@@ -1221,7 +1324,14 @@
 
       var head = el("div", "song-head");
       head.appendChild(el("h1", null, song.title));
-      if (song.artist) head.appendChild(el("div", "by", song.artist));
+      /* On the song's own page there is room to say which is which, and it
+         matters: the person who wrote the words is rarely the one you heard. */
+      var by = credits(song);
+      if (by.length) {
+        head.appendChild(el("div", "by", by.map(function (c) {
+          return c.label + ": " + c.name;
+        }).join("  •  ")));
+      }
       app.appendChild(head);
 
       var tools = el("div", "tools");
@@ -1388,7 +1498,10 @@
   function viewEditor(slug) {
     if (!auth.in) return askSignIn(function () { route(); });
 
-    if (!slug) return startEditor({ id: null, slug: "", title: "", artist: "", song_key: "", dir: "rtl", lines: [blankLine()] });
+    if (!slug) return startEditor({
+      id: null, slug: "", title: "", lyrics_by: "", music_by: "",
+      dir: "rtl", lines: [blankLine()],
+    });
 
     setBusy("טוען את השיר");
     db.bySlug(slug).then(function (song) {
@@ -1420,8 +1533,28 @@
     }
 
     var titleField = field("שם השיר", song.title, "full", function (v) { song.title = v; });
-    var artistField = field("אמן", song.artist, null, function (v) { song.artist = v; });
-    var keyField = field("סולם", song.song_key, null, function (v) { song.song_key = v; });
+
+    /* Built from the same list the index and the song page read, so a third
+       credit would be one line there and appear here by itself. */
+    var byFields = CREDITS.map(function (c) {
+      return field(c.label, song[c.field], null, function (v) { song[c.field] = v; });
+    });
+
+    /* Finished from the names already in the library. A plain datalist, so the
+       browser does the filtering, the arrow keys and the touch keyboard, and
+       an unlisted name is still just a name that gets typed. */
+    var known = el("datalist");
+    known.id = "credit-names";
+    byFields.forEach(function (f) { f.input.setAttribute("list", known.id); });
+    app.appendChild(known);
+    db.names().then(function (names) {
+      if (!known.isConnected) return;
+      names.forEach(function (name) {
+        var option = el("option");
+        option.value = name;
+        known.appendChild(option);
+      });
+    });
 
     var dirLabel = el("label", null, "כיוון");
     var dirSelect = el("select");
@@ -1435,8 +1568,7 @@
     dirLabel.appendChild(dirSelect);
 
     meta.appendChild(titleField.label);
-    meta.appendChild(artistField.label);
-    meta.appendChild(keyField.label);
+    byFields.forEach(function (f) { meta.appendChild(f.label); });
     meta.appendChild(dirLabel);
     app.appendChild(meta);
 
@@ -1502,8 +1634,6 @@
        line split while a handler from before is still bound, and an index would
        quietly start pointing at its neighbour. */
     function editRow(line, index) {
-      var row = el("div", "ln-row");
-
       var ln = el("div", "ln" + (line.type === "section" ? " is-section" : ""));
       ln.dataset.index = index;
 
@@ -1574,24 +1704,11 @@
         ln.appendChild(text);
       }
 
-      var ops = el("div", "ln-ops");
-      ops.appendChild(iconBtn(ICON.plus, "שורה חדשה מתחת", function () { addLineAfter(line); }));
-      ops.appendChild(iconBtn(ICON.section, line.type === "section" ? "להפוך לשורת מילים" : "להפוך לכותרת קטע", function () {
-        var at = song.lines.indexOf(line);
-        song.lines[at] = line.type === "section"
-          ? { type: "line", text: line.text, chords: [] }
-          : { type: "section", text: line.text, chords: [] };
-        draw();
-      }));
-      ops.appendChild(iconBtn(ICON.trash, "מחיקת השורה", function () {
-        song.lines.splice(song.lines.indexOf(line), 1);
-        if (!song.lines.length) song.lines.push(blankLine());
-        draw();
-      }));
-
-      row.appendChild(ln);
-      row.appendChild(ops);
-      return row;
+      /* No buttons alongside the line. Enter makes one, Backspace at the start
+         of an empty one takes it away, and a row of icons that appears when
+         the pointer passes is three things moving on a page whose whole point
+         is that nothing moves but the caret. */
+      return ln;
     }
 
     /* The keys that shape a document, doing what they do everywhere else.
@@ -1636,13 +1753,6 @@
         event.preventDefault();
         focusLine(index + (event.shiftKey ? -1 : 1));
       }
-    }
-
-    function addLineAfter(line) {
-      var at = song.lines.indexOf(line);
-      song.lines.splice(at + 1, 0, blankLine());
-      draw();
-      focusLine(at + 1);
     }
 
     function focusLine(index, caret) {
@@ -1921,14 +2031,16 @@
       saveBtn.disabled = true;
       var payload = {
         title: title,
-        artist: String(song.artist || "").trim(),
-        song_key: String(song.song_key || "").trim(),
         dir: song.dir || "rtl",
         lines: songToText(song.lines),
       };
+      CREDITS.forEach(function (c) { payload[c.field] = String(song[c.field] || "").trim(); });
 
-      /* typing a song by hand is what makes a failed read stop being failed */
-      if (hasStatus) { payload.status = "ready"; payload.status_note = ""; }
+      /* typing a song by hand is what makes a failed read stop being failed.
+         A column that is not in the table yet is dropped by `shed` on the way
+         out, so naming it here is safe. */
+      payload.status = "ready";
+      payload.status_note = "";
 
       var wanted = song.id && song.slug ? song.slug : slugify(title);
 
@@ -2049,7 +2161,7 @@
      nothing. The index watches the row. */
   function uploadSong() {
     /* the whole flow rests on the row being able to say "reading" */
-    if (!hasStatus) return toast("צריך להריץ את schema.sql ב-Supabase לפני קריאה מתמונה", true);
+    if (!has("status")) return toast("צריך להריץ את schema.sql ב-Supabase לפני קריאה מתמונה", true);
     requireAuth(openUploadDialog);
   }
 
@@ -2173,8 +2285,6 @@
       return db.insert({
         slug: slug,
         title: name,
-        artist: "",
-        song_key: "",
         dir: "rtl",
         lines: [],
         status: "reading",

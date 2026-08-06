@@ -144,6 +144,10 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .list a:hover { border-color: var(--accent); transform: translateY(-1px); }
 .list .t { font-weight: 700; font-size: 17px; }
 .list .a { color: var(--ink-soft); font-size: 14px; }
+/* The name, and beside it who wrote it. On a narrow screen the credit drops
+   under the name rather than squeezing it. */
+.list .t-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.list .by { color: var(--ink-soft); font-size: 14px; }
 /* The song's own chords, under its name, in the order it reaches them and in
    the page's own direction: the first one the song plays is the first one you
    read. */
@@ -191,10 +195,16 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 
 /* A line never wraps (white-space: pre on .ln-t), so a long line overflows and
    the whole sheet scrolls sideways. That is deliberate: the chord row and the
-   word row have to move together, or a chord stops being over its syllable. */
+   word row have to move together, or a chord stops being over its syllable.
+
+   The generous side padding is not decoration. A chord is centred on its
+   character, so one over the FIRST character sticks out half a label past the
+   start of the line, and the alternative to room for it is nudging it inward,
+   which would mean the sheet no longer shows what the song says. Wide enough
+   for half of a long name like G#m7b5. */
 .sheet {
   background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
-  box-shadow: var(--shadow); padding: 22px 20px 30px; margin-bottom: 64px;
+  box-shadow: var(--shadow); padding: 22px 34px 30px; margin-bottom: 64px;
   overflow-x: auto;
   font-family: var(--song-font);
 }
@@ -311,14 +321,9 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    Nothing here changes how the words LOOK. No box, no border, no highlight, no
    growing field: the text on screen is the text being edited, so clicking into
    a line moves a caret and moves nothing else. */
-.ln-row { display: flex; align-items: flex-end; gap: 8px; }
-.ln-row > .ln { flex: 1 1 auto; min-width: 0; }
 .ed .ln-t { cursor: text; outline: none; }
 .ed .ln-section { cursor: text; outline: none; }
 .ed .ln-c { cursor: copy; }
-
-.ln-ops { flex: 0 0 auto; display: flex; gap: 4px; visibility: hidden; padding-bottom: 2px; }
-.ln-row:hover .ln-ops, .ln-row:focus-within .ln-ops { visibility: visible; }
 
 /* A chord in the editor is the same chord the reader sees, and it stays that
    way. No border, no box, no highlight, nothing that appears or grows. The
@@ -426,6 +431,6 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   body { background: #fff; }
   /* a little room at the start of the line, or the first chord of every line
      is centred half off the paper */
-  .sheet { border: none; box-shadow: none; padding: 0 4px; overflow: visible; }
+  .sheet { border: none; box-shadow: none; padding: 0 26px; overflow: visible; }
   .wrap { width: 100%; }
 }

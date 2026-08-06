@@ -18,16 +18,38 @@
       it) and writes the result to Supabase itself, in the user's own name with
       the token the endpoint verified. So closing the tab costs nothing.
 
-   3. It ASKS FOR A DOCUMENT, NOT FOR NUMBERS. The hard part of this work was
-      never reading the text, it was saying where each chord goes. Asking for
-      a character index meant counting from the right-hand end of a Hebrew
-      line, which nobody does reliably. Asking instead for
+   3. IT ASKS EACH CHORD TO NAME ITS OWN LETTER. The hard part of this work was
+      never reading the text, it was saying where each chord goes, and the
+      question has now been asked three different ways.
+
+      Asking for a character index meant counting from the right-hand end of a
+      Hebrew line, which nobody does reliably. Asking for a document instead,
 
           [Am]שלום לך אדו[G]ני
 
-      removes the counting altogether: the bracket goes in front of the letter.
-      Right to left stops being a special case, because there is no longer
-      anything being counted for it to be special about.
+      removed the counting, and read well, and was still wrong in two ways that
+      the shape of the answer could not stop: writing the line left to right
+      quietly reversed the chords in the middle of it, and a bracket, having
+      nothing to hold onto, drifted to the front of the nearest word.
+
+      So now each chord is asked for on its own terms:
+
+          { chord: "C", word: 1, letter: "ל", letters_before: 2 }
+
+      which says the C is over the third letter of the first word. Three things
+      follow from that, and they are the whole reason for this file's shape.
+
+      The ORDER cannot be wrong, because there is no order: each chord names
+      its own word, and this code sorts them. The reversal that plagued every
+      earlier version is not fixed here, it is impossible.
+
+      The DRIFT has somewhere to catch, because `letter` and `letters_before`
+      say the same thing twice. Where they disagree the letter wins, since
+      naming a glyph is the judgement being asked for and the count is only the
+      arithmetic on top of it.
+
+      And RIGHT TO LEFT never comes up. Nothing is counted along a line, so
+      there is no direction for it to be counted in.
    ========================================================================== */
 
 /* --- what the read costs --------------------------------------------------
@@ -42,18 +64,13 @@
      Sonnet, high     ~5 cents,  the ORDER came right, which was the structural
                                  failure, but chords still landed a word off
                                  and a repeated phrase was dropped.
+     Opus, medium               the words came right, repetitions and all, and
+                                 the chords still sat at the fronts of their
+                                 words instead of inside them.
 
-   So the rung between them, which is the one combination not yet tried: Opus
-   at MEDIUM. The failures that are left are visual judgements, deciding which
-   Hebrew letter a Latin symbol is printed over, and that is what the bigger
-   model is for; the effort setting, not the model, is what turned into three
-   and a half minutes and forty cents.
-
-   If this is still not right, the problem is not the settings and stacking
-   more instructions will not fix it either. The next thing to try then is a
-   different shape of question: ask for the chord line and the lyric line
-   transcribed separately with their spacing kept, and do the merging here in
-   code, where a column is a column and nothing has to be judged.
+   That last one is what settled it: four settings had been tried and the same
+   two errors kept coming back, so the setting was not what was wrong. The
+   question was. Hence the shape above, and the model stays where it is.
 
    max_tokens is a ceiling and not a target: at 32000 a long song cannot run
    out of room, and nothing is paid for room that goes unused. */
@@ -63,108 +80,144 @@ const MAX_TOKENS = 32000;
 
 export const MEDIA_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif", "application/pdf"];
 
-/* The song, as the app stores it: one piece of text, chords in square brackets
-   where they belong. Forcing the shape here rather than asking for it in prose
-   is what makes the answer safe to hand straight to the editor.
+/* Not the finished document: the raw observations it is built from. Every
+   chord is a separate little answer that names the word it stands over, the
+   letter it stands over, and how far into the word that letter is. The
+   assembling happens below, in code.
 
-   Asking for the document rather than for a list of offsets is the important
-   part. Counting characters from the right-hand end of a Hebrew line is a job
-   nobody does well, model or person; putting "[Am]" immediately before the
-   syllable is a job that cannot really be got wrong. */
-const SCHEMA = {
+   Forcing the shape here rather than asking for it in prose is what makes the
+   answer safe to hand straight to the editor. */
+const CHORD = {
   type: "object",
   additionalProperties: false,
-  required: ["title", "artist", "song_key", "dir", "body"],
+  required: ["chord", "word", "letter", "letters_before"],
   properties: {
-    title: { type: "string", description: "The song's name as printed, or an empty string if the sheet does not name it." },
-    artist: { type: "string", description: "The performer or writer as printed, or an empty string." },
-    song_key: { type: "string", description: "The key, if the sheet states one (for example \"Am\"), otherwise an empty string." },
-    dir: { type: "string", enum: ["rtl", "ltr"], description: "rtl when the lyrics are Hebrew or Arabic, ltr otherwise." },
-    body: {
+    chord: {
+      type: "string",
+      description: "The chord symbol exactly as printed: Am, F#m7, G/B, Cmaj7, Bdim.",
+    },
+    word: {
+      type: "integer",
+      description:
+        "Which word of this line the chord is printed above. 1 is the word the line STARTS with, which on a Hebrew line is the rightmost word on the page. 0 means the chord is printed past the end of the last word, out on its own.",
+    },
+    letter: {
       type: "string",
       description:
-        "The whole song as one piece of text, lines separated by newlines. Each chord appears in square brackets immediately before the character it is printed above, for example: [Am]שלום לך אדו[G]ני. A heading such as a chorus marker is a line wrapped in braces, for example {פזמון}.",
+        "The single letter the middle of the chord symbol sits directly above. It must be one of the letters of that word. Empty string only when word is 0.",
+    },
+    letters_before: {
+      type: "integer",
+      description:
+        "How many letters of that word come before that letter, counting from the word's own beginning. 0 means the chord is over the word's first letter, 2 means it is over its third. For word 0, use 0.",
     },
   },
 };
 
-const SYSTEM = `You read photographs or scans of a chord sheet and return the song as one piece of text.
+const LINE = {
+  type: "object",
+  additionalProperties: false,
+  required: ["words", "chords"],
+  properties: {
+    words: {
+      type: "string",
+      description:
+        "One line of the song, words only, exactly as printed, with no chords in it. An empty string for a blank line between stanzas. A heading such as a chorus marker is written in braces: {פזמון}.",
+    },
+    chords: {
+      type: "array",
+      description:
+        "Every chord symbol printed above this line, one entry each. The order of this array does not matter and is not used.",
+      items: CHORD,
+    },
+  },
+};
 
-A chord sheet is lyrics with chord symbols printed on their own lines, floating above the words. Recovering the words is the easy half. The half that matters is recovering, for every single chord, WHICH SYLLABLE it was printed above.
+const SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["title", "lyrics_by", "music_by", "dir", "lines"],
+  properties: {
+    title: { type: "string", description: "The song's name as printed, or an empty string if the sheet does not name it." },
+    lyrics_by: { type: "string", description: "Who wrote the words, if the sheet says so (often after \"מילים:\"), otherwise an empty string." },
+    music_by: { type: "string", description: "Who wrote the tune, if the sheet says so (often after \"לחן:\"), otherwise an empty string." },
+    dir: { type: "string", enum: ["rtl", "ltr"], description: "rtl when the lyrics are Hebrew or Arabic, ltr otherwise." },
+    lines: { type: "array", description: "The song, top to bottom, one entry per printed line.", items: LINE },
+  },
+};
 
-HOW TO WRITE IT DOWN
+const SYSTEM = `You read photographs or scans of a chord sheet and report what is printed on it.
 
-Put each chord in square brackets INSIDE the line of words, immediately before the character it is printed above. Nothing else:
+A chord sheet is lyrics with chord symbols printed on their own lines, floating above the words. Recovering the words is the easy half. The half that matters is recovering, for every single chord, WHICH LETTER it was printed above.
 
-    [Am]שלום לך אדו[G]ני
+HOW TO REPORT A LINE
 
-means the Am is over the ש and the G is over the נ. Do not write the chords on a line of their own. Do not describe positions with numbers. The bracket sits where the chord sits, and that is the whole notation.
+For each printed line, give the words on their own, exactly as printed and with no chords in them, and then give each chord above that line as its own separate entry. A chord entry answers three questions about ONE chord symbol:
 
-On the printed page that Hebrew line looks like this, with the Am on the RIGHT because the words start there:
+  word            which word of the line it stands over
+  letter          which letter of that word its middle stands over
+  letters_before  how many letters of the word come before that letter
 
-              G           Am
-        שלום לך אדוני
+Word 1 is the word the line begins with. On a Hebrew line the line begins on the RIGHT, so word 1 is the rightmost word on the page and the count runs leftwards. Inside a word, the first letter is likewise the one the word begins with: for בנקיק the letters are ב, נ, ק, י, ק in that order, and letters_before 2 means the third of them, the ק.
 
-so the Am, being the rightmost, is the first chord of the line and the G is the second.
+An example. The page shows
 
-- WHICH LETTER, EXACTLY. This is the rule, and it works on every sheet: take the chord symbol's horizontal MIDDLE, not its left edge and not its right edge, and look straight down from that middle. The bracket goes immediately before whichever letter is under it. If the point falls between two letters, choose the one whose own start is nearer to it.
+              C
+        אילה מה לי
 
-- Some sheets, and many Hebrew ones, also print a small mark under each chord: a tick, a comma, an apostrophe, a short slanted stroke. Where there is one it says the same thing more precisely, so use it to settle a close call. Where there is none, nothing changes: the middle of the symbol is the answer either way.
+The C's middle is over the ל of אילה, which is the first word and its third letter, so that chord is
 
-- CHORDS DO NOT PREFER THE STARTS OF WORDS. This is a bias worth naming, because it is the mistake that keeps happening: a chord lands wherever the singer changes note, which is inside a word at least as often as at its edge. בנ[Am]קיק is an ordinary thing for a sheet to say and [Am]בנקיק is a different thing, and reading the first as the second is the failure. Do not round a chord to the nearest word boundary. If the mark or the middle sits over the third letter, the bracket goes before the third letter.
+    { chord: "C", word: 1, letter: "ל", letters_before: 2 }
 
-- WORK IT OUT IN WORDS FIRST. For each chord, before writing anything: name the word it is over, and say whether it is over that word's beginning, its middle or its end, and which letter that is. Then write the line. Naming a letter is a judgement you can check; sliding a bracket along a line is not.
-- A chord printed over a space stays over that space: שלום לך [Am]אדוני and שלום לך[Am] אדוני are different, and both are things you may need to write.
-- WORK ONE CHORD AT A TIME, NEVER AS A LIST. This is the failure this task actually has, so it is worth being exact about. For each chord symbol on the page separately: note where it sits horizontally, look straight down from its middle, find the letter under it, and put the bracket in front of that letter. Then go to the next symbol and do the same.
+THE ORDER OF THE CHORDS DOES NOT MATTER. Every chord names its own word, so they are sorted afterwards by what they name. Do not try to list them in any particular sequence, and above all do not read the chord line as a row of symbols and hand them out to the words in the order you read them: Latin symbols read left to right and Hebrew words read right to left, and handing one sequence to the other reverses every chord in the middle of the line. Take ONE symbol, look down from its middle, name what is under it, write that entry. Then the next symbol. Where you start does not matter and how many you have done does not matter, because nothing here depends on order.
 
-  Do NOT read the chord line as a row of symbols and then hand them out to the words. A row has a direction. Chord symbols are Latin, so the eye reads a row of them left to right, while Hebrew words go right to left, and handing one sequence to the other silently reverses every chord in the middle of the line. It looks right, because the first and last chord land correctly and only the ones between them are exchanged.
+WHICH LETTER, EXACTLY
 
-  A worked example. The page shows
+- Take the chord symbol's horizontal MIDDLE, not its left edge and not its right edge, and look straight down. Name the letter under it. If the point falls between two letters, take the one whose own start is nearer.
 
-              Am        G         F        Am
-        בנקיק נסתר בצוקים אילה שותה מים
+- Many sheets print a small mark under each chord: a tick, a comma, an apostrophe, a short slanted stroke. Where there is one it says the same thing more precisely, so use it to settle a close call. Where there is none, nothing changes: the middle of the symbol is the answer either way.
 
-  The rightmost Am is over בנקיק, the G is over בצוקים, the F is over אילה, the leftmost Am is over מים. Written down, that is
+- CHORDS DO NOT PREFER THE STARTS OF WORDS. This is the mistake that keeps happening, so it is worth naming: a chord lands wherever the singer changes note, which is inside a word at least as often as at its edge. letters_before is 0 far less often than it looks. If the symbol's middle is over the third letter, say so; do not round it back to the front of the word, and do not move it onto the neighbouring word either.
 
-        [Am]בנקיק נסתר [G]בצוקים [F]אילה שותה [Am]מים
+  On a real sheet the line
 
-  and NOT [Am]בנקיק נסתר [F]בצוקים [G]אילה שותה [Am]מים, which is what handing the left-to-right row to the right-to-left words produces.
-- A chord after the last word goes after it, and the SPACES ARE THE SPACING. There is nothing else to say how far out it sits, so a chord printed a hand's width past the words needs that many spaces in front of it, and a run of chords spread evenly across a line needs even gaps between them. Count roughly in characters: if the gap between two chord symbols on the page is about as wide as four letters of the words below, put four spaces. Three spaces for something the page spreads across half a line is the difference between a turnaround you can read and a knot.
+              G7    E         Am          G       C
+        אילה מה לי ולה מה לי ולה מה לי ולה
 
-      נה נה נה...    [F]    [Am]    [F]    [G]
-- Lines are separated by a single newline. A blank line between stanzas is a blank line.
-- A heading that names a part of the song is a line wrapped in braces: {פזמון}, {בית}, {מעבר}, {Chorus}, {Intro}.
-- Right to left changes nothing about this. You are not counting from either end, you are putting a bracket in front of a letter.
+  reads: C over the ל of אילה, G over the ל of the first ולה, Am over the ל of the second ולה, E over the ל of the third ולה, and G7 past the end of the line. Every one of those five is inside a word or past the words. Not one of them is at word 0 of anything.
 
-TEXT AND CHORDS
+- letter AND letters_before MUST AGREE. Read the word you named, count to letters_before, and check that the letter you land on is the letter you wrote. If they disagree, look at the page again.
+
+- A chord printed out past the last word, or one standing alone in a gap with no word under it, is word 0 with an empty letter and letters_before 0. Report those in the order they are printed along the line, beginning from the side the line begins on.
+
+- A blank line between stanzas is an entry with empty words and no chords.
+- A heading that names a part of the song is a line whose words are wrapped in braces: {פזמון}, {בית}, {מעבר}, {Chorus}, {Intro}.
+
+THE WORDS
 
 - Copy the lyrics as printed: same words, same spelling, same punctuation, including Hebrew niqqud if it is there. Do not translate, do not transliterate, do not correct.
 
-- REPEATED PHRASES ARE REPEATED EXACTLY AS OFTEN AS THE PAGE REPEATS THEM. This is the one error in the words that hides itself: a line reading "אילה מה לי ולה מה לי ולה מה לי ולה" comes back as "אילה מה לי ולה מה לי מה לי ולה" and reads perfectly well, so nothing about it looks wrong. It is wrong. And because every chord after the missing words shifts along with them, one skipped repetition turns the whole rest of the line into chords on the wrong syllables.
+- REPEATED PHRASES ARE REPEATED EXACTLY AS OFTEN AS THE PAGE REPEATS THEM. This is the one error in the words that hides itself: a line reading "אילה מה לי ולה מה לי ולה מה לי ולה" comes back as "אילה מה לי ולה מה לי מה לי ולה" and reads perfectly well, so nothing about it looks wrong. It is wrong, and it also moves every chord after it onto the wrong word, because the words it named are no longer there.
 
-  So on any line that says the same thing more than once: count the repetitions on the page, out loud, before writing the line. Then count them in what you wrote. Three means three.
+  So on any line that says the same thing more than once: count the repetitions on the page before writing the line, then count them in what you wrote. Three means three.
 - Copy chords as printed, in Latin notation: A to G, with # or b, and whatever follows (m, 7, maj7, sus4, dim, add9) and any slash bass such as G/B.
-- Several images are pages of ONE song, in the order given. Return them as one continuous song.
+- Several images are pages of ONE song, in the order given. Return them as one song.
 - Anything that is not the song itself, such as a page number, a website name or a printed comment, is left out.
 - If a part of the image is unreadable, return the lines you can read rather than inventing the rest.
 
 BEFORE YOU ANSWER
 
-Go back over each line once and check three things.
+Go over each line once more and check three things.
 
-The WORDS: the line you wrote has every word the page has, in order, with repeated phrases repeated as often as the page repeats them. Read the printed line and your line side by side, word for word, and only then move on. A line with a repetition missing reads perfectly and is wrong, and it drags every chord after it onto the wrong syllable.
+The WORDS: your line has every word the page has, in order, with repeated phrases repeated as often as the page repeats them. Read the printed line and your line side by side, word for word.
 
-The COUNT: the line you wrote has exactly as many brackets as the page has chord symbols above that line. A missing one and an invented one both read as plausible.
+The COUNT: your line has exactly as many chord entries as the page has chord symbols above that line. A missing one and an invented one both read as plausible.
 
-The ORDER: reading your line from its own beginning, the chords come in the same order as they do reading the page from its own beginning, which for Hebrew is from the right.
-
-The LETTER: each bracket sits before the letter you named for it, the one under the middle of its symbol, and not before the start of that letter's word unless that is where you said it was.
-
-Two chords exchanged, or one sitting a couple of letters from where it belongs, is the failure this task actually has, and it is invisible unless it is looked for.`;
+The LETTERS: for each chord, the word you named has that many letters, the letter at that position is the letter you named, and it is the one under the middle of the symbol. Count the letters; do not eyeball them. A chord sitting one or two letters from where it belongs is the failure this task actually has, and it is invisible unless it is looked for.`;
 
 const USER_TEXT =
-  "This is a chord sheet. Return the whole song as one piece of text. For every chord, find the syllable it is " +
-  "printed above and put the chord in square brackets immediately before that syllable.";
+  "This is a chord sheet. Report every line of it: the words as printed, and every chord above them as its own " +
+  "entry naming the word, the letter and how many letters come before that letter.";
 
 /* --- the model ------------------------------------------------------------
    Streamed, and read with a deliberately cheap parser. A long answer arrives
@@ -250,10 +303,104 @@ export async function readChordSheet(env, files, onProgress) {
   return clean(JSON.parse(text));
 }
 
+/* --- assembling the document ----------------------------------------------
+   The observations come back as words plus a bag of chords, and the ChordPro
+   document is built here. This is the half of the new design that does not
+   involve a model at all, and it is where the two errors that survived every
+   earlier version are made impossible rather than discouraged. */
+
+/* How far past the end of a line a chord with nothing under it is put, and how
+   far apart a run of them ends up. Wide enough to read as separate chords,
+   near enough to still belong to the line. Anyone can drag them afterwards. */
+const TRAIL_GAP = "    ";
+
+/* The words of a line, each with where it starts. Whitespace separated and
+   counted in reading order, which needs no special case: word 1 is the first
+   word of the string, and a Hebrew string begins with its rightmost word. */
+function wordsOf(text) {
+  const words = [];
+  const pattern = /\S+/g;
+  let found;
+  while ((found = pattern.exec(text))) words.push({ text: found[0], start: found.index });
+  return words;
+}
+
+/* One chord, turned into a character position in the line. Null means it has
+   no word under it and belongs past the end. */
+function positionOf(words, chord) {
+  const index = Math.round(Number(chord.word));
+  if (!Number.isFinite(index) || index < 1 || index > words.length) return null;
+
+  const word = words[index - 1];
+  let at = Math.round(Number(chord.letters_before));
+  if (!Number.isFinite(at)) at = 0;
+  at = Math.max(0, Math.min(word.text.length, at));
+
+  /* The two answers checked against each other.
+
+     The letter and the count say the same thing twice, which is the point of
+     asking for both: where they disagree, the letter wins, because naming the
+     glyph under the symbol is the judgement being asked for and the count is
+     only arithmetic laid on top of it. Nearest matching letter, so a word
+     holding the same letter twice does not send the chord to the far end of
+     itself. */
+  const letter = String(chord.letter ?? "").trim();
+  if (letter.length === 1 && word.text[at] !== letter) {
+    let best = -1;
+    for (let i = 0; i < word.text.length; i++) {
+      if (word.text[i] !== letter) continue;
+      if (best < 0 || Math.abs(i - at) < Math.abs(best - at)) best = i;
+    }
+    if (best >= 0) at = best;
+  }
+
+  return word.start + at;
+}
+
+/* Exported for the test that pins the reference sheet, which is the only way
+   the sorting and the letter check stay honest: both of them are invisible
+   when they work and were the whole bug when they did not. */
+export function chordProLine(line) {
+  const text = String(line?.words ?? "").replace(/[\t\r\n]+/g, " ").replace(/ +$/, "");
+  const words = wordsOf(text);
+
+  const placed = [];
+  const trailing = [];
+  (Array.isArray(line?.chords) ? line.chords : []).forEach((chord) => {
+    const name = String(chord?.chord ?? "").trim().slice(0, 16);
+    if (!name) return;
+    const pos = positionOf(words, chord);
+    if (pos === null) trailing.push(name);
+    else placed.push({ name, pos });
+  });
+
+  /* SORTED HERE, and never taken as given. The order the chords arrived in is
+     the order the model happened to look at the page, which for a Hebrew line
+     under Latin symbols is frequently backwards. What each chord named is not
+     backwards, so the sort is the whole answer. */
+  placed.sort((a, b) => a.pos - b.pos);
+
+  let out = "";
+  let at = 0;
+  placed.forEach((chord) => {
+    out += text.slice(at, chord.pos) + "[" + chord.name + "]";
+    at = chord.pos;
+  });
+  out += text.slice(at);
+
+  /* Chords with no word under them, spaced out past the end. The spaces are
+     the spacing: this format has nothing else to say how far out a chord sits,
+     and the app reads them back as positions past the last character. */
+  trailing.forEach((name) => { out += TRAIL_GAP + "[" + name + "]"; });
+
+  return out;
+}
+
 /* The schema guarantees the shape; this guarantees it is a song. */
 function clean(song) {
-  const body = String(song.body ?? "")
-    .replace(/\r\n?/g, "\n")
+  const lines = Array.isArray(song.lines) ? song.lines : [];
+
+  const body = lines.map(chordProLine).join("\n")
     .replace(/\n{3,}/g, "\n\n")          // no gaps wider than one blank line
     .replace(/[ \t]+$/gm, "")            // trailing space is padding nobody asked for
     .trim()
@@ -265,8 +412,8 @@ function clean(song) {
 
   return {
     title: short(song.title, 120),
-    artist: short(song.artist, 120),
-    song_key: short(song.song_key, 16),
+    lyrics_by: short(song.lyrics_by, 120),
+    music_by: short(song.music_by, 120),
     dir: song.dir === "ltr" ? "ltr" : "rtl",
     body,
   };
@@ -330,6 +477,22 @@ async function patchSong(env, token, id, fields) {
   return { status: response.status, body };
 }
 
+/* The credit columns arrived after the table did, and a project that has not
+   had the new SQL run against it refuses any write that names them. A song is
+   worth a great deal more than its credits, so drop those and keep the song
+   rather than losing a read that has already been paid for. */
+const CREDIT_COLUMNS = ["lyrics_by", "music_by"];
+
+async function saveSong(env, token, id, fields) {
+  const failure = await patchSong(env, token, id, fields);
+  if (!failure) return null;
+  if (!CREDIT_COLUMNS.some((column) => failure.body.includes(column))) return failure;
+
+  const without = { ...fields };
+  CREDIT_COLUMNS.forEach((column) => delete without[column]);
+  return patchSong(env, token, id, without);
+}
+
 /* The whole background job: read, name, save. Never throws — a failure is
    written onto the row as `failed`, because a row that says why is the only
    thing the person who uploaded the picture can act on. */
@@ -383,8 +546,8 @@ export async function readAndSave(env, token, songId, files) {
   }
 
   const fields = {
-    artist: song.artist,
-    song_key: song.song_key,
+    lyrics_by: song.lyrics_by,
+    music_by: song.music_by,
     dir: song.dir,
     /* the column is called `lines` for historical reasons; what goes in it is
        the whole song as one ChordPro document */
@@ -403,7 +566,7 @@ export async function readAndSave(env, token, songId, files) {
      somebody chose, and it beats anything this could invent. Its address stays
      as it is too, for the same reason. */
   if (!song.title) {
-    const failure = await patchSong(env, token, songId, fields);
+    const failure = await saveSong(env, token, songId, fields);
     if (failure) await stop(failure);
     return;
   }
@@ -414,7 +577,7 @@ export async function readAndSave(env, token, songId, files) {
   fields.title = song.title;
   const wanted = slugify(song.title);
   for (let attempt = 1; attempt <= 30; attempt++) {
-    const failure = await patchSong(env, token, songId, {
+    const failure = await saveSong(env, token, songId, {
       ...fields,
       slug: attempt === 1 ? wanted : `${wanted}_${attempt}`,
     });

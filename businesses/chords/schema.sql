@@ -16,6 +16,17 @@ create table if not exists public.songs (
   slug        text not null unique,
 
   title       text not null,
+
+  -- Who made it, which is two different people as often as it is one. The
+  -- performer is deliberately not among them: a song is one song however many
+  -- people have recorded it.
+  lyrics_by   text not null default '',
+  music_by    text not null default '',
+
+  -- Kept, read by nothing. `artist` held a performer and `song_key` a key, and
+  -- both were dropped from the app rather than from the table, because a
+  -- column that is not read costs nothing and a column that is dropped takes
+  -- whatever was typed into it with it.
   artist      text not null default '',
   song_key    text not null default '',
 
@@ -57,6 +68,8 @@ create table if not exists public.songs (
 -- added after the first version of this file; safe to re-run
 alter table public.songs add column if not exists status      text not null default 'ready';
 alter table public.songs add column if not exists status_note text not null default '';
+alter table public.songs add column if not exists lyrics_by   text not null default '';
+alter table public.songs add column if not exists music_by    text not null default '';
 
 do $$ begin
   alter table public.songs add constraint songs_status_check
