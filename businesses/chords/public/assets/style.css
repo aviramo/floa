@@ -144,9 +144,10 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .list a:hover { border-color: var(--accent); transform: translateY(-1px); }
 .list .t { font-weight: 700; font-size: 17px; }
 .list .a { color: var(--ink-soft); font-size: 14px; }
-/* The song's own chords, in the order it reaches them, laid out in the page's
-   own direction: the first one the song plays is the first one you read. */
-.list .keys { margin-inline-start: auto; display: flex; flex-wrap: wrap; gap: 5px; }
+/* The song's own chords, under its name, in the order it reaches them and in
+   the page's own direction: the first one the song plays is the first one you
+   read. */
+.list .keys { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
 .list .k {
   font-size: 13px; font-weight: 700;
   color: var(--chord); background: var(--chord-soft); border-radius: 999px; padding: 2px 9px;

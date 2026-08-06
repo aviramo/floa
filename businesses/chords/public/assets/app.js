@@ -1075,22 +1075,23 @@
 
       var box = el("div");
       box.appendChild(el("div", "t", s.title));
-      if (s.artist) box.appendChild(el("div", "a", s.artist));
-      a.appendChild(box);
 
-      /* What you actually want to know before opening a song: whether you can
-         play it. In the order the song reaches them, so the first one is the
-         one it opens on. */
+      /* Under the name goes what you actually want to know before opening a
+         song: whether you can play it. The artist is not that, and it is still
+         on the song's own page and still searched for from here.
+
+         In the order the song reaches them, so the first is the one it opens
+         on, and read right to left like everything else on the page. Each name
+         keeps its own direction (see .k), which is what stops "G/B" flipping
+         inside itself. */
       var used = chordsUsed(s.lines);
       if (used.length) {
-        /* The row is read right to left like everything else on the page, so
-           the first chord of the song is the rightmost one. Each name keeps
-           its own direction (see .k), which is what stops "G/B" flipping. */
         var keys = el("div", "keys");
         used.forEach(function (name) { keys.appendChild(el("span", "k", name)); });
-        a.appendChild(keys);
+        box.appendChild(keys);
       }
 
+      a.appendChild(box);
       li.appendChild(a);
       return li;
     }
