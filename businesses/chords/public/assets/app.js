@@ -1236,12 +1236,11 @@
         var rtl = (song.dir || "rtl") === "rtl";
 
         /* A chord shown a fret below what the song is in is a chord you play
-           with a capo there, so the sheet says where the capo goes. Above zero
-           there is no capo, only a different key, and it says that instead. */
-        capo.textContent = semis < 0
-          ? "קפו " + (-semis)
-          : semis > 0 ? "בלי קפו, מוגבה " + semis : "";
-        capo.hidden = !semis;
+           with a capo there, so the sheet says where the capo goes, and says
+           nothing otherwise: raising the key is not a capo, and the control
+           above already shows by how much. */
+        capo.textContent = semis < 0 ? "קפו " + (-semis) : "";
+        capo.hidden = semis >= 0;
         sheet.appendChild(capo);
 
         song.lines.forEach(function (line) {
