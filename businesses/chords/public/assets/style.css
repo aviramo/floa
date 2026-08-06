@@ -226,6 +226,8 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .tools .lbl { font-size: 13px; color: var(--ink-soft); font-weight: 600; }
 .tools .val { font-size: 14px; font-weight: 700; min-width: 34px; text-align: center; direction: ltr; }
 .tools .grow { margin-inline-start: auto; }
+/* less and more, side by side, the same shape for every control that has them */
+.tools .step { display: flex; align-items: center; gap: 6px; }
 
 /* A line never wraps (white-space: pre on .ln-t), so a long line overflows and
    the whole sheet scrolls sideways. That is deliberate: the chord row and the
@@ -241,6 +243,27 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   box-shadow: var(--shadow); padding: 22px 34px 30px; margin-bottom: 64px;
   overflow-x: auto;
   font-family: var(--song-font);
+}
+
+/* --- a narrow screen -----------------------------------------------------
+   620px is also where editing stops (see NARROW in app.js). Keep the two in
+   step: below this width the song is read, not written.
+
+   What a phone is short of is width, and every one of these gives some back.
+   The sheet loses its card entirely and runs to both edges of the screen: a
+   border, a shadow and a radius are worth nothing on a page held at arm's
+   length, and the twenty pixels they cost are a word and a half of every
+   line. */
+@media (max-width: 620px) {
+  .sheet {
+    border: none; box-shadow: none; border-radius: 0;
+    padding: 16px 26px 24px;
+    /* out through the page's own gutters, to the edges of the screen */
+    margin-inline: calc(50% - 50vw);
+    width: 100vw;
+  }
+
+  .tools { border-radius: var(--radius); }
 }
 
 /* Where the capo goes, inside the sheet so it prints with the song: the shapes

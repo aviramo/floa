@@ -1104,7 +1104,12 @@
     app.appendChild(box);
   }
 
+  /* Reading a photograph is the one thing a phone is BETTER at, since the
+     camera is already in your hand, so that stays. Typing a song out is the
+     one it is worst at, so it says so rather than opening a page that cannot
+     be typed on. */
   function newSong() {
+    if (NARROW.matches) return toast("שיר נכתב במסך גדול. מתמונה אפשר גם מכאן.", true);
     requireAuth(function () { go(BASE + "/new"); });
   }
 
@@ -1369,6 +1374,13 @@
     return li;
   }
 
+  /* The same width the stylesheet calls narrow, asked in JavaScript, because
+     one of the things that changes at this width is not a style: below it the
+     song cannot be edited at all. Keeping the number in both places would be
+     two numbers waiting to disagree, so this one is the copy that is commented
+     as one (see the media queries in style.css). */
+  var NARROW = window.matchMedia("(max-width: 620px)");
+
   /* --- one song ------------------------------------------------------------
      ONE SCREEN, NOT TWO. There is no editor to go to and come back from: the
      song you are looking at is the song you are changing, and signing in is
@@ -1399,9 +1411,15 @@
   function renderSong(song) {
     document.title = (song.title || "שיר חדש") + " | אקורדים";
 
-    /* Signed in is the whole of edit mode. Nothing is switched on or off after
-       this: signing in re-runs the route, which comes back through here. */
-    var editing = auth.in;
+    /* Signed in AND on a screen with room. Nothing is switched on or off after
+       this: signing in re-runs the route, which comes back through here.
+
+       A phone is for playing from, not for editing on. Every gesture the editor
+       has is a small one over a small target, dragging a chord onto one letter
+       out of forty, and a finger on a moving page cannot do any of them: what
+       it does instead is scroll the song sideways and drop a chord somewhere
+       nobody asked for. So the phone reads, and the desk writes. */
+    var editing = auth.in && !NARROW.matches;
 
     /* A song opens on its EASY version: transposed down by whatever capo turns
        its chords into the fewest barres. So the number differs from song to
@@ -1503,16 +1521,33 @@
 
     var tools = el("div", "tools");
 
-    tools.appendChild(el("span", "lbl", "טרנספוזיציה"));
-    tools.appendChild(iconBtn('<path d="M5 12h14"/>', "הורדת חצי טון", function () { setSemis(semis - 1); }));
+    /* Less and more, side by side, and the same shape for both controls. The
+       count sits with its label rather than between the two buttons, so that
+       transposition and size are laid out identically and neither has to be
+       read differently from the other. */
+    function stepper(label, less, more) {
+      var step = el("span", "step");
+      step.appendChild(iconBtn('<path d="M5 12h14"/>', "פחות " + label, less));
+      step.appendChild(iconBtn(ICON.plus, "יותר " + label, more));
+      return step;
+    }
+
     var value = el("span", "val", "0");
+    tools.appendChild(el("span", "lbl", "טרנספוזיציה"));
     tools.appendChild(value);
-    tools.appendChild(iconBtn(ICON.plus, "העלאת חצי טון", function () { setSemis(semis + 1); }));
+    tools.appendChild(stepper(
+      "טרנספוזיציה",
+      function () { setSemis(semis - 1); },
+      function () { setSemis(semis + 1); }
+    ));
 
     tools.appendChild(el("span", "sep"));
     tools.appendChild(el("span", "lbl", "גודל"));
-    tools.appendChild(iconBtn('<path d="M5 12h14"/>', "טקסט קטן יותר", function () { setSize(size - 1); }));
-    tools.appendChild(iconBtn(ICON.plus, "טקסט גדול יותר", function () { setSize(size + 1); }));
+    tools.appendChild(stepper(
+      "גודל",
+      function () { setSize(size - 1); },
+      function () { setSize(size + 1); }
+    ));
 
     tools.appendChild(el("span", "grow"));
 
@@ -2655,6 +2690,7 @@
     /* A new song is the song page with nothing on it yet, and it needs somebody
        signed in to be worth opening at all. */
     if (p[0] === "new") {
+      if (NARROW.matches) return go(BASE + "/");
       if (!auth.in) return askSignIn(function () { route(); });
       return viewSong(null);
     }
