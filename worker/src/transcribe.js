@@ -45,10 +45,12 @@
    second reason: the job outlives the request that started it, and the shorter
    it is the less there is for the runtime to cut short.
 
-   If chords start landing on the wrong syllables, raise the effort before
-   changing anything else. */
+   Effort went back up to `high` after a real sheet came back with two chords
+   in the wrong order and a third a letter and a half off: this is the knob
+   that buys accuracy here, and accuracy is the whole product. Sonnet at high
+   is still a fraction of Opus at anything. */
 const MODEL = "claude-sonnet-5";
-const EFFORT = "medium";
+const EFFORT = "high";
 const MAX_TOKENS = 16000;
 
 export const MEDIA_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif", "application/pdf"];
@@ -97,6 +99,7 @@ On the printed page that Hebrew line looks like this, with the Am on the RIGHT b
 
 so the Am, being the rightmost, is the first chord of the line and the G is the second.
 
+- WHICH LETTER, EXACTLY. Take the chord symbol's horizontal MIDDLE, not its left or right edge, and look straight down from it. The bracket goes immediately before whichever letter is under that middle. A chord printed over the third letter of a word belongs in the middle of that word: בנ[Am]קיק, not [Am]בנקיק. Being one word out is a mistake; being two letters out is also a mistake, and it is the one that is easy to make without noticing.
 - A chord printed over a space stays over that space: שלום לך [Am]אדוני and שלום לך[Am] אדוני are different, and both are things you may need to write.
 - THE CHORDS OF A LINE ARE READ IN THE SAME DIRECTION AS ITS WORDS. This is the single easiest thing to get wrong on a Hebrew sheet and it is worth stopping to check. Chord symbols are Latin, so the eye wants to read a row of them left to right; above a Hebrew line that is backwards. The FIRST chord of a Hebrew line is the RIGHTMOST one on the page, the one above the first word, and each next chord is the next one leftwards. Before writing a line, name its chords out loud from the right and confirm the order, then write them in that order.
 - A chord after the last word goes after it, with spaces before it if the sheet shows it further out: נה נה נה   [G]   [F]
@@ -110,7 +113,11 @@ TEXT AND CHORDS
 - Copy chords as printed, in Latin notation: A to G, with # or b, and whatever follows (m, 7, maj7, sus4, dim, add9) and any slash bass such as G/B.
 - Several images are pages of ONE song, in the order given. Return them as one continuous song.
 - Anything that is not the song itself, such as a page number, a website name or a printed comment, is left out.
-- If a part of the image is unreadable, return the lines you can read rather than inventing the rest.`;
+- If a part of the image is unreadable, return the lines you can read rather than inventing the rest.
+
+BEFORE YOU ANSWER
+
+Go back over each line once. Read its chords off the page from the right, name the letter under the middle of each one, and check that the line you wrote puts the brackets in that order and in front of those letters. Two chords swapped, or one sitting a couple of letters away from where it belongs, is the failure this task actually has, and it is invisible unless it is looked for.`;
 
 const USER_TEXT =
   "This is a chord sheet. Return the whole song as one piece of text. For every chord, find the syllable it is " +

@@ -1404,7 +1404,15 @@
         text.addEventListener("input", function () {
           var caret = caretIndex(text);
           var next = text.textContent;
-          line.chords = remapChords(line.text, next, line.chords);
+
+          /* The new positions are written ONTO the chords, not swapped in as
+             new objects. Everything that can move a chord after this, the drag
+             handlers, the picker, the swap, holds a chord by identity, and a
+             fresh array would leave every one of them holding something that is
+             no longer part of the line: the chord would appear to move and then
+             be gone at the next redraw, and gone from what was saved. */
+          var moved = remapChords(line.text, next, line.chords);
+          line.chords.forEach(function (c, i) { c.pos = moved[i].pos; });
           line.text = next;
 
           fillSpans(text, next);
