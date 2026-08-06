@@ -180,10 +180,14 @@ const LINE_1 = "בנקיק נסתר בצוקים אילה שותה מים";
 {
   const boxes = [
     ...hebrewRow("שורה ראשונה", 100),
-    chordBox("C", overChar("שורה ראשונה", 1, 100), 160),   // between the two lines
-    ...hebrewRow("שורה שנייה", 200),
+    /* between the two, and the two set a line apart rather than a verse apart:
+       spread them and a blank line belongs between them, which is a different
+       thing this file checks elsewhere */
+    chordBox("C", overChar("שורה ראשונה", 1, 100), 124),
+    ...hebrewRow("שורה שנייה", 140),
   ];
   const song = songFrom(boxes, "rtl");
+  check("two lines and no verse break", song.length, 2);
   check("it goes to the line below", song[1].placed.length, 1);
   check("and not to the one above", song[0].placed.length, 0);
 }
