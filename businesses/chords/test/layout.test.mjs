@@ -286,14 +286,20 @@ try {
 
       await mouse(send, "mousePressed", held.cx, held.y);
 
+      /* Past the threshold that tells a drag from a click, first. Everything
+         measured after this is meant to be movement. */
+      await mouse(send, "mouseMoved", held.cx - 6, held.y);
+      await sleep(40);
+      let from = (await evaluate(POSITIONS)).chords[0].x;
+
       /* Short of the neighbour: small steps, and after every one of them the
          chord must have moved a little. A continuous position looks like six
          small moves; a snapping one looks like three of nothing and then a
          jump. */
-      const step = Math.max(2, Math.floor((gap - 12) / 6));
+      const step = Math.max(2, Math.floor((gap - 18) / 6));
       const seen = [];
       for (let i = 1; i <= 6; i++) {
-        await mouse(send, "mouseMoved", held.cx - i * step, held.y);
+        await mouse(send, "mouseMoved", held.cx - 6 - i * step, held.y);
         await sleep(40);
         seen.push((await evaluate(POSITIONS)).chords[0].x);
       }
@@ -302,7 +308,7 @@ try {
       check("the dragged chord followed the pointer", near.chords[0].x < held.x - step * 4,
         `moved from ${held.x} to ${near.chords[0].x}`);
 
-      const steps = seen.map((x, i) => Math.abs(x - (i ? seen[i - 1] : held.x)));
+      const steps = seen.map((x, i) => Math.abs(x - (i ? seen[i - 1] : from)));
       check("it moved on every step, with no jump", steps.every((d) => d > 0 && d < 20), JSON.stringify(steps));
 
       const nearOthers = near.chords.slice(1);

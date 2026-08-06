@@ -706,6 +706,23 @@
   var app = document.getElementById("app");
   var state = { songs: null };
 
+  /* How big this reader wants the words, kept between songs and between visits.
+     Whoever needs a bigger font on one song needs it on the next one too, and
+     setting it again every time is the kind of small tax that adds up. Call it
+     with a number to set it, without one to read it. */
+  var SIZE_KEY = "chords.size";
+
+  function readingSize(next) {
+    if (next != null) {
+      var size = Math.max(13, Math.min(30, Math.round(next)));
+      try { localStorage.setItem(SIZE_KEY, String(size)); } catch (e) { /* private window */ }
+      return size;
+    }
+    var saved = 0;
+    try { saved = parseInt(localStorage.getItem(SIZE_KEY), 10); } catch (e) { /* private window */ }
+    return saved >= 13 && saved <= 30 ? saved : 18;
+  }
+
   function setBusy(message) {
     app.innerHTML = "";
     var box = el("div", "center");
@@ -915,7 +932,9 @@
       song.lines = normalizeLines(song.lines);
 
       var semis = 0;
-      var size = 18;
+      /* the size follows the reader from song to song. Transposing does not:
+         it belongs to the one song it was set on. */
+      var size = readingSize();
 
       app.innerHTML = "";
 
@@ -973,7 +992,7 @@
       }
 
       function setSize(next) {
-        size = Math.max(13, Math.min(30, next));
+        size = readingSize(next);
         sheet.style.setProperty("--song-size", size + "px");
         requestAnimationFrame(function () { layoutAll(sheet, (song.dir || "rtl") === "rtl"); });
       }

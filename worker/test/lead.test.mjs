@@ -90,6 +90,9 @@ check("unset recipient -> 502, nothing sent", r.status === 502 && r.sent === nul
 let background = [];
 const ctx = { waitUntil: (p) => background.push(p) };
 
+/* The reading answers with a STREAM, held open for as long as it takes, padded
+   with spaces so the connection cannot go quiet. So the body is read to the end
+   and trimmed rather than parsed straight off. */
 const call = async (path, headers = {}, body = { song_id: "s1", files: [{ media_type: "image/png", data: "x" }] }) => {
   background = [];
   const res = await worker.fetch(new Request(`https://x${path}`, {
@@ -97,7 +100,8 @@ const call = async (path, headers = {}, body = { song_id: "s1", files: [{ media_
     headers: { origin: "https://floa.co.il", "content-type": "application/json", ...headers },
     body: JSON.stringify(body),
   }), env, ctx);
-  return { status: res.status, body: await res.json(), background: background.length };
+  const text = (await res.text()).trim();
+  return { status: res.status, body: text ? JSON.parse(text) : null, background: background.length };
 };
 
 /* 8. an unknown path is not a lead and not a read */
@@ -112,11 +116,12 @@ check("transcribe without a token -> 401", r.status === 401 && r.body.error === 
 r = await call("/transcribe", { authorization: "Bearer forged" });
 check("transcribe with a rejected token -> 401", r.status === 401 && r.body.error === "auth", JSON.stringify(r));
 
-/* 11. a real user gets an immediate answer and the work goes to the background,
-       which is the whole point: the browser is free before the reading starts */
+/* 11. a real user gets the reading, on a stream that stays open until it is
+       done. NOT handed to waitUntil: this runtime cancels work that outlives
+       its request, so the request is what has to last. */
 r = await call("/transcribe", { authorization: "Bearer good" });
-check("transcribe with a real token -> 202, work handed off",
-  r.status === 202 && r.body.ok === true && r.background === 1, JSON.stringify(r));
+check("transcribe with a real token -> a stream, nothing left behind",
+  r.status === 200 && r.body && r.body.done === true && r.background === 0, JSON.stringify(r));
 
 /* 12. nothing is handed off without a row to write the answer onto */
 r = await call("/transcribe", { authorization: "Bearer good" }, { files: [{ media_type: "image/png", data: "x" }] });
