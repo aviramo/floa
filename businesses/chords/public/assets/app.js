@@ -292,6 +292,35 @@
     }).filter(function (c) { return c.name; });
   }
 
+  /* --- what kind of song it is ----------------------------------------------
+     Several at once, because a song is a circle song and a prayer and a
+     lullaby and there is no sense in making anybody pick one of the three.
+
+     Free text, and the vocabulary is whatever the library has used before: a
+     fixed list would be a guess made on the first day, and what is offered
+     instead is every style already on another song, so the second song of a
+     kind gets named the same as the first without anybody having to decide on
+     the words in advance. */
+  function styles(song) {
+    var list = song && song.styles;
+    if (!Array.isArray(list)) return [];
+    return list.map(function (s) { return String(s || "").trim(); }).filter(Boolean);
+  }
+
+  /* Trimmed, deduplicated and in the order they were added. Kept in a plain
+     array rather than a set so the order is the author's. */
+  function tidyStyles(list) {
+    var seen = {};
+    var out = [];
+    (list || []).forEach(function (raw) {
+      var name = String(raw || "").trim().replace(/\s+/g, " ").slice(0, 40);
+      if (!name || seen[name]) return;
+      seen[name] = true;
+      out.push(name);
+    });
+    return out;
+  }
+
   /* --- whose bill it is -----------------------------------------------------
      One account pays for the readings, and what they cost is that account's
      business and nobody else's.
@@ -406,6 +435,7 @@
     { columns: ["review"] },
     { columns: ["draft"] },
     { columns: ["published"] },
+    { columns: ["styles"] },
   ].map(function (g) { return { columns: g.columns, admin: !!g.admin, on: true }; });
 
   function withOptional(fields) {
@@ -629,6 +659,27 @@
         /* a library with no suggestions is a working library */
         if (!dropMissing(error)) return [];
         return self.names();
+      });
+    },
+
+    /* Every style the library already uses, for the same reason the names
+       are offered: the second circle song should be called what the first one
+       was called, and nobody should have to remember how they spelled it. */
+    styles: function () {
+      var self = this;
+      if (!has("styles")) return Promise.resolve([]);
+      return rest(T + "?select=styles&deleted_at=is.null").then(function (rows) {
+        var seen = {};
+        (rows || []).forEach(function (row) {
+          (Array.isArray(row.styles) ? row.styles : []).forEach(function (name) {
+            var kind = String(name || "").trim();
+            if (kind) seen[kind] = true;
+          });
+        });
+        return Object.keys(seen).sort(function (a, b) { return a.localeCompare(b, "he"); });
+      }).catch(function (error) {
+        if (!dropMissing(error)) return [];
+        return self.styles();
       });
     },
 
@@ -2009,6 +2060,15 @@
       counts.appendChild(tallies);
       app.appendChild(counts);
 
+      /* And under it, what KIND of songs it holds. A second row and not more
+         chips in the first, because the two answer different questions: the
+         states are the work outstanding and the styles are the shelf itself.
+         Both narrow the list and they narrow it together, which is how you get
+         to "the circle songs I have not checked yet". */
+      var kind = null;
+      var kinds = el("div", "kinds");
+      app.appendChild(kinds);
+
       function paintTallies() {
         tallies.textContent = "";
         var real = ready(state.songs);
@@ -2024,6 +2084,37 @@
             paint(input.value);
           });
           tallies.appendChild(chip);
+        });
+      }
+
+      /* Every style the library uses, in the order a person would look for
+         them: the biggest shelf first, and alphabetically among equals so the
+         row does not reshuffle itself every time a song is saved. A style
+         nothing is in any more is not in the row, because the row is a
+         description of the library and not a vocabulary list. */
+      function paintKinds() {
+        kinds.textContent = "";
+        var counted = {};
+        ready(state.songs).forEach(function (s) {
+          styles(s).forEach(function (name) { counted[name] = (counted[name] || 0) + 1; });
+        });
+
+        var names = Object.keys(counted).sort(function (a, b) {
+          return counted[b] - counted[a] || a.localeCompare(b, "he");
+        });
+        if (!names.length) return;
+
+        names.forEach(function (name) {
+          var chip = el("button", "tally tally-style" + (kind === name ? " is-on" : ""));
+          chip.type = "button";
+          chip.appendChild(el("span", "tally-n", String(counted[name])));
+          chip.appendChild(el("span", "tally-l", name));
+          chip.title = kind === name ? "לחיצה מחזירה את כל השירים" : "לחיצה מציגה רק את אלה";
+          chip.addEventListener("click", function () {
+            kind = kind === name ? null : name;
+            paint(input.value);
+          });
+          kinds.appendChild(chip);
         });
       }
 
@@ -2125,22 +2216,29 @@
         list.innerHTML = "";
         showBar();
         paintTallies();
+        paintKinds();
         var marks = marksFor(state.songs);
         var q = String(filter || "").trim().toLowerCase();
         var only = tag && TAGS.filter(function (t) { return t.key === tag; })[0];
         var shown = state.songs.filter(function (s) {
           if (only && !(ready([s]).length && only.is(s))) return false;
+          if (kind && styles(s).indexOf(kind) < 0) return false;
           if (!q) return true;
-          var hay = s.title + " " + credits(s).map(function (c) { return c.name; }).join(" ");
+          /* the style is searched too: it is one of the words on the row, and
+             a box that finds everything else on it and not that is a box that
+             is wrong about what it can find */
+          var hay = s.title + " " + credits(s).map(function (c) { return c.name; }).join(" ") +
+            " " + styles(s).join(" ");
           return hay.toLowerCase().indexOf(q) >= 0;
         });
 
         if (!shown.length) {
           if (!empty.parentNode) app.appendChild(empty);
           emptyText.textContent = q ? "לא נמצא שיר שמתאים לחיפוש."
+            : kind ? "אין שירים בסגנון הזה."
             : only ? "אין שירים בתווית הזאת."
             : "עוד אין שירים כאן.";
-          emptyActions.hidden = !!q || !!only;
+          emptyActions.hidden = !!q || !!only || !!kind;
           return;
         }
         if (empty.parentNode) empty.remove();
@@ -2388,6 +2486,12 @@
       if (by.length) {
         top.appendChild(el("div", "by", by.map(function (c) { return c.name; }).join(", ")));
       }
+      /* What kind of song it is, beside who wrote it, because both are facts
+         about the song rather than about its state: the far column is for the
+         states, and a style is not one. */
+      styles(s).forEach(function (kind) {
+        top.appendChild(el("span", "tag tag-style", kind));
+      });
       box.appendChild(top);
 
       /* Under the name goes what you actually want to know before opening a
@@ -2638,6 +2742,7 @@
     var byFields = [];
     /* set below, with the buttons they keep in step with the song */
     var showDraft = null;
+    var showStyles = null;
     var draftBtn = null;
     var pubBtn = null;
     if (editing) {
@@ -2671,6 +2776,70 @@
           known.appendChild(option);
         });
       });
+
+      /* --- what kind of song it is ---
+         A row of what it already is, each with a way off, and a field to add
+         another. Not a list to choose from: the vocabulary of a library is
+         discovered over a year of adding songs to it, so what is offered is
+         every style the library already uses, and a new one is just typed.
+
+         Enter adds. It is one field whose whole job is to add one word, and a
+         button beside it would be a second thing to aim at for no gain. */
+      var kindsRow = el("div", "kinds-field");
+      var kindsLabel = el("div", "kinds-label", "סגנונות");
+      var kindsList = el("div", "kinds-list");
+      var kindsInput = el("input");
+      kindsInput.type = "text";
+      kindsInput.placeholder = "להוסיף סגנון";
+      kindsInput.setAttribute("aria-label", "להוסיף סגנון לשיר");
+
+      var kindsKnown = el("datalist");
+      kindsKnown.id = "song-styles";
+      kindsInput.setAttribute("list", kindsKnown.id);
+      db.styles().then(function (all) {
+        if (!kindsKnown.isConnected) return;
+        all.forEach(function (name) {
+          var option = el("option");
+          option.value = name;
+          kindsKnown.appendChild(option);
+        });
+      });
+
+      showStyles = function () {
+        kindsList.textContent = "";
+        styles(song).forEach(function (name) {
+          var chip = el("span", "tag tag-style");
+          chip.appendChild(el("span", null, name));
+          var off = el("button", "tag-x", "×");
+          off.type = "button";
+          off.title = "להוריד את הסגנון";
+          off.addEventListener("click", function () {
+            song.styles = styles(song).filter(function (other) { return other !== name; });
+            showStyles();
+            mark();
+          });
+          chip.appendChild(off);
+          kindsList.appendChild(chip);
+        });
+      };
+      showStyles();
+
+      kindsInput.addEventListener("keydown", function (event) {
+        if (event.key !== "Enter") return;
+        event.preventDefault();
+        var name = kindsInput.value.trim();
+        if (!name) return;
+        song.styles = tidyStyles(styles(song).concat([name]));
+        kindsInput.value = "";
+        showStyles();
+        mark();
+      });
+
+      kindsRow.appendChild(kindsLabel);
+      kindsRow.appendChild(kindsList);
+      kindsRow.appendChild(kindsInput);
+      kindsRow.appendChild(kindsKnown);
+      meta.appendChild(kindsRow);
 
       /* The direction used to be one button up here, and it belonged to the
          whole song. It is a property of a LINE now and it is chosen down in the
@@ -2752,8 +2921,12 @@
       /* Reading it rather than writing it, the draft mark is not a button to
          press but something to know before playing from the page: this one is
          not finished. */
-      if (song.draft || song.published) {
+      var kindsSaid = styles(song);
+      if (song.draft || song.published || kindsSaid.length) {
         var flagRow = el("div", "head-tags");
+        kindsSaid.forEach(function (name) {
+          flagRow.appendChild(el("span", "tag tag-style", name));
+        });
         if (song.draft) flagRow.appendChild(tag("draft", "טיוטה", "השיר עוד לא גמור"));
         if (song.published) flagRow.appendChild(tag("published", "פורסם", "השיר פתוח לכולם"));
         head.appendChild(flagRow);
@@ -3057,6 +3230,7 @@
            a change back takes the mark with it */
         !!song.draft,
         !!song.published,
+        styles(song),
       ]);
     }
 
@@ -3117,10 +3291,12 @@
       song.lines = normalizeLines(was[3], song.dir);
       song.draft = !!was[4];
       song.published = !!was[5];
+      song.styles = tidyStyles(was[6]);
 
       if (title.textContent !== song.title) title.textContent = song.title;
       byFields.forEach(function (input, index) { input.value = was[1][index] || ""; });
       if (showDraft) showDraft();
+      if (showStyles) showStyles();
 
       draw();
       current = snapshot();
@@ -4029,6 +4205,7 @@
         lines: songToText(song.lines),
         draft: !!song.draft,
         published: !!song.published,
+        styles: styles(song),
       };
       CREDITS.forEach(function (c) { payload[c.field] = String(song[c.field] || "").trim(); });
 

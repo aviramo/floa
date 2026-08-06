@@ -133,6 +133,24 @@ update public.songs
 -- who owns what, asked on every read
 create index if not exists songs_owner_idx on public.songs (owner);
 
+-- WHAT KIND OF SONG IT IS, in the words of whoever keeps the library. Several
+-- at once, because a song is a circle song and a prayer and a lullaby and
+-- there is no sense in making somebody pick one.
+--
+-- Free text and not a list to choose from. The vocabulary of a library is
+-- something its keeper discovers over a year of adding songs to it, and a
+-- fixed list would be a guess made on the first day; what the app does instead
+-- is offer back every style already used, so the second song of a kind is
+-- named the same as the first without anybody deciding on the vocabulary.
+--
+-- An array rather than a table of its own, because a style has nothing to it
+-- but its name: there is no fact about "שירי מעגל" that is not a fact about
+-- the songs in it.
+alter table public.songs add column if not exists styles      text[] not null default '{}';
+
+-- everything in one kind, asked as `styles=cs.{...}`
+create index if not exists songs_styles_idx on public.songs using gin (styles);
+
 -- WHEN IT WAS DELETED, because deleting a song does not delete it. A song is
 -- an evening's worth of typing and half of them are deleted by somebody
 -- meaning to delete the other one; so the row stays exactly as it was and this

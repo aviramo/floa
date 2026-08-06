@@ -210,6 +210,17 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 /* Each in its own state's colour, always, and not only when it is the one
    being looked at: it is the same colour that state wears on every row below
    and on the button inside the song. Pressed, it fills with it. */
+/* What KIND of songs the library holds, under what state they are in. A row of
+   its own, because the two answer different questions: the states are the work
+   outstanding and the styles are the shelf itself. They narrow together. */
+.kinds {
+  display: flex; flex-wrap: wrap; gap: 8px; margin: -8px 0 16px;
+  justify-content: flex-end;
+}
+.kinds:empty { display: none; }
+.tally-style { color: var(--ink-soft); }
+.tally-style.is-on { background: var(--bg); color: var(--ink); }
+
 .tally-review { color: var(--review-ink); }
 .tally-draft { color: var(--draft-ink); }
 .tally-kept { color: var(--kept-ink); }
@@ -460,6 +471,36 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 .tag-draft { color: var(--draft-ink); background: var(--draft-soft); }
 .tag-kept { color: var(--kept-ink); background: var(--kept-soft); }
 .tag-published { color: var(--published-ink); background: var(--published-soft); }
+
+/* WHAT KIND OF SONG IT IS, which is not one of the four states and does not
+   wear one of their colours. It is a fact about the music, so it is quiet and
+   outlined: on a row it sits beside who wrote the song, where the other facts
+   about the song are, and the far column stays the column of states. */
+.tag-style {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: var(--ink-soft); background: none;
+  box-shadow: inset 0 0 0 1px var(--line); font-weight: 600;
+}
+.tag-x {
+  appearance: none; cursor: pointer; border: 0; background: none; padding: 0 0 0 1px;
+  font: inherit; font-size: 14px; line-height: 1; color: var(--ink-soft);
+}
+.tag-x:hover { color: var(--danger); }
+
+/* The styles of one song, being written. The word, what it already is, and one
+   field that adds another: a row of the same shape as the credits above it,
+   because it is the same kind of thing, one more fact about the song. */
+.kinds-field {
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px;
+  flex: 1 1 100%; min-width: 0;
+}
+.kinds-label { font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+.kinds-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.song-meta .kinds-field input[type="text"] {
+  flex: 0 1 140px; min-width: 0;
+  margin-top: 0; padding: 4px 2px; border-radius: 0;
+  background: none; border: 0; border-bottom: 1px solid var(--line);
+}
 
 /* Who wrote it and which way it runs, on the song itself: there is no other
    page to keep them on any more. Three things about one song, so one line, and
