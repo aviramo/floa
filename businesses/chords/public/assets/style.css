@@ -312,6 +312,13 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 
 .row-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-inline-start: auto; }
 
+/* the way to what was deleted, and the way back from it: under the list, where
+   somebody who has finished reading it is looking */
+.after-list { display: flex; justify-content: center; margin: -40px 0 64px; }
+/* a song that is not in the library any more, and is still every word of what
+   it was */
+.list .row.is-gone { opacity: .8; }
+
 /* --- an evening of singing ----------------------------------------------
    A name, a date, and songs in the order they will be sung. The head and the
    tools are the song page's own, because it is the same shape of page: one
@@ -483,11 +490,27 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 /* On a screen with room the word sits BESIDE its field rather than over it.
    Two words of label, each on a line of its own, cost more height than they
    are worth on a page whose point is the song underneath: the eye is not
-   short of room to the side here, it is short of room downwards. */
+   short of room to the side here, it is short of room downwards.
+
+   AND THE LINE RUNS UNDER BOTH. It belongs to the field, and beside it the
+   word is part of the field: a rule that starts halfway along, after the
+   label, draws two things where there is one. So it moves off the input and
+   onto the row that holds them, and the row is what lights up when the field
+   inside it is being typed in. */
 @media (min-width: 621px) {
-  .song-meta label, .ev-meta label { display: flex; align-items: baseline; gap: 8px; }
-  .song-meta label input, .ev-meta label input { flex: 1 1 auto; min-width: 0; }
+  .song-meta label, .ev-meta label {
+    display: flex; align-items: baseline; gap: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .song-meta label input, .ev-meta label input {
+    flex: 1 1 auto; min-width: 0; border-bottom: 0;
+  }
   .ev-meta label input[type="date"] { flex: 0 0 auto; }
+  .song-meta label:hover, .ev-meta label:hover { border-bottom-color: var(--ink-soft); }
+  .song-meta label:focus-within, .ev-meta label:focus-within {
+    border-bottom-color: var(--accent); box-shadow: 0 1px 0 var(--accent);
+  }
+  .song-meta input:focus-visible, .ev-meta input:focus-visible { box-shadow: none; }
 }
 .song-meta input[type="text"],
 .ev-meta input[type="text"], .ev-meta input[type="date"] {

@@ -133,6 +133,23 @@ update public.songs
 -- who owns what, asked on every read
 create index if not exists songs_owner_idx on public.songs (owner);
 
+-- WHEN IT WAS DELETED, because deleting a song does not delete it. A song is
+-- an evening's worth of typing and half of them are deleted by somebody
+-- meaning to delete the other one; so the row stays exactly as it was and this
+-- column is the whole of the difference, and the library reads only the rows
+-- where it is null.
+--
+-- Its ADDRESS goes, though, which is the one thing that cannot be kept: the
+-- slug is unique, and a deleted song holding on to its own name is a song
+-- nobody can write again under that name. It is moved aside to a string
+-- nothing will ever ask for, and a restored song is given a fresh one from its
+-- title, the same way a new song gets its first.
+alter table public.songs add column if not exists deleted_at  timestamptz;
+
+-- the library asks for the living, newest change first, and that is the index
+create index if not exists songs_alive_idx on public.songs (updated_at desc)
+  where deleted_at is null;
+
 -- EVERY READING THE SONG HAS HAD, kept side by side.
 --
 -- A song is read by two different machines that fail in different ways, and

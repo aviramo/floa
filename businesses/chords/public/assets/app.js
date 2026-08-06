@@ -472,7 +472,7 @@
          being worked on is almost always one of the last few that were
          touched. Looking a song up by name is what the search box is, and it
          finds it wherever it sits. */
-      return rest(T + "?select=" + withOptional(LIST_FIELDS) + "&order=updated_at.desc").then(function (rows) {
+      return rest(T + "?select=" + withOptional(LIST_FIELDS) + "&deleted_at=is.null&order=updated_at.desc").then(function (rows) {
         /* a song still being read, or one that failed, goes to the top: it is
            the only row on the page that is waiting for something */
         return (rows || []).sort(function (a, b) {
@@ -540,7 +540,67 @@
           return self.update(id, song);
         });
     },
+    /* --- deleting, which does not delete --------------------------------------
+       A song is an evening's worth of typing, and half of the ones that get
+       deleted are deleted by somebody meaning to delete the other one. So the
+       row stays exactly as it is and only says when: the library reads the
+       living, and everything else is still there to be brought back.
+
+       ITS ADDRESS IS THE ONE THING THAT CANNOT BE KEPT. The slug is unique, so
+       a deleted song holding on to its name is a name nobody can use again,
+       and the old link would go on opening a song its owner meant to be rid
+       of. It is moved aside to a string nothing will ever ask for.
+
+       Published goes too: deleting is taking a song out of the world, and a
+       song out of the world that other people can still open is not out of it. */
     remove: function (id) {
+      return rest(T + "?id=eq." + encodeURIComponent(id), {
+        method: "PATCH",
+        body: shed({
+          deleted_at: new Date().toISOString(),
+          published: false,
+          slug: "-" + id,
+        }),
+      });
+    },
+
+    /* Everything deleted and not yet gone, newest first: what was deleted a
+       minute ago by mistake is what somebody is looking for. */
+    deleted: function () {
+      var self = this;
+      return rest(T + "?select=" + withOptional(LIST_FIELDS + ",deleted_at") +
+        "&deleted_at=not.is.null&order=deleted_at.desc")
+        .catch(function (error) {
+          if (!dropMissing(error)) throw error;
+          return self.deleted();
+        });
+    },
+
+    /* Back into the library, with a NEW address taken from its title the same
+       way a new song gets its first, because the old one was thrown away and
+       another song may be standing on it by now. 23505 is that other song. */
+    restore: function (song) {
+      var wanted = slugify(song.title || "");
+
+      var attempt = function (slug, tries) {
+        return rest(T + "?id=eq." + encodeURIComponent(song.id), {
+          method: "PATCH",
+          body: shed({ deleted_at: null, slug: slug }),
+          prefer: "return=representation",
+        }).then(function (rows) { return rows && rows[0]; })
+          .catch(function (error) {
+            if (String(error.code) === "23505" && tries < 30) {
+              return attempt(wanted + "_" + (tries + 1), tries + 1);
+            }
+            throw error;
+          });
+      };
+
+      return attempt(wanted, 1);
+    },
+
+    /* Gone for good, and the only thing here that is. */
+    purge: function (id) {
       return rest(T + "?id=eq." + encodeURIComponent(id), { method: "DELETE" });
     },
 
@@ -633,7 +693,7 @@
   /* Words the app has taken for itself under /chords/. A song may not be
      called one of them, because the address would be the app's answer rather
      than the song's. */
-  var RESERVED_SLUGS = { "new": true, "edit": true, "evenings": true };
+  var RESERVED_SLUGS = { "new": true, "edit": true, "evenings": true, "deleted": true };
 
   /* Two decimals is finer than any eye and any font, and it keeps a stored
      song readable instead of full of 6.234567901234568 */
@@ -1648,15 +1708,27 @@
      with a number to set it, without one to read it. */
   var SIZE_KEY = "chords.size";
 
+  /* A song is read from a music stand, at arm's length, by somebody holding a
+     guitar and not their glasses, so the top of this range is deliberately
+     larger than a page of text would ever want. */
+  var SIZE_MIN = 13;
+  var SIZE_MAX = 48;
+
+  /* TWO POINTS A PRESS. One was a step nobody could see: the difference
+     between 18 and 19 pixels is a difference you have to be told about, so
+     every change of size was four or five presses of a button to find out
+     whether you wanted it. */
+  var SIZE_STEP = 2;
+
   function readingSize(next) {
     if (next != null) {
-      var size = Math.max(13, Math.min(30, Math.round(next)));
+      var size = Math.max(SIZE_MIN, Math.min(SIZE_MAX, Math.round(next)));
       try { localStorage.setItem(SIZE_KEY, String(size)); } catch (e) { /* private window */ }
       return size;
     }
     var saved = 0;
     try { saved = parseInt(localStorage.getItem(SIZE_KEY), 10); } catch (e) { /* private window */ }
-    return saved >= 13 && saved <= 30 ? saved : 18;
+    return saved >= SIZE_MIN && saved <= SIZE_MAX ? saved : 18;
   }
 
   function setBusy(message) {
@@ -1958,20 +2030,22 @@
       var list = el("ul", "list");
       app.appendChild(list);
 
-      /* Named, and not only counted. Deleting is the one thing here that cannot
-         be undone, so the question says which songs it is about rather than how
-         many, and the list is what is being agreed to. */
+      /* Named, and not only counted: what is being agreed to is a list of
+         songs, and the names are what somebody can check. It no longer says
+         "לצמיתות", because it is not: they go to the deleted list with their
+         words and their chords, and the question says which way out there is
+         rather than making a promise the app does not keep. */
       function removePicked() {
         var going = pickedSongs();
         if (!going.length) return;
 
         var names = going.map(function (s) { return s.title; });
         var head = going.length === 1
-          ? "למחוק את השיר הזה לצמיתות?"
-          : "למחוק " + going.length + " שירים לצמיתות?";
+          ? "למחוק את השיר הזה?"
+          : "למחוק " + going.length + " שירים?";
         var said = names.slice(0, 12);
         if (names.length > said.length) said.push("ועוד " + (names.length - said.length));
-        if (!window.confirm(head + "\n\n" + said.join("\n"))) return;
+        if (!window.confirm(head + "\n\n" + said.join("\n") + "\n\nאפשר יהיה לשחזר מתוך שירים שנמחקו.")) return;
 
         Promise.all(going.map(function (s) { return db.remove(s.id); }))
           .then(function () {
@@ -2100,6 +2174,100 @@
       input.addEventListener("input", function () { paint(input.value); });
       paint("");
       poll();
+
+      /* The way to what was deleted, under everything and only when there is
+         something there. A library with an empty bin says nothing about bins:
+         the door appears when there is a room behind it. */
+      if (auth.in) {
+        db.deleted().then(function (gone) {
+          if (!list.isConnected || !gone || !gone.length) return;
+          var back = el("div", "after-list");
+          back.appendChild(button("שירים שנמחקו (" + gone.length + ")", ICON.trash, "ghost small", function () {
+            go(BASE + "/deleted");
+          }));
+          app.appendChild(back);
+        }).catch(function () { /* not being able to say is not worth saying */ });
+      }
+    }).catch(fail);
+  }
+
+  /* --- what was deleted ------------------------------------------------------
+     Deleting a song leaves it exactly where it was and takes its address away,
+     so this page is the only way back to one. Everything here is a song that
+     somebody meant to be rid of, and the point of the page is the handful of
+     those that somebody meant to keep.
+
+     Two things can be done to a row: bring it back, which gives it a fresh
+     address from its title, or delete it for good, which is the only thing in
+     this app that cannot be taken back and asks accordingly. */
+  function viewDeleted() {
+    document.title = "שירים שנמחקו | אקורדים";
+    if (!auth.in) return needSignIn();
+
+    setBusy("טוען");
+    db.deleted().then(function (gone) {
+      app.innerHTML = "";
+
+      var head = el("div", "song-head");
+      head.appendChild(el("h1", null, "שירים שנמחקו"));
+      head.appendChild(el("div", "by", "שיר שנמחק נשאר כאן עם המילים והאקורדים שלו. הכתובת שלו נזרקה, ושחזור נותן לו כתובת חדשה משמו."));
+      app.appendChild(head);
+
+      var list = el("ul", "list");
+      app.appendChild(list);
+
+      var actions = el("div", "row-actions");
+      actions.appendChild(button("לרשימת השירים", null, "ghost small", function () { go(BASE + "/"); }));
+      var after = el("div", "after-list");
+      after.appendChild(actions);
+      app.appendChild(after);
+
+      function paint(rows) {
+        list.innerHTML = "";
+        if (!rows.length) {
+          var empty = el("div", "center");
+          empty.appendChild(el("p", null, "אין כאן שירים שנמחקו."));
+          list.replaceWith(empty);
+          return;
+        }
+        rows.forEach(function (s) { list.appendChild(row(s, rows)); });
+      }
+
+      function row(s, rows) {
+        var li = el("li");
+        var box = el("div", "row is-gone");
+
+        var what = el("div");
+        var top = el("div", "t-row");
+        top.appendChild(el("div", "t", s.title));
+        var by = credits(s);
+        if (by.length) top.appendChild(el("div", "by", by.map(function (c) { return c.name; }).join(", ")));
+        what.appendChild(top);
+        var when = whenWords(s.deleted_at);
+        if (when) what.appendChild(el("div", "a", "נמחק " + when));
+        box.appendChild(what);
+
+        var buttons = el("div", "row-actions");
+        buttons.appendChild(button("שחזור", ICON.undo, "small", function () {
+          db.restore(s).then(function (back) {
+            toast("השיר חזר");
+            go(BASE + "/" + encodeURIComponent((back && back.slug) || slugify(s.title)));
+          }).catch(function (e) { toast("השחזור נכשל: " + e.message, true); });
+        }));
+        buttons.appendChild(button("מחיקה לצמיתות", ICON.trash, "danger small", function () {
+          if (!window.confirm('למחוק את "' + s.title + '" לצמיתות?\n\nזה השלב היחיד כאן שאי אפשר לחזור ממנו.')) return;
+          db.purge(s.id).then(function () {
+            paint(rows = rows.filter(function (other) { return other.id !== s.id; }));
+            toast("נמחק לצמיתות");
+          }).catch(function (e) { toast("המחיקה נכשלה: " + e.message, true); });
+        }));
+        box.appendChild(buttons);
+
+        li.appendChild(box);
+        return li;
+      }
+
+      paint(gone || []);
     }).catch(fail);
   }
 
@@ -2306,8 +2474,13 @@
       wait.appendChild(waitBox);
 
       var waitActions = el("div", "row-actions");
+      /* Purged and not deleted, which is the one place that difference is not
+         a kindness: a queued song's row IS its place in the queue, and the
+         Workflow holding it stops when it finds the row gone. A row still
+         sitting there with a date on it is a reading that goes on happening
+         and goes on being paid for. */
       waitActions.appendChild(button("ביטול", null, "ghost small", function () {
-        db.remove(s.id).then(refresh).catch(function (e) { toast("הביטול נכשל: " + e.message, true); });
+        db.purge(s.id).then(refresh).catch(function (e) { toast("הביטול נכשל: " + e.message, true); });
       }));
       wait.appendChild(waitActions);
 
@@ -2660,8 +2833,8 @@
     tools.appendChild(el("span", "sep"));
     tools.appendChild(control(
       "גודל", null,
-      function () { setSize(size - 1); },
-      function () { setSize(size + 1); }
+      function () { setSize(size - SIZE_STEP); },
+      function () { setSize(size + SIZE_STEP); }
     ));
 
     /* WHERE THE CAPO IS, WHICH IS WHEREVER THEY PUT IT. It moves nothing: the
@@ -3915,10 +4088,13 @@
       }
     }
 
+    /* It asks, and it no longer says "לצמיתות", because it is not: the song
+       keeps its words and its chords and goes to the deleted list, and the
+       question says so rather than making a promise the app does not keep. */
     function removeSong() {
-      if (!window.confirm('למחוק את "' + song.title + '" לצמיתות?')) return;
+      if (!window.confirm('למחוק את "' + song.title + '"?\n\nהשיר יעבור לשירים שנמחקו ואפשר יהיה לשחזר אותו.')) return;
       db.remove(song.id).then(function () {
-        toast("השיר נמחק");
+        toast("השיר נמחק. אפשר לשחזר מתוך שירים שנמחקו.");
         go(BASE + "/");
       }).catch(function (error) {
         toast("המחיקה נכשלה: " + error.message, true);
@@ -4018,8 +4194,10 @@
       actions.appendChild(button("להקליד ידנית", ICON.pencil, "ghost", function () {
         go(BASE + "/" + encodeURIComponent(song.slug) + "/edit");
       }));
+      /* A song that is still being read has nothing in it to keep, and its row
+         is what the Workflow reads to know it is still wanted. */
       actions.appendChild(button("מחיקה", ICON.trash, "danger", function () {
-        db.remove(song.id).then(function () { toast("נמחק"); go(BASE + "/"); })
+        db.purge(song.id).then(function () { toast("נמחק"); go(BASE + "/"); })
           .catch(function (e) { toast("המחיקה נכשלה: " + e.message, true); });
       }));
       box.appendChild(actions);
@@ -5103,7 +5281,9 @@
           if (parts().length === 0) route(); else go(BASE + "/");
         })
         .catch(function (error) {
-          created.forEach(function (row) { db.remove(row.id).catch(function () {}); });
+          /* rows made a second ago for a request that never landed: there is
+             nothing here for anybody to want back */
+          created.forEach(function (row) { db.purge(row.id).catch(function () {}); });
           fail(error.message, error.detail);
         });
     }
@@ -5215,6 +5395,9 @@
       if (p[1]) return viewEvening(p[1]);
       return viewEvenings();
     }
+
+    /* What was deleted and is still there. An account's own, so it needs one. */
+    if (p[0] === "deleted") return viewDeleted();
 
     /* A new song is the song page with nothing on it yet, and it needs somebody
        signed in to be worth opening at all. */
