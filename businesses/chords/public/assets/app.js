@@ -1296,6 +1296,9 @@
       "לחיצה על הפס שמעל השורה מוסיפה אקורד במקום שלחצתם, גרירה מזיזה אותו לאורך השורה, ולחיצה עליו פותחת אותו להקלדה."));
 
     var sheet = el("div", "sheet ed");
+    /* the same size the reader chose. Editing a song that looks different from
+       the song is editing something else. */
+    sheet.style.setProperty("--song-size", readingSize() + "px");
     app.appendChild(sheet);
 
     var addRow = el("div", "ed-bar");
