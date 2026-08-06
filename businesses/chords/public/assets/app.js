@@ -2170,6 +2170,10 @@
   /* --- the index ---------------------------------------------------------- */
 
   function viewIndex() {
+    /* THE LIBRARY GETS THE WHOLE WINDOW. Every other page here is one thing
+       being read or written, and a column of about eighty characters is what
+       that wants; a library is a wall of songs, and a wall wants the wall. */
+    document.body.classList.add("wide");
     setBusy("טוען שירים");
 
     db.list().then(function (songs) {
@@ -6288,6 +6292,7 @@
     /* the header follows the address, because what it offers depends on it.
        Nothing is printable until a view says it is, and every address starts
        out as not that. */
+    document.body.classList.remove("wide");
     state.printable = false;
     state.printer = null;
     state.killer = null;
