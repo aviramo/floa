@@ -2082,6 +2082,15 @@
         flag.title = "השיר נקרא מתוך קובץ ועדיין לא נבדק";
         top.appendChild(flag);
       }
+      /* And when it is neither, it says that too. The three numbers over the
+         list count these three things, so every row carries the one it is
+         counted in: a row with nothing on it would leave "שמור" as the label
+         you have to work out from the absence of the other two. */
+      if (!s.review && !s.draft) {
+        var done = el("span", "tag-kept", "שמור");
+        done.title = "השיר גמור ונבדק";
+        top.appendChild(done);
+      }
       box.appendChild(top);
 
       /* Under the name goes what you actually want to know before opening a
