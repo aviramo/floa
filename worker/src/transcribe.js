@@ -125,7 +125,9 @@ so the Am, being the rightmost, is the first chord of the line and the G is the 
         [Am]בנקיק נסתר [G]בצוקים [F]אילה שותה [Am]מים
 
   and NOT [Am]בנקיק נסתר [F]בצוקים [G]אילה שותה [Am]מים, which is what handing the left-to-right row to the right-to-left words produces.
-- A chord after the last word goes after it, with spaces before it if the sheet shows it further out: נה נה נה   [G]   [F]
+- A chord after the last word goes after it, and the SPACES ARE THE SPACING. There is nothing else to say how far out it sits, so a chord printed a hand's width past the words needs that many spaces in front of it, and a run of chords spread evenly across a line needs even gaps between them. Count roughly in characters: if the gap between two chord symbols on the page is about as wide as four letters of the words below, put four spaces. Three spaces for something the page spreads across half a line is the difference between a turnaround you can read and a knot.
+
+      נה נה נה...    [F]    [Am]    [F]    [G]
 - Lines are separated by a single newline. A blank line between stanzas is a blank line.
 - A heading that names a part of the song is a line wrapped in braces: {פזמון}, {בית}, {מעבר}, {Chorus}, {Intro}.
 - Right to left changes nothing about this. You are not counting from either end, you are putting a bracket in front of a letter.
