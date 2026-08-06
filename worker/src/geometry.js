@@ -36,6 +36,24 @@
       tight enough that a chord row and the words under it stay apart. */
 const SAME_ROW = 0.55;
 
+/* AND A ROW MAY NOT SWALLOW SOMETHING MUCH SMALLER THAN ITSELF. This is the
+   difference between a reader that works on a plain sheet and one that works
+   on a printed songbook, and it took a page of pointed Hebrew to find.
+
+   Niqqud hangs below the letter it belongs to, so a box holding a pointed
+   letter is two or three times the height of a bare one, and four times the
+   height of a chord symbol. A row of those, judged by its own height, reaches
+   half a line in every direction and takes the chord row above it with it.
+   The symbols are then read as part of the words, the row stops being a row of
+   chords, and everything printed over that verse is gone.
+
+   So a row that is much taller than the box asking to join it keeps a much
+   shorter reach: near enough to be part of the same printing, not near enough
+   to be a different line. Both numbers are wanted, because the ordinary case
+   is two boxes of a similar size and that one must not get stricter. */
+const MUCH_TALLER = 2.6;
+const APART = 0.22;
+
 /* 2. WHAT MAKES A SPACE. Printing has spaces; a list of boxes has gaps. A gap
       wider than this many typical glyph widths is a word break. Hebrew sets
       words tightly and the space between them is wide, so this is not a close
@@ -179,7 +197,27 @@ export function rowsOf(boxes) {
     .sort((a, b) => midY(a) - midY(b))
     .forEach((box) => {
       const row = rows[rows.length - 1];
-      if (row && Math.abs(midY(box) - row.middle) < row.height * SAME_ROW) {
+      /* MEASURED AGAINST THE SMALLER OF THE TWO, and that is the whole of it.
+
+         A chord symbol is half the height of a lyric letter, and on a sheet
+         with niqqud it is a quarter of it: the vowel marks hang below the
+         letter and the box that holds both is enormous. Judged against the
+         lyric row's height, a chord printed a comfortable distance above it is
+         "within half a line" and joins it, and then the chord row is gone: its
+         symbols are read as part of the words, the row is no longer a row of
+         chords, and a whole verse loses everything printed over it.
+
+         The smaller box is the one with something to lose, so it sets the
+         distance. A tall letter still gathers its neighbours; a small one has
+         to be genuinely close to anything. */
+      /* Only for something that is itself a letter. A full stop, a comma, the
+         tick under a chord: those are tiny wherever they are printed, so their
+         size says nothing about which line they belong to, and holding them to
+         this would strand every one of them on a line of its own. */
+      const letter = /[\p{L}\p{N}]/u.test(String(box.text));
+      const near = letter && row && row.height > box.h * MUCH_TALLER ? APART : SAME_ROW;
+      const reach = row ? row.height * near : 0;
+      if (row && Math.abs(midY(box) - row.middle) < reach) {
         row.boxes.push(box);
         row.heights.push(box.h);
         row.height = median(row.heights);
