@@ -1536,7 +1536,14 @@
         makeEditable(text);
         text.addEventListener("input", function () {
           var caret = caretIndex(text);
-          var next = text.textContent;
+
+          /* A space typed at the end of editable text is inserted by the
+             browser as a NON-BREAKING space, so that it cannot be collapsed
+             away. Here nothing collapses anything (white-space: pre), and a
+             song carrying two kinds of space that look identical is a song
+             where padding, trimming and searching all quietly disagree. Same
+             length, so the caret still points where it pointed. */
+          var next = text.textContent.replace(/ /g, " ");
 
           /* The new positions are written ONTO the chords, not swapped in as
              new objects. Everything that can move a chord after this, the drag
@@ -1548,6 +1555,8 @@
           line.chords.forEach(function (c, i) { c.pos = moved[i].pos; });
           line.text = next;
 
+          /* rebuilt from the model, which is what turns the browser's
+             non-breaking space back into an ordinary one on screen too */
           fillSpans(text, next);
           if (caret !== null) placeCaret(text, caret);
 
