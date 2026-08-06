@@ -214,18 +214,12 @@ import { directionOf, songFrom } from "./geometry.js";
    goes up, and the price goes up with it, and whether that is worth paying is
    a question about this song and not about this file.
 
-   max_tokens is a ceiling and not a target, and nothing is paid for room that
-   goes unused, so the two halves get different ceilings for different reasons.
-   The words need room for a long song. The chords need room to THINK: at high
-   effort the reasoning is most of the answer, and the one truly wasted read is
-   the one that reaches the ceiling mid-sentence and has to be thrown away
-   after being paid for in full. That happened once, at 42 cents. */
+   Which leaves the settings below, and one number above them that they answer
+   to. */
 const WORDS_MODEL = "claude-sonnet-5";
 const WORDS_EFFORT = "low";
-const WORDS_MAX_TOKENS = 32000;
 const CHORDS_MODEL = "claude-opus-5";
 const CHORDS_EFFORT = "medium";
-const CHORDS_MAX_TOKENS = 48000;
 
 /* US dollars per million tokens, so that a read can be priced from the usage
    the API reports rather than guessed at afterwards. A song carries what it
@@ -249,6 +243,39 @@ function costOf(model, usage) {
   const output = Number(usage.output || 0) * price.output;
   return (input + output) / 10000;          // dollars per million -> US cents
 }
+
+/* --- WHAT A SONG MAY COST -------------------------------------------------
+   In US cents, and a ceiling rather than a hope.
+
+   Everything else in this file is a judgement about accuracy; this is the one
+   number that is a decision about money, so it is written once and everything
+   else is derived from it. Change it and the reader changes with it.
+
+   IT IS ENFORCED, NOT INTENDED, and max_tokens is what enforces it. A read is
+   priced by what it writes, and almost all of what it writes is thinking, so
+   capping the tokens caps the bill. There is nothing else in the request that
+   would stop a model spending ten minutes and a dollar on one page, and it has
+   done exactly that.
+
+   WHICH TURNS EXPENSIVE INTO FAILED, and that is the trade, said plainly. A
+   song that would have run past the ceiling now stops at it and comes back as
+   a failed row, paid for and empty. That is worth taking only because a bill
+   with no top is worse than a failure with a known price, and because this
+   route is the fallback: measuring the page costs a fifth of a cent and is
+   where a song should be coming from.
+
+   The input side is not modelled. It is two or three cents whatever happens,
+   and pretending to control it would only make this arithmetic look more
+   precise than the price list it rests on. */
+const MAX_CENTS = 50;
+
+/* The budget, split and turned into token counts. The words get a small slice
+   because copying lyrics is small work: a long song runs to a couple of
+   thousand tokens and this leaves room for several. The judgement gets the
+   rest, because the judgement is what the money is for. */
+const cap = (model, cents) => Math.floor((cents / 100 / PRICES[model].output) * 1e6);
+const WORDS_MAX_TOKENS = cap(WORDS_MODEL, MAX_CENTS * 0.15);
+const CHORDS_MAX_TOKENS = cap(CHORDS_MODEL, MAX_CENTS * 0.8);
 
 export const MEDIA_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif", "application/pdf"];
 
