@@ -1294,7 +1294,10 @@
         requestAnimationFrame(function () { layoutAll(sheet, (song.dir || "rtl") === "rtl"); });
       }
 
-      draw();
+      /* through setSemis, not straight to draw: the counter is written there
+         and nowhere else, so starting any other way leaves it reading 0 over a
+         song that is being shown seven frets down */
+      setSemis(semis);
       relayoutOn(sheet, function () { return (song.dir || "rtl") === "rtl"; });
     }).catch(fail);
   }
