@@ -72,17 +72,18 @@
     /* four corners opening outwards: the song, and nothing else, on the whole
        of the screen */
     stage: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>',
-    /* a clock with a hand going backwards: not this change, the whole way back */
+    /* A CLOCK WITH A HAND GOING BACKWARDS, which is the picture everything else
+       uses for "what this was before", so it is the one on the way to the
+       versions and not on anything else. It was on the revert button, where it
+       meant something close enough to be confusing: back through this hour's
+       typing rather than back to a published song. That one is the rewind
+       below, and the difference between the two pictures is the difference
+       between the two things. */
     history: '<path d="M12 8.5V12l2.5 2"/><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M3 4v4h4"/>',
+    /* two arrows and the wall they stop at: not one change back, all of them */
+    rewind: '<path d="M20 6l-6 6 6 6"/><path d="M13 6l-6 6 6 6"/><path d="M5 5v14"/>',
     /* two things moving apart, which is what opening a gap does */
     gap: '<path d="M10 8l-4 4 4 4M14 8l4 4-4 4"/>',
-    /* Lines, and an arrow pushing them off the edge they start at. The arrows
-       point the way the words move on THIS page, which runs right to left, so
-       indenting is the one pointing left. */
-    indent: '<path d="M4 5h16M4 19h16M11 12h9M7 9l-3 3 3 3"/>',
-    outdent: '<path d="M4 5h16M4 19h16M4 12h9M17 9l3 3-3 3"/>',
-    /* a sheet with an older sheet behind it: the song, and the songs it was */
-    versions: '<rect x="8" y="3" width="12" height="14" rx="2"/><path d="M4 7v12a2 2 0 0 0 2 2h9"/>',
     /* --- the three controls over a song, as pictures ---
        Each has to be recognisable at fifteen pixels by somebody who was not
        told, so each is drawn as the thing itself rather than as an abstraction
@@ -3710,7 +3711,7 @@
        what there is to undo, and it is this page that knows: the bar is
        painted once and these two change on every keystroke. */
     var undoBtn = iconBtn(ICON.undo, "ביטול הפעולה האחרונה", undo);
-    var revertBtn = iconBtn(ICON.history, "החזרה למקור", revert);
+    var revertBtn = iconBtn(ICON.rewind, "החזרה למקור", revert);
     revertBtn.classList.add("quiet");
     /* WHERE THE WRITING GOT TO, which is what is left of the save button: the
        song writes itself now (see the saving block below), so the row does not
@@ -3742,7 +3743,7 @@
          be pressed to find that out. The answer comes back after the bar is
          painted, so the button is made hidden and shown when it is earned. */
       if (song.id) {
-        var pastBtn = iconBtn(ICON.versions, "גרסאות שפורסמו", function () {
+        var pastBtn = iconBtn(ICON.history, "גרסאות שפורסמו", function () {
           flush();
           go(BASE + "/" + encodeURIComponent(song.slug) + "/versions");
         });
@@ -3777,6 +3778,8 @@
        be scrolled back to between one press and the next is not there. */
     var blockBar = null;
     var blockCount = null;
+    /* the tick at the head of the sheet's own column of ticks, made in draw */
+    var allBox = null;
     var pasteLinesBtn = null;
     var pasteChordsBtn = null;
     if (editing && !coming) {
@@ -3785,8 +3788,6 @@
       blockBar.appendChild(blockCount);
       blockBar.appendChild(iconBtn(ICON.up, "להעלות את המסומן", function () { moveMarked(-1); }));
       blockBar.appendChild(iconBtn(ICON.down, "להוריד את המסומן", function () { moveMarked(1); }));
-      blockBar.appendChild(iconBtn(ICON.indent, "הזחה פנימה", function () { indentMarked(1); }));
-      blockBar.appendChild(iconBtn(ICON.outdent, "הזחה החוצה", function () { indentMarked(-1); }));
       blockBar.appendChild(button("שכפול", ICON.copy, "ghost small", copyMarked));
 
       /* One copy, and the two ways to put it down beside it. Neither of them
@@ -3824,29 +3825,11 @@
       app.appendChild(blockBar);
     }
 
-    var addRow = null;
-    if (editing && !coming) {
-      addRow = el("div", "ed-bar");
-      /* A new line runs the way the song's last line runs. Whoever is typing an
-         English chorus is typing the next line of it too. */
-      addRow.appendChild(button("שורה בסוף", ICON.plus, "ghost small", function () {
-        song.lines.push(blankLine(lastDir()));
-        draw();
-        focusLine(song.lines.length - 1);
-        mark();
-      }));
-      addRow.appendChild(button("כותרת קטע", ICON.section, "ghost small", function () {
-        song.lines.push({ type: "section", text: "פזמון", chords: [], dir: lastDir() });
-        draw();
-        focusLine(song.lines.length - 1);
-        mark();
-      }));
-      /* Here rather than in the block bar, because the block bar is not on
-         screen until something is marked, and this is how a song with nothing
-         marked gets everything marked. */
-      addRow.appendChild(button("סימון כל השורות", null, "ghost small", markAll));
-      app.appendChild(addRow);
-    }
+    /* There was a row of buttons under the sheet: a line at the end, a section
+       heading, and marking every line. The marking moved into the sheet, where
+       it is a tick at the head of the column of ticks and says what it does by
+       being where it is, and the row went with it. A line at the end is Enter
+       at the end of the last line, which is where a hand already is. */
 
     /* The sheet's own direction is the song's, which is its first line's. It
        decides where the capo chip and the headings sit; each line inside says
@@ -3856,8 +3839,30 @@
          hanging under one of them with it */
       hideGap();
       sheet.innerHTML = "";
+      allBox = null;
       song.dir = songDir(song.lines);
       sheet.dir = song.dir;
+
+      /* THE HEAD OF THE COLUMN OF TICKS. A tick above all the others, in line
+         with them, which marks every line in the song or lets them all go: it
+         is the same shape doing the same thing one level up, so it needs no
+         label to say so. It was a button under the sheet reading "סימון כל
+         השורות", a sentence to say what a tick in a column of ticks says by
+         being there. */
+      if (editing && !coming) {
+        var allRow = el("div", "ln ln-all");
+        var allPick = el("label", "ln-pick");
+        allBox = el("input");
+        allBox.type = "checkbox";
+        allBox.title = "סימון כל השורות";
+        allBox.setAttribute("aria-label", allBox.title);
+        allBox.addEventListener("change", function () {
+          if (allBox.checked) markAll(); else clearMarks();
+        });
+        allPick.appendChild(allBox);
+        allRow.appendChild(allPick);
+        sheet.appendChild(allRow);
+      }
 
       /* WHAT STANDS WHERE THE SONG WILL BE. A reading takes a minute or two
          and it is happening somewhere else, so the sheet says how long it has
@@ -4533,8 +4538,10 @@
     }
 
     function showMarked() {
-      if (!blockBar) return;
       var n = markedCount();
+      /* the head of the column is ticked when every line under it is */
+      if (allBox) allBox.checked = song.lines.length > 0 && n === song.lines.length;
+      if (!blockBar) return;
       blockBar.hidden = !n;
       blockCount.textContent = n === 1 ? "שורה אחת מסומנת" : n + " שורות מסומנות";
       pasteLinesBtn.hidden = !held;
@@ -4652,49 +4659,12 @@
       mark();
     }
 
-    /* --- room at the START of a line ------------------------------------------
-       The same room as between two letters, put where a line begins: one gap
-       character in front of the words, so the line starts a little further in
-       and the chord over its first letter comes with it.
-
-       WHAT IT IS FOR IS THE WHOLE SONG. Mark every line and press it, and the
-       song moves in as one, which is what a sheet wants when a chord over the
-       first letter of every line is hanging off the edge of the page. One line
-       at a time is the same button, on one line.
-
-       A HEADING IS LEFT ALONE. Its text is not laid out character by character
-       (only .ln-t is), so a gap in it would be a codepoint the font has never
-       heard of, drawn as a box, in the middle of the word "פזמון".
-
-       The chords come along, because they name characters and a character has
-       been added in front of all of them. */
-    function indentMarked(by) {
-      var going = song.lines.filter(function (line) {
-        return isMarked(line) && line.type !== "section";
-      });
-      if (!going.length) return;
-
-      var moved = false;
-      going.forEach(function (line) {
-        if (by > 0) {
-          line.text = GAP + line.text;
-          line.chords.forEach(function (c) { c.pos += 1; });
-          moved = true;
-          return;
-        }
-        /* out, and only out of room that was put there: a line that starts
-           with a letter has nothing to take back, and taking the letter would
-           be an indent button that deletes the song a character at a time */
-        if (line.text.charAt(0) !== GAP) return;
-        line.text = line.text.slice(1);
-        line.chords.forEach(function (c) { c.pos = Math.max(0, c.pos - 1); });
-        moved = true;
-      });
-      if (!moved) return;
-
-      draw();
-      mark();
-    }
+    /* There were two buttons here that put a gap at the front of every marked
+       line at once, and moving a whole song in from its edge is not a thing
+       the song wants said about it: the room a line needs at its start is the
+       same room any two letters need, one line at a time, and it is opened the
+       same way. Click where it should go and press the button that appears
+       (see offerGap). */
 
     /* --- ONE COPY, AND TWO WAYS TO PUT IT DOWN ---------------------------------
        Copying takes the marked lines whole: their words, their chords, and
