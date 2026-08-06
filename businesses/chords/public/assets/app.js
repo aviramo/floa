@@ -3501,6 +3501,9 @@
       dropBtn = button("הדבקת אקורדים", null, "ghost small", dropChords);
       dropBtn.hidden = true;
       blockBar.appendChild(dropBtn);
+      /* Last, and the only one here in the colour of something that removes:
+         a row of things that move and copy, and then the one that takes away. */
+      blockBar.appendChild(button("מחיקת השורות", ICON.trash, "danger small", dropMarked));
       blockBar.appendChild(button("ביטול הסימון", null, "ghost small", function () { clearMarks(); }));
       blockBar.hidden = true;
       app.appendChild(blockBar);
@@ -4236,6 +4239,27 @@
 
       draw();
       mark();
+    }
+
+    /* Out. The lines that were marked stop being part of the song, and a song
+       that has just lost all of its lines keeps one empty one, because a song
+       is a document and a document with nothing in it still has somewhere to
+       type.
+
+       It does not ask. Undo is one press away and takes the whole block back,
+       and a dialog in front of a thing that can be undone is a dialog that
+       teaches people to dismiss dialogs. */
+    function dropMarked() {
+      var going = song.lines.filter(isMarked);
+      if (!going.length) return;
+
+      song.lines = song.lines.filter(function (line) { return !isMarked(line); });
+      if (!song.lines.length) song.lines.push(blankLine(song.dir));
+      marked.length = 0;
+
+      draw();
+      mark();
+      toast(going.length === 1 ? "שורה נמחקה" : going.length + " שורות נמחקו");
     }
 
     /* A chorus is the same four lines again, and typing them a second time is
