@@ -922,8 +922,25 @@ export function writeLine(text, placed, trailing) {
 /* A finished document, made fit to keep. Both routes end here, because both
    can leave the same untidiness behind and neither of them is a song until it
    has been swept. */
+/* Hebrew points and cantillation: the marks written UNDER and OVER a letter,
+   never beside it. Not the maqaf, which is a hyphen and belongs to the word,
+   and not a Latin accent, because a songbook holds Portuguese too and Mãe is
+   spelt with one. */
+const NIQQUD = /[֑-ׇֽֿׁׂׅׄ]/g;
+
 function tidy(body) {
   const swept = String(body || "")
+    /* THE POINTS COME OFF. A printed songbook points its Hebrew; a screen does
+       not need it and this one is worse for it. The marks are half the height
+       of the letters and the app sets a chord over a CHARACTER, so a pointed
+       line is a line where the letters are further apart than they look and
+       the chords sit between them. They also arrive unevenly, some read and
+       some not, so the same song read twice is two different strings.
+
+       Safe to do at the end, and only at the end: a mark is a character of its
+       own that follows the letter it belongs to, so taking one out never moves
+       a bracket off the letter it was written after. */
+    .replace(NIQQUD, "")
     .replace(/\n{3,}/g, "\n\n")          // no gaps wider than one blank line
     .replace(/[ \t]+$/gm, "")            // trailing space is padding nobody asked for
     .trim()
