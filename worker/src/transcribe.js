@@ -135,6 +135,10 @@ so the Am, being the rightmost, is the first chord of the line and the G is the 
 TEXT AND CHORDS
 
 - Copy the lyrics as printed: same words, same spelling, same punctuation, including Hebrew niqqud if it is there. Do not translate, do not transliterate, do not correct.
+
+- REPEATED PHRASES ARE REPEATED EXACTLY AS OFTEN AS THE PAGE REPEATS THEM. This is the one error in the words that hides itself: a line reading "אילה מה לי ולה מה לי ולה מה לי ולה" comes back as "אילה מה לי ולה מה לי מה לי ולה" and reads perfectly well, so nothing about it looks wrong. It is wrong. And because every chord after the missing words shifts along with them, one skipped repetition turns the whole rest of the line into chords on the wrong syllables.
+
+  So on any line that says the same thing more than once: count the repetitions on the page, out loud, before writing the line. Then count them in what you wrote. Three means three.
 - Copy chords as printed, in Latin notation: A to G, with # or b, and whatever follows (m, 7, maj7, sus4, dim, add9) and any slash bass such as G/B.
 - Several images are pages of ONE song, in the order given. Return them as one continuous song.
 - Anything that is not the song itself, such as a page number, a website name or a printed comment, is left out.
@@ -143,6 +147,8 @@ TEXT AND CHORDS
 BEFORE YOU ANSWER
 
 Go back over each line once and check three things.
+
+The WORDS: the line you wrote has every word the page has, in order, with repeated phrases repeated as often as the page repeats them. Read the printed line and your line side by side, word for word, and only then move on. A line with a repetition missing reads perfectly and is wrong, and it drags every chord after it onto the wrong syllable.
 
 The COUNT: the line you wrote has exactly as many brackets as the page has chord symbols above that line. A missing one and an invented one both read as plausible.
 
