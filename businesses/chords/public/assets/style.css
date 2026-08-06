@@ -25,6 +25,12 @@
   --shadow: 0 1px 2px rgba(23, 32, 42, .05), 0 8px 24px rgba(23, 32, 42, .06);
 
   --song-size: 18px;
+
+  /* The song is set in the face a printed chord sheet is set in, not in the
+     app's own. Arial's Hebrew is the one nearly every sheet in circulation was
+     typed in, so a song here looks like the page it was copied from. No web
+     font is fetched: these are already on the machine. */
+  --song-font: "Arial Hebrew", Arial, "Helvetica Neue", Helvetica, "Segoe UI", sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -181,6 +187,7 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
   box-shadow: var(--shadow); padding: 22px 20px 30px; margin-bottom: 64px;
   overflow-x: auto;
+  font-family: var(--song-font);
 }
 
 /* --- a line, and the chords above it ------------------------------------

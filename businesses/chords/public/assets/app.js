@@ -883,7 +883,7 @@
     var box2 = el("div");
     box2.appendChild(el("div", "t", s.title));
     box2.appendChild(el("div", "a", reading
-      ? (s.status_note || "קורא את השיר") + ", אפשר לסגור את הדף"
+      ? (s.status_note || "קורא את השיר") + ", אל תסגרו את הדף"
       : stalled(s) ? "הקריאה נתקעה ולא הסתיימה" : "הקריאה נכשלה"));
     if (s.status !== "reading" && s.status_note) box2.appendChild(el("div", "detail", s.status_note));
     row.appendChild(box2);
@@ -1019,7 +1019,7 @@
       busy.appendChild(el("span", "spin"));
       busy.appendChild(document.createTextNode("קורא את " + song.title));
       box.appendChild(busy);
-      box.appendChild(el("p", "muted", "אפשר לסגור את הדף. הקריאה ממשיכה גם בלעדיו."));
+      box.appendChild(el("p", "muted", "הקריאה רצה כל עוד הדף פתוח. אפשר לעבור בין שירים בינתיים."));
       setTimeout(function () { if (box.isConnected) viewSong(song.slug); }, 5000);
     } else {
       box.appendChild(el("p", null, stalled(song)
@@ -1672,7 +1672,7 @@
     var drop = el("div", "drop");
     drop.appendChild(el("h3", null, "גררו לכאן צילום של השיר"));
     drop.appendChild(el("p", null,
-      "תמונה, כמה תמונות של אותו שיר, או PDF. המערכת קוראת את המילים ואת האקורדים ומציבה כל אקורד מעל ההברה שהוא יושב עליה בתמונה."));
+      "תמונה, כמה תמונות של אותו שיר, או PDF. המערכת קוראת את המילים ואת האקורדים ומציבה כל אקורד מעל ההברה שהוא יושב עליה בתמונה. זה לוקח כחצי דקה."));
 
     var input = el("input");
     input.type = "file";
@@ -1749,16 +1749,25 @@
           });
         });
       }).then(function (r) {
-        return r.json().then(function (body) {
-          if (!r.ok || !body.ok) {
+        if (!r.ok) {
+          return r.json().catch(function () { return {}; }).then(function (body) {
             var e = new Error(transcribeError(body, r.status));
             e.detail = body && body.detail;
             throw e;
-          }
-        });
-      }).then(function () {
+          });
+        }
+
+        /* The response stays open for as long as the reading takes, and it has
+           to: the bytes trickling down it are what keep the Worker alive, since
+           Cloudflare cancels work that outlives its request. Nothing here waits
+           for it, because the finished song lands on the ROW rather than in this
+           response, and the list is already watching the row. Reading it to the
+           end is the whole job. */
+        r.text().catch(function () {});
+        created = null;                     // handed over; not ours to undo now
+
         dlg.close();
-        toast("השיר נקרא ברקע. אפשר לסגור את הדף.");
+        toast("קורא את השיר. אפשר להמשיך לעבוד, רק לא לסגור את הדף.");
         if (parts().length === 0) route(); else go(BASE + "/");
       }).catch(function (error) {
         /* the row was created but the work never started: it would sit as

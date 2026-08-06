@@ -246,13 +246,20 @@ async function signedIn(env, token) {
   return res.ok;
 }
 
-/* Answers at once and keeps working.
+/* Reads the picture while the caller holds the line, and answers in dribs.
 
-   The reading takes minutes, and a browser is a bad place to keep a minutes
-   long job: close the tab and it is gone. So the row already exists (the app
-   created it as `reading` before calling), this hands the work to waitUntil,
-   and transcribe.js writes the finished song onto that row itself. The caller
-   is free the moment it gets this 202, and can watch the row instead. */
+   Two limits shape this, and between them they rule out both obvious designs.
+   A silent request is cut at a hundred seconds with a 524, so the answer
+   cannot simply be waited for. And waitUntil, which is what "answer at once
+   and keep working" would need, is cancelled by the runtime shortly after the
+   response ends: it was tried, and the log said so in as many words.
+
+   So the response is a stream that says nothing until it has something to say,
+   and meanwhile emits a space every five seconds. Bytes on the wire are what
+   keeps both the connection and the invocation alive. The finished song is
+   written onto the row by transcribe.js either way, so the caller can watch the
+   row and never has to read this response at all. What it does have to do is
+   stay open: this is the one thing here that does not survive a closed tab. */
 async function handleTranscribe(request, env, ctx, origin) {
   if (!env.ANTHROPIC_API_KEY) {
     console.error("transcribe dropped: ANTHROPIC_API_KEY is not set on the Worker");
@@ -287,15 +294,32 @@ async function handleTranscribe(request, env, ctx, origin) {
   }
   if (total > MAX_BASE64) return json({ ok: false, error: "size" }, 413, origin);
 
-  /* The job outlives this response. Anything it throws would otherwise be
-     swallowed by waitUntil and leave the row saying `reading` for ever, so it
-     is caught here and said out loud. */
-  ctx.waitUntil(
-    readAndSave(env, token, songId, files)
-      .catch((err) => console.error("transcribe crashed", songId, err && err.message, err && err.stack))
-  );
   console.log("transcribe accepted", songId, files.length, "file(s)");
-  return json({ ok: true, reading: true }, 202, origin);
+
+  const { readable, writable } = new TransformStream();
+  const writer = writable.getWriter();
+  const encode = new TextEncoder();
+  const say = (text) => writer.write(encode.encode(text)).catch(() => {});
+
+  /* a space every five seconds: enough to keep the wire warm, and whitespace
+     the caller trims off before reading what actually came back */
+  const alive = setInterval(() => say(" "), 5000);
+
+  readAndSave(env, token, songId, files)
+    .then(() => say(JSON.stringify({ ok: true, done: true })))
+    .catch((err) => {
+      console.error("transcribe crashed", songId, err && err.message, err && err.stack);
+      return say(JSON.stringify({ ok: false, error: "read", detail: String(err && err.message).slice(0, 300) }));
+    })
+    .finally(() => {
+      clearInterval(alive);
+      writer.close().catch(() => {});
+    });
+
+  return new Response(readable, {
+    status: 200,
+    headers: { "content-type": "text/plain; charset=utf-8", ...cors(origin) },
+  });
 }
 
 /* --- /lead ---------------------------------------------------------------- */
