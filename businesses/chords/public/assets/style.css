@@ -682,25 +682,35 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    is ink. A space's worth of width, given here rather than left to the font,
    because the codepoint is a private-use one and what a font draws for one of
    those is a box, if it draws anything. */
+/* The character itself has no size at all, which is what puts out the box a
+   font draws for a codepoint it has never heard of. The WIDTH is the span's,
+   given in the song's own size rather than in em: an em of a font-size of zero
+   is zero. */
 .ln-t .gap {
-  display: inline-block; width: .34em; overflow: hidden;
-  color: transparent; vertical-align: baseline;
-  position: relative;
+  display: inline-block; vertical-align: baseline;
+  width: calc(var(--song-size) * .34);
+  font-size: 0;
 }
 
-/* WHILE IT IS BEING WRITTEN, a gap shows a dash. An invisible thing cannot be
-   counted, moved or deleted on purpose, and the whole business of opening one
-   is aiming: you need to see the room you made and how much of it there is.
+/* A gap in the editor draws a rule the width of itself, and the rule is the
+   colour of the paper: invisible, and there.
 
-   Drawn on top rather than put in the line, so it costs no width and no
-   character: the model has a gap there, not a hyphen, and what the reader
-   opens and what a lyrics sheet prints is the word with nothing between its
-   letters. */
-.ed .ln-t .gap::before {
-  content: "-";
-  position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  color: var(--chord); opacity: .45; font-weight: 400;
+   THAT IS DELIBERATE AND IT LOOKS LIKE NOTHING, WHICH IS THE POINT. The room
+   is meant to read as room. What the rule is for is the caret: an inline-block
+   with no ink at all is a box a browser will not always let you land in, and
+   painting it edge to edge means the run is one continuous shape rather than
+   the row of separate dashes this was for an hour, which read as three of
+   something instead of one piece of room.
+
+   Painted rather than written, either way. The model has a gap there, not a
+   hyphen, and what the reader opens and what a lyrics sheet prints is the word
+   with nothing at all between its letters. */
+.ed .ln-t .gap {
+  height: calc(var(--song-size) * .5);
+  background-image: linear-gradient(var(--card), var(--card));
+  background-size: 100% 1px;
+  background-position: 0 50%;
+  background-repeat: no-repeat;
 }
 
 /* The button that opens one. Under the letters, in the air between two lines,

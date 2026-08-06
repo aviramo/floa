@@ -129,7 +129,7 @@
            from the account rather than from this browser, so it is the same
            on the phone on the sofa as on the desk it was set at. */
         capo: meta && typeof meta.capo === "number" ? meta.capo
-          : (this.session && typeof this.session.capo === "number" ? this.session.capo : -1),
+          : (this.session && typeof this.session.capo === "number" ? this.session.capo : 0),
       };
       localStorage.setItem(SESSION_KEY, JSON.stringify(this.session));
     },
@@ -142,27 +142,27 @@
     get in() { return !!(this.session && this.session.refresh_token); },
 
     /* --- the fret this person plays at ---------------------------------------
-       A song opens at whatever capo turns ITS chords into the fewest barres,
-       which is a fact about the song. This is a fact about the player: the one
-       fret their voice sits at, or the one their hand is used to, and it beats
-       the arithmetic because the arithmetic never knew what key anybody sings
-       in.
+       WHERE THE CAPO IS, BECAUSE THEY PUT IT THERE. Not worked out from
+       anything: the app used to derive a capo from the transposition, which
+       made one number wear two hats and meant the answer to "where is my capo"
+       changed every time somebody moved the song. This is the other thing
+       entirely, a fact about the player and their guitar, and the sheet simply
+       says it.
 
-       -1 means no answer, and no answer is not zero: it is "work it out per
-       song", which is what the app did before this existed and what it goes
-       back to when the number is taken off.
+       A fret, so zero or up: there is no minus second fret. Zero is no capo,
+       which is a real answer and the usual one.
 
        It lives on the ACCOUNT, in the user's own metadata, not in this
        browser. A capo is a fact about a person, and the person is the same
        person on the phone they are holding and the desk they set it at. */
     capo: function () {
       var value = this.session && this.session.capo;
-      return typeof value === "number" && value >= 0 ? value : -1;
+      return typeof value === "number" && value > 0 ? Math.round(value) : 0;
     },
 
     setCapo: function (value) {
       var self = this;
-      var kept = value >= 0 ? value : -1;
+      var kept = value > 0 ? Math.round(value) : 0;
       /* on screen at once, written behind it: the sheet redrawing is the
          answer to the press, and a fret is not worth waiting on a network for */
       if (this.session) {
@@ -2331,23 +2331,25 @@
        sentence under the title. So the phone reads and the desk writes. */
     var editing = auth.in && !NARROW.matches;
 
-    /* A song opens on its EASY version: transposed down by whatever capo turns
-       its chords into the fewest barres. So the number differs from song to
-       song, because it is a property of the song rather than a preference, and
-       a negative transposition is exactly what a capo is. Moving it is still
-       one button away, and 0 is the song as written.
+    /* TWO NUMBERS, AND THEY ARE NOT THE SAME NUMBER.
 
-       Unless the person reading has said where their own capo goes, in which
-       case that wins. The easy version is arithmetic about the chords; a capo
-       somebody actually clamps on is about their voice, and the arithmetic
-       never knew what key they sing in. */
+       The transposition moves the chords on the page. It opens at 0, the song
+       as it was written, and it belongs to this reading of this song: it is
+       forgotten the moment the page is left.
+
+       The capo is where the reader's capo is. It moves nothing. It is a fact
+       about the guitar in their hands, it is the same on every song and on
+       every screen they open, and the sheet's only job is to say it.
+
+       They were one number for a while: the song opened transposed down to
+       whatever fret made its chords easiest, and the sheet called that number
+       the capo. It reads well and it is a guess about somebody else's hands,
+       and worse, it meant "where is my capo" changed every time anybody moved
+       the song a semitone. The easy version is still worked out, and still on
+       every row of the library, where it is a fact about the song and nobody
+       has to accept it. */
     var myCapo = auth.capo();
-
-    function openingSemis() {
-      return myCapo >= 0 ? -myCapo : -easyVersion(chordsUsed(song.lines)).capo;
-    }
-
-    var semis = openingSemis();
+    var semis = 0;
 
     /* the size follows the reader from song to song. The transposition does
        not: it belongs to the one song it was worked out for. */
@@ -2576,14 +2578,14 @@
       function () { setSize(size + 1); }
     ));
 
-    /* The fret THIS PERSON plays at, which is a different question from the one
-       beside it. Transposition moves this song, now, for as long as it is open.
-       This is an answer about the player: every song opens here from now on,
-       on this screen and on their phone, because it lives on the account.
+    /* WHERE THE CAPO IS, WHICH IS WHEREVER THEY PUT IT. It moves nothing: the
+       chords on the page are the transposition's business, and this is a fact
+       about the guitar. The sheet says it under the title and that is the
+       whole of what it does with it.
 
-       Below zero it says "אוטומטי", and that is not a number: it is the app
-       working the capo out per song from the chords, which is what it did
-       before anybody said where their own capo goes.
+       A fret, so zero or up, and zero means no capo, which is a real answer
+       and the usual one. It is the same on every song and on every screen the
+       account opens, because it is a fact about the player.
 
        Only for somebody signed in. There is no account to keep it on
        otherwise, and a preference that is silently forgotten is worse than one
@@ -2593,27 +2595,26 @@
       tools.appendChild(el("span", "sep"));
       myValue = el("span", "val");
       var mine = control(
-        "הקפו שלי", myValue,
+        "קפו", myValue,
         function () { setMyCapo(myCapo - 1); },
         function () { setMyCapo(myCapo + 1); }
       );
-      mine.title = "הקפו שאתם מנגנים בו. כל שיר ייפתח בו, בכל מכשיר.";
+      mine.title = "באיזה סריג הקפו שלכם. נשמר לחשבון ומופיע על כל שיר.";
       tools.appendChild(mine);
       showMyCapo();
     }
 
     function showMyCapo() {
-      if (!myValue) return;
-      myValue.textContent = myCapo >= 0 ? String(myCapo) : "אוטו";
+      if (myValue) myValue.textContent = String(myCapo);
     }
 
     /* The sheet answers at once and the account is told behind it: a fret is
        not worth waiting on a network for, and the number is already kept in
        this browser's copy of the session either way. */
     function setMyCapo(next) {
-      myCapo = next < 0 ? -1 : Math.min(next, MAX_CAPO);
+      myCapo = Math.max(0, Math.min(next, MAX_CAPO));
       showMyCapo();
-      setSemis(openingSemis());
+      showCapo();
       auth.setCapo(myCapo).catch(function () {
         toast("הקפו נשמר כאן, אבל לא הצליח להישמר בחשבון", true);
       });
@@ -2656,8 +2657,15 @@
     app.appendChild(tools);
 
     /* Inside the sheet, so it prints with the song: the shapes are useless to
-       anyone who does not know where the capo goes. */
+       anyone who does not know where the capo goes. It says where the READER's
+       capo is, which is a number they set and nothing here works out, and it
+       says nothing at all when there is no capo on the neck. */
     var capo = el("div", "capo-line");
+
+    function showCapo() {
+      capo.textContent = myCapo > 0 ? "קפו " + myCapo : "";
+      capo.hidden = !myCapo;
+    }
     var sheet = el("div", "sheet" + (editing ? " ed" : ""));
     sheet.style.setProperty("--song-size", size + "px");
     app.appendChild(sheet);
@@ -2737,12 +2745,7 @@
       song.dir = songDir(song.lines);
       sheet.dir = song.dir;
 
-      /* A chord shown a fret below what the song is in is a chord you play with
-         a capo there, so the sheet says where the capo goes, and says nothing
-         otherwise: raising the key is not a capo, and the control above already
-         shows by how much. */
-      capo.textContent = semis < 0 ? "קפו " + (-semis) : "";
-      capo.hidden = semis >= 0;
+      showCapo();
       sheet.appendChild(capo);
 
       song.lines.forEach(function (line, index) {
