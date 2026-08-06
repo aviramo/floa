@@ -65,6 +65,9 @@
     copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/>',
     close: '<path d="M6 6l12 12M18 6L6 18"/>',
     check: '<path d="M5 13l4 4 10-11"/>',
+    /* four corners opening outwards: the song, and nothing else, on the whole
+       of the screen */
+    stage: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>',
     /* a clock with a hand going backwards: not this change, the whole way back */
     history: '<path d="M12 8.5V12l2.5 2"/><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M3 4v4h4"/>',
     /* two things moving apart, which is what opening a gap does */
@@ -1886,7 +1889,10 @@
   /* ------------------------------------------------------------------ views */
 
   var app = document.getElementById("app");
-  var state = { songs: null, printable: false, printer: null, killer: null, editToggle: null };
+  var state = {
+    songs: null, printable: false, printer: null, killer: null,
+    editToggle: null, stage: null,
+  };
 
   /* How big this reader wants the words, kept between songs and between visits.
      Whoever needs a bigger font on one song needs it on the next one too, and
@@ -2069,6 +2075,7 @@
         if (edit.on) editBtn.classList.add("is-on");
         bar.appendChild(editBtn);
       }
+      if (state.stage) bar.appendChild(iconBtn(ICON.stage, "מצב תצוגה", state.stage));
       if (state.printable) {
         var printBtn = iconBtn(ICON.print, "הדפסה", function () { askPrint(printBtn); });
         bar.appendChild(printBtn);
@@ -2913,6 +2920,7 @@
        LEAVING IS SAFE, so nothing asks. The song writes itself, and whatever
        is still on the clock goes out on the way. */
     state.printable = true;
+    state.stage = function () { openStage(); };
     if (auth.in && onPhone) {
       state.editToggle = {
         on: editing,
@@ -4668,6 +4676,126 @@
        No navigation afterwards, because there is nowhere to go: this is already
        the page the saved song lives on. The address follows the name if the
        name changed, and the button goes away, which is the receipt. */
+    /* --- מצב תצוגה: the song, and nothing else -------------------------------
+       A song is read from a stand, across a room, by somebody whose hands are
+       full. What that wants is the biggest words that will fit and NO
+       SCROLLING: a scroll in the middle of a verse is a gesture nobody has a
+       hand free for.
+
+       So this is the song alone on the whole screen, and if it does not fit
+       down the page at the size that has been chosen, it is poured into TWO
+       COLUMNS instead of being made smaller. A wide screen has the room
+       sideways that it does not have downwards, and two columns of a song is
+       what a printed songbook does with the same problem.
+
+       One column while one column fits, because two columns of four lines each
+       is a page pretending to be full.
+
+       The size is the same one the page uses, so it is where the reader left
+       it, and changing it here re-pours everything: the columns are decided
+       again from the height it lands at.
+
+       Nothing else is on screen. The controls fade out and come back on a
+       touch or a movement of the mouse, which is what a page whose whole point
+       is to be looked at from a distance wants. */
+    function openStage() {
+      var stage = el("div", "stage");
+      var sheetOn = el("div", "sheet stage-sheet");
+      var size = readingSize();
+
+      stage.appendChild(sheetOn);
+      document.body.appendChild(stage);
+      document.body.classList.add("on-stage");
+
+      /* --- the controls, quiet and gone in a moment --- */
+      var bar = el("div", "stage-bar");
+      var less = iconBtn('<path d="M5 12h14"/>', "פחות גודל", function () { setStageSize(size - SIZE_STEP); });
+      var more = iconBtn(ICON.plus, "יותר גודל", function () { setStageSize(size + SIZE_STEP); });
+      var shut = iconBtn(ICON.close, "יציאה ממצב תצוגה", closeStage);
+      bar.appendChild(less);
+      bar.appendChild(more);
+      bar.appendChild(shut);
+      stage.appendChild(bar);
+
+      var sleepTimer = null;
+      function wake() {
+        stage.classList.add("is-awake");
+        clearTimeout(sleepTimer);
+        sleepTimer = setTimeout(function () { stage.classList.remove("is-awake"); }, 2500);
+      }
+      stage.addEventListener("pointermove", wake);
+      stage.addEventListener("pointerdown", wake);
+      wake();
+
+      /* --- the song --- */
+      function drawStage() {
+        sheetOn.innerHTML = "";
+        sheetOn.dir = song.dir || "rtl";
+        sheetOn.style.setProperty("--song-size", size + "px");
+        song.lines.forEach(function (line) { sheetOn.appendChild(viewLine(line, semis)); });
+        fitStage();
+      }
+
+      /* One column, and two if one will not do. Measured rather than guessed:
+         the sheet is laid out in one column, and if what came out is taller
+         than the screen it is laid out again in two. The chords are placed
+         after the columns settle, because a chord belongs to the line where
+         the line ended up. */
+      function fitStage() {
+        stage.classList.remove("is-two");
+        requestAnimationFrame(function () {
+          if (sheetOn.scrollHeight > sheetOn.clientHeight + 1) stage.classList.add("is-two");
+          requestAnimationFrame(function () { layoutAll(sheetOn); });
+        });
+      }
+
+      function setStageSize(next) {
+        size = readingSize(next);
+        drawStage();
+      }
+
+      function closeStage() {
+        clearTimeout(sleepTimer);
+        window.removeEventListener("resize", fitStage);
+        document.removeEventListener("keydown", onStageKey, true);
+        document.removeEventListener("fullscreenchange", onFullscreen);
+        if (document.fullscreenElement) document.exitFullscreen().catch(function () {});
+        document.body.classList.remove("on-stage");
+        stage.remove();
+        /* the reading size may have moved while it was up there, and the page
+           underneath is still showing the old one */
+        renderSong(song);
+      }
+
+      function onStageKey(event) {
+        if (event.key === "Escape") { event.preventDefault(); return closeStage(); }
+        if (event.key === "+" || event.key === "=") { event.preventDefault(); return setStageSize(size + SIZE_STEP); }
+        if (event.key === "-" || event.key === "_") { event.preventDefault(); return setStageSize(size - SIZE_STEP); }
+      }
+
+      /* Leaving fullscreen by any of the ways a browser offers leaves the
+         stage itself standing, and a page that is neither one thing nor the
+         other is worse than either. */
+      function onFullscreen() {
+        if (!document.fullscreenElement && stage.isConnected) closeStage();
+      }
+
+      window.addEventListener("resize", fitStage);
+      document.addEventListener("keydown", onStageKey, true);
+
+      /* Asked for, and it may be refused: some browsers only allow it from a
+         gesture and some do not have it at all. The stage covers the screen
+         either way, so a refusal costs the browser's own chrome and nothing
+         else. */
+      if (stage.requestFullscreen) {
+        stage.requestFullscreen().then(function () {
+          document.addEventListener("fullscreenchange", onFullscreen);
+        }).catch(function () {});
+      }
+
+      drawStage();
+    }
+
     /* --- saving, which happens by itself --------------------------------------
        NO SAVE BUTTON. A song is written a word at a time and there is nothing
        to review before a word counts, so a change writes itself: the typing
@@ -6059,6 +6187,7 @@
     state.printer = null;
     state.killer = null;
     state.editToggle = null;
+    state.stage = null;
     paintHeader();
     var p = parts();
 

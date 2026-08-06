@@ -1228,3 +1228,50 @@ button.val:hover { border-color: var(--line); background: #fff; }
   .sheet { border: none; box-shadow: none; padding: 0 26px; overflow: visible; }
   .wrap { width: 100%; }
 }
+
+/* --- מצב תצוגה ------------------------------------------------------------
+   The song alone on the whole screen, for reading from a stand across a room
+   with both hands on a guitar. What that wants is the largest words that fit
+   and NOTHING to scroll: a scroll in the middle of a verse is a gesture
+   nobody there has a hand free for.
+
+   So when the song does not fit down the page it is poured into two columns
+   rather than made smaller. A wide screen has room sideways that it does not
+   have downwards, which is exactly what a printed songbook does with the same
+   problem, and the first column is on the right where a Hebrew page starts.
+   -------------------------------------------------------------------------- */
+.stage {
+  position: fixed; inset: 0; z-index: 100;
+  background: var(--card);
+  padding: 26px 34px;
+  overflow: hidden;
+}
+/* nothing behind it moves while it is up */
+body.on-stage { overflow: hidden; }
+
+/* The sheet without the card: no border, no shadow, no margins, and a height
+   of exactly the screen, which is what makes "does it fit" a question with an
+   answer and what the columns are filled against. */
+.stage-sheet {
+  height: 100%; margin: 0; padding: 0;
+  border: 0; box-shadow: none; border-radius: 0;
+  overflow: hidden;
+}
+.stage.is-two .stage-sheet { columns: 2; column-gap: 52px; column-fill: auto; }
+/* a line and the chords over it are one thing, and a column break through the
+   middle of it would leave the chords on the other side of the page */
+.stage .ln { break-inside: avoid; }
+
+/* The controls, which are not what this screen is for: they fade out and come
+   back on a touch or a movement of the mouse. */
+.stage-bar {
+  position: fixed; z-index: 2;
+  inset-inline-start: 18px; bottom: 18px;
+  display: flex; gap: 6px; padding: 6px;
+  background: rgba(255, 255, 255, .94);
+  border: 1px solid var(--line); border-radius: 999px;
+  box-shadow: 0 6px 20px rgba(23, 32, 42, .14);
+  opacity: 0; pointer-events: none; transition: opacity .2s;
+}
+.stage.is-awake .stage-bar { opacity: 1; pointer-events: auto; }
+@media (prefers-reduced-motion: reduce) { .stage-bar { transition: none; } }
