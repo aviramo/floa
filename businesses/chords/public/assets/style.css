@@ -89,6 +89,10 @@ body {
 .muted { color: var(--ink-soft); }
 .err { color: var(--danger); font-size: 14px; margin: 4px 0 0; }
 .center { text-align: center; padding: 56px 0; color: var(--ink-soft); }
+.center p { margin: 0 0 18px; }
+
+/* .btn sets display, which beats the user agent's rule for [hidden] */
+[hidden] { display: none !important; }
 
 .card {
   background: var(--card); border: 1px solid var(--line);

@@ -454,11 +454,19 @@
     app.appendChild(box);
   }
 
+  function newSong() {
+    requireAuth(function () { go(BASE + "/new"); });
+  }
+
+  /* "שיר חדש" is shown to everyone, signed in or not. Hiding it until you log
+     in leaves a visitor looking at an empty list with no way forward and no
+     reason given; showing it and asking for the password on the click says
+     what the rule is at the moment it applies. */
   function paintHeader() {
     var bar = document.getElementById("topActions");
     bar.innerHTML = "";
+    bar.appendChild(button("שיר חדש", ICON.plus, "small", newSong));
     if (auth.in) {
-      bar.appendChild(button("שיר חדש", ICON.plus, "small", function () { go(BASE + "/new"); }));
       bar.appendChild(button("יציאה", null, "ghost small", function () {
         auth.signOut();
         paintHeader();
@@ -531,7 +539,12 @@
       var list = el("ul", "list");
       app.appendChild(list);
 
-      var empty = el("p", "center", "עוד אין שירים כאן. הוסיפו את הראשון.");
+      /* the empty list carries the way out of itself */
+      var empty = el("div", "center");
+      var emptyText = el("p");
+      var emptyAction = button("להוסיף את השיר הראשון", ICON.plus, null, newSong);
+      empty.appendChild(emptyText);
+      empty.appendChild(emptyAction);
 
       function paint(filter) {
         list.innerHTML = "";
@@ -542,7 +555,8 @@
 
         if (!shown.length) {
           if (!empty.parentNode) app.appendChild(empty);
-          empty.textContent = q ? "לא נמצא שיר שמתאים לחיפוש." : "עוד אין שירים כאן. הוסיפו את הראשון.";
+          emptyText.textContent = q ? "לא נמצא שיר שמתאים לחיפוש." : "עוד אין שירים כאן.";
+          emptyAction.hidden = !!q;
           return;
         }
         if (empty.parentNode) empty.remove();
