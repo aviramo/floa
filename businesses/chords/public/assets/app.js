@@ -1068,6 +1068,124 @@
     Array.prototype.forEach.call(root.querySelectorAll(".ln"), function (ln) { layoutLine(ln, rtl); });
   }
 
+  /* --- a line too long for the screen --------------------------------------
+     On a desk the sheet scrolls sideways and that is fine: the whole line is
+     an arm's reach away. On a phone it is not. A song you have to drag left
+     and right to read is a song you cannot play from, and the words that fell
+     off the edge are the ones nobody sees at all.
+
+     So on a narrow screen a line that does not fit is BROKEN, at a space,
+     never inside a word, and what is left over goes on a row of its own
+     directly under it. Not merged into the next line of the song: the chords
+     above these words belong to THIS line, and dropping them onto the next
+     one would print them over syllables they were never written for.
+
+     The break is a fact about the screen, not about the song. Nothing here is
+     saved, nothing changes what is stored, and a wider screen or a smaller
+     font simply breaks it in fewer places or not at all.
+
+     The continuation row is marked (an arrow, in the margin the row is
+     indented by) and pulled tight against the row it fell out of, while the
+     air below the group stays as it was. So what the eye separates is one
+     sung line from the next, and the arrow says the row it is on is a
+     leftover rather than a line of its own. That distinction is the whole
+     point: a reader must never take a broken line for two lines.
+
+     It works off the DOM rather than off the song, so the labels are the ones
+     already on screen, transposed. Called with the rows measured, i.e. after
+     they are in the page.
+     ------------------------------------------------------------------------ */
+
+  /* How far a continuation row is pushed in, and how wide the margin holding
+     its arrow is. One number, handed to the stylesheet, so the indent and the
+     mark cannot drift apart. */
+  var CONT_INDENT = 1.5;
+
+  function wrapAll(root, rtl) {
+    Array.prototype.forEach.call(root.querySelectorAll(".ln"), function (ln) { wrapRow(ln, rtl); });
+  }
+
+  function wrapRow(ln, rtl) {
+    var m = metrics(ln, rtl);
+    var t = ln.querySelector(".ln-t");
+    if (!m || !t || !m.count) return;
+
+    var width = ln.clientWidth;
+    if (!(width > 0)) return;
+
+    var text = t.textContent;
+    var chords = Array.prototype.map.call(ln.querySelectorAll(".ln-c .chord"), function (node) {
+      return { label: node.textContent, pos: Number(node.dataset.pos) || 0 };
+    });
+
+    /* The line is counted in cells: one per character, and then as many more
+       as the chords past the last character need. An outro is a row of chords
+       over nothing, and it runs off the edge exactly like words do. */
+    var far = -1;
+    chords.forEach(function (c) { if (c.pos > far) far = c.pos; });
+    var cells = Math.max(text.length, far + 1);
+
+    var advance = [];
+    for (var i = 0; i < cells; i++) advance.push(i < m.count ? m.at(i + 1) - m.at(i) : m.unit);
+
+    var indent = CONT_INDENT * (parseFloat(getComputedStyle(t).fontSize) || 18);
+
+    /* Greedily, so the most words that fit on a row are on it. The break goes
+       back to the last space; a single word longer than the screen has nowhere
+       to go back to, and is cut where it runs out of room. */
+    var segments = [];
+    var start = 0;
+    var room = width;
+    while (start < cells) {
+      var x = 0, at = start, space = -1;
+      while (at < cells && x + advance[at] <= room) {
+        if (at > start && at < text.length && text[at] === " ") space = at;
+        x += advance[at];
+        at++;
+      }
+      if (at >= cells) { segments.push([start, cells]); break; }
+
+      var end = space > start ? space + 1 : Math.max(at, start + 1);
+      segments.push([start, end]);
+      start = end;
+
+      /* A row does not begin with the spaces the break left behind, unless a
+         chord is sitting on one of them: an outro's chords live out in that
+         emptiness, and moving them would be changing the song to fit the
+         screen. */
+      while (start < text.length && text[start] === " " && !chords.some(function (c) { return c.pos === start; })) start++;
+      room = width - indent;
+    }
+
+    if (segments.length < 2) return;
+
+    var rows = segments.map(function (seg, n) {
+      var cont = n > 0;
+      var more = n < segments.length - 1;
+      var row = el("div", "ln" + (cont ? " is-cont" : "") + (more ? " has-cont" : ""));
+
+      var lane = el("div", "ln-c");
+      chords.forEach(function (c) {
+        if (c.pos < seg[0] || c.pos >= seg[1]) return;
+        /* already transposed on screen, so nothing is shifted a second time */
+        lane.appendChild(chordEl(c.label, c.pos - seg[0], 0));
+      });
+      row.appendChild(lane);
+
+      var words = textSpans(text.slice(seg[0], Math.min(seg[1], text.length)));
+      if (cont) {
+        row.style.setProperty("--cont", indent + "px");
+        /* pointing the way the words run: down and to the left in Hebrew */
+        words.dataset.cont = rtl ? "↲" : "↳";
+      }
+      row.appendChild(words);
+      return row;
+    });
+
+    rows.forEach(function (row) { ln.parentNode.insertBefore(row, ln); });
+    ln.remove();
+  }
+
   /* Where the pointer is, said in characters, fraction and all. The caller
      rounds it: a stored position is always a whole character, but the fraction
      is what lets a chord follow the hand smoothly while it is being dragged. */
@@ -1165,7 +1283,7 @@
   /* ------------------------------------------------------------------ views */
 
   var app = document.getElementById("app");
-  var state = { songs: null };
+  var state = { songs: null, printable: false };
 
   /* How big this reader wants the words, kept between songs and between visits.
      Whoever needs a bigger font on one song needs it on the next one too, and
@@ -1239,7 +1357,15 @@
       return;
     }
 
-    if (p.length) return;
+    if (p.length) {
+      /* Only once there is a song on the page. A song still loading, one that
+         is not there at all and one still being read from a photograph are all
+         this same address, and none of them is worth paper. */
+      if (state.printable) {
+        bar.appendChild(button("הדפסה", ICON.print, "small", function () { window.print(); }));
+      }
+      return;
+    }
 
     /* The way into the other half of the app, first, because it is the only
        one of these that goes somewhere rather than making something. */
@@ -1576,6 +1702,12 @@
   function renderSong(song) {
     document.title = (song.title || "שיר חדש") + " | אקורדים";
 
+    /* Now there is something on the page to print, and the bar can say so. The
+       database answers after the routing has already painted the bar once, so
+       it is painted again here rather than earlier. */
+    state.printable = true;
+    paintHeader();
+
     /* Signed in AND on a screen with room. Nothing is switched on or off after
        this: signing in re-runs the route, which comes back through here.
 
@@ -1719,13 +1851,12 @@
 
     tools.appendChild(el("span", "grow"));
 
-    /* Printing is what you came to this page to do second, after playing from
-       it, so it is a whole button with its name on it. Deleting is the thing
-       you almost never mean and can never take back, so it is one quiet icon
-       standing on its own, and it asks before it does anything. */
-    tools.appendChild(button("הדפסה", ICON.print, "small", function () { window.print(); }));
+    /* Printing sits in the top bar now, so what is left in this row is only
+       what changes the song in front of you. Deleting is the thing you almost
+       never mean and can never take back, so it is one quiet icon standing on
+       its own, and it asks before it does anything.
 
-    /* Three ways back, each smaller than the last, and none of them there
+       Three ways back, each smaller than the last, and none of them there
        until it has something to undo:
 
          undo, one step at a time, also on Ctrl+Z
@@ -3794,7 +3925,10 @@
     window.scrollTo(0, 0);
     /* whatever the page being left still owed the database */
     flushNow();
-    /* the header follows the address, because what it offers depends on it */
+    /* the header follows the address, because what it offers depends on it.
+       Nothing is printable until a view says it is, and every address starts
+       out as not that. */
+    state.printable = false;
     paintHeader();
     var p = parts();
 
