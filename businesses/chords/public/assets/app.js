@@ -2192,14 +2192,18 @@
       }).sort(function (a, b) { return a.shown.localeCompare(b.shown, "en"); });
     }
 
-    /* One small row: the chords this song already uses, a + for one it does
-       not, and an × to take this chord off.
+    /* One small row: somewhere to write a chord, the chords this song already
+       uses, and an × to take this chord off.
 
-       A song has five chords and they usually arrive with it, read from a
-       picture, so placing one is CHOOSING. The + is the way out rather than the
-       way in: it stays a single character until it is asked for, and only then
-       becomes a field. A song with no chords at all has nothing to choose from,
-       so there the field opens straight away. */
+       THE FIELD IS FIRST AND IT IS ALWAYS THERE. It used to be a +, on the
+       argument that a song arrives with its own five chords and putting one
+       down is choosing rather than typing. That is true and it was still a
+       click in the way of the other half of the work, the chord this song does
+       not have yet, and the click had to be found before it could be made.
+
+       Both are offered at once now, and they are not two things: what is typed
+       into the field is also what narrows the row under it, so the same gesture
+       reaches a chord that is already in the song and one that is not. */
     function openPicker(node, ln, line, chord) {
       closePicker();
 
@@ -2224,9 +2228,6 @@
         mark();
       }
 
-      /* a chord that never got a name does not survive the picker closing */
-      pickerDismissed = function () { if (!chord.chord) drop(); };
-
       function commit(name) {
         pickerDismissed = null;
         closePicker();
@@ -2249,79 +2250,77 @@
         return b;
       }
 
-      function typeOne() {
-        picker.textContent = "";
-        var field = el("input", "picker-field");
-        field.type = "text";
-        field.dir = "ltr";
-        field.value = transposeChord(chord.chord, semis);
-        field.placeholder = "Am";
-        field.setAttribute("aria-label", "אקורד");
-        picker.appendChild(field);
-        picker.classList.add("is-typing");
+      var field = el("input", "picker-field");
+      field.type = "text";
+      field.dir = "ltr";
+      field.value = transposeChord(chord.chord, semis);
+      field.placeholder = "Am";
+      field.setAttribute("aria-label", "אקורד");
+      picker.appendChild(field);
 
-        var found = el("div", "picker-found");
-        picker.appendChild(found);
+      var found = el("div", "picker-found");
+      picker.appendChild(found);
 
-        /* Typing a letter answers with that letter's chords, and every keystroke
-           after it narrows them down, matched anywhere in the name. Not a chord
-           is still not a chord: the field says so, refuses to close on it, and a
-           way out that is not Enter drops it rather than writing "W" into the
-           song. */
-        function refresh() {
-          var value = field.value.trim();
-          field.classList.toggle("is-bad", !!value && !isChord(value));
+      /* only when there is something to remove: a chord being put down for the
+         first time has no name yet, so an × would be offering to delete a
+         choice that has not been made */
+      if (chord.chord) chip("picker-x", "×", "הסרת האקורד", function () { commit(""); });
 
-          found.textContent = "";
-          suggestChords(value).slice(0, 18).forEach(function (name) {
-            var hit = el("button", "picker-chip" + (name === value ? " is-on" : ""), name);
-            hit.type = "button";
-            hit.addEventListener("click", function () { commit(untranspose(name)); });
-            found.appendChild(hit);
-          });
-          place();
+      /* What the row under the field is showing. An empty field offers the
+         song's own chords, which is nearly always the answer and is why they
+         come first. A letter answers with that letter's chords, and every
+         keystroke after it narrows them down, matched anywhere in the name.
+
+         Both shapes carry the name twice, because the two are not the same
+         string on a transposed song: `name` is the chord in the song's own key,
+         which is what gets kept, and `shown` is the one on screen. */
+      function offers(value) {
+        if (!value) return chordsInSong();
+        return suggestChords(value).slice(0, 18).map(function (shown) {
+          return { name: untranspose(shown), shown: shown };
+        });
+      }
+
+      /* Not a chord is still not a chord: the field says so, refuses to close on
+         it, and a way out that is not Enter drops it rather than writing "W"
+         into the song. */
+      function refresh() {
+        var value = field.value.trim();
+        field.classList.toggle("is-bad", !!value && !isChord(value));
+
+        found.textContent = "";
+        offers(value).forEach(function (one) {
+          var on = value ? one.shown === value : one.name === chord.chord;
+          var hit = el("button", "picker-chip" + (on ? " is-on" : ""), one.shown);
+          hit.type = "button";
+          hit.addEventListener("click", function () { commit(one.name); });
+          found.appendChild(hit);
+        });
+        place();
+      }
+
+      field.addEventListener("input", refresh);
+      field.addEventListener("keydown", function (event) {
+        if (event.key !== "Enter") return;
+        event.preventDefault();
+        if (field.value.trim() && !isChord(field.value)) {
+          /* half a chord with a list under it: Enter takes the first of them */
+          if (found.firstChild) return commit(untranspose(found.firstChild.textContent));
+          return refresh();
         }
+        commit(untranspose(field.value));
+      });
 
-        field.addEventListener("input", refresh);
-        field.addEventListener("keydown", function (event) {
-          if (event.key !== "Enter") return;
-          event.preventDefault();
-          if (field.value.trim() && !isChord(field.value)) {
-            /* half a chord with a list under it: Enter takes the first of them */
-            if (found.firstChild) return commit(untranspose(found.firstChild.textContent));
-            return refresh();
-          }
-          commit(untranspose(field.value));
-        });
+      /* Enter is one way out of the field, not the only one. Clicking
+         elsewhere, or Escape, keeps what was typed too: a chord typed and then
+         lost to a stray click is the kind of thing you only notice two verses
+         later. */
+      pickerDismissed = function () { finish(untranspose(field.value)); };
 
-        /* Enter is one way out of the field, not the only one. Clicking
-           elsewhere, or Escape, keeps what was typed too: a chord typed and
-           then lost to a stray click is the kind of thing you only notice two
-           verses later. */
-        pickerDismissed = function () { finish(untranspose(field.value)); };
-
-        refresh();
-        field.focus();
-        field.select();
-      }
-
-      var used = chordsInSong();
-      if (!used.length) {
-        typeOne();
-      } else {
-        used.forEach(function (one) {
-          chip("picker-chip" + (one.name === chord.chord ? " is-on" : ""), one.shown, null, function () {
-            commit(one.name);
-          });
-        });
-        chip("picker-add", "+", "אקורד אחר", typeOne);
-        /* only when there is something to remove: a chord being put down for
-           the first time has no name yet, so an × would be offering to delete
-           a choice that has not been made */
-        if (chord.chord) chip("picker-x", "×", "הסרת האקורד", function () { commit(""); });
-      }
-
+      refresh();
       place();
+      field.focus();
+      field.select();
       document.addEventListener("pointerdown", closeOnOutside, true);
       document.addEventListener("keydown", closeOnEscape, true);
 
@@ -2522,7 +2521,14 @@
      travel in ONE request: the Worker brakes uploads rather than files, and a
      folder of sheets should be one action rather than nine refusals. */
   var MAX_SONGS = 10;
-  var MAX_EDGE = 1400;
+  /* The long edge a picture is sent at, and it is the model's own ceiling
+     rather than a number picked here: anything larger is resized on arrival, so
+     pixels above this line are paid for and then thrown away. Below it they are
+     not free either, and this is where they are worth buying. */
+  var MAX_EDGE = 1568;
+  /* What one song may weigh, in the base64 it travels as, under the Worker's
+     own limit with room to spare. */
+  var MAX_DATA = 640 * 1024;
   var OK_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif", "application/pdf"];
 
   function toBase64(file) {
@@ -2537,25 +2543,106 @@
     });
   }
 
+  /* Where the writing is, and nothing else.
+
+     A photographed or scanned sheet is mostly blank page: a border of white all
+     the way round, and often a wide one. Shrinking the picture to a fixed size
+     shrinks that border along with the words, so a good part of what is sent is
+     paid for at full price to show nothing.
+
+     Cutting it is free resolution on the only part anybody is looking at, and
+     resolution is not a detail on this job. The question being asked of the
+     picture is which of two ADJACENT HEBREW LETTERS a chord symbol's middle is
+     over, and a letter on a full page at the size that gets sent is about ten
+     pixels wide. Every pixel that goes to the margin comes off that ten.
+
+     Found on a small copy rather than on the photograph itself, because this
+     runs in a browser on a picture from a phone, and the edge of a block of
+     text is not a thing that needs pixels to find. Anything that does not look
+     like writing on a page is left alone: a crop that saves nothing, and a crop
+     that would throw most of the picture away, are both refused. */
+  function inkBox(bitmap) {
+    var SCAN = 400;
+    var scale = Math.min(1, SCAN / Math.max(bitmap.width, bitmap.height));
+    var w = Math.max(1, Math.round(bitmap.width * scale));
+    var h = Math.max(1, Math.round(bitmap.height * scale));
+
+    var canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    var ctx = canvas.getContext("2d");
+    ctx.drawImage(bitmap, 0, 0, w, h);
+
+    var data;
+    /* a picture from another origin taints the canvas and cannot be read back;
+       there is nothing to do about that but send it whole */
+    try { data = ctx.getImageData(0, 0, w, h).data; } catch (e) { return null; }
+
+    /* Darker than this counts as ink. Generous on purpose: white paper under a
+       kitchen light is grey and unevenly lit, and what is wanted here is the
+       edge of the writing, not the writing. */
+    var INK = 200;
+    var top = h, left = w, right = -1, bottom = -1;
+    for (var y = 0; y < h; y++) {
+      for (var x = 0; x < w; x++) {
+        var i = (y * w + x) * 4;
+        if (Math.min(data[i], data[i + 1], data[i + 2]) > INK) continue;
+        if (x < left) left = x;
+        if (x > right) right = x;
+        if (y < top) top = y;
+        if (y > bottom) bottom = y;
+      }
+    }
+    if (right < 0) return null;
+
+    /* a little air, so no letter sits against the cut, and back up to the
+       photograph's own scale */
+    var pad = Math.round(Math.max(w, h) * 0.012) + 1;
+    var box = { x: Math.max(0, (left - pad) / scale), y: Math.max(0, (top - pad) / scale) };
+    box.w = Math.min(bitmap.width, (right + pad + 1) / scale) - box.x;
+    box.h = Math.min(bitmap.height, (bottom + pad + 1) / scale) - box.y;
+
+    var whole = bitmap.width * bitmap.height;
+    if (box.w * box.h > whole * 0.93) return null;      // nothing worth cutting
+    if (box.w * box.h < whole * 0.05) return null;      // not a page of writing
+    return box;
+  }
+
   /* A photo straight off a phone is four thousand pixels wide and several
-     megabytes, and none of that helps: the model reads well past this size and
-     the extra pixels only cost money and time. A PDF is passed through as it
-     is, because it is already text. */
+     megabytes, and none of that arrives: the model resizes anything past
+     MAX_EDGE itself. So the shrinking happens here, where it can be done well.
+     A PDF is passed through as it is, because it is already text. */
   function prepare(file) {
     if (file.type === "application/pdf") return toBase64(file);
     if (typeof createImageBitmap !== "function") return toBase64(file);
 
     return createImageBitmap(file).then(function (bitmap) {
-      var scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+      var box = inkBox(bitmap) || { x: 0, y: 0, w: bitmap.width, h: bitmap.height };
+      var scale = Math.min(1, MAX_EDGE / Math.max(box.w, box.h));
+
       var canvas = document.createElement("canvas");
-      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      canvas.width = Math.max(1, Math.round(box.w * scale));
+      canvas.height = Math.max(1, Math.round(box.h * scale));
       var ctx = canvas.getContext("2d");
       ctx.fillStyle = "#fff";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(bitmap, box.x, box.y, box.w, box.h, 0, 0, canvas.width, canvas.height);
       bitmap.close();
-      var url = canvas.toDataURL("image/jpeg", 0.82);
+
+      /* QUALITY IS GIVEN UP BEFORE PIXELS ARE, and it used to be the other way
+         round. What a picture costs to read is decided by its width and height
+         alone, so compressing it harder saves nothing at all on the reading and
+         only makes room in the request. But compression is exactly what closes
+         the gap between two neighbouring letters: squeeze a page of small black
+         writing and the edges smear into each other, which is the one thing
+         this picture is being sent to answer. So it goes out as sharp as it can
+         while still fitting, rather than at a number chosen once. */
+      var quality = 0.92;
+      var url = canvas.toDataURL("image/jpeg", quality);
+      while (url.length > MAX_DATA && quality > 0.45) {
+        quality -= 0.08;
+        url = canvas.toDataURL("image/jpeg", quality);
+      }
       return { media_type: "image/jpeg", data: url.slice(url.indexOf(",") + 1) };
     }).catch(function () { return toBase64(file); });
   }

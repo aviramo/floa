@@ -121,9 +121,16 @@
 
      the system prompt      ~1700 tokens
      the schema              ~700 tokens
-     one 1400px image       ~1900 tokens
+     one page of sheet      ~2300 tokens
                             -------------
-     all input              ~4300 tokens = about 2 cents
+     all input              ~4700 tokens = about 2 cents
+
+   The page is sent at the largest size the model does not resize, cropped to
+   the writing and compressed lightly, and all three of those are deliberate:
+   an image is priced by its width and height, so the pixels cost about a third
+   of a cent and the sharpness costs nothing at all. See prepare() in the app.
+   Being able to tell one Hebrew letter from the one beside it is the whole
+   job, and it is the cheapest thing in this file.
 
      the answer, thinking included, is 3000 to 16000 tokens
                                        = 7 to 40 cents
@@ -338,7 +345,11 @@ WHICH LETTER, EXACTLY
 
   Middle against middle, both times. A chord sits ON a letter, not in the space between two of them, so what decides which letter is the distance from the middle of the symbol to the middle of each candidate: whichever is smallest is the answer. A symbol that hangs slightly past the end of a letter still belongs to that letter if its middle is nearer to that letter's middle than to the next one's.
 
-- ONE LETTER OFF IS THE ERROR THIS JOB ACTUALLY MAKES. Not a wild miss: the neighbour. Hebrew letters are narrow and a chord symbol is three or four of them wide, so an answer eyeballed from the symbol's general area lands next door about as often as it lands right. That is the whole reason the mark matters. Name the letter under the mark, count how many letters of the word come before it, and let those two agree; do not settle for the letter that merely looks about right.
+- ONE LETTER OFF IS THE ERROR THIS JOB ACTUALLY MAKES. Not a wild miss: the neighbour, and it goes either way. Measured on a real sheet, four chords in one song: the one printed over a ק came back as the י beside it, one over a ל came back as the ה after it, another over a ל came back as the ה after it, and one over a ל came back as the י before it.
+
+  A chord symbol is three or four Hebrew letters wide and the letters are narrow, so an answer taken from the symbol's general area is a coin toss between two neighbours. Two habits make it worse and both are worth naming. Latin text BEGINS AT ITS LEFT EDGE, and looking at where writing starts is what anyone does with writing; on a Hebrew line the left edge is one to two letters FURTHER ALONG the word than the middle, because the words run the other way. And a symbol that overhangs the end of a word looks like it belongs to the next one, when what decides is still the middle.
+
+  So: not the left edge, not the right edge, not where the symbol begins. THE MARK UNDER IT, or failing that the MIDDLE. Then say which letter that is, and count how many letters come before it, and check the two against each other before you write them down.
 
 - CHORDS DO NOT PREFER THE STARTS OF WORDS. This is the mistake that keeps happening, so it is worth naming: a chord lands wherever the singer changes note, which is inside a word at least as often as at its edge. letters_before is 0 far less often than it looks. If the symbol's middle is over the third letter, say so; do not round it back to the front of the word, and do not move it onto the neighbouring word either.
 

@@ -431,8 +431,8 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    have. It should read as a list, not as a dialog. */
 .picker {
   position: fixed; z-index: 50;
-  display: flex; align-items: center; flex-wrap: wrap; gap: 1px;
-  max-width: min(260px, calc(100vw - 12px));
+  display: flex; align-items: flex-start; flex-wrap: nowrap; gap: 1px;
+  max-width: min(300px, calc(100vw - 12px));
   padding: 3px; border-radius: 8px;
   background: #fff; border: 1px solid var(--line); box-shadow: 0 4px 14px rgba(23, 32, 42, .12);
 }
@@ -442,16 +442,16 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   padding: 3px 7px; border-radius: 5px;
 }
 .picker-chip { color: var(--chord); font-weight: 700; }
-.picker-chip:hover, .picker-add:hover, .picker-x:hover { background: var(--chord-soft); }
+.picker-chip:hover, .picker-x:hover { background: var(--chord-soft); }
 .picker-chip.is-on { background: var(--chord-soft); }
-.picker-add { color: var(--ink-soft); font-weight: 700; }
-.picker-x { color: var(--ink-soft); font-size: 15px; }
+.picker-x { flex: none; color: var(--ink-soft); font-size: 15px; }
 .picker-x:hover { color: var(--danger); background: #fdf1ef; }
 /* Two class names deep on purpose. The shared input[type="text"] rule is an
    attribute selector, so it outranks a single class and would put its own
    width, padding and radius back on this field. */
 .picker .picker-field {
-  width: 5ch; padding: 3px 5px; border-radius: 5px;
+  flex: none; width: 5ch; margin-inline-end: 3px;
+  padding: 3px 5px; border-radius: 5px;
   border: 1px solid var(--chord-soft);
   direction: ltr; text-align: left;
   font-size: 13px; line-height: 1.4; font-weight: 700; color: var(--chord);
@@ -459,10 +459,10 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .picker .picker-field:focus-visible { outline: none; border-color: var(--chord); }
 .picker .picker-field.is-bad { border-color: var(--danger); color: var(--danger); }
 
-/* typing turns the row into a small column: the field, and under it what the
-   letters so far could become */
-.picker.is-typing { flex-direction: column; align-items: stretch; width: max-content; }
-.picker-found { display: flex; flex-wrap: wrap; gap: 1px; max-width: 214px; }
+/* The names on offer, beside the field and wrapping under themselves rather
+   than under it, so the field stays where it was put however many chords the
+   letters so far could still become. */
+.picker-found { flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 1px; }
 .picker-found:empty { display: none; }
 
 .hint {
