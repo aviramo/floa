@@ -215,7 +215,7 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    air goes BETWEEN the pairs and not inside them: tight above the words, open
    below the line. */
 .ln { position: relative; margin-bottom: .45em; }
-.ln-c { position: relative; height: .92em; }
+.ln-c { position: relative; height: 1.02em; }
 .ln-t {
   white-space: pre;
   font-size: var(--song-size);
@@ -245,8 +245,10 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    measuring. */
 .chord::after {
   content: "";
-  position: absolute; top: calc(100% - 1px); left: 50%;
-  width: 1.5px; height: .34em;
+  /* pulled up into the label's own descender space so it touches the letters,
+     and short, so what is left over is the gap down to the words */
+  position: absolute; top: calc(100% - 4px); left: 50%;
+  width: 1.5px; height: .3em;
   background: currentColor; border-radius: 1px;
   transform: translateX(-50%) rotate(16deg); transform-origin: top center;
 }
