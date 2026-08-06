@@ -367,7 +367,10 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    Two selectors deep on purpose. The shared field rule is an attribute
    selector, so it outranks a single class and would put the border, the white
    fill and the padding straight back. */
-.song-meta label, .ev-meta label, .song-meta .cap {
+/* .fld is what a field that cannot be a <label> is wrapped in: a label labels
+   one control, and the direction is two buttons. Its caption is written the
+   same, so the row has one line of captions and not two kinds. */
+.song-meta label, .ev-meta label, .fld .cap {
   display: block; font-size: 13px; font-weight: 600; color: var(--ink-soft);
 }
 .song-meta input[type="text"],
@@ -390,13 +393,15 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    which is inside the one that is on: the white pill, the darker ink and the
    heavier weight. */
 .seg {
-  display: inline-flex; gap: 2px; padding: 3px;
+  display: inline-flex; gap: 2px; padding: 2px;
   background: var(--bg); border: 1px solid var(--line); border-radius: 999px;
 }
+/* as tall as the fields beside it, so the three captions above them sit on one
+   line and the row reads as one row */
 .seg-b {
   appearance: none; border: 0; background: none; cursor: pointer;
-  font: inherit; font-size: 14px; color: var(--ink-soft);
-  padding: 4px 14px; border-radius: 999px;
+  font: inherit; font-size: 14px; line-height: 1.4; color: var(--ink-soft);
+  padding: 3px 13px; border-radius: 999px;
 }
 .seg-b:hover { color: var(--ink); }
 .seg-b[aria-pressed="true"] {
