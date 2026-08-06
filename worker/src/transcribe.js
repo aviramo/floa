@@ -180,7 +180,27 @@ import { directionOf, songFrom } from "./geometry.js";
    it several times over. And each half has its own model and its own effort,
    so an experiment is one line rather than a rewrite.
 
-   WHICH IS WHAT CHORDS_EFFORT IS NOW SPENDING. Everything else had been tried:
+   CHORDS_EFFORT WENT UP TO HIGH AND CAME STRAIGHT BACK DOWN, and both halves
+   of that are worth keeping, because the reasoning was sound and the result
+   settled it in two reads.
+
+     Opus, high     79.5 cents. It WORKED: the three chords a person had marked
+                    as wrong on the previous read were all exactly right, and
+                    nothing that had been right moved.
+     Opus, high     nothing at all. Ten and a half minutes of thinking, and
+                    then the 48000 token ceiling with the answer unwritten,
+                    which bills in full and returns a failed row.
+
+   So high effort is not a setting this can carry. It buys real accuracy and it
+   pays for it with a variance that has no floor: the cost of a read stops
+   being knowable, and one read in some number of them costs a dollar and comes
+   back empty. Raising the ceiling only raises the size of that bill.
+
+   And it matters less than it looks, because this whole route is the FALLBACK
+   now. What a fallback has to be is cheap and certain, not brilliant and
+   occasionally ruinous. Measuring the page is the road.
+
+   Everything else had been tried:
    the question was reshaped so the order cannot come out backwards, the mark
    under the symbol was made the answer rather than a tiebreak, and the picture
    itself was cropped to the writing and sent at the largest size that is not
@@ -204,7 +224,7 @@ const WORDS_MODEL = "claude-sonnet-5";
 const WORDS_EFFORT = "low";
 const WORDS_MAX_TOKENS = 32000;
 const CHORDS_MODEL = "claude-opus-5";
-const CHORDS_EFFORT = "high";
+const CHORDS_EFFORT = "medium";
 const CHORDS_MAX_TOKENS = 48000;
 
 /* US dollars per million tokens, so that a read can be priced from the usage
@@ -873,7 +893,7 @@ function slugify(name) {
    call for different next moves. */
 function why(message, seconds) {
   const said =
-    message === "truncated" ? "הקריאה נקטעה באמצע. השיר ארוך מהמקום שהוקצה לו." :
+    message === "truncated" ? "הקריאה נקטעה באמצע ולא הספיקה לענות. שווה לנסות שוב." :
     message === "empty" ? "לא זוהו מילים ואקורדים בקובץ." :
     message === "refusal" ? "הקריאה סורבה." :
     /^anthropic 4\d\d/.test(message) ? "השירות דחה את הבקשה." :
