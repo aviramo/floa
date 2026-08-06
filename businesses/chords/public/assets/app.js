@@ -2898,6 +2898,11 @@
 
     var head = el("div", "song-head");
 
+    /* The name, and at the other end of its line whatever the song has to say
+       about itself. A label under the title is a line of the page spent on two
+       words, and on a phone the page is the song. */
+    var headTop = el("div", "head-top");
+
     var title = el("h1", null, song.title);
     if (editing) {
       makeEditable(title);
@@ -2907,7 +2912,8 @@
         if (event.key === "Enter") { event.preventDefault(); title.blur(); }
       });
     }
-    head.appendChild(title);
+    headTop.appendChild(title);
+    head.appendChild(headTop);
 
     var byFields = [];
     /* set below, with the buttons they keep in step with the song */
