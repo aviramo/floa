@@ -407,7 +407,10 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 /* What the save button on the song page says by appearing and disappearing.
    There is no button here (every change writes itself), so the word carries
    it alone. */
-.save-state { font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+/* Where the writing got to. In the top bar on a song, beside the ways back,
+   because it is about the page rather than about the song; on an evening it is
+   all that a toolbar left behind, so it stands on its own line there. */
+.save-state { font-size: 13px; font-weight: 600; color: var(--ink-soft); white-space: nowrap; }
 /* on the evening it is the whole of what a toolbar left behind, so it stands
    on its own line rather than at the end of a row of controls */
 .ev-state { display: block; margin: 6px 0 18px; }

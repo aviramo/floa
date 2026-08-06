@@ -3356,20 +3356,25 @@
     undoBtn.hidden = true;
     revertBtn.hidden = true;
 
+    /* EVERYTHING THAT IS ABOUT THE PAGE GOES TO THE BAR, and the row over the
+       song is left holding only the three things that change what you are
+       looking at. Deleting the song, taking a change back, taking all of them
+       back, and the word saying where the writing got to: none of those is a
+       property of the song on screen, they are what is being done to it.
+
+       Inserted at the START of the bar, which on a page that runs right to
+       left is its right hand end, in the order they are read: how it is going,
+       then the ways back, then the way to be rid of it. */
     if (editing) {
+      var topBar = document.getElementById("topActions");
+      var mine = [];
       if (song.id) {
         var trash = iconBtn(ICON.trash, "מחיקת השיר", removeSong);
         trash.classList.add("quiet");
-        tools.appendChild(trash);
+        mine.push(trash);
       }
-      tools.appendChild(stateNode);
-
-      /* At the START of the bar, which in a page that runs right to left is
-         its right hand end: the way back stands before the things that make
-         the page do something new. */
-      var topBar = document.getElementById("topActions");
-      topBar.insertBefore(revertBtn, topBar.firstChild);
-      topBar.insertBefore(undoBtn, topBar.firstChild);
+      mine.push(revertBtn, undoBtn, stateNode);
+      mine.forEach(function (node) { topBar.insertBefore(node, topBar.firstChild); });
     }
     app.appendChild(tools);
 
