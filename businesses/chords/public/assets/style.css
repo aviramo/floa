@@ -204,7 +204,10 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    positioned at the lane's top, so the difference hangs down into the space the
    text's own line height leaves empty above its letters, which costs nothing
    and closes the gap. */
-.ln { position: relative; }
+/* The pair, chords and the words under them, is one thing on the page. So the
+   air goes BETWEEN the pairs and not inside them: tight above the words, open
+   below the line. */
+.ln { position: relative; margin-bottom: .45em; }
 .ln-c { position: relative; height: .72em; }
 .ln-t {
   white-space: pre;
