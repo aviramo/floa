@@ -1266,6 +1266,7 @@
        that is not on the list yet. */
 
     var picker = null;
+    var pickerDismissed = null;
 
     function closePicker() {
       if (!picker) return;
@@ -1273,6 +1274,13 @@
       picker = null;
       document.removeEventListener("pointerdown", closeOnOutside, true);
       document.removeEventListener("keydown", closeOnEscape, true);
+
+      /* Clicking the empty lane puts down a chord with no name yet, and the
+         picker is what names it. Walking away instead has to take it back with
+         it, or the line keeps an invisible chord nobody asked for. */
+      var dismissed = pickerDismissed;
+      pickerDismissed = null;
+      if (dismissed) dismissed();
     }
 
     function closeOnOutside(event) { if (picker && !picker.contains(event.target)) closePicker(); }
@@ -1304,15 +1312,21 @@
       picker.dir = "ltr";
       document.body.appendChild(picker);
 
+      function drop() {
+        line.chords.splice(line.chords.indexOf(chord), 1);
+        node.remove();
+        layoutLine(ln, rtl());
+      }
+
+      /* a chord that never got a name does not survive the picker closing */
+      pickerDismissed = function () { if (!chord.chord) drop(); };
+
       function commit(value) {
-        chord.chord = String(value || "").trim().slice(0, 16);
+        pickerDismissed = null;
         closePicker();
-        if (!chord.chord) {
-          line.chords.splice(line.chords.indexOf(chord), 1);
-          node.remove();
-        } else {
-          node.textContent = chord.chord;
-        }
+        chord.chord = String(value || "").trim().slice(0, 16);
+        if (!chord.chord) return drop();
+        node.textContent = chord.chord;
         layoutLine(ln, rtl());
       }
 
@@ -1350,7 +1364,10 @@
           chip("picker-chip" + (name === chord.chord ? " is-on" : ""), name, null, function () { commit(name); });
         });
         chip("picker-add", "+", "אקורד אחר", typeOne);
-        chip("picker-x", "×", "הסרת האקורד", function () { commit(""); });
+        /* only when there is something to remove: a chord being put down for
+           the first time has no name yet, so an × would be offering to delete
+           a choice that has not been made */
+        if (chord.chord) chip("picker-x", "×", "הסרת האקורד", function () { commit(""); });
       }
 
       place();
