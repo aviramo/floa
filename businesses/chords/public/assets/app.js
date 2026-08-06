@@ -1934,9 +1934,16 @@
     saveBtn.hidden = true;
 
     /* `writing` and not `editing`: a phone that can put a name in the head has
-       to be able to keep it, and to take it back. */
+       to be able to keep it, and to take it back.
+
+       Deleting is the exception, and it stays on the desk. It is the one thing
+       here that no undo reaches and no draft holds a copy of, and a phone is
+       where a press is least likely to have been meant: it is held while
+       walking, it is played from with a hand that is also holding a guitar, and
+       the target is the size of a fingertip. A song that has to go can wait for
+       a desk. */
     if (writing) {
-      if (song.id) {
+      if (song.id && editing) {
         var trash = iconBtn(ICON.trash, "מחיקת השיר", removeSong);
         trash.classList.add("quiet");
         tools.appendChild(trash);
