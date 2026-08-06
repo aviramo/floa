@@ -2782,9 +2782,21 @@
         box.appendChild(keys);
       }
 
-      /* A finished song may still carry a note: the chords ran out of room and
-         only the words came. Quiet, under everything, because the song works. */
-      if (s.status_note) box.appendChild(el("div", "detail", s.status_note));
+      /* A song still in the machine says which stage it reached, and a
+         finished one may carry a note about what did not come off the page.
+         The same column, two different things, so two different shapes: the
+         stage is a chip in the colour of the state it belongs to, because it
+         IS that state saying more about itself, and the note is the quiet
+         box the app uses for what went wrong. */
+      if (s.status_note) {
+        if (busy) {
+          var stage = el("div", "keys");
+          stage.appendChild(el("span", "tag tag-imported", s.status_note));
+          box.appendChild(stage);
+        } else {
+          box.appendChild(el("div", "detail", s.status_note));
+        }
+      }
 
       a.appendChild(box);
 
