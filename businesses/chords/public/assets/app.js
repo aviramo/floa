@@ -68,6 +68,7 @@
     undo: '<path d="M4 10h9a4.5 4.5 0 0 1 0 9h-5"/><path d="M8 6l-4 4 4 4"/>',
     print: '<path d="M7 9V4h10v5M7 18H5v-6h14v6h-2M8 14h8v6H8z"/>',
     calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+    person: '<circle cx="12" cy="8" r="3.6"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/>',
   };
 
   function iconBtn(icon, title, onClick) {
@@ -106,6 +107,29 @@
   /* ------------------------------------------------------------------ auth */
 
   var SESSION_KEY = "chords.session";
+  /* Where somebody was standing when they went off to Google. A round trip
+     through another site loses the page, and the page is usually the point:
+     you press "התחברות" on the song you were about to fix. */
+  var RETURN_KEY = "chords.return";
+
+  /* WHAT TO CALL THE PERSON IN THE BAR.
+     Their own answer first, because a name is theirs to give; then whatever
+     Google said about them when they signed in; and an email's first half
+     when there is neither, which is at least something a person recognises as
+     themselves.
+
+     Their own answer is kept under a key of its own, `display_name`, and not
+     over Google's `name`. The provider rewrites what it wrote every time the
+     account signs in through it, so a name typed here and stored there would
+     quietly come back as the Google one on the next sign in. */
+  function nameFrom(meta, email) {
+    var said = [meta && meta.display_name, meta && meta.full_name, meta && meta.name];
+    for (var i = 0; i < said.length; i++) {
+      var name = String(said[i] || "").trim();
+      if (name) return name;
+    }
+    return String(email || "").split("@")[0] || "";
+  }
 
   var auth = {
     session: null,
@@ -116,22 +140,34 @@
       return this.session;
     },
 
+    keep: function () {
+      try { localStorage.setItem(SESSION_KEY, JSON.stringify(this.session)); }
+      catch (e) { /* private window */ }
+    },
+
     save: function (data) {
-      var meta = (data.user && data.user.user_metadata) || null;
+      var user = data.user || null;
+      var meta = (user && user.user_metadata) || null;
+      var email = (user && user.email) || (this.session && this.session.email) || "";
       this.session = {
         access_token: data.access_token,
-        refresh_token: data.refresh_token,
+        refresh_token: data.refresh_token || (this.session && this.session.refresh_token) || "",
         expires_at: Date.now() + (data.expires_in || 3600) * 1000,
-        email: (data.user && data.user.email) || (this.session && this.session.email) || "",
-        /* Whatever the account already knows about the person, which right now
-           is one number: the fret they play at. Kept here so a page can be
-           opened without asking the server who is looking at it, and taken
-           from the account rather than from this browser, so it is the same
-           on the phone on the sofa as on the desk it was set at. */
+        email: email,
+        /* An answer that came with this response, else the one already here,
+           else the email. The middle one matters on the way back from Google:
+           that hands over tokens and nothing about the person, and the name
+           arrives a moment later from whoAmI. */
+        name: (meta && nameFrom(meta, email)) || (this.session && this.session.name) || nameFrom(null, email),
+        /* Whatever else the account already knows about the person, which
+           right now is one number: the fret they play at. Kept here so a page
+           can be opened without asking the server who is looking at it, and
+           taken from the account rather than from this browser, so it is the
+           same on the phone on the sofa as on the desk it was set at. */
         capo: meta && typeof meta.capo === "number" ? meta.capo
           : (this.session && typeof this.session.capo === "number" ? this.session.capo : 0),
       };
-      localStorage.setItem(SESSION_KEY, JSON.stringify(this.session));
+      this.keep();
     },
 
     clear: function () {
@@ -167,10 +203,40 @@
          answer to the press, and a fret is not worth waiting on a network for */
       if (this.session) {
         this.session.capo = kept;
-        try { localStorage.setItem(SESSION_KEY, JSON.stringify(this.session)); } catch (e) { /* private window */ }
+        this.keep();
       }
+      return this.remember({ capo: kept });
+    },
+
+    /* --- what this person is called ------------------------------------------
+       A NAME IS THE PERSON'S TO GIVE. Google hands one over at the door and it
+       is usually the right one, which is why it is what the bar says without
+       anybody being asked. But it is the name on somebody's Google account,
+       not necessarily the name they want over their own songs, and the two
+       are different often enough that it has to be changeable.
+
+       So it lives on the account, beside the capo, under a key Google does not
+       write to: see nameFrom above for why that matters. */
+    name: function () {
+      return (this.session && this.session.name) || "";
+    },
+
+    setName: function (value) {
+      var self = this;
+      var kept = String(value || "").trim().replace(/\s+/g, " ").slice(0, 60);
+      if (!kept) return Promise.reject(new Error("צריך שם"));
+      return this.remember({ display_name: kept }).then(function () {
+        self.session.name = kept;
+        self.keep();
+      });
+    },
+
+    /* One more thing the account knows about the person. Everything in here is
+       small and the account is the right place for all of it, because it is
+       true of them and not of the browser they happen to be holding. */
+    remember: function (data) {
       return this.token().then(function (token) {
-        if (!token) return null;
+        if (!token) throw new Error("צריך להתחבר מחדש");
         return fetch(CFG.supabaseUrl + "/auth/v1/user", {
           method: "PUT",
           headers: {
@@ -178,12 +244,52 @@
             authorization: "Bearer " + token,
             "content-type": "application/json",
           },
-          body: JSON.stringify({ data: { capo: kept } }),
+          body: JSON.stringify({ data: data }),
         }).then(function (r) {
-          if (!r.ok) throw new Error("capo " + r.status);
+          if (!r.ok) throw new Error("לא הצלחנו לשמור");
           return null;
         });
       });
+    },
+
+    /* Who the token belongs to, asked of the server. Needed on exactly one
+       path: coming back from Google, which hands over tokens and says nothing
+       about the person holding them. Signing in with a password answers both
+       questions in the one response and never comes here. */
+    whoAmI: function () {
+      var self = this;
+      return this.token().then(function (token) {
+        if (!token) return null;
+        return fetch(CFG.supabaseUrl + "/auth/v1/user", {
+          headers: { apikey: CFG.supabaseAnonKey, authorization: "Bearer " + token },
+        }).then(function (r) { return r.ok ? r.json() : null; });
+      }).then(function (user) {
+        if (!user || !self.session) return null;
+        var meta = user.user_metadata || null;
+        self.session.email = user.email || self.session.email;
+        self.session.name = nameFrom(meta, self.session.email);
+        if (meta && typeof meta.capo === "number") self.session.capo = meta.capo;
+        self.keep();
+        return user;
+      }).catch(function () { return null; });
+    },
+
+    /* --- the way in through Google -------------------------------------------
+       The browser leaves this site, comes back to /chords/ with the tokens in
+       the address, and absorbGoogle picks them up. Nothing is exchanged here:
+       Supabase's authorize endpoint hands the session straight over when it is
+       not asked for a code, and asking for one would mean keeping a verifier
+       across a page that is about to be thrown away.
+
+       ONE address is registered as the way back, the app's own front door,
+       rather than every song's. Where the person actually was is this side's
+       business and it is kept here, which also means a new song's address does
+       not have to be one Supabase has been told about. */
+    signInWithGoogle: function () {
+      try { localStorage.setItem(RETURN_KEY, location.pathname); } catch (e) { /* private window */ }
+      var back = location.origin + BASE + "/";
+      location.assign(CFG.supabaseUrl + "/auth/v1/authorize?provider=google&redirect_to=" +
+        encodeURIComponent(back));
     },
 
     signIn: function (email, password) {
@@ -1792,12 +1898,16 @@
     app.appendChild(box);
   }
 
-  /* Reading a photograph is the one thing a phone is BETTER at, since the
-     camera is already in your hand, so that stays. Typing a song out is the
-     one it is worst at, and a button that answers a press with a refusal is
-     worse than no button: it asks to be pressed, takes the press, and gives
-     back a sentence. So on a phone it is not offered at all, and "מתמונה"
-     is left standing on its own as the way to add a song. */
+  /* Both ways in are offered on every screen now. Typing a song out is the
+     thing a phone is worst at and reading a photograph is the thing it is
+     best at, the camera being already in your hand, and for a while that was
+     reason enough to hide the typing on one: a button that answers a press
+     with a refusal is worse than no button.
+
+     It is not hidden any more because it no longer refuses. The editor works
+     on a phone (see the song page), so the button leads somewhere, and which
+     of the two is the easier way in on the screen in front of you is a
+     judgement the person holding it can make. */
   function newSong() {
     requireAuth(function () { go(BASE + "/new"); });
   }
@@ -1927,8 +2037,8 @@
     }));
     /* On a phone the reading is the only way in, so it is the one that gets
        the solid button. On a desk both are open and the typing leads. */
-    bar.appendChild(button("מתמונה", ICON.upload, NARROW.matches ? "small" : "ghost small", uploadSong));
-    if (!NARROW.matches) bar.appendChild(button("שיר חדש", ICON.plus, "small", newSong));
+    bar.appendChild(button("מתמונה", ICON.upload, "ghost small", uploadSong));
+    bar.appendChild(button("שיר חדש", ICON.plus, "small", newSong));
     bar.appendChild(session());
   }
 
@@ -2156,8 +2266,8 @@
       var empty = el("div", "center");
       var emptyText = el("p");
       var emptyActions = el("div", "row-actions");
-      if (!NARROW.matches) emptyActions.appendChild(button("להקליד שיר", ICON.plus, null, newSong));
-      emptyActions.appendChild(button("מתמונה או PDF", ICON.upload, NARROW.matches ? null : "ghost", uploadSong));
+      emptyActions.appendChild(button("להקליד שיר", ICON.plus, null, newSong));
+      emptyActions.appendChild(button("מתמונה או PDF", ICON.upload, "ghost", uploadSong));
       empty.appendChild(emptyText);
       empty.appendChild(emptyActions);
 
@@ -2678,21 +2788,25 @@
     state.printable = true;
     paintHeader();
 
-    /* Signed in AND on a screen with room. Nothing is switched on or off after
-       this: signing in re-runs the route, which comes back through here.
+    /* Signed in, and on a phone, asked for.
 
-       ONE ANSWER FOR THE WHOLE PAGE, head and sheet alike. A phone is for
-       playing from, not for editing on: every gesture the editor has is a small
-       one over a small target, dragging a chord onto one letter out of forty,
-       and a finger on a moving page cannot do any of them.
+       ONE ANSWER FOR THE WHOLE PAGE, head and sheet alike: everything the
+       editor has is on or all of it is off, and there is no half-editable
+       page to explain.
 
-       The name and the credits are easier to type than that, and they are still
-       not offered here. A page that can be changed is a page that has to be
-       watched, and a page held while walking, or pressed with a hand that is
-       also holding a guitar, is where a change nobody meant gets made. What a
-       phone needs of the credits is to READ them, and it does: they are the
-       sentence under the title. So the phone reads and the desk writes. */
-    var editing = auth.in && !NARROW.matches;
+       A phone was refused it outright for a long time, and the reason was
+       good: a page that can be changed is a page that has to be watched, and a
+       page held while walking, or pressed with a hand that is also holding a
+       guitar, is where a change nobody meant gets made. What was wrong with it
+       was the word "outright". Somebody who has found a wrong chord in the
+       middle of a session has a phone in their hand and no desk, and telling
+       them to remember it until they get home is telling them to lose it.
+
+       So the phone opens READING, which is what a phone is for, and the editor
+       is one press away. The press is the watching: nothing here changes by
+       accident, because getting in was on purpose. */
+    var onPhone = NARROW.matches;
+    var editing = auth.in && (!onPhone || !!state.editOnPhone);
 
     /* TWO NUMBERS, AND THEY ARE NOT THE SAME NUMBER.
 
@@ -3075,6 +3189,25 @@
     undoBtn.hidden = true;
     revertBtn.hidden = true;
     saveBtn.hidden = true;
+
+    /* The way in and out of the editor, on the screen that has one. It is the
+       first thing in this half of the row on purpose: on a phone it is the
+       only one of these buttons that is there before anything has been
+       changed.
+
+       IT WILL NOT LEAVE WITH SOMETHING UNSAVED. Leaving redraws the page from
+       the song in memory, which would take the save button away while the
+       change it was offering to write is still only here, and the answer to
+       "did that get saved" would become a lie. Save or take it back first;
+       both are one press away and both are on this row. */
+    if (auth.in && onPhone) {
+      tools.appendChild(button(editing ? "סיום עריכה" : "עריכה", ICON.pencil,
+        editing ? "small" : "ghost small", function () {
+          if (editing && !saveBtn.hidden) return toast("יש שינויים שלא נשמרו", true);
+          state.editOnPhone = !editing;
+          renderSong(song);
+        }));
+    }
 
     if (editing) {
       if (song.id) {
@@ -5577,10 +5710,13 @@
     if (p[0] === "deleted") return viewDeleted();
 
     /* A new song is the song page with nothing on it yet, and it needs somebody
-       signed in to be worth opening at all. */
+       signed in to be worth opening at all. A phone used to be sent back to
+       the library from here, because there was no editor on one; there is now,
+       so a song can be started wherever somebody happens to be. */
     if (p[0] === "new") {
-      if (NARROW.matches) return go(BASE + "/");
       if (!auth.in) return askSignIn(function () { route(); });
+      /* it opens IN the editor, since an empty song is nothing to read */
+      state.editOnPhone = true;
       return viewSong(null);
     }
 

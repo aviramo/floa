@@ -650,6 +650,12 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
     width: 100vw;
   }
 
+  /* THE EDITOR NEEDS ITS MARGINS BACK. A line being written carries a box out
+     in the sheet's own padding (see .ln-pick), and the phone's sheet is
+     narrower than that box is far out: without this the ticks are off the edge
+     of the screen and a verse cannot be marked at all. */
+  .sheet.ed { padding-inline: 40px; }
+
   .tools { border-radius: var(--radius); }
 }
 
