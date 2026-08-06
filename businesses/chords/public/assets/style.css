@@ -389,10 +389,10 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .list .row.is-failed { border-color: #f0d3cf; background: #fffaf9; }
 /* what the machine charged to read this song. Quiet on purpose: worth knowing,
    not what the row is for. */
-/* level with the chords it stands beside, rather than sitting on their baseline
-   and looking like it slipped */
+/* beside the name, on its line: the last thing read there, and never wrapped
+   into the middle of a title */
 .list .cost {
-  color: var(--ink-soft); font-size: 12px; align-self: center;
+  color: var(--ink-soft); font-size: 12px; white-space: nowrap;
   direction: ltr; unicode-bidi: isolate;
 }
 .list .row .a { color: var(--ink-soft); font-size: 14px; }

@@ -2776,6 +2776,19 @@
       if (by.length) {
         top.appendChild(el("div", "by", by.map(function (c) { return c.name; }).join(", ")));
       }
+
+      /* What the machine charged to read this one, beside the name. It rode at
+         the end of the chords for a while, where it was the last thing on a row
+         of pink and read as one more chord; up here it is next to the only
+         other thing on the card that is about the song rather than about
+         playing it. Quiet, because it is worth knowing and it is not what the
+         card is for, and only for the account that pays it. */
+      var paid = price(s);
+      if (paid) {
+        var cost = el("span", "cost", paid);
+        cost.title = priceWhy(s);
+        top.appendChild(cost);
+      }
       /* The kinds of song are NOT on the card. They are on nearly every card
          and they are the same two or three words on all of them, so as a label
          they say almost nothing and as ink they are a line of every card. What
@@ -2791,22 +2804,12 @@
          keeps its own direction (see .k), which is what stops "G/B" flipping
          inside itself. */
       var used = chordsUsed(s.lines);
-      var paid = price(s);
-      if (used.length || paid) {
-        var easy = used.length ? easyVersion(used) : null;
+      if (used.length) {
+        var easy = easyVersion(used);
         var keys = el("div", "keys");
-        if (easy) {
-          keys.title = "השיר עצמו: " + used.join("  ");
-          if (easy.capo) keys.appendChild(el("span", "capo", "קפו " + easy.capo));
-          easy.shapes.forEach(function (shape) { keys.appendChild(el("span", "k", shape)); });
-        }
-        /* What the machine charged to read this one. Last, and quiet: it is
-           worth knowing and it is not what the row is for. */
-        if (paid) {
-          var cost = el("span", "cost", paid);
-          cost.title = priceWhy(s);
-          keys.appendChild(cost);
-        }
+        keys.title = "השיר עצמו: " + used.join("  ");
+        if (easy.capo) keys.appendChild(el("span", "capo", "קפו " + easy.capo));
+        easy.shapes.forEach(function (shape) { keys.appendChild(el("span", "k", shape)); });
         box.appendChild(keys);
       }
 
