@@ -14,7 +14,7 @@
    ========================================================================== */
 
 import assert from "node:assert/strict";
-import { chordProLine } from "../src/transcribe.js";
+import { chordProLine, numbered, merge } from "../src/transcribe.js";
 
 let passed = 0;
 function check(what, got, want) {
@@ -159,6 +159,68 @@ check(
     ],
   }),
   "he[C]llo there wo[G]rld"
+);
+
+/* --- numbering the words for the second question -------------------------
+   The read is asked in two halves, and this is the handover between them. The
+   whole point of doing the counting here is that it cannot be miscounted, so
+   an off-by-one in this function would move every chord in the song onto a
+   neighbouring line with nothing looking broken. */
+
+check(
+  "a line is numbered, and so is every word in it",
+  numbered(["אילה מה לי"]),
+  "1: אילה מה לי\n   1=אילה 2=מה 3=לי"
+);
+
+/* A blank line keeps its number. Dropping it would renumber everything under
+   it, which is the one mistake here that ruins a whole song at once. */
+check(
+  "a blank line keeps its number and takes no words",
+  numbered(["מים", "", "נסתר"]),
+  "1: מים\n   1=מים\n2:\n3: נסתר\n   1=נסתר"
+);
+
+check(
+  "runs of spaces do not become words",
+  numbered(["מה   לי    ולה"]),
+  "1: מה   לי    ולה\n   1=מה 2=לי 3=ולה"
+);
+
+/* --- joining the two answers --------------------------------------------- */
+
+const WORDS = { title: "אילה", lyrics_by: "", music_by: "", dir: "rtl" };
+const LINES = ["מים", "", "נסתר"];
+
+check(
+  "a chord lands on the line it named",
+  merge(WORDS, LINES, { lines: [{ line: 3, chords: [{ chord: "Am", word: 1, letter: "נ", letters_before: 0 }] }] })
+    .lines.map((l) => l.chords.length).join(","),
+  "0,0,1"
+);
+
+check(
+  "a chord naming a line that is not there is dropped, not guessed at",
+  merge(WORDS, LINES, { lines: [{ line: 9, chords: [{ chord: "Am", word: 1, letter: "", letters_before: 0 }] }] })
+    .lines.map((l) => l.chords.length).join(","),
+  "0,0,0"
+);
+
+check(
+  "a line reported twice keeps both halves",
+  merge(WORDS, LINES, {
+    lines: [
+      { line: 1, chords: [{ chord: "Am", word: 1, letter: "מ", letters_before: 0 }] },
+      { line: 1, chords: [{ chord: "F", word: 1, letter: "ם", letters_before: 2 }] },
+    ],
+  }).lines[0].chords.length,
+  2
+);
+
+check(
+  "no chords at all still gives every line",
+  merge(WORDS, LINES, { lines: [] }).lines.length,
+  3
 );
 
 console.log(`transcribe: ${passed} checks passed`);

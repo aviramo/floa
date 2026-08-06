@@ -102,10 +102,52 @@
    because the chorus line above is the proof it earned: the shape is what made
    an exactly correct line possible at all, on any model.
 
+   --- WHERE THE MONEY ACTUALLY GOES ------------------------------------------
+
+   Measured rather than guessed, because the obvious economies are all in the
+   wrong place. One read of a one-page sheet:
+
+     the system prompt      ~1700 tokens
+     the schema              ~700 tokens
+     one 1400px image       ~1900 tokens
+                            -------------
+     all input              ~4300 tokens = about 2 cents
+
+     the answer, thinking included, is 3000 to 16000 tokens
+                                       = 7 to 40 cents
+
+   So THE PROMPT IS NOT THE COST. Shortening it saves fractions of a cent and
+   buys back nothing. Every cent worth having is in the output, and almost all
+   of the output is thinking.
+
+   Which is what this file's shape is now for: THE JOB IS TWO JOBS, AND THEY DO
+   NOT COST THE SAME. Reading the words off a photograph is copying, and needs
+   no judgement at all. Deciding which Hebrew letter a Latin symbol is printed
+   over is nothing but judgement, and that is what the thinking is spent on.
+   Asked together, the words travel on the chords' expensive ticket.
+
+   So they are asked separately.
+
+     1. THE WORDS. A cheap model, little thinking. Its whole output is the
+        lyrics, and it never sees a chord.
+
+     2. THE CHORDS. The good model, and it is handed the words from step 1
+        ALREADY NUMBERED, word by word. Its output carries no lyrics at all,
+        only the chord entries, and the counting it used to do for itself is
+        now a lookup in what it was given.
+
+   The image goes twice, which costs about two more cents of input and is worth
+   it several times over. And each half now has its own model and its own
+   effort, so the next experiment is one line rather than a rewrite: the
+   obvious one is CHORDS_MODEL down to Sonnet, which failed as a single call
+   but is being asked something much smaller here.
+
    max_tokens is a ceiling and not a target: at 32000 a long song cannot run
    out of room, and nothing is paid for room that goes unused. */
-const MODEL = "claude-opus-5";
-const EFFORT = "medium";
+const WORDS_MODEL = "claude-sonnet-5";
+const WORDS_EFFORT = "low";
+const CHORDS_MODEL = "claude-opus-5";
+const CHORDS_EFFORT = "medium";
 const MAX_TOKENS = 32000;
 
 export const MEDIA_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif", "application/pdf"];
@@ -144,26 +186,8 @@ const CHORD = {
   },
 };
 
-const LINE = {
-  type: "object",
-  additionalProperties: false,
-  required: ["words", "chords"],
-  properties: {
-    words: {
-      type: "string",
-      description:
-        "One line of the song, words only, exactly as printed, with no chords in it. An empty string for a blank line between stanzas. A heading such as a chorus marker is written in braces: {פזמון}.",
-    },
-    chords: {
-      type: "array",
-      description:
-        "Every chord symbol printed above this line, one entry each. The order of this array does not matter and is not used.",
-      items: CHORD,
-    },
-  },
-};
-
-const SCHEMA = {
+/* Step one's answer: the song in words, and nothing about chords. */
+const WORDS_SCHEMA = {
   type: "object",
   additionalProperties: false,
   required: ["title", "lyrics_by", "music_by", "dir", "lines"],
@@ -172,34 +196,93 @@ const SCHEMA = {
     lyrics_by: { type: "string", description: "Who wrote the words, if the sheet says so (often after \"מילים:\"), otherwise an empty string." },
     music_by: { type: "string", description: "Who wrote the tune, if the sheet says so (often after \"לחן:\"), otherwise an empty string." },
     dir: { type: "string", enum: ["rtl", "ltr"], description: "rtl when the lyrics are Hebrew or Arabic, ltr otherwise." },
-    lines: { type: "array", description: "The song, top to bottom, one entry per printed line.", items: LINE },
+    lines: {
+      type: "array",
+      description: "The song, top to bottom, one entry per printed line of words. An empty string for a blank line between stanzas. A heading such as a chorus marker is written in braces: {פזמון}.",
+      items: { type: "string" },
+    },
   },
 };
 
-const SYSTEM = `You read photographs or scans of a chord sheet and report what is printed on it.
+/* Step two's answer: chords only, each one against a line number it was given
+   rather than one it worked out. Nothing here repeats the lyrics, which is
+   most of why this step is cheap. */
+const CHORDS_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["lines"],
+  properties: {
+    lines: {
+      type: "array",
+      description: "One entry per numbered line that has any chords above it. Lines with none may be left out.",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["line", "chords"],
+        properties: {
+          line: { type: "integer", description: "The line's number, exactly as given in the numbered list." },
+          chords: {
+            type: "array",
+            description: "Every chord symbol printed above that line, one entry each. The order of this array does not matter and is not used.",
+            items: CHORD,
+          },
+        },
+      },
+    },
+  },
+};
 
-A chord sheet is lyrics with chord symbols printed on their own lines, floating above the words. Recovering the words is the easy half. The half that matters is recovering, for every single chord, WHICH LETTER it was printed above.
+/* Step one. Copying, not judging: no chord is mentioned anywhere in here, and
+   there is nothing in the job that needs weighing up. */
+const WORDS_SYSTEM = `You read photographs or scans of a chord sheet and write out THE WORDS OF THE SONG. Nothing else.
 
-HOW TO REPORT A LINE
+A chord sheet is lyrics with chord symbols printed on their own lines, floating above the words. IGNORE THE CHORD SYMBOLS ENTIRELY. They are somebody else's job. You are copying out the lyrics, line by line, exactly as they are printed.
 
-For each printed line, give the words on their own, exactly as printed and with no chords in them, and then give each chord above that line as its own separate entry. A chord entry answers three questions about ONE chord symbol:
+- One entry per printed line of words, top to bottom.
+- Copy each line as printed: same words, same spelling, same punctuation, including Hebrew niqqud if it is there. Do not translate, do not transliterate, do not correct, do not tidy.
+- A blank line between stanzas is an empty entry. Keep it: the line numbering that follows depends on it.
+- A heading that names a part of the song is a line in braces: {פזמון}, {בית}, {מעבר}, {Chorus}, {Intro}.
+- A line of the sheet that has chord symbols and no words under them is still a line: give it as an empty entry, or as whatever few words it does have.
 
-  word            which word of the line it stands over
+- REPEATED PHRASES ARE REPEATED EXACTLY AS OFTEN AS THE PAGE REPEATS THEM. This is the one error here that hides itself: a line reading "אילה מה לי ולה מה לי ולה מה לי ולה" comes back as "אילה מה לי ולה מה לי מה לי ולה" and reads perfectly well, so nothing about it looks wrong. It is wrong. Count the repetitions on the page before you write the line, then count them in what you wrote. Three means three.
+
+- Several images are pages of ONE song, in the order given. Return them as one song.
+- Anything that is not the song itself, such as a page number, a website name or a printed comment, is left out.
+- If part of the image is unreadable, give the lines you can read rather than inventing the rest.
+
+The title, and the credits if the sheet prints them, come from the page too. A Hebrew sheet usually writes them as "מילים:" and "לחן:".`;
+
+const WORDS_TEXT = "This is a chord sheet. Write out its words, line by line, ignoring the chord symbols completely.";
+
+/* Step two. Nothing but judgement, and every fact it does not have to judge is
+   handed to it: the lines, their numbers, the words, and the words' numbers. */
+const CHORDS_SYSTEM = `You are looking at a photograph of a chord sheet: lyrics with chord symbols printed on their own lines, floating above the words.
+
+The words have already been read for you, and they are given below the picture, numbered by line and numbered by word within each line. YOU DO NOT NEED TO READ THE WORDS AND YOU MUST NOT REPEAT THEM. Your entire job is to say, for every chord symbol on the page, WHICH LETTER OF WHICH WORD it is printed above.
+
+A chord entry answers three questions about ONE chord symbol:
+
+  word            which word of that line it stands over, by the number given
   letter          which letter of that word its middle stands over
   letters_before  how many letters of the word come before that letter
 
-Word 1 is the word the line begins with. On a Hebrew line the line begins on the RIGHT, so word 1 is the rightmost word on the page and the count runs leftwards. Inside a word, the first letter is likewise the one the word begins with: for בנקיק the letters are ב, נ, ק, י, ק in that order, and letters_before 2 means the third of them, the ק.
+Inside a word, the first letter is the one the word begins with: for בנקיק the letters are ב, נ, ק, י, ק in that order, and letters_before 2 means the third of them, the ק.
 
-An example. The page shows
+An example. Line 4 is given to you as
+
+    4: אילה מה לי
+       1=אילה 2=מה 3=לי
+
+and the picture shows
 
               C
         אילה מה לי
 
-The C's middle is over the ל of אילה, which is the first word and its third letter, so that chord is
+The C's middle is over the ל of אילה, which is word 1 and its third letter, so that chord is
 
     { chord: "C", word: 1, letter: "ל", letters_before: 2 }
 
-THE ORDER OF THE CHORDS DOES NOT MATTER. Every chord names its own word, so they are sorted afterwards by what they name. Do not try to list them in any particular sequence, and above all do not read the chord line as a row of symbols and hand them out to the words in the order you read them: Latin symbols read left to right and Hebrew words read right to left, and handing one sequence to the other reverses every chord in the middle of the line. Take ONE symbol, look down from its middle, name what is under it, write that entry. Then the next symbol. Where you start does not matter and how many you have done does not matter, because nothing here depends on order.
+THE ORDER OF THE CHORDS DOES NOT MATTER. Every chord names its own word, and they are sorted afterwards by what they name. Do not list them in any particular sequence, and above all do not read the chord line as a row of symbols and then hand them out to the words in the order you read them: Latin symbols read left to right and Hebrew words read right to left, and handing one sequence to the other puts every chord in the middle of the line onto its neighbour's word. Take ONE symbol, look straight down from its middle, find what is under it, write that entry. Then the next symbol. Where you start and how many you have done change nothing.
 
 WHICH LETTER, EXACTLY
 
@@ -214,40 +297,25 @@ WHICH LETTER, EXACTLY
               G7    E         Am          G       C
         אילה מה לי ולה מה לי ולה מה לי ולה
 
-  reads: C over the ל of אילה, G over the ל of the first ולה, Am over the ל of the second ולה, E over the ל of the third ולה, and G7 past the end of the line. Every one of those five is inside a word or past the words. Not one of them is at word 0 of anything.
+  reads: C over the ל of אילה, G over the ל of the first ולה, Am over the ל of the second ולה, E over the ל of the third ולה, and G7 past the end of the line. Every one of those five is inside a word or past the words. Not one of them is at the front of anything.
 
-- letter AND letters_before MUST AGREE. Read the word you named, count to letters_before, and check that the letter you land on is the letter you wrote. If they disagree, look at the page again.
+- A chord printed out past the last word, or standing alone in a gap with no word under it, is word 0 with an empty letter and letters_before 0. Give those in the order they are printed along the line, starting from the side the line starts on. A line of the song whose chords are ALL printed past its words, a turnaround or an outro, is a whole line of word 0 entries; do not scatter them in among the syllables to find them homes.
 
-- A chord printed out past the last word, or one standing alone in a gap with no word under it, is word 0 with an empty letter and letters_before 0. Report those in the order they are printed along the line, beginning from the side the line begins on.
+- A line with no chords above it can be left out altogether.
 
-- A blank line between stanzas is an entry with empty words and no chords.
-- A heading that names a part of the song is a line whose words are wrapped in braces: {פזמון}, {בית}, {מעבר}, {Chorus}, {Intro}.
-
-THE WORDS
-
-- Copy the lyrics as printed: same words, same spelling, same punctuation, including Hebrew niqqud if it is there. Do not translate, do not transliterate, do not correct.
-
-- REPEATED PHRASES ARE REPEATED EXACTLY AS OFTEN AS THE PAGE REPEATS THEM. This is the one error in the words that hides itself: a line reading "אילה מה לי ולה מה לי ולה מה לי ולה" comes back as "אילה מה לי ולה מה לי מה לי ולה" and reads perfectly well, so nothing about it looks wrong. It is wrong, and it also moves every chord after it onto the wrong word, because the words it named are no longer there.
-
-  So on any line that says the same thing more than once: count the repetitions on the page before writing the line, then count them in what you wrote. Three means three.
-- Copy chords as printed, in Latin notation: A to G, with # or b, and whatever follows (m, 7, maj7, sus4, dim, add9) and any slash bass such as G/B.
-- Several images are pages of ONE song, in the order given. Return them as one song.
-- Anything that is not the song itself, such as a page number, a website name or a printed comment, is left out.
-- If a part of the image is unreadable, return the lines you can read rather than inventing the rest.
+- Copy each chord as printed, in Latin notation: A to G, with # or b, and whatever follows (m, 7, maj7, sus4, dim, add9) and any slash bass such as G/B.
 
 BEFORE YOU ANSWER
 
-Go over each line once more and check three things.
+Go over each line once more and check two things.
 
-The WORDS: your line has every word the page has, in order, with repeated phrases repeated as often as the page repeats them. Read the printed line and your line side by side, word for word.
+The COUNT: you gave exactly as many chord entries for that line as the page has chord symbols above it. A missing one and an invented one both read as plausible.
 
-The COUNT: your line has exactly as many chord entries as the page has chord symbols above that line. A missing one and an invented one both read as plausible.
+The WORD: each chord names the word its middle is actually over. A chord one word along from where it belongs is the failure this task has, and it is invisible unless it is looked for.`;
 
-The LETTERS: for each chord, the word you named has that many letters, the letter at that position is the letter you named, and it is the one under the middle of the symbol. Count the letters; do not eyeball them. A chord sitting one or two letters from where it belongs is the failure this task actually has, and it is invisible unless it is looked for.`;
-
-const USER_TEXT =
-  "This is a chord sheet. Report every line of it: the words as printed, and every chord above them as its own " +
-  "entry naming the word, the letter and how many letters come before that letter.";
+const CHORDS_TEXT =
+  "Here is the sheet again, and the words that have already been read from it, numbered.\n\n" +
+  "For every chord symbol printed on the page, say which numbered word it stands over and which letter of it.\n\n";
 
 /* --- the model ------------------------------------------------------------
    Streamed, and read with a deliberately cheap parser. A long answer arrives
@@ -305,9 +373,55 @@ async function streamText(env, body, onProgress) {
   return { text, stopReason };
 }
 
-/* Reads one upload, which may be several pages of the same song. Throws an
-   Error whose message is safe to store: it is ours, never a key. */
-export async function readChordSheet(env, files, onProgress) {
+/* One question, asked and answered. Everything that can go wrong with an
+   answer is turned into an error whose message is safe to store: it is ours,
+   never a key. */
+async function ask(env, body, onProgress) {
+  const { text, stopReason } = await streamText(env, body, onProgress);
+
+  if (stopReason === "refusal") throw new Error("refusal");
+  if (stopReason === "max_tokens") throw new Error("truncated");
+  if (!text.trim()) throw new Error("empty");
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error("empty");
+  }
+}
+
+/* The words, handed to step two the way step two needs them: numbered by line,
+   and within each line numbered by word.
+
+   This is the point of splitting the job. The counting a chord entry rests on
+   is done HERE, once, in code that cannot miscount, so what is left for the
+   model is looking at a photograph and saying what it sees. Blank lines keep
+   their numbers, because a line number that shifts is worse than useless.
+
+   Exported for the test: this is the only place the numbers a whole read hangs
+   on are produced, and an off-by-one here would move every chord in the song
+   onto the line above or below without anything looking broken. */
+export function numbered(lines) {
+  return lines.map((line, index) => {
+    const text = String(line ?? "").trim();
+    const number = index + 1;
+    if (!text) return `${number}:`;
+
+    const words = wordsOf(text).map((word, i) => `${i + 1}=${word.text}`).join(" ");
+    return `${number}: ${text}\n   ${words}`;
+  }).join("\n");
+}
+
+/* Reads one upload, which may be several pages of the same song.
+
+   TWO QUESTIONS, NOT ONE, and the reason is written out at the top of this
+   file: copying the words and judging where the chords sit are different jobs
+   at wildly different prices, and asked together the cheap one is billed at
+   the dear one's rate.
+
+   `beat` is called with the stage in progress, often, so that whoever is
+   watching the row sees which half is happening. */
+export async function readChordSheet(env, files, beat) {
   const pages = files.map((file) => {
     const source = { type: "base64", media_type: file.media_type, data: file.data };
     return file.media_type === "application/pdf"
@@ -315,22 +429,58 @@ export async function readChordSheet(env, files, onProgress) {
       : { type: "image", source };
   });
 
-  const { text, stopReason } = await streamText(env, {
-    model: MODEL,
+  /* --- one: the words --- */
+  const words = await ask(env, {
+    model: WORDS_MODEL,
     max_tokens: MAX_TOKENS,
-    system: SYSTEM,
+    system: WORDS_SYSTEM,
     output_config: {
-      effort: EFFORT,
-      format: { type: "json_schema", schema: SCHEMA },
+      effort: WORDS_EFFORT,
+      format: { type: "json_schema", schema: WORDS_SCHEMA },
     },
-    messages: [{ role: "user", content: [...pages, { type: "text", text: USER_TEXT }] }],
-  }, onProgress);
+    messages: [{ role: "user", content: [...pages, { type: "text", text: WORDS_TEXT }] }],
+  }, () => beat && beat("קורא מילים"));
 
-  if (stopReason === "refusal") throw new Error("refusal");
-  if (stopReason === "max_tokens") throw new Error("truncated");
-  if (!text.trim()) throw new Error("empty");
+  const lines = Array.isArray(words.lines) ? words.lines.map((line) => String(line ?? "")) : [];
+  if (!lines.some((line) => line.trim())) throw new Error("empty");
 
-  return clean(JSON.parse(text));
+  /* --- two: the chords --- */
+  const report = await ask(env, {
+    model: CHORDS_MODEL,
+    max_tokens: MAX_TOKENS,
+    system: CHORDS_SYSTEM,
+    output_config: {
+      effort: CHORDS_EFFORT,
+      format: { type: "json_schema", schema: CHORDS_SCHEMA },
+    },
+    messages: [{
+      role: "user",
+      content: [...pages, { type: "text", text: CHORDS_TEXT + numbered(lines) }],
+    }],
+  }, () => beat && beat("מסדר אקורדים"));
+
+  return clean(merge(words, lines, report));
+}
+
+/* The two answers, joined by line number. A chord naming a line that is not
+   there is dropped rather than guessed at: it is the one thing in this file
+   that cannot be repaired, since there is no word for it to sit on. */
+export function merge(words, lines, report) {
+  const byLine = new Map();
+  (Array.isArray(report?.lines) ? report.lines : []).forEach((entry) => {
+    const number = Math.round(Number(entry?.line));
+    if (!Number.isFinite(number) || number < 1 || number > lines.length) return;
+    const already = byLine.get(number) || [];
+    byLine.set(number, already.concat(Array.isArray(entry.chords) ? entry.chords : []));
+  });
+
+  return {
+    title: words.title,
+    lyrics_by: words.lyrics_by,
+    music_by: words.music_by,
+    dir: words.dir,
+    lines: lines.map((line, index) => ({ words: line, chords: byLine.get(index + 1) || [] })),
+  };
 }
 
 /* --- assembling the document ----------------------------------------------
@@ -550,17 +700,20 @@ export async function readAndSave(env, token, songId, files) {
     return;
   }
 
-  let beat = 0;
-  const heartbeat = () => {
+  let last = 0;
+  let stage = "מפענח";
+  const heartbeat = (now) => {
+    if (now) stage = now;
     const seconds = Math.round((Date.now() - began) / 1000);
-    if (seconds - beat < 20) return;
-    beat = seconds;
+    if (seconds - last < 20) return;
+    last = seconds;
     /* The STAGE, not the time. Whoever is watching counts the seconds in their
        own browser, once a second, which is smoother than anything a heartbeat
        could send. What only this side knows is which part of the work is
-       happening, so that is what it says. Writing the same word again is not
-       wasted: the row's updated_at is what proves the job is still alive. */
-    patchSong(env, token, songId, { status_note: "מפענח" })
+       happening, and now that the work is two halves that is worth saying: the
+       words first, then the chords. Writing the same word again is not wasted,
+       since the row's updated_at is what proves the job is still alive. */
+    patchSong(env, token, songId, { status_note: stage })
       .then((failure) => { if (failure) console.error("heartbeat refused", songId, failure.status); })
       .catch((err) => console.error("heartbeat threw", songId, err.message));
   };
