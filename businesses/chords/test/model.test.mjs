@@ -9,7 +9,7 @@ const end = src.indexOf("/* ----------------------------------------------------
 if (start < 0 || end < 0) throw new Error("could not find the model block");
 
 const block = src.slice(start, end);
-const api = new Function(block + "\nreturn { slugify, transposeChord, remapChords, parsePasted, looksLikeChord, isChord, suggestChords, chordsUsed, easyVersion, toChordPro, fromChordPro, songToText, textToSong, normalizeLines, songDir, splitLine, joinLines, padTo, trimPadding };")();
+const api = new Function(block + "\nreturn { slugify, transposeChord, remapChords, parsePasted, looksLikeChord, isChord, suggestChords, chordsUsed, easyVersion, toChordPro, fromChordPro, songToText, textToSong, normalizeLines, songDir, splitLine, joinLines, padTo, trimPadding, diffLines, changeCount };")();
 
 let failed = 0;
 const eq = (label, got, want) => {
@@ -260,6 +260,55 @@ eq("chord recognition", [
   api.looksLikeChord("Am"), api.looksLikeChord("F#m7"), api.looksLikeChord("G/B"),
   api.looksLikeChord("Csus4"), api.looksLikeChord("שיר"), api.looksLikeChord("Hello"),
 ], [true, true, true, true, false, false]);
+
+/* --- what one version did to the one before it ----------------------------
+   The list every version page is drawn from: whose lines survived, which ones
+   arrived, and which ones left. Written as "mark words" per line, because that
+   is exactly what the page draws. */
+const diff = (before, after) =>
+  api.diffLines(api.normalizeLines(before, "rtl"), api.normalizeLines(after, "rtl"))
+    .map((op) => op.mark + " " + (op.line.type === "section" ? "{" + op.line.text + "}" : api.toChordPro(op.line)));
+
+/* The brackets go AFTER the character the chord sits on, which is why these
+   read the way they do: א[Am]חת is an Am over the alef. */
+eq("the same song twice changed nothing",
+  diff("א[Am]חת\nשתיים", "א[Am]חת\nשתיים"),
+  ["same א[Am]חת", "same שתיים"]);
+
+eq("a line that arrived in the middle",
+  diff("אחת\nשלוש", "אחת\nשתיים\nשלוש"),
+  ["same אחת", "add שתיים", "same שלוש"]);
+
+eq("a line that left",
+  diff("אחת\nשתיים\nשלוש", "אחת\nשלוש"),
+  ["same אחת", "gone שתיים", "same שלוש"]);
+
+/* A chord that moved makes a different line, and the two are shown in the
+   order they happened: this was here, and this is here now. */
+eq("a chord that moved is the old line leaving and a new one arriving",
+  diff("א[Am]חת שתיים", "אחת ש[Am]תיים"),
+  ["gone א[Am]חת שתיים", "add אחת ש[Am]תיים"]);
+
+eq("a heading is a line like any other",
+  diff("{בית}\nאחת", "{פזמון}\nאחת"),
+  ["gone {בית}", "add {פזמון}", "same אחת"]);
+
+/* A chorus that repeats is where a cheaper diff goes wrong: the spine has to
+   be the longest run of lines that survive IN ORDER, not the first match. */
+eq("a repeated chorus keeps its place",
+  diff("פזמון\nאחת\nפזמון", "פזמון\nאחת\nשתיים\nפזמון"),
+  ["same פזמון", "same אחת", "add שתיים", "same פזמון"]);
+
+/* An empty line is drawn with its mark and counted in nothing: a gap that
+   opened is part of what the version looks like and not something that
+   happened to the words. */
+eq("blank lines are not counted",
+  api.changeCount(api.diffLines(api.normalizeLines("אחת", "rtl"), api.normalizeLines("אחת\n\nשתיים", "rtl"))),
+  { add: 1, gone: 0 });
+
+eq("counted on both sides",
+  api.changeCount(api.diffLines(api.normalizeLines("אחת\nשתיים", "rtl"), api.normalizeLines("שלוש\nארבע\nחמש", "rtl"))),
+  { add: 3, gone: 2 });
 
 console.log(failed ? `\n${failed} failed` : "\nall passed");
 process.exit(failed ? 1 : 0);

@@ -948,6 +948,18 @@
         .catch(function () { return 0; });
     },
 
+    /* The one published before this one, which is what a version is read
+       against: "what changed" has no answer that does not name a second song,
+       and the second song is the one this replaced. Null for the first
+       version, which changed nothing because there was nothing there. */
+    before: function (songId, when) {
+      return rest(VER + "?select=" + VER_FIELDS +
+        "&song_id=eq." + encodeURIComponent(songId) +
+        "&created_at=lt." + encodeURIComponent(when) + "&order=created_at.desc&limit=1")
+        .then(function (rows) { return rows && rows[0]; })
+        .catch(function () { return null; });
+    },
+
     /* `owner` is not sent. The database fills it in from the token, which is
        the whole of why a version cannot be written into somebody else's name. */
     add: function (row) {
@@ -1458,6 +1470,79 @@
       out.push({ type: "line", text: parsed.text, chords: parsed.chords, dir: dir });
     });
     return out;
+  }
+
+  /* --- what one version did to the one before it -----------------------------
+     Two songs in, one list of lines out, each carrying whether it is new, gone,
+     or the same in both. Which is the whole of "what changed": a version is not
+     a description of an edit, it is the song afterwards, so the edit has to be
+     worked out from the two songs rather than read off either.
+
+     A LINE IS ITS WORDS AND ITS CHORDS TOGETHER. Moving one chord along a line
+     makes it a different line, and it shows as the old one going and a new one
+     arriving, which is what happened: there is no smaller true thing to say
+     about a chord that moved, and pretending the line merely "changed" would
+     hide which of the two you are looking at.
+
+     The longest common subsequence, which is the diff every version control
+     system is: the lines that survive in order are the song's spine, and
+     everything else is an arrival or a departure. Written out in full rather
+     than by some cheaper heuristic because a song is a couple of hundred lines
+     at the very most, and a diff that is nearly right about a chorus that
+     repeats four times is worse than no diff.
+
+     A departure is offered before an arrival at the same place, so a line that
+     was rewritten reads downwards: this was there, and this is there now. */
+  function lineKey(line) {
+    return line.type === "section" ? "{" + line.text + "}" : toChordPro(line);
+  }
+
+  function diffLines(before, after) {
+    var a = before || [], b = after || [];
+    var n = a.length, m = b.length;
+    var keyA = a.map(lineKey), keyB = b.map(lineKey);
+
+    /* L[i][j] is how many lines a[i..] and b[j..] still have in common. Filled
+       from the end backwards so the walk below can go forwards, which is the
+       order the answer is read in. */
+    var L = [];
+    for (var i = 0; i <= n; i++) L.push(new Array(m + 1).fill(0));
+    for (i = n - 1; i >= 0; i--) {
+      for (var j = m - 1; j >= 0; j--) {
+        L[i][j] = keyA[i] === keyB[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+      }
+    }
+
+    var out = [];
+    i = 0; j = 0;
+    while (i < n || j < m) {
+      if (i < n && j < m && keyA[i] === keyB[j]) {
+        out.push({ line: b[j], mark: "same" });
+        i++; j++;
+      } else if (i < n && (j === m || L[i + 1][j] >= L[i][j + 1])) {
+        out.push({ line: a[i], mark: "gone" });
+        i++;
+      } else {
+        out.push({ line: b[j], mark: "add" });
+        j++;
+      }
+    }
+    return out;
+  }
+
+  /* A blank line arriving is not a change anybody means, so the counting skips
+     the empty ones. They are still drawn with their mark: on the page a gap
+     that appeared is part of what the version looks like, and here it would be
+     a number saying something happened when nothing did. */
+  function changeCount(ops) {
+    var add = 0, gone = 0;
+    (ops || []).forEach(function (op) {
+      var line = op.line;
+      if (!String(line.text || "").trim() && !(line.chords && line.chords.length)) return;
+      if (op.mark === "add") add++;
+      else if (op.mark === "gone") gone++;
+    });
+    return { add: add, gone: gone };
   }
 
   /* the other half of padTo: spaces nothing needs any more, once the chord that
@@ -3555,10 +3640,43 @@
     if (song.status_note && !coming) app.appendChild(el("div", "song-note", song.status_note));
 
     /* A version says so at the top of itself, because everything under it looks
-       exactly like the song and is not it. The two things worth doing from here
-       are in the band rather than under the sheet: the sentence and the answer
-       to it belong together, and a long song would put them a screen apart. */
-    if (past) app.appendChild(pastBand(past));
+       exactly like the song and is not it. The things worth doing from here are
+       in the band rather than under the sheet: the sentence and the answer to
+       it belong together, and a long song would put them a screen apart. */
+    if (past) app.appendChild(pastBand(past, flipDiff));
+
+    /* --- the same sheet, with what changed marked on it ------------------------
+       Not a second page and not two songs side by side. The version is already
+       drawn, so what the marks add is the lines that are NOT in it: the ones
+       the version before had and this one does not, put back where they stood,
+       struck through. Everything else keeps its place, which is the point. A
+       song read next to another song is two things to read; a song with the
+       departed lines standing in it is one.
+
+       It is off until it is asked for. What a version is, first, is the song
+       as it went out, and that is what somebody opening one came to see. */
+    var showingDiff = false;
+    var ownLines = null;
+
+    function flipDiff() {
+      if (!past || !past.before) return false;
+      if (!ownLines) ownLines = song.lines;
+      showingDiff = !showingDiff;
+      song.lines = showingDiff
+        ? diffLines(normalizeLines(past.before.lines, past.before.dir), ownLines).map(function (op) {
+            /* A copy for anything marked, because the mark is about this
+               drawing and not about the line: the version's own lines are
+               handed back untouched the moment the marks come off. */
+            if (op.mark === "same") return op.line;
+            return {
+              type: op.line.type, text: op.line.text, chords: op.line.chords,
+              dir: op.line.dir, mark: op.mark,
+            };
+          })
+        : ownLines;
+      draw();
+      return showingDiff;
+    }
 
     /* A band used to sit here saying the song had been read by a machine and
        not by a person, with a button to take the label off. Both are the
@@ -5530,14 +5648,20 @@
     if (editing && !song.id) title.focus();
   }
 
+  /* `line.mark` is set on nothing but a version being read against the one
+     before it (see flipDiff): "add" for a line this version brought, "gone"
+     for one it left behind. Carried on the line rather than passed in, because
+     the two kinds are interleaved down one sheet and the drawing has to be
+     told line by line. */
   function viewLine(line, semis) {
+    var change = line.mark ? " is-" + line.mark : "";
     if (line.type === "section") {
-      var s = el("div", "ln is-section");
+      var s = el("div", "ln is-section" + change);
       s.dir = dirOf(line);
       s.appendChild(el("div", "ln-section", line.text));
       return s;
     }
-    var ln = el("div", "ln" + (line.text.trim() || line.chords.length ? "" : " is-blank"));
+    var ln = el("div", "ln" + change + (line.text.trim() || line.chords.length ? "" : " is-blank"));
     /* Said on the row, which is both how the browser lays the words out and
        where every measurement asks (see rowRtl). One answer, one place. */
     ln.dir = dirOf(line);
@@ -5649,12 +5773,47 @@
     }).length;
   }
 
-  function pastBand(past) {
+  /* What a version did to the one before it, in words, for a row that cannot
+     show it. "3 שורות" is the size of a song and this is the size of a change,
+     which is the number somebody scanning a list of dates is actually after. */
+  function changeWords(ops, first) {
+    if (first) return "הגרסה הראשונה";
+    var counted = changeCount(ops);
+    var said = [];
+    if (counted.add) said.push(counted.add === 1 ? "שורה אחת חדשה" : counted.add + " שורות חדשות");
+    if (counted.gone) said.push(counted.gone === 1 ? "שורה אחת ירדה" : counted.gone + " שורות ירדו");
+    /* A publication with nothing new in the words is a real one: a name, a
+       credit or a style was fixed, and saying "0 שורות" would be a number
+       where a sentence belongs. */
+    return said.length ? said.join(", ") : "המילים והאקורדים לא השתנו";
+  }
+
+  /* The sentence over a version, which is two different sentences: what this
+     page is, and, once the marks are on, what the colours mean. */
+  function pastBand(past, onFlip) {
     var band = el("div", "past-band");
-    band.appendChild(el("span", "past-said",
-      "זו גרסה שפורסמה " + whenWords(past.version.created_at) + ", ולא השיר עצמו. אי אפשר לערוך אותה, אפשר לשחזר אותה."));
+    var said = el("span", "past-said");
+    var plain = "זו גרסה שפורסמה " + whenWords(past.version.created_at) + ", ולא השיר עצמו. אי אפשר לערוך אותה, אפשר לשחזר אותה.";
+    var marked = "מסומן מה שהשתנה מהגרסה שלפניה: ירוק הוא מה שנוסף, אדום ומחוק הוא מה שירד.";
+    said.textContent = plain;
+    band.appendChild(said);
 
     var actions = el("div", "row-actions");
+
+    /* Only against something. The first version of a song changed nothing,
+       because there was nothing there to change, and a button that can only
+       answer that is a button that should not be offered. */
+    if (past.before) {
+      /* No picture on it. The clock going backwards is the way TO a version,
+         and this button is already standing on one. */
+      var flip = button("מה השתנה", null, "ghost small", function () {
+        var on = onFlip();
+        said.textContent = on ? marked : plain;
+        flip.querySelector(".lb").textContent = on ? "הגרסה בלבד" : "מה השתנה";
+      });
+      actions.appendChild(flip);
+    }
+
     actions.appendChild(button("שחזור הגרסה הזאת", ICON.undo, "small", function () {
       restoreVersion(past.song, past.version);
     }));
@@ -5734,8 +5893,11 @@
           return;
         }
 
+        /* The list is newest first, so the version each row is read against is
+           the NEXT one down. The oldest has nothing under it, and that is what
+           makes it the first. */
         var list = el("ul", "list");
-        rows.forEach(function (v) { list.appendChild(versionRow(song, v)); });
+        rows.forEach(function (v, index) { list.appendChild(versionRow(song, v, rows[index + 1])); });
         app.appendChild(list);
 
         var actions = el("div", "row-actions");
@@ -5755,7 +5917,7 @@
      The one that matches the song as it stands says so. Without it a list of
      dates gives no answer at all to the question everybody actually arrives
      with: which of these is what is up there now. */
-  function versionRow(song, v) {
+  function versionRow(song, v, before) {
     var li = el("li");
     var box = el("div", "row");
 
@@ -5767,7 +5929,11 @@
     if (sameVersion(v, song)) top.appendChild(el("span", "tag tag-published", "זה מה שבשיר עכשיו"));
     what.appendChild(top);
 
-    var said = [];
+    /* WHAT THIS ONE CHANGED, first, because that is what a list of dates is
+       being read for: which of these is the one where the second verse came
+       in. How long the song was and who it is by come after it. */
+    var said = [changeWords(before ? diffLines(normalizeLines(before.lines, before.dir),
+      normalizeLines(v.lines, v.dir)) : null, !before)];
     var many = lineCount(v);
     said.push(many === 1 ? "שורה אחת" : many + " שורות");
     var by = credits(v);
@@ -5796,7 +5962,12 @@
 
       return versions.one(song.id, id).then(function (v) {
         if (!v) return noVersion(song);
-        renderSong(versionSong(song, v), { song: song, version: v });
+        /* And the one before it, which is the only thing "what changed" can be
+           answered against. Asked for here rather than when the button is
+           pressed, so the button is offered only where there is an answer. */
+        return versions.before(song.id, v.created_at).then(function (was) {
+          renderSong(versionSong(song, v), { song: song, version: v, before: was });
+        });
       });
     }).catch(fail);
   }

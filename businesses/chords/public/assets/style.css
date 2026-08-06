@@ -1111,6 +1111,29 @@ button.val:hover { border-color: var(--line); background: #fff; }
 }
 .sheet[dir="rtl"] .ln.is-marked::before { right: -7px; }
 .sheet[dir="ltr"] .ln.is-marked::before { left: -7px; }
+
+/* --- what a version changed, on the version itself -------------------------
+   The same bar in the same margin as a marked line, because it says the same
+   kind of thing about a row: this one, not the others. The colour is what is
+   different, and it is the only thing that needs learning here.
+
+   A line that went is drawn where it stood, struck through and faded. Not
+   hidden, and not moved to the bottom: the whole reason to put it back on the
+   page is that it stood between those two lines, and that is what says what
+   happened to the verse.
+   ------------------------------------------------------------------------- */
+.ln.is-add::before, .ln.is-gone::before {
+  content: ""; position: absolute; top: -1px; bottom: -1px;
+  width: 3px; border-radius: 2px;
+}
+.ln.is-add::before { background: var(--published-ink); }
+.ln.is-gone::before { background: var(--danger); }
+.sheet[dir="rtl"] .ln.is-add::before, .sheet[dir="rtl"] .ln.is-gone::before { right: -7px; }
+.sheet[dir="ltr"] .ln.is-add::before, .sheet[dir="ltr"] .ln.is-gone::before { left: -7px; }
+/* the words go through, the chords over them only fade: a struck chord is a
+   line through two letters and reads as a chord nobody can make out */
+.ln.is-gone { opacity: .62; }
+.ln.is-gone .ln-t, .ln.is-gone .ln-section { text-decoration: line-through; text-decoration-color: var(--danger); }
 @media (prefers-reduced-motion: reduce) { .ln-pick { transition: none; } }
 
 /* What is marked, and what can be done to it. Floating over the page rather
@@ -1313,6 +1336,9 @@ button.val:hover { border-color: var(--line); background: #fff; }
   /* marking a verse is editing, and a page of ticks is not a song */
   .block-bar, .ln-pick, .gap-btn { display: none !important; }
   .ln.is-marked::before { display: none; }
+  /* what a version changed is about two versions, and paper holds one */
+  .ln.is-add::before, .ln.is-gone::before { display: none; }
+  .ln.is-gone { display: none; }
   body { background: #fff; }
 
   /* An evening on paper is the name, the date and the songs in order. The
