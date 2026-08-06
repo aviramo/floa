@@ -787,6 +787,25 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 /* The pair, chords and the words under them, is one thing on the page. So the
    air goes BETWEEN the pairs and not inside them: tight above the words, open
    below the line. */
+/* --- WHAT COMES OUT WHEN A SONG IS COPIED --------------------------------
+   The words, and only the words.
+
+   Somebody dragging across a song and pressing copy wants the lyrics: to send
+   them to whoever is singing, to search for the next verse, to paste them
+   somewhere that has no idea what a chord is. What they were getting was every
+   chord label interleaved with the syllables it sits over, because the labels
+   are text in the same page and a selection takes everything in its path.
+
+   So the chord lane cannot be selected at all, and neither can the gaps inside
+   words: a gap is room on the screen, not a character of the song, and a word
+   spelled out with them in it is not that word.
+
+   Only where the song is being READ. In the editor a gap has to be reachable
+   by the caret to be deleted, and it is the words themselves being worked on
+   there rather than copied out. */
+.chord, .ln-c { user-select: none; -webkit-user-select: none; }
+.sheet:not(.ed) .ln-t .gap { user-select: none; -webkit-user-select: none; }
+
 .ln { position: relative; margin-bottom: .45em; }
 .ln-c { position: relative; height: .94em; }
 .ln-t {
