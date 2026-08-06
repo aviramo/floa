@@ -363,9 +363,16 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 /* less and more, side by side, the same shape for every control that has them */
 .tools .step { display: flex; align-items: center; gap: 6px; }
 
-/* A line never wraps (white-space: pre on .ln-t), so a long line overflows and
-   the whole sheet scrolls sideways. That is deliberate: the chord row and the
-   word row have to move together, or a chord stops being over its syllable.
+/* A line never wraps by itself (white-space: pre on .ln-t), so a long line
+   overflows and the whole sheet scrolls sideways. That is deliberate: the
+   chord row and the word row have to move together, or a chord stops being
+   over its syllable, and no wrapping the browser knows how to do would move
+   them together.
+
+   On a wide screen that is the end of it, and the scroll is never needed. On a
+   phone the browser is not asked to wrap, but the words ARE broken, by wrapRow
+   in app.js, which cuts the line and its chords together into rows that fit
+   and marks each leftover (see .ln.is-cont below).
 
    The generous side padding is not decoration. A chord is centred on its
    character, so one over the FIRST character sticks out half a label past the
@@ -492,6 +499,32 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   letter-spacing: .06em; text-transform: uppercase;
   color: var(--ink-soft);
 }
+/* --- what did not fit on the screen --------------------------------------
+   A row carrying the tail of the line above it (see wrapRow in app.js, which
+   is where the width is decided and where --cont is written).
+
+   Two things have to be true at once: it must read as a continuation and not
+   as a line of the song, and it must still be clearly attached to the row it
+   fell out of. So it is indented, it carries an arrow in the space it was
+   indented by, and the gap above it is closed while the gap below the group
+   stays the full one. The air between two sung lines is then wider than the
+   air inside one, which is what tells them apart at a glance.
+
+   The indent is padding on .ln-t and never on .ln: the chords are measured
+   from the row's own edges, and padding on the row would move every one of
+   them without moving the letters they sit over. Padding on the words moves
+   the letters, and the measuring follows. */
+.ln.has-cont { margin-bottom: 0; }
+.ln.is-cont.is-tight .ln-c { height: 0; }
+.ln.is-cont .ln-t { position: relative; padding-inline-start: var(--cont); }
+.ln.is-cont .ln-t::before {
+  content: attr(data-cont);
+  position: absolute; inset-inline-start: 0; top: 0;
+  width: var(--cont); text-align: center;
+  color: var(--chord); opacity: .5;
+  font-weight: 400;
+}
+
 /* A blank line is the gap between two stanzas, and a gap does not need a full
    line of words plus an empty chord lane above it to say so: about half that
    reads as a break without reading as a missing verse. The lane goes entirely,

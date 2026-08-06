@@ -1125,8 +1125,18 @@
     chords.forEach(function (c) { if (c.pos > far) far = c.pos; });
     var cells = Math.max(text.length, far + 1);
 
+    /* What each character actually takes, asked of the character itself rather
+       than of the distance to the next one. The two are the same until a line
+       mixes directions, and then they are not: a Latin word inside a Hebrew
+       line is laid out the other way about, so the distance between two
+       neighbours there can come out backwards, while the width of a letter is
+       the width of a letter either way. It also gets Hebrew vowel points
+       right, which take no room at all and must not be counted as if they
+       did. */
     var advance = [];
-    for (var i = 0; i < cells; i++) advance.push(i < m.count ? m.at(i + 1) - m.at(i) : m.unit);
+    for (var i = 0; i < cells; i++) {
+      advance.push(i < m.count ? m.spans[i].getBoundingClientRect().width : m.unit);
+    }
 
     var indent = CONT_INDENT * (parseFloat(getComputedStyle(t).fontSize) || 18);
 
@@ -1144,6 +1154,12 @@
         at++;
       }
       if (at >= cells) { segments.push([start, cells]); break; }
+
+      /* The space the row breaks ON does not have to fit on it: it is the last
+         thing on the row and there is nothing after it to push off the edge.
+         Without this a line whose words end exactly at the screen's edge loses
+         the whole last word to the row below. */
+      if (at > start && at < text.length && text[at] === " ") space = at;
 
       var end = space > start ? space + 1 : Math.max(at, start + 1);
       segments.push([start, end]);
@@ -1164,12 +1180,22 @@
       var more = n < segments.length - 1;
       var row = el("div", "ln" + (cont ? " is-cont" : "") + (more ? " has-cont" : ""));
 
+      /* EVERY chord lands on exactly one row, so a row claims everything from
+         where it starts up to where the next one does. The spaces a break ate
+         are a gap between the two, and a chord may not fall down it. */
+      var from = cont ? seg[0] : -Infinity;
+      var upto = more ? segments[n + 1][0] : Infinity;
+
       var lane = el("div", "ln-c");
       chords.forEach(function (c) {
-        if (c.pos < seg[0] || c.pos >= seg[1]) return;
+        if (c.pos < from || c.pos >= upto) return;
         /* already transposed on screen, so nothing is shifted a second time */
-        lane.appendChild(chordEl(c.label, c.pos - seg[0], 0));
+        lane.appendChild(chordEl(c.label, Math.max(0, c.pos - seg[0]), 0));
       });
+      /* A leftover row with no chords over it needs no lane to hold them, and
+         the fifteen pixels it would take are a line of the song further down
+         the page. */
+      if (cont && !lane.children.length) row.classList.add("is-tight");
       row.appendChild(lane);
 
       var words = textSpans(text.slice(seg[0], Math.min(seg[1], text.length)));
@@ -2701,7 +2727,7 @@
        nowhere else, so starting any other way leaves it reading 0 over a song
        that is being shown seven frets down */
     setSemis(semis);
-    relayoutOn(sheet, rtl);
+    relayoutOn(sheet, rtl, editing ? null : draw);
 
     /* last, once the page is whole, because taking a draft back means writing
        into the title, the credits and every line of the sheet, and all of them
@@ -2727,11 +2753,33 @@
   }
 
   /* Fonts arrive after the first paint and a window resize changes every
-     offset, so both re-measure. Nothing is re-rendered, only re-placed. */
-  function relayoutOn(root, isRtl) {
+     offset, so both re-measure. Nothing is re-rendered, only re-placed.
+
+     Except where the width is what changed and the lines are broken to it:
+     there the rows themselves are wrong, not only the chords on them, so the
+     caller hands in a redraw and it is used instead. Only when the width
+     actually moved, because a phone fires resize for its own address bar
+     sliding away, and redrawing the sheet under a reader's thumb for that is
+     the page flinching at nothing. */
+  function relayoutOn(root, isRtl, redraw) {
     var run = function () { layoutAll(root, isRtl()); };
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(run);
-    var onResize = function () { if (root.isConnected) run(); else window.removeEventListener("resize", onResize); };
+    var width = root.clientWidth;
+
+    /* The font the words were broken with has to be the font they are read in,
+       so a font arriving late breaks them again rather than only nudging the
+       chords. */
+    var rewrap = function () {
+      if (!redraw || !NARROW.matches) return run();
+      width = root.clientWidth;
+      redraw();
+    };
+
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(rewrap);
+    var onResize = function () {
+      if (!root.isConnected) return window.removeEventListener("resize", onResize);
+      if (redraw && NARROW.matches && root.clientWidth !== width) return rewrap();
+      run();
+    };
     window.addEventListener("resize", onResize);
   }
 

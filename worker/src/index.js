@@ -36,7 +36,7 @@
                       its `to` in the table
    ========================================================================== */
 import { BUSINESSES } from "./businesses.js";
-import { MEDIA_TYPES } from "./transcribe.js";
+import { MEDIA_TYPES, readChordSheet } from "./transcribe.js";
 import { measure } from "./ocr.js";          // temporary, for /boxes
 
 /* A lead sent before the sites were rebuilt carries no `business` field. It can
@@ -426,9 +426,54 @@ async function boxesOf(request, env) {
   }
 }
 
+/* --- one page, read by the model, on purpose ------------------------------
+   TEMPORARY, and it exists to build a reference rather than to serve anybody.
+
+   Measuring a page is what the reader does now and it is what the reader
+   should do. But a song has to be CORRECTED by a person before it can be used
+   to judge the measuring, and correcting a badly measured page is more work
+   than typing it out. The model's read is not better, it is differently wrong,
+   and it is close enough to be worth fixing by hand. So: the same reader with
+   the ruler taken out of its hands.
+
+   It answers as a slow trickle of spaces and then the song, because a read
+   takes minutes and a quiet connection is cut at a hundred seconds.
+
+   DELETE IT once there is a reference. */
+async function readByModel(request, env) {
+  let body;
+  try { body = await request.json(); } catch { return json({ ok: false, said: "bad body" }, 400, ""); }
+  if (!body?.data) return json({ ok: false, said: "no data" }, 400, "");
+
+  const files = [{ media_type: body.media_type || "image/jpeg", data: body.data }];
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const encoder = new TextEncoder();
+      const tick = setInterval(() => controller.enqueue(encoder.encode(" ")), 5000);
+      try {
+        /* the key taken away is the whole of "do not measure it" */
+        const song = await readChordSheet({ ...env, GOOGLE_VISION_KEY: "" }, files, () => {});
+        controller.enqueue(encoder.encode("\n" + JSON.stringify({ ok: true, song })));
+      } catch (err) {
+        controller.enqueue(encoder.encode("\n" + JSON.stringify({ ok: false, threw: String(err.message).slice(0, 300) })));
+      } finally {
+        clearInterval(tick);
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, { headers: { "content-type": "text/plain; charset=utf-8" } });
+}
+
 export default {
   async fetch(request, env, ctx) {
     const origin = request.headers.get("origin") || "";
+
+    if (request.method === "POST" && new URL(request.url).pathname === "/read-model") {
+      return readByModel(request, env);
+    }
 
     if (request.method === "POST" && new URL(request.url).pathname === "/boxes") {
       return boxesOf(request, env);
