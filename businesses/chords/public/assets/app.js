@@ -358,7 +358,12 @@
   var db = {
     list: function () {
       var self = this;
-      return rest(T + "?select=" + withOptional(LIST_FIELDS) + "&order=title.asc").then(function (rows) {
+      /* Newest change first. A library is not a dictionary: nobody arrives at
+         it needing the song that starts with the letter alef, and the song
+         being worked on is almost always one of the last few that were
+         touched. Looking a song up by name is what the search box is, and it
+         finds it wherever it sits. */
+      return rest(T + "?select=" + withOptional(LIST_FIELDS) + "&order=updated_at.desc").then(function (rows) {
         /* a song still being read, or one that failed, goes to the top: it is
            the only row on the page that is waiting for something */
         return (rows || []).sort(function (a, b) {
@@ -1698,6 +1703,47 @@
 
   /* One line of the index. Three shapes, because a song has three states:
      ready and openable, still being read, or failed with a reason. */
+  /* --- when a song last changed --------------------------------------------
+     The list is ordered by this, and an order nobody can see is not an order:
+     without the date on the row, a library that has stopped being alphabetical
+     looks shuffled.
+
+     Said the way a person says it near the top, where "היום" and "אתמול" are
+     the whole answer, and as a plain date further down, where "לפני 23 ימים"
+     is a number nobody converts and the date itself is both shorter and truer.
+
+     Counted in days on the calendar rather than in twenty four hour steps. A
+     song saved last night at eleven was saved yesterday, and subtracting
+     milliseconds would go on calling it "היום" until this evening. */
+  function midnight(t) {
+    var d = new Date(t);
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  }
+
+  function whenWords(value) {
+    var t = Date.parse(value || "");
+    if (!t) return "";
+    var days = Math.round((midnight(Date.now()) - midnight(t)) / 86400000);
+    if (days <= 0) return "היום";
+    if (days === 1) return "אתמול";
+    if (days === 2) return "לפני יומיים";
+    if (days < 7) return "לפני " + days + " ימים";
+    var d = new Date(t);
+    return d.getDate() + "." + (d.getMonth() + 1) + "." + d.getFullYear();
+  }
+
+  /* The same moment to the minute, for hovering over. The row says "אתמול"
+     because that is what is worth reading at a glance; the exact time is worth
+     having and is not worth the width. */
+  function whenExactly(value) {
+    var t = Date.parse(value || "");
+    if (!t) return "";
+    var d = new Date(t);
+    var minutes = d.getMinutes();
+    return "עודכן " + d.getDate() + "." + (d.getMonth() + 1) + "." + d.getFullYear() +
+      " בשעה " + d.getHours() + ":" + (minutes < 10 ? "0" : "") + minutes;
+  }
+
   function songRow(s, refresh, mark) {
     var li = el("li");
 
@@ -1765,6 +1811,18 @@
       if (s.status_note) box.appendChild(el("div", "detail", s.status_note));
 
       a.appendChild(box);
+
+      /* At the far end, quiet: it is the reason this row is where it is, and
+         it is not what the row is for. `created_at` behind it, because a song
+         that has never been changed since it was written was last changed when
+         it was written. */
+      var stamp = whenWords(s.updated_at || s.created_at);
+      if (stamp) {
+        var when = el("div", "when", stamp);
+        when.title = whenExactly(s.updated_at || s.created_at);
+        a.appendChild(when);
+      }
+
       li.appendChild(a);
       return li;
     }
@@ -3288,6 +3346,14 @@
 
     var byId = {};
     library.forEach(function (song) { byId[song.id] = song; });
+
+    /* The shelf below is ordered by name, and the index next door is ordered
+       by when a song last changed. Two lists of the same songs and two orders,
+       because they answer different questions: the index is asked "what have I
+       been working on", and a shelf is asked for a song by name. */
+    library = library.slice().sort(function (a, b) {
+      return String(a.title || "").localeCompare(String(b.title || ""), "he");
+    });
 
     app.innerHTML = "";
 

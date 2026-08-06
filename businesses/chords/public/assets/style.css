@@ -212,6 +212,15 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   background: #eef2f3; border-radius: 999px; padding: 2px 9px; white-space: nowrap;
 }
 
+/* When the song last changed, which is what the list is ordered by. At the far
+   end of the row and quiet: it explains where the row is sitting, it is not
+   what the row is about. Never wraps, so a long name pushes it along the row
+   rather than breaking it in half. */
+.list .when {
+  margin-inline-start: auto; align-self: center; white-space: nowrap;
+  color: var(--ink-soft); font-size: 13px;
+}
+
 /* a song that is not openable yet: being read, or failed. Same box as a link,
    without the link, so the list keeps its rhythm while one row is busy. */
 .list .row {
