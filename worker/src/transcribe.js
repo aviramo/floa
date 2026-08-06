@@ -283,6 +283,12 @@ function costOf(model, usage) {
    precise than the price list it rests on. */
 const MAX_CENTS = 50;
 
+/* How alike the measured words and the read words must be for the measuring to
+   be kept. High on purpose: the two are reading the same page and ought to
+   agree almost exactly, so anything short of that is the measuring having lost
+   something, and what it lost is worth more than the forty cents saved. */
+const TRUST_MEASURED = 0.9;
+
 /* The budget, split and turned into token counts. The words get a small slice
    because copying lyrics is small work: a long song runs to a couple of
    thousand tokens and this leaves room for several. The judgement gets the
@@ -653,11 +659,11 @@ export async function readChordSheet(env, files, beat) {
      and always did, so a key that has expired, a quota that has run out or a
      page that came back empty drops through to it rather than costing anybody
      a song. */
+  let measured = null;
   if (env.GOOGLE_VISION_KEY && canMeasure(files)) {
     try {
-      const measured = await measureSheet(env, files, beat);
-      if (measured) return measured;
-      console.log("vision found nothing on the page; reading it instead");
+      measured = await measureSheet(env, files, beat);
+      if (!measured) console.log("vision found nothing on the page; reading it instead");
     } catch (err) {
       console.error("vision failed, reading the page instead:", err.message);
     }
@@ -685,6 +691,43 @@ export async function readChordSheet(env, files, beat) {
   const words = first.answer;
   const lines = Array.isArray(words.lines) ? words.lines.map((line) => String(line ?? "")) : [];
   if (!lines.some((line) => line.trim())) throw new Error("empty");
+
+  /* --- one and a half: is the measuring to be believed -----------------------
+
+     THE WORDS ARE THE WITNESS. Measuring a page costs a fifth of a cent and is
+     exact when it works; when it fails it fails structurally, losing a line,
+     running two together, reading a mark as a letter. And every one of those
+     failures shows up in the WORDS, because a chord's place is an index into
+     them: a page whose text came back right is a page whose rows were found,
+     and a page whose text came back wrong was never going to place a chord.
+
+     So the cheap half of the model, which reads nothing but the text, is asked
+     the same page and the two are compared. Where they agree the measuring is
+     kept and the expensive half is never called: a song for four cents instead
+     of forty, with the chords placed by arithmetic rather than by judgement.
+     Where they disagree the measuring is thrown away and the model finishes
+     the job, which is what it costs today and no more, because this reading of
+     the words is the one that would have been paid for anyway.
+
+     Compared as bags of words, for the same reason a twin is (see twinOf):
+     two readings of one page are never the same string, and what does not
+     change is which words are in it. */
+  if (measured) {
+    const agreement = likeness(bagOf(measured.body), bagOf(lines.join(" ")));
+    if (agreement >= TRUST_MEASURED) {
+      console.log(`measured and read agree ${Math.round(agreement * 100)}%; keeping the measuring`);
+      return {
+        ...measured,
+        /* the model read the title and the credits off the page, which a ruler
+           cannot do, so those come from here even when the song does not */
+        title: words.title || measured.title,
+        lyrics_by: words.lyrics_by || "",
+        music_by: words.music_by || "",
+        cost: Math.round(((measured.cost || 0) + (first.cost || 0)) * 100) / 100,
+      };
+    }
+    console.log(`measured and read agree only ${Math.round(agreement * 100)}%; reading the chords`);
+  }
 
   /* --- two: the chords -----------------------------------------------------
 
