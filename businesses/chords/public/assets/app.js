@@ -1204,11 +1204,16 @@
     requireAuth(function () { go(BASE + "/new"); });
   }
 
-  /* ONLY ON THE INDEX. Adding a song, signing in and signing out belong to the
-     library, and a song open on the screen has buttons of its own about that
-     song. Two rows of buttons an inch apart, one of them about what you are
-     looking at and the other about something else, is a page where you have to
-     read before you can press.
+  /* Adding a song, signing in and signing out belong to the library, so they
+     are offered on the index and nowhere else. Two rows of buttons an inch
+     apart, one of them about what you are looking at and the other about
+     something else, is a page where you have to read before you can press.
+
+     A song open on the screen leaves the bar with nothing to say, and printing
+     is what you came to that page to do second, after playing from it. So that
+     one button moves up here: it is about the song, it is the only thing in the
+     bar, and it is in the same place on every song rather than at the end of a
+     row of steppers.
 
      "שיר חדש" is shown there to everyone, signed in or not. Hiding it until you
      log in leaves a visitor looking at an empty list with no way forward and no
@@ -1594,16 +1599,13 @@
 
     app.innerHTML = "";
 
-    /* --- the head: the way back, the name, and who made it --- */
+    /* --- the head: the name, and who made it ---
+
+       No arrow back to the list. The app's name in the bar above is the way
+       home on every page, and a second one next to the title only says the
+       same thing twice. */
 
     var head = el("div", "song-head");
-
-    var titleRow = el("div", "title-row");
-    /* Pointing the way it goes. ICON.back is a chevron for a left-to-right
-       page; here the list is behind you to the right. */
-    titleRow.appendChild(iconBtn('<path d="M9 5l7 7-7 7"/>', "לרשימת השירים", function () {
-      go(BASE + "/");
-    }));
 
     var title = el("h1", null, song.title);
     if (editing) {
@@ -1614,8 +1616,7 @@
         if (event.key === "Enter") { event.preventDefault(); title.blur(); }
       });
     }
-    titleRow.appendChild(title);
-    head.appendChild(titleRow);
+    head.appendChild(title);
 
     var byFields = [];
     if (editing) {
@@ -2930,14 +2931,12 @@
 
     app.innerHTML = "";
 
-    /* --- the head: the way back, the name, the date --- */
+    /* --- the head: the name, the date ---
+
+       Like the song page, no arrow back: the app's name in the bar goes home,
+       and the evenings are one press from there. */
 
     var head = el("div", "song-head");
-
-    var titleRow = el("div", "title-row");
-    titleRow.appendChild(iconBtn('<path d="M9 5l7 7-7 7"/>', "לרשימת הערבים", function () {
-      go(BASE + "/evenings");
-    }));
 
     var title = el("h1", "ev-title", evening.title);
     title.dataset.empty = "שם הערב";
@@ -2951,8 +2950,7 @@
       /* one line, so Enter is not a newline here, it is done */
       if (event.key === "Enter") { event.preventDefault(); title.blur(); }
     });
-    titleRow.appendChild(title);
-    head.appendChild(titleRow);
+    head.appendChild(title);
 
     /* When and where, twice, and only ever one of the two visible: the fields
        that set them on the screen, and the sentence they make on paper. A date

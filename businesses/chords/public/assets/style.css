@@ -343,10 +343,6 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   color: var(--ink-soft); font-size: 14px;
 }
 
-/* the way back, then the name, on one line */
-.title-row { display: flex; align-items: center; gap: 6px; }
-.title-row h1 { flex: 1 1 auto; min-width: 0; }
-
 /* who wrote it and which way it runs, on the song itself: there is no other
    page to keep them on any more */
 .song-meta {
@@ -654,7 +650,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 /* --- print -------------------------------------------------------------- */
 
 @media print {
-  .top, .tools, .ed-bar, .song-meta, .title-row button, .toast { display: none !important; }
+  .top, .tools, .ed-bar, .song-meta, .toast { display: none !important; }
   body { background: #fff; }
 
   /* An evening on paper is the name, the date and the songs in order. The
