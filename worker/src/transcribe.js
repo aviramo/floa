@@ -45,11 +45,22 @@
    second reason: the job outlives the request that started it, and the shorter
    it is the less there is for the runtime to cut short.
 
-   Effort went back up to `high` after a real sheet came back with two chords
-   in the wrong order and a third a letter and a half off: this is the knob
-   that buys accuracy here, and accuracy is the whole product. Sonnet at high
-   is still a fraction of Opus at anything. */
-const MODEL = "claude-sonnet-5";
+   It started on Sonnet at medium effort, which is the cheap end and was the
+   right first guess: this is careful reading, not hard reasoning. Real sheets
+   said otherwise. Twice, chords came back exchanged with their neighbours and
+   sitting a couple of letters off the syllable they belong on, and there is no
+   version of this app where that is acceptable: a chord on the wrong letter is
+   worse than no chord, because it is wrong quietly.
+
+   So: Opus at high. Deciding which letter of a Hebrew word a Latin symbol is
+   printed over is a visual judgement, and it is the entire product. The
+   picture is small and a song is read once in its life, so what this costs is
+   a few cents, once, against a correction by hand every time it is wrong.
+
+   To make it cheaper again, move down this list rather than jumping: Opus at
+   medium, then Sonnet at high. Check a Hebrew sheet with four or more chords
+   on a line after each step, because that is where it breaks first. */
+const MODEL = "claude-opus-5";
 const EFFORT = "high";
 const MAX_TOKENS = 16000;
 
@@ -101,7 +112,20 @@ so the Am, being the rightmost, is the first chord of the line and the G is the 
 
 - WHICH LETTER, EXACTLY. Take the chord symbol's horizontal MIDDLE, not its left or right edge, and look straight down from it. The bracket goes immediately before whichever letter is under that middle. A chord printed over the third letter of a word belongs in the middle of that word: בנ[Am]קיק, not [Am]בנקיק. Being one word out is a mistake; being two letters out is also a mistake, and it is the one that is easy to make without noticing.
 - A chord printed over a space stays over that space: שלום לך [Am]אדוני and שלום לך[Am] אדוני are different, and both are things you may need to write.
-- THE CHORDS OF A LINE ARE READ IN THE SAME DIRECTION AS ITS WORDS. This is the single easiest thing to get wrong on a Hebrew sheet and it is worth stopping to check. Chord symbols are Latin, so the eye wants to read a row of them left to right; above a Hebrew line that is backwards. The FIRST chord of a Hebrew line is the RIGHTMOST one on the page, the one above the first word, and each next chord is the next one leftwards. Before writing a line, name its chords out loud from the right and confirm the order, then write them in that order.
+- WORK ONE CHORD AT A TIME, NEVER AS A LIST. This is the failure this task actually has, so it is worth being exact about. For each chord symbol on the page separately: note where it sits horizontally, look straight down from its middle, find the letter under it, and put the bracket in front of that letter. Then go to the next symbol and do the same.
+
+  Do NOT read the chord line as a row of symbols and then hand them out to the words. A row has a direction. Chord symbols are Latin, so the eye reads a row of them left to right, while Hebrew words go right to left, and handing one sequence to the other silently reverses every chord in the middle of the line. It looks right, because the first and last chord land correctly and only the ones between them are exchanged.
+
+  A worked example. The page shows
+
+              Am        G         F        Am
+        בנקיק נסתר בצוקים אילה שותה מים
+
+  The rightmost Am is over בנקיק, the G is over בצוקים, the F is over אילה, the leftmost Am is over מים. Written down, that is
+
+        [Am]בנקיק נסתר [G]בצוקים [F]אילה שותה [Am]מים
+
+  and NOT [Am]בנקיק נסתר [F]בצוקים [G]אילה שותה [Am]מים, which is what handing the left-to-right row to the right-to-left words produces.
 - A chord after the last word goes after it, with spaces before it if the sheet shows it further out: נה נה נה   [G]   [F]
 - Lines are separated by a single newline. A blank line between stanzas is a blank line.
 - A heading that names a part of the song is a line wrapped in braces: {פזמון}, {בית}, {מעבר}, {Chorus}, {Intro}.
