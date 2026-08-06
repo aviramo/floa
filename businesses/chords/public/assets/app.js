@@ -3107,18 +3107,16 @@
 
       li.appendChild(box);
 
-      if (editing) {
-        var out = iconBtn(ICON.trash, "הוצאה מהערב", function () {
-          var at = evening.songs.indexOf(item);
-          if (at < 0) return;
-          evening.songs.splice(at, 1);
-          draw();
-          paintPool();
-          mark(true);
-        });
-        out.classList.add("quiet");
-        li.appendChild(out);
-      }
+      var out = iconBtn(ICON.trash, "הוצאה מהערב", function () {
+        var at = evening.songs.indexOf(item);
+        if (at < 0) return;
+        evening.songs.splice(at, 1);
+        draw();
+        paintPool();
+        mark(true);
+      });
+      out.classList.add("quiet");
+      li.appendChild(out);
 
       return li;
     }
@@ -3228,8 +3226,6 @@
     /* --- adding and taking out ---------------------------------------------- */
 
     function paintPool() {
-      if (!pool) return;
-
       var q = String(poolInput.value || "").trim().toLowerCase();
       var inside = {};
       evening.songs.forEach(function (item) { inside[item.id] = true; });
@@ -3297,13 +3293,11 @@
     var timer = null, inFlight = false, again = false;
 
     function note(text, bad) {
-      if (!stateNode) return;
       stateNode.textContent = text;
       stateNode.className = "save-state" + (bad ? " is-bad" : "");
     }
 
     function mark(now) {
-      if (!editing) return;
       note("לא נשמר");
       clearTimeout(timer);
       timer = setTimeout(commit, now ? 0 : 900);
@@ -3374,10 +3368,8 @@
 
     draw();
     paintPool();
-    if (editing) {
-      flushPending = flush;
-      if (!evening.id) title.focus();
-    }
+    flushPending = flush;
+    if (!evening.id) title.focus();
   }
 
   /* --- reading a photo or a PDF -------------------------------------------- */
