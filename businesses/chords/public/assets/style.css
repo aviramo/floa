@@ -300,7 +300,11 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 }
 .list li { display: flex; min-width: 0; }
 .list li > a, .list li > .row { flex: 1 1 auto; min-width: 0; }
-.list .pick { flex: none; display: flex; align-items: center; }
+/* Level with the NAME, not with the card. A card is as tall as what is in it,
+   so a box centred on the whole of one floats somewhere in the middle of the
+   chords; the tick belongs beside the thing it is ticking, which is the song's
+   name at the top. */
+.list .pick { flex: none; display: flex; align-items: flex-start; padding-top: 3px; }
 .list .pick input {
   width: 20px; height: 20px; margin: 0; cursor: pointer; accent-color: var(--accent);
 }
@@ -342,7 +346,9 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 
    The same three on a row of an evening, which is the list somebody is
    actually holding a guitar over. Two places, one look, one rule. */
-.list .keys, .set-main .keys { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.list .keys, .set-main .keys {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 6px;
+}
 .list .k, .set-main .k {
   font-size: 13px; font-weight: 700;
   color: var(--chord); background: var(--chord-soft); border-radius: 999px; padding: 2px 9px;
@@ -354,15 +360,15 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   background: #eef2f3; border-radius: 999px; padding: 2px 9px; white-space: nowrap;
 }
 
-/* The far end of a row: what state the song is in, and when it last changed.
-   Both are ABOUT the song rather than in it, and neither is what the row is
-   for, so they stand together where the eye goes only when it is asking.
-
-   The state over the date, in a column of its own, so a page of rows has one
-   column of labels to run down and one of dates under them. */
+/* The far end of a card: the state at the top of it and the date at the
+   bottom. With the tick and the name at the other end, that gives the card its
+   four corners, one fact in each: where you choose, where you read, where you
+   sort, where you last left off. Nothing floats in the middle of the card
+   except what the card is actually about. */
 .list .side {
-  margin-inline-start: auto; align-self: center;
-  display: flex; flex-direction: column; align-items: flex-end; gap: 3px;
+  margin-inline-start: auto; align-self: stretch;
+  display: flex; flex-direction: column; align-items: flex-end;
+  justify-content: space-between; gap: 8px;
 }
 .list .side-tags { display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-end; }
 .list .when { white-space: nowrap; color: var(--ink-soft); font-size: 13px; }
@@ -379,7 +385,12 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .list .row.is-failed { border-color: #f0d3cf; background: #fffaf9; }
 /* what the machine charged to read this song. Quiet on purpose: worth knowing,
    not what the row is for. */
-.list .cost { color: var(--ink-soft); font-size: 12px; direction: ltr; unicode-bidi: isolate; }
+/* level with the chords it stands beside, rather than sitting on their baseline
+   and looking like it slipped */
+.list .cost {
+  color: var(--ink-soft); font-size: 12px; align-self: center;
+  direction: ltr; unicode-bidi: isolate;
+}
 .list .row .a { color: var(--ink-soft); font-size: 14px; }
 .list .row .detail { flex-basis: 100%; }
 

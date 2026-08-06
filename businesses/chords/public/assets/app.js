@@ -2270,6 +2270,9 @@
          states are the work outstanding and the styles are the shelf itself.
          Both narrow the list and they narrow it together, which is how you get
          to "the circle songs I have not checked yet". */
+      /* Not a style, and it cannot be mistaken for one whatever anybody types:
+         it is not a string at all, so no name can ever equal it. */
+      var NO_STYLE = {};
       var kind = null;
       var kindsRow = el("div", "kinds-row");
       var kinds = el("div", "kinds");
@@ -2306,27 +2309,37 @@
       function paintKinds() {
         kinds.textContent = "";
         var counted = {};
+        var bare = 0;
         state.songs.forEach(function (s) {
-          styles(s).forEach(function (name) { counted[name] = (counted[name] || 0) + 1; });
+          var mine = styles(s);
+          if (!mine.length) return bare++;
+          mine.forEach(function (name) { counted[name] = (counted[name] || 0) + 1; });
         });
 
         var names = Object.keys(counted).sort(function (a, b) {
           return counted[b] - counted[a] || a.localeCompare(b, "he");
         });
-        if (!names.length) return;
+        if (!names.length && !bare) return;
 
-        names.forEach(function (name) {
-          var chip = el("button", "tally tally-style" + (kind === name ? " is-on" : ""));
+        function chipFor(key, label, n) {
+          var chip = el("button", "tally tally-style" + (kind === key ? " is-on" : ""));
           chip.type = "button";
-          chip.appendChild(el("span", "tally-n", String(counted[name])));
-          chip.appendChild(el("span", "tally-l", name));
-          chip.title = kind === name ? "לחיצה מחזירה את כל השירים" : "לחיצה מציגה רק את אלה";
+          chip.appendChild(el("span", "tally-n", String(n)));
+          chip.appendChild(el("span", "tally-l", label));
+          chip.title = kind === key ? "לחיצה מחזירה את כל השירים" : "לחיצה מציגה רק את אלה";
           chip.addEventListener("click", function () {
-            kind = kind === name ? null : name;
+            kind = kind === key ? null : key;
             paint(input.value);
           });
           kinds.appendChild(chip);
-        });
+        }
+
+        names.forEach(function (name) { chipFor(name, name, counted[name]); });
+        /* LAST, AND ONLY WHEN THERE ARE ANY. The songs nobody has said anything
+           about yet are a shelf like the others, and the one worth reaching for
+           when the naming is being done: it is the pile that still needs it.
+           A library where every song has a kind never sees this chip. */
+        if (bare) chipFor(NO_STYLE, "ללא סגנון", bare);
       }
 
       var list = el("ul", "list");
@@ -2461,7 +2474,8 @@
         var only = tag && TAGS.filter(function (t) { return t.key === tag; })[0];
         var shown = state.songs.filter(function (s) {
           if (only && !only.is(s)) return false;
-          if (kind && styles(s).indexOf(kind) < 0) return false;
+          if (kind === NO_STYLE) { if (styles(s).length) return false; }
+          else if (kind && styles(s).indexOf(kind) < 0) return false;
           if (!q) return true;
           return hayOf(s).indexOf(q) >= 0;
         });
@@ -2762,12 +2776,11 @@
       if (by.length) {
         top.appendChild(el("div", "by", by.map(function (c) { return c.name; }).join(", ")));
       }
-      /* What kind of song it is, beside who wrote it, because both are facts
-         about the song rather than about its state: the far column is for the
-         states, and a style is not one. */
-      styles(s).forEach(function (kind) {
-        top.appendChild(el("span", "tag tag-style", kind));
-      });
+      /* The kinds of song are NOT on the card. They are on nearly every card
+         and they are the same two or three words on all of them, so as a label
+         they say almost nothing and as ink they are a line of every card. What
+         they are good for is narrowing the library, and that is what the row
+         of them over the wall does. */
       box.appendChild(top);
 
       /* Under the name goes what you actually want to know before opening a
@@ -2816,14 +2829,16 @@
       a.appendChild(box);
 
       /* --- the far column: what state it is in, and when it last changed ------
-         Both of them are ABOUT the song rather than in it, and neither is what
-         the row is for, so they stand together at the far end where the eye
-         goes only when it is asking. Beside the name they were competing with
-         it: a label is short, loud and never the thing you are looking for
-         when you are looking for a song.
+         Both are ABOUT the song rather than in it, and neither is what the card
+         is for, so they stand at the far end where the eye goes only when it is
+         asking. Beside the name they were competing with it: a label is short,
+         loud and never the thing you are looking for when you are looking for
+         a song.
 
-         The state on top and the date under it, because the state is the one
-         you scan a column of. */
+         The state at the TOP of that end and the date at the BOTTOM, which
+         gives the card its four corners: the tick where you choose, the name
+         where you read, the state where you sort, the date where you last
+         left off. */
       var side = el("div", "side");
 
       var tags = el("div", "side-tags");
