@@ -920,7 +920,12 @@ function slugify(name) {
    call for different next moves. */
 function why(message, seconds) {
   const said =
-    message === "truncated" ? "הקריאה נקטעה באמצע ולא הספיקה לענות. שווה לנסות שוב." :
+    /* The ceiling, said as the thing it actually is. "It was cut off" describes
+       what happened to the text; what happened to the person is that a song
+       reached the most they were willing to spend on it and stopped there. The
+       number comes from the budget itself so the message cannot go stale when
+       the budget moves. */
+    message === "truncated" ? `הקריאה עברה את התקרה של ${MAX_CENTS} סנט לשיר ונעצרה. שווה לנסות שוב.` :
     message === "empty" ? "לא זוהו מילים ואקורדים בקובץ." :
     message === "refusal" ? "הקריאה סורבה." :
     /^anthropic 4\d\d/.test(message) ? "השירות דחה את הבקשה." :
