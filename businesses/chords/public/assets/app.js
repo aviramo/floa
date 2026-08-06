@@ -1720,9 +1720,7 @@
     return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
   }
 
-  function whenWords(value) {
-    var t = Date.parse(value || "");
-    if (!t) return "";
+  function dayWords(t) {
     var days = Math.round((midnight(Date.now()) - midnight(t)) / 86400000);
     if (days <= 0) return "היום";
     if (days === 1) return "אתמול";
@@ -1732,16 +1730,29 @@
     return d.getDate() + "." + (d.getMonth() + 1) + "." + d.getFullYear();
   }
 
-  /* The same moment to the minute, for hovering over. The row says "אתמול"
-     because that is what is worth reading at a glance; the exact time is worth
-     having and is not worth the width. */
+  function hourWords(t) {
+    var d = new Date(t);
+    var minutes = d.getMinutes();
+    return d.getHours() + ":" + (minutes < 10 ? "0" : "") + minutes;
+  }
+
+  /* The day and the hour, because a day is not enough on the day itself: three
+     songs all saying "היום" are three rows in an order the page is not
+     explaining, and the hour is what tells them apart. */
+  function whenWords(value) {
+    var t = Date.parse(value || "");
+    if (!t) return "";
+    return dayWords(t) + ", " + hourWords(t);
+  }
+
+  /* The same moment written out, for hovering over. "אתמול" is the right thing
+     to read at a glance and it is not a date, so the date is here. */
   function whenExactly(value) {
     var t = Date.parse(value || "");
     if (!t) return "";
     var d = new Date(t);
-    var minutes = d.getMinutes();
     return "עודכן " + d.getDate() + "." + (d.getMonth() + 1) + "." + d.getFullYear() +
-      " בשעה " + d.getHours() + ":" + (minutes < 10 ? "0" : "") + minutes;
+      " בשעה " + hourWords(t);
   }
 
   function songRow(s, refresh, mark) {
@@ -2802,7 +2813,16 @@
       field.setAttribute("aria-label", "אקורד");
       picker.appendChild(field);
 
+      /* Two rows, and which is which is the whole of it. On top, the chords
+         this song already uses, always, however full the field is: a chord
+         being changed is nearly always being changed to another one the song
+         already plays, and that answer should never have to be typed for.
+         Under it, everything the letters so far could still become. */
       var found = el("div", "picker-found");
+      var mine = el("div", "picker-row");
+      var more = el("div", "picker-row picker-more");
+      found.appendChild(mine);
+      found.appendChild(more);
       picker.appendChild(found);
 
       /* only when there is something to remove: a chord being put down for the
@@ -2810,20 +2830,35 @@
          choice that has not been made */
       if (chord.chord) chip("picker-x", "×", "הסרת האקורד", function () { commit(""); });
 
-      /* What the row under the field is showing. An empty field offers the
-         song's own chords, which is nearly always the answer and is why they
-         come first. A letter answers with that letter's chords, and every
-         keystroke after it narrows them down, matched anywhere in the name.
+      /* What the letters so far could still become. Empty answers with nothing,
+         which is not a gap: the row above it is already full of the song's own
+         chords, and that is what an untouched picker is for.
 
-         Both shapes carry the name twice, because the two are not the same
+         Each offer carries the name twice, because the two are not the same
          string on a transposed song: `name` is the chord in the song's own key,
          which is what gets kept, and `shown` is the one on screen. */
       function offers(value) {
-        if (!value) return chordsInSong();
         return suggestChords(value).slice(0, 18).map(function (shown) {
           return { name: untranspose(shown), shown: shown };
         });
       }
+
+      function fill(row, list, value) {
+        row.textContent = "";
+        list.forEach(function (one) {
+          var on = value ? one.shown === value : one.name === chord.chord;
+          var hit = el("button", "picker-chip" + (on ? " is-on" : ""), one.shown);
+          hit.type = "button";
+          hit.addEventListener("click", function () { commit(one.name); });
+          row.appendChild(hit);
+        });
+      }
+
+      /* What Enter takes when the field holds half a chord. Kept here rather
+         than read back off the first button, because the first button on
+         screen belongs to the song's own row, which is not filtered by what is
+         being typed and would answer with a chord nobody was reaching for. */
+      var best = null;
 
       /* Not a chord is still not a chord: the field says so, refuses to close on
          it, and a way out that is not Enter drops it rather than writing "W"
@@ -2832,14 +2867,17 @@
         var value = field.value.trim();
         field.classList.toggle("is-bad", !!value && !isChord(value));
 
-        found.textContent = "";
-        offers(value).forEach(function (one) {
-          var on = value ? one.shown === value : one.name === chord.chord;
-          var hit = el("button", "picker-chip" + (on ? " is-on" : ""), one.shown);
-          hit.type = "button";
-          hit.addEventListener("click", function () { commit(one.name); });
-          found.appendChild(hit);
-        });
+        var own = chordsInSong();
+        var taken = {};
+        own.forEach(function (one) { taken[one.shown] = true; });
+
+        var matches = offers(value);
+        best = matches[0] || null;
+
+        fill(mine, own, value);
+        /* A chord the song already has is on the row above. Twice in one
+           popup is the same chord twice, not two answers. */
+        fill(more, matches.filter(function (one) { return !taken[one.shown]; }), value);
         place();
       }
 
@@ -2849,7 +2887,7 @@
         event.preventDefault();
         if (field.value.trim() && !isChord(field.value)) {
           /* half a chord with a list under it: Enter takes the first of them */
-          if (found.firstChild) return commit(untranspose(found.firstChild.textContent));
+          if (best) return commit(best.name);
           return refresh();
         }
         commit(untranspose(field.value));
