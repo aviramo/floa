@@ -339,7 +339,7 @@ export async function readAndSave(env, token, songId, files) {
      to the row it is supposed to fill. If it cannot write, there is no point
      spending a read whose answer has nowhere to go, and no point trying to mark
      the row as failed either, because writing is exactly what is broken. */
-  const blocked = await patchSong(env, token, songId, { status_note: "נשלח לקריאה" });
+  const blocked = await patchSong(env, token, songId, { status_note: "מפענח" });
   if (blocked) {
     console.error("transcribe cannot write to its row", songId, blocked.status, blocked.body.slice(0, 300));
     return;
@@ -355,7 +355,7 @@ export async function readAndSave(env, token, songId, files) {
        could send. What only this side knows is which part of the work is
        happening, so that is what it says. Writing the same word again is not
        wasted: the row's updated_at is what proves the job is still alive. */
-    patchSong(env, token, songId, { status_note: "קורא את הצילום" })
+    patchSong(env, token, songId, { status_note: "מפענח" })
       .then((failure) => { if (failure) console.error("heartbeat refused", songId, failure.status); })
       .catch((err) => console.error("heartbeat threw", songId, err.message));
   };
