@@ -1208,6 +1208,19 @@ button.val:hover { border-color: var(--line); background: #fff; }
   body.print-words .ln-t .gap { width: 0 !important; }
   /* where a capo goes is one more thing that is not about singing */
   body.print-words .capo-line { display: none !important; }
+
+  /* TIGHTER, AND FURTHER FROM THE NAME. The spacing of a chord sheet is built
+     around the row of symbols over every line: take that row away and the same
+     spacing is a page of words with a chord's worth of air between them, which
+     reads as a list rather than as a song. So the lines close up to something
+     a verse can be seen whole in, the blank line between two verses keeps
+     enough to still be a break, and the title gets the room the chords used to
+     take: a heading resting on the first line reads as part of it. */
+  body.print-words .song-head { margin-bottom: 30px; }
+  body.print-words .ln { margin-bottom: 0; }
+  body.print-words .ln-t { line-height: 1.35; min-height: 0; }
+  body.print-words .ln.is-blank .ln-t { min-height: .9em; }
+  body.print-words .ln.is-section { margin: 16px 0 3px; }
   /* the label is about the song's state here, not about the song */
   .review-band { display: none !important; }
   /* marking a verse is editing, and a page of ticks is not a song */
