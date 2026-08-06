@@ -63,6 +63,7 @@
     up: '<path d="M12 19V5m0 0l-6 6m6-6l6 6"/>',
     down: '<path d="M12 5v14m0 0l-6-6m6 6l6-6"/>',
     copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/>',
+    close: '<path d="M6 6l12 12M18 6L6 18"/>',
     /* two things moving apart, which is what opening a gap does */
     gap: '<path d="M10 8l-4 4 4 4M14 8l4 4-4 4"/>',
     /* the three controls over a song, as pictures: up and down for the key,
@@ -2179,16 +2180,21 @@
         return state.songs.filter(function (s) { return picked[s.id]; });
       }
 
-      /* IN THE SAME ROW AS THE TALLIES, at the other end of it. They were a bar
-         of their own under the counts, which is a whole line of the page that
-         is empty most of the time and appears under the reader's eye exactly
-         when they are busy ticking. There is room across from the counts and
-         nothing in it, and how many are ticked is a thing the delete button
-         can say itself. */
+      /* AT THE FAR END OF THE STYLES ROW. They were a bar of their own between
+         the counts and the songs, which is a whole line of the page standing
+         empty most of the time and arriving under the reader's eye exactly
+         while they are busy ticking, pushing the rows they are aiming at down
+         by its own height. That row already exists and has room in it. */
       var picking = el("div", "picking");
-      var killBtn = button("מחיקה", ICON.trash, "danger small", removePicked);
+      /* Pictures, and no words. They are two of the most familiar pictures
+         there are, they stand in a box already full of words, and the words
+         they had were three times their own width. What is ticked is on the
+         rows themselves, in ticks, so the row above them does not need to
+         count it out loud; how many is in the question the trash asks. */
+      var killBtn = iconBtn(ICON.trash, "מחיקה", removePicked);
+      killBtn.classList.add("kill");
       picking.appendChild(killBtn);
-      picking.appendChild(button("ביטול הבחירה", null, "ghost small", function () {
+      picking.appendChild(iconBtn(ICON.close, "ביטול הבחירה", function () {
         picked = {};
         paint(input.value);
       }));
@@ -2234,18 +2240,17 @@
       var tallies = el("div", "tallies");
       search.appendChild(tallies);
 
-      var counts = el("div", "counts");
-      counts.appendChild(picking);
-      app.appendChild(counts);
-
       /* And under it, what KIND of songs it holds. A second row and not more
          chips in the first, because the two answer different questions: the
          states are the work outstanding and the styles are the shelf itself.
          Both narrow the list and they narrow it together, which is how you get
          to "the circle songs I have not checked yet". */
       var kind = null;
+      var kindsRow = el("div", "kinds-row");
       var kinds = el("div", "kinds");
-      app.appendChild(kinds);
+      kindsRow.appendChild(kinds);
+      kindsRow.appendChild(picking);
+      app.appendChild(kindsRow);
 
       function paintTallies() {
         tallies.textContent = "";
@@ -2375,9 +2380,10 @@
       function showBar() {
         var n = pickedSongs().length;
         picking.hidden = !n;
-        /* the count is on the button that uses it: "delete" and "how many"
-           are one question, and a sentence saying it twice is a sentence */
-        killBtn.querySelector(".lb").textContent = n > 1 ? "מחיקה (" + n + ")" : "מחיקה";
+        /* the count is in what the button is called, so hovering it says what
+           pressing it would take */
+        killBtn.title = n > 1 ? "מחיקת " + n + " שירים" : "מחיקת השיר שנבחר";
+        killBtn.setAttribute("aria-label", killBtn.title);
       }
 
       /* A tick changes one row and the bar, and nothing else on the page is

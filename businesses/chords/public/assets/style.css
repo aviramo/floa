@@ -218,14 +218,14 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    AT THE FAR END, over the column of labels they are counting. A number and
    the rows it counts want to be in the same place, or the eye has to travel
    the width of the page to connect them. */
-/* What is ticked, and only while something is. The states it used to share
-   this row with have moved into the search box, so what is left appears when
-   there is something to say and takes no room at all when there is not. */
-.counts {
-  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
-}
-.counts:empty { display: none; }
-.picking { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: -6px 0 16px; }
+/* What is ticked, at the far end of the row the styles are in: that row is
+   already there, and what is ticked is not worth a line of the page of its
+   own, least of all one that appears while somebody is busy ticking and pushes
+   the rows they are aiming at down. */
+.picking { display: flex; align-items: center; gap: 4px; flex: none; margin-inline-start: auto; }
+.picking .icon-btn { width: 28px; height: 26px; }
+.picking .kill { color: var(--danger); }
+.picking .kill:hover { color: #fff; background: var(--danger); border-color: var(--danger); }
 .tallies {
   display: flex; flex-wrap: wrap; gap: 8px;
   justify-content: flex-end;
@@ -240,11 +240,16 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 /* Each in its own state's colour, always, and not only when it is the one
    being looked at: it is the same colour that state wears on every row below
    and on the button inside the song. Pressed, it fills with it. */
-/* What KIND of songs the library holds, under what state they are in. A row of
-   its own, because the two answer different questions: the states are the work
-   outstanding and the styles are the shelf itself. They narrow together. */
+/* What KIND of songs the library holds, under the box the states are in: the
+   two answer different questions, the states being the work outstanding and
+   the styles the shelf itself. They narrow together.
+
+   The row also carries what is ticked, at its other end. */
+.kinds-row {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: -8px 0 16px;
+}
 .kinds {
-  display: flex; flex-wrap: wrap; gap: 8px; margin: -8px 0 16px;
+  display: flex; flex-wrap: wrap; gap: 8px;
   justify-content: flex-start;
 }
 .kinds:empty { display: none; }
