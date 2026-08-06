@@ -204,7 +204,16 @@
   }
 
   var FIELDS = "id,slug,title,artist,song_key,dir,lines,updated_at";
-  var LIST_FIELDS = "id,slug,title,artist,song_key";
+  var LIST_FIELDS = "id,slug,title,artist,song_key,created_at";
+
+  /* A read runs in the Worker, so nothing in the browser can be told that it
+     died. After this long a row that still says `reading` is not reading. */
+  var STALLED_AFTER = 6 * 60 * 1000;
+
+  function stalled(song) {
+    return song.status === "reading" &&
+      Date.now() - Date.parse(song.created_at || 0) > STALLED_AFTER;
+  }
 
   /* `status` and `status_note` arrived after the table did, and the table is
      not upgraded by deploying this file: someone has to run the SQL. Until
@@ -242,7 +251,7 @@
     },
     bySlug: function (slug) {
       var self = this;
-      return rest(T + "?select=" + withStatus(FIELDS) + "&slug=eq." + encodeURIComponent(slug) + "&limit=1")
+      return rest(T + "?select=" + withStatus(FIELDS + ",created_at") + "&slug=eq." + encodeURIComponent(slug) + "&limit=1")
         .then(function (rows) { return rows && rows[0]; })
         .catch(function (error) {
           if (!missingStatus(error)) throw error;
@@ -288,10 +297,85 @@
   var FLATS = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
   var ROOTS = { C: 0, "C#": 1, Db: 1, D: 2, "D#": 3, Eb: 3, E: 4, Fb: 4, "E#": 5, F: 5, "F#": 6, Gb: 6, G: 7, "G#": 8, Ab: 8, A: 9, "A#": 10, Bb: 10, B: 11, Cb: 11 };
 
+  /* Splitting a chord into root, colour and bass, for transposing. Deliberately
+     forgiving: whatever came through isChord below is already a chord, and this
+     only has to find the letters in it. */
   var CHORD_RE = /^([A-G][#b]?)([^/]*)(?:\/([A-G][#b]?))?$/;
 
-  function looksLikeChord(token) {
-    return CHORD_RE.test(token) && /^[A-G]/.test(token) && token.length <= 12;
+  /* --- what counts as a chord ----------------------------------------------
+     Built up rather than guessed at, because the space is genuinely large:
+     Am, G/B, Cmaj7, F#m7b5, C7sus4, Dadd9, Bdim7, E7#9, C-7, CΔ, C6/9, Am7/G.
+     A root is not optional and everything after it has to be made of pieces
+     that mean something, which is what keeps a stray "W" out.
+
+     Parentheses and spaces are stripped before the test, so Cm(maj7) is judged
+     as Cmmaj7 and still stored the way it was typed. */
+  var ROOT = "[A-G](?:##|bb|#|b|♯|♭)?";
+  /* diminished is written °, dim, o and 0 depending on who wrote the chart, and
+     half-diminished ø or Ø. All four of the first are the same chord. */
+  var QUALITY = "(?:maj|Maj|MAJ|M|Δ|min|mi|m|-|dim|°|o|0|aug|\\+|ø|Ø)";
+  var EXTENSION = "(?:5|6|7|9|11|13)";
+  var COLOUR = "(?:sus(?:2|4)?|add(?:2|4|6|9|11|13)|(?:#|b|♯|♭)(?:5|6|9|11|13)|maj7|M7|Δ7|no(?:3|5)|omit(?:3|5)|alt|6/9|2|4)";
+
+  var VALID_CHORD = new RegExp(
+    "^" + ROOT + QUALITY + "?" + EXTENSION + "?" + COLOUR + "*(?:/" + ROOT + ")?$"
+  );
+
+  function isChord(value) {
+    var name = String(value || "").trim();
+    if (!name || name.length > 16) return false;
+    if (/^(?:N\.?C\.?)$/i.test(name)) return true;          // "no chord", a real marking
+    return VALID_CHORD.test(name.replace(/[()\s]/g, ""));
+  }
+
+  var looksLikeChord = isChord;
+
+  /* What a root is usually played as. Not every chord in music, the ones a
+     chart actually uses, so that typing a letter answers with a short list
+     instead of a catalogue. */
+  var FAMILY = ["", "m", "7", "m7", "maj7", "6", "9", "m9", "sus2", "sus4", "7sus4", "add9", "dim", "dim7", "aug", "m7b5"];
+
+  /* NOT the ROOTS map above, which is note name to semitone for transposing.
+     These are the twelve roots a suggestion can be built on. */
+  var ROOT_NOTES = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
+
+  /* Suggestions for a half-typed chord, matched anywhere in the name rather
+     than only at the front, so "sus" finds Csus4 and "m7" finds every minor
+     seventh. Start with a note and the search stays inside that note's family;
+     start with anything else and it looks across all twelve. Typing something
+     the family does not have offers the family rather than nothing, because an
+     empty list is the one answer that helps no one. */
+  function suggestChords(typed) {
+    var value = String(typed || "").trim();
+    if (!value) return [];
+
+    var m = /^([A-Ga-g])(##|bb|#|b|♯|♭)?/.exec(value);
+
+    /* No note yet: search the names themselves, across all twelve roots. */
+    if (!m) {
+      var needle = value.toLowerCase();
+      var all = [];
+      ROOT_NOTES.forEach(function (root) {
+        FAMILY.forEach(function (suffix) { all.push(root + suffix); });
+      });
+      return all.filter(function (name) { return name.toLowerCase().indexOf(needle) >= 0; });
+    }
+
+    /* A note fixes the root, and the rest searches the colours: "Bsus" has to
+       find B7sus4 as well as Bsus4, which searching the whole name would miss.
+       What starts with what was typed comes before what merely contains it. */
+    var root = m[1].toUpperCase() + (m[2] || "").replace("♯", "#").replace("♭", "b");
+    var tail = value.slice(m[0].length).toLowerCase();
+    var starts = [], holds = [];
+
+    FAMILY.forEach(function (suffix) {
+      var at = suffix.toLowerCase().indexOf(tail);
+      if (at === 0) starts.push(root + suffix);
+      else if (at > 0) holds.push(root + suffix);
+    });
+
+    var hits = starts.concat(holds);
+    return hits.length ? hits : FAMILY.map(function (suffix) { return root + suffix; });
   }
 
   function shiftRoot(root, semis, preferFlat) {
@@ -745,7 +829,7 @@
          again while any of them is still reading, and stops the moment none
          is. Leaving the page ends it: the list is gone from the document. */
       function poll() {
-        if (!state.songs.some(function (s) { return s.status === "reading"; })) return;
+        if (!state.songs.some(function (s) { return s.status === "reading" && !stalled(s); })) return;
         setTimeout(function () {
           if (!list.isConnected) return;
           refresh();
@@ -788,18 +872,19 @@
       return li;
     }
 
-    var row = el("div", "row is-" + (s.status === "reading" ? "reading" : "failed"));
+    var reading = s.status === "reading" && !stalled(s);
+    var row = el("div", "row is-" + (reading ? "reading" : "failed"));
 
-    if (s.status === "reading") row.appendChild(el("span", "spin"));
+    if (reading) row.appendChild(el("span", "spin"));
     var box2 = el("div");
     box2.appendChild(el("div", "t", s.title));
-    box2.appendChild(el("div", "a", s.status === "reading"
+    box2.appendChild(el("div", "a", reading
       ? "קורא את השיר, אפשר לסגור את הדף"
-      : "הקריאה נכשלה"));
+      : stalled(s) ? "הקריאה נתקעה ולא הסתיימה" : "הקריאה נכשלה"));
     if (s.status === "failed" && s.status_note) box2.appendChild(el("div", "detail", s.status_note));
     row.appendChild(box2);
 
-    if (s.status === "failed") {
+    if (!reading) {
       var actions = el("div", "row-actions");
       actions.appendChild(button("להקליד ידנית", ICON.pencil, "ghost small", function () {
         go(BASE + "/" + encodeURIComponent(s.slug) + "/edit");
@@ -925,7 +1010,7 @@
     app.innerHTML = "";
     var box = el("div", "center");
 
-    if (song.status === "reading") {
+    if (song.status === "reading" && !stalled(song)) {
       var busy = el("span", "busy");
       busy.appendChild(el("span", "spin"));
       busy.appendChild(document.createTextNode("קורא את " + song.title));
@@ -933,7 +1018,9 @@
       box.appendChild(el("p", "muted", "אפשר לסגור את הדף. הקריאה ממשיכה גם בלעדיו."));
       setTimeout(function () { if (box.isConnected) viewSong(song.slug); }, 5000);
     } else {
-      box.appendChild(el("p", null, "הקריאה של " + song.title + " נכשלה."));
+      box.appendChild(el("p", null, stalled(song)
+        ? "הקריאה של " + song.title + " נתקעה ולא הסתיימה."
+        : "הקריאה של " + song.title + " נכשלה."));
       if (song.status_note) box.appendChild(el("div", "detail", song.status_note));
       var actions = el("div", "row-actions");
       actions.appendChild(button("להקליד ידנית", ICON.pencil, "ghost", function () {
@@ -1319,9 +1406,10 @@
       }
 
       function finish(value) {
-        chord.chord = String(value || "").trim().slice(0, 16);
-        if (!chord.chord) return drop();
-        node.textContent = chord.chord;
+        var name = String(value || "").trim().slice(0, 16);
+        if (!name || !isChord(name)) return drop();
+        chord.chord = name;
+        node.textContent = name;
         layoutLine(ln, rtl());
       }
 
@@ -1351,10 +1439,42 @@
         field.value = chord.chord;
         field.placeholder = "Am";
         field.setAttribute("aria-label", "אקורד");
-        field.addEventListener("keydown", function (event) {
-          if (event.key === "Enter") { event.preventDefault(); commit(field.value); }
-        });
         picker.appendChild(field);
+        picker.classList.add("is-typing");
+
+        var found = el("div", "picker-found");
+        picker.appendChild(found);
+
+        /* Typing a letter answers with that letter's chords, and every keystroke
+           after it narrows them down, matched anywhere in the name. Not a chord
+           is still not a chord: the field says so, refuses to close on it, and a
+           way out that is not Enter drops it rather than writing "W" into the
+           song. */
+        function refresh() {
+          var value = field.value.trim();
+          field.classList.toggle("is-bad", !!value && !isChord(value));
+
+          found.textContent = "";
+          suggestChords(value).slice(0, 18).forEach(function (name) {
+            var hit = el("button", "picker-chip" + (name === value ? " is-on" : ""), name);
+            hit.type = "button";
+            hit.addEventListener("click", function () { commit(name); });
+            found.appendChild(hit);
+          });
+          place();
+        }
+
+        field.addEventListener("input", refresh);
+        field.addEventListener("keydown", function (event) {
+          if (event.key !== "Enter") return;
+          event.preventDefault();
+          if (field.value.trim() && !isChord(field.value)) {
+            /* half a chord with a list under it: Enter takes the first of them */
+            if (found.firstChild) return commit(found.firstChild.textContent);
+            return refresh();
+          }
+          commit(field.value);
+        });
 
         /* Enter is one way out of the field, not the only one. Clicking
            elsewhere, or Escape, keeps what was typed too: a chord typed and
@@ -1362,7 +1482,7 @@
            verses later. */
         pickerDismissed = function () { finish(field.value); };
 
-        place();
+        refresh();
         field.focus();
         field.select();
       }

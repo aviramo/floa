@@ -9,7 +9,7 @@ const end = src.indexOf("/* ----------------------------------------------------
 if (start < 0 || end < 0) throw new Error("could not find the model block");
 
 const block = src.slice(start, end);
-const api = new Function(block + "\nreturn { slugify, transposeChord, remapChords, parsePasted, looksLikeChord };")();
+const api = new Function(block + "\nreturn { slugify, transposeChord, remapChords, parsePasted, looksLikeChord, isChord, suggestChords };")();
 
 let failed = 0;
 const eq = (label, got, want) => {
@@ -79,6 +79,35 @@ eq("section, chord line over its lyric line, blank, chord-only line",
 eq("a lyric line that happens to start with a capital is not a chord line",
   api.parsePasted("Baby you're a firework").map((l) => l.chords.length),
   [0]);
+
+/* --- what counts as a chord --- */
+const good = [
+  "C", "Am", "Bb", "F#", "A#m", "Eb",
+  "G7", "Cmaj7", "CM7", "CΔ", "CΔ7", "Cmin7", "C-7", "Cmi7",
+  "Cdim", "C°", "Cdim7", "C°7", "Caug", "C+", "Cø", "Cm7b5",
+  "Csus", "Csus2", "Csus4", "C7sus4", "Dadd9", "Cadd11", "C6", "C6/9",
+  "E7#9", "C7b9", "C9", "C11", "C13", "Cmaj9", "Calt", "Cno3",
+  "G/B", "Am7/G", "F#m7b5/A", "Cm(maj7)", "N.C.",
+];
+const bad = ["W", "H", "hello", "שיר", "8", "", "Cq", "Zm", "C#x9y", "maj7", "/G", "C/H"];
+
+eq("every real chord passes", good.filter((c) => !api.isChord(c)), []);
+eq("nothing else does", bad.filter((c) => api.isChord(c)), []);
+
+eq("diminished, however it was written",
+  ["B°", "Bo", "B0", "Bdim", "Bdim7", "Bø", "Bm7b5"].filter((c) => !api.isChord(c)), []);
+
+/* --- suggestions, matched anywhere in the name --- */
+eq("a letter offers that letter's chords",
+  api.suggestChords("B").slice(0, 5), ["B", "Bm", "B7", "Bm7", "Bmaj7"]);
+eq("more letters narrow it down", api.suggestChords("Bdi"), ["Bdim", "Bdim7"]);
+eq("the match is anywhere, not only at the front",
+  api.suggestChords("Bsus"), ["Bsus2", "Bsus4", "B7sus4"]);
+eq("without a note it searches every root",
+  api.suggestChords("sus4").filter((c) => /^(C|F#|Bb)sus4$/.test(c)), ["Csus4", "F#sus4", "Bbsus4"]);
+eq("a tail the family does not have still offers the family",
+  api.suggestChords("Bzz")[0], "B");
+eq("nothing typed, nothing offered", api.suggestChords(""), []);
 
 eq("chord recognition", [
   api.looksLikeChord("Am"), api.looksLikeChord("F#m7"), api.looksLikeChord("G/B"),

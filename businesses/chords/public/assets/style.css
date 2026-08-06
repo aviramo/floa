@@ -307,6 +307,13 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   font-size: 13px; line-height: 1.4; font-weight: 700; color: var(--chord);
 }
 .picker .picker-field:focus-visible { outline: none; border-color: var(--chord); }
+.picker .picker-field.is-bad { border-color: var(--danger); color: var(--danger); }
+
+/* typing turns the row into a small column: the field, and under it what the
+   letters so far could become */
+.picker.is-typing { flex-direction: column; align-items: stretch; width: max-content; }
+.picker-found { display: flex; flex-wrap: wrap; gap: 1px; max-width: 214px; }
+.picker-found:empty { display: none; }
 
 .hint {
   font-size: 13px; color: var(--ink-soft);
