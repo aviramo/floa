@@ -1212,11 +1212,6 @@
       state.songs = songs || [];
       app.innerHTML = "";
 
-      var head = el("div", "page-head");
-      head.appendChild(el("h1", null, "השירים"));
-      head.appendChild(el("span", "count", state.songs.length ? state.songs.length + " שירים" : ""));
-      app.appendChild(head);
-
       var search = el("div", "search");
       search.appendChild(svg(ICON.search));
       var input = el("input");
@@ -1276,7 +1271,6 @@
         return db.list().then(function (rows) {
           if (!list.isConnected) return;
           state.songs = rows || [];
-          head.querySelector(".count").textContent = state.songs.length ? state.songs.length + " שירים" : "";
           paint(input.value);
           poll();
         }).catch(function () { /* a failed refresh is not worth a red screen */ });

@@ -54,6 +54,18 @@
 
       And RIGHT TO LEFT never comes up. Nothing is counted along a line, so
       there is no direction for it to be counted in.
+
+      What is left after all that is one persistent error, and it is small: the
+      chord lands on the letter NEXT DOOR. Hebrew letters are narrow, a chord
+      symbol is several of them wide, and an answer read off the symbol's
+      general area is a guess between two neighbours.
+
+      THE SHEET ALREADY ANSWERS THIS, and the prompt used to treat the answer
+      as a tiebreak. Printed sheets set a small tick under each symbol, exactly
+      because the symbol is too wide to point with. So the tick is now the
+      question being asked, and the symbol's middle is the fallback for a sheet
+      that has none: the mark is a statement about one letter, and the middle
+      is an estimate over four.
    ========================================================================== */
 
 /* --- what the read costs --------------------------------------------------
@@ -199,7 +211,7 @@ const CHORD = {
     letter: {
       type: "string",
       description:
-        "The single letter this chord sits on: drop a vertical line from the middle of the chord symbol, and take the letter whose own middle it passes closest to. It must be one of the letters of that word. Empty string only when word is 0.",
+        "The single letter this chord sits on. If a small mark is printed under the chord symbol, a tick, comma, apostrophe or short stroke, the letter it points down at IS the answer; the mark was put there by whoever wrote the sheet to say exactly this. Only where there is no mark: drop a vertical line from the middle of the symbol and take the letter whose own middle it passes closest to. It must be one of the letters of that word. Empty string only when word is 0.",
     },
     letters_before: {
       type: "integer",
@@ -318,11 +330,15 @@ This is asked separately, and it is not a formality. It is the same fact as "the
 
 WHICH LETTER, EXACTLY
 
-- Take the chord symbol's horizontal MIDDLE, not its left edge and not its right edge. Drop a straight vertical line down from it into the words. Then name the letter whose OWN MIDDLE that line passes closest to.
+- LOOK FIRST FOR THE MARK UNDER THE CHORD. Most printed sheets put a small stroke below each symbol: a tick, a comma, an apostrophe, a short slanted line. It is not decoration and it is not punctuation belonging to the words. Whoever set the sheet put it there to say WHICH LETTER, precisely, because the symbol itself is wide and the letter under it is narrow.
+
+  Where that mark exists it IS the answer. Follow it straight down and name the letter it lands on. Do not then check the answer against the middle of the symbol and change your mind: the symbol is an estimate and the mark is a statement, and where they disagree the mark is right.
+
+- Only where there is no mark: take the chord symbol's horizontal MIDDLE, not its left edge and not its right edge. Drop a straight vertical line down from it into the words. Then name the letter whose OWN MIDDLE that line passes closest to.
 
   Middle against middle, both times. A chord sits ON a letter, not in the space between two of them, so what decides which letter is the distance from the middle of the symbol to the middle of each candidate: whichever is smallest is the answer. A symbol that hangs slightly past the end of a letter still belongs to that letter if its middle is nearer to that letter's middle than to the next one's.
 
-- Many sheets print a small mark under each chord: a tick, a comma, an apostrophe, a short slanted stroke. Where there is one it says the same thing more precisely, so use it to settle a close call. Where there is none, nothing changes: the middle of the symbol is the answer either way.
+- ONE LETTER OFF IS THE ERROR THIS JOB ACTUALLY MAKES. Not a wild miss: the neighbour. Hebrew letters are narrow and a chord symbol is three or four of them wide, so an answer eyeballed from the symbol's general area lands next door about as often as it lands right. That is the whole reason the mark matters. Name the letter under the mark, count how many letters of the word come before it, and let those two agree; do not settle for the letter that merely looks about right.
 
 - CHORDS DO NOT PREFER THE STARTS OF WORDS. This is the mistake that keeps happening, so it is worth naming: a chord lands wherever the singer changes note, which is inside a word at least as often as at its edge. letters_before is 0 far less often than it looks. If the symbol's middle is over the third letter, say so; do not round it back to the front of the word, and do not move it onto the neighbouring word either.
 
@@ -350,6 +366,13 @@ Go over each line once more and check two things.
 The COUNT: you gave exactly as many chord entries for that line as the page has chord symbols above it. A missing one and an invented one both read as plausible.
 
 The WORD: each chord names the word its middle is actually over. A chord one word along from where it belongs is the failure this task has, and it is invisible unless it is looked for.
+
+The SPREAD: chords are spread along a line the way they are spread along the page. Two of your entries naming the SAME word, or two neighbouring words, while some earlier word with a symbol plainly above it has been given nothing, means one of them has travelled. Find which, and put it back where the page has it. On a real sheet the line
+
+        C          Em        D
+  אילה מה לי ולה אלא אהבתי
+
+  came back with the Em and the D right and the C moved from the first word to the last, so the line read as though it began on nothing and ended on three chords at once. Every symbol above a line has its own place along that line; none of them bunch up at the end.
 
 THE DIRECTION: the chord you gave the earliest word is the same one you named as first_chord. If it is the one you named LAST, you have laid the row of symbols onto the words from the wrong end, and every chord on the line is on somebody else's word.`;
 

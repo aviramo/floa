@@ -142,11 +142,9 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 
 /* --- index -------------------------------------------------------------- */
 
-.page-head { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin: 28px 0 18px; }
-.page-head h1 { margin: 0; font-size: 27px; letter-spacing: -.02em; }
-.page-head .count { color: var(--ink-soft); font-size: 15px; }
-
-.search { position: relative; margin-bottom: 18px; }
+/* No heading over the list. The page is the list, it says so in the top bar,
+   and a title that repeats that only pushed the songs down the screen. */
+.search { position: relative; margin: 28px 0 18px; }
 .search input { padding-inline-start: 40px; height: 46px; border-radius: 999px; }
 .search svg {
   position: absolute; inset-inline-start: 14px; top: 50%; transform: translateY(-50%);
