@@ -1260,16 +1260,24 @@ body.on-stage { overflow: hidden; }
 .stage-sheet {
   width: max-content; max-width: 100%;
   height: auto; max-height: 100%;
-  margin: 0; padding: 0;
+  margin: 0;
+  /* ROOM FOR THE FIRST CHORD. A chord is centred on the character it names, so
+     one over the first letter of a line hangs half its own width past the
+     start of that line. The sheet has always been padded for that; the stage
+     took the padding off and clipped the label to "An". It scales with the
+     song, because at this size half a chord is a lot of pixels. */
+  padding-inline: calc(var(--song-size) * 1.3);
   border: 0; box-shadow: none; border-radius: 0;
   overflow: hidden;
 }
-/* Two columns want the whole width to divide and the whole height to fill:
-   column-fill: auto is what pours the song down the first one and then into
-   the second, rather than balancing them into two half-empty ones. */
+/* TWO COLUMNS OF THE SAME LENGTH. Poured, the first column fills to the bottom
+   of the screen and the second holds whatever was left, which on most songs is
+   three lines against thirty: one full page and one empty one. Balanced, the
+   song is halved and the pair reads as one spread, centred by the flex above
+   in both directions. */
 .stage.is-two .stage-sheet {
-  width: 100%; height: 100%;
-  columns: 2; column-gap: 52px; column-fill: auto;
+  width: 100%; height: auto; max-height: 100%;
+  columns: 2; column-gap: calc(var(--song-size) * 2.6); column-fill: balance;
 }
 /* a line and the chords over it are one thing, and a column break through the
    middle of it would leave the chords on the other side of the page */
