@@ -1717,6 +1717,8 @@
       saveBtn.hidden = now === saved;
       revertBtn.hidden = now === saved;
       undoBtn.hidden = !history.length;
+
+      keepDraft(now);
     }
 
     /* Back to a state, whole: the words, the chords, the order of the lines,
@@ -1751,6 +1753,50 @@
       if (current === saved) return;
       history.length = 0;
       restore(saved);
+    }
+
+    /* --- the draft -----------------------------------------------------------
+       Walking away does not lose anything. Every change is written to this
+       browser as it is made, so closing the tab, going back to the list, or
+       shutting the laptop and opening the song tomorrow finds it exactly as it
+       was left, with the save button still up and the way back still offered.
+
+       WRITTEN ON EVERY CHANGE rather than on the way out, and that is the whole
+       design. A page has too many ways to end for any of them to be the one
+       that saves: back, forward, a link, a closed tab, a phone that sleeps, a
+       crash. None of those can be relied on to run code. A change that is
+       already written down does not need to be caught leaving.
+
+       It stays in this browser and not in the database. A draft is a
+       half-finished thought, and the song everyone else opens should be the
+       last one that was finished. Saving throws it away, and so does taking the
+       changes back: in both cases the page and the song agree again, and there
+       is nothing left for a draft to remember. */
+    function draftKey() {
+      return "chords:draft:" + (song.id || "new");
+    }
+
+    function keepDraft(state) {
+      try {
+        if (state === saved) localStorage.removeItem(draftKey());
+        else localStorage.setItem(draftKey(), JSON.stringify({ base: saved, state: state }));
+      } catch (e) { /* a private window has nowhere to keep it, and that is survivable */ }
+    }
+
+    /* A draft also remembers WHAT IT WAS A CHANGE TO, and that is not
+       ceremony. A song saved from another tab, or read again from a picture,
+       leaves a draft describing a song that is no longer there; laying it back
+       down would silently undo the newer one. So it is dropped instead, and
+       only a draft whose ground has not moved is offered back. */
+    function takeDraft() {
+      var kept = null;
+      try { kept = JSON.parse(localStorage.getItem(draftKey()) || "null"); } catch (e) { kept = null; }
+      if (!kept || typeof kept.state !== "string") return;
+
+      if (kept.base !== saved || kept.state === saved) return keepDraft(saved);
+
+      restore(kept.state);
+      toast("יש כאן שינויים שלא נשמרו");
     }
 
     /* The net under the explicit calls. A chord dragged, a chord picked, a line
@@ -2320,6 +2366,10 @@
         var request = song.id ? db.update(song.id, payload) : db.insert(payload);
         request.then(function (row) {
           saveBtn.disabled = false;
+          /* A song typed from nothing kept its draft under "new", and it is
+             about to have an id of its own. Take the old one out by hand: mark()
+             below can only clear the key the song has now. */
+          var wasKey = draftKey();
           song.id = row.id;
           song.slug = row.slug;
           /* this is the state to come back to now, and the way back to the one
@@ -2328,6 +2378,9 @@
           current = saved;
           history.length = 0;
           mark();
+          if (wasKey !== draftKey()) {
+            try { localStorage.removeItem(wasKey); } catch (e) { /* nothing was kept */ }
+          }
 
           document.title = name + " | אקורדים";
           var here = BASE + "/" + encodeURIComponent(row.slug);
@@ -2371,6 +2424,13 @@
        that is being shown seven frets down */
     setSemis(semis);
     relayoutOn(sheet, rtl);
+
+    /* last, once the page is whole, because taking a draft back means writing
+       into the title, the credits and every line of the sheet, and all of them
+       have to exist first. Only where they can be written into at all: a phone
+       or a signed-out reader is looking at the saved song, and should be told
+       the truth about it. */
+    if (editing) takeDraft();
     if (editing && !song.id) title.focus();
   }
 
