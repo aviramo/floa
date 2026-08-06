@@ -165,12 +165,6 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 }
 
 .list { list-style: none; margin: 0 0 64px; padding: 0; display: grid; gap: 10px; }
-/* On the songs the search box holds the list off the bar, so the list itself
-   needs no room above it. On the evenings there is no search box and the list
-   is the first thing on the page, so it takes the same 28px the search would
-   have taken: the gap under the header is one gap, whichever list is under
-   it. */
-#app > .list:first-child { margin-top: 28px; }
 .list a {
   display: flex; align-items: center; gap: 14px; text-decoration: none; color: inherit;
   background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
@@ -179,6 +173,14 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .list a:hover { border-color: var(--accent); transform: translateY(-1px); }
 .list .t { font-weight: 700; font-size: 17px; }
 .list .a { color: var(--ink-soft); font-size: 14px; }
+/* What is in the evening, by name. Two lines at most: a line in an index is a
+   taste of the list, not the list, and an evening of thirty songs would push
+   the next evening off the screen. */
+.list .names {
+  margin-top: 2px;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
+  overflow: hidden;
+}
 /* The name, and beside it who wrote it. On a narrow screen the credit drops
    under the name rather than squeezing it. */
 .list .t-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }

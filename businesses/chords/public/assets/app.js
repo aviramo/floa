@@ -432,6 +432,20 @@
         return self.names();
       });
     },
+
+    /* Every song's name against its id, and nothing else. For a page that
+       lists songs without drawing any of them: the index asks for whole rows
+       because it shows the chords, and an evening's one line does not.
+
+       A failure here is not worth a red screen either. The evening still
+       knows what it was told the songs were called when they went in. */
+    titles: function () {
+      return rest(T + "?select=id,title").then(function (rows) {
+        var by = {};
+        (rows || []).forEach(function (row) { by[row.id] = row.title; });
+        return by;
+      }).catch(function () { return {}; });
+    },
   };
 
   /* --- evenings of singing --------------------------------------------------
@@ -2744,17 +2758,33 @@
     });
   }
 
+  /* What is in the evening, by name, in the order it will be sung.
+
+     The name the song has NOW, read out of the library, with the one it was
+     called when it went in as the fallback: a song that has since been
+     renamed is the same song, and a song that has since been deleted is still
+     worth naming. */
+  function songNames(evening, titles) {
+    return normalizeSet(evening.songs).map(function (item) {
+      return titles[item.id] || item.title || "";
+    }).filter(Boolean);
+  }
+
   function viewEvenings() {
     document.title = "ערבי שירה | אקורדים";
     setBusy("טוען ערבים");
 
-    sets.list().then(function (rows) {
+    /* The names come along, because they are what the list shows and what the
+       search box searches. Only the names: an evening's line does not draw
+       chords, so it has no use for the rest of a song. */
+    Promise.all([sets.list(), db.titles()]).then(function (both) {
       app.innerHTML = "";
-      var evenings = byWhen(rows || []);
+      var evenings = byWhen(both[0] || []);
+      var titles = both[1] || {};
 
       if (!evenings.length) {
         var empty = el("div", "center");
-        empty.appendChild(el("p", null, "עוד לא תוכנן כאן ערב. ערב הוא שם, תאריך ורשימת שירים לפי הסדר."));
+        empty.appendChild(el("p", null, "עוד לא תוכנן כאן ערב. ערב הוא שם, תאריך, מיקום ורשימת שירים לפי הסדר."));
         var actions = el("div", "row-actions");
         actions.appendChild(button("ערב חדש", ICON.plus, null, newEvening));
         empty.appendChild(actions);
@@ -2762,29 +2792,73 @@
         return;
       }
 
+      /* One box for both questions somebody arrives with: which evening was
+         that, and where did we play this song. So it searches the name, the
+         place, the date in words and every song in the evening, because all
+         four are things a person remembers an evening by and none of them is
+         the one they always remember. */
+      var search = el("div", "search");
+      search.appendChild(svg(ICON.search));
+      var input = el("input");
+      input.type = "search";
+      input.placeholder = "חיפוש לפי שם ערב, מיקום או שיר";
+      input.setAttribute("aria-label", "חיפוש ערב");
+      search.appendChild(input);
+      app.appendChild(search);
+
       var list = el("ul", "list");
-      evenings.forEach(function (evening) {
-        var li = el("li");
-        var a = el("a");
-        a.href = BASE + "/evenings/" + evening.id;
-        a.addEventListener("click", function (event) {
-          event.preventDefault();
-          go(a.getAttribute("href"));
-        });
-
-        var box = el("div");
-        var top = el("div", "t-row");
-        top.appendChild(el("div", "t", evening.title || "ערב בלי שם"));
-        var said = whenWhere(evening);
-        if (said) top.appendChild(el("div", "by", said));
-        box.appendChild(top);
-        box.appendChild(el("div", "a", songCount(normalizeSet(evening.songs).length)));
-
-        a.appendChild(box);
-        li.appendChild(a);
-        list.appendChild(li);
-      });
       app.appendChild(list);
+
+      var none = el("p", "center", "לא נמצא ערב שמתאים לחיפוש.");
+      none.hidden = true;
+      app.appendChild(none);
+
+      function haystack(evening) {
+        return [
+          evening.title || "",
+          evening.venue || "",
+          dateWords(evening.event_date),
+          songNames(evening, titles).join(" "),
+        ].join(" ").toLowerCase();
+      }
+
+      function paint(filter) {
+        var q = String(filter || "").trim().toLowerCase();
+        list.innerHTML = "";
+
+        var shown = q ? evenings.filter(function (e) { return haystack(e).indexOf(q) >= 0; }) : evenings;
+        none.hidden = shown.length > 0;
+
+        shown.forEach(function (evening) {
+          var li = el("li");
+          var a = el("a");
+          a.href = BASE + "/evenings/" + evening.id;
+          a.addEventListener("click", function (event) {
+            event.preventDefault();
+            go(a.getAttribute("href"));
+          });
+
+          var box = el("div");
+          var top = el("div", "t-row");
+          top.appendChild(el("div", "t", evening.title || "ערב בלי שם"));
+          var said = whenWhere(evening);
+          if (said) top.appendChild(el("div", "by", said));
+          box.appendChild(top);
+
+          /* The songs themselves rather than how many of them there are. The
+             count is a number you have to open the evening to make any use
+             of; the names are the evening. */
+          var names = songNames(evening, titles);
+          box.appendChild(el("div", "a names", names.length ? names.join("  •  ") : "עוד בלי שירים"));
+
+          a.appendChild(box);
+          li.appendChild(a);
+          list.appendChild(li);
+        });
+      }
+
+      input.addEventListener("input", function () { paint(input.value); });
+      paint("");
     }).catch(function (error) {
       if (missingTable(error)) return needSchema();
       fail(error);
