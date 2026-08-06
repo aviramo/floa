@@ -232,7 +232,7 @@
   function elapsed(node) {
     var since = Number(node.dataset.since) || Date.now();
     var seconds = Math.max(0, Math.round((Date.now() - since) / 1000));
-    node.textContent = "קורא את השיר, אפשר לסגור את הדף. " + clock(seconds);
+    node.textContent = "קורא את השיר  " + clock(seconds);
   }
 
   function tick(root) {
