@@ -3143,7 +3143,9 @@
       statusChip = el("button", "status-chip");
       statusChip.type = "button";
       statusChip.addEventListener("click", function () { askState(statusChip); });
-      meta.appendChild(statusChip);
+      /* It is put in the top bar further down, with the rest of what is about
+         the page rather than about the song: what state it is in, how the
+         writing is going, and the ways back. */
 
       showState = function () {
         var was = songState();
@@ -3373,7 +3375,7 @@
         trash.classList.add("quiet");
         mine.push(trash);
       }
-      mine.push(revertBtn, undoBtn, stateNode);
+      mine.push(revertBtn, undoBtn, stateNode, statusChip);
       mine.forEach(function (node) { topBar.insertBefore(node, topBar.firstChild); });
     }
     app.appendChild(tools);
