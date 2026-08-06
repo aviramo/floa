@@ -419,21 +419,150 @@
     });
   }
 
+  /* --- how a line is WRITTEN DOWN ------------------------------------------
+     Brackets, in the line itself:
+
+         [Am]שלום לך אדו[G]ני
+
+     This is the ChordPro convention, and the reason to store a song this way
+     rather than as text plus a list of offsets is that the link stops being a
+     number somebody has to keep true. The chord IS inside the words. Type a
+     space before אדוני and the G moves with it because it cannot do anything
+     else; there is no index left to drift.
+
+     In memory a line is still split into `text` and `chords` with a position
+     each, because drawing one and dragging one both need a position. But that
+     split lives only as long as the page does: what is stored, and what a
+     person reads if they ever look at the database, is the line above. */
+
+  function toChordPro(line) {
+    if (line.type === "section") return line.text;
+    var chords = line.chords.slice().sort(function (a, b) { return a.pos - b.pos; });
+    var out = "", at = 0;
+    chords.forEach(function (c) {
+      var pos = Math.max(at, Math.min(c.pos, line.text.length));
+      out += line.text.slice(at, pos) + "[" + c.chord + "]";
+      at = pos;
+    });
+    return out + line.text.slice(at);
+  }
+
+  function fromChordPro(raw) {
+    var text = "", chords = [];
+    var brackets = /\[([^\]\n]{1,16})\]/g, at = 0, found;
+    while ((found = brackets.exec(raw))) {
+      text += raw.slice(at, found.index);
+      var chord = found[1].trim();
+      if (chord) chords.push({ pos: text.length, chord: chord });
+      at = found.index + found[0].length;
+    }
+    return { text: text + raw.slice(at), chords: chords };
+  }
+
   function blankLine() { return { type: "line", text: "", chords: [] }; }
 
+  /* Cutting a line in two and putting two back together, with the chords going
+     wherever their own characters went. These are what let Enter, Backspace and
+     Delete behave the way they do in any other text editor: a song is a
+     document, so the keys that shape a document have to work on it. */
+  function splitLine(line, at) {
+    var cut = Math.max(0, Math.min(at, line.text.length));
+    var before = { type: line.type, text: line.text.slice(0, cut), chords: [] };
+    var after = { type: "line", text: line.text.slice(cut), chords: [] };
+    (line.chords || []).forEach(function (c) {
+      if (c.pos < cut) before.chords.push({ pos: c.pos, chord: c.chord });
+      else after.chords.push({ pos: c.pos - cut, chord: c.chord });
+    });
+    return [before, after];
+  }
+
+  function joinLines(first, second) {
+    var at = first.text.length;
+    return {
+      type: first.type,
+      text: first.text + second.text,
+      chords: (first.chords || []).map(function (c) { return { pos: c.pos, chord: c.chord }; })
+        .concat((second.chords || []).map(function (c) { return { pos: c.pos + at, chord: c.chord }; })),
+    };
+  }
+
+  /* Room for a chord that belongs after the last word: the LINE grows, in
+     spaces, so the chord still names a character. This is what a printed chord
+     sheet does too, and it is what keeps the promise that editing the words
+     moves the chords with them. */
+  function padTo(line, pos) {
+    if (pos <= line.text.length) return false;
+    line.text += new Array(pos - line.text.length + 1).join(" ");
+    return true;
+  }
+
+  /* What goes into the database: the song, as ONE piece of text.
+
+         [Am]שלום לך אדו[G]ני
+         [F]ואיך היה היום
+
+         {פזמון}
+         ...
+
+     Not a list of line objects. A song is a document, so a newline is what a
+     newline is, an empty line is an empty line, and the whole thing can be read
+     and edited by a person looking at the database, or pasted into any other
+     program that speaks ChordPro. A heading is a line in braces; that is the
+     only piece of punctuation this format has beyond the brackets. */
+  function songToText(lines) {
+    return normalizeLines(lines).map(function (line) {
+      return line.type === "section" ? "{" + line.text + "}" : toChordPro(line);
+    }).join("\n");
+  }
+
+  function textToSong(body) {
+    return String(body).replace(/\r\n?/g, "\n").split("\n").map(function (row) {
+      var heading = /^\s*\{(.*)\}\s*$/.exec(row);
+      if (heading) return { type: "section", text: heading[1].trim(), chords: [] };
+      var parsed = fromChordPro(row);
+      return { type: "line", text: parsed.text, chords: parsed.chords };
+    });
+  }
+
+  /* the other half of padTo: spaces nothing needs any more, once the chord that
+     called for them has moved back */
+  function trimPadding(line) {
+    var needed = 0;
+    line.chords.forEach(function (c) { if (c.pos > needed) needed = c.pos; });
+    var words = line.text.replace(/\s+$/, "").length;
+    var keep = Math.max(words, needed);
+    if (keep >= line.text.length) return false;
+    line.text = line.text.slice(0, keep);
+    return true;
+  }
+
   function normalizeLines(lines) {
+    /* The song as it is stored now: one document. Songs written before that,
+       as a list of line objects, still open, which is the whole reason this
+       function takes both. */
+    if (typeof lines === "string") lines = lines.trim() ? textToSong(lines) : [];
     if (!Array.isArray(lines) || !lines.length) return [blankLine()];
+
     return lines.map(function (l) {
-      var text = String(l && l.text != null ? l.text : "");
-      if (l && l.type === "section") return { type: "section", text: text, chords: [] };
-      var chords = (l && Array.isArray(l.chords) ? l.chords : [])
+      var raw = String(l && l.text != null ? l.text : "");
+      if (l && l.type === "section") return { type: "section", text: raw, chords: [] };
+
+      /* Written down with brackets. A song saved before that, with a separate
+         list of offsets, still opens: its own list is used and the brackets
+         are simply not there to find. */
+      var parsed = Array.isArray(l && l.chords) ? { text: raw, chords: l.chords } : fromChordPro(raw);
+      var text = parsed.text;
+
+      var chords = parsed.chords
         .map(function (c) {
-          /* NOT rounded to a whole character, and NOT cut off at the last one.
-             A chord dropped by hand sits exactly where it was let go, usually
-             between two letters, and a song's last chords often belong past
-             the words entirely. The ceiling is only there so a stray number
-             cannot put a chord a mile off the page. */
-          return { pos: Math.max(0, Math.min(round2(Number(c.pos) || 0), text.length + 80)), chord: String(c.chord || "").trim() };
+          /* A WHOLE character of THIS line, and nothing else is allowed.
+             That is the entire contract: a chord names a character, so editing
+             the words carries the chord along with the syllable it sat on.
+             A fraction is a pixel wearing a costume, and an index past the end
+             of the text names nothing at all, so a chord that belongs after
+             the last word is made room for by lengthening the line (see
+             padTo), never by pointing past it. */
+          return { pos: Math.max(0, Math.min(Math.round(Number(c.pos) || 0), text.length)), chord: String(c.chord || "").trim() };
         })
         .filter(function (c) { return c.chord; })
         .sort(function (a, b) { return a.pos - b.pos; });
@@ -594,10 +723,10 @@
      the others must hold still: a neighbour that shuffles aside as you pass it
      makes the line feel like it is rearranging itself under your hand. The
      tidying pass in layoutLine runs again when the drag ends. */
-  function placeChord(ln, node, rtl) {
+  function placeChord(ln, node, rtl, at) {
     var m = metrics(ln, rtl);
     if (!m) return;
-    var x = positionOf(m, Number(node.dataset.pos) || 0);
+    var x = at != null ? at : positionOf(m, Number(node.dataset.pos) || 0);
     node.style.left = rtl ? "auto" : x + "px";
     node.style.right = rtl ? x + "px" : "auto";
   }
@@ -606,10 +735,9 @@
     Array.prototype.forEach.call(root.querySelectorAll(".ln"), function (ln) { layoutLine(ln, rtl); });
   }
 
-  /* Where the pointer is, said in characters. The exact inverse of positionOf,
-     fraction and all, which is what makes dragging continuous: the chord goes
-     precisely where the hand is instead of snapping to the nearest letter, and
-     it keeps going past the end of the words instead of stopping dead there. */
+  /* Where the pointer is, said in characters, fraction and all. The caller
+     rounds it: a stored position is always a whole character, but the fraction
+     is what lets a chord follow the hand smoothly while it is being dragged. */
   function posFromX(ln, clientX, rtl) {
     var m = metrics(ln, rtl);
     if (!m) return 0;
@@ -1269,19 +1397,47 @@
       return row;
     }
 
-    /* Enter opens the next line, Tab walks, Escape lets go. Nothing here
-       submits anything: the song is saved by the Save button and by nothing
-       else. */
+    /* The keys that shape a document, doing what they do everywhere else.
+
+       Enter cuts the line at the caret and the rest of it becomes the next
+       line. Backspace at the very start pulls this line up onto the one
+       before. Delete at the very end pulls the next one up onto this. In every
+       case the chords travel with the characters they name, which is what the
+       whole format is for. Nothing here saves anything: that is the Save
+       button's job and nobody else's. */
     function lineKeys(event, line, editable) {
+      var index = song.lines.indexOf(line);
+      var at = caretIndex(editable);
+      var spread = window.getSelection && window.getSelection().rangeCount && !window.getSelection().isCollapsed;
+
       if (event.key === "Enter") {
         event.preventDefault();
-        addLineAfter(line);
+        var halves = splitLine(line, at == null ? line.text.length : at);
+        song.lines.splice(index, 1, halves[0], halves[1]);
+        draw();
+        focusLine(index + 1, 0);
+
+      } else if (event.key === "Backspace" && !spread && at === 0 && index > 0) {
+        event.preventDefault();
+        var seam = song.lines[index - 1].text.length;
+        song.lines.splice(index - 1, 2, joinLines(song.lines[index - 1], line));
+        draw();
+        focusLine(index - 1, seam);
+
+      } else if (event.key === "Delete" && !spread && at === line.text.length && index < song.lines.length - 1) {
+        event.preventDefault();
+        var end = line.text.length;
+        song.lines.splice(index, 2, joinLines(line, song.lines[index + 1]));
+        draw();
+        focusLine(index, end);
+
       } else if (event.key === "Escape") {
         event.preventDefault();
         editable.blur();
+
       } else if (event.key === "Tab") {
         event.preventDefault();
-        focusLine(song.lines.indexOf(line) + (event.shiftKey ? -1 : 1));
+        focusLine(index + (event.shiftKey ? -1 : 1));
       }
     }
 
@@ -1292,13 +1448,13 @@
       focusLine(at + 1);
     }
 
-    function focusLine(index) {
+    function focusLine(index, caret) {
       var ln = sheet.querySelector('.ln[data-index="' + index + '"]');
       if (!ln) return;
       var editable = ln.querySelector(".ln-t, .ln-section");
       if (!editable) return;
       editable.focus();
-      placeCaret(editable, editable.textContent.length);
+      placeCaret(editable, caret == null ? editable.textContent.length : caret);
     }
 
     /* --- a chord ------------------------------------------------------------
@@ -1331,8 +1487,21 @@
           grab = chord.pos - posFromX(ln, event.clientX, rtl());
         }
 
-        var pos = round2(Math.max(0, posFromX(ln, event.clientX, rtl()) + grab));
+        /* The hand moves in pixels, the song moves in characters. The chord is
+           DRAWN wherever the hand is, so the drag is smooth, and RECORDED on
+           the nearest character, so what is stored still names a letter. The
+           only visible cost is half a character of settling when you let go. */
+        var raw = Math.max(0, posFromX(ln, event.clientX, rtl()) + grab);
+        var pos = Math.round(raw);
         var previous = chord.pos;
+
+        /* A chord that has been pulled past the last word: the LINE grows to
+           meet it, in spaces, so it still names a character of its own line. */
+        if (padTo(line, pos)) {
+          fillSpans(ln.querySelector(".ln-t"), line.text);
+        }
+
+        placeChord(ln, node, rtl(), positionOf(metrics(ln, rtl()), raw));
         if (pos === previous) return;
 
         /* Run one chord over another and the two change places, so a chord can
@@ -1351,7 +1520,6 @@
 
         chord.pos = pos;
         node.dataset.pos = pos;
-        placeChord(ln, node, rtl());
 
         if (crossed) {
           crossed.pos = previous;
@@ -1365,8 +1533,12 @@
       node.addEventListener("pointerup", function (event) {
         if (node.hasPointerCapture(event.pointerId)) node.releasePointerCapture(event.pointerId);
         node.classList.remove("is-dragging");
-        if (dragging) layoutLine(ln, rtl());
-        else openPicker(node, ln, line, chord);
+        if (!dragging) return openPicker(node, ln, line, chord);
+
+        /* let go: the chord settles onto its character, and any spaces the drag
+           called for and no longer needs go back */
+        if (trimPadding(line)) fillSpans(ln.querySelector(".ln-t"), line.text);
+        layoutLine(ln, rtl());
       });
 
       node.addEventListener("pointercancel", function () {
@@ -1559,7 +1731,7 @@
         artist: String(song.artist || "").trim(),
         song_key: String(song.song_key || "").trim(),
         dir: song.dir || "rtl",
-        lines: normalizeLines(song.lines),
+        lines: songToText(song.lines),
       };
 
       /* typing a song by hand is what makes a failed read stop being failed */

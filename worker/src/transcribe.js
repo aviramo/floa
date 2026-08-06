@@ -6,25 +6,28 @@
    like the Resend key next door. Nothing is stored here; the picture is read
    once and forgotten.
 
-   TWO THINGS SHAPE THIS FILE, and both were learned the hard way.
+   THREE THINGS SHAPE THIS FILE, and all three were learned the hard way.
 
-   1. It STREAMS. A careful read of a full page takes minutes, and a plain
-      request that quiet for that long is cut off at a hundred seconds with a
-      524 before a single word comes back. A stream keeps bytes moving, so the
-      time it takes stops being a failure mode.
+   1. It STREAMS. A careful read of a full page takes minutes, and a request
+      that quiet for that long is cut off at a hundred seconds with a 524
+      before a single word comes back. A stream keeps bytes moving, so the time
+      it takes stops being a failure mode.
 
-   2. It FINISHES WITHOUT THE BROWSER. The caller gets an answer immediately
-      and this keeps running (see ctx.waitUntil in index.js), then writes the
-      result to Supabase itself, in the user's own name with the token it just
-      verified. So closing the tab costs nothing, and a half-read song is a
-      visible row rather than a lost minute.
+   2. It FINISHES WITHOUT ANYONE WATCHING. It runs inside a Workflow (see
+      read-workflow.js, which also records the two designs that failed before
+      it) and writes the result to Supabase itself, in the user's own name with
+      the token the endpoint verified. So closing the tab costs nothing.
 
-   The hard part of the work itself is not reading the text, it is the
-   POSITION. A chord printed above a Hebrew line has to come back as an index
-   counted from the start of the line in reading order, which for Hebrew is the
-   right. Getting that wrong is what makes every naive chord sheet in Word come
-   out scrambled, so the prompt spends most of its words on it, and the schema
-   forces the answer into the one shape the app can use.
+   3. It ASKS FOR A DOCUMENT, NOT FOR NUMBERS. The hard part of this work was
+      never reading the text, it was saying where each chord goes. Asking for
+      a character index meant counting from the right-hand end of a Hebrew
+      line, which nobody does reliably. Asking instead for
+
+          [Am]שלום לך אדו[G]ני
+
+      removes the counting altogether: the bracket goes in front of the letter.
+      Right to left stops being a special case, because there is no longer
+      anything being counted for it to be special about.
    ========================================================================== */
 
 /* --- what the read costs --------------------------------------------------
@@ -50,88 +53,60 @@ const MAX_TOKENS = 16000;
 
 export const MEDIA_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif", "application/pdf"];
 
-/* The song, as the app stores it. Forcing the shape here rather than asking
-   for JSON in prose is what makes the answer safe to hand straight to the
-   editor: there is no parse to fail and no field to be missing. */
+/* The song, as the app stores it: one piece of text, chords in square brackets
+   where they belong. Forcing the shape here rather than asking for it in prose
+   is what makes the answer safe to hand straight to the editor.
+
+   Asking for the document rather than for a list of offsets is the important
+   part. Counting characters from the right-hand end of a Hebrew line is a job
+   nobody does well, model or person; putting "[Am]" immediately before the
+   syllable is a job that cannot really be got wrong. */
 const SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["title", "artist", "song_key", "dir", "lines"],
+  required: ["title", "artist", "song_key", "dir", "body"],
   properties: {
     title: { type: "string", description: "The song's name as printed, or an empty string if the sheet does not name it." },
     artist: { type: "string", description: "The performer or writer as printed, or an empty string." },
     song_key: { type: "string", description: "The key, if the sheet states one (for example \"Am\"), otherwise an empty string." },
     dir: { type: "string", enum: ["rtl", "ltr"], description: "rtl when the lyrics are Hebrew or Arabic, ltr otherwise." },
-    lines: {
-      type: "array",
-      description: "The song from top to bottom, one entry per printed line.",
-      items: {
-        type: "object",
-        additionalProperties: false,
-        required: ["type", "text", "chords"],
-        properties: {
-          type: { type: "string", enum: ["line", "section"] },
-          text: { type: "string", description: "The words of this line exactly as printed, with no chord symbols in it." },
-          chords: {
-            type: "array",
-            items: {
-              type: "object",
-              additionalProperties: false,
-              required: ["pos", "chord"],
-              properties: {
-                pos: { type: "integer", description: "Index into text of the first character of the syllable this chord is printed above." },
-                chord: { type: "string", description: "The chord exactly as printed, for example Am, F#m7, G/B." },
-              },
-            },
-          },
-        },
-      },
+    body: {
+      type: "string",
+      description:
+        "The whole song as one piece of text, lines separated by newlines. Each chord appears in square brackets immediately before the character it is printed above, for example: [Am]שלום לך אדו[G]ני. A heading such as a chorus marker is a line wrapped in braces, for example {פזמון}.",
     },
   },
 };
 
-const SYSTEM = `You read photographs or scans of a chord sheet and return the song as structured data.
+const SYSTEM = `You read photographs or scans of a chord sheet and return the song as one piece of text.
 
 A chord sheet is lyrics with chord symbols printed on their own lines, floating above the words. Recovering the words is the easy half. The half that matters is recovering, for every single chord, WHICH SYLLABLE it was printed above.
 
-HOW A LINE IS REPRESENTED
+HOW TO WRITE IT DOWN
 
-Each printed lyric line becomes one entry:
-- "text" is the words of that line, exactly as printed. Chord symbols NEVER appear in "text". The chord line above it is not a line of its own in the output; its chords become the "chords" of the lyric line beneath it.
-- "chords" is every chord printed above that lyric line.
-- "pos" is a 0-based index INTO "text", counted in characters from the START of the line in READING ORDER. For Hebrew that is the rightmost character of the line; for English it is the leftmost. Index 0 is the first character the reader reads. Spaces count. "pos" may equal the length of "text", which places the chord just past the last word.
+Put each chord in square brackets INSIDE the line of words, immediately before the character it is printed above. Nothing else:
 
-HOW TO FIND pos, FOR EVERY CHORD
+    [Am]שלום לך אדו[G]ני
 
-1. Look at where the chord symbol starts horizontally in the image.
-2. Look straight down to the lyric line beneath it and identify the exact word, and within that word the exact syllable, that the chord sits over.
-3. Count characters in "text" from the start of the line in reading order up to the first character of that syllable. That count is "pos".
+means the Am is over the ש and the G is over the נ. Do not write the chords on a line of their own. Do not describe positions with numbers. The bracket sits where the chord sits, and that is the whole notation.
 
-Do this per chord. Do not space chords out evenly, do not give them all the same position, and do not guess from the order alone. If a chord sits in the gap between two words, choose whichever word's start is nearest beneath it. If a chord sits over the middle of a word, "pos" points at the character in the middle of the word, not at the word's start: chords land on syllables, and that is the whole reason this format exists.
-
-Sanity check before answering: chords in a line must have strictly increasing "pos" values in the same order they are printed in reading order, and every "pos" must be between 0 and the length of that line's "text".
-
-RIGHT TO LEFT
-
-For a Hebrew song, the words read right to left but "pos" is still counted from the start of reading, which is the right-hand edge. A chord printed above the FIRST (rightmost) word of a Hebrew line has a small "pos", near 0. A chord above the LAST (leftmost) word has a large "pos", near the end of the string. Do not mirror the counting; count in reading order. Set "dir" to "rtl".
-
-OTHER KINDS OF LINE
-
-- A heading that names a part of the song ("פזמון", "בית", "מעבר", "Chorus", "Verse 2", "Intro") becomes type "section", with the heading in "text" and no chords.
-- A blank line between stanzas becomes type "line" with an empty "text" and no chords. Keep them: they are the shape of the song.
-- A line of chords with no words under it (an intro, a solo, a turnaround) becomes type "line" whose "text" is a run of plain spaces long enough to hold the chords, with each chord at the column where it was printed.
-- Anything that is not the song itself, such as a page number, a website name or a printed comment, is left out.
+- A chord printed over a space stays over that space: שלום לך [Am]אדוני and שלום לך[Am] אדוני are different, and both are things you may need to write.
+- A chord after the last word goes after it, with spaces before it if the sheet shows it further out: נה נה נה   [G]   [F]
+- Lines are separated by a single newline. A blank line between stanzas is a blank line.
+- A heading that names a part of the song is a line wrapped in braces: {פזמון}, {בית}, {מעבר}, {Chorus}, {Intro}.
+- Right to left changes nothing about this. You are not counting from either end, you are putting a bracket in front of a letter.
 
 TEXT AND CHORDS
 
 - Copy the lyrics as printed: same words, same spelling, same punctuation, including Hebrew niqqud if it is there. Do not translate, do not transliterate, do not correct.
 - Copy chords as printed, in Latin notation: A to G, with # or b, and whatever follows (m, 7, maj7, sus4, dim, add9) and any slash bass such as G/B.
 - Several images are pages of ONE song, in the order given. Return them as one continuous song.
+- Anything that is not the song itself, such as a page number, a website name or a printed comment, is left out.
 - If a part of the image is unreadable, return the lines you can read rather than inventing the rest.`;
 
 const USER_TEXT =
-  "This is a chord sheet. Return the whole song. Take particular care with the position of each chord: " +
-  "for every chord, find the syllable it is printed above and give the index of that syllable's first character in the line's text.";
+  "This is a chord sheet. Return the whole song as one piece of text. For every chord, find the syllable it is " +
+  "printed above and put the chord in square brackets immediately before that syllable.";
 
 /* --- the model ------------------------------------------------------------
    Streamed, and read with a deliberately cheap parser. A long answer arrives
@@ -217,26 +192,16 @@ export async function readChordSheet(env, files, onProgress) {
   return clean(JSON.parse(text));
 }
 
-/* The schema guarantees the shape; this guarantees the meaning. Positions are
-   clamped into their own line and sorted, so a stray index can never push a
-   chord onto a character that does not exist. */
+/* The schema guarantees the shape; this guarantees it is a song. */
 function clean(song) {
-  const lines = (Array.isArray(song.lines) ? song.lines : [])
-    .map((line) => {
-      const text = String(line.text ?? "");
-      if (line.type === "section") return { type: "section", text: text.trim(), chords: [] };
-      const chords = (Array.isArray(line.chords) ? line.chords : [])
-        .map((c) => ({
-          pos: Math.max(0, Math.min(Math.round(Number(c.pos) || 0), text.length)),
-          chord: String(c.chord ?? "").trim().slice(0, 16),
-        }))
-        .filter((c) => c.chord)
-        .sort((a, b) => a.pos - b.pos);
-      return { type: "line", text, chords };
-    })
-    .filter((line) => line.type !== "section" || line.text);
+  const body = String(song.body ?? "")
+    .replace(/\r\n?/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")          // no gaps wider than one blank line
+    .replace(/[ \t]+$/gm, "")            // trailing space is padding nobody asked for
+    .trim()
+    .slice(0, 20000);
 
-  if (!lines.length) throw new Error("empty");
+  if (!body) throw new Error("empty");
 
   const short = (v, max) => String(v ?? "").trim().slice(0, max);
 
@@ -245,7 +210,7 @@ function clean(song) {
     artist: short(song.artist, 120),
     song_key: short(song.song_key, 16),
     dir: song.dir === "ltr" ? "ltr" : "rtl",
-    lines,
+    body,
   };
 }
 
@@ -349,7 +314,9 @@ export async function readAndSave(env, token, songId, files) {
     artist: song.artist,
     song_key: song.song_key,
     dir: song.dir,
-    lines: song.lines,
+    /* the column is called `lines` for historical reasons; what goes in it is
+       the whole song as one ChordPro document */
+    lines: song.body,
     status: "ready",
     status_note: "",
   };

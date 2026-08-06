@@ -9,7 +9,7 @@ const end = src.indexOf("/* ----------------------------------------------------
 if (start < 0 || end < 0) throw new Error("could not find the model block");
 
 const block = src.slice(start, end);
-const api = new Function(block + "\nreturn { slugify, transposeChord, remapChords, parsePasted, looksLikeChord, isChord, suggestChords };")();
+const api = new Function(block + "\nreturn { slugify, transposeChord, remapChords, parsePasted, looksLikeChord, isChord, suggestChords, toChordPro, fromChordPro, songToText, textToSong, normalizeLines, splitLine, joinLines, padTo, trimPadding };")();
 
 let failed = 0;
 const eq = (label, got, want) => {
@@ -57,6 +57,63 @@ eq("a chord after the change keeps its syllable",
 eq("clearing the line clamps everything to zero",
   api.remapChords("אני שר לך", "", ch),
   [{ pos: 0, chord: "Am" }, { pos: 0, chord: "F" }, { pos: 0, chord: "G" }]);
+
+/* --- how a song is written down --------------------------------------------
+   Brackets in the words themselves, so the link between a chord and the
+   syllable under it is not a number anybody has to keep true. */
+
+eq("a chord goes in front of the letter it sits on",
+  api.toChordPro({ type: "line", text: "שלום לך אדוני", chords: [{ pos: 0, chord: "Am" }, { pos: 11, chord: "G" }] }),
+  "[Am]שלום לך אדו[G]ני");
+
+eq("and comes back off it",
+  api.fromChordPro("[Am]שלום לך אדו[G]ני"),
+  { text: "שלום לך אדוני", chords: [{ pos: 0, chord: "Am" }, { pos: 11, chord: "G" }] });
+
+eq("a chord over a space stays over that space",
+  api.fromChordPro("שלום לך  [Am]      אדוני").chords, [{ pos: 9, chord: "Am" }]);
+
+eq("brackets survive a round trip untouched",
+  api.songToText(api.textToSong("[Am]שלום לך  [G]  אדוני\n\n{פזמון}\nעוד שורה")),
+  "[Am]שלום לך  [G]  אדוני\n\n{פזמון}\nעוד שורה");
+
+eq("a heading is a line in braces",
+  api.textToSong("{פזמון}")[0], { type: "section", text: "פזמון", chords: [] });
+
+/* the whole point of the format: edit the words, the chord goes with them */
+const before = api.normalizeLines("שלום לך אדו[G]ני")[0];
+eq("inserting a space before the chord carries it along",
+  api.toChordPro({ type: "line", text: "שלום לך  אדוני", chords: api.remapChords(before.text, "שלום לך  אדוני", before.chords) }),
+  "שלום לך  אדו[G]ני");
+
+/* a position is always a whole character of its own line, never a fraction and
+   never past the end: those are pixels wearing a costume */
+eq("fractions and overruns are pulled back onto real characters",
+  api.normalizeLines([{ type: "line", text: "שלום", chords: [{ pos: 1.7, chord: "Am" }, { pos: 24.3, chord: "D" }] }])[0].chords,
+  [{ pos: 2, chord: "Am" }, { pos: 4, chord: "D" }]);
+
+/* room past the last word is made by lengthening the line, not by pointing
+   past it */
+const outro = { type: "line", text: "נה נה נה", chords: [{ pos: 0, chord: "Am" }] };
+api.padTo(outro, 12);
+eq("a chord past the words lengthens the line", outro.text, "נה נה נה    ");
+outro.chords.push({ pos: 12, chord: "G" });
+eq("and the chord then names a real character", api.toChordPro(outro), "[Am]נה נה נה    [G]");
+outro.chords.pop();
+api.trimPadding(outro);
+eq("spaces nothing needs any more go back", outro.text, "נה נה נה");
+
+/* --- lines cut and joined, the way a text editor does it --- */
+eq("Enter cuts a line and the chords go with their own characters",
+  api.splitLine({ type: "line", text: "שלום לך אדוני", chords: [{ pos: 0, chord: "Am" }, { pos: 11, chord: "G" }] }, 8)
+    .map(api.toChordPro),
+  ["[Am]שלום לך ", "אדו[G]ני"]);
+
+eq("Backspace joins them back",
+  api.toChordPro(api.joinLines(
+    { type: "line", text: "שלום לך ", chords: [{ pos: 0, chord: "Am" }] },
+    { type: "line", text: "אדוני", chords: [{ pos: 3, chord: "G" }] })),
+  "[Am]שלום לך אדו[G]ני");
 
 /* --- pasted text --- */
 const pasted = [

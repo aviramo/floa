@@ -23,31 +23,22 @@ import { extname, join, resolve } from "node:path";
 
 const DIST = resolve("dist");
 
-const LINES_RTL = [
-  { type: "section", text: "בית", chords: [] },
-  { type: "line", text: "בנקיק נסתר בצוקים אילה שותה מים", chords: [
-    { pos: 0, chord: "Am" }, { pos: 6, chord: "G" }, { pos: 18, chord: "F" }, { pos: 27, chord: "Am" },
-  ] },
-  { type: "line", text: "מה לי וללה אלא צוקי לבי", chords: [
-    { pos: 3.4, chord: "F#m7" }, { pos: 11, chord: "G/B" }, { pos: 23, chord: "Am" },
-  ] },
-  { type: "line", text: "", chords: [] },
-  /* a short line whose chords run past the last word, the way an outro does.
-     Nothing here may pile up on the end of the text. */
-  { type: "line", text: "שלום", chords: [
-    { pos: 0, chord: "Am" }, { pos: 5.5, chord: "C" }, { pos: 11, chord: "G" },
-  ] },
-];
+/* The song exactly as it is stored: one document, chords in brackets in front
+   of the letters they sit on. The last line's chords run past the last word,
+   the way an outro does, and the spaces are what carries them. */
+const BODY_RTL = [
+  "{בית}",
+  "[Am]בנקיק [G]נסתר בצוקים [F]אילה שותה [Am]מים",
+  "מה [F#m7]לי וללה [G/B]אלא צוקי לב[Am]י",
+  "",
+  "[Am]שלום[C]     [G]",
+].join("\n");
 
-const LINES_LTR = [
-  { type: "line", text: "Hello there my old friend", chords: [
-    { pos: 0, chord: "C" }, { pos: 6, chord: "G" }, { pos: 16.5, chord: "Am" }, { pos: 25, chord: "F" },
-  ] },
-];
+const BODY_LTR = "[C]Hello [G]there my old [Am]friend[F]";
 
 const song = (dir) => ({
   id: "test", slug: "s-" + dir, title: "בדיקה " + dir, artist: "", song_key: "Am",
-  dir, status: "ready", status_note: "", lines: dir === "rtl" ? LINES_RTL : LINES_LTR,
+  dir, status: "ready", status_note: "", lines: dir === "rtl" ? BODY_RTL : BODY_LTR,
 });
 
 function page(dir, edit) {

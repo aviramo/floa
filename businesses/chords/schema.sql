@@ -23,13 +23,23 @@ create table if not exists public.songs (
   -- single index holds both.
   dir         text not null default 'rtl' check (dir in ('rtl', 'ltr')),
 
-  -- the song itself:
-  --   [{ "type": "line",    "text": "אני שר",  "chords": [{"pos": 0, "chord": "Am"}] },
-  --    { "type": "section", "text": "פזמון",   "chords": [] }]
-  -- `pos` is a character index into `text`, never a pixel and never a column.
-  -- That is what keeps a chord over the same syllable at every font size, and
-  -- what makes right-to-left no different from left-to-right.
-  lines       jsonb not null default '[]'::jsonb,
+  -- The song itself, as ONE piece of text, in the ChordPro convention:
+  --
+  --   "[Am]שלום לך אדו[G]ני\n[F]ואיך היה היום\n\n{פזמון}\n..."
+  --
+  -- A chord sits in square brackets immediately before the character it is
+  -- printed above; a heading is a line in braces; a newline is a newline.
+  --
+  -- Stored this way rather than as text plus a list of offsets because then
+  -- the link between a chord and its syllable is not a number anyone has to
+  -- keep true: the chord is INSIDE the words. Type a space before a word and
+  -- the chord moves with it because it cannot do anything else. It is also
+  -- readable straight out of the database, and pastes into any other program
+  -- that speaks ChordPro.
+  --
+  -- The column is jsonb and holds a JSON string. Songs written before this,
+  -- as an array of line objects, are still read correctly by the app.
+  lines       jsonb not null default '""'::jsonb,
 
   -- 'ready' unless a picture of it is still being read.
   --
