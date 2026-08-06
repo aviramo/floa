@@ -65,6 +65,11 @@
     copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/>',
     /* two things moving apart, which is what opening a gap does */
     gap: '<path d="M10 8l-4 4 4 4M14 8l4 4-4 4"/>',
+    /* the three controls over a song, as pictures: up and down for the key,
+       two letters for the size, a bar across the strings for the capo */
+    pitch: '<path d="M7 9l5-5 5 5M7 15l5 5 5-5"/>',
+    textSize: '<path d="M3 18l5-13 5 13M4.7 14h6.6M14 18l3.2-8 3.2 8M15 15.6h4.4"/>',
+    capo: '<path d="M7 3v18M12 3v18M17 3v18M3 8.5h18"/>',
     undo: '<path d="M4 10h9a4.5 4.5 0 0 1 0 9h-5"/><path d="M8 6l-4 4 4 4"/>',
     print: '<path d="M7 9V4h10v5M7 18H5v-6h14v6h-2M8 14h8v6H8z"/>',
     calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
@@ -1871,7 +1876,7 @@
   /* ------------------------------------------------------------------ views */
 
   var app = document.getElementById("app");
-  var state = { songs: null, printable: false };
+  var state = { songs: null, printable: false, printer: null, killer: null };
 
   /* How big this reader wants the words, kept between songs and between visits.
      Whoever needs a bigger font on one song needs it on the next one too, and
@@ -2029,6 +2034,16 @@
       if (p.length === 1) {
         bar.appendChild(button("ערב חדש", ICON.plus, "small", newEvening));
         bar.appendChild(session());
+        return;
+      }
+      /* An evening that is open: the two things there are to do to the whole
+         of it, both as pictures. A word beside a picture that means printing
+         is the picture explained to somebody who already understood it. */
+      if (state.printer) bar.appendChild(iconBtn(ICON.print, "הדפסה", state.printer));
+      if (state.killer) {
+        var killEvening = iconBtn(ICON.trash, "מחיקת הערב", state.killer);
+        killEvening.classList.add("quiet");
+        bar.appendChild(killEvening);
       }
       return;
     }
@@ -2038,7 +2053,7 @@
          is not there at all and one still being read from a photograph are all
          this same address, and none of them is worth paper. */
       if (state.printable) {
-        var printBtn = button("הדפסה", ICON.print, "small", function () { askPrint(printBtn); });
+        var printBtn = iconBtn(ICON.print, "הדפסה", function () { askPrint(printBtn); });
         bar.appendChild(printBtn);
       }
       return;
@@ -2141,7 +2156,10 @@
       search.appendChild(svg(ICON.search));
       var input = el("input");
       input.type = "search";
-      input.placeholder = "חיפוש לפי שם, מילים או לחן";
+      /* One word. The box is a box with a magnifying glass in it and the only
+         thing on this page to search is the songs; a sentence explaining which
+         of their words it reads is a sentence nobody needs twice. */
+      input.placeholder = "חיפוש...";
       input.setAttribute("aria-label", "חיפוש שיר");
       search.appendChild(input);
       app.appendChild(search);
@@ -2192,10 +2210,13 @@
          unchecked, not unfinished and not done; it is not there yet. */
       var tag = null;
 
+      /* The three a song can be in, in the order it passes through them. A
+         song that is neither published nor waiting to be checked is one
+         somebody is working on, which is what a draft is: there is no fourth
+         state for "finished and private". */
       var TAGS = [
-        { key: "review", label: "לסקירה", is: function (s) { return !!s.review; } },
-        { key: "draft", label: "טיוטה", is: function (s) { return !!s.draft; } },
-        { key: "kept", label: "שמור", is: function (s) { return !s.review && !s.draft && !s.published; } },
+        { key: "review", label: "לסקירה", is: function (s) { return !s.published && !!s.review; } },
+        { key: "draft", label: "טיוטה", is: function (s) { return !s.published && !s.review; } },
         { key: "published", label: "פורסם", is: function (s) { return !!s.published; } },
       ];
 
@@ -2203,12 +2224,18 @@
         return songs.filter(function (s) { return !s.status || s.status === "ready"; });
       }
 
-      /* One row under the search box: what is ticked at one end, what the
-         library is made of at the other. */
-      var counts = el("div", "counts");
+      /* --- IN THE SEARCH BOX, at the far end of it -----------------------------
+         The states are a filter, the box beside them is a filter, and they had
+         a row of their own between the box and the songs. One row of the page
+         for four chips, and two places to narrow a library from.
+
+         So they sit inside the box. What is ticked keeps a row under it, and
+         only while something is ticked. */
       var tallies = el("div", "tallies");
+      search.appendChild(tallies);
+
+      var counts = el("div", "counts");
       counts.appendChild(picking);
-      counts.appendChild(tallies);
       app.appendChild(counts);
 
       /* And under it, what KIND of songs it holds. A second row and not more
@@ -2225,6 +2252,10 @@
         var real = ready(state.songs);
         TAGS.forEach(function (t) {
           var n = real.filter(t.is).length;
+          /* A count of nothing is not a fact worth a chip. It is a row of
+             states the library is not in, and the only thing pressing one
+             could do is empty the list. */
+          if (!n && tag !== t.key) return;
           var chip = el("button", "tally tally-" + t.key + (tag === t.key ? " is-on" : ""));
           chip.type = "button";
           chip.appendChild(el("span", "tally-n", String(n)));
@@ -2692,16 +2723,12 @@
       var tags = el("div", "side-tags");
       /* A song can carry two: one is the machine's, "nobody has checked this
          reading", and the other the author's, "I am not done with this". */
-      if (s.draft) tags.appendChild(tag("draft", "טיוטה", "השיר עוד לא גמור"));
+      /* ONE, because a song is in one state. The row says which, the numbers
+         over the list count the same three, and the chip inside the song is
+         the same word again. */
       if (s.published) tags.appendChild(tag("published", "פורסם", "השיר פתוח לכולם"));
-      if (s.review) tags.appendChild(tag("review", "לסקירה", "השיר נקרא מתוך קובץ ועדיין לא נבדק"));
-      /* And when it is none of them it says that too. The numbers over the
-         list count these states, so every row carries the one it is counted
-         in: a row with nothing on it would leave "שמור" as the label you have
-         to work out from the absence of the others. */
-      if (!s.review && !s.draft && !s.published) {
-        tags.appendChild(tag("kept", "שמור", "השיר גמור ונבדק, ופרטי"));
-      }
+      else if (s.review) tags.appendChild(tag("review", "לסקירה", "השיר נקרא מתוך קובץ ועדיין לא נבדק"));
+      else tags.appendChild(tag("draft", "טיוטה", "עוד עובדים עליו, ורק אתם רואים אותו"));
       side.appendChild(tags);
 
       /* `created_at` behind it, because a song that has never been changed
@@ -2901,11 +2928,27 @@
     head.appendChild(headTop);
 
     var byFields = [];
-    /* set below, with the buttons they keep in step with the song */
-    var showDraft = null;
+    /* set below, with the things they keep in step with the song */
+    var showState = null;
     var showStyles = null;
-    var draftBtn = null;
-    var pubBtn = null;
+    var statusChip = null;
+
+    /* THREE, AND A SONG IS IN ONE OF THEM. They are booleans in the database
+       because that is what a policy can read (published is who may open it),
+       and one word here, because a person should never have to work out a
+       combination.
+
+       Not published and not waiting to be checked means somebody is working on
+       it, which is what a draft is. There is no fourth state for "finished and
+       private": a song nobody else can open is a song still being worked on,
+       whether or not anybody has touched it today. */
+    var STATE_WORDS = { review: "לסקירה", draft: "טיוטה", published: "פורסם" };
+
+    function songState() {
+      if (song.published) return "published";
+      if (song.review) return "review";
+      return "draft";
+    }
     if (editing) {
       /* Who wrote it, on the song itself. It belongs to it and there is no
          other page to keep it on any more. */
@@ -2944,8 +2987,11 @@
          discovered over a year of adding songs to it, so what is offered is
          every style the library already uses, and a new one is just typed.
 
-         Enter adds. It is one field whose whole job is to add one word, and a
-         button beside it would be a second thing to aim at for no gain. */
+         THREE WAYS TO FINISH TYPING ONE, and it took only the first for a
+         while, which meant a style picked from the suggestions with the mouse
+         was never added at all: choosing from a datalist fires no key. Enter,
+         choosing a suggestion, and walking away from a field with a word left
+         in it all mean the same thing, so all three do it. */
       var kindsRow = el("div", "kinds-field");
       /* One word, like the two beside it, and singular like them: the field
          takes several and so does "לחן". */
@@ -2987,16 +3033,25 @@
       };
       showStyles();
 
-      kindsInput.addEventListener("keydown", function (event) {
-        if (event.key !== "Enter") return;
-        event.preventDefault();
+      function addKind() {
         var name = kindsInput.value.trim();
         if (!name) return;
         song.styles = tidyStyles(styles(song).concat([name]));
         kindsInput.value = "";
         showStyles();
         mark();
+      }
+
+      kindsInput.addEventListener("keydown", function (event) {
+        if (event.key !== "Enter") return;
+        event.preventDefault();
+        addKind();
       });
+      /* `change` is what a datalist choice fires, and what a field left with a
+         word in it fires on the way out. Both are somebody having finished
+         saying one style. */
+      kindsInput.addEventListener("change", addKind);
+      kindsInput.addEventListener("blur", addKind);
 
       kindsRow.appendChild(kindsLabel);
       kindsRow.appendChild(kindsList);
@@ -3009,59 +3064,35 @@
          sheet, on the lines it is about (see the block bar): a song with a
          Hebrew verse and an English chorus has no one answer to give here. */
 
-      /* Not finished, and said so by the person writing it. The other label on
-         a song is the machine's; this one is the author's, and a song can
-         easily be both.
+      /* --- ONE CHIP, WHICH IS THE STATE AND THE ONLY WAY OUT OF IT ---
+         A song is in exactly one of these at a time, so it is one word and not
+         a row of switches to work out the combination of:
 
-         It travels with the song rather than being written the moment it is
-         pressed, because deciding that a song is still a draft is a decision
-         about the song, taken while working on it, and it belongs in the same
-         save as the verse that is still missing. */
-      draftBtn = el("button", "draft-btn");
-      draftBtn.type = "button";
-      draftBtn.textContent = "טיוטה";
-      draftBtn.addEventListener("click", function () {
-        song.draft = !song.draft;
-        /* A song cannot be both unfinished and out in the world. Pressing one
-           of these is choosing, so the other lets go rather than making
-           somebody press it too. */
-        if (song.draft) song.published = false;
-        showDraft();
-        mark();
-      });
-      meta.appendChild(draftBtn);
+           לסקירה   a machine read it and nobody has looked at it yet
+           טיוטה    somebody is working on it, or has just touched it
+           פורסם    finished, and other people may open it
 
-      /* Out in the world, and unlike the other two this one is not a label. It
-         is the whole of who may open the song: an unpublished song is its
-         author's alone, enforced by the database and not by this page. So the
-         button says what it does rather than what it is called. */
-      pubBtn = el("button", "draft-btn pub-btn");
-      pubBtn.type = "button";
-      pubBtn.textContent = "פורסם";
-      pubBtn.addEventListener("click", function () {
-        song.published = !song.published;
-        if (song.published) song.draft = false;
-        showDraft();
-        mark();
-      });
-      meta.appendChild(pubBtn);
+         Pressing it offers what it can become, and from every one of those
+         there is exactly one answer worth offering: פורסם. Going the other way
+         needs no button at all, because touching the song does it (see mark).
 
-      showDraft = function () {
-        var isDraft = !!song.draft;
-        draftBtn.classList.toggle("is-on", isDraft);
-        draftBtn.setAttribute("aria-pressed", isDraft ? "true" : "false");
-        draftBtn.title = isDraft
-          ? "השיר מסומן כטיוטה. לחיצה מסירה את הסימון."
-          : "לסמן את השיר כטיוטה, כל עוד הוא לא גמור.";
+         There is no save button on this page. A draft writes itself as it is
+         typed, and publishing writes it too: "finished, let people have it" is
+         one sentence, so it is one press. */
+      statusChip = el("button", "status-chip");
+      statusChip.type = "button";
+      statusChip.addEventListener("click", function () { askState(statusChip); });
+      meta.appendChild(statusChip);
 
-        var out = !!song.published;
-        pubBtn.classList.toggle("is-on", out);
-        pubBtn.setAttribute("aria-pressed", out ? "true" : "false");
-        pubBtn.title = out
-          ? "השיר פתוח לכולם. לחיצה מחזירה אותו להיות פרטי."
-          : "לפרסם: רק שיר מפורסם נפתח למי שלא כתב אותו.";
+      showState = function () {
+        var was = songState();
+        statusChip.className = "status-chip tag tag-" + was;
+        statusChip.textContent = STATE_WORDS[was];
+        statusChip.title = was === "published"
+          ? "השיר פתוח לכולם. כל שינוי בו מחזיר אותו לטיוטה."
+          : "לחיצה מפרסמת את השיר: רק שיר מפורסם נפתח למי שלא כתב אותו.";
       };
-      showDraft();
+      showState();
 
       head.appendChild(meta);
     } else {
@@ -3084,17 +3115,13 @@
       /* Reading it rather than writing it, the draft mark is not a button to
          press but something to know before playing from the page: this one is
          not finished. */
-      var kindsSaid = styles(song);
-      if (song.draft || song.published || kindsSaid.length) {
-        var flagRow = el("div", "head-tags");
-        kindsSaid.forEach(function (name) {
-          flagRow.appendChild(el("span", "tag tag-style", name));
-        });
-        if (song.draft) flagRow.appendChild(tag("draft", "טיוטה", "השיר עוד לא גמור"));
-        if (song.published) flagRow.appendChild(tag("published", "פורסם", "השיר פתוח לכולם"));
-        /* on the title's own line, at the far end of it */
-        headTop.appendChild(flagRow);
-      }
+      var flagRow = el("div", "head-tags");
+      styles(song).forEach(function (name) {
+        flagRow.appendChild(el("span", "tag tag-style", name));
+      });
+      flagRow.appendChild(el("span", "tag tag-" + songState(), STATE_WORDS[songState()]));
+      /* on the title's own line, at the far end of it */
+      headTop.appendChild(flagRow);
     }
 
     app.appendChild(head);
@@ -3106,40 +3133,10 @@
        the difference. Saving clears it, because saving makes it untrue. */
     if (song.status_note) app.appendChild(el("div", "song-note", song.status_note));
 
-    /* --- read by a machine, not yet by a person -------------------------------
-       A song that came off a picture is right most of the time and wrong in
-       ways only somebody who knows the song can see: a word misheard, a chord
-       half a syllable along, a verse that came out twice. So it says so, until
-       a person says otherwise.
-
-       Taken off by hand and by nothing else. Saving does not do it, because
-       fixing one line is not the same as having read the whole song, and a
-       label that comes off by itself is a label nobody trusts. */
-    if (song.review) {
-      var band = el("div", "review-band");
-      band.appendChild(el("span", "review-tag", "לסקירה"));
-      band.appendChild(el("span", "review-said", "השיר נקרא מתוך קובץ ועדיין לא נבדק מול המקור."));
-
-      if (editing && song.id) {
-        var done = button("נבדק, להסיר את התווית", null, "ghost small", function () {
-          done.disabled = true;
-          /* Written on its own and at once, not folded into the save button.
-             It is not a change to the song, it is a statement about it, and
-             the song underneath may well be exactly as it was. */
-          db.update(song.id, { review: false }).then(function () {
-            song.review = false;
-            band.remove();
-            toast("התווית הוסרה");
-          }).catch(function (e) {
-            done.disabled = false;
-            toast("לא הצלחתי להסיר: " + e.message, true);
-          });
-        });
-        band.appendChild(done);
-      }
-
-      app.appendChild(band);
-    }
+    /* A band used to sit here saying the song had been read by a machine and
+       not by a person, with a button to take the label off. Both are the
+       status chip's job now: it says לסקירה, and touching the song or
+       publishing it is what takes it off. One fact, one place. */
 
     /* --- the tools --- */
 
@@ -3151,9 +3148,18 @@
        either of them. Less and more sit side by side, and the count sits with
        its label rather than between them, so transposition and size are laid
        out identically and neither has to be read differently from the other. */
-    function control(label, valueNode, less, more) {
+    /* THE NAME IS A PICTURE. Three words, each as long as the control it names,
+       is most of a row on a phone spent saying what the numbers beside them
+       already say: a value that goes up and down under an arrow is a key, and
+       under two letters is a size. The word is still there for anyone hovering
+       or listening. */
+    function control(icon, label, valueNode, less, more) {
       var ctl = el("span", "ctl");
-      ctl.appendChild(el("span", "lbl", label));
+      var lbl = el("span", "lbl");
+      lbl.appendChild(svg(icon));
+      lbl.title = label;
+      lbl.setAttribute("aria-label", label);
+      ctl.appendChild(lbl);
       if (valueNode) ctl.appendChild(valueNode);
       /* THE TWO OF THEM IN ONE BOX. They were two bordered squares with air
          between them, which is two of everything a stepper needs one of, and
@@ -3168,14 +3174,14 @@
 
     var value = el("span", "val", "0");
     tools.appendChild(control(
-      "טרנספוזיציה", value,
+      ICON.pitch, "טרנספוזיציה", value,
       function () { setSemis(semis - 1); },
       function () { setSemis(semis + 1); }
     ));
 
     tools.appendChild(el("span", "sep"));
     tools.appendChild(control(
-      "גודל", null,
+      ICON.textSize, "גודל", null,
       function () { setSize(size - SIZE_STEP); },
       function () { setSize(size + SIZE_STEP); }
     ));
@@ -3197,7 +3203,7 @@
       tools.appendChild(el("span", "sep"));
       myValue = el("span", "val");
       var mine = control(
-        "קפו", myValue,
+        ICON.capo, "קפו", myValue,
         function () { setMyCapo(myCapo - 1); },
         function () { setMyCapo(myCapo + 1); }
       );
@@ -3216,7 +3222,6 @@
     function setMyCapo(next) {
       myCapo = Math.max(0, Math.min(next, MAX_CAPO));
       showMyCapo();
-      showCapo();
       auth.setCapo(myCapo).catch(function () {
         toast("הקפו נשמר כאן, אבל לא הצליח להישמר בחשבון", true);
       });
@@ -3237,14 +3242,12 @@
          and save, which is the only one that writes anything. */
     var undoBtn = iconBtn(ICON.undo, "ביטול הפעולה האחרונה", undo);
     var revertBtn = button("החזרה למקור", null, "ghost small", revert);
-    /* THE SAVE BUTTON IS NOT THERE UNTIL THERE IS SOMETHING TO SAVE. On a page
-       that is always editable, a button that is always present says nothing;
-       one that appears the moment something changes says exactly what it is
-       for, and its absence is the answer to "did that get saved". */
-    var saveBtn = button("שמירה", null, "small", save);
+    /* WHERE THE WRITING GOT TO, which is what is left of the save button: the
+       song writes itself now (see the saving block below), so the row does not
+       need a thing to press, it needs a thing to read. */
+    var stateNode = el("span", "save-state");
     undoBtn.hidden = true;
     revertBtn.hidden = true;
-    saveBtn.hidden = true;
 
     /* The way in and out of the editor, on the screen that has one. It is the
        first thing in this half of the row on purpose: on a phone it is the
@@ -3259,7 +3262,9 @@
     if (auth.in && onPhone) {
       tools.appendChild(button(editing ? "סיום עריכה" : "עריכה", ICON.pencil,
         editing ? "small" : "ghost small", function () {
-          if (editing && !saveBtn.hidden) return toast("יש שינויים שלא נשמרו", true);
+          /* nothing to lose by leaving: the song writes itself, and whatever
+             is still on the clock goes out now */
+          flush();
           state.editOnPhone = !editing;
           renderSong(song);
         }));
@@ -3271,22 +3276,18 @@
         trash.classList.add("quiet");
         tools.appendChild(trash);
       }
+      tools.appendChild(stateNode);
       tools.appendChild(undoBtn);
       tools.appendChild(revertBtn);
-      tools.appendChild(saveBtn);
     }
     app.appendChild(tools);
 
-    /* Inside the sheet, so it prints with the song: the shapes are useless to
-       anyone who does not know where the capo goes. It says where the READER's
-       capo is, which is a number they set and nothing here works out, and it
-       says nothing at all when there is no capo on the neck. */
-    var capo = el("div", "capo-line");
-
-    function showCapo() {
-      capo.textContent = myCapo > 0 ? "קפו " + myCapo : "";
-      capo.hidden = !myCapo;
-    }
+    /* The sheet used to carry a "קפו 3" chip of its own, from when the capo was
+       worked out from the transposition and was a fact about the SONG. It is a
+       fact about the player now, it is on the control that sets it, and a
+       second copy inside the song was the same number twice: on screen it is
+       an inch from its own control, and on paper it is a note about whoever
+       printed the page rather than about the song on it. */
     var sheet = el("div", "sheet" + (editing ? " ed" : ""));
     sheet.style.setProperty("--song-size", size + "px");
     app.appendChild(sheet);
@@ -3366,9 +3367,6 @@
       song.dir = songDir(song.lines);
       sheet.dir = song.dir;
 
-      showCapo();
-      sheet.appendChild(capo);
-
       song.lines.forEach(function (line, index) {
         sheet.appendChild(editing ? editRow(line, index) : viewLine(line, semis));
       });
@@ -3409,18 +3407,81 @@
        cannot miss a change and cannot invent one, which no counting of events
        could promise. A song is a few hundred characters, so it costs nothing to
        ask after every keystroke. */
-    function snapshot() {
+    /* THE SONG ITSELF, apart from what is said about it. Two things are being
+       compared here and they are not the same question: whether the words,
+       chords, name, credits or kinds have moved, and whether the song is
+       finished or out in the world. Only the first of them puts a song back
+       into draft (see mark), and a button that says "this is finished" must
+       not be able to count as work on it. */
+    function songBody() {
       return JSON.stringify([
         String(song.title || "").trim(),
         CREDITS.map(function (c) { return String(song[c.field] || "").trim(); }),
         song.dir || "rtl",
         songToText(song.lines),
+        styles(song),
+      ]);
+    }
+
+    function snapshot() {
+      return JSON.stringify([
+        songBody(),
         /* in here, so pressing one of these lights the save button and taking
            a change back takes the mark with it */
         !!song.draft,
         !!song.published,
-        styles(song),
       ]);
+    }
+
+    /* --- what it can become ----------------------------------------------------
+       One offer, always the same one: פורסם. Everything else about the state
+       happens by itself, so there is nothing else here to choose. A song that
+       is already out in the world has nothing to be offered at all, and its
+       chip says so by not opening.
+
+       A panel and not a straight toggle, because publishing is the one press
+       on this page that changes who can see the song, and a press that does
+       that should be aimed at rather than brushed against. */
+    var stateMenu = null;
+
+    function closeStateMenu() {
+      if (!stateMenu) return;
+      stateMenu.remove();
+      stateMenu = null;
+      document.removeEventListener("pointerdown", stateOutside, true);
+    }
+
+    function stateOutside(event) {
+      if (!stateMenu) return;
+      if (stateMenu.contains(event.target)) return;
+      if (statusChip && statusChip.contains(event.target)) return;
+      closeStateMenu();
+    }
+
+    function askState(anchor) {
+      if (stateMenu) return closeStateMenu();
+      if (songState() === "published") return;
+
+      stateMenu = el("div", "print-menu");
+      stateMenu.appendChild(button("פורסם", null, "ghost small", function () {
+        closeStateMenu();
+        song.published = true;
+        song.draft = false;
+        song.review = false;
+        showState();
+        mark();
+        /* AND IT SAVES, now rather than in a second: this is the press that
+           hands the song to everybody else. */
+        queueSave(true);
+      }));
+      document.body.appendChild(stateMenu);
+
+      var box = anchor.getBoundingClientRect();
+      var width = stateMenu.offsetWidth;
+      stateMenu.style.top = (box.bottom + 6) + "px";
+      stateMenu.style.left = Math.min(Math.max(6, box.right - width), window.innerWidth - width - 6) + "px";
+
+      document.addEventListener("pointerdown", stateOutside, true);
     }
 
     /* --- taking it back ------------------------------------------------------
@@ -3444,7 +3505,31 @@
        the burst, which is where undo should land. */
     var BURST = 600;
 
+    /* --- a touched song is a draft again ---------------------------------------
+       What everybody else can open is what was published, and the moment a
+       word of it moves, the song on this screen is not that song any more. So
+       touching ANYTHING that can be edited puts it back to being a draft and
+       takes it out of the world, and the one thing the status chip offers is
+       the way back out: פורסם, which means "this is finished, let people have
+       it" and is the same sentence twice, and so is one press.
+
+       Only a change to the song itself. Publishing is a statement ABOUT the
+       song and must not count as work on it, or the state could never leave
+       draft: it would put itself straight back. */
+    var lastBody = songBody();
+
     function mark() {
+      var body = songBody();
+      if (!restoring && editing && body !== lastBody && songState() !== "draft") {
+        song.draft = true;
+        song.published = false;
+        /* A machine read it and a person has now touched it, which is the
+           whole of what the review label was waiting for. */
+        song.review = false;
+        if (showState) showState();
+      }
+      lastBody = body;
+
       var now = snapshot();
 
       if (!restoring && now !== current) {
@@ -3456,11 +3541,11 @@
         current = now;
       }
 
-      saveBtn.hidden = now === saved;
       revertBtn.hidden = now === saved;
       undoBtn.hidden = !history.length;
 
       keepDraft(now);
+      if (now !== saved) queueSave(false);
     }
 
     /* Back to a state, whole: the words, the chords, the order of the lines,
@@ -3469,25 +3554,30 @@
        lying about what it holds. */
     function restore(state) {
       var was = JSON.parse(state);
+      var body = JSON.parse(was[0]);
       restoring = true;
 
-      song.title = was[0];
-      CREDITS.forEach(function (c, index) { song[c.field] = was[1][index] || ""; });
-      song.dir = was[2] || "rtl";
+      song.title = body[0];
+      CREDITS.forEach(function (c, index) { song[c.field] = body[1][index] || ""; });
+      song.dir = body[2] || "rtl";
       /* Lines read back out of a string are new objects, so every mark is now
          held against a line that is not in the song any more. */
       marked.length = 0;
-      song.lines = normalizeLines(was[3], song.dir);
-      song.draft = !!was[4];
-      song.published = !!was[5];
-      song.styles = tidyStyles(was[6]);
+      song.lines = normalizeLines(body[3], song.dir);
+      song.styles = tidyStyles(body[4]);
+      song.draft = !!was[1];
+      song.published = !!was[2];
 
       if (title.textContent !== song.title) title.textContent = song.title;
-      byFields.forEach(function (input, index) { input.value = was[1][index] || ""; });
+      byFields.forEach(function (input, index) { input.value = body[1][index] || ""; });
       if (showDraft) showDraft();
       if (showStyles) showStyles();
 
       draw();
+      /* the song is what it was, so what a change is measured against is what
+         it was too: without this the restore itself reads as an edit and puts
+         the draft mark straight back on */
+      lastBody = songBody();
       current = snapshot();
       restoring = false;
       mark();
@@ -4381,11 +4471,54 @@
        No navigation afterwards, because there is nowhere to go: this is already
        the page the saved song lives on. The address follows the name if the
        name changed, and the button goes away, which is the receipt. */
-    function save() {
-      var name = String(song.title || "").trim();
-      if (!name) { title.focus(); return toast("צריך שם לשיר", true); }
+    /* --- saving, which happens by itself --------------------------------------
+       NO SAVE BUTTON. A song is written a word at a time and there is nothing
+       to review before a word counts, so a change writes itself: the typing
+       stops, and a second later the song is in the database as a draft. What
+       used to be a button is now the quiet word beside the tools, which says
+       where the writing got to.
 
-      saveBtn.disabled = true;
+       PUBLISHING IS THE SAME WRITE with one more thing said in it. "Finished,
+       and let people have it" is one sentence, so it is one press, and after
+       it there is nothing left to decide and so nothing left to press.
+
+       A song with no name yet cannot be written at all: its address is made
+       from its name. So it waits, and says so, and the first thing anybody
+       does on a new song is name it. */
+    var saveTimer = null, inFlight = false, again = false;
+
+    function note(text, bad) {
+      if (!stateNode) return;
+      stateNode.textContent = text;
+      stateNode.className = "save-state" + (bad ? " is-bad" : "");
+    }
+
+    function queueSave(now) {
+      if (!editing) return;
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(commit, now ? 0 : 900);
+      note("לא נשמר");
+    }
+
+    /* Whatever is still on the clock, now. Registered as the flush that any
+       navigation and any hidden tab runs, so the last change lands rather than
+       the one before it. */
+    function flush() {
+      if (saveTimer === null) return;
+      clearTimeout(saveTimer);
+      commit();
+    }
+
+    function commit() {
+      saveTimer = null;
+      /* one write at a time, and one more after it if anything moved while it
+         was in the air: two PATCHes racing on one row can land in either
+         order, and the loser would be the newer song */
+      if (inFlight) { again = true; return; }
+
+      var name = String(song.title || "").trim();
+      if (!name) return note("צריך שם לשיר", true);
+
       var payload = {
         title: name,
         /* the song's direction is its first line's: the sheet is laid out in
@@ -4394,6 +4527,7 @@
         lines: songToText(song.lines),
         draft: !!song.draft,
         published: !!song.published,
+        review: !!song.review,
         styles: styles(song),
       };
       CREDITS.forEach(function (c) { payload[c.field] = String(song[c.field] || "").trim(); });
@@ -4404,24 +4538,25 @@
       payload.status = "ready";
       payload.status_note = "";
 
+      var going = snapshot();
+      inFlight = true;
+      note("שומר");
       attempt(song.id && song.slug ? song.slug : slugify(name), 1);
 
       function attempt(slug, tries) {
         payload.slug = slug;
         var request = song.id ? db.update(song.id, payload) : db.insert(payload);
         request.then(function (row) {
-          saveBtn.disabled = false;
+          inFlight = false;
           /* A song typed from nothing kept its draft under "new", and it is
-             about to have an id of its own. Take the old one out by hand: mark()
-             below can only clear the key the song has now. */
+             about to have an id of its own. Take the old one out by hand:
+             mark() below can only clear the key the song has now. */
           var wasKey = draftKey();
           song.id = row.id;
           song.slug = row.slug;
-          /* this is the state to come back to now, and the way back to the one
-             before it went out with the write */
-          saved = snapshot();
-          current = saved;
-          history.length = 0;
+          /* what went out is what is now in the database, and anything typed
+             while it was in the air is still ahead of it */
+          saved = going;
           mark();
           if (wasKey !== draftKey()) {
             try { localStorage.removeItem(wasKey); } catch (e) { /* nothing was kept */ }
@@ -4440,16 +4575,21 @@
              difference or anything to do about it. */
           var lost = CREDITS.filter(function (c) { return payload[c.field] && !has(c.field); });
           if (lost.length) {
-            toast("השיר נשמר, אבל " + lost.map(function (c) { return c.label; }).join(" ו") +
-              " לא. צריך להריץ את schema.sql ב-Supabase.", true);
+            note("נשמר בלי " + lost.map(function (c) { return c.label; }).join(" ו"), true);
           } else {
-            toast("נשמר");
+            note(current === saved ? "נשמר" : "לא נשמר");
           }
+
+          if (again) { again = false; queueSave(true); }
         }).catch(function (error) {
           /* 23505 is the unique index on slug: two songs with the same name */
           if (error.code === "23505" && tries < 30) return attempt(slugify(name) + "_" + (tries + 1), tries + 1);
-          saveBtn.disabled = false;
-          toast(error.status === 401 || error.status === 403 ? "אין הרשאה. נסו להתחבר שוב." : "השמירה נכשלה: " + error.message, true);
+          inFlight = false;
+          again = false;
+          note(error.status === 401 || error.status === 403 ? "אין הרשאה" : "לא נשמר", true);
+          toast(error.status === 401 || error.status === 403
+            ? "אין הרשאה. נסו להתחבר שוב."
+            : "השמירה נכשלה: " + error.message, true);
         });
       }
     }
@@ -4479,6 +4619,11 @@
        or a signed-out reader is looking at the saved song, and should be told
        the truth about it. */
     if (editing) takeDraft();
+    if (editing) {
+      note(current === saved ? "נשמר" : "לא נשמר");
+      /* whatever is still on the clock when this page is left */
+      flushPending = flush;
+    }
     if (editing && !song.id) title.focus();
   }
 
@@ -4631,12 +4776,6 @@
     var where = String(evening.venue || "").trim();
     if (where) said.push(where);
     return said.join("  •  ");
-  }
-
-  function songCount(n) {
-    if (!n) return "עוד בלי שירים";
-    if (n === 1) return "שיר אחד";
-    return n + " שירים";
   }
 
   /* Whatever is in the column, as a list of {id, title}. Anything without an
@@ -4927,25 +5066,21 @@
 
     app.appendChild(head);
 
-    /* --- the tools --- */
+    /* --- where the writing got to --------------------------------------------
+       All that is left of a toolbar. Printing and deleting are in the top bar,
+       where the actions about the page you are on live; how many songs are in
+       the evening is what the list itself says, in numbers down its side, and
+       saying it again in words over it was the same fact twice.
 
-    var tools = el("div", "tools");
-    var counter = el("span", "lbl", "");
-    tools.appendChild(counter);
-    tools.appendChild(el("span", "grow"));
+       This one word cannot move up there: it is not an action, it is an
+       answer, and it belongs beside the thing it is answering about. */
+    var stateNode = el("span", "save-state ev-state");
+    app.appendChild(stateNode);
 
-    /* What the save button used to say, said by a word instead. See mark()
-       below for why there is no button. */
-    var stateNode = el("span", "save-state");
-    tools.appendChild(stateNode);
-
-    tools.appendChild(button("הדפסה", ICON.print, "small", function () { window.print(); }));
-
-    var trash = iconBtn(ICON.trash, "מחיקת הערב", removeEvening);
-    trash.classList.add("quiet");
-    tools.appendChild(trash);
-
-    app.appendChild(tools);
+    /* the two things worth doing to a whole evening, in the bar */
+    state.printer = function () { window.print(); };
+    state.killer = removeEvening;
+    paintHeader();
 
     /* --- the songs, in order --- */
 
@@ -4987,7 +5122,6 @@
       listEl.innerHTML = "";
       evening.songs.forEach(function (item) { listEl.appendChild(setRow(item)); });
       emptyNote.hidden = evening.songs.length > 0;
-      counter.textContent = songCount(evening.songs.length);
     }
 
     function setRow(item) {
@@ -5741,6 +5875,8 @@
        Nothing is printable until a view says it is, and every address starts
        out as not that. */
     state.printable = false;
+    state.printer = null;
+    state.killer = null;
     paintHeader();
     var p = parts();
 

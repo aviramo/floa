@@ -21,19 +21,18 @@
   --chord: #e11d63;
   --chord-soft: #fde7ef;
 
-  /* --- the four states a song can be in ------------------------------------
+  /* --- the three states a song can be in ------------------------------------
      A colour belongs to a STATE, not to a place: the same green means
      published on a row of the library, on the tally counting them and on the
-     button inside the song that puts it there. Four colours learned once and
+     chip inside the song that puts it there. Three colours learned once and
      read everywhere, which is the whole reason they are named here and not
      written into each of the three places.
 
-     Warm for the two that are waiting on somebody, cool for the two that are
-     not: amber asks to be checked, brown says unfinished, slate is finished
-     and private, green is out in the world. */
+     Warm while somebody still owes the song something, cool when nobody does:
+     amber asks to be checked, brown says being worked on, green is out in the
+     world. */
   --review-ink: #8a5a12;    --review-soft: #f6e6ca;
   --draft-ink: #5b4636;     --draft-soft: #f1ece4;
-  --kept-ink: #4a5b68;      --kept-soft: #e9eef3;
   --published-ink: #0d5c4a; --published-soft: #dcf1e9;
 
   --danger: #c0392b;
@@ -105,11 +104,19 @@ body {
    word keep it, since there is nothing else left of them.
 
    Not a second row: the bar is sticky, and a sticky header that grew a row
-   would take that row off the top of every song for good. */
+   would take that row off the top of every song for good.
+
+   And a label goes OVER its field rather than beside it. A word and a field
+   side by side on a screen this narrow leave the field a few characters wide,
+   and the date is the worst of them: it is the one field that sizes itself, so
+   it sat up on the label's own line and squeezed it. */
 @media (max-width: 620px) {
   .top-actions .btn svg + .lb { display: none; }
   .top-actions .btn.small { padding: 8px; }
   .top-actions .btn svg { width: 18px; height: 18px; }
+
+  .ev-meta input[type="date"] { display: block; }
+  .kinds-label { flex: 1 1 100%; }
 }
 
 /* --- buttons ------------------------------------------------------------ */
@@ -181,12 +188,28 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 
 /* No heading over the list. The page is the list, it says so in the top bar,
    and a title that repeats that only pushed the songs down the screen. */
-.search { position: relative; margin: 28px 0 18px; }
-.search input { padding-inline-start: 40px; height: 46px; border-radius: 999px; }
-.search svg {
-  position: absolute; inset-inline-start: 14px; top: 50%; transform: translateY(-50%);
-  width: 18px; height: 18px; color: var(--ink-soft); pointer-events: none;
+/* The box, and inside it at the far end the states to narrow by. Both are the
+   same gesture on the same list, so they are one control: a row of chips
+   between the box and the songs was a second place to narrow a library from,
+   and a whole line of the page for four words.
+
+   The border belongs to the box now rather than to the field inside it, and
+   the field has none, so the two read as one thing however many chips are in
+   it. On a narrow screen they wrap INSIDE it. */
+.search {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+  margin: 28px 0 18px; padding: 5px 14px; min-height: 46px;
+  background: #fff; border: 1px solid var(--line); border-radius: 999px;
 }
+.search:focus-within { border-color: var(--accent); }
+.search svg { flex: none; width: 18px; height: 18px; color: var(--ink-soft); }
+.search input {
+  flex: 1 1 120px; min-width: 0; width: auto;
+  padding: 4px 0; height: auto;
+  background: none; border: 0; border-radius: 0;
+}
+.search input:focus-visible { outline: none; }
+.search .tallies { margin: 0; flex: none; }
 
 /* How much of the library is waiting for something, in four numbers. Quiet and
    small: they are the state of the shelf, not the shelf. Pressable, because a
@@ -195,16 +218,14 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    AT THE FAR END, over the column of labels they are counting. A number and
    the rows it counts want to be in the same place, or the eye has to travel
    the width of the page to connect them. */
-/* One row: what is ticked at one end of it, what the library is made of at the
-   other. The ticked half was a bar of its own under this one, which is a line
-   of the page standing empty most of the time and arriving under the reader's
-   eye exactly while they are busy ticking. There was room across from the
-   counts and nothing in it. */
+/* What is ticked, and only while something is. The states it used to share
+   this row with have moved into the search box, so what is left appears when
+   there is something to say and takes no room at all when there is not. */
 .counts {
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 8px; margin: -6px 0 16px;
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
 }
-.picking { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.counts:empty { display: none; }
+.picking { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: -6px 0 16px; }
 .tallies {
   display: flex; flex-wrap: wrap; gap: 8px;
   justify-content: flex-end;
@@ -224,7 +245,7 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    outstanding and the styles are the shelf itself. They narrow together. */
 .kinds {
   display: flex; flex-wrap: wrap; gap: 8px; margin: -8px 0 16px;
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 .kinds:empty { display: none; }
 .tally-style { color: var(--ink-soft); }
@@ -232,13 +253,11 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 
 .tally-review { color: var(--review-ink); }
 .tally-draft { color: var(--draft-ink); }
-.tally-kept { color: var(--kept-ink); }
 .tally-published { color: var(--published-ink); }
 .tally:hover { border-color: currentColor; }
 .tally.is-on { border-color: currentColor; }
 .tally-review.is-on { background: var(--review-soft); }
 .tally-draft.is-on { background: var(--draft-soft); }
-.tally-kept.is-on { background: var(--kept-soft); }
 .tally-published.is-on { background: var(--published-soft); }
 
 .list { list-style: none; margin: 0 0 64px; padding: 0; display: grid; gap: 10px; }
@@ -368,6 +387,9 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    There is no button here (every change writes itself), so the word carries
    it alone. */
 .save-state { font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+/* on the evening it is the whole of what a toolbar left behind, so it stands
+   on its own line rather than at the end of a row of controls */
+.ev-state { display: block; margin: 6px 0 18px; }
 .save-state.is-bad { color: var(--danger); }
 
 /* The songs. An ol, so the numbers are the browser's own counter: a drag
@@ -484,7 +506,6 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 .review-tag,
 .tag-review { color: var(--review-ink); background: var(--review-soft); }
 .tag-draft { color: var(--draft-ink); background: var(--draft-soft); }
-.tag-kept { color: var(--kept-ink); background: var(--kept-soft); }
 .tag-published { color: var(--published-ink); background: var(--published-soft); }
 
 /* WHAT KIND OF SONG IT IS, which is not one of the four states and does not
@@ -592,6 +613,20 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   border-bottom-color: var(--accent); box-shadow: 0 1px 0 var(--accent);
 }
 
+/* The one state the song is in, and the way out of it. A chip and not a
+   button, because it is a fact first: it is the same word in the same colour
+   the row in the library shows, and pressing it is the second thing it does. */
+.status-chip {
+  appearance: none; cursor: pointer; border: 0;
+  font: inherit; font-size: 12px; font-weight: 700; line-height: 1.6;
+  border-radius: 999px; padding: 2px 12px; white-space: nowrap;
+  align-self: center;
+}
+.status-chip:hover { box-shadow: inset 0 0 0 1px currentColor; }
+
+/* Where the writing got to, in place of the button that used to ask for it.
+   Quiet: it is the answer to a question nobody has asked out loud, and it is
+   read at a glance or not at all. */
 /* "Not finished", in the author's own words. One word about the whole song,
    and it is either on or it is not: pressed, it looks like the label it puts
    on the row in the library.
