@@ -389,11 +389,16 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 }
 .review-said { color: var(--ink-soft); }
 .review-band .btn { margin-inline-start: auto; }
-.review-tag, .tag-review {
+.review-tag, .tag-review, .tag-draft {
   font-size: 12px; font-weight: 700; line-height: 1.6;
   color: #8a5a12; background: #f6e6ca;
   border-radius: 999px; padding: 1px 10px; white-space: nowrap;
 }
+/* Quieter than the review one, and a different colour, because the two are
+   different claims and a song can carry both at once. "Nobody has checked
+   this" is the machine's and wants an eye on it; "I am not done" is the
+   author's, who already knows. */
+.tag-draft { color: #5b4636; background: #f1ece4; }
 
 /* Who wrote it and which way it runs, on the song itself: there is no other
    page to keep them on any more. Three things about one song, so one line, and
@@ -450,6 +455,23 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 }
 .dir-btn:hover { color: var(--ink); border-color: var(--ink-soft); }
 .dir-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* "Not finished", in the author's own words. Shaped like the direction button
+   beside it because it is the same kind of thing, one word about the whole
+   song, and it is either on or it is not: pressed, it looks like the label it
+   puts on the row in the library. */
+.draft-btn {
+  flex: none; appearance: none; cursor: pointer;
+  font: inherit; font-size: 13px; font-weight: 700;
+  color: var(--ink-soft); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 999px;
+  padding: 4px 13px;
+}
+.draft-btn:hover { color: var(--ink); border-color: var(--ink-soft); }
+.draft-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.draft-btn.is-on { color: #5b4636; background: #f1ece4; border-color: #ded3c4; }
+
+.head-tags { margin-top: 6px; }
 
 /* Two gaps, and the difference between them is what says where one control ends
    and the next begins: the parts of a control sit close enough to read as one

@@ -101,6 +101,13 @@ alter table public.songs add column if not exists usd_ils     numeric;
 -- say something about them that nobody knows to be true.
 alter table public.songs add column if not exists review      boolean not null default false;
 
+-- Not finished, and said so by the person writing it. The other label is the
+-- machine's ("nobody has checked this"); this one is the author's ("I am not
+-- done with this"), and a song can easily be both. It is set and unset by hand
+-- and travels with the song when it is saved, because deciding a song is still
+-- a draft is a decision about the song, made while working on it.
+alter table public.songs add column if not exists draft       boolean not null default false;
+
 -- Dropped and recreated rather than added, because 'queued' arrived after the
 -- first version of this constraint and an "add if it is not there" would leave
 -- the old one in place and refuse every queued row.

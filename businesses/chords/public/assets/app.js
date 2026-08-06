@@ -332,6 +332,7 @@
        the other still shows a price, in dollars */
     ["usd_ils"],
     ["review"],
+    ["draft"],
   ].map(function (columns) { return { columns: columns, on: true }; });
 
   function withOptional(fields) {
@@ -1921,9 +1922,18 @@
       if (by.length) {
         top.appendChild(el("div", "by", by.map(function (c) { return c.name; }).join(", ")));
       }
-      /* A song a machine read and nobody has checked. On the row rather than
-         only inside the song, because the point of it is to be seen without
-         opening anything. */
+      /* What is known about the song rather than what is in it. On the row and
+         not only inside the song, because the whole point of a label is to be
+         seen without opening anything.
+
+         Two of them, and a song can carry both: one is the machine's, "nobody
+         has checked this reading", and the other is the author's, "I am not
+         done with this". */
+      if (s.draft) {
+        var mine = el("span", "tag-draft", "טיוטה");
+        mine.title = "השיר עוד לא גמור";
+        top.appendChild(mine);
+      }
       if (s.review) {
         var flag = el("span", "tag-review", "לסקירה");
         flag.title = "השיר נקרא מתוך קובץ ועדיין לא נבדק";
@@ -2132,8 +2142,10 @@
     head.appendChild(title);
 
     var byFields = [];
-    /* set below, with the direction button it keeps in step with the song */
+    /* set below, with the buttons they keep in step with the song */
     var showDir = null;
+    var showDraft = null;
+    var draftBtn = null;
     if (editing) {
       /* Who wrote it, on the song itself. It belongs to it and there is no
          other page to keep it on any more. */
@@ -2195,6 +2207,34 @@
 
       meta.appendChild(dirBtn);
 
+      /* Not finished, and said so by the person writing it. The other label on
+         a song is the machine's; this one is the author's, and a song can
+         easily be both.
+
+         It travels with the song rather than being written the moment it is
+         pressed, because deciding that a song is still a draft is a decision
+         about the song, taken while working on it, and it belongs in the same
+         save as the verse that is still missing. */
+      draftBtn = el("button", "draft-btn");
+      draftBtn.type = "button";
+      draftBtn.textContent = "טיוטה";
+      draftBtn.addEventListener("click", function () {
+        song.draft = !song.draft;
+        showDraft();
+        mark();
+      });
+      meta.appendChild(draftBtn);
+
+      showDraft = function () {
+        var on = !!song.draft;
+        draftBtn.classList.toggle("is-on", on);
+        draftBtn.setAttribute("aria-pressed", on ? "true" : "false");
+        draftBtn.title = on
+          ? "השיר מסומן כטיוטה. לחיצה מסירה את הסימון."
+          : "לסמן את השיר כטיוטה, כל עוד הוא לא גמור.";
+      };
+      showDraft();
+
       head.appendChild(meta);
     } else {
       /* Reading it, the credits are a sentence rather than a form, and it
@@ -2211,6 +2251,15 @@
         head.appendChild(el("div", "by", by.map(function (c) {
           return c.label + ": " + c.name;
         }).join("  •  ")));
+      }
+
+      /* Reading it rather than writing it, the draft mark is not a button to
+         press but something to know before playing from the page: this one is
+         not finished. */
+      if (song.draft) {
+        var flagRow = el("div", "head-tags");
+        flagRow.appendChild(el("span", "tag-draft", "טיוטה"));
+        head.appendChild(flagRow);
       }
     }
 
@@ -2436,6 +2485,9 @@
         CREDITS.map(function (c) { return String(song[c.field] || "").trim(); }),
         song.dir || "rtl",
         songToText(song.lines),
+        /* in here, so pressing the draft button lights the save button and
+           taking a change back takes the mark back with it */
+        !!song.draft,
       ]);
     }
 
@@ -2494,10 +2546,12 @@
          held against a line that is not in the song any more. */
       marked.length = 0;
       song.lines = normalizeLines(was[3]);
+      song.draft = !!was[4];
 
       if (title.textContent !== song.title) title.textContent = song.title;
       byFields.forEach(function (input, index) { input.value = was[1][index] || ""; });
       if (showDir) showDir();
+      if (showDraft) showDraft();
 
       draw();
       current = snapshot();
@@ -3243,6 +3297,7 @@
         title: name,
         dir: song.dir || "rtl",
         lines: songToText(song.lines),
+        draft: !!song.draft,
       };
       CREDITS.forEach(function (c) { payload[c.field] = String(song[c.field] || "").trim(); });
 
