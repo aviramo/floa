@@ -226,6 +226,18 @@
     }).filter(function (c) { return c.name; });
   }
 
+  /* What the reading of this song cost, in US cents, as the Worker counted it
+     from the model's own token usage. A song typed by hand has no price and
+     says nothing, which is different from one that cost nothing. */
+  function price(song) {
+    if (song.read_cost == null) return "";
+    var cents = Number(song.read_cost);
+    if (!isFinite(cents)) return "";
+    /* Under a cent is shown as under a cent rather than as $0.00, which reads
+       as free and is a different claim. */
+    return cents < 0.5 ? "פחות מסנט" : "$" + (cents / 100).toFixed(2);
+  }
+
   /* A read runs in the Worker and outlives the request that started it, so if
      the runtime cuts it short there is nobody left to say so. What says so is
      silence: the job writes the elapsed time onto its own row every twenty
@@ -277,6 +289,7 @@
   var OPTIONAL = [
     ["status", "status_note"],
     ["lyrics_by", "music_by"],
+    ["read_cost"],
   ].map(function (columns) { return { columns: columns, on: true }; });
 
   function withOptional(fields) {
@@ -332,7 +345,10 @@
         return (rows || []).sort(function (a, b) {
           var pa = (a.status || "ready") === "ready" ? 1 : 0;
           var pb = (b.status || "ready") === "ready" ? 1 : 0;
-          return pa - pb;
+          if (pa !== pb) return pa - pb;
+          /* among the unfinished, the order they will actually be read in */
+          if (!pa) return String(a.created_at || "") < String(b.created_at || "") ? -1 : 1;
+          return 0;
         });
       }).catch(function (error) {
         if (!dropMissing(error)) throw error;
@@ -1199,11 +1215,13 @@
         tick(list);
       }
 
-      /* A song being read is a row that changes on its own, so the list looks
-         again while any of them is still reading, and stops the moment none
-         is. Leaving the page ends it: the list is gone from the document. */
+      /* A song waiting or being read is a row that changes on its own, so the
+         list looks again while any of them is unfinished, and stops the moment
+         none is. Leaving the page ends it: the list is gone from the document. */
       function poll() {
-        if (!state.songs.some(function (s) { return s.status === "reading" && !stalled(s); })) return;
+        if (!state.songs.some(function (s) {
+          return s.status === "queued" || (s.status === "reading" && !stalled(s));
+        })) return;
         setTimeout(function () {
           if (!list.isConnected) return;
           refresh();
@@ -1258,17 +1276,47 @@
          keeps its own direction (see .k), which is what stops "G/B" flipping
          inside itself. */
       var used = chordsUsed(s.lines);
-      if (used.length) {
-        var easy = easyVersion(used);
+      var paid = price(s);
+      if (used.length || paid) {
+        var easy = used.length ? easyVersion(used) : null;
         var keys = el("div", "keys");
-        keys.title = "השיר עצמו: " + used.join("  ");
-        if (easy.capo) keys.appendChild(el("span", "capo", "קפו " + easy.capo));
-        easy.shapes.forEach(function (shape) { keys.appendChild(el("span", "k", shape)); });
+        if (easy) {
+          keys.title = "השיר עצמו: " + used.join("  ");
+          if (easy.capo) keys.appendChild(el("span", "capo", "קפו " + easy.capo));
+          easy.shapes.forEach(function (shape) { keys.appendChild(el("span", "k", shape)); });
+        }
+        /* What the machine charged to read this one. Last, and quiet: it is
+           worth knowing and it is not what the row is for. */
+        if (paid) {
+          var cost = el("span", "cost", paid);
+          cost.title = "עלות הפענוח של השיר הזה";
+          keys.appendChild(cost);
+        }
         box.appendChild(keys);
       }
 
       a.appendChild(box);
       li.appendChild(a);
+      return li;
+    }
+
+    /* Waiting its turn. Nothing has been spent on it yet, which is exactly why
+       it can be called off: deleting the row is the whole of cancelling, and
+       the Workflow holding this song finds it gone and stops. */
+    if (s.status === "queued") {
+      var wait = el("div", "row is-queued");
+      var waitBox = el("div");
+      waitBox.appendChild(el("div", "t", s.title));
+      waitBox.appendChild(el("div", "a", "ממתין בתור"));
+      wait.appendChild(waitBox);
+
+      var waitActions = el("div", "row-actions");
+      waitActions.appendChild(button("ביטול", null, "ghost small", function () {
+        db.remove(s.id).then(refresh).catch(function (e) { toast("הביטול נכשל: " + e.message, true); });
+      }));
+      wait.appendChild(waitActions);
+
+      li.appendChild(wait);
       return li;
     }
 
@@ -2099,8 +2147,7 @@
   /* --- reading a photo or a PDF -------------------------------------------- */
 
   var MAX_BYTES = 12 * 1024 * 1024;
-  var MAX_PAGES = 8;
-  /* Several songs go up together, each its own song and its own reading. They
+  /* Several songs go up together, one per file, each its own reading. They
      travel in ONE request: the Worker brakes uploads rather than files, and a
      folder of sheets should be one action rather than nine refusals. */
   var MAX_SONGS = 10;
@@ -2163,7 +2210,7 @@
     var drop = el("div", "drop");
     drop.appendChild(el("h3", null, "גררו לכאן צילומים של שירים"));
     drop.appendChild(el("p", null,
-      "אפשר כמה קבצים יחד, וכל קובץ נעשה שיר בפני עצמו ונקרא במקביל. המערכת קוראת את המילים ואת האקורדים ומציבה כל אקורד מעל ההברה שהוא יושב עליה בתמונה. זה לוקח כחצי דקה לשיר."));
+      "אפשר כמה קבצים יחד, וכל קובץ הוא שיר. המערכת קוראת את המילים ואת האקורדים ומציבה כל אקורד מעל ההברה שהוא יושב עליה בתמונה. השירים נכנסים לתור, אפשר לבטל כל אחד מהם כל עוד הוא ממתין."));
 
     var input = el("input");
     input.type = "file";
@@ -2173,20 +2220,6 @@
     drop.appendChild(input);
     drop.appendChild(button("בחירת קבצים", ICON.upload, "ghost", function () { input.click(); }));
     box.appendChild(drop);
-
-    /* The one thing the files themselves cannot say. Two pictures are either
-       two songs or two pages of one, and nothing about them tells which, so it
-       is asked once here instead of guessed at every time. Off by default,
-       because a handful of sheets is the common case and a two-page song is
-       not. */
-    var together = el("input");
-    together.type = "checkbox";
-    together.id = "pagesOfOne";
-    var togetherLabel = el("label", "check");
-    togetherLabel.htmlFor = together.id;
-    togetherLabel.appendChild(together);
-    togetherLabel.appendChild(el("span", null, "כל הקבצים הם עמודים של שיר אחד"));
-    box.appendChild(togetherLabel);
 
     var status = el("p", "muted");
     box.appendChild(status);
@@ -2228,14 +2261,10 @@
       }
       if (!picked.length) return;
 
-      /* One group is one song. Either every file is a page of the same one, or
-         each file is a song of its own; nothing in between, because nothing in
-         between could be told apart from these files. */
-      var groups = together.checked
-        ? [picked.slice(0, MAX_PAGES)]
-        : picked.slice(0, MAX_SONGS).map(function (file) { return [file]; });
-
-      var dropped = picked.length - groups.reduce(function (n, g) { return n + g.length; }, 0);
+      /* ONE FILE IS ONE SONG. No grouping, no guessing which pictures belong
+         together: a sheet is a page, and a page is a song. */
+      var groups = picked.slice(0, MAX_SONGS).map(function (file) { return [file]; });
+      var dropped = picked.length - groups.length;
 
       status.innerHTML = "";
       status.className = "muted";
@@ -2293,7 +2322,7 @@
 
           dlg.close();
           toast(groups.length > 1
-            ? "קורא " + groups.length + " שירים ברקע. אפשר לסגור את הדף."
+            ? groups.length + " שירים בתור. אפשר לסגור את הדף."
             : "קורא את השיר ברקע. אפשר לסגור את הדף.");
           if (dropped > 0) toast("נלקחו " + groups.length + " קבצים בלבד. השאר לא נשלחו.", true);
           if (parts().length === 0) route(); else go(BASE + "/");
@@ -2317,10 +2346,19 @@
         title: name,
         dir: "rtl",
         lines: [],
-        status: "reading",
+        /* Queued, not reading. The Workflow flips it to `reading` when its turn
+           comes, and until then the row can simply be deleted: nothing has been
+           spent and there is nothing to undo. */
+        status: "queued",
         status_note: "",
       }).catch(function (error) {
         if (error.code === "23505" && tries < 30) return attempt(base + "_" + (tries + 1), tries + 1);
+        /* 23514 is the check on `status`, and the only way to meet it here is a
+           table whose constraint predates the queue. Say which SQL, because the
+           raw complaint names a constraint and not a thing anyone can do. */
+        if (error.code === "23514") {
+          throw new Error("צריך להריץ מחדש את schema.sql ב-Supabase כדי שהתור יעבוד.");
+        }
         throw error;
       });
     }

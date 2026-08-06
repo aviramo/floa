@@ -150,6 +150,29 @@ const CHORDS_MODEL = "claude-opus-5";
 const CHORDS_EFFORT = "medium";
 const MAX_TOKENS = 32000;
 
+/* US dollars per million tokens, so that a read can be priced from the usage
+   the API reports rather than guessed at afterwards. A song carries what it
+   cost, and the list shows it.
+
+   THESE ARE A COPY OF A PRICE LIST AND WILL GO STALE. A model missing from
+   here prices at nothing rather than at a wrong number, because a blank says
+   "we do not know" and 0.00 says "it was free". Sonnet 5 also had introductory
+   pricing at $2/$10 into 2026, so a read from that period cost less than this
+   says; the standard rate is used because it is the one that keeps being
+   true. */
+const PRICES = {
+  "claude-opus-5": { input: 5, output: 25 },
+  "claude-sonnet-5": { input: 3, output: 15 },
+};
+
+function costOf(model, usage) {
+  const price = PRICES[model];
+  if (!price || !usage) return null;
+  const input = Number(usage.input || 0) * price.input;
+  const output = Number(usage.output || 0) * price.output;
+  return (input + output) / 10000;          // dollars per million -> US cents
+}
+
 export const MEDIA_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif", "application/pdf"];
 
 /* Not the finished document: the raw observations it is built from. Every
@@ -181,7 +204,7 @@ const CHORD = {
     letters_before: {
       type: "integer",
       description:
-        "How many letters of that word come before that letter, counting from the word's own beginning. 0 means the chord is over the word's first letter, 2 means it is over its third. For word 0, use 0.",
+        "How many letters of that word come before that letter, counting from the word's own beginning. 0 means the chord is over the word's first letter, 2 means it is over its third. WHEN word IS 0 this means something else: how many other chords stand between this one and the last word, so 0 for the one nearest the words, 1 for the next one out, and so on.",
     },
   },
 };
@@ -299,7 +322,11 @@ WHICH LETTER, EXACTLY
 
   reads: C over the ל of אילה, G over the ל of the first ולה, Am over the ל of the second ולה, E over the ל of the third ולה, and G7 past the end of the line. Every one of those five is inside a word or past the words. Not one of them is at the front of anything.
 
-- A chord printed out past the last word, or standing alone in a gap with no word under it, is word 0 with an empty letter and letters_before 0. Give those in the order they are printed along the line, starting from the side the line starts on. A line of the song whose chords are ALL printed past its words, a turnaround or an outro, is a whole line of word 0 entries; do not scatter them in among the syllables to find them homes.
+- A chord printed out past the last word, or standing alone in a gap with no word under it, is word 0 with an empty letter. For these, and only these, letters_before says HOW FAR OUT it is: 0 for the chord nearest the words, 1 for the next one beyond it, 2 for the one beyond that.
+
+  Say it that way, as a distance from the words, and never as a sequence. The sequence is the trap: a row of Latin symbols is read left to right, a Hebrew line runs right to left, and a run of chords listed in the order the eye met them comes out backwards. "Nearest the words" has no direction in it and cannot come out backwards. On a Hebrew line the chord nearest the words is the RIGHTMOST of the run, and the one furthest out is the leftmost.
+
+  A line of the song whose chords are ALL printed past its words, a turnaround or an outro, is a whole line of word 0 entries; do not scatter them in among the syllables to find them homes.
 
 - A line with no chords above it can be left out altogether.
 
@@ -341,6 +368,11 @@ async function streamText(env, body, onProgress) {
   let buffer = "";
   let text = "";
   let stopReason = null;
+  /* What it cost, said by the side that charges for it. The input count comes
+     with the first event and the output count with the last, and taking both
+     from the stream is the only way to price a read without asking for the
+     bill afterwards. */
+  const usage = { input: 0, output: 0 };
 
   for (;;) {
     const { value, done } = await reader.read();
@@ -358,6 +390,7 @@ async function streamText(env, body, onProgress) {
       if (
         payload.indexOf('"text_delta"') < 0 &&
         payload.indexOf('"stop_reason"') < 0 &&
+        payload.indexOf('"message_start"') < 0 &&
         payload.indexOf('"type":"error"') < 0
       ) continue;
 
@@ -365,29 +398,35 @@ async function streamText(env, body, onProgress) {
       try { event = JSON.parse(payload); } catch { continue; }
 
       if (event.type === "content_block_delta" && event.delta?.type === "text_delta") text += event.delta.text;
-      else if (event.type === "message_delta" && event.delta?.stop_reason) stopReason = event.delta.stop_reason;
-      else if (event.type === "error") throw new Error(`anthropic stream: ${event.error?.message || "error"}`);
+      else if (event.type === "message_start") {
+        usage.input = Number(event.message?.usage?.input_tokens || 0);
+      } else if (event.type === "message_delta") {
+        if (event.delta?.stop_reason) stopReason = event.delta.stop_reason;
+        if (event.usage?.output_tokens) usage.output = Number(event.usage.output_tokens);
+      } else if (event.type === "error") throw new Error(`anthropic stream: ${event.error?.message || "error"}`);
     }
   }
 
-  return { text, stopReason };
+  return { text, stopReason, usage };
 }
 
 /* One question, asked and answered. Everything that can go wrong with an
    answer is turned into an error whose message is safe to store: it is ours,
    never a key. */
 async function ask(env, body, onProgress) {
-  const { text, stopReason } = await streamText(env, body, onProgress);
+  const { text, stopReason, usage } = await streamText(env, body, onProgress);
 
   if (stopReason === "refusal") throw new Error("refusal");
   if (stopReason === "max_tokens") throw new Error("truncated");
   if (!text.trim()) throw new Error("empty");
 
+  let answer;
   try {
-    return JSON.parse(text);
+    answer = JSON.parse(text);
   } catch {
     throw new Error("empty");
   }
+  return { answer, cost: costOf(body.model, usage) };
 }
 
 /* The words, handed to step two the way step two needs them: numbered by line,
@@ -430,7 +469,7 @@ export async function readChordSheet(env, files, beat) {
   });
 
   /* --- one: the words --- */
-  const words = await ask(env, {
+  const first = await ask(env, {
     model: WORDS_MODEL,
     max_tokens: MAX_TOKENS,
     system: WORDS_SYSTEM,
@@ -441,11 +480,12 @@ export async function readChordSheet(env, files, beat) {
     messages: [{ role: "user", content: [...pages, { type: "text", text: WORDS_TEXT }] }],
   }, () => beat && beat("קורא מילים"));
 
+  const words = first.answer;
   const lines = Array.isArray(words.lines) ? words.lines.map((line) => String(line ?? "")) : [];
   if (!lines.some((line) => line.trim())) throw new Error("empty");
 
   /* --- two: the chords --- */
-  const report = await ask(env, {
+  const second = await ask(env, {
     model: CHORDS_MODEL,
     max_tokens: MAX_TOKENS,
     system: CHORDS_SYSTEM,
@@ -459,7 +499,16 @@ export async function readChordSheet(env, files, beat) {
     }],
   }, () => beat && beat("מסדר אקורדים"));
 
-  return clean(merge(words, lines, report));
+  const song = clean(merge(words, lines, second.answer));
+
+  /* Both halves, because the song was read once however many questions it
+     took. Null only if neither price was known, which is a missing price list
+     rather than a free read. */
+  song.cost = first.cost === null && second.cost === null
+    ? null
+    : Math.round(((first.cost || 0) + (second.cost || 0)) * 100) / 100;
+
+  return song;
 }
 
 /* The two answers, joined by line number. A chord naming a line that is not
@@ -546,13 +595,23 @@ export function chordProLine(line) {
 
   const placed = [];
   const trailing = [];
-  (Array.isArray(line?.chords) ? line.chords : []).forEach((chord) => {
+  (Array.isArray(line?.chords) ? line.chords : []).forEach((chord, index) => {
     const name = String(chord?.chord ?? "").trim().slice(0, 16);
     if (!name) return;
     const pos = positionOf(words, chord);
-    if (pos === null) trailing.push(name);
-    else placed.push({ name, pos });
+    if (pos !== null) return placed.push({ name, pos });
+
+    /* Past the end of the line, where there is no word to name. These carry a
+       DISTANCE instead: how many other chords stand between this one and the
+       words. A distance has no direction in it, which is the whole point, since
+       a run of chords listed in the order a Latin-reading eye met them comes
+       out backwards over Hebrew words. `index` only breaks ties. */
+    let out = Math.round(Number(chord?.letters_before));
+    if (!Number.isFinite(out) || out < 0) out = 0;
+    trailing.push({ name, out, index });
   });
+
+  trailing.sort((a, b) => a.out - b.out || a.index - b.index);
 
   /* SORTED HERE, and never taken as given. The order the chords arrived in is
      the order the model happened to look at the page, which for a Hebrew line
@@ -568,10 +627,11 @@ export function chordProLine(line) {
   });
   out += text.slice(at);
 
-  /* Chords with no word under them, spaced out past the end. The spaces are
-     the spacing: this format has nothing else to say how far out a chord sits,
-     and the app reads them back as positions past the last character. */
-  trailing.forEach((name) => { out += TRAIL_GAP + "[" + name + "]"; });
+  /* Chords with no word under them, nearest the words first, spaced out past
+     the end. The spaces are the spacing: this format has nothing else to say
+     how far out a chord sits, and the app reads them back as positions past
+     the last character. */
+  trailing.forEach((chord) => { out += TRAIL_GAP + "[" + chord.name + "]"; });
 
   return out;
 }
@@ -657,20 +717,58 @@ async function patchSong(env, token, id, fields) {
   return { status: response.status, body };
 }
 
-/* The credit columns arrived after the table did, and a project that has not
-   had the new SQL run against it refuses any write that names them. A song is
-   worth a great deal more than its credits, so drop those and keep the song
-   rather than losing a read that has already been paid for. */
-const CREDIT_COLUMNS = ["lyrics_by", "music_by"];
+/* These columns arrived after the table did, and a project that has not had
+   the new SQL run against it refuses any write that names them. A song is
+   worth a great deal more than its credits or its price, so drop those and
+   keep the song rather than losing a read that has already been paid for. */
+const LATE_COLUMNS = ["lyrics_by", "music_by", "read_cost"];
 
 async function saveSong(env, token, id, fields) {
   const failure = await patchSong(env, token, id, fields);
   if (!failure) return null;
-  if (!CREDIT_COLUMNS.some((column) => failure.body.includes(column))) return failure;
+  if (!LATE_COLUMNS.some((column) => failure.body.includes(column))) return failure;
 
   const without = { ...fields };
-  CREDIT_COLUMNS.forEach((column) => delete without[column]);
+  LATE_COLUMNS.forEach((column) => delete without[column]);
   return patchSong(env, token, id, without);
+}
+
+/* --- the queue ------------------------------------------------------------
+   Ten sheets dropped at once are ten Workflows, and ten readings at once would
+   be ten Opus calls in the same second: a good way to meet a rate limit, and a
+   good way to spend ten songs' worth of money before noticing the first one
+   came out wrong. So they take turns.
+
+   THE TURN IS COMPUTED, NEVER CLAIMED. A song's place is how many songs still
+   waiting or being read were created before it, which is a fact about the
+   table rather than a lock, so two Workflows waking at the same instant cannot
+   both take the same slot. Cancelling a song ahead simply moves everyone up.
+
+   And a song whose row has gone has been cancelled, which is the whole of the
+   cancelling: delete the row and the reading never starts, and nothing has
+   been paid. */
+const READING_AT_ONCE = 3;
+
+async function readSongs(env, token, query) {
+  const response = await fetch(`${env.SUPABASE_URL}/rest/v1/songs?${query}`, {
+    headers: { apikey: env.SUPABASE_ANON_KEY, authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) return null;
+  return response.json().catch(() => null);
+}
+
+export async function turnFor(env, token, songId) {
+  const mine = await readSongs(env, token, `select=id,status,created_at&id=eq.${encodeURIComponent(songId)}&limit=1`);
+  if (!mine) return "go";                     // cannot tell; never stall a song over it
+  if (!mine.length) return "gone";
+  if (mine[0].status !== "queued" && mine[0].status !== "reading") return "gone";
+
+  const ahead = await readSongs(
+    env, token,
+    `select=id&status=in.(queued,reading)&created_at=lt.${encodeURIComponent(mine[0].created_at)}`
+  );
+  if (!ahead) return "go";
+  return ahead.length < READING_AT_ONCE ? "go" : "wait";
 }
 
 /* The whole background job: read, name, save. Never throws — a failure is
@@ -694,7 +792,7 @@ export async function readAndSave(env, token, songId, files) {
      to the row it is supposed to fill. If it cannot write, there is no point
      spending a read whose answer has nowhere to go, and no point trying to mark
      the row as failed either, because writing is exactly what is broken. */
-  const blocked = await patchSong(env, token, songId, { status_note: "מפענח" });
+  const blocked = await patchSong(env, token, songId, { status: "reading", status_note: "מפענח" });
   if (blocked) {
     console.error("transcribe cannot write to its row", songId, blocked.status, blocked.body.slice(0, 300));
     return;
@@ -735,6 +833,10 @@ export async function readAndSave(env, token, songId, files) {
     /* the column is called `lines` for historical reasons; what goes in it is
        the whole song as one ChordPro document */
     lines: song.body,
+    /* what it cost, in US cents, from the token counts the API itself
+       reported. Null means the price was not known here, never that it was
+       free. */
+    read_cost: song.cost,
     status: "ready",
     status_note: "",
   };

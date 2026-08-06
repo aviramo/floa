@@ -52,7 +52,7 @@ create table if not exists public.songs (
   -- as an array of line objects, are still read correctly by the app.
   lines       jsonb not null default '""'::jsonb,
 
-  -- 'ready' unless a picture of it is still being read.
+  -- 'ready' unless a picture of it is waiting to be read or being read.
   --
   -- Reading a photo takes a minute or two and it happens in the Worker, not in
   -- the browser, so the row is created first and filled in when the reading
@@ -71,11 +71,17 @@ alter table public.songs add column if not exists status_note text not null defa
 alter table public.songs add column if not exists lyrics_by   text not null default '';
 alter table public.songs add column if not exists music_by    text not null default '';
 
-do $$ begin
-  alter table public.songs add constraint songs_status_check
-    check (status in ('ready', 'reading', 'failed'));
-exception when duplicate_object then null;
-end $$;
+-- What the reading cost, in US cents, counted from the token usage the model
+-- reports and written by the Worker when it saves. Null on a song nobody paid
+-- to read: one typed by hand, or one read before this column existed.
+alter table public.songs add column if not exists read_cost   numeric;
+
+-- Dropped and recreated rather than added, because 'queued' arrived after the
+-- first version of this constraint and an "add if it is not there" would leave
+-- the old one in place and refuse every queued row.
+alter table public.songs drop constraint if exists songs_status_check;
+alter table public.songs add constraint songs_status_check
+  check (status in ('queued', 'ready', 'reading', 'failed'));
 
 -- the index page sorts by title
 create index if not exists songs_title_idx on public.songs (title);

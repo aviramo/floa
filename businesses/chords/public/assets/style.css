@@ -180,7 +180,11 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   padding: 14px 18px;
 }
 .list .row.is-reading { border-style: dashed; }
+.list .row.is-queued { border-style: dashed; opacity: .72; }
 .list .row.is-failed { border-color: #f0d3cf; background: #fffaf9; }
+/* what the machine charged to read this song. Quiet on purpose: worth knowing,
+   not what the row is for. */
+.list .cost { color: var(--ink-soft); font-size: 12px; direction: ltr; unicode-bidi: isolate; }
 .list .row .a { color: var(--ink-soft); font-size: 14px; }
 .list .row .detail { flex-basis: 100%; }
 
@@ -417,10 +421,6 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .drop.is-over { border-color: var(--accent); background: #eef5f4; }
 .drop h3 { margin: 0 0 4px; font-size: 17px; }
 .drop p { margin: 0 0 14px; color: var(--ink-soft); font-size: 14px; }
-
-/* the one question the files cannot answer for themselves */
-.check { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink-soft); cursor: pointer; }
-.check input { width: 16px; height: 16px; margin-top: 0; accent-color: var(--accent); flex: 0 0 auto; }
 
 .busy { display: inline-flex; align-items: center; gap: 9px; color: var(--ink-soft); font-size: 15px; }
 .spin {

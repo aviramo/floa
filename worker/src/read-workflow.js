@@ -1,5 +1,5 @@
 import { WorkflowEntrypoint } from "cloudflare:workers";
-import { readAndSave } from "./transcribe.js";
+import { readAndSave, turnFor } from "./transcribe.js";
 
 /* ==========================================================================
    Reading a chord sheet, as work that outlives everything.
@@ -26,10 +26,38 @@ import { readAndSave } from "./transcribe.js";
 
    The song lands on its row exactly as before (see readAndSave), so nothing
    downstream knows or cares that this is where the work happens now.
+
+   WAITING IS PART OF THE WORK. A folder of sheets starts a Workflow each, and
+   they queue rather than all calling the model at once (see turnFor). Sleeping
+   here rather than inside the read is what makes the waiting free: a sleeping
+   Workflow costs nothing and holds nothing open, and the queue survives a
+   restart because the queue is the table, not a variable in this file.
    ========================================================================== */
+
+/* Long enough that a whole queue does not churn, short enough that a cancelled
+   song ahead frees this one within a moment of somebody pressing the button. */
+const CHECK_EVERY = "15 seconds";
+const GIVE_UP_AFTER = 80;                    // twenty minutes of taking turns
+
 export class ReadSong extends WorkflowEntrypoint {
   async run(event, step) {
     const { token, songId, files } = event.payload;
+
+    for (let round = 0; round < GIVE_UP_AFTER; round++) {
+      const turn = await step.do(
+        `is it this song's turn (${round})`,
+        { retries: { limit: 2, delay: "5 seconds" }, timeout: "1 minute" },
+        () => turnFor(this.env, token, songId)
+      );
+
+      /* CANCELLED. The row is gone, or somebody has already dealt with it, so
+         there is nothing to read and nowhere to put it. Stopping here is the
+         whole of cancelling, and it costs nothing because nothing was spent. */
+      if (turn === "gone") return "cancelled";
+      if (turn === "go") break;
+
+      await step.sleep(`waiting for a turn (${round})`, CHECK_EVERY);
+    }
 
     /* One step, because the read is one indivisible thing: half a song is not
        worth keeping and cannot be resumed from. `readAndSave` writes its own
@@ -43,5 +71,7 @@ export class ReadSong extends WorkflowEntrypoint {
         return songId;
       }
     );
+
+    return songId;
   }
 }

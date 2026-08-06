@@ -112,8 +112,33 @@ check(
   "מים    [F]"
 );
 
+/* A run past the end of a line is ordered by DISTANCE from the words, never by
+   the sequence it was reported in. A row of Latin symbols is read left to
+   right and a Hebrew line runs right to left, so a sequence comes out
+   backwards; "nearest the words" has no direction in it. */
+const TURNAROUND = [
+  { chord: "Am", word: 0, letter: "", letters_before: 0 },
+  { chord: "F", word: 0, letter: "", letters_before: 1 },
+  { chord: "G", word: 0, letter: "", letters_before: 2 },
+];
+const TURNAROUND_WANT = "נה נה נה...    [Am]    [F]    [G]";
+
 check(
-  "a run past the end keeps the order it was given",
+  "a run past the end goes out from the words",
+  chordProLine({ words: "נה נה נה...", chords: TURNAROUND }),
+  TURNAROUND_WANT
+);
+
+check(
+  "the same run reported backwards comes out the same way",
+  chordProLine({ words: "נה נה נה...", chords: TURNAROUND.slice().reverse() }),
+  TURNAROUND_WANT
+);
+
+/* All at distance 0, which is a model that did not answer the question. The
+   order it gave is all there is, so it is kept rather than shuffled. */
+check(
+  "with no distances given the reported order stands",
   chordProLine({
     words: "נה נה נה...",
     chords: [
@@ -122,7 +147,7 @@ check(
       { chord: "G", word: 0, letter: "", letters_before: 0 },
     ],
   }),
-  "נה נה נה...    [Am]    [F]    [G]"
+  TURNAROUND_WANT
 );
 
 check("a blank line stays blank", chordProLine({ words: "", chords: [] }), "");
