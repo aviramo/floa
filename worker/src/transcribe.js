@@ -617,8 +617,15 @@ async function measureSheet(env, files, beat) {
   const { boxes, cost } = await measure(env, files);
   if (!boxes.length) return null;
 
+  /* What the measuring made of the page, in the log. A wrong answer here is
+     silent by nature: a chord that failed to read as one is simply not there,
+     and the song looks like a song with fewer chords. Reading a page costs a
+     fifth of a cent, so the cheap way to fix this is to look at what it saw. */
+  const notes = [];
   const dir = directionOf(boxes);
-  const lines = songFrom(boxes, dir);
+  const lines = songFrom(boxes, dir, notes);
+  console.log(`measured ${boxes.length} boxes, ${dir}\n${notes.join("\n")}`);
+
   const body = tidy(lines.map((line) => writeLine(line.text, line.placed, line.trailing)).join("\n"));
 
   return { title: "", lyrics_by: "", music_by: "", dir, body, cost };
@@ -1043,6 +1050,90 @@ async function readSongs(env, token, query) {
   });
   if (!response.ok) return null;
   return response.json().catch(() => null);
+}
+
+/* --- have we read this one already ----------------------------------------
+
+   Asking the words half of the read whether the library already holds this
+   song, BEFORE the chords half is allowed to spend anything.
+
+   It costs nothing to ask, which is the whole reason it is possible. Splitting
+   the job in two was done to stop the cheap work being billed at the dear
+   work's rate; what it also bought, unplanned, is a moment between the two
+   halves where the song is known and nothing expensive has happened yet. The
+   words come back in seconds for a few cents, and they are enough to recognise
+   a song by.
+
+   COMPARED AS A BAG OF WORDS, not as text. Two reads of the same page are
+   never the same string: a repetition is counted differently, a niqqud mark
+   comes and goes, a line breaks in another place. What does not change is
+   which words are in it and how often, so that is what is compared, and it
+   survives every one of those without being told about any of them. */
+const TWIN = 0.9;
+
+/* Every word in a song and how often it occurs, with everything that is not a
+   word taken out: the chords, the niqqud, the punctuation, the braces round a
+   heading. Exported because the threshold above is only as meaningful as this
+   is, and a test is the only thing that keeps it honest. */
+export function bagOf(text) {
+  const bag = new Map();
+
+  String(text || "")
+    .replace(/\[[^\]]*\]/g, " ")            // chords
+    .replace(/[֑-ׇ]/g, "")        // niqqud and cantillation
+    .replace(/[^\p{L}\p{N}]+/gu, " ")       // everything that is not a word
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .forEach((word) => bag.set(word, (bag.get(word) || 0) + 1));
+
+  return bag;
+}
+
+/* How alike two bags are, from 0 to 1: twice what they share over what they
+   hold between them. A song against itself is 1, a song against another song
+   in the same language sits well under a half, and a song against a second
+   reading of its own page comes out in the high nineties. */
+export function likeness(mine, theirs) {
+  let here = 0;
+  let there = 0;
+  let shared = 0;
+
+  mine.forEach((count) => { here += count; });
+  theirs.forEach((count) => { there += count; });
+  if (!here || !there) return 0;
+
+  mine.forEach((count, word) => { shared += Math.min(count, theirs.get(word) || 0); });
+  return (2 * shared) / (here + there);
+}
+
+/* The column holds one document now and held a list of lines before it, and
+   a song from either era can be the one you already have. */
+function wordsOfRow(lines) {
+  if (typeof lines === "string") return lines;
+  if (Array.isArray(lines)) return lines.map((line) => String(line?.text ?? "")).join("\n");
+  return "";
+}
+
+/* The song in the library this one looks like, or nothing. Never itself: the
+   row being read is already there, waiting, with no words in it. */
+async function twinOf(env, token, songId, lyrics) {
+  const mine = bagOf(lyrics);
+  /* A handful of words is not enough to recognise anything by, and a wrong
+     answer here costs a whole read. */
+  if (mine.size < 8) return null;
+
+  const songs = await readSongs(env, token, "select=id,title,slug,lines&status=eq.ready");
+  if (!songs) return null;
+
+  let best = null;
+  songs.forEach((song) => {
+    if (song.id === songId) return;
+    const score = likeness(mine, bagOf(wordsOfRow(song.lines)));
+    if (score >= TWIN && (!best || score > best.score)) best = { title: song.title, slug: song.slug, score };
+  });
+
+  return best;
 }
 
 export async function turnFor(env, token, songId) {

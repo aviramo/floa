@@ -12,7 +12,7 @@
    ========================================================================== */
 
 import assert from "node:assert/strict";
-import { rowsOf, layout, directionOf, songFrom, isChord } from "../src/geometry.js";
+import { rowsOf, layout, directionOf, songFrom, isChord, nameOf } from "../src/geometry.js";
 import { writeLine } from "../src/transcribe.js";
 
 let passed = 0;
@@ -56,6 +56,15 @@ function chordBox(name, centre, y) {
 
 check("plain chords pass", ["A", "Am", "F#m7", "G/B", "Cmaj7", "Bdim", "Dsus4", "G7"].every(isChord), true);
 check("words do not", ["אילה", "the", "I", "H", "Amen", "Gk"].some(isChord), false);
+
+/* The tick the sheet prints under a chord, in both the shapes OCR sends it
+   back in: beside the symbol as punctuation, and on it as an accent. Neither
+   is part of the name, and a chord that keeps one is dropped in silence. */
+check("a tick beside it comes off", ["Am,", "G7.", "C'", "F ,"].map(nameOf), ["Am", "G7", "C", "F"]);
+check("a tick on it comes off too", ["Ç", "Ģ", "Ẹm"].map(nameOf), ["C", "G", "Em"]);
+check("and what is left still reads as a chord", ["Am,", "Ç", "G7."].every(isChord), true);
+check("what a chord is spelt with stays", ["Bb", "C#", "G/B", "F#m7"].map(nameOf), ["Bb", "C#", "G/B", "F#m7"]);
+check("the rule down the margin is not a chord", ["|", "...", "l"].some(isChord), false);
 
 /* --- rows ----------------------------------------------------------------- */
 

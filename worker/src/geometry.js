@@ -60,8 +60,37 @@ const CHORD_SHARE = 0.6;
    and a loose pattern would make "F" out of every stray letter on the page. */
 const CHORD = /^[A-G](#|b|♯|♭)?(m|maj|min|M|dim|aug|sus|add|°|\+)?[0-9]{0,2}(sus|add|maj|dim)?[0-9]{0,2}(\/[A-G](#|b|♯|♭)?)?$/;
 
+/* THE MARK COMES BACK STUCK TO THE CHORD, about half the time. A sheet prints
+   a tick under each symbol and an engine reading the page has no reason to
+   think it is not punctuation, so "Am" arrives as "Am," or "C'" or "G7." with
+   no warning and no pattern: whether the mark gets its own box depends on how
+   far from the symbol the printer set it.
+
+   Which is why this exists rather than trimming being done at the call site.
+   The mark is not part of the name and never was, so it comes off both ends
+   before anything looks at what is left. What may stay is only what a chord is
+   spelt with, which is how Bb keeps its b and C# keeps its sharp while a comma
+   or an apostrophe goes.
+
+   Getting this wrong is expensive and silent: a symbol that fails to read as a
+   chord is dropped without a word, and a page can lose two thirds of its
+   chords while looking like a page that simply had fewer. */
+export function nameOf(text) {
+  return String(text ?? "")
+    .trim()
+    /* And when the mark is set CLOSE under the letter it comes back as an
+       accent on it rather than as punctuation beside it: the C of a chord
+       sheet arrives as Ç, the G as Ģ, which is a perfectly reasonable thing to
+       read and not a chord anybody has ever played. Pulled apart into letter
+       and mark, and the mark dropped, which leaves what was printed. */
+    .normalize("NFD")
+    .replace(/\p{M}+/gu, "")
+    .replace(/^[^A-Za-z]+/, "")
+    .replace(/[^A-Za-z0-9#b♯♭+°/]+$/u, "");
+}
+
 export function isChord(text) {
-  const value = String(text ?? "").trim();
+  const value = nameOf(text);
   return value.length > 0 && value.length <= 16 && CHORD.test(value);
 }
 
@@ -99,8 +128,22 @@ function median(values) {
 export function rowsOf(boxes) {
   const rows = [];
 
-  boxes.slice()
-    .filter((box) => box && String(box.text ?? "").trim())
+  const kept = boxes.filter((box) => box && String(box.text ?? "").trim());
+
+  /* 5. WHAT IS NOT WRITING. A scan catches the rule down the margin, the edge
+        of the paper, the shadow of a staple, and hands each of them over as a
+        character: usually a | or an l, tall and thin and spanning several
+        lines at once. One of those is worse than a stray letter, because a box
+        that tall makes the row it lands in believe it is tall too, and a tall
+        row reaches down and swallows the one beneath it.
+
+        Anything far taller than the page's own letters is therefore not a
+        letter. Measured against the median rather than a number, so it holds
+        for a photograph at any size. */
+  const tall = median(kept.map((box) => box.h)) * 2.5;
+
+  kept
+    .filter((box) => !(tall > 0 && box.h > tall))
     .sort((a, b) => midY(a) - midY(b))
     .forEach((box) => {
       const row = rows[rows.length - 1];
@@ -259,8 +302,9 @@ export function directionOf(boxes) {
    Returns the lines of the song, each with its chords already carrying a
    CHARACTER POSITION, which is the same shape the rest of the reader works in
    and can be written out by the same writer. */
-export function songFrom(boxes, dir) {
+export function songFrom(boxes, dir, notes) {
   const rtl = dir !== "ltr";
+  const say = (line) => { if (notes) notes.push(line); };
 
   const rows = rowsOf(boxes).map((row) => {
     const laid = layout(row, rtl);
@@ -280,6 +324,9 @@ export function songFrom(boxes, dir) {
   const lyrics = rows.filter((row) => !row.isChords);
   const lines = lyrics.map((row) => ({ text: row.text, placed: [], trailing: [] }));
 
+  say(`${rows.length} rows, ${rows.length - lyrics.length} of chords`);
+  rows.forEach((row) => say(`  ${row.isChords ? "chords" : "words "} | ${row.text}`));
+
   rows.filter((row) => row.isChords).forEach((row) => {
     /* the words this row of chords is printed above: the nearest lyric row
        BELOW it, and only if it is near enough to be about it */
@@ -290,14 +337,17 @@ export function songFrom(boxes, dir) {
       if (drop <= 0 || drop > row.height * CHORD_REACH) return;
       if (drop < nearest) { nearest = drop; owner = index; }
     });
-    if (owner < 0) return;
+    if (owner < 0) return say(`  no words under: ${row.text}`);
 
     const line = lines[owner];
     const cells = lyrics[owner].cells;
 
     row.tokens.forEach((token) => {
-      const name = token.text;
-      if (!isChord(name)) return;
+      const name = nameOf(token.text);
+      /* Said out loud, because this is where a chord disappears without
+         anything looking wrong. A page that quietly loses two thirds of its
+         symbols reads exactly like a page that had fewer. */
+      if (!isChord(name)) return say(`  not a chord: ${JSON.stringify(token.text)}`);
 
       /* Middle against middle, which is the whole of it. The last character
          the chord can belong to is the last one printed; past that it is a
