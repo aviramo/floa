@@ -165,6 +165,27 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 }
 
 .list { list-style: none; margin: 0 0 64px; padding: 0; display: grid; gap: 10px; }
+/* A row is the card and, for whoever may delete it, a box to the side of the
+   card. Beside rather than inside, because the card is a link: a box within it
+   would open the song as often as it ticked. */
+.list li { display: flex; align-items: stretch; gap: 10px; }
+.list li > a, .list li > .row { flex: 1 1 auto; min-width: 0; }
+.list .pick { flex: none; display: flex; align-items: center; padding-inline-start: 2px; }
+.list .pick input {
+  width: 20px; height: 20px; margin: 0; cursor: pointer; accent-color: var(--accent);
+}
+/* what has been picked, said on the row itself and not only in the count */
+.list li.is-picked > a, .list li.is-picked > .row { border-color: var(--accent); }
+
+/* Everything picked, and the one thing worth doing to several songs at once.
+   Above the list rather than fixed to the bottom of the screen: it appears
+   where the ticking is happening, and it does not sit over the last row. */
+.picked-bar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin: 0 0 12px; padding: 10px 14px;
+  background: var(--card); border: 1px solid var(--accent); border-radius: var(--radius);
+}
+.picked-count { font-weight: 700; }
 .list a {
   display: flex; align-items: center; gap: 14px; text-decoration: none; color: inherit;
   background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);

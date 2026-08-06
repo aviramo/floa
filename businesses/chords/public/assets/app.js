@@ -1612,8 +1612,65 @@
       search.appendChild(input);
       app.appendChild(search);
 
+      /* --- several at once -----------------------------------------------------
+         Sometimes what you want to do is to a handful of songs rather than to
+         one: five readings of the same sheet, four mistakes from the same
+         afternoon. Deleting them one dialog at a time is the same work five
+         times over, and the row already knows which song it is.
+
+         Only for a signed in reader, because deleting is. A visitor gets the
+         library exactly as it was, without a column of boxes for something
+         they cannot do. */
+      var picked = {};
+
+      function pickedSongs() {
+        return state.songs.filter(function (s) { return picked[s.id]; });
+      }
+
+      var bar = el("div", "picked-bar");
+      var barCount = el("div", "picked-count");
+      var barActions = el("div", "row-actions");
+      barActions.appendChild(button("מחיקה", ICON.trash, "danger small", removePicked));
+      barActions.appendChild(button("ביטול הבחירה", null, "ghost small", function () {
+        picked = {};
+        paint(input.value);
+      }));
+      bar.appendChild(barCount);
+      bar.appendChild(barActions);
+      bar.hidden = true;
+      app.appendChild(bar);
+
       var list = el("ul", "list");
       app.appendChild(list);
+
+      /* Named, and not only counted. Deleting is the one thing here that cannot
+         be undone, so the question says which songs it is about rather than how
+         many, and the list is what is being agreed to. */
+      function removePicked() {
+        var going = pickedSongs();
+        if (!going.length) return;
+
+        var names = going.map(function (s) { return s.title; });
+        var head = going.length === 1
+          ? "למחוק את השיר הזה לצמיתות?"
+          : "למחוק " + going.length + " שירים לצמיתות?";
+        var said = names.slice(0, 12);
+        if (names.length > said.length) said.push("ועוד " + (names.length - said.length));
+        if (!window.confirm(head + "\n\n" + said.join("\n"))) return;
+
+        Promise.all(going.map(function (s) { return db.remove(s.id); }))
+          .then(function () {
+            picked = {};
+            toast(going.length === 1 ? "נמחק" : "נמחקו " + going.length + " שירים");
+            return refresh();
+          })
+          .catch(function (e) {
+            /* Some of them may well be gone: the list is read again either way,
+               so what is on screen is what is in the library. */
+            toast("המחיקה נכשלה: " + e.message, true);
+            return refresh();
+          });
+      }
 
       /* the empty list carries the way out of itself */
       var empty = el("div", "center");
@@ -1651,8 +1708,31 @@
         return marks;
       }
 
+      /* Counted over the library and not over what the search left, so narrowing
+         the list does not quietly unpick what is no longer on screen. */
+      function showBar() {
+        var n = pickedSongs().length;
+        bar.hidden = !n;
+        barCount.textContent = n === 1 ? "שיר אחד נבחר" : "נבחרו " + n + " שירים";
+      }
+
+      /* A tick changes one row and the bar, and nothing else on the page is
+         redrawn: repainting the list under a finger that is still ticking
+         boxes takes the focus off the box it just ticked. */
+      function tickBox(s) {
+        if (!auth.in) return null;
+        return {
+          on: !!picked[s.id],
+          set: function (yes) {
+            if (yes) picked[s.id] = true; else delete picked[s.id];
+            showBar();
+          },
+        };
+      }
+
       function paint(filter) {
         list.innerHTML = "";
+        showBar();
         var marks = marksFor(state.songs);
         var q = String(filter || "").trim().toLowerCase();
         var shown = state.songs.filter(function (s) {
@@ -1669,7 +1749,7 @@
         }
         if (empty.parentNode) empty.remove();
 
-        shown.forEach(function (s) { list.appendChild(songRow(s, refresh, marks[s.id])); });
+        shown.forEach(function (s) { list.appendChild(songRow(s, refresh, marks[s.id], tickBox(s))); });
         tick(list);
       }
 
@@ -1755,8 +1835,27 @@
       " בשעה " + hourWords(t);
   }
 
-  function songRow(s, refresh, mark) {
+  function songRow(s, refresh, mark, pick) {
     var li = el("li");
+
+    /* Outside the card rather than inside it, because the card is a link and a
+       box inside a link is a box that opens the song half the time. Given to
+       every shape of row: a song that failed to be read is one of the ones you
+       are most likely to be clearing out several of. */
+    if (pick) {
+      var holder = el("label", "pick");
+      var tickBox = el("input");
+      tickBox.type = "checkbox";
+      tickBox.checked = pick.on;
+      tickBox.setAttribute("aria-label", "לבחור את " + s.title);
+      li.classList.toggle("is-picked", pick.on);
+      tickBox.addEventListener("change", function () {
+        li.classList.toggle("is-picked", tickBox.checked);
+        pick.set(tickBox.checked);
+      });
+      holder.appendChild(tickBox);
+      li.appendChild(holder);
+    }
 
     /* The name, and where a name is not the only one of itself, the number
        that says which of them this is. Every shape of row uses it, because a
