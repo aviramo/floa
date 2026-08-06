@@ -4800,13 +4800,29 @@
         sheetOn.style.setProperty("--song-size", px + "px");
       }
 
-      /* Nothing sticking out, sideways or downwards. A line is never broken
-         here (white-space: pre), so a song too wide for its column overflows
-         rather than wrapping, and the width half of this is what stops the
-         search from choosing a size that reads off the edge. */
-      function fits() {
-        return sheetOn.scrollWidth <= sheetOn.clientWidth + 1 &&
-          sheetOn.scrollHeight <= sheetOn.clientHeight + 1;
+      /* THE WIDEST LINE, ASKED OF THE LINE. A line is never broken here
+         (white-space: pre), so one too wide for its column does not wrap, it
+         runs out of the column and over whatever is beside it. And a multicol
+         container does not report that as overflow of its own: the column
+         boxes are the width they are, so asking the sheet whether anything is
+         sticking out of it answers no while two columns of words are printing
+         on top of each other.
+
+         So the width question is asked of the lines themselves, against the
+         width of ONE COLUMN, and the height question of the sheet. */
+      function widestLine() {
+        var wide = 0;
+        Array.prototype.forEach.call(sheetOn.querySelectorAll(".ln-t"), function (t) {
+          if (t.scrollWidth > wide) wide = t.scrollWidth;
+        });
+        return wide;
+      }
+
+      function fits(two) {
+        if (sheetOn.scrollHeight > sheetOn.clientHeight + 1) return false;
+        var gap = parseFloat(getComputedStyle(sheetOn).columnGap) || 0;
+        var column = two ? (sheetOn.clientWidth - gap) / 2 : sheetOn.clientWidth;
+        return widestLine() <= column + 1;
       }
 
       function biggestThatFits(two) {
@@ -4814,7 +4830,7 @@
         while (low <= high) {
           var mid = Math.floor((low + high) / 2);
           show(mid, two);
-          if (fits()) { best = mid; low = mid + 1; } else { high = mid - 1; }
+          if (fits(two)) { best = mid; low = mid + 1; } else { high = mid - 1; }
         }
         return best;
       }
@@ -4835,7 +4851,7 @@
       function nudge(by) {
         var next = Math.max(SIZE_MIN, Math.min(STAGE_MAX, size + by));
         show(next, false);
-        if (!fits()) show(next, true);
+        if (!fits(false)) show(next, true);
         place();
       }
 
