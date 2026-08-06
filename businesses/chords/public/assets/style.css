@@ -21,6 +21,21 @@
   --chord: #e11d63;
   --chord-soft: #fde7ef;
 
+  /* --- the four states a song can be in ------------------------------------
+     A colour belongs to a STATE, not to a place: the same green means
+     published on a row of the library, on the tally counting them and on the
+     button inside the song that puts it there. Four colours learned once and
+     read everywhere, which is the whole reason they are named here and not
+     written into each of the three places.
+
+     Warm for the two that are waiting on somebody, cool for the two that are
+     not: amber asks to be checked, brown says unfinished, slate is finished
+     and private, green is out in the world. */
+  --review-ink: #8a5a12;    --review-soft: #f6e6ca;
+  --draft-ink: #5b4636;     --draft-soft: #f1ece4;
+  --kept-ink: #4a5b68;      --kept-soft: #e9eef3;
+  --published-ink: #0d5c4a; --published-soft: #dcf1e9;
+
   --danger: #c0392b;
   --radius: 14px;
   --shadow: 0 1px 2px rgba(23, 32, 42, .05), 0 8px 24px rgba(23, 32, 42, .06);
@@ -164,24 +179,37 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   width: 18px; height: 18px; color: var(--ink-soft); pointer-events: none;
 }
 
-/* How much of the library is waiting for something, in three numbers. Quiet
-   and small: they are the state of the shelf, not the shelf. Pressable,
-   because a number worth showing is a number somebody wants the list of. */
-.tallies { display: flex; flex-wrap: wrap; gap: 8px; margin: -6px 0 16px; }
+/* How much of the library is waiting for something, in four numbers. Quiet and
+   small: they are the state of the shelf, not the shelf. Pressable, because a
+   number worth showing is a number somebody wants the list of.
+
+   AT THE FAR END, over the column of labels they are counting. A number and
+   the rows it counts want to be in the same place, or the eye has to travel
+   the width of the page to connect them. */
+.tallies {
+  display: flex; flex-wrap: wrap; gap: 8px; margin: -6px 0 16px;
+  justify-content: flex-end;
+}
 .tally {
   display: inline-flex; align-items: baseline; gap: 6px;
   appearance: none; cursor: pointer; font: inherit; font-size: 13px;
-  color: var(--ink-soft); background: var(--card);
+  background: var(--card);
   border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px;
 }
-.tally:hover { border-color: var(--ink-soft); color: var(--ink); }
 .tally-n { font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; }
-/* the one the list is narrowed to, in that label's own colour */
-.tally.is-on { color: var(--ink); border-color: currentColor; }
-.tally-review.is-on { color: #8a5a12; background: #fdf6ec; }
-.tally-draft.is-on { color: #5b4636; background: #f5f1eb; }
-.tally-kept.is-on { color: var(--ink); background: var(--card); }
-.tally-published.is-on { color: #0d5c4a; background: #f2faf7; }
+/* Each in its own state's colour, always, and not only when it is the one
+   being looked at: it is the same colour that state wears on every row below
+   and on the button inside the song. Pressed, it fills with it. */
+.tally-review { color: var(--review-ink); }
+.tally-draft { color: var(--draft-ink); }
+.tally-kept { color: var(--kept-ink); }
+.tally-published { color: var(--published-ink); }
+.tally:hover { border-color: currentColor; }
+.tally.is-on { border-color: currentColor; }
+.tally-review.is-on { background: var(--review-soft); }
+.tally-draft.is-on { background: var(--draft-soft); }
+.tally-kept.is-on { background: var(--kept-soft); }
+.tally-published.is-on { background: var(--published-soft); }
 
 .list { list-style: none; margin: 0 0 64px; padding: 0; display: grid; gap: 10px; }
 /* A row is the card and, for whoever may delete it, a box to the side of the
@@ -252,14 +280,18 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   background: #eef2f3; border-radius: 999px; padding: 2px 9px; white-space: nowrap;
 }
 
-/* When the song last changed, which is what the list is ordered by. At the far
-   end of the row and quiet: it explains where the row is sitting, it is not
-   what the row is about. Never wraps, so a long name pushes it along the row
-   rather than breaking it in half. */
-.list .when {
-  margin-inline-start: auto; align-self: center; white-space: nowrap;
-  color: var(--ink-soft); font-size: 13px;
+/* The far end of a row: what state the song is in, and when it last changed.
+   Both are ABOUT the song rather than in it, and neither is what the row is
+   for, so they stand together where the eye goes only when it is asking.
+
+   The state over the date, in a column of its own, so a page of rows has one
+   column of labels to run down and one of dates under them. */
+.list .side {
+  margin-inline-start: auto; align-self: center;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 3px;
 }
+.list .side-tags { display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-end; }
+.list .when { white-space: nowrap; color: var(--ink-soft); font-size: 13px; }
 
 /* a song that is not openable yet: being read, or failed. Same box as a link,
    without the link, so the list keeps its rhythm while one row is busy. */
@@ -408,27 +440,18 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 }
 .review-said { color: var(--ink-soft); }
 .review-band .btn { margin-inline-start: auto; }
-.review-tag, .tag-review, .tag-draft, .tag-kept, .tag-published {
+/* One shape for all four, and the state decides the colour. Same colour on the
+   tally counting them and on the button inside the song that sets them, which
+   is why the four pairs are named once at the top of this file. */
+.tag, .review-tag {
   font-size: 12px; font-weight: 700; line-height: 1.6;
-  color: #8a5a12; background: #f6e6ca;
   border-radius: 999px; padding: 1px 10px; white-space: nowrap;
 }
-/* Quieter than the review one, and a different colour, because the two are
-   different claims and a song can carry both at once. "Nobody has checked
-   this" is the machine's and wants an eye on it; "I am not done" is the
-   author's, who already knows. */
-.tag-draft { color: #5b4636; background: #f1ece4; }
-/* The quietest of the three, and it is on most of the rows: it is the one that
-   is not asking for anything. Outlined rather than filled, so a shelf of
-   finished songs does not read as a shelf of labels. */
-.tag-kept {
-  color: var(--ink-soft); background: none;
-  box-shadow: inset 0 0 0 1px var(--line); font-weight: 600;
-}
-/* Out in the world, and the only one of the four that is not a note to
-   yourself: it says who can open the song. In the accent, because it is the
-   one worth seeing from across the list. */
-.tag-published { color: #0d5c4a; background: #dcf1e9; }
+.review-tag,
+.tag-review { color: var(--review-ink); background: var(--review-soft); }
+.tag-draft { color: var(--draft-ink); background: var(--draft-soft); }
+.tag-kept { color: var(--kept-ink); background: var(--kept-soft); }
+.tag-published { color: var(--published-ink); background: var(--published-soft); }
 
 /* Who wrote it and which way it runs, on the song itself: there is no other
    page to keep them on any more. Three things about one song, so one line, and
@@ -497,10 +520,10 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 }
 .draft-btn:hover { color: var(--ink); border-color: var(--ink-soft); }
 .draft-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.draft-btn.is-on { color: #5b4636; background: #f1ece4; border-color: #ded3c4; }
-/* the same button in the other of the two states a song can be put in, and
-   pressed it looks like the label it puts on the row */
-.pub-btn.is-on { color: #0d5c4a; background: #dcf1e9; border-color: #b6ddd0; }
+/* Pressed, each looks like the label it puts on the row, in that state's own
+   colour: the button, the tag and the tally are three drawings of one fact. */
+.draft-btn.is-on { color: var(--draft-ink); background: var(--draft-soft); border-color: currentColor; }
+.pub-btn.is-on { color: var(--published-ink); background: var(--published-soft); border-color: currentColor; }
 
 .head-tags { margin-top: 6px; }
 

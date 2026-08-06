@@ -2149,6 +2149,17 @@
       " בשעה " + hourWords(t);
   }
 
+  /* One label, in that state's own colour. The colour belongs to the STATE and
+     not to the place it is drawn: the same green means published on a row of
+     the library, on the tally over it and on the button inside the song, so
+     the four states are learned once and read everywhere. The colours
+     themselves are in the stylesheet, under one name each. */
+  function tag(state, words, why) {
+    var node = el("span", "tag tag-" + state, words);
+    node.title = why;
+    return node;
+  }
+
   function songRow(s, refresh, mark, pick) {
     var li = el("li");
 
@@ -2201,37 +2212,6 @@
       if (by.length) {
         top.appendChild(el("div", "by", by.map(function (c) { return c.name; }).join(", ")));
       }
-      /* What is known about the song rather than what is in it. On the row and
-         not only inside the song, because the whole point of a label is to be
-         seen without opening anything.
-
-         Two of them, and a song can carry both: one is the machine's, "nobody
-         has checked this reading", and the other is the author's, "I am not
-         done with this". */
-      if (s.draft) {
-        var mine = el("span", "tag-draft", "טיוטה");
-        mine.title = "השיר עוד לא גמור";
-        top.appendChild(mine);
-      }
-      if (s.published) {
-        var out = el("span", "tag-published", "פורסם");
-        out.title = "השיר פתוח לכולם";
-        top.appendChild(out);
-      }
-      if (s.review) {
-        var flag = el("span", "tag-review", "לסקירה");
-        flag.title = "השיר נקרא מתוך קובץ ועדיין לא נבדק";
-        top.appendChild(flag);
-      }
-      /* And when it is none of them, it says that too. The numbers over the
-         list count these states, so every row carries the one it is counted
-         in: a row with nothing on it would leave "שמור" as the label you have
-         to work out from the absence of the others. */
-      if (!s.review && !s.draft && !s.published) {
-        var done = el("span", "tag-kept", "שמור");
-        done.title = "השיר גמור ונבדק, ופרטי";
-        top.appendChild(done);
-      }
       box.appendChild(top);
 
       /* Under the name goes what you actually want to know before opening a
@@ -2267,17 +2247,42 @@
 
       a.appendChild(box);
 
-      /* At the far end, quiet: it is the reason this row is where it is, and
-         it is not what the row is for. `created_at` behind it, because a song
-         that has never been changed since it was written was last changed when
-         it was written. */
+      /* --- the far column: what state it is in, and when it last changed ------
+         Both of them are ABOUT the song rather than in it, and neither is what
+         the row is for, so they stand together at the far end where the eye
+         goes only when it is asking. Beside the name they were competing with
+         it: a label is short, loud and never the thing you are looking for
+         when you are looking for a song.
+
+         The state on top and the date under it, because the state is the one
+         you scan a column of. */
+      var side = el("div", "side");
+
+      var tags = el("div", "side-tags");
+      /* A song can carry two: one is the machine's, "nobody has checked this
+         reading", and the other the author's, "I am not done with this". */
+      if (s.draft) tags.appendChild(tag("draft", "טיוטה", "השיר עוד לא גמור"));
+      if (s.published) tags.appendChild(tag("published", "פורסם", "השיר פתוח לכולם"));
+      if (s.review) tags.appendChild(tag("review", "לסקירה", "השיר נקרא מתוך קובץ ועדיין לא נבדק"));
+      /* And when it is none of them it says that too. The numbers over the
+         list count these states, so every row carries the one it is counted
+         in: a row with nothing on it would leave "שמור" as the label you have
+         to work out from the absence of the others. */
+      if (!s.review && !s.draft && !s.published) {
+        tags.appendChild(tag("kept", "שמור", "השיר גמור ונבדק, ופרטי"));
+      }
+      side.appendChild(tags);
+
+      /* `created_at` behind it, because a song that has never been changed
+         since it was written was last changed when it was written. */
       var stamp = whenWords(s.updated_at || s.created_at);
       if (stamp) {
         var when = el("div", "when", stamp);
         when.title = whenExactly(s.updated_at || s.created_at);
-        a.appendChild(when);
+        side.appendChild(when);
       }
 
+      a.appendChild(side);
       li.appendChild(a);
       return li;
     }
@@ -2568,8 +2573,8 @@
          not finished. */
       if (song.draft || song.published) {
         var flagRow = el("div", "head-tags");
-        if (song.draft) flagRow.appendChild(el("span", "tag-draft", "טיוטה"));
-        if (song.published) flagRow.appendChild(el("span", "tag-published", "פורסם"));
+        if (song.draft) flagRow.appendChild(tag("draft", "טיוטה", "השיר עוד לא גמור"));
+        if (song.published) flagRow.appendChild(tag("published", "פורסם", "השיר פתוח לכולם"));
         head.appendChild(flagRow);
       }
     }
