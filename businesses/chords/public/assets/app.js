@@ -2393,7 +2393,16 @@
         }
       }
 
-      var joined = !!(row && row.used + sepW + line.advance[0] <= row.room);
+      /* ONLY ONTO A ROW THAT A BREAK CREATED. The room worth reclaiming is the
+         room a break left behind: a leftover of one word sitting alone on a
+         row of its own. A row that simply ended with space to spare is a line
+         of the song that fits, and the next line belongs under it, where the
+         person who wrote the song put it. Packing onto those as well rewrites
+         the shape of the whole song to save nothing.
+
+         `tail` is true only of a row opened to carry the rest of a line that
+         did not fit, which is exactly that leftover. */
+      var joined = !!(row && row.tail && row.used + sepW + line.advance[0] <= row.room);
 
       while (pos < line.cells) {
         if (joined) {

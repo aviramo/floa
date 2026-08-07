@@ -1239,14 +1239,19 @@ button.song-facts:hover .song-facts-ask { color: var(--accent); }
    picture, and one of the two is a fact about the song while the other is a
    fact about the screen. So the pour's own pair is marked.
 
-   A stroke rather than a symbol, and in the quiet grey rather than in the
-   chords' pink: it is punctuation about the layout, and the one thing it must
-   not do is read as something to sing. */
+   A leaning stroke, in the chords' own red. Nothing else on the sheet leans,
+   so it cannot be mistaken for a letter or for anything to sing, and the red
+   is the one colour here that already means "this is not a word". */
 .ln-t .gap.is-turn::before {
   content: ""; position: absolute;
-  top: -.72em; height: 1.15em;
+  top: -.68em; height: 1.05em;
   inset-inline-start: calc(var(--gap-w) * .8);
-  border-inline-start: 2px solid var(--line);
+  border-inline-start: 2px solid var(--chord);
+  /* LEANING, WHICH IS THE WHOLE OF WHAT IT SAYS. An upright stroke between
+     two words is a bar line, and a bar line is about the music; a stroke lying
+     over says the thing a solidus has always said, that what is on one side
+     of it and what is on the other were not written on one line. */
+  transform: rotate(20deg);
 }
 
 .ln-t .gap { user-select: none; -webkit-user-select: none; }
