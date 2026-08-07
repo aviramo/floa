@@ -1068,8 +1068,11 @@ button.val:hover { border-color: var(--line); background: #fff; }
    the window: every gutter the same, and each end margin half of one. */
 .page {
   /* stretch, so the rule between two segments runs the height of the page
-     rather than the height of whichever of them holds more song */
-  display: flex; align-items: stretch; justify-content: center;
+     rather than the height of whichever of them holds more song. As wide as
+     its slots and centred in the window, so what is left over at the two ends
+     is outside the page and nothing gets drawn on it. */
+  display: flex; align-items: stretch;
+  margin-inline: auto;
   /* Air at both ends, so the song never touches the rule under it and never
      runs into the edge of the window. The height below is the whole page
      INCLUDING this, and what is dealt into it is measured against what is
@@ -1097,6 +1100,10 @@ button.val:hover { border-color: var(--line); background: #fff; }
   margin-block: calc(var(--page-air, 0px) * -1);
   padding-block: var(--page-air, 0px);
 }
+/* A slot a short last page never reached. It holds the width open so the
+   pages above keep their shape, and nothing is drawn on it: there is no
+   segment there, so there is no paper and no edge to rule. */
+.col.is-empty { background: none; }
 
 /* BETWEEN ONE SEGMENT AND THE NEXT, down the whole page. A gutter says where
    a segment ends by being empty, and empty is also what the end of a verse
@@ -1113,9 +1120,9 @@ button.val:hover { border-color: var(--line); background: #fff; }
    segment that carries on past the edge of the window. Closed, the page is a
    row of boxes and each one is plainly the whole of itself.
 
-   Each segment draws the rule at its own leading edge, half a gutter out, so
-   the one between two of them belongs to the second and sits exactly in the
-   middle of the space; the last segment draws the far one as well. */
+   A segment draws BOTH its own edges, which is its own box and needs no
+   arithmetic about gutters: two segments side by side put a rule at the same
+   place twice, and the same place twice is one line. */
 /* THROUGH THE PAGE'S AIR AND OUT TO ITS EDGES. A segment stands inside that
    air, so a rule the height of the segment stops short at both ends of every
    page and the line comes apart at each boundary: what should read as one
@@ -1124,12 +1131,12 @@ button.val:hover { border-color: var(--line); background: #fff; }
 /* Top to bottom of the page, which is now top to bottom of the segment: the
    rules of one page meet the rules of the next, and the line down the window
    is one line rather than a row of dashes. */
-.col::before, .col:last-child::after {
+.col:not(.is-empty)::before, .col:not(.is-empty)::after {
   content: ""; position: absolute; top: 0; bottom: 0;
   width: 1px; background: var(--line);
 }
-.col::before { inset-inline-start: calc(var(--gutter, 0px) / -2); }
-.col:last-child::after { inset-inline-end: calc(var(--gutter, 0px) / -2); }
+.col:not(.is-empty)::before { inset-inline-start: 0; }
+.col:not(.is-empty)::after { inset-inline-end: 0; }
 
 /* WHERE ONE SCREENFUL ENDS AND THE NEXT BEGINS. Without it the song appears
    to carry straight on down the segment it is in, and the eye goes back to the
@@ -1657,7 +1664,7 @@ button.val:hover { border-color: var(--line); background: #fff; }
      come apart and the song runs down the sheet as one. */
   .sheet { min-height: 0 !important; }
   .page { display: block !important; height: auto !important; overflow: visible !important; border: 0 !important; }
-  .col::before, .col:last-child::after { display: none !important; }
+  .col::before, .col::after { display: none !important; }
   .col { width: auto !important; }
   .wrap { width: 100%; }
 }

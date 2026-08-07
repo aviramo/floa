@@ -2099,18 +2099,31 @@
     var used = 0;
     var inPage = 0;
 
+    /* A SEGMENT CARRIES HALF A GUTTER ON EACH SIDE RATHER THAN STANDING IN
+       ONE. It comes to the same distance between two of them, and it makes
+       the difference to everything drawn on a segment: the paper reaches the
+       rules instead of stopping half a gutter short of them, and the rule
+       itself is the segment's own edge rather than a line hanging in the
+       space beside it. */
+    var slot = plan.colW + plan.gutter;
+
     function nextCol() {
       if (!page || inPage >= plan.cols) {
         page = el("div", "page");
         page.style.height = Math.round(plan.pageH) + "px";
-        page.style.gap = Math.round(plan.gutter) + "px";
-        /* the rule between two segments is drawn in the middle of this */
-        page.style.setProperty("--gutter", Math.round(plan.gutter) + "px");
+        /* EVERY PAGE IS THE SAME WIDTH AND HOLDS THE SAME NUMBER OF SLOTS,
+           filled or not. Centring each page's own segments instead put the
+           last page's, which are fewer, at a different place from every page
+           above it, so the rules stopped lining up down the window. And the
+           page being exactly as wide as its slots is what keeps the rule
+           between two pages from running out over the grey at both ends. */
+        page.style.width = Math.round(plan.cols * slot) + "px";
         built.appendChild(page);
         inPage = 0;
       }
       col = el("div", "col");
-      col.style.width = Math.round(plan.colW) + "px";
+      col.style.width = Math.round(slot) + "px";
+      col.style.paddingInline = Math.round(plan.gutter / 2) + "px";
       page.appendChild(col);
       inPage++;
       used = 0;
@@ -2125,6 +2138,18 @@
         col.appendChild(ln);
         used += heights[i];
       });
+      /* The slots a short last page never reached. They hold the width open so
+         the pages above keep their shape, and they are marked as empty so that
+         nothing is drawn on them: no paper and no rules, because there is no
+         segment there. */
+      Array.prototype.forEach.call(built.childNodes, function (pg) {
+        while (pg.children.length < plan.cols) {
+          var spare = el("div", "col is-empty");
+          spare.style.width = Math.round(slot) + "px";
+          pg.appendChild(spare);
+        }
+      });
+
       sheet.textContent = "";
       sheet.appendChild(built);
     } catch (e) {
