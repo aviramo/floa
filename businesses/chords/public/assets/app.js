@@ -4688,23 +4688,13 @@
         });
       }
 
-      /* What the head still carries: what this person did across the library
-         as a whole. The tag on each card below says what they did on THAT
-         song, which is not the same fact, since somebody can have written the
-         words of one and the tune of another. */
+      /* The head is for paper only. On screen the name is in the bar and the
+         rest of the head said things the list under it already says: what this
+         person did is the tag on each card, and how many songs there are is
+         how many cards there are. In print the bar is gone, so the page still
+         needs its name (see .on-paper). */
       var head = el("div", "song-head");
-      var top = el("div", "head-top");
-      top.appendChild(el("h1", "on-paper", name));
-      var tags = el("div", "head-tags");
-      var roles = {};
-      mine.forEach(function (song) {
-        var did = rolesOn(song, name);
-        Object.keys(did).forEach(function (field) { roles[field] = true; });
-      });
-      roleTags(roles).forEach(function (t) { tags.appendChild(tag(t.kind, t.words)); });
-      top.appendChild(tags);
-      head.appendChild(top);
-      head.appendChild(el("div", "by", mine.length === 1 ? "שיר אחד" : mine.length + " שירים"));
+      head.appendChild(el("h1", "on-paper", name));
       app.appendChild(head);
 
       var list = el("ul", "list");

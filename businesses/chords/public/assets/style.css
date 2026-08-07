@@ -1089,9 +1089,6 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 .draft-btn.is-on { color: var(--draft-ink); background: var(--draft-soft); border-color: currentColor; }
 .pub-btn.is-on { color: var(--published-ink); background: var(--published-soft); border-color: currentColor; }
 
-/* at the far end of the title's line, and never wrapped mid-label */
-.head-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-inline-start: auto; }
-
 /* Two gaps, and the difference between them is what says where one control ends
    and the next begins: the parts of a control sit close enough to read as one
    thing, and the room is spent between the controls instead. */
