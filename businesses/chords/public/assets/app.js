@@ -4918,11 +4918,12 @@
        So it is one row. The facts of the song at the start of it, the three
        controls at the end, and the song directly underneath.
 
-       THE FIELDS ARE NOT ON IT. They are under it and closed, and pressing the
-       facts opens them: a form is what you want for the ten seconds you are
-       filling it in and never again, so it costs its height for those ten
-       seconds and nothing for the rest. What stands in its place is the same
-       information as a sentence, which is what anybody wants of it after. */
+       THE FIELDS ARE NOT ON IT AND NOT ON THE PAGE. Pressing the facts opens
+       them in a panel over it: a form is what you want for the ten seconds you
+       are filling it in and never again, so it costs nothing at all for the
+       rest of the song's life and moves nothing while it is open. What stands
+       in its place is the same information as a sentence, which is what
+       anybody wants of it after. */
     var strip = el("div", "song-strip");
     var facts = null;
     var meta = null;
@@ -5044,8 +5045,9 @@
          it on the page is what lets the two lists of suggestions fill
          themselves in the background before anybody asks for them.
 
-         Escape shuts it and so does the dark behind it, both without a line of
-         code: that is what a dialog is. */
+         Escape shuts it, which is a dialog's own doing, and so does the dark
+         behind it: the panel has no unsaved anything in it, so every way of
+         saying "done here" is allowed to be one. */
       metaPanel = el("dialog", "dlg");
       var metaBox = el("div", "dlg-in");
       metaBox.appendChild(el("h2", null, "מי כתב, ואיזה סוג"));
@@ -5054,6 +5056,11 @@
       metaDone.appendChild(button("סיום", null, "ghost", function () { metaPanel.close(); }));
       metaBox.appendChild(metaDone);
       metaPanel.appendChild(metaBox);
+      /* The dark behind it. A press lands on the dialog itself only where the
+         panel is not, which is exactly there. */
+      metaPanel.addEventListener("click", function (event) {
+        if (event.target === metaPanel) metaPanel.close();
+      });
       /* A style left half typed in the field is a style somebody meant: the
          way out of the panel counts as having finished saying it, the same as
          walking out of the field does. */

@@ -1432,15 +1432,6 @@ button.song-facts:hover .song-facts-ask { color: var(--accent); }
    font draws for a codepoint it has never heard of. The WIDTH is the span's,
    given in the song's own size rather than in em: an em of a font-size of zero
    is zero. */
-/* WHERE ONE LINE OF THE SONG ENDS AND THE NEXT BEGINS ON THE SAME ROW. The
-   pour puts a solidus there with room either side of it (see flowSheet), and
-   the solidus is a CHARACTER of the row like any other: it stands on the
-   words' baseline and takes their size, so there is nothing here to position
-   and nothing that can be positioned wrong.
-
-   The chords' red, which is the one colour on this sheet that already means
-   "this is not a word". */
-.ln-t .is-turn { color: var(--chord); }
 
 .ln-t .gap {
   display: inline-block; vertical-align: baseline; position: relative;
@@ -1484,40 +1475,38 @@ button.song-facts:hover .song-facts-ask { color: var(--accent); }
    themselves, so a line of gaps is never mistaken for a line of chords. The
    reader's page and the printed one have nothing at all. The model has a gap
    there, not a hyphen. */
-/* DRAWN WHEREVER THE GAPS ARE, and it used to be drawn only in the editor.
-   That was right while an artificial space was only ever something somebody
-   had opened: whoever opened it is whoever is looking at it, and a reader had
-   no use for the fact. It is not only that any more, so the arc is on in both
-   places, and what it says is the same in both: this space is room, not a
-   word that is missing. */
-.ln-t .gap-run::after {
-  content: "";
-  /* OUT OF THE FLOW, so the mark cannot make the line taller or push it up.
-     It was a background on the span, and a span with a background needs a
-     height to paint it in, and that height was a line's worth of room under
-     every word that had a gap in it.
+/* --- WHERE ONE LINE ENDS AND THE NEXT BEGINS ON THE SAME ROW --------------
+   The pour puts a run of artificial spaces between them and paints a diagonal
+   on the middle one (see flowSheet). Drawn exactly the way the arc under a
+   run is drawn, and for the same reasons:
 
-     Placed a little above the baseline, where the middle of a letter is, so it
-     reads as being on the line rather than under it. */
+   OUT OF THE FLOW, so the mark cannot make the line taller or push it up. A
+   span with a background needs a height to paint it in, and that height would
+   be a line's worth of room under every row that had a break in it.
+
+   AND NOT A CHARACTER. A solidus in the text is one more character in a row
+   of characters, which is the one thing this must not look like: the rest of
+   the row is the song and this is a fact about the screen. Drawn, it can be
+   the colour of the chords without being read as one.
+
+   It leans the way the line runs, or it leans back into the words it is
+   separating and reads as the wrong kind of mark. */
+.ln-t .gap.is-turn::after {
+  content: "";
   position: absolute;
   inset-inline-start: 0;
-  width: calc(var(--gap-w) * var(--run, 1));
-  bottom: calc(var(--song-size) * .12);
-  /* the height IS the depth of the dip: the vertical radius is the whole of
-     it, so the curve uses every pixel given here and no more */
-  height: calc(var(--song-size) * .15);
-  /* THICK ENOUGH TO BE A STROKE. A hairline curve loses to the antialiasing
-     along its shallow middle, which is exactly the part that says «arc»: it
-     comes out as a grey smudge with two crisp ends. At two pixels the middle
-     is drawn rather than approximated, and the whole thing reads as one line
-     someone meant to put there. */
-  /* the token and not a copy of it: one red on this page, and a gap that
-     drifts off it the day the red is tuned is a gap nobody will think to look
-     at. Faded with opacity, which is the whole of what is drawn here. */
-  border-bottom: 2px solid var(--chord);
-  opacity: .55;
-  border-radius: 0 0 50% 50% / 0 0 100% 100%;
+  width: var(--gap-w);
+  /* a little above the baseline, where the middle of a letter is, so it reads
+     as standing on the line rather than hanging under it */
+  bottom: calc(var(--song-size) * .08);
+  height: calc(var(--song-size) * .58);
+  /* thick enough to be a stroke rather than a hairline the antialiasing eats */
+  border-inline-start: 2px solid var(--chord);
+  transform: rotate(20deg);
+  transform-origin: bottom;
 }
+.ln[dir="ltr"] .ln-t .gap.is-turn::after { transform: rotate(-20deg); }
+
 
 /* The button that opens one, and under it the one that says what it is. Under
    the letters, in the air between two lines, because they are the answer to a
