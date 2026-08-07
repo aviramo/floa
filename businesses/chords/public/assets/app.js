@@ -2415,10 +2415,12 @@
        a row of characters, which is the one thing this must not look like: it
        is a fact about the screen and the rest of the row is the song.
 
-       A background on the span cannot be put in the wrong place. It is the
-       span. */
+       AND IT NEEDS NO CLASS OF ITS OWN. The stylesheet already knows what a
+       run of artificial spaces is, because fillSpans marks the first of every
+       run and tells it how many there are; the mark is drawn from that. Every
+       version of this that added a class here was a version that could fail
+       to arrive, and did. */
     var sep = new Array(SEP_GAPS + 1).join(GAP);
-    var MARK_AT = Math.floor(SEP_GAPS / 2);
 
     lines.forEach(function (line) {
       /* A heading, or a blank line between two verses, is a thing of its own
@@ -2584,9 +2586,6 @@
       ln.dir = desc.rtl ? "rtl" : "ltr";
       var lane = el("div", "ln-c");
       var text = "";
-      /* where the solidus of each separator fell, so it can be told from the
-         letters once the characters are spans */
-      var turns = [];
       /* One piece, always: a row holds one line of the song. Written as a loop
          because the pieces are what the chords are claimed against, and one of
          them is still a list of one. */
@@ -2594,12 +2593,7 @@
         /* The double gap that says a new line of the song begins here, laid
            down BEFORE the offset is taken, so the chords of the piece after it
            are counted from the piece and not from the separator. */
-        if (piece.lead) {
-          /* the middle gap of the run, which is the one the diagonal is
-             painted on: the others either side of it are room */
-          turns.push(text.length + MARK_AT);
-          text += piece.lead;
-        }
+        if (piece.lead) text += piece.lead;
         var offset = text.length;
         piece.line.chords.forEach(function (c) {
           if (c.pos < piece.claimFrom || c.pos >= piece.claimTo) return;
@@ -2620,10 +2614,6 @@
          it is gone with the joining it went with: a row that is one line of a
          song needs no punctuation explaining itself. */
       if (desc.tail) ln.style.setProperty("--cont", indent + "px");
-      turns.forEach(function (at) {
-        var span = words.children[at];
-        if (span) span.classList.add("is-turn");
-      });
       ln.appendChild(words);
       return ln;
     }
@@ -4972,7 +4962,10 @@
       byFields = CREDITS.map(function (c) {
         var label = el("label");
         var word = el("span", "meta-word");
-        word.appendChild(creditMark(c));
+        /* The mark is not carrying the word here, the word is right beside it,
+           so it is the one place the pen and the note are decoration and are
+           allowed to be hidden from a reader who is being read to. */
+        word.appendChild(svg(ICON[c.icon]));
         word.appendChild(el("span", null, c.label));
         label.appendChild(word);
         var input = el("input");

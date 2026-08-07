@@ -161,9 +161,9 @@ const POURED = `(() => {
     /* A run of artificial spaces, which in this song can only be the pour's
        own: the words it is poured from carry none. The arc drawn under a run
        is what says the space is the screen's doing and not the song's. */
-    joins: document.querySelectorAll(".sheet .ln-t .is-turn").length,
+    joins: document.querySelectorAll(".sheet .ln-t .gap-run").length,
     arc: (() => {
-      const g = document.querySelector(".sheet .ln-t .is-turn");
+      const g = document.querySelector(".sheet .ln-t .gap-run");
       if (!g) return "no solidus";
       /* the mark is PAINTED on the span, not written in it: what there is to
          check is the stroke, not a letter */

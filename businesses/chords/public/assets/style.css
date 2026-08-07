@@ -931,13 +931,20 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    as well: a form of three lines with three different left edges reads as
    three unrelated things.
    The mark in front of the word is the one the reader's line uses (see
-   .credit): one shape for a credit whether it is being read or written. */
+   .credit): one shape for a credit whether it is being read or written.
+
+   The word is a line of text and not a little flex row of its own. The row it
+   sits on lines everything up by the baseline, and a flex box's baseline is
+   its first child's, which would make the mark the thing the name in the field
+   beside it lines up with. Inline, the baseline is the word's own. */
 .meta-word {
-  flex: none; width: 4.4em;
-  display: inline-flex; align-items: center; gap: 5px;
+  flex: none; width: 4.8em; white-space: nowrap;
   font-size: 13px; font-weight: 600; color: var(--ink-soft);
 }
-.meta-word svg { width: 14px; height: 14px; flex: none; opacity: .7; }
+.meta-word svg {
+  width: 14px; height: 14px; opacity: .7;
+  vertical-align: -3px; margin-inline-end: 4px;
+}
 /* THE NAME IS BIGGER THAN THE WORD IN FRONT OF IT. Both were thirteen pixels,
    the size a label wants, which made what somebody typed as quiet as the
    heading over it. What is typed is the content of the form and the word is
@@ -1527,37 +1534,43 @@ button.song-facts:hover .song-facts-ask { color: var(--accent); }
    themselves, so a line of gaps is never mistaken for a line of chords. The
    reader's page and the printed one have nothing at all. The model has a gap
    there, not a hyphen. */
-/* --- WHERE ONE LINE ENDS AND THE NEXT BEGINS ON THE SAME ROW --------------
-   The pour puts a run of artificial spaces between them and paints a diagonal
-   on the middle one (see flowSheet). Drawn exactly the way the arc under a
-   run is drawn, and for the same reasons:
+/* --- WHAT AN ARTIFICIAL SPACE IS MARKED WITH ------------------------------
+   A diagonal, drawn on the run rather than written into it. It was a curve
+   for a while and the shape is the only thing that changed: everything about
+   how it is drawn is what the curve did, because that is the version that
+   worked.
+
+   ON THE RUN, WHICH NEEDS NO CLASS OF ITS OWN. fillSpans already marks the
+   first gap of every run and tells it how many there are, so the stylesheet
+   has everything it needs. Three attempts at this put a class on some other
+   gap from the pour, and a class that has to be added is a class that can
+   fail to arrive, which is exactly what kept happening.
 
    OUT OF THE FLOW, so the mark cannot make the line taller or push it up. A
    span with a background needs a height to paint it in, and that height would
-   be a line's worth of room under every row that had a break in it.
+   be a line's worth of room under every word that had a gap in it.
 
-   AND NOT A CHARACTER. A solidus in the text is one more character in a row
-   of characters, which is the one thing this must not look like: the rest of
-   the row is the song and this is a fact about the screen. Drawn, it can be
-   the colour of the chords without being read as one.
-
-   It leans the way the line runs, or it leans back into the words it is
-   separating and reads as the wrong kind of mark. */
-.ln-t .gap.is-turn::after {
+   Placed a little above the baseline, where the middle of a letter is, so it
+   reads as being on the line rather than under it. And drawn rather than
+   written, because a solidus in the text is one more character in a row of
+   characters, and the one thing this must not look like is a word: the rest
+   of the row is the song, and this is a fact about the screen. */
+.ln-t .gap-run::after {
   content: "";
   position: absolute;
-  inset-inline-start: 0;
+  /* centred in the run, however many spaces it holds */
+  inset-inline-start: calc(var(--gap-w) * (var(--run, 1) - 1) / 2);
   width: var(--gap-w);
-  /* a little above the baseline, where the middle of a letter is, so it reads
-     as standing on the line rather than hanging under it */
   bottom: calc(var(--song-size) * .08);
-  height: calc(var(--song-size) * .58);
+  height: calc(var(--song-size) * .56);
   /* thick enough to be a stroke rather than a hairline the antialiasing eats */
   border-inline-start: 2px solid var(--chord);
   transform: rotate(20deg);
   transform-origin: bottom;
 }
-.ln[dir="ltr"] .ln-t .gap.is-turn::after { transform: rotate(-20deg); }
+/* it leans the way the line runs, or it leans back into the words it holds
+   apart and reads as the wrong kind of mark */
+.ln[dir="ltr"] .ln-t .gap-run::after { transform: rotate(-20deg); }
 
 
 /* The button that opens one, and under it the one that says what it is. Under
@@ -1780,6 +1793,21 @@ button.song-facts:hover .song-facts-ask { color: var(--accent); }
    asking. Pushed to the other end so it is not pressed on the way to one that
    is. */
 .dlg-actions .far { margin-inline-end: auto; }
+
+/* --- THE PANEL THE SONG'S FACTS ARE WRITTEN IN ----------------------------
+   A form and not a question, so it is spaced like one: the line that says the
+   typing keeps itself sits with the heading, the fields have air under it, and
+   the way out runs the width of the panel.
+
+   That last one is the only button here and it does nothing but shut the
+   panel. A pill in the corner made it look like the one that saves, which is a
+   button this panel does not have; the width says the opposite, that it is the
+   floor of the panel rather than a decision on it, and it is the easier thing
+   to hit with a thumb into the bargain. */
+.dlg-meta .dlg-in { gap: 6px; }
+.dlg-meta .song-meta { margin-top: 14px; }
+.dlg-meta .dlg-actions { margin-top: 18px; }
+.dlg-meta .dlg-actions .btn { flex: 1 1 auto; justify-content: center; }
 
 /* --- signing in --------------------------------------------------------- */
 
