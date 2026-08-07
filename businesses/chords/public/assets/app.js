@@ -2157,12 +2157,13 @@
     var used = 0;
     var inPage = 0;
 
-    /* A SEGMENT CARRIES HALF A GUTTER ON EACH SIDE RATHER THAN STANDING IN
-       ONE. It comes to the same distance between two of them, and it makes
+    /* A SEGMENT CARRIES ITS MARGIN ON EACH SIDE RATHER THAN STANDING IN ONE.
+       Between two of them the two margins come to the gutter, and it makes
        the difference to everything drawn on a segment: the paper reaches the
        rules instead of stopping half a gutter short of them, and the rule
        itself is the segment's own edge rather than a line hanging in the
-       space beside it. */
+       space beside it. (How wide that margin is, and why a phone gets a
+       narrower one, is planColumns's business.) */
     var slot = plan.colW + plan.pad * 2;
 
     function nextCol() {
@@ -2216,6 +2217,16 @@
           pg.appendChild(spare);
         }
       });
+
+      /* THE LAST PAGE ENDS WHERE THE SONG DOES. Every page above it is exactly
+         a screenful, because that is what turning a page means here: the next
+         set of segments begins one window down, whether or not the song filled
+         the one before. The last page has nothing under it to line up with,
+         and held to the same height it is a screenful of blank paper after the
+         final line, which on a phone is most of the screen. Let it take its
+         own height and the paper stops with the words, and what is under them
+         is the desk. */
+      if (built.lastChild) built.lastChild.style.height = "";
 
       sheet.textContent = "";
       sheet.appendChild(built);
