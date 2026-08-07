@@ -4659,21 +4659,10 @@
       function () { setSemis(semis + 1); }
     ));
 
-    tools.appendChild(el("span", "sep"));
-    /* THE SAME THREE PARTS AS THE OTHER TWO. This one had no number for a
-       while, on the argument that nobody reads a font size, and the argument
-       was about the number rather than about the row: three controls that look
-       alike and one of them missing its middle is a row you have to look at
-       twice to use once. */
-    var sizeValue = el("span", "val");
-    tools.appendChild(control(
-      ICON.textSize, "גודל", sizeValue,
-      function () { setSize(size - SIZE_STEP); },
-      function () { setSize(size + SIZE_STEP); }
-    ));
-
-    function showSize() { sizeValue.textContent = String(size); }
-    showSize();
+    /* THE SIZE IS NOT HERE ANY MORE. It was two buttons and a number, three
+       things on a strip whose whole point is to be short, for a setting with
+       one honest answer: bigger, until it is big enough. And every machine
+       already has a gesture that means exactly that. See zoomBy below. */
 
     /* WHERE THE CAPO IS, WHICH IS WHEREVER THEY PUT IT. It moves nothing: the
        chords on the page are the transposition's business, and this is a fact
@@ -4939,13 +4928,73 @@
        rows themselves are different rows. */
     function setSize(next) {
       size = readingSize(next);
-      showSize();
       sheet.style.setProperty("--song-size", size + "px");
       if (!editing && NARROW.matches) return draw();
       /* Bigger words are a wider longest line and a taller song, which are
          the two numbers the column count is made of. */
       requestAnimationFrame(function () { fitColumns(sheet); layoutAll(sheet); });
     }
+
+    /* --- THE SIZE IS A GESTURE ------------------------------------------------
+       On a desk it is the wheel with Ctrl held, which is also what a trackpad
+       sends when two fingers spread on it: a browser reports a trackpad pinch
+       as a wheel with ctrlKey set, so one handler is both. On a phone it is
+       two fingers on the song.
+
+       IT TAKES THE BROWSER'S OWN ZOOM AWAY, on purpose, and that is the better
+       trade rather than a rudeness. Zooming the PAGE makes the words bigger
+       and the screen no wider, so the lines of a chord sheet, which never
+       wrap, run off the side of it. Zooming the SONG breaks them again to the
+       screen they are on. The gesture already meant "make this bigger"; this
+       is the only reading of it that works here.
+
+       Nothing is written until the number actually changes. One turn of a
+       wheel is dozens of events, and setSize redraws the whole sheet on a
+       narrow screen. */
+    var WHEEL_PER_STEP = 60;
+    var wheeled = 0;
+
+    sheet.addEventListener("wheel", function (event) {
+      if (!event.ctrlKey) return;
+      event.preventDefault();
+      wheeled += event.deltaY;
+      var steps = Math.trunc(wheeled / WHEEL_PER_STEP);
+      if (!steps) return;
+      wheeled -= steps * WHEEL_PER_STEP;
+      /* down is smaller, which is what a wheel means everywhere else */
+      setSize(size - steps);
+    }, { passive: false });
+
+    /* How far apart two fingers are, which is the whole of a pinch: the size
+       follows the RATIO against where they started, so letting go and starting
+       again does not jump. */
+    function spread(touches) {
+      var dx = touches[0].clientX - touches[1].clientX;
+      var dy = touches[0].clientY - touches[1].clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    var pinchFrom = 0;
+    var pinchSize = 0;
+
+    sheet.addEventListener("touchstart", function (event) {
+      if (event.touches.length !== 2) return;
+      pinchFrom = spread(event.touches);
+      pinchSize = size;
+    }, { passive: true });
+
+    sheet.addEventListener("touchmove", function (event) {
+      if (event.touches.length !== 2 || !pinchFrom) return;
+      event.preventDefault();
+      var now = spread(event.touches);
+      if (!(now > 0)) return;
+      var want = Math.round(pinchSize * (now / pinchFrom));
+      if (want !== size) setSize(want);
+    }, { passive: false });
+
+    var pinchOff = function () { pinchFrom = 0; };
+    sheet.addEventListener("touchend", pinchOff);
+    sheet.addEventListener("touchcancel", pinchOff);
 
     /* --- what has changed ----------------------------------------------------
        The song as it would be saved, in one string. Comparing that against the

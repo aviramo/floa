@@ -1005,6 +1005,13 @@ button.val:hover { border-color: var(--line); background: #fff; }
   box-shadow: var(--shadow); padding: 22px 34px 30px; margin-bottom: 64px;
   overflow-x: auto;
   font-family: var(--song-font);
+  /* TWO FINGERS ON THE SONG SET THE SONG'S SIZE, not the page's zoom (see the
+     wheel and touch handlers in app.js). Panning is left alone, so the sheet
+     still scrolls both ways; it is the pinch that is taken, and taken because
+     the browser's answer to it is the wrong one here: zooming the page makes
+     the words bigger and the screen no wider, and a chord sheet's lines never
+     wrap. */
+  touch-action: pan-x pan-y;
 }
 
 /* --- A SONG IN COLUMNS ----------------------------------------------------

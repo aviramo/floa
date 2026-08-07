@@ -615,7 +615,71 @@ try {
       }
     });
 
-    /* --- 6. dragging moves one chord and leaves the rest where they are --- */
+    /* --- 6. THE SIZE IS A GESTURE AND THERE IS NO OTHER WAY IN --------------
+       There were two buttons and a number over the song and they are gone, so
+       if these handlers stop working the reading size cannot be changed at
+       all, by anybody, on any machine. That is the kind of thing worth a
+       tripwire.
+
+       Ctrl and the wheel is also what a trackpad's own pinch sends, so the one
+       check covers both ways in on a desk; the two-finger one is checked
+       underneath with real touches. */
+    await open(`http://127.0.0.1:${port}/chords/_t/rtl/`, async ({ send, evaluate }) => {
+      const sizeNow = `JSON.stringify(parseFloat(getComputedStyle(document.querySelector(".sheet")).getPropertyValue("--song-size")))`;
+      const where = await evaluate(`JSON.stringify((() => {
+        const b = document.querySelector(".sheet").getBoundingClientRect();
+        return { x: Math.round(b.left + b.width / 2), y: Math.round(b.top + 40) };
+      })())`);
+
+      const was = await evaluate(sizeNow);
+      /* modifiers: 2 is Ctrl, which is what a trackpad pinch arrives as */
+      await send("Input.dispatchMouseEvent", { type: "mouseWheel", x: where.x, y: where.y, deltaX: 0, deltaY: -240, modifiers: 2 });
+      await sleep(200);
+      const bigger = await evaluate(sizeNow);
+      check("size: ctrl and the wheel makes the song bigger", bigger > was, `${was} -> ${bigger}`);
+
+      await send("Input.dispatchMouseEvent", { type: "mouseWheel", x: where.x, y: where.y, deltaX: 0, deltaY: 480, modifiers: 2 });
+      await sleep(200);
+      const smaller = await evaluate(sizeNow);
+      check("size: and the other way makes it smaller", smaller < bigger, `${bigger} -> ${smaller}`);
+
+      /* A WHEEL WITHOUT CTRL IS THE PAGE SCROLLING and must stay that way: a
+         song that resized itself every time somebody scrolled past it would be
+         unusable, and it is one missing condition away. */
+      await send("Input.dispatchMouseEvent", { type: "mouseWheel", x: where.x, y: where.y, deltaX: 0, deltaY: -480, modifiers: 0 });
+      await sleep(200);
+      check("size: a wheel on its own leaves it alone",
+        (await evaluate(sizeNow)) === smaller, `${smaller} -> ${await evaluate(sizeNow)}`);
+
+      /* Two fingers, spreading. Dispatched as real touches, because this is
+         the only way in on the machine most of these songs are read from. */
+      const pinch = async (gap) => send("Input.dispatchTouchEvent", {
+        type: gap ? "touchMove" : "touchEnd",
+        touchPoints: gap ? [
+          { x: where.x - gap / 2, y: where.y, id: 1 },
+          { x: where.x + gap / 2, y: where.y, id: 2 },
+        ] : [],
+      });
+      await send("Input.dispatchTouchEvent", {
+        type: "touchStart",
+        touchPoints: [{ x: where.x - 40, y: where.y, id: 1 }, { x: where.x + 40, y: where.y, id: 2 }],
+      });
+      await pinch(200);
+      await sleep(60);
+      await pinch(280);
+      await sleep(200);
+      const pinched = await evaluate(sizeNow);
+      await pinch(0);
+      check("size: two fingers spreading makes it bigger", pinched > smaller, `${smaller} -> ${pinched}`);
+
+      /* PUT IT BACK. The size is one setting for one reader and it is kept in
+         this browser, so a section that changes it hands the next one a song
+         set three sizes larger than it expects. Which is exactly how the chord
+         drag below started failing: its steps are measured in pixels. */
+      await send("Runtime.evaluate", { expression: 'localStorage.removeItem("chords.size")' });
+    });
+
+    /* --- 7. dragging moves one chord and leaves the rest where they are --- */
     await open(`http://127.0.0.1:${port}/chords/_t/edit/`, async ({ send, evaluate }) => {
       const before = await evaluate(POSITIONS);
       check("the editor rendered its chords", before && before.chords.length >= 3, JSON.stringify(before));
