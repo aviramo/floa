@@ -3384,6 +3384,28 @@
     findField.placeholder = "חיפוש שיר, יוצר או ערב";
     findField.setAttribute("aria-label", "חיפוש שיר, יוצר או ערב");
     findBox.appendChild(findField);
+
+    /* THE WAY BACK OUT, AND ONLY ON A PHONE, WHERE THERE IS SOMETHING TO GO
+       BACK TO. There the box does not open, it takes over: the mark, the name
+       of the page and every button on the bar stand down to make room for it.
+       So the one gesture that ends it is a press on whatever is left of the
+       page, which is a thing you have to already know. A reader who pressed
+       the glass by mistake gets a keyboard and no door.
+
+       On a desk it stays hidden, because the bar never went anywhere and the
+       cross would be back to being the second picture in a box that wants
+       one. */
+    var findX = el("button", "find-x");
+    findX.type = "button";
+    findX.setAttribute("aria-label", "סגירת החיפוש");
+    findX.appendChild(svg(ICON.close));
+    findX.addEventListener("click", function (event) {
+      /* the press is also a press on the box, and the box opens */
+      event.stopPropagation();
+      clearFind();
+    });
+    findBox.appendChild(findX);
+
     slot.appendChild(findBox);
 
     findOut = el("div", "find-out");

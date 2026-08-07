@@ -204,6 +204,18 @@ body.on-song { background: var(--bg); }
 /* Two crosses in one box is one too many: Escape empties it, and so does
    going anywhere. */
 .top-find input[type="search"]::-webkit-search-cancel-button { display: none; }
+/* Not the browser's cross, which empties the field and leaves you inside the
+   search. This one closes it. It is there only while the box has taken the
+   whole bar, so on a desk the box is still a field and a glass and nothing
+   else. */
+.top-find .find-x {
+  display: none;
+  flex: none; align-items: center; justify-content: center;
+  width: 24px; height: 24px; margin-inline-end: -3px;
+  appearance: none; background: none; border: 0; padding: 0;
+  color: var(--ink-soft); cursor: pointer;
+}
+.top-find .find-x > svg { width: 16px; height: 16px; }
 
 /* WHAT THE BOX FOUND, HANGING UNDER IT. Not a page: a search that took over
    the screen would lose the song you were reading in order to tell you about
@@ -285,6 +297,9 @@ body.on-song { background: var(--bg); }
   body.finding .top-find { flex: 1 1 auto; width: auto; }
   body.finding .top-find input[type="search"] { width: auto; flex: 1 1 auto; }
   body.finding .brand, body.finding .top-actions, body.finding .top-where { display: none; }
+  /* everything that could have given the bar back is now hidden, so the box
+     carries its own way out */
+  body.finding .top-find .find-x { display: flex; }
 
   .top-where { font-size: 16px; }
   .find-out { inset-inline-start: auto; inset-inline-end: 0; }
