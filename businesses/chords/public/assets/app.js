@@ -87,8 +87,10 @@
        like once it is there, so the button and its result are the same shape:
        press this, get this. */
     gap: '<path d="M4.5 9.5Q12 18.5 19.5 9.5"/>',
-    /* the question mark itself: the hook, the stem and the dot */
-    help: '<path d="M9.1 9.3a2.9 2.9 0 1 1 2.9 3.1V14.6"/><path d="M12 18.2h.01"/>',
+    /* the question mark itself: the hook, the stem and the dot. Drawn to the
+       full height of the box like every other icon here, so that at fifteen
+       pixels it is a question mark and not a speck. */
+    help: '<path d="M8.4 8.6a3.6 3.6 0 1 1 3.6 3.9V15"/><path d="M12 18.7h.01"/>',
     /* --- the three controls over a song, as pictures ---
        Each has to be recognisable at fifteen pixels by somebody who was not
        told, so each is drawn as the thing itself rather than as an abstraction
@@ -5595,7 +5597,15 @@
       var dlg = el("dialog", "dlg");
       var box = el("div", "dlg-in");
 
-      box.appendChild(el("h2", null, "רווח מלאכותי"));
+      /* THE MARK ITSELF STANDS AT THE TOP, beside its name. Somebody reading
+         this got here by pressing a shape, and the first line of an
+         explanation should be the shape they pressed: the arc on the button,
+         the arc in the panel and the arc under the letters are one thing, and
+         seeing them together is most of the explanation. */
+      var head = el("div", "dlg-head");
+      head.appendChild(svg(ICON.gap));
+      head.appendChild(el("h2", null, "רווח מלאכותי"));
+      box.appendChild(head);
       box.appendChild(el("p", null,
         "לשני אקורדים מעל מילה קצרה אין מספיק אותיות לשבת עליהן, והשני נדחף הצידה עד שהוא כבר לא מעל שום הברה. רווח מלאכותי פותח מקום בתוך המילה בדיוק בשביל זה: האותיות מתרחקות זו מזו על המסך, לאקורד יש איפה לעמוד, והמילה נשארת מילה אחת ולא נשברת לשתיים."));
       box.appendChild(el("p", null,
@@ -5647,7 +5657,7 @@
       open.appendChild(svg(ICON.gap));
       open.addEventListener("click", function () { openGap(ln, line, editable, at); });
 
-      var why = hold(el("button", "gap-btn gap-why"));
+      var why = hold(el("button", "gap-btn"));
       why.title = "מה זה רווח מלאכותי";
       why.setAttribute("aria-label", why.title);
       why.appendChild(svg(ICON.help));

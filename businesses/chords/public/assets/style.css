@@ -99,11 +99,13 @@ body {
    distinguishing. The phone lost it for the same reason years ago (see the
    narrow rules below), and this is the desk catching up. */
 body.on-song #app { padding-top: 0; width: 100%; }
-/* The white belongs to the PAGE now rather than to the sheet. The sheet is
-   only as wide as its columns need and stands in the middle of the window
-   (see fitColumns), so a white sheet on a grey page would be a white block
-   with grey down both sides of it. */
-body.on-song { background: var(--card); }
+/* THE PAPER IS THE SEGMENTS, AND WHAT IS NOT A SEGMENT IS NOT PAPER. The
+   segments are a fixed width and centred, so on a wide screen there is room
+   left over at both ends and in the gutters between them, and that room is
+   not part of the song: white, it reads as page with nothing written on it,
+   which invites the question of why nothing is written there. In the grey the
+   bar is already using, it reads as the desk the pages are lying on. */
+body.on-song { background: var(--bg); }
 
 /* --- header ------------------------------------------------------------- */
 
@@ -1071,11 +1073,30 @@ button.val:hover { border-color: var(--line); background: #fff; }
   /* Air at both ends, so the song never touches the rule under it and never
      runs into the edge of the window. The height below is the whole page
      INCLUDING this, and what is dealt into it is measured against what is
-     left (see PAGE_AIR in app.js). */
-  padding-block: 16px;
+     left. Named, because the rules between the segments have to reach back
+     out through it (see .col::before) and the two must not drift apart.
+     PAGE_AIR in app.js is the same number, and it is what the lines are
+     measured against when they are dealt out. */
+  --page-air: 16px;
+  padding-block: var(--page-air);
   overflow: hidden;
 }
-.col { min-width: 0; position: relative; }
+/* A SEGMENT IS THE PAPER, so it carries the white, and it carries it for the
+   whole height of the page rather than only as far as the words go: a column
+   that stopped at its last line would leave a page half white and half grey
+   down its own middle.
+
+   Which is what the negative margins are for. The page holds its air as
+   padding, so a segment standing inside it reaches neither the top of the
+   page nor the bottom; pulled back out by exactly that air and given it back
+   as padding of its own, the segment spans the whole page and the words still
+   stand clear of both ends. */
+.col {
+  min-width: 0; position: relative;
+  background: var(--card);
+  margin-block: calc(var(--page-air, 0px) * -1);
+  padding-block: var(--page-air, 0px);
+}
 
 /* BETWEEN ONE SEGMENT AND THE NEXT, down the whole page. A gutter says where
    a segment ends by being empty, and empty is also what the end of a verse
@@ -1095,6 +1116,14 @@ button.val:hover { border-color: var(--line); background: #fff; }
    Each segment draws the rule at its own leading edge, half a gutter out, so
    the one between two of them belongs to the second and sits exactly in the
    middle of the space; the last segment draws the far one as well. */
+/* THROUGH THE PAGE'S AIR AND OUT TO ITS EDGES. A segment stands inside that
+   air, so a rule the height of the segment stops short at both ends of every
+   page and the line comes apart at each boundary: what should read as one
+   division of the window reads as a row of dashes. Pulled back out by exactly
+   the air the page holds, the rules of one page meet the rules of the next. */
+/* Top to bottom of the page, which is now top to bottom of the segment: the
+   rules of one page meet the rules of the next, and the line down the window
+   is one line rather than a row of dashes. */
 .col::before, .col:last-child::after {
   content: ""; position: absolute; top: 0; bottom: 0;
   width: 1px; background: var(--line);
@@ -1360,13 +1389,11 @@ button.val:hover { border-color: var(--line); background: #fff; }
 .gap-btn:hover { color: var(--chord); border-color: var(--chord); }
 .gap-btn svg { width: 15px; height: 15px; }
 
-/* The question mark is SMALLER AND QUIETER than the button it hangs under.
-   Both are offered by the same click, and the one that does the thing has to
-   be the one the eye lands on: a help mark the same size as the tool beside it
-   is two tools. */
-.gap-why { width: 20px; height: 18px; box-shadow: none; opacity: .72; }
-.gap-why:hover { opacity: 1; }
-.gap-why svg { width: 12px; height: 12px; }
+/* The question mark was drawn smaller than the button it hangs under, to keep
+   it from competing with it. At that size it stopped being a question mark and
+   became a speck: the thing it is competing with is not the button above it,
+   it is going unnoticed. Same size, same weight, and the order of the two says
+   which is which. */
 
 /* A blank line is the gap between two stanzas, and a gap does not need a full
    line of words plus an empty chord lane above it to say so: about half that
@@ -1504,6 +1531,11 @@ button.val:hover { border-color: var(--line); background: #fff; }
 .dlg::backdrop { background: rgba(23, 32, 42, .35); }
 .dlg-in { padding: 22px; display: grid; gap: 12px; }
 .dlg-in h2 { margin: 0; font-size: 20px; }
+/* A panel that explains a mark shows the mark, at the size of the words next
+   to it rather than of an illustration: it is a heading with a symbol in it,
+   not a picture with a caption. */
+.dlg-head { display: flex; align-items: center; gap: 10px; }
+.dlg-head svg { flex: none; width: 26px; height: 26px; color: var(--chord); }
 .dlg-in p { margin: 0; font-size: 14px; }
 .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
 /* The one button in a row that is not the answer to the question the panel is

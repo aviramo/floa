@@ -349,6 +349,12 @@ async function withChrome(run) {
         await sleep(250);
         const n = await send("Runtime.evaluate", { expression: 'document.querySelectorAll(".sheet .chord").length', returnByValue: true });
         if (n.result.value > 0) break;
+        /* A TAB THAT CAME UP ON NOTHING. Chrome hands back a target before it
+           has navigated to the address it was opened with often enough to
+           matter, and the wait above would spend all of its patience on a
+           blank page and then fail somewhere further down saying nothing about
+           why. Asked for again, once, a couple of seconds in. */
+        if (i === 4 || i === 16) await send("Page.navigate", { url });
       }
       await sleep(500);                     // fonts, and the relayout they trigger
 
@@ -769,6 +775,45 @@ try {
       const after = await evaluate(`JSON.stringify(document.activeElement ? String(document.activeElement.className) : "")`);
       check("typing: Enter leaves the caret in the line it opened",
         after.indexOf("ln-t") >= 0, after);
+
+      /* EVERYTHING, AND THEN SOMETHING DONE TO IT. Ctrl+A does not put the
+         ends of the selection inside any line, it puts them on the sheet, so
+         every question asked of the two ends comes back with "no line" and the
+         whole song reads as nothing selected: pasting pasted over nothing and
+         Delete deleted nothing. Which is why both are pressed here. */
+      const all = { modifiers: 2, key: "ש", code: "KeyA", windowsVirtualKeyCode: 65 };
+      await send("Input.dispatchKeyEvent", { type: "rawKeyDown", ...all });
+      await send("Input.dispatchKeyEvent", { type: "keyUp", ...all });
+      await sleep(200);
+      const chosen = await evaluate(`JSON.stringify([...document.querySelectorAll(".sheet .ln")]
+        .filter((l) => getSelection().containsNode(l, true)).length)`);
+      check("everything: ctrl+a takes the whole song", chosen >= 5, String(chosen));
+
+      const over = await evaluate(`JSON.stringify((() => {
+        const data = new DataTransfer();
+        data.setData("text/plain", "{פזמון}\\n[C]אחת ו[G]שתיים\\n\\n[Am]שלוש");
+        const ev = new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData: data });
+        (document.activeElement || document.body).dispatchEvent(ev);
+        return [...document.querySelectorAll(".sheet .ln")].map((l) => ({
+          text: (l.querySelector(".ln-t") || l.querySelector(".ln-section") || { textContent: "" }).textContent,
+          chords: [...l.querySelectorAll(".chord")].map((c) => c.textContent + "@" + c.dataset.pos).join(","),
+        }));
+      })())`);
+      check("everything: a paste over it puts the pasted song in its place",
+        over.length === 4 && over[0].text === "פזמון" && over[1].chords === "C@0,G@4",
+        JSON.stringify(over));
+
+      await sleep(200);
+      await send("Input.dispatchKeyEvent", { type: "rawKeyDown", ...all });
+      await send("Input.dispatchKeyEvent", { type: "keyUp", ...all });
+      await sleep(200);
+      await send("Input.dispatchKeyEvent", { type: "rawKeyDown", key: "Delete", code: "Delete", windowsVirtualKeyCode: 46 });
+      await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Delete", code: "Delete", windowsVirtualKeyCode: 46 });
+      await sleep(300);
+      const left = await evaluate(`JSON.stringify([...document.querySelectorAll(".sheet .ln")].map((l) => (l.textContent || "")))`);
+      /* a song with nothing in it still has somewhere to type */
+      check("everything: and Delete leaves one empty line",
+        left.length === 1 && left[0] === "", JSON.stringify(left));
     });
 
     /* --- 6. THE SIZE IS A GESTURE AND THERE IS NO OTHER WAY IN --------------
