@@ -1503,12 +1503,21 @@ button.song-facts:hover .song-facts-ask { color: var(--accent); }
   display: flex; align-items: center; justify-content: center;
   width: 26px; height: 22px; padding: 0;
   appearance: none; cursor: pointer;
-  color: var(--ink-soft); background: #fff;
+  background: #fff;
   border: 1px solid var(--line); border-radius: 6px;
   box-shadow: 0 2px 8px rgba(23, 32, 42, .12);
 }
-.gap-btn:hover { color: var(--chord); border-color: var(--chord); }
 .gap-btn svg { width: 15px; height: 15px; }
+
+/* THE BUTTON IS DRAWN IN THE COLOUR OF WHAT IT LEAVES BEHIND. The arc it puts
+   under the letters is the page's one red, so the arc on the button is that
+   same red: press it, and the thing that appears is the thing that was on the
+   button. The question mark next to it does not make anything, so it stays in
+   the colour of ordinary text and lets the red one be the one that is offered. */
+.gap-do { color: var(--chord); }
+.gap-do:hover { border-color: var(--chord); }
+.gap-why { color: var(--ink); }
+.gap-why:hover { border-color: var(--ink); }
 
 /* The question mark was drawn smaller than the button it hangs under, to keep
    it from competing with it. At that size it stopped being a question mark and

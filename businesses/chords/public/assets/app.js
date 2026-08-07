@@ -6009,13 +6009,13 @@
         return node;
       };
 
-      var open = hold(el("button", "gap-btn"));
+      var open = hold(el("button", "gap-btn gap-do"));
       open.title = "לפתוח רווח בין האותיות, בלי לשבור את המילה";
       open.setAttribute("aria-label", open.title);
       open.appendChild(svg(ICON.gap));
       open.addEventListener("click", function () { openGap(ln, line, editable, at); });
 
-      var why = hold(el("button", "gap-btn"));
+      var why = hold(el("button", "gap-btn gap-why"));
       why.title = "מה זה רווח מלאכותי";
       why.setAttribute("aria-label", why.title);
       why.appendChild(svg(ICON.help));
