@@ -36,9 +36,21 @@ const BODY_RTL = [
 
 const BODY_LTR = "[C]Hello [G]there my old [Am]friend[F]";
 
+/* MORE SONG THAN FITS DOWN ONE SCREEN, which is the only kind that gets more
+   than one column: how many columns there are is how many screenfuls of song
+   there are (see fitColumns in app.js). Its lines are the same short lines as
+   the song above, so on a 1200 pixel window three of them stand side by side
+   with room to spare, and any line that came out wider than its own column
+   would be the failure this is looking for. */
+const BODY_LONG = ["{בית}"].concat(
+  Array.from({ length: 15 }, () => BODY_RTL.split("\n").slice(1).join("\n"))
+).join("\n");
+
+const BODIES = { rtl: BODY_RTL, ltr: BODY_LTR, long: BODY_LONG };
+
 const song = (dir) => ({
   id: "test", slug: "s-" + dir, title: "בדיקה " + dir, lyrics_by: "", music_by: "",
-  dir, status: "ready", status_note: "", lines: dir === "rtl" ? BODY_RTL : BODY_LTR,
+  dir: dir === "ltr" ? "ltr" : "rtl", status: "ready", status_note: "", lines: BODIES[dir],
 });
 
 function page(dir, edit) {
@@ -147,6 +159,49 @@ const POURED = `(() => {
     where: innerWidth + "px wide, narrow=" + matchMedia("(max-width: 620px)").matches +
       ", song " + (sheet ? getComputedStyle(sheet).getPropertyValue("--song-size") : "?") +
       ", room " + (rows[0] ? rows[0].clientWidth : "?"),
+  });
+})()`;
+
+/* --- AND WHAT A WIDE SCREEN DID TO IT -------------------------------------
+   A long song on a desk stands in two or three columns, and the two things
+   that can go wrong with that are the two things asked here.
+
+   It can fail to happen, which is what a call that got written over looks
+   like: the count says one and stays there however long the song is.
+
+   And it can happen too eagerly. A chord sheet's lines do not wrap, so a line
+   too wide for its column does not break, it runs out of the column and over
+   the one beside it, and NOTHING REPORTS THAT: the sheet is not overflowing,
+   the column boxes are the width they were asked for, and the page measures
+   as fine everywhere except below, where each line is asked what it takes
+   against the room it was given.
+
+   The chords themselves are checked by MEASURE, unchanged. A chord is placed
+   in pixels measured from its own line's edge, and a line fragmented into two
+   columns would have two of those, so this is exactly where that would
+   show. */
+const COLUMNS = `(() => {
+  const sheet = document.querySelector(".sheet");
+  if (!sheet) return "null";
+  const over = [];
+  for (const ln of document.querySelectorAll(".sheet .ln")) {
+    const t = ln.querySelector(".ln-t");
+    if (!t) continue;
+    const pad = parseFloat(getComputedStyle(t).paddingInlineStart) || 0;
+    const words = [...t.children].reduce((a, s) => a + s.getBoundingClientRect().width, 0);
+    if (words + pad > ln.clientWidth + 1) {
+      over.push({ text: t.textContent.slice(0, 24), needs: Math.round(words + pad), room: Math.round(ln.clientWidth) });
+    }
+  }
+  /* Where the lines actually landed, which is the only proof the browser did
+     what the count asked for. Bucketed, because two columns are hundreds of
+     pixels apart and a rounding error is not a column. */
+  const at = new Set([...document.querySelectorAll(".sheet .ln-t")]
+    .map((t) => Math.round(t.getBoundingClientRect().left / 20)));
+  return JSON.stringify({
+    cols: Number(getComputedStyle(sheet).columnCount) || 1,
+    boxes: at.size, over,
+    where: innerWidth + "x" + innerHeight + ", sheet " + Math.round(sheet.scrollHeight) + "px tall",
   });
 })()`;
 
@@ -296,6 +351,8 @@ await mkdir(join(root, "edit"), { recursive: true });
 await writeFile(join(root, "rtl/index.html"), page("rtl", false), "utf8");
 await writeFile(join(root, "ltr/index.html"), page("ltr", false), "utf8");
 await writeFile(join(root, "edit/index.html"), page("rtl", true), "utf8");
+await mkdir(join(root, "long"), { recursive: true });
+await writeFile(join(root, "long/index.html"), page("long", false), "utf8");
 
 try {
   await withChrome(async (open) => {
@@ -453,7 +510,39 @@ try {
       await send("Runtime.evaluate", { expression: 'localStorage.removeItem("chords.size")' });
     });
 
-    /* --- 3. dragging moves one chord and leaves the rest where they are --- */
+    /* --- 3. a desk: a long song stands in columns, and none of them cuts a
+       line off ------------------------------------------------------------ */
+    await open(`http://127.0.0.1:${port}/chords/_t/long/`, async ({ evaluate }) => {
+      const laid = await evaluate(COLUMNS);
+      const report = await evaluate(MEASURE);
+      check("wide: no page errors", report.errors.length === 0, JSON.stringify(report.errors));
+
+      /* Nothing is learned on a window too small to hold two columns of it,
+         and a headless browser is not obliged to be 1200 pixels wide. */
+      if (!laid || laid.cols < 2) {
+        unknown("wide: a long song stands in more than one column",
+          `columnCount ${laid && laid.cols} (${laid && laid.where})`);
+      } else {
+        check("wide: a long song stands in more than one column", true, "");
+        check("wide: and the lines really landed in them", laid.boxes >= laid.cols,
+          `${laid.boxes} places for ${laid.cols} columns (${laid.where})`);
+      }
+
+      /* Asked whatever the count came out as. One column that cannot hold its
+         own lines is the same failure at a smaller size. */
+      check("wide: no line is wider than the column it stands in", laid.over.length === 0,
+        JSON.stringify(laid.over));
+
+      /* The first few are enough: they are the same three lines fifteen times
+         over, and a chord that slipped slipped on all of them. */
+      for (const c of report.chords.slice(0, 12)) {
+        const exact = Math.abs(c.off) <= 1;
+        check(`wide: "${c.chord}" at ${c.pos} of «${c.line}»`,
+          exact || (c.off > 0 && c.off <= (c.nudged ? 60 : 1)), `off by ${c.off}px`);
+      }
+    });
+
+    /* --- 4. dragging moves one chord and leaves the rest where they are --- */
     await open(`http://127.0.0.1:${port}/chords/_t/edit/`, async ({ send, evaluate }) => {
       const before = await evaluate(POSITIONS);
       check("the editor rendered its chords", before && before.chords.length >= 3, JSON.stringify(before));

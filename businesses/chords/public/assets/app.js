@@ -99,6 +99,8 @@
     print: '<path d="M7 9V4h10v5M7 18H5v-6h14v6h-2M8 14h8v6H8z"/>',
     calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
     person: '<circle cx="12" cy="8" r="3.6"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/>',
+    /* two of them, which is what a page of everybody who wrote a song is */
+    people: '<circle cx="9.5" cy="8.5" r="3.2"/><path d="M3.5 19.5a6 6 0 0 1 12 0"/><path d="M16 5.6a3.2 3.2 0 0 1 0 6"/><path d="M17.5 14.2a6 6 0 0 1 3 5.3"/>',
   };
 
   function iconBtn(icon, title, onClick) {
@@ -431,15 +433,89 @@
 
      `artist` and `song_key` are still columns, holding whatever was typed into
      them before this, and nothing here reads or writes them any more. */
+  /* Two words each, and they are not the same word. `label` is what the
+     credit is called ON the song, where it names a part of it: the words, the
+     tune. `who` is what the same fact makes of the PERSON, on their own page
+     and beside their name in a search result, where "מילים" would be the
+     answer to a question nobody asked. */
   var CREDITS = [
-    { field: "lyrics_by", label: "מילים" },
-    { field: "music_by", label: "לחן" },
+    { field: "lyrics_by", label: "מילים", who: "כותב", kind: "words" },
+    { field: "music_by", label: "לחן", who: "מלחין", kind: "tune" },
   ];
 
   function credits(song) {
     return CREDITS.map(function (c) {
       return { label: c.label, name: String(song[c.field] || "").trim() };
     }).filter(function (c) { return c.name; });
+  }
+
+  /* Who made it, as a line to read: the names, once each. Whoever wrote the
+     words usually wrote the tune as well, and a card that answered "who wrote
+     this" with the same name twice was reading the columns out loud rather
+     than naming a person. The credits themselves keep both, because on the
+     song they are two different facts. */
+  function creditNames(song) {
+    var seen = {};
+    return credits(song).map(function (c) { return c.name; }).filter(function (name) {
+      if (seen[name]) return false;
+      seen[name] = true;
+      return true;
+    });
+  }
+
+  /* --- the people, read out of the songs ------------------------------------
+     THERE IS NO TABLE OF CREATORS AND THERE SHOULD NOT BE. A person is not a
+     row somebody creates and then has to keep in step with the songs; a
+     person is what the songs say, gathered. Typing a name onto a song is the
+     only way anybody is ever added, which is also the only way anybody would
+     want to be, and a name that stops appearing on any song stops being a
+     page, correctly: there is nothing left to show on it.
+
+     What that costs is that two spellings of one person are two people. That
+     is why the editor finishes a half typed name from every name already in
+     the library (see db.names), and it is a cost worth paying for a set of
+     pages that can never disagree with the songs they are made of.
+
+     The same name in both columns is ONE person with two roles, which is the
+     ordinary case: whoever wrote the words usually wrote the tune. */
+  function creatorsOf(songs) {
+    var by = {};
+    (songs || []).forEach(function (song) {
+      CREDITS.forEach(function (c) {
+        var name = String(song[c.field] || "").trim();
+        if (!name) return;
+        var rec = by[name] || (by[name] = { name: name, roles: {}, songs: [] });
+        rec.roles[c.field] = true;
+        if (rec.songs.indexOf(song) < 0) rec.songs.push(song);
+      });
+    });
+    return Object.keys(by).sort(function (a, b) { return a.localeCompare(b, "he"); })
+      .map(function (name) { return by[name]; });
+  }
+
+  /* Which of the two this person is, said in their own words. In the order
+     the credits are written in, so somebody who did both always reads
+     "כותב, מלחין" and never the other way about. */
+  function roleTags(roles) {
+    return CREDITS.filter(function (c) { return roles[c.field]; }).map(function (c) {
+      return { kind: c.kind, words: c.who };
+    });
+  }
+
+  /* What one person did on ONE song, which is the same question asked of a
+     single row rather than of the library. */
+  function rolesOn(song, name) {
+    var roles = {};
+    CREDITS.forEach(function (c) {
+      if (String(song[c.field] || "").trim() === name) roles[c.field] = true;
+    });
+    return roles;
+  }
+
+  function songsBy(songs, name) {
+    return (songs || []).filter(function (song) {
+      return CREDITS.some(function (c) { return String(song[c.field] || "").trim() === name; });
+    });
   }
 
   /* --- what kind of song it is ----------------------------------------------
@@ -1029,7 +1105,10 @@
   /* Words the app has taken for itself under /chords/. A song may not be
      called one of them, because the address would be the app's answer rather
      than the song's. */
-  var RESERVED_SLUGS = { "new": true, "edit": true, "evenings": true, "deleted": true };
+  var RESERVED_SLUGS = {
+    "new": true, "edit": true, "evenings": true, "deleted": true,
+    "creators": true, "creator": true,
+  };
 
   /* Two decimals is finer than any eye and any font, and it keeps a stored
      song readable instead of full of 6.234567901234568 */
@@ -1791,6 +1870,127 @@
     Array.prototype.forEach.call(root.querySelectorAll(".ln"), function (ln) { layoutLine(ln); });
   }
 
+  /* --- HOW MANY COLUMNS THE SONG STANDS IN ----------------------------------
+     Nobody is asked, and that is the point of it. A reader knows how big they
+     want the words; they do not know how many pixels their longest line takes
+     in the font their machine happens to have, and working out whether the
+     second verse would fit beside the first is not a thing anybody came here
+     to do.
+
+     TWO QUESTIONS, AND BOTH ARE MEASURED.
+
+     How many columns are ALLOWED is a question about width. A chord sheet's
+     lines never wrap (white-space: pre), so a line too wide for its column
+     does not break, it runs out of the column and prints over the one beside
+     it. So the widest line in the song is asked of the line itself, and a
+     column narrower than that is not a column. This is the whole of "without
+     hurting the width of the text": the answer can only ever be a number of
+     columns each of which holds the longest line whole.
+
+     How many are WANTED is a question about height: how many screenfuls of
+     song there are. One screenful wants one column, three want three. A short
+     song in two columns is a page pretending to be full, and a long one in
+     one is a page you have to scroll through a verse at a time.
+
+     The smaller of the two wins, capped at three, because past three the
+     columns are narrower than the eye wants to travel and the song stops
+     being readable across a room.
+
+     Not on a phone, where the sheet is poured to the width of the screen and
+     there is only ever one column's worth of room, and not while the song is
+     being edited: an editor is one line at a time in the order they are
+     written, and lines that carry on in a second column half a screen away
+     are not that. */
+  var COL_MAX = 3;
+  /* The air between two columns, in song sizes rather than in pixels: at 40px
+     type a 44px gutter is two columns touching. Wide enough that the rule
+     down the middle of it has room on both sides even where a chord hangs
+     off the end of a line. */
+  var COL_GAP = 2.8;
+
+  /* What is actually written on the line, in pixels. See the note in
+     fitColumns: a block is as wide as its container and says so. */
+  function textWidth(node) {
+    var range = document.createRange();
+    range.selectNodeContents(node);
+    return range.getBoundingClientRect().width;
+  }
+
+  function oneColumn(sheet) {
+    sheet.style.columnCount = "";
+    sheet.style.columnGap = "";
+    sheet.classList.remove("is-cols");
+  }
+
+  function fitColumns(sheet) {
+    if (!sheet || !sheet.isConnected || !sheet.classList.contains("sheet")) return;
+    /* measured at one column, because that is the shape both questions are
+       asked of: the widest line and the whole height of the song */
+    oneColumn(sheet);
+    if (NARROW.matches || sheet.classList.contains("ed")) return;
+
+    var texts = sheet.querySelectorAll(".ln-t");
+    if (!texts.length) return;
+
+    var size = parseFloat(getComputedStyle(texts[0]).fontSize) || 18;
+    var gap = COL_GAP * size;
+
+    /* THE WIDEST LINE, ASKED OF THE WORDS AND NOT OF THE BOX THEY SIT IN.
+
+       The sheet cannot answer this: a line that overflows its column is not
+       overflow of the sheet, so the sheet reports no trouble while two
+       columns of words print over each other. And neither can the line, which
+       is a block and therefore exactly as wide as whatever is holding it: ask
+       it and the answer that comes back is the sheet's own width, every line
+       looks like the widest possible line, and the count comes out one on
+       every song there is. A range over its contents measures the text, which
+       is the thing the question is about.
+
+       The headings are measured too. They carry no chords and they are still
+       lines of the page, and a heading that runs into the next column is the
+       same page as a verse that does. */
+    var widest = 0;
+    Array.prototype.forEach.call(sheet.querySelectorAll(".ln-t, .ln-section"), function (t) {
+      var w = textWidth(t);
+      if (w > widest) widest = w;
+    });
+    if (!(widest > 0)) return;
+
+    /* ROOM FOR THE CHORDS OVER THE ENDS OF IT. A chord is centred on its
+       character, so one over the last letter of a line hangs half a label past
+       where the words stop. At the edges of the sheet that is what the wide
+       side padding is for; between two columns it has to come out of the
+       column's own width, or a chord in the first column prints over the
+       start of the second. */
+    widest += size * 1.4;
+
+    var box = getComputedStyle(sheet);
+    var room = sheet.clientWidth
+      - (parseFloat(box.paddingLeft) || 0) - (parseFloat(box.paddingRight) || 0);
+    if (!(room > 0)) return;
+
+    var allowed = Math.floor((room + gap) / (widest + gap));
+    if (allowed < 2) return;
+
+    /* From where the sheet begins to the bottom of the window, which is the
+       room a reader has without scrolling. Taken from the document rather
+       than from the viewport so that a window resized halfway down a song
+       gets the same answer as one resized at the top of it. */
+    var top = sheet.getBoundingClientRect().top + (window.pageYOffset || 0);
+    var screenful = window.innerHeight - Math.min(top, window.innerHeight * 0.5) - 40;
+    if (!(screenful > 160)) screenful = window.innerHeight * 0.7;
+
+    var tall = sheet.scrollHeight
+      - (parseFloat(box.paddingTop) || 0) - (parseFloat(box.paddingBottom) || 0);
+
+    var cols = Math.min(Math.ceil(tall / screenful), allowed, COL_MAX);
+    if (cols < 2) return;
+
+    sheet.style.columnGap = Math.round(gap) + "px";
+    sheet.style.columnCount = String(cols);
+    sheet.classList.add("is-cols");
+  }
+
   /* --- a song too wide for the screen --------------------------------------
      On a desk the sheet scrolls sideways and that is fine: the whole line is
      an arm's reach away. On a phone it is not. A song you have to drag left
@@ -2284,6 +2484,17 @@
       return;
     }
 
+    /* The two pages about people. Neither has anything to do TO what is on
+       it, so the bar carries the ways on from it: the other half of the app,
+       and who is looking. */
+    if (p[0] === "creators" || p[0] === "creator") {
+      bar.appendChild(button("ערבי שירה", ICON.calendar, "ghost small", function () {
+        go(BASE + "/evenings");
+      }));
+      bar.appendChild(session());
+      return;
+    }
+
     if (p.length) {
       /* Only once there is a song on the page. A song still loading, one that
          is not there at all and one still being read from a photograph are all
@@ -2307,6 +2518,13 @@
        one of these that goes somewhere rather than making something. */
     bar.appendChild(button("ערבי שירה", ICON.calendar, "ghost small", function () {
       go(BASE + "/evenings");
+    }));
+    /* And the people, beside the evenings, because they are the same kind of
+       door: another way through the same songs. The library is by when a song
+       was last touched, an evening is by what was played together, and this
+       one is by who wrote it. */
+    bar.appendChild(button("יוצרים", ICON.people, "ghost small", function () {
+      go(BASE + "/creators");
     }));
     /* On a phone the reading is the only way in, so it is the one that gets
        the solid button. On a desk both are open and the typing leads. */
@@ -2387,30 +2605,367 @@
     if (auth.in) then(); else auth.signInWithGoogle();
   }
 
+  /* --- ONE BOX, IN THE BAR, THAT FINDS EVERYTHING --------------------------
+     It used to be on the library's own page, which is the one page where a
+     search box is worth least: the songs are already on the screen and the
+     chips over them narrow the wall. Where it is actually wanted is
+     everywhere else. You are inside a song and you want the next one. You are
+     planning an evening and you want to remember what you played in March.
+     You have a name in your head and you want everything that person wrote.
+
+     None of those is a filter on the page you are on. They are all the way
+     OFF it, which is navigation, and navigation belongs in the bar.
+
+     SO IT SEARCHES EVERY KIND OF THING THERE IS: songs by their name, their
+     credits, their style AND their words; the people who wrote them; and the
+     evenings they were sung at. Which means a row of results is a row of
+     three different kinds of thing, so every one of them carries the word for
+     what it is. Without that the list is a column of names and the only way
+     to find out where a press would take you is to press it.
+
+     THE WORDS ARE SEARCHED WITHOUT THE GAPS IN THEM. A gap is room on the
+     screen made to fit a chord over a syllable, and it is a character of the
+     stored line: searching the raw text would fail to find any word with one
+     inside it, which is most of the words anybody would search for. What is
+     read is the words as they are sung. */
+
+  /* Worked out once per song and kept on the row. A refresh brings new rows,
+     so nothing goes stale, and a keystroke does not re-read a hundred
+     songs. */
+  function songHay(s) {
+    if (s.hay == null) {
+      s.hay = [
+        s.title,
+        credits(s).map(function (c) { return c.name; }).join(" "),
+        styles(s).join(" "),
+        withoutGaps(normalizeLines(s.lines).map(function (l) { return l.text; }).join(" ")),
+      ].join(" ").toLowerCase();
+    }
+    return s.hay;
+  }
+
+  /* An evening is remembered by four different things and never by the same
+     one twice: its name, the room, the date in words, or a song that was
+     sung at it. */
+  function eveningHay(evening, titles) {
+    return [
+      evening.title || "",
+      evening.venue || "",
+      dateWords(evening.event_date),
+      songNames(evening, titles || {}).join(" "),
+    ].join(" ").toLowerCase();
+  }
+
+  /* --- what the box has to look through ------------------------------------
+     Both lists whole, in the browser, because both are small: a library is a
+     few hundred rows of text and an evening is a name and a list of ids. So a
+     keystroke costs a search and no request.
+
+     Kept for a minute and no longer. A search that opens a song written on
+     another machine two minutes ago should find it, and one typed into on a
+     page that has just loaded the same list should not go and ask again. The
+     pages that read either list hand what they read to the seed below, so the
+     ordinary case costs nothing at all. */
+  var FIND_FRESH = 60000;
+  var findSongs = null, findSongsAt = 0;
+  var findEvenings = null, findEveningsAt = 0;
+
+  function seedSongs(rows) {
+    findSongs = rows || [];
+    findSongsAt = Date.now();
+    return findSongs;
+  }
+
+  function seedEvenings(rows) {
+    findEvenings = rows || [];
+    findEveningsAt = Date.now();
+    return findEvenings;
+  }
+
+  /* A search that cannot reach the database still has whatever it last saw,
+     and a box that answers nothing is worse than a box that answers what it
+     knew a minute ago. */
+  function findSongList() {
+    if (findSongs && Date.now() - findSongsAt < FIND_FRESH) return Promise.resolve(findSongs);
+    return db.list().then(seedSongs).catch(function () { return findSongs || []; });
+  }
+
+  /* An evening belongs to an account and the database answers nothing at all
+     without one, so a signed out reader is not asked to wait for an empty
+     list. */
+  function findEveningList() {
+    if (!auth.in) return Promise.resolve([]);
+    if (findEvenings && Date.now() - findEveningsAt < FIND_FRESH) return Promise.resolve(findEvenings);
+    return sets.list().then(seedEvenings).catch(function () { return findEvenings || []; });
+  }
+
+  /* How many rows the panel will hold. A search that answers with sixty songs
+     has not answered: what it is for is the two or three that match, and past
+     a screenful the thing to do is type another letter. The count of what was
+     left out is said, so the list never quietly pretends to be all of it. */
+  var FIND_SHOW = 18;
+
+  /* WHERE THE MATCH WAS, WHICH IS HOW THE LIST IS ORDERED. A song whose NAME
+     holds what was typed is what was meant; a song with the word somewhere in
+     its third verse is a maybe. Both are worth showing and they are not worth
+     showing in the order the library happens to be in. */
+  var HIT_NAME = 3;
+  var HIT_NEAR = 2;
+  var HIT_DEEP = 1;
+
+  function findAll(q, songs, evenings) {
+    q = String(q || "").trim().toLowerCase();
+    if (!q) return [];
+
+    var out = [];
+    var titles = {};
+    songs.forEach(function (s) { titles[s.id] = s.title; });
+
+    songs.forEach(function (s) {
+      var name = String(s.title || "").toLowerCase();
+      var hit = name.indexOf(q) >= 0 ? HIT_NAME : (songHay(s).indexOf(q) >= 0 ? HIT_DEEP : 0);
+      if (!hit) return;
+      out.push({
+        hit: hit, order: 0,
+        name: s.title || "בלי שם",
+        said: creditNames(s).join(", "),
+        tags: [{ kind: "kind", words: "שיר" }],
+        href: BASE + "/" + encodeURIComponent(s.slug),
+      });
+    });
+
+    creatorsOf(songs).forEach(function (person) {
+      if (person.name.toLowerCase().indexOf(q) < 0) return;
+      out.push({
+        hit: HIT_NEAR, order: 1,
+        name: person.name,
+        said: person.songs.length === 1 ? "שיר אחד" : person.songs.length + " שירים",
+        tags: roleTags(person.roles),
+        href: BASE + "/creator/" + encodeURIComponent(person.name),
+      });
+    });
+
+    evenings.forEach(function (evening) {
+      var near = [evening.title || "", evening.venue || "", dateWords(evening.event_date)]
+        .join(" ").toLowerCase();
+      var hit = near.indexOf(q) >= 0 ? HIT_NEAR : (eveningHay(evening, titles).indexOf(q) >= 0 ? HIT_DEEP : 0);
+      if (!hit) return;
+      out.push({
+        hit: hit, order: 2,
+        name: evening.title || "ערב בלי שם",
+        said: whenWhere(evening),
+        tags: [{ kind: "kind", words: "ערב" }],
+        href: BASE + "/evenings/" + evening.id,
+      });
+    });
+
+    /* Where it matched first, then what kind of thing it is, then the name.
+       The last of the three is what stops the list reshuffling itself between
+       one keystroke and the next. */
+    out.sort(function (a, b) {
+      return b.hit - a.hit || a.order - b.order || a.name.localeCompare(b.name, "he");
+    });
+    return out;
+  }
+
+  var findBox = null;
+  var findField = null;
+  var findOut = null;
+  var findRows = [];
+  var findAt = -1;
+  var findTimer = null;
+  /* Which keystroke an answer belongs to. The lists are fetched, so two
+     letters typed quickly are two answers that can land in either order, and
+     the one that must win is the later question's. */
+  var findAsked = 0;
+
+  function buildFind() {
+    var slot = document.getElementById("topFind");
+    /* The test harness builds its own page around this file and has no bar to
+       put a box in. A search box that is not there is not a broken app. */
+    if (!slot) return null;
+
+    findBox = el("div", "find");
+    findBox.appendChild(svg(ICON.search));
+    findField = el("input");
+    findField.type = "search";
+    findField.autocomplete = "off";
+    findField.placeholder = "חיפוש שיר, יוצר או ערב";
+    findField.setAttribute("aria-label", "חיפוש שיר, יוצר או ערב");
+    findBox.appendChild(findField);
+
+    /* THE WAY BACK OUT, AND ONLY ON A PHONE. There the box takes the whole
+       bar while it is open (see .top-find in the stylesheet), so the buttons
+       it covered need a press that gives them back, and Escape is not a key
+       anybody has on a phone. On a desk nothing is covered and this is not
+       shown. */
+    var shut = iconBtn(ICON.close, "סגירת החיפוש", clearFind);
+    shut.classList.add("find-shut");
+    findBox.appendChild(shut);
+
+    slot.appendChild(findBox);
+
+    findOut = el("div", "find-out");
+    findOut.hidden = true;
+    slot.appendChild(findOut);
+
+    /* A press anywhere on the box is a press on the field. On a phone the
+       field is nothing but a magnifying glass until it is opened, and a
+       glass that has to be hit exactly is a glass nobody hits. */
+    findBox.addEventListener("click", function (event) {
+      if (event.target === shut || shut.contains(event.target)) return;
+      openFind();
+    });
+
+    findField.addEventListener("input", function () {
+      clearTimeout(findTimer);
+      findTimer = setTimeout(askFind, 110);
+    });
+    findField.addEventListener("focus", function () {
+      openFind();
+      if (findField.value.trim()) askFind();
+    });
+    findField.addEventListener("keydown", onFindKey);
+    document.addEventListener("pointerdown", function (event) {
+      if (!findOut || findOut.hidden) return;
+      if (findBox.contains(event.target) || findOut.contains(event.target)) return;
+      shutFind();
+    }, true);
+
+    /* Pressing away from an open box on a phone gives the bar back, whether
+       or not there was a panel under it to close. */
+    document.addEventListener("pointerdown", function (event) {
+      if (!document.body.classList.contains("finding")) return;
+      if (findBox.contains(event.target) || (findOut && findOut.contains(event.target))) return;
+      clearFind();
+    }, true);
+
+    return findBox;
+  }
+
+  /* On a phone this is what makes room for it: the bar's own buttons stand
+     down while it is open. On a desk the class changes nothing, because
+     nothing was in the way. */
+  function openFind() {
+    if (!findField) return;
+    document.body.classList.add("finding");
+    if (document.activeElement !== findField) findField.focus();
+  }
+
+  function shutFind() {
+    if (!findOut) return;
+    findOut.hidden = true;
+    findOut.textContent = "";
+    findRows = [];
+    findAt = -1;
+  }
+
+  /* A new page is a new question, and the answer to the old one hanging over
+     it is a panel about where you have just been. */
+  function clearFind() {
+    document.body.classList.remove("finding");
+    if (!findField) return;
+    findField.value = "";
+    findField.blur();
+    shutFind();
+  }
+
+  function askFind() {
+    if (!findField) return;
+    var q = findField.value.trim();
+    if (!q) return shutFind();
+
+    var mine = ++findAsked;
+    Promise.all([findSongList(), findEveningList()]).then(function (both) {
+      if (mine !== findAsked || !findField) return;
+      paintFind(q, findAll(q, both[0] || [], both[1] || []));
+    });
+  }
+
+  function paintFind(q, found) {
+    findOut.textContent = "";
+    findRows = [];
+    findAt = -1;
+    findOut.hidden = false;
+
+    if (!found.length) {
+      findOut.appendChild(el("div", "find-none", 'לא נמצא כלום עבור "' + q + '".'));
+      return;
+    }
+
+    found.slice(0, FIND_SHOW).forEach(function (item) {
+      var row = el("button", "find-row");
+      row.type = "button";
+
+      var main = el("div", "find-main");
+      main.appendChild(el("div", "find-t", item.name));
+      if (item.said) main.appendChild(el("div", "find-said", item.said));
+      row.appendChild(main);
+
+      var tags = el("div", "find-tags");
+      item.tags.forEach(function (t) { tags.appendChild(tag(t.kind, t.words)); });
+      row.appendChild(tags);
+
+      row.addEventListener("click", function () {
+        clearFind();
+        go(item.href);
+      });
+      row.addEventListener("mousemove", function () { markFind(findRows.indexOf(row)); });
+
+      findRows.push(row);
+      findOut.appendChild(row);
+    });
+
+    /* NAMED AS A NUMBER AND NOT HIDDEN. A list cut at eighteen that says
+       nothing about it is a list claiming to be all of them. */
+    var over = found.length - findRows.length;
+    if (over > 0) findOut.appendChild(el("div", "find-more", "ועוד " + over + ", אפשר להקליד עוד אות"));
+  }
+
+  function markFind(index) {
+    if (index < 0 || index >= findRows.length) return;
+    if (findAt >= 0 && findRows[findAt]) findRows[findAt].classList.remove("is-on");
+    findAt = index;
+    findRows[findAt].classList.add("is-on");
+  }
+
+  function onFindKey(event) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      return clearFind();
+    }
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      if (!findRows.length) return;
+      event.preventDefault();
+      var next = findAt + (event.key === "ArrowDown" ? 1 : -1);
+      if (next < 0) next = findRows.length - 1;
+      if (next >= findRows.length) next = 0;
+      markFind(next);
+      findRows[next].scrollIntoView({ block: "nearest" });
+      return;
+    }
+    if (event.key === "Enter") {
+      /* Nothing chosen with the arrows means the first of them, which is the
+         one the box put at the top for exactly this. */
+      var row = findRows[findAt >= 0 ? findAt : 0];
+      if (!row) return;
+      event.preventDefault();
+      row.click();
+    }
+  }
+
   /* --- the index ---------------------------------------------------------- */
 
   function viewIndex() {
-    /* THE LIBRARY GETS THE WHOLE WINDOW. Every other page here is one thing
-       being read or written, and a column of about eighty characters is what
-       that wants; a library is a wall of songs, and a wall wants the wall. */
-    document.body.classList.add("wide");
     setBusy("טוען שירים");
 
     db.list().then(function (songs) {
       state.songs = songs || [];
+      /* the box in the bar searches this same list, and it has just been
+         read: asking for it a second time a keystroke later would be the same
+         request twice */
+      seedSongs(state.songs);
       app.innerHTML = "";
-
-      var search = el("div", "search");
-      search.appendChild(svg(ICON.search));
-      var input = el("input");
-      input.type = "search";
-      /* One word. The box is a box with a magnifying glass in it and the only
-         thing on this page to search is the songs; a sentence explaining which
-         of their words it reads is a sentence nobody needs twice. */
-      input.placeholder = "חיפוש...";
-      input.setAttribute("aria-label", "חיפוש שיר");
-      search.appendChild(input);
-      app.appendChild(search);
 
       /* --- several at once -----------------------------------------------------
          Sometimes what you want to do is to a handful of songs rather than to
@@ -2533,7 +3088,7 @@
       picking.appendChild(killBtn);
       picking.appendChild(iconBtn(ICON.close, "ביטול הבחירה", function () {
         picked = {};
-        paint(input.value);
+        paint();
       }));
       picking.hidden = true;
 
@@ -2565,27 +3120,26 @@
         };
       });
 
-      /* --- IN THE SEARCH BOX, at the far end of it -----------------------------
-         The states are a filter, the box beside them is a filter, and they had
-         a row of their own between the box and the songs. One row of the page
-         for four chips, and two places to narrow a library from.
+      /* --- ONE ROW OF CHIPS OVER THE WALL --------------------------------------
+         The states used to sit inside the library's own search box, because
+         the two were the same gesture: both narrowed the list. The searching
+         has moved into the bar, where it is about getting to another page
+         rather than about this one, and what is left here is filtering, which
+         is what these are.
 
-         So they sit inside the box. What is ticked keeps a row under it, and
-         only while something is ticked. */
+         So the states and the styles stand together in the row over the wall.
+         They answer different questions, the states being the work
+         outstanding and the styles being the shelf itself, and they narrow
+         together: that is how you get to "the circle songs I have not checked
+         yet". */
       var tallies = el("div", "tallies");
-      search.appendChild(tallies);
 
-      /* And under it, what KIND of songs it holds. A second row and not more
-         chips in the first, because the two answer different questions: the
-         states are the work outstanding and the styles are the shelf itself.
-         Both narrow the list and they narrow it together, which is how you get
-         to "the circle songs I have not checked yet". */
       /* Not a style, and it cannot be mistaken for one whatever anybody types:
          it is not a string at all, so no name can ever equal it. */
       var NO_STYLE = {};
       /* --- EVERYTHING THE FILTER LEFT ------------------------------------------
          The ticks are for doing one thing to a handful of songs, and the
-         handful is usually "these", where "these" is what the search box and
+         handful is usually "these", where "these" is what
          the chips have already narrowed the wall down to: the songs with no
          style yet, everything by one writer, the drafts. Ticking forty of
          those by hand is forty presses to say a word the page already knows.
@@ -2606,12 +3160,13 @@
           if (take) picked[s.id] = true;
           else delete picked[s.id];
         });
-        paint(input.value);
+        paint();
       }
 
       var kind = null;
       var kindsRow = el("div", "kinds-row");
       var kinds = el("div", "kinds");
+      kindsRow.appendChild(tallies);
       kindsRow.appendChild(kinds);
       if (auth.in) {
         allBtn = iconBtn(ICON.checkAll, "סימון כל מה שמוצג", pickAll);
@@ -2635,7 +3190,7 @@
           chip.title = tag === t.key ? "לחיצה מחזירה את כל השירים" : "לחיצה מציגה רק את אלה";
           chip.addEventListener("click", function () {
             tag = tag === t.key ? null : t.key;
-            paint(input.value);
+            paint();
           });
           tallies.appendChild(chip);
         });
@@ -2669,7 +3224,7 @@
           chip.title = kind === key ? "לחיצה מחזירה את כל השירים" : "לחיצה מציגה רק את אלה";
           chip.addEventListener("click", function () {
             kind = kind === key ? null : key;
-            paint(input.value);
+            paint();
           });
           kinds.appendChild(chip);
         }
@@ -2777,47 +3332,22 @@
         };
       }
 
-      /* --- WHAT THE SEARCH BOX READS -------------------------------------------
-         The name, who wrote it, what kind of song it is, AND THE WORDS. Half
-         the time a song is looked for by a line of it rather than by its name:
-         nobody remembers what "אל נא רפא נא לה" is called, they remember a
-         line they were singing. The library is already in the browser, so this
-         costs a search and no request.
-
-         Without the chords and without the gaps: a chord sits INSIDE a word in
-         the stored text, so searching the raw document would fail to find any
-         word that has one in it, which is most of the words worth searching
-         for. What is searched is the words as they are sung.
-
-         Worked out once per song and kept on the row. A refresh brings new
-         rows, so nothing goes stale, and a keystroke does not re-read a
-         hundred songs. */
-      function hayOf(s) {
-        if (s.hay == null) {
-          s.hay = [
-            s.title,
-            credits(s).map(function (c) { return c.name; }).join(" "),
-            styles(s).join(" "),
-            withoutGaps(normalizeLines(s.lines).map(function (l) { return l.text; }).join(" ")),
-          ].join(" ").toLowerCase();
-        }
-        return s.hay;
-      }
-
-      function paint(filter) {
+      /* WHAT THE CHIPS LEFT. Looking a song up by NAME, by who wrote it or by
+         a line of it is the box in the bar, on every page and not only on
+         this one; what is asked here is the other question a library gets,
+         which is "show me a shelf of it". */
+      function paint() {
         list.innerHTML = "";
         showBar();
         paintTallies();
         paintKinds();
         var marks = marksFor(state.songs);
-        var q = String(filter || "").trim().toLowerCase();
         var only = tag && TAGS.filter(function (t) { return t.key === tag; })[0];
         var shown = state.songs.filter(function (s) {
           if (only && !only.is(s)) return false;
           if (kind === NO_STYLE) { if (styles(s).length) return false; }
           else if (kind && styles(s).indexOf(kind) < 0) return false;
-          if (!q) return true;
-          return hayOf(s).indexOf(q) >= 0;
+          return true;
         });
 
         shownNow = shown;
@@ -2825,11 +3355,10 @@
 
         if (!shown.length) {
           if (!empty.parentNode) app.appendChild(empty);
-          emptyText.textContent = q ? "לא נמצא שיר שמתאים לחיפוש."
-            : kind ? "אין שירים בסגנון הזה."
+          emptyText.textContent = kind ? "אין שירים בסגנון הזה."
             : only ? "אין שירים בתווית הזאת."
             : "עוד אין שירים כאן.";
-          emptyActions.hidden = !!q || !!only || !!kind;
+          emptyActions.hidden = !!only || !!kind;
           return;
         }
         if (empty.parentNode) empty.remove();
@@ -2861,13 +3390,12 @@
         return db.list().then(function (rows) {
           if (!list.isConnected) return;
           state.songs = rows || [];
-          paint(input.value);
+          paint();
           poll();
         }).catch(function () { /* a failed refresh is not worth a red screen */ });
       }
 
-      input.addEventListener("input", function () { paint(input.value); });
-      paint("");
+      paint();
       poll();
 
       /* The way to what was deleted, under everything and only when there is
@@ -3050,11 +3578,18 @@
      themselves are in the stylesheet, under one name each. */
   function tag(state, words, why) {
     var node = el("span", "tag tag-" + state, words);
-    node.title = why;
+    /* A tag that has nothing more to say says nothing more. Handed `why`
+       whatever it was would put the word "undefined" under the pointer. */
+    if (why) node.title = why;
     return node;
   }
 
-  function songRow(s, refresh, mark, pick) {
+  /* `extra` is whatever the PAGE has to say about this song that the song
+     does not say about itself. There is one page that does: a creator's, where
+     every card has to say which of the two things this person did on it. It
+     goes in the same corner as the state, because it is the same kind of fact,
+     a word about the song rather than a word of it. */
+  function songRow(s, refresh, mark, pick, extra) {
     var li = el("li");
 
     /* IN THE CARD'S CORNER, AND NOT IN THE CARD. It looks like it is inside,
@@ -3119,10 +3654,8 @@
          sits in and nobody reads an index that way. */
       var top = el("div", "t-row");
       top.appendChild(name());
-      var by = credits(s);
-      if (by.length) {
-        top.appendChild(el("div", "by", by.map(function (c) { return c.name; }).join(", ")));
-      }
+      var by = creditNames(s);
+      if (by.length) top.appendChild(el("div", "by", by.join(", ")));
 
       /* What the machine charged to read this one, beside the name. It rode at
          the end of the chords for a while, where it was the last thing on a row
@@ -3209,6 +3742,7 @@
       };
       var was = rowState(s);
       tags.appendChild(tag(was, STATE_WORDS[was], WHY[was]));
+      (extra || []).forEach(function (t) { tags.appendChild(tag(t.kind, t.words)); });
       side.appendChild(tags);
 
       /* `created_at` behind it, because a song that has never been changed
@@ -3255,6 +3789,127 @@
      two numbers waiting to disagree, so this one is the copy that is commented
      as one (see the media queries in style.css). */
   var NARROW = window.matchMedia("(max-width: 620px)");
+
+  /* --- WHO WROTE THE SONGS --------------------------------------------------
+     Two pages, and they are the same wall of cards the library is, because
+     they are the same kind of question: what is on the shelf.
+
+       /creators          everybody the library has a name for
+       /creator/<name>    one of them, and everything they wrote
+
+     Neither of them is a table (see creatorsOf). A person here is what the
+     songs say about who made them, gathered up on the way out, so nothing can
+     ever be a person with no songs or a song by nobody. */
+
+  function creatorRow(person) {
+    var li = el("li");
+    var a = el("a");
+    a.href = BASE + "/creator/" + encodeURIComponent(person.name);
+    a.addEventListener("click", function (event) {
+      event.preventDefault();
+      go(a.getAttribute("href"));
+    });
+
+    var box = el("div");
+    var top = el("div", "t-row");
+    top.appendChild(el("div", "t", person.name));
+    top.appendChild(el("div", "by", person.songs.length === 1 ? "שיר אחד" : person.songs.length + " שירים"));
+    box.appendChild(top);
+
+    /* The songs by name, the way an evening shows what is in it and for the
+       same reason: a count is a number you have to open the page to use, and
+       the names are the answer to "is this the person I meant". Cut to two
+       lines by the stylesheet, so somebody with forty songs is still a card. */
+    box.appendChild(el("div", "a names", person.songs.map(function (song) {
+      return song.title || "בלי שם";
+    }).join("  •  ")));
+    a.appendChild(box);
+
+    /* WHICH OF THE TWO THEY ARE, in the corner a song keeps its state in.
+       Somebody who did both carries both, in the order the credits are
+       written in. */
+    var side = el("div", "side");
+    var tags = el("div", "side-tags");
+    roleTags(person.roles).forEach(function (t) { tags.appendChild(tag(t.kind, t.words)); });
+    side.appendChild(tags);
+    a.appendChild(side);
+
+    li.appendChild(a);
+    return li;
+  }
+
+  function viewCreators() {
+    document.title = "יוצרים | אקורדים";
+    setBusy("טוען יוצרים");
+
+    db.list().then(function (songs) {
+      seedSongs(songs || []);
+      app.innerHTML = "";
+
+      var people = creatorsOf(songs || []);
+      if (!people.length) {
+        var box = el("div", "center");
+        box.appendChild(el("p", null, "עוד אין שם של אף אחד על שיר. מי כתב את המילים ומי הלחין נכתבים בתוך השיר עצמו, ומכאן הם נאספים."));
+        box.appendChild(button("לרשימת השירים", ICON.back, "ghost", function () { go(BASE + "/"); }));
+        app.appendChild(box);
+        return;
+      }
+
+      var list = el("ul", "list");
+      people.forEach(function (person) { list.appendChild(creatorRow(person)); });
+      app.appendChild(list);
+    }).catch(fail);
+  }
+
+  function viewCreator(name) {
+    name = String(name || "").trim();
+    document.title = (name || "יוצר") + " | אקורדים";
+    setBusy("טוען שירים");
+
+    db.list().then(function (songs) {
+      seedSongs(songs || []);
+      var mine = songsBy(songs || [], name);
+      app.innerHTML = "";
+
+      /* A name nobody is credited with is not a page. It is almost always a
+         name that has since been corrected on the one song that carried it,
+         and the way out is the list of the names that do exist. */
+      if (!mine.length) {
+        var gone = el("div", "center");
+        gone.appendChild(el("p", null, 'אין שירים על שם "' + name + '".'));
+        gone.appendChild(button("לרשימת היוצרים", ICON.back, "ghost", function () { go(BASE + "/creators"); }));
+        app.appendChild(gone);
+        return;
+      }
+
+      /* The name as a heading, and beside it what this person did across the
+         library as a whole. The tag on each card below says what they did on
+         THAT song, which is not the same fact: somebody can have written the
+         words of one and the tune of another. */
+      var head = el("div", "song-head");
+      var top = el("div", "head-top");
+      top.appendChild(el("h1", null, name));
+      var tags = el("div", "head-tags");
+      var roles = {};
+      mine.forEach(function (song) {
+        var did = rolesOn(song, name);
+        Object.keys(did).forEach(function (field) { roles[field] = true; });
+      });
+      roleTags(roles).forEach(function (t) { tags.appendChild(tag(t.kind, t.words)); });
+      top.appendChild(tags);
+      head.appendChild(top);
+      head.appendChild(el("div", "by", mine.length === 1 ? "שיר אחד" : mine.length + " שירים"));
+      app.appendChild(head);
+
+      var list = el("ul", "list");
+      mine.forEach(function (song) {
+        list.appendChild(songRow(song, function () { viewCreator(name); }, null, null,
+          roleTags(rolesOn(song, name))));
+      });
+      app.appendChild(list);
+      tick(list);
+    }).catch(fail);
+  }
 
   /* --- one song ------------------------------------------------------------
      ONE SCREEN, NOT TWO. There is no editor to go to and come back from: the
@@ -4012,8 +4667,13 @@
       /* Breaking first and placing second, because a chord belongs to the row
          its syllable ended up on and there is no telling which that is until
          the words have been broken. */
+      /* And the columns after the breaking and before the placing, for the
+         same reason and in the same order: how many columns there are depends
+         on how tall the song came out, and where a chord goes depends on
+         which column its line landed in. */
       requestAnimationFrame(function () {
         if (!editing && NARROW.matches) flowSheet(sheet);
+        fitColumns(sheet);
         layoutAll(sheet);
       });
     }
@@ -4035,7 +4695,9 @@
       showSize();
       sheet.style.setProperty("--song-size", size + "px");
       if (!editing && NARROW.matches) return draw();
-      requestAnimationFrame(function () { layoutAll(sheet); });
+      /* Bigger words are a wider longest line and a taller song, which are
+         the two numbers the column count is made of. */
+      requestAnimationFrame(function () { fitColumns(sheet); layoutAll(sheet); });
     }
 
     /* --- what has changed ----------------------------------------------------
@@ -5682,7 +6344,10 @@
      sliding away, and redrawing the sheet under a reader's thumb for that is
      the page flinching at nothing. */
   function relayoutOn(root, redraw) {
-    var run = function () { layoutAll(root); };
+    /* A window that changed width changed how many columns the song stands
+       in, which is a fact about the sheet and not about any one chord, so it
+       is asked again before the chords are placed. */
+    var run = function () { fitColumns(root); layoutAll(root); };
     var width = root.clientWidth;
 
     /* The font the words were broken with has to be the font they are read in,
@@ -6118,11 +6783,13 @@
     document.title = "ערבי שירה | אקורדים";
     setBusy("טוען ערבים");
 
-    /* The names come along, because they are what the list shows and what the
-       search box searches. Only the names: an evening's line does not draw
-       chords, so it has no use for the rest of a song. */
+    /* The names come along, because they are what a row of this list shows.
+       Only the names: an evening's card does not draw chords, so it has no
+       use for the rest of a song. */
     Promise.all([sets.list(), db.titles()]).then(function (both) {
       app.innerHTML = "";
+      /* what the box in the bar looks through, read here anyway */
+      seedEvenings(both[0] || []);
       var evenings = byWhen(both[0] || []);
       var titles = both[1] || {};
 
@@ -6136,73 +6803,55 @@
         return;
       }
 
-      /* One box for both questions somebody arrives with: which evening was
-         that, and where did we play this song. So it searches the name, the
-         place, the date in words and every song in the evening, because all
-         four are things a person remembers an evening by and none of them is
-         the one they always remember. */
-      var search = el("div", "search");
-      search.appendChild(svg(ICON.search));
-      var input = el("input");
-      input.type = "search";
-      input.placeholder = "חיפוש לפי שם ערב, מיקום או שיר";
-      input.setAttribute("aria-label", "חיפוש ערב");
-      search.appendChild(input);
-      app.appendChild(search);
+      /* THE SAME WALL THE SONGS STAND IN. An evening is a card like a song is
+         a card, so it is the same list, in the same columns, at the same
+         width: two halves of one app should not be two different shapes.
 
+         The box that used to stand over it is in the bar now, and it searches
+         further than this one could: an evening is remembered by its name, by
+         the room, by the date, or by a song that was sung at it, and the box
+         up there reads all four along with the songs and the people. */
       var list = el("ul", "list");
       app.appendChild(list);
 
-      var none = el("p", "center", "לא נמצא ערב שמתאים לחיפוש.");
-      none.hidden = true;
-      app.appendChild(none);
-
-      function haystack(evening) {
-        return [
-          evening.title || "",
-          evening.venue || "",
-          dateWords(evening.event_date),
-          songNames(evening, titles).join(" "),
-        ].join(" ").toLowerCase();
-      }
-
-      function paint(filter) {
-        var q = String(filter || "").trim().toLowerCase();
-        list.innerHTML = "";
-
-        var shown = q ? evenings.filter(function (e) { return haystack(e).indexOf(q) >= 0; }) : evenings;
-        none.hidden = shown.length > 0;
-
-        shown.forEach(function (evening) {
-          var li = el("li");
-          var a = el("a");
-          a.href = BASE + "/evenings/" + evening.id;
-          a.addEventListener("click", function (event) {
-            event.preventDefault();
-            go(a.getAttribute("href"));
-          });
-
-          var box = el("div");
-          var top = el("div", "t-row");
-          top.appendChild(el("div", "t", evening.title || "ערב בלי שם"));
-          var said = whenWhere(evening);
-          if (said) top.appendChild(el("div", "by", said));
-          box.appendChild(top);
-
-          /* The songs themselves rather than how many of them there are. The
-             count is a number you have to open the evening to make any use
-             of; the names are the evening. */
-          var names = songNames(evening, titles);
-          box.appendChild(el("div", "a names", names.length ? names.join("  •  ") : "עוד בלי שירים"));
-
-          a.appendChild(box);
-          li.appendChild(a);
-          list.appendChild(li);
+      evenings.forEach(function (evening) {
+        var li = el("li");
+        var a = el("a");
+        a.href = BASE + "/evenings/" + evening.id;
+        a.addEventListener("click", function (event) {
+          event.preventDefault();
+          go(a.getAttribute("href"));
         });
-      }
 
-      input.addEventListener("input", function () { paint(input.value); });
-      paint("");
+        var box = el("div");
+        var top = el("div", "t-row");
+        top.appendChild(el("div", "t", evening.title || "ערב בלי שם"));
+        var said = whenWhere(evening);
+        if (said) top.appendChild(el("div", "by", said));
+        box.appendChild(top);
+
+        /* The songs themselves rather than how many of them there are. The
+           count is a number you have to open the evening to make any use
+           of; the names are the evening. */
+        var names = songNames(evening, titles);
+        box.appendChild(el("div", "a names", names.length ? names.join("  •  ") : "עוד בלי שירים"));
+
+        a.appendChild(box);
+
+        /* WHAT KIND OF THING THIS CARD IS. On its own page it is the only
+           kind there is and the word is spare; it is the same word the box in
+           the bar puts on an evening among songs and people, and a card that
+           reads one way in a list of results and another way here would be
+           two cards. */
+        var side = el("div", "side");
+        var tags = el("div", "side-tags");
+        tags.appendChild(tag("kind", "ערב"));
+        side.appendChild(tags);
+        a.appendChild(side);
+
+        li.appendChild(a);
+        list.appendChild(li);
+      });
     }).catch(function (error) {
       if (missingTable(error)) return needSchema();
       fail(error);
@@ -7126,7 +7775,9 @@
     /* the header follows the address, because what it offers depends on it.
        Nothing is printable until a view says it is, and every address starts
        out as not that. */
-    document.body.classList.remove("wide");
+    /* A new page is a new question. Whatever the box in the bar was showing
+       is an answer about where you have just been. */
+    clearFind();
     state.printable = false;
     state.printer = null;
     state.killer = null;
@@ -7155,6 +7806,19 @@
 
     /* What was deleted and is still there. An account's own, so it needs one. */
     if (p[0] === "deleted") return viewDeleted();
+
+    /* --- who wrote them ---
+       /creators        everybody the library has a name for
+       /creator/<name>  one of them, with everything they wrote
+
+       The name is the address, unencoded by parts() along with the rest of
+       the path, because a person has no id to be named by: they are what the
+       songs say (see creatorsOf), and what the songs say is a name. */
+    if (p[0] === "creators") return viewCreators();
+    if (p[0] === "creator") {
+      if (!p[1]) return viewCreators();
+      return viewCreator(p[1]);
+    }
 
     /* A new song is the song page with nothing on it yet, and it needs somebody
        signed in to be worth opening at all. A phone used to be sent back to
@@ -7271,6 +7935,10 @@
   if (NARROW.addEventListener) NARROW.addEventListener("change", function () { paintHeader(); });
 
   absorbFallback();
+  /* The box in the bar is built once and stays for the life of the tab: it is
+     the same box on every page, and rebuilding it on each one would take the
+     focus out of it every time somebody pressed a result. */
+  buildFind();
   auth.load();
   /* after the session is loaded, because coming back from Google replaces it,
      and before the routing, because what the first page draws depends on

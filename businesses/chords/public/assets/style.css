@@ -72,9 +72,13 @@ body {
   min-height: 100vh;
 }
 
-.wrap { width: min(880px, 100% - 32px); margin-inline: auto; }
-/* The library, which is not one thing being read. See viewIndex. */
-body.wide .wrap { width: calc(100% - 32px); }
+/* THE WHOLE WINDOW, ON EVERY PAGE. It used to be a column of about eighty
+   characters, with the library alone allowed out of it, and that rule came
+   from a page of prose. Nothing here is prose: the library is a wall of
+   cards, an evening is a wall of cards, and a song is a sheet that answers a
+   wide screen by standing in two or three columns rather than by running down
+   the middle of it. So the gutter is the only thing left of it. */
+.wrap { width: calc(100% - 32px); margin-inline: auto; }
 
 /* --- header ------------------------------------------------------------- */
 
@@ -91,6 +95,68 @@ body.wide .wrap { width: calc(100% - 32px); }
 }
 .brand svg { width: 24px; height: 24px; color: var(--accent); }
 .top-actions { margin-inline-start: auto; display: flex; align-items: center; gap: 8px; }
+
+/* --- ONE SEARCH BOX, AND IT IS IN THE BAR ---------------------------------
+   It was on the library's own page, which is the one page where a search box
+   is least needed: the songs are already on the screen. What it is for is the
+   other pages, where you are inside one song, or planning an evening, and the
+   thing you want is a different song, a person, or the evening you played it
+   at. That is navigation, so it belongs where the navigation is.
+
+   It is as wide as the bar will let it be and no wider: a search box that
+   takes the whole of a wide screen reads as the page rather than as the way
+   off it. */
+/* min-width: 0, or a flex item refuses to go below what is inside it and the
+   bar of a phone pushes the buttons off its own end. */
+.top-find { position: relative; flex: 1 1 220px; min-width: 0; max-width: 460px; margin-inline: 8px; }
+.top-find .find {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 14px; height: 38px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 999px;
+}
+.top-find .find:focus-within { border-color: var(--accent); }
+.top-find .find svg { flex: none; width: 17px; height: 17px; color: var(--ink-soft); }
+.top-find input {
+  flex: 1 1 auto; min-width: 0;
+  font: inherit; font-size: 15px; color: inherit;
+  background: none; border: 0; padding: 0;
+}
+.top-find input:focus-visible { outline: none; }
+/* the browser's own clearing cross, which duplicates the one below it */
+.top-find input::-webkit-search-cancel-button { display: none; }
+/* Shown on a phone and only while the box is open, where it is the press that
+   gives the bar's buttons back. See the media query near the top. */
+.find-shut { display: none; flex: none; width: 26px; height: 26px; border: 0; }
+
+/* WHAT THE BOX FOUND, HANGING UNDER IT. Not a page: a search that took over
+   the screen would lose the song you were reading in order to tell you about
+   another one, and half the time what the box is for is a glance. */
+.find-out {
+  position: absolute; z-index: 30; top: calc(100% + 8px);
+  inset-inline-start: 0; width: min(460px, calc(100vw - 24px));
+  max-height: min(70vh, 560px); overflow-y: auto;
+  background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: 0 10px 34px rgba(23, 32, 42, .16);
+  padding: 6px;
+}
+.find-out[hidden] { display: none; }
+.find-row {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; text-align: start; cursor: pointer;
+  appearance: none; font: inherit; color: inherit;
+  background: none; border: 0; border-radius: 10px; padding: 8px 10px;
+}
+.find-row:hover, .find-row.is-on { background: var(--bg); }
+.find-main { flex: 1 1 auto; min-width: 0; }
+.find-t { font-weight: 700; font-size: 15px; }
+/* One line each. A result is a way to a page, not the page. */
+.find-said {
+  color: var(--ink-soft); font-size: 13px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.find-tags { flex: none; display: flex; gap: 4px; }
+.find-none { padding: 14px 12px; color: var(--ink-soft); font-size: 14px; }
+.find-more { padding: 8px 12px 6px; color: var(--ink-soft); font-size: 12px; }
 
 /* A name is as long as somebody's name is, and the bar has the width it has.
    Cut with an ellipsis rather than let one long name push everything else out
@@ -117,6 +183,35 @@ body.wide .wrap { width: calc(100% - 32px); }
   .top-actions .btn svg + .lb { display: none; }
   .top-actions .btn.small { padding: 8px; }
   .top-actions .btn svg { width: 18px; height: 18px; }
+
+  /* The app's name goes and its mark stays. The bar has to hold the search
+     box, and a word that says which app you are in is the one thing on it
+     that nobody is looking for: the mark says the same and costs a quarter of
+     the room. */
+  .brand span { display: none; }
+  .top-in { gap: 8px; }
+
+  /* A GLASS UNTIL IT IS PRESSED, AND THEN THE WHOLE BAR. The bar of a phone
+     holds a mark, four pictures and a name, and what was left over for a
+     search box was ninety pixels: a box you cannot read your own typing in.
+
+     A second row was the other answer and it is the wrong one. The bar is
+     sticky, so a row grown here is a row taken off the top of every song for
+     good, to hold a box that is empty almost all of the time.
+
+     So it takes the room from the buttons, and only while it is being used.
+     Nothing is lost: they come straight back, and the press that brings them
+     is the cross at the end of the box. */
+  .top-find { flex: none; width: 38px; margin-inline: 0; }
+  .top-find .find { height: 36px; padding: 0 9px; cursor: pointer; }
+  .top-find input { width: 0; flex: 0 0 0; }
+
+  body.finding .top-find { flex: 1 1 auto; width: auto; }
+  body.finding .top-find input { width: auto; flex: 1 1 auto; }
+  body.finding .brand, body.finding .top-actions { display: none; }
+  body.finding .find-shut { display: inline-flex; }
+
+  .find-out { inset-inline-start: auto; inset-inline-end: 0; }
 
   .ev-meta input[type="date"] { display: block; }
   .kinds-label { flex: 1 1 100%; }
@@ -196,14 +291,14 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 
 /* No heading over the list. The page is the list, it says so in the top bar,
    and a title that repeats that only pushed the songs down the screen. */
-/* The box, and inside it at the far end the states to narrow by. Both are the
-   same gesture on the same list, so they are one control: a row of chips
-   between the box and the songs was a second place to narrow a library from,
-   and a whole line of the page for four words.
+/* WHAT IS LEFT OF THIS. It was the library's own box, with the state chips
+   riding inside it. Searching moved into the bar, where it reaches the
+   people and the evenings as well and is on every page rather than on one,
+   and the chips moved down onto the row over the wall, where they are
+   filtering and nothing else.
 
-   The border belongs to the box now rather than to the field inside it, and
-   the field has none, so the two read as one thing however many chips are in
-   it. On a narrow screen they wrap INSIDE it. */
+   The shape survives for the one box that is not searching anything: the
+   shelf inside an evening, which picks songs to put in it. */
 .search {
   display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
   margin: 28px 0 18px; padding: 5px 14px; min-height: 46px;
@@ -217,7 +312,6 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   background: none; border: 0; border-radius: 0;
 }
 .search input:focus-visible { outline: none; }
-.search .tallies { margin: 0; flex: none; }
 
 /* How much of the library is waiting for something, in four numbers. Quiet and
    small: they are the state of the shelf, not the shelf. Pressable, because a
@@ -253,8 +347,10 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    the styles the shelf itself. They narrow together.
 
    The row also carries what is ticked, at its other end. */
+/* It is the first thing on the library now, the search box that used to stand
+   over it having moved into the bar, so it carries its own air above. */
 .kinds-row {
-  display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: -8px 0 16px;
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 24px 0 16px;
 }
 .kinds {
   display: flex; flex-wrap: wrap; gap: 8px;
@@ -589,6 +685,20 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 .tag-draft { color: var(--draft-ink); background: var(--draft-soft); }
 .tag-published { color: var(--published-ink); background: var(--published-soft); }
 
+/* --- WHAT KIND OF THING THIS IS -------------------------------------------
+   The four above say what state a song is in. These say what a thing IS: a
+   song, a person who wrote one, an evening it was sung at. One box searches
+   all of them now, so a row of results is a row of three different kinds of
+   thing, and without a word on each the list is a list of names with no way
+   to tell which page a press would open.
+
+   Deliberately quieter than the states. A state is news about a song and a
+   kind is not: it is what the row already looks like, said in a word for the
+   one glance where the look is not enough. */
+.tag-kind { color: var(--ink-soft); background: var(--bg); box-shadow: inset 0 0 0 1px var(--line); }
+.tag-words { color: var(--imported-ink); background: var(--imported-soft); }
+.tag-tune { color: var(--chord); background: var(--chord-soft); }
+
 /* WHAT KIND OF SONG IT IS, which is not one of the four states and does not
    wear one of their colours. It is a fact about the music, so it is quiet and
    outlined: on a row it sits beside who wrote the song, where the other facts
@@ -812,6 +922,32 @@ button.val:hover { border-color: var(--line); background: #fff; }
   overflow-x: auto;
   font-family: var(--song-font);
 }
+
+/* --- A SONG IN COLUMNS ----------------------------------------------------
+   A chord sheet's lines do not wrap, so a song is as wide as its longest
+   line and no wider: on a screen that is three times that, one column is a
+   ribbon down the middle and the second verse is off the bottom of the
+   window. Which is what a printed songbook solved a century ago, and it
+   solved it the same way.
+
+   How many columns is worked out and not chosen (see fitColumns in app.js):
+   as many as the song is long enough to fill, and never more than the width
+   allows a whole line to stand in. Nobody is asked, because there is nothing
+   here a reader knows that the page does not: the room is the window's and
+   the length is the song's.
+
+   Balanced rather than poured, so the columns end level. Poured, the first
+   would run to the bottom of the screen and the last would hold three lines.
+
+   The rule between them is what makes two columns read as two columns. In
+   Hebrew the first is the right hand one, which is where the page starts. */
+.sheet.is-cols { column-fill: balance; column-rule: 1px solid var(--line); }
+/* A line and the chords over it are one thing, and a column break through
+   the middle of the pair would leave the chords on the other side of the
+   page. It is also what keeps a chord findable at all: a chord is placed in
+   pixels measured from its own line, so a line split down two columns is a
+   line whose chords have two different origins. */
+.sheet .ln, .sheet .ln.is-section { break-inside: avoid; }
 
 /* --- a narrow screen -----------------------------------------------------
    620px is also where editing stops (see NARROW in app.js). Keep the two in
@@ -1357,6 +1493,10 @@ button.val:hover { border-color: var(--line); background: #fff; }
   /* a little room at the start of the line, or the first chord of every line
      is centred half off the paper */
   .sheet { border: none; box-shadow: none; padding: 0 26px; overflow: visible; }
+  /* Columns are an answer to a screen, and paper is not a screen: it has a
+     page break where a window has a scroll, and it comes in one width. The
+     count is written onto the element by hand, so this has to shout. */
+  .sheet { column-count: 1 !important; column-rule: none !important; }
   .wrap { width: 100%; }
 }
 
