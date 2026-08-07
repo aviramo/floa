@@ -1027,9 +1027,22 @@ body.on-song .top { border-bottom: 0; }
 /* In the bar the strip is not a row of its own, so what was standing at the
    far end of one has nothing to be at the end of. */
 .top-actions .tools { margin-inline-start: 0; }
-.top-actions .song-facts { flex: 0 1 auto; max-width: 22ch; }
-.top-actions .song-facts .song-by,
-.top-actions .song-facts .song-facts-ask {
+
+/* --- AND WHO WROTE IT, BESIDE THE NAME ------------------------------------
+   Its own place in the bar, between the name of the song and the search. It
+   was at the far end with the dials, where it was the one line of text in a
+   row of controls and half a bar away from the name it is about.
+   One line and never two: the bar is a fixed height, so what does not fit is
+   cut with an ellipsis rather than wrapped. Empty on every page but a song,
+   and an empty box still spends the row's gap, so it goes when it is empty. */
+.top-facts {
+  flex: 0 1 auto; min-width: 0; max-width: 22ch;
+  display: flex; align-items: center;
+}
+.top-facts:empty { display: none; }
+.top-facts .song-facts { flex: 0 1 auto; min-width: 0; flex-wrap: nowrap; }
+.top-facts .song-facts .song-by,
+.top-facts .song-facts .song-facts-ask {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
@@ -1407,6 +1420,16 @@ button.song-facts:hover .song-facts-ask { color: var(--accent); }
    font draws for a codepoint it has never heard of. The WIDTH is the span's,
    given in the song's own size rather than in em: an em of a font-size of zero
    is zero. */
+/* WHERE ONE LINE OF THE SONG ENDS AND THE NEXT BEGINS ON THE SAME ROW. The
+   pour puts a solidus there with room either side of it (see flowSheet), and
+   the solidus is a CHARACTER of the row like any other: it stands on the
+   words' baseline and takes their size, so there is nothing here to position
+   and nothing that can be positioned wrong.
+
+   The chords' red, which is the one colour on this sheet that already means
+   "this is not a word". */
+.ln-t .is-turn { color: var(--chord); }
+
 .ln-t .gap {
   display: inline-block; vertical-align: baseline; position: relative;
   /* named, because the arc below has to reach across a whole run of these and
@@ -1449,16 +1472,7 @@ button.song-facts:hover .song-facts-ask { color: var(--accent); }
    themselves, so a line of gaps is never mistaken for a line of chords. The
    reader's page and the printed one have nothing at all. The model has a gap
    there, not a hyphen. */
-/* THE ARC IS DRAWN WHEREVER THE GAPS ARE, and it used to be drawn only in the
-   editor. That was right while an artificial space was only ever something
-   somebody had opened: the person who opened it is the person looking at it,
-   and a reader had no use for the fact.
-
-   It is not only that any more. The pour puts a run of them between two lines
-   of the song sharing a row (see flowSheet), and there the arc is the one
-   thing saying that the space is the screen's doing and not the song's. A
-   reader needs that more than a writer does. */
-.ln-t .gap-run::after {
+.ed .ln-t .gap-run::after {
   content: "";
   /* OUT OF THE FLOW, so the mark cannot make the line taller or push it up.
      It was a background on the span, and a span with a background needs a

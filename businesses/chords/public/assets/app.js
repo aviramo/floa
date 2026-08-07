@@ -2150,7 +2150,13 @@
     /* What a page can actually hold, which is its height less the air it
        keeps at both ends. Filling to the full height and then padding it is
        how a line ends up under the fold. */
-    var room = plan.pageH - PAGE_AIR * 2;
+    /* ONE SEGMENT ACROSS IS A PHONE, AND A PHONE HAS NO PAGES. A page is a
+       screenful because that is how a row of segments is read: fill the row,
+       then the next row underneath. With one segment there is no row, so
+       cutting the song into screenfuls buys nothing and costs the tail of
+       every one of them, a band of empty paper wherever the last line of a
+       page did not reach the bottom. The song simply runs on. */
+    var room = plan.cols < 2 ? Infinity : plan.pageH - PAGE_AIR * 2;
 
     var page = null;
     var col = null;
@@ -2169,7 +2175,7 @@
     function nextCol() {
       if (!page || inPage >= plan.cols) {
         page = el("div", "page");
-        page.style.height = Math.round(plan.pageH) + "px";
+        if (plan.cols > 1) page.style.height = Math.round(plan.pageH) + "px";
         /* EVERY PAGE IS THE SAME WIDTH AND HOLDS THE SAME NUMBER OF SLOTS,
            filled or not. Centring each page's own segments instead put the
            last page's, which are fewer, at a different place from every page
@@ -2391,12 +2397,32 @@
     var probe = sheet.querySelector(".ln-t .gap");
     if (probe) gapW = probe.getBoundingClientRect().width;
     if (!(gapW > 0)) gapW = (sized[0].size || 18) * 0.34;
-    var sepW = SEP_GAPS * gapW;
+    /* THE SOLIDUS IS INK AND TAKES ROOM LIKE ANY OTHER LETTER. Counting only
+       the gaps either side of it left the row a few pixels wider than the
+       segment it stands in, which is a word printed over the next segment. A
+       third of a size is a solidus with a little to spare, and spare is the
+       right way to be wrong here: a row that breaks a word early costs a word,
+       and a row that runs over costs a reader the line. */
+    var sepW = SEP_GAPS * gapW + (sized[0].size || 18) * 0.35;
 
-    /* The separator itself: artificial spaces and nothing else. What says
-       they are the pour's and not somebody's is the arc drawn under them,
-       which the stylesheet draws under any run of them (see .gap-run). */
-    var sep = new Array(SEP_GAPS + 1).join(GAP);
+    /* --- THE MARK IS A CHARACTER OF THE ROW ----------------------------------
+       A solidus with room either side of it, and the solidus is a character
+       like any other on the line: it sits on the words' baseline because it is
+       standing on it, and at their size because it inherits it, and the only
+       thing left to say about it is its colour.
+
+       It was drawn as a pseudo-element hung off the gap beside it for a while,
+       and that gap is a box of no height at all, so where the mark landed was
+       arithmetic against nothing. A character cannot land in the wrong place,
+       because it lands where the text does.
+
+       IT LEANS THE WAY THE LINE RUNS. A solidus leans forward along the
+       reading direction, so a line going the other way wants the mirror of it,
+       or it leans back into the words it is separating. */
+    function separator(rtl) {
+      var half = new Array(Math.max(1, Math.round(SEP_GAPS / 2)) + 1).join(GAP);
+      return half + (rtl ? "/" : "\\") + half;
+    }
 
     lines.forEach(function (line) {
       /* A heading, or a blank line between two verses, is a thing of its own
@@ -2448,7 +2474,7 @@
         var lead = "";
         var shared = !!row.pieces.length;
         if (shared) {
-          lead = sep;
+          lead = separator(line.rtl);
           row.used += sepW;
         }
 
@@ -2562,6 +2588,9 @@
       ln.dir = desc.rtl ? "rtl" : "ltr";
       var lane = el("div", "ln-c");
       var text = "";
+      /* where the solidus of each separator fell, so it can be told from the
+         letters once the characters are spans */
+      var turns = [];
       /* One piece, always: a row holds one line of the song. Written as a loop
          because the pieces are what the chords are claimed against, and one of
          them is still a list of one. */
@@ -2569,7 +2598,12 @@
         /* The double gap that says a new line of the song begins here, laid
            down BEFORE the offset is taken, so the chords of the piece after it
            are counted from the piece and not from the separator. */
-        if (piece.lead) text += piece.lead;
+        if (piece.lead) {
+          /* the solidus itself, which is the one character of the separator
+             that is ink: the gaps either side of it are room */
+          turns.push(text.length + (piece.lead.length - 1) / 2);
+          text += piece.lead;
+        }
         var offset = text.length;
         piece.line.chords.forEach(function (c) {
           if (c.pos < piece.claimFrom || c.pos >= piece.claimTo) return;
@@ -2590,6 +2624,10 @@
          it is gone with the joining it went with: a row that is one line of a
          song needs no punctuation explaining itself. */
       if (desc.tail) ln.style.setProperty("--cont", indent + "px");
+      turns.forEach(function (at) {
+        var span = words.children[at];
+        if (span) span.classList.add("is-turn");
+      });
       ln.appendChild(words);
       return ln;
     }
@@ -2749,7 +2787,20 @@
     /* At the START of the bar, which right to left is its right hand end: they
        are about the song, and what is already there is about the page. */
     home.insertBefore(made.tools, home.firstChild);
-    if (made.facts) home.insertBefore(made.facts, made.tools);
+    /* WHO WROTE IT GOES WITH THE NAME OF THE SONG, not at the far end of the
+       bar among the dials. It stood there beside the transposer and the size,
+       which is a line of text in a row of controls: it is the only thing up
+       there that is a FACT about the song rather than something to press, and
+       the name it belongs under is at the other end of the bar.
+       So it sits directly after the name and before the search, which is where
+       it reads as the second half of the title rather than as a control that
+       lost its buttons. On a phone there is no room for it there and it stays
+       on the strip, in the row with the dials. */
+    var beside = NARROW.matches ? null : document.getElementById("topFacts");
+    if (made.facts) {
+      if (beside) beside.appendChild(made.facts);
+      else home.insertBefore(made.facts, made.tools);
+    }
     made.strip.hidden = !NARROW.matches;
 
     /* Stuck directly under the bar, whatever height the bar happens to be:
@@ -3176,6 +3227,11 @@
     node.oninput = null;
     node.onblur = null;
     whereUnder(null);
+    /* And what stood beside the name goes with it. The bar's own end is wiped
+       on every page (see paintHeader); this slot is not, so a song's credits
+       would still be standing there on the page after it. */
+    var beside = document.getElementById("topFacts");
+    if (beside) beside.textContent = "";
     return node;
   }
 
