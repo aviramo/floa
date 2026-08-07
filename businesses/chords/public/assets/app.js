@@ -71,7 +71,6 @@
     checkAll: '<rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M7.5 12l3 3 6-6.5"/>',
     /* four corners opening outwards: the song, and nothing else, on the whole
        of the screen */
-    stage: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>',
     /* A CLOCK WITH A HAND GOING BACKWARDS, which is the picture everything else
        uses for "what this was before", so it is the one on the way to the
        versions and not on anything else. It was on the revert button, where it
@@ -2050,16 +2049,26 @@
 
     sheet.style.columnGap = Math.round(gap) + "px";
 
-    /* A COLUMN IS AS WIDE AS THE LONGEST LINE, AND NO WIDER, AND THE SET IS
-       CENTRED — where nothing can be broken. Widening the columns to fill the
-       room would not put more song in them: it would put the same words
-       against one edge of each column with a hand's width of nothing beside
-       them, which is what this looked like. Better to hold the leftover at the
-       two ends, where it reads as a margin.
+    /* --- THE SCREEN IN EQUAL PARTS -------------------------------------------
+       Where nothing can be broken, a column is exactly as wide as the longest
+       line and no wider: widening them to fill the room would not put more
+       song in them, it would put the same words against one edge of each with
+       a hand's width of nothing beside them.
 
-       Reading, the lines are broken to whatever the columns come out as, so
-       there is no width the room cannot be divided into and the sheet simply
-       keeps all of it: a wide screen should be covered in song. */
+       WHAT IS LEFT OVER IS SHARED OUT SO THE PARTS COME OUT EVEN. Each column
+       sits in the middle of its own equal share of the room, which makes every
+       gutter the same size and the two end margins each a half of one. A rule
+       drawn down the middle of every gutter then falls exactly on those
+       divisions.
+
+       It used to be the whole block centred with the gutters at their natural
+       width, which divides the SHEET evenly and the SCREEN unevenly. The sheet
+       has no edge anybody can see, so what that looked like was a set of lines
+       that did not line up with anything.
+
+       Reading, none of this arises: the lines are broken to whatever the
+       columns come out as, so the sheet keeps the whole room and the browser
+       divides it into equal columns itself. */
     var need = Math.min(want, room);
 
     function apply(n) {
@@ -2070,7 +2079,15 @@
         sheet.style.columnCount = "";
         sheet.classList.remove("is-cols");
       }
-      if (!poured) sheet.style.maxWidth = Math.ceil(n * need + (n - 1) * gap + padded) + "px";
+      if (poured) return;
+
+      /* one equal share of the room per column, and the column in the middle
+         of it: the leftover becomes a half-gutter at each end and a whole one
+         between each pair */
+      var part = room / n;
+      var gutter = Math.max(0, part - need);
+      sheet.style.columnGap = Math.round(gutter) + "px";
+      sheet.style.maxWidth = Math.ceil(n * need + (n - 1) * gutter + padded) + "px";
     }
 
     apply(cols);
@@ -2419,7 +2436,7 @@
   var app = document.getElementById("app");
   var state = {
     songs: null, printable: false, printer: null, killer: null,
-    editToggle: null, stage: null, songControls: null,
+    editToggle: null, songControls: null,
   };
 
   /* --- THE SONG GETS THE SCREEN ---------------------------------------------
@@ -2464,12 +2481,6 @@
      it was a press; it is a gesture now, so the far end of it costs the same
      as the near end, and a music stand across a room is a long way away. */
   var SIZE_MAX = 96;
-
-  /* TWO POINTS A PRESS. One was a step nobody could see: the difference
-     between 18 and 19 pixels is a difference you have to be told about, so
-     every change of size was four or five presses of a button to find out
-     whether you wanted it. */
-  var SIZE_STEP = 2;
 
   function readingSize(next) {
     if (next != null) {
@@ -2645,7 +2656,6 @@
         if (edit.on) editBtn.classList.add("is-on");
         bar.appendChild(editBtn);
       }
-      if (state.stage) bar.appendChild(iconBtn(ICON.stage, "מצב תצוגה", state.stage));
       if (state.printable) {
         var printBtn = iconBtn(ICON.print, "הדפסה", function () { askPrint(printBtn); });
         bar.appendChild(printBtn);
@@ -4288,7 +4298,6 @@
        it. See body.on-song in the stylesheet. */
     document.body.classList.add("on-song");
     state.printable = true;
-    state.stage = function () { openStage(); };
     /* Not on a version: there is nothing here to go into. */
     if (!past && auth.in && onPhone) {
       state.editToggle = {
@@ -6510,189 +6519,6 @@
        No navigation afterwards, because there is nowhere to go: this is already
        the page the saved song lives on. The address follows the name if the
        name changed, and the button goes away, which is the receipt. */
-    /* --- מצב תצוגה: the song, and nothing else -------------------------------
-       A song is read from a stand, across a room, by somebody whose hands are
-       full. What that wants is the biggest words that will fit and NO
-       SCROLLING: a scroll in the middle of a verse is a gesture nobody there
-       has a hand free for.
-
-       So the size is not a setting here, it is an ANSWER. The screen is a
-       fixed amount of room, the song is a fixed amount of words, and the
-       largest type those two allow is a number that can be worked out. It is
-       worked out twice, once down one column and once down two, and the bigger
-       of the two answers wins: two columns of a long song are legible from
-       across a room in a way that one column of the same song squeezed to fit
-       is not, and it is what a printed songbook does with the same problem.
-
-       Measured, not guessed. The sheet is laid out at a size, the browser is
-       asked whether anything is sticking out of it, and the search halves the
-       range each time; a dozen layouts settle it and it is over before the
-       screen has drawn once.
-
-       Then it is centred, because a song standing against one edge of a wide
-       screen is a page nobody would print.
-
-       Plus and minus are still there for whoever wants it bigger than fits, or
-       smaller, and every press asks the column question again. They do not
-       touch the reading size the rest of the app uses: that one is a
-       preference about a page, and this is an answer about a screen. */
-    var STAGE_MAX = 120;
-
-    function openStage() {
-      var stage = el("div", "stage");
-      var sheetOn = el("div", "sheet stage-sheet");
-      var size = 0;
-
-      stage.appendChild(sheetOn);
-      document.body.appendChild(stage);
-      document.body.classList.add("on-stage");
-
-      /* --- the controls, quiet and gone in a moment --- */
-      var bar = el("div", "stage-bar");
-      bar.appendChild(iconBtn(ICON.plus, "יותר גודל", function () { nudge(SIZE_STEP); }));
-      bar.appendChild(iconBtn('<path d="M5 12h14"/>', "פחות גודל", function () { nudge(-SIZE_STEP); }));
-      bar.appendChild(iconBtn(ICON.close, "יציאה ממצב תצוגה", closeStage));
-      stage.appendChild(bar);
-
-      var sleepTimer = null;
-      function wake() {
-        stage.classList.add("is-awake");
-        clearTimeout(sleepTimer);
-        sleepTimer = setTimeout(function () { stage.classList.remove("is-awake"); }, 2500);
-      }
-      stage.addEventListener("pointermove", wake);
-      stage.addEventListener("pointerdown", wake);
-      wake();
-
-      /* the song itself, once: only the size and the number of columns change
-         after this, and neither of them is a different song */
-      function fill() {
-        sheetOn.innerHTML = "";
-        sheetOn.dir = song.dir || "rtl";
-        song.lines.forEach(function (line) { sheetOn.appendChild(viewLine(line, semis)); });
-      }
-
-      function show(px, cols) {
-        size = px;
-        stage.classList.toggle("is-multi", cols > 1);
-        sheetOn.style.columnCount = cols > 1 ? String(cols) : "";
-        sheetOn.style.setProperty("--song-size", px + "px");
-      }
-
-      /* THE WIDEST LINE, ASKED OF THE LINE. A line is never broken here
-         (white-space: pre), so one too wide for its column does not wrap, it
-         runs out of the column and over whatever is beside it. And a multicol
-         container does not report that as overflow of its own: the column
-         boxes are the width they are, so asking the sheet whether anything is
-         sticking out of it answers no while two columns of words are printing
-         on top of each other.
-
-         So the width question is asked of the lines themselves, against the
-         width of ONE COLUMN, and the height question of the sheet. */
-      function widestLine() {
-        var wide = 0;
-        Array.prototype.forEach.call(sheetOn.querySelectorAll(".ln-t"), function (t) {
-          if (t.scrollWidth > wide) wide = t.scrollWidth;
-        });
-        return wide;
-      }
-
-      function fits(cols) {
-        if (sheetOn.scrollHeight > sheetOn.clientHeight + 1) return false;
-        var gap = parseFloat(getComputedStyle(sheetOn).columnGap) || 0;
-        var column = (sheetOn.clientWidth - gap * (cols - 1)) / cols;
-        return widestLine() <= column + 1;
-      }
-
-      function biggestThatFits(cols) {
-        var low = SIZE_MIN, high = STAGE_MAX, best = 0;
-        while (low <= high) {
-          var mid = Math.floor((low + high) / 2);
-          show(mid, cols);
-          if (fits(cols)) { best = mid; low = mid + 1; } else { high = mid - 1; }
-        }
-        return best;
-      }
-
-      /* One, two or three, whichever sets the song largest. Three is what a
-         short-lined song on a wide screen wants: a page of four-word lines in
-         one column is a ribbon down the middle with the type kept small by the
-         height, and in three it is a page.
-
-         STRICTLY BIGGER WINS, so a tie keeps the fewest columns: a song that
-         fits down the page at the same size does not want a second column, and
-         two columns of four lines is a page pretending to be full. */
-      var COLUMNS = [1, 2, 3];
-
-      function autoFit() {
-        var best = { size: 0, cols: 1 };
-        COLUMNS.forEach(function (cols) {
-          var px = biggestThatFits(cols);
-          if (px > best.size) best = { size: px, cols: cols };
-        });
-        show(Math.max(best.size, SIZE_MIN), best.cols);
-        place();
-      }
-
-      /* Asked for by hand, and then the column question is asked again from
-         the size rather than the other way about: the fewest columns that hold
-         it, and the most there are if none of them do. */
-      function nudge(by) {
-        var next = Math.max(SIZE_MIN, Math.min(STAGE_MAX, size + by));
-        var cols = COLUMNS.filter(function (n) {
-          show(next, n);
-          return fits(n);
-        })[0] || COLUMNS[COLUMNS.length - 1];
-        show(next, cols);
-        place();
-      }
-
-      function place() {
-        requestAnimationFrame(function () { layoutAll(sheetOn); });
-      }
-
-      function closeStage() {
-        clearTimeout(sleepTimer);
-        window.removeEventListener("resize", autoFit);
-        document.removeEventListener("keydown", onStageKey, true);
-        document.removeEventListener("fullscreenchange", onFullscreen);
-        if (document.fullscreenElement) document.exitFullscreen().catch(function () {});
-        document.body.classList.remove("on-stage");
-        stage.remove();
-      }
-
-      function onStageKey(event) {
-        if (event.key === "Escape") { event.preventDefault(); return closeStage(); }
-        if (event.key === "+" || event.key === "=") { event.preventDefault(); return nudge(SIZE_STEP); }
-        if (event.key === "-" || event.key === "_") { event.preventDefault(); return nudge(-SIZE_STEP); }
-      }
-
-      /* Leaving fullscreen by any of the ways a browser offers leaves the
-         stage itself standing, and a page that is neither one thing nor the
-         other is worse than either. */
-      function onFullscreen() {
-        if (!document.fullscreenElement && stage.isConnected) closeStage();
-      }
-
-      window.addEventListener("resize", autoFit);
-      document.addEventListener("keydown", onStageKey, true);
-
-      /* Asked for, and it may be refused: some browsers only allow it from a
-         gesture and some do not have it at all. The stage covers the screen
-         either way, so a refusal costs the browser's own chrome and nothing
-         else. The fit is worked out AFTER it lands, because going fullscreen
-         is what changes how much room there is. */
-      fill();
-      if (stage.requestFullscreen) {
-        stage.requestFullscreen().then(function () {
-          document.addEventListener("fullscreenchange", onFullscreen);
-          requestAnimationFrame(autoFit);
-        }).catch(autoFit);
-      } else {
-        autoFit();
-      }
-    }
-
     /* --- saving, which happens by itself --------------------------------------
        NO SAVE BUTTON. A song is written a word at a time and there is nothing
        to review before a word counts, so a change writes itself: the typing
@@ -8348,7 +8174,6 @@
     state.printer = null;
     state.killer = null;
     state.editToggle = null;
-    state.stage = null;
     paintHeader();
     var p = parts();
 
