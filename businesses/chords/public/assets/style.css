@@ -143,14 +143,44 @@ body.on-song { background: var(--bg); }
    no bar.
 
    As much of it as the bar allows and no more: a name that would push the
-   search box off the end is cut with an ellipsis. */
-.top-where {
+   search box off the end is cut with an ellipsis.
+
+   The column holds the name and the small line under it, and it is the column
+   that gives way when the bar runs out of room: two things that shrink on
+   their own shrink at two different moments. */
+.top-name {
   flex: 0 1 auto; min-width: 0;
+  display: flex; flex-direction: column; justify-content: center;
+}
+.top-where {
+  max-width: 100%;
   font-weight: 700; font-size: 17px; letter-spacing: -.01em;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   outline: none;
 }
 .top-where:empty { display: none; }
+
+/* --- AND WHO MADE IT, UNDER ITS NAME --------------------------------------
+   The second line of the title, at the size a second line is read at. It was
+   on the strip below, in a row with the styles and the state, and there it
+   was one of four things of four different kinds: this one is the only one
+   that belongs to the name.
+
+   A picture where the label was. "מילים:" in front of a name is two thirds of
+   the line spent saying what is the same on every song, and the pen and the
+   note say it in the room a colon takes. */
+.top-sub {
+  display: flex; align-items: center; gap: 4px 14px;
+  max-width: 100%; overflow: hidden;
+  font-size: 12px; line-height: 1.4; color: var(--ink-soft);
+}
+.top-sub:empty { display: none; }
+.top-sub .credit {
+  display: inline-flex; align-items: center; gap: 4px; min-width: 0;
+  white-space: nowrap;
+}
+.top-sub .credit > span { overflow: hidden; text-overflow: ellipsis; }
+.top-sub .credit svg { width: 13px; height: 13px; flex: none; opacity: .75; }
 /* Typed into rather than read. It takes a line under the pointer, because a
    name in a bar reads as a label until something says otherwise, and it says
    what it wants while it is empty. */
@@ -296,7 +326,7 @@ body.on-song { background: var(--bg); }
 
   body.finding .top-find { flex: 1 1 auto; width: auto; }
   body.finding .top-find input[type="search"] { width: auto; flex: 1 1 auto; }
-  body.finding .brand, body.finding .top-actions, body.finding .top-where { display: none; }
+  body.finding .brand, body.finding .top-actions, body.finding .top-name { display: none; }
   /* everything that could have given the bar back is now hidden, so the box
      carries its own way out */
   body.finding .top-find .find-x { display: flex; }
@@ -1246,47 +1276,20 @@ button.song-facts:hover .song-facts-ask { color: var(--accent); }
    there rather than copied out. */
 .chord, .ln-c { user-select: none; -webkit-user-select: none; }
 .sheet:not(.ed) /* WHERE ONE LINE OF THE SONG ENDS AND THE NEXT BEGINS ON THE SAME ROW. The
-   pour puts two artificial spaces there (see flowSheet), and two spaces is
-   what a person opening room between two letters also leaves: the same
-   picture, and one of the two is a fact about the song while the other is a
-   fact about the screen. So the pour's own pair is marked.
+   pour puts a solidus there with room on either side of it (see flowSheet),
+   and the solidus is a CHARACTER of the row like any other: it sits on the
+   words' baseline because it is standing on it, and at their size because it
+   inherits it.
 
-   A leaning stroke, in the chords' own red. Nothing else on the sheet leans,
-   so it cannot be mistaken for a letter or for anything to sing, and the red
-   is the one colour here that already means "this is not a word". */
-.ln-t .gap.is-turn::before {
-  /* A SOLIDUS, THE CHARACTER, AND NOT A STROKE DRAWN OVER THE LINE. It was a
-     tall rotated rule, which is a mark ABOUT the row: it reached up past the
-     letters into the chords and read as a barline through the music. This is
-     one character sitting on the same baseline as the words, the size of the
-     words, in the chords' red, and it says what a solidus has always said,
-     that what is on either side of it was not written on one line.
+   Which is the whole of why there is nothing here but a colour. It was drawn
+   as a pseudo-element hung off the gap beside it, and that gap is a box of no
+   height at all, so where the mark landed was arithmetic against nothing; on
+   a machine that was not mine it came out drawn nowhere at all. A character
+   cannot land in the wrong place, because it lands where the text does.
 
-     IT LEANS THE WAY THE LINE RUNS. A solidus leans forward along the reading
-     direction, so right to left it must be drawn the other way about, or it
-     leans back into the words it is separating and reads as the wrong kind of
-     mark. The row says which way it runs (see .ln[dir]), so the rule can ask
-     it. */
-  content: "\\";
-  position: absolute;
-  inset-inline-start: calc(var(--gap-w) * .9);
-  /* IN SONG SIZES, BECAUSE A GAP HAS NO FONT SIZE OF ITS OWN. The span is set
-     to zero so that the character it carries takes width and no height (see
-     .gap below), so an em here is nothing and everything written in one was
-     drawn a nothing tall: the mark was in the page and never on the screen. */
-  font-size: var(--song-size);
-  line-height: 1;
-  color: var(--chord);
-  /* THE GAP'S BOX SITS ON THE BASELINE, so the glyph is hung from it rather
-     than pushed down from a top nobody can see: `bottom` here IS the line the
-     words stand on, less the room a descender takes. Written as a top it was
-     an offset guessed against a box of no height, and a guess like that is
-     right at the size it was guessed at and drifting at every other. */
-  bottom: calc(var(--song-size) * -.2);
-}
-/* Right to left it is the mirror of it, which is the character it looks like
-   on a page that runs the other way. */
-.ln[dir="rtl"] .ln-t .gap.is-turn::before { content: "/"; }
+   The chords' red, which is the one colour on this sheet that already means
+   "this is not a word". */
+.ln-t .is-turn { color: var(--chord); }
 
 .ln-t .gap { user-select: none; -webkit-user-select: none; }
 

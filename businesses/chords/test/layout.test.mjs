@@ -158,7 +158,7 @@ const POURED = `(() => {
        two of the artificial spaces side by side. One on its own is room
        somebody opened between two letters; two together is the separator the
        pour lays down where a new line begins on a row already in use. */
-    joins: document.querySelectorAll(".sheet .ln-t .gap.is-turn").length,
+    joins: document.querySelectorAll(".sheet .ln-t .is-turn").length,
     /* A WORD IS NEVER CUT IN HALF except where there is nowhere wider to try:
        a word longer than a whole segment. Anything else means a row took part
        of a word it had no room for, which is the pour writing something the

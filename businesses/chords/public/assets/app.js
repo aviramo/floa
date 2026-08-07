@@ -108,6 +108,18 @@
     person: '<circle cx="12" cy="8" r="3.6"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/>',
     /* two of them, which is what a page of everybody who wrote a song is */
     people: '<circle cx="9.5" cy="8.5" r="3.2"/><path d="M3.5 19.5a6 6 0 0 1 12 0"/><path d="M16 5.6a3.2 3.2 0 0 1 0 6"/><path d="M17.5 14.2a6 6 0 0 1 3 5.3"/>',
+    /* --- who made it, as two pictures -----------------------------------
+       Under the name of the song there is room for the names and not for the
+       words "מילים" and "לחן" in front of them: at that size the labels are
+       half the line and they say the same thing on every song. So each name
+       carries the picture of what the person did.
+
+       A pen ON A LINE, and the line is what keeps it from being the pencil
+       that means "edit this song": that one is a pen alone, this one is a pen
+       and what it wrote. And a single note for the tune, which is one note
+       rather than the two of the key dial, for the same reason. */
+    words: '<path d="M4 20.3h16"/><path d="M7 15.6 15.8 6.8a2.3 2.3 0 0 1 3.3 3.3l-8.8 8.8H7v-3.3Z"/>',
+    tune: '<ellipse cx="7.6" cy="17.3" rx="3.1" ry="2.5"/><path d="M10.7 17V5.2c3.7.7 5.7 2.7 6 5.8"/>',
   };
 
   function iconBtn(icon, title, onClick) {
@@ -415,14 +427,31 @@
      and beside their name in a search result, where "מילים" would be the
      answer to a question nobody asked. */
   var CREDITS = [
-    { field: "lyrics_by", label: "מילים", who: "כותב", kind: "words" },
-    { field: "music_by", label: "לחן", who: "מלחין", kind: "tune" },
+    { field: "lyrics_by", label: "מילים", who: "כותב", kind: "words", icon: "words" },
+    { field: "music_by", label: "לחן", who: "מלחין", kind: "tune", icon: "tune" },
   ];
 
   function credits(song) {
     return CREDITS.map(function (c) {
-      return { label: c.label, name: String(song[c.field] || "").trim() };
+      return { label: c.label, name: String(song[c.field] || "").trim(), icon: c.icon };
     }).filter(function (c) { return c.name; });
+  }
+
+  /* The picture in place of the word, where the word would not fit: under the
+     name of the song, at twelve pixels, "מילים:" is half the line and it is
+     the same half on every song.
+
+     So it is not decoration and it does not get aria-hidden: it carries the
+     word it replaced, which is what a reader hovering it is asking for and
+     the only thing a screen reader has to go on. */
+  function creditMark(credit) {
+    var mark = svg(ICON[credit.icon]);
+    mark.removeAttribute("aria-hidden");
+    mark.setAttribute("role", "img");
+    var says = document.createElementNS("http://www.w3.org/2000/svg", "title");
+    says.textContent = credit.label;
+    mark.appendChild(says);
+    return mark;
   }
 
   /* Who made it, as a line to read: the names, once each. Whoever wrote the
@@ -2054,22 +2083,32 @@
 
        A single segment takes the room it is given: a phone has none to hold
        back. */
-    /* HALF A GUTTER INSIDE EVERY SEGMENT, ALWAYS. Between two of them the two
-       halves make the gutter; at the outer edge of the first and the last, the
-       half is the margin the paper keeps, and the words stand off the edge of
-       the sheet the way words on paper do.
+    /* HALF A GUTTER INSIDE EVERY SEGMENT. Between two of them the two halves
+       make the gutter; at the outer edge of the first and the last, the half
+       is the margin the paper keeps, and the words stand off the edge of the
+       sheet the way words on paper do.
 
        Taking it away from a lone segment was the wrong cure for a real
        problem: the slot came out wider than the room, so the page came out
        wider than the screen and a phone got a white sheet pushed off one edge
        with grey at the other. The problem was that the space was never taken
-       off the width. It is now, and the margin can stay. */
+       off the width. It is now, and the margin can stay.
+
+       EXCEPT WHERE THERE IS NO GUTTER TO HALVE. Half a gutter is wide because
+       it has to say, on its own, where one segment ends and the next begins.
+       A single segment filling a phone has no next one, so on that screen the
+       same number is a thumb's width of white down each edge, taken off lines
+       that are already being broken for want of room. What the margin owes the
+       words there is only half a chord label, so one written over the first
+       character of a line still has somewhere to hang. */
     var gutter = gap;
-    var colW = Math.min(seg, room - gutter);
+    var lone = cols < 2 && room < seg + gutter;
+    var pad = lone ? Math.min(gutter / 2, size * 0.75) : gutter / 2;
+    var colW = Math.min(seg, room - pad * 2);
     if (!(colW > 0)) return null;
 
     return {
-      cols: cols, colW: colW, gutter: gutter,
+      cols: cols, colW: colW, gutter: gutter, pad: pad,
       pageH: pageH, padded: padded, poured: poured,
     };
   }
@@ -2124,7 +2163,7 @@
        rules instead of stopping half a gutter short of them, and the rule
        itself is the segment's own edge rather than a line hanging in the
        space beside it. */
-    var slot = plan.colW + plan.gutter;
+    var slot = plan.colW + plan.pad * 2;
 
     function nextCol() {
       if (!page || inPage >= plan.cols) {
@@ -2151,7 +2190,7 @@
       }
       col = el("div", "col");
       col.style.width = slot + "px";
-      col.style.paddingInline = (plan.gutter / 2) + "px";
+      col.style.paddingInline = plan.pad + "px";
       page.appendChild(col);
       inPage++;
       used = 0;
@@ -2342,7 +2381,21 @@
     if (probe) gapW = probe.getBoundingClientRect().width;
     if (!(gapW > 0)) gapW = (sized[0].size || 18) * 0.34;
     var sepW = SEP_GAPS * gapW;
-    var sep = new Array(SEP_GAPS + 1).join(GAP);
+
+    /* THE MARK IS A CHARACTER OF THE ROW, NOT SOMETHING DRAWN ON ONE. It was a
+       pseudo-element hung off the gap that carries it, and that gap is a box of
+       no height at all: everything about where it landed was arithmetic against
+       nothing, and on a machine that was not mine it came out drawn nowhere.
+
+       A real solidus has no such problem. It sits on the same baseline as the
+       words because it IS one of them, at their size because it inherits it,
+       and the only thing left to say about it is its colour. It leans the way
+       the line runs, which a character can do and a rule about a character
+       cannot: right to left the mirror of it is the one that leans forward. */
+    function separator(rtl) {
+      var half = new Array(Math.max(1, SEP_GAPS / 2) + 1).join(GAP);
+      return half + (rtl ? "/" : "\\") + half;
+    }
 
     lines.forEach(function (line) {
       /* A heading, or a blank line between two verses, is a thing of its own
@@ -2394,7 +2447,7 @@
         var lead = "";
         var shared = !!row.pieces.length;
         if (shared) {
-          lead = sep;
+          lead = separator(line.rtl);
           row.used += sepW;
         }
 
@@ -2522,7 +2575,9 @@
            down BEFORE the offset is taken, so the chords of the piece after it
            are counted from the piece and not from the separator. */
         if (piece.lead) {
-          turns.push(text.length);
+          /* the solidus itself, which is the one character of the separator
+             that is ink: the gaps on either side of it are room */
+          turns.push(text.length + Math.floor(piece.lead.length / 2));
           text += piece.lead;
         }
         var offset = text.length;
@@ -3134,7 +3189,22 @@
     node.onkeydown = null;
     node.oninput = null;
     node.onblur = null;
+    whereUnder(null);
     return node;
+  }
+
+  /* AND THE SMALL LINE UNDER IT, for what is about the thing the name names
+     rather than about the page. One page uses it: a song says under its own
+     name who wrote it.
+
+     Cleared by where() above, so it belongs to whoever set it and never
+     survives the trip to the next page. */
+  function whereUnder(nodes) {
+    var sub = document.getElementById("topSub");
+    if (!sub) return null;
+    sub.textContent = "";
+    (nodes || []).forEach(function (node) { sub.appendChild(node); });
+    return sub;
   }
 
   /* AND WHERE THAT NAME IS A THING, IT IS THE FIELD FOR IT. A song, an
@@ -5025,14 +5095,22 @@
          question the reader was not asked, and a song whose credits are both
          empty says nothing here at all. Which is why this is a sentence and not
          a form: a form has to show the rows it has no answers for, and a
-         sentence simply leaves them out. */
+         sentence simply leaves them out.
+
+         AND IT GOES UNDER THE NAME OF THE SONG, not on the strip beside the
+         chips. It stood there among what the song is and what state it is in,
+         which is a row of four things of four different kinds, and only one
+         of them belongs to the name: who made this is the second line of the
+         title and reads as one. Small, quiet, and with a picture where the
+         label was, because at that size "מילים:" costs more room than the
+         name it introduces. */
       facts = el("div", "song-facts is-read");
-      var by = credits(song);
-      if (by.length) {
-        facts.appendChild(el("span", "song-by", by.map(function (c) {
-          return c.label + ": " + c.name;
-        }).join("  •  ")));
-      }
+      whereUnder(credits(song).map(function (c) {
+        var one = el("span", "credit");
+        one.appendChild(creditMark(c));
+        one.appendChild(el("span", null, c.name));
+        return one;
+      }));
 
       /* Reading it rather than writing it, the draft mark is not a button to
          press but something to know before playing from the page: this one is
