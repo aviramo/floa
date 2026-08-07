@@ -687,7 +687,9 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 
 /* --- song page ---------------------------------------------------------- */
 
-.song-head { margin: 0 0 6px; }
+/* Nothing in here is on the screen any more: the name is in the bar and the
+   facts are on the strip, and what is left is the heading paper needs. */
+.song-head { margin: 0; }
 /* The name, and at the far end of its own line whatever the song says about
    itself. Under the title those two words cost a line of the page, and on a
    phone the page is the song. Baseline-aligned, so the label sits on the name
@@ -790,10 +792,17 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 /* Flex and not a grid, because the row is two fields on a phone and three on a
    desk: an empty grid track still spends its gap, and the credits would sit
    short of the edge for a button that is not there. */
+/* IT IS SHUT UNLESS SOMEBODY IS FILLING IT IN. A form is what you want for
+   the ten seconds you are typing into it and never again, so it costs its
+   height for those ten seconds and nothing for the rest of the song's life.
+   What stands in its place is .song-facts, which is the same information as a
+   line to read. */
 .song-meta {
   display: flex; align-items: flex-end; flex-wrap: wrap; gap: 6px 20px;
-  margin: 14px 0 4px;
+  margin: 0 0 14px; padding: 12px 14px;
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
 }
+.song-meta[hidden] { display: none; }
 .song-meta label { flex: 1 1 140px; min-width: 0; }
 
 /* The head of a song and the head of an evening are written, not filled in.
@@ -898,43 +907,70 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 /* Two gaps, and the difference between them is what says where one control ends
    and the next begins: the parts of a control sit close enough to read as one
    thing, and the room is spent between the controls instead. */
+/* --- ONE STRIP OVER THE SONG ----------------------------------------------
+   Three rows stood here: who wrote it, what kind of song it is, and the three
+   dials. Together they took a third of the screen before a word of the song,
+   which is the wrong trade twice over: none of them is what the page is for,
+   and two of the three are filled in once and read at a glance ever after.
+
+   So it is one row. The song's own facts at the start of it, the controls at
+   the end, and the song directly under it. Everything in here is sized to the
+   tallest thing that has any business being on it, which is a stepper. */
+.song-strip {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px;
+  margin: 0 0 12px;
+}
+
+/* WHAT THE SONG SAYS ABOUT ITSELF, AS A LINE. The same facts the form holds,
+   read rather than filled: the names, the kinds, and nothing where there is
+   nothing. Pressing it opens the form under the strip, and it is a button
+   only where there is a form to open. */
+.song-facts {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px;
+  appearance: none; font: inherit; text-align: start;
+  color: var(--ink-soft); background: none;
+  border: 0; border-radius: 999px; padding: 4px 2px;
+}
+button.song-facts { cursor: pointer; }
+button.song-facts:hover .song-by, button.song-facts.is-open .song-by { color: var(--ink); }
+button.song-facts:hover .song-facts-ask { color: var(--accent); }
+.song-by { font-size: 14px; }
+/* A song with nothing said about it yet. Quiet, and clearly a question: an
+   empty strip reads as a strip with nothing behind it. */
+.song-facts-ask { font-size: 14px; text-decoration: underline dotted; text-underline-offset: 3px; }
+
 .tools {
-  display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap;
-  margin: 16px 0 18px; padding: 10px 12px;
+  display: flex; align-items: center; gap: 4px 10px; flex-wrap: wrap;
+  margin-inline-start: auto; padding: 3px 8px;
   background: var(--card); border: 1px solid var(--line); border-radius: 999px;
 }
-.tools .ctl { display: flex; align-items: center; gap: 6px; }
-/* The number over the picture of what it is, as one column: read downwards it
-   says what it is at and then what "it" is, and the pair is as wide as the
-   wider of the two rather than as wide as both. */
-.tools .dial {
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
-  line-height: 1;
-}
-/* ONE SHAPE FOR ALL THREE, and it is read in one order: what it is, what it is
-   at, and the way to move it. A picture, a number beside it, and less and more
-   stacked in one box like the buttons on anything else that counts.
-
-   Stacked rather than side by side: more is up and less is down, which is the
-   direction they mean, and the pair is then no wider than one of them. */
+.tools .ctl { display: flex; align-items: center; gap: 5px; }
+/* The picture and the number side by side, read in that order: what it is,
+   and what it is at. */
+.tools .dial { display: flex; align-items: center; gap: 4px; line-height: 1; }
+/* ONE SHAPE FOR ALL THREE: a picture, the number beside it, and less and more
+   in one box like the buttons on anything else that counts. Joined, because
+   two bordered squares with air between them is two of everything a stepper
+   needs one of, and three controls' worth of that is most of a phone's row. */
 .tools .steps {
-  display: inline-flex; flex-direction: column; background: #fff;
+  display: inline-flex; background: #fff;
   border: 1px solid var(--line); border-radius: 8px; overflow: hidden;
 }
-.tools .steps .icon-btn { border: 0; border-radius: 0; width: 30px; height: 17px; }
-.tools .steps .icon-btn + .icon-btn { border-top: 1px solid var(--line); }
-.tools .steps .icon-btn svg { width: 13px; height: 13px; }
+.tools .steps .icon-btn { border: 0; border-radius: 0; width: 22px; height: 20px; }
+.tools .steps .icon-btn + .icon-btn { border-inline-start: 1px solid var(--line); }
+.tools .steps .icon-btn svg { width: 12px; height: 12px; }
 .tools .steps .icon-btn:hover { background: var(--bg); }
-.tools .sep { width: 1px; height: 22px; background: var(--line); }
+.tools .sep { width: 1px; height: 16px; background: var(--line); }
 /* A PICTURE NEEDS A SIZE. An svg with none is not small, it is whatever the
    box around it happens to allow, which in a flex row is nothing at all: the
    three pictures were in the page and none of them was on the screen. */
 .tools .lbl { display: flex; color: var(--ink-soft); }
-.tools .lbl svg { width: 16px; height: 16px; }
+.tools .lbl svg { width: 15px; height: 15px; }
 /* wide enough for -11 and no wider, so the number does not stand in a hole of
-   its own between the word and the buttons */
+   its own between the picture and the buttons */
 .tools .val {
-  font-size: 15px; font-weight: 700; min-width: 3ch;
+  font-size: 14px; font-weight: 700; min-width: 2.5ch;
   text-align: center; direction: ltr; font-variant-numeric: tabular-nums;
 }
 /* In the editor the transposition's number is a button: pressing it offers to
@@ -943,10 +979,9 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 button.val {
   appearance: none; cursor: pointer; font-family: inherit; color: inherit;
   background: none; border: 1px solid transparent; border-radius: 6px;
-  padding: 1px 4px; line-height: 1.1;
+  padding: 0 3px; line-height: 1.2;
 }
 button.val:hover { border-color: var(--line); background: #fff; }
-.tools .grow { margin-inline-start: auto; }
 
 /* A line never wraps by itself (white-space: pre on .ln-t), so a long line
    overflows and the whole sheet scrolls sideways. That is deliberate: the
@@ -1515,6 +1550,8 @@ button.val:hover { border-color: var(--line); background: #fff; }
      sheet, so a long line can break like any other paragraph, and turning the
      size up fills the page instead of scaling it down. */
   body.print-words .ln-t { white-space: pre-wrap; }
+  .song-head { margin: 0 0 12px; }
+  .song-strip, .song-meta { display: none !important; }
   body.print-words .song-head { margin-bottom: 30px; }
   body.print-words .ln { margin-bottom: 0; }
   body.print-words .ln-t { line-height: 1.35; min-height: 0; }

@@ -4288,10 +4288,31 @@
       if (song.review) return "review";
       return "draft";
     }
+    /* --- ONE STRIP, AND THE SONG UNDER IT -------------------------------------
+       There were three rows here: who wrote it, what kind of song it is, and
+       the three dials, one under the other, and together they took a third of
+       the screen before a word of the song. Which is the wrong trade twice
+       over: none of them is what the page is FOR, and two of the three are
+       filled in once and then read at a glance for the rest of the song's
+       life.
+
+       So it is one row. The facts of the song at the start of it, the three
+       controls at the end, and the song directly underneath.
+
+       THE FIELDS ARE NOT ON IT. They are under it and closed, and pressing the
+       facts opens them: a form is what you want for the ten seconds you are
+       filling it in and never again, so it costs its height for those ten
+       seconds and nothing for the rest. What stands in its place is the same
+       information as a sentence, which is what anybody wants of it after. */
+    var strip = el("div", "song-strip");
+    var facts = null;
+    var meta = null;
+
     if (editing) {
       /* Who wrote it, on the song itself. It belongs to it and there is no
          other page to keep it on any more. */
-      var meta = el("div", "song-meta");
+      meta = el("div", "song-meta");
+      meta.hidden = true;
 
       byFields = CREDITS.map(function (c) {
         var label = el("label", null, c.label);
@@ -4440,7 +4461,52 @@
       };
       showState();
 
-      head.appendChild(meta);
+      /* WHAT THE FORM SAYS, WITH THE FORM SHUT. The same facts, as a line to
+         read rather than a grid to fill: the names, the kinds, and nothing
+         where there is nothing.
+
+         A song that has none of them says what is missing instead, because an
+         empty strip is a strip that looks like it has nothing behind it. */
+      facts = el("button", "song-facts");
+      facts.type = "button";
+
+      var showFacts = function () {
+        facts.textContent = "";
+        var said = creditNames(song);
+        var kinds = styles(song);
+        if (!said.length && !kinds.length) {
+          facts.appendChild(el("span", "song-facts-ask", "מי כתב, ואיזה סוג"));
+        } else {
+          if (said.length) facts.appendChild(el("span", "song-by", said.join(", ")));
+          kinds.forEach(function (name) {
+            facts.appendChild(el("span", "tag tag-style", name));
+          });
+        }
+      };
+
+      /* Open while it is being filled and shut the moment it is not. Escape
+         and pressing the line again both shut it, and so does anything that
+         takes the page somewhere else. */
+      var openMeta = function (yes) {
+        meta.hidden = !yes;
+        facts.classList.toggle("is-open", yes);
+        showFacts();
+        if (yes && byFields[0]) byFields[0].focus();
+      };
+      facts.addEventListener("click", function () { openMeta(meta.hidden); });
+      meta.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") { event.preventDefault(); openMeta(false); }
+      });
+
+      /* The line is the form's own reflection, so everything that writes into
+         the song writes into it too. */
+      var wasShowStyles = showStyles;
+      showStyles = function () { wasShowStyles(); showFacts(); };
+      byFields.forEach(function (input) {
+        input.addEventListener("input", showFacts);
+      });
+      showFacts();
+      strip.appendChild(facts);
     } else {
       /* Reading it, the credits are a sentence rather than a form, and it
          matters which is which: whoever wrote the words is rarely the one you
@@ -4451,9 +4517,10 @@
          empty says nothing here at all. Which is why this is a sentence and not
          a form: a form has to show the rows it has no answers for, and a
          sentence simply leaves them out. */
+      facts = el("div", "song-facts is-read");
       var by = credits(song);
       if (by.length) {
-        head.appendChild(el("div", "by", by.map(function (c) {
+        facts.appendChild(el("span", "song-by", by.map(function (c) {
           return c.label + ": " + c.name;
         }).join("  •  ")));
       }
@@ -4461,13 +4528,11 @@
       /* Reading it rather than writing it, the draft mark is not a button to
          press but something to know before playing from the page: this one is
          not finished. */
-      var flagRow = el("div", "head-tags");
       styles(song).forEach(function (name) {
-        flagRow.appendChild(el("span", "tag tag-style", name));
+        facts.appendChild(el("span", "tag tag-style", name));
       });
-      flagRow.appendChild(el("span", "tag tag-" + songState(), STATE_WORDS[songState()]));
-      /* on the title's own line, at the far end of it */
-      headTop.appendChild(flagRow);
+      facts.appendChild(el("span", "tag tag-" + songState(), STATE_WORDS[songState()]));
+      strip.appendChild(facts);
     }
 
     app.appendChild(head);
@@ -4528,7 +4593,7 @@
        status chip's job now: it says לסקירה, and touching the song or
        publishing it is what takes it off. One fact, one place. */
 
-    /* --- the tools --- */
+    /* --- the tools, at the far end of the same row --- */
 
     var tools = el("div", "tools");
 
@@ -4546,25 +4611,31 @@
     function control(icon, label, valueNode, less, more) {
       var ctl = el("span", "ctl");
 
-      /* The number, and under it the picture of what the number is. They are
-         one thing to read and they are read downwards: what it is at, and what
-         "it" is. Beside them, the way to move it. */
+      /* The picture and then the number, in the order they are read: what it
+         is, and what it is at. They stood one over the other while this row
+         was a row of its own; the row is a strip beside the song's own facts
+         now, and a stacked pair is twice the height of the tallest thing that
+         has any business being here. */
       var dial = el("span", "dial");
-      if (valueNode) dial.appendChild(valueNode);
       var lbl = el("span", "lbl");
       lbl.appendChild(svg(icon));
       lbl.title = label;
       lbl.setAttribute("aria-label", label);
       dial.appendChild(lbl);
+      if (valueNode) dial.appendChild(valueNode);
       ctl.appendChild(dial);
       /* THE TWO OF THEM IN ONE BOX. They were two bordered squares with air
          between them, which is two of everything a stepper needs one of, and
          three controls' worth of that is most of a phone's row. Joined, they
-         read as the one thing they are, and the row fits. */
+         read as the one thing they are, and the row fits.
+
+         Side by side rather than stacked, and less before more, which right to
+         left is less on the right: the height of the strip is the height of
+         this pair, and this pair is the only thing on it that was ever two
+         things tall. */
       var steps = el("span", "steps");
-      /* more on top and less under it, which is the direction they mean */
-      steps.appendChild(iconBtn(ICON.plus, "יותר " + label, more));
       steps.appendChild(iconBtn('<path d="M5 12h14"/>', "פחות " + label, less));
+      steps.appendChild(iconBtn(ICON.plus, "יותר " + label, more));
       ctl.appendChild(steps);
       return ctl;
     }
@@ -4653,7 +4724,6 @@
       });
     }
 
-    tools.appendChild(el("span", "grow"));
 
     /* Printing sits in the top bar now, so what is left in this row is only
        what changes the song in front of you. Deleting is the thing you almost
@@ -4723,7 +4793,11 @@
       mine.push(revertBtn, undoBtn, stateNode, statusChip);
       mine.forEach(function (node) { topBar.insertBefore(node, topBar.firstChild); });
     }
-    app.appendChild(tools);
+    strip.appendChild(tools);
+    app.appendChild(strip);
+    /* Under the strip and shut, so the height it takes is the height of
+       nothing until somebody asks for it. */
+    if (meta) app.appendChild(meta);
 
     /* The sheet used to carry a "קפו 3" chip of its own, from when the capo was
        worked out from the transposition and was a fact about the SONG. It is a
