@@ -81,8 +81,12 @@
     history: '<path d="M12 8.5V12l2.5 2"/><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M3 4v4h4"/>',
     /* two arrows and the wall they stop at: not one change back, all of them */
     rewind: '<path d="M20 6l-6 6 6 6"/><path d="M13 6l-6 6 6 6"/><path d="M5 5v14"/>',
-    /* two things moving apart, which is what opening a gap does */
-    gap: '<path d="M10 8l-4 4 4 4M14 8l4 4-4 4"/>',
+    /* THE MARK ITSELF, not a picture of what pressing it does. It was two
+       arrows moving apart, which is a fine drawing of opening a gap and tells
+       nobody what will appear on the page. The concave arc is what a gap looks
+       like once it is there, so the button and its result are the same shape:
+       press this, get this. */
+    gap: '<path d="M4.5 9.5Q12 18.5 19.5 9.5"/>',
     /* --- the three controls over a song, as pictures ---
        Each has to be recognisable at fifteen pixels by somebody who was not
        told, so each is drawn as the thing itself rather than as an abstraction
