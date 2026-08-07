@@ -158,9 +158,22 @@ const POURED = `(() => {
        two of the artificial spaces side by side. One on its own is room
        somebody opened between two letters; two together is the separator the
        pour lays down where a new line begins on a row already in use. */
-    joins: [...document.querySelectorAll(".sheet .ln-t")].filter((t) =>
-      [...t.children].some((c, i) =>
-        c.classList.contains("gap") && t.children[i + 1] && t.children[i + 1].classList.contains("gap"))).length,
+    joins: document.querySelectorAll(".sheet .ln-t .gap.is-turn").length,
+    /* A WORD IS NEVER CUT IN HALF except where there is nowhere wider to try:
+       a word longer than a whole segment. Anything else means a row took part
+       of a word it had no room for, which is the pour writing something the
+       song does not say. */
+    split: [...document.querySelectorAll(".sheet .ln")].filter((ln) => {
+      const t = ln.querySelector(".ln-t");
+      if (!t) return false;
+      const words = t.textContent;
+      /* a row that ends mid-word AND is not the whole width of its box */
+      const last = words.replace(/\s+$/, "").slice(-1);
+      if (!last) return false;
+      const next = ln.nextElementSibling;
+      const after = next && next.querySelector(".ln-t") ? next.querySelector(".ln-t").textContent : "";
+      return /\S/.test(last) && /^\S/.test(after) && next.classList.contains("is-cont");
+    }).length,
     wide,
     where: innerWidth + "px wide, narrow=" + matchMedia("(max-width: 620px)").matches +
       ", song " + (sheet ? getComputedStyle(sheet).getPropertyValue("--song-size") : "?") +
@@ -549,6 +562,13 @@ try {
          saying something it does not say. */
       check("narrow: a leftover row takes the next line behind a double gap",
         poured.joins > 0, `${poured.joins} rows carry two lines (${poured.where})`);
+      /* A WORD IS NOT CUT IN HALF. The only place one may come apart is a word
+         longer than a whole segment, because there is nowhere wider to try;
+         anything else is a row taking part of a word it had no room for,
+         which is the pour writing something the song does not say. There is no
+         such word in this song, so the answer here is none. */
+      check("narrow: no word is broken across two rows", poured.split === 0,
+        `${poured.split} rows end in the middle of a word`);
       check("narrow: nothing is left wider than the screen", poured.wide.length === 0,
         JSON.stringify(poured.wide));
 

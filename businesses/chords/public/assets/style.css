@@ -1233,7 +1233,23 @@ button.song-facts:hover .song-facts-ask { color: var(--accent); }
    by the caret to be deleted, and it is the words themselves being worked on
    there rather than copied out. */
 .chord, .ln-c { user-select: none; -webkit-user-select: none; }
-.sheet:not(.ed) .ln-t .gap { user-select: none; -webkit-user-select: none; }
+.sheet:not(.ed) /* WHERE ONE LINE OF THE SONG ENDS AND THE NEXT BEGINS ON THE SAME ROW. The
+   pour puts two artificial spaces there (see flowSheet), and two spaces is
+   what a person opening room between two letters also leaves: the same
+   picture, and one of the two is a fact about the song while the other is a
+   fact about the screen. So the pour's own pair is marked.
+
+   A stroke rather than a symbol, and in the quiet grey rather than in the
+   chords' pink: it is punctuation about the layout, and the one thing it must
+   not do is read as something to sing. */
+.ln-t .gap.is-turn::before {
+  content: ""; position: absolute;
+  top: -.72em; height: 1.15em;
+  inset-inline-start: calc(var(--gap-w) * .8);
+  border-inline-start: 2px solid var(--line);
+}
+
+.ln-t .gap { user-select: none; -webkit-user-select: none; }
 
 .ln { position: relative; margin-bottom: .45em; }
 /* IN SONG SIZES, NOT IN EM. An em here is the APP's sixteen pixels, because

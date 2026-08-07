@@ -2407,7 +2407,8 @@
         /* The separator is part of what this row has already spent, and the
            piece that follows it starts after it. */
         var lead = "";
-        if (row.pieces.length) {
+        var shared = !!row.pieces.length;
+        if (shared) {
           lead = sep;
           row.used += sepW;
         }
@@ -2437,9 +2438,27 @@
           if (at > pos && at < line.text.length && line.text[at] === " ") space = at;
           end = space > pos ? space : at;
 
-          /* Nothing fits at all: one character, because a word longer than the
-             whole screen has to be cut somewhere. */
-          if (end <= pos) end = pos + 1;
+          /* --- A WORD IS NOT CUT IN HALF ---------------------------------------
+             No space fits, so not even the first word of this piece does. On a
+             row that is already carrying something, that means it has no room
+             for this line at all: the row is closed and the line starts on the
+             next one whole. The separator it was charged for goes back with
+             it.
+
+             On an EMPTY row it means the word is longer than a whole segment,
+             and then it has to be cut somewhere, because there is nowhere
+             wider to try. That is the only place a word comes apart. */
+          if (end <= pos) {
+            if (shared) {
+              /* Nothing of this piece was written to the row, so all it has to
+                 give back is the separator it was charged for. What it already
+                 carried stays where it is. */
+              row.used -= sepW;
+              row = null;
+              continue;
+            }
+            end = pos + 1;
+          }
         }
 
         var piece = { line: line, from: pos, to: end, lead: lead };
@@ -2493,6 +2512,11 @@
       ln.dir = desc.rtl ? "rtl" : "ltr";
       var lane = el("div", "ln-c");
       var text = "";
+      /* Where the separators fell, so they can be marked once the characters
+         are spans. A separator is two gaps like any other two gaps, and the
+         one thing that tells them apart is that these were put there by the
+         pour rather than by a person. */
+      var turns = [];
 
       /* One piece, always: a row holds one line of the song. Written as a loop
          because the pieces are what the chords are claimed against, and one of
@@ -2501,7 +2525,10 @@
         /* The double gap that says a new line of the song begins here, laid
            down BEFORE the offset is taken, so the chords of the piece after it
            are counted from the piece and not from the separator. */
-        if (piece.lead) text += piece.lead;
+        if (piece.lead) {
+          turns.push(text.length);
+          text += piece.lead;
+        }
         var offset = text.length;
         piece.line.chords.forEach(function (c) {
           if (c.pos < piece.claimFrom || c.pos >= piece.claimTo) return;
@@ -2522,6 +2549,10 @@
          it is gone with the joining it went with: a row that is one line of a
          song needs no punctuation explaining itself. */
       if (desc.tail) ln.style.setProperty("--cont", indent + "px");
+      turns.forEach(function (at) {
+        var span = words.children[at];
+        if (span) span.classList.add("is-turn");
+      });
       ln.appendChild(words);
       return ln;
     }
