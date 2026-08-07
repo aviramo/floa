@@ -99,6 +99,12 @@ body {
    distinguishing. The phone lost it for the same reason years ago (see the
    narrow rules below), and this is the desk catching up. */
 body.on-song #app { padding-top: 0; width: 100%; }
+/* THE MARGIN BELONGS TO THE PAPER NOW. Every segment keeps half a gutter
+   inside itself, which is what holds the words off its edges and what leaves
+   room for a chord hanging past the end of a line; the sheet keeping its own
+   as well would be the same margin twice, and on a phone that is a third of
+   the glass spent on nothing. */
+body.on-song .sheet { padding-inline: 0; }
 /* THE PAPER IS THE SEGMENTS, AND WHAT IS NOT A SEGMENT IS NOT PAPER. The
    segments are a fixed width and centred, so on a wide screen there is room
    left over at both ends and in the gutters between them, and that room is

@@ -2058,12 +2058,17 @@
 
        A single segment takes the room it is given: a phone has none to hold
        back. */
-    /* A GUTTER IS THE SPACE BETWEEN TWO SEGMENTS, so one segment has none.
-       Given one anyway, the slot came out wider than the room, the page came
-       out wider than the screen, and a phone got a white sheet pushed off one
-       edge with grey showing at the other and the words running out past both.
-       There is nothing beside the only segment there is. */
-    var gutter = cols > 1 ? gap : 0;
+    /* HALF A GUTTER INSIDE EVERY SEGMENT, ALWAYS. Between two of them the two
+       halves make the gutter; at the outer edge of the first and the last, the
+       half is the margin the paper keeps, and the words stand off the edge of
+       the sheet the way words on paper do.
+
+       Taking it away from a lone segment was the wrong cure for a real
+       problem: the slot came out wider than the room, so the page came out
+       wider than the screen and a phone got a white sheet pushed off one edge
+       with grey at the other. The problem was that the space was never taken
+       off the width. It is now, and the margin can stay. */
+    var gutter = gap;
     var colW = Math.min(seg, room - gutter);
     if (!(colW > 0)) return null;
 
