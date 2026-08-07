@@ -2747,7 +2747,7 @@
   var app = document.getElementById("app");
   var state = {
     songs: null, printable: false, printer: null, killer: null,
-    editToggle: null, songControls: null, redrawSong: null,
+    editToggle: null, songControls: null, redrawSong: null, rehome: null,
   };
 
   /* --- THE SONG GETS THE SCREEN ---------------------------------------------
@@ -3218,6 +3218,10 @@
        would still be standing there on the page after it. */
     var beside = document.getElementById("topFacts");
     if (beside) beside.textContent = "";
+    /* And the end of the search box, which is the same kind of loan: the page
+       that is open puts something there and the next page must not inherit
+       it. The box itself is built once and lives through every view. */
+    if (findExtra) findExtra.textContent = "";
     return node;
   }
 
@@ -3459,6 +3463,7 @@
 
   var findBox = null;
   var findField = null;
+  var findExtra = null;
   var findOut = null;
   var findRows = [];
   var findAt = -1;
@@ -3482,6 +3487,32 @@
     findField.placeholder = "חיפוש שיר, יוצר או ערב";
     findField.setAttribute("aria-label", "חיפוש שיר, יוצר או ערב");
     findBox.appendChild(findField);
+
+    /* --- AND THE FAR END OF THE BOX IS THE PAGE'S ----------------------------
+       The box takes whatever the bar has left, which on a wide screen is a
+       long stretch of white with a placeholder at one end of it. What the page
+       has to say about what it is showing goes in the other end.
+
+       Which is where the library's states belong, and where they were: three
+       counts saying how much of it is unchecked, unfinished and done, and each
+       one pressable to narrow the wall to it. They stood in a row of their own
+       over the songs, and a row that holds three small chips costs a band of
+       the page on every screen in exchange for something that fits in room
+       already being wasted.
+
+       They are NARROWING and the box is NAVIGATION, which is why they were
+       parted in the first place. Side by side they read as one gesture again,
+       which is what they always were: both of them are ways of getting to
+       fewer songs.
+
+       Emptied by `where`, which every page goes through, so nothing is ever
+       left hanging over the wrong one. */
+    findExtra = el("div", "find-extra");
+    /* A press on the box opens the search. A press on a chip is not one: it is
+       about the page under the box, and it must not put a keyboard on a phone
+       or a panel over the wall it just narrowed. */
+    findExtra.addEventListener("click", function (event) { event.stopPropagation(); });
+    findBox.appendChild(findExtra);
 
     /* THE WAY BACK OUT, AND ONLY ON A PHONE, WHERE THERE IS SOMETHING TO GO
        BACK TO. There the box does not open, it takes over: the mark, the name
@@ -3822,23 +3853,18 @@
         };
       });
 
-      /* --- ONE ROW OF CHIPS OVER THE WALL --------------------------------------
-         The states used to sit inside the library's own search box, because
-         the two were the same gesture: both narrowed the list. The searching
-         has moved into the bar, where it is about getting to another page
-         rather than about this one, and what is left here is filtering, which
-         is what these are.
+      /* --- IN THE SEARCH BOX, AT ITS FAR END ------------------------------------
+         They sat inside the library's own search box once, then in a row of
+         chips over the wall when the searching moved to the bar, and now they
+         are back in the box the searching moved to. Both narrow the list; one
+         box holds both.
 
-         THE STATES ONLY. The styles stood here too for a while, a second row
-         of chips saying what kind of song each shelf holds, and they have gone
-         to the search box, where they already were: typing a style there
-         offers the shelf itself above the songs that merely carry the word,
-         and that is one place to go looking rather than two. What is left over
-         the wall is the work outstanding, which is the one question the
-         library page is asked and the search box cannot answer.
-
-         A shelf is still a page of its own, /style/<name>, and the search box
-         is the way in. */
+         THE STATES ONLY. The styles stood in that row too, one chip per shelf,
+         and they have gone to the search box in the other sense: typing a
+         style there offers the shelf itself above the songs that merely carry
+         the word, and a shelf is a page, /style/<name>. What is left is the
+         work outstanding, which is the one question the library is asked that
+         no amount of typing can answer. */
       var tallies = el("div", "tallies");
 
       /* --- EVERYTHING THE FILTER LEFT ------------------------------------------
@@ -3871,29 +3897,58 @@
       /* Set by the address and never from the page: /style/<name> is a shelf,
          and every other way into the library shows all of it. */
       var kind = shelf || null;
-      var kindsRow = el("div", "kinds-row");
-      /* AT THE HEAD OF THE ROW, before anything it acts on. It says "all of
-         these", and "these" is everything after it: the chips that narrowed
-         the wall and the wall itself. Standing at the far end it read as one
-         more thing hanging off the row rather than the word that opens it.
 
-         AND IT IS A CHECKBOX, the same box at the same size as the one in the
-         corner of every card, because it does the same thing to all of them at
-         once. An icon of a ticked square inside a button said "a control to do
-         with ticking"; a checkbox says whether they are ticked, which is the
-         thing worth knowing at a glance. Some of them ticked has a face of its
-         own here and no icon could have carried it. */
+      /* --- ON A DESK, NONE OF THIS IS ON THE PAGE ------------------------------
+         There was a row over the wall holding the tick that takes everything
+         shown, the three state chips and the two buttons for what is ticked.
+         On a wide screen it is gone, and its three parts went into the bar,
+         which had the room for all of them standing empty:
+
+           the tick, and the buttons that come with it, beside the name of the
+           page, because "שירים" is the name of what is on screen and the tick
+           means "all of it": one phrase, read in that order
+
+           the states at the far end of the search box (see buildFind)
+
+         AND THE TICK IS A CHECKBOX, the same box at the same size as the one
+         in the corner of every card, because it does the same thing to all of
+         them at once. An icon of a ticked square inside a button said "a
+         control to do with ticking"; a checkbox says whether they are ticked,
+         which is the thing worth knowing at a glance. Some of them ticked has
+         a face of its own here and no icon could have carried it.
+
+         ON A PHONE THE ROW STAYS, because the bar there does not have the
+         room: the name is beside a mark and four pictures, and the search box
+         is a thirty pixel glass with nothing inside it to hang anything on.
+         The row is the same row, holding the same three things in the same
+         order.
+
+         Which of the two it is depends on a width that can change under a
+         window that is already open, so it is written once as a function and
+         the media query calls it again. The bar's slots are wiped by `where`
+         on every page, so nothing here can be left standing over a song. */
       if (auth.in) {
         allBtn = el("label", "pick-all");
         allTick = el("input");
         allTick.type = "checkbox";
         allTick.addEventListener("change", pickAll);
         allBtn.appendChild(allTick);
-        kindsRow.appendChild(allBtn);
       }
-      kindsRow.appendChild(tallies);
-      kindsRow.appendChild(picking);
-      app.appendChild(kindsRow);
+      var overWall = el("div", "kinds-row");
+      app.appendChild(overWall);
+
+      function rehome() {
+        var beside = document.getElementById("topFacts");
+        var inBar = !NARROW.matches && beside && findExtra;
+        if (allBtn) (inBar ? beside : overWall).appendChild(allBtn);
+        (inBar ? findExtra : overWall).appendChild(tallies);
+        if (auth.in) (inBar ? beside : overWall).appendChild(picking);
+        /* An empty row is still a row: it has a margin under it, and on a desk
+           that margin is the band of page this whole move was for. */
+        overWall.hidden = !overWall.firstChild;
+      }
+      rehome();
+      state.rehome = rehome;
 
       function paintTallies() {
         tallies.textContent = "";
@@ -8805,6 +8860,7 @@
     document.body.classList.remove("on-song");
     state.songControls = null;
     state.redrawSong = null;
+    state.rehome = null;
     state.printable = false;
     state.printer = null;
     state.killer = null;
@@ -8971,6 +9027,9 @@
   if (NARROW.addEventListener) {
     NARROW.addEventListener("change", function () {
       paintHeader();
+      /* and the library's own three things, which are in the bar on a desk and
+         in a row over the wall on a phone */
+      if (state.rehome) state.rehome();
       /* and the song with it, since which of reading and writing it is was
          answered by the width it was drawn at */
       if (state.redrawSong) {

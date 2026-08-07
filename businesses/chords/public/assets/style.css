@@ -243,6 +243,18 @@ body.on-song { background: var(--bg); }
   appearance: none;
 }
 .top-find input[type="search"]:focus-visible { outline: none; }
+/* WHAT THE OPEN PAGE HAS TO SAY, AT THE FAR END OF THE BOX. The library puts
+   its three state counts here; every other page leaves it empty, and an empty
+   box still spends the row's gap, so it goes when it is empty.
+
+   Never wrapped and never stretched: it is a passenger in a control that
+   belongs to the field, and the field is what gives way to it. */
+.find-extra { flex: none; display: flex; align-items: center; gap: 8px; }
+.find-extra:empty { display: none; }
+.find-extra .tallies { flex: none; flex-wrap: nowrap; }
+/* Inside the box they are not cards on a page: the box is the white, and a
+   second white pill on it is a box in a box. */
+.find-extra .tally { background: none; padding: 3px 10px; }
 /* Two crosses in one box is one too many: Escape empties it, and so does
    going anywhere. */
 .top-find input[type="search"]::-webkit-search-cancel-button { display: none; }
@@ -482,16 +494,18 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    AT THE FAR END, over the column of labels they are counting. A number and
    the rows it counts want to be in the same place, or the eye has to travel
    the width of the page to connect them. */
-/* What is ticked, at the far end of the row the states are in: that row is
-   already there, and what is ticked is not worth a line of the page of its
-   own, least of all one that appears while somebody is busy ticking and pushes
-   the rows they are aiming at down. */
+/* What is ticked, next to the tick that takes everything: on a desk that is
+   beside the name of the page and on a phone it is the row over the wall. It
+   is not worth a line of the page of its own either way, least of all one that
+   appears while somebody is busy ticking and pushes the rows they are aiming
+   at down. */
 .picking { display: flex; align-items: center; gap: 4px; flex: none; }
 .picking .icon-btn { width: 28px; height: 26px; }
 .picking .kill { color: var(--danger); }
 .picking .kill:hover { color: #fff; background: var(--danger); border-color: var(--danger); }
-/* They take the width, which is what leaves what is ticked at the other end
-   of the row with nothing to push it back with. */
+/* In the row over the wall they take the width, which is what leaves what is
+   ticked at the other end of it with nothing to push it back with. In the
+   search box they take what they need (see .find-extra). */
 .tallies {
   display: flex; flex-wrap: wrap; gap: 8px;
   flex: 1 1 auto;
@@ -506,19 +520,18 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 /* Each in its own state's colour, always, and not only when it is the one
    being looked at: it is the same colour that state wears on every row below
    and on the button inside the song. Pressed, it fills with it. */
-/* THE ONE ROW OVER THE WALL. It opens with the tick that takes everything
-   shown, then the states, and ends with what is ticked.
+/* THE ROW OVER THE WALL, AND ONLY ON A PHONE. It opens with the tick that
+   takes everything shown, then the states, and ends with what is ticked.
 
-   It held a second set of chips for a while, one per style, and they have gone
-   to the search box: a style typed there offers the shelf itself, so the row
-   here is asked one question rather than two.
-
-   It is the first thing on the library now, the search box that used to stand
-   over it having moved into the bar, so it carries its own air above. */
+   On a desk the three of them are in the bar, which had the room standing
+   empty, and this row is not drawn at all: see rehome in the script. */
 .kinds-row {
   display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 16px;
 }
 .pick-all { display: flex; flex: none; }
+/* Beside the name of the page, where the tick is one more word of it rather
+   than the first of a row of controls. */
+.top-facts .pick-all { margin-inline-start: 4px; }
 
 .tally-imported { color: var(--imported-ink); }
 .tally-review { color: var(--review-ink); }
@@ -1124,7 +1137,7 @@ body.on-song .top { border-bottom: 0; }
    What gives way instead is the search box beside it, which is a field and
    loses nothing by being narrower. Empty on every page but a song, and an
    empty box still spends the row's gap, so it goes when it is empty. */
-.top-facts { flex: none; display: flex; align-items: center; }
+.top-facts { flex: none; display: flex; align-items: center; gap: 8px; }
 .top-facts:empty { display: none; }
 .top-facts .song-facts { flex: none; flex-wrap: nowrap; white-space: nowrap; }
 
