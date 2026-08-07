@@ -1287,12 +1287,19 @@ button.val:hover { border-color: var(--line); background: #fff; }
   border-radius: 0 0 50% 50% / 0 0 100% 100%;
 }
 
-/* The button that opens one. Under the letters, in the air between two lines,
-   because it is the answer to a click and not a thing the page has: out of the
-   way of the words and of the chords over them, and gone the moment anything
-   is typed. Small, for the same reason. */
-.gap-btn {
+/* The button that opens one, and under it the one that says what it is. Under
+   the letters, in the air between two lines, because they are the answer to a
+   click and not a thing the page has: out of the way of the words and of the
+   chords over them, and gone the moment anything is typed. Small, for the same
+   reason.
+
+   THE STACK CARRIES THE POSITION, not the buttons: one thing to place under
+   the letter, one thing to ask whether a press landed inside. */
+.gap-offer {
   position: fixed; z-index: 50;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.gap-btn {
   display: flex; align-items: center; justify-content: center;
   width: 26px; height: 22px; padding: 0;
   appearance: none; cursor: pointer;
@@ -1302,6 +1309,14 @@ button.val:hover { border-color: var(--line); background: #fff; }
 }
 .gap-btn:hover { color: var(--chord); border-color: var(--chord); }
 .gap-btn svg { width: 15px; height: 15px; }
+
+/* The question mark is SMALLER AND QUIETER than the button it hangs under.
+   Both are offered by the same click, and the one that does the thing has to
+   be the one the eye lands on: a help mark the same size as the tool beside it
+   is two tools. */
+.gap-why { width: 20px; height: 18px; box-shadow: none; opacity: .72; }
+.gap-why:hover { opacity: 1; }
+.gap-why svg { width: 12px; height: 12px; }
 
 /* A blank line is the gap between two stanzas, and a gap does not need a full
    line of words plus an empty chord lane above it to say so: about half that
@@ -1530,7 +1545,7 @@ button.val:hover { border-color: var(--line); background: #fff; }
      than about the song. On paper it is the song. */
   .past-band { display: none !important; }
   /* what is offered on a screen is not a fact about the song on paper */
-  .gap-btn { display: none !important; }
+  .gap-offer { display: none !important; }
   /* what a version changed is about two versions, and paper holds one */
   .ln.is-add::before, .ln.is-gone::before { display: none; }
   .ln.is-gone { display: none; }

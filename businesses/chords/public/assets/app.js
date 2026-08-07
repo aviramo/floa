@@ -87,6 +87,8 @@
        like once it is there, so the button and its result are the same shape:
        press this, get this. */
     gap: '<path d="M4.5 9.5Q12 18.5 19.5 9.5"/>',
+    /* the question mark itself: the hook, the stem and the dot */
+    help: '<path d="M9.1 9.3a2.9 2.9 0 1 1 2.9 3.1V14.6"/><path d="M12 18.2h.01"/>',
     /* --- the three controls over a song, as pictures ---
        Each has to be recognisable at fifteen pixels by somebody who was not
        told, so each is drawn as the thing itself rather than as an abstraction
@@ -5460,18 +5462,56 @@
 
        Under and not over, and small: it is standing in the space between one
        line and the next, where nothing is being read, and it is out of the way
-       of the words and of the chords above them. Typing dismisses it. */
-    var gapBtn = null;
+       of the words and of the chords above them. Typing dismisses it.
+
+       A QUESTION MARK HANGS UNDER IT, because this is the one thing in the
+       editor that nobody arrives already knowing. Everything else here is a
+       picture of a thing people have done before: undo, print, delete. An arc
+       that appears under a word and pushes its letters apart is this app's own
+       idea, and an idea gets one sentence offered at the moment it is on the
+       screen, not a page somewhere that has to be gone looking for. */
+    var gapOffer = null;
 
     function hideGap() {
-      if (!gapBtn) return;
-      gapBtn.remove();
-      gapBtn = null;
+      if (!gapOffer) return;
+      gapOffer.remove();
+      gapOffer = null;
       document.removeEventListener("pointerdown", gapOutside, true);
     }
 
     function gapOutside(event) {
-      if (gapBtn && !gapBtn.contains(event.target)) hideGap();
+      /* THE EXPLANATION IS NOT OUTSIDE. It is opened by one of these buttons
+         and it covers the page, so a press on it, or on the dark behind it, is
+         a press on this offer: dismissing the offer while somebody is reading
+         what it does would leave them with nothing to press when they finish. */
+      if (event.target && event.target.closest && event.target.closest("dialog")) return;
+      if (gapOffer && !gapOffer.contains(event.target)) hideGap();
+    }
+
+    /* What the arc means, in the words of somebody who has just seen one and
+       does not know what it is. Three things, in the order they matter: what
+       it is for, that it is a mark and not ink, and that the word is still the
+       word underneath it. */
+    function explainGap() {
+      var dlg = el("dialog", "dlg");
+      var box = el("div", "dlg-in");
+
+      box.appendChild(el("h2", null, "רווח מלאכותי"));
+      box.appendChild(el("p", null,
+        "לשני אקורדים מעל מילה קצרה אין מספיק אותיות לשבת עליהן, והשני נדחף הצידה עד שהוא כבר לא מעל שום הברה. רווח מלאכותי פותח מקום בתוך המילה בדיוק בשביל זה: האותיות מתרחקות זו מזו על המסך, לאקורד יש איפה לעמוד, והמילה נשארת מילה אחת ולא נשברת לשתיים."));
+      box.appendChild(el("p", null,
+        "הקשת מתחת לאותיות היא הסימן שלו, והיא נראית רק כאן בעריכה. בדף שקוראים ממנו ובהדפסה אין שום סימן, יש רק את המקום."));
+      box.appendChild(el("p", null,
+        "והוא לא חלק מהמילה. החיפוש קורא את השיר בלי הרווחים האלה, ולכן מילה שנפתח בתוכה רווח עדיין נמצאת כשמחפשים אותה. כל לחיצה על הקשת פותחת רווח אחד, ולוחצים שוב כדי להרחיב."));
+
+      var actions = el("div", "dlg-actions");
+      actions.appendChild(button("הבנתי", null, "ghost", function () { dlg.close(); }));
+      box.appendChild(actions);
+
+      dlg.appendChild(box);
+      document.body.appendChild(dlg);
+      dlg.addEventListener("close", function () { dlg.remove(); });
+      dlg.showModal();
     }
 
     function offerGap(ln, line, editable) {
@@ -5491,22 +5531,36 @@
       var letter = editable.children[at] || editable.children[editable.children.length - 1];
       if (!letter) return;
 
-      gapBtn = el("button", "gap-btn");
-      gapBtn.type = "button";
-      gapBtn.title = "לפתוח רווח בין האותיות, בלי לשבור את המילה";
-      gapBtn.setAttribute("aria-label", gapBtn.title);
-      gapBtn.appendChild(svg(ICON.gap));
-      /* the caret is the whole of where this will go, so the press must not
-         take it away first */
-      gapBtn.addEventListener("pointerdown", function (event) { event.preventDefault(); });
-      gapBtn.addEventListener("click", function () { openGap(ln, line, editable, at); });
-      document.body.appendChild(gapBtn);
+      gapOffer = el("div", "gap-offer");
+
+      /* the caret is the whole of where this will go, so a press on either
+         button must not take it away first */
+      var hold = function (node) {
+        node.addEventListener("pointerdown", function (event) { event.preventDefault(); });
+        node.type = "button";
+        gapOffer.appendChild(node);
+        return node;
+      };
+
+      var open = hold(el("button", "gap-btn"));
+      open.title = "לפתוח רווח בין האותיות, בלי לשבור את המילה";
+      open.setAttribute("aria-label", open.title);
+      open.appendChild(svg(ICON.gap));
+      open.addEventListener("click", function () { openGap(ln, line, editable, at); });
+
+      var why = hold(el("button", "gap-btn gap-why"));
+      why.title = "מה זה רווח מלאכותי";
+      why.setAttribute("aria-label", why.title);
+      why.appendChild(svg(ICON.help));
+      why.addEventListener("click", explainGap);
+
+      document.body.appendChild(gapOffer);
 
       var box = letter.getBoundingClientRect();
-      var width = gapBtn.offsetWidth;
+      var width = gapOffer.offsetWidth;
       var left = Math.min(Math.max(4, box.left + box.width / 2 - width / 2), window.innerWidth - width - 4);
-      gapBtn.style.left = left + "px";
-      gapBtn.style.top = (box.bottom + 2) + "px";
+      gapOffer.style.left = left + "px";
+      gapOffer.style.top = (box.bottom + 2) + "px";
 
       document.addEventListener("pointerdown", gapOutside, true);
     }
