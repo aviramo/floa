@@ -602,10 +602,16 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
   overflow: hidden;
 }
-/* The name, and beside it who wrote it. On a narrow screen the credit drops
-   under the name rather than squeezing it. */
+/* The name, and what the reading of it cost, which is the only thing that
+   shares its line. */
 .list .t-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+/* AND WHO WROTE IT ON THE LINE UNDER IT, the way the song's own page says it
+   under the name in the bar. Beside the name it was a second thing of the same
+   size fighting it for the width of a card. */
 .list .by { color: var(--ink-soft); font-size: 14px; }
+/* Only the one standing under the row, and not the count of songs that still
+   sits inside it on a person's card. */
+.list .t-row + .by { margin-top: 2px; }
 /* Which of the songs by this name. Only appears where a name repeats, so an
    index of songs that are each the only one of themselves never grows a column
    of ones. Quiet, and clearly not part of the name. */
@@ -883,10 +889,18 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    from them for a while, which said it was a different kind of thing from who
    wrote the song. It is not: it is one more fact about the song. */
 .kinds-field {
-  display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px;
+  display: flex; align-items: baseline; gap: 8px;
   min-width: 0;
 }
-.kinds-label { font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+/* WHAT IS ON THE ROW WRAPS, THE WORD IN FRONT OF IT DOES NOT. The row used to
+   be one flex line of all three, so the second style a song was given pushed
+   "סגנון" onto a line of its own and the row stopped matching the two above
+   it. The styles and the field that adds one wrap between themselves instead,
+   inside the room the word leaves them. */
+.kinds-body {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px;
+}
 .kinds-list { display: flex; flex-wrap: wrap; gap: 6px; }
 .song-meta .kinds-field input[type="text"] {
   flex: 1 1 80px; min-width: 0;
@@ -908,8 +922,32 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    ONE FIELD UNDER THE NEXT, because the panel is the width of a form and not
    the width of a screen: three fields in a row across a desk put "מילים" and
    the line it belongs to half a metre apart. */
-.song-meta { display: grid; gap: 14px; }
+.song-meta { display: grid; gap: 18px; }
 .song-meta label { min-width: 0; }
+
+/* ONE COLUMN FOR THE THREE WORDS, so the three fields start where each other
+   starts. They were each as wide as their own word, which put "מילים" and
+   "לחן" a syllable apart and the two names that follow them a syllable apart
+   as well: a form of three lines with three different left edges reads as
+   three unrelated things.
+   The mark in front of the word is the one the reader's line uses (see
+   .credit): one shape for a credit whether it is being read or written. */
+.meta-word {
+  flex: none; width: 4.4em;
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 13px; font-weight: 600; color: var(--ink-soft);
+}
+.meta-word svg { width: 14px; height: 14px; flex: none; opacity: .7; }
+/* THE NAME IS BIGGER THAN THE WORD IN FRONT OF IT. Both were thirteen pixels,
+   the size a label wants, which made what somebody typed as quiet as the
+   heading over it. What is typed is the content of the form and the word is
+   the question, so the answer is the one set at reading size. */
+.song-meta input[type="text"] { font-size: 15px; }
+/* The browser's own arrow, which appears at the far end of a field with a
+   datalist behind it and is a black triangle in a panel that has nothing else
+   sharp in it. The suggestions are not lost with it: they still drop as soon
+   as a letter is typed, which is when anybody wants them. */
+.song-meta input::-webkit-calendar-picker-indicator { display: none; }
 
 /* The head of a song and the head of an evening are written, not filled in.
    The title above them is a bare line of text with no box around it, and a
@@ -924,33 +962,46 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 .song-meta label, .ev-meta label {
   display: block; font-size: 13px; font-weight: 600; color: var(--ink-soft);
 }
-/* On a screen with room the word sits BESIDE its field rather than over it.
-   Two words of label, each on a line of its own, cost more height than they
-   are worth on a page whose point is the song underneath: the eye is not
-   short of room to the side here, it is short of room downwards.
+/* THE WORD SITS BESIDE ITS FIELD, ON EVERY SCREEN. It waited for a wide one
+   for a while, because a label of two words on a line of its own is cheaper
+   than a label of two words folded into a narrow row. These are one word each
+   and they live in a fixed column now, so even a phone can spare the fifty
+   pixels, and the form is three lines instead of six on the screen with the
+   least room to spare.
 
    AND THE LINE RUNS UNDER BOTH. It belongs to the field, and beside it the
    word is part of the field: a rule that starts halfway along, after the
    label, draws two things where there is one. So it moves off the input and
    onto the row that holds them, and the row is what lights up when the field
    inside it is being typed in. */
+.song-meta label, .kinds-field {
+  display: flex; align-items: baseline; gap: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.song-meta label input, .song-meta .kinds-field input[type="text"] {
+  flex: 1 1 auto; min-width: 0; border-bottom: 0;
+}
+.song-meta label:hover, .kinds-field:hover { border-bottom-color: var(--ink-soft); }
+.song-meta label:focus-within, .kinds-field:focus-within {
+  border-bottom-color: var(--accent); box-shadow: 0 1px 0 var(--accent);
+}
+.song-meta input:focus-visible { box-shadow: none; }
+
+/* The evening's own form is still a label over a field until there is room:
+   its words are longer and one of its fields is a date, which a narrow row
+   has no answer for. */
 @media (min-width: 621px) {
-  .song-meta label, .ev-meta label, .kinds-field {
+  .ev-meta label {
     display: flex; align-items: baseline; gap: 8px;
     border-bottom: 1px solid var(--line);
   }
-  .song-meta label input, .ev-meta label input,
-  .song-meta .kinds-field input[type="text"] {
-    flex: 1 1 auto; min-width: 0; border-bottom: 0;
-  }
+  .ev-meta label input { flex: 1 1 auto; min-width: 0; border-bottom: 0; }
   .ev-meta label input[type="date"] { flex: 0 0 auto; }
-  .song-meta label:hover, .ev-meta label:hover, .kinds-field:hover {
-    border-bottom-color: var(--ink-soft);
-  }
-  .song-meta label:focus-within, .ev-meta label:focus-within, .kinds-field:focus-within {
+  .ev-meta label:hover { border-bottom-color: var(--ink-soft); }
+  .ev-meta label:focus-within {
     border-bottom-color: var(--accent); box-shadow: 0 1px 0 var(--accent);
   }
-  .song-meta input:focus-visible, .ev-meta input:focus-visible { box-shadow: none; }
+  .ev-meta input:focus-visible { box-shadow: none; }
 }
 .song-meta input[type="text"],
 .ev-meta input[type="text"], .ev-meta input[type="date"] {
@@ -1048,19 +1099,16 @@ body.on-song .top { border-bottom: 0; }
    Its own place in the bar, between the name of the song and the search. It
    was at the far end with the dials, where it was the one line of text in a
    row of controls and half a bar away from the name it is about.
-   One line and never two: the bar is a fixed height, so what does not fit is
-   cut with an ellipsis rather than wrapped. Empty on every page but a song,
-   and an empty box still spends the row's gap, so it goes when it is empty. */
-.top-facts {
-  flex: 0 1 auto; min-width: 0; max-width: 22ch;
-  display: flex; align-items: center;
-}
+
+   ONE LINE, AND WHOLE NAMES ON IT. It is not given a width to fit inside and
+   it does not shrink: a name cut to "ת…" is a name nobody can read, and two of
+   them are two things nobody can read taking the room they were cut to save.
+   What gives way instead is the search box beside it, which is a field and
+   loses nothing by being narrower. Empty on every page but a song, and an
+   empty box still spends the row's gap, so it goes when it is empty. */
+.top-facts { flex: none; display: flex; align-items: center; }
 .top-facts:empty { display: none; }
-.top-facts .song-facts { flex: 0 1 auto; min-width: 0; flex-wrap: nowrap; }
-.top-facts .song-facts .credit,
-.top-facts .song-facts .song-facts-ask {
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
+.top-facts .song-facts { flex: none; flex-wrap: nowrap; white-space: nowrap; }
 
 /* WHAT THE SONG SAYS ABOUT ITSELF, AS A LINE. The same facts the form holds,
    read rather than filled: the names, the kinds, and nothing where there is
@@ -1682,10 +1730,45 @@ button.song-facts:hover .song-facts-ask { color: var(--accent); }
 
 /* --- dialog, toast ------------------------------------------------------ */
 
-.dlg { border: none; border-radius: var(--radius); padding: 0; box-shadow: 0 24px 60px rgba(23, 32, 42, .22); max-width: 380px; width: calc(100% - 32px); }
+.dlg {
+  border: none; border-radius: 18px; padding: 0;
+  box-shadow: 0 1px 3px rgba(23, 32, 42, .1), 0 24px 60px rgba(23, 32, 42, .22);
+  max-width: 400px; width: calc(100% - 32px);
+}
 .dlg::backdrop { background: rgba(23, 32, 42, .35); }
-.dlg-in { padding: 22px; display: grid; gap: 12px; }
-.dlg-in h2 { margin: 0; font-size: 20px; }
+.dlg-in { padding: 24px; display: grid; gap: 12px; }
+.dlg-in h2 { margin: 0; font-size: 20px; line-height: 1.3; letter-spacing: -.01em; }
+
+/* IT ARRIVES, RATHER THAN BEING THERE. A panel that appears between two frames
+   is read as the page having been redrawn, and the eye then has to find what
+   changed; a fifth of a second of rising into place says where it came from
+   and that the page under it is still the page.
+
+   Three things have to be allowed to animate for the way out to work as well
+   as the way in: the two properties, and the discrete jumps of `display` and
+   of the top layer, which are what actually end a dialog. The plain transition
+   stands on its own, and browsers that know how to interpolate those jumps
+   take the second one, so an older one loses the closing frames and nothing
+   else. */
+.dlg, .dlg::backdrop { transition: opacity .18s ease, transform .18s ease; }
+@supports (transition-behavior: allow-discrete) {
+  .dlg, .dlg::backdrop {
+    transition: opacity .18s ease, transform .18s ease,
+                overlay .18s allow-discrete, display .18s allow-discrete;
+  }
+}
+.dlg, .dlg::backdrop { opacity: 0; }
+.dlg { transform: translateY(10px) scale(.98); }
+.dlg[open] { opacity: 1; transform: none; }
+.dlg[open]::backdrop { opacity: 1; }
+@starting-style {
+  .dlg[open] { opacity: 0; transform: translateY(10px) scale(.98); }
+  .dlg[open]::backdrop { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dlg, .dlg::backdrop { transition: none; }
+  .dlg { transform: none; }
+}
 /* A panel that explains a mark shows the mark, at the size of the words next
    to it rather than of an illustration: it is a heading with a symbol in it,
    not a picture with a caption. */

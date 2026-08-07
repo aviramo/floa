@@ -4393,14 +4393,19 @@
 
       var box = el("div");
 
-      /* The name, and beside it whoever made it: words, tune, performer, the
-         ones that are filled in, separated by commas. Bare names, no labels,
-         because a label on every one of three would be longer than the row it
-         sits in and nobody reads an index that way. */
+      /* The name, and UNDER it whoever made it, the way the song's own page
+         says it under the name in the bar. Beside it, the two shared the width
+         of a card with the price and with each other: a long name and a long
+         name are one line that wraps in the middle of somebody, and which of
+         the two lines was the song was left to the weight of the letters.
+         A card is read down. The song, then who wrote it, then what it is to
+         play, each on its own line and always in that order.
+
+         Bare names, no labels, separated by commas: whoever wrote the words
+         usually wrote the tune, and a card is not asked which is which, it is
+         asked whose song this is. */
       var top = el("div", "t-row");
       top.appendChild(name());
-      var by = creditNames(s);
-      if (by.length) top.appendChild(el("div", "by", by.join(", ")));
 
       /* What the machine charged to read this one, beside the name. It rode at
          the end of the chords for a while, where it was the last thing on a row
@@ -4420,6 +4425,9 @@
          they are good for is narrowing the library, and that is what the row
          of them over the wall does. */
       box.appendChild(top);
+
+      var by = creditNames(s);
+      if (by.length) box.appendChild(el("div", "by", by.join(", ")));
 
       /* Under the name goes what you actually want to know before opening a
          song: whether you can play it.
@@ -4955,8 +4963,18 @@
          other page to keep it on any more. */
       meta = el("div", "song-meta");
 
+      /* THE WORD, WITH THE MARK THE READER SEES IN ITS PLACE. The strip above
+         this form says a credit as a pen or a note and a name, and so does the
+         line under the title on the page people play from. Saying it here as a
+         bare word would make the form a third way of saying the same fact, so
+         it is the same pair: the mark, then the word, in a column the width of
+         the longest of the three. */
       byFields = CREDITS.map(function (c) {
-        var label = el("label", null, c.label);
+        var label = el("label");
+        var word = el("span", "meta-word");
+        word.appendChild(creditMark(c));
+        word.appendChild(el("span", null, c.label));
+        label.appendChild(word);
         var input = el("input");
         input.type = "text";
         input.value = song[c.field] || "";
@@ -4995,8 +5013,16 @@
          in it all mean the same thing, so all three do it. */
       var kindsRow = el("div", "kinds-field");
       /* One word, like the two beside it, and singular like them: the field
-         takes several and so does "לחן". */
-      var kindsLabel = el("div", "kinds-label", "סגנון");
+         takes several and so does "לחן". With a mark in front of it like the
+         two above, because it is one more fact about the song and the row
+         should not look like a different kind of row. */
+      var kindsLabel = el("div", "meta-word");
+      kindsLabel.appendChild(svg(ICON.tag));
+      kindsLabel.appendChild(el("span", null, "סגנון"));
+      /* The styles and the field that adds one, held together: they wrap
+         between themselves and never take the word onto a second line with
+         them, which is what used to happen the moment a song had two styles. */
+      var kindsBody = el("div", "kinds-body");
       var kindsList = el("div", "kinds-list");
       var kindsInput = el("input");
       kindsInput.type = "text";
@@ -5054,9 +5080,10 @@
       kindsInput.addEventListener("change", addKind);
       kindsInput.addEventListener("blur", addKind);
 
+      kindsBody.appendChild(kindsList);
+      kindsBody.appendChild(kindsInput);
       kindsRow.appendChild(kindsLabel);
-      kindsRow.appendChild(kindsList);
-      kindsRow.appendChild(kindsInput);
+      kindsRow.appendChild(kindsBody);
       kindsRow.appendChild(kindsKnown);
       meta.appendChild(kindsRow);
 
@@ -5068,9 +5095,15 @@
          Escape shuts it, which is a dialog's own doing, and so does the dark
          behind it: the panel has no unsaved anything in it, so every way of
          saying "done here" is allowed to be one. */
-      metaPanel = el("dialog", "dlg");
+      metaPanel = el("dialog", "dlg dlg-meta");
       var metaBox = el("div", "dlg-in");
       metaBox.appendChild(el("h2", null, "מי כתב, ואיזה סוג"));
+      /* Why there is no save button on a panel full of fields. One line, said
+         once, under the question the panel is asking: without it the only
+         button here reads as the one that keeps the typing, and somebody who
+         leaves by the dark behind the panel is left wondering what they lost.
+         Nothing, is the answer. */
+      metaBox.appendChild(el("p", "muted", "נשמר תוך כדי הכתיבה."));
       metaBox.appendChild(meta);
       var metaDone = el("div", "dlg-actions");
       metaDone.appendChild(button("סיום", null, "ghost", function () { metaPanel.close(); }));
