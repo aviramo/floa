@@ -2246,7 +2246,7 @@
 
   /* How far the second and later rows of one line are pushed in, so that a
      line broken in two still reads as one line. */
-  var CONT_INDENT = 1.5;
+  var CONT_INDENT = 0;
 
   /* One measured line: its words, its chords, and what every character of it
      costs. A row that has no words to measure (a section heading, the blank
@@ -2383,7 +2383,13 @@
     /* --- and drawing it --------------------------------------------------- */
 
     function buildRow(desc) {
-      var ln = el("div", "ln" + (desc.tail ? " is-cont" : "") + (desc.more ? " has-cont" : ""));
+      /* `more` is a row with another row of the same line after it, `tail` a
+         row that carries the end of the line before it. A row that is a tail
+         and has no more after it is the LAST of a broken line, and it is the
+         only one that needs saying so: what comes under it is the next line
+         of the song. */
+      var ln = el("div", "ln" + (desc.tail ? " is-cont" : "") + (desc.more ? " has-cont" : "")
+        + (desc.tail && !desc.more ? " is-last" : ""));
       /* the poured row runs the way the line it was poured from runs */
       ln.dir = desc.rtl ? "rtl" : "ltr";
       var lane = el("div", "ln-c");

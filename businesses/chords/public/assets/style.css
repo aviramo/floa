@@ -1319,23 +1319,23 @@ button.val:hover { border-color: var(--line); background: #fff; }
 }
 /* --- what did not fit on the screen --------------------------------------
    .is-cont is a row that BEGINS with the leftover of the line above it (see
-   flowSheet in app.js, which is where the width is decided and where --cont is
-   written). It is indented and the gap over it is closed, so it reads as the
-   end of that line rather than as a line of its own.
+   flowSheet in app.js, which is where the width is decided).
 
-   THE INDENT IS THE WHOLE OF WHAT IT SAYS NOW. There was an arrow drawn in the
-   indent, and a second one inside a row where a leftover ended and the next
-   line of the song began on the same row. Both are gone, with the joining they
-   explained: a row is one line of the song, and a row that is one line needs
-   no punctuation about itself.
+   IT IS NOT INDENTED, AND THE SPACE MOVED TO THE OTHER END. An indent said
+   "this is the end of the line above" by starting the words somewhere else,
+   and it cost the words that came down the one thing they wanted, which is to
+   begin where every other line begins: a word pushed in from the margin is a
+   word the eye has to go and find. So the rows all start together, and what
+   says where one line of the song ended is a gap under the last of its rows,
+   twice the air between two rows of the same line.
 
-   The indent is padding on .ln-t and never on .ln: the chords are measured
-   from the row's own edges, and padding on the row would move every one of
-   them without moving the letters they sit over. Padding on the words moves
-   the letters, and the measuring follows. */
+   Which is the same fact told the other way about, and told where it is
+   cheaper: a reader going down the page needs to know where the NEXT line
+   starts, not where the last one is still going. */
 .ln.has-cont { margin-bottom: 0; }
 .ln.is-cont.is-tight .ln-c { height: 0; }
-.ln.is-cont .ln-t { padding-inline-start: var(--cont); }
+/* The last row of a broken line, with the next line of the song under it. */
+.ln.is-cont.is-last { margin-bottom: 1.35em; }
 
 /* Room between two letters of a word that must not be broken. The character is
    there, it is one of the line's own and a chord can sit on it; what it is not
