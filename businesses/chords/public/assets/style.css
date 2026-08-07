@@ -1245,11 +1245,17 @@ button.val:hover { border-color: var(--line); background: #fff; }
    chord and the chords floated away from the words; bigger, the chord grew
    out of the lane and came down on top of them.
 
-   Kept a shade SHORTER than the chord is tall, deliberately: the difference
-   hangs down into the space the text's own line height leaves empty above its
-   letters, which costs no height and closes the gap between a chord and the
-   syllable it names. */
-.ln-c { position: relative; height: calc(var(--song-size) * .8); }
+   Kept SHORTER than the chord is tall, deliberately, and by a good deal: the
+   difference hangs down into the space the text's own line height leaves
+   empty above its letters. That space costs nothing, because it is there
+   whether a chord uses it or not, and every bit of it the chord takes is a
+   bit less air between the chord and the syllable it names. A chord that
+   floats is a chord you have to look twice at to attach to a word.
+
+   The floor on it is the letters themselves: the lane at .66 puts the chord's
+   foot about an eighth of a size above the tops of the glyphs, which holds
+   for the tall ones and for a word carrying vowel points. */
+.ln-c { position: relative; height: calc(var(--song-size) * .66); }
 .ln-t {
   white-space: pre;
   font-size: var(--song-size);
