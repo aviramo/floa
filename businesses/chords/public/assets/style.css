@@ -1051,12 +1051,6 @@ button.val:hover { border-color: var(--line); background: #fff; }
     width: 100vw;
   }
 
-  /* THE EDITOR NEEDS ITS MARGINS BACK. A line being written carries a box out
-     in the sheet's own padding (see .ln-pick), and the phone's sheet is
-     narrower than that box is far out: without this the ticks are off the edge
-     of the screen and a verse cannot be marked at all. */
-  .sheet.ed { padding-inline: 40px; }
-
   .tools { border-radius: var(--radius); }
 }
 
@@ -1305,31 +1299,16 @@ button.val:hover { border-color: var(--line); background: #fff; }
    floating above the line it belongs to. It is pinned to the bottom instead
    and centred over the height of the text itself, which is where the eye
    expects it. In the song's own size, because the reader can change that. */
-.ln-pick {
-  position: absolute;
-  bottom: 0; height: calc(var(--song-size) * 1.55);
-  display: flex; align-items: center; justify-content: center; width: 22px;
-  opacity: .22; transition: opacity .12s;
-}
-/* PHYSICAL, and off the SHEET's direction rather than the line's. A line
-   carries its own dir now, so a logical inset would put the box of an English
-   line inside a Hebrew song at the other end of the row, and the column of
-   boxes would zigzag down the page. The column belongs to the sheet. */
-.sheet[dir="rtl"] .ln-pick { right: -32px; left: auto; }
-.sheet[dir="ltr"] .ln-pick { left: -32px; right: auto; }
-/* a heading is one short line and nothing above it, so the whole row IS the
-   text and the box centres on all of it */
-.ln.is-section .ln-pick { top: 0; height: 100%; }
-/* The head of the column: a row with nothing in it but the tick that marks
-   every line under it. As tall as the box and no taller, so it sits over the
-   first line rather than pushing the song down a line. */
-.ln-all { height: calc(var(--song-size) * .9); margin-bottom: 0; }
-.ln-all .ln-pick { opacity: .5; }
-.ed .ln-all:hover .ln-pick, .ln-all .ln-pick:hover { opacity: 1; }
-.ln-pick input { width: 15px; height: 15px; margin: 0; cursor: pointer; accent-color: var(--accent); }
-.ed .ln:hover .ln-pick, .ln.is-marked .ln-pick { opacity: 1; }
-/* A tick is a small thing to find four of down a page, so a marked line also
-   carries a bar in the margin: what is going to move reads as one shape. */
+/* --- WHAT A SELECTED LINE LOOKS LIKE --------------------------------------
+   There was a tick in the margin of every line, and the block of them was
+   ticked into being. Selecting is dragging across the words now (see
+   markRange in app.js), so what a selected line needs is what a selection
+   looks like anywhere: the words on a ground of their own.
+
+   And the bar in the margin stays. A wash of colour is easy to lose track of
+   down a page of pink chords, and in two columns the eye needs the edge of the
+   block as well as its middle. */
+.ln.is-marked { background: rgba(14, 140, 126, .11); border-radius: 5px; }
 .ln.is-marked::before {
   content: ""; position: absolute; top: -1px; bottom: -1px;
   width: 3px; border-radius: 2px; background: var(--accent);
@@ -1337,29 +1316,15 @@ button.val:hover { border-color: var(--line); background: #fff; }
 .sheet[dir="rtl"] .ln.is-marked::before { right: -7px; }
 .sheet[dir="ltr"] .ln.is-marked::before { left: -7px; }
 
-/* --- what a version changed, on the version itself -------------------------
-   The same bar in the same margin as a marked line, because it says the same
-   kind of thing about a row: this one, not the others. The colour is what is
-   different, and it is the only thing that needs learning here.
+/* WHILE THE DRAG IS TAKING LINES, the browser's own answer is on screen and
+   it is wrong: it stopped at the first line, because a selection does not
+   cross from one editable host into the next, and it is painting half of that
+   line blue. It is cleared on every move; this hides the flicker in between.
 
-   A line that went is drawn where it stood, struck through and faded. Not
-   hidden, and not moved to the bottom: the whole reason to put it back on the
-   page is that it stood between those two lines, and that is what says what
-   happened to the verse.
-   ------------------------------------------------------------------------- */
-.ln.is-add::before, .ln.is-gone::before {
-  content: ""; position: absolute; top: -1px; bottom: -1px;
-  width: 3px; border-radius: 2px;
-}
-.ln.is-add::before { background: var(--published-ink); }
-.ln.is-gone::before { background: var(--danger); }
-.sheet[dir="rtl"] .ln.is-add::before, .sheet[dir="rtl"] .ln.is-gone::before { right: -7px; }
-.sheet[dir="ltr"] .ln.is-add::before, .sheet[dir="ltr"] .ln.is-gone::before { left: -7px; }
-/* the words go through, the chords over them only fade: a struck chord is a
-   line through two letters and reads as a chord nobody can make out */
-.ln.is-gone { opacity: .62; }
-.ln.is-gone .ln-t, .ln.is-gone .ln-section { text-decoration: line-through; text-decoration-color: var(--danger); }
-@media (prefers-reduced-motion: reduce) { .ln-pick { transition: none; } }
+   Not user-select: none, which on something contenteditable is a way of
+   turning editing off and finding out about it later. */
+.sheet.is-picking ::selection { background: transparent; }
+.sheet.is-picking { cursor: default; }
 
 /* What is marked, and what can be done to it. Floating over the page rather
    than sitting above the sheet or under it, because the verse being moved can
@@ -1560,8 +1525,9 @@ button.val:hover { border-color: var(--line); background: #fff; }
   /* Which version this is, and what to do about it, are about the page rather
      than about the song. On paper it is the song. */
   .past-band { display: none !important; }
-  /* marking a verse is editing, and a page of ticks is not a song */
-  .block-bar, .ln-pick, .gap-btn { display: none !important; }
+  /* what is selected on a screen is not a fact about the song on paper */
+  .block-bar, .gap-btn { display: none !important; }
+  .ln.is-marked { background: none !important; }
   .ln.is-marked::before { display: none; }
   /* what a version changed is about two versions, and paper holds one */
   .ln.is-add::before, .ln.is-gone::before { display: none; }

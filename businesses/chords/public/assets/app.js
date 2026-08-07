@@ -1901,18 +1901,18 @@
      INCLUDING WHILE THE SONG IS BEING EDITED. The editor is not a second
      screen here, it is this one with the words open, so a rule that skipped
      it would mean the person who owns the library never sees a song laid out
-     at all: signed in, on a desk, every song opens editable. What the editor
-     does cost is the room its ticks stand in, which the gutter has to hold.
-     See below. */
+     at all: signed in, on a desk, every song opens editable.
+
+     The editor used to cost the gutter a floor, for the column of ticks that
+     stood out beside every line. The ticks are gone (see markRange) and the
+     floor with them: what hangs outside a line now is the seven pixel bar on a
+     marked one, which any gutter holds. */
   var COL_MAX = 3;
   /* The air between two columns, in song sizes rather than in pixels: at 40px
      type a 44px gutter is two columns touching. Wide enough that the rule
      down the middle of it has room on both sides even where a chord hangs
      off the end of a line. */
   var COL_GAP = 2.8;
-  /* Twice the 32 pixels a tick stands out by, and a little: each column gets
-     half the gutter, and the tick has to fit in its half. */
-  var COL_EDIT_GAP = 78;
 
   /* What is actually written on the line, in pixels. See the note in
      fitColumns: a block is as wide as its container and says so. */
@@ -1962,14 +1962,6 @@
     var size = parseFloat(getComputedStyle(texts[0]).fontSize) || 18;
     var gap = COL_GAP * size;
 
-    /* THE TICKS HAVE TO STAND SOMEWHERE. A line being edited carries the box
-       that marks it 32 pixels outside itself, and a marked one carries a bar
-       beside that. For the first column that room is the sheet's own padding;
-       for the second and the third it is the gutter, and half a gutter is all
-       either column gets before the rule down the middle of it. So while the
-       song is open for writing the gutter has a floor, whatever the type
-       size, or the ticks of one column print over the words of the next. */
-    if (sheet.classList.contains("ed")) gap = Math.max(gap, COL_EDIT_GAP);
 
     /* THE WIDEST LINE, ASKED OF THE WORDS AND NOT OF THE BOX THEY SIT IN.
 
@@ -4815,25 +4807,34 @@
        be scrolled back to between one press and the next is not there. */
     var blockBar = null;
     var blockCount = null;
-    /* the tick at the head of the sheet's own column of ticks, made in draw */
-    var allBox = null;
+    /* Everything on the bar that is about the selected lines, kept together so
+       it can stand down as one thing when there is no selection. Declared here
+       because it is filled a few lines below, and a `var` further down the
+       function would run afterwards and hand back an empty one. */
+    var blockKeep = [];
     var pasteLinesBtn = null;
     var pasteChordsBtn = null;
     if (editing && !coming) {
       blockBar = el("div", "block-bar");
       blockCount = el("div", "block-count");
       blockBar.appendChild(blockCount);
-      blockBar.appendChild(iconBtn(ICON.up, "להעלות את המסומן", function () { moveMarked(-1); }));
-      blockBar.appendChild(iconBtn(ICON.down, "להוריד את המסומן", function () { moveMarked(1); }));
-      blockBar.appendChild(button("שכפול", ICON.copy, "ghost small", copyMarked));
+      /* Everything here that is about the lines THEMSELVES, kept together so
+         that it can stand down as one thing: with nothing selected the bar is
+         still open when there is something to put down, and a row of buttons
+         about a selection that is not there is a row of buttons that do
+         nothing. */
+      var keep = function (node) { blockKeep.push(node); blockBar.appendChild(node); return node; };
+      keep(iconBtn(ICON.up, "להעלות את המסומן", function () { moveMarked(-1); }));
+      keep(iconBtn(ICON.down, "להוריד את המסומן", function () { moveMarked(1); }));
+      keep(button("שכפול", ICON.copy, "ghost small", copyMarked));
 
       /* One copy, and the two ways to put it down beside it. Neither of them
          is there until something has been copied: a button that can only
          answer "there is nothing to paste" is a button that has to be pressed
          to find that out. */
-      blockBar.appendChild(button("העתקה", ICON.copy, "ghost small", copyLines));
-      pasteLinesBtn = button("הדבקת שורות", null, "ghost small", pasteLines);
-      pasteChordsBtn = button("הדבקת אקורדים", null, "ghost small", pasteChords);
+      keep(button("העתקה", ICON.copy, "ghost small", copyLines));
+      pasteLinesBtn = button("הדבקת שורות כאן", null, "ghost small", pasteLines);
+      pasteChordsBtn = button("הדבקת אקורדים כאן", null, "ghost small", pasteChords);
       pasteLinesBtn.hidden = true;
       pasteChordsBtn.hidden = true;
       blockBar.appendChild(pasteLinesBtn);
@@ -4851,13 +4852,17 @@
       toLtr.title = "השורות המסומנות באנגלית, משמאל לימין";
       toRtl.dir = "ltr";
       toLtr.dir = "ltr";
-      blockBar.appendChild(toRtl);
-      blockBar.appendChild(toLtr);
+      keep(toRtl);
+      keep(toLtr);
 
       /* Last, and the only one here in the colour of something that removes:
          a row of things that move and copy, and then the one that takes away. */
-      blockBar.appendChild(button("מחיקת השורות", ICON.trash, "danger small", dropMarked));
-      blockBar.appendChild(button("ביטול הסימון", null, "ghost small", function () { clearMarks(); }));
+      keep(button("מחיקת השורות", ICON.trash, "danger small", dropMarked));
+      blockBar.appendChild(button("סגירה", null, "ghost small", function () {
+        clearMarks();
+        pasteAt = null;
+        showMarked();
+      }));
       blockBar.hidden = true;
       app.appendChild(blockBar);
     }
@@ -4876,30 +4881,8 @@
          hanging under one of them with it */
       hideGap();
       sheet.innerHTML = "";
-      allBox = null;
       song.dir = songDir(song.lines);
       sheet.dir = song.dir;
-
-      /* THE HEAD OF THE COLUMN OF TICKS. A tick above all the others, in line
-         with them, which marks every line in the song or lets them all go: it
-         is the same shape doing the same thing one level up, so it needs no
-         label to say so. It was a button under the sheet reading "סימון כל
-         השורות", a sentence to say what a tick in a column of ticks says by
-         being there. */
-      if (editing && !coming) {
-        var allRow = el("div", "ln ln-all");
-        var allPick = el("label", "ln-pick");
-        allBox = el("input");
-        allBox.type = "checkbox";
-        allBox.title = "סימון כל השורות";
-        allBox.setAttribute("aria-label", allBox.title);
-        allBox.addEventListener("change", function () {
-          if (allBox.checked) markAll(); else clearMarks();
-        });
-        allPick.appendChild(allBox);
-        allRow.appendChild(allPick);
-        sheet.appendChild(allRow);
-      }
 
       /* WHAT STANDS WHERE THE SONG WILL BE. A reading takes a minute or two
          and it is happening somewhere else, so the sheet says how long it has
@@ -5506,23 +5489,11 @@
         ln.appendChild(text);
       }
 
-      /* The one thing beside a line: the box that makes it part of the block.
-         Out in the sheet's own margin, so it takes no width from the words and
-         no chord moves by a pixel because a line can be marked. */
+      /* NOTHING BESIDE THE LINE. There was a tick out in the margin of every
+         one of them, a column of forty checkboxes down a song, and what it was
+         for is what dragging across the words does in any other document. See
+         the block below. */
       if (isMarked(line)) ln.classList.add("is-marked");
-      var pick = el("label", "ln-pick");
-      var box = el("input");
-      box.type = "checkbox";
-      box.checked = isMarked(line);
-      box.tabIndex = -1;
-      box.setAttribute("aria-label", "לסמן את השורה");
-      box.addEventListener("change", function () {
-        setMark(line, box.checked);
-        ln.classList.toggle("is-marked", box.checked);
-        showMarked();
-      });
-      pick.appendChild(box);
-      ln.appendChild(pick);
 
       return ln;
     }
@@ -5545,7 +5516,55 @@
        neighbour. */
     var marked = [];
 
+    /* --- SELECTING IS DRAGGING ACROSS THE WORDS -------------------------------
+       There was a tick in the margin of every line, a column of forty
+       checkboxes down a song, and what it was for is what dragging across the
+       words does in every other document there is.
+
+       IT CANNOT BE THE BROWSER'S OWN SELECTION, and that is worth knowing
+       before anybody tries to simplify this away. Each line is its own
+       contenteditable host, which is what keeps a caret, an undo and a paste
+       inside the line they belong to; a browser will not carry a selection
+       from one editable host into the next, and one dragged across three lines
+       comes back holding the first. Measured, not assumed.
+
+       So the rule is: a drag that STAYS on its line is the browser's, and
+       selects words the way it always has. A drag that LEAVES it is ours, and
+       takes whole lines, because that is the only thing that could have been
+       meant by dragging past the end of a line.
+
+       `pasteAt` is the other half. A caret is a position, and putting one
+       somewhere is the cheapest gesture there is, so that is what says where a
+       copy lands. */
+    var pasteAt = null;
+
     function isMarked(line) { return marked.indexOf(line) >= 0; }
+
+    /* The line a node belongs to, as a line of the SONG. Everything below asks
+       this of whatever the pointer happened to be over: a character span, the
+       chord lane, a chord label. */
+    function lineAt(node) {
+      var ln = node && node.closest ? node.closest(".ln") : null;
+      if (!ln || !sheet.contains(ln)) return null;
+      var index = Number(ln.dataset.index);
+      return isFinite(index) ? song.lines[index] || null : null;
+    }
+
+    /* Everything from one line to another, in the song's own order, whichever
+       way round they were dragged. */
+    function markRange(from, to) {
+      var a = song.lines.indexOf(from);
+      var b = song.lines.indexOf(to);
+      if (a < 0 || b < 0) return;
+      if (a > b) { var swapped = a; a = b; b = swapped; }
+
+      marked.length = 0;
+      for (var i = a; i <= b; i++) marked.push(song.lines[i]);
+      rowsOf().forEach(function (ln) {
+        ln.classList.toggle("is-marked", isMarked(lineAt(ln)));
+      });
+      showMarked();
+    }
 
     function setMark(line, on) {
       var at = marked.indexOf(line);
@@ -5554,12 +5573,10 @@
     }
 
     function clearMarks() {
+      if (!marked.length) return;
       marked.length = 0;
       showMarked();
       rowsOf().forEach(function (ln) { ln.classList.remove("is-marked"); });
-      Array.prototype.forEach.call(sheet.querySelectorAll(".ln-pick input"), function (box) {
-        box.checked = false;
-      });
     }
 
     /* The whole song in one press. Turning a song that came out in the wrong
@@ -5575,24 +5592,34 @@
       song.lines.forEach(function (line) { marked.push(line); });
       showMarked();
       rowsOf().forEach(function (ln) { ln.classList.add("is-marked"); });
-      Array.prototype.forEach.call(sheet.querySelectorAll(".ln-pick input"), function (box) {
-        box.checked = true;
-      });
     }
 
     function markedCount() {
       return song.lines.filter(isMarked).length;
     }
 
+    /* THE BAR IS OPEN WHEN THERE IS SOMETHING FOR IT TO DO, and there are two
+       of those. Lines are selected, and then it is a bar about them: move
+       them, copy them, turn them round, take them out. Or something has been
+       copied and the caret is sitting in a line, and then it is a bar about
+       putting that down: the click is where it lands.
+
+       Both at once is the ordinary case in the middle of laying a chorus over
+       a verse, and the bar simply carries both sets. */
     function showMarked() {
-      var n = markedCount();
-      /* the head of the column is ticked when every line under it is */
-      if (allBox) allBox.checked = song.lines.length > 0 && n === song.lines.length;
       if (!blockBar) return;
-      blockBar.hidden = !n;
-      blockCount.textContent = n === 1 ? "שורה אחת מסומנת" : n + " שורות מסומנות";
-      pasteLinesBtn.hidden = !held;
-      pasteChordsBtn.hidden = !held;
+      var n = markedCount();
+      var landing = held && held.length && pasteAt && song.lines.indexOf(pasteAt) >= 0;
+
+      var copied = held ? held.length : 0;
+      blockBar.hidden = !n && !landing;
+      blockCount.textContent = n === 1 ? "שורה אחת מסומנת"
+        : n ? n + " שורות מסומנות"
+        : copied === 1 ? "שורה אחת הועתקה" : copied + " שורות הועתקו";
+
+      blockKeep.forEach(function (node) { node.hidden = !n; });
+      pasteLinesBtn.hidden = !landing;
+      pasteChordsBtn.hidden = !landing;
     }
 
     /* One step, in whichever direction. Walked from the edge the block is
@@ -5751,11 +5778,21 @@
       toast(held.length === 1 ? "שורה הועתקה" : held.length + " שורות הועתקו");
     }
 
+    /* WHERE IT LANDS IS WHERE YOU CLICKED. It used to land after the last
+       marked line, which meant putting a chorus somewhere was a matter of
+       marking the line above it first: a selection made in order to say a
+       position, and then thrown away.
+
+       A caret already says a position, and putting it somewhere is the
+       cheapest gesture there is. So the click is the answer, and a selection
+       is still taken when there is one, since marking a verse and pasting
+       under it is one honest way to mean the same thing. */
     function pasteLines() {
       if (!held || !held.length) return;
 
       var last = -1;
       song.lines.forEach(function (line, index) { if (isMarked(line)) last = index; });
+      if (last < 0) last = song.lines.indexOf(pasteAt);
       if (last < 0) last = song.lines.length - 1;
 
       var copies = held.map(copyLine);
@@ -5764,6 +5801,7 @@
       /* what lands is what stays marked: after a paste the next thing is
          almost always moving what was just pasted */
       marked.length = 0;
+      pasteAt = null;
       copies.forEach(function (line) { marked.push(line); });
 
       draw();
@@ -5788,7 +5826,19 @@
       if (!from.length) return toast("בשורות שהועתקו אין אקורדים", true);
 
       var into = chordLines();
-      if (!into.length) return toast("צריך לסמן שורה של מילים", true);
+      /* Nothing selected means the caret said where instead, and then what it
+         said is "here and the lines after it", as many as were copied: laying
+         four lines of chords over four lines of words is one click, which is
+         what it was always trying to be. */
+      if (!into.length && pasteAt) {
+        var start = song.lines.indexOf(pasteAt);
+        if (start >= 0) {
+          for (var i = start; i < song.lines.length && into.length < from.length; i++) {
+            if (song.lines[i].type !== "section") into.push(song.lines[i]);
+          }
+        }
+      }
+      if (!into.length) return toast("צריך לבחור שורה של מילים", true);
 
       if (from.length !== 1 && from.length !== into.length) {
         return toast("הועתקו " + from.length + " שורות ומסומנות " + into.length + ". צריך אותו מספר.", true);
@@ -5804,6 +5854,7 @@
       /* done, so the marking is done: the next pair starts from nothing
          marked, and the copy is still held for the verse after this one */
       marked.length = 0;
+      pasteAt = null;
 
       draw();
       mark();
@@ -5817,6 +5868,64 @@
        and the one that stayed is the one that can move a verse. */
     function rowsOf() {
       return Array.prototype.slice.call(sheet.querySelectorAll(".ln"));
+    }
+
+    /* --- the drag, and the click ---------------------------------------------
+       Hung on the SHEET and not on each line, because the whole point of it is
+       that it crosses from one line to another: a handler that belongs to a
+       line is a handler that stops at its edge.
+
+       The chords are not part of this. Pressing one drags it along its own
+       line and pressing the empty lane puts a new one down, and both of those
+       are gestures about a chord that happen to begin on a line. */
+    function fromChords(target) {
+      return !!(target && target.closest && target.closest(".ln-c"));
+    }
+
+    if (editing && !coming) {
+      var dragFrom = null;
+
+      sheet.addEventListener("pointerdown", function (event) {
+        if (event.button) return;
+        if (fromChords(event.target)) return;
+        dragFrom = lineAt(event.target);
+        /* A press is the start of a new answer either way: whatever was
+           selected is no longer what anybody means. */
+        clearMarks();
+      });
+
+      sheet.addEventListener("pointermove", function (event) {
+        if (!dragFrom || !event.buttons) return;
+        var now = lineAt(document.elementFromPoint(event.clientX, event.clientY));
+        if (!now || now === dragFrom) return;
+
+        /* Past the end of the line it started on, so it is lines that are
+           being taken and not words. The browser has been selecting text up to
+           this moment and its answer is wrong from here on: it stopped at the
+           first line and it is about to paint half of it blue. */
+        var chosen = window.getSelection && window.getSelection();
+        if (chosen) chosen.removeAllRanges();
+        sheet.classList.add("is-picking");
+        markRange(dragFrom, now);
+      });
+
+      var endDrag = function () {
+        dragFrom = null;
+        sheet.classList.remove("is-picking");
+      };
+      sheet.addEventListener("pointerup", endDrag);
+      sheet.addEventListener("pointercancel", endDrag);
+
+      /* WHERE A COPY WOULD LAND. Said by the caret, which is already where
+         somebody pointed, so there is nothing extra to press. Only worth
+         asking when there is something held: until then the bar has nothing
+         to offer about a place. */
+      sheet.addEventListener("click", function (event) {
+        if (fromChords(event.target)) return;
+        if (markedCount()) return;
+        pasteAt = lineAt(event.target);
+        showMarked();
+      });
     }
 
     /* The keys that shape a document, doing what they do everywhere else.
@@ -5855,6 +5964,14 @@
         draw();
         focusLine(index, end);
         mark();
+
+      } else if ((event.ctrlKey || event.metaKey) && (event.key === "a" || event.key === "A")) {
+        /* The whole song, which used to be the tick at the head of the column
+           of ticks. In a document this is the key for it, and a line's worth
+           of its own text is not what anybody means by "everything" on a page
+           of forty lines. */
+        event.preventDefault();
+        markAll();
 
       } else if (event.key === "Escape") {
         event.preventDefault();

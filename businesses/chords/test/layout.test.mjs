@@ -198,25 +198,9 @@ const COLUMNS = `(() => {
      pixels apart and a rounding error is not a column. */
   const at = new Set([...document.querySelectorAll(".sheet .ln-t")]
     .map((t) => Math.round(t.getBoundingClientRect().left / 20)));
-  /* THE TICKS, AGAINST THE WORDS OF THE COLUMN BESIDE THEM. A line being
-     edited carries the box that marks it 32 pixels outside itself, which for
-     the first column comes out of the sheet's padding and for the others out
-     of the gutter. A gutter too narrow for it puts a column of checkboxes on
-     top of somebody's second verse, and it is the kind of wrong that looks
-     fine in every number except this one. */
-  const ticks = [...document.querySelectorAll(".ln-pick")].map((p) => p.getBoundingClientRect());
-  const words = [...document.querySelectorAll(".ln-t, .ln-section")].map((t) => t.getBoundingClientRect());
-  const hits = [];
-  for (const t of ticks) {
-    for (const w of words) {
-      if (t.right > w.left + 1 && t.left < w.right - 1 && t.bottom > w.top + 1 && t.top < w.bottom - 1) {
-        hits.push({ tick: Math.round(t.left), word: Math.round(w.left) + ".." + Math.round(w.right) });
-      }
-    }
-  }
   return JSON.stringify({
     cols: Number(getComputedStyle(sheet).columnCount) || 1,
-    boxes: at.size, over, ticks: ticks.length, hits: hits.slice(0, 6),
+    boxes: at.size, over,
     where: innerWidth + "x" + innerHeight + ", sheet " + Math.round(sheet.scrollHeight) + "px tall",
   });
 })()`;
@@ -568,7 +552,6 @@ try {
       const laid = await evaluate(COLUMNS);
       const report = await evaluate(MEASURE);
       check("editing: no page errors", report.errors.length === 0, JSON.stringify(report.errors));
-      check("editing: the ticks are there at all", laid.ticks > 0, JSON.stringify(laid));
 
       if (!laid || laid.cols < 2) {
         unknown("editing: a long song stands in more than one column",
@@ -579,11 +562,60 @@ try {
 
       check("editing: no line is wider than the column it stands in", laid.over.length === 0,
         JSON.stringify(laid.over));
-      check("editing: no tick stands on the words of the next column", laid.hits.length === 0,
-        JSON.stringify(laid.hits));
+      check("editing: no line carries a tick beside it any more",
+        (await evaluate(`JSON.stringify(document.querySelectorAll(".ln-pick").length)`)) === 0, "");
     });
 
-    /* --- 5. dragging moves one chord and leaves the rest where they are --- */
+    /* --- 5. SELECTING LINES IS DRAGGING ACROSS THEM ------------------------
+       This one cannot be read off the code at all, and it is the whole of the
+       gesture: a browser will not carry a selection out of one contenteditable
+       host and into the next, so a drag across three lines comes back holding
+       one. Everything about how a block is chosen rests on that being true,
+       and on the app taking over at exactly the moment it stops being enough.
+
+       So: a drag that stays on its line is the browser's, and the words under
+       it are selected. A drag that leaves it is the app's, and the lines it
+       crossed are marked. Both, in one place, with a real pointer. */
+    await open(`http://127.0.0.1:${port}/chords/_t/edit/`, async ({ send, evaluate }) => {
+      const spots = await evaluate(`JSON.stringify([...document.querySelectorAll(".sheet .ln-t")]
+        .map((t) => { const b = t.getBoundingClientRect();
+          return { x: Math.round(b.right - 24), y: Math.round(b.top + b.height / 2) }; }))`);
+
+      if (spots.length < 3) {
+        unknown("selecting: a drag across lines takes them", `${spots.length} lines on the page`);
+      } else {
+        /* within one line: the browser's own, and no lines taken */
+        await mouse(send, "mousePressed", spots[0].x, spots[0].y);
+        await mouse(send, "mouseMoved", spots[0].x - 70, spots[0].y);
+        await sleep(60);
+        await mouse(send, "mouseReleased", spots[0].x - 70, spots[0].y);
+        await sleep(120);
+        const inside = await evaluate(`JSON.stringify({
+          text: String(getSelection()).length,
+          marks: document.querySelectorAll(".ln.is-marked").length,
+        })`);
+        check("selecting: a drag inside one line still selects its words",
+          inside.text > 0 && inside.marks === 0, JSON.stringify(inside));
+
+        /* across three: the app's */
+        await mouse(send, "mousePressed", spots[0].x, spots[0].y);
+        await mouse(send, "mouseMoved", spots[1].x, spots[1].y);
+        await sleep(50);
+        await mouse(send, "mouseMoved", spots[2].x, spots[2].y);
+        await sleep(50);
+        await mouse(send, "mouseReleased", spots[2].x, spots[2].y);
+        await sleep(150);
+        const across = await evaluate(`JSON.stringify({
+          marks: document.querySelectorAll(".ln.is-marked").length,
+          bar: document.querySelector(".block-bar") ? document.querySelector(".block-bar").hidden : null,
+          said: document.querySelector(".block-count") ? document.querySelector(".block-count").textContent : "",
+        })`);
+        check("selecting: a drag across three lines takes three", across.marks === 3, JSON.stringify(across));
+        check("selecting: and that is what opens the bar", across.bar === false, JSON.stringify(across));
+      }
+    });
+
+    /* --- 6. dragging moves one chord and leaves the rest where they are --- */
     await open(`http://127.0.0.1:${port}/chords/_t/edit/`, async ({ send, evaluate }) => {
       const before = await evaluate(POSITIONS);
       check("the editor rendered its chords", before && before.chords.length >= 3, JSON.stringify(before));
