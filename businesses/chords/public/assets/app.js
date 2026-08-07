@@ -1897,16 +1897,22 @@
      being readable across a room.
 
      Not on a phone, where the sheet is poured to the width of the screen and
-     there is only ever one column's worth of room, and not while the song is
-     being edited: an editor is one line at a time in the order they are
-     written, and lines that carry on in a second column half a screen away
-     are not that. */
+     there is only ever one column's worth of room. Everywhere else, yes,
+     INCLUDING WHILE THE SONG IS BEING EDITED. The editor is not a second
+     screen here, it is this one with the words open, so a rule that skipped
+     it would mean the person who owns the library never sees a song laid out
+     at all: signed in, on a desk, every song opens editable. What the editor
+     does cost is the room its ticks stand in, which the gutter has to hold.
+     See below. */
   var COL_MAX = 3;
   /* The air between two columns, in song sizes rather than in pixels: at 40px
      type a 44px gutter is two columns touching. Wide enough that the rule
      down the middle of it has room on both sides even where a chord hangs
      off the end of a line. */
   var COL_GAP = 2.8;
+  /* Twice the 32 pixels a tick stands out by, and a little: each column gets
+     half the gutter, and the tick has to fit in its half. */
+  var COL_EDIT_GAP = 78;
 
   /* What is actually written on the line, in pixels. See the note in
      fitColumns: a block is as wide as its container and says so. */
@@ -1922,18 +1928,48 @@
     sheet.classList.remove("is-cols");
   }
 
+  /* A LINE BEING TYPED INTO CAN OUTGROW THE COLUMN IT STANDS IN. The count is
+     worked out when the sheet is drawn, and typing does not draw it: a
+     keystroke changes one line in place, deliberately, because rebuilding a
+     song under a caret is how a caret gets lost. So a line typed longer than
+     its column runs out of it, and nothing between that keystroke and the
+     next structural change would notice.
+
+     So it is asked again once the typing STOPS. Not on the keystroke, which
+     would re-balance the columns under the hand doing the typing, and not
+     never, which is a line printing over the one beside it. */
+  var settleTimer = null;
+
+  function settleColumns(sheet) {
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(function () {
+      if (!sheet || !sheet.isConnected) return;
+      fitColumns(sheet);
+      layoutAll(sheet);
+    }, 450);
+  }
+
   function fitColumns(sheet) {
     if (!sheet || !sheet.isConnected || !sheet.classList.contains("sheet")) return;
     /* measured at one column, because that is the shape both questions are
        asked of: the widest line and the whole height of the song */
     oneColumn(sheet);
-    if (NARROW.matches || sheet.classList.contains("ed")) return;
+    if (NARROW.matches) return;
 
     var texts = sheet.querySelectorAll(".ln-t");
     if (!texts.length) return;
 
     var size = parseFloat(getComputedStyle(texts[0]).fontSize) || 18;
     var gap = COL_GAP * size;
+
+    /* THE TICKS HAVE TO STAND SOMEWHERE. A line being edited carries the box
+       that marks it 32 pixels outside itself, and a marked one carries a bar
+       beside that. For the first column that room is the sheet's own padding;
+       for the second and the third it is the gutter, and half a gutter is all
+       either column gets before the rule down the middle of it. So while the
+       song is open for writing the gutter has a floor, whatever the type
+       size, or the ticks of one column print over the words of the next. */
+    if (sheet.classList.contains("ed")) gap = Math.max(gap, COL_EDIT_GAP);
 
     /* THE WIDEST LINE, ASKED OF THE WORDS AND NOT OF THE BOX THEY SIT IN.
 
@@ -5229,6 +5265,9 @@
             nodes[i].dataset.pos = line.chords[i].pos;
           }
           layoutLine(ln);
+          /* and once the typing stops, whether this line still fits the
+             column it is standing in */
+          settleColumns(sheet);
         });
         text.addEventListener("keydown", function (event) { lineKeys(event, line, text); });
         /* Clicking between two letters offers to open a gap there, and typing

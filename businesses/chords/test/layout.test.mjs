@@ -198,9 +198,25 @@ const COLUMNS = `(() => {
      pixels apart and a rounding error is not a column. */
   const at = new Set([...document.querySelectorAll(".sheet .ln-t")]
     .map((t) => Math.round(t.getBoundingClientRect().left / 20)));
+  /* THE TICKS, AGAINST THE WORDS OF THE COLUMN BESIDE THEM. A line being
+     edited carries the box that marks it 32 pixels outside itself, which for
+     the first column comes out of the sheet's padding and for the others out
+     of the gutter. A gutter too narrow for it puts a column of checkboxes on
+     top of somebody's second verse, and it is the kind of wrong that looks
+     fine in every number except this one. */
+  const ticks = [...document.querySelectorAll(".ln-pick")].map((p) => p.getBoundingClientRect());
+  const words = [...document.querySelectorAll(".ln-t, .ln-section")].map((t) => t.getBoundingClientRect());
+  const hits = [];
+  for (const t of ticks) {
+    for (const w of words) {
+      if (t.right > w.left + 1 && t.left < w.right - 1 && t.bottom > w.top + 1 && t.top < w.bottom - 1) {
+        hits.push({ tick: Math.round(t.left), word: Math.round(w.left) + ".." + Math.round(w.right) });
+      }
+    }
+  }
   return JSON.stringify({
     cols: Number(getComputedStyle(sheet).columnCount) || 1,
-    boxes: at.size, over,
+    boxes: at.size, over, ticks: ticks.length, hits: hits.slice(0, 6),
     where: innerWidth + "x" + innerHeight + ", sheet " + Math.round(sheet.scrollHeight) + "px tall",
   });
 })()`;
@@ -352,7 +368,9 @@ await writeFile(join(root, "rtl/index.html"), page("rtl", false), "utf8");
 await writeFile(join(root, "ltr/index.html"), page("ltr", false), "utf8");
 await writeFile(join(root, "edit/index.html"), page("rtl", true), "utf8");
 await mkdir(join(root, "long"), { recursive: true });
+await mkdir(join(root, "longed"), { recursive: true });
 await writeFile(join(root, "long/index.html"), page("long", false), "utf8");
+await writeFile(join(root, "longed/index.html"), page("long", true), "utf8");
 
 try {
   await withChrome(async (open) => {
@@ -542,7 +560,30 @@ try {
       }
     });
 
-    /* --- 4. dragging moves one chord and leaves the rest where they are --- */
+    /* --- 4. the same song open for writing: the editor gets columns too --
+       Which it has to. Signed in and on a desk, every song opens editable, so
+       an editor that stayed in one column would mean the person who owns the
+       library never sees a song laid out at all. */
+    await open(`http://127.0.0.1:${port}/chords/_t/longed/`, async ({ evaluate }) => {
+      const laid = await evaluate(COLUMNS);
+      const report = await evaluate(MEASURE);
+      check("editing: no page errors", report.errors.length === 0, JSON.stringify(report.errors));
+      check("editing: the ticks are there at all", laid.ticks > 0, JSON.stringify(laid));
+
+      if (!laid || laid.cols < 2) {
+        unknown("editing: a long song stands in more than one column",
+          `columnCount ${laid && laid.cols} (${laid && laid.where})`);
+      } else {
+        check("editing: a long song stands in more than one column", true, "");
+      }
+
+      check("editing: no line is wider than the column it stands in", laid.over.length === 0,
+        JSON.stringify(laid.over));
+      check("editing: no tick stands on the words of the next column", laid.hits.length === 0,
+        JSON.stringify(laid.hits));
+    });
+
+    /* --- 5. dragging moves one chord and leaves the rest where they are --- */
     await open(`http://127.0.0.1:${port}/chords/_t/edit/`, async ({ send, evaluate }) => {
       const before = await evaluate(POSITIONS);
       check("the editor rendered its chords", before && before.chords.length >= 3, JSON.stringify(before));
