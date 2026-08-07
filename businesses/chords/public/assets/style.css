@@ -1472,7 +1472,13 @@ button.song-facts:hover .song-facts-ask { color: var(--accent); }
    themselves, so a line of gaps is never mistaken for a line of chords. The
    reader's page and the printed one have nothing at all. The model has a gap
    there, not a hyphen. */
-.ed .ln-t .gap-run::after {
+/* DRAWN WHEREVER THE GAPS ARE, and it used to be drawn only in the editor.
+   That was right while an artificial space was only ever something somebody
+   had opened: whoever opened it is whoever is looking at it, and a reader had
+   no use for the fact. It is not only that any more, so the arc is on in both
+   places, and what it says is the same in both: this space is room, not a
+   word that is missing. */
+.ln-t .gap-run::after {
   content: "";
   /* OUT OF THE FLOW, so the mark cannot make the line taller or push it up.
      It was a background on the span, and a span with a background needs a
