@@ -99,6 +99,11 @@ body {
    distinguishing. The phone lost it for the same reason years ago (see the
    narrow rules below), and this is the desk catching up. */
 body.on-song #app { padding-top: 0; width: 100%; }
+/* The white belongs to the PAGE now rather than to the sheet. The sheet is
+   only as wide as its columns need and stands in the middle of the window
+   (see fitColumns), so a white sheet on a grey page would be a white block
+   with grey down both sides of it. */
+body.on-song { background: var(--card); }
 
 /* --- header ------------------------------------------------------------- */
 
@@ -1023,9 +1028,13 @@ button.val:hover { border-color: var(--line); background: #fff; }
    which would mean the sheet no longer shows what the song says. Wide enough
    for half of a long name like G#m7b5. */
 .sheet {
-  background: var(--card);
+  background: none;
   border: 0; border-radius: 0; box-shadow: none;
   padding: 22px 34px 30px; margin-bottom: 0;
+  /* As wide as its columns need, in the middle of what is left. The width
+     itself is written on the element by fitColumns, because it is a fact
+     about this song at this size on this screen. */
+  margin-inline: auto;
   min-height: calc(100vh - 60px);
   overflow-x: auto;
   font-family: var(--song-font);

@@ -1873,41 +1873,36 @@
   /* --- HOW MANY COLUMNS THE SONG STANDS IN ----------------------------------
      Nobody is asked, and that is the point of it. A reader knows how big they
      want the words; they do not know how many pixels their longest line takes
-     in the font their machine happens to have, and working out whether the
-     second verse would fit beside the first is not a thing anybody came here
-     to do.
+     in the font their machine happens to have, and working out how many of
+     those fit across their window is not a thing anybody came here to do.
 
-     TWO QUESTIONS, AND BOTH ARE MEASURED.
+     AS MANY AS THE WIDTH HOLDS. It was as few as the HEIGHT needed for a
+     while, which is a different question and the wrong one: a song two
+     screenfuls long on a screen with room for four columns was set in two,
+     and the answer to "why is half the window empty" was that the song was
+     not long enough to deserve it. What a wide screen is for is seeing more
+     of the song at once.
 
-     How many columns are ALLOWED is a question about width. A chord sheet's
+     A COLUMN IS AS WIDE AS THE LONGEST LINE AND NO WIDER. A chord sheet's
      lines never wrap (white-space: pre), so a line too wide for its column
      does not break, it runs out of the column and prints over the one beside
-     it. So the widest line in the song is asked of the line itself, and a
-     column narrower than that is not a column. This is the whole of "without
-     hurting the width of the text": the answer can only ever be a number of
-     columns each of which holds the longest line whole.
-
-     How many are WANTED is a question about height: how many screenfuls of
-     song there are. One screenful wants one column, three want three. A short
-     song in two columns is a page pretending to be full, and a long one in
-     one is a page you have to scroll through a verse at a time.
-
-     The smaller of the two wins, capped at three, because past three the
-     columns are narrower than the eye wants to travel and the song stops
-     being readable across a room.
+     it. Making the column exactly as wide as the widest line is what stops
+     that, and it is also what stops the columns being half empty: left to
+     itself a multicol shares the whole room out between them, which on a song
+     of short lines is a hand's width of nothing down the middle of every one.
+     The set is then centred in what is left over.
 
      Not on a phone, where the sheet is poured to the width of the screen and
      there is only ever one column's worth of room. Everywhere else, yes,
      INCLUDING WHILE THE SONG IS BEING EDITED. The editor is not a second
      screen here, it is this one with the words open, so a rule that skipped
      it would mean the person who owns the library never sees a song laid out
-     at all: signed in, on a desk, every song opens editable.
-
-     The editor used to cost the gutter a floor, for the column of ticks that
-     stood out beside every line. The ticks are gone (see markRange) and the
-     floor with them: what hangs outside a line now is the seven pixel bar on a
-     marked one, which any gutter holds. */
-  var COL_MAX = 3;
+     at all: signed in, on a desk, every song opens editable. */
+  var COL_MAX = 4;
+  /* A column with three lines in it is not a column, it is a heap. However
+     much room a wide screen has, the song has to have something to put in
+     them. */
+  var COL_MIN_ROWS = 6;
   /* The air between two columns, in song sizes rather than in pixels: at 40px
      type a 44px gutter is two columns touching. Wide enough that the rule
      down the middle of it has room on both sides even where a chord hangs
@@ -1926,6 +1921,7 @@
     sheet.style.columnCount = "";
     sheet.style.columnWidth = "";
     sheet.style.columnGap = "";
+    sheet.style.maxWidth = "";
     sheet.classList.remove("is-cols");
   }
 
@@ -1973,10 +1969,10 @@
     /* THE WIDEST LINE, ASKED OF THE WORDS AND NOT OF THE BOX THEY SIT IN.
 
        The sheet cannot answer this: a line that overflows its column is not
-       overflow of the sheet, so the sheet reports no trouble while two
-       columns of words print over each other. And neither can the line, which
-       is a block and therefore exactly as wide as whatever is holding it: ask
-       it and the answer that comes back is the sheet's own width, every line
+       overflow of the sheet, so the sheet reports no trouble while two columns
+       of words print over each other. And neither can the line, which is a
+       block and therefore exactly as wide as whatever is holding it: ask it
+       and the answer that comes back is the sheet's own width, every line
        looks like the widest possible line, and the count comes out one on
        every song there is. A range over its contents measures the text, which
        is the thing the question is about.
@@ -1993,68 +1989,82 @@
 
     /* ROOM FOR THE CHORDS OVER THE ENDS OF IT. A chord is centred on its
        character, so one over the last letter of a line hangs half a label past
-       where the words stop. At the edges of the sheet that is what the wide
-       side padding is for; between two columns it has to come out of the
-       column's own width, or a chord in the first column prints over the
-       start of the second. */
-    widest += size * 1.4;
+       where the words stop. */
+    var want = widest + size * 1.4;
 
     /* Whether the lines will be broken to the column, which is the same
        question as whether this song is being read rather than written. */
     var poured = !sheet.classList.contains("ed");
 
     var box = getComputedStyle(sheet);
-    var room = sheet.clientWidth
-      - (parseFloat(box.paddingLeft) || 0) - (parseFloat(box.paddingRight) || 0);
+    var padded = (parseFloat(box.paddingLeft) || 0) + (parseFloat(box.paddingRight) || 0);
+    var room = sheet.clientWidth - padded;
     if (!(room > 0)) return;
 
-    /* From where the sheet begins to the bottom of the window, which is the
-       room a reader has without scrolling. Taken from the document rather
-       than from the viewport so that a window resized halfway down a song
-       gets the same answer as one resized at the top of it. */
-    var top = sheet.getBoundingClientRect().top + (window.pageYOffset || 0);
-    var screenful = window.innerHeight - Math.min(top, window.innerHeight * 0.5) - 40;
-    if (!(screenful > 160)) screenful = window.innerHeight * 0.7;
+    /* --- AS MANY AS THE WIDTH HOLDS ------------------------------------------
+       It used to be as few as the HEIGHT needed: one screenful of song wanted
+       one column, three wanted three. That is a different question and it was
+       the wrong one. A song two screenfuls long on a screen that holds four
+       columns of it was set in two, with the other half of the window empty,
+       and the answer to "why is there nothing there" was that the song was not
+       long enough to deserve it. Nobody wants that. What a wide screen is for
+       is seeing more of the song at once.
 
-    var tall = sheet.scrollHeight
-      - (parseFloat(box.paddingTop) || 0) - (parseFloat(box.paddingBottom) || 0);
+       So: how many columns of the width the song actually needs fit across the
+       room. The only thing that holds it back is the song itself having
+       nothing to put in them. */
+    /* THE NARROWEST A COLUMN MAY BE, which is a different number in the two
+       states and is the whole of the difference between them.
 
-    var cols = Math.min(Math.ceil(tall / screenful), COL_MAX);
-    if (cols < 2) return;
+       READING, the lines are POURED to whatever the column comes out as (see
+       flowSheet), exactly as they are on a phone. So no line can be too wide
+       for a column, and the only floor is being wide enough to read: about
+       thirty characters, which is roughly what a line of a song takes anyway.
+       The few that reach further are broken, and that is the price of the
+       other three columns.
 
-    /* --- AND THE BROWSER SETTLES IT ------------------------------------------
-       Not `columnCount` alone, which divides the room into that many whatever
-       is written on them: my arithmetic and the browser's differ by a pixel or
-       two, and a pixel or two is the difference between a line inside its
-       column and a line printing over the one beside it. That is exactly what
-       went wrong, on the one line of the song that was longer than the rest.
-
-       With a width AND a count, the rule is "this many at most, and never
-       narrower than this", and the browser is the one that divides. It cannot
-       disagree with itself. The columns are then widened to fill what is left,
-       so nothing is wasted either.
-
-       What the width has to be is a different question in the two states, and
-       that is the whole of the difference between them:
-
-         READING, the lines are POURED to whatever the column comes out as (see
-         flowSheet), so no line can be too wide for one and the only floor is
-         being wide enough to read.
-
-         WRITING, they are not, because a poured row is not a line you can type
-         into. So the floor is the longest line in the song, and one long line
-         genuinely does cost the song a column. That is the honest answer, and
-         it is why the widest line is still measured. */
-    /* ROOM FOR THE CHORDS OVER THE ENDS OF A LINE, where the lines are whole:
-       a chord is centred on its character, so one over the last letter hangs
-       half a label past where the words stop. Poured, that is the pour's
-       business and not this one's. */
-    var need = poured ? COL_MIN * size : widest + size * 1.4;
+       WRITING, they are not, because a poured row is not a line you can type
+       into. So the floor is the longest line in the song, and one long line
+       genuinely does cost the song a column. */
+    var floorWidth = poured ? COL_MIN * size : want;
+    var byWidth = Math.floor((room + gap) / (floorWidth + gap));
+    var rows = sheet.querySelectorAll(".ln").length;
+    var byRows = Math.ceil(rows / COL_MIN_ROWS);
+    var cols = Math.max(1, Math.min(byWidth, byRows, COL_MAX));
 
     sheet.style.columnGap = Math.round(gap) + "px";
-    sheet.style.columnWidth = Math.ceil(need) + "px";
-    sheet.style.columnCount = String(cols);
-    sheet.classList.add("is-cols");
+
+    if (poured) {
+      /* FILL THE ROOM. A wide screen should be covered in song rather than in
+         margins, and the lines are broken to whatever the columns come out
+         as, so there is no width the room can be divided into that they
+         cannot take. The sheet keeps the whole room and the browser divides
+         it. */
+      if (cols > 1) {
+        sheet.style.columnCount = String(cols);
+        sheet.classList.add("is-cols");
+      }
+      return;
+    }
+
+    /* A COLUMN IS AS WIDE AS THE LONGEST LINE, AND NO WIDER, AND THE SET IS
+       CENTRED. Nothing here can be broken, so widening the columns to fill the
+       room would not put more song in them: it would put the same words
+       against one edge of each column with a hand's width of nothing beside
+       them, which is what this looked like. Better to hold the leftover at the
+       two ends, where it reads as a margin.
+
+       Exactly, and not approximately, which is also what stops a line
+       overflowing: the browser divides the width I hand it into the count I
+       hand it, and both numbers are made of the same one. */
+    var need = Math.min(want, room);
+    var span = cols * need + (cols - 1) * gap;
+
+    sheet.style.maxWidth = Math.ceil(span + padded) + "px";
+    if (cols > 1) {
+      sheet.style.columnCount = String(cols);
+      sheet.classList.add("is-cols");
+    }
   }
 
   /* --- a song too wide for the screen --------------------------------------
@@ -2421,7 +2431,11 @@
      guitar and not their glasses, so the top of this range is deliberately
      larger than a page of text would ever want. */
   var SIZE_MIN = 13;
-  var SIZE_MAX = 48;
+  /* Bigger than any page of text would ever want, and then bigger again. The
+     top of this range was 48 while the size was two buttons and every step of
+     it was a press; it is a gesture now, so the far end of it costs the same
+     as the near end, and a music stand across a room is a long way away. */
+  var SIZE_MAX = 96;
 
   /* TWO POINTS A PRESS. One was a step nobody could see: the difference
      between 18 and 19 pixels is a difference you have to be told about, so

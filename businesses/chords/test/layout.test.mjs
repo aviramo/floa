@@ -207,6 +207,9 @@ const COLUMNS = `(() => {
   return JSON.stringify({
     cols: at.size,
     poured: document.querySelectorAll(".sheet .ln.is-cont").length,
+    /* Reading, the sheet keeps the whole room; writing it is only as wide as
+       its columns need and stands in the middle of what is left. */
+    fills: sheet.getBoundingClientRect().width > innerWidth - 40,
     over,
     where: innerWidth + "x" + innerHeight + ", sheet " + Math.round(sheet.scrollHeight) + "px tall",
   });
@@ -547,10 +550,13 @@ try {
          nothing down the middle" is that one chorus reaches further than the
          rest. The song here is short-lined, so this only holds when the count
          got high enough to make a column narrow. */
-      if (laid.cols >= 3) {
-        check("wide: a line too wide for its column is broken to it, as on a phone",
-          laid.poured > 0 || laid.over.length === 0, JSON.stringify(laid));
-      }
+      /* AND THE COLUMNS COVER THE WINDOW. Reading, the lines are broken to
+         whatever the columns come out as, so there is no width the room
+         cannot be divided into: a wide screen should be covered in song
+         rather than in margins. This is the check that a long song stops
+         standing in one column with half the window beside it. */
+      check("wide: reading, the columns fill the window",
+        laid.fills, JSON.stringify(laid));
 
       /* The first few are enough: they are the same three lines fifteen times
          over, and a chord that slipped slipped on all of them. */
