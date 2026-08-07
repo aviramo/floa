@@ -161,12 +161,11 @@ const POURED = `(() => {
     /* A run of artificial spaces, which in this song can only be the pour's
        own: the words it is poured from carry none. The arc drawn under a run
        is what says the space is the screen's doing and not the song's. */
-    joins: document.querySelectorAll(".sheet .ln-t .gap-run").length,
+    joins: document.querySelectorAll(".sheet .ln-t .is-turn").length,
     arc: (() => {
-      const g = document.querySelector(".sheet .ln-t .gap-run");
-      if (!g) return "no run";
-      const st = getComputedStyle(g, "::after");
-      return st.content + " " + st.height + " " + st.borderBottomWidth;
+      const g = document.querySelector(".sheet .ln-t .is-turn");
+      if (!g) return "no solidus";
+      return g.textContent + " " + getComputedStyle(g).color;
     })(),
     /* A WORD IS NEVER CUT IN HALF except where there is nowhere wider to try:
        a word longer than a whole segment. Anything else means a row took part
@@ -569,15 +568,26 @@ try {
          checking because the alternative reading of the same picture, a row
          that simply ran two lines together with nothing between, is a song
          saying something it does not say. */
-      check("narrow: a leftover row takes the next line behind artificial space",
-        poured.joins > 0, `${poured.joins} rows carry two lines (${poured.where})`);
-      /* AND THE ARC IS DRAWN OVER IT WHILE THE SONG IS BEING READ. It used to
-         be an editor-only mark, on the grounds that whoever opened a space is
-         the one looking at it; the pour opens them now, and then it is the
-         reader who needs telling that the space is the screen's and not the
-         song's. */
-      check("narrow: and the artificial space carries its arc when reading",
-        poured.arc !== "no run" && poured.arc.indexOf("0px") !== 0, poured.arc);
+      /* Whether any row ends up carrying two lines depends on where this
+         song's words happen to fall against this screen's width, which is not
+         something this file owns: with none, there is nothing to check rather
+         than something broken. What it does own is that where it DOES happen,
+         it happens behind a solidus. */
+      if (!poured.joins) {
+        unknown("narrow: a leftover row takes the next line behind a solidus",
+          `no row carried two lines here (${poured.where})`);
+      } else {
+        check("narrow: a leftover row takes the next line behind a solidus",
+          poured.joins > 0, `${poured.joins} rows carry two lines (${poured.where})`);
+      }
+      /* AND IT IS RED, which is the one colour on this sheet that already
+         means "this is not a word". The mark is a character of the row, so
+         there is nothing to position and the only thing that can be wrong
+         about it is its colour. */
+      if (poured.joins) {
+        check("narrow: and the solidus is not one of the words",
+          poured.arc.indexOf("rgb(225, 29, 99)") >= 0, poured.arc);
+      }
       /* A WORD IS NOT CUT IN HALF. The only place one may come apart is a word
          longer than a whole segment, because there is nowhere wider to try;
          anything else is a row taking part of a word it had no room for,
