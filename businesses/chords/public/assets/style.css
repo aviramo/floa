@@ -1413,6 +1413,12 @@ button.song-facts:hover .song-facts-ask { color: var(--accent); }
      height. */
   height: 0;
   font-size: 0;
+  /* AND WHAT IS DRAWN ON IT IS NOT CLIPPED BY IT. The box is a nothing tall,
+     so anything hung off it, the break mark above all, lies entirely outside
+     it: a gap that clipped to its own bounds would draw none of it. Said out
+     loud rather than left to the default, because the default is the one
+     thing here nobody would think to check. */
+  overflow: visible;
 }
 
 /* A gap in the editor draws an ARC UNDER THE ROOM IT MADE, the way a tie is
