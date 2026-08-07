@@ -1891,244 +1891,275 @@
     Array.prototype.forEach.call(root.querySelectorAll(".ln"), function (ln) { layoutLine(ln); });
   }
 
-  /* --- HOW MANY COLUMNS THE SONG STANDS IN ----------------------------------
-     Nobody is asked, and that is the point of it. A reader knows how big they
-     want the words; they do not know how many pixels their longest line takes
-     in the font their machine happens to have, and working out how many of
-     those fit across their window is not a thing anybody came here to do.
+  /* --- THE SONG IN SCREENFULS ----------------------------------------------
+     A SCREEN IS A PAGE, AND THE COLUMNS ARE ON IT. The first three columns
+     run from under the header to the bottom of the window, and the next three
+     begin underneath, the same height again, and are reached by scrolling.
+     Which is what a book does, and what somebody playing from a stand is
+     doing when they scroll: taking the next page, not the next inch.
 
-     AS MANY AS THE WIDTH HOLDS. It was as few as the HEIGHT needed for a
-     while, which is a different question and the wrong one: a song two
-     screenfuls long on a screen with room for four columns was set in two,
-     and the answer to "why is half the window empty" was that the song was
-     not long enough to deserve it. What a wide screen is for is seeing more
-     of the song at once.
+     This is why the browser's own columns are not used here. A multicol
+     BALANCES: it takes the whole song and shares it out between the columns
+     it was given, so each one is as tall as a third of the song, and reading
+     to the bottom of the first is scrolling through a third of the song
+     before starting again at the top. There is no way to ask it for a row of
+     columns that ends and another that begins: overflow in a multicol goes
+     sideways, not down. So the lines are dealt out here, by height, into
+     columns of a screenful each.
 
-     A COLUMN IS AS WIDE AS THE LONGEST LINE AND NO WIDER. A chord sheet's
-     lines never wrap (white-space: pre), so a line too wide for its column
-     does not break, it runs out of the column and prints over the one beside
-     it. Making the column exactly as wide as the widest line is what stops
-     that, and it is also what stops the columns being half empty: left to
-     itself a multicol shares the whole room out between them, which on a song
-     of short lines is a hand's width of nothing down the middle of every one.
-     The set is then centred in what is left over.
+     Nobody is asked how many columns. A reader knows how big they want the
+     words; they do not know how many pixels their longest line takes in the
+     font their machine happens to have. */
 
-     Not on a phone, where the sheet is poured to the width of the screen and
-     there is only ever one column's worth of room. Everywhere else, yes,
-     INCLUDING WHILE THE SONG IS BEING EDITED. The editor is not a second
-     screen here, it is this one with the words open, so a rule that skipped
-     it would mean the person who owns the library never sees a song laid out
-     at all: signed in, on a desk, every song opens editable. */
+  /* The narrowest a column may be where the lines are broken to fit it, in
+     song sizes: about thirty characters of Hebrew. Narrower than that and
+     every line is broken, which is a page of stubs rather than a song. */
+  /* A SEGMENT IS A PHONE, AND A PHONE IS 390 PIXELS. Not a number of
+     characters and not a share of the window: the actual width of the glass
+     most of these songs are read from. Phones run from about 360 to 430 CSS
+     pixels, and 400 sits in the middle of that.
+
+     IN PIXELS, WHICH IS THE POINT OF IT. Written as a multiple of the type
+     size instead, a segment grew as the words grew, so zooming changed how
+     many segments fitted across the screen and the page rearranged itself
+     under the reader. Fixed, zooming does what it does on a phone: the
+     segment stays where it is, fewer words fit on a line, and the song runs
+     into more segments. The shape of the page is a fact about the window and
+     nothing else. */
+  var COL_W = 400;
   var COL_MAX = 4;
-  /* A column with three lines in it is not a column, it is a heap. However
-     much room a wide screen has, the song has to have something to put in
-     them. */
-  var COL_MIN_ROWS = 6;
   /* The air between two columns, in song sizes rather than in pixels: at 40px
      type a 44px gutter is two columns touching. There is no line drawn down
      it, so the gutter is the only thing saying where one column ends and the
      next begins, and it has to be wide enough to say it on its own. */
   var COL_GAP = 2.8;
 
-  /* What is actually written on the line, in pixels. See the note in
-     fitColumns: a block is as wide as its container and says so. */
+  /* What is actually written on the line, in pixels. A line is a block and so
+     is exactly as wide as whatever is holding it: ask it and the answer that
+     comes back is the sheet's own width, every line looks like the widest
+     possible line, and the count comes out one on every song there is. A
+     range over its contents measures the text, which is the thing the
+     question is about. */
   function textWidth(node) {
     var range = document.createRange();
     range.selectNodeContents(node);
     return range.getBoundingClientRect().width;
   }
 
-  /* How many of the columns the song actually landed in, which is not always
-     how many it was given: see the note where this is called. Bucketed by
-     twenty pixels, because two columns are hundreds apart and a rounding
-     error is not a column. */
-  function usedColumns(sheet) {
-    var at = {};
-    var n = 0;
-    Array.prototype.forEach.call(sheet.querySelectorAll(".ln-t, .ln-section"), function (t) {
-      var key = Math.round(t.getBoundingClientRect().left / 20);
-      if (at[key]) return;
-      at[key] = true;
-      n++;
-    });
-    return n;
+  /* Every line of the sheet in the order the song has them, wherever they are
+     standing now: flat under the sheet before there are any pages, and inside
+     a column after. */
+  function sheetRows(sheet) {
+    return Array.prototype.slice.call(sheet.querySelectorAll(".ln, .coming"));
   }
 
-  function oneColumn(sheet) {
-    sheet.style.columnCount = "";
-    sheet.style.columnWidth = "";
-    sheet.style.columnGap = "";
+  /* Back to one flat column, which is what a phone reads and what everything
+     measures itself against before it is dealt out. */
+  /* The air a page holds at its top and its bottom, so the song never touches
+     the rule under it and never runs into the edge of the window. */
+  var PAGE_AIR = 16;
+
+  function unpage(sheet) {
     sheet.style.maxWidth = "";
-    sheet.classList.remove("is-cols");
+    sheet.style.paddingTop = "";
+    sheet.style.paddingBottom = "";
+    if (!sheet.querySelector(".page")) return;
+    var rows = sheetRows(sheet);
+    sheet.textContent = "";
+    rows.forEach(function (ln) { sheet.appendChild(ln); });
   }
 
-  /* A LINE BEING TYPED INTO CAN OUTGROW THE COLUMN IT STANDS IN. The count is
-     worked out when the sheet is drawn, and typing does not draw it: a
-     keystroke changes one line in place, deliberately, because rebuilding a
-     song under a caret is how a caret gets lost. So a line typed longer than
-     its column runs out of it, and nothing between that keystroke and the
-     next structural change would notice.
+  /* --- how wide a column, and how many ---------------------------------------
+     Two numbers, and the smaller wins.
 
-     So it is asked again once the typing STOPS. Not on the keystroke, which
-     would re-balance the columns under the hand doing the typing, and not
-     never, which is a line printing over the one beside it. */
-  var settleTimer = null;
+     HOW WIDE ONE HAS TO BE is asked of the song. Reading, the lines are
+     poured to whatever the column comes out as, exactly as they are on a
+     phone, so no line can be too wide for one and the floor is only being
+     wide enough to read. Writing, they are not, because a poured row is not a
+     line you can type into, so the floor is the longest line in the song and
+     one long line genuinely does cost the song a column.
 
-  function settleColumns(sheet) {
-    clearTimeout(settleTimer);
-    settleTimer = setTimeout(function () {
-      if (!sheet || !sheet.isConnected) return;
-      fitColumns(sheet);
-      layoutAll(sheet);
-    }, 450);
-  }
-
-  /* The narrowest a column is allowed to be where the lines are broken to
-     fit it, in song sizes: about thirty characters of Hebrew. Narrower than
-     that and every line is broken, which is a page of stubs rather than a
-     song in columns. */
-  var COL_MIN = 13;
-
-  function fitColumns(sheet) {
-    if (!sheet || !sheet.isConnected || !sheet.classList.contains("sheet")) return;
-    /* measured at one column, because that is the shape both questions are
-       asked of: the widest line and the whole height of the song */
-    oneColumn(sheet);
-    if (NARROW.matches) return;
+     HOW MANY OF THOSE FIT is a division. And then never more than the song
+     has song to put in them: a fourth column with nothing in it is a quarter
+     of the window held empty. */
+  function planColumns(sheet) {
+    if (!sheet || !sheet.isConnected || !sheet.classList.contains("sheet")) return null;
 
     var texts = sheet.querySelectorAll(".ln-t");
-    if (!texts.length) return;
+    if (!texts.length) return null;
 
     var size = parseFloat(getComputedStyle(texts[0]).fontSize) || 18;
-    var gap = COL_GAP * size;
+    /* Air enough for the type to read as separated, but never so much that
+       the space between two segments competes with the segments: a quarter of
+       one is as far as that goes. */
+    var gap = Math.min(COL_GAP * size, COL_W * 0.25);
+    var poured = !sheet.classList.contains("ed");
 
-
-    /* THE WIDEST LINE, ASKED OF THE WORDS AND NOT OF THE BOX THEY SIT IN.
-
-       The sheet cannot answer this: a line that overflows its column is not
-       overflow of the sheet, so the sheet reports no trouble while two columns
-       of words print over each other. And neither can the line, which is a
-       block and therefore exactly as wide as whatever is holding it: ask it
-       and the answer that comes back is the sheet's own width, every line
-       looks like the widest possible line, and the count comes out one on
-       every song there is. A range over its contents measures the text, which
-       is the thing the question is about.
-
-       The headings are measured too. They carry no chords and they are still
-       lines of the page, and a heading that runs into the next column is the
-       same page as a verse that does. */
     var widest = 0;
     Array.prototype.forEach.call(sheet.querySelectorAll(".ln-t, .ln-section"), function (t) {
       var w = textWidth(t);
       if (w > widest) widest = w;
     });
-    if (!(widest > 0)) return;
+    if (!(widest > 0)) return null;
 
-    /* ROOM FOR THE CHORDS OVER THE ENDS OF IT. A chord is centred on its
-       character, so one over the last letter of a line hangs half a label past
-       where the words stop. */
+    /* room for the chords over the ends of it: a chord is centred on its
+       character, so one over the last letter hangs half a label past where
+       the words stop */
     var want = widest + size * 1.4;
-
-    /* Whether the lines will be broken to the column, which is the same
-       question as whether this song is being read rather than written. */
-    var poured = !sheet.classList.contains("ed");
 
     var box = getComputedStyle(sheet);
     var padded = (parseFloat(box.paddingLeft) || 0) + (parseFloat(box.paddingRight) || 0);
     var room = sheet.clientWidth - padded;
-    if (!(room > 0)) return;
+    if (!(room > 0)) return null;
 
-    /* --- AS MANY AS THE WIDTH HOLDS ------------------------------------------
-       It used to be as few as the HEIGHT needed: one screenful of song wanted
-       one column, three wanted three. That is a different question and it was
-       the wrong one. A song two screenfuls long on a screen that holds four
-       columns of it was set in two, with the other half of the window empty,
-       and the answer to "why is there nothing there" was that the song was not
-       long enough to deserve it. Nobody wants that. What a wide screen is for
-       is seeing more of the song at once.
+    /* Reading, a segment is a phone and the lines are poured to it. Writing,
+       they are not, because a poured row is not a line you can type into, so
+       a segment has to be at least as wide as the longest line in the song.
+       That is the one thing the two states cannot share. */
+    var seg = poured ? COL_W : Math.max(COL_W, want);
+    var byWidth = Math.max(1, Math.floor((room + gap) / (seg + gap)));
 
-       So: how many columns of the width the song actually needs fit across the
-       room. The only thing that holds it back is the song itself having
-       nothing to put in them. */
-    /* THE NARROWEST A COLUMN MAY BE, which is a different number in the two
-       states and is the whole of the difference between them.
+    /* A PAGE IS THE WINDOW UNDER THE HEADER. The header is sticky, so it
+       covers the same strip of every page and not only the first. */
+    var head = document.querySelector(".top");
+    var pageH = window.innerHeight - (head ? head.getBoundingClientRect().height : 0);
+    if (!(pageH > 200)) return null;
 
-       READING, the lines are POURED to whatever the column comes out as (see
-       flowSheet), exactly as they are on a phone. So no line can be too wide
-       for a column, and the only floor is being wide enough to read: about
-       thirty characters, which is roughly what a line of a song takes anyway.
-       The few that reach further are broken, and that is the price of the
-       other three columns.
+    /* How much song there is, measured while it is still one flat column. */
+    var tall = 0;
+    sheetRows(sheet).forEach(function (ln) {
+      tall += ln.offsetHeight + (parseFloat(getComputedStyle(ln).marginBottom) || 0);
+    });
 
-       WRITING, they are not, because a poured row is not a line you can type
-       into. So the floor is the longest line in the song, and one long line
-       genuinely does cost the song a column. */
-    var floorWidth = poured ? COL_MIN * size : want;
-    var byWidth = Math.floor((room + gap) / (floorWidth + gap));
-    var rows = sheet.querySelectorAll(".ln").length;
-    var byRows = Math.ceil(rows / COL_MIN_ROWS);
-    var cols = Math.max(1, Math.min(byWidth, byRows, COL_MAX));
+    /* never more columns than the song can fill the first page with */
+    var bySong = Math.max(1, Math.ceil(tall / pageH));
+    var cols = Math.max(1, Math.min(byWidth, bySong, COL_MAX));
 
-    sheet.style.columnGap = Math.round(gap) + "px";
+    /* THE SEGMENTS ARE THE WIDTH THEY ARE AND THE SET STANDS IN THE MIDDLE.
+       Whatever the window has over is held at the two ends, where it reads as
+       a margin. Spreading it between them instead would make the gutters a
+       fact about the window rather than about the type, and two segments on a
+       very wide screen would end up at opposite edges of it with a hand's
+       width of nothing between.
 
-    /* --- THE SCREEN IN EQUAL PARTS -------------------------------------------
-       Where nothing can be broken, a column is exactly as wide as the longest
-       line and no wider: widening them to fill the room would not put more
-       song in them, it would put the same words against one edge of each with
-       a hand's width of nothing beside them.
+       A single segment takes the room it is given: a phone has none to hold
+       back. */
+    var colW = cols > 1 ? Math.min(seg, room) : Math.min(seg, room);
+    if (!(colW > 0)) return null;
 
-       WHAT IS LEFT OVER IS SHARED OUT SO THE PARTS COME OUT EVEN. Each column
-       sits in the middle of its own equal share of the room, which makes every
-       gutter the same size and the two end margins each a half of one.
+    return {
+      cols: cols, colW: colW, gutter: gap,
+      pageH: pageH, padded: padded, poured: poured,
+    };
+  }
 
-       It used to be the whole block centred with the gutters at their natural
-       width, which divides the SHEET evenly and the SCREEN unevenly, and the
-       sheet has no edge anybody can see.
+  /* --- dealing the lines out -------------------------------------------------
+     Down a column until the next line would not fit, then the next column,
+     and after the last column of a page, a new page under it. Greedy and not
+     balanced, and that is the point: a page that is full to the bottom is a
+     page you can read to the bottom of.
 
-       Reading, none of this arises: the lines are broken to whatever the
-       columns come out as, so the sheet keeps the whole room and the browser
-       divides it into equal columns itself. */
-    var need = Math.min(want, room);
+     THE ORDER IN THE DOCUMENT IS STILL THE ORDER OF THE SONG, column by
+     column and page by page, which everything else here depends on: the lines
+     are the same nodes moved, so what they say, what is marked and where the
+     caret is all come along with them. */
+  function pageUp(sheet, plan) {
+    var rows = sheetRows(sheet);
+    if (!rows.length) return;
 
-    function apply(n) {
-      if (n > 1) {
-        sheet.style.columnCount = String(n);
-        sheet.classList.add("is-cols");
-      } else {
-        sheet.style.columnCount = "";
-        sheet.classList.remove("is-cols");
+    /* measured first, because moving them is what makes them unmeasurable */
+    var heights = rows.map(function (ln) {
+      return ln.offsetHeight + (parseFloat(getComputedStyle(ln).marginBottom) || 0);
+    });
+
+    /* NOTHING IS TAKEN OUT UNTIL THE PAGES ARE BUILT TO PUT IT IN. Emptying
+       the sheet first and filling it afterwards means anything that throws
+       between the two leaves the song gone off the screen altogether, with no
+       way back but a reload: the rows are the only copy on the page. */
+    var built = document.createDocumentFragment();
+
+    /* THE SHEET'S OWN TOP AND BOTTOM PADDING GOES WHILE THERE ARE PAGES. A
+       page is meant to be exactly the window under the header, and twenty two
+       pixels of padding above the first one pushes every page that far down:
+       the bottom of each is then below the fold, and the last line on it is
+       cut in half by the edge of the screen. The air belongs to the pages
+       now, where it also keeps the song off the rule between them. */
+    sheet.style.paddingTop = "0";
+    sheet.style.paddingBottom = "0";
+
+    /* What a page can actually hold, which is its height less the air it
+       keeps at both ends. Filling to the full height and then padding it is
+       how a line ends up under the fold. */
+    var room = plan.pageH - PAGE_AIR * 2;
+
+    var page = null;
+    var col = null;
+    var used = 0;
+    var inPage = 0;
+
+    function nextCol() {
+      if (!page || inPage >= plan.cols) {
+        page = el("div", "page");
+        page.style.height = Math.round(plan.pageH) + "px";
+        page.style.gap = Math.round(plan.gutter) + "px";
+        /* the rule between two segments is drawn in the middle of this */
+        page.style.setProperty("--gutter", Math.round(plan.gutter) + "px");
+        built.appendChild(page);
+        inPage = 0;
       }
-      if (poured) return;
-
-      /* one equal share of the room per column, and the column in the middle
-         of it: the leftover becomes a half-gutter at each end and a whole one
-         between each pair */
-      var part = room / n;
-      var gutter = Math.max(0, part - need);
-      sheet.style.columnGap = Math.round(gutter) + "px";
-      sheet.style.maxWidth = Math.ceil(n * need + (n - 1) * gutter + padded) + "px";
+      col = el("div", "col");
+      col.style.width = Math.round(plan.colW) + "px";
+      page.appendChild(col);
+      inPage++;
+      used = 0;
     }
 
-    apply(cols);
-
-    /* --- AND HOW MANY OF THEM THE SONG ACTUALLY FILLED ------------------------
-       Which is not always how many it was given, and that is not a rounding
-       error: balancing shares the lines out over the columns it was handed,
-       and a line is an unbreakable block (see break-inside on .ln), so the
-       height it settles on is one that a few of them overshoot. The song then
-       runs out early and the last column stands empty, taking its share of the
-       width with nothing in it, which is how you end up looking at three
-       columns of words spread out as if there were four.
-
-       So the count is asked again OF THE ANSWER, and the empty ones are handed
-       back. It settles in one pass almost always, and the loop is bounded by
-       the number of columns there could ever be. */
-    for (var tries = 0; tries < COL_MAX; tries++) {
-      var filled = usedColumns(sheet);
-      if (filled < 1 || filled >= cols) break;
-      cols = filled;
-      apply(cols);
+    try {
+      nextCol();
+      rows.forEach(function (ln, i) {
+        /* `used > 0` so a line taller than a whole page still lands somewhere
+           rather than being dealt into an endless run of empty columns */
+        if (used > 0 && used + heights[i] > room) nextCol();
+        col.appendChild(ln);
+        used += heights[i];
+      });
+      sheet.textContent = "";
+      sheet.appendChild(built);
+    } catch (e) {
+      /* Back to one flat column with every line in it. A song laid out wrong
+         is a bad afternoon; a song that is not on the screen at all is a page
+         nobody can do anything with. */
+      sheet.textContent = "";
+      rows.forEach(function (ln) { sheet.appendChild(ln); });
+      unpage(sheet);
     }
+  }
+
+  /* The whole of it, in the order the answers depend on each other: how wide a
+     column is, then the lines broken to that width, then dealt out by height.
+     The sheet is squeezed to one column's width while the pouring runs,
+     because a line is broken to the width of the box it is standing in and
+     until the columns exist that box is the whole sheet. */
+  function fitColumns(sheet) {
+    if (!sheet || !sheet.isConnected) return;
+    unpage(sheet);
+
+    var plan = planColumns(sheet);
+    /* One column, which is a phone and a song whose lines are too long to
+       stand two of them side by side. The lines are still broken to the room
+       there is, which is what a phone has always done. */
+    if (!plan) {
+      if (!sheet.classList.contains("ed")) flowSheet(sheet);
+      return;
+    }
+
+    if (plan.poured) {
+      sheet.style.maxWidth = Math.ceil(plan.colW + plan.padded) + "px";
+      flowSheet(sheet);
+      sheet.style.maxWidth = "";
+    }
+
+    pageUp(sheet, plan);
   }
 
   /* --- a song too wide for the screen --------------------------------------
@@ -2424,6 +2455,16 @@
     var range = document.createRange();
     range.selectNodeContents(node);
     select(range);
+  }
+
+  /* WHICH KEY WAS PRESSED, NOT WHICH LETTER CAME OUT OF IT. A song is typed in
+     Hebrew, so the keyboard is in Hebrew, and Ctrl+Z arrives with a `key` of
+     ז: every shortcut written against the letter stops working the moment the
+     layout is the one this whole app is for. `code` is the key itself,
+     wherever a layout puts its letters, and the letter is still accepted
+     because a keyboard without one (a phone) sends no code. */
+  function pressed(event, code, letter) {
+    return event.code === code || String(event.key).toLowerCase() === letter;
   }
 
   /* contenteditable="plaintext-only" is what keeps a paste from bringing
@@ -5000,11 +5041,53 @@
          And the placing last, because a chord belongs to the row its syllable
          ended up on and there is no telling which that is until the words have
          been broken. */
+      /* fitColumns owns the whole of it now: how wide a column is, the
+         breaking of the lines to that width, and dealing them out into
+         screenfuls. The placing is last, because a chord belongs to the row
+         its syllable ended up on and there is no telling which that is until
+         the words have been broken. */
       requestAnimationFrame(function () {
+        /* DEALING THE ROWS OUT MOVES THEM, and a row that is moved in the
+           document takes the caret out of itself: the browser hands focus back
+           to the page. So whoever asked for a caret before this frame (Enter,
+           a join, a paste) gets it back after it, in the same character.
+           Without this every key that redraws the song ends with the typing
+           stopped and nothing on screen saying so. */
+        var host = typing && typing.isConnected ? typing : null;
+        var caret = host ? caretIndex(host) : null;
         fitColumns(sheet);
-        if (!editing) flowSheet(sheet);
         layoutAll(sheet);
+        if (host && host.isConnected) {
+          host.focus();
+          placeCaret(host, caret == null ? 0 : caret);
+        }
       });
+    }
+
+    /* ONCE THE TYPING STOPS, and not on the keystroke. A line that has grown
+       past the column it stands in has to be dealt out again, but dealing them
+       out MOVES the rows, and moving the row being typed into takes the caret
+       out of it: on every letter that is an editor that fights back. So it
+       waits for a pause, and puts the caret back where it was.
+
+       There was a call to a function of this name here that had stopped
+       existing, so every keystroke threw and the columns never settled at
+       all. */
+    var settling = 0;
+
+    function settle() {
+      clearTimeout(settling);
+      settling = setTimeout(function () {
+        if (!sheet.isConnected) return;
+        var host = typing && typing.isConnected ? typing : null;
+        var caret = host ? caretIndex(host) : null;
+        fitColumns(sheet);
+        layoutAll(sheet);
+        if (host && host.isConnected && caret !== null) {
+          host.focus();
+          placeCaret(host, caret);
+        }
+      }, 500);
     }
 
     /* Round, not against a wall. Past the top it comes out at the bottom and
@@ -5349,6 +5432,15 @@
       var body = JSON.parse(was[0]);
       restoring = true;
 
+      /* WHERE THE TYPING WAS. An undo that leaves nothing focused is an undo
+         that has to be followed by a click before the next word can be typed,
+         and the change it took back was almost always a word being typed. The
+         line is remembered by its place in the song, because the line object
+         itself is about to be replaced by one read back out of a string. */
+      var host = typing && typing.isConnected ? typing : null;
+      var where = host ? song.lines.indexOf(lineAt(host)) : -1;
+      var caret = host ? caretIndex(host) : null;
+
       song.title = body[0];
       CREDITS.forEach(function (c, index) { song[c.field] = body[1][index] || ""; });
       song.dir = body[2] || "rtl";
@@ -5359,10 +5451,17 @@
 
       if (title.textContent !== song.title) title.textContent = song.title;
       byFields.forEach(function (input, index) { input.value = body[1][index] || ""; });
-      if (showDraft) showDraft();
+      /* WHAT THE CHIP SAYS IS PART OF THE STATE, and this line used to call
+         something that no longer exists: it threw here, before the song was
+         drawn, and every undo went nowhere. Nothing about the stack was wrong,
+         which is why it looked so much like the stack. */
+      if (showState) showState();
       if (showStyles) showStyles();
 
       draw();
+      if (where >= 0 && song.lines.length) {
+        focusLine(Math.min(where, song.lines.length - 1), caret == null ? 0 : caret);
+      }
       /* the song is what it was, so what a change is measured against is what
          it was too: without this the restore itself reads as an edit and puts
          the draft mark straight back on */
@@ -5441,7 +5540,7 @@
          asked for. Capture, so it never reaches the line at all. */
       var onKey = function (event) {
         if (!sheet.isConnected) return document.removeEventListener("keydown", onKey, true);
-        if (!(event.ctrlKey || event.metaKey) || String(event.key).toLowerCase() !== "z") return;
+        if (!(event.ctrlKey || event.metaKey) || !pressed(event, "KeyZ", "z")) return;
         event.preventDefault();
         undo();
       };
@@ -5615,7 +5714,7 @@
 
       if (line.type === "section") {
         var heading = el("div", "ln-section", line.text);
-        makeEditable(heading);
+        holdOff(heading);
         heading.addEventListener("input", function () { line.text = heading.textContent; });
         heading.addEventListener("keydown", function (event) { lineKeys(event, line, heading); });
         ln.appendChild(heading);
@@ -5642,7 +5741,7 @@
         ln.appendChild(lane);
 
         var text = textSpans(line.text);
-        makeEditable(text);
+        holdOff(text);
         text.addEventListener("input", function () {
           var caret = caretIndex(text);
 
@@ -5684,7 +5783,7 @@
           layoutLine(ln);
           /* and once the typing stops, whether this line still fits the
              column it is standing in */
-          settleColumns(sheet);
+          settle();
         });
         text.addEventListener("keydown", function (event) { lineKeys(event, line, text); });
         /* Clicking between two letters offers to open a gap there, and typing
@@ -5696,390 +5795,179 @@
       }
 
       /* NOTHING BESIDE THE LINE. There was a tick out in the margin of every
-         one of them, a column of forty checkboxes down a song, and what it was
-         for is what dragging across the words does in any other document. See
-         the block below. */
-      if (isMarked(line)) ln.classList.add("is-marked");
-
+         one of them, a column of forty checkboxes down a song, and then a
+         drag that took whole lines instead of words. Both are gone: what is
+         beside a line is nothing, and what a drag across it does is what it
+         does in any other document. */
       return ln;
     }
 
-    /* --- moving a verse ------------------------------------------------------
-       The grip carries ONE line, which is the right size for a line that ended
-       up in the wrong place and the wrong size for the thing that actually goes
-       wrong in a song: a whole verse in the wrong order, four lines that have
-       to travel together. Dragging those one at a time is four drags, and after
-       the first one they are no longer beside each other.
+    /* --- SELECTING IS THE BROWSER'S AGAIN --------------------------------------
+       Every line of the song is its own contenteditable host. That is what
+       keeps a caret, an undo and a paste inside the line they belong to, and
+       it is what lets a chord be positioned over one character of it. It is
+       also why a selection could never leave the line it started on: a
+       browser will not carry one from one editing host into the next, and a
+       drag across three lines came back holding the first.
 
-       So a line can be marked, and what is marked moves as one. Contiguous or
-       not: each marked line steps over the unmarked line next to it, which for
-       a verse is the verse moving a line at a time, and for a scattered set is
-       each of them keeping its distance from the others.
+       The answer used to be to take the gesture away: past the end of its own
+       line the drag stopped selecting words and started taking whole lines.
+       Which was never what was under the pointer.
 
-       THE MARKS ARE LINE OBJECTS, NEVER INDICES, for the same reason the chords
-       are: a line can be split, joined or carried up the page by the grip while
-       a mark is still held, and an index would quietly start pointing at the
-       neighbour. */
-    var marked = [];
+       So the hosts are shut until the caret asks for one. A line is editable
+       ONLY while it is being typed into; every other line on the page is
+       ordinary text, and a drag across ordinary text is the browser's own
+       selection, exactly the characters it crosses, as many lines as it
+       likes. Pressing shuts the one that was open, and letting go opens the
+       one that was pressed, at the character that was pressed. Nothing about
+       the typing changes: by the time a key can be pressed, the line under
+       the caret is a host again.
 
-    /* --- SELECTING IS DRAGGING ACROSS THE WORDS -------------------------------
-       There was a tick in the margin of every line, a column of forty
-       checkboxes down a song, and what it was for is what dragging across the
-       words does in every other document there is.
+       What a selection that crosses lines can then have done to it is below:
+       copied (see sheetToText), cut, typed over, deleted. */
+    var typing = null;
 
-       IT CANNOT BE THE BROWSER'S OWN SELECTION, and that is worth knowing
-       before anybody tries to simplify this away. Each line is its own
-       contenteditable host, which is what keeps a caret, an undo and a paste
-       inside the line they belong to; a browser will not carry a selection
-       from one editable host into the next, and one dragged across three lines
-       comes back holding the first. Measured, not assumed.
+    /* Editable, but not yet. The paste handling and the plaintext-only mode
+       are settled once, here, and remembered: opening the host again is then
+       one attribute and no guesswork. */
+    function holdOff(node) {
+      makeEditable(node);
+      node.dataset.edit = node.contentEditable;
+      node.contentEditable = "false";
+      return node;
+    }
 
-       So the rule is: a drag that STAYS on its line is the browser's, and
-       selects words the way it always has. A drag that LEAVES it is ours, and
-       takes whole lines, because that is the only thing that could have been
-       meant by dragging past the end of a line.
+    function shutLines() {
+      if (!typing) return;
+      /* SHUT AND LET GO OF IT. A host that is closed while it still holds the
+         focus is still where the browser thinks the editing is, and a
+         selection begun in it is held inside it: the drag would stop at the
+         end of that line exactly as it did when the line was open. */
+      if (typing.isConnected) {
+        typing.contentEditable = "false";
+        if (document.activeElement === typing) typing.blur();
+      }
+      typing = null;
+    }
 
-       `pasteAt` is the other half. A caret is a position, and putting one
-       somewhere is the cheapest gesture there is, so that is what says where a
-       copy lands. */
-    var pasteAt = null;
+    /* Open one, and put the caret back exactly where the pointer left it. The
+       range was taken before the host opened; the characters it names are the
+       same spans afterwards, so it still points at them. */
+    function openLine(node, range) {
+      if (!node) return null;
+      if (typing !== node) {
+        shutLines();
+        node.contentEditable = node.dataset.edit || "true";
+        typing = node;
+      }
+      node.focus();
+      if (range) select(range);
+      return node;
+    }
 
-    function isMarked(line) { return marked.indexOf(line) >= 0; }
-
-    /* The line a node belongs to, as a line of the SONG. Everything below asks
-       this of whatever the pointer happened to be over: a character span, the
-       chord lane, a chord label. */
-    function lineAt(node) {
+    /* The line a node belongs to, as a line of the SONG, and the row it is
+       drawn in. Everything below asks this of whatever the pointer or the
+       selection happened to land on: a character span, a heading, the lane. */
+    function rowOf(node) {
       var ln = node && node.closest ? node.closest(".ln") : null;
-      if (!ln || !sheet.contains(ln)) return null;
+      if (!ln && node && node.parentNode && node.parentNode.closest) ln = node.parentNode.closest(".ln");
+      return ln && sheet.contains(ln) ? ln : null;
+    }
+
+    function lineAt(node) {
+      var ln = rowOf(node);
+      if (!ln) return null;
       var index = Number(ln.dataset.index);
       return isFinite(index) ? song.lines[index] || null : null;
     }
 
-    /* Everything from one line to another, in the song's own order, whichever
-       way round they were dragged. */
-    function markRange(from, to) {
-      var a = song.lines.indexOf(from);
-      var b = song.lines.indexOf(to);
-      if (a < 0 || b < 0) return;
-      if (a > b) { var swapped = a; a = b; b = swapped; }
+    function hostOf(node) {
+      var ln = rowOf(node);
+      return ln ? ln.querySelector(".ln-t, .ln-section") : null;
+    }
 
-      marked.length = 0;
-      for (var i = a; i <= b; i++) marked.push(song.lines[i]);
-      rowsOf().forEach(function (ln) {
-        ln.classList.toggle("is-marked", isMarked(lineAt(ln)));
+    /* Where a boundary of the selection falls, as a character index of the
+       line it fell in: the same probe the caret is read with. */
+    function indexAt(host, node, offset) {
+      var probe = document.createRange();
+      probe.selectNodeContents(host);
+      try { probe.setEnd(node, offset); } catch (e) { return null; }
+      return probe.toString().length;
+    }
+
+    /* A selection the app has to answer for, in the song's own terms: which
+       line it starts in and where, which line it ends in and where.
+
+       WHICH ROWS IT TOUCHES IS ASKED OF THE ROWS, not read off the two ends of
+       the range. A drag ends inside a character, and those two answers are the
+       same; Ctrl+A does not, it puts both ends on the sheet itself, and asking
+       the ends what line they are in comes back with "none" and the whole
+       selection reads as nothing at all. Everything the keys below do to a
+       selection went through here, so Ctrl+A and then Delete deleted nothing
+       and Ctrl+A and then a paste pasted over nothing.
+
+       Null for a selection inside the line being typed into: that one is the
+       browser's own business and is left to it. */
+    function acrossLines() {
+      var selection = window.getSelection && window.getSelection();
+      if (!selection || !selection.rangeCount || selection.isCollapsed) return null;
+
+      var range = selection.getRangeAt(0);
+      var about = range.commonAncestorContainer;
+      if (about !== sheet && !sheet.contains(about)) return null;
+
+      var rows = Array.prototype.filter.call(sheet.querySelectorAll(".ln"), function (ln) {
+        return selection.containsNode(ln, true);
       });
-      showMarked();
+      if (!rows.length) return null;
+      if (rows.length === 1 && typing && rows[0].contains(typing)) return null;
+
+      var first = rows[0], last = rows[rows.length - 1];
+      var head = first.querySelector(".ln-t, .ln-section");
+      var foot = last.querySelector(".ln-t, .ln-section");
+
+      var a = song.lines.indexOf(lineAt(first));
+      var b = song.lines.indexOf(lineAt(last));
+      if (a < 0 || b < 0 || a > b) return null;
+
+      /* Where it begins inside the first row and ends inside the last. A
+         boundary that is not in the row at all means the whole of it: it began
+         above this row, or it ends below that one. */
+      var at = head && head.contains(range.startContainer) ? indexAt(head, range.startContainer, range.startOffset) : 0;
+      var end = foot && foot.contains(range.endContainer)
+        ? indexAt(foot, range.endContainer, range.endOffset)
+        : String(song.lines[b].text || "").length;
+
+      return { a: a, b: b, at: at == null ? 0 : at, end: end == null ? String(song.lines[b].text || "").length : end };
     }
 
-    function setMark(line, on) {
-      var at = marked.indexOf(line);
-      if (on && at < 0) marked.push(line);
-      if (!on && at >= 0) marked.splice(at, 1);
-    }
+    /* Taking it out. The first line keeps what came before the selection, the
+       last keeps what came after, and the two halves become one line: which is
+       what deleting a selection means in any document. The chords travel with
+       the characters they name, because splitLine and joinLines are the same
+       ones Enter and Backspace use. */
+    function dropAcross() {
+      var span = acrossLines();
+      if (!span) return null;
 
-    function clearMarks() {
-      if (!marked.length) return;
-      marked.length = 0;
-      showMarked();
-      rowsOf().forEach(function (ln) { ln.classList.remove("is-marked"); });
-    }
+      var head = splitLine(song.lines[span.a], span.at)[0];
+      var foot = splitLine(song.lines[span.b], span.end)[1];
+      var joined = joinLines(head, foot);
 
-    /* The whole song in one press. Turning a song that came out in the wrong
-       direction the right way round, or moving all of it down to make room at
-       the top, is a thing about the song rather than about a verse, and ticking
-       forty boxes to say so is forty presses to say one word.
-
-       Not a toggle: the same bar already carries the way back, and a button
-       that means two different things depending on what is ticked is a button
-       you have to look at what is ticked to press. */
-    function markAll() {
-      marked.length = 0;
-      song.lines.forEach(function (line) { marked.push(line); });
-      showMarked();
-      rowsOf().forEach(function (ln) { ln.classList.add("is-marked"); });
-    }
-
-    function markedCount() {
-      return song.lines.filter(isMarked).length;
-    }
-
-    /* THE BAR IS OPEN WHEN THERE IS SOMETHING FOR IT TO DO, and there are two
-       of those. Lines are selected, and then it is a bar about them: move
-       them, copy them, turn them round, take them out. Or something has been
-       copied and the caret is sitting in a line, and then it is a bar about
-       putting that down: the click is where it lands.
-
-       Both at once is the ordinary case in the middle of laying a chorus over
-       a verse, and the bar simply carries both sets. */
-    function showMarked() {
-      if (!blockBar) return;
-      var n = markedCount();
-      var landing = held && held.length && pasteAt && song.lines.indexOf(pasteAt) >= 0;
-
-      var copied = held ? held.length : 0;
-      blockBar.hidden = !n && !landing;
-      blockCount.textContent = n === 1 ? "שורה אחת מסומנת"
-        : n ? n + " שורות מסומנות"
-        : copied === 1 ? "שורה אחת הועתקה" : copied + " שורות הועתקו";
-
-      blockKeep.forEach(function (node) { node.hidden = !n; });
-      pasteLinesBtn.hidden = !landing;
-      pasteChordsBtn.hidden = !landing;
-    }
-
-    /* One step, in whichever direction. Walked from the edge the block is
-       moving towards, so the lines never step on each other, and a marked line
-       whose neighbour is marked too stays where it is: that neighbour is part
-       of the same block and has already moved, or is against the end of the
-       song and nothing can. */
-    function moveMarked(step) {
-      var lines = song.lines;
-      var at = [];
-      lines.forEach(function (line, index) { if (isMarked(line)) at.push(index); });
-      if (!at.length) return;
-      if (step > 0) at.reverse();
-
-      var moved = false;
-      at.forEach(function (index) {
-        var to = index + step;
-        if (to < 0 || to >= lines.length) return;
-        if (isMarked(lines[to])) return;
-        var was = lines[to];
-        lines[to] = lines[index];
-        lines[index] = was;
-        moved = true;
-      });
-      if (!moved) return;
-
-      draw();
-      mark();
-    }
-
-    /* Out. The lines that were marked stop being part of the song, and a song
-       that has just lost all of its lines keeps one empty one, because a song
-       is a document and a document with nothing in it still has somewhere to
-       type.
-
-       It does not ask. Undo is one press away and takes the whole block back,
-       and a dialog in front of a thing that can be undone is a dialog that
-       teaches people to dismiss dialogs. */
-    function dropMarked() {
-      var going = song.lines.filter(isMarked);
-      if (!going.length) return;
-
-      song.lines = song.lines.filter(function (line) { return !isMarked(line); });
+      song.lines.splice(span.a, span.b - span.a + 1, joined);
       if (!song.lines.length) song.lines.push(blankLine(song.dir));
-      marked.length = 0;
 
       draw();
+      focusLine(span.a, head.text.length);
       mark();
-      toast(going.length === 1 ? "שורה נמחקה" : going.length + " שורות נמחקו");
+      /* where it left the caret, for whatever asked for the deleting */
+      return { index: span.a, at: head.text.length };
     }
 
-    /* A chorus is the same four lines again, and typing them a second time is
-       typing them a second time. So what is marked can be laid down again,
-       words, chords and headings together, right under the last of it.
-
-       THE COPY IS WHAT STAYS MARKED. Almost every duplication is followed by
-       moving the new verse somewhere, and the thing you want under the arrows
-       afterwards is the one that was just made, not the one it came from. */
-    function copyLine(line) {
-      return {
-        type: line.type,
-        text: line.text,
-        chords: line.chords.map(function (c) { return { pos: c.pos, chord: c.chord }; }),
-      };
-    }
-
-    function copyMarked() {
-      var going = song.lines.filter(isMarked);
-      if (!going.length) return;
-
-      var last = 0;
-      song.lines.forEach(function (line, index) { if (isMarked(line)) last = index; });
-
-      var copies = going.map(copyLine);
-      song.lines.splice.apply(song.lines, [last + 1, 0].concat(copies));
-
-      marked.length = 0;
-      copies.forEach(function (line) { marked.push(line); });
-
-      draw();
-      mark();
-    }
-
-    /* Which way the last line of the song runs, which is which way the next one
-       will. A song with nothing in it yet runs the way the song says. */
-    function lastDir() {
-      var lines = song.lines;
-      return lines.length ? dirOf(lines[lines.length - 1], song.dir) : (song.dir || "rtl");
-    }
-
-    /* The direction of the marked lines, set to what was asked for rather than
-       flipped: a block can hold both directions at once, and "the other one" is
-       not an answer when there are two of them.
-
-       Drawn again rather than nudged, because a line changing direction changes
-       which edge it starts at, where every chord on it is measured from and,
-       on a phone, where the whole thing breaks. */
-    function faceMarked(dir) {
-      var going = song.lines.filter(isMarked);
-      if (!going.length) return;
-
-      var moved = false;
-      going.forEach(function (line) {
-        if (dirOf(line) === dir) return;
-        line.dir = dir;
-        moved = true;
-      });
-      if (!moved) return;
-
-      draw();
-      mark();
-    }
-
-    /* There were two buttons here that put a gap at the front of every marked
-       line at once, and moving a whole song in from its edge is not a thing
-       the song wants said about it: the room a line needs at its start is the
-       same room any two letters need, one line at a time, and it is opened the
-       same way. Click where it should go and press the button that appears
-       (see offerGap). */
-
-    /* --- ONE COPY, AND TWO WAYS TO PUT IT DOWN ---------------------------------
-       Copying takes the marked lines whole: their words, their chords, and
-       which way they run. What is done with them is chosen when they are put
-       down rather than when they are picked up, because it is the same handful
-       of lines either way and nobody knows, at the moment of copying, which of
-       the two they are going to want.
-
-         הדבקת שורות     the lines themselves, ADDED after the marked one.
-                         Nothing that was in the song stops being in it: this
-                         is the one gesture here whose whole point is to have
-                         more song afterwards than before, and a paste that
-                         quietly replaced four lines with four others would be
-                         a delete wearing a copy's clothes.
-
-         הדבקת אקורדים   the chords off those lines, onto the marked ones, line
-                         for line. This one DOES replace, and that is the whole
-                         of what it is for: the words stay exactly as they are
-                         and the chords over them become the copied ones.
-
-       The copy is held after either of them, so one chorus can be laid over
-       three verses, and it lasts until something else is copied. */
-    var held = null;
-
-    function chordLines() {
-      return song.lines.filter(function (line) {
-        return isMarked(line) && line.type !== "section";
-      });
-    }
-
-    function copyLines() {
-      var going = song.lines.filter(isMarked);
-      if (!going.length) return;
-
-      held = going.map(copyLine);
-      clearMarks();
-      toast(held.length === 1 ? "שורה הועתקה" : held.length + " שורות הועתקו");
-    }
-
-    /* WHERE IT LANDS IS WHERE YOU CLICKED. It used to land after the last
-       marked line, which meant putting a chorus somewhere was a matter of
-       marking the line above it first: a selection made in order to say a
-       position, and then thrown away.
-
-       A caret already says a position, and putting it somewhere is the
-       cheapest gesture there is. So the click is the answer, and a selection
-       is still taken when there is one, since marking a verse and pasting
-       under it is one honest way to mean the same thing. */
-    function pasteLines() {
-      if (!held || !held.length) return;
-
-      var last = -1;
-      song.lines.forEach(function (line, index) { if (isMarked(line)) last = index; });
-      if (last < 0) last = song.lines.indexOf(pasteAt);
-      if (last < 0) last = song.lines.length - 1;
-
-      var copies = held.map(copyLine);
-      song.lines.splice.apply(song.lines, [last + 1, 0].concat(copies));
-
-      /* what lands is what stays marked: after a paste the next thing is
-         almost always moving what was just pasted */
-      marked.length = 0;
-      pasteAt = null;
-      copies.forEach(function (line) { marked.push(line); });
-
-      draw();
-      mark();
-    }
-
-    /* Line for line: the first copied onto the first marked, the second onto
-       the second. ONE line copied goes onto as many as are marked, which is
-       the same rule with nothing to line up. Any other pair of numbers is
-       refused rather than guessed at, because a wrong guess here is chords
-       landing silently on the wrong words. Headings are in neither count: a
-       heading has no chords and cannot take any.
-
-       THE POSITIONS COME ACROSS UNCHANGED and a short line is padded. A chord
-       names a character, so a chord on character twelve of a line ten
-       characters long needs two more characters to exist, exactly as it would
-       if it had been dragged there. */
-    function pasteChords() {
-      if (!held || !held.length) return;
-
-      var from = held.filter(function (line) { return line.type !== "section"; });
-      if (!from.length) return toast("בשורות שהועתקו אין אקורדים", true);
-
-      var into = chordLines();
-      /* Nothing selected means the caret said where instead, and then what it
-         said is "here and the lines after it", as many as were copied: laying
-         four lines of chords over four lines of words is one click, which is
-         what it was always trying to be. */
-      if (!into.length && pasteAt) {
-        var start = song.lines.indexOf(pasteAt);
-        if (start >= 0) {
-          for (var i = start; i < song.lines.length && into.length < from.length; i++) {
-            if (song.lines[i].type !== "section") into.push(song.lines[i]);
-          }
-        }
-      }
-      if (!into.length) return toast("צריך לבחור שורה של מילים", true);
-
-      if (from.length !== 1 && from.length !== into.length) {
-        return toast("הועתקו " + from.length + " שורות ומסומנות " + into.length + ". צריך אותו מספר.", true);
-      }
-
-      into.forEach(function (line, index) {
-        var source = from.length === 1 ? from[0] : from[index];
-        line.chords = source.chords.map(function (c) { return { pos: c.pos, chord: c.chord }; });
-        line.chords.forEach(function (c) { padTo(line, c.pos); });
-        trimPadding(line);
-      });
-
-      /* done, so the marking is done: the next pair starts from nothing
-         marked, and the copy is still held for the verse after this one */
-      marked.length = 0;
-      pasteAt = null;
-
-      draw();
-      mark();
-    }
-
-    /* There was a grip beside every line that dragged it up and down the song.
-       It is gone, and what replaced it is the block above: marking a line and
-       pressing an arrow does everything the drag did, one line at a time or
-       four together, and it does it without a pointer held steady over a
-       moving page. Two ways to reorder a song is one more than a song needs,
-       and the one that stayed is the one that can move a verse. */
-    function rowsOf() {
-      return Array.prototype.slice.call(sheet.querySelectorAll(".ln"));
-    }
-
-    /* --- the drag, and the click ---------------------------------------------
-       Hung on the SHEET and not on each line, because the whole point of it is
-       that it crosses from one line to another: a handler that belongs to a
-       line is a handler that stops at its edge.
+    /* --- the press, and the letting go -----------------------------------------
+       Hung on the SHEET and not on each line, because the gesture crosses from
+       one line to another and a handler that belongs to a line stops at its
+       edge.
 
        The chords are not part of this. Pressing one drags it along its own
        line and pressing the empty lane puts a new one down, and both of those
@@ -6089,49 +5977,164 @@
     }
 
     if (editing && !coming) {
-      var dragFrom = null;
-
+      /* DOWN SHUTS EVERYTHING. Whatever happens between here and letting go is
+         a selection, and a selection has to be free to leave the line it
+         started on, which it cannot do out of an editing host. */
       sheet.addEventListener("pointerdown", function (event) {
         if (event.button) return;
         if (fromChords(event.target)) return;
-        dragFrom = lineAt(event.target);
-        /* A press is the start of a new answer either way: whatever was
-           selected is no longer what anybody means. */
-        clearMarks();
+        shutLines();
       });
 
-      sheet.addEventListener("pointermove", function (event) {
-        if (!dragFrom || !event.buttons) return;
-        var now = lineAt(document.elementFromPoint(event.clientX, event.clientY));
-        if (!now || now === dragFrom) return;
-
-        /* Past the end of the line it started on, so it is lines that are
-           being taken and not words. The browser has been selecting text up to
-           this moment and its answer is wrong from here on: it stopped at the
-           first line and it is about to paint half of it blue. */
-        var chosen = window.getSelection && window.getSelection();
-        if (chosen) chosen.removeAllRanges();
-        sheet.classList.add("is-picking");
-        markRange(dragFrom, now);
-      });
-
-      var endDrag = function () {
-        dragFrom = null;
-        sheet.classList.remove("is-picking");
-      };
-      sheet.addEventListener("pointerup", endDrag);
-      sheet.addEventListener("pointercancel", endDrag);
-
-      /* WHERE A COPY WOULD LAND. Said by the caret, which is already where
-         somebody pointed, so there is nothing extra to press. Only worth
-         asking when there is something held: until then the bar has nothing
-         to offer about a place. */
-      sheet.addEventListener("click", function (event) {
+      /* UP OPENS THE ONE UNDER THE POINTER, at the character under it.
+         Unless the selection went somewhere: a drag across two lines is an
+         answer about those lines and opening a host would throw it away, and
+         a word taken inside one line is opened with the word still selected,
+         so that typing replaces it the way it does anywhere else. */
+      sheet.addEventListener("pointerup", function (event) {
+        if (event.button) return;
         if (fromChords(event.target)) return;
-        if (markedCount()) return;
-        pasteAt = lineAt(event.target);
-        showMarked();
+
+        var host = hostOf(event.target);
+        if (!host) return;
+
+        var selection = window.getSelection && window.getSelection();
+        if (selection && selection.rangeCount && !selection.isCollapsed) {
+          var range = selection.getRangeAt(0);
+          if (hostOf(range.startContainer) !== host || hostOf(range.endContainer) !== host) return;
+          return void openLine(host, range.cloneRange());
+        }
+
+        /* Where the pointer actually landed, asked of the browser: the same
+           question it answers itself when the text is editable. */
+        var at = null;
+        if (document.caretRangeFromPoint) {
+          at = document.caretRangeFromPoint(event.clientX, event.clientY);
+        } else if (document.caretPositionFromPoint) {
+          var spot = document.caretPositionFromPoint(event.clientX, event.clientY);
+          if (spot) {
+            at = document.createRange();
+            at.setStart(spot.offsetNode, spot.offset);
+            at.collapse(true);
+          }
+        }
+        openLine(host, at && host.contains(at.startContainer) ? at : null);
       });
+
+      /* --- and what can be done to a selection that crosses lines ---------------
+         While one is held no line is a host, so nothing inside the sheet is
+         listening: these three are on the document, and each one asks first
+         whether the selection is really in this song.
+
+         Typed over, deleted, cut, pasted into. The four things a selection is
+         for, and the first three are one operation: the words before it stay,
+         the words after it stay, and what was between them goes. */
+      var onSpanKey = function (event) {
+        if (!sheet.isConnected) return document.removeEventListener("keydown", onSpanKey, true);
+        if (event.defaultPrevented || event.isComposing) return;
+        if (event.ctrlKey || event.metaKey || event.altKey) return;
+
+        var key = String(event.key);
+        var typed = key.length === 1;
+        if (!typed && key !== "Backspace" && key !== "Delete" && key !== "Enter") return;
+        if (!acrossLines()) return;
+
+        event.preventDefault();
+        var spot = dropAcross();
+        if (!spot) return;
+
+        /* The line under the caret is a host again by now (focusLine opened
+           it), so a typed character is inserted the ordinary way and the chords
+           are remapped by the same handler that watches typing. */
+        if (typed) return void document.execCommand("insertText", false, key);
+        if (key !== "Enter") return;
+
+        song.lines.splice.apply(song.lines, [spot.index, 1].concat(splitLine(song.lines[spot.index], spot.at)));
+        draw();
+        focusLine(spot.index + 1, 0);
+        mark();
+      };
+      document.addEventListener("keydown", onSpanKey, true);
+
+      /* Ctrl+X is the copy that Ctrl+C makes, and then the selection taken
+         out. Inside one line the browser would cut the characters alone, which
+         is not what was copied a key to the left. */
+      var onCut = function (event) {
+        if (!sheet.isConnected) return document.removeEventListener("cut", onCut, true);
+        var selection = window.getSelection && window.getSelection();
+        if (sheetOfSelection(selection) !== sheet || !event.clipboardData) return;
+
+        var text = sheetToText(sheet, selection);
+        if (!text) return;
+        event.clipboardData.setData("text/plain", text);
+        event.preventDefault();
+
+        if (!dropAcross()) document.execCommand("delete");
+      };
+      document.addEventListener("cut", onCut, true);
+
+      /* WHAT COMES OFF THE CLIPBOARD IS A SONG, not a run of letters. Written
+         with brackets if it was copied off this page, and a row of chords over
+         a row of words if it came off somebody else's; either way it arrives
+         with its chords, its headings and its line breaks, and lands where the
+         caret is. */
+      var onPaste = function (event) {
+        if (!sheet.isConnected) return document.removeEventListener("paste", onPaste, true);
+        var data = event.clipboardData || window.clipboardData;
+        if (!data) return;
+
+        var span = acrossLines();
+        var here = typing && sheet.contains(typing) && document.activeElement === typing ? typing : null;
+        if (!span && !here) return;
+
+        var raw = String(data.getData("text") || "").replace(/\r\n?/g, "\n");
+        if (!raw) return;
+        event.preventDefault();
+
+        /* What was selected is what is replaced, whether it was two words or
+           two verses. */
+        var spot;
+        if (span) {
+          spot = dropAcross();
+          here = typing;
+        } else {
+          var chosen = window.getSelection && window.getSelection();
+          if (chosen && chosen.rangeCount && !chosen.isCollapsed) document.execCommand("delete");
+          spot = { index: song.lines.indexOf(lineAt(here)), at: caretIndex(here) || 0 };
+        }
+        if (!spot || spot.index < 0 || !here) return;
+
+        /* A handful of characters with nothing to say about chords or lines is
+           a handful of characters at the caret, and the browser knows where
+           that is better than any arithmetic here would. */
+        if (raw.indexOf("\n") < 0 && raw.indexOf("[") < 0) {
+          return void document.execCommand("insertText", false, raw.replace(/\t/g, " "));
+        }
+
+        var dir = dirOf(song.lines[spot.index], song.dir);
+        var written = /\[[^\]\n]{1,16}\]/.test(raw) || /^[ \t]*\{[^}]*\}[ \t]*$/m.test(raw);
+        var rows = normalizeLines(written ? textToSong(raw, dir) : parsePasted(raw), dir);
+        if (!rows.length) return;
+
+        /* The line it lands in opens at the caret: the first row pasted joins
+           what was before it, the last joins what was after, and the rest
+           stand between them as lines of their own. */
+        var halves = splitLine(song.lines[spot.index], spot.at);
+        var built = rows.map(function (row) {
+          return { type: row.type, text: row.text, chords: row.chords.map(function (c) { return { pos: c.pos, chord: c.chord }; }), dir: row.dir };
+        });
+        built[0] = joinLines(halves[0], built[0]);
+
+        var end = built.length - 1;
+        var caret = built[end].text.length;
+        built[end] = joinLines(built[end], halves[1]);
+
+        song.lines.splice.apply(song.lines, [spot.index, 1].concat(built));
+        draw();
+        focusLine(spot.index + end, caret);
+        mark();
+      };
+      document.addEventListener("paste", onPaste, true);
     }
 
     /* The keys that shape a document, doing what they do everywhere else.
@@ -6171,13 +6174,16 @@
         focusLine(index, end);
         mark();
 
-      } else if ((event.ctrlKey || event.metaKey) && (event.key === "a" || event.key === "A")) {
-        /* The whole song, which used to be the tick at the head of the column
-           of ticks. In a document this is the key for it, and a line's worth
-           of its own text is not what anybody means by "everything" on a page
-           of forty lines. */
+      } else if ((event.ctrlKey || event.metaKey) && pressed(event, "KeyA", "a")) {
+        /* The whole song. A line's worth of its own text is not what anybody
+           means by "everything" on a page of forty lines, and the browser
+           would give exactly that: the caret is inside one editing host and
+           that host is all it knows about. So the hosts are shut and the
+           sheet is selected, which is an ordinary selection over ordinary
+           text and copies like one. */
         event.preventDefault();
-        markAll();
+        shutLines();
+        selectAll(sheet);
 
       } else if (event.key === "Escape") {
         event.preventDefault();
@@ -6214,7 +6220,9 @@
       if (!ln) return;
       var editable = ln.querySelector(".ln-t, .ln-section");
       if (!editable) return;
-      editable.focus();
+      /* Open before the caret is placed: a caret put into a line that is not
+         a host yet is a caret in a page, and the next key goes nowhere. */
+      openLine(editable);
       placeCaret(editable, caret == null ? editable.textContent.length : caret);
     }
 

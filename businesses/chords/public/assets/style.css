@@ -1065,10 +1065,48 @@ button.val:hover { border-color: var(--line); background: #fff; }
    space-around, so each column stands in the middle of its own equal share of
    the window: every gutter the same, and each end margin half of one. */
 .page {
-  display: flex; align-items: flex-start; justify-content: flex-start;
+  /* stretch, so the rule between two segments runs the height of the page
+     rather than the height of whichever of them holds more song */
+  display: flex; align-items: stretch; justify-content: center;
+  /* Air at both ends, so the song never touches the rule under it and never
+     runs into the edge of the window. The height below is the whole page
+     INCLUDING this, and what is dealt into it is measured against what is
+     left (see PAGE_AIR in app.js). */
+  padding-block: 16px;
   overflow: hidden;
 }
-.col { min-width: 0; }
+.col { min-width: 0; position: relative; }
+
+/* BETWEEN ONE SEGMENT AND THE NEXT, down the whole page. A gutter says where
+   a segment ends by being empty, and empty is also what the end of a verse
+   looks like: on a song of short lines the eye cannot tell the space beside a
+   line from the space after one, and reads across the gap into the next
+   segment.
+
+   Drawn in the MIDDLE of the gutter, from the page's own --gutter, so it is
+   the same distance from the words on either side of it. And down the whole
+   page rather than only as far as the words go, so a half-filled last segment
+   does not leave the line stopping in mid-air. */
+/* EVERY BOUNDARY, INCLUDING THE TWO OUTER ONES. A rule only between the
+   segments leaves the set open at both ends, and an open end reads as a
+   segment that carries on past the edge of the window. Closed, the page is a
+   row of boxes and each one is plainly the whole of itself.
+
+   Each segment draws the rule at its own leading edge, half a gutter out, so
+   the one between two of them belongs to the second and sits exactly in the
+   middle of the space; the last segment draws the far one as well. */
+.col::before, .col:last-child::after {
+  content: ""; position: absolute; top: 0; bottom: 0;
+  width: 1px; background: var(--line);
+}
+.col::before { inset-inline-start: calc(var(--gutter, 0px) / -2); }
+.col:last-child::after { inset-inline-end: calc(var(--gutter, 0px) / -2); }
+
+/* WHERE ONE SCREENFUL ENDS AND THE NEXT BEGINS. Without it the song appears
+   to carry straight on down the segment it is in, and the eye goes back to the
+   top of the next one expecting the next verse: a page break that says
+   nothing is a page break somebody reads through. */
+.page + .page { border-top: 1px solid var(--line); }
 
 /* --- a narrow screen -----------------------------------------------------
    620px is also where editing stops (see NARROW in app.js). Keep the two in
@@ -1140,7 +1178,19 @@ button.val:hover { border-color: var(--line); background: #fff; }
 .sheet:not(.ed) .ln-t .gap { user-select: none; -webkit-user-select: none; }
 
 .ln { position: relative; margin-bottom: .45em; }
-.ln-c { position: relative; height: .94em; }
+/* IN SONG SIZES, NOT IN EM. An em here is the APP's sixteen pixels, because
+   the lane inherits the page's font and only .ln-t is set in the song's, so
+   this was a fixed fifteen pixels at every size the song was ever read at.
+   The chord in it scales (see .chord below), so the two only agreed at the
+   one size the number was picked at: smaller, the lane stood taller than the
+   chord and the chords floated away from the words; bigger, the chord grew
+   out of the lane and came down on top of them.
+
+   Kept a shade SHORTER than the chord is tall, deliberately: the difference
+   hangs down into the space the text's own line height leaves empty above its
+   letters, which costs no height and closes the gap between a chord and the
+   syllable it names. */
+.ln-c { position: relative; height: calc(var(--song-size) * .8); }
 .ln-t {
   white-space: pre;
   font-size: var(--song-size);
@@ -1568,7 +1618,8 @@ button.val:hover { border-color: var(--line); background: #fff; }
   /* Paper has pages of its own and they are not the window's. The columns
      come apart and the song runs down the sheet as one. */
   .sheet { min-height: 0 !important; }
-  .page { display: block !important; height: auto !important; overflow: visible !important; }
+  .page { display: block !important; height: auto !important; overflow: visible !important; border: 0 !important; }
+  .col::before, .col:last-child::after { display: none !important; }
   .col { width: auto !important; }
   .wrap { width: 100%; }
 }

@@ -206,12 +206,18 @@ const COLUMNS = `(() => {
     .map((t) => Math.round(t.getBoundingClientRect().left / 20)));
   return JSON.stringify({
     cols: at.size,
-    /* What it was HANDED, against what it used. Balancing can come back
-       having filled fewer columns than it was given, and an unused column is
-       not invisible: it takes its share of the width and it gets a rule drawn
-       down beside it. Three columns of words with four columns' worth of
-       furniture is what that looks like. */
-    given: Number(sheet.style.columnCount) || 1,
+    /* The columns as the page BUILT them, against where the words actually
+       landed. A column with nothing in it is not invisible: it takes its share
+       of the width and holds it empty. */
+    given: (sheet.querySelector(".page") || { children: [] }).children.length,
+    /* A PAGE IS A SCREENFUL, and the next one begins under it. This is the
+       whole shape of the thing: the browser's own columns balance, so each
+       one comes out as tall as a third of the song, and reading to the bottom
+       of the first means scrolling through a third of the song before
+       starting again at the top. */
+    pages: sheet.querySelectorAll(".page").length,
+    pageH: Math.round((sheet.querySelector(".page") || { getBoundingClientRect: () => ({ height: 0 }) }).getBoundingClientRect().height),
+    roomH: innerHeight - Math.round(document.querySelector(".top").getBoundingClientRect().height),
     poured: document.querySelectorAll(".sheet .ln.is-cont").length,
     /* Reading, the sheet keeps the whole room; writing it is only as wide as
        its columns need and stands in the middle of what is left. */
@@ -283,7 +289,14 @@ async function withChrome(run) {
   const binary = browser;
   const port = 9333;
   const profile = join(process.env.TEMP || "/tmp", "chords-cdp-profile");
-  await rm(profile, { recursive: true, force: true });
+  /* A run that ended badly leaves a Chrome still letting go of its profile,
+     and Windows will not delete a file somebody still has open. Waited for
+     rather than reported, because "the last run is still closing" is not a
+     thing to make anybody read. */
+  for (let i = 0; i < 10; i++) {
+    try { await rm(profile, { recursive: true, force: true }); break; }
+    catch (e) { if (i === 9) throw e; await sleep(500); }
+  }
 
   const child = spawn(binary, [
     "--headless=new", `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
@@ -322,6 +335,13 @@ async function withChrome(run) {
 
       const evaluate = async (expression) => {
         const out = await send("Runtime.evaluate", { expression, returnByValue: true });
+        /* What the page said, when what it said was an exception. Without this
+           the failure arrives as "undefined is not valid JSON" and says
+           nothing at all about which line of which page threw. */
+        if (out.exceptionDetails) {
+          const why = out.exceptionDetails.exception || {};
+          throw new Error("the page threw: " + (why.description || why.value || out.exceptionDetails.text));
+        }
         return JSON.parse(out.result.value);
       };
 
@@ -563,8 +583,11 @@ try {
          standing in one column with half the window beside it. */
       check("wide: reading, the columns fill the window",
         laid.fills, JSON.stringify(laid));
-      check("wide: every column it asked for is a column with song in it",
-        laid.given === laid.cols, `asked ${laid.given}, filled ${laid.cols}`);
+      check("wide: every column it built is a column with song in it",
+        laid.given === laid.cols, `built ${laid.given}, filled ${laid.cols}`);
+      check("wide: a page is the window under the header",
+        laid.pages > 0 && Math.abs(laid.pageH - laid.roomH) <= 2,
+        `page ${laid.pageH}, room ${laid.roomH}, ${laid.pages} pages`);
 
       /* The first few are enough: they are the same three lines fifteen times
          over, and a chord that slipped slipped on all of them. */
@@ -593,22 +616,32 @@ try {
 
       check("editing: no line is wider than the column it stands in", laid.over.length === 0,
         JSON.stringify(laid.over));
-      check("editing: every column it asked for is a column with song in it",
-        laid.given === laid.cols, `asked ${laid.given}, filled ${laid.cols}`);
+      check("editing: every column it built is a column with song in it",
+        laid.given === laid.cols, `built ${laid.given}, filled ${laid.cols}`);
+      check("editing: a page is the window under the header",
+        laid.pages > 0 && Math.abs(laid.pageH - laid.roomH) <= 2,
+        `page ${laid.pageH}, room ${laid.roomH}, ${laid.pages} pages`);
       check("editing: no line carries a tick beside it any more",
         (await evaluate(`JSON.stringify(document.querySelectorAll(".ln-pick").length)`)) === 0, "");
     });
 
-    /* --- 5. SELECTING LINES IS DRAGGING ACROSS THEM ------------------------
-       This one cannot be read off the code at all, and it is the whole of the
-       gesture: a browser will not carry a selection out of one contenteditable
-       host and into the next, so a drag across three lines comes back holding
-       one. Everything about how a block is chosen rests on that being true,
-       and on the app taking over at exactly the moment it stops being enough.
+    /* --- 5. A DRAG ACROSS THE WORDS SELECTS THE WORDS -----------------------
+       This one cannot be read off the code at all. Every line of the song is
+       its own contenteditable host, and a browser will not carry a selection
+       out of one host and into the next: a drag across three lines came back
+       holding one. The app used to answer that by taking whole lines instead,
+       which was never what was under the pointer.
 
-       So: a drag that stays on its line is the browser's, and the words under
-       it are selected. A drag that leaves it is the app's, and the lines it
-       crossed are marked. Both, in one place, with a real pointer. */
+       So the hosts are shut until the caret asks for one (see holdOff and
+       openLine in app.js), and this is the check that they really are: a drag
+       across three lines has to come back holding characters from all three,
+       and a drag inside one has to leave that line open to type into. With a
+       real pointer, because a selection made from script would prove nothing
+       about either.
+
+       And then the copy, which is what the selection is for: the words that
+       were taken, with the chords standing over them, written the way the song
+       itself is written down. */
     await open(`http://127.0.0.1:${port}/chords/_t/edit/`, async ({ send, evaluate }) => {
       const spots = await evaluate(`JSON.stringify([...document.querySelectorAll(".sheet .ln-t")]
         .map((t) => { const b = t.getBoundingClientRect();
@@ -617,7 +650,8 @@ try {
       if (spots.length < 3) {
         unknown("selecting: a drag across lines takes them", `${spots.length} lines on the page`);
       } else {
-        /* within one line: the browser's own, and no lines taken */
+        /* inside one line: the browser's own words, and the line open behind
+           them so that typing replaces what was taken */
         await mouse(send, "mousePressed", spots[0].x, spots[0].y);
         await mouse(send, "mouseMoved", spots[0].x - 70, spots[0].y);
         await sleep(60);
@@ -625,27 +659,116 @@ try {
         await sleep(120);
         const inside = await evaluate(`JSON.stringify({
           text: String(getSelection()).length,
-          marks: document.querySelectorAll(".ln.is-marked").length,
+          rows: [...document.querySelectorAll(".sheet .ln-t")]
+            .filter((t) => [...t.children].some((c) => getSelection().containsNode(c, true))).length,
+          open: document.activeElement ? String(document.activeElement.className) : "",
         })`);
         check("selecting: a drag inside one line still selects its words",
-          inside.text > 0 && inside.marks === 0, JSON.stringify(inside));
+          inside.text > 0 && inside.rows === 1, JSON.stringify(inside));
+        check("selecting: and leaves that line open to type into",
+          inside.open.indexOf("ln-t") >= 0, JSON.stringify(inside));
 
-        /* across three: the app's */
+        /* Across the song: still the browser's own, which is the whole point.
+           From the first line of words to the last, over the empty line
+           between the verses, so what comes back has to hold that too.
+
+           The click first, on another line, to put down what the drag above
+           took: pressing INSIDE a selection is a browser picking the text up
+           to drag it somewhere, not a browser starting a new selection, and
+           the second gesture would never begin. */
+        const last = spots.length - 1;
+        await mouse(send, "mousePressed", spots[last].x, spots[last].y);
+        await mouse(send, "mouseReleased", spots[last].x, spots[last].y);
+        await sleep(120);
+
         await mouse(send, "mousePressed", spots[0].x, spots[0].y);
         await mouse(send, "mouseMoved", spots[1].x, spots[1].y);
         await sleep(50);
-        await mouse(send, "mouseMoved", spots[2].x, spots[2].y);
+        await mouse(send, "mouseMoved", spots[last].x - 40, spots[last].y);
         await sleep(50);
-        await mouse(send, "mouseReleased", spots[2].x, spots[2].y);
+        await mouse(send, "mouseReleased", spots[last].x - 40, spots[last].y);
         await sleep(150);
         const across = await evaluate(`JSON.stringify({
-          marks: document.querySelectorAll(".ln.is-marked").length,
-          bar: document.querySelector(".block-bar") ? document.querySelector(".block-bar").hidden : null,
-          said: document.querySelector(".block-count") ? document.querySelector(".block-count").textContent : "",
+          rows: [...document.querySelectorAll(".sheet .ln-t")]
+            .filter((t) => [...t.children].some((c) => getSelection().containsNode(c, true))).length,
+          hosts: document.querySelectorAll('.sheet [contenteditable="plaintext-only"], .sheet [contenteditable="true"]').length,
         })`);
-        check("selecting: a drag across three lines takes three", across.marks === 3, JSON.stringify(across));
-        check("selecting: and that is what opens the bar", across.bar === false, JSON.stringify(across));
+        check("selecting: a drag down the song takes every line it crossed",
+          across.rows === 3, JSON.stringify(across));
+        check("selecting: and no line is a host while it is held",
+          across.hosts === 0, JSON.stringify(across));
+
+        /* WHAT A COPY OF IT HANDS BACK. The clipboard itself cannot be read
+           from here, so the copy is asked for with the event the browser would
+           send and answered with whatever the app writes onto it. */
+        const copied = await evaluate(`JSON.stringify((() => {
+          const event = new ClipboardEvent("copy", { bubbles: true, cancelable: true, clipboardData: new DataTransfer() });
+          document.dispatchEvent(event);
+          const got = event.clipboardData.getData("text/plain");
+          return { text: got, rows: got.split("\\n").length, brackets: (got.match(/\\[[^\\]]+\\]/g) || []).length };
+        })())`);
+        /* three lines of words and the empty line standing between the two
+           verses: the space is part of what was selected */
+        check("copying: what was selected comes back line for line",
+          copied.rows === 4, JSON.stringify(copied));
+        check("copying: with the chords among the words, in brackets",
+          copied.brackets >= 3 && /\[Am\]|\[G\]|\[F\]/.test(copied.text), JSON.stringify(copied));
+        /* the gap is a private-use codepoint: invisible on this page and a box
+           of tofu in whatever the words are pasted into */
+        check("copying: and no gap characters carried out with it",
+          !new RegExp("[\uE000-\uF8FF]").test(copied.text), JSON.stringify(copied));
       }
+    });
+
+    /* --- 5b. THE KEYS, ON THE KEYBOARD THIS APP IS ACTUALLY TYPED ON --------
+       A song is typed in Hebrew, so the keyboard is in Hebrew, and Ctrl+Z
+       arrives with a `key` of ז. Every shortcut written against the letter
+       reads it, finds it is not "z", and does nothing at all: undo was dead on
+       the only keyboard that matters, and nothing on screen said so. So this
+       presses it the way that keyboard sends it, with the code of the key and
+       the letter of the layout.
+
+       And the caret with it, because the same press is worth nothing if the
+       words come back and the typing does not: a redraw deals the rows into
+       their columns, which MOVES them, and a row that moves takes the caret
+       out of itself unless it is put back. */
+    await open(`http://127.0.0.1:${port}/chords/_t/edit/`, async ({ send, evaluate }) => {
+      const line = `JSON.stringify(document.querySelector(".sheet .ln .ln-t").textContent)`;
+      const was = await evaluate(line);
+
+      const spot = await evaluate(`JSON.stringify((() => {
+        const b = document.querySelector(".sheet .ln .ln-t").getBoundingClientRect();
+        return { x: Math.round(b.right - 20), y: Math.round(b.top + b.height / 2) };
+      })())`);
+      await mouse(send, "mousePressed", spot.x, spot.y);
+      await mouse(send, "mouseReleased", spot.x, spot.y);
+      await sleep(150);
+
+      for (const ch of "קק") {
+        await send("Input.dispatchKeyEvent", { type: "keyDown", text: ch, key: ch, unmodifiedText: ch });
+        await send("Input.dispatchKeyEvent", { type: "keyUp", key: ch });
+        await sleep(40);
+      }
+      await sleep(300);
+      const typed = await evaluate(line);
+      check("typing: a letter goes into the line the caret is in", typed !== was, `${was} -> ${typed}`);
+
+      /* past the burst window, so the state before the typing is on the stack */
+      await sleep(800);
+      await send("Input.dispatchKeyEvent", { type: "rawKeyDown", modifiers: 2, key: "ז", code: "KeyZ", windowsVirtualKeyCode: 90 });
+      await send("Input.dispatchKeyEvent", { type: "keyUp", modifiers: 2, key: "ז", code: "KeyZ", windowsVirtualKeyCode: 90 });
+      await sleep(400);
+      check("undo: ctrl+z on a Hebrew keyboard takes the change back",
+        (await evaluate(line)) === was, `${typed} -> ${await evaluate(line)}`);
+
+      /* Enter, and then a letter: the caret has to survive the redraw and the
+         dealing out of the columns that follows it. */
+      await send("Input.dispatchKeyEvent", { type: "rawKeyDown", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13 });
+      await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13 });
+      await sleep(250);
+      const after = await evaluate(`JSON.stringify(document.activeElement ? String(document.activeElement.className) : "")`);
+      check("typing: Enter leaves the caret in the line it opened",
+        after.indexOf("ln-t") >= 0, after);
     });
 
     /* --- 6. THE SIZE IS A GESTURE AND THERE IS NO OTHER WAY IN --------------
@@ -704,6 +827,52 @@ try {
       const pinched = await evaluate(sizeNow);
       await pinch(0);
       check("size: two fingers spreading makes it bigger", pinched > smaller, `${smaller} -> ${pinched}`);
+
+      /* --- AND THE CHORDS STAY THE SAME DISTANCE FROM THE WORDS ---------------
+         A chord sits in a lane above its line, and how tall that lane is has
+         to be a proportion of the song rather than a number of pixels: fixed,
+         it is right at exactly one size, and at every other size the chords
+         either float away from the words or grow out of the lane and come
+         down on top of them. Which is what happened, and it is invisible in
+         the stylesheet, because the rule that did it was written in `em` and
+         the lane inherits the PAGE's font rather than the song's.
+
+         So it is measured at two sizes far apart: the gap between the bottom
+         of a chord and the top of its words, as a fraction of the type size,
+         has to come out the same. Zoomed with the wheel rather than reloaded,
+         because a navigation throws the execution context away underneath
+         whatever is being measured. */
+      /* Wrapped, because anything that throws in here comes back as no value
+         at all and takes the whole run down with it rather than failing one
+         check. */
+      const lean = `JSON.stringify((() => {
+        try {
+          const ln = [...document.querySelectorAll(".sheet .ln")]
+            .find((l) => l.querySelector(".chord") && l.querySelector(".ln-t"));
+          if (!ln) return null;
+          const size = parseFloat(getComputedStyle(ln.querySelector(".ln-t")).fontSize);
+          const chord = ln.querySelector(".chord").getBoundingClientRect();
+          const words = ln.querySelector(".ln-t").getBoundingClientRect();
+          if (!(size > 0)) return null;
+          return { size: size, apart: (words.top - chord.bottom) / size };
+        } catch (e) { return null; }
+      })())`;
+
+      const small = await evaluate(lean);
+      for (let i = 0; i < 6; i++) {
+        await send("Input.dispatchMouseEvent", { type: "mouseWheel", x: where.x, y: where.y, deltaX: 0, deltaY: -240, modifiers: 2 });
+        await sleep(80);
+      }
+      const big = await evaluate(lean);
+
+      if (!small || !big || !(big.size > small.size + 6)) {
+        unknown("size: the chords keep their distance from the words at any size",
+          `${small && small.size} then ${big && big.size}`);
+      } else {
+        check("size: the chords keep their distance from the words at any size",
+          Math.abs(small.apart - big.apart) < 0.12,
+          `at ${small.size}px they sit ${small.apart.toFixed(2)} of a size over the words, at ${big.size}px ${big.apart.toFixed(2)}`);
+      }
 
       /* PUT IT BACK. The size is one setting for one reader and it is kept in
          this browser, so a section that changes it hands the next one a song
