@@ -337,29 +337,35 @@ body.on-song { background: var(--bg); }
      So it takes the room from everything else, and only while it is being
      used. A press anywhere off it gives the bar back.
 
-     AND WHILE IT IS CLOSED IT IS A BUTTON, so it is drawn as one and stands
-     with the others. It was a white pill of its own, a size and a colour
-     nothing else on the bar had, adrift in the space between the name of the
-     page and the row of pictures: a fourth kind of thing in a bar that has
-     three. Closed, it is not a search box. It is the button that opens one,
-     and the button that opens one belongs beside print and pencil.
+     AND WHILE IT IS CLOSED IT IS ONE OF THE PICTURES, so it is drawn as one
+     of them and not merely near them. It was a pill, thirty-six across, with
+     an eighteen pixel glass in it, standing beside two thirty pixel squares
+     with fifteen pixel pictures: near enough to read as the same row and far
+     enough to read as a mistake in it. Closed, it is not a search box. It is
+     the button that opens one, so it wears exactly what print and pencil wear,
+     down to the corner and the grey.
 
      The gap that separated them was the actions pushing themselves to the far
      end. The search takes that over, so the two of them are one row again and
      the space in front of them is what gives way. */
-  .top-find { flex: none; width: 36px; margin-inline-start: auto; }
+  .top-find { flex: none; width: 30px; margin-inline-start: auto; }
   .top-actions { margin-inline-start: 0; }
   .top-find .find {
-    height: 36px; padding: 0 8px; gap: 0; cursor: pointer;
-    background: transparent; color: var(--ink);
+    height: 30px; padding: 0; gap: 0; cursor: pointer; justify-content: center;
+    background: #fff; border-radius: 8px; color: var(--ink-soft);
   }
-  .top-find .find > svg { width: 18px; height: 18px; color: inherit; }
+  .top-find .find:hover { color: var(--ink); }
+  .top-find .find > svg { width: 15px; height: 15px; color: inherit; }
   .top-find input[type="search"] { width: 0; flex: 0 0 0; }
 
-  /* open, it is a field again: the room, the white and the space around what
-     is in it all come back */
+  /* open, it is a field again: the room, the white, the round end and the
+     space around what is in it all come back */
   body.finding .top-find { flex: 1 1 auto; width: auto; }
-  body.finding .top-find .find { padding: 0 12px; gap: 9px; background: var(--card); }
+  body.finding .top-find .find {
+    height: 38px; padding: 0 12px; gap: 9px; justify-content: flex-start;
+    background: var(--card); border-radius: 999px; color: inherit;
+  }
+  body.finding .top-find .find > svg { width: 17px; height: 17px; color: var(--ink-soft); }
   body.finding .top-find input[type="search"] { width: auto; flex: 1 1 auto; }
   body.finding .brand, body.finding .top-actions, body.finding .top-name { display: none; }
   /* everything that could have given the bar back is now hidden, so the box
