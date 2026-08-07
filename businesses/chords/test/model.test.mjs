@@ -99,26 +99,36 @@ eq("a heading is a line in braces",
   api.textToSong("{פזמון}")[0], { type: "section", text: "פזמון", chords: [], dir: "rtl" });
 
 /* --- which way each line runs -------------------------------------------
-   A direction belongs to a line, so the document says so where it CHANGES and
-   nowhere else: a song in one direction carries no markers at all. */
+   A DIRECTION IS NOT STORED AND NOT CHOSEN. It is read off the line every time
+   the song is drawn, from the first character in it that has a direction of
+   its own: a line that begins with a Hebrew letter runs right to left, and
+   there is no second opinion to have about that. So nothing about direction is
+   written into the document, and a `{dir:...}` left in one from the years when
+   it WAS a setting is thrown away rather than obeyed.
+
+   Which is what the third case is for. The marker says one thing and the words
+   say another, and the words win: a marker is what somebody once said, and the
+   words are what is there now. */
 const ONE_WAY = ["ש[Am]לום", "עוד שורה"].join("\n");
-const TURNS = ["שלום", "{dir:ltr}", "Hello", "{dir:rtl}", "עולם"].join("\n");
-const OPENS_LTR = ["Hello", "{dir:rtl}", "שלום"].join("\n");
+const TURNS = ["שלום", "Hello", "עולם"].join("\n");
+const OLD_MARKS = ["שלום", "{dir:ltr}", "Hello", "{dir:rtl}", "עולם"].join("\n");
 
 eq("a song in one direction says nothing about it",
   api.songToText(api.textToSong(ONE_WAY)), ONE_WAY);
 
-eq("a marker turns the lines after it",
+eq("each line runs the way its own words do",
   api.textToSong(TURNS).map((l) => l.dir), ["rtl", "ltr", "rtl"]);
 
-eq("and it is written back where the direction changes",
+eq("and nothing about direction is written down",
   api.songToText(api.textToSong(TURNS)), TURNS);
 
-eq("the first line needs no marker, it IS the song's direction",
-  api.songToText(api.textToSong(OPENS_LTR, "ltr")), OPENS_LTR);
+eq("a marker left from when it was a setting is dropped, not obeyed",
+  api.songToText(api.textToSong(OLD_MARKS)), TURNS);
 
-eq("a line inherits the one before it",
-  api.normalizeLines([{ text: "a", dir: "ltr" }, { text: "b" }, { text: "c", dir: "rtl" }]).map((l) => l.dir),
+/* A line with no letters in it, a blank one or a bar of chords over nothing,
+   has nothing to say and no reason to interrupt. */
+eq("a line with no letters keeps the one before it",
+  api.normalizeLines([{ text: "Hello" }, { text: "   " }, { text: "שלום" }]).map((l) => l.dir),
   ["ltr", "ltr", "rtl"]);
 
 eq("both halves of a cut line keep its direction",
@@ -126,7 +136,7 @@ eq("both halves of a cut line keep its direction",
   ["ltr", "ltr"]);
 
 eq("the song runs the way its first line does",
-  api.songDir(api.textToSong(OPENS_LTR, "ltr")), "ltr");
+  api.songDir(api.textToSong(["Hello", "שלום"].join("\n"))), "ltr");
 
 /* Typing a space with the caret exactly where a chord sits. Nothing is
    deleted, so the change is zero characters wide and the chord stands on both

@@ -1347,17 +1347,42 @@
      in their new places rather than in the ones they were typed at. */
   var DIR_MARK = /^\s*\{dir:(rtl|ltr)\}\s*$/i;
 
+  /* The first character that has a direction of its own. Hebrew and Arabic
+     and their presentation forms run one way, the Latin, Greek and Cyrillic
+     alphabets the other; everything else is silent and the loop goes on.
+     Digits, spaces and punctuation have no direction to give: they belong to
+     whichever way the words around them run. */
+  var RTL_LETTER = /[֐-޿ࢠ-ࣿיִ-﷿ﹰ-﻿]/;
+  var LTR_LETTER = /[A-Za-zÀ-ɏͰ-ӿ]/;
+
+  function textDir(text) {
+    var body = String(text == null ? "" : text);
+    for (var i = 0; i < body.length; i++) {
+      var ch = body.charAt(i);
+      if (RTL_LETTER.test(ch)) return "rtl";
+      if (LTR_LETTER.test(ch)) return "ltr";
+    }
+    return "";
+  }
+
   function dirOf(line, fallback) {
-    var dir = line && line.dir;
-    return dir === "rtl" || dir === "ltr" ? dir : (fallback || "rtl");
+    var said = textDir(line && line.text);
+    if (said) return said;
+    /* Nothing to go on, which is a blank line or a bar of chords over
+       nothing: whatever the line before it settled on (see fillDirs), and
+       failing that whatever the caller says the song is. A line with nothing
+       to say has no reason to interrupt. */
+    var kept = line && line.dir;
+    if (kept === "rtl" || kept === "ltr") return kept;
+    return fallback === "ltr" ? "ltr" : "rtl";
   }
 
   /* Every line saying which way it runs, so that nothing further down has to
      ask a song what one of its lines is doing. */
   function fillDirs(lines, fallback) {
-    var last = fallback || "rtl";
+    var last = fallback === "ltr" ? "ltr" : "rtl";
     lines.forEach(function (line) {
-      last = dirOf(line, last);
+      last = textDir(line.text) || last;
       line.dir = last;
     });
     return lines;
@@ -1525,34 +1550,36 @@
      and edited by a person looking at the database, or pasted into any other
      program that speaks ChordPro. A heading is a line in braces; that is the
      only piece of punctuation this format has beyond the brackets. */
+  /* NO DIRECTION IS WRITTEN DOWN ANY MORE. It is read off the words every
+     time the song is drawn (see dirOf), so a marker in the document could only
+     ever agree with them or be wrong about them, and a stored fact that can go
+     stale is a stored fact that will. */
   function songToText(lines) {
-    var out = [];
-    var running = "";
-    normalizeLines(lines).forEach(function (line) {
-      var dir = line.dir === "ltr" || line.dir === "rtl" ? line.dir : running;
-      /* The first line sets the direction without saying so: it IS the song's,
-         and it is in the column. Every later change says so. */
-      if (dir && dir !== running) {
-        if (running) out.push("{dir:" + dir + "}");
-        running = dir;
-      }
-      out.push(line.type === "section" ? "{" + line.text + "}" : toChordPro(line));
-    });
-    return out.join("\n");
+    return normalizeLines(lines).map(function (line) {
+      return line.type === "section" ? "{" + line.text + "}" : toChordPro(line);
+    }).join("\n");
   }
 
   function textToSong(body, fallback) {
     var dir = fallback === "ltr" ? "ltr" : "rtl";
     var out = [];
     String(body).replace(/\r\n?/g, "\n").split("\n").forEach(function (row) {
-      var turn = DIR_MARK.exec(row);
-      /* a directive is not a line of the song, it is a fact about the lines
-         after it */
-      if (turn) { dir = turn[1].toLowerCase(); return; }
+      /* THROWN AWAY RATHER THAN OBEYED. A song written while the direction was
+         a setting carries these, and the words underneath them are the better
+         witness: they say what the line IS, and a marker says what somebody
+         once said it was and may have typed past ever since. */
+      if (DIR_MARK.test(row)) return;
 
+      /* The words decide, and a line with no letters in it keeps whatever the
+         line before it settled on. */
       var heading = /^\s*\{(.*)\}\s*$/.exec(row);
-      if (heading) return out.push({ type: "section", text: heading[1].trim(), chords: [], dir: dir });
+      if (heading) {
+        var title = heading[1].trim();
+        dir = textDir(title) || dir;
+        return out.push({ type: "section", text: title, chords: [], dir: dir });
+      }
       var parsed = fromChordPro(row);
+      dir = textDir(parsed.text) || dir;
       out.push({ type: "line", text: parsed.text, chords: parsed.chords, dir: dir });
     });
     return out;
