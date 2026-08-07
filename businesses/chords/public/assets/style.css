@@ -1262,9 +1262,12 @@ button.song-facts:hover .song-facts-ask { color: var(--accent); }
   font-size: var(--song-size);
   line-height: 1;
   color: var(--chord);
-  /* the gap's box sits ON the baseline, so the glyph is lifted back onto the
-     line the words are standing on */
-  top: calc(var(--song-size) * -.78);
+  /* THE GAP'S BOX SITS ON THE BASELINE, so the glyph is hung from it rather
+     than pushed down from a top nobody can see: `bottom` here IS the line the
+     words stand on, less the room a descender takes. Written as a top it was
+     an offset guessed against a box of no height, and a guess like that is
+     right at the size it was guessed at and drifting at every other. */
+  bottom: calc(var(--song-size) * -.2);
 }
 /* Right to left it is the mirror of it, which is the character it looks like
    on a page that runs the other way. */

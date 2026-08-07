@@ -225,13 +225,6 @@
            that hands over tokens and nothing about the person, and the name
            arrives a moment later from whoAmI. */
         name: (meta && nameFrom(meta, email)) || (this.session && this.session.name) || nameFrom(null, email),
-        /* Whatever else the account already knows about the person, which
-           right now is one number: the fret they play at. Kept here so a page
-           can be opened without asking the server who is looking at it, and
-           taken from the account rather than from this browser, so it is the
-           same on the phone on the sofa as on the desk it was set at. */
-        capo: meta && typeof meta.capo === "number" ? meta.capo
-          : (this.session && typeof this.session.capo === "number" ? this.session.capo : 0),
       };
       this.keep();
     },
@@ -243,36 +236,12 @@
 
     get in() { return !!(this.session && this.session.refresh_token); },
 
-    /* --- the fret this person plays at ---------------------------------------
-       WHERE THE CAPO IS, BECAUSE THEY PUT IT THERE. Not worked out from
-       anything: the app used to derive a capo from the transposition, which
-       made one number wear two hats and meant the answer to "where is my capo"
-       changed every time somebody moved the song. This is the other thing
-       entirely, a fact about the player and their guitar, and the sheet simply
-       says it.
-
-       A fret, so zero or up: there is no minus second fret. Zero is no capo,
-       which is a real answer and the usual one.
-
-       It lives on the ACCOUNT, in the user's own metadata, not in this
-       browser. A capo is a fact about a person, and the person is the same
-       person on the phone they are holding and the desk they set it at. */
-    capo: function () {
-      var value = this.session && this.session.capo;
-      return typeof value === "number" && value > 0 ? Math.round(value) : 0;
-    },
-
-    setCapo: function (value) {
-      var self = this;
-      var kept = value > 0 ? Math.round(value) : 0;
-      /* on screen at once, written behind it: the sheet redrawing is the
-         answer to the press, and a fret is not worth waiting on a network for */
-      if (this.session) {
-        this.session.capo = kept;
-        this.keep();
-      }
-      return this.remember({ capo: kept });
-    },
+    /* THE CAPO IS NOT KEPT HERE ANY MORE. It was one number on the account,
+       the same on every song, on the argument that a capo is a fact about the
+       player. Where the capo goes is chosen for the song being played, so it
+       is kept with the key that song is played in, per reader and per song
+       (see keptFor). The account is left holding what is true of the person
+       wherever they are: their name. */
 
     /* --- what this person is called ------------------------------------------
        A NAME IS THE PERSON'S TO GIVE. Google hands one over at the door and it
@@ -281,8 +250,9 @@
        not necessarily the name they want over their own songs, and the two
        are different often enough that it has to be changeable.
 
-       So it lives on the account, beside the capo, under a key Google does not
-       write to: see nameFrom above for why that matters. */
+       So it lives on the account, which is now the whole of what the account
+       keeps about the person, under a key Google does not write to: see
+       nameFrom above for why that matters. */
     name: function () {
       return (this.session && this.session.name) || "";
     },
@@ -335,7 +305,6 @@
         var meta = user.user_metadata || null;
         self.session.email = user.email || self.session.email;
         self.session.name = nameFrom(meta, self.session.email);
-        if (meta && typeof meta.capo === "number") self.session.capo = meta.capo;
         self.keep();
         return user;
       }).catch(function () { return null; });
@@ -2775,34 +2744,65 @@
     return saved >= SIZE_MIN && saved <= SIZE_MAX ? saved : 18;
   }
 
-  /* --- WHICH KEY THIS READER PUT THIS SONG IN --------------------------------
-     Somebody who moved a song three semitones down did it because that is
-     where their voice sits, or where their hands do, and both of those are as
-     true next week as they were tonight. So it is kept, per song, and the song
-     opens there.
+  /* --- WHAT THIS READER DOES WITH THIS SONG ----------------------------------
+     THE WHOLE STRIP IS ABOUT THE PAIR. Two numbers, and neither of them is a
+     fact about the song and neither is a fact about the person on their own:
+     which key they play this one in, and where the capo goes for it. Somebody
+     who moved a song three semitones down did it because that is where their
+     voice sits, and somebody who clamped at 2 did it for the shapes THIS song
+     asks for. Both are as true next week as they were tonight, and neither
+     says anything about the next song.
 
-     Per song and not per person-and-song on the account, deliberately. It is
-     kept in this browser, beside the size, which is the same kind of fact and
-     is kept the same way: what it costs to be wrong is two presses, and a row
-     per reader per song is a table to carry forever for that.
+     The capo was one number on the account for a while, the same on every
+     song, on the argument that it is a fact about the guitar. A guitar has no
+     opinion: the fret is chosen for the song in front of it, which is why it
+     is here now, beside the key it is chosen with.
 
-     Zero is an answer like any other. A reader who moved the song back to the
-     key it is written in means it, and gets it. Only a saved song has an id to
-     keep anything under; one being typed for the first time has nowhere to put
-     it and nothing yet to say. Call it with a number to set it, without one to
-     read it, and it answers null for "they have never said". */
-  var KEY_OF = "chords.key.";
+     Kept in this browser rather than on the account, beside the reading size,
+     which is the same kind of fact: what it costs to be wrong is two presses,
+     and a row per reader per song is a table to carry forever for that. Under
+     the reader it belongs to all the same, so two people signing into one
+     screen do not inherit each other's answers, and a guest keeps their own.
 
-  function keptKey(id, next) {
+     Only a saved song has an id to keep anything under; one being typed for
+     the first time has nowhere to put it and nothing yet to say. */
+  var KEPT_OF = "chords.song.";
+
+  function keptBox(id) {
+    return KEPT_OF + ((auth.session && auth.session.email) || "-") + "." + id;
+  }
+
+  function keptFor(id) {
     if (!id) return null;
-    try {
-      if (next == null) {
-        var saved = parseInt(localStorage.getItem(KEY_OF + id), 10);
-        return saved >= -11 && saved <= 11 ? saved : null;
-      }
-      localStorage.setItem(KEY_OF + id, String(next));
-    } catch (e) { /* private window */ }
-    return null;
+    var was = null;
+    try { was = JSON.parse(localStorage.getItem(keptBox(id)) || "null"); }
+    catch (e) { was = null; }
+    return was && typeof was === "object" ? was : null;
+  }
+
+  /* One number at a time, without disturbing the other: the two are pressed
+     separately and a write of either is not an answer about both. */
+  function keepFor(id, name, value) {
+    if (!id) return;
+    var was = keptFor(id) || {};
+    was[name] = value;
+    try { localStorage.setItem(keptBox(id), JSON.stringify(was)); }
+    catch (e) { /* private window */ }
+  }
+
+  /* Zero is an answer like any other, in both of them: a reader who moved the
+     song back to the key it is written in means it, and so does one who took
+     the capo off. So "they have never said" is null, and not zero. */
+  function keptKey(id) {
+    var was = keptFor(id);
+    var k = was ? was.k : null;
+    return typeof k === "number" && k >= -11 && k <= 11 ? Math.round(k) : null;
+  }
+
+  function keptCapo(id) {
+    var was = keptFor(id);
+    var c = was ? was.c : null;
+    return typeof c === "number" && c >= 0 && c <= MAX_CAPO ? Math.round(c) : 0;
   }
 
   /* --- AND FAILING THAT, THE ONE THAT IS EASIEST TO HOLD ---------------------
@@ -4682,15 +4682,15 @@
     }
     paintHeader();
 
-    /* TWO NUMBERS, AND THEY ARE NOT THE SAME NUMBER.
+    /* TWO NUMBERS, AND THEY ARE NOT THE SAME NUMBER, but they are about the
+       same thing: this reader and this song (see keptFor).
 
-       The transposition moves the chords on the page. It belongs to this
-       reader and this song: where they left it last time, and failing that the
-       easy version, which is where the library row said it would be.
+       The transposition moves the chords on the page. It opens where they left
+       it last time, and failing that on the easy version, which is where the
+       library row said it would be.
 
-       The capo is where the reader's capo is. It moves nothing. It is a fact
-       about the guitar in their hands, it is the same on every song and on
-       every screen they open, and the sheet's only job is to say it.
+       The capo moves nothing. It is a note about the hand: which fret this
+       person clamps at to play this one, kept beside the key they play it in.
 
        They were one number for a while: the song opened transposed down to
        whatever fret made its chords easiest, and the sheet called that number
@@ -4702,7 +4702,7 @@
 
        A song still coming out of the machine, or read out of one and not yet
        checked, gets nothing worked out for it at all (see openKey). */
-    var myCapo = auth.capo();
+    var myCapo = keptCapo(song.id);
     var semis = openKey(song);
 
     /* the size follows the reader from song to song. The key does not: it
@@ -5149,18 +5149,18 @@
        one honest answer: bigger, until it is big enough. And every machine
        already has a gesture that means exactly that. See zoomBy below. */
 
-    /* WHERE THE CAPO IS, WHICH IS WHEREVER THEY PUT IT. It moves nothing: the
-       chords on the page are the transposition's business, and this is a fact
-       about the guitar. The sheet says it under the title and that is the
-       whole of what it does with it.
+    /* WHERE THE CAPO GOES ON THIS SONG, WHICH IS WHEREVER THEY PUT IT. It
+       moves nothing on the page: what the chords say is the transposition's
+       business, and this is a note about the hand that plays them.
 
        A fret, so zero or up, and zero means no capo, which is a real answer
-       and the usual one. It is the same on every song and on every screen the
-       account opens, because it is a fact about the player.
+       and the usual one. It is kept for this reader and this song, beside the
+       key, because it is the same kind of answer: this is how I play THIS.
 
-       Only for somebody signed in. There is no account to keep it on
-       otherwise, and a preference that is silently forgotten is worse than one
-       that was never offered. */
+       Only for somebody signed in, which is the one thing the two numbers do
+       not share. The key changes the page and everybody gets it; a fret is a
+       note somebody keeps for themselves, and there is nobody to keep it for
+       until there is somebody. */
     var myValue = null;
     if (auth.in) {
       tools.appendChild(el("span", "sep"));
@@ -5170,7 +5170,7 @@
         function () { setMyCapo(myCapo - 1); },
         function () { setMyCapo(myCapo + 1); }
       );
-      mine.title = "באיזה סריג הקפו שלכם. נשמר לחשבון ומופיע על כל שיר.";
+      mine.title = "באיזה סריג הקפו שלכם בשיר הזה. נשמר לכם, לשיר הזה.";
       tools.appendChild(mine);
       showMyCapo();
     }
@@ -5179,15 +5179,12 @@
       if (myValue) myValue.textContent = String(myCapo);
     }
 
-    /* The sheet answers at once and the account is told behind it: a fret is
-       not worth waiting on a network for, and the number is already kept in
-       this browser's copy of the session either way. */
+    /* Kept where the key is kept, in this browser, under this reader and this
+       song: one press, one write, no network to wait on. */
     function setMyCapo(next) {
       myCapo = Math.max(0, Math.min(next, MAX_CAPO));
       showMyCapo();
-      auth.setCapo(myCapo).catch(function () {
-        toast("הקפו נשמר כאן, אבל לא הצליח להישמר בחשבון", true);
-      });
+      keepFor(song.id, "c", myCapo);
     }
 
 
@@ -5411,7 +5408,7 @@
        nobody can tell from an answer. */
     function moveSemis(by) {
       setSemis(semis + by);
-      keptKey(song.id, semis);
+      keepFor(song.id, "k", semis);
     }
 
     /* Bigger words fit in fewer places, so where the lines break is part of
