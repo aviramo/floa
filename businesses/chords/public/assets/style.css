@@ -129,6 +129,23 @@ body.on-song { background: var(--bg); }
 .brand svg { width: 24px; height: 24px; color: var(--accent); }
 .top-actions { margin-inline-start: auto; display: flex; align-items: center; gap: 8px; }
 
+/* ONE SHAPE FOR A BUTTON IN THE BAR, AND IT IS ROUND. The bar was holding two
+   different kinds of button depending on which page you were on: the library's
+   are .btn, which is a pill because a pill is what a word sits in, and a song's
+   are .icon-btn, which is a small square because that is what it is everywhere
+   else in the app. Nobody sees both rows at once, but the glass stands in both
+   of them, so whatever it matched on one page it clashed with on the other.
+
+   So in this bar, and only in this bar, a picture on its own is a circle: the
+   pill with its word taken away. Everywhere else on the page .icon-btn keeps
+   its corner, and the steppers keep theirs (see .tools .steps), because a
+   stepper is two halves of one box rather than two buttons.
+
+   And in the same ink, which is the bar's ink: elsewhere .icon-btn is drawn
+   soft because it sits beside the thing it acts on and should not compete with
+   it, and up here it is the thing itself. */
+.top-actions > .icon-btn { border-radius: 999px; color: var(--ink); }
+
 /* --- WHAT PAGE THIS IS ----------------------------------------------------
    The app's name used to stand here beside its own mark, which is one word
    saying what the mark already said and the only word on the bar nobody is
@@ -330,6 +347,10 @@ body.on-song { background: var(--bg); }
   .top-actions .btn svg + .lb { display: none; }
   .top-actions .btn.small { padding: 8px; }
   .top-actions .btn svg { width: 18px; height: 18px; }
+  /* A button that has lost its word is thirty-six across with an eighteen
+     pixel picture in it, so the ones that never had a word are that too. */
+  .top-actions > .icon-btn { width: 36px; height: 36px; }
+  .top-actions > .icon-btn > svg { width: 18px; height: 18px; }
 
   /* The app's name goes and its mark stays. The bar has to hold the search
      box, and a word that says which app you are in is the one thing on it
@@ -349,35 +370,30 @@ body.on-song { background: var(--bg); }
      So it takes the room from everything else, and only while it is being
      used. A press anywhere off it gives the bar back.
 
-     AND WHILE IT IS CLOSED IT IS ONE OF THE PICTURES, so it is drawn as one
-     of them and not merely near them. It was a pill, thirty-six across, with
-     an eighteen pixel glass in it, standing beside two thirty pixel squares
-     with fifteen pixel pictures: near enough to read as the same row and far
-     enough to read as a mistake in it. Closed, it is not a search box. It is
-     the button that opens one, so it wears exactly what print and pencil wear,
-     down to the corner and the grey.
+     AND WHILE IT IS CLOSED IT IS ONE OF THE PICTURES, so it is exactly the
+     size and the shape of one: a thirty-six pixel circle with an eighteen
+     pixel glass in it, which is what every other picture in this bar comes out
+     to (see .top-actions > .icon-btn above). Closed, it is not a search box.
+     It is the button that opens one, and it stands in a row of buttons.
 
      The gap that separated them was the actions pushing themselves to the far
      end. The search takes that over, so the two of them are one row again and
      the space in front of them is what gives way. */
-  .top-find { flex: none; width: 30px; margin-inline-start: auto; }
+  .top-find { flex: none; width: 36px; margin-inline-start: auto; }
   .top-actions { margin-inline-start: 0; }
   .top-find .find {
-    height: 30px; padding: 0; gap: 0; cursor: pointer; justify-content: center;
-    background: #fff; border-radius: 8px; color: var(--ink-soft);
+    height: 36px; padding: 0; gap: 0; cursor: pointer; justify-content: center;
+    background: transparent; color: var(--ink);
   }
-  .top-find .find:hover { color: var(--ink); }
-  .top-find .find > svg { width: 15px; height: 15px; color: inherit; }
+  .top-find .find > svg { width: 18px; height: 18px; color: inherit; }
   .top-find input[type="search"] { width: 0; flex: 0 0 0; }
 
-  /* open, it is a field again: the room, the white, the round end and the
-     space around what is in it all come back */
+  /* open, it is a field again: the room, the white and the space around what
+     is in it all come back */
   body.finding .top-find { flex: 1 1 auto; width: auto; }
   body.finding .top-find .find {
-    height: 38px; padding: 0 12px; gap: 9px; justify-content: flex-start;
-    background: var(--card); border-radius: 999px; color: inherit;
+    padding: 0 12px; gap: 9px; justify-content: flex-start; background: var(--card);
   }
-  body.finding .top-find .find > svg { width: 17px; height: 17px; color: var(--ink-soft); }
   body.finding .top-find input[type="search"] { width: auto; flex: 1 1 auto; }
   body.finding .brand, body.finding .top-actions, body.finding .top-name { display: none; }
   /* everything that could have given the bar back is now hidden, so the box
