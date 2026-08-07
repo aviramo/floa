@@ -3654,9 +3654,9 @@
 
   /* --- the index ---------------------------------------------------------- */
 
-  /* `shelf`, when there is one, is the style this page opened narrowed to.
-     It is the same narrowing the chips do, arrived at from the address rather
-     than from a press: one state, two ways in. */
+  /* `shelf`, when there is one, is the style this page opened narrowed to, and
+     the address is the only way to it: the search box offers the shelf, the
+     shelf is a page, and the bar says its name. */
   function viewIndex(shelf) {
     where(shelf || "שירים", shelf ? null : "אקורדים");
     setBusy("טוען שירים");
@@ -3829,16 +3829,18 @@
          rather than about this one, and what is left here is filtering, which
          is what these are.
 
-         So the states and the styles stand together in the row over the wall.
-         They answer different questions, the states being the work
-         outstanding and the styles being the shelf itself, and they narrow
-         together: that is how you get to "the circle songs I have not checked
-         yet". */
+         THE STATES ONLY. The styles stood here too for a while, a second row
+         of chips saying what kind of song each shelf holds, and they have gone
+         to the search box, where they already were: typing a style there
+         offers the shelf itself above the songs that merely carry the word,
+         and that is one place to go looking rather than two. What is left over
+         the wall is the work outstanding, which is the one question the
+         library page is asked and the search box cannot answer.
+
+         A shelf is still a page of its own, /style/<name>, and the search box
+         is the way in. */
       var tallies = el("div", "tallies");
 
-      /* Not a style, and it cannot be mistaken for one whatever anybody types:
-         it is not a string at all, so no name can ever equal it. */
-      var NO_STYLE = {};
       /* --- EVERYTHING THE FILTER LEFT ------------------------------------------
          The ticks are for doing one thing to a handful of songs, and the
          handful is usually "these", where "these" is what
@@ -3866,9 +3868,10 @@
         paint();
       }
 
+      /* Set by the address and never from the page: /style/<name> is a shelf,
+         and every other way into the library shows all of it. */
       var kind = shelf || null;
       var kindsRow = el("div", "kinds-row");
-      var kinds = el("div", "kinds");
       /* AT THE HEAD OF THE ROW, before anything it acts on. It says "all of
          these", and "these" is everything after it: the chips that narrowed
          the wall and the wall itself. Standing at the far end it read as one
@@ -3889,7 +3892,6 @@
         kindsRow.appendChild(allBtn);
       }
       kindsRow.appendChild(tallies);
-      kindsRow.appendChild(kinds);
       kindsRow.appendChild(picking);
       app.appendChild(kindsRow);
 
@@ -3912,59 +3914,6 @@
           });
           tallies.appendChild(chip);
         });
-      }
-
-      /* Every style the library uses, in the order a person would look for
-         them: the biggest shelf first, and alphabetically among equals so the
-         row does not reshuffle itself every time a song is saved. A style
-         nothing is in any more is not in the row, because the row is a
-         description of the library and not a vocabulary list. */
-      function paintKinds() {
-        kinds.textContent = "";
-        var counted = {};
-        var bare = 0;
-        state.songs.forEach(function (s) {
-          var mine = styles(s);
-          if (!mine.length) return bare++;
-          mine.forEach(function (name) { counted[name] = (counted[name] || 0) + 1; });
-        });
-
-        var names = Object.keys(counted).sort(function (a, b) {
-          return counted[b] - counted[a] || a.localeCompare(b, "he");
-        });
-        if (!names.length && !bare) return;
-
-        function chipFor(key, label, n) {
-          var chip = el("button", "tally tally-style" + (kind === key ? " is-on" : ""));
-          chip.type = "button";
-          chip.appendChild(el("span", "tally-n", String(n)));
-          chip.appendChild(el("span", "tally-l", label));
-          chip.title = kind === key ? "לחיצה מחזירה את כל השירים" : "לחיצה מציגה רק את אלה";
-          chip.addEventListener("click", function () {
-            kind = kind === key ? null : key;
-            /* The address follows the shelf, WITHOUT leaving the page: this is
-               the same view the address /style/<name> opens, so pressing a
-               chip should leave you somewhere you could have arrived at, and
-               somewhere you can send to somebody. Replaced rather than pushed,
-               because narrowing a list is not a place you go back from one
-               chip at a time.
-
-               Only for a style that HAS a name. "no style yet" is a real shelf
-               and it is not a word, so there is nothing to put in an address. */
-            var named = typeof kind === "string" ? kind : null;
-            history.replaceState(null, "", named ? BASE + "/style/" + encodeURIComponent(named) : BASE + "/");
-            where(named || "שירים", named ? null : "אקורדים");
-            paint();
-          });
-          kinds.appendChild(chip);
-        }
-
-        names.forEach(function (name) { chipFor(name, name, counted[name]); });
-        /* LAST, AND ONLY WHEN THERE ARE ANY. The songs nobody has said anything
-           about yet are a shelf like the others, and the one worth reaching for
-           when the naming is being done: it is the pile that still needs it.
-           A library where every song has a kind never sees this chip. */
-        if (bare) chipFor(NO_STYLE, "ללא סגנון", bare);
       }
 
       var list = el("ul", "list");
@@ -4062,21 +4011,18 @@
         };
       }
 
-      /* WHAT THE CHIPS LEFT. Looking a song up by NAME, by who wrote it or by
-         a line of it is the box in the bar, on every page and not only on
-         this one; what is asked here is the other question a library gets,
-         which is "show me a shelf of it". */
+      /* WHAT THE CHIPS LEFT, and on a shelf, what the address left. Looking a
+         song up by NAME, by who wrote it or by a line of it is the box in the
+         bar, on every page and not only on this one. */
       function paint() {
         list.innerHTML = "";
         showBar();
         paintTallies();
-        paintKinds();
         var marks = marksFor(state.songs);
         var only = tag && TAGS.filter(function (t) { return t.key === tag; })[0];
         var shown = state.songs.filter(function (s) {
           if (only && !only.is(s)) return false;
-          if (kind === NO_STYLE) { if (styles(s).length) return false; }
-          else if (kind && styles(s).indexOf(kind) < 0) return false;
+          if (kind && styles(s).indexOf(kind) < 0) return false;
           return true;
         });
 

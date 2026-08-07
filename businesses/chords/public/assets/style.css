@@ -476,7 +476,7 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    AT THE FAR END, over the column of labels they are counting. A number and
    the rows it counts want to be in the same place, or the eye has to travel
    the width of the page to connect them. */
-/* What is ticked, at the far end of the row the styles are in: that row is
+/* What is ticked, at the far end of the row the states are in: that row is
    already there, and what is ticked is not worth a line of the page of its
    own, least of all one that appears while somebody is busy ticking and pushes
    the rows they are aiming at down. */
@@ -484,9 +484,11 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .picking .icon-btn { width: 28px; height: 26px; }
 .picking .kill { color: var(--danger); }
 .picking .kill:hover { color: #fff; background: var(--danger); border-color: var(--danger); }
+/* They take the width, which is what leaves what is ticked at the other end
+   of the row with nothing to push it back with. */
 .tallies {
   display: flex; flex-wrap: wrap; gap: 8px;
-  justify-content: flex-end;
+  flex: 1 1 auto;
 }
 .tally {
   display: inline-flex; align-items: baseline; gap: 6px;
@@ -498,28 +500,19 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 /* Each in its own state's colour, always, and not only when it is the one
    being looked at: it is the same colour that state wears on every row below
    and on the button inside the song. Pressed, it fills with it. */
-/* What KIND of songs the library holds, under the box the states are in: the
-   two answer different questions, the states being the work outstanding and
-   the styles the shelf itself. They narrow together.
+/* THE ONE ROW OVER THE WALL. It opens with the tick that takes everything
+   shown, then the states, and ends with what is ticked.
 
-   The row opens with the tick that takes everything the chips left, and ends
-   with what is ticked. */
-/* It is the first thing on the library now, the search box that used to stand
+   It held a second set of chips for a while, one per style, and they have gone
+   to the search box: a style typed there offers the shelf itself, so the row
+   here is asked one question rather than two.
+
+   It is the first thing on the library now, the search box that used to stand
    over it having moved into the bar, so it carries its own air above. */
 .kinds-row {
   display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 16px;
 }
 .pick-all { display: flex; flex: none; }
-.kinds {
-  display: flex; flex-wrap: wrap; gap: 8px;
-  /* Centred on the page. They are a description of the whole library and the
-     wall of cards under them is the whole width, so a row of two or three
-     chips hard against one edge reads as something that was left there. */
-  flex: 1 1 auto; justify-content: center;
-}
-.kinds:empty { display: none; }
-.tally-style { color: var(--ink-soft); }
-.tally-style.is-on { background: var(--bg); color: var(--ink); }
 
 .tally-imported { color: var(--imported-ink); }
 .tally-review { color: var(--review-ink); }
@@ -902,12 +895,15 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px;
 }
 .kinds-list { display: flex; flex-wrap: wrap; gap: 6px; }
+/* A width in ems and not `auto`. A field is `width: 100%` everywhere in this
+   app, and a flex item asked for an automatic basis takes its width property
+   as that basis: eight ems of room asked for the whole row and went to a line
+   of its own the moment the song had one style on it. */
 .song-meta .kinds-field input[type="text"] {
-  flex: 1 1 80px; min-width: 0;
+  flex: 1 1 8em; min-width: 0;
   margin-top: 0; padding: 4px 2px; border-radius: 0;
-  background: none; border: 0; border-bottom: 1px solid var(--line);
+  background: none; border: 0;
 }
-.song-meta .kinds-field input[type="text"]:hover { border-bottom-color: var(--ink-soft); }
 
 /* Who wrote it and what kind of song it is, on the song itself: there is no
    other page to keep them on any more. Three fields, and all three of them are
@@ -950,11 +946,16 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    heading over it. What is typed is the content of the form and the word is
    the question, so the answer is the one set at reading size. */
 .song-meta input[type="text"] { font-size: 15px; }
-/* The browser's own arrow, which appears at the far end of a field with a
-   datalist behind it and is a black triangle in a panel that has nothing else
-   sharp in it. The suggestions are not lost with it: they still drop as soon
-   as a letter is typed, which is when anybody wants them. */
-.song-meta input::-webkit-calendar-picker-indicator { display: none; }
+/* The browser's own arrow, which appears at the far end of a field that has a
+   datalist behind it: a solid black triangle, floating half a panel away from
+   the word it belongs to, in a form that has nothing else sharp in it. The
+   suggestions are not lost with it. They still drop as soon as a letter is
+   typed, which is when anybody wants them.
+   Two names for the same button, because Chrome has called it both. */
+.song-meta input::-webkit-calendar-picker-indicator,
+.song-meta input::-webkit-list-button {
+  display: none !important; opacity: 0; width: 0;
+}
 
 /* The head of a song and the head of an evening are written, not filled in.
    The title above them is a bare line of text with no box around it, and a
@@ -985,14 +986,11 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   display: flex; align-items: baseline; gap: 8px;
   border-bottom: 1px solid var(--line);
 }
-.song-meta label input, .song-meta .kinds-field input[type="text"] {
-  flex: 1 1 auto; min-width: 0; border-bottom: 0;
-}
+.song-meta label input { flex: 1 1 auto; min-width: 0; border-bottom: 0; }
 .song-meta label:hover, .kinds-field:hover { border-bottom-color: var(--ink-soft); }
 .song-meta label:focus-within, .kinds-field:focus-within {
   border-bottom-color: var(--accent); box-shadow: 0 1px 0 var(--accent);
 }
-.song-meta input:focus-visible { box-shadow: none; }
 
 /* The evening's own form is still a label over a field until there is room:
    its words are longer and one of its fields is a date, which a narrow row
@@ -1013,18 +1011,25 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 .song-meta input[type="text"],
 .ev-meta input[type="text"], .ev-meta input[type="date"] {
   margin-top: 0; padding: 4px 2px; border-radius: 0;
-  background: none; border: 0; border-bottom: 1px solid var(--line);
+  background: none; border: 0;
+}
+.ev-meta input[type="text"], .ev-meta input[type="date"] {
+  border-bottom: 1px solid var(--line);
 }
 .ev-meta input[type="date"] { width: auto; }
-.song-meta input:hover, .ev-meta input:hover { border-bottom-color: var(--ink-soft); }
+.ev-meta input:hover { border-bottom-color: var(--ink-soft); }
 /* The focus ring would be a box again, which is the one shape this field is
    trying not to be. The line answers instead, in the accent and a pixel
    heavier, and the weight is a shadow rather than a border so that nothing on
    the row moves when it arrives. */
-.song-meta input:focus-visible, .ev-meta input:focus-visible {
+.ev-meta input:focus-visible {
   outline: none;
   border-bottom-color: var(--accent); box-shadow: 0 1px 0 var(--accent);
 }
+/* The line that lights up in the song's form is the ROW's, drawn under the
+   word and the field together, so the field inside it draws nothing of its
+   own: two green lines a pixel apart is what that looked like. */
+.song-meta input:focus-visible { outline: none; box-shadow: none; }
 
 /* The one state the song is in, and the way out of it. A chip and not a
    button, because it is a fact first: it is the same word in the same colour
