@@ -1335,12 +1335,14 @@ button.val:hover { border-color: var(--line); background: #fff; }
    `--run`, counted when the spans are built). Five gaps pressed in a row are
    one piece of room, and five little arcs would read as five of something.
 
-   Quiet, not hidden. A gap that has to be hunted for is a gap that cannot be
-   counted, aimed at or deleted on purpose, and the page this is drawn on is
-   the one where someone is putting the gaps in. It went from a tenth strength
-   to a quarter to this, which is where the eye finds it without being sent
-   looking. The reader's page and the printed one have nothing at all. The
-   model has a gap there, not a hyphen. */
+   IN THE CHORDS' OWN COLOUR, because the gap belongs to them. It was a grey,
+   which is what a page uses for a thing it is not saying much about, and this
+   is not that: nobody opens a gap for the sake of the word, they open it
+   because a chord had nowhere to stand. Red says whose it is, and the eye
+   finds it without being sent looking. Faded well down from the labels
+   themselves, so a line of gaps is never mistaken for a line of chords. The
+   reader's page and the printed one have nothing at all. The model has a gap
+   there, not a hyphen. */
 .ed .ln-t .gap-run::after {
   content: "";
   /* OUT OF THE FLOW, so the mark cannot make the line taller or push it up.
@@ -1362,7 +1364,11 @@ button.val:hover { border-color: var(--line); background: #fff; }
      comes out as a grey smudge with two crisp ends. At two pixels the middle
      is drawn rather than approximated, and the whole thing reads as one line
      someone meant to put there. */
-  border-bottom: 2px solid rgba(23, 32, 42, .42);
+  /* the token and not a copy of it: one red on this page, and a gap that
+     drifts off it the day the red is tuned is a gap nobody will think to look
+     at. Faded with opacity, which is the whole of what is drawn here. */
+  border-bottom: 2px solid var(--chord);
+  opacity: .55;
   border-radius: 0 0 50% 50% / 0 0 100% 100%;
 }
 
