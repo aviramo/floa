@@ -4923,77 +4923,23 @@
     sheet.style.setProperty("--song-size", size + "px");
     app.appendChild(sheet);
 
-    /* The marked lines, and the two things worth doing to them. It floats over
-       the page instead of sitting in the tools above the sheet, because the
-       verse being moved can be anywhere in a long song: a control that has to
-       be scrolled back to between one press and the next is not there. */
-    var blockBar = null;
-    var blockCount = null;
-    /* Everything on the bar that is about the selected lines, kept together so
-       it can stand down as one thing when there is no selection. Declared here
-       because it is filled a few lines below, and a `var` further down the
-       function would run afterwards and hand back an empty one. */
-    var blockKeep = [];
-    var pasteLinesBtn = null;
-    var pasteChordsBtn = null;
-    if (editing && !coming) {
-      blockBar = el("div", "block-bar");
-      blockCount = el("div", "block-count");
-      blockBar.appendChild(blockCount);
-      /* Everything here that is about the lines THEMSELVES, kept together so
-         that it can stand down as one thing: with nothing selected the bar is
-         still open when there is something to put down, and a row of buttons
-         about a selection that is not there is a row of buttons that do
-         nothing. */
-      var keep = function (node) { blockKeep.push(node); blockBar.appendChild(node); return node; };
-      keep(iconBtn(ICON.up, "להעלות את המסומן", function () { moveMarked(-1); }));
-      keep(iconBtn(ICON.down, "להוריד את המסומן", function () { moveMarked(1); }));
-      keep(button("שכפול", ICON.copy, "ghost small", copyMarked));
+    /* THERE WAS A BAR HERE, and a way of marking whole lines to feed it: a
+       drag across the words took the lines it crossed, painted them, and put
+       up a floating row of buttons about them. Move, duplicate, copy, turn
+       round, delete. It is gone, all of it.
 
-      /* One copy, and the two ways to put it down beside it. Neither of them
-         is there until something has been copied: a button that can only
-         answer "there is nothing to paste" is a button that has to be pressed
-         to find that out. */
-      keep(button("העתקה", ICON.copy, "ghost small", copyLines));
-      pasteLinesBtn = button("הדבקת שורות כאן", null, "ghost small", pasteLines);
-      pasteChordsBtn = button("הדבקת אקורדים כאן", null, "ghost small", pasteChords);
-      pasteLinesBtn.hidden = true;
-      pasteChordsBtn.hidden = true;
-      blockBar.appendChild(pasteLinesBtn);
-      blockBar.appendChild(pasteChordsBtn);
-
-      /* Which way the marked lines run. Two buttons rather than one that
-         toggles, because a block can hold both directions at once and there
-         would be no honest state for a toggle to be in; these two say what to
-         BE, which is an answer whatever the lines are now. The Latin names on
-         a Hebrew page on purpose: they are what the two directions are called
-         everywhere they are written down. */
-      var toRtl = button("RTL", null, "ghost small", function () { faceMarked("rtl"); });
-      var toLtr = button("LTR", null, "ghost small", function () { faceMarked("ltr"); });
-      toRtl.title = "השורות המסומנות בעברית, מימין לשמאל";
-      toLtr.title = "השורות המסומנות באנגלית, משמאל לימין";
-      toRtl.dir = "ltr";
-      toLtr.dir = "ltr";
-      keep(toRtl);
-      keep(toLtr);
-
-      /* Last, and the only one here in the colour of something that removes:
-         a row of things that move and copy, and then the one that takes away. */
-      keep(button("מחיקת השורות", ICON.trash, "danger small", dropMarked));
-      blockBar.appendChild(button("סגירה", null, "ghost small", function () {
-        clearMarks();
-        pasteAt = null;
-        showMarked();
-      }));
-      blockBar.hidden = true;
-      app.appendChild(blockBar);
-    }
+       What it cost was the ordinary thing. Dragging across the words is how
+       anybody selects part of anything, and this took that gesture away and
+       answered with whole lines: what came back was never what was under the
+       pointer, and there was no way to copy half a line, or two lines and the
+       start of a third. So the gesture belongs to the browser again, it
+       selects exactly the characters it crosses, and Ctrl+C hands back exactly
+       those with the chords standing over them (see sheetToText). */
 
     /* There was a row of buttons under the sheet: a line at the end, a section
-       heading, and marking every line. The marking moved into the sheet, where
-       it is a tick at the head of the column of ticks and says what it does by
-       being where it is, and the row went with it. A line at the end is Enter
-       at the end of the last line, which is where a hand already is. */
+       heading, and marking every line. A line at the end is Enter at the end
+       of the last line, which is where a hand already is, and the marking is
+       gone with the bar above. */
 
     /* The sheet's own direction is the song's, which is its first line's. It
        decides where the capo chip and the headings sit; each line inside says
@@ -5027,12 +4973,12 @@
         return;
       }
 
+      /* Every row on screen is new, so the one that was being typed into is
+         not one of them any more (see holdOff). */
+      typing = null;
       song.lines.forEach(function (line, index) {
         sheet.appendChild(editing ? editRow(line, index) : viewLine(line, semis));
       });
-      /* a marked line that was joined into its neighbour is not a line any
-         more, so what the bar is counting is asked again after every redraw */
-      showMarked();
       /* Breaking first and placing second, because a chord belongs to the row
          its syllable ended up on and there is no telling which that is until
          the words have been broken. */
@@ -5400,9 +5346,6 @@
       song.title = body[0];
       CREDITS.forEach(function (c, index) { song[c.field] = body[1][index] || ""; });
       song.dir = body[2] || "rtl";
-      /* Lines read back out of a string are new objects, so every mark is now
-         held against a line that is not in the song any more. */
-      marked.length = 0;
       song.lines = normalizeLines(body[3], song.dir);
       song.styles = tidyStyles(body[4]);
       song.draft = !!was[1];
@@ -6753,6 +6696,124 @@
     ln.appendChild(textSpans(line.text));
     return ln;
   }
+
+  /* --- WHAT A COPY OFF THE PAGE HANDS BACK -----------------------------------
+     Ctrl+C over a song gives back the words AND the chords over them, written
+     the way the song itself is written down:
+
+         [Am]את אורם של כל הכו[Dm]כבים
+
+     The browser on its own gives back the words alone, and it is right to: a
+     chord is not part of the line it stands over, it is a label floating above
+     it, and it is user-select: none precisely so that dragging across the
+     words does not drag the labels in sideways and out of order. So what lands
+     on the clipboard is put together here instead.
+
+     EXACTLY WHAT IS SELECTED, character by character. Half a line is half a
+     line, and it comes with the chords standing over that half and no others.
+
+     Read off the PAGE rather than off the song. The labels are the transposed
+     ones on screen, which is what the person copying is looking at; it works
+     the same in the reader, in the editor and on a version; and a row that the
+     reader broke off the line above rejoins it, because that break is a fact
+     about this screen and not about the song. */
+
+  /* The gaps come out, and the chords that stood on them step back onto the
+     last real character. A gap is a private-use codepoint (see GAP): invisible
+     here and a box of tofu in whatever the words are pasted into. */
+  function withoutGapsAt(text, chords) {
+    var out = "", map = [];
+    for (var i = 0; i < text.length; i++) {
+      if (text[i] === GAP) { map.push(Math.max(0, out.length - 1)); continue; }
+      map.push(out.length);
+      out += text[i];
+    }
+    return {
+      text: out,
+      chords: chords.map(function (c) {
+        var at = c.pos < map.length ? map[c.pos] : out.length;
+        return { pos: at, chord: c.chord };
+      }),
+    };
+  }
+
+  function sheetToText(sheet, selection) {
+    var lines = [], gaps = 0, any = false;
+
+    /* Empty rows inside the selection are part of it: they are the space
+       between one verse and the next. Held rather than written as they come,
+       so the ones after the last selected line are not carried along. */
+    function put(text) {
+      while (any && gaps > 0) { lines.push(""); gaps--; }
+      gaps = 0;
+      lines.push(text);
+      any = true;
+    }
+
+    Array.prototype.forEach.call(sheet.querySelectorAll(".ln"), function (ln) {
+      var head = ln.querySelector(".ln-section");
+      if (head) {
+        if (selection.containsNode(head, true)) put("{" + head.textContent.trim() + "}");
+        else gaps++;
+        return;
+      }
+
+      var t = ln.querySelector(".ln-t");
+      var spans = t ? t.children : [];
+      var from = -1, to = -1;
+      for (var i = 0; i < spans.length; i++) {
+        if (!selection.containsNode(spans[i], true)) continue;
+        if (from < 0) from = i;
+        to = i;
+      }
+      if (from < 0) { gaps++; return; }
+
+      var text = "";
+      for (var j = from; j <= to; j++) text += spans[j].textContent;
+
+      var chords = [];
+      Array.prototype.forEach.call(ln.querySelectorAll(".ln-c .chord"), function (node) {
+        var at = Number(node.dataset.pos);
+        if (!isFinite(at) || at < from || at > to) return;
+        chords.push({ pos: at - from, chord: node.textContent.trim() });
+      });
+      chords.sort(function (a, b) { return a.pos - b.pos; });
+
+      var clean = withoutGapsAt(text, chords);
+      var written = toChordPro({ type: "line", text: clean.text, chords: clean.chords });
+
+      /* A row the reader broke off the line above is that line continuing, so
+         it goes back onto it. Only when the row above was taken too: a
+         selection that starts in the middle of a broken line starts a line. */
+      if (!gaps && lines.length && ln.classList.contains("is-cont")) lines[lines.length - 1] += written;
+      else put(written);
+    });
+
+    return lines.join("\n");
+  }
+
+  /* The sheet the selection is in, if it is in one at all. A copy anywhere
+     else on the page is the browser's own business. */
+  function sheetOfSelection(selection) {
+    if (!selection || !selection.rangeCount || selection.isCollapsed) return null;
+    var node = selection.getRangeAt(0).commonAncestorContainer;
+    if (node && node.nodeType !== 1) node = node.parentNode;
+    return node && node.closest ? node.closest(".sheet") : null;
+  }
+
+  /* One listener for every sheet there is, hung on the document because a copy
+     is a fact about the selection and not about any one element. */
+  document.addEventListener("copy", function (event) {
+    var selection = window.getSelection && window.getSelection();
+    var sheet = sheetOfSelection(selection);
+    if (!sheet || !event.clipboardData) return;
+
+    var text = sheetToText(sheet, selection);
+    if (!text) return;
+
+    event.clipboardData.setData("text/plain", text);
+    event.preventDefault();
+  });
 
   /* Fonts arrive after the first paint and a window resize changes every
      offset, so both re-measure. Nothing is re-rendered, only re-placed.

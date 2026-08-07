@@ -1264,11 +1264,12 @@ button.val:hover { border-color: var(--line); background: #fff; }
    `--run`, counted when the spans are built). Five gaps pressed in a row are
    one piece of room, and five little arcs would read as five of something.
 
-   Faint, but only faint: from reading distance it is nearly paper, and from
-   working distance, when the eye is on the word being spaced, it is plainly
-   there. A gap that cannot be seen is a gap that cannot be counted, aimed at
-   or deleted on purpose. The reader's page and the printed one have nothing
-   at all. The model has a gap there, not a hyphen. */
+   Quiet, not hidden. A gap that has to be hunted for is a gap that cannot be
+   counted, aimed at or deleted on purpose, and the page this is drawn on is
+   the one where someone is putting the gaps in. It went from a tenth strength
+   to a quarter to this, which is where the eye finds it without being sent
+   looking. The reader's page and the printed one have nothing at all. The
+   model has a gap there, not a hyphen. */
 .ed .ln-t .gap-run::after {
   content: "";
   /* OUT OF THE FLOW, so the mark cannot make the line taller or push it up.
@@ -1284,8 +1285,10 @@ button.val:hover { border-color: var(--line); background: #fff; }
   bottom: calc(var(--song-size) * .12);
   /* the height IS the depth of the dip: the vertical radius is the whole of
      it, so the curve uses every pixel given here and no more */
-  height: calc(var(--song-size) * .13);
-  border-bottom: 1px solid rgba(23, 32, 42, .26);
+  height: calc(var(--song-size) * .15);
+  /* thicker as well as darker: a hairline curve loses to the antialiasing
+     along its shallow middle, which is exactly the part that says «arc» */
+  border-bottom: 1.5px solid rgba(23, 32, 42, .42);
   border-radius: 0 0 50% 50% / 0 0 100% 100%;
 }
 
