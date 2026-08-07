@@ -1238,7 +1238,11 @@ button.val:hover { border-color: var(--line); background: #fff; }
    is zero. */
 .ln-t .gap {
   display: inline-block; vertical-align: baseline; position: relative;
-  width: calc(var(--song-size) * .34);
+  /* named, because the arc below has to reach across a whole run of these and
+     an arc that measures a gap differently than the gap measures itself would
+     stop short of the last one or hang past it */
+  --gap-w: calc(var(--song-size) * .34);
+  width: var(--gap-w);
   /* WIDTH AND NOTHING ELSE. No size to the character means no height either,
      so the box sits on the baseline taking up no part of the line: a gap must
      cost the line the room between two letters and not one pixel of its
@@ -1247,21 +1251,25 @@ button.val:hover { border-color: var(--line); background: #fff; }
   font-size: 0;
 }
 
-/* A gap in the editor draws a rule the width of itself, AS FAINT AS SOMETHING
-   CAN BE AND STILL BE THERE. It was the colour of the paper for a while, which
-   is honest about the room being room and leaves the writer with no way to see
-   what they made: a gap they cannot see is a gap they cannot count, aim at or
-   delete on purpose.
+/* A gap in the editor draws an ARC UNDER THE ROOM IT MADE, the way a tie is
+   drawn under two notes held together: the two letters are still one word, and
+   what is between them is room and not a break. A straight rule said the same
+   thing but said it like a hyphen, which is the one thing a gap is not.
 
-   So it is a grey at a tenth strength: from reading distance the line is white
-   paper, and from working distance, when the eye is on the word being spaced,
-   it is there. The reader's page and the printed one have nothing at all.
+   The arc is concave, dipping at the middle and rising to nothing at both
+   ends, so it reads as belonging to the letters on either side of it rather
+   than as a mark of its own.
 
-   Painted edge to edge rather than written, so a run of gaps is one continuous
-   shape instead of a row of separate dashes, and so the caret has a box to
-   land in: an inline-block with no ink at all is one a browser will not always
-   let you into. The model has a gap there, not a hyphen. */
-.ed .ln-t .gap::after {
+   ONE ARC PER RUN, drawn by the first gap of the run across all of them (see
+   `--run`, counted when the spans are built). Five gaps pressed in a row are
+   one piece of room, and five little arcs would read as five of something.
+
+   Faint, but only faint: from reading distance it is nearly paper, and from
+   working distance, when the eye is on the word being spaced, it is plainly
+   there. A gap that cannot be seen is a gap that cannot be counted, aimed at
+   or deleted on purpose. The reader's page and the printed one have nothing
+   at all. The model has a gap there, not a hyphen. */
+.ed .ln-t .gap-run::after {
   content: "";
   /* OUT OF THE FLOW, so the mark cannot make the line taller or push it up.
      It was a background on the span, and a span with a background needs a
@@ -1270,9 +1278,15 @@ button.val:hover { border-color: var(--line); background: #fff; }
 
      Placed a little above the baseline, where the middle of a letter is, so it
      reads as being on the line rather than under it. */
-  position: absolute; inset-inline: 0;
-  bottom: calc(var(--song-size) * .16);
-  height: 1px; background: rgba(23, 32, 42, .13);
+  position: absolute;
+  inset-inline-start: 0;
+  width: calc(var(--gap-w) * var(--run, 1));
+  bottom: calc(var(--song-size) * .12);
+  /* the height IS the depth of the dip: the vertical radius is the whole of
+     it, so the curve uses every pixel given here and no more */
+  height: calc(var(--song-size) * .13);
+  border-bottom: 1px solid rgba(23, 32, 42, .26);
+  border-radius: 0 0 50% 50% / 0 0 100% 100%;
 }
 
 /* The button that opens one. Under the letters, in the air between two lines,

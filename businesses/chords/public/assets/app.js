@@ -1731,7 +1731,23 @@
       /* the gap keeps its character, and the character keeps its span: the DOM
          text and the model's text are the same string, which is what lets the
          words be read straight back out of the page as they are typed */
-      wrap.appendChild(el("span", text[i] === GAP ? "gap" : null, text[i]));
+      var span = el("span", text[i] === GAP ? "gap" : null, text[i]);
+
+      /* ONE ARC OVER A RUN, NOT ONE PER GAP. Five gaps pressed in a row are one
+         piece of room, and five little arcs read as five of something. So the
+         FIRST gap of a run carries the mark and is told how many characters it
+         has to reach across (`--run`); the rest of the run draws nothing and
+         the arc is drawn once, edge to edge, over all of them. Counted here
+         rather than in the stylesheet because CSS can ask whether a gap follows
+         a gap but not how many follow it. */
+      if (text[i] === GAP && text[i - 1] !== GAP) {
+        var run = 1;
+        while (text[i + run] === GAP) run++;
+        span.className = "gap gap-run";
+        span.style.setProperty("--run", run);
+      }
+
+      wrap.appendChild(span);
     }
   }
 
