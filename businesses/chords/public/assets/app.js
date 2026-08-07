@@ -2173,6 +2173,10 @@
            cut to fit it, and the last word of a row hangs out over the next
            segment. Sub-pixel widths are what CSS is for. */
         page.style.width = (plan.cols * slot) + "px";
+        /* ONE SEGMENT ACROSS IS A PHONE, and there the line between two pages
+           divides nothing: it is not the end of a row of segments, it is
+           wherever the scrolling happened to reach. */
+        if (plan.cols < 2) page.classList.add("is-alone");
         built.appendChild(page);
         inPage = 0;
       }
@@ -2355,7 +2359,10 @@
 
        `row` lives outside the loop over lines, which is the whole mechanism:
        the row a line ends on is still open when the next line starts. */
-    var SEP_GAPS = 2;
+    /* FOUR, NOT TWO. The separator has to be read as a space between two
+       different lines of the song rather than as a wide space inside one, and
+       two gaps is about what a person leaves between two words. */
+    var SEP_GAPS = 4;
     var row = null;
 
     /* What the separator takes, in pixels. The gap's width is a fact of the
@@ -2445,6 +2452,24 @@
              at that space and steps over it, unless a chord is sitting on it,
              in which case it is kept and carried along (see below). */
           if (at > pos && at < line.text.length && line.text[at] === " ") space = at;
+
+          /* --- A WORD IS NOT CUT IN HALF ---------------------------------------
+             No space inside the room means the first word of this piece does
+             not fit whole. On a row already carrying something that means the
+             row has no room for this line at all, whatever it could take of
+             it: the row is closed, the separator it was charged for goes back,
+             and the line starts on the next row entire. Taking the two letters
+             that happened to fit is how רפאי came out as רפ on one page and
+             אי on the next.
+
+             It was only caught when NOTHING fitted, which is a narrower case
+             than the one that matters. */
+          if (space <= pos && shared) {
+            row.used -= sepW;
+            row = null;
+            continue;
+          }
+
           end = space > pos ? space : at;
 
           /* --- A WORD IS NOT CUT IN HALF ---------------------------------------
@@ -2457,17 +2482,10 @@
              On an EMPTY row it means the word is longer than a whole segment,
              and then it has to be cut somewhere, because there is nowhere
              wider to try. That is the only place a word comes apart. */
-          if (end <= pos) {
-            if (shared) {
-              /* Nothing of this piece was written to the row, so all it has to
-                 give back is the separator it was charged for. What it already
-                 carried stays where it is. */
-              row.used -= sepW;
-              row = null;
-              continue;
-            }
-            end = pos + 1;
-          }
+          /* An empty row and still nothing fits: the word is longer than a
+             whole segment, and there is nowhere wider to try. That is the only
+             place a word comes apart. */
+          if (end <= pos) end = pos + 1;
         }
 
         var piece = { line: line, from: pos, to: end, lead: lead };
@@ -2755,6 +2773,82 @@
     var saved = 0;
     try { saved = parseInt(localStorage.getItem(SIZE_KEY), 10); } catch (e) { /* private window */ }
     return saved >= SIZE_MIN && saved <= SIZE_MAX ? saved : 18;
+  }
+
+  /* --- WHICH KEY THIS READER PUT THIS SONG IN --------------------------------
+     Somebody who moved a song three semitones down did it because that is
+     where their voice sits, or where their hands do, and both of those are as
+     true next week as they were tonight. So it is kept, per song, and the song
+     opens there.
+
+     Per song and not per person-and-song on the account, deliberately. It is
+     kept in this browser, beside the size, which is the same kind of fact and
+     is kept the same way: what it costs to be wrong is two presses, and a row
+     per reader per song is a table to carry forever for that.
+
+     Zero is an answer like any other. A reader who moved the song back to the
+     key it is written in means it, and gets it. Only a saved song has an id to
+     keep anything under; one being typed for the first time has nowhere to put
+     it and nothing yet to say. Call it with a number to set it, without one to
+     read it, and it answers null for "they have never said". */
+  var KEY_OF = "chords.key.";
+
+  function keptKey(id, next) {
+    if (!id) return null;
+    try {
+      if (next == null) {
+        var saved = parseInt(localStorage.getItem(KEY_OF + id), 10);
+        return saved >= -11 && saved <= 11 ? saved : null;
+      }
+      localStorage.setItem(KEY_OF + id, String(next));
+    } catch (e) { /* private window */ }
+    return null;
+  }
+
+  /* --- AND FAILING THAT, THE ONE THAT IS EASIEST TO HOLD ---------------------
+     Every row in the library already shows the shapes of the easy version, and
+     that is the promise the row makes: this is what your hand will be doing.
+     A song that then opened in the key it happens to be stored in, four barre
+     chords deep, is the page breaking the promise the row made.
+
+     So a reader who has said nothing gets the song where the row said it would
+     be. easyVersion works in capo frets, which is the same move downwards: a
+     capo at 3 and a transposition of -3 put the identical shapes on the page.
+     Whether they clamp anything on is theirs to decide, and their own capo is
+     on the strip beside the song.
+
+     One answer, asked here by everything that has to give it: the page that
+     opens the song, the row in the library and the evening. A row that says
+     one thing and a page that does another is worse than neither of them
+     saying anything. */
+  function openKey(song) {
+    var mine = keptKey(song.id);
+    if (mine != null) return mine;
+    /* NOTHING IS GUESSED AT A SONG NOBODY HAS CHECKED YET. A song a machine
+       read out of a picture is opened beside that picture, and the whole of
+       the job in front of whoever opened it is "does this say what the picture
+       says". A page that has helpfully moved every chord three semitones down
+       cannot be compared to anything, and a chord corrected on it is corrected
+       into the wrong key. It gets the easy version like every other song the
+       moment somebody has looked at it. */
+    if (song.review || song.status === "queued" || song.status === "reading") return 0;
+    var used = chordsUsed(song.lines || []);
+    return used.length ? -easyVersion(used).capo : 0;
+  }
+
+  /* The chords of this song as this reader will see them, and whether that is
+     the app's own guess or their answer: a capo the app worked out is worth
+     saying, and a capo under a key somebody chose themselves is a number about
+     a version of the song they are not playing. */
+  function shapesFor(song) {
+    var used = chordsUsed(song.lines || []);
+    var mine = keptKey(song.id);
+    var by = openKey(song);
+    return {
+      shapes: used.map(function (chord) { return transposeChord(chord, by); }),
+      capo: mine == null ? -by : 0,
+      used: used,
+    };
   }
 
   function setBusy(message) {
@@ -4188,12 +4282,14 @@
          guess about somebody else's hands, and where the capo actually goes is
          a fact about the player that the song page now carries. What the card
          is for is "can I play this", and the answer to that is the shapes. */
-      var used = chordsUsed(s.lines);
-      if (used.length) {
-        var easy = easyVersion(used);
+      /* And in the key the song will actually open in, which for anybody who
+         has moved it is the one they moved it to. The row is the page's own
+         promise, so it is made from the same answer (see shapesFor). */
+      var mine = shapesFor(s);
+      if (mine.shapes.length) {
         var keys = el("div", "keys");
-        keys.title = "השיר עצמו: " + used.join("  ");
-        easy.shapes.forEach(function (shape) { keys.appendChild(el("span", "k", shape)); });
+        keys.title = "השיר עצמו: " + mine.used.join("  ");
+        mine.shapes.forEach(function (shape) { keys.appendChild(el("span", "k", shape)); });
         box.appendChild(keys);
       }
 
@@ -4588,9 +4684,9 @@
 
     /* TWO NUMBERS, AND THEY ARE NOT THE SAME NUMBER.
 
-       The transposition moves the chords on the page. It opens at 0, the song
-       as it was written, and it belongs to this reading of this song: it is
-       forgotten the moment the page is left.
+       The transposition moves the chords on the page. It belongs to this
+       reader and this song: where they left it last time, and failing that the
+       easy version, which is where the library row said it would be.
 
        The capo is where the reader's capo is. It moves nothing. It is a fact
        about the guitar in their hands, it is the same on every song and on
@@ -4600,14 +4696,17 @@
        whatever fret made its chords easiest, and the sheet called that number
        the capo. It reads well and it is a guess about somebody else's hands,
        and worse, it meant "where is my capo" changed every time anybody moved
-       the song a semitone. The easy version is still worked out, and still on
-       every row of the library, where it is a fact about the song and nobody
-       has to accept it. */
-    var myCapo = auth.capo();
-    var semis = 0;
+       the song a semitone. The song still opens on the easy version. It is
+       just not called a capo any more, and nothing on the page pretends to
+       know where their hand is.
 
-    /* the size follows the reader from song to song. The transposition does
-       not: it belongs to the one song it was worked out for. */
+       A song still coming out of the machine, or read out of one and not yet
+       checked, gets nothing worked out for it at all (see openKey). */
+    var myCapo = auth.capo();
+    var semis = openKey(song);
+
+    /* the size follows the reader from song to song. The key does not: it
+       belongs to the one song it was chosen for. */
     var size = readingSize();
 
     app.innerHTML = "";
@@ -4995,10 +5094,7 @@
        already say: a value that goes up and down under an arrow is a key, and
        under two letters is a size. The word is still there for anyone hovering
        or listening. */
-    /* The picture is a button when there is something behind it: the
-       transposition's picture is the way to make the key on screen the song's
-       own (see askKey). Everywhere else it is what it looks like, a name. */
-    function control(icon, label, valueNode, less, more, press) {
+    function control(icon, label, valueNode, less, more) {
       var ctl = el("span", "ctl");
 
       /* The picture and then the number, in the order they are read: what it
@@ -5007,14 +5103,10 @@
          now, and a stacked pair is twice the height of the tallest thing that
          has any business being here. */
       var dial = el("span", "dial");
-      var lbl = el(press ? "button" : "span", "lbl");
+      var lbl = el("span", "lbl");
       lbl.appendChild(svg(icon));
       lbl.title = label;
       lbl.setAttribute("aria-label", label);
-      if (press) {
-        lbl.type = "button";
-        lbl.addEventListener("click", function () { press(lbl); });
-      }
       dial.appendChild(lbl);
       if (valueNode) dial.appendChild(valueNode);
       ctl.appendChild(dial);
@@ -5034,37 +5126,23 @@
       return ctl;
     }
 
-    /* --- THE KEY THE SONG IS WRITTEN IN ----------------------------------------
-       Transposing moves the chords on the screen and changes nothing about the
-       song: everybody else still opens it in the key it was written in. Which
-       is right for a reader, and not enough for whoever keeps the song, because
-       "does this start on Am or on Dm" is a decision about the song itself and
-       somebody has to be able to make it.
+    /* --- THE KEY IT IS PLAYED IN -----------------------------------------------
+       Two buttons and no number. The number said how far the page was from a
+       key nobody can hear, and the answer to "which key am I in" was already on
+       the page, in the chords, in letters twice the size. A nought beside the
+       picture was worse than nothing: a count of a distance from a place the
+       reader never asked about.
 
-       So in the editor the picture is a button. Press it, press "ברירת מחדל",
-       and what is on the screen becomes what the song IS: every chord is
-       written down as it is being shown, and the transposition drops to zero
-       because there is nothing left to transpose. Nothing on screen moves,
-       which is the point.
-
-       It is not offered at zero, and at zero it is not a button either: there
-       is nothing to make default when the song is already being shown as
-       itself.
-
-       ZERO IS NOT WRITTEN DOWN. "This song is in the key it is written in" is
-       what the page already says, in the chords on it, so a nought beside the
-       picture was a number nobody read standing where a number means
-       something. The count appears the moment the page is in some other key,
-       says how far from home it is, and goes again when it comes back. */
-    var value = el("span", "val");
-    var pitch = control(
-      ICON.pitch, "טרנספוזיציה", value,
-      function () { setSemis(semis - 1); },
-      function () { setSemis(semis + 1); },
-      editing && !coming ? askKey : null
-    );
-    var keyBtn = pitch.querySelector("button.lbl");
-    tools.appendChild(pitch);
+       There is nothing to press it into place with either. Making the key on
+       screen the song's own was a button behind that number, for a decision
+       that turns out not to need making: what the song is stored in is a
+       detail of the file now, and what each person plays it in is kept for
+       each person (see keptKey). Nobody has to agree with anybody. */
+    tools.appendChild(control(
+      ICON.pitch, "טרנספוזיציה", null,
+      function () { moveSemis(-1); },
+      function () { moveSemis(1); }
+    ));
 
     /* THE SIZE IS NOT HERE ANY MORE. It was two buttons and a number, three
        things on a strip whose whole point is to be short, for a setting with
@@ -5322,17 +5400,18 @@
        pressing the other button eleven times. */
     function setSemis(next) {
       semis = next > 11 ? -11 : next < -11 ? 11 : next;
-      value.textContent = semis > 0 ? "+" + semis : String(semis);
-      /* hidden rather than emptied: an empty box 2.5 characters wide is a hole
-         between the picture and the buttons */
-      value.hidden = !semis;
-      if (keyBtn) {
-        keyBtn.disabled = !semis;
-        var says = semis ? "לקבוע את הסולם הזה כברירת המחדל של השיר" : "טרנספוזיציה";
-        keyBtn.title = says;
-        keyBtn.setAttribute("aria-label", says);
-      }
       draw();
+    }
+
+    /* PRESSING IS CHOOSING. Whoever moves the song has just said where they
+       play it, and they are the same person with the same voice and the same
+       hands tomorrow, so it is kept and the song opens there next time. Kept on
+       the press and not on the drawing, because the app draws its own guess at
+       the easy version too, and a guess that writes itself down is a guess
+       nobody can tell from an answer. */
+    function moveSemis(by) {
+      setSemis(semis + by);
+      keptKey(song.id, semis);
     }
 
     /* Bigger words fit in fewer places, so where the lines break is part of
@@ -5455,60 +5534,13 @@
       ]);
     }
 
-    /* --- making this key the song's own ---------------------------------------
-       One offer, and only when there is one: the chords as they are on screen,
-       written into the song. */
-    var keyMenu = null;
-
-    function closeKeyMenu() {
-      if (!keyMenu) return;
-      keyMenu.remove();
-      keyMenu = null;
-      document.removeEventListener("pointerdown", keyOutside, true);
-    }
-
-    function keyOutside(event) {
-      if (!keyMenu) return;
-      if (keyMenu.contains(event.target)) return;
-      /* the picture it hangs from: pressing that shuts it by itself, and
-         shutting it here first would only have it opened again */
-      if (keyBtn && keyBtn.contains(event.target)) return;
-      closeKeyMenu();
-    }
-
-    function askKey(anchor) {
-      if (keyMenu) return closeKeyMenu();
-      if (!semis) return;
-
-      keyMenu = el("div", "print-menu");
-      keyMenu.appendChild(button("ברירת מחדל", null, "ghost small", function () {
-        closeKeyMenu();
-        bakeKey();
-      }));
-      document.body.appendChild(keyMenu);
-
-      var box = anchor.getBoundingClientRect();
-      var width = keyMenu.offsetWidth;
-      keyMenu.style.top = (box.bottom + 6) + "px";
-      keyMenu.style.left = Math.min(Math.max(6, box.right - width), window.innerWidth - width - 6) + "px";
-
-      document.addEventListener("pointerdown", keyOutside, true);
-    }
-
-    /* The chords are rewritten, the number goes to zero, and between the two
-       of them the sheet does not move a pixel: what was being SHOWN is now
-       what is STORED. Every chord by identity, so the drag handlers and the
-       picker keep holding the same objects they were holding. */
-    function bakeKey() {
-      var by = semis;
-      if (!by) return;
-      song.lines.forEach(function (line) {
-        line.chords.forEach(function (c) { c.chord = transposeChord(c.chord, by); });
-      });
-      setSemis(0);
-      mark();
-      toast("הסולם הזה הוא עכשיו ברירת המחדל של השיר");
-    }
+    /* THE SONG'S OWN KEY IS NOT A DECISION ANY MORE. There was a menu behind
+       the transposition's number, "ברירת מחדל", that wrote the chords as they
+       were being shown into the song itself, so that everybody else would open
+       it there too. Nobody needs to open it there: every reader gets the key
+       they left it in, and a reader who has never touched it gets the one that
+       is easiest to hold. What the file stores is what came off the page it was
+       read from, and it can stay that way. */
 
     /* --- what it can become ----------------------------------------------------
        One offer, always the same one: פורסם. Everything else about the state
@@ -6387,8 +6419,18 @@
            what was before it, the last joins what was after, and the rest
            stand between them as lines of their own. */
         var halves = splitLine(song.lines[spot.index], spot.at);
+        /* Pasted against what is on screen, so the chords come back down to
+           the song's own key before they are kept, exactly the way a typed one
+           does (see untranspose). Otherwise a song being read three semitones
+           down takes a pasted verse at face value and puts it up three
+           semitones higher than it was pasted. */
         var built = rows.map(function (row) {
-          return { type: row.type, text: row.text, chords: row.chords.map(function (c) { return { pos: c.pos, chord: c.chord }; }), dir: row.dir };
+          return {
+            type: row.type, text: row.text, dir: row.dir,
+            chords: row.chords.map(function (c) {
+              return { pos: c.pos, chord: transposeChord(c.chord, -semis) };
+            }),
+          };
         });
         built[0] = joinLines(halves[0], built[0]);
 
@@ -6971,9 +7013,9 @@
       });
     }
 
-    /* through setSemis, not straight to draw: the counter is written there and
-       nowhere else, so starting any other way leaves it reading 0 over a song
-       that is being shown seven frets down */
+    /* through setSemis, not straight to draw, so the page opens on the key it
+       was opened in: the first drawing is the one that has to be transposed,
+       and it is the only one nobody presses a button to get */
     setSemis(semis);
     relayoutOn(sheet, editing ? null : draw);
 
@@ -7858,13 +7900,14 @@
          index says it. On an evening it is worth more than on the index: this
          is the list somebody is holding a guitar over. */
       if (song) {
-        var used = chordsUsed(song.lines);
-        if (used.length) {
-          var easy = easyVersion(used);
+        var mine = shapesFor(song);
+        if (mine.shapes.length) {
           var keys = el("div", "keys");
-          keys.title = "השיר עצמו: " + used.join("  ");
-          if (easy.capo) keys.appendChild(el("span", "capo", "קפו " + easy.capo));
-          easy.shapes.forEach(function (shape) { keys.appendChild(el("span", "k", shape)); });
+          keys.title = "השיר עצמו: " + mine.used.join("  ");
+          /* only where the app worked the key out itself: under a key somebody
+             chose, a fret is a note about a version they are not playing */
+          if (mine.capo) keys.appendChild(el("span", "capo", "קפו " + mine.capo));
+          mine.shapes.forEach(function (shape) { keys.appendChild(el("span", "k", shape)); });
           box.appendChild(keys);
         }
       }

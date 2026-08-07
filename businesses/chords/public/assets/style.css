@@ -1015,17 +1015,9 @@ button.song-facts:hover .song-facts-ask { color: var(--accent); }
    three pictures were in the page and none of them was on the screen. */
 .tools .lbl { display: flex; color: var(--ink-soft); }
 .tools .lbl svg { width: 15px; height: 15px; }
-/* In the editor the transposition's picture is a button: pressing it offers to
-   make the key on screen the song's own. It looks like the picture it is, and
-   there is nothing behind it while the song is in its own key. */
-.tools button.lbl {
-  appearance: none; padding: 0; border: 0; background: none;
-  font: inherit; cursor: pointer;
-}
-.tools button.lbl:hover:not(:disabled) { color: var(--accent); }
-.tools button.lbl:disabled { cursor: default; }
-/* wide enough for -11 and no wider, so the number does not stand in a hole of
-   its own between the picture and the buttons */
+/* The capo's fret, and the only number left on the strip. Wide enough for two
+   digits and no wider, so it does not stand in a hole of its own between the
+   picture and the buttons. */
 .tools .val {
   font-size: 14px; font-weight: 700; min-width: 2.5ch;
   text-align: center; direction: ltr; font-variant-numeric: tabular-nums;
@@ -1165,6 +1157,11 @@ button.song-facts:hover .song-facts-ask { color: var(--accent); }
    top of the next one expecting the next verse: a page break that says
    nothing is a page break somebody reads through. */
 .page + .page { border-top: 1px solid var(--line); }
+/* Except where there is only one segment across. The rule says "this row of
+   segments has ended and the next begins"; with one segment there is no row,
+   and what it draws is a line through the song at whatever height the window
+   happens to be. */
+.page.is-alone + .page { border-top: 0; }
 
 /* --- a narrow screen -----------------------------------------------------
    620px is also where editing stops (see NARROW in app.js). Keep the two in
@@ -1243,16 +1240,35 @@ button.song-facts:hover .song-facts-ask { color: var(--accent); }
    so it cannot be mistaken for a letter or for anything to sing, and the red
    is the one colour here that already means "this is not a word". */
 .ln-t .gap.is-turn::before {
-  content: ""; position: absolute;
-  top: -.68em; height: 1.05em;
-  inset-inline-start: calc(var(--gap-w) * .8);
-  border-inline-start: 2px solid var(--chord);
-  /* LEANING, WHICH IS THE WHOLE OF WHAT IT SAYS. An upright stroke between
-     two words is a bar line, and a bar line is about the music; a stroke lying
-     over says the thing a solidus has always said, that what is on one side
-     of it and what is on the other were not written on one line. */
-  transform: rotate(20deg);
+  /* A SOLIDUS, THE CHARACTER, AND NOT A STROKE DRAWN OVER THE LINE. It was a
+     tall rotated rule, which is a mark ABOUT the row: it reached up past the
+     letters into the chords and read as a barline through the music. This is
+     one character sitting on the same baseline as the words, the size of the
+     words, in the chords' red, and it says what a solidus has always said,
+     that what is on either side of it was not written on one line.
+
+     IT LEANS THE WAY THE LINE RUNS. A solidus leans forward along the reading
+     direction, so right to left it must be drawn the other way about, or it
+     leans back into the words it is separating and reads as the wrong kind of
+     mark. The row says which way it runs (see .ln[dir]), so the rule can ask
+     it. */
+  content: "\\";
+  position: absolute;
+  inset-inline-start: calc(var(--gap-w) * .9);
+  /* IN SONG SIZES, BECAUSE A GAP HAS NO FONT SIZE OF ITS OWN. The span is set
+     to zero so that the character it carries takes width and no height (see
+     .gap below), so an em here is nothing and everything written in one was
+     drawn a nothing tall: the mark was in the page and never on the screen. */
+  font-size: var(--song-size);
+  line-height: 1;
+  color: var(--chord);
+  /* the gap's box sits ON the baseline, so the glyph is lifted back onto the
+     line the words are standing on */
+  top: calc(var(--song-size) * -.78);
 }
+/* Right to left it is the mirror of it, which is the character it looks like
+   on a page that runs the other way. */
+.ln[dir="rtl"] .ln-t .gap.is-turn::before { content: "/"; }
 
 .ln-t .gap { user-select: none; -webkit-user-select: none; }
 
