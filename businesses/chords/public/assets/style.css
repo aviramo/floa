@@ -936,10 +936,23 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    So it is one row. The song's own facts at the start of it, the controls at
    the end, and the song directly under it. Everything in here is sized to the
    tallest thing that has any business being on it, which is a stepper. */
+/* ON A PHONE THIS IS THE REST OF THE BAR. The controls do not fit up there
+   (see placeControls), so they stand on a row of their own directly under it,
+   and since the page is the same grey the bar is, the two read as one block.
+   Which they are: what they are not is a block with a line drawn across the
+   middle of it, which is what the bar's own bottom border made of them. The
+   line goes under both.
+
+   Sticky with it, so it covers the same strip of every page rather than only
+   the first: a page is the window less whatever is permanently over it, and
+   if this scrolled away that number would be wrong for every page but one. */
 .song-strip {
   display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px;
-  margin: 0 16px 10px;
+  position: sticky; z-index: 19;
+  background: var(--bg); border-bottom: 1px solid var(--line);
+  margin: 0; padding: 6px 16px;
 }
+body.on-song .top { border-bottom: 0; }
 .song-strip[hidden] { display: none; }
 /* In the bar the strip is not a row of its own, so what was standing at the
    far end of one has nothing to be at the end of. */
@@ -1137,6 +1150,10 @@ button.val:hover { border-color: var(--line); background: #fff; }
 }
 .col:not(.is-empty)::before { inset-inline-start: 0; }
 .col:not(.is-empty)::after { inset-inline-end: 0; }
+/* A page of one segment is a phone, and there the segment is the screen: a
+   rule down each edge of it is a hairline against the two edges of the glass,
+   which marks nothing, because there is nothing on the other side of it. */
+.col:only-child::before, .col:only-child::after { display: none; }
 
 /* WHERE ONE SCREENFUL ENDS AND THE NEXT BEGINS. Without it the song appears
    to carry straight on down the segment it is in, and the eye goes back to the

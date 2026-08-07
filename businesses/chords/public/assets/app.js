@@ -2021,10 +2021,17 @@
     var seg = poured ? COL_W : Math.max(COL_W, want);
     var byWidth = Math.max(1, Math.floor((room + gap) / (seg + gap)));
 
-    /* A PAGE IS THE WINDOW UNDER THE HEADER. The header is sticky, so it
-       covers the same strip of every page and not only the first. */
-    var head = document.querySelector(".top");
-    var pageH = window.innerHeight - (head ? head.getBoundingClientRect().height : 0);
+    /* A PAGE IS THE WINDOW UNDER WHATEVER IS PERMANENTLY OVER IT. The bar is
+       sticky, and on a phone so is the row of controls under it, which is the
+       rest of the bar by another name: both cover the same strip of every
+       page and not only the first, so both come off the height of all of
+       them. */
+    var over = 0;
+    Array.prototype.forEach.call(document.querySelectorAll(".top, .song-strip"), function (node) {
+      if (node.offsetParent === null) return;
+      over += node.getBoundingClientRect().height;
+    });
+    var pageH = window.innerHeight - over;
     if (!(pageH > 200)) return null;
 
     /* How much song there is, measured while it is still one flat column. */
@@ -2046,11 +2053,17 @@
 
        A single segment takes the room it is given: a phone has none to hold
        back. */
-    var colW = cols > 1 ? Math.min(seg, room) : Math.min(seg, room);
+    /* A GUTTER IS THE SPACE BETWEEN TWO SEGMENTS, so one segment has none.
+       Given one anyway, the slot came out wider than the room, the page came
+       out wider than the screen, and a phone got a white sheet pushed off one
+       edge with grey showing at the other and the words running out past both.
+       There is nothing beside the only segment there is. */
+    var gutter = cols > 1 ? gap : 0;
+    var colW = Math.min(seg, room - gutter);
     if (!(colW > 0)) return null;
 
     return {
-      cols: cols, colW: colW, gutter: gap,
+      cols: cols, colW: colW, gutter: gutter,
       pageH: pageH, padded: padded, poured: poured,
     };
   }
@@ -2551,6 +2564,11 @@
     home.insertBefore(made.tools, home.firstChild);
     if (made.facts) home.insertBefore(made.facts, made.tools);
     made.strip.hidden = !NARROW.matches;
+
+    /* Stuck directly under the bar, whatever height the bar happens to be:
+       a sticky thing with nothing to stick at is a thing that scrolls away. */
+    var head = document.querySelector(".top");
+    made.strip.style.top = head ? Math.round(head.getBoundingClientRect().height) + "px" : "0";
   }
 
   /* How big this reader wants the words, kept between songs and between visits.
@@ -6819,24 +6837,17 @@
      reader broke off the line above rejoins it, because that break is a fact
      about this screen and not about the song. */
 
-  /* The gaps come out, and the chords that stood on them step back onto the
-     last real character. A gap is a private-use codepoint (see GAP): invisible
-     here and a box of tofu in whatever the words are pasted into. */
-  function withoutGapsAt(text, chords) {
-    var out = "", map = [];
-    for (var i = 0; i < text.length; i++) {
-      if (text[i] === GAP) { map.push(Math.max(0, out.length - 1)); continue; }
-      map.push(out.length);
-      out += text[i];
-    }
-    return {
-      text: out,
-      chords: chords.map(function (c) {
-        var at = c.pos < map.length ? map[c.pos] : out.length;
-        return { pos: at, chord: c.chord };
-      }),
-    };
-  }
+  /* THE ARTIFICIAL SPACES COME ALONG. They were taken out of the copy at
+     first, on the grounds that a gap is a private-use codepoint (see GAP) and
+     comes out a box of tofu in whatever the words are pasted into. But a gap
+     is what holds two chords apart over one short word: a line copied without
+     them and pasted back is that word closed up again with its chords piled
+     on top of each other, which is the line broken by having been copied.
+
+     And this is the format the song is stored in either way. songToText writes
+     the line's own characters, gaps and all, so what goes on the clipboard is
+     exactly what goes in the database: one format, copied, pasted, saved and
+     read back the same. */
 
   function sheetToText(sheet, selection) {
     var lines = [], gaps = 0, any = false;
@@ -6880,8 +6891,7 @@
       });
       chords.sort(function (a, b) { return a.pos - b.pos; });
 
-      var clean = withoutGapsAt(text, chords);
-      var written = toChordPro({ type: "line", text: clean.text, chords: clean.chords });
+      var written = toChordPro({ type: "line", text: text, chords: chords });
 
       /* A row the reader broke off the line above is that line continuing, so
          it goes back onto it. Only when the row above was taken too: a
