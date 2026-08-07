@@ -6085,6 +6085,27 @@
       var onSpanKey = function (event) {
         if (!sheet.isConnected) return document.removeEventListener("keydown", onSpanKey, true);
         if (event.defaultPrevented || event.isComposing) return;
+
+        /* THE WHOLE SONG, WHEREVER THE PRESS CAME FROM. It used to be answered
+           inside the line that had the caret, which meant it was answered only
+           while a line had one: pressed with nothing focused, or a second time
+           after the first shut the lines, it fell through to the browser and
+           selected the whole page, header and all. Delete then deleted nothing
+           and a paste pasted over nothing, because neither could find the song
+           in a selection that was about the document.
+
+           Not when the press came from somewhere else on the page: the name of
+           the song and the search field are ordinary fields and Ctrl+A in one
+           of them means that field. */
+        if ((event.ctrlKey || event.metaKey) && !event.altKey && pressed(event, "KeyA", "a")) {
+          var where = event.target;
+          var loose = !where || where === document.body || where === document.documentElement;
+          if (!loose && !sheet.contains(where)) return;
+          event.preventDefault();
+          shutLines();
+          return void selectAll(sheet);
+        }
+
         if (event.ctrlKey || event.metaKey || event.altKey) return;
 
         var key = String(event.key);
@@ -6227,16 +6248,10 @@
         focusLine(index, end);
         mark();
 
-      } else if ((event.ctrlKey || event.metaKey) && pressed(event, "KeyA", "a")) {
-        /* The whole song. A line's worth of its own text is not what anybody
-           means by "everything" on a page of forty lines, and the browser
-           would give exactly that: the caret is inside one editing host and
-           that host is all it knows about. So the hosts are shut and the
-           sheet is selected, which is an ordinary selection over ordinary
-           text and copies like one. */
-        event.preventDefault();
-        shutLines();
-        selectAll(sheet);
+      /* Ctrl+A is not here. A line's worth of its own text is not what anybody
+         means by "everything" on a page of forty lines, and it has to be
+         answered whether or not a line holds the caret, so it lives on the
+         document with the other keys about a selection (see onSpanKey). */
 
       } else if (event.key === "Escape") {
         event.preventDefault();

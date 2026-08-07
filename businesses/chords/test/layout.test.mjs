@@ -719,10 +719,6 @@ try {
           copied.rows === 4, JSON.stringify(copied));
         check("copying: with the chords among the words, in brackets",
           copied.brackets >= 3 && /\[Am\]|\[G\]|\[F\]/.test(copied.text), JSON.stringify(copied));
-        /* the gap is a private-use codepoint: invisible on this page and a box
-           of tofu in whatever the words are pasted into */
-        check("copying: and no gap characters carried out with it",
-          !new RegExp("[\uE000-\uF8FF]").test(copied.text), JSON.stringify(copied));
       }
     });
 
@@ -789,19 +785,45 @@ try {
         .filter((l) => getSelection().containsNode(l, true)).length)`);
       check("everything: ctrl+a takes the whole song", chosen >= 5, String(chosen));
 
+      /* WITH TWO ARTIFICIAL SPACES IN IT, because they were being dropped on
+         the way out: a gap is what holds two chords apart over one short word
+         (see GAP in app.js), and a line copied without them is that word
+         closed up again with its chords piled on each other. So the song
+         pasted here has a pair of them, and the copy taken below has to hand
+         them back. */
       const over = await evaluate(`JSON.stringify((() => {
         const data = new DataTransfer();
-        data.setData("text/plain", "{פזמון}\\n[C]אחת ו[G]שתיים\\n\\n[Am]שלוש");
+        data.setData("text/plain", "{פזמון}\\n[C]א\\uE000\\uE000ליה ו[G]שתיים\\n\\n[Am]שלוש");
         const ev = new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData: data });
         (document.activeElement || document.body).dispatchEvent(ev);
-        return [...document.querySelectorAll(".sheet .ln")].map((l) => ({
-          text: (l.querySelector(".ln-t") || l.querySelector(".ln-section") || { textContent: "" }).textContent,
-          chords: [...l.querySelectorAll(".chord")].map((c) => c.textContent + "@" + c.dataset.pos).join(","),
-        }));
+        return {
+          rows: [...document.querySelectorAll(".sheet .ln")].map((l) => ({
+            text: (l.querySelector(".ln-t") || l.querySelector(".ln-section") || { textContent: "" }).textContent,
+            chords: [...l.querySelectorAll(".chord")].map((c) => c.textContent + "@" + c.dataset.pos).join(","),
+          })),
+          gaps: document.querySelectorAll(".sheet .ln-t .gap").length,
+        };
       })())`);
       check("everything: a paste over it puts the pasted song in its place",
-        over.length === 4 && over[0].text === "פזמון" && over[1].chords === "C@0,G@4",
-        JSON.stringify(over));
+        over.rows.length === 4 && over.rows[0].text === "פזמון" && over.rows[1].chords === "C@0,G@7",
+        JSON.stringify(over.rows));
+      check("gaps: an artificial space arrives with the words it holds apart",
+        over.gaps === 2, JSON.stringify(over));
+
+      await sleep(200);
+      await send("Input.dispatchKeyEvent", { type: "rawKeyDown", ...all });
+      await send("Input.dispatchKeyEvent", { type: "keyUp", ...all });
+      await sleep(200);
+      const back = await evaluate(`JSON.stringify((() => {
+        const ev = new ClipboardEvent("copy", { bubbles: true, cancelable: true, clipboardData: new DataTransfer() });
+        document.dispatchEvent(ev);
+        return ev.clipboardData.getData("text/plain");
+      })())`);
+      /* the same document that was pasted in, out again: the format on the
+         clipboard is the format the song is stored in */
+      check("gaps: and goes back out with a copy, so a paste of it is the same line",
+        back.indexOf("א[C]\uE000\uE000ליה ו[G]שתיים") >= 0 && (back.match(/\uE000/g) || []).length === 2,
+        JSON.stringify(back));
 
       await sleep(200);
       await send("Input.dispatchKeyEvent", { type: "rawKeyDown", ...all });
