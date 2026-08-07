@@ -1252,10 +1252,13 @@ button.val:hover { border-color: var(--line); background: #fff; }
    bit less air between the chord and the syllable it names. A chord that
    floats is a chord you have to look twice at to attach to a word.
 
-   The floor on it is the letters themselves: the lane at .66 puts the chord's
-   foot about an eighth of a size above the tops of the glyphs, which holds
-   for the tall ones and for a word carrying vowel points. */
-.ln-c { position: relative; height: calc(var(--song-size) * .66); }
+   THE FLOOR ON IT IS THE LETTERS THEMSELVES, and this is near it. Measured
+   rather than guessed: at .61 there is about six hundredths of a size between
+   a chord's foot and the top of the letters' own ascent box, which at .58 was
+   three, and three is a pixel at a reading size and nothing at all at a small
+   one. The margin is not spare room, it is what a word carrying vowel points
+   needs: a holam sits above the letter, and above that box. */
+.ln-c { position: relative; height: calc(var(--song-size) * .61); }
 .ln-t {
   white-space: pre;
   font-size: var(--song-size);
