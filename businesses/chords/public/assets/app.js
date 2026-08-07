@@ -4844,10 +4844,6 @@
     var undoBtn = iconBtn(ICON.undo, "ביטול הפעולה האחרונה", undo);
     var revertBtn = iconBtn(ICON.rewind, "החזרה למקור", revert);
     revertBtn.classList.add("quiet");
-    /* WHERE THE WRITING GOT TO, which is what is left of the save button: the
-       song writes itself now (see the saving block below), so the row does not
-       need a thing to press, it needs a thing to read. */
-    var stateNode = el("span", "save-state");
     undoBtn.hidden = true;
     revertBtn.hidden = true;
 
@@ -4888,7 +4884,7 @@
           pastBtn.setAttribute("aria-label", pastBtn.title);
         });
       }
-      mine.push(revertBtn, undoBtn, stateNode, statusChip);
+      mine.push(revertBtn, undoBtn, statusChip);
       mine.forEach(function (node) { topBar.insertBefore(node, topBar.firstChild); });
     }
     app.appendChild(strip);
@@ -6538,10 +6534,25 @@
        there is nothing true to keep a copy of. */
     var wantVersion = false;
 
+    /* THE QUIET WORD IN THE BAR IS GONE. It said where the writing had got
+       to, "נשמר" and "לא נשמר", which on a page that saves itself is the
+       answer to a question nobody asked: it was right almost always, and
+       being right almost always is what made it worth nothing to read.
+
+       What is left is the two things it said that nothing else says, and both
+       of them are trouble, so they are said the way trouble is said here.
+
+       ONCE EACH. A song saves itself every few seconds, so the same complaint
+       would arrive every few seconds, and a message that repeats while you
+       are typing is a message you learn to look past. It is armed again by
+       the next save that goes through. */
+    var said = "";
+
     function note(text, bad) {
-      if (!stateNode) return;
-      stateNode.textContent = text;
-      stateNode.className = "save-state" + (bad ? " is-bad" : "");
+      if (!bad) { said = ""; return; }
+      if (text === said) return;
+      said = text;
+      toast(text, true);
     }
 
     function queueSave(now) {
