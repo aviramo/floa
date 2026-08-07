@@ -3879,12 +3879,16 @@
       var kind = shelf || null;
       var kindsRow = el("div", "kinds-row");
       var kinds = el("div", "kinds");
-      kindsRow.appendChild(tallies);
-      kindsRow.appendChild(kinds);
+      /* AT THE HEAD OF THE ROW, before anything it acts on. It says "all of
+         these", and "these" is everything after it: the chips that narrowed
+         the wall and the wall itself. Standing at the far end it read as one
+         more thing hanging off the row rather than the word that opens it. */
       if (auth.in) {
         allBtn = iconBtn(ICON.checkAll, "סימון כל מה שמוצג", pickAll);
         kindsRow.appendChild(allBtn);
       }
+      kindsRow.appendChild(tallies);
+      kindsRow.appendChild(kinds);
       kindsRow.appendChild(picking);
       app.appendChild(kindsRow);
 

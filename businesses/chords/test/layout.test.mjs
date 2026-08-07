@@ -165,7 +165,10 @@ const POURED = `(() => {
     arc: (() => {
       const g = document.querySelector(".sheet .ln-t .is-turn");
       if (!g) return "no solidus";
-      return g.textContent + " " + getComputedStyle(g).color;
+      /* the mark is PAINTED on the span, not written in it: what there is to
+         check is the stroke, not a letter */
+      const st = getComputedStyle(g, "::after");
+      return st.borderInlineStartColor + " " + st.height + " " + st.transform;
     })(),
     /* A WORD IS NEVER CUT IN HALF except where there is nowhere wider to try:
        a word longer than a whole segment. Anything else means a row took part
@@ -574,19 +577,21 @@ try {
          than something broken. What it does own is that where it DOES happen,
          it happens behind a solidus. */
       if (!poured.joins) {
-        unknown("narrow: a leftover row takes the next line behind a solidus",
+        unknown("narrow: a leftover row takes the next line behind a break mark",
           `no row carried two lines here (${poured.where})`);
       } else {
-        check("narrow: a leftover row takes the next line behind a solidus",
+        check("narrow: a leftover row takes the next line behind a break mark",
           poured.joins > 0, `${poured.joins} rows carry two lines (${poured.where})`);
       }
-      /* AND IT IS RED, which is the one colour on this sheet that already
-         means "this is not a word". The mark is a character of the row, so
-         there is nothing to position and the only thing that can be wrong
-         about it is its colour. */
+      /* AND IT IS DRAWN, not written. Every version of this that was a glyph
+         or a box hung beside one had the same weakness: the gap that carries
+         it is a box of no height, so anything positioned against it was
+         arithmetic against nothing. What is checked is that the stroke is
+         there, in the chords' red, and leaning. */
       if (poured.joins) {
-        check("narrow: and the solidus is not one of the words",
-          poured.arc.indexOf("rgb(225, 29, 99)") >= 0, poured.arc);
+        check("narrow: and the break carries a drawn diagonal, not a letter",
+          poured.arc.indexOf("rgb(225, 29, 99)") >= 0 && poured.arc.indexOf("matrix") >= 0,
+          poured.arc);
       }
       /* A WORD IS NOT CUT IN HALF. The only place one may come apart is a word
          longer than a whole segment, because there is nowhere wider to try;

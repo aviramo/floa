@@ -502,7 +502,8 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    two answer different questions, the states being the work outstanding and
    the styles the shelf itself. They narrow together.
 
-   The row also carries what is ticked, at its other end. */
+   The row opens with the tick that takes everything the chips left, and ends
+   with what is ticked. */
 /* It is the first thing on the library now, the search box that used to stand
    over it having moved into the bar, so it carries its own air above. */
 .kinds-row {
