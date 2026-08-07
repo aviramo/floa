@@ -87,6 +87,19 @@ body {
    it. One rule here, and nothing below has a top margin of its own. */
 #app { padding-top: 22px; }
 
+/* --- A SONG IS THE PAGE ---------------------------------------------------
+   Everything else here is something ON a page: a wall of cards, a form, a
+   list. A song is the page. So on a song there is nothing between the header
+   and the words: no gutters, no air over them, and no card around them.
+
+   The card was worth having when the sheet was a column of about eighty
+   characters standing in the middle of a screen, where it said where the song
+   began and ended. It is the whole width now, so what it draws is a box round
+   the edge of the window: a border a thousand pixels from anything it could be
+   distinguishing. The phone lost it for the same reason years ago (see the
+   narrow rules below), and this is the desk catching up. */
+body.on-song #app { padding-top: 0; width: 100%; }
+
 /* --- header ------------------------------------------------------------- */
 
 .top {
@@ -918,7 +931,16 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    tallest thing that has any business being on it, which is a stepper. */
 .song-strip {
   display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px;
-  margin: 0 0 12px;
+  margin: 0 16px 10px;
+}
+.song-strip[hidden] { display: none; }
+/* In the bar the strip is not a row of its own, so what was standing at the
+   far end of one has nothing to be at the end of. */
+.top-actions .tools { margin-inline-start: 0; }
+.top-actions .song-facts { flex: 0 1 auto; max-width: 22ch; }
+.top-actions .song-facts .song-by,
+.top-actions .song-facts .song-facts-ask {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
 /* WHAT THE SONG SAYS ABOUT ITSELF, AS A LINE. The same facts the form holds,
@@ -1001,8 +1023,10 @@ button.val:hover { border-color: var(--line); background: #fff; }
    which would mean the sheet no longer shows what the song says. Wide enough
    for half of a long name like G#m7b5. */
 .sheet {
-  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
-  box-shadow: var(--shadow); padding: 22px 34px 30px; margin-bottom: 64px;
+  background: var(--card);
+  border: 0; border-radius: 0; box-shadow: none;
+  padding: 22px 34px 30px; margin-bottom: 0;
+  min-height: calc(100vh - 60px);
   overflow-x: auto;
   font-family: var(--song-font);
   /* TWO FINGERS ON THE SONG SET THE SONG'S SIZE, not the page's zoom (see the
@@ -1050,13 +1074,10 @@ button.val:hover { border-color: var(--line); background: #fff; }
    length, and the twenty pixels they cost are a word and a half of every
    line. */
 @media (max-width: 620px) {
-  .sheet {
-    border: none; box-shadow: none; border-radius: 0;
-    padding: 16px 26px 24px;
-    /* out through the page's own gutters, to the edges of the screen */
-    margin-inline: calc(50% - 50vw);
-    width: 100vw;
-  }
+  /* The card came off every screen (see .sheet), so what is left for a phone
+     is the padding: at arm's length those twenty pixels are a word and a half
+     of every line. */
+  .sheet { padding: 16px 22px 24px; min-height: 0; }
 
   .tools { border-radius: var(--radius); }
 }
@@ -1555,7 +1576,10 @@ button.val:hover { border-color: var(--line); background: #fff; }
   /* Columns are an answer to a screen, and paper is not a screen: it has a
      page break where a window has a scroll, and it comes in one width. The
      count is written onto the element by hand, so this has to shout. */
-  .sheet { column-count: 1 !important; column-rule: none !important; }
+  .sheet {
+    column-count: 1 !important; column-width: auto !important;
+    column-rule: none !important; min-height: 0 !important;
+  }
   .wrap { width: 100%; }
 }
 

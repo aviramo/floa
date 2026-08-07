@@ -1924,6 +1924,7 @@
 
   function oneColumn(sheet) {
     sheet.style.columnCount = "";
+    sheet.style.columnWidth = "";
     sheet.style.columnGap = "";
     sheet.classList.remove("is-cols");
   }
@@ -1948,6 +1949,12 @@
       layoutAll(sheet);
     }, 450);
   }
+
+  /* The narrowest a column is allowed to be where the lines are broken to
+     fit it, in song sizes: about thirty characters of Hebrew. Narrower than
+     that and every line is broken, which is a page of stubs rather than a
+     song in columns. */
+  var COL_MIN = 13;
 
   function fitColumns(sheet) {
     if (!sheet || !sheet.isConnected || !sheet.classList.contains("sheet")) return;
@@ -1992,13 +1999,14 @@
        start of the second. */
     widest += size * 1.4;
 
+    /* Whether the lines will be broken to the column, which is the same
+       question as whether this song is being read rather than written. */
+    var poured = !sheet.classList.contains("ed");
+
     var box = getComputedStyle(sheet);
     var room = sheet.clientWidth
       - (parseFloat(box.paddingLeft) || 0) - (parseFloat(box.paddingRight) || 0);
     if (!(room > 0)) return;
-
-    var allowed = Math.floor((room + gap) / (widest + gap));
-    if (allowed < 2) return;
 
     /* From where the sheet begins to the bottom of the window, which is the
        room a reader has without scrolling. Taken from the document rather
@@ -2011,10 +2019,40 @@
     var tall = sheet.scrollHeight
       - (parseFloat(box.paddingTop) || 0) - (parseFloat(box.paddingBottom) || 0);
 
-    var cols = Math.min(Math.ceil(tall / screenful), allowed, COL_MAX);
+    var cols = Math.min(Math.ceil(tall / screenful), COL_MAX);
     if (cols < 2) return;
 
+    /* --- AND THE BROWSER SETTLES IT ------------------------------------------
+       Not `columnCount` alone, which divides the room into that many whatever
+       is written on them: my arithmetic and the browser's differ by a pixel or
+       two, and a pixel or two is the difference between a line inside its
+       column and a line printing over the one beside it. That is exactly what
+       went wrong, on the one line of the song that was longer than the rest.
+
+       With a width AND a count, the rule is "this many at most, and never
+       narrower than this", and the browser is the one that divides. It cannot
+       disagree with itself. The columns are then widened to fill what is left,
+       so nothing is wasted either.
+
+       What the width has to be is a different question in the two states, and
+       that is the whole of the difference between them:
+
+         READING, the lines are POURED to whatever the column comes out as (see
+         flowSheet), so no line can be too wide for one and the only floor is
+         being wide enough to read.
+
+         WRITING, they are not, because a poured row is not a line you can type
+         into. So the floor is the longest line in the song, and one long line
+         genuinely does cost the song a column. That is the honest answer, and
+         it is why the widest line is still measured. */
+    /* ROOM FOR THE CHORDS OVER THE ENDS OF A LINE, where the lines are whole:
+       a chord is centred on its character, so one over the last letter hangs
+       half a label past where the words stop. Poured, that is the pour's
+       business and not this one's. */
+    var need = poured ? COL_MIN * size : widest + size * 1.4;
+
     sheet.style.columnGap = Math.round(gap) + "px";
+    sheet.style.columnWidth = Math.ceil(need) + "px";
     sheet.style.columnCount = String(cols);
     sheet.classList.add("is-cols");
   }
@@ -2343,8 +2381,35 @@
   var app = document.getElementById("app");
   var state = {
     songs: null, printable: false, printer: null, killer: null,
-    editToggle: null, stage: null,
+    editToggle: null, stage: null, songControls: null,
   };
+
+  /* --- THE SONG GETS THE SCREEN ---------------------------------------------
+     What is left over the song is a strip carrying two dials and a line about
+     who wrote it, thirty pixels of it, and thirty pixels is still a row of the
+     page spent on something that is not the song. On a desk there is a hand's
+     width of empty bar right above it, so that is where they go, and the song
+     starts directly under the header.
+
+     Not on a phone. The bar there is already a mark, a name, a glass and three
+     pictures, and the same two dials would be the row overflowing rather than
+     the row filling up. So the strip stays, and the controls are put wherever
+     the screen can hold them.
+
+     Which is why they are placed from HERE rather than built into one or the
+     other: the header is repainted whenever the window crosses that width, and
+     the answer has to be able to change with it. */
+  function placeControls() {
+    var made = state.songControls;
+    if (!made) return;
+    var home = NARROW.matches ? made.strip : document.getElementById("topActions");
+    if (!home) return;
+    /* At the START of the bar, which right to left is its right hand end: they
+       are about the song, and what is already there is about the page. */
+    home.insertBefore(made.tools, home.firstChild);
+    if (made.facts) home.insertBefore(made.facts, made.tools);
+    made.strip.hidden = !NARROW.matches;
+  }
 
   /* How big this reader wants the words, kept between songs and between visits.
      Whoever needs a bigger font on one song needs it on the next one too, and
@@ -2543,6 +2608,8 @@
         var printBtn = iconBtn(ICON.print, "הדפסה", function () { askPrint(printBtn); });
         bar.appendChild(printBtn);
       }
+      /* last, because it puts them at the front */
+      placeControls();
       return;
     }
 
@@ -4174,6 +4241,10 @@
 
        LEAVING IS SAFE, so nothing asks. The song writes itself, and whatever
        is still on the clock goes out on the way. */
+    /* THE SONG IS THE PAGE. Said on the body, because what it changes is the
+       shape of everything around the sheet: no gutters, no card, no air over
+       it. See body.on-song in the stylesheet. */
+    document.body.classList.add("on-song");
     state.printable = true;
     state.stage = function () { openStage(); };
     /* Not on a version: there is nothing here to go into. */
@@ -4498,7 +4569,6 @@
         input.addEventListener("input", showFacts);
       });
       showFacts();
-      strip.appendChild(facts);
     } else {
       /* Reading it, the credits are a sentence rather than a form, and it
          matters which is which: whoever wrote the words is rarely the one you
@@ -4524,7 +4594,6 @@
         facts.appendChild(el("span", "tag tag-style", name));
       });
       facts.appendChild(el("span", "tag tag-" + songState(), STATE_WORDS[songState()]));
-      strip.appendChild(facts);
     }
 
     app.appendChild(head);
@@ -4774,11 +4843,15 @@
       mine.push(revertBtn, undoBtn, stateNode, statusChip);
       mine.forEach(function (node) { topBar.insertBefore(node, topBar.firstChild); });
     }
-    strip.appendChild(tools);
     app.appendChild(strip);
     /* Under the strip and shut, so the height it takes is the height of
        nothing until somebody asks for it. */
     if (meta) app.appendChild(meta);
+
+    /* And now they are handed over, to be put in whichever of the two places
+       the screen can hold them (see placeControls). */
+    state.songControls = { strip: strip, facts: facts, tools: tools };
+    placeControls();
 
     /* The sheet used to carry a "קפו 3" chip of its own, from when the capo was
        worked out from the transposition and was a fact about the SONG. It is a
@@ -4907,9 +4980,17 @@
          same reason and in the same order: how many columns there are depends
          on how tall the song came out, and where a chord goes depends on
          which column its line landed in. */
+      /* THE COLUMNS FIRST AND THE POURING SECOND, which is the opposite of the
+         order it ran in while pouring was a thing that only happened on a
+         phone. A line is broken to the width of the box it stands in, and
+         until the columns are decided that box is the whole sheet.
+
+         And the placing last, because a chord belongs to the row its syllable
+         ended up on and there is no telling which that is until the words have
+         been broken. */
       requestAnimationFrame(function () {
-        if (!editing && NARROW.matches) flowSheet(sheet);
         fitColumns(sheet);
+        if (!editing) flowSheet(sheet);
         layoutAll(sheet);
       });
     }
@@ -4929,9 +5010,10 @@
     function setSize(next) {
       size = readingSize(next);
       sheet.style.setProperty("--song-size", size + "px");
-      if (!editing && NARROW.matches) return draw();
-      /* Bigger words are a wider longest line and a taller song, which are
-         the two numbers the column count is made of. */
+      /* Bigger words break in different places, so where the lines break is
+         part of what the size changes. Drawn again rather than measured
+         again, since the rows themselves are different rows. */
+      if (!editing) return draw();
       requestAnimationFrame(function () { fitColumns(sheet); layoutAll(sheet); });
     }
 
@@ -4951,7 +5033,12 @@
        Nothing is written until the number actually changes. One turn of a
        wheel is dozens of events, and setSize redraws the whole sheet on a
        narrow screen. */
-    var WHEEL_PER_STEP = 60;
+    /* ONE NOTCH OF A MOUSE WHEEL IS ABOUT A HUNDRED, and it should be worth
+       something: at sixty it was a pixel a notch, which is twenty turns to
+       cross the range and reads as a control that is not working. Four pixels
+       a notch crosses it in nine, and a trackpad, which sends a stream of
+       small numbers rather than notches, still accumulates smoothly. */
+    var WHEEL_PER_STEP = 25;
     var wheeled = 0;
 
     sheet.addEventListener("wheel", function (event) {
@@ -6786,7 +6873,7 @@
        so a font arriving late breaks them again rather than only nudging the
        chords. */
     var rewrap = function () {
-      if (!redraw || !NARROW.matches) return run();
+      if (!redraw) return run();
       width = root.clientWidth;
       redraw();
     };
@@ -6794,7 +6881,7 @@
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(rewrap);
     var onResize = function () {
       if (!root.isConnected) return window.removeEventListener("resize", onResize);
-      if (redraw && NARROW.matches && root.clientWidth !== width) return rewrap();
+      if (redraw && root.clientWidth !== width) return rewrap();
       run();
     };
     window.addEventListener("resize", onResize);
@@ -8204,6 +8291,8 @@
        it. */
     clearFind();
     where("");
+    document.body.classList.remove("on-song");
+    state.songControls = null;
     state.printable = false;
     state.printer = null;
     state.killer = null;

@@ -193,14 +193,21 @@ const COLUMNS = `(() => {
       over.push({ text: t.textContent.slice(0, 24), needs: Math.round(words + pad), room: Math.round(ln.clientWidth) });
     }
   }
-  /* Where the lines actually landed, which is the only proof the browser did
-     what the count asked for. Bucketed, because two columns are hundreds of
-     pixels apart and a rounding error is not a column. */
+  /* HOW MANY COLUMNS THERE REALLY ARE, which is where the lines actually
+     landed and not what the stylesheet was asked for. getComputedStyle hands
+     back the SPECIFIED count, and the whole question here is what the browser
+     did with it: the sheet asks for a count and a minimum width together, and
+     the browser is the one that decides how many of those fit. Reading the
+     specified number back is reading your own request.
+
+     Bucketed, because two columns are hundreds of pixels apart and a rounding
+     error is not a column. */
   const at = new Set([...document.querySelectorAll(".sheet .ln-t")]
     .map((t) => Math.round(t.getBoundingClientRect().left / 20)));
   return JSON.stringify({
-    cols: Number(getComputedStyle(sheet).columnCount) || 1,
-    boxes: at.size, over,
+    cols: at.size,
+    poured: document.querySelectorAll(".sheet .ln.is-cont").length,
+    over,
     where: innerWidth + "x" + innerHeight + ", sheet " + Math.round(sheet.scrollHeight) + "px tall",
   });
 })()`;
@@ -526,14 +533,24 @@ try {
           `columnCount ${laid && laid.cols} (${laid && laid.where})`);
       } else {
         check("wide: a long song stands in more than one column", true, "");
-        check("wide: and the lines really landed in them", laid.boxes >= laid.cols,
-          `${laid.boxes} places for ${laid.cols} columns (${laid.where})`);
       }
 
       /* Asked whatever the count came out as. One column that cannot hold its
          own lines is the same failure at a smaller size. */
       check("wide: no line is wider than the column it stands in", laid.over.length === 0,
         JSON.stringify(laid.over));
+
+      /* AND A LINE TOO WIDE FOR ITS COLUMN IS BROKEN TO IT, which is what
+         makes the column count a question about height alone: without the
+         pour, one long line in a song costs every other line a column, and
+         the answer to "why is this in two columns with a hand's width of
+         nothing down the middle" is that one chorus reaches further than the
+         rest. The song here is short-lined, so this only holds when the count
+         got high enough to make a column narrow. */
+      if (laid.cols >= 3) {
+        check("wide: a line too wide for its column is broken to it, as on a phone",
+          laid.poured > 0 || laid.over.length === 0, JSON.stringify(laid));
+      }
 
       /* The first few are enough: they are the same three lines fifteen times
          over, and a chord that slipped slipped on all of them. */
