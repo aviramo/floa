@@ -175,12 +175,16 @@ body.on-song { background: var(--bg); }
   font-size: 12px; line-height: 1.4; color: var(--ink-soft);
 }
 .top-sub:empty { display: none; }
-.top-sub .credit {
+/* ONE SHAPE FOR A CREDIT, wherever it is read: under the name on the page you
+   play from, and on the button that opens the form on the page you write on.
+   The picture says which of the two it is, so the same name written twice is
+   not two of anything, and no line has to explain itself. */
+.credit {
   display: inline-flex; align-items: center; gap: 4px; min-width: 0;
   white-space: nowrap;
 }
-.top-sub .credit > span { overflow: hidden; text-overflow: ellipsis; }
-.top-sub .credit svg { width: 13px; height: 13px; flex: none; opacity: .75; }
+.credit > span { overflow: hidden; text-overflow: ellipsis; }
+.credit svg { width: 13px; height: 13px; flex: none; opacity: .75; }
 /* Typed into rather than read. It takes a line under the pointer, because a
    name in a bar reads as a label until something says otherwise, and it says
    what it wants while it is empty. */
@@ -209,8 +213,16 @@ body.on-song { background: var(--bg); }
    rounded white box around the field inside the rounded white box around all
    of it. What that looked like was two boxes and a button. A search box is
    the plainest control there is: somewhere to type, and a picture saying what
-   typing there does. */
-.top-find { position: relative; flex: 1 1 200px; min-width: 0; max-width: 420px; }
+   typing there does.
+
+   AND IT TAKES WHATEVER THE BAR HAS LEFT. It was capped at 420px, which on a
+   wide screen left a stretch of empty bar between the name of the page and the
+   row of buttons: room nothing was using, next to the one control that could
+   use it. A song's name is long, an evening's is longer, and what you type
+   here is one of them. Everything else on the bar is either fixed or asks for
+   only as much as its own words need, so the space that is left over is the
+   search box's by default. */
+.top-find { position: relative; flex: 1 1 200px; min-width: 0; }
 .top-find .find {
   display: flex; align-items: center; gap: 9px;
   padding: 0 14px; height: 38px;
@@ -249,10 +261,14 @@ body.on-song { background: var(--bg); }
 
 /* WHAT THE BOX FOUND, HANGING UNDER IT. Not a page: a search that took over
    the screen would lose the song you were reading in order to tell you about
-   another one, and half the time what the box is for is a glance. */
+   another one, and half the time what the box is for is a glance.
+
+   As wide as the box, whatever the box came out to be. It carried a width of
+   its own, and two edges that nearly line up read as a mistake rather than as
+   two things. */
 .find-out {
   position: absolute; z-index: 30; top: calc(100% + 8px);
-  inset-inline-start: 0; width: min(420px, calc(100vw - 24px));
+  inset-inline-start: 0; width: 100%;
   max-height: min(70vh, 560px); overflow-y: auto;
   background: var(--card); border: 1px solid var(--line); border-radius: 14px;
   box-shadow: 0 10px 34px rgba(23, 32, 42, .16);
@@ -858,13 +874,13 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 /* The styles of one song, being written. The word, what it already is, and one
    field that adds another: a row of the same shape as the credits above it,
    because it is the same kind of thing, one more fact about the song. */
-/* ONE MORE FIELD IN THE ROW OF THEM, and shaped like the two beside it: a word
-   and a line, and what has been written on it sitting on that line. It had a
-   row of its own underneath, which said it was a different kind of thing from
-   who wrote the song. It is not: it is one more fact about the song. */
+/* ONE MORE FIELD IN THE FORM, and shaped like the two above it: a word and a
+   line, and what has been written on it sitting on that line. It stood apart
+   from them for a while, which said it was a different kind of thing from who
+   wrote the song. It is not: it is one more fact about the song. */
 .kinds-field {
   display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px;
-  flex: 1 1 180px; min-width: 0;
+  min-width: 0;
 }
 .kinds-label { font-size: 13px; font-weight: 600; color: var(--ink-soft); }
 .kinds-list { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -875,25 +891,21 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 }
 .song-meta .kinds-field input[type="text"]:hover { border-bottom-color: var(--ink-soft); }
 
-/* Who wrote it and which way it runs, on the song itself: there is no other
-   page to keep them on any more. Three things about one song, so one line, and
-   the direction last because it is the only one that is chosen rather than
-   typed. */
-/* Flex and not a grid, because the row is two fields on a phone and three on a
-   desk: an empty grid track still spends its gap, and the credits would sit
-   short of the edge for a button that is not there. */
-/* IT IS SHUT UNLESS SOMEBODY IS FILLING IT IN. A form is what you want for
-   the ten seconds you are typing into it and never again, so it costs its
-   height for those ten seconds and nothing for the rest of the song's life.
-   What stands in its place is .song-facts, which is the same information as a
-   line to read. */
-.song-meta {
-  display: flex; align-items: flex-end; flex-wrap: wrap; gap: 6px 20px;
-  margin: 0 0 14px; padding: 12px 14px;
-  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
-}
-.song-meta[hidden] { display: none; }
-.song-meta label { flex: 1 1 140px; min-width: 0; }
+/* Who wrote it and what kind of song it is, on the song itself: there is no
+   other page to keep them on any more. Three fields, and all three of them are
+   filled in once and read at a glance for the rest of the song's life.
+
+   IT IS NOT ON THE PAGE AT ALL. A form is what you want for the ten seconds
+   you are typing into it and never again, so it lives in a panel over the
+   page (see the song's own dialog) and the page under it does not move while
+   it is open. What stands in its place is .song-facts, which is the same
+   information as a line to read.
+
+   ONE FIELD UNDER THE NEXT, because the panel is the width of a form and not
+   the width of a screen: three fields in a row across a desk put "מילים" and
+   the line it belongs to half a metre apart. */
+.song-meta { display: grid; gap: 14px; }
+.song-meta label { min-width: 0; }
 
 /* The head of a song and the head of an evening are written, not filled in.
    The title above them is a bare line of text with no box around it, and a
@@ -1041,15 +1053,15 @@ body.on-song .top { border-bottom: 0; }
 }
 .top-facts:empty { display: none; }
 .top-facts .song-facts { flex: 0 1 auto; min-width: 0; flex-wrap: nowrap; }
-.top-facts .song-facts .song-by,
+.top-facts .song-facts .credit,
 .top-facts .song-facts .song-facts-ask {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
 /* WHAT THE SONG SAYS ABOUT ITSELF, AS A LINE. The same facts the form holds,
    read rather than filled: the names, the kinds, and nothing where there is
-   nothing. Pressing it opens the form under the strip, and it is a button
-   only where there is a form to open. */
+   nothing. Pressing it opens the form in a panel over the page, and it is a
+   button only where there is a form to open. */
 .song-facts {
   flex: 1 1 auto; min-width: 0;
   display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px;
@@ -1058,9 +1070,9 @@ body.on-song .top { border-bottom: 0; }
   border: 0; border-radius: 999px; padding: 4px 2px;
 }
 button.song-facts { cursor: pointer; }
-button.song-facts:hover .song-by, button.song-facts.is-open .song-by { color: var(--ink); }
+button.song-facts:hover .credit, button.song-facts.is-open .credit { color: var(--ink); }
 button.song-facts:hover .song-facts-ask { color: var(--accent); }
-.song-by { font-size: 14px; }
+.song-facts .credit { font-size: 14px; }
 /* A song with nothing said about it yet. Quiet, and clearly a question: an
    empty strip reads as a strip with nothing behind it. */
 .song-facts-ask { font-size: 14px; text-decoration: underline dotted; text-underline-offset: 3px; }

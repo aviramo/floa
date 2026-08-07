@@ -2387,7 +2387,7 @@
     /* FOUR, NOT TWO. The separator has to be read as a space between two
        different lines of the song rather than as a wide space inside one, and
        two gaps is about what a person leaves between two words. */
-    var SEP_GAPS = 4;
+    var SEP_GAPS = 5;
     var row = null;
 
     /* What the separator takes, in pixels. The gap's width is a fact of the
@@ -2403,26 +2403,23 @@
        third of a size is a solidus with a little to spare, and spare is the
        right way to be wrong here: a row that breaks a word early costs a word,
        and a row that runs over costs a reader the line. */
-    var sepW = SEP_GAPS * gapW + (sized[0].size || 18) * 0.35;
+    var sepW = SEP_GAPS * gapW;
 
-    /* --- THE MARK IS A CHARACTER OF THE ROW ----------------------------------
-       A solidus with room either side of it, and the solidus is a character
-       like any other on the line: it sits on the words' baseline because it is
-       standing on it, and at their size because it inherits it, and the only
-       thing left to say about it is its colour.
+    /* --- THE MARK IS DRAWN, NOT WRITTEN -------------------------------------
+       The separator is artificial spaces and nothing else, and the middle one
+       of them carries the mark: a diagonal painted onto the span itself.
 
-       It was drawn as a pseudo-element hung off the gap beside it for a while,
-       and that gap is a box of no height at all, so where the mark landed was
-       arithmetic against nothing. A character cannot land in the wrong place,
-       because it lands where the text does.
+       Painted rather than written, because every version of this that was a
+       glyph or a box hung beside one had the same weakness. The gap that
+       carries it is a box of no height, so anything positioned against it is
+       arithmetic against nothing, and a solidus in the text is a character in
+       a row of characters, which is the one thing this must not look like: it
+       is a fact about the screen and the rest of the row is the song.
 
-       IT LEANS THE WAY THE LINE RUNS. A solidus leans forward along the
-       reading direction, so a line going the other way wants the mirror of it,
-       or it leans back into the words it is separating. */
-    function separator(rtl) {
-      var half = new Array(Math.max(1, Math.round(SEP_GAPS / 2)) + 1).join(GAP);
-      return half + (rtl ? "/" : "\\") + half;
-    }
+       A background on the span cannot be put in the wrong place. It is the
+       span. */
+    var sep = new Array(SEP_GAPS + 1).join(GAP);
+    var MARK_AT = Math.floor(SEP_GAPS / 2);
 
     lines.forEach(function (line) {
       /* A heading, or a blank line between two verses, is a thing of its own
@@ -2474,7 +2471,7 @@
         var lead = "";
         var shared = !!row.pieces.length;
         if (shared) {
-          lead = separator(line.rtl);
+          lead = sep;
           row.used += sepW;
         }
 
@@ -2599,9 +2596,9 @@
            down BEFORE the offset is taken, so the chords of the piece after it
            are counted from the piece and not from the separator. */
         if (piece.lead) {
-          /* the solidus itself, which is the one character of the separator
-             that is ink: the gaps either side of it are room */
-          turns.push(text.length + (piece.lead.length - 1) / 2);
+          /* the middle gap of the run, which is the one the diagonal is
+             painted on: the others either side of it are room */
+          turns.push(text.length + MARK_AT);
           text += piece.lead;
         }
         var offset = text.length;
@@ -4929,12 +4926,13 @@
     var strip = el("div", "song-strip");
     var facts = null;
     var meta = null;
+    /* the panel the form is opened in, built at the end of it */
+    var metaPanel = null;
 
     if (editing) {
       /* Who wrote it, on the song itself. It belongs to it and there is no
          other page to keep it on any more. */
       meta = el("div", "song-meta");
-      meta.hidden = true;
 
       byFields = CREDITS.map(function (c) {
         var label = el("label", null, c.label);
@@ -5041,6 +5039,29 @@
       kindsRow.appendChild(kindsKnown);
       meta.appendChild(kindsRow);
 
+      /* THE PANEL THE FORM OPENS IN. Built here, with the form, and put on the
+         page shut: a dialog that nobody has opened draws nothing, and keeping
+         it on the page is what lets the two lists of suggestions fill
+         themselves in the background before anybody asks for them.
+
+         Escape shuts it and so does the dark behind it, both without a line of
+         code: that is what a dialog is. */
+      metaPanel = el("dialog", "dlg");
+      var metaBox = el("div", "dlg-in");
+      metaBox.appendChild(el("h2", null, "מי כתב, ואיזה סוג"));
+      metaBox.appendChild(meta);
+      var metaDone = el("div", "dlg-actions");
+      metaDone.appendChild(button("סיום", null, "ghost", function () { metaPanel.close(); }));
+      metaBox.appendChild(metaDone);
+      metaPanel.appendChild(metaBox);
+      /* A style left half typed in the field is a style somebody meant: the
+         way out of the panel counts as having finished saying it, the same as
+         walking out of the field does. */
+      metaPanel.addEventListener("close", function () {
+        addKind();
+        facts.classList.remove("is-open");
+      });
+
       /* The direction used to be one button up here, and it belonged to the
          whole song. It is a property of a LINE now and it is chosen down in the
          sheet, on the lines it is about (see the block bar): a song with a
@@ -5087,6 +5108,13 @@
          read rather than a grid to fill: the names, the kinds, and nothing
          where there is nothing.
 
+         IN THE SHAPE THE READER'S PAGE USES, which is a picture and a name for
+         each of them (see credits below). It was one line of names run
+         together with a comma, and that line cannot say which of the two each
+         name is: whoever wrote the words is rarely the one who wrote the tune,
+         and the pen and the note say which is which in the room a comma took.
+         One shape for the same fact, read or written.
+
          A song that has none of them says what is missing instead, because an
          empty strip is a strip that looks like it has nothing behind it. */
       facts = el("button", "song-facts");
@@ -5094,30 +5122,43 @@
 
       var showFacts = function () {
         facts.textContent = "";
-        var said = creditNames(song);
+        var said = credits(song);
         var kinds = styles(song);
         if (!said.length && !kinds.length) {
           facts.appendChild(el("span", "song-facts-ask", "מי כתב, ואיזה סוג"));
         } else {
-          if (said.length) facts.appendChild(el("span", "song-by", said.join(", ")));
+          said.forEach(function (c) {
+            var one = el("span", "credit");
+            one.appendChild(creditMark(c));
+            one.appendChild(el("span", null, c.name));
+            facts.appendChild(one);
+          });
           kinds.forEach(function (name) {
             facts.appendChild(el("span", "tag tag-style", name));
           });
         }
       };
 
-      /* Open while it is being filled and shut the moment it is not. Escape
-         and pressing the line again both shut it, and so does anything that
-         takes the page somewhere else. */
-      var openMeta = function (yes) {
-        meta.hidden = !yes;
-        facts.classList.toggle("is-open", yes);
-        showFacts();
-        if (yes && byFields[0]) byFields[0].focus();
-      };
-      facts.addEventListener("click", function () { openMeta(meta.hidden); });
-      meta.addEventListener("keydown", function (event) {
-        if (event.key === "Escape") { event.preventDefault(); openMeta(false); }
+      /* --- AND THE FORM IS A PANEL, NOT A ROW OF THE PAGE ---------------------
+         It used to open in place, under the strip, which is the whole width of
+         the screen spent on three fields: on a desk they stood in a line so
+         long that "מילים" and its own field were half a metre apart, and on a
+         phone they pushed the song off the bottom of the screen to say what a
+         button above them already said.
+
+         So it opens over the page instead, at the width a form of three fields
+         wants, and it is the same panel on both. What is behind it does not
+         move at all, which is the other half of it: filling this in is ten
+         seconds spent on something that is not the song, and the song should
+         be exactly where it was when those ten seconds are over.
+
+         There is no save button on it. Every field writes into the song as it
+         is typed, the same as everything else in this editor, so the only
+         thing left to do is to be finished. */
+      facts.addEventListener("click", function () {
+        facts.classList.add("is-open");
+        metaPanel.showModal();
+        if (byFields[0]) byFields[0].focus();
       });
 
       /* The line is the form's own reflection, so everything that writes into
@@ -5402,9 +5443,10 @@
       mine.forEach(function (node) { topBar.insertBefore(node, topBar.firstChild); });
     }
     app.appendChild(strip);
-    /* Under the strip and shut, so the height it takes is the height of
-       nothing until somebody asks for it. */
-    if (meta) app.appendChild(meta);
+    /* Shut, and a shut dialog is nothing on the page: no height, no row, no
+       trace. It goes with the song when the page is redrawn, which is the
+       whole of its cleaning up. */
+    if (metaPanel) app.appendChild(metaPanel);
 
     /* And now they are handed over, to be put in whichever of the two places
        the screen can hold them (see placeControls). */
