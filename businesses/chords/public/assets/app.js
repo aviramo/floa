@@ -2167,13 +2167,18 @@
            above it, so the rules stopped lining up down the window. And the
            page being exactly as wide as its slots is what keeps the rule
            between two pages from running out over the grey at both ends. */
-        page.style.width = Math.round(plan.cols * slot) + "px";
+        /* NOT ROUNDED, AND THAT IS NOT FUSSINESS. The lines were broken to a
+           width worked out from these same numbers, so a column rounded to a
+           different one is a column a hair narrower than the words that were
+           cut to fit it, and the last word of a row hangs out over the next
+           segment. Sub-pixel widths are what CSS is for. */
+        page.style.width = (plan.cols * slot) + "px";
         built.appendChild(page);
         inPage = 0;
       }
       col = el("div", "col");
-      col.style.width = Math.round(slot) + "px";
-      col.style.paddingInline = Math.round(plan.gutter / 2) + "px";
+      col.style.width = slot + "px";
+      col.style.paddingInline = (plan.gutter / 2) + "px";
       page.appendChild(col);
       inPage++;
       used = 0;
@@ -2195,7 +2200,7 @@
       Array.prototype.forEach.call(built.childNodes, function (pg) {
         while (pg.children.length < plan.cols) {
           var spare = el("div", "col is-empty");
-          spare.style.width = Math.round(slot) + "px";
+          spare.style.width = slot + "px";
           pg.appendChild(spare);
         }
       });
@@ -2333,22 +2338,81 @@
 
     var out = [];
 
-    /* A row belongs to ONE line of the song, so it is opened here, inside the
-       line being poured, and closes when that line is done. Nothing carries
-       over between lines any more: no leftover waiting to be joined, and no
-       state outside this loop for the next line to inherit. */
+    /* --- A LEFTOVER ROW TAKES THE LINE AFTER IT ------------------------------
+       The last row of a broken line is usually one word on an otherwise empty
+       row, and a row spent on one word is a row of the screen spent on
+       nothing. So the next line of the song starts there, on the same row,
+       and what separates them is a double gap: two of the artificial spaces
+       the format already has (see GAP), drawn and never stored.
+
+       A row is then not always one line of the song, and the whole of what
+       says so is that space. It is worth being clear that this is a trade and
+       not a free win: a row carrying the tail of one line and the head of
+       another is two things to take apart before either can be sung, and a
+       person playing from a phone is reading a line ahead with their hands
+       full. What buys it back is the room, which on a small screen is the
+       thing there is least of.
+
+       `row` lives outside the loop over lines, which is the whole mechanism:
+       the row a line ends on is still open when the next line starts. */
+    var SEP_GAPS = 2;
+    var row = null;
+
+    /* What the separator takes, in pixels. The gap's width is a fact of the
+       stylesheet, so it is asked of the stylesheet rather than guessed at
+       here: two places holding the same number is how they come to disagree. */
+    var gapW = 0;
+    var probe = sheet.querySelector(".ln-t .gap");
+    if (probe) gapW = probe.getBoundingClientRect().width;
+    if (!(gapW > 0)) gapW = (sized[0].size || 18) * 0.34;
+    var sepW = SEP_GAPS * gapW;
+    var sep = new Array(SEP_GAPS + 1).join(GAP);
+
     lines.forEach(function (line) {
-      if (line.keep) { out.push(line); return; }
+      /* A heading, or a blank line between two verses, is a thing of its own
+         and closes whatever row was open: nothing gets tacked onto it and it
+         gets tacked onto nothing. */
+      if (line.keep) { out.push(line); row = null; return; }
 
       var pos = 0;
       var tail = false;
+      /* Room enough for the separator and a character after it, or the row is
+         full and the line starts on a new one. */
+      /* THE SPACE A ROW BROKE ON WAS ALLOWED TO HANG PAST THE EDGE, because it
+         was the last thing on the row and there was nothing after it to push
+         off. Joined, there is: the separator and the next line follow it, and
+         the row comes out wider than the segment by exactly one space. So the
+         row gives it back before it takes anything else. */
+      if (row && row.pieces.length) {
+        var back = row.pieces[row.pieces.length - 1];
+        var text = back.line.text;
+        if (back.to > back.from && text[back.to - 1] === " " &&
+            !back.line.chords.some(function (c) { return c.pos === back.to - 1; })) {
+          back.to--;
+          row.used -= back.line.advance[back.to];
+        }
+      }
+
+      var joined = !!(row && row.used + sepW + line.advance[0] <= row.room);
 
       while (pos < line.cells) {
-        var row = { tail: tail, pieces: [], used: 0, rtl: line.rtl };
-        row.room = full - (tail ? indent : 0);
-        out.push(row);
+        if (joined) {
+          joined = false;
+        } else {
+          row = { tail: tail, pieces: [], used: 0, rtl: line.rtl };
+          row.room = full - (tail ? indent : 0);
+          out.push(row);
+        }
 
-        var avail = row.room;
+        /* The separator is part of what this row has already spent, and the
+           piece that follows it starts after it. */
+        var lead = "";
+        if (row.pieces.length) {
+          lead = sep;
+          row.used += sepW;
+        }
+
+        var avail = row.room - row.used;
         var x = 0, at = pos, space = -1;
         while (at < line.cells && x + line.advance[at] <= avail) {
           if (at > pos && at < line.text.length && line.text[at] === " ") space = at;
@@ -2360,19 +2424,25 @@
         if (at >= line.cells) {
           end = line.cells;
         } else {
-          /* The space a row breaks ON does not have to fit on it: it is the
-             last thing on the row and there is nothing after it to push off
-             the edge. Without this a line whose words end exactly at the
-             screen's edge loses the whole last word to the row below. */
+          /* THE SPACE A ROW BREAKS ON IS NOT PUT ON IT. It used to be, on the
+             grounds that it is the last thing on the row and there is nothing
+             after it to push off the edge; that stopped being true when a row
+             began taking the line after it, and a row that is three pixels
+             wider than the segment it stands in is a word printed over the
+             next segment.
+
+             Nothing is lost by leaving it off. The row after this one starts
+             at that space and steps over it, unless a chord is sitting on it,
+             in which case it is kept and carried along (see below). */
           if (at > pos && at < line.text.length && line.text[at] === " ") space = at;
-          end = space > pos ? space + 1 : at;
+          end = space > pos ? space : at;
 
           /* Nothing fits at all: one character, because a word longer than the
              whole screen has to be cut somewhere. */
           if (end <= pos) end = pos + 1;
         }
 
-        var piece = { line: line, from: pos, to: end };
+        var piece = { line: line, from: pos, to: end, lead: lead };
         row.pieces.push(piece);
         line.pieces.push(piece);
 
@@ -2391,6 +2461,8 @@
         if (pos < line.cells) {
           row.more = true;
           tail = true;
+          /* the rest of this line needs a row of its own */
+          row = null;
         }
       }
 
@@ -2426,6 +2498,10 @@
          because the pieces are what the chords are claimed against, and one of
          them is still a list of one. */
       desc.pieces.forEach(function (piece) {
+        /* The double gap that says a new line of the song begins here, laid
+           down BEFORE the offset is taken, so the chords of the piece after it
+           are counted from the piece and not from the separator. */
+        if (piece.lead) text += piece.lead;
         var offset = text.length;
         piece.line.chords.forEach(function (c) {
           if (c.pos < piece.claimFrom || c.pos >= piece.claimTo) return;

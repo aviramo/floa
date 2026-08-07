@@ -154,7 +154,13 @@ const POURED = `(() => {
   return JSON.stringify({
     rows: rows.length,
     conts: rows.filter((l) => l.classList.contains("is-cont")).length,
-    seps: document.querySelectorAll(".sheet .ln-t .sp").length,
+    /* Rows carrying two lines of the song, counted by the mark that says so:
+       two of the artificial spaces side by side. One on its own is room
+       somebody opened between two letters; two together is the separator the
+       pour lays down where a new line begins on a row already in use. */
+    joins: [...document.querySelectorAll(".sheet .ln-t")].filter((t) =>
+      [...t.children].some((c, i) =>
+        c.classList.contains("gap") && t.children[i + 1] && t.children[i + 1].classList.contains("gap"))).length,
     wide,
     where: innerWidth + "px wide, narrow=" + matchMedia("(max-width: 620px)").matches +
       ", song " + (sheet ? getComputedStyle(sheet).getPropertyValue("--song-size") : "?") +
@@ -531,12 +537,18 @@ try {
         unknown("narrow: a line that does not fit is broken",
           `${poured.rows} rows for ${LINES_IN_BODY} lines after ${drew.frames} frames: the sheet was never poured here (${poured.where})`);
       }
-      /* One line of the song per row. A leftover used to pull the line after
-         it up onto its own row, with a mark between the two saying where one
-         ended and the other began; a row is one line now and there is nothing
-         to mark. */
-      check("narrow: one row holds one line of the song", poured.seps === 0,
-        `${poured.seps} separators, so a row is carrying two lines`);
+      /* A LEFTOVER ROW TAKES THE LINE AFTER IT. The last row of a broken line
+         is usually one word on an otherwise empty row, so the next line of the
+         song starts there, and what separates them is two of the artificial
+         spaces the format already has: drawn, never stored.
+
+         What this looks for is the pair of them side by side, which is the
+         only mark there is that a row is carrying two lines. It is worth
+         checking because the alternative reading of the same picture, a row
+         that simply ran two lines together with nothing between, is a song
+         saying something it does not say. */
+      check("narrow: a leftover row takes the next line behind a double gap",
+        poured.joins > 0, `${poured.joins} rows carry two lines (${poured.where})`);
       check("narrow: nothing is left wider than the screen", poured.wide.length === 0,
         JSON.stringify(poured.wide));
 
