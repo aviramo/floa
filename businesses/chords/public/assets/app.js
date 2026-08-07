@@ -4879,7 +4879,10 @@
        already say: a value that goes up and down under an arrow is a key, and
        under two letters is a size. The word is still there for anyone hovering
        or listening. */
-    function control(icon, label, valueNode, less, more) {
+    /* The picture is a button when there is something behind it: the
+       transposition's picture is the way to make the key on screen the song's
+       own (see askKey). Everywhere else it is what it looks like, a name. */
+    function control(icon, label, valueNode, less, more, press) {
       var ctl = el("span", "ctl");
 
       /* The picture and then the number, in the order they are read: what it
@@ -4888,10 +4891,14 @@
          now, and a stacked pair is twice the height of the tallest thing that
          has any business being here. */
       var dial = el("span", "dial");
-      var lbl = el("span", "lbl");
+      var lbl = el(press ? "button" : "span", "lbl");
       lbl.appendChild(svg(icon));
       lbl.title = label;
       lbl.setAttribute("aria-label", label);
+      if (press) {
+        lbl.type = "button";
+        lbl.addEventListener("click", function () { press(lbl); });
+      }
       dial.appendChild(lbl);
       if (valueNode) dial.appendChild(valueNode);
       ctl.appendChild(dial);
@@ -4918,25 +4925,30 @@
        "does this start on Am or on Dm" is a decision about the song itself and
        somebody has to be able to make it.
 
-       So in the editor the number is a button. Press it, press "ברירת מחדל",
+       So in the editor the picture is a button. Press it, press "ברירת מחדל",
        and what is on the screen becomes what the song IS: every chord is
        written down as it is being shown, and the transposition drops to zero
        because there is nothing left to transpose. Nothing on screen moves,
        which is the point.
 
-       It is not offered at zero. There is nothing to make default when the
-       song is already being shown as itself. */
-    var value = el(editing && !coming ? "button" : "span", "val", "0");
-    if (editing && !coming) {
-      value.type = "button";
-      value.title = "לקבוע את הסולם הזה כברירת המחדל של השיר";
-      value.addEventListener("click", function () { askKey(value); });
-    }
-    tools.appendChild(control(
+       It is not offered at zero, and at zero it is not a button either: there
+       is nothing to make default when the song is already being shown as
+       itself.
+
+       ZERO IS NOT WRITTEN DOWN. "This song is in the key it is written in" is
+       what the page already says, in the chords on it, so a nought beside the
+       picture was a number nobody read standing where a number means
+       something. The count appears the moment the page is in some other key,
+       says how far from home it is, and goes again when it comes back. */
+    var value = el("span", "val");
+    var pitch = control(
       ICON.pitch, "טרנספוזיציה", value,
       function () { setSemis(semis - 1); },
-      function () { setSemis(semis + 1); }
-    ));
+      function () { setSemis(semis + 1); },
+      editing && !coming ? askKey : null
+    );
+    var keyBtn = pitch.querySelector("button.lbl");
+    tools.appendChild(pitch);
 
     /* THE SIZE IS NOT HERE ANY MORE. It was two buttons and a number, three
        things on a strip whose whole point is to be short, for a setting with
@@ -5195,6 +5207,15 @@
     function setSemis(next) {
       semis = next > 11 ? -11 : next < -11 ? 11 : next;
       value.textContent = semis > 0 ? "+" + semis : String(semis);
+      /* hidden rather than emptied: an empty box 2.5 characters wide is a hole
+         between the picture and the buttons */
+      value.hidden = !semis;
+      if (keyBtn) {
+        keyBtn.disabled = !semis;
+        var says = semis ? "לקבוע את הסולם הזה כברירת המחדל של השיר" : "טרנספוזיציה";
+        keyBtn.title = says;
+        keyBtn.setAttribute("aria-label", says);
+      }
       draw();
     }
 
@@ -5333,7 +5354,9 @@
     function keyOutside(event) {
       if (!keyMenu) return;
       if (keyMenu.contains(event.target)) return;
-      if (value.contains && value.contains(event.target)) return;
+      /* the picture it hangs from: pressing that shuts it by itself, and
+         shutting it here first would only have it opened again */
+      if (keyBtn && keyBtn.contains(event.target)) return;
       closeKeyMenu();
     }
 

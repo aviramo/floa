@@ -1015,22 +1015,21 @@ button.song-facts:hover .song-facts-ask { color: var(--accent); }
    three pictures were in the page and none of them was on the screen. */
 .tools .lbl { display: flex; color: var(--ink-soft); }
 .tools .lbl svg { width: 15px; height: 15px; }
+/* In the editor the transposition's picture is a button: pressing it offers to
+   make the key on screen the song's own. It looks like the picture it is, and
+   there is nothing behind it while the song is in its own key. */
+.tools button.lbl {
+  appearance: none; padding: 0; border: 0; background: none;
+  font: inherit; cursor: pointer;
+}
+.tools button.lbl:hover:not(:disabled) { color: var(--accent); }
+.tools button.lbl:disabled { cursor: default; }
 /* wide enough for -11 and no wider, so the number does not stand in a hole of
    its own between the picture and the buttons */
 .tools .val {
   font-size: 14px; font-weight: 700; min-width: 2.5ch;
   text-align: center; direction: ltr; font-variant-numeric: tabular-nums;
 }
-/* In the editor the transposition's number is a button: pressing it offers to
-   make the key on screen the song's own. It looks like the number it is until
-   the pointer is on it, because that is what it is most of the time. */
-button.val {
-  appearance: none; cursor: pointer; font-family: inherit; color: inherit;
-  background: none; border: 1px solid transparent; border-radius: 6px;
-  padding: 0 3px; line-height: 1.2;
-}
-button.val:hover { border-color: var(--line); background: #fff; }
-
 /* A line never wraps by itself (white-space: pre on .ln-t), so a long line
    overflows and the whole sheet scrolls sideways. That is deliberate: the
    chord row and the word row have to move together, or a chord stops being
