@@ -68,7 +68,6 @@
     tag: '<path d="M12.8 3.6H20v7.2l-9.1 9.1-7.2-7.2 9.1-9.1Z"/><circle cx="16.5" cy="7.1" r="1.2"/>',
     check: '<path d="M5 13l4 4 10-11"/>',
     /* a box with a tick in it: everything on screen, at once */
-    checkAll: '<rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M7.5 12l3 3 6-6.5"/>',
     /* four corners opening outwards: the song, and nothing else, on the whole
        of the screen */
     /* A CLOCK WITH A HAND GOING BACKWARDS, which is the picture everything else
@@ -3861,6 +3860,7 @@
          it with the shown songs all ticked and they all let go. So it is safe
          to press twice and it never reaches past what is on screen. */
       var allBtn = null;
+      var allTick = null;
       var shownNow = [];
 
       function allShownPicked() {
@@ -3882,9 +3882,20 @@
       /* AT THE HEAD OF THE ROW, before anything it acts on. It says "all of
          these", and "these" is everything after it: the chips that narrowed
          the wall and the wall itself. Standing at the far end it read as one
-         more thing hanging off the row rather than the word that opens it. */
+         more thing hanging off the row rather than the word that opens it.
+
+         AND IT IS A CHECKBOX, the same box at the same size as the one in the
+         corner of every card, because it does the same thing to all of them at
+         once. An icon of a ticked square inside a button said "a control to do
+         with ticking"; a checkbox says whether they are ticked, which is the
+         thing worth knowing at a glance. Some of them ticked has a face of its
+         own here and no icon could have carried it. */
       if (auth.in) {
-        allBtn = iconBtn(ICON.checkAll, "סימון כל מה שמוצג", pickAll);
+        allBtn = el("label", "pick-all");
+        allTick = el("input");
+        allTick.type = "checkbox";
+        allTick.addEventListener("change", pickAll);
+        allBtn.appendChild(allTick);
         kindsRow.appendChild(allBtn);
       }
       kindsRow.appendChild(tallies);
@@ -4094,9 +4105,14 @@
 
         shownNow = shown;
         if (allBtn) {
-          allBtn.classList.toggle("is-on", allShownPicked());
-          allBtn.title = allShownPicked() ? "ביטול הסימון של כל מה שמוצג" : "סימון כל מה שמוצג";
-          allBtn.setAttribute("aria-label", allBtn.title);
+          /* All of them, none of them, or the third state a checkbox has for
+             exactly this: some. It is not a value anybody can type in, it is
+             only ever set from here, and it is the truth about the wall. */
+          var allOn = allShownPicked();
+          allTick.checked = allOn;
+          allTick.indeterminate = !allOn && shown.some(function (s) { return picked[s.id]; });
+          allBtn.title = allOn ? "ביטול הסימון של כל מה שמוצג" : "סימון כל מה שמוצג";
+          allTick.setAttribute("aria-label", allBtn.title);
         }
         shown.forEach(function (s) { list.appendChild(songRow(s, refresh, marks[s.id], tickBox(s))); });
         tick(list);
