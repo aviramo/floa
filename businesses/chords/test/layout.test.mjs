@@ -71,7 +71,7 @@ window.fetch = (url) => Promise.resolve(new Response(
   { status: 200, headers: { "content-type": "application/json" } }));
 <\/script>
 </head><body>
-<header class="top"><div class="wrap top-in"><a class="brand" href="/chords/">א</a><div class="top-actions" id="topActions"></div></div></header>
+<header class="top"><div class="wrap top-in"><a class="brand" href="/chords/">א</a><div class="top-where" id="topWhere"></div><div class="top-find" id="topFind"></div><div class="top-actions" id="topActions"></div></div></header>
 <main id="app" class="wrap"></main>
 <div id="toast" class="toast"></div>
 <dialog id="authDialog" class="dlg"><form id="authForm"><p class="err" id="authErr"></p><button type="button" data-close></button><button type="submit"></button></form></dialog>

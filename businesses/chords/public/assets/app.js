@@ -1107,7 +1107,7 @@
      than the song's. */
   var RESERVED_SLUGS = {
     "new": true, "edit": true, "evenings": true, "deleted": true,
-    "creators": true, "creator": true,
+    "creators": true, "creator": true, "style": true,
   };
 
   /* Two decimals is finer than any eye and any font, and it keeps a stored
@@ -2333,7 +2333,11 @@
     } catch (e) {
       node.contentEditable = "true";
     }
-    if (node.contentEditable === "true") {
+    /* Once per node. Everything this is called on used to be built fresh for
+       the page it was on; the name in the bar is not, it outlives every view,
+       and a listener hung on it per page is a listener per page. */
+    if (node.contentEditable === "true" && !node.dataset.pasted) {
+      node.dataset.pasted = "1";
       node.addEventListener("paste", function (event) {
         event.preventDefault();
         var text = (event.clipboardData || window.clipboardData).getData("text").replace(/\s+/g, " ");
@@ -2641,6 +2645,65 @@
     if (auth.in) then(); else auth.signInWithGoogle();
   }
 
+  /* --- WHAT PAGE THIS IS ---------------------------------------------------
+     Said once and read twice: the tab's name and the bar's. They were two
+     lines in every view saying the same thing in two shapes, which is two
+     places to forget.
+
+     `bar` is what the bar shows and `tab` is what the tab shows, and they are
+     the same sentence unless a page says otherwise. The library is the one
+     that does: on the bar it is the shelf it is showing, and in the tab it is
+     the app, because a tab among thirty others is asked which app this is. */
+  function where(bar, tab) {
+    var node = document.getElementById("topWhere");
+    document.title = tab || (bar ? bar + " | אקורדים" : "אקורדים");
+    /* The test harness builds its own bar and has no slot for this. */
+    if (!node) return null;
+    node.textContent = bar || "";
+    node.removeAttribute("contenteditable");
+    node.removeAttribute("data-empty");
+    node.onkeydown = null;
+    node.oninput = null;
+    node.onblur = null;
+    return node;
+  }
+
+  /* AND WHERE THAT NAME IS A THING, IT IS THE FIELD FOR IT. A song, an
+     evening and a person are each called something, and the bar is where that
+     something is now typed: the page carried a second copy as a heading, and
+     two editable copies of one name are two places for it to go wrong.
+
+     `each` runs on every keystroke, for whatever has to keep up with the name
+     as it is typed. `done` runs when the typing is finished, which is Enter or
+     the field being left, and is where anything expensive belongs. Escape puts
+     back what was there and leaves. */
+  function whereEditable(name, empty, each, done) {
+    var node = where(name);
+    if (!node) return;
+    var was = name || "";
+
+    node.dataset.empty = empty;
+    makeEditable(node);
+
+    node.oninput = function () { if (each) each(node.textContent.trim()); };
+    node.onkeydown = function (event) {
+      /* one line, so Enter is not a newline here, it is done */
+      if (event.key === "Enter") { event.preventDefault(); return node.blur(); }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        node.textContent = was;
+        if (each) each(was);
+        node.blur();
+      }
+    };
+    node.onblur = function () {
+      var now = node.textContent.trim();
+      if (now === was) return;
+      was = now;
+      if (done) done(now);
+    };
+  }
+
   /* --- ONE BOX, IN THE BAR, THAT FINDS EVERYTHING --------------------------
      It used to be on the library's own page, which is the one page where a
      search box is worth least: the songs are already on the screen and the
@@ -2770,6 +2833,29 @@
       });
     });
 
+    /* WHAT KIND OF SONG, AS A THING RATHER THAN AS A WORD ON ONE. A style is
+       a shelf: "the circle songs" is an answer somebody wants the whole of,
+       and until now the only way to it was to find the library, find the row
+       of chips over it and press the right one.
+
+       It ranks above the songs that merely carry the word, which is the same
+       rule the others follow: the shelf itself is what was meant, and the
+       twenty songs on it are underneath. */
+    var shelves = {};
+    songs.forEach(function (song) {
+      styles(song).forEach(function (name) { shelves[name] = (shelves[name] || 0) + 1; });
+    });
+    Object.keys(shelves).forEach(function (name) {
+      if (name.toLowerCase().indexOf(q) < 0) return;
+      out.push({
+        hit: HIT_NEAR, order: 2,
+        name: name,
+        said: shelves[name] === 1 ? "שיר אחד" : shelves[name] + " שירים",
+        tags: [{ kind: "kind", words: "סגנון" }],
+        href: BASE + "/style/" + encodeURIComponent(name),
+      });
+    });
+
     creatorsOf(songs).forEach(function (person) {
       if (person.name.toLowerCase().indexOf(q) < 0) return;
       out.push({
@@ -2787,7 +2873,7 @@
       var hit = near.indexOf(q) >= 0 ? HIT_NEAR : (eveningHay(evening, titles).indexOf(q) >= 0 ? HIT_DEEP : 0);
       if (!hit) return;
       out.push({
-        hit: hit, order: 2,
+        hit: hit, order: 3,
         name: evening.title || "ערב בלי שם",
         said: whenWhere(evening),
         tags: [{ kind: "kind", words: "ערב" }],
@@ -2829,16 +2915,6 @@
     findField.placeholder = "חיפוש שיר, יוצר או ערב";
     findField.setAttribute("aria-label", "חיפוש שיר, יוצר או ערב");
     findBox.appendChild(findField);
-
-    /* THE WAY BACK OUT, AND ONLY ON A PHONE. There the box takes the whole
-       bar while it is open (see .top-find in the stylesheet), so the buttons
-       it covered need a press that gives them back, and Escape is not a key
-       anybody has on a phone. On a desk nothing is covered and this is not
-       shown. */
-    var shut = iconBtn(ICON.close, "סגירת החיפוש", clearFind);
-    shut.classList.add("find-shut");
-    findBox.appendChild(shut);
-
     slot.appendChild(findBox);
 
     findOut = el("div", "find-out");
@@ -2846,12 +2922,9 @@
     slot.appendChild(findOut);
 
     /* A press anywhere on the box is a press on the field. On a phone the
-       field is nothing but a magnifying glass until it is opened, and a
-       glass that has to be hit exactly is a glass nobody hits. */
-    findBox.addEventListener("click", function (event) {
-      if (event.target === shut || shut.contains(event.target)) return;
-      openFind();
-    });
+       field is nothing but a magnifying glass until it is opened, and a glass
+       that has to be hit exactly is a glass nobody hits. */
+    findBox.addEventListener("click", openFind);
 
     findField.addEventListener("input", function () {
       clearTimeout(findTimer);
@@ -2992,7 +3065,11 @@
 
   /* --- the index ---------------------------------------------------------- */
 
-  function viewIndex() {
+  /* `shelf`, when there is one, is the style this page opened narrowed to.
+     It is the same narrowing the chips do, arrived at from the address rather
+     than from a press: one state, two ways in. */
+  function viewIndex(shelf) {
+    where(shelf || "שירים", shelf ? null : "אקורדים");
     setBusy("טוען שירים");
 
     db.list().then(function (songs) {
@@ -3199,7 +3276,7 @@
         paint();
       }
 
-      var kind = null;
+      var kind = shelf || null;
       var kindsRow = el("div", "kinds-row");
       var kinds = el("div", "kinds");
       kindsRow.appendChild(tallies);
@@ -3260,6 +3337,18 @@
           chip.title = kind === key ? "לחיצה מחזירה את כל השירים" : "לחיצה מציגה רק את אלה";
           chip.addEventListener("click", function () {
             kind = kind === key ? null : key;
+            /* The address follows the shelf, WITHOUT leaving the page: this is
+               the same view the address /style/<name> opens, so pressing a
+               chip should leave you somewhere you could have arrived at, and
+               somewhere you can send to somebody. Replaced rather than pushed,
+               because narrowing a list is not a place you go back from one
+               chip at a time.
+
+               Only for a style that HAS a name. "no style yet" is a real shelf
+               and it is not a word, so there is nothing to put in an address. */
+            var named = typeof kind === "string" ? kind : null;
+            history.replaceState(null, "", named ? BASE + "/style/" + encodeURIComponent(named) : BASE + "/");
+            where(named || "שירים", named ? null : "אקורדים");
             paint();
           });
           kinds.appendChild(chip);
@@ -3460,7 +3549,7 @@
      address from its title, or delete it for good, which is the only thing in
      this app that cannot be taken back and asks accordingly. */
   function viewDeleted() {
-    document.title = "שירים שנמחקו | אקורדים";
+    where("שירים שנמחקו");
     if (!auth.in) return needSignIn();
 
     setBusy("טוען");
@@ -3874,8 +3963,45 @@
     return li;
   }
 
+  /* --- CALLING SOMEBODY SOMETHING ELSE --------------------------------------
+     A person has no row to edit, so renaming one is renaming them on every
+     song that credits them. Which is the thing this shape of data costs, and
+     the thing it should therefore make cheap: two spellings of one person are
+     two people here (see creatorsOf), and until now the only cure was opening
+     a dozen songs and fixing each by hand.
+
+     It writes the name into whichever of the two credits held the old one, on
+     each song separately, and it does not touch the songs themselves: a
+     credit is a fact about who made a song, not a word of it.
+
+     WHAT IT CANNOT DO IS SOMEBODY ELSE'S SONG. Only the account that owns a
+     song may write to it, which the database enforces and this cannot talk
+     its way around, so the answer says how many rows actually took it rather
+     than claiming the lot.
+
+     Renaming somebody to a name the library already has MERGES the two, and
+     that is not a mishap, it is the commonest reason to do this at all. */
+  function renameCreator(was, now) {
+    var songs = songsBy(state.songs || [], was);
+    var done = 0;
+
+    return Promise.all(songs.map(function (song) {
+      var patch = {};
+      CREDITS.forEach(function (c) {
+        if (String(song[c.field] || "").trim() === was) patch[c.field] = now;
+      });
+      if (!Object.keys(patch).length) return null;
+      return db.update(song.id, patch).then(function () {
+        done++;
+        /* the row in hand follows the write, so nothing on the page is
+           reading a name the database no longer holds */
+        Object.keys(patch).forEach(function (field) { song[field] = now; });
+      }).catch(function () { /* counted by not being counted */ });
+    })).then(function () { return done; });
+  }
+
   function viewCreators() {
-    document.title = "יוצרים | אקורדים";
+    where("יוצרים");
     setBusy("טוען יוצרים");
 
     db.list().then(function (songs) {
@@ -3899,11 +4025,12 @@
 
   function viewCreator(name) {
     name = String(name || "").trim();
-    document.title = (name || "יוצר") + " | אקורדים";
+    where(name || "יוצר");
     setBusy("טוען שירים");
 
     db.list().then(function (songs) {
       seedSongs(songs || []);
+      state.songs = songs || [];
       var mine = songsBy(songs || [], name);
       app.innerHTML = "";
 
@@ -3918,13 +4045,35 @@
         return;
       }
 
-      /* The name as a heading, and beside it what this person did across the
-         library as a whole. The tag on each card below says what they did on
-         THAT song, which is not the same fact: somebody can have written the
+      /* THE NAME IS IN THE BAR, AND IT IS THE FIELD FOR IT. A person is not a
+         row anywhere, so this is the only place they are called anything: what
+         is typed here is written onto every song that credits them.
+
+         Only for somebody signed in, because only they can write a song at
+         all. A visitor reads the name.
+
+         It commits when the typing is finished rather than on the keystroke,
+         which is not a nicety: every letter would otherwise be a write to a
+         dozen rows and a new address for the page. */
+      if (auth.in) {
+        whereEditable(name, "שם היוצר", null, function (next) {
+          if (!next || next === name) return where(name);
+          renameCreator(name, next).then(function (done) {
+            if (!done) return toast("לא הצלחנו לשנות את השם", true);
+            toast(done === 1 ? "השם שונה בשיר אחד" : "השם שונה ב-" + done + " שירים");
+            /* the address is the name, so it moves with it */
+            go(BASE + "/creator/" + encodeURIComponent(next));
+          });
+        });
+      }
+
+      /* What the head still carries: what this person did across the library
+         as a whole. The tag on each card below says what they did on THAT
+         song, which is not the same fact, since somebody can have written the
          words of one and the tune of another. */
       var head = el("div", "song-head");
       var top = el("div", "head-top");
-      top.appendChild(el("h1", null, name));
+      top.appendChild(el("h1", "on-paper", name));
       var tags = el("div", "head-tags");
       var roles = {};
       mine.forEach(function (song) {
@@ -3989,7 +4138,6 @@
      song without anybody asking for it, and the way to do that on purpose is
      the restore button in the band at the top. */
   function renderSong(song, past) {
-    document.title = (past ? "גרסה של " : "") + (song.title || "שיר חדש") + " | אקורדים";
 
     /* Now there is something on the page to print, and the bar can say so. The
        database answers after the routing has already painted the bar once, so
@@ -4083,26 +4231,32 @@
 
     var head = el("div", "song-head");
 
-    /* The name, and at the other end of its line whatever the song has to say
-       about itself. A label under the title is a line of the page spent on two
-       words, and on a phone the page is the song. */
-    var headTop = el("div", "head-top");
+    /* THE NAME IS IN THE BAR. It was a heading here, thirty pixels of it, and
+       the bar over it said what app you were in; now the bar says which song
+       this is, which is the one thing about the page that is worth carrying
+       down it as you scroll. The heading is kept for paper, where there is no
+       bar to carry anything.
 
-    var title = el("h1", null, song.title);
-    if (editing) {
-      /* A name that has not been typed yet is nowhere to click: an empty
-         contenteditable is zero pixels wide. So it says what it wants, the way
-         an evening's name does, and the word goes the moment a letter lands on
-         it. It is also the one field the song cannot be saved without, its
-         address being made from it. */
-      title.dataset.empty = "שם השיר";
-      makeEditable(title);
-      title.addEventListener("input", function () { song.title = title.textContent.trim(); mark(); });
-      title.addEventListener("keydown", function (event) {
-        /* one line, so Enter is not a newline here, it is done */
-        if (event.key === "Enter") { event.preventDefault(); title.blur(); }
+       A version is read and not written, so its name is a name and not a
+       field. Everything else about a version says the same. */
+    var title = el("h1", "on-paper", song.title);
+
+    if (past || !editing) {
+      where((past ? "גרסה של " : "") + (song.title || "שיר חדש"));
+    } else {
+      whereEditable(song.title, "שם השיר", function (typed) {
+        song.title = typed;
+        title.textContent = typed;
+        /* the tab follows the name as it is typed, since the tab IS the name */
+        document.title = (typed || "שיר חדש") + " | אקורדים";
+        mark();
       });
+      document.title = (song.title || "שיר חדש") + " | אקורדים";
     }
+
+    /* What the head still carries: whatever the song has to say about itself,
+       at the end of the line the name used to start. */
+    var headTop = el("div", "head-top");
     headTop.appendChild(title);
     head.appendChild(headTop);
 
@@ -6275,7 +6429,6 @@
             keepVersion(row);
           }
 
-          document.title = name + " | אקורדים";
           var here = BASE + "/" + encodeURIComponent(row.slug);
           if (decodeURIComponent(location.pathname) !== decodeURIComponent(here)) {
             history.replaceState(null, "", here);
@@ -6418,7 +6571,7 @@
      is a page that has to be left before anything can be done. */
 
   function notFound(slug) {
-    document.title = "לא נמצא | אקורדים";
+    where("לא נמצא");
     app.innerHTML = "";
     var box = el("div", "center");
     box.appendChild(el("p", null, 'אין שיר בשם "' + slug.replace(/_/g, " ") + '".'));
@@ -6566,7 +6719,7 @@
   }
 
   function viewVersions(slug) {
-    document.title = "גרסאות | אקורדים";
+    where("גרסאות");
     if (!auth.in) return needSignIn("הגרסאות של שיר שייכות לחשבון שכתב אותו. מה שפורסם פתוח לכולם, והדרך שהשיר עבר עד שם לא.");
 
     setBusy("טוען את הגרסאות");
@@ -6574,7 +6727,7 @@
       if (!song) return notFound(slug);
 
       return versions.of(song.id).then(function (rows) {
-        document.title = "גרסאות של " + (song.title || "שיר") + " | אקורדים";
+        where("גרסאות של " + (song.title || "שיר"));
         app.innerHTML = "";
 
         function back() { go(BASE + "/" + encodeURIComponent(song.slug)); }
@@ -6677,7 +6830,7 @@
   }
 
   function noVersion(song) {
-    document.title = "לא נמצא | אקורדים";
+    where("לא נמצא");
     app.innerHTML = "";
     var box = el("div", "center");
     box.appendChild(el("p", null, "הגרסה הזאת לא נמצאה."));
@@ -6758,7 +6911,7 @@
   }
 
   function noEvening() {
-    document.title = "לא נמצא | אקורדים";
+    where("לא נמצא");
     app.innerHTML = "";
     var box = el("div", "center");
     box.appendChild(el("p", null, "הערב הזה לא נמצא. אולי הוא נמחק, ואולי הוא של חשבון אחר."));
@@ -6777,7 +6930,7 @@
      the answer to any of them on its own. The title is the page's own state
      rather than any of the three. */
   function needSignIn(said) {
-    document.title = "צריך חשבון | אקורדים";
+    where("צריך חשבון");
     app.innerHTML = "";
     var box = el("div", "center");
     box.appendChild(el("p", null, said || "ערבי השירה שייכים לחשבון. כל אחד רואה, מתכנן ומוחק רק את שלו."));
@@ -6819,7 +6972,7 @@
   }
 
   function viewEvenings() {
-    document.title = "ערבי שירה | אקורדים";
+    where("ערבי שירה");
     setBusy("טוען ערבים");
 
     /* The names come along, because they are what a row of this list shows.
@@ -6877,17 +7030,10 @@
 
         a.appendChild(box);
 
-        /* WHAT KIND OF THING THIS CARD IS. On its own page it is the only
-           kind there is and the word is spare; it is the same word the box in
-           the bar puts on an evening among songs and people, and a card that
-           reads one way in a list of results and another way here would be
-           two cards. */
-        var side = el("div", "side");
-        var tags = el("div", "side-tags");
-        tags.appendChild(tag("kind", "ערב"));
-        side.appendChild(tags);
-        a.appendChild(side);
-
+        /* NO CHIP SAYING "ערב". Every card on this page is one, so the word is
+           a label on a shelf where nothing else is stocked. It is worth
+           saying among the search results, where an evening stands next to
+           songs and people, and it is worth saying nowhere else. */
         li.appendChild(a);
         list.appendChild(li);
       });
@@ -6923,7 +7069,6 @@
   }
 
   function renderEvening(evening, library) {
-    document.title = (evening.title || "ערב חדש") + " | אקורדים";
 
     /* Everything here can be changed, and there is no other state for this
        page to be in: an evening is its account's, so whoever is looking at one
@@ -6954,18 +7099,17 @@
 
     var head = el("div", "song-head");
 
-    var title = el("h1", "ev-title", evening.title);
-    title.dataset.empty = "שם הערב";
-    makeEditable(title);
-    title.addEventListener("input", function () {
-      evening.title = title.textContent.trim();
-      document.title = (evening.title || "ערב חדש") + " | אקורדים";
+    /* The name is in the bar, like a song's, and the heading here is for
+       paper: an evening is printed and handed round, and a sheet with no name
+       on it is a list of songs. */
+    var title = el("h1", "ev-title on-paper", evening.title);
+    whereEditable(evening.title, "שם הערב", function (typed) {
+      evening.title = typed;
+      title.textContent = typed;
+      document.title = (typed || "ערב חדש") + " | אקורדים";
       mark();
     });
-    title.addEventListener("keydown", function (event) {
-      /* one line, so Enter is not a newline here, it is done */
-      if (event.key === "Enter") { event.preventDefault(); title.blur(); }
-    });
+    document.title = (evening.title || "ערב חדש") + " | אקורדים";
     head.appendChild(title);
 
     /* When and where, twice, and only ever one of the two visible: the fields
@@ -7814,9 +7958,12 @@
     /* the header follows the address, because what it offers depends on it.
        Nothing is printable until a view says it is, and every address starts
        out as not that. */
-    /* A new page is a new question. Whatever the box in the bar was showing
-       is an answer about where you have just been. */
+    /* A new page is a new question, and the name of the last one is an answer
+       about where you have just been. Both go before anything is drawn: what
+       the bar says while a page loads should be nothing, not the page before
+       it. */
     clearFind();
+    where("");
     state.printable = false;
     state.printer = null;
     state.killer = null;
@@ -7825,7 +7972,17 @@
     paintHeader();
     var p = parts();
 
-    if (!p.length) { document.title = "אקורדים"; return viewIndex(); }
+    if (!p.length) return viewIndex(null);
+
+    /* --- one shelf of it ---
+       /style/<name>   the library, narrowed to one kind of song
+
+       A style is a word tied onto a song and it is also a shelf, and a shelf
+       is a thing worth having an address for: it is what somebody means when
+       they go looking for "the circle songs", and it is what the search box
+       hands back when they type one. Narrowing by hand writes the same
+       address without leaving the page, so the two cannot disagree. */
+    if (p[0] === "style") return viewIndex(p[1] || null);
 
     /* --- the evenings ---
        /evenings          the list of them
