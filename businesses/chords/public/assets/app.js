@@ -1903,9 +1903,9 @@
      them. */
   var COL_MIN_ROWS = 6;
   /* The air between two columns, in song sizes rather than in pixels: at 40px
-     type a 44px gutter is two columns touching. Wide enough that the rule
-     down the middle of it has room on both sides even where a chord hangs
-     off the end of a line. */
+     type a 44px gutter is two columns touching. There is no line drawn down
+     it, so the gutter is the only thing saying where one column ends and the
+     next begins, and it has to be wide enough to say it on its own. */
   var COL_GAP = 2.8;
 
   /* What is actually written on the line, in pixels. See the note in
@@ -2057,14 +2057,11 @@
 
        WHAT IS LEFT OVER IS SHARED OUT SO THE PARTS COME OUT EVEN. Each column
        sits in the middle of its own equal share of the room, which makes every
-       gutter the same size and the two end margins each a half of one. A rule
-       drawn down the middle of every gutter then falls exactly on those
-       divisions.
+       gutter the same size and the two end margins each a half of one.
 
        It used to be the whole block centred with the gutters at their natural
-       width, which divides the SHEET evenly and the SCREEN unevenly. The sheet
-       has no edge anybody can see, so what that looked like was a set of lines
-       that did not line up with anything.
+       width, which divides the SHEET evenly and the SCREEN unevenly, and the
+       sheet has no edge anybody can see.
 
        Reading, none of this arises: the lines are broken to whatever the
        columns come out as, so the sheet keeps the whole room and the browser
@@ -2097,9 +2094,9 @@
        error: balancing shares the lines out over the columns it was handed,
        and a line is an unbreakable block (see break-inside on .ln), so the
        height it settles on is one that a few of them overshoot. The song then
-       runs out early and the last column stands empty — with a rule drawn
-       down beside it, which is how you end up looking at three columns of
-       words and four columns' worth of furniture.
+       runs out early and the last column stands empty, taking its share of the
+       width with nothing in it, which is how you end up looking at three
+       columns of words spread out as if there were four.
 
        So the count is asked again OF THE ANSWER, and the empty ones are handed
        back. It settles in one pass almost always, and the loop is bounded by

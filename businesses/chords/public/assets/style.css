@@ -1065,7 +1065,12 @@ button.val:hover { border-color: var(--line); background: #fff; }
 
    The rule between them is what makes two columns read as two columns. In
    Hebrew the first is the right hand one, which is where the page starts. */
-.sheet.is-cols { column-fill: balance; column-rule: 1px solid var(--line); }
+/* NO RULE BETWEEN THEM. A line down the gutter is a claim about where the
+   page divides, and a reader will hold it to that claim: they read the space
+   either side of it as equal and notice when it is not. The gutters carry
+   that on their own, and they are honest about it, because a gutter IS the
+   space. A stripe of ink between two columns of a song is furniture. */
+.sheet.is-cols { column-fill: balance; }
 /* A line and the chords over it are one thing, and a column break through
    the middle of the pair would leave the chords on the other side of the
    page. It is also what keeps a chord findable at all: a chord is placed in
@@ -1587,7 +1592,7 @@ button.val:hover { border-color: var(--line); background: #fff; }
      count is written onto the element by hand, so this has to shout. */
   .sheet {
     column-count: 1 !important; column-width: auto !important;
-    column-rule: none !important; min-height: 0 !important;
+    min-height: 0 !important;
   }
   .wrap { width: 100%; }
 }
