@@ -1997,12 +1997,17 @@
     var gap = Math.min(COL_GAP * size, COL_W * 0.25);
     var poured = !sheet.classList.contains("ed");
 
+    /* NOTHING WRITTEN YET IS A WIDTH OF NOTHING, AND THAT IS AN ANSWER. A new
+       song has one empty line, so the widest line in it is nothing wide, and
+       bailing out here left the page with no segment on it at all: a bar, and
+       then the grey desk with nothing lying on it. A song with nothing in it
+       is still a song, and what it should show is the one sheet of paper it
+       has not been written on yet. */
     var widest = 0;
     Array.prototype.forEach.call(sheet.querySelectorAll(".ln-t, .ln-section"), function (t) {
       var w = textWidth(t);
       if (w > widest) widest = w;
     });
-    if (!(widest > 0)) return null;
 
     /* room for the chords over the ends of it: a chord is centred on its
        character, so one over the last letter hangs half a label past where
