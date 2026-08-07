@@ -158,7 +158,16 @@ const POURED = `(() => {
        two of the artificial spaces side by side. One on its own is room
        somebody opened between two letters; two together is the separator the
        pour lays down where a new line begins on a row already in use. */
-    joins: document.querySelectorAll(".sheet .ln-t .is-turn").length,
+    /* A run of artificial spaces, which in this song can only be the pour's
+       own: the words it is poured from carry none. The arc drawn under a run
+       is what says the space is the screen's doing and not the song's. */
+    joins: document.querySelectorAll(".sheet .ln-t .gap-run").length,
+    arc: (() => {
+      const g = document.querySelector(".sheet .ln-t .gap-run");
+      if (!g) return "no run";
+      const st = getComputedStyle(g, "::after");
+      return st.content + " " + st.height + " " + st.borderBottomWidth;
+    })(),
     /* A WORD IS NEVER CUT IN HALF except where there is nowhere wider to try:
        a word longer than a whole segment. Anything else means a row took part
        of a word it had no room for, which is the pour writing something the
@@ -560,8 +569,15 @@ try {
          checking because the alternative reading of the same picture, a row
          that simply ran two lines together with nothing between, is a song
          saying something it does not say. */
-      check("narrow: a leftover row takes the next line behind a double gap",
+      check("narrow: a leftover row takes the next line behind artificial space",
         poured.joins > 0, `${poured.joins} rows carry two lines (${poured.where})`);
+      /* AND THE ARC IS DRAWN OVER IT WHILE THE SONG IS BEING READ. It used to
+         be an editor-only mark, on the grounds that whoever opened a space is
+         the one looking at it; the pour opens them now, and then it is the
+         reader who needs telling that the space is the screen's and not the
+         song's. */
+      check("narrow: and the artificial space carries its arc when reading",
+        poured.arc !== "no run" && poured.arc.indexOf("0px") !== 0, poured.arc);
       /* A WORD IS NOT CUT IN HALF. The only place one may come apart is a word
          longer than a whole segment, because there is nowhere wider to try;
          anything else is a row taking part of a word it had no room for,
