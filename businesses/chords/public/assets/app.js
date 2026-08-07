@@ -2536,7 +2536,7 @@
   var app = document.getElementById("app");
   var state = {
     songs: null, printable: false, printer: null, killer: null,
-    editToggle: null, songControls: null,
+    editToggle: null, songControls: null, redrawSong: null,
   };
 
   /* --- THE SONG GETS THE SCREEN ---------------------------------------------
@@ -4402,6 +4402,17 @@
        shape of everything around the sheet: no gutters, no card, no air over
        it. See body.on-song in the stylesheet. */
     document.body.classList.add("on-song");
+    /* A WINDOW DRAGGED ACROSS THE NARROW LINE IS A DIFFERENT PAGE. Whether
+       this song is open for writing is decided here, once, from the width at
+       the moment it was drawn: a page opened wide is the editor, and dragged
+       narrow it stayed the editor, on a screen where the editor was never
+       meant to be. Which is not only a wrong shape. The editor does not break
+       its lines, because a broken row is not a line you can type into, so
+       what it left on a phone was a song running off both edges of the glass.
+
+       Only the bar was repainted when the line was crossed. The song is drawn
+       again now, and it comes back as whichever of the two that width means. */
+    state.redrawSong = function () { renderSong(song, past); };
     state.printable = true;
     /* Not on a version: there is nothing here to go into. */
     if (!past && auth.in && onPhone) {
@@ -8381,6 +8392,7 @@
     where("");
     document.body.classList.remove("on-song");
     state.songControls = null;
+    state.redrawSong = null;
     state.printable = false;
     state.printer = null;
     state.killer = null;
@@ -8544,7 +8556,17 @@
      to offer, and a button that was true when it was painted is not true any
      more. Cheap enough to redraw, and it is the same function the routing
      calls. */
-  if (NARROW.addEventListener) NARROW.addEventListener("change", function () { paintHeader(); });
+  if (NARROW.addEventListener) {
+    NARROW.addEventListener("change", function () {
+      paintHeader();
+      /* and the song with it, since which of reading and writing it is was
+         answered by the width it was drawn at */
+      if (state.redrawSong) {
+        flushNow();
+        state.redrawSong();
+      }
+    });
+  }
 
   absorbFallback();
   /* The box in the bar is built once and stays for the life of the tab: it is

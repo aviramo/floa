@@ -608,7 +608,7 @@ try {
        Which it has to. Signed in and on a desk, every song opens editable, so
        an editor that stayed in one column would mean the person who owns the
        library never sees a song laid out at all. */
-    await open(`http://127.0.0.1:${port}/chords/_t/longed/`, async ({ evaluate }) => {
+    await open(`http://127.0.0.1:${port}/chords/_t/longed/`, async ({ send, evaluate }) => {
       const laid = await evaluate(COLUMNS);
       const report = await evaluate(MEASURE);
       check("editing: no page errors", report.errors.length === 0, JSON.stringify(report.errors));
@@ -627,6 +627,34 @@ try {
       check("editing: a page is the window under the header",
         laid.pages > 0 && Math.abs(laid.pageH - laid.roomH) <= 2,
         `page ${laid.pageH}, room ${laid.roomH}, ${laid.pages} pages`);
+      /* --- AND DRAGGED NARROW IT STOPS BEING THE EDITOR -----------------------
+         Whether a song is open for writing is answered once, from the width
+         it was drawn at. A page opened wide and then dragged narrow used to
+         stay the editor on a screen the editor was never meant to be on, and
+         the editor does not break its lines, because a broken row is not a
+         line you can type into: what it left was a song running off both
+         edges of the glass. Only the bar was repainted when the line was
+         crossed.
+
+         Nothing about that is visible in the code, and it is what a person
+         resizing a window actually does. */
+      await send("Emulation.setDeviceMetricsOverride", { width: 420, height: 800, deviceScaleFactor: 1, mobile: false });
+      await sleep(700);
+      const shrunk = await evaluate(`JSON.stringify((() => {
+        const over = [];
+        for (const ln of document.querySelectorAll(".sheet .ln")) {
+          const t = ln.querySelector(".ln-t");
+          if (!t) continue;
+          const words = [...t.children].reduce((a, c) => a + c.getBoundingClientRect().width, 0);
+          if (words > ln.clientWidth + 1) over.push(Math.round(words) + " in " + Math.round(ln.clientWidth));
+        }
+        return { over: over.slice(0, 3), wide: document.documentElement.scrollWidth > innerWidth + 1 };
+      })())`);
+      await send("Emulation.clearDeviceMetricsOverride");
+      await sleep(400);
+      check("editing: dragged narrow, the song breaks its lines instead of running off the screen",
+        shrunk.over.length === 0 && !shrunk.wide, JSON.stringify(shrunk));
+
       check("editing: no line carries a tick beside it any more",
         (await evaluate(`JSON.stringify(document.querySelectorAll(".ln-pick").length)`)) === 0, "");
     });
