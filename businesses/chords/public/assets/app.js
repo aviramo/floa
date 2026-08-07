@@ -1917,6 +1917,22 @@
     return range.getBoundingClientRect().width;
   }
 
+  /* How many of the columns the song actually landed in, which is not always
+     how many it was given: see the note where this is called. Bucketed by
+     twenty pixels, because two columns are hundreds apart and a rounding
+     error is not a column. */
+  function usedColumns(sheet) {
+    var at = {};
+    var n = 0;
+    Array.prototype.forEach.call(sheet.querySelectorAll(".ln-t, .ln-section"), function (t) {
+      var key = Math.round(t.getBoundingClientRect().left / 20);
+      if (at[key]) return;
+      at[key] = true;
+      n++;
+    });
+    return n;
+  }
+
   function oneColumn(sheet) {
     sheet.style.columnCount = "";
     sheet.style.columnWidth = "";
@@ -2034,36 +2050,48 @@
 
     sheet.style.columnGap = Math.round(gap) + "px";
 
-    if (poured) {
-      /* FILL THE ROOM. A wide screen should be covered in song rather than in
-         margins, and the lines are broken to whatever the columns come out
-         as, so there is no width the room can be divided into that they
-         cannot take. The sheet keeps the whole room and the browser divides
-         it. */
-      if (cols > 1) {
-        sheet.style.columnCount = String(cols);
-        sheet.classList.add("is-cols");
-      }
-      return;
-    }
-
     /* A COLUMN IS AS WIDE AS THE LONGEST LINE, AND NO WIDER, AND THE SET IS
-       CENTRED. Nothing here can be broken, so widening the columns to fill the
+       CENTRED — where nothing can be broken. Widening the columns to fill the
        room would not put more song in them: it would put the same words
        against one edge of each column with a hand's width of nothing beside
        them, which is what this looked like. Better to hold the leftover at the
        two ends, where it reads as a margin.
 
-       Exactly, and not approximately, which is also what stops a line
-       overflowing: the browser divides the width I hand it into the count I
-       hand it, and both numbers are made of the same one. */
+       Reading, the lines are broken to whatever the columns come out as, so
+       there is no width the room cannot be divided into and the sheet simply
+       keeps all of it: a wide screen should be covered in song. */
     var need = Math.min(want, room);
-    var span = cols * need + (cols - 1) * gap;
 
-    sheet.style.maxWidth = Math.ceil(span + padded) + "px";
-    if (cols > 1) {
-      sheet.style.columnCount = String(cols);
-      sheet.classList.add("is-cols");
+    function apply(n) {
+      if (n > 1) {
+        sheet.style.columnCount = String(n);
+        sheet.classList.add("is-cols");
+      } else {
+        sheet.style.columnCount = "";
+        sheet.classList.remove("is-cols");
+      }
+      if (!poured) sheet.style.maxWidth = Math.ceil(n * need + (n - 1) * gap + padded) + "px";
+    }
+
+    apply(cols);
+
+    /* --- AND HOW MANY OF THEM THE SONG ACTUALLY FILLED ------------------------
+       Which is not always how many it was given, and that is not a rounding
+       error: balancing shares the lines out over the columns it was handed,
+       and a line is an unbreakable block (see break-inside on .ln), so the
+       height it settles on is one that a few of them overshoot. The song then
+       runs out early and the last column stands empty — with a rule drawn
+       down beside it, which is how you end up looking at three columns of
+       words and four columns' worth of furniture.
+
+       So the count is asked again OF THE ANSWER, and the empty ones are handed
+       back. It settles in one pass almost always, and the loop is bounded by
+       the number of columns there could ever be. */
+    for (var tries = 0; tries < COL_MAX; tries++) {
+      var filled = usedColumns(sheet);
+      if (filled < 1 || filled >= cols) break;
+      cols = filled;
+      apply(cols);
     }
   }
 
@@ -5047,12 +5075,17 @@
        Nothing is written until the number actually changes. One turn of a
        wheel is dozens of events, and setSize redraws the whole sheet on a
        narrow screen. */
-    /* ONE NOTCH OF A MOUSE WHEEL IS ABOUT A HUNDRED, and it should be worth
-       something: at sixty it was a pixel a notch, which is twenty turns to
-       cross the range and reads as a control that is not working. Four pixels
-       a notch crosses it in nine, and a trackpad, which sends a stream of
-       small numbers rather than notches, still accumulates smoothly. */
+    /* ONE NOTCH OF A MOUSE WHEEL IS ABOUT A HUNDRED, so this is four steps a
+       notch, and a trackpad, which sends a stream of small numbers rather
+       than notches, accumulates over the same threshold. */
     var WHEEL_PER_STEP = 25;
+    /* AND A STEP IS A PROPORTION, NOT A PIXEL. Two pixels is a third of the
+       way up from thirteen and nothing at all at ninety, so a fixed step
+       crawls at the top of the range exactly where somebody turning the wheel
+       is trying to get somewhere. Six per cent a step is a quarter of a notch,
+       which crosses the whole range in about eight turns and still lands
+       where you meant at the small end. */
+    var WHEEL_STEP_RATIO = 1.06;
     var wheeled = 0;
 
     sheet.addEventListener("wheel", function (event) {
@@ -5063,7 +5096,11 @@
       if (!steps) return;
       wheeled -= steps * WHEEL_PER_STEP;
       /* down is smaller, which is what a wheel means everywhere else */
-      setSize(size - steps);
+      var next = size * Math.pow(WHEEL_STEP_RATIO, -steps);
+      /* At the bottom of the range a proportion of the size rounds back to
+         the size, and a wheel that answers nothing reads as a broken one. */
+      if (Math.round(next) === size) next = size - steps;
+      setSize(next);
     }, { passive: false });
 
     /* How far apart two fingers are, which is the whole of a pinch: the size

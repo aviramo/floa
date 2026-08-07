@@ -206,6 +206,12 @@ const COLUMNS = `(() => {
     .map((t) => Math.round(t.getBoundingClientRect().left / 20)));
   return JSON.stringify({
     cols: at.size,
+    /* What it was HANDED, against what it used. Balancing can come back
+       having filled fewer columns than it was given, and an unused column is
+       not invisible: it takes its share of the width and it gets a rule drawn
+       down beside it. Three columns of words with four columns' worth of
+       furniture is what that looks like. */
+    given: Number(sheet.style.columnCount) || 1,
     poured: document.querySelectorAll(".sheet .ln.is-cont").length,
     /* Reading, the sheet keeps the whole room; writing it is only as wide as
        its columns need and stands in the middle of what is left. */
@@ -557,6 +563,8 @@ try {
          standing in one column with half the window beside it. */
       check("wide: reading, the columns fill the window",
         laid.fills, JSON.stringify(laid));
+      check("wide: every column it asked for is a column with song in it",
+        laid.given === laid.cols, `asked ${laid.given}, filled ${laid.cols}`);
 
       /* The first few are enough: they are the same three lines fifteen times
          over, and a chord that slipped slipped on all of them. */
@@ -585,6 +593,8 @@ try {
 
       check("editing: no line is wider than the column it stands in", laid.over.length === 0,
         JSON.stringify(laid.over));
+      check("editing: every column it asked for is a column with song in it",
+        laid.given === laid.cols, `asked ${laid.given}, filled ${laid.cols}`);
       check("editing: no line carries a tick beside it any more",
         (await evaluate(`JSON.stringify(document.querySelectorAll(".ln-pick").length)`)) === 0, "");
     });
