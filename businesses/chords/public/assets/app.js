@@ -100,11 +100,16 @@
        of it: a note for the key the song is in, two letters of different sizes
        for how big the words are, and a capo across the strings of a neck.
 
-       The capo is three strings and a BAR: a thin line across them would be a
-       fret, and a fret is not what you clamp on. */
+       THE CAPO IS THE OBJECT, not a mark where it goes. It was three strings
+       and a thick line across them, which at fifteen pixels is a fret, and a
+       fret is not what you clamp on. So it is drawn as the thing itself: the
+       strings running down the neck, thin, because they are what it is put
+       ON and not what it is; the padded bar lying across them, rounded, with
+       its own outline; and the arm coming off one end and round the back of
+       the neck, which is the half of a capo that says it is a clamp. */
     pitch: '<path d="M8 17V6l9-2v9"/><ellipse cx="5.6" cy="17.2" rx="2.6" ry="2.1"/><ellipse cx="14.6" cy="15.2" rx="2.6" ry="2.1"/>',
     textSize: '<path d="M2 19l5-13 5 13M3.6 15h6.8M14 19l3.3-8.5 3.3 8.5M15.1 16.4h4.4"/>',
-    capo: '<path d="M6 3v18M12 3v18M18 3v18"/><path d="M3 8h18" stroke-width="4"/>',
+    capo: '<path d="M6.5 3v18M12 3v18M17.5 3v18" stroke-width="1.1"/><rect x="2.3" y="6.5" width="19.4" height="4.7" rx="2.35"/><path d="M19.6 11.2v2a3.4 3.4 0 0 1-3.4 3.4h-1.4" stroke-width="1.5"/>',
     undo: '<path d="M4 10h9a4.5 4.5 0 0 1 0 9h-5"/><path d="M8 6l-4 4 4 4"/>',
     print: '<path d="M7 9V4h10v5M7 18H5v-6h14v6h-2M8 14h8v6H8z"/>',
     calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
@@ -543,15 +548,10 @@
     });
   }
 
-  /* What one person did on ONE song, which is the same question asked of a
-     single row rather than of the library. */
-  function rolesOn(song, name) {
-    var roles = {};
-    CREDITS.forEach(function (c) {
-      if (String(song[c.field] || "").trim() === name) roles[c.field] = true;
-    });
-    return roles;
-  }
+  /* THERE WAS A rolesOn HERE, what one person did on ONE song, and it fed a
+     chip on every card of that person's page. The chips are gone (see
+     songRow), and so is it. What roles somebody has is still asked, once, of
+     the whole library, which is the question the card on /creators answers. */
 
   function songsBy(songs, name) {
     return (songs || []).filter(function (song) {
@@ -3006,7 +3006,7 @@
      `songs` is not one of them: it is the library itself, one copy for
      everybody, and every sheet showing it is showing the same songs. */
   var PAGE_STATE = ["printable", "printer", "killer", "editToggle",
-    "songControls", "redrawSong", "rehome", "wake"];
+    "songControls", "redrawSong", "rehome", "wake", "sift"];
 
   function takeKids(node) {
     if (!node) return null;
@@ -3048,6 +3048,10 @@
     at = layers.indexOf(layer);
     document.body.classList.toggle("on-song", !!layer.onSong);
     PAGE_STATE.forEach(function (name) { state[name] = layer.state[name]; });
+    /* The box was emptied on the way out of here, and this page may have been
+       left with the wall held down to what was typed in it. The sieve belongs
+       to the page, so the words come back up with it. */
+    if (findField && state.sift) findField.value = state.sift.q || "";
 
     var h = layer.head;
     /* where() wipes the three slots beside the name, so it goes first and what
@@ -4036,6 +4040,10 @@
     findX.addEventListener("click", function (event) {
       /* the press is also a press on the box, and the box opens */
       event.stopPropagation();
+      /* The cross is the one gesture that means "done with this box", so on a
+         page it is sieving it hands the whole of the page back rather than
+         leaving a narrowed wall standing under an empty box. */
+      if (state.sift) state.sift("");
       clearFind();
     });
     findBox.appendChild(findX);
@@ -4051,12 +4059,27 @@
        that has to be hit exactly is a glass nobody hits. */
     findBox.addEventListener("click", openFind);
 
+    /* --- AND ON THE LIBRARY IT IS NOT A PANEL, IT IS THE PAGE -----------------
+       A panel of results is a way to somewhere else, and everywhere else is
+       what it is for: inside a song, planning an evening, on a person's page.
+       On the library itself the songs are ALREADY on the screen, in cards with
+       their chords and their state on them, and hanging a list of names over
+       them is answering with less than what is underneath.
+
+       So the library leaves a sieve here (see viewIndex) and the box narrows
+       the wall instead of covering it. Same box, same typing: what changes is
+       that the answer is the page rather than a list of ways to one. */
     findField.addEventListener("input", function () {
       clearTimeout(findTimer);
+      if (state.sift) {
+        shutFind();
+        return state.sift(findField.value);
+      }
       findTimer = setTimeout(askFind, 110);
     });
     findField.addEventListener("focus", function () {
       openFind();
+      if (state.sift) return;
       if (findField.value.trim()) askFind();
     });
     findField.addEventListener("keydown", onFindKey);
@@ -4071,6 +4094,14 @@
     document.addEventListener("pointerdown", function (event) {
       if (!document.body.classList.contains("finding")) return;
       if (findBox.contains(event.target) || (findOut && findOut.contains(event.target))) return;
+      /* On a page the box is sieving, putting the bar back is not undoing the
+         sieve: the wall underneath IS the answer, and pressing away from the
+         box is how somebody gets to it. The words stay in the box, saying why
+         the page is as short as it is. */
+      if (state.sift) {
+        document.body.classList.remove("finding");
+        return findField.blur();
+      }
       clearFind();
     }, true);
 
@@ -4166,6 +4197,14 @@
   function onFindKey(event) {
     if (event.key === "Escape") {
       event.preventDefault();
+      /* On the library the box is holding the page down to a handful of cards,
+         so Escape is what gives the rest of them back, and it stays a box the
+         reader is standing in rather than closing something. */
+      if (state.sift) {
+        findField.value = "";
+        state.sift("");
+        return findField.blur();
+      }
       return clearFind();
     }
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
@@ -4539,18 +4578,50 @@
       app.appendChild(mine);
       app.appendChild(bands);
 
+      /* --- WHAT THE BOX IN THE BAR IS SIEVING THIS PAGE DOWN TO ----------------
+         Everywhere else in the app that box is navigation and answers with a
+         panel of ways to other pages. Here the things it would list are the
+         things already on the screen, in cards that carry their chords, their
+         state and who wrote them, so a list of names hanging over them is a
+         worse answer than the page underneath it.
+
+         So the library hands the box a sieve (see state.sift in buildFind) and
+         typing narrows what is drawn: the songs by everything they are made of,
+         and the three bands over them by name, so a page held down to one word
+         is that word's events, shelves, people and songs and nothing else.
+         Bands with nothing left in them go, rather than standing empty. */
+      var sifted = "";
+
+      function passes(hay) {
+        return !sifted || String(hay).toLowerCase().indexOf(sifted) >= 0;
+      }
+
+      /* Read once and kept: the evenings are somebody's own rows and they do
+         not change under a keystroke, so sieving them is not asking again. */
+      var myEvenings = null;
+
       function paintMine() {
         if (shelf || !auth.in) return;
+        if (myEvenings) return drawMine();
         findEveningList().then(function (rows) {
           /* the page may have been left while the answer was in the air */
           if (!mine.isConnected) return;
-          mine.textContent = "";
-          var evenings = byWhen(rows || []);
-          if (!evenings.length) return;
-          mine.appendChild(wall("אירועים", evenings.map(function (evening) {
-            return eveningRow(evening, null, true);
-          })));
+          myEvenings = byWhen(rows || []);
+          drawMine();
         }).catch(function () { /* not being able to say is not worth saying */ });
+      }
+
+      function drawMine() {
+        mine.textContent = "";
+        var titles = {};
+        state.songs.forEach(function (s) { titles[s.id] = s.title; });
+        var shown = (myEvenings || []).filter(function (evening) {
+          return passes(eveningHay(evening, titles));
+        });
+        if (!shown.length) return;
+        mine.appendChild(wall("אירועים", shown.map(function (evening) {
+          return eveningRow(evening, null, true);
+        })));
       }
 
       function paintBands() {
@@ -4561,14 +4632,19 @@
         state.songs.forEach(function (s) {
           styles(s).forEach(function (name) { counted[name] = (counted[name] || 0) + 1; });
         });
-        var names = Object.keys(counted).sort(function (a, b) { return a.localeCompare(b, "he"); });
+        /* Counted over the whole library, sieved by name: how many songs a
+           shelf holds is a fact about the shelf, not about what was typed. */
+        var names = Object.keys(counted).filter(passes)
+          .sort(function (a, b) { return a.localeCompare(b, "he"); });
         if (names.length) {
           bands.appendChild(wall("סגנונות", names.map(function (name) {
             return shelfRow(name, counted[name]);
           })));
         }
 
-        var people = creatorsOf(state.songs);
+        var people = creatorsOf(state.songs).filter(function (person) {
+          return passes(person.name);
+        });
         if (people.length) {
           bands.appendChild(wall("יוצרים", people.map(function (person) {
             return creatorRow(person, true);
@@ -4690,6 +4766,9 @@
         var shown = state.songs.filter(function (s) {
           if (only && !only.is(s)) return false;
           if (kind && styles(s).indexOf(kind) < 0) return false;
+          /* everything the song is made of: its name, its credits, its style
+             and its words, without the gaps in them (see songHay) */
+          if (!passes(songHay(s))) return false;
           return true;
         });
 
@@ -4701,10 +4780,14 @@
 
         if (!shown.length) {
           if (!empty.parentNode) app.appendChild(empty);
-          emptyText.textContent = kind ? "אין שירים בסגנון הזה."
+          emptyText.textContent = sifted ? 'לא נמצא כלום עבור "' + sifted + '".'
+            : kind ? "אין שירים בסגנון הזה."
             : only ? "אין שירים בתווית הזאת."
             : "עוד אין שירים כאן.";
-          emptyActions.hidden = !!only || !!kind;
+          /* "start a song" under a search that found nothing is an offer to
+             write the one that was being looked for, which is not what was
+             being asked */
+          emptyActions.hidden = !!only || !!kind || !!sifted;
           return;
         }
         if (empty.parentNode) empty.remove();
@@ -4758,6 +4841,25 @@
       /* And it starts again when the page is uncovered, because leaving it
          ended it: a list out of the document stops asking. */
       state.wake = poll;
+
+      /* THE SIEVE IS THE LIBRARY'S OWN, and it is handed to the box in the bar
+         for as long as this page is the page. A shelf is left out on purpose:
+         it is one kind of song already, and what somebody types there is
+         almost always the way OFF it, which is what the panel is for. */
+      if (!shelf) {
+        var sift = function (typed) {
+          /* what was typed, kept as it was typed: the page is put aside and
+             uncovered with the box emptied in between, and what goes back in
+             it has to be the reader's own letters (see reveal) */
+          sift.q = String(typed || "");
+          sifted = sift.q.trim().toLowerCase();
+          paint();
+          paintBands();
+          paintMine();
+        };
+        sift.q = "";
+        state.sift = sift;
+      }
 
       /* The way to what was deleted, under everything and only when there is
          something there. A library with an empty bin says nothing about bins:
@@ -4945,12 +5047,16 @@
     return node;
   }
 
-  /* `extra` is whatever the PAGE has to say about this song that the song
-     does not say about itself. There is one page that does: a creator's, where
-     every card has to say which of the two things this person did on it. It
-     goes in the same corner as the state, because it is the same kind of fact,
-     a word about the song rather than a word of it. */
-  function songRow(s, refresh, mark, pick, extra) {
+  /* THE CARD SAYS WHAT THE SONG IS, AND NOTHING THE PAGE AROUND IT ALREADY
+     SAID. It took an `extra` for a while, chips the PAGE had to add: on a
+     creator's page every card carried כותב or מלחין or both, which of the two
+     things that person did on that song. It is gone. A page about one person,
+     under their name, listing their songs, is answering "whose is this" before
+     the first card is read, and the difference between having written the
+     words and the tune is not what anybody came to that page to sort out. What
+     is left in the corner is the song's own state, and only when it has one
+     worth saying. */
+  function songRow(s, refresh, mark, pick) {
     var li = el("li");
 
     /* IN THE CARD'S CORNER, AND NOT IN THE CARD. It looks like it is inside,
@@ -5099,22 +5205,33 @@
          left off. */
       var side = el("div", "side");
 
-      var tags = el("div", "side-tags");
-      /* A song can carry two: one is the machine's, "nobody has checked this
-         reading", and the other the author's, "I am not done with this". */
       /* ONE, because a song is in one state. The row says which, the numbers
          over the list count the same three, and the chip inside the song is
          the same word again. */
+      /* AND PUBLISHED SAYS NOTHING. It is what nearly every song in the
+         library is, so the chip stood on nearly every card, in the loudest
+         corner of it, saying the ordinary. A label is worth its ink when it
+         marks the one card out of the wall that is not like the others: a song
+         still in the machine, one nobody has checked, one somebody is in the
+         middle of. Published is the resting state, and the resting state needs
+         no word. Where it IS worth saying is inside the song, on the button
+         that changes it, because there it is the answer to a question somebody
+         is asking. */
       var WHY = {
         imported: "הקובץ נקרא עכשיו. אפשר להיכנס ולמלא שם, מי כתב וסגנון.",
         review: "השיר נקרא מתוך קובץ ועדיין לא נבדק",
         draft: "עוד עובדים עליו, ורק אתם רואים אותו",
-        published: "השיר פתוח לכולם",
       };
+      /* AND THE BOX GOES WITH THE CHIP. An empty div is still a row of the
+         column and still takes the gap either side of it, so a published card
+         would keep the hole its label used to stand in and the date would sit
+         where nothing put it. */
       var was = rowState(s);
-      tags.appendChild(tag(was, STATE_WORDS[was], WHY[was]));
-      (extra || []).forEach(function (t) { tags.appendChild(tag(t.kind, t.words)); });
-      side.appendChild(tags);
+      if (was !== "published") {
+        var tags = el("div", "side-tags");
+        tags.appendChild(tag(was, STATE_WORDS[was], WHY[was]));
+        side.appendChild(tags);
+      }
 
       /* `created_at` behind it, because a song that has never been changed
          since it was written was last changed when it was written. */
@@ -5252,11 +5369,13 @@
 
        NOT IN THE BAND OVER THE LIBRARY. There the card is a name and a way to
        a page, one line of it, and two coloured chips on that line are the
-       loudest thing on a band that is meant to be glanced at. What they answer
-       is asked on the person's own page, where it is asked about each song
-       separately and answered there, on the song (see viewCreator): somebody
-       who wrote the words of one and the tune of another is two chips here and
-       the truth there. */
+       loudest thing on a band that is meant to be glanced at.
+
+       THIS IS THE ONLY PLACE IT IS SAID NOW. The person's own page used to say
+       it again on every card, song by song, and that is gone (see songRow): on
+       the list of everybody, "what does this person do" is what tells one card
+       from the next, and on their own page it is a distinction nobody went
+       there to make. */
     if (!brief) {
       var side = el("div", "side");
       var tags = el("div", "side-tags");
@@ -5423,18 +5542,21 @@
         });
       }
       /* The head is for paper only. On screen the name is in the bar and the
-         rest of the head said things the list under it already says: what this
-         person did is the tag on each card, and how many songs there are is
+         rest of the head said things the list under it already says: whose
+         songs these are is the name over them, and how many songs there are is
          how many cards there are. In print the bar is gone, so the page still
          needs its name (see .on-paper). */
       var head = el("div", "song-head");
       head.appendChild(el("h1", "on-paper", name));
       app.appendChild(head);
 
+      /* Ordinary cards, the same as anywhere else in the library. They used to
+         carry a chip each saying whether this person wrote the words of this
+         one or the tune, which is a distinction nobody opens a person's page
+         to make (see songRow). */
       var list = el("ul", "list");
       mine.forEach(function (song) {
-        list.appendChild(songRow(song, function () { viewCreator(name); }, null, null,
-          roleTags(rolesOn(song, name))));
+        list.appendChild(songRow(song, function () { viewCreator(name); }));
       });
       app.appendChild(list);
       tick(list);
@@ -6096,7 +6218,7 @@
        already say: a value that goes up and down under an arrow is a key, and
        under two letters is a size. The word is still there for anyone hovering
        or listening. */
-    function control(icon, label, valueNode, less, more) {
+    function control(icon, label, valueNode, less, more, folded) {
       var ctl = el("span", "ctl");
 
       /* The picture and then the number, in the order they are read: what it
@@ -6104,7 +6226,7 @@
          was a row of its own; the row is a strip beside the song's own facts
          now, and a stacked pair is twice the height of the tallest thing that
          has any business being here. */
-      var dial = el("span", "dial");
+      var dial = el(folded ? "button" : "span", "dial" + (folded ? " dial-btn" : ""));
       var lbl = el("span", "lbl");
       lbl.appendChild(svg(icon));
       lbl.title = label;
@@ -6124,7 +6246,83 @@
       var steps = el("span", "steps");
       steps.appendChild(iconBtn('<path d="M5 12h14"/>', "פחות " + label, less));
       steps.appendChild(iconBtn(ICON.plus, "יותר " + label, more));
-      ctl.appendChild(steps);
+      if (!folded) {
+        ctl.appendChild(steps);
+        return ctl;
+      }
+
+      /* --- FOLDED: THE BUTTONS ARE NOT STANDING THERE ------------------------
+         Two buttons on the strip is two buttons on the strip for the whole of
+         a song, for a number most people set once and then read. So the
+         picture and the number ARE the control: press them, and less and more
+         come out under them; press anywhere else, and they go away again.
+
+         Which is the shape the editor already has for the one other thing that
+         is offered rather than done (see offerGap): a small pair of buttons
+         under the thing they are about, dismissed by the next press outside
+         them. One gesture, learned once, in both places.
+
+         The stepper is BUILT either way and moved into the panel when it is
+         opened, so what comes out is the same box of two halves it always was
+         and not a second drawing of it. */
+      dial.type = "button";
+      dial.title = label;
+      dial.setAttribute("aria-label", label);
+      dial.setAttribute("aria-expanded", "false");
+
+      var pop = null;
+
+      function shut() {
+        if (!pop) return;
+        pop.remove();
+        pop = null;
+        dial.setAttribute("aria-expanded", "false");
+        document.removeEventListener("pointerdown", outside, true);
+        document.removeEventListener("keydown", onKey, true);
+        window.removeEventListener("resize", shut);
+        window.removeEventListener("scroll", shut, true);
+      }
+
+      /* The dial is not outside: it is the thing that opened this, and a press
+         on it is the press that closes it, below. Anywhere else, including the
+         strip's own air, shuts. And a panel whose control has been drawn away
+         with the song has nothing left to hang under. */
+      function outside(event) {
+        if (!dial.isConnected) return shut();
+        if (pop.contains(event.target) || dial.contains(event.target)) return;
+        shut();
+      }
+
+      function onKey(event) {
+        if (event.key === "Escape") { shut(); dial.focus(); }
+      }
+
+      /* Fixed to the screen, under the dial, and pulled back inside the window
+         at either edge: the strip sits at the end of a row that on a phone is
+         nearly the whole width. */
+      function place() {
+        var box = dial.getBoundingClientRect();
+        var width = pop.offsetWidth;
+        var left = Math.min(Math.max(4, box.left + box.width / 2 - width / 2), window.innerWidth - width - 4);
+        pop.style.left = left + "px";
+        pop.style.top = (box.bottom + 6) + "px";
+      }
+
+      dial.addEventListener("click", function () {
+        if (pop) return shut();
+        pop = el("div", "steps-pop");
+        pop.appendChild(steps);
+        document.body.appendChild(pop);
+        place();
+        dial.setAttribute("aria-expanded", "true");
+        document.addEventListener("pointerdown", outside, true);
+        document.addEventListener("keydown", onKey, true);
+        window.addEventListener("resize", shut);
+        /* true, so the page scrolling under it counts and not only the window:
+           the strip travels with the song. */
+        window.addEventListener("scroll", shut, true);
+      });
+
       return ctl;
     }
 
@@ -6162,7 +6360,13 @@
        Only for somebody signed in, which is the one thing the two numbers do
        not share. The key changes the page and everybody gets it; a fret is a
        note somebody keeps for themselves, and there is nobody to keep it for
-       until there is somebody. */
+       until there is somebody.
+
+       AND IT IS FOLDED. A fret is chosen once for a song and then read for the
+       rest of it, so the two buttons that choose it were the loudest thing on
+       the strip for the longest time they were of no use to anybody. Pressing
+       the capo and the number is what brings them out (see control's `folded`),
+       which is also the only press anyone would try: they are the control. */
     var myValue = null;
     if (auth.in) {
       tools.appendChild(el("span", "sep"));
@@ -6170,7 +6374,8 @@
       var mine = control(
         ICON.capo, "קפו", myValue,
         function () { setMyCapo(myCapo - 1); },
-        function () { setMyCapo(myCapo + 1); }
+        function () { setMyCapo(myCapo + 1); },
+        true
       );
       mine.title = "באיזה סריג הקפו שלכם בשיר הזה. נשמר לכם, לשיר הזה.";
       tools.appendChild(mine);
@@ -10166,6 +10371,9 @@
     state.printer = null;
     state.killer = null;
     state.editToggle = null;
+    /* and the box in the bar goes back to being a way to other pages, until a
+       page that can be sieved says otherwise (see state.sift in viewIndex) */
+    state.sift = null;
     paintHeader();
     var p = parts();
 

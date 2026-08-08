@@ -146,7 +146,7 @@ body.on-song { background: var(--bg); }
 
    So in this bar, and only in this bar, a picture on its own is a circle: the
    pill with its word taken away. Everywhere else on the page .icon-btn keeps
-   its corner, and the steppers keep theirs (see .tools .steps), because a
+   its corner, and the steppers keep theirs (see .steps), because a
    stepper is two halves of one box rather than two buttons.
 
    And in the same ink, which is the bar's ink: elsewhere .icon-btn is drawn
@@ -696,6 +696,12 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 }
 .list .side-tags { display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-end; }
 .list .when { white-space: nowrap; color: var(--ink-soft); font-size: 13px; }
+/* THE DATE STAYS AT THE BOTTOM WITH NOTHING OVER IT. A published song carries
+   no chip any more (see songRow), so its column holds one thing, and
+   space-between with one thing in it puts that thing at the top: the date
+   would sit level with the name on most cards of the library and level with
+   the chords on the rest. Pushed down by hand, the corner is the corner. */
+.list .side > .when:only-child { margin-block-start: auto; }
 
 /* a song that is not openable yet: being read, or failed. Same box as a link,
    without the link, so the list keeps its rhythm while one row is busy. */
@@ -1278,14 +1284,44 @@ body.on-song .top { border-bottom: 0; }
    in one box like the buttons on anything else that counts. Joined, because
    two bordered squares with air between them is two of everything a stepper
    needs one of, and three controls' worth of that is most of a phone's row. */
-.tools .steps {
+/* NOT UNDER .tools ANY MORE. The capo's stepper is moved out of the strip and
+   into a panel on the body when it is opened (see control in app.js), and a
+   rule that only worked inside the strip left it there unstyled: two bare
+   buttons in a heap. It is the same box wherever it is standing. */
+.steps {
   display: inline-flex; background: #fff;
   border: 1px solid var(--line); border-radius: 8px; overflow: hidden;
 }
-.tools .steps .icon-btn { border: 0; border-radius: 0; width: 22px; height: 20px; }
-.tools .steps .icon-btn + .icon-btn { border-inline-start: 1px solid var(--line); }
-.tools .steps .icon-btn svg { width: 12px; height: 12px; }
-.tools .steps .icon-btn:hover { background: var(--bg); }
+.steps .icon-btn { border: 0; border-radius: 0; width: 22px; height: 20px; }
+.steps .icon-btn + .icon-btn { border-inline-start: 1px solid var(--line); }
+.steps .icon-btn svg { width: 12px; height: 12px; }
+.steps .icon-btn:hover { background: var(--bg); }
+
+/* --- A CONTROL THAT IS ITS OWN BUTTON --------------------------------------
+   The capo folds: the picture and the fret are what you press, and less and
+   more come out under them. So the pair has to LOOK pressable, which the two
+   loose spans it used to be did not, and it is drawn as the stepper beside it
+   is drawn, one box with a line round it. Open, it is lit like everything else
+   in this app that has a panel hanging off it. */
+.tools .dial-btn {
+  appearance: none; font: inherit; color: inherit; cursor: pointer;
+  padding: 2px 7px; height: 22px; background: #fff;
+  border: 1px solid var(--line); border-radius: 8px;
+}
+.tools .dial-btn:hover { background: var(--bg); }
+.tools .dial-btn[aria-expanded="true"] { color: var(--accent); border-color: var(--accent); }
+.tools .dial-btn[aria-expanded="true"] .lbl { color: inherit; }
+
+/* Under the dial and over everything, with the shadow that says it is standing
+   off the page, the same as the offer under a word (see .gap-offer). Its
+   buttons are bigger than the ones on the strip were: nothing is competing for
+   the room out here, and a fret is set with a finger. */
+.steps-pop {
+  position: fixed; z-index: 50;
+  border-radius: 8px; box-shadow: 0 2px 8px rgba(23, 32, 42, .12);
+}
+.steps-pop .icon-btn { width: 32px; height: 28px; }
+.steps-pop .icon-btn svg { width: 14px; height: 14px; }
 .tools .sep { width: 1px; height: 16px; background: var(--line); }
 /* A PICTURE NEEDS A SIZE. An svg with none is not small, it is whatever the
    box around it happens to allow, which in a flex row is nothing at all: the
@@ -2094,7 +2130,7 @@ body.on-song .top { border-bottom: 0; }
      than about the song. On paper it is the song. */
   .past-band { display: none !important; }
   /* what is offered on a screen is not a fact about the song on paper */
-  .gap-offer { display: none !important; }
+  .gap-offer, .steps-pop { display: none !important; }
   /* what a version changed is about two versions, and paper holds one */
   .ln.is-add::before, .ln.is-gone::before { display: none; }
   .ln.is-gone { display: none; }
