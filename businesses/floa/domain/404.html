@@ -26,6 +26,15 @@
   var path = location.pathname.replace(/^\/+/, "");
   var app = path.split("/")[0];
   if (APPS.indexOf(app) < 0) return;
+  /* AND THE TAB IS THE APP'S FROM HERE. This document stays on the screen for
+     as long as the next request takes, which on a phone is long enough to
+     look at, and what it was showing for a song was the domain's mark over
+     "the page was not found". An app that owns an address owns the tab for
+     it, so the mark becomes its own, by the convention every app here keeps:
+     /<app>/favicon.svg. */
+  var mark = document.querySelector("link[rel=icon]");
+  if (mark) mark.href = "/" + app + "/favicon.svg";
+
   var rest = path.slice(app.length).replace(/^\/+/, "").replace(/\/+$/, "");
   location.replace("/" + app + "/?p=" + rest + location.hash);
 })();
