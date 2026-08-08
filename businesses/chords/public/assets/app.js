@@ -3045,9 +3045,97 @@
      log in leaves a visitor looking at an empty list with no way forward and no
      reason given; showing it and sending the click to Google says what the rule
      is at the moment it applies. */
+
+  /* --- THE BAR IS REARRANGED, NEVER REBUILT --------------------------------
+     Every page used to empty the bar and make its buttons over again, so the
+     button carrying your own name was thrown away and built a second time on
+     the way into every song: the same word, in a new element that had never
+     been on the screen before. What that costs is not the work, it is that
+     the bar blinks on a move that never touched it, and that whatever the
+     browser was holding on those elements, the focus in them included, is
+     dropped with them.
+
+     So the buttons are KEPT. Each is made the first time it is asked for and
+     is then the same object for the life of the tab. A page that wants a
+     different word in one changes THE WORD (see relabel); a page that wants a
+     different picture changes the picture (reicon); a page that wants it to do
+     something else hands it something else to do (`_act`). What changes on a
+     move between pages is only which of them stand in the bar, and in what
+     order, which is a matter of moving nodes about (see fill). */
+  var kept = {};
+
+  function keep(name, make) {
+    if (!kept[name]) kept[name] = make();
+    return kept[name];
+  }
+
+  /* The label of a button is a span of its own, and this is what that is for:
+     the word can be replaced without touching the picture beside it. Written
+     only when it differs, so a repaint that changes nothing changes nothing. */
+  function relabel(node, label) {
+    var lb = node.querySelector(".lb");
+    if (lb && lb.textContent !== label) lb.textContent = label;
+    if (node.getAttribute("aria-label") !== label) node.setAttribute("aria-label", label);
+  }
+
+  function retitle(node, title) {
+    if (node.title !== title) node.title = title;
+    if (node.getAttribute("aria-label") !== title) node.setAttribute("aria-label", title);
+  }
+
+  function reicon(node, icon) {
+    if (node._icon === icon) return;
+    node._icon = icon;
+    var was = node.querySelector("svg");
+    var now = svg(icon);
+    if (was) node.replaceChild(now, was);
+    else node.insertBefore(now, node.firstChild);
+  }
+
+  /* A picture button that outlives the page it was made for, so what it does
+     is a slot rather than something sealed into it at birth: the print button
+     prints a song on one page and an evening on another, and it is the same
+     button on both. Handed back blank, for whoever asked to fill in. */
+  function actionBtn(name, icon, title) {
+    var b = keep(name, function () {
+      var node = iconBtn(icon, title, function () { if (node._act) node._act(); });
+      node._icon = icon;
+      return node;
+    });
+    reicon(b, icon);
+    retitle(b, title);
+    b._act = null;
+    return b;
+  }
+
+  /* WHAT THE BAR HOLDS IS SET BY MOVING THINGS, NOT BY EMPTYING IT. Whatever
+     is not wanted comes out, and what is wanted goes to its place; a button
+     standing on both the page before and the page after is not touched at
+     all, because it is already where it is being asked to be. */
+  function fill(bar, wanted) {
+    var i;
+    for (i = bar.children.length - 1; i >= 0; i--) {
+      if (wanted.indexOf(bar.children[i]) < 0) bar.removeChild(bar.children[i]);
+    }
+    for (i = 0; i < wanted.length; i++) {
+      if (bar.children[i] !== wanted[i]) bar.insertBefore(wanted[i], bar.children[i] || null);
+    }
+  }
+
+  /* The way into the other half of the app. It stands on the library and on
+     the two pages about people, and it is one button on all three. */
+  function toEvenings() {
+    return keep("toEvenings", function () {
+      return button("ערבי שירה", ICON.calendar, "ghost small", function () {
+        go(BASE + "/evenings");
+      });
+    });
+  }
+
   function paintHeader() {
     var bar = document.getElementById("topActions");
-    bar.innerHTML = "";
+    /* The test harness builds its own page around this file and has no bar. */
+    if (!bar) return;
     var p = parts();
 
     /* The evenings are a list like the library is a list, so their page gets
@@ -3057,72 +3145,92 @@
     if (p[0] === "evenings") {
       /* Nothing here is readable without an account, so the one button that
          matters is the way in. */
-      if (!auth.in) { bar.appendChild(session()); return; }
+      if (!auth.in) return fill(bar, [session()]);
       if (p.length === 1) {
-        bar.appendChild(button("ערב חדש", ICON.plus, "small", newEvening));
-        bar.appendChild(session());
-        return;
+        return fill(bar, [
+          keep("newEvening", function () {
+            return button("ערב חדש", ICON.plus, "small", newEvening);
+          }),
+          session(),
+        ]);
       }
       /* An evening that is open: the two things there are to do to the whole
          of it, both as pictures. A word beside a picture that means printing
          is the picture explained to somebody who already understood it. */
-      if (state.printer) bar.appendChild(iconBtn(ICON.print, "הדפסה", state.printer));
-      if (state.killer) {
-        var killEvening = iconBtn(ICON.trash, "מחיקת הערב", state.killer);
-        killEvening.classList.add("quiet");
-        bar.appendChild(killEvening);
+      var whole = [];
+      if (state.printer) {
+        var evPrint = actionBtn("print", ICON.print, "הדפסה");
+        evPrint._act = state.printer;
+        whole.push(evPrint);
       }
-      return;
+      if (state.killer) {
+        var evKill = actionBtn("kill", ICON.trash, "מחיקת הערב");
+        evKill.classList.add("quiet");
+        evKill._act = state.killer;
+        whole.push(evKill);
+      }
+      return fill(bar, whole);
     }
 
     /* The two pages about people. Neither has anything to do TO what is on
        it, so the bar carries the ways on from it: the other half of the app,
        and who is looking. */
     if (p[0] === "creators" || p[0] === "creator") {
-      bar.appendChild(button("ערבי שירה", ICON.calendar, "ghost small", function () {
-        go(BASE + "/evenings");
-      }));
-      bar.appendChild(session());
-      return;
+      return fill(bar, [toEvenings(), session()]);
     }
 
     if (p.length) {
+      var mine = [];
+      /* On a desk the song's own dials stand at the start of the bar. They
+         belong to the song rather than to the bar: made with it and handed
+         over by placeControls, which is why they are named here too. A repaint
+         that did not know about them would take them out. */
+      if (state.songControls && !NARROW.matches) mine.push(state.songControls.tools);
       /* Only once there is a song on the page. A song still loading, one that
          is not there at all and one still being read from a photograph are all
          this same address, and none of them is worth paper. */
       if (state.editToggle) {
         var edit = state.editToggle;
-        var editBtn = iconBtn(edit.on ? ICON.check : ICON.pencil,
-          edit.on ? "סיום עריכה" : "עריכה", edit.flip);
-        if (edit.on) editBtn.classList.add("is-on");
-        bar.appendChild(editBtn);
+        var editBtn = actionBtn("edit", edit.on ? ICON.check : ICON.pencil,
+          edit.on ? "סיום עריכה" : "עריכה");
+        editBtn.classList.toggle("is-on", !!edit.on);
+        editBtn._act = edit.flip;
+        mine.push(editBtn);
       }
       if (state.printable) {
-        var printBtn = iconBtn(ICON.print, "הדפסה", function () { askPrint(printBtn); });
-        bar.appendChild(printBtn);
+        var printBtn = actionBtn("print", ICON.print, "הדפסה");
+        printBtn._act = function () { askPrint(printBtn); };
+        mine.push(printBtn);
       }
+      fill(bar, mine);
       /* last, because it puts them at the front */
       placeControls();
       return;
     }
 
-    /* The way into the other half of the app, first, because it is the only
-       one of these that goes somewhere rather than making something. */
-    bar.appendChild(button("ערבי שירה", ICON.calendar, "ghost small", function () {
-      go(BASE + "/evenings");
-    }));
-    /* And the people, beside the evenings, because they are the same kind of
-       door: another way through the same songs. The library is by when a song
-       was last touched, an evening is by what was played together, and this
-       one is by who wrote it. */
-    bar.appendChild(button("יוצרים", ICON.people, "ghost small", function () {
-      go(BASE + "/creators");
-    }));
-    /* On a phone the reading is the only way in, so it is the one that gets
-       the solid button. On a desk both are open and the typing leads. */
-    bar.appendChild(button("מתמונה", ICON.upload, "ghost small", uploadSong));
-    bar.appendChild(button("שיר חדש", ICON.plus, "small", newSong));
-    bar.appendChild(session());
+    fill(bar, [
+      /* The way out to the evenings, first, because it is the only one of
+         these that goes somewhere rather than making something. */
+      toEvenings(),
+      /* And the people, beside the evenings, because they are the same kind of
+         door: another way through the same songs. The library is by when a song
+         was last touched, an evening is by what was played together, and this
+         one is by who wrote it. */
+      keep("toCreators", function () {
+        return button("יוצרים", ICON.people, "ghost small", function () {
+          go(BASE + "/creators");
+        });
+      }),
+      /* On a phone the reading is the only way in, so it is the one that gets
+         the solid button. On a desk both are open and the typing leads. */
+      keep("fromPhoto", function () {
+        return button("מתמונה", ICON.upload, "ghost small", uploadSong);
+      }),
+      keep("newSong", function () {
+        return button("שיר חדש", ICON.plus, "small", newSong);
+      }),
+      session(),
+    ]);
   }
 
   /* WHO IS LOOKING AT THIS, in the corner where it belongs, and their own name
@@ -3133,10 +3241,22 @@
      The name is a button, and what it opens is the small panel about the
      person: change the name, or leave. Signing out lives in there rather than
      beside it because it is the rarer of the two by a long way, and because a
-     bar with five buttons in it is a bar nobody reads. */
+     bar with five buttons in it is a bar nobody reads.
+
+     THE NAME IS A VALUE IN A BUTTON, NOT A BUTTON. It is the one thing in the
+     bar that stands on nearly every page and changes only rarely, so it is
+     made once and the word inside it is written over: renaming yourself, or
+     the name arriving from Google a moment after the page did, replaces four
+     letters and nothing else. */
   function session() {
-    if (!auth.in) return googleButton("התחברות", "small");
-    return button(auth.name() || "החשבון", ICON.person, "ghost small who", askMe);
+    if (!auth.in) {
+      return keep("signIn", function () { return googleButton("התחברות", "small"); });
+    }
+    var who = keep("who", function () {
+      return button("החשבון", ICON.person, "ghost small who", askMe);
+    });
+    relabel(who, auth.name() || "החשבון");
+    return who;
   }
 
   function askMe() {
@@ -3208,10 +3328,15 @@
      the app, because a tab among thirty others is asked which app this is. */
   function where(bar, tab) {
     var node = document.getElementById("topWhere");
-    document.title = tab || (bar ? bar + " | אקורדים" : "אקורדים");
+    var title = tab || (bar ? bar + " | אקורדים" : "אקורדים");
+    if (document.title !== title) document.title = title;
     /* The test harness builds its own bar and has no slot for this. */
     if (!node) return null;
-    node.textContent = bar || "";
+    /* The slot for the name is the same slot on every page, and what a move
+       changes is the name in it. Written only when it differs, so a repaint
+       that lands on the same page does not take the caret out of a name
+       somebody is in the middle of typing (see whereEditable). */
+    if (node.textContent !== (bar || "")) node.textContent = bar || "";
     node.removeAttribute("contenteditable");
     node.removeAttribute("data-empty");
     node.onkeydown = null;
@@ -7490,7 +7615,7 @@
 
           var here = BASE + "/" + encodeURIComponent(row.slug);
           if (decodeURIComponent(location.pathname) !== decodeURIComponent(here)) {
-            history.replaceState(null, "", here);
+            history.replaceState(history.state, "", here);
           }
 
           /* A column the table does not have yet is dropped on the way out so
@@ -8670,7 +8795,7 @@
         evening.id = row.id;
         /* it exists now, so it has an address of its own, and a refresh from
            here comes back to it rather than to an empty new evening */
-        if (born) history.replaceState(null, "", BASE + "/evenings/" + row.id);
+        if (born) history.replaceState(history.state, "", BASE + "/evenings/" + row.id);
         note("נשמר");
         if (again) { again = false; commit(); }
       }).catch(function (error) {
@@ -9089,9 +9214,84 @@
 
   /* ---------------------------------------------------------------- routing */
 
+  /* --- WHERE YOU WERE ON THE PAGE YOU LEFT ---------------------------------
+     The back button out of a song used to land at the top of the library,
+     which after a scroll down a wall of a hundred songs means finding your
+     place again by hand every single time.
+
+     THE BROWSER CANNOT DO THIS ONE ITSELF, and turning it off is the point of
+     the first line here. Its own restoring happens the moment the address
+     changes, and at that moment the page it is restoring does not exist yet:
+     the library is drawn from an answer that is still on its way from the
+     database, so there is nothing on the screen and nothing to scroll to.
+     Left on, all it does is fight the page while it arrives.
+
+     So it is written down here instead. Every history entry the app makes
+     carries a key; the place is saved under that key as the page is left, and
+     it is put back once the page that came in is tall enough to hold it. */
+  if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+
+  var scrollAt = {};
+  var scrollStep = 0;
+  /* Where the page about to be drawn should end up, and which attempt at
+     getting it there is the live one. */
+  var scrollWanted = 0;
+  var scrollTry = 0;
+  /* The key of the entry on the screen right now, which is the one whose place
+     is worth saving when it goes. */
+  var scrollHere = null;
+
+  /* An entry the app pushed carries its key. One it did not, which is the
+     address the tab was opened on, gets one now. */
+  function keyHere() {
+    var had = history.state && history.state.k;
+    if (had) return had;
+    var k = "s" + (++scrollStep);
+    history.replaceState({ k: k }, "");
+    return k;
+  }
+
+  function leaving() {
+    if (scrollHere) scrollAt[scrollHere] = window.scrollY || window.pageYOffset || 0;
+  }
+
+  /* A hand on the page beats anything remembered about it: whoever is already
+     scrolling has said where they want to be. */
+  ["wheel", "touchstart", "keydown"].forEach(function (name) {
+    window.addEventListener(name, function () { scrollTry++; }, { passive: true });
+  });
+
+  function restoreScroll() {
+    var want = scrollWanted;
+    scrollWanted = 0;
+    var mine = ++scrollTry;
+    /* Every page starts at the top, including the one that is going back to
+       somewhere further down: what is under the header at this moment is the
+       page being left, and it should not be seen half way through. */
+    window.scrollTo(0, 0);
+    if (!want) return;
+
+    var frames = 0;
+    (function again() {
+      if (mine !== scrollTry) return;
+      var far = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      if (far >= want) return window.scrollTo(0, want);
+      /* Two seconds of frames and then take what there is. A song deleted while
+         you were away is a page that will never be that tall again, and a page
+         that keeps reaching for a place that is not there is a page that will
+         not let go of the scrollbar. */
+      if (++frames > 120) return window.scrollTo(0, far);
+      requestAnimationFrame(again);
+    })();
+  }
+
   function go(href) {
     if (location.pathname === href) return;
-    history.pushState(null, "", href);
+    leaving();
+    history.pushState({ k: "s" + (++scrollStep) }, "", href);
+    scrollHere = history.state.k;
+    /* forward is a page nobody has seen yet, so it starts at the top */
+    scrollWanted = 0;
     route();
   }
 
@@ -9127,7 +9327,7 @@
   });
 
   function route() {
-    window.scrollTo(0, 0);
+    restoreScroll();
     /* whatever the page being left still owed the database */
     flushNow();
     /* the header follows the address, because what it offers depends on it.
@@ -9216,7 +9416,7 @@
        Kept rather than dropped because it is written down in bookmarks and in
        the index's own links from before this. */
     if (p.length >= 2 && p[1] === "edit") {
-      history.replaceState(null, "", BASE + "/" + encodeURIComponent(p[0]));
+      history.replaceState(history.state, "", BASE + "/" + encodeURIComponent(p[0]));
       return viewSong(p[0]);
     }
 
@@ -9244,7 +9444,7 @@
     var p = params.get("p");
     if (!p) return;
     var clean = BASE + "/" + p.replace(/^\/+/, "");
-    history.replaceState(null, "", clean + location.hash);
+    history.replaceState(history.state, "", clean + location.hash);
   }
 
   /* Back from Google, with the session in the fragment: `#access_token=…`, or
@@ -9281,7 +9481,7 @@
       });
     }
 
-    history.replaceState(null, "", back && back.indexOf(BASE) === 0 ? back : BASE + "/");
+    history.replaceState(history.state, "", back && back.indexOf(BASE) === 0 ? back : BASE + "/");
 
     if (trouble) {
       /* Google's own words, which are English and aimed at whoever wrote the
@@ -9300,7 +9500,15 @@
     });
   }
 
-  window.addEventListener("popstate", function () { route(); });
+  /* Back and forward. The address has already changed by the time this runs,
+     but nothing has scrolled, so what is on the screen is still the page being
+     left and its place can be taken now. */
+  window.addEventListener("popstate", function () {
+    leaving();
+    scrollHere = keyHere();
+    scrollWanted = scrollAt[scrollHere] || 0;
+    route();
+  });
 
   /* A window dragged across the narrow line changes what the header is allowed
      to offer, and a button that was true when it was painted is not true any
@@ -9322,6 +9530,9 @@
   }
 
   absorbFallback();
+  /* The address the tab opened on is a history entry like any other, and it is
+     the one everything else will be coming back to. */
+  scrollHere = keyHere();
   /* The box in the bar is built once and stays for the life of the tab: it is
      the same box on every page, and rebuilding it on each one would take the
      focus out of it every time somebody pressed a result. */
