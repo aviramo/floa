@@ -2108,6 +2108,25 @@ body.on-song .top { border-bottom: 0; }
 .told-tags .tag-style { text-decoration: none; }
 .told-tags .tag-style:hover { color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 
+/* --- AND WHO PUT IT IN THE LIBRARY ---------------------------------------
+   Under a line, in the panel's quiet ink, and as a sentence rather than as a
+   third row of the list above it. Who wrote a song is true wherever it is
+   sung; who typed it in is true only here, about this row, and a fact of that
+   kind read as one more answer in the column would be read as one more thing
+   about the song.
+
+   It also arrives a moment after the panel does, and a line that has to
+   appear is a line that should not be able to move the answers above it: at
+   the foot of the panel, nothing is under it to be pushed. */
+.told-who {
+  margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--line);
+  font-size: 13px; color: var(--ink-soft);
+}
+/* Hidden until there is a name to say. Said here rather than left to the
+   browser, so that giving this line a display of its own later cannot quietly
+   bring it back on every song. */
+.told-who[hidden] { display: none; }
+
 /* --- signing in --------------------------------------------------------- */
 
 /* THE ONLY WAY IN, so it is one button and it looks like itself everywhere:

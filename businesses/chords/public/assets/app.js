@@ -211,6 +211,9 @@
      through another site loses the page, and the page is usually the point:
      you press "התחברות" on the song you were about to fix. */
   var RETURN_KEY = "chords.return";
+  /* The last thing this browser told the library to call this account, so it
+     is told once and not on every page it opens (see announce). */
+  var SAID_KEY = "chords.said";
 
   /* WHAT TO CALL THE PERSON IN THE BAR.
      Their own answer first, because a name is theirs to give; then whatever
@@ -254,6 +257,12 @@
         refresh_token: data.refresh_token || (this.session && this.session.refresh_token) || "",
         expires_at: Date.now() + (data.expires_in || 3600) * 1000,
         email: email,
+        /* WHICH ACCOUNT THIS IS, which the app never needed while the only
+           person it had to name was the one holding the browser. A song
+           carries the uuid of whoever put it in the library and every reader
+           of that song is shown a name for it, so the account has to be able
+           to say which uuid is its own (see announce). */
+        id: (user && user.id) || (this.session && this.session.id) || "",
         /* An answer that came with this response, else the one already here,
            else the email. The middle one matters on the way back from Google:
            that hands over tokens and nothing about the person, and the name
@@ -261,6 +270,7 @@
         name: (meta && nameFrom(meta, email)) || (this.session && this.session.name) || nameFrom(null, email),
       };
       this.keep();
+      this.announce();
     },
 
     clear: function () {
@@ -298,7 +308,52 @@
       return this.remember({ display_name: kept }).then(function () {
         self.session.name = kept;
         self.keep();
+        /* and the library is told, because the name under every song this
+           account put there is this one */
+        return self.announce();
       });
+    },
+
+    /* --- AND THE ONE THING ABOUT AN ACCOUNT THAT OTHER PEOPLE SEE ------------
+       Everything else the account knows about the person is the person's own
+       business, and auth.users keeps it that way: nobody but the account may
+       read that row. What has to leave it is the name, and only the name,
+       because a song says who put it in the library and says it in a uuid.
+
+       So the name is copied to a row anybody may read (see `people` in
+       schema.sql). Copied, not moved: the account is still where it is set and
+       still where the bar reads it from, and this is the shop window.
+
+       SAID ONCE, NOT ON EVERY PAGE. What was last sent is written down here,
+       and a browser that has already said this name for this account sends
+       nothing at all: a page that wrote to the database every time it opened
+       would be a page that writes for no reason on almost every visit.
+
+       And it is never waited for. A name arriving in the library a moment
+       late costs nothing, and one that never arrives, because the table is
+       not there or the network went, leaves the songs saying what they said
+       before. */
+    announce: function () {
+      var id = this.session && this.session.id;
+      var name = this.name();
+      if (!id || !name) return Promise.resolve(null);
+
+      var saying = id + "\n" + name;
+      var said = "";
+      try { said = localStorage.getItem(SAID_KEY) || ""; } catch (e) { /* private window */ }
+      if (said === saying) return Promise.resolve(null);
+
+      /* One row per account, so writing one that is already there is the same
+         request as writing it for the first time: PostgREST is told which
+         column decides that and told to merge rather than complain. */
+      return rest(CFG.peopleTable + "?on_conflict=id", {
+        method: "POST",
+        body: { id: id, name: name },
+        prefer: "resolution=merge-duplicates",
+      }).then(function () {
+        try { localStorage.setItem(SAID_KEY, saying); } catch (e) { /* private window */ }
+        return null;
+      }).catch(function () { return null; });
     },
 
     /* One more thing the account knows about the person. Everything in here is
@@ -337,9 +392,13 @@
       }).then(function (user) {
         if (!user || !self.session) return null;
         var meta = user.user_metadata || null;
+        self.session.id = user.id || self.session.id || "";
         self.session.email = user.email || self.session.email;
         self.session.name = nameFrom(meta, self.session.email);
         self.keep();
+        /* This is the one answer that carries both halves of it, so it is the
+           natural place to say them: the account, and what to call it. */
+        self.announce();
         return user;
       }).catch(function () { return null; });
     },
@@ -727,6 +786,10 @@
     { columns: ["draft"] },
     { columns: ["published"] },
     { columns: ["styles"] },
+    /* Read and never written. The database fills it in from the token, which
+       is the whole of why a song cannot be put into somebody else's name; what
+       the app does with it is ask who that is (see db.who). */
+    { columns: ["owner"] },
   ].map(function (g) { return { columns: g.columns, admin: !!g.admin, on: true }; });
 
   function withOptional(fields) {
@@ -784,6 +847,14 @@
      never be touched from here. */
   var T = CFG.table;
   var COSTS = CFG.costTable;
+  var WHO = CFG.peopleTable;
+
+  /* Asked once per account for the life of the tab. A library is a handful of
+     people and a reader walks through twenty songs of theirs, so the answer is
+     the same answer twenty times; a failed ask is forgotten rather than kept,
+     so a page opened while the network was out is not answered from a hole for
+     the rest of the visit. */
+  var whoKnown = {};
 
   var db = {
     list: function () {
@@ -986,6 +1057,26 @@
         (rows || []).forEach(function (row) { by[row.id] = row.title; });
         return by;
       }).catch(function () { return {}; });
+    },
+
+    /* WHO AN ACCOUNT IS, in a word rather than in a uuid. The song carries the
+       uuid and the name behind it is in a table of its own, because the place
+       an account's name is actually kept is auth.users and nobody but that
+       account may read it (see `people` in schema.sql).
+
+       An empty answer is an answer: an account that has not opened the app
+       since the table existed has no row yet, and the page simply says nothing
+       about who put the song there rather than saying a uuid or an apology. */
+    who: function (id) {
+      if (!id) return Promise.resolve("");
+      if (whoKnown[id]) return whoKnown[id];
+      whoKnown[id] = rest(WHO + "?select=name&id=eq." + encodeURIComponent(id) + "&limit=1")
+        .then(function (rows) { return String((rows && rows[0] && rows[0].name) || "").trim(); })
+        .catch(function () {
+          delete whoKnown[id];
+          return "";
+        });
+      return whoKnown[id];
     },
   };
 
@@ -3214,13 +3305,23 @@
   }
 
   /* --- WHAT THIS READER DOES WITH THIS SONG ----------------------------------
-     THE WHOLE STRIP IS ABOUT THE PAIR. Two numbers, and neither of them is a
-     fact about the song and neither is a fact about the person on their own:
-     which key they play this one in, and where the capo goes for it. Somebody
-     who moved a song three semitones down did it because that is where their
-     voice sits, and somebody who clamped at 2 did it for the shapes THIS song
-     asks for. Both are as true next week as they were tonight, and neither
-     says anything about the next song.
+     THE WHOLE STRIP IS ABOUT THE PAIR, and the pair is the two things a person
+     with a guitar actually decides: WHICH KEY THEY SING IT IN, and WHERE THE
+     CAPO GOES. Somebody who moved a song three semitones down did it because
+     that is where their voice sits; somebody who clamped at 2 did it for the
+     shapes THIS song asks for. Both are as true next week as they were
+     tonight, and neither says anything about the next song.
+
+     WHAT IS ON THE PAGE IS NEITHER OF THEM. It was, for a while: one number
+     said how far the chords had moved and the capo was a note beside it that
+     changed nothing, which meant the singing moved every time somebody went
+     looking for a shape they could hold. Those are two different questions and
+     they were being asked with one button.
+
+     So the page is a RESULT now (see pageOf). Move the singing and the song
+     comes out higher. Move the capo and the shapes change under a voice that
+     has not moved at all, which is the whole of what a capo is for, and the
+     number on the strip is where to put it.
 
      The capo was one number on the account for a while, the same on every
      song, on the argument that it is a fact about the guitar. A guitar has no
@@ -3259,19 +3360,45 @@
     catch (e) { /* private window */ }
   }
 
-  /* Zero is an answer like any other, in both of them: a reader who moved the
-     song back to the key it is written in means it, and so does one who took
-     the capo off. So "they have never said" is null, and not zero. */
-  function keptKey(id) {
-    var was = keptFor(id);
-    var k = was ? was.k : null;
-    return typeof k === "number" && k >= -11 && k <= 11 ? Math.round(k) : null;
-  }
-
+  /* Zero is an answer like any other, in both of them: a reader who sings it
+     in the key it is written in means it, and so does one who plays it with no
+     capo at all. So "they have never said" is null, and not zero. */
   function keptCapo(id) {
     var was = keptFor(id);
     var c = was ? was.c : null;
     return typeof c === "number" && c >= 0 && c <= MAX_CAPO ? Math.round(c) : 0;
+  }
+
+  /* THE KEY THEY SING IT IN, WHICH USED TO BE KEPT AS THE KEY ON THE PAGE.
+     What is on the page is not a fact about anybody any more, it is what the
+     other two work out between them, so the number written down under "k" is
+     read here for what it always meant in the end: the page, plus whatever
+     fret they had a capo on, is what came out of the guitar. Nobody has to be
+     asked anything and nothing is lost, and the answer is written back under
+     "s" the next time they press a button. */
+  function keptSung(id) {
+    var was = keptFor(id);
+    if (!was) return null;
+    if (typeof was.s === "number" && was.s >= -11 && was.s <= 11) return Math.round(was.s);
+    /* THE OLD PAIR, ADDED UP. The fret counts here even where the page was
+       never moved: somebody who only ever put a capo on had the page at zero
+       and a capo at 4, and what came out of the guitar was four semitones up
+       whatever the app called it. Reading that as "sings it as written, capo
+       4" would move their whole song down to pay for a fret they were already
+       holding. */
+    var k = typeof was.k === "number" && was.k >= -11 && was.k <= 11 ? Math.round(was.k) : null;
+    if (k == null && typeof was.c !== "number") return null;
+    var sung = (k || 0) + keptCapo(id);
+    return sung > 11 ? sung - 12 : sung;
+  }
+
+  /* Whether this reader has said anything at all about this song. The two
+     numbers are answered together (see playedAs), because somebody who set
+     either of them has chosen a page, and only somebody who set neither is
+     handed one. */
+  function saidAnything(id) {
+    var was = keptFor(id);
+    return !!was && (typeof was.s === "number" || typeof was.k === "number" || typeof was.c === "number");
   }
 
   /* --- THE ONE YOU HAD OPEN LAST STANDS FIRST -------------------------------
@@ -3335,19 +3462,28 @@
      A song that then opened in the key it happens to be stored in, four barre
      chords deep, is the page breaking the promise the row made.
 
-     So a reader who has said nothing gets the song where the row said it would
-     be. easyVersion works in capo frets, which is the same move downwards: a
-     capo at 3 and a transposition of -3 put the identical shapes on the page.
-     Whether they clamp anything on is theirs to decide, and their own capo is
-     on the strip beside the song.
+     So a reader who has said nothing is handed the easy version, and now it is
+     handed to them AS WHAT IT IS. easyVersion searches capo frets, and a capo
+     fret is a capo fret: the answer goes into the capo, the singing stays where
+     the song was written, and the page falls out of the two. What used to
+     happen was the same shapes reached by moving the song down and calling the
+     fret a guess, which put the app in the position of having quietly changed
+     the key of a song nobody asked it to change.
 
-     One answer, asked here by everything that has to give it: the page that
-     opens the song, the row in the library and the evening. A row that says
-     one thing and a page that does another is worse than neither of them
-     saying anything. */
-  function openKey(song) {
-    var mine = keptKey(song.id);
-    if (mine != null) return mine;
+     Said once, here, by everything that has to say it: the page that opens the
+     song, the row in the library and the evening. A row that says one thing
+     and a page that does another is worse than neither of them saying
+     anything.
+
+     TWO ANSWERS AND NOT ONE, because a reader who has set either has set the
+     page. Somebody who moved the singing and never touched a capo means capo
+     zero, and handing them the easy version on top of the key they chose would
+     move the song under them. Silence is the only thing the app answers. */
+  function playedAs(song) {
+    if (saidAnything(song.id)) {
+      var sung = keptSung(song.id);
+      return { sung: sung == null ? 0 : sung, capo: keptCapo(song.id) };
+    }
     /* NOTHING IS GUESSED AT A SONG NOBODY HAS CHECKED YET. A song a machine
        read out of a picture is opened beside that picture, and the whole of
        the job in front of whoever opened it is "does this say what the picture
@@ -3355,22 +3491,34 @@
        cannot be compared to anything, and a chord corrected on it is corrected
        into the wrong key. It gets the easy version like every other song the
        moment somebody has looked at it. */
-    if (song.review || song.status === "queued" || song.status === "reading") return 0;
+    if (song.review || song.status === "queued" || song.status === "reading") return { sung: 0, capo: 0 };
     var used = chordsUsed(song.lines || []);
-    return used.length ? -easyVersion(used).capo : 0;
+    return { sung: 0, capo: used.length ? easyVersion(used).capo : 0 };
   }
 
-  /* The chords of this song as this reader will see them, and whether that is
-     the app's own guess or their answer: a capo the app worked out is worth
-     saying, and a capo under a key somebody chose themselves is a number about
-     a version of the song they are not playing. */
+  /* --- AND THE PAGE IS WHAT THE TWO OF THEM COME TO --------------------------
+     THIS IS THE WHOLE ARITHMETIC OF THE APP. Sing it `sung` semitones from
+     where the file has it, hold the capo at fret `capo`, and the shapes your
+     hand actually makes are `sung - capo` from the file, because the capo does
+     the rest of the distance for you.
+
+     It runs one way only, and that is the point. The page is worked out from
+     the two answers; nothing works the two answers out from the page. So the
+     capo can be moved all evening without the singing moving a hair, which is
+     not a rule anybody has to enforce anywhere, it is what subtraction does. */
+  function pageOf(played) { return played.sung - played.capo; }
+
+  /* The chords of this song as this reader will see them, and the fret their
+     hand is at to make them sound right. Both of them are true whether they
+     were chosen or worked out: an easy version the app found is a real capo at
+     a real fret, and saying so is the row keeping its promise to the page. */
   function shapesFor(song) {
     var used = chordsUsed(song.lines || []);
-    var mine = keptKey(song.id);
-    var by = openKey(song);
+    var played = playedAs(song);
+    var by = pageOf(played);
     return {
       shapes: used.map(function (chord) { return transposeChord(chord, by); }),
-      capo: mine == null ? -by : 0,
+      capo: played.capo,
       used: used,
     };
   }
@@ -5279,11 +5427,11 @@
          on, and read right to left like everything else on the page. Each name
          keeps its own direction (see .k), which is what stops "G/B" flipping
          inside itself. */
-      /* THE SHAPES, AND NOT WHERE TO CLAMP. The easy version is worked out
-         from a capo, and the card used to say which fret it assumed; it is a
-         guess about somebody else's hands, and where the capo actually goes is
-         a fact about the player that the song page now carries. What the card
-         is for is "can I play this", and the answer to that is the shapes. */
+      /* THE SHAPES, AND NOT WHERE TO CLAMP. The fret is real enough now, and
+         it is on the evening's list, where somebody is holding a guitar over
+         the page. Here it is not: this is a wall of cards being scanned, what
+         the card is for is "can I play this", and the answer to that is the
+         shapes. The fret is waiting on the song page for whoever opens it. */
       /* And in the key the song will actually open in, which for anybody who
          has moved it is the one they moved it to. The row is the page's own
          promise, so it is made from the same answer (see shapesFor). */
@@ -5741,7 +5889,10 @@
   function songTold(song) {
     var said = creditsOnce(song);
     var kinds = styles(song);
-    if (!said.length && !kinds.length) return null;
+    /* The owner counts, even though the name behind it has not arrived yet: a
+       song with no credits and no kind still has somebody who put it there,
+       and that is an answer worth a button. */
+    if (!said.length && !kinds.length && !song.owner) return null;
 
     var box = el("div", "song-told");
 
@@ -5780,6 +5931,34 @@
         tags.appendChild(opens(chip, BASE + "/style/" + encodeURIComponent(name)));
       });
       row("סגנון", tags);
+    }
+
+    /* --- AND WHO PUT IT THERE ------------------------------------------------
+       Not one more line of the form, and not a word in the column the other
+       two start in. Who wrote a song is a fact about the SONG and is true
+       wherever it is sung; who typed it into this library is a fact about the
+       ROW, and it is true only here. Two different kinds of thing, so it is a
+       sentence at the foot of the panel with a line over it rather than a
+       third answer in the list.
+
+       AND THERE IS NOTHING TO CHANGE ABOUT IT. The database fills the column
+       in from the token that wrote the song and refuses a row that claims
+       anybody else, so it is not a field here for the same reason it is not a
+       field in the editor: nobody, including the person who owns the song, is
+       being asked. It is what happened.
+
+       It arrives after the panel does, which is why the line is built empty
+       and hidden: one small request behind a button most people never press,
+       and a song whose owner has no name yet simply never shows the line. */
+    if (song.owner) {
+      var byWhom = el("div", "told-who");
+      byWhom.hidden = true;
+      box.appendChild(byWhom);
+      db.who(song.owner).then(function (name) {
+        if (!name || !byWhom.isConnected) return;
+        byWhom.textContent = "נוסף לספרייה על ידי " + name;
+        byWhom.hidden = false;
+      });
     }
 
     return box;
@@ -5873,25 +6052,16 @@
     /* TWO NUMBERS, AND THEY ARE NOT THE SAME NUMBER, but they are about the
        same thing: this reader and this song (see keptFor).
 
-       The transposition moves the chords on the page. It opens where they left
-       it last time, and failing that on the easy version, which is where the
-       library row said it would be.
-
-       The capo moves nothing. It is a note about the hand: which fret this
-       person clamps at to play this one, kept beside the key they play it in.
-
-       They were one number for a while: the song opened transposed down to
-       whatever fret made its chords easiest, and the sheet called that number
-       the capo. It reads well and it is a guess about somebody else's hands,
-       and worse, it meant "where is my capo" changed every time anybody moved
-       the song a semitone. The song still opens on the easy version. It is
-       just not called a capo any more, and nothing on the page pretends to
-       know where their hand is.
+       `sung` is where the voice is. `myCapo` is where the hand is. `semis`,
+       which everything below draws with, is neither: it is the two of them
+       subtracted (see pageOf), and it is written to in exactly one place.
 
        A song still coming out of the machine, or read out of one and not yet
-       checked, gets nothing worked out for it at all (see openKey). */
-    var myCapo = keptCapo(song.id);
-    var semis = openKey(song);
+       checked, gets nothing worked out for it at all (see playedAs). */
+    var played = playedAs(song);
+    var sung = played.sung;
+    var myCapo = played.capo;
+    var semis = pageOf(played);
 
     /* the size follows the reader from song to song. The key does not: it
        belongs to the one song it was chosen for. */
@@ -6370,10 +6540,14 @@
         });
         info.classList.add("song-info");
         /* The same hover the editor's button carries, which is the whole of
-           the panel in one line: the answer without opening anything. */
+           the panel in one line: the answer without opening anything. A song
+           that has nothing but an owner keeps the words the button was made
+           with, because the one line it could say has not arrived yet. */
         var inOneLine = creditsOnce(song).map(creditSaid).concat(styles(song));
-        info.title = inOneLine.join("  •  ");
-        info.setAttribute("aria-label", info.title);
+        if (inOneLine.length) {
+          info.title = inOneLine.join("  •  ");
+          info.setAttribute("aria-label", info.title);
+        }
         facts.appendChild(info);
 
         /* On the way DOWN, so it lands before the link's own handler does: a
@@ -6569,7 +6743,7 @@
       return ctl;
     }
 
-    /* --- THE KEY IT IS PLAYED IN -----------------------------------------------
+    /* --- THE KEY IT IS SUNG IN -------------------------------------------------
        Two buttons and no number. The number said how far the page was from a
        key nobody can hear, and the answer to "which key am I in" was already on
        the page, in the chords, in letters twice the size. A nought beside the
@@ -6579,62 +6753,82 @@
        There is nothing to press it into place with either. Making the key on
        screen the song's own was a button behind that number, for a decision
        that turns out not to need making: what the song is stored in is a
-       detail of the file now, and what each person plays it in is kept for
-       each person (see keptKey). Nobody has to agree with anybody. */
-    tools.appendChild(control(
-      ICON.pitch, "טרנספוזיציה", null,
-      function () { moveSemis(-1); },
-      function () { moveSemis(1); }
-    ));
+       detail of the file now, and what each person sings it in is kept for
+       each person (see keptSung). Nobody has to agree with anybody.
+
+       THIS IS THE ONE THAT CHANGES THE SOUND, and it is the only one. The capo
+       beside it moves the same chords under the same voice. */
+    var pitch = control(
+      ICON.pitch, "סולם", null,
+      function () { moveSung(-1); },
+      function () { moveSung(1); }
+    );
+    pitch.title = "באיזה סולם לשיר את השיר. משנה את הצליל, והקפו לא זז.";
+    tools.appendChild(pitch);
 
     /* THE SIZE IS NOT HERE ANY MORE. It was two buttons and a number, three
        things on a strip whose whole point is to be short, for a setting with
        one honest answer: bigger, until it is big enough. And every machine
        already has a gesture that means exactly that. See zoomBy below. */
 
-    /* WHERE THE CAPO GOES ON THIS SONG, WHICH IS WHEREVER THEY PUT IT. It
-       moves nothing on the page: what the chords say is the transposition's
-       business, and this is a note about the hand that plays them.
+    /* WHERE THE CAPO GOES, AND THIS IS THE ONE TO PLAY WITH. It moves the
+       chords on the page and it does not move the singing by so much as a
+       comma: clamp one fret higher and every shape on the page comes down one,
+       and the song still comes out of the guitar in the key it was coming out
+       in a second ago. That is not a rule being kept anywhere, it is what
+       pageOf subtracts.
+
+       So the number here is the answer to the only question a capo asks:
+       WHERE DO I PUT IT. Roll it up and down and watch the barre chords turn
+       into shapes you own, with your voice standing still the whole time.
 
        A fret, so zero or up, and zero means no capo, which is a real answer
-       and the usual one. It is kept for this reader and this song, beside the
-       key, because it is the same kind of answer: this is how I play THIS.
+       and the usual one. Up to MAX_CAPO, which is where easyVersion stops
+       looking too: one ceiling, so the app can never suggest a fret the strip
+       cannot reach.
 
-       Only for somebody signed in, which is the one thing the two numbers do
-       not share. The key changes the page and everybody gets it; a fret is a
-       note somebody keeps for themselves, and there is nobody to keep it for
-       until there is somebody.
+       FOR EVERYBODY NOW, signed in or not. It was kept for signed-in readers
+       while it was a private note about somebody's hand; it changes the page,
+       so it belongs to whoever is reading the page.
 
-       AND IT IS FOLDED. A fret is chosen once for a song and then read for the
-       rest of it, so the two buttons that choose it were the loudest thing on
-       the strip for the longest time they were of no use to anybody. Pressing
-       the capo and the number is what brings them out (see control's `folded`),
-       which is also the only press anyone would try: they are the control. */
-    var myValue = null;
-    if (auth.in) {
-      tools.appendChild(el("span", "sep"));
-      myValue = el("span", "val");
-      var mine = control(
-        ICON.capo, "קפו", myValue,
-        function () { setMyCapo(myCapo - 1); },
-        function () { setMyCapo(myCapo + 1); },
-        true
-      );
-      mine.title = "באיזה סריג הקפו שלכם בשיר הזה. נשמר לכם, לשיר הזה.";
-      tools.appendChild(mine);
-      showMyCapo();
-    }
+       AND IT STAYS FOLDED, which turns out to be the right shape for a control
+       you sit and roll rather than the wrong one. The FRET is on the dial and
+       never hidden: what folds is only less and more. Press once and they come
+       out underneath at the size a finger wants, half again as big as anything
+       on the strip has room to be, and they stay out while you press them:
+       drawing the song again rebuilds the sheet and leaves the strip standing,
+       so the shapes change under the panel with the panel still open. */
+    tools.appendChild(el("span", "sep"));
+    var myValue = el("span", "val");
+    var capoCtl = control(
+      ICON.capo, "קפו", myValue,
+      function () { setMyCapo(myCapo - 1); },
+      function () { setMyCapo(myCapo + 1); },
+      true
+    );
+    capoCtl.title = "באיזה סריג לשים את הקפו. משנה את האקורדים על הדף, לא את הצליל.";
+    tools.appendChild(capoCtl);
+    showMyCapo();
 
     function showMyCapo() {
-      if (myValue) myValue.textContent = String(myCapo);
+      myValue.textContent = String(myCapo);
     }
 
-    /* Kept where the key is kept, in this browser, under this reader and this
-       song: one press, one write, no network to wait on. */
+    /* Kept where the singing is kept, in this browser, under this reader and
+       this song: one press, one write, no network to wait on. */
     function setMyCapo(next) {
+      var was = myCapo;
       myCapo = Math.max(0, Math.min(next, MAX_CAPO));
+      if (myCapo === was) return;
       showMyCapo();
       keepFor(song.id, "c", myCapo);
+      /* AND THE SINGING IS WRITTEN DOWN WITH IT, once, the first time either
+         is touched. Until now this reader had nothing kept for this song and
+         the app was answering for them; the moment they move a fret, the key
+         they are singing in is their answer too, and a page worked out from
+         one chosen number and one guessed one is a page nobody chose. */
+      keepFor(song.id, "s", sung);
+      repage();
     }
 
 
@@ -6877,23 +7071,43 @@
       }, soon ? 60 : 500);
     }
 
-    /* Round, not against a wall. Past the top it comes out at the bottom and
-       the other way about, so reaching a distant key is never a matter of
-       pressing the other button eleven times. */
-    function setSemis(next) {
-      semis = next > 11 ? -11 : next < -11 ? 11 : next;
+    /* THE ONLY PLACE `semis` IS EVER ASSIGNED, and it is not a decision, it is
+       a subtraction (see pageOf). Both controls end here, which is why neither
+       of them can drift away from the other: there is no second copy of the
+       answer to go stale.
+
+       Not wrapped, because it does not need to be. It runs from -11 - MAX_CAPO
+       to 11 at worst, and shiftRoot takes any integer modulo twelve. Wrapping
+       it here would be a second opinion about a number nobody reads. */
+    function repage() {
+      semis = pageOf({ sung: sung, capo: myCapo });
       draw();
     }
 
-    /* PRESSING IS CHOOSING. Whoever moves the song has just said where they
-       play it, and they are the same person with the same voice and the same
-       hands tomorrow, so it is kept and the song opens there next time. Kept on
-       the press and not on the drawing, because the app draws its own guess at
-       the easy version too, and a guess that writes itself down is a guess
-       nobody can tell from an answer. */
-    function moveSemis(by) {
-      setSemis(semis + by);
-      keepFor(song.id, "k", semis);
+    /* Round, not against a wall. Past the top it comes out at the bottom and
+       the other way about, so reaching a distant key is never a matter of
+       pressing the other button eleven times.
+
+       PRESSING IS CHOOSING. Whoever moves the song has just said where they
+       sing it, and they are the same person with the same voice tomorrow, so
+       it is kept and the song opens there next time. Kept on the press and not
+       on the drawing, because the app draws its own guess at the easy version
+       too, and a guess that writes itself down is a guess nobody can tell from
+       an answer.
+
+       THE CAPO DOES NOT MOVE. Somebody who wants the song higher wants it
+       higher out of the guitar, and taking a fret off their neck to pay for it
+       would leave the song exactly where it was. Their hand is where they put
+       it, and the shapes on the page go up with the voice. */
+    function moveSung(by) {
+      var next = sung + by;
+      sung = next > 11 ? -11 : next < -11 ? 11 : next;
+      keepFor(song.id, "s", sung);
+      /* AND THE FRET IS WRITTEN DOWN WITH IT, the mirror of setMyCapo: until
+         one of the two is touched the app is answering for this reader, and a
+         page half chosen and half guessed is a page nobody chose. */
+      keepFor(song.id, "c", myCapo);
+      repage();
     }
 
     /* Bigger words fit in fewer places, so where the lines break is part of
@@ -9016,10 +9230,10 @@
       });
     }
 
-    /* through setSemis, not straight to draw, so the page opens on the key it
+    /* through repage, not straight to draw, so the page opens on the key it
        was opened in: the first drawing is the one that has to be transposed,
        and it is the only one nobody presses a button to get */
-    setSemis(semis);
+    repage();
     relayoutOn(sheet, draw, editing);
 
     /* last, once the page is whole, because taking a draft back means writing
@@ -10013,8 +10227,9 @@
         if (mine.shapes.length) {
           var keys = el("div", "keys");
           keys.title = "השיר עצמו: " + mine.used.join("  ");
-          /* only where the app worked the key out itself: under a key somebody
-             chose, a fret is a note about a version they are not playing */
+          /* The fret these shapes are the shapes FOR, which is the same fret
+             the song page will open on: chosen or worked out, it is where the
+             capo goes to make this row true. Zero is not worth a chip. */
           if (mine.capo) keys.appendChild(el("span", "capo", "קפו " + mine.capo));
           mine.shapes.forEach(function (shape) { keys.appendChild(el("span", "k", shape)); });
           box.appendChild(keys);

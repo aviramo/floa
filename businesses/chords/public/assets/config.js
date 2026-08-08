@@ -20,6 +20,13 @@ window.CHORDS_CONFIG = {
   versionTable: "song_versions",
   costTable: "song_costs",
 
+  /* And a fifth, which is not about songs at all: what to call an account
+     where somebody OTHER than that account has to be shown its name. A song
+     says who put it in the library, and the column it says it in is a uuid;
+     the name behind that uuid lives in auth.users, which nobody but the
+     account itself may read. See `people` in schema.sql. */
+  peopleTable: "people",
+
   /* The Worker holds the Anthropic key and reads an uploaded photo or PDF.
      Same deployment that sends the leads for every other business here. */
   transcribeEndpoint: "https://floa-lead.floa-il.workers.dev/transcribe",

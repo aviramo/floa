@@ -506,3 +506,81 @@ drop policy if exists "a reading records what it cost" on public.song_costs;
 create policy "a reading records what it cost"
   on public.song_costs for insert to authenticated
   with check (true);
+
+-- ==========================================================================
+-- What to call an account, where somebody else has to be named.
+--
+-- A person's name is already kept, on the account itself, in the metadata
+-- auth.users holds for it. And auth.users is not readable through the API by
+-- anybody but the account it belongs to: there is no policy that could open
+-- it and there should not be, because that table holds the email addresses,
+-- the providers and the tokens of everybody who ever signed in.
+--
+-- Which is right for the bar at the top of the page, where an account reads
+-- its own name, and no use at all in the one place another person has to be
+-- named: the song says who put it in the library, and what it says it in is a
+-- uuid. A uuid is not an answer.
+--
+-- So this is a row per account holding the ONE thing about an account that
+-- other people are shown, and nothing else. No email, no provider, no dates
+-- anybody signed in on. Written by the account itself and by nothing else,
+-- read by anybody at all, and kept in step by the app the moment a name is
+-- set (see auth.announce).
+-- ==========================================================================
+create table if not exists public.people (
+  id         uuid primary key references auth.users (id) on delete cascade,
+  name       text not null default '',
+  updated_at timestamptz not null default now()
+);
+
+drop trigger if exists people_touch_updated_at on public.people;
+create trigger people_touch_updated_at
+  before update on public.people
+  for each row execute function public.touch_updated_at();
+
+-- Everybody who signed in before this table existed, named the way the app
+-- names them: their own answer first, then whatever Google said, then the
+-- first half of the email. The same order as nameFrom in the browser, because
+-- a person who is called one thing in the bar and another under a song is two
+-- people as far as anybody reading is concerned.
+--
+-- `on conflict do nothing`, so this fills in what is missing and never writes
+-- over a name somebody has since given themselves.
+insert into public.people (id, name)
+select u.id,
+       coalesce(nullif(u.raw_user_meta_data ->> 'display_name', ''),
+                nullif(u.raw_user_meta_data ->> 'full_name', ''),
+                nullif(u.raw_user_meta_data ->> 'name', ''),
+                split_part(coalesce(u.email, ''), '@', 1),
+                '')
+  from auth.users u
+on conflict (id) do nothing;
+
+alter table public.people enable row level security;
+
+-- Anybody, signed in or not. What is in here is a name somebody chose to put
+-- over their own songs, and the songs it names are readable by everybody: a
+-- row that said who wrote them but only to people with an account would be a
+-- credit that goes missing on exactly the page it belongs on.
+drop policy if exists "a person is readable by everyone" on public.people;
+create policy "a person is readable by everyone"
+  on public.people for select
+  using (true);
+
+-- And it is written by the one account it is about. `with check` on both is
+-- what stops a row being written in somebody else's name, or handed over
+-- afterwards, which is the same rule the songs live under.
+drop policy if exists "a person names themselves" on public.people;
+create policy "a person names themselves"
+  on public.people for insert to authenticated
+  with check (id = auth.uid());
+
+drop policy if exists "a person renames themselves" on public.people;
+create policy "a person renames themselves"
+  on public.people for update to authenticated
+  using (id = auth.uid()) with check (id = auth.uid());
+
+-- No delete policy, so there is none. A row here is what a song's owner
+-- column means, and deleting it would leave every song that account put in
+-- the library owned by a uuid again. It goes when the account goes, by the
+-- cascade above, and that is the only way out.
