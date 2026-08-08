@@ -1851,6 +1851,28 @@ body.on-song .top { border-bottom: 0; }
    it is going unnoticed. Same size, same weight, and the order of the two says
    which is which. */
 
+/* --- the chords of a copy, offered over the next marking -------------------
+   It stands off the page the same way the offer under a letter does, and it is
+   the same red, because what it puts down is chords and the chords on this page
+   are red. It carries its words as well as its picture: two notes over a line
+   is a clear enough drawing once you know what it does, and nobody arrives
+   knowing, so the button says it.
+
+   Small, though. It is standing over words somebody has just marked and is
+   still reading, and a marking is not a request for a toolbar. */
+.chord-offer { position: fixed; z-index: 50; }
+.chord-btn {
+  display: flex; align-items: center; gap: 5px;
+  height: 25px; padding: 0 8px;
+  appearance: none; cursor: pointer;
+  font: inherit; font-size: 12px; line-height: 1; white-space: nowrap;
+  color: var(--chord); background: #fff;
+  border: 1px solid var(--line); border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(23, 32, 42, .12);
+}
+.chord-btn:hover { border-color: var(--chord); }
+.chord-btn svg { width: 14px; height: 14px; }
+
 /* A blank line is the gap between two stanzas, and a gap does not need a full
    line of words plus an empty chord lane above it to say so: about half that
    reads as a break without reading as a missing verse. The lane goes entirely,
@@ -2133,7 +2155,7 @@ body.on-song .top { border-bottom: 0; }
      than about the song. On paper it is the song. */
   .past-band { display: none !important; }
   /* what is offered on a screen is not a fact about the song on paper */
-  .gap-offer, .steps-pop { display: none !important; }
+  .gap-offer, .steps-pop, .chord-offer { display: none !important; }
   /* what a version changed is about two versions, and paper holds one */
   .ln.is-add::before, .ln.is-gone::before { display: none; }
   .ln.is-gone { display: none; }

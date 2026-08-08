@@ -86,6 +86,12 @@
        like once it is there, so the button and its result are the same shape:
        press this, get this. */
     gap: '<path d="M4.5 9.5Q12 18.5 19.5 9.5"/>',
+    /* THE CHORDS AND THE LINE THEY STAND OVER, and the line is empty. That is
+       the whole of what the button does: two notes come down onto words that
+       are already written, and nothing else comes with them. The note heads
+       are the ones on the key dial and on «who wrote the tune», because a note
+       is a note wherever it is drawn here. */
+    chordsOnly: '<path d="M3.5 20.5h17"/><path d="M8 5.5v6.6"/><ellipse cx="6.3" cy="12.6" rx="1.8" ry="1.5" fill="currentColor" stroke="none"/><path d="M17 5.5v6.6"/><ellipse cx="15.3" cy="12.6" rx="1.8" ry="1.5" fill="currentColor" stroke="none"/>',
     /* the question mark itself: the hook, the stem and the dot. Drawn to the
        full height of the box like every other icon here, so that at fifteen
        pixels it is a question mark and not a speck. */
@@ -6642,9 +6648,10 @@
       /* The frame the drawing before this one asked for was for rows that are
          about to stop existing, so it goes with them. */
       if (framed) { cancelAnimationFrame(framed); framed = 0; }
-      /* every row on screen is about to stop existing, and the little button
+      /* every row on screen is about to stop existing, and the little buttons
          hanging under one of them with it */
       hideGap();
+      hideChordOffer();
       sheet.innerHTML = "";
       song.dir = songDir(song.lines);
       sheet.dir = song.dir;
@@ -7332,6 +7339,174 @@
       settle();
     }
 
+    /* --- THE CHORDS OF THE LAST COPY, OVER WHAT IS MARKED NOW -----------------
+       A song repeats itself. The second verse is sung to the first one's
+       chords, the chorus comes back with the same four, and a whole song can
+       run on one turnaround. Typing those chords again, one at a time, over
+       words that are already on the page, is the longest thing there is to do
+       in this editor and the one thing the song already knows the answer to.
+
+       So a copy of lines with chords over them leaves the chords behind it
+       (see chordClip), and marking any other words afterwards puts up a small
+       button over them: the same chords, on these words, without the words
+       they came from. Offered and not done, exactly like the arc under a
+       letter: marking text is how anybody reads and re-reads, and a marking
+       that quietly rewrote the song would be an editor that types back.
+
+       It appears a moment after the marking stops rather than while it is
+       being made. A drag fires for every character it crosses, and a button
+       that came up under a moving pointer would be a thing to chase. */
+    var chordOffer = null;
+
+    function hideChordOffer() {
+      if (!chordOffer) return;
+      chordOffer.remove();
+      chordOffer = null;
+      document.removeEventListener("pointerdown", chordOutside, true);
+      window.removeEventListener("scroll", hideChordOffer, true);
+      window.removeEventListener("resize", hideChordOffer);
+    }
+
+    function chordOutside(event) {
+      if (chordOffer && !chordOffer.contains(event.target)) hideChordOffer();
+    }
+
+    /* A marking held inside the one line that is open for typing. acrossLines
+       hands that case back to the browser on purpose, and it is exactly where
+       a double-clicked word lands: the pointer came up inside a line, so that
+       line was opened with its word still marked. */
+    function insideLine() {
+      var selection = window.getSelection && window.getSelection();
+      if (!selection || !selection.rangeCount || selection.isCollapsed) return null;
+
+      var range = selection.getRangeAt(0);
+      if (!typing || !sheet.contains(typing) || !typing.contains(range.commonAncestorContainer)) return null;
+
+      var index = lineIndexOf(typing);
+      if (index < 0) return null;
+
+      var here = rowFrom(rowOf(typing));
+      var opens = indexAt(typing, range.startContainer, range.startOffset);
+      var shuts = indexAt(typing, range.endContainer, range.endOffset);
+      if (opens == null || shuts == null || opens >= shuts) return null;
+
+      return { a: index, b: index, at: opens + here, end: shuts + here };
+    }
+
+    /* What is marked, as a stretch of characters in each line it crosses: the
+       first line from where it began to its end, the last from its start to
+       where it stopped, and everything between them whole. Headings are not
+       lines with chords over them and neither are blank rows, so neither is
+       ever one of these. */
+    function markedLines() {
+      var span = acrossLines() || insideLine();
+      if (!span) return null;
+
+      var where = [];
+      for (var i = span.a; i <= span.b; i++) {
+        var line = song.lines[i];
+        if (!line || line.type === "section") continue;
+
+        var from = i === span.a ? span.at : 0;
+        var to = Math.min(i === span.b ? span.end : line.text.length, line.text.length);
+        if (!(from < to)) continue;
+        if (!withoutGaps(line.text.slice(from, to)).trim()) continue;
+
+        where.push({ index: i, from: from, to: to });
+      }
+      return where.length ? where : null;
+    }
+
+    /* THE PATTERN GOES ROUND, and how many chords land is a matter of how much
+       line there is to land on. Neither of those is a mismatch to be refused:
+       a verse of two lines copied onto six is that verse three times over, and
+       a long line copied onto a short one puts down as many chords as the
+       short one has characters for and leaves the rest behind.
+
+       What stood over the marked characters comes off first. This is the same
+       thing as typing over a marked word: what was there is what is being
+       replaced, and a chord outside the marking was not part of the question. */
+    function dropChords(where) {
+      if (!chordClip || !chordClip.length) return;
+      var put = 0, took = 0;
+
+      where.forEach(function (spot, n) {
+        var line = song.lines[spot.index];
+        if (!line) return;
+
+        var from = chordClip[n % chordClip.length];
+        var had = line.chords.length;
+
+        line.chords = line.chords.filter(function (c) {
+          return c.pos < spot.from || c.pos >= spot.to;
+        });
+        took += had - line.chords.length;
+
+        from.chords.forEach(function (c) {
+          var at = spot.from + c.pos;
+          /* past the end of what was marked is not in it */
+          if (at >= spot.to) return;
+          /* Read off the screen and written into the song, so a chord copied
+             while the page was three semitones up goes in as the chord it
+             would have been in the song's own key: the same journey a pasted
+             verse makes (see onPaste), and for the same reason. */
+          line.chords.push({ pos: at, chord: transposeChord(c.chord, -semis) });
+          put++;
+        });
+
+        line.chords.sort(function (a, b) { return a.pos - b.pos; });
+      });
+
+      hideChordOffer();
+      if (!put && !took) return void toast("אין מקום לאקורדים במה שסומן");
+      draw();
+      mark();
+    }
+
+    function offerChords() {
+      hideChordOffer();
+      if (!sheet.isConnected || !chordClip || !chordClip.length) return;
+
+      var selection = window.getSelection && window.getSelection();
+      if (!selection || !selection.rangeCount || selection.isCollapsed) return;
+
+      /* Asked for before the button is built, so a marking with nothing in it
+         to answer for never puts one up. */
+      var where = markedLines();
+      if (!where) return;
+
+      /* The last of the boxes the marking is drawn in, which is the row it
+         ends on: the button belongs under the end of the gesture and not under
+         the middle of a block that may be a screenful tall. */
+      var rects = selection.getRangeAt(0).getClientRects();
+      var box = rects.length ? rects[rects.length - 1] : selection.getRangeAt(0).getBoundingClientRect();
+      if (!box || (!box.width && !box.height)) return;
+
+      chordOffer = el("div", "chord-offer");
+      var put = el("button", "chord-btn");
+      put.type = "button";
+      put.title = "להעמיד את האקורדים שהועתקו מעל מה שסומן, בלי המילים";
+      put.setAttribute("aria-label", put.title);
+      put.appendChild(svg(ICON.chordsOnly));
+      put.appendChild(el("span", null, "אקורדים בלבד"));
+      /* the marking is the whole of where this goes, so a press must not take
+         it away before the press is answered */
+      put.addEventListener("pointerdown", function (event) { event.preventDefault(); });
+      put.addEventListener("click", function () { dropChords(where); });
+      chordOffer.appendChild(put);
+      document.body.appendChild(chordOffer);
+
+      var width = chordOffer.offsetWidth, height = chordOffer.offsetHeight;
+      chordOffer.style.left = Math.min(Math.max(4, box.left + box.width / 2 - width / 2), window.innerWidth - width - 4) + "px";
+      chordOffer.style.top = Math.min(box.bottom + 4, window.innerHeight - height - 4) + "px";
+
+      document.addEventListener("pointerdown", chordOutside, true);
+      /* it is standing at a place on the screen, and both of these move that
+         place out from under it */
+      window.addEventListener("scroll", hideChordOffer, true);
+      window.addEventListener("resize", hideChordOffer);
+    }
+
     /* --- one editable line ---------------------------------------------------
        There is no edit mode and no field. The words on screen ARE the input:
        the same spans the reader sees, made editable in place, so nothing moves,
@@ -7924,6 +8099,9 @@
 
         var text = sheetToText(sheet, selection);
         if (!text) return;
+        /* Before the lines go: what is being taken out is on the clipboard,
+           chords and all, and its chords are on their own as well. */
+        rememberChords(sheet, selection);
         event.clipboardData.setData("text/plain", text);
         event.preventDefault();
 
@@ -8003,6 +8181,29 @@
         mark();
       };
       document.addEventListener("paste", onPaste, true);
+
+      /* --- and the chords of the last copy, offered over the next marking -------
+         Every change takes the offer away and asks for it again a moment
+         later, so what is on the screen is always about the marking that is on
+         the screen, and a drag puts one button up at the end and none along
+         the way (see offerChords). */
+      var soon = 0;
+      var onMark = function () {
+        clearTimeout(soon);
+        hideChordOffer();
+        if (!sheet.isConnected) return document.removeEventListener("selectionchange", onMark);
+        soon = setTimeout(offerChords, 180);
+      };
+      document.addEventListener("selectionchange", onMark);
+
+      /* A COPY IS NOT A MARKING. What was just taken stays marked afterwards,
+         and offering its own chords back onto it is a button that does
+         nothing. The next thing marked gets the offer. */
+      var onCopied = function () {
+        if (!sheet.isConnected) return document.removeEventListener("copy", onCopied);
+        hideChordOffer();
+      };
+      document.addEventListener("copy", onCopied);
     }
 
     /* The keys that shape a document, doing what they do everywhere else.
@@ -8847,12 +9048,96 @@
     return node && node.closest ? node.closest(".sheet") : null;
   }
 
+  /* --- AND THE SAME COPY, WITHOUT THE WORDS ----------------------------------
+     What lands on the clipboard is the words and the chords together, because
+     that is what a copy of a song is. But a chord sheet is written the other
+     way round as often as not: a second verse sung to the first one's chords,
+     a chorus that comes back three times, a whole song over one turnaround.
+     There the words are already on the page and the only thing worth carrying
+     over is what stands above them.
+
+     So every copy leaves its chords behind it here as well, on their own,
+     counted from the first character that was taken. Nothing is done with
+     them until they are asked for: they wait, and the next thing marked in an
+     editor is offered them (see offerChords).
+
+     LINE BY LINE, AND ONLY THE LINES THAT HAVE WORDS. A blank row between two
+     verses is the space between them, it can hold no chord, and a pattern
+     that counted it would fall out of step with a marking that has none. A
+     line with words and no chords over them IS part of the pattern: copying
+     two lines where the second is bare is copying a line and a rest.
+
+     A copy with no chord in it anywhere clears what was here rather than
+     leaving it. The offer is about the last thing copied, and somebody who
+     just copied plain words is not carrying chords any more. */
+  var chordClip = null;
+
+  function copiedChords(sheet, selection) {
+    /* `open` is the line a broken row would carry on: the last row taken, and
+       only while nothing has come between the two. A heading, a row left out
+       of the marking or a row with no words in it all close it, because a
+       continuation of a line the copy never took is not a continuation of
+       anything here. */
+    var rows = [], open = null;
+
+    Array.prototype.forEach.call(sheet.querySelectorAll(".ln"), function (ln) {
+      if (ln.querySelector(".ln-section")) { open = null; return; }
+
+      var t = ln.querySelector(".ln-t");
+      var spans = t ? t.children : [];
+      var from = -1, to = -1;
+      for (var i = 0; i < spans.length; i++) {
+        if (!selection.containsNode(spans[i], true)) continue;
+        if (from < 0) from = i;
+        to = i;
+      }
+      if (from < 0) { open = null; return; }
+
+      var text = "";
+      for (var j = from; j <= to; j++) text += spans[j].textContent;
+
+      var chords = [];
+      Array.prototype.forEach.call(ln.querySelectorAll(".ln-c .chord"), function (node) {
+        var at = Number(node.dataset.pos);
+        var name = node.textContent.trim();
+        /* A chord being named this second has no name yet, and an empty label
+           is not something to carry anywhere. */
+        if (!name || !isFinite(at) || at < from || at > to) return;
+        chords.push({ pos: at - from, chord: name });
+      });
+      chords.sort(function (a, b) { return a.pos - b.pos; });
+
+      /* A row the reader broke off the line above is that line continuing, so
+         its chords carry on past the end of what was taken from the row above:
+         the same join sheetToText makes, counted instead of written. */
+      if (open && ln.classList.contains("is-cont")) {
+        var here = open;
+        chords.forEach(function (c) { here.chords.push({ pos: c.pos + here.len, chord: c.chord }); });
+        here.len += text.length;
+        return;
+      }
+
+      open = withoutGaps(text).trim() ? { len: text.length, chords: chords } : null;
+      if (open) rows.push(open);
+    });
+
+    return rows;
+  }
+
+  function rememberChords(sheet, selection) {
+    var rows = copiedChords(sheet, selection);
+    var any = rows.some(function (row) { return row.chords.length > 0; });
+    chordClip = any ? rows : null;
+  }
+
   /* One listener for every sheet there is, hung on the document because a copy
      is a fact about the selection and not about any one element. */
   document.addEventListener("copy", function (event) {
     var selection = window.getSelection && window.getSelection();
     var sheet = sheetOfSelection(selection);
     if (!sheet || !event.clipboardData) return;
+
+    rememberChords(sheet, selection);
 
     var text = sheetToText(sheet, selection);
     if (!text) return;
