@@ -1003,8 +1003,30 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 .song-meta .kinds-field input[type="text"] {
   flex: 1 1 8em; min-width: 0;
   margin-top: 0; padding: 4px 2px; border-radius: 0;
-  background: none; border: 0;
+  background: none; border: 0; border-bottom: 1px solid var(--accent);
 }
+/* ONE MORE OF THESE, DRAWN AS ONE OF THESE. The way to add a style is the same
+   chip its result will be, with a plus where the name goes: what a press makes
+   is one more of the things standing beside it. It was a field standing open
+   with grey words in it, which is a second shape on a row of chips and a line
+   under empty space on a song that may already have every style it needs.
+
+   The field is what the press opens, in its place, so the row never holds both
+   and nothing on it moves but the one thing that changed.
+
+   It IS a .tag-style, so the ring, the round and the quiet are already its. What
+   is left here is the difference between a word and a button: it is pressable,
+   it is one character wide, and it answers the pointer. */
+.tag-add {
+  appearance: none; cursor: pointer; border: 0; font: inherit;
+  font-size: 13px; font-weight: 700; line-height: 1.5;
+  padding-inline: 9px;
+}
+.tag-add:hover { color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+/* A chip is displayed inline-flex, which is a display of its own and therefore
+   beats the browser's own rule for a hidden element. Said here, or the plus
+   stands beside the field it was replaced by. */
+.tag-add[hidden] { display: none; }
 
 /* Who wrote it and what kind of song it is, on the song itself: there is no
    other page to keep them on any more. Three fields, and all three of them are
@@ -1027,20 +1049,15 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    "לחן" a syllable apart and the two names that follow them a syllable apart
    as well: a form of three lines with three different left edges reads as
    three unrelated things.
-   The mark in front of the word is the one the reader's line uses (see
-   .credit): one shape for a credit whether it is being read or written.
 
-   The word is a line of text and not a little flex row of its own. The row it
-   sits on lines everything up by the baseline, and a flex box's baseline is
-   its first child's, which would make the mark the thing the name in the field
-   beside it lines up with. Inline, the baseline is the word's own. */
+   THE WORD ALONE. Each of them carried the little picture that stands in for
+   it where there is no room for the word: a pen, a note, a tag. Where the word
+   itself is written out, the picture beside it is a picture of the word, and
+   three of them down the side of a panel of three fields is a column of
+   decoration in the one place there was never a shortage of room. */
 .meta-word {
   flex: none; width: 4.8em; white-space: nowrap;
   font-size: 13px; font-weight: 600; color: var(--ink-soft);
-}
-.meta-word svg {
-  width: 14px; height: 14px; opacity: .7;
-  vertical-align: -3px; margin-inline-end: 4px;
 }
 /* THE NAME IS BIGGER THAN THE WORD IN FRONT OF IT. Both were thirteen pixels,
    the size a label wants, which made what somebody typed as quiet as the
@@ -1078,18 +1095,24 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    pixels, and the form is three lines instead of six on the screen with the
    least room to spare.
 
-   AND THE LINE RUNS UNDER BOTH. It belongs to the field, and beside it the
-   word is part of the field: a rule that starts halfway along, after the
-   label, draws two things where there is one. So it moves off the input and
-   onto the row that holds them, and the row is what lights up when the field
-   inside it is being typed in. */
+   AND THE WORD IS NOT RULED. The line ran under the whole row, the label
+   included, which draws the word as one more thing to fill in: "מילים" is the
+   question, not an answer anybody types over. It belongs to the field, so it is
+   the field's, and it starts where the field starts. */
 .song-meta label, .kinds-field {
   display: flex; align-items: baseline; gap: 8px;
-  border-bottom: 1px solid var(--line);
 }
-.song-meta label input { flex: 1 1 auto; min-width: 0; border-bottom: 0; }
-.song-meta label:hover, .kinds-field:hover { border-bottom-color: var(--ink-soft); }
-.song-meta label:focus-within, .kinds-field:focus-within {
+/* AND IT IS NOT DRAWN UNTIL IT IS REACHED FOR. A rule under a name that is
+   already written says the name is unfinished, and a rule across the empty half
+   of the row says there is more of it to say. What the panel holds is three
+   short answers, usually already given; the line arrives under the pointer and
+   stays while the field is being typed in, which is when there is a field. */
+.song-meta label input {
+  flex: 1 1 auto; min-width: 0;
+  border-bottom: 1px solid transparent;
+}
+.song-meta label input:hover { border-bottom-color: var(--line); }
+.song-meta label input:focus-visible {
   border-bottom-color: var(--accent); box-shadow: 0 1px 0 var(--accent);
 }
 
@@ -1129,10 +1152,9 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   outline: none;
   border-bottom-color: var(--accent); box-shadow: 0 1px 0 var(--accent);
 }
-/* The line that lights up in the song's form is the ROW's, drawn under the
-   word and the field together, so the field inside it draws nothing of its
-   own: two green lines a pixel apart is what that looked like. */
-.song-meta input:focus-visible { outline: none; box-shadow: none; }
+/* The line is what a field in this app answers a focus with; the ring the
+   browser would draw is the box these fields are trying not to be. */
+.song-meta input:focus-visible { outline: none; }
 
 /* The one state the song is in, and the way out of it. A chip and not a
    button, because it is a fact first: it is the same word in the same colour

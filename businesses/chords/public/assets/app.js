@@ -5804,7 +5804,19 @@
         mark();
       }
 
+      /* Enter keeps the field open, because a song that is being given a style
+         is usually being given two: the word lands as a chip beside the others
+         and the caret is still where the next one goes. Escape is the way out
+         with nothing typed, the same key that would leave the panel. */
       kindsInput.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") {
+          /* and it must not reach the dialog, or leaving the field would shut
+             the whole panel */
+          event.stopPropagation();
+          event.preventDefault();
+          kindsInput.value = "";
+          return askKind(false);
+        }
         if (event.key !== "Enter") return;
         event.preventDefault();
         addKind();
@@ -5813,10 +5825,17 @@
          word in it fires on the way out. Both are somebody having finished
          saying one style. */
       kindsInput.addEventListener("change", addKind);
-      kindsInput.addEventListener("blur", addKind);
+      /* Walking away from it says the same, and then the row goes back to what
+         it looks like when nobody is typing in it: chips, and a plus. */
+      kindsInput.addEventListener("blur", function () {
+        addKind();
+        askKind(false);
+      });
 
       kindsBody.appendChild(kindsList);
       kindsBody.appendChild(kindsInput);
+      kindsBody.appendChild(kindsAdd);
+      askKind(false);
       kindsRow.appendChild(kindsLabel);
       kindsRow.appendChild(kindsBody);
       kindsRow.appendChild(kindsKnown);
@@ -5854,6 +5873,7 @@
          walking out of the field does. */
       metaPanel.addEventListener("close", function () {
         addKind();
+        askKind(false);
         facts.classList.remove("is-open");
       });
 
