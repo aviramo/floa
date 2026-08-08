@@ -268,14 +268,6 @@ body.on-song { background: var(--bg); }
   appearance: none;
 }
 .top-find input[type="search"]:focus-visible { outline: none; }
-/* WHAT THE PAGE IS NARROWED TO, WHICH IS IN THE FIELD AND WAS NOT TYPED THERE.
-   A shelf, a person and an evening each write their name into the box (see
-   narrowTo), so that the box says what the list is limited to and emptying it
-   takes the limit off. Coloured, because it is a fact about the wall below
-   rather than a question somebody asked, and nobody should go looking for
-   where they typed it. It goes back to being plain text the moment it is typed
-   over, because from then on it is a search like any other. */
-.top-find .find.is-narrow input[type="search"] { color: var(--accent); font-weight: 600; }
 /* WHAT THE OPEN PAGE HAS TO SAY, AT THE FAR END OF THE BOX. The library puts
    its three state counts here; every other page leaves it empty, and an empty
    box still spends the row's gap, so it goes when it is empty.

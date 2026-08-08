@@ -1578,6 +1578,45 @@
     return body + new Array(Math.max(0, needed - body.length) + 1).join(GAP);
   }
 
+  /* --- and the same room, at the other end -----------------------------------
+     A chord dragged back past the FIRST word has nothing to name either, so
+     the line grows there too. The one difference between the two ends is what
+     the growing does to what is already on the line: a tail is only more
+     characters after the last one, while a head puts characters in FRONT of
+     every character there was, so every chord on the line moves along with the
+     word it is standing on. Nothing changes places; the whole line steps
+     forward by what was put before it. */
+  function growHead(line, add) {
+    if (!(add > 0)) return 0;
+    line.text = new Array(add + 1).join(GAP) + line.text;
+    line.chords.forEach(function (c) { c.pos += add; });
+    return add;
+  }
+
+  /* Both ends of a line made to fit what stands on it, which is the one
+     definition of what padding IS: room a chord asked for, kept while it is
+     wanted and taken back when it is not.
+
+     At the front that means the gaps BEFORE the first chord, and only those: a
+     chord brought forward again leaves them behind it with nothing to hold, so
+     they go and the line steps back to where lines begin. The room between
+     that chord and the first word is not touched, because something is
+     standing on either side of it.
+
+     Answers how many characters came off the FRONT, because that is the number
+     everything drawn from this line has to hear about: the words moved. */
+  function fitPadding(line) {
+    var drop = 0;
+    while (line.text.charAt(drop) === GAP) drop++;
+    line.chords.forEach(function (c) { if (c.pos < drop) drop = c.pos; });
+    if (drop > 0) {
+      line.text = line.text.slice(drop);
+      line.chords.forEach(function (c) { c.pos -= drop; });
+    }
+    line.text = padTail(line.text, line.chords);
+    return drop;
+  }
+
   /* What goes into the database: the song, as ONE piece of text.
 
          [Am]שלום לך אדו[G]ני
@@ -1699,14 +1738,6 @@
     return { add: add, gone: gone };
   }
 
-  /* the other half of padTo: room nothing needs any more, once the chord that
-     called for it has moved back */
-  function trimPadding(line) {
-    var next = padTail(line.text, line.chords);
-    if (next === line.text) return false;
-    line.text = next;
-    return true;
-  }
 
   function normalizeLines(lines, fallback) {
     /* The song as it is stored now: one document. Songs written before that,
@@ -1740,13 +1771,14 @@
         .filter(function (c) { return c.chord; })
         .sort(function (a, b) { return a.pos - b.pos; });
 
-      /* And the tail is whatever those chords still need, in gaps. Which is
-         also where a song stored before there were gaps is put right: the real
-         spaces it was padded with come out artificial, so the line is the same
-         length, the chords stand over the same cells, and the WORDS end where
-         the words end. */
-      var text = padTail(parsed.text, chords);
-      return { type: "line", text: text, chords: chords, dir: l && l.dir };
+      /* And the padding at either end is whatever those chords still need, in
+         gaps. Which is also where a song stored before there were gaps is put
+         right: the real spaces it was padded with come out artificial, so the
+         line is the same length, the chords stand over the same cells, and the
+         WORDS end where the words end. */
+      var line = { type: "line", text: parsed.text, chords: chords, dir: l && l.dir };
+      fitPadding(line);
+      return line;
     }), fallback);
   }
 
@@ -1826,15 +1858,16 @@
         /* AND A MARK IS ABOUT WHAT IS BETWEEN TWO CHARACTERS. Both of them
            are: the arc says «these two letters are one word with room in
            between», the diagonal says «these two lines were not written on one
-           line». A run that ENDS the row has nothing on its far side to say
-           anything about. It is the room a chord was dragged out into (see
-           padTo), and room past the last word is not a mark, it is emptiness.
+           line». A run standing at either END of the row has nothing on its far
+           side to say anything about. It is the room a chord was dragged out
+           into, before the first word or after the last (see growHead and
+           padTo), and room out there is not a mark, it is emptiness.
 
            The separator is the exception, and it is the only host made of
            nothing but gaps: it stands between two rows rather than between two
            characters, so it carries its mark with nothing on either side of it
            (see buildSep). */
-        if (i + run < text.length || wrap.classList.contains("ln-sep")) {
+        if ((i > 0 && i + run < text.length) || wrap.classList.contains("ln-sep")) {
           span.className = "gap gap-run";
           span.style.setProperty("--run", run);
         }
@@ -2789,8 +2822,13 @@
     var starts = [];
     for (var i = 0; i <= m.count; i++) starts.push(m.at(i));
 
-    if (!m.count) return round2(Math.max(0, x / m.unit));
-    if (x <= starts[0]) return round2(Math.max(0, x / m.unit));
+    /* AND IT ANSWERS BELOW ZERO. A pointer before the start of the line is a
+       real answer and not an error: it is a chord being pulled back past the
+       first word, and the room it is asking for is opened from that number
+       (see growHead). Clamped here, the count simply stopped at the edge and
+       the chord stopped with it. */
+    if (!m.count) return round2(x / m.unit);
+    if (x <= starts[0]) return round2(x / m.unit);
     if (x >= starts[m.count]) return round2(m.count + (x - starts[m.count]) / m.unit);
 
     for (var j = 0; j < m.count; j++) {
@@ -2970,9 +3008,6 @@
       sub: takeKids(document.getElementById("topSub")),
       facts: takeKids(document.getElementById("topFacts")),
       extra: takeKids(findExtra),
-      /* what the page was narrowed to, which is words in the box rather than
-         anything hanging off it (see narrowTo) */
-      narrow: findNarrow,
     };
     layer.state = {};
     PAGE_STATE.forEach(function (name2) { layer.state[name2] = state[name2]; });
@@ -2996,8 +3031,6 @@
     putKids(document.getElementById("topSub"), h.sub);
     putKids(document.getElementById("topFacts"), h.facts);
     putKids(findExtra, h.extra);
-    /* after where(), which wipes it along with the rest of them */
-    narrowTo(h.narrow);
     paintHeader();
     /* A list that stopped looking at itself while it was out of the document
        starts again (see poll in viewIndex). */
@@ -3656,10 +3689,6 @@
        that is open puts something there and the next page must not inherit
        it. The box itself is built once and lives through every view. */
     if (findExtra) findExtra.textContent = "";
-    /* And what is written INSIDE it, for the same reason: a shelf's name left
-       standing over the next page would say that page is narrowed to it. The
-       three pages that are narrowed write it again after this. */
-    narrowTo(null);
     return node;
   }
 
@@ -3903,54 +3932,6 @@
     return out;
   }
 
-  /* --- AND WHAT THE PAGE IS ALREADY NARROWED TO, WRITTEN IN IT --------------
-     A shelf, a person and an evening are each the library with most of it
-     taken away, and until now the only thing that said so was the address.
-     The bar carries the name, but a name in the bar reads as the title of a
-     page rather than as a filter over one, and nothing on the screen was a way
-     back to the rest of the library: a reader who narrowed by hand had the
-     browser's back button and nothing else.
-
-     SO THE NARROWING IS WRITTEN INTO THE SEARCH BOX, as the words that are in
-     it. Which puts what the list is limited to in the one place a reader
-     already looks to ask about a list, says which KIND of thing is doing the
-     limiting, and brings the way out with it for nothing: a box with words in
-     it is a box that can be emptied, and emptying this one is the whole
-     library again.
-
-     `words` are what stands in the box and `home` is where emptying it lands,
-     which for all three is the library with nothing taken off it. */
-  var findNarrow = null;
-
-  function narrowTo(spec) {
-    var before = findNarrow ? findNarrow.words : "";
-    findNarrow = spec || null;
-    if (!findField) return;
-    /* Written over what the narrowing itself put there, or over an empty box,
-       and never over anything else: somebody in the middle of typing owns the
-       box, and a repaint under their hands must not take the letters out of
-       it. */
-    if (findField.value === before || !findField.value) {
-      findField.value = findNarrow ? findNarrow.words : "";
-    }
-    paintNarrow();
-  }
-
-  /* The words of a narrowing are not the words of a search, and they are in the
-     same field: what tells them apart is that these were not typed. So they are
-     coloured rather than left as plain text, and the colour goes the moment
-     somebody types over them, because from then on they ARE a search. */
-  function paintNarrow() {
-    if (!findBox || !findField) return;
-    var showing = !!findNarrow && findField.value === findNarrow.words;
-    findBox.classList.toggle("is-narrow", showing);
-  }
-
-  function narrowBy(kind, name, home) {
-    if (!name) return narrowTo(null);
-    narrowTo({ words: kind + ": " + name, home: home || BASE + "/" });
-  }
-
   var findBox = null;
   var findField = null;
   var findExtra = null;
@@ -4038,25 +4019,10 @@
 
     findField.addEventListener("input", function () {
       clearTimeout(findTimer);
-      paintNarrow();
-      /* THE BOX EMPTIED IS THE NARROWING LET GO. The words in it are not a
-         search somebody typed, they are what the page is limited to, so taking
-         them out is the gesture for taking the limit off, and it lands on the
-         library with all of it there. */
-      if (findNarrow && !findField.value.trim()) {
-        var home = findNarrow.home;
-        shutFind();
-        return go(home);
-      }
       findTimer = setTimeout(askFind, 110);
     });
     findField.addEventListener("focus", function () {
       openFind();
-      /* The narrowing is not a question waiting for an answer, it is the page
-         itself, so it opens no panel of its own. It is taken whole instead:
-         one press of a key replaces it with a real search, and one press of
-         Backspace is the way back to the whole library. */
-      if (findNarrow && findField.value === findNarrow.words) return findField.select();
       if (findField.value.trim()) askFind();
     });
     findField.addEventListener("keydown", onFindKey);
@@ -4099,11 +4065,7 @@
   function clearFind() {
     document.body.classList.remove("finding");
     if (!findField) return;
-    /* Empty of what was TYPED, which is not the same as empty: what the page
-       is narrowed to was not typed, and it goes on saying what is on the
-       screen after the search that was asked over it has gone. */
-    findField.value = findNarrow ? findNarrow.words : "";
-    paintNarrow();
+    findField.value = "";
     findField.blur();
     shutFind();
   }
@@ -4199,8 +4161,6 @@
      shelf is a page, and the bar says its name. */
   function viewIndex(shelf) {
     where(shelf || "אקורדים", shelf ? null : "אקורדים");
-    /* the wall is one style's, and the box says which and how to stop */
-    narrowBy("סגנון", shelf);
     setBusy("טוען שירים");
 
     db.list().then(function (songs) {
@@ -4210,6 +4170,36 @@
          request twice */
       seedSongs(state.songs);
       app.innerHTML = "";
+
+      /* --- AND ON A SHELF, THE NAME IN THE BAR IS THE FIELD FOR IT ------------
+         A style has no row of its own anywhere: it is a word on each of the
+         songs that carry it, gathered up into a shelf on the way out. So the
+         only place it can be called something else is the place its name is
+         written, which is the bar, exactly as a person's is on theirs.
+
+         After the list, because renaming it is rewriting the word on every song
+         that has it and those are the songs. It commits when the typing is
+         finished rather than on the keystroke: every letter would otherwise be
+         a write to a dozen rows and a new address for the page. */
+      if (shelf && auth.in) {
+        /* Named, so that a name that came to nothing can put the field back as
+           a field rather than leaving the shelf with a name that cannot be
+           typed in until the page is opened again. */
+        var shelfField = function () {
+          whereEditable(shelf, "שם הסגנון", null, renameShelf);
+        };
+        var renameShelf = function (typed) {
+          var next = tidyStyles([typed])[0];
+          if (!next || next === shelf) return shelfField();
+          renameStyle(shelf, next).then(function (done) {
+            if (!done) return toast("לא הצלחנו לשנות את שם הסגנון", true);
+            toast(done === 1 ? "הסגנון שונה בשיר אחד" : "הסגנון שונה ב-" + done + " שירים");
+            /* the address is the name, so it moves with it */
+            go(BASE + "/style/" + encodeURIComponent(next));
+          });
+        };
+        shelfField();
+      }
 
       /* --- several at once -----------------------------------------------------
          Sometimes what you want to do is to a handful of songs rather than to
@@ -5268,6 +5258,42 @@
     })).then(function () { return done; });
   }
 
+  /* --- CALLING A SHELF SOMETHING ELSE ---------------------------------------
+     A style is a word tied onto a song, and it is tied onto each of them
+     separately, so renaming the shelf is renaming the word on every song that
+     carries it. The same shape as renaming a person, and for the same reason:
+     two spellings of one word are two shelves (see paintBands), and until now
+     the only cure was opening a dozen songs and fixing each by hand.
+
+     The new word stands exactly where the old one stood, so a song's styles
+     stay in the order they were given. A song that already carries the new
+     word ends up with one of it, because tidyStyles takes the second copy off.
+
+     WHAT IT CANNOT DO IS SOMEBODY ELSE'S SONG. Only the account that owns a
+     song may write to it, which the database enforces, so the answer says how
+     many rows actually took the word rather than claiming the lot.
+
+     Renaming a shelf onto one the library already has MERGES the two, and that
+     is not a mishap, it is one of the two reasons to do this at all. */
+  function renameStyle(was, now) {
+    var songs = (state.songs || []).filter(function (song) {
+      return styles(song).indexOf(was) >= 0;
+    });
+    var done = 0;
+
+    return Promise.all(songs.map(function (song) {
+      var next = tidyStyles(styles(song).map(function (name) {
+        return name === was ? now : name;
+      }));
+      return db.update(song.id, { styles: next }).then(function () {
+        done++;
+        /* the row in hand follows the write, so nothing on the page is reading
+           a word the database no longer holds */
+        song.styles = next;
+      }).catch(function () { /* counted by not being counted */ });
+    })).then(function () { return done; });
+  }
+
   function viewCreators() {
     where("יוצרים");
     setBusy("טוען יוצרים");
@@ -5306,7 +5332,6 @@
          name that has since been corrected on the one song that carried it,
          and the way out is the list of the names that do exist. */
       if (!mine.length) {
-        narrowBy("יוצר", name);
         var gone = el("div", "center");
         gone.appendChild(el("p", null, 'אין שירים על שם "' + name + '".'));
         gone.appendChild(button("לרשימת היוצרים", ICON.back, "ghost", function () { go(BASE + "/creators"); }));
@@ -5326,10 +5351,7 @@
          dozen rows and a new address for the page. */
       if (auth.in) {
         whereEditable(name, "שם היוצר", null, function (next) {
-          if (!next || next === name) {
-            where(name);
-            return narrowBy("יוצר", name);
-          }
+          if (!next || next === name) return where(name);
           renameCreator(name, next).then(function (done) {
             if (!done) return toast("לא הצלחנו לשנות את השם", true);
             toast(done === 1 ? "השם שונה בשיר אחד" : "השם שונה ב-" + done + " שירים");
@@ -5338,10 +5360,6 @@
           });
         });
       }
-      /* After the field, which goes through where() and takes it down with the
-         rest of the bar's loans. */
-      narrowBy("יוצר", name);
-
       /* The head is for paper only. On screen the name is in the bar and the
          rest of the head said things the list under it already says: what this
          person did is the tag on each card, and how many songs there are is
@@ -6954,7 +6972,10 @@
         lane.addEventListener("pointerdown", function (event) {
           if (event.target !== lane) return;
           event.preventDefault();
-          var chord = { pos: posFromX(ln, event.clientX) + rowFrom(ln), chord: "" };
+          /* A press lands inside the lane, so it lands on the line; the floor
+             is there because the count itself has none any more (see
+             posFromX) and a chord is born on a character of its own line. */
+          var chord = { pos: Math.max(0, posFromX(ln, event.clientX)) + rowFrom(ln), chord: "" };
           line.chords.push(chord);
           var node = chordEl("", chord.pos - rowFrom(ln), semis);
           bindChord(node, ln, line, chord);
@@ -7096,6 +7117,29 @@
       Array.prototype.forEach.call(ln.querySelectorAll(".ln-c .chord"), function (node) {
         if (node.__chord && line.chords.indexOf(node.__chord) >= 0) node.dataset.pos = node.__chord.pos - here;
       });
+    }
+
+    /* --- room opened at the FRONT, with the chord still in the hand ----------
+       The other end of refill, and it is a bigger thing than the tail: putting
+       characters before the first one moves every character of the line, so
+       the words slide away from the start and every chord over them follows
+       its own syllable. Nothing here is a chord changing places with another;
+       it is the line stepping forward under all of them.
+
+       The row is patched rather than redrawn because this happens on a pointer
+       move: the whole page is drawn again when the hand lets go. */
+    function openHead(ln, line, add) {
+      if (!growHead(line, add)) return 0;
+      /* this row now holds `add` characters more than it did, and every row of
+         this line under it begins that much later */
+      ln.dataset.to = rowTo(ln, line) + add;
+      refill(ln, line);
+      shiftAfter(ln, line, add);
+      syncChords(ln, line);
+      Array.prototype.forEach.call(ln.querySelectorAll(".ln-c .chord"), function (label) {
+        placeChord(ln, label);
+      });
+      return add;
     }
 
     /* The characters of one row, written again from the song: what a chord
@@ -7754,7 +7798,25 @@
            character carrying it is the one it falls INSIDE: floor, not round.
            The only visible cost is half a character of settling on release. */
         var here = rowFrom(ln);
-        var raw = Math.max(here, posFromX(ln, event.clientX) + here + grab);
+        var reach = posFromX(ln, event.clientX) + here + grab;
+
+        /* PULLED BACK PAST THE FIRST WORD, which is the same thing as being
+           pulled past the last one and is answered the same way: the line
+           grows to meet the chord, in artificial spaces. Only here the room
+           goes in FRONT of the words, so they slide away from the start of the
+           line and the chord holds its place at the head of it.
+
+           Only on the row that BEGINS the line: further down there is more of
+           the line in front of the chord, and what is in front of it is where
+           it is going. And `grab` moves with everything else, or the room just
+           opened is opened again on the next pointer move, and again. */
+        if (!here && reach < 0) {
+          var add = openHead(ln, line, Math.ceil(-reach));
+          reach += add;
+          grab += add;
+        }
+
+        var raw = Math.max(here, reach);
         var pos = Math.max(here, Math.floor(raw));
         var previous = chord.pos;
 
@@ -7801,12 +7863,20 @@
         if (!dragging) return openPicker(node, ln, line, chord);
 
         /* let go: the chord settles onto its character, and any room the drag
-           called for and no longer needs goes back */
-        if (trimPadding(line)) refill(ln, line);
+           called for and no longer needs goes back, at either end of the line.
+
+           What comes off the FRONT is the one thing a row cannot be patched
+           through: every character of the line moves, so every row of it holds
+           a different slice and every chord on it a different number. The page
+           is drawn again from the song instead, which is what the settling
+           below would do half a second later anyway. */
+        var was = line.text;
+        if (fitPadding(line)) { mark(); return draw(); }
+        if (line.text !== was) refill(ln, line);
         layoutLine(ln);
         mark();
-        /* and a line that grew or shrank by those spaces may break somewhere
-           else now */
+        /* and a line that grew or shrank by that room may break somewhere else
+           now */
         settle();
       });
 
@@ -8975,15 +9045,9 @@
       evening.title = typed;
       title.textContent = typed;
       document.title = (typed || "אירוע חדש") + " | אקורדים";
-      /* the box says which event this is, so it is renamed as the name is
-         typed rather than a page later */
-      narrowBy("אירוע", typed);
       mark();
     });
     document.title = (evening.title || "אירוע חדש") + " | אקורדים";
-    /* After the field: whereEditable goes through where(), which takes the
-       words back out of the box. */
-    narrowBy("אירוע", evening.title);
     head.appendChild(title);
 
     /* When and where, twice, and only ever one of the two visible: the fields

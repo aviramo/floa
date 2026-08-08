@@ -9,7 +9,7 @@ const end = src.indexOf("/* ----------------------------------------------------
 if (start < 0 || end < 0) throw new Error("could not find the model block");
 
 const block = src.slice(start, end);
-const api = new Function(block + "\nreturn { slugify, transposeChord, remapChords, parsePasted, looksLikeChord, isChord, suggestChords, chordsUsed, easyVersion, toChordPro, fromChordPro, songToText, textToSong, normalizeLines, songDir, splitLine, joinLines, padTo, padTail, trimPadding, GAP, diffLines, changeCount };")();
+const api = new Function(block + "\nreturn { slugify, transposeChord, remapChords, parsePasted, looksLikeChord, isChord, suggestChords, chordsUsed, easyVersion, toChordPro, fromChordPro, songToText, textToSong, normalizeLines, songDir, splitLine, joinLines, padTo, padTail, growHead, fitPadding, GAP, diffLines, changeCount };")();
 
 /* The artificial space (see GAP): room on the screen and nothing in the words,
    which is what a line grows by when a chord is dragged past its last one. */
@@ -192,14 +192,42 @@ eq("and the words are none the longer for it", outro.text.split(G).join(""), "נ
 outro.chords.push({ pos: 12, chord: "G" });
 eq("and the chord then names a real character", api.toChordPro(outro), "נ[Am]ה נה נה" + gaps(5) + "[G]");
 outro.chords.pop();
-api.trimPadding(outro);
+api.fitPadding(outro);
 eq("room nothing needs any more goes back", outro.text, "נה נה נה");
 
 /* Half of it goes back: the tail is as long as the furthest chord still needs
    and no longer, which is what a chord dragged part of the way in does. */
 const pulled = { type: "line", text: "נה נה נה" + gaps(5), chords: [{ pos: 10, chord: "G" }] };
-api.trimPadding(pulled);
+api.fitPadding(pulled);
 eq("a chord brought back shrinks the room to what it needs", pulled.text, "נה נה נה" + gaps(3));
+
+/* --- and the same room at the other end ------------------------------------
+   A chord dragged back past the FIRST word has nothing to name either, so the
+   line grows there too. What is different about that end is that everything
+   already on the line moves along with the words: nothing changes places, the
+   whole line steps forward by what was put in front of it. */
+const intro = { type: "line", text: "נה נה", chords: [{ pos: 0, chord: "Am" }, { pos: 3, chord: "G" }] };
+api.growHead(intro, 4);
+eq("room before the first word goes in front of everything",
+  intro.text, gaps(4) + "נה נה");
+eq("and every chord on the line kept its own syllable",
+  api.toChordPro(intro), gaps(4) + "נ[Am]ה נ[G]ה");
+eq("the words, still, are the words", intro.text.split(G).join(""), "נה נה");
+
+/* The chord that asked for the room is the one standing at the head of it, so
+   nothing there is room nothing needs. */
+intro.chords[0].pos = 0;
+eq("and none of it goes back while the chord is out at the front",
+  api.fitPadding(intro), 0);
+
+/* Brought forward two, and the two gaps it left behind it come off: the line
+   steps back to where lines begin, and the room between that chord and the
+   first word is untouched. */
+intro.chords[0].pos = 2;
+eq("a chord brought forward takes the room in front of it back", api.fitPadding(intro), 2);
+eq("the line is the same line, two gaps shorter", intro.text, gaps(2) + "נה נה");
+eq("with every chord on it two back", intro.chords.map((c) => c.pos), [0, 5]);
+eq("and the words are still the words", intro.text.split(G).join(""), "נה נה");
 
 /* A song padded with real spaces before there were artificial ones comes back
    the same length, the same chords over the same cells, and the words ending
