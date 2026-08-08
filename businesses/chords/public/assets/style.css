@@ -1290,14 +1290,6 @@ button.song-facts:hover .song-facts-ask { color: var(--accent); }
      dealt out. */
   --page-air: 16px;
   padding: var(--page-air);
-  /* A ROW WIDER THAN ITS SEGMENT IS CUT OFF AT THE EDGE OF THE PAGE, which is
-     what keeps a line that has outgrown its card, or one being typed into and
-     not yet broken again, from being drawn over the card beside it.
-
-     The air above is also what the cards' own shadows are drawn into: clipped
-     to the cards themselves, a shadow would end in a straight line down the
-     outermost edge of the page, which is a shadow with a shadow. */
-  overflow: hidden;
 }
 /* --- A SEGMENT IS A CARD ---------------------------------------------------
    It carries the white, so it is the paper; it keeps its own air inside its
@@ -1315,11 +1307,34 @@ button.song-facts:hover .song-facts-ask { color: var(--accent); }
   background: var(--card);
   padding-block: var(--page-air, 0px);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  /* THE SHADOW EVERY OTHER CARD IN THIS APP CASTS, and the same hairline round
+     its edge, which together are what makes a white box read as a sheet of
+     paper lying on something rather than as a hole in the desk.
+
+     THE EDGE IS AN INSET SHADOW AND NOT A BORDER, deliberately. A border is a
+     pixel of the box, and the width of this box is worked out to the fraction
+     of a pixel in planColumns: the lines were broken to fit inside it, so a
+     border taking a pixel off each side is a card a hair narrower than the
+     words that were cut for it, and the last word of a row hangs out over the
+     desk. An inset shadow is drawn in the padding and costs the words nothing.
+
+     THE SHADOW IS DRAWN OUTSIDE THE CARD, which is why the page it stands on
+     no longer clips what stands on it: a shadow cut off by the edge of the page
+     ends in a straight line down the outermost card, which reads as a crease
+     rather than as a shadow. What has to be clipped is a row that has outgrown
+     its card, and the card clips that itself, below. */
+  box-shadow: inset 0 0 0 1px var(--line), var(--shadow);
+  /* A LINE WIDER THAN THE CARD IS CUT OFF AT THE CARD'S OWN EDGE. It happens
+     while a line is being typed into and has not been broken again yet, and
+     wherever a chord stands out past the end of the words: over the desk it
+     would be ink lying between two sheets of paper, and over the next card it
+     would be one song's word inside another segment. Rounded with the card,
+     because the corner is the card's and so is everything inside it. */
+  overflow: hidden;
 }
 /* A slot a short last page never reached. It holds the width open so the
    pages above keep their shape, and nothing is drawn on it: there is no
-   segment there, so there is no card and no paper. */
+   segment there, so there is no card, no paper and no shadow. */
 .col.is-empty { background: none; box-shadow: none; }
 
 /* A PAGE OF ONE SEGMENT IS A PHONE, and there the segment is not a card lying
@@ -1331,6 +1346,12 @@ button.song-facts:hover .song-facts-ask { color: var(--accent); }
 .page.is-alone > .col {
   border-radius: 0; box-shadow: none;
   margin-block: calc(var(--page-air, 0px) * -1);
+  /* AND IT DOES NOT CUT ANYTHING OFF. A card cuts a row that has outgrown it,
+     because what is beyond a card is another card; here what is beyond the
+     segment is the edge of the screen, and a line too wide for it is meant to
+     hang out and take the sheet's own sideways scroll with it (see .sheet).
+     Clipped, those words are simply gone. */
+  overflow: visible;
 }
 
 /* --- a narrow screen -----------------------------------------------------
@@ -2012,6 +2033,7 @@ button.song-facts:hover .song-facts-ask { color: var(--accent); }
   .col {
     width: auto !important; margin-inline-start: 0 !important;
     border-radius: 0 !important; box-shadow: none !important;
+    overflow: visible !important;
   }
   .wrap { width: 100%; }
 }
