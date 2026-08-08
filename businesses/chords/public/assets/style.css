@@ -624,7 +624,14 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    and the wall stopped having a line to read along. */
 .list a {
   display: flex; align-items: flex-start; gap: 14px; text-decoration: none; color: inherit;
+  /* ONE CARD IS ONE CARD, WHEREVER IT IS. A song in the library, a song in an
+     evening and a segment of a song on its own page are all a sheet of paper on
+     the same desk, and they carry the same three things: the white, the hairline
+     round it and the shadow under it (see .card, and .col for the segments).
+     Half of them had no shadow, which on the same grey read as a box drawn on
+     the desk beside a card rather than as another card. */
   background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow);
   padding: 14px 18px; transition: border-color .15s, transform .15s;
 }
 .list a:hover { border-color: var(--accent); transform: translateY(-1px); }
@@ -694,7 +701,9 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    without the link, so the list keeps its rhythm while one row is busy. */
 .list .row {
   display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  /* the same card as the link beside it, because that is the whole point of it */
   background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow);
   padding: 14px 18px;
 }
 .list .row.is-reading { border-style: dashed; }
@@ -771,7 +780,9 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .set-row {
   counter-increment: song;
   display: flex; align-items: center; gap: 12px;
+  /* a song in an evening is a card like a song in the library (see .list a) */
   background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow);
   padding: 12px 16px;
 }
 .set-row::before {
@@ -1337,22 +1348,12 @@ button.song-facts:hover .song-facts-ask { color: var(--accent); }
    segment there, so there is no card, no paper and no shadow. */
 .col.is-empty { background: none; box-shadow: none; }
 
-/* A PAGE OF ONE SEGMENT IS A PHONE, and there the segment is not a card lying
-   on a desk, it is the glass. A radius, a shadow and air at the ends are worth
-   nothing on a page held at arm's length, and the paper runs from one edge of
-   the screen to the other: pulled back out through the page's own air and given
-   it back as padding, so the words still stand clear of both ends. */
-.page.is-alone { padding-inline: 0; }
-.page.is-alone > .col {
-  border-radius: 0; box-shadow: none;
-  margin-block: calc(var(--page-air, 0px) * -1);
-  /* AND IT DOES NOT CUT ANYTHING OFF. A card cuts a row that has outgrown it,
-     because what is beyond a card is another card; here what is beyond the
-     segment is the edge of the screen, and a line too wide for it is meant to
-     hang out and take the sheet's own sideways scroll with it (see .sheet).
-     Clipped, those words are simply gone. */
-  overflow: visible;
-}
+/* WHETHER A SEGMENT IS A CARD IS A FACT ABOUT THE SCREEN, and it is settled in
+   the narrow rules below, not here. It used to be settled by the number of
+   segments across, on the reasoning that one segment across is a phone; but a
+   song of four lines stands in one segment on the widest screen there is,
+   because there is no more song to put in a second, and that rule took the
+   shape and the shadow off every short song on every desk. */
 
 /* --- a narrow screen -----------------------------------------------------
    620px is also where editing stops (see NARROW in app.js). Keep the two in
@@ -1368,6 +1369,23 @@ button.song-facts:hover .song-facts-ask { color: var(--accent); }
      is the padding: at arm's length those twenty pixels are a word and a half
      of every line. */
   .sheet { padding: 16px 22px 24px; min-height: 0; }
+
+  /* A SEGMENT HERE IS NOT A CARD LYING ON A DESK, IT IS THE GLASS. A radius, a
+     shadow and desk at the two ends are worth nothing on a page held at arm's
+     length, and the paper runs from one edge of the screen to the other: pulled
+     back out through the page's own air and given it back as padding, so the
+     words still stand clear of both ends.
+
+     AND IT CUTS NOTHING OFF. A card cuts a row that has outgrown it, because
+     what is beyond a card is another card; here what is beyond the segment is
+     the edge of the screen, and a line too wide for it is meant to hang out and
+     take the sheet's own sideways scroll with it (see .sheet). Clipped, those
+     words are simply gone. */
+  .page { padding-inline: 0; }
+  .col {
+    border-radius: 0; box-shadow: none; overflow: visible;
+    margin-block: calc(var(--page-air, 0px) * -1);
+  }
 
   .tools { border-radius: var(--radius); }
 }

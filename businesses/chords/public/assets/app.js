@@ -2071,12 +2071,20 @@
        room there would be if one more gap were going spare.
 
        AND THE PAGE'S OWN AIR AT THE TWO ENDS, which is what the outermost
-       cards' shadows are drawn into (see .page). It comes off here rather than
-       off `room`, because a page of one segment is a phone: no card, no shadow,
-       nothing to keep room for, and thirty two pixels of a phone is a word and
-       a half of every line. */
+       cards' shadows are drawn into (see .page). Not on a phone: there the
+       segment is the glass rather than a card lying on a desk, it casts no
+       shadow, and thirty two pixels of a phone is a word and a half of every
+       line.
+
+       ASKED OF THE SCREEN AND NOT OF THE NUMBER OF SEGMENTS. A song of four
+       lines stands in ONE segment on the widest screen there is, because there
+       is no more song to put in a second: that is a card on a desk like any
+       other, and a rule that read "one segment across, so this is a phone" took
+       the shape off every short song on every desk. */
+    var glass = NARROW.matches;
     var apart = CARD_GAP;
-    var byWidth = Math.max(1, Math.floor((room - PAGE_AIR * 2 + apart) / (seg + pad * 2 + apart)));
+    var shadowed = glass ? 0 : PAGE_AIR * 2;
+    var byWidth = Math.max(1, Math.floor((room - shadowed + apart) / (seg + pad * 2 + apart)));
 
     /* A PAGE IS THE WINDOW UNDER WHATEVER IS PERMANENTLY OVER IT. The bar is
        sticky, and on a phone so is the row of controls under it, which is the
@@ -2115,7 +2123,7 @@
     if (!(colW > 0)) return null;
 
     return {
-      cols: cols, colW: colW, pad: pad, apart: apart,
+      cols: cols, colW: colW, pad: pad, apart: apart, air: shadowed,
       pageH: pageH, padded: padded,
     };
   }
@@ -2196,15 +2204,15 @@
            cut to fit it, and the last word of a row hangs out over the next
            segment. Sub-pixel widths are what CSS is for. */
         /* The cards, the desk between them, and the page's own air at the two
-           ends, which is where their shadows are drawn (see .page). A page of
-           one segment keeps none of that air: there is no card and no shadow,
-           and the paper runs to both edges of the glass. */
-        page.style.width = (plan.cols * slot + (plan.cols - 1) * plan.apart
-          + (plan.cols > 1 ? PAGE_AIR * 2 : 0)) + "px";
-        /* ONE SEGMENT ACROSS IS A PHONE, and there a segment is not a card on a
-           desk, it is the glass: no shape of its own, no desk around it, and no
-           line where one screenful ends, because there are no screenfuls. */
-        if (plan.cols < 2) page.classList.add("is-alone");
+           ends, which is where their shadows are drawn (see .page). A phone
+           keeps none of that air: the segment there is the glass rather than a
+           card, so it casts no shadow and the paper runs to both edges. */
+        page.style.width = (plan.cols * slot + (plan.cols - 1) * plan.apart + plan.air) + "px";
+        /* There was a mark on the page here saying it held one segment, and the
+           stylesheet took the card off a page so marked: which is what put a
+           short song, standing in one segment because there was no more song for
+           a second, on a desk with no card under it. What a segment looks like
+           is a fact about the SCREEN and is answered in the narrow rules. */
         built.appendChild(page);
         inPage = 0;
       }
