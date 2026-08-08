@@ -1519,6 +1519,38 @@ button.song-facts:hover .song-facts-ask { color: var(--accent); }
 /* The last row of a broken line, with the next line of the song under it. */
 .ln.is-cont.is-last { margin-bottom: 1.35em; }
 
+/* --- TWO LINES OF THE SONG ON ONE LINE OF THE PAGE -------------------------
+   The last row of a broken line is usually one word on an otherwise empty
+   row, so the next line of the song starts on that row rather than under it
+   (see flowSheet). What stands between them is .ln-sep: the artificial spaces
+   the format already has, carrying the mark that says a new line begins here.
+
+   TWO ROWS AND NOT ONE ROW HOLDING TWO. A single row would be two lines of the
+   song at once: one caret for both, one lane of chords over both, and a copy
+   that ran them together. Side by side, each row is one line of the song, with
+   its own chords over its own characters and its own place in the song.
+
+   ON THE BASELINE, because that is the line the two of them actually share.
+   Aligning their tops would hang one line's words lower than the other's
+   wherever the two rows have different lanes over them, a row with chords
+   beside a row without.
+
+   The air under the shared line is on the pair and not on either row: what it
+   says is where the LAST line on it ended, which is what the row underneath
+   follows on from. */
+.ln-row { display: flex; align-items: baseline; margin-bottom: .45em; }
+.ln-row > .ln { margin-bottom: 0; }
+.ln-row.has-cont { margin-bottom: 0; }
+.ln-row.is-last { margin-bottom: 1.35em; }
+/* Neither of them gives way: what fits on this line was worked out in pixels
+   before the rows were built, and a row squeezed narrower than its words is a
+   row whose last word is drawn over the segment beside it. */
+.ln-row > .ln, .ln-row > .ln-sep { flex: none; }
+/* It is not part of either line, so it is not part of anything taken off the
+   page: a drag across the two rows selects the words of both and not the room
+   between them. */
+.ln-sep { user-select: none; -webkit-user-select: none; cursor: default; }
+
 /* Room between two letters of a word that must not be broken. The character is
    there, it is one of the line's own and a chord can sit on it; what it is not
    is ink. A space's worth of width, given here rather than left to the font,

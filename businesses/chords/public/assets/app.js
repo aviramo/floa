@@ -1954,17 +1954,19 @@
      nothing else. */
   var COL_W = 400;
   var COL_MAX = 4;
-  /* The air between two columns, in song sizes rather than in pixels: at 40px
-     type a 44px gutter is two columns touching. There is no line drawn down
-     it, so the gutter is the only thing saying where one column ends and the
-     next begins, and it has to be wide enough to say it on its own. */
-  var COL_GAP = 2.8;
 
   /* Every line of the sheet in the order the song has them, wherever they are
-     standing now: flat under the sheet before there are any pages, and inside
-     a column after. */
+     standing now: flat under the sheet before there are any pages, inside a
+     column after, and beside another row where two of them share a line of the
+     page (see .ln-row). */
   function sheetRows(sheet) {
     return Array.prototype.slice.call(sheet.querySelectorAll(".ln, .coming"));
+  }
+
+  /* What the page is DEALT in, which is not the same list: two rows sharing a
+     line of the page are one thing to move and one height to count. */
+  function sheetBlocks(sheet) {
+    return Array.prototype.slice.call(sheet.children);
   }
 
   /* Back to one flat column, which is what a phone reads and what everything
@@ -1977,7 +1979,10 @@
     sheet.style.maxWidth = "";
     sheet.style.paddingTop = "";
     sheet.style.paddingBottom = "";
-    if (!sheet.querySelector(".page")) return;
+    /* The pages, and also the pairs of rows that share a line of one: both are
+       something built around the rows, and what has to be taken back to is the
+       rows themselves. */
+    if (!sheet.querySelector(".page, .ln-row")) return;
     var rows = sheetRows(sheet);
     sheet.textContent = "";
     rows.forEach(function (ln) { sheet.appendChild(ln); });
@@ -2000,10 +2005,28 @@
     if (!texts.length) return null;
 
     var size = parseFloat(getComputedStyle(texts[0]).fontSize) || 18;
-    /* Air enough for the type to read as separated, but never so much that
-       the space between two segments competes with the segments: a quarter of
-       one is as far as that goes. */
-    var gap = Math.min(COL_GAP * size, COL_W * 0.25);
+
+    /* WHAT A SEGMENT KEEPS AT ITS TWO ENDS, and it is the chords that ask for
+       it and not the words. A chord is centred on the character it names, so
+       one written over the first character of a row hangs half a label past
+       where the words begin, and a page holds a segment and not a pixel more
+       (see .page): whatever hangs past that edge is cut off, which is how
+       Cmaj7 came to be drawn with its C missing.
+
+       HALF OF THE WIDEST LABEL IN THE SONG, asked of the labels themselves.
+       That is exactly what the overhang needs and nothing beyond it, and it is
+       ONE NUMBER: the same at both ends of every segment, on a phone and on a
+       desk, for the chords and for the words. Between two segments the two
+       halves meet and make the gutter, which used to be a wide multiple of the
+       type because the space alone had to say where one segment ended. There
+       is a rule drawn down every boundary now (see .col::before), so the space
+       no longer says it on its own and can be no more than the ink needs. */
+    var half = size * 0.4;
+    Array.prototype.forEach.call(sheet.querySelectorAll(".chord"), function (node) {
+      var w = node.getBoundingClientRect().width / 2;
+      if (w > half) half = w;
+    });
+    var pad = Math.ceil(half) + 2;
 
     var box = getComputedStyle(sheet);
     var padded = (parseFloat(box.paddingLeft) || 0) + (parseFloat(box.paddingRight) || 0);
@@ -2018,7 +2041,7 @@
        width no reader would ever see. A poured row is an editing host now (see
        __adoptRow), so the two states are the same page. */
     var seg = COL_W;
-    var byWidth = Math.max(1, Math.floor((room + gap) / (seg + gap)));
+    var byWidth = Math.max(1, Math.floor(room / (seg + pad * 2)));
 
     /* A PAGE IS THE WINDOW UNDER WHATEVER IS PERMANENTLY OVER IT. The bar is
        sticky, and on a phone so is the row of controls under it, which is the
@@ -2045,39 +2068,19 @@
 
     /* THE SEGMENTS ARE THE WIDTH THEY ARE AND THE SET STANDS IN THE MIDDLE.
        Whatever the window has over is held at the two ends, where it reads as
-       a margin. Spreading it between them instead would make the gutters a
-       fact about the window rather than about the type, and two segments on a
-       very wide screen would end up at opposite edges of it with a hand's
-       width of nothing between.
+       a margin. Spreading it between them instead would make the space between
+       two segments a fact about the window rather than about the song, and two
+       segments on a very wide screen would end up at opposite edges of it with
+       a hand's width of nothing between.
 
        A single segment takes the room it is given: a phone has none to hold
-       back. */
-    /* HALF A GUTTER INSIDE EVERY SEGMENT. Between two of them the two halves
-       make the gutter; at the outer edge of the first and the last, the half
-       is the margin the paper keeps, and the words stand off the edge of the
-       sheet the way words on paper do.
-
-       Taking it away from a lone segment was the wrong cure for a real
-       problem: the slot came out wider than the room, so the page came out
-       wider than the screen and a phone got a white sheet pushed off one edge
-       with grey at the other. The problem was that the space was never taken
-       off the width. It is now, and the margin can stay.
-
-       EXCEPT WHERE THERE IS NO GUTTER TO HALVE. Half a gutter is wide because
-       it has to say, on its own, where one segment ends and the next begins.
-       A single segment filling a phone has no next one, so on that screen the
-       same number is a thumb's width of white down each edge, taken off lines
-       that are already being broken for want of room. What the margin owes the
-       words there is only half a chord label, so one written over the first
-       character of a line still has somewhere to hang. */
-    var gutter = gap;
-    var lone = cols < 2 && room < seg + gutter;
-    var pad = lone ? Math.min(gutter / 2, size * 0.75) : gutter / 2;
+       back, and it keeps the same margin as any other segment, which is what
+       a chord over its first character needs. */
     var colW = Math.min(seg, room - pad * 2);
     if (!(colW > 0)) return null;
 
     return {
-      cols: cols, colW: colW, gutter: gutter, pad: pad,
+      cols: cols, colW: colW, pad: pad,
       pageH: pageH, padded: padded,
     };
   }
@@ -2093,7 +2096,10 @@
      are the same nodes moved, so what they say, what is marked and where the
      caret is all come along with them. */
   function pageUp(sheet, plan) {
-    var rows = sheetRows(sheet);
+    /* In blocks and not in rows: two rows that share a line of the page stand
+       in one block, and dealing them out one at a time would put the head of a
+       line in one column and the tail of the line above it in another. */
+    var rows = sheetBlocks(sheet);
     if (!rows.length) return;
 
     /* measured first, because moving them is what makes them unmeasurable */
@@ -2324,14 +2330,8 @@
     /* WRITING IS READING WITH A CARET IN IT. The song is poured the same way
        either way, and what the editor needs back is only this: which line of
        the song a row is a piece of, and where in that line the piece starts.
-       That is handed over row by row, through __adoptRow (see the song page),
-       which turns the row into an editing host for its own slice.
-
-       Two things are off while the song is being written. A row does not take
-       the line after it, because a host holding the tail of one line and the
-       head of another is two lines in one caret, and it does not give back the
-       space it broke on, because a space quietly dropped from a row is a space
-       dropped from the song the moment somebody types into that row. */
+       That is handed over piece by piece, through __adoptRow (see the song
+       page), which builds the row for that slice out of the song itself. */
     var ed = sheet.classList.contains("ed");
     var adopt = ed && typeof sheet.__adoptRow === "function" ? sheet.__adoptRow : null;
 
@@ -2416,7 +2416,7 @@
          off. Joined, there is: the separator and the next line follow it, and
          the row comes out wider than the segment by exactly one space. So the
          row gives it back before it takes anything else. */
-      if (!ed && row && row.pieces.length) {
+      if (row && row.pieces.length) {
         var back = row.pieces[row.pieces.length - 1];
         var text = back.line.text;
         if (back.to > back.from && text[back.to - 1] === " " &&
@@ -2435,25 +2435,22 @@
 
          `tail` is true only of a row opened to carry the rest of a line that
          did not fit, which is exactly that leftover. */
-      var joined = !ed && !!(row && row.tail && row.used + sepW + line.advance[0] <= row.room);
+      var joined = !!(row && row.tail && row.used + sepW + line.advance[0] <= row.room);
 
       while (pos < line.cells) {
         if (joined) {
           joined = false;
         } else {
-          row = { tail: tail, pieces: [], used: 0, rtl: line.rtl };
+          row = { tail: tail, pieces: [], used: 0 };
           row.room = full - (tail ? indent : 0);
           out.push(row);
         }
 
-        /* The separator is part of what this row has already spent, and the
-           piece that follows it starts after it. */
-        var lead = "";
+        /* The separator is part of what this line of the page has spent, and
+           the piece that follows it begins after it. It is drawn between the
+           two rows rather than written into either (see buildSep). */
         var shared = !!row.pieces.length;
-        if (shared) {
-          lead = sep;
-          row.used += sepW;
-        }
+        if (shared) row.used += sepW;
 
         var avail = row.room - row.used;
         var x = 0, at = pos, space = -1;
@@ -2514,7 +2511,7 @@
           if (end <= pos) end = pos + 1;
         }
 
-        var piece = { line: line, from: pos, to: end, lead: lead };
+        var piece = { line: line, from: pos, to: end };
         row.pieces.push(piece);
         line.pieces.push(piece);
 
@@ -2531,7 +2528,6 @@
         while (pos < line.text.length && line.text[pos] === " " && !line.chords.some(function (c) { return c.pos === pos; })) pos++;
 
         if (pos < line.cells) {
-          row.more = true;
           tail = true;
           /* the rest of this line needs a row of its own */
           row = null;
@@ -2548,52 +2544,69 @@
       line.pieces.forEach(function (piece, n) {
         piece.claimFrom = n ? piece.from : -Infinity;
         piece.claimTo = n < line.pieces.length - 1 ? line.pieces[n + 1].from : Infinity;
+        /* A piece that carries the end of the line before it, and a piece with
+           more of its own line after it. Asked of the line rather than of the
+           row it landed on, which is the same question now that a row is one
+           piece: it is the LINE that continues, not the row. */
+        piece.tail = n > 0;
+        piece.more = n < line.pieces.length - 1;
       });
     });
 
-    /* --- and drawing it --------------------------------------------------- */
+    /* --- and drawing it -----------------------------------------------------
+       ONE ROW PER PIECE, ALWAYS, and where two pieces share a line of the page
+       they are two rows standing side by side in one.
 
-    function buildRow(desc) {
-      /* `more` is a row with another row of the same line after it, `tail` a
-         row that carries the end of the line before it. A row that is a tail
-         and has no more after it is the LAST of a broken line, and it is the
-         only one that needs saying so: what comes under it is the next line
-         of the song. */
-      var ln = el("div", "ln" + (desc.tail ? " is-cont" : "") + (desc.more ? " has-cont" : "")
-        + (desc.tail && !desc.more ? " is-last" : ""));
+       They used to be a single row holding both, with the separator written
+       into its own characters, and that row was two lines of the song at once:
+       one caret for both, one lane of chords over both, and a copy that ran
+       the two of them together into one line. Side by side, a row is one line
+       of the song again, wherever it was broken and whatever it shares its
+       line of the page with. */
+    function buildRow(piece) {
+      var line = piece.line;
+      /* A row that is a tail and has no more after it is the LAST of a broken
+         line, and it is the only one that needs saying so: what comes under it
+         is the next line of the song. */
+      var ln = el("div", "ln");
       /* the poured row runs the way the line it was poured from runs */
-      ln.dir = desc.rtl ? "rtl" : "ltr";
+      ln.dir = line.rtl ? "rtl" : "ltr";
+
       var lane = el("div", "ln-c");
-      var text = "";
-      /* One piece, always: a row holds one line of the song. Written as a loop
-         because the pieces are what the chords are claimed against, and one of
-         them is still a list of one. */
-      desc.pieces.forEach(function (piece) {
-        /* The double gap that says a new line of the song begins here, laid
-           down BEFORE the offset is taken, so the chords of the piece after it
-           are counted from the piece and not from the separator. */
-        if (piece.lead) text += piece.lead;
-        var offset = text.length;
-        piece.line.chords.forEach(function (c) {
-          if (c.pos < piece.claimFrom || c.pos >= piece.claimTo) return;
-          /* already transposed on screen, so nothing is shifted a second time */
-          lane.appendChild(chordEl(c.label, offset + Math.max(0, c.pos - piece.from), 0));
-        });
-        text += piece.line.text.slice(piece.from, Math.min(piece.to, piece.line.text.length));
+      line.chords.forEach(function (c) {
+        if (c.pos < piece.claimFrom || c.pos >= piece.claimTo) return;
+        /* already transposed on screen, so nothing is shifted a second time */
+        lane.appendChild(chordEl(c.label, Math.max(0, c.pos - piece.from), 0));
       });
 
       /* A leftover row with no chords over it needs no lane to hold them, and
          the fifteen pixels it would take are a line of the song further down
          the page. */
-      if (desc.tail && !lane.children.length) ln.classList.add("is-tight");
+      if (piece.tail && !lane.children.length) ln.classList.add("is-tight");
       ln.appendChild(lane);
+      ln.appendChild(textSpans(line.text.slice(piece.from, Math.min(piece.to, line.text.length))));
+      return ln;
+    }
 
-      var words = textSpans(text);
-      /* Indented and nothing else. There was an arrow drawn in the indent, and
-         it is gone with the joining it went with: a row that is one line of a
-         song needs no punctuation explaining itself. */
-      if (desc.tail) ln.style.setProperty("--cont", indent + "px");
-      ln.appendChild(words);
+    /* WHAT SAYS THAT A NEW LINE OF THE SONG BEGINS HERE. Artificial spaces,
+       the same ones the format already has, with the mark drawn on the run by
+       the stylesheet (see fillSpans). It stands between the two rows and
+       belongs to neither: nothing can be typed into it and nothing is copied
+       out of it, because it is not a line of anything. */
+    function buildSep() {
+      var node = el("div", "ln-t ln-sep");
+      fillSpans(node, sep);
+      return node;
+    }
+
+    /* What the pouring has to say about a row, whoever built it. */
+    function shape(ln, piece) {
+      if (piece.tail) {
+        ln.classList.add("is-cont");
+        ln.style.setProperty("--cont", indent + "px");
+      }
+      if (piece.more) ln.classList.add("has-cont");
+      if (piece.tail && !piece.more) ln.classList.add("is-last");
       return ln;
     }
 
@@ -2602,39 +2615,61 @@
        editor made, with its caret, its listeners and its chords bound to the
        song. Most lines of most songs fit, so most rows are carried straight
        through and only a line that had to be broken is poured into pieces. */
+    function rowFor(piece) {
+      if (ed && !piece.tail && !piece.more && !piece.from && piece.to >= piece.line.text.length) {
+        return piece.line.node;
+      }
+      /* Writing, the row comes back from the editor, which builds it out of
+         the song exactly as it builds a whole line. It is not given a tight
+         lane the way a read one is: an empty lane on a page being written is
+         where the next chord goes down, and there has to be something there to
+         press. */
+      return shape((adopt ? adopt(piece) : null) || buildRow(piece), piece);
+    }
+
+    /* WHERE THE SONG GOES, TAKEN BEFORE THE ROWS ARE BUILT. Building them moves
+       the rows that are being carried through: a row that ends up sharing a
+       line of the page is moved into the pair that holds it, and if that row
+       was the one this place was being taken beside, the whole song would be
+       inserted inside the pair. */
+    var here = document.createComment("");
+    sheet.insertBefore(here, originals[0]);
+
     var nodes = out.map(function (desc) {
       if (desc.keep) return desc.node;
-      var only = desc.pieces.length === 1 ? desc.pieces[0] : null;
-      if (ed && only && !only.lead && only.line.pieces.length === 1) return only.line.node;
 
-      /* Writing, the row comes back from the editor, and what the pouring has
-         to say about it is only what it says about any poured row: that it
-         carries the end of the line above, that its own line goes on below, or
-         both. The row is not given a tight lane the way a read one is: an
-         empty lane on a page being written is where the next chord goes down,
-         and there has to be something there to press. */
-      var made = adopt && only ? adopt(only) : null;
-      if (!made) return buildRow(desc);
+      var made = desc.pieces.map(rowFor);
+      if (made.length < 2) return made[0];
 
-      if (desc.tail) {
-        made.classList.add("is-cont");
-        made.style.setProperty("--cont", indent + "px");
-      }
-      if (desc.more) made.classList.add("has-cont");
-      if (desc.tail && !desc.more) made.classList.add("is-last");
-      return made;
+      /* Two lines of the song on one line of the page. The air under it is the
+         air the LAST of them asks for, because that is the line the next row
+         of the page follows on from. */
+      var share = el("div", "ln-row");
+      made.forEach(function (node, n) {
+        if (n) share.appendChild(buildSep());
+        share.appendChild(node);
+      });
+      var end = desc.pieces[desc.pieces.length - 1];
+      if (end.more) share.classList.add("has-cont");
+      if (end.tail && !end.more) share.classList.add("is-last");
+      return share;
     });
 
-    /* In one place, before the first of the rows being replaced, so the order
-       is the order of `out` whether a row is a new one or one being carried
-       through and moved. */
-    var parent = originals[0].parentNode;
-    var here = document.createComment("");
-    parent.insertBefore(here, originals[0]);
-    nodes.forEach(function (node) { parent.insertBefore(node, here); });
-    parent.removeChild(here);
+    /* All of them at that one place, so the order on the page is the order of
+       `out` whether a row is a new one or one being carried through. */
+    nodes.forEach(function (node) { sheet.insertBefore(node, here); });
+    sheet.removeChild(here);
+
+    /* And what is left over goes. A row carried through is either one of these
+       nodes or standing inside one of them, and an original that is neither is
+       a row the pouring has replaced. */
+    var kept = [];
+    nodes.forEach(function (node) {
+      kept.push(node);
+      Array.prototype.forEach.call(node.children, function (child) { kept.push(child); });
+    });
     originals.forEach(function (node) {
-      if (node.parentNode && nodes.indexOf(node) === -1) node.parentNode.removeChild(node);
+      if (node.parentNode && kept.indexOf(node) === -1) node.parentNode.removeChild(node);
     });
   }
 
@@ -6476,9 +6511,13 @@
           syncChords(ln, line);
           layoutLine(ln);
           /* and whether this line still fits the segment it is standing in,
-             and where it breaks if it does not: at once if the row has already
-             run past the edge, and otherwise once the typing stops */
-          settle(text.scrollWidth > ln.clientWidth + 1);
+             and where it breaks if it does not: at once if what is on this
+             line of the page has already run past the edge of it, and
+             otherwise once the typing stops. Asked of the pair where the row
+             shares its line with another, because a row that shares one is
+             only as wide as its own words and can never overflow itself. */
+          var box = ln.parentNode && ln.parentNode.classList.contains("ln-row") ? ln.parentNode : ln;
+          settle(box.scrollWidth > box.clientWidth + 1);
         });
         text.addEventListener("keydown", function (event) { lineKeys(event, line, text); });
         /* Clicking between two letters offers to open a gap there, and typing
