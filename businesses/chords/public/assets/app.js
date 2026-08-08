@@ -480,6 +480,30 @@
     });
   }
 
+  /* THE SAME RULE WHERE THE CREDITS KEEP THEIR LABELS: one entry per PERSON
+     rather than one per column, and the labels of both gathered onto it. So a
+     song whose words and tune are one person's says their name once and still
+     says they did both, instead of "מילים: תמי בן הדר, לחן: תמי בן הדר",
+     which is the two columns read out loud.
+
+     `parts` are the credits as they were, in the order they are written on the
+     song, for whoever needs the labels or the pictures that go with them. */
+  function creditsOnce(song) {
+    var by = {};
+    var out = [];
+    credits(song).forEach(function (c) {
+      if (by[c.name]) return by[c.name].parts.push(c);
+      by[c.name] = { name: c.name, parts: [c] };
+      out.push(by[c.name]);
+    });
+    return out;
+  }
+
+  /* "מילים ולחן" out of one person's two credits, "מילים" out of one. */
+  function creditSaid(group) {
+    return group.parts.map(function (c) { return c.label; }).join(" ו") + ": " + group.name;
+  }
+
   /* --- the people, read out of the songs ------------------------------------
      THERE IS NO TABLE OF CREATORS AND THERE SHOULD NOT BE. A person is not a
      row somebody creates and then has to keep in step with the songs; a
@@ -4201,9 +4225,16 @@
         var renameShelf = function (typed) {
           var next = tidyStyles([typed])[0];
           if (!next || next === shelf) return shelfField();
-          renameStyle(shelf, next).then(function (done) {
-            if (!done) return toast("לא הצלחנו לשנות את שם הסגנון", true);
-            toast(done === 1 ? "הסגנון שונה בשיר אחד" : "הסגנון שונה ב-" + done + " שירים");
+          renameStyle(shelf, next).then(function (count) {
+            if (!count.done) return toast("לא הצלחנו לשנות את שם הסגנון", true);
+            /* A RENAME IS ALL OF THEM OR IT IS SAID OUT LOUD. A shelf left in
+               two halves is the one outcome nobody can see from the page they
+               land on, so the songs that did not take the word are named as a
+               number rather than quietly left behind. */
+            var left = count.of - count.done;
+            toast(left ? "הסגנון שונה ב-" + count.done + " שירים, ו-" + left + " לא השתנו"
+              : count.done === 1 ? "הסגנון שונה בשיר אחד"
+              : "הסגנון שונה ב-" + count.done + " שירים", !!left);
             /* the address is the name, so it moves with it */
             go(BASE + "/style/" + encodeURIComponent(next));
           });
@@ -4352,11 +4383,18 @@
          unchecked, not unfinished and not done; it is not there yet. */
       var tag = null;
 
-      /* The three a song can be in, in the order it passes through them. A
-         song that is neither published nor waiting to be checked is one
-         somebody is working on, which is what a draft is: there is no fourth
-         state for "finished and private". */
-      var TAGS = ["imported", "review", "draft", "published"].map(function (key) {
+      /* THE WORK OUTSTANDING, AND NOT THE WORK DONE. A song passes through
+         four states and only three of them are worth a count: still in the
+         machine, waiting to be checked, being worked on. Published is the
+         fourth, and a number for it is a count of the library minus the few
+         rows that are not finished, which is the page itself. It was the
+         largest number in the row and the only one nobody was ever going to
+         press.
+
+         The word itself stays on every card that earned it. What went is the
+         tally, which was answering a question the library does not get
+         asked. */
+      var TAGS = ["imported", "review", "draft"].map(function (key) {
         return {
           key: key,
           label: STATE_WORDS[key],
@@ -4786,8 +4824,8 @@
         var what = el("div");
         var top = el("div", "t-row");
         top.appendChild(el("div", "t", s.title));
-        var by = credits(s);
-        if (by.length) top.appendChild(el("div", "by", by.map(function (c) { return c.name; }).join(", ")));
+        var by = creditNames(s);
+        if (by.length) top.appendChild(el("div", "by", by.join(", ")));
         what.appendChild(top);
         var when = whenWords(s.deleted_at);
         if (when) what.appendChild(el("div", "a", "נמחק " + when));
@@ -5259,13 +5297,16 @@
         if (String(song[c.field] || "").trim() === was) patch[c.field] = now;
       });
       if (!Object.keys(patch).length) return null;
-      return db.update(song.id, patch).then(function () {
+      return db.update(song.id, patch).then(function (row) {
+        /* the row that came back, not the request that went out: a PATCH no
+           row matched is an empty answer and a good one (see renameStyle) */
+        if (!row) return;
         done++;
         /* the row in hand follows the write, so nothing on the page is
            reading a name the database no longer holds */
         Object.keys(patch).forEach(function (field) { song[field] = now; });
       }).catch(function () { /* counted by not being counted */ });
-    })).then(function () { return done; });
+    })).then(function () { return { done: done, of: songs.length }; });
   }
 
   /* --- CALLING A SHELF SOMETHING ELSE ---------------------------------------
@@ -5295,13 +5336,19 @@
       var next = tidyStyles(styles(song).map(function (name) {
         return name === was ? now : name;
       }));
-      return db.update(song.id, { styles: next }).then(function () {
+      return db.update(song.id, { styles: next }).then(function (row) {
+        /* THE ROW THAT CAME BACK, NOT THE REQUEST THAT WENT OUT. A write that
+           no row matched is not an error: the database answers a PATCH that
+           changed nothing with an empty list and a perfectly good 200, which
+           is exactly what happens to somebody else's song. Counting the
+           requests would report a rename that never touched a thing. */
+        if (!row) return;
         done++;
         /* the row in hand follows the write, so nothing on the page is reading
            a word the database no longer holds */
         song.styles = next;
       }).catch(function () { /* counted by not being counted */ });
-    })).then(function () { return done; });
+    })).then(function () { return { done: done, of: songs.length }; });
   }
 
   function viewCreators() {
@@ -5362,9 +5409,14 @@
       if (auth.in) {
         whereEditable(name, "שם היוצר", null, function (next) {
           if (!next || next === name) return where(name);
-          renameCreator(name, next).then(function (done) {
-            if (!done) return toast("לא הצלחנו לשנות את השם", true);
-            toast(done === 1 ? "השם שונה בשיר אחד" : "השם שונה ב-" + done + " שירים");
+          renameCreator(name, next).then(function (count) {
+            if (!count.done) return toast("לא הצלחנו לשנות את השם", true);
+            /* all of them, or the ones that were left is said (see the same
+               count on a shelf) */
+            var left = count.of - count.done;
+            toast(left ? "השם שונה ב-" + count.done + " שירים, ו-" + left + " לא השתנו"
+              : count.done === 1 ? "השם שונה בשיר אחד"
+              : "השם שונה ב-" + count.done + " שירים", !!left);
             /* the address is the name, so it moves with it */
             go(BASE + "/creator/" + encodeURIComponent(next));
           });
@@ -5626,20 +5678,16 @@
          other page to keep it on any more. */
       meta = el("div", "song-meta");
 
-      /* THE WORD, WITH THE MARK THE READER SEES IN ITS PLACE. The strip above
-         this form says a credit as a pen or a note and a name, and so does the
-         line under the title on the page people play from. Saying it here as a
-         bare word would make the form a third way of saying the same fact, so
-         it is the same pair: the mark, then the word, in a column the width of
-         the longest of the three. */
+      /* THE WORD, AND ONLY THE WORD. Each of these carried the little pen or
+         note that stands in for it where there is no room for it: under the
+         title of a song, at twelve pixels, "מילים:" is half the line. Here
+         there is room and the word is written out in full, so the picture
+         beside it is a picture of the word next to the word. Three of them
+         down the side of a panel of three fields is a column of decoration in
+         the one place the words already fit. */
       byFields = CREDITS.map(function (c) {
         var label = el("label");
-        var word = el("span", "meta-word");
-        /* The mark is not carrying the word here, the word is right beside it,
-           so it is the one place the pen and the note are decoration and are
-           allowed to be hidden from a reader who is being read to. */
-        word.appendChild(svg(ICON[c.icon]));
-        word.appendChild(el("span", null, c.label));
+        var word = el("span", "meta-word", c.label);
         label.appendChild(word);
         var input = el("input");
         input.type = "text";
@@ -5679,12 +5727,9 @@
          in it all mean the same thing, so all three do it. */
       var kindsRow = el("div", "kinds-field");
       /* One word, like the two beside it, and singular like them: the field
-         takes several and so does "לחן". With a mark in front of it like the
-         two above, because it is one more fact about the song and the row
-         should not look like a different kind of row. */
-      var kindsLabel = el("div", "meta-word");
-      kindsLabel.appendChild(svg(ICON.tag));
-      kindsLabel.appendChild(el("span", null, "סגנון"));
+         takes several and so does "לחן". Bare, like them, for the same reason:
+         a tag drawn next to the word "סגנון" says what the word says. */
+      var kindsLabel = el("div", "meta-word", "סגנון");
       /* The styles and the field that adds one, held together: they wrap
          between themselves and never take the word onto a second line with
          them, which is what used to happen the moment a song had two styles. */
@@ -5692,8 +5737,32 @@
       var kindsList = el("div", "kinds-list");
       var kindsInput = el("input");
       kindsInput.type = "text";
-      kindsInput.placeholder = "להוסיף סגנון";
+      kindsInput.placeholder = "סגנון חדש";
       kindsInput.setAttribute("aria-label", "להוסיף סגנון לשיר");
+
+      /* --- ONE MORE OF THESE, AS ONE OF THESE ---------------------------------
+         Adding a style was a field standing open at the end of the row with
+         "להוסיף סגנון" written in it in grey, which is a second shape on a row
+         whose whole content is chips, and a line under empty space asking to be
+         filled in on a song that may well have every style it needs.
+
+         So it is a chip, the same chip the styles themselves are, with a plus
+         where their name would be: what a press adds is one more of the things
+         standing beside it, and it says so by looking like them. The field is
+         what the press opens, in its place, and it goes back to being a plus
+         when there is nothing being typed in it. */
+      var kindsAdd = el("button", "tag tag-style tag-add", "+");
+      kindsAdd.type = "button";
+      kindsAdd.title = "להוסיף סגנון";
+      kindsAdd.setAttribute("aria-label", "להוסיף סגנון לשיר");
+
+      function askKind(open) {
+        kindsInput.hidden = !open;
+        kindsAdd.hidden = !!open;
+        if (open) kindsInput.focus();
+      }
+
+      kindsAdd.addEventListener("click", function () { askKind(true); });
 
       var kindsKnown = el("datalist");
       kindsKnown.id = "song-styles";
@@ -5851,7 +5920,7 @@
       facts.classList.add("song-info");
 
       var showFacts = function () {
-        var said = credits(song).map(function (c) { return c.label + ": " + c.name; });
+        var said = creditsOnce(song).map(creditSaid);
         var kinds = styles(song);
         /* A song with none of them is asked, in the words the panel opens with:
            the button is the way in either way, and what changes is whether it
@@ -5906,10 +5975,15 @@
          label was, because at that size "מילים:" costs more room than the
          name it introduces. */
       facts = el("div", "song-facts is-read");
-      whereUnder(credits(song).map(function (c) {
+      /* ONE ENTRY PER PERSON, with as many pictures as they earned. Whoever
+         wrote the words usually wrote the tune, and their name under the title
+         twice with a different picture beside each was the two columns read
+         out loud. Both pictures, one name, and nothing about who did what is
+         lost by saying it once. */
+      whereUnder(creditsOnce(song).map(function (group) {
         var one = el("span", "credit");
-        one.appendChild(creditMark(c));
-        one.appendChild(el("span", null, c.name));
+        group.parts.forEach(function (c) { one.appendChild(creditMark(c)); });
+        one.appendChild(el("span", null, group.name));
         return one;
       }));
 
@@ -8722,8 +8796,8 @@
       normalizeLines(v.lines, v.dir)) : null, !before)];
     var many = lineCount(v);
     said.push(many === 1 ? "שורה אחת" : many + " שורות");
-    var by = credits(v);
-    if (by.length) said.push(by.map(function (c) { return c.label + ": " + c.name; }).join(", "));
+    var by = creditsOnce(v);
+    if (by.length) said.push(by.map(creditSaid).join(", "));
     styles(v).forEach(function (kind) { said.push(kind); });
     what.appendChild(el("div", "a", said.join("  •  ")));
     box.appendChild(what);
@@ -9173,10 +9247,8 @@
           go(a.getAttribute("href"));
         });
         top.appendChild(a);
-        var by = credits(song);
-        if (by.length) {
-          top.appendChild(el("div", "by", by.map(function (c) { return c.name; }).join(", ")));
-        }
+        var by = creditNames(song);
+        if (by.length) top.appendChild(el("div", "by", by.join(", ")));
       } else {
         /* The song was deleted from the library after it was put in the
            evening. Saying which one is gone is the only useful thing left to

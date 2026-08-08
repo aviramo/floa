@@ -815,6 +815,9 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 /* on the evening it is the whole of what a toolbar left behind, so it stands
    on its own line rather than at the end of a row of controls */
 .ev-state { display: block; margin: 6px 0 18px; }
+/* And it is empty unless a write failed, which is the only thing it has left
+   to say (see note): an empty line still spends its margins, so it goes. */
+.ev-state:empty { display: none; }
 .save-state.is-bad { color: var(--danger); }
 
 /* The songs. An ol, so the numbers are the browser's own counter: a drag
