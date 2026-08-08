@@ -107,14 +107,17 @@
        thing being named was the smaller half of its own picture.
 
        So the strings are gone and what is left is the object, from the side,
-       the way it sits in a case and the way anybody who owns one would draw
-       it: the two padded jaws reaching out, the yoke that joins them at the
-       back, and the knurled screw standing off the top of it. A C with a
-       circle on its shoulder, which is a capo and is not anything else on this
-       strip or in this app. */
+       the way it lies in a case: the two jaws reaching out, the yoke joining
+       them at the back, and the knurled screw standing off the shoulder.
+
+       AND IT IS DRAWN HEAVY, which no other picture here is. A capo is a solid
+       thing and its jaws are slabs; at line weight the same shape is a
+       bracket, a paperclip, a letter C. The stroke is what makes it an object
+       and not a mark, so the jaws are thick and the screw is filled, and the
+       one icon on this strip that is a thing you can pick up looks like one. */
     pitch: '<path d="M8 17V6l9-2v9"/><ellipse cx="5.6" cy="17.2" rx="2.6" ry="2.1"/><ellipse cx="14.6" cy="15.2" rx="2.6" ry="2.1"/>',
     textSize: '<path d="M2 19l5-13 5 13M3.6 15h6.8M14 19l3.3-8.5 3.3 8.5M15.1 16.4h4.4"/>',
-    capo: '<circle cx="8.7" cy="6.4" r="2.6"/><path d="M20.8 8.6h-8.4a4.3 4.3 0 0 0 0 8.6h8.4"/>',
+    capo: '<path d="M19 8.6h-7.4a3.6 3.6 0 0 0 0 7.2H19" stroke-width="3"/><circle cx="6.6" cy="8.4" r="3.2" fill="currentColor" stroke-width="1"/>',
     undo: '<path d="M4 10h9a4.5 4.5 0 0 1 0 9h-5"/><path d="M8 6l-4 4 4 4"/>',
     print: '<path d="M7 9V4h10v5M7 18H5v-6h14v6h-2M8 14h8v6H8z"/>',
     calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
