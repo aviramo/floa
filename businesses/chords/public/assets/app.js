@@ -5719,6 +5719,72 @@
     }).catch(fail);
   }
 
+  /* --- THE SAME FACTS, TO SOMEBODY WHO CANNOT CHANGE THEM -------------------
+     Who wrote the song and what kind of song it is, as a thing to READ. The
+     panel behind the editor's info button asks for exactly these, and this is
+     what stands in it for everybody else: the same three lines, in the same
+     order, with the answers where the fields were.
+
+     Which is why the button is not the editor's any more. What it opens is a
+     fact about the song and not a form belonging to whoever typed it, and a
+     reader who wants to know who wrote this had nowhere to press.
+
+     AND WHAT IS IN IT LEADS SOMEWHERE. A name is a page of everything that
+     person wrote and a style is a shelf of everything like this, so both are
+     links: on a page you cannot change, "who else, what else" is the only
+     thing left to want, and this is the one place on the song that can answer
+     it. The credits under the title cannot: they are the second line of a
+     name and a link there would make them a control.
+
+     Nothing to say is nothing to open, so a song with neither hands back
+     nothing at all and the button is never built (see renderSong). */
+  function songTold(song) {
+    var said = creditsOnce(song);
+    var kinds = styles(song);
+    if (!said.length && !kinds.length) return null;
+
+    var box = el("div", "song-told");
+
+    function opens(node, href) {
+      node.href = href;
+      node.addEventListener("click", function (event) {
+        event.preventDefault();
+        go(href);
+      });
+      return node;
+    }
+
+    /* The word in front, at the width the form gives it, so the answers start
+       where each other starts and the panel reads as the one the editor sees
+       filled in. */
+    function row(word, body) {
+      var line = el("div", "told-row");
+      line.appendChild(el("span", "meta-word", word));
+      line.appendChild(body);
+      box.appendChild(line);
+    }
+
+    /* ONE LINE PER PERSON, with both words on it where one person did both:
+       "מילים ולחן: תמי בן הדר" and never the same name twice under two
+       headings, which is the two columns of the table read out loud. */
+    said.forEach(function (group) {
+      var word = group.parts.map(function (c) { return c.label; }).join(" ו");
+      var who = el("a", "told-said", group.name);
+      row(word, opens(who, BASE + "/creator/" + encodeURIComponent(group.name)));
+    });
+
+    if (kinds.length) {
+      var tags = el("div", "told-tags");
+      kinds.forEach(function (name) {
+        var chip = el("a", "tag tag-style", name);
+        tags.appendChild(opens(chip, BASE + "/style/" + encodeURIComponent(name)));
+      });
+      row("סגנון", tags);
+    }
+
+    return box;
+  }
+
   /* `past`, when it is there, means this is not the song but a version of it:
      {song, version}, the row in the library and the one on the shelf. The page
      is the same page, drawn from the older words, and it CANNOT BE EDITED. Not
@@ -6263,12 +6329,63 @@
          a reader who is about to play it nothing they can use.
 
          It is still set from here, on the same line with the editor open, where
-         it is the form's own reflection and not a decoration.
+         it is the form's own reflection and not a decoration, and it is still
+         SAID here, one press away, in the panel below: not on the page, where
+         it would stand over the song for the whole of it, but in the one place
+         somebody goes to ask.
 
          The draft mark stays, because it is not a label about the song but
          something to know before playing from the page: this one is not
          finished. */
       facts.appendChild(el("span", "tag tag-" + songState(), STATE_WORDS[songState()]));
+
+      /* --- AND THE SAME PANEL, WITH NOTHING TO FILL IN -----------------------
+         The info button was the editor's, which made "who wrote this" a
+         question only the person who typed the song could ask. It is a fact
+         about the song and not a property of the account that owns it, so the
+         button is here too, in the same place in the bar, opening the same
+         panel with the answers where the fields were (see songTold).
+
+         READ AND NOT WRITTEN, all of it. There is no field in it, nothing in
+         it is saved, and the way out says so: the editor's panel is finished
+         with, this one is simply shut.
+
+         And it is not built at all for a song that has neither a name on it
+         nor a kind. A button that opens an empty panel is a button that has
+         to be pressed to find that out. */
+      var told = songTold(song);
+      if (told) {
+        metaPanel = el("dialog", "dlg dlg-meta dlg-told");
+        var toldBox = el("div", "dlg-in");
+        toldBox.appendChild(el("h2", null, "מי כתב, ואיזה סוג"));
+        toldBox.appendChild(told);
+        var toldDone = el("div", "dlg-actions");
+        toldDone.appendChild(button("סגירה", null, "ghost", function () { metaPanel.close(); }));
+        toldBox.appendChild(toldDone);
+        metaPanel.appendChild(toldBox);
+
+        var info = iconBtn(ICON.info, "מי כתב, ואיזה סוג", function () {
+          info.classList.add("is-open");
+          metaPanel.showModal();
+        });
+        info.classList.add("song-info");
+        /* The same hover the editor's button carries, which is the whole of
+           the panel in one line: the answer without opening anything. */
+        var inOneLine = creditsOnce(song).map(creditSaid).concat(styles(song));
+        info.title = inOneLine.join("  •  ");
+        info.setAttribute("aria-label", info.title);
+        facts.appendChild(info);
+
+        /* On the way DOWN, so it lands before the link's own handler does: a
+           panel about the song you were on has no business standing over the
+           page it just sent you to. The dark behind it is the same press,
+           landing on the dialog itself where the panel is not. */
+        metaPanel.addEventListener("click", function (event) {
+          if (event.target === metaPanel) return metaPanel.close();
+          if (event.target.closest && event.target.closest("a")) metaPanel.close();
+        }, true);
+        metaPanel.addEventListener("close", function () { info.classList.remove("is-open"); });
+      }
     }
 
     app.appendChild(head);
