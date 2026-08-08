@@ -1189,8 +1189,13 @@ try {
         await mouse(send, "mouseMoved", last.cx - i * 10, last.y);
         await sleep(30);
       }
+      /* LONGER THAN IT LOOKS. Letting go of a chord asks for the song to be
+         poured again half a second later (see settle), and every row on the
+         page is a new row afterwards. Measured before that, the next press
+         lands on a node that is about to stop existing and the drag goes
+         nowhere. So the wait is for the page to have finished moving. */
       await mouse(send, "mouseReleased", last.cx - 80, last.y);
-      await sleep(200);
+      await sleep(700);
 
       const out = await evaluate(TAIL);
       check("a chord dragged past the words leaves the words alone",
@@ -1210,29 +1215,27 @@ try {
         await sleep(30);
       }
       await mouse(send, "mouseReleased", far.cx + 50, far.y);
-      await sleep(200);
+      await sleep(700);
 
       const back = await evaluate(TAIL);
       check("a chord brought back takes the room with it",
         back && back.gaps < out.gaps && back.words === "שלום",
         `${out.gaps} gaps, then ${back && back.gaps}`);
-    });
 
-    /* --- 9. and the same room at the front of a line ----------------------
-       A chord pulled back past the FIRST word is the same gesture read from
-       the other side, and it opens the same room. The difference is what the
-       room does to the line: it goes in FRONT, so the words slide away from
-       the start and every other chord stays over its own syllable. */
-    await open(`http://127.0.0.1:${port}/chords/_t/edit/`, async ({ send, evaluate }) => {
-      const state = await evaluate(HEAD);
+      /* --- and the same room at the FRONT of a line ------------------------
+         A chord pulled back past the first word is the same gesture read from
+         the other side, and it opens the same room. The difference is what
+         the room does to the line: it goes in front, so the words slide away
+         from the start and every other chord stays over its own syllable. */
+      const begun = await evaluate(HEAD);
       check("the first line of the song begins at the beginning",
-        state && state.lead === 0 && state.chords.length === 4, JSON.stringify(state));
-      if (!state || !state.chords.length) return;
+        begun && begun.lead === 0 && begun.chords.length === 4, JSON.stringify(begun));
+      if (!begun || !begun.chords.length) return;
 
       /* Its first chord, pulled backwards, which in a line running right to
          left is rightwards. */
-      const first = state.chords[0];
-      const others = state.chords.slice(1).map((c) => c.pos);
+      const first = begun.chords[0];
+      const kept = begun.chords.slice(1).map((c) => c.pos);
       await mouse(send, "mousePressed", first.cx, first.y);
       await mouse(send, "mouseMoved", first.cx + 10, first.y);
       await sleep(40);
@@ -1241,38 +1244,38 @@ try {
         await sleep(30);
       }
       await mouse(send, "mouseReleased", first.cx + 60, first.y);
-      await sleep(300);
+      await sleep(700);
 
-      const out = await evaluate(HEAD);
+      const front = await evaluate(HEAD);
       check("a chord pulled back past the first word opens room in front of it",
-        out && out.lead > 0, JSON.stringify(out && { lead: out.lead, chords: out.chords.map((c) => c.pos) }));
+        front && front.lead > 0, JSON.stringify(front && { lead: front.lead, chords: front.chords.map((c) => c.pos) }));
       check("and the words are the words, with no real space among them",
-        out && out.words === state.words && out.spaces === 0, JSON.stringify(out && out.words));
+        front && front.words === begun.words && front.spaces === 0, JSON.stringify(front && front.words));
       check("the chord that opened it stands at the head of it",
-        out && out.chords[0].pos === 0, JSON.stringify(out && out.chords.map((c) => c.pos)));
+        front && front.chords[0].pos === 0, JSON.stringify(front && front.chords.map((c) => c.pos)));
       check("and every other chord kept its own syllable",
-        out && out.chords.slice(1).every((c, i) => c.pos === others[i] + out.lead),
-        JSON.stringify(out && { lead: out.lead, was: others, now: out.chords.slice(1).map((c) => c.pos) }));
-      check("with nothing drawn over the room either", out && out.marks === 0, JSON.stringify(out && out.marks));
+        front && front.chords.slice(1).every((c, i) => c.pos === kept[i] + front.lead),
+        JSON.stringify(front && { lead: front.lead, was: kept, now: front.chords.slice(1).map((c) => c.pos) }));
+      check("with nothing drawn over the room either", front && front.marks === 0, JSON.stringify(front && front.marks));
 
       /* And forward again: the room it left behind it goes back, and the line
          starts where lines start. */
-      const held = out.chords[0];
-      await mouse(send, "mousePressed", held.cx, held.y);
-      await mouse(send, "mouseMoved", held.cx - 10, held.y);
+      const head = front.chords[0];
+      await mouse(send, "mousePressed", head.cx, head.y);
+      await mouse(send, "mouseMoved", head.cx - 10, head.y);
       await sleep(40);
       for (let i = 2; i <= 5; i++) {
-        await mouse(send, "mouseMoved", held.cx - i * 10, held.y);
+        await mouse(send, "mouseMoved", head.cx - i * 10, head.y);
         await sleep(30);
       }
-      await mouse(send, "mouseReleased", held.cx - 50, held.y);
-      await sleep(300);
+      await mouse(send, "mouseReleased", head.cx - 50, head.y);
+      await sleep(700);
 
       const home = await evaluate(HEAD);
       check("a chord brought forward takes the room in front of it back",
-        home && home.lead < out.lead, `${out.lead} gaps, then ${home && home.lead}`);
+        home && home.lead < front.lead, `${front.lead} gaps, then ${home && home.lead}`);
       check("and the line is the same line",
-        home && home.words === state.words, JSON.stringify(home && home.words));
+        home && home.words === begun.words, JSON.stringify(home && home.words));
     });
   });
 } finally {

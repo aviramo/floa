@@ -90,6 +90,10 @@
        full height of the box like every other icon here, so that at fifteen
        pixels it is a question mark and not a speck. */
     help: '<path d="M8.4 8.6a3.6 3.6 0 1 1 3.6 3.9V15"/><path d="M12 18.7h.01"/>',
+    /* The i in its ring, the way every app draws "there is more to know about
+       this here". The dot first and the stem under it, the same two strokes
+       the question mark above is drawn with and in the same order. */
+    info: '<circle cx="12" cy="12" r="9"/><path d="M12 7.9h.01"/><path d="M12 11.4v5"/>',
     /* --- the three controls over a song, as pictures ---
        Each has to be recognisable at fifteen pixels by somebody who was not
        told, so each is drawn as the thing itself rather than as an abstraction
@@ -3955,7 +3959,13 @@
     findField = el("input");
     findField.type = "search";
     findField.autocomplete = "off";
-    findField.placeholder = "חיפוש שיר, יוצר או אירוע";
+    /* One word, because the box is not the thing to explain. It listed what it
+       searches, which is four words of grey standing across the widest thing in
+       the bar to say something anybody finds out by typing one letter into it,
+       and on a narrow bar it was the longest text on the page. The full sentence
+       is still there for a reader who is being read to, where it costs nothing
+       and is the only way to know. */
+    findField.placeholder = "חיפוש...";
     findField.setAttribute("aria-label", "חיפוש שיר, יוצר או אירוע");
     findBox.appendChild(findField);
 
@@ -5820,39 +5830,35 @@
       };
       showState();
 
-      /* WHAT THE FORM SAYS, WITH THE FORM SHUT. The same facts, as a line to
-         read rather than a grid to fill: the names, the kinds, and nothing
-         where there is nothing.
+      /* WHAT THE FORM SAYS, WITH THE FORM SHUT, AND IT IS ONE BUTTON WIDE.
+         It used to say it out loud: the names with a pen and a note in front of
+         them and the kinds as chips, a strip of text standing in the bar beside
+         the name of the song. Which is the same facts twice on a page that is
+         being WRITTEN, because the panel behind it says them in full and in the
+         shape you can change them in, and it is the widest thing in the bar
+         spent on something nobody up there is reading. The reader's page still
+         says the credits under the title, where they are the second line of the
+         name and not a control.
 
-         IN THE SHAPE THE READER'S PAGE USES, which is a picture and a name for
-         each of them (see credits below). It was one line of names run
-         together with a comma, and that line cannot say which of the two each
-         name is: whoever wrote the words is rarely the one who wrote the tune,
-         and the pen and the note say which is which in the room a comma took.
-         One shape for the same fact, read or written.
-
-         A song that has none of them says what is missing instead, because an
-         empty strip is a strip that looks like it has nothing behind it. */
-      facts = el("button", "song-facts");
-      facts.type = "button";
+         So it is the picture that means "more about this": one press, the same
+         panel. What it says is in the hover, which costs no room at all and
+         still answers "did I fill this in" without opening anything. */
+      facts = iconBtn(ICON.info, "מי כתב, ואיזה סוג", function () {
+        facts.classList.add("is-open");
+        metaPanel.showModal();
+        if (byFields[0]) byFields[0].focus();
+      });
+      facts.classList.add("song-info");
 
       var showFacts = function () {
-        facts.textContent = "";
-        var said = credits(song);
+        var said = credits(song).map(function (c) { return c.label + ": " + c.name; });
         var kinds = styles(song);
-        if (!said.length && !kinds.length) {
-          facts.appendChild(el("span", "song-facts-ask", "מי כתב, ואיזה סוג"));
-        } else {
-          said.forEach(function (c) {
-            var one = el("span", "credit");
-            one.appendChild(creditMark(c));
-            one.appendChild(el("span", null, c.name));
-            facts.appendChild(one);
-          });
-          kinds.forEach(function (name) {
-            facts.appendChild(el("span", "tag tag-style", name));
-          });
-        }
+        /* A song with none of them is asked, in the words the panel opens with:
+           the button is the way in either way, and what changes is whether it
+           is telling you something or asking you for it. */
+        var words = said.concat(kinds).join("  •  ") || "מי כתב, ואיזה סוג";
+        facts.title = words;
+        facts.setAttribute("aria-label", words);
       };
 
       /* --- AND THE FORM IS A PANEL, NOT A ROW OF THE PAGE ---------------------
@@ -5870,15 +5876,11 @@
 
          There is no save button on it. Every field writes into the song as it
          is typed, the same as everything else in this editor, so the only
-         thing left to do is to be finished. */
-      facts.addEventListener("click", function () {
-        facts.classList.add("is-open");
-        metaPanel.showModal();
-        if (byFields[0]) byFields[0].focus();
-      });
+         thing left to do is to be finished. It is opened by the button above,
+         which is the whole of what is left of the form on the page. */
 
-      /* The line is the form's own reflection, so everything that writes into
-         the song writes into it too. */
+      /* What the button says of itself is the form's own reflection, so
+         everything that writes into the song writes into it too. */
       var wasShowStyles = showStyles;
       showStyles = function () { wasShowStyles(); showFacts(); };
       byFields.forEach(function (input) {

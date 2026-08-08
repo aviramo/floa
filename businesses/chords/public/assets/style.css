@@ -792,10 +792,14 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    written: a line to put words on rather than a box to fill in. The fields
    themselves are styled with the song's, down at .song-meta. The date takes the
    width a date needs and the place takes the rest. */
+/* AND NO AIR OF ITS OWN OVER IT. The bar already leaves the same band of page
+   over every page in the app (see #app), so a margin here was that gap and a
+   half again: a line of two short fields floating in the middle of an empty
+   band, with the first song of the evening pushed under it. */
 .ev-meta {
   display: grid; align-items: end; gap: 4px 24px;
   grid-template-columns: auto minmax(0, 1fr);
-  margin: 14px 0 4px; max-width: 560px;
+  margin: 0 0 4px; max-width: 560px;
 }
 .ev-when:empty { display: none; }
 /* the same date the field above holds, kept back for the printer */
@@ -1006,8 +1010,8 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    IT IS NOT ON THE PAGE AT ALL. A form is what you want for the ten seconds
    you are typing into it and never again, so it lives in a panel over the
    page (see the song's own dialog) and the page under it does not move while
-   it is open. What stands in its place is .song-facts, which is the same
-   information as a line to read.
+   it is open. What stands in its place is .song-info, one button in the bar
+   that opens it and says what is inside it when it is hovered.
 
    ONE FIELD UNDER THE NEXT, because the panel is the width of a form and not
    the width of a screen: three fields in a row across a desk put "מילים" and
@@ -1090,28 +1094,30 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    its words are longer and one of its fields is a date, which a narrow row
    has no answer for. */
 @media (min-width: 621px) {
-  .ev-meta label {
-    display: flex; align-items: baseline; gap: 8px;
-    border-bottom: 1px solid var(--line);
-  }
-  .ev-meta label input { flex: 1 1 auto; min-width: 0; border-bottom: 0; }
+  .ev-meta label { display: flex; align-items: baseline; gap: 8px; }
+  .ev-meta label input { flex: 1 1 auto; min-width: 0; }
   .ev-meta label input[type="date"] { flex: 0 0 auto; }
-  .ev-meta label:hover { border-bottom-color: var(--ink-soft); }
-  .ev-meta label:focus-within {
-    border-bottom-color: var(--accent); box-shadow: 0 1px 0 var(--accent);
-  }
-  .ev-meta input:focus-visible { box-shadow: none; }
 }
 .song-meta input[type="text"],
 .ev-meta input[type="text"], .ev-meta input[type="date"] {
   margin-top: 0; padding: 4px 2px; border-radius: 0;
   background: none; border: 0;
 }
+/* --- AND NOTHING IS RULED UNTIL IT IS REACHED FOR ---------------------------
+   The line under these two ran the width of the row, under the word as well as
+   under the field, and past the end of what was typed to the far edge of the
+   page: a rule under "מיקום" says the word is something to fill in, and a rule
+   across four inches of nothing says there is a field there wanting four inches
+   of answer. Neither is true. When and where are a line to READ on an evening
+   that has been planned, and the writing is the ten seconds it took.
+
+   So at rest they are words. The line arrives under the pointer and stays while
+   the field is being typed in, which is exactly when there is a field. */
 .ev-meta input[type="text"], .ev-meta input[type="date"] {
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid transparent;
 }
 .ev-meta input[type="date"] { width: auto; }
-.ev-meta input:hover { border-bottom-color: var(--ink-soft); }
+.ev-meta input:hover { border-bottom-color: var(--line); }
 /* The focus ring would be a box again, which is the one shape this field is
    trying not to be. The line answers instead, in the accent and a pixel
    heavier, and the weight is a shadow rather than a border so that nothing on
@@ -1213,24 +1219,26 @@ body.on-song .top { border-bottom: 0; }
 .top-facts:empty { display: none; }
 .top-facts .song-facts { flex: none; flex-wrap: nowrap; white-space: nowrap; }
 
-/* WHAT THE SONG SAYS ABOUT ITSELF, AS A LINE. The same facts the form holds,
-   read rather than filled: the names, the kinds, and nothing where there is
-   nothing. Pressing it opens the form in a panel over the page, and it is a
-   button only where there is a form to open. */
+/* WHAT THE SONG SAYS ABOUT ITSELF WHILE IT IS BEING READ: the state it is in,
+   beside the name. Writing it is the button below, and the credits are under
+   the title, where they are the second line of the name. */
 .song-facts {
   flex: 1 1 auto; min-width: 0;
   display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px;
-  appearance: none; font: inherit; text-align: start;
-  color: var(--ink-soft); background: none;
-  border: 0; border-radius: 999px; padding: 4px 2px;
+  color: var(--ink-soft);
 }
-button.song-facts { cursor: pointer; }
-button.song-facts:hover .credit, button.song-facts.is-open .credit { color: var(--ink); }
-button.song-facts:hover .song-facts-ask { color: var(--accent); }
 .song-facts .credit { font-size: 14px; }
-/* A song with nothing said about it yet. Quiet, and clearly a question: an
-   empty strip reads as a strip with nothing behind it. */
-.song-facts-ask { font-size: 14px; text-decoration: underline dotted; text-underline-offset: 3px; }
+/* THE WAY INTO EVERYTHING THE SONG SAYS ABOUT ITSELF, WHILE IT IS BEING
+   WRITTEN, and it is one button wide. The strip of names and kinds that used to
+   stand here is in the panel behind it, in the shape you can change them in;
+   on a page that is being edited, saying them out loud in the bar as well was
+   the same fact twice across the widest thing up there. It is an icon button
+   like the ones at the other end of the bar, because that is what it is.
+
+   Open, it is lit, the way the editor's own button is: the panel over the page
+   and the button that opened it are one thing. */
+.top-facts .song-info { flex: none; }
+.song-info.is-open { color: #fff; background: var(--accent); border-color: var(--accent); }
 
 .tools {
   display: flex; align-items: center; gap: 4px 10px; flex-wrap: wrap;
