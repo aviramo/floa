@@ -3268,6 +3268,61 @@
     return typeof c === "number" && c >= 0 && c <= MAX_CAPO ? Math.round(c) : 0;
   }
 
+  /* --- THE ONE YOU HAD OPEN LAST STANDS FIRST -------------------------------
+     The library was ordered by when a song last CHANGED, which is the right
+     answer for a library being written and the wrong one for a library being
+     used: reading a song is not writing it, so an evening spent going back to
+     the same four songs left them exactly where they were, and the way back to
+     the one you closed a minute ago was to look for it.
+
+     WHAT SOMEBODY OPENS IS WHAT THEY ARE DOING. So the songs this reader has
+     opened come first, latest first, and everything else keeps the order it
+     had underneath them. Not instead of the library's order, on top of it: a
+     song nobody here has ever opened is still the newest change first.
+
+     IN THIS BROWSER AND UNDER THIS READER, like the key and the capo beside
+     it. Where you got to is not a fact about the song, it is a fact about you,
+     and a row per reader per song is a table to carry forever for something
+     worth two seconds of looking. */
+  var SEEN_OF = "chords.opened.";
+
+  /* Enough to cover what anybody is working on and short enough that the list
+     is read and written on every song opened without thinking about it. Past
+     it the library's own order is the answer again. */
+  var SEEN_KEEP = 60;
+
+  /* Bumped whenever a song is opened, so a library standing under the song
+     that was just closed knows its own order has moved on (see state.wake). */
+  var seenAt = 0;
+
+  function seenBox() {
+    return SEEN_OF + ((auth.session && auth.session.email) || "-");
+  }
+
+  function seenList() {
+    var was = null;
+    try { was = JSON.parse(localStorage.getItem(seenBox()) || "[]"); }
+    catch (e) { was = null; }
+    return Array.isArray(was) ? was : [];
+  }
+
+  /* id -> how far back it was, 0 being the one just closed. */
+  function seenRank() {
+    var rank = {};
+    seenList().forEach(function (id, i) { if (rank[id] == null) rank[id] = i; });
+    return rank;
+  }
+
+  function sawSong(id) {
+    if (!id) return;
+    var list = seenList().filter(function (was) { return was !== id; });
+    list.unshift(id);
+    if (list.length > SEEN_KEEP) list.length = SEEN_KEEP;
+    seenAt++;
+    try { localStorage.setItem(seenBox(), JSON.stringify(list)); }
+    catch (e) { /* private window: the order is then the library's own */ }
+  }
+
   /* --- AND FAILING THAT, THE ONE THAT IS EASIEST TO HOLD ---------------------
      Every row in the library already shows the shapes of the easy version, and
      that is the promise the row makes: this is what your hand will be doing.
@@ -4806,6 +4861,19 @@
           return true;
         });
 
+        /* AND THE ONES THIS READER HAS OPENED COME FIRST, LATEST FIRST. On top
+           of the order the library arrived in rather than instead of it: the
+           sort is stable, so everything nobody here has opened keeps its place
+           underneath, which is still the newest change first (see db.list). */
+        var rank = seenRank();
+        shown.sort(function (a, b) {
+          var ra = rank[a.id], rb = rank[b.id];
+          if (ra == null && rb == null) return 0;
+          if (ra == null) return 1;
+          if (rb == null) return -1;
+          return ra - rb;
+        });
+
         shownNow = shown;
         if (allBtn) allBtn.hidden = !shown.length;
         /* A shelf is one kind of song and the bar already says which, so the
@@ -4872,9 +4940,22 @@
       paintBands();
       paint();
       poll();
+
       /* And it starts again when the page is uncovered, because leaving it
-         ended it: a list out of the document stops asking. */
-      state.wake = poll;
+         ended it: a list out of the document stops asking.
+
+         AND THE SONG THAT WAS JUST CLOSED IS NOW THE FIRST CARD ON IT. This
+         page is not redrawn when it is uncovered, it is the same page standing
+         where it was left, so the card that has moved to the front would not
+         move until something else redrew the list. Reading is not writing, so
+         nothing else would. */
+      var drewSeen = seenAt;
+      state.wake = function () {
+        poll();
+        if (drewSeen === seenAt) return;
+        drewSeen = seenAt;
+        paint();
+      };
 
       /* THE SIEVE IS THE LIBRARY'S OWN, and it is handed to the box in the bar
          for as long as this page is the page. A shelf is left out on purpose:
@@ -5639,6 +5720,11 @@
      song without anybody asking for it, and the way to do that on purpose is
      the restore button in the band at the top. */
   function renderSong(song, past) {
+    /* OPENED, WHICH IS WHAT PUTS IT AT THE FRONT OF THE LIBRARY (see sawSong).
+       The song as it is now and not a version of it: reading what a song used
+       to be is not being on it, and a song being typed for the first time has
+       no id to be remembered by yet. */
+    if (!past) sawSong(song.id);
 
     /* Now there is something on the page to print, and the bar can say so. The
        database answers after the routing has already painted the bar once, so
