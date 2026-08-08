@@ -2970,6 +2970,9 @@
       sub: takeKids(document.getElementById("topSub")),
       facts: takeKids(document.getElementById("topFacts")),
       extra: takeKids(findExtra),
+      /* what the page was narrowed to, which is words in the box rather than
+         anything hanging off it (see narrowTo) */
+      narrow: findNarrow,
     };
     layer.state = {};
     PAGE_STATE.forEach(function (name2) { layer.state[name2] = state[name2]; });
@@ -2993,6 +2996,8 @@
     putKids(document.getElementById("topSub"), h.sub);
     putKids(document.getElementById("topFacts"), h.facts);
     putKids(findExtra, h.extra);
+    /* after where(), which wipes it along with the rest of them */
+    narrowTo(h.narrow);
     paintHeader();
     /* A list that stopped looking at itself while it was out of the document
        starts again (see poll in viewIndex). */
@@ -3420,7 +3425,7 @@
      the two pages about people, and it is one button on all three. */
   function toEvenings() {
     return keep("toEvenings", function () {
-      return button("ערבי שירה", ICON.calendar, "ghost small", function () {
+      return button("אירועי שירה", ICON.calendar, "ghost small", function () {
         go(BASE + "/evenings");
       });
     });
@@ -3443,7 +3448,7 @@
       if (p.length === 1) {
         return fill(bar, [
           keep("newEvening", function () {
-            return button("ערב חדש", ICON.plus, "small", newEvening);
+            return button("אירוע חדש", ICON.plus, "small", newEvening);
           }),
           session(),
         ]);
@@ -3458,7 +3463,7 @@
         whole.push(evPrint);
       }
       if (state.killer) {
-        var evKill = actionBtn("kill", ICON.trash, "מחיקת הערב");
+        var evKill = actionBtn("kill", ICON.trash, "מחיקת האירוע");
         evKill.classList.add("quiet");
         evKill._act = state.killer;
         whole.push(evKill);
@@ -3651,6 +3656,10 @@
        that is open puts something there and the next page must not inherit
        it. The box itself is built once and lives through every view. */
     if (findExtra) findExtra.textContent = "";
+    /* And what is written INSIDE it, for the same reason: a shelf's name left
+       standing over the next page would say that page is narrowed to it. The
+       three pages that are narrowed write it again after this. */
+    narrowTo(null);
     return node;
   }
 
@@ -3878,9 +3887,9 @@
       if (!hit) return;
       out.push({
         hit: hit, order: 3,
-        name: evening.title || "ערב בלי שם",
+        name: evening.title || "אירוע בלי שם",
         said: whenWhere(evening),
-        tags: [{ kind: "kind", words: "ערב" }],
+        tags: [{ kind: "kind", words: "אירוע" }],
         href: BASE + "/evenings/" + evening.id,
       });
     });
@@ -3892,6 +3901,54 @@
       return b.hit - a.hit || a.order - b.order || a.name.localeCompare(b.name, "he");
     });
     return out;
+  }
+
+  /* --- AND WHAT THE PAGE IS ALREADY NARROWED TO, WRITTEN IN IT --------------
+     A shelf, a person and an evening are each the library with most of it
+     taken away, and until now the only thing that said so was the address.
+     The bar carries the name, but a name in the bar reads as the title of a
+     page rather than as a filter over one, and nothing on the screen was a way
+     back to the rest of the library: a reader who narrowed by hand had the
+     browser's back button and nothing else.
+
+     SO THE NARROWING IS WRITTEN INTO THE SEARCH BOX, as the words that are in
+     it. Which puts what the list is limited to in the one place a reader
+     already looks to ask about a list, says which KIND of thing is doing the
+     limiting, and brings the way out with it for nothing: a box with words in
+     it is a box that can be emptied, and emptying this one is the whole
+     library again.
+
+     `words` are what stands in the box and `home` is where emptying it lands,
+     which for all three is the library with nothing taken off it. */
+  var findNarrow = null;
+
+  function narrowTo(spec) {
+    var before = findNarrow ? findNarrow.words : "";
+    findNarrow = spec || null;
+    if (!findField) return;
+    /* Written over what the narrowing itself put there, or over an empty box,
+       and never over anything else: somebody in the middle of typing owns the
+       box, and a repaint under their hands must not take the letters out of
+       it. */
+    if (findField.value === before || !findField.value) {
+      findField.value = findNarrow ? findNarrow.words : "";
+    }
+    paintNarrow();
+  }
+
+  /* The words of a narrowing are not the words of a search, and they are in the
+     same field: what tells them apart is that these were not typed. So they are
+     coloured rather than left as plain text, and the colour goes the moment
+     somebody types over them, because from then on they ARE a search. */
+  function paintNarrow() {
+    if (!findBox || !findField) return;
+    var showing = !!findNarrow && findField.value === findNarrow.words;
+    findBox.classList.toggle("is-narrow", showing);
+  }
+
+  function narrowBy(kind, name, home) {
+    if (!name) return narrowTo(null);
+    narrowTo({ words: kind + ": " + name, home: home || BASE + "/" });
   }
 
   var findBox = null;
@@ -3917,8 +3974,8 @@
     findField = el("input");
     findField.type = "search";
     findField.autocomplete = "off";
-    findField.placeholder = "חיפוש שיר, יוצר או ערב";
-    findField.setAttribute("aria-label", "חיפוש שיר, יוצר או ערב");
+    findField.placeholder = "חיפוש שיר, יוצר או אירוע";
+    findField.setAttribute("aria-label", "חיפוש שיר, יוצר או אירוע");
     findBox.appendChild(findField);
 
     /* --- AND THE FAR END OF THE BOX IS THE PAGE'S ----------------------------
@@ -3981,10 +4038,25 @@
 
     findField.addEventListener("input", function () {
       clearTimeout(findTimer);
+      paintNarrow();
+      /* THE BOX EMPTIED IS THE NARROWING LET GO. The words in it are not a
+         search somebody typed, they are what the page is limited to, so taking
+         them out is the gesture for taking the limit off, and it lands on the
+         library with all of it there. */
+      if (findNarrow && !findField.value.trim()) {
+        var home = findNarrow.home;
+        shutFind();
+        return go(home);
+      }
       findTimer = setTimeout(askFind, 110);
     });
     findField.addEventListener("focus", function () {
       openFind();
+      /* The narrowing is not a question waiting for an answer, it is the page
+         itself, so it opens no panel of its own. It is taken whole instead:
+         one press of a key replaces it with a real search, and one press of
+         Backspace is the way back to the whole library. */
+      if (findNarrow && findField.value === findNarrow.words) return findField.select();
       if (findField.value.trim()) askFind();
     });
     findField.addEventListener("keydown", onFindKey);
@@ -4027,7 +4099,11 @@
   function clearFind() {
     document.body.classList.remove("finding");
     if (!findField) return;
-    findField.value = "";
+    /* Empty of what was TYPED, which is not the same as empty: what the page
+       is narrowed to was not typed, and it goes on saying what is on the
+       screen after the search that was asked over it has gone. */
+    findField.value = findNarrow ? findNarrow.words : "";
+    paintNarrow();
     findField.blur();
     shutFind();
   }
@@ -4123,6 +4199,8 @@
      shelf is a page, and the bar says its name. */
   function viewIndex(shelf) {
     where(shelf || "אקורדים", shelf ? null : "אקורדים");
+    /* the wall is one style's, and the box says which and how to stop */
+    narrowBy("סגנון", shelf);
     setBusy("טוען שירים");
 
     db.list().then(function (songs) {
@@ -4431,7 +4509,7 @@
           mine.textContent = "";
           var evenings = byWhen(rows || []);
           if (!evenings.length) return;
-          mine.appendChild(wall("ערבים", evenings.map(function (evening) {
+          mine.appendChild(wall("אירועים", evenings.map(function (evening) {
             return eveningRow(evening, null, true);
           })));
         }).catch(function () { /* not being able to say is not worth saying */ });
@@ -4464,7 +4542,7 @@
          over them, and only then: the page used to be called "שירים" in the
          bar, which named the one thing on it. Under a band of people, an
          unnamed wall of cards reads as more of the band. */
-      var listHead = el("h2", "band-h wall-h", "שירים");
+      var listHead = el("h2", "band-h", "שירים");
       app.appendChild(listHead);
 
       var list = el("ul", "list");
@@ -5132,12 +5210,22 @@
 
     /* WHICH OF THE TWO THEY ARE, in the corner a song keeps its state in.
        Somebody who did both carries both, in the order the credits are
-       written in. */
-    var side = el("div", "side");
-    var tags = el("div", "side-tags");
-    roleTags(person.roles).forEach(function (t) { tags.appendChild(tag(t.kind, t.words)); });
-    side.appendChild(tags);
-    a.appendChild(side);
+       written in.
+
+       NOT IN THE BAND OVER THE LIBRARY. There the card is a name and a way to
+       a page, one line of it, and two coloured chips on that line are the
+       loudest thing on a band that is meant to be glanced at. What they answer
+       is asked on the person's own page, where it is asked about each song
+       separately and answered there, on the song (see viewCreator): somebody
+       who wrote the words of one and the tune of another is two chips here and
+       the truth there. */
+    if (!brief) {
+      var side = el("div", "side");
+      var tags = el("div", "side-tags");
+      roleTags(person.roles).forEach(function (t) { tags.appendChild(tag(t.kind, t.words)); });
+      side.appendChild(tags);
+      a.appendChild(side);
+    }
 
     li.appendChild(a);
     return li;
@@ -5218,6 +5306,7 @@
          name that has since been corrected on the one song that carried it,
          and the way out is the list of the names that do exist. */
       if (!mine.length) {
+        narrowBy("יוצר", name);
         var gone = el("div", "center");
         gone.appendChild(el("p", null, 'אין שירים על שם "' + name + '".'));
         gone.appendChild(button("לרשימת היוצרים", ICON.back, "ghost", function () { go(BASE + "/creators"); }));
@@ -5237,7 +5326,10 @@
          dozen rows and a new address for the page. */
       if (auth.in) {
         whereEditable(name, "שם היוצר", null, function (next) {
-          if (!next || next === name) return where(name);
+          if (!next || next === name) {
+            where(name);
+            return narrowBy("יוצר", name);
+          }
           renameCreator(name, next).then(function (done) {
             if (!done) return toast("לא הצלחנו לשנות את השם", true);
             toast(done === 1 ? "השם שונה בשיר אחד" : "השם שונה ב-" + done + " שירים");
@@ -5246,6 +5338,9 @@
           });
         });
       }
+      /* After the field, which goes through where() and takes it down with the
+         rest of the bar's loans. */
+      narrowBy("יוצר", name);
 
       /* The head is for paper only. On screen the name is in the bar and the
          rest of the head said things the list under it already says: what this
@@ -8667,7 +8762,7 @@
   function needSchema() {
     app.innerHTML = "";
     var box = el("div", "center");
-    box.appendChild(el("p", null, "טבלת הערבים עוד לא קיימת. צריך להריץ פעם אחת את schema.sql ב-Supabase."));
+    box.appendChild(el("p", null, "טבלת האירועים עוד לא קיימת. צריך להריץ פעם אחת את schema.sql ב-Supabase."));
     box.appendChild(button("לרשימת השירים", null, "ghost", function () { go(BASE + "/"); }));
     app.appendChild(box);
   }
@@ -8676,8 +8771,8 @@
     where("לא נמצא");
     app.innerHTML = "";
     var box = el("div", "center");
-    box.appendChild(el("p", null, "הערב הזה לא נמצא. אולי הוא נמחק, ואולי הוא של חשבון אחר."));
-    box.appendChild(button("לרשימת הערבים", null, "ghost", function () { go(BASE + "/evenings"); }));
+    box.appendChild(el("p", null, "האירוע הזה לא נמצא. אולי הוא נמחק, ואולי הוא של חשבון אחר."));
+    box.appendChild(button("לרשימת האירועים", null, "ghost", function () { go(BASE + "/evenings"); }));
     app.appendChild(box);
   }
 
@@ -8695,7 +8790,7 @@
     where("צריך חשבון");
     app.innerHTML = "";
     var box = el("div", "center");
-    box.appendChild(el("p", null, said || "ערבי השירה שייכים לחשבון. כל אחד רואה, מתכנן ומוחק רק את שלו."));
+    box.appendChild(el("p", null, said || "אירועי השירה שייכים לחשבון. כל אחד רואה, מתכנן ומוחק רק את שלו."));
     var actions = el("div", "row-actions");
     actions.appendChild(googleButton("התחברות עם גוגל"));
     actions.appendChild(button("לרשימת השירים", null, "ghost", function () { go(BASE + "/"); }));
@@ -8749,7 +8844,7 @@
 
     var box = el("div");
     var top = el("div", "t-row");
-    top.appendChild(el("div", "t", evening.title || "ערב בלי שם"));
+    top.appendChild(el("div", "t", evening.title || "אירוע בלי שם"));
     var said = whenWhere(evening);
     if (said) top.appendChild(el("div", "by", said));
     box.appendChild(top);
@@ -8764,7 +8859,7 @@
 
     a.appendChild(box);
 
-    /* NO CHIP SAYING "ערב". Every card on the evenings page is one, so the word
+    /* NO CHIP SAYING "אירוע". Every card on the evenings page is one, so the word
        is a label on a shelf where nothing else is stocked. It is worth saying
        among the search results, where an evening stands next to songs and
        people, and it is worth saying nowhere else. */
@@ -8773,8 +8868,8 @@
   }
 
   function viewEvenings() {
-    where("ערבי שירה");
-    setBusy("טוען ערבים");
+    where("אירועי שירה");
+    setBusy("טוען אירועים");
 
     /* The names come along, because they are what a row of this list shows.
        Only the names: an evening's card does not draw chords, so it has no
@@ -8788,9 +8883,9 @@
 
       if (!evenings.length) {
         var empty = el("div", "center");
-        empty.appendChild(el("p", null, "עוד לא תוכנן כאן ערב. ערב הוא שם, תאריך, מיקום ורשימת שירים לפי הסדר."));
+        empty.appendChild(el("p", null, "עוד לא תוכנן כאן אירוע. אירוע הוא שם, תאריך, מיקום ורשימת שירים לפי הסדר."));
         var actions = el("div", "row-actions");
-        actions.appendChild(button("ערב חדש", ICON.plus, null, newEvening));
+        actions.appendChild(button("אירוע חדש", ICON.plus, null, newEvening));
         empty.appendChild(actions);
         app.appendChild(empty);
         return;
@@ -8817,7 +8912,7 @@
   }
 
   function viewEvening(id) {
-    setBusy(id === null ? "טוען את המאגר" : "טוען את הערב");
+    setBusy(id === null ? "טוען את המאגר" : "טוען את האירוע");
 
     var blank = { id: null, title: "", event_date: todayISO(), songs: [] };
 
@@ -8876,13 +8971,19 @@
        paper: an evening is printed and handed round, and a sheet with no name
        on it is a list of songs. */
     var title = el("h1", "ev-title on-paper", evening.title);
-    whereEditable(evening.title, "שם הערב", function (typed) {
+    whereEditable(evening.title, "שם האירוע", function (typed) {
       evening.title = typed;
       title.textContent = typed;
-      document.title = (typed || "ערב חדש") + " | אקורדים";
+      document.title = (typed || "אירוע חדש") + " | אקורדים";
+      /* the box says which event this is, so it is renamed as the name is
+         typed rather than a page later */
+      narrowBy("אירוע", typed);
       mark();
     });
-    document.title = (evening.title || "ערב חדש") + " | אקורדים";
+    document.title = (evening.title || "אירוע חדש") + " | אקורדים";
+    /* After the field: whereEditable goes through where(), which takes the
+       words back out of the box. */
+    narrowBy("אירוע", evening.title);
     head.appendChild(title);
 
     /* When and where, twice, and only ever one of the two visible: the fields
@@ -8947,7 +9048,7 @@
     var listEl = el("ol", "set");
     app.appendChild(listEl);
 
-    var emptyNote = el("p", "hint", "אין עדיין שירים בערב. אפשר להוסיף מהמאגר שלמטה, ואחר כך לגרור בידית כדי לסדר.");
+    var emptyNote = el("p", "hint", "אין עדיין שירים באירוע. אפשר להוסיף מהמאגר שלמטה, ואחר כך לגרור בידית כדי לסדר.");
     app.appendChild(emptyNote);
 
     /* --- the library, to add from ---
@@ -8957,7 +9058,7 @@
 
     var pool = el("div", "pool card");
     pool.appendChild(el("h2", null, "מהמאגר"));
-    pool.appendChild(el("p", "muted", "לחיצה על שיר מוסיפה אותו לערב, לחיצה נוספת מוציאה אותו."));
+    pool.appendChild(el("p", "muted", "לחיצה על שיר מוסיפה אותו לאירוע, לחיצה נוספת מוציאה אותו."));
 
     var field = el("div", "search");
     field.appendChild(svg(ICON.search));
@@ -9037,7 +9138,7 @@
 
       li.appendChild(box);
 
-      var out = iconBtn(ICON.trash, "הוצאה מהערב", function () {
+      var out = iconBtn(ICON.trash, "הוצאה מהאירוע", function () {
         var at = evening.songs.indexOf(item);
         if (at < 0) return;
         evening.songs.splice(at, 1);
@@ -9186,7 +9287,7 @@
         var by = credits(song);
         if (by.length) b.appendChild(el("span", "by", by.map(function (c) { return c.name; }).join(", ")));
         b.appendChild(el("span", "grow"));
-        b.appendChild(el("span", "pool-mark", inside[song.id] ? "בערב" : "הוספה"));
+        b.appendChild(el("span", "pool-mark", inside[song.id] ? "באירוע" : "הוספה"));
         b.addEventListener("click", function () { toggle(song); });
         li.appendChild(b);
         poolList.appendChild(li);
@@ -9283,13 +9384,13 @@
     }
 
     function removeEvening() {
-      if (!window.confirm('למחוק את "' + (evening.title || "הערב הזה") + '" לצמיתות?')) return;
+      if (!window.confirm('למחוק את "' + (evening.title || "האירוע הזה") + '" לצמיתות?')) return;
       clearTimeout(timer);
       timer = null;
       flushPending = null;
       if (!evening.id) return go(BASE + "/evenings");
       sets.remove(evening.id).then(function () {
-        toast("הערב נמחק");
+        toast("האירוע נמחק");
         go(BASE + "/evenings");
       }).catch(function (error) {
         toast("המחיקה נכשלה: " + error.message, true);
