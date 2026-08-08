@@ -25,7 +25,9 @@ const DIST = resolve("dist");
 
 /* The song exactly as it is stored: one document, chords in brackets in front
    of the letters they sit on. The last line's chords run past the last word,
-   the way an outro does, and the spaces are what carries them. */
+   the way an outro does, and it is written the way a song written before there
+   were artificial spaces is: with real ones, which the app reads back as gaps
+   (see padTail in app.js). */
 const BODY_RTL = [
   "{בית}",
   "[Am]בנקיק [G]נסתר בצוקים [F]אילה שותה [Am]מים",
@@ -267,6 +269,32 @@ const POSITIONS = `(() => {
     chords: [...ln.querySelectorAll(".chord")].map(c => {
       const b = c.getBoundingClientRect();
       return { chord: c.textContent, pos: Number(c.dataset.pos), x: Math.round(b.left), y: Math.round(b.top + b.height / 2), cx: Math.round(b.left + b.width / 2) };
+    }),
+  });
+})()`;
+
+/* What one line is made of, asked of the line that ends the song: its words,
+   the artificial spaces past them, and whether any real space got in among
+   them. The words are what a lyrics sheet prints and what a copy carries, so
+   they are the thing a chord dragged out into the emptiness must not touch. */
+const TAIL = `(() => {
+  const GAP = "\\ue000";
+  const ln = [...document.querySelectorAll(".sheet .ln")]
+    .find(l => (l.querySelector(".ln-t") || {}).textContent === "שלום" + GAP.repeat(5) ||
+               ((l.querySelector(".ln-t") || {}).textContent || "").indexOf("שלום") === 0);
+  if (!ln) return "null";
+  const text = ln.querySelector(".ln-t").textContent;
+  return JSON.stringify({
+    words: text.split(GAP).join(""),
+    gaps: text.length - text.split(GAP).join("").length,
+    spaces: (text.match(/ /g) || []).length,
+    /* the arc and the diagonal, both of which are about two letters with room
+       between them (see fillSpans) */
+    marks: ln.querySelectorAll(".gap-run").length,
+    chords: [...ln.querySelectorAll(".chord")].map(c => {
+      const b = c.getBoundingClientRect();
+      return { chord: c.textContent, pos: Number(c.dataset.pos),
+        y: Math.round(b.top + b.height / 2), cx: Math.round(b.left + b.width / 2) };
     }),
   });
 })()`;
@@ -1101,6 +1129,70 @@ try {
       check("running over a chord swaps the two",
         past.chords[NEXT].pos < neighbour.pos && past.chords[HELD].pos > past.chords[NEXT].pos,
         `held ${held.pos} -> ${past.chords[HELD].pos}, neighbour ${neighbour.pos} -> ${past.chords[NEXT].pos}`);
+    });
+
+    /* --- 8. and dragged past the last word, it costs the words nothing -----
+       An outro's chords live out past the end of the line, so the line grows
+       to meet them. What it grows by is artificial spaces (see padTo): room
+       on the screen, no characters in the song. Real ones were the words
+       themselves, and they went onto the lyrics sheet, into the clipboard and
+       into the selection, which is a line that reads «אני עומד» and does not
+       end there.
+
+       Three things, and the middle one is the point: the WORDS do not change
+       however far out the chord is dragged, the room is made of gaps and not
+       of spaces, and pulling the chord back takes the room back with it. */
+    await open(`http://127.0.0.1:${port}/chords/_t/edit/`, async ({ send, evaluate }) => {
+      const state = await evaluate(TAIL);
+      check("the outro line came back as words and gaps",
+        state && state.words === "שלום" && state.spaces === 0 && state.gaps === 5,
+        JSON.stringify(state));
+      if (!state || !state.chords.length) return;
+
+      /* NO MARK OUT THERE. A run of gaps between two letters is drawn with an
+         arc, and a long one with the diagonal that says two lines of the song
+         share a row. Both are about what stands on either side of the room,
+         and past the last word nothing does. */
+      check("and nothing is drawn over the room past the last word", state.marks === 0,
+        `${state.marks} marks`);
+
+      /* The last chord of the line, out at the end of the tail, dragged
+         further out still: leftwards, because the line runs right to left. */
+      const last = state.chords[state.chords.length - 1];
+      await mouse(send, "mousePressed", last.cx, last.y);
+      await mouse(send, "mouseMoved", last.cx - 10, last.y);
+      await sleep(40);
+      for (let i = 2; i <= 8; i++) {
+        await mouse(send, "mouseMoved", last.cx - i * 10, last.y);
+        await sleep(30);
+      }
+      await mouse(send, "mouseReleased", last.cx - 80, last.y);
+      await sleep(200);
+
+      const out = await evaluate(TAIL);
+      check("a chord dragged past the words leaves the words alone",
+        out && out.words === "שלום" && out.spaces === 0, JSON.stringify(out));
+      check("and the line grew to meet it, in gaps",
+        out && out.gaps > state.gaps, `${state.gaps} gaps, then ${out && out.gaps}`);
+      check("still with nothing drawn over them", out && out.marks === 0, JSON.stringify(out && out.marks));
+
+      /* And back in again: the tail is as long as the furthest chord needs and
+         not one gap longer. */
+      const far = out.chords[out.chords.length - 1];
+      await mouse(send, "mousePressed", far.cx, far.y);
+      await mouse(send, "mouseMoved", far.cx + 10, far.y);
+      await sleep(40);
+      for (let i = 2; i <= 5; i++) {
+        await mouse(send, "mouseMoved", far.cx + i * 10, far.y);
+        await sleep(30);
+      }
+      await mouse(send, "mouseReleased", far.cx + 50, far.y);
+      await sleep(200);
+
+      const back = await evaluate(TAIL);
+      check("a chord brought back takes the room with it",
+        back && back.gaps < out.gaps && back.words === "שלום",
+        `${out.gaps} gaps, then ${back && back.gaps}`);
     });
   });
 } finally {

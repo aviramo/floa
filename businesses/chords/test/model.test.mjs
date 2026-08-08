@@ -9,7 +9,12 @@ const end = src.indexOf("/* ----------------------------------------------------
 if (start < 0 || end < 0) throw new Error("could not find the model block");
 
 const block = src.slice(start, end);
-const api = new Function(block + "\nreturn { slugify, transposeChord, remapChords, parsePasted, looksLikeChord, isChord, suggestChords, chordsUsed, easyVersion, toChordPro, fromChordPro, songToText, textToSong, normalizeLines, songDir, splitLine, joinLines, padTo, trimPadding, diffLines, changeCount };")();
+const api = new Function(block + "\nreturn { slugify, transposeChord, remapChords, parsePasted, looksLikeChord, isChord, suggestChords, chordsUsed, easyVersion, toChordPro, fromChordPro, songToText, textToSong, normalizeLines, songDir, splitLine, joinLines, padTo, padTail, trimPadding, GAP, diffLines, changeCount };")();
+
+/* The artificial space (see GAP): room on the screen and nothing in the words,
+   which is what a line grows by when a chord is dragged past its last one. */
+const G = api.GAP;
+const gaps = (n) => new Array(n + 1).join(G);
 
 let failed = 0;
 const eq = (label, got, want) => {
@@ -175,15 +180,36 @@ eq("fractions and overruns are pulled back onto real characters",
   [{ pos: 2, chord: "Am" }, { pos: 4, chord: "D" }]);
 
 /* Room past the last word is made by lengthening the line, not by pointing
-   past it. A chord ON character 12 needs thirteen characters to sit on. */
+   past it. A chord ON character 12 needs thirteen characters to sit on.
+
+   AND IT GROWS BY ARTIFICIAL SPACES. What the line gets is room on the screen
+   and nothing in the words: a lyrics sheet, a search and a copy all read
+   "נה נה נה" and stop there, however far out the last chord was dragged. */
 const outro = { type: "line", text: "נה נה נה", chords: [{ pos: 0, chord: "Am" }] };
 api.padTo(outro, 12);
-eq("a chord past the words lengthens the line", outro.text, "נה נה נה     ");
+eq("a chord past the words lengthens the line", outro.text, "נה נה נה" + gaps(5));
+eq("and the words are none the longer for it", outro.text.split(G).join(""), "נה נה נה");
 outro.chords.push({ pos: 12, chord: "G" });
-eq("and the chord then names a real character", api.toChordPro(outro), "נ[Am]ה נה נה     [G]");
+eq("and the chord then names a real character", api.toChordPro(outro), "נ[Am]ה נה נה" + gaps(5) + "[G]");
 outro.chords.pop();
 api.trimPadding(outro);
-eq("spaces nothing needs any more go back", outro.text, "נה נה נה");
+eq("room nothing needs any more goes back", outro.text, "נה נה נה");
+
+/* Half of it goes back: the tail is as long as the furthest chord still needs
+   and no longer, which is what a chord dragged part of the way in does. */
+const pulled = { type: "line", text: "נה נה נה" + gaps(5), chords: [{ pos: 10, chord: "G" }] };
+api.trimPadding(pulled);
+eq("a chord brought back shrinks the room to what it needs", pulled.text, "נה נה נה" + gaps(3));
+
+/* A song padded with real spaces before there were artificial ones comes back
+   the same length, the same chords over the same cells, and the words ending
+   where the words end. */
+eq("a line padded in real spaces is read back in gaps",
+  api.normalizeLines([{ type: "line", text: "נה נה נה     ", chords: [{ pos: 12, chord: "G" }] }])[0].text,
+  "נה נה נה" + gaps(5));
+eq("and trailing spaces nothing stands on are not padding at all",
+  api.normalizeLines([{ type: "line", text: "נה נה נה     ", chords: [{ pos: 0, chord: "Am" }] }])[0].text,
+  "נה נה נה");
 
 eq("the chords a song uses, once each, in the order it reaches them",
   api.chordsUsed("[Am]שלום [G]לך\n[F]ואיך [Am]היה [C]היום"),
@@ -230,7 +256,7 @@ eq("section, chord line over its lyric line, blank, chord-only line",
     { type: "section", text: "פזמון", chords: [], dir: "rtl" },
     { type: "line", text: "אני שר לך שיר", chords: [{ pos: 0, chord: "Am" }, { pos: 10, chord: "F" }], dir: "rtl" },
     { type: "line", text: "", chords: [], dir: "rtl" },
-    { type: "line", text: "    ", chords: [{ pos: 0, chord: "C" }, { pos: 3, chord: "G" }], dir: "rtl" },
+    { type: "line", text: gaps(4), chords: [{ pos: 0, chord: "C" }, { pos: 3, chord: "G" }], dir: "rtl" },
   ]);
 
 eq("a lyric line that happens to start with a capital is not a chord line",

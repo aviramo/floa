@@ -1537,17 +1537,45 @@
     };
   }
 
-  /* Room for a chord that belongs after the last word: the LINE grows, in
-     spaces, so the chord still names a character. This is what a printed chord
-     sheet does too, and it is what keeps the promise that editing the words
-     moves the chords with them. */
-  /* A chord names a CHARACTER, so the line has to be long enough to have one:
+  /* --- room after the last word ---------------------------------------------
+     Room for a chord that belongs after the last word: the LINE grows so the
+     chord still names a character. This is what a printed chord sheet does
+     too, and it is what keeps the promise that editing the words moves the
+     chords with them.
+
+     IN ARTIFICIAL SPACES, NOT IN SPACES, and that is the whole of it. A space
+     is room in the WORDS, and the words are what a lyrics sheet prints, what a
+     search reads and what a copy carries: a line ending «אני עומד» ended four
+     spaces later, and those four spaces went onto the paper, into the
+     clipboard and into the selection. A gap is room on the screen and nothing
+     in the song (see GAP), so a chord dragged out past the end of a line now
+     costs the words nothing at all.
+
+     A chord names a CHARACTER, so the line has to be long enough to have one:
      a chord on character 12 needs thirteen characters, not twelve. */
   function padTo(line, pos) {
     var needed = pos + 1;
     if (needed <= line.text.length) return false;
-    line.text += new Array(needed - line.text.length + 1).join(" ");
+    line.text += new Array(needed - line.text.length + 1).join(GAP);
     return true;
+  }
+
+  /* The tail a line's chords ask for, and nothing more: as far out as the
+     furthest one needs, in gaps, and never shorter than the words themselves,
+     which are not padding and are never touched.
+
+     It answers in BOTH directions, which is what makes it padding rather than
+     typing: a chord dragged out grows it, a chord brought back shrinks it
+     again. And it is where a song written before any of this arrives: real
+     trailing spaces come out of here as gaps, the same length and the same
+     chords standing over them. */
+  var TAIL = new RegExp("[\\s" + GAP + "]+$");
+
+  function padTail(text, chords) {
+    var needed = 0;
+    (chords || []).forEach(function (c) { if (c.pos + 1 > needed) needed = c.pos + 1; });
+    var body = String(text == null ? "" : text).replace(TAIL, "");
+    return body + new Array(Math.max(0, needed - body.length) + 1).join(GAP);
   }
 
   /* What goes into the database: the song, as ONE piece of text.
@@ -1671,15 +1699,12 @@
     return { add: add, gone: gone };
   }
 
-  /* the other half of padTo: spaces nothing needs any more, once the chord that
-     called for them has moved back */
+  /* the other half of padTo: room nothing needs any more, once the chord that
+     called for it has moved back */
   function trimPadding(line) {
-    var needed = 0;
-    line.chords.forEach(function (c) { if (c.pos + 1 > needed) needed = c.pos + 1; });
-    var words = line.text.replace(/\s+$/, "").length;
-    var keep = Math.max(words, needed);
-    if (keep >= line.text.length) return false;
-    line.text = line.text.slice(0, keep);
+    var next = padTail(line.text, line.chords);
+    if (next === line.text) return false;
+    line.text = next;
     return true;
   }
 
@@ -1700,7 +1725,6 @@
          list of offsets, still opens: its own list is used and the brackets
          are simply not there to find. */
       var parsed = Array.isArray(l && l.chords) ? { text: raw, chords: l.chords } : fromChordPro(raw);
-      var text = parsed.text;
 
       var chords = parsed.chords
         .map(function (c) {
@@ -1711,10 +1735,17 @@
              of the text names nothing at all, so a chord that belongs after
              the last word is made room for by lengthening the line (see
              padTo), never by pointing past it. */
-          return { pos: Math.max(0, Math.min(Math.round(Number(c.pos) || 0), text.length)), chord: String(c.chord || "").trim() };
+          return { pos: Math.max(0, Math.min(Math.round(Number(c.pos) || 0), parsed.text.length)), chord: String(c.chord || "").trim() };
         })
         .filter(function (c) { return c.chord; })
         .sort(function (a, b) { return a.pos - b.pos; });
+
+      /* And the tail is whatever those chords still need, in gaps. Which is
+         also where a song stored before there were gaps is put right: the real
+         spaces it was padded with come out artificial, so the line is the same
+         length, the chords stand over the same cells, and the WORDS end where
+         the words end. */
+      var text = padTail(parsed.text, chords);
       return { type: "line", text: text, chords: chords, dir: l && l.dir };
     }), fallback);
   }
@@ -1791,8 +1822,22 @@
       if (text[i] === GAP && text[i - 1] !== GAP) {
         var run = 1;
         while (text[i + run] === GAP) run++;
-        span.className = "gap gap-run";
-        span.style.setProperty("--run", run);
+
+        /* AND A MARK IS ABOUT WHAT IS BETWEEN TWO CHARACTERS. Both of them
+           are: the arc says «these two letters are one word with room in
+           between», the diagonal says «these two lines were not written on one
+           line». A run that ENDS the row has nothing on its far side to say
+           anything about. It is the room a chord was dragged out into (see
+           padTo), and room past the last word is not a mark, it is emptiness.
+
+           The separator is the exception, and it is the only host made of
+           nothing but gaps: it stands between two rows rather than between two
+           characters, so it carries its mark with nothing on either side of it
+           (see buildSep). */
+        if (i + run < text.length || wrap.classList.contains("ln-sep")) {
+          span.className = "gap gap-run";
+          span.style.setProperty("--run", run);
+        }
       }
 
       wrap.appendChild(span);
@@ -6931,9 +6976,9 @@
     }
 
     /* The characters of one row, written again from the song: what a chord
-       dragged past the end of a line does to the words under it. The last row
+       dragged past the end of a line does to the line under it. The last row
        of a line ends wherever the line now ends, which is what makes room for
-       the spaces that drag just added. */
+       the gaps that drag just added. */
     function refill(ln, line) {
       var host = ln.querySelector(".ln-t");
       if (!host) return;
@@ -7591,7 +7636,8 @@
         var previous = chord.pos;
 
         /* A chord that has been pulled past the last word: the LINE grows to
-           meet it, in spaces, so it still names a character of its own line. */
+           meet it, in artificial spaces, so it still names a character of its
+           own line and the words are none the longer for it (see padTo). */
         if (padTo(line, pos)) refill(ln, line);
 
         /* drawn in the row's own coordinates, which is where its pixels are */
@@ -7631,8 +7677,8 @@
         node.classList.remove("is-dragging");
         if (!dragging) return openPicker(node, ln, line, chord);
 
-        /* let go: the chord settles onto its character, and any spaces the drag
-           called for and no longer needs go back */
+        /* let go: the chord settles onto its character, and any room the drag
+           called for and no longer needs goes back */
         if (trimPadding(line)) refill(ln, line);
         layoutLine(ln);
         mark();
