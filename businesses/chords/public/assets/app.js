@@ -4407,8 +4407,35 @@
       /* The styles and the people, over the songs. Only on the library itself:
          a shelf is already one style, and a page that opened narrowed to one
          kind of song has no business offering the other eleven above it. */
+      /* THE EVENINGS FIRST, AND THEY ARE NOT MADE OF THE SONGS. The other two
+         bands are the library counted up, so they are ready the moment it is;
+         an evening is a row in a table of its own that belongs to an account,
+         and it arrives on its own. Hence a slot of its own at the top, filled
+         when the answer comes rather than a band that appears above the others
+         a moment later and pushes them down.
+
+         Nobody else's, ever: the database answers this question with the
+         evenings of whoever is asking and with nothing at all for a reader who
+         is not signed in, so a visitor has no such band and there is no way to
+         write one that shows another account's. */
+      var mine = el("div");
       var bands = el("div");
+      app.appendChild(mine);
       app.appendChild(bands);
+
+      function paintMine() {
+        if (shelf || !auth.in) return;
+        findEveningList().then(function (rows) {
+          /* the page may have been left while the answer was in the air */
+          if (!mine.isConnected) return;
+          mine.textContent = "";
+          var evenings = byWhen(rows || []);
+          if (!evenings.length) return;
+          mine.appendChild(wall("ערבים", evenings.map(function (evening) {
+            return eveningRow(evening, null, true);
+          })));
+        }).catch(function () { /* not being able to say is not worth saying */ });
+      }
 
       function paintBands() {
         bands.textContent = "";
@@ -4608,6 +4635,7 @@
         }).catch(function () { /* a failed refresh is not worth a red screen */ });
       }
 
+      paintMine();
       paintBands();
       paint();
       poll();
@@ -8705,6 +8733,45 @@
     }).filter(Boolean);
   }
 
+  /* ONE EVENING, AS A CARD. The same card a song is and a person is, because
+     the app has one card (see .list a). `titles` is the library by id, for the
+     names of the songs in it; `brief` is the card standing in a band over
+     something else, where the evening is a way in rather than the page, and
+     the list of what is sung at it is a paragraph the band has no room for. */
+  function eveningRow(evening, titles, brief) {
+    var li = el("li");
+    var a = el("a");
+    a.href = BASE + "/evenings/" + evening.id;
+    a.addEventListener("click", function (event) {
+      event.preventDefault();
+      go(a.getAttribute("href"));
+    });
+
+    var box = el("div");
+    var top = el("div", "t-row");
+    top.appendChild(el("div", "t", evening.title || "ערב בלי שם"));
+    var said = whenWhere(evening);
+    if (said) top.appendChild(el("div", "by", said));
+    box.appendChild(top);
+
+    /* The songs themselves rather than how many of them there are. The count
+       is a number you have to open the evening to make any use of; the names
+       are the evening. */
+    if (!brief) {
+      var names = songNames(evening, titles || {});
+      box.appendChild(el("div", "a names", names.length ? names.join("  •  ") : "עוד בלי שירים"));
+    }
+
+    a.appendChild(box);
+
+    /* NO CHIP SAYING "ערב". Every card on the evenings page is one, so the word
+       is a label on a shelf where nothing else is stocked. It is worth saying
+       among the search results, where an evening stands next to songs and
+       people, and it is worth saying nowhere else. */
+    li.appendChild(a);
+    return li;
+  }
+
   function viewEvenings() {
     where("ערבי שירה");
     setBusy("טוען ערבים");
@@ -8741,35 +8808,7 @@
       app.appendChild(list);
 
       evenings.forEach(function (evening) {
-        var li = el("li");
-        var a = el("a");
-        a.href = BASE + "/evenings/" + evening.id;
-        a.addEventListener("click", function (event) {
-          event.preventDefault();
-          go(a.getAttribute("href"));
-        });
-
-        var box = el("div");
-        var top = el("div", "t-row");
-        top.appendChild(el("div", "t", evening.title || "ערב בלי שם"));
-        var said = whenWhere(evening);
-        if (said) top.appendChild(el("div", "by", said));
-        box.appendChild(top);
-
-        /* The songs themselves rather than how many of them there are. The
-           count is a number you have to open the evening to make any use
-           of; the names are the evening. */
-        var names = songNames(evening, titles);
-        box.appendChild(el("div", "a names", names.length ? names.join("  •  ") : "עוד בלי שירים"));
-
-        a.appendChild(box);
-
-        /* NO CHIP SAYING "ערב". Every card on this page is one, so the word is
-           a label on a shelf where nothing else is stocked. It is worth
-           saying among the search results, where an evening stands next to
-           songs and people, and it is worth saying nowhere else. */
-        li.appendChild(a);
-        list.appendChild(li);
+        list.appendChild(eveningRow(evening, titles));
       });
     }).catch(function (error) {
       if (missingTable(error)) return needSchema();
