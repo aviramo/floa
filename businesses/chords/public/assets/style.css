@@ -87,6 +87,14 @@ body {
    it. One rule here, and nothing below has a top margin of its own. */
 #app { padding-top: 22px; }
 
+/* --- ONE SHEET PER PAGE ---------------------------------------------------
+   #app is not the page any more, it is what the page is laid on. Every page
+   that opens gets a sheet of its own, and the page it covered is kept aside
+   whole, out of the document, so that going back is a sheet being put back
+   rather than a page being built for the second time (see the stack in
+   app.js). Only one is ever in here, so it needs no rules of its own: it is
+   the block #app used to be. */
+
 /* --- A SONG IS THE PAGE ---------------------------------------------------
    Everything else here is something ON a page: a wall of cards, a form, a
    list. A song is the page. So on a song there is nothing between the header
@@ -1262,91 +1270,68 @@ button.song-facts:hover .song-facts-ask { color: var(--accent); }
    space-around, so each column stands in the middle of its own equal share of
    the window: every gutter the same, and each end margin half of one. */
 .page {
-  /* stretch, so the rule between two segments runs the height of the page
-     rather than the height of whichever of them holds more song. As wide as
-     its slots and centred in the window, so what is left over at the two ends
-     is outside the page and nothing gets drawn on it. */
-  display: flex; align-items: stretch;
+  /* A CARD IS AS TALL AS WHAT IS WRITTEN ON IT. They used to be stretched to
+     the height of the page so that the hairline between two of them ran the
+     whole way down, and what that cost was a band of blank paper under the
+     last line of every segment: a page is a screenful and a screenful is never
+     a whole number of rows, so there was always a remainder, and stretched it
+     was paper with nothing on it. Now the card stops with the words and what
+     is under it is the desk, which is what a card resting on one looks like.
+
+     As wide as its slots and centred in the window, so what is left over at
+     the two ends is outside the page and nothing gets drawn on it. */
+  display: flex; align-items: flex-start;
   margin-inline: auto;
-  /* Air at both ends, so the song never touches the rule under it and never
-     runs into the edge of the window. The height below is the whole page
-     INCLUDING this, and what is dealt into it is measured against what is
-     left. Named, because the rules between the segments have to reach back
-     out through it (see .col::before) and the two must not drift apart.
-     PAGE_AIR in app.js is the same number, and it is what the lines are
-     measured against when they are dealt out. */
+  /* Air at both ends, which on a desk is the desk showing between the cards of
+     one screenful and the cards of the next. The height below is the whole
+     page INCLUDING this, and what is dealt into it is measured against what is
+     left. PAGE_AIR in app.js is the same number, spent here and again inside
+     the card, and it is what the lines are measured against when they are
+     dealt out. */
   --page-air: 16px;
-  padding-block: var(--page-air);
+  padding: var(--page-air);
+  /* A ROW WIDER THAN ITS SEGMENT IS CUT OFF AT THE EDGE OF THE PAGE, which is
+     what keeps a line that has outgrown its card, or one being typed into and
+     not yet broken again, from being drawn over the card beside it.
+
+     The air above is also what the cards' own shadows are drawn into: clipped
+     to the cards themselves, a shadow would end in a straight line down the
+     outermost edge of the page, which is a shadow with a shadow. */
   overflow: hidden;
 }
-/* A SEGMENT IS THE PAPER, so it carries the white, and it carries it for the
-   whole height of the page rather than only as far as the words go: a column
-   that stopped at its last line would leave a page half white and half grey
-   down its own middle.
+/* --- A SEGMENT IS A CARD ---------------------------------------------------
+   It carries the white, so it is the paper; it keeps its own air inside its
+   edges, so the words never touch them; and it has the shape every other piece
+   of paper in this app has, which is what says where one segment ends and the
+   next begins.
 
-   Which is what the negative margins are for. The page holds its air as
-   padding, so a segment standing inside it reaches neither the top of the
-   page nor the bottom; pulled back out by exactly that air and given it back
-   as padding of its own, the segment spans the whole page and the words still
-   stand clear of both ends. */
+   THERE WERE HAIRLINES HERE, one down each edge of every segment, and they are
+   gone with the gutter they stood in. A rule down the middle of an empty space
+   is a rule drawn because the space is not saying anything on its own: it was
+   half a gutter wide on each side and the eye could not tell it from the space
+   after a verse. A card with desk around it says it by being a card. */
 .col {
   min-width: 0; position: relative;
   background: var(--card);
-  margin-block: calc(var(--page-air, 0px) * -1);
   padding-block: var(--page-air, 0px);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
 }
 /* A slot a short last page never reached. It holds the width open so the
    pages above keep their shape, and nothing is drawn on it: there is no
-   segment there, so there is no paper and no edge to rule. */
-.col.is-empty { background: none; }
+   segment there, so there is no card and no paper. */
+.col.is-empty { background: none; box-shadow: none; }
 
-/* BETWEEN ONE SEGMENT AND THE NEXT, down the whole page. A gutter says where
-   a segment ends by being empty, and empty is also what the end of a verse
-   looks like: on a song of short lines the eye cannot tell the space beside a
-   line from the space after one, and reads across the gap into the next
-   segment.
-
-   Drawn in the MIDDLE of the gutter, from the page's own --gutter, so it is
-   the same distance from the words on either side of it. And down the whole
-   page rather than only as far as the words go, so a half-filled last segment
-   does not leave the line stopping in mid-air. */
-/* EVERY BOUNDARY, INCLUDING THE TWO OUTER ONES. A rule only between the
-   segments leaves the set open at both ends, and an open end reads as a
-   segment that carries on past the edge of the window. Closed, the page is a
-   row of boxes and each one is plainly the whole of itself.
-
-   A segment draws BOTH its own edges, which is its own box and needs no
-   arithmetic about gutters: two segments side by side put a rule at the same
-   place twice, and the same place twice is one line. */
-/* THROUGH THE PAGE'S AIR AND OUT TO ITS EDGES. A segment stands inside that
-   air, so a rule the height of the segment stops short at both ends of every
-   page and the line comes apart at each boundary: what should read as one
-   division of the window reads as a row of dashes. Pulled back out by exactly
-   the air the page holds, the rules of one page meet the rules of the next. */
-/* Top to bottom of the page, which is now top to bottom of the segment: the
-   rules of one page meet the rules of the next, and the line down the window
-   is one line rather than a row of dashes. */
-.col:not(.is-empty)::before, .col:not(.is-empty)::after {
-  content: ""; position: absolute; top: 0; bottom: 0;
-  width: 1px; background: var(--line);
+/* A PAGE OF ONE SEGMENT IS A PHONE, and there the segment is not a card lying
+   on a desk, it is the glass. A radius, a shadow and air at the ends are worth
+   nothing on a page held at arm's length, and the paper runs from one edge of
+   the screen to the other: pulled back out through the page's own air and given
+   it back as padding, so the words still stand clear of both ends. */
+.page.is-alone { padding-inline: 0; }
+.page.is-alone > .col {
+  border-radius: 0; box-shadow: none;
+  margin-block: calc(var(--page-air, 0px) * -1);
 }
-.col:not(.is-empty)::before { inset-inline-start: 0; }
-.col:not(.is-empty)::after { inset-inline-end: 0; }
-/* A page of one segment is a phone, and there the segment is the screen: a
-   rule down each edge of it is a hairline against the two edges of the glass,
-   which marks nothing, because there is nothing on the other side of it. */
-.col:only-child::before, .col:only-child::after { display: none; }
-
-/* WHERE ONE SCREENFUL ENDS AND THE NEXT BEGINS. Without it the song appears
-   to carry straight on down the segment it is in, and the eye goes back to the
-   top of the next one expecting the next verse: a page break that says
-   nothing is a page break somebody reads through. */
-.page + .page { border-top: 1px solid var(--line); }
-/* Except where there is only one segment across. The rule says "this row of
-   segments has ended and the next begins"; with one segment there is no row,
-   and what it draws is a line through the song at whatever height the window
-   happens to be. */
-.page.is-alone + .page { border-top: 0; }
 
 /* --- a narrow screen -----------------------------------------------------
    620px is also where editing stops (see NARROW in app.js). Keep the two in
@@ -2021,8 +2006,13 @@ button.song-facts:hover .song-facts-ask { color: var(--accent); }
      come apart and the song runs down the sheet as one. */
   .sheet { min-height: 0 !important; }
   .page { display: block !important; height: auto !important; overflow: visible !important; border: 0 !important; }
-  .col::before, .col::after { display: none !important; }
-  .col { width: auto !important; }
+  /* A card is a thing on a screen: on paper the segment is the paper, so the
+     shape, the shadow and the desk between them all go, and what is left is
+     the words with a margin. */
+  .col {
+    width: auto !important; margin-inline-start: 0 !important;
+    border-radius: 0 !important; box-shadow: none !important;
+  }
   .wrap { width: 100%; }
 }
 

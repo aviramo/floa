@@ -378,8 +378,17 @@
 
   /* ------------------------------------------------------------------- data */
 
+  /* HOW MANY TIMES THIS TAB HAS CHANGED SOMETHING. A page kept aside under the
+     one on the screen (see the stack of sheets below) is a picture of the
+     database at the moment it was drawn, and the only thing that can make that
+     picture wrong is somebody writing. So a page that comes back up compares
+     this number with the one it was drawn at: the same, and it is still true
+     and there is nothing to do; higher, and it is drawn again. */
+  var writes = 0;
+
   function rest(path, options) {
     options = options || {};
+    if (options.method && options.method !== "GET") writes++;
     return auth.token().then(function (token) {
       var headers = {
         apikey: CFG.supabaseAnonKey,
@@ -1954,6 +1963,15 @@
      nothing else. */
   var COL_W = 400;
   var COL_MAX = 4;
+  /* THE DESK BETWEEN TWO CARDS. A segment is a card on a desk (see .col), and
+     what says where one card ends and the next begins is the desk showing
+     between them: there was a hairline down the middle of the space instead,
+     which is a rule drawn because the space was not saying it on its own.
+
+     In pixels and not in song sizes, like the width of a segment and for the
+     same reason: it is the shape of the page, and the page must not rearrange
+     itself when the words are made bigger. */
+  var CARD_GAP = 14;
 
   /* Every line of the sheet in the order the song has them, wherever they are
      standing now: flat under the sheet before there are any pages, inside a
@@ -1971,8 +1989,14 @@
 
   /* Back to one flat column, which is what a phone reads and what everything
      measures itself against before it is dealt out. */
-  /* The air a page holds at its top and its bottom, so the song never touches
-     the rule under it and never runs into the edge of the window. */
+  /* THE AIR, AND IT IS SPENT TWICE. A page holds it at its top and its bottom,
+     which is the desk between the cards of one screenful and the cards of the
+     next; and a card holds it again inside itself, over its first line and
+     under its last. So what a page can actually be filled with is its height
+     less four of these, which is why the dealing counts it four times.
+
+     It is --page-air in the stylesheet, and two places holding one number is
+     how they come to disagree: neither may be changed alone. */
   var PAGE_AIR = 16;
 
   function unpage(sheet) {
@@ -2017,10 +2041,10 @@
        That is exactly what the overhang needs and nothing beyond it, and it is
        ONE NUMBER: the same at both ends of every segment, on a phone and on a
        desk, for the chords and for the words. Between two segments the two
-       halves meet and make the gutter, which used to be a wide multiple of the
-       type because the space alone had to say where one segment ended. There
-       is a rule drawn down every boundary now (see .col::before), so the space
-       no longer says it on its own and can be no more than the ink needs. */
+       halves meet and make the margin the card keeps inside its own edge, which
+       used to be a wide multiple of the type because that space alone had to
+       say where one segment ended. It is a card on a desk now (see .col), so
+       the space says nothing and can be no more than the ink needs. */
     var half = size * 0.4;
     Array.prototype.forEach.call(sheet.querySelectorAll(".chord"), function (node) {
       var w = node.getBoundingClientRect().width / 2;
@@ -2041,7 +2065,18 @@
        width no reader would ever see. A poured row is an editing host now (see
        __adoptRow), so the two states are the same page. */
     var seg = COL_W;
-    var byWidth = Math.max(1, Math.floor(room / (seg + pad * 2)));
+    /* A card takes its own width and, unless it is the first on the page, the
+       desk between it and the one before it. The two ends of the page have no
+       desk of their own to pay for, which is what the odd `+ apart` is: the
+       room there would be if one more gap were going spare.
+
+       AND THE PAGE'S OWN AIR AT THE TWO ENDS, which is what the outermost
+       cards' shadows are drawn into (see .page). It comes off here rather than
+       off `room`, because a page of one segment is a phone: no card, no shadow,
+       nothing to keep room for, and thirty two pixels of a phone is a word and
+       a half of every line. */
+    var apart = CARD_GAP;
+    var byWidth = Math.max(1, Math.floor((room - PAGE_AIR * 2 + apart) / (seg + pad * 2 + apart)));
 
     /* A PAGE IS THE WINDOW UNDER WHATEVER IS PERMANENTLY OVER IT. The bar is
        sticky, and on a phone so is the row of controls under it, which is the
@@ -2080,7 +2115,7 @@
     if (!(colW > 0)) return null;
 
     return {
-      cols: cols, colW: colW, pad: pad,
+      cols: cols, colW: colW, pad: pad, apart: apart,
       pageH: pageH, padded: padded,
     };
   }
@@ -2122,29 +2157,29 @@
     sheet.style.paddingTop = "0";
     sheet.style.paddingBottom = "0";
 
-    /* What a page can actually hold, which is its height less the air it
-       keeps at both ends. Filling to the full height and then padding it is
-       how a line ends up under the fold. */
+    /* What a page can actually hold, which is its height less the air it keeps
+       at both ends and less the air the card keeps inside its own edges (see
+       PAGE_AIR: the same number, spent twice at the top and twice at the
+       bottom). Filling to the full height and then padding it is how a line
+       ends up under the fold. */
     /* ONE SEGMENT ACROSS IS A PHONE, AND A PHONE HAS NO PAGES. A page is a
        screenful because that is how a row of segments is read: fill the row,
        then the next row underneath. With one segment there is no row, so
        cutting the song into screenfuls buys nothing and costs the tail of
        every one of them, a band of empty paper wherever the last line of a
        page did not reach the bottom. The song simply runs on. */
-    var room = plan.cols < 2 ? Infinity : plan.pageH - PAGE_AIR * 2;
+    var room = plan.cols < 2 ? Infinity : plan.pageH - PAGE_AIR * 4;
 
     var page = null;
     var col = null;
     var used = 0;
     var inPage = 0;
 
-    /* A SEGMENT CARRIES ITS MARGIN ON EACH SIDE RATHER THAN STANDING IN ONE.
-       Between two of them the two margins come to the gutter, and it makes
-       the difference to everything drawn on a segment: the paper reaches the
-       rules instead of stopping half a gutter short of them, and the rule
-       itself is the segment's own edge rather than a line hanging in the
-       space beside it. (How wide that margin is, and why a phone gets a
-       narrower one, is planColumns's business.) */
+    /* A SEGMENT CARRIES ITS MARGIN INSIDE ITSELF. The card is the paper, so
+       what holds the words off its edges, and what leaves room for a chord
+       hanging past the end of a line, is the card's own padding rather than a
+       space beside it. (How wide that is, and why, is planColumns's business.)
+       The desk between two cards is on top of that. */
     var slot = plan.colW + plan.pad * 2;
 
     function nextCol() {
@@ -2154,18 +2189,21 @@
         /* EVERY PAGE IS THE SAME WIDTH AND HOLDS THE SAME NUMBER OF SLOTS,
            filled or not. Centring each page's own segments instead put the
            last page's, which are fewer, at a different place from every page
-           above it, so the rules stopped lining up down the window. And the
-           page being exactly as wide as its slots is what keeps the rule
-           between two pages from running out over the grey at both ends. */
+           above it, so the cards stopped lining up down the window. */
         /* NOT ROUNDED, AND THAT IS NOT FUSSINESS. The lines were broken to a
            width worked out from these same numbers, so a column rounded to a
            different one is a column a hair narrower than the words that were
            cut to fit it, and the last word of a row hangs out over the next
            segment. Sub-pixel widths are what CSS is for. */
-        page.style.width = (plan.cols * slot) + "px";
-        /* ONE SEGMENT ACROSS IS A PHONE, and there the line between two pages
-           divides nothing: it is not the end of a row of segments, it is
-           wherever the scrolling happened to reach. */
+        /* The cards, the desk between them, and the page's own air at the two
+           ends, which is where their shadows are drawn (see .page). A page of
+           one segment keeps none of that air: there is no card and no shadow,
+           and the paper runs to both edges of the glass. */
+        page.style.width = (plan.cols * slot + (plan.cols - 1) * plan.apart
+          + (plan.cols > 1 ? PAGE_AIR * 2 : 0)) + "px";
+        /* ONE SEGMENT ACROSS IS A PHONE, and there a segment is not a card on a
+           desk, it is the glass: no shape of its own, no desk around it, and no
+           line where one screenful ends, because there are no screenfuls. */
         if (plan.cols < 2) page.classList.add("is-alone");
         built.appendChild(page);
         inPage = 0;
@@ -2173,6 +2211,9 @@
       col = el("div", "col");
       col.style.width = slot + "px";
       col.style.paddingInline = plan.pad + "px";
+      /* the desk between this card and the one before it, and none at the ends
+         of the page: what is outside the page is desk already */
+      if (inPage) col.style.marginInlineStart = plan.apart + "px";
       page.appendChild(col);
       inPage++;
       used = 0;
@@ -2189,12 +2230,13 @@
       });
       /* The slots a short last page never reached. They hold the width open so
          the pages above keep their shape, and they are marked as empty so that
-         nothing is drawn on them: no paper and no rules, because there is no
-         segment there. */
+         nothing is drawn on them: no card and no desk of their own, because
+         there is no segment there. */
       Array.prototype.forEach.call(built.childNodes, function (pg) {
         while (pg.children.length < plan.cols) {
           var spare = el("div", "col is-empty");
           spare.style.width = slot + "px";
+          if (pg.children.length) spare.style.marginInlineStart = plan.apart + "px";
           pg.appendChild(spare);
         }
       });
@@ -2784,11 +2826,168 @@
 
   /* ------------------------------------------------------------------ views */
 
-  var app = document.getElementById("app");
+  /* --- THE PAGES ARE A STACK, AND BACK TAKES THE TOP SHEET OFF --------------
+     There used to be one container under the header, emptied and filled again
+     on every move. Which means BACK was not going back at all: it was the page
+     you came from being built for the first time, out of an answer that had to
+     be asked of the database again, and it arrived at the top of itself,
+     because at the moment the browser would have put it back where it was
+     there was nothing there yet to put back.
+
+     So it is not one container. Every page that opens gets a sheet of its own,
+     laid over the one before it, and the one before it is not thrown away, it
+     is covered: its rows, its scroll, the shelf it was narrowed to and
+     whatever was half typed into it are all still standing underneath. BACK
+     takes the top sheet off. What is under it never went anywhere, so there is
+     nothing to fetch, nothing to draw and nothing to scroll to. It is already
+     exactly as it was left, in the same frame the press landed in.
+
+     FIVE DEEP, and the deepest goes when a sixth arrives. A song is a few
+     hundred measured lines and there is no reason to hold a whole morning's
+     reading in memory; five is further back than anybody presses.
+
+     WHAT A SHEET DOES NOT CARRY IS THE BAR, because there is one bar and it
+     stands over all of them. So whatever a page put up there comes down with
+     it and goes back up when it does: see bury and reveal.
+
+     A COVERED SHEET IS TAKEN OUT OF THE DOCUMENT, not hidden inside it. Half
+     this file asks `isConnected` to find out whether the page it belongs to is
+     still the page: a list that has left the document stops asking the
+     database for itself, an editor that has left takes its key handling off
+     the document. Hidden and still in there, every one of those would go on
+     running under the page on the screen, and the keys somebody typed into the
+     library would be read by a song nobody can see. Out of the document, every
+     one of those sentences means what it always meant. Nothing is lost by it:
+     what a detached node keeps is everything except where it was standing, and
+     where it was standing is written down here anyway. */
+  var stack = document.getElementById("app");
+  /* What every view draws into. NOT the stack: the sheet on top of it. */
+  var app = null;
+  var layers = [];
+  /* Which of them is showing. Everything before it is covered, and anything
+     after it is what the forward button would go back to. */
+  var at = -1;
+  var DEEP = 5;
+
   var state = {
     songs: null, printable: false, printer: null, killer: null,
     editToggle: null, songControls: null, redrawSong: null, rehome: null,
+    wake: null,
   };
+
+  /* The answers the bar reads to know what to offer. They are about the page
+     on the screen and not about the tab, so they go under the sheet with it.
+     `songs` is not one of them: it is the library itself, one copy for
+     everybody, and every sheet showing it is showing the same songs. */
+  var PAGE_STATE = ["printable", "printer", "killer", "editToggle",
+    "songControls", "redrawSong", "rehome", "wake"];
+
+  function takeKids(node) {
+    if (!node) return null;
+    var box = document.createDocumentFragment();
+    while (node.firstChild) box.appendChild(node.firstChild);
+    return box;
+  }
+
+  function putKids(node, box) {
+    if (node && box) node.appendChild(box);
+  }
+
+  /* Everything this page put outside its own sheet, taken down and kept with
+     it: the name in the bar, what stands under and beside that name, the far
+     end of the search box, and where the reader had got to. A covered sheet
+     has no scroll of its own, so the scroll has to be written down. */
+  function bury(layer) {
+    if (!layer || !layer.node.isConnected) return;
+    layer.y = window.scrollY || window.pageYOffset || 0;
+    layer.onSong = document.body.classList.contains("on-song");
+    var name = document.getElementById("topWhere");
+    layer.head = {
+      /* read off the bar rather than remembered from when it was written: a
+         name that is a field has been typed into since (see whereEditable) */
+      bar: name ? name.textContent : "",
+      tab: document.title,
+      sub: takeKids(document.getElementById("topSub")),
+      facts: takeKids(document.getElementById("topFacts")),
+      extra: takeKids(findExtra),
+    };
+    layer.state = {};
+    PAGE_STATE.forEach(function (name2) { layer.state[name2] = state[name2]; });
+    layer.node.remove();
+  }
+
+  function reveal(layer) {
+    app = layer.node;
+    stack.appendChild(layer.node);
+    at = layers.indexOf(layer);
+    document.body.classList.toggle("on-song", !!layer.onSong);
+    PAGE_STATE.forEach(function (name) { state[name] = layer.state[name]; });
+
+    var h = layer.head;
+    /* where() wipes the three slots beside the name, so it goes first and what
+       came down goes back up after it. A name that was a field is made one
+       again, with the same four answers it was given the first time. */
+    if (layer.edit) whereEditable(h.bar, layer.edit.empty, layer.edit.each, layer.edit.done);
+    else where(h.bar);
+    if (document.title !== h.tab) document.title = h.tab;
+    putKids(document.getElementById("topSub"), h.sub);
+    putKids(document.getElementById("topFacts"), h.facts);
+    putKids(findExtra, h.extra);
+    paintHeader();
+    /* A list that stopped looking at itself while it was out of the document
+       starts again (see poll in viewIndex). */
+    if (state.wake) state.wake();
+    /* In this frame, not after one: the page is back at its full height, and
+       the height is asked for here so that it is worked out before the scroll
+       rather than clamped against a document that has not been measured. */
+    void stack.offsetHeight;
+    window.scrollTo(0, layer.y || 0);
+  }
+
+  /* A sheet for a page about to be drawn. Whatever the forward button could
+     have gone back to goes now, which is what the browser does with the
+     history itself the moment a new address is opened. */
+  function openLayer(key) {
+    while (layers.length > at + 1) layers.pop().node.remove();
+    var now = layers[at];
+    if (now && now.key === key) {
+      /* the same address being drawn a second time, so it replaces itself
+         rather than standing under itself */
+      now.node.remove();
+      layers.pop();
+      at--;
+    } else if (now) {
+      bury(now);
+    }
+
+    var node = el("div", "layer");
+    stack.appendChild(node);
+    layers.push({ key: key, node: node, head: null, state: null, edit: null, y: 0, writes: writes });
+    at = layers.length - 1;
+    while (layers.length > DEEP) {
+      layers.shift().node.remove();
+      at--;
+    }
+    app = node;
+    return layers[at];
+  }
+
+  function layerAt(key) {
+    for (var i = 0; i < layers.length; i++) if (layers[i].key === key) return i;
+    return -1;
+  }
+
+  /* A width that crosses the line the whole app is drawn either side of makes
+     every covered sheet a picture of the other screen. Cheaper to forget them
+     than to redraw five pages nobody is looking at. */
+  function forgetCovered() {
+    for (var i = layers.length - 1; i >= 0; i--) {
+      if (i === at) continue;
+      layers[i].node.remove();
+      layers.splice(i, 1);
+      if (i < at) at--;
+    }
+  }
 
   /* --- THE SONG GETS THE SCREEN ---------------------------------------------
      What is left over the song is a strip carrying two dials and a line about
@@ -3372,6 +3571,8 @@
        that lands on the same page does not take the caret out of a name
        somebody is in the middle of typing (see whereEditable). */
     if (node.textContent !== (bar || "")) node.textContent = bar || "";
+    /* A plain name, until whereEditable says otherwise a line below. */
+    if (layers[at]) layers[at].edit = null;
     node.removeAttribute("contenteditable");
     node.removeAttribute("data-empty");
     node.onkeydown = null;
@@ -3417,6 +3618,10 @@
     var node = where(name);
     if (!node) return;
     var was = name || "";
+
+    /* Kept with the sheet, so a page that is covered and then uncovered gets
+       its name back as a field rather than as a line of text (see reveal). */
+    if (layers[at]) layers[at].edit = { empty: empty, each: each, done: done };
 
     node.dataset.empty = empty;
     makeEditable(node);
@@ -4298,6 +4503,9 @@
 
       paint();
       poll();
+      /* And it starts again when the page is uncovered, because leaving it
+         ended it: a list out of the document stops asking. */
+      state.wake = poll;
 
       /* The way to what was deleted, under everything and only when there is
          something there. A library with an empty bin says nothing about bins:
@@ -9267,11 +9475,39 @@
 
      So it is written down here instead. Every history entry the app makes
      carries a key; the place is saved under that key as the page is left, and
-     it is put back once the page that came in is tall enough to hold it. */
+     it is put back once the page that came in is tall enough to hold it.
+
+     Going BACK does not need any of this, because the page it goes to is still
+     standing (see the stack of sheets above) and comes back at its own height
+     with its own scroll. What is left for this to do is the case a stack
+     cannot help with: RELOADING. F5 on a library scrolled half way down is a
+     new tab as far as the page is concerned, and everything drawn is drawn
+     again from nothing. The one thing that survives it is what the browser
+     itself keeps, which is the history entry and the session's own store, so
+     the places go there and are read back on the way in. */
   if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 
+  var KEPT_SCROLL = "chords:where-i-was";
   var scrollAt = {};
   var scrollStep = 0;
+
+  /* Read on the way in, so a reload lands where the reader was. The counter
+     comes back with them: keys go on being minted from where they stopped, and
+     a fresh "s1" over a stored "s1" would be one page put back at another
+     page's place. */
+  try {
+    var wasKept = JSON.parse(sessionStorage.getItem(KEPT_SCROLL) || "null");
+    if (wasKept && wasKept.at) {
+      scrollAt = wasKept.at;
+      scrollStep = wasKept.step || 0;
+    }
+  } catch (e) { /* private window, or nonsense in the store */ }
+
+  function keepScroll() {
+    try {
+      sessionStorage.setItem(KEPT_SCROLL, JSON.stringify({ at: scrollAt, step: scrollStep }));
+    } catch (e) { /* private window */ }
+  }
   /* Where the page about to be drawn should end up, and which attempt at
      getting it there is the live one. */
   var scrollWanted = 0;
@@ -9291,8 +9527,18 @@
   }
 
   function leaving() {
-    if (scrollHere) scrollAt[scrollHere] = window.scrollY || window.pageYOffset || 0;
+    if (!scrollHere) return;
+    scrollAt[scrollHere] = window.scrollY || window.pageYOffset || 0;
+    keepScroll();
   }
+
+  /* A tab being reloaded, closed or put in a pocket. The last of the three is
+     the only one a phone reliably gives, which is why it is here and not on
+     unload. */
+  window.addEventListener("pagehide", leaving);
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "hidden") leaving();
+  });
 
   /* A hand on the page beats anything remembered about it: whoever is already
      scrolling has said where they want to be. */
@@ -9300,14 +9546,12 @@
     window.addEventListener(name, function () { scrollTry++; }, { passive: true });
   });
 
-  function restoreScroll() {
-    var want = scrollWanted;
-    scrollWanted = 0;
+  /* Keep reaching for a place until the page is tall enough to have one. A
+     page being drawn rather than uncovered arrives in its own time: a spinner
+     first, then whatever the database had to say, and only then is there
+     anything to scroll past. */
+  function holdScroll(want) {
     var mine = ++scrollTry;
-    /* Every page starts at the top, including the one that is going back to
-       somewhere further down: what is under the header at this moment is the
-       page being left, and it should not be seen half way through. */
-    window.scrollTo(0, 0);
     if (!want) return;
 
     var frames = 0;
@@ -9322,6 +9566,16 @@
       if (++frames > 120) return window.scrollTo(0, far);
       requestAnimationFrame(again);
     })();
+  }
+
+  function restoreScroll() {
+    var want = scrollWanted;
+    scrollWanted = 0;
+    /* Every page starts at the top, including one on its way back to somewhere
+       further down: what is under the header at this moment is the page being
+       left, and it should not be seen half way through. */
+    window.scrollTo(0, 0);
+    holdScroll(want);
   }
 
   function go(href) {
@@ -9366,22 +9620,51 @@
   });
 
   function route() {
-    restoreScroll();
     /* whatever the page being left still owed the database */
     flushNow();
-    /* the header follows the address, because what it offers depends on it.
-       Nothing is printable until a view says it is, and every address starts
-       out as not that. */
-    /* A new page is a new question, and the name of the last one is an answer
-       about where you have just been. Both go before anything is drawn: what
-       the bar says while a page loads should be nothing, not the page before
-       it. */
+    /* A new page is a new question, and the answer to the old one hanging over
+       it is a panel about where you have just been. */
     clearFind();
+
+    /* --- BACK ONTO A SHEET THAT IS STILL THERE -----------------------------
+       Not a page being opened: a page being uncovered. Nothing is fetched and
+       nothing is drawn, the one above it is simply lifted off, and what was
+       under it is standing where it was left, at the height it was left at.
+
+       Unless something has been written since. Then it is a picture of a
+       database that has moved on, and it is drawn again over itself. */
+    var found = layerAt(scrollHere);
+    if (found >= 0 && found !== at) {
+      scrollWanted = 0;
+      bury(layers[at]);
+      var back = layers[found];
+      reveal(back);
+      if (back.writes !== writes) {
+        back.writes = writes;
+        /* Drawn over itself and put back at the same place, which needs the
+           waiting again: for a moment it is a spinner and has no height. */
+        holdScroll(back.y);
+        draw();
+      }
+      return;
+    }
+
+    restoreScroll();
+    openLayer(scrollHere);
+    draw();
+  }
+
+  /* Everything the bar was holding for the page that is going. Nothing is
+     printable until a view says it is, and every address starts out as not
+     that; the name goes too, because the name of the last page is an answer
+     about where you have just been. */
+  function draw() {
     where("");
     document.body.classList.remove("on-song");
     state.songControls = null;
     state.redrawSong = null;
     state.rehome = null;
+    state.wake = null;
     state.printable = false;
     state.printer = null;
     state.killer = null;
@@ -9555,6 +9838,9 @@
      calls. */
   if (NARROW.addEventListener) {
     NARROW.addEventListener("change", function () {
+      /* And every sheet under this one was drawn for the width that is no
+         longer the width. */
+      forgetCovered();
       paintHeader();
       /* and the library's own three things, which are in the bar on a desk and
          in a row over the wall on a phone */
@@ -9570,8 +9856,11 @@
 
   absorbFallback();
   /* The address the tab opened on is a history entry like any other, and it is
-     the one everything else will be coming back to. */
+     the one everything else will be coming back to. If this is a reload rather
+     than a first visit, the entry is the SAME entry, so the place the reader
+     was standing at is still written down under it. */
   scrollHere = keyHere();
+  scrollWanted = scrollAt[scrollHere] || 0;
   /* The box in the bar is built once and stays for the life of the tab: it is
      the same box on every page, and rebuilding it on each one would take the
      focus out of it every time somebody pressed a result. */
