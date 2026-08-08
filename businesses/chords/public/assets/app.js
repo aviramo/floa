@@ -531,6 +531,13 @@
     });
   }
 
+  /* How many songs there are of something, in words, because "1 שירים" is not
+     Hebrew. Said the same way wherever it is said: on a person's card, on a
+     style's, and in the answer the search box offers for either. */
+  function songsSaid(n) {
+    return n === 1 ? "שיר אחד" : n + " שירים";
+  }
+
   /* --- what kind of song it is ----------------------------------------------
      Several at once, because a song is a circle song and a prayer and a
      lullaby and there is no sense in making anybody pick one of the three.
@@ -3802,7 +3809,7 @@
       out.push({
         hit: HIT_NEAR, order: 2,
         name: name,
-        said: shelves[name] === 1 ? "שיר אחד" : shelves[name] + " שירים",
+        said: songsSaid(shelves[name]),
         tags: [{ kind: "kind", words: "סגנון" }],
         href: BASE + "/style/" + encodeURIComponent(name),
       });
@@ -3813,7 +3820,7 @@
       out.push({
         hit: HIT_NEAR, order: 1,
         name: person.name,
-        said: person.songs.length === 1 ? "שיר אחד" : person.songs.length + " שירים",
+        said: songsSaid(person.songs.length),
         tags: roleTags(person.roles),
         href: BASE + "/creator/" + encodeURIComponent(person.name),
       });
@@ -4070,7 +4077,7 @@
      the address is the only way to it: the search box offers the shelf, the
      shelf is a page, and the bar says its name. */
   function viewIndex(shelf) {
-    where(shelf || "שירים", shelf ? null : "אקורדים");
+    where(shelf || "אקורדים", shelf ? null : "אקורדים");
     setBusy("טוען שירים");
 
     db.list().then(function (songs) {
@@ -4286,7 +4293,7 @@
          which had the room for all of them standing empty:
 
            the tick, and the buttons that come with it, beside the name of the
-           page, because "שירים" is the name of what is on screen and the tick
+           page, because "אקורדים" is the name of what is on screen and the tick
            means "all of it": one phrase, read in that order
 
            the states at the far end of the search box (see buildFind)
@@ -4351,6 +4358,42 @@
           tallies.appendChild(chip);
         });
       }
+
+      /* The styles and the people, over the songs. Only on the library itself:
+         a shelf is already one style, and a page that opened narrowed to one
+         kind of song has no business offering the other eleven above it. */
+      var bands = el("div");
+      app.appendChild(bands);
+
+      function paintBands() {
+        bands.textContent = "";
+        if (shelf) return;
+
+        var counted = {};
+        state.songs.forEach(function (s) {
+          styles(s).forEach(function (name) { counted[name] = (counted[name] || 0) + 1; });
+        });
+        var names = Object.keys(counted).sort(function (a, b) { return a.localeCompare(b, "he"); });
+        if (names.length) {
+          bands.appendChild(wall("סגנונות", names.map(function (name) {
+            return shelfRow(name, counted[name]);
+          })));
+        }
+
+        var people = creatorsOf(state.songs);
+        if (people.length) {
+          bands.appendChild(wall("יוצרים", people.map(function (person) {
+            return creatorRow(person, true);
+          })));
+        }
+      }
+
+      /* The songs get a label of their own now that two labelled bands stand
+         over them, and only then: the page used to be called "שירים" in the
+         bar, which named the one thing on it. Under a band of people, an
+         unnamed wall of cards reads as more of the band. */
+      var listHead = el("h2", "band-h wall-h", "שירים");
+      app.appendChild(listHead);
 
       var list = el("ul", "list");
       app.appendChild(list);
@@ -4464,6 +4507,9 @@
 
         shownNow = shown;
         if (allBtn) allBtn.hidden = !shown.length;
+        /* A shelf is one kind of song and the bar already says which, so the
+           word "שירים" over it would be the second name of the same page. */
+        listHead.hidden = !shown.length || !!shelf;
 
         if (!shown.length) {
           if (!empty.parentNode) app.appendChild(empty);
@@ -4508,10 +4554,16 @@
           if (!list.isConnected) return;
           state.songs = rows || [];
           paint();
+          /* The bands are made of the songs too: a song that just took a style
+             is a shelf that may not have existed a moment ago. They are not in
+             paint(), because pressing a state chip narrows the SONGS and has
+             nothing to say about who wrote them. */
+          paintBands();
           poll();
         }).catch(function () { /* a failed refresh is not worth a red screen */ });
       }
 
+      paintBands();
       paint();
       poll();
       /* And it starts again when the page is uncovered, because leaving it
@@ -4913,6 +4965,50 @@
     return li;
   }
 
+  /* --- THE TWO OTHER WAYS INTO THE LIBRARY -----------------------------------
+     Over the songs stand the styles and then the people, each a band of cards
+     of its own. Both were pages you could only reach by typing their name into
+     the box, which is a fine way to reach a thing you already know the name of
+     and no way at all to find out what the library has: "what kinds of song
+     are here" and "whose songs are here" are the two questions somebody opens
+     a library with, and until now the page answered neither.
+
+     They are the SAME CARD the songs below them are, because they are the same
+     gesture: a name, how much of it there is, and a page behind it. What they
+     are not is a wall. A wall is what you scroll; these are read across in one
+     look, so they stand in the middle of the page and stop where they stop
+     (see .list.band). */
+  function wall(title, rows) {
+    var box = el("section", "band");
+    box.appendChild(el("h2", "band-h", title));
+    var ul = el("ul", "list band");
+    rows.forEach(function (row) { ul.appendChild(row); });
+    box.appendChild(ul);
+    return box;
+  }
+
+  /* A style is a shelf, and a shelf is a page: /style/<name> is the library
+     narrowed to one kind of song, and this is the card that opens it. */
+  function shelfRow(name, n) {
+    var li = el("li");
+    var a = el("a");
+    a.href = BASE + "/style/" + encodeURIComponent(name);
+    a.addEventListener("click", function (event) {
+      event.preventDefault();
+      go(a.getAttribute("href"));
+    });
+
+    var box = el("div");
+    var top = el("div", "t-row");
+    top.appendChild(el("div", "t", name));
+    top.appendChild(el("div", "by", songsSaid(n)));
+    box.appendChild(top);
+    a.appendChild(box);
+
+    li.appendChild(a);
+    return li;
+  }
+
   /* The same width the stylesheet calls narrow, asked in JavaScript, because
      one of the things that changes at this width is not a style: below it the
      song cannot be edited at all. Keeping the number in both places would be
@@ -4931,7 +5027,11 @@
      songs say about who made them, gathered up on the way out, so nothing can
      ever be a person with no songs or a song by nobody. */
 
-  function creatorRow(person) {
+  /* `brief` is a card standing in a row of its own kind rather than on a page
+     of nothing else: on the library, where the people are one band across the
+     top and the songs are what the page is for, the names of their songs would
+     be four lines of song titles over the songs themselves. */
+  function creatorRow(person, brief) {
     var li = el("li");
     var a = el("a");
     a.href = BASE + "/creator/" + encodeURIComponent(person.name);
@@ -4943,16 +5043,18 @@
     var box = el("div");
     var top = el("div", "t-row");
     top.appendChild(el("div", "t", person.name));
-    top.appendChild(el("div", "by", person.songs.length === 1 ? "שיר אחד" : person.songs.length + " שירים"));
+    top.appendChild(el("div", "by", songsSaid(person.songs.length)));
     box.appendChild(top);
 
     /* The songs by name, the way an evening shows what is in it and for the
        same reason: a count is a number you have to open the page to use, and
        the names are the answer to "is this the person I meant". Cut to two
        lines by the stylesheet, so somebody with forty songs is still a card. */
-    box.appendChild(el("div", "a names", person.songs.map(function (song) {
-      return song.title || "בלי שם";
-    }).join("  •  ")));
+    if (!brief) {
+      box.appendChild(el("div", "a names", person.songs.map(function (song) {
+        return song.title || "בלי שם";
+      }).join("  •  ")));
+    }
     a.appendChild(box);
 
     /* WHICH OF THE TWO THEY ARE, in the corner a song keeps its state in.

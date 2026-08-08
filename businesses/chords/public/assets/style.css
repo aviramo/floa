@@ -722,6 +722,44 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 
 .row-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-inline-start: auto; }
 
+/* --- THE BANDS OVER THE WALL: THE STYLES, AND THE PEOPLE --------------------
+   The same card as a song, and not the same shape of list. The songs are a
+   wall: many, unequal, read by scrolling, and columns are what lets each one
+   be exactly as tall as it is. A band is a handful of short cards read across
+   in one look, and columns would pour eight of them down the right hand edge
+   and leave the rest of the line empty.
+
+   So a band is a row that wraps, MIDDLED: five cards sit in the middle of the
+   page rather than trailing off from one edge, and the last line of a long
+   band is centred under the ones above it instead of ending halfway. */
+.list.band {
+  columns: auto;
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+  gap: 12px; margin-bottom: 36px;
+}
+/* The card carries its own space in a column layout; in a row it is the gap's
+   job, and two of them together is a double line between the bands. */
+.list.band li { margin-bottom: 0; max-width: 340px; }
+/* AND EACH CARD IS READ ACROSS ITS OWN MIDDLE. A song card starts everything
+   at the top because it has four corners with a different fact in each; these
+   have a name at one end and a word about it at the other, on one line, and
+   anything else lines up with that line. */
+.list.band a { align-items: center; }
+.list.band .side { align-self: auto; justify-content: center; }
+
+/* Which of the two bands this is. Quiet and centred over cards that are
+   themselves centred: it is a label on a shelf, not a heading somebody is
+   meant to read before the shelf. */
+.band-h {
+  margin: 0 0 12px;
+  font-size: 14px; font-weight: 700; color: var(--ink-soft);
+  text-align: center;
+}
+/* Over the wall of songs it is the same label, and it starts where the wall
+   starts: the cards under it fill from the edge of the page, and a centred
+   word over them would be pointing at the middle of the third column. */
+.wall-h { text-align: start; }
+
 /* the way to what was deleted, and the way back from it: under the list, where
    somebody who has finished reading it is looking */
 .after-list { display: flex; justify-content: center; margin: -40px 0 64px; }
