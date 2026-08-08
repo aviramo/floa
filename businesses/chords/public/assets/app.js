@@ -2532,8 +2532,16 @@
        the row a line ends on is still open when the next line starts. */
     /* FOUR, NOT TWO. The separator has to be read as a space between two
        different lines of the song rather than as a wide space inside one, and
-       two gaps is about what a person leaves between two words. */
-    var SEP_GAPS = 5;
+       two gaps is about what a person leaves between two words.
+
+       AND FOUR IS ALSO THE MOST IT MAY BE. The mark in the middle of it is
+       drawn at the width of ONE gap, so every gap past that is air around a
+       stroke that is already there: five put a hand's width of nothing either
+       side of it and read as two songs rather than as one line carrying the
+       end of another. Four is the fewest that still tells the two marks apart,
+       which the stylesheet does by counting them (see .gap-run), so it is the
+       narrowest this can be without the diagonal turning into an arc. */
+    var SEP_GAPS = 4;
     var row = null;
 
     /* What the separator takes, in pixels. The gap's width is a fact of the

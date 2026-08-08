@@ -1781,8 +1781,11 @@ body.on-song .top { border-bottom: 0; }
    must not be the same mark.
 
    TOLD APART BY HOW MANY SPACES THERE ARE, and by nothing else. The pour lays
-   down five (see SEP_GAPS); a press of the gap button lays down one, so a
+   down four (see SEP_GAPS); a press of the gap button lays down one, so a
    person would have to press four times running to be mistaken for a break.
+   Which is also why the pour lays down exactly four and not more: the count is
+   the whole of what tells the two marks apart, so four is the narrowest the
+   separator can be, and anything above it is air around a mark one gap wide.
 
    Counted in the stylesheet rather than marked in the script, which is the
    whole point of doing it this way: fillSpans already writes the count onto
