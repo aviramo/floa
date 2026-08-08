@@ -3530,6 +3530,9 @@
     document.getElementById("meOut").onclick = function () {
       dlg.close();
       auth.signOut();
+      /* Every page kept aside was drawn for somebody who was signed in, down to
+         the tick boxes on the rows. None of them is true any more. */
+      forgetCovered();
       paintHeader();
       route();
       toast("התנתקת");
@@ -9504,6 +9507,13 @@
   } catch (e) { /* private window, or nonsense in the store */ }
 
   function keepScroll() {
+    /* Forty places back is further than anybody presses, and the store is not
+       a place to leave a morning's worth of them. Keys are minted in order, so
+       the oldest are the ones at the front. */
+    var keys = Object.keys(scrollAt);
+    if (keys.length > 40) {
+      keys.slice(0, keys.length - 40).forEach(function (k) { delete scrollAt[k]; });
+    }
     try {
       sessionStorage.setItem(KEPT_SCROLL, JSON.stringify({ at: scrollAt, step: scrollStep }));
     } catch (e) { /* private window */ }
@@ -9649,8 +9659,12 @@
       return;
     }
 
-    restoreScroll();
+    /* The sheet is put aside FIRST and the scroll reset after it, in that
+       order: what is written down as the place the reader had got to is read
+       off the window, and by the time the window has been sent back to the top
+       the place it is being asked for is nought. */
     openLayer(scrollHere);
+    restoreScroll();
     draw();
   }
 

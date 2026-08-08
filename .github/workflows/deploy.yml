@@ -50,6 +50,11 @@ jobs:
       # not settle it. So a real browser opens the built page and measures.
       - run: npm run test:layout
 
+      # And the same browser presses back, because a page that was left has to
+      # come back as the page it was and not as a fresh one at the top of
+      # itself. Also unreadable from the code: it is all about the address.
+      - run: npm run test:stack
+
       # The generated Worker table must match what was committed. If it does
       # not, someone changed a business and pushed without rebuilding — and the
       # Worker deployed from this repo would be validating the wrong pages.

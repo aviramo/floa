@@ -21,7 +21,10 @@
     "`npm run test:layout` drives a real Chrome over dist/ to check that a chord",
     "sits on its syllable in both directions, which is the one thing about this",
     "that cannot be checked by reading it. It needs a build first, and it passes",
-    "with a note where there is no browser to drive."
+    "with a note where there is no browser to drive.",
+    "`npm run test:stack` drives one too, and presses back: a page that was left",
+    "has to come back as the same nodes, at the same height, without asking the",
+    "database anything."
   ],
   "//hooks": [
     "core.hooksPath is stored per clone, not in the repo, so a fresh checkout",
@@ -32,6 +35,7 @@
     "hooks": "git config core.hooksPath .githooks",
     "test":"node worker/test/lead.test.mjs && node worker/test/transcribe.test.mjs && node worker/test/geometry.test.mjs && node worker/test/page.test.mjs && node businesses/chords/test/model.test.mjs",
     "test:layout": "node businesses/chords/test/layout.test.mjs",
+    "test:stack": "node businesses/chords/test/stack.test.mjs",
     "build": "node build.mjs",
     "dev": "node build.mjs --serve",
     "watch": "node build.mjs --watch",
