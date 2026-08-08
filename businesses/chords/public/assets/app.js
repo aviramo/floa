@@ -1960,18 +1960,6 @@
      next begins, and it has to be wide enough to say it on its own. */
   var COL_GAP = 2.8;
 
-  /* What is actually written on the line, in pixels. A line is a block and so
-     is exactly as wide as whatever is holding it: ask it and the answer that
-     comes back is the sheet's own width, every line looks like the widest
-     possible line, and the count comes out one on every song there is. A
-     range over its contents measures the text, which is the thing the
-     question is about. */
-  function textWidth(node) {
-    var range = document.createRange();
-    range.selectNodeContents(node);
-    return range.getBoundingClientRect().width;
-  }
-
   /* Every line of the sheet in the order the song has them, wherever they are
      standing now: flat under the sheet before there are any pages, and inside
      a column after. */
@@ -1998,12 +1986,9 @@
   /* --- how wide a column, and how many ---------------------------------------
      Two numbers, and the smaller wins.
 
-     HOW WIDE ONE HAS TO BE is asked of the song. Reading, the lines are
-     poured to whatever the column comes out as, exactly as they are on a
-     phone, so no line can be too wide for one and the floor is only being
-     wide enough to read. Writing, they are not, because a poured row is not a
-     line you can type into, so the floor is the longest line in the song and
-     one long line genuinely does cost the song a column.
+     HOW WIDE ONE IS is not asked at all: it is 400, reading and writing
+     alike, and the lines are poured to it. No line can be too wide for a
+     segment, because a line that does not fit is broken until it does.
 
      HOW MANY OF THOSE FIT is a division. And then never more than the song
      has song to put in them: a fourth column with nothing in it is a quarter
@@ -2019,35 +2004,20 @@
        the space between two segments competes with the segments: a quarter of
        one is as far as that goes. */
     var gap = Math.min(COL_GAP * size, COL_W * 0.25);
-    var poured = !sheet.classList.contains("ed");
-
-    /* NOTHING WRITTEN YET IS A WIDTH OF NOTHING, AND THAT IS AN ANSWER. A new
-       song has one empty line, so the widest line in it is nothing wide, and
-       bailing out here left the page with no segment on it at all: a bar, and
-       then the grey desk with nothing lying on it. A song with nothing in it
-       is still a song, and what it should show is the one sheet of paper it
-       has not been written on yet. */
-    var widest = 0;
-    Array.prototype.forEach.call(sheet.querySelectorAll(".ln-t, .ln-section"), function (t) {
-      var w = textWidth(t);
-      if (w > widest) widest = w;
-    });
-
-    /* room for the chords over the ends of it: a chord is centred on its
-       character, so one over the last letter hangs half a label past where
-       the words stop */
-    var want = widest + size * 1.4;
 
     var box = getComputedStyle(sheet);
     var padded = (parseFloat(box.paddingLeft) || 0) + (parseFloat(box.paddingRight) || 0);
     var room = sheet.clientWidth - padded;
     if (!(room > 0)) return null;
 
-    /* Reading, a segment is a phone and the lines are poured to it. Writing,
-       they are not, because a poured row is not a line you can type into, so
-       a segment has to be at least as wide as the longest line in the song.
-       That is the one thing the two states cannot share. */
-    var seg = poured ? COL_W : Math.max(COL_W, want);
+    /* A SEGMENT IS 400 WHETHER THE SONG IS BEING READ OR WRITTEN. It used to
+       widen to the longest line in the song while editing, because a poured
+       row was not a line anybody could type into: the price was that the same
+       song had one shape on the page and another under the hands that wrote
+       it, and every judgement about where a line breaks was made against a
+       width no reader would ever see. A poured row is an editing host now (see
+       __adoptRow), so the two states are the same page. */
+    var seg = COL_W;
     var byWidth = Math.max(1, Math.floor((room + gap) / (seg + gap)));
 
     /* A PAGE IS THE WINDOW UNDER WHATEVER IS PERMANENTLY OVER IT. The bar is
@@ -2108,7 +2078,7 @@
 
     return {
       cols: cols, colW: colW, gutter: gutter, pad: pad,
-      pageH: pageH, padded: padded, poured: poured,
+      pageH: pageH, padded: padded,
     };
   }
 
@@ -2258,16 +2228,11 @@
     /* One column, which is a phone and a song whose lines are too long to
        stand two of them side by side. The lines are still broken to the room
        there is, which is what a phone has always done. */
-    if (!plan) {
-      if (!sheet.classList.contains("ed")) flowSheet(sheet);
-      return;
-    }
+    if (!plan) return void flowSheet(sheet);
 
-    if (plan.poured) {
-      sheet.style.maxWidth = Math.ceil(plan.colW + plan.padded) + "px";
-      flowSheet(sheet);
-      sheet.style.maxWidth = "";
-    }
+    sheet.style.maxWidth = Math.ceil(plan.colW + plan.padded) + "px";
+    flowSheet(sheet);
+    sheet.style.maxWidth = "";
 
     pageUp(sheet, plan);
   }
@@ -2356,6 +2321,20 @@
     var full = originals[0].clientWidth;
     if (!(full > 0)) return;
 
+    /* WRITING IS READING WITH A CARET IN IT. The song is poured the same way
+       either way, and what the editor needs back is only this: which line of
+       the song a row is a piece of, and where in that line the piece starts.
+       That is handed over row by row, through __adoptRow (see the song page),
+       which turns the row into an editing host for its own slice.
+
+       Two things are off while the song is being written. A row does not take
+       the line after it, because a host holding the tail of one line and the
+       head of another is two lines in one caret, and it does not give back the
+       space it broke on, because a space quietly dropped from a row is a space
+       dropped from the song the moment somebody types into that row. */
+    var ed = sheet.classList.contains("ed");
+    var adopt = ed && typeof sheet.__adoptRow === "function" ? sheet.__adoptRow : null;
+
     var lines = originals.map(function (ln) { return measureLine(ln); });
     var sized = lines.filter(function (line) { return !line.keep; });
     if (!sized.length) return;
@@ -2437,7 +2416,7 @@
          off. Joined, there is: the separator and the next line follow it, and
          the row comes out wider than the segment by exactly one space. So the
          row gives it back before it takes anything else. */
-      if (row && row.pieces.length) {
+      if (!ed && row && row.pieces.length) {
         var back = row.pieces[row.pieces.length - 1];
         var text = back.line.text;
         if (back.to > back.from && text[back.to - 1] === " " &&
@@ -2456,7 +2435,7 @@
 
          `tail` is true only of a row opened to carry the rest of a line that
          did not fit, which is exactly that leftover. */
-      var joined = !!(row && row.tail && row.used + sepW + line.advance[0] <= row.room);
+      var joined = !ed && !!(row && row.tail && row.used + sepW + line.advance[0] <= row.room);
 
       while (pos < line.cells) {
         if (joined) {
@@ -2618,7 +2597,33 @@
       return ln;
     }
 
-    var nodes = out.map(function (desc) { return desc.keep ? desc.node : buildRow(desc); });
+    /* A LINE THAT FITS IS THE ROW IT ALREADY IS. Rebuilding it would throw
+       away the one thing that cannot be rebuilt from the outside: the row the
+       editor made, with its caret, its listeners and its chords bound to the
+       song. Most lines of most songs fit, so most rows are carried straight
+       through and only a line that had to be broken is poured into pieces. */
+    var nodes = out.map(function (desc) {
+      if (desc.keep) return desc.node;
+      var only = desc.pieces.length === 1 ? desc.pieces[0] : null;
+      if (ed && only && !only.lead && only.line.pieces.length === 1) return only.line.node;
+
+      /* Writing, the row comes back from the editor, and what the pouring has
+         to say about it is only what it says about any poured row: that it
+         carries the end of the line above, that its own line goes on below, or
+         both. The row is not given a tight lane the way a read one is: an
+         empty lane on a page being written is where the next chord goes down,
+         and there has to be something there to press. */
+      var made = adopt && only ? adopt(only) : null;
+      if (!made) return buildRow(desc);
+
+      if (desc.tail) {
+        made.classList.add("is-cont");
+        made.style.setProperty("--cont", indent + "px");
+      }
+      if (desc.more) made.classList.add("has-cont");
+      if (desc.tail && !desc.more) made.classList.add("is-last");
+      return made;
+    });
 
     /* In one place, before the first of the rows being replaced, so the order
        is the order of `out` whether a row is a new one or one being carried
@@ -5589,42 +5594,54 @@
            to the page. So whoever asked for a caret before this frame (Enter,
            a join, a paste) gets it back after it, in the same character.
            Without this every key that redraws the song ends with the typing
-           stopped and nothing on screen saying so. */
+           stopped and nothing on screen saying so.
+
+           REMEMBERED AS A PLACE IN THE SONG, not as a node with a number in
+           it. A line that has to be broken is not the row it was a moment ago:
+           its row is gone and two poured ones stand where it was, so a caret
+           kept as "this element, character nine" is a caret in an element
+           nobody can see any more. Kept as "line four, character nine" it
+           lands in whichever piece of line four holds character nine. */
         var host = typing && typing.isConnected ? typing : null;
-        var caret = host ? caretIndex(host) : null;
+        var index = host ? lineIndexOf(host) : -1;
+        var caret = host ? caretAt(host) : null;
         fitColumns(sheet);
         layoutAll(sheet);
-        if (host && host.isConnected) {
-          host.focus();
-          placeCaret(host, caret == null ? 0 : caret);
-        }
+        if (index >= 0 && caret != null) focusLine(index, caret);
       });
     }
 
     /* ONCE THE TYPING STOPS, and not on the keystroke. A line that has grown
-       past the column it stands in has to be dealt out again, but dealing them
-       out MOVES the rows, and moving the row being typed into takes the caret
-       out of it: on every letter that is an editor that fights back. So it
-       waits for a pause, and puts the caret back where it was.
+       past the segment it stands in has to be broken again and dealt out
+       again, but that MOVES the rows, and moving the row being typed into
+       takes the caret out of it: on every letter that is an editor that fights
+       back. So it waits for a pause, and puts the caret back where it was.
 
-       There was a call to a function of this name here that had stopped
-       existing, so every keystroke threw and the columns never settled at
-       all. */
+       FROM THE SONG AND NOT FROM THE SCREEN. What is standing on the page
+       while somebody types is pieces of lines, and pouring pieces again would
+       be pouring what has already been poured. So the rows are made afresh out
+       of the song, one whole line each, and broken from there: the same road
+       Enter and a paste already take. */
     var settling = 0;
 
-    function settle() {
+    /* SOON, WHERE WAITING WOULD HIDE THE WORDS. A page holds a segment's width
+       and not a pixel more (see .page), so a row that has grown past its
+       segment is a row whose last words are behind the edge of it: the very
+       ones being typed. Half a second of that is half a second of typing
+       blind, so when a row overflows the breaking follows the hand instead of
+       waiting for it to stop. Not on the keystroke itself, because a fast
+       hand would then redraw the song on every letter and the caret would be
+       chasing the words. */
+    function settle(soon) {
       clearTimeout(settling);
       settling = setTimeout(function () {
         if (!sheet.isConnected) return;
         var host = typing && typing.isConnected ? typing : null;
-        var caret = host ? caretIndex(host) : null;
-        fitColumns(sheet);
-        layoutAll(sheet);
-        if (host && host.isConnected && caret !== null) {
-          host.focus();
-          placeCaret(host, caret);
-        }
-      }, 500);
+        var index = host ? lineIndexOf(host) : -1;
+        var caret = host ? caretAt(host) : null;
+        draw();
+        if (index >= 0 && caret != null) focusLine(index, caret);
+      }, soon ? 60 : 500);
     }
 
     /* Round, not against a wall. Past the top it comes out at the bottom and
@@ -5654,9 +5671,9 @@
       sheet.style.setProperty("--song-size", size + "px");
       /* Bigger words break in different places, so where the lines break is
          part of what the size changes. Drawn again rather than measured
-         again, since the rows themselves are different rows. */
-      if (!editing) return draw();
-      requestAnimationFrame(function () { fitColumns(sheet); layoutAll(sheet); });
+         again, since the rows themselves are different rows: writing as well
+         as reading, because the lines are broken there too now. */
+      draw();
     }
 
     /* --- THE SIZE IS A GESTURE ------------------------------------------------
@@ -5941,7 +5958,7 @@
          itself is about to be replaced by one read back out of a string. */
       var host = typing && typing.isConnected ? typing : null;
       var where = host ? song.lines.indexOf(lineAt(host)) : -1;
-      var caret = host ? caretIndex(host) : null;
+      var caret = host ? caretAt(host) : null;
 
       song.title = body[0];
       CREDITS.forEach(function (c, index) { song[c.field] = body[1][index] || ""; });
@@ -6174,9 +6191,12 @@
       document.addEventListener("pointerdown", gapOutside, true);
     }
 
+    /* `at` is where the caret is IN THE ROW, because that is where the button
+       was drawn; the room is opened at the matching character of the line. */
     function openGap(ln, line, editable, at) {
+      var here = rowFrom(ln);
       var was = line.text;
-      var next = was.slice(0, at) + gapRun() + was.slice(at);
+      var next = was.slice(0, here + at) + gapRun() + was.slice(here + at);
 
       /* The same three steps typing takes, for the same reason: the chords are
          written onto the objects the handlers already hold, the caret is put
@@ -6184,21 +6204,23 @@
          they name. The caret is handed to remapChords because a run of
          identical characters cannot be diffed: five gaps inserted anywhere in
          a line of gaps gives the same string. */
-      var moved = remapChords(was, next, line.chords, at);
+      var moved = remapChords(was, next, line.chords, here + at);
       line.chords.forEach(function (c, i) { c.pos = moved[i].pos; });
       line.text = next;
 
-      fillSpans(editable, next);
+      ln.dataset.to = rowTo(ln, line) + GAP_RUN;
+      shiftAfter(ln, line, GAP_RUN);
+
+      fillSpans(editable, next.slice(here, rowTo(ln, line)));
       placeCaret(editable, at + GAP_RUN);
 
-      var nodes = ln.querySelectorAll(".ln-c .chord");
-      for (var i = 0; i < nodes.length && i < line.chords.length; i++) {
-        nodes[i].dataset.pos = line.chords[i].pos;
-      }
+      syncChords(ln, line);
       layoutLine(ln);
 
       hideGap();
       mark();
+      /* the line is that much wider, so it may break somewhere else now */
+      settle();
     }
 
     /* --- one editable line ---------------------------------------------------
@@ -6211,13 +6233,29 @@
        Chords are held by object, never by index: a chord can be deleted or a
        line split while a handler from before is still bound, and an index would
        quietly start pointing at its neighbour. */
-    function editRow(line, index) {
+    /* ONE ROW BUILDER, FOR A WHOLE LINE AND FOR A PIECE OF ONE. Given a piece
+       it builds the row for that slice of the line: the characters from `from`
+       to `to`, and the chords standing over them. Given none it builds the
+       line, which is the same thing with a slice that happens to be all of it.
+
+       That is why there is no second, read-only kind of row on a page being
+       written. A line too long for its segment is broken, and each piece of it
+       is a row of this kind: a caret in it is a caret in the song, at the
+       character the arithmetic here says it is. */
+    function editRow(line, index, piece) {
+      var from = piece ? piece.from : 0;
+      var to = piece ? Math.min(piece.to, line.text.length) : line.text.length;
+
       /* The same shrunken blank line the reader sees. It is still a full line
          to type into: the height is a floor, and the first character typed
          pushes past it. */
       var blank = line.type !== "section" && !line.text.trim() && !line.chords.length;
       var ln = el("div", "ln" + (line.type === "section" ? " is-section" : blank ? " is-blank" : ""));
       ln.dataset.index = index;
+      if (piece) {
+        ln.dataset.from = from;
+        ln.dataset.to = to;
+      }
       /* Which way this one runs, said on the row: it is what the browser lays
          the words out by and what every measurement here asks (see rowRtl). */
       ln.dir = dirOf(line, song.dir);
@@ -6229,9 +6267,15 @@
         heading.addEventListener("keydown", function (event) { lineKeys(event, line, heading); });
         ln.appendChild(heading);
       } else {
+        /* The chords of this row are the ones standing over its own
+           characters. A whole line claims all of them; a piece claims the ones
+           between where it starts and where the next piece does, which is what
+           keeps a chord over a word that moved to the row below from being
+           drawn twice, or on the wrong row. */
         var lane = el("div", "ln-c");
         line.chords.forEach(function (chord) {
-          var node = chordEl(chord.chord, chord.pos, semis);
+          if (piece && (chord.pos < piece.claimFrom || chord.pos >= piece.claimTo)) return;
+          var node = chordEl(chord.chord, chord.pos - from, semis);
           bindChord(node, ln, line, chord);
           lane.appendChild(node);
         });
@@ -6240,9 +6284,9 @@
         lane.addEventListener("pointerdown", function (event) {
           if (event.target !== lane) return;
           event.preventDefault();
-          var chord = { pos: posFromX(ln, event.clientX), chord: "" };
+          var chord = { pos: posFromX(ln, event.clientX) + rowFrom(ln), chord: "" };
           line.chords.push(chord);
-          var node = chordEl("", chord.pos, semis);
+          var node = chordEl("", chord.pos - rowFrom(ln), semis);
           bindChord(node, ln, line, chord);
           lane.appendChild(node);
           layoutLine(ln);
@@ -6250,9 +6294,14 @@
         });
         ln.appendChild(lane);
 
-        var text = textSpans(line.text);
+        var text = textSpans(line.text.slice(from, to));
         holdOff(text);
         text.addEventListener("input", function () {
+          /* Asked now and not remembered from when the row was built: a row
+             below this one on the same line moves every time this one grows
+             or shrinks (see shiftAfter), and it is the one being typed into
+             that has to know where it starts. */
+          var here = rowFrom(ln), ends = rowTo(ln, line);
           var caret = caretIndex(text);
 
           /* A space typed at the end of editable text is inserted by the
@@ -6263,15 +6312,28 @@
              length, so the caret still points where it pointed. */
           var next = text.textContent.replace(/ /g, " ");
 
+          /* WHAT WAS TYPED WENT INTO A SLICE, AND WHAT IS KEPT IS THE LINE.
+             The row holds the characters between `here` and `ends`; the rest
+             of the line is standing in the rows above and below it, untouched,
+             and the song gets all three back in order. A row that is a whole
+             line slices nothing off either end and this is the line itself. */
+          var whole = line.text.slice(0, here) + next + line.text.slice(ends);
+
           /* The new positions are written ONTO the chords, not swapped in as
              new objects. Everything that can move a chord after this, the drag
              handlers, the picker, the swap, holds a chord by identity, and a
              fresh array would leave every one of them holding something that is
              no longer part of the line: the chord would appear to move and then
              be gone at the next redraw, and gone from what was saved. */
-          var moved = remapChords(line.text, next, line.chords, caret);
+          var moved = remapChords(line.text, whole, line.chords, here + (caret == null ? next.length : caret));
           line.chords.forEach(function (c, i) { c.pos = moved[i].pos; });
-          line.text = next;
+          var grew = whole.length - line.text.length;
+          line.text = whole;
+
+          /* This row now ends where its own characters do, and every row of
+             this line under it has moved by what was typed. */
+          ln.dataset.to = here + next.length;
+          shiftAfter(ln, line, grew);
 
           /* rebuilt from the model, which is what turns the browser's
              non-breaking space back into an ordinary one on screen too */
@@ -6283,17 +6345,15 @@
              gives it one, and the last character deleted takes it away again.
              Without this the lane a line was BORN without never comes back,
              and there is nowhere to put a chord on it ever again. */
-          ln.classList.toggle("is-blank", !next.trim() && !line.chords.length);
+          ln.classList.toggle("is-blank", !whole.trim() && !line.chords.length);
 
           /* the model moved, so the labels above it move with it */
-          var nodes = ln.querySelectorAll(".ln-c .chord");
-          for (var i = 0; i < nodes.length && i < line.chords.length; i++) {
-            nodes[i].dataset.pos = line.chords[i].pos;
-          }
+          syncChords(ln, line);
           layoutLine(ln);
-          /* and once the typing stops, whether this line still fits the
-             column it is standing in */
-          settle();
+          /* and whether this line still fits the segment it is standing in,
+             and where it breaks if it does not: at once if the row has already
+             run past the edge, and otherwise once the typing stops */
+          settle(text.scrollWidth > ln.clientWidth + 1);
         });
         text.addEventListener("keydown", function (event) { lineKeys(event, line, text); });
         /* Clicking between two letters offers to open a gap there, and typing
@@ -6310,6 +6370,84 @@
          beside a line is nothing, and what a drag across it does is what it
          does in any other document. */
       return ln;
+    }
+
+    /* --- WHERE THE BREAKING HANDS THE SONG BACK -------------------------------
+       The pouring knows how to cut a line to the width of a segment and
+       nothing at all about the song behind it. So it cuts, and hands each
+       piece here, and what goes back is a row of the editor's own making for
+       exactly that slice: the same rows, the same listeners and the same
+       chords as a line that never had to be broken.
+
+       The one thing the poured row is asked for is its shape (which piece of
+       which line, and which chords fall in it); the row itself is thrown away
+       and built again from the song. */
+    if (editing && !coming) {
+      sheet.__adoptRow = function (piece) {
+        var index = Number(piece.line.node.dataset.index);
+        var line = song.lines[index];
+        return isFinite(index) && line ? editRow(line, index, piece) : null;
+      };
+    }
+
+    /* --- keeping the other pieces of a line in step ---------------------------
+       A line drawn in three rows is one string in the song, and typing into
+       the middle row moves the third one along by however much was typed.
+       Until the song is poured again, which is half a second after the typing
+       stops, those rows are what the person is looking at: left alone they
+       show the line as it was before the key was pressed, and worse, they
+       still believe they start where they used to, so the next thing typed
+       into one of them is spliced into the wrong place. */
+    function shiftAfter(ln, line, grew) {
+      if (!grew) return;
+      var rows = rowsOf(ln.dataset.index);
+      var after = rows.slice(rows.indexOf(ln) + 1);
+      after.forEach(function (row) {
+        row.dataset.from = rowFrom(row) + grew;
+        row.dataset.to = Number(row.dataset.to) + grew;
+        var host = row.querySelector(".ln-t");
+        if (host) fillSpans(host, line.text.slice(rowFrom(row), rowTo(row, line)));
+        syncChords(row, line);
+        layoutLine(row);
+      });
+    }
+
+    /* The labels of one row, put back over the characters they name. A chord
+       is held by object here as it is everywhere else (see bindChord), so a
+       row that carries only some of a line's chords is no special case: each
+       label asks the chord it belongs to where it is, and takes off where its
+       own row begins. */
+    function syncChords(ln, line) {
+      var here = rowFrom(ln);
+      Array.prototype.forEach.call(ln.querySelectorAll(".ln-c .chord"), function (node) {
+        if (node.__chord && line.chords.indexOf(node.__chord) >= 0) node.dataset.pos = node.__chord.pos - here;
+      });
+    }
+
+    /* The characters of one row, written again from the song: what a chord
+       dragged past the end of a line does to the words under it. The last row
+       of a line ends wherever the line now ends, which is what makes room for
+       the spaces that drag just added. */
+    function refill(ln, line) {
+      var host = ln.querySelector(".ln-t");
+      if (!host) return;
+      var rows = rowsOf(ln.dataset.index);
+      if (rows[rows.length - 1] === ln) ln.dataset.to = line.text.length;
+      fillSpans(host, line.text.slice(rowFrom(ln), rowTo(ln, line)));
+    }
+
+    /* The label standing for one chord, wherever in the song it is drawn: the
+       row it is on is not necessarily the row the question is being asked
+       from, because a chord can be pushed onto a piece of the line the hand is
+       not in. */
+    function chordNodeOf(index, chord) {
+      var found = null;
+      rowsOf(index).forEach(function (row) {
+        Array.prototype.forEach.call(row.querySelectorAll(".ln-c .chord"), function (node) {
+          if (node.__chord === chord) found = node;
+        });
+      });
+      return found;
     }
 
     /* --- SELECTING IS THE BROWSER'S AGAIN --------------------------------------
@@ -6391,6 +6529,55 @@
       return isFinite(index) ? song.lines[index] || null : null;
     }
 
+    /* --- A ROW IS A SLICE OF A LINE ------------------------------------------
+       A line that fits its segment is drawn in one row and the two are the
+       same thing, which is what every row was until the song began to be
+       broken while it was being written. A line that does not fit is drawn in
+       two rows or three, and then a row is a SLICE: it holds the characters
+       from `from` up to `to` and nothing else.
+
+       Everything below that talks to the song, the caret, the keys, the
+       chords, the gap, works in the line's own characters, and the whole of
+       the difference between the two cases is these three functions. A row
+       that is a whole line says from 0 and answers to the length of the line,
+       so it goes through exactly the same arithmetic and comes out where it
+       went in. */
+    function rowFrom(ln) {
+      var at = ln ? Number(ln.dataset.from) : 0;
+      return isFinite(at) ? at : 0;
+    }
+
+    function rowTo(ln, line) {
+      var end = ln && ln.dataset.to !== undefined && ln.dataset.to !== "" ? Number(ln.dataset.to) : NaN;
+      var len = String((line || {}).text || "").length;
+      return isFinite(end) ? Math.min(end, len) : len;
+    }
+
+    /* Where the caret is IN THE LINE, which is where it is in the row plus
+       everything the rows before it hold. */
+    function caretAt(host) {
+      var at = caretIndex(host);
+      return at == null ? null : at + rowFrom(rowOf(host));
+    }
+
+    function lineIndexOf(node) {
+      var ln = rowOf(node);
+      var index = ln ? Number(ln.dataset.index) : NaN;
+      return isFinite(index) ? index : -1;
+    }
+
+    /* Every row a line is drawn in, in the order the song reads them. */
+    function rowsOf(index) {
+      return Array.prototype.slice.call(sheet.querySelectorAll('.ln[data-index="' + index + '"]'));
+    }
+
+    /* The rows of the whole song, in reading order: down a segment, on to the
+       next, and on to the page under it. Which is what the caret follows when
+       it is asked for the row above or below. */
+    function allRows() {
+      return Array.prototype.slice.call(sheet.querySelectorAll(".ln"));
+    }
+
     function hostOf(node) {
       var ln = rowOf(node);
       return ln ? ln.querySelector(".ln-t, .ln-section") : null;
@@ -6440,13 +6627,14 @@
       var b = song.lines.indexOf(lineAt(last));
       if (a < 0 || b < 0 || a > b) return null;
 
-      /* Where it begins inside the first row and ends inside the last. A
-         boundary that is not in the row at all means the whole of it: it began
-         above this row, or it ends below that one. */
-      var at = head && head.contains(range.startContainer) ? indexAt(head, range.startContainer, range.startOffset) : 0;
-      var end = foot && foot.contains(range.endContainer)
-        ? indexAt(foot, range.endContainer, range.endOffset)
-        : String(song.lines[b].text || "").length;
+      /* Where it begins inside the first row and ends inside the last, counted
+         in the characters of the LINE each row is a piece of. A boundary that
+         is not in the row at all means the whole of it: it began above this
+         row, or it ends below that one. */
+      var opens = head && head.contains(range.startContainer) ? indexAt(head, range.startContainer, range.startOffset) : null;
+      var shuts = foot && foot.contains(range.endContainer) ? indexAt(foot, range.endContainer, range.endOffset) : null;
+      var at = opens == null ? rowFrom(first) : opens + rowFrom(first);
+      var end = shuts == null ? String(song.lines[b].text || "").length : shuts + rowFrom(last);
 
       return { a: a, b: b, at: at == null ? 0 : at, end: end == null ? String(song.lines[b].text || "").length : end };
     }
@@ -6631,7 +6819,7 @@
         } else {
           var chosen = window.getSelection && window.getSelection();
           if (chosen && chosen.rangeCount && !chosen.isCollapsed) document.execCommand("delete");
-          spot = { index: song.lines.indexOf(lineAt(here)), at: caretIndex(here) || 0 };
+          spot = { index: song.lines.indexOf(lineAt(here)), at: caretAt(here) || 0 };
         }
         if (!spot || spot.index < 0 || !here) return;
 
@@ -6688,7 +6876,10 @@
        button's job and nobody else's. */
     function lineKeys(event, line, editable) {
       var index = song.lines.indexOf(line);
-      var at = caretIndex(editable);
+      /* In the LINE's characters, not the row's: Enter cuts a line of the song
+         in two and it has to be cut where the caret is standing in that line,
+         whichever piece of it the caret happens to be in. */
+      var at = caretAt(editable);
       var spread = window.getSelection && window.getSelection().rangeCount && !window.getSelection().isCollapsed;
 
       if (event.key === "Enter") {
@@ -6715,6 +6906,22 @@
         focusLine(index, end);
         mark();
 
+      /* --- AT THE SEAM BETWEEN TWO PIECES OF ONE LINE --------------------------
+         A line too long for its segment is drawn in two rows, and each row is
+         its own editing host. So at the start of the second one the browser
+         sees nothing to the left of the caret and Backspace does nothing at
+         all, while in the song there is a character standing right there. Same
+         at the end of the first row and Delete. The keys answer for it here:
+         one character of the line, taken out where the caret says. */
+      } else if (event.key === "Backspace" && !spread && at > 0 && caretIndex(editable) === 0) {
+        event.preventDefault();
+        dropChar(line, index, at - 1);
+
+      } else if (event.key === "Delete" && !spread && at != null && at < line.text.length &&
+                 caretIndex(editable) === editable.textContent.length) {
+        event.preventDefault();
+        dropChar(line, index, at);
+
       /* Ctrl+A is not here. A line's worth of its own text is not what anybody
          means by "everything" on a page of forty lines, and it has to be
          answered whether or not a line holds the caret, so it lives on the
@@ -6726,7 +6933,8 @@
 
       } else if (event.key === "Tab") {
         event.preventDefault();
-        focusLine(index + (event.shiftKey ? -1 : 1));
+        var rows = allRows();
+        focusRow(rows[rows.indexOf(rowOf(editable)) + (event.shiftKey ? -1 : 1)]);
 
       } else if (event.key === "ArrowUp" || event.key === "ArrowDown") {
         /* UP AND DOWN GO WHERE THEY GO IN ANY OTHER EDITOR. Every line here is
@@ -6742,23 +6950,87 @@
 
            At the ends of the song they do nothing at all, rather than being
            swallowed: an arrow that answers with silence at the top of a page
-           reads as a page that has stopped listening. */
-        var to = index + (event.key === "ArrowUp" ? -1 : 1);
-        if (to < 0 || to >= song.lines.length) return;
+           reads as a page that has stopped listening.
+
+           BY ROW AND NOT BY LINE. A long line is drawn in two rows or three,
+           and an arrow that stepped a whole line at a time would jump over the
+           rest of the line it is standing in: on the screen that is the caret
+           skipping the very row it was pointing at. */
+        var here = allRows();
+        var to = here[here.indexOf(rowOf(editable)) + (event.key === "ArrowUp" ? -1 : 1)];
+        if (!to) return;
         event.preventDefault();
-        focusLine(to, at == null ? 0 : at);
+        focusRow(to, caretIndex(editable));
+
+      } else if (!spread && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+        /* AND OFF THE END OF A ROW, ONTO THE NEXT. Inside the row the browser
+           does this itself and is left to; at the edge it has nowhere to go,
+           because the row is the whole of the document as far as it knows.
+
+           Which end is "onward" is a question about the row and not about the
+           key: in a line running right to left it is the left arrow that
+           reaches the next character. */
+        var edge = caretIndex(editable);
+        if (edge == null) return;
+        var rtl = rowRtl(rowOf(editable));
+        var onward = event.key === (rtl ? "ArrowLeft" : "ArrowRight");
+        if (onward ? edge < editable.textContent.length : edge > 0) return;
+
+        var order = allRows();
+        var over = order[order.indexOf(rowOf(editable)) + (onward ? 1 : -1)];
+        if (!over) return;
+        event.preventDefault();
+        var host = over.querySelector(".ln-t, .ln-section");
+        focusRow(over, onward ? 0 : (host ? host.textContent.length : 0));
       }
     }
 
+    /* One character of a line, taken out where the caret is standing. The three
+       steps are the ones typing takes: the chords are moved onto the characters
+       that are left, the song keeps the new line, and the page is drawn again
+       from it, because a character fewer can be a break in a different place. */
+    function dropChar(line, index, at) {
+      var was = line.text;
+      if (at < 0 || at >= was.length) return;
+      var next = was.slice(0, at) + was.slice(at + 1);
+      var moved = remapChords(was, next, line.chords, at);
+      line.chords.forEach(function (c, i) { c.pos = moved[i].pos; });
+      line.text = next;
+      draw();
+      focusLine(index, at);
+      mark();
+    }
+
+    /* A CHARACTER OF A LINE, WHEREVER THAT LINE IS DRAWN. One row or three, the
+       caller says which line and which character of it; the row that holds
+       that character is the last one that begins at or before it. */
     function focusLine(index, caret) {
-      var ln = sheet.querySelector('.ln[data-index="' + index + '"]');
-      if (!ln) return;
+      var rows = rowsOf(index);
+      if (!rows.length) return;
+
+      var ln = rows[0];
+      if (caret != null) {
+        rows.forEach(function (row) { if (rowFrom(row) <= caret) ln = row; });
+      }
+
       var editable = ln.querySelector(".ln-t, .ln-section");
       if (!editable) return;
       /* Open before the caret is placed: a caret put into a line that is not
          a host yet is a caret in a page, and the next key goes nowhere. */
       openLine(editable);
-      placeCaret(editable, caret == null ? editable.textContent.length : caret);
+      var here = caret == null ? editable.textContent.length : caret - rowFrom(ln);
+      placeCaret(editable, Math.max(0, Math.min(here, editable.textContent.length)));
+    }
+
+    /* The row above or below, at the same character of it. Not the same
+       character of the LINE: what somebody pressing the arrow just looked at
+       is the row on the screen. */
+    function focusRow(ln, offset) {
+      if (!ln) return;
+      var editable = ln.querySelector(".ln-t, .ln-section");
+      if (!editable) return;
+      openLine(editable);
+      placeCaret(editable, Math.max(0, Math.min(offset == null ? editable.textContent.length : offset, editable.textContent.length)));
     }
 
     /* --- a chord ------------------------------------------------------------
@@ -6768,6 +7040,13 @@
        already uses. */
     function bindChord(node, ln, line, chord) {
       var dragging = false, from = 0, grab = 0;
+
+      /* THE LABEL SAYS WHICH CHORD IT IS. Everything that draws a chord asks
+         the chord itself where it stands, and a row holding a piece of a line
+         holds only the chords of that piece: counting the labels along a lane
+         and hoping the count matches the song is exactly what stops working
+         the moment a line is drawn in more than one row. */
+      node.__chord = chord;
 
       node.addEventListener("pointerdown", function (event) {
         event.stopPropagation();
@@ -6788,7 +7067,10 @@
              what it is anchored to is the middle of a character. Remember the
              difference at the moment the drag begins and keep it, or the chord
              snaps that far sideways on the first pixel of movement. */
-          grab = (chord.pos + 0.5) - posFromX(ln, event.clientX);
+          /* Both in the LINE's characters: the pointer is asked of the row and
+             the row may be a piece of the line, so what it answers is counted
+             from where that piece begins. */
+          grab = (chord.pos + 0.5) - (posFromX(ln, event.clientX) + rowFrom(ln));
         }
 
         /* The hand moves in pixels, the song moves in characters. The chord is
@@ -6797,17 +7079,17 @@
            letter. `raw` is that middle in character coordinates, so the
            character carrying it is the one it falls INSIDE: floor, not round.
            The only visible cost is half a character of settling on release. */
-        var raw = Math.max(0, posFromX(ln, event.clientX) + grab);
-        var pos = Math.max(0, Math.floor(raw));
+        var here = rowFrom(ln);
+        var raw = Math.max(here, posFromX(ln, event.clientX) + here + grab);
+        var pos = Math.max(here, Math.floor(raw));
         var previous = chord.pos;
 
         /* A chord that has been pulled past the last word: the LINE grows to
            meet it, in spaces, so it still names a character of its own line. */
-        if (padTo(line, pos)) {
-          fillSpans(ln.querySelector(".ln-t"), line.text);
-        }
+        if (padTo(line, pos)) refill(ln, line);
 
-        placeChord(ln, node, positionOf(metrics(ln), raw));
+        /* drawn in the row's own coordinates, which is where its pixels are */
+        placeChord(ln, node, positionOf(metrics(ln), raw - here));
         if (pos === previous) return;
 
         /* Run one chord over another and the two change places, so a chord can
@@ -6825,14 +7107,16 @@
         });
 
         chord.pos = pos;
-        node.dataset.pos = pos;
+        node.dataset.pos = pos - here;
 
         if (crossed) {
           crossed.pos = previous;
-          /* the lane's children follow line.chords one for one, because they
-             are appended and removed together */
-          var twin = node.parentNode.children[line.chords.indexOf(crossed)];
-          if (twin) { twin.dataset.pos = crossed.pos; placeChord(ln, twin); }
+          /* The one the crossing pushed back, wherever it is drawn: a line
+             broken into pieces keeps its chords on the piece their character
+             is in, which is not always the piece the hand is in. */
+          var twin = chordNodeOf(ln.dataset.index, crossed);
+          var where = twin ? rowOf(twin) : null;
+          if (where) { twin.dataset.pos = crossed.pos - rowFrom(where); placeChord(where, twin); }
         }
       });
 
@@ -6843,9 +7127,12 @@
 
         /* let go: the chord settles onto its character, and any spaces the drag
            called for and no longer needs go back */
-        if (trimPadding(line)) fillSpans(ln.querySelector(".ln-t"), line.text);
+        if (trimPadding(line)) refill(ln, line);
         layoutLine(ln);
         mark();
+        /* and a line that grew or shrank by those spaces may break somewhere
+           else now */
+        settle();
       });
 
       node.addEventListener("pointercancel", function () {
@@ -7249,7 +7536,7 @@
        was opened in: the first drawing is the one that has to be transposed,
        and it is the only one nobody presses a button to get */
     setSemis(semis);
-    relayoutOn(sheet, editing ? null : draw);
+    relayoutOn(sheet, draw, editing);
 
     /* last, once the page is whole, because taking a draft back means writing
        into the title, the credits and every line of the sheet, and all of them
@@ -7416,8 +7703,13 @@
      caller hands in a redraw and it is used instead. Only when the width
      actually moved, because a phone fires resize for its own address bar
      sliding away, and redrawing the sheet under a reader's thumb for that is
-     the page flinching at nothing. */
-  function relayoutOn(root, redraw) {
+     the page flinching at nothing.
+
+     `always` is for a sheet being written into. What is standing on it is
+     pieces of lines, and measuring those again would be breaking what is
+     already broken: there is no cheap answer there, only the song drawn
+     again, however small the thing that moved. */
+  function relayoutOn(root, redraw, always) {
     /* A window that changed width changed how many columns the song stands
        in, which is a fact about the sheet and not about any one chord, so it
        is asked again before the chords are placed. */
@@ -7436,7 +7728,7 @@
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(rewrap);
     var onResize = function () {
       if (!root.isConnected) return window.removeEventListener("resize", onResize);
-      if (redraw && root.clientWidth !== width) return rewrap();
+      if (redraw && (always || root.clientWidth !== width)) return rewrap();
       run();
     };
     window.addEventListener("resize", onResize);
