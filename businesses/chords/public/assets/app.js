@@ -6011,10 +6011,30 @@
        of the last line, which is where a hand already is, and the marking is
        gone with the bar above. */
 
+    /* ONE FRAME, HOWEVER MANY DRAWINGS ASKED FOR IT. Laying the song out is
+       not something that can be done twice: fitColumns takes the sheet apart
+       to the rows STANDING ON IT, and after a pour those are pieces of lines
+       and not lines, so a second run pours what is already poured. Every piece
+       then looks like a whole line that fits, none of them is the leftover of
+       a break any more, and the two lines that were sharing a line of the page
+       come apart with no way back (see flowSheet, and unpage, which can flatten
+       a pair but cannot rebuild the line it was made of).
+
+       Two drawings in one frame is the ordinary case and not a corner: the
+       page draws itself, and then the fonts land and it draws itself again
+       (see relayoutOn). Both queued a frame, the first poured, and the second
+       poured the first one's output. Which is why a song opened cold showed
+       every leftover row standing alone, and the same song after a zoom, one
+       drawing and one frame, showed them paired. */
+    var framed = 0;
+
     /* The sheet's own direction is the song's, which is its first line's. It
        decides where the capo chip and the headings sit; each line inside says
        which way IT runs and is laid out by that alone. */
     function draw() {
+      /* The frame the drawing before this one asked for was for rows that are
+         about to stop existing, so it goes with them. */
+      if (framed) { cancelAnimationFrame(framed); framed = 0; }
       /* every row on screen is about to stop existing, and the little button
          hanging under one of them with it */
       hideGap();
@@ -6069,7 +6089,8 @@
          screenfuls. The placing is last, because a chord belongs to the row
          its syllable ended up on and there is no telling which that is until
          the words have been broken. */
-      requestAnimationFrame(function () {
+      framed = requestAnimationFrame(function () {
+        framed = 0;
         /* DEALING THE ROWS OUT MOVES THEM, and a row that is moved in the
            document takes the caret out of itself: the browser hands focus back
            to the page. So whoever asked for a caret before this frame (Enter,
@@ -8193,7 +8214,15 @@
      `always` is for a sheet being written into. What is standing on it is
      pieces of lines, and measuring those again would be breaking what is
      already broken: there is no cheap answer there, only the song drawn
-     again, however small the thing that moved. */
+     again, however small the thing that moved.
+
+     WHICH IS TRUE OF A SHEET BEING READ AS WELL, and the reason there is no
+     `run` left on this path. A poured sheet holds pieces whichever state it is
+     in, so laying it out again takes apart the pairs the pouring made and
+     cannot put them back (see draw). What is cheap is the placing, and the
+     placing alone is right for exactly one case: a window that changed height
+     and not width on a phone, where the address bar sliding away moves no row
+     and there are no pages to re-cut. */
   function relayoutOn(root, redraw, always) {
     /* A window that changed width changed how many columns the song stands
        in, which is a fact about the sheet and not about any one chord, so it
@@ -8213,8 +8242,8 @@
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(rewrap);
     var onResize = function () {
       if (!root.isConnected) return window.removeEventListener("resize", onResize);
-      if (redraw && (always || root.clientWidth !== width)) return rewrap();
-      run();
+      if (redraw && (always || root.clientWidth !== width || !NARROW.matches)) return rewrap();
+      layoutAll(root);
     };
     window.addEventListener("resize", onResize);
   }
