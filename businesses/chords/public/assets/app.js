@@ -98,18 +98,23 @@
        Each has to be recognisable at fifteen pixels by somebody who was not
        told, so each is drawn as the thing itself rather than as an abstraction
        of it: a note for the key the song is in, two letters of different sizes
-       for how big the words are, and a capo across the strings of a neck.
+       for how big the words are, and the capo itself.
 
-       THE CAPO IS THE OBJECT, not a mark where it goes. It was three strings
-       and a thick line across them, which at fifteen pixels is a fret, and a
-       fret is not what you clamp on. So it is drawn as the thing itself: the
-       strings running down the neck, thin, because they are what it is put
-       ON and not what it is; the padded bar lying across them, rounded, with
-       its own outline; and the arm coming off one end and round the back of
-       the neck, which is the half of a capo that says it is a clamp. */
+       THE CAPO AND NOTHING ELSE. It was three strings with a thick line laid
+       across them, a picture of where a capo GOES, and at fifteen pixels the
+       thick line is a fret. Nobody clamps a fret. Then it was the same strings
+       with the clamp drawn over them, which is more true and less legible: the
+       thing being named was the smaller half of its own picture.
+
+       So the strings are gone and what is left is the object, from the side,
+       the way it sits in a case and the way anybody who owns one would draw
+       it: the two padded jaws reaching out, the yoke that joins them at the
+       back, and the knurled screw standing off the top of it. A C with a
+       circle on its shoulder, which is a capo and is not anything else on this
+       strip or in this app. */
     pitch: '<path d="M8 17V6l9-2v9"/><ellipse cx="5.6" cy="17.2" rx="2.6" ry="2.1"/><ellipse cx="14.6" cy="15.2" rx="2.6" ry="2.1"/>',
     textSize: '<path d="M2 19l5-13 5 13M3.6 15h6.8M14 19l3.3-8.5 3.3 8.5M15.1 16.4h4.4"/>',
-    capo: '<path d="M6.5 3v18M12 3v18M17.5 3v18" stroke-width="1.1"/><rect x="2.3" y="6.5" width="19.4" height="4.7" rx="2.35"/><path d="M19.6 11.2v2a3.4 3.4 0 0 1-3.4 3.4h-1.4" stroke-width="1.5"/>',
+    capo: '<circle cx="8.7" cy="6.4" r="2.6"/><path d="M20.8 8.6h-8.4a4.3 4.3 0 0 0 0 8.6h8.4"/>',
     undo: '<path d="M4 10h9a4.5 4.5 0 0 1 0 9h-5"/><path d="M8 6l-4 4 4 4"/>',
     print: '<path d="M7 9V4h10v5M7 18H5v-6h14v6h-2M8 14h8v6H8z"/>',
     calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
@@ -3806,15 +3811,32 @@
      so nothing goes stale, and a keystroke does not re-read a hundred
      songs. */
   function songHay(s) {
-    if (s.hay == null) {
-      s.hay = [
-        s.title,
-        credits(s).map(function (c) { return c.name; }).join(" "),
-        styles(s).join(" "),
-        withoutGaps(normalizeLines(s.lines).map(function (l) { return l.text; }).join(" ")),
-      ].join(" ").toLowerCase();
-    }
+    if (s.hay == null) sortHay(s);
     return s.hay;
+  }
+
+  /* THE SAME SONG WITHOUT WHAT KIND OF SONG IT IS. Where the styles are cards
+     of their own standing over the songs, a word that is a style is already
+     answered by the shelf itself, and matching the songs on it as well answers
+     "שירי מעגל" with the shelf AND with all forty-two songs underneath it,
+     which is the shelf opened without anybody asking for it. What the wall is
+     for there is the song whose NAME, whose writer or whose words hold the
+     word. The panel keeps the whole of it, because there the shelf is one row
+     and the songs beneath it are the rest of the answer. */
+  function songSaid(s) {
+    if (s.said == null) sortHay(s);
+    return s.said;
+  }
+
+  /* Both at once: the words of a song are the expensive part and they are the
+     same words in either. */
+  function sortHay(s) {
+    s.said = [
+      s.title,
+      credits(s).map(function (c) { return c.name; }).join(" "),
+      withoutGaps(normalizeLines(s.lines).map(function (l) { return l.text; }).join(" ")),
+    ].join(" ").toLowerCase();
+    s.hay = (s.said + " " + styles(s).join(" ")).toLowerCase();
   }
 
   /* An evening is remembered by four different things and never by the same
@@ -4766,9 +4788,10 @@
         var shown = state.songs.filter(function (s) {
           if (only && !only.is(s)) return false;
           if (kind && styles(s).indexOf(kind) < 0) return false;
-          /* everything the song is made of: its name, its credits, its style
-             and its words, without the gaps in them (see songHay) */
-          if (!passes(songHay(s))) return false;
+          /* what the song itself says: its name, its credits and its words,
+             and NOT what kind of song it is, which the shelf over the wall is
+             already the answer to (see songSaid) */
+          if (!passes(songSaid(s))) return false;
           return true;
         });
 
