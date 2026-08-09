@@ -7692,6 +7692,22 @@
       /* The frame the drawing before this one asked for was for rows that are
          about to stop existing, so it goes with them. */
       if (framed) { cancelAnimationFrame(framed); framed = 0; }
+
+      /* WHERE THE READER IS STAYS WHERE THE READER IS. A drawing empties the
+         sheet and builds it again, and for that moment the page is one screen
+         tall: the browser has nowhere to put a scroll of two thousand pixels,
+         so it pulls it back to the top, and putting the song back afterwards
+         does not bring it with it. Half a second after moving a chord on the
+         third screenful of a song, the song jumped to the first.
+
+         Nobody noticed it while typing, because the caret is put back at the
+         end of the drawing and the browser scrolls to show it. A chord has no
+         caret, so there was nothing to carry the page back down.
+
+         Only on a REDRAW. A sheet that has nothing on it yet is a song being
+         opened, and that one starts where the routing says it starts, which is
+         the top or the place this reader was last time (see restoreScroll). */
+      var keepY = sheet.firstChild ? (window.scrollY || window.pageYOffset || 0) : null;
       /* every row on screen is about to stop existing, and the little buttons
          hanging under one of them with it */
       hideGap();
@@ -7767,6 +7783,11 @@
         var caret = host ? caretAt(host) : null;
         fitColumns(sheet);
         layoutAll(sheet);
+        /* The page is as tall as it was again, so the place it was at is a
+           place it can be at again. Before the caret and not after it: whoever
+           is typing has just been given a caret somewhere, and showing that is
+           worth more than the pixel it was at. */
+        if (keepY != null && !keepingPlace()) window.scrollTo(0, keepY);
         if (index >= 0 && caret != null) focusLine(index, caret);
       });
     }
@@ -11711,6 +11732,17 @@
     window.addEventListener(name, function () { scrollTry++; }, { passive: true });
   });
 
+  /* The attempt that is still reaching for a remembered place, if there is one.
+     A page drawn again while that is going on must not put the scroll back
+     where it was a frame ago (see keepingPlace): the two would be pulling in
+     opposite directions and the drawing, being the later of the two, would win.
+     Held as the attempt's own token, so a hand on the page cancels this along
+     with everything else the counter cancels. */
+  var reaching = 0;
+  function keepingPlace() {
+    return reaching !== 0 && reaching === scrollTry;
+  }
+
   /* Keep reaching for a place until the page is tall enough to have one. A
      page being drawn rather than uncovered arrives in its own time: a spinner
      first, then whatever the database had to say, and only then is there
@@ -11718,17 +11750,18 @@
   function holdScroll(want) {
     var mine = ++scrollTry;
     if (!want) return;
+    reaching = mine;
 
     var frames = 0;
     (function again() {
       if (mine !== scrollTry) return;
       var far = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-      if (far >= want) return window.scrollTo(0, want);
+      if (far >= want) { reaching = 0; return window.scrollTo(0, want); }
       /* Two seconds of frames and then take what there is. A song deleted while
          you were away is a page that will never be that tall again, and a page
          that keeps reaching for a place that is not there is a page that will
          not let go of the scrollbar. */
-      if (++frames > 120) return window.scrollTo(0, far);
+      if (++frames > 120) { reaching = 0; return window.scrollTo(0, far); }
       requestAnimationFrame(again);
     })();
   }
