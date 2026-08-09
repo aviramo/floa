@@ -17,9 +17,22 @@ create table if not exists public.songs (
 
   title       text not null,
 
-  -- Who made it, which is two different people as often as it is one. The
-  -- performer is deliberately not among them: a song is one song however many
-  -- people have recorded it.
+  -- Who made it, which is two different people as often as it is one, and each
+  -- of the two is SEVERAL people as often as it is one: three wrote the words
+  -- and two of them wrote the tune. The performer is deliberately not among
+  -- them: a song is one song however many people have recorded it.
+  --
+  -- A LIST OF NAMES SEPARATED BY COMMAS, "דביר כהן, ליאת ציון, ינון דר", which
+  -- is how a printed sheet says it and how anybody typing one in says it. The
+  -- app splits on the comma everywhere it reads these (see `people` in app.js),
+  -- so the songs written before it did are right without being touched: the
+  -- text was always a list, it was only being read as one name.
+  --
+  -- Not an array like `styles` below, and not a table. What would be gained is
+  -- a separator the database enforces; what it would cost is a migration, two
+  -- more shapes in the Worker, and REST queries on a text[] for a fact that is
+  -- never queried on. A person becomes a row here on the day a person has
+  -- something to them beyond a name.
   lyrics_by   text not null default '',
   music_by    text not null default '',
 

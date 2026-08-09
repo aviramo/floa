@@ -368,8 +368,8 @@ const WORDS_SCHEMA = {
   required: ["title", "lyrics_by", "music_by", "dir", "lines"],
   properties: {
     title: { type: "string", description: "The song's name as printed, or an empty string if the sheet does not name it." },
-    lyrics_by: { type: "string", description: "Who wrote the words, if the sheet says so (often after \"מילים:\"), otherwise an empty string." },
-    music_by: { type: "string", description: "Who wrote the tune, if the sheet says so (often after \"לחן:\"), otherwise an empty string." },
+    lyrics_by: { type: "string", description: "Who wrote the words, if the sheet says so (often after \"מילים:\"), otherwise an empty string. Several people are separated by a comma: \"דביר כהן, ליאת ציון\"." },
+    music_by: { type: "string", description: "Who wrote the tune, if the sheet says so (often after \"לחן:\"), otherwise an empty string. Several people are separated by a comma." },
     dir: { type: "string", enum: ["rtl", "ltr"], description: "rtl when the lyrics are Hebrew or Arabic, ltr otherwise." },
     lines: {
       type: "array",

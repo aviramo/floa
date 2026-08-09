@@ -981,13 +981,14 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 }
 .tag-x:hover { color: var(--danger); }
 
-/* The styles of one song, being written. The word, what it already is, and one
-   field that adds another: a row of the same shape as the credits above it,
-   because it is the same kind of thing, one more fact about the song. */
-/* ONE MORE FIELD IN THE FORM, and shaped like the two above it: a word and a
-   line, and what has been written on it sitting on that line. It stood apart
-   from them for a while, which said it was a different kind of thing from who
-   wrote the song. It is not: it is one more fact about the song. */
+/* One list of a song's, being written. The word, what it already says, and one
+   more chip that adds to it.
+
+   THE WHOLE FORM IS THREE OF THESE. It was the styles alone, standing under two
+   text fields that asked who wrote the words and who wrote the tune, and all
+   three are lists: the words of a song are three people's as easily as one, and
+   a field made them one person with commas in their name. So the row is the
+   shape of every fact about a song that there can be several of. */
 .kinds-field {
   display: flex; align-items: baseline; gap: 8px;
   min-width: 0;
@@ -1046,9 +1047,13 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 
    ONE FIELD UNDER THE NEXT, because the panel is the width of a form and not
    the width of a screen: three fields in a row across a desk put "מילים" and
-   the line it belongs to half a metre apart. */
+   the line it belongs to half a metre apart.
+
+   AND ALL THREE ARE THE SAME ROW NOW. Two of them were a label and a text
+   field, which is a form saying a song has one writer, and the third was
+   chips. They are three .kinds-field rows: a word, what has been said already
+   standing as chips, and a plus that adds one more. */
 .song-meta { display: grid; gap: 18px; }
-.song-meta label { min-width: 0; }
 
 /* ONE COLUMN FOR THE THREE WORDS, so the three fields start where each other
    starts. They were each as wide as their own word, which put "מילים" and
@@ -1091,7 +1096,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    Two selectors deep on purpose. The shared field rule is an attribute
    selector, so it outranks a single class and would put the border, the white
    fill and the padding straight back. */
-.song-meta label, .ev-meta label {
+.ev-meta label {
   display: block; font-size: 13px; font-weight: 600; color: var(--ink-soft);
 }
 /* THE WORD SITS BESIDE ITS FIELD, ON EVERY SCREEN. It waited for a wide one
@@ -1104,23 +1109,11 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    AND THE WORD IS NOT RULED. The line ran under the whole row, the label
    included, which draws the word as one more thing to fill in: "מילים" is the
    question, not an answer anybody types over. It belongs to the field, so it is
-   the field's, and it starts where the field starts. */
-.song-meta label, .kinds-field {
-  display: flex; align-items: baseline; gap: 8px;
-}
-/* AND IT IS NOT DRAWN UNTIL IT IS REACHED FOR. A rule under a name that is
-   already written says the name is unfinished, and a rule across the empty half
-   of the row says there is more of it to say. What the panel holds is three
-   short answers, usually already given; the line arrives under the pointer and
-   stays while the field is being typed in, which is when there is a field. */
-.song-meta label input {
-  flex: 1 1 auto; min-width: 0;
-  border-bottom: 1px solid transparent;
-}
-.song-meta label input:hover { border-bottom-color: var(--line); }
-.song-meta label input:focus-visible {
-  border-bottom-color: var(--accent); box-shadow: 0 1px 0 var(--accent);
-}
+   the field's, and it starts where the field starts.
+
+   THE RULE UNDER THE NAME IS GONE WITH THE FIELD THAT HELD IT. A row is chips
+   and a plus at rest, and the line under the field arrives with the field, when
+   the plus is pressed (see .kinds-field above). */
 
 /* The evening's own form is still a label over a field until there is room:
    its words are longer and one of its fields is a date, which a narrow row
@@ -2088,22 +2081,16 @@ body.on-song .top { border-bottom: 0; }
 .song-told { display: grid; gap: 14px; }
 .told-row { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
 
-/* A NAME IS A PAGE, so it is a link, and it is a link that does not shout: an
-   underline under every name in a panel of three lines is a panel of ruled
-   paper. The line arrives on the way in, which is where a link has to answer
-   the pointer, and until then this reads as the sentence it is. */
-.told-said {
-  flex: 1 1 auto; min-width: 0;
-  font-size: 15px; color: var(--ink); text-decoration: none;
-  border-bottom: 1px solid transparent;
-}
-.told-said:hover { color: var(--accent); border-bottom-color: currentColor; }
-.told-said:focus-visible { color: var(--accent); }
+/* A NAME IS A PAGE AND A STYLE IS A SHELF, so both are links, and both are the
+   same chip they are everywhere else in the app. The name was a line of text
+   with an underline arriving under it, which reads well for the one song in ten
+   that one person wrote and not at all for the nine where the words are three
+   people's: a row of names has to say where each of them ends, and three chips
+   say it without a comma being asked to do the work of a border.
 
-/* And a style is a shelf, so it is the same chip it is everywhere else in the
-   app with a page behind it. The ring it already has is what lights up: a chip
-   that gained an underline on the way in would be a chip with a line through
-   the bottom of its own border. */
+   The ring the chip already has is what lights up. A chip that gained an
+   underline on the way in would be a chip with a line through the bottom of its
+   own border. */
 .told-tags { flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: wrap; gap: 6px; }
 .told-tags .tag-style { text-decoration: none; }
 .told-tags .tag-style:hover { color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }

@@ -521,10 +521,61 @@
     { field: "music_by", label: "לחן", who: "מלחין", kind: "tune", icon: "tune" },
   ];
 
+  /* --- AND EACH OF THE TWO IS SEVERAL PEOPLE ---------------------------------
+     THE COLUMN IS A LIST AND NOT A NAME. Three people wrote the words and two
+     of them wrote the tune, which is the ordinary case and not the odd one,
+     and a column read as one name made "דביר כהן, ליאת ציון, ינון דר" a
+     person: one page under that name, one chip, one thing to press, and the
+     three people who are actually there nowhere in the library at all.
+
+     So the text is read as names separated by commas, everywhere it is read,
+     and written back the same way. Which is also what fixes the songs already
+     written: nothing has to be migrated, because what is in the column was
+     already a comma separated list. It was only being read as a name.
+
+     Commas and semicolons, and nothing else. A slash is inside "מילים/לחן" as
+     often as it is between two people, and "ו" is the middle of a name far
+     more often than it is the word "and". */
+  function people(text) {
+    var seen = {};
+    var out = [];
+    String(text == null ? "" : text).split(/[,;]/).forEach(function (raw) {
+      var name = String(raw).trim().replace(/\s+/g, " ").slice(0, 60);
+      /* the same person twice in one column is one person */
+      if (!name || seen[name]) return;
+      seen[name] = true;
+      out.push(name);
+    });
+    return out;
+  }
+
+  /* Back into the column, in the order they were given, tidied and without
+     repeats: a comma and a space is the whole of the format. */
+  function peopleSaid(list) {
+    return people((list || []).join(",")).join(", ");
+  }
+
+  /* ONE ENTRY PER PERSON, not per column. Everything downstream counts people,
+     lists people or draws one chip each, and the column they came out of is
+     what the label on the entry says. */
   function credits(song) {
+    var out = [];
+    CREDITS.forEach(function (c) {
+      people(song[c.field]).forEach(function (name) {
+        out.push({ label: c.label, name: name, icon: c.icon, kind: c.kind, field: c.field });
+      });
+    });
+    return out;
+  }
+
+  /* Who made it, in a line: one word and everybody under it, "מילים: א, ב".
+     For the places that have room for a sentence and not for a form, which is
+     the hover on the info button and a row in the list of versions. */
+  function creditsLine(song) {
     return CREDITS.map(function (c) {
-      return { label: c.label, name: String(song[c.field] || "").trim(), icon: c.icon };
-    }).filter(function (c) { return c.name; });
+      var names = people(song[c.field]);
+      return names.length ? c.label + ": " + names.join(", ") : "";
+    }).filter(Boolean);
   }
 
   /* The picture in place of the word, where the word would not fit: under the
@@ -548,7 +599,9 @@
      words usually wrote the tune as well, and a card that answered "who wrote
      this" with the same name twice was reading the columns out loud rather
      than naming a person. The credits themselves keep both, because on the
-     song they are two different facts. */
+     song they are two different facts. And several of each: a song whose words
+     are three people's and whose tune is one of those three says four names
+     here and not two. */
   function creditNames(song) {
     var seen = {};
     return credits(song).map(function (c) { return c.name; }).filter(function (name) {
@@ -577,11 +630,6 @@
     return out;
   }
 
-  /* "מילים ולחן" out of one person's two credits, "מילים" out of one. */
-  function creditSaid(group) {
-    return group.parts.map(function (c) { return c.label; }).join(" ו") + ": " + group.name;
-  }
-
   /* --- the people, read out of the songs ------------------------------------
      THERE IS NO TABLE OF CREATORS AND THERE SHOULD NOT BE. A person is not a
      row somebody creates and then has to keep in step with the songs; a
@@ -596,16 +644,18 @@
      pages that can never disagree with the songs they are made of.
 
      The same name in both columns is ONE person with two roles, which is the
-     ordinary case: whoever wrote the words usually wrote the tune. */
+     ordinary case: whoever wrote the words usually wrote the tune. And a
+     column naming three people is three people (see `people`), which is what
+     it always was on the page it was copied off. */
   function creatorsOf(songs) {
     var by = {};
     (songs || []).forEach(function (song) {
       CREDITS.forEach(function (c) {
-        var name = String(song[c.field] || "").trim();
-        if (!name) return;
-        var rec = by[name] || (by[name] = { name: name, roles: {}, songs: [] });
-        rec.roles[c.field] = true;
-        if (rec.songs.indexOf(song) < 0) rec.songs.push(song);
+        people(song[c.field]).forEach(function (name) {
+          var rec = by[name] || (by[name] = { name: name, roles: {}, songs: [] });
+          rec.roles[c.field] = true;
+          if (rec.songs.indexOf(song) < 0) rec.songs.push(song);
+        });
       });
     });
     return Object.keys(by).sort(function (a, b) { return a.localeCompare(b, "he"); })
@@ -628,7 +678,7 @@
 
   function songsBy(songs, name) {
     return (songs || []).filter(function (song) {
-      return CREDITS.some(function (c) { return String(song[c.field] || "").trim() === name; });
+      return CREDITS.some(function (c) { return people(song[c.field]).indexOf(name) >= 0; });
     });
   }
 
@@ -1003,7 +1053,9 @@
        between one person and two.
 
        Both columns pour into one pool, because the person who wrote the words
-       is often the one who wrote the tune. */
+       is often the one who wrote the tune. A column naming several people
+       pours all of them in separately: what is offered is a name to finish
+       typing, and "דביר כהן, ליאת ציון" is not one. */
     names: function () {
       var self = this;
       var fields = CREDITS.map(function (c) { return c.field; });
@@ -1012,8 +1064,7 @@
         var seen = {};
         (rows || []).forEach(function (row) {
           fields.forEach(function (f) {
-            var name = String(row[f] || "").trim();
-            if (name) seen[name] = true;
+            people(row[f]).forEach(function (name) { seen[name] = true; });
           });
         });
         return Object.keys(seen).sort(function (a, b) { return a.localeCompare(b, "he"); });
@@ -3312,16 +3363,25 @@
      shapes THIS song asks for. Both are as true next week as they were
      tonight, and neither says anything about the next song.
 
-     WHAT IS ON THE PAGE IS NEITHER OF THEM. It was, for a while: one number
-     said how far the chords had moved and the capo was a note beside it that
-     changed nothing, which meant the singing moved every time somebody went
-     looking for a shape they could hold. Those are two different questions and
-     they were being asked with one button.
+     WHAT IS KEPT IS THE PAGE AND THE SINGING. THE FRET IS WORKED OUT FROM THEM
+     (see capoOf), and that is the whole trick of this file: the capo is what
+     is left over between the chords printed on the page and the key the song
+     comes out in, so it cannot drift away from either of them, because there
+     is no copy of it anywhere to drift.
 
-     So the page is a RESULT now (see pageOf). Move the singing and the song
-     comes out higher. Move the capo and the shapes change under a voice that
-     has not moved at all, which is the whole of what a capo is for, and the
-     number on the strip is where to put it.
+     WHICH IS WHAT MAKES THE TRANSPOSITION SAFE TO PRESS. Moving the page does
+     not move the singing, so the leftover, the fret, moves instead: transpose
+     down and the capo climbs to pay for it, and the song comes out of the
+     guitar in the key it came out in a second ago. The capo runs out at
+     MAX_CAPO, and past that the singing does move, because at that point no
+     fret on the neck could have kept it.
+
+     AND IT STILL COMES BACK. A fret kept as a number of its own would have
+     been clamped at each end and would have counted the presses it could not
+     take: three up against the ceiling and three back down would leave the
+     page where it started and the capo three frets away from where it started.
+     A leftover cannot do that. Put the page back and the subtraction gives the
+     same answer it gave before.
 
      The capo was one number on the account for a while, the same on every
      song, on the argument that it is a fact about the guitar. A guitar has no
@@ -3362,33 +3422,44 @@
 
   /* Zero is an answer like any other, in both of them: a reader who sings it
      in the key it is written in means it, and so does one who plays it with no
-     capo at all. So "they have never said" is null, and not zero. */
-  function keptCapo(id) {
+     capo at all. So "they have never said" is null, and not zero.
+
+     ONLY WHAT WAS PRESSED IS WRITTEN DOWN, and the fret is not one of those:
+     it is the leftover (see capoOf), so keeping it would be keeping the same
+     answer twice and inviting the two copies to disagree. The old key "c" is
+     still READ, because every reader has one, and never written again. */
+
+  /* WHAT IS PRINTED ON THE PAGE, which is the transposition and the thing the
+     transposition buttons move. Kept under "p"; the old key for it was "k",
+     which meant exactly the same thing and is read straight across. */
+  function keptPage(id) {
     var was = keptFor(id);
-    var c = was ? was.c : null;
-    return typeof c === "number" && c >= 0 && c <= MAX_CAPO ? Math.round(c) : 0;
+    if (!was) return null;
+    if (typeof was.p === "number" && was.p >= -11 && was.p <= 11) return Math.round(was.p);
+    if (typeof was.k === "number" && was.k >= -11 && was.k <= 11) return Math.round(was.k);
+    /* a reader who only ever put a capo on never moved the page */
+    return typeof was.c === "number" ? 0 : null;
   }
 
-  /* THE KEY THEY SING IT IN, WHICH USED TO BE KEPT AS THE KEY ON THE PAGE.
-     What is on the page is not a fact about anybody any more, it is what the
-     other two work out between them, so the number written down under "k" is
-     read here for what it always meant in the end: the page, plus whatever
-     fret they had a capo on, is what came out of the guitar. Nobody has to be
-     asked anything and nothing is lost, and the answer is written back under
-     "s" the next time they press a button. */
+  /* WHAT COMES OUT OF THE GUITAR: the page plus whatever fret is holding the
+     rest of the distance. This is the number the capo protects, which is why
+     moving the page does not move it.
+
+     Every reader already has one written down, in the old pair, and it was
+     never called this: "k" moved the chords and "c" was a note beside them
+     about a capo that really was on the neck, so the guitar really was sounding
+     k + c. Read that way, nobody has to be asked anything and nothing is lost.
+     The fret counts even where the page was never moved: somebody who only ever
+     clamped at 4 was sounding four semitones up, and reading it as "sings it as
+     written" would drop the whole song to pay for a fret already held. */
   function keptSung(id) {
     var was = keptFor(id);
     if (!was) return null;
     if (typeof was.s === "number" && was.s >= -11 && was.s <= 11) return Math.round(was.s);
-    /* THE OLD PAIR, ADDED UP. The fret counts here even where the page was
-       never moved: somebody who only ever put a capo on had the page at zero
-       and a capo at 4, and what came out of the guitar was four semitones up
-       whatever the app called it. Reading that as "sings it as written, capo
-       4" would move their whole song down to pay for a fret they were already
-       holding. */
-    var k = typeof was.k === "number" && was.k >= -11 && was.k <= 11 ? Math.round(was.k) : null;
-    if (k == null && typeof was.c !== "number") return null;
-    var sung = (k || 0) + keptCapo(id);
+    var page = keptPage(id);
+    if (page == null) return null;
+    var c = typeof was.c === "number" && was.c >= 0 && was.c <= MAX_CAPO ? Math.round(was.c) : 0;
+    var sung = page + c;
     return sung > 11 ? sung - 12 : sung;
   }
 
@@ -3398,7 +3469,8 @@
      handed one. */
   function saidAnything(id) {
     var was = keptFor(id);
-    return !!was && (typeof was.s === "number" || typeof was.k === "number" || typeof was.c === "number");
+    return !!was && (typeof was.s === "number" || typeof was.p === "number"
+      || typeof was.k === "number" || typeof was.c === "number");
   }
 
   /* --- THE ONE YOU HAD OPEN LAST STANDS FIRST -------------------------------
@@ -3481,8 +3553,9 @@
      move the song under them. Silence is the only thing the app answers. */
   function playedAs(song) {
     if (saidAnything(song.id)) {
+      var page = keptPage(song.id);
       var sung = keptSung(song.id);
-      return { sung: sung == null ? 0 : sung, capo: keptCapo(song.id) };
+      return { page: page == null ? 0 : page, sung: sung == null ? 0 : sung };
     }
     /* NOTHING IS GUESSED AT A SONG NOBODY HAS CHECKED YET. A song a machine
        read out of a picture is opened beside that picture, and the whole of
@@ -3491,22 +3564,35 @@
        cannot be compared to anything, and a chord corrected on it is corrected
        into the wrong key. It gets the easy version like every other song the
        moment somebody has looked at it. */
-    if (song.review || song.status === "queued" || song.status === "reading") return { sung: 0, capo: 0 };
+    if (song.review || song.status === "queued" || song.status === "reading") return { page: 0, sung: 0 };
     var used = chordsUsed(song.lines || []);
-    return { sung: 0, capo: used.length ? easyVersion(used).capo : 0 };
+    /* the easy version, as what it is: a fret, under a song still in its own
+       key, with the page moved down to meet it */
+    var easy = used.length ? easyVersion(used).capo : 0;
+    return { page: -easy, sung: 0 };
   }
 
-  /* --- AND THE PAGE IS WHAT THE TWO OF THEM COME TO --------------------------
-     THIS IS THE WHOLE ARITHMETIC OF THE APP. Sing it `sung` semitones from
-     where the file has it, hold the capo at fret `capo`, and the shapes your
-     hand actually makes are `sung - capo` from the file, because the capo does
-     the rest of the distance for you.
+  /* --- AND THE FRET IS WHAT IS LEFT OVER -------------------------------------
+     THIS IS THE WHOLE ARITHMETIC OF THE APP, and it is one subtraction. The
+     page is the shapes the hand makes. The singing is what comes out. A capo
+     at fret N raises everything the hand plays by N, so the fret that makes
+     those two true at once is the difference between them, and there is
+     nothing to decide.
 
-     It runs one way only, and that is the point. The page is worked out from
-     the two answers; nothing works the two answers out from the page. So the
-     capo can be moved all evening without the singing moving a hair, which is
-     not a rule anybody has to enforce anywhere, it is what subtraction does. */
-  function pageOf(played) { return played.sung - played.capo; }
+     WHICH IS WHY THE TRANSPOSITION MOVES IT AND NOTHING HAS TO MAKE IT. Press
+     the page down one and the singing has not been asked to move, so the
+     difference is one bigger and the capo goes up a fret. Press the page back
+     and the difference is what it was. It cannot creep, it cannot get stuck at
+     an end and come back somewhere else, and it cannot disagree with the two
+     numbers it is made of, because it is not stored anywhere to be wrong.
+
+     CLAMPED, BECAUSE A NECK ENDS. Below zero there is no such thing as a capo
+     and above MAX_CAPO there is no room for a hand, so past either end the
+     fret stops and the singing is what gives instead. That is not the app
+     losing the key: it is a guitar that cannot hold it, said out loud. */
+  function capoOf(played) {
+    return Math.max(0, Math.min(played.sung - played.page, MAX_CAPO));
+  }
 
   /* The chords of this song as this reader will see them, and the fret their
      hand is at to make them sound right. Both of them are true whether they
@@ -3515,10 +3601,9 @@
   function shapesFor(song) {
     var used = chordsUsed(song.lines || []);
     var played = playedAs(song);
-    var by = pageOf(played);
     return {
-      shapes: used.map(function (chord) { return transposeChord(chord, by); }),
-      capo: played.capo,
+      shapes: used.map(function (chord) { return transposeChord(chord, played.page); }),
+      capo: capoOf(played),
       used: used,
     };
   }
@@ -3547,6 +3632,22 @@
     requireAuth(function () { go(BASE + "/new"); });
   }
 
+  /* --- AND THE TWO OF THEM STAND BEHIND ONE BUTTON ---------------------------
+     They were two buttons side by side in the bar, a plus and an arrow, and on
+     a phone that is two pictures that both mean "add a song" with nothing on
+     either of them saying which is which. The bar is four pictures wide there
+     and this was two of them spent on one thing.
+
+     So the bar carries the ONE thing, adding a song, and the press asks which
+     way. It is the same panel printing uses, in the same words the empty
+     library offers: typing it out, or handing over a photograph. */
+  function askAdd(anchor) {
+    menuUnder(anchor, [
+      button("להקליד שיר", ICON.plus, "ghost small", function () { closeUnder(); newSong(); }),
+      button("מתמונה או PDF", ICON.upload, "ghost small", function () { closeUnder(); uploadSong(); }),
+    ]);
+  }
+
   /* --- printing, of which there are two --------------------------------------
      A chord sheet and a lyrics sheet are two different pieces of paper for two
      different moments. The chords are for playing from; the words are for the
@@ -3561,33 +3662,62 @@
      gaps closed. Nothing is re-rendered and nothing is re-fetched: the words
      on paper are the words on screen, which is the only way the two cannot
      disagree. The gaps closing is what the gap character was for. */
-  var printMenu = null;
-  var printAnchor = null;
+  /* --- A HANDFUL OF LINES UNDER A BUTTON -------------------------------------
+     The shape the printing choice has had for a while, and it is the shape
+     every small choice in the bar wants: a couple of buttons hanging under the
+     one that was pressed, gone on a press anywhere else, on Escape, and on
+     pressing that button again. One of them is open at a time, because two
+     panels standing over the page at once is a page nobody chose. */
+  var underMenu = null;
+  var underAnchor = null;
 
-  function closePrintMenu() {
-    if (!printMenu) return;
-    printMenu.remove();
-    printMenu = null;
-    document.removeEventListener("pointerdown", printOutside, true);
-    document.removeEventListener("keydown", printEscape, true);
+  function closeUnder() {
+    if (!underMenu) return;
+    underMenu.remove();
+    underMenu = null;
+    if (underAnchor) underAnchor.setAttribute("aria-expanded", "false");
+    underAnchor = null;
+    document.removeEventListener("pointerdown", underOutside, true);
+    document.removeEventListener("keydown", underEscape, true);
   }
 
   /* The button that opened it is not "outside": pressing it again is asking
      for the panel to go away, and closing here would take it away and let the
      click that followed open it straight back up. */
-  function printOutside(event) {
-    if (!printMenu) return;
-    if (printMenu.contains(event.target)) return;
-    if (printAnchor && printAnchor.contains(event.target)) return;
-    closePrintMenu();
+  function underOutside(event) {
+    if (!underMenu) return;
+    if (underMenu.contains(event.target)) return;
+    if (underAnchor && underAnchor.contains(event.target)) return;
+    closeUnder();
   }
 
-  function printEscape(event) {
-    if (event.key === "Escape") closePrintMenu();
+  function underEscape(event) {
+    if (event.key === "Escape") closeUnder();
+  }
+
+  function menuUnder(anchor, rows) {
+    /* pressing the open one is asking for it to shut */
+    var again = underAnchor === anchor;
+    closeUnder();
+    if (again) return;
+
+    underAnchor = anchor;
+    underMenu = el("div", "print-menu");
+    rows.forEach(function (row) { underMenu.appendChild(row); });
+    document.body.appendChild(underMenu);
+
+    var box = anchor.getBoundingClientRect();
+    var width = underMenu.offsetWidth;
+    underMenu.style.top = (box.bottom + 6) + "px";
+    underMenu.style.left = Math.min(Math.max(6, box.right - width), window.innerWidth - width - 6) + "px";
+    anchor.setAttribute("aria-expanded", "true");
+
+    document.addEventListener("pointerdown", underOutside, true);
+    document.addEventListener("keydown", underEscape, true);
   }
 
   function printNow(words) {
-    closePrintMenu();
+    closeUnder();
     document.body.classList.toggle("print-words", !!words);
     /* Put back afterwards however the printing ended, including cancelled, and
        on a timer as well: afterprint is not fired by every browser, and a page
@@ -3602,21 +3732,10 @@
   }
 
   function askPrint(anchor) {
-    if (printMenu) return closePrintMenu();
-
-    printAnchor = anchor;
-    printMenu = el("div", "print-menu");
-    printMenu.appendChild(button("אקורדים", null, "ghost small", function () { printNow(false); }));
-    printMenu.appendChild(button("מילים בלבד", null, "ghost small", function () { printNow(true); }));
-    document.body.appendChild(printMenu);
-
-    var box = anchor.getBoundingClientRect();
-    var width = printMenu.offsetWidth;
-    printMenu.style.top = (box.bottom + 6) + "px";
-    printMenu.style.left = Math.min(Math.max(6, box.right - width), window.innerWidth - width - 6) + "px";
-
-    document.addEventListener("pointerdown", printOutside, true);
-    document.addEventListener("keydown", printEscape, true);
+    menuUnder(anchor, [
+      button("אקורדים", null, "ghost small", function () { printNow(false); }),
+      button("מילים בלבד", null, "ghost small", function () { printNow(true); }),
+    ]);
   }
 
   /* Adding a song, signing in and signing out belong to the library, so they
@@ -3810,13 +3929,14 @@
           go(BASE + "/creators");
         });
       }),
-      /* On a phone the reading is the only way in, so it is the one that gets
-         the solid button. On a desk both are open and the typing leads. */
-      keep("fromPhoto", function () {
-        return button("מתמונה", ICON.upload, "ghost small", uploadSong);
-      }),
+      /* One button for adding a song, and which way in is asked on the press
+         (see askAdd): typing it out and reading it off a photograph are two
+         answers to one question, and the bar asks the question. */
       keep("newSong", function () {
-        return button("שיר חדש", ICON.plus, "small", newSong);
+        var add = button("שיר חדש", ICON.plus, "small", function () { askAdd(add); });
+        add.setAttribute("aria-haspopup", "menu");
+        add.setAttribute("aria-expanded", "false");
+        return add;
       }),
       session(),
     ]);
@@ -5311,6 +5431,139 @@
     return node;
   }
 
+  /* --- A LIST OF THINGS, WRITTEN AS CHIPS -----------------------------------
+     THREE OF THE FACTS ABOUT A SONG ARE LISTS AND ONLY ONE OF THEM WAS DRAWN
+     AS ONE. What kind of song it is was chips from the start, because nobody
+     ever thought a song was one kind; who wrote the words was a text field,
+     which said a song has one writer, and the three people who wrote them went
+     into it as one name with commas in it. They came out the other end as a
+     person: one page, one chip, one name in the library that belongs to
+     nobody.
+
+     So it is one shape, used three times. What is already there stands as
+     chips with a way off each, and the way to add another is one more chip
+     with a plus where the name goes: what a press makes is one more of the
+     things standing beside it, and it says so by looking like them. The field
+     is what the press opens, in its place, and it goes back to being a plus
+     when nothing is being typed in it.
+
+     THREE WAYS TO FINISH TYPING ONE, and it took only the first for a while,
+     which meant a name picked from the suggestions with the mouse was never
+     added at all: choosing from a datalist fires no key. Enter, choosing a
+     suggestion, and walking away from a field with a word left in it all mean
+     the same thing, so all three do it.
+
+     What it does NOT know is what it is a list of. `get` hands it the list,
+     `set` takes the new one, and whether that is a column of text with commas
+     in it or an array of styles is the caller's business. */
+  function chipRow(opts) {
+    var row = el("div", "kinds-field");
+    row.appendChild(el("div", "meta-word", opts.word));
+
+    /* What is on the row wraps, the word in front of it does not */
+    var body = el("div", "kinds-body");
+    var list = el("div", "kinds-list");
+
+    var field = el("input");
+    field.type = "text";
+    field.placeholder = opts.placeholder;
+    field.setAttribute("aria-label", opts.ask);
+
+    var add = el("button", "tag tag-style tag-add", "+");
+    add.type = "button";
+    add.title = opts.ask;
+    add.setAttribute("aria-label", opts.ask);
+
+    /* Finished from what the library already says elsewhere. A plain datalist,
+       so the browser does the filtering, the arrow keys and the touch
+       keyboard, and an unlisted word is still just a word that gets typed. */
+    var known = el("datalist");
+    known.id = opts.listId;
+    field.setAttribute("list", known.id);
+    opts.known().then(function (all) {
+      if (!known.isConnected) return;
+      all.forEach(function (name) {
+        var option = el("option");
+        option.value = name;
+        known.appendChild(option);
+      });
+    });
+
+    function open(yes) {
+      field.hidden = !yes;
+      add.hidden = !!yes;
+      if (yes) field.focus();
+    }
+    add.addEventListener("click", function () { open(true); });
+
+    function show() {
+      list.textContent = "";
+      opts.get().forEach(function (name) {
+        var chip = el("span", "tag tag-style");
+        chip.appendChild(el("span", null, name));
+        var off = el("button", "tag-x", "×");
+        off.type = "button";
+        off.title = opts.off;
+        off.addEventListener("click", function () {
+          opts.set(opts.get().filter(function (other) { return other !== name; }));
+          show();
+          opts.changed();
+        });
+        chip.appendChild(off);
+        list.appendChild(chip);
+      });
+    }
+
+    function take() {
+      var name = field.value.trim();
+      if (!name) return;
+      opts.set(opts.get().concat([name]));
+      field.value = "";
+      show();
+      opts.changed();
+    }
+
+    /* Enter keeps the field open, because a song that is being given one of
+       these is usually being given two: the word lands as a chip beside the
+       others and the caret is still where the next one goes. Escape is the way
+       out with nothing typed, and it must not reach the dialog, or leaving the
+       field would shut the whole panel. */
+    field.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        event.preventDefault();
+        field.value = "";
+        return open(false);
+      }
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      take();
+    });
+    /* `change` is what a datalist choice fires, and what a field left with a
+       word in it fires on the way out. Both are somebody having finished
+       saying one. */
+    field.addEventListener("change", take);
+    field.addEventListener("blur", function () { take(); open(false); });
+
+    body.appendChild(list);
+    body.appendChild(field);
+    body.appendChild(add);
+    row.appendChild(body);
+    row.appendChild(known);
+    open(false);
+    show();
+
+    return {
+      row: row,
+      /* the chips again, for whoever changed the song from somewhere else */
+      show: show,
+      /* a word left half typed in the field is a word somebody meant: leaving
+         the panel counts as having finished saying it, the same as walking out
+         of the field does */
+      done: function () { take(); open(false); },
+    };
+  }
+
   /* THE CARD SAYS WHAT THE SONG IS, AND NOTHING THE PAGE AROUND IT ALREADY
      SAID. It took an `extra` for a while, chips the PAGE had to add: on a
      creator's page every card carried כותב or מלחין or both, which of the two
@@ -5669,7 +5922,13 @@
      than claiming the lot.
 
      Renaming somebody to a name the library already has MERGES the two, and
-     that is not a mishap, it is the commonest reason to do this at all. */
+     that is not a mishap, it is the commonest reason to do this at all. On a
+     song that credits both of them the two become one name in one place on the
+     list, because a list of names does not hold the same one twice.
+
+     THE OTHER NAMES ON THE SONG ARE NOT TOUCHED. A credit is a list of people
+     now, so this writes the new name exactly where the old one stood in it and
+     leaves whoever else is on the row where they are. */
   function renameCreator(was, now) {
     var songs = songsBy(state.songs || [], was);
     var done = 0;
@@ -5677,7 +5936,11 @@
     return Promise.all(songs.map(function (song) {
       var patch = {};
       CREDITS.forEach(function (c) {
-        if (String(song[c.field] || "").trim() === was) patch[c.field] = now;
+        var names = people(song[c.field]);
+        if (names.indexOf(was) < 0) return;
+        patch[c.field] = peopleSaid(names.map(function (name) {
+          return name === was ? now : name;
+        }));
       });
       if (!Object.keys(patch).length) return null;
       return db.update(song.id, patch).then(function (row) {
@@ -5687,7 +5950,7 @@
         done++;
         /* the row in hand follows the write, so nothing on the page is
            reading a name the database no longer holds */
-        Object.keys(patch).forEach(function (field) { song[field] = now; });
+        Object.keys(patch).forEach(function (field) { song[field] = patch[field]; });
       }).catch(function () { /* counted by not being counted */ });
     })).then(function () { return { done: done, of: songs.length }; });
   }
@@ -5882,7 +6145,7 @@
      Nothing to say is nothing to open, so a song with neither hands back
      nothing at all and the button is never built (see renderSong). */
   function songTold(song) {
-    var said = creditsOnce(song);
+    var said = credits(song);
     var kinds = styles(song);
     /* The owner counts, even though the name behind it has not arrived yet: a
        song with no credits and no kind still has somebody who put it there,
@@ -5910,13 +6173,28 @@
       box.appendChild(line);
     }
 
-    /* ONE LINE PER PERSON, with both words on it where one person did both:
-       "מילים ולחן: תמי בן הדר" and never the same name twice under two
-       headings, which is the two columns of the table read out loud. */
-    said.forEach(function (group) {
-      var word = group.parts.map(function (c) { return c.label; }).join(" ו");
-      var who = el("a", "told-said", group.name);
-      row(word, opens(who, BASE + "/creator/" + encodeURIComponent(group.name)));
+    /* ONE ROW PER CREDIT, AND ONE CHIP PER PERSON ON IT. It was one line per
+       person, with the words gathered onto it where somebody did both, which
+       reads well for the one song in ten that is one person's and says nothing
+       at all about the other nine: the words of a song are three people's and
+       the tune is two of them, and a panel that answers "who wrote this" with
+       one line saying "מילים: דביר כהן, ליאת ציון, ינון דר" is a panel naming
+       a person nobody has ever heard of.
+
+       So each of them is a thing on its own, the way a style is, and a press
+       on any one of them is that person's page. Somebody who did both stands
+       on both rows, which is what the two rows are for: the question is not
+       "who was involved", it is "who wrote the words" and "who wrote the
+       tune". */
+    CREDITS.forEach(function (c) {
+      var names = people(song[c.field]);
+      if (!names.length) return;
+      var who = el("div", "told-tags");
+      names.forEach(function (name) {
+        var chip = el("a", "tag tag-style", name);
+        who.appendChild(opens(chip, BASE + "/creator/" + encodeURIComponent(name)));
+      });
+      row(c.label, who);
     });
 
     if (kinds.length) {
@@ -6047,16 +6325,18 @@
     /* TWO NUMBERS, AND THEY ARE NOT THE SAME NUMBER, but they are about the
        same thing: this reader and this song (see keptFor).
 
-       `sung` is where the voice is. `myCapo` is where the hand is. `semis`,
-       which everything below draws with, is neither: it is the two of them
-       subtracted (see pageOf), and it is written to in exactly one place.
+       `semis` is the page: the distance every chord below is drawn at, and
+       what the transposition buttons move. `sung` is what comes out of the
+       guitar, which the transposition does NOT move. `myCapo` is neither of
+       them, it is the gap between them (see capoOf), and it is never assigned
+       from anywhere but showMyCapo.
 
        A song still coming out of the machine, or read out of one and not yet
        checked, gets nothing worked out for it at all (see playedAs). */
     var played = playedAs(song);
+    var semis = played.page;
     var sung = played.sung;
-    var myCapo = played.capo;
-    var semis = pageOf(played);
+    var myCapo = capoOf(played);
 
     /* the size follows the reader from song to song. The key does not: it
        belongs to the one song it was chosen for. */
@@ -6101,10 +6381,12 @@
     headTop.appendChild(title);
     head.appendChild(headTop);
 
-    var byFields = [];
+    /* the three rows of chips in the panel: who wrote the words, who wrote the
+       tune, and what kind of song it is */
+    var metaFields = [];
     /* set below, with the things they keep in step with the song */
     var showState = null;
-    var showStyles = null;
+    var showMeta = null;
     var statusChip = null;
 
     /* THREE, AND A SONG IS IN ONE OF THEM. They are booleans in the database
@@ -6163,162 +6445,77 @@
          there is room and the word is written out in full, so the picture
          beside it is a picture of the word next to the word. Three of them
          down the side of a panel of three fields is a column of decoration in
-         the one place the words already fit. */
-      byFields = CREDITS.map(function (c) {
-        var label = el("label");
-        var word = el("span", "meta-word", c.label);
-        label.appendChild(word);
-        var input = el("input");
-        input.type = "text";
-        input.value = song[c.field] || "";
-        input.addEventListener("input", function () { song[c.field] = input.value; mark(); });
-        label.appendChild(input);
-        meta.appendChild(label);
-        return input;
-      });
+         the one place the words already fit.
 
-      /* Finished from the names already on the other songs. A plain datalist,
-         so the browser does the filtering, the arrow keys and the touch
-         keyboard, and an unlisted name is still just a name that gets typed. */
-      var known = el("datalist");
-      known.id = "credit-names";
-      byFields.forEach(function (input) { input.setAttribute("list", known.id); });
-      meta.appendChild(known);
-      db.names().then(function (names) {
-        if (!known.isConnected) return;
-        names.forEach(function (name) {
-          var option = el("option");
-          option.value = name;
-          known.appendChild(option);
+         AND ALL THREE OF THEM ARE LISTS. Who wrote the words was one field
+         with one line under it, which is a form saying a song has a writer,
+         and what people put in it is what the sheet says: three names with
+         commas between them. The library then read that back as a person, gave
+         them a page and a chip, and the three who are actually there had
+         neither. It is chips now, the same shape the styles beside it have
+         always had, one per person (see chipRow and `people`). */
+      function metaChanged() {
+        mark();
+        /* what the button in the bar says is this form's own reflection, so
+           everything that writes into the song writes into it too */
+        if (showFacts) showFacts();
+      }
+
+      /* asked once and handed to both rows that want it */
+      var namesAsked = null;
+      function knownNames() {
+        return (namesAsked || (namesAsked = db.names()));
+      }
+
+      metaFields = CREDITS.map(function (c) {
+        return chipRow({
+          word: c.label,
+          /* the person and not the part of the song: what is typed into the
+             field is a כותב, and what the row is called is מילים */
+          placeholder: c.who,
+          ask: "להוסיף " + c.who + " לשיר",
+          off: "להוריד את השם",
+          /* One list of suggestions per row, because two elements cannot share
+             an id. What fills them is one pool and one request: whoever wrote
+             the words of one song wrote the tune of another, and asking the
+             library twice for the same answer is one round trip wasted on
+             every song opened. */
+          listId: "credit-" + c.kind,
+          known: knownNames,
+          get: function () { return people(song[c.field]); },
+          set: function (list) { song[c.field] = peopleSaid(list); },
+          changed: metaChanged,
         });
       });
 
       /* --- what kind of song it is ---
-         A row of what it already is, each with a way off, and a field to add
-         another. Not a list to choose from: the vocabulary of a library is
-         discovered over a year of adding songs to it, so what is offered is
-         every style the library already uses, and a new one is just typed.
+         The same row a third time. Not a list to choose from: the vocabulary
+         of a library is discovered over a year of adding songs to it, so what
+         is offered is every style the library already uses, and a new one is
+         just typed. */
+      metaFields.push(chipRow({
+        /* One word, like the two above it, and singular like them: the row
+           takes several and so does "לחן". */
+        word: "סגנון",
+        placeholder: "סגנון חדש",
+        ask: "להוסיף סגנון לשיר",
+        off: "להוריד את הסגנון",
+        listId: "song-styles",
+        known: function () { return db.styles(); },
+        get: function () { return styles(song); },
+        set: function (list) { song.styles = tidyStyles(list); },
+        changed: metaChanged,
+      }));
 
-         THREE WAYS TO FINISH TYPING ONE, and it took only the first for a
-         while, which meant a style picked from the suggestions with the mouse
-         was never added at all: choosing from a datalist fires no key. Enter,
-         choosing a suggestion, and walking away from a field with a word left
-         in it all mean the same thing, so all three do it. */
-      var kindsRow = el("div", "kinds-field");
-      /* One word, like the two beside it, and singular like them: the field
-         takes several and so does "לחן". Bare, like them, for the same reason:
-         a tag drawn next to the word "סגנון" says what the word says. */
-      var kindsLabel = el("div", "meta-word", "סגנון");
-      /* The styles and the field that adds one, held together: they wrap
-         between themselves and never take the word onto a second line with
-         them, which is what used to happen the moment a song had two styles. */
-      var kindsBody = el("div", "kinds-body");
-      var kindsList = el("div", "kinds-list");
-      var kindsInput = el("input");
-      kindsInput.type = "text";
-      kindsInput.placeholder = "סגנון חדש";
-      kindsInput.setAttribute("aria-label", "להוסיף סגנון לשיר");
+      metaFields.forEach(function (f) { meta.appendChild(f.row); });
 
-      /* --- ONE MORE OF THESE, AS ONE OF THESE ---------------------------------
-         Adding a style was a field standing open at the end of the row with
-         "להוסיף סגנון" written in it in grey, which is a second shape on a row
-         whose whole content is chips, and a line under empty space asking to be
-         filled in on a song that may well have every style it needs.
-
-         So it is a chip, the same chip the styles themselves are, with a plus
-         where their name would be: what a press adds is one more of the things
-         standing beside it, and it says so by looking like them. The field is
-         what the press opens, in its place, and it goes back to being a plus
-         when there is nothing being typed in it. */
-      var kindsAdd = el("button", "tag tag-style tag-add", "+");
-      kindsAdd.type = "button";
-      kindsAdd.title = "להוסיף סגנון";
-      kindsAdd.setAttribute("aria-label", "להוסיף סגנון לשיר");
-
-      function askKind(open) {
-        kindsInput.hidden = !open;
-        kindsAdd.hidden = !!open;
-        if (open) kindsInput.focus();
-      }
-
-      kindsAdd.addEventListener("click", function () { askKind(true); });
-
-      var kindsKnown = el("datalist");
-      kindsKnown.id = "song-styles";
-      kindsInput.setAttribute("list", kindsKnown.id);
-      db.styles().then(function (all) {
-        if (!kindsKnown.isConnected) return;
-        all.forEach(function (name) {
-          var option = el("option");
-          option.value = name;
-          kindsKnown.appendChild(option);
-        });
-      });
-
-      showStyles = function () {
-        kindsList.textContent = "";
-        styles(song).forEach(function (name) {
-          var chip = el("span", "tag tag-style");
-          chip.appendChild(el("span", null, name));
-          var off = el("button", "tag-x", "×");
-          off.type = "button";
-          off.title = "להוריד את הסגנון";
-          off.addEventListener("click", function () {
-            song.styles = styles(song).filter(function (other) { return other !== name; });
-            showStyles();
-            mark();
-          });
-          chip.appendChild(off);
-          kindsList.appendChild(chip);
-        });
+      /* The whole form again, for a change that came from somewhere other than
+         the form: an undo is the song being put back to what it was, and the
+         chips are drawn from the song. */
+      showMeta = function () {
+        metaFields.forEach(function (f) { f.show(); });
+        showFacts();
       };
-      showStyles();
-
-      function addKind() {
-        var name = kindsInput.value.trim();
-        if (!name) return;
-        song.styles = tidyStyles(styles(song).concat([name]));
-        kindsInput.value = "";
-        showStyles();
-        mark();
-      }
-
-      /* Enter keeps the field open, because a song that is being given a style
-         is usually being given two: the word lands as a chip beside the others
-         and the caret is still where the next one goes. Escape is the way out
-         with nothing typed, the same key that would leave the panel. */
-      kindsInput.addEventListener("keydown", function (event) {
-        if (event.key === "Escape") {
-          /* and it must not reach the dialog, or leaving the field would shut
-             the whole panel */
-          event.stopPropagation();
-          event.preventDefault();
-          kindsInput.value = "";
-          return askKind(false);
-        }
-        if (event.key !== "Enter") return;
-        event.preventDefault();
-        addKind();
-      });
-      /* `change` is what a datalist choice fires, and what a field left with a
-         word in it fires on the way out. Both are somebody having finished
-         saying one style. */
-      kindsInput.addEventListener("change", addKind);
-      /* Walking away from it says the same, and then the row goes back to what
-         it looks like when nobody is typing in it: chips, and a plus. */
-      kindsInput.addEventListener("blur", function () {
-        addKind();
-        askKind(false);
-      });
-
-      kindsBody.appendChild(kindsList);
-      kindsBody.appendChild(kindsInput);
-      kindsBody.appendChild(kindsAdd);
-      askKind(false);
-      kindsRow.appendChild(kindsLabel);
-      kindsRow.appendChild(kindsBody);
-      kindsRow.appendChild(kindsKnown);
-      meta.appendChild(kindsRow);
 
       /* THE PANEL THE FORM OPENS IN. Built here, with the form, and put on the
          page shut: a dialog that nobody has opened draws nothing, and keeping
@@ -6339,7 +6536,14 @@
       metaBox.appendChild(el("p", "muted", "נשמר תוך כדי הכתיבה."));
       metaBox.appendChild(meta);
       var metaDone = el("div", "dlg-actions");
-      metaDone.appendChild(button("סיום", null, "ghost", function () { metaPanel.close(); }));
+      /* AND THIS IS WHAT THE PANEL OPENS ONTO. A dialog with nothing marked
+         hands the focus to the first thing in it that can take it, which here
+         is the × on the first person's chip: a ring around a way of removing
+         somebody, and a stray Enter doing it. The way out is the safe thing to
+         land on, and it is what a reader of this panel wants next anyway. */
+      var doneBtn = button("סיום", null, "ghost", function () { metaPanel.close(); });
+      doneBtn.autofocus = true;
+      metaDone.appendChild(doneBtn);
       metaBox.appendChild(metaDone);
       metaPanel.appendChild(metaBox);
       /* The dark behind it. A press lands on the dialog itself only where the
@@ -6347,13 +6551,12 @@
       metaPanel.addEventListener("click", function (event) {
         if (event.target === metaPanel) metaPanel.close();
       });
-      /* A style left half typed in the field is a style somebody meant: the
-         way out of the panel counts as having finished saying it, the same as
-         walking out of the field does. */
+      /* A name or a style left half typed in a field is one somebody meant:
+         the way out of the panel counts as having finished saying it, the same
+         as walking out of the field does. */
       metaPanel.addEventListener("close", function () {
-        addKind();
-        askKind(false);
-        facts.classList.remove("is-open");
+        metaFields.forEach(function (f) { f.done(); });
+        factsBtn.classList.remove("is-open");
       });
 
       /* The direction used to be one button up here, and it belonged to the
@@ -6379,9 +6582,14 @@
       statusChip = el("button", "status-chip");
       statusChip.type = "button";
       statusChip.addEventListener("click", function () { askState(statusChip); });
-      /* It is put in the top bar further down, with the rest of what is about
-         the page rather than about the song: what state it is in, how the
-         writing is going, and the ways back. */
+      /* IT STANDS WHERE THE READER'S PAGE PUTS IT, beside the song's own facts
+         and not up among the ways back. It was in the top bar, and a chip
+         appearing there was the whole row rearranging itself under the press
+         that turns the editor on: the glass, the tick and the printer each
+         moved a word's width sideways between reading a song and writing it,
+         which is the two states of one page disagreeing about where its
+         buttons are. Reading is the state to agree with, since it is the one
+         nearly every song is opened in. */
 
       showState = function () {
         var was = songState();
@@ -6411,22 +6619,35 @@
          So it is the picture that means "more about this": one press, the same
          panel. What it says is in the hover, which costs no room at all and
          still answers "did I fill this in" without opening anything. */
-      facts = iconBtn(ICON.info, "מי כתב, ואיזה סוג", function () {
-        facts.classList.add("is-open");
+      var factsBtn = iconBtn(ICON.info, "מי כתב, ואיזה סוג", function () {
+        factsBtn.classList.add("is-open");
         metaPanel.showModal();
-        if (byFields[0]) byFields[0].focus();
+        /* AND NOTHING IN IT IS OPEN FOR TYPING. It used to open with the caret
+           in the first field, which was right while a field was the only way
+           to say anything here. It is three rows of chips now, and a song that
+           gets opened here is usually one that is already filled in: what the
+           panel is for is reading what it says, and taking one chip off as
+           often as adding one. So it opens at rest, and a phone does not put a
+           keyboard over it for a question nobody asked. */
       });
-      facts.classList.add("song-info");
+      factsBtn.classList.add("song-info");
+
+      /* The state and the button, in that order, which is the row the reader's
+         page shows in the same place: what this song is right now, and the way
+         into everything else it says about itself. */
+      facts = el("div", "song-facts");
+      facts.appendChild(statusChip);
+      facts.appendChild(factsBtn);
 
       var showFacts = function () {
-        var said = creditsOnce(song).map(creditSaid);
+        var said = creditsLine(song);
         var kinds = styles(song);
         /* A song with none of them is asked, in the words the panel opens with:
            the button is the way in either way, and what changes is whether it
            is telling you something or asking you for it. */
         var words = said.concat(kinds).join("  •  ") || "מי כתב, ואיזה סוג";
-        facts.title = words;
-        facts.setAttribute("aria-label", words);
+        factsBtn.title = words;
+        factsBtn.setAttribute("aria-label", words);
       };
 
       /* --- AND THE FORM IS A PANEL, NOT A ROW OF THE PAGE ---------------------
@@ -6447,13 +6668,6 @@
          thing left to do is to be finished. It is opened by the button above,
          which is the whole of what is left of the form on the page. */
 
-      /* What the button says of itself is the form's own reflection, so
-         everything that writes into the song writes into it too. */
-      var wasShowStyles = showStyles;
-      showStyles = function () { wasShowStyles(); showFacts(); };
-      byFields.forEach(function (input) {
-        input.addEventListener("input", showFacts);
-      });
       showFacts();
     } else {
       /* Reading it, the credits are a sentence rather than a form, and it
@@ -6538,7 +6752,7 @@
            the panel in one line: the answer without opening anything. A song
            that has nothing but an owner keeps the words the button was made
            with, because the one line it could say has not arrived yet. */
-        var inOneLine = creditsOnce(song).map(creditSaid).concat(styles(song));
+        var inOneLine = creditsLine(song).concat(styles(song));
         if (inOneLine.length) {
           info.title = inOneLine.join("  •  ");
           info.setAttribute("aria-label", info.title);
@@ -6738,7 +6952,7 @@
       return ctl;
     }
 
-    /* --- THE KEY IT IS SUNG IN -------------------------------------------------
+    /* --- THE CHORDS ON THE PAGE ------------------------------------------------
        Two buttons and no number. The number said how far the page was from a
        key nobody can hear, and the answer to "which key am I in" was already on
        the page, in the chords, in letters twice the size. A nought beside the
@@ -6748,17 +6962,21 @@
        There is nothing to press it into place with either. Making the key on
        screen the song's own was a button behind that number, for a decision
        that turns out not to need making: what the song is stored in is a
-       detail of the file now, and what each person sings it in is kept for
-       each person (see keptSung). Nobody has to agree with anybody.
+       detail of the file now, and what each person plays it in is kept for
+       each person (see keptPage). Nobody has to agree with anybody.
 
-       THIS IS THE ONE THAT CHANGES THE SOUND, and it is the only one. The capo
-       beside it moves the same chords under the same voice. */
+       AND THE CAPO COMES WITH IT. Moving the chords is not asking to be heard
+       differently, it is asking for different shapes, so the fret takes up the
+       distance and the song comes out where it came out before: down one, capo
+       up one. Nothing here does that on purpose. The fret is the gap between
+       the page and the singing (see capoOf), this button moves one of the two,
+       and the gap is a gap. */
     var pitch = control(
-      ICON.pitch, "סולם", null,
-      function () { moveSung(-1); },
-      function () { moveSung(1); }
+      ICON.pitch, "טרנספוזיציה", null,
+      function () { moveSemis(-1); },
+      function () { moveSemis(1); }
     );
-    pitch.title = "באיזה סולם לשיר את השיר. משנה את הצליל, והקפו לא זז.";
+    pitch.title = "מזיז את האקורדים על הדף, והקפו זז איתם כדי שהשיר יישמע אותו דבר.";
     tools.appendChild(pitch);
 
     /* THE SIZE IS NOT HERE ANY MORE. It was two buttons and a number, three
@@ -6766,16 +6984,19 @@
        one honest answer: bigger, until it is big enough. And every machine
        already has a gesture that means exactly that. See zoomBy below. */
 
-    /* WHERE THE CAPO GOES, AND THIS IS THE ONE TO PLAY WITH. It moves the
-       chords on the page and it does not move the singing by so much as a
-       comma: clamp one fret higher and every shape on the page comes down one,
-       and the song still comes out of the guitar in the key it was coming out
-       in a second ago. That is not a rule being kept anywhere, it is what
-       pageOf subtracts.
+    /* WHERE THE CAPO GOES, WHICH IS MOSTLY NOT PRESSED AT ALL. It answers to
+       the transposition beside it: that is where the fret comes from for
+       anybody who is simply looking for a shape they can hold, and the number
+       here is the whole of what they need out of it, WHERE DO I PUT IT.
 
-       So the number here is the answer to the only question a capo asks:
-       WHERE DO I PUT IT. Roll it up and down and watch the barre chords turn
-       into shapes you own, with your voice standing still the whole time.
+       Pressed by hand it means the other thing, and this is the one place the
+       two numbers part company. Moving the page is "different shapes, same
+       song"; moving the FRET while the page stands still is "same shapes,
+       higher song", which is what somebody means when they clamp at 2 and play
+       the chords in front of them. So it moves the singing and it does not
+       move the transposition, which is exactly what was asked for, and it is
+       not a special case: the fret is the gap, and pinning the gap while one
+       side holds still moves the other side.
 
        A fret, so zero or up, and zero means no capo, which is a real answer
        and the usual one. Up to MAX_CAPO, which is where easyVersion stops
@@ -6786,13 +7007,10 @@
        while it was a private note about somebody's hand; it changes the page,
        so it belongs to whoever is reading the page.
 
-       AND IT STAYS FOLDED, which turns out to be the right shape for a control
-       you sit and roll rather than the wrong one. The FRET is on the dial and
-       never hidden: what folds is only less and more. Press once and they come
-       out underneath at the size a finger wants, half again as big as anything
-       on the strip has room to be, and they stay out while you press them:
-       drawing the song again rebuilds the sheet and leaves the strip standing,
-       so the shapes change under the panel with the panel still open. */
+       AND IT STAYS FOLDED, which turns out to be the right shape for it. The
+       FRET is on the dial and never hidden, which matters more here than
+       anywhere, because the transposition moves it and a number that moves has
+       to be readable: what folds is only less and more. */
     tools.appendChild(el("span", "sep"));
     var myValue = el("span", "val");
     var capoCtl = control(
@@ -6801,28 +7019,32 @@
       function () { setMyCapo(myCapo + 1); },
       true
     );
-    capoCtl.title = "באיזה סריג לשים את הקפו. משנה את האקורדים על הדף, לא את הצליל.";
+    capoCtl.title = "באיזה סריג הקפו. זז לבד עם הטרנספוזיציה, ואם מזיזים אותו ידנית השיר נשמע גבוה או נמוך יותר.";
     tools.appendChild(capoCtl);
-    showMyCapo();
 
+    /* NOT ASSIGNED, WORKED OUT, every time and from the same subtraction the
+       rest of the app uses. myCapo is a cache of one expression and this is
+       the only thing allowed to fill it, which is what stops a fret on screen
+       from ever being a fret nothing else agrees with. */
     function showMyCapo() {
+      myCapo = capoOf({ page: semis, sung: sung });
       myValue.textContent = String(myCapo);
     }
 
-    /* Kept where the singing is kept, in this browser, under this reader and
-       this song: one press, one write, no network to wait on. */
+    /* PINNING THE GAP. There is no fret to write down, so what a press on this
+       actually decides is the singing: hold the page still, ask for fret N,
+       and the song has to come out N above the shapes on it.
+
+       Off the ends of the neck it does nothing at all, rather than writing a
+       key nobody can reach with a capo. */
     function setMyCapo(next) {
-      var was = myCapo;
-      myCapo = Math.max(0, Math.min(next, MAX_CAPO));
-      if (myCapo === was) return;
-      showMyCapo();
-      keepFor(song.id, "c", myCapo);
-      /* AND THE SINGING IS WRITTEN DOWN WITH IT, once, the first time either
-         is touched. Until now this reader had nothing kept for this song and
-         the app was answering for them; the moment they move a fret, the key
-         they are singing in is their answer too, and a page worked out from
-         one chosen number and one guessed one is a page nobody chose. */
+      var fret = Math.max(0, Math.min(next, MAX_CAPO));
+      if (fret === myCapo) return;
+      sung = semis + fret;
       keepFor(song.id, "s", sung);
+      /* and the page is written down with it, so a reader who has now chosen
+         one of the two is not still being answered for on the other */
+      keepFor(song.id, "p", semis);
       repage();
     }
 
@@ -6851,15 +7073,20 @@
     undoBtn.hidden = true;
     revertBtn.hidden = true;
 
-    /* EVERYTHING THAT IS ABOUT THE PAGE GOES TO THE BAR, and the row over the
-       song is left holding only the three things that change what you are
-       looking at. Deleting the song, taking a change back, taking all of them
-       back, and the word saying where the writing got to: none of those is a
-       property of the song on screen, they are what is being done to it.
+    /* WHAT IS BEING DONE TO THE SONG GOES TO THE BAR, and the row over the
+       song is left holding only what changes what you are looking at. Deleting
+       it, taking a change back, taking all of them back: none of those is a
+       property of the song on screen.
+
+       The word saying what state it is in is not one of these and is not here.
+       It is a FACT about the song rather than something being done to it, so
+       it stands with the rest of them, in the place the reader's page shows it
+       (see the chip): the same page in its two states should not move its
+       buttons about when you start writing on it.
 
        Inserted at the START of the bar, which on a page that runs right to
-       left is its right hand end, in the order they are read: how it is going,
-       then the ways back, then the way to be rid of it. */
+       left is its right hand end, in the order they are read: the ways back,
+       then the way to be rid of it. */
     if (editing) {
       var topBar = document.getElementById("topActions");
       var mine = [];
@@ -6888,7 +7115,10 @@
           pastBtn.setAttribute("aria-label", pastBtn.title);
         });
       }
-      mine.push(revertBtn, undoBtn, statusChip);
+      /* The state is not among them any more: it stands with the song's own
+         facts, where the reader's page keeps it (see the chip). What is left
+         here is only what is being DONE to the song. */
+      mine.push(revertBtn, undoBtn);
       mine.forEach(function (node) { topBar.insertBefore(node, topBar.firstChild); });
     }
     app.appendChild(strip);
@@ -7066,16 +7296,11 @@
       }, soon ? 60 : 500);
     }
 
-    /* THE ONLY PLACE `semis` IS EVER ASSIGNED, and it is not a decision, it is
-       a subtraction (see pageOf). Both controls end here, which is why neither
-       of them can drift away from the other: there is no second copy of the
-       answer to go stale.
-
-       Not wrapped, because it does not need to be. It runs from -11 - MAX_CAPO
-       to 11 at worst, and shiftRoot takes any integer modulo twelve. Wrapping
-       it here would be a second opinion about a number nobody reads. */
+    /* Both controls end here: whichever of the two numbers was written, the
+       fret is read off them again and the song is drawn again. Which is the
+       whole reason the fret can never be caught disagreeing with the page. */
     function repage() {
-      semis = pageOf({ sung: sung, capo: myCapo });
+      showMyCapo();
       draw();
     }
 
@@ -7084,24 +7309,29 @@
        pressing the other button eleven times.
 
        PRESSING IS CHOOSING. Whoever moves the song has just said where they
-       sing it, and they are the same person with the same voice tomorrow, so
+       play it, and they are the same person with the same hands tomorrow, so
        it is kept and the song opens there next time. Kept on the press and not
        on the drawing, because the app draws its own guess at the easy version
        too, and a guess that writes itself down is a guess nobody can tell from
        an answer.
 
-       THE CAPO DOES NOT MOVE. Somebody who wants the song higher wants it
-       higher out of the guitar, and taking a fret off their neck to pay for it
-       would leave the song exactly where it was. Their hand is where they put
-       it, and the shapes on the page go up with the voice. */
-    function moveSung(by) {
-      var next = sung + by;
-      sung = next > 11 ? -11 : next < -11 ? 11 : next;
+       THE SINGING IS NOT TOUCHED, and that is what makes the capo move: the
+       fret is the gap between the two, and this widens it. Down one, capo up
+       one, and the song comes out where it came out before.
+
+       PAST THE END OF THE NECK THE FRET STOPS AND THE SINGING GIVES, which is
+       the honest answer and not a wall: a page seven frets below its key is
+       already at the top of what a capo can do, and the press after that is
+       somebody asking for the song lower. It is still perfectly reversible,
+       because nothing was counted while the fret sat at its end. Press back up
+       and the same subtraction gives the same fret it gave on the way down. */
+    function moveSemis(by) {
+      var next = semis + by;
+      semis = next > 11 ? -11 : next < -11 ? 11 : next;
+      keepFor(song.id, "p", semis);
+      /* and the singing is written down with it, so a reader who has now
+         chosen one of the two is not still being answered for on the other */
       keepFor(song.id, "s", sung);
-      /* AND THE FRET IS WRITTEN DOWN WITH IT, the mirror of setMyCapo: until
-         one of the two is touched the app is answering for this reader, and a
-         page half chosen and half guessed is a page nobody chose. */
-      keepFor(song.id, "c", myCapo);
       repage();
     }
 
@@ -7411,13 +7641,14 @@
       song.published = !!was[2];
 
       if (title.textContent !== song.title) title.textContent = song.title;
-      byFields.forEach(function (input, index) { input.value = body[1][index] || ""; });
       /* WHAT THE CHIP SAYS IS PART OF THE STATE, and this line used to call
          something that no longer exists: it threw here, before the song was
          drawn, and every undo went nowhere. Nothing about the stack was wrong,
          which is why it looked so much like the stack. */
       if (showState) showState();
-      if (showStyles) showStyles();
+      /* the names and the kinds are chips drawn from the song, so putting the
+         song back is the whole of putting them back */
+      if (showMeta) showMeta();
 
       draw();
       if (where >= 0 && song.lines.length) {
@@ -9752,8 +9983,8 @@
       normalizeLines(v.lines, v.dir)) : null, !before)];
     var many = lineCount(v);
     said.push(many === 1 ? "שורה אחת" : many + " שורות");
-    var by = creditsOnce(v);
-    if (by.length) said.push(by.map(creditSaid).join(", "));
+    var by = creditsLine(v);
+    if (by.length) said.push(by.join("  •  "));
     styles(v).forEach(function (kind) { said.push(kind); });
     what.appendChild(el("div", "a", said.join("  •  ")));
     box.appendChild(what);
@@ -10379,8 +10610,8 @@
         var b = el("button", "pool-row" + (inside[song.id] ? " is-in" : ""));
         b.type = "button";
         b.appendChild(el("span", "pool-t", song.title));
-        var by = credits(song);
-        if (by.length) b.appendChild(el("span", "by", by.map(function (c) { return c.name; }).join(", ")));
+        var by = creditNames(song);
+        if (by.length) b.appendChild(el("span", "by", by.join(", ")));
         b.appendChild(el("span", "grow"));
         b.appendChild(el("span", "pool-mark", inside[song.id] ? "באירוע" : "הוספה"));
         b.addEventListener("click", function () { toggle(song); });

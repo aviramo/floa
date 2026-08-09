@@ -1,25 +1,32 @@
 /* Exercises the pair a reader keeps for a song, straight out of the shipped
-   app.js: which key they sing it in and where the capo goes, and the one
-   subtraction that turns the two of them into a page.
+   app.js: the chords printed on the page and the key the song comes out in,
+   and the one subtraction that turns those two into a fret.
 
-   Two things are worth a test here and neither can be read off the screen.
+   Three things are worth a test here and none of them can be read off a
+   screenshot.
 
-   THE FIRST IS THAT THE CAPO CANNOT MOVE THE SINGING. That is the whole of
-   what was asked for, and it is not enforced anywhere: it falls out of pageOf
-   being a subtraction. A test is what notices if anybody ever makes it a
-   decision instead.
+   THE FRET FOLLOWS THE TRANSPOSITION. Move the page down and the capo climbs
+   to pay for it, so the song sounds the same. That is what was asked for.
 
-   THE SECOND IS THE MIGRATION, which gets exactly one chance. Every reader has
-   a pair already written into their browser under the old meaning, where "k"
-   moved the page and "c" was a note beside it, and they will never be asked
-   about it. Read it wrong and every song they have ever set opens in a key
-   they did not choose. */
+   AND IT COMES BACK. The reason the fret is a leftover rather than a number of
+   its own is that a stored fret would be clamped at each end and would lose
+   count: three presses up against the ceiling and three back down would leave
+   the page where it started and the fret somewhere else. A subtraction cannot
+   do that, and this is where anybody who turns it back into a stored number
+   will find out.
+
+   AND THE MIGRATION GETS ONE CHANCE. Every reader already has a pair written
+   into their browser under the old meaning, where "k" moved the page and "c"
+   was a note beside it, and none of them will ever be asked about it. Read it
+   wrong and every song they have set opens somewhere they did not choose. */
 import { readFileSync } from "node:fs";
 
 const src = readFileSync("businesses/chords/public/assets/app.js", "utf8");
 const start = src.indexOf('var KEPT_OF = "chords.song.";');
 const end = src.indexOf("function setBusy(message)");
 if (start < 0 || end < 0) throw new Error("could not find the kept-pair block");
+
+const MAX_CAPO = 7;
 
 /* Enough of a browser to hold what a reader said, and enough of the model to
    let the block run: the block is about arithmetic and storage, so the chord
@@ -33,11 +40,11 @@ const localStorage = {
 const api = new Function(
   "localStorage", "auth", "MAX_CAPO", "chordsUsed", "easyVersion", "transposeChord",
   src.slice(start, end) +
-  "\nreturn { keptFor, keepFor, keptCapo, keptSung, saidAnything, playedAs, pageOf, shapesFor };"
+  "\nreturn { keptFor, keepFor, keptPage, keptSung, saidAnything, playedAs, capoOf, shapesFor };"
 )(
   localStorage,
   { session: null },
-  7,
+  MAX_CAPO,
   (lines) => lines,
   /* a stand-in: four chords are the song that wants a capo at 3 */
   (chords) => ({ capo: chords.length === 4 ? 3 : 0, shapes: chords, hard: 0 }),
@@ -51,8 +58,8 @@ const eq = (label, got, want) => {
   if (!ok) { console.log(`       got  ${JSON.stringify(got)}\n       want ${JSON.stringify(want)}`); failed++; }
 };
 
-/* The page is compared modulo twelve, because that is all shiftRoot ever looks
-   at: a page of -1 and a page of 11 put the identical letters on the screen. */
+/* The page is compared modulo twelve where a wrap is in play, because that is
+   all shiftRoot ever looks at: -1 and 11 print the identical letters. */
 const sameEq = (label, got, want) => {
   const ok = ((got - want) % 12 + 12) % 12 === 0;
   console.log(`${ok ? "  ok  " : "  FAIL"} ${label}`);
@@ -62,78 +69,132 @@ const sameEq = (label, got, want) => {
 const put = (id, was) => { store["chords.song.-." + id] = JSON.stringify(was); };
 const song = (id, chords) => ({ id, lines: chords, status: "published" });
 
-/* --- THE CAPO DOES NOT MOVE THE SINGING ------------------------------------
-   What comes out of the guitar is the page plus the fret. Roll the fret from
-   one end of the neck to the other and it has to come out the same. */
-const sung = 2;
-let moved = null;
-for (let capo = 0; capo <= 7; capo++) {
-  const heard = api.pageOf({ sung, capo }) + capo;
-  if (heard !== sung && moved == null) moved = `fret ${capo} sang it at ${heard}`;
+/* The two handlers on the strip, mirrored. They are three lines each inside
+   renderSong and cannot be imported, so they are restated here against the
+   REAL capoOf: what is being tested is that these two moves, over that
+   subtraction, behave. */
+const press = (at, by) => {
+  const next = at.page + by;
+  return { page: next > 11 ? -11 : next < -11 ? 11 : next, sung: at.sung };
+};
+const clampAt = (at, fret) => {
+  const want = Math.max(0, Math.min(fret, MAX_CAPO));
+  return want === api.capoOf(at) ? at : { page: at.page, sung: at.page + want };
+};
+const heard = (at) => at.page + api.capoOf(at);
+
+/* --- THE TRANSPOSITION MOVES THE FRET -------------------------------------- */
+let at = { page: 0, sung: 0 };
+eq("no capo to start with", api.capoOf(at), 0);
+at = press(at, -1);
+eq("a page down one puts the capo on the first fret", api.capoOf(at), 1);
+eq("and the song comes out where it was", heard(at), 0);
+at = press(at, -2);
+eq("three down is the third fret", api.capoOf(at), 3);
+eq("and the song still comes out where it was", heard(at), 0);
+at = press(at, 3);
+eq("and back up takes the capo off again", api.capoOf(at), 0);
+eq("with the song still where it was", heard(at), 0);
+
+/* Every fret on the way down, and the song never moves. */
+let held = null;
+for (let step = 0, was = { page: 0, sung: 0 }; step < MAX_CAPO; step++) {
+  was = press(was, -1);
+  if (api.capoOf(was) !== step + 1 && held == null) held = `after ${step + 1} down the fret was ${api.capoOf(was)}`;
+  if (heard(was) !== 0 && held == null) held = `after ${step + 1} down the song moved to ${heard(was)}`;
 }
-eq("every fret from 0 to 7 leaves the singing exactly where it was", moved, null);
+eq("the capo walks up one fret per press, all the way to the end", held, null);
 
-/* And the other way about: moving the singing leaves the hand alone. */
-eq("moving the singing does not move the hand",
-  [-2, 0, 5].map((s) => api.pageOf({ sung: s, capo: 4 })), [-6, -4, 1]);
+/* --- PAST THE END OF THE NECK ---------------------------------------------- */
+at = { page: -MAX_CAPO, sung: 0 };
+eq("seven down is the last fret there is", api.capoOf(at), MAX_CAPO);
+at = press(at, -1);
+eq("one more does not invent an eighth", api.capoOf(at), MAX_CAPO);
+eq("so the song is what gives, by one", heard(at), -1);
 
-/* --- A READER WHO HAS SAID NOTHING ----------------------------------------
-   gets the easy version, and gets it as what it is: a fret, under a song still
-   in the key it was written in. */
-eq("nothing said: the fret is the easy version and the singing has not moved",
-  api.playedAs(song("a", ["Bm", "A", "G", "D"])), { sung: 0, capo: 3 });
-eq("and the page is the shapes that fret makes",
-  api.pageOf(api.playedAs(song("a", ["Bm", "A", "G", "D"]))), -3);
+/* --- AND IT COMES BACK, WHICH A STORED FRET WOULD NOT ---------------------- */
+const roundTrip = (from, by) => {
+  let there = from;
+  for (let i = 0; i < Math.abs(by); i++) there = press(there, Math.sign(by));
+  for (let i = 0; i < Math.abs(by); i++) there = press(there, -Math.sign(by));
+  return there;
+};
+/* Up three from an open neck: the fret is already at zero and cannot go
+   lower, so three presses have nothing to take. Coming back must not hand
+   those three to the capo. */
+eq("three up against the floor and three back down changes nothing",
+  roundTrip({ page: 0, sung: 0 }, 3), { page: 0, sung: 0 });
+eq("and the fret is where it started", api.capoOf(roundTrip({ page: 0, sung: 0 }, 3)), 0);
+/* And the same against the ceiling. */
+eq("three down through the ceiling and three back up changes nothing",
+  roundTrip({ page: -MAX_CAPO, sung: 0 }, -3), { page: -MAX_CAPO, sung: 0 });
+eq("and the fret is back at the last one", api.capoOf(roundTrip({ page: -MAX_CAPO, sung: 0 }, -3)), MAX_CAPO);
+
+/* --- MOVING THE FRET BY HAND DOES NOT MOVE THE TRANSPOSITION --------------- */
+at = { page: -3, sung: 0 };
+eq("standing at the third fret", api.capoOf(at), 3);
+const pinned = clampAt(at, 5);
+eq("asking for the fifth leaves the page exactly where it was", pinned.page, -3);
+eq("the fret is the fifth", api.capoOf(pinned), 5);
+eq("and the song is what moved, by two", heard(pinned), 2);
+/* The buttons only ever ask for one more or one less, so the ends are where
+   the guard has to hold: a press that cannot change the fret must not change
+   the singing either, or holding the button down at the top of the neck would
+   walk the song up without the number ever moving. */
+const top = { page: -MAX_CAPO, sung: 0 };
+eq("at the last fret, asking for one more does nothing", clampAt(top, MAX_CAPO + 1), top);
+eq("at no capo, asking for one less does nothing",
+  clampAt({ page: 0, sung: 0 }, -1), { page: 0, sung: 0 });
+
+/* --- A READER WHO HAS SAID NOTHING ----------------------------------------- */
+eq("nothing said: the page is moved down to meet the easy version",
+  api.playedAs(song("a", ["Bm", "A", "G", "D"])), { page: -3, sung: 0 });
+eq("and the fret it left is the fret to use",
+  api.capoOf(api.playedAs(song("a", ["Bm", "A", "G", "D"]))), 3);
 
 /* Nothing is worked out for a song nobody has checked yet: it is opened beside
    the picture it was read from and has to be comparable to it. */
 eq("a song still to be checked is left alone",
-  api.playedAs({ id: "q", lines: ["Bm", "A", "G", "D"], status: "queued" }), { sung: 0, capo: 0 });
+  api.playedAs({ id: "q", lines: ["Bm", "A", "G", "D"], status: "queued" }), { page: 0, sung: 0 });
 
-/* --- AND ONE WHO SAID SOMETHING UNDER THE OLD MEANING ----------------------
-   The page they had is the page they keep, and the key they were hearing is
-   the key they keep hearing. */
+/* --- AND ONE WHO SAID SOMETHING UNDER THE OLD MEANING ---------------------- */
 put("b", { k: -3 });
-eq("moved down three, no capo: sings three down", api.keptSung("b"), -3);
-sameEq("and the page is where it was", api.pageOf(api.playedAs(song("b", []))), -3);
+eq("moved down three, no capo", api.playedAs(song("b", [])), { page: -3, sung: -3 });
+eq("which is still no capo", api.capoOf(api.playedAs(song("b", []))), 0);
 
 put("c", { k: -3, c: 2 });
-eq("down three with a capo at two: was sounding one down", api.keptSung("c"), -1);
-sameEq("and the page is where it was", api.pageOf(api.playedAs(song("c", []))), -3);
+eq("down three with a capo at two", api.playedAs(song("c", [])), { page: -3, sung: -1 });
+eq("the fret they were holding is the fret they keep", api.capoOf(api.playedAs(song("c", []))), 2);
+eq("and the song sounds where it sounded", heard(api.playedAs(song("c", []))), -1);
 
 /* The fret counts even where the page was never moved. Somebody who only ever
-   clamped a capo on was playing the written shapes four semitones up, and
-   reading that as "sings it as written" would drop the song under them. */
+   clamped a capo on was playing the written shapes four semitones up. */
 put("d", { c: 4 });
-eq("a capo and nothing else: it was sounding four up", api.keptSung("d"), 4);
-sameEq("and the page is where it was", api.pageOf(api.playedAs(song("d", []))), 0);
+eq("a capo and nothing else", api.playedAs(song("d", [])), { page: 0, sung: 4 });
+eq("keeps its fret", api.capoOf(api.playedAs(song("d", []))), 4);
+eq("and its sound", heard(api.playedAs(song("d", []))), 4);
 
 put("e", { k: 11, c: 7 });
-eq("past the top it comes back round", api.keptSung("e"), 6);
-sameEq("and the page is where it was", api.pageOf(api.playedAs(song("e", []))), 11);
+sameEq("the page at the very top stays at the very top", api.playedAs(song("e", [])).page, 11);
+eq("with the singing brought back inside the ring", api.playedAs(song("e", [])).sung, 6);
 
-/* --- ONCE THE NEW NUMBER IS THERE, IT IS THE ANSWER --- */
-put("f", { s: 2, c: 5, k: -99 });
-eq("what was written down last wins", api.keptSung("f"), 2);
-eq("and the page is the subtraction", api.pageOf(api.playedAs(song("f", []))), -3);
+/* --- ONCE THE NEW KEYS ARE THERE, THEY ARE THE ANSWER ---------------------- */
+put("f", { p: -2, s: 3, k: -99, c: 99 });
+eq("what was written down last wins", api.playedAs(song("f", [])), { page: -2, sung: 3 });
+eq("and the fret is the gap", api.capoOf(api.playedAs(song("f", []))), 5);
 
 /* --- SILENCE IS THE ONLY THING THE APP ANSWERS FOR ------------------------- */
-put("g", { s: 0, c: 0 });
+put("g", { p: 0, s: 0 });
 eq("a chosen zero is not silence",
-  api.playedAs(song("g", ["Bm", "A", "G", "D"])), { sung: 0, capo: 0 });
-eq("and neither is a fret on its own", api.saidAnything("d"), true);
+  api.playedAs(song("g", ["Bm", "A", "G", "D"])), { page: 0, sung: 0 });
+eq("and neither is an old fret on its own", api.saidAnything("d"), true);
 eq("but an empty box is", api.saidAnything("nobody"), false);
 
 /* --- WHAT A ROW SHOWS IS THE PAGE, AND THE FRET THAT MAKES IT TRUE --------- */
-put("h", { s: 0, c: 2 });
+put("h", { p: -2, s: 0 });
 eq("the row's shapes and its chip agree",
   api.shapesFor({ id: "h", lines: ["Am", "F"], status: "published" }),
   { shapes: ["Am@-2", "F@-2"], capo: 2, used: ["Am", "F"] });
-
-/* --- nonsense is not kept --- */
-eq("no fret at all is no fret", api.keptCapo("nobody"), 0);
-put("i", { s: 0, c: 99 });
-eq("nor is a fret past the end of the neck", api.keptCapo("i"), 0);
 
 console.log(failed ? `\n${failed} failed` : "\nall passed");
 process.exit(failed ? 1 : 0);
