@@ -135,6 +135,14 @@ body.on-song { background: var(--bg); }
   color: var(--ink); text-decoration: none;
 }
 .brand svg { width: 24px; height: 24px; color: var(--accent); }
+/* THE TICK THAT TAKES EVERYTHING, BETWEEN THE MARK AND THE NAME. Its own slot
+   rather than a corner of the one after the name, because the two are read
+   together: the box, then the word it is ticking. Closer to the name than the
+   bar's own gap would put it, so it reads as the name's own box and not as a
+   third thing standing between the mark and the page. Empty on every page but
+   the library, and an empty slot still spends the row's gap. */
+.top-pick { flex: none; display: flex; align-items: center; margin-inline-end: -8px; }
+.top-pick:empty { display: none; }
 .top-actions { margin-inline-start: auto; display: flex; align-items: center; gap: 8px; }
 
 /* ONE SHAPE FOR A BUTTON IN THE BAR, AND IT IS ROUND. The bar was holding two
@@ -395,7 +403,7 @@ body.on-song { background: var(--bg); }
      into the box, and one more picture standing there is one more bite out of
      the ninety pixels the box was already short of. */
   body.finding .brand, body.finding .top-actions, body.finding .top-name,
-  body.finding .top-facts { display: none; }
+  body.finding .top-facts, body.finding .top-pick { display: none; }
   /* everything that could have given the bar back is now hidden, so the box
      carries its own way out */
   body.finding .top-find .find-x { display: flex; }
@@ -545,9 +553,6 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 16px;
 }
 .pick-all { display: flex; flex: none; }
-/* Beside the name of the page, where the tick is one more word of it rather
-   than the first of a row of controls. */
-.top-facts .pick-all { margin-inline-start: 4px; }
 
 .tally-imported { color: var(--imported-ink); }
 .tally-review { color: var(--review-ink); }
@@ -585,6 +590,25 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   columns: auto 340px;
   column-gap: 12px;
 }
+
+/* AND A WALL THAT DOES NOT FILL THE WINDOW STANDS IN THE MIDDLE OF IT.
+   Columns are laid from the edge the page begins at, so the evenings with one
+   evening in them put a single card against the right hand edge of a desk with
+   the rest of the width empty beside it, and the same happened to the library
+   held down to one word.
+
+   There is no way to ask a column layout to middle what it holds, so it is
+   asked for the room it actually needs instead: as many column widths as there
+   are cards, and auto margins do the rest. Counted in CSS rather than handed
+   down from the script, because every one of these lists is redrawn as it is
+   sieved and a number written on it once would be the count it had before.
+   Past four the window is the smaller of the two and this stops mattering.
+   The band of shelves and the bill middle themselves, further down. */
+.list:not(.band):not(.ledger) { margin-inline: auto; }
+.list:not(.band):not(.ledger):has(li):not(:has(li:nth-child(2))) { max-width: 352px; }
+.list:not(.band):not(.ledger):has(li:nth-child(2)):not(:has(li:nth-child(3))) { max-width: 704px; }
+.list:not(.band):not(.ledger):has(li:nth-child(3)):not(:has(li:nth-child(4))) { max-width: 1056px; }
+.list:not(.band):not(.ledger):has(li:nth-child(4)):not(:has(li:nth-child(5))) { max-width: 1408px; }
 /* A card is never split down the middle of itself by a column ending, and it
    carries its own space underneath: in a column layout there is no gap
    property to do it. */

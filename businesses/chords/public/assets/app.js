@@ -3357,6 +3357,7 @@
       bar: name ? name.textContent : "",
       tab: document.title,
       facts: takeKids(document.getElementById("topFacts")),
+      pick: takeKids(document.getElementById("topPick")),
       extra: takeKids(findExtra),
     };
     layer.state = {};
@@ -3376,13 +3377,14 @@
     if (findField && state.sift) findField.value = state.sift.q || "";
 
     var h = layer.head;
-    /* where() wipes the three slots beside the name, so it goes first and what
+    /* where() wipes the slots around the name, so it goes first and what
        came down goes back up after it. A name that was a field is made one
        again, with the same four answers it was given the first time. */
     if (layer.edit) whereEditable(h.bar, layer.edit.empty, layer.edit.each, layer.edit.done);
     else where(h.bar);
     if (document.title !== h.tab) document.title = h.tab;
     putKids(document.getElementById("topFacts"), h.facts);
+    putKids(document.getElementById("topPick"), h.pick);
     putKids(findExtra, h.extra);
     paintHeader();
     /* A list that stopped looking at itself while it was out of the document
@@ -4235,6 +4237,10 @@
        would still be standing there on the page after it. */
     var beside = document.getElementById("topFacts");
     if (beside) beside.textContent = "";
+    /* And the tick on the other side of the name, which is the library's and
+       has no business standing over a song. */
+    var picked = document.getElementById("topPick");
+    if (picked) picked.textContent = "";
     /* And the end of the search box, which is the same kind of loan: the page
        that is open puts something there and the next page must not inherit
        it. The box itself is built once and lives through every view. */
@@ -5020,9 +5026,15 @@
          On a wide screen it is gone, and its three parts went into the bar,
          which had the room for all of them standing empty:
 
-           the tick, and the buttons that come with it, beside the name of the
-           page, because "אקורדים" is the name of what is on screen and the tick
-           means "all of it": one phrase, read in that order
+           the tick BEFORE the name of the page and after the mark, in a slot
+           of its own: "אקורדים" is the name of what is on screen and the tick
+           means "all of it", and a word is qualified by what stands in front
+           of it. After the name it read as one more thing hung off the end of
+           a row that already ends in a search box; in front of it, the two are
+           one phrase. The buttons for what is ticked stay on the far side of
+           the name, because they are not part of that phrase: they appear only
+           once something is ticked, and a slot that grows and empties itself
+           between the mark and the name would shift the name every time
 
            the states at the far end of the search box (see buildFind)
 
@@ -5055,8 +5067,9 @@
 
       function rehome() {
         var beside = document.getElementById("topFacts");
+        var before = document.getElementById("topPick");
         var inBar = !NARROW.matches && beside && findExtra;
-        if (allBtn) (inBar ? beside : overWall).appendChild(allBtn);
+        if (allBtn) (inBar && before ? before : overWall).appendChild(allBtn);
         (inBar ? findExtra : overWall).appendChild(tallies);
         if (auth.in) (inBar ? beside : overWall).appendChild(picking);
         /* An empty row is still a row: it has a margin under it, and on a desk
