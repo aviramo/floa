@@ -136,6 +136,9 @@
        cost, and the torn edge is the one thing that says "list" at fifteen
        pixels. */
     receipt: '<path d="M6 3.5h12v17l-2.4-1.7-2.4 1.7-2.4-1.7-2.4 1.7-2.4-1.7V3.5Z"/><path d="M9.2 8.4h5.6M9.2 12.2h5.6"/>',
+    /* a chevron pointing down: a drawer that opens. Turned over by the
+       stylesheet when it is open, so the same mark says both states. */
+    turn: '<path d="M6 9.5l6 6 6-6"/>',
   };
 
   function iconBtn(icon, title, onClick) {
@@ -3530,21 +3533,23 @@
      did it for the same reason. Both are as true next week as they were
      tonight, and neither says anything about the next song.
 
-     AND THE TWO MOVE TOGETHER, THE SAME WAY. Transpose down a semitone and the
-     capo comes down a fret with it; transpose up and it goes up. One press,
-     both numbers, in step.
+     AND THE TWO MOVE OPPOSITE WAYS, WHICH IS THE POINT OF A CAPO. Transpose
+     down a semitone and the capo climbs a fret to pay for it: the shapes under
+     the hand change, and the song comes out of the guitar in the key it came
+     out in a second ago. That is the move a capo exists for.
 
-     WHAT IS KEPT IS THE PAGE AND THE PIN. The fret is not stored anywhere: it
-     is worked out (see capoOf) from where the page is and where the capo was
-     last put by hand. That is the whole trick of this file, and it is what
-     lets the two travel together without either of them getting lost.
+     WHAT IS KEPT IS THE PAGE AND THE SINGING. The fret is not stored anywhere:
+     it is worked out (see capoOf) as what is left over between the chords
+     printed on the page and the key the song sounds in. That is the whole
+     trick of this file, and it is why the fret can never drift away from
+     either of them, because there is no copy of it anywhere to drift.
 
      BECAUSE A FRET KEPT AS A NUMBER OF ITS OWN WOULD LOSE COUNT. It has to be
      clamped, the neck being what it is, and a clamped number that is added to
      on every press forgets the presses it could not take: three up against the
      ceiling and three back down would put the page back where it started and
-     leave the capo three frets from where it started. Worked out instead, it
-     cannot. Put the page back and the same sum gives the same fret.
+     leave the capo three frets from where it started. A leftover cannot do
+     that. Put the page back and the subtraction gives the same fret.
 
      The capo was one number on the account for a while, the same on every
      song, on the argument that it is a fact about the guitar. A guitar has no
@@ -3604,32 +3609,26 @@
     return typeof was.c === "number" ? 0 : null;
   }
 
-  /* THE PIN: WHERE THIS READER PUT THE CAPO, MEASURED AT THE SONG'S OWN KEY.
-     The fret itself travels with the page, so it is no good as something to
-     write down: it would be a different number after every transposition. What
-     does not move is where they last put it BY HAND, held at a fixed point,
-     and the fixed point is the song as written. So the pin is the fret they
-     would be at with the page at zero, and the fret at any other page is the
-     pin plus the page (see capoOf).
+  /* WHAT COMES OUT OF THE GUITAR: the page plus whatever fret is holding the
+     rest of the distance. This is the number the capo protects, which is why
+     moving the page does not move it, and why moving the page moves the fret.
 
-     Every reader already has one, in the old pair, and it was never called
-     this: "k" was the page and "c" was the fret on the neck at that page, so
-     the pin is the difference. Nobody has to be asked anything and nothing is
-     lost, and it is written back under "a" the next time anything is pressed.
-
-     Not clamped here. The pin is allowed to sit off the end of the neck, and
-     that is deliberate: somebody who transposed six frets past the ceiling and
-     came back has a pin nobody could hold, and it is the only thing that knows
-     how to give them their fret back when they return. capoOf clamps at the
-     last moment, where a fret is actually being shown to a person. */
-  function keptPin(id) {
+     Every reader already has one written down, in the old pair, and it was
+     never called this: "k" moved the chords and "c" was a note beside them
+     about a capo that really was on the neck, so the guitar really was sounding
+     k + c. Read that way, nobody has to be asked anything and nothing is lost.
+     The fret counts even where the page was never moved: somebody who only ever
+     clamped at 4 was sounding four semitones up, and reading it as "sings it as
+     written" would drop the whole song to pay for a fret already held. */
+  function keptSung(id) {
     var was = keptFor(id);
     if (!was) return null;
-    if (typeof was.a === "number" && was.a >= -32 && was.a <= 32) return Math.round(was.a);
+    if (typeof was.s === "number" && was.s >= -11 && was.s <= 11) return Math.round(was.s);
     var page = keptPage(id);
     if (page == null) return null;
     var c = typeof was.c === "number" && was.c >= 0 && was.c <= MAX_CAPO ? Math.round(was.c) : 0;
-    return c - page;
+    var sung = page + c;
+    return sung > 11 ? sung - 12 : sung;
   }
 
   /* Whether this reader has said anything at all about this song. The two
@@ -3638,7 +3637,7 @@
      handed one. */
   function saidAnything(id) {
     var was = keptFor(id);
-    return !!was && (typeof was.a === "number" || typeof was.p === "number"
+    return !!was && (typeof was.s === "number" || typeof was.p === "number"
       || typeof was.k === "number" || typeof was.c === "number");
   }
 
@@ -3705,11 +3704,11 @@
 
      So a reader who has said nothing is handed the easy version, and now it is
      handed to them AS WHAT IT IS. easyVersion searches capo frets, and a capo
-     fret is a capo fret: the page comes down to the shapes it found and the
-     fret it found is on the strip beside them. What used to happen was the
-     same shapes reached by moving the song down and calling the fret a guess,
-     so the one number that could have told anybody where to put their hand was
-     the one number the app would not commit to.
+     fret is a capo fret: the answer goes into the fret, the singing stays where
+     the song was written, and the page falls out of the two. What used to
+     happen was the same shapes reached by moving the song down and calling the
+     fret a guess, which put the app in the position of having quietly changed
+     the key of a song nobody asked it to change.
 
      Said once, here, by everything that has to say it: the page that opens the
      song, the row in the library and the evening. A row that says one thing
@@ -3724,8 +3723,8 @@
   function playedAs(song) {
     if (saidAnything(song.id)) {
       var page = keptPage(song.id);
-      var pin = keptPin(song.id);
-      return { page: page == null ? 0 : page, pin: pin == null ? 0 : pin };
+      var sung = keptSung(song.id);
+      return { page: page == null ? 0 : page, sung: sung == null ? 0 : sung };
     }
     /* NOTHING IS GUESSED AT A SONG NOBODY HAS CHECKED YET. A song a machine
        read out of a picture is opened beside that picture, and the whole of
@@ -3734,40 +3733,34 @@
        cannot be compared to anything, and a chord corrected on it is corrected
        into the wrong key. It gets the easy version like every other song the
        moment somebody has looked at it. */
-    if (song.review || song.status === "queued" || song.status === "reading") return { page: 0, pin: 0 };
+    if (song.review || song.status === "queued" || song.status === "reading") return { page: 0, sung: 0 };
     var used = chordsUsed(song.lines || []);
-    /* THE EASY VERSION, AS WHAT IT IS: the page comes down to the shapes and
-       the fret it was found at goes on the strip. The pin is the fret measured
-       at the song's own key, so for the two to come out at -easy and easy it
-       has to be twice that. Which is the arithmetic and not a coincidence: the
-       page has already travelled `easy` frets away from zero, and the fret
-       travels with the page, so the pin has to be that much further out for
-       the sum to land back on `easy`. */
+    /* the easy version, as what it is: a fret, under a song still in its own
+       key, with the page moved down to meet it */
     var easy = used.length ? easyVersion(used).capo : 0;
-    return { page: -easy, pin: 2 * easy };
+    return { page: -easy, sung: 0 };
   }
 
-  /* --- AND THE FRET IS WORKED OUT ---------------------------------------------
-     THIS IS THE WHOLE ARITHMETIC OF THE APP, and it is one sum. The pin is
-     where the capo was last put by hand, measured at the song's own key. The
-     page is how far the chords have been moved from that key. The capo goes
-     the same way the page goes and by the same amount, so the fret is the two
-     added up, and there is nothing to decide.
+  /* --- AND THE FRET IS WHAT IS LEFT OVER -------------------------------------
+     THIS IS THE WHOLE ARITHMETIC OF THE APP, and it is one subtraction. The
+     page is the shapes the hand makes. The singing is what comes out. A capo
+     at fret N raises everything the hand plays by N, so the fret that makes
+     those two true at once is the difference between them, and there is
+     nothing to decide.
 
      WHICH IS WHY THE TRANSPOSITION MOVES IT AND NOTHING HAS TO MAKE IT. Press
-     the page down one and the sum is one smaller, so the capo comes down a
-     fret. Press it back and the sum is what it was. The fret cannot creep, it
-     cannot get stuck at an end and come back somewhere else, and it cannot
-     disagree with the two numbers it is made of, because it is not stored
-     anywhere to be wrong.
+     the page down one and the singing has not been asked to move, so the
+     difference is one bigger and the capo goes up a fret. Press the page back
+     and the difference is what it was. It cannot creep, it cannot get stuck at
+     an end and come back somewhere else, and it cannot disagree with the two
+     numbers it is made of, because it is not stored anywhere to be wrong.
 
-     CLAMPED HERE AND NOWHERE ELSE, BECAUSE A NECK ENDS. Below zero there is no
-     such thing as a capo and above MAX_CAPO there is no room for a hand, so
-     past either end the number shown stops. The PIN behind it does not stop,
-     which is the point: somebody who ran six frets past the ceiling and came
-     back finds their fret waiting for them, exactly where they left it. */
+     CLAMPED, BECAUSE A NECK ENDS. Below zero there is no such thing as a capo
+     and above MAX_CAPO there is no room for a hand, so past either end the
+     fret stops and the singing is what gives instead. That is not the app
+     losing the key: it is a guitar that cannot hold it, said out loud. */
   function capoOf(played) {
-    return Math.max(0, Math.min(played.pin + played.page, MAX_CAPO));
+    return Math.max(0, Math.min(played.sung - played.page, MAX_CAPO));
   }
 
   /* The chords of this song as this reader will see them, and the fret their
@@ -4153,6 +4146,29 @@
     err.hidden = true;
     document.getElementById("meWho").textContent = (auth.session && auth.session.email) || "";
     field.value = auth.name();
+
+    /* --- AND THE WAY TO THE BILL, FOR WHOEVER GETS IT ----------------------
+       The readings and what they cost are one account's, and this panel is the
+       one place in the app that is about the account rather than about the
+       songs: it is where the name is set and where signing out lives, so it is
+       where a page belonging to the account belongs.
+
+       It was a button under the wall of songs for a while, which put a private
+       page on the most public one there is. Nobody else could see it, and it
+       still stood on the library, where every other door leads somewhere
+       everybody shares.
+
+       The test harness builds its own bar and its own panel, so nothing here
+       assumes the row is in the page. */
+    var billRow = document.getElementById("meBillRow");
+    var bill = document.getElementById("meBill");
+    if (billRow) billRow.hidden = !isAdmin();
+    if (bill) {
+      bill.onclick = function () {
+        dlg.close();
+        go(BASE + "/reads");
+      };
+    }
 
     form.onsubmit = function (event) {
       event.preventDefault();
@@ -5387,40 +5403,24 @@
         state.sift = sift;
       }
 
-      /* --- THE DOORS UNDER THE WALL -----------------------------------------
-         Under the songs, in one row, whatever else this account has here. Both
-         of them are made the same way and neither is always there, so they
-         share the row rather than each bringing one of its own: two centred
-         rows one under the other, the first arriving a moment after the page,
-         is a page that jumps. */
-      var doors = null;
-      function door(node) {
-        if (!doors) {
-          doors = el("div", "after-list");
-          app.appendChild(doors);
-        }
-        doors.appendChild(node);
-      }
+      /* The way to what was deleted, under everything and only when there is
+         something there. A library with an empty bin says nothing about bins:
+         the door appears when there is a room behind it.
 
-      /* The bill, for the account that gets it. It is the only page in the app
-         that is one person's, so it is the only door drawn for one person, and
-         it is drawn without asking anything first: there is always something
-         behind it for whoever pays. */
-      if (isAdmin()) {
-        door(button("פענוח", ICON.receipt, "ghost small", function () {
-          go(BASE + "/reads");
-        }));
-      }
-
-      /* The way to what was deleted, and only when there is something there. A
-         library with an empty bin says nothing about bins: the door appears
-         when there is a room behind it. */
+         THE BILL IS NOT BESIDE IT. It stood here for a while, drawn for one
+         account and invisible to everybody else, which is a private page on
+         the most public one in the app. It is in the panel behind the name in
+         the bar now (see askMe), where the rest of what belongs to the account
+         already is. What is deleted stays here, because it is the library's
+         own back room and not the account's. */
       if (auth.in) {
         db.deleted().then(function (gone) {
           if (!list.isConnected || !gone || !gone.length) return;
-          door(button("שירים שנמחקו (" + gone.length + ")", ICON.trash, "ghost small", function () {
+          var back = el("div", "after-list");
+          back.appendChild(button("שירים שנמחקו (" + gone.length + ")", ICON.trash, "ghost small", function () {
             go(BASE + "/deleted");
           }));
+          app.appendChild(back);
         }).catch(function () { /* not being able to say is not worth saying */ });
       }
     }).catch(fail);
@@ -5644,14 +5644,36 @@
           body.appendChild(listOf(readsSorted(rows, how), false));
           return;
         }
-        readsByAccount(rows, how).forEach(function (group) {
-          var band = el("section", "read-band");
-          var h = el("div", "read-h");
-          h.appendChild(el("div", "read-who", nameOf(group.reader)));
-          var paid = el("div", "read-paid");
+        /* --- AN ACCOUNT IS A DRAWER THAT OPENS ----------------------------
+           Gathering by account is asking how much each of them spent, and the
+           answer to that is the heading: a name, a sum and how many readings
+           it is made of. The readings themselves are what you look at AFTER
+           deciding which account you meant, so they are behind the heading
+           rather than under it: four accounts laid out flat is four walls of
+           cards to scroll past to reach the sums, which are the answer.
+
+           `details` and not a button and a class, because that is what the
+           element is for: it opens with a press, with the keyboard, and with
+           the browser's own find-in-page, none of which anything here has to
+           write. THE BIGGEST BILL IS OPEN and the rest are shut, so the page
+           still answers its first question without a press. */
+        readsByAccount(rows, how).forEach(function (group, at) {
+          var band = el("details", "read-band");
+          band.open = at === 0;
+
+          var h = el("summary", "read-h");
+          /* the mark is drawn rather than left to the browser's own triangle,
+             which is a different shape and a different size in every one of
+             them. It turns when the drawer opens (see .read-band[open]). */
+          var turn = svg(ICON.turn);
+          turn.setAttribute("class", "read-turn");
+          h.appendChild(turn);
+          h.appendChild(el("span", "read-who", nameOf(group.reader)));
+          var paid = el("span", "read-paid");
           paid.appendChild(el("span", "read-total", billSaid(group.bill) || "בלי מחיר"));
           paid.appendChild(el("span", "read-n", group.bill.n + (group.bill.n === 1 ? " פענוח" : " פענוחים")));
           h.appendChild(paid);
+
           band.appendChild(h);
           band.appendChild(listOf(group.rows, true));
           body.appendChild(band);
@@ -5669,13 +5691,36 @@
         return ul;
       }
 
-      /* One reading. `under` is true where it stands under the account that
-         paid for it, and then the row does not say whose it is again: a column
+      /* ONE READING IS ONE CARD, the same card a song is in the library and an
+         evening is on its own page: the white, the hairline and the shadow.
+         The title used to be a link INSIDE a card, which the stylesheet paints
+         as a card of its own (see `.list a`), so every row was a box in a box.
+
+         So the card IS the link where there is somewhere to go, and a plain
+         card where there is not: a song this account may not open, or one it
+         has thrown away. Which is exactly how the library draws a song that
+         cannot be opened yet.
+
+         `under` is true where the card stands inside the drawer of the account
+         that paid for it, and then it does not say whose it is again: a column
          of the same name repeated forty times is the heading, said forty
          times. */
       function readRow(row, under) {
         var li = el("li");
-        var box = el("div", "row read");
+        var song = songs[row.song_id];
+        var open = song && !song.deleted_at;
+
+        var box;
+        if (open) {
+          box = el("a", "read");
+          box.href = BASE + "/" + encodeURIComponent(song.slug);
+          box.addEventListener("click", function (event) {
+            event.preventDefault();
+            go(box.getAttribute("href"));
+          });
+        } else {
+          box = el("div", "row read");
+        }
 
         var what = el("div", "what");
         var top = el("div", "t-row");
@@ -5723,20 +5768,16 @@
          this account may open, one it may open and has thrown away, and one it
          may not read at all. The third is not a hole in the page, it is what
          the rule about whose library it is looks like from the side that pays
-         for the reading. */
+         for the reading.
+
+         The name only. Whether it can be opened is the card's business (see
+         readRow), because the whole card is the way in. */
       function songSaid(row) {
         var song = songs[row.song_id];
-        if (!song) return el("span", "t muted", "שיר של חשבון אחר");
+        if (!song) return el("div", "t muted", "שיר של חשבון אחר");
         var title = song.title || "בלי שם";
-        if (song.deleted_at) return el("span", "t muted", title + " (נמחק)");
-        var a = el("a", "t");
-        a.href = BASE + "/" + encodeURIComponent(song.slug);
-        a.addEventListener("click", function (event) {
-          event.preventDefault();
-          go(a.getAttribute("href"));
-        });
-        a.textContent = title;
-        return a;
+        if (song.deleted_at) return el("div", "t muted", title + " (נמחק)");
+        return el("div", "t", title);
       }
 
       paintSum();
@@ -6736,17 +6777,16 @@
        same thing: this reader and this song (see keptFor).
 
        `semis` is the page: the distance every chord below is drawn at, and
-       what the transposition buttons move. `pin` is where the capo was last
-       put by hand, held at the song's own key so that it survives the page
-       moving under it. `myCapo` is neither of them, it is the two added up and
-       clamped to the neck (see capoOf), and it is never assigned from anywhere
-       but showMyCapo.
+       what the transposition buttons move. `sung` is what comes out of the
+       guitar, which the transposition does NOT move. `myCapo` is neither of
+       them, it is the gap between them (see capoOf), and it is never assigned
+       from anywhere but showMyCapo.
 
        A song still coming out of the machine, or read out of one and not yet
        checked, gets nothing worked out for it at all (see playedAs). */
     var played = playedAs(song);
     var semis = played.page;
-    var pin = played.pin;
+    var sung = played.sung;
     var myCapo = capoOf(played);
 
     /* the size follows the reader from song to song. The key does not: it
@@ -7433,16 +7473,18 @@
        detail of the file now, and what each person plays it in is kept for
        each person (see keptPage). Nobody has to agree with anybody.
 
-       AND THE CAPO COMES WITH IT, THE SAME WAY AND BY THE SAME AMOUNT. Down a
-       semitone, down a fret; up a semitone, up a fret. Nothing here does that
-       on purpose: the fret is the pin plus the page (see capoOf), this button
-       is the page, and a sum moves when what it is made of moves. */
+       AND THE CAPO COMES WITH IT. Moving the chords is not asking to be heard
+       differently, it is asking for different shapes, so the fret takes up the
+       distance and the song comes out where it came out before: down one, capo
+       up one. Nothing here does that on purpose. The fret is the gap between
+       the page and the singing (see capoOf), this button moves one of the two,
+       and the gap is a gap. */
     var pitch = control(
       ICON.pitch, "טרנספוזיציה", null,
       function () { moveSemis(-1); },
       function () { moveSemis(1); }
     );
-    pitch.title = "מזיז את האקורדים על הדף, והקפו זז איתם באותו כיוון.";
+    pitch.title = "מזיז את האקורדים על הדף, והקפו זז איתם כדי שהשיר יישמע אותו דבר.";
     tools.appendChild(pitch);
 
     /* THE SIZE IS NOT HERE ANY MORE. It was two buttons and a number, three
@@ -7451,15 +7493,18 @@
        already has a gesture that means exactly that. See zoomBy below. */
 
     /* WHERE THE CAPO GOES, WHICH IS MOSTLY NOT PRESSED AT ALL. It answers to
-       the transposition beside it, and the number here is the whole of what
-       anybody needs out of it: WHERE DO I PUT IT.
+       the transposition beside it: that is where the fret comes from for
+       anybody who is simply looking for a shape they can hold, and the number
+       here is the whole of what they need out of it, WHERE DO I PUT IT.
 
-       PRESSED BY HAND IT MOVES ITSELF AND NOTHING ELSE. The chords on the page
-       do not budge, which is what was asked for, and it is not a special case
-       being kept: this writes the pin, the transposition writes the page, and
-       neither of them touches the other's number. What it changes is only
-       where the fret sits from here on, and where it will sit after the next
-       transposition, since the two travel together from wherever they are.
+       Pressed by hand it means the other thing, and this is the one place the
+       two numbers part company. Moving the page is "different shapes, same
+       song"; moving the FRET while the page stands still is "same shapes,
+       higher song", which is what somebody means when they clamp at 2 and play
+       the chords in front of them. So it moves the singing and it does not
+       move the transposition, which is exactly what was asked for, and it is
+       not a special case: the fret is the gap, and pinning the gap while one
+       side holds still moves the other side.
 
        A fret, so zero or up, and zero means no capo, which is a real answer
        and the usual one. Up to MAX_CAPO, which is where easyVersion stops
@@ -7482,29 +7527,29 @@
       function () { setMyCapo(myCapo + 1); },
       true
     );
-    capoCtl.title = "באיזה סריג הקפו. זז לבד עם הטרנספוזיציה, ואפשר להזיז אותו לבד בלי שהאקורדים יזוזו.";
+    capoCtl.title = "באיזה סריג הקפו. זז לבד עם הטרנספוזיציה, ואם מזיזים אותו ידנית השיר נשמע גבוה או נמוך יותר.";
     tools.appendChild(capoCtl);
 
-    /* NOT ASSIGNED, WORKED OUT, every time and from the same sum the rest of
-       the app uses. myCapo is a cache of one expression and this is the only
-       thing allowed to fill it, which is what stops a fret on screen from ever
-       being a fret nothing else agrees with. */
+    /* NOT ASSIGNED, WORKED OUT, every time and from the same subtraction the
+       rest of the app uses. myCapo is a cache of one expression and this is
+       the only thing allowed to fill it, which is what stops a fret on screen
+       from ever being a fret nothing else agrees with. */
     function showMyCapo() {
-      myCapo = capoOf({ page: semis, pin: pin });
+      myCapo = capoOf({ page: semis, sung: sung });
       myValue.textContent = String(myCapo);
     }
 
-    /* MOVING THE PIN, WHICH IS THE FRET HELD AT THE SONG'S OWN KEY. Asking for
-       fret N at this page means the pin is N minus the page, and the page is
-       not touched: the chords stay exactly where they are.
+    /* PINNING THE GAP. There is no fret to write down, so what a press on this
+       actually decides is the singing: hold the page still, ask for fret N,
+       and the song has to come out N above the shapes on it.
 
        At either end of the neck the press does nothing at all, rather than
-       walking the pin off into the distance while the number stands still. */
+       writing a key nobody can reach with a capo. */
     function setMyCapo(next) {
       var fret = Math.max(0, Math.min(next, MAX_CAPO));
       if (fret === myCapo) return;
-      pin = fret - semis;
-      keepFor(song.id, "a", pin);
+      sung = semis + fret;
+      keepFor(song.id, "s", sung);
       /* and the page is written down with it, so a reader who has now chosen
          one of the two is not still being answered for on the other */
       keepFor(song.id, "p", semis);
@@ -7778,22 +7823,23 @@
        too, and a guess that writes itself down is a guess nobody can tell from
        an answer.
 
-       THE PIN IS NOT TOUCHED, and that is what carries the capo along: the
-       fret is the pin plus the page, so a page that moves down one leaves a
-       fret one lower, in step and in the same direction.
+       THE SINGING IS NOT TOUCHED, and that is what makes the capo move: the
+       fret is the gap between the two, and this widens it. Down one, capo up
+       one, and the song comes out where it came out before.
 
-       PAST THE END OF THE NECK THE NUMBER STOPS AND THE PIN KEEPS GOING, which
-       is what makes this safe to lean on. Nothing is being counted at the end
-       and lost there: the pin is still the same pin it was, however far out it
-       has been carried, so pressing back the other way brings the fret home to
-       the exact value it left from. */
+       PAST THE END OF THE NECK THE FRET STOPS AND THE SINGING GIVES, which is
+       the honest answer and not a wall: a page seven frets below its key is
+       already at the top of what a capo can do, and the press after that is
+       somebody asking for the song lower. It is still perfectly reversible,
+       because nothing was counted while the fret sat at its end. Press back up
+       and the same subtraction gives the same fret it gave on the way down. */
     function moveSemis(by) {
       var next = semis + by;
       semis = next > 11 ? -11 : next < -11 ? 11 : next;
       keepFor(song.id, "p", semis);
-      /* and the pin is written down with it, so a reader who has now chosen
-         one of the two is not still being answered for on the other */
-      keepFor(song.id, "a", pin);
+      /* and the singing is written down with it, so a reader who has now
+         chosen one of the two is not still being answered for on the other */
+      keepFor(song.id, "s", sung);
       repage();
     }
 

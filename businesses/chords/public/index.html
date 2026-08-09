@@ -44,6 +44,15 @@
     <label>השם שלך<input type="text" name="name" autocomplete="name" maxlength="60" required></label>
     <p class="muted">זה השם שמופיע למעלה. אפשר לשנות אותו, גם אם הוא הגיע מגוגל.</p>
     <p class="err" id="meErr" hidden></p>
+    <!-- The way to the bill, for the one account that gets it. In this panel
+         and nowhere else: it is the room where the account looks at itself,
+         and what the readings cost is the account's own business. Hidden for
+         everybody else by the script, which is a courtesy and not the rule:
+         the rule is on the table (see song_costs in schema.sql). -->
+    <div class="dlg-door" id="meBillRow" hidden>
+      <button type="button" class="btn ghost small" id="meBill">פענוח</button>
+      <span class="muted">כמה עלה כל פענוח, מתי, ומי ביצע אותו.</span>
+    </div>
     <div class="dlg-actions">
       <button type="button" class="btn ghost far" id="meOut">יציאה מהחשבון</button>
       <button type="button" class="btn ghost" data-close>ביטול</button>

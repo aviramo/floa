@@ -799,14 +799,13 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   columns: auto; max-width: 680px; margin-inline: auto; margin-bottom: 28px;
 }
 .list.ledger li { margin-bottom: 8px; }
-.list .row.read { align-items: center; gap: 10px; padding: 12px 16px; }
-.list .row.read .what { flex: 1 1 auto; min-width: 0; }
-.list .row.read .t { font-size: 16px; }
-/* the name of the song is a link and it is not painted like one: the row is
-   the row, and the underline appears where the hand is */
-.list .row.read a.t { color: inherit; text-decoration: none; }
-.list .row.read a.t:hover { color: var(--accent); text-decoration: underline; }
-.list .row.read .side { flex: none; align-self: center; }
+/* ONE READING IS ONE CARD, and the card is the link where the song can be
+   opened. `.read` catches both, because a card that cannot be opened is drawn
+   by `.list .row` as the same sheet of paper without the link. */
+.list .read { align-items: center; gap: 10px; padding: 12px 16px; }
+.list .read .what { flex: 1 1 auto; min-width: 0; }
+.list .read .t { font-size: 16px; }
+.list .read .side { flex: none; align-self: center; }
 
 /* THE MONEY, ALWAYS AT THE END OF THE ROW AND ALWAYS THE SAME WIDTH. Tabular
    figures and one direction: a column of prices that shifts by a digit is a
@@ -826,17 +825,34 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .read-sum .read-total { font-size: 22px; }
 .read-n { color: var(--ink-soft); font-size: 14px; }
 
-/* One account, and everything it spent. The heading is a line and not a card:
-   what is under it are the cards. */
-.read-band { margin-bottom: 26px; }
+/* --- ONE ACCOUNT IS A DRAWER ----------------------------------------------
+   The heading holds the whole answer, a name, a sum and how many readings it
+   is made of, and the readings are behind it. It is a `summary`, so the mark
+   the browser draws by itself is taken off and one of ours is drawn instead:
+   the same chevron at the same size in every browser, turned over when the
+   drawer is open. */
+.read-band { max-width: 680px; margin: 0 auto 10px; }
 .read-h {
-  display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
-  max-width: 680px; margin: 0 auto 10px;
-  padding-bottom: 6px; border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  cursor: pointer; list-style: none;
+  padding: 10px 4px; border-bottom: 1px solid var(--line);
 }
+.read-h::-webkit-details-marker { display: none; }
+.read-h:hover { border-bottom-color: var(--accent); }
+.read-h:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+.read-turn {
+  flex: none; width: 16px; height: 16px; color: var(--ink-soft);
+  transition: transform .15s ease;
+}
+.read-band[open] > .read-h > .read-turn { transform: rotate(180deg); }
+/* the cards inside sit off the heading rather than against it */
+.read-band[open] > .list.ledger { margin-top: 10px; }
 .read-who { font-weight: 700; font-size: 17px; flex: 1 1 auto; min-width: 0; }
 .read-paid { display: flex; align-items: baseline; gap: 8px; flex: none; }
 .read-paid .read-total { font-size: 16px; }
+@media (prefers-reduced-motion: reduce) {
+  .read-turn { transition: none; }
+}
 
 /* HOW THE READING WENT, in the same chips the states of a song wear, and in
    colours that mean the same things they mean there: green for the one that
@@ -2124,6 +2140,12 @@ body.on-song .top { border-bottom: 0; }
 .dlg-head svg { flex: none; width: 26px; height: 26px; color: var(--chord); }
 .dlg-in p { margin: 0; font-size: 14px; }
 .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+/* A WAY OUT OF THE PANEL, and not an answer to it. It stands above the row of
+   buttons with a line beside it saying where it goes, because a button in that
+   row would read as a third thing to do to the name being typed. */
+.dlg-door { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.dlg-door[hidden] { display: none; }
+.dlg-door .muted { font-size: 13px; flex: 1 1 140px; min-width: 0; }
 /* The one button in a row that is not the answer to the question the panel is
    asking. Pushed to the other end so it is not pressed on the way to one that
    is. */
