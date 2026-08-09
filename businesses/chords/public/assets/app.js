@@ -5684,7 +5684,10 @@
         if (when) line.push(when);
         if (line.length) {
           var said = el("div", "a", line.join("  ·  "));
-          said.title = whenExactly(row.created_at);
+          /* the date in full, and NOT through whenExactly: that one says
+             "עודכן", which is true of a song and not of a reading. A reading
+             happened once and was never updated. */
+          said.title = exactDate(row.created_at);
           what.appendChild(said);
         }
         box.appendChild(what);
@@ -5775,12 +5778,20 @@
 
   /* The same moment written out, for hovering over. "אתמול" is the right thing
      to read at a glance and it is not a date, so the date is here. */
-  function whenExactly(value) {
+  /* The moment itself, with no word in front of it. What the word should be
+     depends on what happened at that moment, and the two callers here mean two
+     different things by it: a song was updated, a reading simply happened. */
+  function exactDate(value) {
     var t = Date.parse(value || "");
     if (!t) return "";
     var d = new Date(t);
-    return "עודכן " + d.getDate() + "." + (d.getMonth() + 1) + "." + d.getFullYear() +
+    return d.getDate() + "." + (d.getMonth() + 1) + "." + d.getFullYear() +
       " בשעה " + hourWords(t);
+  }
+
+  function whenExactly(value) {
+    var said = exactDate(value);
+    return said ? "עודכן " + said : "";
   }
 
   /* --- the one state a song is in --------------------------------------------
