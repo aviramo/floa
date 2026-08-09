@@ -479,6 +479,57 @@ create table if not exists public.song_costs (
   created_at timestamptz not null default now()
 );
 
+-- WHOSE READING IT WAS. Filled in by the database from the token the request
+-- carried, exactly as `owner` is on a song, so it cannot be claimed: the
+-- Worker writes this row with the token of whoever dropped the photograph in,
+-- and that is the account the reading is charged to.
+--
+-- `on delete set null` and not a cascade, which is the difference between this
+-- and everything else here. A song belongs to an account and goes with it; a
+-- price is money that was actually spent, and an account leaving does not
+-- unspend it. What goes is the name on the row.
+alter table public.song_costs add column if not exists reader uuid
+  references auth.users (id) on delete set null;
+alter table public.song_costs alter column reader set default auth.uid();
+
+-- HOW THE READING WENT, in one word, put here rather than on the song for the
+-- same reason the price is: what came back is a fact about the reading, the
+-- song is what is left of it afterwards, and a song saved by hand is a song
+-- that has already been written over.
+--
+--   measured  the ruler and the words agreed, and the chords were placed by
+--             arithmetic. The cheap read.
+--   model     they did not, so the model placed them. The dear one.
+--   words     the chords half failed and the words were kept.
+--   failed    nothing came back, and what was burned getting there is the
+--             price on this row.
+--
+-- Null on a row written before this column existed. Not backfilled: nobody
+-- knows which of the four those readings were, and guessing would put a word
+-- on the page that is not true of anything.
+alter table public.song_costs add column if not exists kept text;
+alter table public.song_costs drop constraint if exists song_costs_kept_check;
+alter table public.song_costs add constraint song_costs_kept_check
+  check (kept is null or kept in ('measured', 'model', 'words', 'failed'));
+
+-- How much the ruler and the words agreed, 0 to 1, which is the number that
+-- chose between the two answers above. Null where there was no measuring to
+-- compare against.
+alter table public.song_costs add column if not exists agreement numeric;
+
+-- A reading written before there was a reader has none, and it belongs to
+-- whoever the song belongs to: the Worker reads with the token of the account
+-- that made the row, and the row is made by the account that uploaded the
+-- picture. So this is not a guess about the past, it is the same fact read off
+-- the other table.
+update public.song_costs c
+   set reader = s.owner
+  from public.songs s
+ where c.song_id = s.id and c.reader is null and s.owner is not null;
+
+-- the page groups by account and adds up what each one spent
+create index if not exists song_costs_reader_idx on public.song_costs (reader);
+
 -- Everything the two old columns held, copied across and THEN dropped, in that
 -- order and in one block. The copy stood at the bottom of this file while the
 -- drop stood at the top once, which is a way of saying the columns were emptied

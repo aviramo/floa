@@ -53,7 +53,7 @@ window.fetch = (url) => {
 </head><body>
 <header class="top"><div class="wrap top-in">
 <a class="brand" href="/chords/">א</a>
-<div class="top-name"><div class="top-where" id="topWhere"></div><div class="top-sub" id="topSub"></div></div>
+<div class="top-name"><div class="top-where" id="topWhere"></div></div>
 <div class="top-facts" id="topFacts"></div>
 <div class="top-find" id="topFind"></div>
 <div class="top-actions" id="topActions"></div>

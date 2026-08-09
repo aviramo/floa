@@ -23,7 +23,7 @@ function grab(head, open = "{", shut = "}") {
 }
 
 const NAMES = ["people", "peopleSaid", "credits", "creditsLine", "creditNames",
-  "creditsOnce", "creatorsOf", "songsBy"];
+  "creatorsOf", "songsBy"];
 const api = new Function([
   grab("var CREDITS = [", "[", "]"),
   ...NAMES.map((name) => grab("function " + name + "(")),
@@ -68,12 +68,9 @@ eq("everybody once, however many credits they have", api.creditNames(song),
 eq("a line per word, everybody on it",
   api.creditsLine(song), ["מילים: דביר כהן, ליאת ציון, ינון דר", "לחן: ינון דר, ליאת ציון"]);
 eq("a song with no names says nothing at all", api.creditsLine(none), []);
-eq("one person who did both is one entry with both words",
-  api.creditsOnce(solo).map((g) => g.name + ":" + g.parts.map((p) => p.label).join("+")),
-  ["תמי בן הדר:מילים+לחן"]);
-eq("and nobody is ever given the same word twice",
-  api.creditsOnce(song).map((g) => g.name + ":" + g.parts.map((p) => p.label).join("+")),
-  ["דביר כהן:מילים", "ליאת ציון:מילים+לחן", "ינון דר:מילים+לחן"]);
+eq("one person who did both is named once, in each of the two lines",
+  api.creditsLine(solo), ["מילים: תמי בן הדר", "לחן: תמי בן הדר"]);
+eq("and once in the list of everybody on the song", api.creditNames(solo), ["תמי בן הדר"]);
 
 /* --- the people, gathered out of the songs --- */
 const shelf = api.creatorsOf([song, solo, none]);

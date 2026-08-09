@@ -750,6 +750,10 @@ export async function readChordSheet(env, files, beat) {
            `reads` column in schema.sql: a losing answer thrown away is a
            tuning round that has to be paid for twice. */
         reads: { measured: measured.body, agreement: agree, kept: "measured" },
+        /* the same word, going the other way: onto the bill rather than onto
+           the song, because what a reading was is a fact about the reading and
+           the song is written over the first time anybody edits it */
+        went: "measured",
         /* the model read the title and the credits off the page, which a ruler
            cannot do, so those come from here even when the song does not */
         title: words.title || measured.title,
@@ -814,6 +818,11 @@ export async function readChordSheet(env, files, beat) {
     agreement: measured ? agreement(measured.body, lines.join(String.fromCharCode(10))) : null,
     kept: "model",
   };
+
+  /* And what the bill will say it was. A read whose chords half fell over is
+     not the model's read: it is the words, alone, which is a different thing
+     to have paid for and the one thing the page has to be able to tell apart. */
+  song.went = lost ? "words" : "model";
 
   /* Both halves, because the song was read once however many questions it
      took, and a half that failed was billed like a half that worked. Null only
@@ -1142,7 +1151,7 @@ async function shekelRate() {
   }
 }
 
-/* What this reading cost, into a table of its own.
+/* WHAT THIS READING COST AND HOW IT WENT, into a table of its own.
 
    NOT A COLUMN ON THE SONG any more. The library is public where it is
    published, and row level security is about rows: a column on a row somebody
@@ -1151,12 +1160,26 @@ async function shekelRate() {
    written by whoever's reading it was and read by the one account that gets
    the invoice.
 
+   The price is not the only thing here. Which half of the reader was kept, and
+   how far the two agreed, are facts about the READING rather than about the
+   song, and the song is written over the moment somebody edits it: the only
+   place they survive is beside what they cost. Together they are what the
+   page at /chords/reads is: a reading, what came of it, what it cost, when,
+   and whose.
+
    Best effort, and deliberately last. The song is already saved by the time
-   this runs; a project that has not had the new SQL run against it, or a
-   network that drops this one request, loses a number and keeps the song. */
-async function saveCost(env, token, songId, cost, rate) {
-  if (cost == null && rate == null) return;
-  try {
+   this runs; a network that drops this one request loses a number and keeps
+   the song.
+
+   AND A PROJECT WHOSE SQL IS OLDER THAN THIS FILE STILL GETS ITS PRICE. The
+   three columns below arrived after the table did, so a write naming them is
+   refused whole by a table that has not heard of them; refused whole, the
+   price goes with them. So it is tried again with the row as it used to be,
+   which is the same bargain the song makes with its own late columns. */
+async function saveCost(env, token, songId, { cost, rate, kept, agreement }) {
+  if (cost == null && rate == null && !kept) return;
+
+  const write = async (row) => {
     const response = await fetch(`${env.SUPABASE_URL}/rest/v1/song_costs`, {
       method: "POST",
       headers: {
@@ -1165,9 +1188,25 @@ async function saveCost(env, token, songId, cost, rate) {
         "content-type": "application/json",
         prefer: "return=minimal,resolution=merge-duplicates",
       },
-      body: JSON.stringify({ song_id: songId, read_cost: cost, usd_ils: rate }),
+      body: JSON.stringify(row),
     });
-    if (!response.ok) console.error("cost not recorded", songId, response.status, (await response.text()).slice(0, 200));
+    return response.ok ? null : { status: response.status, body: (await response.text()).slice(0, 200) };
+  };
+
+  const priced = { song_id: songId, read_cost: cost, usd_ils: rate };
+  try {
+    const failure = await write({
+      ...priced,
+      kept: kept || null,
+      agreement: Number.isFinite(agreement) ? Math.round(agreement * 100) / 100 : null,
+    });
+    if (!failure) return;
+    if (!["kept", "agreement"].some((column) => failure.body.includes(column))) {
+      console.error("cost not recorded", songId, failure.status, failure.body);
+      return;
+    }
+    const again = await write(priced);
+    if (again) console.error("cost not recorded", songId, again.status, again.body);
   } catch (err) {
     console.error("cost not recorded", songId, err.message);
   }
@@ -1363,6 +1402,21 @@ export async function readAndSave(env, token, songId, files) {
     const seconds = Math.round((Date.now() - began) / 1000);
     console.error("transcribe failed", songId, seconds + "s", err.message);
     await patchSong(env, token, songId, { status: "failed", status_note: why(err.message, seconds) });
+
+    /* A FAILURE IS ON THE BILL TOO. An attempt that produced nothing was still
+       billed in full (see ask), and a page of readings that shows only the ones
+       that worked is a page telling you the reader is cheaper than it is. The
+       row says so in a word, and its price is whatever was burned getting
+       there: null where even that is not known, which is a missing price list
+       rather than a free failure. */
+    const spent = Number.isFinite(err.cost) ? err.cost : null;
+    await saveCost(env, token, songId, {
+      cost: spent,
+      /* nothing to convert, so nobody is asked what a dollar is worth */
+      rate: spent == null ? null : await shekelRate(),
+      kept: "failed",
+      agreement: null,
+    });
     return;
   }
 
@@ -1400,10 +1454,20 @@ export async function readAndSave(env, token, songId, files) {
      already has, taken from the file it was uploaded from. That is a real name
      somebody chose, and it beats anything this could invent. Its address stays
      as it is too, for the same reason. */
+  const bill = {
+    cost: song.cost,
+    rate,
+    kept: song.went || null,
+    /* null and not nought. A read with nothing to compare against did not
+       disagree with anything, and `Number(null)` is a zero that would put
+       "0% התאמה" on the page and mean the opposite of what happened. */
+    agreement: song.reads && song.reads.agreement != null ? Number(song.reads.agreement) : null,
+  };
+
   if (!song.title) {
     const failure = await saveSong(env, token, songId, fields);
     if (failure) return stop(failure);
-    await saveCost(env, token, songId, song.cost, rate);
+    await saveCost(env, token, songId, bill);
     return;
   }
 
@@ -1417,7 +1481,7 @@ export async function readAndSave(env, token, songId, files) {
       ...fields,
       slug: attempt === 1 ? wanted : `${wanted}_${attempt}`,
     });
-    if (!failure) return saveCost(env, token, songId, song.cost, rate);
+    if (!failure) return saveCost(env, token, songId, bill);
     if (!failure.body.includes("23505")) return stop(failure);
   }
 }

@@ -130,18 +130,12 @@
     person: '<circle cx="12" cy="8" r="3.6"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/>',
     /* two of them, which is what a page of everybody who wrote a song is */
     people: '<circle cx="9.5" cy="8.5" r="3.2"/><path d="M3.5 19.5a6 6 0 0 1 12 0"/><path d="M16 5.6a3.2 3.2 0 0 1 0 6"/><path d="M17.5 14.2a6 6 0 0 1 3 5.3"/>',
-    /* --- who made it, as two pictures -----------------------------------
-       Under the name of the song there is room for the names and not for the
-       words "מילים" and "לחן" in front of them: at that size the labels are
-       half the line and they say the same thing on every song. So each name
-       carries the picture of what the person did.
-
-       A pen ON A LINE, and the line is what keeps it from being the pencil
-       that means "edit this song": that one is a pen alone, this one is a pen
-       and what it wrote. And a single note for the tune, which is one note
-       rather than the two of the key dial, for the same reason. */
-    words: '<path d="M4 20.3h16"/><path d="M7 15.6 15.8 6.8a2.3 2.3 0 0 1 3.3 3.3l-8.8 8.8H7v-3.3Z"/>',
-    tune: '<ellipse cx="7.6" cy="17.3" rx="3.1" ry="2.5"/><path d="M10.7 17V5.2c3.7.7 5.7 2.7 6 5.8"/>',
+    /* A BILL, torn off along the bottom the way a printed one is, with two
+       lines of writing on it. Not a coin and not a banknote: what is behind the
+       button is not money, it is a list of what was done and what each of them
+       cost, and the torn edge is the one thing that says "list" at fifteen
+       pixels. */
+    receipt: '<path d="M6 3.5h12v17l-2.4-1.7-2.4 1.7-2.4-1.7-2.4 1.7-2.4-1.7V3.5Z"/><path d="M9.2 8.4h5.6M9.2 12.2h5.6"/>',
   };
 
   function iconBtn(icon, title, onClick) {
@@ -515,10 +509,14 @@
      credit is called ON the song, where it names a part of it: the words, the
      tune. `who` is what the same fact makes of the PERSON, on their own page
      and beside their name in a search result, where "מילים" would be the
-     answer to a question nobody asked. */
+     answer to a question nobody asked.
+
+     There was an `icon` on each of them as well, a pen and a note drawn in
+     place of the two words under the name of the song. That line is gone and
+     so are they: everywhere the credits are read now has room for the word. */
   var CREDITS = [
-    { field: "lyrics_by", label: "מילים", who: "כותב", kind: "words", icon: "words" },
-    { field: "music_by", label: "לחן", who: "מלחין", kind: "tune", icon: "tune" },
+    { field: "lyrics_by", label: "מילים", who: "כותב", kind: "words" },
+    { field: "music_by", label: "לחן", who: "מלחין", kind: "tune" },
   ];
 
   /* --- AND EACH OF THE TWO IS SEVERAL PEOPLE ---------------------------------
@@ -562,7 +560,7 @@
     var out = [];
     CREDITS.forEach(function (c) {
       people(song[c.field]).forEach(function (name) {
-        out.push({ label: c.label, name: name, icon: c.icon, kind: c.kind, field: c.field });
+        out.push({ label: c.label, name: name, kind: c.kind, field: c.field });
       });
     });
     return out;
@@ -578,22 +576,12 @@
     }).filter(Boolean);
   }
 
-  /* The picture in place of the word, where the word would not fit: under the
-     name of the song, at twelve pixels, "מילים:" is half the line and it is
-     the same half on every song.
-
-     So it is not decoration and it does not get aria-hidden: it carries the
-     word it replaced, which is what a reader hovering it is asking for and
-     the only thing a screen reader has to go on. */
-  function creditMark(credit) {
-    var mark = svg(ICON[credit.icon]);
-    mark.removeAttribute("aria-hidden");
-    mark.setAttribute("role", "img");
-    var says = document.createElementNS("http://www.w3.org/2000/svg", "title");
-    says.textContent = credit.label;
-    mark.appendChild(says);
-    return mark;
-  }
+  /* THERE WAS A creditMark HERE, a little pen and a little note drawn in place
+     of the words "מילים" and "לחן" in the one place they would not fit: the
+     second line of the bar, under the name of the song. That line is gone (see
+     renderSong), and with it the only reason to say a word in a picture. Who
+     wrote a song is said in words now, in the panel behind the info button,
+     where there is room for the word and for everybody it belongs to. */
 
   /* Who made it, as a line to read: the names, once each. Whoever wrote the
      words usually wrote the tune as well, and a card that answered "who wrote
@@ -611,24 +599,13 @@
     });
   }
 
-  /* THE SAME RULE WHERE THE CREDITS KEEP THEIR LABELS: one entry per PERSON
-     rather than one per column, and the labels of both gathered onto it. So a
-     song whose words and tune are one person's says their name once and still
-     says they did both, instead of "מילים: תמי בן הדר, לחן: תמי בן הדר",
-     which is the two columns read out loud.
-
-     `parts` are the credits as they were, in the order they are written on the
-     song, for whoever needs the labels or the pictures that go with them. */
-  function creditsOnce(song) {
-    var by = {};
-    var out = [];
-    credits(song).forEach(function (c) {
-      if (by[c.name]) return by[c.name].parts.push(c);
-      by[c.name] = { name: c.name, parts: [c] };
-      out.push(by[c.name]);
-    });
-    return out;
-  }
+  /* THERE WAS A creditsOnce HERE, and a creditsAlike after it, both of them
+     ways of drawing the credits in a line too short to hold them: one entry
+     per person with both pictures on whoever earned both, then one entry per
+     thing that was done with a comma between the people who did it. The line
+     they were folding themselves into is gone. What asks about the credits now
+     is a panel with a row per word and a chip per person (see songTold), and a
+     row of chips needs nothing folded. */
 
   /* --- the people, read out of the songs ------------------------------------
      THERE IS NO TABLE OF CREATORS AND THERE SHOULD NOT BE. A person is not a
@@ -738,47 +715,204 @@
     return !!(auth.session && String(auth.session.email || "").toLowerCase() === ADMIN);
   }
 
-  /* What the reading of this song cost, as the Worker counted it from the
-     model's own token usage. A song typed by hand has no price and says
-     nothing, which is different from one that cost nothing.
+  /* --- WHAT A READING COST, AND IT IS NOT WRITTEN ON THE SONG ----------------
+     It was, in the corner of every card: a small number beside the name, drawn
+     for one account and invisible to everybody else. Which put money on a wall
+     of songs, where nobody is asking about money, and answered the question it
+     IS asked, "what is this reader costing me", one song at a time in a place
+     you cannot add up.
 
-     IN SHEKELS, AT THE RATE OF THE DAY IT WAS READ. The price is counted in US
-     cents because that is what the bill is in, and it is read in the money the
-     person paying it thinks in. The rate is the one kept on the row, never
-     today's: a price is a fact about a moment, and converting at the rate of
-     whenever the page happens to be open would restate an old reading in this
-     morning's money and change the number under a song for no reason a reader
-     could see. A row from before the rate was kept says its price in dollars,
-     which is at least true. */
-  function rateOf(song) {
-    var rate = Number(song.usd_ils);
+     So the prices came off the cards and went to a page of their own,
+     /chords/reads, where every reading is a row: what came of it, what it
+     cost, when, and whose it was. The library is a library again and the bill
+     is a bill.
+
+     Everything below is that page's arithmetic, and it is kept here, beside
+     the rule about who may read any of it, rather than down among the views. */
+
+  /* IN US CENTS, ALWAYS, which is the one number every row has: it is what the
+     API bills in and what the Worker counted. The shekels are a reading of it
+     (see moneySaid), so comparing, sorting and adding up are all done here, in
+     cents, and never on two different currencies. */
+  function centsOf(row) {
+    var cents = Number(row && row.read_cost);
+    return row && row.read_cost != null && isFinite(cents) ? cents : null;
+  }
+
+  /* What a dollar was worth in shekels the day THIS reading happened. Never
+     today's rate: a price is a fact about a moment, and converting at whatever
+     the rate is when somebody opens the page would restate a reading from last
+     year in this morning's money and move a number that nothing has touched.
+     A row from before the rate was kept has none, and says its price in
+     dollars, which is at least true. */
+  function rateOf(row) {
+    var rate = Number(row && row.usd_ils);
     return isFinite(rate) && rate > 0 ? rate : 0;
   }
 
-  function price(song) {
-    if (!isAdmin()) return "";
-    if (song.read_cost == null) return "";
-    var cents = Number(song.read_cost);
-    if (!isFinite(cents)) return "";
-
-    var rate = rateOf(song);
-    /* UNDER THE SMALLEST COIN, NOTHING IS SHOWN. It used to say "פחות
-       מאגורה", which is true and is three words spent on a number that is
-       nought: a reading that cost less than the smallest coin there is cost
-       nothing anybody is going to think about, and the row is better off
-       saying nothing about it than saying that. */
+  /* UNDER THE SMALLEST COIN IT SAYS SO, which is the opposite of what the card
+     did. There, nothing was shown: a card is about a song and three words
+     about a fifth of an agora are three words too many. Here every row IS a
+     price, and a row with a blank where the money goes reads as a row whose
+     price is missing rather than as one that cost nothing. */
+  function moneySaid(row) {
+    var cents = centsOf(row);
+    if (cents === null) return "";
+    var rate = rateOf(row);
     if (rate) {
       var agorot = cents * rate;
-      return agorot < 0.5 ? "" : "₪" + (agorot / 100).toFixed(2);
+      return agorot < 0.5 ? "פחות מאגורה" : "₪" + (agorot / 100).toFixed(2);
     }
-    return cents < 0.5 ? "" : "$" + (cents / 100).toFixed(2);
+    return cents < 0.5 ? "פחות מסנט" : "$" + (cents / 100).toFixed(2);
   }
 
-  function priceWhy(song) {
-    var rate = rateOf(song);
-    var said = "עלות הפענוח של השיר הזה";
-    if (!rate) return said;
-    return said + ", לפי שער " + rate.toFixed(2) + " ביום שבו נקרא";
+  function moneyWhy(row) {
+    var rate = rateOf(row);
+    if (!rate) return "המחיר בדולרים, כי לא נשמר שער ליום הזה";
+    return "לפי שער " + rate.toFixed(2) + " ביום שבו נקרא";
+  }
+
+  /* A HANDFUL OF READINGS ADDED UP, and they are not all in one currency.
+     Nearly every row carries the rate of its own day and becomes agorot; the
+     few from before the rate was kept are dollars and stay dollars. Adding the
+     two would need one rate for all of them, which is exactly the restating
+     this file refuses to do everywhere else, so they are carried side by side
+     and said side by side.
+
+     `cents` is the whole of it in the money the bill is in, and it is what one
+     account's total is compared with another's: it is the only number that
+     every row has. */
+  function billOf(rows) {
+    var bill = { cents: 0, agorot: 0, dollars: 0, priced: 0, unknown: 0, n: 0 };
+    (rows || []).forEach(function (row) {
+      bill.n++;
+      var cents = centsOf(row);
+      if (cents === null) return bill.unknown++;
+      bill.priced++;
+      bill.cents += cents;
+      var rate = rateOf(row);
+      if (rate) bill.agorot += cents * rate;
+      else bill.dollars += cents;
+    });
+    return bill;
+  }
+
+  function billSaid(bill) {
+    var said = [];
+    if (bill.agorot >= 0.5) said.push("₪" + (bill.agorot / 100).toFixed(2));
+    if (bill.dollars >= 0.5) said.push("$" + (bill.dollars / 100).toFixed(2));
+    if (!said.length) return bill.priced ? "פחות מאגורה" : "";
+    return said.join(" ועוד ");
+  }
+
+  /* --- HOW THE READING WENT --------------------------------------------------
+     Four words, and the difference between them is the difference between four
+     cents and forty. See `kept` in schema.sql for where each comes from.
+
+     A row from before the column existed says nothing rather than guessing,
+     because nobody knows which of the four it was. */
+  var WENT = {
+    measured: {
+      words: "סרגל",
+      kind: "measured",
+      why: "המילים והמדידה הסכימו, והאקורדים סודרו בחישוב. הקריאה הזולה.",
+    },
+    model: {
+      words: "מודל",
+      kind: "model",
+      why: "המדידה לא התאימה למילים, אז המודל סידר את האקורדים. הקריאה היקרה.",
+    },
+    words: {
+      words: "מילים בלבד",
+      kind: "half",
+      why: "האקורדים לא נקראו. המילים נשמרו, והאקורדים נכתבו ביד.",
+    },
+    failed: {
+      words: "נכשל",
+      kind: "failed",
+      why: "לא חזר שיר. מה שנשרף בדרך הוא המחיר שכאן.",
+    },
+  };
+
+  function wentOf(row) {
+    return WENT[row && row.kept] || null;
+  }
+
+  /* How far the two readings of the page agreed, which is the number that
+     chose between them. Rounded to whole percent: the third decimal of an
+     agreement is not a thing anybody acts on. */
+  function agreeSaid(row) {
+    var agree = Number(row && row.agreement);
+    if (row == null || row.agreement == null || !isFinite(agree)) return "";
+    return Math.round(agree * 100) + "% התאמה";
+  }
+
+  /* --- THE ORDER THE READINGS STAND IN ---------------------------------------
+     Three, and they are three different questions: what is expensive here,
+     what is cheap here, and what happened lately. Money first, because a page
+     of prices is opened to find the big ones.
+
+     A reading with no price at all goes LAST whichever way round it is. It is
+     not the cheapest thing on the page, it is the thing the page does not
+     know, and floating it to the top of "מהזול ליקר" would put a row with no
+     number where the smallest number belongs. */
+  var READ_ORDERS = [
+    { key: "dear", label: "מהיקר לזול" },
+    { key: "cheap", label: "מהזול ליקר" },
+    { key: "when", label: "לפי מועד" },
+  ];
+
+  function newestFirst(a, b) {
+    return String(b.created_at || "").localeCompare(String(a.created_at || ""));
+  }
+
+  function readsSorted(rows, how) {
+    var out = (rows || []).slice();
+    if (how === "when") return out.sort(newestFirst);
+    return out.sort(function (a, b) {
+      var ca = centsOf(a);
+      var cb = centsOf(b);
+      if (ca === null || cb === null) {
+        if (ca === cb) return newestFirst(a, b);
+        return ca === null ? 1 : -1;
+      }
+      /* and two readings that cost the same are two readings, so the later one
+         is first: the tie is broken by the only other thing on the row */
+      if (ca === cb) return newestFirst(a, b);
+      return how === "cheap" ? ca - cb : cb - ca;
+    });
+  }
+
+  /* --- AND THE SAME READINGS, GATHERED BY ACCOUNT ----------------------------
+     THE BIGGEST BILL FIRST, which is the whole point of gathering them: the
+     question a page of costs is opened with is who is spending, and the answer
+     is the first heading rather than a sum somebody adds up by eye.
+
+     Inside a group the rows keep whatever order the page is in, so the two
+     controls are one control: gathering does not take the sorting away.
+
+     A reading whose account is not known is a group of its own, and it goes
+     last however much it holds: "לא ידוע" at the top of a list of people would
+     be read as a person. */
+  function readsByAccount(rows, how) {
+    var by = {};
+    var out = [];
+    (rows || []).forEach(function (row) {
+      var key = row.reader || "";
+      if (!by[key]) {
+        by[key] = { reader: row.reader || "", rows: [] };
+        out.push(by[key]);
+      }
+      by[key].rows.push(row);
+    });
+    out.forEach(function (group) {
+      group.bill = billOf(group.rows);
+      group.rows = readsSorted(group.rows, how);
+    });
+    return out.sort(function (a, b) {
+      if (!a.reader !== !b.reader) return a.reader ? -1 : 1;
+      return b.bill.cents - a.bill.cents;
+    });
   }
 
   /* A read runs in the Worker and outlives the request that started it, so if
@@ -925,35 +1059,33 @@
           if (!pa) return String(a.created_at || "") < String(b.created_at || "") ? -1 : 1;
           return 0;
         });
-      }).then(function (rows) {
-        return self.withCosts(rows);
       }).catch(function (error) {
         if (!dropMissing(error)) throw error;
         return self.list();
       });
     },
 
-    /* What the readings cost, laid onto the songs they were paid for. A second
-       request and a second table, because the prices are the payer's alone and
-       a column of the library could never have been (see song_costs in
-       schema.sql). Asked for only by that account: everybody else's page skips
-       it, and would be answered with nothing if it did not. */
-    withCosts: function (rows) {
-      if (!isAdmin() || !rows || !rows.length) return rows;
-      return rest(COSTS + "?select=song_id,read_cost,usd_ils").then(function (costs) {
-        var by = {};
-        (costs || []).forEach(function (c) { by[c.song_id] = c; });
-        rows.forEach(function (song) {
-          var c = by[song.id];
-          if (!c) return;
-          song.read_cost = c.read_cost;
-          song.usd_ils = c.usd_ils;
+    /* --- EVERY READING THERE HAS EVER BEEN ---------------------------------
+       The prices used to be fetched here, by the library, and laid onto the
+       songs so a card could carry a number in its corner. They are a page of
+       their own now (see viewReads), and this is what that page asks for:
+       the readings themselves, newest first, and nothing about any song.
+
+       Asked for by the one account that may have them. Anybody else asking is
+       answered with an empty list by the database rather than by this line,
+       which is where that rule belongs (see song_costs in schema.sql).
+
+       The last three columns arrived with the page. A project whose SQL has
+       not been run since is a project that still has prices, and prices are
+       most of what the page is for, so it asks again without them. 42703 is
+       Postgres for a column that is not there. */
+    reads: function () {
+      var mine = "song_id,read_cost,usd_ils,created_at";
+      return rest(COSTS + "?select=" + mine + ",reader,kept,agreement&order=created_at.desc")
+        .catch(function (error) {
+          if (String(error.code) !== "42703") throw error;
+          return rest(COSTS + "?select=" + mine + "&order=created_at.desc");
         });
-        return rows;
-      }).catch(function () {
-        /* a library with no prices on it is still a library */
-        return rows;
-      });
     },
     bySlug: function (slug) {
       var self = this;
@@ -1311,7 +1443,7 @@
      than the song's. */
   var RESERVED_SLUGS = {
     "new": true, "edit": true, "evenings": true, "deleted": true,
-    "creators": true, "creator": true, "style": true,
+    "creators": true, "creator": true, "style": true, "reads": true,
   };
 
   /* Two decimals is finer than any eye and any font, and it keeps a stored
@@ -3197,7 +3329,6 @@
          name that is a field has been typed into since (see whereEditable) */
       bar: name ? name.textContent : "",
       tab: document.title,
-      sub: takeKids(document.getElementById("topSub")),
       facts: takeKids(document.getElementById("topFacts")),
       extra: takeKids(findExtra),
     };
@@ -3224,7 +3355,6 @@
     if (layer.edit) whereEditable(h.bar, layer.edit.empty, layer.edit.each, layer.edit.done);
     else where(h.bar);
     if (document.title !== h.tab) document.title = h.tab;
-    putKids(document.getElementById("topSub"), h.sub);
     putKids(document.getElementById("topFacts"), h.facts);
     putKids(findExtra, h.extra);
     paintHeader();
@@ -3356,32 +3486,27 @@
   }
 
   /* --- WHAT THIS READER DOES WITH THIS SONG ----------------------------------
-     THE WHOLE STRIP IS ABOUT THE PAIR, and the pair is the two things a person
-     with a guitar actually decides: WHICH KEY THEY SING IT IN, and WHERE THE
-     CAPO GOES. Somebody who moved a song three semitones down did it because
-     that is where their voice sits; somebody who clamped at 2 did it for the
-     shapes THIS song asks for. Both are as true next week as they were
+     THE WHOLE STRIP IS ABOUT THE PAIR: which key this song is on the page in,
+     and where the capo goes for it. Somebody who moved a song three semitones
+     did it for the shapes THIS song asks for, and somebody who clamped at 2
+     did it for the same reason. Both are as true next week as they were
      tonight, and neither says anything about the next song.
 
-     WHAT IS KEPT IS THE PAGE AND THE SINGING. THE FRET IS WORKED OUT FROM THEM
-     (see capoOf), and that is the whole trick of this file: the capo is what
-     is left over between the chords printed on the page and the key the song
-     comes out in, so it cannot drift away from either of them, because there
-     is no copy of it anywhere to drift.
+     AND THE TWO MOVE TOGETHER, THE SAME WAY. Transpose down a semitone and the
+     capo comes down a fret with it; transpose up and it goes up. One press,
+     both numbers, in step.
 
-     WHICH IS WHAT MAKES THE TRANSPOSITION SAFE TO PRESS. Moving the page does
-     not move the singing, so the leftover, the fret, moves instead: transpose
-     down and the capo climbs to pay for it, and the song comes out of the
-     guitar in the key it came out in a second ago. The capo runs out at
-     MAX_CAPO, and past that the singing does move, because at that point no
-     fret on the neck could have kept it.
+     WHAT IS KEPT IS THE PAGE AND THE PIN. The fret is not stored anywhere: it
+     is worked out (see capoOf) from where the page is and where the capo was
+     last put by hand. That is the whole trick of this file, and it is what
+     lets the two travel together without either of them getting lost.
 
-     AND IT STILL COMES BACK. A fret kept as a number of its own would have
-     been clamped at each end and would have counted the presses it could not
-     take: three up against the ceiling and three back down would leave the
-     page where it started and the capo three frets away from where it started.
-     A leftover cannot do that. Put the page back and the subtraction gives the
-     same answer it gave before.
+     BECAUSE A FRET KEPT AS A NUMBER OF ITS OWN WOULD LOSE COUNT. It has to be
+     clamped, the neck being what it is, and a clamped number that is added to
+     on every press forgets the presses it could not take: three up against the
+     ceiling and three back down would put the page back where it started and
+     leave the capo three frets from where it started. Worked out instead, it
+     cannot. Put the page back and the same sum gives the same fret.
 
      The capo was one number on the account for a while, the same on every
      song, on the argument that it is a fact about the guitar. A guitar has no
@@ -3441,26 +3566,32 @@
     return typeof was.c === "number" ? 0 : null;
   }
 
-  /* WHAT COMES OUT OF THE GUITAR: the page plus whatever fret is holding the
-     rest of the distance. This is the number the capo protects, which is why
-     moving the page does not move it.
+  /* THE PIN: WHERE THIS READER PUT THE CAPO, MEASURED AT THE SONG'S OWN KEY.
+     The fret itself travels with the page, so it is no good as something to
+     write down: it would be a different number after every transposition. What
+     does not move is where they last put it BY HAND, held at a fixed point,
+     and the fixed point is the song as written. So the pin is the fret they
+     would be at with the page at zero, and the fret at any other page is the
+     pin plus the page (see capoOf).
 
-     Every reader already has one written down, in the old pair, and it was
-     never called this: "k" moved the chords and "c" was a note beside them
-     about a capo that really was on the neck, so the guitar really was sounding
-     k + c. Read that way, nobody has to be asked anything and nothing is lost.
-     The fret counts even where the page was never moved: somebody who only ever
-     clamped at 4 was sounding four semitones up, and reading it as "sings it as
-     written" would drop the whole song to pay for a fret already held. */
-  function keptSung(id) {
+     Every reader already has one, in the old pair, and it was never called
+     this: "k" was the page and "c" was the fret on the neck at that page, so
+     the pin is the difference. Nobody has to be asked anything and nothing is
+     lost, and it is written back under "a" the next time anything is pressed.
+
+     Not clamped here. The pin is allowed to sit off the end of the neck, and
+     that is deliberate: somebody who transposed six frets past the ceiling and
+     came back has a pin nobody could hold, and it is the only thing that knows
+     how to give them their fret back when they return. capoOf clamps at the
+     last moment, where a fret is actually being shown to a person. */
+  function keptPin(id) {
     var was = keptFor(id);
     if (!was) return null;
-    if (typeof was.s === "number" && was.s >= -11 && was.s <= 11) return Math.round(was.s);
+    if (typeof was.a === "number" && was.a >= -32 && was.a <= 32) return Math.round(was.a);
     var page = keptPage(id);
     if (page == null) return null;
     var c = typeof was.c === "number" && was.c >= 0 && was.c <= MAX_CAPO ? Math.round(was.c) : 0;
-    var sung = page + c;
-    return sung > 11 ? sung - 12 : sung;
+    return c - page;
   }
 
   /* Whether this reader has said anything at all about this song. The two
@@ -3469,7 +3600,7 @@
      handed one. */
   function saidAnything(id) {
     var was = keptFor(id);
-    return !!was && (typeof was.s === "number" || typeof was.p === "number"
+    return !!was && (typeof was.a === "number" || typeof was.p === "number"
       || typeof was.k === "number" || typeof was.c === "number");
   }
 
@@ -3536,26 +3667,27 @@
 
      So a reader who has said nothing is handed the easy version, and now it is
      handed to them AS WHAT IT IS. easyVersion searches capo frets, and a capo
-     fret is a capo fret: the answer goes into the capo, the singing stays where
-     the song was written, and the page falls out of the two. What used to
-     happen was the same shapes reached by moving the song down and calling the
-     fret a guess, which put the app in the position of having quietly changed
-     the key of a song nobody asked it to change.
+     fret is a capo fret: the page comes down to the shapes it found and the
+     fret it found is on the strip beside them. What used to happen was the
+     same shapes reached by moving the song down and calling the fret a guess,
+     so the one number that could have told anybody where to put their hand was
+     the one number the app would not commit to.
 
      Said once, here, by everything that has to say it: the page that opens the
      song, the row in the library and the evening. A row that says one thing
      and a page that does another is worse than neither of them saying
      anything.
 
-     TWO ANSWERS AND NOT ONE, because a reader who has set either has set the
-     page. Somebody who moved the singing and never touched a capo means capo
-     zero, and handing them the easy version on top of the key they chose would
-     move the song under them. Silence is the only thing the app answers. */
+     TWO ANSWERS AND NOT ONE, because a reader who has set either has set both.
+     Somebody who moved the page and never touched a capo means no capo, and
+     handing them the easy version's fret on top of the page they chose would
+     put a capo on a neck they never reached for. Silence is the only thing the
+     app answers. */
   function playedAs(song) {
     if (saidAnything(song.id)) {
       var page = keptPage(song.id);
-      var sung = keptSung(song.id);
-      return { page: page == null ? 0 : page, sung: sung == null ? 0 : sung };
+      var pin = keptPin(song.id);
+      return { page: page == null ? 0 : page, pin: pin == null ? 0 : pin };
     }
     /* NOTHING IS GUESSED AT A SONG NOBODY HAS CHECKED YET. A song a machine
        read out of a picture is opened beside that picture, and the whole of
@@ -3564,34 +3696,40 @@
        cannot be compared to anything, and a chord corrected on it is corrected
        into the wrong key. It gets the easy version like every other song the
        moment somebody has looked at it. */
-    if (song.review || song.status === "queued" || song.status === "reading") return { page: 0, sung: 0 };
+    if (song.review || song.status === "queued" || song.status === "reading") return { page: 0, pin: 0 };
     var used = chordsUsed(song.lines || []);
-    /* the easy version, as what it is: a fret, under a song still in its own
-       key, with the page moved down to meet it */
+    /* THE EASY VERSION, AS WHAT IT IS: the page comes down to the shapes and
+       the fret it was found at goes on the strip. The pin is the fret measured
+       at the song's own key, so for the two to come out at -easy and easy it
+       has to be twice that. Which is the arithmetic and not a coincidence: the
+       page has already travelled `easy` frets away from zero, and the fret
+       travels with the page, so the pin has to be that much further out for
+       the sum to land back on `easy`. */
     var easy = used.length ? easyVersion(used).capo : 0;
-    return { page: -easy, sung: 0 };
+    return { page: -easy, pin: 2 * easy };
   }
 
-  /* --- AND THE FRET IS WHAT IS LEFT OVER -------------------------------------
-     THIS IS THE WHOLE ARITHMETIC OF THE APP, and it is one subtraction. The
-     page is the shapes the hand makes. The singing is what comes out. A capo
-     at fret N raises everything the hand plays by N, so the fret that makes
-     those two true at once is the difference between them, and there is
-     nothing to decide.
+  /* --- AND THE FRET IS WORKED OUT ---------------------------------------------
+     THIS IS THE WHOLE ARITHMETIC OF THE APP, and it is one sum. The pin is
+     where the capo was last put by hand, measured at the song's own key. The
+     page is how far the chords have been moved from that key. The capo goes
+     the same way the page goes and by the same amount, so the fret is the two
+     added up, and there is nothing to decide.
 
      WHICH IS WHY THE TRANSPOSITION MOVES IT AND NOTHING HAS TO MAKE IT. Press
-     the page down one and the singing has not been asked to move, so the
-     difference is one bigger and the capo goes up a fret. Press the page back
-     and the difference is what it was. It cannot creep, it cannot get stuck at
-     an end and come back somewhere else, and it cannot disagree with the two
-     numbers it is made of, because it is not stored anywhere to be wrong.
+     the page down one and the sum is one smaller, so the capo comes down a
+     fret. Press it back and the sum is what it was. The fret cannot creep, it
+     cannot get stuck at an end and come back somewhere else, and it cannot
+     disagree with the two numbers it is made of, because it is not stored
+     anywhere to be wrong.
 
-     CLAMPED, BECAUSE A NECK ENDS. Below zero there is no such thing as a capo
-     and above MAX_CAPO there is no room for a hand, so past either end the
-     fret stops and the singing is what gives instead. That is not the app
-     losing the key: it is a guitar that cannot hold it, said out loud. */
+     CLAMPED HERE AND NOWHERE ELSE, BECAUSE A NECK ENDS. Below zero there is no
+     such thing as a capo and above MAX_CAPO there is no room for a hand, so
+     past either end the number shown stops. The PIN behind it does not stop,
+     which is the point: somebody who ran six frets past the ceiling and came
+     back finds their fret waiting for them, exactly where they left it. */
   function capoOf(played) {
-    return Math.max(0, Math.min(played.sung - played.page, MAX_CAPO));
+    return Math.max(0, Math.min(played.pin + played.page, MAX_CAPO));
   }
 
   /* The chords of this song as this reader will see them, and the fret their
@@ -4056,7 +4194,6 @@
     node.onkeydown = null;
     node.oninput = null;
     node.onblur = null;
-    whereUnder(null);
     /* And what stood beside the name goes with it. The bar's own end is wiped
        on every page (see paintHeader); this slot is not, so a song's credits
        would still be standing there on the page after it. */
@@ -4069,19 +4206,12 @@
     return node;
   }
 
-  /* AND THE SMALL LINE UNDER IT, for what is about the thing the name names
-     rather than about the page. One page uses it: a song says under its own
-     name who wrote it.
-
-     Cleared by where() above, so it belongs to whoever set it and never
-     survives the trip to the next page. */
-  function whereUnder(nodes) {
-    var sub = document.getElementById("topSub");
-    if (!sub) return null;
-    sub.textContent = "";
-    (nodes || []).forEach(function (node) { sub.appendChild(node); });
-    return sub;
-  }
+  /* THERE WAS A whereUnder HERE, a small second line under the name in the bar,
+     and one page used it: a song said under its own name who wrote it, in names
+     with a little pen or note where the words would not fit. It is gone, and so
+     is the slot in the bar it wrote into. Who wrote a song is one press away in
+     the panel behind the info button, said in words and with a page behind
+     every name, and a cramped second answer beside it was one answer too many. */
 
   /* AND WHERE THAT NAME IS A THING, IT IS THE FIELD FOR IT. A song, an
      evening and a person are each called something, and the bar is where that
@@ -5208,17 +5338,40 @@
         state.sift = sift;
       }
 
-      /* The way to what was deleted, under everything and only when there is
-         something there. A library with an empty bin says nothing about bins:
-         the door appears when there is a room behind it. */
+      /* --- THE DOORS UNDER THE WALL -----------------------------------------
+         Under the songs, in one row, whatever else this account has here. Both
+         of them are made the same way and neither is always there, so they
+         share the row rather than each bringing one of its own: two centred
+         rows one under the other, the first arriving a moment after the page,
+         is a page that jumps. */
+      var doors = null;
+      function door(node) {
+        if (!doors) {
+          doors = el("div", "after-list");
+          app.appendChild(doors);
+        }
+        doors.appendChild(node);
+      }
+
+      /* The bill, for the account that gets it. It is the only page in the app
+         that is one person's, so it is the only door drawn for one person, and
+         it is drawn without asking anything first: there is always something
+         behind it for whoever pays. */
+      if (isAdmin()) {
+        door(button("פענוח", ICON.receipt, "ghost small", function () {
+          go(BASE + "/reads");
+        }));
+      }
+
+      /* The way to what was deleted, and only when there is something there. A
+         library with an empty bin says nothing about bins: the door appears
+         when there is a room behind it. */
       if (auth.in) {
         db.deleted().then(function (gone) {
           if (!list.isConnected || !gone || !gone.length) return;
-          var back = el("div", "after-list");
-          back.appendChild(button("שירים שנמחקו (" + gone.length + ")", ICON.trash, "ghost small", function () {
+          door(button("שירים שנמחקו (" + gone.length + ")", ICON.trash, "ghost small", function () {
             go(BASE + "/deleted");
           }));
-          app.appendChild(back);
         }).catch(function () { /* not being able to say is not worth saying */ });
       }
     }).catch(fail);
@@ -5301,6 +5454,238 @@
       }
 
       paint(gone || []);
+    }).catch(fail);
+  }
+
+  /* --- WHAT THE READINGS COST -----------------------------------------------
+     /chords/reads. Every time a photograph was handed to the machine, as a
+     row: which song came out, how the reading went, what it cost, when, and
+     whose account it was on.
+
+     WHY IT IS A PAGE AND NOT A NUMBER ON A CARD. The price sat in the corner
+     of every song in the library, drawn for one account and invisible to
+     everybody else. Which is the wrong shape for what it is: money is asked
+     about in totals and in comparisons, "what is this costing me", "which of
+     these was the expensive one", "who is spending", and not one song at a
+     time on a wall you scroll. A column of prices you can order and gather is
+     an answer to all three; the same numbers scattered over a wall are an
+     answer to none of them.
+
+     ONE ACCOUNT SEES IT, and that is the database's rule and not this page's
+     (see song_costs in schema.sql). What the check below decides is only
+     whether to draw a page or a sentence: somebody else who types the address
+     is answered with an empty list either way, and an empty list is not an
+     explanation.
+
+     A READING WHOSE SONG THIS ACCOUNT MAY NOT OPEN IS STILL ON THE BILL. The
+     library is its authors' until they publish, so a song read by somebody
+     else and kept private is a price with no name on it here. It is shown as
+     exactly that rather than dropped: money that was spent is on the bill, and
+     the song behind it is not this account's to read. */
+  function viewReads() {
+    where("פענוח");
+    if (!auth.in) {
+      return needSignIn("הפענוחים ומה שהם עלו שייכים לחשבון שמשלם עליהם.");
+    }
+    if (!isAdmin()) {
+      app.innerHTML = "";
+      var no = el("div", "center");
+      no.appendChild(el("p", null, "הדף הזה שייך לחשבון שמשלם על הפענוחים."));
+      var out = el("div", "row-actions");
+      out.appendChild(button("לרשימת השירים", null, "ghost", function () { go(BASE + "/"); }));
+      no.appendChild(out);
+      app.appendChild(no);
+      return;
+    }
+
+    setBusy("טוען");
+    /* Three questions at once and none of them waits for the others: the
+       readings, the songs they were readings OF, and what the accounts that
+       paid for them are called. */
+    Promise.all([db.reads(), db.named(), db.everyone()]).then(function (answers) {
+      var rows = answers[0] || [];
+      var songs = answers[1] || {};
+      var folk = answers[2] || {};
+
+      /* What the page is showing, and it is two questions rather than one: the
+         order, and whether the rows stand in one list or under the accounts
+         that paid for them. Kept here, so pressing either does not go back to
+         the database for anything. */
+      var how = "dear";
+      var gathered = false;
+
+      app.innerHTML = "";
+
+      var head = el("div", "song-head");
+      head.appendChild(el("h1", null, "פענוח"));
+      head.appendChild(el("div", "by", "כל פעם שתמונה נמסרה למכונה: מה יצא ממנה, כמה עלתה, מתי, ועל חשבון מי."));
+      app.appendChild(head);
+
+      var bill = billOf(rows);
+      var sum = el("div", "read-sum");
+      app.appendChild(sum);
+
+      var controls = el("div", "kinds-row");
+      var orders = el("div", "tallies");
+      controls.appendChild(orders);
+      app.appendChild(controls);
+
+      var body = el("div");
+      app.appendChild(body);
+
+      var actions = el("div", "row-actions");
+      actions.appendChild(button("לרשימת השירים", null, "ghost small", function () { go(BASE + "/"); }));
+      var after = el("div", "after-list");
+      after.appendChild(actions);
+      app.appendChild(after);
+
+      /* --- the whole of it, in one line ---
+         The count and the total, over everything: the first thing anybody
+         opening a page of prices wants is the price of the lot. */
+      function paintSum() {
+        sum.textContent = "";
+        sum.appendChild(el("span", "read-total", billSaid(bill) || "בלי מחיר"));
+        var said = bill.n + (bill.n === 1 ? " פענוח" : " פענוחים");
+        /* and a reading whose price nobody knows is said, because a total that
+           quietly leaves rows out is a total that is wrong */
+        if (bill.unknown) said += ", " + bill.unknown + " מהם בלי מחיר";
+        sum.appendChild(el("span", "read-n", said));
+      }
+
+      function paintControls() {
+        orders.textContent = "";
+        READ_ORDERS.forEach(function (order) {
+          var chip = el("button", "tally" + (how === order.key ? " is-on" : ""));
+          chip.type = "button";
+          chip.appendChild(el("span", "tally-l", order.label));
+          chip.addEventListener("click", function () {
+            if (how === order.key) return;
+            how = order.key;
+            paintControls();
+            paintRows();
+          });
+          orders.appendChild(chip);
+        });
+
+        /* AND THE ONE THAT IS NOT AN ORDER. Gathering by account is a
+           different question from which way the money runs, so it is a chip
+           that stays pressed rather than a fourth of the three above: with it
+           on, the three still choose the order inside each account. */
+        var group = el("button", "tally tally-group" + (gathered ? " is-on" : ""));
+        group.type = "button";
+        group.appendChild(el("span", "tally-l", "לפי חשבון"));
+        group.title = "כל חשבון בנפרד, מהחשבון שהוציא הכי הרבה";
+        group.addEventListener("click", function () {
+          gathered = !gathered;
+          paintControls();
+          paintRows();
+        });
+        orders.appendChild(group);
+      }
+
+      function paintRows() {
+        body.textContent = "";
+        if (!rows.length) {
+          var empty = el("div", "center");
+          empty.appendChild(el("p", null, "עוד לא נקרא כאן שום דבר."));
+          body.appendChild(empty);
+          return;
+        }
+        if (!gathered) {
+          body.appendChild(listOf(readsSorted(rows, how), false));
+          return;
+        }
+        readsByAccount(rows, how).forEach(function (group) {
+          var band = el("section", "read-band");
+          var h = el("div", "read-h");
+          h.appendChild(el("div", "read-who", nameOf(group.reader)));
+          var paid = el("div", "read-paid");
+          paid.appendChild(el("span", "read-total", billSaid(group.bill) || "בלי מחיר"));
+          paid.appendChild(el("span", "read-n", group.bill.n + (group.bill.n === 1 ? " פענוח" : " פענוחים")));
+          h.appendChild(paid);
+          band.appendChild(h);
+          band.appendChild(listOf(group.rows, true));
+          body.appendChild(band);
+        });
+      }
+
+      function nameOf(reader) {
+        if (!reader) return "לא ידוע";
+        return folk[reader] || "חשבון בלי שם";
+      }
+
+      function listOf(some, under) {
+        var ul = el("ul", "list ledger");
+        some.forEach(function (row) { ul.appendChild(readRow(row, under)); });
+        return ul;
+      }
+
+      /* One reading. `under` is true where it stands under the account that
+         paid for it, and then the row does not say whose it is again: a column
+         of the same name repeated forty times is the heading, said forty
+         times. */
+      function readRow(row, under) {
+        var li = el("li");
+        var box = el("div", "row read");
+
+        var what = el("div", "what");
+        var top = el("div", "t-row");
+        top.appendChild(songSaid(row));
+
+        var went = wentOf(row);
+        if (went) {
+          var mark = el("span", "tag tag-went tag-" + went.kind, went.words);
+          mark.title = went.why;
+          top.appendChild(mark);
+        }
+        var agree = agreeSaid(row);
+        if (agree) top.appendChild(el("span", "by", agree));
+        what.appendChild(top);
+
+        var line = [];
+        if (!under) line.push(nameOf(row.reader));
+        var when = whenWords(row.created_at);
+        if (when) line.push(when);
+        if (line.length) {
+          var said = el("div", "a", line.join("  ·  "));
+          said.title = whenExactly(row.created_at);
+          what.appendChild(said);
+        }
+        box.appendChild(what);
+
+        var side = el("div", "side");
+        var paid = el("div", "read-paid-one", moneySaid(row) || "בלי מחיר");
+        paid.title = moneyWhy(row);
+        side.appendChild(paid);
+        box.appendChild(side);
+
+        li.appendChild(box);
+        return li;
+      }
+
+      /* WHICH SONG IT WAS, and the three answers the library can give: one
+         this account may open, one it may open and has thrown away, and one it
+         may not read at all. The third is not a hole in the page, it is what
+         the rule about whose library it is looks like from the side that pays
+         for the reading. */
+      function songSaid(row) {
+        var song = songs[row.song_id];
+        if (!song) return el("span", "t muted", "שיר של חשבון אחר");
+        var title = song.title || "בלי שם";
+        if (song.deleted_at) return el("span", "t muted", title + " (נמחק)");
+        var a = el("a", "t");
+        a.href = BASE + "/" + encodeURIComponent(song.slug);
+        a.addEventListener("click", function (event) {
+          event.preventDefault();
+          go(a.getAttribute("href"));
+        });
+        a.textContent = title;
+        return a;
+      }
+
+      paintSum();
+      paintControls();
+      paintRows();
     }).catch(fail);
   }
 
@@ -5609,18 +5994,13 @@
       var top = el("div", "t-row");
       top.appendChild(name());
 
-      /* What the machine charged to read this one, beside the name. It rode at
-         the end of the chords for a while, where it was the last thing on a row
-         of pink and read as one more chord; up here it is next to the only
-         other thing on the card that is about the song rather than about
-         playing it. Quiet, because it is worth knowing and it is not what the
-         card is for, and only for the account that pays it. */
-      var paid = price(s);
-      if (paid) {
-        var cost = el("span", "cost", paid);
-        cost.title = priceWhy(s);
-        top.appendChild(cost);
-      }
+      /* THE PRICE IS NOT HERE ANY MORE. What the machine charged to read this
+         one stood beside the name, for one account and for nobody else, and it
+         put money on a wall of songs: the card is asked "can I play this", and
+         a number in agorot is not part of the answer. What that number is
+         actually good for is being added up and compared, which a card cannot
+         do at all. It is a page now, /chords/reads, and every reading is a row
+         on it. */
       /* The kinds of song are NOT on the card. They are on nearly every card
          and they are the same two or three words on all of them, so as a label
          they say almost nothing and as ink they are a line of every card. What
@@ -6292,16 +6672,17 @@
        same thing: this reader and this song (see keptFor).
 
        `semis` is the page: the distance every chord below is drawn at, and
-       what the transposition buttons move. `sung` is what comes out of the
-       guitar, which the transposition does NOT move. `myCapo` is neither of
-       them, it is the gap between them (see capoOf), and it is never assigned
-       from anywhere but showMyCapo.
+       what the transposition buttons move. `pin` is where the capo was last
+       put by hand, held at the song's own key so that it survives the page
+       moving under it. `myCapo` is neither of them, it is the two added up and
+       clamped to the neck (see capoOf), and it is never assigned from anywhere
+       but showMyCapo.
 
        A song still coming out of the machine, or read out of one and not yet
        checked, gets nothing worked out for it at all (see playedAs). */
     var played = playedAs(song);
     var semis = played.page;
-    var sung = played.sung;
+    var pin = played.pin;
     var myCapo = capoOf(played);
 
     /* the size follows the reader from song to song. The key does not: it
@@ -6657,35 +7038,25 @@
 
       showFacts();
     } else {
-      /* Reading it, the credits are a sentence rather than a form, and it
-         matters which is which: whoever wrote the words is rarely the one you
-         heard sing them.
+      /* --- WHO WROTE IT IS NOT IN THE BAR ANY MORE ---------------------------
+         It was a second line under the name of the song: the names, small and
+         quiet, with a little pen or note where the word "מילים" would not fit.
+         Which was already a compromise, and every reason it was made got worse
+         as the credits got truer. Who wrote the words is three people as often
+         as one, and three names under the title, each carrying a picture that
+         has to be hovered to be read, is a line nobody can take in at a glance
+         and a line that only ever grows.
 
-         A name that is not known is not written down: an empty field is a
-         question the reader was not asked, and a song whose credits are both
-         empty says nothing here at all. Which is why this is a sentence and not
-         a form: a form has to show the rows it has no answers for, and a
-         sentence simply leaves them out.
+         AND THERE IS ONE PLACE FOR IT, one press away: the info button beside
+         it opens the panel that says all of it in full, in words rather than
+         in pictures, with a chip per person and a page behind every chip (see
+         songTold). Two answers to one question, one of them cramped, is one
+         answer too many, and the cramped one is the one that goes.
 
-         AND IT GOES UNDER THE NAME OF THE SONG, not on the strip beside the
-         chips. It stood there among what the song is and what state it is in,
-         which is a row of four things of four different kinds, and only one
-         of them belongs to the name: who made this is the second line of the
-         title and reads as one. Small, quiet, and with a picture where the
-         label was, because at that size "מילים:" costs more room than the
-         name it introduces. */
+         WHAT STAYS IN THE BAR IS THE NAME OF THE SONG, which is what the bar
+         is for. The slot the line was written into is gone from the page as
+         well (see the top of index.html), so there is nothing here to clear. */
       facts = el("div", "song-facts is-read");
-      /* ONE ENTRY PER PERSON, with as many pictures as they earned. Whoever
-         wrote the words usually wrote the tune, and their name under the title
-         twice with a different picture beside each was the two columns read
-         out loud. Both pictures, one name, and nothing about who did what is
-         lost by saying it once. */
-      whereUnder(creditsOnce(song).map(function (group) {
-        var one = el("span", "credit");
-        group.parts.forEach(function (c) { one.appendChild(creditMark(c)); });
-        one.appendChild(el("span", null, group.name));
-        return one;
-      }));
 
       /* WHAT KIND OF SONG IT IS DOES NOT BELONG ON THE SONG. A style is how the
          library is sorted: it is the answer to "what else is like this", and
@@ -6702,8 +7073,18 @@
 
          The draft mark stays, because it is not a label about the song but
          something to know before playing from the page: this one is not
-         finished. */
-      facts.appendChild(el("span", "tag tag-" + songState(), STATE_WORDS[songState()]));
+         finished.
+
+         AND "פורסם" IS NOT A MARK, IT IS THE ABSENCE OF ONE. A published song
+         is the ordinary song, the one every reader who is not its author is
+         looking at and the only kind they can open at all; a chip saying so
+         over every one of them is a green word in the bar that is true of the
+         whole library and tells nobody anything. The three that are worth
+         saying are the three that mean "not yet", and they are exactly the
+         ones left here. */
+      if (songState() !== "published") {
+        facts.appendChild(el("span", "tag tag-" + songState(), STATE_WORDS[songState()]));
+      }
 
       /* --- AND THE SAME PANEL, WITH NOTHING TO FILL IN -----------------------
          The info button was the editor's, which made "who wrote this" a
@@ -6763,6 +7144,13 @@
         }, true);
         metaPanel.addEventListener("close", function () { info.classList.remove("is-open"); });
       }
+
+      /* A published song with nothing to tell about itself leaves this box
+         with nothing in it, and an empty box still spends the bar's own gap:
+         a hole between the name of the song and the search, on the page where
+         there is least to explain it. Handed over as nothing instead, which is
+         a case the bar already knows (see placeControls). */
+      if (!facts.childNodes.length) facts = null;
     }
 
     app.appendChild(head);
@@ -6959,18 +7347,16 @@
        detail of the file now, and what each person plays it in is kept for
        each person (see keptPage). Nobody has to agree with anybody.
 
-       AND THE CAPO COMES WITH IT. Moving the chords is not asking to be heard
-       differently, it is asking for different shapes, so the fret takes up the
-       distance and the song comes out where it came out before: down one, capo
-       up one. Nothing here does that on purpose. The fret is the gap between
-       the page and the singing (see capoOf), this button moves one of the two,
-       and the gap is a gap. */
+       AND THE CAPO COMES WITH IT, THE SAME WAY AND BY THE SAME AMOUNT. Down a
+       semitone, down a fret; up a semitone, up a fret. Nothing here does that
+       on purpose: the fret is the pin plus the page (see capoOf), this button
+       is the page, and a sum moves when what it is made of moves. */
     var pitch = control(
       ICON.pitch, "טרנספוזיציה", null,
       function () { moveSemis(-1); },
       function () { moveSemis(1); }
     );
-    pitch.title = "מזיז את האקורדים על הדף, והקפו זז איתם כדי שהשיר יישמע אותו דבר.";
+    pitch.title = "מזיז את האקורדים על הדף, והקפו זז איתם באותו כיוון.";
     tools.appendChild(pitch);
 
     /* THE SIZE IS NOT HERE ANY MORE. It was two buttons and a number, three
@@ -6979,18 +7365,15 @@
        already has a gesture that means exactly that. See zoomBy below. */
 
     /* WHERE THE CAPO GOES, WHICH IS MOSTLY NOT PRESSED AT ALL. It answers to
-       the transposition beside it: that is where the fret comes from for
-       anybody who is simply looking for a shape they can hold, and the number
-       here is the whole of what they need out of it, WHERE DO I PUT IT.
+       the transposition beside it, and the number here is the whole of what
+       anybody needs out of it: WHERE DO I PUT IT.
 
-       Pressed by hand it means the other thing, and this is the one place the
-       two numbers part company. Moving the page is "different shapes, same
-       song"; moving the FRET while the page stands still is "same shapes,
-       higher song", which is what somebody means when they clamp at 2 and play
-       the chords in front of them. So it moves the singing and it does not
-       move the transposition, which is exactly what was asked for, and it is
-       not a special case: the fret is the gap, and pinning the gap while one
-       side holds still moves the other side.
+       PRESSED BY HAND IT MOVES ITSELF AND NOTHING ELSE. The chords on the page
+       do not budge, which is what was asked for, and it is not a special case
+       being kept: this writes the pin, the transposition writes the page, and
+       neither of them touches the other's number. What it changes is only
+       where the fret sits from here on, and where it will sit after the next
+       transposition, since the two travel together from wherever they are.
 
        A fret, so zero or up, and zero means no capo, which is a real answer
        and the usual one. Up to MAX_CAPO, which is where easyVersion stops
@@ -7013,29 +7396,29 @@
       function () { setMyCapo(myCapo + 1); },
       true
     );
-    capoCtl.title = "באיזה סריג הקפו. זז לבד עם הטרנספוזיציה, ואם מזיזים אותו ידנית השיר נשמע גבוה או נמוך יותר.";
+    capoCtl.title = "באיזה סריג הקפו. זז לבד עם הטרנספוזיציה, ואפשר להזיז אותו לבד בלי שהאקורדים יזוזו.";
     tools.appendChild(capoCtl);
 
-    /* NOT ASSIGNED, WORKED OUT, every time and from the same subtraction the
-       rest of the app uses. myCapo is a cache of one expression and this is
-       the only thing allowed to fill it, which is what stops a fret on screen
-       from ever being a fret nothing else agrees with. */
+    /* NOT ASSIGNED, WORKED OUT, every time and from the same sum the rest of
+       the app uses. myCapo is a cache of one expression and this is the only
+       thing allowed to fill it, which is what stops a fret on screen from ever
+       being a fret nothing else agrees with. */
     function showMyCapo() {
-      myCapo = capoOf({ page: semis, sung: sung });
+      myCapo = capoOf({ page: semis, pin: pin });
       myValue.textContent = String(myCapo);
     }
 
-    /* PINNING THE GAP. There is no fret to write down, so what a press on this
-       actually decides is the singing: hold the page still, ask for fret N,
-       and the song has to come out N above the shapes on it.
+    /* MOVING THE PIN, WHICH IS THE FRET HELD AT THE SONG'S OWN KEY. Asking for
+       fret N at this page means the pin is N minus the page, and the page is
+       not touched: the chords stay exactly where they are.
 
-       Off the ends of the neck it does nothing at all, rather than writing a
-       key nobody can reach with a capo. */
+       At either end of the neck the press does nothing at all, rather than
+       walking the pin off into the distance while the number stands still. */
     function setMyCapo(next) {
       var fret = Math.max(0, Math.min(next, MAX_CAPO));
       if (fret === myCapo) return;
-      sung = semis + fret;
-      keepFor(song.id, "s", sung);
+      pin = fret - semis;
+      keepFor(song.id, "a", pin);
       /* and the page is written down with it, so a reader who has now chosen
          one of the two is not still being answered for on the other */
       keepFor(song.id, "p", semis);
@@ -7309,23 +7692,22 @@
        too, and a guess that writes itself down is a guess nobody can tell from
        an answer.
 
-       THE SINGING IS NOT TOUCHED, and that is what makes the capo move: the
-       fret is the gap between the two, and this widens it. Down one, capo up
-       one, and the song comes out where it came out before.
+       THE PIN IS NOT TOUCHED, and that is what carries the capo along: the
+       fret is the pin plus the page, so a page that moves down one leaves a
+       fret one lower, in step and in the same direction.
 
-       PAST THE END OF THE NECK THE FRET STOPS AND THE SINGING GIVES, which is
-       the honest answer and not a wall: a page seven frets below its key is
-       already at the top of what a capo can do, and the press after that is
-       somebody asking for the song lower. It is still perfectly reversible,
-       because nothing was counted while the fret sat at its end. Press back up
-       and the same subtraction gives the same fret it gave on the way down. */
+       PAST THE END OF THE NECK THE NUMBER STOPS AND THE PIN KEEPS GOING, which
+       is what makes this safe to lean on. Nothing is being counted at the end
+       and lost there: the pin is still the same pin it was, however far out it
+       has been carried, so pressing back the other way brings the fret home to
+       the exact value it left from. */
     function moveSemis(by) {
       var next = semis + by;
       semis = next > 11 ? -11 : next < -11 ? 11 : next;
       keepFor(song.id, "p", semis);
-      /* and the singing is written down with it, so a reader who has now
-         chosen one of the two is not still being answered for on the other */
-      keepFor(song.id, "s", sung);
+      /* and the pin is written down with it, so a reader who has now chosen
+         one of the two is not still being answered for on the other */
+      keepFor(song.id, "a", pin);
       repage();
     }
 
@@ -11360,6 +11742,10 @@
 
     /* What was deleted and is still there. An account's own, so it needs one. */
     if (p[0] === "deleted") return viewDeleted();
+
+    /* Every reading there has ever been and what it cost. One account's, and
+       the only page here that is: see viewReads. */
+    if (p[0] === "reads") return viewReads();
 
     /* --- who wrote them ---
        /creators        everybody the library has a name for

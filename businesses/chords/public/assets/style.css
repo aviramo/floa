@@ -185,31 +185,18 @@ body.on-song { background: var(--bg); }
 }
 .top-where:empty { display: none; }
 
-/* --- AND WHO MADE IT, UNDER ITS NAME --------------------------------------
-   The second line of the title, at the size a second line is read at. It was
-   on the strip below, in a row with the styles and the state, and there it
-   was one of four things of four different kinds: this one is the only one
-   that belongs to the name.
+/* --- AND WHO MADE IT WAS UNDER ITS NAME, AND IS NOT ANY MORE ----------------
+   There was a .top-sub here, a second line under the title holding the credits
+   at twelve pixels, with a little pen and a little note standing in for the
+   words "מילים" and "לחן" because at that size the words were two thirds of
+   the line. It was already a compromise, and it got worse as the credits got
+   truer: the words of a song are three people's as often as one, and three
+   names each carrying a picture that has to be hovered to be read is a line
+   nobody takes in at a glance.
 
-   A picture where the label was. "מילים:" in front of a name is two thirds of
-   the line spent saying what is the same on every song, and the pen and the
-   note say it in the room a colon takes. */
-.top-sub {
-  display: flex; align-items: center; gap: 4px 14px;
-  max-width: 100%; overflow: hidden;
-  font-size: 12px; line-height: 1.4; color: var(--ink-soft);
-}
-.top-sub:empty { display: none; }
-/* ONE SHAPE FOR A CREDIT, wherever it is read: under the name on the page you
-   play from, and on the button that opens the form on the page you write on.
-   The picture says which of the two it is, so the same name written twice is
-   not two of anything, and no line has to explain itself. */
-.credit {
-  display: inline-flex; align-items: center; gap: 4px; min-width: 0;
-  white-space: nowrap;
-}
-.credit > span { overflow: hidden; text-overflow: ellipsis; }
-.credit svg { width: 13px; height: 13px; flex: none; opacity: .75; }
+   It is one press away instead, in the panel behind the info button, where
+   there is room for the word and for everybody it belongs to, and every name
+   in it is a chip with that person's page behind it. */
 /* Typed into rather than read. It takes a line under the pointer, because a
    name in a bar reads as a label until something says otherwise, and it says
    what it wants while it is empty. */
@@ -715,14 +702,10 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .list .row.is-reading { border-style: dashed; }
 .list .row.is-queued { border-style: dashed; opacity: .72; }
 .list .row.is-failed { border-color: #f0d3cf; background: #fffaf9; }
-/* what the machine charged to read this song. Quiet on purpose: worth knowing,
-   not what the row is for. */
-/* beside the name, on its line: the last thing read there, and never wrapped
-   into the middle of a title */
-.list .cost {
-  color: var(--ink-soft); font-size: 12px; white-space: nowrap;
-  direction: ltr; unicode-bidi: isolate;
-}
+/* THE PRICE OF A READING WAS HERE, beside the name of every song, for the one
+   account that pays for them. It is a page of its own now (see .ledger below):
+   money is read in totals and in comparisons, and a number in the corner of a
+   card is neither. */
 .list .row .a { color: var(--ink-soft); font-size: 14px; }
 .list .row .detail { flex-basis: 100%; }
 
@@ -768,10 +751,78 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 
 /* the way to what was deleted, and the way back from it: under the list, where
    somebody who has finished reading it is looking */
-.after-list { display: flex; justify-content: center; margin: -40px 0 64px; }
+/* One row under the wall, holding whatever doors this account has: the bill
+   and the bin. A gap, because there can be two of them and the second arrives
+   a moment after the page does. */
+.after-list { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin: -40px 0 64px; }
 /* a song that is not in the library any more, and is still every word of what
    it was */
 .list .row.is-gone { opacity: .8; }
+
+/* --- THE BILL: EVERY READING AND WHAT IT COST -----------------------------
+   /chords/reads, and it is the one list in this app that is NOT a wall. The
+   library is a wall because a song is a thing of its own size and the shape of
+   the shelf is worth seeing; a bill is read DOWN, one line per reading, with
+   the money in the same place on every line so the eye can run the column.
+   Hence one narrow column and not the card layout above.
+   ------------------------------------------------------------------------ */
+.list.ledger {
+  columns: auto; max-width: 680px; margin-inline: auto; margin-bottom: 28px;
+}
+.list.ledger li { margin-bottom: 8px; }
+.list .row.read { align-items: center; gap: 10px; padding: 12px 16px; }
+.list .row.read .what { flex: 1 1 auto; min-width: 0; }
+.list .row.read .t { font-size: 16px; }
+/* the name of the song is a link and it is not painted like one: the row is
+   the row, and the underline appears where the hand is */
+.list .row.read a.t { color: inherit; text-decoration: none; }
+.list .row.read a.t:hover { color: var(--accent); text-decoration: underline; }
+.list .row.read .side { flex: none; align-self: center; }
+
+/* THE MONEY, ALWAYS AT THE END OF THE ROW AND ALWAYS THE SAME WIDTH. Tabular
+   figures and one direction: a column of prices that shifts by a digit is a
+   column nobody can compare down. */
+.read-paid-one, .read-total {
+  font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: isolate;
+  white-space: nowrap; font-weight: 700;
+}
+.read-paid-one { font-size: 16px; }
+
+/* The whole of it, over the page: the total first and big, because it is what
+   the page is opened for, and what it is made of after it. */
+.read-sum {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  margin: 0 0 18px;
+}
+.read-sum .read-total { font-size: 22px; }
+.read-n { color: var(--ink-soft); font-size: 14px; }
+
+/* One account, and everything it spent. The heading is a line and not a card:
+   what is under it are the cards. */
+.read-band { margin-bottom: 26px; }
+.read-h {
+  display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+  max-width: 680px; margin: 0 auto 10px;
+  padding-bottom: 6px; border-bottom: 1px solid var(--line);
+}
+.read-who { font-weight: 700; font-size: 17px; flex: 1 1 auto; min-width: 0; }
+.read-paid { display: flex; align-items: baseline; gap: 8px; flex: none; }
+.read-paid .read-total { font-size: 16px; }
+
+/* HOW THE READING WENT, in the same chips the states of a song wear, and in
+   colours that mean the same things they mean there: green for the one that
+   went right and cost least, blue while it was the machine's work, amber for
+   the half that has been left to a person, red for the one that came back with
+   nothing. */
+.tag-measured { color: var(--published-ink); background: var(--published-soft); }
+.tag-model { color: var(--imported-ink); background: var(--imported-soft); }
+.tag-half { color: var(--review-ink); background: var(--review-soft); }
+.tag-failed { color: var(--danger); background: #f9e6e3; }
+
+/* The chip that gathers the rows by account rather than ordering them. Pressed
+   it is the accent, because it is the one control here that changes the shape
+   of the page and not the order of it. */
+.tally-group.is-on { color: var(--accent); background: var(--published-soft); }
 
 /* What stands in the sheet while the machine is still reading the song into
    it. In the sheet and not over the page, because it is standing exactly where
@@ -1249,7 +1300,6 @@ body.on-song .top { border-bottom: 0; }
   display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px;
   color: var(--ink-soft);
 }
-.song-facts .credit { font-size: 14px; }
 /* THE WAY INTO EVERYTHING THE SONG SAYS ABOUT ITSELF, WHILE IT IS BEING
    WRITTEN, and it is one button wide. The strip of names and kinds that used to
    stand here is in the panel behind it, in the shape you can change them in;
