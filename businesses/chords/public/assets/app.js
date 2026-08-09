@@ -3715,7 +3715,7 @@
      the two pages about people, and it is one button on all three. */
   function toEvenings() {
     return keep("toEvenings", function () {
-      return button("אירועי שירה", ICON.calendar, "ghost small", function () {
+      return button("אירועים", ICON.calendar, "ghost small", function () {
         go(BASE + "/evenings");
       });
     });
@@ -4801,11 +4801,11 @@
         });
       }
 
-      /* The styles and the people, over the songs. Only on the library itself:
-         a shelf is already one style, and a page that opened narrowed to one
-         kind of song has no business offering the other eleven above it. */
-      /* THE EVENINGS FIRST, AND THEY ARE NOT MADE OF THE SONGS. The other two
-         bands are the library counted up, so they are ready the moment it is;
+      /* The styles, over the songs. Only on the library itself: a shelf is
+         already one style, and a page that opened narrowed to one kind of song
+         has no business offering the other eleven above it. */
+      /* THE EVENINGS FIRST, AND THEY ARE NOT MADE OF THE SONGS. The other
+         band is the library counted up, so it is ready the moment it is;
          an evening is a row in a table of its own that belongs to an account,
          and it arrives on its own. Hence a slot of its own at the top, filled
          when the answer comes rather than a band that appears above the others
@@ -4829,8 +4829,8 @@
 
          So the library hands the box a sieve (see state.sift in buildFind) and
          typing narrows what is drawn: the songs by everything they are made of,
-         and the three bands over them by name, so a page held down to one word
-         is that word's events, shelves, people and songs and nothing else.
+         and the two bands over them by name, so a page held down to one word
+         is that word's events, shelves and songs and nothing else.
          Bands with nothing left in them go, rather than standing empty. */
       var sifted = "";
 
@@ -4883,20 +4883,15 @@
             return shelfRow(name, counted[name]);
           })));
         }
-
-        var people = creatorsOf(state.songs).filter(function (person) {
-          return passes(person.name);
-        });
-        if (people.length) {
-          bands.appendChild(wall("יוצרים", people.map(function (person) {
-            return creatorRow(person, true);
-          })));
-        }
       }
 
-      /* The songs get a label of their own now that two labelled bands stand
+      /* The people are not here on purpose: the library has one name per song
+         and dozens of names in all, so a wall of them pushed the songs off the
+         first screen. They live on /creators, a click away in the bar.
+
+         The songs get a label of their own now that a labelled band stands
          over them, and only then: the page used to be called "שירים" in the
-         bar, which named the one thing on it. Under a band of people, an
+         bar, which named the one thing on it. Under a band of shelves, an
          unnamed wall of cards reads as more of the band. */
       var listHead = el("h2", "band-h", "שירים");
       app.appendChild(listHead);
@@ -9897,7 +9892,7 @@
     where("צריך חשבון");
     app.innerHTML = "";
     var box = el("div", "center");
-    box.appendChild(el("p", null, said || "אירועי השירה שייכים לחשבון. כל אחד רואה, מתכנן ומוחק רק את שלו."));
+    box.appendChild(el("p", null, said || "האירועים שייכים לחשבון. כל אחד רואה, מתכנן ומוחק רק את שלו."));
     var actions = el("div", "row-actions");
     actions.appendChild(googleButton("התחברות עם גוגל"));
     actions.appendChild(button("לרשימת השירים", null, "ghost", function () { go(BASE + "/"); }));
@@ -9975,7 +9970,7 @@
   }
 
   function viewEvenings() {
-    where("אירועי שירה");
+    where("אירועים");
     setBusy("טוען אירועים");
 
     /* The names come along, because they are what a row of this list shows.
