@@ -117,7 +117,7 @@ ${section({
   id: "projects",
   className: "projects",
   children: html`${sectionHead(projectsHead)}
-${projectGrid(ctx, { items: pickProjects("once", "harpatka") })}`,
+${projectGrid(ctx, { items: pickProjects("once", "chords", "harpatka") })}`,
 })}
 
 ${section({

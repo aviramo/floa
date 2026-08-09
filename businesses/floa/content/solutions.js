@@ -126,7 +126,7 @@ export const solutions = [
         eyebrow: "עבודות",
         title: "מוצרים דיגיטליים שנבנו מהרעיון ועד השימוש בפועל",
       },
-      projects: ["once", "harpatka"],
+      projects: ["once", "chords", "harpatka"],
     },
 
     cta: {

@@ -19,6 +19,24 @@ export const projects = {
     ],
   },
 
+  chords: {
+    name: "אקורדים",
+    title: "אפליקציית ספריית שירים ואקורדים",
+    href: "https://floa.co.il/chords/",
+    ariaLabel: "האפליקציה אקורדים",
+    linkLabel: "לאפליקציה",
+    /* The library beside one song open for playing: the two screens the app
+       actually lives in, captured from the running app and not redrawn. */
+    shots: [
+      { src: "assets/project-chords.webp", width: 1200, height: 1200, alt: "האפליקציה אקורדים, ספריית השירים בתצוגת דסקטופ לצד דף שיר פתוח לנגינה בתצוגת מובייל" },
+    ],
+    parts: [
+      { label: "האתגר", text: "דפי אקורדים מפוזרים בין קבצים, צילומי מסך ואתרים, וכל ערב שירה מתחיל בחיפוש מחדש" },
+      { label: "הפתרון", text: "אפליקציה אחת עם ספרייה משותפת, דף נגינה לכל שיר ואירועי שירה שמרכזים את הרשימה" },
+      { label: "מה נבנה", text: "ספרייה עם חיפוש לפי שיר, יוצר וסגנון, עורך שירים שמעמיד כל אקורד על ההברה שלו, טרנספוזיציה, פריסה שמתאימה את עצמה למסך, אירועי שירה, התחברות ודאטהבייס משותף" },
+    ],
+  },
+
   harpatka: {
     name: "יוצאים להרפתקה",
     title: "דף נחיתה ומערך הרשמה לאירועים",
@@ -36,5 +54,5 @@ export const projects = {
   },
 };
 
-/* pick("harpatka", "once") -> the two, in that order */
+/* pick("harpatka", "once") -> those two, in that order */
 export const pick = (...keys) => keys.map((key) => projects[key]);
