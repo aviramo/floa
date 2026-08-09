@@ -33,7 +33,7 @@
   ],
   "scripts": {
     "hooks": "git config core.hooksPath .githooks",
-    "test":"node worker/test/lead.test.mjs && node worker/test/transcribe.test.mjs && node worker/test/geometry.test.mjs && node worker/test/page.test.mjs && node businesses/chords/test/model.test.mjs && node businesses/chords/test/credits.test.mjs && node businesses/chords/test/played.test.mjs",
+    "test":"node worker/test/lead.test.mjs && node worker/test/transcribe.test.mjs && node worker/test/geometry.test.mjs && node worker/test/page.test.mjs && node businesses/chords/test/model.test.mjs && node businesses/chords/test/credits.test.mjs && node businesses/chords/test/played.test.mjs && node businesses/chords/test/costs.test.mjs",
     "test:layout": "node businesses/chords/test/layout.test.mjs",
     "test:stack": "node businesses/chords/test/stack.test.mjs",
     "build": "node build.mjs",

@@ -390,7 +390,12 @@ body.on-song { background: var(--bg); }
     padding: 0 12px; gap: 9px; justify-content: flex-start; background: var(--card);
   }
   body.finding .top-find input[type="search"] { width: auto; flex: 1 1 auto; }
-  body.finding .brand, body.finding .top-actions, body.finding .top-name { display: none; }
+  /* The facts go with the name, because they are the name's second half: what
+     the song says about itself has nothing to do with the question being typed
+     into the box, and one more picture standing there is one more bite out of
+     the ninety pixels the box was already short of. */
+  body.finding .brand, body.finding .top-actions, body.finding .top-name,
+  body.finding .top-facts { display: none; }
   /* everything that could have given the bar back is now hidden, so the box
      carries its own way out */
   body.finding .top-find .find-x { display: flex; }

@@ -1261,6 +1261,33 @@
         });
       return whoKnown[id];
     },
+
+    /* AND EVERYBODY AT ONCE, for the one page that names accounts rather than
+       an account: a list of readings gathered by who paid for them asks the
+       question once per group, and one request is one request however many
+       groups there turn out to be. */
+    everyone: function () {
+      return rest(WHO + "?select=id,name").then(function (rows) {
+        var by = {};
+        (rows || []).forEach(function (row) {
+          by[row.id] = String(row.name || "").trim();
+        });
+        return by;
+      }).catch(function () { return {}; });
+    },
+
+    /* Every song this account may open, by id, with just enough to name it and
+       get to it. THE DELETED ONES TOO, which the library itself never asks
+       for: a reading that was paid for is still on the bill after somebody
+       throws the song away, and a row that cannot say which song it was is a
+       price with nothing attached to it. */
+    named: function () {
+      return rest(T + "?select=id,slug,title,deleted_at").then(function (rows) {
+        var by = {};
+        (rows || []).forEach(function (row) { by[row.id] = row; });
+        return by;
+      }).catch(function () { return {}; });
+    },
   };
 
   /* --- evenings of singing --------------------------------------------------
@@ -3436,16 +3463,25 @@
     /* At the START of the bar, which right to left is its right hand end: they
        are about the song, and what is already there is about the page. */
     home.insertBefore(made.tools, home.firstChild);
-    /* WHO WROTE IT GOES WITH THE NAME OF THE SONG, not at the far end of the
-       bar among the dials. It stood there beside the transposer and the size,
-       which is a line of text in a row of controls: it is the only thing up
-       there that is a FACT about the song rather than something to press, and
-       the name it belongs under is at the other end of the bar.
-       So it sits directly after the name and before the search, which is where
-       it reads as the second half of the title rather than as a control that
-       lost its buttons. On a phone there is no room for it there and it stays
-       on the strip, in the row with the dials. */
-    var beside = NARROW.matches ? null : document.getElementById("topFacts");
+    /* WHAT THE SONG SAYS ABOUT ITSELF GOES WITH THE NAME OF THE SONG, not at
+       the far end of the bar among the dials, and NOT ON THE STRIP EITHER.
+       It stood beside the transposer and the size, which is the only thing up
+       there that is a FACT about the song rather than something to press, half
+       a bar away from the name it is about.
+
+       ON A PHONE IT WENT TO THE STRIP, and the reason was room: this was a
+       line of TEXT then, the credits written out, and there is no room for a
+       sentence beside a name on a phone. It is one picture now, and the strip
+       is the wrong place for a picture that is not a control: down there among
+       the dials it reads as a fourth dial, at the far end of the row from the
+       song it is about, and pressing it does not change the page like the
+       three beside it do.
+
+       So it is beside the name on both, where it reads as the second half of
+       the title. One picture fits next to a name on the narrowest phone, and
+       the one thing on that bar that ever needs the whole width takes it from
+       everything anyway (see body.finding in the stylesheet). */
+    var beside = document.getElementById("topFacts");
     if (made.facts) {
       if (beside) beside.appendChild(made.facts);
       else home.insertBefore(made.facts, made.tools);
@@ -5634,7 +5670,7 @@
 
         var went = wentOf(row);
         if (went) {
-          var mark = el("span", "tag tag-went tag-" + went.kind, went.words);
+          var mark = el("span", "tag tag-" + went.kind, went.words);
           mark.title = went.why;
           top.appendChild(mark);
         }
@@ -5654,8 +5690,12 @@
         box.appendChild(what);
 
         var side = el("div", "side");
-        var paid = el("div", "read-paid-one", moneySaid(row) || "בלי מחיר");
-        paid.title = moneyWhy(row);
+        var said = moneySaid(row);
+        var paid = el("div", "read-paid-one", said || "בלי מחיר");
+        /* the hover explains a price. A row with no price is explained by the
+           words already in it, and "לפי שער 3.70" over "בלי מחיר" is an answer
+           to a question the row is not asking. */
+        if (said) paid.title = moneyWhy(row);
         side.appendChild(paid);
         box.appendChild(side);
 
@@ -6962,6 +7002,18 @@
       showState = function () {
         var was = songState();
         statusChip.className = "status-chip tag tag-" + was;
+        /* AND "פורסם" IS NOT A STATE WORTH A WORD, IT IS THE ABSENCE OF ONE.
+           The three others all mean "not yet", which is worth knowing before
+           playing from the page or handing it to anybody; published is the
+           ordinary song, the one every reader who is not its author sees and
+           the only one they can open at all. A green chip saying so over every
+           finished song is a word in the bar that is true of the library.
+
+           Nothing is lost by it going. Pressing it published the song, and a
+           published song has nothing left to be offered; the way back is not
+           the chip either, it is touching the song (see mark), and the moment
+           that happens the chip is a draft again and standing here again. */
+        statusChip.hidden = was === "published";
         /* and while it is being read, what it is doing: the state saying more
            about itself, in the state's own chip */
         var stage = coming && song.status_note ? "  ·  " + song.status_note : "";
@@ -7000,12 +7052,15 @@
       });
       factsBtn.classList.add("song-info");
 
-      /* The state and the button, in that order, which is the row the reader's
-         page shows in the same place: what this song is right now, and the way
-         into everything else it says about itself. */
+      /* THE BUTTON FIRST AND THE STATE AFTER IT, which is the row the reader's
+         page shows in the same place. The button is on every song and the
+         state is on some of them, so it is the button that sits against the
+         name: put the state first and it holds the place next to the title on
+         the few songs that have one and leaves it empty on the rest, which is
+         the one thing in the bar moving sideways from song to song. */
       facts = el("div", "song-facts");
-      facts.appendChild(statusChip);
       facts.appendChild(factsBtn);
+      facts.appendChild(statusChip);
 
       var showFacts = function () {
         var said = creditsLine(song);
@@ -7081,10 +7136,15 @@
          over every one of them is a green word in the bar that is true of the
          whole library and tells nobody anything. The three that are worth
          saying are the three that mean "not yet", and they are exactly the
-         ones left here. */
-      if (songState() !== "published") {
-        facts.appendChild(el("span", "tag tag-" + songState(), STATE_WORDS[songState()]));
-      }
+         ones left here.
+
+         Made now and put in AFTER the button below, for the reason the editor
+         gives where it builds the same row: the button is on every song and
+         this is on a few, so it is the button that stands against the name and
+         this that comes after it. */
+      var stateMark = songState() === "published"
+        ? null
+        : el("span", "tag tag-" + songState(), STATE_WORDS[songState()]);
 
       /* --- AND THE SAME PANEL, WITH NOTHING TO FILL IN -----------------------
          The info button was the editor's, which made "who wrote this" a
@@ -7144,6 +7204,8 @@
         }, true);
         metaPanel.addEventListener("close", function () { info.classList.remove("is-open"); });
       }
+
+      if (stateMark) facts.appendChild(stateMark);
 
       /* A published song with nothing to tell about itself leaves this box
          with nothing in it, and an empty box still spends the bar's own gap:
