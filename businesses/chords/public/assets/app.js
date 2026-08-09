@@ -2851,9 +2851,14 @@
        drawn at the width of ONE gap, so every gap past that is air around a
        stroke that is already there: five put a hand's width of nothing either
        side of it and read as two songs rather than as one line carrying the
-       end of another. Four is the fewest that still tells the two marks apart,
-       which the stylesheet does by counting them (see .gap-run), so it is the
-       narrowest this can be without the diagonal turning into an arc. */
+       end of another.
+
+       WHAT FOUR NO LONGER DOES IS SAY WHICH MARK THIS IS. It did, and that
+       was a bug with a number for a cause: four gaps opened by hand inside a
+       word were counted as a separator and the page announced a new line
+       where somebody had only made room. The separator is its own row now
+       (see buildSep) and the stylesheet reads the row, so this number is
+       about width alone and can be changed for how it looks. */
     var SEP_GAPS = 4;
     var row = null;
 
@@ -2885,9 +2890,10 @@
 
        AND IT NEEDS NO CLASS OF ITS OWN. The stylesheet already knows what a
        run of artificial spaces is, because fillSpans marks the first of every
-       run and tells it how many there are; the mark is drawn from that. Every
-       version of this that added a class here was a version that could fail
-       to arrive, and did. */
+       run and tells it how many there are, and it knows this run is a
+       separator because the row it is in is `.ln-sep`. Both facts are already
+       there; every version of this that added a third was a version that
+       could fail to arrive, and did. */
     var sep = new Array(SEP_GAPS + 1).join(GAP);
 
     lines.forEach(function (line) {
@@ -3081,9 +3087,15 @@
        the same ones the format already has, with the mark drawn on the run by
        the stylesheet (see fillSpans). It stands between the two rows and
        belongs to neither: nothing can be typed into it and nothing is copied
-       out of it, because it is not a line of anything. */
-    function buildSep() {
+       out of it, because it is not a line of anything.
+
+       IT RUNS THE WAY THE LINE IT INTRODUCES RUNS, said here because it is
+       the only place that knows. The separator is a child of the pair and not
+       of either row, so it cannot inherit a direction from the row beside it,
+       and the mark on it leans one way or the other by direction. */
+    function buildSep(dir) {
       var node = el("div", "ln-t ln-sep");
+      node.dir = dir === "ltr" ? "ltr" : "rtl";
       fillSpans(node, sep);
       return node;
     }
@@ -3135,7 +3147,7 @@
          of the page follows on from. */
       var share = el("div", "ln-row");
       made.forEach(function (node, n) {
-        if (n) share.appendChild(buildSep());
+        if (n) share.appendChild(buildSep(node.dir));
         share.appendChild(node);
       });
       var end = desc.pieces[desc.pieces.length - 1];

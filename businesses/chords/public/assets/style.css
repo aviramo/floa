@@ -1846,7 +1846,7 @@ body.on-song .top { border-bottom: 0; }
    written, because a solidus in the text is one more character in a row of
    characters, and the one thing this must not look like is a word: the rest
    of the row is the song, and this is a fact about the screen. */
-.ln-t .gap-run::after {
+.ln-sep .gap-run::after {
   content: "";
   position: absolute;
   /* centred in the run, however many spaces it holds */
@@ -1861,7 +1861,7 @@ body.on-song .top { border-bottom: 0; }
 }
 /* it leans the way the line runs, or it leans back into the words it holds
    apart and reads as the wrong kind of mark */
-.ln[dir="ltr"] .ln-t .gap-run::after { transform: rotate(-20deg); }
+.ln-sep[dir="ltr"] .gap-run::after { transform: rotate(-20deg); }
 
 /* --- AND A SPACE SOMEBODY OPENED KEEPS ITS ARC ----------------------------
    Two marks for two different things. The diagonal says "these two lines were
@@ -1869,22 +1869,24 @@ body.on-song .top { border-bottom: 0; }
    "this is room between two letters", which is a fact about the song. They
    must not be the same mark.
 
-   TOLD APART BY HOW MANY SPACES THERE ARE, and by nothing else. The pour lays
-   down four (see SEP_GAPS); a press of the gap button lays down one, so a
-   person would have to press four times running to be mistaken for a break.
-   Which is also why the pour lays down exactly four and not more: the count is
-   the whole of what tells the two marks apart, so four is the narrowest the
-   separator can be, and anything above it is air around a mark one gap wide.
+   TOLD APART BY WHICH ROW THEY ARE IN, and by nothing else. The separator is
+   a row of its own, `.ln-sep`, built by the pour out of nothing but gaps and
+   standing between two lines; every other run of gaps is inside the words of
+   a line. So the diagonal is drawn only in there, and the arc only outside
+   it, and no press of the gap button can produce either the wrong one.
 
-   Counted in the stylesheet rather than marked in the script, which is the
-   whole point of doing it this way: fillSpans already writes the count onto
-   the run, so both marks are drawn from what is already there. Three attempts
-   at this added a class of their own and the class never arrived, and the arc
-   was the one mark that always worked for exactly that reason. An opacity
-   that computes to nothing draws nothing, and min() gives each mark a count
-   at which it goes out. */
-.ln-t .gap-run::after { opacity: min(1, calc(var(--run, 1) - 3)); }
-.ln-t .gap-run::before {
+   IT WAS TOLD APART BY COUNTING, and counting was wrong. The separator lays
+   down four gaps, so the two marks swapped at four: press the gap button four
+   times to hold a long word open and the page said «a new line begins here»,
+   about a place where nobody had pressed anything of the sort. A count is a
+   guess at what somebody meant, and the row already knows.
+
+   THE ROW IS THE ONE CLASS THAT ARRIVES. Earlier attempts marked some gap
+   from the pour and the class kept failing to reach the span; this one is on
+   the container buildSep creates, which is the same class fillSpans already
+   reads to decide that a run standing alone still carries a mark. One fact,
+   read in two places, and neither can be handed a row without it. */
+.ln-t:not(.ln-sep) .gap-run::before {
   content: "";
   position: absolute;
   inset-inline-start: 0;
@@ -1892,13 +1894,18 @@ body.on-song .top { border-bottom: 0; }
   bottom: calc(var(--song-size) * .12);
   /* the height IS the depth of the dip: the vertical radius is the whole of
      it, so the curve uses every pixel given here and no more */
-  height: calc(var(--song-size) * .15);
+  /* AND IT DEEPENS WITH THE RUN. A tie is shallow, and a shallow curve held
+     across a hand's width of room is a straight line with two bent ends: the
+     one thing it must not read as. So the dip grows a little with every gap
+     under it and stops at a third of the size, which is as deep as a mark
+     under the words can go before it is a mark of its own. */
+  height: calc(var(--song-size) * min(.33, .15 + .035 * (var(--run, 1) - 1)));
   /* THICK ENOUGH TO BE A STROKE. A hairline curve loses to the antialiasing
      along its shallow middle, which is exactly the part that says «arc»: it
      comes out as a smudge with two crisp ends. */
   border-bottom: 2px solid var(--chord);
   border-radius: 0 0 50% 50% / 0 0 100% 100%;
-  opacity: min(.55, calc(4 - var(--run, 1)));
+  opacity: .55;
 }
 
 
