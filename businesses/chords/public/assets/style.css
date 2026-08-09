@@ -728,7 +728,7 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 
 .row-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-inline-start: auto; }
 
-/* --- THE BANDS OVER THE WALL: THE STYLES, AND THE PEOPLE --------------------
+/* --- THE BAND OVER THE WALL: THE STYLES ------------------------------------
    The same card as a song, and not the same shape of list. The songs are a
    wall: many, unequal, read by scrolling, and columns are what lets each one
    be exactly as tall as it is. A band is a handful of short cards read across
@@ -756,12 +756,10 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 /* Which shelf this is. Quiet and centred: it is a label on a shelf, not a
    heading somebody is meant to read before the shelf.
 
-   CENTRED OVER THE WALL OF SONGS TOO, which is the one that fills from the
-   edge of the page rather than from the middle. Its label used to start where
-   its cards start, for that reason, and that made it the one label on the page
-   standing somewhere else. Read down the page they are a column of labels, and
-   a column with one word pushed out to an edge reads as three shelves and a
-   heading rather than as four shelves. */
+   CENTRED OVER THE WALL OF SONGS, which is the one that fills from the edge of
+   the page rather than from the middle. It used to start where its cards
+   start, for that reason, and centred it sits over the band of shelves above
+   it instead of off to one side of the page. */
 .band-h {
   margin: 0 0 12px;
   font-size: 14px; font-weight: 700; color: var(--ink-soft);
@@ -2054,18 +2052,19 @@ body.on-song .top { border-bottom: 0; }
 
 /* --- THE PANEL THE SONG'S FACTS ARE WRITTEN IN ----------------------------
    A form and not a question, so it is spaced like one: the line that says the
-   typing keeps itself sits with the heading, the fields have air under it, and
-   the way out runs the width of the panel.
+   typing keeps itself sits with the heading, and the fields have air under it.
 
-   That last one is the only button here and it does nothing but shut the
-   panel. A pill in the corner made it look like the one that saves, which is a
-   button this panel does not have; the width says the opposite, that it is the
-   floor of the panel rather than a decision on it, and it is the easier thing
-   to hit with a thumb into the bargain. */
+   There is no row of buttons at the foot. There was one, running the width of
+   the panel and doing nothing but shutting it, which is a button standing
+   where the one that saves would stand on a panel that saves as it is typed.
+   Escape and the dark behind the panel do the same thing and neither of them
+   has to be read first, so the panel ends where its fields end. */
 .dlg-meta .dlg-in { gap: 6px; }
 .dlg-meta .song-meta { margin-top: 14px; }
-.dlg-meta .dlg-actions { margin-top: 18px; }
-.dlg-meta .dlg-actions .btn { flex: 1 1 auto; justify-content: center; }
+/* The heading takes the focus when the panel opens, so that a dialog does not
+   hand it to the × on the first chip. It is a place to start and not a control,
+   and a ring around it would say it was one. */
+.dlg-meta h2:focus { outline: none; }
 
 /* --- AND THE SAME PANEL, READ RATHER THAN FILLED IN -----------------------
    What somebody who cannot change the song sees when they press the same

@@ -4923,21 +4923,14 @@
 
       /* The styles, over the songs. Only on the library itself: a shelf is
          already one style, and a page that opened narrowed to one kind of song
-         has no business offering the other eleven above it. */
-      /* THE EVENINGS FIRST, AND THEY ARE NOT MADE OF THE SONGS. The other
-         band is the library counted up, so it is ready the moment it is;
-         an evening is a row in a table of its own that belongs to an account,
-         and it arrives on its own. Hence a slot of its own at the top, filled
-         when the answer comes rather than a band that appears above the others
-         a moment later and pushes them down.
+         has no business offering the other eleven above it.
 
-         Nobody else's, ever: the database answers this question with the
-         evenings of whoever is asking and with nothing at all for a reader who
-         is not signed in, so a visitor has no such band and there is no way to
-         write one that shows another account's. */
-      var mine = el("div");
+         The evenings are NOT here. They were, in a band of their own at the
+         top, and they are somebody's own rows rather than anything the library
+         is made of: the first thing on the page of songs was a handful of
+         appointments that only the signed-in reader had. They live on
+         /evenings, a click away in the bar. */
       var bands = el("div");
-      app.appendChild(mine);
       app.appendChild(bands);
 
       /* --- WHAT THE BOX IN THE BAR IS SIEVING THIS PAGE DOWN TO ----------------
@@ -4949,41 +4942,13 @@
 
          So the library hands the box a sieve (see state.sift in buildFind) and
          typing narrows what is drawn: the songs by everything they are made of,
-         and the two bands over them by name, so a page held down to one word
-         is that word's events, shelves and songs and nothing else.
-         Bands with nothing left in them go, rather than standing empty. */
+         and the band of shelves over them by name, so a page held down to one
+         word is that word's shelves and songs and nothing else.
+         A band with nothing left in it goes, rather than standing empty. */
       var sifted = "";
 
       function passes(hay) {
         return !sifted || String(hay).toLowerCase().indexOf(sifted) >= 0;
-      }
-
-      /* Read once and kept: the evenings are somebody's own rows and they do
-         not change under a keystroke, so sieving them is not asking again. */
-      var myEvenings = null;
-
-      function paintMine() {
-        if (shelf || !auth.in) return;
-        if (myEvenings) return drawMine();
-        findEveningList().then(function (rows) {
-          /* the page may have been left while the answer was in the air */
-          if (!mine.isConnected) return;
-          myEvenings = byWhen(rows || []);
-          drawMine();
-        }).catch(function () { /* not being able to say is not worth saying */ });
-      }
-
-      function drawMine() {
-        mine.textContent = "";
-        var titles = {};
-        state.songs.forEach(function (s) { titles[s.id] = s.title; });
-        var shown = (myEvenings || []).filter(function (evening) {
-          return passes(eveningHay(evening, titles));
-        });
-        if (!shown.length) return;
-        mine.appendChild(wall("אירועים", shown.map(function (evening) {
-          return eveningRow(evening, null, true);
-        })));
       }
 
       function paintBands() {
@@ -4999,7 +4964,7 @@
         var names = Object.keys(counted).filter(passes)
           .sort(function (a, b) { return a.localeCompare(b, "he"); });
         if (names.length) {
-          bands.appendChild(wall("סגנונות", names.map(function (name) {
+          bands.appendChild(wall(names.map(function (name) {
             return shelfRow(name, counted[name]);
           })));
         }
@@ -5009,10 +4974,10 @@
          and dozens of names in all, so a wall of them pushed the songs off the
          first screen. They live on /creators, a click away in the bar.
 
-         The songs get a label of their own now that a labelled band stands
-         over them, and only then: the page used to be called "שירים" in the
-         bar, which named the one thing on it. Under a band of shelves, an
-         unnamed wall of cards reads as more of the band. */
+         The songs keep a label of their own even though the band of shelves
+         over them dropped its: the page used to be called "שירים" in the bar,
+         which named the one thing on it, and with something standing above it
+         an unnamed wall of cards reads as more of that something. */
       var listHead = el("h2", "band-h", "שירים");
       app.appendChild(listHead);
 
@@ -5205,7 +5170,6 @@
         }).catch(function () { /* a failed refresh is not worth a red screen */ });
       }
 
-      paintMine();
       paintBands();
       paint();
       poll();
@@ -5239,7 +5203,6 @@
           sifted = sift.q.trim().toLowerCase();
           paint();
           paintBands();
-          paintMine();
         };
         sift.q = "";
         state.sift = sift;
@@ -5788,22 +5751,25 @@
     return li;
   }
 
-  /* --- THE TWO OTHER WAYS INTO THE LIBRARY -----------------------------------
-     Over the songs stand the styles and then the people, each a band of cards
-     of its own. Both were pages you could only reach by typing their name into
-     the box, which is a fine way to reach a thing you already know the name of
-     and no way at all to find out what the library has: "what kinds of song
-     are here" and "whose songs are here" are the two questions somebody opens
-     a library with, and until now the page answered neither.
+  /* --- THE OTHER WAY INTO THE LIBRARY ----------------------------------------
+     Over the songs stand the styles, a band of cards of its own. It was a page
+     you could only reach by typing its name into the box, which is a fine way
+     to reach a thing you already know the name of and no way at all to find
+     out what the library has: "what kinds of song are here" is a question
+     somebody opens a library with, and until now the page did not answer it.
 
      They are the SAME CARD the songs below them are, because they are the same
      gesture: a name, how much of it there is, and a page behind it. What they
      are not is a wall. A wall is what you scroll; these are read across in one
      look, so they stand in the middle of the page and stop where they stop
-     (see .list.band). */
-  function wall(title, rows) {
+     (see .list.band).
+
+     UNTITLED, and it does not need a title: a row of names each followed by
+     how many songs it holds is legible as what it is, and the word over it was
+     a label on the one shelf in the room. The songs below still carry theirs,
+     because there the heading is what separates two walls of cards. */
+  function wall(rows) {
     var box = el("section", "band");
-    box.appendChild(el("h2", "band-h", title));
     var ul = el("ul", "list band");
     rows.forEach(function (row) { ul.appendChild(row); });
     box.appendChild(ul);
@@ -6527,24 +6493,45 @@
          saying "done here" is allowed to be one. */
       metaPanel = el("dialog", "dlg dlg-meta");
       var metaBox = el("div", "dlg-in");
-      metaBox.appendChild(el("h2", null, "מי כתב, ואיזה סוג"));
-      /* Why there is no save button on a panel full of fields. One line, said
-         once, under the question the panel is asking: without it the only
-         button here reads as the one that keeps the typing, and somebody who
-         leaves by the dark behind the panel is left wondering what they lost.
-         Nothing, is the answer. */
-      metaBox.appendChild(el("p", "muted", "נשמר תוך כדי הכתיבה."));
-      metaBox.appendChild(meta);
-      var metaDone = el("div", "dlg-actions");
       /* AND THIS IS WHAT THE PANEL OPENS ONTO. A dialog with nothing marked
          hands the focus to the first thing in it that can take it, which here
          is the × on the first person's chip: a ring around a way of removing
-         somebody, and a stray Enter doing it. The way out is the safe thing to
-         land on, and it is what a reader of this panel wants next anyway. */
-      var doneBtn = button("סיום", null, "ghost", function () { metaPanel.close(); });
-      doneBtn.autofocus = true;
-      metaDone.appendChild(doneBtn);
-      metaBox.appendChild(metaDone);
+         somebody, and a stray Enter doing it. So the title takes it instead. It
+         is not a stop on the way through the panel, only the place the panel
+         starts, and what it says when it is read out is the panel's own name. */
+      var metaTitle = el("h2", null, "פרטים");
+      metaTitle.tabIndex = -1;
+      metaTitle.setAttribute("autofocus", "");
+      metaBox.appendChild(metaTitle);
+      /* Why there is no button at the foot of a panel full of fields, not one
+         to save and not one to finish. Every field here writes itself as it is
+         typed, so a button down there would be a second way of doing what
+         Escape and the dark behind the panel already do, standing exactly where
+         a save button stands and read as one. This line says once what it would
+         have said, and then the panel is nothing but its fields. */
+      metaBox.appendChild(el("p", "muted", "נשמר תוך כדי הכתיבה."));
+      metaBox.appendChild(meta);
+      /* AND WHO PUT IT IN THE LIBRARY, the same sentence the reader's panel
+         ends with (see songTold) and for the same reasons: under a line rather
+         than in the column of answers, because who wrote a song is a fact about
+         the song and who typed it in is a fact about the row. It is here too
+         and not only there because a panel of fields is exactly where somebody
+         goes looking for it, and finding nothing reads as "this is not kept".
+
+         Not a field, though, and never one. The database fills the column in
+         from the token that wrote the song and refuses a row claiming anybody
+         else, so there is nothing here to be asked. The name arrives after the
+         panel does, so the line is built empty and hidden. */
+      if (song.owner) {
+        var metaWho = el("div", "told-who");
+        metaWho.hidden = true;
+        metaBox.appendChild(metaWho);
+        db.who(song.owner).then(function (name) {
+          if (!name || !metaWho.isConnected) return;
+          metaWho.textContent = "נוסף לספרייה על ידי " + name;
+          metaWho.hidden = false;
+        });
+      }
       metaPanel.appendChild(metaBox);
       /* The dark behind it. A press lands on the dialog itself only where the
          panel is not, which is exactly there. */
@@ -6725,9 +6712,12 @@
          button is here too, in the same place in the bar, opening the same
          panel with the answers where the fields were (see songTold).
 
-         READ AND NOT WRITTEN, all of it. There is no field in it, nothing in
-         it is saved, and the way out says so: the editor's panel is finished
-         with, this one is simply shut.
+         READ AND NOT WRITTEN, all of it. There is no field in it and nothing
+         in it is saved, and it shuts the way the editor's panel shuts: Escape,
+         or the dark behind it. Neither of them carries a button at the foot,
+         because in a panel that is only answers a button there is one more
+         thing to read before the answers, for a way out both panels already
+         have twice over.
 
          And it is not built at all for a song that has neither a name on it
          nor a kind. A button that opens an empty panel is a button that has
@@ -6736,11 +6726,15 @@
       if (told) {
         metaPanel = el("dialog", "dlg dlg-meta dlg-told");
         var toldBox = el("div", "dlg-in");
-        toldBox.appendChild(el("h2", null, "מי כתב, ואיזה סוג"));
+        /* The title takes the focus, for the reason the editor's does: what a
+           dialog hands it to otherwise is the first chip in the list, which
+           here is a link to somebody's page and a stray Enter away from
+           leaving the song. */
+        var toldTitle = el("h2", null, "פרטים");
+        toldTitle.tabIndex = -1;
+        toldTitle.setAttribute("autofocus", "");
+        toldBox.appendChild(toldTitle);
         toldBox.appendChild(told);
-        var toldDone = el("div", "dlg-actions");
-        toldDone.appendChild(button("סגירה", null, "ghost", function () { metaPanel.close(); }));
-        toldBox.appendChild(toldDone);
         metaPanel.appendChild(toldBox);
 
         var info = iconBtn(ICON.info, "מי כתב, ואיזה סוג", function () {
@@ -10163,10 +10157,8 @@
 
   /* ONE EVENING, AS A CARD. The same card a song is and a person is, because
      the app has one card (see .list a). `titles` is the library by id, for the
-     names of the songs in it; `brief` is the card standing in a band over
-     something else, where the evening is a way in rather than the page, and
-     the list of what is sung at it is a paragraph the band has no room for. */
-  function eveningRow(evening, titles, brief) {
+     names of the songs in it. */
+  function eveningRow(evening, titles) {
     var li = el("li");
     var a = el("a");
     a.href = BASE + "/evenings/" + evening.id;
@@ -10185,10 +10177,8 @@
     /* The songs themselves rather than how many of them there are. The count
        is a number you have to open the evening to make any use of; the names
        are the evening. */
-    if (!brief) {
-      var names = songNames(evening, titles || {});
-      box.appendChild(el("div", "a names", names.length ? names.join("  •  ") : "עוד בלי שירים"));
-    }
+    var names = songNames(evening, titles || {});
+    box.appendChild(el("div", "a names", names.length ? names.join("  •  ") : "עוד בלי שירים"));
 
     a.appendChild(box);
 
