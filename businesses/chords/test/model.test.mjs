@@ -9,7 +9,7 @@ const end = src.indexOf("/* ----------------------------------------------------
 if (start < 0 || end < 0) throw new Error("could not find the model block");
 
 const block = src.slice(start, end);
-const api = new Function(block + "\nreturn { slugify, transposeChord, remapChords, parsePasted, looksLikeChord, isChord, suggestChords, chordsUsed, easyVersion, toChordPro, fromChordPro, songToText, textToSong, normalizeLines, songDir, splitLine, joinLines, padTo, padTail, growHead, fitPadding, GAP, diffLines, changeCount };")();
+const api = new Function(block + "\nreturn { slugify, transposeChord, remapChords, parsePasted, looksLikeChord, isChord, suggestChords, chordsUsed, easyVersion, keyChoices, toChordPro, fromChordPro, songToText, textToSong, normalizeLines, songDir, splitLine, joinLines, padTo, padTail, growHead, fitPadding, GAP, diffLines, changeCount };")();
 
 /* The artificial space (see GAP): room on the screen and nothing in the words,
    which is what a line grows by when a chord is dragged past its last one. */
@@ -256,6 +256,33 @@ eq("barres become open shapes under a capo",
 
 eq("the lowest capo wins a tie", api.easyVersion(["C", "G"]).capo, 0);
 eq("nothing to play, nothing to say", api.easyVersion([]), { capo: 0, shapes: [], hard: 0 });
+
+/* --- and the few keys worth offering ---------------------------------------
+   The same ranking, opened out into a short menu. Each choice is a page and
+   the fret that pays for it, and the two always agree: capo = sung - page,
+   which is the one subtraction the whole app is made of (see capoOf). */
+const keyed = (used, sung) => api.keyChoices(used, sung || 0)
+  .map((c) => c.shapes[0] + "@" + c.capo);
+
+eq("a song of open chords is offered the keys that stay open",
+  keyed(["Am", "G", "C", "Em"]), ["Am@0", "Em@5", "Dm@7"]);
+
+/* Bm A G D is one barre away from open at fret 7, and that is the only fret
+   where all four come out open, so the tier of one is topped up to three. */
+eq("the easiest tier first, then enough of the next to be a choice",
+  keyed(["Bm", "A", "G", "D"]).length, 3);
+eq("the fret that opens every shape is in the list", keyed(["Bm", "A", "G", "D"])[2], "Em@7");
+
+eq("never the whole chromatic scale", keyed(["C#m", "F#", "B", "E"]).length <= 5, true);
+eq("nothing to play, nothing to choose from", api.keyChoices([], 0), []);
+
+/* The page is the transposition the chords are printed at, and it is exactly
+   what the fret is subtracted from. A reader who has already taken the song
+   down as far as it goes has fewer frets left to be offered. */
+eq("page and fret are the one subtraction",
+  api.keyChoices(["Am", "G", "C", "Em"], 0).every((c) => c.page === -c.capo), true);
+eq("no key is offered that could not be written down",
+  api.keyChoices(["Am", "G", "C", "Em"], -9).every((c) => c.page >= -11), true);
 
 /* --- lines cut and joined, the way a text editor does it --- */
 eq("Enter cuts a line and the chords go with their own characters",

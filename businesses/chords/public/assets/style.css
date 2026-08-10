@@ -1400,29 +1400,12 @@ body.on-song .top { border-bottom: 0; }
 /* The picture and the number side by side, read in that order: what it is,
    and what it is at. */
 .tools .dial { display: flex; align-items: center; gap: 4px; line-height: 1; }
-/* ONE SHAPE FOR ALL THREE: a picture, the number beside it, and less and more
-   in one box like the buttons on anything else that counts. Joined, because
-   two bordered squares with air between them is two of everything a stepper
-   needs one of, and three controls' worth of that is most of a phone's row. */
-/* NOT UNDER .tools ANY MORE. The capo's stepper is moved out of the strip and
-   into a panel on the body when it is opened (see control in app.js), and a
-   rule that only worked inside the strip left it there unstyled: two bare
-   buttons in a heap. It is the same box wherever it is standing. */
-.steps {
-  display: inline-flex; background: #fff;
-  border: 1px solid var(--line); border-radius: var(--corner); overflow: hidden;
-}
-.steps .icon-btn { border: 0; border-radius: 0; width: 22px; height: 20px; }
-.steps .icon-btn + .icon-btn { border-inline-start: 1px solid var(--line); }
-.steps .icon-btn svg { width: 12px; height: 12px; }
-.steps .icon-btn:hover { background: var(--bg); }
-
 /* --- A CONTROL THAT IS ITS OWN BUTTON --------------------------------------
-   The capo folds: the picture and the fret are what you press, and less and
-   more come out under them. So the pair has to LOOK pressable, which the two
-   loose spans it used to be did not, and it is drawn as the stepper beside it
-   is drawn, one box with a line round it. Open, it is lit like everything else
-   in this app that has a panel hanging off it. */
+   Both dials fold: the picture and the value are what you press, and what it
+   could be comes out under them. So the pair has to LOOK pressable, which the
+   two loose spans it used to be did not, and it is drawn as one box with a
+   line round it. Open, it is lit like everything else in this app that has a
+   panel hanging off it. */
 .tools .dial-btn {
   appearance: none; font: inherit; color: inherit; cursor: pointer;
   padding: 2px 7px; height: 22px; background: #fff;
@@ -1431,18 +1414,76 @@ body.on-song .top { border-bottom: 0; }
 .tools .dial-btn:hover { background: var(--bg); }
 .tools .dial-btn[aria-expanded="true"] { color: var(--accent); border-color: var(--accent); }
 .tools .dial-btn[aria-expanded="true"] .lbl { color: inherit; }
-
-/* Under the dial and over everything, with the shadow that says it is standing
-   off the page, the same as the offer under a word (see .gap-offer). Its
-   buttons are bigger than the ones on the strip were: nothing is competing for
-   the room out here, and a fret is set with a finger. */
-.steps-pop {
-  position: fixed; z-index: 50;
-  border-radius: var(--corner); box-shadow: 0 2px 8px rgba(23, 32, 42, .12);
-}
-.steps-pop .icon-btn { width: 32px; height: 28px; }
-.steps-pop .icon-btn svg { width: 14px; height: 14px; }
 .tools .sep { width: 1px; height: 16px; background: var(--line); }
+
+/* --- AND WHAT COMES OUT OF IT ----------------------------------------------
+   One panel for both dials: under the dial, over everything, with the shadow
+   that says it is standing off the page, the same as the offer under a word
+   (see .gap-offer). What differs is only what is put inside it, a list of keys
+   or a keypad of frets, and neither of those has to know where it is standing.
+
+   NOT UNDER .tools. The panel is on the body while it is open, so a rule that
+   only worked inside the strip would leave it there unstyled. */
+.dial-pop {
+  position: fixed; z-index: 50; padding: 4px;
+  background: #fff; border: 1px solid var(--line); border-radius: var(--corner);
+  box-shadow: 0 2px 8px rgba(23, 32, 42, .12);
+  /* A column of eight on a phone held sideways is taller than the glass, and a
+     panel that runs off the bottom is a choice nobody can reach. */
+  max-height: calc(100vh - 56px); overflow-y: auto;
+}
+
+/* --- THE KEYS ON OFFER -----------------------------------------------------
+   A few keys the song can be played in, each with the capo it wants. Wide
+   enough that the widest of them, a chord of four characters beside "בלי קפו",
+   never breaks over two lines.
+
+   A row is a line of a menu and not a button on a toolbar, so it is drawn as
+   one: no border, the whole width, and it lights under a finger. */
+.keys { min-width: 140px; }
+.key-opt {
+  appearance: none; display: flex; width: 100%; align-items: baseline;
+  justify-content: space-between; gap: 14px;
+  padding: 8px 10px; font: inherit; text-align: start; white-space: nowrap;
+  color: inherit; background: none; border: 0; border-radius: 6px; cursor: pointer;
+}
+.key-opt:hover { background: var(--bg); }
+/* The chord in the ink chords are written in everywhere else in the app, so
+   the list reads as a row of chords and not as a row of words. */
+.key-opt .key-name {
+  font-size: 15px; font-weight: 700; direction: ltr; color: var(--chord);
+}
+.key-opt .key-fret { font-size: 12px; color: var(--ink-soft); }
+/* Where you already are. Painted rather than ticked: a mark in a column of its
+   own is a column, and this list is two things wide already. */
+.key-opt.is-on { background: var(--chord-soft); }
+.key-opt.is-on .key-fret { color: var(--ink); }
+
+/* --- AND THE EIGHT FRETS ---------------------------------------------------
+   ONE COLUMN, TOP TO BOTTOM, and not the four by two pad this was first drawn
+   as. A pad is a keypad, and a keypad is for a number you already know: it is
+   read by hunting for the one you came for. This is a neck. Eight frets in a
+   row down the panel are the neck itself, in the order the neck is in, and the
+   eye runs down them instead of across and back.
+
+   Which is also the shape of the keys beside them, so the two panels are one
+   thing learned once: a column of choices, the one you are at painted in. */
+.frets { display: flex; flex-direction: column; }
+.fret-opt {
+  appearance: none; min-width: 52px; height: 32px; padding: 0;
+  font: inherit; font-size: 15px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: inherit; background: none; border: 0; border-radius: 6px; cursor: pointer;
+}
+.fret-opt:hover { background: var(--bg); }
+.fret-opt.is-on { color: #fff; background: var(--accent); }
+
+/* A song with no chords in it yet has no key, and the dial goes with it. The
+   strip lays its controls out with flex, which outranks what [hidden] means. */
+.tools .ctl[hidden] { display: none; }
+/* Chords, not digits: the fret's tabular figures would space the letters of a
+   chord name out to the width of a number. */
+.tools .key-val { font-variant-numeric: normal; min-width: 0; }
 /* A PICTURE NEEDS A SIZE. An svg with none is not small, it is whatever the
    box around it happens to allow, which in a flex row is nothing at all: the
    three pictures were in the page and none of them was on the screen. */
@@ -1697,6 +1738,39 @@ body.on-song .top { border-bottom: 0; }
    one. The margin is not spare room, it is what a word carrying vowel points
    needs: a holam sits above the letter, and above that box. */
 .ln-c { position: relative; height: calc(var(--song-size) * .61); }
+
+/* --- AND ON A PHONE IT IS ALSO SOMETHING TO PRESS -------------------------
+   The height above is the height a chord needs and not a pixel more, which is
+   right everywhere the song is being read and wrong in the one place a lane is
+   pressed. Eleven pixels is not a small target, it is not a target: measured
+   with a real browser and a real finger, a tap on the strip lands in the words
+   underneath, and so does a tap aimed to the pixel, because a phone snaps a
+   tap to whatever near it is worth tapping and a line you can type into is
+   worth more than a strip. Swept, the answer is fourteen: at twelve the middle
+   of the lane starts winning the tap, and fourteen is that with something to
+   spare.
+
+   THE REACH GOES ABOVE THE CHORD AND NOT AROUND IT. The label is pushed down
+   by exactly what the lane grew by, so it stands where it always stood, as
+   close to the syllable as the glyphs allow. What grew is the empty air over
+   it, which was the previous line's business and is now the way in to putting
+   a chord down.
+
+   The last three pixels, the ones against the letters, still go to the words,
+   and they should: that close to a line, a tap is somebody reaching for the
+   text.
+
+   A TAIL ROW GETS ONE TOO. A piece of a long line carrying no chords has no
+   lane at all while it is being read, which saves the space it would waste. On
+   a phone nearly every line is poured into a head and a tail, so a tail with
+   no lane is half the song with nowhere to put a chord. It costs the space
+   here and it is worth it, in the editor and only there.
+   ------------------------------------------------------------------------ */
+@media (max-width: 620px) {
+  .ed .ln-c,
+  .ed .ln.is-cont.is-tight .ln-c { height: calc(var(--song-size) * .61 + 14px); }
+  .ed .chord { top: 14px; }
+}
 .ln-t {
   white-space: pre;
   font-size: var(--song-size);
@@ -2355,7 +2429,7 @@ body.on-song .top { border-bottom: 0; }
      than about the song. On paper it is the song. */
   .past-band { display: none !important; }
   /* what is offered on a screen is not a fact about the song on paper */
-  .gap-offer, .steps-pop, .chord-offer { display: none !important; }
+  .gap-offer, .dial-pop, .chord-offer { display: none !important; }
   /* what a version changed is about two versions, and paper holds one */
   .ln.is-add::before, .ln.is-gone::before { display: none; }
   .ln.is-gone { display: none; }

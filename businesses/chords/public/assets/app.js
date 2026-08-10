@@ -1855,6 +1855,59 @@
     return best;
   }
 
+  /* --- AND THE FEW IT IS WORTH BEING OFFERED IN ------------------------------
+     easyVersion answers with the one best fret, which is what a row in the
+     library needs: it has one line to say it in. A reader with the song open
+     is asking something else. Not "what is easiest", which the app has already
+     decided for them, but "what else can I hold this in", and the honest
+     answer to that is a short list of real ones.
+
+     A FRET IS A KEY HERE. The singing does not move when the page does (see
+     capoOf), so each fret is the same song coming out of the guitar under a
+     different set of shapes. Choosing one is choosing both at once: what is
+     printed over the words, and where the capo goes to pay for it.
+
+     ONLY WHAT A HAND CAN HOLD. Twelve keys is a catalogue, and nine of them
+     are four barre chords deep for anybody who came here to play the song
+     tonight. So the frets are ranked by how many shapes fall outside the open
+     position, which is the count easyVersion already ranks by, and what is
+     offered is the top of that ranking and nothing else.
+
+     THE BEST TIER, AND ENOUGH OF IT TO BE A CHOICE. A list of one is a button
+     that opens onto the answer it is already showing, so where the easiest
+     tier is short the next fret or two come up with it. Never past MOST, which
+     is the catalogue coming back. */
+  var LEAST_KEYS = 3;
+  var MOST_KEYS = 5;
+
+  function keyChoices(used, sung) {
+    if (!used.length) return [];
+    var all = [];
+    /* Below -11 there is no page to write down (see keptPage), so a reader who
+       has already taken the song a long way down has fewer frets left to
+       reach for. Everybody else has the whole neck. */
+    var top = Math.min(MAX_CAPO, sung + 11);
+    for (var capo = 0; capo <= top; capo++) {
+      var page = sung - capo;
+      var shapes = used.map(function (chord) { return transposeChord(chord, page); });
+      all.push({
+        capo: capo, page: page, shapes: shapes,
+        hard: shapes.filter(function (shape) { return !OPEN_SHAPES[shape]; }).length,
+      });
+    }
+
+    var order = all.slice().sort(function (a, b) { return a.hard - b.hard || a.capo - b.capo; });
+    var kept = order.filter(function (one) { return one.hard === order[0].hard; });
+    while (kept.length < LEAST_KEYS && kept.length < order.length) kept.push(order[kept.length]);
+    kept = kept.slice(0, MOST_KEYS);
+
+    /* Shown in the order the neck runs and not in the order they were ranked.
+       A list that rearranges itself as the song is edited is a list nobody can
+       learn the shape of, and the fret is the one thing about these that has
+       an order of its own: no capo first, and down the neck from there. */
+    return kept.sort(function (a, b) { return a.capo - b.capo; });
+  }
+
   /* A new line runs the way the line before it ran. Whoever is typing an
      English chorus is typing the second line of it too, and being handed a
      Hebrew line in the middle of it is being handed the wrong thing. */
@@ -7404,69 +7457,19 @@
 
     var tools = el("div", "tools");
 
-    /* ONE CONTROL IS ONE THING: its name, what it is at, and the two buttons
-       that move it. So it is one group and not four things standing in a row,
-       and the air goes between the controls rather than through the middle of
-       either of them. Less and more sit side by side, and the count sits with
-       its label rather than between them, so transposition and size are laid
-       out identically and neither has to be read differently from the other. */
-    /* THE NAME IS A PICTURE. Three words, each as long as the control it names,
-       is most of a row on a phone spent saying what the numbers beside them
-       already say: a value that goes up and down under an arrow is a key, and
-       under two letters is a size. The word is still there for anyone hovering
-       or listening. */
-    function control(icon, label, valueNode, less, more, folded) {
-      var ctl = el("span", "ctl");
+    /* --- A PANEL THAT HANGS OFF A DIAL ----------------------------------------
+       Two of the things on this strip are shut until they are asked for: the
+       fret, whose less and more come out under it, and the key, whose choices
+       do. One gesture, learned once, and one piece of code, because what is
+       hard about a panel is never what is in it. It is everything around it:
+       where it lands on a narrow screen, what closes it, and the fact that the
+       button that opened it is not "outside" it.
 
-      /* The picture and then the number, in the order they are read: what it
-         is, and what it is at. They stood one over the other while this row
-         was a row of its own; the row is a strip beside the song's own facts
-         now, and a stacked pair is twice the height of the tallest thing that
-         has any business being here. */
-      var dial = el(folded ? "button" : "span", "dial" + (folded ? " dial-btn" : ""));
-      var lbl = el("span", "lbl");
-      lbl.appendChild(svg(icon));
-      lbl.title = label;
-      lbl.setAttribute("aria-label", label);
-      dial.appendChild(lbl);
-      if (valueNode) dial.appendChild(valueNode);
-      ctl.appendChild(dial);
-      /* THE TWO OF THEM IN ONE BOX. They were two bordered squares with air
-         between them, which is two of everything a stepper needs one of, and
-         three controls' worth of that is most of a phone's row. Joined, they
-         read as the one thing they are, and the row fits.
-
-         Side by side rather than stacked, and less before more, which right to
-         left is less on the right: the height of the strip is the height of
-         this pair, and this pair is the only thing on it that was ever two
-         things tall. */
-      var steps = el("span", "steps");
-      steps.appendChild(iconBtn('<path d="M5 12h14"/>', "פחות " + label, less));
-      steps.appendChild(iconBtn(ICON.plus, "יותר " + label, more));
-      if (!folded) {
-        ctl.appendChild(steps);
-        return ctl;
-      }
-
-      /* --- FOLDED: THE BUTTONS ARE NOT STANDING THERE ------------------------
-         Two buttons on the strip is two buttons on the strip for the whole of
-         a song, for a number most people set once and then read. So the
-         picture and the number ARE the control: press them, and less and more
-         come out under them; press anywhere else, and they go away again.
-
-         Which is the shape the editor already has for the one other thing that
-         is offered rather than done (see offerGap): a small pair of buttons
-         under the thing they are about, dismissed by the next press outside
-         them. One gesture, learned once, in both places.
-
-         The stepper is BUILT either way and moved into the panel when it is
-         opened, so what comes out is the same box of two halves it always was
-         and not a second drawing of it. */
-      dial.type = "button";
-      dial.title = label;
-      dial.setAttribute("aria-label", label);
-      dial.setAttribute("aria-expanded", "false");
-
+       WHAT GOES IN IS FILLED IN FRESH ON EVERY OPENING. The stepper hands back
+       the same box of two halves each time, which is what makes it the one
+       control it looks like; the key hands back a list of a song that may have
+       been edited since it was last looked at. Both are one call. */
+    function fold(dial, klass, fill) {
       var pop = null;
 
       function shut() {
@@ -7507,8 +7510,8 @@
 
       dial.addEventListener("click", function () {
         if (pop) return shut();
-        pop = el("div", "steps-pop");
-        pop.appendChild(steps);
+        pop = el("div", klass);
+        fill(pop, shut);
         document.body.appendChild(pop);
         place();
         dial.setAttribute("aria-expanded", "true");
@@ -7519,36 +7522,129 @@
            the strip travels with the song. */
         window.addEventListener("scroll", shut, true);
       });
+    }
 
+    /* ONE CONTROL IS ONE THING: its picture, what it is at, and the choices
+       behind it. So it is one group and not three things standing in a row,
+       and the air goes between the controls rather than through the middle of
+       either of them.
+
+       THE NAME IS A PICTURE. Two words, each as long as the control it names,
+       is most of a row on a phone spent saying what the value beside them
+       already says. The word is still there for anyone hovering or listening.
+
+       AND THERE IS NO STEPPER LEFT ON EITHER OF THEM. Both of these were less
+       and more: a pair of buttons that answered "where do I want to be" with
+       "which way is it from here", and left the reader to walk there reading
+       the page at each step to find out where they had arrived. Both have a
+       small, countable set of answers, the keys worth playing in and the
+       frets of a neck, so both now SAY the set and take one press. What is
+       left standing on the strip is the two values, which is the only part
+       anybody ever read. */
+    function dialFor(icon, label, note, valueNode, fill) {
+      var ctl = el("span", "ctl");
+      ctl.title = note;
+
+      /* The picture and then the value, in the order they are read: what it
+         is, and what it is at. They stood one over the other while this row
+         was a row of its own; the row is a strip beside the song's own facts
+         now, and a stacked pair is twice the height of the tallest thing that
+         has any business being here. */
+      var dial = el("button", "dial dial-btn");
+      dial.type = "button";
+      dial.title = note;
+      dial.setAttribute("aria-label", label);
+      dial.setAttribute("aria-expanded", "false");
+      var lbl = el("span", "lbl");
+      lbl.appendChild(svg(icon));
+      dial.appendChild(lbl);
+      dial.appendChild(valueNode);
+      ctl.appendChild(dial);
+
+      /* WHAT IS BEHIND IT IS NOT STANDING THERE. A panel for the whole of a
+         song, for a setting most people choose once and then read, is a panel
+         that is shut: the picture and the value ARE the control, press them
+         and the choices come out under them, press anywhere else and they go
+         away again.
+
+         Which is the shape the editor already has for the one other thing that
+         is offered rather than done (see offerGap): a small set of buttons
+         under the thing they are about, dismissed by the next press outside
+         them. One gesture, learned once, in three places. */
+      fold(dial, "dial-pop", fill);
       return ctl;
     }
 
-    /* --- THE CHORDS ON THE PAGE ------------------------------------------------
-       Two buttons and no number. The number said how far the page was from a
-       key nobody can hear, and the answer to "which key am I in" was already on
-       the page, in the chords, in letters twice the size. A nought beside the
-       picture was worse than nothing: a count of a distance from a place the
-       reader never asked about.
+    /* --- THE CHORD THE SONG STARTS ON -----------------------------------------
+       It was less and more, and the whole of what it said about where you are
+       was the direction of the next press. A reader who wanted the song in
+       something their hand knows had to walk the twelve keys a semitone at a
+       time, reading the chords each time to find out where they had arrived,
+       and the app knew the answer to that before they started: it works out
+       the easy version for the library rows and for the page (see easyVersion).
+       Walking is what you do when nobody will tell you.
 
-       There is nothing to press it into place with either. Making the key on
-       screen the song's own was a button behind that number, for a decision
-       that turns out not to need making: what the song is stored in is a
-       detail of the file now, and what each person plays it in is kept for
-       each person (see keptPage). Nobody has to agree with anybody.
+       So the control SAYS WHERE YOU ARE, in the one word that means anything
+       here, the chord the song opens on, and a press asks the other question:
+       what else. What comes out is a short list of real keys, each with the
+       fret it is held at, and choosing one is one press instead of seven.
+
+       ONLY WHAT A HAND CAN HOLD, which is why this is a list and not the
+       chromatic scale (see keyChoices). Nine of the twelve are four barre
+       chords deep for the person this is for, and a menu that offers them is a
+       menu that has to be read through rather than chosen from.
 
        AND THE CAPO COMES WITH IT. Moving the chords is not asking to be heard
        differently, it is asking for different shapes, so the fret takes up the
-       distance and the song comes out where it came out before: down one, capo
-       up one. Nothing here does that on purpose. The fret is the gap between
-       the page and the singing (see capoOf), this button moves one of the two,
-       and the gap is a gap. */
-    var pitch = control(
-      ICON.pitch, "טרנספוזיציה", null,
-      function () { moveSemis(-1); },
-      function () { moveSemis(1); }
+       distance and the song comes out where it came out before. Nothing here
+       does that on purpose: the fret is the gap between the page and the
+       singing (see capoOf), this moves one of the two, and the gap is a gap.
+       What the list adds is that the gap is now the thing being chosen, which
+       is why each line of it can say what the fret will be. */
+    var keyValue = el("span", "val key-val");
+    var keyCtl = dialFor(
+      ICON.pitch, "האקורד שהשיר מתחיל בו",
+      "האקורד שהשיר מתחיל בו. אפשר לבחור אחר, והקפו זז כדי שהשיר יישמע אותו דבר.",
+      keyValue, fillKeys
     );
-    pitch.title = "מזיז את האקורדים על הדף, והקפו זז איתם כדי שהשיר יישמע אותו דבר.";
-    tools.appendChild(pitch);
+    tools.appendChild(keyCtl);
+
+    /* Built on every opening rather than once, because the song underneath is
+       being edited: a list made when the page was drawn is a list of the
+       chords the song had then. */
+    function fillKeys(pop, shut) {
+      var list = el("div", "keys");
+      keyChoices(chordsUsed(song.lines || []), sung).forEach(function (choice) {
+        list.appendChild(keyRow(choice, shut));
+      });
+      pop.appendChild(list);
+    }
+
+    function keyRow(choice, shut) {
+      var row = el("button", "key-opt");
+      row.type = "button";
+      /* The chord in the size it is worth reading at, and beside it the one
+         other thing the choice costs: where the capo goes. Nought is not a
+         fret and is not written as one. */
+      row.appendChild(el("span", "key-name", choice.shapes[0]));
+      row.appendChild(el("span", "key-fret", choice.capo ? "קפו " + choice.capo : "בלי קפו"));
+      if (choice.page === semis) {
+        row.classList.add("is-on");
+        row.setAttribute("aria-current", "true");
+      }
+      row.addEventListener("click", function () { shut(); setPage(choice.page); });
+      return row;
+    }
+
+    /* A SONG WITH NO CHORDS HAS NO KEY, and a dial standing there with nothing
+       written on it is a control that has broken. It comes back the moment
+       there is a chord to name it with, which in the editor is as soon as one
+       is put down. */
+    function showKey() {
+      var used = chordsUsed(song.lines || []);
+      keyCtl.hidden = !used.length;
+      if (used.length) keyValue.textContent = transposeChord(used[0], semis);
+    }
 
     /* THE SIZE IS NOT HERE ANY MORE. It was two buttons and a number, three
        things on a strip whose whole point is to be short, for a setting with
@@ -7578,20 +7674,46 @@
        while it was a private note about somebody's hand; it changes the page,
        so it belongs to whoever is reading the page.
 
-       AND IT STAYS FOLDED, which turns out to be the right shape for it. The
-       FRET is on the dial and never hidden, which matters more here than
-       anywhere, because the transposition moves it and a number that moves has
-       to be readable: what folds is only less and more. */
+       THE FRET IS ON THE DIAL AND NEVER HIDDEN, which matters more here than
+       anywhere, because choosing a key moves it and a number that moves has to
+       be readable. What is folded away is only the eight it could be.
+
+       AND THEY ARE ALL EIGHT THERE, unlike the keys next to them. A fret is
+       not a matter of what a hand can hold: it is where the capo goes, there
+       are eight places it goes, and somebody who wants the fourth one wants
+       the fourth one. Filtering a neck would be filtering nothing. */
     tools.appendChild(el("span", "sep"));
     var myValue = el("span", "val");
-    var capoCtl = control(
-      ICON.capo, "קפו", myValue,
-      function () { setMyCapo(myCapo - 1); },
-      function () { setMyCapo(myCapo + 1); },
-      true
+    var capoCtl = dialFor(
+      ICON.capo, "קפו",
+      "באיזה סריג הקפו. זז לבד עם בחירת האקורד, ואם מזיזים אותו ידנית השיר נשמע גבוה או נמוך יותר.",
+      myValue, fillFrets
     );
-    capoCtl.title = "באיזה סריג הקפו. זז לבד עם הטרנספוזיציה, ואם מזיזים אותו ידנית השיר נשמע גבוה או נמוך יותר.";
     tools.appendChild(capoCtl);
+
+    /* Eight frets, in the order a neck is in, nought at the top. The one the
+       capo is at is marked, so the panel says where you are as well as where
+       you could go, and pressing it again is pressing the answer it already
+       gives, which does nothing and closes. */
+    function fillFrets(pop, shut) {
+      var grid = el("div", "frets");
+      for (var fret = 0; fret <= MAX_CAPO; fret++) grid.appendChild(fretBtn(fret, shut));
+      pop.appendChild(grid);
+    }
+
+    function fretBtn(fret, shut) {
+      var btn = el("button", "fret-opt", String(fret));
+      btn.type = "button";
+      var said = fret ? "קפו בסריג " + fret : "בלי קפו";
+      btn.title = said;
+      btn.setAttribute("aria-label", said);
+      if (fret === myCapo) {
+        btn.classList.add("is-on");
+        btn.setAttribute("aria-current", "true");
+      }
+      btn.addEventListener("click", function () { shut(); setMyCapo(fret); });
+      return btn;
+    }
 
     /* NOT ASSIGNED, WORKED OUT, every time and from the same subtraction the
        rest of the app uses. myCapo is a cache of one expression and this is
@@ -7784,6 +7906,10 @@
          opened, and that one starts where the routing says it starts, which is
          the top or the place this reader was last time (see restoreScroll). */
       var keepY = sheet.firstChild ? (window.scrollY || window.pageYOffset || 0) : null;
+      /* The dial names the song by the chord it opens on, so it is drawn with
+         the song and not once with the strip: a chord typed, moved or taken
+         off the first line changes what the song starts on. */
+      showKey();
       /* every row on screen is about to stop existing, and the little buttons
          hanging under one of them with it */
       hideGap();
@@ -7909,30 +8035,26 @@
       draw();
     }
 
-    /* Round, not against a wall. Past the top it comes out at the bottom and
-       the other way about, so reaching a distant key is never a matter of
-       pressing the other button eleven times.
+    /* WHERE THE CHORDS ARE PRINTED, said outright rather than stepped towards.
+       There is no walking off either end any more and so nothing to wrap
+       round: what arrives here is one of the frets the list offered, and every
+       one of those is a page this reader can hold (see keyChoices). The clamp
+       is what keptPage will read back and no more than that.
 
-       PRESSING IS CHOOSING. Whoever moves the song has just said where they
-       play it, and they are the same person with the same hands tomorrow, so
+       CHOOSING IS CHOOSING. Whoever picks a key has just said where they play
+       this song, and they are the same person with the same hands tomorrow, so
        it is kept and the song opens there next time. Kept on the press and not
        on the drawing, because the app draws its own guess at the easy version
        too, and a guess that writes itself down is a guess nobody can tell from
        an answer.
 
        THE SINGING IS NOT TOUCHED, and that is what makes the capo move: the
-       fret is the gap between the two, and this widens it. Down one, capo up
-       one, and the song comes out where it came out before.
-
-       PAST THE END OF THE NECK THE FRET STOPS AND THE SINGING GIVES, which is
-       the honest answer and not a wall: a page seven frets below its key is
-       already at the top of what a capo can do, and the press after that is
-       somebody asking for the song lower. It is still perfectly reversible,
-       because nothing was counted while the fret sat at its end. Press back up
-       and the same subtraction gives the same fret it gave on the way down. */
-    function moveSemis(by) {
-      var next = semis + by;
-      semis = next > 11 ? -11 : next < -11 ? 11 : next;
+       fret is the gap between the two, and this sets it. Which is the whole
+       reason the list can promise a fret beside each key and be right. */
+    function setPage(next) {
+      var page = Math.max(-11, Math.min(11, next));
+      if (page === semis) return;
+      semis = page;
       keepFor(song.id, "p", semis);
       /* and the singing is written down with it, so a reader who has now
          chosen one of the two is not still being answered for on the other */
