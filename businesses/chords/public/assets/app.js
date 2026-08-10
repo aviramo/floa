@@ -3017,12 +3017,6 @@
     var rows = sheetRows(sheet);
     sheet.textContent = "";
     rows.forEach(function (ln) {
-      /* AND THE AIR THAT WAS SHARED OUT BETWEEN THEM GOES BACK. A row that was
-         spread to fill a page (see spreadToBottom) carries the share it was
-         given written onto it, and everything downstream measures rows: left
-         on, the next layout is planned against a song that is taller than it
-         is, and the one after that taller again. */
-      ln.style.marginBottom = "";
       sheet.appendChild(ln);
     });
   }
@@ -3318,90 +3312,6 @@
     };
   }
 
-  /* --- A SONG THAT DOES NOT REACH THE BOTTOM IS SPREAD DOWN TO IT ------------
-     A song of four verses on a tall screen stops halfway down it and the rest
-     of the page is nothing: the words are in the top half and the reader is
-     looking at the bottom half wondering whether that is all of it. The room
-     is there and the song is what the page is for, so the room goes between
-     the lines and the song ends where the page does.
-
-     THE AIR GOES BETWEEN THE ROWS AND NOT UNDER THEM, which is the whole
-     difference between a song that fills a page and a song sitting at the top
-     of one with a wide margin under it. Shared out evenly, so the shape of the
-     song survives it: a verse break is a blank row and it grows by the same
-     amount every other gap does, so it is still bigger than the gap between
-     two lines by exactly the blank row that makes it.
-
-     AND NEVER MORE THAN A ROW IS TALL. Past that the space between two lines
-     is bigger than the lines themselves, and what is on the page stops reading
-     as a song and starts reading as a list of unrelated sentences. A song of
-     four lines on a big screen takes what it can and stops short, which is the
-     honest answer: there is not enough song there to cover that page, and
-     pretending otherwise costs more than the white does.
-
-     ONLY WHERE THE SONG STANDS ON ONE PAGE. Where there are two, every page
-     above the last is already exactly a screenful and the last one ends where
-     the song does, on purpose, because what is under it is the next thing to
-     scroll to rather than the bottom of the window.
-
-     Measured after the pages are in the document, because a fragment nobody
-     has put on the screen yet has no heights to ask about. */
-  function spreadToBottom(sheet, plan) {
-    /* NOT ON PAPER. A window has a bottom edge that the eye takes as the end of
-       what there is, which is the whole reason for this; a sheet of paper has a
-       margin, and a short song printed with its lines pushed apart to reach the
-       foot of the page is a song set to the paper rather than to itself. */
-    if (paper) return;
-
-    var room = plan.pageH - PAGE_AIR * 2;
-
-    /* ONE SHARE FOR THE WHOLE PAGE, AND IT IS THE SMALLEST ANY SEGMENT ASKS
-       FOR. Segments are filled one after another until the song runs out, so
-       the first is full to the bottom and the last is however much was left:
-       spread each to its own bottom and two segments standing side by side get
-       two different rhythms, one airy and one tight, which is a page that
-       looks broken rather than a page that looks full.
-
-       So the fullest segment on the page decides, and the others keep step. A
-       page of several segments is usually covered already, because the first
-       of them reaches the bottom and a short last segment is what the end of a
-       chapter looks like in any book. What this is really for is the one
-       segment on a phone, where nothing else is standing beside the song to
-       cover the page for it. */
-    var each = Infinity;
-    var cap = 0;
-    var cols = Array.prototype.slice.call(sheet.querySelectorAll(".page .col"));
-    var seen = cols.map(function (col) {
-      var rows = Array.prototype.slice.call(col.children);
-      var used = 0;
-      /* MEASURED WITH THE FRACTIONS ON. offsetHeight is a whole number of
-         pixels and a row is not: over thirty of them the halves that were
-         rounded away add up to most of a line, and the page comes out that
-         much taller than the window it was spread to fill. */
-      var margins = rows.map(function (ln) {
-        var margin = parseFloat(getComputedStyle(ln).marginBottom) || 0;
-        var tall = ln.getBoundingClientRect().height;
-        used += tall + margin;
-        if (tall > cap) cap = tall;
-        return margin;
-      });
-      /* A segment with one row in it cannot be spread and does not get a say:
-         there is no gap in it to put the air into. */
-      if (rows.length > 1) each = Math.min(each, (room - used) / (rows.length - 1));
-      return { rows: rows, margins: margins };
-    });
-
-    if (!(each > 0) || !(cap > 0) || each === Infinity) return;
-    each = Math.min(each, cap);
-
-    seen.forEach(function (col) {
-      col.rows.forEach(function (ln, i) {
-        if (i === col.rows.length - 1) return;
-        ln.style.marginBottom = (col.margins[i] + each) + "px";
-      });
-    });
-  }
-
   /* --- dealing the lines out -------------------------------------------------
      Down a column until the next line would not fit, then the next column,
      and after the last column of a page, a new page under it. Greedy and not
@@ -3567,10 +3477,23 @@
          is the desk. */
       if (built.lastChild) built.lastChild.style.height = "";
 
-      var pages = built.childNodes.length;
+      /* --- AND WHAT IS UNDER THE LAST LINE IS NOTHING, ON PURPOSE --------------
+         A song that does not reach the bottom of the screen used to be spread
+         down to it: the room left over was shared out between the rows so that
+         the last line landed on the bottom edge. It is gone, and what it looked
+         like is why. A song of five lines on a desk screen got half a line of
+         air in every gap, and gaps that wide are not a song any more, they are
+         five unrelated sentences down a page, with the verse breaks blown to
+         twice that again because a blank row took the share twice. It also
+         moved every line the moment the window changed height, which is the one
+         thing a page somebody is playing from must not do.
+
+         The room stays under the song, where it costs nothing: the rows keep
+         the spacing they were set in, and the sheet still reaches the bottom of
+         the window on its own (min-height in the stylesheet), so the fingers
+         still land on the song everywhere below the last line. */
       sheet.textContent = "";
       sheet.appendChild(built);
-      if (pages === 1) spreadToBottom(sheet, plan);
     } catch (e) {
       /* Back to one flat column with every line in it. A song laid out wrong
          is a bad afternoon; a song that is not on the screen at all is a page
