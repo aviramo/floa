@@ -132,11 +132,23 @@
      ========================================================================== */
   var STAY = Math.log(0.86);
   var NEXT = Math.log(0.115);
-  /* Two and three ahead: a chord that went by without being heard, damped,
-     played quietly, or missed. Each much dearer than the one before, and there
-     is no fourth, because skipping four chords is not something a player does.
-     It is the follower being wrong. */
-  var SKIP = [Math.log(0.012), Math.log(0.0015)];
+  /* --- AND NOTHING SKIPS AHEAD ----------------------------------------------
+     There was a cost here for landing two or three chords along, meant for a
+     chord that went by without being heard: damped, played quietly, missed.
+
+     It is gone, and the reason is what it looked like. A follower that is
+     ALLOWED to skip does skip, on the readings it is least sure about, and
+     what a reader sees is a mark that hops over chords. That is worse than a
+     mark that lags, by a long way: a lagging mark is a mark you can still read
+     the song from, and a hopping one has to be checked against the page every
+     time it moves, which is exactly the work it exists to save.
+
+     AND NOTHING IS LOST BY TAKING IT OUT, which is the good part. A chord
+     nobody heard is still walked THROUGH: the reading after it, the one that
+     matches, is reachable from it at the ordinary cost of the next chord, so
+     the mark passes over the missed one in a reading or two and carries on. It
+     catches up by walking rather than by jumping, and walking is what it is
+     supposed to look like. */
 
   /* --- AND BACKWARDS, WHICH IS A THING SONGS DO ------------------------------
      Playing the verse again. Going round the chorus once more. Starting the
@@ -225,8 +237,23 @@
      once. Half a second of agreement is what separates a player who skipped a
      chord from a reading that was wrong, and there is no cheaper way to tell
      them apart than waiting. */
-  var STRIDE = 1;
+  /* How far ahead the arithmetic may be before the mark stops walking after it
+     and starts treating it as a jump. Six chords is a bar or two: past that,
+     whatever happened was not the playing carrying on, and running the mark
+     through six places to get there would be drawing a passage nobody played.
+     Which then needs the same patience as any other jump. */
+  var LEAP = 6;
   var PATIENCE = 12;
+
+  /* And even one place forward is not taken on a single reading. Four of them,
+     which is under a fifth of a second and nobody sees, and it is the
+     difference between a mark that moves when the playing moves and one that
+     is nudged along by the loud confused moment in the middle of a strum. That
+     moment used to cost nothing, and a mark nudged forward has to be walked
+     back, which is a jump, which needs the patience above: so a transient too
+     small to see would ratchet the mark forward and hold it there for half a
+     second at a time. */
+  var STEP = 4;
 
   /* `starts` is which places in the song begin a part: the first chord under
      each heading. Optional, and a song without any is a song with one part. */
@@ -258,6 +285,8 @@
     var here = 0;
     var want = -1;
     var waited = 0;
+    /* how many readings running have agreed that we are past `here` */
+    var pushed = 0;
     /* WHETHER THERE IS ANYTHING TO BE LOYAL TO YET. Everything below is built
        to be slow to leave a position it believes in, and at the very first
        reading it believes in nothing: the song has just been opened and where
@@ -271,7 +300,7 @@
        second verse. */
     function reset() {
       for (var j = 0; j < n; j++) prev[j] = 0;
-      here = 0; want = -1; waited = 0; locked = false;
+      here = 0; want = -1; waited = 0; pushed = 0; locked = false;
     }
 
     /* Somebody said where they are, by touching a chord on the page. Which is
@@ -280,7 +309,7 @@
     function put(at) {
       if (!(at >= 0 && at < n)) return here;
       for (var j = 0; j < n; j++) prev[j] = j === at ? 0 : -40;
-      here = at; want = -1; waited = 0; locked = true;
+      here = at; want = -1; waited = 0; pushed = 0; locked = true;
       return here;
     }
 
@@ -303,9 +332,6 @@
       for (j = 0; j < n; j++) {
         var v = prev[j] + STAY;
         if (j >= 1 && prev[j - 1] + NEXT > v) v = prev[j - 1] + NEXT;
-        for (var d = 2; d <= 3; d++) {
-          if (j >= d && prev[j - d] + SKIP[d - 2] > v) v = prev[j - d] + SKIP[d - 2];
-        }
         /* Somebody playing the verse again, which arrives here from further on
            in the song rather than from just behind, and which lands on the top
            of a part far more often than in the middle of one. */
@@ -357,9 +383,24 @@
         if (at === want) { if (++waited >= 3) { locked = true; want = -1; waited = 0; } }
         else { want = at; waited = 1; }
         moved = true;
-      } else if (at === here) { want = -1; waited = 0; }
-      else if (at > here && at - here <= STRIDE) { here = at; moved = true; want = -1; waited = 0; }
+      } else if (at === here) { want = -1; waited = 0; pushed = 0; }
+      /* --- FORWARD IS ONE AT A TIME, ALWAYS -----------------------------------
+         Not "one at a time unless it is further, in which case leap". The mark
+         goes to the next chord and to no other, and where the arithmetic has
+         got further ahead than that the mark WALKS after it, a place a reading,
+         until it catches up. Which takes a twentieth of a second per chord and
+         looks like what it is: running to catch up with the playing.
+
+         The alternative is a mark that arrives at the right place by hopping
+         over the ones in between, and a reader cannot tell that from a mark
+         that is simply wrong. This is the whole of what "one after the other"
+         means, and it is worth more than the fraction of a second it costs. */
+      else if (at > here && at - here <= LEAP) {
+        want = -1; waited = 0;
+        if (++pushed >= STEP) { here++; moved = true; pushed = 0; }
+      }
       else {
+        pushed = 0;
         if (at === want) waited++;
         else { want = at; waited = 1; }
         if (waited >= PATIENCE) { here = at; moved = true; want = -1; waited = 0; }

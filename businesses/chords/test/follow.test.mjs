@@ -188,15 +188,21 @@ const play = (follow, chord, frames = 6, high, low) => {
 
 /* --- a chord that goes by unheard ------------------------------------------
    A quiet chord, a chord damped, a chord the microphone missed. The song did
-   not stop. */
+   not stop, and the mark does not jump over it either: it WALKS through it,
+   which is the same thing the eye does when reading past a chord nobody
+   played. There is no cost for skipping any more and nothing needs one. */
 {
   const song = ["Am", "F", "C", "G", "Em"];
   const f = F.make(song);
   play(f, "Am", 8);
-  /* F never sounds; C does. Two places on is not the next chord, so it is not
-     taken on sight: half a second of agreement first (see PATIENCE). */
-  play(f, "C", 16);
+  /* F never sounds; C does */
+  const seen = [f.where()];
+  for (let i = 0; i < 24; i++) {
+    const at = f.step(reading(f, "C")).here;
+    if (at !== seen[seen.length - 1]) seen.push(at);
+  }
   eq("a chord passed over is passed over rather than lost", f.where(), 2);
+  eq("and it is walked through rather than jumped over", seen, [0, 1, 2]);
 }
 
 /* --- and being lost is survivable ------------------------------------------
@@ -207,9 +213,19 @@ const play = (follow, chord, frames = 6, high, low) => {
   const f = F.make(song);
   play(f, "Am", 8);
   eq("it is where it thinks it is", f.where(), 0);
-  /* the player has jumped to the far end of the song and stayed there */
-  play(f, "E", 30);
+
+  /* The player has moved somewhere else in the song and stayed there. The mark
+     goes to them, and it goes ONE PLACE AT A TIME: what a reader sees is the
+     mark running up the song to catch them, which is a thing they can follow,
+     rather than a mark that vanishes from one line and appears on another. */
+  const walked = [];
+  for (let i = 0; i < 40; i++) {
+    const at = f.step(reading(f, "E")).here;
+    if (at !== walked[walked.length - 1]) walked.push(at);
+  }
   eq("a player who moved somewhere else is followed there", f.where(), 6);
+  eq("and followed one chord at a time rather than by vanishing",
+    walked.every((at, i) => i === 0 || at === walked[i - 1] + 1), true);
 }
 
 /* --- somebody saying where they are beats any amount of listening ---------- */
