@@ -15501,13 +15501,21 @@
 
   function shutEar() {
     if (!ear) return;
-    /* A RECORDING IN PROGRESS IS ASKED ABOUT, NOT ABANDONED. Switching the
-       microphone off while a take is running is somebody who has stopped
-       playing, and what they have already played is the take: throwing it away
-       over which button they reached for would be losing a performance to a
-       technicality. So the offer comes up and the closing waits for it: what
-       answers the offer closes this properly (see hearTake). */
-    if (taping()) return stopTape();
+    /* --- A TAKE RUNNING IS NOT CLOSED FROM HERE -------------------------------
+       This used to put the offer up instead of closing, so that a microphone
+       switched off mid performance asked about what had been played rather
+       than throwing it away. Every way of closing the band therefore ended a
+       take: a press outside it, Escape, a push downwards, a step back. That is
+       four gestures, none of which is «I have finished playing», and the one
+       that matters most is the one nobody presses on purpose. Scrolling a song
+       was putting the offer up over a performance still going.
+
+       THERE IS A BUTTON THAT MEANS IT, and it is on the screen for the whole
+       of the recording: the header goes and it stays (see airRoom). So a take
+       ends where it began, under one press, and the microphone is simply not
+       closable while one is running. Answering the offer closes it properly
+       (see hearTake), which is how it was always meant to happen. */
+    if (taping()) return;
     /* and a take that was asked for and never got a microphone is not asked
        for any more: the flag it left standing would keep the band away from
        the next person who opens it (see takeWanted) */
@@ -17158,9 +17166,9 @@
          playing. So the pause that opened it is lifted and the take is running
          again, exactly where it was.
 
-         Only while the microphone is still there. Closing the ear puts this up
-         too (see shutEar), and answering that by walking away is walking away
-         from both. */
+         Only while the microphone is still there, which while a take is
+         running it always is: nothing closes it but answering this (see
+         shutEar). */
       if (done) shutEar();
       else if (earOpen() && tapeHeld()) holdTape();
       else paintTape();
