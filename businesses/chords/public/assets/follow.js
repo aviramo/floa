@@ -145,8 +145,26 @@
      having arrived at all. A chord being played scores three quarters and up
      against the chord it is; a room, a chair, a voice and the noise a
      microphone makes when it is switched on score flat and low against
-     everything. */
-  var HEARD = 0.66;
+     everything.
+
+     It is the number the app used to hold before this file was asked to, and
+     it went UP to two thirds when the waiting was written, on the grounds that
+     one chord asked about carefully should be asked about strictly. That was
+     wrong in the room, where a real chord played into a real phone lands under
+     it often enough to matter, so it is back where it was. */
+  var HEARD = 0.62;
+
+  /* AND A LOWER BAR FOR THE SLOW WAY IN (see below), which is allowed to ask
+     for less of the sound because it asks for so much more of the clock: not
+     "is this chord in the sound" but "is this chord the best this song can say
+     about the sound, on its own, for four tenths of a second". Under this
+     there is no chord in the room at all and there is nothing to be the best
+     of. */
+  var FAINT = 0.55;
+  /* Twelve readings, which is four tenths of a second. Long enough that the
+     chord before it cannot hold the top spot by wobble, short enough to be a
+     beat rather than a bar. */
+  var LATE = 12;
 
   /* AND IT HAS TO BEAT THE CHORD BEFORE IT, which is the one still ringing. A
      guitar does not stop when the hand moves: for a moment after a change both
@@ -264,6 +282,7 @@
     /* Readings running that say it has arrived, that the one after it is
        sounding instead, and that some other chord of this song is. */
     var held = 0;
+    var plainly = 0;
     var slipped = 0;
     var astray = 0;
     /* What the room has been plainly playing, and for how many readings, so
@@ -276,7 +295,7 @@
 
     function reset() {
       at = 0; since = 0; lastLong = 0;
-      held = 0; slipped = 0; astray = 0;
+      held = 0; plainly = 0; slipped = 0; astray = 0;
       sure = -1; sureFor = 0;
       tape = []; room = [];
     }
@@ -287,7 +306,7 @@
     function put(i) {
       if (!(i >= 0 && i < n)) return at;
       at = i; since = now; lastLong = 0;
-      held = 0; slipped = 0; astray = 0;
+      held = 0; plainly = 0; slipped = 0; astray = 0;
       return at;
     }
 
@@ -343,20 +362,50 @@
         if (tape.length > 4) tape.shift();
       } else { sure = -1; sureFor = 0; }
 
-      /* --- HAS IT ARRIVED ---------------------------------------------------- */
-      if (back < 0) {
-        /* THE FIRST CHORD OF THE SONG has nothing ringing behind it to be
-           louder than, so what is asked of it instead is that it be the chord
-           the room is most plainly playing. Without that, any sound at all
-           that scored two thirds against it would open the song. */
-        if (sWant >= HEARD && top === want) { if (++held >= HOLD) return onward(); }
-        else held = 0;
-      } else if (want !== back) {
-        if (sWant >= HEARD && sWant >= sBack + LEAD) { if (++held >= HOLD) return onward(); }
-        else held = 0;
-      } else {
-        /* the same chord written twice, where only a fresh strum can say it */
-        held = 0;
+      /* --- HAS IT ARRIVED, THE QUICK WAY ------------------------------------
+         It beat the chord before it by the margin, which is what a chord
+         struck while the one before it is still ringing looks like.
+
+         THE FIRST CHORD OF THE SONG has nothing ringing behind it to be louder
+         than, so what is asked of it instead is that it be the chord the room
+         is most plainly playing. Without that, any sound at all that scored
+         two thirds against it would open the song. */
+      if (back < 0 ? (sWant >= HEARD && top === want)
+                   : (want !== back && sWant >= HEARD && sWant >= sBack + LEAD)) {
+        if (++held >= HOLD) return onward();
+      } else held = 0;
+
+      /* --- OR THE SLOW WAY, AND THIS IS WHY THERE ARE TWO -------------------
+         THE MARK GOT STUCK, and this is what it was stuck on. A chord really
+         being played, by a real person, into a phone lying on a table, does
+         not reliably clear two thirds AND beat the chord before it by the
+         margin. A quiet strum does not. A damped one does not. A chord sharing
+         two notes with the one still ringing does not. In every one of those
+         the quick test above says nothing at all, and the mark stands still
+         while somebody plays the chord underneath it over and over.
+
+         AND NOTHING ELSE COULD RESCUE IT. Being in the wrong place is noticed
+         by hearing OTHER chords of the song (see LOST), and there were none to
+         hear: the chord the room was plainly playing was the one being waited
+         for. So the one thing this follower could not survive was being right.
+
+         The second way in asks for less of the sound and more of the clock:
+         the awaited chord being the best explanation this song has of the
+         room, on its own, for four tenths of a second. The chord before it
+         cannot do that while it rings, because if it could it would be the
+         best explanation itself. A room does not do it by accident. It is
+         simply slower to believe, which is the honest price of a lower bar.
+
+         AND IT CANNOT RUN AWAY WITH THE SONG. One chord per four tenths at the
+         very most, and every step needs a DIFFERENT chord to become the best
+         one, because the moment the mark moves, the chord the room is playing
+         is the one behind it. */
+      if (want !== back && top === want && sWant >= FAINT) {
+        if (++plainly >= LATE) return onward();
+      } else plainly = 0;
+
+      /* --- and the same chord written twice, which neither way can answer --- */
+      if (back >= 0 && want === back) {
         if (sWant >= HEARD && loud() > quietest() * STRUM &&
             now - since >= Math.max(DWELL_MIN, lastLong * DWELL)) return onward();
       }
@@ -383,7 +432,7 @@
     }
 
     function onward() {
-      held = 0; slipped = 0; astray = 0;
+      held = 0; plainly = 0; slipped = 0; astray = 0;
       /* The last chord of the song, played. There is nothing after it to wait
          for and the mark stays on it, which is where somebody finishing a song
          is looking anyway. */
@@ -411,7 +460,7 @@
       if (found < 0) return false;
       at = Math.min(n - 1, found + 1);
       since = now; lastLong = 0;
-      held = 0; slipped = 0;
+      held = 0; plainly = 0; slipped = 0;
       return true;
     }
 

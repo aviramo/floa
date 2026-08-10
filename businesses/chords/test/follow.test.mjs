@@ -118,6 +118,49 @@ const hush = (follow, frames = 6) => {
     f.where(), 1);
 }
 
+/* --- AND A CHORD THAT IS PLAYED BUT NEVER CLEARS THE BAR -------------------
+   Reported from a room: "I play the chord and it does not register that I am
+   playing it, and it sticks."
+
+   The quick test asks for two things at once, that the chord be well in the
+   sound AND that it beat the chord before it by a margin, and a real chord
+   played into a phone lying on a table does not always manage both. A quiet
+   strum does not. One sharing two notes with the chord still ringing does not.
+
+   And nothing else could rescue it: being in the wrong place is noticed by
+   hearing OTHER chords of the song, and the chord the room was plainly playing
+   was the one being waited for. The one thing it could not survive was being
+   right.
+
+   So the awaited chord being the best this song can say about the room, on its
+   own, for four tenths of a second, is enough on its own. */
+{
+  const song = ["Am", "C", "G"];
+  const f = F.make(song);
+  play(f, "Am", 8);
+  eq("through the first chord", f.where(), 1);
+
+  /* C is the best answer the song has, and only just: under the bar the quick
+     test asks for, and nowhere near beating the Am by a margin. */
+  const faint = () => f.step([0.60, 0.61, 0.52], 0.2, (clock += TICK));
+
+  for (let i = 0; i < 11; i++) faint();
+  eq("eleven readings of it are not yet enough", f.where(), 1);
+
+  faint();
+  eq("but a chord plainly played for four tenths of a second has been played",
+    f.where(), 2);
+
+  /* AND IT IS NOT A WAY ROUND THE RULE ABOVE. What the slow way asks is that
+     the awaited chord be the BEST one, and while the chord before it is
+     ringing, the best one is the chord before it. */
+  const g = F.make(["Am", "C", "G"]);
+  play(g, "Am", 8);
+  for (let i = 0; i < 40; i++) g.step([0.85, 0.79, 0.52], 0.2, (clock += TICK));
+  eq("a chord still ringing is still the best answer, and nothing moves",
+    g.where(), 1);
+}
+
 /* --- and then it is waited through ---------------------------------------- */
 {
   const song = ["Am", "F", "C", "G"];

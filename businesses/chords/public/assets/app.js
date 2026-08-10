@@ -17354,10 +17354,57 @@
      ========================================================================== */
   var alongTo = null;
 
+  /* --- A RECORDING THAT DOES NOT KNOW HOW LONG IT IS -------------------------
+     THE PROGRESS BAR HAD NOTHING TO DRAW AGAINST, and it is not a direction
+     problem, which is the first thing it looks like on a page that runs right
+     to left. It is that `duration` comes back Infinity.
+
+     A recorder writes its file as the sound arrives, and a file being written
+     has no length yet, so the header where the length goes is left empty and
+     nothing ever goes back to fill it in. Measured in Chrome rather than
+     assumed: a recording of two and a half seconds loads as Infinity, out of a
+     blob and over HTTP alike, and a seek bar cannot put a thumb anywhere along
+     a bar of infinite length.
+
+     What it can do is find out. Seeking past the end of it makes the browser
+     read to the end, and having read to the end it knows: the same recording
+     then says 2.4 and the bar works, the time reads properly and the thumb can
+     be dragged. So it is asked once, before anybody presses play, and put back
+     to the beginning.
+
+     THE MARK IS HELD STILL WHILE THAT HAPPENS. The page follows the recording
+     by where the sound has got to (see alongTake), and this walks the sound to
+     the end of the song and back inside one frame. Without holding it, opening
+     the panel would throw the mark down the page and back. */
+  var measuring = null;
+
+  function tellLength(audio) {
+    var asked = false;
+    var ask = function () {
+      if (asked || audio.duration !== Infinity) return;
+      asked = true;
+      measuring = audio;
+      audio.addEventListener("seeked", function back() {
+        audio.removeEventListener("seeked", back);
+        measuring = null;
+        /* Back to the start, which is where somebody who has not pressed play
+           expects to be, and never mind if this seek fails: what was wanted
+           was the reading, and that has already happened. */
+        try { audio.currentTime = 0; } catch (e) { /* nothing to be done */ }
+      });
+      try { audio.currentTime = 1e101; } catch (e) { measuring = null; }
+    };
+    audio.addEventListener("loadedmetadata", ask);
+    /* And once now, for a recording whose metadata was already there: a blob
+       made in this tab a moment ago often is. */
+    if (audio.readyState >= 1) ask();
+  }
+
   function alongTake(audio, marks) {
     var was = -1;
 
     function look() {
+      if (measuring === audio) return;
       var ms = audio.currentTime * 1000;
       var at = -1;
       for (var i = 0; i < marks.length && marks[i].t <= ms; i++) at = marks[i].at;
@@ -17421,6 +17468,7 @@
     audio.preload = "metadata";
     var url = URL.createObjectURL(made.blob);
     audio.src = url;
+    tellLength(audio);
     alongTake(audio, made.marks);
     box.appendChild(audio);
 
