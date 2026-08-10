@@ -208,6 +208,9 @@ const CHORD_READ = `(() => {
     rec: !!document.querySelector(".tape-bar .icon-btn.is-rec"),
     taping: !!document.querySelector(".tape-bar .icon-btn.is-taping"),
     heard: (document.querySelector(".heard-now") || {}).textContent,
+    /* What the reading says about the note underneath, which is the whole of
+       what separates chords sharing two notes out of three. */
+    sure: (document.querySelector(".heard-sure") || {}).textContent,
     bars: [...document.querySelectorAll(".cx-fill")].map((b) => parseInt(b.style.height, 10) || 0),
     tape: (document.querySelector(".ear-tape") || {}).textContent,
     rows, marked,
@@ -865,6 +868,18 @@ try {
       const bare = await evaluate(CHORD_READ);
       check("the ear names what the room is hearing, not what the page prints",
         bare.heard === "Cm", JSON.stringify(bare.heard));
+      /* --- AND THE NOTE UNDERNEATH IT ----------------------------------------
+         Nothing checked this and it was worth checking: the bass is what
+         separates chords sharing two notes out of three, and it was being
+         looked for in a way that never found one. The room is playing an Am
+         shape three frets up, so the lowest note in it is a C.
+
+         The panel is asked rather than the arithmetic, because what went wrong
+         was not the arithmetic: it was that "no bass" was the answer to every
+         reading in every room, and the one place a person could have seen that
+         is this line. */
+      check("and it says which note it heard underneath",
+        /באס\s*C/.test(bare.sure || ""), JSON.stringify(bare.sure));
       check("and the shape it belongs to is the one lit on the page",
         bare.marked.length === 3 && bare.marked.every((c) => c === "Am"),
         JSON.stringify(bare.marked));

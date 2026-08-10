@@ -436,11 +436,11 @@
      was, so the case that used to work is untouched, and only a bass somebody
      could point at gets more. */
   var BASS_HELP = 0.12;
-  /* How far above its neighbours the bass has to stand to be worth all of it.
-     Below STANDS_OUT it is not named at all (see chord), and between the two
-     it is believed in proportion. */
-  var STANDS_OUT = 1.6;
-  var BASS_PLAIN = 2.2;
+  /* How much of the strongest note in the bass range the LOWEST one has to
+     carry before it counts as being played rather than as the skirt of
+     something above it. Three fifths: plainly there, and well under what a
+     string actually struck comes back with. */
+  var LOW_ENOUGH = 0.6;
   /* How much of BASS_HELP this reading's bass has earned. */
   var bassSure = 0;
 
@@ -463,23 +463,44 @@
     for (i = 0; i < 12; i++) if (chroma[i] > top) top = chroma[i];
     if (top > 0) for (i = 0; i < 12; i++) chroma[i] /= top;
 
-    /* The lowest thing being played, named only when it stands out: a bass
-       that is merely the loudest of twelve similar numbers is not a bass, it
-       is a guess, and a guess is worth less here than nothing. */
-    bass = -1;
-    var loud = 0, next = 0;
+    /* --- THE LOWEST THING BEING PLAYED, AND LOWEST IS THE WHOLE OF IT --------
+       IT USED TO TAKE THE LOUDEST and ask that it stand clear of the second
+       loudest, and the answer was "no bass" in every room it was ever shown.
+       The reason is in the arithmetic above: a note is measured as energy at
+       its own pitch AND at the first few multiples of it (see salience), so
+       when an A2 is sounding, the E3 a fifth over it is measured partly on the
+       very same energy, and the two come back within a whisker of each other.
+       The test asked the loudest note to beat its own harmonic by half again.
+       Nothing ever does. So a number the follower leans on was, in practice,
+       never there at all, and raising what it was worth changed nothing.
+
+       A BASS IS NOT THE LOUDEST NOTE DOWN THERE, IT IS THE LOWEST ONE. That is
+       what the word means and it is what a guitar does: on the open shapes a
+       chord sheet is written in, the lowest string being played is the root
+       itself, capo or no capo. So the search runs upwards and stops at the
+       first note carrying a real part of the energy in this range, and how
+       much of it that note carries is how sure we are. */
+    var sal = [];
+    var top = 0;
     for (n = BASS_LOW; n <= BASS_HIGH; n++) {
       var s = salience(n, [1, 0.5, 0.3]);
-      if (s > loud) { next = loud; loud = s; bass = n % 12; }
-      else if (s > next) next = s;
+      sal.push(s);
+      if (s > top) top = s;
     }
-    if (!(loud > next * STANDS_OUT)) bass = -1;
-    /* Nought at the threshold it is named at and all of it once it is plain,
-       so that raising what a bass is worth cannot make a doubtful one louder
-       than it was: at 1.6 it earns half, which is what it used to be given
-       flat, and only a bass standing well clear earns the rest. */
-    bassSure = bass < 0 ? 0 :
-      Math.min(1, (loud / next - 1) / (BASS_PLAIN - 1));
+    bass = -1;
+    bassSure = 0;
+    if (top > 0) {
+      for (n = BASS_LOW; n <= BASS_HIGH; n++) {
+        var mine = sal[n - BASS_LOW];
+        if (mine < top * LOW_ENOUGH) continue;
+        bass = n % 12;
+        /* All of it when the lowest note is also the strongest, which is what
+           a struck bass string looks like, and less as it fades towards the
+           floor this search stops at. */
+        bassSure = Math.min(1, (mine / top - LOW_ENOUGH) / (1 - LOW_ENOUGH));
+        break;
+      }
+    }
     out.bass = bass;
 
     out.best = weigh(chroma);

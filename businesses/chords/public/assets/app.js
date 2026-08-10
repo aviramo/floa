@@ -18188,20 +18188,67 @@
   /* --- THE SHEET THEY COME UP ON --------------------------------------------
      One at a time, opened by name from the panel behind the three dots, and
      closed the way every other panel on this page is closed: a press on the
-     song under it, or Escape. Pressing the row again puts it away, which is
-     what pressing an open thing's own button means everywhere else here. */
+     song under it, Escape, or a push downwards. Pressing the row again puts it
+     away, which is what pressing an open thing's own button means everywhere
+     else here.
+
+     AND NOTHING IS DARK BEHIND IT, unlike the player over the library. What is
+     behind this one is the song, and somebody with a recording playing is
+     reading the song while it plays: that is the whole of what this sheet is
+     for. So the page under it stays a page, and what that costs is paid for
+     twice below, in the room the song is given and in the press that is not
+     answered until the hand comes off. */
   var takesSheet = null;
+  var takesWatch = null;
 
   function openTakes(box) {
     if (takesSheet === box) return closeTakes();
     closeTakes();
     takesSheet = box;
     box.hidden = false;
+    /* THE BAR ACROSS THE TOP IS HELD NOW. It was drawn and not held: it said
+       the sheet had come up from the edge and could be pushed back down there,
+       and a hand that tried found nothing under it. It is the same bar every
+       other panel here is pushed down by (see gripUp), and the drawn one has
+       gone. */
+    if (!box.gripped) {
+      box.gripped = true;
+      gripUp(box, closeTakes);
+    }
     /* A frame between being in the document and being on the way up, or the
        browser has nothing to move the sheet from and it simply appears. */
     requestAnimationFrame(function () { box.classList.add("is-open"); });
+    roomForTakes(box);
     document.addEventListener("pointerdown", takesOutside, true);
     document.addEventListener("keydown", takesEscape, true);
+  }
+
+  /* --- AND THE SONG IS GIVEN THE ROOM IT LOST -------------------------------
+     A sheet standing over the foot of a page it does not cover hides the last
+     lines of that page, and on a song the last lines are a verse. So the song
+     is given exactly as much room under it as the sheet takes, and what was
+     behind the sheet can be scrolled up above it.
+
+     MEASURED AND NOT GUESSED. This sheet is one row while a recording plays
+     and a list of them when it stops (see is-one), so it changes height under
+     its own hand, and a number written here would be wrong for one of the two.
+     Where a browser cannot watch it, the number in the stylesheet stands. */
+  function roomForTakes(box) {
+    document.body.classList.add("on-takes");
+    var say = function () {
+      document.body.style.setProperty("--takes-room", box.offsetHeight + "px");
+    };
+    say();
+    if (window.ResizeObserver) {
+      takesWatch = new ResizeObserver(say);
+      takesWatch.observe(box);
+    }
+  }
+
+  function roomBack() {
+    if (takesWatch) { takesWatch.disconnect(); takesWatch = null; }
+    document.body.classList.remove("on-takes");
+    document.body.style.removeProperty("--takes-room");
   }
 
   function closeTakes() {
@@ -18221,16 +18268,62 @@
     document.removeEventListener("pointerdown", takesOutside, true);
     document.removeEventListener("keydown", takesEscape, true);
     /* Out of the document once it has slid down, and only if nothing has been
-       opened in the meantime. */
-    setTimeout(function () { if (!takesSheet) box.hidden = true; }, 220);
+       opened in the meantime. Whatever a hand left on it comes off with it: a
+       sheet pushed down carries its own transform, and it would stand over the
+       rules on the way back up (the same tidying a dialog does, see showOver).
+       The room goes back to the song here rather than at the top of this, so
+       the page does not jump under a sheet that is still on its way down. */
+    setTimeout(function () {
+      box.going = false;
+      box.style.animation = "";
+      box.style.transition = "";
+      box.style.transform = "";
+      box.style.opacity = "";
+      box.style.pointerEvents = "";
+      if (takesSheet === box) return;
+      box.hidden = true;
+      if (!takesSheet) roomBack();
+    }, 220);
   }
+
+  /* --- AND SCROLLING THE SONG IS NOT LEAVING THE SHEET ----------------------
+     A press on the song is the way out of this sheet, and on a phone the way to
+     read the song is to put a finger on it and move it. Those are the same
+     press until it moves, and the sheet was answering the first half of it: the
+     reader who scrolled to the next verse to follow the recording lost the
+     recording, which is the one thing they were doing.
+
+     So the press is answered when the hand comes off, and only if the hand
+     stayed where it was. One gesture is now either a scroll or a press, and
+     never both. A touch the browser takes for its own scrolling never comes
+     back as a release at all, which says the same thing. */
+  var TAP = 10;
 
   function takesOutside(event) {
     if (!takesSheet) return;
     if (takesSheet.contains(event.target)) return;
     /* the panel the row that opened this stands in, which is shutting itself */
     if (event.target.closest && event.target.closest(".print-menu")) return;
-    closeTakes();
+    var down = event.pointerId, x = event.clientX, y = event.clientY, moved = false;
+
+    function moving(e) {
+      if (e.pointerId !== down) return;
+      if (Math.abs(e.clientY - y) > TAP || Math.abs(e.clientX - x) > TAP) moved = true;
+    }
+    function up(e) {
+      if (e.pointerId !== down) return;
+      document.removeEventListener("pointermove", moving, true);
+      document.removeEventListener("pointerup", up, true);
+      document.removeEventListener("pointercancel", up, true);
+      if (moved || e.type === "pointercancel" || !takesSheet) return;
+      /* and the press that closed it goes no further, the same as every other
+         press outside a panel here */
+      pressOutside(e);
+      closeTakes();
+    }
+    document.addEventListener("pointermove", moving, true);
+    document.addEventListener("pointerup", up, true);
+    document.addEventListener("pointercancel", up, true);
   }
 
   function takesEscape(event) {

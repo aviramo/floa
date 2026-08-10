@@ -3769,11 +3769,18 @@ body.on-ear.ear-small { padding-bottom: 78px; }
    So it is a sheet that rises over the song from the edge it is nearest, the
    way a phone offers a handful of choices, and it is opened by name from the
    panel behind the three dots. It is closed the way every other panel here is:
-   a press on the page, or Escape.
+   a press on the page, Escape, or a push downwards.
 
    Fixed to the bottom rather than to a scroll position: what is under it is
    the song, and the song is what somebody is reading while the recording
    plays. */
+/* AND THE SONG IS GIVEN THE ROOM THE SHEET TOOK. Nothing is dark behind this
+   one, so the page under it is still being read, and a sheet standing over the
+   foot of it hides the last verse. The room is the height of the sheet, which
+   is measured while it is open (see roomForTakes) because the sheet is one row
+   while a recording plays and a list when it stops. The number here is only
+   what stands where a browser cannot measure. */
+body.on-takes { padding-bottom: var(--takes-room, 240px); }
 .takes {
   position: fixed; inset-inline: 0; bottom: 0; z-index: 62;
   max-height: min(70vh, 560px); overflow-y: auto;
@@ -3785,13 +3792,9 @@ body.on-ear.ear-small { padding-bottom: 78px; }
 }
 .takes.is-open { transform: none; }
 .takes:empty, .takes[hidden] { display: none; }
-/* THE HANDLE, which is the whole of what says this came up from the edge and
-   can go back down. It is drawn and not pressed: what puts the sheet away is a
-   press on the song, the same as every other panel. */
-.takes::before {
-  content: ""; display: block; width: 40px; height: 4px; margin: 0 auto 8px;
-  border-radius: 2px; background: var(--line);
-}
+/* THE HANDLE IS THE ONE EVERY SHEET HERE HAS (see .grip). It used to be drawn
+   here and nothing else: a bar that said the sheet could be pushed back down,
+   over a sheet that could not be. */
 .takes-head {
   font-size: 15px; color: var(--ink-soft); font-weight: 600;
   margin: 0 0 10px; padding-inline-start: 2px;
