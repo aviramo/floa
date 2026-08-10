@@ -725,12 +725,14 @@ try {
          first line. The song has to be long enough for the walk to happen
          inside it.
 
-         AND IT IS A CHORD THE ROOM IS NOT PLAYING. This song runs Am G F over
-         and over and the room is on an Am, so a finger put on one of the Am
-         would be answered at once: the chord waited for is sounding, so it has
-         arrived, and the mark would be a place further on before the screen
-         was read. That is the follower working and it is not what this block
-         is measuring, so the finger goes on the G. */
+         AND THE FINGER GOES ON A G. This song runs Am G F over and over and
+         the room is on an Am, and a finger says "the mark belongs here", which
+         is to say the chord before it is the one being played (see markPlace).
+         Put on a G, the chord before it is the Am the room is playing and
+         everything agrees; put on an Am, it would be claiming the F before it
+         was sounding, and the follower would spend the next second putting the
+         mark back where the sound says. Which is the follower working, and not
+         what this block is measuring. */
       await evaluate(`JSON.stringify(([...document.querySelectorAll(".sheet .chord")][46]
         .dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })), true))`);
       await sleep(900);
