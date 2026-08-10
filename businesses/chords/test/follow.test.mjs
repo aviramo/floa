@@ -385,27 +385,5 @@ const play = (follow, chord, frames = 6, high, low) => {
   eq("and there is nowhere to be put", f.put(0), 0);
 }
 
-/* --- AND WHETHER IT HAS HEARD ANYTHING AT ALL ------------------------------
-   Asked by the page rather than by the arithmetic. The mark is drawn on the
-   chord AFTER this one (see markPlace in app.js), and before a single reading
-   has been stepped on, `where` is not an answer: it is the nought it was
-   initialised to. A page that drew one past that would open every song on its
-   second chord with nobody having touched a string. */
-{
-  const f = F.make(["Am", "F", "C"]);
-  eq("a follower nobody has played to has heard nothing", f.started(), false);
-  eq("and it is standing at the top of the song", f.where(), 0);
-
-  play(f, "Am", 4);
-  eq("one reading is enough to have heard something", f.started(), true);
-
-  const g = F.make(["Am", "F", "C"]);
-  eq("and a finger is a reading too", (g.put(1), g.started()), true);
-
-  g.reset();
-  eq("and a follower put back to the start has heard nothing again",
-    g.started(), false);
-}
-
 console.log(failed ? `\n${failed} failed` : "\nall passed");
 process.exit(failed ? 1 : 0);

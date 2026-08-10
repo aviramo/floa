@@ -500,10 +500,8 @@ try {
          nobody asked. It looks exactly like a follower that is broken.
          ==================================================================== */
       await until(evaluate, 'document.querySelector(".sheet .chord.is-at")');
-      /* THE MARK IS ON WHAT HAS NOT BEEN PLAYED YET, so on a page where an Am
-         is already sounding it opens on the first chord, hears it, and settles
-         on the SECOND. Read after that has happened rather than during it:
-         everything below compares against where it settled. */
+      /* Read once it has settled rather than during: everything below
+         compares against where it settled. */
       await sleep(400);
       const began = await evaluate(FOLLOW_READ);
       check("the song the follower reads is the song on the page",
@@ -524,8 +522,8 @@ try {
       check("and the line the mark is on is lit, and only that line",
         began.lines === 1 && began.lineHolds,
         JSON.stringify({ lines: began.lines, holds: began.lineHolds }));
-      check("and it says which chord of the song is being waited for",
-        /2\s*מתוך\s*7/.test(began.said || ""), JSON.stringify(began.said));
+      check("and it says which chord of the song it is on",
+        /1\s*מתוך\s*7/.test(began.said || ""), JSON.stringify(began.said));
 
       /* --- AND A ROOM NOBODY IS PLAYING IN MOVES NOTHING ---------------------
          Switching a microphone on is a moment of nothing: a click, a room, a
@@ -544,24 +542,23 @@ try {
 
       /* --- and now the song is played ---------------------------------------
          Am G F Am Dm, one chord at a time, which is the whole of what a
-         follower has to get right. The song is Am G F Am Dm G Am, and the mark
-         runs one ahead of the playing throughout, because what it is standing
-         on is the chord not played yet. */
+         follower has to get right. The fourth of those is the test: it is the
+         same sound as the first, and the answer has to land on the SECOND Am,
+         which no measurement of the sound could have chosen. */
       const walked = [began.at];
       for (const chord of ["G", "F", "Am", "Dm"]) {
         await evaluate(`JSON.stringify((window.__playing = ${JSON.stringify(chord)}, true))`);
         await sleep(700);
         walked.push((await evaluate(FOLLOW_READ)).at);
       }
-      check("it waits through the song in order as the song is played",
-        JSON.stringify(walked) === JSON.stringify([1, 2, 3, 4, 5]), JSON.stringify(walked));
+      check("it walks the song in order as the song is played",
+        JSON.stringify(walked) === JSON.stringify([0, 1, 2, 3, 4]), JSON.stringify(walked));
 
       /* THE ONE THAT MATTERS. The fourth step above played an Am, and there
-         are three Am in this song. What it went on to wait for was the Dm that
-         follows the SECOND of them, which no measurement of the sound could
-         have chosen: the first Am is followed by a G. */
+         are three Am in this song. It landed on the one the playing had
+         reached, which only continuity can decide. */
       check("the second Am is the second Am and not the first",
-        walked[3] === 4, JSON.stringify(walked));
+        walked[3] === 3, JSON.stringify(walked));
 
       /* --- a finger says where we are --------------------------------------- */
       await evaluate(`JSON.stringify(([...document.querySelectorAll(".sheet .chord")][6]
@@ -753,20 +750,19 @@ try {
          first line. The song has to be long enough for the walk to happen
          inside it.
 
-         AND THE FINGER GOES ON A G. This song runs Am G F over and over and
-         the room is on an Am, and a finger says "the mark belongs here", which
-         is to say the chord before it is the one being played (see markPlace).
-         Put on a G, the chord before it is the Am the room is playing and
-         everything agrees; put on an Am, it would be claiming the F before it
-         was sounding, and the follower would spend the next second putting the
-         mark back where the sound says. Which is the follower working, and not
-         what this block is measuring. */
-      await evaluate(`JSON.stringify(([...document.querySelectorAll(".sheet .chord")][46]
+         AND THE FINGER GOES ON AN Am, which is what the room is playing. This
+         song runs Am G F over and over, and a finger put on the G would be
+         telling the follower something the sound flatly contradicts: it would
+         accept the finger and then walk forward to the nearest Am, three
+         places on, which is the follower working and not this block's
+         question. The finger and the room agree here, so what is left to
+         measure is whether the SCREEN went to where the finger pointed. */
+      await evaluate(`JSON.stringify(([...document.querySelectorAll(".sheet .chord")][45]
         .dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })), true))`);
       await sleep(900);
       const jumped = await evaluate(SCROLL_READ);
       check("a mark put below the screen brings the screen to it",
-        jumped.at === 46 && jumped.y > 200, JSON.stringify({ at: jumped.at, y: jumped.y }));
+        jumped.at === 45 && jumped.y > 200, JSON.stringify({ at: jumped.at, y: jumped.y }));
       /* A THIRD OF THE WAY DOWN, and this is the check that says so. It read
          "somewhere in the upper part", anything under six tenths, and that is
          a check a page can pass while being useless: the mark landed at
@@ -797,7 +793,7 @@ try {
       await sleep(600);
       const played = await evaluate(SCROLL_READ);
       check("playing on walks the mark down the song",
-        played.at > 46, JSON.stringify({ from: 46, to: played.at }));
+        played.at > 45, JSON.stringify({ from: 45, to: played.at }));
       check("and the page came down with it",
         played.y > before, JSON.stringify({ before, after: played.y }));
       /* AND STILL IN THE TOP HALF, which is stronger than "still on the
@@ -849,11 +845,8 @@ try {
       const capoed = await evaluate(FOLLOW_READ);
       check("the page still says the shapes, capo or no capo",
         JSON.stringify(capoed.sequence) === JSON.stringify(SEQUENCE), JSON.stringify(capoed.sequence));
-      /* The room is playing a C minor and the page says Am, and the follower
-         has heard the song's first Am in it and moved on to wait for the G
-         after it: exactly what it does with no capo and a room playing Am. */
       check("an Am shape sounding three frets up is still the song's first Am",
-        capoed.at === 1 && capoed.marks === 1, JSON.stringify({ at: capoed.at, marks: capoed.marks }));
+        capoed.at === 0 && capoed.marks === 1, JSON.stringify({ at: capoed.at, marks: capoed.marks }));
 
       /* And it walks, which is the whole of the proof: every one of these is
          a chord the page does not name and the room is full of. */
@@ -864,7 +857,7 @@ try {
         walked.push((await evaluate(FOLLOW_READ)).at);
       }
       check("and the song is followed through a capo exactly as without one",
-        JSON.stringify(walked) === JSON.stringify([1, 2, 3, 4, 5]), JSON.stringify(walked));
+        JSON.stringify(walked) === JSON.stringify([0, 1, 2, 3, 4]), JSON.stringify(walked));
 
       /* The measurement underneath it too: the row says Am and scores Cm. */
       await evaluate('JSON.stringify((window.__playing = "Am+3", document.querySelector(".ear-go").click(), true))');

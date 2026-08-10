@@ -1015,6 +1015,72 @@ create policy "a take is deleted by its account"
   on public.song_takes for delete to authenticated
   using (owner = auth.uid());
 
+-- --------------------------------------------------------------------------
+-- AND THE SONG A SHARED RECORDING IS OF.
+--
+-- A take is a recording OF something, so a link to one opens the SONG with the
+-- performance playing over it. Which used to mean that passing on a recording
+-- of a song that was not published was an offer to publish the SONG, asked as
+-- a question at the moment of sharing: the other person could not read the
+-- page, so the page had to be put into the world, into everybody's library and
+-- into the sitemap along with it.
+--
+-- That is a much larger thing than the button was pressed for. Publishing a
+-- song is a decision about the song; passing on a recording is a decision
+-- about the recording; and neither should be the price of the other.
+--
+-- So the song comes back THROUGH THE TAKE, and only through it. The policy on
+-- songs above is untouched, which is what keeps the difference: the library
+-- lists the published ones and the build writes exactly those to disk, because
+-- both ask the TABLE and the table still answers what it always did. What this
+-- answers is one question, which the table cannot be asked without losing that
+-- difference: "the song this published recording is of". Whoever holds the id
+-- of a recording that is out gets the words it was played over. Whoever does
+-- not gets nothing, and there is no way in here from a song id, a slug or a
+-- list.
+--
+-- SECURITY DEFINER, because reading past the policy is the whole of what it is
+-- for, which is also why it names its columns one at a time instead of handing
+-- back the row: `reads` is there for measuring the reader and is nobody's
+-- business, and a `setof songs` would have carried it out with everything
+-- else. search_path is pinned for the same reason every definer function pins
+-- it: one that resolves its own names is one somebody else can point
+-- somewhere.
+-- --------------------------------------------------------------------------
+-- The argument is `take_id` and not `take`, which is what it was: `take` is
+-- already a COLUMN on song_takes (which recording of this song this is), a
+-- column beats a parameter of the same name inside the body, and `t.id = take`
+-- was quietly comparing a uuid with that integer. Postgres said so and refused
+-- to create the function, which is the good version of this mistake.
+drop function if exists public.song_of_take(uuid);
+create function public.song_of_take(take_id uuid)
+returns table (
+  id uuid, slug text, title text, lyrics_by text, music_by text,
+  dir text, lines jsonb, styles text[], status text, status_note text,
+  review boolean, draft boolean, published boolean, owner uuid,
+  created_at timestamptz, updated_at timestamptz, deleted_at timestamptz
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select s.id, s.slug, s.title, s.lyrics_by, s.music_by,
+         s.dir, s.lines, s.styles, s.status, s.status_note,
+         s.review, s.draft, s.published, s.owner,
+         s.created_at, s.updated_at, s.deleted_at
+    from public.song_takes t
+    join public.songs s on s.id = t.song_id
+   where t.id = take_id
+     and t.published
+     -- A song in the wastebasket is a song its owner took out of the world,
+     -- and a link somebody sent last week is not a reason to hand it back.
+     and s.deleted_at is null
+$$;
+
+revoke all on function public.song_of_take(uuid) from public;
+grant execute on function public.song_of_take(uuid) to anon, authenticated;
+
 -- ==========================================================================
 -- And the bucket the sound itself is in.
 --

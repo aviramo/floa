@@ -356,14 +356,6 @@
        we are is whatever the sound says. So the first few readings are taken
        as they come, and the patience starts once a position has held. */
     var locked = false;
-    /* WHETHER A SINGLE READING HAS BEEN STEPPED ON, which is not the same
-       question as whether a position has held. It is asked by the page, not by
-       the arithmetic: the mark is drawn on the chord AFTER this one (see
-       markPlace in app.js), and before anything has been played `here` is not
-       an answer at all, it is the nought it was initialised to. Drawing one
-       past that would open every song on its second chord with nobody having
-       touched a string. */
-    var heard = false;
 
     /* Nothing is known yet, so every place in the song is equally likely and
        the first few readings are what narrow it down. Not "the song starts at
@@ -372,7 +364,6 @@
     function reset() {
       for (var j = 0; j < n; j++) prev[j] = 0;
       here = 0; want = -1; waited = 0; pushed = 0; locked = false;
-      heard = false;
     }
 
     /* Somebody said where they are, by touching a chord on the page. Which is
@@ -382,8 +373,6 @@
       if (!(at >= 0 && at < n)) return here;
       for (var j = 0; j < n; j++) prev[j] = j === at ? 0 : -40;
       here = at; want = -1; waited = 0; pushed = 0; locked = true;
-      /* A finger is a reading like any other, and a better one. */
-      heard = true;
       return here;
     }
 
@@ -391,7 +380,6 @@
        `kinds`, and each is how much this reading looked like that chord. */
     function step(scores) {
       if (!n) return { at: -1, here: -1, alike: 0, moved: false };
-      heard = true;
 
       var j, best = -Infinity, at = 0;
       var was = -Infinity;
@@ -494,7 +482,6 @@
       kinds: kinds, length: n,
       step: step, put: put, reset: reset,
       where: function () { return here; },
-      started: function () { return heard; },
     };
   }
 

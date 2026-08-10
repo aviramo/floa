@@ -1430,6 +1430,27 @@
           return self.bySlug(slug);
         });
     },
+
+    /* --- THE SONG ONE RECORDING IS OF ---------------------------------------
+       For a reader holding a link to a take of a song that is not in the
+       library. A recording that is out is out: whoever has it may hear it, and
+       what it is a recording OF is the page it plays over, so the words come
+       with it. Sharing a performance never publishes the song (see shareTake).
+
+       NOT A SECOND WAY INTO THE LIBRARY. The database answers this question and
+       no other, and only for a recording that is published: there is no way in
+       here from a song id, from a slug, or from a list (see song_of_take in
+       schema.sql). Everything else on this page still asks the table and is
+       still answered by the same rule as before.
+
+       A project whose SQL has not been run since this arrived has no such
+       function and says so; the answer then is the same as no song, which is
+       the page the reader was going to get anyway. */
+    byTake: function (id) {
+      return rest("rpc/song_of_take?take_id=" + encodeURIComponent(id))
+        .then(function (rows) { return (rows && rows[0]) || null; })
+        .catch(function () { return null; });
+    },
     insert: function (song) {
       var self = this;
       return rest(T, { method: "POST", body: shed(song), prefer: "return=representation" })
@@ -8754,6 +8775,21 @@
 
     setBusy("טוען את השיר");
     db.bySlug(slug).then(function (song) {
+      if (song) return song;
+      /* --- OR THE SONG A RECORDING WAS SENT WITH ---------------------------
+         Nothing came back, and there are two ways that happens: there is no
+         such song, or there is one and this reader is not allowed to read it.
+         The second has an answer whenever the address names a recording,
+         because a recording that is out is out: whoever holds the link may
+         hear it, and what it is a recording OF is the page it plays over.
+
+         So the song is asked for through the take instead, which is a door
+         that opens on nothing else (see db.byTake). Somebody who was passed a
+         performance gets the words under it, and the song is not in anybody's
+         library for it. */
+      var wanted = takeWanted();
+      return wanted ? db.byTake(wanted) : null;
+    }).then(function (song) {
       if (!song) return notFound(slug);
 
       /* A song whose reading FAILED is a song with a name and no words yet,
@@ -16705,40 +16741,26 @@
      in it we are. */
   var HEARD_ENOUGH = 0.62;
 
-  /* --- WHERE WE ARE, AND WHAT THE PAGE DRAWS ---------------------------------
-     ONE APART, AND ON PURPOSE. follow.js answers the question it has always
-     answered, "which chord is being played", because that is the question the
-     arithmetic in it is built for and the one its tests hold it to. The page
-     draws the mark on the chord AFTER that one.
+  /* --- WHERE WE ARE, AND WHAT THE PAGE DRAWS ARE ONE THING -----------------
+     THE BAND LIGHTS THE LINE BEING PLAYED. Not the line after it, which is
+     what it did for a few hours and which is worth writing down because the
+     reasoning was sound and the result was wrong.
 
-     Because that is the chord worth looking at. The one under somebody's hand
-     is already under their hand and they know what it is; what a page can tell
-     them that they do not know is what comes next. So the mark stands on a
-     chord that has not been played yet, and the moment it is played the mark
-     moves on to the one after it.
+     The mark used to be one chord AHEAD: the chord under a hand is a chord its
+     owner already knows, so the useful thing to point at is the next one. That
+     is true of a mark on a CHORD. It stops being true the moment what is drawn
+     is a whole line, because the chord after the one being played is, at every
+     line ending in the song, the first chord of the NEXT LINE. So the band
+     jumped a line early, every line, and what a reader saw was the song moving
+     on while they were still singing the line they were on.
 
-     THIS WAS BUILT THE OTHER WAY ROUND FIRST, as a follower that waited for
-     the marked chord and only moved when it heard it, and the takes said what
-     that cost: on one recording of forty three seconds it reached four chords
-     of twenty, sitting fifteen seconds at a time on chords that were being
-     played in the room. The same length of recording under the follower below
-     walked seventeen chords in order without skipping one.
+     Reported exactly that way: "the Em of בדמע has not been played and it has
+     already moved to מטהר". The Em is the last chord of its line and the G of
+     מטהר is the first of the next one, and the follower was right about both.
 
-     What was wrong with waiting was not the idea, it was where the idea was
-     put. Deciding where we are and deciding what to draw are two questions,
-     and answering the first one with the second one's answer threw away every
-     bit of continuity the first one had. So the display moved and the
-     arithmetic stayed. */
-  function markPlace(at) {
-    if (at < 0 || !following) return at;
-    /* AND NOTHING PLAYED YET IS NOT A CHORD BEHIND US. Before the first
-       reading the follower has no answer, only the nought it started at, so
-       the chord to look at is the FIRST one: nobody has played it. */
-    if (!following.started()) return at;
-    /* AND NOT PAST THE END. A song ends on its last chord and the mark stands
-       on it, which is where somebody finishing a song is looking anyway. */
-    return Math.min(following.length - 1, at + 1);
-  }
+     A line does not need to be one ahead to be read ahead FROM. The next line
+     is already on the screen, directly underneath, which is the whole reason
+     lighting a line works at all. */
 
   function followOn(quiet) {
     /* The page underneath may have become a different page: a song closed, the
@@ -16807,9 +16829,8 @@
      that is always the same is not a reading, and a warning that never appears
      is worse than none. */
   function followSay(at) {
-    var place = markPlace(at);
-    markAt(place);
-    earParts.chord.at.textContent = place < 0 ? "" : (place + 1) + " מתוך " + following.length;
+    markAt(at);
+    earParts.chord.at.textContent = at < 0 ? "" : (at + 1) + " מתוך " + following.length;
   }
 
   /* THE SONG AS THE PAGE HAS IT, walked row by row rather than asked for as
@@ -16975,13 +16996,9 @@
     if (!sheet || sheet.classList.contains("ed")) return;
     for (var i = 0; i < followSpans.length; i++) {
       if (followSpans[i] === hit) {
-        /* A FINGER LANDS THE MARK WHERE IT LANDED, which is what a finger
-           means everywhere: the chord touched is the chord to look at. The
-           mark stands one ahead of the playing (see markPlace), so saying "the
-           mark belongs here" is saying "the chord before here is the one being
-           played", and the first chord of a song has nothing before it to be
-           played, so it stays where it is. */
-        following.put(Math.max(0, i - 1));
+        /* A FINGER SAYS WHICH CHORD IS BEING PLAYED, which is what the
+           follower's answer is, and the band lights the line it is on. */
+        following.put(i);
         scrollHold = 0;
         markAt(i);
         return;
@@ -17473,7 +17490,7 @@
     heldTake = null;
     /* Where the mark already is, so a take opens on the chord it opened on
        rather than on the first one the player happens to move to. */
-    tapeMark(following ? markPlace(following.where()) : 0);
+    tapeMark(following ? following.where() : 0);
     paintHeader();
   }
 
@@ -18143,9 +18160,14 @@
        it. Published, and it appears.
 
        Somebody else's take that is out has one too. Passing on a link that
-       already exists is passing on a link. */
+       already exists is passing on a link.
+
+       AND IT COSTS THE SONG NOTHING. The recording is what is being passed on,
+       and the words come with it because a performance has to be played over
+       something; the song is not published, not listed and not indexed for it
+       (see shareTake). */
     var pass = iconBtn(ICON.share, "שיתוף ההקלטה", function () {
-      shareTake(row, song, pass);
+      shareTake(row, song);
     });
     pass.classList.add("take-pass");
     pass.hidden = !row.published;
@@ -18197,60 +18219,39 @@
      playing over them. Not a file: a file is a recording, and this is a
      recording OF a song, which is a page.
 
+     AND IT SHARES THE RECORDING, NOT THE SONG. It used to ask, whenever the
+     song was not published, whether to publish it: the other person had to be
+     able to read the page, and the only way in was the front door, which is
+     the library and the sitemap and every reader there will ever be. So
+     passing one recording to one person cost the whole song, and the question
+     came up at the worst possible moment, with the sheet already open and the
+     press already made.
+
+     What goes out is what was pressed: this performance, to whoever is handed
+     the link, and the words underneath it because a recording without them is
+     a sound with nowhere to stand. The song stays exactly as private as it
+     was, out of the library and out of the sitemap, and the way in is the
+     recording itself (see song_of_take in schema.sql, and db.byTake).
+
      Handed to whatever the machine has. A phone opens the sheet every app on
      it is listed in; a desk has no such thing and gets the link on the
      clipboard, which is what it would have done with it anyway. */
-  function shareTake(row, song, pass) {
-    var out = function () {
-      var where = (window.SITE_ORIGIN || location.origin) + BASE + "/" +
-        encodeURIComponent(song.slug) + "?t=" + row.id;
-      var note = { title: song.title || "הקלטה", url: where };
-      if (navigator.share) {
-        return navigator.share(note).catch(function () { /* waved off */ });
-      }
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        return navigator.clipboard.writeText(where)
-          .then(function () { toast("הקישור הועתק"); })
-          .catch(function () { window.prompt("הקישור להקלטה", where); });
-      }
-      window.prompt("הקישור להקלטה", where);
-      return Promise.resolve();
-    };
-
-    /* --- AND THE SONG HAS TO BE OUT TOO ---------------------------------------
-       A recording is a recording OF something, and what a link opens is the
-       song with the recording playing over it. So a public take on a private
-       song is a link to a page the other person is not allowed to read: they
-       get nothing, and nothing is what the sharer sees no sign of.
-
-       ASKED, NEVER DONE QUIETLY. Publishing the song puts it in everybody's
-       library, and that is a larger thing than the button was pressed for. So
-       it is one question, asked once, and it is the truth about what sharing
-       means here. The recording itself is already out, or this button would
-       not be on the row (see takeRow). */
-    pass.disabled = true;
-    rest(CFG.table + "?id=eq." + song.id + "&select=published").then(function (rows) {
-      var songOut = !!(rows && rows[0] && rows[0].published);
-      if (songOut) {
-        pass.disabled = false;
-        return out();
-      }
-      if (!window.confirm(
-        "כדי שמישהו אחר יוכל לשמוע את ההקלטה הוא צריך לפתוח את השיר, ולכן גם השיר יהיה ציבורי.\n\nלפרסם את השיר?")) {
-        pass.disabled = false;
-        return null;
-      }
-      return rest(CFG.table + "?id=eq." + song.id,
-        { method: "PATCH", body: { published: true } }).then(function () {
-        song.published = true;
-        pass.disabled = false;
-        if (state.redrawTakes) state.redrawTakes();
-        return out();
-      });
-    }).catch(function () {
-      pass.disabled = false;
-      toast("לא הצלחנו לפרסם");
-    });
+  function shareTake(row, song) {
+    /* With the slash on the end, which is the address the app itself writes
+       (see addr): the one without it is answered by a redirect, and a redirect
+       is one more place the "?t=" can be dropped on the way. */
+    var where = (window.SITE_ORIGIN || location.origin) + addr(song.slug) + "?t=" + row.id;
+    var note = { title: song.title || "הקלטה", url: where };
+    if (navigator.share) {
+      return navigator.share(note).catch(function () { /* waved off */ });
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(where)
+        .then(function () { toast("הקישור הועתק"); })
+        .catch(function () { window.prompt("הקישור להקלטה", where); });
+    }
+    window.prompt("הקישור להקלטה", where);
+    return Promise.resolve();
   }
 
   function shortDate(when) {
@@ -18378,16 +18379,15 @@
     tellLength(audio, function () { startAudio(audio); });
   }
 
+  /* PUBLISHING A RECORDING SAYS NOTHING ABOUT THE SONG, and it used to have to:
+     what anybody else opens is the song with the recording playing over it, so
+     a public take on a private song was a link to a page they were not allowed
+     to read, and this said so and sharing offered to publish both. It does not
+     any more. A recording that is out carries the words it was played over to
+     whoever holds it, and the song stays where its author left it (see
+     song_of_take in schema.sql). One button, one thing said. */
   function offerTake(row, out, pass) {
     var want = !row.published;
-    /* A public take on a private song is a take nobody can reach: what anybody
-       else opens is the SONG, with the recording playing over it, and a song
-       that is not out is a page they are not allowed to read. Said here rather
-       than fixed here, because the tick is about this recording and publishing
-       the song is a decision about the song (see shareTake, which asks). */
-    if (want && state.takeSong && state.takeSong.published === false) {
-      toast("ההקלטה תהיה ציבורית, אבל השיר עצמו עדיין לא. שיתוף יציע לפרסם את שניהם.");
-    }
     out.disabled = true;
     rest(CFG.takeTable + "?id=eq." + row.id, {
       method: "PATCH", body: { published: want },

@@ -77,7 +77,15 @@
   }
 
   var rest = path.slice(app.length).replace(/^\/+/, "").replace(/\/+$/, "");
-  location.replace("/" + app + "/?p=" + repair(rest) + location.hash);
+  /* AND WHATEVER WAS ASKED ALONG WITH THE ADDRESS. The path was being handed
+     on and the question after it dropped, so a link to one recording of a song
+     (/chords/<song>/?t=…) arrived at the app as a link to the song and
+     nothing else: the page opened, the recording did not play, and the reader
+     had no way of knowing there had been one. `p` goes first and the rest
+     follows it, which is the order the app takes them apart in. */
+  var asked = location.search.replace(/^\?/, "");
+  location.replace("/" + app + "/?p=" + repair(rest) +
+    (asked ? "&" + asked : "") + location.hash);
 })();
 </script>
 <style>
