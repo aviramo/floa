@@ -15726,8 +15726,8 @@
     if (taping()) return;
     /* and a take that was asked for and never got a microphone is not asked
        for any more: the flag it left standing would keep the band away from
-       the next person who opens it (see takeWanted) */
-    takeWanted = false;
+       the next person who opens it (see takeComing) */
+    takeComing = false;
     if (earTicking) cancelAnimationFrame(earTicking);
     earTicking = 0;
     if (window.CHORDS_EAR.live()) window.CHORDS_EAR.close();
@@ -16568,8 +16568,8 @@
        already a person playing: the band was going up on the press and coming
        down when the following began, which on the screen is something rising
        from the bottom and disappearing. What the press means is known at the
-       press (see takeWanted). */
-    var on = (!!following || taping() || takeWanted) && earMode === "chord";
+       press (see takeComing). */
+    var on = (!!following || taping() || takeComing) && earMode === "chord";
     var away = on && !earParts.chord.node.classList.contains("is-shown");
     ear.hidden = away;
     /* On the BODY and not on the band, because what it changes is how much
@@ -16829,8 +16829,18 @@
      earRoom), and without it the recording press put the band up and took it
      down again in the same second: something rose from the bottom of the
      screen and vanished, for nobody, because the press was never about the
-     measurement. Pressed to record, the band is never asked for at all. */
-  var takeWanted = false;
+     measurement. Pressed to record, the band is never asked for at all.
+
+     AND IT IS NOT CALLED takeWanted, which is what it was called, because
+     there is a takeWanted() a few hundred lines down: which recording an
+     address asked to be opened for. Two declarations of one name in one scope
+     are not two things, they are one, and a `var` assigned at load time wins
+     over a hoisted function for the rest of the tab. What that cost was the
+     whole list of recordings under every song: drawTakes calls takeWanted(),
+     the name was a boolean by then, and the call threw inside a promise where
+     nothing was listening. The takes were saved, the panel was empty, and the
+     only honest reading of an empty panel is that nothing was saved. */
+  var takeComing = false;
 
   /* ==========================================================================
      A TAKE THAT WAS NOT ANSWERED SURVIVES THE PAGE.
@@ -16963,8 +16973,8 @@
     if (earOpen() && earMode === "chord") return startTape();
     /* The band is not put up on its way to being taken down: this press is for
        a recording, and the microphone opening is the only thing between the
-       press and one (see takeWanted). */
-    takeWanted = true;
+       press and one (see takeComing). */
+    takeComing = true;
     askEar("chord", startTape);
   }
 
@@ -16972,8 +16982,8 @@
     /* Whatever comes of this, nothing is waiting on the microphone any more:
        either a take is running, which is what keeps the band away by itself,
        or none is, and the band is the panel that was opened. */
-    var waited = takeWanted;
-    takeWanted = false;
+    var waited = takeComing;
+    takeComing = false;
     var no = function (said) {
       toast(said);
       /* the band was held back for a take that is not going to happen */
