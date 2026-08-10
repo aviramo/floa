@@ -92,6 +92,11 @@
        are the ones on the key dial and on «who wrote the tune», because a note
        is a note wherever it is drawn here. */
     chordsOnly: '<path d="M3.5 20.5h17"/><path d="M8 5.5v6.6"/><ellipse cx="6.3" cy="12.6" rx="1.8" ry="1.5" fill="currentColor" stroke="none"/><path d="M17 5.5v6.6"/><ellipse cx="15.3" cy="12.6" rx="1.8" ry="1.5" fill="currentColor" stroke="none"/>',
+    /* ONE note over the line, which is the one above with one note taken off
+       it. The two buttons say different things and they are drawn in the same
+       vocabulary on purpose: that one puts down the chords a copy is carrying,
+       this one puts down a single chord on a single letter. */
+    chordHere: '<path d="M3.5 20.5h17"/><path d="M12 5.5v6.6"/><ellipse cx="10.3" cy="12.6" rx="1.8" ry="1.5" fill="currentColor" stroke="none"/>',
     /* the question mark itself: the hook, the stem and the dot. Drawn to the
        full height of the box like every other icon here, so that at fifteen
        pixels it is a question mark and not a speck. */
@@ -3513,6 +3518,30 @@
       if (beside) beside.appendChild(made.facts);
       else home.insertBefore(made.facts, made.tools);
     }
+
+    /* WHAT IS BEING DONE TO THE SONG COMES DOWN WITH THE DIALS. On a desk the
+       group stands in the bar and the bar names it (see paintHeader). On a
+       phone the bar is a mark, a name, a glass and a picture already, and the
+       four of these on the end of it is the row overflowing; the strip under it
+       is the rest of the same bar and it is half empty, because the dials pull
+       themselves to the far end of it and nothing was standing at the near one.
+       So this is what stands there.
+
+       At the START of the strip, after the dials were put in: right to left
+       that is its right hand end, which is where a hand holding a phone is, and
+       it leaves the row reading as the two things it is. What to do to the
+       song, and what to do to the page.
+
+       THE WAY IN AND OUT OF THE EDITOR COMES DOWN WITH THEM. It is the one of
+       these the BAR makes rather than the page, and it exists on a phone and
+       nowhere else (see state.editToggle), so this is the only width it has to
+       be placed at: a pencil while reading and a tick while writing, in the
+       same place both times, so pressing it does not move it. */
+    if (made.acts && NARROW.matches) {
+      home.insertBefore(made.acts, home.firstChild);
+      if (state.editToggle && kept.edit) made.acts.appendChild(kept.edit);
+    }
+
     made.strip.hidden = !NARROW.matches;
 
     /* Stuck directly under the bar, whatever height the bar happens to be:
@@ -4084,7 +4113,13 @@
          belong to the song rather than to the bar: made with it and handed
          over by placeControls, which is why they are named here too. A repaint
          that did not know about them would take them out. */
-      if (state.songControls && !NARROW.matches) mine.push(state.songControls.tools);
+      if (state.songControls && !NARROW.matches) {
+        mine.push(state.songControls.tools);
+        /* and what is being done to the song beside them, named here for the
+           same reason: it is made with the song and handed over, and a bar
+           that did not know about it would sweep it off on the next repaint */
+        if (state.songControls.acts) mine.push(state.songControls.acts);
+      }
       /* Only once there is a song on the page. A song still loading, one that
          is not there at all and one still being read from a photograph are all
          this same address, and none of them is worth paper. */
@@ -4094,7 +4129,13 @@
           edit.on ? "סיום עריכה" : "עריכה");
         editBtn.classList.toggle("is-on", !!edit.on);
         editBtn._act = edit.flip;
-        mine.push(editBtn);
+        /* IT BELONGS WITH THE REST OF WHAT IS DONE TO THE SONG, which on a
+           phone is the row under this one (see placeControls), and this button
+           is only ever on a phone. Named here only while the page has not
+           handed that group over yet, which is the moment between the bar being
+           painted and the song being drawn. */
+        var down = NARROW.matches && state.songControls && state.songControls.acts;
+        if (!down) mine.push(editBtn);
       }
       if (state.printable) {
         var printBtn = actionBtn("print", ICON.print, "הדפסה");
@@ -7603,10 +7644,18 @@
     undoBtn.hidden = true;
     revertBtn.hidden = true;
 
-    /* WHAT IS BEING DONE TO THE SONG GOES TO THE BAR, and the row over the
+    /* WHAT IS BEING DONE TO THE SONG STANDS TOGETHER, and the row over the
        song is left holding only what changes what you are looking at. Deleting
        it, taking a change back, taking all of them back: none of those is a
        property of the song on screen.
+
+       ONE GROUP AND NOT FOUR LOOSE BUTTONS, because they are not always in the
+       same place. On a desk they are in the bar; on a phone the bar is full
+       and they come down to the song's own row with the dials (see
+       placeControls). A group can be moved between the two in one line, and
+       what is more, it comes BACK: the bar is rearranged by naming what belongs
+       on it, and four buttons nobody had a name for were swept off it by the
+       first repaint after they were made.
 
        The word saying what state it is in is not one of these and is not here.
        It is a FACT about the song rather than something being done to it, so
@@ -7614,11 +7663,11 @@
        (see the chip): the same page in its two states should not move its
        buttons about when you start writing on it.
 
-       Inserted at the START of the bar, which on a page that runs right to
+       Inserted at the START of the group, which on a page that runs right to
        left is its right hand end, in the order they are read: the ways back,
        then the way to be rid of it. */
+    var acts = el("div", "song-acts");
     if (editing) {
-      var topBar = document.getElementById("topActions");
       var mine = [];
       if (song.id) {
         var trash = iconBtn(ICON.trash, "מחיקת השיר", removeSong);
@@ -7649,7 +7698,7 @@
          facts, where the reader's page keeps it (see the chip). What is left
          here is only what is being DONE to the song. */
       mine.push(revertBtn, undoBtn);
-      mine.forEach(function (node) { topBar.insertBefore(node, topBar.firstChild); });
+      mine.forEach(function (node) { acts.insertBefore(node, acts.firstChild); });
     }
     app.appendChild(strip);
     /* Shut, and a shut dialog is nothing on the page: no height, no row, no
@@ -7659,8 +7708,13 @@
 
     /* And now they are handed over, to be put in whichever of the two places
        the screen can hold them (see placeControls). */
-    state.songControls = { strip: strip, facts: facts, tools: tools };
-    placeControls();
+    state.songControls = { strip: strip, facts: facts, tools: tools, acts: acts };
+    /* THE WHOLE HEADER AND NOT ONLY THE PLACING, because what the bar is
+       allowed to hold has just changed: the group above did not exist when the
+       bar was painted at the top of this function, and the way in and out of
+       the editor has somewhere to stand now that it does. Painting it names
+       both, and finishes by placing them. */
+    paintHeader();
 
     /* The sheet used to carry a "קפו 3" chip of its own, from when the capo was
        worked out from the transposition and was a fact about the SONG. It is a
@@ -8391,6 +8445,52 @@
         gapOffer.appendChild(node);
         return node;
       };
+
+      /* --- A CHORD ON THE CHARACTER THE CARET IS IN FRONT OF -------------------
+         The lane over the words is where a chord is put down, and on a phone
+         the lane is eleven pixels of strip between two lines of text. Measured
+         with a real browser and a real finger: a tap on it lands in the words
+         instead, and so does a tap aimed to the pixel, because a phone snaps a
+         tap to whatever near it is worth tapping and a line you can type into
+         is worth more than a strip. The lane was not small there, it was
+         unreachable, and a song could be written on a phone with no chords in
+         it.
+
+         So the caret is the other way in, and it is not a lesser one. The
+         character the caret stands in front of is exactly the character the
+         chord goes over, and it is chosen with the phone's own magnifying
+         glass instead of by aim. On a desk it is the same offer, where it is
+         the difference between clicking at a pixel of a lane and naming a
+         letter.
+
+         The lane is untouched and still the quickest thing on a desk: a press
+         on it puts a chord down where the pointer is, which is one gesture
+         where this is two. */
+      var lane = ln.querySelector(".ln-c");
+      if (lane) {
+        var put = hold(el("button", "gap-btn gap-do"));
+        put.title = "לשים אקורד מעל האות הזאת";
+        put.setAttribute("aria-label", put.title);
+        put.appendChild(svg(ICON.chordHere));
+        put.addEventListener("click", function () {
+          /* The same four steps the lane takes, with the caret answering where
+             instead of the pointer: born on a character of this line, bound so
+             it can be dragged and re-picked like any other, drawn, and named.
+             Nameless until the picker says otherwise, and the picker takes it
+             back out again if it is walked away from (see pickerDismissed). */
+          var chord = { pos: rowFrom(ln) + at, chord: "" };
+          line.chords.push(chord);
+          var node = chordEl("", at, semis);
+          bindChord(node, ln, line, chord);
+          lane.appendChild(node);
+          layoutLine(ln);
+          /* The offer has been answered, so it goes before the picker opens:
+             two small things floating over the same letter is one of them in
+             the way of the other. */
+          hideGap();
+          openPicker(node, ln, line, chord);
+        });
+      }
 
       var open = hold(el("button", "gap-btn gap-do"));
       open.title = "לפתוח רווח בין האותיות, בלי לשבור את המילה";

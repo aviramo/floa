@@ -160,7 +160,14 @@ body.on-song { background: var(--bg); }
    And in the same ink, which is the bar's ink: elsewhere .icon-btn is drawn
    soft because it sits beside the thing it acts on and should not compete with
    it, and up here it is the thing itself. */
-.top-actions > .icon-btn { border-radius: 999px; color: var(--ink); }
+/* AND THE SONG'S OWN BUTTONS ARE THE BAR'S BUTTONS WHEREVER THEY STAND. On a
+   phone they come down to the strip under it (see .song-acts), which is the
+   rest of the same bar, so the shape comes with them: a button that changed
+   from a circle to a square when the window narrowed would read as a different
+   button doing a different thing. Written here rather than beside the strip so
+   that the quiet ones still turn red under the hand, which is a rule further
+   down the file and has to be the later one. */
+.top-actions > .icon-btn, .song-acts > .icon-btn { border-radius: 999px; color: var(--ink); }
 
 /* --- WHAT PAGE THIS IS ----------------------------------------------------
    The app's name used to stand here beside its own mark, which is one word
@@ -1322,6 +1329,23 @@ body.on-song .top { border-bottom: 0; }
    far end of one has nothing to be at the end of. */
 .top-actions .tools { margin-inline-start: 0; }
 
+/* --- WHAT IS BEING DONE TO THE SONG ---------------------------------------
+   Finishing, deleting, taking a change back, the versions behind it. On a desk
+   they stand in the bar with everything else; on a phone the bar is full and
+   they come down here, to the near end of the strip, which was empty because
+   the dials pull themselves to the far one.
+
+   Empty is nothing at all. Reading a song there is only the way into the
+   editor in here, and on a version page not even that, and an empty box in a
+   flex row still spends the row's gap. */
+.song-acts { display: flex; align-items: center; gap: 6px; }
+.song-acts:empty { display: none; }
+/* Big enough for a thumb, which is what is holding the phone this row exists
+   for, and no bigger: the strip is the second half of a bar and not a second
+   bar, and every pixel of it is a pixel of the song. */
+.song-strip .song-acts > .icon-btn { width: 34px; height: 34px; }
+.song-strip .song-acts > .icon-btn > svg { width: 17px; height: 17px; }
+
 /* --- AND WHO WROTE IT, BESIDE THE NAME ------------------------------------
    Its own place in the bar, between the name of the song and the search. It
    was at the far end with the dials, where it was the one line of text in a
@@ -1940,6 +1964,22 @@ body.on-song .top { border-bottom: 0; }
 .gap-do:hover { border-color: var(--chord); }
 .gap-why { color: var(--ink); }
 .gap-why:hover { border-color: var(--ink); }
+
+/* ON A PHONE THE OFFER LIES DOWN, and it is the third button that turns it.
+   Two stacked hang the depth of two buttons under a letter and that was
+   nothing; three of them, at a size a thumb can actually land on, would hang
+   past the next line of the song and the one after it, which is a toolbar
+   standing on the words somebody is reading. Side by side it covers the line
+   under it and no more, and it is the only line it was ever standing on.
+
+   Bigger, because this is where they matter: the offer is the whole way in to
+   putting a chord down on a phone (see offerGap), and twenty six pixels is
+   not something a thumb aims at. */
+@media (max-width: 620px) {
+  .gap-offer { flex-direction: row; gap: 6px; }
+  .gap-btn { width: 38px; height: 34px; border-radius: 8px; }
+  .gap-btn svg { width: 19px; height: 19px; }
+}
 
 /* The question mark was drawn smaller than the button it hangs under, to keep
    it from competing with it. At that size it stopped being a question mark and
