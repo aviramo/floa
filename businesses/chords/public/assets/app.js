@@ -1238,7 +1238,7 @@
       audio.addEventListener("error", stopWall);
       node.classList.add("is-playing");
       reicon(node, ICON.stop);
-      audio.play().catch(function () { stopWall(); });
+      startAudio(audio);
     }).catch(function () {
       node.disabled = false;
       toast("לא הצלחנו להשמיע את ההקלטה");
@@ -15036,6 +15036,39 @@
     return d.toLocaleDateString("he-IL", { day: "numeric", month: "short" });
   }
 
+  /* --- MAKING A SOUND ON A PAGE NOBODY HAS TOUCHED YET -----------------------
+     A browser refuses to play audio on a page that has had no gesture on it,
+     and it is right to: what that rule exists to stop is exactly a link that
+     makes a noise at somebody. But a link to a recording is a link somebody
+     followed ON PURPOSE, and arriving to silence with no sign of what to do is
+     the worst of both.
+
+     So it is asked for, and where it is refused the NEXT touch anywhere on the
+     page starts it. Which is a gesture the reader was going to make anyway,
+     costs them nothing, and turns "it did not play" into "it played when I
+     touched it". A press on a button is left alone: that button has its own
+     opinion about this recording and it should win. */
+  var wantsGesture = null;
+
+  function startAudio(audio) {
+    var went = audio.play();
+    if (!went || !went.catch) return;
+    went.catch(function () {
+      wantsGesture = audio;
+      toast("געו במסך כדי לשמוע את ההקלטה");
+      var wake = function (event) {
+        document.removeEventListener("pointerdown", wake, true);
+        document.removeEventListener("keydown", wake, true);
+        if (wantsGesture !== audio) return;
+        wantsGesture = null;
+        if (event && event.target && event.target.closest && event.target.closest("button")) return;
+        audio.play().catch(function () { /* nothing more to be done about it */ });
+      };
+      document.addEventListener("pointerdown", wake, true);
+      document.addEventListener("keydown", wake, true);
+    });
+  }
+
   /* --- and playing one ------------------------------------------------------
      Fetched rather than pointed at, because the bucket is not public and an
      audio element cannot carry a token (see store). Once, and kept on the row
@@ -15056,7 +15089,7 @@
       alongTake(audio, Array.isArray(row.marks) ? row.marks : []);
       go.disabled = false;
       go.hidden = true;
-      audio.play();
+      startAudio(audio);
     }).catch(function () {
       go.disabled = false;
       toast("לא הצלחנו להשמיע את ההקלטה");
