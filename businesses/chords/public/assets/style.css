@@ -1428,7 +1428,18 @@ body.on-song .top { border-bottom: 0; }
    than alone in the slot, and a button in a flex row is a button that can be
    squeezed: a square pressed out of true by the words next to it. */
 .top-facts .song-info, .song-facts .song-info { flex: none; }
-.song-info.is-open { color: #fff; background: var(--accent); border-color: var(--accent); }
+/* AND NO BOX ROUND IT, ONLY THE MARK. Every other picture in this bar is a
+   thing to press and is drawn as one; this one is the second half of the
+   title, and a white box with a line round it standing against the name makes
+   the quietest thing up there the loudest. The mark alone is enough: it is the
+   one everybody already knows, and the room it takes is the room it is in.
+   Under the hand it takes the soft fill the rows of a menu take, which is what
+   says a picture is pressable without a box saying it all the time. */
+.song-info { border-color: transparent; background: none; }
+.song-info:hover { border-color: transparent; background: var(--bg); color: var(--ink); }
+.song-info.is-open, .song-info.is-open:hover {
+  color: #fff; background: var(--accent); border-color: var(--accent);
+}
 
 /* THREE CONTROLS, AND NOTHING DRAWN ROUND THEM. Each of them is already a box
    with a line round it, and a fourth line round all three is a box inside a box
@@ -1460,10 +1471,16 @@ body.on-song .top { border-bottom: 0; }
    could be comes out under them. So the pair has to LOOK pressable, which the
    two loose spans it used to be did not, and it is drawn as one box with a
    line round it. Open, it is lit like everything else in this app that has a
-   panel hanging off it. */
+   panel hanging off it.
+
+   AND IT IS THE HEIGHT OF THE BUTTONS BESIDE IT. It was twenty two, from when
+   it stood on a strip of its own among other dials and the row was sized to
+   it. It stands in the bar now, between the glass and the three dots (see
+   placeControls), and a box two thirds the height of its neighbours reads as
+   something that came from somewhere else. */
 .tools .dial-btn {
   appearance: none; font: inherit; color: inherit; cursor: pointer;
-  padding: 2px 7px; height: 22px; background: #fff;
+  padding: 2px 9px; height: 30px; background: #fff;
   border: 1px solid var(--line); border-radius: var(--corner);
 }
 .tools .dial-btn:hover { background: var(--bg); }
