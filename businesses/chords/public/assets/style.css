@@ -1887,12 +1887,20 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 .ln-t .gap { user-select: none; -webkit-user-select: none; }
 
 /* THE AIR BETWEEN ONE LINE AND THE NEXT, and it is the only air in a row: what
-   is above the words is the chords' and belongs to them. It was .45 and it is
-   .3, which is about three pixels off every line of the song, and three pixels
-   a line is a line and a half more on every screenful. A song is not prose and
-   is not read a paragraph at a time: it is read a line ahead, by somebody who
-   wants as much of the next verse in front of them as will go. */
-.ln { position: relative; margin-bottom: .3em; }
+   is above the words is the chords' and belongs to them. It was .45 of an em,
+   then .3, and it is a seventh of a song size now: about five pixels off every
+   line of the song since this started, which is two lines more on a screenful
+   and a good deal more than that on a phone. A song is not prose and is not
+   read a paragraph at a time. It is read a line ahead, by somebody who wants
+   as much of the next verse in front of them as will go.
+
+   IN SONG SIZES AND NOT IN EM, which is the same correction .ln-c carries
+   below. An em here is the APP's sixteen pixels, because a row inherits the
+   page's font and only .ln-t is set in the song's: as a fixed number of pixels
+   this was the right gap at one size and at no other, wide enough to read as a
+   blank line at the small end and gone altogether at the large. The space
+   between two lines is a fact about the words, so it is measured in them. */
+.ln { position: relative; margin-bottom: calc(var(--song-size) * .14); }
 /* IN SONG SIZES, NOT IN EM. An em here is the APP's sixteen pixels, because
    the lane inherits the page's font and only .ln-t is set in the song's, so
    this was a fixed fifteen pixels at every size the song was ever read at.
