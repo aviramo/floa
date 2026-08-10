@@ -235,6 +235,16 @@ body.on-air .top {
   color: var(--ink); text-decoration: none;
 }
 .brand svg { width: 24px; height: 24px; color: var(--accent); }
+/* THE MARK AND THE NAME BESIDE IT ARE ONE THING. The row's gap is what stands
+   between one control and the next, and these two are not two controls: the
+   picture and the word say the same thing, and sixteen pixels of bar between
+   them read as a space with something taken out of it, next to the eight the
+   buttons at the other end of the same bar stand at. Half of it is given back,
+   the way .top-facts takes its own back below, and the two close into one
+   mark with its name against it.
+   A phone holds the whole row at eight already, so there is nothing to take
+   there and the rule is undone in the narrow block. */
+.brand { margin-inline-end: -8px; }
 /* THERE WAS A .top-pick HERE, a slot between the mark and the name holding a
    tick that took every song on the page, and a .picking beside it holding what
    could then be done to them. Both are gone with the ticking itself: see the
@@ -486,6 +496,8 @@ body.on-air .top {
      that nobody is looking for: the mark says the same and costs a quarter of
      the room. */
   .top-in { gap: 8px; }
+  /* which is already what the mark and the name were pulled to on a desk */
+  .brand { margin-inline-end: 0; }
 
   /* A GLASS UNTIL IT IS PRESSED, AND THEN THE WHOLE BAR. The bar of a phone
      holds a mark, the name of the page and four pictures, and what is left
@@ -1163,17 +1175,27 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    written: a line to put words on rather than a box to fill in. The fields
    themselves are styled with the song's, down at .song-meta. The date takes the
    width a date needs and the place takes the rest. */
-/* AND NO AIR OF ITS OWN OVER IT. The bar already leaves the same band of page
-   over every page in the app (see #app), so a margin here was that gap and a
-   half again: a line of two short fields floating in the middle of an empty
-   band, with the first song of the evening pushed under it. */
-/* The two stand at their tops, not at their bottoms: the place can take a
+/* AND THE AIR IS UNDER IT, NOT OVER IT. It had none of its own over it and
+   four pixels under it, which put it in the middle of the band the bar leaves
+   over every page (see #app) and then dropped the first song of the evening
+   straight onto it. It is the second line of a name that is in the bar: it
+   belongs up against what it is about, and the list below it is a different
+   thing and wants saying so. So ten of the band is taken back and spent on the
+   other side of the line.
+
+   The two stand at their tops, not at their bottoms: the place can take a
    second line and the date never can, and aligning their ends would drop the
-   date half a line down the row to keep the two feet level. */
+   date half a line down the row to keep the two feet level.
+
+   AND TWENTY PIXELS BETWEEN WHEN AND WHERE WAS A HOLE IN THE MIDDLE OF A
+   SENTENCE. The row reads "תאריך 14/08/2026 מיקום שבט", four words in one
+   breath, and the widest gap on it stood between the two halves rather than
+   around them. Twelve is still half again what holds a word to its own field,
+   which is all the row has to say about where one of them ends. */
 .ev-meta {
-  display: grid; align-items: start; gap: 4px 20px;
+  display: grid; align-items: start; gap: 4px 12px;
   grid-template-columns: auto minmax(0, 1fr);
-  margin: 0 0 4px; max-width: 560px;
+  margin: -10px 0 16px; max-width: 560px;
 }
 .ev-when:empty { display: none; }
 /* the same date the field above holds, kept back for the printer */
