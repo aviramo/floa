@@ -409,10 +409,40 @@
   var unit = new Float32Array(12);
   var bass = -1;
 
-  /* Matching the bass under the chord is worth something and is worth only a
-     little: it is the strongest single clue between C and Am, and it is also
-     the part of the spectrum a phone microphone hears worst. */
-  var BASS_HELP = 0.05;
+  /* --- THE BASS, WHICH IS THE WHOLE OF WHAT SEPARATES C FROM Am -------------
+     Am is A C E and C is C E G. Two notes out of three are the same notes, so
+     the twelve numbers above say almost nothing about which of the two is
+     being played, and no amount of care with them ever will: they are very
+     nearly the same chord. What is not the same is the note underneath, and
+     that is the one thing a chord sheet and a pair of hands agree on.
+
+     REPORTED FROM A SONG THAT IS BUILT OUT OF THAT PAIR. "שר ליבי" runs Am and
+     C against each other line after line, and the follower spent sixteen
+     seconds of a recording on the first chord change of the song, because a
+     chord change has to be WON by a margin (see follow.js) and these two never
+     win anything against each other. On a song of Am F Dm the same follower
+     walked seventeen chords without a stumble.
+
+     So the bass is worth more than it was. It was worth a flat 0.05 whenever
+     it stood out at all, and the reason it was kept that small is real and has
+     not gone away: the bottom of the spectrum is the part a phone hears worst,
+     and a bass heard wrongly does not merely fail to help, it argues for the
+     wrong chord.
+
+     WHICH IS WHY WHAT CHANGED IS NOT ONLY THE SIZE. It is now worth what it is
+     WORTH: nothing at all when the bottom is a muddle, and up to a quarter of
+     the distance between two chords when one note down there is plainly louder
+     than everything around it. At the old threshold it is worth what it always
+     was, so the case that used to work is untouched, and only a bass somebody
+     could point at gets more. */
+  var BASS_HELP = 0.12;
+  /* How far above its neighbours the bass has to stand to be worth all of it.
+     Below STANDS_OUT it is not named at all (see chord), and between the two
+     it is believed in proportion. */
+  var STANDS_OUT = 1.6;
+  var BASS_PLAIN = 2.2;
+  /* How much of BASS_HELP this reading's bass has earned. */
+  var bassSure = 0;
 
   function chord() {
     var out = { rms: 0, chroma: chroma, bass: -1, best: [] };
@@ -443,7 +473,13 @@
       if (s > loud) { next = loud; loud = s; bass = n % 12; }
       else if (s > next) next = s;
     }
-    if (!(loud > next * 1.6)) bass = -1;
+    if (!(loud > next * STANDS_OUT)) bass = -1;
+    /* Nought at the threshold it is named at and all of it once it is plain,
+       so that raising what a bass is worth cannot make a doubtful one louder
+       than it was: at 1.6 it earns half, which is what it used to be given
+       flat, and only a bass standing well clear earns the rest. */
+    bassSure = bass < 0 ? 0 :
+      Math.min(1, (loud / next - 1) / (BASS_PLAIN - 1));
     out.bass = bass;
 
     out.best = weigh(chroma);
@@ -462,7 +498,12 @@
      against the shape of a chord, and a quiet strum and a loud one of the same
      chord have the same shape. */
   function weigh(vec, low) {
-    if (arguments.length > 1) bass = low == null ? -1 : low;
+    /* A bass handed in by name is a bass somebody is certain about: there is
+       no spectrum here to have been unsure of. */
+    if (arguments.length > 1) {
+      bass = low == null ? -1 : low;
+      bassSure = bass < 0 ? 0 : 1;
+    }
     var i, len = 0;
     for (i = 0; i < 12; i++) len += vec[i] * vec[i];
     len = Math.sqrt(len) || 1;
@@ -481,7 +522,7 @@
   function dot(t) {
     var s = 0;
     for (var i = 0; i < 12; i++) s += unit[i] * t.v[i];
-    if (bass >= 0 && bass === t.root) s += BASS_HELP;
+    if (bass >= 0 && bass === t.root) s += BASS_HELP * bassSure;
     return s;
   }
 

@@ -126,5 +126,35 @@ eq("the chord that is sounding scores highest of the ones asked about",
   gScore > cScore, true);
 eq("and it scores well rather than merely better", gScore > 0.9, true);
 
+/* --- THE PAIR THAT SHARES TWO NOTES OUT OF THREE ---------------------------
+   Am is A C E and C is C E G, and a song built out of the two of them is most
+   of the songs anybody brings to this app. Reported from "שר ליבי", where the
+   follower spent sixteen seconds of a recording on the first chord change,
+   because a chord change has to be won by a margin (see follow.js) and these
+   two never win anything against each other.
+
+   The twelve numbers cannot settle it and no care with them ever will: they
+   are very nearly the same chord. THE NOTE UNDERNEATH CAN.
+
+   ASKED THE WAY THE SONG PAGE ASKS IT. Not "what chord is this", which on a
+   reading with all four notes in it is honestly an Am7, but "how much does
+   this look like the Am the song says is here, against the C". That is the
+   question the follower puts, and it is the one the bass has to answer. */
+{
+  /* Both chords ringing into each other, which is what a bar of one going into
+     the other actually sounds like: the two shared notes loudest, and the note
+     that belongs to only one of them present on both sides. */
+  const shared = { A: 0.85, C: 1, E: 0.95, G: 0.82 };
+  const gap = (low) => {
+    ear.weigh(chroma(shared), low == null ? -1 : N.indexOf(low));
+    return ear.score(N.indexOf("A"), "m") - ear.score(N.indexOf("C"), "");
+  };
+
+  eq("with nothing underneath, the two of them are a coin toss",
+    Math.abs(gap(null)) < 0.05, true);
+  eq("with an A underneath, the A minor is plainly ahead", gap("A") > 0.1, true);
+  eq("and with a C underneath, the C is", gap("C") < -0.1, true);
+}
+
 console.log(failed ? `\n${failed} failed` : "\nall passed");
 process.exit(failed ? 1 : 0);
