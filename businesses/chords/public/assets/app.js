@@ -3144,14 +3144,24 @@
        segment narrower than its middle line or narrower than its longest word.
        One is where a page stops being readable and the other is where the pour
        stops being possible. */
-    /* AND A PHONE HOLDS ONE, WHICH IS NOT AN ARITHMETIC QUESTION. A song of
-       short lines divides a phone in two perfectly well on paper: two segments
-       of a hundred and eighty pixels, which is a song nobody can read from a
-       stand with their hands full, on the one screen where the whole idea of a
-       segment came from. The phone IS the segment. */
+    /* AND THE SAME QUESTION IS ASKED OF EVERY SCREEN. There was a rule here
+       that a narrow one holds a single segment whatever the arithmetic says,
+       written after watching a phone divide itself into two of a hundred and
+       fifty pixels. What it also did was hold every window between a phone and
+       a desk to one segment: a browser dragged to a third of a screen, a
+       tablet beside another window, a phone laid on its side, all of them with
+       room for a second segment and a rule saying no on the strength of a
+       number nobody measured. Which is the same fault as the four hundred that
+       started all this, in a different place.
+
+       So the width answers it here too, and it answers it the same way: as
+       many segments as the song can stand. A screen small enough that a second
+       one would take the segments under the song's own middle line still gets
+       one, because that is what `need` says, and it says it about this song
+       rather than about a class of device. */
     var need = Math.max(song.middle, song.word);
     var cols = 1;
-    if (!glass) while (cols < COL_MAX && share(cols + 1) >= need) cols++;
+    while (cols < COL_MAX && share(cols + 1) >= need) cols++;
 
     /* AND NEVER MORE THAN THE SONG HAS SONG TO FILL THEM WITH. A fourth
        segment with nothing in it is a quarter of the window held empty. Asked
@@ -7427,12 +7437,28 @@
     var box = el("div");
     var top = el("div", "t-row");
     top.appendChild(el("div", "t", name));
-    top.appendChild(el("div", "by", songsSaid(n)));
+    top.appendChild(countTag(n));
     box.appendChild(top);
     a.appendChild(box);
 
     li.appendChild(a);
     return li;
+  }
+
+  /* HOW MANY SONGS ARE BEHIND THIS CARD, AS A LABEL AND NOT AS A SENTENCE.
+     It was "54 שירים" in the quiet ink beside the name, which is the width of
+     two words to say one number: on a shelf and on a person the word "שירים"
+     is the same word on every card in the band, so it is a column of ink that
+     never differs. The number does, and it is the whole of what is being read.
+
+     Drawn as the chip every count and state in this app is drawn as, in the
+     app's own soft green (see .tag), so a card carries a number the way a song
+     carries a word about itself. The sentence stays under the pointer, where
+     it costs a card nothing and still says what the number counts. */
+  function countTag(n) {
+    var node = el("span", "tag tag-count", String(n));
+    node.title = songsSaid(n);
+    return node;
   }
 
   /* The same width the stylesheet calls narrow, asked in JavaScript, because
@@ -7469,7 +7495,9 @@
     var box = el("div");
     var top = el("div", "t-row");
     top.appendChild(el("div", "t", person.name));
-    top.appendChild(el("div", "by", songsSaid(person.songs.length)));
+    /* The same chip a shelf carries, because it is the same fact: how many
+       songs are behind this card (see countTag). */
+    top.appendChild(countTag(person.songs.length));
     box.appendChild(top);
 
     /* The songs by name, the way an evening shows what is in it and for the
