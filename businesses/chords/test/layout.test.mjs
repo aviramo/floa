@@ -1091,6 +1091,7 @@ try {
       await pinch(0);
       check("size: two fingers spreading makes it bigger", pinched > smaller, `${smaller} -> ${pinched}`);
 
+
       /* --- AND THE CHORDS STAY THE SAME DISTANCE FROM THE WORDS ---------------
          A chord sits in a lane above its line, and how tall that lane is has
          to be a proportion of the song rather than a number of pixels: fixed,
@@ -1135,6 +1136,77 @@ try {
         check("size: the chords keep their distance from the words at any size",
           Math.abs(small.apart - big.apart) < 0.12,
           `at ${small.size}px they sit ${small.apart.toFixed(2)} of a size over the words, at ${big.size}px ${big.apart.toFixed(2)}`);
+      }
+
+      /* --- AND TWO FINGERS BELOW THE LAST LINE ARE STILL ON THE SONG ----------
+         Most of the screen under a short song is not words, and on a phone that
+         is where a hand actually lands. The sheet is the whole of what is under
+         the bar for exactly this reason (see .sheet): where it stopped with the
+         words, everything below them was the body, and a pinch there was either
+         nothing at all or the browser's own zoom, which makes the letters
+         bigger and the screen no wider, which is the one thing this gesture
+         exists to prevent.
+
+         ON A PHONE, WHICH IS WHERE IT WAS BROKEN. The sheet has been the height
+         of the window under the bar on a desk for as long as there has been a
+         sheet; it was the narrow rules that took it back down to the height of
+         the words, on the screen where the empty half of the page is most of
+         the page. A check for it run at a desk's width proves nothing.
+
+         The point is taken from where the song ends rather than from the sheet,
+         and it is checked to be ON the sheet before anything is pressed: that
+         is the whole of what could break here, and it would break silently. */
+      await send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: false });
+      await sleep(700);
+
+      /* AND THE SIZE BACK DOWN FIRST, which is the whole of what this needs to
+         be true: the checks above turned it up six notches, and a song set that
+         large runs off the bottom of a phone by itself. The sheet would then
+         cover the screen because its CONTENT does, the fingers would land on it
+         whatever its height was asked to be, and the check would pass with the
+         rule it is here to guard taken back out. Small, the song ends halfway
+         down and everything under it is the sheet or it is nothing. */
+      for (let i = 0; i < 9; i++) {
+        await send("Input.dispatchMouseEvent", { type: "mouseWheel", x: 195, y: 200, deltaX: 0, deltaY: 240, modifiers: 2 });
+        await sleep(60);
+      }
+      await sleep(400);
+
+      const empty = await evaluate(`JSON.stringify((() => {
+        const lns = [...document.querySelectorAll(".sheet .ln")];
+        if (!lns.length) return null;
+        const last = lns[lns.length - 1].getBoundingClientRect();
+        const y = Math.round(Math.min(innerHeight - 30, last.bottom + 90));
+        if (y < last.bottom + 40) return null;
+        const x = Math.round(innerWidth / 2);
+        const hit = document.elementFromPoint(x, y);
+        return { x, y, on: !!(hit && hit.closest(".sheet")), hit: hit ? String(hit.className || hit.tagName) : "nothing" };
+      })())`);
+
+      if (!empty) {
+        unknown("size: two fingers below the last line still set the song's size",
+          "the song reaches the bottom of this window, so there is nothing under it");
+      } else {
+        const pinchAt = async (gap) => send("Input.dispatchTouchEvent", {
+          type: gap ? "touchMove" : "touchEnd",
+          touchPoints: gap ? [
+            { x: empty.x - gap / 2, y: empty.y, id: 1 },
+            { x: empty.x + gap / 2, y: empty.y, id: 2 },
+          ] : [],
+        });
+        const before = await evaluate(sizeNow);
+        await send("Input.dispatchTouchEvent", {
+          type: "touchStart",
+          touchPoints: [{ x: empty.x - 40, y: empty.y, id: 1 }, { x: empty.x + 40, y: empty.y, id: 2 }],
+        });
+        await pinchAt(200);
+        await sleep(60);
+        await pinchAt(300);
+        await sleep(200);
+        const after = await evaluate(sizeNow);
+        await pinchAt(0);
+        check("size: two fingers below the last line still set the song's size",
+          empty.on && after > before, `${empty.hit}, ${before} -> ${after}`);
       }
 
       /* PUT IT BACK. The size is one setting for one reader and it is kept in

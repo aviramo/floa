@@ -1724,7 +1724,25 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
      itself is written on the element by fitColumns, because it is a fact
      about this song at this size on this screen. */
   margin-inline: auto;
-  min-height: calc(100vh - 60px);
+  /* --- THE SHEET IS THE WHOLE OF WHAT IS UNDER THE BAR ----------------------
+     Even where the song stops halfway down it, and this is not about how it
+     looks: the paper is white on white and nothing shows either way. It is
+     about what the fingers land on.
+
+     TWO FINGERS BELOW THE LAST LINE ARE TWO FINGERS ON THE SONG. The pinch
+     that sets the reading size is taken by this element (see the touch
+     handlers in app.js) and so is the promise not to let the browser zoom the
+     page instead (see touch-action below). Where the sheet stopped with the
+     words, everything under them was the body: a pinch there did nothing at
+     all, or worse, did the browser's own zoom, which makes the words bigger
+     and the screen no wider. On a phone, where most of a short song's screen
+     is under the last line, that is most of the page.
+
+     IN dvh AND NOT vh. A phone's vh is the tall viewport, the one with the
+     address bar hidden, so vh minus the bar is taller than what is actually on
+     the glass and the page scrolls by the height of the address bar with
+     nothing in that strip. dvh is what is showing now. */
+  min-height: calc(100dvh - 60px);
   overflow-x: auto;
   font-family: var(--song-font);
   /* TWO FINGERS ON THE SONG SET THE SONG'S SIZE, not the page's zoom (see the
@@ -1833,12 +1851,15 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    step: below this width the song is read, not written.
 
    What a phone is short of is width, and every one of these gives some back.
-   There is only ever one segment here, so there is no desk between segments
-   and no rule to draw: the whole of what is left to say is that the words run
-   to both edges of the glass. */
+   A song of short lines can still stand in two segments here, because how many
+   there are is asked of the song rather than of the screen (see planColumns);
+   what this says is only that the words run to both edges of the glass. */
 @media (max-width: 620px) {
-  /* At arm's length those twenty pixels are a word and a half of every line. */
-  .sheet { padding: 16px 22px 24px; min-height: 0; }
+  /* At arm's length those twenty pixels are a word and a half of every line.
+     The height stays as it is: the sheet is the whole of what is under the bar
+     on every screen, and on this one most of all, because a pinch has to land
+     on the song wherever the fingers go down (see .sheet). */
+  .sheet { padding: 16px 22px 24px; }
 
   /* THE SEGMENT HERE IS THE GLASS. Air at the two ends of a page is worth
      nothing on something held at arm's length, and the words run from one edge
