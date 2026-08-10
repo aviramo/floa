@@ -18237,6 +18237,14 @@
     document.body.classList.add("on-takes");
     var say = function () {
       document.body.style.setProperty("--takes-room", box.offsetHeight + "px");
+      /* AND WHETHER THERE IS ANYTHING IN IT TO SCROLL IS SAID OUT LOUD. A sheet
+         that can scroll keeps the downward drag for its own scrolling, which is
+         right, and a browser cannot tell that a sheet with one recording on it
+         has nothing to scroll: it sees a scrollable box and takes the touch the
+         moment a finger moves down it, mid push (see gripUp). One recording is
+         the usual number, and it is the only one on the sheet while it plays,
+         so this is the usual case and not a corner of one. */
+      box.classList.toggle("is-still", box.scrollHeight <= box.clientHeight + 1);
     };
     say();
     if (window.ResizeObserver) {

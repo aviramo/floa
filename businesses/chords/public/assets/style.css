@@ -3792,6 +3792,12 @@ body.on-takes { padding-bottom: var(--takes-room, 240px); }
 }
 .takes.is-open { transform: none; }
 .takes:empty, .takes[hidden] { display: none; }
+/* NOTHING IN IT TO SCROLL, SO A FINGER ON IT IS PUSHING IT DOWN. Said only
+   while that is true, which is decided by measurement (see roomForTakes): a
+   sheet with more recordings than fit keeps the drag for its own scrolling,
+   and is pushed down by the bar. */
+.takes.is-still { touch-action: none; }
+.takes.is-still .take-play { touch-action: auto; }
 /* THE HANDLE IS THE ONE EVERY SHEET HERE HAS (see .grip). It used to be drawn
    here and nothing else: a bar that said the sheet could be pushed back down,
    over a sheet that could not be. */
