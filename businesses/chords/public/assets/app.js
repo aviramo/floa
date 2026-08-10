@@ -18395,9 +18395,45 @@
       node.classList.toggle("is-playing", yes);
       if (node.parentNode) node.parentNode.classList.toggle("is-one", yes);
     };
-    audio.addEventListener("play", function () { alone(true); });
-    audio.addEventListener("pause", function () { alone(false); });
-    audio.addEventListener("ended", function () { alone(false); });
+    /* --- AND A THUMB DRAGGED ALONG THE BAR IS NOT A PAUSE ------------------
+       The browser stops the sound while the thumb is held and starts it again
+       when it is let go, and it says both of those in exactly the words the
+       pause button says them in. So a reader moving to the second verse had
+       the other recordings unfold under their hand, and the row they were
+       dragging jumped down the sheet while they were still dragging it.
+
+       So the question is asked of the recording rather than answered by the
+       event: while a hand is on the player there is a sound about to come
+       back, and the sheet is not told anything. The hand lets go, and then
+       whether it is really paused is worth a quarter of a second, because
+       that is how long the browser takes to start it again. */
+    var held = false;
+    var back = 0;
+    var settle = function () {
+      clearTimeout(back);
+      if (!audio.paused) return alone(true);
+      if (held) return;
+      back = setTimeout(function () {
+        /* and not if the row has since been put away and another one opened:
+           the sheet they fold is the same sheet (see shutTake) */
+        if (node._audio === audio && audio.paused && !held) alone(false);
+      }, 250);
+    };
+    audio.addEventListener("play", settle);
+    audio.addEventListener("pause", settle);
+    /* The end of a recording is nobody's hand, and waits for nothing. */
+    audio.addEventListener("ended", function () { clearTimeout(back); alone(false); });
+    audio.addEventListener("pointerdown", function () {
+      held = true;
+      var up = function () {
+        document.removeEventListener("pointerup", up, true);
+        document.removeEventListener("pointercancel", up, true);
+        held = false;
+        settle();
+      };
+      document.addEventListener("pointerup", up, true);
+      document.addEventListener("pointercancel", up, true);
+    });
     /* The length first, then the sound: a recording that does not know how
        long it is draws a thumb against a guess, and the guess grows as the
        browser reads on, so the thumb walks BACKWARDS along a bar nobody is
