@@ -3683,7 +3683,14 @@ body.on-ear.ear-small { padding-bottom: 78px; }
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
   /* the bar across the top is the room at the top now */
   padding-top: 0;
+  /* AND A FINGER ON IT IS PUSHING IT, NEVER SCROLLING. There is nothing here to
+     scroll, the panel is three things on one line, but a browser that has not
+     been told so reads a downward drag as a scroll it might have to make and
+     takes the touch back mid push (see gripUp). Said on the row and not on the
+     panel, so the player keeps its own, which is a drag along a bar. */
+  touch-action: none;
 }
+.dock-in .dock-play { touch-action: auto; }
 /* The name of the song is the way to it: somebody listening to a recording is
    somebody halfway to wanting the song, and it is already written here on the
    one part of the screen that is not going anywhere. */

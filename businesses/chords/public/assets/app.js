@@ -5524,6 +5524,24 @@
      on. What IS asked, every time it is painted, is who is looking. */
   function paintDoors(row) {
     row.textContent = "";
+    /* AND THE ACCOUNT IS ONE CHIP, WHICHEVER WAY ROUND IT IS, AND IT IS THE
+       FIRST OF THEM. Signed in it carries the name and opens the panel about
+       it; signed out it says "התחברות" and carries Google's mark, because the
+       mark is the whole of what makes that door recognisable (see
+       googleButton). It used to be a button in the bar, which on a phone is a
+       bar that takes the word off everything it holds: four unlabelled
+       pictures in a row, and the one that was the way in was a picture nobody
+       had a reason to press.
+
+       FIRST, because who is looking is the fact the rest of the page is drawn
+       under, and because the two ways round have to stand in the same place:
+       an account that is a name at the end of the row and a way in at the
+       start of it is a chip that moves when the thing it says changes. Last
+       it also fell to a second line as soon as the name was long, which put
+       the way in below the row on exactly the screen that has no room to
+       spare. */
+    if (auth.in) row.appendChild(doorChip(auth.name() || "החשבון", ICON.person, askMe));
+    else row.appendChild(signInChip());
     row.appendChild(doorChip("אירועים", ICON.calendar, function () { go(addr("evenings")); }));
     row.appendChild(doorChip("יוצרים", ICON.people, function () { go(addr("creators")); }));
     /* AND THE BILL IS A DOOR LIKE THEM, for the one account that gets it. It
@@ -5538,16 +5556,6 @@
        is on the table (see song_costs in schema.sql), and somebody else who
        opens /chords/reads by hand is answered by the page itself. */
     if (isAdmin()) row.appendChild(doorChip("פענוח", ICON.receipt, function () { go(addr("reads")); }));
-    /* AND THE ACCOUNT IS ONE CHIP, WHICHEVER WAY ROUND IT IS. Signed in it
-       carries the name and opens the panel about it; signed out it says
-       "התחברות" and carries Google's mark, because the mark is the whole of
-       what makes that door recognisable (see googleButton). It used to be a
-       button in the bar, which on a phone is a bar that takes the word off
-       everything it holds: four unlabelled pictures in a row, and the one
-       that was the way in was a picture nobody had a reason to press. The
-       account belongs where the account is, and that is here. */
-    if (auth.in) row.appendChild(doorChip(auth.name() || "החשבון", ICON.person, askMe));
-    else row.appendChild(signInChip());
   }
 
   /* The band for the page being drawn, and the page keeps the way to paint it
@@ -6259,9 +6267,23 @@
      still deciding.
 
      WHAT A DRAG MAY START ON. The bar always, whatever is under it. Anywhere
-     else on the sheet only where there is nothing to press and nothing that
-     has been scrolled: a press on a button is a press on that button, and a
-     panel somebody has scrolled down through is being read, not pushed away.
+     else on the sheet where nothing has been scrolled: a panel somebody has
+     scrolled down through is being read, not pushed away.
+
+     A BUTTON IS NOT A WALL. It used to be one, on the reasoning that a press on
+     a button is a press on that button, and on a tall panel with a button here
+     and there that reasoning holds up. On the player over the library it does
+     not: the panel is a name, a player and a cross, so nearly all of it was
+     wall, and a hand that pushed anywhere but the bar pushed nothing. A press
+     is a press and a push is a push, and which one it was is known a moment
+     later: the button keeps the gesture until the hand has moved far enough
+     down to have meant it, and then the sheet takes it and the press that was
+     going to happen does not.
+
+     A CONTROL'S OWN GESTURE IS STILL ITS OWN, though: a field being typed into,
+     a player whose thumb is being dragged along the bar. Those keep what they
+     take, because what they take IS a drag and there is no later moment that
+     tells the two apart.
 
      AND FAR ENOUGH IS FAR ENOUGH FOR THE PANEL BEING PUSHED. Ninety pixels is a
      third of a tall sheet and nearly the whole of a short one, and the player
@@ -6276,13 +6298,18 @@
      flick reads as one that refused. */
   var PUSHED = 90;
   var THROWN = .4;
+  /* How far down a hand has to have moved before a press on a button is read as
+     a push on the sheet it stands on. Far enough that nobody pressing gets one
+     by accident, near enough that the sheet is moving by the time anybody
+     pushing is looking for it. */
+  var MEANT = 10;
 
   function gripUp(card, shut) {
     var grip = el("div", "grip");
     grip.setAttribute("aria-hidden", "true");
     card.insertBefore(grip, card.firstChild);
 
-    var from = 0, went = 0, live = false, held = 0, began = 0;
+    var from = 0, went = 0, live = false, held = 0, began = 0, waiting = false;
 
     function scrolled(node) {
       while (node && node !== card) {
@@ -6292,30 +6319,68 @@
       return false;
     }
 
-    card.addEventListener("pointerdown", function (event) {
-      if (event.button || live) return;
-      var onGrip = !!(event.target.closest && event.target.closest(".grip"));
-      if (!onGrip) {
-        if (event.target.closest("input, textarea, select, button, a, audio, video, [contenteditable]")) return;
-        if (scrolled(event.target)) return;
+    /* --- AND THE PRESS THAT BECAME A PUSH IS NOT ALSO A PRESS ---------------
+       The button under the finger never heard the pointer leave, so it is still
+       going to make a click out of it, and that click would open a song or shut
+       a panel behind the sheet on its way down. Eaten on the way in, and a
+       timer behind it for the push that never becomes one (the same shape as a
+       press outside a panel, see pressOutside). */
+    function eatClick(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      offClick();
+    }
+    var clicks = 0;
+    function offClick() {
+      clearTimeout(clicks);
+      card.removeEventListener("click", eatClick, true);
+    }
+
+    /* The sheet takes the pointer: from the grip that is at once, from a button
+       it is the moment the hand has moved far enough to have meant it. */
+    function take() {
+      waiting = false;
+      live = true;
+      went = 0;
+      card.classList.add("is-held");
+      if (card.setPointerCapture) {
+        try { card.setPointerCapture(held); } catch (e) { /* gone already */ }
       }
+    }
+
+    card.addEventListener("pointerdown", function (event) {
+      if (event.button || live || waiting) return;
+      var onGrip = !!(event.target.closest && event.target.closest(".grip"));
+      var press = null;
+      if (!onGrip) {
+        if (event.target.closest("input, textarea, select, audio, video, [contenteditable]")) return;
+        if (scrolled(event.target)) return;
+        press = event.target.closest("button, a");
+      }
+      held = event.pointerId;
+      from = event.clientY;
+      began = event.timeStamp;
+      /* A press on a button is left alone until it moves: nothing is prevented
+         and nothing is captured, or the button would lose the press it is
+         probably about to get. */
+      if (press) return (waiting = true);
       /* AND THE BROWSER IS TOLD THE PRESS IS SPOKEN FOR. Without this it makes
          its own gesture out of the same movement, a selection or a drag of the
          thing under the finger, and takes the pointer back the moment it does:
          one frame of the sheet following the hand and then a pointercancel. */
       event.preventDefault();
-      live = true;
-      held = event.pointerId;
-      from = event.clientY;
-      went = 0;
-      began = event.timeStamp;
-      card.classList.add("is-held");
-      if (card.setPointerCapture) {
-        try { card.setPointerCapture(held); } catch (e) { /* gone already */ }
-      }
+      take();
     });
 
     card.addEventListener("pointermove", function (event) {
+      if (waiting && event.pointerId === held) {
+        /* still deciding, and a hand that went up the sheet or sideways along
+           it was never pushing it down */
+        if (event.clientY - from < MEANT) return;
+        take();
+        card.addEventListener("click", eatClick, true);
+        clicks = setTimeout(offClick, 800);
+      }
       if (!live || event.pointerId !== held) return;
       var dy = event.clientY - from;
       /* It does not come up. A sheet is at the foot of the screen and there is
@@ -6327,7 +6392,11 @@
 
     ["pointerup", "pointercancel"].forEach(function (name) {
       card.addEventListener(name, function (event) {
-        if (!live || event.pointerId !== held) return;
+        if (event.pointerId !== held) return;
+        /* a press on a button that never moved: it was a press, and the button
+           is about to get it */
+        if (waiting) waiting = false;
+        if (!live) return;
         live = false;
         card.classList.remove("is-held");
         /* Far enough, or fast enough, is the rest of the way down, carrying on
