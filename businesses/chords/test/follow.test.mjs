@@ -50,6 +50,42 @@ const play = (follow, chord, frames = 6, high, low) => {
   eq("a song opened in the middle is found in the middle", f.where(), 2);
 }
 
+/* --- AND IT WAITS FOR THE NEXT CHORD --------------------------------------
+   The readings above are clean, and clean readings hide the failure this is
+   about. In a room the scores wobble, and the next chord in a song is nearly
+   always one that SHARES NOTES with the one before it: Am into C, C into Am, G
+   into Em. So a quarter of the readings taken while an Am is ringing hand the
+   C a slightly better score than the Am, purely on which string was loudest.
+
+   Nothing in the model said a chord change has to be WON rather than tied, so
+   the mark moved on the first of those readings and ran ahead of the playing,
+   chord after chord, while the player was still on the first one.
+
+   The wobble here is worked out rather than random, so this test is the same
+   test every time it runs. */
+{
+  const song = ["Am", "C", "G", "F"];
+  const f = F.make(song);
+  /* a repeating shuffle, deterministic, that crosses zero often */
+  let seed = 7;
+  const wobble = () => {
+    seed = (seed * 1103515245 + 12345) % 2147483648;
+    return (seed / 2147483648 - 0.5) * 0.18;
+  };
+
+  let crossed = 0;
+  for (let i = 0; i < 90; i++) {
+    const am = 0.85 + wobble();
+    const c = 0.82 + wobble();
+    if (c > am) crossed++;
+    f.step([am, c, 0.70, 0.68]);
+  }
+  eq("the wobble really does hand the next chord the better score sometimes",
+    crossed > 15, true);
+  eq("and a chord held is a chord held: the mark waits for the next one",
+    f.where(), 0);
+}
+
 /* --- and then it walks --------------------------------------------------- */
 {
   const song = ["Am", "F", "C", "G"];
@@ -136,10 +172,10 @@ const play = (follow, chord, frames = 6, high, low) => {
      part after it is still waiting where it was. */
   const twice = F.make(song);
   ["Am", "D", "Am", "D"].forEach((c) => play(twice, c, 8));
-  const round = ["Am", "D", "Am", "D"].map((c) => play(twice, c, 16).here);
+  const round = ["Am", "D", "Am", "D"].map((c) => play(twice, c, 24).here);
   eq("a verse played again is walked again rather than run past",
     round.every((at) => at < 4) && round[3] > round[0], true);
-  ["F", "C", "E"].forEach((c) => play(twice, c, 16));
+  ["F", "C", "E"].forEach((c) => play(twice, c, 24));
   eq("and the part after it is still there when it comes", twice.where(), 6);
 
   /* AND WHERE THE PARTS BEGIN IS KNOWN, so a repeat lands on the top of the

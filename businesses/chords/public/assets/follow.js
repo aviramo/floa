@@ -179,7 +179,7 @@
      to the beginning of a part", which is a far more specific guess and
      therefore a far better one. A song with no headings in it simply has one
      part, and everything below carries on exactly as it did. */
-  var BACK_START = Math.log(0.006);
+  var BACK_START = Math.log(0.012);
   /* AND ANYWHERE AT ALL, from anywhere at all. This is the difference between
      a follower that recovers and one that does not: without it, a follower
      that lost the song at the second verse spends the rest of the song
@@ -217,6 +217,31 @@
      would keep pulling the mark one place back instead. */
   var HOME = 0.8;
   var NEAR = 2;
+
+  /* --- AND A LARGER ONE FOR NOT HAVING MOVED AT ALL --------------------------
+     THE SITTING TENANT, and its absence is why the mark ran ahead of the
+     playing. HOME above gives the same bonus to where we are and to the two
+     places after it, which is right for the question it was written for, "do
+     not leap across the song", and does nothing whatever for the question it
+     was silently also answering: "has the chord actually changed yet".
+
+     Because it had no answer to that, the two chords were level, and the next
+     chord in a song is nearly always one that SHARES NOTES with the one before
+     it. So on a reading where the noise happened to favour it by a hair, the
+     mark moved, while the player was still on the first chord and had not
+     touched anything.
+
+     What this says is that a chord change has to be WON rather than tied.
+     Which is the same rule the panel's own stabiliser lives by, and for the
+     same reason: two evenly matched answers with nothing between them will
+     swap forever, and the average of a coin toss is a coin toss.
+
+     Its size is what "wait for the next chord" costs. A real chord change
+     out-scores the chord before it by about three of these, so it still gets
+     through in a reading or two; a hair's difference between two chords that
+     share two notes out of three is worth a fraction of one, and now moves
+     nothing. */
+  var SIT = 1.5;
 
   /* How sharply a score is believed. The scores coming in are cosine
      similarities and the interesting ones live between about .6 and .95, so a
@@ -340,8 +365,12 @@
         if (anywhere > v) v = anywhere;
         v += BELIEF * scores[of[j]];
         /* And the reason to stay near where we already are, which is the only
-           evidence there is when the sound cannot tell two places apart. */
-        if (j >= here && j <= here + NEAR) v += HOME;
+           evidence there is when the sound cannot tell two places apart. The
+           place we are ON gets more than the places beside it, because "have
+           we moved along" and "have we leapt across the song" are different
+           questions and only one of them is answered by nearness. */
+        if (j === here) v += SIT;
+        else if (j > here && j <= here + NEAR) v += HOME;
         cur[j] = v;
         /* THE NEAREST OF THE EQUALS. Where two places explain the readings
            exactly as well as each other, which in a song of four chords played
