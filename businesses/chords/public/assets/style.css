@@ -587,7 +587,9 @@ body.on-air .top {
      carries its own way out */
   body.finding .top-find .find-x { display: flex; }
 
-  .top-where { font-size: 16px; }
+  /* the total beside the name comes down with the name: they are one line,
+     and one of them a pixel bigger than the other is what breaks that */
+  .top-where, .top-bill { font-size: 16px; }
   .find-out { inset-inline-start: auto; inset-inline-end: 0; }
 
   /* THE DATE WAS PUT ON A LINE OF ITS OWN HERE, when a date field was as wide
@@ -973,9 +975,15 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .list .when { white-space: nowrap; color: var(--ink-soft); font-size: 13px; }
 /* --- HOW MANY RECORDINGS OF IT ARE OUT --------------------------------------
    Where the clock used to be, and it is a different kind of thing so it is
-   drawn as one: a mark and a number rather than a line of text. The ink is the
-   chords' own, because a recording is somebody playing THIS song and that is
-   what the pink means everywhere else on the page. */
+   drawn as one: a mark and a number rather than a line of text.
+
+   AND IT IS THE GREEN, NOT THE PINK. The pink is the chords', and the argument
+   for it here was that a recording is somebody playing this song. True, and it
+   is not what the button is counting: it counts the takes that are OUT, the
+   ones anybody may hear, and it is not there at all until one of them is (see
+   db.outTakes). Out in the world is the one thing this app says in green, on
+   the chip that says a song is published and on the row that publishes it, and
+   a number of public recordings is the same fact about a different thing. */
 /* AND IT IS A BUTTON. A wall of songs is a wall of things to pick up, and the
    shortest way to decide whether to pick this one up is to hear somebody play
    it, so the mark that says there are recordings is the thing that plays one.
@@ -991,14 +999,14 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   display: inline-flex; align-items: center; gap: 5px;
   flex: none; white-space: nowrap;
   padding: 3px 9px 3px 7px; border-radius: 999px;
-  border: 1px solid var(--chord-soft); background: var(--chord-soft);
-  color: var(--chord); font: inherit; font-size: 12px;
+  border: 1px solid var(--state-soft); background: var(--state-soft);
+  color: var(--state-ink); font: inherit; font-size: 12px;
   font-variant-numeric: tabular-nums; font-weight: 700;
 }
-.when.has-takes:hover { border-color: var(--chord); }
+.when.has-takes:hover { border-color: var(--accent); }
 .when.has-takes svg { width: var(--transport); height: var(--transport); }
 .when.has-takes.is-playing {
-  color: #fff; background: var(--chord); border-color: var(--chord);
+  color: #fff; background: var(--accent); border-color: var(--accent);
 }
 .when.has-takes[disabled] { opacity: .5; cursor: default; }
 /* THE DATE STAYS AT THE BOTTOM WITH NOTHING OVER IT. A published song carries
@@ -1111,13 +1119,25 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 }
 .read-paid-one { font-size: 16px; }
 
-/* The whole of it, over the page: the total first and big, because it is what
-   the page is opened for, and what it is made of after it. */
-.read-sum {
-  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
-  margin: 0 0 18px;
+/* THE WHOLE OF IT, ON THE BAR BESIDE THE NAME OF THE PAGE. It stood over the
+   page as a line of its own, at twenty-two pixels, and left the screen with
+   the first scroll; up here it is beside the word it is the meaning of, and
+   it stays while the list runs (see viewReads).
+
+   NOT A CHIP AND NOT A BOX. Nothing in that bar is a fact with a border round
+   it: a box up there is a thing to press, and this is a number to read. So it
+   is the number, in the weight and the size of the name it stands against, and
+   the two read as one line.
+
+   The ten pixels are the ones .top-facts takes back. That slot pulls itself
+   towards the name because what used to sit in it was the second half of the
+   title, one picture that belonged against the word. This is a different fact
+   about the page and it stands at the bar's own gap, like everything else. */
+.top-bill {
+  margin-inline-start: 10px;
+  font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: isolate;
+  white-space: nowrap; font-weight: 700; font-size: 17px;
 }
-.read-sum .read-total { font-size: 22px; }
 .read-n { color: var(--ink-soft); font-size: 14px; }
 
 /* --- ONE ACCOUNT IS A DRAWER ----------------------------------------------
