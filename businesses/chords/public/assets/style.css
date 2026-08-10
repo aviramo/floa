@@ -2808,6 +2808,26 @@ body.on-ear.ear-small { padding-bottom: 92px; }
    is a recording here" and "it is going". Nothing else on the page has to say
    so, and nothing else does. */
 .tape-bar .icon-btn.is-rec.is-taping { animation: on-air 1.6s ease-in-out infinite; }
+
+/* --- AND FINISHING, WHICH IS ITS EQUAL -------------------------------------
+   The two things there are to do to a held recording: one carries on and one
+   is done. They are equals, so they are drawn as equals, and a quiet grey
+   square beside a filled circle would make the second the afterthought it is
+   not.
+
+   Green because that is what finished means everywhere else here, and because
+   two filled buttons of the same colour side by side are one button as far as
+   a hand at arm's length is concerned. */
+.tape-bar .icon-btn.is-stop {
+  width: 34px; height: 34px; border-radius: 999px;
+  color: #fff; background: var(--accent); border-color: var(--accent);
+  box-shadow: 0 1px 4px rgba(14, 140, 126, .3);
+}
+.tape-bar .icon-btn.is-stop svg { width: 13px; height: 13px; }
+.tape-bar .icon-btn.is-stop:hover {
+  color: #fff; background: var(--accent-ink); border-color: var(--accent-ink);
+  box-shadow: 0 2px 7px rgba(14, 140, 126, .42);
+}
 @keyframes on-air {
   0%, 100% { box-shadow: 0 0 0 0 rgba(225, 29, 99, .55); }
   50% { box-shadow: 0 0 0 5px rgba(225, 29, 99, 0); }

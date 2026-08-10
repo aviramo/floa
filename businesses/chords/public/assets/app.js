@@ -14056,7 +14056,15 @@
     var on = iconBtn(ICON.dot, "להמשיך להקליט", holdTape);
     on.classList.add("is-rec");
     tapeBar.appendChild(on);
-    tapeBar.appendChild(iconBtn(ICON.stop, "סיום ההקלטה", stopTape));
+    /* AND FINISHING IS FILLED TOO, in the other colour. These are the two
+       things there are to do to a held recording and they are equals: one
+       carries on and one is done, and drawing the second as a quiet grey
+       square would make it the afterthought it is not. Green because that is
+       what finished means everywhere else here, and because the eye needs to
+       tell them apart at arm's length without reading either. */
+    var end = iconBtn(ICON.stop, "סיום ההקלטה", stopTape);
+    end.classList.add("is-stop");
+    tapeBar.appendChild(end);
   }
 
   function showLead() {

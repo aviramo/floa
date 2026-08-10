@@ -63,7 +63,10 @@ const song = (dir) => ({
   dir: dir === "ltr" ? "ltr" : "rtl", status: "ready", status_note: "", lines: BODIES[dir],
 });
 
-function page(dir, edit) {
+/* `who` is the account the page is signed in as, and it is OWNER unless a
+   check wants a stranger: the whole difference between the editor and the
+   reader's page is whether the two match. */
+function page(dir, edit, who) {
   const s = song(dir);
   const path = "/chords/" + s.slug + (edit ? "/edit" : "");
   return `<!doctype html>
@@ -72,7 +75,7 @@ function page(dir, edit) {
 <script>
 window.__errors = [];
 addEventListener("error", (e) => window.__errors.push(e.message + " @ " + e.filename + ":" + e.lineno));
-${edit ? `localStorage.setItem("chords.session", JSON.stringify({access_token:"t",refresh_token:"r",expires_at:Date.now()+3600000,email:"t@t",id:${JSON.stringify(OWNER)}}));` : ""}
+${edit ? `localStorage.setItem("chords.session", JSON.stringify({access_token:"t",refresh_token:"r",expires_at:Date.now()+3600000,email:"t@t",id:${JSON.stringify(who || OWNER)}}));` : ""}
 history.replaceState(null, "", ${JSON.stringify(path)});
 window.SUPABASE = { url: "https://stub.invalid", anonKey: "anon" };
 const SONG = ${JSON.stringify(s)};
@@ -492,6 +495,9 @@ await mkdir(join(root, "edit"), { recursive: true });
 await writeFile(join(root, "rtl/index.html"), page("rtl", false), "utf8");
 await writeFile(join(root, "ltr/index.html"), page("ltr", false), "utf8");
 await writeFile(join(root, "edit/index.html"), page("rtl", true), "utf8");
+/* The same song, signed in as somebody who did not put it there. */
+await mkdir(join(root, "guest"), { recursive: true });
+await writeFile(join(root, "guest/index.html"), page("rtl", true, "u-other"), "utf8");
 await mkdir(join(root, "long"), { recursive: true });
 await mkdir(join(root, "longed"), { recursive: true });
 await writeFile(join(root, "long/index.html"), page("long", false), "utf8");
@@ -1294,6 +1300,46 @@ try {
         home && home.lead < front.lead, `${front.lead} gaps, then ${home && home.lead}`);
       check("and the line is the same line",
         home && home.words === begun.words, JSON.stringify(home && home.words));
+    });
+
+    /* --- 9. and a song that is not yours opens READING ---------------------
+       Which is the one thing about the editor that is not about the editor: a
+       song belongs to the account that put it in the library, everybody else
+       gets the same page to read, and what they type into it is an offer and
+       not the song (see mySong and commitOffer in app.js).
+
+       Here because the page is the only place that answer exists. Every other
+       test in this file signs in as the owner and none of them would notice a
+       stranger being handed the editor, or being handed nothing at all: the
+       whole of the rule is which of the two pages comes up. */
+    await open(`http://127.0.0.1:${port}/chords/_t/guest/`, async ({ evaluate }) => {
+      const READS = `JSON.stringify({
+        errors: window.__errors,
+        editing: !!document.querySelector(".sheet.ed"),
+        pencil: !!document.querySelector('#topActions [aria-label="עריכה"]'),
+        trash: !!document.querySelector('#topActions [aria-label="מחיקת השיר"]'),
+        band: (document.querySelector(".past-band .past-said") || {}).textContent || "",
+      })`;
+
+      const shut = await evaluate(READS);
+      check("a stranger's page had no errors", shut.errors.length === 0, JSON.stringify(shut.errors));
+      check("somebody else's song opens reading and not writing", shut.editing === false, JSON.stringify(shut));
+      check("and it is not theirs to delete", shut.trash === false, "the wastebasket was offered");
+      check("but the way in is there", shut.pencil === true, "no pencil in the bar");
+
+      /* And the press opens the editor, with the band over it saying what
+         typing into it will actually do. */
+      await evaluate(`(() => {
+        var pencil = document.querySelector('#topActions [aria-label="עריכה"]');
+        if (pencil) pencil.click();
+        return JSON.stringify(!!pencil);
+      })()`);
+      await sleep(400);
+      const open2 = await evaluate(READS);
+      check("the press opens it", open2.editing === true, JSON.stringify(open2));
+      check("and the page says the typing is an offer",
+        open2.band.indexOf("הצעה") >= 0, JSON.stringify(open2.band));
+      check("the wastebasket stays away", open2.trash === false, "the wastebasket was offered");
     });
   });
 } finally {
