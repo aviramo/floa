@@ -8220,16 +8220,6 @@
       return row;
     }
 
-    /* A SONG WITH NO CHORDS HAS NO KEY, and a dial standing there with nothing
-       written on it is a control that has broken. It comes back the moment
-       there is a chord to name it with, which in the editor is as soon as one
-       is put down. */
-    function showKey() {
-      var used = chordsUsed(song.lines || []);
-      keyCtl.hidden = !used.length;
-      if (used.length) keyValue.textContent = transposeChord(used[0], semis);
-    }
-
     /* THE SIZE IS NOT HERE ANY MORE. It was two buttons and a number, three
        things on a strip whose whole point is to be short, for a setting with
        one honest answer: bigger, until it is big enough. And every machine
