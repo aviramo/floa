@@ -1361,7 +1361,9 @@
         shut.classList.add("dock-x");
         box.appendChild(shut);
       });
-      startAudio(audio);
+      /* And the same question as in the sheet: how long is it, before it is
+         played, so the bar has something to draw against (see tellLength). */
+      tellLength(audio, function () { startAudio(audio); });
     }).catch(function () {
       node.disabled = false;
       toast("לא הצלחנו להשמיע את ההקלטה");
@@ -17505,8 +17507,15 @@
      What it can do is find out. Seeking past the end of it makes the browser
      read to the end, and having read to the end it knows: the same recording
      then says 2.4 and the bar works, the time reads properly and the thumb can
-     be dragged. So it is asked once, before anybody presses play, and put back
-     to the beginning.
+     be dragged. So it is asked once, before anything sounds, and put back to
+     the beginning.
+
+     EVERY PLAYER ASKS IT, not only the one that opens over a take just made.
+     A bar with no length is not blank, which would at least look broken: the
+     browser draws the thumb against how much it has read so far, and it reads
+     more as it plays, so the thumb slides LEFTWARDS along a bar nobody is
+     touching. Whoever hands a recording to a player asks this first and starts
+     it in the answer (see playTake, hearOnWall).
 
      THE MARK IS HELD STILL WHILE THAT HAPPENS. The page follows the recording
      by where the sound has got to (see alongTake), and this walks the sound to
@@ -17514,11 +17523,25 @@
      the panel would throw the mark down the page and back. */
   var measuring = null;
 
-  function tellLength(audio) {
+  function tellLength(audio, then) {
     var asked = false;
+    var over = false;
+    /* Whatever happened, it happened once, and the length is no longer being
+       asked about: a hold left on releases nothing and the mark would stand
+       still for the whole of that recording. */
+    var enough = function () {
+      if (over) return;
+      over = true;
+      if (measuring === audio) measuring = null;
+      if (then) then();
+    };
     var ask = function () {
-      if (asked || audio.duration !== Infinity) return;
+      if (asked) return;
       asked = true;
+      /* A recording that already knows is nothing to do: some files carry the
+         length in the header, and one that has been read to the end once
+         carries it in the element. */
+      if (audio.duration !== Infinity) return enough();
       measuring = audio;
       audio.addEventListener("seeked", function back() {
         audio.removeEventListener("seeked", back);
@@ -17527,13 +17550,20 @@
            expects to be, and never mind if this seek fails: what was wanted
            was the reading, and that has already happened. */
         try { audio.currentTime = 0; } catch (e) { /* nothing to be done */ }
+        enough();
       });
-      try { audio.currentTime = 1e101; } catch (e) { measuring = null; }
+      try { audio.currentTime = 1e101; } catch (e) { enough(); }
     };
     audio.addEventListener("loadedmetadata", ask);
+    audio.addEventListener("error", enough);
     /* And once now, for a recording whose metadata was already there: a blob
        made in this tab a moment ago often is. */
     if (audio.readyState >= 1) ask();
+    /* SOMEBODY IS WAITING TO HEAR IT. A browser that answers neither the
+       metadata nor the seek would otherwise keep the play button pressed
+       forever, and a bar drawn against nothing is a smaller loss than a
+       recording that never sounds. */
+    if (then) setTimeout(enough, 2000);
   }
 
   /* Stops the recorder with it, because the recorder is made of the same
@@ -18087,7 +18117,12 @@
       audio.addEventListener("play", function () { alone(true); });
       audio.addEventListener("pause", function () { alone(false); });
       audio.addEventListener("ended", function () { alone(false); });
-      startAudio(audio);
+      /* The length first, then the sound: a recording that does not know how
+         long it is draws a thumb against a guess, and the guess grows as the
+         browser reads on, so the thumb walks BACKWARDS along a bar nobody is
+         touching (see tellLength). Asked before playing rather than during,
+         because the reading seeks to the end and back. */
+      tellLength(audio, function () { startAudio(audio); });
     }).catch(function () {
       go.disabled = false;
       toast("לא הצלחנו להשמיע את ההקלטה");
