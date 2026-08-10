@@ -4881,19 +4881,27 @@
       return;
     }
 
-    var shelf = [
-      /* One button for adding a song, and which way in is asked on the press
-         (see askAdd): typing it out and reading it off a photograph are two
-         answers to one question, and the bar asks the question. It is the one
-         thing here that is not a door, which is why it is the one thing that
-         stayed out of the panel. */
-      keep("newSong", function () {
+    var shelf = [];
+    /* One button for adding a song, and which way in is asked on the press
+       (see askAdd): typing it out and reading it off a photograph are two
+       answers to one question, and the bar asks the question. It is the one
+       thing here that is not a door, which is why it is the one thing that
+       stayed out of the panel.
+
+       ON A DESK. On a phone the bar takes the word off every button it holds,
+       and this one lost the only thing on it that said what it makes: a green
+       plus between the mark and the search, which is a picture that means
+       "add" to whoever already knew. Downstairs, on the row of chips over the
+       wall, there is room to write it out, so on a phone that is where it
+       stands (see paintTallies) and the bar does not hold it at all. */
+    if (!NARROW.matches) {
+      shelf.push(keep("newSong", function () {
         var add = button("שיר חדש", ICON.plus, "small", function () { askAdd(add); });
         add.setAttribute("aria-haspopup", "menu");
         add.setAttribute("aria-expanded", "false");
         return add;
-      }),
-    ];
+      }));
+    }
     /* The tuner, the evenings, the people and whoever is looking: all of them
        one press further away, in the corner (see more). */
     if (!auth.in) shelf.push(session());

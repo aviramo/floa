@@ -371,6 +371,16 @@ body.on-song { background: var(--bg); }
      pixel picture in it, so the ones that never had a word are that too. */
   .top-actions > .icon-btn { width: 36px; height: 36px; }
   .top-actions > .icon-btn > svg { width: 18px; height: 18px; }
+  /* And the capo with them. It stands in this row too (see placeControls), it
+     is pressed by the same thumb, and a box six pixels shorter than the two
+     beside it is the one thing in the bar that does not sit on the line the
+     others do. Its picture and its number stay the size they are: the number
+     is read, not aimed at, and it is already the largest thing in the box.
+
+     Named through the bar, and not as .tools .dial-btn: the height it is
+     overriding is written further down the file, and a rule inside a media
+     query is still just a rule. What wins here is the third class. */
+  .top-actions .tools .dial-btn { height: 36px; }
 
   /* The app's name goes and its mark stays. The bar has to hold the search
      box, and a word that says which app you are in is the one thing on it
