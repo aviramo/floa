@@ -362,21 +362,18 @@ try {
       check("and they are scored apart rather than all alike",
         new Set(heard.rows.map((r) => r.width)).size > 1, JSON.stringify(heard.rows.map((r) => r.width)));
 
-      /* --- and the mark on the song ---------------------------------------- */
-      check("every Am in the song is lit and nothing else is",
-        heard.marked.length === 3 && heard.marked.every((c) => c === "Am"),
-        JSON.stringify(heard.marked));
-
       /* ====================================================================
-         AND THE FOLLOWER, which is what the rest of this was for.
+         AND THE FOLLOWER, which is what the rest of this was for, and which
+         is why it is already running: opening this tab on a song is asking to
+         be followed through it. What used to stand here instead was the
+         measurement's own mark, which lights every chord of a name at once,
+         and three Am in a line all lit is the honest answer to a question
+         nobody asked. It looks exactly like a follower that is broken.
          ==================================================================== */
-      await evaluate('JSON.stringify((document.querySelector(".ear-go").click(), true))');
-      await sleep(700);
-
       const began = await evaluate(FOLLOW_READ);
       check("the song the follower reads is the song on the page",
         JSON.stringify(began.sequence) === JSON.stringify(SEQUENCE), JSON.stringify(began.sequence));
-      check("following is on and the band got out of the way",
+      check("opening the tab on a song is asking to be followed through it",
         began.on && began.small, JSON.stringify({ on: began.on, small: began.small }));
       check("one chord is marked, and one only",
         began.marks === 1, JSON.stringify({ marks: began.marks, at: began.at }));
@@ -412,12 +409,39 @@ try {
       check("touching a chord on the page puts the mark there",
         tapped.at === 6 && tapped.marks === 1, JSON.stringify({ at: tapped.at, marks: tapped.marks }));
 
-      /* --- and off again ----------------------------------------------------- */
+      /* --- and off again -----------------------------------------------------
+         Which is the way back to the measurement, and to the mark that belongs
+         to it: every chord of the name being heard, all at once, which is all
+         a sound can say and is worth being able to see. */
+      /* Back to strumming an Am, so that the mark being asked after has more
+         than one place in this song to be: the whole difference between the
+         two marks is that one of them lights all three. */
+      await evaluate('JSON.stringify((window.__playing = "Am", true))');
       await evaluate('JSON.stringify((document.querySelector(".ear-go").click(), true))');
-      await sleep(300);
+      await sleep(900);
       const off = await evaluate(FOLLOW_READ);
       check("switching it off takes the mark and gives the room back",
         off.marks === 0 && !off.on && !off.small, JSON.stringify(off));
+
+      const bare = await evaluate(CHORD_READ);
+      check("and the measurement's own mark comes back with it: every Am at once",
+        bare.marked.length === 3 && bare.marked.every((c) => c === "Am"),
+        JSON.stringify(bare.marked));
+
+      /* AND IT STAYS OFF. A default that reasserts itself a reading later is
+         not a default, it is an argument. */
+      await sleep(600);
+      const still = await evaluate(FOLLOW_READ);
+      check("a switch turned off stays turned off", !still.on && still.marks === 0,
+        JSON.stringify({ on: still.on, marks: still.marks }));
+
+      /* --- and on again ------------------------------------------------------ */
+      await evaluate('JSON.stringify((document.querySelector(".ear-go").click(), true))');
+      await sleep(700);
+      const again = await evaluate(FOLLOW_READ);
+      check("and switching it back on takes one mark again",
+        again.on && again.marks === 1 && again.heard === 0,
+        JSON.stringify({ on: again.on, marks: again.marks, heard: again.heard }));
 
       /* --- the other tab ---------------------------------------------------- */
       await evaluate('JSON.stringify((window.__sound = "note", [...document.querySelectorAll(".ear-tab")][0].click(), true))');
