@@ -44,6 +44,23 @@ const SONG = {
   dir: "rtl", status: "ready", status_note: "", lines: BODY,
 };
 
+/* --- AND A SONG THAT DOES NOT FIT ON A SCREEN ------------------------------
+   Which is the only kind that can be scrolled, and therefore the only kind
+   that can show whether the page moves itself. The same two lines over and
+   over: what is being measured is where the window ends up, and the words have
+   nothing to do with it.
+
+   The last verse ends on a Dm, which is the one chord in it that happens once.
+   That is what the follower is walked to, and it is a long way down. */
+const LONG = ["{בית}"].concat(
+  Array.from({ length: 14 }, () => "[Am]בנקיק [G]נסתר בצוקים [F]אילה שותה מים")
+).concat(["[Dm]ובסוף השיר"]).join("\n");
+
+const TALL = {
+  id: "tall", slug: "s-tall", title: "בדיקת גלילה", lyrics_by: "", music_by: "",
+  dir: "rtl", status: "ready", status_note: "", lines: LONG,
+};
+
 /* --- the sound, written out by hand ----------------------------------------
    An A minor chord as a guitar voices it, A2 E3 A3 C4 E4, each with four
    harmonics falling away above it. Everything else in the spectrum is silence,
@@ -58,7 +75,7 @@ const VOICINGS = {
 };
 const RINGS = [-20, -28, -34, -40];
 
-function page() {
+function page(song = SONG) {
   return `<!doctype html>
 <html lang="he" dir="rtl"><head><meta charset="utf-8">
 <link rel="stylesheet" href="/chords/assets/style.css">
@@ -66,13 +83,13 @@ function page() {
 window.__errors = [];
 addEventListener("error", (e) => window.__errors.push(e.message + " @ " + e.filename + ":" + e.lineno));
 addEventListener("unhandledrejection", (e) => window.__errors.push("rejected: " + e.reason));
-history.replaceState(null, "", "/chords/${SONG.slug}");
+history.replaceState(null, "", "/chords/${song.slug}");
 /* The page as it is written and not as the app would guess it: the marking
    below is checked against chord names, and a transposition chosen for us
    would make those names something else. */
-localStorage.setItem("chords.song.-." + ${JSON.stringify(SONG.id)}, JSON.stringify({ p: 0 }));
+localStorage.setItem("chords.song.-." + ${JSON.stringify(song.id)}, JSON.stringify({ p: 0 }));
 window.SUPABASE = { url: "https://stub.invalid", anonKey: "anon" };
-const SONG = ${JSON.stringify(SONG)};
+const SONG = ${JSON.stringify(song)};
 window.fetch = (url) => Promise.resolve(new Response(
   JSON.stringify(String(url).includes("/rest/v1/songs") ? [SONG] : []),
   { status: 200, headers: { "content-type": "application/json" } }));
@@ -172,6 +189,23 @@ const FOLLOW_READ = `(() => {
     on: !!document.querySelector(".ear-go.is-on"),
     small: document.body.classList.contains("ear-small"),
     sequence: all.map((c) => c.textContent),
+    errors: window.__errors,
+  });
+})()`;
+
+/* Where the WINDOW is, which is the only way to ask whether the page moved
+   itself. Everything else about following can be right while the mark sits
+   two screens below the glass. */
+const SCROLL_READ = `(() => {
+  const mark = document.querySelector(".sheet .chord.is-at");
+  return JSON.stringify({
+    y: Math.round(window.scrollY || window.pageYOffset || 0),
+    room: Math.round(document.documentElement.scrollHeight - window.innerHeight),
+    at: [...document.querySelectorAll(".sheet .chord")].findIndex((c) => c.classList.contains("is-at")),
+    /* Where the mark is standing on the glass, as a fraction of the window.
+       Under nought is above the top of the screen and over one is below it. */
+    where: mark ? +(mark.getBoundingClientRect().top / window.innerHeight).toFixed(2) : null,
+    chords: document.querySelectorAll(".sheet .chord").length,
     errors: window.__errors,
   });
 })()`;
@@ -317,8 +351,9 @@ const { server, port } = await serve();
    run, and those scripts are asked for by address. A document set after the
    fact is a document whose scripts have already been fetched. */
 const root = join(DIST, "chords/_ear");
-await mkdir(root, { recursive: true });
+await mkdir(join(root, "tall"), { recursive: true });
 await writeFile(join(root, "index.html"), page(), "utf8");
+await writeFile(join(root, "tall/index.html"), page(TALL), "utf8");
 
 try {
   await withChrome(async (open) => {
@@ -463,6 +498,82 @@ try {
         JSON.stringify({ open: shut.open, padded: shut.padded, marked: shut.marked }));
 
       check("and nothing threw along the way", shut.errors.length === 0, JSON.stringify(shut.errors));
+    });
+
+    /* ======================================================================
+       AND THE PAGE MOVING UNDER THE MARK.
+
+       On a phone sized screen and a song that does not fit on one, because
+       those are the only conditions under which there is anything to move. A
+       wide window pours a long song into columns until it fits, and a page
+       that fits is a page with nothing to scroll: every check below would pass
+       by doing nothing at all.
+       ====================================================================== */
+    await open(`http://127.0.0.1:${port}/chords/_ear/tall/`, async ({ send, evaluate }) => {
+      await send("Emulation.setDeviceMetricsOverride", {
+        width: 430, height: 760, deviceScaleFactor: 1, mobile: true,
+      });
+      /* The app draws a different page either side of the narrow line, so it
+         is given the frame it needs to draw the one this is about. */
+      await sleep(900);
+
+      const start = await evaluate(SCROLL_READ);
+      console.log("DEBUG", JSON.stringify(await evaluate('JSON.stringify({app: document.getElementById("app").innerHTML.slice(0,300), errs: window.__errors, w: window.innerWidth})')));
+      check("the song is taller than the screen, so there is something to scroll",
+        start.room > 400 && start.chords > 30, JSON.stringify({ room: start.room, chords: start.chords }));
+      check("and it opens at the top", start.y === 0, String(start.y));
+
+      await evaluate('JSON.stringify((document.querySelector(".ear-door").click(), true))');
+      await sleep(900);
+
+      const lit = await evaluate(SCROLL_READ);
+      check("following starts on the tall song too", lit.at >= 0, JSON.stringify({ at: lit.at }));
+
+      /* --- a finger on a chord a long way down --------------------------------
+         The quickest way to ask the one question this block exists for: put
+         the mark somewhere off the screen and see whether the screen follows
+         it. Which is also a thing people do. */
+      await evaluate(`JSON.stringify(([...document.querySelectorAll(".sheet .chord")][30]
+        .dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })), true))`);
+      await sleep(900);
+      const jumped = await evaluate(SCROLL_READ);
+      check("a mark put below the screen brings the screen to it",
+        jumped.at === 30 && jumped.y > 200, JSON.stringify({ at: jumped.at, y: jumped.y }));
+      check("and it lands in the upper part of the screen rather than at its edge",
+        jumped.where !== null && jumped.where > 0.05 && jumped.where < 0.6, String(jumped.where));
+
+      /* --- and playing carries it on --------------------------------------- */
+      const before = jumped.y;
+      for (const chord of ["G", "F", "Am", "G", "F", "Am", "G", "F"]) {
+        await evaluate(`JSON.stringify((window.__playing = ${JSON.stringify(chord)}, true))`);
+        await sleep(420);
+      }
+      await sleep(500);
+      const played = await evaluate(SCROLL_READ);
+      check("playing on walks the mark down the song",
+        played.at > 30, JSON.stringify({ from: 30, to: played.at }));
+      check("and the page came down with it",
+        played.y > before, JSON.stringify({ before, after: played.y }));
+      check("with the mark still on the screen",
+        played.where !== null && played.where > 0 && played.where < 0.95, String(played.where));
+
+      /* --- a hand on the page outranks all of it ------------------------------
+         Somebody who dragged the song has said where they want to be, and a
+         page that scrolls out from under them a moment later has taken it
+         back. Six seconds, and this asks inside them. */
+      await evaluate(`JSON.stringify((window.dispatchEvent(new WheelEvent("wheel", { deltaY: -200 })), true))`);
+      const held = (await evaluate(SCROLL_READ)).y;
+      for (const chord of ["Am", "G", "F", "Am"]) {
+        await evaluate(`JSON.stringify((window.__playing = ${JSON.stringify(chord)}, true))`);
+        await sleep(420);
+      }
+      const after = await evaluate(SCROLL_READ);
+      check("a hand on the page stops the page moving itself",
+        after.y === held, JSON.stringify({ held, after: after.y }));
+      check("but the mark carries on regardless",
+        after.at > played.at, JSON.stringify({ was: played.at, now: after.at }));
+
+      check("and nothing threw here either", after.errors.length === 0, JSON.stringify(after.errors));
     });
   });
 } finally {

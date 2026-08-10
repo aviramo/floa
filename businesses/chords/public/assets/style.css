@@ -1391,10 +1391,16 @@ body.on-song .top { border-bottom: 0; }
 .top-facts .song-info, .song-facts .song-info { flex: none; }
 .song-info.is-open { color: #fff; background: var(--accent); border-color: var(--accent); }
 
+/* THREE CONTROLS, AND NOTHING DRAWN ROUND THEM. Each of them is already a box
+   with a line round it, and a fourth line round all three is a box inside a box
+   on a row that is itself inside a bordered strip. What holds them together is
+   that they stand together, which they do without being fenced in.
+
+   The element itself stays: it is what placeControls moves between the bar and
+   the strip in one line. It is a group now and not a surface. */
 .tools {
-  display: flex; align-items: center; gap: 4px 10px; flex-wrap: wrap;
-  margin-inline-start: auto; padding: 3px 8px;
-  background: var(--card); border: 1px solid var(--line); border-radius: var(--corner);
+  display: flex; align-items: center; gap: 4px 8px; flex-wrap: wrap;
+  margin-inline-start: auto;
 }
 .tools .ctl { display: flex; align-items: center; gap: 5px; }
 /* The picture and the number side by side, read in that order: what it is,
@@ -1414,7 +1420,6 @@ body.on-song .top { border-bottom: 0; }
 .tools .dial-btn:hover { background: var(--bg); }
 .tools .dial-btn[aria-expanded="true"] { color: var(--accent); border-color: var(--accent); }
 .tools .dial-btn[aria-expanded="true"] .lbl { color: inherit; }
-.tools .sep { width: 1px; height: 16px; background: var(--line); }
 
 /* --- AND WHAT COMES OUT OF IT ----------------------------------------------
    One panel for both dials: under the dial, over everything, with the shadow

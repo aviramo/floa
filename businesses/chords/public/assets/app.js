@@ -28,6 +28,30 @@
   var CFG = window.CHORDS_CONFIG;
   var BASE = CFG.base.replace(/\/+$/, "");
 
+  /* EVERY ADDRESS HERE IS BUILT IN ONE PLACE, AND IT ENDS IN A SLASH.
+
+     A song has a file now, and GitHub Pages serves a folder at the address
+     with the slash on the end. Asked for the address without it, it does not
+     serve the file: it answers with a redirect to the folder, and it writes
+     the folder's name into the Location header as raw bytes. A header is not
+     allowed to carry those, so the browser reads them one byte at a time as
+     Latin-1, and a Hebrew song name comes back as a row of ×'s. That address
+     is nowhere, so the refresh lands on the domain's 404 and the song is
+     reported missing under a name nobody typed.
+
+     Nothing about it can be fixed from here, and nothing needs to be: the app
+     simply never asks for the address that redirects. This is also exactly
+     what the build writes into the sitemap and the canonical (see href in
+     pages/render.js), so there is one spelling of a song's address. */
+  function at() {
+    var parts = [];
+    for (var i = 0; i < arguments.length; i++) {
+      var one = arguments[i];
+      if (one !== null && one !== undefined && one !== "") parts.push(encodeURIComponent(one));
+    }
+    return BASE + "/" + (parts.length ? parts.join("/") + "/" : "");
+  }
+
   /* ---------------------------------------------------------------- helpers */
 
   function el(tag, cls, text) {
@@ -424,7 +448,7 @@
        not have to be one Supabase has been told about. */
     signInWithGoogle: function () {
       try { localStorage.setItem(RETURN_KEY, location.pathname); } catch (e) { /* private window */ }
-      var back = location.origin + BASE + "/";
+      var back = location.origin + at();
       location.assign(CFG.supabaseUrl + "/auth/v1/authorize?provider=google&redirect_to=" +
         encodeURIComponent(back));
     },
@@ -4067,7 +4091,7 @@
      of the two is the easier way in on the screen in front of you is a
      judgement the person holding it can make. */
   function newSong() {
-    requireAuth(function () { go(BASE + "/new"); });
+    requireAuth(function () { go(at("new")); });
   }
 
   /* --- AND THE TWO OF THEM STAND BEHIND ONE BUTTON ---------------------------
@@ -4273,7 +4297,7 @@
   function toEvenings() {
     return keep("toEvenings", function () {
       return button("אירועים", ICON.calendar, "ghost small", function () {
-        go(BASE + "/evenings");
+        go(at("evenings"));
       });
     });
   }
@@ -4385,7 +4409,7 @@
          one is by who wrote it. */
       keep("toCreators", function () {
         return button("יוצרים", ICON.people, "ghost small", function () {
-          go(BASE + "/creators");
+          go(at("creators"));
         });
       }),
       /* One button for adding a song, and which way in is asked on the press
@@ -4456,7 +4480,7 @@
     if (bill) {
       bill.onclick = function () {
         dlg.close();
-        go(BASE + "/reads");
+        go(at("reads"));
       };
     }
 
@@ -4743,7 +4767,7 @@
         name: s.title || "בלי שם",
         said: creditNames(s).join(", "),
         tags: [{ kind: "kind", words: "שיר" }],
-        href: BASE + "/" + encodeURIComponent(s.slug),
+        href: at(s.slug),
       });
     });
 
@@ -4766,7 +4790,7 @@
         name: name,
         said: songsSaid(shelves[name]),
         tags: [{ kind: "kind", words: "סגנון" }],
-        href: BASE + "/style/" + encodeURIComponent(name),
+        href: at("style", name),
       });
     });
 
@@ -4777,7 +4801,7 @@
         name: person.name,
         said: songsSaid(person.songs.length),
         tags: roleTags(person.roles),
-        href: BASE + "/creator/" + encodeURIComponent(person.name),
+        href: at("creator", person.name),
       });
     });
 
@@ -4791,7 +4815,7 @@
         name: evening.title || "אירוע בלי שם",
         said: whenWhere(evening),
         tags: [{ kind: "kind", words: "אירוע" }],
-        href: BASE + "/evenings/" + evening.id,
+        href: at("evenings", evening.id),
       });
     });
 
@@ -5115,7 +5139,7 @@
               : count.done === 1 ? "הסגנון שונה בשיר אחד"
               : "הסגנון שונה ב-" + count.done + " שירים", !!left);
             /* the address is the name, so it moves with it */
-            go(BASE + "/style/" + encodeURIComponent(next));
+            go(at("style", next));
           });
         };
         shelfField();
@@ -5708,7 +5732,7 @@
           if (!list.isConnected || !gone || !gone.length) return;
           var back = el("div", "after-list");
           back.appendChild(button("שירים שנמחקו (" + gone.length + ")", ICON.trash, "ghost small", function () {
-            go(BASE + "/deleted");
+            go(at("deleted"));
           }));
           app.appendChild(back);
         }).catch(function () { /* not being able to say is not worth saying */ });
@@ -5742,7 +5766,7 @@
       app.appendChild(list);
 
       var actions = el("div", "row-actions");
-      actions.appendChild(button("לרשימת השירים", null, "ghost small", function () { go(BASE + "/"); }));
+      actions.appendChild(button("לרשימת השירים", null, "ghost small", function () { go(at()); }));
       var after = el("div", "after-list");
       after.appendChild(actions);
       app.appendChild(after);
@@ -5776,7 +5800,7 @@
         buttons.appendChild(button("שחזור", ICON.undo, "small", function () {
           db.restore(s).then(function (back) {
             toast("השיר חזר");
-            go(BASE + "/" + encodeURIComponent((back && back.slug) || slugify(s.title)));
+            go(at((back && back.slug) || slugify(s.title)));
           }).catch(function (e) { toast("השחזור נכשל: " + e.message, true); });
         }));
         buttons.appendChild(button("מחיקה לצמיתות", ICON.trash, "danger small", function () {
@@ -5831,7 +5855,7 @@
       var no = el("div", "center");
       no.appendChild(el("p", null, "הדף הזה שייך לחשבון שמשלם על הפענוחים."));
       var out = el("div", "row-actions");
-      out.appendChild(button("לרשימת השירים", null, "ghost", function () { go(BASE + "/"); }));
+      out.appendChild(button("לרשימת השירים", null, "ghost", function () { go(at()); }));
       no.appendChild(out);
       app.appendChild(no);
       return;
@@ -5873,7 +5897,7 @@
       app.appendChild(body);
 
       var actions = el("div", "row-actions");
-      actions.appendChild(button("לרשימת השירים", null, "ghost small", function () { go(BASE + "/"); }));
+      actions.appendChild(button("לרשימת השירים", null, "ghost small", function () { go(at()); }));
       var after = el("div", "after-list");
       after.appendChild(actions);
       app.appendChild(after);
@@ -6003,7 +6027,7 @@
         var box;
         if (open) {
           box = el("a", "read");
-          box.href = BASE + "/" + encodeURIComponent(song.slug);
+          box.href = at(song.slug);
           box.addEventListener("click", function (event) {
             event.preventDefault();
             go(box.getAttribute("href"));
@@ -6370,7 +6394,7 @@
     var busy = s.status === "queued" || (s.status === "reading" && !stalled(s));
     if (!s.status || s.status === "ready" || busy) {
       var a = el("a");
-      a.href = BASE + "/" + encodeURIComponent(s.slug);
+      a.href = at(s.slug);
       a.addEventListener("click", function (e) { e.preventDefault(); go(a.getAttribute("href")); });
 
       var box = el("div");
@@ -6515,7 +6539,7 @@
 
     var actions = el("div", "row-actions");
     actions.appendChild(button("להקליד ידנית", ICON.pencil, "ghost small", function () {
-      go(BASE + "/" + encodeURIComponent(s.slug));
+      go(at(s.slug));
     }));
     actions.appendChild(button("מחיקה", ICON.trash, "danger small", function () {
       db.remove(s.id).then(refresh).catch(function (e) { toast("המחיקה נכשלה: " + e.message, true); });
@@ -6556,7 +6580,7 @@
   function shelfRow(name, n) {
     var li = el("li");
     var a = el("a");
-    a.href = BASE + "/style/" + encodeURIComponent(name);
+    a.href = at("style", name);
     a.addEventListener("click", function (event) {
       event.preventDefault();
       go(a.getAttribute("href"));
@@ -6598,7 +6622,7 @@
   function creatorRow(person, brief) {
     var li = el("li");
     var a = el("a");
-    a.href = BASE + "/creator/" + encodeURIComponent(person.name);
+    a.href = at("creator", person.name);
     a.addEventListener("click", function (event) {
       event.preventDefault();
       go(a.getAttribute("href"));
@@ -6750,7 +6774,7 @@
       if (!people.length) {
         var box = el("div", "center");
         box.appendChild(el("p", null, "עוד אין שם של אף אחד על שיר. מי כתב את המילים ומי הלחין נכתבים בתוך השיר עצמו, ומכאן הם נאספים."));
-        box.appendChild(button("לרשימת השירים", ICON.back, "ghost", function () { go(BASE + "/"); }));
+        box.appendChild(button("לרשימת השירים", ICON.back, "ghost", function () { go(at()); }));
         app.appendChild(box);
         return;
       }
@@ -6778,7 +6802,7 @@
       if (!mine.length) {
         var gone = el("div", "center");
         gone.appendChild(el("p", null, 'אין שירים על שם "' + name + '".'));
-        gone.appendChild(button("לרשימת היוצרים", ICON.back, "ghost", function () { go(BASE + "/creators"); }));
+        gone.appendChild(button("לרשימת היוצרים", ICON.back, "ghost", function () { go(at("creators")); }));
         app.appendChild(gone);
         return;
       }
@@ -6805,7 +6829,7 @@
               : count.done === 1 ? "השם שונה בשיר אחד"
               : "השם שונה ב-" + count.done + " שירים", !!left);
             /* the address is the name, so it moves with it */
-            go(BASE + "/creator/" + encodeURIComponent(next));
+            go(at("creator", next));
           });
         });
       }
@@ -6933,7 +6957,7 @@
       var who = el("div", "told-tags");
       names.forEach(function (name) {
         var chip = el("a", "tag tag-style", name);
-        who.appendChild(opens(chip, BASE + "/creator/" + encodeURIComponent(name)));
+        who.appendChild(opens(chip, at("creator", name)));
       });
       row(c.label, who);
     });
@@ -6942,7 +6966,7 @@
       var tags = el("div", "told-tags");
       kinds.forEach(function (name) {
         var chip = el("a", "tag tag-style", name);
-        tags.appendChild(opens(chip, BASE + "/style/" + encodeURIComponent(name)));
+        tags.appendChild(opens(chip, at("style", name)));
       });
       row("סגנון", tags);
     }
@@ -7856,7 +7880,6 @@
        not a matter of what a hand can hold: it is where the capo goes, there
        are eight places it goes, and somebody who wants the fourth one wants
        the fourth one. Filtering a neck would be filtering nothing. */
-    tools.appendChild(el("span", "sep"));
     var myValue = el("span", "val");
     var capoCtl = dialFor(
       ICON.capo, "קפו",
@@ -7877,7 +7900,6 @@
        and «which of these eight chords is it» only means anything with the
        eight on the page beside it. The tuner, which is about the guitar and
        not about anything written down, has its door in the bar instead. */
-    tools.appendChild(el("span", "sep"));
     tools.appendChild(earDoor("chord", "ear-door"));
 
     /* Read when the panel asks and not written down here, because the song is
@@ -8005,7 +8027,7 @@
       if (song.id) {
         var pastBtn = iconBtn(ICON.history, "גרסאות שפורסמו", function () {
           flush();
-          go(BASE + "/" + encodeURIComponent(song.slug) + "/versions");
+          go(at(song.slug, "versions"));
         });
         pastBtn.classList.add("quiet");
         pastBtn.hidden = true;
@@ -8434,7 +8456,7 @@
           if (!window.confirm('לבטל את הייבוא של "' + (song.title || "השיר") + '"?')) return;
           db.purge(song.id).then(function () {
             toast("הייבוא בוטל");
-            go(BASE + "/");
+            go(at());
           }).catch(function (e) { toast("הביטול נכשל: " + e.message, true); });
         }));
         document.body.appendChild(stateMenu);
@@ -10411,13 +10433,14 @@
           }
 
           /* A SONG NOW HAS A FILE, and GitHub Pages serves a folder at the
-             address with the slash on the end: /chords/<שיר>/. So the two
-             spellings are one address, and rewriting the bar from the one the
-             browser was given to the one without it would be a change of
-             address for nothing, on every save. */
-          var here = BASE + "/" + encodeURIComponent(row.slug);
-          var now = decodeURIComponent(location.pathname).replace(/\/+$/, "");
-          if (now !== decodeURIComponent(here)) {
+             address with the slash on the end: /chords/<שיר>/. The bar is only
+             rewritten when the SLUG has moved, which happens when the title
+             does; a browser that was handed the address without the slash is
+             already on this song, and moving it would be a change of address
+             for nothing, on every save. */
+          var slash = function (path) { return decodeURIComponent(path).replace(/\/+$/, ""); };
+          var here = at(row.slug);
+          if (slash(location.pathname) !== slash(here)) {
             history.replaceState(history.state, "", here);
           }
 
@@ -10454,7 +10477,7 @@
       if (!window.confirm('למחוק את "' + song.title + '"?\n\nהשיר יעבור לשירים שנמחקו ואפשר יהיה לשחזר אותו.')) return;
       db.remove(song.id).then(function () {
         toast("השיר נמחק. אפשר לשחזר מתוך שירים שנמחקו.");
-        go(BASE + "/");
+        go(at());
       }).catch(function (error) {
         toast("המחיקה נכשלה: " + error.message, true);
       });
@@ -10786,7 +10809,7 @@
     app.innerHTML = "";
     var box = el("div", "center");
     box.appendChild(el("p", null, 'אין שיר בשם "' + slug.replace(/_/g, " ") + '".'));
-    box.appendChild(button("לרשימת השירים", ICON.back, "ghost", function () { go(BASE + "/"); }));
+    box.appendChild(button("לרשימת השירים", ICON.back, "ghost", function () { go(at()); }));
     app.appendChild(box);
   }
 
@@ -10886,7 +10909,7 @@
       restoreVersion(past.song, past.version);
     }));
     actions.appendChild(button("כל הגרסאות", null, "ghost small", function () {
-      go(BASE + "/" + encodeURIComponent(past.song.slug) + "/versions");
+      go(at(past.song.slug, "versions"));
     }));
     band.appendChild(actions);
     return band;
@@ -10920,7 +10943,7 @@
       styles: Array.isArray(version.styles) ? version.styles : [],
     }).then(function (row) {
       toast("השיר חזר לגרסה מ" + when);
-      go(BASE + "/" + encodeURIComponent((row && row.slug) || song.slug));
+      go(at((row && row.slug) || song.slug));
     }).catch(function (error) {
       /* back to the page that was being read, so the failure is a sentence over
          a page rather than a word on an empty screen */
@@ -10941,7 +10964,7 @@
         where("גרסאות של " + (song.title || "שיר"));
         app.innerHTML = "";
 
-        function back() { go(BASE + "/" + encodeURIComponent(song.slug)); }
+        function back() { go(at(song.slug)); }
 
         var head = el("div", "song-head");
         head.appendChild(el("h1", null, song.title || "שיר"));
@@ -10970,7 +10993,7 @@
 
         var actions = el("div", "row-actions");
         actions.appendChild(button("חזרה לשיר", ICON.back, "ghost small", back));
-        actions.appendChild(button("לרשימת השירים", null, "ghost small", function () { go(BASE + "/"); }));
+        actions.appendChild(button("לרשימת השירים", null, "ghost small", function () { go(at()); }));
         var after = el("div", "after-list");
         after.appendChild(actions);
         app.appendChild(after);
@@ -11012,7 +11035,7 @@
 
     var buttons = el("div", "row-actions");
     buttons.appendChild(button("פתיחה", null, "ghost small", function () {
-      go(BASE + "/" + encodeURIComponent(song.slug) + "/versions/" + encodeURIComponent(v.id));
+      go(at(song.slug, "versions", v.id));
     }));
     buttons.appendChild(button("שחזור", ICON.undo, "small", function () { restoreVersion(song, v); }));
     box.appendChild(buttons);
@@ -11046,7 +11069,7 @@
     var box = el("div", "center");
     box.appendChild(el("p", null, "הגרסה הזאת לא נמצאה."));
     box.appendChild(button("כל הגרסאות", null, "ghost", function () {
-      go(BASE + "/" + encodeURIComponent(song.slug) + "/versions");
+      go(at(song.slug, "versions"));
     }));
     app.appendChild(box);
   }
@@ -11107,7 +11130,7 @@
   }
 
   function newEvening() {
-    requireAuth(function () { go(BASE + "/evenings/new"); });
+    requireAuth(function () { go(at("evenings", "new")); });
   }
 
   /* The table is created by schema.sql, and deploying this file does not run
@@ -11117,7 +11140,7 @@
     app.innerHTML = "";
     var box = el("div", "center");
     box.appendChild(el("p", null, "טבלת האירועים עוד לא קיימת. צריך להריץ פעם אחת את schema.sql ב-Supabase."));
-    box.appendChild(button("לרשימת השירים", null, "ghost", function () { go(BASE + "/"); }));
+    box.appendChild(button("לרשימת השירים", null, "ghost", function () { go(at()); }));
     app.appendChild(box);
   }
 
@@ -11126,7 +11149,7 @@
     app.innerHTML = "";
     var box = el("div", "center");
     box.appendChild(el("p", null, "האירוע הזה לא נמצא. אולי הוא נמחק, ואולי הוא של חשבון אחר."));
-    box.appendChild(button("לרשימת האירועים", null, "ghost", function () { go(BASE + "/evenings"); }));
+    box.appendChild(button("לרשימת האירועים", null, "ghost", function () { go(at("evenings")); }));
     app.appendChild(box);
   }
 
@@ -11147,7 +11170,7 @@
     box.appendChild(el("p", null, said || "האירועים שייכים לחשבון. כל אחד רואה, מתכנן ומוחק רק את שלו."));
     var actions = el("div", "row-actions");
     actions.appendChild(googleButton("התחברות עם גוגל"));
-    actions.appendChild(button("לרשימת השירים", null, "ghost", function () { go(BASE + "/"); }));
+    actions.appendChild(button("לרשימת השירים", null, "ghost", function () { go(at()); }));
     box.appendChild(actions);
     app.appendChild(box);
   }
@@ -11188,7 +11211,7 @@
   function eveningRow(evening, titles) {
     var li = el("li");
     var a = el("a");
-    a.href = BASE + "/evenings/" + evening.id;
+    a.href = at("evenings", evening.id);
     a.addEventListener("click", function (event) {
       event.preventDefault();
       go(a.getAttribute("href"));
@@ -11445,7 +11468,7 @@
         /* One tap to the song itself, which is the point of writing the
            evening down in the first place. */
         var a = el("a", "set-t", song.title);
-        a.href = BASE + "/" + encodeURIComponent(song.slug);
+        a.href = at(song.slug);
         a.addEventListener("click", function (event) {
           event.preventDefault();
           go(a.getAttribute("href"));
@@ -11726,7 +11749,7 @@
         evening.id = row.id;
         /* it exists now, so it has an address of its own, and a refresh from
            here comes back to it rather than to an empty new evening */
-        if (born) history.replaceState(history.state, "", BASE + "/evenings/" + row.id);
+        if (born) history.replaceState(history.state, "", at("evenings", row.id));
         /* and the line about what went wrong goes with the thing going right */
         note("");
         if (again) { again = false; commit(); }
@@ -11745,10 +11768,10 @@
       clearTimeout(timer);
       timer = null;
       flushPending = null;
-      if (!evening.id) return go(BASE + "/evenings");
+      if (!evening.id) return go(at("evenings"));
       sets.remove(evening.id).then(function () {
         toast("האירוע נמחק");
-        go(BASE + "/evenings");
+        go(at("evenings"));
       }).catch(function (error) {
         toast("המחיקה נכשלה: " + error.message, true);
       });
@@ -12094,7 +12117,7 @@
             ? groups.length + " שירים בתור. אפשר לסגור את הדף."
             : "קורא את השיר ברקע. אפשר לסגור את הדף.");
           if (dropped > 0) toast("נלקחו " + groups.length + " קבצים בלבד. השאר לא נשלחו.", true);
-          if (parts().length === 0) route(); else go(BASE + "/");
+          if (parts().length === 0) route(); else go(at());
         })
         .catch(function (error) {
           /* rows made a second ago for a request that never landed: there is
@@ -12458,7 +12481,7 @@
        Kept rather than dropped because it is written down in bookmarks and in
        the index's own links from before this. */
     if (p.length >= 2 && p[1] === "edit") {
-      history.replaceState(history.state, "", BASE + "/" + encodeURIComponent(p[0]));
+      history.replaceState(history.state, "", at(p[0]));
       return viewSong(p[0]);
     }
 
@@ -12478,15 +12501,19 @@
     return viewSong(p[0]);
   }
 
-  /* GitHub Pages has no file at /chords/<slug>, so the domain's 404.html sends
-     the browser here with the path in ?p=. Put the real address back before
-     anything renders, so the bar reads /chords/<slug> and a refresh works. */
+  /* An evening, a version, an editor, a song written a minute ago: GitHub Pages
+     has no file at any of those, so the domain's 404.html sends the browser
+     here with the path in ?p=. Put the real address back before anything
+     renders, so the bar reads /chords/<slug>/ and a refresh works.
+
+     Rebuilt through at() rather than pasted back, so whatever spelling arrived
+     leaves as the one spelling this app has (see at). */
   function absorbFallback() {
     var params = new URLSearchParams(location.search);
     var p = params.get("p");
     if (!p) return;
-    var clean = BASE + "/" + p.replace(/^\/+/, "");
-    history.replaceState(history.state, "", clean + location.hash);
+    var steps = p.replace(/^\/+/, "").replace(/\/+$/, "").split("/").filter(Boolean);
+    history.replaceState(history.state, "", at.apply(null, steps) + location.hash);
   }
 
   /* Back from Google, with the session in the fragment: `#access_token=…`, or
@@ -12523,7 +12550,7 @@
       });
     }
 
-    history.replaceState(history.state, "", back && back.indexOf(BASE) === 0 ? back : BASE + "/");
+    history.replaceState(history.state, "", back && back.indexOf(BASE) === 0 ? back : at());
 
     if (trouble) {
       /* Google's own words, which are English and aimed at whoever wrote the
@@ -13088,7 +13115,7 @@
     }
     markHeard(null);
     document.addEventListener("pointerdown", followTap, true);
-    ["wheel", "touchstart", "keydown"].forEach(function (name) {
+    ["wheel", "touchmove", "keydown"].forEach(function (name) {
       window.addEventListener(name, handOnPage, { passive: true });
     });
     earRoom();
@@ -13100,12 +13127,21 @@
     if (followMark && followMark.isConnected) followMark.classList.remove("is-at");
     followMark = null;
     document.removeEventListener("pointerdown", followTap, true);
-    ["wheel", "touchstart", "keydown"].forEach(function (name) {
+    ["wheel", "touchmove", "keydown"].forEach(function (name) {
       window.removeEventListener(name, handOnPage);
     });
     earRoom();
   }
 
+  /* A HAND THAT MOVED THE PAGE, which is not the same as a hand that touched
+     it. This listened for `touchstart` at first, and on a phone that is every
+     tap there is: turning the follower on stopped it from scrolling for six
+     seconds, and so did touching a chord to say where you are, which is the
+     one gesture that most obviously means "and now catch up with me".
+
+     `touchmove` is the drag itself. Somebody who dragged the song has said
+     where they want to be, and somebody who tapped it has not said anything
+     about the scroll at all. */
   function handOnPage() {
     /* Six seconds, which is a few bars: long enough that somebody who looked
        ahead gets to read what they looked at, short enough that they do not

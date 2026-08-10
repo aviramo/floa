@@ -18,11 +18,43 @@
    for a hundred years, a row of chords over a row of words, is the shape that
    survives being read as text.
    ========================================================================== */
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 
 import { model } from "./library.js";
 
-const SHELL = await readFile(new URL("../shell.html", import.meta.url), "utf8");
+/* --- WHAT VERSION OF ITSELF THE PAGE ASKS FOR ------------------------------
+   Every script and stylesheet in the shell gets `?v=` and eight characters of
+   its own content, worked out here at build time.
+
+   Without it the address of app.js never changes, and GitHub Pages serves it
+   with `Cache-Control: max-age=600`. So a change that has been live for nine
+   minutes is a change that some readers have and some do not, and the ones who
+   do not are looking at a page that behaves like the version before it with
+   nothing on screen saying so. That is not a theoretical problem: it cost an
+   afternoon of "it is not doing what you said it does" against a deploy that
+   had already landed.
+
+   PER FILE AND NOT ONE STAMP FOR ALL OF THEM, so that a change to the
+   stylesheet does not throw away a cached app.js that is still correct.
+
+   The engine businesses have had this from the start (see the hash in
+   build.mjs); this is a manual business, its shell is written by hand, and so
+   the shell is what carries it. */
+const SHELL = await stamp(await readFile(new URL("../shell.html", import.meta.url), "utf8"));
+
+async function stamp(html) {
+  const ASSET = /\/chords\/assets\/([\w.-]+\.(?:js|css))/g;
+  const names = new Set([...html.matchAll(ASSET)].map((m) => m[1]));
+  const version = new Map();
+  for (const name of names) {
+    const body = await readFile(new URL("../public/assets/" + name, import.meta.url));
+    version.set(name, createHash("sha1").update(body).digest("hex").slice(0, 8));
+  }
+  /* Replaced in one pass off the same expression that found them, so a name
+     that is the tail of another name cannot be stamped twice. */
+  return html.replace(ASSET, (whole, name) => whole + "?v=" + version.get(name));
+}
 
 const ORIGIN = "https://floa.co.il";
 const BASE = "/chords";
