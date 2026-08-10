@@ -4819,22 +4819,6 @@
     else node.insertBefore(now, node.firstChild);
   }
 
-  /* A picture button that outlives the page it was made for, so what it does
-     is a slot rather than something sealed into it at birth: the print button
-     prints a song on one page and an evening on another, and it is the same
-     button on both. Handed back blank, for whoever asked to fill in. */
-  function actionBtn(name, icon, title) {
-    var b = keep(name, function () {
-      var node = iconBtn(icon, title, function () { if (node._act) node._act(); });
-      node._icon = icon;
-      return node;
-    });
-    reicon(b, icon);
-    retitle(b, title);
-    b._act = null;
-    return b;
-  }
-
   /* WHAT THE BAR HOLDS IS SET BY MOVING THINGS, NOT BY EMPTYING IT. Whatever
      is not wanted comes out, and what is wanted goes to its place; a button
      standing on both the page before and the page after is not touched at
@@ -5135,6 +5119,50 @@
     return node;
   }
 
+  /* --- AND AN EVENING HAS THE SAME PANEL --------------------------------------
+     The two things there are to do to a whole evening stood in the bar as two
+     pictures: a printer and a wastebasket, side by side, the same size and the
+     same grey. Two pictures in the corner is the row nobody reads (see more),
+     and here it was worse than elsewhere, because one of them cannot be taken
+     back and the only thing telling them apart was a shape half a centimetre
+     wide.
+
+     So they go behind the dots, in words, exactly as a song's do (see
+     songRows). The panel is the same panel, the corner is one button wide, and
+     printing is now a press further away, which is right for the thing you do
+     to an evening once, at the end, and nowhere near the thing you must never
+     do by mistake.
+
+     The rows are made at the press and not kept, because both read off what
+     this page is holding at that second: an evening still loading has neither. */
+  function eveningRows() {
+    var rows = [];
+    if (state.printer) {
+      var paper = state.printer;
+      rows.push(button("הדפסה", ICON.print, "ghost small", function () {
+        closeUnder();
+        paper();
+      }));
+    }
+    if (state.killer) {
+      var kill = state.killer;
+      rows.push(button("מחיקת האירוע", ICON.trash, "ghost small", function () {
+        closeUnder();
+        kill();
+      }));
+    }
+    return rows;
+  }
+
+  function eveningMore() {
+    return keep("eveningMore", function () {
+      var node = iconBtn(ICON.dots, "עוד", function () { menuUnder(node, eveningRows()); });
+      node.setAttribute("aria-haspopup", "menu");
+      node.setAttribute("aria-expanded", "false");
+      return node;
+    });
+  }
+
   /* --- THE MARK IN THE CORNER, AND WHAT IT IS ANYWHERE ELSE -----------------
      One button, and it says two different things, because «where does this
      corner go» has two different answers.
@@ -5270,21 +5298,10 @@
         ]);
       }
       /* An evening that is open: the two things there are to do to the whole
-         of it, both as pictures. A word beside a picture that means printing
-         is the picture explained to somebody who already understood it. */
-      var whole = [];
-      if (state.printer) {
-        var evPrint = actionBtn("print", ICON.print, "הדפסה");
-        evPrint._act = state.printer;
-        whole.push(evPrint);
-      }
-      if (state.killer) {
-        var evKill = actionBtn("kill", ICON.trash, "מחיקת האירוע");
-        evKill.classList.add("quiet");
-        evKill._act = state.killer;
-        whole.push(evKill);
-      }
-      return fill(bar, whole);
+         of it, behind one picture, in the panel that says what each of them is
+         (see eveningRows). Only once there is one of them to offer: an evening
+         still loading is this same address and has neither. */
+      return fill(bar, state.printer || state.killer ? [eveningMore()] : []);
     }
 
     /* The two pages about people. Neither has anything to do TO what is on
@@ -12950,6 +12967,15 @@
 
       var box = el("div", "set-main");
       var top = el("div", "t-row");
+      /* THE SAME CARD THE LIBRARY DRAWS, READ DOWN. The name, then whoever made
+         it, then what it is to play, each on its own line and always in that
+         order (see the wall's cards). Beside the name, the two shared the width
+         of a row with each other: a long name and a long name is one line that
+         wraps in the middle of somebody, and on a phone the same evening had
+         some rows saying the name on its own and some saying it with a person
+         hanging off the end of it. Which of the two lines was the song was left
+         to the weight of the letters, and it came out differently on every row. */
+      var said = "";
 
       if (song) {
         /* One tap to the song itself, which is the point of writing the
@@ -12961,16 +12987,16 @@
           go(a.getAttribute("href"));
         });
         top.appendChild(a);
-        var by = creditNames(song);
-        if (by.length) top.appendChild(el("div", "by", by.join(", ")));
+        said = creditNames(song).join(", ");
       } else {
         /* The song was deleted from the library after it was put in the
            evening. Saying which one is gone is the only useful thing left to
            say, and a silently shorter list is the one answer that is worse. */
         top.appendChild(el("span", "set-t", item.title || "שיר"));
-        top.appendChild(el("div", "by", "כבר לא במאגר"));
+        said = "כבר לא במאגר";
       }
       box.appendChild(top);
+      if (said) box.appendChild(el("div", "by", said));
 
       /* Where the capo goes and which shapes come out of it, the same way the
          index says it. On an evening it is worth more than on the index: this
