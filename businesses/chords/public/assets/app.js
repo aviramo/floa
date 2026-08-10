@@ -14078,8 +14078,12 @@
     var node = el("div", "tune");
     node.dir = "ltr";
 
+    /* THERE WAS A HAIRLINE DOWN THE MIDDLE OF THE DIAL, marking the note
+       exactly. The band around it marks the same thing and is the one that
+       matters, because in tune is a band and not a point (see .tune-dial): two
+       marks for one target, the smaller of them unreachable, and a needle
+       resting in the band still had a line beside it saying not quite. */
     var dial = el("div", "tune-dial");
-    dial.appendChild(el("span", "tune-mid"));
     var pin = el("span", "tune-pin");
     dial.appendChild(pin);
 

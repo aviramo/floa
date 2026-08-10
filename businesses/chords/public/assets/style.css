@@ -2783,10 +2783,9 @@ body.on-ear { padding-bottom: 182px; }
 }
 .tune.is-true .tune-dial::before { background: var(--state-soft); }
 .tune.is-quiet .tune-dial::before { background: var(--line); }
-.tune-mid {
-  position: absolute; top: 4px; bottom: 4px; left: 50%;
-  width: 1.5px; margin-left: -.75px; background: var(--ink-soft);
-}
+/* There is no mark down the middle. The band IS the mark, and a second one
+   inside it was a target nobody can hit standing in front of the target
+   everybody can (see buildTune). */
 .tune-pin {
   position: absolute; top: -3px; bottom: -3px; left: 50%; width: 3px; margin-left: -1.5px;
   border-radius: 2px; background: var(--chord); transition: left .06s linear;
