@@ -5618,7 +5618,9 @@
        after the page was drawn and the state moves under it. */
     var out = state.songOut && state.songOut();
     if (out) {
-      var hand = button("פרסום", ICON.people, "ghost small", function () {
+      /* The same globe a recording goes out under (see takeRow). Publishing is
+         one act whatever is being published, so it is one picture: the world. */
+      var hand = button("פרסום", ICON.globe, "ghost small", function () {
         closeUnder();
         out();
       });
