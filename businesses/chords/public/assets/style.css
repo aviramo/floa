@@ -1608,11 +1608,9 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 .key-opt .key-name {
   font-size: 15px; font-weight: 700; direction: ltr; color: var(--chord);
 }
-.key-opt .key-fret { font-size: 12px; color: var(--ink-soft); }
 /* Where you already are. Painted rather than ticked: a mark in a column of its
    own is a column, and this list is two things wide already. */
 .key-opt.is-on { background: var(--chord-soft); }
-.key-opt.is-on .key-fret { color: var(--ink); }
 
 /* --- AND THE EIGHT FRETS ---------------------------------------------------
    ONE COLUMN, TOP TO BOTTOM, and not the four by two pad this was first drawn

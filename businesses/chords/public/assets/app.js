@@ -8632,22 +8632,12 @@
     function keyRow(choice, again) {
       var row = el("button", "key-opt");
       row.type = "button";
-      /* The chord in the size it is worth reading at, and beside it the one
-         other thing the choice costs: where the capo goes. Worked out against
-         what the guitar is sounding NOW rather than read off the choice, which
-         knows only the song's own key: the fret written here is the fret the
-         strip will be showing the moment the row is pressed, and the two are
-         never allowed to say different things. Nought is not a fret and is not
-         written as one. */
-      var fret = capoOf({ page: choice.page, sung: sung });
+      /* THE CHORD, AND NOTHING BESIDE IT. Each row carried where the capo would
+         go if this key were chosen, which is the number in the column standing
+         right next to this one: the panel is two columns because the two are
+         read together, and writing one of them into the other made every row a
+         sentence about a fact already on the screen. The row is the key. */
       row.appendChild(el("span", "key-name", choice.shapes[0]));
-      /* AND NOTHING WHERE THERE IS NO CAPO. "בלי קפו" was written beside every
-         choice that needs none, which on a song played open is every row in the
-         column: a word repeated down a list is a word nobody reads, and what it
-         says is already said by the number nought standing lit in the column
-         beside it. What is worth writing is where the capo goes when there is
-         one. */
-      if (fret) row.appendChild(el("span", "key-fret", "קפו " + fret));
       if (choice.page === semis) {
         row.classList.add("is-on");
         row.setAttribute("aria-current", "true");
