@@ -2982,6 +2982,20 @@
   var PAPER = { w: 190, h: 128 };
   var MM = 96 / 25.4;
 
+  /* AND HOW BIG THE WORDS ARE ON IT, WHICH IS NOT THE SIZE ON THE SCREEN. The
+     reading size answers a question about the reader's own glass: how far their
+     face is from it, how good their eyes are that evening, how much of the song
+     they want to see at once, and it is turned up and down with two fingers all
+     the time (see readingSize). A sheet of paper is none of that. It is one
+     size, always, the size a printed song is set in, and a page that came out
+     of the printer in whatever the last pinch happened to leave behind is a
+     page nobody chose.
+
+     Everything about the sheet follows from it, because everything is measured:
+     how many segments the song stands in, how wide each of them is and how many
+     sheets there are all fall out of the words being this big. */
+  var PAPER_SIZE = 20;
+
   function unpage(sheet) {
     sheet.style.maxWidth = "";
     sheet.style.paddingTop = "";
@@ -3659,6 +3673,13 @@
     var wide = Math.floor(PAPER.w * MM);
     var tall = Math.floor(PAPER.h * MM);
     box.style.width = wide + "px";
+
+    /* THE SIZE THE PAPER IS SET IN, and it is written here rather than carried
+       over with the copy: the sheet on the screen holds the reader's own size
+       on itself (see renderSong), so a clone of it arrives set to whatever the
+       last pinch left. Set BEFORE anything is measured, which is everything
+       below: what is being worked out is how this song stands at this size. */
+    copy.style.setProperty("--song-size", PAPER_SIZE + "px");
 
     /* THE NAME AND WHO WROTE IT STAND OVER THE FIRST SHEET, and the room they
        take is room the song has not got there. Off the first sheet alone and
