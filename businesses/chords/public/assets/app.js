@@ -14623,6 +14623,26 @@
         }
       }
 
+      /* AND THE WHOLE OF IT IS THE WAY IN, not the four words at the top of
+         it. The name was the only thing on the row that opened the song, and
+         everything under it, the people, the shapes and the air they stand in,
+         was a press that did nothing, on a list whose entire purpose is to be
+         opened song by song. On a phone that is most of the row, and the part
+         of it a thumb lands on.
+
+         The name stays an anchor, because a way to a page has to be one: it can
+         be opened in a tab of its own, it can be reached by a keyboard, and it
+         says where it goes. What is added is the rest of the card behind it,
+         and the press that is already on something is left alone, so a press
+         on the name is not answered twice. */
+      if (song) {
+        box.classList.add("is-way");
+        box.addEventListener("click", function (event) {
+          if (event.target.closest("a, button")) return;
+          go(addr(song.slug));
+        });
+      }
+
       li.appendChild(box);
 
       /* AND THE RECORDINGS OF IT, on the same button every other song card
@@ -17952,6 +17972,15 @@
     if (!takesSheet) return;
     var box = takesSheet;
     takesSheet = null;
+    /* AND THE RECORDING STOPS WITH IT. The player is on a row of this sheet, so
+       a sheet on its way down takes the one control there is to stop the sound
+       with: what is left otherwise is a voice singing over a page with nothing
+       on it to say where it is coming from, and a band lit across a line that
+       is no longer being played from. Putting the sheet away IS the stop
+       button, because it is the only one still in reach.
+       shutTake pauses it, takes the player off the row and puts the mark out
+       (see showAt(-1) in there). */
+    shutTake();
     box.classList.remove("is-open");
     document.removeEventListener("pointerdown", takesOutside, true);
     document.removeEventListener("keydown", takesEscape, true);

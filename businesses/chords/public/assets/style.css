@@ -265,6 +265,16 @@ body.on-air .top {
    Written above the quiet ones further down the file, which have to stay the
    later rule so that they still turn red under the hand. */
 .top-actions > .icon-btn { color: var(--ink); }
+/* AND THEY ARE ALL THE SAME WHITE. The bar is not white, it is the page's own
+   grey with the page moving under it, and a button drawn on it in transparent
+   is not a button standing on the bar: it is a hole in the bar with a line
+   round it. Which is what a ghost is EVERYWHERE ELSE, and rightly, because
+   elsewhere it stands on white and the transparency is what keeps it quiet.
+
+   Up here the row is read as a row: the tuner beside the dots beside the
+   glass. Two of them white and one of them grey is one control saying it is a
+   different kind of thing from the two next to it, and it is not. */
+.top-actions .btn.ghost { background: var(--card); }
 
 /* --- WHAT PAGE THIS IS ----------------------------------------------------
    The app's name used to stand here beside its own mark, which is one word
@@ -547,19 +557,24 @@ body.on-air .top {
      it. That is also the whole of what a rule about a hidden glass used to
      do here: the corner belongs to the actions either way now, so a page that
      has no glass (see paintHeader) needs nothing said about it. */
+     AND IT IS THE WHITE THE OTHERS ARE. It was drawn transparent here, which
+     on a bar that is not white is a hole with a line round it standing beside
+     two solid buttons (see .top-actions .btn.ghost, which had the same
+     trouble). A row of pictures is one row or it is not. */
   .top-find { flex: none; width: 36px; order: 1; }
   .top-find .find {
     height: 36px; padding: 0; gap: 0; cursor: pointer; justify-content: center;
-    background: transparent; color: var(--ink);
+    color: var(--ink);
   }
   .top-find .find > svg { width: 18px; height: 18px; color: inherit; }
   .top-find input[type="search"] { width: 0; flex: 0 0 0; }
 
-  /* open, it is a field again: the room, the white and the space around what
-     is in it all come back */
+  /* open, it is a field again: the room and the space around what is in it
+     come back. The white is not mentioned here any more, because it never
+     went: closed it is a button and a button on this bar is white. */
   body.finding .top-find { flex: 1 1 auto; width: auto; }
   body.finding .top-find .find {
-    padding: 0 12px; gap: 9px; justify-content: flex-start; background: var(--card);
+    padding: 0 12px; gap: 9px; justify-content: flex-start;
   }
   body.finding .top-find input[type="search"] { width: auto; flex: 1 1 auto; }
   /* The facts go with the name, because they are the name's second half: what
@@ -1244,6 +1259,11 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .set-main .t-row + .by { margin-top: 2px; }
 .set-t { font-weight: 700; font-size: 17px; color: inherit; text-decoration: none; }
 a.set-t:hover { color: var(--accent); text-decoration: underline; }
+/* The whole card opens the song, not the name on it (see setRow), so the whole
+   card says so: the hand over any part of it, and the name lighting up as if
+   the pointer were on it, because that is where the press is going. */
+.set-main.is-way { cursor: pointer; }
+.set-main.is-way:hover .set-t { color: var(--accent); }
 
 /* Always there, unlike the song editor's grip, which appears under the
    pointer. A row of an evening is a whole row wide and gets dragged on a
@@ -3442,11 +3462,23 @@ body.on-ear.ear-small { padding-bottom: 78px; }
    and words together, is what makes it read as one line of a song; colouring
    the letters instead would be a second kind of ink on a page that already
    uses ink to mean chord. It bleeds a little past the words on both sides so
-   that it is a band and not a box drawn tight around a sentence. */
+   that it is a band and not a box drawn tight around a sentence.
+
+   AND THE SAME AIR ABOVE THE CHORDS AS BELOW THE WORDS. A pixel either side of
+   the row is a pixel either side of the BOX, and the box is not the ink: the
+   words carry their own half leading and a descender's worth of room under
+   them, and the chord is set at line-height 1 and starts almost at the top
+   edge. So the same number top and bottom drew a band that sat on the chords
+   and floated under the words, which reads as a band that has slipped.
+
+   Measured, at a reading size and in the fonts this page actually uses: about
+   two and a half pixels of air over the chord against about seven under the
+   letters, at eighteen. The difference is a third of a size, and it is spent
+   here, upwards, into room the line above was not using. */
 .ln.is-here::before {
   content: "";
   position: absolute;
-  inset: -1px -10px;
+  inset: calc(var(--song-size) * -.32) -10px -1px;
   background: var(--chord-soft);
   border-radius: 9px;
   pointer-events: none;
