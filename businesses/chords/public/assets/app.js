@@ -3920,17 +3920,13 @@
        it leaves the row reading as the two things it is. What to do to the
        song, and what to do to the page.
 
-       THE WAY IN AND OUT OF THE EDITOR COMES DOWN WITH THEM. It is the one of
-       these the BAR makes rather than the page, and this is the width it has
-       to be placed at by hand: a pencil while reading and a tick while
-       writing, in the same place both times, so pressing it does not move it.
-       On a desk the bar holds it itself, in the row with the rest (see
-       paintHeader), which is where it stands on a song of somebody else's: a
-       page that opens reading on any screen, because what is typed into it is
-       an offer and not the song. */
+       THE WAY IN AND OUT OF THE EDITOR DOES NOT COME DOWN WITH THEM. It used
+       to, and it was the one thing in the app that stood in a different corner
+       of the screen depending on the width of the window. It is in the bar on
+       every screen now (see paintHeader), which is also the corner every other
+       thing done to the PAGE is in. */
     if (made.acts && NARROW.matches) {
       home.insertBefore(made.acts, home.firstChild);
-      if (state.editToggle && kept.edit) made.acts.appendChild(kept.edit);
     }
 
     made.strip.hidden = !NARROW.matches;
@@ -4445,7 +4441,7 @@
 
     var box = anchor.getBoundingClientRect();
     var width = underMenu.offsetWidth;
-    underMenu.style.top = (box.bottom + 6) + "px";
+    underMenu.style.top = (box.bottom + 8) + "px";
     underMenu.style.left = Math.min(Math.max(6, box.right - width), window.innerWidth - width - 6) + "px";
     anchor.setAttribute("aria-expanded", "true");
 
@@ -4630,7 +4626,72 @@
     });
   }
 
+  /* --- THE MARK IN THE CORNER, AND WHAT IT IS ANYWHERE ELSE -----------------
+     One button, and it says two different things, because «where does this
+     corner go» has two different answers.
+
+     On the library there is nothing above the page, so the mark is the mark:
+     it names the app and it opens the app. On every other page there IS
+     something above it, and it is whatever the reader came from, which is
+     hardly ever the library: a song opened from an evening, a version opened
+     from a song, a person opened from a song's credits. A mark that always
+     went to the list threw that away every time, and the only control on the
+     screen that did not was the browser's own arrow, which on a phone is at
+     the far end of the window from the thumb.
+
+     So off the library it is an arrow and it goes back. Not two buttons: a
+     bar carrying a way home AND a way back makes the reader pick between two
+     words for one corner, and the way home is one press further either way. */
+  var theMark = null;
+
+  function paintBrand() {
+    var brand = document.querySelector(".brand");
+    /* The test harness builds its own page around this file and has no bar. */
+    if (!brand) return;
+    /* The app's own mark, as it was written in the shell: taken once, because
+       from the second page on it is not in the button any more. */
+    if (theMark === null) {
+      theMark = brand.innerHTML;
+      brand.addEventListener("click", function (event) {
+        /* A press that asks for a tab of its own is asking for the app, and
+           the app is the address on the anchor. Only the plain one means
+           back. */
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.button) return;
+        if (!parts().length) return;
+        event.preventDefault();
+        goBack();
+      });
+    }
+
+    var deep = parts().length > 0;
+    if (brand._deep === deep) return;
+    brand._deep = deep;
+    brand.innerHTML = deep ? "" : theMark;
+    if (deep) brand.appendChild(svg(ICON.back));
+    var said = deep ? "חזרה" : "אקורדים";
+    brand.title = said;
+    brand.setAttribute("aria-label", said);
+  }
+
+  /* BACK THROUGH THE APP, AND NOT OUT OF IT. An entry the app pushed has the
+     page it was pushed from underneath it, so the browser's own step is the
+     right one: it lands where the reader was, at the height they were at, off
+     the sheet that is still standing there (see popstate).
+
+     The entry the tab was OPENED on has nothing of ours underneath. A song
+     arriving from a search result or from a message is the floor of this
+     app's stack, and stepping off the floor leaves for somewhere that is not
+     this app at all. From there, back means the library. */
+  function goBack() {
+    if (history.state && history.state.floor) return go(addr());
+    history.back();
+  }
+
   function paintHeader() {
+    /* The corner belongs to the page and not to the bar's buttons, so it is
+       painted here whatever else this page turns out to hold. */
+    paintBrand();
+
     var bar = document.getElementById("topActions");
     /* The test harness builds its own page around this file and has no bar. */
     if (!bar) return;
@@ -4699,13 +4760,16 @@
           edit.on ? "סיום עריכה" : "עריכה");
         editBtn.classList.toggle("is-on", !!edit.on);
         editBtn._act = edit.flip;
-        /* IT BELONGS WITH THE REST OF WHAT IS DONE TO THE SONG, which on a
-           phone is the row under this one (see placeControls), and this button
-           is only ever on a phone. Named here only while the page has not
-           handed that group over yet, which is the moment between the bar being
-           painted and the song being drawn. */
-        var down = NARROW.matches && state.songControls && state.songControls.acts;
-        if (!down) mine.push(editBtn);
+        /* IN THE BAR ON EVERY WIDTH, beside the printer. It came down to the
+           strip on a phone for a while, on the reasoning that it is a thing
+           done to the song like the wastebasket beside it; what that actually
+           did was move the way into the editor to a different corner of the
+           screen depending on how wide the window is, and put it in the row
+           that fills up with dials and a microphone while a song is being
+           played. It is the most pressed button on the page. It stands in the
+           same place on every screen, in the corner the page's own buttons are
+           in, which is where a hand goes looking for it. */
+        mine.push(editBtn);
       }
       if (state.printable) {
         var printBtn = actionBtn("print", ICON.print, "הדפסה");
@@ -14125,7 +14189,7 @@
        offered is the one thing that was missing, which is an answer. */
     if (!taping() && heldHere()) {
       var back = iconBtn(ICON.stop, "לסיים את ההקלטה שנשארה פתוחה", askHeld);
-      back.classList.add("is-stop");
+      back.classList.add("is-rec");
       tapeBar.appendChild(back);
       return;
     }
@@ -14156,28 +14220,20 @@
        No stop beside it. Finishing is a decision, and a decision does not
        belong under a thumb that is holding a plectrum: pausing is the cheap
        gesture and stopping is behind it. */
-    if (!tapeHeld()) {
-      var hold = iconBtn(ICON.pause, "השהיה", holdTape);
-      hold.classList.add("is-rec", "is-taping");
-      tapeBar.appendChild(hold);
-      return;
-    }
+    /* --- RUNNING: ONE BUTTON, AND IT ASKS -------------------------------------
+       It holds the recording and puts the question up in the same press, which
+       is what pausing a take is actually for: somebody stops playing in order
+       to decide, and every one of them was then reaching for a second button
+       to say so. There is no held state left on the screen, so there is
+       nothing to draw for it, and closing the question carries on.
 
-    /* --- HELD: CARRY ON, OR FINISH --------------------------------------------
-       The two things there are to do to a paused recording, and carrying on is
-       the same filled circle that started it, in the same place. */
-    var on = iconBtn(ICON.dot, "להמשיך להקליט", holdTape);
-    on.classList.add("is-rec");
-    tapeBar.appendChild(on);
-    /* AND FINISHING IS FILLED TOO, in the other colour. These are the two
-       things there are to do to a held recording and they are equals: one
-       carries on and one is done, and drawing the second as a quiet grey
-       square would make it the afterthought it is not. Green because that is
-       what finished means everywhere else here, and because the eye needs to
-       tell them apart at arm's length without reading either. */
-    var end = iconBtn(ICON.stop, "סיום ההקלטה", stopTape);
-    end.classList.add("is-stop");
-    tapeBar.appendChild(end);
+       AND IT IS THE THING THAT SAYS THE RECORDING IS RUNNING, so it is red and
+       it breathes. A red mark that does not move reads as a decoration; one
+       that pulses reads as live, which is the difference between "there is a
+       recording here" and "it is going". */
+    var hold = iconBtn(ICON.pause, "השהיה", stopTape);
+    hold.classList.add("is-rec", "is-taping");
+    tapeBar.appendChild(hold);
   }
 
   function showLead() {
@@ -14777,10 +14833,17 @@
          mark comes off, and the button looks exactly as it did before any of
          this was pressed.
 
-         DISMISSED, AND NOTHING HAPPENS AT ALL. The recording is still running,
-         held where it was left, and the two buttons over the song are still
-         carry on and finish. */
+         DISMISSED, AND THE RECORDING CARRIES ON. Closing the question without
+         answering it is not "leave it paused", it is "not yet": whoever put it
+         up did so to decide, and deciding not to decide means they are still
+         playing. So the pause that opened it is lifted and the take is running
+         again, exactly where it was.
+
+         Only while the microphone is still there. Closing the ear puts this up
+         too (see shutEar), and answering that by walking away is walking away
+         from both. */
       if (done) shutEar();
+      else if (earOpen() && tapeHeld()) holdTape();
       else paintTape();
     });
     dlg.showModal();

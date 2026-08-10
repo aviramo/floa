@@ -589,13 +589,14 @@ try {
       check("and it is the second string that lit", note.peg === 1, String(note.peg));
       check("the mark on the song went with the tab that made it", note.marked === 0, String(note.marked));
 
-      /* --- AND THE THREE STATES OF A RECORDING -------------------------------
+      /* --- AND THE TWO STATES OF A RECORDING ---------------------------------
          Back to the chords, where the take started at the door and has been
          running through all of the above.
 
          NOT STARTED, one button, and it records. RUNNING, one button, and it
-         holds: finishing is a decision and a decision does not belong under a
-         thumb that is holding a plectrum. HELD, two: carry on, or finish. */
+         holds the take and asks what to do with it in the same press: that is
+         what pausing is for. There is no third state on the screen, because
+         closing the question carries on. */
       await evaluate('JSON.stringify((window.__sound = "chord", [...document.querySelectorAll(".ear-tab")][1].click(), true))');
       await until(evaluate, 'document.querySelector(".tape-bar .icon-btn")');
       await sleep(400);
@@ -605,55 +606,36 @@ try {
         running.keys === 1 && running.taping === true,
         JSON.stringify({ keys: running.keys, taping: running.taping }));
 
-      await evaluate('JSON.stringify((document.querySelector(".tape-bar .icon-btn").click(), true))');
-      await sleep(400);
-      const held = await evaluate(CHORD_READ);
-      check("held: carry on, and finish",
-        held.keys === 2 && held.taping === false && held.rec,
-        JSON.stringify({ keys: held.keys, taping: held.taping, rec: held.rec }));
-
-      await evaluate('JSON.stringify((document.querySelector(".tape-bar .icon-btn").click(), true))');
-      await sleep(400);
-      const carried = await evaluate(CHORD_READ);
-      check("and carrying on goes back to one button",
-        carried.keys === 1 && carried.taping === true,
-        JSON.stringify({ keys: carried.keys, taping: carried.taping }));
-
-      /* --- AND FINISHING OFFERS IT RATHER THAN SAVING IT ---------------------
+      /* --- PAUSING IS ASKING -------------------------------------------------
          A take is a person singing, most of them are not worth keeping, and a
          library that fills up with every attempt is a library nobody opens. So
-         what stopping does is hand it back to be heard. Behind the pause,
-         because that is where a decision belongs. */
+         what the pause does is hand it back to be heard. */
       await evaluate('JSON.stringify((document.querySelector(".tape-bar .icon-btn").click(), true))');
-      await sleep(400);
-      await evaluate('JSON.stringify(([...document.querySelectorAll(".tape-bar .icon-btn")][1].click(), true))');
       const offered = await until(evaluate, 'document.querySelector("dialog[open] .take-play")');
-      check("stopping the recording offers it to listen to", offered, "no panel came up");
+      check("pausing offers the take to listen to", offered, "no panel came up");
       const asked = await evaluate(`JSON.stringify({
         answers: [...document.querySelectorAll("dialog[open] .dlg-actions .btn")].map((b) => b.textContent),
       })`);
       /* Saving needs an account and this harness has none, so what is offered
          here is the one answer that does not: throwing it away. What matters
-         either way is that WALKING AWAY IS NOT A BUTTON. The question is what
-         to do with the take, "neither" is not an answer to it, and the dark
-         behind the panel is how somebody leaves without giving one. */
+         either way is that WALKING AWAY IS NOT A BUTTON. */
       check("nothing on offer is a way of not answering",
         asked.answers.length >= 1 && !asked.answers.some((w) => /סגירה|ביטול/.test(w)),
         JSON.stringify(asked.answers));
 
-      /* --- AND WALKING AWAY LEAVES IT EXACTLY WHERE IT WAS -------------------
-         A panel that ends the take the moment it appears is a panel nobody can
-         back out of: a stray press and a performance is over. Dismissed, the
-         recording is still there, still held, and finishing asks again. */
+      /* --- AND CLOSING IT CARRIES ON ----------------------------------------
+         Not "leave it paused": whoever put the question up did so in order to
+         decide, and deciding not to decide means they are still playing. */
       await evaluate('JSON.stringify((document.querySelector("dialog[open]").close(), true))');
-      await sleep(400);
-      const left = await evaluate(CHORD_READ);
-      check("dismissing the offer leaves the take held rather than ending it",
-        left.keys === 2 && left.open && !left.taping,
-        JSON.stringify({ keys: left.keys, open: left.open, taping: left.taping }));
-      await evaluate('JSON.stringify(([...document.querySelectorAll(".tape-bar .icon-btn")][1].click(), true))');
-      const asked2 = await until(evaluate, 'document.querySelector("dialog[open] .take-play")');
-      check("and finishing again asks the same question", asked2, "no panel the second time");
+      await sleep(600);
+      const back = await evaluate(CHORD_READ);
+      check("closing the question carries the recording on",
+        back.keys === 1 && back.taping === true && !back.open === false,
+        JSON.stringify({ keys: back.keys, taping: back.taping }));
+
+      /* And answering it is what ends it. */
+      await evaluate('JSON.stringify((document.querySelector(".tape-bar .icon-btn").click(), true))');
+      await until(evaluate, 'document.querySelector("dialog[open] .take-play")');
 
       /* --- AND ANSWERING IT PUTS EVERYTHING BACK -----------------------------
          Keeping the take and throwing it away are both the end of it, and what

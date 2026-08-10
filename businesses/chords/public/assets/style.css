@@ -2409,12 +2409,16 @@ body.on-song .top { border-bottom: 0; }
    two words and a choice, not a dialog. */
 .print-menu {
   position: fixed; z-index: 60;
-  display: flex; flex-direction: column; align-items: stretch; gap: 2px;
-  padding: 4px;
+  display: flex; flex-direction: column; align-items: stretch; gap: 6px;
+  padding: 8px;
   background: #fff; border: 1px solid var(--line); border-radius: var(--corner);
   box-shadow: 0 6px 20px rgba(23, 32, 42, .16);
 }
-.print-menu .btn { justify-content: flex-start; }
+/* A row is read down a list before it is pressed, and the small button that
+   fits in a crowded bar is too tight for that: the rows touch each other and
+   the whole panel reads as one block of text rather than as a few choices. So
+   the rows keep the small type and take back the ordinary button's height. */
+.print-menu .btn { justify-content: flex-start; padding: 9px 14px; }
 /* A row that is a door to something already open says so, the same way the
    picture of it did when it stood in the bar (see .icon-btn.is-on). */
 .print-menu .btn.is-on { color: #fff; background: var(--accent); border-color: var(--accent); }
@@ -2831,51 +2835,6 @@ body.on-ear.ear-small { padding-bottom: 92px; }
    is a recording here" and "it is going". Nothing else on the page has to say
    so, and nothing else does. */
 .tape-bar .icon-btn.is-rec.is-taping { animation: on-air 1.6s ease-in-out infinite; }
-
-/* --- AND FINISHING, WHICH IS ITS EQUAL -------------------------------------
-   The two things there are to do to a held recording: one carries on and one
-   is done. They are equals, so they are drawn as equals, and a quiet grey
-   square beside a filled circle would make the second the afterthought it is
-   not.
-
-   Green because that is what finished means everywhere else here, and because
-   two filled buttons of the same colour side by side are one button as far as
-   a hand at arm's length is concerned. */
-.tape-bar .icon-btn.is-stop {
-  width: 34px; height: 34px; border-radius: 999px;
-  color: #fff; background: var(--accent); border-color: var(--accent);
-  box-shadow: 0 1px 4px rgba(14, 140, 126, .3);
-}
-.tape-bar .icon-btn.is-stop svg { width: 13px; height: 13px; }
-.tape-bar .icon-btn.is-stop:hover {
-  color: #fff; background: var(--accent-ink); border-color: var(--accent-ink);
-  box-shadow: 0 2px 7px rgba(14, 140, 126, .42);
-}
-@keyframes on-air {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(225, 29, 99, .55); }
-  50% { box-shadow: 0 0 0 5px rgba(225, 29, 99, 0); }
-}
-/* Held is red and still, because a pause is exactly "recording, not moving". */
-@media (prefers-reduced-motion: reduce) { .tools .ear-door.is-taping { animation: none; } }
-
-/* The two or three things done to a recording, beside the microphone rather
-   than at the foot of the page: these are pressed while playing, at arm's
-   length, and the band along the bottom was covering the song to hold them. */
-.tape-bar { display: inline-flex; align-items: center; gap: 4px; }
-.tape-bar .icon-btn { width: 30px; height: 30px; }
-.tape-bar .icon-btn svg { width: 15px; height: 15px; }
-
-/* --- THE ONE THING HERE THAT STARTS SOMETHING ------------------------------
-   Everything else in this strip is a setting: a picture on a white square,
-   quiet on purpose, because a setting is read far more often than it is
-   pressed. This one is the reason the microphone was switched on at all, and
-   a button that has to be found among four identical grey squares is a button
-   nobody finds.
-
-   So it is filled, in the ink the chords are already in, and it is round,
-   because a record button has been a round red dot on every machine that ever
-   recorded anything and there is nothing to be gained by being the one that
-   is not. */
 
 /* ==========================================================================
    THE TAKES OF A SONG.
