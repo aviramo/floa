@@ -445,6 +445,19 @@ body.on-air .top {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .find-tags { flex: none; display: flex; gap: 4px; }
+/* AND WHERE A ROW IS NOT A WAY ANYWHERE, WHAT PRESSING IT DOES. On an evening
+   the panel is the library being picked out of (see state.pick), so the end of
+   the row carries the one press there is to make rather than a label saying
+   what kind of thing this is: it is a song, they all are.
+
+   A word and not a plus: what the press does is not the same both ways, and
+   the row is where somebody finds out which way it is facing. */
+.find-mark { flex: none; font-size: 13px; font-weight: 700; color: var(--accent); }
+/* already in the evening: the row says so, and the press takes it out */
+.find-row.is-in { background: #eef5f4; }
+.find-row.is-in:hover, .find-row.is-in.is-on { background: #e4efed; }
+.find-row.is-in .find-mark { color: var(--ink-soft); }
+.find-row.is-in:hover .find-mark, .find-row.is-in.is-on .find-mark { color: var(--danger); }
 .find-none { padding: 14px 12px; color: var(--ink-soft); font-size: 14px; }
 .find-more { padding: 8px 12px 6px; color: var(--ink-soft); font-size: 12px; }
 
@@ -665,27 +678,16 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 
 /* No heading over the list. The page is the list, it says so in the top bar,
    and a title that repeats that only pushed the songs down the screen. */
-/* WHAT IS LEFT OF THIS. It was the library's own box, with the state chips
-   riding inside it. Searching moved into the bar, where it reaches the
-   people and the evenings as well and is on every page rather than on one,
-   and the chips moved down onto the row over the wall, where they are
-   filtering and nothing else.
+/* AND THERE WAS A .search HERE, and now there is no box on a page at all. It
+   was the library's own, with the state chips riding inside it; searching
+   moved into the bar, where it reaches the people and the evenings as well and
+   stands on every page rather than on one, and the chips moved down onto the
+   row over the wall, where they are filtering and nothing else.
 
-   The shape survives for the one box that is not searching anything: the
-   shelf inside an evening, which picks songs to put in it. */
-.search {
-  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
-  margin: 28px 0 18px; padding: 5px 14px; min-height: 46px;
-  background: #fff; border: 1px solid var(--line); border-radius: var(--corner);
-}
-.search:focus-within { border-color: var(--accent); }
-.search svg { flex: none; width: 18px; height: 18px; color: var(--ink-soft); }
-.search input {
-  flex: 1 1 120px; min-width: 0; width: auto;
-  padding: 4px 0; height: auto;
-  background: none; border: 0; border-radius: 0;
-}
-.search input:focus-visible { outline: none; }
+   The shape outlived it by one box, the shelf at the foot of an evening, and
+   that box is the bar's now too (see state.pick). Which is the whole point of
+   there being one: a person types the name of a song into the same field
+   wherever in this app they happen to be standing. */
 
 /* How much of the library is waiting for something, in four numbers. Quiet and
    small: they are the state of the shelf, not the shelf. Pressable, because a
@@ -1262,38 +1264,15 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 .set-grip.is-held { cursor: grabbing; color: var(--accent); }
 .set-grip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--corner); }
 
-/* --- the library, to add from ---
-   One list, one click, both ways: a song is in the evening or it is not, and
-   the same row says which and changes it. */
-.pool { padding: 16px 18px 18px; margin-bottom: 64px; }
-.pool h2 { margin: 0; font-size: 17px; }
-.pool p { margin: 4px 0 0; font-size: 14px; }
-.pool .search { margin: 12px 0 10px; }
-.pool .search input { height: 40px; }
+/* THERE WAS A .pool HERE: the library, as a panel nailed to the foot of every
+   evening. A heading, a sentence explaining itself, a second search field and
+   the whole shelf under it, open on a page of three songs whether or not
+   anybody was adding one, and the evening above it pushed up the screen by it.
 
-/* Tall enough to choose from, short enough that the evening above it stays on
-   the screen while you do. */
-.pool-list {
-  list-style: none; margin: 0; padding: 0;
-  max-height: 46vh; overflow-y: auto;
-  border-top: 1px solid var(--line);
-}
-.pool-row {
-  appearance: none; width: 100%; text-align: start; cursor: pointer;
-  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
-  background: none; border: 0; border-bottom: 1px solid var(--line);
-  padding: 10px 4px; font: inherit; color: var(--ink);
-}
-.pool-row:hover { background: #f2f7f6; }
-.pool-row .grow { margin-inline-start: auto; }
-.pool-row .by { color: var(--ink-soft); font-size: 14px; }
-.pool-t { font-weight: 600; }
-.pool-mark { font-size: 13px; font-weight: 700; color: var(--accent); }
-/* already in the evening: the row says so and the click takes it out */
-.pool-row.is-in { background: #eef5f4; }
-.pool-row.is-in .pool-mark { color: var(--ink-soft); }
-.pool-row.is-in:hover .pool-mark { color: var(--danger); }
-.pool-none { padding: 14px 4px; color: var(--ink-soft); font-size: 14px; }
+   It is the box in the bar now, which is the field this app already searches
+   songs in and which costs the page nothing while it is shut (see state.pick).
+   What is left of the panel is two lines further up this file: a mark on the
+   end of a result saying whether that song is already in the evening. */
 
 /* --- song page ---------------------------------------------------------- */
 
@@ -3053,7 +3032,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   .ear, .takes { display: none !important; }
   /* and the band under the line goes with them: paper has no follower on it */
   .ln.is-here::before { display: none !important; }
-  .chord.is-heard, .chord.is-at {
+  .chord.is-heard {
     color: inherit !important; background: none !important; box-shadow: none !important;
     /* and it comes back down: the lift is room for a halo, and there is no
        halo on paper */
@@ -3110,10 +3089,11 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   body { background: #fff; }
 
   /* An evening on paper is the name, the date and the songs in order. The
-     library it was built from, the grips that reordered it and the buttons
-     that emptied it are all tools, and a tool on a printed page is ink spent
-     on something nobody can press. */
-  .pool, .ev-meta, .hint, .set-grip, .set-row button { display: none !important; }
+     grips that reordered it and the buttons that emptied it are tools, and a
+     tool on a printed page is ink spent on something nobody can press. The
+     library it was built from is not here to be hidden any more: it is the box
+     in the bar, and the bar does not print (see state.pick). */
+  .ev-meta, .hint, .set-grip, .set-row button { display: none !important; }
   .on-paper { display: block; }
   /* and one of them is left out when there is nothing to say (see sayWho): the
      class turns these on for the printer, so it has to be told when not to */
@@ -3427,29 +3407,27 @@ body.on-ear.ear-small { padding-bottom: 78px; }
    the previous line was leaving empty anyway, and the chord goes on naming the
    letter it was naming. Lifted and not padded: padding is in the box and the
    placing measures the box, so a padded chord would move sideways too. */
-.chord.is-heard, .chord.is-at { transform: translateY(-3px); }
+/* The lift belongs to the mark that is drawn, and `is-at` is not drawn any
+   more (see below): lifting a chord that looks exactly like every other chord
+   is a letter that moves for no reason anybody can see. */
+.chord.is-heard { transform: translateY(-3px); }
 .chord.is-heard {
   background: var(--chord-soft);
   box-shadow: 0 0 0 3px var(--chord-soft);
   border-radius: 3px;
 }
 
-/* --- AND WHERE WE ARE, WHICH IS ONE CHORD AND NOT A NAME -------------------
-   The mark above lights every chord of the same name at once, because that is
-   all a sound can say. This one lights ONE, because the follower knows which
-   time round it is (see follow.js), and the difference between the two marks
-   is the difference between hearing a song and following one.
+/* --- AND WHERE WE ARE, WHICH IS DRAWN ON THE LINE AND NOT ON THE CHORD -----
+   `.chord.is-at` HAS NO PICTURE, on purpose. It was a filled chord, in the ink
+   the chords are already in, and it was the thing being looked for: a mark on
+   one chord is exact and it is a few millimetres across, on a page held at
+   arm's length by somebody whose hands are on a guitar. Two marks a bar, each
+   of which has to be FOUND, is the work the following was supposed to save.
 
-   So it is drawn as a different thing and not as a stronger version of the
-   same one: filled rather than tinted, in the ink the chords are already in.
-   No padding, for the reason above: a chord label's box is exactly its glyphs
-   and the placing measures that box. */
-.chord.is-at {
-  color: #fff;
-  background: var(--chord);
-  box-shadow: 0 0 0 3px var(--chord);
-  border-radius: 3px;
-}
+   So the answer stays on the chord in the page, because that is where the
+   follower's answer belongs and everything downstream reads it there, and what
+   is DRAWN is the band across its line below. One answer, one picture, and the
+   picture is the size of the thing being read. */
 /* It moves several times a bar, so it arrives rather than appears: a mark that
    blinks from place to place at that rate reads as flicker, and the eye finds
    a thing that faded in where a thing that snapped in has to be searched for. */

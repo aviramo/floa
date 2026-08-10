@@ -4381,7 +4381,7 @@
      `songs` is not one of them: it is the library itself, one copy for
      everybody, and every sheet showing it is showing the same songs. */
   var PAGE_STATE = ["printable", "printer", "killer", "editToggle",
-    "songControls", "redrawSong", "rehome", "doors", "wake", "sift", "ear",
+    "songControls", "redrawSong", "rehome", "doors", "wake", "sift", "pick", "ear",
     "takeSong", "redrawTakes", "takesOpen", "takesCount",
     "songMoves", "songDetails", "songOut", "songPast", "songKill",
     "songUndo", "songRevert", "up"];
@@ -5923,8 +5923,23 @@
        gives way for it. The library is one press away on every one of those
        pages, in the corner, which is where somebody who wants to look for
        another song is going anyway. */
+    /* EXCEPT WHERE THE BOX IS HOW SOMETHING GETS PICKED. An evening is built
+       out of the library, so the library has to be reachable from inside it,
+       and it was reachable as a panel nailed to the foot of the page: a search
+       field and every song under it, standing open under an evening of three
+       songs whether or not anybody was adding one. The box in the bar is the
+       same field, already there, already known, and it costs the page nothing
+       while it is shut (see state.pick in renderEvening). */
     var glass = document.getElementById("topFind");
-    if (glass) glass.hidden = p.length > 0;
+    if (glass) glass.hidden = p.length > 0 && !state.pick;
+    /* And it says which of the two it is. One word either way, because the box
+       is not the thing to explain, but they are not the same word: everywhere
+       else typing here leads somewhere, and on an evening it puts a song in. */
+    if (findField) {
+      findField.placeholder = state.pick ? "הוספת שיר..." : "חיפוש...";
+      findField.setAttribute("aria-label",
+        state.pick ? "חיפוש שיר להוספה לאירוע" : "חיפוש שיר, יוצר או אירוע");
+    }
 
     /* The evenings are a list like the library is a list, so their page gets
        the same two buttons the library's does: the one that adds to it, and
@@ -6757,6 +6772,21 @@
     findField.addEventListener("focus", function () {
       openFind();
       if (state.sift) return;
+      /* --- AND WHERE IT PICKS, IT OPENS ON THE WHOLE SHELF --------------------
+         Everywhere else an empty box is an empty question and there is nothing
+         to answer it with. On an evening the question is "which song", the
+         answer is the library, and it is a list somebody browses as often as
+         they search it: the name is on the tip of the tongue about as often as
+         it is in the hand. So the press opens the shelf, and typing shortens
+         it.
+
+         Only while it is shut: a song put in from halfway down the list leaves
+         the panel open and the field focused, and asking again on the way back
+         into it would send the list to the top under the finger. */
+      if (state.pick) {
+        if (findOut.hidden) askFind();
+        return;
+      }
       if (findField.value.trim()) askFind();
     });
     findField.addEventListener("keydown", onFindKey);
@@ -6815,6 +6845,11 @@
   function askFind() {
     if (!findField) return;
     var q = findField.value.trim();
+    /* The page that is picking answers out of what it is already holding: the
+       evening read the library to draw itself, and reading it a second time to
+       say which of it is in the list would be the same request twice. Nothing
+       is in the air, so nothing has to be waited for or beaten to the panel. */
+    if (state.pick) return paintPick(q);
     if (!q) return shutFind();
 
     var mine = ++findAsked;
@@ -6862,6 +6897,71 @@
        nothing about it is a list claiming to be all of them. */
     var over = found.length - findRows.length;
     if (over > 0) findOut.appendChild(el("div", "find-more", "ועוד " + over + ", אפשר להקליד עוד אות"));
+  }
+
+  /* --- AND THE SAME PANEL, WHERE A RESULT IS NOT A WAY ANYWHERE --------------
+     Every row above opens a page and the box shuts behind it. Here a row is a
+     song going into the evening under the box, the page it would open is not
+     where anybody is going, and an evening is usually built several songs at a
+     time. So the panel stays, the row says what it now is, and the next song
+     is the next press.
+
+     Not cut at eighteen either. Up there a cut list is a list of ways to a
+     page and one more letter finds the way; this is a shelf being looked
+     along, and a shelf that stops halfway is missing songs. It scrolls, which
+     is what a shelf does. */
+  function paintPick(q) {
+    var found = state.pick(q) || [];
+    /* Rebuilt where it was, so a list browsed halfway down does not jump back
+       to the top the moment something is taken off it. */
+    var was = findOut.scrollTop;
+    findOut.textContent = "";
+    findRows = [];
+    findAt = -1;
+    findOut.hidden = false;
+
+    if (!found.length) {
+      findOut.appendChild(el("div", "find-none",
+        q ? 'לא נמצא שיר עבור "' + q + '".' : "המאגר עוד ריק."));
+      return;
+    }
+
+    found.forEach(function (item) {
+      var row = el("button", "find-row" + (item.inside ? " is-in" : ""));
+      row.type = "button";
+
+      var main = el("div", "find-main");
+      main.appendChild(el("div", "find-t", item.name));
+      if (item.said) main.appendChild(el("div", "find-said", item.said));
+      row.appendChild(main);
+
+      /* ONE ROW, ONE PRESS, BOTH WAYS. A song is in the evening or it is not,
+         and the same row says which and changes it: adding from one place and
+         taking out from another would be two answers to one question. */
+      var mark = el("span", "find-mark", item.inside ? "באירוע" : "הוספה");
+      row.appendChild(mark);
+
+      row.addEventListener("click", function () {
+        item.take();
+        /* The row is changed where it stands and the list is NOT drawn again:
+           a panel that rebuilds itself under a finger takes the row that was
+           just pressed out from under it, and the press after it lands on
+           whatever slid into the place. */
+        item.inside = !item.inside;
+        row.classList.toggle("is-in", item.inside);
+        mark.textContent = item.inside ? "באירוע" : "הוספה";
+        /* and the typing goes on from where it left off: the press moved the
+           focus onto the button it landed on, and the box is the thing being
+           used */
+        findField.focus();
+      });
+      row.addEventListener("mousemove", function () { markFind(findRows.indexOf(row)); });
+
+      findRows.push(row);
+      findOut.appendChild(row);
+    });
+
+    findOut.scrollTop = was;
   }
 
   function markFind(index) {
@@ -14415,6 +14515,24 @@
     /* the two things worth doing to a whole evening, in the bar */
     state.printer = function () { window.print(); };
     state.killer = removeEvening;
+    /* --- AND WHERE THE SONGS COME FROM, ALSO IN THE BAR ----------------------
+       The songs are everybody's and the evening is one account's, which is why
+       the library has to be reachable from in here at all: an evening is a
+       choice out of a shelf that is not itself private.
+
+       It was a panel at the foot of the page, a heading, a sentence explaining
+       itself, a field and the whole library under it, standing open under an
+       evening of three songs whether or not anybody was adding one. Which is
+       the second search box on a page that already has one: the box in the bar
+       is the field everybody in this app already types songs into, it is empty
+       until it is pressed, and it hangs its answer over the evening instead of
+       pushing it up the screen.
+
+       So the page hands the box a shelf to pick out of, exactly as the library
+       hands it a sieve (see state.sift), and the box does the rest: pressed it
+       opens on all of them, typed into it narrows, and a press on a row puts
+       that song in or takes it out. */
+    state.pick = pickList;
     paintHeader();
 
     /* --- the songs, in order --- */
@@ -14425,31 +14543,11 @@
     var listEl = el("ol", "set");
     app.appendChild(listEl);
 
-    var emptyNote = el("p", "hint", "אין עדיין שירים באירוע. אפשר להוסיף מהמאגר שלמטה, ואחר כך לגרור בידית כדי לסדר.");
+    /* An empty evening is the one time the way to add to it has to be said in
+       words: there is nothing on the page to press, and the box that fills it
+       is a glass in the corner of the bar. */
+    var emptyNote = el("p", "hint", "אין עדיין שירים באירוע. אפשר להוסיף אותם בחיפוש שבסרגל למעלה, ואחר כך לגרור בידית כדי לסדר.");
     app.appendChild(emptyNote);
-
-    /* --- the library, to add from ---
-       The songs are everybody's and the evening is one account's, which is
-       exactly why this panel is here: the evening is a choice out of a shelf
-       that is not itself private. */
-
-    var pool = el("div", "pool card");
-    pool.appendChild(el("h2", null, "מהמאגר"));
-    pool.appendChild(el("p", "muted", "לחיצה על שיר מוסיפה אותו לאירוע, לחיצה נוספת מוציאה אותו."));
-
-    var field = el("div", "search");
-    field.appendChild(svg(ICON.search));
-    var poolInput = el("input");
-    poolInput.type = "search";
-    poolInput.placeholder = "חיפוש לפי שם, מילים או לחן";
-    poolInput.setAttribute("aria-label", "חיפוש שיר להוספה");
-    poolInput.addEventListener("input", function () { paintPool(); });
-    field.appendChild(poolInput);
-    pool.appendChild(field);
-
-    var poolList = el("ul", "pool-list");
-    pool.appendChild(poolList);
-    app.appendChild(pool);
 
     /* --- drawing ------------------------------------------------------------ */
 
@@ -14537,7 +14635,6 @@
         if (at < 0) return;
         evening.songs.splice(at, 1);
         draw();
-        paintPool();
         mark(true);
       });
       out.classList.add("quiet");
@@ -14650,49 +14747,39 @@
 
     /* --- adding and taking out ---------------------------------------------- */
 
-    function paintPool() {
-      var q = String(poolInput.value || "").trim().toLowerCase();
+    /* WHAT THE BOX IN THE BAR IS OFFERING, at the moment it is asked. The
+       shelf is this page's and the panel is the app's, so what crosses between
+       them is a list of names and, on each one, the one press there is to make
+       (see paintPick).
+
+       Asked afresh on every keystroke rather than filtered from a list handed
+       over once: what is in the evening changes while the box is open, and a
+       row still saying "הוספה" about a song that is already in the list is the
+       panel disagreeing with the page under it. */
+    function pickList(q) {
+      q = String(q || "").trim().toLowerCase();
       var inside = {};
       evening.songs.forEach(function (item) { inside[item.id] = true; });
 
-      var shown = library.filter(function (song) {
+      return library.filter(function (song) {
         /* a song still being read has no words yet, so it cannot be sung from */
         if (song.status && song.status !== "ready") return false;
         if (!q) return true;
         var hay = song.title + " " + credits(song).map(function (c) { return c.name; }).join(" ");
         return hay.toLowerCase().indexOf(q) >= 0;
+      }).map(function (song) {
+        return {
+          name: song.title,
+          /* the names, once each: whoever wrote the words usually wrote the
+             tune as well, and one person is one name (see creditNames) */
+          said: creditNames(song).join(", "),
+          inside: !!inside[song.id],
+          take: function () { toggle(song); },
+        };
       });
-
-      /* rebuilt in place, so the box does not jump back to the top every time
-         a song is added from halfway down it */
-      var was = poolList.scrollTop;
-      poolList.innerHTML = "";
-
-      if (!shown.length) {
-        poolList.appendChild(el("li", "pool-none", q ? "לא נמצא שיר שמתאים לחיפוש." : "המאגר עוד ריק."));
-        return;
-      }
-
-      shown.forEach(function (song) {
-        var li = el("li");
-        var b = el("button", "pool-row" + (inside[song.id] ? " is-in" : ""));
-        b.type = "button";
-        b.appendChild(el("span", "pool-t", song.title));
-        /* the names, once each: whoever wrote the words usually wrote the tune
-           as well, and one person is one name (see creditNames) */
-        var by = creditNames(song);
-        if (by.length) b.appendChild(el("span", "by", by.join(", ")));
-        b.appendChild(el("span", "grow"));
-        b.appendChild(el("span", "pool-mark", inside[song.id] ? "באירוע" : "הוספה"));
-        b.addEventListener("click", function () { toggle(song); });
-        li.appendChild(b);
-        poolList.appendChild(li);
-      });
-
-      poolList.scrollTop = was;
     }
 
-    /* One list, one click, both ways. A song is in the evening or it is not,
+    /* One row, one press, both ways. A song is in the evening or it is not,
        and the same row says which and changes it: adding from one place and
        removing from another would be two answers to one question.
 
@@ -14704,7 +14791,6 @@
       if (at >= 0) evening.songs.splice(at, 1);
       else evening.songs.push({ id: song.id, title: song.title });
       draw();
-      paintPool();
       mark(true);
     }
 
@@ -14806,7 +14892,6 @@
     }
 
     draw();
-    paintPool();
     flushPending = flush;
     if (!evening.id) title.focus();
   }
@@ -15482,8 +15567,12 @@
        above) */
     state.up = null;
     /* and the box in the bar goes back to being a way to other pages, until a
-       page that can be sieved says otherwise (see state.sift in viewIndex) */
+       page that can be sieved says otherwise (see state.sift in viewIndex), or
+       one that is built out of the library does (see state.pick in
+       renderEvening). The second one also takes the box off the bar again on
+       every page that is not an evening. */
     state.sift = null;
+    state.pick = null;
     paintHeader();
     var p = parts();
 
@@ -15911,7 +16000,7 @@
        of the recording: the header goes and it stays (see airRoom). So a take
        ends where it began, under one press, and the microphone is simply not
        closable while one is running. Answering the offer closes it properly
-       (see hearTake), which is how it was always meant to happen. */
+       (see askTake), which is how it was always meant to happen. */
     if (taping()) return;
     /* and a take that was asked for and never got a microphone is not asked
        for any more: the flag it left standing would keep the band away from
@@ -16705,11 +16794,17 @@
     if (followMark && followMark.isConnected) followMark.classList.remove("is-at");
     followMark = want;
     followAt = at;
-    if (followMark) {
-      followMark.classList.add("is-at");
-      keepInView(followMark);
-    }
+    /* THE ANSWER IS STILL A CHORD AND NOTHING IS DRAWN ON IT. `is-at` is where
+       the follower says we are, which is the one thing worth keeping in the
+       page itself: the line is worked out from it, the take is written from it
+       and the scroll follows it. What it is not any more is a picture. The
+       stylesheet draws a band across its LINE and leaves the chord alone. */
+    if (followMark) followMark.classList.add("is-at");
     showLine(followMark);
+    /* And the page follows the LINE, because the line is the thing being read:
+       a chord sits in the row above the words it belongs to, so keeping the
+       chord on screen can leave its own words under the edge of it. */
+    if (followLine || followMark) keepInView(followLine || followMark);
     return true;
   }
 
@@ -17366,7 +17461,7 @@
     if (tape.rec.state === "recording") holdTape();
     gatherTape().then(function () {
       if (!tape || !tape.bits.length) return;
-      hearTake({
+      askTake({
         blob: new Blob(tape.bits, { type: tape.mime }),
         mime: tape.mime,
         marks: tape.marks.slice(),
@@ -17439,7 +17534,7 @@
   function askHeld() {
     var held = heldHere();
     if (!held) return;
-    hearTake({
+    askTake({
       blob: new Blob(held.bits, { type: held.mime || "audio/webm" }),
       mime: held.mime || "audio/webm",
       marks: Array.isArray(held.marks) ? held.marks : [],
@@ -17665,7 +17760,14 @@
      recording, and whoever pressed stop knows what this is about. The panel
      says it in the one way that cannot be misread, which is by holding the
      take itself. */
-  function hearTake(made) {
+  /* NOT hearTake, WHICH IS SOMETHING ELSE A FEW HUNDRED LINES DOWN: playing a
+     recording that has already been saved. Two declarations of one name in one
+     scope are one thing, and the second one wins for the whole file, so while
+     both were called hearTake this panel could not come up at all: pressing
+     stop on a recording called the player with a take it had never heard of.
+     A recording could be made and never answered. See names.test.mjs, which is
+     what found it. */
+  function askTake(made) {
     if (asking) return;
     asking = true;
     var dlg = el("dialog", "dlg");

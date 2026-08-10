@@ -510,7 +510,12 @@ try {
         JSON.stringify(began.sequence) === JSON.stringify(SEQUENCE), JSON.stringify(began.sequence));
       check("opening the tab on a song is asking to be followed through it",
         began.on && began.away, JSON.stringify({ on: began.on, away: began.away }));
-      check("one chord is marked, and one only",
+      /* The follower's answer is on one chord and nothing is drawn on it: what
+         a reader sees is the band across that chord's line (see below). The
+         answer is still asked for here, because it is the only place the exact
+         chord can be read, and telling the second Am from the first is the
+         whole of what this block is for. */
+      check("one chord is the answer, and one only",
         began.marks === 1, JSON.stringify({ marks: began.marks, at: began.at }));
       check("the mark that lights every chord of a name is put away while it runs",
         began.heard === 0, String(began.heard));
