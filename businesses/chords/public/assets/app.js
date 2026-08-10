@@ -1211,9 +1211,18 @@
     node.title = out.n === 1 ? "להשמיע את ההקלטה" : "להשמיע את ההקלטה האחרונה מתוך " + out.n;
     node.setAttribute("aria-label", node.title);
 
+    /* --- THE PRESS STOPS HERE, AND IT STOPS EARLY ---------------------------
+       The row is a link to the song and this is a button standing on it, so a
+       press that carries on becomes a navigation. Stopping the CLICK is enough
+       for that, and it is not enough for what the press LOOKS like: the pointer
+       going down on a link is what puts the link into its pressed state, and
+       the browser had already lit the whole card by the time the click was
+       refused. So the pointer is caught on the way down as well, which is the
+       moment the card would otherwise have taken it. */
+    ["pointerdown", "mousedown", "touchstart"].forEach(function (kind) {
+      node.addEventListener(kind, function (event) { event.stopPropagation(); }, true);
+    });
     node.addEventListener("click", function (event) {
-      /* The row is a link to the song and this is a button standing on it, so
-         the press has to stop here or the wall turns into the song. */
       event.preventDefault();
       event.stopPropagation();
       if (wallPlaying && wallPlaying.node === node) return stopWall();
