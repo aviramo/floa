@@ -3661,19 +3661,20 @@ body.on-ear.ear-small { padding-bottom: 78px; }
    seconds, and no way to stop it except finding again the one row out of fifty
    whose button started it.
 
-   So it stands still while the list scrolls under it, and the page is given
-   the room back underneath: a bar fixed over the foot of a list hides the last
-   row of it, and the last row of a library is a song like any other.
+   AND IT IS A PANEL, WEARING WHAT EVERY PANEL HERE WEARS. It was a strip laid
+   along the foot of the page: no bar across the top, nothing dark behind it,
+   and the list still live underneath, so it read as part of the page rather
+   than as something that had come up over it and could be sent back down. A
+   thing that can be put away has to say so, and here that is said one way and
+   one way only (see .dlg and .grip): the bar, the dark, and the three ways out.
+
+   So the shape is not written here. It is a dialog like the rest, and what is
+   left for this block is what is ON it: the name, the player and the way out.
    ========================================================================== */
-.dock {
-  position: fixed; inset-inline: 0; bottom: 0; z-index: 70;
-  background: var(--card); border-top: 1px solid var(--line);
-  box-shadow: 0 -2px 14px rgba(23, 32, 42, .1);
-  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
-}
 .dock-in {
-  max-width: 720px; margin-inline: auto;
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  /* the bar across the top is the room at the top now */
+  padding-top: 0;
 }
 /* The name of the song is the way to it: somebody listening to a recording is
    somebody halfway to wanting the song, and it is already written here on the
@@ -3707,13 +3708,16 @@ body.on-ear.ear-small { padding-bottom: 78px; }
 .dock .dock-play, .take-play { direction: ltr; }
 .dock .dock-play { flex: 2 1 240px; height: 36px; min-width: 0; }
 .dock-x { flex: none; }
-body.on-dock { padding-bottom: 92px; }
+/* NOTHING IS ASKED OF THE PAGE UNDERNEATH ANY MORE. A strip fixed over the
+   foot of a list hides the last row of it, so the page used to be given the
+   room back; a panel standing over the page with the dark behind it takes
+   nothing from the page, and shifting the list under the dark would be a jump
+   nobody asked for. */
 /* On a phone the name and the player each want the width, so they take a line
    each rather than squeezing into one and giving neither enough. */
 @media (max-width: 620px) {
   .dock-said { flex-basis: 100%; }
   .dock .dock-play { flex-basis: calc(100% - 46px); }
-  body.on-dock { padding-bottom: 128px; }
 }
 
 /* ==========================================================================

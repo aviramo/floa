@@ -1250,28 +1250,51 @@
      A recording that plays with nothing on screen is a recording nobody can
      do anything with: no way to see how far in it is, no way to go back ten
      seconds, and no way to stop it except finding again the one row out of
-     fifty whose button started it. So the sound comes with a player, and the
-     player stands still while the wall scrolls under it.
+     fifty whose button started it. So the sound comes with a player.
 
-     THE PAGE IS GIVEN THE ROOM BACK. A bar fixed over the foot of a list hides
-     the last row of it, and the last row of a library is a song like any
-     other. */
+     AND THE PLAYER IS A PANEL LIKE EVERY OTHER PANEL HERE. It was a strip laid
+     along the foot of the page, and a strip is read as part of the page: no bar
+     across the top to say it could be pushed back down, nothing dark behind it
+     to say the page was waiting, and the wall still live underneath, so a hand
+     reaching past it went on scrolling the list instead of putting the player
+     away. Everything else that comes up over a page in here is a sheet, and a
+     sheet says all three of those in one shape (see openSheet): the bar, the
+     dark, and the three ways out that go with them, a press on the dark, back,
+     and a push downwards.
+
+     So this is a dialog now, and the panel is what it is opened as. What it
+     costs is the one thing a strip was good for, listening on while the wall
+     scrolls; what it buys is a player anybody can be rid of without hunting for
+     the small cross in the corner of it. */
   function showDock(fill) {
     if (!dock) {
-      dock = el("div", "dock");
+      dock = el("dialog", "dlg dock");
+      /* THE SOUND BELONGS TO THE PANEL. There are five ways out of it now and
+         only one of them was ever wired to the recording, so the stopping is
+         said once, here, at the place they all arrive: the cross, the dark,
+         back, Escape and a push downwards each end as this event. */
+      dock.addEventListener("close", stopWall);
       document.body.appendChild(dock);
     }
-    dock.innerHTML = "";
-    var box = el("div", "dock-in");
+    /* The bar is put on the panel once and stays on it (see gripUp), so what a
+       second recording replaces is the column under the bar and not everything
+       inside the panel. */
+    var was = dock.querySelector(".dlg-in");
+    if (was) was.remove();
+    var box = el("div", "dlg-in dock-in");
     fill(box);
     dock.appendChild(box);
-    document.body.classList.add("on-dock");
+    if (!dock.open) openSheet(dock);
     return box;
   }
 
+  /* Closed and not taken off the page: the panel is the browser's own now, and
+     it has its own way down (see .dlg in the stylesheet). Shutting it is what
+     runs the stopping above, so this is the one call that must not assume it is
+     the first: pressing the cross stops the sound and shuts the panel, and the
+     shut panel asks for the sound to be stopped again. */
   function hideDock() {
-    if (dock) { dock.remove(); dock = null; }
-    document.body.classList.remove("on-dock");
+    if (dock && dock.open) dock.close();
   }
 
   function stopWall() {
@@ -1347,8 +1370,12 @@
            Somebody listening to a recording of a song is somebody halfway to
            wanting the song, and the name of it is already there, on the one
            part of the screen that is not going anywhere. The sound carries on
-           across the move, because the player is fixed to the window and the
-           page under it is redrawn rather than reloaded. */
+           across the move, because the panel stands in the top layer and the
+           page under it is redrawn rather than reloaded.
+
+           WHAT ARRIVES BEHIND THE DARK IS THE SONG, and the push downwards is
+           the last step of the same movement: press the name, push the player
+           down, and the song is what is left standing. */
         var said = el("button", "dock-said");
         said.type = "button";
         said.title = "לפתוח את השיר";
