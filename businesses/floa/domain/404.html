@@ -11,8 +11,13 @@
 
    GitHub Pages serves a file or nothing: it has no rewrite rules, and it only
    ever looks for 404.html at the ROOT of the published site, never inside a
-   folder. So an application that owns a range of addresses (chords/<song>) has
-   no file at any of them, and every one of those requests lands here.
+   folder. So an application that owns a range of addresses has no file at most
+   of them, and every one of those requests lands here.
+
+   The songs of /chords/ are written to disk now, one folder each, so that a
+   search engine can have them (see businesses/chords/pages/). What still
+   arrives here is everything the build cannot know: an evening, a version, an
+   editor, a song added in the last minute, and a song somebody typed wrong.
 
    For those, and only those, this page hands the path back to the application
    that owns it. The application puts the real address back with replaceState,

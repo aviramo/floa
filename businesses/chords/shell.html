@@ -1,18 +1,31 @@
 <!doctype html>
 <html lang="he" dir="rtl">
 <head>
+<!-- THE SHELL, and not a page. Every address here is built from this file by
+     the build (see pages/render.js): the app's own markup, plus a title, a
+     description and a copy of the words for whoever is reading without
+     running the script, which is a crawler and anybody on a slow line.
+     It sits outside public/ because public/ is copied verbatim, and a file
+     copied verbatim would land on top of the index this becomes. -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>אקורדים</title>
-<meta name="description" content="אינדקס שירים עם אקורדים, כל שיר בדף משלו והאקורדים בדיוק מעל המילים.">
-<meta name="robots" content="noindex">
+<title>{{title}}</title>
+<meta name="description" content="{{description}}">
+<link rel="canonical" href="{{canonical}}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="אקורדים">
+<meta property="og:locale" content="he_IL">
+<meta property="og:title" content="{{title}}">
+<meta property="og:description" content="{{description}}">
+<meta property="og:url" content="{{canonical}}">
 <link rel="icon" href="/chords/favicon.svg" type="image/svg+xml">
 <!-- The same mark as a bitmap, for the two places that cannot read the one
      above it: a phone putting the app on a home screen wants a raster, and
      without one it takes the mark at the root of the domain, which is FLOA's.
      Drawn from the same numbers by scripts/icon.mjs. -->
 <link rel="apple-touch-icon" href="/chords/apple-touch-icon.png">
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="/chords/assets/style.css">
+{{head}}
 </head>
 <body>
 
@@ -33,7 +46,7 @@
   </div>
 </header>
 
-<main id="app" class="wrap" aria-live="polite"></main>
+<main id="app" class="wrap" aria-live="polite">{{seed}}</main>
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
@@ -62,7 +75,7 @@
 </dialog>
 
 <script src="/supabase.js"></script>
-<script src="assets/config.js"></script>
-<script src="assets/app.js"></script>
+<script src="/chords/assets/config.js"></script>
+<script src="/chords/assets/app.js"></script>
 </body>
 </html>

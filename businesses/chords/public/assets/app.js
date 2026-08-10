@@ -3325,6 +3325,16 @@
      what a detached node keeps is everything except where it was standing, and
      where it was standing is written down here anyway. */
   var stack = document.getElementById("app");
+
+  /* THE WORDS THAT WERE ALREADY THERE. Every address here is written to disk
+     with the song in it, so that a crawler, and anybody whose script has not
+     arrived yet, is given the words rather than an empty box (see
+     pages/render.js). It is the same song this is about to draw, in plain
+     markup, so it comes down the moment there is something to put in its
+     place. Nothing else in here knows it ever existed. */
+  var seed = document.getElementById("seed");
+  if (seed) seed.remove();
+
   /* What every view draws into. NOT the stack: the sheet on top of it. */
   var app = null;
   var layers = [];
@@ -9991,8 +10001,14 @@
             keepVersion(row);
           }
 
+          /* A SONG NOW HAS A FILE, and GitHub Pages serves a folder at the
+             address with the slash on the end: /chords/<שיר>/. So the two
+             spellings are one address, and rewriting the bar from the one the
+             browser was given to the one without it would be a change of
+             address for nothing, on every save. */
           var here = BASE + "/" + encodeURIComponent(row.slug);
-          if (decodeURIComponent(location.pathname) !== decodeURIComponent(here)) {
+          var now = decodeURIComponent(location.pathname).replace(/\/+$/, "");
+          if (now !== decodeURIComponent(here)) {
             history.replaceState(history.state, "", here);
           }
 

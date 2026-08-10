@@ -394,7 +394,14 @@ async function withChrome(run) {
     if (!ready) throw new Error("Chrome never answered on the debugging port");
 
     return await run(async (url, body) => {
-      const target = await (await fetch(`http://127.0.0.1:${port}/json/new?${encodeURIComponent(url)}`, { method: "PUT" })).json();
+      /* OPENED BLANK ON PURPOSE. Handing the address to the tab as it is
+         created is how a tab comes up on nothing: Chrome answers with a target
+         before it has navigated to what the target was asked for, often enough
+         to matter, and the whole wait below is then spent on a blank page,
+         which fails at the end saying something about innerHTML. The address
+         is asked for over the wire instead, once the socket is listening, and
+         the load becomes a thing this can wait for. */
+      const target = await (await fetch(`http://127.0.0.1:${port}/json/new?about:blank`, { method: "PUT" })).json();
       const socket = new WebSocket(target.webSocketDebuggerUrl);
       await new Promise((ok, no) => { socket.onopen = ok; socket.onerror = () => no(new Error("cdp socket")); });
 
@@ -413,6 +420,9 @@ async function withChrome(run) {
         pending.set(mine, { ok, no });
         socket.send(JSON.stringify({ id: mine, method, params }));
       });
+
+      await send("Page.enable", {});
+      await send("Page.navigate", { url });
 
       const evaluate = async (expression) => {
         const out = await send("Runtime.evaluate", { expression, returnByValue: true });

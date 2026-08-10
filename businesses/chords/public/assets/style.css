@@ -2340,3 +2340,36 @@ body.on-song .top { border-bottom: 0; }
   .wrap { width: 100%; }
 }
 
+
+/* ==========================================================================
+   THE SEED, which most people will never see.
+
+   Every address here is written to disk with the song already in it (see
+   pages/render.js), so that a crawler, and anybody whose script has not
+   arrived yet, is given the words rather than an empty box. app.js takes it
+   out the moment it starts and draws the real page over it.
+
+   So this is styled for the half second it is up and for the reader who has
+   no script at all: plain, readable, and out of the way. The sheet is set in
+   a monospace face because a chord in it is placed by COUNTING CHARACTERS,
+   which is the one thing that can be done without measuring anything: the
+   real sheet next door measures every letter and is right at any size.
+   ========================================================================== */
+.seed { max-width: 720px; margin-inline: auto; padding: 20px 0 64px; }
+.seed h1 { font-size: 26px; margin: 0 0 6px; }
+.seed h2 { font-size: 17px; margin: 26px 0 8px; }
+.seed p { margin: 0 0 12px; color: var(--ink-soft); }
+.seed a { color: var(--accent-ink); }
+.seed-by { font-size: 14px; }
+.seed-kinds a { margin-inline-end: 10px; }
+
+.seed-sheet {
+  margin: 10px 0 20px; padding: 16px; overflow-x: auto;
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 14px; line-height: 1.85; color: var(--ink);
+}
+
+.seed-list { list-style: none; margin: 0; padding: 0; }
+.seed-list li { padding: 8px 0; border-bottom: 1px solid var(--line); }
+.seed-note { color: var(--ink-soft); font-size: 13px; }

@@ -75,9 +75,13 @@ const RESERVED = new Set(["assets", "css", "js", "src", "businesses", "worker", 
 const top = (path) => path.split("/")[0];
 const isFolder = (name) => !name.includes(".");
 
+/* A business whose pages are worked out at build time (see listOf) has none to
+   read here, and its folder is the whole of what it claims: renderBusiness
+   refuses a root page from such a list, so there is nothing this could miss. */
 const claims = (b) => new Set([
   ...(b.out ? [b.out] : []),
-  ...b.pages.filter((p) => b.out === "" || p.root).map((p) => top(p.out)).filter(isFolder),
+  ...(typeof b.pages === "function" ? []
+    : b.pages.filter((p) => b.out === "" || p.root).map((p) => top(p.out)).filter(isFolder)),
 ]);
 
 function checkCollisions(businesses) {
@@ -165,8 +169,24 @@ async function statics(key, out, root) {
    Generated from the business's own siteMap, so they can never name a page the
    build doesn't produce, or miss one it does — and never name another
    business's page at all. */
-function robotsTxt(origin) {
-  return `User-agent: *\nAllow: /\n\nSitemap: ${origin}/sitemap.xml\n`;
+/* EVERY SITEMAP THIS DOMAIN HAS, and not only the root business's. A crawler
+   looks for /robots.txt and nowhere else, so a business still living in a
+   folder of somebody else's domain is found through this list or it is not
+   found at all: its own sitemap.xml sits in its folder, correct and unread,
+   until robots.txt names it.
+
+   A business that has moved to an origin of its own is left out, because it is
+   not this domain's business any more: its sitemap belongs in the robots.txt
+   of the domain that serves it. */
+function robotsTxt(origin, sitemaps) {
+  return `User-agent: *\nAllow: /\n\n${sitemaps.map((loc) => `Sitemap: ${loc}\n`).join("")}`;
+}
+
+function sitemapsOf(businesses, origin) {
+  return businesses
+    .filter((b) => b.site.origin === origin && (typeof b.siteMap === "function" || b.siteMap.length))
+    .sort((a, b) => Number(b.root) - Number(a.root))          // the domain's own first
+    .map((b) => (b.root ? `${origin}/sitemap.xml` : `${origin}/${b.out}/sitemap.xml`));
 }
 
 function sitemapXml(entries) {
@@ -223,11 +243,31 @@ async function load() {
   }));
 }
 
+/* --- a page list that is not in the repo -----------------------------------
+   A business usually knows its own pages: they are files in its folder and the
+   list is an array. An application whose pages come out of a DATABASE cannot,
+   until it has asked — so `pages` and `siteMap` may each be a FUNCTION instead,
+   and the build asks at the moment it renders that business.
+
+   Which is also what keeps `--only=floa` from asking: nothing resolves a list
+   it is not about to write, so a build of somebody else touches no network. */
+const listOf = async (v) => (typeof v === "function" ? await v() : v);
+
 /* One business, one site. Everything it emits lands under its own `out`, and
    every path inside it is relative to that — which is why the same folder can be
    served from floa.co.il/<key>/ today and from its own domain tomorrow. */
-async function renderBusiness(business, bundle) {
-  const { key, out, root, site, runtime, pages, siteMap } = business;
+async function renderBusiness(business, bundle, sitemaps) {
+  const { key, out, root, site, runtime } = business;
+
+  const pages = await listOf(business.pages);
+  const siteMap = await listOf(business.siteMap);
+
+  /* checkCollisions ran before any of this, on a list that could not include
+     these: a name nobody can see yet cannot be checked against the ones that
+     are taken. So a page worked out at build time stays inside its business. */
+  if (typeof business.pages === "function" && pages.some((p) => p.root)) {
+    throw new Error(`build: "${key}" works its pages out at build time, so none of them may sit at the domain root`);
+  }
 
   const styles = await concat(
     await order(bundle.css, (n) => n.endsWith(".css")),
@@ -260,7 +300,7 @@ async function renderBusiness(business, bundle) {
     write(join(out, "js/main.js"), script),
     write(join(crawlers, "sitemap.xml"), sitemapXml(siteMap)),
     write(join(crawlers, "llms.txt"), llmsTxt(site, siteMap)),
-    ...(root ? [write("robots.txt", robotsTxt(site.origin))] : []),
+    ...(root ? [write("robots.txt", robotsTxt(site.origin, sitemaps))] : []),
 
     /* `root` on a page means its `out` is relative to the DOMAIN, not to the
        business: it is how the homepage lands at / while all of its files still
@@ -291,8 +331,14 @@ async function build(only) {
      serves every business at once, so a --only build must not shrink its table */
   console.log(`  ${await writeRepo("worker/src/businesses.js", workerBusinesses(all))}`);
 
+  /* Worked out from ALL of them for the same reason the Worker's table is: the
+     domain has one robots.txt, and a --only build must not shrink it to the one
+     business being rendered. */
+  const root = all.find((b) => b.root);
+  const sitemaps = root ? sitemapsOf(all, root.site.origin) : [];
+
   for (const business of chosen) {
-    const written = await renderBusiness(business, bundle);
+    const written = await renderBusiness(business, bundle, sitemaps);
     console.log(`✓ ${business.key} — ${written.length} files`);
     for (const f of written) console.log(`  ${f.replaceAll("\\", "/")}`);
   }

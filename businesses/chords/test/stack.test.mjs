@@ -124,7 +124,10 @@ async function withChrome(run) {
     }
     if (!ready) throw new Error("Chrome never answered");
     return await run(async (url, body) => {
-      const target = await (await fetch(`http://127.0.0.1:${port}/json/new?${encodeURIComponent(url)}`, { method: "PUT" })).json();
+      /* Opened blank and navigated over the wire, for the reason the layout
+         test next door spells out: a tab handed its address as it is created
+         sometimes comes up on nothing at all. */
+      const target = await (await fetch(`http://127.0.0.1:${port}/json/new?about:blank`, { method: "PUT" })).json();
       const socket = new WebSocket(target.webSocketDebuggerUrl);
       await new Promise((ok, no) => { socket.onopen = ok; socket.onerror = () => no(new Error("cdp socket")); });
       let id = 0;
@@ -142,6 +145,9 @@ async function withChrome(run) {
         pending.set(mine, { ok, no });
         socket.send(JSON.stringify({ id: mine, method, params }));
       });
+      await send("Page.enable", {});
+      await send("Page.navigate", { url });
+
       const evaluate = async (expression) => {
         const out = await send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true });
         if (out.exceptionDetails) {
@@ -213,7 +219,11 @@ try {
       check("back left one sheet", await evaluate(`document.querySelectorAll("#app > .layer").length`) === 1,
         await evaluate(`document.querySelectorAll("#app > .layer").length + " layers"`));
       check("back put the library back", await evaluate(`document.querySelectorAll("#app a[href^='/chords/song-']").length`) > 20, "no rows");
-      check("the bar says the library", (await evaluate(`document.getElementById("topWhere").textContent`)) === "שירים",
+      /* The name the library goes by in the bar, which is the app's own name
+         (see viewIndex). It was "שירים" once and this expectation stayed
+         behind, which is a test failing about a word rather than about going
+         back: everything else on this page had already come back correctly. */
+      check("the bar says the library", (await evaluate(`document.getElementById("topWhere").textContent`)) === "אקורדים",
         await evaluate(`JSON.stringify(document.getElementById("topWhere").textContent)`));
       check("the bar has its buttons back", await evaluate(`document.getElementById("topActions").children.length`) >= 4,
         await evaluate(`document.getElementById("topActions").children.length + " buttons"`));
