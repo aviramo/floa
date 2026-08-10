@@ -18,6 +18,10 @@
   --card: #ffffff;
   --accent: #0e8c7e;
   --accent-ink: #0a6c61;
+  /* the green laid down flat, for the few marks that are the app's own green
+     said quietly rather than pressed: a reading that went right, a string in
+     tune, the recordings on a card */
+  --accent-soft: #dcf1e9;
   --chord: #e11d63;
   --chord-soft: #fde7ef;
 
@@ -38,23 +42,35 @@
 
      So the colour stops carrying the meaning and goes back to carrying the
      kind: this is a state, states look like this, and WHICH state it is, is
-     written on it. The green is the app's own, the one on the button that adds
-     a song and on the row that publishes one, and it is soft here because a
-     label is read beside a name and not instead of it.
+     written on it.
+
+     AND THE COLOUR IS YELLOW, BECAUSE IT IS NOBODY ELSE'S. It was the app's
+     own green, the one on the button that adds a song and on the row that
+     publishes one, so the few cards carrying a state wore the colour of "press
+     this" on a wall where they were the one thing not being pressed. Yellow is
+     the one colour here that belongs to no control: not the green of a button,
+     not the red of a chord. It marks a card instead of inviting a press, and
+     it is soft because a label is read beside a name and not instead of it.
 
      Named per state still, because these are five different facts and a page
      that wanted to tell two of them apart should not have to invent a colour
      to do it. */
-  --state-ink: #0a6c61;     --state-soft: #dcf1e9;
+  --state-ink: #8a6100;     --state-soft: #fbf0cc;
   --imported-ink: var(--state-ink);  --imported-soft: var(--state-soft);
   --review-ink: var(--state-ink);    --review-soft: var(--state-soft);
   --draft-ink: var(--state-ink);     --draft-soft: var(--state-soft);
   --published-ink: var(--state-ink); --published-soft: var(--state-soft);
   --offer-ink: var(--state-ink);     --offer-soft: var(--state-soft);
 
+  /* THE SAME FACT AS A MARK RATHER THAN AS A WORD: the dot on the corner that
+     hides the row about it, where there is no room for the word (see
+     .has-news). Full rather than soft, because nine pixels of a pale colour on
+     a white bar is nothing at all. */
+  --state-mark: #e0a010;
+
   /* AND WHAT A THING IS, WHICH IS NOT A STATE. These label a recording and how
      a song was read, not where a song is in its life, and they keep colours of
-     their own so that a wall of green states is not also a wall of green
+     their own so that a wall of yellow states is not also a wall of yellow
      everything else (see .tag-measured, .tag-model, .tag-half, .tag-words). */
   --told-ink: #2f5d8a;      --told-soft: #dde9f4;
   --part-ink: #8a5a12;      --part-soft: #f6e6ca;
@@ -1008,8 +1024,8 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   display: inline-flex; align-items: center; gap: 5px;
   flex: none; white-space: nowrap;
   padding: 3px 9px 3px 7px; border-radius: 999px;
-  border: 1px solid var(--state-soft); background: var(--state-soft);
-  color: var(--state-ink); font: inherit; font-size: 12px;
+  border: 1px solid var(--accent-soft); background: var(--accent-soft);
+  color: var(--accent-ink); font: inherit; font-size: 12px;
   font-variant-numeric: tabular-nums; font-weight: 700;
 }
 .when.has-takes:hover { border-color: var(--accent); }
@@ -1193,7 +1209,7 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    went right and cost least, blue while it was the machine's work, amber for
    the half that has been left to a person, red for the one that came back with
    nothing. */
-.tag-measured { color: var(--state-ink); background: var(--state-soft); }
+.tag-measured { color: var(--accent-ink); background: var(--accent-soft); }
 .tag-model { color: var(--told-ink); background: var(--told-soft); }
 .tag-half { color: var(--part-ink); background: var(--part-soft); }
 .tag-failed { color: var(--danger); background: #f9e6e3; }
@@ -1201,7 +1217,7 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 /* The chip that gathers the rows by account rather than ordering them. Pressed
    it is the accent, because it is the one control here that changes the shape
    of the page and not the order of it. */
-.tally-group.is-on { color: var(--accent); background: var(--published-soft); }
+.tally-group.is-on { color: var(--accent); background: var(--accent-soft); }
 
 /* What stands in the sheet while the machine is still reading the song into
    it. In the sheet and not over the page, because it is standing exactly where
@@ -1714,19 +1730,23 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    that nobody else can see this, and the one row that would say so is behind a
    corner nobody has a reason to press.
 
-   So the corner says there is something in it. A dot in the app's own green,
-   half off the button, and the same dot again on the row it is about, so that
-   pressing the corner leads the eye straight to the thing the dot was for.
-   What it MEANS takes a word, and the bar has nowhere to put one; the word is
-   on the row, which is where the dot goes.
+   So the corner says there is something in it. A dot half off the button, and
+   the same dot again on the row it is about, so that pressing the corner leads
+   the eye straight to the thing the dot was for. What it MEANS takes a word,
+   and the bar has nowhere to put one; the word is on the row, which is where
+   the dot goes.
 
-   It is the colour of publishing rather than a warning colour, because that is
-   what it is pointing at: the thing to do, not a thing gone wrong. */
+   It is the colour a state is written in, because a state is what it is
+   saying: this song is not out yet, in the same yellow the library says it in
+   on the card (see the states at the top of this file). It was the green of
+   the button that publishes, which named the cure and not the thing, and put
+   the app's press-me colour on a corner that is not the press. Not a warning
+   colour either: nothing here has gone wrong. */
 .has-news { position: relative; }
 .has-news::after {
   content: ""; position: absolute; top: -2px; inset-inline-start: -2px;
   width: 9px; height: 9px; border-radius: 50%;
-  border: 2px solid var(--card); background: var(--accent);
+  border: 2px solid var(--card); background: var(--state-mark);
 }
 /* ON A ROW THE CORNER IS NOWHERE. A row in the panel is a line of text across
    the whole width, and its top corner is half a panel away from the word it
@@ -1737,8 +1757,9 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   top: 50%; inset-inline-start: auto; inset-inline-end: 12px;
   width: 7px; height: 7px; margin-top: -3px; border: 0;
 }
-/* and on the row under the pointer, which fills with the same green, the dot
-   is the one thing on it that would disappear */
+/* and on the row under the pointer, which fills with the app's green, the dot
+   goes white: a yellow mark on a green fill is the one thing on the row that
+   would have to be looked for */
 .print-menu .btn.has-news.is-on::after { background: #fff; }
 
 /* THREE CONTROLS, AND NOTHING DRAWN ROUND THEM. Each of them is already a box
@@ -3359,7 +3380,7 @@ body.on-ear { padding-bottom: 196px; }
   content: ""; position: absolute; top: 0; bottom: 0; left: 45%; width: 10%;
   background: var(--chord-soft); border-radius: 4px;
 }
-.tune.is-true .tune-dial::before { background: var(--state-soft); }
+.tune.is-true .tune-dial::before { background: var(--accent-soft); }
 .tune.is-quiet .tune-dial::before { background: var(--line); }
 /* There is no mark down the middle. The band IS the mark, and a second one
    inside it was a target nobody can hit standing in front of the target
