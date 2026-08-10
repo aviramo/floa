@@ -13964,6 +13964,75 @@
     });
   }
 
+  /* --- A WALL THAT DOES NOT FILL THE WINDOW STANDS IN THE MIDDLE OF IT ------
+     The cards are laid in columns (see .list), and a column layout fills from
+     the edge the page starts at: six cards on a screen with room for five
+     columns balance into three, and the two that are left over are empty and at
+     the far end. What that looks like is a wall pushed against one side of the
+     window with a hand's width of nothing beside it, and the wider the screen
+     the worse it looks.
+
+     There is no way to ask a column layout to middle what it holds, so it is
+     given exactly the room it turned out to use and the auto margins do the
+     rest. MEASURED AND NOT COUNTED: how many columns a wall of unequal cards
+     balances into is the browser's answer, arrived at from the height of every
+     card in it, and no arithmetic here would get the same number twice. Every
+     card in one column starts at the same x, so how many different x's there
+     are is how many columns have anything in them.
+
+     And never narrower than the room there is. A phone holds one column, one
+     column is what a phone uses, and a wall capped to its own width would be a
+     wall standing away from both edges of the screen for no reason. */
+  var WALL_COL = 340;
+  var WALL_GAP = 12;
+
+  function middleWall(list) {
+    if (!list.isConnected) return;
+    /* measured with nothing holding it in, or the answer is the last answer */
+    if (list.style.maxWidth) list.style.maxWidth = "";
+    var room = list.clientWidth;
+    if (!room || !list.children.length) return;
+
+    var fits = Math.max(1, Math.floor((room + WALL_GAP) / (WALL_COL + WALL_GAP)));
+    var seen = {};
+    var used = 0;
+    Array.prototype.forEach.call(list.children, function (li) {
+      var x = Math.round(li.getBoundingClientRect().left);
+      if (seen[x]) return;
+      seen[x] = 1;
+      used++;
+    });
+    if (used && used < fits) {
+      list.style.maxWidth = (used * (WALL_COL + WALL_GAP) - WALL_GAP) + "px";
+    }
+  }
+
+  function middleWalls() {
+    Array.prototype.forEach.call(
+      document.querySelectorAll(".list:not(.band):not(.ledger)"), middleWall);
+  }
+
+  /* Every wall, whenever one is built or sieved and whenever the room changes.
+     Watched rather than called from the six places a list is filled: a wall is
+     redrawn on every keystroke of the search and every press of a chip, and a
+     rule that has to be remembered at each of those is a rule that will be
+     forgotten at the seventh. Only children are watched, never attributes, so
+     the width written below is not itself a reason to measure again. */
+  var wallSoon = 0;
+
+  function wallsSoon() {
+    if (wallSoon) return;
+    wallSoon = requestAnimationFrame(function () {
+      wallSoon = 0;
+      middleWalls();
+    });
+  }
+
+  if (stack && window.MutationObserver) {
+    new MutationObserver(wallsSoon).observe(stack, { childList: true, subtree: true });
+  }
+  window.addEventListener("resize", wallsSoon);
+
   /* ==========================================================================
      THE MICROPHONE.
 
