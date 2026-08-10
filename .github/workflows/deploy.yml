@@ -17,6 +17,24 @@ on:
     branches: [main]
   workflow_dispatch:          # so a deploy can be re-run without an empty commit
 
+  # THE LIBRARY CHANGED, AND NOBODY PUSHED ANYTHING.
+  #
+  # The songs of /chords/ are written to disk at build time, out of Supabase,
+  # so a song published this morning is not on the site until the site is built
+  # again. Worse the other way: a song taken off the shelf keeps its page, with
+  # its words in it, until the same moment.
+  #
+  # So the database says so itself. A trigger on the songs table posts here the
+  # moment a song is published, unpublished, deleted or restored, and this run
+  # is the same build as any other: it asks the library again and writes what it
+  # finds. See "התראה מהדאטהבייס" in businesses/chords/schema.sql.
+  #
+  # It fires on publication and NOT on saving. A song saves itself every second
+  # while it is being typed, and a build per keystroke is not a fresher site, it
+  # is a queue.
+  repository_dispatch:
+    types: [library-changed]
+
 permissions:
   contents: read
   pages: write

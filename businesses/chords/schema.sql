@@ -648,3 +648,118 @@ create policy "a person renames themselves"
 -- column means, and deleting it would leave every song that account put in
 -- the library owned by a uuid again. It goes when the account goes, by the
 -- cascade above, and that is the only way out.
+
+-- ==========================================================================
+-- THE LIBRARY CHANGED, AND NOBODY PUSHED ANYTHING.
+--
+-- The songs are written to disk at build time. Every address under /chords/
+-- is a real file, built by asking this table with the anon key (see
+-- businesses/chords/pages/library.js), which is what lets a search engine
+-- have the library at all. The price is that the site knows what was true at
+-- the last build: a song published this morning is not on it, and, which
+-- matters more, a song taken off the shelf keeps its page and its words.
+--
+-- So the table says so itself. The moment a song is published, unpublished,
+-- deleted or restored, this posts to GitHub and the site builds again, about
+-- a minute later. Nothing here writes the site; it only says that what the
+-- site was built from has moved.
+--
+-- IT DOES NOT FIRE ON SAVING. A song saves itself every second while it is
+-- being typed, and a build per keystroke is not a fresher site, it is a
+-- queue. What it fires on is the small set of moments somebody decided
+-- something about who may read a song:
+--
+--   published changed      out into the world, or back off the shelf
+--   deleted_at changed     deleted, or restored
+--   a version written      "פורסם" was pressed, which is the one moment an
+--                          edited song is finished (see song_versions)
+--   a published row born   or one purged for good
+--
+-- THE TOKEN IS NOT IN THIS FILE and must never be: this repo is public. It
+-- lives in the project's own vault under the name below, and this reads it
+-- from there. Without it the function does nothing at all and every write
+-- goes through as before, which is the right way round: a notification that
+-- is not set up must never be able to stop a song being saved.
+--
+-- To put it there, once, in the SQL editor:
+--
+--   select vault.create_secret('<github token>', 'github_dispatch_token',
+--     'fine grained PAT on aviramo/floa, Contents: read and write');
+--
+-- and to replace it later, vault.update_secret under the same name.
+-- ==========================================================================
+create extension if not exists pg_net;
+
+create or replace function public.library_changed()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  token text;
+begin
+  select decrypted_secret into token
+    from vault.decrypted_secrets
+   where name = 'github_dispatch_token';
+
+  -- No token, no notification, and the write itself is untouched. A project
+  -- restored from a dump, or one nobody has set this up on, behaves exactly
+  -- as it did before this existed.
+  if token is null or token = '' then
+    return coalesce(new, old);
+  end if;
+
+  -- pg_net QUEUES the request and returns. Nothing here waits on GitHub, so a
+  -- slow answer cannot make saving a song slow, and a failed one cannot roll
+  -- one back. What came of it is readable afterwards in net._http_response.
+  perform net.http_post(
+    url := 'https://api.github.com/repos/aviramo/floa/dispatches',
+    headers := jsonb_build_object(
+      'authorization', 'Bearer ' || token,
+      'accept', 'application/vnd.github+json',
+      'content-type', 'application/json',
+      'user-agent', 'floa-chords'),
+    body := jsonb_build_object('event_type', 'library-changed')
+  );
+
+  return coalesce(new, old);
+end;
+$$;
+
+-- A song crossing the line between "mine" and "everybody's", in either
+-- direction, and a song leaving or coming back. Nothing else on the row.
+drop trigger if exists songs_library_changed on public.songs;
+create trigger songs_library_changed
+  after update on public.songs
+  for each row
+  when (old.published is distinct from new.published
+     or old.deleted_at is distinct from new.deleted_at)
+  execute function public.library_changed();
+
+-- A row that arrives already published, and one that is purged for good. A
+-- new song is written unpublished and is nobody's business yet, so an
+-- ordinary insert says nothing.
+drop trigger if exists songs_born_published on public.songs;
+create trigger songs_born_published
+  after insert on public.songs
+  for each row
+  when (new.published and new.deleted_at is null)
+  execute function public.library_changed();
+
+drop trigger if exists songs_purged on public.songs;
+create trigger songs_purged
+  after delete on public.songs
+  for each row
+  when (old.published)
+  execute function public.library_changed();
+
+-- AND THE PRESS ITSELF. A version row is written the moment "פורסם" is
+-- pressed and at no other time, so it is exactly "this song is finished and
+-- it is out", said once however many times the song saved itself on the way
+-- there. It is what carries an EDIT to a song that was already published.
+drop trigger if exists song_published_again on public.song_versions;
+create trigger song_published_again
+  after insert on public.song_versions
+  for each row
+  execute function public.library_changed();
