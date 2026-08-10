@@ -3593,6 +3593,24 @@ body.on-ear.ear-small { padding-bottom: 78px; }
   border-radius: 9px;
   pointer-events: none;
 }
+/* --- AND IT IS THE WIDTH OF THE LINE, NOT THE WIDTH OF THE PAGE -----------
+   A row is a block, so its box runs to the far edge of the segment however
+   few words are written on it, and a band drawn on that box is a stripe
+   across the page with a line of a song at one end of it. What is being
+   pointed at is the line, so the picture is the shape of the line: the words,
+   the chords over them, and a little air past both ends.
+
+   The row being lit shrinks to what is written on it, and nothing moves for
+   it. The box keeps its start edge, which is the right one in a Hebrew song
+   and the left one in a Latin one, and every chord is placed from that same
+   edge (see metrics in app.js), so the only thing that changes is where the
+   box ENDS.
+
+   ONLY WHERE THE SONG IS BEING READ. In the editor the room past the end of a
+   line is what a caret is put with and what a chord is pressed onto (see the
+   lane's height on a phone), and a row that ends where its words do is a row
+   with nothing to press after them. */
+.sheet:not(.ed) .ln.is-here { width: fit-content; }
 /* The room above is the chord lane's, and a page of words alone has no lane:
    the rows sit straight on top of each other there (see .paper.words), so the
    third of a size would be spent on the line before instead. What is left is
