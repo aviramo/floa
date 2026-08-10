@@ -2981,12 +2981,11 @@
     var byWidth = Math.max(1, Math.floor((room - shadowed + apart) / (seg + pad * 2 + apart)));
 
     /* A PAGE IS THE WINDOW UNDER WHATEVER IS PERMANENTLY OVER IT. The bar is
-       sticky, and on a phone so is the row of controls under it, which is the
-       rest of the bar by another name: both cover the same strip of every
-       page and not only the first, so both come off the height of all of
-       them. */
+       sticky and it covers the same strip of every page and not only the first,
+       so its height comes off all of them. There was a second row under it on a
+       phone and it counted here too; it is gone (see placeControls). */
     var over = 0;
-    Array.prototype.forEach.call(document.querySelectorAll(".top, .song-strip"), function (node) {
+    Array.prototype.forEach.call(document.querySelectorAll(".top"), function (node) {
       if (node.offsetParent === null) return;
       over += node.getBoundingClientRect().height;
     });
@@ -3812,6 +3811,8 @@
     wake: null, ear: null, takeSong: null, redrawTakes: null,
     takesOpen: null, takesCount: 0,
     songMoves: null, songDetails: null,
+    songOut: null, songPast: null, songKill: null,
+    songUndo: null, songRevert: null,
   };
 
   /* The answers the bar reads to know what to offer. They are about the page
@@ -3821,7 +3822,8 @@
   var PAGE_STATE = ["printable", "printer", "killer", "editToggle",
     "songControls", "redrawSong", "rehome", "wake", "sift", "ear",
     "takeSong", "redrawTakes", "takesOpen", "takesCount",
-    "songMoves", "songDetails"];
+    "songMoves", "songDetails", "songOut", "songPast", "songKill",
+    "songUndo", "songRevert"];
 
   function takeKids(node) {
     if (!node) return null;
@@ -4006,37 +4008,14 @@
       else row.insertBefore(made.facts, bar);
     }
 
-    /* WHAT IS BEING DONE TO THE SONG IS THE ONLY THING LEFT ON THE STRIP, and
-       only on a phone and only while the song is being written on. On a desk
-       the group stands in the bar and the bar names it (see paintHeader); on a
-       phone the bar is a mark, a name, a capo, a microphone and two pictures
-       already, and four more on the end of it is the row overflowing. So they
-       come down here, to a row that now exists for them alone and is not there
-       at all when there is nothing to put on it (see .song-strip).
+    /* AND THERE IS NOTHING UNDER THE BAR ANY MORE. There was a strip below it
+       on a phone, holding whatever the bar could not: the wastebasket, the
+       versions, the way to publish, the ways back. Every one of them is a row
+       in the panel behind the three dots now (see songRows), which is one
+       corner on every width instead of two corners depending on the window.
 
-       At the START of the strip: right to left that is its right hand end,
-       which is where a hand holding a phone is.
-
-       THE WAY IN AND OUT OF THE EDITOR DOES NOT COME DOWN WITH THEM. It used
-       to, and it was the one thing in the app that stood in a different corner
-       of the screen depending on the width of the window. It is in the bar on
-       every screen now, in the panel behind the three dots (see songMore),
-       which is also the corner every other thing done to the PAGE is in. */
-    if (made.acts && NARROW.matches) {
-      made.strip.insertBefore(made.acts, made.strip.firstChild);
-    }
-    /* AND THE WAY TO PUBLISH STANDS WITH THEM, in the same row and centred with
-       it (see .song-strip): what is being done to the song, in one group, in
-       the middle of the row it has to itself. On a desk that row is the bar,
-       the same as the group beside it. */
-    if (made.out && NARROW.matches) made.strip.appendChild(made.out);
-
-    made.strip.hidden = !NARROW.matches;
-
-    /* Stuck directly under the bar, whatever height the bar happens to be:
-       a sticky thing with nothing to stick at is a thing that scrolls away. */
-    var head = document.querySelector(".top");
-    made.strip.style.top = head ? Math.round(head.getBoundingClientRect().height) + "px" : "0";
+       So there is no second row to place anything on, and the song starts
+       directly under the bar wherever it is read. */
   }
 
   /* How big this reader wants the words, kept between songs and between visits.
@@ -4777,8 +4756,31 @@
      facing, and whether there is a song under it worth paper. */
   function songRows(anchor) {
     var rows = [];
-    /* FIRST, BECAUSE IT IS THE ONE THING IN HERE THAT IS ABOUT THIS SONG
-       BEING PLAYED. The recordings used to stand at the foot of the page,
+    /* FIRST OF ALL, THE WAY BACK, and only while there is one. Somebody who has
+       just typed over a line they meant to keep wants one thing, and they want
+       it now: it is the row nearest the button they pressed, and on the pages
+       where nothing has been changed it is not there at all, so it costs the
+       other pages nothing.
+
+       The whole way back stands under it, for the rarer moment when it is not
+       the last thing that was wrong but everything since the song was opened
+       (see the ways back in renderSong). */
+    var step = state.songUndo && state.songUndo();
+    if (step) {
+      rows.push(button("ביטול שינויים", ICON.undo, "ghost small", function () {
+        closeUnder();
+        step();
+      }));
+    }
+    var whole = state.songRevert && state.songRevert();
+    if (whole) {
+      rows.push(button("החזרה למקור", ICON.rewind, "ghost small", function () {
+        closeUnder();
+        whole();
+      }));
+    }
+    /* THEN THE ONE THING IN HERE THAT IS ABOUT THIS SONG BEING PLAYED. The
+       recordings used to stand at the foot of the page,
        under the last line, which meant scrolling a whole song to reach one.
        They come up on a sheet now (see openTakes) and this is the way to it,
        offered only where there is something on it. */
@@ -4818,7 +4820,32 @@
 
        Not while the editor is open. Then the row is the way out of it, and
        the way out is the one thing it can say. */
-    if (state.editToggle) {
+    /* ONE ROW, AND WHICH OF THE TWO IT IS, IS THE STATE OF THE SONG. A song of
+       yours that is not published is open for writing already (see editing), so
+       there is no door to offer and the thing to do with it is hand it over:
+       פרסום. Once it is published the page is a page you read, and the thing to
+       do with it is the pencil.
+
+       So publishing wins the row wherever there is anything to publish, which
+       includes the one state that is both: a published song typed into is a
+       draft again from that keystroke on (see mark), and what it wants then is
+       to go out again rather than to be closed.
+
+       Asked here and not built with the song, because the panel is opened long
+       after the page was drawn and the state moves under it. */
+    var out = state.songOut && state.songOut();
+    if (out) {
+      var hand = button("פרסום", ICON.people, "ghost small", function () {
+        closeUnder();
+        out();
+      });
+      /* THE SAME DOT THAT IS ON THE CORNER, on the row it was about. The dot up
+         there says there is something in here; this one says which of these it
+         meant, so the two are one sentence read in two presses (see .has-news
+         and songMore). */
+      hand.classList.add("has-news");
+      rows.push(hand);
+    } else if (state.editToggle) {
       var edit = state.editToggle;
       var row = button(edit.on ? "סיום עריכה" : "עריכה", edit.on ? ICON.check : ICON.pencil,
         "ghost small", function () {
@@ -4856,23 +4883,60 @@
         told.open();
       }));
     }
+    /* AND THE TWO THAT ARE ABOUT THE SONG'S WHOLE LIFE, at the foot of the
+       panel, where the heaviest things in a list belong. They were two small
+       pictures on a row of their own over the song, standing there on every
+       song of your own whether or not anybody wanted either, and neither is
+       pressed while playing: the versions are looked for once in a while, and
+       the wastebasket is the one press here that cannot be taken back.
+
+       The versions only where there are any. A song nobody has published yet
+       has no history, and a door onto an empty room is a door that has to be
+       opened to find that out (see the count in renderSong). */
+    if (state.songPast) {
+      var past = state.songPast;
+      /* "גרסאות" and not "גרסאות שפורסמו": a version is made by publishing and
+         by nothing else (see versions.keep), so the second word is telling
+         somebody that the only kind there is is the kind there is. */
+      rows.push(button("גרסאות (" + past.many + ")", ICON.history, "ghost small", function () {
+        closeUnder();
+        past.open();
+      }));
+    }
+    if (state.songKill) {
+      var kill = state.songKill;
+      rows.push(button("מחיקת השיר", ICON.trash, "ghost small", function () {
+        closeUnder();
+        kill();
+      }));
+    }
     return rows;
   }
 
-  /* THERE WAS A DOT ON THIS CORNER for a while, in the colour of whatever state
-     the song was in, because the state had nowhere else to be said. It has
-     somewhere now: a song that is not published is open for writing and
-     carries a button that publishes it (see the strip), which is the state and
-     the way out of it in one thing you can see. A dot beside that would be the
-     same news twice, in the corner that is only ever pressed for something
-     else. */
+  /* AND A DOT ON THE CORNER WHEN THERE IS SOMETHING BEHIND IT. A song that is
+     not published looks exactly like one that is: same page, same words,
+     nothing anywhere saying that nobody else can see this. The word that says
+     it is on the row inside (see songRows), and a word inside a panel is a word
+     nobody has been given a reason to open.
+
+     So the corner carries the reason, and it is the smallest thing that can:
+     one green dot, meaning there is something in here, in the colour of the
+     thing it turns out to be. What it is takes a word, and the bar has nowhere
+     to put one.
+
+     Painted rather than built, because the state moves under the page: a
+     published song typed into is a draft again from that keystroke on, and the
+     dot has to be able to come back without the song being drawn again around
+     the caret (see showState). */
   function songMore() {
-    return keep("songMore", function () {
-      var node = iconBtn(ICON.dots, "עוד", function () { menuUnder(node, songRows(node)); });
-      node.setAttribute("aria-haspopup", "menu");
-      node.setAttribute("aria-expanded", "false");
-      return node;
+    var node = keep("songMore", function () {
+      var made = iconBtn(ICON.dots, "עוד", function () { menuUnder(made, songRows(made)); });
+      made.setAttribute("aria-haspopup", "menu");
+      made.setAttribute("aria-expanded", "false");
+      return made;
     });
+    node.classList.toggle("has-news", !!(state.songOut && state.songOut()));
+    return node;
   }
 
   /* --- THE MARK IN THE CORNER, AND WHAT IT IS ANYWHERE ELSE -----------------
@@ -5019,16 +5083,9 @@
       var mine = [];
       /* The song's own dials are NOT named here. They stand in the header row
          itself, on the other side of the glass (see placeControls), so the
-         bar holds only what is about the page.
-
-         What is being DONE to the song is, on a desk: it is made with the song
-         and handed over, and a bar that did not know about it would sweep it
-         off on the next repaint. On a phone that group is downstairs, on the
-         strip, so naming it here would pull it back up. */
-      if (state.songControls && !NARROW.matches) {
-        if (state.songControls.acts) mine.push(state.songControls.acts);
-        if (state.songControls.out) mine.push(state.songControls.out);
-      }
+         bar holds only what is about the page. What is being DONE to the song
+         is not named here either, and is not a button anywhere: every one of
+         those is a row in the panel below (see songRows). */
       /* AND THE TWO THINGS DONE TO THE PAGE, BEHIND ONE PICTURE. Printing and
          the way into the editor were two of them standing here; they are the
          rows of the panel now (see songRows), and the corner is one button
@@ -7543,6 +7600,12 @@
      song without anybody asking for it, and the way to do that on purpose is
      the restore button in the band at the top. */
   function renderSong(song, past, offerRows) {
+    /* THE SHEET THIS SONG IS BEING DRAWN INTO, kept so that an answer arriving
+       from the database later can ask whether the page that wanted it is still
+       the page: a covered sheet is taken out of the document (see the stack),
+       so `isConnected` is the whole of that question. */
+    var page = app;
+
     /* OPENED, WHICH IS WHAT PUTS IT AT THE FRONT OF THE LIBRARY (see sawSong).
        The song as it is now and not a version of it: reading what a song used
        to be is not being on it, and a song being typed for the first time has
@@ -7815,35 +7878,36 @@
        looking: a state is not a label, it is a thing to do something about.
 
        So the page shows it by being what it is. A song that is not published is
-       open for writing, with a button on its own row that publishes it; a
-       published song is a page you read, with a pencil in the panel. Nothing
-       says "טיוטה" anywhere, because the page is the draft. */
+       open for writing, and the row in the panel that every other song uses to
+       open the editor is the row that publishes it; a published song is a page
+       you read, with a pencil on that same row. Nothing says "טיוטה" anywhere,
+       because the page is the draft. */
     /* Painted again whenever the state moves: what is on the bar and on the row
        under it depends on it. */
-    showState = function () {
-      var made = state.songControls;
-      if (made && made.out) made.out.hidden = !!song.published;
-      paintHeader();
-    };
+    /* What the state is worth to the page is one row in a panel that is built
+       at the press (see songRows), so there is nothing here to keep in step:
+       the bar is painted because what it may hold can change with it. */
+    showState = function () { paintHeader(); };
 
-    /* --- ONE STRIP, AND THE SONG UNDER IT -------------------------------------
-       There were three rows here: who wrote it, what kind of song it is, and
-       the three dials, one under the other, and together they took a third of
-       the screen before a word of the song. Which is the wrong trade twice
-       over: none of them is what the page is FOR, and two of the three are
-       filled in once and then read at a glance for the rest of the song's
-       life.
+    /* --- THERE IS NO STRIP ANY MORE, AND THE SONG STARTS UNDER THE BAR --------
+       There were three rows over every song: who wrote it, what kind of song it
+       is, and the three dials, one under the other, taking a third of the
+       screen before a word of the song. They became one row, and then that row
+       emptied out too. The dials went up beside the name (see placeControls),
+       who wrote it became the second line of the name, and the rest of it, the
+       wastebasket, the versions, the way to publish and the ways back, are rows
+       in the panel behind the three dots (see songRows), which is where a thing
+       pressed once in a while belongs.
 
-       So it is one row. The facts of the song at the start of it, the three
-       controls at the end, and the song directly underneath.
+       So the song begins directly under the bar, on every width. Nothing is
+       kept here waiting to be given something to hold.
 
-       THE FIELDS ARE NOT ON IT AND NOT ON THE PAGE. Pressing the facts opens
-       them in a panel over it: a form is what you want for the ten seconds you
-       are filling it in and never again, so it costs nothing at all for the
-       rest of the song's life and moves nothing while it is open. What stands
-       in its place is the same information as a sentence, which is what
-       anybody wants of it after. */
-    var strip = el("div", "song-strip");
+       THE FIELDS ARE NOT ON THE PAGE EITHER. Pressing the facts opens them in a
+       panel over it: a form is what you want for the ten seconds you are
+       filling it in and never again, so it costs nothing at all for the rest of
+       the song's life and moves nothing while it is open. What stands in its
+       place is the same information as a sentence, which is what anybody wants
+       of it after. */
     var facts = null;
     var meta = null;
     /* the panel the form is opened in, built at the end of it */
@@ -8700,132 +8764,103 @@
     }
 
 
-    /* Printing sits in the top bar now, so what is left in this row is only
-       what changes the song in front of you. Deleting is the thing you almost
-       never mean and can never take back, so it is one quiet icon standing on
-       its own, and it asks before it does anything.
+    /* --- THE WAYS BACK, AND THEY ARE ROWS LIKE EVERYTHING ELSE ---------------
+       Two of them, each further back than the last, and neither offered until
+       there is something to go back to:
 
-       Three ways back, each smaller than the last, and none of them there
-       until it has something to undo:
+         ביטול שינויים, one step at a time, also on Ctrl+Z
+         and החזרה למקור, the whole way, in one press.
 
-         undo, one step at a time, also on Ctrl+Z
-         back to the original, the whole way, in one press
-         and save, which is the only one that writes anything. */
-    /* Both of them are pictures in the top bar with the rest of what is about
-       this page rather than about the song's key or its size: an arrow back
-       for the last thing done, a clock going backwards for all of it.
+       They were two small pictures on a strip over the song, and that strip was
+       the last thing standing between the bar and the first line: a band across
+       the top of the page, appearing on the first keystroke and pushing the song
+       down as it came. The panel is where the rest of what is done to a song
+       already lives, so this is where they go too (see songRows).
 
-       They are made here rather than in the bar because they come and go with
-       what there is to undo, and it is this page that knows: the bar is
-       painted once and these two change on every keystroke. */
-    var undoBtn = iconBtn(ICON.undo, "ביטול הפעולה האחרונה", undo);
-    var revertBtn = iconBtn(ICON.rewind, "החזרה למקור", revert);
-    revertBtn.classList.add("quiet");
-    undoBtn.hidden = true;
-    revertBtn.hidden = true;
-
-    /* WHAT IS BEING DONE TO THE SONG STANDS TOGETHER, and the row over the
-       song is left holding only what changes what you are looking at. Deleting
-       it, taking a change back, taking all of them back: none of those is a
-       property of the song on screen.
-
-       ONE GROUP AND NOT FOUR LOOSE BUTTONS, because they are not always in the
-       same place. On a desk they are in the bar; on a phone the bar is full
-       and they come down to the song's own row with the dials (see
-       placeControls). A group can be moved between the two in one line, and
-       what is more, it comes BACK: the bar is rearranged by naming what belongs
-       on it, and four buttons nobody had a name for were swept off it by the
-       first repaint after they were made.
-
-       The word saying what state it is in is not one of these and is not here.
-       It is a FACT about the song rather than something being done to it, so
-       it stands with the rest of them, in the place the reader's page shows it
-       (see the chip): the same page in its two states should not move its
-       buttons about when you start writing on it.
-
-       Inserted at the START of the group, which on a page that runs right to
-       left is its right hand end, in the order they are read: the ways back,
-       then the way to be rid of it. */
-    var acts = el("div", "song-acts");
+       Asked as functions rather than handed over as buttons, because what there
+       is to go back to changes on every keystroke and the panel is built at the
+       press: the answer is read at the moment somebody looks, which is the one
+       moment it has to be right. */
     if (editing) {
-      var mine = [];
-      /* DELETING IS THE SONG'S ACCOUNT AND NOBODY ELSE. The database refuses
-         it from anybody else and would go on refusing it whatever this line
-         said (see the policies in schema.sql); what this line stops is the
-         OFFER of it. A wastebasket over somebody else's song that can only
-         ever answer "אין הרשאה" reads as a broken app rather than as a song
-         that is not yours, and there is nothing here for it to do: a person
-         who is not the owner is writing an offer, and the way to be rid of an
-         offer is to take it back (see dropOffer).
+      state.songUndo = function () { return trail.length ? undo : null; };
+      state.songRevert = function () { return current === saved ? null : revert; };
+    }
 
-         The same goes for the versions beside it. A history belongs to the
-         account that wrote the song, so the count comes back nought for
-         everybody else and the button would never appear anyway; not asking is
-         the same page and one request fewer. */
-      if (song.id && owned) {
-        var trash = iconBtn(ICON.trash, "מחיקת השיר", removeSong);
-        trash.classList.add("quiet");
-        mine.push(trash);
-      }
+    /* DELETING IS THE SONG'S ACCOUNT AND NOBODY ELSE. The database refuses it
+       from anybody else and would go on refusing it whatever this line said
+       (see the policies in schema.sql); what this line stops is the OFFER of
+       it. A wastebasket over somebody else's song that can only ever answer
+       "אין הרשאה" reads as a broken app rather than as a song that is not
+       yours, and there is nothing here for it to do: a person who is not the
+       owner is writing an offer, and the way to be rid of an offer is to take
+       it back (see dropOffer).
+
+       The same goes for the versions beside it. A history belongs to the
+       account that wrote the song, so the count comes back nought for
+       everybody else and asking would be a request spent on a row that could
+       never appear.
+
+       NEITHER OF THEM WAITS FOR THE EDITOR ANY MORE. They were two pictures on
+       the strip, which was only there while the song was being written on, so
+       being rid of a song of your own that is published meant opening the
+       editor first: a page you have to change in order to delete. They are rows
+       in the panel now (see songRows), and the panel is on the page in both
+       states. */
+    if (!past && owned && song.id) {
+      state.songKill = removeSong;
       /* THE DOOR APPEARS WHEN THERE IS A ROOM BEHIND IT, the same way the way
          to the deleted songs does. A song nobody has published yet has no
-         history, and a button leading to an empty page is a button that has to
-         be pressed to find that out. The answer comes back after the bar is
-         painted, so the button is made hidden and shown when it is earned. */
-      if (song.id && owned) {
-        var pastBtn = iconBtn(ICON.history, "גרסאות שפורסמו", function () {
-          flush();
-          go(addr(song.slug, "versions"));
-        });
-        pastBtn.classList.add("quiet");
-        pastBtn.hidden = true;
-        mine.push(pastBtn);
-        versions.count(song.id).then(function (many) {
-          if (!many || !pastBtn.isConnected) return;
-          pastBtn.hidden = false;
-          pastBtn.title = "גרסאות שפורסמו (" + many + ")";
-          pastBtn.setAttribute("aria-label", pastBtn.title);
-        });
-      }
-      /* The state is not among them any more: it stands with the song's own
-         facts, where the reader's page keeps it (see the chip). What is left
-         here is only what is being DONE to the song. */
-      mine.push(revertBtn, undoBtn);
-      mine.forEach(function (node) { acts.insertBefore(node, acts.firstChild); });
+         history, and a row leading to an empty page is a row that has to be
+         pressed to find that out. The answer comes back after the page is
+         drawn, and the panel is built at the press, so it is simply written
+         down here and read if and when somebody opens it. */
+      versions.count(song.id).then(function (many) {
+        /* the page it was asked for may be gone by now, and this state belongs
+           to whatever is on the screen: a covered sheet is out of the document
+           (see the stack), so being connected is the whole of the question */
+        if (!many || !page.isConnected) return;
+        state.songPast = {
+          many: many,
+          open: function () {
+            flush();
+            go(addr(song.slug, "versions"));
+          },
+        };
+      });
     }
-    app.appendChild(strip);
     /* Shut, and a shut dialog is nothing on the page: no height, no row, no
        trace. It goes with the song when the page is redrawn, which is the
        whole of its cleaning up. */
     if (metaPanel) app.appendChild(metaPanel);
 
     /* --- AND THE ONE THING A SONG IS FOR SAYING IT IS FINISHED ---------------
-       A button and not a row in a panel. Publishing is the press that hands a
-       song to everybody else, it is the last thing that happens to one, and it
-       is the only thing on this page that changes who may open it: a row in a
-       panel is where things go that are looked for, and this is looked AT. It
-       stands with the rest of what is being done to the song, which is where a
-       hand already goes for the wastebasket and the versions.
+       A ROW IN THE PANEL, where the way into the editor stands on every other
+       kind of song (see songRows). It was a green button on a row of its own
+       over the words, and that row was the last thing left on the strip: a
+       whole band across the top of the page, on every draft, for a press made
+       once in a song's life.
 
-       Only where there is something to publish: your own song, finished enough
-       to be handed over, and not one the machine is still reading. A published
-       song has nothing to offer here at all, and the moment one is typed into
-       it is a draft again and this is back. */
-    var out = null;
+       The two never appear together, and that is not a rule imposed on them,
+       it is what they are. A song of yours that is not published is already
+       open for writing, so there is no way in or out to offer; once it is
+       published the pencil is what it wants and there is nothing left to hand
+       over.
+
+       Asked at the press and not built here, because the state moves under the
+       page: a published song typed into is a draft again from that keystroke
+       on (see mark), and the panel opened after it has to say so without the
+       song being drawn again around the caret. */
     if (!past && owned && !coming) {
-      out = button("פרסום", ICON.people, "small song-out", function () { publishSong(); });
-      /* Built either way and hidden while there is nothing to publish, because
-         the state moves under the page: a published song typed into is a draft
-         from that keystroke on (see mark), and the button has to be able to
-         come back without the song being drawn again around the caret. */
-      out.hidden = !!song.published;
+      state.songOut = function () {
+        return song.published ? null : publishSong;
+      };
     }
 
-    /* And now they are handed over, to be put in whichever of the two places
-       the screen can hold them (see placeControls). */
-    state.songControls = { strip: strip, facts: facts, tools: tools, acts: acts, out: out };
+    /* And now they are handed over, to be stood in the bar beside the name of
+       the song they are about (see placeControls). */
+    state.songControls = { facts: facts, tools: tools };
     /* THE WHOLE HEADER AND NOT ONLY THE PLACING, because what the bar is
-       allowed to hold has just changed: the group above did not exist when the
+       allowed to hold has just changed: the dials above did not exist when the
        bar was painted at the top of this function, and the way in and out of
        the editor has somewhere to stand now that it does. Painting it names
        both, and finishes by placing them. */
@@ -9212,9 +9247,9 @@
        that should be aimed at rather than brushed against. */
     /* --- WHAT THE STATE CAN BECOME, AS ROWS --------------------------------
        This was a panel of its own, hanging under the chip in the bar, with its
-       own opening, its own closing and its own placing. The chip is gone (see
-       the strip) and so is the panel: what it held are rows, and they stand in
-       the one panel this page already has, behind the three dots.
+       own opening, its own closing and its own placing. The chip is gone and so
+       is the panel: what it held are rows, and they stand in the one panel this
+       page already has, behind the three dots.
 
        A song is in exactly one state, so there is one thing to be offered
        about it, and the offer is a sentence rather than a word: what the song
@@ -9268,8 +9303,8 @@
       }
 
       /* Which leaves the ordinary one, and it has nothing in here: publishing
-         is a button standing on the song's own row (see the strip), where it
-         is looked at rather than looked for. */
+         is the row over these, the one every other song opens the editor with
+         (see songRows), because a draft is already open. */
       return [];
     };
 
@@ -9362,8 +9397,9 @@
         current = now;
       }
 
-      revertBtn.hidden = now === saved;
-      undoBtn.hidden = !trail.length;
+      /* Nothing to keep in step here any more: the ways back are rows in a
+         panel that is built at the press (see songRows), so what there is to go
+         back to is read at the one moment it matters. */
 
       keepDraft(now);
       if (now !== saved) queueSave(false);
@@ -9642,7 +9678,7 @@
          a bar that is stuck to the top of the window: then it goes back under
          the letters, where at worst a handle is in front of it. */
       var stuck = 0;
-      Array.prototype.forEach.call(document.querySelectorAll(".top, .song-strip"), function (node) {
+      Array.prototype.forEach.call(document.querySelectorAll(".top"), function (node) {
         if (node.offsetParent !== null) stuck += node.getBoundingClientRect().height;
       });
       var over = box.top - gapOffer.offsetHeight - 2;
@@ -12017,7 +12053,7 @@
              belongs to somebody else, and those two look identical from here:
              the database answers a stranger with an empty list, which is the
              right answer and not a fact about the song. */
-          empty.appendChild(el("p", null, "אין כאן גרסאות עדיין. כל לחיצה על פורסם שומרת אחת."));
+          empty.appendChild(el("p", null, "אין כאן גרסאות עדיין. כל פרסום שומר אחת."));
           empty.appendChild(button("חזרה לשיר", ICON.back, "ghost", back));
           app.appendChild(empty);
           return;
@@ -13463,6 +13499,15 @@
     /* what the song said about itself, which the next page does not say */
     state.songMoves = null;
     state.songDetails = null;
+    /* and the three things done to the song itself: handing it over, its
+       history, and being rid of it. All three are about the song that was
+       open, and the next page is not it. */
+    state.songOut = null;
+    state.songPast = null;
+    state.songKill = null;
+    /* and the ways back through a song that is not on the screen any more */
+    state.songUndo = null;
+    state.songRevert = null;
     /* and the box in the bar goes back to being a way to other pages, until a
        page that can be sieved says otherwise (see state.sift in viewIndex) */
     state.sift = null;

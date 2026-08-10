@@ -1366,33 +1366,46 @@ try {
       check("the press opens it", open2.editing === true, JSON.stringify(open2));
       check("and the page says the typing is an offer",
         open2.band.indexOf("הצעה") >= 0, JSON.stringify(open2.band));
-      check("the wastebasket stays away", open2.trash === false, "the wastebasket was offered");
+
+      /* And the wastebasket is not in the panel either, which is where it
+         lives now: somebody who is writing an offer has nothing here to
+         delete, and a row that could only ever answer "אין הרשאה" reads as a
+         broken app rather than as a song that is not theirs. */
+      await evaluate(`(() => {
+        document.querySelector('#topActions [aria-label^="עוד"]').click();
+        return JSON.stringify("ok");
+      })()`);
+      await sleep(250);
+      const guestRows = await evaluate(`JSON.stringify([...document.querySelectorAll(".print-menu .btn")]
+        .map(b => b.getAttribute("aria-label")).join(" | "))`);
+      check("the wastebasket stays away",
+        open2.trash === false && guestRows.indexOf("מחיקת השיר") < 0, guestRows);
     });
 
     /* --- 10. AND YOUR OWN UNFINISHED SONG IS ALREADY OPEN ------------------
        Not published means not finished, and a page you have not finished is
-       one you are working on: it opens writing, it carries the one button
-       that says it is done, and the panel does not offer a way into a room it
-       is standing in. */
+       one you are working on: it opens writing, and the row in the panel that
+       every other song opens the editor with publishes it instead. The two are
+       never both there, because they are the same sentence at two moments (see
+       songRows in app.js).
+
+       And nothing stands between the bar and the first line. The strip under
+       the bar used to carry the wastebasket, the versions and a green button
+       that published it, on every draft, whether or not anybody wanted any of
+       the three; all three are rows in the panel now, and what is left down
+       there comes with the first change made and goes with the last. */
     await open(`http://127.0.0.1:${port}/chords/_t/draft/`, async ({ evaluate }) => {
       await sleep(500);
       const mine = await evaluate(`JSON.stringify({
         errors: window.__errors,
         editing: !!document.querySelector(".sheet.ed"),
-        out: (function () {
-          var b = document.querySelector(".song-out");
-          return !!b && !b.hidden;
-        })(),
-        strip: (function () {
-          var s = document.querySelector(".song-strip");
-          return s ? getComputedStyle(s).display + " " + getComputedStyle(s).justifyContent : "none";
-        })(),
+        out: !!document.querySelector(".song-out"),
+        shown: !!document.querySelector(".song-strip"),
       })`);
       check("a draft of your own had no errors", mine.errors.length === 0, JSON.stringify(mine.errors));
       check("it opens writing, without being asked to", mine.editing === true, JSON.stringify(mine));
-      check("and it carries the one button that finishes it", mine.out === true, JSON.stringify(mine));
-      check("which stands in the middle of the song's own row",
-        mine.strip.indexOf("center") > 0, mine.strip);
+      check("and nothing stands between the bar and the first line",
+        mine.out === false && mine.shown === false, JSON.stringify(mine));
 
       await evaluate(`(() => {
         document.querySelector('#topActions [aria-label^="עוד"]').click();
@@ -1401,8 +1414,10 @@ try {
       await sleep(250);
       const rows = await evaluate(`JSON.stringify([...document.querySelectorAll(".print-menu .btn")]
         .map(b => b.getAttribute("aria-label")).join(" | "))`);
-      check("and the panel offers neither a way in nor a way to publish",
-        rows.indexOf("עריכה") < 0 && rows.indexOf("פרסום") < 0, rows);
+      check("the panel hands it over in the place of the way in",
+        rows.indexOf("פרסום") >= 0 && rows.indexOf("עריכה") < 0, rows);
+      check("and being rid of it is a row in there too",
+        rows.indexOf("מחיקת השיר") >= 0, rows);
     });
   });
 } finally {

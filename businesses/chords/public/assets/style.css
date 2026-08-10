@@ -21,27 +21,37 @@
   --chord: #e11d63;
   --chord-soft: #fde7ef;
 
-  /* --- the four states a song can be in ------------------------------------
-     A colour belongs to a STATE, not to a place: the same green means
-     published on a row of the library, on the tally counting them and on the
-     chip inside the song that puts it there. Three colours learned once and
-     read everywhere, which is the whole reason they are named here and not
-     written into each of the three places.
+  /* --- WHAT STATE A SONG IS IN, AND IT IS ONE COLOUR -----------------------
+     There were five: blue while the machine still had it, amber while it asked
+     to be checked, brown while somebody was working on it, violet while
+     somebody was waiting on somebody, green once it was out in the world. Five
+     colours is a key, and a key has to be learned before the page can be read:
+     the wall of the library came out as a colour chart of a code nobody was
+     given, and the one thing every label actually says, in a word, in Hebrew,
+     was the thing the colour was competing with.
 
-     Blue while the machine still has it, warm while a person still owes it
-     something, green when it is out in the world: blue is being read, amber
-     asks to be checked, brown says being worked on. */
-  --imported-ink: #2f5d8a;  --imported-soft: #dde9f4;
-  --review-ink: #8a5a12;    --review-soft: #f6e6ca;
-  --draft-ink: #5b4636;     --draft-soft: #f1ece4;
-  --published-ink: #0d5c4a; --published-soft: #dcf1e9;
+     So the colour stops carrying the meaning and goes back to carrying the
+     kind: this is a state, states look like this, and WHICH state it is, is
+     written on it. The green is the app's own, the one on the button that adds
+     a song and on the row that publishes one, and it is soft here because a
+     label is read beside a name and not instead of it.
 
-  /* And a fifth, which is not a state the song passed into: somebody else is
-     standing beside it holding a change (see song_offers). Violet, because it
-     is the one word here that is not about the song at all but about a person
-     waiting on another person, and none of the four above should be read as
-     that. */
-  --offer-ink: #5b3f8f;     --offer-soft: #e9e2f6;
+     Named per state still, because these are five different facts and a page
+     that wanted to tell two of them apart should not have to invent a colour
+     to do it. */
+  --state-ink: #0a6c61;     --state-soft: #dcf1e9;
+  --imported-ink: var(--state-ink);  --imported-soft: var(--state-soft);
+  --review-ink: var(--state-ink);    --review-soft: var(--state-soft);
+  --draft-ink: var(--state-ink);     --draft-soft: var(--state-soft);
+  --published-ink: var(--state-ink); --published-soft: var(--state-soft);
+  --offer-ink: var(--state-ink);     --offer-soft: var(--state-soft);
+
+  /* AND WHAT A THING IS, WHICH IS NOT A STATE. These label a recording and how
+     a song was read, not where a song is in its life, and they keep colours of
+     their own so that a wall of green states is not also a wall of green
+     everything else (see .tag-measured, .tag-model, .tag-half, .tag-words). */
+  --told-ink: #2f5d8a;      --told-soft: #dde9f4;
+  --part-ink: #8a5a12;      --part-soft: #f6e6ca;
 
   --danger: #c0392b;
   --radius: 14px;
@@ -173,11 +183,9 @@ body.on-song { background: var(--bg); }
    thing it acts on and should not compete with it, and up here it is the thing
    itself.
 
-   The song's own buttons come down to the strip under the bar on a phone (see
-   .song-acts), which is the rest of the same bar, so they are named here with
-   it. Written above the quiet ones further down the file, which have to stay
-   the later rule so that they still turn red under the hand. */
-.top-actions > .icon-btn, .song-acts > .icon-btn { color: var(--ink); }
+   Written above the quiet ones further down the file, which have to stay the
+   later rule so that they still turn red under the hand. */
+.top-actions > .icon-btn { color: var(--ink); }
 
 /* --- WHAT PAGE THIS IS ----------------------------------------------------
    The app's name used to stand here beside its own mark, which is one word
@@ -591,18 +599,17 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    a band of their own. */
 .kinds-row .tallies { justify-content: center; }
 
-.tally-offer { color: var(--offer-ink); }
-.tally-imported { color: var(--imported-ink); }
-.tally-review { color: var(--review-ink); }
-.tally-draft { color: var(--draft-ink); }
-.tally-published { color: var(--published-ink); }
+/* All five in the one colour a state wears, and the word on each is which of
+   them it is (see the states at the top of this file). They were five
+   different colours, which made this row a key to a code, and the code said
+   nothing the words did not. */
+.tally-offer, .tally-imported, .tally-review, .tally-draft, .tally-published {
+  color: var(--state-ink);
+}
 .tally:hover { border-color: currentColor; }
 .tally.is-on { border-color: currentColor; }
-.tally-offer.is-on { background: var(--offer-soft); }
-.tally-imported.is-on { background: var(--imported-soft); }
-.tally-review.is-on { background: var(--review-soft); }
-.tally-draft.is-on { background: var(--draft-soft); }
-.tally-published.is-on { background: var(--published-soft); }
+.tally-offer.is-on, .tally-imported.is-on, .tally-review.is-on,
+.tally-draft.is-on, .tally-published.is-on { background: var(--state-soft); }
 
 /* AND THE ONE CHIP IN THE ROW THAT MAKES SOMETHING. The others narrow the wall
    underneath, so they are quiet and take their colour from the state they
@@ -956,9 +963,9 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    went right and cost least, blue while it was the machine's work, amber for
    the half that has been left to a person, red for the one that came back with
    nothing. */
-.tag-measured { color: var(--published-ink); background: var(--published-soft); }
-.tag-model { color: var(--imported-ink); background: var(--imported-soft); }
-.tag-half { color: var(--review-ink); background: var(--review-soft); }
+.tag-measured { color: var(--state-ink); background: var(--state-soft); }
+.tag-model { color: var(--told-ink); background: var(--told-soft); }
+.tag-half { color: var(--part-ink); background: var(--part-soft); }
 .tag-failed { color: var(--danger); background: #f9e6e3; }
 
 /* The chip that gathers the rows by account rather than ordering them. Pressed
@@ -1130,19 +1137,18 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   font-size: 14px;
 }
 .past-said { color: var(--ink-soft); flex: 1 1 240px; }
-/* One shape for all four, and the state decides the colour. Same colour on the
-   tally counting them and on the button inside the song that sets them, which
-   is why the four pairs are named once at the top of this file. */
+/* ONE SHAPE AND ONE COLOUR, AND THE WORD SAYS WHICH STATE IT IS. The same pale
+   green on the tag, on the tally counting them and on the row inside the song
+   that sets them, which is why the pair is named once at the top of this file:
+   what the colour says is "this is where the song is in its life", and what it
+   is, is written on it in a word. */
 .tag, .review-tag {
   font-size: 12px; font-weight: 700; line-height: 1.6;
   border-radius: var(--corner); padding: 1px 10px; white-space: nowrap;
 }
-.review-tag,
-.tag-imported { color: var(--imported-ink); background: var(--imported-soft); }
-.tag-offer { color: var(--offer-ink); background: var(--offer-soft); }
-.tag-review { color: var(--review-ink); background: var(--review-soft); }
-.tag-draft { color: var(--draft-ink); background: var(--draft-soft); }
-.tag-published { color: var(--published-ink); background: var(--published-soft); }
+.review-tag, .tag-imported, .tag-offer, .tag-review, .tag-draft, .tag-published {
+  color: var(--state-ink); background: var(--state-soft);
+}
 
 /* --- WHAT KIND OF THING THIS IS -------------------------------------------
    The four above say what state a song is in. These say what a thing IS: a
@@ -1155,7 +1161,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    kind is not: it is what the row already looks like, said in a word for the
    one glance where the look is not enough. */
 .tag-kind { color: var(--ink-soft); background: var(--bg); box-shadow: inset 0 0 0 1px var(--line); }
-.tag-words { color: var(--imported-ink); background: var(--imported-soft); }
+.tag-words { color: var(--told-ink); background: var(--told-soft); }
 .tag-tune { color: var(--chord); background: var(--chord-soft); }
 
 /* WHAT KIND OF SONG IT IS, which is not one of the four states and does not
@@ -1352,7 +1358,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    the page and that was the one word in it nobody pressed. The word is on the
    row that opens the editor now, in the panel behind the three dots, and what
    is left up here is nothing at all: a song that is not published is open for
-   writing and carries the button that publishes it (see .song-strip). */
+   writing, and the same row in the same panel publishes it (see songRows). */
 
 /* Where the writing got to, in place of the button that used to ask for it.
    Quiet: it is the answer to a question nobody has asked out loud, and it is
@@ -1373,78 +1379,23 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 }
 .draft-btn:hover { color: var(--ink); border-color: var(--ink-soft); }
 .draft-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-/* Pressed, each looks like the label it puts on the row, in that state's own
-   colour: the button, the tag and the tally are three drawings of one fact. */
+/* Pressed, each looks like the label it puts on the row: the button, the tag
+   and the tally are three drawings of one fact. */
 .draft-btn.is-on { color: var(--draft-ink); background: var(--draft-soft); border-color: currentColor; }
 .pub-btn.is-on { color: var(--published-ink); background: var(--published-soft); border-color: currentColor; }
 
 /* Two gaps, and the difference between them is what says where one control ends
    and the next begins: the parts of a control sit close enough to read as one
    thing, and the room is spent between the controls instead. */
-/* --- ONE STRIP OVER THE SONG ----------------------------------------------
-   Three rows stood here: who wrote it, what kind of song it is, and the three
-   dials. Together they took a third of the screen before a word of the song,
-   which is the wrong trade twice over: none of them is what the page is for,
-   and two of the three are filled in once and read at a glance ever after.
-
-   So it is one row. The song's own facts at the start of it, the controls at
-   the end, and the song directly under it. Everything in here is sized to the
-   tallest thing that has any business being on it, which is a stepper. */
-/* ON A PHONE THIS IS THE REST OF THE BAR. The controls do not fit up there
-   (see placeControls), so they stand on a row of their own directly under it,
-   and since the page is the same grey the bar is, the two read as one block.
-   Which they are: what they are not is a block with a line drawn across the
-   middle of it, which is what the bar's own bottom border made of them. The
-   line goes under both.
-
-   Sticky with it, so it covers the same strip of every page rather than only
-   the first: a page is the window less whatever is permanently over it, and
-   if this scrolled away that number would be wrong for every page but one. */
-.song-strip {
-  display: flex; align-items: center; justify-content: center;
-  flex-wrap: wrap; gap: 8px 14px;
-  position: sticky; z-index: 19;
-  background: var(--bg); border-bottom: 1px solid var(--line);
-  margin: 0; padding: 6px 16px;
-}
-body.on-song .top { border-bottom: 0; }
-.song-strip[hidden] { display: none; }
-/* WHAT IS BEING DONE TO THE SONG, IN THE MIDDLE OF ITS OWN ROW. The capo and
-   the microphone moved up beside the name (see placeControls), so what is left
-   down here is the wastebasket, the versions, the ways back, and the button
-   that publishes it: one group of unlike things that are all the same kind of
-   thing, and a group reads as one where it stands together. Centred rather
-   than pushed to an end, because there is nothing at the other end for it to
-   be measured against.
-
-   AND IT IS NOT THERE WHILE THERE IS NOTHING ON IT. Reading a published song
-   the row would be an empty band of grey between the bar and the first line.
-   The buttons that come and go are hidden rather than removed, which is why
-   the test is for a child that is not. */
-.song-strip:not(:has(> .song-out:not([hidden]))):not(:has(> .song-acts > *:not([hidden]))) {
-  display: none;
-}
-/* A button draws itself, so being hidden has to be said in the same breath:
-   .btn sets a display of its own and the browser's own rule for [hidden] is
-   the weaker of the two. */
-.song-out[hidden] { display: none; }
-
-/* --- WHAT IS BEING DONE TO THE SONG ---------------------------------------
-   Finishing, deleting, taking a change back, the versions behind it. On a desk
-   they stand in the bar with everything else; on a phone the bar is full and
-   they come down here, to the near end of the strip, which was empty because
-   the dials pull themselves to the far one.
-
-   Empty is nothing at all. Reading a song there is only the way into the
-   editor in here, and on a version page not even that, and an empty box in a
-   flex row still spends the row's gap. */
-.song-acts { display: flex; align-items: center; gap: 6px; }
-.song-acts:empty { display: none; }
-/* Big enough for a thumb, which is what is holding the phone this row exists
-   for, and no bigger: the strip is the second half of a bar and not a second
-   bar, and every pixel of it is a pixel of the song. */
-.song-strip .song-acts > .icon-btn { width: 34px; height: 34px; }
-.song-strip .song-acts > .icon-btn > svg { width: 17px; height: 17px; }
+/* --- THERE IS NO STRIP OVER THE SONG --------------------------------------
+   There were three rows here: who wrote it, what kind of song it is, and the
+   three dials. They became one, and then that one emptied out too. The dials
+   went up beside the name and the credits became the second line of it (see
+   placeControls); the wastebasket, the versions, the way to publish and the
+   ways back are rows in the panel behind the three dots (see songRows), which
+   is one corner on every width rather than a band across the top of every
+   song. Nothing is left to draw, on a phone or anywhere else, so the song
+   begins directly under the bar and the bar keeps its own bottom line. */
 
 /* --- AND WHO WROTE IT, BESIDE THE NAME ------------------------------------
    Its own place in the bar, between the name of the song and the search. It
@@ -1459,7 +1410,7 @@ body.on-song .top { border-bottom: 0; }
    empty box still spends the row's gap, so it goes when it is empty. */
 /* Nothing stands beside the name any more: who wrote the song is the line
    under it (see .top-under) and what state it is in is a dot on the three dots
-   (see .song-strip). The slot is kept because the bar is built once and a page
+   (see .has-news). The slot is kept because the bar is built once and a page
    may yet want it; empty, it takes nothing. */
 .top-facts {
   flex: none; display: flex; align-items: center; gap: 8px;
@@ -1484,11 +1435,38 @@ body.on-song .top { border-bottom: 0; }
 }
 .top-under:empty { display: none; }
 
-/* THERE WAS A DOT ON THE THREE DOTS HERE, in the colour of whatever state the
-   song was in, and a word in the same colour on the row inside. Both are gone
-   with the reason for them: a song that is not published is open for writing
-   and carries the button that publishes it, on its own row where it can be
-   seen (see .song-strip). The page IS the draft, so nothing has to say so. */
+/* --- AND THE DOT ON THE THREE DOTS -----------------------------------------
+   A song that is not published looks exactly like one that is. It is the same
+   page, the same words, the same green everywhere: nothing on the screen says
+   that nobody else can see this, and the one row that would say so is behind a
+   corner nobody has a reason to press.
+
+   So the corner says there is something in it. A dot in the app's own green,
+   half off the button, and the same dot again on the row it is about, so that
+   pressing the corner leads the eye straight to the thing the dot was for.
+   What it MEANS takes a word, and the bar has nowhere to put one; the word is
+   on the row, which is where the dot goes.
+
+   It is the colour of publishing rather than a warning colour, because that is
+   what it is pointing at: the thing to do, not a thing gone wrong. */
+.has-news { position: relative; }
+.has-news::after {
+  content: ""; position: absolute; top: -2px; inset-inline-start: -2px;
+  width: 9px; height: 9px; border-radius: 50%;
+  border: 2px solid var(--card); background: var(--accent);
+}
+/* ON A ROW THE CORNER IS NOWHERE. A row in the panel is a line of text across
+   the whole width, and its top corner is half a panel away from the word it
+   would be marking. So the same dot stands at the end of the line instead,
+   where reading it leaves you, and it needs no ring around it: there is no
+   picture underneath for it to be lifted off. */
+.print-menu .btn.has-news::after {
+  top: 50%; inset-inline-start: auto; inset-inline-end: 12px;
+  width: 7px; height: 7px; margin-top: -3px; border: 0;
+}
+/* and on the row under the pointer, which fills with the same green, the dot
+   is the one thing on it that would disappear */
+.print-menu .btn.has-news.is-on::after { background: #fff; }
 
 /* THREE CONTROLS, AND NOTHING DRAWN ROUND THEM. Each of them is already a box
    with a line round it, and a fourth line round all three is a box inside a box
@@ -2586,7 +2564,7 @@ body.on-song .top { border-bottom: 0; }
      size up fills the page instead of scaling it down. */
   body.print-words .ln-t { white-space: pre-wrap; }
   .song-head { margin: 0 0 12px; }
-  .song-strip, .song-meta { display: none !important; }
+  .song-meta { display: none !important; }
   body.print-words .song-head { margin-bottom: 30px; }
   body.print-words .ln { margin-bottom: 0; }
   body.print-words .ln-t { line-height: 1.35; min-height: 0; }
