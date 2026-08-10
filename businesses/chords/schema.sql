@@ -650,6 +650,70 @@ create policy "a person renames themselves"
 -- cascade above, and that is the only way out.
 
 -- ==========================================================================
+-- WHICH SONGS THIS ACCOUNT HAS BEEN ON, latest first.
+--
+-- The library is ordered by when a song last CHANGED, which is the right
+-- answer for a library being written and the wrong one for a library being
+-- used: reading a song is not writing it, so an evening spent going back to
+-- the same four songs left all four exactly where they were. What somebody
+-- opens is what they are doing, so the songs this account has opened stand at
+-- the front of the library and everything else keeps the order it had.
+--
+-- It was in the browser and it is here now, for one reason: a song worked on
+-- at the desk and played off the phone an hour later is one song and one
+-- person. A list that lived in localStorage knew about one screen, and the
+-- second screen handed them the whole library again.
+--
+-- ONE ROW PER ACCOUNT, HOLDING THE LIST. Not a row per account per song with
+-- a timestamp on it, which is a table growing forever, indexed forever and
+-- ordered on every read, for a fact worth two seconds of looking. The order
+-- IS the value, an array already has one, and the app caps it at sixty: past
+-- that the library's own order is the answer again. The same argument, and
+-- the same shape, as the songs in an evening (see setlists.songs).
+--
+-- The ids are ids and nothing more. A song deleted, or one belonging to
+-- somebody else and since unpublished, is an id that matches nothing in the
+-- library and falls out of the ordering on its own, which is exactly right:
+-- this says where a reader has been, and it is not a second opinion about
+-- what is in the library or who may read it.
+-- ==========================================================================
+create table if not exists public.song_opens (
+  -- WHOSE. The account itself, so there cannot be anything but one row per
+  -- account. The default fills it in from the token the request carried when
+  -- the browser does not send it, and the policy below refuses a row written
+  -- in anybody else's name when it does: the value is not the browser's to
+  -- decide either way.
+  id         uuid primary key default auth.uid()
+             references auth.users (id) on delete cascade,
+
+  -- ["<song id>", …], newest first.
+  songs      jsonb not null default '[]'::jsonb,
+
+  updated_at timestamptz not null default now()
+);
+
+drop trigger if exists song_opens_touch_updated_at on public.song_opens;
+create trigger song_opens_touch_updated_at
+  before update on public.song_opens
+  for each row execute function public.touch_updated_at();
+
+alter table public.song_opens enable row level security;
+
+-- One rule for all four verbs, the same as an evening: this is the account's
+-- own and nobody else's, ever. Not granted to anon at all, so a reader with no
+-- account is answered as though the table were empty, which for them it is;
+-- their order is their browser's, which is where it always was.
+--
+-- What is in here is a reading history, and it is the one thing in this
+-- project that says what a person did rather than what they made. It is never
+-- shown to anybody, including on a song they published.
+drop policy if exists "what an account has opened is its own" on public.song_opens;
+create policy "what an account has opened is its own"
+  on public.song_opens for all to authenticated
+  using (id = auth.uid())
+  with check (id = auth.uid());
+
+-- ==========================================================================
 -- THE LIBRARY CHANGED, AND NOBODY PUSHED ANYTHING.
 --
 -- The songs are written to disk at build time. Every address under /chords/

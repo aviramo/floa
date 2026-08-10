@@ -498,12 +498,20 @@
      database at the moment it was drawn, and the only thing that can make that
      picture wrong is somebody writing. So a page that comes back up compares
      this number with the one it was drawn at: the same, and it is still true
-     and there is nothing to do; higher, and it is drawn again. */
+     and there is nothing to do; higher, and it is drawn again.
+
+     A WRITE CAN SAY IT IS NOT ONE OF THOSE, with `quiet`. What it counts is
+     writes that could make a drawn page wrong, and there is one write here
+     that no page is drawn from at all: the list of songs this reader opened
+     (see sawSong), which every page reads from the browser and not from the
+     database. Counted, it would mean going back from a song redraws the
+     library from scratch every single time, which is the cost the whole stack
+     of sheets exists to avoid. */
   var writes = 0;
 
   function rest(path, options) {
     options = options || {};
-    if (options.method && options.method !== "GET") writes++;
+    if (options.method && options.method !== "GET" && !options.quiet) writes++;
     return auth.token().then(function (token) {
       var headers = {
         apikey: CFG.supabaseAnonKey,
@@ -3788,10 +3796,25 @@
      had underneath them. Not instead of the library's order, on top of it: a
      song nobody here has ever opened is still the newest change first.
 
-     IN THIS BROWSER AND UNDER THIS READER, like the key and the capo beside
-     it. Where you got to is not a fact about the song, it is a fact about you,
-     and a row per reader per song is a table to carry forever for something
-     worth two seconds of looking. */
+     UNDER THIS READER, AND ON THE ACCOUNT RATHER THAN IN THE BROWSER. Where
+     you got to inside a song is kept in the browser, because it is about one
+     evening on one screen; which songs you have been on is not. Somebody works
+     on a song at the desk and opens the library on the phone an hour later to
+     play it, and a library that only knew what THIS browser had opened handed
+     them the alphabet again on the second screen.
+
+     So it is a row per account (`song_opens`), holding the list itself in the
+     order it stands in, and it is read and written by that account and by
+     nobody else. Not a row per reader per song, which would be a table growing
+     forever for a fact worth two seconds of looking: it is one list, capped,
+     and it is the same shape it has always been.
+
+     THE BROWSER STILL HOLDS A COPY, and that copy is what every paint reads.
+     The order has to be on the screen in the first frame, and an answer from
+     the network is not there in the first frame; so the copy is the list, the
+     server is where it lives, and the answer lands a moment later and moves
+     it. A reader with no account, or with no network, has exactly what they
+     had before this: their own browser's list. */
   var SEEN_OF = "chords.opened.";
 
   /* Enough to cover what anybody is working on and short enough that the list
@@ -3803,6 +3826,23 @@
      that was just closed knows its own order has moved on (see state.wake). */
   var seenAt = 0;
 
+  /* Has the account's own list been asked for, and has it answered. Nothing is
+     ever sent up before an answer has come down: a list written from a browser
+     that has not read the account's yet is a list that would wipe it. */
+  var seenAsked = false;
+  var seenKnown = false;
+
+  /* What was opened here before that answer came, newest first. It goes on top
+     of whatever arrives, because it happened later than any of it. */
+  var seenHere = [];
+
+  /* One write at a time, and one more remembered. Songs are opened one after
+     another and the list is whole on every write, so two in the air at once
+     are two answers to the same question arriving in whichever order the
+     network feels like. */
+  var seenSending = null;
+  var seenAgain = false;
+
   function seenBox() {
     return SEEN_OF + ((auth.session && auth.session.email) || "-");
   }
@@ -3812,6 +3852,11 @@
     try { was = JSON.parse(localStorage.getItem(seenBox()) || "[]"); }
     catch (e) { was = null; }
     return Array.isArray(was) ? was : [];
+  }
+
+  function seenKeep(list) {
+    try { localStorage.setItem(seenBox(), JSON.stringify(list)); }
+    catch (e) { /* private window: the order is then this tab's alone */ }
   }
 
   /* id -> how far back it was, 0 being the one just closed. */
@@ -3827,8 +3872,97 @@
     list.unshift(id);
     if (list.length > SEEN_KEEP) list.length = SEEN_KEEP;
     seenAt++;
-    try { localStorage.setItem(seenBox(), JSON.stringify(list)); }
-    catch (e) { /* private window: the order is then the library's own */ }
+    seenKeep(list);
+
+    seenHere = seenHere.filter(function (was) { return was !== id; });
+    seenHere.unshift(id);
+    if (seenHere.length > SEEN_KEEP) seenHere.length = SEEN_KEEP;
+
+    /* An account whose list never came down is asked again here rather than
+       given up on: opening a song is the moment the answer is worth having,
+       and the first ask may simply have been made with the network out. */
+    if (seenKnown) seenPush(); else seenPull();
+  }
+
+  /* ONE ROW PER ACCOUNT, so writing one that is already there is the same
+     request as writing it for the first time (the same shape `announce` uses
+     for the name).
+
+     Never waited for and never complained about. The order is already right on
+     this screen; what this is for is the next one. */
+  function seenPush() {
+    if (!auth.in || !seenKnown) return Promise.resolve(null);
+    if (seenSending) { seenAgain = true; return seenSending; }
+
+    var body = { songs: seenList() };
+    /* Which account, when this browser has been told. Left out when it has
+       not, and the column's own default fills it in from the token instead.
+       Either way it is not the browser's to decide: the policy refuses a row
+       written in anybody else's name, whichever of the two put it there. */
+    var me = auth.session && auth.session.id;
+    if (me) body.id = me;
+
+    var sending = rest(CFG.openTable + "?on_conflict=id", {
+      method: "POST",
+      body: body,
+      prefer: "resolution=merge-duplicates",
+      /* no page is drawn from this, so no page has to be drawn again */
+      quiet: true,
+    }).catch(function () { return null; }).then(function () {
+      seenSending = null;
+      if (!seenAgain) return null;
+      seenAgain = false;
+      return seenPush();
+    });
+
+    seenSending = sending;
+    return sending;
+  }
+
+  /* And the same list coming the other way, once, when the tab opens.
+     What comes down is the truth, with anything opened here since the tab
+     opened standing on top of it. An account that has never had a row gets
+     this browser's list as its first: a reader who has been using the app for
+     a month is not asked to start again on the day it moved to the account. */
+  function seenPull() {
+    if (seenAsked || !auth.in) return Promise.resolve(null);
+    seenAsked = true;
+
+    return rest(CFG.openTable + "?select=songs&limit=1").then(function (rows) {
+      var row = rows && rows[0];
+      seenKnown = true;
+      /* No row at all: this browser's list becomes the account's first one,
+         and an account with nothing to say waits until it opens something
+         rather than writing an empty row to say it opened nothing. */
+      if (!row) return seenList().length ? seenPush() : null;
+
+      var list = (Array.isArray(row.songs) ? row.songs : []).filter(function (id) {
+        return typeof id === "string" && !!id;
+      });
+      seenHere.slice().reverse().forEach(function (id) {
+        list = list.filter(function (was) { return was !== id; });
+        list.unshift(id);
+      });
+      if (list.length > SEEN_KEEP) list.length = SEEN_KEEP;
+
+      var was = JSON.stringify(seenList());
+      seenKeep(list);
+      /* The library may already be on the screen, drawn from what the browser
+         had a second ago. It is only redrawn when the answer actually moved
+         something, because a list redrawn under a finger is a list that moves
+         while it is being read. */
+      if (JSON.stringify(list) !== was) {
+        seenAt++;
+        if (state.wake) state.wake();
+      }
+      return seenHere.length ? seenPush() : null;
+    }).catch(function () {
+      /* No table, no network, no answer. The browser's own list is the order,
+         exactly as it was before any of this existed, and the next song opened
+         asks again. */
+      seenAsked = false;
+      return null;
+    });
   }
 
   /* --- AND FAILING THAT, THE ONE THAT IS EASIEST TO HOLD ---------------------
@@ -12722,8 +12856,16 @@
     go.type = "button";
     go.title = "לסמן על השיר איפה אנחנו, ולגלול לשם";
     go.addEventListener("click", function () {
-      if (following) stopFollowing();
-      else startFollowing();
+      followRefused = !!following;
+      if (following) {
+        stopFollowing();
+        /* Back to the measurement, which is what is under it: the mark that
+           lights every chord of a name, and the whole of the working. */
+        earParts.chord.node.classList.add("is-shown");
+      } else {
+        earParts.chord.node.classList.remove("is-shown");
+        startFollowing(true);
+      }
       showLead();
     });
     var at = el("span", "ear-at");
@@ -12797,6 +12939,13 @@
     var c = earParts.chord;
     var i;
 
+    /* Asked every reading rather than once when the tab opened, because the
+       page underneath changes without this panel being told: a song opened
+       from the library, a different song from an evening, a song that has
+       finished being read from a photograph. Each of those is a song to follow
+       arriving, and none of them is a press. */
+    if (!following && !followRefused) startFollowing(false);
+
     for (i = 0; i < 12; i++) c.cells[i].style.height = Math.round(r.chroma[i] * 100) + "%";
 
     var top = r.best[0];
@@ -12818,11 +12967,19 @@
         if (heardTape.length > 14) heardTape.shift();
         c.tape.textContent = heardTape.join("  ");
       }
-      /* One mark on the song at a time. While the follower is running it owns
-         the marking, and lighting every chord of the same name underneath it
-         would be two answers to one question. */
-      if (!following) markHeard(said);
     }
+
+    /* ASKED EVERY READING AND NOT ONLY WHEN THE ANSWER CHANGES, which is what
+       it was. Two things happen without the chord changing and both left the
+       song bare: the follower being switched off, and the sheet being drawn
+       again, which every transposition does. In both cases the answer was
+       still Am and the marks were on nodes that no longer existed or had never
+       been asked.
+
+       ONE MARK ON THE SONG AT A TIME. While the follower is running it owns
+       the marking, and lighting every chord of the same name underneath it
+       would be two answers to one question. */
+    if (!following) markHeard(heardNow);
 
     /* --- and where in the song that puts us --------------------------------- */
     if (following) followOn();
@@ -12910,13 +13067,25 @@
   var followWas = "";
   var followMark = null;
   var followAt = -1;
+  /* SOMEBODY SAID NO. Following starts on its own on any page that has a song
+     to follow, because it is what this tab is for and because what stands
+     there instead is the measurement, whose mark lights every chord of a name
+     at once: three Am in a line, all lit, which is the honest answer to a
+     question nobody asked and looks exactly like a follower that is broken.
+
+     So the only way it is off is that it was switched off, and then it stays
+     off until it is switched on. A default that reasserts itself on the next
+     page is not a default, it is an argument. */
+  var followRefused = false;
   /* When the page may next move itself. A hand on the page outranks this
      entirely: whoever scrolled has said where they want to be. */
   var scrollHold = 0;
 
-  function startFollowing() {
-    followRead();
-    if (!following) return toast("אין אקורדים לעקוב אחריהם");
+  function startFollowing(asked) {
+    if (!followRead()) {
+      if (asked) toast("אין אקורדים לעקוב אחריהם");
+      return;
+    }
     markHeard(null);
     document.addEventListener("pointerdown", followTap, true);
     ["wheel", "touchstart", "keydown"].forEach(function (name) {
@@ -12949,25 +13118,29 @@
      the lines into different rows. */
   function followRead() {
     var sheet = document.querySelector(".sheet");
-    if (!sheet) { following = null; followWas = ""; return; }
+    if (!sheet) return false;
     var spans = sheet.querySelectorAll(".chord");
+    if (!spans.length) return false;
     var names = [], i;
     for (i = 0; i < spans.length; i++) names.push(spans[i].textContent.trim());
     followSpans = spans;
     var key = names.join(" ");
-    if (following && key === followWas) return;
+    if (following && key === followWas) return true;
     followWas = key;
     /* A SONG REDRAWN IS THE SAME SONG. Where we had got to is kept across the
        rebuild, because a transposition is not somebody starting again: the
        chords are written differently and the playing did not stop. */
     var was = following ? following.where() : -1;
-    following = names.length ? window.CHORDS_FOLLOW.make(names) : null;
-    if (following && was >= 0 && was < names.length) following.put(was);
+    following = window.CHORDS_FOLLOW.make(names);
+    if (was >= 0 && was < names.length) following.put(was);
+    return true;
   }
 
   function followOn() {
-    followRead();
-    if (!following) return;
+    /* The page underneath may have become a different page: a song closed, the
+       library opened, a version being read. There is nothing to follow on any
+       of those and the mark goes with them. */
+    if (!followRead()) return stopFollowing();
 
     /* One number per DISTINCT chord in the song, which is eight or so rather
        than the two hundred places those eight stand in. */
@@ -13087,8 +13260,17 @@
     var want = name ? thirdOf(name) : null;
     var all = sheet.querySelectorAll(".chord");
     for (var i = 0; i < all.length; i++) {
-      var mine = want ? thirdOf(all[i].textContent) : null;
-      all[i].classList.toggle("is-heard", !!want && mine === want);
+      var node = all[i];
+      /* Worked out once per chord and kept on the chord, because this runs
+         twenty times a second over every chord in the song and what it is
+         asking is a question about the text: while the text is what it was,
+         so is the answer. A chord drawn again is a new node with nothing
+         remembered on it, which is exactly right. */
+      if (node._third === undefined || node._said !== node.textContent) {
+        node._said = node.textContent;
+        node._third = thirdOf(node.textContent);
+      }
+      node.classList.toggle("is-heard", !!want && node._third === want);
     }
   }
 
@@ -13156,5 +13338,11 @@
      and before the routing, because what the first page draws depends on
      whether there is one */
   absorbGoogle();
+  /* Which songs this account has been on, which is the order the library
+     stands in (see sawSong). Asked for here and not waited for: the library
+     draws itself from the copy in the browser and moves when the answer
+     lands, and on the way back from Google the session is already saved by
+     the line above, so this is the same ask either way. */
+  seenPull();
   route();
 })();

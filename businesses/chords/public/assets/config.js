@@ -27,6 +27,12 @@ window.CHORDS_CONFIG = {
      account itself may read. See `people` in schema.sql. */
   peopleTable: "people",
 
+  /* And a sixth, which is not about a song either: which songs an account has
+     opened, latest first, one row per account. It is what puts the song you
+     had open last at the front of the library, on whatever screen you open it
+     next (see sawSong in app.js). */
+  openTable: "song_opens",
+
   /* The Worker holds the Anthropic key and reads an uploaded photo or PDF.
      Same deployment that sends the leads for every other business here. */
   transcribeEndpoint: "https://floa-lead.floa-il.workers.dev/transcribe",
