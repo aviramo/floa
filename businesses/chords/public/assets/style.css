@@ -474,11 +474,23 @@ body.on-song { background: var(--bg); }
 
 .muted { color: var(--ink-soft); }
 .err { color: var(--danger); font-size: 14px; margin: 4px 0 0; }
+/* The raw string a machine handed us: an English message, a code, a path. It
+   is set in monospace and left to right because that is what it is, and it is
+   never a sentence anybody wrote. */
 .detail {
   margin-top: 6px; padding: 7px 10px; border-radius: var(--corner);
   background: #fdf1ef; color: #7a3b33;
   font: 12px/1.5 ui-monospace, Menlo, Consolas, monospace;
   direction: ltr; text-align: left; word-break: break-word;
+}
+/* The same box for a sentence WE wrote, which is Hebrew and reads right to
+   left in the page's own type. In .detail it came out backwards: the full stop
+   landed on the wrong end and the words sat in a monospace grid they were
+   never written for. */
+.note {
+  margin-top: 6px; padding: 7px 10px; border-radius: var(--corner);
+  background: #fdf1ef; color: #7a3b33;
+  font-size: 13px; line-height: 1.5; text-align: right;
 }
 .center { text-align: center; padding: 56px 0; color: var(--ink-soft); }
 .center p { margin: 0 0 18px; }
@@ -714,6 +726,16 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 }
 .list .side-tags { display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-end; }
 .list .when { white-space: nowrap; color: var(--ink-soft); font-size: 13px; }
+/* --- HOW MANY RECORDINGS OF IT ARE OUT --------------------------------------
+   Where the clock used to be, and it is a different kind of thing so it is
+   drawn as one: a mark and a number rather than a line of text. The ink is the
+   chords' own, because a recording is somebody playing THIS song and that is
+   what the pink means everywhere else on the page. */
+.list .when.has-takes {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: var(--chord); font-variant-numeric: tabular-nums; font-weight: 600;
+}
+.list .when.has-takes svg { width: 11px; height: 11px; }
 /* THE DATE STAYS AT THE BOTTOM WITH NOTHING OVER IT. A published song carries
    no chip any more (see songRow), so its column holds one thing, and
    space-between with one thing in it puts that thing at the top: the date
@@ -738,7 +760,7 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    money is read in totals and in comparisons, and a number in the corner of a
    card is neither. */
 .list .row .a { color: var(--ink-soft); font-size: 14px; }
-.list .row .detail { flex-basis: 100%; }
+.list .row .detail, .list .row .note { flex-basis: 100%; }
 
 .row-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-inline-start: auto; }
 

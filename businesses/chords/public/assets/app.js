@@ -1161,6 +1161,10 @@
      the rest of the visit. */
   var whoKnown = {};
 
+  /* How many recordings of each song are OUT, by song id. Read with the wall
+     and kept for as long as the wall is on screen. */
+  var takesOut = {};
+
   var db = {
     list: function () {
       var self = this;
@@ -1392,6 +1396,25 @@
         var by = {};
         (rows || []).forEach(function (row) {
           by[row.id] = String(row.name || "").trim();
+        });
+        return by;
+      }).catch(function () { return {}; });
+    },
+
+    /* --- AND HOW MANY RECORDINGS OF EACH SONG ARE OUT ------------------------
+       One question for the whole wall rather than one per row, and only the
+       ones that are OUT: an account's own unpublished attempts are readable by
+       it (see song_takes in schema.sql) and they are not a reason for anybody,
+       its owner included, to pick a song off a wall.
+
+       An empty answer on a project whose SQL has not been run since takes
+       arrived. A library that will not open because of a table that is not
+       about libraries is a worse failure than a row with nothing on it. */
+    outTakes: function () {
+      return rest(CFG.takeTable + "?select=song_id&published=eq.true").then(function (rows) {
+        var by = {};
+        (rows || []).forEach(function (row) {
+          by[row.song_id] = (by[row.song_id] || 0) + 1;
         });
         return by;
       }).catch(function () { return {}; });
@@ -5303,8 +5326,13 @@
        offers.seen), and a card cannot be drawn without it. Answered as an
        empty answer on a project that has no such table and for a reader with
        no account, so the library opens either way. */
-    Promise.all([db.list(), offers.seen()]).then(function (got) {
+    Promise.all([db.list(), offers.seen(), db.outTakes()]).then(function (got) {
       var songs = got[0];
+      /* How many recordings of each song are out in the world, which is what
+         stands on a row where the clock used to. One question for the whole
+         wall, and an empty answer on a project whose SQL has not been run
+         since takes arrived, so the library opens either way. */
+      takesOut = got[2] || {};
       state.songs = songs || [];
       /* the box in the bar searches this same list, and it has just been
          read: asking for it a second time a keystroke later would be the same
@@ -6438,7 +6466,7 @@
           stage.appendChild(el("span", "tag tag-imported", s.status_note));
           box.appendChild(stage);
         } else {
-          box.appendChild(el("div", "detail", s.status_note));
+          box.appendChild(el("div", "note", s.status_note));
         }
       }
 
@@ -6486,13 +6514,31 @@
         side.appendChild(tags);
       }
 
-      /* `created_at` behind it, because a song that has never been changed
-         since it was written was last changed when it was written. */
-      var stamp = whenWords(s.updated_at || s.created_at);
-      if (stamp) {
-        var when = el("div", "when", stamp);
-        when.title = whenExactly(s.updated_at || s.created_at);
-        side.appendChild(when);
+      /* --- WHO HAS PLAYED IT, WHERE THE CLOCK USED TO BE -----------------------
+         There was a timestamp here, "היום, 9:52", on every row, and it was the
+         same six characters on all of them: a library gets most of its songs in
+         a week and then lives for a year, so a column of dates is a column of
+         one date. What it was FOR was the order, which is by when a song was
+         last touched, and an order nobody can see is not an order. But the
+         order is only worth explaining while it means something, and by the
+         second week it does not.
+
+         What stands there instead is a fact that differs from row to row and
+         that somebody might act on: how many recordings of this song are out
+         in the world. A song with three is a song to open and listen to; a
+         song with none says nothing, and says it by not being there.
+
+         Only the ones that are OUT. An account's own unpublished attempts are
+         readable by it (see song_takes in schema.sql) and they are not a
+         reason for anybody, including its owner, to pick this row off a
+         wall. */
+      var out = takesOut[s.id];
+      if (out) {
+        var heard = el("div", "when has-takes");
+        heard.appendChild(svg(ICON.play));
+        heard.appendChild(el("span", null, String(out)));
+        heard.title = out === 1 ? "הקלטה אחת" : out + " הקלטות";
+        side.appendChild(heard);
       }
 
       a.appendChild(side);
@@ -6508,7 +6554,7 @@
     var box2 = el("div");
     box2.appendChild(name());
     box2.appendChild(el("div", "a", stalled(s) ? "הקריאה נתקעה ולא הסתיימה" : "הקריאה נכשלה"));
-    if (s.status_note) box2.appendChild(el("div", "detail", s.status_note));
+    if (s.status_note) box2.appendChild(el("div", "note", s.status_note));
     row.appendChild(box2);
 
     var actions = el("div", "row-actions");
