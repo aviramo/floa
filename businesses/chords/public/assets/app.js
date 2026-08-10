@@ -5327,9 +5327,14 @@
 
     /* The two pages about people. Neither has anything to do TO what is on
        it, so the bar carries nothing but the ways on from it, and the ways on
-       are all in the one panel. */
+       are all in the one panel.
+
+       AND NO TUNING FORK HERE EITHER, for the reason the evenings have none: a
+       list of names is read, not played, and nobody stands on it with a guitar
+       in both hands. It is on the library, where the songs are, and on every
+       song, which is the whole of where the tuning happens. */
     if (p[0] === "creators" || p[0] === "creator") {
-      return fill(bar, auth.in ? [tuner(), more()] : [session(), tuner(), more()]);
+      return fill(bar, auth.in ? [more()] : [session(), more()]);
     }
 
     if (p.length) {
@@ -5409,42 +5414,178 @@
     return who;
   }
 
-  /* --- A PANEL IS A PLACE, AND A PRESS OUTSIDE IT OR BACK COMES OUT ---------
-     A dialog is the browser's, and the browser gives it one way out: Escape,
-     which a phone does not have. So both of the ways a person actually leaves
-     something are added here, once, for any panel that asks.
+  /* --- ONE PANEL, AND IT IS A SHEET ----------------------------------------
+     Everything that stands over the page in this app is the same object: a
+     sheet at the foot of the screen with a short bar across the top of it. The
+     tuner, the handful of lines behind a button in the bar, the panel of the
+     song's facts and every dialog are one shape, arriving from one edge, so
+     that a panel is read once and then recognised.
 
-     A PRESS ON THE DARK. The backdrop belongs to the dialog element itself, so
-     a press that lands on the element and not on anything inside it is a press
-     outside the panel.
+     THE BAR IS NOT DECORATION. It is the one mark that says this came up from
+     the bottom and can be pushed back down there, and a shape that can be
+     pushed had better say so before somebody tries.
 
-     AND BACK. It is a swipe from the edge of a phone and it is the way out of
-     everything: a panel that let it through answered "close this" by leaving
-     the app. The panel stands on an entry of its own, which is the same address
-     as the page under it, so the way back out of the panel is a step back, and
-     the page it uncovers is the page it was opened over. Closing it any other
-     way takes that entry away again, quietly, because nothing moved. */
-  var overPage = null;
-  var backQuietly = false;
+     AND THERE ARE THREE WAYS OUT, because a person reaches for whichever is
+     nearest and not one of them is the one to be taught:
 
-  function shutsOnBack(dlg) {
-    dlg.addEventListener("click", function (event) {
-      if (event.target === dlg) dlg.close();
-    });
-    /* One at a time is all this app ever opens, and the entry belongs to
-       whichever is on the screen. */
-    if (overPage) return;
-    overPage = dlg;
+       A PRESS ON THE PAGE BEHIND IT, which means "done with this" and means
+       nothing else. It used to close the panel and then carry on into whatever
+       it landed on, so a press on a song closed the tuner AND opened the song:
+       two things done for somebody who asked for one (see pressOutside).
+
+       BACK. On a phone it is a swipe from the edge and it is the way out of
+       everything, so a panel that let it through answered "close this" by
+       leaving the app. Each panel stands on an entry of its own at the same
+       address as the page under it, so a step back is the panel coming off and
+       the page under it never moves. Closing it any other way takes that entry
+       away again, quietly.
+
+       AND A PUSH DOWNWARDS, which is the gesture the bar is drawn for.
+     ------------------------------------------------------------------------ */
+
+  /* The panels standing over the page, innermost last. A stack and not a
+     single slot: the tuner can be open when a dialog comes up over it, and
+     back should take off the one that is on top. */
+  var overPage = [];
+  /* Entries this app is taking back off the stack itself, which popstate must
+     let past: nothing moved, so nothing is redrawn. */
+  var backQuietly = 0;
+
+  function standsOnBack(shut) {
+    overPage.push(shut);
     history.pushState({ over: true }, "", location.href);
-    dlg.addEventListener("close", function () {
-      /* back already took the entry, and with it the panel */
-      if (overPage !== dlg) return;
-      overPage = null;
-      if (history.state && history.state.over) {
-        backQuietly = true;
-        history.back();
+  }
+
+  /* A panel closed by any other means gives its entry back. */
+  function offBack(shut) {
+    var i = overPage.indexOf(shut);
+    if (i < 0) return;
+    overPage.splice(i, 1);
+    if (history.state && history.state.over) {
+      backQuietly++;
+      history.back();
+    }
+  }
+
+  /* --- AND THE PRESS THAT CLOSED IT GOES NO FURTHER -------------------------
+     A press outside a panel is caught on the way down, before the page under
+     it has heard anything, and everything the rest of that one press would
+     have become is eaten: the release, and the click the browser makes out of
+     the pair of them. Without this the press closes the panel and then opens
+     whatever it happened to land on.
+
+     The eating stops at the click, and a timer stands behind that for the
+     presses that never become one, a press that ends outside the window
+     included. */
+  function pressOutside(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    var rest = ["pointerup", "mouseup", "click"];
+    var over = false;
+    var timer = 0;
+
+    function eat(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.type === "click") off();
+    }
+    function off() {
+      if (over) return;
+      over = true;
+      clearTimeout(timer);
+      rest.forEach(function (name) { document.removeEventListener(name, eat, true); });
+    }
+
+    rest.forEach(function (name) { document.addEventListener(name, eat, true); });
+    timer = setTimeout(off, 800);
+  }
+
+  /* --- THE BAR ACROSS THE TOP, AND WHAT IT IS FOR --------------------------
+     The sheet follows the finger down and either goes back where it was or
+     keeps going, which is the whole of the gesture: a panel that snapped shut
+     at some invisible distance would be a panel that closed while somebody was
+     still deciding.
+
+     WHAT A DRAG MAY START ON. The bar always, whatever is under it. Anywhere
+     else on the sheet only where there is nothing to press and nothing that
+     has been scrolled: a press on a button is a press on that button, and a
+     panel somebody has scrolled down through is being read, not pushed away. */
+  var PUSHED = 90;
+
+  function gripUp(card, shut) {
+    var grip = el("div", "grip");
+    grip.setAttribute("aria-hidden", "true");
+    card.insertBefore(grip, card.firstChild);
+
+    var from = 0, went = 0, live = false, held = 0;
+
+    function scrolled(node) {
+      while (node && node !== card) {
+        if (node.scrollTop > 0) return true;
+        node = node.parentNode;
       }
-    }, { once: true });
+      return false;
+    }
+
+    card.addEventListener("pointerdown", function (event) {
+      if (event.button || live) return;
+      var onGrip = !!(event.target.closest && event.target.closest(".grip"));
+      if (!onGrip) {
+        if (event.target.closest("input, textarea, select, button, a, audio, video, [contenteditable]")) return;
+        if (scrolled(event.target)) return;
+      }
+      live = true;
+      held = event.pointerId;
+      from = event.clientY;
+      went = 0;
+      card.classList.add("is-held");
+      if (card.setPointerCapture) {
+        try { card.setPointerCapture(held); } catch (e) { /* gone already */ }
+      }
+    });
+
+    card.addEventListener("pointermove", function (event) {
+      if (!live || event.pointerId !== held) return;
+      var dy = event.clientY - from;
+      /* It does not come up. A sheet is at the foot of the screen and there is
+         nowhere above it to go, so pulling gives a quarter of itself and says
+         so. */
+      went = dy > 0 ? dy : dy / 4;
+      card.style.transform = "translateY(" + Math.max(0, went) + "px)";
+    });
+
+    ["pointerup", "pointercancel"].forEach(function (name) {
+      card.addEventListener(name, function (event) {
+        if (!live || event.pointerId !== held) return;
+        live = false;
+        card.classList.remove("is-held");
+        card.style.transform = "";
+        if (went > PUSHED) shut();
+      });
+    });
+  }
+
+  /* --- AND A DIALOG IS ONE OF THEM ------------------------------------------
+     The browser's own panel, wearing the same sheet: it keeps what it is good
+     at, which is the top layer, the dark behind it and Escape, and it is given
+     the bar, the push downwards and back, which it has none of. */
+  function openSheet(dlg) {
+    if (!dlg.sheeted) {
+      dlg.sheeted = true;
+      gripUp(dlg, function () { dlg.close(); });
+      /* The dark belongs to the dialog element itself, so a press that lands
+         on the element and not on anything inside it is a press outside. */
+      dlg.addEventListener("pointerdown", function (event) {
+        if (event.target !== dlg) return;
+        pressOutside(event);
+        dlg.close();
+      }, true);
+    }
+    var shut = function () { dlg.close(); };
+    standsOnBack(shut);
+    dlg.addEventListener("close", function () { offBack(shut); }, { once: true });
+    dlg.showModal();
   }
 
   function askMe() {
@@ -5517,8 +5658,7 @@
     /* THERE IS NO ביטול IN HERE ANY MORE. A panel with nothing typed into it
        has nothing to cancel, and the two ways out of a panel are the two ways
        out of everything: a press on the page behind it, or back. */
-    shutsOnBack(dlg);
-    dlg.showModal();
+    openSheet(dlg);
   }
 
   /* THERE IS ONE WAY IN AND IT IS ONE BUTTON. A panel offering a choice of
@@ -8415,7 +8555,7 @@
            called "סגנון" over the only place the writers can be named is a
            door with the wrong sign on it. */
         said: "יוצרים וסגנון", icon: ICON.tag,
-        open: function () { metaPanel.showModal(); },
+        open: function () { openSheet(metaPanel); },
       };
 
       /* The direction used to be one button up here, and it belonged to the
@@ -8565,7 +8705,7 @@
           /* the same two things it holds while it is being written, read
              rather than filled in */
           said: "יוצרים וסגנון", icon: ICON.tag,
-          open: function () { metaPanel.showModal(); },
+          open: function () { openSheet(metaPanel); },
         };
 
         /* On the way DOWN, so it lands before the link's own handler does: a
@@ -9956,7 +10096,7 @@
       dlg.appendChild(box);
       document.body.appendChild(dlg);
       dlg.addEventListener("close", function () { dlg.remove(); });
-      dlg.showModal();
+      openSheet(dlg);
     }
 
     function offerGap(ln, line, editable) {
@@ -13619,7 +13759,7 @@
     dlg.appendChild(box);
     document.body.appendChild(dlg);
     dlg.addEventListener("close", function () { dlg.remove(); });
-    dlg.showModal();
+    openSheet(dlg);
 
     ["dragenter", "dragover"].forEach(function (name) {
       drop.addEventListener(name, function (e) { e.preventDefault(); drop.classList.add("is-over"); });
@@ -15851,13 +15991,11 @@
     else box.appendChild(el("p", "muted", "כדי לשמור הקלטה צריך להיות מחובר לחשבון."));
     box.appendChild(actions);
 
-    /* THE DARK BEHIND IT IS THE WAY OUT WITHOUT ANSWERING, which is a dialog's
-       own gesture and not something to be taught. What is on the other side of
-       it is the recording exactly as it was left: held, with carry on and
-       finish over the song, and finish asks this again. */
-    dlg.addEventListener("click", function (event) {
-      if (event.target === dlg) dlg.close();
-    });
+    /* THE DARK BEHIND IT IS THE WAY OUT WITHOUT ANSWERING, which is what the
+       dark behind every panel here is for and not something to be taught (see
+       openSheet). What is on the other side of it is the recording exactly as
+       it was left: held, with carry on and finish over the song, and finish
+       asks this again. */
 
     dlg.appendChild(box);
     document.body.appendChild(dlg);
