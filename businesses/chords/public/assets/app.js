@@ -13963,7 +13963,12 @@
      to start listening is the picture that says it is listening, and the same
      one goes red when it is being kept. */
   function paintTape() {
-    if (!tapeBar || !tapeBar.isConnected) return;
+    /* Filled whether or not it is standing in the page yet. The strip is built
+       with the song and put into the bar afterwards (see placeControls), so
+       asking for it to be connected first meant the one state that matters
+       most, the one before anything has been pressed, was drawn into nothing
+       and the button was simply missing until something else repainted. */
+    if (!tapeBar) return;
     tapeBar.innerHTML = "";
 
     /* --- NOT STARTED: ONE BUTTON, AND IT RECORDS ------------------------------

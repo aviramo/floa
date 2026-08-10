@@ -632,8 +632,14 @@ try {
       const asked = await evaluate(`JSON.stringify({
         answers: [...document.querySelectorAll("dialog[open] .dlg-actions .btn")].map((b) => b.textContent),
       })`);
-      check("and asks two things, neither of which is walking away",
-        asked.answers.length === 2, JSON.stringify(asked.answers));
+      /* Saving needs an account and this harness has none, so what is offered
+         here is the one answer that does not: throwing it away. What matters
+         either way is that WALKING AWAY IS NOT A BUTTON. The question is what
+         to do with the take, "neither" is not an answer to it, and the dark
+         behind the panel is how somebody leaves without giving one. */
+      check("nothing on offer is a way of not answering",
+        asked.answers.length >= 1 && !asked.answers.some((w) => /סגירה|ביטול/.test(w)),
+        JSON.stringify(asked.answers));
 
       /* --- AND WALKING AWAY LEAVES IT EXACTLY WHERE IT WAS -------------------
          A panel that ends the take the moment it appears is a panel nobody can
