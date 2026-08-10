@@ -7554,10 +7554,12 @@
 
       app.innerHTML = "";
 
-      var head = el("div", "song-head");
-      head.appendChild(el("h1", null, "פענוח"));
-      head.appendChild(el("div", "by", "כל פעם שתמונה נמסרה למכונה: מה יצא ממנה, כמה עלתה, מתי, ועל חשבון מי."));
-      app.appendChild(head);
+      /* NO HEADING AND NO SENTENCE UNDER IT. The bar over the page already
+         says פענוח, and a second copy of that word in bigger letters is the
+         page saying its own name twice before showing anything. What stood
+         under it explained what a row here is, to somebody who is the only one
+         who can open this page and who put every one of those rows here. The
+         page opens on the money now, which is what it is for. */
 
       var bill = billOf(rows);
       var sum = el("div", "read-sum");
