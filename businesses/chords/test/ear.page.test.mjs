@@ -123,13 +123,11 @@ window.fetch = (url) => Promise.resolve(new Response(
   { status: 200, headers: { "content-type": "application/json" } }));
 
 /* --- a microphone that is not one ------------------------------------------
-   Stubbed at the browser's boundary, so that everything the app and ear.js do
-   with what comes back is the shipped code doing it. */
-Object.defineProperty(navigator, "mediaDevices", {
-  configurable: true,
-  value: { getUserMedia: () => Promise.resolve({ getTracks: () => [] }) },
-});
-
+   getUserMedia is NOT stubbed. Chrome is started with a fake capture device
+   (see the flags below), so what comes back is a real MediaStream: real enough
+   for MediaRecorder to record, which a hand written object is not, and that is
+   the whole reason. What IS stubbed is the AudioContext, so the analysis is
+   still fed a spectrum written out here by hand and stays exact. */
 const RATE = 48000;
 window.__sound = "chord";          // "note", or "hush": the test switches this
 window.__voicings = ${JSON.stringify(VOICINGS)};
@@ -194,9 +192,20 @@ const CHORD_READ = `(() => {
     width: r.querySelector(".mine-fill").style.width,
     top: r.classList.contains("is-top"),
   }));
+  const band = document.querySelector(".ear");
   return JSON.stringify({
-    open: !!document.querySelector(".ear"),
+    open: !!band,
+    /* Out of the way rather than gone: the band still exists, holding the
+       measurement, and while the follower is running it takes no room. */
+    away: !!band && band.hidden,
     padded: document.body.classList.contains("on-ear"),
+    /* What is done to a recording, which stands in the song's own strip. Not
+       called tape: this whole expression is a template string, that name is
+       already taken by the record of the chords heard, and the later key wins
+       silently, which is a confusing half hour. */
+    keys: [...document.querySelectorAll(".tape-bar .icon-btn")].length,
+    live: !!document.querySelector(".ear-door.is-live"),
+    taping: !!document.querySelector(".ear-door.is-taping"),
     heard: (document.querySelector(".heard-now") || {}).textContent,
     bars: [...document.querySelectorAll(".cx-fill")].map((b) => parseInt(b.style.height, 10) || 0),
     tape: (document.querySelector(".ear-tape") || {}).textContent,
@@ -218,7 +227,8 @@ const FOLLOW_READ = `(() => {
     heard: document.querySelectorAll(".sheet .chord.is-heard").length,
     said: (document.querySelector(".ear-at") || {}).textContent,
     on: !!document.querySelector(".ear-go.is-on"),
-    small: document.body.classList.contains("ear-small"),
+    away: !!(document.querySelector(".ear") || {}).hidden,
+    padded: document.body.classList.contains("on-ear"),
     sequence: all.map((c) => c.textContent),
     errors: window.__errors,
   });
@@ -317,6 +327,11 @@ async function withChrome(run) {
   const child = spawn(browser, [
     "--headless=new", `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
     "--no-first-run", "--no-default-browser-check", "--disable-gpu",
+    /* A real microphone that is not a microphone: a stream the machine makes
+       up, which getUserMedia hands over without asking anybody. Real enough
+       for MediaRecorder, which is what the recording is built on. */
+    "--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream",
+    "--autoplay-policy=no-user-gesture-required",
     "--window-size=1200,900", "about:blank",
   ], { stdio: "ignore" });
 
@@ -416,8 +431,16 @@ try {
       await sleep(900);
       const heard = await evaluate(CHORD_READ);
 
-      check("the panel is up", heard.open && heard.padded, JSON.stringify({ open: heard.open, padded: heard.padded }));
-      check("and the page was given room under itself for it", heard.padded, "on-ear was not set");
+      /* THE BAND IS BUILT AND IT IS OUT OF THE WAY. Following starts on its
+         own here (see below), and while it runs there is no band on screen at
+         all: what is being looked at is the song. */
+      check("the panel is built", heard.open && heard.away,
+        JSON.stringify({ open: heard.open, away: heard.away }));
+      check("and it takes no room off the song while the follower runs",
+        !heard.padded, "on-ear was still set");
+      check("the microphone in the strip says it is listening", heard.live, "no is-live");
+      check("and what is done to a recording stands beside it",
+        heard.keys === 1, heard.keys + " buttons");
       check("it says how loud it is hearing", heard.level && heard.level !== "0%", String(heard.level));
       check("an A minor chord is heard as A minor", heard.heard === "Am", String(heard.heard));
       check("and written down as it was heard", (heard.tape || "").indexOf("Am") >= 0, JSON.stringify(heard.tape));
@@ -450,11 +473,12 @@ try {
          and three Am in a line all lit is the honest answer to a question
          nobody asked. It looks exactly like a follower that is broken.
          ==================================================================== */
+      await until(evaluate, 'document.querySelector(".sheet .chord.is-at")');
       const began = await evaluate(FOLLOW_READ);
       check("the song the follower reads is the song on the page",
         JSON.stringify(began.sequence) === JSON.stringify(SEQUENCE), JSON.stringify(began.sequence));
       check("opening the tab on a song is asking to be followed through it",
-        began.on && began.small, JSON.stringify({ on: began.on, small: began.small }));
+        began.on && began.away, JSON.stringify({ on: began.on, away: began.away }));
       check("one chord is marked, and one only",
         began.marks === 1, JSON.stringify({ marks: began.marks, at: began.at }));
       check("the mark that lights every chord of a name is put away while it runs",
@@ -515,8 +539,8 @@ try {
       await evaluate('JSON.stringify((document.querySelector(".ear-go").click(), true))');
       await sleep(900);
       const off = await evaluate(FOLLOW_READ);
-      check("switching it off takes the mark and gives the room back",
-        off.marks === 0 && !off.on && !off.small, JSON.stringify(off));
+      check("switching it off takes the mark and brings the measurement back",
+        off.marks === 0 && !off.on && !off.away && off.padded, JSON.stringify(off));
 
       const bare = await evaluate(CHORD_READ);
       check("and the measurement's own mark comes back with it: every Am at once",
@@ -538,6 +562,38 @@ try {
         again.on && again.marks === 1 && again.heard === 0,
         JSON.stringify({ on: again.on, marks: again.marks, heard: again.heard }));
 
+      /* --- AND A RECORDING SAYS SO ON THE MICROPHONE ------------------------
+         From the other side of a room, without reading anything. */
+      await evaluate('JSON.stringify(([...document.querySelectorAll(".tape-bar .icon-btn")][0].click(), true))');
+      await sleep(500);
+      const taping = await evaluate(CHORD_READ);
+      check("recording turns the microphone red and live",
+        taping.taping === true, JSON.stringify({ taping: taping.taping }));
+      check("and offers a pause and a stop rather than a start",
+        taping.keys === 2, taping.keys + " buttons");
+
+      await evaluate('JSON.stringify(([...document.querySelectorAll(".tape-bar .icon-btn")][0].click(), true))');
+      await sleep(300);
+      const held = await evaluate(CHORD_READ);
+      check("a held recording is still red and no longer pulsing",
+        held.taping === false && held.keys === 2, JSON.stringify({ taping: held.taping, keys: held.keys }));
+
+      /* --- AND STOPPING OFFERS IT RATHER THAN SAVING IT ---------------------
+         A take is a person singing, most of them are not worth keeping, and a
+         library that fills up with every attempt is a library nobody opens. So
+         what stopping does is hand it back to be heard. */
+      await evaluate('JSON.stringify(([...document.querySelectorAll(".tape-bar .icon-btn")][1].click(), true))');
+      const offered = await until(evaluate, 'document.querySelector("dialog[open] .take-play")');
+      check("stopping the recording offers it to listen to", offered, "no panel came up");
+      const back = await evaluate(`JSON.stringify({
+        keys: document.querySelectorAll(".tape-bar .icon-btn").length,
+        taping: !!document.querySelector(".ear-door.is-taping"),
+      })`);
+      check("and the strip goes back to offering a new one",
+        back.keys === 1 && !back.taping, JSON.stringify(back));
+      await evaluate('JSON.stringify((document.querySelector("dialog[open]").close(), true))');
+      await sleep(300);
+
       /* --- the other tab ---------------------------------------------------- */
       await evaluate('JSON.stringify((window.__sound = "note", [...document.querySelectorAll(".ear-tab")][0].click(), true))');
       await sleep(700);
@@ -554,7 +610,7 @@ try {
       await sleep(200);
       const shut = await evaluate(CHORD_READ);
       check("closing takes the panel, the room under it and every mark",
-        !shut.open && !shut.padded && shut.marked.length === 0,
+        !shut.open && !shut.padded && shut.marked.length === 0 && !shut.live,
         JSON.stringify({ open: shut.open, padded: shut.padded, marked: shut.marked }));
 
       check("and nothing threw along the way", shut.errors.length === 0, JSON.stringify(shut.errors));

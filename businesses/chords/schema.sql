@@ -827,3 +827,152 @@ create trigger song_published_again
   after insert on public.song_versions
   for each row
   execute function public.library_changed();
+
+-- ==========================================================================
+-- TAKES. Somebody playing the song, recorded.
+--
+-- A song is words and chords, and that is the same for everybody who ever sang
+-- it. A take is one person playing it once: their tempo, their strumming,
+-- their voice, on an evening. The two are different kinds of thing, which is
+-- why this is a table rather than a column, and why a song can have any number
+-- of them from any number of accounts.
+--
+-- WHAT IS KEPT IS NOT ONLY THE SOUND. `marks` is where the mark was and when:
+-- every time the follower moved while the recording was running, the moment it
+-- moved and the chord it moved to. Which is the whole point of it. Sound alone
+-- is a recording and every phone has one of those; sound WITH the times turns
+-- playing it back into the page moving through the song exactly as it moved
+-- while it was being played, with no microphone in the room at all.
+--
+-- The audio itself is not in here. A row is a few hundred bytes and a take is
+-- a megabyte, so the sound lives in the bucket set up at the bottom of this
+-- file and the row holds the path to it.
+-- ==========================================================================
+create table if not exists public.song_takes (
+  id       uuid primary key default gen_random_uuid(),
+
+  song_id  uuid not null references public.songs (id) on delete cascade,
+
+  -- Whose. Filled in by the database from the token the request carried, never
+  -- by the browser, exactly as on a song and on an evening: a take belongs to
+  -- the account that recorded it the moment it is recorded, and there is no
+  -- other way to record one.
+  owner    uuid default auth.uid() references auth.users (id) on delete cascade,
+
+  -- WHICH TAKE THIS IS, counted per song per account: 1, 2, 3. The same idea
+  -- as a song's versions and for the same reason: somebody who played it three
+  -- times has three of them and needs to be able to say which. Worked out by
+  -- the browser from what it can already see, which is exactly this account's
+  -- takes of this song.
+  take     int not null default 1,
+
+  -- Where the sound is inside the bucket: <owner>/<song>/<id>. Not a URL: a
+  -- URL is an address that could change, and this is a name in a bucket this
+  -- project owns.
+  path     text not null,
+  -- What the browser managed to record in. Chrome gives webm and opus, Safari
+  -- gives mp4 and aac, and whichever it was has to be handed back to the audio
+  -- element that plays it.
+  mime     text not null default '',
+  seconds  numeric,
+
+  -- [{ "t": 1240, "at": 3 }, ...]  milliseconds from the start of the take,
+  -- and the chord it moved to, counted along the song the way the sheet counts
+  -- them (see followRead in app.js).
+  marks    jsonb not null default '[]'::jsonb,
+
+  -- THE KEY IT WAS PLAYED IN, because a take is a sound at a pitch and the
+  -- page is a drawing that moves. Somebody playing it back after taking the
+  -- song down two is hearing a recording that no longer matches what is
+  -- printed, and these are what lets the app say so. `page` is the
+  -- transposition the chords were drawn at, `capo` the fret the hand was at.
+  page     int not null default 0,
+  capo     int not null default 0,
+
+  -- Out in the world, and exactly like a song's own `published`: the only
+  -- thing that makes it readable by anybody else. A take is a recording of a
+  -- person singing, which is a more personal thing than a chord sheet, so it
+  -- starts private and stays that way until it is offered.
+  published boolean not null default false,
+
+  created_at timestamptz not null default now()
+);
+
+-- one song's takes, newest first, which is the only question asked of it
+create index if not exists song_takes_song_idx
+  on public.song_takes (song_id, created_at desc);
+create index if not exists song_takes_owner_idx on public.song_takes (owner);
+
+alter table public.song_takes enable row level security;
+
+-- Anybody at all for the ones that are out, and the account's own either way,
+-- which is the same rule the songs live under.
+drop policy if exists "a take that is out is readable" on public.song_takes;
+create policy "a take that is out is readable"
+  on public.song_takes for select
+  using (published or owner = auth.uid());
+
+drop policy if exists "a take is recorded by its account" on public.song_takes;
+create policy "a take is recorded by its account"
+  on public.song_takes for insert to authenticated
+  with check (owner = auth.uid());
+
+drop policy if exists "a take is changed by its account" on public.song_takes;
+create policy "a take is changed by its account"
+  on public.song_takes for update to authenticated
+  using (owner = auth.uid()) with check (owner = auth.uid());
+
+drop policy if exists "a take is deleted by its account" on public.song_takes;
+create policy "a take is deleted by its account"
+  on public.song_takes for delete to authenticated
+  using (owner = auth.uid());
+
+-- ==========================================================================
+-- And the bucket the sound itself is in.
+--
+-- NOT PUBLIC. A public bucket is one where knowing the path is knowing the
+-- sound, and an unpublished take would then be private only in the sense that
+-- nobody has been told where it is. This one is read through the same rule the
+-- table is read through, asked of the row that names the file: out, or yours.
+-- So a take nobody has offered is readable by nobody, and there is no address
+-- that changes that.
+--
+-- What it costs is that the browser cannot point an <audio> element straight
+-- at a URL, because an element cannot carry an authorization header. It
+-- fetches the sound and plays it out of memory instead, which for a few
+-- minutes of opus is nothing.
+-- ==========================================================================
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('takes', 'takes', false, 26214400,
+        array['audio/webm', 'audio/ogg', 'audio/mp4', 'audio/mpeg', 'audio/aac', 'audio/wav'])
+on conflict (id) do update
+  set public = false,
+      file_size_limit = excluded.file_size_limit,
+      allowed_mime_types = excluded.allowed_mime_types;
+
+-- Readable exactly when the row that names it is readable. `name` in
+-- storage.objects is the path within the bucket, which is what song_takes.path
+-- holds, so the two are the same string and this is one lookup.
+drop policy if exists "a take sound follows its row" on storage.objects;
+create policy "a take sound follows its row"
+  on storage.objects for select
+  using (
+    bucket_id = 'takes' and exists (
+      select 1 from public.song_takes t
+       where t.path = storage.objects.name
+         and (t.published or t.owner = auth.uid())
+    )
+  );
+
+-- And written by the account it belongs to. The path opens with that account's
+-- own uuid, which is what makes this checkable without reading another table:
+-- a file can only be put where its owner's name already is.
+drop policy if exists "a take sound is uploaded by its account" on storage.objects;
+create policy "a take sound is uploaded by its account"
+  on storage.objects for insert to authenticated
+  with check (bucket_id = 'takes' and (storage.foldername(name))[1] = auth.uid()::text);
+
+drop policy if exists "a take sound is removed by its account" on storage.objects;
+create policy "a take sound is removed by its account"
+  on storage.objects for delete to authenticated
+  using (bucket_id = 'takes' and (storage.foldername(name))[1] = auth.uid()::text);

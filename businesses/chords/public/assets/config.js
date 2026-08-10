@@ -33,6 +33,15 @@ window.CHORDS_CONFIG = {
      next (see sawSong in app.js). */
   openTable: "song_opens",
 
+  /* And a seventh, which is not a fact about a song but a person playing one:
+     a take. What is kept is the sound AND the times, every moment the mark
+     moved and the chord it moved to, which is what turns playing it back into
+     the page moving through the song exactly as it moved while it was played.
+     The sound itself is too big for a row, so it lives in a bucket and the row
+     holds the path. See song_takes in schema.sql. */
+  takeTable: "song_takes",
+  takeBucket: "takes",
+
   /* The Worker holds the Anthropic key and reads an uploaded photo or PDF.
      Same deployment that sends the leads for every other business here. */
   transcribeEndpoint: "https://floa-lead.floa-il.workers.dev/transcribe",

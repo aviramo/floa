@@ -491,6 +491,12 @@
     open: open,
     close: close,
     live: live,
+    /* THE SAME STREAM, for whoever wants to keep it rather than measure it.
+       A recording and a reading are two things done to one microphone, and
+       asking for a second one would be a second permission prompt, a second
+       red light in the tab, and two recordings of the same room that do not
+       line up with each other. */
+    stream: function () { return stream; },
     note: note,
     chord: chord,
     score: score,

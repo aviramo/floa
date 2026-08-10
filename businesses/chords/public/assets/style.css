@@ -149,14 +149,10 @@ body.on-song { background: var(--bg); }
   color: var(--ink); text-decoration: none;
 }
 .brand svg { width: 24px; height: 24px; color: var(--accent); }
-/* THE TICK THAT TAKES EVERYTHING, BETWEEN THE MARK AND THE NAME. Its own slot
-   rather than a corner of the one after the name, because the two are read
-   together: the box, then the word it is ticking. Closer to the name than the
-   bar's own gap would put it, so it reads as the name's own box and not as a
-   third thing standing between the mark and the page. Empty on every page but
-   the library, and an empty slot still spends the row's gap. */
-.top-pick { flex: none; display: flex; align-items: center; margin-inline-end: -8px; }
-.top-pick:empty { display: none; }
+/* THERE WAS A .top-pick HERE, a slot between the mark and the name holding a
+   tick that took every song on the page, and a .picking beside it holding what
+   could then be done to them. Both are gone with the ticking itself: see the
+   note over .list. */
 .top-actions { margin-inline-start: auto; display: flex; align-items: center; gap: 8px; }
 
 /* THE BAR'S BUTTONS ARE DARKER, AND THAT IS ALL THEY ARE. There used to be a
@@ -417,7 +413,7 @@ body.on-song { background: var(--bg); }
      into the box, and one more picture standing there is one more bite out of
      the ninety pixels the box was already short of. */
   body.finding .brand, body.finding .top-actions, body.finding .top-name,
-  body.finding .top-facts, body.finding .top-pick { display: none; }
+  body.finding .top-facts { display: none; }
   /* everything that could have given the bar back is now hidden, so the box
      carries its own way out */
   body.finding .top-find .find-x { display: flex; }
@@ -532,18 +528,8 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    AT THE FAR END, over the column of labels they are counting. A number and
    the rows it counts want to be in the same place, or the eye has to travel
    the width of the page to connect them. */
-/* What is ticked, next to the tick that takes everything: on a desk that is
-   beside the name of the page and on a phone it is the row over the wall. It
-   is not worth a line of the page of its own either way, least of all one that
-   appears while somebody is busy ticking and pushes the rows they are aiming
-   at down. */
-.picking { display: flex; align-items: center; gap: 4px; flex: none; }
-.picking .icon-btn { width: 28px; height: 26px; }
-.picking .kill { color: var(--danger); }
-.picking .kill:hover { color: #fff; background: var(--danger); border-color: var(--danger); }
-/* In the row over the wall they take the width, which is what leaves what is
-   ticked at the other end of it with nothing to push it back with. In the
-   search box they take what they need (see .find-extra). */
+/* In the row over the wall they take the width, and in the search box they
+   take what they need (see .find-extra). */
 .tallies {
   display: flex; flex-wrap: wrap; gap: 8px;
   flex: 1 1 auto;
@@ -558,15 +544,18 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 /* Each in its own state's colour, always, and not only when it is the one
    being looked at: it is the same colour that state wears on every row below
    and on the button inside the song. Pressed, it fills with it. */
-/* THE ROW OVER THE WALL, AND ONLY ON A PHONE. It opens with the tick that
-   takes everything shown, then the states, and ends with what is ticked.
-
-   On a desk the three of them are in the bar, which had the room standing
-   empty, and this row is not drawn at all: see rehome in the script. */
+/* THE ROW OVER THE WALL, AND ONLY ON A PHONE: the states, and nothing else
+   any more. On a desk they are at the end of the search box and this row is
+   not drawn at all: see rehome in the script. */
 .kinds-row {
   display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 16px;
 }
-.pick-all { display: flex; flex: none; }
+/* AND THEY SIT IN THE MIDDLE OF IT. They were against the start edge because
+   a tick stood in front of them holding them there; on their own they were a
+   short huddle of chips in one corner of a page whose every other band, the
+   shelves and the wall, is laid out across the whole of it. Centred, they are
+   a band of their own. */
+.kinds-row .tallies { justify-content: center; }
 
 .tally-imported { color: var(--imported-ink); }
 .tally-review { color: var(--review-ink); }
@@ -631,22 +620,12 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   break-inside: avoid; margin-bottom: 12px;
 }
 .list li > a, .list li > .row { flex: 1 1 auto; min-width: 0; }
-/* Over the corner of the card, in the gutter the card leaves for it: level
-   with the name, which is the thing it is ticking, and outside the link, which
-   is the only place a checkbox can be and still work (see songRow). */
-.list .pick {
-  position: absolute; z-index: 1;
-  top: 16px; inset-inline-start: 16px;
-  display: flex;
-}
-.list li.can-pick > a, .list li.can-pick > .row { padding-inline-start: 46px; }
-/* The box over a card, and the one at the head of the row that ticks all of
-   them: one box, one size, because they are the same gesture at two scales. */
-.list .pick input, .pick-all input {
-  width: 20px; height: 20px; margin: 0; cursor: pointer; accent-color: var(--accent);
-}
-/* what has been picked, said on the row itself and not only in the count */
-.list li.is-picked > a, .list li.is-picked > .row { border-color: var(--accent); }
+/* THERE WAS A CHECKBOX OVER THE CORNER OF EVERY CARD, and a gutter left in the
+   card for it. A whole second way of using the library hung off it: tick a few
+   songs and a row of buttons appeared to do something to all of them at once.
+   It is gone. A card is a song and a press on it opens that song, and what
+   happens to a song happens on the song's own page, where the thing being
+   changed is on the screen while it changes. */
 
 /* Everything starts at the top of the card. The cards in a row are all the
    height of the tallest of them, so a song with a short name and no chords
@@ -2394,21 +2373,16 @@ body.on-song .top { border-bottom: 0; }
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
-/* The same small panel, holding what a handful of songs can be called: every
-   style the library already uses, one press each, and a field for one it has
-   never heard of. */
-.styler { max-width: min(320px, calc(100vw - 24px)); }
-.styler-known { display: flex; flex-wrap: wrap; gap: 4px; }
-.styler input[type="text"] {
-  margin-top: 6px; padding: 6px 10px; border-radius: var(--corner); font-size: 14px;
-}
+/* THERE WAS A .styler HERE, the same small panel holding every style the
+   library already uses, for naming a handful of ticked songs at once. It went
+   with the ticking. A song is given its style on the song's own page. */
 
 @media print {
   .top, .tools, .ed-bar, .song-meta, .toast, .print-menu { display: none !important; }
   /* A microphone is about the room, and paper is not in it. The mark it leaves
      on the chords goes with it: what is being played at this second is the
      shortest lived fact in the app, and printing one is printing a moment. */
-  .ear { display: none !important; }
+  .ear, .takes { display: none !important; }
   .chord.is-heard, .chord.is-at {
     color: inherit !important; background: none !important; box-shadow: none !important;
   }
@@ -2767,6 +2741,94 @@ body.on-ear.ear-small { padding-bottom: 92px; }
 @media (prefers-reduced-motion: no-preference) {
   .chord { transition: background-color .12s linear, color .12s linear, box-shadow .12s linear; }
 }
+
+/* ==========================================================================
+   RECORDING, and what says so.
+
+   THE RED IS ON THE MICROPHONE. Somebody playing needs to know they are being
+   recorded from the other side of a room, without reading anything, so the
+   picture they pressed to start listening is the picture that says it is
+   listening, and the same one goes red while it is being kept.
+
+   The pulse is what makes it a state rather than a colour. A red dot that does
+   not move reads as a decoration; one that breathes reads as live, and that is
+   the whole difference between "there is a microphone here" and "it is on".
+   ========================================================================== */
+.tools .ear-door.is-live { color: var(--accent); border-color: var(--accent); background: #eefaf7; }
+.tools .ear-door.is-taping,
+.tools .ear-door.is-held { color: #fff; background: var(--chord); border-color: var(--chord); }
+.tools .ear-door.is-taping { animation: on-air 1.6s ease-in-out infinite; }
+@keyframes on-air {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(225, 29, 99, .55); }
+  50% { box-shadow: 0 0 0 5px rgba(225, 29, 99, 0); }
+}
+/* Held is red and still, because a pause is exactly "recording, not moving". */
+@media (prefers-reduced-motion: reduce) { .tools .ear-door.is-taping { animation: none; } }
+
+/* The two or three things done to a recording, beside the microphone rather
+   than at the foot of the page: these are pressed while playing, at arm's
+   length, and the band along the bottom was covering the song to hold them. */
+.tape-bar { display: inline-flex; align-items: center; gap: 4px; }
+.tape-bar .icon-btn { width: 30px; height: 30px; }
+.tape-bar .icon-btn svg { width: 15px; height: 15px; }
+
+/* --- THE ONE THING HERE THAT STARTS SOMETHING ------------------------------
+   Everything else in this strip is a setting: a picture on a white square,
+   quiet on purpose, because a setting is read far more often than it is
+   pressed. This one is the reason the microphone was switched on at all, and
+   a button that has to be found among four identical grey squares is a button
+   nobody finds.
+
+   So it is filled, in the ink the chords are already in, and it is round,
+   because a record button has been a round red dot on every machine that ever
+   recorded anything and there is nothing to be gained by being the one that
+   is not. */
+.tape-bar .icon-btn.is-rec {
+  color: #fff; background: var(--chord); border-color: var(--chord);
+  border-radius: 999px;
+  box-shadow: 0 1px 4px rgba(225, 29, 99, .35);
+}
+.tape-bar .icon-btn.is-rec:hover {
+  background: #c2185b; border-color: #c2185b;
+  box-shadow: 0 2px 7px rgba(225, 29, 99, .45);
+}
+.tape-bar .icon-btn.is-rec svg { width: 13px; height: 13px; }
+
+/* ==========================================================================
+   THE TAKES OF A SONG.
+
+   Under the words, where the words end. A take is not what somebody came to
+   the page for, so it does not stand between them and the song; it is worth
+   finding when they get to the bottom, so that is where it is.
+   ========================================================================== */
+.takes { max-width: 720px; margin: 26px auto 40px; padding: 0 4px; }
+.takes:empty { display: none; }
+.takes-head { font-size: 15px; color: var(--ink-soft); font-weight: 600; margin: 0 0 8px; }
+.takes-list { display: flex; flex-direction: column; gap: 6px; }
+
+.take {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--corner);
+  background: var(--card);
+}
+.take-go { flex: none; }
+.take-said { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.take-who { font-size: 14px; color: var(--ink); }
+.take-when { font-size: 12px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+/* A take is a sound at a pitch and the page is a drawing that moves, so a
+   reader who has taken the song down two is about to hear something that does
+   not agree with the chords in front of them. Said, never prevented. */
+.take-off {
+  flex: none; font-size: 11px; color: var(--ink-soft);
+  padding: 2px 8px; border-radius: 999px; background: var(--bg);
+}
+.take-out.is-on { color: var(--accent); border-color: var(--accent); background: #eefaf7; }
+.take-play { width: 100%; height: 34px; margin-top: 2px; }
+.take.is-mine { border-color: var(--chord-soft); }
+
+/* In the panel that offers the take just recorded, where it is the one thing
+   on the page and gets the whole width of it. */
+.dlg-in .take-play { margin: 10px 0 4px; }
 
 /* Both doors are toggles and both say so, in the two places they stand. */
 .tools .ear-door.is-on, .top-actions .icon-btn.is-on {

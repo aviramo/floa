@@ -88,8 +88,8 @@
     down: '<path d="M12 5v14m0 0l-6-6m6 6l6-6"/>',
     copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/>',
     close: '<path d="M6 6l12 12M18 6L6 18"/>',
-    /* a luggage label, which is what a style is: a word tied onto a song */
-    tag: '<path d="M12.8 3.6H20v7.2l-9.1 9.1-7.2-7.2 9.1-9.1Z"/><circle cx="16.5" cy="7.1" r="1.2"/>',
+    /* THERE WAS A `tag` HERE, a luggage label for the button that put one word
+       onto a handful of ticked songs. The ticking is gone and so is it. */
     check: '<path d="M5 13l4 4 10-11"/>',
     /* a box with a tick in it: everything on screen, at once */
     /* four corners opening outwards: the song, and nothing else, on the whole
@@ -180,6 +180,14 @@
        purpose: one names what is being measured, the other names the ear. */
     fork: '<path d="M8 3v7.5a4 4 0 0 0 8 0V3"/><path d="M12 14.5V21"/>',
     mic: '<rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><path d="M12 17.5V21"/>',
+    /* --- and what is done to a recording, in the three shapes every machine
+       that has ever recorded anything has used. Filled rather than drawn,
+       because these are pressed while playing, at arm's length, by somebody
+       who is not looking closely. */
+    dot: '<circle cx="12" cy="12" r="6.5" fill="currentColor" stroke="none"/>',
+    pause: '<rect x="8" y="6" width="3.2" height="12" rx="1" fill="currentColor" stroke="none"/><rect x="12.8" y="6" width="3.2" height="12" rx="1" fill="currentColor" stroke="none"/>',
+    stop: '<rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor" stroke="none"/>',
+    play: '<path d="M9 6.5l9 5.5-9 5.5V6.5Z" fill="currentColor" stroke="none"/>',
   };
 
   function iconBtn(icon, title, onClick) {
@@ -758,6 +766,19 @@
     return list.map(function (s) { return String(s || "").trim(); }).filter(Boolean);
   }
 
+  /* --- AND THE SONGS THAT ARE NOT CALLED ANYTHING -----------------------------
+     Every style is a shelf, and the songs with no style at all are a shelf too:
+     they are the ones with a word still owed to them, and until now the only
+     way to see them together was to scroll the whole library looking for cards
+     without a chip. It stands with the other shelves and it opens the same way,
+     as a page.
+
+     Its address is `-`, which is not a name anybody would call a kind of song
+     and is the shortest way of writing "none". The word on the card is Hebrew;
+     the address is not, because it is not a name being spelled. */
+  var NO_STYLE = "-";
+  var NO_STYLE_SAID = "ללא סגנון";
+
   /* Trimmed, deduplicated and in the order they were added. Kept in a plain
      array rather than a set so the order is the author's. */
   function tidyStyles(list) {
@@ -1101,6 +1122,29 @@
     var out = {};
     Object.keys(song).forEach(function (k) { if (!gone[k]) out[k] = song[k]; });
     return out;
+  }
+
+  /* --- WHOSE SONG IT IS ------------------------------------------------------
+     A song is deleted by the account that put it in the library and by nobody
+     else, and that is not decided here: the database refuses the write, and it
+     would refuse it just the same if this file said otherwise (see the
+     policies on songs in schema.sql).
+
+     What this is for is the OFFER. The library is everybody's now, so a signed
+     in reader opening somebody else's published song was being shown a
+     wastebasket that could only ever answer "אין הרשאה", and a button that
+     fails when pressed does not read as somebody else's song, it reads as a
+     broken app. So the rule is asked twice: once by the database, which is
+     what makes it true, and once here, which is what keeps it from being
+     offered.
+
+     A song with no owner belongs to nobody, and no account is nobody, so the
+     answer is no: the database says the same. The one case where it opens up
+     again is a table with no owner column at all, which is the world before
+     any of this, where there is no rule to keep either. */
+  function mySong(song) {
+    if (!has("owner")) return auth.in;
+    return !!(song && song.owner && auth.session && song.owner === auth.session.id);
   }
 
   /* The project is the domain's, the table is this app's. Everything below
@@ -3473,7 +3517,7 @@
   var state = {
     songs: null, printable: false, printer: null, killer: null,
     editToggle: null, songControls: null, redrawSong: null, rehome: null,
-    wake: null, ear: null,
+    wake: null, ear: null, takeSong: null, redrawTakes: null,
   };
 
   /* The answers the bar reads to know what to offer. They are about the page
@@ -3481,7 +3525,8 @@
      `songs` is not one of them: it is the library itself, one copy for
      everybody, and every sheet showing it is showing the same songs. */
   var PAGE_STATE = ["printable", "printer", "killer", "editToggle",
-    "songControls", "redrawSong", "rehome", "wake", "sift", "ear"];
+    "songControls", "redrawSong", "rehome", "wake", "sift", "ear",
+    "takeSong", "redrawTakes"];
 
   function takeKids(node) {
     if (!node) return null;
@@ -3509,7 +3554,6 @@
       bar: name ? name.textContent : "",
       tab: document.title,
       facts: takeKids(document.getElementById("topFacts")),
-      pick: takeKids(document.getElementById("topPick")),
       extra: takeKids(findExtra),
     };
     layer.state = {};
@@ -3536,7 +3580,6 @@
     else where(h.bar);
     if (document.title !== h.tab) document.title = h.tab;
     putKids(document.getElementById("topFacts"), h.facts);
-    putKids(document.getElementById("topPick"), h.pick);
     putKids(findExtra, h.extra);
     paintHeader();
     /* A list that stopped looking at itself while it was out of the document
@@ -4446,6 +4489,7 @@
       fill(bar, mine);
       /* last, because it puts them at the front */
       placeControls();
+      paintTape();
       return;
     }
 
@@ -4611,10 +4655,6 @@
        would still be standing there on the page after it. */
     var beside = document.getElementById("topFacts");
     if (beside) beside.textContent = "";
-    /* And the tick on the other side of the name, which is the library's and
-       has no business standing over a song. */
-    var picked = document.getElementById("topPick");
-    if (picked) picked.textContent = "";
     /* And the end of the search box, which is the same kind of loan: the page
        that is open puts something there and the next page must not inherit
        it. The box itself is built once and lives through every view. */
@@ -5141,7 +5181,12 @@
      the address is the only way to it: the search box offers the shelf, the
      shelf is a page, and the bar says its name. */
   function viewIndex(shelf) {
-    where(shelf || "אקורדים", shelf ? null : "אקורדים");
+    /* The shelf of songs with no style is a shelf like the others everywhere
+       except in its name, which is a sentence about them rather than a word
+       any of them carries: it says so in the bar, and nothing about it can be
+       renamed, because there is no word there to rewrite. */
+    var bare = shelf === NO_STYLE;
+    where(bare ? NO_STYLE_SAID : (shelf || "אקורדים"), shelf ? null : "אקורדים");
     setBusy("טוען שירים");
 
     db.list().then(function (songs) {
@@ -5162,7 +5207,7 @@
          that has it and those are the songs. It commits when the typing is
          finished rather than on the keystroke: every letter would otherwise be
          a write to a dozen rows and a new address for the page. */
-      if (shelf && auth.in) {
+      if (shelf && !bare && auth.in) {
         /* Named, so that a name that came to nothing can put the field back as
            a field rather than leaving the shelf with a name that cannot be
            typed in until the page is opened again. */
@@ -5189,130 +5234,22 @@
         shelfField();
       }
 
-      /* --- several at once -----------------------------------------------------
-         Sometimes what you want to do is to a handful of songs rather than to
-         one: five readings of the same sheet, four mistakes from the same
-         afternoon. Deleting them one dialog at a time is the same work five
-         times over, and the row already knows which song it is.
+      /* --- SEVERAL AT ONCE, AND NOT ANY MORE -----------------------------------
+         There was a checkbox on the corner of every card here, a tick in the
+         bar that took all of them, and a row of buttons that appeared once
+         anything was ticked: delete these five, call these fifteen a circle
+         song. It is gone, all of it.
 
-         Only for a signed in reader, because deleting is. A visitor gets the
-         library exactly as it was, without a column of boxes for something
-         they cannot do. */
-      var picked = {};
+         It was a second way of using the library laid over the first, and the
+         first is the one the page is for: a wall of songs you press to open.
+         Every card carried a box for a gesture almost nobody was making, the
+         wall answered a press in two different ways depending on where in the
+         card it landed, and what the buttons then did happened to songs that
+         were not on the screen while it happened.
 
-      function pickedSongs() {
-        return state.songs.filter(function (s) { return picked[s.id]; });
-      }
-
-      /* AT THE FAR END OF THE STYLES ROW. They were a bar of their own between
-         the counts and the songs, which is a whole line of the page standing
-         empty most of the time and arriving under the reader's eye exactly
-         while they are busy ticking, pushing the rows they are aiming at down
-         by its own height. That row already exists and has room in it. */
-      var picking = el("div", "picking");
-      /* Pictures, and no words. They are two of the most familiar pictures
-         there are, they stand in a box already full of words, and the words
-         they had were three times their own width. What is ticked is on the
-         rows themselves, in ticks, so the row above them does not need to
-         count it out loud; how many is in the question the trash asks. */
-      /* --- a style, onto all of them at once ------------------------------------
-         Naming what kind of song something is happens in batches: a folder of
-         circle songs goes up, and then all of them are circle songs. One at a
-         time is the same word typed fifteen times, in fifteen pages that each
-         have to be opened and left.
-
-         It does not touch anything else about them. A style is a word tied on
-         the outside; it is not the song, so a song that was published stays
-         published and nothing goes back to being a draft. */
-      var styleBtn = iconBtn(ICON.tag, "לתת סגנון", function () { askStyle(styleBtn); });
-      picking.appendChild(styleBtn);
-
-      var styler = null;
-
-      function closeStyler() {
-        if (!styler) return;
-        styler.remove();
-        styler = null;
-        document.removeEventListener("pointerdown", stylerOutside, true);
-      }
-
-      function stylerOutside(event) {
-        if (!styler) return;
-        if (styler.contains(event.target)) return;
-        if (styleBtn.contains(event.target)) return;
-        closeStyler();
-      }
-
-      function askStyle(anchor) {
-        if (styler) return closeStyler();
-
-        styler = el("div", "print-menu styler");
-
-        /* Every style the library already uses, one press each: the second
-           song of a kind should be called what the first one was called, and
-           nobody should have to remember how they spelled it. */
-        var known = {};
-        state.songs.forEach(function (s) {
-          styles(s).forEach(function (name) { known[name] = true; });
-        });
-        var names = Object.keys(known).sort(function (a, b) { return a.localeCompare(b, "he"); });
-        if (names.length) {
-          var row = el("div", "styler-known");
-          names.forEach(function (name) {
-            row.appendChild(button(name, null, "ghost small", function () { giveStyle(name); }));
-          });
-          styler.appendChild(row);
-        }
-
-        /* and one that the library has never heard of */
-        var field = el("input");
-        field.type = "text";
-        field.placeholder = "סגנון חדש";
-        field.setAttribute("aria-label", "סגנון חדש לשירים שנבחרו");
-        field.addEventListener("keydown", function (event) {
-          if (event.key !== "Enter") return;
-          event.preventDefault();
-          giveStyle(field.value);
-        });
-        styler.appendChild(field);
-
-        document.body.appendChild(styler);
-        var box = anchor.getBoundingClientRect();
-        var width = styler.offsetWidth;
-        styler.style.top = (box.bottom + 6) + "px";
-        styler.style.left = Math.min(Math.max(6, box.right - width), window.innerWidth - width - 6) + "px";
-        field.focus();
-
-        document.addEventListener("pointerdown", stylerOutside, true);
-      }
-
-      function giveStyle(raw) {
-        var name = tidyStyles([raw])[0];
-        if (!name) return;
-        var going = pickedSongs();
-        if (!going.length) return closeStyler();
-
-        closeStyler();
-        Promise.all(going.map(function (s) {
-          return db.update(s.id, { styles: tidyStyles(styles(s).concat([name])) });
-        })).then(function () {
-          picked = {};
-          toast(going.length === 1 ? "הסגנון נוסף" : "הסגנון נוסף ל-" + going.length + " שירים");
-          return refresh();
-        }).catch(function (e) {
-          toast("לא הצלחתי: " + e.message, true);
-          return refresh();
-        });
-      }
-
-      var killBtn = iconBtn(ICON.trash, "מחיקה", removePicked);
-      killBtn.classList.add("kill");
-      picking.appendChild(killBtn);
-      picking.appendChild(iconBtn(ICON.close, "ביטול הבחירה", function () {
-        picked = {};
-        paint();
-      }));
-      picking.hidden = true;
+         What is left is the one way: open the song, and change it on its own
+         page, where the thing being changed is in front of you. Deleting is
+         there too, in the song's own menu. */
 
       /* --- what state the library is in ----------------------------------------
          Three numbers under the search box: how many songs are waiting to be
@@ -5363,89 +5300,29 @@
          no amount of typing can answer. */
       var tallies = el("div", "tallies");
 
-      /* --- EVERYTHING THE FILTER LEFT ------------------------------------------
-         The ticks are for doing one thing to a handful of songs, and the
-         handful is usually "these", where "these" is what
-         the chips have already narrowed the wall down to: the songs with no
-         style yet, everything by one writer, the drafts. Ticking forty of
-         those by hand is forty presses to say a word the page already knows.
-
-         It is a toggle against what is SHOWN, not against the library: press
-         it with the shown songs all ticked and they all let go. So it is safe
-         to press twice and it never reaches past what is on screen. */
-      var allBtn = null;
-      var allTick = null;
-      var shownNow = [];
-
-      function allShownPicked() {
-        return shownNow.length > 0 && shownNow.every(function (s) { return picked[s.id]; });
-      }
-
-      function pickAll() {
-        var take = !allShownPicked();
-        shownNow.forEach(function (s) {
-          if (take) picked[s.id] = true;
-          else delete picked[s.id];
-        });
-        paint();
-      }
-
       /* Set by the address and never from the page: /style/<name> is a shelf,
          and every other way into the library shows all of it. */
       var kind = shelf || null;
 
       /* --- ON A DESK, NONE OF THIS IS ON THE PAGE ------------------------------
-         There was a row over the wall holding the tick that takes everything
-         shown, the three state chips and the two buttons for what is ticked.
-         On a wide screen it is gone, and its three parts went into the bar,
-         which had the room for all of them standing empty:
-
-           the tick BEFORE the name of the page and after the mark, in a slot
-           of its own: "אקורדים" is the name of what is on screen and the tick
-           means "all of it", and a word is qualified by what stands in front
-           of it. After the name it read as one more thing hung off the end of
-           a row that already ends in a search box; in front of it, the two are
-           one phrase. The buttons for what is ticked stay on the far side of
-           the name, because they are not part of that phrase: they appear only
-           once something is ticked, and a slot that grows and empties itself
-           between the mark and the name would shift the name every time
-
-           the states at the far end of the search box (see buildFind)
-
-         AND THE TICK IS A CHECKBOX, the same box at the same size as the one
-         in the corner of every card, because it does the same thing to all of
-         them at once. An icon of a ticked square inside a button said "a
-         control to do with ticking"; a checkbox says whether they are ticked,
-         which is the thing worth knowing at a glance. Some of them ticked has
-         a face of its own here and no icon could have carried it.
+         There was a row over the wall holding the state chips, and on a wide
+         screen it is gone: they went to the far end of the search box (see
+         buildFind), which had the room standing empty.
 
          ON A PHONE THE ROW STAYS, because the bar there does not have the
          room: the name is beside a mark and four pictures, and the search box
          is a thirty pixel glass with nothing inside it to hang anything on.
-         The row is the same row, holding the same three things in the same
-         order.
 
          Which of the two it is depends on a width that can change under a
          window that is already open, so it is written once as a function and
          the media query calls it again. The bar's slots are wiped by `where`
          on every page, so nothing here can be left standing over a song. */
-      if (auth.in) {
-        allBtn = el("label", "pick-all");
-        allTick = el("input");
-        allTick.type = "checkbox";
-        allTick.addEventListener("change", pickAll);
-        allBtn.appendChild(allTick);
-      }
       var overWall = el("div", "kinds-row");
       app.appendChild(overWall);
 
       function rehome() {
-        var beside = document.getElementById("topFacts");
-        var before = document.getElementById("topPick");
-        var inBar = !NARROW.matches && beside && findExtra;
-        if (allBtn) (inBar && before ? before : overWall).appendChild(allBtn);
+        var inBar = !NARROW.matches && findExtra;
         (inBar ? findExtra : overWall).appendChild(tallies);
-        if (auth.in) (inBar ? beside : overWall).appendChild(picking);
         /* An empty row is still a row: it has a margin under it, and on a desk
            that margin is the band of page this whole move was for. */
         overWall.hidden = !overWall.firstChild;
@@ -5509,18 +5386,28 @@
         if (shelf) return;
 
         var counted = {};
+        var bareN = 0;
         state.songs.forEach(function (s) {
-          styles(s).forEach(function (name) { counted[name] = (counted[name] || 0) + 1; });
+          var mine = styles(s);
+          if (!mine.length) bareN++;
+          mine.forEach(function (name) { counted[name] = (counted[name] || 0) + 1; });
         });
         /* Counted over the whole library, sieved by name: how many songs a
            shelf holds is a fact about the shelf, not about what was typed. */
         var names = Object.keys(counted).filter(passes)
           .sort(function (a, b) { return a.localeCompare(b, "he"); });
-        if (names.length) {
-          bands.appendChild(wall(names.map(function (name) {
-            return shelfRow(name, counted[name]);
-          })));
+        var cards = names.map(function (name) {
+          return shelfRow(name, counted[name], addr("style", name));
+        });
+        /* AND LAST OF ALL, THE ONES WITH NO WORD ON THEM. Last because the
+           shelves before it are sorted by name and this one has none to sort
+           by: it is where the row ends rather than a place in the row. It is
+           not drawn when there are none, like every other shelf, and it
+           answers to its own words in the box over it. */
+        if (bareN && passes(NO_STYLE_SAID)) {
+          cards.push(shelfRow(NO_STYLE_SAID, bareN, addr("style", NO_STYLE)));
         }
+        if (cards.length) bands.appendChild(wall(cards));
       }
 
       /* The people are not here on purpose: the library has one name per song
@@ -5536,37 +5423,6 @@
 
       var list = el("ul", "list");
       app.appendChild(list);
-
-      /* Named, and not only counted: what is being agreed to is a list of
-         songs, and the names are what somebody can check. It no longer says
-         "לצמיתות", because it is not: they go to the deleted list with their
-         words and their chords, and the question says which way out there is
-         rather than making a promise the app does not keep. */
-      function removePicked() {
-        var going = pickedSongs();
-        if (!going.length) return;
-
-        var names = going.map(function (s) { return s.title; });
-        var head = going.length === 1
-          ? "למחוק את השיר הזה?"
-          : "למחוק " + going.length + " שירים?";
-        var said = names.slice(0, 12);
-        if (names.length > said.length) said.push("ועוד " + (names.length - said.length));
-        if (!window.confirm(head + "\n\n" + said.join("\n") + "\n\nאפשר יהיה לשחזר מתוך שירים שנמחקו.")) return;
-
-        Promise.all(going.map(function (s) { return db.remove(s.id); }))
-          .then(function () {
-            picked = {};
-            toast(going.length === 1 ? "נמחק" : "נמחקו " + going.length + " שירים");
-            return refresh();
-          })
-          .catch(function (e) {
-            /* Some of them may well be gone: the list is read again either way,
-               so what is on screen is what is in the library. */
-            toast("המחיקה נכשלה: " + e.message, true);
-            return refresh();
-          });
-      }
 
       /* the empty list carries the way out of itself */
       var empty = el("div", "center");
@@ -5604,43 +5460,18 @@
         return marks;
       }
 
-      /* Counted over the library and not over what the search left, so narrowing
-         the list does not quietly unpick what is no longer on screen. */
-      function showBar() {
-        var n = pickedSongs().length;
-        picking.hidden = !n;
-        /* the count is in what the button is called, so hovering it says what
-           pressing it would take */
-        killBtn.title = n > 1 ? "מחיקת " + n + " שירים" : "מחיקת השיר שנבחר";
-        killBtn.setAttribute("aria-label", killBtn.title);
-      }
-
-      /* A tick changes one row and the bar, and nothing else on the page is
-         redrawn: repainting the list under a finger that is still ticking
-         boxes takes the focus off the box it just ticked. */
-      function tickBox(s) {
-        if (!auth.in) return null;
-        return {
-          on: !!picked[s.id],
-          set: function (yes) {
-            if (yes) picked[s.id] = true; else delete picked[s.id];
-            showBar();
-          },
-        };
-      }
-
       /* WHAT THE CHIPS LEFT, and on a shelf, what the address left. Looking a
          song up by NAME, by who wrote it or by a line of it is the box in the
          bar, on every page and not only on this one. */
       function paint() {
         list.innerHTML = "";
-        showBar();
         paintTallies();
         var marks = marksFor(state.songs);
         var only = tag && TAGS.filter(function (t) { return t.key === tag; })[0];
         var shown = state.songs.filter(function (s) {
           if (only && !only.is(s)) return false;
-          if (kind && styles(s).indexOf(kind) < 0) return false;
+          if (bare && styles(s).length) return false;
+          if (kind && !bare && styles(s).indexOf(kind) < 0) return false;
           /* what the song itself says: its name, its credits and its words,
              and NOT what kind of song it is, which the shelf over the wall is
              already the answer to (see songSaid) */
@@ -5661,8 +5492,6 @@
           return ra - rb;
         });
 
-        shownNow = shown;
-        if (allBtn) allBtn.hidden = !shown.length;
         /* A shelf is one kind of song and the bar already says which, so the
            word "שירים" over it would be the second name of the same page. */
         listHead.hidden = !shown.length || !!shelf;
@@ -5670,6 +5499,7 @@
         if (!shown.length) {
           if (!empty.parentNode) app.appendChild(empty);
           emptyText.textContent = sifted ? 'לא נמצא כלום עבור "' + sifted + '".'
+            : bare ? "לכל השירים יש סגנון."
             : kind ? "אין שירים בסגנון הזה."
             : only ? "אין שירים בתווית הזאת."
             : "עוד אין שירים כאן.";
@@ -5681,18 +5511,7 @@
         }
         if (empty.parentNode) empty.remove();
 
-        shownNow = shown;
-        if (allBtn) {
-          /* All of them, none of them, or the third state a checkbox has for
-             exactly this: some. It is not a value anybody can type in, it is
-             only ever set from here, and it is the truth about the wall. */
-          var allOn = allShownPicked();
-          allTick.checked = allOn;
-          allTick.indeterminate = !allOn && shown.some(function (s) { return picked[s.id]; });
-          allBtn.title = allOn ? "ביטול הסימון של כל מה שמוצג" : "סימון כל מה שמוצג";
-          allTick.setAttribute("aria-label", allBtn.title);
-        }
-        shown.forEach(function (s) { list.appendChild(songRow(s, refresh, marks[s.id], tickBox(s))); });
+        shown.forEach(function (s) { list.appendChild(songRow(s, refresh, marks[s.id])); });
         tick(list);
       }
 
@@ -6384,36 +6203,12 @@
      words and the tune is not what anybody came to that page to sort out. What
      is left in the corner is the song's own state, and only when it has one
      worth saying. */
-  function songRow(s, refresh, mark, pick) {
+  /* THERE WAS A CHECKBOX IN THE CORNER OF THIS CARD, laid over a gutter the
+     card kept for it, and it is gone with the whole business of ticking songs
+     and doing something to the handful that came up. The card is one thing
+     again: a song, and a press on it opens it. */
+  function songRow(s, refresh, mark) {
     var li = el("li");
-
-    /* IN THE CARD'S CORNER, AND NOT IN THE CARD. It looks like it is inside,
-       and in the DOM it is a sister of the card, laid over the gutter the card
-       leaves for it.
-
-       Which is not tidiness, it is the only way it works. The card is a link,
-       so a box inside it is a box the browser also treats as a click on a
-       link. Cancelling that cancels the tick with it: an input's checked state
-       is flipped BEFORE the click is dispatched and put back if the click is
-       cancelled, so a handler that cancels and re-flips by hand ends exactly
-       where it started, which is how ticking a song stopped working at all.
-       Outside the link there is nothing to cancel. */
-    var holder = null;
-    if (pick) {
-      li.classList.add("can-pick");
-      holder = el("label", "pick");
-      var tickBox = el("input");
-      tickBox.type = "checkbox";
-      tickBox.checked = pick.on;
-      tickBox.setAttribute("aria-label", "לבחור את " + s.title);
-      li.classList.toggle("is-picked", pick.on);
-      tickBox.addEventListener("change", function () {
-        li.classList.toggle("is-picked", tickBox.checked);
-        pick.set(tickBox.checked);
-      });
-      holder.appendChild(tickBox);
-      li.appendChild(holder);
-    }
 
     /* The name, and where a name is not the only one of itself, the number
        that says which of them this is. Every shape of row uses it, because a
@@ -6620,11 +6415,13 @@
   }
 
   /* A style is a shelf, and a shelf is a page: /style/<name> is the library
-     narrowed to one kind of song, and this is the card that opens it. */
-  function shelfRow(name, n) {
+     narrowed to one kind of song, and this is the card that opens it. The
+     address is handed in rather than made from the name, because one of these
+     shelves is called something no song is called (see NO_STYLE). */
+  function shelfRow(name, n, to) {
     var li = el("li");
     var a = el("a");
-    a.href = addr("style", name);
+    a.href = to || addr("style", name);
     a.addEventListener("click", function (event) {
       event.preventDefault();
       go(a.getAttribute("href"));
@@ -7944,7 +7741,17 @@
        and «which of these eight chords is it» only means anything with the
        eight on the page beside it. The tuner, which is about the guitar and
        not about anything written down, has its door in the bar instead. */
-    tools.appendChild(earDoor("chord", "ear-door"));
+    micDoor = earDoor("chord", "ear-door");
+    tools.appendChild(micDoor);
+    /* WHAT IS DONE TO A RECORDING STANDS BESIDE THE MICROPHONE AND NOT AT THE
+       FOOT OF THE PAGE. A band along the bottom is the right place for a
+       measurement, which is read; it is the wrong place for a control, which
+       is pressed while playing, and it was covering the song to do it. So
+       while the app is following there is no band at all, and what is on
+       screen is the song and three small buttons in the strip over it. */
+    tapeBar = el("span", "tape-bar");
+    tools.appendChild(tapeBar);
+    paintTape();
 
     /* Read when the panel asks and not written down here, because the song is
        being edited underneath it: a list taken at the moment the page was
@@ -7967,6 +7774,11 @@
          and not written down here, because it moves: choosing a key moves it,
          and so does moving it by hand. */
       capo: function () { return myCapo; },
+      /* And what the chords are drawn at, which is the other half of the same
+         fact: a take is a sound at a pitch, the page is a drawing that moves,
+         and a recording made before the song was taken down two no longer
+         agrees with what is printed. Kept on the take, said on its row. */
+      page: function () { return semis; },
     };
 
     /* Eight frets, in the order a neck is in, nought at the top. The one the
@@ -8125,6 +7937,22 @@
     var sheet = el("div", "sheet" + (editing && !coming ? " ed" : ""));
     sheet.style.setProperty("--song-size", size + "px");
     app.appendChild(sheet);
+
+    /* --- AND WHO HAS PLAYED IT, under the song --------------------------------
+       Under it and not over it, and not behind a button either. A take is not
+       what somebody came to this page for, so it does not stand between them
+       and the words; it is worth finding when they reach the end, so it stands
+       where the words end.
+
+       Not on a version being read: what a song used to be is a thing on paper
+       and nobody recorded THAT. */
+    var takes = el("div", "takes");
+    if (!past) {
+      app.appendChild(takes);
+      state.takeSong = song;
+      state.redrawTakes = function () { drawTakes(takes, song); };
+      state.redrawTakes();
+    }
 
     /* THERE WAS A BAR HERE, and a way of marking whole lines to feed it: a
        drag across the words took the lines it crossed, painted them, and put
@@ -12460,6 +12288,10 @@
        is tuning, and walking from one page to another is not a reason to stop
        (see earPanel). What it loses is the column about this song. */
     state.ear = null;
+    /* and the recordings of the song that was open, which are about that song
+       and not about the next one */
+    state.takeSong = null;
+    state.redrawTakes = null;
     /* and the box in the bar goes back to being a way to other pages, until a
        page that can be sieved says otherwise (see state.sift in viewIndex) */
     state.sift = null;
@@ -12761,6 +12593,12 @@
 
   function shutEar() {
     if (!ear) return;
+    /* A RECORDING IN PROGRESS IS FINISHED, NOT ABANDONED. Switching the
+       microphone off while a take is running is somebody who has stopped
+       playing, and what they have already played is the take: throwing it away
+       because of which button they reached for would be losing a performance
+       to a technicality. Stopped first, before the stream under it goes. */
+    if (taping()) stopTape();
     if (earTicking) cancelAnimationFrame(earTicking);
     earTicking = 0;
     if (window.CHORDS_EAR.live()) window.CHORDS_EAR.close();
@@ -13178,6 +13016,12 @@
      a second ordering, sorted by hand, and the first time it differed the mark
      would land on the wrong chord with nothing on screen saying why.
      ========================================================================== */
+  /* The microphone in the song's own strip, and the row of things done to a
+     recording beside it. Made with the song and kept here so that a change of
+     state can repaint them without redrawing the song. */
+  var micDoor = null;
+  var tapeBar = null;
+
   var following = null;
   var followSpans = null;
   var followWas = "";
@@ -13253,17 +13097,8 @@
 
        Which is what makes a repeat findable. Nobody plays one chord over
        again, they play the verse over again, and a verse starts at {בית}. */
-    var rows = sheet.querySelectorAll(".ln");
-    var spans = [], names = [], starts = [], opening = true;
-    for (var r = 0; r < rows.length; r++) {
-      if (rows[r].classList.contains("is-section")) { opening = true; continue; }
-      var here = rows[r].querySelectorAll(".chord");
-      for (var k = 0; k < here.length; k++) {
-        if (opening) { starts.push(spans.length); opening = false; }
-        spans.push(here[k]);
-        names.push(here[k].textContent.trim());
-      }
-    }
+    var read = songSpans(sheet);
+    var spans = read.spans, names = read.names, starts = read.starts;
     if (!spans.length) return false;
 
     followSpans = spans;
@@ -13358,15 +13193,56 @@
     earParts.chord.at.textContent = at < 0 ? "" : (at + 1) + " מתוך " + following.length;
   }
 
+  /* THE SONG AS THE PAGE HAS IT, walked row by row rather than asked for as
+     one list of chords, because two things are wanted and only one of them is
+     a chord: the order, and where each part of the song begins. A heading is a
+     row of its own (see viewLine), so the first chord after one opens a part,
+     and so does the first chord in the song.
+
+     Read off the page and not out of the data on purpose. Every chord in the
+     sheet is already a node, in the order the song reaches it, and taking the
+     order from the same nodes that will be marked is what makes the two
+     impossible to disagree about. */
+  function songSpans(sheet) {
+    sheet = sheet || document.querySelector(".sheet");
+    var out = { spans: [], names: [], starts: [] };
+    if (!sheet) return out;
+    var rows = sheet.querySelectorAll(".ln");
+    var opening = true;
+    for (var r = 0; r < rows.length; r++) {
+      if (rows[r].classList.contains("is-section")) { opening = true; continue; }
+      var here = rows[r].querySelectorAll(".chord");
+      for (var k = 0; k < here.length; k++) {
+        if (opening) { out.starts.push(out.spans.length); opening = false; }
+        out.spans.push(here[k]);
+        out.names.push(here[k].textContent.trim());
+      }
+    }
+    return out;
+  }
+
   function markAt(i) {
-    var want = followSpans && followSpans[i] ? followSpans[i] : null;
-    if (want === followMark && i === followAt) return;
+    /* Only a mark that actually moved is worth writing into a take: the same
+       chord reported twenty times a second is one moment, not twenty. */
+    if (showAt(i, followSpans)) tapeMark(i);
+  }
+
+  /* Where the mark is, whoever is deciding it. The follower decides it while
+     the microphone is listening; a take being played back decides it off the
+     times written down when it was recorded, and neither of them should have
+     to know how the other one works. */
+  function showAt(at, spans) {
+    var list = spans || songSpans().spans;
+    var want = list && list[at] ? list[at] : null;
+    if (want === followMark && at === followAt) return false;
     if (followMark && followMark.isConnected) followMark.classList.remove("is-at");
     followMark = want;
-    followAt = i;
-    if (!followMark) return;
-    followMark.classList.add("is-at");
-    keepInView(followMark);
+    followAt = at;
+    if (followMark) {
+      followMark.classList.add("is-at");
+      keepInView(followMark);
+    }
+    return true;
   }
 
   /* --- and the page moves under the mark -------------------------------------
@@ -13419,12 +13295,57 @@
   function earRoom() {
     if (!ear || !earParts) return;
     var on = !!following && earMode === "chord";
-    var small = on && !earParts.chord.node.classList.contains("is-shown");
+    /* AND WHILE IT IS FOLLOWING THERE IS NO BAND AT ALL. It was one row, and
+       one row along the foot of a phone is still a row of the song gone, for a
+       thing nobody looks at while playing: what is being looked at is the mark
+       on the page. The measurement is still one press away, and the press is
+       the picture of a microphone that is already in the strip. */
+    var away = on && !earParts.chord.node.classList.contains("is-shown");
+    ear.hidden = away;
     /* On the BODY and not on the band, because what it changes is how much
        room the page keeps under itself, and the page is not inside the band. */
-    document.body.classList.toggle("ear-small", small);
+    document.body.classList.toggle("on-ear", !away);
     earParts.chord.node.classList.toggle("is-following", on);
     earParts.chord.go.classList.toggle("is-on", !!following);
+    paintTape();
+  }
+
+  /* --- WHAT IS DONE TO A RECORDING -------------------------------------------
+     Three shapes, in the strip over the song, and never more than two of them
+     at once. Rebuilt rather than hidden and shown, because what stands there
+     is a different set of things in each of the three states and a button that
+     means "start" one moment and "pause" the next is a button nobody can learn.
+
+     THE RED IS ON THE MICROPHONE. Somebody recording needs to know it from the
+     other side of a room without reading anything, so the picture they pressed
+     to start listening is the picture that says it is listening, and the same
+     one goes red when it is being kept. */
+  function paintTape() {
+    if (micDoor && micDoor.isConnected) {
+      micDoor.classList.toggle("is-live", earOpen() && earMode === "chord");
+      micDoor.classList.toggle("is-taping", taping() && !tapeHeld());
+      micDoor.classList.toggle("is-held", tapeHeld());
+    }
+    if (!tapeBar || !tapeBar.isConnected) return;
+    tapeBar.innerHTML = "";
+    if (!earOpen() || earMode !== "chord") return;
+
+    if (!taping()) {
+      /* FILLED, AND IN THE INK THE CHORDS ARE IN. Everything else in this
+         strip is a setting: a picture on a white square, quiet on purpose,
+         because a setting is read far more often than it is pressed. This one
+         is the only thing here that starts something, it is the reason the
+         microphone was switched on at all, and a button that has to be
+         searched for among four identical grey squares is a button nobody
+         finds. So it looks like what it is: press me. */
+      var go = iconBtn(ICON.dot, "הקלטה", startTape);
+      go.classList.add("is-rec");
+      tapeBar.appendChild(go);
+      return;
+    }
+    tapeBar.appendChild(iconBtn(tapeHeld() ? ICON.dot : ICON.pause,
+      tapeHeld() ? "להמשיך להקליט" : "השהיה", holdTape));
+    tapeBar.appendChild(iconBtn(ICON.stop, "סיום ההקלטה", stopTape));
   }
 
   function showLead() {
@@ -13503,6 +13424,468 @@
     earParts.lit.style.width = Math.min(100, Math.round(Math.sqrt(r.rms / 0.25) * 100)) + "%";
     if (earMode === "tune") paintTune(r);
     else paintChord(r);
+  }
+
+  /* ==========================================================================
+     A TAKE. Somebody playing the song, kept.
+
+     THE SOUND AND THE TIMES, and the second of those is what makes it worth
+     having. Every phone can record a guitar. What a phone cannot do is know
+     that at one and a quarter seconds the player reached the third chord, so
+     that playing the recording back moves the page through the song exactly as
+     it moved while it was being played, with no microphone in the room at all.
+
+     Both come out of what is already running: the sound from the same stream
+     the readings are taken from, so there is one microphone and one red light
+     in the tab, and the times from the follower, which is already deciding
+     where the mark goes twenty times a second.
+
+     WHAT IS RECORDED IS THE PLAYING AND NOT THE CLOCK. Pausing stops the sound
+     and the times together, so the two can never drift apart: a take with
+     three pauses in it plays back as the continuous performance it was, rather
+     than as a performance with three silences the page sits through.
+     ========================================================================== */
+  var tape = null;
+
+  /* What a browser will record in. Chrome and Firefox give opus in a webm
+     container, Safari gives aac in an mp4, and asking for the wrong one is
+     refused rather than translated. The first supported one wins, and the
+     empty string means "whatever you were going to do anyway", which is the
+     right last resort: whatever it turns out to be is written into the row and
+     handed back to the audio element, so anything the browser can make it can
+     also play. */
+  var TAPE_KINDS = [
+    "audio/webm;codecs=opus", "audio/webm",
+    "audio/mp4;codecs=mp4a.40.2", "audio/mp4",
+    "audio/ogg;codecs=opus", "",
+  ];
+
+  function tapeKind() {
+    if (!window.MediaRecorder) return null;
+    for (var i = 0; i < TAPE_KINDS.length; i++) {
+      if (!TAPE_KINDS[i]) return "";
+      if (MediaRecorder.isTypeSupported(TAPE_KINDS[i])) return TAPE_KINDS[i];
+    }
+    return "";
+  }
+
+  function taping() {
+    return !!tape;
+  }
+
+  function tapeHeld() {
+    return !!tape && tape.rec.state === "paused";
+  }
+
+  function startTape() {
+    if (tape) return;
+    var stream = window.CHORDS_EAR.stream();
+    var kind = tapeKind();
+    if (!stream || kind === null) return toast("הדפדפן הזה לא יודע להקליט");
+
+    var rec;
+    try { rec = new MediaRecorder(stream, kind ? { mimeType: kind } : undefined); }
+    catch (e) { return toast("לא הצלחנו להתחיל הקלטה"); }
+
+    tape = {
+      rec: rec, bits: [], marks: [], mime: rec.mimeType || kind || "audio/webm",
+      began: Date.now(), still: 0, since: 0, seconds: 0,
+    };
+    rec.ondataavailable = function (event) {
+      if (event.data && event.data.size) tape.bits.push(event.data);
+    };
+    rec.onstop = function () { keepTake(); };
+    rec.start();
+    /* Where the mark already is, so a take opens on the chord it opened on
+       rather than on the first one the player happens to move to. */
+    tapeMark(following ? following.where() : 0);
+    paintHeader();
+  }
+
+  /* The clock a take is measured on, and it stops when the playing stops. */
+  function tapeAt() {
+    if (!tape) return 0;
+    var now = tape.since || Date.now();
+    return now - tape.began - tape.still;
+  }
+
+  function tapeMark(at) {
+    if (!tape || at < 0 || tape.rec.state !== "recording") return;
+    var last = tape.marks[tape.marks.length - 1];
+    if (last && last.at === at) return;
+    tape.marks.push({ t: Math.round(tapeAt()), at: at });
+  }
+
+  function holdTape() {
+    if (!tape) return;
+    if (tape.rec.state === "recording") {
+      tape.rec.pause();
+      tape.since = Date.now();
+    } else if (tape.rec.state === "paused") {
+      tape.still += Date.now() - tape.since;
+      tape.since = 0;
+      tape.rec.resume();
+    }
+    paintHeader();
+  }
+
+  function stopTape() {
+    if (!tape || tape.rec.state === "inactive") return;
+    if (tape.rec.state === "paused") { tape.still += Date.now() - tape.since; tape.since = 0; }
+    tape.seconds = Math.max(0, Math.round(tapeAt() / 100) / 10);
+    tape.rec.stop();
+  }
+
+  /* --- and what came out is offered rather than saved ------------------------
+     A take is a person singing, most of them are not worth keeping, and a
+     library that fills up with every attempt is a library nobody opens. So it
+     is played back first and kept second. */
+  function keepTake() {
+    var made = tape;
+    tape = null;
+    paintHeader();
+    if (!made || !made.bits.length) return;
+    hearTake({
+      blob: new Blob(made.bits, { type: made.mime }),
+      mime: made.mime,
+      marks: made.marks,
+      seconds: made.seconds || 0,
+    });
+  }
+
+  /* --- THE SOUND ITSELF, WHICH IS NOT A ROW ---------------------------------
+     A row is a few hundred bytes and a take is a megabyte, so the sound is in
+     a bucket and the row holds the path to it.
+
+     THE BUCKET IS NOT PUBLIC (see schema.sql): what may be read out of it is
+     decided by the row that names the file, so a take nobody has offered is
+     readable by nobody. The price is that an <audio> element cannot be pointed
+     at a URL, because an element cannot carry an authorization header, so the
+     sound is fetched and played out of memory. For a few minutes of opus that
+     is nothing. */
+  function store(path, options) {
+    options = options || {};
+    return auth.token().then(function (token) {
+      var headers = {
+        apikey: CFG.supabaseAnonKey,
+        authorization: "Bearer " + (token || CFG.supabaseAnonKey),
+      };
+      if (options.type) headers["content-type"] = options.type;
+      return fetch(CFG.supabaseUrl + "/storage/v1/object/" + CFG.takeBucket + "/" + path, {
+        method: options.method || "GET",
+        headers: headers,
+        body: options.body,
+      });
+    }).then(function (r) {
+      if (!r.ok) throw new Error("האחסון החזיר שגיאה");
+      return r;
+    });
+  }
+
+  function freshId() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+      var r = (Math.random() * 16) | 0;
+      return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+    });
+  }
+
+  /* webm, mp4, ogg. Taken off what the browser said it recorded rather than
+     guessed, because the name is only for the eye: what actually decides how
+     it plays is the mime written into the row beside it. */
+  function tapeTail(mime) {
+    var m = /audio\/(webm|mp4|ogg|mpeg|wav|aac)/.exec(String(mime || ""));
+    return m ? (m[1] === "mpeg" ? "mp3" : m[1]) : "webm";
+  }
+
+  /* ==========================================================================
+     PLAYING A TAKE BACK, which is where the times earn their keep.
+
+     The audio plays and the mark walks the song beside it, hitting each chord
+     at the moment it was actually reached. Nothing is being listened to and
+     nothing is being worked out: the answer was written down while it was
+     played, and this is reading it back.
+     ========================================================================== */
+  var alongTo = null;
+
+  function alongTake(audio, marks) {
+    var was = -1;
+
+    function look() {
+      var ms = audio.currentTime * 1000;
+      var at = -1;
+      for (var i = 0; i < marks.length && marks[i].t <= ms; i++) at = marks[i].at;
+      if (at === was) return;
+      was = at;
+      showAt(at);
+    }
+
+    function done() {
+      if (alongTo === audio) alongTo = null;
+      showAt(-1);
+    }
+
+    audio.addEventListener("play", function () {
+      /* One take at a time. Two of them playing over each other is two
+         performances in the room and two marks fighting over the page. */
+      if (alongTo && alongTo !== audio) alongTo.pause();
+      alongTo = audio;
+      /* And the microphone is not listening to a recording of itself. */
+      if (following) stopFollowing();
+      was = -1;
+      look();
+    });
+    audio.addEventListener("timeupdate", look);
+    audio.addEventListener("seeked", look);
+    audio.addEventListener("ended", done);
+    audio.addEventListener("pause", function () { if (audio.ended) done(); });
+  }
+
+  /* --- listening to what was just played ------------------------------------
+     Offered rather than saved. A take is a person singing, most of them are
+     not worth keeping, and a library that fills with every attempt is a
+     library nobody opens. So it is heard first and kept second, and the
+     button that keeps it is the only one that writes anything down. */
+  function hearTake(made) {
+    var dlg = el("dialog", "dlg");
+    var box = el("div", "dlg-in");
+
+    var head = el("div", "dlg-head");
+    head.appendChild(svg(ICON.mic));
+    head.appendChild(el("h2", null, "ההקלטה"));
+    box.appendChild(head);
+    box.appendChild(el("p", "muted",
+      "אפשר לשמוע אותה עכשיו. בזמן ההשמעה הסימון עובר על השיר בדיוק במקומות שבהם עברת עליו."));
+
+    var audio = el("audio", "take-play");
+    audio.controls = true;
+    audio.preload = "metadata";
+    var url = URL.createObjectURL(made.blob);
+    audio.src = url;
+    alongTake(audio, made.marks);
+    box.appendChild(audio);
+
+    box.appendChild(el("p", "muted",
+      said(made.seconds) + ", " + made.marks.length + " מעברי אקורד"));
+
+    var err = el("p", "err");
+    err.hidden = true;
+    box.appendChild(err);
+
+    var actions = el("div", "dlg-actions");
+    var toss = button("מחיקה", null, "ghost far", function () { dlg.close(); });
+    var save = button("שמירה לשיר", null, null, function () {
+      save.disabled = true;
+      relabel(save, "שומר…");
+      keepTakeIn(made).then(function () {
+        dlg.close();
+        toast("ההקלטה נשמרה");
+        if (state.redrawTakes) state.redrawTakes();
+      }, function (e) {
+        save.disabled = false;
+        relabel(save, "שמירה לשיר");
+        err.hidden = false;
+        err.textContent = (e && e.message) || "לא הצלחנו לשמור";
+      });
+    });
+    actions.appendChild(toss);
+    actions.appendChild(button("סגירה", null, "ghost", function () { dlg.close(); }));
+    if (auth.in) actions.appendChild(save);
+    else box.appendChild(el("p", "muted", "כדי לשמור הקלטה צריך להיות מחובר לחשבון."));
+    box.appendChild(actions);
+
+    dlg.appendChild(box);
+    document.body.appendChild(dlg);
+    dlg.addEventListener("close", function () {
+      audio.pause();
+      URL.revokeObjectURL(url);
+      showAt(-1);
+      dlg.remove();
+    });
+    dlg.showModal();
+  }
+
+  function said(seconds) {
+    var whole = Math.round(seconds || 0);
+    var m = Math.floor(whole / 60), s = whole % 60;
+    return m + ":" + (s < 10 ? "0" : "") + s;
+  }
+
+  /* The sound first and the row second, in that order and never the other way
+     about: a row pointing at a file that is not there is a take that cannot be
+     played and cannot be told apart from one that can. */
+  function keepTakeIn(made) {
+    var song = state.takeSong;
+    if (!song) return Promise.reject(new Error("אין שיר לשמור אליו"));
+    if (!auth.session || !auth.session.id) return Promise.reject(new Error("צריך להתחבר"));
+
+    var id = freshId();
+    var path = auth.session.id + "/" + song.id + "/" + id + "." + tapeTail(made.mime);
+
+    return store(path, { method: "POST", body: made.blob, type: made.mime })
+      .then(function () {
+        return rest(CFG.takeTable + "?song_id=eq." + song.id +
+          "&owner=eq." + auth.session.id + "&select=take&order=take.desc&limit=1");
+      })
+      .then(function (rows) {
+        var next = (rows && rows.length ? Number(rows[0].take) || 0 : 0) + 1;
+        return rest(CFG.takeTable, {
+          method: "POST",
+          prefer: "return=representation",
+          body: {
+            id: id, song_id: song.id, take: next, path: path, mime: made.mime,
+            seconds: made.seconds, marks: made.marks,
+            page: state.ear ? state.ear.page() : 0,
+            capo: state.ear ? state.ear.capo() : 0,
+          },
+        });
+      });
+  }
+
+  /* ==========================================================================
+     THE TAKES OF A SONG, under the song.
+
+     Under it and not over it, and not behind a button either. A take is not
+     what somebody came to the page for, so it does not stand between them and
+     the words; it is worth finding when they get to the end, so it is where
+     the words end.
+
+     WHAT IS LISTED IS WHAT MAY BE HEARD, which the database decides and not
+     this: the ones that are out, plus your own either way (see song_takes in
+     schema.sql). So a visitor sees the offered ones and an account sees those
+     and its own attempts, and neither is told that the other exists.
+     ========================================================================== */
+  function drawTakes(box, song) {
+    box.innerHTML = "";
+    if (!song || !song.id) return;
+
+    rest(CFG.takeTable + "?song_id=eq." + song.id +
+      "&select=id,owner,take,path,mime,seconds,marks,page,capo,published,created_at" +
+      "&order=created_at.desc").then(function (rows) {
+      if (!box.isConnected) return;
+      if (!rows || !rows.length) return;
+      box.appendChild(el("h2", "takes-head", "הקלטות"));
+      var list = el("div", "takes-list");
+      box.appendChild(list);
+      rows.forEach(function (row) { list.appendChild(takeRow(row, song)); });
+    }).catch(function (error) {
+      /* A project whose SQL has not been run since this arrived has no table,
+         and a song page is not the place to say so. */
+      if (error && (error.code === "42P01" || error.status === 404)) return;
+    });
+  }
+
+  function takeRow(row, song) {
+    var mine = auth.session && auth.session.id === row.owner;
+    var node = el("div", "take" + (mine ? " is-mine" : ""));
+
+    var go = iconBtn(ICON.play, "השמעה", function () { playTake(row, node, go); });
+    go.classList.add("take-go");
+    node.appendChild(go);
+
+    var said = el("div", "take-said");
+    var who = el("span", "take-who", mine ? "שלי" : "");
+    said.appendChild(who);
+    if (!mine) db.who(row.owner).then(function (name) {
+      if (who.isConnected) who.textContent = name || "מישהו";
+    });
+    /* WHICH TAKE THIS IS, in the same words a song's own versions are counted
+       in, because it is the same idea: somebody who played it three times has
+       three of them and needs to be able to say which. */
+    said.appendChild(el("span", "take-when",
+      "הקלטה " + (row.take || 1) + "  ·  " + said0(row.seconds) + "  ·  " + shortDate(row.created_at)));
+    node.appendChild(said);
+
+    /* AND WHETHER IT MATCHES WHAT IS PRINTED. A take is a sound at a pitch and
+       the page is a drawing that moves, so a reader who has taken the song
+       down two is about to hear something that no longer agrees with the
+       chords in front of them. Said rather than prevented: it is still their
+       recording and they may well want to hear it. */
+    if (state.ear && (state.ear.page() !== (row.page || 0) || state.ear.capo() !== (row.capo || 0))) {
+      var off = el("span", "take-off", "בסולם אחר");
+      off.title = "ההקלטה נוגנה בסולם או בקפו אחרים ממה שכתוב עכשיו";
+      node.appendChild(off);
+    }
+
+    if (mine) {
+      var out = iconBtn(row.published ? ICON.check : ICON.upload,
+        row.published ? "מפורסמת, אפשר להוריד" : "פרסום ההקלטה", function () {
+          offerTake(row, out);
+        });
+      out.classList.add("take-out");
+      out.classList.toggle("is-on", !!row.published);
+      node.appendChild(out);
+
+      var kill = iconBtn(ICON.trash, "מחיקת ההקלטה", function () { dropTake(row, node); });
+      kill.classList.add("quiet");
+      node.appendChild(kill);
+    }
+    return node;
+  }
+
+  function said0(seconds) {
+    return said(seconds || 0);
+  }
+
+  function shortDate(when) {
+    var d = new Date(when);
+    if (isNaN(d)) return "";
+    return d.toLocaleDateString("he-IL", { day: "numeric", month: "short" });
+  }
+
+  /* --- and playing one ------------------------------------------------------
+     Fetched rather than pointed at, because the bucket is not public and an
+     audio element cannot carry a token (see store). Once, and kept on the row
+     it belongs to, so pressing play a second time does not fetch it again. */
+  function playTake(row, node, go) {
+    if (node._audio) {
+      if (node._audio.paused) node._audio.play();
+      else node._audio.pause();
+      return;
+    }
+    go.disabled = true;
+    store(row.path).then(function (r) { return r.blob(); }).then(function (blob) {
+      var audio = el("audio", "take-play");
+      audio.controls = true;
+      audio.src = URL.createObjectURL(blob.slice(0, blob.size, row.mime || blob.type));
+      node._audio = audio;
+      node.appendChild(audio);
+      alongTake(audio, Array.isArray(row.marks) ? row.marks : []);
+      go.disabled = false;
+      go.hidden = true;
+      audio.play();
+    }).catch(function () {
+      go.disabled = false;
+      toast("לא הצלחנו להשמיע את ההקלטה");
+    });
+  }
+
+  function offerTake(row, out) {
+    var want = !row.published;
+    out.disabled = true;
+    rest(CFG.takeTable + "?id=eq." + row.id, {
+      method: "PATCH", body: { published: want },
+    }).then(function () {
+      row.published = want;
+      out.disabled = false;
+      out.classList.toggle("is-on", want);
+      reicon(out, want ? ICON.check : ICON.upload);
+      retitle(out, want ? "מפורסמת, אפשר להוריד" : "פרסום ההקלטה");
+      toast(want ? "ההקלטה פורסמה" : "ההקלטה ירדה מפרסום");
+    }).catch(function () {
+      out.disabled = false;
+      toast("לא הצלחנו לשנות את הפרסום");
+    });
+  }
+
+  /* The row and the sound, in that order: a file with no row is a file nobody
+     can reach, and a row with no file is a take that cannot be played. */
+  function dropTake(row, node) {
+    if (!window.confirm("למחוק את ההקלטה?")) return;
+    rest(CFG.takeTable + "?id=eq." + row.id, { method: "DELETE" }).then(function () {
+      node.remove();
+      return store(row.path, { method: "DELETE" });
+    }).catch(function () { toast("לא הצלחנו למחוק"); });
   }
 
   /* The way in. Made fresh each time rather than kept, because one of the two
