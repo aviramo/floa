@@ -3004,7 +3004,7 @@
      Everything about the sheet follows from it, because everything is measured:
      how many segments the song stands in, how wide each of them is and how many
      sheets there are all fall out of the words being this big. */
-  var PAPER_SIZE = 20;
+  var PAPER_SIZE = 16;
 
   function unpage(sheet) {
     sheet.style.maxWidth = "";
@@ -3700,10 +3700,20 @@
     paper = { w: wide, h: tall, head: headH };
     try {
       fitColumns(copy);
-      layoutAll(copy);
+    } catch (e) {
+      /* A COPY THAT COULD NOT BE POURED IS STILL PRINTED, so it has to be a
+         page: the lines are already out of it and back into one flat column
+         (see unpage), and what would go to the printer is that column with
+         every chord in it standing at the start of its line, one on top of
+         another, because placing them is the step that never ran. */
     } finally {
       paper = null;
     }
+    /* AND THE CHORDS ARE PLACED WHATEVER HAPPENED ABOVE. A chord's distance
+       along its line is written onto the chord, and a chord that was never
+       written on falls back to the start of the line it is in: all of them
+       together, at the same point, over the first word. */
+    layoutAll(copy);
     return box;
   }
 
@@ -3711,6 +3721,14 @@
      button says which (see printNow), and Ctrl+P, which asks nothing, gets
      whichever was last chosen. */
   var paperWords = false;
+
+  /* AND IT IS BUILT TWICE, ON PURPOSE. The button builds it before it asks for
+     the printer (see printNow), because that is the one moment that is certain
+     to happen; this builds it again for a print nobody pressed a button for,
+     which is Ctrl+P and the browser's own menu, and it keeps the copy honest
+     where a song was written into between the press and the printing.
+     beforeprint is not raised everywhere, and a sheet that only exists where it
+     is raised is a blank page on every browser that does not. */
   window.addEventListener("beforeprint", function () { toPaper(paperWords); });
 
   /* --- a song too wide for the screen --------------------------------------
@@ -4603,11 +4621,15 @@
      opinion: the fret is chosen for the song in front of it, which is why it
      is here now, beside the key it is chosen with.
 
-     Kept in this browser rather than on the account, beside the reading size,
-     which is the same kind of fact: what it costs to be wrong is two presses,
-     and a row per reader per song is a table to carry forever for that. Under
-     the reader it belongs to all the same, so two people signing into one
-     screen do not inherit each other's answers, and a guest keeps their own.
+     KEPT IN THIS BROWSER AND ON THE ACCOUNT, and the browser's copy is the one
+     every frame reads (see keysPull below for why it is both). It was the
+     browser's alone for a while, on the argument that being wrong costs two
+     presses. It costs more: a song set up at the desk and picked up on the
+     phone in the evening opened in a key nobody chose, with the capo somewhere
+     else. This is an answer a person gave, and it belongs to the person.
+
+     Under the reader either way, so two people signing into one screen do not
+     inherit each other's answers, and a guest keeps their own.
 
      Only a saved song has an id to keep anything under; one being typed for
      the first time has nowhere to put it and nothing yet to say. */
@@ -4625,14 +4647,31 @@
     return was && typeof was === "object" ? was : null;
   }
 
-  /* One number at a time, without disturbing the other: the two are pressed
-     separately and a write of either is not an answer about both. */
-  function keepFor(id, name, value) {
+  /* THE TWO TOGETHER AND NEVER ONE OF THEM, because they are two ends of one
+     distance: a reader answered from the new page and the old singing is a
+     reader holding a capo at a fret neither of them asked for. The old keys
+     under them are left exactly where they are, and simply stop being read
+     (see keptPage). */
+  function writeKept(id, page, sung) {
     if (!id) return;
     var was = keptFor(id) || {};
-    was[name] = value;
+    was.p = page;
+    was.s = sung;
     try { localStorage.setItem(keptBox(id), JSON.stringify(was)); }
     catch (e) { /* private window */ }
+  }
+
+  /* What a reader pressed. Written where the next frame will read it, and sent
+     to the account, which is where it will be read from on the next screen. */
+  function keepFor(id, page, sung) {
+    if (!id) return;
+    writeKept(id, page, sung);
+    keysHere[id] = true;
+    /* An account whose map never came down is asked for it here rather than
+       written over: this browser is about to claim it knows every answer this
+       reader has, and it does not know that until it has asked. The ask sends
+       what is here once it lands (see keysPull). */
+    if (keysKnown) keysPush(); else keysPull();
   }
 
   /* Zero is an answer like any other, in both of them: a reader who sings it
@@ -4686,6 +4725,163 @@
     var was = keptFor(id);
     return !!was && (typeof was.s === "number" || typeof was.p === "number"
       || typeof was.k === "number" || typeof was.c === "number");
+  }
+
+  /* --- AND THE SAME PAIR ON THE ACCOUNT, SO IT SURVIVES THE SCREEN -----------
+     ONE ROW PER ACCOUNT HOLDING THE WHOLE MAP (`song_keys`), which is the shape
+     the opens list below uses and for the same reason: a row per reader per
+     song is a table growing without end, indexed without end, for two small
+     integers. Uncapped, though, where that list is capped at sixty. Trimming
+     "where you have been" costs a second of looking; trimming this throws away
+     something somebody decided.
+
+     THE BROWSER'S COPY IS STILL THE ONE EVERY FRAME READS. The song has to be
+     in the right key in the FIRST frame, and an answer from the network is not
+     there in the first frame. So the browser is the copy, the account is where
+     it lives, and the answer lands a moment later. A reader with no account,
+     or with no network, has exactly what they had before any of this.
+
+     WHAT IS ON THE SCREEN IS NOT MOVED BY AN ANSWER THAT ARRIVES. A song
+     already open is a song being read, and a page that transposes itself under
+     a hand halfway through a verse is worse than one key too low. The library
+     redraws, because a row is a promise about a song and not a place anybody
+     is standing (see keysAt), and the song itself takes the account's answer
+     the next time it is opened. */
+  var keysAt = 0;
+  var keysAsked = false;
+  var keysKnown = false;
+
+  /* Songs answered HERE since the tab opened. They outrank whatever comes
+     down, because they happened later than any of it. */
+  var keysHere = {};
+
+  /* One write at a time and one more remembered, the whole map going up on
+     each: two in the air at once are two answers to the same question landing
+     in whichever order the network feels like. */
+  var keysSending = null;
+  var keysAgain = false;
+
+  /* Every song this reader has answered, as the pair means it now. The old
+     keys are read across on the way up (see keptPage and keptSung), so a
+     browser that has never sent anything sends the new pair for answers given
+     long before it existed, and nobody is asked about any of it. */
+  function keysMap() {
+    var mine = KEPT_OF + ((auth.session && auth.session.email) || "-") + ".";
+    var map = {};
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var name = localStorage.key(i);
+        if (!name || name.indexOf(mine) !== 0) continue;
+        var id = name.slice(mine.length);
+        if (!id || !saidAnything(id)) continue;
+        var page = keptPage(id);
+        var sung = keptSung(id);
+        map[id] = { p: page == null ? 0 : page, s: sung == null ? 0 : sung };
+      }
+    } catch (e) { /* private window */ }
+    return map;
+  }
+
+  /* Whether two maps say the same thing, which is not a string comparison:
+     the same answers written in a different order are the same answers. */
+  function sameKeys(a, b) {
+    var mine = Object.keys(a);
+    if (mine.length !== Object.keys(b).length) return false;
+    for (var i = 0; i < mine.length; i++) {
+      var here = a[mine[i]], there = b[mine[i]];
+      if (!there || here.p !== there.p || here.s !== there.s) return false;
+    }
+    return true;
+  }
+
+  /* Only a pair, and only a pair inside the ring. Anything else in the column
+     is not an answer this app wrote, and reading it would move somebody's song
+     for them. */
+  function pairIn(was) {
+    if (!was || typeof was !== "object") return null;
+    if (typeof was.p !== "number" || typeof was.s !== "number") return null;
+    var p = Math.round(was.p), s = Math.round(was.s);
+    if (p < -11 || p > 11 || s < -11 || s > 11) return null;
+    return { p: p, s: s };
+  }
+
+  /* ONE ROW PER ACCOUNT, so writing one that is already there is the same
+     request as writing it for the first time. Never waited for and never
+     complained about: the key is already right on this screen, and what this
+     is for is the next one. */
+  function keysPush() {
+    if (!auth.in || !keysKnown) return Promise.resolve(null);
+    if (keysSending) { keysAgain = true; return keysSending; }
+
+    var body = { keys: keysMap() };
+    /* Which account, when this browser has been told. Left out when it has
+       not, and the column's own default fills it in from the token instead. */
+    var me = auth.session && auth.session.id;
+    if (me) body.id = me;
+
+    var sending = rest(CFG.keyTable + "?on_conflict=id", {
+      method: "POST",
+      body: body,
+      prefer: "resolution=merge-duplicates",
+      /* no page is drawn from this, so no page has to be drawn again */
+      quiet: true,
+    }).catch(function () { return null; }).then(function () {
+      keysSending = null;
+      if (!keysAgain) return null;
+      keysAgain = false;
+      return keysPush();
+    });
+
+    keysSending = sending;
+    return sending;
+  }
+
+  /* And the map coming the other way, once, when the tab opens.
+
+     WHAT COMES DOWN IS THE TRUTH, except about a song answered here since the
+     tab opened, which happened later than anything the account can be holding.
+     A song the account has never heard of keeps whatever this browser has and
+     goes up with the next write: a reader who has been using the app for a
+     month is not asked to start again on the day it moved to the account. */
+  function keysPull() {
+    if (keysAsked || !auth.in) return Promise.resolve(null);
+    keysAsked = true;
+
+    return rest(CFG.keyTable + "?select=keys&limit=1").then(function (rows) {
+      var row = rows && rows[0];
+      keysKnown = true;
+
+      var came = {};
+      var said = (row && row.keys && typeof row.keys === "object") ? row.keys : {};
+      var moved = false;
+      Object.keys(said).forEach(function (id) {
+        var pair = pairIn(said[id]);
+        if (!pair) return;
+        came[id] = pair;
+        if (keysHere[id]) return;
+        if (keptPage(id) === pair.p && keptSung(id) === pair.s) return;
+        writeKept(id, pair.p, pair.s);
+        moved = true;
+      });
+
+      /* Only when the answer actually moved something: a library redrawn for
+         nothing is a list that moves while it is being read. */
+      if (moved) {
+        keysAt++;
+        if (state.wake) state.wake();
+      }
+
+      /* And back up only if this browser knows something the row does not,
+         which is the first tab after this existed and almost no tab after it.
+         A row that already says what is here is not written again. */
+      return sameKeys(keysMap(), came) ? null : keysPush();
+    }).catch(function () {
+      /* No table, no network, no answer. What is in the browser is the answer,
+         exactly as it was before any of this existed, and the next song opened
+         asks again. */
+      keysAsked = false;
+      return null;
+    });
   }
 
   /* --- THE ONE YOU HAD OPEN LAST STANDS FIRST -------------------------------
@@ -4786,6 +4982,10 @@
        given up on: opening a song is the moment the answer is worth having,
        and the first ask may simply have been made with the network out. */
     if (seenKnown) seenPush(); else seenPull();
+    /* And the same for the keys, which is the same moment for the same reason
+       and costs nothing when the answer is already in: opening a song is when
+       being in the wrong key starts to matter. */
+    keysPull();
   }
 
   /* ONE ROW PER ACCOUNT, so writing one that is already there is the same
@@ -5073,11 +5273,24 @@
 
   function printNow(words) {
     closeUnder();
-    /* WHICH PAPER, AND NOTHING ELSE. What goes to the printer is built when
-       the printer asks for it (see toPaper), so all this does is answer the
-       question the panel was opened to ask, and nothing here has to be undone
-       when the printing is over. */
     paperWords = !!words;
+
+    /* AND THE PAPER IS BUILT HERE, BEFORE THE PRINTER IS ASKED FOR, rather
+       than left to beforeprint alone. That event is not raised by every
+       browser, and where it is not the copy was never built: what went to the
+       printer was the page off the screen, with the chords over the words on a
+       sheet that was asked for without them and the columns of a window on a
+       piece of A5. A press is a certainty and an event is not.
+
+       It is built again at beforeprint, which costs one pouring of one song and
+       buys the print nobody pressed this button for.
+
+       AND THE BODY IS TOLD AS WELL, for the printer that gets neither: with no
+       copy at all it is the page itself that is printed, and the least it can
+       do is print the sheet that was actually asked for (see body.print-words
+       in the stylesheet). The class means nothing on a screen. */
+    document.body.classList.toggle("print-words", !!words);
+    toPaper(paperWords);
     window.print();
   }
 
@@ -7112,11 +7325,18 @@
          where it was left, so the card that has moved to the front would not
          move until something else redrew the list. Reading is not writing, so
          nothing else would. */
+      /* AND THE SHAPES ON EVERY ROW, for the same reason in the other
+         direction: a row shows the chords this reader's hand will make and the
+         fret it will make them at, and the account's answer to that may land a
+         moment after the list was drawn from the browser's (see keysPull). A
+         row promising the wrong shapes is the one thing a row must not do. */
       var drewSeen = seenAt;
+      var drewKeys = keysAt;
       state.wake = function () {
         poll();
-        if (drewSeen === seenAt) return;
+        if (drewSeen === seenAt && drewKeys === keysAt) return;
         drewSeen = seenAt;
+        drewKeys = keysAt;
         paint();
       };
 
@@ -9982,8 +10202,7 @@
     function keepChoice() {
       if (!chosen) return;
       chosen = false;
-      keepFor(song.id, "p", semis);
-      keepFor(song.id, "s", sung);
+      keepFor(song.id, semis, sung);
     }
 
     /* --- AND THE MICROPHONE ---------------------------------------------------
@@ -17638,5 +17857,10 @@
      lands, and on the way back from Google the session is already saved by
      the line above, so this is the same ask either way. */
   seenPull();
+  /* And which key this account plays each song in, which is what every row in
+     the library promises about the shapes on it (see keptFor). Asked for the
+     same way and for the same reason: the page draws itself from the browser's
+     copy and the answer moves what it has to when it lands. */
+  keysPull();
   route();
 })();

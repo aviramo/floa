@@ -2915,9 +2915,19 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    has to be measurable while it is being laid out. What belongs to the printer
    alone is down in @media print: which of the two copies is shown.
    ========================================================================== */
+/* OUT OF THE WINDOW RATHER THAN HIDDEN, and the difference is the whole thing:
+   every line of this copy is measured while it stands here, and what a hidden
+   box hands back when it is asked how wide a letter is depends on the browser.
+   Standing somewhere nobody is looking is not a special state, it is an
+   ordinary box at an address off the side of the glass.
+
+   FIXED, because a fixed box is outside the flow and outside what a window can
+   be scrolled to: an absolute one at a negative offset is scrollable overflow
+   in a page that runs right to left, which is a bar along the bottom of the
+   song and a screen that can be dragged sideways onto nothing. */
 .paper {
-  position: fixed; top: 0; left: 0; z-index: -1;
-  visibility: hidden; pointer-events: none;
+  position: fixed; top: 0; left: -20000px; z-index: -1;
+  pointer-events: none;
 }
 /* The air a page keeps at its two ends is the space between one screenful and
    the next, and paper has no next screenful: it has a margin of its own (see
@@ -3025,7 +3035,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
      there is no class either, and what comes out is what always came out. */
   .off-paper { display: none !important; }
   .paper {
-    position: static; visibility: visible;
+    position: static; left: auto; top: auto;
     width: auto !important; z-index: auto;
   }
   /* EVERY SCREENFUL IS A SHEET, which is what the whole layout already means:
@@ -3040,6 +3050,20 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
      only thing to say about it is that it may not end inside a line: a chord
      and the syllable under it are one thing, and half of each is neither. */
   .paper .ln, .paper .ln-row { break-inside: avoid; }
+
+  /* --- AND WHERE NO COPY WAS BUILT AT ALL -----------------------------------
+     Which is a browser that raises no beforeprint and a print nobody pressed
+     the button for: the page on the screen is what goes to the printer, and
+     these three lines are the least it owes whoever asked for the words. The
+     class is put on the body by the press (see printNow) and means nothing
+     anywhere but here.
+
+     It says the same thing .paper.words says, and both are true at once on
+     every print that did build a copy, which is why they may not disagree:
+     they are set by the same press, from the same answer. */
+  body.print-words .ln-c { display: none !important; }
+  body.print-words .ln-t .gap { width: 0 !important; }
+  body.print-words .capo-line { display: none !important; }
 
   .song-head { margin: 0 0 12px; }
   /* Which version this is, and what to do about it, are about the page rather

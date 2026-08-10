@@ -33,12 +33,17 @@ const store = {};
 const localStorage = {
   getItem: (k) => (k in store ? store[k] : null),
   setItem: (k, v) => { store[k] = String(v); },
+  /* walkable, because what goes up to the account is everything this reader
+     has ever answered and the only list of that is the box itself */
+  get length() { return Object.keys(store).length; },
+  key: (i) => Object.keys(store)[i],
 };
 
 const api = new Function(
   "localStorage", "auth", "MAX_CAPO", "chordsUsed", "easyVersion", "transposeChord",
   src.slice(start, end) +
-  "\nreturn { keptFor, keepFor, keptPage, keptSung, saidAnything, playedAs, capoOf, shapesFor };"
+  "\nreturn { keptFor, keepFor, keptPage, keptSung, saidAnything, playedAs, capoOf, shapesFor,"
+  + "\n         keysMap, sameKeys, pairIn };"
 )(
   localStorage,
   { session: null },
@@ -197,6 +202,39 @@ put("h", { p: -2, s: 0 });
 eq("the row's shapes and its chip agree",
   api.shapesFor({ id: "h", lines: ["Am", "F"], status: "published" }),
   { shapes: ["Am@-2", "F@-2"], capo: 2, used: ["Am", "F"] });
+
+/* --- AND WHAT THE ACCOUNT IS TOLD ------------------------------------------
+   The pair is kept per reader per song ON THE ACCOUNT now, so it survives the
+   screen it was chosen on. What goes up is the pair as it means things today,
+   whatever the browser happens to be holding, which is where the migration
+   above gets its second and last chance: a reader whose browser only ever knew
+   "k" and "c" hands the account a page and a key, once, and is never asked. */
+api.keepFor("m", -2, 1);
+eq("what was pressed is what comes back", api.playedAs(song("m", [])), { page: -2, sung: 1 });
+
+const going = api.keysMap();
+eq("a pressed pair goes up as it is", going.m, { p: -2, s: 1 });
+eq("an old page and an old fret go up as a page and a key", going.c, { p: -3, s: -1 });
+eq("a lone old fret goes up as the key it was making", going.d, { p: 0, s: 4 });
+eq("and what was written down last is what goes up", going.f, { p: -2, s: 3 });
+eq("a song nobody answered has nothing to send", "nobody" in going, false);
+
+/* Two maps are compared by what they say, not by how they were written out:
+   the same answers in another order are a row that does not need writing. */
+eq("the same answers in another order are the same answers",
+  api.sameKeys({ a: { p: 1, s: 2 }, b: { p: 0, s: 0 } }, { b: { p: 0, s: 0 }, a: { p: 1, s: 2 } }), true);
+eq("one answer moved is a different map",
+  api.sameKeys({ a: { p: 1, s: 2 } }, { a: { p: 1, s: 3 } }), false);
+eq("one answer more is a different map",
+  api.sameKeys({ a: { p: 1, s: 2 } }, { a: { p: 1, s: 2 }, b: { p: 0, s: 0 } }), false);
+
+/* And what comes DOWN moves somebody's song, so only a whole pair inside the
+   ring is allowed to. */
+eq("a pair is taken as it is", api.pairIn({ p: -3, s: 2 }), { p: -3, s: 2 });
+eq("a chosen zero comes down like any other answer", api.pairIn({ p: 0, s: 0 }), { p: 0, s: 0 });
+eq("half a pair is not an answer", api.pairIn({ p: 1 }), null);
+eq("nor is one outside the ring", api.pairIn({ p: 12, s: 0 }), null);
+eq("nor is anything that is not a pair at all", api.pairIn("-3"), null);
 
 console.log(failed ? `\n${failed} failed` : "\nall passed");
 process.exit(failed ? 1 : 0);

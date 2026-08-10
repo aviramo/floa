@@ -48,6 +48,14 @@ window.CHORDS_CONFIG = {
      when its own account takes it. See song_offers in schema.sql. */
   offerTable: "song_offers",
 
+  /* And a ninth, which is not about a song either but about a person playing
+     one: which key they sing it in, and therefore which fret their capo is on.
+     One row per account holding a map of song id to the pair, because the key
+     somebody sings a song in follows them from the desk to the phone and is
+     not a fact about the song. See song_keys in schema.sql, and keptFor in
+     app.js. */
+  keyTable: "song_keys",
+
   /* The Worker holds the Anthropic key and reads an uploaded photo or PDF.
      Same deployment that sends the leads for every other business here. */
   transcribeEndpoint: "https://floa-lead.floa-il.workers.dev/transcribe",

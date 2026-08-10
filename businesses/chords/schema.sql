@@ -732,6 +732,76 @@ create policy "what an account has opened is its own"
   with check (id = auth.uid());
 
 -- ==========================================================================
+-- WHICH KEY THIS ACCOUNT PLAYS EACH SONG IN, and therefore which fret.
+--
+-- A song is written in one key and sung in another, and which other is a fact
+-- about the person singing it and not about the song: two people open the same
+-- published song and each of them is right about a different key. So it is
+-- kept per account and per song, and it never touches the song itself.
+--
+-- TWO NUMBERS AND NOT THREE. `p` is what is printed on the page, the distance
+-- every chord is drawn at; `s` is what comes out of the guitar, which moving
+-- the page does not move. The capo is the gap between them and is deliberately
+-- NOT here: a fret stored on its own has to be clamped at each end of the neck,
+-- and a clamped number added to on every press loses count. A subtraction
+-- cannot (see capoOf in app.js).
+--
+-- It was in the browser only, on the argument that being wrong costs two
+-- presses. It costs more than that: somebody sets a song up at the desk,
+-- picks up the phone in the evening, and the song opens in a key they did not
+-- choose, with the capo somewhere else. The pair is an answer a person gave,
+-- and an answer a person gave belongs to the person and not to one screen.
+--
+-- ONE ROW PER ACCOUNT, HOLDING THE MAP, exactly as the opens list does above.
+-- Not a row per account per song: that is a table growing without end, indexed
+-- without end, for two small integers. The map is `{"<song id>": {"p": 0,
+-- "s": 0}}` and it is written whole.
+--
+-- Uncapped, which the opens list is not, because the two lists lose different
+-- things when they are trimmed. Dropping the tail off "where you have been"
+-- costs a second of looking; dropping an entry here throws away something
+-- somebody decided. Two integers per song is a row of a few kilobytes for a
+-- reader who has answered a thousand songs.
+--
+-- The browser still holds its own copy, and that copy is what every frame
+-- reads: the page has to be in the right key in the first frame, and an answer
+-- from the network is not there in the first frame. A reader with no account
+-- has exactly what they had before this, their own browser's.
+-- ==========================================================================
+create table if not exists public.song_keys (
+  -- WHOSE, and the same argument as song_opens: the account itself, so there
+  -- cannot be more than one row per account, filled in from the token when the
+  -- browser leaves it out and refused by the policy when it names anybody else.
+  id         uuid primary key default auth.uid()
+             references auth.users (id) on delete cascade,
+
+  -- {"<song id>": {"p": <page>, "s": <sung>}, …}
+  keys       jsonb not null default '{}'::jsonb,
+
+  updated_at timestamptz not null default now()
+);
+
+drop trigger if exists song_keys_touch_updated_at on public.song_keys;
+create trigger song_keys_touch_updated_at
+  before update on public.song_keys
+  for each row execute function public.touch_updated_at();
+
+alter table public.song_keys enable row level security;
+
+-- One rule for all four verbs: this is the account's own and nobody else's.
+-- Not granted to anon, so a reader with no account is answered as though the
+-- table were empty, which for them it is.
+--
+-- And never shown to anybody, including on a song they published. Which key
+-- somebody sings a song in says something about their voice, and it is theirs
+-- the same way the reading history above is.
+drop policy if exists "the key an account plays in is its own" on public.song_keys;
+create policy "the key an account plays in is its own"
+  on public.song_keys for all to authenticated
+  using (id = auth.uid())
+  with check (id = auth.uid());
+
+-- ==========================================================================
 -- THE LIBRARY CHANGED, AND NOBODY PUSHED ANYTHING.
 --
 -- The songs are written to disk at build time. Every address under /chords/
