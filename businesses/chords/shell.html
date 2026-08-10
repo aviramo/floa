@@ -55,7 +55,6 @@
     <h2>החשבון</h2>
     <p class="muted" id="meWho"></p>
     <label>השם שלך<input type="text" name="name" autocomplete="name" maxlength="60" required></label>
-    <p class="muted">זה השם שמופיע למעלה. אפשר לשנות אותו, גם אם הוא הגיע מגוגל.</p>
     <p class="err" id="meErr" hidden></p>
     <!-- The way to the bill, for the one account that gets it. In this panel
          and nowhere else: it is the room where the account looks at itself,
@@ -66,9 +65,10 @@
       <button type="button" class="btn ghost small" id="meBill">פענוח</button>
       <span class="muted">כמה עלה כל פענוח, מתי, ומי ביצע אותו.</span>
     </div>
+    <!-- No ביטול: a press on the page behind this, or back, is the way out of
+         it, the same as it is out of every other panel here. -->
     <div class="dlg-actions">
       <button type="button" class="btn ghost far" id="meOut">יציאה מהחשבון</button>
-      <button type="button" class="btn ghost" data-close>ביטול</button>
       <button type="submit" class="btn">שמירה</button>
     </div>
   </form>

@@ -1520,10 +1520,14 @@
 
        A failure here is not worth a red screen either. The evening still
        knows what it was told the songs were called when they went in. */
+    /* id -> what the song is called and where it lives. The address comes along
+       because a name of a song is almost always a way to it (see the chips on
+       an evening's card), and it is one more column on a request that is
+       already being made. */
     titles: function () {
-      return rest(T + "?select=id,title").then(function (rows) {
+      return rest(T + "?select=id,title,slug").then(function (rows) {
         var by = {};
-        (rows || []).forEach(function (row) { by[row.id] = row.title; });
+        (rows || []).forEach(function (row) { by[row.id] = { title: row.title, slug: row.slug }; });
         return by;
       }).catch(function () { return {}; });
     },
@@ -4797,7 +4801,7 @@
        buildEar), so this is the door: a guitar goes out of tune in the middle
        of the song being played, which is exactly where somebody is standing
        when they want it. */
-    var fork = button("כיוון הגיטרה", ICON.fork, "ghost small", function () {
+    var fork = button("כיוון הגיטרה", ICON.fork, "ghost small ear-row", function () {
       closeUnder();
       askEar("tune");
     });
@@ -4970,8 +4974,15 @@
            the app is the address on the anchor. Only the plain one means
            back. */
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.button) return;
-        if (!parts().length) return;
+        /* AT HOME THE MARK STARTS THE APP AGAIN. There is nowhere for it to go
+           from the library, and pressing the name of a thing you are already
+           looking at means one thing: this, freshly. So the page is loaded
+           again over the entry it is standing on, which takes with it every
+           sheet kept aside, every request still in the air and whatever a long
+           afternoon of use has left behind, and leaves no step back into the
+           app it just replaced. */
         event.preventDefault();
+        if (!parts().length) return location.replace(addr());
         goBack();
       });
     }
@@ -5156,6 +5167,44 @@
     return who;
   }
 
+  /* --- A PANEL IS A PLACE, AND A PRESS OUTSIDE IT OR BACK COMES OUT ---------
+     A dialog is the browser's, and the browser gives it one way out: Escape,
+     which a phone does not have. So both of the ways a person actually leaves
+     something are added here, once, for any panel that asks.
+
+     A PRESS ON THE DARK. The backdrop belongs to the dialog element itself, so
+     a press that lands on the element and not on anything inside it is a press
+     outside the panel.
+
+     AND BACK. It is a swipe from the edge of a phone and it is the way out of
+     everything: a panel that let it through answered "close this" by leaving
+     the app. The panel stands on an entry of its own, which is the same address
+     as the page under it, so the way back out of the panel is a step back, and
+     the page it uncovers is the page it was opened over. Closing it any other
+     way takes that entry away again, quietly, because nothing moved. */
+  var overPage = null;
+  var backQuietly = false;
+
+  function shutsOnBack(dlg) {
+    dlg.addEventListener("click", function (event) {
+      if (event.target === dlg) dlg.close();
+    });
+    /* One at a time is all this app ever opens, and the entry belongs to
+       whichever is on the screen. */
+    if (overPage) return;
+    overPage = dlg;
+    history.pushState({ over: true }, "", location.href);
+    dlg.addEventListener("close", function () {
+      /* back already took the entry, and with it the panel */
+      if (overPage !== dlg) return;
+      overPage = null;
+      if (history.state && history.state.over) {
+        backQuietly = true;
+        history.back();
+      }
+    }, { once: true });
+  }
+
   function askMe() {
     var dlg = document.getElementById("meDialog");
     var form = document.getElementById("meForm");
@@ -5223,7 +5272,10 @@
       route();
       toast("התנתקת");
     };
-    form.querySelector("[data-close]").onclick = function () { dlg.close(); };
+    /* THERE IS NO ביטול IN HERE ANY MORE. A panel with nothing typed into it
+       has nothing to cancel, and the two ways out of a panel are the two ways
+       out of everything: a press on the page behind it, or back. */
+    shutsOnBack(dlg);
     dlg.showModal();
   }
 
@@ -5474,7 +5526,7 @@
 
     var out = [];
     var titles = {};
-    songs.forEach(function (s) { titles[s.id] = s.title; });
+    songs.forEach(function (s) { titles[s.id] = { title: s.title, slug: s.slug }; });
 
     songs.forEach(function (s) {
       var name = String(s.title || "").toLowerCase();
@@ -7416,7 +7468,7 @@
      on screen are the input; there was never a reason for the page around them
      to be a different page. */
 
-  function viewSong(slug) {
+  function viewSong(slug, asked) {
     /* a song that does not exist yet is still a song page, with nothing on it */
     if (slug === null) {
       return renderSong({
@@ -7444,6 +7496,11 @@
          to it. Both are the same request and the database decides which of the
          two kinds come back (see offers.of); a reader with no account asks
          nothing and is handed nothing. */
+      /* AND AN ADDRESS CAN ASK FOR THE EDITOR, which is what /edit is (see the
+         routing). The pencil is asked for per song and by id, and the id is not
+         in the address, so the asking waits here until the row is in hand. */
+      if (asked) state.editAsked = song.id;
+
       return offers.of(song.id).then(function (rows) {
         renderSong(song, null, rows);
       });
@@ -7616,24 +7673,24 @@
        database answers after the routing has already painted the bar once, so
        it is painted again here rather than earlier. */
 
-    /* Signed in, and on a phone, asked for.
+    /* Signed in, and asked for.
 
        ONE ANSWER FOR THE WHOLE PAGE, head and sheet alike: everything the
        editor has is on or all of it is off, and there is no half-editable
        page to explain.
 
-       A phone was refused it outright for a long time, and the reason was
-       good: a page that can be changed is a page that has to be watched, and a
-       page held while walking, or pressed with a hand that is also holding a
-       guitar, is where a change nobody meant gets made. What was wrong with it
-       was the word "outright". Somebody who has found a wrong chord in the
-       middle of a session has a phone in their hand and no desk, and telling
-       them to remember it until they get home is telling them to lose it.
+       AND THE SAME ANSWER ON EVERY WIDTH. A phone opened reading and a desk
+       opened writing, which made the window the app is in a fact about what
+       the page IS: the same song, the same account, two different pages, and
+       the way in standing in the panel on one of them and nowhere on the other.
+       A page that can be changed is a page that has to be watched, and that is
+       as true at a desk as it is on a bus.
 
-       So the phone opens READING, which is what a phone is for, and the editor
-       is one press away. The press is the watching: nothing here changes by
-       accident, because getting in was on purpose. */
-    var onPhone = NARROW.matches;
+       So every song opens READING, which is what a song is for, and the editor
+       is one press away in the panel. The press is the watching: nothing here
+       changes by accident, because getting in was on purpose. The one song that
+       opens writing is one of your own that is not published yet, which is not
+       a page anybody is reading; it is a page being written. */
 
     /* --- STILL BEING READ ------------------------------------------------------
        A song whose picture is still in the machine has a name, and often
@@ -7706,7 +7763,7 @@
        draft somebody is writing, it is a reading in progress, and the words
        under the caret would be replaced as they were typed. */
     var editing = !past && auth.in && (owned
-      ? ((!song.published && !coming) || !onPhone || state.editAsked === editKey)
+      ? ((!song.published && !coming) || state.editAsked === editKey)
       : state.editAsked === editKey);
 
     /* The row stays whole in `row` and the editor is handed a copy with the
@@ -7741,18 +7798,17 @@
     state.printable = true;
     /* Not on a version: there is nothing here to go into.
 
-       ON A PHONE, WHERE EVERY SONG OPENS READING, AND ON ANYBODY ELSE'S SONG,
-       WHERE IT DOES TOO. The two are the same press for two different reasons:
-       a phone is held while walking, and somebody else's song is not yours to
-       change by opening it. What the press means on one is "I mean to type
-       here"; on the other it is that and "and what I type is an offer", which
-       is what the band under the bar then says. */
-    /* AND THE WAY IN IS OFFERED ONLY WHERE IT MEANS SOMETHING: on a published
+       AND THE WAY IN IS OFFERED ONLY WHERE IT MEANS SOMETHING: on a published
        song of your own, which opens reading and is changed on purpose, and on
        somebody else's, where the press is what says the typing is an offer. An
        unfinished song of your own is already open (see editing above), so a row
-       saying "עריכה" over it would be a door onto the room it is standing in. */
-    if (!past && auth.in && (onPhone || !owned) && (!owned || song.published)) {
+       saying "עריכה" over it would be a door onto the room it is standing in.
+
+       The same on every width. It used to depend on how wide the window was,
+       which meant the way into the editor stood in the panel on a phone and
+       nowhere at all on a desk, where the page simply arrived writable. One
+       page, one door, and the press is what says the change is meant. */
+    if (!past && auth.in && (!owned || song.published)) {
       state.editToggle = {
         on: editing,
         flip: function () {
@@ -8585,7 +8641,13 @@
          written as one. */
       var fret = capoOf({ page: choice.page, sung: sung });
       row.appendChild(el("span", "key-name", choice.shapes[0]));
-      row.appendChild(el("span", "key-fret", fret ? "קפו " + fret : "בלי קפו"));
+      /* AND NOTHING WHERE THERE IS NO CAPO. "בלי קפו" was written beside every
+         choice that needs none, which on a song played open is every row in the
+         column: a word repeated down a list is a word nobody reads, and what it
+         says is already said by the number nought standing lit in the column
+         beside it. What is worth writing is where the capo goes when there is
+         one. */
+      if (fret) row.appendChild(el("span", "key-fret", "קפו " + fret));
       if (choice.page === semis) {
         row.classList.add("is-on");
         row.setAttribute("aria-current", "true");
@@ -11260,8 +11322,16 @@
              about to have an id of its own. Take the old one out by hand:
              mark() below can only clear the key the song has now. */
           var wasKey = draftKey();
+          var isNew = !song.id;
           song.id = row.id;
           song.slug = row.slug;
+          /* A SONG TYPED FROM NOTHING GOES TO THE FRONT OF THE LIBRARY, the
+             moment it has an id to be remembered by. Opening a song is what
+             puts it there (see sawSong), and this one was opened before it
+             existed: without this the song somebody is writing at this second
+             arrived among the ones they have never opened, which on a full
+             library is the far end of the wall. */
+          if (isNew) sawSong(song.id);
           /* And the pencil was pressed on "new", which is not what this song
              is called any more: a page that was drawn again from here would
              find the editor was asked for on a song that no longer exists and
@@ -12272,10 +12342,18 @@
      called when it went in as the fallback: a song that has since been
      renamed is the same song, and a song that has since been deleted is still
      worth naming. */
-  function songNames(evening, titles) {
+  function songsIn(evening, titles) {
     return normalizeSet(evening.songs).map(function (item) {
-      return titles[item.id] || item.title || "";
+      var known = titles[item.id];
+      var name = (known && known.title) || item.title || "";
+      /* A song that has since been deleted has no address left to go to, and
+         it is still worth naming: it was sung. */
+      return name ? { title: name, slug: known && known.slug } : null;
     }).filter(Boolean);
+  }
+
+  function songNames(evening, titles) {
+    return songsIn(evening, titles).map(function (s) { return s.title; });
   }
 
   /* ONE EVENING, AS A CARD. The same card a song is and a person is, because
@@ -12291,17 +12369,53 @@
     });
 
     var box = el("div");
-    var top = el("div", "t-row");
-    top.appendChild(el("div", "t", evening.title || "אירוע בלי שם"));
-    var said = whenWhere(evening);
-    if (said) top.appendChild(el("div", "by", said));
-    box.appendChild(top);
+    box.appendChild(el("div", "t", evening.title || "אירוע בלי שם"));
 
-    /* The songs themselves rather than how many of them there are. The count
-       is a number you have to open the evening to make any use of; the names
-       are the evening. */
-    var names = songNames(evening, titles || {});
-    box.appendChild(el("div", "a names", names.length ? names.join("  •  ") : "עוד בלי שירים"));
+    /* WHEN, AND THEN WHERE, EACH ON ITS OWN LINE AND BOTH UNDER THE NAME. They
+       stood beside it as one line with a dot between them, which on a card this
+       wide is a line that wraps in the middle of an address: the room came out
+       split across two lines and the date pushed the name of the evening over.
+       Two facts, two lines, directly under the thing they are about, the same
+       way a song's card carries who wrote it. */
+    var when = dateWords(evening.event_date);
+    var where = String(evening.venue || "").trim();
+    if (when) box.appendChild(el("div", "by", when));
+    if (where) box.appendChild(el("div", "by", where));
+
+    /* THE SONGS THEMSELVES, AND EACH ONE IS THE WAY TO IT. They were a sentence
+       of names with dots between them, which reads as one thing said about the
+       evening; they are a list of songs, and the reason to look at one on this
+       card is almost always to open it. So each is a chip, and a press on it
+       goes to the song rather than to the evening around it.
+
+       A button and not a link, because this card IS a link: an anchor inside an
+       anchor is not a thing, and what a press means here is written below
+       either way. */
+    var songs = songsIn(evening, titles || {});
+    if (!songs.length) {
+      box.appendChild(el("div", "a names", "עוד בלי שירים"));
+    } else {
+      var chips = el("div", "ev-songs");
+      songs.forEach(function (song) {
+        /* The same chip a style is, because it is the same kind of thing: a
+           small quiet word standing beside others of its kind (see .tag-style).
+           A song that is not there any more is the word without the press. */
+        var chip = el(song.slug ? "button" : "span",
+          "tag tag-style" + (song.slug ? " ev-song" : ""), song.title);
+        if (song.slug) {
+          chip.type = "button";
+          chip.addEventListener("click", function (event) {
+            /* the press was for the song and not for the card it is standing
+               on, and the card is what would otherwise take it */
+            event.preventDefault();
+            event.stopPropagation();
+            go(addr(song.slug));
+          });
+        }
+        chips.appendChild(chip);
+      });
+      box.appendChild(chips);
+    }
 
     a.appendChild(box);
 
@@ -13202,10 +13316,21 @@
   }
 
   /* A placeholder row. Its name and its address come from the file for now;
-     the Worker replaces both once it knows what the song is actually called. */
+     the Worker replaces both once it knows what the song is actually called.
+
+     AND IT GOES STRAIGHT TO THE FRONT OF THE LIBRARY. The wall is ordered by
+     what this reader was on last (see sawSong), and a song handed to the
+     machine a second ago is by any reading the last thing they were on: it is
+     the row they are about to watch. Without this it arrived among the songs
+     nobody here has opened, which on a full library is the far end of a long
+     wall, and the one row on the page that is actually doing something was the
+     hardest one to find. */
   function insertReading(name) {
     var base = slugify(name);
-    return attempt(base, 1);
+    return attempt(base, 1).then(function (row) {
+      if (row) sawSong(row.id);
+      return row;
+    });
 
     function attempt(slug, tries) {
       return db.insert({
@@ -13579,13 +13704,14 @@
       return viewSong(null);
     }
 
-    /* /edit was a page of its own once. The song page IS the editor now, so the
-       address still opens the song, and the one in the bar becomes the song's.
-       Kept rather than dropped because it is written down in bookmarks and in
-       the index's own links from before this. */
+    /* /edit was a page of its own once. There is one page now and the pencil is
+       a thing done to it, so this address opens the song and asks for the
+       pencil, and the address in the bar becomes the song's own. Kept rather
+       than dropped because it is written down in bookmarks and in the index's
+       own links from before this. */
     if (p.length >= 2 && p[1] === "edit") {
       history.replaceState(history.state, "", addr(p[0]));
-      return viewSong(p[0]);
+      return viewSong(p[0], true);
     }
 
     /* --- what the song was ---
@@ -13697,6 +13823,22 @@
      but nothing has scrolled, so what is on the screen is still the page being
      left and its place can be taken now. */
   window.addEventListener("popstate", function () {
+    /* A PANEL OVER THE PAGE IS A PLACE, AND BACK COMES OUT OF IT. On a phone
+       back is a swipe from the edge and it is the way out of everything, so a
+       panel that let it through answered "close this" by leaving the app
+       altogether (see shutsOnBack). */
+    if (overPage) {
+      var open = overPage;
+      overPage = null;
+      open.close();
+      return;
+    }
+    /* and the entry that panel was standing on, being taken away behind it:
+       the page under it never went anywhere and has nothing to redraw */
+    if (backQuietly) {
+      backQuietly = false;
+      return;
+    }
     leaving();
     scrollHere = keyHere();
     scrollWanted = scrollAt[scrollHere] || 0;

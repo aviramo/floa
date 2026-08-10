@@ -294,7 +294,16 @@ body.on-song { background: var(--bg); }
 
    Never wrapped and never stretched: it is a passenger in a control that
    belongs to the field, and the field is what gives way to it. */
-.find-extra { flex: none; display: flex; align-items: center; gap: 8px; }
+/* AND AS CLOSE TO THE END OF THE BOX AS IT IS TO THE TOP OF IT. The box carries
+   fourteen pixels of padding, which is what a field's first letter wants and is
+   twice the seven left over above and below a chip this tall: the counts stood
+   further from the end of the box than from its edges, which reads as a group
+   that has not quite arrived. Half the padding is given back, and the air round
+   them is the same air on all four sides. */
+.find-extra {
+  flex: none; display: flex; align-items: center; gap: 8px;
+  margin-inline-end: -7px;
+}
 .find-extra:empty { display: none; }
 .find-extra .tallies { flex: none; flex-wrap: nowrap; }
 /* Inside the box they are not cards on a page: the box is the white, and a
@@ -500,9 +509,13 @@ body.on-song { background: var(--bg); }
 /* The raw string a machine handed us: an English message, a code, a path. It
    is set in monospace and left to right because that is what it is, and it is
    never a sentence anybody wrote. */
+/* IN THE COLOUR THE CHORDS ARE, which is the app's other colour and the one it
+   already uses for the thing that went wrong: it was a brown on a pink of its
+   own, a third colour on a page that has two, and what it said in that brown
+   was that a reading had failed. */
 .detail {
   margin-top: 6px; padding: 7px 10px; border-radius: var(--corner);
-  background: #fdf1ef; color: #7a3b33;
+  background: var(--chord-soft); color: var(--chord);
   font: 12px/1.5 ui-monospace, Menlo, Consolas, monospace;
   direction: ltr; text-align: left; word-break: break-word;
 }
@@ -512,7 +525,7 @@ body.on-song { background: var(--bg); }
    never written for. */
 .note {
   margin-top: 6px; padding: 7px 10px; border-radius: var(--corner);
-  background: #fdf1ef; color: #7a3b33;
+  background: var(--chord-soft); color: var(--chord);
   font-size: 13px; line-height: 1.5; text-align: right;
 }
 .center { text-align: center; padding: 56px 0; color: var(--ink-soft); }
@@ -741,6 +754,26 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
   overflow: hidden;
 }
+/* --- WHAT IS IN AN EVENING, AS CHIPS --------------------------------------
+   They were a sentence of names with dots between them, which reads as one
+   thing said about the evening. They are a list of songs, and what somebody
+   looking at one on this card almost always wants is to open it, so each is a
+   chip and a press on it goes to the song rather than to the evening around
+   it (see eveningRow).
+
+   No clamp on it. Two lines of a sentence was a taste of a list; chips wrap
+   into a block that is plainly a list, and an evening with twenty songs in it
+   is an evening with twenty songs in it. */
+.ev-songs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+/* A button drawn as the chip it is standing among: the reset first, then the
+   two things .tag would have given it, because `font` is a shorthand and this
+   rule comes after it. */
+.ev-song {
+  appearance: none; cursor: pointer; border: 0;
+  font: inherit; font-size: 12px; font-weight: 600; line-height: 1.6;
+}
+.ev-song:hover { color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+
 /* The name, and what the reading of it cost, which is the only thing that
    shares its line. */
 .list .t-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
@@ -749,8 +782,10 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    size fighting it for the width of a card. */
 .list .by { color: var(--ink-soft); font-size: 14px; }
 /* Only the one standing under the row, and not the count of songs that still
-   sits inside it on a person's card. */
-.list .t-row + .by { margin-top: 2px; }
+   sits inside it on a person's card. The same two pixels under a name that has
+   no row around it, which is an evening's card: when and where sit against the
+   name they are about, and against each other. */
+.list .t-row + .by, .list .t + .by { margin-top: 2px; }
 /* Which of the songs by this name. Only appears where a name repeats, so an
    index of songs that are each the only one of themselves never grows a column
    of ones. Quiet, and clearly not part of the name. */
@@ -1161,7 +1196,10 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    kind is not: it is what the row already looks like, said in a word for the
    one glance where the look is not enough. */
 .tag-kind { color: var(--ink-soft); background: var(--bg); box-shadow: inset 0 0 0 1px var(--line); }
-.tag-words { color: var(--told-ink); background: var(--told-soft); }
+/* Who wrote the words is a state of a kind: it is what this person is to the
+   songs under their name, so it wears the one colour the app says that in. The
+   tune is the chords' own red, because that is what a tune is here. */
+.tag-words { color: var(--state-ink); background: var(--state-soft); }
 .tag-tune { color: var(--chord); background: var(--chord-soft); }
 
 /* WHAT KIND OF SONG IT IS, which is not one of the four states and does not
@@ -2515,6 +2553,11 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    picture of it did when it stood in the bar (see .icon-btn.is-on). */
 .print-menu .btn.is-on,
 .print-menu .btn.is-on:hover { color: #fff; background: var(--accent); border-color: var(--accent); }
+/* Except the one with a microphone behind it, which is red wherever it stands:
+   the picture of it in the bar says the same thing in the same colour (see
+   .ear-door.is-on). */
+.print-menu .btn.ear-row.is-on,
+.print-menu .btn.ear-row.is-on:hover { background: var(--chord); border-color: var(--chord); }
 /* WIDE ENOUGH TO READ A NAME IN. The rows here are the buttons that used to
    stand in the bar, and one of them carries whatever somebody is called. */
 .print-menu { min-width: 168px; }
@@ -2726,11 +2769,20 @@ body.on-ear { padding-bottom: 182px; }
    way is under what an ear hears on a strummed chord, so a needle anywhere in
    it is a string that is done. Without it the target is a hairline and nobody
    is ever finished. */
+/* THE BAND AND THE NEEDLE SAY THE SAME THING IN TWO SIZES, and they say it in
+   the two colours this app already has: green once the string is there, red
+   while it is not. The band is the pale one of the pair and the needle is the
+   full one, so the answer is readable across a room and exact up close.
+
+   And grey while nothing is being heard. Red is what "not yet" looks like, and
+   a panel that opens red is telling somebody a string is wrong before they have
+   played one. */
 .tune-dial::before {
   content: ""; position: absolute; top: 0; bottom: 0; left: 45%; width: 10%;
   background: var(--chord-soft); border-radius: 4px;
 }
-.tune.is-true .tune-dial::before { background: #d8f2ea; }
+.tune.is-true .tune-dial::before { background: var(--state-soft); }
+.tune.is-quiet .tune-dial::before { background: var(--line); }
 .tune-mid {
   position: absolute; top: 4px; bottom: 4px; left: 50%;
   width: 1.5px; margin-left: -.75px; background: var(--ink-soft);
@@ -3069,9 +3121,15 @@ body.on-dock { padding-bottom: 92px; }
    on the page and gets the whole width of it. */
 .dlg-in .take-play { margin: 10px 0 4px; }
 
-/* Both doors are toggles and both say so, in the two places they stand. */
+/* Both doors are toggles and both say so, in the two places they stand.
+
+   IN THE RED, AND NOT IN THE APP'S GREEN. What is behind either of them is a
+   microphone that is listening, which is the one thing in here that is not the
+   app doing something for you but the app taking something in. Red is the
+   colour that already means that: it is the chords' red and it is the colour
+   of the button that records. Green here read as another thing switched on. */
 .tools .ear-door.is-on, .top-actions .icon-btn.is-on {
-  color: var(--accent); border-color: var(--accent); background: #eefaf7;
+  color: var(--chord); border-color: var(--chord); background: var(--chord-soft);
 }
 
 /* On a phone the band is most of the screen if it is allowed to be, so what

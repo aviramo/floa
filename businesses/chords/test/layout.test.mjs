@@ -71,13 +71,18 @@ const song = (dir) => ({
 
 /* `who` is the account the page is signed in as, and it is OWNER unless a
    check wants a stranger: the whole difference between the editor and the
-   reader's page is whether the two match. */
-function page(dir, edit, who, draft) {
+   reader's page is whether the two match.
+
+   `edit` signs the page in, and unless `reading` says otherwise it lands on
+   /edit, which is the address that asks for the pencil (see the routing in
+   app.js). Every song opens READING now, on every width, so a page that wants
+   the editor has to ask for it the way a person would. */
+function page(dir, edit, who, draft, reading) {
   const s = song(dir);
   /* A SONG THAT WAS NEVER PUBLISHED, which is the one kind that opens itself
-     for writing and carries the button that publishes it (see renderSong). */
+     for writing without being asked to (see renderSong). */
   if (draft) s.published = false;
-  const path = "/chords/" + s.slug + (edit ? "/edit" : "");
+  const path = "/chords/" + s.slug + (edit && !reading ? "/edit" : "");
   return `<!doctype html>
 <html lang="he" dir="rtl"><head><meta charset="utf-8">
 <link rel="stylesheet" href="/chords/assets/style.css">
@@ -506,12 +511,12 @@ await writeFile(join(root, "ltr/index.html"), page("ltr", false), "utf8");
 await writeFile(join(root, "edit/index.html"), page("rtl", true), "utf8");
 /* The same song, signed in as somebody who did not put it there. */
 await mkdir(join(root, "guest"), { recursive: true });
-await writeFile(join(root, "guest/index.html"), page("rtl", true, "u-other"), "utf8");
+await writeFile(join(root, "guest/index.html"), page("rtl", true, "u-other", false, true), "utf8");
 /* The owner's own song, not published: the page that opens writing without
    being asked to. Signed in, and at the plain address rather than at /edit,
    which is the whole of what is being checked. */
 await mkdir(join(root, "draft"), { recursive: true });
-await writeFile(join(root, "draft/index.html"), page("rtl", true, null, true), "utf8");
+await writeFile(join(root, "draft/index.html"), page("rtl", true, null, true, true), "utf8");
 await mkdir(join(root, "long"), { recursive: true });
 await mkdir(join(root, "longed"), { recursive: true });
 await writeFile(join(root, "long/index.html"), page("long", false), "utf8");
