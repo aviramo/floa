@@ -592,7 +592,10 @@
     });
   }
 
-  var FIELDS = "id,slug,title,dir,lines,updated_at";
+  /* `deleted_at` comes along because a song in the wastebasket is still opened
+     by address: the card there leads to its last version (see viewDeleted), and
+     that page is a different page for a song that is not in the library. */
+  var FIELDS = "id,slug,title,dir,lines,updated_at,deleted_at";
   /* `lines` is fetched for the list too, so a row can show which chords the
      song uses. A song is a few hundred bytes of text; a library of them is
      still smaller than one photograph. */
@@ -6371,17 +6374,15 @@
 
       var head = el("div", "song-head");
       head.appendChild(el("h1", null, "שירים שנמחקו"));
-      head.appendChild(el("div", "by", "שיר שנמחק נשאר כאן עם המילים והאקורדים שלו. הכתובת שלו נזרקה, ושחזור נותן לו כתובת חדשה משמו."));
       app.appendChild(head);
 
+      /* No sentence explaining what this page is. What a deleted song keeps is
+         on the card, what happens to it is behind the card, and a paragraph
+         above a list of two rows is a paragraph read once by whoever wrote it.
+         No way back at the foot of it either: the corner of the bar is the way
+         back on every page here (see paintBrand). */
       var list = el("ul", "list");
       app.appendChild(list);
-
-      var actions = el("div", "row-actions");
-      actions.appendChild(button("לרשימת השירים", null, "ghost small", function () { go(addr()); }));
-      var after = el("div", "after-list");
-      after.appendChild(actions);
-      app.appendChild(after);
 
       function paint(rows) {
         list.innerHTML = "";
@@ -6396,7 +6397,21 @@
 
       function row(s, rows) {
         var li = el("li");
-        var box = el("div", "row is-gone");
+        /* THE CARD OPENS THE SONG AS IT LAST WENT OUT, and that is where it is
+           brought back from. A wastebasket is a place to look at what is in it,
+           and the one thing that cannot be seen from here is the one thing
+           anybody needs in order to decide: the words. So a press opens the
+           last version of it, which is the song, whole, read-only, with the way
+           back to the library on it (see viewVersion and pastBand).
+
+           A deleted song keeps an address of its own, taken from its id when it
+           went (see db.remove), so there is somewhere for that press to go. */
+        var box = el("a", "row is-gone");
+        box.href = addr(s.slug, "versions", "last");
+        box.addEventListener("click", function (event) {
+          event.preventDefault();
+          go(box.getAttribute("href"));
+        });
 
         var what = el("div");
         var top = el("div", "t-row");
@@ -6408,14 +6423,15 @@
         if (when) what.appendChild(el("div", "a", "נמחק " + when));
         box.appendChild(what);
 
+        /* Bringing it back is not here. It is on the page the card opens,
+           under the words it would bring back, where the press is made by
+           somebody who has just read what they are restoring. What is left
+           here is the one thing that cannot be undone anywhere. */
         var buttons = el("div", "row-actions");
-        buttons.appendChild(button("שחזור", ICON.undo, "small", function () {
-          db.restore(s).then(function (back) {
-            toast("השיר חזר");
-            go(addr((back && back.slug) || slugify(s.title)));
-          }).catch(function (e) { toast("השחזור נכשל: " + e.message, true); });
-        }));
-        buttons.appendChild(button("מחיקה לצמיתות", ICON.trash, "danger small", function () {
+        buttons.appendChild(button("מחיקה לצמיתות", ICON.trash, "danger small", function (event) {
+          /* the card is a link, and this press was not for it */
+          event.preventDefault();
+          event.stopPropagation();
           if (!window.confirm('למחוק את "' + s.title + '" לצמיתות?\n\nזה השלב היחיד כאן שאי אפשר לחזור ממנו.')) return;
           db.purge(s.id).then(function () {
             paint(rows = rows.filter(function (other) { return other.id !== s.id; }));
@@ -11912,9 +11928,16 @@
        A version is one the song already gave and can be gone back to; an offer
        is one somebody else is proposing and is waiting on the press. */
     var offer = past.offer || null;
+    /* AND A SONG IN THE WASTEBASKET IS READ HERE TOO. The card there opens its
+       last version (see viewDeleted), so this band is what a deleted song says
+       about itself: not "this is not the song" but "this is the song, and it is
+       not in the library". */
+    var gone = !offer && past.song && past.song.deleted_at;
     var plain = offer
       ? "זו הצעה לשיר, ולא השיר עצמו. השיר ישתנה רק אם תאשרו אותה."
-      : "זו גרסה שפורסמה " + whenWords(past.version.created_at) + ", ולא השיר עצמו. אי אפשר לערוך אותה, אפשר לשחזר אותה.";
+      : gone
+        ? "השיר הזה נמחק, וכך הוא נראה בפעם האחרונה שפורסם, " + whenWords(past.version.created_at) + ". שחזור מחזיר אותו לרשימה בכתובת חדשה."
+        : "זו גרסה שפורסמה " + whenWords(past.version.created_at) + ", ולא השיר עצמו. אי אפשר לערוך אותה, אפשר לשחזר אותה.";
     var marked = offer
       ? "מסומן מה שההצעה משנה בשיר: ירוק הוא מה שנוסף, אדום ומחוק הוא מה שיורד."
       : "מסומן מה שהשתנה מהגרסה שלפניה: ירוק הוא מה שנוסף, אדום ומחוק הוא מה שירד.";
@@ -11965,7 +11988,7 @@
       return band;
     }
 
-    actions.appendChild(button("שחזור הגרסה הזאת", ICON.undo, "small", function () {
+    actions.appendChild(button(gone ? "שחזור השיר" : "שחזור הגרסה הזאת", ICON.undo, "small", function () {
       restoreVersion(past.song, past.version);
     }));
     actions.appendChild(button("כל הגרסאות", null, "ghost small", function () {
@@ -12093,11 +12116,37 @@
      question says so rather than promising a way back that does not exist. */
   function restoreVersion(song, version) {
     var when = whenWords(version.created_at);
-    if (!window.confirm('לשחזר את "' + (song.title || "השיר") + '" לגרסה מ' + when +
-      "?\n\nמה שכתוב בשיר עכשיו יוחלף. שינויים שנעשו מאז הפרסום האחרון ולא פורסמו לא נשמרו בשום גרסה, והם ילכו.")) return;
+    /* A SONG IN THE WASTEBASKET IS BROUGHT BACK BY THE SAME PRESS. This page is
+       where a deleted song is read from (see viewDeleted), and what somebody
+       wants there is not "put these words back into a song nobody can reach",
+       it is the song. So the two are one press: out of the wastebasket, with a
+       new address taken from its name, and these words in it.
+
+       Nothing is being replaced in that case, because there is nothing standing
+       there to replace, so the question is a different question. */
+    var gone = !!song.deleted_at;
+    if (!window.confirm(gone
+      ? 'להחזיר את "' + (song.title || "השיר") + '" לרשימה, כפי שהיה בגרסה מ' + when + "?"
+      : 'לשחזר את "' + (song.title || "השיר") + '" לגרסה מ' + when +
+        "?\n\nמה שכתוב בשיר עכשיו יוחלף. שינויים שנעשו מאז הפרסום האחרון ולא פורסמו לא נשמרו בשום גרסה, והם ילכו.")) return;
 
     setBusy("משחזר");
-    db.update(song.id, {
+    /* The way back into the library first, because it is the one that can fail
+       on the name being taken and the one that decides the address; the words
+       are written into a song that is standing again. */
+    (gone ? db.restore(song) : Promise.resolve(song)).then(function (row) {
+      song = row || song;
+      return writeVersion(song, version, when, gone);
+    }).catch(function (error) {
+      route();
+      toast("השחזור נכשל: " + error.message, true);
+    });
+  }
+
+  /* The words of a version written into the song itself, which is the whole of
+     what restoring is once the song is standing in the library. */
+  function writeVersion(song, version, when, gone) {
+    return db.update(song.id, {
       title: String(version.title || ""),
       lyrics_by: String(version.lyrics_by || ""),
       music_by: String(version.music_by || ""),
@@ -12105,13 +12154,8 @@
       lines: version.lines == null ? "" : version.lines,
       styles: Array.isArray(version.styles) ? version.styles : [],
     }).then(function (row) {
-      toast("השיר חזר לגרסה מ" + when);
+      toast(gone ? "השיר חזר" : "השיר חזר לגרסה מ" + when);
       go(addr((row && row.slug) || song.slug));
-    }).catch(function (error) {
-      /* back to the page that was being read, so the failure is a sentence over
-         a page rather than a word on an empty screen */
-      route();
-      toast("השחזור נכשל: " + error.message, true);
     });
   }
 
@@ -12212,8 +12256,21 @@
     db.bySlug(slug).then(function (song) {
       if (!song) return notFound(slug);
 
-      return versions.one(song.id, id).then(function (v) {
+      /* "last" IS AN ADDRESS ANYBODY CAN WRITE DOWN and nobody has to look up.
+         It is how a deleted song is opened from the wastebasket (see
+         viewDeleted): the card there knows the song and not which of its
+         versions was the last one, and asking the database for the answer in
+         order to build a link would be a request per card on the page. */
+      var wanted = id === "last"
+        ? versions.of(song.id).then(function (rows) { return (rows && rows[0]) || null; })
+        : versions.one(song.id, id);
+
+      return wanted.then(function (v) {
         if (!v) return noVersion(song);
+        /* and the address becomes the version that was actually opened, so a
+           reload, a bookmark or a link is this one rather than whichever turns
+           out to be last by then */
+        if (id === "last") history.replaceState(history.state, "", addr(song.slug, "versions", v.id));
         /* And the one before it, which is the only thing "what changed" can be
            answered against. Asked for here rather than when the button is
            pressed, so the button is offered only where there is an answer. */
@@ -12228,11 +12285,33 @@
     where("לא נמצא");
     app.innerHTML = "";
     var box = el("div", "center");
+    /* A DELETED SONG THAT WAS NEVER PUBLISHED HAS NOTHING TO SHOW, and it is
+       still the song somebody came here to bring back: the wastebasket sends
+       every card to its last version (see viewDeleted), and one that has none
+       lands here. So this page says why there is nothing to read and offers the
+       one thing that was wanted anyway. */
+    if (song.deleted_at) {
+      box.appendChild(el("p", null, "השיר הזה נמחק לפני שפורסם, אז אין גרסה להראות. המילים והאקורדים שלו נשמרו."));
+      box.appendChild(button("שחזור השיר", ICON.undo, null, function () { restoreSong(song); }));
+      app.appendChild(box);
+      return;
+    }
     box.appendChild(el("p", null, "הגרסה הזאת לא נמצאה."));
     box.appendChild(button("כל הגרסאות", null, "ghost", function () {
       go(addr(song.slug, "versions"));
     }));
     app.appendChild(box);
+  }
+
+  /* OUT OF THE WASTEBASKET, with a new address taken from its name because the
+     old one was thrown away when it went (see db.restore). Called from the two
+     places a deleted song can be looked at: a version of it, and the page that
+     says it has none. */
+  function restoreSong(song) {
+    db.restore(song).then(function (back) {
+      toast("השיר חזר");
+      go(addr((back && back.slug) || slugify(song.title)));
+    }).catch(function (e) { toast("השחזור נכשל: " + e.message, true); });
   }
 
   /* --- an evening of singing -----------------------------------------------
