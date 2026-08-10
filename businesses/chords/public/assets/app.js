@@ -5664,6 +5664,28 @@
     });
     fork.classList.toggle("is-on", earOpen() && earMode === "tune");
     rows.push(fork);
+
+    /* --- AND THE MEASUREMENT, WHICH HAD NO DOOR AT ALL ------------------------
+       There is a "מה שומעים" button that opens the working: the twelve numbers,
+       what the ear nearly said, and every chord of THIS song with the score it
+       just got. It is the one place that answers "why did the mark do that",
+       and it lived inside the band at the foot of the screen.
+
+       WHICH IS HIDDEN WHILE THE FOLLOWER RUNS, and the follower runs on every
+       song page by itself. So the button that opens the measurement was inside
+       the thing the measurement had to be opened from: a door locked from the
+       inside, and the comment beside it cheerfully said the measurement was a
+       press away. It was not reachable at all.
+
+       Found by somebody being told to go and read it and answering that there
+       was nothing to press. */
+    var work = button("מה שומעים", ICON.mic, "ghost small ear-row", function () {
+      closeUnder();
+      showWork();
+    });
+    work.classList.toggle("is-on", !!earParts && earMode === "chord" &&
+      earParts.chord.node.classList.contains("is-shown"));
+    rows.push(work);
     if (state.printable) {
       rows.push(button("הדפסה", ICON.print, "ghost small", function () {
         /* not closeUnder: this row asks a second question, and asking it
@@ -17154,6 +17176,19 @@
   /* How much of the screen the band is allowed. While the follower is running
      it is one row, because what is being looked at is the song; the
      measurement is behind a press for whoever wants to see why. */
+  /* Opens the working and, if the microphone is not listening yet, the
+     microphone with it. Two steps rather than one because the band is built
+     when the ear opens and there is nothing to unfold before that. */
+  function showWork() {
+    var unfold = function () {
+      if (!earParts) return;
+      earParts.chord.node.classList.add("is-shown");
+      earRoom();
+    };
+    if (earOpen() && earMode === "chord") return unfold();
+    askEar("chord", unfold);
+  }
+
   function earRoom() {
     if (!ear || !earParts) return;
     /* AND WHILE IT IS FOLLOWING THERE IS NO BAND AT ALL. It was one row, and
