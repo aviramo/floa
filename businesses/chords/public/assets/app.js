@@ -6483,18 +6483,20 @@
          window that is already open, so it is written once as a function and
          the media query calls it again. The bar's slots are wiped by `where`
          on every page, so nothing here can be left standing over a song. */
-      /* THE WAYS OUT OF HERE STAND FIRST, above the row that adds to this page
-         and counts what is on it. A door belongs to the app and a count
-         belongs to the wall, so they are two bands and not one, and the doors
-         are the upper of the two because they are the wider question.
+      /* THE WAYS OUT OF HERE STAND AT THE HEAD OF THE PAGE, and they are the
+         only thing up here: a door belongs to the app, and everything under
+         them belongs to the wall of songs.
 
          Not on a shelf: /style/<name> is the library held down to one word,
          reached from the wall below and left by the arrow in the corner, and
          it never carried these in the bar either. */
       if (!shelf) app.appendChild(doorsBand());
 
+      /* Made here and PUT ON THE PAGE FURTHER DOWN, under the songs' own
+         heading: what stands in this row adds a song and narrows the wall of
+         them, so it belongs against the thing it acts on rather than over the
+         shelves, which it says nothing about. */
       var overWall = el("div", "kinds-row");
-      app.appendChild(overWall);
 
       function rehome() {
         var inBar = !NARROW.matches && findExtra;
@@ -6630,6 +6632,12 @@
          an unnamed wall of cards reads as more of that something. */
       var listHead = el("h2", "band-h", "שירים");
       app.appendChild(listHead);
+
+      /* AND UNDER THAT HEADING, the way to add a song and the counts of the
+         work outstanding (see rehome above). They were over the shelves, which
+         put them above a band they have nothing to say about; every one of
+         them is about the wall of songs, and this is the top of it. */
+      app.appendChild(overWall);
 
       var list = el("ul", "list");
       app.appendChild(list);
