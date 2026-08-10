@@ -50,15 +50,16 @@
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-<!-- NOTHING IN HERE IS IN THE HAND WHEN IT OPENS. A dialog hands the focus to
-     the first thing inside it that can take one, which here is the name, and
-     on a phone a focused text field is a keyboard: half the panel covered, by
-     a field almost nobody came to change. The `autofocus` on the dialog itself
-     is what says so, and it is read before any field inside is looked at; the
-     tabindex is what lets the dialog hold the focus it is being given. -->
-<dialog id="meDialog" class="dlg" tabindex="-1" autofocus>
+<dialog id="meDialog" class="dlg">
   <form class="dlg-in" id="meForm">
-    <h2>החשבון</h2>
+    <!-- AND THE PANEL OPENS ONTO ITS OWN NAME. A dialog with nothing marked
+         hands the focus to the first thing inside it that can take one, which
+         here is the field with the name in it, and a focused field on a phone
+         is a keyboard: half the panel covered on the way in, for a name almost
+         nobody opened this to change. So the heading takes it, the same way it
+         does on the panel about a song (see metaTitle in app.js). It is where
+         the panel starts and not a control, so it wears no ring. -->
+    <h2 tabindex="-1" autofocus>החשבון</h2>
     <p class="muted" id="meWho"></p>
     <label>השם שלך<input type="text" name="name" autocomplete="name" maxlength="60" required></label>
     <p class="err" id="meErr" hidden></p>
