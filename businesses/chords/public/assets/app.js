@@ -7891,7 +7891,22 @@
        plays from, and whose song it is belongs with its name the way it does
        on every card in the library. Written whenever the song is drawn, so
        naming somebody in the panel puts them here as it is typed. */
-    var sayWho = function () { whereUnder(creditNames(song).join(", ")); };
+    /* AND ON PAPER IT IS NOT THE SAME LINE. The bar says a person once, because
+       what the line under a name answers is "whose song is this", and somebody
+       who wrote both the words and the tune is one answer to it. A printed
+       sheet leaves the app and is played from, handed on and kept, and there
+       the question is which of the two each name did: the words, the tune, and
+       who each of them belongs to (see creditsLine). Written by the same
+       function, so naming somebody in the panel reaches both. */
+    var paperBy = el("div", "by on-paper");
+    var sayWho = function () {
+      whereUnder(creditNames(song).join(", "));
+      var told = creditsLine(song);
+      paperBy.textContent = told.join(" · ");
+      /* a song with nobody named on it prints as the name and the words, not
+         as the name, an empty line, and the words */
+      paperBy.hidden = !told.length;
+    };
     sayWho();
 
     /* What the head still carries: whatever the song has to say about itself,
@@ -7899,6 +7914,7 @@
     var headTop = el("div", "head-top");
     headTop.appendChild(title);
     head.appendChild(headTop);
+    head.appendChild(paperBy);
 
     /* the three rows of chips in the panel: who wrote the words, who wrote the
        tune, and what kind of song it is */

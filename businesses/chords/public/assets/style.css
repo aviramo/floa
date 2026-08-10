@@ -2637,18 +2637,42 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
      on something nobody can press. */
   .pool, .ev-meta, .hint, .set-grip, .set-row button { display: none !important; }
   .on-paper { display: block; }
+  /* and one of them is left out when there is nothing to say (see sayWho): the
+     class turns these on for the printer, so it has to be told when not to */
+  .on-paper[hidden] { display: none; }
   .set-row { border: none; padding: 4px 0; break-inside: avoid; }
   .set { gap: 0; }
-  /* a little room at the start of the line, or the first chord of every line
-     is centred half off the paper */
-  .sheet { border: none; box-shadow: none; padding: 0 26px; overflow: visible; }
+  /* --- ONE MARGIN, AND EVERYTHING ON THE PAGE STANDS ON IT ------------------
+     The margin used to belong to the sheet: a little room at the start of the
+     line, because the first chord of a line is centred on its first character
+     and half of it hangs past the start. But the name of the song is not in
+     the sheet, it is over it, so it stood on a margin of its own, and what
+     came out of the printer was a title that began somewhere the words never
+     did. The columns made it worse: their width is worked out for a WINDOW,
+     written onto the element in pixels, and on paper that is a band of words
+     centred in the middle of the page with the title reaching past both ends
+     of it.
+
+     So the margin is the paper's. It is set once, on what everything on the
+     page is inside, and the sheet, the columns and the heading all give up
+     margins of their own: the title, whoever wrote the song and the first
+     letter of every line all begin at the same place, and the chord that
+     hangs past it hangs into the paper's margin, which is what it is for. */
+  #app { padding-inline: 26px; }
+  .sheet { border: none; box-shadow: none; padding: 0 !important; overflow: visible; }
   /* Columns are an answer to a screen, and paper is not a screen: it has a
      page break where a window has a scroll, and it comes in one width. The
      count is written onto the element by hand, so this has to shout. */
   /* Paper has pages of its own and they are not the window's. The columns
      come apart and the song runs down the sheet as one. */
   .sheet { min-height: 0 !important; }
-  .page { display: block !important; height: auto !important; overflow: visible !important; border: 0 !important; }
+  .page {
+    display: block !important; height: auto !important;
+    overflow: visible !important; border: 0 !important;
+    /* the width and the air at its ends are both answers to a window, and the
+       paper's own margin is above (see #app) */
+    width: auto !important; padding-inline: 0 !important;
+  }
   /* A card is a thing on a screen: on paper the segment is the paper, so the
      shape, the shadow and the desk between them all go, and what is left is
      the words with a margin. */
