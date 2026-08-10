@@ -13052,8 +13052,11 @@
        would be two answers to one question. */
     if (!following) markHeard(heardNow);
 
-    /* --- and where in the song that puts us --------------------------------- */
-    if (following) followOn();
+    /* --- and where in the song that puts us ---------------------------------
+       Only on a reading there is something in. See followOn: a follower that
+       steps on silence walks off on the noise of the microphone being switched
+       on, before a single string has been touched. */
+    if (following) followOn(quiet);
 
     c.now.textContent = heardNow || "·";
     c.node.classList.toggle("is-quiet", !heardNow);
@@ -13234,11 +13237,34 @@
     return true;
   }
 
-  function followOn() {
+  /* HOW MUCH OF THIS SONG HAS TO BE IN THE SOUND before it is allowed to move
+     the mark. A chord being played scores three quarters and up against the
+     chord it is; a room, a chair, a voice and the noise a microphone makes
+     when it is switched on score flat and low against everything. Under this
+     the reading says nothing about this song and is not evidence about where
+     in it we are. */
+  var HEARD_ENOUGH = 0.62;
+
+  function followOn(quiet) {
     /* The page underneath may have become a different page: a song closed, the
        library opened, a version being read. There is nothing to follow on any
        of those and the mark goes with them. */
     if (!followRead()) return stopFollowing();
+
+    /* --- NOTHING TO GO ON, SO NOTHING MOVES ----------------------------------
+       The mark stays exactly where it is and the arithmetic is not run at all.
+
+       This is the difference between a follower that waits and one that does
+       not. Switching the microphone on is a moment of nothing: a click, a
+       room, a chair, whatever the machine does as it opens the input. The
+       follower used to take that as its first reading, and because there is
+       nothing to be loyal to at the first reading (see follow.js) it took it
+       AS THE ANSWER and put the mark wherever the noise happened to point,
+       usually a chord or two in, before a single string had been touched.
+
+       And it is the right rule for the rest of the song too: the pause between
+       two verses is not the song moving on. */
+    if (quiet) return followSay(following.where());
 
     /* One number per DISTINCT chord in the song, which is eight or so rather
        than the two hundred places those eight stand in. */
@@ -13258,19 +13284,34 @@
        follower has to climb over; the average makes it transparent, which is
        what it is: a place in the song that says nothing about the sound. */
     var mean = count ? sum / count : 0;
-    for (i = 0; i < kinds.length; i++) if (scores[i] < 0) scores[i] = mean;
+    var top = 0;
+    for (i = 0; i < kinds.length; i++) {
+      if (scores[i] < 0) scores[i] = mean;
+      if (scores[i] > top) top = scores[i];
+    }
+    /* Loud, and still nothing of this song in it. Somebody talking over the
+       guitar, a door, a different song. Loudness alone is not evidence: what
+       makes a reading worth stepping on is that it looks like something the
+       song is written in. */
+    if (top < HEARD_ENOUGH) return followSay(following.where());
 
-    var step = following.step(scores);
-    markAt(step.here);
-    /* Where in the song, and nothing about how sure. There WAS a "לא בטוח"
-       here, worked out from the paths themselves, and it was measuring the
-       model rather than the song: the costs in follow.js floor every rival a
-       fixed distance behind the leader, so it read as near certainty on every
-       song ever written, including the ones that are four chords sixteen
-       times. A number that is always the same is not a reading, and a warning
-       that never appears is worse than none. */
-    earParts.chord.at.textContent = step.here < 0 ? "" :
-      (step.here + 1) + " מתוך " + following.length;
+    followSay(following.step(scores).here);
+  }
+
+  /* The mark, and the same thing in words on the strip. One call, because the
+     three places that decide where the mark goes should not each have to
+     remember to say so.
+
+     Where in the song, and nothing about how sure. There WAS a "לא בטוח" here,
+     worked out from the paths themselves, and it was measuring the model
+     rather than the song: the costs in follow.js floor every rival a fixed
+     distance behind the leader, so it read as near certainty on every song
+     ever written, including the ones that are four chords sixteen times. A
+     number that is always the same is not a reading, and a warning that never
+     appears is worse than none. */
+  function followSay(at) {
+    markAt(at);
+    earParts.chord.at.textContent = at < 0 ? "" : (at + 1) + " מתוך " + following.length;
   }
 
   function markAt(i) {

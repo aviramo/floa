@@ -108,7 +108,7 @@ Object.defineProperty(navigator, "mediaDevices", {
 });
 
 const RATE = 48000;
-window.__sound = "chord";          // or "note": the test switches this
+window.__sound = "chord";          // "note", or "hush": the test switches this
 window.__voicings = ${JSON.stringify(VOICINGS)};
 window.__playing = "Am";           // which of them is being strummed
 
@@ -119,7 +119,7 @@ function analyser() {
     get frequencyBinCount() { return this.fftSize / 2; },
     getFloatFrequencyData(out) {
       out.fill(-110);
-      if (window.__sound !== "chord") return;
+      if (window.__sound !== "chord") return;   // silence, and the note tab
       const bin = RATE / this.fftSize;
       for (const midi of window.__voicings[window.__playing]) {
         const f = 440 * Math.pow(2, (midi - 69) / 12);
@@ -132,6 +132,9 @@ function analyser() {
     /* Loud enough to be worth reading, and, on the note tab, a clean 110 hertz
        sine, which is a guitar's A string exactly in tune. */
     getFloatTimeDomainData(out) {
+      /* A room nobody is playing in: under HUSH, which is what the follower
+         has to refuse to step on. */
+      if (window.__sound === "hush") { out.fill(0); return; }
       const hz = window.__sound === "note" ? 110 : 220;
       for (let i = 0; i < out.length; i++) out[i] = 0.25 * Math.sin(2 * Math.PI * hz * i / RATE);
     },
@@ -433,6 +436,21 @@ try {
         began.heard === 0, String(began.heard));
       check("and it says where in the song that is",
         /1\s*מתוך\s*7/.test(began.said || ""), JSON.stringify(began.said));
+
+      /* --- AND A ROOM NOBODY IS PLAYING IN MOVES NOTHING ---------------------
+         Switching a microphone on is a moment of nothing: a click, a room, a
+         chair, whatever the machine does as it opens the input. The follower
+         used to take that as its first reading and, having nothing yet to be
+         loyal to, take it as the ANSWER: the mark landed a chord or two in
+         before a single string had been touched. */
+      await evaluate('JSON.stringify((window.__sound = "hush", true))');
+      await sleep(900);
+      const hushed = await evaluate(FOLLOW_READ);
+      check("silence does not walk the mark anywhere",
+        hushed.at === began.at && hushed.marks === 1,
+        JSON.stringify({ was: began.at, now: hushed.at, marks: hushed.marks }));
+      await evaluate('JSON.stringify((window.__sound = "chord", true))');
+      await sleep(400);
 
       /* --- and now the song is played ---------------------------------------
          Am G F Am Dm, one chord at a time, which is the whole of what a
