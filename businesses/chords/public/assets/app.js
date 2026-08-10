@@ -8221,13 +8221,13 @@
       return part;
     }
 
-    function keyList(choices, shut) {
+    function keyList(choices, again) {
       var list = el("div", "keys");
-      choices.forEach(function (choice) { list.appendChild(keyRow(choice, shut)); });
+      choices.forEach(function (choice) { list.appendChild(keyRow(choice, again)); });
       return list;
     }
 
-    function keyRow(choice, shut) {
+    function keyRow(choice, again) {
       var row = el("button", "key-opt");
       row.type = "button";
       /* The chord in the size it is worth reading at, and beside it the one
@@ -8239,7 +8239,14 @@
         row.classList.add("is-on");
         row.setAttribute("aria-current", "true");
       }
-      row.addEventListener("click", function () { shut(); setPage(choice.page); });
+      /* The song moves under the panel and the panel is drawn again over it:
+         the key that is now on, and what the fret has become, which is the
+         half of this the reader did not press. */
+      row.addEventListener("click", function () {
+        chosen = true;
+        setPage(choice.page);
+        again();
+      });
       return row;
     }
 
@@ -8278,9 +8285,32 @@
     var playCtl = dialFor(
       ICON.capo, "קפו וסולם",
       "המספר הוא הסריג שהקפו יושב עליו. בלחיצה אפשר להזיז אותו, ואפשר לבחור סולם אחר לשיר: בחירת סולם מזיזה את הקפו כדי שהשיר יישמע אותו דבר, והזזת הקפו לבד משנה את הגובה.",
-      myValue, fillPlay
+      myValue, fillPlay, keepChoice
     );
     tools.appendChild(playCtl);
+
+    /* --- WRITTEN DOWN WHEN THE PANEL SHUTS, AND NOT ON THE PRESS --------------
+       Whoever opens this is trying the song in one key and then in another, and
+       on a fret and then on the next one: the presses in between are a hand
+       looking for something, not an answer. The answer is where they stopped,
+       so what is kept is the state the panel is left in, once, when it closes.
+
+       ONLY IF SOMETHING WAS PRESSED. The app draws its own guess at the easy
+       version of every song (see easyVersion), and a panel opened, read and
+       closed again would otherwise write that guess down as the reader's own
+       answer, where nothing afterwards could tell the two apart.
+
+       BOTH NUMBERS, whichever of them was pressed: they are two ends of one
+       distance and half of it kept is a reader being answered from the old
+       pair on one side and the new one on the other. */
+    var chosen = false;
+
+    function keepChoice() {
+      if (!chosen) return;
+      chosen = false;
+      keepFor(song.id, "p", semis);
+      keepFor(song.id, "s", sung);
+    }
 
     /* --- AND THE MICROPHONE ---------------------------------------------------
        The third thing on a strip about playing this song, and the only one
@@ -8335,14 +8365,14 @@
     /* Eight frets, in the order a neck is in, nought at the top. The one the
        capo is at is marked, so the panel says where you are as well as where
        you could go, and pressing it again is pressing the answer it already
-       gives, which does nothing and closes. */
-    function fretGrid(shut) {
+       gives, which does nothing. */
+    function fretGrid(again) {
       var grid = el("div", "frets");
-      for (var fret = 0; fret <= MAX_CAPO; fret++) grid.appendChild(fretBtn(fret, shut));
+      for (var fret = 0; fret <= MAX_CAPO; fret++) grid.appendChild(fretBtn(fret, again));
       return grid;
     }
 
-    function fretBtn(fret, shut) {
+    function fretBtn(fret, again) {
       var btn = el("button", "fret-opt", String(fret));
       btn.type = "button";
       var said = fret ? "קפו בסריג " + fret : "בלי קפו";
@@ -8352,7 +8382,11 @@
         btn.classList.add("is-on");
         btn.setAttribute("aria-current", "true");
       }
-      btn.addEventListener("click", function () { shut(); setMyCapo(fret); });
+      btn.addEventListener("click", function () {
+        chosen = true;
+        setMyCapo(fret);
+        again();
+      });
       return btn;
     }
 
@@ -8375,10 +8409,6 @@
       var fret = Math.max(0, Math.min(next, MAX_CAPO));
       if (fret === myCapo) return;
       sung = semis + fret;
-      keepFor(song.id, "s", sung);
-      /* and the page is written down with it, so a reader who has now chosen
-         one of the two is not still being answered for on the other */
-      keepFor(song.id, "p", semis);
       repage();
     }
 
@@ -8714,12 +8744,10 @@
        one of those is a page this reader can hold (see keyChoices). The clamp
        is what keptPage will read back and no more than that.
 
-       CHOOSING IS CHOOSING. Whoever picks a key has just said where they play
-       this song, and they are the same person with the same hands tomorrow, so
-       it is kept and the song opens there next time. Kept on the press and not
-       on the drawing, because the app draws its own guess at the easy version
-       too, and a guess that writes itself down is a guess nobody can tell from
-       an answer.
+       CHOOSING IS CHOOSING, but a press is not yet choosing: this moves the
+       page and writes nothing down. Somebody trying the song in three keys
+       pressed three times and meant the last one, and that one is written when
+       the panel shuts (see keepChoice).
 
        THE SINGING IS NOT TOUCHED, and that is what makes the capo move: the
        fret is the gap between the two, and this sets it. Which is the whole
@@ -8728,10 +8756,6 @@
       var page = Math.max(-11, Math.min(11, next));
       if (page === semis) return;
       semis = page;
-      keepFor(song.id, "p", semis);
-      /* and the singing is written down with it, so a reader who has now
-         chosen one of the two is not still being answered for on the other */
-      keepFor(song.id, "s", sung);
       repage();
     }
 
@@ -12962,7 +12986,11 @@
     var had = history.state && history.state.k;
     if (had) return had;
     var k = "s" + (++scrollStep);
-    history.replaceState({ k: k }, "");
+    /* AND THAT IT IS THE FLOOR. An entry the app did not push is the address
+       the tab was opened on: a song arriving from a search result or from a
+       message, with nothing of ours underneath it. The corner of the bar reads
+       this to know whether back is a step or a way out (see goBack). */
+    history.replaceState({ k: k, floor: true }, "");
     return k;
   }
 
