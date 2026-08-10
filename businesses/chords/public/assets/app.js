@@ -16978,6 +16978,10 @@
       URL.revokeObjectURL(url);
       showAt(-1);
       dlg.remove();
+      /* AND THE NEXT PRESS ON STOP MAY ASK AGAIN. Whatever this was closed by,
+         an answer or a hand on the dark behind it, there is no panel standing
+         over the take any more (see asking). */
+      asking = false;
       /* ANSWERED, AND THE MICROPHONE GOES BACK TO BEING A DOOR. Keeping the
          take and throwing it away are both the end of it, and on the other
          side of that is a page nobody is playing to: the light goes out, the
