@@ -188,6 +188,11 @@
     pause: '<rect x="8" y="6" width="3.2" height="12" rx="1" fill="currentColor" stroke="none"/><rect x="12.8" y="6" width="3.2" height="12" rx="1" fill="currentColor" stroke="none"/>',
     stop: '<rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor" stroke="none"/>',
     play: '<path d="M9 6.5l9 5.5-9 5.5V6.5Z" fill="currentColor" stroke="none"/>',
+    /* Three points and the lines between them, which is what sharing has
+       looked like since before any of this. Not the box with an arrow out of
+       it: that one is one platform's word for it and reads as "upload"
+       everywhere else. */
+    share: '<circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="M8.2 10.8l7.6-4M8.2 13.2l7.6 4"/>',
   };
 
   function iconBtn(icon, title, onClick) {
@@ -1165,6 +1170,81 @@
      and kept for as long as the wall is on screen. */
   var takesOut = {};
 
+  /* ==========================================================================
+     THE RECORDINGS ON A ROW OF THE WALL, AND THE BUTTON THAT PLAYS ONE.
+
+     It was a mark and a number saying how many there are, which is worth
+     knowing and is not worth much: a wall of songs is a wall of things to pick
+     up, and the shortest way to decide whether to pick this one up is to hear
+     somebody play it. So the mark is the button: press it and the last
+     recording of that song starts, right there, without leaving the wall.
+
+     ONE AT A TIME, AND THAT IS NOT A DETAIL. Fifty rows each able to make a
+     noise is fifty noises, and the second one starting is the first one
+     becoming impossible to stop, because the button that would have stopped it
+     has scrolled away. So starting one ends whatever else was going.
+
+     THE COUNT STAYS INSIDE IT. What is being pressed is "the recordings of
+     this song", and how many there are is part of what that means, not a
+     separate remark beside it.
+     ========================================================================== */
+  var wallPlaying = null;
+
+  function stopWall() {
+    if (!wallPlaying) return;
+    var was = wallPlaying;
+    wallPlaying = null;
+    was.audio.pause();
+    if (was.url) URL.revokeObjectURL(was.url);
+    if (was.node && was.node.isConnected) {
+      was.node.classList.remove("is-playing");
+      reicon(was.node, ICON.play);
+    }
+  }
+
+  function playRow(song, out) {
+    var node = el("button", "when has-takes");
+    node.type = "button";
+    node._icon = ICON.play;
+    node.appendChild(svg(ICON.play));
+    node.appendChild(el("span", null, String(out.n)));
+    node.title = out.n === 1 ? "להשמיע את ההקלטה" : "להשמיע את ההקלטה האחרונה מתוך " + out.n;
+    node.setAttribute("aria-label", node.title);
+
+    node.addEventListener("click", function (event) {
+      /* The row is a link to the song and this is a button standing on it, so
+         the press has to stop here or the wall turns into the song. */
+      event.preventDefault();
+      event.stopPropagation();
+      if (wallPlaying && wallPlaying.node === node) return stopWall();
+      stopWall();
+      hearOnWall(node, out.top);
+    });
+    return node;
+  }
+
+  function hearOnWall(node, take) {
+    if (!take || !take.path) return;
+    node.disabled = true;
+    store(take.path).then(function (r) { return r.blob(); }).then(function (blob) {
+      node.disabled = false;
+      /* The wall may have been redrawn, or another row started, while this was
+         being fetched. Either of those means nobody is waiting for it. */
+      if (!node.isConnected) return;
+      var url = URL.createObjectURL(blob.slice(0, blob.size, take.mime || blob.type));
+      var audio = new Audio(url);
+      wallPlaying = { audio: audio, node: node, url: url };
+      audio.addEventListener("ended", stopWall);
+      audio.addEventListener("error", stopWall);
+      node.classList.add("is-playing");
+      reicon(node, ICON.stop);
+      audio.play().catch(function () { stopWall(); });
+    }).catch(function () {
+      node.disabled = false;
+      toast("לא הצלחנו להשמיע את ההקלטה");
+    });
+  }
+
   var db = {
     list: function () {
       var self = this;
@@ -1411,10 +1491,15 @@
        arrived. A library that will not open because of a table that is not
        about libraries is a worse failure than a row with nothing on it. */
     outTakes: function () {
-      return rest(CFG.takeTable + "?select=song_id&published=eq.true").then(function (rows) {
+      return rest(CFG.takeTable +
+        "?select=id,song_id,path,mime,created_at&published=eq.true&order=created_at.desc"
+      ).then(function (rows) {
         var by = {};
+        /* Newest first out of the database, so the first one seen for a song is
+           the last one recorded, which is the one the button plays. */
         (rows || []).forEach(function (row) {
-          by[row.song_id] = (by[row.song_id] || 0) + 1;
+          if (!by[row.song_id]) by[row.song_id] = { n: 0, top: row };
+          by[row.song_id].n++;
         });
         return by;
       }).catch(function () { return {}; });
@@ -6533,13 +6618,7 @@
          reason for anybody, including its owner, to pick this row off a
          wall. */
       var out = takesOut[s.id];
-      if (out) {
-        var heard = el("div", "when has-takes");
-        heard.appendChild(svg(ICON.play));
-        heard.appendChild(el("span", null, String(out)));
-        heard.title = out === 1 ? "הקלטה אחת" : out + " הקלטות";
-        side.appendChild(heard);
-      }
+      if (out) side.appendChild(playRow(s, out));
 
       a.appendChild(side);
       li.appendChild(a);
@@ -12952,6 +13031,11 @@
     state.printer = null;
     state.killer = null;
     state.editToggle = null;
+    /* A TAKE DOES NOT GO ON RECORDING UNDER ANOTHER PAGE. Walking off a song
+       is not a decision about the recording, so it is held rather than ended:
+       what was played is kept, and the answer is asked for the next time the
+       song is opened. */
+    if (taping() && !tapeHeld()) holdTape();
     /* The chords the ear is listening FOR belong to the song that was open,
        so they go with it. The panel itself does not: somebody who is tuning
        is tuning, and walking from one page to another is not a reason to stop
@@ -13082,7 +13166,15 @@
     var p = params.get("p");
     if (!p) return;
     var steps = p.replace(/^\/+/, "").replace(/\/+$/, "").split("/").filter(Boolean);
-    history.replaceState(history.state, "", addr.apply(null, steps) + location.hash);
+    /* AND EVERYTHING ELSE IN THE QUERY SURVIVES. `p` is the 404's own way of
+       saying which address was asked for, and it was throwing the rest of the
+       question away with itself: a link to one recording of a song
+       (?t=…) that happened to land on a song with no file of its own arrived
+       as a link to the song and nothing else. */
+    params.delete("p");
+    var rest = params.toString();
+    history.replaceState(history.state, "",
+      addr.apply(null, steps) + (rest ? "?" + rest : "") + location.hash);
   }
 
   /* Back from Google, with the session in the fragment: `#access_token=…`, or
@@ -14017,6 +14109,18 @@
     if (!tapeBar) return;
     tapeBar.innerHTML = "";
 
+    /* --- LEFT UNANSWERED LAST TIME --------------------------------------------
+       A take that outlived its page, put back on the song it belongs to. There
+       is no carrying on: the recorder was in a tab that is gone, and two
+       recordings joined end to end are two files rather than one. So what is
+       offered is the one thing that was missing, which is an answer. */
+    if (!taping() && heldHere()) {
+      var back = iconBtn(ICON.stop, "לסיים את ההקלטה שנשארה פתוחה", askHeld);
+      back.classList.add("is-stop");
+      tapeBar.appendChild(back);
+      return;
+    }
+
     /* --- NOT STARTED: ONE BUTTON, AND IT RECORDS ------------------------------
        There is no separate microphone to switch on first. Opening the
        microphone, following the song and recording it are one thing somebody
@@ -14166,6 +14270,92 @@
      ========================================================================== */
   var tape = null;
 
+  /* ==========================================================================
+     A TAKE THAT WAS NOT ANSWERED SURVIVES THE PAGE.
+
+     Somebody recording is playing, and somebody playing does other things: they
+     look up the next song, they open the library, they drop the phone, the tab
+     reloads. None of that is a decision about the recording, and until now all
+     of it threw one away.
+
+     SO IT IS KEPT ON THE DEVICE AND NOWHERE ELSE. Not on the server: nothing
+     goes to the server until somebody says to keep it, because a recording of
+     a person singing is theirs until they offer it, and a half take that
+     uploaded itself because a tab crashed is a thing they never agreed to.
+
+     The pieces go into IndexedDB as they arrive, one row each, so a long take
+     is a stream of small writes rather than the same growing megabyte written
+     over and over. What comes back next time is the take exactly as far as it
+     got, held, waiting for the one thing that was never given: an answer.
+
+     AND WHILE IT IS WAITING, NOTHING ELSE CAN BE RECORDED. Two unanswered
+     takes is a question nobody can answer, because the second one buries the
+     first.
+     ========================================================================== */
+  var HELD_DB = "chords-held-take";
+  var HELD_META = "meta";
+  var HELD_BITS = "bits";
+
+  function heldDb() {
+    return new Promise(function (ok, no) {
+      if (!window.indexedDB) return no(new Error("no store"));
+      var ask = indexedDB.open(HELD_DB, 1);
+      ask.onupgradeneeded = function () {
+        var db = ask.result;
+        if (!db.objectStoreNames.contains(HELD_META)) db.createObjectStore(HELD_META);
+        if (!db.objectStoreNames.contains(HELD_BITS)) {
+          db.createObjectStore(HELD_BITS, { autoIncrement: true });
+        }
+      };
+      ask.onsuccess = function () { ok(ask.result); };
+      ask.onerror = function () { no(ask.error || new Error("no store")); };
+    });
+  }
+
+  function heldWork(stores, mode, run) {
+    return heldDb().then(function (db) {
+      return new Promise(function (ok, no) {
+        var t = db.transaction(stores, mode);
+        var out = run(t);
+        t.oncomplete = function () { db.close(); ok(out && out.result !== undefined ? out.result : out); };
+        t.onerror = function () { db.close(); no(t.error); };
+      });
+    });
+  }
+
+  /* One piece of sound, as it arrives. The meta is written with it so that
+     what comes back knows which song it belongs to and how far it got. */
+  function heldAdd(bit, meta) {
+    return heldWork([HELD_META, HELD_BITS], "readwrite", function (t) {
+      if (bit) t.objectStore(HELD_BITS).add(bit);
+      t.objectStore(HELD_META).put(meta, "held");
+    }).catch(function () { /* a private window, a full disk: the take is still in memory */ });
+  }
+
+  function heldRead() {
+    return heldWork([HELD_META, HELD_BITS], "readonly", function (t) {
+      var got = { meta: null, bits: null };
+      t.objectStore(HELD_META).get("held").onsuccess = function (e) { got.meta = e.target.result || null; };
+      t.objectStore(HELD_BITS).getAll().onsuccess = function (e) { got.bits = e.target.result || []; };
+      return got;
+    }).then(function (got) {
+      if (!got || !got.meta || !got.bits || !got.bits.length) return null;
+      got.meta.bits = got.bits;
+      return got.meta;
+    }).catch(function () { return null; });
+  }
+
+  function heldDrop() {
+    return heldWork([HELD_META, HELD_BITS], "readwrite", function (t) {
+      t.objectStore(HELD_META).clear();
+      t.objectStore(HELD_BITS).clear();
+    }).catch(function () { /* nothing to forget */ });
+  }
+
+  /* What is waiting, once it has been looked for. Null means nothing is;
+     undefined means nobody has asked yet. */
+  var heldTake = undefined;
+
   /* What a browser will record in. Chrome and Firefox give opus in a webm
      container, Safari gives aac in an mp4, and asking for the wrong one is
      refused rather than translated. The first supported one wins, and the
@@ -14200,6 +14390,14 @@
      are one thing somebody wants, so they are one thing to press for: if the
      ear is not open yet it is opened and the take starts the moment it is. */
   function beginTake() {
+    /* TWO UNANSWERED TAKES IS A QUESTION NOBODY CAN ANSWER, because the second
+       buries the first. If one is waiting on another song, this says which,
+       rather than refusing without a reason. */
+    if (heldTake) {
+      return toast(heldTake.title
+        ? "יש הקלטה שלא הוחלט עליה בשיר «" + heldTake.title + "»"
+        : "יש הקלטה שלא הוחלט עליה");
+    }
     if (earOpen() && earMode === "chord") return startTape();
     askEar("chord", startTape);
   }
@@ -14220,14 +14418,27 @@
     };
     /* GUARDED, because this fires after the answer. Stopping a recorder makes
        it hand over one last piece, and by the time that arrives the take has
-       been kept or thrown away and there is nothing to push it onto. */
+       been kept or thrown away and there is nothing to push it onto.
+
+       AND EVERY PIECE GOES TO THE DEVICE AS IT ARRIVES, so that a tab that
+       reloads, crashes or is closed comes back to the take rather than to
+       nothing. Nothing goes to the server here: a recording of a person
+       singing is theirs until they offer it. */
     rec.ondataavailable = function (event) {
-      if (tape && event.data && event.data.size) tape.bits.push(event.data);
+      if (!tape || !event.data || !event.data.size) return;
+      tape.bits.push(event.data);
+      heldAdd(event.data, heldMeta());
     };
     /* Nothing on stop. What is offered is taken by stopTape while the recorder
        is still alive, so that dismissing the offer leaves the take where it
        was; by the time this fires an answer has already been given. */
-    rec.start();
+    /* ON A CLOCK, so that the pieces arrive while it is running instead of all
+       at the end: a take is only as safe as its last piece, and a recorder
+       asked for nothing until it stops is a recorder holding four minutes of
+       singing in a tab that might not last four minutes. */
+    rec.start(2000);
+    heldAdd(null, heldMeta());
+    heldTake = null;
     /* Where the mark already is, so a take opens on the chord it opened on
        rather than on the first one the player happens to move to. */
     tapeMark(following ? following.where() : 0);
@@ -14302,9 +14513,71 @@
     });
   }
 
+  /* Everything about the take except the sound, written beside it every time a
+     piece lands, so that what comes back knows which song it belongs to, how
+     far it got, and where the mark was as it went. */
+  function heldMeta() {
+    var song = state.takeSong;
+    return {
+      song: song ? song.id : "",
+      slug: song ? song.slug : "",
+      title: song ? song.title : "",
+      mime: tape ? tape.mime : "",
+      marks: tape ? tape.marks.slice() : [],
+      seconds: Math.max(0, Math.round(tapeAt() / 100) / 10),
+      page: state.ear ? state.ear.page() : 0,
+      capo: state.ear ? state.ear.capo() : 0,
+      at: Date.now(),
+    };
+  }
+
+  /* --- AND WHAT WAS LEFT UNANSWERED, WHEN THE SONG IS OPENED AGAIN -----------
+     Looked for once for the life of the tab, and only ever put back on the
+     song it belongs to: a take is a recording OF something, and the marks in
+     it count chords along one particular sheet.
+
+     What comes back cannot be carried on. A recorder is a thing in a tab and
+     the tab is gone; two recordings joined end to end are not one file, they
+     are two files in a trench coat, and the second one's header lands in the
+     middle of the first one's sound. So what is offered is the one thing that
+     was missing anyway, which is an answer: finish it, hear it, and keep it or
+     throw it away. */
+  function lookForHeld() {
+    if (heldTake !== undefined) return Promise.resolve(heldTake);
+    return heldRead().then(function (found) {
+      heldTake = found;
+      paintTape();
+      return found;
+    });
+  }
+
+  function heldHere() {
+    var song = state.takeSong;
+    return heldTake && song && heldTake.song === song.id ? heldTake : null;
+  }
+
+  /* Finishing a recovered take: there is no recorder to stop, only a question
+     to ask. */
+  function askHeld() {
+    var held = heldHere();
+    if (!held) return;
+    hearTake({
+      blob: new Blob(held.bits, { type: held.mime || "audio/webm" }),
+      mime: held.mime || "audio/webm",
+      marks: Array.isArray(held.marks) ? held.marks : [],
+      seconds: held.seconds || 0,
+      held: true,
+    });
+  }
+
   /* The end of it, and the only thing that reaches here is an answer. */
   function endTape() {
-    if (!tape) return;
+    /* The device copy goes with it either way: an answered take is either a
+       row in the library or a decision to forget it, and both of those are the
+       end of the thing that was waiting. */
+    heldTake = null;
+    heldDrop();
+    if (!tape) return paintTape();
     var rec = tape.rec;
     tape = null;
     try { rec.stop(); } catch (e) { /* already inactive */ }
@@ -14563,10 +14836,42 @@
       "&order=created_at.desc").then(function (rows) {
       if (!box.isConnected) return;
       if (!rows || !rows.length) return;
+
+      /* --- IN THE ORDER THEY WILL BE HEARD --------------------------------
+         Newest first, which is the order somebody who has been recording
+         wants, EXCEPT when the page was opened by a link to one particular
+         recording. Then that one is first, because it is the one playing, and
+         a list whose first row is not the thing you are listening to is a list
+         that has to be searched to be understood. */
+      var wanted = takeWanted();
+      if (wanted) {
+        rows.sort(function (a, b) {
+          return (b.id === wanted ? 1 : 0) - (a.id === wanted ? 1 : 0);
+        });
+      }
+
       box.appendChild(el("h2", "takes-head", "הקלטות"));
       var list = el("div", "takes-list");
       box.appendChild(list);
-      rows.forEach(function (row) { list.appendChild(takeRow(row, song)); });
+      var first = null;
+      rows.forEach(function (row) {
+        var made = takeRow(row, song);
+        if (wanted && row.id === wanted && !first) first = made;
+        list.appendChild(made);
+      });
+
+      /* AND IT STARTS. A browser may refuse to play a sound on a page nobody
+         has touched yet, and that refusal is right: what it protects against
+         is exactly a link that makes a noise. So it is asked for, and if it is
+         refused the recording is still the first row with its play button
+         under a thumb. Asked once: the address is cleared either way, so that
+         going back to this song later is going back to a song. */
+      if (first) {
+        var go = first.querySelector(".take-go");
+        first.scrollIntoView({ block: "center", behavior: "smooth" });
+        if (go) go.click();
+        takeAsked = true;
+      }
     }).catch(function (error) {
       /* A project whose SQL has not been run since this arrived has no table,
          and a song page is not the place to say so. */
@@ -14606,9 +14911,33 @@
       node.appendChild(off);
     }
 
+    /* --- SHARING, WHICH IS THE REASON MOST OF THEM ARE KEPT -------------------
+       And it PUBLISHES on the way out, because the alternative is a link that
+       does not work and no way of telling why: somebody who is sending a
+       recording to a person has already decided the person may hear it, and
+       making them say so twice is asking a question that has been answered.
+
+       Offered on any take that can be listened to, which is one of yours or
+       one already out. Passing on somebody else's is passing on a link that
+       already exists. */
+    if (mine || row.published) {
+      var pass = iconBtn(ICON.share, "שיתוף ההקלטה", function () {
+        shareTake(row, song, pass);
+      });
+      pass.classList.add("take-pass");
+      node.appendChild(pass);
+    }
+
     if (mine) {
-      var out = iconBtn(row.published ? ICON.check : ICON.upload,
-        row.published ? "מפורסמת, אפשר להוריד" : "פרסום ההקלטה", function () {
+      /* --- AND WHETHER ANYBODY ELSE CAN HEAR IT --------------------------------
+         Said by the picture on the button rather than beside it. A tick means
+         "done" and every other button on this row means "press me to do
+         something", so a tick pressed in was the one thing on the row that had
+         to be worked out. Two faces is not a state of a button, it is a fact
+         about the recording: other people. */
+      var out = iconBtn(row.published ? ICON.people : ICON.upload,
+        row.published ? "ציבורית: כל מי שיש לו את הקישור יכול לשמוע. לחיצה מורידה מפרסום"
+                      : "פרסום ההקלטה", function () {
           offerTake(row, out);
         });
       out.classList.add("take-out");
@@ -14624,6 +14953,59 @@
 
   function said0(seconds) {
     return said(seconds || 0);
+  }
+
+  /* WHICH RECORDING THIS PAGE WAS OPENED FOR, if it was opened for one. Read
+     off the address once and then let go of: a link is about the moment it is
+     followed, and a reader still on this song ten minutes later is on a song. */
+  var takeAsked = false;
+
+  function takeWanted() {
+    if (takeAsked) return "";
+    var t = "";
+    try { t = new URLSearchParams(location.search).get("t") || ""; } catch (e) { t = ""; }
+    return t;
+  }
+
+  /* --- A LINK TO ONE RECORDING ----------------------------------------------
+     The song's own address with the take named on it, so that what opens on
+     the other side is the words and the chords with this performance already
+     playing over them. Not a file: a file is a recording, and this is a
+     recording OF a song, which is a page.
+
+     Handed to whatever the machine has. A phone opens the sheet every app on
+     it is listed in; a desk has no such thing and gets the link on the
+     clipboard, which is what it would have done with it anyway. */
+  function shareTake(row, song, pass) {
+    var out = function () {
+      var where = (window.SITE_ORIGIN || location.origin) + BASE + "/" +
+        encodeURIComponent(song.slug) + "?t=" + row.id;
+      var note = { title: song.title || "הקלטה", url: where };
+      if (navigator.share) {
+        return navigator.share(note).catch(function () { /* waved off */ });
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(where)
+          .then(function () { toast("הקישור הועתק"); })
+          .catch(function () { window.prompt("הקישור להקלטה", where); });
+      }
+      window.prompt("הקישור להקלטה", where);
+      return Promise.resolve();
+    };
+
+    if (row.published) return out();
+    pass.disabled = true;
+    rest(CFG.takeTable + "?id=eq." + row.id, { method: "PATCH", body: { published: true } })
+      .then(function () {
+        row.published = true;
+        pass.disabled = false;
+        if (state.redrawTakes) state.redrawTakes();
+        return out();
+      })
+      .catch(function () {
+        pass.disabled = false;
+        toast("לא הצלחנו לפרסם את ההקלטה");
+      });
   }
 
   function shortDate(when) {
@@ -14668,8 +15050,9 @@
       row.published = want;
       out.disabled = false;
       out.classList.toggle("is-on", want);
-      reicon(out, want ? ICON.check : ICON.upload);
-      retitle(out, want ? "מפורסמת, אפשר להוריד" : "פרסום ההקלטה");
+      reicon(out, want ? ICON.people : ICON.upload);
+      retitle(out, want ? "ציבורית: כל מי שיש לו את הקישור יכול לשמוע. לחיצה מורידה מפרסום"
+                        : "פרסום ההקלטה");
       toast(want ? "ההקלטה פורסמה" : "ההקלטה ירדה מפרסום");
     }).catch(function () {
       out.disabled = false;

@@ -731,11 +731,25 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    drawn as one: a mark and a number rather than a line of text. The ink is the
    chords' own, because a recording is somebody playing THIS song and that is
    what the pink means everywhere else on the page. */
+/* AND IT IS A BUTTON. A wall of songs is a wall of things to pick up, and the
+   shortest way to decide whether to pick this one up is to hear somebody play
+   it, so the mark that says there are recordings is the thing that plays one.
+   The count stays inside it: what is being pressed is "the recordings of this
+   song", and how many there are is part of what that means. */
 .list .when.has-takes {
-  display: inline-flex; align-items: center; gap: 4px;
-  color: var(--chord); font-variant-numeric: tabular-nums; font-weight: 600;
+  appearance: none; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px 3px 7px; border-radius: 999px;
+  border: 1px solid var(--chord-soft); background: var(--chord-soft);
+  color: var(--chord); font: inherit; font-size: 12px;
+  font-variant-numeric: tabular-nums; font-weight: 700;
 }
+.list .when.has-takes:hover { border-color: var(--chord); }
 .list .when.has-takes svg { width: 11px; height: 11px; }
+.list .when.has-takes.is-playing {
+  color: #fff; background: var(--chord); border-color: var(--chord);
+}
+.list .when.has-takes[disabled] { opacity: .5; cursor: default; }
 /* THE DATE STAYS AT THE BOTTOM WITH NOTHING OVER IT. A published song carries
    no chip any more (see songRow), so its column holds one thing, and
    space-between with one thing in it puts that thing at the top: the date
@@ -2899,6 +2913,7 @@ body.on-ear.ear-small { padding-bottom: 92px; }
   flex: none; font-size: 11px; color: var(--ink-soft);
   padding: 2px 8px; border-radius: 999px; background: var(--bg);
 }
+.take-pass { flex: none; }
 .take-out.is-on { color: var(--accent); border-color: var(--accent); background: #eefaf7; }
 .take-play { width: 100%; height: 34px; margin-top: 2px; }
 .take.is-mine { border-color: var(--chord-soft); }
