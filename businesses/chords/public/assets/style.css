@@ -2394,7 +2394,9 @@ body.on-song .top { border-bottom: 0; }
      on the chords goes with it: what is being played at this second is the
      shortest lived fact in the app, and printing one is printing a moment. */
   .ear { display: none !important; }
-  .chord.is-heard { background: none !important; box-shadow: none !important; }
+  .chord.is-heard, .chord.is-at {
+    color: inherit !important; background: none !important; box-shadow: none !important;
+  }
 
   /* THE LYRICS SHEET. The same page with the chords taken off it and the gaps
      closed up, which is the whole reason a gap is a character of its own and
@@ -2649,6 +2651,35 @@ body.on-ear { padding-bottom: 210px; }
   font-family: var(--chord-font); font-size: 9px; color: var(--ink-soft);
 }
 
+/* --- THE SWITCH, AND WHAT IS BEHIND IT -------------------------------------
+   The one thing on this tab that is not a measurement. Everything else says
+   what the room sounds like; this says where in the song we are, and it is
+   what the measurement was for. */
+.ear-lead { display: flex; align-items: center; gap: 10px; padding-bottom: 4px; }
+.ear-go {
+  appearance: none; cursor: pointer; font: inherit; font-size: 13px;
+  padding: 5px 12px; border-radius: var(--corner);
+  color: var(--ink); background: #fff; border: 1px solid var(--line);
+}
+.ear-go:hover { border-color: var(--accent); }
+.ear-go.is-on { color: #fff; background: var(--accent); border-color: var(--accent); }
+.ear-at { flex: 1; font-size: 12px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+/* The way back to the measurement, and only while the measurement is put away:
+   when the whole of it is on screen there is nothing to ask for. */
+.ear-peek {
+  appearance: none; cursor: pointer; font: inherit; font-size: 12px;
+  border: 0; background: none; color: var(--ink-soft); padding: 4px 6px;
+  border-radius: var(--corner); display: none;
+}
+.ear-peek:hover { background: var(--bg); color: var(--ink); }
+.ear-chord.is-following .ear-peek { display: block; }
+.ear-chord.is-shown .ear-peek { color: var(--ink); }
+/* WHILE IT IS FOLLOWING THE BAND IS ONE ROW, because what is being looked at
+   is the song. The measurement is a press away for whoever wants to see why it
+   did what it did, and it is in nobody's way until then. */
+body.ear-small .ear-work { display: none; }
+body.on-ear.ear-small { padding-bottom: 92px; }
+
 /* --- AND THE SONG'S OWN CHORDS ---------------------------------------------
    The only part of this panel that is about the song rather than about the
    room, and the one that answers the real question. Naming a chord out of all
@@ -2697,6 +2728,29 @@ body.on-ear { padding-bottom: 210px; }
   background: var(--chord-soft);
   box-shadow: 0 0 0 3px var(--chord-soft);
   border-radius: 3px;
+}
+
+/* --- AND WHERE WE ARE, WHICH IS ONE CHORD AND NOT A NAME -------------------
+   The mark above lights every chord of the same name at once, because that is
+   all a sound can say. This one lights ONE, because the follower knows which
+   time round it is (see follow.js), and the difference between the two marks
+   is the difference between hearing a song and following one.
+
+   So it is drawn as a different thing and not as a stronger version of the
+   same one: filled rather than tinted, in the ink the chords are already in.
+   No padding, for the reason above: a chord label's box is exactly its glyphs
+   and the placing measures that box. */
+.chord.is-at {
+  color: #fff;
+  background: var(--chord);
+  box-shadow: 0 0 0 3px var(--chord);
+  border-radius: 3px;
+}
+/* It moves several times a bar, so it arrives rather than appears: a mark that
+   blinks from place to place at that rate reads as flicker, and the eye finds
+   a thing that faded in where a thing that snapped in has to be searched for. */
+@media (prefers-reduced-motion: no-preference) {
+  .chord { transition: background-color .12s linear, color .12s linear, box-shadow .12s linear; }
 }
 
 /* Both doors are toggles and both say so, in the two places they stand. */

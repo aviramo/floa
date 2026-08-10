@@ -12489,11 +12489,6 @@
      answer that flickers is worse than no answer, because a reader cannot tell
      which of its flickers to believe. */
   var SURE_ENOUGH = 0.72;
-  /* And it has to say the same thing this many readings running. A strum has a
-     moment at its start where the old chord is still ringing and the new one
-     has not settled, and a panel that reports every frame reports that moment
-     as a chord that was never played. */
-  var STEADY = 3;
 
   var ear = null;        /* the band, once it has been built */
   var earMode = "tune";
@@ -12501,12 +12496,16 @@
   var earLast = 0;
   var earParts = null;
 
-  /* What the ear currently believes is being played, and how long it has
-     believed it. Kept out here so that closing the chords tab and coming back
-     does not pretend the room went silent. */
+  /* What the ear currently believes is being played. Not the last reading: a
+     vote over half a second, with the answer already on screen keeping its
+     place unless it is beaten by a margin (see steady in follow.js). It was
+     "the same answer three readings running" once, which is a seventh of a
+     second, and the panel flickered exactly as much as the readings did.
+
+     Kept out here so that closing the chords tab and coming back does not
+     pretend the room went silent. */
+  var stable = null;
   var heardNow = null;
-  var heardTry = null;
-  var heardFor = 0;
   var heardTape = [];
   /* Where the needle is standing, which is not where the last reading put it:
      a string wavers by a few cents as it decays, and a needle that follows
@@ -12527,7 +12526,8 @@
     earMode = mode;
     if (ear) return earTab();
 
-    if (!window.CHORDS_EAR || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    if (!window.CHORDS_EAR || !window.CHORDS_FOLLOW ||
+        !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       return toast("הדפדפן הזה לא נותן גישה למיקרופון");
     }
 
@@ -12551,9 +12551,11 @@
     ear.remove();
     ear = null;
     earParts = null;
-    heardNow = null; heardTry = null; heardFor = 0; heardTape = [];
+    stable = null; heardNow = null; heardTape = [];
     pinNote = -1;
+    stopFollowing();
     document.body.classList.remove("on-ear");
+    document.body.classList.remove("ear-small");
     markHeard(null);
     paintHeader();
   }
@@ -12605,9 +12607,12 @@
     earParts.tabs[1].classList.toggle("is-on", earMode === "chord");
     earParts.body.innerHTML = "";
     earParts.body.appendChild(earMode === "tune" ? earParts.tune.node : earParts.chord.node);
-    /* The other tab's answer is about a sound that is no longer being made. */
-    if (earMode === "tune") markHeard(null);
+    /* The other tab's answer is about a sound that is no longer being made,
+       and a follower running while nothing is being asked about chords is a
+       mark on the song that has stopped being kept true. */
+    if (earMode === "tune") { markHeard(null); stopFollowing(); }
     pinNote = -1;
+    earRoom();
     paintHeader();
   }
 
@@ -12626,7 +12631,11 @@
     dial.appendChild(pin);
 
     var read = el("div", "tune-read");
-    var name = el("span", "tune-name", "–");
+    /* A dot where the note will be, and a dot rather than a dash on purpose:
+       no page here carries an en dash or an em dash, placeholders included
+       (see the language section of CLAUDE.md). It also happens to be the
+       better mark: a dash reads as a minus sign next to a number of cents. */
+    var name = el("span", "tune-name", "·");
     var oct = el("span", "tune-oct");
     var cents = el("span", "tune-cents");
     read.appendChild(name);
@@ -12654,7 +12663,7 @@
     var clear = r.hz > 0 && r.clarity >= 0.55;
     t.node.classList.toggle("is-quiet", !clear);
     if (!clear) {
-      t.name.textContent = "–";
+      t.name.textContent = "·";
       t.oct.textContent = "";
       t.cents.textContent = "";
       t.pegs.forEach(function (p) { p.classList.remove("is-on"); });
@@ -12698,8 +12707,41 @@
   function buildChord() {
     var node = el("div", "ear-chord");
 
+    /* --- THE SWITCH, and what is behind it is the point of all of this -------
+       Everything else on this tab is a measurement of the room. This is the
+       thing the measurement was for: the song is already known, so the
+       question stops being "which of eighty four chords is this" and becomes
+       "are we still on the one we were on, or on the next", which is a choice
+       between two rather than eighty four. See follow.js.
+
+       OFF UNTIL IT IS ASKED FOR, and it stays that way. A page that starts
+       moving under somebody who opened it to read is a page that has taken a
+       decision on their behalf. */
+    var lead = el("div", "ear-lead");
+    var go = el("button", "ear-go", "מעקב");
+    go.type = "button";
+    go.title = "לסמן על השיר איפה אנחנו, ולגלול לשם";
+    go.addEventListener("click", function () {
+      if (following) stopFollowing();
+      else startFollowing();
+      showLead();
+    });
+    var at = el("span", "ear-at");
+    /* While the follower is running the panel is one row, because what is
+       being looked at is the SONG. This is the way back to the measurement for
+       whoever wants to see why it did what it did. */
+    var peek = el("button", "ear-peek", "מה שומעים");
+    peek.type = "button";
+    peek.addEventListener("click", function () {
+      node.classList.toggle("is-shown");
+      earRoom();
+    });
+    lead.appendChild(go);
+    lead.appendChild(at);
+    lead.appendChild(peek);
+
     var said = el("div", "heard");
-    var now = el("span", "heard-now", "–");
+    var now = el("span", "heard-now", "·");
     now.dir = "ltr";
     var sure = el("span", "heard-sure");
     said.appendChild(now);
@@ -12735,12 +12777,20 @@
     var tape = el("div", "ear-tape");
     tape.dir = "ltr";
 
-    node.appendChild(said);
-    node.appendChild(also);
-    node.appendChild(bars);
-    node.appendChild(mine);
-    node.appendChild(tape);
-    return { node: node, now: now, sure: sure, also: also, cells: cells, mine: mine, tape: tape, rows: null, was: "" };
+    var body = el("div", "ear-work");
+    body.appendChild(said);
+    body.appendChild(also);
+    body.appendChild(bars);
+    body.appendChild(mine);
+    body.appendChild(tape);
+
+    node.appendChild(lead);
+    node.appendChild(body);
+    return {
+      node: node, lead: lead, go: go, at: at, peek: peek,
+      now: now, sure: sure, also: also, cells: cells, mine: mine, tape: tape,
+      rows: null, was: "",
+    };
   }
 
   function paintChord(r) {
@@ -12753,21 +12803,31 @@
     var quiet = r.rms < window.CHORDS_EAR.HUSH || !top;
     var name = quiet || top.score < SURE_ENOUGH ? null : chordName(top);
 
-    /* Steady before it is said. See STEADY: the first frames of a strum are
-       the chord before it, still ringing. */
-    if (name === heardTry) heardFor++;
-    else { heardTry = name; heardFor = 1; }
-    if (heardFor >= STEADY && name !== heardNow) {
-      heardNow = name;
-      if (name) {
-        heardTape.push(name);
+    /* Voted on rather than counted. One reading in ten disagreeing used to
+       reset a run of three and the panel flickered with it; now it costs a
+       tenth of a vote, and the answer already on screen keeps its place unless
+       it is beaten by a margin. Which is the only thing that stops an evenly
+       matched pair from swapping forever: the average of a coin toss is a coin
+       toss. See steady in follow.js. */
+    if (!stable) stable = window.CHORDS_FOLLOW.steady();
+    var said = stable.hear(name, top ? top.score : 0, Date.now());
+    if (said !== heardNow) {
+      heardNow = said;
+      if (said) {
+        heardTape.push(said);
         if (heardTape.length > 14) heardTape.shift();
         c.tape.textContent = heardTape.join("  ");
       }
-      markHeard(name);
+      /* One mark on the song at a time. While the follower is running it owns
+         the marking, and lighting every chord of the same name underneath it
+         would be two answers to one question. */
+      if (!following) markHeard(said);
     }
 
-    c.now.textContent = heardNow || "–";
+    /* --- and where in the song that puts us --------------------------------- */
+    if (following) followOn();
+
+    c.now.textContent = heardNow || "·";
     c.node.classList.toggle("is-quiet", !heardNow);
     /* How sure, said as the GAP to the next best and not as the score itself.
        A score of 0.8 means nothing on its own; 0.8 with 0.79 underneath it
@@ -12829,6 +12889,185 @@
 
   function chordName(one) {
     return ROOT_NOTES[one.root] + one.quality;
+  }
+
+  /* ==========================================================================
+     FOLLOWING THE SONG.
+
+     The arithmetic is in follow.js and knows nothing about any of this. What
+     is here is the three things it cannot do on its own: read the song off the
+     page, put the mark where it says, and keep that mark on the screen.
+
+     THE SONG IS READ OFF THE PAGE AND NOT OUT OF THE DATA. Every chord in the
+     sheet is already a node, in the order the song reaches it, and taking the
+     sequence from the same nodes that will be marked is what makes the two
+     impossible to disagree about. Reading it from song.lines instead would be
+     a second ordering, sorted by hand, and the first time it differed the mark
+     would land on the wrong chord with nothing on screen saying why.
+     ========================================================================== */
+  var following = null;
+  var followSpans = null;
+  var followWas = "";
+  var followMark = null;
+  var followAt = -1;
+  /* When the page may next move itself. A hand on the page outranks this
+     entirely: whoever scrolled has said where they want to be. */
+  var scrollHold = 0;
+
+  function startFollowing() {
+    followRead();
+    if (!following) return toast("אין אקורדים לעקוב אחריהם");
+    markHeard(null);
+    document.addEventListener("pointerdown", followTap, true);
+    ["wheel", "touchstart", "keydown"].forEach(function (name) {
+      window.addEventListener(name, handOnPage, { passive: true });
+    });
+    earRoom();
+  }
+
+  function stopFollowing() {
+    if (!following) return;
+    following = null; followSpans = null; followWas = ""; followAt = -1;
+    if (followMark && followMark.isConnected) followMark.classList.remove("is-at");
+    followMark = null;
+    document.removeEventListener("pointerdown", followTap, true);
+    ["wheel", "touchstart", "keydown"].forEach(function (name) {
+      window.removeEventListener(name, handOnPage);
+    });
+    earRoom();
+  }
+
+  function handOnPage() {
+    /* Six seconds, which is a few bars: long enough that somebody who looked
+       ahead gets to read what they looked at, short enough that they do not
+       have to press anything to be caught up with again. */
+    scrollHold = Date.now() + 6000;
+  }
+
+  /* The song as the page has it. Rebuilt only when it has actually changed,
+     which it does on a transposition, an edit, or a window resize that repours
+     the lines into different rows. */
+  function followRead() {
+    var sheet = document.querySelector(".sheet");
+    if (!sheet) { following = null; followWas = ""; return; }
+    var spans = sheet.querySelectorAll(".chord");
+    var names = [], i;
+    for (i = 0; i < spans.length; i++) names.push(spans[i].textContent.trim());
+    followSpans = spans;
+    var key = names.join(" ");
+    if (following && key === followWas) return;
+    followWas = key;
+    /* A SONG REDRAWN IS THE SAME SONG. Where we had got to is kept across the
+       rebuild, because a transposition is not somebody starting again: the
+       chords are written differently and the playing did not stop. */
+    var was = following ? following.where() : -1;
+    following = names.length ? window.CHORDS_FOLLOW.make(names) : null;
+    if (following && was >= 0 && was < names.length) following.put(was);
+  }
+
+  function followOn() {
+    followRead();
+    if (!following) return;
+
+    /* One number per DISTINCT chord in the song, which is eight or so rather
+       than the two hundred places those eight stand in. */
+    var kinds = following.kinds;
+    var scores = new Array(kinds.length);
+    var sum = 0, count = 0, i;
+    for (i = 0; i < kinds.length; i++) {
+      var parts = CHORD_RE.exec(kinds[i]);
+      if (parts && (parts[1] in ROOTS)) {
+        scores[i] = window.CHORDS_EAR.score(ROOTS[parts[1]], parts[2] || "");
+        sum += scores[i];
+        count++;
+      } else scores[i] = -1;
+    }
+    /* A mark that is not a chord at all, "N.C." or a word somebody typed, is
+       given the average rather than nothing. Nothing would make it a wall the
+       follower has to climb over; the average makes it transparent, which is
+       what it is: a place in the song that says nothing about the sound. */
+    var mean = count ? sum / count : 0;
+    for (i = 0; i < kinds.length; i++) if (scores[i] < 0) scores[i] = mean;
+
+    var step = following.step(scores);
+    markAt(step.here);
+    earParts.chord.at.textContent = step.here < 0 ? "" :
+      (step.here + 1) + " מתוך " + following.length + (step.sure < 0.35 ? "  ·  לא בטוח" : "");
+  }
+
+  function markAt(i) {
+    var want = followSpans && followSpans[i] ? followSpans[i] : null;
+    if (want === followMark && i === followAt) return;
+    if (followMark && followMark.isConnected) followMark.classList.remove("is-at");
+    followMark = want;
+    followAt = i;
+    if (!followMark) return;
+    followMark.classList.add("is-at");
+    keepInView(followMark);
+  }
+
+  /* --- and the page moves under the mark -------------------------------------
+     Kept in a band rather than centred on every step, because a page that
+     scrolls on every chord is a page nobody can read: what the eye needs is
+     for the mark to be somewhere in the middle of the screen, and for the
+     screen to stay still until it is not. */
+  function keepInView(node) {
+    if (Date.now() < scrollHold) return;
+    var box = node.getBoundingClientRect();
+    var head = document.querySelector(".top");
+    var ceiling = (head ? head.getBoundingClientRect().height : 0) + 30;
+    var floor = window.innerHeight - (ear ? ear.getBoundingClientRect().height : 0) - 40;
+    if (floor - ceiling < 80) return;                /* no band to speak of */
+    if (box.top >= ceiling && box.bottom <= floor) return;
+
+    var y = window.scrollY || window.pageYOffset || 0;
+    var want = Math.max(0, y + box.top - (ceiling + (floor - ceiling) * 0.3));
+    window.scrollTo({ top: want, behavior: "smooth" });
+    /* Its own hold, and a short one: a smooth scroll takes a few hundred
+       milliseconds and the readings during it are about a page that is still
+       moving. Without this the next reading measures a rectangle mid flight
+       and asks for another scroll on top of the one already running. */
+    scrollHold = Date.now() + 700;
+  }
+
+  /* A finger on a chord says where we are, which is worth more than any amount
+     of listening. Read on pointerdown rather than click so that it lands
+     before anything else on the page has a chance to move, and refused inside
+     the editor, where a press on a chord already means something else. */
+  function followTap(event) {
+    if (!following || !followSpans) return;
+    var hit = event.target && event.target.closest && event.target.closest(".chord");
+    if (!hit) return;
+    var sheet = hit.closest(".sheet");
+    if (!sheet || sheet.classList.contains("ed")) return;
+    for (var i = 0; i < followSpans.length; i++) {
+      if (followSpans[i] === hit) {
+        following.put(i);
+        scrollHold = 0;
+        markAt(i);
+        return;
+      }
+    }
+  }
+
+  /* How much of the screen the band is allowed. While the follower is running
+     it is one row, because what is being looked at is the song; the
+     measurement is behind a press for whoever wants to see why. */
+  function earRoom() {
+    if (!ear || !earParts) return;
+    var on = !!following && earMode === "chord";
+    var small = on && !earParts.chord.node.classList.contains("is-shown");
+    /* On the BODY and not on the band, because what it changes is how much
+       room the page keeps under itself, and the page is not inside the band. */
+    document.body.classList.toggle("ear-small", small);
+    earParts.chord.node.classList.toggle("is-following", on);
+    earParts.chord.go.classList.toggle("is-on", !!following);
+  }
+
+  function showLead() {
+    if (!earParts) return;
+    earParts.chord.at.textContent = "";
+    earRoom();
   }
 
   /* --- and the same chord, marked on the song --------------------------------

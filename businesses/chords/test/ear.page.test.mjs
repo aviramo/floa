@@ -26,14 +26,18 @@ import { extname, join, resolve } from "node:path";
 
 const DIST = resolve("dist");
 
-/* Am, G, F and a couple of others, so that the list of the song's own chords
-   has something in it and the marking on the sheet has more than one answer to
-   choose between. */
+/* Seven chords, and Am three times among them. The repeat is the point: a mark
+   that lights every Am at once and a mark that knows WHICH Am are two
+   different things, and this song is written so that the difference shows. */
 const BODY = [
   "{בית}",
   "[Am]בנקיק [G]נסתר בצוקים [F]אילה שותה [Am]מים",
   "מה [Dm]לי וללה [G]אלא צוקי לב[Am]י",
 ].join("\n");
+
+/* Am G F Am Dm G Am, which is the order the sheet puts them in and therefore
+   the order the follower reads them in. */
+const SEQUENCE = ["Am", "G", "F", "Am", "Dm", "G", "Am"];
 
 const SONG = {
   id: "test", slug: "s-ear", title: "בדיקת אוזן", lyrics_by: "", music_by: "",
@@ -46,7 +50,12 @@ const SONG = {
    which is not what a room sounds like and is not the point: what is being
    tested here is the wiring, and a clean signal is the only one that makes a
    wrong answer mean something. */
-const VOICING = [45, 52, 57, 60, 64];
+const VOICINGS = {
+  Am: [45, 52, 57, 60, 64],           /* A2 E3 A3 C4 E4 */
+  G: [43, 47, 50, 55, 59, 67],        /* G2 B2 D3 G3 B3 G4 */
+  F: [41, 48, 53, 57, 60, 65],        /* F2 C3 F3 A3 C4 F4 */
+  Dm: [50, 57, 62, 65],               /* D3 A3 D4 F4 */
+};
 const RINGS = [-20, -28, -34, -40];
 
 function page() {
@@ -78,6 +87,8 @@ Object.defineProperty(navigator, "mediaDevices", {
 
 const RATE = 48000;
 window.__sound = "chord";          // or "note": the test switches this
+window.__voicings = ${JSON.stringify(VOICINGS)};
+window.__playing = "Am";           // which of them is being strummed
 
 function analyser() {
   const a = {
@@ -88,7 +99,7 @@ function analyser() {
       out.fill(-110);
       if (window.__sound !== "chord") return;
       const bin = RATE / this.fftSize;
-      for (const midi of ${JSON.stringify(VOICING)}) {
+      for (const midi of window.__voicings[window.__playing]) {
         const f = 440 * Math.pow(2, (midi - 69) / 12);
         ${JSON.stringify(RINGS)}.forEach((db, h) => {
           const at = Math.round(f * (h + 1) / bin);
@@ -122,6 +133,7 @@ window.AudioContext = function () {
 <dialog id="authDialog" class="dlg"><form id="authForm"><p class="err" id="authErr"></p><button type="button" data-close></button><button type="submit"></button></form></dialog>
 <script src="/chords/assets/config.js"><\/script>
 <script src="/chords/assets/ear.js"><\/script>
+<script src="/chords/assets/follow.js"><\/script>
 <script src="/chords/assets/app.js"><\/script>
 </body></html>`;
 }
@@ -143,6 +155,23 @@ const CHORD_READ = `(() => {
     level: (document.querySelector(".ear-lit") || { style: {} }).style.width,
     rows, marked,
     sheet: [...document.querySelectorAll(".sheet .chord")].map((c) => c.textContent),
+    errors: window.__errors,
+  });
+})()`;
+
+/* Where the follower says we are: the ONE chord it marked, its place in the
+   song, and how much room the band is taking while it does it. */
+const FOLLOW_READ = `(() => {
+  const all = [...document.querySelectorAll(".sheet .chord")];
+  const at = all.findIndex((c) => c.classList.contains("is-at"));
+  return JSON.stringify({
+    at,
+    marks: all.filter((c) => c.classList.contains("is-at")).length,
+    heard: document.querySelectorAll(".sheet .chord.is-heard").length,
+    said: (document.querySelector(".ear-at") || {}).textContent,
+    on: !!document.querySelector(".ear-go.is-on"),
+    small: document.body.classList.contains("ear-small"),
+    sequence: all.map((c) => c.textContent),
     errors: window.__errors,
   });
 })()`;
@@ -337,6 +366,58 @@ try {
       check("every Am in the song is lit and nothing else is",
         heard.marked.length === 3 && heard.marked.every((c) => c === "Am"),
         JSON.stringify(heard.marked));
+
+      /* ====================================================================
+         AND THE FOLLOWER, which is what the rest of this was for.
+         ==================================================================== */
+      await evaluate('JSON.stringify((document.querySelector(".ear-go").click(), true))');
+      await sleep(700);
+
+      const began = await evaluate(FOLLOW_READ);
+      check("the song the follower reads is the song on the page",
+        JSON.stringify(began.sequence) === JSON.stringify(SEQUENCE), JSON.stringify(began.sequence));
+      check("following is on and the band got out of the way",
+        began.on && began.small, JSON.stringify({ on: began.on, small: began.small }));
+      check("one chord is marked, and one only",
+        began.marks === 1, JSON.stringify({ marks: began.marks, at: began.at }));
+      check("the mark that lights every chord of a name is put away while it runs",
+        began.heard === 0, String(began.heard));
+      check("and it says where in the song that is",
+        /1\s*מתוך\s*7/.test(began.said || ""), JSON.stringify(began.said));
+
+      /* --- and now the song is played ---------------------------------------
+         Am G F Am Dm, one chord at a time, which is the whole of what a
+         follower has to get right. The fourth of those is the test: it is the
+         same sound as the first, and the mark has to land on the SECOND Am. */
+      const walked = [began.at];
+      for (const chord of ["G", "F", "Am", "Dm"]) {
+        await evaluate(`JSON.stringify((window.__playing = ${JSON.stringify(chord)}, true))`);
+        await sleep(700);
+        walked.push((await evaluate(FOLLOW_READ)).at);
+      }
+      check("it walks the song in order as the song is played",
+        JSON.stringify(walked) === JSON.stringify([0, 1, 2, 3, 4]), JSON.stringify(walked));
+
+      /* THE ONE THAT MATTERS. The fourth step above played an Am, and there
+         are three Am in this song. It landed on the one the playing had
+         reached, which no measurement of the sound could have chosen. */
+      check("the second Am is the second Am and not the first",
+        walked[3] === 3, JSON.stringify(walked));
+
+      /* --- a finger says where we are --------------------------------------- */
+      await evaluate(`JSON.stringify(([...document.querySelectorAll(".sheet .chord")][6]
+        .dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })), true))`);
+      await sleep(200);
+      const tapped = await evaluate(FOLLOW_READ);
+      check("touching a chord on the page puts the mark there",
+        tapped.at === 6 && tapped.marks === 1, JSON.stringify({ at: tapped.at, marks: tapped.marks }));
+
+      /* --- and off again ----------------------------------------------------- */
+      await evaluate('JSON.stringify((document.querySelector(".ear-go").click(), true))');
+      await sleep(300);
+      const off = await evaluate(FOLLOW_READ);
+      check("switching it off takes the mark and gives the room back",
+        off.marks === 0 && !off.on && !off.small, JSON.stringify(off));
 
       /* --- the other tab ---------------------------------------------------- */
       await evaluate('JSON.stringify((window.__sound = "note", [...document.querySelectorAll(".ear-tab")][0].click(), true))');
