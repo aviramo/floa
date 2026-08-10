@@ -197,11 +197,16 @@ eq("a chosen zero is not silence",
 eq("and neither is an old fret on its own", api.saidAnything("d"), true);
 eq("but an empty box is", api.saidAnything("nobody"), false);
 
-/* --- WHAT A ROW SHOWS IS THE PAGE, AND THE FRET THAT MAKES IT TRUE --------- */
+/* --- WHAT A ROW SHOWS IS THE PAGE, AND ONLY THE PAGE ----------------------- */
 put("h", { p: -2, s: 0 });
-eq("the row's shapes and its chip agree",
+eq("the row shows the shapes the page will open on",
   api.shapesFor({ id: "h", lines: ["Am", "F"], status: "published" }),
-  { shapes: ["Am@-2", "F@-2"], capo: 2, used: ["Am", "F"] });
+  { shapes: ["Am@-2", "F@-2"], used: ["Am", "F"] });
+/* The fret those shapes are for is still two, and it is still worked out the
+   same way. It is not on the row: it is a fact about the player, it lives on
+   the control that sets it, and a card is about the song. */
+eq("and the fret it is not showing is still there to be had",
+  api.capoOf(api.playedAs(song("h", ["Am", "F"]))), 2);
 
 /* --- AND WHAT THE ACCOUNT IS TOLD ------------------------------------------
    The pair is kept per reader per song ON THE ACCOUNT now, so it survives the

@@ -943,11 +943,6 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   color: var(--chord); background: var(--chord-soft); border-radius: var(--corner); padding: 2px 9px;
   direction: ltr; white-space: nowrap;
 }
-/* where to clamp, so the shapes beside it mean something */
-.list .capo, .set-main .capo {
-  font-size: 12px; font-weight: 700; color: var(--ink-soft);
-  background: #eef2f3; border-radius: var(--corner); padding: 2px 9px; white-space: nowrap;
-}
 
 /* The far end of a card: the state at the top of it and the date at the
    bottom. With the tick and the name at the other end, that gives the card its

@@ -5157,16 +5157,18 @@
     return Math.max(0, Math.min(played.sung - played.page, MAX_CAPO));
   }
 
-  /* The chords of this song as this reader will see them, and the fret their
-     hand is at to make them sound right. Both of them are true whether they
-     were chosen or worked out: an easy version the app found is a real capo at
-     a real fret, and saying so is the row keeping its promise to the page. */
+  /* The chords of this song as this reader will see them when they open it,
+     which is what a row promising "this is how it goes" has to be made from.
+
+     THE SHAPES AND NOT THE FRET. The fret they are the shapes for is right
+     here (capoOf(played)) and it is deliberately not handed out: it is a fact
+     about the player, it belongs on the control that sets it, and a card is
+     about the song. It is the same reason the sheet gave up its own chip. */
   function shapesFor(song) {
     var used = chordsUsed(song.lines || []);
     var played = playedAs(song);
     return {
       shapes: used.map(function (chord) { return transposeChord(chord, played.page); }),
-      capo: capoOf(played),
       used: used,
     };
   }
@@ -8217,11 +8219,10 @@
          on, and read right to left like everything else on the page. Each name
          keeps its own direction (see .k), which is what stops "G/B" flipping
          inside itself. */
-      /* THE SHAPES, AND NOT WHERE TO CLAMP. The fret is real enough now, and
-         it is on the evening's list, where somebody is holding a guitar over
-         the page. Here it is not: this is a wall of cards being scanned, what
-         the card is for is "can I play this", and the answer to that is the
-         shapes. The fret is waiting on the song page for whoever opens it. */
+      /* THE SHAPES, AND NOT WHERE TO CLAMP. A card is being scanned by
+         somebody deciding what to pick up, what it is for is "can I play
+         this", and the answer to that is the shapes. The fret is waiting on
+         the song page for whoever opens it, on the control that sets it. */
       /* And in the key the song will actually open in, which for anybody who
          has moved it is the one they moved it to. The row is the page's own
          promise, so it is made from the same answer (see shapesFor). */
@@ -14602,18 +14603,21 @@
       box.appendChild(top);
       if (said) box.appendChild(el("div", "by", said));
 
-      /* Where the capo goes and which shapes come out of it, the same way the
-         index says it. On an evening it is worth more than on the index: this
-         is the list somebody is holding a guitar over. */
+      /* The shapes this reader's hand will make, the same way the index says
+         them. On an evening they are worth more than on the index: this is the
+         list somebody is holding a guitar over.
+
+         AND THE FRET IS NOT AMONG THEM, for the reason the sheet gave up its
+         own chip (see the song page): the capo is a fact about the player and
+         it lives on the control that sets it. A card is about the SONG, and a
+         number on it that changes with whoever is reading is a number the card
+         cannot answer for. The shapes are the same kind of thing, but they are
+         what the row was for in the first place. */
       if (song) {
         var mine = shapesFor(song);
         if (mine.shapes.length) {
           var keys = el("div", "keys");
           keys.title = "השיר עצמו: " + mine.used.join("  ");
-          /* The fret these shapes are the shapes FOR, which is the same fret
-             the song page will open on: chosen or worked out, it is where the
-             capo goes to make this row true. Zero is not worth a chip. */
-          if (mine.capo) keys.appendChild(el("span", "capo", "קפו " + mine.capo));
           mine.shapes.forEach(function (shape) { keys.appendChild(el("span", "k", shape)); });
           box.appendChild(keys);
         }
