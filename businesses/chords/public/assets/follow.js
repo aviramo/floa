@@ -17,35 +17,10 @@
    shape of the question.
 
    This asks something else entirely. THE SONG IS ALREADY KNOWN: its chords, in
-   order, are on the page. So the question is never "which chord is this", it
-   is "are we still on the one we were on, or have we moved to the next one",
-   and that is a choice between two or three rather than between eighty four.
-   Everything else is thrown out before it reaches the vote.
-
-   Which is why the wavering above does not carry through to here, and why the
-   panel being unsure is not a reason to expect this to be.
-
-   ---------------------------------------------------------------------------
-   AND WHY IT IS NOT SIMPLY "TAKE THE BEST CHORD AND FIND IT IN THE SONG".
-
-   Because most songs are four chords played four times. The second Am is
-   indistinguishable from the first by any measurement of sound, forever, and
-   no better microphone will ever change that. What separates them is not the
-   sound, it is WHERE WE WERE A MOMENT AGO: the fifth Am is the one that comes
-   after the fourth G. So the position is carried forward, every reading is
-   evidence about how it moved rather than about where it is, and continuity
-   does the work that the sound cannot do.
-
-   That is what the arithmetic below is. Every chord in the song is a place we
-   could be; each reading scores them all; and a place is only reachable from
-   the places just behind it, at a cost, plus a way of jumping to anywhere at a
-   much larger one. The cheapest story that explains all the readings so far is
-   where we are. It is a Viterbi pass, run one reading at a time and never
-   looking back, which is the whole of what "following" means here.
-
-   THE JUMP TO ANYWHERE IS NOT A DETAIL. Without it, a follower that loses the
-   song stays lost for as long as the song lasts, because every path back costs
-   infinity. With it, being lost is expensive for a second and then over.
+   order, are on the page. So the question is never "which chord is this", and
+   it is not even "where in this song are we". It is one question about one
+   chord: the next one written down has not been played yet, and has it been
+   played now.
    ========================================================================== */
 (function () {
   "use strict";
@@ -119,176 +94,146 @@
   }
 
   /* ==========================================================================
-     AND THE FOLLOWER.
+     AND THE FOLLOWER, WHICH WAITS FOR ONE CHORD AT A TIME.
 
-     Costs, in logs, because they are multiplied together over the whole song
-     and a product of five hundred small numbers is nought in double precision.
+     THE MARK STANDS ON A CHORD THAT HAS NOT BEEN PLAYED YET, and everything
+     below is bookkeeping for that one sentence. The chord written next in the
+     song is the chord being waited for; when it is heard, the mark moves on to
+     the one after it and waits for that one; and a song is followed by being
+     waited through, chord by chord, in the order somebody wrote it down.
 
-     They are not measured from anything. They are the shape of playing a song:
-     mostly you are still on the chord you were on, sometimes you have moved to
-     the next one, occasionally a chord goes by without being sounded clearly
-     enough to see, and once in a while somebody stops, starts again from the
-     chorus, or turns two pages at once.
+     It is also the chord a reader wants under the mark. The one they are
+     playing is already under their hand and they know what it is. What the
+     page can tell them that they do not know is what comes next.
+
+     ---------------------------------------------------------------------------
+     WHAT WAS HERE BEFORE, AND WHY IT IS GONE.
+
+     A Viterbi pass over the whole song. Every chord in it was a place we could
+     be, every reading scored all of them, each place was reachable from the
+     places behind it at a cost and from anywhere at a much larger one, and the
+     cheapest story that explained every reading so far was where we were. It
+     is the right answer to "given everything heard, where in this song are
+     we", and that turned out not to be the question a page has to answer.
+
+     BECAUSE IT ASKED THE ROOM ABOUT THE WHOLE SONG, EVERYTHING IN THE ROOM GOT
+     A VOTE. A voice singing over the guitar, a second instrument, the chord
+     before still ringing, a chord four lines further down that happens to
+     share two notes with a chair being moved: each of them pushed some place
+     in the song up a little, and the mark went wherever the pushing added up.
+     Nothing on the screen could ever say why, because the reason was a sum
+     over two hundred places. A mark that moves for reasons nobody in the room
+     can see is worse than a mark that does not move.
+
+     WAITING ASKS ONE THING INSTEAD: of everything in this sound, is the chord
+     written next in it. A voice is not that chord. A chair is not. The chord
+     still ringing is the one BEFORE, and is scored as exactly that. Almost
+     everything that used to be able to move the mark now has nowhere to move
+     it to, and what is left is the one comparison that was always doing the
+     work.
+
+     AND WHAT IS LOST IS WORTH SAYING. The old one could be dropped into the
+     middle of a song it had never been told about and find itself inside two
+     seconds, because it was searching all the time. This one is told where it
+     starts, at the top, and being in the wrong place is something it notices
+     afterwards rather than never falls into (see LOST below). That is the
+     trade, and it is the right way round: being found quickly is worth little
+     if being wrong is quiet.
      ========================================================================== */
-  var STAY = Math.log(0.86);
-  var NEXT = Math.log(0.115);
-  /* --- AND NOTHING SKIPS AHEAD ----------------------------------------------
-     There was a cost here for landing two or three chords along, meant for a
-     chord that went by without being heard: damped, played quietly, missed.
 
-     It is gone, and the reason is what it looked like. A follower that is
-     ALLOWED to skip does skip, on the readings it is least sure about, and
-     what a reader sees is a mark that hops over chords. That is worse than a
-     mark that lags, by a long way: a lagging mark is a mark you can still read
-     the song from, and a hopping one has to be checked against the page every
-     time it moves, which is exactly the work it exists to save.
+  /* How much of the awaited chord has to be in the sound before it counts as
+     having arrived at all. A chord being played scores three quarters and up
+     against the chord it is; a room, a chair, a voice and the noise a
+     microphone makes when it is switched on score flat and low against
+     everything. */
+  var HEARD = 0.66;
 
-     AND NOTHING IS LOST BY TAKING IT OUT, which is the good part. A chord
-     nobody heard is still walked THROUGH: the reading after it, the one that
-     matches, is reachable from it at the ordinary cost of the next chord, so
-     the mark passes over the missed one in a reading or two and carries on. It
-     catches up by walking rather than by jumping, and walking is what it is
-     supposed to look like. */
+  /* AND IT HAS TO BEAT THE CHORD BEFORE IT, which is the one still ringing. A
+     guitar does not stop when the hand moves: for a moment after a change both
+     chords are inside the window the reading is taken over (see ear.js), and
+     at the start of that moment the older one is the louder of the two. So
+     arriving is not "the next chord is in the sound", it is "the next chord is
+     more of this sound than the last one is", and until that happens nothing
+     has been played that was not already playing.
 
-  /* --- AND BACKWARDS, WHICH IS A THING SONGS DO ------------------------------
-     Playing the verse again. Going round the chorus once more. Starting the
-     line over because it came out wrong. None of those is being lost, and none
-     of them was possible here except by way of the "jump to anywhere" below,
-     which is fifty times dearer.
+     AND THE SIZE OF IT IS NOT A ROUNDING. A chord and the chord after it share
+     notes far more often than not, Am into C, C into Am, G into Em, so while
+     the first is ringing a good quarter of the readings hand the second the
+     better score anyway, purely on which string happened to be loudest. A
+     margin that only had to be beaten by a hair would be beaten by that within
+     a bar, and the mark would run ahead of the hand chord after chord. Eight
+     hundredths is what a real chord change clears in a reading or two and what
+     the wobble between two chords that share two notes never clears at all.
+     The model that stood here before this one asked for the same thing in
+     different units, and it was the one number in it that was doing the work. */
+  var LEAD = 0.08;
 
-     WHICH IS THE BUG THIS EXISTS TO FIX, and it is worth saying exactly. In a
-     song running Am D Am D F C E Am, a player who has reached the second D and
-     wants the verse again plays Am. The Am they mean is two places BEHIND. The
-     next Am in the written song is four places AHEAD, in the second verse. If
-     going back can only be done by the anywhere jump and going forward can be
-     done by skipping, then going forward is cheaper, and the follower answers
-     a repeat by leaping over F, C and E into the next verse. Which is what it
-     did.
+  /* Readings of that, running. Four of them is an eighth of a second, which no
+     player will ever feel, and it is what stops the one loud confused reading
+     in the middle of a strum from moving the mark on its own. */
+  var HOLD = 4;
 
-     So a repeat has a cost of its own: dearer than the next chord by a long
-     way, because most of the time the song simply carries on, and far cheaper
-     than being lost, because this is a thing people do on purpose. */
-  var BACK = Math.log(0.0004);
+  /* --- A CHORD THAT NOBODY HEARD --------------------------------------------
+     Damped, played quietly, missed by the microphone, or simply skipped. The
+     song carried on and the mark is waiting for something that is not coming.
 
-  /* AND GOING BACK TO THE TOP OF A PART IS CHEAPER STILL, because that is what
-     a repeat actually is. Nobody plays one chord over again; they play the
-     verse over again, and a verse starts where the song says {בית} starts.
+     So the chord AFTER the awaited one is scored too, and when THAT is what is
+     sounding, plainly and for long enough not to be a stray reading, the
+     awaited one is taken as having gone by. The mark then steps twice in quick
+     succession, because the reading that moved it the first time still applies
+     the second time, and on the page that looks like catching up, which is
+     what it is.
 
-     The app already knows where those are, it is written into every song, and
-     handing them over turns "somebody went backwards" into "somebody went back
-     to the beginning of a part", which is a far more specific guess and
-     therefore a far better one. A song with no headings in it simply has one
-     part, and everything below carries on exactly as it did. */
-  var BACK_START = Math.log(0.012);
-  /* AND ANYWHERE AT ALL, from anywhere at all. This is the difference between
-     a follower that recovers and one that does not: without it, a follower
-     that lost the song at the second verse spends the rest of the song
-     insisting it is still there, because every path back is impossible rather
-     than merely expensive. One in three million a reading, which is about a
-     second of being consistently wrong before starting again somewhere else
-     becomes the cheaper story. */
-  var LOST = Math.log(3e-7);
+     Longer than HOLD by a good margin, and deliberately: stepping over a chord
+     nobody played is a guess, and stepping over one somebody is about to play
+     is the mark running ahead of the hand. */
+  var GONE_BY = 10;
 
-  /* --- AND A REASON TO STAY WHERE WE ARE ------------------------------------
-     A small bonus, every reading, for the places within a bar of where we
-     already think we are.
+  /* --- AND A SONG WITH THE SAME CHORD WRITTEN TWICE --------------------------
+     Am, and then Am again. There is nothing in the sound that says the player
+     reached the second one: it is the same six strings, and no microphone will
+     ever hear the difference between a chord held and a chord played again.
 
-     WITHOUT IT A REPETITIVE SONG SNAPS BACK TO ITS FIRST LINE. "Am G F" forty
-     times over is forty places that fit every reading exactly as well as each
-     other, so the moment the follower stumbles, for a beat, on a chord change
-     it missed, the fortieth Am and the FIRST Am are level, and a search for
-     the best place picks whichever it looks at first. That is the top of the
-     song. The mark jumps to the first line and the page scrolls up with it,
-     over and over, which is the one failure that makes the whole thing
-     useless: it is not lost, it is wrong and confident.
+     What CAN be heard is a fresh strum, so that is what is waited for. And it
+     only counts once the first of the two has been held for about as long as
+     chords in this song have been lasting, because a song strummed four times
+     to the bar is four strums to the bar, and without the wait the mark would
+     walk four chords through every one of them.
 
-     The bonus is what says that a tie is not a tie. When nothing in the sound
-     can separate two places, WHERE WE WERE A MOMENT AGO is the only evidence
-     there is, and it should win. When something in the sound can separate them
-     it is far too small to matter: a chord that matches where a chord that
-     does not is worth about three of these, so real evidence still moves the
-     mark within a couple of readings.
+     It is a guess. It is the only thing there is to go on, and it is used
+     nowhere else. */
+  var STRUM = 1.7;      /* louder than the quietest moment just behind it */
+  var DWELL = 0.55;     /* of however long the chord before it lasted */
+  var DWELL_MIN = 500;  /* and never less than half a second */
+  /* How far back "just behind it" reaches when looking for the quiet a strum
+     rises out of. Long enough to hold the gap between two strums, short enough
+     that it is not measuring the last chord. */
+  var ROOM = 320;
 
-     HERE AND THE TWO PLACES AFTER IT, and deliberately not the two before. It
-     is a reason not to leap across the song, not a reason to stand still, so
-     carrying on is rewarded exactly as much as staying. And going BACK is a
-     different question with its own answer below: a player repeating a part
-     means the top of that part, and a bonus for the chord just behind them
-     would keep pulling the mark one place back instead. */
-  var HOME = 0.8;
-  var NEAR = 2;
+  /* --- AND WAITING IN THE WRONG PLACE ENTIRELY -------------------------------
+     Somebody opened the song in the middle, or played the verse again, or put
+     the phone down for a minute and picked the song up somewhere else. The
+     mark is waiting for a chord that is not coming, and the song is going on
+     without it.
 
-  /* --- AND A LARGER ONE FOR NOT HAVING MOVED AT ALL --------------------------
-     THE SITTING TENANT, and its absence is why the mark ran ahead of the
-     playing. HOME above gives the same bonus to where we are and to the two
-     places after it, which is right for the question it was written for, "do
-     not leap across the song", and does nothing whatever for the question it
-     was silently also answering: "has the chord actually changed yet".
+     Nothing here searches the song on every reading. That is the thing that
+     was taken out and it is not coming back in through a side door. But a mark
+     that has sat still while the room plainly played SEVERAL chords of this
+     song that were neither the one awaited nor the one before it is a mark in
+     the wrong place, and the last two chords actually heard, in the order they
+     were heard, are usually enough to say where the right place is. A PAIR and
+     not a single chord: one Am appears eight times in a song and says nothing,
+     and "F and then C" appears twice at most.
 
-     Because it had no answer to that, the two chords were level, and the next
-     chord in a song is nearly always one that SHARES NOTES with the one before
-     it. So on a reading where the noise happened to favour it by a hair, the
-     mark moved, while the player was still on the first chord and had not
-     touched anything.
-
-     What this says is that a chord change has to be WON rather than tied.
-     Which is the same rule the panel's own stabiliser lives by, and for the
-     same reason: two evenly matched answers with nothing between them will
-     swap forever, and the average of a coin toss is a coin toss.
-
-     Its size is what "wait for the next chord" costs. A real chord change
-     out-scores the chord before it by about three of these, so it still gets
-     through in a reading or two; a hair's difference between two chords that
-     share two notes out of three is worth a fraction of one, and now moves
-     nothing. */
-  var SIT = 1.5;
-
-  /* How sharply a score is believed. The scores coming in are cosine
-     similarities and the interesting ones live between about .6 and .95, so a
-     tenth of a point apart has to mean something: at eighteen it means about
-     six times as likely, which is strong evidence from one reading and not
-     proof. */
-  var BELIEF = 18;
-
-  /* ONE FORWARD IS FREE AND NOTHING ELSE IS. A song moves to the next chord,
-     so that step is taken the moment it is worked out and the mark keeps up
-     with the playing. Everything else, including two forward, has to hold for
-     PATIENCE readings first.
-
-     Two forward was free here at first, and three, on the grounds that a chord
-     is sometimes passed over. What that actually bought was the strum: one
-     loud confused reading in the middle of a chord change names something four
-     places along, and a follower allowed to go there at once goes there at
-     once. Half a second of agreement is what separates a player who skipped a
-     chord from a reading that was wrong, and there is no cheaper way to tell
-     them apart than waiting. */
-  /* How far ahead the arithmetic may be before the mark stops walking after it
-     and starts treating it as a jump. Six chords is a bar or two: past that,
-     whatever happened was not the playing carrying on, and running the mark
-     through six places to get there would be drawing a passage nobody played.
-     Which then needs the same patience as any other jump. */
-  var LEAP = 6;
-  /* HALF A SECOND, WRITTEN AS READINGS, and the two are only the same number
-     for as long as a reading is what it is. A reading is a thirtieth of a
-     second on a song page (see EAR_GAP_CHORD in app.js), so eighteen of them is
-     a little over half a second, and this was twelve when a reading was a
-     twentieth. Speeding the ear up must not quietly make the follower hastier:
-     what the ear buys is that the same certainty arrives sooner, not that less
-     of it is asked for. */
-  var PATIENCE = 18;
-
-  /* And even one place forward is not taken on a single reading. Four of them,
-     which is an eighth of a second and nobody sees, and it is the
-     difference between a mark that moves when the playing moves and one that
-     is nudged along by the loud confused moment in the middle of a strum. That
-     moment used to cost nothing, and a mark nudged forward has to be walked
-     back, which is a jump, which needs the patience above: so a transient too
-     small to see would ratchet the mark forward and hold it there for half a
-     second at a time. */
-  var STEP = 4;
+     Counted in readings that disagree rather than in seconds, so that a pause
+     between two verses costs nothing: silence is not a chord being heard
+     somewhere else. */
+  var LOST = 45;
 
   /* `starts` is which places in the song begin a part: the first chord under
-     each heading. Optional, and a song without any is a song with one part. */
+     each heading. Optional, and a song without any is a song with one part.
+     Used in one place only, to break a tie when the waiting has to be moved:
+     somebody who went back went back to the top of something. */
   function make(names, starts) {
     var n = names ? names.length : 0;
     var opens = new Uint8Array(n);
@@ -308,149 +253,181 @@
       of[i] = which[name];
     }
 
-    var prev = new Float64Array(n);
-    var cur = new Float64Array(n);
-    /* The best place AHEAD of each one, so that "come back to here from
-       anywhere later in the song" is one lookup rather than a search. Filled
-       from the far end backwards, once a reading. */
-    var ahead = new Float64Array(n);
-    var here = 0;
-    var want = -1;
-    var waited = 0;
-    /* how many readings running have agreed that we are past `here` */
-    var pushed = 0;
-    /* WHETHER THERE IS ANYTHING TO BE LOYAL TO YET. Everything below is built
-       to be slow to leave a position it believes in, and at the very first
-       reading it believes in nothing: the song has just been opened and where
-       we are is whatever the sound says. So the first few readings are taken
-       as they come, and the patience starts once a position has held. */
-    var locked = false;
+    /* THE PLACE BEING WAITED FOR, which is the whole of the state and is what
+       the mark is drawn on. */
+    var at = 0;
+    /* When it started being waited for, and how long the one before it took.
+       Both are here for the repeat above and for nothing else. */
+    var since = 0;
+    var lastLong = 0;
+    var now = 0;
+    /* Readings running that say it has arrived, that the one after it is
+       sounding instead, and that some other chord of this song is. */
+    var held = 0;
+    var slipped = 0;
+    var astray = 0;
+    /* What the room has been plainly playing, and for how many readings, so
+       that a chord is written into the tape once rather than twenty times. */
+    var sure = -1;
+    var sureFor = 0;
+    var tape = [];
+    /* How loud it has been just lately, for hearing a strum. */
+    var room = [];
 
-    /* Nothing is known yet, so every place in the song is equally likely and
-       the first few readings are what narrow it down. Not "the song starts at
-       the beginning": somebody may well have pressed this in the middle of the
-       second verse. */
     function reset() {
-      for (var j = 0; j < n; j++) prev[j] = 0;
-      here = 0; want = -1; waited = 0; pushed = 0; locked = false;
+      at = 0; since = 0; lastLong = 0;
+      held = 0; slipped = 0; astray = 0;
+      sure = -1; sureFor = 0;
+      tape = []; room = [];
     }
 
     /* Somebody said where they are, by touching a chord on the page. Which is
-       worth more than any amount of listening, so everything else is put a
-       long way behind it rather than merely nudged. */
-    function put(at) {
-      if (!(at >= 0 && at < n)) return here;
-      for (var j = 0; j < n; j++) prev[j] = j === at ? 0 : -40;
-      here = at; want = -1; waited = 0; pushed = 0; locked = true;
-      return here;
+       worth more than any amount of listening, and here it is not an argument
+       to be won either: the waiting simply moves. */
+    function put(i) {
+      if (!(i >= 0 && i < n)) return at;
+      at = i; since = now; lastLong = 0;
+      held = 0; slipped = 0; astray = 0;
+      return at;
     }
 
-    /* One reading. `scores` is one number per DISTINCT chord, in the order of
-       `kinds`, and each is how much this reading looked like that chord. */
-    function step(scores) {
-      if (!n) return { at: -1, here: -1, alike: 0, moved: false };
+    function quietest() {
+      var q = -1;
+      for (var i = 0; i < room.length; i++) if (q < 0 || room[i].rms < q) q = room[i].rms;
+      return q < 0 ? 0 : q;
+    }
 
-      var j, best = -Infinity, at = 0;
-      var was = -Infinity;
-      for (j = 0; j < n; j++) if (prev[j] > was) was = prev[j];
-      var anywhere = was + LOST;
+    /* ONE READING. `scores` is one number per DISTINCT chord, in the order of
+       `kinds`, and each is how much this reading looked like that chord. A
+       place in the song that is not a chord at all, "N.C." or a word somebody
+       typed, is handed in as a NEGATIVE score: there is nothing to wait for
+       there, and the mark steps over it rather than standing on it forever.
 
-      /* Everything later in the song than each place, so that going back to it
-         costs one comparison. Backwards from the end, which is the only
-         direction this can be worked out in. */
-      ahead[n - 1] = -Infinity;
-      for (j = n - 2; j >= 0; j--) ahead[j] = prev[j + 1] > ahead[j + 1] ? prev[j + 1] : ahead[j + 1];
+       `scores` is null for a reading with nothing in it, which is most of the
+       readings in a quiet room. The loudness is still taken, because a strum
+       is heard as a rise out of the quiet before it and the quiet is half the
+       measurement. */
+    function step(scores, rms, when) {
+      if (!n) return { here: -1, moved: false };
+      now = when;
+      if (!since) since = now;
 
-      for (j = 0; j < n; j++) {
-        var v = prev[j] + STAY;
-        if (j >= 1 && prev[j - 1] + NEXT > v) v = prev[j - 1] + NEXT;
-        /* Somebody playing the verse again, which arrives here from further on
-           in the song rather than from just behind, and which lands on the top
-           of a part far more often than in the middle of one. */
-        var home = ahead[j] + (opens[j] ? BACK_START : BACK);
-        if (home > v) v = home;
-        if (anywhere > v) v = anywhere;
-        v += BELIEF * scores[of[j]];
-        /* And the reason to stay near where we already are, which is the only
-           evidence there is when the sound cannot tell two places apart. The
-           place we are ON gets more than the places beside it, because "have
-           we moved along" and "have we leapt across the song" are different
-           questions and only one of them is answered by nearness. */
-        if (j === here) v += SIT;
-        else if (j > here && j <= here + NEAR) v += HOME;
-        cur[j] = v;
-        /* THE NEAREST OF THE EQUALS. Where two places explain the readings
-           exactly as well as each other, which in a song of four chords played
-           forty times is most of them, the one to believe is the one closest
-           to where we already were. Deciding it by which comes first in the
-           song puts the mark on the first line and the page back at the top. */
-        if (v > best || (v === best && Math.abs(j - here) < Math.abs(at - here))) {
-          best = v; at = j;
-        }
+      room.push({ at: now, rms: rms });
+      while (room.length && now - room[0].at > ROOM) room.shift();
+
+      var moved = scores ? read(scores) : false;
+      return { here: at, moved: moved };
+    }
+
+    function read(scores) {
+      /* A place that is not a chord is not something anybody can play, so it
+         is not something to wait for. */
+      if (scores[of[at]] < 0) return onward();
+
+      var want = of[at];
+      var back = at > 0 ? of[at - 1] : -1;
+      var next = at + 1 < n ? of[at + 1] : -1;
+      var sWant = scores[want];
+      var sBack = back >= 0 && scores[back] >= 0 ? scores[back] : 0;
+      var sNext = next >= 0 ? scores[next] : -1;
+
+      /* --- WHAT THE ROOM IS PLAINLY PLAYING ---------------------------------
+         Not used to decide anything about the waiting. Kept because a mark in
+         the wrong place has to be noticed somehow, and this is the only thing
+         that can notice it. */
+      var top = -1, best = 0, k;
+      for (k = 0; k < kinds.length; k++) if (scores[k] > best) { best = scores[k]; top = k; }
+      if (top >= 0 && best >= HEARD) {
+        if (top === sure) { if (++sureFor === HOLD && tape[tape.length - 1] !== top) tape.push(top); }
+        else { sure = top; sureFor = 1; }
+        if (tape.length > 4) tape.shift();
+      } else { sure = -1; sureFor = 0; }
+
+      /* --- HAS IT ARRIVED ---------------------------------------------------- */
+      if (back < 0) {
+        /* THE FIRST CHORD OF THE SONG has nothing ringing behind it to be
+           louder than, so what is asked of it instead is that it be the chord
+           the room is most plainly playing. Without that, any sound at all
+           that scored two thirds against it would open the song. */
+        if (sWant >= HEARD && top === want) { if (++held >= HOLD) return onward(); }
+        else held = 0;
+      } else if (want !== back) {
+        if (sWant >= HEARD && sWant >= sBack + LEAD) { if (++held >= HOLD) return onward(); }
+        else held = 0;
+      } else {
+        /* the same chord written twice, where only a fresh strum can say it */
+        held = 0;
+        if (sWant >= HEARD && loud() > quietest() * STRUM &&
+            now - since >= Math.max(DWELL_MIN, lastLong * DWELL)) return onward();
       }
 
-      /* Kept relative to the best, so the numbers stay where double precision
-         is exact instead of walking off towards minus infinity over a song. It
-         changes nothing: every comparison here is between two of them. */
-      for (j = 0; j < n; j++) cur[j] -= best;
-      var swap = prev; prev = cur; cur = swap;
+      /* --- OR GONE BY -------------------------------------------------------- */
+      if (sNext >= HEARD && sNext >= sWant + LEAD && sNext >= sBack + LEAD) {
+        if (++slipped >= GONE_BY) return onward();
+      } else slipped = 0;
 
-      /* HOW MANY PLACES IN THE SONG CARRY THIS SAME CHORD, which is the only
-         honest thing there is to say about how much this can be trusted. One
-         means the sound alone settles it. Sixteen means the sound says nothing
-         at all about which of them we are on and every bit of the answer is
-         coming from where we were a moment ago, which is real evidence and is
-         not proof.
-
-         It replaced a number worked out from the paths themselves, and that
-         one was measuring the model rather than the song: the costs below floor
-         every rival at a fixed distance behind the leader, so it read as near
-         certainty on every song ever written, including the ones that are four
-         chords sixteen times. A number that is always the same is not a
-         reading. */
-      var alike = 0;
-      for (j = 0; j < n; j++) if (of[j] === of[at]) alike++;
-
-      var moved = false;
-      if (!locked) {
-        /* Still finding our feet. Take what the sound says and start counting
-           patience only once it has said the same thing three times running. */
-        here = at;
-        if (at === want) { if (++waited >= 3) { locked = true; want = -1; waited = 0; } }
-        else { want = at; waited = 1; }
-        moved = true;
-      } else if (at === here) { want = -1; waited = 0; pushed = 0; }
-      /* --- FORWARD IS ONE AT A TIME, ALWAYS -----------------------------------
-         Not "one at a time unless it is further, in which case leap". The mark
-         goes to the next chord and to no other, and where the arithmetic has
-         got further ahead than that the mark WALKS after it, a place at a time,
-         until it catches up. Each of those places is asked for as patiently as
-         the first, so it is an eighth of a second per chord, and it looks like
-         what it is: running to catch up with the playing.
-
-         The alternative is a mark that arrives at the right place by hopping
-         over the ones in between, and a reader cannot tell that from a mark
-         that is simply wrong. This is the whole of what "one after the other"
-         means, and it is worth more than the fraction of a second it costs. */
-      else if (at > here && at - here <= LEAP) {
-        want = -1; waited = 0;
-        if (++pushed >= STEP) { here++; moved = true; pushed = 0; }
-      }
-      else {
-        pushed = 0;
-        if (at === want) waited++;
-        else { want = at; waited = 1; }
-        if (waited >= PATIENCE) { here = at; moved = true; want = -1; waited = 0; }
+      /* --- OR THE WAITING IS IN THE WRONG PLACE ------------------------------ */
+      if (best >= HEARD) {
+        if (top !== want && top !== back) { if (++astray >= LOST) return relocate(); }
+        else astray = 0;
       }
 
-      return { at: at, here: here, alike: alike, moved: moved };
+      return false;
+    }
+
+    /* The last loudness taken, which is what a strum is measured with. Read
+       back out of the room rather than passed around, so that `read` has one
+       argument and the two measurements cannot get out of step. */
+    function loud() {
+      return room.length ? room[room.length - 1].rms : 0;
+    }
+
+    function onward() {
+      held = 0; slipped = 0; astray = 0;
+      /* The last chord of the song, played. There is nothing after it to wait
+         for and the mark stays on it, which is where somebody finishing a song
+         is looking anyway. */
+      if (at + 1 >= n) { since = now; return false; }
+      lastLong = now - since;
+      at++;
+      since = now;
+      return true;
+    }
+
+    /* Where the last two chords heard actually stand in the song, and the
+       waiting moves to just after them. Nothing is searched for unless the
+       waiting has already been shown to be wrong, and a pair is looked for
+       rather than a chord, because one chord names eight places and two name
+       one. */
+    function relocate() {
+      astray = 0;
+      if (tape.length < 2) return false;
+      var a = tape[tape.length - 2], b = tape[tape.length - 1];
+      var found = -1, p;
+      for (p = 1; p < n; p++) {
+        if (of[p - 1] !== a || of[p] !== b) continue;
+        if (found < 0 || rank(p) < rank(found)) found = p;
+      }
+      if (found < 0) return false;
+      at = Math.min(n - 1, found + 1);
+      since = now; lastLong = 0;
+      held = 0; slipped = 0;
+      return true;
+    }
+
+    /* Which of two places that both fit is the one meant. THE TOP OF A PART
+       first, because somebody who went somewhere else went to the top of
+       something, and then whichever is nearest to where the waiting already
+       was, because a song is more often carried on with than jumped about in. */
+    function rank(p) {
+      return (opens[p - 1] ? 0 : 1) * 1000000 + Math.abs(p - at);
     }
 
     reset();
     return {
       kinds: kinds, length: n,
       step: step, put: put, reset: reset,
-      where: function () { return here; },
+      where: function () { return at; },
     };
   }
 

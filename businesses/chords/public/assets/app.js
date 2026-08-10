@@ -3004,7 +3004,7 @@
      Everything about the sheet follows from it, because everything is measured:
      how many segments the song stands in, how wide each of them is and how many
      sheets there are all fall out of the words being this big. */
-  var PAPER_SIZE = 16;
+  var PAPER_SIZE = 20;
 
   function unpage(sheet) {
     sheet.style.maxWidth = "";
@@ -16210,7 +16210,7 @@
        Only on a reading there is something in. See followOn: a follower that
        steps on silence walks off on the noise of the microphone being switched
        on, before a single string has been touched. */
-    if (following) followOn(quiet);
+    if (following) followOn(r, quiet);
 
     c.now.textContent = heardNow || "·";
     c.node.classList.toggle("is-quiet", !heardNow);
@@ -16313,6 +16313,13 @@
      The arithmetic is in follow.js and knows nothing about any of this. What
      is here is the three things it cannot do on its own: read the song off the
      page, put the mark where it says, and keep that mark on the screen.
+
+     AND THE MARK IS ON THE CHORD THAT HAS NOT BEEN PLAYED YET. It used to be
+     on the one being played, which is the same thing said one chord later and
+     is the less useful of the two: the chord under somebody's hand is a chord
+     they already know, and what a page can tell them is the one coming. So the
+     follower waits for the marked chord, and the moment it is heard the mark
+     moves on to the next and waits for that. See follow.js.
 
      THE SONG IS READ OFF THE PAGE AND NOT OUT OF THE DATA. Every chord in the
      sheet is already a node, in the order the song reaches it, and taking the
@@ -16423,80 +16430,62 @@
     return true;
   }
 
-  /* HOW MUCH OF THIS SONG HAS TO BE IN THE SOUND before it is allowed to move
-     the mark. A chord being played scores three quarters and up against the
-     chord it is; a room, a chair, a voice and the noise a microphone makes
-     when it is switched on score flat and low against everything. Under this
-     the reading says nothing about this song and is not evidence about where
-     in it we are. */
-  var HEARD_ENOUGH = 0.62;
-
-  function followOn(quiet) {
+  function followOn(r, quiet) {
     /* The page underneath may have become a different page: a song closed, the
        library opened, a version being read. There is nothing to follow on any
        of those and the mark goes with them. */
     if (!followRead()) return stopFollowing();
 
+    var now = Date.now();
+
     /* --- NOTHING TO GO ON, SO NOTHING MOVES ----------------------------------
-       The mark stays exactly where it is and the arithmetic is not run at all.
+       The mark stays exactly where it is and no chord is scored at all.
 
        This is the difference between a follower that waits and one that does
        not. Switching the microphone on is a moment of nothing: a click, a
-       room, a chair, whatever the machine does as it opens the input. The
-       follower used to take that as its first reading, and because there is
-       nothing to be loyal to at the first reading (see follow.js) it took it
-       AS THE ANSWER and put the mark wherever the noise happened to point,
-       usually a chord or two in, before a single string had been touched.
+       room, a chair, whatever the machine does as it opens the input. And it
+       is the right rule for the rest of the song too: the pause between two
+       verses is not the song moving on.
 
-       And it is the right rule for the rest of the song too: the pause between
-       two verses is not the song moving on. */
-    if (quiet) return followSay(following.where());
+       THE LOUDNESS STILL GOES OVER, which is the part that is easy to miss.
+       Where a song has the same chord written twice there is nothing in the
+       sound to tell the two apart except a fresh strum, a strum is a rise out
+       of the quiet just before it, and a follower that is only told about the
+       loud moments has never been told what quiet was. */
+    if (quiet) return followSay(following.step(null, r.rms, now).here);
 
     /* One number per DISTINCT chord in the song, which is eight or so rather
        than the two hundred places those eight stand in. */
     var kinds = following.kinds;
     var scores = new Array(kinds.length);
-    var sum = 0, count = 0, i;
-    for (i = 0; i < kinds.length; i++) {
+    for (var i = 0; i < kinds.length; i++) {
       /* The capo is in here (see sounding): what is asked of the microphone is
-         what the room is hearing, not what the page is printing. */
-      var root = sounding(kinds[i]);
-      if (root >= 0) {
-        scores[i] = window.CHORDS_EAR.score(root, colourOf(kinds[i]));
-        sum += scores[i];
-        count++;
-      } else scores[i] = -1;
-    }
-    /* A mark that is not a chord at all, "N.C." or a word somebody typed, is
-       given the average rather than nothing. Nothing would make it a wall the
-       follower has to climb over; the average makes it transparent, which is
-       what it is: a place in the song that says nothing about the sound. */
-    var mean = count ? sum / count : 0;
-    var top = 0;
-    for (i = 0; i < kinds.length; i++) {
-      if (scores[i] < 0) scores[i] = mean;
-      if (scores[i] > top) top = scores[i];
-    }
-    /* Loud, and still nothing of this song in it. Somebody talking over the
-       guitar, a door, a different song. Loudness alone is not evidence: what
-       makes a reading worth stepping on is that it looks like something the
-       song is written in. */
-    if (top < HEARD_ENOUGH) return followSay(following.where());
+         what the room is hearing, not what the page is printing.
 
-    followSay(following.step(scores).here);
+         A MARK THAT IS NOT A CHORD AT ALL, "N.C." or a word somebody typed,
+         goes over as a negative. There is nothing anybody can play that would
+         make it arrive, so the follower steps over it rather than waiting for
+         it forever. It used to be handed the average of the others, which was
+         the right answer to the old question, "how well does this place
+         explain the sound", and is no answer at all to this one. */
+      var root = sounding(kinds[i]);
+      scores[i] = root >= 0 ? window.CHORDS_EAR.score(root, colourOf(kinds[i])) : -1;
+    }
+
+    followSay(following.step(scores, r.rms, now).here);
   }
 
   /* The mark, and the same thing in words on the strip. One call, because the
      three places that decide where the mark goes should not each have to
      remember to say so.
 
-     Where in the song, and nothing about how sure. There WAS a "לא בטוח" here,
-     worked out from the paths themselves, and it was measuring the model
-     rather than the song: the costs in follow.js floor every rival a fixed
-     distance behind the leader, so it read as near certainty on every song
-     ever written, including the ones that are four chords sixteen times. A
-     number that is always the same is not a reading, and a warning that never
-     appears is worse than none. */
+     WHICH CHORD OF THE SONG IS BEING WAITED FOR, said as a count, and nothing
+     about how sure. There WAS a "לא בטוח" here, worked out from the paths of
+     the model that used to be in follow.js, and it was measuring the model
+     rather than the song: it read as near certainty on every song ever
+     written, including the ones that are four chords sixteen times. A number
+     that is always the same is not a reading, and a warning that never appears
+     is worse than none. */
   function followSay(at) {
     markAt(at);
     earParts.chord.at.textContent = at < 0 ? "" : (at + 1) + " מתוך " + following.length;
