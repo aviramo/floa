@@ -1774,31 +1774,45 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    the panel is as tall as the taller of the two and both are on the screen at
    once, which is what lets the reader see that choosing a key moves the fret.
 
-   The capo is the first column, which right to left is the right hand one:
-   the same side as the number on the dial the panel came out of. */
+   The key is the first column, which right to left is the right hand one: it
+   is the question the panel is opened with, and the fret beside it is the
+   answer the app works out while the reader chooses. */
 .play-pop { display: flex; align-items: flex-start; gap: 4px; }
 .pop-part + .pop-part { border-inline-start: 1px solid var(--line); padding-inline-start: 4px; }
-/* THE WORD OVER THE COLUMN, and the whole reason there is one: a column of
-   numbers beside a column of chords does not say by itself which of them is
-   the capo. Small and quiet, because it is a label and not a choice: what is
-   pressed is underneath it. */
+/* WHAT THE COLUMN IS, OVER IT, and the whole reason there is a head at all: a
+   column of numbers beside a column of chords does not say by itself which of
+   them is the capo.
+
+   A PICTURE AND NOT A WORD. Each column is one short thing wide, four
+   characters at the most, and a word over it is wider than everything it
+   names: two labels were setting the width of the panel and the choices under
+   them were sitting in the air they left. The pictures are the ones on the
+   dial and in the app's own vocabulary, at the size of what they stand over.
+   Quiet, because a head is a label and not a choice: what is pressed is
+   underneath it. */
 .pop-head {
-  padding: 4px 10px 6px; font-size: 11px; font-weight: 700;
-  letter-spacing: .04em; color: var(--ink-soft); text-align: center;
+  display: flex; justify-content: center; padding: 5px 0 7px; color: var(--ink-soft);
 }
+.pop-head svg { width: 15px; height: 15px; }
 
 /* --- THE KEYS ON OFFER -----------------------------------------------------
-   A few keys the song can be played in, each with the capo it wants. Wide
-   enough that the widest of them, a chord of four characters beside "בלי קפו",
-   never breaks over two lines.
+   A few keys the song can be played in. As wide as the widest chord and no
+   wider: each row used to carry the fret that key wanted at its other end,
+   which is the column standing right beside this one, and the width that
+   sentence needed stayed behind after it went (see keyRow).
+
+   SO IT IS THE FRETS' COLUMN, in every measure that shows: same width, same
+   height, same middle. Two columns of one short thing, read together, are one
+   panel; two columns drawn to different rules are two panels that happen to
+   touch.
 
    A row is a line of a menu and not a button on a toolbar, so it is drawn as
-   one: no border, the whole width, and it lights under a finger. */
-.keys { min-width: 140px; }
+   one: no border and it lights under a finger. */
+.play-pop .keys { display: flex; flex-direction: column; }
 .key-opt {
-  appearance: none; display: flex; width: 100%; align-items: baseline;
-  justify-content: space-between; gap: 14px;
-  padding: 8px 10px; font: inherit; text-align: start; white-space: nowrap;
+  appearance: none; display: flex; align-items: center; justify-content: center;
+  min-width: 52px; height: 32px; padding: 0 6px;
+  font: inherit; white-space: nowrap;
   color: inherit; background: none; border: 0; border-radius: 6px; cursor: pointer;
 }
 .key-opt:hover { background: var(--bg); }

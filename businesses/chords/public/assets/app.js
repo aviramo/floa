@@ -152,6 +152,13 @@
        and not a mark, so the jaws are thick and the screw is filled, and the
        one icon on this strip that is a thing you can pick up looks like one. */
     capo: '<path d="M19 8.6h-7.4a3.6 3.6 0 0 0 0 7.2H19" stroke-width="3"/><circle cx="6.6" cy="8.4" r="3.2" fill="currentColor" stroke-width="1"/>',
+    /* A NOTE, for the key, standing over the column of chords the way the capo
+       stands over the column of frets. One note and not the two of chordsOnly:
+       that picture means "chords come down onto this line" and this one means
+       "the pitch the song is at", and two drawings that share a vocabulary at
+       fifteen pixels are one drawing. The head is filled and the stem is short,
+       which is the shape everything that has ever meant «music» is drawn in. */
+    note: '<path d="M10.2 17.4V4.8c3.7 1 5.6 2.7 5.6 5.5"/><ellipse cx="7.4" cy="17.8" rx="2.8" ry="2.3" fill="currentColor" stroke="none"/>',
     undo: '<path d="M4 10h9a4.5 4.5 0 0 1 0 9h-5"/><path d="M8 6l-4 4 4 4"/>',
     print: '<path d="M7 9V4h10v5M7 18H5v-6h14v6h-2M8 14h8v6H8z"/>',
     calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
@@ -9993,11 +10000,21 @@
 
       /* Fixed to the screen, under the dial, and pulled back inside the window
          at either edge: the strip sits at the end of a row that on a phone is
-         nearly the whole width. */
+         nearly the whole width.
+
+         EDGE TO EDGE WITH THE DIAL, and not centred under it. Centred, a panel
+         wider than the small button it hangs off stands out on both sides of
+         it, and there is no line anywhere that says the two belong together:
+         it reads as a panel that happened to land near a button. Sharing the
+         left edge, the panel is the button opened out, which is what it is.
+
+         THE LEFT EDGE AND NOT THE RIGHT ONE, because this control sits at the
+         left end of the strip: the panel opens into the room the button has
+         beside it rather than off the near edge of the screen. */
       function place() {
         var box = dial.getBoundingClientRect();
         var width = pop.offsetWidth;
-        var left = Math.min(Math.max(4, box.left + box.width / 2 - width / 2), window.innerWidth - width - 4);
+        var left = Math.min(Math.max(4, box.left), window.innerWidth - width - 4);
         pop.style.left = left + "px";
         pop.style.top = (box.bottom + 6) + "px";
       }
@@ -10108,25 +10125,36 @@
        underneath is being edited: a list made when the page was drawn is a
        list of the chords the song had then.
 
-       THE CAPO FIRST, which right to left is the right hand column, directly
-       under the number that opened the panel. The value on the dial and the
-       column it came out of are the same fact, so they stand in the same
-       place. */
+       THE KEY FIRST, which right to left is the right hand column, which is
+       where a page in Hebrew is read from. It is the question somebody opens
+       this panel with: what should this song be in. The fret is the answer the
+       app works out for them, so it stands second, on the left, and moves
+       while they choose. */
     function fillPlay(pop, shut, again) {
-      pop.appendChild(column("קפו", fretGrid(again)));
       var choices = keyChoices(chordsUsed(song.lines || []));
-      /* A SONG WITH NO CHORDS HAS NO KEY, and a word with nothing under it is
+      /* A SONG WITH NO CHORDS HAS NO KEY, and a mark with nothing under it is
          a column that has broken. It comes back the moment there is a chord to
          name it with, which in the editor is as soon as one is put down. */
-      if (choices.length) pop.appendChild(column("סולם", keyList(choices, again)));
+      if (choices.length) pop.appendChild(column(ICON.note, "סולם", keyList(choices, again)));
+      pop.appendChild(column(ICON.capo, "קפו", fretGrid(again)));
     }
 
-    /* The word over the choices, which is the whole point of the panel: one
-       says קפו and the numbers under it are frets, the other says סולם and the
-       chords under it are keys. */
-    function column(word, body) {
+    /* WHAT THE COLUMN IS, DRAWN AND NOT SPELLED. A word over a column of four
+       characters is wider than everything under it, so the word was setting
+       the width of the choices and the panel was two labels with some numbers
+       beneath them. The picture is the same picture that is on the dial the
+       panel came out of, at the size of the things it names.
+
+       THE WORD IS STILL THERE for anyone hovering or listening: on the head as
+       its title and its label, which is what a picture standing in for a word
+       owes. */
+    function column(icon, word, body) {
       var part = el("div", "pop-part");
-      part.appendChild(el("div", "pop-head", word));
+      var head = el("div", "pop-head");
+      head.title = word;
+      head.setAttribute("aria-label", word);
+      head.appendChild(svg(icon));
+      part.appendChild(head);
       part.appendChild(body);
       return part;
     }
