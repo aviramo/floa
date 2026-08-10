@@ -2266,16 +2266,17 @@ body.on-song .top { border-bottom: 0; }
 .dlg-actions .far { margin-inline-end: auto; }
 
 /* --- THE PANEL THE SONG'S FACTS ARE WRITTEN IN ----------------------------
-   A form and not a question, so it is spaced like one: the line that says the
-   typing keeps itself sits with the heading, and the fields have air under it.
+   A form and not a question, so it is spaced like one: a heading, and air
+   under it before the first field. The heading used to have a line of its own
+   held close beneath it saying the typing keeps itself, and the tighter gap
+   that held it there went when it did.
 
    There is no row of buttons at the foot. There was one, running the width of
    the panel and doing nothing but shutting it, which is a button standing
    where the one that saves would stand on a panel that saves as it is typed.
    Escape and the dark behind the panel do the same thing and neither of them
    has to be read first, so the panel ends where its fields end. */
-.dlg-meta .dlg-in { gap: 6px; }
-.dlg-meta .song-meta { margin-top: 14px; }
+.dlg-meta .song-meta { margin-top: 16px; }
 /* The heading takes the focus when the panel opens, so that a dialog does not
    hand it to the × on the first chip. It is a place to start and not a control,
    and a ring around it would say it was one. */
@@ -2286,11 +2287,8 @@ body.on-song .top { border-bottom: 0; }
    button: the same three lines in the same order, with the answers standing
    where the fields were. So the word in front keeps the width the form gives
    it and the answer keeps the size the form set for what was typed, and the
-   two panels are one panel that has been answered.
-
-   The heading has no line under it here. "נשמר תוך כדי הכתיבה" is about
-   typing, and there is none: the panel opens straight onto what it has to
-   say. */
+   two panels are one panel that has been answered, down to the air under the
+   heading. */
 .dlg-told .song-told { margin-top: 16px; }
 .song-told { display: grid; gap: 14px; }
 .told-row { display: flex; align-items: baseline; gap: 8px; min-width: 0; }

@@ -7147,9 +7147,13 @@
          to save and not one to finish. Every field here writes itself as it is
          typed, so a button down there would be a second way of doing what
          Escape and the dark behind the panel already do, standing exactly where
-         a save button stands and read as one. This line says once what it would
-         have said, and then the panel is nothing but its fields. */
-      metaBox.appendChild(el("p", "muted", "נשמר תוך כדי הכתיבה."));
+         a save button stands and read as one.
+
+         There was a line up here saying so in words, and it is gone too. A
+         panel that has no save button does not have to announce that it saves:
+         the sentence sat between the heading and the first field explaining
+         something nothing on screen had raised, and reading it took longer
+         than noticing a name stay put. The panel is its fields. */
       metaBox.appendChild(meta);
       /* AND WHO PUT IT IN THE LIBRARY, the same sentence the reader's panel
          ends with (see songTold) and for the same reasons: under a line rather
