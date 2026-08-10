@@ -430,7 +430,7 @@ body.on-song { background: var(--bg); }
      into the box, and one more picture standing there is one more bite out of
      the ninety pixels the box was already short of. */
   body.finding .brand, body.finding .top-actions, body.finding .top-name,
-  body.finding .top-facts { display: none; }
+  body.finding .top-facts, body.finding .top-in > .tools { display: none; }
   /* everything that could have given the bar back is now hidden, so the box
      carries its own way out */
   body.finding .top-find .find-x { display: flex; }
@@ -1525,7 +1525,7 @@ body.on-song .top { border-bottom: 0; }
    something that came from somewhere else. */
 .tools .dial-btn {
   appearance: none; font: inherit; color: inherit; cursor: pointer;
-  padding: 2px 9px; height: 30px; background: #fff;
+  padding: 2px 6px; height: 30px; background: #fff;
   border: 1px solid var(--line); border-radius: var(--corner);
 }
 .tools .dial-btn:hover { background: var(--bg); }

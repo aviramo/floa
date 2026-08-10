@@ -3949,17 +3949,28 @@
     if (!made) return;
     var bar = document.getElementById("topActions");
     if (!bar) return;
-    /* At the START of the bar, which right to left is its right hand end: they
-       are about the song, and what is already there is about the page.
+    /* BESIDE THE NAME OF THE SONG, AND ON EVERY WIDTH. They came down to a row
+       of their own on a phone because the bar was full: a mark, a name, a
+       glass and two pictures, and the capo and the microphone on the end of it
+       was the row overflowing. The two pictures are one now (see songMore),
+       and what that bought is exactly the room these need. So they stand up
+       here on a phone as on a desk, and the song starts directly under the
+       bar.
 
-       ON EVERY WIDTH, and that is new. They came down to a row of their own on
-       a phone because the bar was full: a mark, a name, a glass and two
-       pictures, and the capo and the microphone on the end of it was the row
-       overflowing. The two pictures are one now (see songMore), and what that
-       bought is exactly the room these need. So the capo and the record button
-       stand beside the name of the song they belong to, on a phone as on a
-       desk, and the song starts directly under the bar. */
-    bar.insertBefore(made.tools, bar.firstChild);
+       IN THE HEADER ROW ITSELF AND NOT AMONG THE BAR'S BUTTONS, which puts the
+       glass between them and the three dots: what is about the song is on one
+       side of it and what is about the page is on the other. It also keeps the
+       search out of trouble, since opening it hides the buttons to take their
+       room (see body.finding), and a box that lived inside what it hides would
+       hide itself.
+
+       Which means the sweep that empties the bar on the way to the next page
+       does not reach them, so leaving a song takes them off by hand (see
+       draw). Before the glass where there is one, and otherwise in front of
+       the buttons: either way outside them. */
+    var row = bar.parentNode;
+    var glass = document.getElementById("topFind");
+    row.insertBefore(made.tools, glass && glass.parentNode === row ? glass : bar);
     /* WHAT THE SONG SAYS ABOUT ITSELF GOES WITH THE NAME OF THE SONG, not at
        the far end of the bar among the dials, and NOT ON THE STRIP EITHER.
        It stood beside the transposer and the size, which is the only thing up
@@ -3980,8 +3991,12 @@
        everything anyway (see body.finding in the stylesheet). */
     var beside = document.getElementById("topFacts");
     if (made.facts) {
+      /* And where there is no slot for it, immediately in front of the dials,
+         which is the same place: this is the second half of the name and the
+         dials are what follows the name. In the row and not in the bar,
+         because that is where the dials are now. */
       if (beside) beside.appendChild(made.facts);
-      else bar.insertBefore(made.facts, made.tools);
+      else row.insertBefore(made.facts, made.tools);
     }
 
     /* WHAT IS BEING DONE TO THE SONG IS THE ONLY THING LEFT ON THE STRIP, and
@@ -4668,19 +4683,25 @@
      row nobody reads: they are all the same size and the same grey, and the
      only way to find the one you want is to press until something happens.
 
-     So one of them is kept out and the rest go behind three dots. What is
-     kept out is ADDING A SONG, because it is the one thing on this bar
-     somebody came here to DO; everything else is a way somewhere else, and a
-     way somewhere else is what a menu is for. The account goes in with them:
-     it is looked at rarely, and it was holding the corner that the menu
-     wants.
+     So the ones that are DOORS TO OTHER PAGES go behind three dots, and what
+     is not a door stays out. Adding a song stays out because it is the one
+     thing on this bar somebody came here to DO. The account goes in with the
+     doors: it is looked at rarely, and it was holding the corner that the
+     menu wants.
+
+     AND THE TUNING FORK CAME BACK OUT. It is not a door either: it opens a
+     panel over the page you are already on and leaves you there, which is the
+     same kind of thing the microphone is on a song, and it is the one here
+     that is picked up in the middle of doing something else, with a guitar in
+     both hands. A press to open the panel and then a press to find it is one
+     press too many for that. It stands beside the dots, on the side the glass
+     is on (see tuner).
 
      What the panel holds is decided at the press and not at the painting, so
-     a door is never offered to the page you are already standing on, and the
-     fork knows whether its panel is open at the moment you look. */
+     a door is never offered to the page you are already standing on. */
   function moreRows() {
     var p = parts();
-    var rows = [earDoor("tune", null, true)];
+    var rows = [];
     if (p[0] !== "evenings") rows.push(toEvenings());
     if (p[0] !== "creators" && p[0] !== "creator") rows.push(toCreators());
     /* Signing in is not in here: it is the only way forward for somebody who
@@ -4704,6 +4725,22 @@
       node.setAttribute("aria-expanded", "false");
       return node;
     });
+  }
+
+  /* THE TUNING FORK, ONE PRESS FROM ANYWHERE IT IS OFFERED. It stands next to
+     the three dots, between them and the glass, which puts the two things that
+     open a panel over the page at the same end of the bar.
+
+     Kept like everything else up here, and lit the way the row in the panel
+     was: the picture says whether the thing behind it is open at the moment
+     you look at it, which it can only do if it is painted rather than
+     built. */
+  function tuner() {
+    var node = keep("tuner", function () {
+      return iconBtn(ICON.fork, "כיוון הגיטרה", function () { askEar("tune"); });
+    });
+    node.classList.toggle("is-on", earOpen() && earMode === "tune");
+    return node;
   }
 
   /* --- AND A SONG HAS A PANEL OF ITS OWN ------------------------------------
@@ -4826,6 +4863,23 @@
     if (!bar) return;
     var p = parts();
 
+    /* THE DIALS OF THE SONG THAT WAS HERE BEFORE. They stand in the header row
+       beside the bar rather than inside it (see placeControls), so the sweep
+       that empties the bar does not reach them, and a capo left standing over
+       the library is a control for a song nobody is looking at.
+
+       Here and not where the page is drawn, because a page also comes back by
+       being UNCOVERED, which draws nothing and repaints this. Whatever is
+       hanging there and does not belong to the song on the screen at this
+       moment goes; what does belong is left exactly where it is. */
+    var song = state.songControls;
+    Array.prototype.forEach.call(
+      document.querySelectorAll(".top-in > .tools, .top-in > .song-facts"),
+      function (node) {
+        if (!song || (node !== song.tools && node !== song.facts)) node.remove();
+      }
+    );
+
     /* The evenings are a list like the library is a list, so their page gets
        the same two buttons the library's does: the one that adds to it, and
        the one that says who you are. An evening that is open has tools of its
@@ -4839,6 +4893,7 @@
           keep("newEvening", function () {
             return button("אירוע חדש", ICON.plus, "small", newEvening);
           }),
+          tuner(),
           more(),
         ]);
       }
@@ -4864,23 +4919,21 @@
        it, so the bar carries nothing but the ways on from it, and the ways on
        are all in the one panel. */
     if (p[0] === "creators" || p[0] === "creator") {
-      return fill(bar, auth.in ? [more()] : [session(), more()]);
+      return fill(bar, auth.in ? [tuner(), more()] : [session(), tuner(), more()]);
     }
 
     if (p.length) {
       var mine = [];
-      /* The song's own dials stand at the start of the bar, on every width.
-         They belong to the song rather than to the bar: made with it and handed
-         over by placeControls, which is why they are named here too. A repaint
-         that did not know about them would take them out. */
-      if (state.songControls) {
-        mine.push(state.songControls.tools);
-        /* and what is being done to the song beside them, named here for the
-           same reason: it is made with the song and handed over, and a bar
-           that did not know about it would sweep it off on the next repaint.
-           On a phone that group is downstairs, on the strip (see
-           placeControls), so naming it here would pull it back up. */
-        if (state.songControls.acts && !NARROW.matches) mine.push(state.songControls.acts);
+      /* The song's own dials are NOT named here. They stand in the header row
+         itself, on the other side of the glass (see placeControls), so the
+         bar holds only what is about the page.
+
+         What is being DONE to the song is, on a desk: it is made with the song
+         and handed over, and a bar that did not know about it would sweep it
+         off on the next repaint. On a phone that group is downstairs, on the
+         strip, so naming it here would pull it back up. */
+      if (state.songControls && state.songControls.acts && !NARROW.matches) {
+        mine.push(state.songControls.acts);
       }
       /* AND THE TWO THINGS DONE TO THE PAGE, BEHIND ONE PICTURE. Printing and
          the way into the editor were two of them standing here; they are the
@@ -4918,10 +4971,11 @@
         return add;
       }));
     }
-    /* The tuner, the evenings, the people and whoever is looking: all of them
-       one press further away, in the corner (see more). */
+    /* The evenings, the people and whoever is looking: all of them one press
+       further away, in the corner (see more). The fork is not among them, it
+       is the picture beside them (see tuner). */
     if (!auth.in) shelf.push(session());
-    shelf.push(more());
+    shelf.push(tuner(), more());
     fill(bar, shelf);
   }
 
