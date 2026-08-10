@@ -1195,6 +1195,35 @@
      separate remark beside it.
      ========================================================================== */
   var wallPlaying = null;
+  var dock = null;
+
+  /* --- AND A PLAYER AT THE FOOT OF THE SCREEN --------------------------------
+     A recording that plays with nothing on screen is a recording nobody can
+     do anything with: no way to see how far in it is, no way to go back ten
+     seconds, and no way to stop it except finding again the one row out of
+     fifty whose button started it. So the sound comes with a player, and the
+     player stands still while the wall scrolls under it.
+
+     THE PAGE IS GIVEN THE ROOM BACK. A bar fixed over the foot of a list hides
+     the last row of it, and the last row of a library is a song like any
+     other. */
+  function showDock(fill) {
+    if (!dock) {
+      dock = el("div", "dock");
+      document.body.appendChild(dock);
+    }
+    dock.innerHTML = "";
+    var box = el("div", "dock-in");
+    fill(box);
+    dock.appendChild(box);
+    document.body.classList.add("on-dock");
+    return box;
+  }
+
+  function hideDock() {
+    if (dock) { dock.remove(); dock = null; }
+    document.body.classList.remove("on-dock");
+  }
 
   function stopWall() {
     if (!wallPlaying) return;
@@ -1206,6 +1235,7 @@
       was.node.classList.remove("is-playing");
       reicon(was.node, ICON.play);
     }
+    hideDock();
   }
 
   function playRow(song, out) {
@@ -1233,12 +1263,12 @@
       event.stopPropagation();
       if (wallPlaying && wallPlaying.node === node) return stopWall();
       stopWall();
-      hearOnWall(node, out.top);
+      hearOnWall(node, out.top, song);
     });
     return node;
   }
 
-  function hearOnWall(node, take) {
+  function hearOnWall(node, take, song) {
     if (!take || !take.path) return;
     node.disabled = true;
     store(take.path).then(function (r) { return r.blob(); }).then(function (blob) {
@@ -1247,12 +1277,29 @@
          being fetched. Either of those means nobody is waiting for it. */
       if (!node.isConnected) return;
       var url = URL.createObjectURL(blob.slice(0, blob.size, take.mime || blob.type));
-      var audio = new Audio(url);
+      var audio = el("audio", "dock-play");
+      audio.controls = true;
+      audio.src = url;
       wallPlaying = { audio: audio, node: node, url: url };
       audio.addEventListener("ended", stopWall);
       audio.addEventListener("error", stopWall);
       node.classList.add("is-playing");
       reicon(node, ICON.stop);
+
+      showDock(function (box) {
+        var said = el("div", "dock-said");
+        said.appendChild(el("span", "dock-name", song.title || ""));
+        var who = el("span", "dock-who", "הקלטה");
+        said.appendChild(who);
+        db.who(take.owner).then(function (name) {
+          if (who.isConnected && name) who.textContent = name;
+        });
+        box.appendChild(said);
+        box.appendChild(audio);
+        var shut = iconBtn(ICON.close, "לעצור ולסגור", stopWall);
+        shut.classList.add("dock-x");
+        box.appendChild(shut);
+      });
       startAudio(audio);
     }).catch(function () {
       node.disabled = false;
@@ -1507,7 +1554,7 @@
        about libraries is a worse failure than a row with nothing on it. */
     outTakes: function () {
       return rest(CFG.takeTable +
-        "?select=id,song_id,path,mime,created_at&published=eq.true&order=created_at.desc"
+        "?select=id,song_id,owner,path,mime,created_at&published=eq.true&order=created_at.desc"
       ).then(function (rows) {
         var by = {};
         /* Newest first out of the database, so the first one seen for a song is

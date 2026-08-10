@@ -664,7 +664,19 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   box-shadow: var(--shadow);
   padding: 14px 18px; transition: border-color .15s, transform .15s;
 }
-.list a:hover { border-color: var(--accent); transform: translateY(-1px); }
+/* --- LIT ONLY WHERE THERE IS SOMETHING TO LIGHT IT WITH ---------------------
+   A card lifts and takes a green edge under a pointer, which is the right thing
+   to say to a mouse and the wrong thing to say to a finger: a touch screen has
+   no hover, so it fakes one on the last thing tapped and leaves it there. What
+   that looked like was a card that stayed selected after its play button was
+   pressed, on a press that was never about the card at all. */
+@media (hover: hover) {
+  .list a:hover { border-color: var(--accent); transform: translateY(-1px); }
+  /* AND NOT WHILE THE POINTER IS ON THE BUTTON STANDING ON IT. Playing a
+     recording is not a way of opening the song, so the card should not be
+     offering to open while it is being done. */
+  .list a:hover:has(.has-takes:hover) { border-color: var(--line); transform: none; }
+}
 /* AND NO WASH OF COLOUR OVER THE WHOLE CARD WHEN SOMETHING ON IT IS PRESSED.
    A phone paints a link it is touching, the card is the link, and the button
    standing on it that plays a recording is not a way of opening the song. What
@@ -2914,6 +2926,48 @@ body.on-ear.ear-small { padding-bottom: 84px; }
    is a recording here" and "it is going". Nothing else on the page has to say
    so, and nothing else does. */
 .tape-bar .icon-btn.is-rec.is-taping { animation: on-air 1.6s ease-in-out infinite; }
+
+/* ==========================================================================
+   THE PLAYER AT THE FOOT OF THE SCREEN.
+
+   A recording that plays with nothing on screen is a recording nobody can do
+   anything with: no way to see how far in it is, no way to go back ten
+   seconds, and no way to stop it except finding again the one row out of fifty
+   whose button started it.
+
+   So it stands still while the list scrolls under it, and the page is given
+   the room back underneath: a bar fixed over the foot of a list hides the last
+   row of it, and the last row of a library is a song like any other.
+   ========================================================================== */
+.dock {
+  position: fixed; inset-inline: 0; bottom: 0; z-index: 70;
+  background: var(--card); border-top: 1px solid var(--line);
+  box-shadow: 0 -2px 14px rgba(23, 32, 42, .1);
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+}
+.dock-in {
+  max-width: 720px; margin-inline: auto;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+.dock-said { flex: 1 1 160px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.dock-name {
+  font-weight: 700; font-size: 15px; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dock-who {
+  font-size: 12px; color: var(--ink-soft);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dock .dock-play { flex: 2 1 240px; height: 36px; min-width: 0; }
+.dock-x { flex: none; }
+body.on-dock { padding-bottom: 92px; }
+/* On a phone the name and the player each want the width, so they take a line
+   each rather than squeezing into one and giving neither enough. */
+@media (max-width: 620px) {
+  .dock-said { flex-basis: 100%; }
+  .dock .dock-play { flex-basis: calc(100% - 46px); }
+  body.on-dock { padding-bottom: 128px; }
+}
 
 /* ==========================================================================
    THE TAKES OF A SONG.
