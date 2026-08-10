@@ -14993,19 +14993,41 @@
       return Promise.resolve();
     };
 
-    if (row.published) return out();
+    /* --- AND THE SONG HAS TO BE OUT TOO ---------------------------------------
+       A recording is a recording OF something, and what a link opens is the
+       song with the recording playing over it. So a public take on a private
+       song is a link to a page the other person is not allowed to read: they
+       get nothing, and nothing is what the sharer sees no sign of.
+
+       ASKED, NEVER DONE QUIETLY. Publishing one recording is offering one
+       performance; publishing the song puts it in everybody's library, and
+       that is a larger thing than the button was pressed for. So it is one
+       question, asked once, and it is the truth about what sharing means
+       here. */
     pass.disabled = true;
-    rest(CFG.takeTable + "?id=eq." + row.id, { method: "PATCH", body: { published: true } })
-      .then(function () {
+    rest(CFG.table + "?id=eq." + song.id + "&select=published").then(function (rows) {
+      var songOut = !!(rows && rows[0] && rows[0].published);
+      if (!songOut && !window.confirm(
+        "כדי שמישהו אחר יוכל לשמוע את ההקלטה הוא צריך לפתוח את השיר, ולכן גם השיר יהיה ציבורי.\n\nלפרסם את השיר ואת ההקלטה?")) {
+        pass.disabled = false;
+        return null;
+      }
+      var work = [];
+      if (!songOut) work.push(rest(CFG.table + "?id=eq." + song.id,
+        { method: "PATCH", body: { published: true } }));
+      if (!row.published) work.push(rest(CFG.takeTable + "?id=eq." + row.id,
+        { method: "PATCH", body: { published: true } }));
+      return Promise.all(work).then(function () {
+        song.published = true;
         row.published = true;
         pass.disabled = false;
         if (state.redrawTakes) state.redrawTakes();
         return out();
-      })
-      .catch(function () {
-        pass.disabled = false;
-        toast("לא הצלחנו לפרסם את ההקלטה");
       });
+    }).catch(function () {
+      pass.disabled = false;
+      toast("לא הצלחנו לפרסם");
+    });
   }
 
   function shortDate(when) {
@@ -15043,6 +15065,14 @@
 
   function offerTake(row, out) {
     var want = !row.published;
+    /* A public take on a private song is a take nobody can reach: what anybody
+       else opens is the SONG, with the recording playing over it, and a song
+       that is not out is a page they are not allowed to read. Said here rather
+       than fixed here, because the tick is about this recording and publishing
+       the song is a decision about the song (see shareTake, which asks). */
+    if (want && state.takeSong && state.takeSong.published === false) {
+      toast("ההקלטה תהיה ציבורית, אבל השיר עצמו עדיין לא. שיתוף יציע לפרסם את שניהם.");
+    }
     out.disabled = true;
     rest(CFG.takeTable + "?id=eq." + row.id, {
       method: "PATCH", body: { published: want },
