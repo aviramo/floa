@@ -89,5 +89,29 @@
      tested exactly. -->
 <script src="/chords/assets/follow.js"></script>
 <script src="/chords/assets/app.js"></script>
+<!-- --- AND THE SCRIPTS ABOVE ARE ALWAYS THE ONES JUST PUBLISHED -------------
+     THIS APP WAS THE ONE PAGE ON THE DOMAIN WITHOUT IT. The engine puts a
+     hash on every asset address it writes and registers the worker below on
+     every page it renders; this shell is written by hand and did neither, so
+     the addresses above never change and GitHub Pages serves them with ten
+     minutes of cache. On a desk that is a refresh. On a phone it is a person
+     playing a guitar to a version of the app that was replaced twenty minutes
+     ago and reporting what it did, which is worse than no report at all: it
+     is a measurement of something that no longer exists.
+
+     The worker is the domain's (see businesses/floa/domain/sw.js) and it
+     stores nothing. All it does is fetch documents, CSS and JS with no-store,
+     so an ordinary refresh is always the newest build and no address here
+     needs a version on it.
+
+     Root-absolute, deliberately: a worker only controls pages at or below its
+     own path, and this one belongs to the domain rather than to this app. -->
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("/sw.js").catch(function () {});
+    });
+  }
+</script>
 </body>
 </html>
