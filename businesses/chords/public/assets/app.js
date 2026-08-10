@@ -1929,10 +1929,16 @@
      which is the whole point of opening the gap. */
   var GAP = "";
 
-  /* ONE PER PRESS. A press is cheap and an undo of half a gap is not: pressing
-     twice is how you get two, and there is no way to ask for four and mean
-     three. */
-  var GAP_RUN = 1;
+  /* TWO PER PRESS, which is both the least room a press can open and the whole
+     of what a second press adds. One was too little to see: a single gap is a
+     third of a letter, and asking for room and getting a hairline reads as a
+     button that did nothing, so the press was made twice and the number was
+     really two all along.
+
+     A press stays cheap, and what it costs to undo is a backspace that takes
+     one of the two: half a press is a real state, and it is a narrower gap
+     rather than a broken one. */
+  var GAP_RUN = 2;
 
   function gapRun() { return new Array(GAP_RUN + 1).join(GAP); }
 
