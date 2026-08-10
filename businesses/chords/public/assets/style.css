@@ -462,15 +462,23 @@ body.on-air .top {
      It is the button that opens one, and it stands in a row of buttons.
 
      The gap that separated them was the actions pushing themselves to the far
-     end. The search takes that over, so the two of them are one row again and
-     the space in front of them is what gives way. */
-  .top-find { flex: none; width: 36px; margin-inline-start: auto; }
-  .top-actions { margin-inline-start: 0; }
-  /* The glass is the library's and stands nowhere else (see paintHeader), and
-     it was the thing holding the two ends of the bar apart. Where it is gone,
-     what follows it takes that over: the name at one end, and the corner of
-     the page with the song's own controls after it at the other. */
-  .top-find[hidden] ~ .top-actions { margin-inline-start: auto; }
+     end. The two of them are one row again and the space in front of them is
+     what gives way.
+
+     AND IN THE OTHER ORDER FROM THE ONE THEY STAND IN ON A DESK. There the
+     box is a box, and it lies between the name of the page and the buttons
+     because that stretch of bar is the only room nobody else wants. Here it
+     is not a box, it is one more picture in a row of pictures, and a row of
+     pictures is read from the corner in: the glass takes the corner, and the
+     fork stands in front of it.
+
+     Which hands the auto margin back to the actions, where it was before the
+     box came to sit at the end of the row. It holds everything after it at
+     the far end, and the glass, riding along behind it on `order`, comes with
+     it. That is also the whole of what a rule about a hidden glass used to
+     do here: the corner belongs to the actions either way now, so a page that
+     has no glass (see paintHeader) needs nothing said about it. */
+  .top-find { flex: none; width: 36px; order: 1; }
   .top-find .find {
     height: 36px; padding: 0; gap: 0; cursor: pointer; justify-content: center;
     background: transparent; color: var(--ink);
@@ -802,7 +810,7 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .list a { -webkit-tap-highlight-color: transparent; }
 /* The label inside the button is words in the middle of a link, so a press
    that lands a hair off centre selects them and paints them instead. */
-.list .when.has-takes { user-select: none; -webkit-user-select: none; }
+.when.has-takes { user-select: none; -webkit-user-select: none; }
 .list .t { font-weight: 700; font-size: 17px; }
 .list .a { color: var(--ink-soft); font-size: 14px; }
 /* What is in the evening, by name. Two lines at most: a line in an index is a
@@ -896,20 +904,26 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    it, so the mark that says there are recordings is the thing that plays one.
    The count stays inside it: what is being pressed is "the recordings of this
    song", and how many there are is part of what that means. */
-.list .when.has-takes {
+/* AND IT IS NOT THE WALL'S. The button is part of a song card, and a song
+   card is drawn on the library, on a person's page and on an evening's list,
+   so what it looks like cannot hang off the list it happened to be born in.
+   Everything it needs it carries itself: the width it wants, and a refusal to
+   be squeezed by whatever it is standing beside. */
+.when.has-takes {
   appearance: none; cursor: pointer;
   display: inline-flex; align-items: center; gap: 5px;
+  flex: none; white-space: nowrap;
   padding: 3px 9px 3px 7px; border-radius: 999px;
   border: 1px solid var(--chord-soft); background: var(--chord-soft);
   color: var(--chord); font: inherit; font-size: 12px;
   font-variant-numeric: tabular-nums; font-weight: 700;
 }
-.list .when.has-takes:hover { border-color: var(--chord); }
-.list .when.has-takes svg { width: 11px; height: 11px; }
-.list .when.has-takes.is-playing {
+.when.has-takes:hover { border-color: var(--chord); }
+.when.has-takes svg { width: 11px; height: 11px; }
+.when.has-takes.is-playing {
   color: #fff; background: var(--chord); border-color: var(--chord);
 }
-.list .when.has-takes[disabled] { opacity: .5; cursor: default; }
+.when.has-takes[disabled] { opacity: .5; cursor: default; }
 /* THE DATE STAYS AT THE BOTTOM WITH NOTHING OVER IT. A published song carries
    no chip any more (see songRow), so its column holds one thing, and
    space-between with one thing in it puts that thing at the top: the date
@@ -2815,7 +2829,111 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    library already uses, for naming a handful of ticked songs at once. It went
    with the ticking. A song is given its style on the song's own page. */
 
+/* ==========================================================================
+   THE SONG ON PAPER.
+
+   A second copy of the song, laid out by the same code that lays out the page
+   on the screen and for the same reasons, except that the room it is given is
+   a sheet of A5 across instead of a window (see toPaper in app.js). It stands
+   off the screen from the moment a printer asks for it and it is what the
+   printer is given; the page the reader is looking at is not printed at all.
+
+   WHY A COPY AND NOT THE PAGE. The columns are real elements with the song
+   dealt out into them, so laying the page out for paper means taking the
+   reader's page apart under them and putting it back when the printing is
+   over, and when that is cannot be known: several browsers fire afterprint the
+   moment window.print returns, before anything has been laid out for paper.
+
+   WHY NOT A STYLESHEET, which is what this used to be. How many segments a
+   song stands in and where each page of it ends are worked out by measuring
+   the song, in the reader's own font at the reader's own size, and CSS cannot
+   measure. Taking the columns apart for paper printed a page nobody had laid
+   out; leaving them alone printed a page built for a window, which the printer
+   then squeezed to half its size to make it fit.
+
+   So everything below is what this copy IS, on screen and off it, because it
+   has to be measurable while it is being laid out. What belongs to the printer
+   alone is down in @media print: which of the two copies is shown.
+   ========================================================================== */
+.paper {
+  position: fixed; top: 0; left: 0; z-index: -1;
+  visibility: hidden; pointer-events: none;
+}
+/* The air a page keeps at its two ends is the space between one screenful and
+   the next, and paper has no next screenful: it has a margin of its own (see
+   @page) and a fresh sheet after every page. PAGE_AIR in app.js gives the same
+   nothing to the arithmetic, and neither may be changed alone. */
+.paper .page { --page-air: 0px; }
+/* and the hairline that says a screenful ended: on paper the sheet says it */
+.paper .page + .page { background: none; }
+/* A SEGMENT ON PAPER CUTS NOTHING OFF. On screen it does, because a line being
+   typed into has not been broken to the column yet and would be written across
+   the one beside it. Nothing is typed into this copy: every line in it was
+   poured to the width it is standing in, and the only thing that reaches past
+   that is a chord hanging past the end of its line, which is what the margin
+   inside every segment is for. */
+.paper .col { overflow: visible; }
+/* the sheet is paper here, not something lying on a screen */
+.paper .sheet {
+  min-height: 0; padding: 0; border: none; box-shadow: none; overflow: visible;
+}
+.paper .song-head { margin: 0 0 12px; }
+.paper .on-paper { display: block; }
+/* and one of them is left out when there is nothing to say (see sayWho) */
+.paper .on-paper[hidden] { display: none; }
+.paper .song-meta, .paper .past-band, .paper .save-state { display: none; }
+
+/* --- THE LYRICS SHEET ------------------------------------------------------
+   The same page with the chords taken off it and the gaps closed up, which is
+   the whole reason a gap is a character of its own and not a run of spaces:
+   the words come back together into words.
+
+   For the people singing, who do not read chords and to whom a pink symbol
+   over every line is a page that is harder to follow.
+
+   AND IT IS TAKEN OFF BEFORE THE PAGE IS LAID OUT, which is why none of this
+   is in the print stylesheet any more. How many segments the words stand in
+   and where each sheet of them ends are worked out by measuring lines, and a
+   line with a row of chords over it is half as tall again as the same line
+   without one: measured with the chords and printed without them, every sheet
+   came out with a hand's width of nothing at the foot of it. */
+.paper.words .ln-c { display: none; }
+.paper.words .ln-t .gap { width: 0; }
+/* where a capo goes is one more thing that is not about singing */
+.paper.words .capo-line { display: none; }
+
+/* TIGHTER, AND FURTHER FROM THE NAME. The spacing of a chord sheet is built
+   around the row of symbols over every line: take that row away and the same
+   spacing is a page of words with a chord's worth of air between them, which
+   reads as a list rather than as a song. So the lines close up to something a
+   verse can be seen whole in, the blank line between two verses keeps enough
+   to still be a break, and the title gets the room the chords used to take: a
+   heading resting on the first line reads as part of it. */
+/* AND THE WORDS MAY WRAP HERE. Every line was poured to the width of the
+   segment it stands in and fits it, so this changes nothing on an ordinary
+   sheet; what it does is make the one line that measured a hair wide break
+   like a paragraph instead of being cut off at the edge of its column. A chord
+   sheet cannot have that, because a chord has to stay over its syllable. */
+.paper.words .ln-t { white-space: pre-wrap; line-height: 1.35; min-height: 0; }
+.paper.words .song-head { margin-bottom: 30px; }
+.paper.words .ln { margin-bottom: 0; }
+.paper.words .ln.is-blank .ln-t { min-height: .9em; }
+.paper.words .ln.is-section { margin: 16px 0 3px; }
+
 @media print {
+  /* --- WHAT IS BEING PRINTED ON ---------------------------------------------
+     A5 across. A song is read from a stand at arm's length with both hands
+     busy, so what a sheet of it wants is width for the columns and few enough
+     lines down the page that the eye can find the next one: A4 upright is the
+     opposite of both. The margin is the printer's, and it is the only margin
+     on the page, so the name of the song, whoever wrote it and the first
+     letter of every line all begin at the same place.
+
+     PAPER in app.js holds the same sheet less the same margin, in the
+     millimetres the columns are worked out from, and two places holding one
+     number is how they come to disagree: neither may be changed alone. */
+  @page { size: A5 landscape; margin: 10mm; }
+
   .top, .tools, .ed-bar, .song-meta, .toast, .print-menu { display: none !important; }
   /* A microphone is about the room, and paper is not in it. The mark it leaves
      on the chords goes with it: what is being played at this second is the
@@ -2825,39 +2943,24 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
     color: inherit !important; background: none !important; box-shadow: none !important;
   }
 
-  /* THE LYRICS SHEET. The same page with the chords taken off it and the gaps
-     closed up, which is the whole reason a gap is a character of its own and
-     not a run of spaces: the words come back together into words.
+  /* --- AND WHICH OF THE TWO COPIES ------------------------------------------
+     The song laid out for paper is shown and the page on the screen is not
+     (see toPaper). The screen's page says so on itself rather than through the
+     body, because a browser that never raised beforeprint built no copy at
+     all, and a page with both halves hidden is a blank sheet: with no copy
+     there is no class either, and what comes out is what always came out. */
+  .off-paper { display: none !important; }
+  .paper {
+    position: static; visibility: visible;
+    width: auto !important; z-index: auto;
+  }
+  /* EVERY SCREENFUL IS A SHEET, which is what the whole layout already means:
+     a page here is exactly as much of the song as the room holds, and the room
+     it was dealt into was a sheet of A5. */
+  .paper .page { break-inside: avoid; }
+  .paper .page + .page { break-before: page; }
 
-     For the people singing, who do not read chords and to whom a pink symbol
-     over every line is a page that is harder to follow. */
-  body.print-words .ln-c { display: none !important; }
-  body.print-words .ln-t .gap { width: 0 !important; }
-  /* where a capo goes is one more thing that is not about singing */
-  body.print-words .capo-line { display: none !important; }
-
-  /* TIGHTER, AND FURTHER FROM THE NAME. The spacing of a chord sheet is built
-     around the row of symbols over every line: take that row away and the same
-     spacing is a page of words with a chord's worth of air between them, which
-     reads as a list rather than as a song. So the lines close up to something
-     a verse can be seen whole in, the blank line between two verses keeps
-     enough to still be a break, and the title gets the room the chords used to
-     take: a heading resting on the first line reads as part of it. */
-  /* AND THE WORDS WRAP HERE, which is the difference between the size being
-     respected and the size being obeyed. A chord sheet's lines never wrap,
-     because a chord has to stay over its syllable, so a line wider than the
-     paper makes the browser shrink the whole page to fit it: the reader turns
-     the size up and the print comes out no bigger. There are no chords on this
-     sheet, so a long line can break like any other paragraph, and turning the
-     size up fills the page instead of scaling it down. */
-  body.print-words .ln-t { white-space: pre-wrap; }
   .song-head { margin: 0 0 12px; }
-  .song-meta { display: none !important; }
-  body.print-words .song-head { margin-bottom: 30px; }
-  body.print-words .ln { margin-bottom: 0; }
-  body.print-words .ln-t { line-height: 1.35; min-height: 0; }
-  body.print-words .ln.is-blank .ln-t { min-height: .9em; }
-  body.print-words .ln.is-section { margin: 16px 0 3px; }
   /* Which version this is, and what to do about it, are about the page rather
      than about the song. On paper it is the song. */
   .past-band { display: none !important; }
@@ -2880,47 +2983,25 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   .set-row { border: none; padding: 4px 0; break-inside: avoid; }
   .set { gap: 0; }
   /* --- ONE MARGIN, AND EVERYTHING ON THE PAGE STANDS ON IT ------------------
-     The margin used to belong to the sheet: a little room at the start of the
-     line, because the first chord of a line is centred on its first character
-     and half of it hangs past the start. But the name of the song is not in
-     the sheet, it is over it, so it stood on a margin of its own, and what
-     came out of the printer was a title that began somewhere the words never
-     did. The columns made it worse: their width is worked out for a WINDOW,
-     written onto the element in pixels, and on paper that is a band of words
-     centred in the middle of the page with the title reaching past both ends
-     of it.
+     The margin used to belong to the sheet, then to #app: a little room at the
+     start of the line, because the first chord of a line is centred on its
+     first character and half of it hangs past the start. It is the paper's now
+     (see @page above), which is the one place that can hold it: the columns
+     are dealt out to the width of what is left, so a margin anywhere inside
+     the page would be room the song was promised and then not given.
 
-     So the margin is the paper's. It is set once, on what everything on the
-     page is inside, and the sheet, the columns and the heading all give up
-     margins of their own: the title, whoever wrote the song and the first
-     letter of every line all begin at the same place, and the chord that
-     hangs past it hangs into the paper's margin, which is what it is for. */
-  #app { padding-inline: 26px; }
-  .sheet { border: none; box-shadow: none; padding: 0 !important; overflow: visible; }
-  /* Columns are an answer to a screen, and paper is not a screen: it has a
-     page break where a window has a scroll, and it comes in one width. The
-     count is written onto the element by hand, so this has to shout. */
-  /* Paper has pages of its own and they are not the window's. The columns
-     come apart and the song runs down the sheet as one. */
-  .sheet { min-height: 0 !important; }
-  .page {
-    display: block !important; height: auto !important;
-    overflow: visible !important; border: 0 !important;
-    /* the width and the air at its ends are both answers to a window, and the
-       paper's own margin is above (see #app) */
-    width: auto !important; padding-inline: 0 !important;
-    /* and the rule between one screenful and the next is a fact about a
-       window: paper has page breaks of its own */
-    background: none !important;
-  }
-  /* On paper the segment is the paper, so what is left is the words with a
-     margin. */
-  .col { width: auto !important; overflow: visible !important; }
-  /* A desk between two segments, and a rule down it, are both answers to a row
-     of segments. There is no row on paper: the song runs down the page as one,
-     so this would be a stripe of nothing between two verses. */
-  .rule { display: none !important; }
+     What is left here is everything on the page giving up a margin of its own,
+     so that the title, whoever wrote the song and the first letter of every
+     line all begin at the same place, and the chord that hangs past it hangs
+     into the paper's margin, which is what it is for. */
+  #app { padding-inline: 0; }
   .wrap { width: 100%; }
+  /* The edges of a sheet are what says where the song is on a screen. On paper
+     the paper says it. The copy laid out for the printer has given these up
+     already (see .paper); this is for the sheet on the page itself, which is
+     printed only where no copy was ever built. */
+  .sheet { border: none; box-shadow: none; padding: 0 !important; overflow: visible; }
+  .sheet { min-height: 0 !important; }
 }
 
 

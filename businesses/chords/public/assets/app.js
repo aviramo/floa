@@ -1201,8 +1201,12 @@
      the rest of the visit. */
   var whoKnown = {};
 
-  /* How many recordings of each song are OUT, by song id. Read with the wall
-     and kept for as long as the wall is on screen. */
+  /* How many recordings of each song are OUT, by song id. THE BUTTON THAT
+     PLAYS ONE IS PART OF A SONG CARD, and a song card is drawn in more than
+     one place: the library, a person's page, an evening's list. So this is
+     read by every page that draws one, and a page that forgets to ask draws
+     the same cards with the button quietly missing from all of them. Kept
+     here, because it is one question for a whole page of cards. */
   var takesOut = {};
 
   /* ==========================================================================
@@ -2993,7 +2997,15 @@
     if (!sheet.querySelector(".page, .ln-row")) return;
     var rows = sheetRows(sheet);
     sheet.textContent = "";
-    rows.forEach(function (ln) { sheet.appendChild(ln); });
+    rows.forEach(function (ln) {
+      /* AND THE AIR THAT WAS SHARED OUT BETWEEN THEM GOES BACK. A row that was
+         spread to fill a page (see spreadToBottom) carries the share it was
+         given written onto it, and everything downstream measures rows: left
+         on, the next layout is planned against a song that is taller than it
+         is, and the one after that taller again. */
+      ln.style.marginBottom = "";
+      sheet.appendChild(ln);
+    });
   }
 
   /* --- WHAT THE SONG ITSELF IS WIDE -----------------------------------------
@@ -3282,6 +3294,66 @@
       cols: cols, colW: colW, pad: pad, apart: apart, air: air,
       pageH: pageH, padded: padded, ends: ends,
     };
+  }
+
+  /* --- A SONG THAT DOES NOT REACH THE BOTTOM IS SPREAD DOWN TO IT ------------
+     A song of four verses on a tall screen stops halfway down it and the rest
+     of the page is nothing: the words are in the top half and the reader is
+     looking at the bottom half wondering whether that is all of it. The room
+     is there and the song is what the page is for, so the room goes between
+     the lines and the song ends where the page does.
+
+     THE AIR GOES BETWEEN THE ROWS AND NOT UNDER THEM, which is the whole
+     difference between a song that fills a page and a song sitting at the top
+     of one with a wide margin under it. Shared out evenly, so the shape of the
+     song survives it: a verse break is a blank row and it grows by the same
+     amount every other gap does, so it is still bigger than the gap between
+     two lines by exactly the blank row that makes it.
+
+     AND NEVER MORE THAN A ROW IS TALL. Past that the space between two lines
+     is bigger than the lines themselves, and what is on the page stops reading
+     as a song and starts reading as a list of unrelated sentences. A song of
+     four lines on a big screen takes what it can and stops short, which is the
+     honest answer: there is not enough song there to cover that page, and
+     pretending otherwise costs more than the white does.
+
+     ONLY WHERE THE SONG STANDS ON ONE PAGE. Where there are two, every page
+     above the last is already exactly a screenful and the last one ends where
+     the song does, on purpose, because what is under it is the next thing to
+     scroll to rather than the bottom of the window.
+
+     Measured after the pages are in the document, because a fragment nobody
+     has put on the screen yet has no heights to ask about. */
+  function spreadToBottom(sheet, plan) {
+    /* NOT ON PAPER. A window has a bottom edge that the eye takes as the end of
+       what there is, which is the whole reason for this; a sheet of paper has a
+       margin, and a short song printed with its lines pushed apart to reach the
+       foot of the page is a song set to the paper rather than to itself. */
+    if (paper) return;
+
+    var room = plan.pageH - PAGE_AIR * 2;
+    Array.prototype.forEach.call(sheet.querySelectorAll(".page .col"), function (col) {
+      var rows = Array.prototype.slice.call(col.children);
+      if (rows.length < 2) return;
+
+      var used = 0;
+      var tallest = 0;
+      var margins = rows.map(function (ln) {
+        var margin = parseFloat(getComputedStyle(ln).marginBottom) || 0;
+        used += ln.offsetHeight + margin;
+        if (ln.offsetHeight > tallest) tallest = ln.offsetHeight;
+        return margin;
+      });
+
+      var slack = room - used;
+      if (!(slack > 0) || !(tallest > 0)) return;
+
+      var each = Math.min(slack / (rows.length - 1), tallest);
+      rows.forEach(function (ln, i) {
+        if (i === rows.length - 1) return;
+        ln.style.marginBottom = (margins[i] + each) + "px";
+      });
+    });
   }
 
   /* --- dealing the lines out -------------------------------------------------
@@ -8138,7 +8210,14 @@
     where(name || "יוצר");
     setBusy("טוען שירים");
 
-    db.list().then(function (songs) {
+    /* The songs, and how many recordings of each are out in the world. The
+       cards here are the library's own cards (see songRow), and the button
+       that plays a recording is part of one, so the question that makes it is
+       asked here as well. Answered as nothing on a project whose SQL has not
+       been run since takes arrived, so the page opens either way. */
+    Promise.all([db.list(), db.outTakes()]).then(function (got) {
+      var songs = got[0];
+      takesOut = got[1] || {};
       seedSongs(songs || []);
       state.songs = songs || [];
       var mine = songsBy(songs || [], name);
@@ -13780,11 +13859,16 @@
        drawn from it: the name a song has NOW, who wrote it, and which chords
        it needs. An evening that stored those itself would go stale the first
        time a song was corrected. */
+    /* And the recordings that are out, for the same reason the library asks
+       for them: the button that plays one is part of a song card, and every
+       row here is a song card (see setRow). */
     Promise.all([
       id === null ? Promise.resolve(blank) : sets.byId(id),
       db.list(),
+      db.outTakes(),
     ]).then(function (both) {
       if (!both[0]) return noEvening();
+      takesOut = both[2] || {};
       var evening = both[0];
       evening.songs = normalizeSet(evening.songs);
       renderEvening(evening, both[1] || []);
@@ -13999,6 +14083,15 @@
       }
 
       li.appendChild(box);
+
+      /* AND THE RECORDINGS OF IT, on the same button every other song card
+         carries (see playRow). Here it is worth more than on the wall: the
+         wall is being scanned by somebody deciding what to pick up, and this
+         is a list somebody is about to sing from, where "how does this one go
+         again" is the question of the evening. One at a time and a player at
+         the foot of the screen, exactly as it is everywhere else. */
+      var takes = song && takesOut[song.id];
+      if (takes) li.appendChild(playRow(song, takes));
 
       var out = iconBtn(ICON.trash, "הוצאה מהאירוע", function () {
         var at = evening.songs.indexOf(item);
