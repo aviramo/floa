@@ -1403,7 +1403,16 @@ body.on-song .top { border-bottom: 0; }
    What gives way instead is the search box beside it, which is a field and
    loses nothing by being narrower. Empty on every page but a song, and an
    empty box still spends the row's gap, so it goes when it is empty. */
-.top-facts { flex: none; display: flex; align-items: center; gap: 8px; }
+/* AND IT STANDS AGAINST THE NAME, not a bar's width from it. The row's own
+   gap is what holds the unlike things in this bar apart: the mark, the name,
+   the search, the buttons. This is not one of them. It is what the song says
+   about itself, it is read as the end of its own title, and sixteen pixels of
+   air between them makes it a fourth thing in the row. So it takes most of
+   that gap back and follows the name immediately. */
+.top-facts {
+  flex: none; display: flex; align-items: center; gap: 8px;
+  margin-inline-start: -10px;
+}
 .top-facts:empty { display: none; }
 .top-facts .song-facts { flex: none; flex-wrap: nowrap; white-space: nowrap; }
 
