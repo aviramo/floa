@@ -7956,6 +7956,17 @@
           return transposeChord(chord, semis);
         });
       },
+      /* --- AND WHERE THE CAPO IS, WHICH THE MICROPHONE CANNOT GUESS ----------
+         WHAT IS PRINTED IS THE SHAPE THE HAND HOLDS, and what comes out of the
+         guitar is that shape moved up by the fret the capo is at (see capoOf:
+         the fret IS the gap between the page and the singing). So with a capo
+         on the third, the page says Am and the room hears Cm.
+
+         Everything that listens for a chord of this song has to add it, or it
+         is listening for a sound nobody is making. Read when it is asked for
+         and not written down here, because it moves: choosing a key moves it,
+         and so does moving it by hand. */
+      capo: function () { return myCapo; },
     };
 
     /* Eight frets, in the order a neck is in, nought at the top. The one the
@@ -13106,8 +13117,10 @@
     var quiet = r.rms < window.CHORDS_EAR.HUSH;
     var best = -1, at = -1;
     var scores = c.rows.map(function (row, i) {
-      var parts = quiet ? null : CHORD_RE.exec(row.chord);
-      var s = parts ? window.CHORDS_EAR.score(ROOTS[parts[1]], parts[2] || "") : 0;
+      /* The name shown is the shape on the page; the score is for what that
+         shape SOUNDS like under the capo (see sounding). */
+      var root = quiet ? -1 : sounding(row.chord);
+      var s = root < 0 ? 0 : window.CHORDS_EAR.score(root, colourOf(row.chord));
       if (s > best) { best = s; at = i; }
       return s;
     });
@@ -13120,6 +13133,35 @@
 
   function chordName(one) {
     return ROOT_NOTES[one.root] + one.quality;
+  }
+
+  /* --- WHAT A CHORD ON THE PAGE ACTUALLY SOUNDS LIKE -------------------------
+     The one translation between the page and the room, and everything that
+     listens for a chord of this song goes through it.
+
+     A chord label is the SHAPE a hand holds. The sound is that shape moved up
+     by the fret the capo is at, so a page saying Am under a capo on the third
+     is a room hearing Cm. Without this the app spends the whole song listening
+     for chords nobody is playing, and the more useful the capo is the more
+     wrong it gets.
+
+     Hands back the pitch class of the sound, or -1 for a label that is not a
+     chord at all. */
+  function earCapo() {
+    return state.ear && state.ear.capo ? state.ear.capo() : 0;
+  }
+
+  function sounding(label) {
+    var parts = CHORD_RE.exec(String(label || "").trim());
+    if (!parts || !(parts[1] in ROOTS)) return -1;
+    return (ROOTS[parts[1]] + earCapo()) % 12;
+  }
+
+  /* The rest of the name, which a capo does not touch: a minor shape held
+     three frets up is still minor. */
+  function colourOf(label) {
+    var parts = CHORD_RE.exec(String(label || "").trim());
+    return parts ? (parts[2] || "") : "";
   }
 
   /* ==========================================================================
@@ -13272,9 +13314,11 @@
     var scores = new Array(kinds.length);
     var sum = 0, count = 0, i;
     for (i = 0; i < kinds.length; i++) {
-      var parts = CHORD_RE.exec(kinds[i]);
-      if (parts && (parts[1] in ROOTS)) {
-        scores[i] = window.CHORDS_EAR.score(ROOTS[parts[1]], parts[2] || "");
+      /* The capo is in here (see sounding): what is asked of the microphone is
+         what the room is hearing, not what the page is printing. */
+      var root = sounding(kinds[i]);
+      if (root >= 0) {
+        scores[i] = window.CHORDS_EAR.score(root, colourOf(kinds[i]));
         sum += scores[i];
         count++;
       } else scores[i] = -1;
@@ -13403,7 +13447,10 @@
   function markHeard(name) {
     var sheet = document.querySelector(".sheet");
     if (!sheet) return;
-    var want = name ? thirdOf(name) : null;
+    /* The name the ear said is already a SOUND, so it carries no capo; the
+       names on the page are shapes, so they do. */
+    var want = name ? thirdOf(name, 0) : null;
+    var capo = earCapo();
     var all = sheet.querySelectorAll(".chord");
     for (var i = 0; i < all.length; i++) {
       var node = all[i];
@@ -13411,10 +13458,12 @@
          twenty times a second over every chord in the song and what it is
          asking is a question about the text: while the text is what it was,
          so is the answer. A chord drawn again is a new node with nothing
-         remembered on it, which is exactly right. */
-      if (node._third === undefined || node._said !== node.textContent) {
+         remembered on it, which is exactly right. And the fret is part of the
+         question, so a capo moved is every answer here out of date. */
+      if (node._third === undefined || node._said !== node.textContent || node._capo !== capo) {
         node._said = node.textContent;
-        node._third = thirdOf(node.textContent);
+        node._capo = capo;
+        node._third = thirdOf(node.textContent, capo);
       }
       node.classList.toggle("is-heard", !!want && node._third === want);
     }
@@ -13422,14 +13471,14 @@
 
   /* A chord reduced to the two things a microphone can be trusted about: which
      note it is built on, and whether the third in it is major or minor. */
-  function thirdOf(text) {
+  function thirdOf(text, capo) {
     var parts = CHORD_RE.exec(String(text || "").trim());
     if (!parts || !(parts[1] in ROOTS)) return null;
     var shape = window.CHORDS_EAR.shapeOf(parts[2] || "");
     var third = shape === "m" || shape === "m7" ? "m"
       : shape === "sus4" ? "s"
       : shape === "dim" ? "d" : "M";
-    return ROOTS[parts[1]] + third;
+    return ((ROOTS[parts[1]] + (capo || 0)) % 12) + third;
   }
 
   /* --- the clock -------------------------------------------------------------

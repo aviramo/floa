@@ -61,6 +61,20 @@ const TALL = {
   dir: "rtl", status: "ready", status_note: "", lines: LONG,
 };
 
+/* --- AND THE SAME SONG UNDER A CAPO ----------------------------------------
+   Which is the case the whole app is quietly built around and the listening
+   forgot: WHAT IS PRINTED IS THE SHAPE A HAND HOLDS, and the sound is that
+   shape moved up by the fret the capo is at. Page says Am, capo on the third,
+   room hears Cm.
+
+   The voicings played into the microphone below are the SOUNDING ones, which
+   is what a microphone would get. Nothing about the page changes. */
+const CAPOED = {
+  id: "capo", slug: "s-capo", title: "בדיקת קפו", lyrics_by: "", music_by: "",
+  dir: "rtl", status: "ready", status_note: "", lines: BODY,
+};
+const CAPO = 3;
+
 /* --- the sound, written out by hand ----------------------------------------
    An A minor chord as a guitar voices it, A2 E3 A3 C4 E4, each with four
    harmonics falling away above it. Everything else in the spectrum is silence,
@@ -72,10 +86,15 @@ const VOICINGS = {
   G: [43, 47, 50, 55, 59, 67],        /* G2 B2 D3 G3 B3 G4 */
   F: [41, 48, 53, 57, 60, 65],        /* F2 C3 F3 A3 C4 F4 */
   Dm: [50, 57, 62, 65],               /* D3 A3 D4 F4 */
+  /* the same four shapes as they sound with a capo on the third fret */
+  "Am+3": [48, 55, 60, 63, 67],
+  "G+3": [46, 50, 53, 58, 62, 70],
+  "F+3": [44, 51, 56, 60, 63, 68],
+  "Dm+3": [53, 60, 65, 68],
 };
 const RINGS = [-20, -28, -34, -40];
 
-function page(song = SONG) {
+function page(song = SONG, capo = 0) {
   return `<!doctype html>
 <html lang="he" dir="rtl"><head><meta charset="utf-8">
 <!-- The same one the real shell carries. Without it a browser told it is a
@@ -92,7 +111,11 @@ history.replaceState(null, "", "/chords/${song.slug}");
 /* The page as it is written and not as the app would guess it: the marking
    below is checked against chord names, and a transposition chosen for us
    would make those names something else. */
-localStorage.setItem("chords.song.-." + ${JSON.stringify(song.id)}, JSON.stringify({ p: 0 }));
+/* THE FRET IS THE GAP between what is printed and what is sung (see capoOf),
+   so a capo is asked for by saying the song is sung higher than it is drawn:
+   page at nought, singing at three, fret three. */
+localStorage.setItem("chords.song.-." + ${JSON.stringify(song.id)},
+  JSON.stringify({ p: 0, s: ${JSON.stringify(capo)} }));
 window.SUPABASE = { url: "https://stub.invalid", anonKey: "anon" };
 const SONG = ${JSON.stringify(song)};
 window.fetch = (url) => Promise.resolve(new Response(
@@ -373,6 +396,8 @@ const root = join(DIST, "chords/_ear");
 await mkdir(join(root, "tall"), { recursive: true });
 await writeFile(join(root, "index.html"), page(), "utf8");
 await writeFile(join(root, "tall/index.html"), page(TALL), "utf8");
+await mkdir(join(root, "capo"), { recursive: true });
+await writeFile(join(root, "capo/index.html"), page(CAPOED, CAPO), "utf8");
 
 try {
   await withChrome(async (open) => {
@@ -627,6 +652,58 @@ try {
         after.at > played.at, JSON.stringify({ was: played.at, now: after.at }));
 
       check("and nothing threw here either", after.errors.length === 0, JSON.stringify(after.errors));
+    });
+
+    /* ======================================================================
+       AND THE SAME SONG UNDER A CAPO.
+
+       The one thing about this app the listening had no idea about, and the
+       more useful the capo is the more wrong it was. What is printed is the
+       SHAPE a hand holds; the sound is that shape moved up by the fret. Page
+       says Am, capo on the third, room hears Cm.
+
+       So the page below is identical to the first one and the microphone is
+       fed something else entirely: the same four shapes as they SOUND three
+       frets up. Everything is then asked exactly as it was asked without a
+       capo, and has to come out the same.
+       ====================================================================== */
+    await open(`http://127.0.0.1:${port}/chords/_ear/capo/`, async ({ evaluate }) => {
+      await until(evaluate, 'document.querySelector(".ear-door")');
+      await evaluate('JSON.stringify((window.__playing = "Am+3", true))');
+      await evaluate('JSON.stringify((document.querySelector(".ear-door").click(), true))');
+      await sleep(900);
+
+      const capoed = await evaluate(FOLLOW_READ);
+      check("the page still says the shapes, capo or no capo",
+        JSON.stringify(capoed.sequence) === JSON.stringify(SEQUENCE), JSON.stringify(capoed.sequence));
+      check("an Am shape sounding three frets up is still the song's first Am",
+        capoed.at === 0 && capoed.marks === 1, JSON.stringify({ at: capoed.at, marks: capoed.marks }));
+
+      /* And it walks, which is the whole of the proof: every one of these is
+         a chord the page does not name and the room is full of. */
+      const walked = [capoed.at];
+      for (const chord of ["G+3", "F+3", "Am+3", "Dm+3"]) {
+        await evaluate(`JSON.stringify((window.__playing = ${JSON.stringify(chord)}, true))`);
+        await sleep(700);
+        walked.push((await evaluate(FOLLOW_READ)).at);
+      }
+      check("and the song is followed through a capo exactly as without one",
+        JSON.stringify(walked) === JSON.stringify([0, 1, 2, 3, 4]), JSON.stringify(walked));
+
+      /* The measurement underneath it too: the row says Am and scores Cm. */
+      await evaluate('JSON.stringify((window.__playing = "Am+3", document.querySelector(".ear-go").click(), true))');
+      await sleep(900);
+      const bare = await evaluate(CHORD_READ);
+      check("the ear names what the room is hearing, not what the page prints",
+        bare.heard === "Cm", JSON.stringify(bare.heard));
+      check("and the shape it belongs to is the one lit on the page",
+        bare.marked.length === 3 && bare.marked.every((c) => c === "Am"),
+        JSON.stringify(bare.marked));
+      check("and the song's own rows score the shapes as they sound",
+        bare.rows.filter((r) => r.top).map((r) => r.name).join() === "Am",
+        JSON.stringify(bare.rows));
+
+      check("and nothing threw under a capo", bare.errors.length === 0, JSON.stringify(bare.errors));
     });
   });
 } finally {
