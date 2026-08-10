@@ -15578,15 +15578,37 @@
     var door = event.target.closest &&
       event.target.closest('[aria-label="כיוון הגיטרה"], .tape-bar, .ear-door');
     if (door) return;
-    pressOutside(event);
-    /* WITH A TAKE RUNNING, WHAT CLOSES IS THE TUNER AND NOT THE BAND. The
-       recording is still going and what belongs to it is the chords, so the
-       press that means "done with the tuner" hands the panel back to them
-       rather than ending a take somebody is in the middle of. */
-    if (earMode === "tune" && taping()) {
-      earMode = "chord";
-      return earTab();
+    /* --- AND A TAKE RUNNING IS NOT A PANEL TO PUT AWAY ------------------------
+       While the follower runs there is nothing on the screen to be done with:
+       the band is not drawn at all (see earRoom), the header is gone, and what
+       is under the finger is the song. So a press on it is a press on the
+       song, and a FINGER DRAGGED DOWN IT IS SOMEBODY READING FURTHER ON, which
+       is the most ordinary thing anybody does while playing.
+
+       That was ending the performance. This runs on the way down, before the
+       page has even scrolled, and with a take running closing the ear means
+       asking about the take: a scroll put the offer up, over a song nobody had
+       finished playing. What ends a take is the button that says stop, and
+       nothing else on this page is allowed to mean it.
+
+       What a press still does is take off whatever is actually covering the
+       song. The tuner goes back to the chords, and the measurement, if
+       somebody asked to see it, goes back under. Neither of them is the
+       recording. */
+    if (taping()) {
+      if (earMode === "tune") {
+        pressOutside(event);
+        earMode = "chord";
+        return earTab();
+      }
+      if (earParts && earParts.chord.node.classList.contains("is-shown")) {
+        pressOutside(event);
+        earParts.chord.node.classList.remove("is-shown");
+        return earRoom();
+      }
+      return;
     }
+    pressOutside(event);
     shutEar();
   }
 
