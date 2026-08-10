@@ -655,7 +655,15 @@ try {
       /* --- PAUSING IS ASKING -------------------------------------------------
          A take is a person singing, most of them are not worth keeping, and a
          library that fills up with every attempt is a library nobody opens. So
-         what the pause does is hand it back to be heard. */
+         what the pause does is hand it back to be heard.
+
+         AND SOMETHING HAS TO HAVE BEEN SUNG FIRST. This pressed stop in the
+         same breath as record, and a recorder that has been running for a
+         fifth of a second has not handed over a byte yet: the panel is offered
+         when there is a take to offer, so what it read as "the panel is
+         broken" was a take of nothing being correctly not offered. A second
+         and a bit, which is a person pressing record, playing, and stopping. */
+      await sleep(1300);
       await evaluate('JSON.stringify((document.querySelector(".tape-bar .icon-btn").click(), true))');
       const offered = await until(evaluate, 'document.querySelector("dialog[open] .take-play")');
       check("pausing offers the take to listen to", offered, "no panel came up");
