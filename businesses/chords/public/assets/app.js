@@ -8146,49 +8146,62 @@
       return ctl;
     }
 
-    /* --- THE CHORD THE SONG STARTS ON -----------------------------------------
-       It was less and more, and the whole of what it said about where you are
-       was the direction of the next press. A reader who wanted the song in
-       something their hand knows had to walk the twelve keys a semitone at a
-       time, reading the chords each time to find out where they had arrived,
-       and the app knew the answer to that before they started: it works out
-       the easy version for the library rows and for the page (see easyVersion).
-       Walking is what you do when nobody will tell you.
+    /* --- ONE CONTROL, BECAUSE IT WAS ALWAYS ONE QUESTION ----------------------
+       There were two dials on this strip: the chord the song opens on, and the
+       fret the capo is at. They were never two questions. The fret IS the gap
+       between what is printed and what comes out of the guitar (see capoOf),
+       so choosing a key moved the fret, and moving the fret changed which
+       shapes the hand ends up holding. Two controls standing side by side,
+       each of which moved the number on the other, and a reader watching a
+       value change under a button they had not pressed.
 
-       So the control SAYS WHERE YOU ARE, in the one word that means anything
-       here, the chord the song opens on, and a press asks the other question:
-       what else. What comes out is a short list of real keys, each with the
-       fret it is held at, and choosing one is one press instead of seven.
+       So it is one control now, and the strip is a number and a microphone.
 
-       ONLY WHAT A HAND CAN HOLD, which is why this is a list and not the
-       chromatic scale (see keyChoices). Nine of the twelve are four barre
-       chords deep for the person this is for, and a menu that offers them is a
-       menu that has to be read through rather than chosen from.
+       THE NUMBER IS THE CAPO, because of the two that is the one that is an
+       instruction to a hand: where do I clamp it. What comes out under it is
+       both sets of answers, the frets of the neck and the keys worth playing
+       in, each under the word for what it is. A column of numbers beside a
+       column of chords does not say by itself which one is the capo, and the
+       whole of what the panel is for is that it says so.
 
-       AND THE CAPO COMES WITH IT. Moving the chords is not asking to be heard
-       differently, it is asking for different shapes, so the fret takes up the
-       distance and the song comes out where it came out before. Nothing here
-       does that on purpose: the fret is the gap between the page and the
-       singing (see capoOf), this moves one of the two, and the gap is a gap.
-       What the list adds is that the gap is now the thing being chosen, which
-       is why each line of it can say what the fret will be. */
-    var keyValue = el("span", "val key-val");
-    var keyCtl = dialFor(
-      ICON.pitch, "האקורד שהשיר מתחיל בו",
-      "האקורד שהשיר מתחיל בו. אפשר לבחור אחר, והקפו זז כדי שהשיר יישמע אותו דבר.",
-      keyValue, fillKeys
-    );
-    tools.appendChild(keyCtl);
+       ONLY WHAT A HAND CAN HOLD, on the keys' side (see keyChoices): nine of
+       the twelve are four barre chords deep for the person this app is for,
+       and a list that offers them is a list to be read through rather than
+       chosen from. The frets are all eight, because a fret is not a matter of
+       what a hand can hold. There are eight places the capo goes, and somebody
+       who wants the fourth one wants the fourth one. */
 
-    /* Built on every opening rather than once, because the song underneath is
-       being edited: a list made when the page was drawn is a list of the
-       chords the song had then. */
-    function fillKeys(pop, shut) {
+    /* Filled on every opening rather than built once, because the song
+       underneath is being edited: a list made when the page was drawn is a
+       list of the chords the song had then.
+
+       THE CAPO FIRST, which right to left is the right hand column, directly
+       under the number that opened the panel. The value on the dial and the
+       column it came out of are the same fact, so they stand in the same
+       place. */
+    function fillPlay(pop, shut) {
+      pop.appendChild(column("קפו", fretGrid(shut)));
+      var choices = keyChoices(chordsUsed(song.lines || []), sung);
+      /* A SONG WITH NO CHORDS HAS NO KEY, and a word with nothing under it is
+         a column that has broken. It comes back the moment there is a chord to
+         name it with, which in the editor is as soon as one is put down. */
+      if (choices.length) pop.appendChild(column("סולם", keyList(choices, shut)));
+    }
+
+    /* The word over the choices, which is the whole point of the panel: one
+       says קפו and the numbers under it are frets, the other says סולם and the
+       chords under it are keys. */
+    function column(word, body) {
+      var part = el("div", "pop-part");
+      part.appendChild(el("div", "pop-head", word));
+      part.appendChild(body);
+      return part;
+    }
+
+    function keyList(choices, shut) {
       var list = el("div", "keys");
-      keyChoices(chordsUsed(song.lines || []), sung).forEach(function (choice) {
-        list.appendChild(keyRow(choice, shut));
-      });
-      pop.appendChild(list);
+      choices.forEach(function (choice) { list.appendChild(keyRow(choice, shut)); });
+      return list;
     }
 
     function keyRow(choice, shut) {
