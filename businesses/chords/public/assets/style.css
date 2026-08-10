@@ -162,8 +162,30 @@ body.on-song { background: var(--card); }
   background: rgba(247, 249, 250, .92);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--line);
+  transition: transform .28s ease, margin-block-end .28s ease;
 }
 .top-in { display: flex; align-items: center; gap: 16px; min-height: 60px; }
+
+/* --- AND WHILE A TAKE IS RUNNING THERE IS NO HEADER ------------------------
+   Somebody recording is playing the song, and the only thing on the screen
+   they are using is the song. A name, a search box and a row of doors are not
+   pressed with a guitar in both hands, and on a phone they are a tenth of the
+   glass: the header goes up and off the way it came, and the page comes up
+   with it, which is a line or two more of the song for nothing.
+
+   TWO MOVES AND NOT ONE. The lift takes the header off the screen and the
+   negative margin takes its height out of the flow, so what rises is not the
+   bar alone but the whole page under it. Both are measured in JavaScript
+   while it is still standing, because how far the page comes up is exactly
+   how tall the thing leaving is (see airRoom).
+
+   The button that stops the recording steps out of here before this runs, and
+   stays. Everything else goes. */
+body.on-air .top {
+  transform: translateY(-100%);
+  margin-block-end: calc(0px - var(--top-away, 60px));
+  pointer-events: none;
+}
 .brand {
   display: inline-flex; align-items: center; flex: none;
   color: var(--ink); text-decoration: none;
@@ -3240,6 +3262,22 @@ body.on-ear.ear-small { padding-bottom: 78px; }
    is a recording here" and "it is going". Nothing else on the page has to say
    so, and nothing else does. */
 .tape-bar .icon-btn.is-rec.is-taping { animation: on-air 1.6s ease-in-out infinite; }
+
+/* --- AND WHERE IT STANDS ONCE THE HEADER HAS GONE --------------------------
+   In exactly the place it was standing a moment earlier. The header slides up
+   and off while a take is running (see body.on-air) and this is the one thing
+   in it that is being used, because it is the way to stop: what happens is
+   that everything around it leaves, not that it moves.
+
+   Which is why the two numbers are read off the screen rather than written
+   here. The top is where the button already was, and the side is the gutter
+   the header keeps, so nothing shifts by a pixel at the moment the row it was
+   standing in goes (see airRoom). */
+.tape-bar.is-air {
+  position: fixed; z-index: 30;
+  top: var(--air-top, 13px);
+  inset-inline-end: 16px;
+}
 
 /* ==========================================================================
    THE PLAYER AT THE FOOT OF THE SCREEN.

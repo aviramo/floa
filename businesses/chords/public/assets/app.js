@@ -189,10 +189,15 @@
        purpose: one names what is being measured, the other names the ear. */
     fork: '<path d="M8 3v7.5a4 4 0 0 0 8 0V3"/><path d="M12 14.5V21"/>',
     mic: '<rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><path d="M12 17.5V21"/>',
-    /* --- and what is done to a recording, in the three shapes every machine
-       that has ever recorded anything has used. Filled rather than drawn,
-       because these are pressed while playing, at arm's length, by somebody
-       who is not looking closely. */
+    /* --- and what is done to a recording, in the shapes every machine that has
+       ever recorded anything has used. Filled rather than drawn, because these
+       are pressed while playing, at arm's length, by somebody who is not
+       looking closely.
+
+       WHAT THE ONE BUTTON WEARS IS PLAY AND THEN STOP. The dot and the two
+       bars are the machine's own words for the same two presses, and they are
+       kept here for whatever wants them: a red dot is a mark on a button that
+       records to tape, and this is a person about to play a song. */
     dot: '<circle cx="12" cy="12" r="6.5" fill="currentColor" stroke="none"/>',
     pause: '<rect x="8" y="6" width="3.2" height="12" rx="1" fill="currentColor" stroke="none"/><rect x="12.8" y="6" width="3.2" height="12" rx="1" fill="currentColor" stroke="none"/>',
     stop: '<rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor" stroke="none"/>',
@@ -1683,7 +1688,7 @@
      See song_versions in schema.sql for the shape and for who may read it,
      which is its author and nobody else. */
   var VER = CFG.versionTable;
-  var VER_FIELDS = "id,created_at,title,lyrics_by,music_by,dir,lines,styles";
+  var VER_FIELDS = "id,created_at,made_by,title,lyrics_by,music_by,dir,lines,styles";
 
   var versions = {
     /* One song's, newest first. Ordered by the database rather than here,
@@ -1744,9 +1749,17 @@
   /* The song as it stands, in the shape a version is kept in. Taken from the
      row the database just handed back rather than from the page, so what is
      recorded is what was actually written and not what was about to be. */
-  function versionOf(row) {
+  function versionOf(row, by) {
     return {
       song_id: row.id,
+      /* WHOSE CHANGE THIS WAS, and not whose history it is. The row is always
+         written by the account the song belongs to, because nobody else may
+         write one, so the column that says so says the same name on every row
+         and answers nothing. This one is the person the change came FROM,
+         which on a version made by taking an offer in is somebody else
+         entirely (see song_versions.made_by in schema.sql). The account's own
+         name unless it was told otherwise. */
+      made_by: by || (auth.session && auth.session.id) || null,
       title: String(row.title || ""),
       lyrics_by: String(row.lyrics_by || ""),
       music_by: String(row.music_by || ""),
@@ -1789,9 +1802,9 @@
      saved before this ran, and a history that could not be written is a shelf
      that stayed empty, not a word lost. A red message over a successful publish
      would say the opposite. */
-  function keepVersion(row) {
+  function keepVersion(row, by) {
     if (!row || !row.id) return;
-    var now = versionOf(row);
+    var now = versionOf(row, by);
     versions.latest(row.id).then(function (last) {
       if (last && sameVersion(last, now)) return;
       return versions.add(now);
@@ -2947,6 +2960,29 @@
      how they come to disagree: neither may be changed alone. */
   var PAGE_AIR = 16;
 
+  /* --- AND WHEN THE PAGE IS A PIECE OF PAPER --------------------------------
+     Everything above asks the WINDOW how much room there is: how wide the
+     sheet came out and how tall the window is under the bar. A printer is a
+     second answer to the same question, and it is a fixed one, so this holds
+     it while a sheet is being laid out for paper and is null the rest of the
+     time (see toPaper).
+
+     WHY THE SAME CODE AND NOT A PRINT STYLESHEET. How many segments a song
+     stands in, how wide each is, and which line begins the next page are
+     worked out by measuring the song in the reader's own font at the reader's
+     own size, and CSS cannot measure. A stylesheet that took the columns apart
+     for paper printed a chord sheet nobody laid out; a stylesheet that left
+     them alone printed a page built for a window, squeezed by the printer to
+     half its size. So paper asks the same question the window asks, and gets
+     the same page back at the size the paper is. */
+  var paper = null;
+
+  /* THE PIECE OF PAPER ITSELF, in millimetres, inside the margin the printer
+     is given. A5 across (see @page in the stylesheet), and two places holding
+     one number is how they come to disagree: neither may be changed alone. */
+  var PAPER = { w: 190, h: 128 };
+  var MM = 96 / 25.4;
+
   function unpage(sheet) {
     sheet.style.maxWidth = "";
     sheet.style.paddingTop = "";
@@ -3088,7 +3124,9 @@
 
     var box = getComputedStyle(sheet);
     var padded = (parseFloat(box.paddingLeft) || 0) + (parseFloat(box.paddingRight) || 0);
-    var room = sheet.clientWidth - padded;
+    /* On paper the room is the paper, and not what a box happens to have come
+       out at in a window nobody is printing (see toPaper). */
+    var room = paper ? paper.w : sheet.clientWidth - padded;
     if (!(room > 0)) return null;
 
     var song = songMeasure(sheet);
@@ -3103,9 +3141,20 @@
        is no more song to put in a second, and a rule that read "one segment
        across, so this is a phone" took the margin off every short song on
        every desk. */
-    var glass = NARROW.matches;
+    /* AND NO PIECE OF PAPER IS A PHONE. The rule above reads a media query,
+       which answers about the SCREEN this is running on, and a song printed
+       from a phone is not printed onto a phone: left alone it would take the
+       margins off a sheet of A5 because the machine that sent it happened to
+       be small. */
+    var glass = !paper && NARROW.matches;
     var apart = CARD_GAP;
-    var air = glass ? 0 : PAGE_AIR * 2;
+    /* AND ON PAPER THE MARGIN IS THE PRINTER'S. The air a page keeps at its
+       ends is the space between one screenful and the next, which is a thing a
+       window has and paper does not: paper has a margin of its own (see @page)
+       and a fresh sheet after every page. Spent here as well it would be that
+       margin and a half again, on all four sides. */
+    var ends = paper ? 0 : PAGE_AIR;
+    var air = glass ? 0 : ends * 2;
 
     /* WHAT ONE SEGMENT IS LEFT WITH when the room is shared n ways: the room,
        less the air the page keeps at its two ends, less the desks between the
@@ -3120,12 +3169,18 @@
        sticky and it covers the same strip of every page and not only the first,
        so its height comes off all of them. There was a second row under it on a
        phone and it counted here too; it is gone (see placeControls). */
-    var over = 0;
-    Array.prototype.forEach.call(document.querySelectorAll(".top"), function (node) {
-      if (node.offsetParent === null) return;
-      over += node.getBoundingClientRect().height;
-    });
-    var pageH = window.innerHeight - over;
+    /* AND ON PAPER IT IS THE PAPER, less the name standing over the first of
+       them, which is worked out where the paper is (see toPaper). There is no
+       bar on a sheet of A5 and no window either. */
+    var pageH = paper ? paper.h : 0;
+    if (!paper) {
+      var over = 0;
+      Array.prototype.forEach.call(document.querySelectorAll(".top"), function (node) {
+        if (node.offsetParent === null) return;
+        over += node.getBoundingClientRect().height;
+      });
+      pageH = window.innerHeight - over;
+    }
     if (!(pageH > 200)) return null;
 
     /* HOW TALL THE SONG STANDS when it is poured to a segment this wide. Every
@@ -3155,7 +3210,7 @@
        the dealing can waste, taken as the price everywhere. */
     var tallest = 0;
     song.rows.forEach(function (r) { if (r.h > tallest) tallest = r.h; });
-    var fits = pageH - PAGE_AIR * 2 - tallest;
+    var fits = pageH - ends * 2 - tallest;
     if (!(fits > 0)) fits = pageH;
 
     /* AS MANY SEGMENTS AS THE SONG CAN STAND, and what it cannot stand is a
@@ -3192,8 +3247,12 @@
        whatever it was when they went down (see heldCols). The width still
        follows, so the words grow under the fingers as they must; what is held
        is only the count, and it is asked properly the moment they leave. */
-    if (heldCols) cols = heldCols;
-    lastCols = cols;
+    /* AND NEITHER OF THOSE IS ABOUT PAPER. Two fingers are on a screen, and
+       what they are holding still is the page under them; the sheet being laid
+       out for the printer is a second one, standing nowhere, and it must
+       neither take that number nor leave one behind for the screen to find. */
+    if (heldCols && !paper) cols = heldCols;
+    if (!paper) lastCols = cols;
 
     /* THE SEGMENTS DIVIDE THE ROOM, AND THE LAST THING THAT IS HELD BACK IS
        WIDTH NO LINE WOULD USE. Past the longest line in the song a segment is
@@ -3221,7 +3280,7 @@
 
     return {
       cols: cols, colW: colW, pad: pad, apart: apart, air: air,
-      pageH: pageH, padded: padded,
+      pageH: pageH, padded: padded, ends: ends,
     };
   }
 
@@ -3276,7 +3335,7 @@
        cutting the song into screenfuls buys nothing and costs the tail of
        every one of them, a band of empty paper wherever the last line of a
        page did not reach the bottom. The song simply runs on. */
-    var room = plan.cols < 2 ? Infinity : plan.pageH - PAGE_AIR * 2;
+    var room = plan.cols < 2 ? Infinity : plan.pageH - plan.ends * 2;
 
     var page = null;
     var col = null;
@@ -3376,8 +3435,10 @@
          is the desk. */
       if (built.lastChild) built.lastChild.style.height = "";
 
+      var pages = built.childNodes.length;
       sheet.textContent = "";
       sheet.appendChild(built);
+      if (pages === 1) spreadToBottom(sheet, plan);
     } catch (e) {
       /* Back to one flat column with every line in it. A song laid out wrong
          is a bad afternoon; a song that is not on the screen at all is a page
@@ -3409,6 +3470,106 @@
 
     pageUp(sheet, plan);
   }
+
+  /* --- THE SONG AS IT WILL BE ON PAPER ---------------------------------------
+     A second copy of the song, laid out by everything above for a sheet of A5
+     across instead of for the window, standing off the screen until a printer
+     asks for it (see .paper in the stylesheet).
+
+     A COPY, AND NOT THE PAGE ITSELF. Laying the song out is moving its lines
+     into columns, so laying the page out for paper means taking the reader's
+     page apart under them and putting it back afterwards, and "afterwards" is
+     exactly what cannot be known: several browsers fire afterprint the moment
+     window.print returns, while the preview is still open and before anything
+     has been laid out for paper. That is what once printed the chords onto the
+     lyrics sheet. Nothing here has to be put back, so nothing here has to know
+     when it is safe to.
+
+     THE SAME NODES, COPIED. What is printed is what is on the screen, word for
+     word and chord for chord, because it is the same markup: nothing is asked
+     for again and nothing is drawn a second way. What differs is only the room
+     it was poured into.
+
+     BUILT AT beforeprint, so it is the song as it stands at the moment of
+     printing rather than as it stood when a button was pressed, and so that
+     Ctrl+P gets the same paper the button does. A browser that does not raise
+     that event prints what it always printed: the page, down the sheet, which
+     is the whole of what is lost.
+
+     THE OLD ONE IS NEVER TAKEN AWAY EXCEPT BY THE NEXT. It stands off the
+     screen behind everything, it costs a copy of one song, and the alternative
+     is guessing when the printer has finished, which is the guess that is
+     wrong. Leaving the song page takes it with the rest of the page. */
+  function toPaper(words) {
+    if (!app) return null;
+
+    /* the head and the sheet as they stand on the screen: the first of each,
+       which is the page's own and not a copy left by a print before this one */
+    var head = null;
+    var live = null;
+    Array.prototype.forEach.call(app.children, function (node) {
+      if (!head && node.classList.contains("song-head")) head = node;
+      if (!live && node.classList.contains("sheet")) live = node;
+    });
+    if (!live) return null;
+
+    var old = app.querySelector(".paper");
+    if (old) old.remove();
+
+    var box = el("div", "paper" + (words ? " words" : ""));
+    var top = head ? head.cloneNode(true) : null;
+    if (top) box.appendChild(top);
+
+    /* NOT THE EDITOR'S SHEET, whatever the reader has open. A caret, a line
+       being typed into and the rows the pouring hands back to the song (see
+       __adoptRow) are all about writing, and none of them crosses a copy: the
+       property that carries them is on the element and not in its markup. What
+       is printed is the song, read. */
+    var copy = live.cloneNode(true);
+    copy.classList.remove("ed");
+    box.appendChild(copy);
+    /* and one name for a thing is one thing: a copied id is the same name
+       twice in the document, and whoever asks for it gets whichever came first */
+    Array.prototype.forEach.call(box.querySelectorAll("[id]"), function (node) {
+      node.removeAttribute("id");
+    });
+
+    live.parentNode.insertBefore(box, live.nextSibling);
+
+    /* THE PAGE ON THE SCREEN IS NOT PRINTED, and it says so on itself rather
+       than through the body: printing with no copy built, which is a browser
+       that does not raise beforeprint, must still print something. */
+    live.classList.add("off-paper");
+    if (head) head.classList.add("off-paper");
+
+    var wide = Math.floor(PAPER.w * MM);
+    var tall = Math.floor(PAPER.h * MM);
+    box.style.width = wide + "px";
+
+    /* THE NAME AND WHO WROTE IT STAND OVER THE FIRST SHEET, and the room they
+       take is room the song has not got. It comes off EVERY sheet and not off
+       the first alone: a page shorter than the rest is a page the dealing
+       above has no way to ask for, and the cost of paying it everywhere is a
+       band of white at the foot of the sheets after the first, while the cost
+       of not paying it is the last line of the first sheet printed off the
+       bottom of the paper. */
+    var headH = top ? top.offsetHeight + (parseFloat(getComputedStyle(top).marginBottom) || 0) : 0;
+
+    paper = { w: wide, h: tall - headH };
+    try {
+      fitColumns(copy);
+      layoutAll(copy);
+    } finally {
+      paper = null;
+    }
+    return box;
+  }
+
+  /* WHICH OF THE TWO PIECES OF PAPER, remembered rather than asked again: the
+     button says which (see printNow), and Ctrl+P, which asks nothing, gets
+     whichever was last chosen. */
+  var paperWords = false;
+  window.addEventListener("beforeprint", function () { toPaper(paperWords); });
 
   /* --- a song too wide for the screen --------------------------------------
      On a desk the sheet scrolls sideways and that is fine: the whole line is
@@ -4770,17 +4931,11 @@
 
   function printNow(words) {
     closeUnder();
-    document.body.classList.toggle("print-words", !!words);
-    /* AND IT IS NOT TAKEN OFF AFTERWARDS. It used to be, on afterprint and on
-       a timer behind it, and on a phone that is exactly what printed the
-       chords onto the lyrics sheet: several browsers fire afterprint the
-       moment window.print returns, while the preview is still open and before
-       anything has been laid out for paper, so the class came off and the page
-       went to the printer as the ordinary sheet.
-
-       There is nothing to take off. Every rule this class carries is inside
-       the print stylesheet, so on screen it means nothing at all, and the next
-       print sets it to whichever of the two was asked for. */
+    /* WHICH PAPER, AND NOTHING ELSE. What goes to the printer is built when
+       the printer asks for it (see toPaper), so all this does is answer the
+       question the panel was opened to ask, and nothing here has to be undone
+       when the printing is over. */
+    paperWords = !!words;
     window.print();
   }
 
@@ -8653,8 +8808,12 @@
         /* WHAT THE WORLD READS HAS JUST MOVED. The credits are on the page the
            build writes to disk and the styles are the shelves the library is
            sorted by, and the only thing that tells the site to be built again
-           is a version being written (see library_changed in schema.sql). */
-        if (got && got.published) keepVersion(got);
+           is a version being written (see library_changed in schema.sql).
+
+           IT GOES INTO THE VERSIONS AS AN ORDINARY ONE, and it says whose
+           change it was: the press is this account's and the three facts are
+           the offering account's (see song_versions.made_by). */
+        if (got && got.published) keepVersion(got, o.owner);
         var answered = got && sameVersion(got, o)
           ? offers.answer(o.id, "taken")
           : Promise.resolve();
@@ -12843,16 +13002,41 @@
   /* What a version did to the one before it, in words, for a row that cannot
      show it. "3 שורות" is the size of a song and this is the size of a change,
      which is the number somebody scanning a list of dates is actually after. */
-  function changeWords(ops, first) {
+  function changeWords(ops, first, v, before) {
     if (first) return "הגרסה הראשונה";
     var counted = changeCount(ops);
     var said = [];
     if (counted.add) said.push(counted.add === 1 ? "שורה אחת חדשה" : counted.add + " שורות חדשות");
     if (counted.gone) said.push(counted.gone === 1 ? "שורה אחת ירדה" : counted.gone + " שורות ירדו");
-    /* A publication with nothing new in the words is a real one: a name, a
-       credit or a style was fixed, and saying "0 שורות" would be a number
-       where a sentence belongs. */
+    /* AND THE THREE FACTS BESIDE THE WORDS, which are a change like any other
+       and are now made from the song's own page without the editor being
+       opened at all (see the details panel in renderSong). A version whose
+       words stand exactly where they stood said "המילים והאקורדים לא השתנו"
+       and nothing whatever about the thing that did move, which on this kind
+       of version is the whole of what happened. What they became is on the
+       same row already, in the line under this one. */
+    var moved = factsMoved(v, before);
+    if (moved) said.push(moved);
+    /* A publication with nothing new in it at all is still a real one: a name
+       was corrected back to what it was, or the press was made twice, and
+       saying "0 שורות" would be a number where a sentence belongs. */
     return said.length ? said.join(", ") : "המילים והאקורדים לא השתנו";
+  }
+
+  /* Which of the three moved between one version and the one before it, said
+     as a sentence and not as a list of the names themselves: the names are
+     printed on the same row a line lower, so repeating them here would be the
+     card saying the same thing twice, once as news and once as fact. */
+  function factsMoved(v, before) {
+    if (!v || !before) return "";
+    var who = CREDITS.some(function (c) {
+      return peopleSaid(people(v[c.field])) !== peopleSaid(people(before[c.field]));
+    });
+    var kind = tidyStyles(styles(v)).join("\n") !== tidyStyles(styles(before)).join("\n");
+    if (who && kind) return "היוצרים והסגנון השתנו";
+    if (who) return "היוצרים השתנו";
+    if (kind) return "הסגנון השתנה";
+    return "";
   }
 
   /* The sentence over a version, which is two different sentences: what this
@@ -12971,8 +13155,12 @@
          it is why nothing in song_offers needs a trigger of its own.
 
          Only for a published song. A version is what a song WAS when it went
-         out, and one that has not gone out has not. */
-      if (row && row.published) keepVersion(row);
+         out, and one that has not gone out has not.
+
+         AND IT IS NOT THIS ACCOUNT'S CHANGE, which is the one thing about it
+         worth recording: the press is the owner's and the work is the person
+         who offered it (see song_versions.made_by). */
+      if (row && row.published) keepVersion(row, offer.owner);
       return offers.answer(offer.id, "taken").then(function () {
         toast("ההצעה אושרה, והשיר עודכן");
         go(addr((row && row.slug) || song.slug));
@@ -13163,6 +13351,25 @@
     top.appendChild(el("div", "t", whenWords(v.created_at)));
     /* the name it went out under, when that is not the name it has now */
     if (v.title && v.title !== song.title) top.appendChild(el("div", "by", "בשם " + v.title));
+    /* --- AND WHOSE CHANGE IT WAS ------------------------------------------
+       Only where it was not this account's. Every row here is read by the one
+       account these versions belong to, so a name on every row would be that
+       person's own name repeated down the whole page; what is worth saying is
+       the version that came from somebody ELSE, which is what an offer taken
+       in is (see song_versions.made_by).
+
+       The name arrives after the row does, so the line is built empty and
+       hidden, exactly as the credit at the foot of the details panel is. */
+    if (v.made_by && !(auth.session && v.made_by === auth.session.id)) {
+      var byWhom = el("div", "by");
+      byWhom.hidden = true;
+      top.appendChild(byWhom);
+      db.who(v.made_by).then(function (name) {
+        if (!name || !byWhom.isConnected) return;
+        byWhom.textContent = "על ידי " + name;
+        byWhom.hidden = false;
+      });
+    }
     if (sameVersion(v, song)) top.appendChild(el("span", "tag tag-published", "זה מה שבשיר עכשיו"));
     what.appendChild(top);
 
@@ -13170,7 +13377,7 @@
        being read for: which of these is the one where the second verse came
        in. How long the song was and who it is by come after it. */
     var said = [changeWords(before ? diffLines(normalizeLines(before.lines, before.dir),
-      normalizeLines(v.lines, v.dir)) : null, !before)];
+      normalizeLines(v.lines, v.dir)) : null, !before, v, before)];
     var many = lineCount(v);
     said.push(many === 1 ? "שורה אחת" : many + " שורות");
     var by = creditsLine(v);
@@ -15223,6 +15430,18 @@
   function earOutside(event) {
     if (!ear) return;
     if (ear.contains(event.target)) return;
+    /* AND NOT WHILE A PANEL STANDS OVER IT. A modal panel makes the whole page
+       under it deaf, so the only presses that can reach here while one is up
+       are presses on the panel itself and on the dark behind it, and both of
+       those belong to the panel: the dark is how it is closed.
+
+       This was the whole of why the take could not be put away. The offer
+       comes up with the microphone still open, so a press on the dark reached
+       this first, ate the press before the panel ever saw it, and closed the
+       ear, which with a take running means asking about the take. So the panel
+       stayed exactly where it was and a second one came up over it: the one
+       gesture that means "close this" was the one gesture that could not. */
+    if (document.querySelector("dialog[open]")) return;
     var door = event.target.closest &&
       event.target.closest('[aria-label="כיוון הגיטרה"], .tape-bar, .ear-door');
     if (door) return;
@@ -15238,8 +15457,13 @@
     shutEar();
   }
 
+  /* Escape belongs to whatever is on top, and a panel over this one is on top:
+     the browser closes it, and this closing the band underneath at the same
+     time is one key answering two things (see earOutside). */
   function earEscape(event) {
-    if (event.key === "Escape") shutEar();
+    if (event.key !== "Escape") return;
+    if (document.querySelector("dialog[open]")) return;
+    shutEar();
   }
 
   function buildEar() {
@@ -15877,7 +16101,12 @@
     if (Date.now() < scrollHold) return;
     var box = node.getBoundingClientRect();
     var head = document.querySelector(".top");
-    var ceiling = (head ? head.getBoundingClientRect().height : 0) + 30;
+    /* WHERE THE HEADER ENDS AND NOT HOW TALL IT IS. The two are the same
+       number for as long as it is standing at the top of the screen, and while
+       a take is running it is not there at all (see airRoom): it has the same
+       height, off the top of the glass, and a band measured from that starts
+       sixty pixels below where the page actually begins. */
+    var ceiling = Math.max(0, head ? head.getBoundingClientRect().bottom : 0) + 30;
     var floor = window.innerHeight - (ear ? ear.getBoundingClientRect().height : 0) - 40;
     if (floor - ceiling < 80) return;                /* no band to speak of */
     if (box.top >= ceiling && box.bottom <= floor) return;
@@ -16040,7 +16269,10 @@
 
     if (on && !tapeBar.classList.contains("is-air")) {
       var head = document.querySelector(".top");
-      var seat = tapeBar.getBoundingClientRect();
+      /* The BUTTON and not the strip around it: the strip is a span, and a
+         span is as tall as a line of text rather than as tall as the round
+         thing standing in it. */
+      var seat = (tapeBar.firstChild || tapeBar).getBoundingClientRect();
       if (head) {
         document.body.style.setProperty("--top-away",
           Math.round(head.getBoundingClientRect().height) + "px");
@@ -16570,21 +16802,33 @@
     audio.addEventListener("pause", function () { if (audio.ended) done(); });
   }
 
+  /* ONE OF THEM AT A TIME. A press on stop holds the recorder and puts this
+     up; a second press while it is standing there would hold an already held
+     recorder and put a second panel over the first, and what is underneath is
+     then a question nobody can answer: two panels about one take, and closing
+     the top one reveals another exactly like it. There is only ever one take
+     being asked about, so there is only ever one of these. */
+  var asking = false;
+
   /* --- listening to what was just played ------------------------------------
      Offered rather than saved. A take is a person singing, most of them are
      not worth keeping, and a library that fills with every attempt is a
      library nobody opens. So it is heard first and kept second, and the
-     button that keeps it is the only one that writes anything down. */
+     button that keeps it is the only one that writes anything down.
+
+     AND NOTHING IS WRITTEN AT THE TOP OF IT. There was a heading, a
+     microphone beside it, a sentence explaining that a recording can be
+     listened to, and a line saying how long it ran and how many chords it
+     passed. Every one of them was answering a question nobody had: what came
+     up is a player and two buttons, one press after somebody stopped
+     recording, and whoever pressed stop knows what this is about. The panel
+     says it in the one way that cannot be misread, which is by holding the
+     take itself. */
   function hearTake(made) {
+    if (asking) return;
+    asking = true;
     var dlg = el("dialog", "dlg");
     var box = el("div", "dlg-in");
-
-    var head = el("div", "dlg-head");
-    head.appendChild(svg(ICON.mic));
-    head.appendChild(el("h2", null, "ההקלטה"));
-    box.appendChild(head);
-    box.appendChild(el("p", "muted",
-      "אפשר לשמוע אותה עכשיו. בזמן ההשמעה הסימון עובר על השיר בדיוק במקומות שבהם עברת עליו."));
 
     var audio = el("audio", "take-play");
     audio.controls = true;
@@ -16594,9 +16838,6 @@
     audio.src = url;
     alongTake(audio, made.marks);
     box.appendChild(audio);
-
-    box.appendChild(el("p", "muted",
-      said(made.seconds) + ", " + made.marks.length + " מעברי אקורד"));
 
     var err = el("p", "err");
     err.hidden = true;

@@ -317,6 +317,24 @@ create table if not exists public.song_versions (
   created_at timestamptz not null default now()
 );
 
+-- WHOSE CHANGE THIS WAS, which is a different question from whose history it
+-- is. Every row here is written by the account the song belongs to, because
+-- nobody else may write one, so `owner` is the same name on every row of one
+-- song and answers only "who may read this". What the list is actually read
+-- for is the other question, and until now it had no answer: a version made by
+-- taking somebody's offer in, or by their change to who wrote the song,
+-- carried nothing at all saying it was theirs.
+--
+-- Written by the browser and NOT defaulted from the token, exactly because it
+-- is not always the token: an offer taken in records the person who made it,
+-- and that person is never the one making the request.
+--
+-- Null on every version written before this column existed, and on any change
+-- nobody can name. A row card with no name on it is a row that says when and
+-- what, which is what all of them said before.
+alter table public.song_versions add column if not exists made_by uuid
+  references auth.users (id) on delete set null;
+
 -- one song's versions, newest first, which is the only question ever asked
 create index if not exists song_versions_song_idx
   on public.song_versions (song_id, created_at desc);
