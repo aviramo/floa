@@ -4980,9 +4980,21 @@
            again over the entry it is standing on, which takes with it every
            sheet kept aside, every request still in the air and whatever a long
            afternoon of use has left behind, and leaves no step back into the
-           app it just replaced. */
+           app it just replaced.
+
+           AND AT THE TOP OF THE WALL. Landing where the reader was is right for
+           a page coming back and wrong for a page being started again: the
+           whole of the press is "take me back to the beginning of this", and
+           halfway down the songs is not it. The place kept for this entry is
+           set to nought, and the entry stops being the one on the screen so
+           that leaving cannot write today's scroll back over it. */
         event.preventDefault();
-        if (!parts().length) return location.replace(addr());
+        if (!parts().length) {
+          if (scrollHere) scrollAt[scrollHere] = 0;
+          scrollHere = null;
+          keepScroll();
+          return location.replace(addr());
+        }
         goBack();
       });
     }
