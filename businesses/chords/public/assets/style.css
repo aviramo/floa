@@ -2856,7 +2856,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 
    A second copy of the song, laid out by the same code that lays out the page
    on the screen and for the same reasons, except that the room it is given is
-   a sheet of A5 across instead of a window (see toPaper in app.js). It stands
+   a sheet of A5 upright instead of a window (see toPaper in app.js). It stands
    off the screen from the moment a printer asks for it and it is what the
    printer is given; the page the reader is looking at is not printed at all.
 
@@ -2951,17 +2951,21 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 
 @media print {
   /* --- WHAT IS BEING PRINTED ON ---------------------------------------------
-     A5 across. A song is read from a stand at arm's length with both hands
-     busy, so what a sheet of it wants is width for the columns and few enough
-     lines down the page that the eye can find the next one: A4 upright is the
-     opposite of both. The margin is the printer's, and it is the only margin
-     on the page, so the name of the song, whoever wrote it and the first
-     letter of every line all begin at the same place.
+     A5 upright, which is half a sheet of A4 and the size a song is handed
+     round on. The margin is the printer's, and it is the only margin on the
+     page, so the name of the song, whoever wrote it and the first letter of
+     every line all begin at the same place.
+
+     HOW MANY SEGMENTS STAND ON IT IS NOT SET HERE and is not a fact about the
+     paper. It is asked of the song, at the size paper is set in, exactly as it
+     is asked of a window (see planColumns in app.js): a song of short lines
+     stands in two on this sheet and a song of long ones stands in one, and
+     neither is a case anybody has to write down.
 
      PAPER in app.js holds the same sheet less the same margin, in the
      millimetres the columns are worked out from, and two places holding one
      number is how they come to disagree: neither may be changed alone. */
-  @page { size: A5 landscape; margin: 10mm; }
+  @page { size: A5; margin: 10mm; }
 
   .top, .tools, .ed-bar, .song-meta, .toast, .print-menu { display: none !important; }
   /* A microphone is about the room, and paper is not in it. The mark it leaves
@@ -2991,6 +2995,13 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
      it was dealt into was a sheet of A5. */
   .paper .page { break-inside: avoid; }
   .paper .page + .page { break-before: page; }
+  /* EXCEPT WHERE THERE IS ONE SEGMENT AND THEREFORE ONE PAGE, which is a song
+     whose lines are too long to stand two of them side by side on this sheet.
+     There is nothing to deal out then and the song simply runs down the paper
+     (see pageUp), so where each sheet ends is the printer's business, and the
+     only thing to say about it is that it may not end inside a line: a chord
+     and the syllable under it are one thing, and half of each is neither. */
+  .paper .ln, .paper .ln-row { break-inside: avoid; }
 
   .song-head { margin: 0 0 12px; }
   /* Which version this is, and what to do about it, are about the page rather

@@ -2977,9 +2977,9 @@
   var paper = null;
 
   /* THE PIECE OF PAPER ITSELF, in millimetres, inside the margin the printer
-     is given. A5 across (see @page in the stylesheet), and two places holding
+     is given. A5 upright (see @page in the stylesheet), and two places holding
      one number is how they come to disagree: neither may be changed alone. */
-  var PAPER = { w: 190, h: 128 };
+  var PAPER = { w: 128, h: 190 };
   var MM = 96 / 25.4;
 
   /* AND HOW BIG THE WORDS ARE ON IT, WHICH IS NOT THE SIZE ON THE SCREEN. The
@@ -3595,7 +3595,7 @@
 
   /* --- THE SONG AS IT WILL BE ON PAPER ---------------------------------------
      A second copy of the song, laid out by everything above for a sheet of A5
-     across instead of for the window, standing off the screen until a printer
+     upright instead of for the window, standing off the screen until a printer
      asks for it (see .paper in the stylesheet).
 
      A COPY, AND NOT THE PAGE ITSELF. Laying the song out is moving its lines
