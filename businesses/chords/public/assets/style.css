@@ -411,6 +411,11 @@ body.on-song { background: var(--bg); }
      the space in front of them is what gives way. */
   .top-find { flex: none; width: 36px; margin-inline-start: auto; }
   .top-actions { margin-inline-start: 0; }
+  /* The glass is the library's and stands nowhere else (see paintHeader), and
+     it was the thing holding the two ends of the bar apart. Where it is gone,
+     what follows it takes that over: the name at one end, and the corner of
+     the page with the song's own controls after it at the other. */
+  .top-find[hidden] ~ .top-actions { margin-inline-start: auto; }
   .top-find .find {
     height: 36px; padding: 0; gap: 0; cursor: pointer; justify-content: center;
     background: transparent; color: var(--ink);

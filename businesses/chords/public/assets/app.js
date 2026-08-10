@@ -3957,20 +3957,20 @@
        here on a phone as on a desk, and the song starts directly under the
        bar.
 
-       IN THE HEADER ROW ITSELF AND NOT AMONG THE BAR'S BUTTONS, which puts the
-       glass between them and the three dots: what is about the song is on one
-       side of it and what is about the page is on the other. It also keeps the
-       search out of trouble, since opening it hides the buttons to take their
-       room (see body.finding), and a box that lived inside what it hides would
-       hide itself.
+       IN THE HEADER ROW ITSELF AND NOT AMONG THE BAR'S BUTTONS, and AFTER
+       them: the corner of the page comes first and the song's own controls
+       follow it, so the last thing on the row is the button that starts a
+       recording and the one before it is the capo. Both of them are pressed
+       with a song open and a guitar in hand; the panel behind the dots is
+       pressed once in a while and does not want the end of the row.
 
-       Which means the sweep that empties the bar on the way to the next page
-       does not reach them, so leaving a song takes them off by hand (see
-       draw). Before the glass where there is one, and otherwise in front of
-       the buttons: either way outside them. */
+       Outside the bar is also what keeps the search out of trouble, since
+       opening it hides the bar's buttons to take their room (see
+       body.finding), and a box that lived inside what it hides would hide
+       itself. It does mean the sweep that empties the bar does not reach
+       these, so a page that is not a song takes them off (see paintHeader). */
     var row = bar.parentNode;
-    var glass = document.getElementById("topFind");
-    row.insertBefore(made.tools, glass && glass.parentNode === row ? glass : bar);
+    row.insertBefore(made.tools, bar.nextSibling);
     /* WHAT THE SONG SAYS ABOUT ITSELF GOES WITH THE NAME OF THE SONG, not at
        the far end of the bar among the dials, and NOT ON THE STRIP EITHER.
        It stood beside the transposer and the size, which is the only thing up
@@ -3991,12 +3991,11 @@
        everything anyway (see body.finding in the stylesheet). */
     var beside = document.getElementById("topFacts");
     if (made.facts) {
-      /* And where there is no slot for it, immediately in front of the dials,
-         which is the same place: this is the second half of the name and the
-         dials are what follows the name. In the row and not in the bar,
-         because that is where the dials are now. */
+      /* And where there is no slot for it, in front of everything the bar
+         holds, which is the same place: this is the second half of the name,
+         so it goes where the name ends. */
       if (beside) beside.appendChild(made.facts);
-      else row.insertBefore(made.facts, made.tools);
+      else row.insertBefore(made.facts, bar);
     }
 
     /* WHAT IS BEING DONE TO THE SONG IS THE ONLY THING LEFT ON THE STRIP, and
@@ -4879,6 +4878,16 @@
         if (!song || (node !== song.tools && node !== song.facts)) node.remove();
       }
     );
+
+    /* THE GLASS IS THE LIBRARY'S, AND IT STANDS ON THE LIBRARY. What it
+       searches is the library and what a result opens is a page of it, so
+       anywhere else it is a box asking about somewhere you are not: on a song
+       it takes the widest slot in the bar and the name of the song is what
+       gives way for it. The library is one press away on every one of those
+       pages, in the corner, which is where somebody who wants to look for
+       another song is going anyway. */
+    var glass = document.getElementById("topFind");
+    if (glass) glass.hidden = p.length > 0;
 
     /* The evenings are a list like the library is a list, so their page gets
        the same two buttons the library's does: the one that adds to it, and
