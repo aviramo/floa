@@ -3484,12 +3484,17 @@
 
     var out = [];
 
-    /* --- A LEFTOVER ROW TAKES THE LINE AFTER IT ------------------------------
+    /* --- A ROW WITH ROOM ON IT TAKES THE LINE AFTER IT -----------------------
        The last row of a broken line is usually one word on an otherwise empty
        row, and a row spent on one word is a row of the screen spent on
        nothing. So the next line of the song starts there, on the same row,
        and what separates them is a double gap: two of the artificial spaces
        the format already has (see GAP), drawn and never stored.
+
+       AND ON A PHONE, ANY ROW THAT HAS THE ROOM, not only one a break left
+       short. A song of short lines breaks nowhere and still ends every line
+       halfway across the glass, which is the same waste arriving by the other
+       road. Where that is turned on, and what it costs, is at `pack` below.
 
        A row is then not always one line of the song, and the whole of what
        says so is that space. It is worth being clear that this is a trade and
@@ -3579,16 +3584,43 @@
         }
       }
 
-      /* ONLY ONTO A ROW THAT A BREAK CREATED. The room worth reclaiming is the
-         room a break left behind: a leftover of one word sitting alone on a
-         row of its own. A row that simply ended with space to spare is a line
-         of the song that fits, and the next line belongs under it, where the
-         person who wrote the song put it. Packing onto those as well rewrites
-         the shape of the whole song to save nothing.
+      /* ONTO A ROW THAT A BREAK CREATED, ALWAYS; ONTO ANY ROW WITH ROOM ON IT,
+         ON A PHONE. The two are the same mechanism and they are worth having
+         for different reasons.
 
+         The first is a leftover of one word sitting alone on a row of its own,
+         which is room a break left behind and pure waste wherever it happens.
          `tail` is true only of a row opened to carry the rest of a line that
-         did not fit, which is exactly that leftover. */
-      var joined = !!(row && row.tail && row.used + sepW + line.advance[0] <= row.room);
+         did not fit, which is exactly that.
+
+         The second is a short-lined song on a narrow screen: nothing is broken
+         at all, every line ends halfway across, and half the glass is white
+         down the whole song. On a desk that space is not worth taking, because
+         a desk answers a short-lined song with another segment beside this one
+         and the width costs nothing; on a phone there is no second segment and
+         the width is the only thing there is.
+
+         AND IT IS NOT FREE. A row carrying two lines of the song is two things
+         to take apart before either can be sung, and whoever is reading this
+         is a line ahead with their hands full. What buys it is the room, and
+         the room is only scarce on the one screen this is turned on for. The
+         mark between them is what keeps it readable: a drawn diagonal in the
+         chords' own ink (see buildSep), not a space anybody could mistake for
+         a wide one.
+
+         WHOLE LINES ONLY, WHERE NOTHING WAS BROKEN. A leftover row takes
+         whatever fits, down to a word, because that row exists to be filled
+         and what is left of the line goes on under it either way. A row that
+         simply ended early is different: taking the first three words of the
+         next line onto it BREAKS a line that fitted perfectly well, to save a
+         few pixels, and the song fills up with lines cut in two by the packing
+         rather than by the glass. So a whole line, or none of it. */
+      var whole = 0;
+      for (var w = 0; w < line.cells; w++) whole += line.advance[w];
+
+      var joined = !!(row && (row.tail
+        ? row.used + sepW + line.advance[0] <= row.room
+        : NARROW.matches && row.used + sepW + whole <= row.room));
 
       while (pos < line.cells) {
         if (joined) {
