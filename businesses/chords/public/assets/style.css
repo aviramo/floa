@@ -662,6 +662,15 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .list:not(.band):not(.ledger):has(li:nth-child(2)):not(:has(li:nth-child(3))) { max-width: 704px; }
 .list:not(.band):not(.ledger):has(li:nth-child(3)):not(:has(li:nth-child(4))) { max-width: 1056px; }
 .list:not(.band):not(.ledger):has(li:nth-child(4)):not(:has(li:nth-child(5))) { max-width: 1408px; }
+/* AND ON A PHONE THERE IS NOTHING LEFT TO MIDDLE. The window is narrower than
+   one column already, so these widths stop being a way of centring a short wall
+   and become a second gutter inside the page's own: a page holding one card
+   stood it 352 across with air either side of it, while a page holding four
+   ran them to the page's edge. Same card, two distances from the edge of the
+   screen, decided by how many happened to be beside it. */
+@media (max-width: 620px) {
+  .list:not(.band):not(.ledger) { max-width: none; }
+}
 /* A card is never split down the middle of itself by a column ending, and it
    carries its own space underneath: in a column layout there is no gap
    property to do it. */
@@ -3022,25 +3031,48 @@ body.on-dock { padding-bottom: 92px; }
    the page for, so it does not stand between them and the song; it is worth
    finding when they get to the bottom, so that is where it is.
    ========================================================================== */
-/* AIR ON ALL FOUR SIDES OF IT. The song above runs to its own gutters and
-   this ran to the glass: a card whose border touches the edge of the screen
-   reads as something that broke off the page rather than as a section of it,
-   and the last one had nothing under it at all, so the bottom of the list and
-   the bottom of the document were the same line.
+/* IT COMES UP FROM THE BOTTOM, AND ONLY WHEN IT IS ASKED FOR. It stood under
+   the words, at the end of the song, which is a fine place for something
+   nobody came for and a bad place for something somebody wants: the way to a
+   recording was to scroll the whole song past. And it was there on every song
+   whether or not anybody was looking for it, taking the foot of the page.
 
-   The room here is the same room the song has, and there is a good deal more
-   of it above and below than between the rows, because what the eye needs is
-   to see that this is a different thing from the song and one thing in
-   itself. */
+   So it is a sheet that rises over the song from the edge it is nearest, the
+   way a phone offers a handful of choices, and it is opened by name from the
+   panel behind the three dots. It is closed the way every other panel here is:
+   a press on the page, or Escape.
+
+   Fixed to the bottom rather than to a scroll position: what is under it is
+   the song, and the song is what somebody is reading while the recording
+   plays. */
 .takes {
-  max-width: 720px; margin: 34px auto 56px;
-  padding-inline: 16px;
+  position: fixed; inset-inline: 0; bottom: 0; z-index: 62;
+  max-height: min(70vh, 560px); overflow-y: auto;
+  padding: 6px 16px calc(18px + env(safe-area-inset-bottom));
+  background: var(--card); border-top: 1px solid var(--line);
+  border-start-start-radius: 18px; border-start-end-radius: 18px;
+  box-shadow: 0 -6px 26px rgba(23, 32, 42, .16);
+  transform: translateY(100%); transition: transform .18s ease-out;
 }
-.takes:empty { display: none; }
+.takes.is-open { transform: none; }
+.takes:empty, .takes[hidden] { display: none; }
+/* THE HANDLE, which is the whole of what says this came up from the edge and
+   can go back down. It is drawn and not pressed: what puts the sheet away is a
+   press on the song, the same as every other panel. */
+.takes::before {
+  content: ""; display: block; width: 40px; height: 4px; margin: 0 auto 8px;
+  border-radius: 2px; background: var(--line);
+}
 .takes-head {
   font-size: 15px; color: var(--ink-soft); font-weight: 600;
   margin: 0 0 10px; padding-inline-start: 2px;
 }
+/* ONE OF THEM IS PLAYING, SO ONE OF THEM IS ON THE SHEET. A row of takes with
+   a sound coming out of one is a list somebody has to read to find out which,
+   and the answer is the only thing on it worth looking at while it plays. The
+   rest are not removed, only put away: pausing brings them back. */
+.takes-list.is-one .take { display: none; }
+.takes-list.is-one .take.is-playing { display: flex; }
 .takes-list { display: flex; flex-direction: column; gap: 8px; }
 
 .take {

@@ -2267,50 +2267,47 @@
      decided for them, but "what else can I hold this in", and the honest
      answer to that is a short list of real ones.
 
-     A FRET IS A KEY HERE. The singing does not move when the page does (see
-     capoOf), so each fret is the same song coming out of the guitar under a
-     different set of shapes. Choosing one is choosing both at once: what is
-     printed over the words, and where the capo goes to pay for it.
+     A FACT ABOUT THE SONG, AND NOT ABOUT THE READER. These are the ways this
+     song's chords fall under a hand, worked out from the song as it is
+     written, and nothing anybody presses adds one or takes one away. The list
+     used to be worked out from where the song was being sung, which meant a
+     press on a fret handed back three different keys, and a menu that answers
+     a different question every time it is opened is a menu nobody can decide
+     anything with.
+
+     A CAPO ONLY GOES UP, which is what makes the search this short: keeping
+     the song where it was written means the page comes DOWN by exactly the
+     fret. Eight candidates, no capo through seven, and no others to consider.
 
      ONLY WHAT A HAND CAN HOLD. Twelve keys is a catalogue, and nine of them
      are four barre chords deep for anybody who came here to play the song
-     tonight. So the frets are ranked by how many shapes fall outside the open
-     position, which is the count easyVersion already ranks by, and what is
-     offered is the top of that ranking and nothing else.
+     tonight. So the candidates are ranked by how many shapes fall outside the
+     open position, which is the count easyVersion already ranks by, and the
+     top of that ranking is the whole of what is offered.
 
-     THE BEST TIER, AND ENOUGH OF IT TO BE A CHOICE. A list of one is a button
-     that opens onto the answer it is already showing, so where the easiest
-     tier is short the next fret or two come up with it. Never past MOST, which
-     is the catalogue coming back. */
-  var LEAST_KEYS = 3;
-  var MOST_KEYS = 5;
+     THREE, AND IN THE ORDER THEY WERE RANKED: easiest to hold first, hardest
+     last. The neck has an order of its own and the column of frets beside this
+     one is in it. This column is about hands, so it stands in the order a hand
+     cares about, and it is short enough to be read at a glance rather than
+     gone through. */
+  var KEYS_OFFERED = 3;
 
-  function keyChoices(used, sung) {
+  function keyChoices(used) {
     if (!used.length) return [];
     var all = [];
-    /* Below -11 there is no page to write down (see keptPage), so a reader who
-       has already taken the song a long way down has fewer frets left to
-       reach for. Everybody else has the whole neck. */
-    var top = Math.min(MAX_CAPO, sung + 11);
-    for (var capo = 0; capo <= top; capo++) {
-      var page = sung - capo;
-      var shapes = used.map(function (chord) { return transposeChord(chord, page); });
+    for (var capo = 0; capo <= MAX_CAPO; capo++) {
+      var shapes = used.map(function (chord) { return transposeChord(chord, -capo); });
       all.push({
-        capo: capo, page: page, shapes: shapes,
+        capo: capo, page: -capo, shapes: shapes,
         hard: shapes.filter(function (shape) { return !OPEN_SHAPES[shape]; }).length,
       });
     }
 
-    var order = all.slice().sort(function (a, b) { return a.hard - b.hard || a.capo - b.capo; });
-    var kept = order.filter(function (one) { return one.hard === order[0].hard; });
-    while (kept.length < LEAST_KEYS && kept.length < order.length) kept.push(order[kept.length]);
-    kept = kept.slice(0, MOST_KEYS);
-
-    /* Shown in the order the neck runs and not in the order they were ranked.
-       A list that rearranges itself as the song is edited is a list nobody can
-       learn the shape of, and the fret is the one thing about these that has
-       an order of its own: no capo first, and down the neck from there. */
-    return kept.sort(function (a, b) { return a.capo - b.capo; });
+    /* fewest barres first, and where two are equally kind the lower fret: a
+       capo is a thing to carry and to fit, and the open neck is worth
+       something on its own */
+    all.sort(function (a, b) { return a.hard - b.hard || a.capo - b.capo; });
+    return all.slice(0, KEYS_OFFERED);
   }
 
   /* A new line runs the way the line before it ran. Whoever is typing an
@@ -3810,6 +3807,7 @@
     songs: null, printable: false, printer: null, killer: null,
     editToggle: null, songControls: null, redrawSong: null, rehome: null,
     wake: null, ear: null, takeSong: null, redrawTakes: null,
+    takesOpen: null, takesCount: 0,
   };
 
   /* The answers the bar reads to know what to offer. They are about the page
@@ -3818,7 +3816,7 @@
      everybody, and every sheet showing it is showing the same songs. */
   var PAGE_STATE = ["printable", "printer", "killer", "editToggle",
     "songControls", "redrawSong", "rehome", "wake", "sift", "ear",
-    "takeSong", "redrawTakes"];
+    "takeSong", "redrawTakes", "takesOpen", "takesCount"];
 
   function takeKids(node) {
     if (!node) return null;
@@ -4764,6 +4762,17 @@
      facing, and whether there is a song under it worth paper. */
   function songRows(anchor) {
     var rows = [];
+    /* FIRST, BECAUSE IT IS THE ONE THING IN HERE THAT IS ABOUT THIS SONG
+       BEING PLAYED. The recordings used to stand at the foot of the page,
+       under the last line, which meant scrolling a whole song to reach one.
+       They come up on a sheet now (see openTakes) and this is the way to it,
+       offered only where there is something on it. */
+    if (state.takesCount && state.takesOpen) {
+      rows.push(button("הקלטות", ICON.play, "ghost small", function () {
+        closeUnder();
+        state.takesOpen();
+      }));
+    }
     /* THE TUNER IS OFFERED HERE TOO. On every other page it is a picture beside
        the dots (see tuner); on a song the bar holds the song's own controls and
        there is no room for it, and it was reachable from the band at the foot
@@ -8420,9 +8429,11 @@
        ONLY WHAT A HAND CAN HOLD, on the keys' side (see keyChoices): nine of
        the twelve are four barre chords deep for the person this app is for,
        and a list that offers them is a list to be read through rather than
-       chosen from. The frets are all eight, because a fret is not a matter of
-       what a hand can hold. There are eight places the capo goes, and somebody
-       who wants the fourth one wants the fourth one. */
+       chosen from. Three of them, easiest first, and THE SAME THREE EVERY TIME
+       THE PANEL OPENS, because they are a fact about the song's chords and not
+       about anything pressed in here. The frets are all eight, because a fret
+       is not a matter of what a hand can hold. There are eight places the capo
+       goes, and somebody who wants the fourth one wants the fourth one. */
 
     /* Filled on every opening rather than built once, because the song
        underneath is being edited: a list made when the page was drawn is a
@@ -8434,7 +8445,7 @@
        place. */
     function fillPlay(pop, shut, again) {
       pop.appendChild(column("קפו", fretGrid(again)));
-      var choices = keyChoices(chordsUsed(song.lines || []), sung);
+      var choices = keyChoices(chordsUsed(song.lines || []));
       /* A SONG WITH NO CHORDS HAS NO KEY, and a word with nothing under it is
          a column that has broken. It comes back the moment there is a chord to
          name it with, which in the editor is as soon as one is put down. */
@@ -8461,10 +8472,15 @@
       var row = el("button", "key-opt");
       row.type = "button";
       /* The chord in the size it is worth reading at, and beside it the one
-         other thing the choice costs: where the capo goes. Nought is not a
-         fret and is not written as one. */
+         other thing the choice costs: where the capo goes. Worked out against
+         what the guitar is sounding NOW rather than read off the choice, which
+         knows only the song's own key: the fret written here is the fret the
+         strip will be showing the moment the row is pressed, and the two are
+         never allowed to say different things. Nought is not a fret and is not
+         written as one. */
+      var fret = capoOf({ page: choice.page, sung: sung });
       row.appendChild(el("span", "key-name", choice.shapes[0]));
-      row.appendChild(el("span", "key-fret", choice.capo ? "קפו " + choice.capo : "בלי קפו"));
+      row.appendChild(el("span", "key-fret", fret ? "קפו " + fret : "בלי קפו"));
       if (choice.page === semis) {
         row.classList.add("is-on");
         row.setAttribute("aria-current", "true");
@@ -8771,6 +8787,7 @@
        Not on a version being read: what a song used to be is a thing on paper
        and nobody recorded THAT. */
     var takes = el("div", "takes");
+    takes.hidden = true;
     if (!past) {
       app.appendChild(takes);
       /* The SONG and not what the editor happens to be holding: a take is
@@ -8779,6 +8796,10 @@
       state.takeSong = row;
       state.redrawTakes = function () { drawTakes(takes, row); };
       state.redrawTakes();
+      /* And the way in, which is a row in the panel behind the three dots (see
+         songRows). The sheet itself is filled now and stands off the screen
+         until it is asked for. */
+      state.takesOpen = function () { openTakes(takes); };
     }
 
     /* THERE WAS A BAR HERE, and a way of marking whole lines to feed it: a
@@ -11945,11 +11966,11 @@
 
         function back() { go(addr(song.slug)); }
 
-        var head = el("div", "song-head");
-        head.appendChild(el("h1", null, song.title || "שיר"));
-        head.appendChild(el("div", "by",
-          "כל לחיצה על פורסם שומרת כאן את השיר כפי שיצא לעולם באותו רגע. אפשר לפתוח כל גרסה ולשחזר אותה."));
-        app.appendChild(head);
+        /* THE NAME OF THE SONG IS ALREADY ON THE BAR, and beside it the word
+           that says these are its versions. A heading under it saying the name
+           a second time, over a paragraph explaining what a version is, put two
+           screenfuls of what is already known between somebody and the list
+           they came for. The rows say when and what, which is the explanation. */
 
         if (!rows.length) {
           var empty = el("div", "center");
@@ -11970,12 +11991,10 @@
         rows.forEach(function (v, index) { list.appendChild(versionRow(song, v, rows[index + 1])); });
         app.appendChild(list);
 
-        var actions = el("div", "row-actions");
-        actions.appendChild(button("חזרה לשיר", ICON.back, "ghost small", back));
-        actions.appendChild(button("לרשימת השירים", null, "ghost small", function () { go(addr()); }));
-        var after = el("div", "after-list");
-        after.appendChild(actions);
-        app.appendChild(after);
+        /* AND NOTHING UNDER THE LIST. The way back is on the bar, on this page
+           as on every other one, and a pair of buttons repeating it at the foot
+           is the page answering a question the bar already answered. The empty
+           list keeps its own, because there it is the only thing to press. */
       });
     }).catch(fail);
   }
@@ -13397,6 +13416,11 @@
        and not about the next one */
     state.takeSong = null;
     state.redrawTakes = null;
+    /* and the sheet they came up on, which went with the page it was drawn
+       into: what is left here is a way to open something that is not there */
+    closeTakes();
+    state.takesOpen = null;
+    state.takesCount = 0;
     /* and the box in the bar goes back to being a way to other pages, until a
        page that can be sieved says otherwise (see state.sift in viewIndex) */
     state.sift = null;
@@ -15204,8 +15228,52 @@
      schema.sql). So a visitor sees the offered ones and an account sees those
      and its own attempts, and neither is told that the other exists.
      ========================================================================== */
+  /* --- THE SHEET THEY COME UP ON --------------------------------------------
+     One at a time, opened by name from the panel behind the three dots, and
+     closed the way every other panel on this page is closed: a press on the
+     song under it, or Escape. Pressing the row again puts it away, which is
+     what pressing an open thing's own button means everywhere else here. */
+  var takesSheet = null;
+
+  function openTakes(box) {
+    if (takesSheet === box) return closeTakes();
+    closeTakes();
+    takesSheet = box;
+    box.hidden = false;
+    /* A frame between being in the document and being on the way up, or the
+       browser has nothing to move the sheet from and it simply appears. */
+    requestAnimationFrame(function () { box.classList.add("is-open"); });
+    document.addEventListener("pointerdown", takesOutside, true);
+    document.addEventListener("keydown", takesEscape, true);
+  }
+
+  function closeTakes() {
+    if (!takesSheet) return;
+    var box = takesSheet;
+    takesSheet = null;
+    box.classList.remove("is-open");
+    document.removeEventListener("pointerdown", takesOutside, true);
+    document.removeEventListener("keydown", takesEscape, true);
+    /* Out of the document once it has slid down, and only if nothing has been
+       opened in the meantime. */
+    setTimeout(function () { if (!takesSheet) box.hidden = true; }, 220);
+  }
+
+  function takesOutside(event) {
+    if (!takesSheet) return;
+    if (takesSheet.contains(event.target)) return;
+    /* the panel the row that opened this stands in, which is shutting itself */
+    if (event.target.closest && event.target.closest(".print-menu")) return;
+    closeTakes();
+  }
+
+  function takesEscape(event) {
+    if (event.key === "Escape") closeTakes();
+  }
+
   function drawTakes(box, song) {
     box.innerHTML = "";
+    state.takesCount = 0;
     if (!song || !song.id) return;
 
     rest(CFG.takeTable + "?song_id=eq." + song.id +
@@ -15236,6 +15304,15 @@
         if (wanted && row.id === wanted && !first) first = made;
         list.appendChild(made);
       });
+      /* What the panel behind the dots needs to know: whether there is
+         anything on this sheet to offer a way to (see songRows). The answer
+         lands after the page is drawn, which is why the row is decided at the
+         press and not at the painting. */
+      state.takesCount = rows.length;
+      /* A LINK TO ONE RECORDING OPENS THE SHEET. It is the whole of what that
+         address is about, and a sheet that stays down while the sound plays
+         is a page with a voice on it and nothing to show for it. */
+      if (first) openTakes(box);
 
       /* AND IT STARTS. A browser may refuse to play a sound on a page nobody
          has touched yet, and that refusal is right: what it protects against
@@ -15467,6 +15544,19 @@
       alongTake(audio, Array.isArray(row.marks) ? row.marks : []);
       go.disabled = false;
       go.hidden = true;
+      /* --- AND THE ONE PLAYING IS THE ONLY ONE ON THE SHEET -------------------
+         Three recordings of the same song are three rows that say very nearly
+         the same thing, and while one of them is sounding the other two are a
+         list to be read to find out which. So the sheet holds what is playing
+         and puts the rest away, and pausing brings them back: the choice is
+         only in the way while there is nothing to choose. */
+      var alone = function (yes) {
+        node.classList.toggle("is-playing", yes);
+        if (node.parentNode) node.parentNode.classList.toggle("is-one", yes);
+      };
+      audio.addEventListener("play", function () { alone(true); });
+      audio.addEventListener("pause", function () { alone(false); });
+      audio.addEventListener("ended", function () { alone(false); });
       startAudio(audio);
     }).catch(function () {
       go.disabled = false;
