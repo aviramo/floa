@@ -496,9 +496,11 @@ body.on-air .top {
 .find-more { padding: 8px 12px 6px; color: var(--ink-soft); font-size: 12px; }
 
 /* THERE WAS A .who HERE, the button in the bar carrying whoever is signed in.
-   The name is a chip over the wall now, with the other doors (see
-   .tally-door), and the bar holds only the way IN, for somebody who has no
-   name to show yet. */
+   The account is a chip over the wall now, with the other doors (see
+   .tally-door), and it is that chip either way round: a name signed in, and
+   the word התחברות over Google's mark signed out. The bar on the library
+   holds none of it. The evenings and the people still carry the way in
+   themselves, having no such row (see session in app.js). */
 
 /* On a phone the bar holds four things and the screen holds about two of
    them. What goes is the WORD on any button that has a picture, because a
@@ -521,6 +523,12 @@ body.on-air .top {
      letters, and the bar has the room for them now that the doors have gone
      down to the wall (see .tally-door). */
   .top-actions .btn.tuner svg + .lb { display: inline; }
+  /* AND THE WAY IN KEEPS ITS WORD TOO. Google's mark is known everywhere, and
+     it still says only "Google", never what pressing it here is for. It is
+     left in the bar on the two pages that have no row of doors to hold it
+     (see session in app.js), and on those it stands there alone, so the room
+     is not the question. */
+  .top-actions .btn.google svg + .lb { display: inline; }
   .top-actions .btn.small { padding: 8px; }
   .top-actions .btn svg { width: 18px; height: 18px; }
   /* A button that has lost its word is thirty-six across with an eighteen

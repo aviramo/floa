@@ -262,14 +262,18 @@
     '<path fill="#FBBC05" d="M5.84 14.11a6.6 6.6 0 0 1 0-4.22V7.05H2.18a11 11 0 0 0 0 9.9l3.66-2.84z"/>' +
     '<path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1a11 11 0 0 0-9.82 6.05l3.66 2.84c.87-2.6 3.3-4.51 6.16-4.51z"/>';
 
-  function googleButton(label, cls) {
-    var b = el("button", "btn google" + (cls ? " " + cls : ""));
-    b.type = "button";
+  function googleMark() {
     var mark = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     mark.setAttribute("viewBox", "0 0 24 24");
     mark.setAttribute("aria-hidden", "true");
     mark.innerHTML = GOOGLE_MARK;
-    b.appendChild(mark);
+    return mark;
+  }
+
+  function googleButton(label, cls) {
+    var b = el("button", "btn google" + (cls ? " " + cls : ""));
+    b.type = "button";
+    b.appendChild(googleMark());
     b.appendChild(el("span", "lb", label));
     b.setAttribute("aria-label", label);
     b.addEventListener("click", function () { auth.signInWithGoogle(); });
@@ -5503,6 +5507,19 @@
     return chip;
   }
 
+  /* The same chip, with Google's four colours instead of a line drawing: the
+     mark is not an icon of this app's and cannot be drawn by svg(), which
+     draws one line in the colour of the text. */
+  function signInChip() {
+    var chip = el("button", "tally tally-door");
+    chip.type = "button";
+    chip.appendChild(googleMark());
+    chip.appendChild(el("span", "tally-l", "התחברות"));
+    chip.title = "התחברות";
+    chip.addEventListener("click", function () { auth.signInWithGoogle(); });
+    return chip;
+  }
+
   /* No page is asked about here, because there is only one page this stands
      on. What IS asked, every time it is painted, is who is looking. */
   function paintDoors(row) {
@@ -5521,11 +5538,16 @@
        is on the table (see song_costs in schema.sql), and somebody else who
        opens /chords/reads by hand is answered by the page itself. */
     if (isAdmin()) row.appendChild(doorChip("פענוח", ICON.receipt, function () { go(addr("reads")); }));
-    /* Signing in is not one of these. It is the only way forward for somebody
-       who has none, and it keeps its own place in the bar, where a way forward
-       belongs (see paintHeader). Whoever IS signed in is a door like the rest:
-       their own name, opening the panel about them. */
+    /* AND THE ACCOUNT IS ONE CHIP, WHICHEVER WAY ROUND IT IS. Signed in it
+       carries the name and opens the panel about it; signed out it says
+       "התחברות" and carries Google's mark, because the mark is the whole of
+       what makes that door recognisable (see googleButton). It used to be a
+       button in the bar, which on a phone is a bar that takes the word off
+       everything it holds: four unlabelled pictures in a row, and the one
+       that was the way in was a picture nobody had a reason to press. The
+       account belongs where the account is, and that is here. */
     if (auth.in) row.appendChild(doorChip(auth.name() || "החשבון", ICON.person, askMe));
+    else row.appendChild(signInChip());
   }
 
   /* The band for the page being drawn, and the page keeps the way to paint it
@@ -6090,20 +6112,20 @@
         return add;
       }));
     }
-    /* The evenings, the people and whoever is looking are not up here at all:
-       they are the row of chips over the wall (see paintDoors). The fork is,
-       because it is not a door (see tuner). */
-    if (!auth.in) shelf.push(session());
+    /* The evenings, the people and the account are not up here at all: they
+       are the row of chips over the wall (see paintDoors), and the account is
+       there whether it has a name yet or not. The fork is, because it is not
+       a door (see tuner). */
     shelf.push(tuner());
     fill(bar, shelf);
   }
 
-  /* THE WAY IN, AND ONLY THE WAY IN. Somebody signed in is a chip over the
-     wall carrying their own name (see paintDoors), because which account is
-     holding the library is a fact about everything on the screen and belongs
-     where the rest of the app's doors are. Somebody who is NOT signed in has
-     no library to be told about and one thing to do, so it stays up here: a
-     way forward hidden anywhere is no way forward.
+  /* THE WAY IN, FOR THE PAGES THAT HAVE NOWHERE ELSE TO PUT IT. On the library
+     the account is a chip over the wall, signed in or out (see paintDoors),
+     and that is where somebody looks for it. The evenings and the people have
+     no such row, and neither has anything on it to read without an account, so
+     there the way in stands in the bar: a way forward hidden anywhere is no
+     way forward.
 
      Made once and handed back on every page, like everything else in the bar,
      so a move between pages moves it rather than building it again. */
