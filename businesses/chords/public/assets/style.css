@@ -38,6 +38,20 @@
 
   --danger: #c0392b;
   --radius: 14px;
+
+  /* ONE CORNER FOR EVERYTHING SMALL, AND IT IS NOT A CIRCLE. The app was drawn
+     in two shapes at once: pills for anything wearing a word (.btn, the search
+     boxes, the state chips) and eight pixel corners for anything wearing a
+     picture (.icon-btn, the steppers). Both are on screen together in the bar
+     over every page, and the pair read as two toolkits rather than as one, so
+     the bar had to be given a third shape of its own to hide the seam.
+
+     There is no seam now. A button, a field, a chip and a strip of them all
+     take this corner, and the shape stops carrying meaning it never had: what
+     tells a button from a chip is the ink and the hand, not the roundness.
+     Only the card keeps its own larger corner (see --radius), because a sheet
+     of paper is a different kind of thing from a control on it. */
+  --corner: 8px;
   --shadow: 0 1px 2px rgba(23, 32, 42, .05), 0 8px 24px rgba(23, 32, 42, .06);
 
   --song-size: 18px;
@@ -145,29 +159,22 @@ body.on-song { background: var(--bg); }
 .top-pick:empty { display: none; }
 .top-actions { margin-inline-start: auto; display: flex; align-items: center; gap: 8px; }
 
-/* ONE SHAPE FOR A BUTTON IN THE BAR, AND IT IS ROUND. The bar was holding two
-   different kinds of button depending on which page you were on: the library's
-   are .btn, which is a pill because a pill is what a word sits in, and a song's
-   are .icon-btn, which is a small square because that is what it is everywhere
-   else in the app. Nobody sees both rows at once, but the glass stands in both
-   of them, so whatever it matched on one page it clashed with on the other.
+/* THE BAR'S BUTTONS ARE DARKER, AND THAT IS ALL THEY ARE. There used to be a
+   shape here too: a picture on its own was made a circle in this one bar,
+   because the library's row was pills and a song's row was corners and the
+   glass between them clashed with whichever one it was not. Every control in
+   the app takes the same corner now (see --corner), so the bar has nothing
+   left to reconcile and the circle is gone with the reason for it.
 
-   So in this bar, and only in this bar, a picture on its own is a circle: the
-   pill with its word taken away. Everywhere else on the page .icon-btn keeps
-   its corner, and the steppers keep theirs (see .steps), because a
-   stepper is two halves of one box rather than two buttons.
+   The ink stays. Elsewhere .icon-btn is drawn soft because it sits beside the
+   thing it acts on and should not compete with it, and up here it is the thing
+   itself.
 
-   And in the same ink, which is the bar's ink: elsewhere .icon-btn is drawn
-   soft because it sits beside the thing it acts on and should not compete with
-   it, and up here it is the thing itself. */
-/* AND THE SONG'S OWN BUTTONS ARE THE BAR'S BUTTONS WHEREVER THEY STAND. On a
-   phone they come down to the strip under it (see .song-acts), which is the
-   rest of the same bar, so the shape comes with them: a button that changed
-   from a circle to a square when the window narrowed would read as a different
-   button doing a different thing. Written here rather than beside the strip so
-   that the quiet ones still turn red under the hand, which is a rule further
-   down the file and has to be the later one. */
-.top-actions > .icon-btn, .song-acts > .icon-btn { border-radius: 999px; color: var(--ink); }
+   The song's own buttons come down to the strip under the bar on a phone (see
+   .song-acts), which is the rest of the same bar, so they are named here with
+   it. Written above the quiet ones further down the file, which have to stay
+   the later rule so that they still turn red under the hand. */
+.top-actions > .icon-btn, .song-acts > .icon-btn { color: var(--ink); }
 
 /* --- WHAT PAGE THIS IS ----------------------------------------------------
    The app's name used to stand here beside its own mark, which is one word
@@ -253,7 +260,7 @@ body.on-song { background: var(--bg); }
 .top-find .find {
   display: flex; align-items: center; gap: 9px;
   padding: 0 14px; height: 38px;
-  background: var(--card); border: 1px solid var(--line); border-radius: 999px;
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--corner);
   transition: border-color .12s;
 }
 .top-find .find:hover { border-color: #cdd8de; }
@@ -280,7 +287,7 @@ body.on-song { background: var(--bg); }
 .find-extra:empty { display: none; }
 .find-extra .tallies { flex: none; flex-wrap: nowrap; }
 /* Inside the box they are not cards on a page: the box is the white, and a
-   second white pill on it is a box in a box. */
+   second white box on it is a box in a box. */
 .find-extra .tally { background: none; padding: 3px 10px; }
 /* Two crosses in one box is one too many: Escape empties it, and so does
    going anywhere. */
@@ -309,7 +316,7 @@ body.on-song { background: var(--bg); }
   position: absolute; z-index: 30; top: calc(100% + 8px);
   inset-inline-start: 0; width: 100%;
   max-height: min(70vh, 560px); overflow-y: auto;
-  background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
   box-shadow: 0 10px 34px rgba(23, 32, 42, .16);
   padding: 6px;
 }
@@ -318,7 +325,7 @@ body.on-song { background: var(--bg); }
   display: flex; align-items: center; gap: 10px;
   width: 100%; text-align: start; cursor: pointer;
   appearance: none; font: inherit; color: inherit;
-  background: none; border: 0; border-radius: 10px; padding: 8px 10px;
+  background: none; border: 0; border-radius: var(--corner); padding: 8px 10px;
 }
 .find-row:hover, .find-row.is-on { background: var(--bg); }
 .find-main { flex: 1 1 auto; min-width: 0; }
@@ -381,9 +388,9 @@ body.on-song { background: var(--bg); }
      used. A press anywhere off it gives the bar back.
 
      AND WHILE IT IS CLOSED IT IS ONE OF THE PICTURES, so it is exactly the
-     size and the shape of one: a thirty-six pixel circle with an eighteen
-     pixel glass in it, which is what every other picture in this bar comes out
-     to (see .top-actions > .icon-btn above). Closed, it is not a search box.
+     size and the shape of one: a thirty-six pixel square with an eighteen
+     pixel glass in it, on the corner every control in the app takes (see
+     --corner). Closed, it is not a search box.
      It is the button that opens one, and it stands in a row of buttons.
 
      The gap that separated them was the actions pushing themselves to the far
@@ -427,7 +434,7 @@ body.on-song { background: var(--bg); }
 .btn {
   appearance: none; border: 1px solid transparent; cursor: pointer;
   background: var(--accent); color: #fff;
-  padding: 9px 16px; border-radius: 999px;
+  padding: 9px 16px; border-radius: var(--corner);
   font: inherit; font-weight: 600; font-size: 15px; line-height: 1.2;
   display: inline-flex; align-items: center; gap: 7px;
   transition: background .15s, color .15s, border-color .15s;
@@ -443,7 +450,7 @@ body.on-song { background: var(--bg); }
 
 .icon-btn {
   appearance: none; border: 1px solid var(--line); background: #fff; cursor: pointer;
-  width: 30px; height: 30px; border-radius: 8px; padding: 0;
+  width: 30px; height: 30px; border-radius: var(--corner); padding: 0;
   display: inline-grid; place-items: center; color: var(--ink-soft);
 }
 .icon-btn:hover { color: var(--ink); border-color: #cdd8de; }
@@ -465,7 +472,7 @@ body.on-song { background: var(--bg); }
 .muted { color: var(--ink-soft); }
 .err { color: var(--danger); font-size: 14px; margin: 4px 0 0; }
 .detail {
-  margin-top: 6px; padding: 7px 10px; border-radius: 8px;
+  margin-top: 6px; padding: 7px 10px; border-radius: var(--corner);
   background: #fdf1ef; color: #7a3b33;
   font: 12px/1.5 ui-monospace, Menlo, Consolas, monospace;
   direction: ltr; text-align: left; word-break: break-word;
@@ -483,7 +490,7 @@ body.on-song { background: var(--bg); }
 
 input[type="text"], input[type="email"], input[type="password"], input[type="search"], input[type="date"], textarea, select {
   font: inherit; color: var(--ink);
-  background: #fff; border: 1px solid var(--line); border-radius: 10px;
+  background: #fff; border: 1px solid var(--line); border-radius: var(--corner);
   padding: 9px 12px; width: 100%;
 }
 input:focus-visible, textarea:focus-visible, select:focus-visible, .btn:focus-visible, .icon-btn:focus-visible {
@@ -507,7 +514,7 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .search {
   display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
   margin: 28px 0 18px; padding: 5px 14px; min-height: 46px;
-  background: #fff; border: 1px solid var(--line); border-radius: 999px;
+  background: #fff; border: 1px solid var(--line); border-radius: var(--corner);
 }
 .search:focus-within { border-color: var(--accent); }
 .search svg { flex: none; width: 18px; height: 18px; color: var(--ink-soft); }
@@ -545,7 +552,7 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   display: inline-flex; align-items: baseline; gap: 6px;
   appearance: none; cursor: pointer; font: inherit; font-size: 13px;
   background: var(--card);
-  border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px;
+  border: 1px solid var(--line); border-radius: var(--corner); padding: 4px 12px;
 }
 .tally-n { font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; }
 /* Each in its own state's colour, always, and not only when it is the one
@@ -685,7 +692,7 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   display: inline-block; margin-inline-start: 8px; vertical-align: 1px;
   font-size: 12px; font-weight: 700; line-height: 1.5;
   color: var(--ink-soft); background: var(--line);
-  border-radius: 999px; padding: 0 8px;
+  border-radius: var(--corner); padding: 0 8px;
 }
 /* The song's own chords, under its name, in the order it reaches them and in
    the page's own direction: the first one the song plays is the first one you
@@ -698,13 +705,13 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 }
 .list .k, .set-main .k {
   font-size: 13px; font-weight: 700;
-  color: var(--chord); background: var(--chord-soft); border-radius: 999px; padding: 2px 9px;
+  color: var(--chord); background: var(--chord-soft); border-radius: var(--corner); padding: 2px 9px;
   direction: ltr; white-space: nowrap;
 }
 /* where to clamp, so the shapes beside it mean something */
 .list .capo, .set-main .capo {
   font-size: 12px; font-weight: 700; color: var(--ink-soft);
-  background: #eef2f3; border-radius: 999px; padding: 2px 9px; white-space: nowrap;
+  background: #eef2f3; border-radius: var(--corner); padding: 2px 9px; white-space: nowrap;
 }
 
 /* The far end of a card: the state at the top of it and the date at the
@@ -846,7 +853,7 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 }
 .read-h::-webkit-details-marker { display: none; }
 .read-h:hover { border-bottom-color: var(--accent); }
-.read-h:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+.read-h:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--corner); }
 .read-turn {
   flex: none; width: 16px; height: 16px; color: var(--ink-soft);
   transition: transform .15s ease;
@@ -967,7 +974,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 .set-grip svg { width: 20px; height: 20px; }
 .set-grip:hover { color: var(--ink); }
 .set-grip.is-held { cursor: grabbing; color: var(--accent); }
-.set-grip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+.set-grip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--corner); }
 
 /* --- the library, to add from ---
    One list, one click, both ways: a song is in the evening or it is not, and
@@ -1045,7 +1052,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    is why the four pairs are named once at the top of this file. */
 .tag, .review-tag {
   font-size: 12px; font-weight: 700; line-height: 1.6;
-  border-radius: 999px; padding: 1px 10px; white-space: nowrap;
+  border-radius: var(--corner); padding: 1px 10px; white-space: nowrap;
 }
 .review-tag,
 .tag-imported { color: var(--imported-ink); background: var(--imported-soft); }
@@ -1122,7 +1129,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    The field is what the press opens, in its place, so the row never holds both
    and nothing on it moves but the one thing that changed.
 
-   It IS a .tag-style, so the ring, the round and the quiet are already its. What
+   It IS a .tag-style, so the ring, the corner and the quiet are already its. What
    is left here is the difference between a word and a button: it is pressable,
    it is one character wide, and it answers the pointer. */
 .tag-add {
@@ -1266,7 +1273,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 .status-chip {
   appearance: none; cursor: pointer; border: 0;
   font: inherit; font-size: 12px; font-weight: 700; line-height: 1.6;
-  border-radius: 999px; padding: 3px 12px; white-space: nowrap;
+  border-radius: var(--corner); padding: 3px 12px; white-space: nowrap;
   align-self: center;
 }
 .status-chip:hover { box-shadow: inset 0 0 0 1px currentColor; }
@@ -1285,7 +1292,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   flex: none; appearance: none; cursor: pointer;
   font: inherit; font-size: 13px; font-weight: 700;
   color: var(--ink-soft); background: var(--bg);
-  border: 1px solid var(--line); border-radius: 999px;
+  border: 1px solid var(--line); border-radius: var(--corner);
   padding: 4px 13px;
 }
 .draft-btn:hover { color: var(--ink); border-color: var(--ink-soft); }
@@ -1380,14 +1387,14 @@ body.on-song .top { border-bottom: 0; }
    and the button that opened it are one thing. */
 /* Reading, it stands in the same place with the state chip beside it rather
    than alone in the slot, and a button in a flex row is a button that can be
-   squeezed: a circle pressed into an oval by the words next to it. */
+   squeezed: a square pressed out of true by the words next to it. */
 .top-facts .song-info, .song-facts .song-info { flex: none; }
 .song-info.is-open { color: #fff; background: var(--accent); border-color: var(--accent); }
 
 .tools {
   display: flex; align-items: center; gap: 4px 10px; flex-wrap: wrap;
   margin-inline-start: auto; padding: 3px 8px;
-  background: var(--card); border: 1px solid var(--line); border-radius: 999px;
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--corner);
 }
 .tools .ctl { display: flex; align-items: center; gap: 5px; }
 /* The picture and the number side by side, read in that order: what it is,
@@ -1403,7 +1410,7 @@ body.on-song .top { border-bottom: 0; }
    buttons in a heap. It is the same box wherever it is standing. */
 .steps {
   display: inline-flex; background: #fff;
-  border: 1px solid var(--line); border-radius: 8px; overflow: hidden;
+  border: 1px solid var(--line); border-radius: var(--corner); overflow: hidden;
 }
 .steps .icon-btn { border: 0; border-radius: 0; width: 22px; height: 20px; }
 .steps .icon-btn + .icon-btn { border-inline-start: 1px solid var(--line); }
@@ -1419,7 +1426,7 @@ body.on-song .top { border-bottom: 0; }
 .tools .dial-btn {
   appearance: none; font: inherit; color: inherit; cursor: pointer;
   padding: 2px 7px; height: 22px; background: #fff;
-  border: 1px solid var(--line); border-radius: 8px;
+  border: 1px solid var(--line); border-radius: var(--corner);
 }
 .tools .dial-btn:hover { background: var(--bg); }
 .tools .dial-btn[aria-expanded="true"] { color: var(--accent); border-color: var(--accent); }
@@ -1431,7 +1438,7 @@ body.on-song .top { border-bottom: 0; }
    the room out here, and a fret is set with a finger. */
 .steps-pop {
   position: fixed; z-index: 50;
-  border-radius: 8px; box-shadow: 0 2px 8px rgba(23, 32, 42, .12);
+  border-radius: var(--corner); box-shadow: 0 2px 8px rgba(23, 32, 42, .12);
 }
 .steps-pop .icon-btn { width: 32px; height: 28px; }
 .steps-pop .icon-btn svg { width: 14px; height: 14px; }
@@ -1609,7 +1616,10 @@ body.on-song .top { border-bottom: 0; }
     margin-block: calc(var(--page-air, 0px) * -1);
   }
 
-  .tools { border-radius: var(--radius); }
+  /* The strip used to be given the card's corner down here, because a pill
+     stretched across the whole width of a phone reads as a lozenge rather than
+     as a row of controls. It is the same corner as everything else now, at
+     every width, so there is nothing left to correct. */
 }
 
 /* Where the capo goes, inside the sheet so it prints with the song: the shapes
@@ -1617,7 +1627,7 @@ body.on-song .top { border-bottom: 0; }
 .capo-line {
   display: inline-block; margin-bottom: 14px;
   font-size: 14px; font-weight: 700; color: var(--chord);
-  background: var(--chord-soft); border-radius: 999px; padding: 3px 12px;
+  background: var(--chord-soft); border-radius: var(--corner); padding: 3px 12px;
 }
 
 /* --- a line, and the chords above it ------------------------------------
@@ -1950,7 +1960,7 @@ body.on-song .top { border-bottom: 0; }
   width: 26px; height: 22px; padding: 0;
   appearance: none; cursor: pointer;
   background: #fff;
-  border: 1px solid var(--line); border-radius: 6px;
+  border: 1px solid var(--line); border-radius: var(--corner);
   box-shadow: 0 2px 8px rgba(23, 32, 42, .12);
 }
 .gap-btn svg { width: 15px; height: 15px; }
@@ -1977,7 +1987,7 @@ body.on-song .top { border-bottom: 0; }
    not something a thumb aims at. */
 @media (max-width: 620px) {
   .gap-offer { flex-direction: row; gap: 6px; }
-  .gap-btn { width: 38px; height: 34px; border-radius: 8px; }
+  .gap-btn { width: 38px; height: 34px; }
   .gap-btn svg { width: 19px; height: 19px; }
 }
 
@@ -2003,7 +2013,7 @@ body.on-song .top { border-bottom: 0; }
   appearance: none; cursor: pointer;
   font: inherit; font-size: 12px; line-height: 1; white-space: nowrap;
   color: var(--chord); background: #fff;
-  border: 1px solid var(--line); border-radius: 6px;
+  border: 1px solid var(--line); border-radius: var(--corner);
   box-shadow: 0 2px 8px rgba(23, 32, 42, .12);
 }
 .chord-btn:hover { border-color: var(--chord); }
@@ -2026,7 +2036,7 @@ body.on-song .top { border-bottom: 0; }
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
   margin: 0 0 16px; padding: 10px 12px;
   background: rgba(247, 249, 250, .94);
-  border: 1px solid var(--line); border-radius: 999px;
+  border: 1px solid var(--line); border-radius: var(--corner);
 }
 .ed-bar .grow { margin-inline-start: auto; }
 
@@ -2066,13 +2076,13 @@ body.on-song .top { border-bottom: 0; }
 
 /* The one thing in the editor that appears on screen, because it is the answer
    to a click rather than a change to the song. One low row of names, and it is
-   meant to be forgettable: no pills, no panel, no colour it did not already
+   meant to be forgettable: no chips, no panel, no colour it did not already
    have. It should read as a list, not as a dialog. */
 .picker {
   position: fixed; z-index: 50;
   display: flex; align-items: flex-start; flex-wrap: nowrap; gap: 1px;
   max-width: min(300px, calc(100vw - 12px));
-  padding: 3px; border-radius: 8px;
+  padding: 3px; border-radius: var(--corner);
   background: #fff; border: 1px solid var(--line); box-shadow: 0 4px 14px rgba(23, 32, 42, .12);
 }
 .picker button {
@@ -2115,7 +2125,7 @@ body.on-song .top { border-bottom: 0; }
 
 .hint {
   font-size: 13px; color: var(--ink-soft);
-  background: #eef5f4; border: 1px solid #d7e7e4; border-radius: 10px;
+  background: #eef5f4; border: 1px solid #d7e7e4; border-radius: var(--corner);
   padding: 9px 13px; margin: 0 0 14px;
 }
 
@@ -2142,7 +2152,7 @@ body.on-song .top { border-bottom: 0; }
 /* --- dialog, toast ------------------------------------------------------ */
 
 .dlg {
-  border: none; border-radius: 18px; padding: 0;
+  border: none; border-radius: var(--radius); padding: 0;
   box-shadow: 0 1px 3px rgba(23, 32, 42, .1), 0 24px 60px rgba(23, 32, 42, .22);
   max-width: 400px; width: calc(100% - 32px);
 }
@@ -2275,7 +2285,7 @@ body.on-song .top { border-bottom: 0; }
 .toast {
   position: fixed; inset-inline: 0; bottom: 22px; margin-inline: auto;
   width: max-content; max-width: calc(100% - 32px);
-  background: var(--ink); color: #fff; padding: 11px 20px; border-radius: 999px;
+  background: var(--ink); color: #fff; padding: 11px 20px; border-radius: var(--corner);
   font-size: 15px; box-shadow: var(--shadow);
   opacity: 0; transform: translateY(8px); pointer-events: none;
   transition: opacity .2s, transform .2s; z-index: 60;
@@ -2291,7 +2301,7 @@ body.on-song .top { border-bottom: 0; }
   position: fixed; z-index: 60;
   display: flex; flex-direction: column; align-items: stretch; gap: 2px;
   padding: 4px;
-  background: #fff; border: 1px solid var(--line); border-radius: 10px;
+  background: #fff; border: 1px solid var(--line); border-radius: var(--corner);
   box-shadow: 0 6px 20px rgba(23, 32, 42, .16);
 }
 .print-menu .btn { justify-content: flex-start; }
@@ -2302,7 +2312,7 @@ body.on-song .top { border-bottom: 0; }
 .styler { max-width: min(320px, calc(100vw - 24px)); }
 .styler-known { display: flex; flex-wrap: wrap; gap: 4px; }
 .styler input[type="text"] {
-  margin-top: 6px; padding: 6px 10px; border-radius: 8px; font-size: 14px;
+  margin-top: 6px; padding: 6px 10px; border-radius: var(--corner); font-size: 14px;
 }
 
 @media print {
