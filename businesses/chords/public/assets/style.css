@@ -1618,11 +1618,14 @@ body.on-song .top { border-bottom: 0; }
    three pictures were in the page and none of them was on the screen. */
 .tools .lbl { display: flex; color: var(--ink-soft); }
 .tools .lbl svg { width: 15px; height: 15px; }
-/* The capo's fret, and the only number left on the strip. Wide enough for two
-   digits and no wider, so it does not stand in a hole of its own between the
-   picture and the buttons. */
+/* The capo's fret, and the only number left in the bar. It was given the width
+   of two and a half digits, from when it stood on a strip with room to spare
+   and a hole under a number that moved would have shown. There is no second
+   digit: the neck stops at the seventh fret (see MAX_CAPO), so every value it
+   can ever hold is one character wide, and the rest of that width was the box
+   pushing the name of the song off the end of the bar. */
 .tools .val {
-  font-size: 14px; font-weight: 700; min-width: 2.5ch;
+  font-size: 14px; font-weight: 700; min-width: 1ch;
   text-align: center; direction: ltr; font-variant-numeric: tabular-nums;
 }
 /* A line never wraps by itself (white-space: pre on .ln-t), so a long line
