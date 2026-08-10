@@ -3729,7 +3729,55 @@
      where a song was written into between the press and the printing.
      beforeprint is not raised everywhere, and a sheet that only exists where it
      is raised is a blank page on every browser that does not. */
-  window.addEventListener("beforeprint", function () { toPaper(paperWords); });
+  window.addEventListener("beforeprint", function () { onPrint(); toPaper(paperWords); });
+
+  /* --- AND WHILE A PRINT IS GOING ON, THE PAGE HOLDS STILL --------------------
+     THIS IS THE ONE THAT MATTERED. Opening a print preview lays the page out
+     again at the size of the paper, and the window fires `resize` for it the
+     way it fires resize for a window somebody dragged narrower. What the song
+     page does with a resize is draw itself again, and drawing takes the sheet
+     apart and puts it back a frame later (see relayoutOn and draw). In the
+     middle of a print that frame never comes.
+
+     So the printer was handed a song whose chords were all standing at the
+     start of their lines, because placing them is what the frame that never
+     came was for; the copy laid out for the paper was thrown away with the page
+     it was standing in, so what printed was the reader's own page at the
+     reader's own size in the reader's own columns; and the sheet asked for
+     without chords came out with them, because the class that takes them off is
+     on the copy that went.
+
+     Nothing about the reader's window changed. A preview is the browser asking
+     what this page looks like on paper, and it has been answered already.
+
+     TWO WAYS OUT OF IT, because neither can be relied on alone. afterprint is
+     the honest one and several browsers raise it early or not at all; the other
+     is the reader coming back to the page, which is a press, a key or a tab
+     being looked at again, and by then the printing is certainly over.
+
+     AND THE PAGE CATCHES UP ON THE WAY OUT. Whatever the window did while this
+     was held was not answered, and the way to answer it is the event that was
+     not answered: it costs one measurement where nothing moved. */
+  var onPaper = false;
+  var ON_PAPER = window.matchMedia ? window.matchMedia("print") : null;
+  function printing() {
+    /* and a browser that raised nothing still says so, in the one place that
+       cannot be wrong about it: the page is being laid out for paper */
+    return onPaper || (ON_PAPER && ON_PAPER.matches);
+  }
+  function onPrint() { onPaper = true; }
+  function offPrint() {
+    if (!onPaper) return;
+    onPaper = false;
+    window.dispatchEvent(new Event("resize"));
+  }
+  window.addEventListener("afterprint", offPrint);
+  ["pointerdown", "keydown", "wheel"].forEach(function (name) {
+    window.addEventListener(name, offPrint, true);
+  });
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden) offPrint();
+  });
 
   /* --- a song too wide for the screen --------------------------------------
      On a desk the sheet scrolls sideways and that is fine: the whole line is
@@ -5290,6 +5338,11 @@
        do is print the sheet that was actually asked for (see body.print-words
        in the stylesheet). The class means nothing on a screen. */
     document.body.classList.toggle("print-words", !!words);
+    /* AND FROM HERE UNTIL THE READER COMES BACK, THE PAGE HOLDS STILL. The
+       preview about to open lays this page out at the size of the paper, and
+       answering that as though the window had changed is what threw the copy
+       below away before it could be printed (see printing). */
+    onPrint();
     toPaper(paperWords);
     window.print();
   }
@@ -13230,6 +13283,11 @@
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(rewrap);
     var onResize = function () {
       if (!root.isConnected) return window.removeEventListener("resize", onResize);
+      /* AND A PRINT IS NOT A RESIZE. Nothing about the reader's window changed:
+         a preview opened over it and the page under it was laid out at the size
+         of the paper, which arrives here as a window that got narrower (see
+         printing). Answering it is what broke printing altogether. */
+      if (printing()) return;
       var moved = root.clientWidth !== width;
 
       /* A PHONE THAT ONLY CHANGED HEIGHT CHANGED NOTHING HERE. One segment
@@ -15529,6 +15587,14 @@
      calls. */
   if (NARROW.addEventListener) {
     NARROW.addEventListener("change", function () {
+      /* UNLESS IT IS A PRINT, AND THIS IS THE ONE THAT ACTUALLY DID IT. A sheet
+         of A5 is narrower than the line this asks about, so a preview opening
+         over a song on a desk crosses it, and what is on the other side of the
+         crossing is the song drawn again from nothing. That took the copy laid
+         out for the printer with it, and the printer was handed the reader's
+         own page instead: their size, their columns, and the chords still on
+         the sheet that was asked for without them (see printing). */
+      if (printing()) return;
       /* And every sheet under this one was drawn for the width that is no
          longer the width. */
       forgetCovered();
