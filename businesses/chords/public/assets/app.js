@@ -732,7 +732,12 @@
       CREDITS.forEach(function (c) {
         people(song[c.field]).forEach(function (name) {
           var rec = by[name] || (by[name] = { name: name, roles: {}, songs: [] });
-          rec.roles[c.field] = true;
+          /* HOW MANY AND NOT WHETHER. `roles` was a yes on each of the two
+             columns this person appears in, and a yes is the same yes for
+             somebody who wrote one tune and for somebody who wrote forty. It
+             counts songs now, one per song per column, and whatever reads it
+             for a yes still gets one: a number that is there is above zero. */
+          rec.roles[c.field] = (rec.roles[c.field] || 0) + 1;
           if (rec.songs.indexOf(song) < 0) rec.songs.push(song);
         });
       });
@@ -741,13 +746,26 @@
       .map(function (name) { return by[name]; });
   }
 
-  /* Which of the two this person is, said in their own words. In the order
-     the credits are written in, so somebody who did both always reads
-     "כותב, מלחין" and never the other way about. */
+  /* Which of the two this person is, said in their own words, and on how many
+     songs. In the order the credits are written in, so somebody who did both
+     always reads "כותב, מלחין" and never the other way about.
+
+     The number rides along rather than being written into the words, because
+     the two places that draw these want different things: the card on
+     /creators is the one asking how much of each (see creatorRow), and a
+     search result already says how many songs the person has in the line
+     above the chips. */
   function roleTags(roles) {
     return CREDITS.filter(function (c) { return roles[c.field]; }).map(function (c) {
-      return { kind: c.kind, words: c.who };
+      return { kind: c.kind, words: c.who, count: roles[c.field] };
     });
+  }
+
+  /* The same fact as a sentence, for under the pointer: what somebody is and
+     on how many songs they are it. "כותב בשיר אחד", because "כותב ב־1 שירים"
+     is not Hebrew, which is the rule songsSaid follows for the same reason. */
+  function roleSaid(who, n) {
+    return n === 1 ? who + " בשיר אחד" : who + " ב־" + n + " שירים";
   }
 
   /* THERE WAS A rolesOn HERE, what one person did on ONE song, and it fed a
@@ -4019,6 +4037,7 @@
     songMoves: null, songDetails: null,
     songOut: null, songPast: null, songKill: null,
     songUndo: null, songRevert: null,
+    up: null,
   };
 
   /* The answers the bar reads to know what to offer. They are about the page
@@ -4029,7 +4048,7 @@
     "songControls", "redrawSong", "rehome", "doors", "wake", "sift", "ear",
     "takeSong", "redrawTakes", "takesOpen", "takesCount",
     "songMoves", "songDetails", "songOut", "songPast", "songKill",
-    "songUndo", "songRevert"];
+    "songUndo", "songRevert", "up"];
 
   function takeKids(node) {
     if (!node) return null;
@@ -5280,16 +5299,46 @@
      The entry the tab was OPENED on has nothing of ours underneath. A song
      arriving from a search result or from a message is the floor of this
      app's stack, and stepping off the floor leaves for somewhere that is not
-     this app at all. From there, back means the library. */
+     this app at all. From there, back means the page this one hangs under.
+
+     AND THE FLOOR IS NOT ONLY WHERE A LINK LANDS. Every address the build has
+     no file for arrives through the domain's 404, which replaces the entry it
+     was asked on (see absorbFallback), so a page reloaded there comes back
+     with the app's own mark wiped off it and reads as the floor even where
+     the whole way here is still underneath it. Which is why the answer is
+     read off the address and not off the stack: it is the same answer either
+     way, and the address is the one thing that is true in both. */
   function goBack() {
-    if (history.state && history.state.floor) return go(addr());
+    if (history.state && history.state.floor) return go(state.up || above());
     history.back();
+  }
+
+  /* THE PAGE AN ADDRESS HANGS UNDER. The library for nearly all of them, since
+     nearly all of them are a thing in it. Not for the pages that live under a
+     song's own address: a version of a song and an offer on it are that song
+     at another moment and not another song, so somebody stepping back from one
+     is going to the song, and the library is not where they were. The list of
+     versions is still one press away in the band on the page (see pastBand),
+     so coming out at the song costs it nothing.
+
+     A page that knows better than its own address says so in state.up. */
+  function above() {
+    var p = parts();
+    if (p.length >= 2 && (p[1] === "versions" || p[1] === "offers")) return addr(p[0]);
+    return addr();
   }
 
   function paintHeader() {
     /* The corner belongs to the page and not to the bar's buttons, so it is
        painted here whatever else this page turns out to hold. */
     paintBrand();
+
+    /* AND WHETHER THERE IS A HEADER AT ALL, which is the first question about
+       it and not the last: while a take is running it is off the top of the
+       screen (see airRoom). Here rather than only where the recording button
+       is drawn, because walking off a song holds the take and repaints this,
+       and every branch below it returns without ever reaching that button. */
+    airRoom();
 
     /* And the row of doors over the wall, which is not in the bar at all but
        answers to the same two facts the bar does: which page this is, and who
@@ -7754,8 +7803,12 @@
     var top = el("div", "t-row");
     top.appendChild(el("div", "t", person.name));
     /* The same chip a shelf carries, because it is the same fact: how many
-       songs are behind this card (see countTag). */
-    top.appendChild(countTag(person.songs.length));
+       songs are behind this card (see countTag).
+
+       ONLY WHERE NOTHING ELSE COUNTS THEM. Where the roles are drawn they
+       carry the number each (see below), and a card saying "2" beside the
+       name and "מלחין 2" in the corner is one number written twice. */
+    if (brief) top.appendChild(countTag(person.songs.length));
     box.appendChild(top);
 
     /* The songs by name, the way an evening shows what is in it and for the
@@ -7769,9 +7822,19 @@
     }
     a.appendChild(box);
 
-    /* WHICH OF THE TWO THEY ARE, in the corner a song keeps its state in.
-       Somebody who did both carries both, in the order the credits are
-       written in.
+    /* WHICH OF THE TWO THEY ARE AND ON HOW MANY SONGS, in the corner a song
+       keeps its state in. Somebody who did both carries both, in the order the
+       credits are written in.
+
+       THE WORD ALONE WAS TOO LITTLE AND THE TOTAL WAS THE WRONG NUMBER.
+       "כותב, מלחין" beside a "2" says this person did both of them on two
+       songs, and leaves the reader to guess which of the two is most of what
+       they do. Each word carries its own count now, so a card reads
+       "כותב 1, מלחין 2": someone who mostly writes tunes and once wrote words
+       is told apart from someone who does both every time, which is the
+       distinction the page exists to make. And the two do not have to add up
+       to the songs, because a song crediting the same person twice is one
+       song.
 
        NOT IN THE BAND OVER THE LIBRARY. There the card is a name and a way to
        a page, one line of it, and two coloured chips on that line are the
@@ -7785,7 +7848,9 @@
     if (!brief) {
       var side = el("div", "side");
       var tags = el("div", "side-tags");
-      roleTags(person.roles).forEach(function (t) { tags.appendChild(tag(t.kind, t.words)); });
+      roleTags(person.roles).forEach(function (t) {
+        tags.appendChild(tag(t.kind, t.words + " " + t.count, roleSaid(t.words, t.count)));
+      });
       side.appendChild(tags);
       a.appendChild(side);
     }
@@ -9632,6 +9697,11 @@
        while the app is following there is no band at all, and what is on
        screen is the song and three small buttons in the strip over it. */
     tapeBar = el("span", "tape-bar");
+    /* WHERE IT LIVES, WRITTEN ON IT. While a take is running it stands out on
+       the page and the strip is not on the screen at all (see airRoom), so the
+       way back cannot be «wherever the header is now»: it is this strip, which
+       belongs to this song, whether or not the song is still the page. */
+    tapeBar._home = tools;
     tools.appendChild(tapeBar);
     paintTape();
 
@@ -13034,6 +13104,9 @@
     setBusy("טוען את הגרסאות");
     db.bySlug(slug).then(function (song) {
       if (!song) return notFound(slug);
+      /* the same as on a version of it: a song in the wastebasket comes out at
+         the wastebasket and not at an address it no longer answers on */
+      if (song.deleted_at) state.up = addr("deleted");
 
       return versions.of(song.id).then(function (rows) {
         where("גרסאות של " + (song.title || "שיר"));
@@ -13123,6 +13196,13 @@
     setBusy("טוען את הגרסה");
     db.bySlug(slug).then(function (song) {
       if (!song) return notFound(slug);
+
+      /* THE WAY OUT OF A DELETED SONG'S VERSION IS THE WASTEBASKET, which is
+         where it was opened from (see viewDeleted) and the only page it is
+         still on. The song's own address is a song that is not in the library,
+         and sending somebody stepping back to a page for a row nobody can
+         reach is worse than sending them to the library was. */
+      if (song.deleted_at) state.up = addr("deleted");
 
       /* "last" IS AN ADDRESS ANYBODY CAN WRITE DOWN and nobody has to look up.
          It is how a deleted song is opened from the wastebasket (see
@@ -14658,6 +14738,10 @@
     /* and the ways back through a song that is not on the screen any more */
     state.songUndo = null;
     state.songRevert = null;
+    /* and where the page that is going hung, which is a fact about that page
+       and not about the one arriving: the address answers for the rest (see
+       above) */
+    state.up = null;
     /* and the box in the bar goes back to being a way to other pages, until a
        page that can be sieved says otherwise (see state.sift in viewIndex) */
     state.sift = null;
@@ -15860,6 +15944,13 @@
      to start listening is the picture that says it is listening, and the same
      one goes red when it is being kept. */
   function paintTape() {
+    /* WHERE THE BUTTON STANDS BEFORE WHAT IS DRAWN ON IT, because the three
+       states are not all drawn in the same place: while a take is running the
+       header is gone and the button is out on the page (see airRoom). First
+       and not last, so that the states which return early below are not the
+       ones that leave the page with a header that never came back. */
+    airRoom();
+
     /* Filled whether or not it is standing in the page yet. The strip is built
        with the song and put into the bar afterwards (see placeControls), so
        asking for it to be connected first meant the one state that matters
@@ -15890,36 +15981,83 @@
        of the way in and the only thing in this strip that starts anything.
        Everything else here is a setting, drawn quiet on purpose: a setting is
        read far more often than it is pressed. */
+    /* A TRIANGLE AND NOT A DOT. The red circle is the mark a tape machine puts
+       on the button that records, and it was the wrong picture here: what this
+       press starts is the microphone, the following and the take together, and
+       the whole of that is somebody beginning to play. A play and a stop are
+       one pair anybody can read across a room; a dot and a pause were two
+       halves of two different pairs. */
     if (!taping()) {
-      var go = iconBtn(ICON.dot, "הקלטה", beginTake);
+      var go = iconBtn(ICON.play, "הקלטה", beginTake);
       go.classList.add("is-rec");
       tapeBar.appendChild(go);
       return;
     }
 
-    /* --- RUNNING: ONE BUTTON, AND IT HOLDS ------------------------------------
-       And it is the thing that says the recording is running, so it is red and
-       it breathes: a red mark that does not move reads as a decoration and one
-       that pulses reads as live, which is the difference between "there is a
-       recording here" and "it is going".
-
-       No stop beside it. Finishing is a decision, and a decision does not
-       belong under a thumb that is holding a plectrum: pausing is the cheap
-       gesture and stopping is behind it. */
     /* --- RUNNING: ONE BUTTON, AND IT ASKS -------------------------------------
        It holds the recording and puts the question up in the same press, which
-       is what pausing a take is actually for: somebody stops playing in order
+       is what stopping a take is actually for: somebody stops playing in order
        to decide, and every one of them was then reaching for a second button
        to say so. There is no held state left on the screen, so there is
        nothing to draw for it, and closing the question carries on.
+
+       A SQUARE AND NOT TWO BARS. The pause was true about the machine and false
+       about the person: what the press means is «I have finished playing», and
+       the panel it puts up asks what to do with what was played. That the
+       recorder is only held underneath, so that walking away from the question
+       carries on, is the app being careful and not a thing to draw a picture
+       of. The pair the eye reads is play and stop.
 
        AND IT IS THE THING THAT SAYS THE RECORDING IS RUNNING, so it is red and
        it breathes. A red mark that does not move reads as a decoration; one
        that pulses reads as live, which is the difference between "there is a
        recording here" and "it is going". */
-    var hold = iconBtn(ICON.pause, "השהיה", stopTape);
+    var hold = iconBtn(ICON.stop, "עצירה", stopTape);
     hold.classList.add("is-rec", "is-taping");
     tapeBar.appendChild(hold);
+  }
+
+  /* --- AND WHILE IT IS RUNNING, THE HEADER IS NOT THERE ----------------------
+     Somebody recording is playing the song, and while they are playing the
+     only thing on the screen that is being used is the song. The header is a
+     name, a search box and a row of doors, none of which is pressed with a
+     guitar in both hands, and on a phone it is a tenth of the glass spent on
+     them: it goes up and off, and the page comes up with it, which is a line
+     or two more of the song for nothing.
+
+     THE BUTTON DOES NOT GO WITH IT. It is the one thing up there that is being
+     used, because it is the way to stop, and a recording that can be started
+     but not stopped is a trap. So it steps out of the header first and stands
+     where it already was, and what leaves is everything else.
+
+     Measured rather than guessed, twice: how tall the thing leaving is, which
+     is what the page rises by, and where the button is standing at that
+     moment, which is where it stays. Both are read while the header is still
+     in place, which is why this runs before the class goes on. */
+  function airRoom() {
+    var on = taping() && !tapeHeld();
+    if (!tapeBar) return document.body.classList.toggle("on-air", false);
+
+    if (on && !tapeBar.classList.contains("is-air")) {
+      var head = document.querySelector(".top");
+      var seat = tapeBar.getBoundingClientRect();
+      if (head) {
+        document.body.style.setProperty("--top-away",
+          Math.round(head.getBoundingClientRect().height) + "px");
+      }
+      document.body.style.setProperty("--air-top", Math.round(seat.top) + "px");
+      tapeBar.classList.add("is-air");
+      document.body.appendChild(tapeBar);
+    } else if (!on && tapeBar.classList.contains("is-air")) {
+      tapeBar.classList.remove("is-air");
+      /* Back where it was built, and NOT wherever the header happens to be
+         now: walking off the song holds the take, and by then the strip this
+         belongs to is a page that is no longer on the screen. It goes home to
+         it either way, so that a page uncovered later has its button. */
+      if (tapeBar._home) tapeBar._home.appendChild(tapeBar);
+      else tapeBar.remove();
+    }
+    document.body.classList.toggle("on-air", on);
   }
 
   function showLead() {

@@ -23,7 +23,7 @@ function grab(head, open = "{", shut = "}") {
 }
 
 const NAMES = ["people", "peopleSaid", "credits", "creditsLine", "creditNames",
-  "creatorsOf", "songsBy"];
+  "creatorsOf", "roleTags", "songsBy"];
 const api = new Function([
   grab("var CREDITS = [", "[", "]"),
   ...NAMES.map((name) => grab("function " + name + "(")),
@@ -79,6 +79,23 @@ eq("everybody the library has a name for, once each, in Hebrew order",
 eq("and which of the two each of them is",
   shelf.map((p) => p.name + ":" + Object.keys(p.roles).join("+")),
   ["דביר כהן:lyrics_by", "ינון דר:lyrics_by+music_by", "ליאת ציון:lyrics_by+music_by", "תמי בן הדר:lyrics_by+music_by"]);
+/* --- and HOW MANY of each, which is what the card on /creators says ---
+   A yes on each column is the same yes for somebody who wrote one tune and
+   for somebody who wrote forty, and the card was spending a chip to say it. */
+const more = { title: "עוד אחד", lyrics_by: "", music_by: "ינון דר" };
+const much = (name) => api.creatorsOf([song, more])
+  .filter((p) => p.name === name)
+  .map((p) => [p.roles.lyrics_by || 0, p.roles.music_by || 0])[0];
+eq("words on one song and tunes on two", much("ינון דר"), [1, 2]);
+eq("and nothing counted on a column they are not in", much("דביר כהן"), [1, 0]);
+eq("one song crediting somebody twice is one song in each column",
+  much("ליאת ציון"), [1, 1]);
+eq("the chip says the word and the number, in the order the credits are written",
+  api.roleTags({ lyrics_by: 1, music_by: 2 }).map((t) => t.words + " " + t.count),
+  ["כותב 1", "מלחין 2"]);
+eq("and a person with one of the two carries one chip",
+  api.roleTags({ music_by: 4 }).map((t) => t.words + " " + t.count), ["מלחין 4"]);
+
 /* the whole point: the row itself is not a person */
 eq("the column read whole is nobody",
   api.creatorsOf([song]).map((p) => p.name).includes(song.lyrics_by), false);
