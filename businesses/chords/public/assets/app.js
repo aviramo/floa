@@ -92,11 +92,6 @@
        are the ones on the key dial and on «who wrote the tune», because a note
        is a note wherever it is drawn here. */
     chordsOnly: '<path d="M3.5 20.5h17"/><path d="M8 5.5v6.6"/><ellipse cx="6.3" cy="12.6" rx="1.8" ry="1.5" fill="currentColor" stroke="none"/><path d="M17 5.5v6.6"/><ellipse cx="15.3" cy="12.6" rx="1.8" ry="1.5" fill="currentColor" stroke="none"/>',
-    /* ONE note over the line, which is the one above with one note taken off
-       it. The two buttons say different things and they are drawn in the same
-       vocabulary on purpose: that one puts down the chords a copy is carrying,
-       this one puts down a single chord on a single letter. */
-    chordHere: '<path d="M3.5 20.5h17"/><path d="M12 5.5v6.6"/><ellipse cx="10.3" cy="12.6" rx="1.8" ry="1.5" fill="currentColor" stroke="none"/>',
     /* the question mark itself: the hook, the stem and the dot. Drawn to the
        full height of the box like every other icon here, so that at fifteen
        pixels it is a question mark and not a speck. */
@@ -8640,52 +8635,13 @@
         return node;
       };
 
-      /* --- A CHORD ON THE CHARACTER THE CARET IS IN FRONT OF -------------------
-         The lane over the words is where a chord is put down, and on a phone
-         the lane is eleven pixels of strip between two lines of text. Measured
-         with a real browser and a real finger: a tap on it lands in the words
-         instead, and so does a tap aimed to the pixel, because a phone snaps a
-         tap to whatever near it is worth tapping and a line you can type into
-         is worth more than a strip. The lane was not small there, it was
-         unreachable, and a song could be written on a phone with no chords in
-         it.
-
-         So the caret is the other way in, and it is not a lesser one. The
-         character the caret stands in front of is exactly the character the
-         chord goes over, and it is chosen with the phone's own magnifying
-         glass instead of by aim. On a desk it is the same offer, where it is
-         the difference between clicking at a pixel of a lane and naming a
-         letter.
-
-         The lane is untouched and still the quickest thing on a desk: a press
-         on it puts a chord down where the pointer is, which is one gesture
-         where this is two. */
-      var lane = ln.querySelector(".ln-c");
-      if (lane) {
-        var put = hold(el("button", "gap-btn gap-do"));
-        put.title = "לשים אקורד מעל האות הזאת";
-        put.setAttribute("aria-label", put.title);
-        put.appendChild(svg(ICON.chordHere));
-        put.addEventListener("click", function () {
-          /* The same four steps the lane takes, with the caret answering where
-             instead of the pointer: born on a character of this line, bound so
-             it can be dragged and re-picked like any other, drawn, and named.
-             Nameless until the picker says otherwise, and the picker takes it
-             back out again if it is walked away from (see pickerDismissed). */
-          var chord = { pos: rowFrom(ln) + at, chord: "" };
-          line.chords.push(chord);
-          var node = chordEl("", at, semis);
-          bindChord(node, ln, line, chord);
-          lane.appendChild(node);
-          layoutLine(ln);
-          /* The offer has been answered, so it goes before the picker opens:
-             two small things floating over the same letter is one of them in
-             the way of the other. */
-          hideGap();
-          openPicker(node, ln, line, chord);
-        });
-      }
-
+      /* THERE WAS A THIRD BUTTON HERE, and it put a chord on the character the
+         caret stood in front of. It was written because the lane over the words
+         was eleven pixels of strip that a finger could not land on, and it is
+         gone because the lane is not that any more: on a phone it is a strip
+         with reach over it, and a press on it puts a chord down where the thumb
+         is, in one gesture where this was two. One way in is better than two,
+         and the one that is left is the one that has always been there. */
       var open = hold(el("button", "gap-btn gap-do"));
       open.title = "לפתוח רווח בין האותיות, בלי לשבור את המילה";
       open.setAttribute("aria-label", open.title);
@@ -8704,7 +8660,32 @@
       var width = gapOffer.offsetWidth;
       var left = Math.min(Math.max(4, box.left + box.width / 2 - width / 2), window.innerWidth - width - 4);
       gapOffer.style.left = left + "px";
-      gapOffer.style.top = (box.bottom + 2) + "px";
+
+      /* --- OVER THE LETTERS ON A PHONE, UNDER THEM ANYWHERE ELSE ---------------
+         Under is the right answer wherever the caret is a line one pixel wide.
+         It stands in the air between two lines, out of the way of the words and
+         of the chords over them, which is what that air is for.
+
+         A PHONE PUTS SOMETHING THERE ALREADY. The caret comes with a handle, a
+         drop the size of a fingertip hanging directly under it so that it can
+         be dragged, and it lands exactly where this does: on the middle button
+         of the offer, covering it. The one that could not be pressed was the
+         one that opens a gap, which is the whole reason the offer exists.
+
+         So on a phone it goes above, into the lane. That is not free, it stands
+         over the chords of the line for as long as it is open, but it is open
+         only until something is pressed or typed, and a button behind a drop is
+         not a button at all.
+
+         Unless there is no room above, which is the first line of a song under
+         a bar that is stuck to the top of the window: then it goes back under
+         the letters, where at worst a handle is in front of it. */
+      var stuck = 0;
+      Array.prototype.forEach.call(document.querySelectorAll(".top, .song-strip"), function (node) {
+        if (node.offsetParent !== null) stuck += node.getBoundingClientRect().height;
+      });
+      var over = box.top - gapOffer.offsetHeight - 2;
+      gapOffer.style.top = (NARROW.matches && over > stuck + 4 ? over : box.bottom + 2) + "px";
 
       document.addEventListener("pointerdown", gapOutside, true);
     }

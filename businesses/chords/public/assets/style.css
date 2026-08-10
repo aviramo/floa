@@ -2049,16 +2049,15 @@ body.on-song .top { border-bottom: 0; }
 .gap-why { color: var(--ink); }
 .gap-why:hover { border-color: var(--ink); }
 
-/* ON A PHONE THE OFFER LIES DOWN, and it is the third button that turns it.
-   Two stacked hang the depth of two buttons under a letter and that was
-   nothing; three of them, at a size a thumb can actually land on, would hang
-   past the next line of the song and the one after it, which is a toolbar
-   standing on the words somebody is reading. Side by side it covers the line
-   under it and no more, and it is the only line it was ever standing on.
+/* ON A PHONE THE OFFER LIES DOWN, because on a phone it stands OVER the
+   letters and not under them: the caret there comes with a handle hanging
+   under it, and that drop lands on whatever the offer put there (see
+   offerGap). Above the letters the room is the chord lane, one line's worth,
+   and a stack of two would reach past it into the line above. Side by side it
+   is one button tall and covers the lane it is standing in and nothing else.
 
-   Bigger, because this is where they matter: the offer is the whole way in to
-   putting a chord down on a phone (see offerGap), and twenty six pixels is
-   not something a thumb aims at. */
+   Bigger, too. Twenty six pixels is a size for a pointer, and what is aiming
+   at these is a thumb. */
 @media (max-width: 620px) {
   .gap-offer { flex-direction: row; gap: 6px; }
   .gap-btn { width: 38px; height: 34px; }
