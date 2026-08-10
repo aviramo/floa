@@ -372,14 +372,10 @@ body.on-song { background: var(--card); }
 .find-none { padding: 14px 12px; color: var(--ink-soft); font-size: 14px; }
 .find-more { padding: 8px 12px 6px; color: var(--ink-soft); font-size: 12px; }
 
-/* A name is as long as somebody's name is, and the bar has the width it has.
-   Cut with an ellipsis rather than let one long name push everything else out
-   of the row: the button is recognised by being the one with the face on it,
-   and the whole name is one press away in the panel it opens. */
-.top-actions .who .lb {
-  display: inline-block; max-width: 11ch;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
+/* THERE WAS A .who HERE, the button in the bar carrying whoever is signed in.
+   The name is a chip over the wall now, with the other doors (see
+   .tally-door), and the bar holds only the way IN, for somebody who has no
+   name to show yet. */
 
 /* On a phone the bar holds four things and the screen holds about two of
    them. What goes is the WORD on any button that has a picture, because a
@@ -395,6 +391,13 @@ body.on-song { background: var(--card); }
    it sat up on the label's own line and squeezed it. */
 @media (max-width: 620px) {
   .top-actions .btn svg + .lb { display: none; }
+  /* EXCEPT THE FORK, which keeps its word here. Everything else in this bar
+     is a picture somebody already knows, a plus that adds and a face that is
+     an account; a tuning fork is a shape most people have never pressed, and
+     without the word it was found by pressing to see what happened. Five
+     letters, and the bar has the room for them now that the doors have gone
+     down to the wall (see .tally-door). */
+  .top-actions .btn.tuner svg + .lb { display: inline; }
   .top-actions .btn.small { padding: 8px; }
   .top-actions .btn svg { width: 18px; height: 18px; }
   /* A button that has lost its word is thirty-six across with an eighteen
@@ -650,6 +653,40 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 }
 .tally-add:hover { background: var(--accent-ink); border-color: transparent; }
 .tally-add svg { width: 16px; height: 16px; }
+
+/* --- AND ABOVE THAT ROW, THE DOORS TO THE REST OF THE APP -------------------
+   The evenings, the people, and whoever is signed in. They were three rows
+   behind three dots in the corner of the bar, and a picture of three dots
+   says "there is more" and nothing else: half the app sat behind a press
+   that had to be spent before it could be read. They are chips over the wall
+   now (see paintDoors in the script), in a band of their own above the row
+   that adds and counts, read at a glance.
+
+   Quiet, in the same grey the app's second lines are written in: the row
+   under them carries a number each and the one filled chip that makes
+   something, and a door is neither. Same size and same corner, so the two
+   rows read as one band with a hairline of air between them. */
+.doors-row { margin-bottom: 8px; }
+.tally-door { align-items: center; color: var(--ink-soft); }
+.tally-door svg { flex: none; width: 16px; height: 16px; }
+/* A name is as long as somebody's name is, and one long one should not push
+   the other doors out of the row. Cut with an ellipsis: the whole of it is in
+   the panel that chip opens. */
+.tally-door .tally-l {
+  display: inline-block; max-width: 14ch;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* --- AND AIR ABOVE THE SHELVES ---------------------------------------------
+   The band of styles is the first thing on the page that is the LIBRARY
+   rather than something to press, and it was sitting a hair under the row of
+   chips: two bands of rounded boxes with nothing between them read as one
+   confused band. The room says which is which.
+
+   It is a margin on the shelves and not under the chips, so it is the same
+   gap at both widths: on a phone there is a row of counts between the two and
+   on a desk there is not, and adjacent margins collapse to the larger of them
+   either way. Nothing when there are no shelves at all. */
+.shelves:not(:empty) { margin-top: 26px; }
 
 /* --- THE LIBRARY IS A WALL OF CARDS ---------------------------------------
    It was a column of full-width rows, which is what a list of one line each
@@ -1894,12 +1931,13 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    read a paragraph at a time. It is read a line ahead, by somebody who wants
    as much of the next verse in front of them as will go.
 
-   IN SONG SIZES AND NOT IN EM, which is the same correction .ln-c carries
-   below. An em here is the APP's sixteen pixels, because a row inherits the
-   page's font and only .ln-t is set in the song's: as a fixed number of pixels
-   this was the right gap at one size and at no other, wide enough to read as a
-   blank line at the small end and gone altogether at the large. The space
-   between two lines is a fact about the words, so it is measured in them. */
+   IN SONG SIZES AND NOT IN EM, which is the same correction .ln-c already
+   carries below. An em here is the APP's sixteen pixels, because a row
+   inherits the page's font and only .ln-t is set in the song's: as a fixed
+   number of pixels this was the right gap at one size and at no other, wide
+   enough to read as a blank line at the small end and gone altogether at the
+   large. The space between two lines is a fact about the words, so it is
+   measured in them. */
 .ln { position: relative; margin-bottom: calc(var(--song-size) * .14); }
 /* IN SONG SIZES, NOT IN EM. An em here is the APP's sixteen pixels, because
    the lane inherits the page's font and only .ln-t is set in the song's, so
@@ -1957,27 +1995,35 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   .ed .chord { top: 14px; }
 }
 .ln-t {
-  /* TWO PIXELS CLOSER THAN THE LANE LEAVES THEM. The lane is as tall as a
-     chord needs and no more, and the chord hangs out of the bottom of it into
-     the space the words' own line height leaves empty above their letters (see
-     .ln-c). This takes two more pixels of that space, from the side the words
-     are on: the chord does not move, the words come up to it.
-
-     Which is the only way round it works. Shortening the LANE moves the chord
-     up with it, because the chord is placed at the lane's top, and the two
-     arrive at the words no closer than they were, one row higher.
-
-     A chord that floats is a chord you have to look twice at to attach to a
-     syllable, and the tick under it (see .chord::after) is drawn to touch the
-     letters rather than to point at them from across a gap. */
-  margin-top: -2px;
   white-space: pre;
   font-size: var(--song-size);
   /* Bold, because the words are what is being read from across a room with a
      guitar in your hands. */
   font-weight: 700;
-  line-height: 1.55;
-  min-height: 1.55em;
+  /* --- THE LEADING, AND IT IS WHERE THE AIR ACTUALLY WAS --------------------
+     A row was measured at 39.4 pixels at a reading size, and only 2.5 of that
+     was the space between rows. The rest of the air was in here: 1.55 of a
+     size against letters about 16 pixels tall left six pixels of half leading
+     ABOVE them and six more BELOW, on every line of every song, and shaving
+     the margin between rows was cutting at the small half of the problem.
+
+     The six above is not spare, and this is why the number moved rather than
+     went: the chord hangs down out of its lane into exactly that space (see
+     .ln-c), which is what keeps a chord attached to the syllable it names. So
+     the leading came down and the two pixels the words used to be pulled up by
+     went with it, and the chord's foot still stands where it stood, about a
+     pixel into the letters' own box.
+
+     WHAT IS GAINED IS THE HALF UNDER THE LETTERS, which is air nothing is
+     using: it and the gap between rows (see .ln) are the same gap twice, and a
+     song is read a line ahead by somebody who wants the next verse in front of
+     them. A song comes out about a tenth shorter for it.
+
+     THE FLOOR IS THE LETTERS THEMSELVES, and vowel points sit above them: a
+     holam is drawn above the letter and above that box. This is measured, not
+     guessed, and it is near that floor. */
+  line-height: 1.3;
+  min-height: 1.3em;
 }
 
 /* left / right are written by layoutLine, never here, and never as a logical
@@ -2421,21 +2467,84 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spin { animation-duration: 2s; } }
 
+/* --- ONE SHEET, AND EVERYTHING OVER THE PAGE IS IT -------------------------
+   The tuner, the handful of rows behind a button in the bar, the panel of the
+   song's facts, and every dialog. One shape, arriving from one edge, with one
+   bar across the top of it, so that a panel is read once and recognised after
+   that (see openSheet in app.js).
+
+   AT THE FOOT OF THE SCREEN AND NOT IN THE MIDDLE OF IT. A panel in the middle
+   is a thing the page was interrupted by; a panel at the bottom is a thing
+   that was reached for, it comes up under the hand that asked for it, and it
+   goes back down the way it came. On a wide screen it is the same sheet,
+   centred, because a shape that changes with the window is two shapes.
+
+   The width is the one measure everything here shares. --------------------- */
+:root { --sheet: 520px; }
+
+/* THE BAR ACROSS THE TOP. Not decoration and not a control with a name: it is
+   the one mark that says this came up from below and can be pushed back down,
+   and a gesture nothing on screen hints at is a gesture nobody makes.
+
+   It takes the whole width, so the finger that reaches for it does not have to
+   find it, and the touch never goes to the page under it while a sheet is
+   being dragged. */
+.grip {
+  flex: none; display: flex; align-items: center; justify-content: center;
+  height: 24px; cursor: grab; touch-action: none; user-select: none;
+}
+.grip::before {
+  content: ""; width: 40px; height: 4px; border-radius: 2px;
+  background: var(--line);
+}
+.is-held .grip { cursor: grabbing; }
+/* WHILE A HAND IS ON IT, IT IS WHERE THE HAND PUT IT. Nothing eases towards
+   anywhere: a sheet that lags a finger by a fifth of a second is a sheet that
+   feels like it is being pulled through water. */
+.is-held { transition: none !important; }
+
+/* AND IT COMES UP FROM THE EDGE IT LIVES ON. A dialog says this with a
+   transition, because it has a start and an end the browser knows about; a
+   panel that is simply put on the page says it with this. */
+@keyframes pop-up { from { transform: translateY(100%); } }
+
 /* --- dialog, toast ------------------------------------------------------ */
 
 .dlg {
-  border: none; border-radius: var(--radius); padding: 0;
-  box-shadow: 0 1px 3px rgba(23, 32, 42, .1), 0 24px 60px rgba(23, 32, 42, .22);
-  max-width: 400px; width: calc(100% - 32px);
+  border: none;
+  border-radius: var(--radius) var(--radius) 0 0;
+  box-shadow: 0 -1px 3px rgba(23, 32, 42, .1), 0 -18px 60px rgba(23, 32, 42, .22);
+  /* the foot of the window, in the middle of it */
+  margin: auto auto 0; max-width: var(--sheet); width: 100%;
+  /* and never taller than the window, whatever is in it */
+  max-height: calc(100dvh - 40px);
+  /* AND NO PADDING OF ITS OWN, not a pixel. A press that lands on the dialog
+     element and not on anything inside it is how the dark behind it is read
+     (see openSheet), and a strip of padding along the foot of the panel would
+     be a strip inside the panel that closed it. */
+  padding: 0;
 }
+/* THE COLUMN IS ON THE OPEN ONE AND NOT ON THE CLASS. An author's `display`
+   beats the browser's own `dialog:not([open]) { display: none }` whatever the
+   specificity says, because author rules beat user agent rules, so a display
+   written here without [open] on it puts every shut dialog on the page. */
+.dlg[open] { display: flex; flex-direction: column; }
 .dlg::backdrop { background: rgba(23, 32, 42, .35); }
-.dlg-in { padding: 24px; display: grid; gap: 12px; }
+/* WHAT SCROLLS IS THE PANEL AND NOT THE PAGE. A long panel keeps its own
+   scroll, and the pull at the end of it stops there rather than dragging the
+   page along behind the sheet. */
+.dlg-in {
+  padding: 4px 24px calc(24px + env(safe-area-inset-bottom));
+  display: grid; gap: 12px;
+  min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+}
 .dlg-in h2 { margin: 0; font-size: 20px; line-height: 1.3; letter-spacing: -.01em; }
 
-/* IT ARRIVES, RATHER THAN BEING THERE. A panel that appears between two frames
-   is read as the page having been redrawn, and the eye then has to find what
-   changed; a fifth of a second of rising into place says where it came from
-   and that the page under it is still the page.
+/* IT ARRIVES, RATHER THAN BEING THERE, and it arrives from the edge it lives
+   on. A panel that appears between two frames is read as the page having been
+   redrawn, and the eye then has to find what changed; a fifth of a second of
+   rising from the bottom says where it came from, that the page under it is
+   still the page, and which way to push it to be rid of it.
 
    Three things have to be allowed to animate for the way out to work as well
    as the way in: the two properties, and the discrete jumps of `display` and
@@ -2443,19 +2552,19 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    stands on its own, and browsers that know how to interpolate those jumps
    take the second one, so an older one loses the closing frames and nothing
    else. */
-.dlg, .dlg::backdrop { transition: opacity .18s ease, transform .18s ease; }
+.dlg, .dlg::backdrop { transition: opacity .2s ease, transform .22s ease; }
 @supports (transition-behavior: allow-discrete) {
   .dlg, .dlg::backdrop {
-    transition: opacity .18s ease, transform .18s ease,
-                overlay .18s allow-discrete, display .18s allow-discrete;
+    transition: opacity .2s ease, transform .22s ease,
+                overlay .22s allow-discrete, display .22s allow-discrete;
   }
 }
 .dlg, .dlg::backdrop { opacity: 0; }
-.dlg { transform: translateY(10px) scale(.98); }
+.dlg { transform: translateY(100%); }
 .dlg[open] { opacity: 1; transform: none; }
 .dlg[open]::backdrop { opacity: 1; }
 @starting-style {
-  .dlg[open] { opacity: 0; transform: translateY(10px) scale(.98); }
+  .dlg[open] { opacity: 0; transform: translateY(100%); }
   .dlg[open]::backdrop { opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -2496,6 +2605,49 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    hand it to the × on the first chip. It is a place to start and not a control,
    and a ring around it would say it was one. */
 .dlg-meta h2:focus { outline: none; }
+
+/* --- WHAT WRITING HERE MEANS, WHERE IT DOES NOT MEAN THE OBVIOUS THING ----
+   One sentence between the heading and the first field, and only for somebody
+   changing a song that is not theirs: what they type is kept beside the song
+   and not in it. The song's own account is told nothing, because there is
+   nothing to tell.
+
+   It is quiet and it is not a warning. Nothing here can go wrong, and a line
+   in red over a form that saves itself would say that something can. */
+.meta-said {
+  margin: 10px 0 0; font-size: 13px; line-height: 1.6; color: var(--ink-soft);
+}
+/* The form follows it at the gap it would have had from the heading, so a
+   panel with the sentence and one without are the same panel. */
+.meta-said + .song-meta { margin-top: 14px; }
+
+/* --- AND WHAT SOMEBODY ELSE WOULD HAVE THEM SAY --------------------------
+   Under the form, under a line, because it is not a fourth field: the fields
+   are what this account says and this is what another one is proposing. The
+   line is the same one the credit at the foot of the panel stands under, and
+   for the same reason: what is above it is the answer, and what is below it is
+   about the answer.
+
+   Boxed and inset, so that a panel holding two answers cannot be misread as a
+   panel holding one. */
+.meta-offers {
+  margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line);
+  display: grid; gap: 14px;
+}
+.meta-offers[hidden] { display: none; }
+.meta-offer {
+  display: grid; gap: 10px;
+  padding: 12px; border-radius: 10px; background: var(--bg);
+}
+.meta-offer-said { font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+/* The answers in it are chips and not links, so they carry the chip's own ring
+   and nothing else: this is a thing to read and answer, not a way out. */
+.meta-offer .told-row { align-items: baseline; }
+.meta-none { font-size: 13px; color: var(--ink-soft); }
+/* The two buttons sit where they are read last, at the end of the block rather
+   than centred in it: the block is a sentence and they are what to do about
+   it. */
+.meta-offer .row-actions { justify-content: flex-start; margin-inline-start: 0; }
 
 /* --- AND THE SAME PANEL, READ RATHER THAN FILLED IN -----------------------
    What somebody who cannot change the song sees when they press the same
@@ -2566,7 +2718,13 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 /* --- print -------------------------------------------------------------- */
 
 /* Which of the two pieces of paper. Under the print button, and small: it is
-   two words and a choice, not a dialog. */
+   two words and a choice, not a dialog.
+
+   AND NOT THE SHEET, which everything else standing over the page here is (see
+   .dlg, and openSheet in app.js). This hangs off the button that opened it and
+   is read in the corner the hand is already in; a choice between two words
+   does not want the width of the window and does not want to stand at the
+   other end of the screen from the question that raised it. */
 .print-menu {
   position: fixed; z-index: 60;
   display: flex; flex-direction: column; align-items: stretch; gap: 2px;
@@ -2605,13 +2763,10 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    .ear-door.is-on). */
 .print-menu .btn.ear-row.is-on,
 .print-menu .btn.ear-row.is-on:hover { background: var(--chord); border-color: var(--chord); }
-/* WIDE ENOUGH TO READ A NAME IN. The rows here are the buttons that used to
-   stand in the bar, and one of them carries whatever somebody is called. */
-.print-menu { min-width: 168px; }
-.print-menu .who .lb {
-  display: inline-block; max-width: 18ch;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
+/* AND NO NAME IN HERE ANY MORE. The panel used to hold the doors to the rest
+   of the app, one of them carrying whoever was signed in; those went to the
+   row of chips over the wall (see .tally-door). What is left in these rows is
+   what is done TO the page they were opened over. */
 
 /* THERE WAS A .styler HERE, the same small panel holding every style the
    library already uses, for naming a handful of ticked songs at once. It went
@@ -2773,13 +2928,25 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    ========================================================================== */
 .ear {
   position: fixed; inset-inline: 0; bottom: 0; z-index: 60;
-  background: var(--card); border-top: 1px solid var(--line);
-  box-shadow: 0 -2px 14px rgba(23, 32, 42, .09);
-  padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+  margin-inline: auto; max-width: var(--sheet);
+  background: var(--card);
+  border-radius: var(--radius) var(--radius) 0 0;
+  box-shadow: 0 -1px 3px rgba(23, 32, 42, .1), 0 -18px 60px rgba(23, 32, 42, .18);
+  padding: 0 14px calc(10px + env(safe-area-inset-bottom));
+  animation: pop-up .22s ease;
+  transition: transform .22s ease;
+}
+/* THE ONE THING IT DOES NOT TAKE FROM THE OTHER SHEETS IS THE DARK BEHIND IT.
+   This panel is read WHILE the song under it is being played from, and a page
+   behind glass is a page nobody can follow. Everything else about it is the
+   same: the shape, the bar across the top, the push down that puts it away,
+   the press outside, and back (see buildEar in app.js). */
+@media (prefers-reduced-motion: reduce) {
+  .ear { animation: none; transition: none; }
 }
 /* Room under the song for the band standing over it, so the last line of a
    song is a line you can read rather than one behind the glass. */
-body.on-ear { padding-bottom: 182px; }
+body.on-ear { padding-bottom: 196px; }
 
 /* THERE WAS A LID HERE: two tabs, a loudness bar and a cross, thirty pixels of
    row standing over the song for as long as the microphone was open. All of it
@@ -2941,7 +3108,7 @@ body.on-ear { padding-bottom: 182px; }
    is the song. The measurement is a press away for whoever wants to see why it
    did what it did, and it is in nobody's way until then. */
 body.ear-small .ear-work { display: none; }
-body.on-ear.ear-small { padding-bottom: 64px; }
+body.on-ear.ear-small { padding-bottom: 78px; }
 
 /* --- AND THE SONG'S OWN CHORDS ---------------------------------------------
    The only part of this panel that is about the song rather than about the
@@ -3209,7 +3376,7 @@ body.on-dock { padding-bottom: 92px; }
    sitting down with this to find out whether it works, and that is not being
    done one handed on a bus. */
 @media (max-width: 620px) {
-  body.on-ear { padding-bottom: 186px; }
+  body.on-ear { padding-bottom: 200px; }
   .ear-chord .heard-also { display: none; }
   .chroma { height: 44px; }
 }

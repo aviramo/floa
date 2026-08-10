@@ -4014,7 +4014,7 @@
   var state = {
     songs: null, printable: false, printer: null, killer: null,
     editToggle: null, songControls: null, redrawSong: null, rehome: null,
-    wake: null, ear: null, takeSong: null, redrawTakes: null,
+    doors: null, wake: null, ear: null, takeSong: null, redrawTakes: null,
     takesOpen: null, takesCount: 0,
     songMoves: null, songDetails: null,
     songOut: null, songPast: null, songKill: null,
@@ -4026,7 +4026,7 @@
      `songs` is not one of them: it is the library itself, one copy for
      everybody, and every sheet showing it is showing the same songs. */
   var PAGE_STATE = ["printable", "printer", "killer", "editToggle",
-    "songControls", "redrawSong", "rehome", "wake", "sift", "ear",
+    "songControls", "redrawSong", "rehome", "doors", "wake", "sift", "ear",
     "takeSong", "redrawTakes", "takesOpen", "takesCount",
     "songMoves", "songDetails", "songOut", "songPast", "songKill",
     "songUndo", "songRevert"];
@@ -4685,20 +4685,29 @@
   /* --- A HANDFUL OF LINES UNDER A BUTTON -------------------------------------
      The shape the printing choice has had for a while, and it is the shape
      every small choice in the bar wants: a couple of buttons hanging under the
-     one that was pressed, gone on a press anywhere else, on Escape, and on
-     pressing that button again. One of them is open at a time, because two
-     panels standing over the page at once is a page nobody chose. */
+     one that was pressed, gone on a press anywhere else, on Escape, on back,
+     and on pressing that button again. One of them is open at a time, because
+     two panels standing over the page at once is a page nobody chose.
+
+     AND IT IS NOT THE SHEET, which everything else over the page here is (see
+     openSheet). A sheet is a place you go into and come out of; this is a list
+     of things to press hanging off the thing that was pressed to see it, and
+     the whole of it is read in the corner the hand is already in. Sending it
+     to the foot of the screen made a choice between two words into a panel the
+     width of the window, and put the answer a long way from the question. */
   var underMenu = null;
   var underAnchor = null;
 
   function closeUnder() {
     if (!underMenu) return;
-    underMenu.remove();
+    var gone = underMenu;
     underMenu = null;
+    gone.remove();
     if (underAnchor) underAnchor.setAttribute("aria-expanded", "false");
     underAnchor = null;
     document.removeEventListener("pointerdown", underOutside, true);
     document.removeEventListener("keydown", underEscape, true);
+    offBack(closeUnder);
   }
 
   /* The button that opened it is not "outside": pressing it again is asking
@@ -4708,6 +4717,9 @@
     if (!underMenu) return;
     if (underMenu.contains(event.target)) return;
     if (underAnchor && underAnchor.contains(event.target)) return;
+    /* and the press that closed it goes no further, the same as it does out of
+       every other panel here (see pressOutside) */
+    pressOutside(event);
     closeUnder();
   }
 
@@ -4734,6 +4746,7 @@
 
     document.addEventListener("pointerdown", underOutside, true);
     document.addEventListener("keydown", underEscape, true);
+    standsOnBack(closeUnder);
   }
 
   function printNow(words) {
@@ -4843,86 +4856,102 @@
     }
   }
 
-  /* The way into the other half of the app. It stands on the library and on
-     the two pages about people, and it is one button on all three. */
-  function toEvenings() {
-    return keep("toEvenings", function () {
-      return button("אירועים", ICON.calendar, "ghost small", function () {
-        go(addr("evenings"));
-      });
-    });
-  }
-
-  function toCreators() {
-    return keep("toCreators", function () {
-      return button("יוצרים", ICON.people, "ghost small", function () {
-        go(addr("creators"));
-      });
-    });
-  }
-
-  /* --- AND THE DOORS STAND BEHIND ONE BUTTON ---------------------------------
+  /* --- AND THE DOORS ARE A ROW ON THE PAGE ----------------------------------
      The bar had six things on it: the mark, the name of the page, a search
      box, and then a tuning fork, a calendar, two faces, a plus and a face.
      Five pictures in a row, on a phone with the words stripped off them, is a
      row nobody reads: they are all the same size and the same grey, and the
      only way to find the one you want is to press until something happens.
 
-     So the ones that are DOORS TO OTHER PAGES go behind three dots, and what
-     is not a door stays out. Adding a song stays out because it is the one
-     thing on this bar somebody came here to DO. The account goes in with the
-     doors: it is looked at rarely, and it was holding the corner that the
-     menu wants.
+     So the ones that are DOORS TO OTHER PAGES came out of the bar, and for a
+     while they stood behind three dots in the corner. THE DOTS ARE GONE TOO.
+     A picture of three dots says "there is more" and never says more than
+     that, so half the app, the evenings and the people and the account, sat
+     behind a press that had to be spent before it could be read. What was
+     inside was three words, and three words fit on the page perfectly well.
 
-     AND THE TUNING FORK CAME BACK OUT. It is not a door either: it opens a
-     panel over the page you are already on and leaves you there, which is the
-     same kind of thing the microphone is on a song, and it is the one here
-     that is picked up in the middle of doing something else, with a guitar in
-     both hands. A press to open the panel and then a press to find it is one
-     press too many for that. It stands beside the dots, on the side the glass
-     is on (see tuner).
+     They stand over the wall now, as chips, in a band of their own above the
+     row that adds to the page and counts what is on it: read without being
+     pressed first, quieter than the one chip in the row below that makes
+     something. Adding stays down there because it is the one thing on the
+     page somebody came here to DO, and the counts stay with it because they
+     are about the wall underneath them.
 
-     What the panel holds is decided at the press and not at the painting, so
-     a door is never offered to the page you are already standing on. */
-  function moreRows() {
+     THE TUNING FORK IS NOT ONE OF THESE. It is not a door: it opens a panel
+     over the page you are already on and leaves you there, and it is picked
+     up in the middle of doing something else, with a guitar in both hands. It
+     keeps its place in the bar, on the side the glass is on (see tuner).
+
+     Which of them is offered is decided at the painting, so a door is never
+     offered to the page it is already standing on. */
+  function doorChip(label, icon, act) {
+    var chip = el("button", "tally tally-door");
+    chip.type = "button";
+    chip.appendChild(svg(icon));
+    chip.appendChild(el("span", "tally-l", label));
+    chip.title = label;
+    chip.addEventListener("click", act);
+    return chip;
+  }
+
+  function paintDoors(row) {
     var p = parts();
-    var rows = [];
-    if (p[0] !== "evenings") rows.push(toEvenings());
-    if (p[0] !== "creators" && p[0] !== "creator") rows.push(toCreators());
-    /* Signing in is not in here: it is the only way forward for somebody who
-       has none, and a way forward hidden behind a picture is no way forward.
-       It keeps its own place in the bar (see paintHeader). */
-    if (auth.in) rows.push(session());
-    return rows;
+    row.textContent = "";
+    if (p[0] !== "evenings") {
+      row.appendChild(doorChip("אירועים", ICON.calendar, function () { go(addr("evenings")); }));
+    }
+    if (p[0] !== "creators" && p[0] !== "creator") {
+      row.appendChild(doorChip("יוצרים", ICON.people, function () { go(addr("creators")); }));
+    }
+    /* THE TUNING FORK IS NOT IN THIS ROW. It came down here for a moment and
+       went back up: it is not a door, it opens a panel over the page you are
+       already on and leaves you there, and it is the one thing here that is
+       picked up in the middle of doing something else, with a guitar in both
+       hands. It keeps its own place in the bar, with its name written on it
+       (see tuner). */
+    /* Signing in is not one of these. It is the only way forward for somebody
+       who has none, and it keeps its own place in the bar, where a way forward
+       belongs (see paintHeader). Whoever IS signed in is a door like the rest:
+       their own name, opening the panel about them. */
+    if (auth.in) row.appendChild(doorChip(auth.name() || "החשבון", ICON.person, askMe));
   }
 
-  function more() {
-    return keep("more", function () {
-      var node = iconBtn(ICON.dots, "עוד", function () {
-        menuUnder(node, moreRows());
-        /* Every row in here either goes somewhere or opens something over the
-           page, so the panel has done its work the moment one is pressed.
-           Said here and not in each row, because the rows are the same
-           buttons that stand alone elsewhere. */
-        if (underMenu) underMenu.addEventListener("click", closeUnder);
-      });
-      node.setAttribute("aria-haspopup", "menu");
-      node.setAttribute("aria-expanded", "false");
-      return node;
-    });
+  /* The band for the page being drawn, and the page keeps the way to paint it
+     again: the name comes back from Google a moment after the page does, and
+     a row written once would still be saying "החשבון" when it arrived.
+
+     Built for each page rather than made once and moved between them, because
+     a page put aside keeps its own nodes inside it (see bury), and one shared
+     band would be lifted out from under whichever sheet was holding it. */
+  function doorsBand() {
+    var band = el("div", "kinds-row doors-row");
+    var row = el("div", "tallies");
+    band.appendChild(row);
+    state.doors = function () { paintDoors(row); };
+    state.doors();
+    return band;
   }
 
-  /* THE TUNING FORK, ONE PRESS FROM ANYWHERE IT IS OFFERED. It stands next to
-     the three dots, between them and the glass, which puts the two things that
-     open a panel over the page at the same end of the bar.
+  /* THE TUNING FORK, ONE PRESS FROM THE LIBRARY, AND IT SAYS WHAT IT IS. It
+     stood here as a picture alone, which is the one thing a bar cannot do for
+     a control nobody has met before: a fork among grey pictures is found by
+     pressing until something happens. So it carries its word, "טיונר", and it
+     KEEPS that word on a phone, where the bar takes the word off everything
+     else it holds (see the media query for .tuner). Five letters are worth
+     the room here, because the picture on its own was not enough.
 
-     Kept like everything else up here, and lit the way the row in the panel
-     was: the picture says whether the thing behind it is open at the moment
-     you look at it, which it can only do if it is painted rather than
+     The doors went down to the row over the wall and this did not follow them:
+     it is not a door. It opens a panel over the page you are already on and
+     leaves you there, and it is picked up in the middle of doing something
+     else, with a guitar in both hands.
+
+     Kept like everything else up here, and lit the way the row for it in a
+     song's own panel is: it says whether the thing behind it is open at the
+     moment you look at it, which it can only do if it is painted rather than
      built. */
   function tuner() {
     var node = keep("tuner", function () {
-      return iconBtn(ICON.fork, "כיוון הגיטרה", function () { askEar("tune"); });
+      return button("טיונר", ICON.fork, "ghost small tuner", function () { askEar("tune"); });
     });
     node.classList.toggle("is-on", earOpen() && earMode === "tune");
     return node;
@@ -5068,10 +5097,17 @@
        it by. */
     if (state.songDetails) {
       var told = state.songDetails;
-      rows.push(button(told.said, told.icon, "ghost small", function () {
+      var door = button(told.said, told.icon, "ghost small", function () {
         closeUnder();
         told.open();
-      }));
+      });
+      /* AND THE SAME DOT, on the row it is about. Somebody has offered other
+         people or another kind for this song, and the panel behind this row is
+         where that is answered: the dot on the corner says there is something
+         in here, and this one says which of these it meant (see .has-news and
+         songMore). */
+      if (told.news && told.news()) door.classList.add("has-news");
+      rows.push(door);
     }
     /* AND THE TWO THAT ARE ABOUT THE SONG'S WHOLE LIFE, at the foot of the
        panel, where the heaviest things in a list belong. They were two small
@@ -5125,7 +5161,13 @@
       made.setAttribute("aria-expanded", "false");
       return made;
     });
-    node.classList.toggle("has-news", !!(state.songOut && state.songOut()));
+    /* Two things can be waiting behind the dots and the corner says neither of
+       them apart: a song of your own that is not out in the world, and details
+       somebody has offered for one that is (see songRows). One dot for both,
+       because what the corner is for is the reason to open the panel at all. */
+    node.classList.toggle("has-news",
+      !!(state.songOut && state.songOut()) ||
+      !!(state.songDetails && state.songDetails.news && state.songDetails.news()));
     return node;
   }
 
@@ -5258,6 +5300,12 @@
        painted here whatever else this page turns out to hold. */
     paintBrand();
 
+    /* And the row of doors over the wall, which is not in the bar at all but
+       answers to the same two facts the bar does: which page this is, and who
+       is looking at it. A page that has no such row (a song, a shelf) says so
+       by having nothing to call (see doorsBand, and draw). */
+    if (state.doors) state.doors();
+
     var bar = document.getElementById("topActions");
     /* The test harness builds its own page around this file and has no bar. */
     if (!bar) return;
@@ -5311,11 +5359,13 @@
             return button("אירוע חדש", ICON.plus, "small", newEvening);
           }));
         }
-        /* AND NO TUNING FORK HERE. It stands beside the dots on the pages
-           about songs, where somebody has a guitar in both hands; this page is
-           a diary of dates and rooms, and nobody tunes on it. It is one press
-           away on every song, which is where the tuning happens. */
-        evs.push(more());
+        /* AND NO TUNING FORK HERE. It stands in the bar on the pages about
+           songs, where somebody has a guitar in both hands; this page is a
+           diary of dates and rooms, and nobody tunes on it. It is one press
+           away on every song, which is where the tuning happens.
+
+           The ways on from here are not in the bar either: they are the row of
+           chips over the wall (see doorsBand in viewEvenings). */
         return fill(bar, evs);
       }
       /* An evening that is open: the two things there are to do to the whole
@@ -5326,15 +5376,16 @@
     }
 
     /* The two pages about people. Neither has anything to do TO what is on
-       it, so the bar carries nothing but the ways on from it, and the ways on
-       are all in the one panel.
+       it, and the ways on from it are the chips over the wall, so the bar is
+       empty here but for the one thing that is not a door: the way in, for
+       somebody who has not signed in.
 
        AND NO TUNING FORK HERE EITHER, for the reason the evenings have none: a
        list of names is read, not played, and nobody stands on it with a guitar
        in both hands. It is on the library, where the songs are, and on every
        song, which is the whole of where the tuning happens. */
     if (p[0] === "creators" || p[0] === "creator") {
-      return fill(bar, auth.in ? [more()] : [session(), more()]);
+      return fill(bar, auth.in ? [] : [session()]);
     }
 
     if (p.length) {
@@ -5380,38 +5431,25 @@
         return add;
       }));
     }
-    /* The evenings, the people and whoever is looking: all of them one press
-       further away, in the corner (see more). The fork is not among them, it
-       is the picture beside them (see tuner). */
+    /* The evenings, the people and whoever is looking are not up here at all:
+       they are the row of chips over the wall (see paintDoors). The fork is,
+       because it is not a door (see tuner). */
     if (!auth.in) shelf.push(session());
-    shelf.push(tuner(), more());
+    shelf.push(tuner());
     fill(bar, shelf);
   }
 
-  /* WHO IS LOOKING AT THIS, in the corner where it belongs, and their own name
-     rather than the word "יציאה". The library is one account's until it is
-     published, so which account is holding it is a fact about everything on
-     the screen, and a bar that said only "יציאה" left it unsaid.
+  /* THE WAY IN, AND ONLY THE WAY IN. Somebody signed in is a chip over the
+     wall carrying their own name (see paintDoors), because which account is
+     holding the library is a fact about everything on the screen and belongs
+     where the rest of the app's doors are. Somebody who is NOT signed in has
+     no library to be told about and one thing to do, so it stays up here: a
+     way forward hidden anywhere is no way forward.
 
-     The name is a button, and what it opens is the small panel about the
-     person: change the name, or leave. Signing out lives in there rather than
-     beside it because it is the rarer of the two by a long way, and because a
-     bar with five buttons in it is a bar nobody reads.
-
-     THE NAME IS A VALUE IN A BUTTON, NOT A BUTTON. It is the one thing in the
-     bar that stands on nearly every page and changes only rarely, so it is
-     made once and the word inside it is written over: renaming yourself, or
-     the name arriving from Google a moment after the page did, replaces four
-     letters and nothing else. */
+     Made once and handed back on every page, like everything else in the bar,
+     so a move between pages moves it rather than building it again. */
   function session() {
-    if (!auth.in) {
-      return keep("signIn", function () { return googleButton("התחברות", "small"); });
-    }
-    var who = keep("who", function () {
-      return button("החשבון", ICON.person, "ghost small who", askMe);
-    });
-    relabel(who, auth.name() || "החשבון");
-    return who;
+    return keep("signIn", function () { return googleButton("התחברות", "small"); });
   }
 
   /* --- ONE PANEL, AND IT IS A SHEET ----------------------------------------
@@ -5535,6 +5573,11 @@
         if (event.target.closest("input, textarea, select, button, a, audio, video, [contenteditable]")) return;
         if (scrolled(event.target)) return;
       }
+      /* AND THE BROWSER IS TOLD THE PRESS IS SPOKEN FOR. Without this it makes
+         its own gesture out of the same movement, a selection or a drag of the
+         thing under the finger, and takes the pointer back the moment it does:
+         one frame of the sheet following the hand and then a pointercancel. */
+      event.preventDefault();
       live = true;
       held = event.pointerId;
       from = event.clientY;
@@ -6402,6 +6445,16 @@
          window that is already open, so it is written once as a function and
          the media query calls it again. The bar's slots are wiped by `where`
          on every page, so nothing here can be left standing over a song. */
+      /* THE WAYS OUT OF HERE STAND FIRST, above the row that adds to this page
+         and counts what is on it. A door belongs to the app and a count
+         belongs to the wall, so they are two bands and not one, and the doors
+         are the upper of the two because they are the wider question.
+
+         Not on a shelf: /style/<name> is the library held down to one word,
+         reached from the wall below and left by the arrow in the corner, and
+         it never carried these in the bar either. */
+      if (!shelf) app.appendChild(doorsBand());
+
       var overWall = el("div", "kinds-row");
       app.appendChild(overWall);
 
@@ -6479,7 +6532,7 @@
          is made of: the first thing on the page of songs was a handful of
          appointments that only the signed-in reader had. They live on
          /evenings, a click away in the bar. */
-      var bands = el("div");
+      var bands = el("div", "shelves");
       app.appendChild(bands);
 
       /* --- WHAT THE BOX IN THE BAR IS SIEVING THIS PAGE DOWN TO ----------------
@@ -7251,23 +7304,37 @@
 
     /* Finished from what the library already says elsewhere. A plain datalist,
        so the browser does the filtering, the arrow keys and the touch
-       keyboard, and an unlisted word is still just a word that gets typed. */
+       keyboard, and an unlisted word is still just a word that gets typed.
+
+       ASKED FOR WHEN THE FIELD IS OPENED, and not when the row is built. Each
+       of these answers is the whole library read for one column, and the rows
+       are now built on every song page a signed-in reader opens rather than
+       only in the editor (see the details panel in renderSong): two requests
+       for a panel most readers never press is two requests spent on nothing.
+       The press that opens the field is the first moment anybody could want a
+       suggestion, and the answer arrives while the first letter is typed. */
     var known = el("datalist");
     known.id = opts.listId;
     field.setAttribute("list", known.id);
-    opts.known().then(function (all) {
-      if (!known.isConnected) return;
-      all.forEach(function (name) {
-        var option = el("option");
-        option.value = name;
-        known.appendChild(option);
+    var asked = false;
+
+    function fill() {
+      if (asked) return;
+      asked = true;
+      opts.known().then(function (all) {
+        if (!known.isConnected) return;
+        all.forEach(function (name) {
+          var option = el("option");
+          option.value = name;
+          known.appendChild(option);
+        });
       });
-    });
+    }
 
     function open(yes) {
       field.hidden = !yes;
       add.hidden = !!yes;
-      if (yes) field.focus();
+      if (yes) { fill(); field.focus(); }
     }
     add.addEventListener("click", function () { open(true); });
 
@@ -7786,6 +7853,10 @@
     db.list().then(function (songs) {
       seedSongs(songs || []);
       app.innerHTML = "";
+      /* The same band of doors the library and the evenings carry, in the same
+         place (see doorsBand). This page has nothing to DO to what is on it,
+         so the band is the whole of what stands over the wall. */
+      app.appendChild(doorsBand());
 
       var people = creatorsOf(songs || []);
       if (!people.length) {
@@ -7812,6 +7883,8 @@
       state.songs = songs || [];
       var mine = songsBy(songs || [], name);
       app.innerHTML = "";
+      /* and the doors, as on every page that is a wall of cards */
+      app.appendChild(doorsBand());
 
       /* A name nobody is credited with is not a page. It is almost always a
          name that has since been corrected on the one song that carried it,
@@ -8398,6 +8471,162 @@
     /* the panel the form is opened in, built at the end of it */
     var metaPanel = null;
 
+    /* --- THE DETAILS ARE NOT THE EDITOR'S ------------------------------------
+       Who wrote the words, who wrote the tune, and what kind of song it is.
+       They used to be fields only while the pencil was down, which put three
+       facts that anybody in the library can be right about behind a door only
+       one person is allowed through, and behind a mode: a reader who knows
+       that the tune is somebody else's had to open the editor of a song that
+       is not theirs to say so.
+
+       So the panel is the form for everybody who is signed in, on the page as
+       it is read. What differs is not the form, it is where it is written:
+
+         the song's own account   straight into the song, and out to the world
+         everybody else           into their offer, and the song does not move
+
+       Which is the rule the whole of this app already lives under (see
+       song_offers), said in the one place these three facts are asked. Until
+       the offer is answered the song reads exactly as it did, which is the
+       point of it: nothing anybody types here changes what a stranger opens.
+
+       AND THE ANSWER IS IN THE SAME PANEL. The account the song belongs to
+       finds what was offered under its own form, with one press to take it in,
+       and a green dot on the row that opens the panel says it is there at all
+       (see songRows). Both of them are here rather than on the offer page
+       because a change to these three is not a change to the song's words: the
+       page that draws the whole offer out line by line is the wrong size of
+       answer for a style somebody added. */
+
+    /* The three, normalized the way they are written, so that "א, ב" and
+       "א,ב" are one answer and not two. */
+    function metaKeys(v) {
+      return JSON.stringify([
+        peopleSaid(people(v.lyrics_by)),
+        peopleSaid(people(v.music_by)),
+        tidyStyles(styles(v)),
+      ]);
+    }
+
+    /* The three, out of whatever holds them, ready to be written. */
+    function metaBody(v) {
+      var body = { styles: tidyStyles(styles(v)) };
+      CREDITS.forEach(function (c) { body[c.field] = peopleSaid(people(v[c.field])); });
+      return body;
+    }
+
+    /* Every offer standing on this song that would have these three say
+       something the song does not say already. An offer whose details match
+       the song is an offer about the WORDS, and the band over the page is
+       where that one is answered. */
+    function metaWaiting() {
+      if (!owned || past) return [];
+      var mine = metaKeys(row);
+      return toMe.filter(function (o) { return metaKeys(o) !== mine; });
+    }
+
+    /* --- TAKING THE DETAILS IN ------------------------------------------------
+       The three columns and nothing else. An offer usually carries the words
+       as well, and those are not what this press is about: what it answers is
+       the part of the offer this panel is asking about.
+
+       So the offer is not marked taken unless there is nothing left in it that
+       the song does not have now. One that still differs in its words is still
+       standing, the band over the song still says so, and the offer page is
+       still where the rest of it is answered. */
+    /* Set for the moment the panel is being shut BY an approval, so that the
+       way out does not also write what is in the fields. Both writes would be
+       to the same three columns of the same row, and two PATCHes in the air at
+       once land in either order: the loser would be the approval, undone
+       without anybody seeing it happen. What is in the fields goes, and it
+       should: the page is about to be drawn again from the database. */
+    var metaTaking = false;
+
+    function takeMeta(o) {
+      metaTaking = true;
+      if (metaPanel) metaPanel.close();
+      flush();
+      setBusy("מאשר");
+      db.update(row.id, metaBody(o)).then(function (got) {
+        /* WHAT THE WORLD READS HAS JUST MOVED. The credits are on the page the
+           build writes to disk and the styles are the shelves the library is
+           sorted by, and the only thing that tells the site to be built again
+           is a version being written (see library_changed in schema.sql). */
+        if (got && got.published) keepVersion(got);
+        var answered = got && sameVersion(got, o)
+          ? offers.answer(o.id, "taken")
+          : Promise.resolve();
+        return answered.then(function () {
+          toast("הפרטים אושרו, והשיר עודכן");
+          viewSong((got && got.slug) || row.slug);
+        });
+      }).catch(function (error) {
+        /* back to the page that was being read, so the failure is a sentence
+           over a page rather than a word on an empty screen */
+        route();
+        toast("האישור נכשל: " + error.message, true);
+      });
+    }
+
+    /* What somebody else would have these three say, at the foot of the panel
+       and only for the account that can answer it. Built once with the panel:
+       taking one in draws the page again from the database, so there is
+       nothing here to keep in step. */
+    function metaOffered() {
+      var box = el("div", "meta-offers");
+      var waiting = metaWaiting();
+      if (!waiting.length) {
+        box.hidden = true;
+        return box;
+      }
+
+      waiting.forEach(function (o) {
+        var one = el("div", "meta-offer");
+        /* The name arrives after the panel does, so the line is made with the
+           words that are true without it and gets the name when it comes. */
+        var said = el("div", "meta-offer-said", "מישהו הציע פרטים אחרים לשיר");
+        one.appendChild(said);
+        db.who(o.owner).then(function (name) {
+          if (name && said.isConnected) said.textContent = "ההצעה של " + name;
+        });
+
+        /* Chips and not links. Everywhere else in this app a name is a page
+           and a style is a shelf, and here a press is aimed at the button
+           underneath: a panel somebody is about to answer has no business
+           being a way out of the song. */
+        function line(word, names) {
+          var at = el("div", "told-row");
+          at.appendChild(el("span", "meta-word", word));
+          var tags = el("div", "told-tags");
+          if (!names.length) tags.appendChild(el("span", "meta-none", "אין"));
+          names.forEach(function (name) { tags.appendChild(el("span", "tag tag-style", name)); });
+          at.appendChild(tags);
+          one.appendChild(at);
+        }
+
+        CREDITS.forEach(function (c) { line(c.label, people(o[c.field])); });
+        line("סגנון", tidyStyles(styles(o)));
+
+        var actions = el("div", "row-actions");
+        actions.appendChild(button("אישור הפרטים", ICON.check, "small", function () {
+          takeMeta(o);
+        }));
+        /* And the whole of what was offered, for the offer that carries words
+           as well: this panel answers three facts, and that page answers the
+           song. Turning one down lives there too, because a refusal is about
+           the offer and not about a style. */
+        actions.appendChild(button("לפתיחת ההצעה", null, "ghost small", function () {
+          metaPanel.close();
+          flush();
+          go(addr(row.slug, "offers", o.id));
+        }));
+        one.appendChild(actions);
+        box.appendChild(one);
+      });
+
+      return box;
+    }
+
     if (editing) {
       /* Who wrote it, on the song itself. It belongs to it and there is no
          other page to keep it on any more. */
@@ -8513,6 +8742,11 @@
          something nothing on screen had raised, and reading it took longer
          than noticing a name stay put. The panel is its fields. */
       metaBox.appendChild(meta);
+      /* And what somebody else would have them say, under the form (see
+         metaOffered). The panel is where these three are answered, with the
+         pencil down as much as without it, so it is where an offer about them
+         is answered too. */
+      metaBox.appendChild(metaOffered());
       /* AND WHO PUT IT IN THE LIBRARY, the same sentence the reader's panel
          ends with (see songTold) and for the same reasons: under a line rather
          than in the column of answers, because who wrote a song is a fact about
@@ -8535,11 +8769,6 @@
         });
       }
       metaPanel.appendChild(metaBox);
-      /* The dark behind it. A press lands on the dialog itself only where the
-         panel is not, which is exactly there. */
-      metaPanel.addEventListener("click", function (event) {
-        if (event.target === metaPanel) metaPanel.close();
-      });
       /* A name or a style left half typed in a field is one somebody meant:
          the way out of the panel counts as having finished saying it, the same
          as walking out of the field does. */
@@ -8555,6 +8784,12 @@
            called "סגנון" over the only place the writers can be named is a
            door with the wrong sign on it. */
         said: "יוצרים וסגנון", icon: ICON.tag,
+        /* AND A GREEN DOT ON IT WHEN SOMEBODY HAS OFFERED OTHER ONES. A panel
+           that is shut says nothing, so the row that opens it carries the fact
+           that there is something inside worth opening it for, in the same dot
+           the corner and the publish row already use (see .has-news). What was
+           offered takes a panel; that it is there takes a dot. */
+        news: function () { return metaWaiting().length > 0; },
         open: function () { openSheet(metaPanel); },
       };
 
@@ -8679,43 +8914,240 @@
          And it is not built at all for a song that has neither a name on it
          nor a kind. A button that opens an empty panel is a button that has
          to be pressed to find that out. */
-      var told = songTold(song);
-      if (told) {
-        metaPanel = el("dialog", "dlg dlg-meta dlg-told");
-        var toldBox = el("div", "dlg-in");
-        /* The title takes the focus, for the reason the editor's does: what a
-           dialog hands it to otherwise is the first chip in the list, which
-           here is a link to somebody's page and a stray Enter away from
-           leaving the song. */
-        var toldTitle = el("h2", null, "פרטים");
-        toldTitle.tabIndex = -1;
-        toldTitle.setAttribute("autofocus", "");
-        toldBox.appendChild(toldTitle);
-        toldBox.appendChild(told);
-        metaPanel.appendChild(toldBox);
+      /* --- AND FOR SOMEBODY SIGNED IN IT IS THE FORM, PENCIL OR NO PENCIL ----
+         Read and not written is what this panel is to a visitor, and to
+         nobody else. Anybody with an account can say who wrote a song and
+         what kind of song it is, here, on the page as it is read, without
+         going through the editor and without the song being theirs (see the
+         block above metaKeys). Where it lands is the whole of the difference,
+         and the database is what decides it.
 
-        /* THE WAY IN IS A ROW IN THE PANEL BEHIND THE THREE DOTS, and it was
-           a picture beside the name. What that picture opened is worth
-           keeping: a name here is a page of everything that person wrote and a
-           style is a shelf of everything like this, which is the only thing
-           left to want on a page you cannot change. What it is not worth is
-           the corner of the bar next to the title, now that who wrote the song
-           is written under it in words. */
+         A version is still read and never written: what a song used to say is
+         not a field. */
+      if (!past && auth.in && song.id) {
+        /* WHOSE ANSWERS THESE ARE. The song's own account writes into the
+           song itself, so the form is the song and the chips are drawn from
+           it. Everybody else writes into their own offer, and what they are
+           shown is that offer where there is one: somebody who has already
+           proposed a name wants to see the name they proposed, not the one
+           the song still carries. */
+        var metaOwn = owned;
+        var metaBag = metaOwn ? song : offerSong(row, myOffer);
+
+        /* One write at a time and one more after it if anything moved while it
+           was in the air, which is what the song's own saving does and for the
+           same reason: two PATCHes racing on one row can land in either order,
+           and the loser would be the newer answer. */
+        var metaBusy = false;
+        var metaAgain = false;
+        var metaMoved = false;
+        var metaOut = false;
+        var metaRow = null;
+
+        function metaWrite() {
+          var body = metaBody(metaBag);
+          /* THE THREE COLUMNS AND NOTHING ELSE. Not the words, which are not
+             on this panel; not `published`, because saying who wrote a song is
+             not taking it off the shelf and never was; and not `draft`, for
+             the same reason. A song whose picture is still in the machine is
+             safe here too: the column being written from the other end is not
+             one of these. */
+          if (metaOwn) return db.update(row.id, body);
+
+          /* AN OFFER IS THE WHOLE SONG AS THIS PERSON WOULD HAVE IT, because
+             taking one writes all six columns into the song (see takeOffer): a
+             row carrying nothing but the credits would empty the words the
+             moment it was answered. The other three come from the song, or
+             from the offer already standing, which is where offerSong got
+             them.
+
+             And it says `open` every time, so an offer that was turned down
+             and then changed again is waiting again. */
+          body.state = "open";
+          if (myOffer) {
+            return offers.update(myOffer.id, body).then(function (got) {
+              if (got) myOffer = got;
+              return got;
+            });
+          }
+          body.song_id = row.id;
+          body.title = String(metaBag.title || "");
+          body.dir = metaBag.dir || "rtl";
+          body.lines = songToText(metaBag.lines);
+          var first = !offerWaiting();
+          return offers.add(body).then(function (got) {
+            if (got) myOffer = got;
+            /* the first save is the moment the offer starts existing, so it is
+               the moment the page has to start saying so: the word in the bar,
+               and the band under it */
+            if (first) {
+              if (showState) showState();
+              showBand();
+            }
+            return got;
+          });
+        }
+
+        function metaSave() {
+          metaMoved = true;
+          if (metaBusy) { metaAgain = true; return; }
+          metaBusy = true;
+          metaWrite().then(function (got) {
+            metaBusy = false;
+            if (got) metaRow = got;
+            if (metaAgain) { metaAgain = false; return metaSave(); }
+            if (metaOut) metaShelf();
+          }).catch(function (error) {
+            metaBusy = false;
+            metaAgain = false;
+            metaOut = false;
+            var denied = error.status === 401 || error.status === 403;
+            toast(denied
+              ? "אין הרשאה. נסו להתחבר שוב."
+              : (metaOwn ? "הפרטים לא נשמרו: " : "ההצעה לא נשמרה: ") + error.message, true);
+          });
+        }
+
+        /* ONCE, ON THE WAY OUT, AND NOT ONCE PER CHIP. These three are read by
+           the world: the credits are in the page the build writes to disk and
+           the styles are the shelves the library is sorted by, so a change
+           here has to reach the site, and the only thing that tells the site
+           to be built again is a version being written (see library_changed in
+           schema.sql). A version per chip would be a build per chip, so it
+           waits for the panel to be shut and for whatever is still in the air
+           to land. */
+        function metaShelf() {
+          metaOut = false;
+          if (!metaMoved) return;
+          metaMoved = false;
+          if (metaOwn && metaRow && metaRow.published) keepVersion(metaRow);
+        }
+
+        function metaChanged() {
+          /* The line under the name in the bar is the SONG's credits, so it
+             follows the form only where the form is writing the song. What
+             somebody has offered is not what the page says. */
+          if (metaOwn) sayWho();
+          metaSave();
+        }
+
+        /* asked once and handed to both rows that want it, and only when a
+           field is actually opened (see chipRow) */
+        var readNames = null;
+        function knownRead() { return (readNames || (readNames = db.names())); }
+
+        metaFields = CREDITS.map(function (c) {
+          return chipRow({
+            word: c.label,
+            placeholder: c.who,
+            ask: "להוסיף " + c.who + " לשיר",
+            off: "להוריד את השם",
+            listId: "credit-" + c.kind,
+            known: knownRead,
+            get: function () { return people(metaBag[c.field]); },
+            set: function (list) { metaBag[c.field] = peopleSaid(list); },
+            changed: metaChanged,
+          });
+        });
+        metaFields.push(chipRow({
+          word: "סגנון",
+          placeholder: "סגנון חדש",
+          ask: "להוסיף סגנון לשיר",
+          off: "להוריד את הסגנון",
+          listId: "song-styles",
+          known: function () { return db.styles(); },
+          get: function () { return styles(metaBag); },
+          set: function (list) { metaBag.styles = tidyStyles(list); },
+          changed: metaChanged,
+        }));
+
+        meta = el("div", "song-meta");
+        metaFields.forEach(function (f) { meta.appendChild(f.row); });
+
+        metaPanel = el("dialog", "dlg dlg-meta");
+        var readBox = el("div", "dlg-in");
+        /* the title takes the focus, for the reason the editor's does: a
+           dialog with nothing marked hands it to the × on the first chip */
+        var readTitle = el("h2", null, "פרטים");
+        readTitle.tabIndex = -1;
+        readTitle.setAttribute("autofocus", "");
+        readBox.appendChild(readTitle);
+        /* AND WHAT WRITING HERE MEANS, said to the one person it does not mean
+           the obvious thing to. The song's own account changes the song and
+           needs no sentence about it; everybody else is changing a row beside
+           it, and finding that out afterwards is finding it out too late. */
+        if (!metaOwn) {
+          readBox.appendChild(el("p", "meta-said",
+            "השיר הזה לא שלכם. מה שתשנו כאן נשמר כהצעה, והוא ייכנס לשיר רק אחרי שמי שהעלה אותו יאשר."));
+        }
+        readBox.appendChild(meta);
+        readBox.appendChild(metaOffered());
+        /* and who put it in the library, the sentence both of the other panels
+           end with and for the same reasons (see songTold) */
+        if (song.owner) {
+          var readWho = el("div", "told-who");
+          readWho.hidden = true;
+          readBox.appendChild(readWho);
+          db.who(song.owner).then(function (name) {
+            if (!name || !readWho.isConnected) return;
+            readWho.textContent = "נוסף לספרייה על ידי " + name;
+            readWho.hidden = false;
+          });
+        }
+        metaPanel.appendChild(readBox);
+        /* A name or a style left half typed in a field is one somebody meant:
+           the way out of the panel counts as having finished saying it. And
+           the way out is also when the shelf is owed a copy, so it is asked
+           for here, after whatever the last chip started. */
+        metaPanel.addEventListener("close", function () {
+          if (metaTaking) return;
+          metaFields.forEach(function (f) { f.done(); });
+          metaOut = true;
+          if (!metaBusy) metaShelf();
+        });
+
         state.songDetails = {
-          /* the same two things it holds while it is being written, read
-             rather than filled in */
           said: "יוצרים וסגנון", icon: ICON.tag,
+          news: function () { return metaWaiting().length > 0; },
           open: function () { openSheet(metaPanel); },
         };
+      } else {
+        var told = songTold(song);
+        if (told) {
+          metaPanel = el("dialog", "dlg dlg-meta dlg-told");
+          var toldBox = el("div", "dlg-in");
+          /* The title takes the focus, for the reason the editor's does: what
+             a dialog hands it to otherwise is the first chip in the list,
+             which here is a link to somebody's page and a stray Enter away
+             from leaving the song. */
+          var toldTitle = el("h2", null, "פרטים");
+          toldTitle.tabIndex = -1;
+          toldTitle.setAttribute("autofocus", "");
+          toldBox.appendChild(toldTitle);
+          toldBox.appendChild(told);
+          metaPanel.appendChild(toldBox);
 
-        /* On the way DOWN, so it lands before the link's own handler does: a
-           panel about the song you were on has no business standing over the
-           page it just sent you to. The dark behind it is the same press,
-           landing on the dialog itself where the panel is not. */
-        metaPanel.addEventListener("click", function (event) {
-          if (event.target === metaPanel) return metaPanel.close();
-          if (event.target.closest && event.target.closest("a")) metaPanel.close();
-        }, true);
+          /* THE WAY IN IS A ROW IN THE PANEL BEHIND THE THREE DOTS, and it was
+             a picture beside the name. What that picture opened is worth
+             keeping: a name here is a page of everything that person wrote and
+             a style is a shelf of everything like this, which is the only
+             thing left to want on a page you cannot change. What it is not
+             worth is the corner of the bar next to the title, now that who
+             wrote the song is written under it in words. */
+          state.songDetails = {
+            /* the same two things it holds while it is being written, read
+               rather than filled in */
+            said: "יוצרים וסגנון", icon: ICON.tag,
+            open: function () { openSheet(metaPanel); },
+          };
+
+          /* On the way DOWN, so it lands before the link's own handler does: a
+             panel about the song you were on has no business standing over the
+             page it just sent you to. */
+          metaPanel.addEventListener("click", function (event) {
+            if (event.target.closest && event.target.closest("a")) metaPanel.close();
+          }, true);
+        }
       }
 
       /* Nothing stands beside the name any more: the credits are under it and
@@ -12932,6 +13364,12 @@
        use for the rest of a song. */
     Promise.all([sets.list(), db.titles()]).then(function (both) {
       app.innerHTML = "";
+      /* The ways out of here, the same band the library carries and in the
+         same place (see doorsBand). Before the count of what is on the page,
+         and before the page turns out to be empty: a diary with nothing
+         written in it yet is exactly when somebody wants the way back to the
+         songs. */
+      app.appendChild(doorsBand());
       /* what the box in the bar looks through, read here anyway */
       seedEvenings(both[0] || []);
       var evenings = byWhen(both[0] || []);
@@ -14145,6 +14583,9 @@
     state.songControls = null;
     state.redrawSong = null;
     state.rehome = null;
+    /* and the row of doors, which belongs to the page that drew it: a page
+       with none says so by leaving this empty (see doorsBand) */
+    state.doors = null;
     state.wake = null;
     state.printable = false;
     state.printer = null;
@@ -14371,20 +14812,20 @@
      but nothing has scrolled, so what is on the screen is still the page being
      left and its place can be taken now. */
   window.addEventListener("popstate", function () {
+    /* and an entry a panel was standing on, being taken away behind it: the
+       page under it never went anywhere and has nothing to redraw */
+    if (backQuietly) {
+      backQuietly--;
+      return;
+    }
     /* A PANEL OVER THE PAGE IS A PLACE, AND BACK COMES OUT OF IT. On a phone
        back is a swipe from the edge and it is the way out of everything, so a
        panel that let it through answered "close this" by leaving the app
-       altogether (see shutsOnBack). */
-    if (overPage) {
-      var open = overPage;
-      overPage = null;
-      open.close();
-      return;
-    }
-    /* and the entry that panel was standing on, being taken away behind it:
-       the page under it never went anywhere and has nothing to redraw */
-    if (backQuietly) {
-      backQuietly = false;
+       altogether (see standsOnBack). The one on top comes off, and it is taken
+       off the stack before it is asked to shut, so that the shutting does not
+       ask for a step back that has already been taken. */
+    if (overPage.length) {
+      overPage.pop()();
       return;
     }
     leaving();
@@ -14601,6 +15042,8 @@
     earTicking = 0;
     if (window.CHORDS_EAR.live()) window.CHORDS_EAR.close();
     document.removeEventListener("pointerdown", earOutside, true);
+    document.removeEventListener("keydown", earEscape, true);
+    offBack(shutEar);
     ear.remove();
     ear = null;
     earParts = null;
@@ -14634,20 +15077,25 @@
 
      THE CROSS, because this is a panel over the page and a panel over the page
      is closed by pressing the page. Which is what the rest of this app does:
-     the small panels under a button, the dial's own panel, the dialogs. The
+     the small panels behind a button, the dial's own panel, the dialogs. The
      press that lands outside is the one that means "done with this", and it
      ends the whole thing, mode and all, because there is nothing else here to
      be done with.
 
      ON THE WAY DOWN, so a press on the song is the press that closes this
      rather than the second one, and not on the button that opened it: pressing
-     that again is asking for it to shut, which it already does (see askEar). */
+     that again is asking for it to shut, which it already does (see askEar).
+
+     AND THAT PRESS DOES NOTHING ELSE. It closed the band and then carried on
+     into whatever it had landed on, so a press on a song in the library put
+     the tuner away and opened the song (see pressOutside). */
   function earOutside(event) {
     if (!ear) return;
     if (ear.contains(event.target)) return;
     var door = event.target.closest &&
       event.target.closest('[aria-label="כיוון הגיטרה"], .tape-bar, .ear-door');
     if (door) return;
+    pressOutside(event);
     /* WITH A TAKE RUNNING, WHAT CLOSES IS THE TUNER AND NOT THE BAND. The
        recording is still going and what belongs to it is the chords, so the
        press that means "done with the tuner" hands the panel back to them
@@ -14659,6 +15107,10 @@
     shutEar();
   }
 
+  function earEscape(event) {
+    if (event.key === "Escape") shutEar();
+  }
+
   function buildEar() {
     ear = el("div", "ear");
 
@@ -14668,7 +15120,15 @@
     earParts = { body: body, tune: buildTune(), chord: buildChord() };
     document.body.appendChild(ear);
     document.body.classList.add("on-ear");
+    /* The same sheet as everything else that stands over the page, down to the
+       bar across the top of it and the push downwards that puts it away (see
+       gripUp). The one thing it does not take from openSheet is the dark: this
+       panel is read WHILE the song under it is being played from, and a page
+       behind glass is a page nobody can follow. */
+    gripUp(ear, shutEar);
     document.addEventListener("pointerdown", earOutside, true);
+    document.addEventListener("keydown", earEscape, true);
+    standsOnBack(shutEar);
     earTab();
     paintHeader();
   }
@@ -16023,7 +16483,7 @@
       else if (earOpen() && tapeHeld()) holdTape();
       else paintTape();
     });
-    dlg.showModal();
+    openSheet(dlg);
   }
 
   function said(seconds) {
