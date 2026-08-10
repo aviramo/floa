@@ -21,6 +21,12 @@
   --chord: #e11d63;
   --chord-soft: #fde7ef;
 
+  /* THE PAGE TALKING ABOUT WHAT IS UNDER IT rather than being it: what a
+     reading could not finish, and the band over a version that is not the
+     song. One warm colour for all of them, wherever they stand. */
+  --note: #fdf6ec;
+  --note-line: #f0dfc4;
+
   /* --- WHAT STATE A SONG IS IN, AND IT IS ONE COLOUR -----------------------
      There were five: blue while the machine still had it, amber while it asked
      to be checked, brown while somebody was working on it, violet while
@@ -568,10 +574,17 @@ body.on-air .top {
 /* The same box for a sentence WE wrote, which is Hebrew and reads right to
    left in the page's own type. In .detail it came out backwards: the full stop
    landed on the wrong end and the words sat in a monospace grid they were
-   never written for. */
+   never written for.
+
+   AND IN THE WARM COLOUR, not the pink. Pink is the chords: it is on every
+   chip over every line and on the letters in the corner of every card, so a
+   pink box on a card read as chords at a glance, and what it says is that
+   there are none. The same sentence stands on the song page in .song-note,
+   and it is the same sentence, so it is the same colour. */
 .note {
   margin-top: 6px; padding: 7px 10px; border-radius: var(--corner);
-  background: var(--chord-soft); color: var(--chord);
+  background: var(--note); border: 1px solid var(--note-line);
+  color: var(--ink-soft);
   font-size: 13px; line-height: 1.5; text-align: right;
 }
 .center { text-align: center; padding: 56px 0; color: var(--ink-soft); }
@@ -1234,7 +1247,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    reads as a note about the page rather than as the page's subject. */
 .song-note {
   margin: 0 0 14px; padding: 9px 14px; border-radius: var(--radius);
-  background: #fdf6ec; border: 1px solid #f0dfc4;
+  background: var(--note); border: 1px solid var(--note-line);
   color: var(--ink-soft); font-size: 14px;
 }
 
@@ -1251,7 +1264,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 .past-band {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   margin: 0 0 14px; padding: 8px 10px 8px 14px; border-radius: var(--radius);
-  background: #fdf6ec; border: 1px solid #f0dfc4;
+  background: var(--note); border: 1px solid var(--note-line);
   font-size: 14px;
 }
 .past-said { color: var(--ink-soft); flex: 1 1 240px; }
