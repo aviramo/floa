@@ -1191,17 +1191,28 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   font-size: 12px; font-weight: 700; line-height: 1.6;
   border-radius: var(--corner); padding: 1px 10px; white-space: nowrap;
 }
-.review-tag, .tag-imported, .tag-offer, .tag-review, .tag-draft, .tag-published,
-.tag-count {
+.review-tag, .tag-imported, .tag-offer, .tag-review, .tag-draft, .tag-published {
   color: var(--state-ink); background: var(--state-soft);
 }
 /* The number a shelf or a person holds, and nothing but the number: what it
    counts is the songs, which is what every card in the app is made of, so the
-   word for it was the same word on every card in the band (see countTag). It
-   is centred in its own line rather than sitting on the baseline of the name,
+   word for it was the same word on every card in the band (see countTag).
+
+   AND IT IS GREY, WHICH IS THE ONE THING IT IS NOT. The green on the chips
+   above says "this is where a song is in its life", and it is worth its ink
+   because it marks the few cards that are not like the rest. A count is on
+   EVERY card in the band, it is news about none of them, and in that green it
+   was a row of labels shouting the ordinary. Grey is the same shape saying the
+   same number quietly, and it is the ink the app already writes a number in
+   beside a name (see .dupe).
+
+   Centred in its own line rather than sitting on the baseline of the name,
    because a chip has a box around it and a box lined up by the letters inside
    it reads as having slipped. */
-.tag-count { align-self: center; font-variant-numeric: tabular-nums; }
+.tag-count {
+  color: var(--ink-soft); background: var(--line);
+  align-self: center; font-variant-numeric: tabular-nums;
+}
 
 /* --- WHAT KIND OF THING THIS IS -------------------------------------------
    The four above say what state a song is in. These say what a thing IS: a
