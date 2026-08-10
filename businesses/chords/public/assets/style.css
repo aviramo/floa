@@ -1351,7 +1351,8 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    in, standing in the bar beside its name. The bar is the narrowest thing on
    the page and that was the one word in it nobody pressed. The word is on the
    row that opens the editor now, in the panel behind the three dots, and what
-   is left up here is a dot on the dots in the same colour (see .has-news). */
+   is left up here is nothing at all: a song that is not published is open for
+   writing and carries the button that publishes it (see .song-strip). */
 
 /* Where the writing got to, in place of the button that used to ask for it.
    Quiet: it is the answer to a question nobody has asked out loud, and it is
@@ -1400,21 +1401,33 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    the first: a page is the window less whatever is permanently over it, and
    if this scrolled away that number would be wrong for every page but one. */
 .song-strip {
-  display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px;
+  display: flex; align-items: center; justify-content: center;
+  flex-wrap: wrap; gap: 8px 14px;
   position: sticky; z-index: 19;
   background: var(--bg); border-bottom: 1px solid var(--line);
   margin: 0; padding: 6px 16px;
 }
 body.on-song .top { border-bottom: 0; }
 .song-strip[hidden] { display: none; }
-/* AND IT IS NOT THERE WHILE THERE IS NOTHING ON IT. The capo and the
-   microphone moved up beside the name of the song (see placeControls), so what
-   is left down here is what is being done to the song while it is being
-   written on, and on a phone only. Reading one, the row would be an empty band
-   of grey between the bar and the first line, and so would writing on one with
-   nothing yet to undo: the buttons that come and go are hidden rather than
-   removed, which is why the test is for a child that is not. */
-.song-strip:not(:has(> .song-acts > *:not([hidden]))) { display: none; }
+/* WHAT IS BEING DONE TO THE SONG, IN THE MIDDLE OF ITS OWN ROW. The capo and
+   the microphone moved up beside the name (see placeControls), so what is left
+   down here is the wastebasket, the versions, the ways back, and the button
+   that publishes it: one group of unlike things that are all the same kind of
+   thing, and a group reads as one where it stands together. Centred rather
+   than pushed to an end, because there is nothing at the other end for it to
+   be measured against.
+
+   AND IT IS NOT THERE WHILE THERE IS NOTHING ON IT. Reading a published song
+   the row would be an empty band of grey between the bar and the first line.
+   The buttons that come and go are hidden rather than removed, which is why
+   the test is for a child that is not. */
+.song-strip:not(:has(> .song-out:not([hidden]))):not(:has(> .song-acts > *:not([hidden]))) {
+  display: none;
+}
+/* A button draws itself, so being hidden has to be said in the same breath:
+   .btn sets a display of its own and the browser's own rule for [hidden] is
+   the weaker of the two. */
+.song-out[hidden] { display: none; }
 
 /* --- WHAT IS BEING DONE TO THE SONG ---------------------------------------
    Finishing, deleting, taking a change back, the versions behind it. On a desk
@@ -1446,7 +1459,7 @@ body.on-song .top { border-bottom: 0; }
    empty box still spends the row's gap, so it goes when it is empty. */
 /* Nothing stands beside the name any more: who wrote the song is the line
    under it (see .top-under) and what state it is in is a dot on the three dots
-   (see .has-news). The slot is kept because the bar is built once and a page
+   (see .song-strip). The slot is kept because the bar is built once and a page
    may yet want it; empty, it takes nothing. */
 .top-facts {
   flex: none; display: flex; align-items: center; gap: 8px;
@@ -1471,31 +1484,11 @@ body.on-song .top { border-bottom: 0; }
 }
 .top-under:empty { display: none; }
 
-/* --- AND THE DOT ON THE THREE DOTS -----------------------------------------
-   A song that is not published used to say so in a word beside its name. The
-   word is inside the panel now, on the row that opens the editor, and this is
-   what is left in the bar: a mark on the corner in the state's own colour,
-   saying there is something in here worth opening. What that something IS
-   takes a word, and the bar has nowhere to put one.
-
-   On the outer corner, half off the button, so it reads as something attached
-   to it rather than as part of the picture. */
-.has-news { position: relative; }
-.has-news::after {
-  content: ""; position: absolute; top: -2px; inset-inline-start: -2px;
-  width: 9px; height: 9px; border-radius: 50%;
-  border: 2px solid var(--card); background: var(--ink-soft);
-}
-.news-draft::after { background: var(--draft-ink); }
-.news-review::after { background: var(--review-ink); }
-.news-offer::after { background: var(--offer-ink); }
-.news-imported::after { background: var(--imported-ink); }
-/* And the word itself, on the row inside, in the same colour it is in on
-   every card in the library. */
-.print-menu .btn.says-draft { color: var(--draft-ink); }
-.print-menu .btn.says-review { color: var(--review-ink); }
-.print-menu .btn.says-offer { color: var(--offer-ink); }
-.print-menu .btn.says-imported { color: var(--imported-ink); }
+/* THERE WAS A DOT ON THE THREE DOTS HERE, in the colour of whatever state the
+   song was in, and a word in the same colour on the row inside. Both are gone
+   with the reason for them: a song that is not published is open for writing
+   and carries the button that publishes it, on its own row where it can be
+   seen (see .song-strip). The page IS the draft, so nothing has to say so. */
 
 /* THREE CONTROLS, AND NOTHING DRAWN ROUND THEM. Each of them is already a box
    with a line round it, and a fourth line round all three is a box inside a box

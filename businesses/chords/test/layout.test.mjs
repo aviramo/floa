@@ -72,8 +72,11 @@ const song = (dir) => ({
 /* `who` is the account the page is signed in as, and it is OWNER unless a
    check wants a stranger: the whole difference between the editor and the
    reader's page is whether the two match. */
-function page(dir, edit, who) {
+function page(dir, edit, who, draft) {
   const s = song(dir);
+  /* A SONG THAT WAS NEVER PUBLISHED, which is the one kind that opens itself
+     for writing and carries the button that publishes it (see renderSong). */
+  if (draft) s.published = false;
   const path = "/chords/" + s.slug + (edit ? "/edit" : "");
   return `<!doctype html>
 <html lang="he" dir="rtl"><head><meta charset="utf-8">
@@ -504,6 +507,11 @@ await writeFile(join(root, "edit/index.html"), page("rtl", true), "utf8");
 /* The same song, signed in as somebody who did not put it there. */
 await mkdir(join(root, "guest"), { recursive: true });
 await writeFile(join(root, "guest/index.html"), page("rtl", true, "u-other"), "utf8");
+/* The owner's own song, not published: the page that opens writing without
+   being asked to. Signed in, and at the plain address rather than at /edit,
+   which is the whole of what is being checked. */
+await mkdir(join(root, "draft"), { recursive: true });
+await writeFile(join(root, "draft/index.html"), page("rtl", true, null, true), "utf8");
 await mkdir(join(root, "long"), { recursive: true });
 await mkdir(join(root, "longed"), { recursive: true });
 await writeFile(join(root, "long/index.html"), page("long", false), "utf8");
@@ -1359,6 +1367,42 @@ try {
       check("and the page says the typing is an offer",
         open2.band.indexOf("הצעה") >= 0, JSON.stringify(open2.band));
       check("the wastebasket stays away", open2.trash === false, "the wastebasket was offered");
+    });
+
+    /* --- 10. AND YOUR OWN UNFINISHED SONG IS ALREADY OPEN ------------------
+       Not published means not finished, and a page you have not finished is
+       one you are working on: it opens writing, it carries the one button
+       that says it is done, and the panel does not offer a way into a room it
+       is standing in. */
+    await open(`http://127.0.0.1:${port}/chords/_t/draft/`, async ({ evaluate }) => {
+      await sleep(500);
+      const mine = await evaluate(`JSON.stringify({
+        errors: window.__errors,
+        editing: !!document.querySelector(".sheet.ed"),
+        out: (function () {
+          var b = document.querySelector(".song-out");
+          return !!b && !b.hidden;
+        })(),
+        strip: (function () {
+          var s = document.querySelector(".song-strip");
+          return s ? getComputedStyle(s).display + " " + getComputedStyle(s).justifyContent : "none";
+        })(),
+      })`);
+      check("a draft of your own had no errors", mine.errors.length === 0, JSON.stringify(mine.errors));
+      check("it opens writing, without being asked to", mine.editing === true, JSON.stringify(mine));
+      check("and it carries the one button that finishes it", mine.out === true, JSON.stringify(mine));
+      check("which stands in the middle of the song's own row",
+        mine.strip.indexOf("center") > 0, mine.strip);
+
+      await evaluate(`(() => {
+        document.querySelector('#topActions [aria-label^="עוד"]').click();
+        return JSON.stringify("ok");
+      })()`);
+      await sleep(250);
+      const rows = await evaluate(`JSON.stringify([...document.querySelectorAll(".print-menu .btn")]
+        .map(b => b.getAttribute("aria-label")).join(" | "))`);
+      check("and the panel offers neither a way in nor a way to publish",
+        rows.indexOf("עריכה") < 0 && rows.indexOf("פרסום") < 0, rows);
     });
   });
 } finally {

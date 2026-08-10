@@ -3811,7 +3811,7 @@
     editToggle: null, songControls: null, redrawSong: null, rehome: null,
     wake: null, ear: null, takeSong: null, redrawTakes: null,
     takesOpen: null, takesCount: 0,
-    songSays: null, songMoves: null, songDetails: null,
+    songMoves: null, songDetails: null,
   };
 
   /* The answers the bar reads to know what to offer. They are about the page
@@ -3821,7 +3821,7 @@
   var PAGE_STATE = ["printable", "printer", "killer", "editToggle",
     "songControls", "redrawSong", "rehome", "wake", "sift", "ear",
     "takeSong", "redrawTakes", "takesOpen", "takesCount",
-    "songSays", "songMoves", "songDetails"];
+    "songMoves", "songDetails"];
 
   function takeKids(node) {
     if (!node) return null;
@@ -4025,6 +4025,11 @@
     if (made.acts && NARROW.matches) {
       made.strip.insertBefore(made.acts, made.strip.firstChild);
     }
+    /* AND THE WAY TO PUBLISH STANDS WITH THEM, in the same row and centred with
+       it (see .song-strip): what is being done to the song, in one group, in
+       the middle of the row it has to itself. On a desk that row is the bar,
+       the same as the group beside it. */
+    if (made.out && NARROW.matches) made.strip.appendChild(made.out);
 
     made.strip.hidden = !NARROW.matches;
 
@@ -4815,9 +4820,7 @@
        the way out is the one thing it can say. */
     if (state.editToggle) {
       var edit = state.editToggle;
-      var says = state.songSays && state.songSays();
-      var word = edit.on ? "סיום עריכה" : (says ? says.word : "עריכה");
-      var row = button(word, edit.on ? ICON.check : ICON.pencil,
+      var row = button(edit.on ? "סיום עריכה" : "עריכה", edit.on ? ICON.check : ICON.pencil,
         "ghost small", function () {
           closeUnder();
           edit.flip();
@@ -4825,9 +4828,6 @@
       /* the panel says which way it is facing the same way the picture in the
          bar used to (see .print-menu .btn.is-on) */
       row.classList.toggle("is-on", !!edit.on);
-      /* and it says it in the state's own colour, which is the same colour as
-         the dot on the button that opened this panel */
-      if (!edit.on && says) row.classList.add("says-" + says.key);
       rows.push(row);
     }
     /* AND WHAT TO DO ABOUT IT, IN A ROW OF ITS OWN. What the song is and what
@@ -4859,28 +4859,20 @@
     return rows;
   }
 
-  /* --- AND THE CORNER SAYS THERE IS SOMETHING IN IT --------------------------
-     A song that is not published carried a word for it in the bar, beside its
-     name. The word is inside the panel now, on the row that opens the editor
-     (see songRows), which leaves the corner itself to say that there is
-     something in there worth opening: a dot on the three dots, in the state's
-     own colour, the same colour the chip was.
-
-     A dot and not a word, because what a person needs from across a room is
-     "there is something here", and what the something IS takes a word that the
-     bar has nowhere to put. */
+  /* THERE WAS A DOT ON THIS CORNER for a while, in the colour of whatever state
+     the song was in, because the state had nowhere else to be said. It has
+     somewhere now: a song that is not published is open for writing and
+     carries a button that publishes it (see the strip), which is the state and
+     the way out of it in one thing you can see. A dot beside that would be the
+     same news twice, in the corner that is only ever pressed for something
+     else. */
   function songMore() {
-    var node = keep("songMore", function () {
-      var made = iconBtn(ICON.dots, "עוד", function () { menuUnder(made, songRows(made)); });
-      made.setAttribute("aria-haspopup", "menu");
-      made.setAttribute("aria-expanded", "false");
-      return made;
+    return keep("songMore", function () {
+      var node = iconBtn(ICON.dots, "עוד", function () { menuUnder(node, songRows(node)); });
+      node.setAttribute("aria-haspopup", "menu");
+      node.setAttribute("aria-expanded", "false");
+      return node;
     });
-    var says = state.songSays && state.songSays();
-    node.className = "icon-btn" + (says ? " has-news news-" + says.key : "");
-    node.title = says ? says.word : "עוד";
-    node.setAttribute("aria-label", says ? "עוד: " + says.word : "עוד");
-    return node;
   }
 
   /* --- THE MARK IN THE CORNER, AND WHAT IT IS ANYWHERE ELSE -----------------
@@ -5033,8 +5025,9 @@
          and handed over, and a bar that did not know about it would sweep it
          off on the next repaint. On a phone that group is downstairs, on the
          strip, so naming it here would pull it back up. */
-      if (state.songControls && state.songControls.acts && !NARROW.matches) {
-        mine.push(state.songControls.acts);
+      if (state.songControls && !NARROW.matches) {
+        if (state.songControls.acts) mine.push(state.songControls.acts);
+        if (state.songControls.out) mine.push(state.songControls.out);
       }
       /* AND THE TWO THINGS DONE TO THE PAGE, BEHIND ONE PICTURE. Printing and
          the way into the editor were two of them standing here; they are the
@@ -7638,8 +7631,20 @@
        to prevent. A song with no row yet is "new", which is what the address
        that starts one asks for. */
     var editKey = song.id || "new";
-    var editing = !past && auth.in &&
-      (owned ? (!onPhone || state.editAsked === editKey) : state.editAsked === editKey);
+    /* AND A SONG OF YOUR OWN THAT IS NOT PUBLISHED IS ALWAYS OPEN FOR WRITING.
+       Not published means not finished, and a page you have not finished is a
+       page you are working on: the pencil there was a press between somebody
+       and the thing they came to do, on the one kind of song where there is
+       nothing else to come for. What it was protecting is a published song,
+       which is the ordinary one and the one that stays as it is until it is
+       asked to change.
+
+       Not a song still coming out of the machine either. That one is not a
+       draft somebody is writing, it is a reading in progress, and the words
+       under the caret would be replaced as they were typed. */
+    var editing = !past && auth.in && (owned
+      ? ((!song.published && !coming) || !onPhone || state.editAsked === editKey)
+      : state.editAsked === editKey);
 
     /* The row stays whole in `row` and the editor is handed a copy with the
        offer's words in it. Everything about the SONG is asked of `row` from
@@ -7679,7 +7684,12 @@
        change by opening it. What the press means on one is "I mean to type
        here"; on the other it is that and "and what I type is an offer", which
        is what the band under the bar then says. */
-    if (!past && auth.in && (onPhone || !owned)) {
+    /* AND THE WAY IN IS OFFERED ONLY WHERE IT MEANS SOMETHING: on a published
+       song of your own, which opens reading and is changed on purpose, and on
+       somebody else's, where the press is what says the typing is an offer. An
+       unfinished song of your own is already open (see editing above), so a row
+       saying "עריכה" over it would be a door onto the room it is standing in. */
+    if (!past && auth.in && (onPhone || !owned) && (!owned || song.published)) {
       state.editToggle = {
         on: editing,
         flip: function () {
@@ -7799,25 +7809,23 @@
       return "draft";
     }
 
-    /* --- AND THE BAR IS TOLD, RATHER THAN SHOWN --------------------------------
-       The state was a chip standing beside the name of the song. It is two
-       things now and neither of them is a word in the bar: the label on the row
-       that opens the editor, and a dot on the three dots in the state's own
-       colour (see songRows and paintHeader). A song that is not finished says
-       so from across a room, and the word for it is where the thing to do about
-       it is.
+    /* --- AND WHAT STATE IT IS IN IS SOMETHING YOU CAN SEE ---------------------
+       It was a chip in the bar, then a word on a row in the panel with a dot on
+       the corner beside it. Both were the same thing said in a place nobody was
+       looking: a state is not a label, it is a thing to do something about.
 
-       Handed over as a question rather than as an answer, because the answer
-       changes under the page: touching a published song makes it a draft as it
-       is typed, and the panel is built at the press. */
-    state.songSays = function () {
-      var was = songState();
-      if (was === "published") return null;
-      return { key: was, word: STATE_WORDS[was] };
+       So the page shows it by being what it is. A song that is not published is
+       open for writing, with a button on its own row that publishes it; a
+       published song is a page you read, with a pencil in the panel. Nothing
+       says "טיוטה" anywhere, because the page is the draft. */
+    /* Painted again whenever the state moves: what is on the bar and on the row
+       under it depends on it. */
+    showState = function () {
+      var made = state.songControls;
+      if (made && made.out) made.out.hidden = !!song.published;
+      paintHeader();
     };
-    /* Painted again whenever the state moves, which is the whole of what the
-       chip's own painter did. */
-    showState = function () { paintHeader(); };
+
     /* --- ONE STRIP, AND THE SONG UNDER IT -------------------------------------
        There were three rows here: who wrote it, what kind of song it is, and
        the three dials, one under the other, and together they took a third of
@@ -8791,9 +8799,31 @@
        whole of its cleaning up. */
     if (metaPanel) app.appendChild(metaPanel);
 
+    /* --- AND THE ONE THING A SONG IS FOR SAYING IT IS FINISHED ---------------
+       A button and not a row in a panel. Publishing is the press that hands a
+       song to everybody else, it is the last thing that happens to one, and it
+       is the only thing on this page that changes who may open it: a row in a
+       panel is where things go that are looked for, and this is looked AT. It
+       stands with the rest of what is being done to the song, which is where a
+       hand already goes for the wastebasket and the versions.
+
+       Only where there is something to publish: your own song, finished enough
+       to be handed over, and not one the machine is still reading. A published
+       song has nothing to offer here at all, and the moment one is typed into
+       it is a draft again and this is back. */
+    var out = null;
+    if (!past && owned && !coming) {
+      out = button("פרסום", ICON.people, "small song-out", function () { publishSong(); });
+      /* Built either way and hidden while there is nothing to publish, because
+         the state moves under the page: a published song typed into is a draft
+         from that keystroke on (see mark), and the button has to be able to
+         come back without the song being drawn again around the caret. */
+      out.hidden = !!song.published;
+    }
+
     /* And now they are handed over, to be put in whichever of the two places
        the screen can hold them (see placeControls). */
-    state.songControls = { strip: strip, facts: facts, tools: tools, acts: acts };
+    state.songControls = { strip: strip, facts: facts, tools: tools, acts: acts, out: out };
     /* THE WHOLE HEADER AND NOT ONLY THE PLACING, because what the bar is
        allowed to hold has just changed: the group above did not exist when the
        bar was painted at the top of this function, and the way in and out of
@@ -9183,7 +9213,7 @@
     /* --- WHAT THE STATE CAN BECOME, AS ROWS --------------------------------
        This was a panel of its own, hanging under the chip in the bar, with its
        own opening, its own closing and its own placing. The chip is gone (see
-       songSays) and so is the panel: what it held are rows, and they stand in
+       the strip) and so is the panel: what it held are rows, and they stand in
        the one panel this page already has, behind the three dots.
 
        A song is in exactly one state, so there is one thing to be offered
@@ -9237,10 +9267,10 @@
         return [];
       }
 
-      /* Which leaves the ordinary one: a draft, and the one thing worth
-         offering about a draft. Going the other way needs no row at all,
-         because touching the song does it (see mark). */
-      return [{ said: "פרסום", icon: ICON.people, act: publishSong }];
+      /* Which leaves the ordinary one, and it has nothing in here: publishing
+         is a button standing on the song's own row (see the strip), where it
+         is looked at rather than looked for. */
+      return [];
     };
 
     /* "finished, let people have it" is one sentence, so it is one press: no
@@ -13431,7 +13461,6 @@
     state.takesOpen = null;
     state.takesCount = 0;
     /* what the song said about itself, which the next page does not say */
-    state.songSays = null;
     state.songMoves = null;
     state.songDetails = null;
     /* and the box in the bar goes back to being a way to other pages, until a
