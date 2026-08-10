@@ -57,9 +57,15 @@ const BODIES = { rtl: BODY_RTL, ltr: BODY_LTR, long: BODY_LONG };
    reader's page and measuring it as the editor's. */
 const OWNER = "u-test";
 
+/* PUBLISHED, WHICH IS WHAT A SONG SOMEBODY ELSE CAN OPEN IS. The database
+   hands a stranger nothing else (see the policies in schema.sql), so a fixture
+   that said otherwise was asking about a page nobody can reach; and the row
+   that opens the editor carries the state's own word on a song that is not
+   published (see songRows in app.js), which is a different label to look for
+   depending on a field this fixture never meant to be about. */
 const song = (dir) => ({
   id: "test", slug: "s-" + dir, title: "בדיקה " + dir, lyrics_by: "", music_by: "",
-  owner: OWNER,
+  owner: OWNER, published: true,
   dir: dir === "ltr" ? "ltr" : "rtl", status: "ready", status_note: "", lines: BODIES[dir],
 });
 
@@ -1316,7 +1322,7 @@ try {
       const READS = `JSON.stringify({
         errors: window.__errors,
         editing: !!document.querySelector(".sheet.ed"),
-        dots: !!document.querySelector('#topActions [aria-label="עוד"]'),
+        dots: !!document.querySelector('#topActions [aria-label^="עוד"]'),
         trash: !!document.querySelector('#topActions [aria-label="מחיקת השיר"]'),
         band: (document.querySelector(".past-band .past-said") || {}).textContent || "",
       })`;
@@ -1331,7 +1337,7 @@ try {
          bar any more (see songRows in app.js): the corner holds one button,
          and what it opens holds printing and the pencil. */
       await evaluate(`(() => {
-        document.querySelector('#topActions [aria-label="עוד"]').click();
+        document.querySelector('#topActions [aria-label^="עוד"]').click();
         return JSON.stringify("ok");
       })()`);
       await sleep(250);

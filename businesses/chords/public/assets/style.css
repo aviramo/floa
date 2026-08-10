@@ -1347,20 +1347,11 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    browser would draw is the box these fields are trying not to be. */
 .song-meta input:focus-visible { outline: none; }
 
-/* The one state the song is in, and the way out of it. A chip and not a
-   button, because it is a fact first: it is the same word in the same colour
-   the row in the library shows, and pressing it is the second thing it does.
-
-   It sits in the top bar, at the right hand end of everything that is about
-   the page: the first thing read there, being the answer to "what is this
-   song right now". */
-.status-chip {
-  appearance: none; cursor: pointer; border: 0;
-  font: inherit; font-size: 12px; font-weight: 700; line-height: 1.6;
-  border-radius: var(--corner); padding: 3px 12px; white-space: nowrap;
-  align-self: center;
-}
-.status-chip:hover { box-shadow: inset 0 0 0 1px currentColor; }
+/* THERE WAS A .status-chip HERE, the one word saying what state the song is
+   in, standing in the bar beside its name. The bar is the narrowest thing on
+   the page and that was the one word in it nobody pressed. The word is on the
+   row that opens the editor now, in the panel behind the three dots, and what
+   is left up here is a dot on the dots in the same colour (see .has-news). */
 
 /* Where the writing got to, in place of the button that used to ask for it.
    Quiet: it is the answer to a question nobody has asked out loud, and it is
@@ -1453,52 +1444,58 @@ body.on-song .top { border-bottom: 0; }
    What gives way instead is the search box beside it, which is a field and
    loses nothing by being narrower. Empty on every page but a song, and an
    empty box still spends the row's gap, so it goes when it is empty. */
-/* AND IT STANDS AGAINST THE NAME, not a bar's width from it. The row's own
-   gap is what holds the unlike things in this bar apart: the mark, the name,
-   the search, the buttons. This is not one of them. It is what the song says
-   about itself, it is read as the end of its own title, and sixteen pixels of
-   air between them makes it a fourth thing in the row. So it takes most of
-   that gap back and follows the name immediately. */
+/* Nothing stands beside the name any more: who wrote the song is the line
+   under it (see .top-under) and what state it is in is a dot on the three dots
+   (see .has-news). The slot is kept because the bar is built once and a page
+   may yet want it; empty, it takes nothing. */
 .top-facts {
   flex: none; display: flex; align-items: center; gap: 8px;
   margin-inline-start: -10px;
 }
 .top-facts:empty { display: none; }
-.top-facts .song-facts { flex: none; flex-wrap: nowrap; white-space: nowrap; }
 
-/* WHAT THE SONG SAYS ABOUT ITSELF WHILE IT IS BEING READ: the state it is in,
-   beside the name. Writing it is the button below, and the credits are under
-   the title, where they are the second line of the name. */
-.song-facts {
-  flex: 1 1 auto; min-width: 0;
-  display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px;
-  color: var(--ink-soft);
-}
-/* THE WAY INTO EVERYTHING THE SONG SAYS ABOUT ITSELF, WHILE IT IS BEING
-   WRITTEN, and it is one button wide. The strip of names and kinds that used to
-   stand here is in the panel behind it, in the shape you can change them in;
-   on a page that is being edited, saying them out loud in the bar as well was
-   the same fact twice across the widest thing up there. It is an icon button
-   like the ones at the other end of the bar, because that is what it is.
+/* --- THE SECOND LINE OF THE TITLE ------------------------------------------
+   Who wrote the song, under its name and smaller than it, which is exactly
+   what a card in the library says and where anybody looks for it. It was a
+   line like this once, with a little pen and a little note standing in for the
+   words the room would not fit; the pictures are what made it unreadable, and
+   what is here now is the people, in their own names.
 
-   Open, it is lit, the way the editor's own button is: the panel over the page
-   and the button that opened it are one thing. */
-/* Reading, it stands in the same place with the state chip beside it rather
-   than alone in the slot, and a button in a flex row is a button that can be
-   squeezed: a square pressed out of true by the words next to it. */
-.top-facts .song-info, .song-facts .song-info { flex: none; }
-/* AND NO BOX ROUND IT, ONLY THE MARK. Every other picture in this bar is a
-   thing to press and is drawn as one; this one is the second half of the
-   title, and a white box with a line round it standing against the name makes
-   the quietest thing up there the loudest. The mark alone is enough: it is the
-   one everybody already knows, and the room it takes is the room it is in.
-   Under the hand it takes the soft fill the rows of a menu take, which is what
-   says a picture is pressable without a box saying it all the time. */
-.song-info { border-color: transparent; background: none; }
-.song-info:hover { border-color: transparent; background: var(--bg); color: var(--ink); }
-.song-info.is-open, .song-info.is-open:hover {
-  color: #fff; background: var(--accent); border-color: var(--accent);
+   It shrinks with the name above it rather than pushing anything: a bar that
+   grew a second line of its own would take that line off the top of every
+   song. Empty on every page but a song, and empty is nothing. */
+.top-under {
+  max-width: 100%;
+  font-size: 12px; line-height: 1.25; color: var(--ink-soft);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+.top-under:empty { display: none; }
+
+/* --- AND THE DOT ON THE THREE DOTS -----------------------------------------
+   A song that is not published used to say so in a word beside its name. The
+   word is inside the panel now, on the row that opens the editor, and this is
+   what is left in the bar: a mark on the corner in the state's own colour,
+   saying there is something in here worth opening. What that something IS
+   takes a word, and the bar has nowhere to put one.
+
+   On the outer corner, half off the button, so it reads as something attached
+   to it rather than as part of the picture. */
+.has-news { position: relative; }
+.has-news::after {
+  content: ""; position: absolute; top: -2px; inset-inline-start: -2px;
+  width: 9px; height: 9px; border-radius: 50%;
+  border: 2px solid var(--card); background: var(--ink-soft);
+}
+.news-draft::after { background: var(--draft-ink); }
+.news-review::after { background: var(--review-ink); }
+.news-offer::after { background: var(--offer-ink); }
+.news-imported::after { background: var(--imported-ink); }
+/* And the word itself, on the row inside, in the same colour it is in on
+   every card in the library. */
+.print-menu .btn.says-draft { color: var(--draft-ink); }
+.print-menu .btn.says-review { color: var(--review-ink); }
+.print-menu .btn.says-offer { color: var(--offer-ink); }
+.print-menu .btn.says-imported { color: var(--imported-ink); }
 
 /* THREE CONTROLS, AND NOTHING DRAWN ROUND THEM. Each of them is already a box
    with a line round it, and a fourth line round all three is a box inside a box

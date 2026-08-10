@@ -585,7 +585,7 @@ try {
          door per side now, and on a song the tuner's door is a row in the
          panel behind the three dots (see songRows in app.js). */
       await evaluate(`JSON.stringify((window.__sound = "note",
-        document.querySelector('#topActions [aria-label="עוד"]').click(), true))`);
+        document.querySelector('#topActions [aria-label^="עוד"]').click(), true))`);
       await sleep(250);
       await evaluate(`JSON.stringify((function () {
         var row = [...document.querySelectorAll(".print-menu .btn")]

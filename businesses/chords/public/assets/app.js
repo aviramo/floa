@@ -94,8 +94,11 @@
     down: '<path d="M12 5v14m0 0l-6-6m6 6l6-6"/>',
     copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/>',
     close: '<path d="M6 6l12 12M18 6L6 18"/>',
-    /* THERE WAS A `tag` HERE, a luggage label for the button that put one word
-       onto a handful of ticked songs. The ticking is gone and so is it. */
+    /* A LUGGAGE LABEL, which is what a style is on a song: a word tied to it
+       that the library sorts by. It was here once for a button that put one
+       word onto a handful of ticked songs, went with the ticking, and comes
+       back for the row that opens what a song is called and what kind it is. */
+    tag: '<path d="M4.5 11.8V5.5a1 1 0 0 1 1-1h6.3l7.7 7.7a1 1 0 0 1 0 1.4l-5.9 5.9a1 1 0 0 1-1.4 0L4.5 11.8Z"/><circle cx="8.4" cy="8.4" r="1.35" fill="currentColor" stroke="none"/>',
     check: '<path d="M5 13l4 4 10-11"/>',
     /* a box with a tick in it: everything on screen, at once */
     /* four corners opening outwards: the song, and nothing else, on the whole
@@ -3808,6 +3811,7 @@
     editToggle: null, songControls: null, redrawSong: null, rehome: null,
     wake: null, ear: null, takeSong: null, redrawTakes: null,
     takesOpen: null, takesCount: 0,
+    songSays: null, songMoves: null, songDetails: null,
   };
 
   /* The answers the bar reads to know what to offer. They are about the page
@@ -3816,7 +3820,8 @@
      everybody, and every sheet showing it is showing the same songs. */
   var PAGE_STATE = ["printable", "printer", "killer", "editToggle",
     "songControls", "redrawSong", "rehome", "wake", "sift", "ear",
-    "takeSong", "redrawTakes", "takesOpen", "takesCount"];
+    "takeSong", "redrawTakes", "takesOpen", "takesCount",
+    "songSays", "songMoves", "songDetails"];
 
   function takeKids(node) {
     if (!node) return null;
@@ -3842,6 +3847,9 @@
       /* read off the bar rather than remembered from when it was written: a
          name that is a field has been typed into since (see whereEditable) */
       bar: name ? name.textContent : "",
+      /* the song's own second line, which is written by the page and wiped by
+         the next one (see whereUnder) */
+      under: (document.getElementById("topUnder") || {}).textContent || "",
       tab: document.title,
       facts: takeKids(document.getElementById("topFacts")),
       extra: takeKids(findExtra),
@@ -3868,6 +3876,8 @@
        again, with the same four answers it was given the first time. */
     if (layer.edit) whereEditable(h.bar, layer.edit.empty, layer.edit.each, layer.edit.done);
     else where(h.bar);
+    /* after where, which wipes it */
+    whereUnder(h.under);
     if (document.title !== h.tab) document.title = h.tab;
     putKids(document.getElementById("topFacts"), h.facts);
     putKids(findExtra, h.extra);
@@ -4793,9 +4803,21 @@
         askPrint(anchor);
       }));
     }
+    /* WHAT THE SONG SAYS ABOUT ITSELF, AND IT IS ON THE WAY INTO THE EDITOR.
+       A song that is not published is a song still being worked on, so the
+       state and the pencil are one sentence: "טיוטה" over the row that opens
+       the editor says what this is and what to do about it in the width of
+       one. Published says nothing, because published is the ordinary song and
+       a word for it would be true of the whole library; then the row is what
+       it always was.
+
+       Not while the editor is open. Then the row is the way out of it, and
+       the way out is the one thing it can say. */
     if (state.editToggle) {
       var edit = state.editToggle;
-      var row = button(edit.on ? "סיום עריכה" : "עריכה", edit.on ? ICON.check : ICON.pencil,
+      var says = state.songSays && state.songSays();
+      var word = edit.on ? "סיום עריכה" : (says ? says.word : "עריכה");
+      var row = button(word, edit.on ? ICON.check : ICON.pencil,
         "ghost small", function () {
           closeUnder();
           edit.flip();
@@ -4803,18 +4825,62 @@
       /* the panel says which way it is facing the same way the picture in the
          bar used to (see .print-menu .btn.is-on) */
       row.classList.toggle("is-on", !!edit.on);
+      /* and it says it in the state's own colour, which is the same colour as
+         the dot on the button that opened this panel */
+      if (!edit.on && says) row.classList.add("says-" + says.key);
       rows.push(row);
+    }
+    /* AND WHAT TO DO ABOUT IT, IN A ROW OF ITS OWN. What the song is and what
+       to do about it are two sentences: publishing a draft, opening an offer
+       somebody left, calling off a reading that is still running. One state,
+       one thing worth offering, decided where the state is known (see
+       songMoves). */
+    if (state.songMoves) {
+      state.songMoves().forEach(function (move) {
+        rows.push(button(move.said, move.icon, "ghost small", function () {
+          closeUnder();
+          move.act();
+        }));
+      });
+    }
+    /* WHO WROTE IT AND WHAT KIND OF SONG IT IS, last, because it is the one
+       thing in here that is neither about playing this song nor about the page
+       it is on. It was a picture beside the name until the credits moved under
+       the title (see sayWho), and what is left for it is the other half: which
+       of them wrote the words, which the tune, and the styles the library sorts
+       it by. */
+    if (state.songDetails) {
+      var told = state.songDetails;
+      rows.push(button(told.said, told.icon, "ghost small", function () {
+        closeUnder();
+        told.open();
+      }));
     }
     return rows;
   }
 
+  /* --- AND THE CORNER SAYS THERE IS SOMETHING IN IT --------------------------
+     A song that is not published carried a word for it in the bar, beside its
+     name. The word is inside the panel now, on the row that opens the editor
+     (see songRows), which leaves the corner itself to say that there is
+     something in there worth opening: a dot on the three dots, in the state's
+     own colour, the same colour the chip was.
+
+     A dot and not a word, because what a person needs from across a room is
+     "there is something here", and what the something IS takes a word that the
+     bar has nowhere to put. */
   function songMore() {
-    return keep("songMore", function () {
-      var node = iconBtn(ICON.dots, "עוד", function () { menuUnder(node, songRows(node)); });
-      node.setAttribute("aria-haspopup", "menu");
-      node.setAttribute("aria-expanded", "false");
-      return node;
+    var node = keep("songMore", function () {
+      var made = iconBtn(ICON.dots, "עוד", function () { menuUnder(made, songRows(made)); });
+      made.setAttribute("aria-haspopup", "menu");
+      made.setAttribute("aria-expanded", "false");
+      return made;
     });
+    var says = state.songSays && state.songSays();
+    node.className = "icon-btn" + (says ? " has-news news-" + says.key : "");
+    node.title = says ? says.word : "עוד";
+    node.setAttribute("aria-label", says ? "עוד: " + says.word : "עוד");
+    return node;
   }
 
   /* --- THE MARK IN THE CORNER, AND WHAT IT IS ANYWHERE ELSE -----------------
@@ -5156,6 +5222,10 @@
        would still be standing there on the page after it. */
     var beside = document.getElementById("topFacts");
     if (beside) beside.textContent = "";
+    /* The same for the line under the name: it is the song's own second line
+       (see whereUnder), and the next page is not that song. */
+    var under = document.getElementById("topUnder");
+    if (under) under.textContent = "";
     /* And the end of the search box, which is the same kind of loan: the page
        that is open puts something there and the next page must not inherit
        it. The box itself is built once and lives through every view. */
@@ -5163,12 +5233,25 @@
     return node;
   }
 
-  /* THERE WAS A whereUnder HERE, a small second line under the name in the bar,
-     and one page used it: a song said under its own name who wrote it, in names
-     with a little pen or note where the words would not fit. It is gone, and so
-     is the slot in the bar it wrote into. Who wrote a song is one press away in
-     the panel behind the info button, said in words and with a page behind
-     every name, and a cramped second answer beside it was one answer too many. */
+  /* --- AND THE SECOND LINE UNDER IT ------------------------------------------
+     Who wrote the song, under its name and smaller than it, which is where a
+     card in the library says it and where anybody looks for it.
+
+     It was here once as names with a little pen or a little note in front of
+     them, standing in for the words "מילים" and "לחן" where those would not
+     fit. That is what went: a picture that has to be hovered to be read is not
+     a word, and three of them under a title is a line nobody takes in. What
+     stands here now is the people, in their own names, once each, which is the
+     whole of what somebody wants from the second line of a title. Which of
+     them wrote the words and which the tune is in the panel that edits them.
+
+     Empty on every page but a song, and an empty line takes no room (see
+     .top-under). */
+  function whereUnder(said) {
+    var node = document.getElementById("topUnder");
+    if (!node) return;
+    if (node.textContent !== (said || "")) node.textContent = said || "";
+  }
 
   /* AND WHERE THAT NAME IS A THING, IT IS THE FIELD FOR IT. A song, an
      evening and a person are each called something, and the bar is where that
@@ -7661,6 +7744,15 @@
       document.title = (song.title || "שיר חדש") + " | אקורדים";
     }
 
+    /* AND WHO WROTE IT, UNDER THE NAME. It was a picture in the bar opening a
+       panel that said it in full, which is one press for a fact that fits in
+       four words and is worth reading at a glance: this is a page somebody
+       plays from, and whose song it is belongs with its name the way it does
+       on every card in the library. Written whenever the song is drawn, so
+       naming somebody in the panel puts them here as it is typed. */
+    var sayWho = function () { whereUnder(creditNames(song).join(", ")); };
+    sayWho();
+
     /* What the head still carries: whatever the song has to say about itself,
        at the end of the line the name used to start. */
     var headTop = el("div", "head-top");
@@ -7673,7 +7765,6 @@
     /* set below, with the things they keep in step with the song */
     var showState = null;
     var showMeta = null;
-    var statusChip = null;
 
     /* THREE, AND A SONG IS IN ONE OF THEM. They are booleans in the database
        because that is what a policy can read (published is who may open it),
@@ -7707,6 +7798,26 @@
       if (song.review) return "review";
       return "draft";
     }
+
+    /* --- AND THE BAR IS TOLD, RATHER THAN SHOWN --------------------------------
+       The state was a chip standing beside the name of the song. It is two
+       things now and neither of them is a word in the bar: the label on the row
+       that opens the editor, and a dot on the three dots in the state's own
+       colour (see songRows and paintHeader). A song that is not finished says
+       so from across a room, and the word for it is where the thing to do about
+       it is.
+
+       Handed over as a question rather than as an answer, because the answer
+       changes under the page: touching a published song makes it a draft as it
+       is typed, and the panel is built at the press. */
+    state.songSays = function () {
+      var was = songState();
+      if (was === "published") return null;
+      return { key: was, word: STATE_WORDS[was] };
+    };
+    /* Painted again whenever the state moves, which is the whole of what the
+       chip's own painter did. */
+    showState = function () { paintHeader(); };
     /* --- ONE STRIP, AND THE SONG UNDER IT -------------------------------------
        There were three rows here: who wrote it, what kind of song it is, and
        the three dials, one under the other, and together they took a third of
@@ -7752,9 +7863,9 @@
          always had, one per person (see chipRow and `people`). */
       function metaChanged() {
         mark();
-        /* what the button in the bar says is this form's own reflection, so
+        /* the line under the name in the bar is this form's own reflection, so
            everything that writes into the song writes into it too */
-        if (showFacts) showFacts();
+        sayWho();
       }
 
       /* asked once and handed to both rows that want it */
@@ -7810,7 +7921,7 @@
          chips are drawn from the song. */
       showMeta = function () {
         metaFields.forEach(function (f) { f.show(); });
-        showFacts();
+        sayWho();
       };
 
       /* THE PANEL THE FORM OPENS IN. Built here, with the form, and put on the
@@ -7877,8 +7988,18 @@
          as walking out of the field does. */
       metaPanel.addEventListener("close", function () {
         metaFields.forEach(function (f) { f.done(); });
-        factsBtn.classList.remove("is-open");
       });
+      /* And this is the way in, a row in the panel behind the three dots (see
+         songRows): "סגנון", because that is what somebody comes here to change
+         once the names are in, and the names are in the same three rows. */
+      state.songDetails = {
+        /* NAMED FOR WHAT IS IN IT, both of them. The panel holds who wrote the
+           words, who wrote the tune and what kind of song it is, and a row
+           called "סגנון" over the only place the writers can be named is a
+           door with the wrong sign on it. */
+        said: "יוצרים וסגנון", icon: ICON.tag,
+        open: function () { metaPanel.showModal(); },
+      };
 
       /* The direction used to be one button up here, and it belonged to the
          whole song. It is a property of a LINE now and it is chosen down in the
@@ -7900,97 +8021,22 @@
          There is no save button on this page. A draft writes itself as it is
          typed, and publishing writes it too: "finished, let people have it" is
          one sentence, so it is one press. */
-      statusChip = el("button", "status-chip");
-      statusChip.type = "button";
-      statusChip.addEventListener("click", function () { askState(statusChip); });
-      /* IT STANDS WHERE THE READER'S PAGE PUTS IT, beside the song's own facts
-         and not up among the ways back. It was in the top bar, and a chip
-         appearing there was the whole row rearranging itself under the press
-         that turns the editor on: the glass, the tick and the printer each
-         moved a word's width sideways between reading a song and writing it,
-         which is the two states of one page disagreeing about where its
-         buttons are. Reading is the state to agree with, since it is the one
-         nearly every song is opened in. */
+      /* IT IS NOT A CHIP IN THE BAR ANY MORE, IT IS A WORD IN THE PANEL. The
+         chip stood beside the name of the song, said one word, and was pressed
+         about once in a song's life; the bar it stood in is the narrowest
+         thing on the page and everything else in it is used constantly.
 
-      showState = function () {
-        var was = songState();
-        statusChip.className = "status-chip tag tag-" + was;
-        /* AND "פורסם" IS NOT A STATE WORTH A WORD, IT IS THE ABSENCE OF ONE.
-           The three others all mean "not yet", which is worth knowing before
-           playing from the page or handing it to anybody; published is the
-           ordinary song, the one every reader who is not its author sees and
-           the only one they can open at all. A green chip saying so over every
-           finished song is a word in the bar that is true of the library.
+         So the word moves into the panel behind the three dots, where it is
+         the label on the row that opens the editor: a song that is not
+         published is a song being worked on, and "טיוטה" over the way into the
+         editor says both things in the width of one. What is left in the bar
+         is the dot on the three dots themselves, in the state's own colour
+         (see paintHeader), which is what a person needs from across a room:
+         there is something here that is not finished.
 
-           Nothing is lost by it going. Pressing it published the song, and a
-           published song has nothing left to be offered; the way back is not
-           the chip either, it is touching the song (see mark), and the moment
-           that happens the chip is a draft again and standing here again. */
-        statusChip.hidden = was === "published";
-        /* and while it is being read, what it is doing: the state saying more
-           about itself, in the state's own chip */
-        var stage = coming && song.status_note ? "  ·  " + song.status_note : "";
-        statusChip.textContent = STATE_WORDS[was] + stage;
-        statusChip.title = was === "published"
-          ? "השיר פתוח לכולם. כל שינוי בו מחזיר אותו לטיוטה."
-          : was === "imported"
-          ? "השיר נקרא עכשיו מתוך הקובץ. לחיצה מאפשרת לבטל."
-          /* The same word to both of them and two different things to do with
-             it: one can take the offer in, the other can take it back. */
-          : was === "offer"
-          ? (owned
-            ? "מישהו הציע שינוי לשיר. השיר לא זז עד שמאשרים, ולחיצה פותחת את ההצעה."
-            : "ההצעה שלכם ממתינה לאישור של מי שהעלה את השיר. השיר עצמו לא השתנה.")
-          : "לחיצה מפרסמת את השיר: רק שיר מפורסם נפתח למי שלא כתב אותו.";
-      };
+         And publishing gets a row of its own, because it is a different
+         sentence: what the song IS, and what to do about it (see songRows). */
       showState();
-
-      /* WHAT THE FORM SAYS, WITH THE FORM SHUT, AND IT IS ONE BUTTON WIDE.
-         It used to say it out loud: the names with a pen and a note in front of
-         them and the kinds as chips, a strip of text standing in the bar beside
-         the name of the song. Which is the same facts twice on a page that is
-         being WRITTEN, because the panel behind it says them in full and in the
-         shape you can change them in, and it is the widest thing in the bar
-         spent on something nobody up there is reading. The reader's page still
-         says the credits under the title, where they are the second line of the
-         name and not a control.
-
-         So it is the picture that means "more about this": one press, the same
-         panel. What it says is in the hover, which costs no room at all and
-         still answers "did I fill this in" without opening anything. */
-      var factsBtn = iconBtn(ICON.info, "מי כתב, ואיזה סוג", function () {
-        factsBtn.classList.add("is-open");
-        metaPanel.showModal();
-        /* AND NOTHING IN IT IS OPEN FOR TYPING. It used to open with the caret
-           in the first field, which was right while a field was the only way
-           to say anything here. It is three rows of chips now, and a song that
-           gets opened here is usually one that is already filled in: what the
-           panel is for is reading what it says, and taking one chip off as
-           often as adding one. So it opens at rest, and a phone does not put a
-           keyboard over it for a question nobody asked. */
-      });
-      factsBtn.classList.add("song-info");
-
-      /* THE BUTTON FIRST AND THE STATE AFTER IT, which is the row the reader's
-         page shows in the same place. The button is on every song and the
-         state is on some of them, so it is the button that sits against the
-         name: put the state first and it holds the place next to the title on
-         the few songs that have one and leaves it empty on the rest, which is
-         the one thing in the bar moving sideways from song to song. */
-      facts = el("div", "song-facts");
-      facts.appendChild(factsBtn);
-      facts.appendChild(statusChip);
-
-      var showFacts = function () {
-        var said = creditsLine(song);
-        var kinds = styles(song);
-        /* A song with none of them is asked, in the words the panel opens with:
-           the button is the way in either way, and what changes is whether it
-           is telling you something or asking you for it. */
-        var words = said.concat(kinds).join("  •  ") || "מי כתב, ואיזה סוג";
-        factsBtn.title = words;
-        factsBtn.setAttribute("aria-label", words);
-      };
 
       /* --- AND THE FORM IS A PANEL, NOT A ROW OF THE PAGE ---------------------
          It used to open in place, under the strip, which is the whole width of
@@ -8007,30 +8053,21 @@
 
          There is no save button on it. Every field writes into the song as it
          is typed, the same as everything else in this editor, so the only
-         thing left to do is to be finished. It is opened by the button above,
-         which is the whole of what is left of the form on the page. */
-
-      showFacts();
+         thing left to do is to be finished. It is opened by a row in the panel
+         behind the three dots, which is the whole of what is left of the form
+         on the page. */
     } else {
-      /* --- WHO WROTE IT IS NOT IN THE BAR ANY MORE ---------------------------
-         It was a second line under the name of the song: the names, small and
-         quiet, with a little pen or note where the word "מילים" would not fit.
-         Which was already a compromise, and every reason it was made got worse
-         as the credits got truer. Who wrote the words is three people as often
-         as one, and three names under the title, each carrying a picture that
-         has to be hovered to be read, is a line nobody can take in at a glance
-         and a line that only ever grows.
+      /* --- WHO WROTE IT IS UNDER THE NAME ------------------------------------
+         Written by sayWho above, into the second line of the title, in the
+         people's own names and once each (see whereUnder). It was a line like
+         that once, with a little pen and a little note standing in for the
+         words "מילים" and "לחן", and that is what made it unreadable: a
+         picture that has to be hovered to be read is not a word. The names
+         alone are what a card in the library says and what anybody wants of a
+         second line.
 
-         AND THERE IS ONE PLACE FOR IT, one press away: the info button beside
-         it opens the panel that says all of it in full, in words rather than
-         in pictures, with a chip per person and a page behind every chip (see
-         songTold). Two answers to one question, one of them cramped, is one
-         answer too many, and the cramped one is the one that goes.
-
-         WHAT STAYS IN THE BAR IS THE NAME OF THE SONG, which is what the bar
-         is for. The slot the line was written into is gone from the page as
-         well (see the top of index.html), so there is nothing here to clear. */
-      facts = el("div", "song-facts is-read");
+         Which of them wrote the words and which the tune is in the panel
+         behind the three dots, with a page behind every name. */
 
       /* WHAT KIND OF SONG IT IS DOES NOT BELONG ON THE SONG. A style is how the
          library is sorted: it is the answer to "what else is like this", and
@@ -8061,9 +8098,12 @@
          gives where it builds the same row: the button is on every song and
          this is on a few, so it is the button that stands against the name and
          this that comes after it. */
-      var stateMark = songState() === "published"
-        ? null
-        : el("span", "tag tag-" + songState(), STATE_WORDS[songState()]);
+      /* THERE WAS A MARK HERE saying the song is not published yet, a chip
+         beside its name. It is a word in the panel behind the three dots now,
+         where it labels the row that opens the editor, and a dot on the dots
+         themselves in the state's own colour (see paintHeader). The bar is the
+         narrowest thing on the page and this was the one word in it that
+         nobody presses. */
 
       /* --- AND THE SAME PANEL, WITH NOTHING TO FILL IN -----------------------
          The info button was the editor's, which made "who wrote this" a
@@ -8097,21 +8137,19 @@
         toldBox.appendChild(told);
         metaPanel.appendChild(toldBox);
 
-        var info = iconBtn(ICON.info, "מי כתב, ואיזה סוג", function () {
-          info.classList.add("is-open");
-          metaPanel.showModal();
-        });
-        info.classList.add("song-info");
-        /* The same hover the editor's button carries, which is the whole of
-           the panel in one line: the answer without opening anything. A song
-           that has nothing but an owner keeps the words the button was made
-           with, because the one line it could say has not arrived yet. */
-        var inOneLine = creditsLine(song).concat(styles(song));
-        if (inOneLine.length) {
-          info.title = inOneLine.join("  •  ");
-          info.setAttribute("aria-label", info.title);
-        }
-        facts.appendChild(info);
+        /* THE WAY IN IS A ROW IN THE PANEL BEHIND THE THREE DOTS, and it was
+           a picture beside the name. What that picture opened is worth
+           keeping: a name here is a page of everything that person wrote and a
+           style is a shelf of everything like this, which is the only thing
+           left to want on a page you cannot change. What it is not worth is
+           the corner of the bar next to the title, now that who wrote the song
+           is written under it in words. */
+        state.songDetails = {
+          /* the same two things it holds while it is being written, read
+             rather than filled in */
+          said: "יוצרים וסגנון", icon: ICON.tag,
+          open: function () { metaPanel.showModal(); },
+        };
 
         /* On the way DOWN, so it lands before the link's own handler does: a
            panel about the song you were on has no business standing over the
@@ -8121,17 +8159,12 @@
           if (event.target === metaPanel) return metaPanel.close();
           if (event.target.closest && event.target.closest("a")) metaPanel.close();
         }, true);
-        metaPanel.addEventListener("close", function () { info.classList.remove("is-open"); });
       }
 
-      if (stateMark) facts.appendChild(stateMark);
-
-      /* A published song with nothing to tell about itself leaves this box
-         with nothing in it, and an empty box still spends the bar's own gap:
-         a hole between the name of the song and the search, on the page where
-         there is least to explain it. Handed over as nothing instead, which is
-         a case the bar already knows (see placeControls). */
-      if (!facts.childNodes.length) facts = null;
+      /* Nothing stands beside the name any more: the credits are under it and
+         the state is in the panel. Handed over as nothing, which is a case the
+         bar already knows (see placeControls). */
+      facts = null;
     }
 
     app.appendChild(head);
@@ -9147,27 +9180,23 @@
        A panel and not a straight toggle, because publishing is the one press
        on this page that changes who can see the song, and a press that does
        that should be aimed at rather than brushed against. */
-    var stateMenu = null;
+    /* --- WHAT THE STATE CAN BECOME, AS ROWS --------------------------------
+       This was a panel of its own, hanging under the chip in the bar, with its
+       own opening, its own closing and its own placing. The chip is gone (see
+       songSays) and so is the panel: what it held are rows, and they stand in
+       the one panel this page already has, behind the three dots.
 
-    function closeStateMenu() {
-      if (!stateMenu) return;
-      stateMenu.remove();
-      stateMenu = null;
-      document.removeEventListener("pointerdown", stateOutside, true);
-    }
+       A song is in exactly one state, so there is one thing to be offered
+       about it, and the offer is a sentence rather than a word: what the song
+       IS is the label on the row that opens the editor, and this is what to do
+       about it.
 
-    function stateOutside(event) {
-      if (!stateMenu) return;
-      if (stateMenu.contains(event.target)) return;
-      if (statusChip && statusChip.contains(event.target)) return;
-      closeStateMenu();
-    }
-
-    function askState(anchor) {
-      if (stateMenu) return closeStateMenu();
-      if (songState() === "published") return;
-
-      stateMenu = el("div", "print-menu");
+       Handed over as descriptions and not as buttons, because the panel is
+       built at the press and these are read then: a song published a moment
+       ago has nothing left to offer. */
+    state.songMoves = function () {
+      var was = songState();
+      if (was === "published") return [];
 
       /* A song still in the machine has one thing that can be done to it and
          it is not publishing: there is nothing to publish yet. Cancelling is
@@ -9176,24 +9205,18 @@
          of the app uses: the Workflow holding the song stops when it finds the
          row gone. */
       if (coming) {
-        stateMenu.appendChild(button("ביטול הייבוא", ICON.close, "ghost small", function () {
-          closeStateMenu();
+        return [{ said: "ביטול הייבוא", icon: ICON.close, act: function () {
           if (!window.confirm('לבטל את הייבוא של "' + (song.title || "השיר") + '"?')) return;
           db.purge(song.id).then(function () {
             toast("הייבוא בוטל");
             go(addr());
           }).catch(function (e) { toast("הביטול נכשל: " + e.message, true); });
-        }));
-        document.body.appendChild(stateMenu);
-        placeStateMenu(anchor);
-        document.addEventListener("pointerdown", stateOutside, true);
-        return;
+        } }];
       }
 
-      /* --- THE CHIP SAYS הצעה, AND THEN IT IS NOT ABOUT PUBLISHING AT ALL ----
+      /* --- AND הצעה IS NOT ABOUT PUBLISHING AT ALL --------------------------
          The two people it is between get the two different things there are to
-         do with an offer, and neither of them is the one thing this menu
-         otherwise offers: the song's account can open what was offered, which
+         do with an offer: the song's account can open what was offered, which
          is where taking it in and turning it down both live, and the person
          who made it can take it back.
 
@@ -9202,55 +9225,41 @@
          person who made the offer has nothing here to publish. */
       if (offerWaiting()) {
         if (owned) {
-          toMe.forEach(function (o) {
-            var who = "לפתיחת ההצעה";
-            var item = button(who, null, "ghost small", function () {
-              closeStateMenu();
+          return toMe.map(function (o) {
+            return { said: "לפתיחת ההצעה", icon: ICON.people, act: function () {
               go(addr(row.slug, "offers", o.id));
-            });
-            db.who(o.owner).then(function (name) {
-              if (name) item.querySelector(".lb").textContent = "ההצעה של " + name;
-            });
-            stateMenu.appendChild(item);
+            } };
           });
-        } else if (myOffer) {
-          stateMenu.appendChild(button("ביטול ההצעה", ICON.trash, "ghost small", function () {
-            closeStateMenu();
-            dropOffer();
-          }));
         }
-        document.body.appendChild(stateMenu);
-        placeStateMenu(anchor);
-        document.addEventListener("pointerdown", stateOutside, true);
-        return;
+        if (myOffer) {
+          return [{ said: "ביטול ההצעה", icon: ICON.trash, act: dropOffer }];
+        }
+        return [];
       }
 
-      stateMenu.appendChild(button("פורסם", null, "ghost small", function () {
-        closeStateMenu();
-        song.published = true;
-        song.draft = false;
-        song.review = false;
-        showState();
-        mark();
-        /* AND IT KEEPS WHAT WAS PUBLISHED. Not from here, from the row the
-           save hands back: what goes on the shelf has to be what actually
-           landed in the database, and a moment from now this page may already
-           have been typed into again. */
-        wantVersion = true;
-        /* AND IT SAVES, now rather than in a second: this is the press that
-           hands the song to everybody else. */
-        queueSave(true);
-      }));
-      document.body.appendChild(stateMenu);
-      placeStateMenu(anchor);
-      document.addEventListener("pointerdown", stateOutside, true);
-    }
+      /* Which leaves the ordinary one: a draft, and the one thing worth
+         offering about a draft. Going the other way needs no row at all,
+         because touching the song does it (see mark). */
+      return [{ said: "פרסום", icon: ICON.people, act: publishSong }];
+    };
 
-    function placeStateMenu(anchor) {
-      var box = anchor.getBoundingClientRect();
-      var width = stateMenu.offsetWidth;
-      stateMenu.style.top = (box.bottom + 6) + "px";
-      stateMenu.style.left = Math.min(Math.max(6, box.right - width), window.innerWidth - width - 6) + "px";
+    /* "finished, let people have it" is one sentence, so it is one press: no
+       second panel asking whether that is what was meant. */
+    function publishSong() {
+      song.published = true;
+      song.draft = false;
+      song.review = false;
+      showState();
+      mark();
+      /* AND IT KEEPS WHAT WAS PUBLISHED. Not from here, from the row the save
+         hands back: what goes on the shelf has to be what actually landed in
+         the database, and a moment from now this page may already have been
+         typed into again. */
+      wantVersion = true;
+      /* AND IT SAVES, now rather than in a second: this is the press that
+         hands the song to everybody else. */
+      queueSave(true);
+      toast("השיר פורסם");
     }
 
     /* --- taking it back ------------------------------------------------------
@@ -13421,6 +13430,10 @@
     closeTakes();
     state.takesOpen = null;
     state.takesCount = 0;
+    /* what the song said about itself, which the next page does not say */
+    state.songSays = null;
+    state.songMoves = null;
+    state.songDetails = null;
     /* and the box in the bar goes back to being a way to other pages, until a
        page that can be sieved says otherwise (see state.sift in viewIndex) */
     state.sift = null;
