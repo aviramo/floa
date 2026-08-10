@@ -77,6 +77,24 @@
   --corner: 8px;
   --shadow: 0 1px 2px rgba(23, 32, 42, .05), 0 8px 24px rgba(23, 32, 42, .06);
 
+  /* --- PLAY, STOP AND PAUSE ARE ONE SIZE WHEREVER THEY ARE -----------------
+     Three shapes and one meaning: this sound starts, this sound ends, this
+     sound waits. They are drawn on a pill on a song card, on the round red
+     one that records, and on the round one beside a recording, and each of
+     those had picked its own number: eleven on the card, fourteen on the two
+     round ones. The buttons around them are different sizes and should be,
+     because a card is not a strip; the SHAPE inside them is the same shape
+     saying the same thing, and a triangle that is one size here and another
+     there reads as two different controls.
+
+     Bigger than any of them was, too, and by a good deal. These are the shapes
+     pressed with a guitar in the way, and eleven pixels of triangle is a mark
+     rather than a button: it went to sixteen first, which is the size of an
+     ordinary icon in this app, and an ordinary icon is exactly what this is
+     not. What is being drawn is the one shape on the screen that makes a
+     sound. */
+  --transport: 20px;
+
   --song-size: 18px;
 
   /* The song is set in the face a printed chord sheet is set in, not in the
@@ -168,7 +186,10 @@ body.on-song { background: var(--card); }
   background: rgba(247, 249, 250, .92);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--line);
-  transition: transform .28s ease, margin-block-end .28s ease;
+  /* The visibility carries no delay HERE, so that coming back is immediate:
+     the bar is on the screen from the first frame of the slide down (see
+     body.on-air, where the same property waits for the slide up to finish). */
+  transition: transform .28s ease, margin-block-end .28s ease, visibility 0s;
 }
 .top-in { display: flex; align-items: center; gap: 16px; min-height: 60px; }
 
@@ -186,11 +207,28 @@ body.on-song { background: var(--card); }
    how tall the thing leaving is (see airRoom).
 
    The button that stops the recording steps out of here before this runs, and
-   stays. Everything else goes. */
+   stays. Everything else goes.
+
+   AND ONCE IT HAS GONE IT IS NOT DRAWN AT ALL, which is the third move and the
+   one that makes the promise true. A bar lifted out of sight by a transform is
+   still a bar the browser is placing, and the placing is exactly the thing
+   nobody controls: this one is stuck to the top of the window, and a window
+   that is scrolled hard at its ends, or that is growing and shrinking because
+   an address bar is sliding in and out of it, moves the things stuck to it.
+   Which is how a header that had gone came back, mid take, for somebody who
+   did nothing but scroll the song.
+
+   So it is taken out of the drawing once it has left, and nothing a browser
+   does with a sticky box can put a hidden one on the screen. Its box stays
+   where it was, holding the space the negative margin above cancels, and only
+   the paint stops. The wait is the length of the slide: hidden any earlier and
+   the header would vanish instead of leaving. */
 body.on-air .top {
   transform: translateY(-100%);
   margin-block-end: calc(0px - var(--top-away, 60px));
   pointer-events: none;
+  visibility: hidden;
+  transition: transform .28s ease, margin-block-end .28s ease, visibility 0s linear .28s;
 }
 .brand {
   display: inline-flex; align-items: center; flex: none;
@@ -934,7 +972,7 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
   font-variant-numeric: tabular-nums; font-weight: 700;
 }
 .when.has-takes:hover { border-color: var(--chord); }
-.when.has-takes svg { width: 11px; height: 11px; }
+.when.has-takes svg { width: var(--transport); height: var(--transport); }
 .when.has-takes.is-playing {
   color: #fff; background: var(--chord); border-color: var(--chord);
 }
@@ -3389,7 +3427,7 @@ body.on-ear.ear-small { padding-bottom: 78px; }
   color: #fff; background: var(--chord); border-color: var(--chord);
   box-shadow: 0 1px 4px rgba(225, 29, 99, .32);
 }
-.tape-bar .icon-btn.is-rec svg { width: 14px; height: 14px; }
+.tape-bar .icon-btn.is-rec svg { width: var(--transport); height: var(--transport); }
 .tape-bar .icon-btn.is-rec:hover {
   color: #fff; background: #c2185b; border-color: #c2185b;
   box-shadow: 0 2px 7px rgba(225, 29, 99, .45);
@@ -3535,7 +3573,7 @@ body.on-dock { padding-bottom: 92px; }
   background: var(--card);
 }
 .take-go { flex: none; width: 34px; height: 34px; border-radius: 999px; }
-.take-go svg { width: 14px; height: 14px; }
+.take-go svg { width: var(--transport); height: var(--transport); }
 .take-said { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .take-who { font-size: 14px; color: var(--ink); font-weight: 600; }
 .take-when { font-size: 12px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }

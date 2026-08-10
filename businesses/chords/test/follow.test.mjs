@@ -32,7 +32,13 @@ const eq = (label, got, want) => {
 const reading = (follow, playing, high = 0.88, low = 0.72) =>
   follow.kinds.map((k) => (k === playing ? high : low));
 
-/* Play a chord for `frames` readings and hand back where it ended up. */
+/* Play a chord for `frames` readings and hand back where it ended up.
+
+   A FRAME IS A READING AND A READING IS A LENGTH OF TIME, a thirtieth of a
+   second on a song page (see EAR_GAP_CHORD in app.js). So the counts below are
+   not arbitrary: they are how long somebody held that chord, and where one of
+   them is close to what the follower waits for, changing how often the ear is
+   asked changes what the count means. */
 const play = (follow, chord, frames = 6, high, low) => {
   let last;
   for (let i = 0; i < frames; i++) last = follow.step(reading(follow, chord, high, low));
@@ -162,7 +168,10 @@ const play = (follow, chord, frames = 6, high, low) => {
   ["Am", "D", "Am", "D"].forEach((c) => play(f, c, 8));
   eq("through the verse once", f.where(), 3);
 
-  play(f, "Am", 20);
+  /* A second of it, which is what going back has to be held for before it is
+     believed: a repeat is a thing people do on purpose and a reading that
+     names something behind us is usually a reading that was wrong. */
+  play(f, "Am", 30);
   eq("and the verse again goes back to the verse, not on to the next Am",
     f.where() < 4, true);
 
@@ -183,7 +192,7 @@ const play = (follow, chord, frames = 6, high, low) => {
      nobody plays one chord over again. */
   const parts = F.make(song, [0, 4]);
   ["Am", "D", "Am", "D"].forEach((c) => play(parts, c, 8));
-  play(parts, "Am", 20);
+  play(parts, "Am", 30);
   eq("and it lands on the top of the verse, because that is what a repeat is",
     parts.where(), 0);
 

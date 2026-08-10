@@ -192,11 +192,21 @@
        WHAT THE ONE BUTTON WEARS IS PLAY AND THEN STOP. The dot and the two
        bars are the machine's own words for the same two presses, and they are
        kept here for whatever wants them: a red dot is a mark on a button that
-       records to tape, and this is a person about to play a song. */
-    dot: '<circle cx="12" cy="12" r="6.5" fill="currentColor" stroke="none"/>',
-    pause: '<rect x="8" y="6" width="3.2" height="12" rx="1" fill="currentColor" stroke="none"/><rect x="12.8" y="6" width="3.2" height="12" rx="1" fill="currentColor" stroke="none"/>',
-    stop: '<rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor" stroke="none"/>',
-    play: '<path d="M9 6.5l9 5.5-9 5.5V6.5Z" fill="currentColor" stroke="none"/>',
+       records to tape, and this is a person about to play a song.
+
+       AND THEY FILL THEIR BOX, which the drawn icons here do not have to and
+       these do. Every other picture in this app is strokes, and a stroke is
+       read by its line: a mark that covers half its box still reads at any
+       size, because the line is the same width either way. These three are
+       solid shapes, and a solid shape is read by its AREA. Drawn to half the
+       box they were half a triangle, a small square and two short bars, and
+       making the box bigger only made the empty part of it bigger with them.
+       So the shapes themselves grew to the edges of the box, and the size they
+       are drawn at is one number for all of them (see --transport). */
+    dot: '<circle cx="12" cy="12" r="7" fill="currentColor" stroke="none"/>',
+    pause: '<rect x="6.6" y="4.5" width="4" height="15" rx="1.2" fill="currentColor" stroke="none"/><rect x="13.4" y="4.5" width="4" height="15" rx="1.2" fill="currentColor" stroke="none"/>',
+    stop: '<rect x="5" y="5" width="14" height="14" rx="2.6" fill="currentColor" stroke="none"/>',
+    play: '<path d="M7 4.4l13.2 7.6L7 19.6V4.4Z" fill="currentColor" stroke="none"/>',
     /* Three points and the lines between them, which is what sharing has
        looked like since before any of this. Not the box with an arrow out of
        it: that one is one platform's word for it and reads as "upload"
@@ -15498,6 +15508,10 @@
        technicality. So the offer comes up and the closing waits for it: what
        answers the offer closes this properly (see hearTake). */
     if (taping()) return stopTape();
+    /* and a take that was asked for and never got a microphone is not asked
+       for any more: the flag it left standing would keep the band away from
+       the next person who opens it (see takeWanted) */
+    takeWanted = false;
     if (earTicking) cancelAnimationFrame(earTicking);
     earTicking = 0;
     if (window.CHORDS_EAR.live()) window.CHORDS_EAR.close();
@@ -16248,10 +16262,33 @@
   }
 
   /* --- and the page moves under the mark -------------------------------------
-     Kept in a band rather than centred on every step, because a page that
-     scrolls on every chord is a page nobody can read: what the eye needs is
-     for the mark to be somewhere in the middle of the screen, and for the
-     screen to stay still until it is not. */
+     THE PLAYING STANDS A THIRD OF THE WAY DOWN, and the two thirds underneath
+     it are what the song is about to be.
+
+     It was a band instead, anywhere from just under the header to just over the
+     strip, and the page moved only when the mark left it. Which sounds gentle
+     and reads badly: a mark that enters the band at the top drifts down through
+     it over a verse and spends most of that verse near the FOOT of the screen,
+     with one line left to read and a jump coming. What a player needs from a
+     chord sheet is the line they have not reached yet, and a page that hands
+     back the least of it exactly when the playing is going fastest is a page
+     that is read by looking away from it.
+
+     So there is a line rather than a band, and the rule about it is one sided.
+     Below it the page moves, up to the line and no further. Above it nothing
+     happens at all, because above the line is the song already played, and a
+     page that shoves the mark back down for having drifted up is a page that
+     never sits still.
+
+     What that looks like in the hand: the mark is put on the line, the next few
+     chords of the same row are read with the page perfectly still, and the row
+     after that brings it back to the line. One row of movement at a time, which
+     is what a page turning under somebody playing should look like. */
+  var THIRD = 1 / 3;
+  /* A chord further along the SAME row has the same top, give or take a
+     rounding, and must not be read as having fallen below the line. */
+  var THIRD_SLACK = 6;
+
   function keepInView(node) {
     if (Date.now() < scrollHold) return;
     var box = node.getBoundingClientRect();
@@ -16264,10 +16301,23 @@
     var ceiling = Math.max(0, head ? head.getBoundingClientRect().bottom : 0) + 30;
     var floor = window.innerHeight - (ear ? ear.getBoundingClientRect().height : 0) - 40;
     if (floor - ceiling < 80) return;                /* no band to speak of */
-    if (box.top >= ceiling && box.bottom <= floor) return;
+
+    /* A third of what is actually readable, and not a third of the window: the
+       header stands over the top of it and the strip stands under the bottom,
+       and a third measured through either of them is not a third of anything
+       anybody is looking at. */
+    var line = ceiling + (floor - ceiling) * THIRD;
+    if (box.top <= line + THIRD_SLACK && box.top >= ceiling) return;
 
     var y = window.scrollY || window.pageYOffset || 0;
-    var want = Math.max(0, y + box.top - (ceiling + (floor - ceiling) * 0.3));
+    /* AND NOT PAST THE END OF THE SONG. The last line cannot be brought to the
+       third of the screen, there is nothing under it to scroll up; asking
+       anyway is a scroll the browser quietly clamps, and then every chord of
+       the last verse asks for it again. */
+    var most = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    var want = Math.min(most, Math.max(0, y + box.top - line));
+    if (Math.abs(want - y) < 2) return;
+
     window.scrollTo({ top: want, behavior: "smooth" });
     /* Its own hold, and a short one: a smooth scroll takes a few hundred
        milliseconds and the readings during it are about a page that is still
@@ -16301,12 +16351,20 @@
      measurement is behind a press for whoever wants to see why. */
   function earRoom() {
     if (!ear || !earParts) return;
-    var on = !!following && earMode === "chord";
     /* AND WHILE IT IS FOLLOWING THERE IS NO BAND AT ALL. It was one row, and
        one row along the foot of a phone is still a row of the song gone, for a
        thing nobody looks at while playing: what is being looked at is the mark
        on the page. The measurement is still one press away, and the press is
-       the picture of a microphone that is already in the strip. */
+       the picture of a microphone that is already in the strip.
+
+       A TAKE IS THE SAME ANSWER, and it is asked a moment earlier. The
+       follower is built from what the room turns out to be saying, which is a
+       second or two after the press, and a take that has been asked for is
+       already a person playing: the band was going up on the press and coming
+       down when the following began, which on the screen is something rising
+       from the bottom and disappearing. What the press means is known at the
+       press (see takeWanted). */
+    var on = (!!following || taping() || takeWanted) && earMode === "chord";
     var away = on && !earParts.chord.node.classList.contains("is-shown");
     ear.hidden = away;
     /* On the BODY and not on the band, because what it changes is how much
@@ -16502,18 +16560,33 @@
   }
 
   /* --- the clock -------------------------------------------------------------
-     Not every frame. A reading costs about a million multiplications and a
-     screen offers sixty chances a second to do it; twenty is faster than
-     anybody reads a needle and a third of what the phone would otherwise
-     spend. The frames in between are spent doing nothing, which is the
-     point. */
+     Not every frame, and not the same gap for the two questions, because they
+     do not cost the same and are not read by the same thing.
+
+     A NOTE costs about a million multiplications: it is found by sliding the
+     sound over itself, delay by delay (see ear.js), and it is read by an eye
+     watching a needle. Twenty a second is faster than anybody reads a needle
+     and a third of what the phone would otherwise spend.
+
+     A CHORD costs a few thousand. The window itself is done on the audio thread
+     whether it is asked for or not, and what is left here is a few hundred
+     multiplications per note and eighty four dot products. So it is asked for
+     half as often again, and the frames in between are still spent doing
+     nothing.
+
+     AND THAT IS NOT ABOUT THE PANEL, IT IS ABOUT THE MARK. The follower waits
+     four readings before it moves the mark on to the next chord (see STEP in
+     follow.js), and four readings is a length of time: a fifth of a second at
+     twenty a second, an eighth at thirty. Nothing about how sure it has to be
+     has changed. The same certainty simply arrives sooner. */
   var EAR_GAP = 45;
+  var EAR_GAP_CHORD = 30;
 
   function earTick() {
     earTicking = requestAnimationFrame(earTick);
     if (!window.CHORDS_EAR.live() || !earParts) return;
     var now = Date.now();
-    if (now - earLast < EAR_GAP) return;
+    if (now - earLast < (earMode === "tune" ? EAR_GAP : EAR_GAP_CHORD)) return;
     earLast = now;
 
     var r = earMode === "tune" ? window.CHORDS_EAR.note() : window.CHORDS_EAR.chord();
@@ -16544,6 +16617,15 @@
      than as a performance with three silences the page sits through.
      ========================================================================== */
   var tape = null;
+
+  /* A TAKE THAT HAS BEEN ASKED FOR AND HAS NOT STARTED YET, which is the
+     handful of tenths the microphone takes to open. It is here because the
+     band at the foot of the screen is not on the screen while a take runs (see
+     earRoom), and without it the recording press put the band up and took it
+     down again in the same second: something rose from the bottom of the
+     screen and vanished, for nobody, because the press was never about the
+     measurement. Pressed to record, the band is never asked for at all. */
+  var takeWanted = false;
 
   /* ==========================================================================
      A TAKE THAT WAS NOT ANSWERED SURVIVES THE PAGE.
@@ -16674,18 +16756,33 @@
         : "יש הקלטה שלא הוחלט עליה");
     }
     if (earOpen() && earMode === "chord") return startTape();
+    /* The band is not put up on its way to being taken down: this press is for
+       a recording, and the microphone opening is the only thing between the
+       press and one (see takeWanted). */
+    takeWanted = true;
     askEar("chord", startTape);
   }
 
   function startTape() {
+    /* Whatever comes of this, nothing is waiting on the microphone any more:
+       either a take is running, which is what keeps the band away by itself,
+       or none is, and the band is the panel that was opened. */
+    var waited = takeWanted;
+    takeWanted = false;
+    var no = function (said) {
+      toast(said);
+      /* the band was held back for a take that is not going to happen */
+      if (waited) earRoom();
+    };
+
     if (tape) return;
     var stream = window.CHORDS_EAR.stream();
     var kind = tapeKind();
-    if (!stream || kind === null) return toast("הדפדפן הזה לא יודע להקליט");
+    if (!stream || kind === null) return no("הדפדפן הזה לא יודע להקליט");
 
     var rec;
     try { rec = new MediaRecorder(stream, kind ? { mimeType: kind } : undefined); }
-    catch (e) { return toast("לא הצלחנו להתחיל הקלטה"); }
+    catch (e) { return no("לא הצלחנו להתחיל הקלטה"); }
 
     tape = {
       rec: rec, bits: [], marks: [], mime: rec.mimeType || kind || "audio/webm",

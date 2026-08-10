@@ -95,20 +95,33 @@
 
         var source = ctx.createMediaStreamSource(stream);
 
-        /* THE LONG WINDOW. 16384 samples is about a third of a second, which
-           is a long time in a song and the price of being able to tell one
-           semitone from the next down where a guitar's bottom string lives:
-           at 48kHz these bins are three hertz apart, and E2 and F2 are five.
-           At the eight thousand it was, they are six apart and the two notes
-           land in the same bin.
+        /* THE LONG WINDOW, AND ITS LENGTH IS A LAG. 8192 samples is 170
+           milliseconds at 48kHz, and for the whole of those 170 milliseconds
+           after a chord is struck the reading still holds the chord before it.
+           That wait is the largest single part of how long the mark on the song
+           takes to move, which is the one thing a player actually feels.
 
-           A third of a second also means a chord change is smeared across the
-           reading for a third of a second. That is the trade, it is the right
-           way round for what this is used for, and it is why the smoothing
-           below is small: the window is already most of the averaging. */
+           It was 16384, twice this, and the reason was the bottom of the
+           instrument: there the bins are three hertz apart and E2 and F2 are
+           five, so the two lowest notes on a guitar land in bins of their own,
+           and at 8192 the bins are six apart and those two share one.
+
+           WHICH COSTS FAR LESS THAN IT SOUNDS, because a note is not read off
+           one bin (see salience). It is read off its own pitch and the first
+           three multiples of it, and by the third of those E and F are fifteen
+           hertz apart and plainly different. And the twelve numbers fold every
+           octave together, so the same E is measured again in the middle of the
+           instrument, where nothing is ambiguous at all. One pair of low
+           fundamentals is blurred. The chord is not.
+
+           Half the smear for a blur at the bottom of one octave is the right
+           way round for a page that has to keep up with the playing. */
         wide = ctx.createAnalyser();
-        wide.fftSize = 16384;
-        wide.smoothingTimeConstant = 0.3;
+        wide.fftSize = 8192;
+        /* And little smoothing, for the same reason. The window is already most
+           of the averaging, and every bit of this is another few milliseconds of
+           the old chord kept alive underneath the new one. */
+        wide.smoothingTimeConstant = 0.2;
         wide.minDecibels = -110;
         wide.maxDecibels = -10;
 

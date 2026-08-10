@@ -185,8 +185,8 @@
      that lost the song at the second verse spends the rest of the song
      insisting it is still there, because every path back is impossible rather
      than merely expensive. One in three million a reading, which is about a
-     second and a half of being consistently wrong before starting again
-     somewhere else becomes the cheaper story. */
+     second of being consistently wrong before starting again somewhere else
+     becomes the cheaper story. */
   var LOST = Math.log(3e-7);
 
   /* --- AND A REASON TO STAY WHERE WE ARE ------------------------------------
@@ -268,10 +268,17 @@
      through six places to get there would be drawing a passage nobody played.
      Which then needs the same patience as any other jump. */
   var LEAP = 6;
-  var PATIENCE = 12;
+  /* HALF A SECOND, WRITTEN AS READINGS, and the two are only the same number
+     for as long as a reading is what it is. A reading is a thirtieth of a
+     second on a song page (see EAR_GAP_CHORD in app.js), so eighteen of them is
+     a little over half a second, and this was twelve when a reading was a
+     twentieth. Speeding the ear up must not quietly make the follower hastier:
+     what the ear buys is that the same certainty arrives sooner, not that less
+     of it is asked for. */
+  var PATIENCE = 18;
 
   /* And even one place forward is not taken on a single reading. Four of them,
-     which is under a fifth of a second and nobody sees, and it is the
+     which is an eighth of a second and nobody sees, and it is the
      difference between a mark that moves when the playing moves and one that
      is nudged along by the loud confused moment in the middle of a strum. That
      moment used to cost nothing, and a mark nudged forward has to be walked
@@ -416,9 +423,10 @@
       /* --- FORWARD IS ONE AT A TIME, ALWAYS -----------------------------------
          Not "one at a time unless it is further, in which case leap". The mark
          goes to the next chord and to no other, and where the arithmetic has
-         got further ahead than that the mark WALKS after it, a place a reading,
-         until it catches up. Which takes a twentieth of a second per chord and
-         looks like what it is: running to catch up with the playing.
+         got further ahead than that the mark WALKS after it, a place at a time,
+         until it catches up. Each of those places is asked for as patiently as
+         the first, so it is an eighth of a second per chord, and it looks like
+         what it is: running to catch up with the playing.
 
          The alternative is a mark that arrives at the right place by hopping
          over the ones in between, and a reader cannot tell that from a mark

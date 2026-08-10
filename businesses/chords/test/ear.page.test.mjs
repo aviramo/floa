@@ -722,17 +722,27 @@ try {
       await sleep(900);
       const jumped = await evaluate(SCROLL_READ);
       check("a mark put below the screen brings the screen to it",
-        jumped.at === 45 && jumped.y > 400, JSON.stringify({ at: jumped.at, y: jumped.y }));
-      check("and it lands in the upper part of the screen rather than at its edge",
-        jumped.where !== null && jumped.where > 0.05 && jumped.where < 0.6, String(jumped.where));
+        jumped.at === 45 && jumped.y > 200, JSON.stringify({ at: jumped.at, y: jumped.y }));
+      /* A THIRD OF THE WAY DOWN, and this is the check that says so. It read
+         "somewhere in the upper part", anything under six tenths, and that is
+         a check a page can pass while being useless: the mark landed at
+         seventy eight hundredths of the screen, INSIDE the old band and
+         therefore not worth moving the page for, and what a player had under
+         it was one line. The number here is the whole point of the rule.
+
+         Not exactly a third, because the third is measured off what is
+         readable rather than off the window: the header stands over the top of
+         it and the strip under the bottom (see keepInView). */
+      check("and it lands a third of the way down, with the song under it",
+        jumped.where !== null && jumped.where > 0.2 && jumped.where < 0.5, String(jumped.where));
 
       /* --- and playing carries it on ---------------------------------------
-         SEVEN LINES OF IT, and the number matters. The page is kept in a BAND
-         rather than centred on every chord, so a mark that moves two lines
-         moves inside the band and the page is right not to touch it: a page
-         that jumps on every chord is a page nobody can read. Only a walk long
-         enough to leave the band asks anything at all, and the first version
-         of this check walked three lines and passed by proving nothing. */
+         ELEVEN BARS OF IT, which is more than the page now needs and is kept
+         anyway. The mark is held a third of the way down (see keepInView), so
+         the page moves as soon as the playing leaves the row it is standing
+         on, and three bars would show that. What eleven shows is that it keeps
+         doing it: the walk crosses several rows, and a page that moved once
+         and then stuck would be caught here and not by a shorter one. */
       const before = jumped.y;
       const bars = [];
       for (let i = 0; i < 11; i++) bars.push("G", "F", "Am");
@@ -746,8 +756,13 @@ try {
         played.at > 45, JSON.stringify({ from: 45, to: played.at }));
       check("and the page came down with it",
         played.y > before, JSON.stringify({ before, after: played.y }));
-      check("with the mark still on the screen",
-        played.where !== null && played.where > 0 && played.where < 0.95, String(played.where));
+      /* AND STILL IN THE TOP HALF, which is stronger than "still on the
+         screen" and is what the rule promises: the mark is put back on the
+         line every time the playing leaves a row, so after any amount of
+         walking it is on the line or a little above it, never down at the
+         foot where the reading runs out. */
+      check("with the mark still in the upper half, not down at the foot",
+        played.where !== null && played.where > 0 && played.where < 0.55, String(played.where));
 
       /* --- a hand on the page outranks all of it ------------------------------
          Somebody who dragged the song has said where they want to be, and a
