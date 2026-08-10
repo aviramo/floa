@@ -5455,6 +5455,18 @@
     row.textContent = "";
     row.appendChild(doorChip("אירועים", ICON.calendar, function () { go(addr("evenings")); }));
     row.appendChild(doorChip("יוצרים", ICON.people, function () { go(addr("creators")); }));
+    /* AND THE BILL IS A DOOR LIKE THEM, for the one account that gets it. It
+       stood inside the account panel for a while, on the grounds that what the
+       readings cost is the account's own business, and what that cost was a
+       press to open a panel about a name before a page about money could be
+       reached at all. It is a page like the evenings and the people, it is
+       reached the way they are, and it says so in the same shape: a picture
+       and a word, in the same band.
+
+       Offered to nobody else, which is a courtesy and not the rule: the rule
+       is on the table (see song_costs in schema.sql), and somebody else who
+       opens /chords/reads by hand is answered by the page itself. */
+    if (isAdmin()) row.appendChild(doorChip("פענוח", ICON.receipt, function () { go(addr("reads")); }));
     /* Signing in is not one of these. It is the only way forward for somebody
        who has none, and it keeps its own place in the bar, where a way forward
        belongs (see paintHeader). Whoever IS signed in is a door like the rest:
@@ -6264,28 +6276,11 @@
     document.getElementById("meWho").textContent = (auth.session && auth.session.email) || "";
     field.value = auth.name();
 
-    /* --- AND THE WAY TO THE BILL, FOR WHOEVER GETS IT ----------------------
-       The readings and what they cost are one account's, and this panel is the
-       one place in the app that is about the account rather than about the
-       songs: it is where the name is set and where signing out lives, so it is
-       where a page belonging to the account belongs.
-
-       It was a button under the wall of songs for a while, which put a private
-       page on the most public one there is. Nobody else could see it, and it
-       still stood on the library, where every other door leads somewhere
-       everybody shares.
-
-       The test harness builds its own bar and its own panel, so nothing here
-       assumes the row is in the page. */
-    var billRow = document.getElementById("meBillRow");
-    var bill = document.getElementById("meBill");
-    if (billRow) billRow.hidden = !isAdmin();
-    if (bill) {
-      bill.onclick = function () {
-        dlg.close();
-        go(addr("reads"));
-      };
-    }
+    /* THE WAY TO THE BILL IS NOT IN HERE ANY MORE. It is a door among the
+       doors over the wall of songs (see paintDoors), because that is what it
+       is: a page, reached the way the other pages are. What is left in this
+       panel is the two things that are about the account itself and about
+       nothing else, the name and the way out. */
 
     form.onsubmit = function (event) {
       event.preventDefault();
@@ -16490,6 +16485,9 @@
     following = null; followSpans = null; followWas = ""; followAt = -1;
     if (followMark && followMark.isConnected) followMark.classList.remove("is-at");
     followMark = null;
+    /* And the band under the line, which is the same mark said the other way
+       round and has to leave with it (see showLine). */
+    showLine(null);
     document.removeEventListener("pointerdown", followTap, true);
     ["wheel", "touchmove", "keydown"].forEach(function (name) {
       window.removeEventListener(name, handOnPage);
@@ -16709,7 +16707,35 @@
       followMark.classList.add("is-at");
       keepInView(followMark);
     }
+    showLine(followMark);
     return true;
+  }
+
+  /* --- AND THE WHOLE LINE UNDER IT -------------------------------------------
+     THE MARK IS A CHORD AND WHAT A PLAYER IS READING IS A LINE. A mark on one
+     chord is precise and it is small, and small is the wrong thing to be on a
+     page held at arm's length with both hands busy: finding it means looking
+     for it, and looking for it is the work the follower exists to save. What
+     the eye can catch without hunting is a whole line lit at once, and by the
+     time it has caught it, it already knows which words are being sung.
+
+     SO BOTH, AND THEY ARE NOT THE SAME ANSWER TWICE. The line says WHERE in
+     the song, at a glance and from across a room. The chord says WHICH chord
+     inside that line, which the line cannot say and which is the whole of what
+     a chord sheet is for. Taking the chord away would leave a reader who can
+     see the line but not the beat inside it.
+
+     The row and not the words: a line of a song is drawn as a row of chords
+     over a row of words (see viewLine), and lighting the pair together is what
+     makes it one line rather than a sentence with something floating over it. */
+  var followLine = null;
+
+  function showLine(node) {
+    var row = node && node.closest ? node.closest(".ln") : null;
+    if (row === followLine) return;
+    if (followLine && followLine.isConnected) followLine.classList.remove("is-here");
+    followLine = row;
+    if (followLine) followLine.classList.add("is-here");
   }
 
   /* --- and the page moves under the mark -------------------------------------
@@ -16911,8 +16937,15 @@
        it breathes. A red mark that does not move reads as a decoration; one
        that pulses reads as live, which is the difference between "there is a
        recording here" and "it is going". */
-    var hold = iconBtn(ICON.stop, "עצירה", stopTape);
-    hold.classList.add("is-rec", "is-taping");
+    /* AND IT ONLY BREATHES WHILE IT IS ACTUALLY RUNNING. Listening to a take
+       before answering closes the microphone, and the recorder goes with it
+       (see hushMic), so from that moment a red mark pulsing over a dead
+       microphone would be saying something untrue. What is left is a take
+       waiting to be answered, and this is still the button that asks. */
+    var live = tape.rec.state !== "inactive";
+    var hold = iconBtn(ICON.stop, live ? "עצירה" : "לסיים את ההקלטה", stopTape);
+    hold.classList.add("is-rec");
+    if (live) hold.classList.add("is-taping");
     tapeBar.appendChild(hold);
   }
 

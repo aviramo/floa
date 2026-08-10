@@ -224,6 +224,14 @@ const FOLLOW_READ = `(() => {
   return JSON.stringify({
     at,
     marks: all.filter((c) => c.classList.contains("is-at")).length,
+    /* The line lit under the mark, and whether it is the mark's own line. A
+       band on a line the mark is not on is worse than no band. */
+    lines: document.querySelectorAll(".sheet .ln.is-here").length,
+    lineHolds: (() => {
+      const lit = document.querySelector(".sheet .ln.is-here");
+      const mark = document.querySelector(".sheet .chord.is-at");
+      return !!(lit && mark && lit.contains(mark));
+    })(),
     heard: document.querySelectorAll(".sheet .chord.is-heard").length,
     said: (document.querySelector(".ear-at") || {}).textContent,
     on: !!document.querySelector(".ear-go.is-on"),
@@ -506,6 +514,11 @@ try {
         began.marks === 1, JSON.stringify({ marks: began.marks, at: began.at }));
       check("the mark that lights every chord of a name is put away while it runs",
         began.heard === 0, String(began.heard));
+      /* What a player catches without hunting for it. One line, and the one
+         the mark is standing on. */
+      check("and the line the mark is on is lit, and only that line",
+        began.lines === 1 && began.lineHolds,
+        JSON.stringify({ lines: began.lines, holds: began.lineHolds }));
       check("and it says which chord of the song is being waited for",
         /2\s*מתוך\s*7/.test(began.said || ""), JSON.stringify(began.said));
 
@@ -566,6 +579,8 @@ try {
       const off = await evaluate(FOLLOW_READ);
       check("switching it off takes the mark and brings the measurement back",
         off.marks === 0 && !off.on && !off.away && off.padded, JSON.stringify(off));
+      check("and the band under the line goes with it",
+        off.lines === 0, String(off.lines));
 
       const bare = await evaluate(CHORD_READ);
       check("and the measurement's own mark comes back with it: every Am at once",

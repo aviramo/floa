@@ -50,21 +50,18 @@
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-<dialog id="meDialog" class="dlg">
+<!-- NOTHING IN HERE IS IN THE HAND WHEN IT OPENS. A dialog hands the focus to
+     the first thing inside it that can take one, which here is the name, and
+     on a phone a focused text field is a keyboard: half the panel covered, by
+     a field almost nobody came to change. The `autofocus` on the dialog itself
+     is what says so, and it is read before any field inside is looked at; the
+     tabindex is what lets the dialog hold the focus it is being given. -->
+<dialog id="meDialog" class="dlg" tabindex="-1" autofocus>
   <form class="dlg-in" id="meForm">
     <h2>החשבון</h2>
     <p class="muted" id="meWho"></p>
     <label>השם שלך<input type="text" name="name" autocomplete="name" maxlength="60" required></label>
     <p class="err" id="meErr" hidden></p>
-    <!-- The way to the bill, for the one account that gets it. In this panel
-         and nowhere else: it is the room where the account looks at itself,
-         and what the readings cost is the account's own business. Hidden for
-         everybody else by the script, which is a courtesy and not the rule:
-         the rule is on the table (see song_costs in schema.sql). -->
-    <div class="dlg-door" id="meBillRow" hidden>
-      <button type="button" class="btn ghost small" id="meBill">פענוח</button>
-      <span class="muted">כמה עלה כל פענוח, מתי, ומי ביצע אותו.</span>
-    </div>
     <!-- No ביטול: a press on the page behind this, or back, is the way out of
          it, the same as it is out of every other panel here. -->
     <div class="dlg-actions">

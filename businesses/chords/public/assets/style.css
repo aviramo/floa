@@ -2731,12 +2731,6 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 .dlg-head svg { flex: none; width: 26px; height: 26px; color: var(--chord); }
 .dlg-in p { margin: 0; font-size: 14px; }
 .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
-/* A WAY OUT OF THE PANEL, and not an answer to it. It stands above the row of
-   buttons with a line beside it saying where it goes, because a button in that
-   row would read as a third thing to do to the name being typed. */
-.dlg-door { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.dlg-door[hidden] { display: none; }
-.dlg-door .muted { font-size: 13px; flex: 1 1 140px; min-width: 0; }
 /* The one button in a row that is not the answer to the question the panel is
    asking. Pushed to the other end so it is not pressed on the way to one that
    is. */
@@ -3056,6 +3050,8 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
      on the chords goes with it: what is being played at this second is the
      shortest lived fact in the app, and printing one is printing a moment. */
   .ear, .takes { display: none !important; }
+  /* and the band under the line goes with them: paper has no follower on it */
+  .ln.is-here::before { display: none !important; }
   .chord.is-heard, .chord.is-at {
     color: inherit !important; background: none !important; box-shadow: none !important;
     /* and it comes back down: the lift is room for a halo, and there is no
@@ -3458,6 +3454,35 @@ body.on-ear.ear-small { padding-bottom: 78px; }
    a thing that faded in where a thing that snapped in has to be searched for. */
 @media (prefers-reduced-motion: no-preference) {
   .chord { transition: background-color .12s linear, color .12s linear, box-shadow .12s linear, transform .12s linear; }
+}
+
+/* --- AND THE LINE THE MARK IS ON ------------------------------------------
+   A mark on one chord is precise and it is small, and small is the wrong thing
+   to be on a page held at arm's length by somebody whose hands are on a
+   guitar: finding it means looking for it. A whole line lit is caught without
+   hunting, and catching it is already knowing which words are being sung. The
+   chord inside it stays, because the line cannot say which beat of itself we
+   are on.
+
+   BEHIND THE ROW AND NOT ON THE WORDS. A band drawn behind the pair, chords
+   and words together, is what makes it read as one line of a song; colouring
+   the letters instead would be a second kind of ink on a page that already
+   uses ink to mean chord. It bleeds a little past the words on both sides so
+   that it is a band and not a box drawn tight around a sentence. */
+.ln.is-here::before {
+  content: "";
+  position: absolute;
+  inset: -1px -10px;
+  background: var(--chord-soft);
+  border-radius: 9px;
+  pointer-events: none;
+}
+/* The row's own contents come back over it: the band is behind the line, and
+   `.ln` is already a positioned box (see above) so this is the whole of it. */
+.ln.is-here > * { position: relative; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .ln::before { transition: opacity .16s linear; }
 }
 
 /* ==========================================================================
