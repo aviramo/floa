@@ -6492,10 +6492,10 @@
          it never carried these in the bar either. */
       if (!shelf) app.appendChild(doorsBand());
 
-      /* Made here and PUT ON THE PAGE FURTHER DOWN, under the songs' own
-         heading: what stands in this row adds a song and narrows the wall of
-         them, so it belongs against the thing it acts on rather than over the
-         shelves, which it says nothing about. */
+      /* Made here and PUT ON THE PAGE FURTHER DOWN, at the top of the wall of
+         songs: what stands in this row adds a song and narrows that wall, so
+         it belongs against the thing it acts on rather than over the shelves,
+         which it says nothing about. */
       var overWall = el("div", "kinds-row");
 
       function rehome() {
@@ -6626,14 +6626,12 @@
          and dozens of names in all, so a wall of them pushed the songs off the
          first screen. They live on /creators, a click away in the bar.
 
-         The songs keep a label of their own even though the band of shelves
-         over them dropped its: the page used to be called "שירים" in the bar,
-         which named the one thing on it, and with something standing above it
-         an unnamed wall of cards reads as more of that something. */
-      var listHead = el("h2", "band-h", "שירים");
-      app.appendChild(listHead);
+         AND THE WALL ITSELF CARRIES NO WORD OVER IT. It stood here for a
+         moment with "שירים" over it, and that is the name of the page: a
+         library with one wall of songs on it does not need to be told twice
+         what it is, and the line only cost the wall a row of its height.
 
-      /* AND UNDER THAT HEADING, the way to add a song and the counts of the
+         What does stand here is the way to add a song and the counts of the
          work outstanding (see rehome above). They were over the shelves, which
          put them above a band they have nothing to say about; every one of
          them is about the wall of songs, and this is the top of it. */
@@ -6709,10 +6707,6 @@
           if (rb == null) return -1;
           return ra - rb;
         });
-
-        /* A shelf is one kind of song and the bar already says which, so the
-           word "שירים" over it would be the second name of the same page. */
-        listHead.hidden = !shown.length || !!shelf;
 
         if (!shown.length) {
           if (!empty.parentNode) app.appendChild(empty);
