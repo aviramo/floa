@@ -2871,6 +2871,13 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    that is a chord hanging past the end of its line, which is what the margin
    inside every segment is for. */
 .paper .col { overflow: visible; }
+/* THE RULE BETWEEN TWO SEGMENTS IS DRAWN AND NOT WRITTEN, which on paper is
+   the difference between printing and not: it is a background (see .rule), and
+   a print dialog leaves backgrounds off unless it is asked. Nobody printing a
+   song is going to go and tick that, and without the rule the two segments of
+   a sheet are two columns of words with a space down the middle, which is the
+   one thing the rule was put there to stop. */
+.paper .rule { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 /* the sheet is paper here, not something lying on a screen */
 .paper .sheet {
   min-height: 0; padding: 0; border: none; box-shadow: none; overflow: visible;
