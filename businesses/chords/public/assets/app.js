@@ -6239,15 +6239,28 @@
      WHAT A DRAG MAY START ON. The bar always, whatever is under it. Anywhere
      else on the sheet only where there is nothing to press and nothing that
      has been scrolled: a press on a button is a press on that button, and a
-     panel somebody has scrolled down through is being read, not pushed away. */
+     panel somebody has scrolled down through is being read, not pushed away.
+
+     AND FAR ENOUGH IS FAR ENOUGH FOR THE PANEL BEING PUSHED. Ninety pixels is a
+     third of a tall sheet and nearly the whole of a short one, and the player
+     over the library is a short one: pushing it far enough meant pushing the
+     hand down to the bottom edge of the screen, which on a phone is where the
+     system takes the touch for its own gesture and the sheet springs back up
+     under a finger that was doing everything right. So it is the smaller of the
+     two, ninety pixels or a third of what is being pushed.
+
+     AND A FLICK IS FAR ENOUGH WHATEVER IT MEASURES. Somebody who throws a panel
+     downwards is not measuring anything, and a panel that comes back after a
+     flick reads as one that refused. */
   var PUSHED = 90;
+  var THROWN = .4;
 
   function gripUp(card, shut) {
     var grip = el("div", "grip");
     grip.setAttribute("aria-hidden", "true");
     card.insertBefore(grip, card.firstChild);
 
-    var from = 0, went = 0, live = false, held = 0;
+    var from = 0, went = 0, live = false, held = 0, began = 0;
 
     function scrolled(node) {
       while (node && node !== card) {
@@ -6273,6 +6286,7 @@
       held = event.pointerId;
       from = event.clientY;
       went = 0;
+      began = event.timeStamp;
       card.classList.add("is-held");
       if (card.setPointerCapture) {
         try { card.setPointerCapture(held); } catch (e) { /* gone already */ }
@@ -6294,9 +6308,15 @@
         if (!live || event.pointerId !== held) return;
         live = false;
         card.classList.remove("is-held");
-        /* Far enough is the rest of the way down, carrying on from where the
-           hand let go; anything less springs back to where it was. */
-        if (went > PUSHED) return sheetDown(card, shut);
+        /* Far enough, or fast enough, is the rest of the way down, carrying on
+           from where the hand let go; anything less springs back to where it
+           was. A flick is measured over the whole push and not over the last
+           frame of it: a hand that travelled a hundred pixels in a fifth of a
+           second was throwing this away whatever it did on the way. */
+        var far = Math.min(PUSHED, card.offsetHeight / 3);
+        var quick = event.timeStamp - began;
+        var flick = went > 24 && quick > 0 && went / quick > THROWN;
+        if (went > far || flick) return sheetDown(card, shut);
         card.style.transform = "";
       });
     });
@@ -16545,9 +16565,16 @@
        A score of 0.8 means nothing on its own; 0.8 with 0.79 underneath it
        means the ear is choosing between two chords by a coin toss, and that is
        the number somebody deciding whether this can work needs to see. */
+    /* AND THE NOTE UNDERNEATH, which is the one thing that separates chords
+       sharing two notes out of three (see BASS_HELP in ear.js) and therefore
+       the one number to look at when the follower is slow on a song built out
+       of such a pair. It is either a note name or it is nothing, and nothing
+       is the answer worth seeing: a bass the ear cannot pick out is a bass
+       that is helping nobody, and no amount of weighting it will change that. */
     c.sure.textContent = quiet ? "" :
       Math.round(top.score * 100) + "%" +
-      (r.best[1] ? "  ·  " + Math.round((top.score - r.best[1].score) * 100) + " מעל הבא" : "");
+      (r.best[1] ? "  ·  " + Math.round((top.score - r.best[1].score) * 100) + " מעל הבא" : "") +
+      "  ·  " + (r.bass >= 0 ? "באס " + SHARPS[r.bass] : "אין באס");
 
     c.also.textContent = quiet ? "" : r.best.slice(0, 4).map(function (one) {
       return chordName(one) + " " + Math.round(one.score * 100);
