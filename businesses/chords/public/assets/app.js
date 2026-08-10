@@ -79,7 +79,13 @@
     search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
     pencil: '<path d="M4 20h4l10-10a2.8 2.8 0 1 0-4-4L4 16v4Z"/>',
     trash: '<path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/>',
-    back: '<path d="M15 5l-7 7 7 7"/>',
+    /* BACK POINTS RIGHT, because the page runs right to left. Every browser
+       turns its own back arrow round on a right-to-left page for the same
+       reason: back is not a direction on a compass, it is the way the words
+       came from, and here they came from the right. It was pointing left, and
+       in the corner of the bar, where there is no word beside it, a left
+       chevron reads as "onwards". */
+    back: '<path d="M9 5l7 7-7 7"/>',
     upload: '<path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>',
     paste: '<rect x="7" y="4" width="10" height="16" rx="2"/><path d="M10 4h4"/>',
     section: '<path d="M5 6h14M5 12h9M5 18h12"/>',
@@ -8029,17 +8035,15 @@
     var tools = el("div", "tools");
 
     /* --- A PANEL THAT HANGS OFF A DIAL ----------------------------------------
-       Two of the things on this strip are shut until they are asked for: the
-       fret, whose less and more come out under it, and the key, whose choices
-       do. One gesture, learned once, and one piece of code, because what is
-       hard about a panel is never what is in it. It is everything around it:
-       where it lands on a narrow screen, what closes it, and the fact that the
-       button that opened it is not "outside" it.
+       What the dial on this strip is at is written on it; what it could be is
+       shut until it is asked for. What is hard about a panel is never what is
+       in it. It is everything around it: where it lands on a narrow screen,
+       what closes it, and the fact that the button that opened it is not
+       "outside" it. So that part is here, once, and knows nothing about frets
+       or keys.
 
-       WHAT GOES IN IS FILLED IN FRESH ON EVERY OPENING. The stepper hands back
-       the same box of two halves each time, which is what makes it the one
-       control it looks like; the key hands back a list of a song that may have
-       been edited since it was last looked at. Both are one call. */
+       WHAT GOES IN IS FILLED IN FRESH ON EVERY OPENING, because the song
+       underneath is being edited and the choices are read off it. */
     function fold(dial, klass, fill) {
       var pop = null;
 
@@ -8225,10 +8229,10 @@
        one honest answer: bigger, until it is big enough. And every machine
        already has a gesture that means exactly that. See zoomBy below. */
 
-    /* WHERE THE CAPO GOES, WHICH IS MOSTLY NOT PRESSED AT ALL. It answers to
-       the transposition beside it: that is where the fret comes from for
-       anybody who is simply looking for a shape they can hold, and the number
-       here is the whole of what they need out of it, WHERE DO I PUT IT.
+    /* WHERE THE CAPO GOES, WHICH IS THE NUMBER ON THE STRIP. It answers to the
+       key chosen behind it: that is where the fret comes from for anybody who
+       is simply looking for a shape they can hold, and this number is the
+       whole of what they need out of it, WHERE DO I PUT IT.
 
        Pressed by hand it means the other thing, and this is the one place the
        two numbers part company. Moving the page is "different shapes, same
@@ -8248,21 +8252,16 @@
        while it was a private note about somebody's hand; it changes the page,
        so it belongs to whoever is reading the page.
 
-       THE FRET IS ON THE DIAL AND NEVER HIDDEN, which matters more here than
-       anywhere, because choosing a key moves it and a number that moves has to
-       be readable. What is folded away is only the eight it could be.
-
-       AND THEY ARE ALL EIGHT THERE, unlike the keys next to them. A fret is
-       not a matter of what a hand can hold: it is where the capo goes, there
-       are eight places it goes, and somebody who wants the fourth one wants
-       the fourth one. Filtering a neck would be filtering nothing. */
+       THE FRET IS NEVER HIDDEN, which matters more here than anywhere, because
+       choosing a key moves it and a number that moves has to be readable. What
+       is folded away is only where it could go, and what to play instead. */
     var myValue = el("span", "val");
-    var capoCtl = dialFor(
-      ICON.capo, "קפו",
-      "באיזה סריג הקפו. זז לבד עם בחירת האקורד, ואם מזיזים אותו ידנית השיר נשמע גבוה או נמוך יותר.",
-      myValue, fillFrets
+    var playCtl = dialFor(
+      ICON.capo, "קפו וסולם",
+      "המספר הוא הסריג שהקפו יושב עליו. בלחיצה אפשר להזיז אותו, ואפשר לבחור סולם אחר לשיר: בחירת סולם מזיזה את הקפו כדי שהשיר יישמע אותו דבר, והזזת הקפו לבד משנה את הגובה.",
+      myValue, fillPlay
     );
-    tools.appendChild(capoCtl);
+    tools.appendChild(playCtl);
 
     /* --- AND THE MICROPHONE ---------------------------------------------------
        The third thing on a strip about playing this song, and the only one
@@ -8318,10 +8317,10 @@
        capo is at is marked, so the panel says where you are as well as where
        you could go, and pressing it again is pressing the answer it already
        gives, which does nothing and closes. */
-    function fillFrets(pop, shut) {
+    function fretGrid(shut) {
       var grid = el("div", "frets");
       for (var fret = 0; fret <= MAX_CAPO; fret++) grid.appendChild(fretBtn(fret, shut));
-      pop.appendChild(grid);
+      return grid;
     }
 
     function fretBtn(fret, shut) {
@@ -8561,10 +8560,10 @@
          opened, and that one starts where the routing says it starts, which is
          the top or the place this reader was last time (see restoreScroll). */
       var keepY = sheet.firstChild ? (window.scrollY || window.pageYOffset || 0) : null;
-      /* The dial names the song by the chord it opens on, so it is drawn with
-         the song and not once with the strip: a chord typed, moved or taken
-         off the first line changes what the song starts on. */
-      showKey();
+      /* NOTHING TO TELL THE DIAL. It said the chord the song opens on and had
+         to be redrawn with every chord typed; what it says now is the fret,
+         which a drawing does not move, and what the song is in is read off the
+         song at the moment the panel is opened (see fillPlay). */
       /* every row on screen is about to stop existing, and the little buttons
          hanging under one of them with it */
       hideGap();

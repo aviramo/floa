@@ -2570,13 +2570,20 @@ body.on-song .top { border-bottom: 0; }
 }
 /* Room under the song for the band standing over it, so the last line of a
    song is a line you can read rather than one behind the glass. */
-body.on-ear { padding-bottom: 210px; }
+body.on-ear { padding-bottom: 202px; }
 
-.ear-tabs { display: flex; align-items: center; gap: 4px; padding: 6px 0 4px; }
+/* THE THINNEST ROW THAT STILL READS. It is the lid of a band that is already
+   standing over the song, and every pixel it takes is a line of the song that
+   somebody playing cannot see. Nothing here is pressed while both hands are on
+   a guitar, so the two tabs and the way out are trimmed to the height of the
+   words in them, and the way out is trimmed with them: at the ordinary 30px it
+   alone would set the height of the row. */
+.ear-tabs { display: flex; align-items: center; gap: 4px; padding: 2px 0; }
+.ear-tabs .icon-btn { width: 26px; height: 26px; }
 .ear-tab {
   appearance: none; border: 0; background: none; cursor: pointer;
   font: inherit; font-size: 14px; color: var(--ink-soft);
-  padding: 5px 10px; border-radius: var(--corner);
+  padding: 4px 10px; border-radius: var(--corner);
 }
 .ear-tab:hover { background: var(--bg); }
 .ear-tab.is-on { color: var(--ink); font-weight: 600; background: var(--bg); }
@@ -2724,7 +2731,7 @@ body.on-ear { padding-bottom: 210px; }
    is the song. The measurement is a press away for whoever wants to see why it
    did what it did, and it is in nobody's way until then. */
 body.ear-small .ear-work { display: none; }
-body.on-ear.ear-small { padding-bottom: 92px; }
+body.on-ear.ear-small { padding-bottom: 84px; }
 
 /* --- AND THE SONG'S OWN CHORDS ---------------------------------------------
    The only part of this panel that is about the song rather than about the
