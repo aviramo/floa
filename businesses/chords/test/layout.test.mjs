@@ -50,8 +50,16 @@ const BODY_LONG = ["{בית}"].concat(
 
 const BODIES = { rtl: BODY_RTL, ltr: BODY_LTR, long: BODY_LONG };
 
+/* WHOSE SONG THIS IS, and it is the account the page below signs in as. The
+   editor is the song's own account and nobody else's: everybody else gets the
+   same page to read and writes an offer rather than the song (see mySong in
+   app.js), so a fixture that did not say who owned it was asking for the
+   reader's page and measuring it as the editor's. */
+const OWNER = "u-test";
+
 const song = (dir) => ({
   id: "test", slug: "s-" + dir, title: "בדיקה " + dir, lyrics_by: "", music_by: "",
+  owner: OWNER,
   dir: dir === "ltr" ? "ltr" : "rtl", status: "ready", status_note: "", lines: BODIES[dir],
 });
 
@@ -64,7 +72,7 @@ function page(dir, edit) {
 <script>
 window.__errors = [];
 addEventListener("error", (e) => window.__errors.push(e.message + " @ " + e.filename + ":" + e.lineno));
-${edit ? `localStorage.setItem("chords.session", JSON.stringify({access_token:"t",refresh_token:"r",expires_at:Date.now()+3600000,email:"t@t"}));` : ""}
+${edit ? `localStorage.setItem("chords.session", JSON.stringify({access_token:"t",refresh_token:"r",expires_at:Date.now()+3600000,email:"t@t",id:${JSON.stringify(OWNER)}}));` : ""}
 history.replaceState(null, "", ${JSON.stringify(path)});
 window.SUPABASE = { url: "https://stub.invalid", anonKey: "anon" };
 const SONG = ${JSON.stringify(s)};
