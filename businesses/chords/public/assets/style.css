@@ -250,6 +250,14 @@ body.on-air .top {
    could then be done to them. Both are gone with the ticking itself: see the
    note over .list. */
 .top-actions { margin-inline-start: auto; display: flex; align-items: center; gap: 8px; }
+/* AND WITH NOTHING IN IT, IT IS NOT THERE AT ALL. A page whose corner holds
+   nothing (the bill, the people, an evening with nothing to do to it) still
+   spent the row's gap on this box, and worse than the gap: the auto margin
+   above is what holds a corner, and TWO of them in one row split the space
+   between them rather than one of them taking it. Which is what stood between
+   the total on the bill and the end of the bar. Empty, it takes nothing and
+   holds nothing, exactly as .top-facts and the box beside it already do. */
+.top-actions:empty { display: none; }
 
 /* THE BAR'S BUTTONS ARE DARKER, AND THAT IS ALL THEY ARE. There used to be a
    shape here too: a picture on its own was made a circle in this one bar,
@@ -1120,24 +1128,34 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 }
 .read-paid-one { font-size: 16px; }
 
-/* THE WHOLE OF IT, ON THE BAR BESIDE THE NAME OF THE PAGE. It stood over the
-   page as a line of its own, at twenty-two pixels, and left the screen with
-   the first scroll; up here it is beside the word it is the meaning of, and
-   it stays while the list runs (see viewReads).
+/* THE WHOLE OF IT, ON THE BAR, AT THE HEAD OF ITS OWN COLUMN. It stood over
+   the page as a line of its own, at twenty-two pixels, and left the screen
+   with the first scroll; up here it stays while the list runs (see viewReads).
+
+   AND IT STANDS WHERE THE OTHER PRICES STAND. Every reading below puts its
+   money at the end of its row, in one column the eye runs down, and the total
+   is the top of that column: beside the name of the page it was a second thing
+   to find, a hand's width from the numbers it is the sum of. Which is the
+   whole reason the money on this page is a column at all.
 
    NOT A CHIP AND NOT A BOX. Nothing in that bar is a fact with a border round
    it: a box up there is a thing to press, and this is a number to read. So it
-   is the number, in the weight and the size of the name it stands against, and
-   the two read as one line.
+   is the number, in the weight and the size of the name at the other end of
+   the bar.
 
-   The ten pixels are the ones .top-facts takes back. That slot pulls itself
-   towards the name because what used to sit in it was the second half of the
-   title, one picture that belonged against the word. This is a different fact
-   about the page and it stands at the bar's own gap, like everything else. */
+   HOW IT FINDS THE COLUMN. The bill is 680 wide and middled in the page (see
+   .list.ledger), so the column's end is half of whatever is left over, and
+   then the card's own 16 of padding and the hairline round it. The bar is the
+   same .wrap, so the same sum lands the total on the same pixel at every
+   width: hard against the edge on a phone, and out over the column on a desk.
+   The auto margin in front of it does the rest of the row. */
 .top-bill {
-  margin-inline-start: 10px;
   font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: isolate;
   white-space: nowrap; font-weight: 700; font-size: 17px;
+}
+.top-facts:has(.top-bill) {
+  margin-inline-start: auto;
+  margin-inline-end: calc(max(0px, 100% - 680px) / 2 + 17px);
 }
 .read-n { color: var(--ink-soft); font-size: 14px; }
 
