@@ -38,14 +38,21 @@ const BODY_RTL = [
 
 const BODY_LTR = "[C]Hello [G]there my old [Am]friend[F]";
 
-/* MORE SONG THAN FITS DOWN ONE SCREEN, which is the only kind that gets more
-   than one column: how many columns there are is how many screenfuls of song
-   there are (see fitColumns in app.js). Its lines are the same short lines as
-   the song above, so on a 1200 pixel window three of them stand side by side
-   with room to spare, and any line that came out wider than its own column
-   would be the failure this is looking for. */
+/* MORE SONG THAN FITS ON ONE SCREENFUL OF COLUMNS, which is the only kind
+   that gets a second page: how many columns there are is how many screenfuls
+   of song there are (see fitColumns in app.js). Its lines are the same short
+   lines as the song above, so on a 1200 pixel window three or four of them
+   stand side by side with room to spare, and any line that came out wider
+   than its own column would be the failure this is looking for.
+
+   TWENTY FOUR OF THEM AND NOT FIFTEEN. Fifteen was more song than one screen
+   held while a segment was a fixed four hundred pixels wide and a window of
+   1200 therefore held two of them. The segments divide the whole window now,
+   so the same song stands in four of them and finishes inside the first
+   screenful, and a fixture that fits on one page cannot say anything about
+   what a second page looks like. */
 const BODY_LONG = ["{בית}"].concat(
-  Array.from({ length: 15 }, () => BODY_RTL.split("\n").slice(1).join("\n"))
+  Array.from({ length: 24 }, () => BODY_RTL.split("\n").slice(1).join("\n"))
 ).join("\n");
 
 const BODIES = { rtl: BODY_RTL, ltr: BODY_LTR, long: BODY_LONG };
@@ -250,23 +257,27 @@ const COLUMNS = `(() => {
       over.push({ text: t.textContent.slice(0, 24), needs: Math.round(words + pad), room: Math.round(ln.clientWidth) });
     }
   }
-  /* HOW MANY COLUMNS THERE REALLY ARE, which is where the lines actually
-     landed and not what the stylesheet was asked for. getComputedStyle hands
-     back the SPECIFIED count, and the whole question here is what the browser
-     did with it: the sheet asks for a count and a minimum width together, and
-     the browser is the one that decides how many of those fit. Reading the
-     specified number back is reading your own request.
+  /* THE SEGMENTS OF THE FIRST SCREENFUL, and how many of them have any song in
+     them. A segment with nothing in it is not invisible: it takes its share of
+     the width and holds it empty, so the two numbers agreeing is the whole
+     check.
 
-     Bucketed, because two columns are hundreds of pixels apart and a rounding
-     error is not a column. */
-  const at = new Set([...document.querySelectorAll(".sheet .ln-t")]
-    .map((t) => Math.round(t.getBoundingClientRect().left / 20)));
+     ASKED OF THE SEGMENTS AND NOT OF WHERE THE WORDS LANDED. It used to bucket
+     the left edge of every row, on the reasoning that a column is a place rows
+     stand at; that was true while a segment was wide enough for every line of
+     this song to stand in whole. The segments divide the window now and a line
+     too long for one is broken and its tail taken up onto the row after it, so
+     one column holds rows at three different left edges and the count came
+     back as three times the truth.
+
+     ALSO NOT IN CHILDREN: the desk between two segments is an element, because
+     the rule down its middle has to be as tall as the page rather than as tall
+     as the words (see .rule), so a page holding three segments has five
+     children. */
+  const built = [...(sheet.querySelector(".page") || sheet).querySelectorAll(".col")];
   return JSON.stringify({
-    cols: at.size,
-    /* The columns as the page BUILT them, against where the words actually
-       landed. A column with nothing in it is not invisible: it takes its share
-       of the width and holds it empty. */
-    given: (sheet.querySelector(".page") || { children: [] }).children.length,
+    cols: built.filter((c) => c.querySelector(".ln")).length,
+    given: built.length,
     /* A PAGE IS A SCREENFUL, and the next one begins under it. This is the
        whole shape of the thing: the browser's own columns balance, so each
        one comes out as tall as a third of the song, and reading to the bottom

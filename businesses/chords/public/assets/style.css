@@ -144,13 +144,16 @@ body.on-song #app { padding-top: 0; width: 100%; }
    as well would be the same margin twice, and on a phone that is a third of
    the glass spent on nothing. */
 body.on-song .sheet { padding-inline: 0; }
-/* THE PAPER IS THE SEGMENTS, AND WHAT IS NOT A SEGMENT IS NOT PAPER. The
-   segments are a fixed width and centred, so on a wide screen there is room
-   left over at both ends and in the gutters between them, and that room is
-   not part of the song: white, it reads as page with nothing written on it,
-   which invites the question of why nothing is written there. In the grey the
-   bar is already using, it reads as the desk the pages are lying on. */
-body.on-song { background: var(--bg); }
+/* THE PAPER IS THE WHOLE WINDOW. It was the segments alone, each a white card
+   on a grey desk, because the segments were a fixed width and the room left
+   over at the two ends was not part of the song: white, it read as page with
+   nothing written on it, and grey it read as the desk the cards lay on.
+
+   The segments divide the whole of the room now (see planColumns), so there is
+   no desk left to show, and what said where one ended is a hairline between
+   them rather than the shape of a card. What is left over is a margin, which
+   is what a margin looks like on paper: paper. */
+body.on-song { background: var(--card); }
 
 /* --- header ------------------------------------------------------------- */
 
@@ -708,12 +711,13 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    and the wall stopped having a line to read along. */
 .list a {
   display: flex; align-items: flex-start; gap: 14px; text-decoration: none; color: inherit;
-  /* ONE CARD IS ONE CARD, WHEREVER IT IS. A song in the library, a song in an
-     evening and a segment of a song on its own page are all a sheet of paper on
-     the same desk, and they carry the same three things: the white, the hairline
-     round it and the shadow under it (see .card, and .col for the segments).
-     Half of them had no shadow, which on the same grey read as a box drawn on
-     the desk beside a card rather than as another card. */
+  /* ONE CARD IS ONE CARD, WHEREVER IT IS. A song in the library and a song in
+     an evening are the same sheet of paper on the same desk, and they carry
+     the same three things: the white, the hairline round it and the shadow
+     under it (see .card). Half of them had no shadow, which on the same grey
+     read as a box drawn on the desk beside a card rather than as another card.
+     A segment of a song is not one of these any more: a song is the page
+     itself, not a wall of cards on one (see .col). */
   background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 14px 18px; transition: border-color .15s, transform .15s;
@@ -1694,114 +1698,106 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    There is no way to ask a multicol for a row of columns that ends and
    another that begins.
 
-   space-around, so each column stands in the middle of its own equal share of
-   the window: every gutter the same, and each end margin half of one. */
+   The segments divide the whole of the room between them (see planColumns), so
+   what is left over at the two ends is width no line of this song would have
+   used, and the page stands in the middle of it. */
 .page {
-  /* A CARD IS AS TALL AS WHAT IS WRITTEN ON IT. They used to be stretched to
-     the height of the page so that the hairline between two of them ran the
-     whole way down, and what that cost was a band of blank paper under the
-     last line of every segment: a page is a screenful and a screenful is never
-     a whole number of rows, so there was always a remainder, and stretched it
-     was paper with nothing on it. Now the card stops with the words and what
-     is under it is the desk, which is what a card resting on one looks like.
-
-     As wide as its slots and centred in the window, so what is left over at
-     the two ends is outside the page and nothing gets drawn on it. */
   display: flex; align-items: flex-start;
   margin-inline: auto;
-  /* Air at both ends, which on a desk is the desk showing between the cards of
-     one screenful and the cards of the next. The height below is the whole
+  /* Air at the two ends of the row of segments. The height below is the whole
      page INCLUDING this, and what is dealt into it is measured against what is
-     left. PAGE_AIR in app.js is the same number, spent here and again inside
-     the card, and it is what the lines are measured against when they are
-     dealt out. */
+     left. PAGE_AIR in app.js is the same number, and it is spent once now:
+     there was a card here that kept its own air inside its edges as well. */
   --page-air: 16px;
   padding: var(--page-air);
 }
-/* --- A SEGMENT IS A CARD ---------------------------------------------------
-   It carries the white, so it is the paper; it keeps its own air inside its
-   edges, so the words never touch them; and it has the shape every other piece
-   of paper in this app has, which is what says where one segment ends and the
-   next begins.
 
-   THERE WERE HAIRLINES HERE, one down each edge of every segment, and they are
-   gone with the gutter they stood in. A rule down the middle of an empty space
-   is a rule drawn because the space is not saying anything on its own: it was
-   half a gutter wide on each side and the eye could not tell it from the space
-   after a verse. A card with desk around it says it by being a card. */
+/* --- WHERE ONE SCREENFUL ENDS AND THE NEXT BEGINS -------------------------
+   A hairline across the top of every page but the first. The air alone said
+   it while each screenful was a row of cards on a desk, because a gap between
+   two rows of cards is a gap between two rows of cards; with the cards gone it
+   was two verses with a slightly wider space between them, at the one place in
+   the song where the words do not run on.
+
+   PAINTED AND NOT A BORDER. A border is a pixel of the box, and this box has
+   its height written onto it in app.js to the fraction of a pixel: a border
+   would take that pixel off the inside of every page and every screenful would
+   sit a little higher than the one above it. */
+.page + .page {
+  background: linear-gradient(var(--line), var(--line)) top center / 100% 1px no-repeat;
+}
+
+/* --- A SEGMENT IS NOT A CARD ------------------------------------------------
+   It was: white paper with a radius, a hairline round it and a shadow under
+   it, lying on a grey desk. What that shape was for was saying where one
+   segment ended and the next began, and it said it by making every segment a
+   small object in the middle of a large screen. A song is not a wall of small
+   objects, it is one page with the words laid out on it, and the reader is
+   holding a guitar rather than browsing.
+
+   So the paper is the whole page now (see body.on-song), and what says where a
+   segment ends is a single hairline standing between them (see .rule). What is
+   left here is the two things a segment does rather than looks like: it does
+   not shrink below the width it was given, and it cuts off anything that hangs
+   out past its edge. */
 .col {
   min-width: 0; position: relative;
-  background: var(--card);
-  padding-block: var(--page-air, 0px);
-  border-radius: var(--radius);
-  /* THE SHADOW EVERY OTHER CARD IN THIS APP CASTS, and the same hairline round
-     its edge, which together are what makes a white box read as a sheet of
-     paper lying on something rather than as a hole in the desk.
-
-     THE EDGE IS AN INSET SHADOW AND NOT A BORDER, deliberately. A border is a
-     pixel of the box, and the width of this box is worked out to the fraction
-     of a pixel in planColumns: the lines were broken to fit inside it, so a
-     border taking a pixel off each side is a card a hair narrower than the
-     words that were cut for it, and the last word of a row hangs out over the
-     desk. An inset shadow is drawn in the padding and costs the words nothing.
-
-     THE SHADOW IS DRAWN OUTSIDE THE CARD, which is why the page it stands on
-     no longer clips what stands on it: a shadow cut off by the edge of the page
-     ends in a straight line down the outermost card, which reads as a crease
-     rather than as a shadow. What has to be clipped is a row that has outgrown
-     its card, and the card clips that itself, below. */
-  box-shadow: inset 0 0 0 1px var(--line), var(--shadow);
-  /* A LINE WIDER THAN THE CARD IS CUT OFF AT THE CARD'S OWN EDGE. It happens
-     while a line is being typed into and has not been broken again yet, and
-     wherever a chord stands out past the end of the words: over the desk it
-     would be ink lying between two sheets of paper, and over the next card it
-     would be one song's word inside another segment. Rounded with the card,
-     because the corner is the card's and so is everything inside it. */
+  /* A LINE WIDER THAN THE SEGMENT IS CUT OFF AT ITS EDGE. It happens while a
+     line is being typed into and has not been broken again yet, and wherever a
+     chord stands out past the end of the words. Over the desk it would be ink
+     lying in the space that says a segment ended; over the next segment it
+     would be one line of the song written inside another. */
   overflow: hidden;
 }
-/* A slot a short last page never reached. It holds the width open so the
-   pages above keep their shape, and nothing is drawn on it: there is no
-   segment there, so there is no card, no paper and no shadow. */
-.col.is-empty { background: none; box-shadow: none; }
 
-/* WHETHER A SEGMENT IS A CARD IS A FACT ABOUT THE SCREEN, and it is settled in
-   the narrow rules below, not here. It used to be settled by the number of
-   segments across, on the reasoning that one segment across is a phone; but a
-   song of four lines stands in one segment on the widest screen there is,
-   because there is no more song to put in a second, and that rule took the
-   shape and the shadow off every short song on every desk. */
+/* --- AND THE DESK BETWEEN TWO OF THEM, WITH THE RULE DOWN ITS MIDDLE --------
+   There were hairlines here once, one down each edge of every segment, and
+   they went because a rule down the middle of an empty space is a rule drawn
+   where the space is not saying anything on its own: they were half a wide
+   gutter away from the words on either side, and the eye could not tell one
+   from the space after a verse. Both of those are answered here. There is ONE
+   rule between two segments rather than two, the desk it stands in is narrow
+   (see CARD_GAP), and it runs the full height of the screenful rather than the
+   height of whichever column happened to have the most in it.
+
+   IT IS AN ELEMENT AND NOT A MARGIN, which is the whole trick: it stands in
+   the row beside the segments, so stretching it is stretching a thing that is
+   there, and the rule reaches the bottom of the page whether the words did or
+   not. A line drawn from inside a segment would stop where that segment's
+   words stopped, and a page ruled to a different height in every column has a
+   ragged edge down it. */
+.rule {
+  flex: none; align-self: stretch;
+  background: linear-gradient(var(--line), var(--line)) center / 1px 100% no-repeat;
+}
+/* The desk beside a slot a short last page never reached: it holds the width
+   open so the pages above keep their shape, and it draws nothing, because a
+   rule between nothing and nothing is a line down a blank half of a page. */
+.rule.is-empty { background: none; }
 
 /* --- a narrow screen -----------------------------------------------------
    620px is also where editing stops (see NARROW in app.js). Keep the two in
    step: below this width the song is read, not written.
 
    What a phone is short of is width, and every one of these gives some back.
-   The sheet loses its card entirely and runs to both edges of the screen: a
-   border, a shadow and a radius are worth nothing on a page held at arm's
-   length, and the twenty pixels they cost are a word and a half of every
-   line. */
+   There is only ever one segment here, so there is no desk between segments
+   and no rule to draw: the whole of what is left to say is that the words run
+   to both edges of the glass. */
 @media (max-width: 620px) {
-  /* The card came off every screen (see .sheet), so what is left for a phone
-     is the padding: at arm's length those twenty pixels are a word and a half
-     of every line. */
+  /* At arm's length those twenty pixels are a word and a half of every line. */
   .sheet { padding: 16px 22px 24px; min-height: 0; }
 
-  /* A SEGMENT HERE IS NOT A CARD LYING ON A DESK, IT IS THE GLASS. A radius, a
-     shadow and desk at the two ends are worth nothing on a page held at arm's
-     length, and the paper runs from one edge of the screen to the other: pulled
-     back out through the page's own air and given it back as padding, so the
-     words still stand clear of both ends.
+  /* THE SEGMENT HERE IS THE GLASS. Air at the two ends of a page is worth
+     nothing on something held at arm's length, and the words run from one edge
+     of the screen to the other.
 
-     AND IT CUTS NOTHING OFF. A card cuts a row that has outgrown it, because
-     what is beyond a card is another card; here what is beyond the segment is
-     the edge of the screen, and a line too wide for it is meant to hang out and
-     take the sheet's own sideways scroll with it (see .sheet). Clipped, those
-     words are simply gone. */
+     AND NOTHING IS CUT OFF. Elsewhere what is beyond a segment is another
+     segment, so a row that has outgrown its own is clipped at the edge; here
+     what is beyond it is the edge of the screen, and a line too wide for it is
+     meant to hang out and take the sheet's own sideways scroll with it (see
+     .sheet). Clipped, those words are simply gone. */
   .page { padding-inline: 0; }
-  .col {
-    border-radius: 0; box-shadow: none; overflow: visible;
-    margin-block: calc(var(--page-air, 0px) * -1);
-  }
+  .col { overflow: visible; }
 
   /* The strip used to be given the card's corner down here, because a pill
      stretched across the whole width of a phone reads as a lozenge rather than
@@ -2658,15 +2654,17 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
     /* the width and the air at its ends are both answers to a window, and the
        paper's own margin is above (see #app) */
     width: auto !important; padding-inline: 0 !important;
+    /* and the rule between one screenful and the next is a fact about a
+       window: paper has page breaks of its own */
+    background: none !important;
   }
-  /* A card is a thing on a screen: on paper the segment is the paper, so the
-     shape, the shadow and the desk between them all go, and what is left is
-     the words with a margin. */
-  .col {
-    width: auto !important; margin-inline-start: 0 !important;
-    border-radius: 0 !important; box-shadow: none !important;
-    overflow: visible !important;
-  }
+  /* On paper the segment is the paper, so what is left is the words with a
+     margin. */
+  .col { width: auto !important; overflow: visible !important; }
+  /* A desk between two segments, and a rule down it, are both answers to a row
+     of segments. There is no row on paper: the song runs down the page as one,
+     so this would be a stripe of nothing between two verses. */
+  .rule { display: none !important; }
   .wrap { width: 100%; }
 }
 

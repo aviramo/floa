@@ -2847,32 +2847,57 @@
      words; they do not know how many pixels their longest line takes in the
      font their machine happens to have. */
 
-  /* The narrowest a column may be where the lines are broken to fit it, in
-     song sizes: about thirty characters of Hebrew. Narrower than that and
-     every line is broken, which is a page of stubs rather than a song. */
-  /* A SEGMENT IS A PHONE, AND A PHONE IS 390 PIXELS. Not a number of
-     characters and not a share of the window: the actual width of the glass
-     most of these songs are read from. Phones run from about 360 to 430 CSS
-     pixels, and 400 sits in the middle of that.
+  /* --- HOW WIDE A SEGMENT IS, AND IT IS THE SONG THAT IS ASKED --------------
+     THERE WAS A NUMBER HERE, four hundred, and what it claimed to be was the
+     width of a phone. On a phone it was right and nowhere else was it right at
+     all. Four hundred goes into a tablet held upright once, with four hundred
+     left over, and the leftover was held at the two ends as margin: half the
+     glass kept empty by a number nobody had measured anything to get. Every
+     screen between about 460 and 920 pixels got the same one segment, whether
+     it was 470 wide or 900.
 
-     IN PIXELS, WHICH IS THE POINT OF IT. Written as a multiple of the type
-     size instead, a segment grew as the words grew, so zooming changed how
-     many segments fitted across the screen and the page rearranged itself
-     under the reader. Fixed, zooming does what it does on a phone: the
-     segment stays where it is, fewer words fit on a line, and the song runs
-     into more segments. The shape of the page is a fact about the window and
-     nothing else. */
-  var COL_W = 400;
+     SO NOTHING HERE IS A NUMBER. The song is asked how wide IT is, in the font
+     the reader actually has and at the size they actually chose, and the
+     segments then share out the whole of the room there is (see songMeasure
+     and planColumns). A song of short lines and a song of long ones get
+     different pages on the same screen, which is what one number for every
+     song could never do.
+
+     WHAT THIS COSTS is that the size of the words now decides the shape of the
+     page, so a pinch can change how many segments there are. That was the
+     reason for the number, and it was the wrong answer to a real problem: what
+     is unbearable is the page rearranging itself DURING the pinch, under the
+     hand, and that is answered where the pinch is handled (see zoomBy) by
+     laying out when the fingers leave. A reader who doubles the size and gets
+     two segments where there were four has been given exactly what a printed
+     page gives them when they hold it closer. */
+
+  /* AND NEVER MORE THAN FOUR ACROSS. A count and not a width, which is why it
+     is still a number: past four, finding the top of the next segment means
+     crossing a screen's width of other people's lines, and whoever is reading
+     this has a guitar in their hands and is two steps back from the screen. */
   var COL_MAX = 4;
-  /* THE DESK BETWEEN TWO CARDS. A segment is a card on a desk (see .col), and
-     what says where one card ends and the next begins is the desk showing
-     between them: there was a hairline down the middle of the space instead,
-     which is a rule drawn because the space was not saying it on its own.
 
-     In pixels and not in song sizes, like the width of a segment and for the
-     same reason: it is the shape of the page, and the page must not rearrange
-     itself when the words are made bigger. */
-  var CARD_GAP = 14;
+  /* HOW MANY SEGMENTS THERE WERE LAST TIME, and how many there must go on
+     being while two fingers are on the song. The words follow the fingers, as
+     they must, or the gesture has no answer; but the NUMBER of segments is
+     held at whatever it was when the fingers went down, and the real question
+     is asked again when they leave (see the pinch handlers). A page that
+     re-columns itself in the middle of a pinch is a page moving under the hand
+     that is trying to hold it, and that, rather than the shape of the page
+     following the size of the words, was what the fixed width was afraid of. */
+  var lastCols = 0;
+  var heldCols = 0;
+
+  /* THE DESK BETWEEN TWO SEGMENTS, with the rule down the middle of it (see
+     .rule). The rule is what says where one segment ends and the next begins,
+     so what this number holds is only the air on either side of the ink: wide
+     enough that no word touches it, and no wider, because all of it is width
+     the song could have had.
+
+     In pixels and not in song sizes: it is the shape of the page rather than
+     the size of the words, and it must not grow when the words do. */
+  var CARD_GAP = 20;
 
   /* Every line of the sheet in the order the song has them, wherever they are
      standing now: flat under the sheet before there are any pages, inside a
@@ -2890,11 +2915,15 @@
 
   /* Back to one flat column, which is what a phone reads and what everything
      measures itself against before it is dealt out. */
-  /* THE AIR, AND IT IS SPENT TWICE. A page holds it at its top and its bottom,
-     which is the desk between the cards of one screenful and the cards of the
-     next; and a card holds it again inside itself, over its first line and
-     under its last. So what a page can actually be filled with is its height
-     less four of these, which is why the dealing counts it four times.
+  /* THE AIR A PAGE KEEPS AT ITS TOP AND ITS BOTTOM, which is the space between
+     the last line of one screenful and the first line of the next, and where
+     the rule between them is drawn. So what a page can actually be filled with
+     is its height less two of these.
+
+     IT USED TO BE SPENT TWICE AT EACH END, because a segment was a card and a
+     card kept air of its own inside its edges on top of the page's. There is
+     no card now, and the thirty two pixels that went is a line of the song on
+     every screenful.
 
      It is --page-air in the stylesheet, and two places holding one number is
      how they come to disagree: neither may be changed alone. */
@@ -2913,16 +2942,101 @@
     rows.forEach(function (ln) { sheet.appendChild(ln); });
   }
 
-  /* --- how wide a column, and how many ---------------------------------------
-     Two numbers, and the smaller wins.
+  /* --- WHAT THE SONG ITSELF IS WIDE -----------------------------------------
+     Measured off the song standing flat, before there are any segments to
+     pour it into, in the reader's own font at the reader's own size. Three
+     answers, and none of them is a number anybody chose:
 
-     HOW WIDE ONE IS is not asked at all: it is 400, reading and writing
-     alike, and the lines are poured to it. No line can be too wide for a
-     segment, because a line that does not fit is broken until it does.
+       MIDDLE, the middle line of the song. A segment at least this wide keeps
+       at least half the lines whole, which is the least that can be called a
+       song rather than a page of stubs. It is the middle and not the longest
+       deliberately: one enormous line in one verse is not what the other forty
+       lines should have their page built around.
 
-     HOW MANY OF THOSE FIT is a division. And then never more than the song
-     has song to put in them: a fourth column with nothing in it is a quarter
-     of the window held empty. */
+       WORD, the longest run with no space in it. This is the one width a
+       segment may not go under at any price: under it the pour has nowhere to
+       break and takes a word apart, which is how רפאי came out as רפ on one
+       page and אי on the next.
+
+       WIDEST, the longest line there is. Past this a segment is being given
+       room no line of this song will ever put anything in, so what is past it
+       is held at the ends of the page as margin instead.
+
+     Every line's height comes back too, because how many segments the song can
+     fill is the other half of the question and it is the same walk. */
+  function songMeasure(sheet) {
+    var rows = [];
+    var widths = [];
+    var word = 0;
+
+    sheetRows(sheet).forEach(function (ln) {
+      var h = ln.offsetHeight + (parseFloat(getComputedStyle(ln).marginBottom) || 0);
+      var m = ln.classList.contains("ln") ? metrics(ln) : null;
+      var t = m && m.count ? ln.querySelector(".ln-t") : null;
+      if (!t) { rows.push({ w: 0, h: h }); return; }
+
+      /* A CHORD PAST THE LAST CHARACTER STILL NEEDS THE ROOM UNDER IT. An
+         outro is a row of chords over nothing, and the line is as wide as the
+         last of them: counted at what one character is worth on this line,
+         which is what the pour counts it at too. */
+      var far = -1;
+      Array.prototype.forEach.call(ln.querySelectorAll(".ln-c .chord"), function (node) {
+        var p = Number(node.dataset.pos) || 0;
+        if (p > far) far = p;
+      });
+      var w = m.at(m.count) + Math.max(0, far + 1 - m.count) * m.unit;
+      if (!(w > 0)) { rows.push({ w: 0, h: h }); return; }
+
+      rows.push({ w: w, h: h });
+      widths.push(w);
+
+      /* WHERE the longest word is, in characters, costs nothing to find; HOW
+         WIDE it is is then one measurement off its two ends rather than a walk
+         over every letter of the song. Taken as a distance either way about,
+         because a Latin word inside a Hebrew line is laid out the other way
+         and its two ends come back in the other order.
+
+         A GAP ENDS A WORD HERE, though the pour will not break on one. What is
+         being asked is where the song would be TORN, and a run of gaps cut
+         anywhere is a run of gaps: no ink comes apart, and the chords standing
+         in it go with the cells they were on. An instrumental line of forty
+         gaps is not a forty-character word, and counting it as one would hold
+         the whole song to one segment. */
+      var text = t.textContent;
+      var best = 0, from = 0, at = 0;
+      for (var i = 0; i <= text.length; i++) {
+        if (i < text.length && text[i] !== " " && text[i] !== GAP) continue;
+        if (i - at > best) { best = i - at; from = at; }
+        at = i + 1;
+      }
+      if (best) {
+        var run = Math.abs(m.at(Math.min(from + best, m.count)) - m.at(Math.min(from, m.count)));
+        if (run > word) word = run;
+      }
+    });
+
+    if (!widths.length) return null;
+    widths.sort(function (a, b) { return a - b; });
+
+    return {
+      rows: rows,
+      middle: widths[widths.length >> 1],
+      widest: widths[widths.length - 1],
+      word: word,
+    };
+  }
+
+  /* --- how wide a segment, and how many --------------------------------------
+     HOW MANY is the question, and how wide falls out of it. As many segments
+     as the room can give the song what it needs (see songMeasure), and then
+     they divide the whole room between them: nothing is held back, which is
+     the difference between a page that fills a tablet and a page that stands
+     in the middle of one.
+
+     And never more than the song has song to put in them, which cannot be
+     asked of the song standing flat: how tall it is depends on how wide a
+     segment is, and how wide a segment is is what is being decided. So it is
+     asked of each candidate in turn, of the width that candidate would give. */
   function planColumns(sheet) {
     if (!sheet || !sheet.isConnected || !sheet.classList.contains("sheet")) return null;
 
@@ -2942,10 +3056,11 @@
        That is exactly what the overhang needs and nothing beyond it, and it is
        ONE NUMBER: the same at both ends of every segment, on a phone and on a
        desk, for the chords and for the words. Between two segments the two
-       halves meet and make the margin the card keeps inside its own edge, which
-       used to be a wide multiple of the type because that space alone had to
-       say where one segment ended. It is a card on a desk now (see .col), so
-       the space says nothing and can be no more than the ink needs. */
+       halves meet and make the margin a segment keeps inside its own edge,
+       which used to be a wide multiple of the type because that space alone
+       had to say where one segment ended. There is a rule down the middle of
+       the desk now (see .rule), so the space says nothing on its own and can
+       be no more than the ink needs. */
     var half = size * 0.4;
     Array.prototype.forEach.call(sheet.querySelectorAll(".chord"), function (node) {
       var w = node.getBoundingClientRect().width / 2;
@@ -2958,34 +3073,30 @@
     var room = sheet.clientWidth - padded;
     if (!(room > 0)) return null;
 
-    /* A SEGMENT IS 400 WHETHER THE SONG IS BEING READ OR WRITTEN. It used to
-       widen to the longest line in the song while editing, because a poured
-       row was not a line anybody could type into: the price was that the same
-       song had one shape on the page and another under the hands that wrote
-       it, and every judgement about where a line breaks was made against a
-       width no reader would ever see. A poured row is an editing host now (see
-       __adoptRow), so the two states are the same page. */
-    var seg = COL_W;
-    /* A card takes its own width and, unless it is the first on the page, the
-       desk between it and the one before it. The two ends of the page have no
-       desk of their own to pay for, which is what the odd `+ apart` is: the
-       room there would be if one more gap were going spare.
+    var song = songMeasure(sheet);
+    if (!song) return null;
 
-       AND THE PAGE'S OWN AIR AT THE TWO ENDS, which is what the outermost
-       cards' shadows are drawn into (see .page). Not on a phone: there the
-       segment is the glass rather than a card lying on a desk, it casts no
-       shadow, and thirty two pixels of a phone is a word and a half of every
-       line.
+    /* THE PAGE'S OWN AIR AT THE TWO ENDS. Not on a phone: there the segment is
+       the glass itself, and thirty two pixels of a phone is a word and a half
+       of every line.
 
        ASKED OF THE SCREEN AND NOT OF THE NUMBER OF SEGMENTS. A song of four
        lines stands in ONE segment on the widest screen there is, because there
-       is no more song to put in a second: that is a card on a desk like any
-       other, and a rule that read "one segment across, so this is a phone" took
-       the shape off every short song on every desk. */
+       is no more song to put in a second, and a rule that read "one segment
+       across, so this is a phone" took the margin off every short song on
+       every desk. */
     var glass = NARROW.matches;
     var apart = CARD_GAP;
-    var shadowed = glass ? 0 : PAGE_AIR * 2;
-    var byWidth = Math.max(1, Math.floor((room - shadowed + apart) / (seg + pad * 2 + apart)));
+    var air = glass ? 0 : PAGE_AIR * 2;
+
+    /* WHAT ONE SEGMENT IS LEFT WITH when the room is shared n ways: the room,
+       less the air the page keeps at its two ends, less the desks between the
+       segments, divided; and then less the margin every segment keeps inside
+       itself for a chord hanging past the end of a line. n - 1 desks and not
+       n, because the two ends of the page are not a desk between anything. */
+    function share(n) {
+      return (room - air - (n - 1) * apart) / n - pad * 2;
+    }
 
     /* A PAGE IS THE WINDOW UNDER WHATEVER IS PERMANENTLY OVER IT. The bar is
        sticky and it covers the same strip of every page and not only the first,
@@ -2999,31 +3110,89 @@
     var pageH = window.innerHeight - over;
     if (!(pageH > 200)) return null;
 
-    /* How much song there is, measured while it is still one flat column. */
-    var tall = 0;
-    sheetRows(sheet).forEach(function (ln) {
-      tall += ln.offsetHeight + (parseFloat(getComputedStyle(ln).marginBottom) || 0);
-    });
+    /* HOW TALL THE SONG STANDS when it is poured to a segment this wide. Every
+       line was measured flat and unbroken, so a line wider than the segment is
+       the rows it will be cut into, which is its width over the segment's.
 
-    /* never more columns than the song can fill the first page with */
-    var bySong = Math.max(1, Math.ceil(tall / pageH));
-    var cols = Math.max(1, Math.min(byWidth, bySong, COL_MAX));
+       It comes out a little tall, and on purpose: a leftover row carrying no
+       chords is shorter than a full one, and a leftover is often taken up onto
+       the row after it and costs no row at all. Being wrong this way asks for
+       one segment too many rather than one too few, and a segment too many is
+       a tail of empty paper while a segment too few is a page turn. */
+    function heightAt(w) {
+      var tall = 0;
+      song.rows.forEach(function (r) {
+        tall += r.h * (r.w > w ? Math.ceil(r.w / w) : 1);
+      });
+      return tall;
+    }
 
-    /* THE SEGMENTS ARE THE WIDTH THEY ARE AND THE SET STANDS IN THE MIDDLE.
-       Whatever the window has over is held at the two ends, where it reads as
-       a margin. Spreading it between them instead would make the space between
-       two segments a fact about the window rather than about the song, and two
-       segments on a very wide screen would end up at opposite edges of it with
-       a hand's width of nothing between.
+    /* AND WHAT A SEGMENT ACTUALLY HOLDS, which is not its height. It holds
+       WHOLE ROWS: the dealing takes rows until the next one would cross the
+       bottom, and that one goes to the next segment, so the room left under it
+       is spent whatever happens. Counting on the full height is counting on a
+       last row that fits exactly, and being wrong by a row per segment is how
+       a song that stands in two comes out with a second screenful holding two
+       lines of it. So the tallest row in the song comes off the top: the worst
+       the dealing can waste, taken as the price everywhere. */
+    var tallest = 0;
+    song.rows.forEach(function (r) { if (r.h > tallest) tallest = r.h; });
+    var fits = pageH - PAGE_AIR * 2 - tallest;
+    if (!(fits > 0)) fits = pageH;
 
-       A single segment takes the room it is given: a phone has none to hold
-       back, and it keeps the same margin as any other segment, which is what
-       a chord over its first character needs. */
-    var colW = Math.min(seg, room - pad * 2);
+    /* AS MANY SEGMENTS AS THE SONG CAN STAND, and what it cannot stand is a
+       segment narrower than its middle line or narrower than its longest word.
+       One is where a page stops being readable and the other is where the pour
+       stops being possible. */
+    /* AND A PHONE HOLDS ONE, WHICH IS NOT AN ARITHMETIC QUESTION. A song of
+       short lines divides a phone in two perfectly well on paper: two segments
+       of a hundred and eighty pixels, which is a song nobody can read from a
+       stand with their hands full, on the one screen where the whole idea of a
+       segment came from. The phone IS the segment. */
+    var need = Math.max(song.middle, song.word);
+    var cols = 1;
+    if (!glass) while (cols < COL_MAX && share(cols + 1) >= need) cols++;
+
+    /* AND NEVER MORE THAN THE SONG HAS SONG TO FILL THEM WITH. A fourth
+       segment with nothing in it is a quarter of the window held empty. Asked
+       of the width each candidate would actually give, and downward: dropping
+       a segment makes the rest wider, which makes the song shorter, so the
+       answer cannot chase itself upward. */
+    while (cols > 1 && Math.ceil(heightAt(share(cols)) / fits) < cols) cols--;
+
+    /* UNLESS THERE ARE TWO FINGERS ON THE SONG, in which case the answer is
+       whatever it was when they went down (see heldCols). The width still
+       follows, so the words grow under the fingers as they must; what is held
+       is only the count, and it is asked properly the moment they leave. */
+    if (heldCols) cols = heldCols;
+    lastCols = cols;
+
+    /* THE SEGMENTS DIVIDE THE ROOM, AND THE LAST THING THAT IS HELD BACK IS
+       WIDTH NO LINE WOULD USE. Past the longest line in the song a segment is
+       being given paper nothing will ever be written on, and four rivers of
+       words with a hand's width of nothing beside each is worse than the same
+       four standing together in the middle. So that much, and only that much,
+       goes back to the margins.
+
+       AND A HAIR MORE THAN THE LONGEST LINE, because a segment exactly as wide
+       as that line is a segment the line does not fit in. The width here is
+       measured off the two ends of the row and the pour adds up every
+       character separately: two honest measurements of the same words that
+       need not agree to the last fraction of a pixel. Wrong by two pixels of
+       margin costs nothing; wrong the other way breaks the longest line in the
+       song in two, on every screen, for ever.
+
+       AND NOTHING IS HELD BACK ON A PHONE, because there is nowhere to hold it
+       back INTO. On a desk the width that goes unused becomes margin, which is
+       what a page with a wide screen around it should look like; on a phone
+       the segment IS the glass, and the same arithmetic would take a strip off
+       the side of a screen that has none to give and hand it back the moment
+       the reader turned the size up. */
+    var colW = glass ? share(cols) : Math.min(share(cols), Math.ceil(song.widest) + 2);
     if (!(colW > 0)) return null;
 
     return {
-      cols: cols, colW: colW, pad: pad, apart: apart, air: shadowed,
+      cols: cols, colW: colW, pad: pad, apart: apart, air: air,
       pageH: pageH, padded: padded,
     };
   }
@@ -3066,29 +3235,50 @@
     sheet.style.paddingBottom = "0";
 
     /* What a page can actually hold, which is its height less the air it keeps
-       at both ends and less the air the card keeps inside its own edges (see
-       PAGE_AIR: the same number, spent twice at the top and twice at the
-       bottom). Filling to the full height and then padding it is how a line
-       ends up under the fold. */
+       at its two ends (see PAGE_AIR). Filling to the full height and then
+       padding it is how a line ends up under the fold.
+
+       IT USED TO BE SPENT TWICE AT EACH END, because a segment was a card and
+       a card kept its own air inside its edges on top of the page's. There is
+       no card now, so there is one air and not two, and the thirty two pixels
+       that went is a line of the song on every screenful. */
     /* ONE SEGMENT ACROSS IS A PHONE, AND A PHONE HAS NO PAGES. A page is a
        screenful because that is how a row of segments is read: fill the row,
        then the next row underneath. With one segment there is no row, so
        cutting the song into screenfuls buys nothing and costs the tail of
        every one of them, a band of empty paper wherever the last line of a
        page did not reach the bottom. The song simply runs on. */
-    var room = plan.cols < 2 ? Infinity : plan.pageH - PAGE_AIR * 4;
+    var room = plan.cols < 2 ? Infinity : plan.pageH - PAGE_AIR * 2;
 
     var page = null;
     var col = null;
     var used = 0;
     var inPage = 0;
 
-    /* A SEGMENT CARRIES ITS MARGIN INSIDE ITSELF. The card is the paper, so
-       what holds the words off its edges, and what leaves room for a chord
-       hanging past the end of a line, is the card's own padding rather than a
-       space beside it. (How wide that is, and why, is planColumns's business.)
-       The desk between two cards is on top of that. */
+    /* A SEGMENT CARRIES ITS MARGIN INSIDE ITSELF, which is what holds the words
+       off its edges and what leaves room for a chord hanging past the end of a
+       line. (How wide that is, and why, is planColumns's business.) The desk
+       between two segments is on top of that. */
     var slot = plan.colW + plan.pad * 2;
+
+    /* THE DESK BETWEEN TWO SEGMENTS, AND IT IS A THING AND NOT A SPACE. It was
+       a margin, and a margin cannot be drawn on: what says where one segment
+       ends and the next begins was the emptiness itself, which said it well
+       enough while every segment was a card with a shadow under it and says
+       nothing at all now that they are not.
+
+       It stands in the row like the segments do, so it is exactly as tall as
+       the page (see .rule) rather than as tall as whichever column happens to
+       have the most in it, and the rule down its middle runs the whole
+       screenful. That is the whole reason it is an element: a line drawn from
+       inside a segment would stop where that segment's words stopped, and a
+       page ruled to a different height in every column is a page with a
+       ragged edge down it. */
+    function desk(blank) {
+      var node = el("div", blank ? "rule is-empty" : "rule");
+      node.style.width = plan.apart + "px";
+      return node;
+    }
 
     function nextCol() {
       if (!page || inPage >= plan.cols) {
@@ -3103,25 +3293,19 @@
            different one is a column a hair narrower than the words that were
            cut to fit it, and the last word of a row hangs out over the next
            segment. Sub-pixel widths are what CSS is for. */
-        /* The cards, the desk between them, and the page's own air at the two
-           ends, which is where their shadows are drawn (see .page). A phone
-           keeps none of that air: the segment there is the glass rather than a
-           card, so it casts no shadow and the paper runs to both edges. */
+        /* The segments, the desks between them, and the page's own air at the
+           two ends. A phone keeps none of that air: the segment there is the
+           glass, and the words run to both edges of it. */
         page.style.width = (plan.cols * slot + (plan.cols - 1) * plan.apart + plan.air) + "px";
-        /* There was a mark on the page here saying it held one segment, and the
-           stylesheet took the card off a page so marked: which is what put a
-           short song, standing in one segment because there was no more song for
-           a second, on a desk with no card under it. What a segment looks like
-           is a fact about the SCREEN and is answered in the narrow rules. */
         built.appendChild(page);
         inPage = 0;
       }
+      /* the desk between this segment and the one before it, and none at the
+         ends of the page: what is outside the page is not between anything */
+      if (inPage) page.appendChild(desk());
       col = el("div", "col");
       col.style.width = slot + "px";
       col.style.paddingInline = plan.pad + "px";
-      /* the desk between this card and the one before it, and none at the ends
-         of the page: what is outside the page is desk already */
-      if (inPage) col.style.marginInlineStart = plan.apart + "px";
       page.appendChild(col);
       inPage++;
       used = 0;
@@ -3138,14 +3322,19 @@
       });
       /* The slots a short last page never reached. They hold the width open so
          the pages above keep their shape, and they are marked as empty so that
-         nothing is drawn on them: no card and no desk of their own, because
-         there is no segment there. */
+         nothing is drawn on them: no rule beside them either, because a rule
+         between nothing and nothing is a line down a blank half of a page.
+
+         COUNTED IN SEGMENTS AND NOT IN CHILDREN: the desks stand in the row
+         too now, so a page with three segments in it has five children. */
       Array.prototype.forEach.call(built.childNodes, function (pg) {
-        while (pg.children.length < plan.cols) {
+        var have = pg.querySelectorAll(".col").length;
+        while (have < plan.cols) {
+          pg.appendChild(desk(true));
           var spare = el("div", "col is-empty");
           spare.style.width = slot + "px";
-          if (pg.children.length) spare.style.marginInlineStart = plan.apart + "px";
           pg.appendChild(spare);
+          have++;
         }
       });
 
@@ -9277,6 +9466,12 @@
       if (event.touches.length !== 2) return;
       pinchFrom = spread(event.touches);
       pinchSize = size;
+      /* HOW MANY SEGMENTS THERE ARE IS SETTLED FOR AS LONG AS THE FINGERS ARE
+         DOWN. The words follow the pinch and the lines break again as they
+         grow, which is the answer the gesture is asking for; the page coming
+         apart into a different number of segments halfway through is the page
+         moving under the hand holding it. Asked again below, once. */
+      heldCols = lastCols;
     }, { passive: true });
 
     sheet.addEventListener("touchmove", function (event) {
@@ -9288,7 +9483,15 @@
       if (want !== size) setSize(want);
     }, { passive: false });
 
-    var pinchOff = function () { pinchFrom = 0; };
+    /* AND NOW THE PAGE IS ALLOWED TO ANSWER. Drawn again only if the size
+       actually moved: two fingers that landed and left without spreading have
+       asked for nothing, and redrawing the song is not nothing. */
+    var pinchOff = function () {
+      pinchFrom = 0;
+      if (!heldCols) return;
+      heldCols = 0;
+      if (size !== pinchSize) draw();
+    };
     sheet.addEventListener("touchend", pinchOff);
     sheet.addEventListener("touchcancel", pinchOff);
 
