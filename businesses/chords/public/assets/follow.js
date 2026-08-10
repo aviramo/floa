@@ -241,6 +241,37 @@
      through in a reading or two; a hair's difference between two chords that
      share two notes out of three is worth a fraction of one, and now moves
      nothing. */
+  /* --- AND HOW BIG IT ACTUALLY IS -------------------------------------------
+     IT IS THIS MINUS HOME AND NOT THIS. The place we are on gets SIT and the
+     place after it gets HOME, so what a chord change has to overcome is the
+     difference between them: 0.4 in logs, which is a bit over two hundredths
+     of a point of score at the belief below. That is the number that matters
+     and it was 0.7, and 0.7 was too much for the songs people actually bring
+     here.
+
+     WHAT TOO MUCH LOOKED LIKE, off a recording rather than off a guess. The
+     follower walked "שר ליבי" from end to end in order without skipping a
+     chord, and did it ONE CHORD LATE: six and a half seconds on the chord
+     before, then two chords inside a tenth of a second when it caught up. A
+     chord held for a tenth of a second is a chord nobody sees, so what was
+     reported was that it had been skipped. It had been passed through at a
+     run. On a song whose chords all share two notes out of three, Am against C
+     against Em, most changes were arriving that way.
+
+     AND WHAT MAKES IT SAFE TO ASK FOR LESS is that there is more to have: the
+     bass now separates exactly those pairs (see BASS_HELP in ear.js), so a
+     real chord change carries an advantage where before it carried almost
+     nothing. What is being lowered is what noise has to beat, and noise still
+     has to beat it FOUR READINGS RUNNING and crosses zero in between, which is
+     what the wobble test holds this to.
+
+     AND IT WAS TRIED AT 1.2, WHICH IS 0.022, AND THE WOBBLE TEST REFUSED IT.
+     The mark ran ahead of the playing on noise alone, which is the failure
+     this bonus exists to prevent and is worse than lagging: a mark that lags
+     can still be read from, and one that runs ahead has to be checked against
+     the page every time it moves. So the number stays, and the way to a
+     follower that keeps up is more evidence per reading rather than a lower
+     bar for it: that is what the bass is for. */
   var SIT = 1.5;
 
   /* How sharply a score is believed. The scores coming in are cosine

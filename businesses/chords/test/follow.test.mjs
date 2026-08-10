@@ -92,6 +92,48 @@ const play = (follow, chord, frames = 6, high, low) => {
     f.where(), 0);
 }
 
+/* --- A CHORD CHANGE WITH A REAL MARGIN IS TAKEN, AND TAKEN SOON ------------
+   Reported off a recording, and the shape of it is worth stating exactly. The
+   follower walked "שר ליבי" from end to end in order without skipping a chord,
+   and it did it ONE CHORD LATE: it sat six and a half seconds on the chord
+   before, then took two chords in a tenth of a second when it caught up. What
+   a reader sees of a chord that is held for a tenth of a second is nothing, so
+   the report was that it had been skipped. It had not. It had been passed
+   through at a run.
+
+   THE CAUSE IS THAT STAYING PUT IS REWARDED EVERY READING. That bonus is not
+   a one-off cost to be paid off over time: a chord whose advantage is smaller
+   than the bonus never accumulates anything, so it does not arrive late, it
+   never arrives at all, and what eventually moves the mark is a lucky reading
+   or the chord after it. On a song built out of chords that share two notes
+   out of three, that is most chord changes in it.
+
+   WHAT A CHORD CHANGE HAS TO CARRY IS ABOUT FOUR HUNDREDTHS, which is SIT
+   minus HOME over the belief (see follow.js), and the margin below is seven.
+   Under four it does not arrive late, it does not arrive at all, and what
+   eventually moves the mark is a lucky reading or the chord after it.
+
+   THAT NUMBER WAS LOWERED AND PUT BACK. At 0.022 the wobble test refused it:
+   the mark ran ahead of the playing on noise alone, which is the worse of the
+   two failures. So this holds the promptness that IS safe, and the way to a
+   follower that keeps up is more evidence per reading, which is what the bass
+   under the chord is now worth (see BASS_HELP in ear.js). */
+{
+  const song = ["Am", "C", "G", "F"];
+  const f = F.make(song);
+  play(f, "Am", 8);
+  eq("on the first chord", f.where(), 0);
+
+  /* The C ahead by seven hundredths, reading after reading, which is what a
+     chord change with the bass agreeing looks like. */
+  let took = -1;
+  for (let i = 0; i < 30 && took < 0; i++) {
+    if (f.step([0.80, 0.87, 0.66, 0.64]).here === 1) took = i;
+  }
+  eq("a chord change with a real margin is taken, and inside a second",
+    took >= 0, true);
+}
+
 /* --- and then it walks --------------------------------------------------- */
 {
   const song = ["Am", "F", "C", "G"];
