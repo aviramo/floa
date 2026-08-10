@@ -8910,16 +8910,26 @@
       typing = null;
     }
 
-    /* Open one, and put the caret back exactly where the pointer left it. The
-       range was taken before the host opened; the characters it names are the
-       same spans afterwards, so it still points at them. */
-    function openLine(node, range) {
+    /* OPEN, AND NOT TAKEN. The line is a host again and nothing has been
+       focused, so nothing has been asked for: whoever places the caret in it
+       next, this code or a browser resolving a tap, finds an editable line
+       waiting for them. That difference is the whole of typing on a phone
+       (see the press, below). */
+    function armLine(node) {
       if (!node) return null;
       if (typing !== node) {
         shutLines();
         node.contentEditable = node.dataset.edit || "true";
         typing = node;
       }
+      return node;
+    }
+
+    /* Open one, and put the caret back exactly where the pointer left it. The
+       range was taken before the host opened; the characters it names are the
+       same spans afterwards, so it still points at them. */
+    function openLine(node, range) {
+      if (!armLine(node)) return null;
       node.focus();
       if (range) select(range);
       return node;
@@ -9090,9 +9100,29 @@
       /* DOWN SHUTS EVERYTHING. Whatever happens between here and letting go is
          a selection, and a selection has to be free to leave the line it
          started on, which it cannot do out of an editing host. */
+      /* EXCEPT UNDER A FINGER, WHERE THE TAP IS THE BROWSER'S OWN. A phone
+         decides whether to raise its keyboard from what is under the finger
+         AT THE MOMENT THE TAP LANDS, and a line that is still shut then is
+         ordinary text: the keyboard that opening it on the way back up asked
+         for was taken away again the instant the tap finished. Which is what
+         a phone did every time somebody touched a word, and why a song could
+         be opened for writing there and not written in.
+
+         So the line is opened on the way DOWN, and only opened: it is a host
+         waiting, with nothing focused. Nothing has been asked for yet, so a
+         finger that came down to SCROLL raises no keyboard, and a finger that
+         came down to type gets the caret where it landed, the keyboard, and
+         the magnifying glass, from the phone itself, exactly as in any other
+         field on it.
+
+         The cost is that a long press inside a line being written on a phone
+         marks that line and stops at its edge, which is what an editing host
+         does everywhere. On a desk, where the crossing gesture actually is,
+         nothing changes. */
       sheet.addEventListener("pointerdown", function (event) {
         if (event.button) return;
         if (fromChords(event.target)) return;
+        if (event.pointerType === "touch" && armLine(hostOf(event.target))) return;
         shutLines();
       });
 
@@ -9104,6 +9134,14 @@
       sheet.addEventListener("pointerup", function (event) {
         if (event.button) return;
         if (fromChords(event.target)) return;
+
+        /* A FINGER HAS ALREADY BEEN ANSWERED. Its line was opened on the way
+           down and the phone did the rest itself: it put the caret where the
+           tap landed and raised the keyboard, or it read the gesture as a
+           scroll and did neither. Either way the answer is the browser's, and
+           a second one from here would be this code guessing at something a
+           phone knows better, and taking the keyboard away to say it. */
+        if (event.pointerType === "touch") return;
 
         var host = hostOf(event.target);
         if (!host) return;
@@ -10285,7 +10323,24 @@
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(rewrap);
     var onResize = function () {
       if (!root.isConnected) return window.removeEventListener("resize", onResize);
-      if (redraw && (always || root.clientWidth !== width || !NARROW.matches)) return rewrap();
+      var moved = root.clientWidth !== width;
+
+      /* A PHONE THAT ONLY CHANGED HEIGHT CHANGED NOTHING HERE. One segment
+         across is a phone and a phone has no pages (see pageUp), so the height
+         is not part of any answer this makes: the lines are broken to the
+         width, and the width is what it was.
+
+         The address bar sliding away was already known about. THE KEYBOARD
+         COMING UP IS THE SAME EVENT, and it was the expensive one, because a
+         sheet being written into asks for the whole song again rather than a
+         re-placing. A finger on a word raised the keyboard, the keyboard
+         resized the window, the window drew the song again, and the drawing
+         emptied the sheet: the line being typed into left the document and the
+         keyboard went with it. The song could be opened for writing on a phone
+         and not written in. */
+      if (!moved && NARROW.matches) { if (!always) layoutAll(root); return; }
+
+      if (redraw && (always || moved || !NARROW.matches)) return rewrap();
       layoutAll(root);
     };
     window.addEventListener("resize", onResize);
