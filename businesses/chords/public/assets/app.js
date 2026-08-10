@@ -165,6 +165,10 @@
     person: '<circle cx="12" cy="8" r="3.6"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/>',
     /* two of them, which is what a page of everybody who wrote a song is */
     people: '<circle cx="9.5" cy="8.5" r="3.2"/><path d="M3.5 19.5a6 6 0 0 1 12 0"/><path d="M16 5.6a3.2 3.2 0 0 1 0 6"/><path d="M17.5 14.2a6 6 0 0 1 3 5.3"/>',
+    /* THE WORLD, which is the word for "anybody may see this" on every place a
+       person has ever posted anything. Not two faces: faces are people you
+       know, and what a published recording is open to is not a group. */
+    globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 3.6 9 14 14 0 0 1-3.6 9 14 14 0 0 1-3.6-9A14 14 0 0 1 12 3Z"/>',
     /* THREE DOTS IN A COLUMN, which everywhere means "and the rest is in
        here". It is the one picture in this file that is not a drawing of the
        thing it opens, because what it opens is a handful of unlike things and
@@ -18105,34 +18109,35 @@
       node.appendChild(off);
     }
 
-    /* --- SHARING, WHICH IS THE REASON MOST OF THEM ARE KEPT -------------------
-       And it PUBLISHES on the way out, because the alternative is a link that
-       does not work and no way of telling why: somebody who is sending a
-       recording to a person has already decided the person may hear it, and
-       making them say so twice is asking a question that has been answered.
+    /* --- SHARING, WHICH ONLY A RECORDING THAT IS OUT CAN DO -------------------
+       What a link to a take opens is the song with that performance playing
+       over it, so a link to a take nobody else may hear opens nothing. On a
+       take of your own that is not published yet the button is NOT THERE: an
+       offer to pass on something that cannot be passed on is an offer to send
+       somebody a dead link, and the way to make it live is the button beside
+       it. Published, and it appears.
 
-       Offered on any take that can be listened to, which is one of yours or
-       one already out. Passing on somebody else's is passing on a link that
-       already exists. */
-    if (mine || row.published) {
-      var pass = iconBtn(ICON.share, "שיתוף ההקלטה", function () {
-        shareTake(row, song, pass);
-      });
-      pass.classList.add("take-pass");
-      node.appendChild(pass);
-    }
+       Somebody else's take that is out has one too. Passing on a link that
+       already exists is passing on a link. */
+    var pass = iconBtn(ICON.share, "שיתוף ההקלטה", function () {
+      shareTake(row, song, pass);
+    });
+    pass.classList.add("take-pass");
+    pass.hidden = !row.published;
+    node.appendChild(pass);
 
     if (mine) {
       /* --- AND WHETHER ANYBODY ELSE CAN HEAR IT --------------------------------
          Said by the picture on the button rather than beside it. A tick means
          "done" and every other button on this row means "press me to do
          something", so a tick pressed in was the one thing on the row that had
-         to be worked out. Two faces is not a state of a button, it is a fact
-         about the recording: other people. */
-      var out = iconBtn(row.published ? ICON.people : ICON.upload,
+         to be worked out. A globe is not a state of a button, it is a fact
+         about the recording: the world, in the same picture every other place
+         a person has posted anything says it with. */
+      var out = iconBtn(row.published ? ICON.globe : ICON.upload,
         row.published ? "ציבורית: כל מי שיש לו את הקישור יכול לשמוע. לחיצה מורידה מפרסום"
                       : "פרסום ההקלטה", function () {
-          offerTake(row, out);
+          offerTake(row, out, pass);
         });
       out.classList.add("take-out");
       out.classList.toggle("is-on", !!row.published);
@@ -18193,27 +18198,26 @@
        song is a link to a page the other person is not allowed to read: they
        get nothing, and nothing is what the sharer sees no sign of.
 
-       ASKED, NEVER DONE QUIETLY. Publishing one recording is offering one
-       performance; publishing the song puts it in everybody's library, and
-       that is a larger thing than the button was pressed for. So it is one
-       question, asked once, and it is the truth about what sharing means
-       here. */
+       ASKED, NEVER DONE QUIETLY. Publishing the song puts it in everybody's
+       library, and that is a larger thing than the button was pressed for. So
+       it is one question, asked once, and it is the truth about what sharing
+       means here. The recording itself is already out, or this button would
+       not be on the row (see takeRow). */
     pass.disabled = true;
     rest(CFG.table + "?id=eq." + song.id + "&select=published").then(function (rows) {
       var songOut = !!(rows && rows[0] && rows[0].published);
-      if (!songOut && !window.confirm(
-        "כדי שמישהו אחר יוכל לשמוע את ההקלטה הוא צריך לפתוח את השיר, ולכן גם השיר יהיה ציבורי.\n\nלפרסם את השיר ואת ההקלטה?")) {
+      if (songOut) {
+        pass.disabled = false;
+        return out();
+      }
+      if (!window.confirm(
+        "כדי שמישהו אחר יוכל לשמוע את ההקלטה הוא צריך לפתוח את השיר, ולכן גם השיר יהיה ציבורי.\n\nלפרסם את השיר?")) {
         pass.disabled = false;
         return null;
       }
-      var work = [];
-      if (!songOut) work.push(rest(CFG.table + "?id=eq." + song.id,
-        { method: "PATCH", body: { published: true } }));
-      if (!row.published) work.push(rest(CFG.takeTable + "?id=eq." + row.id,
-        { method: "PATCH", body: { published: true } }));
-      return Promise.all(work).then(function () {
+      return rest(CFG.table + "?id=eq." + song.id,
+        { method: "PATCH", body: { published: true } }).then(function () {
         song.published = true;
-        row.published = true;
         pass.disabled = false;
         if (state.redrawTakes) state.redrawTakes();
         return out();
@@ -18349,7 +18353,7 @@
     tellLength(audio, function () { startAudio(audio); });
   }
 
-  function offerTake(row, out) {
+  function offerTake(row, out, pass) {
     var want = !row.published;
     /* A public take on a private song is a take nobody can reach: what anybody
        else opens is the SONG, with the recording playing over it, and a song
@@ -18366,9 +18370,13 @@
       row.published = want;
       out.disabled = false;
       out.classList.toggle("is-on", want);
-      reicon(out, want ? ICON.people : ICON.upload);
+      reicon(out, want ? ICON.globe : ICON.upload);
       retitle(out, want ? "ציבורית: כל מי שיש לו את הקישור יכול לשמוע. לחיצה מורידה מפרסום"
                         : "פרסום ההקלטה");
+      /* And the way to pass it on comes with it, because that is what has just
+         become possible, and goes with it when it is taken down: a link that
+         stopped working is worse than no button (see takeRow). */
+      if (pass) pass.hidden = !want;
       toast(want ? "ההקלטה פורסמה" : "ההקלטה ירדה מפרסום");
     }).catch(function () {
       out.disabled = false;
