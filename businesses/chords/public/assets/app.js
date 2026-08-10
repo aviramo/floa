@@ -3884,11 +3884,19 @@
   function placeControls() {
     var made = state.songControls;
     if (!made) return;
-    var home = NARROW.matches ? made.strip : document.getElementById("topActions");
-    if (!home) return;
+    var bar = document.getElementById("topActions");
+    if (!bar) return;
     /* At the START of the bar, which right to left is its right hand end: they
-       are about the song, and what is already there is about the page. */
-    home.insertBefore(made.tools, home.firstChild);
+       are about the song, and what is already there is about the page.
+
+       ON EVERY WIDTH, and that is new. They came down to a row of their own on
+       a phone because the bar was full: a mark, a name, a glass and two
+       pictures, and the capo and the microphone on the end of it was the row
+       overflowing. The two pictures are one now (see songMore), and what that
+       bought is exactly the room these need. So the capo and the record button
+       stand beside the name of the song they belong to, on a phone as on a
+       desk, and the song starts directly under the bar. */
+    bar.insertBefore(made.tools, bar.firstChild);
     /* WHAT THE SONG SAYS ABOUT ITSELF GOES WITH THE NAME OF THE SONG, not at
        the far end of the bar among the dials, and NOT ON THE STRIP EITHER.
        It stood beside the transposer and the size, which is the only thing up
@@ -3910,29 +3918,27 @@
     var beside = document.getElementById("topFacts");
     if (made.facts) {
       if (beside) beside.appendChild(made.facts);
-      else home.insertBefore(made.facts, made.tools);
+      else bar.insertBefore(made.facts, made.tools);
     }
 
-    /* WHAT IS BEING DONE TO THE SONG COMES DOWN WITH THE DIALS. On a desk the
-       group stands in the bar and the bar names it (see paintHeader). On a
-       phone the bar is a mark, a name, a glass and a picture already, and the
-       four of these on the end of it is the row overflowing; the strip under it
-       is the rest of the same bar and it is half empty, because the dials pull
-       themselves to the far end of it and nothing was standing at the near one.
-       So this is what stands there.
+    /* WHAT IS BEING DONE TO THE SONG IS THE ONLY THING LEFT ON THE STRIP, and
+       only on a phone and only while the song is being written on. On a desk
+       the group stands in the bar and the bar names it (see paintHeader); on a
+       phone the bar is a mark, a name, a capo, a microphone and two pictures
+       already, and four more on the end of it is the row overflowing. So they
+       come down here, to a row that now exists for them alone and is not there
+       at all when there is nothing to put on it (see .song-strip).
 
-       At the START of the strip, after the dials were put in: right to left
-       that is its right hand end, which is where a hand holding a phone is, and
-       it leaves the row reading as the two things it is. What to do to the
-       song, and what to do to the page.
+       At the START of the strip: right to left that is its right hand end,
+       which is where a hand holding a phone is.
 
        THE WAY IN AND OUT OF THE EDITOR DOES NOT COME DOWN WITH THEM. It used
        to, and it was the one thing in the app that stood in a different corner
        of the screen depending on the width of the window. It is in the bar on
-       every screen now (see paintHeader), which is also the corner every other
-       thing done to the PAGE is in. */
+       every screen now, in the panel behind the three dots (see songMore),
+       which is also the corner every other thing done to the PAGE is in. */
     if (made.acts && NARROW.matches) {
-      home.insertBefore(made.acts, home.firstChild);
+      made.strip.insertBefore(made.acts, made.strip.firstChild);
     }
 
     made.strip.hidden = !NARROW.matches;
@@ -4470,7 +4476,12 @@
     window.print();
   }
 
+  /* WHICH PIECE OF PAPER, ASKED SECOND. It is reached from a row inside the
+     panel that is already open, so the panel it replaces has to be shut first:
+     without that, the panel under this same button reads the second opening as
+     the button being pressed again and answers by going away. */
   function askPrint(anchor) {
+    closeUnder();
     menuUnder(anchor, [
       button("אקורדים", null, "ghost small", function () { printNow(false); }),
       button("מילים בלבד", null, "ghost small", function () { printNow(true); }),
@@ -4632,6 +4643,55 @@
     });
   }
 
+  /* --- AND A SONG HAS A PANEL OF ITS OWN ------------------------------------
+     The same three dots, over the song, holding the two things there are to do
+     to the page it is on: print it, and write on it.
+
+     They stood in the bar as two pictures, and two pictures is what the bar
+     could not afford: the capo and the microphone belong beside the name of
+     the song they are about, and there was no room for them there while a
+     printer and a pencil were holding the corner. Neither is pressed often.
+     Printing is a thing done to a song a few times in its life, and the way
+     into the editor is pressed once and then the page is a page you are
+     writing on. What IS pressed while a song is open is the capo and the
+     record button, and those are now where a hand goes for them.
+
+     The rows are made at the press and not kept, because both of them read
+     off what the page is doing at that second: which way the editor is
+     facing, and whether there is a song under it worth paper. */
+  function songRows(anchor) {
+    var rows = [];
+    if (state.printable) {
+      rows.push(button("הדפסה", ICON.print, "ghost small", function () {
+        /* not closeUnder: this row asks a second question, and asking it
+           replaces the panel it was asked from (see askPrint) */
+        askPrint(anchor);
+      }));
+    }
+    if (state.editToggle) {
+      var edit = state.editToggle;
+      var row = button(edit.on ? "סיום עריכה" : "עריכה", edit.on ? ICON.check : ICON.pencil,
+        "ghost small", function () {
+          closeUnder();
+          edit.flip();
+        });
+      /* the panel says which way it is facing the same way the picture in the
+         bar used to (see .print-menu .btn.is-on) */
+      row.classList.toggle("is-on", !!edit.on);
+      rows.push(row);
+    }
+    return rows;
+  }
+
+  function songMore() {
+    return keep("songMore", function () {
+      var node = iconBtn(ICON.dots, "עוד", function () { menuUnder(node, songRows(node)); });
+      node.setAttribute("aria-haspopup", "menu");
+      node.setAttribute("aria-expanded", "false");
+      return node;
+    });
+  }
+
   /* --- THE MARK IN THE CORNER, AND WHAT IT IS ANYWHERE ELSE -----------------
      One button, and it says two different things, because «where does this
      corner go» has two different answers.
@@ -4746,42 +4806,27 @@
 
     if (p.length) {
       var mine = [];
-      /* On a desk the song's own dials stand at the start of the bar. They
-         belong to the song rather than to the bar: made with it and handed
+      /* The song's own dials stand at the start of the bar, on every width.
+         They belong to the song rather than to the bar: made with it and handed
          over by placeControls, which is why they are named here too. A repaint
          that did not know about them would take them out. */
-      if (state.songControls && !NARROW.matches) {
+      if (state.songControls) {
         mine.push(state.songControls.tools);
         /* and what is being done to the song beside them, named here for the
            same reason: it is made with the song and handed over, and a bar
-           that did not know about it would sweep it off on the next repaint */
-        if (state.songControls.acts) mine.push(state.songControls.acts);
+           that did not know about it would sweep it off on the next repaint.
+           On a phone that group is downstairs, on the strip (see
+           placeControls), so naming it here would pull it back up. */
+        if (state.songControls.acts && !NARROW.matches) mine.push(state.songControls.acts);
       }
-      /* Only once there is a song on the page. A song still loading, one that
-         is not there at all and one still being read from a photograph are all
-         this same address, and none of them is worth paper. */
-      if (state.editToggle) {
-        var edit = state.editToggle;
-        var editBtn = actionBtn("edit", edit.on ? ICON.check : ICON.pencil,
-          edit.on ? "סיום עריכה" : "עריכה");
-        editBtn.classList.toggle("is-on", !!edit.on);
-        editBtn._act = edit.flip;
-        /* IN THE BAR ON EVERY WIDTH, beside the printer. It came down to the
-           strip on a phone for a while, on the reasoning that it is a thing
-           done to the song like the wastebasket beside it; what that actually
-           did was move the way into the editor to a different corner of the
-           screen depending on how wide the window is, and put it in the row
-           that fills up with dials and a microphone while a song is being
-           played. It is the most pressed button on the page. It stands in the
-           same place on every screen, in the corner the page's own buttons are
-           in, which is where a hand goes looking for it. */
-        mine.push(editBtn);
-      }
-      if (state.printable) {
-        var printBtn = actionBtn("print", ICON.print, "הדפסה");
-        printBtn._act = function () { askPrint(printBtn); };
-        mine.push(printBtn);
-      }
+      /* AND THE TWO THINGS DONE TO THE PAGE, BEHIND ONE PICTURE. Printing and
+         the way into the editor were two of them standing here; they are the
+         rows of the panel now (see songRows), and the corner is one button
+         wide. Only once there is something to put in it: a song still loading,
+         one that is not there at all and one still being read from a
+         photograph are all this same address, and none of them is worth paper
+         or a pencil. */
+      if (state.editToggle || state.printable) mine.push(songMore());
       fill(bar, mine);
       /* last, because it puts them at the front */
       placeControls();

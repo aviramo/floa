@@ -1366,9 +1366,14 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 }
 body.on-song .top { border-bottom: 0; }
 .song-strip[hidden] { display: none; }
-/* In the bar the strip is not a row of its own, so what was standing at the
-   far end of one has nothing to be at the end of. */
-.top-actions .tools { margin-inline-start: 0; }
+/* AND IT IS NOT THERE WHILE THERE IS NOTHING ON IT. The capo and the
+   microphone moved up beside the name of the song (see placeControls), so what
+   is left down here is what is being done to the song while it is being
+   written on, and on a phone only. Reading one, the row would be an empty band
+   of grey between the bar and the first line, and so would writing on one with
+   nothing yet to undo: the buttons that come and go are hidden rather than
+   removed, which is why the test is for a child that is not. */
+.song-strip:not(:has(> .song-acts > *:not([hidden]))) { display: none; }
 
 /* --- WHAT IS BEING DONE TO THE SONG ---------------------------------------
    Finishing, deleting, taking a change back, the versions behind it. On a desk
@@ -1430,11 +1435,21 @@ body.on-song .top { border-bottom: 0; }
    on a row that is itself inside a bordered strip. What holds them together is
    that they stand together, which they do without being fenced in.
 
-   The element itself stays: it is what placeControls moves between the bar and
-   the strip in one line. It is a group now and not a surface. */
+   The element itself stays: it is what placeControls hands to the bar in one
+   line. It is a group now and not a surface.
+
+   It used to pull itself to the far end of whatever row it was on, from when
+   that row was the strip and it was alone there. It stands in the bar now, on
+   every width, at the end nearest the name of the song it is about, and there
+   is nothing left for it to be at the end of. */
+/* AND IT DOES NOT WRAP. It could, on the strip: a row of its own with nothing
+   else on it had room to become two. In the bar the row is shared, and a group
+   that folds in half there does not take a second line of its own, it makes
+   the whole bar taller and leaves the capo standing above the microphone. What
+   gives way instead is the name of the song, which is built to be cut (see
+   .top-where). */
 .tools {
-  display: flex; align-items: center; gap: 4px 8px; flex-wrap: wrap;
-  margin-inline-start: auto;
+  display: flex; align-items: center; gap: 4px 8px; flex: none;
 }
 .tools .ctl { display: flex; align-items: center; gap: 5px; }
 /* The picture and the number side by side, read in that order: what it is,

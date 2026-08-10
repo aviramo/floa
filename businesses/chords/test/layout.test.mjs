@@ -1316,7 +1316,7 @@ try {
       const READS = `JSON.stringify({
         errors: window.__errors,
         editing: !!document.querySelector(".sheet.ed"),
-        pencil: !!document.querySelector('#topActions [aria-label="עריכה"]'),
+        dots: !!document.querySelector('#topActions [aria-label="עוד"]'),
         trash: !!document.querySelector('#topActions [aria-label="מחיקת השיר"]'),
         band: (document.querySelector(".past-band .past-said") || {}).textContent || "",
       })`;
@@ -1325,14 +1325,27 @@ try {
       check("a stranger's page had no errors", shut.errors.length === 0, JSON.stringify(shut.errors));
       check("somebody else's song opens reading and not writing", shut.editing === false, JSON.stringify(shut));
       check("and it is not theirs to delete", shut.trash === false, "the wastebasket was offered");
-      check("but the way in is there", shut.pencil === true, "no pencil in the bar");
+      check("but the corner is there", shut.dots === true, "no panel in the bar");
+
+      /* THE WAY IN IS A ROW IN THE SONG'S OWN PANEL and not a picture in the
+         bar any more (see songRows in app.js): the corner holds one button,
+         and what it opens holds printing and the pencil. */
+      await evaluate(`(() => {
+        document.querySelector('#topActions [aria-label="עוד"]').click();
+        return JSON.stringify("ok");
+      })()`);
+      await sleep(250);
+      const rows = await evaluate(`JSON.stringify([...document.querySelectorAll(".print-menu .btn")]
+        .map(b => b.getAttribute("aria-label")).join(" | "))`);
+      check("the panel offers the way in", rows.indexOf("עריכה") >= 0, rows);
 
       /* And the press opens the editor, with the band over it saying what
          typing into it will actually do. */
       await evaluate(`(() => {
-        var pencil = document.querySelector('#topActions [aria-label="עריכה"]');
-        if (pencil) pencil.click();
-        return JSON.stringify(!!pencil);
+        var row = [...document.querySelectorAll(".print-menu .btn")]
+          .find(b => b.getAttribute("aria-label") === "עריכה");
+        if (row) row.click();
+        return JSON.stringify(!!row);
       })()`);
       await sleep(400);
       const open2 = await evaluate(READS);
