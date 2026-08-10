@@ -5539,6 +5539,38 @@
     timer = setTimeout(off, 800);
   }
 
+  /* --- AND IT GOES BACK DOWN THE WAY IT CAME -------------------------------
+     A panel taken off the page between two frames is a panel that vanished,
+     and a thing that vanishes has to be looked for to be sure it is gone. It
+     leaves the way it arrived, down past the edge it lives on, and it is taken
+     off the page when it gets there.
+
+     FROM WHERE IT IS AND NOT FROM WHERE IT WAS. A sheet pushed half way down
+     by hand and then let go carries on from under the hand; sliding it back up
+     first so it can slide down again is the one thing the gesture must not
+     look like. So this moves what is already on the element rather than
+     handing the job to a class. */
+  var GOING = 220;
+
+  function sheetDown(node, done) {
+    if (!node.going) {
+      node.going = true;
+      node.classList.remove("is-held");
+      /* a panel shut inside the fifth of a second it took to arrive is still
+         being animated in, and an animation stands over anything written on
+         the element itself */
+      node.style.animation = "none";
+      node.style.transition = "transform .22s ease, opacity .22s ease";
+      node.style.transform = "translateY(100%)";
+      node.style.opacity = "0";
+      /* on its way out, and no longer a thing to press */
+      node.style.pointerEvents = "none";
+      if (done) return setTimeout(done, GOING);
+    }
+    /* already on its way down, so whatever is left to do is due now */
+    if (done) done();
+  }
+
   /* --- THE BAR ACROSS THE TOP, AND WHAT IT IS FOR --------------------------
      The sheet follows the finger down and either goes back where it was or
      keeps going, which is the whole of the gesture: a panel that snapped shut
@@ -5603,8 +5635,10 @@
         if (!live || event.pointerId !== held) return;
         live = false;
         card.classList.remove("is-held");
+        /* Far enough is the rest of the way down, carrying on from where the
+           hand let go; anything less springs back to where it was. */
+        if (went > PUSHED) return sheetDown(card, shut);
         card.style.transform = "";
-        if (went > PUSHED) shut();
       });
     });
   }
@@ -5627,7 +5661,20 @@
     }
     var shut = function () { dlg.close(); };
     standsOnBack(shut);
-    dlg.addEventListener("close", function () { offBack(shut); }, { once: true });
+    dlg.addEventListener("close", function () {
+      offBack(shut);
+      /* AND WHATEVER A HAND LEFT ON IT COMES OFF. A dialog animates its own way
+         out, from the rules rather than from the element, and a transform left
+         behind by a push downwards would stand over those rules on the way out
+         and again on the way back in. It is already at the foot of its travel
+         when this runs, so taking it off changes nothing on the screen. */
+      dlg.going = false;
+      dlg.style.animation = "";
+      dlg.style.transition = "";
+      dlg.style.transform = "";
+      dlg.style.opacity = "";
+      dlg.style.pointerEvents = "";
+    }, { once: true });
     dlg.showModal();
   }
 
@@ -15044,14 +15091,25 @@
     document.removeEventListener("pointerdown", earOutside, true);
     document.removeEventListener("keydown", earEscape, true);
     offBack(shutEar);
-    ear.remove();
+    /* AND IT GOES BACK DOWN BEFORE IT GOES. The microphone is off from this
+       moment and so is everything the panel was doing; what is left on the
+       screen for a fifth of a second is a picture of it leaving, and the room
+       it was taking off the page goes when it does, so nothing underneath it
+       moves while it is still standing there (see sheetDown). */
+    var going = ear;
     ear = null;
+    sheetDown(going, function () {
+      going.remove();
+      /* unless one was asked for again while this one was still on its way
+         down: then the room on the page belongs to the new one */
+      if (ear) return;
+      document.body.classList.remove("on-ear");
+      document.body.classList.remove("ear-small");
+    });
     earParts = null;
     stable = null; heardNow = null; heardTape = [];
     pinNote = -1;
     stopFollowing();
-    document.body.classList.remove("on-ear");
-    document.body.classList.remove("ear-small");
     markHeard(null);
     paintHeader();
   }
