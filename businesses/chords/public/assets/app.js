@@ -4238,8 +4238,17 @@
     }
 
     fill(bar, [
-      /* The way out to the evenings, first, because it is the only one of
-         these that goes somewhere rather than making something. */
+      /* THE TUNER, and it is first because of when it is wanted. Everything
+         else in this bar is about the library; this is about the guitar, and
+         it is reached for in the minute BEFORE a song is opened rather than
+         after. Somebody who sat down to play opens the app, tunes, and then
+         goes looking for what to play.
+
+         Made fresh on every painting rather than kept, because it says whether
+         the panel it opens is open (see earDoor). */
+      earDoor("tune"),
+      /* The way out to the evenings, because it is the only one of these that
+         goes somewhere rather than making something. */
       toEvenings(),
       /* And the people, beside the evenings, because they are the same kind of
          door: another way through the same songs. The library is by when a song
@@ -7726,6 +7735,33 @@
       myValue, fillFrets
     );
     tools.appendChild(capoCtl);
+
+    /* --- AND THE MICROPHONE ---------------------------------------------------
+       The third thing on a strip about playing this song, and the only one
+       that is not about how it is printed. What is behind it listens to the
+       room and says which chord it thinks is sounding, scored against the
+       chords THIS song is written in (see state.ear below, and the panel at
+       the foot of this file).
+
+       ON THE SONG AND NOT IN THE BAR, because the question it answers is a
+       question about a song: the twelve bars mean the same thing everywhere,
+       and «which of these eight chords is it» only means anything with the
+       eight on the page beside it. The tuner, which is about the guitar and
+       not about anything written down, has its door in the bar instead. */
+    tools.appendChild(el("span", "sep"));
+    tools.appendChild(earDoor("chord", "ear-door"));
+
+    /* Read when the panel asks and not written down here, because the song is
+       being edited underneath it: a list taken at the moment the page was
+       drawn is a list of the chords the song had then. Transposed, because
+       what is on the page is what the reader is playing. */
+    state.ear = {
+      chords: function () {
+        return chordsUsed(song.lines || []).map(function (chord) {
+          return transposeChord(chord, semis);
+        });
+      },
+    };
 
     /* Eight frets, in the order a neck is in, nought at the top. The one the
        capo is at is marked, so the panel says where you are as well as where
@@ -12421,6 +12457,467 @@
         state.redrawSong();
       }
     });
+  }
+
+  /* ==========================================================================
+     THE MICROPHONE.
+
+     A band along the bottom of the screen, over whatever page is open, with
+     two things in it: a TUNER, and a MEASUREMENT of how well the app can hear
+     which chord is being played.
+
+     THEY ARE ONE PANEL BECAUSE THEY ARE ONE MICROPHONE, and because they are
+     asked for in the same moment: somebody with a guitar in their hands opens
+     a song, tunes, and starts playing. Two doors to two panels would be two
+     permission prompts and two things to close.
+
+     WHY THE SECOND ONE IS A MEASUREMENT AND NOT A FEATURE. The thing worth
+     building here is a page that follows the playing and marks where in the
+     song you are. That needs the app to know which chord is sounding, and
+     whether it can is a question about YOUR room, YOUR guitar and YOUR phone,
+     not a question with an answer in general. So this is the instrument that
+     answers it: it shows what the microphone hears, what it thinks that is,
+     how sure it is, and which of THIS SONG's chords it looks like. An hour
+     with it says whether the following is worth building, and no amount of
+     reasoning about it does.
+
+     WHICH IS ALSO WHY IT SHOWS ITS WORKING. The twelve bars are the raw
+     material every chord guess is made of, and a guess that is wrong while
+     the bars are right is a different problem from one where the bars are
+     mush. Without them there is nothing to learn from a wrong answer.
+     ========================================================================== */
+
+  /* The six open strings, as note numbers. E2 A2 D3 G3 B3 E4, which is what a
+     guitar is tuned to and what a tuner is mostly pointed at. Standing here
+     rather than in ear.js for the reason everything else does: that file knows
+     about sound and this one knows what the sound is coming out of. */
+  var STRINGS = [
+    { midi: 40, name: "E" }, { midi: 45, name: "A" }, { midi: 50, name: "D" },
+    { midi: 55, name: "G" }, { midi: 59, name: "B" }, { midi: 64, name: "E" },
+  ];
+
+  /* In tune. Five cents is under what anybody hears on a strummed chord and
+     over what a string will hold for a whole song, so it is the width of the
+     green rather than a target to chase. */
+  var IN_TUNE = 5;
+
+  /* --- how sure the ear has to be before it says a word ---------------------
+     A cosine similarity, so 1 is a perfect match to a template made of pure
+     tones, which never happens, and about 0.75 is a clean chord in a quiet
+     room. Under this it says nothing rather than saying something wrong: an
+     answer that flickers is worse than no answer, because a reader cannot tell
+     which of its flickers to believe. */
+  var SURE_ENOUGH = 0.72;
+  /* And it has to say the same thing this many readings running. A strum has a
+     moment at its start where the old chord is still ringing and the new one
+     has not settled, and a panel that reports every frame reports that moment
+     as a chord that was never played. */
+  var STEADY = 3;
+
+  var ear = null;        /* the band, once it has been built */
+  var earMode = "tune";
+  var earTicking = 0;
+  var earLast = 0;
+  var earParts = null;
+
+  /* What the ear currently believes is being played, and how long it has
+     believed it. Kept out here so that closing the chords tab and coming back
+     does not pretend the room went silent. */
+  var heardNow = null;
+  var heardTry = null;
+  var heardFor = 0;
+  var heardTape = [];
+  /* Where the needle is standing, which is not where the last reading put it:
+     a string wavers by a few cents as it decays, and a needle that follows
+     that exactly is a needle nobody can read. */
+  var pinCents = 0;
+  var pinNote = -1;
+
+  function earOpen() {
+    return !!ear;
+  }
+
+  /* Both doors come through here. Pressing the door of the tab you are already
+     on closes the panel, which is what a door does; pressing the other one
+     moves to that tab rather than closing, because that press meant "show me
+     the other thing". */
+  function askEar(mode) {
+    if (ear && earMode === mode) return shutEar();
+    earMode = mode;
+    if (ear) return earTab();
+
+    if (!window.CHORDS_EAR || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      return toast("הדפדפן הזה לא נותן גישה למיקרופון");
+    }
+
+    buildEar();
+    window.CHORDS_EAR.open().then(function () {
+      earTick();
+    }, function (err) {
+      shutEar();
+      /* The two refusals worth telling apart: one is a decision and the other
+         is a fault, and "לא הצלחנו" is the wrong sentence for the first. */
+      var said = err && (err.name === "NotAllowedError" || err.name === "SecurityError");
+      toast(said ? "צריך לאשר גישה למיקרופון" : "לא הצלחנו לפתוח את המיקרופון");
+    });
+  }
+
+  function shutEar() {
+    if (!ear) return;
+    if (earTicking) cancelAnimationFrame(earTicking);
+    earTicking = 0;
+    if (window.CHORDS_EAR.live()) window.CHORDS_EAR.close();
+    ear.remove();
+    ear = null;
+    earParts = null;
+    heardNow = null; heardTry = null; heardFor = 0; heardTape = [];
+    pinNote = -1;
+    document.body.classList.remove("on-ear");
+    markHeard(null);
+    paintHeader();
+  }
+
+  /* --- what is on the screen -------------------------------------------------
+     Built once and then only written into. A panel rebuilt every frame is a
+     panel that cannot be selected from, cannot be pressed, and costs more than
+     the arithmetic it is displaying. */
+  function buildEar() {
+    ear = el("div", "ear");
+
+    var tabs = el("div", "ear-tabs");
+    var tune = el("button", "ear-tab", "כיוון");
+    tune.type = "button";
+    tune.addEventListener("click", function () { earMode = "tune"; earTab(); });
+    var chord = el("button", "ear-tab", "אקורדים");
+    chord.type = "button";
+    chord.addEventListener("click", function () { earMode = "chord"; earTab(); });
+    tabs.appendChild(tune);
+    tabs.appendChild(chord);
+    tabs.appendChild(el("span", "ear-gap"));
+    /* HOW LOUD IT IS HEARING, on both tabs and always. Everything else here
+       can be wrong for a dozen reasons; a bar that does not move at all means
+       one thing only, and it is the first thing to check. */
+    var meter = el("span", "ear-level");
+    var lit = el("span", "ear-lit");
+    meter.appendChild(lit);
+    meter.title = "כמה חזק המיקרופון שומע";
+    tabs.appendChild(meter);
+    tabs.appendChild(iconBtn(ICON.close, "סגירה", shutEar));
+
+    var body = el("div", "ear-body");
+    ear.appendChild(tabs);
+    ear.appendChild(body);
+
+    earParts = {
+      tabs: [tune, chord], body: body, lit: lit,
+      tune: buildTune(), chord: buildChord(),
+    };
+    document.body.appendChild(ear);
+    document.body.classList.add("on-ear");
+    earTab();
+    paintHeader();
+  }
+
+  function earTab() {
+    if (!ear) return;
+    earParts.tabs[0].classList.toggle("is-on", earMode === "tune");
+    earParts.tabs[1].classList.toggle("is-on", earMode === "chord");
+    earParts.body.innerHTML = "";
+    earParts.body.appendChild(earMode === "tune" ? earParts.tune.node : earParts.chord.node);
+    /* The other tab's answer is about a sound that is no longer being made. */
+    if (earMode === "tune") markHeard(null);
+    pinNote = -1;
+    paintHeader();
+  }
+
+  /* --- the tuner -------------------------------------------------------------
+     A note, how far off it is, and which string that is. Left to right, always,
+     whatever the page around it is doing: flat is on the left and sharp is on
+     the right on every tuner anybody has ever used, and a Hebrew page is not a
+     reason to be the one that is the other way round. */
+  function buildTune() {
+    var node = el("div", "tune");
+    node.dir = "ltr";
+
+    var dial = el("div", "tune-dial");
+    dial.appendChild(el("span", "tune-mid"));
+    var pin = el("span", "tune-pin");
+    dial.appendChild(pin);
+
+    var read = el("div", "tune-read");
+    var name = el("span", "tune-name", "–");
+    var oct = el("span", "tune-oct");
+    var cents = el("span", "tune-cents");
+    read.appendChild(name);
+    read.appendChild(oct);
+    read.appendChild(cents);
+
+    var strip = el("div", "tune-strings");
+    var pegs = STRINGS.map(function (s) {
+      var peg = el("span", "peg", s.name);
+      strip.appendChild(peg);
+      return peg;
+    });
+
+    node.appendChild(read);
+    node.appendChild(dial);
+    node.appendChild(strip);
+    return { node: node, pin: pin, name: name, oct: oct, cents: cents, pegs: pegs, dial: dial };
+  }
+
+  function paintTune(r) {
+    var t = earParts.tune;
+    /* Clear enough to name. YIN hands back how well the wave repeated itself,
+       and a room, a cough and a chair all come back poorly; naming them anyway
+       is a tuner that reports notes nobody played. */
+    var clear = r.hz > 0 && r.clarity >= 0.55;
+    t.node.classList.toggle("is-quiet", !clear);
+    if (!clear) {
+      t.name.textContent = "–";
+      t.oct.textContent = "";
+      t.cents.textContent = "";
+      t.pegs.forEach(function (p) { p.classList.remove("is-on"); });
+      pinNote = -1;
+      return;
+    }
+
+    var midi = Math.round(r.midi);
+    /* The needle is eased towards the reading, and thrown straight to it when
+       the note changes: following a decaying string smoothly is right, and
+       sliding across four semitones because somebody moved to the next string
+       is a needle that arrives after the string has stopped ringing. */
+    if (midi !== pinNote) { pinCents = r.cents; pinNote = midi; }
+    else pinCents += (r.cents - pinCents) * 0.25;
+
+    t.name.textContent = SHARPS[((midi % 12) + 12) % 12];
+    t.oct.textContent = String(Math.floor(midi / 12) - 1);
+    var off = Math.round(pinCents);
+    t.cents.textContent = (off > 0 ? "+" : "") + off;
+    t.node.classList.toggle("is-true", Math.abs(off) <= IN_TUNE);
+    /* Half the dial is fifty cents, which is the whole way to the next note:
+       past that it is a different note and the needle has already moved. */
+    t.pin.style.left = (50 + Math.max(-50, Math.min(50, pinCents))) + "%";
+
+    /* Which string this is nearest, which is the other half of what a tuner is
+       for: a bottom E tuned up to F is perfectly in tune and completely wrong,
+       and the only thing that says so is which peg lit up. */
+    var near = 0;
+    for (var i = 1; i < STRINGS.length; i++) {
+      if (Math.abs(midi - STRINGS[i].midi) < Math.abs(midi - STRINGS[near].midi)) near = i;
+    }
+    t.pegs.forEach(function (p, at) {
+      p.classList.toggle("is-on", at === near && Math.abs(midi - STRINGS[at].midi) <= 2);
+    });
+  }
+
+  /* --- the chords ------------------------------------------------------------
+     Four things, in the order they are worth reading: what it hears, what else
+     it nearly heard, the twelve numbers all of that is made of, and how those
+     numbers score against the chords THIS song is written in. */
+  function buildChord() {
+    var node = el("div", "ear-chord");
+
+    var said = el("div", "heard");
+    var now = el("span", "heard-now", "–");
+    now.dir = "ltr";
+    var sure = el("span", "heard-sure");
+    said.appendChild(now);
+    said.appendChild(sure);
+
+    /* What it nearly said. A wrong answer with the right one second by a
+       hair is a different report from a wrong answer that was never close,
+       and the difference is the whole of whether this can be made to work. */
+    var also = el("div", "heard-also");
+    also.dir = "ltr";
+
+    var bars = el("div", "chroma");
+    bars.dir = "ltr";
+    var cells = [];
+    for (var i = 0; i < 12; i++) {
+      var cell = el("span", "cx");
+      var fill = el("span", "cx-fill");
+      var tag = el("span", "cx-tag", SHARPS[i]);
+      cell.appendChild(fill);
+      cell.appendChild(tag);
+      bars.appendChild(cell);
+      cells.push(fill);
+    }
+
+    /* Where the song's own chords are scored. Empty on any page that is not a
+       song, and it is the one part of this panel that is about the song rather
+       than about the room. */
+    var mine = el("div", "ear-mine");
+
+    /* And what it heard, in the order it heard it. Which is the measurement
+       that matters most and the one no single frame can show: a page that
+       follows the playing is a page that gets this sequence right. */
+    var tape = el("div", "ear-tape");
+    tape.dir = "ltr";
+
+    node.appendChild(said);
+    node.appendChild(also);
+    node.appendChild(bars);
+    node.appendChild(mine);
+    node.appendChild(tape);
+    return { node: node, now: now, sure: sure, also: also, cells: cells, mine: mine, tape: tape, rows: null, was: "" };
+  }
+
+  function paintChord(r) {
+    var c = earParts.chord;
+    var i;
+
+    for (i = 0; i < 12; i++) c.cells[i].style.height = Math.round(r.chroma[i] * 100) + "%";
+
+    var top = r.best[0];
+    var quiet = r.rms < window.CHORDS_EAR.HUSH || !top;
+    var name = quiet || top.score < SURE_ENOUGH ? null : chordName(top);
+
+    /* Steady before it is said. See STEADY: the first frames of a strum are
+       the chord before it, still ringing. */
+    if (name === heardTry) heardFor++;
+    else { heardTry = name; heardFor = 1; }
+    if (heardFor >= STEADY && name !== heardNow) {
+      heardNow = name;
+      if (name) {
+        heardTape.push(name);
+        if (heardTape.length > 14) heardTape.shift();
+        c.tape.textContent = heardTape.join("  ");
+      }
+      markHeard(name);
+    }
+
+    c.now.textContent = heardNow || "–";
+    c.node.classList.toggle("is-quiet", !heardNow);
+    /* How sure, said as the GAP to the next best and not as the score itself.
+       A score of 0.8 means nothing on its own; 0.8 with 0.79 underneath it
+       means the ear is choosing between two chords by a coin toss, and that is
+       the number somebody deciding whether this can work needs to see. */
+    c.sure.textContent = quiet ? "" :
+      Math.round(top.score * 100) + "%" +
+      (r.best[1] ? "  ·  " + Math.round((top.score - r.best[1].score) * 100) + " מעל הבא" : "");
+
+    c.also.textContent = quiet ? "" : r.best.slice(0, 4).map(function (one) {
+      return chordName(one) + " " + Math.round(one.score * 100);
+    }).join("   ");
+
+    paintMine(c, r);
+  }
+
+  /* The song's own chords, each with the score the last reading gave it. IN
+     THE SONG'S OWN ORDER and never sorted by score: a list that rearranges
+     itself twenty times a second is a list nobody can read, and the question
+     being asked of it is not "which is winning" (that is the line at the top)
+     but "how far apart are they", which is read off the bars. */
+  function paintMine(c, r) {
+    var want = state.ear ? state.ear.chords() : [];
+    var key = want.join(" ");
+    if (key !== c.was) {
+      c.was = key;
+      c.mine.innerHTML = "";
+      c.rows = want.map(function (chord) {
+        var row = el("div", "mine-row");
+        var nm = el("span", "mine-name", chord);
+        nm.dir = "ltr";
+        var bar = el("span", "mine-bar");
+        var fill = el("span", "mine-fill");
+        bar.appendChild(fill);
+        var num = el("span", "mine-num");
+        row.appendChild(nm);
+        row.appendChild(bar);
+        row.appendChild(num);
+        c.mine.appendChild(row);
+        return { chord: chord, row: row, fill: fill, num: num };
+      });
+    }
+    if (!c.rows || !c.rows.length) return;
+
+    var quiet = r.rms < window.CHORDS_EAR.HUSH;
+    var best = -1, at = -1;
+    var scores = c.rows.map(function (row, i) {
+      var parts = quiet ? null : CHORD_RE.exec(row.chord);
+      var s = parts ? window.CHORDS_EAR.score(ROOTS[parts[1]], parts[2] || "") : 0;
+      if (s > best) { best = s; at = i; }
+      return s;
+    });
+    c.rows.forEach(function (row, i) {
+      row.fill.style.width = Math.round(Math.max(0, scores[i]) * 100) + "%";
+      row.num.textContent = quiet ? "" : Math.round(scores[i] * 100);
+      row.row.classList.toggle("is-top", i === at && best >= SURE_ENOUGH);
+    });
+  }
+
+  function chordName(one) {
+    return ROOT_NOTES[one.root] + one.quality;
+  }
+
+  /* --- and the same chord, marked on the song --------------------------------
+     Every place in the song that is written with the chord being heard, lit at
+     once. Which is NOT following the song and is not pretending to be: what it
+     shows is how many places the current sound is consistent with, and that
+     number is the exact difficulty of building the following. Four chords
+     repeated four times means sixteen marks and no way to choose between them
+     from the sound alone.
+
+     MATCHED ON THE ROOT AND THE THIRD, not on the text. A page that says Am7
+     where the ear says Am is the same chord being played, and a highlight that
+     insisted on the seventh would go dark exactly where the song is richest. */
+  function markHeard(name) {
+    var sheet = document.querySelector(".sheet");
+    if (!sheet) return;
+    var want = name ? thirdOf(name) : null;
+    var all = sheet.querySelectorAll(".chord");
+    for (var i = 0; i < all.length; i++) {
+      var mine = want ? thirdOf(all[i].textContent) : null;
+      all[i].classList.toggle("is-heard", !!want && mine === want);
+    }
+  }
+
+  /* A chord reduced to the two things a microphone can be trusted about: which
+     note it is built on, and whether the third in it is major or minor. */
+  function thirdOf(text) {
+    var parts = CHORD_RE.exec(String(text || "").trim());
+    if (!parts || !(parts[1] in ROOTS)) return null;
+    var shape = window.CHORDS_EAR.shapeOf(parts[2] || "");
+    var third = shape === "m" || shape === "m7" ? "m"
+      : shape === "sus4" ? "s"
+      : shape === "dim" ? "d" : "M";
+    return ROOTS[parts[1]] + third;
+  }
+
+  /* --- the clock -------------------------------------------------------------
+     Not every frame. A reading costs about a million multiplications and a
+     screen offers sixty chances a second to do it; twenty is faster than
+     anybody reads a needle and a third of what the phone would otherwise
+     spend. The frames in between are spent doing nothing, which is the
+     point. */
+  var EAR_GAP = 45;
+
+  function earTick() {
+    earTicking = requestAnimationFrame(earTick);
+    if (!window.CHORDS_EAR.live() || !earParts) return;
+    var now = Date.now();
+    if (now - earLast < EAR_GAP) return;
+    earLast = now;
+
+    var r = earMode === "tune" ? window.CHORDS_EAR.note() : window.CHORDS_EAR.chord();
+    /* Loud enough to be worth looking at, on a scale where a strummed guitar a
+       metre away is most of the way across. Rooted so that a quiet room reads
+       as a quiet room and not as a broken microphone. */
+    earParts.lit.style.width = Math.min(100, Math.round(Math.sqrt(r.rms / 0.25) * 100)) + "%";
+    if (earMode === "tune") paintTune(r);
+    else paintChord(r);
+  }
+
+  /* The way in. Made fresh each time rather than kept, because one of the two
+     is built with a song and goes when the song does, and a door that knows
+     which tab it opens is a door that has to say whether that tab is open. */
+  function earDoor(mode, cls) {
+    var icon = mode === "tune" ? ICON.fork : ICON.mic;
+    var label = mode === "tune" ? "כיוון הגיטרה" : "להאזין לנגינה";
+    var b = iconBtn(icon, label, function () { askEar(mode); });
+    if (cls) b.className += " " + cls;
+    b.classList.toggle("is-on", earOpen() && earMode === mode);
+    return b;
   }
 
   absorbFallback();

@@ -2391,6 +2391,11 @@ body.on-song .top { border-bottom: 0; }
 
 @media print {
   .top, .tools, .ed-bar, .song-meta, .toast, .print-menu { display: none !important; }
+  /* A microphone is about the room, and paper is not in it. The mark it leaves
+     on the chords goes with it: what is being played at this second is the
+     shortest lived fact in the app, and printing one is printing a moment. */
+  .ear { display: none !important; }
+  .chord.is-heard { background: none !important; box-shadow: none !important; }
 
   /* THE LYRICS SHEET. The same page with the chords taken off it and the gaps
      closed up, which is the whole reason a gap is a character of its own and
@@ -2497,3 +2502,215 @@ body.on-song .top { border-bottom: 0; }
 .seed-list { list-style: none; margin: 0; padding: 0; }
 .seed-list li { padding: 8px 0; border-bottom: 1px solid var(--line); }
 .seed-note { color: var(--ink-soft); font-size: 13px; }
+
+/* ==========================================================================
+   THE MICROPHONE, along the foot of the screen.
+
+   A band and not a dialog, and that is the whole design: everything in here is
+   read WHILE PLAYING, with both hands on a guitar and the song still on the
+   page above it. A modal would cover the one thing it is about. So it stands
+   at the bottom, the page is given room under itself to make up for it, and
+   nothing here ever takes the focus.
+
+   Fixed rather than sticky, because a person playing scrolls the song and does
+   not want the needle scrolling away with it.
+   ========================================================================== */
+.ear {
+  position: fixed; inset-inline: 0; bottom: 0; z-index: 60;
+  background: var(--card); border-top: 1px solid var(--line);
+  box-shadow: 0 -2px 14px rgba(23, 32, 42, .09);
+  padding: 0 14px calc(10px + env(safe-area-inset-bottom));
+}
+/* Room under the song for the band standing over it, so the last line of a
+   song is a line you can read rather than one behind the glass. */
+body.on-ear { padding-bottom: 210px; }
+
+.ear-tabs { display: flex; align-items: center; gap: 4px; padding: 6px 0 4px; }
+.ear-tab {
+  appearance: none; border: 0; background: none; cursor: pointer;
+  font: inherit; font-size: 14px; color: var(--ink-soft);
+  padding: 5px 10px; border-radius: var(--corner);
+}
+.ear-tab:hover { background: var(--bg); }
+.ear-tab.is-on { color: var(--ink); font-weight: 600; background: var(--bg); }
+.ear-gap { flex: 1; }
+
+/* --- HOW LOUD IT IS HEARING ------------------------------------------------
+   On both tabs and never hidden. Every other number here can be wrong for a
+   dozen reasons and this one cannot: a bar that does not move means the
+   microphone is not reaching the page, which is the first thing to rule out
+   and the only thing this panel can say for certain. */
+.ear-level {
+  width: 54px; height: 5px; border-radius: 3px; overflow: hidden;
+  background: var(--line); margin-inline-end: 4px;
+}
+.ear-lit { display: block; height: 100%; width: 0; background: var(--accent); transition: width .08s linear; }
+
+.ear-body { padding-bottom: 6px; }
+
+/* ==========================================================================
+   THE TUNER.
+
+   Left to right, always. Flat is on the left and sharp is on the right on
+   every tuner that has ever been made, and a Hebrew page is not a reason to be
+   the one that is the other way round: this is a picture of a needle, not a
+   sentence.
+   ========================================================================== */
+.tune { max-width: 420px; margin-inline: auto; text-align: center; }
+
+.tune-read { display: flex; align-items: baseline; justify-content: center; gap: 4px; height: 46px; }
+/* The note, in the size the whole panel exists to show. A tuner is read from
+   across a room, at a glance, by somebody whose hands are busy. */
+.tune-name { font-family: var(--chord-font); font-size: 40px; font-weight: 700; line-height: 1; }
+.tune-oct { font-size: 15px; color: var(--ink-soft); }
+/* How far off, in cents, off to one side. It is the number that says what to
+   do next, and it is smaller than the note because the note is what you are
+   looking for and this is only how the search is going. */
+.tune-cents {
+  margin-inline-start: 10px; min-width: 40px; text-align: start;
+  font-size: 17px; font-variant-numeric: tabular-nums; color: var(--ink-soft);
+}
+.tune.is-true .tune-name, .tune.is-true .tune-cents { color: var(--accent); }
+.tune.is-quiet .tune-name { color: var(--line); }
+
+/* --- THE DIAL --------------------------------------------------------------
+   A line with a mark in the middle, and the needle on it. Not a rotating
+   pointer: what is being shown is one number between minus fifty and plus
+   fifty, a straight line is what that number is, and a round dial face would
+   be a drawing of an instrument rather than a reading. */
+.tune-dial {
+  position: relative; height: 26px; margin: 2px 0 10px;
+  border-radius: 13px; background: var(--bg); border: 1px solid var(--line);
+}
+/* In tune is a BAND and not a point, and the band is drawn: five cents either
+   way is under what an ear hears on a strummed chord, so a needle anywhere in
+   it is a string that is done. Without it the target is a hairline and nobody
+   is ever finished. */
+.tune-dial::before {
+  content: ""; position: absolute; top: 0; bottom: 0; left: 45%; width: 10%;
+  background: var(--chord-soft); border-radius: 4px;
+}
+.tune.is-true .tune-dial::before { background: #d8f2ea; }
+.tune-mid {
+  position: absolute; top: 4px; bottom: 4px; left: 50%;
+  width: 1.5px; margin-left: -.75px; background: var(--ink-soft);
+}
+.tune-pin {
+  position: absolute; top: -3px; bottom: -3px; left: 50%; width: 3px; margin-left: -1.5px;
+  border-radius: 2px; background: var(--chord); transition: left .06s linear;
+}
+.tune.is-true .tune-pin { background: var(--accent); }
+.tune.is-quiet .tune-pin { background: var(--line); }
+
+/* The six open strings. Not a thing to press: a bottom E tuned all the way up
+   to F is perfectly in tune and completely wrong, and the only thing on this
+   panel that says so is which of these lit up. */
+.tune-strings { display: flex; justify-content: center; gap: 6px; }
+.peg {
+  width: 30px; height: 26px; display: grid; place-items: center;
+  font-family: var(--chord-font); font-size: 13px; font-weight: 700;
+  color: var(--ink-soft); background: var(--bg);
+  border: 1px solid var(--line); border-radius: var(--corner);
+}
+.peg.is-on { color: #fff; background: var(--accent); border-color: var(--accent); }
+
+/* ==========================================================================
+   WHAT IT HEARS.
+
+   Four things, in the order they are worth reading: the answer, what it nearly
+   answered, the twelve numbers the answer is made of, and how those numbers
+   score against the chords this song is actually written in.
+
+   THE THIRD OF THOSE IS NOT DECORATION. A wrong answer over sensible bars and
+   a wrong answer over mush are different faults with different fixes, and
+   without the bars there is nothing to tell them apart by.
+   ========================================================================== */
+.ear-chord { max-width: 620px; margin-inline: auto; }
+
+.heard { display: flex; align-items: baseline; gap: 10px; }
+.heard-now {
+  font-family: var(--chord-font); font-size: 30px; font-weight: 700;
+  line-height: 1.1; color: var(--chord); min-width: 2ch;
+}
+.ear-chord.is-quiet .heard-now { color: var(--line); }
+.heard-sure { font-size: 12px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+/* The runners up. A wrong answer with the right one a point behind it is a
+   different report from a wrong answer that was never close, and the distance
+   between those two is most of whether following a song can be made to work. */
+.heard-also {
+  font-family: var(--chord-font); font-size: 12px; color: var(--ink-soft);
+  height: 16px; white-space: nowrap; overflow: hidden;
+}
+
+.chroma { display: flex; align-items: flex-end; gap: 3px; height: 54px; margin: 8px 0 4px; }
+.cx { position: relative; flex: 1; height: 100%; display: flex; align-items: flex-end; }
+.cx-fill { width: 100%; height: 0; background: var(--chord-soft); border-radius: 2px 2px 0 0; }
+.cx-tag {
+  position: absolute; inset-inline: 0; bottom: 0; text-align: center;
+  font-family: var(--chord-font); font-size: 9px; color: var(--ink-soft);
+}
+
+/* --- AND THE SONG'S OWN CHORDS ---------------------------------------------
+   The only part of this panel that is about the song rather than about the
+   room, and the one that answers the real question. Naming a chord out of all
+   of them is a hard problem; choosing between the eight a song is written in
+   is a much easier one, and this is where you can see how much easier.
+
+   IN THE SONG'S ORDER AND NEVER SORTED BY SCORE. A list that rearranges itself
+   twenty times a second cannot be read at all, and what is being asked of it
+   is not which is winning, which is written at the top in letters twice this
+   size, but how far apart they are. */
+.ear-mine { margin: 6px 0 4px; }
+.mine-row { display: flex; align-items: center; gap: 8px; height: 18px; }
+.mine-name {
+  width: 52px; flex: none; text-align: end;
+  font-family: var(--chord-font); font-size: 12px; font-weight: 700; color: var(--chord);
+}
+.mine-bar { flex: 1; height: 6px; border-radius: 3px; background: var(--bg); overflow: hidden; }
+.mine-fill { display: block; height: 100%; width: 0; background: var(--line); transition: width .08s linear; }
+.mine-row.is-top .mine-fill { background: var(--accent); }
+.mine-num {
+  width: 24px; flex: none; text-align: start;
+  font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums;
+}
+
+/* What it heard, in the order it heard it. The measurement no single frame can
+   show: a page that follows the playing is a page that gets this sequence
+   right, and reading it back against the song is how you find out whether it
+   would have. */
+.ear-tape {
+  font-family: var(--chord-font); font-size: 12px; color: var(--ink-soft);
+  height: 17px; white-space: nowrap; overflow: hidden; direction: ltr;
+  border-top: 1px solid var(--line); padding-top: 4px; margin-top: 4px;
+}
+
+/* --- AND ON THE SONG ITSELF ------------------------------------------------
+   Every place in the song written with the chord being heard, lit at once.
+   Which is NOT following the song and does not pretend to be: what it shows is
+   how many places the sound is consistent with, and that count IS the
+   difficulty of the following. Four chords repeated four times lights sixteen
+   marks, and nothing in the sound will ever choose between them.
+
+   A shadow and a background, and no padding, because a chord label carries
+   none: its box is exactly its glyphs and the placing measures that box (see
+   .chord). A pixel of padding would move every chord on the line. */
+.chord.is-heard {
+  background: var(--chord-soft);
+  box-shadow: 0 0 0 3px var(--chord-soft);
+  border-radius: 3px;
+}
+
+/* Both doors are toggles and both say so, in the two places they stand. */
+.tools .ear-door.is-on, .top-actions .icon-btn.is-on {
+  color: var(--accent); border-color: var(--accent); background: #eefaf7;
+}
+
+/* On a phone the band is most of the screen if it is allowed to be, so what
+   goes is what is furthest from the point: the runners up are for somebody
+   sitting down with this to find out whether it works, and that is not being
+   done one handed on a bus. */
+@media (max-width: 620px) {
+  body.on-ear { padding-bottom: 186px; }
+  .ear-chord .heard-also { display: none; }
+  .chroma { height: 44px; }
+}
