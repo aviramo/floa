@@ -2682,39 +2682,22 @@ body.on-song .top { border-bottom: 0; }
   position: fixed; inset-inline: 0; bottom: 0; z-index: 60;
   background: var(--card); border-top: 1px solid var(--line);
   box-shadow: 0 -2px 14px rgba(23, 32, 42, .09);
-  padding: 0 14px calc(10px + env(safe-area-inset-bottom));
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
 }
 /* Room under the song for the band standing over it, so the last line of a
    song is a line you can read rather than one behind the glass. */
-body.on-ear { padding-bottom: 202px; }
+body.on-ear { padding-bottom: 182px; }
 
-/* THE THINNEST ROW THAT STILL READS. It is the lid of a band that is already
-   standing over the song, and every pixel it takes is a line of the song that
-   somebody playing cannot see. Nothing here is pressed while both hands are on
-   a guitar, so the two tabs and the way out are trimmed to the height of the
-   words in them, and the way out is trimmed with them: at the ordinary 30px it
-   alone would set the height of the row. */
-.ear-tabs { display: flex; align-items: center; gap: 4px; padding: 2px 0; }
-.ear-tabs .icon-btn { width: 26px; height: 26px; }
-.ear-tab {
-  appearance: none; border: 0; background: none; cursor: pointer;
-  font: inherit; font-size: 14px; color: var(--ink-soft);
-  padding: 4px 10px; border-radius: var(--corner);
-}
-.ear-tab:hover { background: var(--bg); }
-.ear-tab.is-on { color: var(--ink); font-weight: 600; background: var(--bg); }
-.ear-gap { flex: 1; }
+/* THERE WAS A LID HERE: two tabs, a loudness bar and a cross, thirty pixels of
+   row standing over the song for as long as the microphone was open. All of it
+   is gone (see buildEar in app.js).
 
-/* --- HOW LOUD IT IS HEARING ------------------------------------------------
-   On both tabs and never hidden. Every other number here can be wrong for a
-   dozen reasons and this one cannot: a bar that does not move means the
-   microphone is not reaching the page, which is the first thing to rule out
-   and the only thing this panel can say for certain. */
-.ear-level {
-  width: 54px; height: 5px; border-radius: 3px; overflow: hidden;
-  background: var(--line); margin-inline-end: 4px;
-}
-.ear-lit { display: block; height: 100%; width: 0; background: var(--accent); transition: width .08s linear; }
+   THE TABS, because there are two doors now and each opens its own side: the
+   fork in the bar asks about one string, the red button on the song asks about
+   the chords. THE BAR, because "is the microphone reaching the page" is
+   answered better by the panel under it: a note that moves IS the microphone
+   working. THE CROSS, because a panel over the page is closed by pressing the
+   page, which is what every other panel in this app does. */
 
 .ear-body { padding-bottom: 6px; }
 
@@ -2728,7 +2711,17 @@ body.on-ear { padding-bottom: 202px; }
    ========================================================================== */
 .tune { max-width: 420px; margin-inline: auto; text-align: center; }
 
-.tune-read { display: flex; align-items: baseline; justify-content: center; gap: 4px; height: 46px; }
+/* THE ROW THE NOTE GOES IN, AND IT IS NOT THERE UNTIL THERE IS ONE. Its height
+   is the height of a forty pixel letter, and with nothing plucked yet it is a
+   band of empty white over the dial. It is made when the first note lands and
+   kept from then on (see paintTune), so the panel opens with the standard gap
+   its own padding gives it and does not breathe between one pluck and the
+   next. */
+.tune-read {
+  display: flex; align-items: baseline; justify-content: center; gap: 4px;
+  height: 0; overflow: hidden;
+}
+.tune.has-read .tune-read { height: 46px; }
 /* The note, in the size the whole panel exists to show. A tuner is read from
    across a room, at a glance, by somebody whose hands are busy. */
 .tune-name { font-family: var(--chord-font); font-size: 40px; font-weight: 700; line-height: 1; }
@@ -2847,7 +2840,7 @@ body.on-ear { padding-bottom: 202px; }
    is the song. The measurement is a press away for whoever wants to see why it
    did what it did, and it is in nobody's way until then. */
 body.ear-small .ear-work { display: none; }
-body.on-ear.ear-small { padding-bottom: 84px; }
+body.on-ear.ear-small { padding-bottom: 64px; }
 
 /* --- AND THE SONG'S OWN CHORDS ---------------------------------------------
    The only part of this panel that is about the song rather than about the

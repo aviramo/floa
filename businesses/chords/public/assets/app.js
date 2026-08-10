@@ -4541,15 +4541,16 @@
   function printNow(words) {
     closeUnder();
     document.body.classList.toggle("print-words", !!words);
-    /* Put back afterwards however the printing ended, including cancelled, and
-       on a timer as well: afterprint is not fired by every browser, and a page
-       left in the printing shape is a page with no chords on it. */
-    var back = function () { document.body.classList.remove("print-words"); };
-    window.addEventListener("afterprint", function once() {
-      window.removeEventListener("afterprint", once);
-      back();
-    });
-    setTimeout(back, 60000);
+    /* AND IT IS NOT TAKEN OFF AFTERWARDS. It used to be, on afterprint and on
+       a timer behind it, and on a phone that is exactly what printed the
+       chords onto the lyrics sheet: several browsers fire afterprint the
+       moment window.print returns, while the preview is still open and before
+       anything has been laid out for paper, so the class came off and the page
+       went to the printer as the ordinary sheet.
+
+       There is nothing to take off. Every rule this class carries is inside
+       the print stylesheet, so on screen it means nothing at all, and the next
+       print sets it to whichever of the two was asked for. */
     window.print();
   }
 
@@ -4559,9 +4560,12 @@
      the button being pressed again and answers by going away. */
   function askPrint(anchor) {
     closeUnder();
+    /* A picture each, like every other row in every other panel here: the
+       notes over a line for the sheet as it stands, and the lines on their own
+       for the sheet with the chords taken off it. */
     menuUnder(anchor, [
-      button("אקורדים", null, "ghost small", function () { printNow(false); }),
-      button("מילים בלבד", null, "ghost small", function () { printNow(true); }),
+      button("אקורדים", ICON.chordsOnly, "ghost small", function () { printNow(false); }),
+      button("מילים בלבד", ICON.section, "ghost small", function () { printNow(true); }),
     ]);
   }
 
@@ -4760,6 +4764,19 @@
      facing, and whether there is a song under it worth paper. */
   function songRows(anchor) {
     var rows = [];
+    /* THE TUNER IS OFFERED HERE TOO. On every other page it is a picture beside
+       the dots (see tuner); on a song the bar holds the song's own controls and
+       there is no room for it, and it was reachable from the band at the foot
+       of the screen while that band had a tab for it. It has no tabs now (see
+       buildEar), so this is the door: a guitar goes out of tune in the middle
+       of the song being played, which is exactly where somebody is standing
+       when they want it. */
+    var fork = button("כיוון הגיטרה", ICON.fork, "ghost small", function () {
+      closeUnder();
+      askEar("tune");
+    });
+    fork.classList.toggle("is-on", earOpen() && earMode === "tune");
+    rows.push(fork);
     if (state.printable) {
       rows.push(button("הדפסה", ICON.print, "ghost small", function () {
         /* not closeUnder: this row asks a second question, and asking it
@@ -13713,6 +13730,7 @@
     if (earTicking) cancelAnimationFrame(earTicking);
     earTicking = 0;
     if (window.CHORDS_EAR.live()) window.CHORDS_EAR.close();
+    document.removeEventListener("pointerdown", earOutside, true);
     ear.remove();
     ear = null;
     earParts = null;
@@ -13729,47 +13747,64 @@
      Built once and then only written into. A panel rebuilt every frame is a
      panel that cannot be selected from, cannot be pressed, and costs more than
      the arithmetic it is displaying. */
+  /* --- A PRESS ANYWHERE ELSE PUTS IT AWAY -----------------------------------
+     The band had a lid: two tabs, a loudness meter and a cross, a row of
+     thirty pixels standing over the song for the whole of the time the
+     microphone was open. Every part of it went.
+
+     THE TABS, because there are two doors now and each one opens its own side.
+     The fork in the bar asks about a string and the red button on the song
+     asks about the chords, so the tab that switched between them was a second
+     way of saying what was already said by which button had been pressed.
+
+     THE METER, because it answered "is the microphone reaching the page" and
+     the panel under it answers the same question better: a note that moves and
+     a chord that changes ARE the microphone working, and a panel that says
+     nothing at all while somebody plays says it just as plainly.
+
+     THE CROSS, because this is a panel over the page and a panel over the page
+     is closed by pressing the page. Which is what the rest of this app does:
+     the small panels under a button, the dial's own panel, the dialogs. The
+     press that lands outside is the one that means "done with this", and it
+     ends the whole thing, mode and all, because there is nothing else here to
+     be done with.
+
+     ON THE WAY DOWN, so a press on the song is the press that closes this
+     rather than the second one, and not on the button that opened it: pressing
+     that again is asking for it to shut, which it already does (see askEar). */
+  function earOutside(event) {
+    if (!ear) return;
+    if (ear.contains(event.target)) return;
+    var door = event.target.closest &&
+      event.target.closest('[aria-label="כיוון הגיטרה"], .tape-bar, .ear-door');
+    if (door) return;
+    /* WITH A TAKE RUNNING, WHAT CLOSES IS THE TUNER AND NOT THE BAND. The
+       recording is still going and what belongs to it is the chords, so the
+       press that means "done with the tuner" hands the panel back to them
+       rather than ending a take somebody is in the middle of. */
+    if (earMode === "tune" && taping()) {
+      earMode = "chord";
+      return earTab();
+    }
+    shutEar();
+  }
+
   function buildEar() {
     ear = el("div", "ear");
 
-    var tabs = el("div", "ear-tabs");
-    var tune = el("button", "ear-tab", "כיוון");
-    tune.type = "button";
-    tune.addEventListener("click", function () { earMode = "tune"; earTab(); });
-    var chord = el("button", "ear-tab", "אקורדים");
-    chord.type = "button";
-    chord.addEventListener("click", function () { earMode = "chord"; earTab(); });
-    tabs.appendChild(tune);
-    tabs.appendChild(chord);
-    tabs.appendChild(el("span", "ear-gap"));
-    /* HOW LOUD IT IS HEARING, on both tabs and always. Everything else here
-       can be wrong for a dozen reasons; a bar that does not move at all means
-       one thing only, and it is the first thing to check. */
-    var meter = el("span", "ear-level");
-    var lit = el("span", "ear-lit");
-    meter.appendChild(lit);
-    meter.title = "כמה חזק המיקרופון שומע";
-    tabs.appendChild(meter);
-    tabs.appendChild(iconBtn(ICON.close, "סגירה", shutEar));
-
     var body = el("div", "ear-body");
-    ear.appendChild(tabs);
     ear.appendChild(body);
 
-    earParts = {
-      tabs: [tune, chord], body: body, lit: lit,
-      tune: buildTune(), chord: buildChord(),
-    };
+    earParts = { body: body, tune: buildTune(), chord: buildChord() };
     document.body.appendChild(ear);
     document.body.classList.add("on-ear");
+    document.addEventListener("pointerdown", earOutside, true);
     earTab();
     paintHeader();
   }
 
   function earTab() {
     if (!ear) return;
-    earParts.tabs[0].classList.toggle("is-on", earMode === "tune");
-    earParts.tabs[1].classList.toggle("is-on", earMode === "chord");
     earParts.body.innerHTML = "";
     earParts.body.appendChild(earMode === "tune" ? earParts.tune.node : earParts.chord.node);
     /* The other tab's answer is about a sound that is no longer being made,
@@ -13837,6 +13872,14 @@
     }
 
     var midi = Math.round(r.midi);
+    /* AND THE PANEL OPENS WITHOUT THE ROW THE NOTE GOES IN. It is the height of
+       a forty pixel letter, and before a string has been plucked there is
+       nothing in it: a band of empty white over the dial, which is most of what
+       the panel is at the moment somebody opens it. So the room is made when
+       there is something to put in it, and then kept: the reading goes quiet
+       between one pluck and the next, and a row that came and went with it
+       would be a panel breathing while somebody tunes. */
+    t.node.classList.add("has-read");
     /* The needle is eased towards the reading, and thrown straight to it when
        the note changes: following a decaying string smoothly is right, and
        sliding across four semitones because somebody moved to the next string
@@ -14568,10 +14611,9 @@
     earLast = now;
 
     var r = earMode === "tune" ? window.CHORDS_EAR.note() : window.CHORDS_EAR.chord();
-    /* Loud enough to be worth looking at, on a scale where a strummed guitar a
-       metre away is most of the way across. Rooted so that a quiet room reads
-       as a quiet room and not as a broken microphone. */
-    earParts.lit.style.width = Math.min(100, Math.round(Math.sqrt(r.rms / 0.25) * 100)) + "%";
+    /* THERE WAS A LOUDNESS BAR HERE and it is gone with the lid it stood on
+       (see buildEar). The reading itself still carries the loudness, and the
+       two panels use it: what is drawn is quiet or it is not. */
     if (earMode === "tune") paintTune(r);
     else paintChord(r);
   }

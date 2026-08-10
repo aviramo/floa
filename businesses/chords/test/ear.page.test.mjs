@@ -210,7 +210,6 @@ const CHORD_READ = `(() => {
     heard: (document.querySelector(".heard-now") || {}).textContent,
     bars: [...document.querySelectorAll(".cx-fill")].map((b) => parseInt(b.style.height, 10) || 0),
     tape: (document.querySelector(".ear-tape") || {}).textContent,
-    level: (document.querySelector(".ear-lit") || { style: {} }).style.width,
     rows, marked,
     sheet: [...document.querySelectorAll(".sheet .chord")].map((c) => c.textContent),
     errors: window.__errors,
@@ -457,7 +456,10 @@ try {
         heard.taping === true, JSON.stringify({ taping: heard.taping }));
       check("and while it runs there is one button and it holds",
         heard.keys === 1, heard.keys + " buttons");
-      check("it says how loud it is hearing", heard.level && heard.level !== "0%", String(heard.level));
+      /* THERE WAS A LOUDNESS BAR HERE and a check that it moved. Both are gone
+         with the lid the bar stood on (see buildEar): what says the microphone
+         is reaching the page is the panel naming a chord, which is the next
+         check but one and a better answer than a moving bar ever was. */
       check("an A minor chord is heard as A minor", heard.heard === "Am", String(heard.heard));
       check("and written down as it was heard", (heard.tape || "").indexOf("Am") >= 0, JSON.stringify(heard.tape));
 
@@ -578,8 +580,19 @@ try {
         again.on && again.marks === 1 && again.heard === 0,
         JSON.stringify({ on: again.on, marks: again.marks, heard: again.heard }));
 
-      /* --- the other tab ---------------------------------------------------- */
-      await evaluate('JSON.stringify((window.__sound = "note", [...document.querySelectorAll(".ear-tab")][0].click(), true))');
+      /* --- AND THE TUNER, WHICH IS A DOOR AND NOT A TAB ----------------------
+         The band had two tabs at the top of it and it has none: there is a
+         door per side now, and on a song the tuner's door is a row in the
+         panel behind the three dots (see songRows in app.js). */
+      await evaluate(`JSON.stringify((window.__sound = "note",
+        document.querySelector('#topActions [aria-label="עוד"]').click(), true))`);
+      await sleep(250);
+      await evaluate(`JSON.stringify((function () {
+        var row = [...document.querySelectorAll(".print-menu .btn")]
+          .find(function (b) { return b.getAttribute("aria-label") === "כיוון הגיטרה"; });
+        if (row) row.click();
+        return !!row;
+      })())`);
       await sleep(700);
       const note = await evaluate(NOTE_READ);
       check("a 110 hertz string is named A", note.name === "A", JSON.stringify(note));
@@ -597,7 +610,13 @@ try {
          holds the take and asks what to do with it in the same press: that is
          what pausing is for. There is no third state on the screen, because
          closing the question carries on. */
-      await evaluate('JSON.stringify((window.__sound = "chord", [...document.querySelectorAll(".ear-tab")][1].click(), true))');
+      /* And back to the chords by pressing the song, which is how every panel
+         in this app is put away. With a take running that press ends the
+         TUNER and not the band: the recording is still going and what belongs
+         to it is the chords (see earOutside). */
+      await evaluate(`JSON.stringify((window.__sound = "chord",
+        document.querySelector(".sheet").dispatchEvent(
+          new PointerEvent("pointerdown", { bubbles: true })), true))`);
       await until(evaluate, 'document.querySelector(".tape-bar .icon-btn")');
       await sleep(400);
 
