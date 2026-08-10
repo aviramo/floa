@@ -6262,6 +6262,29 @@
     if (!dlg.sheeted) {
       dlg.sheeted = true;
       gripUp(dlg, function () { dlg.close(); });
+    }
+    showOver(dlg);
+  }
+
+  /* --- AND ONE OF THEM IS NOT A SHEET --------------------------------------
+     The account panel, which is the one thing over the page that is not about
+     the page under it: it opens in the middle of the screen and it has no bar
+     to push down, because it did not come up from an edge (see .dlg.pop in the
+     stylesheet). Everything else a dialog here is given, it is given: the dark,
+     the press outside, Escape and back.
+
+     What it does without is gripUp, and that is the whole difference. A grip
+     on a panel standing in the middle of the screen would be a handle offering
+     a gesture that has nowhere to go. */
+  function openPop(dlg) {
+    showOver(dlg);
+  }
+
+  /* Everything both of them are, less the shape: this is what a dialog here
+     gets that the browser does not hand it. */
+  function showOver(dlg) {
+    if (!dlg.wired) {
+      dlg.wired = true;
       /* The dark belongs to the dialog element itself, so a press that lands
          on the element and not on anything inside it is a press outside. */
       dlg.addEventListener("pointerdown", function (event) {
@@ -6342,7 +6365,7 @@
     /* THERE IS NO ביטול IN HERE ANY MORE. A panel with nothing typed into it
        has nothing to cancel, and the two ways out of a panel are the two ways
        out of everything: a press on the page behind it, or back. */
-    openSheet(dlg);
+    openPop(dlg);
   }
 
   /* THERE IS ONE WAY IN AND IT IS ONE BUTTON. A panel offering a choice of

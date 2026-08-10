@@ -50,7 +50,12 @@
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-<dialog id="meDialog" class="dlg">
+<!-- NOT A SHEET. Every other panel over the page is about the song under it and
+     rises from the foot of the screen over the thing it belongs to; this one is
+     about the account, it belongs to no page in particular, and it opens in the
+     middle of the screen with no bar to push it back down. See .dlg.pop in the
+     stylesheet and openPop in app.js. -->
+<dialog id="meDialog" class="dlg pop">
   <form class="dlg-in" id="meForm">
     <!-- AND THE PANEL OPENS ONTO ITS OWN NAME. A dialog with nothing marked
          hands the focus to the first thing inside it that can take one, which

@@ -2658,9 +2658,10 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 
 /* --- ONE SHEET, AND EVERYTHING OVER THE PAGE IS IT -------------------------
    The tuner, the handful of rows behind a button in the bar, the panel of the
-   song's facts, and every dialog. One shape, arriving from one edge, with one
-   bar across the top of it, so that a panel is read once and recognised after
-   that (see openSheet in app.js).
+   song's facts, and every dialog about a song. One shape, arriving from one
+   edge, with one bar across the top of it, so that a panel is read once and
+   recognised after that (see openSheet in app.js). The account is the one
+   exception, and it is at the end of this section.
 
    AT THE FOOT OF THE SCREEN AND NOT IN THE MIDDLE OF IT. A panel in the middle
    is a thing the page was interrupted by; a panel at the bottom is a thing
@@ -2765,6 +2766,44 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   .dlg, .dlg::backdrop { transition: none; }
   .dlg { transform: none; }
 }
+/* --- AND ONE PANEL IS NOT A SHEET ----------------------------------------
+   The account. Everything else that comes up over the page is about the song
+   under it: the facts, the tuner, the recording, and a sheet rising over the
+   thing it belongs to is the right shape for that, because the page stays the
+   page and the panel is a thing reached for.
+
+   The account is not about the song, and it is not about the page either. It
+   is the one panel that interrupts, and a panel that interrupts belongs in the
+   middle of the screen: it opens where the eye already is, it wears the same
+   corner on all four sides because no edge of it is anchored to anything, and
+   there is nothing to push down because it did not come up from anywhere.
+
+   So no grip either (see openPop in app.js), and the two ways out of it are
+   the two ways out of everything: a press on the dark behind it, or back. */
+.dlg.pop {
+  /* the middle of the window, in both directions */
+  margin: auto;
+  border-radius: var(--radius);
+  box-shadow: 0 1px 3px rgba(23, 32, 42, .1), 0 18px 60px rgba(23, 32, 42, .22);
+  /* and off the edges of a narrow screen, which the sheet never had to be */
+  width: calc(100% - 32px);
+}
+/* THE ROOM AT THE TOP IS THE PANEL'S OWN NOW. On a sheet the bar across the
+   top is what holds the heading off the edge, so the column under it starts
+   almost flush; with no bar there is nothing there, and the heading would sit
+   on the corner. */
+.pop .dlg-in { padding: 24px; }
+
+/* IT COMES UP OUT OF ITSELF, rather than up from an edge. A shape that grows
+   the last few percent into place says the same thing the rise from the foot
+   of the screen says, that this arrived and the page under it is still the
+   page, without claiming it came from a direction it did not come from. */
+.dlg.pop { transform: scale(.96); }
+.dlg.pop[open] { transform: none; }
+@starting-style {
+  .dlg.pop[open] { transform: scale(.96); }
+}
+
 /* A panel that explains a mark shows the mark, at the size of the words next
    to it rather than of an illustration: it is a heading with a symbol in it,
    not a picture with a caption. */
