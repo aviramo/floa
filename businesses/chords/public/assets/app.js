@@ -5299,13 +5299,24 @@
          matters is the way in. */
       if (!auth.in) return fill(bar, [session()]);
       if (p.length === 1) {
-        return fill(bar, [
-          keep("newEvening", function () {
+        var evs = [];
+        /* THE SAME PLACE THE LIBRARY'S OWN ADD BUTTON STANDS. On a desk it is
+           a button in the corner with its word on it; on a phone the bar takes
+           the word off everything it holds, and a green plus between two grey
+           pictures says nothing about what it makes. So it comes down to the
+           row over the wall, written out, exactly as adding a song does (see
+           the chip in viewEvenings and the one in the library). */
+        if (!NARROW.matches) {
+          evs.push(keep("newEvening", function () {
             return button("אירוע חדש", ICON.plus, "small", newEvening);
-          }),
-          tuner(),
-          more(),
-        ]);
+          }));
+        }
+        /* AND NO TUNING FORK HERE. It stands beside the dots on the pages
+           about songs, where somebody has a guitar in both hands; this page is
+           a diary of dates and rooms, and nobody tunes on it. It is one press
+           away on every song, which is where the tuning happens. */
+        evs.push(more());
+        return fill(bar, evs);
       }
       /* An evening that is open: the two things there are to do to the whole
          of it, behind one picture, in the panel that says what each of them is
@@ -12795,6 +12806,49 @@
         app.appendChild(empty);
         return;
       }
+
+      /* --- AND THE WAY TO ADD ONE STANDS OVER THE WALL, ON A PHONE ----------
+         The library moved its own add button down here for a reason that is
+         true of this page word for word: on a phone the bar strips the word
+         off every button it holds, and what was left was a green plus among
+         small grey pictures, the one thing on the bar somebody came here to
+         DO and the one thing that could not say so. This row has the room to
+         write it out.
+
+         The same chip, in the same place, from the same width down (see
+         addChip in the library), because a wall of evenings and a wall of
+         songs are the same page asked about two things.
+
+         Built once and handed back, so a repaint cannot leave anything
+         pointing at a button that has left the document. */
+      var overWall = el("div", "kinds-row");
+      var row = el("div", "tallies");
+      overWall.appendChild(row);
+      app.appendChild(overWall);
+
+      var addEvening = null;
+      function addChip() {
+        if (addEvening) return addEvening;
+        addEvening = el("button", "tally tally-add");
+        addEvening.type = "button";
+        addEvening.appendChild(svg(ICON.plus));
+        addEvening.appendChild(el("span", "tally-l", "הוספת אירוע"));
+        addEvening.title = "אירוע חדש";
+        addEvening.addEventListener("click", newEvening);
+        return addEvening;
+      }
+
+      /* Which of the two places it stands in is a width, and a width changes
+         under a window that is already open, so the media query calls this
+         again (see NARROW). An empty row is still a row, with a margin under
+         it, so on a desk it is not drawn at all. */
+      function rehome() {
+        row.textContent = "";
+        if (NARROW.matches) row.appendChild(addChip());
+        overWall.hidden = !row.firstChild;
+      }
+      rehome();
+      state.rehome = rehome;
 
       /* THE SAME WALL THE SONGS STAND IN. An evening is a card like a song is
          a card, so it is the same list, in the same columns, at the same

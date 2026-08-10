@@ -903,6 +903,12 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    anything else lines up with that line. */
 .list.band a { align-items: center; }
 .list.band .side { align-self: auto; justify-content: center; }
+/* AND THE NAME ON ONE OF THESE IS SMALLER THAN THE NAME ON A SONG. A band
+   stands ABOVE the wall the page is for, and it was set in the same seventeen
+   pixels: two or three shelves in the type of the thing they are shelves of,
+   which made the first screen of the library read as two walls of equal
+   weight. It is a way in, not the thing. */
+.list.band .t { font-size: 15px; }
 
 /* Which shelf this is. Quiet and centred: it is a label on a shelf, not a
    heading somebody is meant to read before the shelf.
@@ -1185,9 +1191,17 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   font-size: 12px; font-weight: 700; line-height: 1.6;
   border-radius: var(--corner); padding: 1px 10px; white-space: nowrap;
 }
-.review-tag, .tag-imported, .tag-offer, .tag-review, .tag-draft, .tag-published {
+.review-tag, .tag-imported, .tag-offer, .tag-review, .tag-draft, .tag-published,
+.tag-count {
   color: var(--state-ink); background: var(--state-soft);
 }
+/* The number a shelf or a person holds, and nothing but the number: what it
+   counts is the songs, which is what every card in the app is made of, so the
+   word for it was the same word on every card in the band (see countTag). It
+   is centred in its own line rather than sitting on the baseline of the name,
+   because a chip has a box around it and a box lined up by the letters inside
+   it reads as having slipped. */
+.tag-count { align-self: center; font-variant-numeric: tabular-nums; }
 
 /* --- WHAT KIND OF THING THIS IS -------------------------------------------
    The four above say what state a song is in. These say what a thing IS: a
@@ -1861,7 +1875,13 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 .sheet:not(.ed) 
 .ln-t .gap { user-select: none; -webkit-user-select: none; }
 
-.ln { position: relative; margin-bottom: .45em; }
+/* THE AIR BETWEEN ONE LINE AND THE NEXT, and it is the only air in a row: what
+   is above the words is the chords' and belongs to them. It was .45 and it is
+   .3, which is about three pixels off every line of the song, and three pixels
+   a line is a line and a half more on every screenful. A song is not prose and
+   is not read a paragraph at a time: it is read a line ahead, by somebody who
+   wants as much of the next verse in front of them as will go. */
+.ln { position: relative; margin-bottom: .3em; }
 /* IN SONG SIZES, NOT IN EM. An em here is the APP's sixteen pixels, because
    the lane inherits the page's font and only .ln-t is set in the song's, so
    this was a fixed fifteen pixels at every size the song was ever read at.
@@ -1918,6 +1938,20 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   .ed .chord { top: 14px; }
 }
 .ln-t {
+  /* TWO PIXELS CLOSER THAN THE LANE LEAVES THEM. The lane is as tall as a
+     chord needs and no more, and the chord hangs out of the bottom of it into
+     the space the words' own line height leaves empty above their letters (see
+     .ln-c). This takes two more pixels of that space, from the side the words
+     are on: the chord does not move, the words come up to it.
+
+     Which is the only way round it works. Shortening the LANE moves the chord
+     up with it, because the chord is placed at the lane's top, and the two
+     arrive at the words no closer than they were, one row higher.
+
+     A chord that floats is a chord you have to look twice at to attach to a
+     syllable, and the tick under it (see .chord::after) is drawn to touch the
+     letters rather than to point at them from across a gap. */
+  margin-top: -2px;
   white-space: pre;
   font-size: var(--song-size);
   /* Bold, because the words are what is being read from across a room with a
