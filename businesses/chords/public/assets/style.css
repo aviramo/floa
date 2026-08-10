@@ -1659,10 +1659,11 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    What gives way instead is the search box beside it, which is a field and
    loses nothing by being narrower. Empty on every page but a song, and an
    empty box still spends the row's gap, so it goes when it is empty. */
-/* Nothing stands beside the name any more: who wrote the song is the line
-   under it (see .top-under) and what state it is in is a dot on the three dots
-   (see .has-news). The slot is kept because the bar is built once and a page
-   may yet want it; empty, it takes nothing. */
+/* Nothing of the SONG'S stands here any more: who wrote it is the line under
+   its name (see .top-under) and what state it is in is a dot on the three dots
+   (see .has-news). What the slot holds now is what a page has to say about
+   itself in a word or a number, which so far is one page and one number: what
+   the readings cost (see .top-bill). Empty, it takes nothing. */
 .top-facts {
   flex: none; display: flex; align-items: center; gap: 8px;
   margin-inline-start: -10px;
@@ -1678,7 +1679,9 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 
    It shrinks with the name above it rather than pushing anything: a bar that
    grew a second line of its own would take that line off the top of every
-   song. Empty on every page but a song, and empty is nothing. */
+   song. Empty on all but two pages, and empty is nothing: the other is the
+   bill, where what stands here is what the total up beside the name is made
+   of (see viewReads). */
 .top-under {
   max-width: 100%;
   font-size: 12px; line-height: 1.25; color: var(--ink-soft);

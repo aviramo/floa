@@ -7661,11 +7661,35 @@
          page saying its own name twice before showing anything. What stood
          under it explained what a row here is, to somebody who is the only one
          who can open this page and who put every one of those rows here. The
-         page opens on the money now, which is what it is for. */
+         money the page is for is on the bar, with the name (see below), so
+         the page itself opens straight on the readings. */
 
+      /* --- AND THE TOTAL IS ON THE BAR, BESIDE THE NAME OF THE PAGE --------
+         It was the first line of the page: the sum big, the count beside it,
+         and the controls under them. Which is the right answer in the wrong
+         place. The bar is where this app says what a page is, and the money
+         IS what this page is: פענוח and what it cost read as one line, the
+         way a song's name and who wrote it do a page later.
+
+         And it is the line that does not scroll away. "What is this costing
+         me" is asked at the bottom of forty rows as often as at the top of
+         them, and a total that leaves the screen with the first scroll is an
+         answer you have to go back up for.
+
+         What the total is made OF goes under the name, in the small line: how
+         many readings, and how many of them are prices nobody knows, because
+         a total that quietly leaves rows out is a total that is wrong.
+
+         Nothing on an empty page, where a 0 beside the name would be the bar
+         answering a question the page below it says nobody has asked yet. */
       var bill = billOf(rows);
-      var sum = el("div", "read-sum");
-      app.appendChild(sum);
+      if (bill.n) {
+        var beside = document.getElementById("topFacts");
+        if (beside) beside.appendChild(el("span", "top-bill", billSaid(bill) || "בלי מחיר"));
+        var many = bill.n + (bill.n === 1 ? " פענוח" : " פענוחים");
+        if (bill.unknown) many += ", " + bill.unknown + " מהם בלי מחיר";
+        whereUnder(many);
+      }
 
       var controls = el("div", "kinds-row");
       var orders = el("div", "tallies");
@@ -7680,19 +7704,6 @@
       var after = el("div", "after-list");
       after.appendChild(actions);
       app.appendChild(after);
-
-      /* --- the whole of it, in one line ---
-         The count and the total, over everything: the first thing anybody
-         opening a page of prices wants is the price of the lot. */
-      function paintSum() {
-        sum.textContent = "";
-        sum.appendChild(el("span", "read-total", billSaid(bill) || "בלי מחיר"));
-        var said = bill.n + (bill.n === 1 ? " פענוח" : " פענוחים");
-        /* and a reading whose price nobody knows is said, because a total that
-           quietly leaves rows out is a total that is wrong */
-        if (bill.unknown) said += ", " + bill.unknown + " מהם בלי מחיר";
-        sum.appendChild(el("span", "read-n", said));
-      }
 
       function paintControls() {
         orders.textContent = "";
@@ -7873,7 +7884,6 @@
         return el("div", "t", title);
       }
 
-      paintSum();
       paintControls();
       paintRows();
     }).catch(fail);
