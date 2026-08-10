@@ -125,13 +125,8 @@
        are the ones on «who wrote the tune», because a note is a note wherever
        it is drawn here. */
     chordsOnly: '<path d="M3.5 20.5h17"/><path d="M8 5.5v6.6"/><ellipse cx="6.3" cy="12.6" rx="1.8" ry="1.5" fill="currentColor" stroke="none"/><path d="M17 5.5v6.6"/><ellipse cx="15.3" cy="12.6" rx="1.8" ry="1.5" fill="currentColor" stroke="none"/>',
-    /* the question mark itself: the hook, the stem and the dot. Drawn to the
-       full height of the box like every other icon here, so that at fifteen
-       pixels it is a question mark and not a speck. */
-    help: '<path d="M8.4 8.6a3.6 3.6 0 1 1 3.6 3.9V15"/><path d="M12 18.7h.01"/>',
     /* The i in its ring, the way every app draws "there is more to know about
-       this here". The dot first and the stem under it, the same two strokes
-       the question mark above is drawn with and in the same order. */
+       this here". The dot first and the stem under it. */
     info: '<circle cx="12" cy="12" r="9"/><path d="M12 7.9h.01"/><path d="M12 11.4v5"/>',
     /* --- the one control over a song, as a picture ---
        There were three: a note for the key, two letters of different sizes for
@@ -3332,26 +3327,50 @@
     if (paper) return;
 
     var room = plan.pageH - PAGE_AIR * 2;
-    Array.prototype.forEach.call(sheet.querySelectorAll(".page .col"), function (col) {
-      var rows = Array.prototype.slice.call(col.children);
-      if (rows.length < 2) return;
 
+    /* ONE SHARE FOR THE WHOLE PAGE, AND IT IS THE SMALLEST ANY SEGMENT ASKS
+       FOR. Segments are filled one after another until the song runs out, so
+       the first is full to the bottom and the last is however much was left:
+       spread each to its own bottom and two segments standing side by side get
+       two different rhythms, one airy and one tight, which is a page that
+       looks broken rather than a page that looks full.
+
+       So the fullest segment on the page decides, and the others keep step. A
+       page of several segments is usually covered already, because the first
+       of them reaches the bottom and a short last segment is what the end of a
+       chapter looks like in any book. What this is really for is the one
+       segment on a phone, where nothing else is standing beside the song to
+       cover the page for it. */
+    var each = Infinity;
+    var cap = 0;
+    var cols = Array.prototype.slice.call(sheet.querySelectorAll(".page .col"));
+    var seen = cols.map(function (col) {
+      var rows = Array.prototype.slice.call(col.children);
       var used = 0;
-      var tallest = 0;
+      /* MEASURED WITH THE FRACTIONS ON. offsetHeight is a whole number of
+         pixels and a row is not: over thirty of them the halves that were
+         rounded away add up to most of a line, and the page comes out that
+         much taller than the window it was spread to fill. */
       var margins = rows.map(function (ln) {
         var margin = parseFloat(getComputedStyle(ln).marginBottom) || 0;
-        used += ln.offsetHeight + margin;
-        if (ln.offsetHeight > tallest) tallest = ln.offsetHeight;
+        var tall = ln.getBoundingClientRect().height;
+        used += tall + margin;
+        if (tall > cap) cap = tall;
         return margin;
       });
+      /* A segment with one row in it cannot be spread and does not get a say:
+         there is no gap in it to put the air into. */
+      if (rows.length > 1) each = Math.min(each, (room - used) / (rows.length - 1));
+      return { rows: rows, margins: margins };
+    });
 
-      var slack = room - used;
-      if (!(slack > 0) || !(tallest > 0)) return;
+    if (!(each > 0) || !(cap > 0) || each === Infinity) return;
+    each = Math.min(each, cap);
 
-      var each = Math.min(slack / (rows.length - 1), tallest);
-      rows.forEach(function (ln, i) {
-        if (i === rows.length - 1) return;
-        ln.style.marginBottom = (margins[i] + each) + "px";
+    seen.forEach(function (col) {
+      col.rows.forEach(function (ln, i) {
+        if (i === col.rows.length - 1) return;
+        ln.style.marginBottom = (col.margins[i] + each) + "px";
       });
     });
   }
@@ -10818,12 +10837,9 @@
        line and the next, where nothing is being read, and it is out of the way
        of the words and of the chords above them. Typing dismisses it.
 
-       A QUESTION MARK HANGS UNDER IT, because this is the one thing in the
-       editor that nobody arrives already knowing. Everything else here is a
-       picture of a thing people have done before: undo, print, delete. An arc
-       that appears under a word and pushes its letters apart is this app's own
-       idea, and an idea gets one sentence offered at the moment it is on the
-       screen, not a page somewhere that has to be gone looking for. */
+       A QUESTION MARK HUNG UNDER IT ONCE, and it opened a panel that said what
+       an artificial gap is. It is gone: the offer is one button now, and one
+       button is the whole of what a click into a line asks for. */
     var gapOffer = null;
 
     function hideGap() {
@@ -10834,46 +10850,7 @@
     }
 
     function gapOutside(event) {
-      /* THE EXPLANATION IS NOT OUTSIDE. It is opened by one of these buttons
-         and it covers the page, so a press on it, or on the dark behind it, is
-         a press on this offer: dismissing the offer while somebody is reading
-         what it does would leave them with nothing to press when they finish. */
-      if (event.target && event.target.closest && event.target.closest("dialog")) return;
       if (gapOffer && !gapOffer.contains(event.target)) hideGap();
-    }
-
-    /* What the arc means, in the words of somebody who has just seen one and
-       does not know what it is. Three things, in the order they matter: what
-       it is for, that it is a mark and not ink, and that the word is still the
-       word underneath it. */
-    function explainGap() {
-      var dlg = el("dialog", "dlg");
-      var box = el("div", "dlg-in");
-
-      /* THE MARK ITSELF STANDS AT THE TOP, beside its name. Somebody reading
-         this got here by pressing a shape, and the first line of an
-         explanation should be the shape they pressed: the arc on the button,
-         the arc in the panel and the arc under the letters are one thing, and
-         seeing them together is most of the explanation. */
-      var head = el("div", "dlg-head");
-      head.appendChild(svg(ICON.gap));
-      head.appendChild(el("h2", null, "רווח מלאכותי"));
-      box.appendChild(head);
-      box.appendChild(el("p", null,
-        "לשני אקורדים מעל מילה קצרה אין מספיק אותיות לשבת עליהן, והשני נדחף הצידה עד שהוא כבר לא מעל שום הברה. רווח מלאכותי פותח מקום בתוך המילה בדיוק בשביל זה: האותיות מתרחקות זו מזו על המסך, לאקורד יש איפה לעמוד, והמילה נשארת מילה אחת ולא נשברת לשתיים."));
-      box.appendChild(el("p", null,
-        "הקשת מתחת לאותיות היא הסימן שלו, והיא נראית רק כאן בעריכה. בדף שקוראים ממנו ובהדפסה אין שום סימן, יש רק את המקום."));
-      box.appendChild(el("p", null,
-        "והוא לא חלק מהמילה. החיפוש קורא את השיר בלי הרווחים האלה, ולכן מילה שנפתח בתוכה רווח עדיין נמצאת כשמחפשים אותה. כל לחיצה על הקשת פותחת רווח אחד, ולוחצים שוב כדי להרחיב."));
-
-      var actions = el("div", "dlg-actions");
-      actions.appendChild(button("הבנתי", null, "ghost", function () { dlg.close(); }));
-      box.appendChild(actions);
-
-      dlg.appendChild(box);
-      document.body.appendChild(dlg);
-      dlg.addEventListener("close", function () { dlg.remove(); });
-      openSheet(dlg);
     }
 
     function offerGap(ln, line, editable) {
@@ -10895,33 +10872,31 @@
 
       gapOffer = el("div", "gap-offer");
 
-      /* the caret is the whole of where this will go, so a press on either
-         button must not take it away first */
-      var hold = function (node) {
-        node.addEventListener("pointerdown", function (event) { event.preventDefault(); });
-        node.type = "button";
-        gapOffer.appendChild(node);
-        return node;
-      };
+      /* THERE WERE THREE BUTTONS HERE, and there is one.
 
-      /* THERE WAS A THIRD BUTTON HERE, and it put a chord on the character the
-         caret stood in front of. It was written because the lane over the words
-         was eleven pixels of strip that a finger could not land on, and it is
-         gone because the lane is not that any more: on a phone it is a strip
-         with reach over it, and a press on it puts a chord down where the thumb
-         is, in one gesture where this was two. One way in is better than two,
-         and the one that is left is the one that has always been there. */
-      var open = hold(el("button", "gap-btn gap-do"));
+         One of them put a chord on the character the caret stood in front of.
+         It was written because the lane over the words was eleven pixels of
+         strip that a finger could not land on, and it is gone because the lane
+         is not that any more: on a phone it is a strip with reach over it, and
+         a press on it puts a chord down where the thumb is, in one gesture
+         where this was two.
+
+         One of them was a question mark that opened a panel about what an
+         artificial gap is. An explanation is not something to press by
+         accident while reaching for the thing it explains.
+
+         One way in is better than three, and the one that is left is the one
+         that has always been there. */
+      var open = el("button", "gap-btn gap-do");
+      open.type = "button";
       open.title = "לפתוח רווח בין האותיות, בלי לשבור את המילה";
       open.setAttribute("aria-label", open.title);
       open.appendChild(svg(ICON.gap));
+      /* the caret is the whole of where this will go, so a press must not take
+         it away first */
+      open.addEventListener("pointerdown", function (event) { event.preventDefault(); });
       open.addEventListener("click", function () { openGap(ln, line, editable, at); });
-
-      var why = hold(el("button", "gap-btn gap-why"));
-      why.title = "מה זה רווח מלאכותי";
-      why.setAttribute("aria-label", why.title);
-      why.appendChild(svg(ICON.help));
-      why.addEventListener("click", explainGap);
+      gapOffer.appendChild(open);
 
       document.body.appendChild(gapOffer);
 

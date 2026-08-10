@@ -2319,18 +2319,14 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 }
 
 
-/* The button that opens one, and under it the one that says what it is. Under
-   the letters, in the air between two lines, because they are the answer to a
-   click and not a thing the page has: out of the way of the words and of the
-   chords over them, and gone the moment anything is typed. Small, for the same
-   reason.
+/* The button that opens one. Under the letters, in the air between two lines,
+   because it is the answer to a click and not a thing the page has: out of the
+   way of the words and of the chords over them, and gone the moment anything
+   is typed. Small, for the same reason.
 
-   THE STACK CARRIES THE POSITION, not the buttons: one thing to place under
-   the letter, one thing to ask whether a press landed inside. */
-.gap-offer {
-  position: fixed; z-index: 50;
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-}
+   THE BOX AROUND IT CARRIES THE POSITION, not the button: one thing to place
+   under the letter, one thing to ask whether a press landed inside. */
+.gap-offer { position: fixed; z-index: 50; }
 .gap-btn {
   display: flex; align-items: center; justify-content: center;
   width: 26px; height: 22px; padding: 0;
@@ -2344,33 +2340,22 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 /* THE BUTTON IS DRAWN IN THE COLOUR OF WHAT IT LEAVES BEHIND. The arc it puts
    under the letters is the page's one red, so the arc on the button is that
    same red: press it, and the thing that appears is the thing that was on the
-   button. The question mark next to it does not make anything, so it stays in
-   the colour of ordinary text and lets the red one be the one that is offered. */
+   button. */
 .gap-do { color: var(--chord); }
 .gap-do:hover { border-color: var(--chord); }
-.gap-why { color: var(--ink); }
-.gap-why:hover { border-color: var(--ink); }
 
-/* ON A PHONE THE OFFER LIES DOWN, because on a phone it stands OVER the
-   letters and not under them: the caret there comes with a handle hanging
-   under it, and that drop lands on whatever the offer put there (see
-   offerGap). Above the letters the room is the chord lane, one line's worth,
-   and a stack of two would reach past it into the line above. Side by side it
-   is one button tall and covers the lane it is standing in and nothing else.
+/* ON A PHONE IT STANDS OVER the letters and not under them: the caret there
+   comes with a handle hanging under it, and that drop lands on whatever the
+   offer put there (see offerGap). Above the letters the room is the chord
+   lane, one line's worth, and one button is one button tall and covers the
+   lane it is standing in and nothing else.
 
    Bigger, too. Twenty six pixels is a size for a pointer, and what is aiming
-   at these is a thumb. */
+   at it is a thumb. */
 @media (max-width: 620px) {
-  .gap-offer { flex-direction: row; gap: 6px; }
   .gap-btn { width: 38px; height: 34px; }
   .gap-btn svg { width: 19px; height: 19px; }
 }
-
-/* The question mark was drawn smaller than the button it hangs under, to keep
-   it from competing with it. At that size it stopped being a question mark and
-   became a speck: the thing it is competing with is not the button above it,
-   it is going unnoticed. Same size, same weight, and the order of the two says
-   which is which. */
 
 /* --- the chords of a copy, offered over the next marking -------------------
    It stands off the page the same way the offer under a letter does, and it is
