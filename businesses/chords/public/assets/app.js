@@ -10532,11 +10532,13 @@
        when the song stands flat and unbroken in a single column, because the
        pouring is exactly what has not happened yet. Asked for from an event
        that arrives before the frame's own drawing, as a press does, that moment
-       is never painted. Asked for from INSIDE the frame, which is where a
-       gesture asks from (see drawSoon), the next frame is a whole frame away
-       and the flat song is painted for all of it: the song comes apart and back
-       together on every step of the pinch, and the browser lays the page out
-       and paints it twice over to show it.
+       is never painted. Asked for from INSIDE a frame, which is where a drawing
+       held back to one a frame asked from, the next frame is a whole frame away
+       and the flat song is painted for all of it: the song came apart and back
+       together on every step of the pinch, and the browser laid the page out
+       and painted it twice over to show it. A gesture does not ask at all now
+       (see zoomOff), but a resize still does, and the hazard is the drawing's
+       rather than the caller's.
 
        So `draw(true)` pours in the same frame it built in. Which is safe for
        the same reason the hazard above exists: a drawing builds its rows out of
@@ -10723,37 +10725,41 @@
       repage();
     }
 
-    /* ONE DRAWING A FRAME, HOWEVER MANY STEPS ASK FOR ONE.
+    /* ONE DRAWING A GESTURE, AND NOT ONE A FRAME.
 
        The size used to be two buttons and a press was a drawing, so a drawing
        a step was a drawing. It is a gesture now: a wheel sends dozens of events
-       a second and two fingers send one for every pixel they move, and a
-       drawing is the whole song taken apart, every line broken again and every
-       letter of it measured. Done once an event they pile up behind the hand,
-       the frame the browser wanted to paint never comes, and the page answers a
-       pinch that finished a second ago. That is the whole of why the size felt
-       heavy: not the arithmetic, the drawings nobody could see.
+       a second and two fingers send one for every pixel they move. Held back to
+       one drawing a frame, which is where this was, the words still moved in
+       steps, and the reason is that a drawing does not fit in a frame.
 
-       THE WORDS GROW AT ONCE ALL THE SAME, because the size itself is one
-       custom property and the browser answers it on the next frame for free.
-       What waits for the frame is where the lines break and where the chords
-       land, and those are exactly what nobody can read mid-gesture anyway. */
-    var drawing = 0;
+       WHAT A DRAWING IS: every row built again out of the song, a rectangle
+       read off every character of every line to know where it can be broken,
+       the lines poured to the width of a segment, the rows dealt out into
+       screenfuls, and then every chord measured and placed over the syllable it
+       ended up on. Tens of milliseconds on any song long enough to be worth
+       zooming, and a fresh one asked for before the last has finished. The
+       frame the browser wanted to paint the new size in never comes: the words
+       move a beat behind the hand, which is the whole of why the zoom felt
+       broken. Not the arithmetic of the gesture, the drawings between them.
 
-    function drawSoon() {
-      if (drawing) return;
-      drawing = requestAnimationFrame(function () { drawing = 0; draw(true); });
-    }
+       SO WHILE THE HAND IS ON IT, ONLY THE SIZE MOVES. That is one custom
+       property, and the browser answers it in its own layout at the rate the
+       screen refreshes: the words grow under the fingers as smoothly as they
+       are asked to, because nothing of ours runs between the frames at all.
+       What waits is where the lines break and how many segments there are, and
+       neither of those can be read mid-gesture anyway, which is the same reason
+       the number of segments was already being held still (see heldCols).
 
-    /* And when the gesture ends the page answers properly, without the frame
-       it was already promised arriving a moment later to do it all again. */
-    function drawNow() {
-      if (drawing) { cancelAnimationFrame(drawing); drawing = 0; }
-      draw(true);
-    }
+       WHAT IT COSTS is a line that has outgrown its segment standing cut off at
+       the edge of it until the hand stops. That is what a segment does with
+       anything hanging past it, and what the editor already shows while a line
+       is being typed into (see .col); on a phone there is no edge to be cut off
+       at, and there it costs nothing at all. */
 
     /* Bigger words fit in fewer places, so where the lines break is part of
-       what the size changes. Drawn again rather than measured again, since the
+       what the size changes. The page is drawn when the gesture ends and not
+       here (see zoomOff). Drawn again rather than measured again, since the
        rows themselves are different rows: writing as well as reading, because
        the lines are broken there too now. */
     function setSize(next) {
@@ -10761,7 +10767,6 @@
       if (want === size) return;
       size = want;
       sheet.style.setProperty("--song-size", size + "px");
-      drawSoon();
     }
 
     /* --- THE SIZE IS A GESTURE ------------------------------------------------
@@ -10777,9 +10782,8 @@
        screen they are on. The gesture already meant "make this bigger"; this
        is the only reading of it that works here.
 
-       Nothing is written until the number actually changes. One turn of a
-       wheel is dozens of events, and setSize redraws the whole sheet on a
-       narrow screen. */
+       Nothing is written until the number actually changes, and nothing is
+       drawn until the hand stops: one turn of a wheel is dozens of events. */
 
     /* --- WHAT A WHEEL SAYS IS NOT A NUMBER OF PIXELS --------------------------
        A browser may report a turn in pixels, in LINES or in pages, and it says
@@ -10816,11 +10820,58 @@
 
     var wheeled = 0;
 
+    /* --- WHERE A GESTURE STARTS AND WHERE IT IS OVER --------------------------
+       Both ends are needed now, because the page is held still between them and
+       drawn once at the far one.
+
+       HOW MANY SEGMENTS THERE ARE IS SETTLED FOR AS LONG AS THE HAND IS ON IT.
+       The words follow the gesture, as they must, or it has no answer at all;
+       but a page that comes apart into a different number of segments halfway
+       through is a page moving under the hand that is trying to hold it. Asked
+       again, once, at the end.
+
+       AND A WHEEL HAS NO «LET GO». Two fingers leave the glass and say so; a
+       wheel says it has stopped only by not saying anything for a moment. A
+       sixth of a second is longer than the gap between two reports of one turn
+       and shorter than the pause between two turns meant as two things. */
+    var REST = 160;
+    var resting = 0;
+    var zoomFrom = 0;
+    var zooming = 0;
+
+    function zoomOn() {
+      if (zooming) return;
+      zooming = 1;
+      zoomFrom = size;
+      heldCols = lastCols;
+    }
+
+    /* AND NOW THE PAGE IS ALLOWED TO ANSWER. Drawn again only if the size
+       actually moved: a wheel turned a hair and two fingers that landed and
+       left without spreading have both asked for nothing, and redrawing the
+       song is not nothing. */
+    function zoomOff() {
+      clearTimeout(resting);
+      resting = 0;
+      if (!zooming) return;
+      zooming = 0;
+      /* Let go of the segments FIRST, and whatever happens after it. The count
+         is one number for the whole app, so a song left mid-gesture that never
+         cleared it would hand the next song a shape it worked out for this
+         one. */
+      heldCols = 0;
+      if (!sheet.isConnected) return;
+      if (size !== zoomFrom) draw(true);
+    }
+
     sheet.addEventListener("wheel", function (event) {
       if (!event.ctrlKey) return;
       event.preventDefault();
       var px = wheelPixels(event);
       if (!px) return;
+      zoomOn();
+      clearTimeout(resting);
+      resting = setTimeout(zoomOff, REST);
       /* down is smaller, which is what a wheel means everywhere else */
       wheeled += px / (Math.abs(px) < FINE ? PER_PINCH : PER_NOTCH);
       var next = size * Math.pow(2, -wheeled);
@@ -10849,13 +10900,11 @@
     sheet.addEventListener("touchstart", function (event) {
       if (event.touches.length !== 2) return;
       pinchFrom = spread(event.touches);
+      /* WHERE THE RATIO IS COUNTED FROM, which is this pinch's own start and
+         not the gesture's: a wheel still resting when two fingers land has the
+         gesture open already, and the fingers still mean «twice this». */
       pinchSize = size;
-      /* HOW MANY SEGMENTS THERE ARE IS SETTLED FOR AS LONG AS THE FINGERS ARE
-         DOWN. The words follow the pinch and the lines break again as they
-         grow, which is the answer the gesture is asking for; the page coming
-         apart into a different number of segments halfway through is the page
-         moving under the hand holding it. Asked again below, once. */
-      heldCols = lastCols;
+      zoomOn();
     }, { passive: true });
 
     sheet.addEventListener("touchmove", function (event) {
@@ -10863,18 +10912,13 @@
       event.preventDefault();
       var now = spread(event.touches);
       if (!(now > 0)) return;
-      var want = Math.round(pinchSize * (now / pinchFrom));
-      if (want !== size) setSize(want);
+      setSize(pinchSize * (now / pinchFrom));
     }, { passive: false });
 
-    /* AND NOW THE PAGE IS ALLOWED TO ANSWER. Drawn again only if the size
-       actually moved: two fingers that landed and left without spreading have
-       asked for nothing, and redrawing the song is not nothing. */
     var pinchOff = function () {
+      if (!pinchFrom) return;
       pinchFrom = 0;
-      if (!heldCols) return;
-      heldCols = 0;
-      if (size !== pinchSize) drawNow();
+      zoomOff();
     };
     sheet.addEventListener("touchend", pinchOff);
     sheet.addEventListener("touchcancel", pinchOff);
@@ -17277,7 +17321,11 @@
      stray press, or a hand on the glass, and a performance is over. What ends
      a take is answering it, and there are exactly two answers. */
   function stopTape() {
-    if (!tape || tape.rec.state === "inactive") return;
+    /* NOT "unless the recorder has stopped". It may have stopped without the
+       take being answered: listening to it closes the microphone, and the
+       recorder goes with the microphone (see hushMic). What is left is still a
+       take waiting for an answer, and this is the button that asks. */
+    if (!tape) return;
     if (tape.rec.state === "recording") holdTape();
     gatherTape().then(function () {
       if (!tape || !tape.bits.length) return;
@@ -17488,6 +17536,14 @@
     if (audio.readyState >= 1) ask();
   }
 
+  /* Stops the recorder with it, because the recorder is made of the same
+     stream, and leaves the take exactly where it is: still held, still
+     unanswered, still on the device. What ends a take is answering it. */
+  function hushMic() {
+    if (window.CHORDS_EAR.live()) window.CHORDS_EAR.close();
+    paintTape();
+  }
+
   function alongTake(audio, marks) {
     var was = -1;
 
@@ -17558,6 +17614,21 @@
     audio.src = url;
     tellLength(audio);
     alongTake(audio, made.marks);
+    /* --- AND THE MICROPHONE GOES BEFORE THE TAKE IS HEARD --------------------
+       A take played back while the microphone is still open does not sound
+       like the take. A phone with a live capture on it is a phone in a call:
+       the sound comes out of the earpiece instead of the speaker, and the
+       echo canceller the operating system runs in that mode ducks whatever it
+       hears itself playing. Reported exactly that way, and it was the same
+       recording either side of it: bad in this panel, right once it had been
+       saved and played from the list, where nothing is listening.
+
+       ON THE FIRST PRESS OF PLAY, and not when this panel opens, which is what
+       keeps the other half of it working. Up to that press the recording is
+       merely held: dismissing this panel lifts the pause and the playing
+       carries on (see the close handler below). Pressing play is the one
+       gesture that says the playing is over and it is time to listen. */
+    audio.addEventListener("play", hushMic);
     box.appendChild(audio);
 
     var err = el("p", "err");
