@@ -2802,12 +2802,27 @@
 
   /* The measurement. Everything is taken from the LINE's own edges with real
      rectangles, so right to left is the same arithmetic read from the other
-     side rather than a second code path. */
-  function layoutLine(ln) {
+     side rather than a second code path.
+
+     ASKED FIRST AND ANSWERED AFTER, and the two are separate on purpose. A
+     rectangle is a question the browser can only answer by laying the page
+     out, and moving a chord is what makes the last answer stale: read, write,
+     read, write is the whole page laid out again between every pair of chords
+     on it. A song of two hundred and forty chords was two hundred and forty
+     layouts of sixteen hundred spans, which is most of a tenth of a second,
+     spent every time the size moved a pixel.
+
+     Nothing is lost by holding the writes back. A chord is positioned
+     absolutely and stands outside the flow, so where one is put cannot move a
+     letter, a line or another chord: the answers are as true after the whole
+     sheet has been planned as they were the instant they were given. Which is
+     why the reading can be done for every line first and the placing for every
+     line second, and the browser lays the page out once. */
+  function planLine(ln) {
     var rtl = rowRtl(ln);
     var lane = ln.querySelector(".ln-c");
     var m = metrics(ln);
-    if (!lane || !m) return;
+    if (!lane || !m) return null;
 
     /* THE MIDDLE OF THE CHARACTER, not its leading edge. A chord sits ON a
        letter, so what its own middle lines up with is the middle of that
@@ -2815,7 +2830,11 @@
        ק and a chord over the seam before it. */
     var placed = [];
     Array.prototype.forEach.call(lane.querySelectorAll(".chord"), function (node) {
-      placed.push({ node: node, start: positionOf(m, (Number(node.dataset.pos) || 0) + 0.5) });
+      placed.push({
+        node: node,
+        start: positionOf(m, (Number(node.dataset.pos) || 0) + 0.5),
+        width: node.getBoundingClientRect().width,
+      });
     });
 
     /* Two chords over neighbouring syllables would print on top of each other.
@@ -2833,8 +2852,15 @@
          why the sheet is padded (see .sheet) rather than the chord moved: what
          is stored has to be what is drawn, or the page and the song stop
          agreeing and there is no way to tell which one is lying. */
-      var width = p.node.getBoundingClientRect().width;
-      var x = Math.max(p.start - width / 2, floor);
+      p.x = Math.max(p.start - p.width / 2, floor);
+      floor = p.x + p.width + 5;
+    });
+
+    return { rtl: rtl, placed: placed };
+  }
+
+  function drawPlan(plan) {
+    plan.placed.forEach(function (p) {
       /* PHYSICAL left/right, deliberately, not inset-inline-start.
 
          A chord carries dir="ltr" so its own Latin label cannot flip inside a
@@ -2843,10 +2869,14 @@
          even when the line it belongs to runs right to left, so every chord in
          a Hebrew song lands at the wrong end of it. The distance above was
          already measured from the correct edge; name that edge outright. */
-      p.node.style.left = rtl ? "auto" : x + "px";
-      p.node.style.right = rtl ? x + "px" : "auto";
-      floor = x + width + 5;
+      p.node.style.left = plan.rtl ? "auto" : p.x + "px";
+      p.node.style.right = plan.rtl ? p.x + "px" : "auto";
     });
+  }
+
+  function layoutLine(ln) {
+    var plan = planLine(ln);
+    if (plan) drawPlan(plan);
   }
 
   /* Moves ONE chord and touches nothing else. While a chord is being dragged
@@ -2864,7 +2894,12 @@
   }
 
   function layoutAll(root) {
-    Array.prototype.forEach.call(root.querySelectorAll(".ln"), function (ln) { layoutLine(ln); });
+    var plans = [];
+    Array.prototype.forEach.call(root.querySelectorAll(".ln"), function (ln) {
+      var plan = planLine(ln);
+      if (plan) plans.push(plan);
+    });
+    plans.forEach(drawPlan);
   }
 
   /* --- THE SONG IN SCREENFULS ----------------------------------------------
@@ -4551,6 +4586,12 @@
      as the near end, and a music stand across a room is a long way away. */
   var SIZE_MAX = 96;
 
+  /* AND IT IS WRITTEN ON EVERY STEP OF THE GESTURE, which looks like the kind
+     of thing a pinch could not afford and is not: five characters to
+     localStorage does not show up in a profile of the gesture at all, next to a
+     drawing of tens of milliseconds. Held back until the hand stopped it would
+     buy nothing measurable and leave a quarter of a second in which the size on
+     the screen and the size written down are two different numbers. */
   function readingSize(next) {
     if (next != null) {
       var size = Math.max(SIZE_MIN, Math.min(SIZE_MAX, Math.round(next)));
@@ -10455,13 +10496,33 @@
        (see relayoutOn). Both queued a frame, the first poured, and the second
        poured the first one's output. Which is why a song opened cold showed
        every leftover row standing alone, and the same song after a zoom, one
-       drawing and one frame, showed them paired. */
+       drawing and one frame, showed them paired.
+
+       AND A DRAWING ASKED FOR FROM INSIDE A FRAME CANNOT USE THE NEXT ONE.
+       What the frame above buys is that second drawing pouring nothing; what
+       it costs is that between the building and the pouring there is a moment
+       when the song stands flat and unbroken in a single column, because the
+       pouring is exactly what has not happened yet. Asked for from an event
+       that arrives before the frame's own drawing, as a press does, that moment
+       is never painted. Asked for from INSIDE the frame, which is where a
+       gesture asks from (see drawSoon), the next frame is a whole frame away
+       and the flat song is painted for all of it: the song comes apart and back
+       together on every step of the pinch, and the browser lays the page out
+       and paints it twice over to show it.
+
+       So `draw(true)` pours in the same frame it built in. Which is safe for
+       the same reason the hazard above exists: a drawing builds its rows out of
+       the SONG, so what a pour at the end of one finds is never a poured row. */
     var framed = 0;
+
+    /* Where the reader was when the drawing started, for the pouring to put
+       them back at. One drawing at a time, so one number. */
+    var keptY = null;
 
     /* The sheet's own direction is the song's, which is its first line's. It
        decides where the capo chip and the headings sit; each line inside says
        which way IT runs and is laid out by that alone. */
-    function draw() {
+    function draw(now) {
       /* The frame the drawing before this one asked for was for rows that are
          about to stop existing, so it goes with them. */
       if (framed) { cancelAnimationFrame(framed); framed = 0; }
@@ -10480,7 +10541,7 @@
          Only on a REDRAW. A sheet that has nothing on it yet is a song being
          opened, and that one starts where the routing says it starts, which is
          the top or the place this reader was last time (see restoreScroll). */
-      var keepY = sheet.firstChild ? (window.scrollY || window.pageYOffset || 0) : null;
+      keptY = sheet.firstChild ? (window.scrollY || window.pageYOffset || 0) : null;
       /* NOTHING TO TELL THE DIAL. It said the chord the song opens on and had
          to be redrawn with every chord typed; what it says now is the fret,
          which a drawing does not move, and what the song is in is read off the
@@ -10540,33 +10601,36 @@
          screenfuls. The placing is last, because a chord belongs to the row
          its syllable ended up on and there is no telling which that is until
          the words have been broken. */
-      framed = requestAnimationFrame(function () {
-        framed = 0;
-        /* DEALING THE ROWS OUT MOVES THEM, and a row that is moved in the
-           document takes the caret out of itself: the browser hands focus back
-           to the page. So whoever asked for a caret before this frame (Enter,
-           a join, a paste) gets it back after it, in the same character.
-           Without this every key that redraws the song ends with the typing
-           stopped and nothing on screen saying so.
+      if (now) return void pour();
+      framed = requestAnimationFrame(pour);
+    }
 
-           REMEMBERED AS A PLACE IN THE SONG, not as a node with a number in
-           it. A line that has to be broken is not the row it was a moment ago:
-           its row is gone and two poured ones stand where it was, so a caret
-           kept as "this element, character nine" is a caret in an element
-           nobody can see any more. Kept as "line four, character nine" it
-           lands in whichever piece of line four holds character nine. */
-        var host = typing && typing.isConnected ? typing : null;
-        var index = host ? lineIndexOf(host) : -1;
-        var caret = host ? caretAt(host) : null;
-        fitColumns(sheet);
-        layoutAll(sheet);
-        /* The page is as tall as it was again, so the place it was at is a
-           place it can be at again. Before the caret and not after it: whoever
-           is typing has just been given a caret somewhere, and showing that is
-           worth more than the pixel it was at. */
-        if (keepY != null && !keepingPlace()) window.scrollTo(0, keepY);
-        if (index >= 0 && caret != null) focusLine(index, caret);
-      });
+    function pour() {
+      framed = 0;
+      /* DEALING THE ROWS OUT MOVES THEM, and a row that is moved in the
+         document takes the caret out of itself: the browser hands focus back
+         to the page. So whoever asked for a caret before this frame (Enter,
+         a join, a paste) gets it back after it, in the same character.
+         Without this every key that redraws the song ends with the typing
+         stopped and nothing on screen saying so.
+
+         REMEMBERED AS A PLACE IN THE SONG, not as a node with a number in
+         it. A line that has to be broken is not the row it was a moment ago:
+         its row is gone and two poured ones stand where it was, so a caret
+         kept as "this element, character nine" is a caret in an element
+         nobody can see any more. Kept as "line four, character nine" it
+         lands in whichever piece of line four holds character nine. */
+      var host = typing && typing.isConnected ? typing : null;
+      var index = host ? lineIndexOf(host) : -1;
+      var caret = host ? caretAt(host) : null;
+      fitColumns(sheet);
+      layoutAll(sheet);
+      /* The page is as tall as it was again, so the place it was at is a
+         place it can be at again. Before the caret and not after it: whoever
+         is typing has just been given a caret somewhere, and showing that is
+         worth more than the pixel it was at. */
+      if (keptY != null && !keepingPlace()) window.scrollTo(0, keptY);
+      if (index >= 0 && caret != null) focusLine(index, caret);
     }
 
     /* ONCE THE TYPING STOPS, and not on the keystroke. A line that has grown
@@ -10631,17 +10695,45 @@
       repage();
     }
 
+    /* ONE DRAWING A FRAME, HOWEVER MANY STEPS ASK FOR ONE.
+
+       The size used to be two buttons and a press was a drawing, so a drawing
+       a step was a drawing. It is a gesture now: a wheel sends dozens of events
+       a second and two fingers send one for every pixel they move, and a
+       drawing is the whole song taken apart, every line broken again and every
+       letter of it measured. Done once an event they pile up behind the hand,
+       the frame the browser wanted to paint never comes, and the page answers a
+       pinch that finished a second ago. That is the whole of why the size felt
+       heavy: not the arithmetic, the drawings nobody could see.
+
+       THE WORDS GROW AT ONCE ALL THE SAME, because the size itself is one
+       custom property and the browser answers it on the next frame for free.
+       What waits for the frame is where the lines break and where the chords
+       land, and those are exactly what nobody can read mid-gesture anyway. */
+    var drawing = 0;
+
+    function drawSoon() {
+      if (drawing) return;
+      drawing = requestAnimationFrame(function () { drawing = 0; draw(true); });
+    }
+
+    /* And when the gesture ends the page answers properly, without the frame
+       it was already promised arriving a moment later to do it all again. */
+    function drawNow() {
+      if (drawing) { cancelAnimationFrame(drawing); drawing = 0; }
+      draw(true);
+    }
+
     /* Bigger words fit in fewer places, so where the lines break is part of
        what the size changes. Drawn again rather than measured again, since the
-       rows themselves are different rows. */
+       rows themselves are different rows: writing as well as reading, because
+       the lines are broken there too now. */
     function setSize(next) {
-      size = readingSize(next);
+      var want = readingSize(next);
+      if (want === size) return;
+      size = want;
       sheet.style.setProperty("--song-size", size + "px");
-      /* Bigger words break in different places, so where the lines break is
-         part of what the size changes. Drawn again rather than measured
-         again, since the rows themselves are different rows: writing as well
-         as reading, because the lines are broken there too now. */
-      draw();
+      drawSoon();
     }
 
     /* --- THE SIZE IS A GESTURE ------------------------------------------------
@@ -10660,31 +10752,57 @@
        Nothing is written until the number actually changes. One turn of a
        wheel is dozens of events, and setSize redraws the whole sheet on a
        narrow screen. */
-    /* ONE NOTCH OF A MOUSE WHEEL IS ABOUT A HUNDRED, so this is four steps a
-       notch, and a trackpad, which sends a stream of small numbers rather
-       than notches, accumulates over the same threshold. */
-    var WHEEL_PER_STEP = 25;
-    /* AND A STEP IS A PROPORTION, NOT A PIXEL. Two pixels is a third of the
-       way up from thirteen and nothing at all at ninety, so a fixed step
-       crawls at the top of the range exactly where somebody turning the wheel
-       is trying to get somewhere. Six per cent a step is a quarter of a notch,
-       which crosses the whole range in about eight turns and still lands
-       where you meant at the small end. */
-    var WHEEL_STEP_RATIO = 1.06;
+
+    /* --- WHAT A WHEEL SAYS IS NOT A NUMBER OF PIXELS --------------------------
+       A browser may report a turn in pixels, in LINES or in pages, and it says
+       which in deltaMode. Chrome and Safari send about a hundred pixels for a
+       notch; Firefox sends three LINES for the same notch of the same mouse.
+       Read raw, the gesture that crosses the whole range in eight turns on one
+       browser needs three hundred turns on the next, which is not a slow zoom,
+       it is a wheel that does nothing. So a turn is put back into pixels before
+       anything is counted: forty to a line is what a line of text is worth, and
+       it lands Firefox's three within a fifth of Chrome's hundred. */
+    function wheelPixels(event) {
+      if (event.deltaMode === 1) return event.deltaY * 40;
+      if (event.deltaMode === 2) return event.deltaY * (window.innerHeight || 800);
+      return event.deltaY;
+    }
+
+    /* --- AND A NOTCH AND A PINCH ARE THE SAME EVENT, NOT THE SAME GESTURE -----
+       Both arrive here as a wheel with ctrlKey set and there is no flag saying
+       which is which, but they are not asking for the same thing, and one
+       number for both is why the trackpad felt stuck.
+
+       A NOTCH IS A JUMP: one turn, one event, about a hundred, and what it
+       means is "a step bigger". A PINCH IS A STREAM: dozens of small numbers,
+       often fractions, and what they add up to is roughly what the fingers did,
+       a hundred all told for a doubling. So the SAME hundred means one step
+       from a mouse and the whole doubling from a trackpad, and the only thing
+       that tells them apart is the size of one report. Small is a stream.
+
+       Three notches of a mouse to double, which is the eight turns across the
+       range this had before, and a trackpad that doubles when the fingers do. */
+    var FINE = 40;
+    var PER_PINCH = 100;
+    var PER_NOTCH = 300;
+
     var wheeled = 0;
 
     sheet.addEventListener("wheel", function (event) {
       if (!event.ctrlKey) return;
       event.preventDefault();
-      wheeled += event.deltaY;
-      var steps = Math.trunc(wheeled / WHEEL_PER_STEP);
-      if (!steps) return;
-      wheeled -= steps * WHEEL_PER_STEP;
+      var px = wheelPixels(event);
+      if (!px) return;
       /* down is smaller, which is what a wheel means everywhere else */
-      var next = size * Math.pow(WHEEL_STEP_RATIO, -steps);
-      /* At the bottom of the range a proportion of the size rounds back to
-         the size, and a wheel that answers nothing reads as a broken one. */
-      if (Math.round(next) === size) next = size - steps;
+      wheeled += px / (Math.abs(px) < FINE ? PER_PINCH : PER_NOTCH);
+      var next = size * Math.pow(2, -wheeled);
+      /* NOTHING SO FAR IS WORTH A PIXEL, so it is kept rather than dropped. A
+         proportion of a small size rounds back to that size, and a trackpad
+         sends the doubling a fortieth at a time: thrown away each time it
+         rounds to nothing, a whole pinch adds up to nothing at all. Held, the
+         fortieths reach a pixel between them and the size moves. */
+      if (Math.round(next) === size) return;
+      wheeled = 0;
       setSize(next);
     }, { passive: false });
 
@@ -10728,7 +10846,7 @@
       pinchFrom = 0;
       if (!heldCols) return;
       heldCols = 0;
-      if (size !== pinchSize) draw();
+      if (size !== pinchSize) drawNow();
     };
     sheet.addEventListener("touchend", pinchOff);
     sheet.addEventListener("touchcancel", pinchOff);
