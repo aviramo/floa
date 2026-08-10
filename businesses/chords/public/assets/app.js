@@ -18116,50 +18116,90 @@
     });
   }
 
-  /* --- and playing one ------------------------------------------------------
-     Fetched rather than pointed at, because the bucket is not public and an
-     audio element cannot carry a token (see store). Once, and kept on the row
-     it belongs to, so pressing play a second time does not fetch it again. */
+  /* --- ONE PLAYER OPEN AT A TIME --------------------------------------------
+     A PLAYER IS A BAR, A CLOCK, A VOLUME AND A MENU, and three of them one
+     under the other is three sets of controls belonging to three recordings
+     that describe themselves in very nearly the same words. Only one of them
+     can be sounding, so the other two are furniture around a decision that has
+     already been made, and the row that a reader is actually looking for is
+     buried under controls for a recording nobody is listening to.
+
+     So opening one puts the last one away, and the row it leaves behind goes
+     back to its play button: the shortest true thing a recording can say about
+     itself is its own name and a way to hear it.
+
+     WHAT IS KEPT IS THE FETCH. The bucket is not public and an audio element
+     cannot carry a token (see store), so the sound is fetched rather than
+     pointed at, and that is the part worth paying for once. The address of the
+     blob stays on the row, so opening it again is instant even though the
+     player itself was thrown away. */
+  var takeOpen = null;
+
+  function shutTake() {
+    var was = takeOpen;
+    if (!was) return;
+    takeOpen = null;
+    /* The sound goes with the controls. A player put away while it is still
+       sounding is a voice in the room with nothing on the screen to stop it. */
+    was.audio.pause();
+    if (alongTo === was.audio) { alongTo = null; showAt(-1); }
+    if (was.audio.parentNode) was.audio.parentNode.removeChild(was.audio);
+    was.node._audio = null;
+    was.node.classList.remove("is-playing");
+    if (was.node.parentNode) was.node.parentNode.classList.remove("is-one");
+    was.go.hidden = false;
+  }
+
   function playTake(row, node, go) {
+    /* Pressing the row that is already open is about that recording, not about
+       the list: it stops and starts, and nothing is put away. */
     if (node._audio) {
       if (node._audio.paused) node._audio.play();
       else node._audio.pause();
       return;
     }
+    if (node._url) return hearTake(row, node, go);
     go.disabled = true;
     store(row.path).then(function (r) { return r.blob(); }).then(function (blob) {
-      var audio = el("audio", "take-play");
-      audio.controls = true;
-      audio.dir = "ltr";
-      audio.src = URL.createObjectURL(blob.slice(0, blob.size, row.mime || blob.type));
-      node._audio = audio;
-      node.appendChild(audio);
-      alongTake(audio, Array.isArray(row.marks) ? row.marks : []);
       go.disabled = false;
-      go.hidden = true;
-      /* --- AND THE ONE PLAYING IS THE ONLY ONE ON THE SHEET -------------------
-         Three recordings of the same song are three rows that say very nearly
-         the same thing, and while one of them is sounding the other two are a
-         list to be read to find out which. So the sheet holds what is playing
-         and puts the rest away, and pausing brings them back: the choice is
-         only in the way while there is nothing to choose. */
-      var alone = function (yes) {
-        node.classList.toggle("is-playing", yes);
-        if (node.parentNode) node.parentNode.classList.toggle("is-one", yes);
-      };
-      audio.addEventListener("play", function () { alone(true); });
-      audio.addEventListener("pause", function () { alone(false); });
-      audio.addEventListener("ended", function () { alone(false); });
-      /* The length first, then the sound: a recording that does not know how
-         long it is draws a thumb against a guess, and the guess grows as the
-         browser reads on, so the thumb walks BACKWARDS along a bar nobody is
-         touching (see tellLength). Asked before playing rather than during,
-         because the reading seeks to the end and back. */
-      tellLength(audio, function () { startAudio(audio); });
+      node._url = URL.createObjectURL(blob.slice(0, blob.size, row.mime || blob.type));
+      hearTake(row, node, go);
     }).catch(function () {
       go.disabled = false;
       toast("לא הצלחנו להשמיע את ההקלטה");
     });
+  }
+
+  function hearTake(row, node, go) {
+    shutTake();
+    var audio = el("audio", "take-play");
+    audio.controls = true;
+    audio.dir = "ltr";
+    audio.src = node._url;
+    node._audio = audio;
+    node.appendChild(audio);
+    takeOpen = { node: node, audio: audio, go: go };
+    alongTake(audio, Array.isArray(row.marks) ? row.marks : []);
+    go.hidden = true;
+    /* --- AND THE ONE PLAYING IS THE ONLY ONE ON THE SHEET -------------------
+       Three recordings of the same song are three rows that say very nearly
+       the same thing, and while one of them is sounding the other two are a
+       list to be read to find out which. So the sheet holds what is playing
+       and puts the rest away, and pausing brings them back: the choice is
+       only in the way while there is nothing to choose. */
+    var alone = function (yes) {
+      node.classList.toggle("is-playing", yes);
+      if (node.parentNode) node.parentNode.classList.toggle("is-one", yes);
+    };
+    audio.addEventListener("play", function () { alone(true); });
+    audio.addEventListener("pause", function () { alone(false); });
+    audio.addEventListener("ended", function () { alone(false); });
+    /* The length first, then the sound: a recording that does not know how
+       long it is draws a thumb against a guess, and the guess grows as the
+       browser reads on, so the thumb walks BACKWARDS along a bar nobody is
+       touching (see tellLength). Asked before playing rather than during,
+       because the reading seeks to the end and back. */
+    tellLength(audio, function () { startAudio(audio); });
   }
 
   function offerTake(row, out) {
