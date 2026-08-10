@@ -2819,19 +2819,36 @@ body.on-ear.ear-small { padding-bottom: 92px; }
    the page for, so it does not stand between them and the song; it is worth
    finding when they get to the bottom, so that is where it is.
    ========================================================================== */
-.takes { max-width: 720px; margin: 26px auto 40px; padding: 0 4px; }
+/* AIR ON ALL FOUR SIDES OF IT. The song above runs to its own gutters and
+   this ran to the glass: a card whose border touches the edge of the screen
+   reads as something that broke off the page rather than as a section of it,
+   and the last one had nothing under it at all, so the bottom of the list and
+   the bottom of the document were the same line.
+
+   The room here is the same room the song has, and there is a good deal more
+   of it above and below than between the rows, because what the eye needs is
+   to see that this is a different thing from the song and one thing in
+   itself. */
+.takes {
+  max-width: 720px; margin: 34px auto 56px;
+  padding-inline: 16px;
+}
 .takes:empty { display: none; }
-.takes-head { font-size: 15px; color: var(--ink-soft); font-weight: 600; margin: 0 0 8px; }
-.takes-list { display: flex; flex-direction: column; gap: 6px; }
+.takes-head {
+  font-size: 15px; color: var(--ink-soft); font-weight: 600;
+  margin: 0 0 10px; padding-inline-start: 2px;
+}
+.takes-list { display: flex; flex-direction: column; gap: 8px; }
 
 .take {
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--corner);
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius);
   background: var(--card);
 }
-.take-go { flex: none; }
-.take-said { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.take-who { font-size: 14px; color: var(--ink); }
+.take-go { flex: none; width: 34px; height: 34px; border-radius: 999px; }
+.take-go svg { width: 14px; height: 14px; }
+.take-said { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.take-who { font-size: 14px; color: var(--ink); font-weight: 600; }
 .take-when { font-size: 12px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
 /* A take is a sound at a pitch and the page is a drawing that moves, so a
    reader who has taken the song down two is about to hear something that does
