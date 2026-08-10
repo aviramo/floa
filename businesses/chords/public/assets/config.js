@@ -42,6 +42,12 @@ window.CHORDS_CONFIG = {
   takeTable: "song_takes",
   takeBucket: "takes",
 
+  /* And an eighth, which is how somebody who does not own a song changes it.
+     A song is written by the account it belongs to and by nobody else; an edit
+     by anybody else lands here instead, as an offer, and the song moves only
+     when its own account takes it. See song_offers in schema.sql. */
+  offerTable: "song_offers",
+
   /* The Worker holds the Anthropic key and reads an uploaded photo or PDF.
      Same deployment that sends the leads for every other business here. */
   transcribeEndpoint: "https://floa-lead.floa-il.workers.dev/transcribe",

@@ -204,8 +204,9 @@ const CHORD_READ = `(() => {
        already taken by the record of the chords heard, and the later key wins
        silently, which is a confusing half hour. */
     keys: [...document.querySelectorAll(".tape-bar .icon-btn")].length,
-    live: !!document.querySelector(".ear-door.is-live"),
-    taping: !!document.querySelector(".ear-door.is-taping"),
+    /* the filled round one, which is the way in and then the recording */
+    rec: !!document.querySelector(".tape-bar .icon-btn.is-rec"),
+    taping: !!document.querySelector(".tape-bar .icon-btn.is-taping"),
     heard: (document.querySelector(".heard-now") || {}).textContent,
     bars: [...document.querySelectorAll(".cx-fill")].map((b) => parseInt(b.style.height, 10) || 0),
     tape: (document.querySelector(".ear-tape") || {}).textContent,
@@ -376,11 +377,16 @@ async function withChrome(run) {
         return out.result.value === undefined ? undefined : JSON.parse(out.result.value);
       };
 
-      for (let i = 0; i < 40; i++) {
+      /* A TAB THAT CAME UP ON NOTHING. Chrome hands back a target before it
+         has navigated to the address it was opened with often enough to
+         matter, and by the third tab of a run, with audio contexts and a
+         recorder behind it, often enough to matter a lot. Asked for again
+         every few seconds rather than once, and waited on for longer. */
+      for (let i = 0; i < 80; i++) {
         await sleep(250);
         const n = await send("Runtime.evaluate", { expression: 'document.querySelectorAll(".sheet .chord").length', returnByValue: true });
         if (n.result.value > 0) break;
-        if (i === 4 || i === 16) await send("Page.navigate", { url });
+        if (i % 8 === 4) await send("Page.navigate", { url });
       }
       await sleep(400);
 
@@ -421,10 +427,16 @@ try {
       check("the song is on the page before anything is listened to",
         before.sheet.length > 0 && !before.open, JSON.stringify(before.sheet));
 
-      /* --- the door ------------------------------------------------------- */
-      await until(evaluate, 'document.querySelector(".ear-door")');
-      const opened = await evaluate('JSON.stringify(!!document.querySelector(".ear-door") && (document.querySelector(".ear-door").click(), true))');
-      check("there is a way in from the song's own strip", opened === true, String(opened));
+      /* --- THE DOOR, AND THERE IS ONLY ONE -----------------------------------
+         Opening the microphone, following the song and recording it are one
+         thing somebody wants, so they are one thing to press for. */
+      await until(evaluate, 'document.querySelector(".tape-bar .icon-btn")');
+      const resting = await evaluate(CHORD_READ);
+      check("the song's strip offers one button, and it is the record one",
+        resting.keys === 1 && resting.rec && !resting.open,
+        JSON.stringify({ keys: resting.keys, rec: resting.rec, open: resting.open }));
+      const opened = await evaluate('JSON.stringify((document.querySelector(".tape-bar .icon-btn").click(), true))');
+      check("pressing it is the whole way in", opened === true, String(opened));
 
       /* Long enough for the microphone to be handed over, for a few readings
          to land, and for STEADY of them to agree. */
@@ -438,8 +450,12 @@ try {
         JSON.stringify({ open: heard.open, away: heard.away }));
       check("and it takes no room off the song while the follower runs",
         !heard.padded, "on-ear was still set");
-      check("the microphone in the strip says it is listening", heard.live, "no is-live");
-      check("and what is done to a recording stands beside it",
+      /* ONE BUTTON WHILE IT RUNS, and it is the thing that says it is running:
+         red and breathing, which is the difference between "there is a
+         recording here" and "it is going". */
+      check("one press started the recording as well as the listening",
+        heard.taping === true, JSON.stringify({ taping: heard.taping }));
+      check("and while it runs there is one button and it holds",
         heard.keys === 1, heard.keys + " buttons");
       check("it says how loud it is hearing", heard.level && heard.level !== "0%", String(heard.level));
       check("an A minor chord is heard as A minor", heard.heard === "Am", String(heard.heard));
@@ -562,38 +578,6 @@ try {
         again.on && again.marks === 1 && again.heard === 0,
         JSON.stringify({ on: again.on, marks: again.marks, heard: again.heard }));
 
-      /* --- AND A RECORDING SAYS SO ON THE MICROPHONE ------------------------
-         From the other side of a room, without reading anything. */
-      await evaluate('JSON.stringify(([...document.querySelectorAll(".tape-bar .icon-btn")][0].click(), true))');
-      await sleep(500);
-      const taping = await evaluate(CHORD_READ);
-      check("recording turns the microphone red and live",
-        taping.taping === true, JSON.stringify({ taping: taping.taping }));
-      check("and offers a pause and a stop rather than a start",
-        taping.keys === 2, taping.keys + " buttons");
-
-      await evaluate('JSON.stringify(([...document.querySelectorAll(".tape-bar .icon-btn")][0].click(), true))');
-      await sleep(300);
-      const held = await evaluate(CHORD_READ);
-      check("a held recording is still red and no longer pulsing",
-        held.taping === false && held.keys === 2, JSON.stringify({ taping: held.taping, keys: held.keys }));
-
-      /* --- AND STOPPING OFFERS IT RATHER THAN SAVING IT ---------------------
-         A take is a person singing, most of them are not worth keeping, and a
-         library that fills up with every attempt is a library nobody opens. So
-         what stopping does is hand it back to be heard. */
-      await evaluate('JSON.stringify(([...document.querySelectorAll(".tape-bar .icon-btn")][1].click(), true))');
-      const offered = await until(evaluate, 'document.querySelector("dialog[open] .take-play")');
-      check("stopping the recording offers it to listen to", offered, "no panel came up");
-      const back = await evaluate(`JSON.stringify({
-        keys: document.querySelectorAll(".tape-bar .icon-btn").length,
-        taping: !!document.querySelector(".ear-door.is-taping"),
-      })`);
-      check("and the strip goes back to offering a new one",
-        back.keys === 1 && !back.taping, JSON.stringify(back));
-      await evaluate('JSON.stringify((document.querySelector("dialog[open]").close(), true))');
-      await sleep(300);
-
       /* --- the other tab ---------------------------------------------------- */
       await evaluate('JSON.stringify((window.__sound = "note", [...document.querySelectorAll(".ear-tab")][0].click(), true))');
       await sleep(700);
@@ -605,13 +589,80 @@ try {
       check("and it is the second string that lit", note.peg === 1, String(note.peg));
       check("the mark on the song went with the tab that made it", note.marked === 0, String(note.marked));
 
-      /* --- and out again ---------------------------------------------------- */
-      await evaluate('JSON.stringify((document.querySelector(".ear .icon-btn").click(), true))');
-      await sleep(200);
+      /* --- AND THE THREE STATES OF A RECORDING -------------------------------
+         Back to the chords, where the take started at the door and has been
+         running through all of the above.
+
+         NOT STARTED, one button, and it records. RUNNING, one button, and it
+         holds: finishing is a decision and a decision does not belong under a
+         thumb that is holding a plectrum. HELD, two: carry on, or finish. */
+      await evaluate('JSON.stringify((window.__sound = "chord", [...document.querySelectorAll(".ear-tab")][1].click(), true))');
+      await until(evaluate, 'document.querySelector(".tape-bar .icon-btn")');
+      await sleep(400);
+
+      const running = await evaluate(CHORD_READ);
+      check("running: one button, and it is the one that says so",
+        running.keys === 1 && running.taping === true,
+        JSON.stringify({ keys: running.keys, taping: running.taping }));
+
+      await evaluate('JSON.stringify((document.querySelector(".tape-bar .icon-btn").click(), true))');
+      await sleep(400);
+      const held = await evaluate(CHORD_READ);
+      check("held: carry on, and finish",
+        held.keys === 2 && held.taping === false && held.rec,
+        JSON.stringify({ keys: held.keys, taping: held.taping, rec: held.rec }));
+
+      await evaluate('JSON.stringify((document.querySelector(".tape-bar .icon-btn").click(), true))');
+      await sleep(400);
+      const carried = await evaluate(CHORD_READ);
+      check("and carrying on goes back to one button",
+        carried.keys === 1 && carried.taping === true,
+        JSON.stringify({ keys: carried.keys, taping: carried.taping }));
+
+      /* --- AND FINISHING OFFERS IT RATHER THAN SAVING IT ---------------------
+         A take is a person singing, most of them are not worth keeping, and a
+         library that fills up with every attempt is a library nobody opens. So
+         what stopping does is hand it back to be heard. Behind the pause,
+         because that is where a decision belongs. */
+      await evaluate('JSON.stringify((document.querySelector(".tape-bar .icon-btn").click(), true))');
+      await sleep(400);
+      await evaluate('JSON.stringify(([...document.querySelectorAll(".tape-bar .icon-btn")][1].click(), true))');
+      const offered = await until(evaluate, 'document.querySelector("dialog[open] .take-play")');
+      check("stopping the recording offers it to listen to", offered, "no panel came up");
+      const asked = await evaluate(`JSON.stringify({
+        answers: [...document.querySelectorAll("dialog[open] .dlg-actions .btn")].map((b) => b.textContent),
+      })`);
+      check("and asks two things, neither of which is walking away",
+        asked.answers.length === 2, JSON.stringify(asked.answers));
+
+      /* --- AND WALKING AWAY LEAVES IT EXACTLY WHERE IT WAS -------------------
+         A panel that ends the take the moment it appears is a panel nobody can
+         back out of: a stray press and a performance is over. Dismissed, the
+         recording is still there, still held, and finishing asks again. */
+      await evaluate('JSON.stringify((document.querySelector("dialog[open]").close(), true))');
+      await sleep(400);
+      const left = await evaluate(CHORD_READ);
+      check("dismissing the offer leaves the take held rather than ending it",
+        left.keys === 2 && left.open && !left.taping,
+        JSON.stringify({ keys: left.keys, open: left.open, taping: left.taping }));
+      await evaluate('JSON.stringify(([...document.querySelectorAll(".tape-bar .icon-btn")][1].click(), true))');
+      const asked2 = await until(evaluate, 'document.querySelector("dialog[open] .take-play")');
+      check("and finishing again asks the same question", asked2, "no panel the second time");
+
+      /* --- AND ANSWERING IT PUTS EVERYTHING BACK -----------------------------
+         Keeping the take and throwing it away are both the end of it, and what
+         is on the other side is a page nobody is playing to. The light in the
+         tab goes out, the mark comes off, and the button looks exactly as it
+         did before any of this was pressed. */
+      /* And answering it is what ends it. */
+      await evaluate('JSON.stringify(([...document.querySelectorAll("dialog[open] .dlg-actions .btn")][0].click(), true))');
+      await sleep(600);
       const shut = await evaluate(CHORD_READ);
-      check("closing takes the panel, the room under it and every mark",
-        !shut.open && !shut.padded && shut.marked.length === 0 && !shut.live,
-        JSON.stringify({ open: shut.open, padded: shut.padded, marked: shut.marked }));
+      check("answering the take shuts the microphone and puts the page back",
+        !shut.open && !shut.padded && shut.marked.length === 0 && !shut.taping &&
+        shut.keys === 1 && shut.rec,
+        JSON.stringify({ open: shut.open, padded: shut.padded, marked: shut.marked,
+                         keys: shut.keys, rec: shut.rec }));
 
       check("and nothing threw along the way", shut.errors.length === 0, JSON.stringify(shut.errors));
     });
@@ -632,7 +683,7 @@ try {
       /* The app draws a different page either side of the narrow line, and the
          controls move with it (see placeControls): on a phone they are on a
          strip under the header rather than in the bar. Waited for. */
-      await until(evaluate, 'document.querySelector(".sheet .chord") && document.querySelector(".ear-door")');
+      await until(evaluate, 'document.querySelector(".sheet .chord") && document.querySelector(".tape-bar .icon-btn")');
       await sleep(300);
 
       const start = await evaluate(SCROLL_READ);
@@ -640,7 +691,7 @@ try {
         start.room > 400 && start.chords > 30, JSON.stringify({ room: start.room, chords: start.chords }));
       check("and it opens at the top", start.y === 0, String(start.y));
 
-      await evaluate('JSON.stringify((document.querySelector(".ear-door").click(), true))');
+      await evaluate('JSON.stringify((document.querySelector(".tape-bar .icon-btn").click(), true))');
       await until(evaluate, 'document.querySelector(".sheet .chord.is-at")');
       await sleep(300);
 
@@ -724,9 +775,9 @@ try {
        capo, and has to come out the same.
        ====================================================================== */
     await open(`http://127.0.0.1:${port}/chords/_ear/capo/`, async ({ evaluate }) => {
-      await until(evaluate, 'document.querySelector(".ear-door")');
+      await until(evaluate, 'document.querySelector(".sheet .chord") && document.querySelector(".tape-bar .icon-btn")');
       await evaluate('JSON.stringify((window.__playing = "Am+3", true))');
-      await evaluate('JSON.stringify((document.querySelector(".ear-door").click(), true))');
+      await evaluate('JSON.stringify((document.querySelector(".tape-bar .icon-btn").click(), true))');
       await sleep(900);
 
       const capoed = await evaluate(FOLLOW_READ);

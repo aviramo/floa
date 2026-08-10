@@ -942,13 +942,22 @@ create policy "a take is deleted by its account"
 -- fetches the sound and plays it out of memory instead, which for a few
 -- minutes of opus is nothing.
 -- ==========================================================================
+-- NO LIST OF ALLOWED TYPES, and that is not laziness. A browser does not
+-- record "audio/webm", it records "audio/webm;codecs=opus", and a list is
+-- matched against the whole string: every upload was refused by the bucket
+-- before it reached the row, with a message about storage that said nothing
+-- about codecs. Safari would have failed the same way on mp4.
+--
+-- What the list was protecting against is not a real risk here either. The
+-- bucket is private, only the owning account may write to it, and it can only
+-- write under its own uuid. A size limit is a useful rule; a guess at how a
+-- browser will spell its own container is not.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('takes', 'takes', false, 26214400,
-        array['audio/webm', 'audio/ogg', 'audio/mp4', 'audio/mpeg', 'audio/aac', 'audio/wav'])
+values ('takes', 'takes', false, 26214400, null)
 on conflict (id) do update
   set public = false,
       file_size_limit = excluded.file_size_limit,
-      allowed_mime_types = excluded.allowed_mime_types;
+      allowed_mime_types = null;
 
 -- Readable exactly when the row that names it is readable. `name` in
 -- storage.objects is the path within the bucket, which is what song_takes.path
@@ -976,3 +985,137 @@ drop policy if exists "a take sound is removed by its account" on storage.object
 create policy "a take sound is removed by its account"
   on storage.objects for delete to authenticated
   using (bucket_id = 'takes' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ==========================================================================
+-- OFFERS. How somebody who does not own a song changes it.
+--
+-- The library is everybody's to read and each song is one account's to write.
+-- That is the rule on songs and it is the right one, and what it had no answer
+-- for at all is the ordinary thing that happens in a library: somebody who
+-- knows the song sees a wrong chord in the second verse. They could type over
+-- it and be refused, which teaches them that the app is broken rather than
+-- that the song is not theirs.
+--
+-- So an edit by anybody else is not refused, it is KEPT, here, and the song
+-- does not move. It is an offer: this is how I would have it. The account the
+-- song belongs to is the only one that can take it, and taking it is what
+-- writes the words into the song. Both of them see that it is standing there,
+-- and until it is taken the world goes on reading the song as it was.
+--
+-- ONE ROW PER PERSON PER SONG, and not a row per attempt. An offer is written
+-- the way a song is written, a word at a time with a save a second later, and
+-- a row per save would be a history of typing. That is the same argument
+-- song_versions makes for putting a version on the shelf when פורסם is
+-- pressed and not when a key is; here there is no press at all, so the row is
+-- rewritten in place and `state` is the whole of what became of it.
+-- ==========================================================================
+create table if not exists public.song_offers (
+  id       uuid primary key default gen_random_uuid(),
+
+  song_id  uuid not null references public.songs (id) on delete cascade,
+
+  -- WHOSE OFFER. Filled in by the database from the token the request carried,
+  -- never by the browser, exactly as on a song, an evening and a take: an
+  -- offer is made by the account that makes it and there is no other way to
+  -- make one.
+  owner    uuid not null default auth.uid() references auth.users (id) on delete cascade,
+
+  -- The song as this person would have it, in the columns the song stands in
+  -- and in the same formats, so taking an offer is a copy across and not a
+  -- translation. The same six a version keeps, and for the same reason: these
+  -- are the song. Everything else on this row is about the offer.
+  title      text not null default '',
+  lyrics_by  text not null default '',
+  music_by   text not null default '',
+  dir        text not null default 'rtl',
+  lines      jsonb not null default '""'::jsonb,
+  styles     text[] not null default '{}',
+
+  --   open      written, and waiting for the account the song belongs to
+  --   taken     the song was written from it
+  --   declined  it was read, and not taken
+  --
+  -- It goes back to `open` by itself the moment the person types into it
+  -- again, which is what makes one row enough: an answered offer that has been
+  -- worked on since is a new offer.
+  state    text not null default 'open'
+           check (state in ('open', 'taken', 'declined')),
+
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+
+  -- ONE PER PERSON PER SONG, said by the database rather than by the browser.
+  -- Two open offers from one account on one song are two answers to the same
+  -- question, and the page that has to draw them cannot say which is the one
+  -- being typed into.
+  unique (song_id, owner)
+);
+
+-- "is anything waiting on this song", which is the question every song page
+-- and every row of the library asks
+create index if not exists song_offers_open_idx
+  on public.song_offers (song_id) where state = 'open';
+create index if not exists song_offers_owner_idx on public.song_offers (owner);
+
+drop trigger if exists song_offers_touch_updated_at on public.song_offers;
+create trigger song_offers_touch_updated_at
+  before update on public.song_offers
+  for each row execute function public.touch_updated_at();
+
+alter table public.song_offers enable row level security;
+
+-- TWO PEOPLE AND NOBODY ELSE: the one who wrote it and the one who can take
+-- it. Not the world, even on a published song. What is published is the song;
+-- an offer is a half-finished sentence about it, and until it is taken it is
+-- between the two of them.
+drop policy if exists "an offer is read by the two it is between" on public.song_offers;
+create policy "an offer is read by the two it is between"
+  on public.song_offers for select to authenticated
+  using (
+    owner = auth.uid()
+    or exists (select 1 from public.songs s where s.id = song_id and s.owner = auth.uid())
+  );
+
+-- Written by the person making it, and it arrives open. An offer that could be
+-- written already taken would be a way of writing somebody else's song in one
+-- request.
+drop policy if exists "an offer is written by the one making it" on public.song_offers;
+create policy "an offer is written by the one making it"
+  on public.song_offers for insert to authenticated
+  with check (owner = auth.uid() and state = 'open');
+
+-- And rewritten by them for as long as they like, at the price of it being
+-- open again: touching an offer is asking again.
+--
+-- `with check` pinning the state is the whole rule this table exists for.
+-- Without it the person making an offer could mark their own offer taken. What
+-- that would still not do is change the song, because nothing here can: the
+-- taking is a write to `songs`, and only its owner may make it.
+drop policy if exists "an offer is rewritten while it is open" on public.song_offers;
+create policy "an offer is rewritten while it is open"
+  on public.song_offers for update to authenticated
+  using (owner = auth.uid())
+  with check (owner = auth.uid() and state = 'open');
+
+-- ANSWERED BY THE ACCOUNT THE SONG BELONGS TO, which is the other half of it.
+drop policy if exists "an offer is answered by the song's account" on public.song_offers;
+create policy "an offer is answered by the song's account"
+  on public.song_offers for update to authenticated
+  using (exists (select 1 from public.songs s where s.id = song_id and s.owner = auth.uid()))
+  with check (exists (select 1 from public.songs s where s.id = song_id and s.owner = auth.uid()));
+
+-- Taken back by whoever made it, cleared away by whoever it was made to.
+drop policy if exists "an offer is withdrawn or cleared" on public.song_offers;
+create policy "an offer is withdrawn or cleared"
+  on public.song_offers for delete to authenticated
+  using (
+    owner = auth.uid()
+    or exists (select 1 from public.songs s where s.id = song_id and s.owner = auth.uid())
+  );
+
+-- NO TRIGGER OF ITS OWN, and that is deliberate. Taking an offer into a
+-- published song changes what the world reads, so the site on disk has to be
+-- built again, and it already is: the app writes a version the moment an offer
+-- is taken into a published song, exactly as it does for פורסם, and the
+-- trigger on song_versions is what posts to GitHub. A second trigger here
+-- would be a second build of the same change.

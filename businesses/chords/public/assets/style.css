@@ -36,6 +36,13 @@
   --draft-ink: #5b4636;     --draft-soft: #f1ece4;
   --published-ink: #0d5c4a; --published-soft: #dcf1e9;
 
+  /* And a fifth, which is not a state the song passed into: somebody else is
+     standing beside it holding a change (see song_offers). Violet, because it
+     is the one word here that is not about the song at all but about a person
+     waiting on another person, and none of the four above should be read as
+     that. */
+  --offer-ink: #5b3f8f;     --offer-soft: #e9e2f6;
+
   --danger: #c0392b;
   --radius: 14px;
 
@@ -557,12 +564,14 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    a band of their own. */
 .kinds-row .tallies { justify-content: center; }
 
+.tally-offer { color: var(--offer-ink); }
 .tally-imported { color: var(--imported-ink); }
 .tally-review { color: var(--review-ink); }
 .tally-draft { color: var(--draft-ink); }
 .tally-published { color: var(--published-ink); }
 .tally:hover { border-color: currentColor; }
 .tally.is-on { border-color: currentColor; }
+.tally-offer.is-on { background: var(--offer-soft); }
 .tally-imported.is-on { background: var(--imported-soft); }
 .tally-review.is-on { background: var(--review-soft); }
 .tally-draft.is-on { background: var(--draft-soft); }
@@ -1035,6 +1044,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 }
 .review-tag,
 .tag-imported { color: var(--imported-ink); background: var(--imported-soft); }
+.tag-offer { color: var(--offer-ink); background: var(--offer-soft); }
 .tag-review { color: var(--review-ink); background: var(--review-soft); }
 .tag-draft { color: var(--draft-ink); background: var(--draft-soft); }
 .tag-published { color: var(--published-ink); background: var(--published-soft); }
@@ -2752,10 +2762,30 @@ body.on-ear.ear-small { padding-bottom: 92px; }
    not move reads as a decoration; one that breathes reads as live, and that is
    the whole difference between "there is a microphone here" and "it is on".
    ========================================================================== */
-.tools .ear-door.is-live { color: var(--accent); border-color: var(--accent); background: #eefaf7; }
-.tools .ear-door.is-taping,
-.tools .ear-door.is-held { color: #fff; background: var(--chord); border-color: var(--chord); }
-.tools .ear-door.is-taping { animation: on-air 1.6s ease-in-out infinite; }
+/* --- THE ONE BUTTON, AND THE THREE THINGS IT IS ----------------------------
+   Not started, and it records. Running, and it holds. Held, and it carries on,
+   with the one thing it cannot mean standing beside it.
+
+   FILLED, ROUND, AND IN THE INK THE CHORDS ARE IN, in all three. It is the
+   whole of the way in and the only thing in this strip that starts anything;
+   everything else here is a setting, drawn quiet on purpose, because a setting
+   is read far more often than it is pressed. And it is the size of the buttons
+   in the bar above rather than of the dials beside it, so the two rows line up
+   down the edge of the page. */
+.tape-bar .icon-btn.is-rec {
+  width: 34px; height: 34px; border-radius: 999px;
+  color: #fff; background: var(--chord); border-color: var(--chord);
+  box-shadow: 0 1px 4px rgba(225, 29, 99, .32);
+}
+.tape-bar .icon-btn.is-rec svg { width: 14px; height: 14px; }
+.tape-bar .icon-btn.is-rec:hover {
+  color: #fff; background: #c2185b; border-color: #c2185b;
+  box-shadow: 0 2px 7px rgba(225, 29, 99, .45);
+}
+/* And while it is running it breathes, which is the difference between "there
+   is a recording here" and "it is going". Nothing else on the page has to say
+   so, and nothing else does. */
+.tape-bar .icon-btn.is-rec.is-taping { animation: on-air 1.6s ease-in-out infinite; }
 @keyframes on-air {
   0%, 100% { box-shadow: 0 0 0 0 rgba(225, 29, 99, .55); }
   50% { box-shadow: 0 0 0 5px rgba(225, 29, 99, 0); }
@@ -2781,16 +2811,6 @@ body.on-ear.ear-small { padding-bottom: 92px; }
    because a record button has been a round red dot on every machine that ever
    recorded anything and there is nothing to be gained by being the one that
    is not. */
-.tape-bar .icon-btn.is-rec {
-  color: #fff; background: var(--chord); border-color: var(--chord);
-  border-radius: 999px;
-  box-shadow: 0 1px 4px rgba(225, 29, 99, .35);
-}
-.tape-bar .icon-btn.is-rec:hover {
-  background: #c2185b; border-color: #c2185b;
-  box-shadow: 0 2px 7px rgba(225, 29, 99, .45);
-}
-.tape-bar .icon-btn.is-rec svg { width: 13px; height: 13px; }
 
 /* ==========================================================================
    THE TAKES OF A SONG.

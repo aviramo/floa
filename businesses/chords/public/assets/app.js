@@ -1584,6 +1584,106 @@
     }).catch(function () { /* the song is published either way */ });
   }
 
+  /* --- WHAT SOMEBODY ELSE WOULD HAVE THE SONG SAY ----------------------------
+     An offer. A person who does not own a song opens the editor, types, and
+     what is written is this rather than the song: the song stands exactly
+     where it was, and the account it belongs to is the only one that can take
+     what was offered into it.
+
+     WHY THE EDIT IS NOT SIMPLY REFUSED. It was, by the database, which is the
+     right answer to "may this person write this row" and the wrong answer to
+     the person: somebody who knows the song, finds a wrong chord in the second
+     verse and fixes it is doing the library a favour, and being told "אין
+     הרשאה" for it teaches them the app is broken. The rule that matters is
+     that the SONG does not move until its author says so, and that rule is
+     kept here whole.
+
+     Two people ever see one, the one who made it and the one it was made to,
+     and that is the database's own rule (see song_offers in schema.sql), which
+     is why nothing below filters by account: one question, and the answer is
+     already only what the asker may have. */
+  var OFF = CFG.offerTable;
+  var OFF_FIELDS = "id,song_id,owner,state,created_at,updated_at," +
+    "title,lyrics_by,music_by,dir,lines,styles";
+
+  /* WHICH SONGS HAVE ONE STANDING ON THEM, for the library, which draws a
+     hundred rows and cannot ask about each. One question for the whole wall,
+     and the answer is the two kinds at once: an offer this account made, and
+     an offer made to it. Both are worth a word on the card, and they are the
+     same word, because from the row's point of view the fact is the same one:
+     somebody is waiting on somebody.
+
+     Emptied and filled again on every visit rather than added to. It is a
+     picture of a moment and the whole of its use is the page being drawn from
+     it now; an offer taken an hour ago that stayed in here would be a chip on
+     a song that has nothing waiting. */
+  var offersOn = {};
+
+  var offers = {
+    seen: function () {
+      offersOn = {};
+      if (!auth.in) return Promise.resolve(offersOn);
+      return rest(OFF + "?select=song_id&state=eq.open").then(function (rows) {
+        (rows || []).forEach(function (row) { offersOn[row.song_id] = true; });
+        return offersOn;
+      }).catch(function () {
+        /* A library that cannot say which songs have an offer is still a
+           library. This is a word in the corner of a card, and a project whose
+           schema.sql has not been run since has no such table at all. */
+        return offersOn;
+      });
+    },
+
+    /* Everything this account may see on one song, which is at most its own
+       offer plus, if the song is its own, every offer standing on it. Split by
+       the page rather than by two requests: the database has already decided
+       which rows come back, and which of the two kinds each one is is one
+       comparison against the account's own id. */
+    of: function (songId) {
+      if (!auth.in || !songId) return Promise.resolve([]);
+      return rest(OFF + "?select=" + OFF_FIELDS +
+        "&song_id=eq." + encodeURIComponent(songId) + "&order=updated_at.desc")
+        .then(function (rows) { return rows || []; })
+        .catch(function () { return []; });
+    },
+
+    one: function (songId, id) {
+      return rest(OFF + "?select=" + OFF_FIELDS +
+        "&song_id=eq." + encodeURIComponent(songId) +
+        "&id=eq." + encodeURIComponent(id) + "&limit=1")
+        .then(function (rows) { return rows && rows[0]; })
+        .catch(function () { return null; });
+    },
+
+    /* `owner` is not sent, and neither is any state but open. The database
+       fills the one in from the token and refuses the other, which is what
+       makes an offer unable to write itself into a song. */
+    add: function (row) {
+      return rest(OFF, { method: "POST", body: row, prefer: "return=representation" })
+        .then(function (rows) { return rows && rows[0]; });
+    },
+
+    update: function (id, row) {
+      return rest(OFF + "?id=eq." + encodeURIComponent(id),
+        { method: "PATCH", body: row, prefer: "return=representation" })
+        .then(function (rows) { return rows && rows[0]; });
+    },
+
+    /* Taken or declined, by the account the song belongs to and by nobody
+       else. What it does NOT do is write the song: that is a separate write to
+       a separate table, and it goes first (see takeOffer). */
+    answer: function (id, state) {
+      return rest(OFF + "?id=eq." + encodeURIComponent(id),
+        { method: "PATCH", body: { state: state } });
+    },
+
+    drop: function (id) {
+      return rest(OFF + "?id=eq." + encodeURIComponent(id), { method: "DELETE" });
+    },
+  };
+
+  function offerOn(id) { return !!(id && offersOn[id]); }
+
   /* ------------------------------------------------------------------ model */
 
   /* Words the app has taken for itself under /chords/. A song may not be
@@ -3704,10 +3804,13 @@
        song, and what to do to the page.
 
        THE WAY IN AND OUT OF THE EDITOR COMES DOWN WITH THEM. It is the one of
-       these the BAR makes rather than the page, and it exists on a phone and
-       nowhere else (see state.editToggle), so this is the only width it has to
-       be placed at: a pencil while reading and a tick while writing, in the
-       same place both times, so pressing it does not move it. */
+       these the BAR makes rather than the page, and this is the width it has
+       to be placed at by hand: a pencil while reading and a tick while
+       writing, in the same place both times, so pressing it does not move it.
+       On a desk the bar holds it itself, in the row with the rest (see
+       paintHeader), which is where it stands on a song of somebody else's: a
+       page that opens reading on any screen, because what is typed into it is
+       an offer and not the song. */
     if (made.acts && NARROW.matches) {
       home.insertBefore(made.acts, home.firstChild);
       if (state.editToggle && kept.edit) made.acts.appendChild(kept.edit);
@@ -5195,7 +5298,13 @@
     where(bare ? NO_STYLE_SAID : (shelf || "אקורדים"), shelf ? null : "אקורדים");
     setBusy("טוען שירים");
 
-    db.list().then(function (songs) {
+    /* The songs, and which of them has an offer standing on it, asked
+       together: the second is one question for the whole wall (see
+       offers.seen), and a card cannot be drawn without it. Answered as an
+       empty answer on a project that has no such table and for a reader with
+       no account, so the library opens either way. */
+    Promise.all([db.list(), offers.seen()]).then(function (got) {
+      var songs = got[0];
       state.songs = songs || [];
       /* the box in the bar searches this same list, and it has just been
          read: asking for it a second time a keystroke later would be the same
@@ -5284,7 +5393,13 @@
          The word itself stays on every card that earned it. What went is the
          tally, which was answering a question the library does not get
          asked. */
-      var TAGS = ["imported", "review", "draft"].map(function (key) {
+      /* AND הצעה STANDS FIRST, ahead of the song's own states, because it is
+         the only one of them that is waiting on a PERSON rather than on work.
+         A draft is unfinished whenever its author next sits down to it; an
+         offer is somebody else who has already done the work and is waiting to
+         hear. It is also the one way anybody finds out an offer was made at
+         all: nothing else on this page would say so. */
+      var TAGS = ["offer", "imported", "review", "draft"].map(function (key) {
         return {
           key: key,
           label: STATE_WORDS[key],
@@ -6032,23 +6147,36 @@
   }
 
   /* --- the one state a song is in --------------------------------------------
-     Four, and a song is in exactly one of them. They are separate columns in
+     Five, and a song is in exactly one of them. They are separate columns in
      the database because that is what a policy can read, and one word here,
      because a person should never have to work out a combination.
 
      Read in the order a song passes through them: still in the machine, read
      but unchecked, being worked on, out in the world. "Not published and not
      waiting to be checked" is somebody working on it, which is what a draft
-     is; there is no state for "finished and private". */
+     is; there is no state for "finished and private".
+
+     AND THE FIFTH IS NOT A PLACE IN THAT LINE. הצעה is not something the song
+     became, it is somebody standing next to it holding a change (see
+     song_offers): the song is published and unmoved, and this is the one thing
+     about it that somebody has to do something about. Which is exactly why it
+     is the word shown instead of the state underneath: what a state is for on
+     this page is "what does this song still need". */
   var STATE_WORDS = {
     imported: "מיובא",
+    offer: "הצעה",
     review: "לסקירה",
     draft: "טיוטה",
     published: "פורסם",
   };
 
+  /* An offer is asked about BEFORE published and after imported. A song still
+     in the machine cannot have one, because nobody else can open it; a
+     published song with an offer standing on it is a published song, and the
+     offer is the part of it that is waiting. */
   function rowState(s) {
     if (s.status === "queued" || (s.status === "reading" && !stalled(s))) return "imported";
+    if (offerOn(s.id)) return "offer";
     if (s.published) return "published";
     if (s.review) return "review";
     return "draft";
@@ -6343,6 +6471,7 @@
          is asking. */
       var WHY = {
         imported: "הקובץ נקרא עכשיו. אפשר להיכנס ולמלא שם, מי כתב וסגנון.",
+        offer: "מישהו הציע שינוי לשיר. השיר עצמו לא זז עד שמאשרים.",
         review: "השיר נקרא מתוך קובץ ועדיין לא נבדק",
         draft: "עוד עובדים עליו, ורק אתם רואים אותו",
       };
@@ -6733,8 +6862,47 @@
       /* the column is what the song ran in before a line could say otherwise,
          so it is what a line that says nothing inherits */
       song.lines = normalizeLines(song.lines, song.dir);
-      renderSong(song);
+
+      /* AND WHATEVER IS STANDING BESIDE IT. At most one offer this account has
+         made on it, and, if the song is this account's own, every offer made
+         to it. Both are the same request and the database decides which of the
+         two kinds come back (see offers.of); a reader with no account asks
+         nothing and is handed nothing. */
+      return offers.of(song.id).then(function (rows) {
+        renderSong(song, null, rows);
+      });
     }).catch(fail);
+  }
+
+  /* --- AN OFFER, AS THE SONG IT WOULD MAKE -----------------------------------
+     What the editor holds while somebody who does not own the song is typing,
+     and what the song's account is shown when they open one. Both want the
+     same thing: the song, with the offer's words in it.
+
+     A COPY, AND NEVER THE ROW ITSELF. The editor writes into what it is given,
+     and what it is given here is the offer; the song underneath has to be
+     standing untouched the moment the pencil goes off again (see renderSong).
+
+     It keeps the song's id, its address and its owner, because those are the
+     SONG and an offer has none of its own: it is a way this song could read
+     and not another song. What it does not keep is any of the words, unless
+     there is no offer yet, in which case the offer starts as the song does. */
+  function offerSong(song, offer) {
+    var from = offer || song;
+    return {
+      id: song.id,
+      slug: song.slug,
+      owner: song.owner,
+      published: song.published,
+      title: String(from.title || ""),
+      lyrics_by: String(from.lyrics_by || ""),
+      music_by: String(from.music_by || ""),
+      dir: from.dir || "rtl",
+      lines: normalizeLines(from.lines, from.dir || "rtl"),
+      styles: Array.isArray(from.styles) ? from.styles : styles(from),
+      status: "ready",
+      status_note: "",
+    };
   }
 
   /* --- THE SAME FACTS, TO SOMEBODY WHO CANNOT CHANGE THEM -------------------
@@ -6855,7 +7023,7 @@
      as a precaution: an editor here would write today's row from yesterday's
      song without anybody asking for it, and the way to do that on purpose is
      the restore button in the band at the top. */
-  function renderSong(song, past) {
+  function renderSong(song, past, offerRows) {
     /* OPENED, WHICH IS WHAT PUTS IT AT THE FRONT OF THE LIBRARY (see sawSong).
        The song as it is now and not a version of it: reading what a song used
        to be is not being on it, and a song being typed for the first time has
@@ -6896,7 +7064,63 @@
        true. */
     var coming = song.status === "queued" || (song.status === "reading" && !stalled(song));
 
-    var editing = !past && auth.in && (!onPhone || !!state.editOnPhone);
+    /* --- WHOSE SONG IT IS, AND WHO IS WAITING ON IT ---------------------------
+       The library is everybody's to read and a song is one account's to write.
+       Everybody else still gets the editor, and what they write is an OFFER:
+       the song does not move, the offer stands beside it, and the account the
+       song belongs to is the only one that can take it in (see song_offers).
+
+       A song that does not exist yet is the account's that is typing it. It
+       has no owner column filled in because it has no row, and the database
+       will write its own name into it the moment there is one. */
+    var owned = !song.id || mySong(song);
+
+    /* At most one of the first, because a person has one offer per song, and
+       any number of the second. Which of the two a row is is one comparison:
+       the database has already decided that these are the only rows this
+       account may see at all. */
+    var myOffer = null;
+    var toMe = [];
+    (offerRows || []).forEach(function (o) {
+      if (auth.session && o.owner === auth.session.id) myOffer = o;
+      else if (o.state === "open") toMe.push(o);
+    });
+
+    /* Somebody is waiting on somebody: either an offer this account made and
+       nobody has answered, or one made to it. Asked as a function and not
+       written down once, because the first save on a new offer makes it true
+       while the page is standing there. */
+    function offerWaiting() {
+      return !!(toMe.length || (myOffer && myOffer.state === "open"));
+    }
+
+    /* THE SONG IS WHAT A READER READS, WHATEVER THEY WOULD HAVE IT SAY. Reading
+       is the published song and writing is the offer, and the pencil is the
+       whole of the difference between the two: a page that showed somebody
+       their own unaccepted words as though they were the song would be lying
+       about what everybody else can see.
+
+       Which is also why the editor is not what a song of somebody else's opens
+       in. It is one press away, the same press a phone has always had, and the
+       press is what says "I mean to change this". */
+    /* WHICH SONG THE PENCIL WAS PRESSED ON, and not whether it was pressed.
+       The editor is asked for per song, because both of the pages that open
+       reading are reading for a reason that does not travel: a phone is held
+       while walking, and a song of somebody else's is not yours to change by
+       arriving at it. A yes carried from one song to the next would open the
+       next one in the editor, which is exactly the accident the press exists
+       to prevent. A song with no row yet is "new", which is what the address
+       that starts one asks for. */
+    var editKey = song.id || "new";
+    var editing = !past && auth.in &&
+      (owned ? (!onPhone || state.editAsked === editKey) : state.editAsked === editKey);
+
+    /* The row stays whole in `row` and the editor is handed a copy with the
+       offer's words in it. Everything about the SONG is asked of `row` from
+       here on: who owns it, what it is called in the bar, and what to draw
+       when the pencil goes off again. */
+    var row = song;
+    if (editing && !owned) song = offerSong(row, myOffer);
 
     /* Now there is something on the page to print, and, on a phone, a way into
        the editor and back out. Both are about the page you are on, so both are
@@ -6919,16 +7143,23 @@
 
        Only the bar was repainted when the line was crossed. The song is drawn
        again now, and it comes back as whichever of the two that width means. */
-    state.redrawSong = function () { renderSong(song, past); };
+    state.redrawSong = function () { renderSong(row, past, offerRows); };
     state.printable = true;
-    /* Not on a version: there is nothing here to go into. */
-    if (!past && auth.in && onPhone) {
+    /* Not on a version: there is nothing here to go into.
+
+       ON A PHONE, WHERE EVERY SONG OPENS READING, AND ON ANYBODY ELSE'S SONG,
+       WHERE IT DOES TOO. The two are the same press for two different reasons:
+       a phone is held while walking, and somebody else's song is not yours to
+       change by opening it. What the press means on one is "I mean to type
+       here"; on the other it is that and "and what I type is an offer", which
+       is what the band under the bar then says. */
+    if (!past && auth.in && (onPhone || !owned)) {
       state.editToggle = {
         on: editing,
         flip: function () {
           flush();
-          state.editOnPhone = !editing;
-          renderSong(song);
+          state.editAsked = editing ? null : editKey;
+          renderSong(row, past, offerRows);
         },
       };
     }
@@ -6975,7 +7206,7 @@
     var title = el("h1", "on-paper", song.title);
 
     if (past || !editing) {
-      where((past ? "גרסה של " : "") + (song.title || "שיר חדש"));
+      where((past ? (past.offer ? "הצעה ל" : "גרסה של ") : "") + (song.title || "שיר חדש"));
     } else {
       whereEditable(song.title, "שם השיר", function (typed) {
         song.title = typed;
@@ -7009,9 +7240,18 @@
        Not published and not waiting to be checked means somebody is working on
        it, which is what a draft is. There is no fourth state for "finished and
        private": a song nobody else can open is a song still being worked on,
-       whether or not anybody has touched it today. */
+       whether or not anybody has touched it today.
+
+       AND הצעה, WHICH IS NOT ONE OF THE THREE AND STANDS IN FRONT OF THEM.
+       It is not something the song became: the song is exactly where it was,
+       and somebody is standing next to it holding a change. Both of the two it
+       is between read the same word here, which is the point of it being the
+       state and not a note to one of them: the person who offered wants to
+       know it is still waiting, and the person who can take it wants to know
+       it is there at all. */
     var STATE_WORDS = {
       imported: "מיובא",
+      offer: "הצעה",
       review: "לסקירה",
       draft: "טיוטה",
       published: "פורסם",
@@ -7019,6 +7259,7 @@
 
     function songState() {
       if (coming) return "imported";
+      if (offerWaiting()) return "offer";
       if (song.published) return "published";
       if (song.review) return "review";
       return "draft";
@@ -7251,6 +7492,12 @@
           ? "השיר פתוח לכולם. כל שינוי בו מחזיר אותו לטיוטה."
           : was === "imported"
           ? "השיר נקרא עכשיו מתוך הקובץ. לחיצה מאפשרת לבטל."
+          /* The same word to both of them and two different things to do with
+             it: one can take the offer in, the other can take it back. */
+          : was === "offer"
+          ? (owned
+            ? "מישהו הציע שינוי לשיר. השיר לא זז עד שמאשרים, ולחיצה פותחת את ההצעה."
+            : "ההצעה שלכם ממתינה לאישור של מי שהעלה את השיר. השיר עצמו לא השתנה.")
           : "לחיצה מפרסמת את השיר: רק שיר מפורסם נפתח למי שלא כתב אותו.";
       };
       showState();
@@ -7463,6 +7710,83 @@
        in the band rather than under the sheet: the sentence and the answer to
        it belong together, and a long song would put them a screen apart. */
     if (past) app.appendChild(pastBand(past, flipDiff));
+
+    /* --- AND AN OFFER SAYS SO IN THE SAME PLACE, IN THE SAME BAND -------------
+       The word in the bar says הצעה to both of the people who can see it, and
+       this is what it means to whichever of the two is reading, with the one
+       thing there is for them to do about it. The sentences are not the same
+       sentence: one of them has been waiting to hear and the other is the one
+       who has to say.
+
+       The same band a version uses, in the same place, because it is the same
+       kind of thing: a line over the song saying that what is under it is not
+       simply the song. */
+    var band = el("div", "past-band");
+    band.hidden = true;
+    if (!past) app.appendChild(band);
+
+    function showBand() {
+      band.textContent = "";
+      var said = el("span", "past-said");
+      var actions = el("div", "row-actions");
+      band.appendChild(said);
+      band.appendChild(actions);
+      band.hidden = false;
+
+      /* --- to the account the song belongs to ---
+         Somebody has done the work and is waiting. The song has not moved and
+         says so, because the first thing anybody asks on being told there is
+         an offer is whether their song has already changed. */
+      if (owned) {
+        if (!toMe.length) { band.hidden = true; return; }
+        said.textContent = toMe.length === 1
+          ? "מישהו הציע שינוי לשיר. השיר עצמו לא זז עד שתאשרו את ההצעה."
+          : "יש " + toMe.length + " הצעות שינוי לשיר. השיר עצמו לא זז עד שתאשרו.";
+        toMe.forEach(function (o) {
+          /* The name arrives after the band does, so the button is made with
+             the words that are true without it and gets the name when it
+             comes (see db.who). */
+          var open = button("לפתיחת ההצעה", null, "small", function () {
+            flush();
+            go(addr(row.slug, "offers", o.id));
+          });
+          db.who(o.owner).then(function (name) {
+            if (name && open.isConnected) open.querySelector(".lb").textContent = "ההצעה של " + name;
+          });
+          actions.appendChild(open);
+        });
+        return;
+      }
+
+      /* --- and to whoever is offering ---
+         Said BEFORE anything is typed, which is the whole reason it is here:
+         somebody who presses the pencil on a song of somebody else's is about
+         to spend twenty minutes on it, and finding out afterwards that it was
+         not the song they were changing is finding out too late. */
+      if (!myOffer && !editing) { band.hidden = true; return; }
+
+      if (!myOffer) {
+        said.textContent = "השיר הזה לא שלכם. מה שתכתבו כאן נשמר כהצעה, והשיר ישתנה רק אם מי שהעלה אותו יאשר אותה.";
+      } else if (myOffer.state === "taken" || myOffer.state === "declined") {
+        /* An answered offer keeps its words, so it is still something that can
+           be worked on and asked again with, and still something to be rid of.
+           Both of those are the one button there has ever been here. */
+        said.textContent = myOffer.state === "taken"
+          ? "ההצעה שלכם התקבלה, והשיר עודכן ממנה."
+          : "ההצעה שלכם נדחתה. כל שינוי שתכתבו כאן יחזיר אותה לאישור.";
+        actions.appendChild(button("הסרת ההצעה", ICON.trash, "ghost small", dropOffer));
+      } else if (editing) {
+        said.textContent = "זו ההצעה שלכם לשיר, ולא השיר עצמו. היא נשמרת תוך כדי הכתיבה וממתינה לאישור של מי שהעלה את השיר.";
+        actions.appendChild(button("ביטול ההצעה", ICON.trash, "ghost small", dropOffer));
+      } else {
+        /* Reading, with an offer waiting. What is on the screen is the song as
+           everybody else has it, which is exactly what somebody in this
+           position is most likely to be wrong about. */
+        said.textContent = "ההצעה שלכם לשיר ממתינה לאישור. מה שכתוב כאן הוא השיר עצמו, בלי מה שהצעתם.";
+        actions.appendChild(button("ביטול ההצעה", ICON.trash, "ghost small", dropOffer));
+      }
+    }
+    if (!past) showBand();
 
     /* --- the same sheet, with what changed marked on it ------------------------
        Not a second page and not two songs side by side. The version is already
@@ -7751,8 +8075,6 @@
        and «which of these eight chords is it» only means anything with the
        eight on the page beside it. The tuner, which is about the guitar and
        not about anything written down, has its door in the bar instead. */
-    micDoor = earDoor("chord", "ear-door");
-    tools.appendChild(micDoor);
     /* WHAT IS DONE TO A RECORDING STANDS BESIDE THE MICROPHONE AND NOT AT THE
        FOOT OF THE PAGE. A band along the bottom is the right place for a
        measurement, which is read; it is the wrong place for a control, which
@@ -7891,7 +8213,20 @@
     var acts = el("div", "song-acts");
     if (editing) {
       var mine = [];
-      if (song.id) {
+      /* DELETING IS THE SONG'S ACCOUNT AND NOBODY ELSE. The database refuses
+         it from anybody else and would go on refusing it whatever this line
+         said (see the policies in schema.sql); what this line stops is the
+         OFFER of it. A wastebasket over somebody else's song that can only
+         ever answer "אין הרשאה" reads as a broken app rather than as a song
+         that is not yours, and there is nothing here for it to do: a person
+         who is not the owner is writing an offer, and the way to be rid of an
+         offer is to take it back (see dropOffer).
+
+         The same goes for the versions beside it. A history belongs to the
+         account that wrote the song, so the count comes back nought for
+         everybody else and the button would never appear anyway; not asking is
+         the same page and one request fewer. */
+      if (song.id && owned) {
         var trash = iconBtn(ICON.trash, "מחיקת השיר", removeSong);
         trash.classList.add("quiet");
         mine.push(trash);
@@ -7901,7 +8236,7 @@
          history, and a button leading to an empty page is a button that has to
          be pressed to find that out. The answer comes back after the bar is
          painted, so the button is made hidden and shown when it is earned. */
-      if (song.id) {
+      if (song.id && owned) {
         var pastBtn = iconBtn(ICON.history, "גרסאות שפורסמו", function () {
           flush();
           go(addr(song.slug, "versions"));
@@ -7959,8 +8294,11 @@
     var takes = el("div", "takes");
     if (!past) {
       app.appendChild(takes);
-      state.takeSong = song;
-      state.redrawTakes = function () { drawTakes(takes, song); };
+      /* The SONG and not what the editor happens to be holding: a take is
+         somebody playing this song, and an offer standing beside it is not a
+         second song to have been played. */
+      state.takeSong = row;
+      state.redrawTakes = function () { drawTakes(takes, row); };
       state.redrawTakes();
     }
 
@@ -8358,6 +8696,41 @@
         return;
       }
 
+      /* --- THE CHIP SAYS הצעה, AND THEN IT IS NOT ABOUT PUBLISHING AT ALL ----
+         The two people it is between get the two different things there are to
+         do with an offer, and neither of them is the one thing this menu
+         otherwise offers: the song's account can open what was offered, which
+         is where taking it in and turning it down both live, and the person
+         who made it can take it back.
+
+         Publishing is not among them either way. A song with an offer standing
+         on it is already published (nobody else could have opened it), and the
+         person who made the offer has nothing here to publish. */
+      if (offerWaiting()) {
+        if (owned) {
+          toMe.forEach(function (o) {
+            var who = "לפתיחת ההצעה";
+            var item = button(who, null, "ghost small", function () {
+              closeStateMenu();
+              go(addr(row.slug, "offers", o.id));
+            });
+            db.who(o.owner).then(function (name) {
+              if (name) item.querySelector(".lb").textContent = "ההצעה של " + name;
+            });
+            stateMenu.appendChild(item);
+          });
+        } else if (myOffer) {
+          stateMenu.appendChild(button("ביטול ההצעה", ICON.trash, "ghost small", function () {
+            closeStateMenu();
+            dropOffer();
+          }));
+        }
+        document.body.appendChild(stateMenu);
+        placeStateMenu(anchor);
+        document.addEventListener("pointerdown", stateOutside, true);
+        return;
+      }
+
       stateMenu.appendChild(button("פורסם", null, "ghost small", function () {
         closeStateMenu();
         song.published = true;
@@ -8424,12 +8797,18 @@
 
        Only a change to the song itself. Publishing is a statement ABOUT the
        song and must not count as work on it, or the state could never leave
-       draft: it would put itself straight back. */
+       draft: it would put itself straight back.
+
+       AND ONLY ON THE SONG'S OWN ACCOUNT. Somebody else typing here is writing
+       an offer, and the song they are writing it against has not moved: taking
+       it out of the world because a stranger typed a chord would be the one
+       thing this whole arrangement exists to prevent, and it would be done to
+       a copy anyway. Their state is the offer's (see songState). */
     var lastBody = songBody();
 
     function mark() {
       var body = songBody();
-      if (!restoring && editing && body !== lastBody && songState() !== "draft") {
+      if (!restoring && editing && owned && body !== lastBody && songState() !== "draft") {
         song.draft = true;
         song.published = false;
         /* A machine read it and a person has now touched it, which is the
@@ -10265,6 +10644,12 @@
       var name = String(song.title || "").trim();
       if (!name) return note("צריך שם לשיר", true);
 
+      /* AND IF THE SONG IS NOT THIS ACCOUNT'S, NONE OF THE BELOW HAPPENS. What
+         is being written is an offer and the song is not touched at all: not
+         its words, not its address, not whether it is published. It is the
+         same typing, saving itself the same way, into a different row. */
+      if (!owned) return commitOffer();
+
       var payload = {
         title: name,
         styles: styles(song),
@@ -10308,6 +10693,12 @@
           var wasKey = draftKey();
           song.id = row.id;
           song.slug = row.slug;
+          /* And the pencil was pressed on "new", which is not what this song
+             is called any more: a page that was drawn again from here would
+             find the editor was asked for on a song that no longer exists and
+             close it (see editKey). */
+          if (state.editAsked === editKey) state.editAsked = row.id;
+          editKey = row.id;
           /* what went out is what is now in the database, and anything typed
              while it was in the air is still ahead of it */
           saved = going;
@@ -10361,6 +10752,87 @@
             : "השמירה נכשלה: " + error.message, true);
         });
       }
+    }
+
+    /* --- SAVING, WHEN THE SONG IS SOMEBODY ELSE'S ------------------------------
+       The same typing, saving itself the same way, into a different row. What
+       goes out is the six things a song IS: its name, who wrote the words and
+       the tune, which way it runs, the words themselves and what kind of song
+       it is. Nothing else, because nothing else is the offer's to say: whether
+       the song is published, what its address is and whether anybody has
+       checked it are facts about the song, and the song is not moving.
+
+       ONE ROW, REWRITTEN. The first save makes it and every save after it
+       writes over it, the same way the song's own saves write over the song:
+       an offer is one answer to "how should this read", not a pile of them.
+
+       And every one of them says `open`, so an offer that was turned down and
+       then worked on again is waiting again. Nobody has to press anything for
+       that: going back to it IS asking again. */
+    function commitOffer() {
+      var body = {
+        title: String(song.title || "").trim(),
+        dir: songDir(song.lines),
+        lines: songToText(song.lines),
+        styles: styles(song),
+        state: "open",
+      };
+      CREDITS.forEach(function (c) { body[c.field] = String(song[c.field] || "").trim(); });
+
+      var making = null;
+      if (!myOffer) {
+        /* which song it is about, said once, when the row is made. It is not
+           sent again afterwards: an offer that could be moved to another song
+           would be a change nobody typed. */
+        making = { song_id: row.id };
+        Object.keys(body).forEach(function (key) { making[key] = body[key]; });
+      }
+
+      var going = snapshot();
+      var waiting = offerWaiting();
+      inFlight = true;
+      note("שומר");
+
+      (myOffer ? offers.update(myOffer.id, body) : offers.add(making)).then(function (got) {
+        inFlight = false;
+        if (got) myOffer = got;
+        saved = going;
+        mark();
+        /* The first save is the moment the offer starts existing, so it is the
+           moment the page has to start saying so: the word in the bar and the
+           band under it. */
+        if (!waiting) {
+          if (showState) showState();
+          showBand();
+        }
+        note(current === saved ? "נשמר" : "לא נשמר");
+        if (again) { again = false; queueSave(true); }
+      }).catch(function (error) {
+        inFlight = false;
+        again = false;
+        var denied = error.status === 401 || error.status === 403;
+        note(denied ? "אין הרשאה" : "ההצעה לא נשמרה", true);
+        toast(denied
+          ? "אין הרשאה. נסו להתחבר שוב."
+          : "ההצעה לא נשמרה: " + error.message, true);
+      });
+    }
+
+    /* Taking it back, which is the only thing the person who made an offer can
+       do to it besides write it. The song is untouched either way, so what the
+       question is about is the typing, and it says so. */
+    function dropOffer() {
+      if (!myOffer) return;
+      if (!window.confirm("לבטל את ההצעה שלכם לשיר?\n\nמה שכתבתם בה יימחק. השיר עצמו לא ישתנה.")) return;
+      clearTimeout(saveTimer);
+      saveTimer = null;
+      offers.drop(myOffer.id).then(function () {
+        toast("ההצעה בוטלה");
+        /* and the page goes back to the song as everybody else reads it, which
+           is what is left when the offer is gone */
+        state.editAsked = null;
+        renderSong(row, past, []);
+      }).catch(function (e) { toast("הביטול נכשל: " + e.message, true); });
     }
 
     /* It asks, and it no longer says "לצמיתות", because it is not: the song
@@ -10777,10 +11249,31 @@
   function pastBand(past, onFlip) {
     var band = el("div", "past-band");
     var said = el("span", "past-said");
-    var plain = "זו גרסה שפורסמה " + whenWords(past.version.created_at) + ", ולא השיר עצמו. אי אפשר לערוך אותה, אפשר לשחזר אותה.";
-    var marked = "מסומן מה שהשתנה מהגרסה שלפניה: ירוק הוא מה שנוסף, אדום ומחוק הוא מה שירד.";
+    /* AN OFFER IS READ IN THIS BAND TOO, and the sentences are the only
+       difference: both pages are the song drawn from somewhere other than the
+       song, with what it would change marked on it and an answer at the end.
+       A version is one the song already gave and can be gone back to; an offer
+       is one somebody else is proposing and is waiting on the press. */
+    var offer = past.offer || null;
+    var plain = offer
+      ? "זו הצעה לשיר, ולא השיר עצמו. השיר ישתנה רק אם תאשרו אותה."
+      : "זו גרסה שפורסמה " + whenWords(past.version.created_at) + ", ולא השיר עצמו. אי אפשר לערוך אותה, אפשר לשחזר אותה.";
+    var marked = offer
+      ? "מסומן מה שההצעה משנה בשיר: ירוק הוא מה שנוסף, אדום ומחוק הוא מה שיורד."
+      : "מסומן מה שהשתנה מהגרסה שלפניה: ירוק הוא מה שנוסף, אדום ומחוק הוא מה שירד.";
     said.textContent = plain;
     band.appendChild(said);
+
+    /* Who made it, once the name is in. It is the one thing about an offer
+       that the drawing itself cannot say, and it is most of what the answer
+       depends on. */
+    if (offer) {
+      db.who(offer.owner).then(function (name) {
+        if (!name || !said.isConnected) return;
+        said.textContent = "זו הצעה של " + name + " לשיר, ולא השיר עצמו. השיר ישתנה רק אם תאשרו אותה.";
+        plain = said.textContent;
+      });
+    }
 
     var actions = el("div", "row-actions");
 
@@ -10798,6 +11291,23 @@
       actions.appendChild(flip);
     }
 
+    if (offer) {
+      /* The two answers, and the way out without giving either. Taking it in
+         is the one that writes the song, so it is the one that looks like a
+         button and the other two are quiet. */
+      actions.appendChild(button("אישור ההצעה", ICON.check, "small", function () {
+        takeOffer(past.song, offer);
+      }));
+      actions.appendChild(button("דחייה", null, "ghost small", function () {
+        declineOffer(past.song, offer);
+      }));
+      actions.appendChild(button("חזרה לשיר", ICON.back, "ghost small", function () {
+        go(addr(past.song.slug));
+      }));
+      band.appendChild(actions);
+      return band;
+    }
+
     actions.appendChild(button("שחזור הגרסה הזאת", ICON.undo, "small", function () {
       restoreVersion(past.song, past.version);
     }));
@@ -10806,6 +11316,109 @@
     }));
     band.appendChild(actions);
     return band;
+  }
+
+  /* --- TAKING AN OFFER IN ----------------------------------------------------
+     The one press in this app that writes one person's typing into another
+     person's song, and it is made by the second of them. Everything up to here
+     has kept the two apart on purpose; this is where they meet, and it is a
+     deliberate press on a page where the whole change is drawn out.
+
+     THE SONG FIRST AND THE OFFER AFTER IT, in that order and never the other
+     way round. Two writes to two tables cannot be made one, so the order is
+     the whole of the safety: if the second fails the offer is still open, the
+     band still says so, and pressing again does the same thing twice, which
+     changes nothing. The other order would leave an offer marked taken that
+     was never taken, and no way to find out.
+
+     Six columns, which are the song. Not `published`, not the address, not
+     whether anybody has checked it: those are facts about the song and this is
+     a change to what it says. */
+  function takeOffer(song, offer) {
+    if (!window.confirm('לאשר את ההצעה ל"' + (song.title || "השיר") +
+      '"?\n\nמה שכתוב בשיר עכשיו יוחלף במה שבהצעה.')) return;
+
+    setBusy("מאשר");
+    db.update(song.id, {
+      title: String(offer.title || ""),
+      lyrics_by: String(offer.lyrics_by || ""),
+      music_by: String(offer.music_by || ""),
+      dir: offer.dir || "rtl",
+      lines: offer.lines == null ? "" : offer.lines,
+      styles: Array.isArray(offer.styles) ? offer.styles : [],
+    }).then(function (row) {
+      /* WHAT THE WORLD READS HAS JUST CHANGED, so the shelf gets a copy of it
+         and the site is built again from the copy: the trigger on the versions
+         table is what posts to GitHub (see library_changed in schema.sql), and
+         it is why nothing in song_offers needs a trigger of its own.
+
+         Only for a published song. A version is what a song WAS when it went
+         out, and one that has not gone out has not. */
+      if (row && row.published) keepVersion(row);
+      return offers.answer(offer.id, "taken").then(function () {
+        toast("ההצעה אושרה, והשיר עודכן");
+        go(addr((row && row.slug) || song.slug));
+      });
+    }).catch(function (error) {
+      /* back to the page that was being read, so the failure is a sentence
+         over a page rather than a word on an empty screen */
+      route();
+      toast("האישור נכשל: " + error.message, true);
+    });
+  }
+
+  /* Read, and not taken. The offer stays exactly where it is, with its words
+     in it: the person who wrote it can see what became of it and go on working
+     on it, and touching it puts it back in front of you (see commitOffer).
+     Nothing here deletes anybody's evening of typing. */
+  function declineOffer(song, offer) {
+    if (!window.confirm("לדחות את ההצעה?\n\nהשיר לא ישתנה. ההצעה תישאר אצל מי שכתב אותה, והוא יוכל לתקן אותה ולהציע שוב.")) return;
+
+    setBusy("שומר");
+    offers.answer(offer.id, "declined").then(function () {
+      toast("ההצעה נדחתה");
+      go(addr(song.slug));
+    }).catch(function (error) {
+      route();
+      toast("הדחייה נכשלה: " + error.message, true);
+    });
+  }
+
+  /* One offer, opened as the song it would make: the same page the song has,
+     drawn from the offer, with the band over it saying so and holding the
+     answer. Read and never written, which renderSong already knows how to be
+     (see `past`).
+
+     `before` is the SONG, and that is the difference between this and a
+     version: what a version is read against is the version before it, and what
+     an offer is read against is the thing it is offering to change. */
+  function viewOffer(slug, id) {
+    where("הצעה");
+    if (!auth.in) return needSignIn("הצעה לשיר היא בין מי שכתב אותה למי שהעלה את השיר, וצריך חשבון כדי לפתוח אותה.");
+
+    setBusy("טוענים את ההצעה");
+    db.bySlug(slug).then(function (song) {
+      if (!song) return notFound(slug);
+
+      return offers.one(song.id, id).then(function (offer) {
+        if (!offer) return noOffer(song);
+        renderSong(offerSong(song, offer), {
+          song: song, version: offer, before: song, offer: offer,
+        });
+      });
+    }).catch(fail);
+  }
+
+  /* Withdrawn, answered already, or simply not this account's business: all
+     three look the same from here, and the database answering with nothing is
+     the right answer rather than a fact about the offer. */
+  function noOffer(song) {
+    where("לא נמצא");
+    app.innerHTML = "";
+    var box = el("div", "center");
+    box.appendChild(el("p", null, "ההצעה הזאת לא נמצאה. אולי היא בוטלה, ואולי כבר נענתה."));
+    box.appendChild(button("חזרה לשיר", ICON.back, "ghost", function () { go(addr(song.slug)); }));
+    app.appendChild(box);
   }
 
   /* --- putting one back ------------------------------------------------------
@@ -12369,7 +12982,7 @@
         return auth.signInWithGoogle();
       }
       /* it opens IN the editor, since an empty song is nothing to read */
-      state.editOnPhone = true;
+      state.editAsked = "new";
       return viewSong(null);
     }
 
@@ -12393,6 +13006,19 @@
     if (p.length >= 2 && p[1] === "versions") {
       if (p[2]) return viewVersion(p[0], p[2]);
       return viewVersions(p[0]);
+    }
+
+    /* --- what somebody else would have it say ---
+       /<slug>/offers/<id>   one offer, opened as the song it would make
+
+       There is no page listing them, and that is not an omission: an offer is
+       reached from the song it is about, where the band names every one
+       standing on it (see showBand), and a song has one or two. What that
+       leaves is the address of the one being read, which has to exist so that
+       the answer is a page somebody can come back to. */
+    if (p.length >= 2 && p[1] === "offers") {
+      if (p[2]) return viewOffer(p[0], p[2]);
+      return viewSong(p[0]);
     }
 
     return viewSong(p[0]);
@@ -12579,10 +13205,10 @@
      on closes the panel, which is what a door does; pressing the other one
      moves to that tab rather than closing, because that press meant "show me
      the other thing". */
-  function askEar(mode) {
+  function askEar(mode, then) {
     if (ear && earMode === mode) return shutEar();
     earMode = mode;
-    if (ear) return earTab();
+    if (ear) { earTab(); return then && then(); }
 
     if (!window.CHORDS_EAR || !window.CHORDS_FOLLOW ||
         !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -12592,6 +13218,7 @@
     buildEar();
     window.CHORDS_EAR.open().then(function () {
       earTick();
+      if (then) then();
     }, function (err) {
       shutEar();
       /* The two refusals worth telling apart: one is a decision and the other
@@ -12603,12 +13230,13 @@
 
   function shutEar() {
     if (!ear) return;
-    /* A RECORDING IN PROGRESS IS FINISHED, NOT ABANDONED. Switching the
+    /* A RECORDING IN PROGRESS IS ASKED ABOUT, NOT ABANDONED. Switching the
        microphone off while a take is running is somebody who has stopped
        playing, and what they have already played is the take: throwing it away
-       because of which button they reached for would be losing a performance
-       to a technicality. Stopped first, before the stream under it goes. */
-    if (taping()) stopTape();
+       over which button they reached for would be losing a performance to a
+       technicality. So the offer comes up and the closing waits for it: what
+       answers the offer closes this properly (see hearTake). */
+    if (taping()) return stopTape();
     if (earTicking) cancelAnimationFrame(earTicking);
     earTicking = 0;
     if (window.CHORDS_EAR.live()) window.CHORDS_EAR.close();
@@ -13026,10 +13654,14 @@
      a second ordering, sorted by hand, and the first time it differed the mark
      would land on the wrong chord with nothing on screen saying why.
      ========================================================================== */
-  /* The microphone in the song's own strip, and the row of things done to a
-     recording beside it. Made with the song and kept here so that a change of
-     state can repaint them without redrawing the song. */
-  var micDoor = null;
+  /* Where the recording lives in the song's own strip. Made with the song and
+     kept here so that a change of state can repaint it without redrawing the
+     song under it.
+
+     THERE IS NO MICROPHONE BUTTON BESIDE IT ANY MORE. Opening the microphone,
+     following the song and recording it are one thing somebody wants, so they
+     are one thing to press for, and a row of pictures that has to be worked
+     through in the right order is a row nobody works through. */
   var tapeBar = null;
 
   var following = null;
@@ -13331,30 +13963,48 @@
      to start listening is the picture that says it is listening, and the same
      one goes red when it is being kept. */
   function paintTape() {
-    if (micDoor && micDoor.isConnected) {
-      micDoor.classList.toggle("is-live", earOpen() && earMode === "chord");
-      micDoor.classList.toggle("is-taping", taping() && !tapeHeld());
-      micDoor.classList.toggle("is-held", tapeHeld());
-    }
     if (!tapeBar || !tapeBar.isConnected) return;
     tapeBar.innerHTML = "";
-    if (!earOpen() || earMode !== "chord") return;
 
+    /* --- NOT STARTED: ONE BUTTON, AND IT RECORDS ------------------------------
+       There is no separate microphone to switch on first. Opening the
+       microphone, following the song and recording it are one thing somebody
+       wants and one thing they should have to press for, and a row of pictures
+       that has to be worked through in order is a row nobody works through.
+
+       FILLED, ROUND, AND IN THE INK THE CHORDS ARE IN, because it is the whole
+       of the way in and the only thing in this strip that starts anything.
+       Everything else here is a setting, drawn quiet on purpose: a setting is
+       read far more often than it is pressed. */
     if (!taping()) {
-      /* FILLED, AND IN THE INK THE CHORDS ARE IN. Everything else in this
-         strip is a setting: a picture on a white square, quiet on purpose,
-         because a setting is read far more often than it is pressed. This one
-         is the only thing here that starts something, it is the reason the
-         microphone was switched on at all, and a button that has to be
-         searched for among four identical grey squares is a button nobody
-         finds. So it looks like what it is: press me. */
-      var go = iconBtn(ICON.dot, "הקלטה", startTape);
+      var go = iconBtn(ICON.dot, "הקלטה", beginTake);
       go.classList.add("is-rec");
       tapeBar.appendChild(go);
       return;
     }
-    tapeBar.appendChild(iconBtn(tapeHeld() ? ICON.dot : ICON.pause,
-      tapeHeld() ? "להמשיך להקליט" : "השהיה", holdTape));
+
+    /* --- RUNNING: ONE BUTTON, AND IT HOLDS ------------------------------------
+       And it is the thing that says the recording is running, so it is red and
+       it breathes: a red mark that does not move reads as a decoration and one
+       that pulses reads as live, which is the difference between "there is a
+       recording here" and "it is going".
+
+       No stop beside it. Finishing is a decision, and a decision does not
+       belong under a thumb that is holding a plectrum: pausing is the cheap
+       gesture and stopping is behind it. */
+    if (!tapeHeld()) {
+      var hold = iconBtn(ICON.pause, "השהיה", holdTape);
+      hold.classList.add("is-rec", "is-taping");
+      tapeBar.appendChild(hold);
+      return;
+    }
+
+    /* --- HELD: CARRY ON, OR FINISH --------------------------------------------
+       The two things there are to do to a paused recording, and carrying on is
+       the same filled circle that started it, in the same place. */
+    var on = iconBtn(ICON.dot, "להמשיך להקליט", holdTape);
+    on.classList.add("is-rec");
+    tapeBar.appendChild(on);
     tapeBar.appendChild(iconBtn(ICON.stop, "סיום ההקלטה", stopTape));
   }
 
@@ -13487,6 +14137,14 @@
     return !!tape && tape.rec.state === "paused";
   }
 
+  /* ONE PRESS FOR ALL OF IT. The microphone, the following and the recording
+     are one thing somebody wants, so they are one thing to press for: if the
+     ear is not open yet it is opened and the take starts the moment it is. */
+  function beginTake() {
+    if (earOpen() && earMode === "chord") return startTape();
+    askEar("chord", startTape);
+  }
+
   function startTape() {
     if (tape) return;
     var stream = window.CHORDS_EAR.stream();
@@ -13501,10 +14159,15 @@
       rec: rec, bits: [], marks: [], mime: rec.mimeType || kind || "audio/webm",
       began: Date.now(), still: 0, since: 0, seconds: 0,
     };
+    /* GUARDED, because this fires after the answer. Stopping a recorder makes
+       it hand over one last piece, and by the time that arrives the take has
+       been kept or thrown away and there is nothing to push it onto. */
     rec.ondataavailable = function (event) {
-      if (event.data && event.data.size) tape.bits.push(event.data);
+      if (tape && event.data && event.data.size) tape.bits.push(event.data);
     };
-    rec.onstop = function () { keepTake(); };
+    /* Nothing on stop. What is offered is taken by stopTape while the recorder
+       is still alive, so that dismissing the offer leaves the take where it
+       was; by the time this fires an answer has already been given. */
     rec.start();
     /* Where the mark already is, so a take opens on the chord it opened on
        rather than on the first one the player happens to move to. */
@@ -13539,28 +14202,54 @@
     paintHeader();
   }
 
+  /* --- FINISHING IS ASKING, NOT ENDING ---------------------------------------
+     Stopping does not stop the recorder. It holds it, takes a copy of what has
+     been played so far, and offers that. If the offer is dismissed without an
+     answer the take is still there, still held, with the same two buttons over
+     the song and the same recording behind them, and pressing stop again asks
+     the same question.
+
+     WHICH IS THE DIFFERENCE BETWEEN A QUESTION AND A TRAPDOOR. A panel that
+     ends the take the moment it appears is a panel nobody can back out of: a
+     stray press, or a hand on the glass, and a performance is over. What ends
+     a take is answering it, and there are exactly two answers. */
   function stopTape() {
     if (!tape || tape.rec.state === "inactive") return;
-    if (tape.rec.state === "paused") { tape.still += Date.now() - tape.since; tape.since = 0; }
-    tape.seconds = Math.max(0, Math.round(tapeAt() / 100) / 10);
-    tape.rec.stop();
+    if (tape.rec.state === "recording") holdTape();
+    gatherTape().then(function () {
+      if (!tape || !tape.bits.length) return;
+      hearTake({
+        blob: new Blob(tape.bits, { type: tape.mime }),
+        mime: tape.mime,
+        marks: tape.marks.slice(),
+        seconds: Math.max(0, Math.round(tapeAt() / 100) / 10),
+      });
+    });
   }
 
-  /* --- and what came out is offered rather than saved ------------------------
-     A take is a person singing, most of them are not worth keeping, and a
-     library that fills up with every attempt is a library nobody opens. So it
-     is played back first and kept second. */
-  function keepTake() {
-    var made = tape;
-    tape = null;
-    paintHeader();
-    if (!made || !made.bits.length) return;
-    hearTake({
-      blob: new Blob(made.bits, { type: made.mime }),
-      mime: made.mime,
-      marks: made.marks,
-      seconds: made.seconds || 0,
+  /* What has been played so far, without ending anything. A recorder hands
+     over what it is holding when it is asked to, and the pieces from the start
+     onwards are a playable recording: the first of them carries the header. */
+  function gatherTape() {
+    return new Promise(function (ok) {
+      if (!tape) return ok();
+      var came = false;
+      var done = function () { if (!came) { came = true; ok(); } };
+      tape.rec.addEventListener("dataavailable", done, { once: true });
+      try { tape.rec.requestData(); } catch (e) { done(); }
+      /* A recorder that hands over nothing still has to be answered, or the
+         panel never comes up and the button looks broken. */
+      setTimeout(done, 500);
     });
+  }
+
+  /* The end of it, and the only thing that reaches here is an answer. */
+  function endTape() {
+    if (!tape) return;
+    var rec = tape.rec;
+    tape = null;
+    try { rec.stop(); } catch (e) { /* already inactive */ }
+    paintTape();
   }
 
   /* --- THE SOUND ITSELF, WHICH IS NOT A ROW ---------------------------------
@@ -13587,8 +14276,18 @@
         body: options.body,
       });
     }).then(function (r) {
-      if (!r.ok) throw new Error("האחסון החזיר שגיאה");
-      return r;
+      if (r.ok) return r;
+      /* WHAT THE STORAGE ACTUALLY SAID, and not "the storage returned an
+         error". The first upload that ever ran was refused for a reason the
+         bucket knew and this line was throwing away: a browser records
+         "audio/webm;codecs=opus" and the bucket had been told to allow
+         "audio/webm", which is a different string. A message that names no
+         cause is half an hour of guessing. */
+      return r.text().then(function (text) {
+        var said = "";
+        try { said = (JSON.parse(text) || {}).message || ""; } catch (e) { said = text; }
+        throw new Error(said ? "האחסון: " + said : "האחסון החזיר שגיאה");
+      });
     });
   }
 
@@ -13682,12 +14381,25 @@
     err.hidden = true;
     box.appendChild(err);
 
+    /* TWO ANSWERS AND NO THIRD. There was a "close" here, beside them, and it
+       was the wrong thing to offer: the question is what to do with the take,
+       and "neither" is not an answer to it, it is walking away from it. Walking
+       away is still allowed, and it is what the dark behind the panel is for
+       (see below), but it is not a button, because a button says a decision has
+       been made and no decision has. */
+    var done = false;
     var actions = el("div", "dlg-actions");
-    var toss = button("מחיקה", null, "ghost far", function () { dlg.close(); });
+    var toss = button("מחיקה", null, "ghost far", function () {
+      done = true;
+      endTape();
+      dlg.close();
+    });
     var save = button("שמירה לשיר", null, null, function () {
       save.disabled = true;
       relabel(save, "שומר…");
       keepTakeIn(made).then(function () {
+        done = true;
+        endTape();
         dlg.close();
         toast("ההקלטה נשמרה");
         if (state.redrawTakes) state.redrawTakes();
@@ -13699,10 +14411,17 @@
       });
     });
     actions.appendChild(toss);
-    actions.appendChild(button("סגירה", null, "ghost", function () { dlg.close(); }));
     if (auth.in) actions.appendChild(save);
     else box.appendChild(el("p", "muted", "כדי לשמור הקלטה צריך להיות מחובר לחשבון."));
     box.appendChild(actions);
+
+    /* THE DARK BEHIND IT IS THE WAY OUT WITHOUT ANSWERING, which is a dialog's
+       own gesture and not something to be taught. What is on the other side of
+       it is the recording exactly as it was left: held, with carry on and
+       finish over the song, and finish asks this again. */
+    dlg.addEventListener("click", function (event) {
+      if (event.target === dlg) dlg.close();
+    });
 
     dlg.appendChild(box);
     document.body.appendChild(dlg);
@@ -13711,6 +14430,17 @@
       URL.revokeObjectURL(url);
       showAt(-1);
       dlg.remove();
+      /* ANSWERED, AND THE MICROPHONE GOES BACK TO BEING A DOOR. Keeping the
+         take and throwing it away are both the end of it, and on the other
+         side of that is a page nobody is playing to: the light goes out, the
+         mark comes off, and the button looks exactly as it did before any of
+         this was pressed.
+
+         DISMISSED, AND NOTHING HAPPENS AT ALL. The recording is still running,
+         held where it was left, and the two buttons over the song are still
+         carry on and finish. */
+      if (done) shutEar();
+      else paintTape();
     });
     dlg.showModal();
   }
