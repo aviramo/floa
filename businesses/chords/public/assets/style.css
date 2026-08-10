@@ -307,8 +307,18 @@ body.on-song { background: var(--bg); }
 .find-extra:empty { display: none; }
 .find-extra .tallies { flex: none; flex-wrap: nowrap; }
 /* Inside the box they are not cards on a page: the box is the white, and a
-   second white box on it is a box in a box. */
-.find-extra .tally { background: none; padding: 3px 10px; }
+   second white box on it is a box in a box.
+
+   AND THEY ARE THE SAME LABEL THAT IS ON THE CARDS. What they count is the word
+   standing in the corner of every row down the wall, so up here they are that
+   word in that type: the same twelve pixels, the same weight, the same corner
+   (see .tag). They were a size of their own, larger than the thing they were
+   counting and standing in the narrowest row on the page. */
+.find-extra .tally {
+  background: none; padding: 1px 10px; gap: 5px;
+  font-size: 12px; font-weight: 700; line-height: 1.6;
+}
+.find-extra .tally-n { font-size: 12px; }
 /* Two crosses in one box is one too many: Escape empties it, and so does
    going anywhere. */
 .top-find input[type="search"]::-webkit-search-cancel-button { display: none; }
