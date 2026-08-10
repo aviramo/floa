@@ -13957,18 +13957,40 @@
       whenWords.textContent = whenWhere(evening);
       mark(true);
     });
+    /* The calendar button at the end of the field is gone (see the CSS), and
+       with it the only thing on the row that was not the date itself. So the
+       date opens the calendar: pressing anywhere on it asks for the picker,
+       which is what pressing the little button did. */
+    when.addEventListener("click", function () {
+      if (typeof when.showPicker === "function") { try { when.showPicker(); } catch (e) {} }
+    });
     whenLabel.appendChild(when);
     meta.appendChild(whenLabel);
 
+    /* A place is longer than a date and it is written the way an address is
+       written: "שבט, פאול קור 16 תל אביב" is one answer, and on a phone it is
+       wider than the room the row has left. An input has one line and no
+       second one, so what does not fit scrolls out of sight while it is being
+       typed. This one wraps instead, and grows a line at a time. */
     var whereLabel = el("label", null, "מיקום");
-    var where = el("input");
-    where.type = "text";
+    var where = el("textarea");
+    where.rows = 1;
     where.value = evening.venue || "";
     where.placeholder = "איפה זה קורה";
+    function fitWhere() {
+      where.style.height = "auto";
+      where.style.height = where.scrollHeight + "px";
+    }
     where.addEventListener("input", function () {
       evening.venue = where.value;
       whenWords.textContent = whenWhere(evening);
+      fitWhere();
       mark();
+    });
+    /* It is one line of an answer even when it takes two lines to write, so
+       Enter finishes it rather than opening a second paragraph in it. */
+    where.addEventListener("keydown", function (event) {
+      if (event.key === "Enter") { event.preventDefault(); where.blur(); }
     });
     whereLabel.appendChild(where);
     meta.appendChild(whereLabel);
@@ -13977,6 +13999,8 @@
     head.appendChild(whenWords);
 
     app.appendChild(head);
+    /* the height is read off the page, so it is measured once the page has it */
+    fitWhere();
 
     /* --- where the writing got to --------------------------------------------
        All that is left of a toolbar. Printing and deleting are in the top bar,
