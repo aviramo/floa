@@ -144,6 +144,17 @@
     /* a chevron pointing down: a drawer that opens. Turned over by the
        stylesheet when it is open, so the same mark says both states. */
     turn: '<path d="M6 9.5l6 6 6-6"/>',
+    /* --- the two things the microphone is for, drawn as the objects they are ---
+       A TUNING FORK, which is what a tuner is a picture of everywhere it has
+       ever been drawn, and is recognisable at fifteen pixels by somebody who
+       has never seen this app. It stands where the app is asked to listen to
+       ONE string.
+
+       And a microphone where it is asked to listen to the whole guitar. The
+       two doors do different things and are drawn in different vocabularies on
+       purpose: one names what is being measured, the other names the ear. */
+    fork: '<path d="M8 3v7.5a4 4 0 0 0 8 0V3"/><path d="M12 14.5V21"/>',
+    mic: '<rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><path d="M12 17.5V21"/>',
   };
 
   function iconBtn(icon, title, onClick) {
@@ -434,15 +445,33 @@
       }
     },
 
-    /* A valid access token, refreshed if it is about to expire. Resolves to
-       null when nobody is signed in, which is a normal state: reading needs
-       no token at all. */
+    /* --- ONE REFRESH AT A TIME, HOWEVER MANY ASK FOR IT ----------------------
+       A valid access token, refreshed if it is about to expire. Resolves to
+       null when nobody is signed in, which is a normal state: reading needs no
+       token at all.
+
+       AND EVERYBODY WHO ASKS WHILE ONE IS IN THE AIR WAITS ON THAT ONE. This
+       app writes in batches: renaming a shelf is forty rows at once, and so is
+       giving forty songs a style or deleting them. Forty writes on a session
+       in its last minute used to be forty refreshes at once, and a refresh
+       token is spent by the first of them: the other thirty-nine are then the
+       second use of a token that is gone, so they fail, and a failed refresh
+       here signs the reader out.
+
+       WHICH IS THE WORST WAY TO FAIL, because it does not look like failing.
+       The writes still in the air go out as a visitor, a visitor may write
+       nothing, and the database answers "no rows matched" rather than "no".
+       So the page believed it had renamed forty-two songs and had renamed
+       three, and the shelf was left in two halves. */
+    refreshing: null,
+
     token: function () {
       var self = this;
       if (!this.in) return Promise.resolve(null);
       if (this.session.expires_at - Date.now() > 60000) return Promise.resolve(this.session.access_token);
+      if (this.refreshing) return this.refreshing;
 
-      return fetch(CFG.supabaseUrl + "/auth/v1/token?grant_type=refresh_token", {
+      this.refreshing = fetch(CFG.supabaseUrl + "/auth/v1/token?grant_type=refresh_token", {
         method: "POST",
         headers: { apikey: CFG.supabaseAnonKey, "content-type": "application/json" },
         body: JSON.stringify({ refresh_token: this.session.refresh_token }),
@@ -456,7 +485,14 @@
         self.clear();
         paintHeader();
         return null;
+      }).then(function (token) {
+        /* Spent, whichever way it went: the next caller that finds the session
+           short again asks for a new one. */
+        self.refreshing = null;
+        return token;
       });
+
+      return this.refreshing;
     },
   };
 
@@ -3404,7 +3440,7 @@
   var state = {
     songs: null, printable: false, printer: null, killer: null,
     editToggle: null, songControls: null, redrawSong: null, rehome: null,
-    wake: null,
+    wake: null, ear: null,
   };
 
   /* The answers the bar reads to know what to offer. They are about the page
@@ -3412,7 +3448,7 @@
      `songs` is not one of them: it is the library itself, one copy for
      everybody, and every sheet showing it is showing the same songs. */
   var PAGE_STATE = ["printable", "printer", "killer", "editToggle",
-    "songControls", "redrawSong", "rehome", "wake", "sift"];
+    "songControls", "redrawSong", "rehome", "wake", "sift", "ear"];
 
   function takeKids(node) {
     if (!node) return null;
@@ -11440,6 +11476,8 @@
         var b = el("button", "pool-row" + (inside[song.id] ? " is-in" : ""));
         b.type = "button";
         b.appendChild(el("span", "pool-t", song.title));
+        /* the names, once each: whoever wrote the words usually wrote the tune
+           as well, and one person is one name (see creditNames) */
         var by = creditNames(song);
         if (by.length) b.appendChild(el("span", "by", by.join(", ")));
         b.appendChild(el("span", "grow"));
@@ -11479,13 +11517,25 @@
        moment it happens; a name being typed waits for the typing to stop. */
     var timer = null, inFlight = false, again = false;
 
+    /* --- AND IT SAYS NOTHING WHILE IT IS GOING WELL ---------------------------
+       There was a word beside the tools for every step: "לא נשמר" the moment
+       anything moved, "שומר" while the write was in the air, "נשמר" when it
+       landed. Three states, and two of them are what happens every single
+       time. The word spent the session announcing that the ordinary thing had
+       happened again, on a page whose whole point is that saving is not
+       something anybody has to think about.
+
+       What is worth a word is the write that did NOT land, because that is the
+       one moment the page on the screen and the row in the database are two
+       different things. So the line is empty until then. */
     function note(text, bad) {
-      stateNode.textContent = text;
-      stateNode.className = "save-state" + (bad ? " is-bad" : "");
+      stateNode.textContent = text || "";
+      /* ev-state kept: it is what puts the word on a line of its own, and
+         rebuilding the class list without it left it inline mid-page */
+      stateNode.className = "save-state ev-state" + (bad ? " is-bad" : "");
     }
 
     function mark(now) {
-      note("לא נשמר");
       clearTimeout(timer);
       timer = setTimeout(commit, now ? 0 : 900);
     }
@@ -11507,7 +11557,6 @@
       if (inFlight) { again = true; return; }
 
       inFlight = true;
-      note("שומר");
 
       var payload = {
         title: String(evening.title || "").trim(),
@@ -11527,7 +11576,8 @@
         /* it exists now, so it has an address of its own, and a refresh from
            here comes back to it rather than to an empty new evening */
         if (born) history.replaceState(history.state, "", BASE + "/evenings/" + row.id);
-        note("נשמר");
+        /* and the line about what went wrong goes with the thing going right */
+        note("");
         if (again) { again = false; commit(); }
       }).catch(function (error) {
         inFlight = false;
@@ -12176,6 +12226,11 @@
     state.printer = null;
     state.killer = null;
     state.editToggle = null;
+    /* The chords the ear is listening FOR belong to the song that was open,
+       so they go with it. The panel itself does not: somebody who is tuning
+       is tuning, and walking from one page to another is not a reason to stop
+       (see earPanel). What it loses is the column about this song. */
+    state.ear = null;
     /* and the box in the bar goes back to being a way to other pages, until a
        page that can be sieved says otherwise (see state.sift in viewIndex) */
     state.sift = null;
