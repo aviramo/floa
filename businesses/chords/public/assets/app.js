@@ -4894,21 +4894,12 @@
     return chip;
   }
 
+  /* No page is asked about here, because there is only one page this stands
+     on. What IS asked, every time it is painted, is who is looking. */
   function paintDoors(row) {
-    var p = parts();
     row.textContent = "";
-    if (p[0] !== "evenings") {
-      row.appendChild(doorChip("אירועים", ICON.calendar, function () { go(addr("evenings")); }));
-    }
-    if (p[0] !== "creators" && p[0] !== "creator") {
-      row.appendChild(doorChip("יוצרים", ICON.people, function () { go(addr("creators")); }));
-    }
-    /* THE TUNING FORK IS NOT IN THIS ROW. It came down here for a moment and
-       went back up: it is not a door, it opens a panel over the page you are
-       already on and leaves you there, and it is the one thing here that is
-       picked up in the middle of doing something else, with a guitar in both
-       hands. It keeps its own place in the bar, with its name written on it
-       (see tuner). */
+    row.appendChild(doorChip("אירועים", ICON.calendar, function () { go(addr("evenings")); }));
+    row.appendChild(doorChip("יוצרים", ICON.people, function () { go(addr("creators")); }));
     /* Signing in is not one of these. It is the only way forward for somebody
        who has none, and it keeps its own place in the bar, where a way forward
        belongs (see paintHeader). Whoever IS signed in is a door like the rest:
@@ -7900,10 +7891,10 @@
     db.list().then(function (songs) {
       seedSongs(songs || []);
       app.innerHTML = "";
-      /* The same band of doors the library and the evenings carry, in the same
-         place (see doorsBand). This page has nothing to DO to what is on it,
-         so the band is the whole of what stands over the wall. */
-      app.appendChild(doorsBand());
+      /* No row of doors here, for the reason the evenings have none: this page
+         is one of the places that row leads TO, and the way back from it is
+         the arrow in the corner, where every inner page keeps it (see
+         doorsBand). */
 
       var people = creatorsOf(songs || []);
       if (!people.length) {
@@ -7930,9 +7921,6 @@
       state.songs = songs || [];
       var mine = songsBy(songs || [], name);
       app.innerHTML = "";
-      /* and the doors, as on every page that is a wall of cards */
-      app.appendChild(doorsBand());
-
       /* A name nobody is credited with is not a page. It is almost always a
          name that has since been corrected on the one song that carried it,
          and the way out is the list of the names that do exist. */
@@ -13411,12 +13399,11 @@
        use for the rest of a song. */
     Promise.all([sets.list(), db.titles()]).then(function (both) {
       app.innerHTML = "";
-      /* The ways out of here, the same band the library carries and in the
-         same place (see doorsBand). Before the count of what is on the page,
-         and before the page turns out to be empty: a diary with nothing
-         written in it yet is exactly when somebody wants the way back to the
-         songs. */
-      app.appendChild(doorsBand());
+      /* NO ROW OF DOORS HERE. It stands on the library and nowhere else (see
+         doorsBand): this page is one of the places it leads TO, the way back
+         is the arrow in the corner where every inner page keeps it, and a band
+         of doors over a page you have just walked into is a second way out
+         that nobody was looking for. */
       /* what the box in the bar looks through, read here anyway */
       seedEvenings(both[0] || []);
       var evenings = byWhen(both[0] || []);
