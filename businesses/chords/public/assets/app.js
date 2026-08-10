@@ -3176,9 +3176,10 @@
        sticky and it covers the same strip of every page and not only the first,
        so its height comes off all of them. There was a second row under it on a
        phone and it counted here too; it is gone (see placeControls). */
-    /* AND ON PAPER IT IS THE PAPER, less the name standing over the first of
-       them, which is worked out where the paper is (see toPaper). There is no
-       bar on a sheet of A5 and no window either. */
+    /* AND ON PAPER IT IS THE PAPER. There is no bar on a sheet of A5 and no
+       window either; what the first sheet has less of is the name standing
+       over it, and that is one page's business rather than every page's (see
+       `over` in pageUp, and toPaper). */
     var pageH = paper ? paper.h : 0;
     if (!paper) {
       var over = 0;
@@ -3288,6 +3289,8 @@
     return {
       cols: cols, colW: colW, pad: pad, apart: apart, air: air,
       pageH: pageH, padded: padded, ends: ends,
+      /* what stands over the FIRST page and no other (see toPaper) */
+      head: paper ? paper.head || 0 : 0,
     };
   }
 
@@ -3426,7 +3429,19 @@
        cutting the song into screenfuls buys nothing and costs the tail of
        every one of them, a band of empty paper wherever the last line of a
        page did not reach the bottom. The song simply runs on. */
-    var room = plan.cols < 2 ? Infinity : plan.pageH - plan.ends * 2;
+    /* AND THE FIRST PAGE IS SHORTER BY WHATEVER STANDS OVER IT, which on paper
+       is the name of the song and whoever wrote it (see toPaper). It is nothing
+       on a screen, where the heading is in the bar. Held as a number rather
+       than folded into the height, because it comes off ONE page: charged to
+       all of them it would be an inch of white at the foot of every sheet after
+       the first, and left off altogether the last line of the first sheet
+       prints past the bottom of the paper. */
+    var over = plan.head || 0;
+    var room = 0;
+    function roomOn(nth) {
+      if (plan.cols < 2) return Infinity;
+      return plan.pageH - (nth ? 0 : over) - plan.ends * 2;
+    }
 
     var page = null;
     var col = null;
@@ -3460,8 +3475,10 @@
 
     function nextCol() {
       if (!page || inPage >= plan.cols) {
+        var nth = built.childNodes.length;
         page = el("div", "page");
-        if (plan.cols > 1) page.style.height = Math.round(plan.pageH) + "px";
+        if (plan.cols > 1) page.style.height = Math.round(plan.pageH - (nth ? 0 : over)) + "px";
+        room = roomOn(nth);
         /* EVERY PAGE IS THE SAME WIDTH AND HOLDS THE SAME NUMBER OF SLOTS,
            filled or not. Centring each page's own segments instead put the
            last page's, which are fewer, at a different place from every page
@@ -3619,6 +3636,12 @@
     var copy = live.cloneNode(true);
     copy.classList.remove("ed");
     box.appendChild(copy);
+    /* AND NOT THE MARK THE LAST PRINT LEFT EITHER. What says "this one is not
+       the one being printed" is written on the page after a copy is taken from
+       it, and a second print copies the page as it stands, mark and all: the
+       first print came out right and every one after it came out blank. */
+    copy.classList.remove("off-paper");
+    if (top) top.classList.remove("off-paper");
     /* and one name for a thing is one thing: a copied id is the same name
        twice in the document, and whoever asks for it gets whichever came first */
     Array.prototype.forEach.call(box.querySelectorAll("[id]"), function (node) {
@@ -3638,15 +3661,12 @@
     box.style.width = wide + "px";
 
     /* THE NAME AND WHO WROTE IT STAND OVER THE FIRST SHEET, and the room they
-       take is room the song has not got. It comes off EVERY sheet and not off
-       the first alone: a page shorter than the rest is a page the dealing
-       above has no way to ask for, and the cost of paying it everywhere is a
-       band of white at the foot of the sheets after the first, while the cost
-       of not paying it is the last line of the first sheet printed off the
-       bottom of the paper. */
+       take is room the song has not got there. Off the first sheet alone and
+       not off all of them: a song of four sheets carrying an inch of white at
+       the foot of three is an inch that could have been the last verse. */
     var headH = top ? top.offsetHeight + (parseFloat(getComputedStyle(top).marginBottom) || 0) : 0;
 
-    paper = { w: wide, h: tall - headH };
+    paper = { w: wide, h: tall, head: headH };
     try {
       fitColumns(copy);
       layoutAll(copy);

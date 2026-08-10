@@ -2939,6 +2939,9 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   .ear, .takes { display: none !important; }
   .chord.is-heard, .chord.is-at {
     color: inherit !important; background: none !important; box-shadow: none !important;
+    /* and it comes back down: the lift is room for a halo, and there is no
+       halo on paper */
+    transform: none !important;
   }
 
   /* --- AND WHICH OF THE TWO COPIES ------------------------------------------
@@ -3275,7 +3278,19 @@ body.on-ear.ear-small { padding-bottom: 78px; }
 
    A shadow and a background, and no padding, because a chord label carries
    none: its box is exactly its glyphs and the placing measures that box (see
-   .chord). A pixel of padding would move every chord on the line. */
+   .chord). A pixel of padding would move every chord on the line.
+
+   --- AND THE MARK RISES BY EXACTLY WHAT IT GREW BY ---------------------------
+   The lane is deliberately short, so a chord's foot stands about a pixel into
+   the top of the letters' own box: that is what keeps a chord attached to the
+   syllable it names (see .ln-c). Which leaves nothing underneath for a halo to
+   grow into, and three pixels of it came down on the words.
+   So the mark is lifted by its own spread. The floor of the pill lands where
+   the floor of the bare glyphs was, the whole of it grows UPWARD into the air
+   the previous line was leaving empty anyway, and the chord goes on naming the
+   letter it was naming. Lifted and not padded: padding is in the box and the
+   placing measures the box, so a padded chord would move sideways too. */
+.chord.is-heard, .chord.is-at { transform: translateY(-3px); }
 .chord.is-heard {
   background: var(--chord-soft);
   box-shadow: 0 0 0 3px var(--chord-soft);
@@ -3302,7 +3317,7 @@ body.on-ear.ear-small { padding-bottom: 78px; }
    blinks from place to place at that rate reads as flicker, and the eye finds
    a thing that faded in where a thing that snapped in has to be searched for. */
 @media (prefers-reduced-motion: no-preference) {
-  .chord { transition: background-color .12s linear, color .12s linear, box-shadow .12s linear; }
+  .chord { transition: background-color .12s linear, color .12s linear, box-shadow .12s linear, transform .12s linear; }
 }
 
 /* ==========================================================================
