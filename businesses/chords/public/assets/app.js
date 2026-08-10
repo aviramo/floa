@@ -1279,6 +1279,7 @@
       var url = URL.createObjectURL(blob.slice(0, blob.size, take.mime || blob.type));
       var audio = el("audio", "dock-play");
       audio.controls = true;
+      audio.dir = "ltr";
       audio.src = url;
       wallPlaying = { audio: audio, node: node, url: url };
       audio.addEventListener("ended", stopWall);
@@ -1286,14 +1287,29 @@
       node.classList.add("is-playing");
       reicon(node, ICON.stop);
 
+      /* AND THE MARK MOVES ON THE SONG, once there is a song on screen to move
+         it on. The times were written down while this was played (see
+         alongTake), so opening the song from here is opening it with the
+         performance already walking through it. */
+      alongTake(audio, Array.isArray(take.marks) ? take.marks : []);
+
       showDock(function (box) {
-        var said = el("div", "dock-said");
+        /* --- AND THE NAME IS THE WAY TO THE SONG -----------------------------
+           Somebody listening to a recording of a song is somebody halfway to
+           wanting the song, and the name of it is already there, on the one
+           part of the screen that is not going anywhere. The sound carries on
+           across the move, because the player is fixed to the window and the
+           page under it is redrawn rather than reloaded. */
+        var said = el("button", "dock-said");
+        said.type = "button";
+        said.title = "לפתוח את השיר";
         said.appendChild(el("span", "dock-name", song.title || ""));
         var who = el("span", "dock-who", "הקלטה");
         said.appendChild(who);
         db.who(take.owner).then(function (name) {
           if (who.isConnected && name) who.textContent = name;
         });
+        said.addEventListener("click", function () { go(addr(song.slug)); });
         box.appendChild(said);
         box.appendChild(audio);
         var shut = iconBtn(ICON.close, "לעצור ולסגור", stopWall);
@@ -1554,7 +1570,7 @@
        about libraries is a worse failure than a row with nothing on it. */
     outTakes: function () {
       return rest(CFG.takeTable +
-        "?select=id,song_id,owner,path,mime,created_at&published=eq.true&order=created_at.desc"
+        "?select=id,song_id,owner,path,mime,marks,created_at&published=eq.true&order=created_at.desc"
       ).then(function (rows) {
         var by = {};
         /* Newest first out of the database, so the first one seen for a song is
@@ -5736,6 +5752,10 @@
       function rehome() {
         var inBar = !NARROW.matches && findExtra;
         (inBar ? findExtra : overWall).appendChild(tallies);
+        /* What is IN the row also depends on the width: the way to add a song
+           is the head of it on a phone and a button in the bar on a desk (see
+           addChip), so a window dragged across the line repaints it. */
+        paintTallies();
         /* An empty row is still a row: it has a margin under it, and on a desk
            that margin is the band of page this whole move was for. */
         overWall.hidden = !overWall.firstChild;
@@ -5743,8 +5763,38 @@
       rehome();
       state.rehome = rehome;
 
+      /* --- AND THE WAY TO ADD A SONG STANDS FIRST IN THAT ROW, ON A PHONE ----
+         It was a plus in the corner of the bar, and on a phone a bar button is
+         a picture with its word taken off it: one of four small pictures over
+         the page, none of which says what it makes. This row is the one place
+         on the library with room for the words, so the button comes down to
+         it, written out, at the head of the chips.
+
+         Made once and handed back, because the panel it opens hangs off it:
+         a chip built again on every repaint would leave the open panel
+         pointing at a button that is no longer on the page.
+
+         Not on a shelf. /style/<name> never carried this button in the bar
+         either, and a page narrowed to one kind of song is not where anybody
+         starts a new one. */
+      var addSong = null;
+
+      function addChip() {
+        if (addSong) return addSong;
+        addSong = el("button", "tally tally-add");
+        addSong.type = "button";
+        addSong.appendChild(svg(ICON.plus));
+        addSong.appendChild(el("span", "tally-l", "הוספת שיר"));
+        addSong.title = "הוספת שיר";
+        addSong.setAttribute("aria-haspopup", "menu");
+        addSong.setAttribute("aria-expanded", "false");
+        addSong.addEventListener("click", function () { askAdd(addSong); });
+        return addSong;
+      }
+
       function paintTallies() {
         tallies.textContent = "";
+        if (NARROW.matches && !shelf) tallies.appendChild(addChip());
         TAGS.forEach(function (t) {
           var n = state.songs.filter(t.is).length;
           /* A count of nothing is not a fact worth a chip. It is a row of
@@ -14914,6 +14964,7 @@
 
     var audio = el("audio", "take-play");
     audio.controls = true;
+    audio.dir = "ltr";
     audio.preload = "metadata";
     var url = URL.createObjectURL(made.blob);
     audio.src = url;
@@ -15304,6 +15355,7 @@
     store(row.path).then(function (r) { return r.blob(); }).then(function (blob) {
       var audio = el("audio", "take-play");
       audio.controls = true;
+      audio.dir = "ltr";
       audio.src = URL.createObjectURL(blob.slice(0, blob.size, row.mime || blob.type));
       node._audio = audio;
       node.appendChild(audio);

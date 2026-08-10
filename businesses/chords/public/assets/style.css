@@ -599,6 +599,20 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
 .tally-draft.is-on { background: var(--draft-soft); }
 .tally-published.is-on { background: var(--published-soft); }
 
+/* AND THE ONE CHIP IN THE ROW THAT MAKES SOMETHING. The others narrow the wall
+   underneath, so they are quiet and take their colour from the state they
+   count; this one adds a song, and it wears the colour every button in the app
+   that does something wears. Same size and same corner as its neighbours,
+   because it stands in their row, and filled, because it is not one of them.
+   It is only ever drawn on a phone, where it came down out of the bar. */
+.tally-add {
+  align-items: center;
+  background: var(--accent); color: #fff; border-color: transparent;
+  font-weight: 600;
+}
+.tally-add:hover { background: var(--accent-ink); border-color: transparent; }
+.tally-add svg { width: 16px; height: 16px; }
+
 /* --- THE LIBRARY IS A WALL OF CARDS ---------------------------------------
    It was a column of full-width rows, which is what a list of one line each
    wants; these are not one line each. A row carried a name, who wrote it, what
@@ -2959,7 +2973,16 @@ body.on-ear.ear-small { padding-bottom: 84px; }
   max-width: 720px; margin-inline: auto;
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
 }
-.dock-said { flex: 1 1 160px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+/* The name of the song is the way to it: somebody listening to a recording is
+   somebody halfway to wanting the song, and it is already written here on the
+   one part of the screen that is not going anywhere. */
+.dock-said {
+  appearance: none; border: 0; background: none; cursor: pointer; font: inherit;
+  flex: 1 1 160px; min-width: 0; display: flex; flex-direction: column; gap: 2px;
+  text-align: start; padding: 4px 6px; margin-inline-start: -6px;
+  border-radius: var(--corner);
+}
+.dock-said:hover { background: var(--bg); }
 .dock-name {
   font-weight: 700; font-size: 15px; color: var(--ink);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -2968,6 +2991,18 @@ body.on-ear.ear-small { padding-bottom: 84px; }
   font-size: 12px; color: var(--ink-soft);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* --- A PLAYER IS A LEFT TO RIGHT INSTRUMENT --------------------------------
+   Play, then the time gone, then the bar, then the time left: that is the
+   order on every machine that has ever played anything, and a page that runs
+   the other way was flipping it. The controls are drawn by the browser out of
+   parts this stylesheet cannot reach, so what a mirrored one actually did was
+   fill the bar from the far end and slide its own pieces about as the elapsed
+   time grew a digit.
+
+   The same exception the chord labels live under (see .chord): Latin text and
+   Latin machinery inside a Hebrew page carry their own direction, and it is
+   said on them rather than left to be inherited. */
+.dock .dock-play, .take-play { direction: ltr; }
 .dock .dock-play { flex: 2 1 240px; height: 36px; min-width: 0; }
 .dock-x { flex: none; }
 body.on-dock { padding-bottom: 92px; }
