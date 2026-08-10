@@ -1456,10 +1456,8 @@ body.on-song .top { border-bottom: 0; }
 .tools .dial-btn[aria-expanded="true"] .lbl { color: inherit; }
 
 /* --- AND WHAT COMES OUT OF IT ----------------------------------------------
-   One panel for both dials: under the dial, over everything, with the shadow
-   that says it is standing off the page, the same as the offer under a word
-   (see .gap-offer). What differs is only what is put inside it, a list of keys
-   or a keypad of frets, and neither of those has to know where it is standing.
+   Under the dial, over everything, with the shadow that says it is standing
+   off the page, the same as the offer under a word (see .gap-offer).
 
    NOT UNDER .tools. The panel is on the body while it is open, so a rule that
    only worked inside the strip would leave it there unstyled. */
@@ -1470,6 +1468,27 @@ body.on-song .top { border-bottom: 0; }
   /* A column of eight on a phone held sideways is taller than the glass, and a
      panel that runs off the bottom is a choice nobody can reach. */
   max-height: calc(100vh - 56px); overflow-y: auto;
+}
+
+/* --- TWO COLUMNS, SIDE BY SIDE ---------------------------------------------
+   The frets and the keys are one panel now, because they were always one
+   question (see fillPlay). Beside each other and not one under the other: the
+   neck is eight rows tall and the keys are five, and stacked they are a
+   column of thirteen that a phone has to be scrolled through. Side by side
+   the panel is as tall as the taller of the two and both are on the screen at
+   once, which is what lets the reader see that choosing a key moves the fret.
+
+   The capo is the first column, which right to left is the right hand one:
+   the same side as the number on the dial the panel came out of. */
+.play-pop { display: flex; align-items: flex-start; gap: 4px; }
+.pop-part + .pop-part { border-inline-start: 1px solid var(--line); padding-inline-start: 4px; }
+/* THE WORD OVER THE COLUMN, and the whole reason there is one: a column of
+   numbers beside a column of chords does not say by itself which of them is
+   the capo. Small and quiet, because it is a label and not a choice: what is
+   pressed is underneath it. */
+.pop-head {
+  padding: 4px 10px 6px; font-size: 11px; font-weight: 700;
+  letter-spacing: .04em; color: var(--ink-soft); text-align: center;
 }
 
 /* --- THE KEYS ON OFFER -----------------------------------------------------
@@ -1517,12 +1536,6 @@ body.on-song .top { border-bottom: 0; }
 .fret-opt:hover { background: var(--bg); }
 .fret-opt.is-on { color: #fff; background: var(--accent); }
 
-/* A song with no chords in it yet has no key, and the dial goes with it. The
-   strip lays its controls out with flex, which outranks what [hidden] means. */
-.tools .ctl[hidden] { display: none; }
-/* Chords, not digits: the fret's tabular figures would space the letters of a
-   chord name out to the width of a number. */
-.tools .key-val { font-variant-numeric: normal; min-width: 0; }
 /* A PICTURE NEEDS A SIZE. An svg with none is not small, it is whatever the
    box around it happens to allow, which in a flex row is nothing at all: the
    three pictures were in the page and none of them was on the screen. */
@@ -2409,19 +2422,26 @@ body.on-song .top { border-bottom: 0; }
    two words and a choice, not a dialog. */
 .print-menu {
   position: fixed; z-index: 60;
-  display: flex; flex-direction: column; align-items: stretch; gap: 6px;
-  padding: 8px;
+  display: flex; flex-direction: column; align-items: stretch; gap: 2px;
+  padding: 6px;
   background: #fff; border: 1px solid var(--line); border-radius: var(--corner);
   box-shadow: 0 6px 20px rgba(23, 32, 42, .16);
 }
-/* A row is read down a list before it is pressed, and the small button that
-   fits in a crowded bar is too tight for that: the rows touch each other and
-   the whole panel reads as one block of text rather than as a few choices. So
-   the rows keep the small type and take back the ordinary button's height. */
-.print-menu .btn { justify-content: flex-start; padding: 9px 14px; }
+/* A ROW IS A LINE OF A MENU, NOT A BUTTON IN A BOX. The panel already has a
+   border and a shadow around it, and drawing a second border around every row
+   inside it says four times over what the panel said once: four boxes in a
+   box. What separates one line from the next is the space it stands in, so the
+   rows lose their outline and take an ordinary button's height instead, and
+   the fill arrives only under the pointer, on the row being chosen. */
+.print-menu .btn {
+  justify-content: flex-start; padding: 9px 14px;
+  border-color: transparent; background: none;
+}
+.print-menu .btn:hover { background: var(--bg); border-color: transparent; }
 /* A row that is a door to something already open says so, the same way the
    picture of it did when it stood in the bar (see .icon-btn.is-on). */
-.print-menu .btn.is-on { color: #fff; background: var(--accent); border-color: var(--accent); }
+.print-menu .btn.is-on,
+.print-menu .btn.is-on:hover { color: #fff; background: var(--accent); border-color: var(--accent); }
 /* WIDE ENOUGH TO READ A NAME IN. The rows here are the buttons that used to
    stand in the bar, and one of them carries whatever somebody is called. */
 .print-menu { min-width: 168px; }

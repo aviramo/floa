@@ -119,8 +119,8 @@
     /* THE CHORDS AND THE LINE THEY STAND OVER, and the line is empty. That is
        the whole of what the button does: two notes come down onto words that
        are already written, and nothing else comes with them. The note heads
-       are the ones on the key dial and on «who wrote the tune», because a note
-       is a note wherever it is drawn here. */
+       are the ones on «who wrote the tune», because a note is a note wherever
+       it is drawn here. */
     chordsOnly: '<path d="M3.5 20.5h17"/><path d="M8 5.5v6.6"/><ellipse cx="6.3" cy="12.6" rx="1.8" ry="1.5" fill="currentColor" stroke="none"/><path d="M17 5.5v6.6"/><ellipse cx="15.3" cy="12.6" rx="1.8" ry="1.5" fill="currentColor" stroke="none"/>',
     /* the question mark itself: the hook, the stem and the dot. Drawn to the
        full height of the box like every other icon here, so that at fifteen
@@ -130,11 +130,13 @@
        this here". The dot first and the stem under it, the same two strokes
        the question mark above is drawn with and in the same order. */
     info: '<circle cx="12" cy="12" r="9"/><path d="M12 7.9h.01"/><path d="M12 11.4v5"/>',
-    /* --- the three controls over a song, as pictures ---
-       Each has to be recognisable at fifteen pixels by somebody who was not
-       told, so each is drawn as the thing itself rather than as an abstraction
-       of it: a note for the key the song is in, two letters of different sizes
-       for how big the words are, and the capo itself.
+    /* --- the one control over a song, as a picture ---
+       There were three: a note for the key, two letters of different sizes for
+       how big the words are, and the capo. The size is a gesture now and the
+       key is behind the capo (see fillPlay), so what is left is the capo, and
+       it has to be recognisable at fifteen pixels by somebody who was not
+       told. So it is drawn as the thing itself rather than as an abstraction
+       of it.
 
        THE CAPO AND NOTHING ELSE. It was three strings with a thick line laid
        across them, a picture of where a capo GOES, and at fifteen pixels the
@@ -151,8 +153,6 @@
        bracket, a paperclip, a letter C. The stroke is what makes it an object
        and not a mark, so the jaws are thick and the screw is filled, and the
        one icon on this strip that is a thing you can pick up looks like one. */
-    pitch: '<path d="M8 17V6l9-2v9"/><ellipse cx="5.6" cy="17.2" rx="2.6" ry="2.1"/><ellipse cx="14.6" cy="15.2" rx="2.6" ry="2.1"/>',
-    textSize: '<path d="M2 19l5-13 5 13M3.6 15h6.8M14 19l3.3-8.5 3.3 8.5M15.1 16.4h4.4"/>',
     capo: '<path d="M19 8.6h-7.4a3.6 3.6 0 0 0 0 7.2H19" stroke-width="3"/><circle cx="6.6" cy="8.4" r="3.2" fill="currentColor" stroke-width="1"/>',
     undo: '<path d="M4 10h9a4.5 4.5 0 0 1 0 9h-5"/><path d="M8 6l-4 4 4 4"/>',
     print: '<path d="M7 9V4h10v5M7 18H5v-6h14v6h-2M8 14h8v6H8z"/>',
@@ -8043,8 +8043,18 @@
        or keys.
 
        WHAT GOES IN IS FILLED IN FRESH ON EVERY OPENING, because the song
-       underneath is being edited and the choices are read off it. */
-    function fold(dial, klass, fill) {
+       underneath is being edited and the choices are read off it. And again
+       after every press, because a press moves the song and the panel is a
+       picture of where the song is: the fret that is marked, and what each key
+       would cost from here. That is what `again` is for.
+
+       AND THE PRESS DOES NOT CLOSE IT. Choosing a key and then wanting the
+       capo somewhere else is one thought, not two, and a panel that shut on
+       the first half made the second half a second opening. It closes the way
+       it always did: a press outside it, Escape, or the page moving under it.
+       `done` is called then, once, which is where anything worth writing down
+       gets written (see keepChoice). */
+    function fold(dial, klass, fill, done) {
       var pop = null;
 
       function shut() {
@@ -8056,6 +8066,7 @@
         document.removeEventListener("keydown", onKey, true);
         window.removeEventListener("resize", shut);
         window.removeEventListener("scroll", shut, true);
+        if (done) done();
       }
 
       /* The dial is not outside: it is the thing that opened this, and a press
@@ -8083,12 +8094,21 @@
         pop.style.top = (box.bottom + 6) + "px";
       }
 
+      /* Drawn again into the same panel rather than into a new one, so the
+         thing under the finger does not go away and come back while it is
+         being pressed. Placed again with it: what is in it can change width. */
+      function again() {
+        if (!pop) return;
+        pop.textContent = "";
+        fill(pop, shut, again);
+        place();
+      }
+
       dial.addEventListener("click", function () {
         if (pop) return shut();
         pop = el("div", klass);
-        fill(pop, shut);
         document.body.appendChild(pop);
-        place();
+        again();
         dial.setAttribute("aria-expanded", "true");
         document.addEventListener("pointerdown", outside, true);
         document.addEventListener("keydown", onKey, true);
@@ -8102,21 +8122,20 @@
     /* ONE CONTROL IS ONE THING: its picture, what it is at, and the choices
        behind it. So it is one group and not three things standing in a row,
        and the air goes between the controls rather than through the middle of
-       either of them.
+       it.
 
-       THE NAME IS A PICTURE. Two words, each as long as the control it names,
+       THE NAME IS A PICTURE. Two words, each as long as the control they name,
        is most of a row on a phone spent saying what the value beside them
        already says. The word is still there for anyone hovering or listening.
 
-       AND THERE IS NO STEPPER LEFT ON EITHER OF THEM. Both of these were less
-       and more: a pair of buttons that answered "where do I want to be" with
-       "which way is it from here", and left the reader to walk there reading
-       the page at each step to find out where they had arrived. Both have a
-       small, countable set of answers, the keys worth playing in and the
-       frets of a neck, so both now SAY the set and take one press. What is
-       left standing on the strip is the two values, which is the only part
-       anybody ever read. */
-    function dialFor(icon, label, note, valueNode, fill) {
+       AND THERE IS NO STEPPER LEFT ON IT. It was less and more: a pair of
+       buttons that answered "where do I want to be" with "which way is it from
+       here", and left the reader to walk there reading the page at each step
+       to find out where they had arrived. There is a small, countable set of
+       answers, the frets of a neck and the keys worth playing in, so the panel
+       SAYS the set and it takes one press. What is left standing on the strip
+       is the value, which is the only part anybody ever read. */
+    function dialFor(icon, label, note, valueNode, fill, done) {
       var ctl = el("span", "ctl");
       ctl.title = note;
 
@@ -8146,7 +8165,7 @@
          is offered rather than done (see offerGap): a small set of buttons
          under the thing they are about, dismissed by the next press outside
          them. One gesture, learned once, in three places. */
-      fold(dial, "dial-pop", fill);
+      fold(dial, "dial-pop play-pop", fill, done);
       return ctl;
     }
 
@@ -8183,13 +8202,13 @@
        under the number that opened the panel. The value on the dial and the
        column it came out of are the same fact, so they stand in the same
        place. */
-    function fillPlay(pop, shut) {
-      pop.appendChild(column("קפו", fretGrid(shut)));
+    function fillPlay(pop, shut, again) {
+      pop.appendChild(column("קפו", fretGrid(again)));
       var choices = keyChoices(chordsUsed(song.lines || []), sung);
       /* A SONG WITH NO CHORDS HAS NO KEY, and a word with nothing under it is
          a column that has broken. It comes back the moment there is a chord to
          name it with, which in the editor is as soon as one is put down. */
-      if (choices.length) pop.appendChild(column("סולם", keyList(choices, shut)));
+      if (choices.length) pop.appendChild(column("סולם", keyList(choices, again)));
     }
 
     /* The word over the choices, which is the whole point of the panel: one
