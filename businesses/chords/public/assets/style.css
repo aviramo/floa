@@ -3483,6 +3483,13 @@ body.on-ear.ear-small { padding-bottom: 78px; }
   border-radius: 9px;
   pointer-events: none;
 }
+/* The room above is the chord lane's, and a page of words alone has no lane:
+   the rows sit straight on top of each other there (see .paper.words), so the
+   third of a size would be spent on the line before instead. What is left is
+   the words' own leading, which is even at both ends to begin with. */
+.paper.words .ln.is-here::before {
+  inset: -1px -10px;
+}
 /* The row's own contents come back over it: the band is behind the line, and
    `.ln` is already a positioned box (see above) so this is the whole of it. */
 .ln.is-here > * { position: relative; }
