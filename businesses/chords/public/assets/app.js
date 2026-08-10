@@ -8769,7 +8769,7 @@
          somebody, and a stray Enter doing it. So the title takes it instead. It
          is not a stop on the way through the panel, only the place the panel
          starts, and what it says when it is read out is the panel's own name. */
-      var metaTitle = el("h2", null, "פרטים");
+      var metaTitle = el("h2", null, "יוצרים וסגנון");
       metaTitle.tabIndex = -1;
       metaTitle.setAttribute("autofocus", "");
       metaBox.appendChild(metaTitle);
@@ -9111,7 +9111,7 @@
         var readBox = el("div", "dlg-in");
         /* the title takes the focus, for the reason the editor's does: a
            dialog with nothing marked hands it to the × on the first chip */
-        var readTitle = el("h2", null, "פרטים");
+        var readTitle = el("h2", null, "יוצרים וסגנון");
         readTitle.tabIndex = -1;
         readTitle.setAttribute("autofocus", "");
         readBox.appendChild(readTitle);
@@ -9163,7 +9163,7 @@
              a dialog hands it to otherwise is the first chip in the list,
              which here is a link to somebody's page and a stray Enter away
              from leaving the song. */
-          var toldTitle = el("h2", null, "פרטים");
+          var toldTitle = el("h2", null, "יוצרים וסגנון");
           toldTitle.tabIndex = -1;
           toldTitle.setAttribute("autofocus", "");
           toldBox.appendChild(toldTitle);
