@@ -2383,6 +2383,16 @@ body.on-song .top { border-bottom: 0; }
   box-shadow: 0 6px 20px rgba(23, 32, 42, .16);
 }
 .print-menu .btn { justify-content: flex-start; }
+/* A row that is a door to something already open says so, the same way the
+   picture of it did when it stood in the bar (see .icon-btn.is-on). */
+.print-menu .btn.is-on { color: #fff; background: var(--accent); border-color: var(--accent); }
+/* WIDE ENOUGH TO READ A NAME IN. The rows here are the buttons that used to
+   stand in the bar, and one of them carries whatever somebody is called. */
+.print-menu { min-width: 168px; }
+.print-menu .who .lb {
+  display: inline-block; max-width: 18ch;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 
 /* The same small panel, holding what a handful of songs can be called: every
    style the library already uses, one press each, and a field for one it has

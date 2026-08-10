@@ -154,6 +154,12 @@
     person: '<circle cx="12" cy="8" r="3.6"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/>',
     /* two of them, which is what a page of everybody who wrote a song is */
     people: '<circle cx="9.5" cy="8.5" r="3.2"/><path d="M3.5 19.5a6 6 0 0 1 12 0"/><path d="M16 5.6a3.2 3.2 0 0 1 0 6"/><path d="M17.5 14.2a6 6 0 0 1 3 5.3"/>',
+    /* THREE DOTS IN A COLUMN, which everywhere means "and the rest is in
+       here". It is the one picture in this file that is not a drawing of the
+       thing it opens, because what it opens is a handful of unlike things and
+       there is no picture of that. Filled rather than stroked: at line weight
+       three small rings are three smudges. */
+    dots: '<circle cx="12" cy="5" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.6" fill="currentColor" stroke="none"/>',
     /* A BILL, torn off along the bottom the way a printed one is, with two
        lines of writing on it. Not a coin and not a banknote: what is behind the
        button is not money, it is a list of what was done and what each of them
@@ -4302,6 +4308,59 @@
     });
   }
 
+  function toCreators() {
+    return keep("toCreators", function () {
+      return button("יוצרים", ICON.people, "ghost small", function () {
+        go(addr("creators"));
+      });
+    });
+  }
+
+  /* --- AND THE DOORS STAND BEHIND ONE BUTTON ---------------------------------
+     The bar had six things on it: the mark, the name of the page, a search
+     box, and then a tuning fork, a calendar, two faces, a plus and a face.
+     Five pictures in a row, on a phone with the words stripped off them, is a
+     row nobody reads: they are all the same size and the same grey, and the
+     only way to find the one you want is to press until something happens.
+
+     So one of them is kept out and the rest go behind three dots. What is
+     kept out is ADDING A SONG, because it is the one thing on this bar
+     somebody came here to DO; everything else is a way somewhere else, and a
+     way somewhere else is what a menu is for. The account goes in with them:
+     it is looked at rarely, and it was holding the corner that the menu
+     wants.
+
+     What the panel holds is decided at the press and not at the painting, so
+     a door is never offered to the page you are already standing on, and the
+     fork knows whether its panel is open at the moment you look. */
+  function moreRows() {
+    var p = parts();
+    var rows = [earDoor("tune", null, true)];
+    if (p[0] !== "evenings") rows.push(toEvenings());
+    if (p[0] !== "creators" && p[0] !== "creator") rows.push(toCreators());
+    /* Signing in is not in here: it is the only way forward for somebody who
+       has none, and a way forward hidden behind a picture is no way forward.
+       It keeps its own place in the bar (see paintHeader). */
+    if (auth.in) rows.push(session());
+    return rows;
+  }
+
+  function more() {
+    return keep("more", function () {
+      var node = iconBtn(ICON.dots, "עוד", function () {
+        menuUnder(node, moreRows());
+        /* Every row in here either goes somewhere or opens something over the
+           page, so the panel has done its work the moment one is pressed.
+           Said here and not in each row, because the rows are the same
+           buttons that stand alone elsewhere. */
+        if (underMenu) underMenu.addEventListener("click", closeUnder);
+      });
+      node.setAttribute("aria-haspopup", "menu");
+      node.setAttribute("aria-expanded", "false");
+      return node;
+    });
+  }
+
   function paintHeader() {
     var bar = document.getElementById("topActions");
     /* The test harness builds its own page around this file and has no bar. */
@@ -4321,7 +4380,7 @@
           keep("newEvening", function () {
             return button("אירוע חדש", ICON.plus, "small", newEvening);
           }),
-          session(),
+          more(),
         ]);
       }
       /* An evening that is open: the two things there are to do to the whole
@@ -4343,10 +4402,10 @@
     }
 
     /* The two pages about people. Neither has anything to do TO what is on
-       it, so the bar carries the ways on from it: the other half of the app,
-       and who is looking. */
+       it, so the bar carries nothing but the ways on from it, and the ways on
+       are all in the one panel. */
     if (p[0] === "creators" || p[0] === "creator") {
-      return fill(bar, [toEvenings(), session()]);
+      return fill(bar, auth.in ? [more()] : [session(), more()]);
     }
 
     if (p.length) {
@@ -4390,39 +4449,24 @@
       return;
     }
 
-    fill(bar, [
-      /* THE TUNER, and it is first because of when it is wanted. Everything
-         else in this bar is about the library; this is about the guitar, and
-         it is reached for in the minute BEFORE a song is opened rather than
-         after. Somebody who sat down to play opens the app, tunes, and then
-         goes looking for what to play.
-
-         Made fresh on every painting rather than kept, because it says whether
-         the panel it opens is open (see earDoor). */
-      earDoor("tune"),
-      /* The way out to the evenings, because it is the only one of these that
-         goes somewhere rather than making something. */
-      toEvenings(),
-      /* And the people, beside the evenings, because they are the same kind of
-         door: another way through the same songs. The library is by when a song
-         was last touched, an evening is by what was played together, and this
-         one is by who wrote it. */
-      keep("toCreators", function () {
-        return button("יוצרים", ICON.people, "ghost small", function () {
-          go(addr("creators"));
-        });
-      }),
+    var shelf = [
       /* One button for adding a song, and which way in is asked on the press
          (see askAdd): typing it out and reading it off a photograph are two
-         answers to one question, and the bar asks the question. */
+         answers to one question, and the bar asks the question. It is the one
+         thing here that is not a door, which is why it is the one thing that
+         stayed out of the panel. */
       keep("newSong", function () {
         var add = button("שיר חדש", ICON.plus, "small", function () { askAdd(add); });
         add.setAttribute("aria-haspopup", "menu");
         add.setAttribute("aria-expanded", "false");
         return add;
       }),
-      session(),
-    ]);
+    ];
+    /* The tuner, the evenings, the people and whoever is looking: all of them
+       one press further away, in the corner (see more). */
+    if (!auth.in) shelf.push(session());
+    shelf.push(more());
+    fill(bar, shelf);
   }
 
   /* WHO IS LOOKING AT THIS, in the corner where it belongs, and their own name
@@ -13155,19 +13199,37 @@
   function followRead() {
     var sheet = document.querySelector(".sheet");
     if (!sheet) return false;
-    var spans = sheet.querySelectorAll(".chord");
+
+    /* Walked row by row rather than asked for as one list of chords, because
+       two things are wanted and only one of them is a chord: the order, and
+       WHERE EACH PART OF THE SONG BEGINS. A heading is a row of its own (see
+       viewLine), so the first chord after one opens a part, and so does the
+       first chord in the song.
+
+       Which is what makes a repeat findable. Nobody plays one chord over
+       again, they play the verse over again, and a verse starts at {בית}. */
+    var rows = sheet.querySelectorAll(".ln");
+    var spans = [], names = [], starts = [], opening = true;
+    for (var r = 0; r < rows.length; r++) {
+      if (rows[r].classList.contains("is-section")) { opening = true; continue; }
+      var here = rows[r].querySelectorAll(".chord");
+      for (var k = 0; k < here.length; k++) {
+        if (opening) { starts.push(spans.length); opening = false; }
+        spans.push(here[k]);
+        names.push(here[k].textContent.trim());
+      }
+    }
     if (!spans.length) return false;
-    var names = [], i;
-    for (i = 0; i < spans.length; i++) names.push(spans[i].textContent.trim());
+
     followSpans = spans;
-    var key = names.join(" ");
+    var key = names.join(" ") + "|" + starts.join(",");
     if (following && key === followWas) return true;
     followWas = key;
     /* A SONG REDRAWN IS THE SAME SONG. Where we had got to is kept across the
        rebuild, because a transposition is not somebody starting again: the
        chords are written differently and the playing did not stop. */
     var was = following ? following.where() : -1;
-    following = window.CHORDS_FOLLOW.make(names);
+    following = window.CHORDS_FOLLOW.make(names, starts);
     if (was >= 0 && was < names.length) following.put(was);
     return true;
   }
@@ -13200,8 +13262,15 @@
 
     var step = following.step(scores);
     markAt(step.here);
+    /* Where in the song, and nothing about how sure. There WAS a "לא בטוח"
+       here, worked out from the paths themselves, and it was measuring the
+       model rather than the song: the costs in follow.js floor every rival a
+       fixed distance behind the leader, so it read as near certainty on every
+       song ever written, including the ones that are four chords sixteen
+       times. A number that is always the same is not a reading, and a warning
+       that never appears is worse than none. */
     earParts.chord.at.textContent = step.here < 0 ? "" :
-      (step.here + 1) + " מתוך " + following.length + (step.sure < 0.35 ? "  ·  לא בטוח" : "");
+      (step.here + 1) + " מתוך " + following.length;
   }
 
   function markAt(i) {
@@ -13348,11 +13417,16 @@
 
   /* The way in. Made fresh each time rather than kept, because one of the two
      is built with a song and goes when the song does, and a door that knows
-     which tab it opens is a door that has to say whether that tab is open. */
-  function earDoor(mode, cls) {
+     which tab it opens is a door that has to say whether that tab is open.
+
+     A door standing among other pictures is a picture, and a door standing in
+     a panel of rows is a row: same door, and the row carries the word, because
+     a line in a list with nothing written on it is a line nobody reads. */
+  function earDoor(mode, cls, worded) {
     var icon = mode === "tune" ? ICON.fork : ICON.mic;
     var label = mode === "tune" ? "כיוון הגיטרה" : "להאזין לנגינה";
-    var b = iconBtn(icon, label, function () { askEar(mode); });
+    var open = function () { askEar(mode); };
+    var b = worded ? button(label, icon, "ghost small", open) : iconBtn(icon, label, open);
     if (cls) b.className += " " + cls;
     b.classList.toggle("is-on", earOpen() && earMode === mode);
     return b;

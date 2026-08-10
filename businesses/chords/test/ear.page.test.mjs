@@ -53,7 +53,7 @@ const SONG = {
    The last verse ends on a Dm, which is the one chord in it that happens once.
    That is what the follower is walked to, and it is a long way down. */
 const LONG = ["{בית}"].concat(
-  Array.from({ length: 14 }, () => "[Am]בנקיק [G]נסתר בצוקים [F]אילה שותה מים")
+  Array.from({ length: 40 }, () => "[Am]בנקיק [G]נסתר בצוקים [F]אילה שותה מים")
 ).concat(["[Dm]ובסוף השיר"]).join("\n");
 
 const TALL = {
@@ -78,6 +78,11 @@ const RINGS = [-20, -28, -34, -40];
 function page(song = SONG) {
   return `<!doctype html>
 <html lang="he" dir="rtl"><head><meta charset="utf-8">
+<!-- The same one the real shell carries. Without it a browser told it is a
+     phone still lays the page out at 980 pixels, which is a desk, and a song
+     that would have been one tall column comes out as three short ones with
+     nothing to scroll. -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="/chords/assets/style.css">
 <script>
 window.__errors = [];
@@ -264,6 +269,17 @@ if (!browser) {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/* Waited for rather than slept past. Crossing the narrow line redraws the
+   whole song, and a fixed pause either wastes time or, on a slow machine,
+   presses a button that is not there yet and fails saying nothing about why. */
+const until = async (evaluate, expression, tries = 60) => {
+  for (let i = 0; i < tries; i++) {
+    if (await evaluate(`JSON.stringify(!!(${expression}))`)) return true;
+    await sleep(150);
+  }
+  return false;
+};
+
 async function withChrome(run) {
   const port = 9335;
   const profile = join(process.env.TEMP || "/tmp", "chords-ear-profile");
@@ -363,6 +379,7 @@ try {
         before.sheet.length > 0 && !before.open, JSON.stringify(before.sheet));
 
       /* --- the door ------------------------------------------------------- */
+      await until(evaluate, 'document.querySelector(".ear-door")');
       const opened = await evaluate('JSON.stringify(!!document.querySelector(".ear-door") && (document.querySelector(".ear-door").click(), true))');
       check("there is a way in from the song's own strip", opened === true, String(opened));
 
@@ -513,18 +530,20 @@ try {
       await send("Emulation.setDeviceMetricsOverride", {
         width: 430, height: 760, deviceScaleFactor: 1, mobile: true,
       });
-      /* The app draws a different page either side of the narrow line, so it
-         is given the frame it needs to draw the one this is about. */
-      await sleep(900);
+      /* The app draws a different page either side of the narrow line, and the
+         controls move with it (see placeControls): on a phone they are on a
+         strip under the header rather than in the bar. Waited for. */
+      await until(evaluate, 'document.querySelector(".sheet .chord") && document.querySelector(".ear-door")');
+      await sleep(300);
 
       const start = await evaluate(SCROLL_READ);
-      console.log("DEBUG", JSON.stringify(await evaluate('JSON.stringify({app: document.getElementById("app").innerHTML.slice(0,300), errs: window.__errors, w: window.innerWidth})')));
       check("the song is taller than the screen, so there is something to scroll",
         start.room > 400 && start.chords > 30, JSON.stringify({ room: start.room, chords: start.chords }));
       check("and it opens at the top", start.y === 0, String(start.y));
 
       await evaluate('JSON.stringify((document.querySelector(".ear-door").click(), true))');
-      await sleep(900);
+      await until(evaluate, 'document.querySelector(".sheet .chord.is-at")');
+      await sleep(300);
 
       const lit = await evaluate(SCROLL_READ);
       check("following starts on the tall song too", lit.at >= 0, JSON.stringify({ at: lit.at }));
@@ -532,26 +551,42 @@ try {
       /* --- a finger on a chord a long way down --------------------------------
          The quickest way to ask the one question this block exists for: put
          the mark somewhere off the screen and see whether the screen follows
-         it. Which is also a thing people do. */
-      await evaluate(`JSON.stringify(([...document.querySelectorAll(".sheet .chord")][30]
+         it. Which is also a thing people do.
+
+         FAR ENOUGH DOWN TO BE OFF THE SCREEN AND NO FURTHER. The first version
+         of this reached for the ninetieth chord of a hundred and twenty one
+         and then played thirty three more, which walks off the END of the
+         song: with nowhere forward to go the follower went back to the top of
+         the part, correctly, and the check read that as a snap back to the
+         first line. The song has to be long enough for the walk to happen
+         inside it. */
+      await evaluate(`JSON.stringify(([...document.querySelectorAll(".sheet .chord")][45]
         .dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })), true))`);
       await sleep(900);
       const jumped = await evaluate(SCROLL_READ);
       check("a mark put below the screen brings the screen to it",
-        jumped.at === 30 && jumped.y > 200, JSON.stringify({ at: jumped.at, y: jumped.y }));
+        jumped.at === 45 && jumped.y > 400, JSON.stringify({ at: jumped.at, y: jumped.y }));
       check("and it lands in the upper part of the screen rather than at its edge",
         jumped.where !== null && jumped.where > 0.05 && jumped.where < 0.6, String(jumped.where));
 
-      /* --- and playing carries it on --------------------------------------- */
+      /* --- and playing carries it on ---------------------------------------
+         SEVEN LINES OF IT, and the number matters. The page is kept in a BAND
+         rather than centred on every chord, so a mark that moves two lines
+         moves inside the band and the page is right not to touch it: a page
+         that jumps on every chord is a page nobody can read. Only a walk long
+         enough to leave the band asks anything at all, and the first version
+         of this check walked three lines and passed by proving nothing. */
       const before = jumped.y;
-      for (const chord of ["G", "F", "Am", "G", "F", "Am", "G", "F"]) {
+      const bars = [];
+      for (let i = 0; i < 11; i++) bars.push("G", "F", "Am");
+      for (const chord of bars) {
         await evaluate(`JSON.stringify((window.__playing = ${JSON.stringify(chord)}, true))`);
-        await sleep(420);
+        await sleep(260);
       }
-      await sleep(500);
+      await sleep(600);
       const played = await evaluate(SCROLL_READ);
       check("playing on walks the mark down the song",
-        played.at > 30, JSON.stringify({ from: 30, to: played.at }));
+        played.at > 45, JSON.stringify({ from: 45, to: played.at }));
       check("and the page came down with it",
         played.y > before, JSON.stringify({ before, after: played.y }));
       check("with the mark still on the screen",

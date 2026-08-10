@@ -132,10 +132,42 @@
      ========================================================================== */
   var STAY = Math.log(0.86);
   var NEXT = Math.log(0.115);
-  /* Two, three and four ahead: a chord passed over. Each is much dearer than
-     the one before, because skipping four chords is nearly always the follower
-     being wrong rather than the player being fast. */
-  var SKIP = [Math.log(0.018), Math.log(0.005), Math.log(0.002)];
+  /* Two and three ahead: a chord that went by without being heard, damped,
+     played quietly, or missed. Each much dearer than the one before, and there
+     is no fourth, because skipping four chords is not something a player does.
+     It is the follower being wrong. */
+  var SKIP = [Math.log(0.012), Math.log(0.0015)];
+
+  /* --- AND BACKWARDS, WHICH IS A THING SONGS DO ------------------------------
+     Playing the verse again. Going round the chorus once more. Starting the
+     line over because it came out wrong. None of those is being lost, and none
+     of them was possible here except by way of the "jump to anywhere" below,
+     which is fifty times dearer.
+
+     WHICH IS THE BUG THIS EXISTS TO FIX, and it is worth saying exactly. In a
+     song running Am D Am D F C E Am, a player who has reached the second D and
+     wants the verse again plays Am. The Am they mean is two places BEHIND. The
+     next Am in the written song is four places AHEAD, in the second verse. If
+     going back can only be done by the anywhere jump and going forward can be
+     done by skipping, then going forward is cheaper, and the follower answers
+     a repeat by leaping over F, C and E into the next verse. Which is what it
+     did.
+
+     So a repeat has a cost of its own: dearer than the next chord by a long
+     way, because most of the time the song simply carries on, and far cheaper
+     than being lost, because this is a thing people do on purpose. */
+  var BACK = Math.log(0.0004);
+
+  /* AND GOING BACK TO THE TOP OF A PART IS CHEAPER STILL, because that is what
+     a repeat actually is. Nobody plays one chord over again; they play the
+     verse over again, and a verse starts where the song says {בית} starts.
+
+     The app already knows where those are, it is written into every song, and
+     handing them over turns "somebody went backwards" into "somebody went back
+     to the beginning of a part", which is a far more specific guess and
+     therefore a far better one. A song with no headings in it simply has one
+     part, and everything below carries on exactly as it did. */
+  var BACK_START = Math.log(0.006);
   /* AND ANYWHERE AT ALL, from anywhere at all. This is the difference between
      a follower that recovers and one that does not: without it, a follower
      that lost the song at the second verse spends the rest of the song
@@ -144,6 +176,35 @@
      second and a half of being consistently wrong before starting again
      somewhere else becomes the cheaper story. */
   var LOST = Math.log(3e-7);
+
+  /* --- AND A REASON TO STAY WHERE WE ARE ------------------------------------
+     A small bonus, every reading, for the places within a bar of where we
+     already think we are.
+
+     WITHOUT IT A REPETITIVE SONG SNAPS BACK TO ITS FIRST LINE. "Am G F" forty
+     times over is forty places that fit every reading exactly as well as each
+     other, so the moment the follower stumbles, for a beat, on a chord change
+     it missed, the fortieth Am and the FIRST Am are level, and a search for
+     the best place picks whichever it looks at first. That is the top of the
+     song. The mark jumps to the first line and the page scrolls up with it,
+     over and over, which is the one failure that makes the whole thing
+     useless: it is not lost, it is wrong and confident.
+
+     The bonus is what says that a tie is not a tie. When nothing in the sound
+     can separate two places, WHERE WE WERE A MOMENT AGO is the only evidence
+     there is, and it should win. When something in the sound can separate them
+     it is far too small to matter: a chord that matches where a chord that
+     does not is worth about three of these, so real evidence still moves the
+     mark within a couple of readings.
+
+     HERE AND THE TWO PLACES AFTER IT, and deliberately not the two before. It
+     is a reason not to leap across the song, not a reason to stand still, so
+     carrying on is rewarded exactly as much as staying. And going BACK is a
+     different question with its own answer below: a player repeating a part
+     means the top of that part, and a bonus for the chord just behind them
+     would keep pulling the mark one place back instead. */
+  var HOME = 0.8;
+  var NEAR = 2;
 
   /* How sharply a score is believed. The scores coming in are cosine
      similarities and the interesting ones live between about .6 and .95, so a
@@ -165,10 +226,16 @@
      chord from a reading that was wrong, and there is no cheaper way to tell
      them apart than waiting. */
   var STRIDE = 1;
-  var PATIENCE = 8;
+  var PATIENCE = 12;
 
-  function make(names) {
+  /* `starts` is which places in the song begin a part: the first chord under
+     each heading. Optional, and a song without any is a song with one part. */
+  function make(names, starts) {
     var n = names ? names.length : 0;
+    var opens = new Uint8Array(n);
+    if (starts) for (var s = 0; s < starts.length; s++) {
+      if (starts[s] >= 0 && starts[s] < n) opens[starts[s]] = 1;
+    }
 
     /* The distinct chords, and which of them each place in the song is. The
        caller scores the DISTINCT ones, which is eight or so, rather than every
@@ -184,9 +251,19 @@
 
     var prev = new Float64Array(n);
     var cur = new Float64Array(n);
+    /* The best place AHEAD of each one, so that "come back to here from
+       anywhere later in the song" is one lookup rather than a search. Filled
+       from the far end backwards, once a reading. */
+    var ahead = new Float64Array(n);
     var here = 0;
     var want = -1;
     var waited = 0;
+    /* WHETHER THERE IS ANYTHING TO BE LOYAL TO YET. Everything below is built
+       to be slow to leave a position it believes in, and at the very first
+       reading it believes in nothing: the song has just been opened and where
+       we are is whatever the sound says. So the first few readings are taken
+       as they come, and the patience starts once a position has held. */
+    var locked = false;
 
     /* Nothing is known yet, so every place in the song is equally likely and
        the first few readings are what narrow it down. Not "the song starts at
@@ -194,7 +271,7 @@
        second verse. */
     function reset() {
       for (var j = 0; j < n; j++) prev[j] = 0;
-      here = 0; want = -1; waited = 0;
+      here = 0; want = -1; waited = 0; locked = false;
     }
 
     /* Somebody said where they are, by touching a chord on the page. Which is
@@ -203,30 +280,51 @@
     function put(at) {
       if (!(at >= 0 && at < n)) return here;
       for (var j = 0; j < n; j++) prev[j] = j === at ? 0 : -40;
-      here = at; want = -1; waited = 0;
+      here = at; want = -1; waited = 0; locked = true;
       return here;
     }
 
     /* One reading. `scores` is one number per DISTINCT chord, in the order of
        `kinds`, and each is how much this reading looked like that chord. */
     function step(scores) {
-      if (!n) return { at: -1, here: -1, sure: 0, moved: false };
+      if (!n) return { at: -1, here: -1, alike: 0, moved: false };
 
       var j, best = -Infinity, at = 0;
       var was = -Infinity;
       for (j = 0; j < n; j++) if (prev[j] > was) was = prev[j];
       var anywhere = was + LOST;
 
+      /* Everything later in the song than each place, so that going back to it
+         costs one comparison. Backwards from the end, which is the only
+         direction this can be worked out in. */
+      ahead[n - 1] = -Infinity;
+      for (j = n - 2; j >= 0; j--) ahead[j] = prev[j + 1] > ahead[j + 1] ? prev[j + 1] : ahead[j + 1];
+
       for (j = 0; j < n; j++) {
         var v = prev[j] + STAY;
         if (j >= 1 && prev[j - 1] + NEXT > v) v = prev[j - 1] + NEXT;
-        for (var d = 2; d <= 4; d++) {
+        for (var d = 2; d <= 3; d++) {
           if (j >= d && prev[j - d] + SKIP[d - 2] > v) v = prev[j - d] + SKIP[d - 2];
         }
+        /* Somebody playing the verse again, which arrives here from further on
+           in the song rather than from just behind, and which lands on the top
+           of a part far more often than in the middle of one. */
+        var home = ahead[j] + (opens[j] ? BACK_START : BACK);
+        if (home > v) v = home;
         if (anywhere > v) v = anywhere;
         v += BELIEF * scores[of[j]];
+        /* And the reason to stay near where we already are, which is the only
+           evidence there is when the sound cannot tell two places apart. */
+        if (j >= here && j <= here + NEAR) v += HOME;
         cur[j] = v;
-        if (v > best) { best = v; at = j; }
+        /* THE NEAREST OF THE EQUALS. Where two places explain the readings
+           exactly as well as each other, which in a song of four chords played
+           forty times is most of them, the one to believe is the one closest
+           to where we already were. Deciding it by which comes first in the
+           song puts the mark on the first line and the page back at the top. */
+        if (v > best || (v === best && Math.abs(j - here) < Math.abs(at - here))) {
+          best = v; at = j;
+        }
       }
 
       /* Kept relative to the best, so the numbers stay where double precision
@@ -235,20 +333,31 @@
       for (j = 0; j < n; j++) cur[j] -= best;
       var swap = prev; prev = cur; cur = swap;
 
-      /* HOW SURE, which is not the winner's own number: that says how well the
-         sound matched, and the question here is whether anywhere ELSE explains
-         it nearly as well. So it is the distance to the best place that is not
-         next to this one, which on a song of four chords played four times is
-         exactly the distance to the same chord one time round earlier. */
-      var rival = -Infinity;
-      for (j = 0; j < n; j++) {
-        if (j >= at - 1 && j <= at + 1) continue;
-        if (prev[j] > rival) rival = prev[j];
-      }
-      var sure = rival === -Infinity ? 1 : Math.min(1, -rival / 6);
+      /* HOW MANY PLACES IN THE SONG CARRY THIS SAME CHORD, which is the only
+         honest thing there is to say about how much this can be trusted. One
+         means the sound alone settles it. Sixteen means the sound says nothing
+         at all about which of them we are on and every bit of the answer is
+         coming from where we were a moment ago, which is real evidence and is
+         not proof.
+
+         It replaced a number worked out from the paths themselves, and that
+         one was measuring the model rather than the song: the costs below floor
+         every rival at a fixed distance behind the leader, so it read as near
+         certainty on every song ever written, including the ones that are four
+         chords sixteen times. A number that is always the same is not a
+         reading. */
+      var alike = 0;
+      for (j = 0; j < n; j++) if (of[j] === of[at]) alike++;
 
       var moved = false;
-      if (at === here) { want = -1; waited = 0; }
+      if (!locked) {
+        /* Still finding our feet. Take what the sound says and start counting
+           patience only once it has said the same thing three times running. */
+        here = at;
+        if (at === want) { if (++waited >= 3) { locked = true; want = -1; waited = 0; } }
+        else { want = at; waited = 1; }
+        moved = true;
+      } else if (at === here) { want = -1; waited = 0; }
       else if (at > here && at - here <= STRIDE) { here = at; moved = true; want = -1; waited = 0; }
       else {
         if (at === want) waited++;
@@ -256,7 +365,7 @@
         if (waited >= PATIENCE) { here = at; moved = true; want = -1; waited = 0; }
       }
 
-      return { at: at, here: here, sure: sure, moved: moved };
+      return { at: at, here: here, alike: alike, moved: moved };
     }
 
     reset();

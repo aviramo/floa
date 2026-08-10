@@ -87,21 +87,12 @@ const play = (follow, chord, frames = 6, high, low) => {
   eq("four chords played four times are sixteen different places",
     walked, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
 
-  /* AND IT NEVER BECOMES CERTAIN WHICH TIME ROUND IT IS, which is not a fault
-     and cannot be fixed. A song that is genuinely four chords sixteen times
-     has four stories that fit every reading equally well and will go on doing
-     so to the last bar: the second time round sounds exactly like the first,
-     and being one bar further into a path that was a guess at the start does
-     not make the guess any better.
-
-     What it IS right about is the RELATIVE position, which is the test above:
-     it walks sixteen places without ever snapping back to the first. So the
-     mark moves correctly through the repeats, and `sure` is the honest report
-     that it could equally be lighting the same chord one time round earlier. */
+  /* AND IT SAYS HOW MUCH OF THAT IS THE SOUND'S DOING, which on this song is
+     none of it: every Am here is one of four, so the sound settles nothing and
+     the whole of the answer is continuity. Which is real evidence and is not
+     proof, and the difference is worth being able to see. */
   const fresh = F.make(song);
-  const walk = ["Am", "F", "C", "G", "Am", "F"].map((c) => play(fresh, c, 8).sure);
-  eq("a song that is one thing over and over stays a guess about which time round",
-    walk.every((s) => s < 0.2), true);
+  eq("it says how many places carry the chord it is on", play(fresh, "Am", 8).alike, 4);
 }
 
 /* --- and a song with something in it that only happens once ----------------
@@ -111,12 +102,88 @@ const play = (follow, chord, frames = 6, high, low) => {
 {
   const song = ["Am", "F", "C", "G", "Am", "F", "C", "G", "Dm", "Bm", "Am", "F", "C", "G"];
   const f = F.make(song);
-  const opened = play(f, "Am", 8).sure;
-  ["F", "C", "G", "Am", "F", "C", "G", "Dm", "Bm"].forEach((c) => play(f, c, 8));
-  const after = play(f, "Am", 8);
+  play(f, "Am", 8);
+  ["F", "C", "G", "Am", "F", "C", "G", "Dm", "Bm"].forEach((c) => play(f, c, 14));
+  const after = play(f, "Am", 14);
   eq("a part that happens once settles where we are", after.here, 10);
-  eq("and it knows it now, where it did not at the start",
-    after.sure > 0.8 && opened < 0.2, true);
+  eq("and the Bm before it was the one place it could have been", after.alike, 3);
+}
+
+/* --- PLAYING THE VERSE AGAIN -----------------------------------------------
+   Reported from a real song, "שיר של תקווה", and it is the failure that says
+   most about how this has to be shaped.
+
+   The song runs Am D Am D, then F C E Am. The player reaches the second D,
+   wants the verse again, and plays Am. The Am they mean is two places BEHIND
+   them. The next Am the song has written down is four places AHEAD, in the
+   part after. And with no way to go backwards except the anywhere jump, going
+   forward was fifty times cheaper: the follower answered a repeat by leaping
+   over F, C and E into the next section. It was not lost. It was wrong, and
+   confident, and it took the page with it. */
+{
+  const song = ["Am", "D", "Am", "D", "F", "C", "E", "Am", "G"];
+  const f = F.make(song);
+  ["Am", "D", "Am", "D"].forEach((c) => play(f, c, 8));
+  eq("through the verse once", f.where(), 3);
+
+  play(f, "Am", 20);
+  eq("and the verse again goes back to the verse, not on to the next Am",
+    f.where() < 4, true);
+
+  /* AND THE WHOLE VERSE AGAIN, which is what actually happens: nobody plays
+     one chord over again, they play the part over again. So the repeat is
+     followed and then the verse is WALKED a second time, in order, and the
+     part after it is still waiting where it was. */
+  const twice = F.make(song);
+  ["Am", "D", "Am", "D"].forEach((c) => play(twice, c, 8));
+  const round = ["Am", "D", "Am", "D"].map((c) => play(twice, c, 16).here);
+  eq("a verse played again is walked again rather than run past",
+    round.every((at) => at < 4) && round[3] > round[0], true);
+  ["F", "C", "E"].forEach((c) => play(twice, c, 16));
+  eq("and the part after it is still there when it comes", twice.where(), 6);
+
+  /* AND WHERE THE PARTS BEGIN IS KNOWN, so a repeat lands on the top of the
+     verse rather than merely somewhere inside it. Which is what a repeat is:
+     nobody plays one chord over again. */
+  const parts = F.make(song, [0, 4]);
+  ["Am", "D", "Am", "D"].forEach((c) => play(parts, c, 8));
+  play(parts, "Am", 20);
+  eq("and it lands on the top of the verse, because that is what a repeat is",
+    parts.where(), 0);
+
+  /* And the part after is still reachable when it is what is actually played:
+     this is a cost, not a wall. */
+  const g = F.make(song);
+  ["Am", "D", "Am", "D"].forEach((c) => play(g, c, 8));
+  ["F", "C", "E"].forEach((c) => play(g, c, 8));
+  eq("carrying on carries on", g.where(), 6);
+  play(g, "Am", 10);
+  eq("and the Am after those is the one in the second part", g.where(), 7);
+}
+
+/* --- AND A SONG THAT IS ONE THING OVER AND OVER DOES NOT SNAP TO ITS TOP ----
+   Forty times "Am G F" is a hundred and twenty places that fit every reading
+   exactly as well as each other. So the moment the follower stumbles, the
+   fortieth Am and the FIRST Am are level, and a search for the best place
+   picks whichever it happens to look at first, which is the top of the song.
+   The mark jumps to the first line, the page scrolls up, and it happens again
+   a bar later.
+
+   Where nothing in the sound can separate two places, where we were a moment
+   ago is the only evidence there is. */
+{
+  const song = [];
+  for (let i = 0; i < 40; i++) song.push("Am", "G", "F");
+  /* AND WITH A HEADING AT THE TOP OF IT, which every song has and which is
+     what makes this the hard case rather than the easy one: "back to the top
+     of a part" is cheap, and here the top of the part is the top of the song.
+     So the cheap way home and the wrong answer are the same place. */
+  const f = F.make(song, [0]);
+  f.put(90);
+  /* eleven bars of it, played fast enough to stumble on */
+  for (let i = 0; i < 11; i++) ["G", "F", "Am"].forEach((c) => play(f, c, 5));
+  eq("thirty bars in, it is thirty bars in", f.where() > 90, true);
+  eq("and not back at the first line", f.where() > 20, true);
 }
 
 /* --- a chord that goes by unheard ------------------------------------------
@@ -126,8 +193,9 @@ const play = (follow, chord, frames = 6, high, low) => {
   const song = ["Am", "F", "C", "G", "Em"];
   const f = F.make(song);
   play(f, "Am", 8);
-  /* F never sounds; C does */
-  play(f, "C", 10);
+  /* F never sounds; C does. Two places on is not the next chord, so it is not
+     taken on sight: half a second of agreement first (see PATIENCE). */
+  play(f, "C", 16);
   eq("a chord passed over is passed over rather than lost", f.where(), 2);
 }
 

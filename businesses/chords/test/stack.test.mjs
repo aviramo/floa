@@ -225,7 +225,9 @@ try {
          back: everything else on this page had already come back correctly. */
       check("the bar says the library", (await evaluate(`document.getElementById("topWhere").textContent`)) === "אקורדים",
         await evaluate(`JSON.stringify(document.getElementById("topWhere").textContent)`));
-      check("the bar has its buttons back", await evaluate(`document.getElementById("topActions").children.length`) >= 4,
+      /* The library's bar: adding a song, the way in, and the three dots that
+         hold the rest of it (see more). */
+      check("the bar has its buttons back", await evaluate(`document.getElementById("topActions").children.length`) >= 3,
         await evaluate(`document.getElementById("topActions").children.length + " buttons"`));
       check("it is the same sheet, not a new one",
         await evaluate(`document.querySelector("#app > .layer").__mark === 1`), "a new node");
