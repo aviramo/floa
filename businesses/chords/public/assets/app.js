@@ -5738,27 +5738,11 @@
     fork.classList.toggle("is-on", earOpen() && earMode === "tune");
     rows.push(fork);
 
-    /* --- AND THE MEASUREMENT, WHICH HAD NO DOOR AT ALL ------------------------
-       There is a "מה שומעים" button that opens the working: the twelve numbers,
-       what the ear nearly said, and every chord of THIS song with the score it
-       just got. It is the one place that answers "why did the mark do that",
-       and it lived inside the band at the foot of the screen.
-
-       WHICH IS HIDDEN WHILE THE FOLLOWER RUNS, and the follower runs on every
-       song page by itself. So the button that opens the measurement was inside
-       the thing the measurement had to be opened from: a door locked from the
-       inside, and the comment beside it cheerfully said the measurement was a
-       press away. It was not reachable at all.
-
-       Found by somebody being told to go and read it and answering that there
-       was nothing to press. */
-    var work = button("מה שומעים", ICON.mic, "ghost small ear-row", function () {
-      closeUnder();
-      showWork();
-    });
-    work.classList.toggle("is-on", !!earParts && earMode === "chord" &&
-      earParts.chord.node.classList.contains("is-shown"));
-    rows.push(work);
+    /* AND THE MEASUREMENT IS NOT OFFERED HERE. The working, the twelve numbers
+       and what the ear nearly said, is a thing for whoever is asking why the
+       mark did what it did, and this panel is read by whoever is about to play
+       a song. It lives on the band at the foot of the screen and nowhere else
+       (see the peek in buildChord). */
     if (state.printable) {
       rows.push(button("הדפסה", ICON.print, "ghost small", function () {
         /* not closeUnder: this row asks a second question, and asking it
@@ -16075,7 +16059,7 @@
        is not a decision about the recording, so it is held rather than ended:
        what was played is kept, and the answer is asked for the next time the
        song is opened. */
-    if (taping() && !tapeHeld()) holdTape();
+    if (tapeAlive() && !tapeHeld()) holdTape();
     /* The chords the ear is listening FOR belong to the song that was open,
        so they go with it. The panel itself does not: somebody who is tuning
        is tuning, and walking from one page to another is not a reason to stop
@@ -17541,26 +17525,13 @@
   /* How much of the screen the band is allowed. While the follower is running
      it is one row, because what is being looked at is the song; the
      measurement is behind a press for whoever wants to see why. */
-  /* Opens the working and, if the microphone is not listening yet, the
-     microphone with it. Two steps rather than one because the band is built
-     when the ear opens and there is nothing to unfold before that. */
-  function showWork() {
-    var unfold = function () {
-      if (!earParts) return;
-      earParts.chord.node.classList.add("is-shown");
-      earRoom();
-    };
-    if (earOpen() && earMode === "chord") return unfold();
-    askEar("chord", unfold);
-  }
-
   function earRoom() {
     if (!ear || !earParts) return;
     /* AND WHILE IT IS FOLLOWING THERE IS NO BAND AT ALL. It was one row, and
        one row along the foot of a phone is still a row of the song gone, for a
        thing nobody looks at while playing: what is being looked at is the mark
-       on the page. The measurement is still one press away, and the press is
-       the picture of a microphone that is already in the strip.
+       on the page. The measurement waits until the following stops, which is
+       the state it is a measurement of anyway.
 
        A TAKE IS THE SAME ANSWER, and it is asked a moment earlier. The
        follower is built from what the room turns out to be saying, which is a
@@ -17625,7 +17596,12 @@
        every app marks a thing that has something new waiting inside it. The
        question is behind the press and only behind the press: a panel that
        opens itself the moment somebody stops playing is a panel in the way of
-       the next thing they were about to do. */
+       the next thing they were about to do.
+
+       AND THE ONE IT ASKS ABOUT IS THIS SONG'S. Every question here is asked
+       of the song being drawn (see taping), so a take left unanswered on
+       another song draws nothing on this one: what stands here is the button
+       that records, and pressing it records THIS song. */
     var back = !taping() && heldHere();
     if (back || tapeDone()) {
       var ask = iconBtn(ICON.note, "יש הקלטה שלא נשמרה", back ? askHeld : offerTape);
@@ -17891,28 +17867,67 @@
      over and over. What comes back next time is the take exactly as far as it
      got, held, waiting for the one thing that was never given: an answer.
 
-     AND WHILE IT IS WAITING, NOTHING ELSE CAN BE RECORDED. Two unanswered
-     takes is a question nobody can answer, because the second one buries the
-     first.
+     AND ONE OF THEM PER SONG, WHICH IS THE WHOLE OF WHAT MAKES THEM
+     INDEPENDENT. It was one for the device: a take waiting on any song at all
+     refused the recording of every other song, which is one player's evening
+     stopped by one unanswered question about a song they have moved on from.
+     What that rule was really protecting is the take itself, and what buries a
+     take is a second take OF THE SAME SONG, because the marks in it count
+     chords along one particular sheet. So the question is asked per song, and
+     the answer to it belongs to that song and to no other: an unanswered take
+     on one song is not a fact about any of the rest.
      ========================================================================== */
   var HELD_DB = "chords-held-take";
   var HELD_META = "meta";
   var HELD_BITS = "bits";
+  var HELD_BY_SONG = "song";
 
   function heldDb() {
     return new Promise(function (ok, no) {
       if (!window.indexedDB) return no(new Error("no store"));
-      var ask = indexedDB.open(HELD_DB, 1);
-      ask.onupgradeneeded = function () {
+      /* SECOND VERSION: ONE TAKE PER SONG. The first kept the only take there
+         could be under the key "held" and its sound as bare blobs, and neither
+         of those can say which song it is of. Now the meta is keyed by the
+         song and every piece of sound carries the song it belongs to, with an
+         index over it so that one song's take can be read back, or forgotten,
+         without touching another's. */
+      var ask = indexedDB.open(HELD_DB, 2);
+      ask.onupgradeneeded = function (event) {
         var db = ask.result;
         if (!db.objectStoreNames.contains(HELD_META)) db.createObjectStore(HELD_META);
         if (!db.objectStoreNames.contains(HELD_BITS)) {
           db.createObjectStore(HELD_BITS, { autoIncrement: true });
         }
+        var bits = ask.transaction.objectStore(HELD_BITS);
+        if (!bits.indexNames.contains(HELD_BY_SONG)) bits.createIndex(HELD_BY_SONG, "song");
+        /* AND THE ONE THAT WAS ALREADY WAITING IS MOVED RATHER THAN DROPPED.
+           It is somebody's recording: the upgrade that threw it away would be
+           the one thing this whole store exists to prevent. It already knew
+           which song it was of, in its meta, so it is written back under that
+           song and its pieces are written back beside it. */
+        if (event.oldVersion >= 1) heldMove(ask.transaction);
       };
       ask.onsuccess = function () { ok(ask.result); };
       ask.onerror = function () { no(ask.error || new Error("no store")); };
     });
+  }
+
+  function heldMove(t) {
+    var meta = t.objectStore(HELD_META);
+    meta.get("held").onsuccess = function (e) {
+      var was = e.target.result;
+      meta.delete("held");
+      var bits = t.objectStore(HELD_BITS);
+      bits.getAll().onsuccess = function (ev) {
+        var pieces = ev.target.result || [];
+        bits.clear();
+        if (!was || !was.song) return;
+        meta.put(was, was.song);
+        for (var i = 0; i < pieces.length; i++) {
+          if (pieces[i] && !pieces[i].song) bits.add({ song: was.song, bit: pieces[i] });
+        }
+      };
+    };
   }
 
   function heldWork(stores, mode, run) {
@@ -17926,38 +17941,86 @@
     });
   }
 
-  /* One piece of sound, as it arrives. The meta is written with it so that
-     what comes back knows which song it belongs to and how far it got. */
+  /* One piece of sound, as it arrives, under the song it is of. The meta is
+     written with it so that what comes back knows which song it belongs to and
+     how far it got. A take with no song is not written at all: there would be
+     no way to give it back to anybody. */
   function heldAdd(bit, meta) {
+    if (!meta || !meta.song) return Promise.resolve();
     return heldWork([HELD_META, HELD_BITS], "readwrite", function (t) {
-      if (bit) t.objectStore(HELD_BITS).add(bit);
-      t.objectStore(HELD_META).put(meta, "held");
+      if (bit) t.objectStore(HELD_BITS).add({ song: meta.song, bit: bit });
+      t.objectStore(HELD_META).put(meta, meta.song);
     }).catch(function () { /* a private window, a full disk: the take is still in memory */ });
   }
 
+  /* --- WHAT IS WAITING, WITHOUT READING A NOTE OF THE SOUND -----------------
+     The metas of every unanswered take, and for each of them how many pieces
+     of sound are behind it, which is the only thing that says whether there is
+     a take there at all. The sound itself stays on the device until somebody
+     asks to hear it (see heldBits): several unanswered takes is now an
+     ordinary state, and several takes' worth of megabytes held in a tab for
+     the rest of its life would be the price of it. */
   function heldRead() {
     return heldWork([HELD_META, HELD_BITS], "readonly", function (t) {
-      var got = { meta: null, bits: null };
-      t.objectStore(HELD_META).get("held").onsuccess = function (e) { got.meta = e.target.result || null; };
-      t.objectStore(HELD_BITS).getAll().onsuccess = function (e) { got.bits = e.target.result || []; };
+      var got = { metas: [], counts: {} };
+      var by = t.objectStore(HELD_BITS).index(HELD_BY_SONG);
+      t.objectStore(HELD_META).getAll().onsuccess = function (e) {
+        got.metas = e.target.result || [];
+        got.metas.forEach(function (meta) {
+          if (!meta || !meta.song) return;
+          by.count(IDBKeyRange.only(meta.song)).onsuccess = function (ev) {
+            got.counts[meta.song] = ev.target.result || 0;
+          };
+        });
+      };
       return got;
     }).then(function (got) {
-      if (!got || !got.meta || !got.bits || !got.bits.length) return null;
-      got.meta.bits = got.bits;
-      return got.meta;
-    }).catch(function () { return null; });
+      var all = {};
+      (got.metas || []).forEach(function (meta) {
+        if (!meta || !meta.song || !got.counts[meta.song]) return;
+        all[meta.song] = meta;
+      });
+      return all;
+    }).catch(function () { return {}; });
   }
 
-  function heldDrop() {
+  /* And the sound of one of them, read when it is about to be heard. In the
+     order it was recorded in: the index hands its rows back by song and then
+     by the key they were written under, which is the order they arrived. */
+  function heldBits(song) {
+    if (!song) return Promise.resolve([]);
+    return heldWork([HELD_BITS], "readonly", function (t) {
+      var got = { bits: [] };
+      t.objectStore(HELD_BITS).index(HELD_BY_SONG).getAll(IDBKeyRange.only(song))
+        .onsuccess = function (e) {
+          got.bits = (e.target.result || []).map(function (row) {
+            return row && row.bit;
+          }).filter(Boolean);
+        };
+      return got;
+    }).then(function (got) { return got.bits; }).catch(function () { return []; });
+  }
+
+  /* ONE SONG'S, AND NEVER THE STORE. Clearing both stores was right while
+     there could only be one take in them, and is now the answer to a question
+     about one song throwing away every other song's recording. */
+  function heldDrop(song) {
+    if (!song) return Promise.resolve();
     return heldWork([HELD_META, HELD_BITS], "readwrite", function (t) {
-      t.objectStore(HELD_META).clear();
-      t.objectStore(HELD_BITS).clear();
+      t.objectStore(HELD_META).delete(song);
+      var bits = t.objectStore(HELD_BITS);
+      bits.index(HELD_BY_SONG).openKeyCursor(IDBKeyRange.only(song)).onsuccess = function (e) {
+        var cursor = e.target.result;
+        if (!cursor) return;
+        bits.delete(cursor.primaryKey);
+        cursor.continue();
+      };
     }).catch(function () { /* nothing to forget */ });
   }
 
-  /* What is waiting, once it has been looked for. Null means nothing is;
-     undefined means nobody has asked yet. */
-  var heldTake = undefined;
+  /* What is waiting, once it has been looked for, by song id. An empty object
+     means nothing is; undefined means nobody has asked yet. */
+  var heldTakes = undefined;
 
   /* What a browser will record in. Chrome and Firefox give opus in a webm
      container, Safari gives aac in an mp4, and asking for the wrong one is
@@ -17981,7 +18044,22 @@
     return "";
   }
 
+  /* --- AND EVERY QUESTION ABOUT A TAKE IS ABOUT THIS SONG'S ------------------
+     There is one microphone and therefore one recorder, but a take is a
+     recording OF something, and the page asking "is one running" is always
+     asking about the song it is drawing. Walking off a song holds its take
+     rather than ending it (see draw), so the recorder outlives the page it was
+     started on; without the song in the question, that held take drew its
+     button over the NEXT song, offered itself to be saved there, and refused
+     to let that song be recorded at all. */
   function taping() {
+    return !!tape && !!state.takeSong && tape.song === state.takeSong.id;
+  }
+
+  /* The recorder itself, whatever song it belongs to. Only for the things that
+     are about the machine rather than about the page: parking it, and holding
+     it when its song is walked away from. */
+  function tapeAlive() {
     return !!tape;
   }
 
@@ -17998,21 +18076,32 @@
      pause left the second case drawn as a take still running, with the header
      off the top of the page and a red mark breathing over a dead microphone. */
   function tapeDone() {
-    return !!tape && tape.rec.state !== "recording";
+    return taping() && tape.rec.state !== "recording";
   }
 
   /* ONE PRESS FOR ALL OF IT. The microphone, the following and the recording
      are one thing somebody wants, so they are one thing to press for: if the
      ear is not open yet it is opened and the take starts the moment it is. */
   function beginTake() {
-    /* TWO UNANSWERED TAKES IS A QUESTION NOBODY CAN ANSWER, because the second
-       buries the first. If one is waiting on another song, this says which,
-       rather than refusing without a reason. */
-    if (heldTake) {
-      return toast(heldTake.title
-        ? "יש הקלטה שלא הוחלט עליה בשיר «" + heldTake.title + "»"
-        : "יש הקלטה שלא הוחלט עליה");
-    }
+    if (!state.takeSong) return;
+    /* WHAT IS ON THE DEVICE IS KNOWN BEFORE ANYTHING IS RECORDED OVER IT. The
+       look is asked for the moment a song is opened (see lookForHeld) and this
+       is the same answer, waited for: a take started before it lands writes
+       its sound into a store that already holds another take of this song, and
+       the two of them together are one file that plays as neither. */
+    if (heldTakes === undefined) return lookForHeld().then(beginTake);
+    /* TWO UNANSWERED TAKES OF ONE SONG IS A QUESTION NOBODY CAN ANSWER,
+       because the second buries the first: they are two performances of the
+       same words, and the marks in both of them count chords along the same
+       sheet. Of ANOTHER song it is no such thing, and it is not asked about
+       here (see parkTape). */
+    if (heldHere()) return toast("יש כאן הקלטה שלא הוחלט עליה");
+    /* AND THE TAKE THAT WAS LEFT ON ANOTHER SONG STEPS ASIDE FOR THIS ONE.
+       There is one microphone, so there is one recorder, and it is holding a
+       performance of a song that is not on the screen. That take is not being
+       decided here: it is put down on its own song, whole, where a press over
+       that song asks about it. */
+    if (tapeAlive()) return parkTape().then(beginTake);
     if (earOpen() && earMode === "chord") return startTape();
     /* The band is not put up on its way to being taken down: this press is for
        a recording, and the microphone opening is the only thing between the
@@ -18034,6 +18123,11 @@
     };
 
     if (tape) return;
+    /* THE SONG IS TAKEN AT THE START AND CARRIED BY THE TAKE. Everything after
+       this reads it off the take rather than off the page: the page can be
+       another song by then, and the take is still a recording of this one. */
+    var song = state.takeSong;
+    if (!song) return;
     var stream = window.CHORDS_EAR.stream();
     var kind = tapeKind();
     if (!stream || kind === null) return no("הדפדפן הזה לא יודע להקליט");
@@ -18044,6 +18138,8 @@
 
     tape = {
       rec: rec, bits: [], marks: [], mime: rec.mimeType || kind || "audio/webm",
+      song: song.id, slug: song.slug, title: song.title,
+      page: 0, capo: 0,
       began: Date.now(), still: 0, since: 0, seconds: 0, trace: [],
     };
     /* GUARDED, because this fires after the answer. Stopping a recorder makes
@@ -18057,7 +18153,7 @@
     rec.ondataavailable = function (event) {
       if (!tape || !event.data || !event.data.size) return;
       tape.bits.push(event.data);
-      heldAdd(event.data, heldMeta());
+      heldAdd(event.data, heldMeta(tape));
     };
     /* Nothing on stop. What is offered is taken by stopTape while the recorder
        is still alive, so that dismissing the offer leaves the take where it
@@ -18067,8 +18163,11 @@
        asked for nothing until it stops is a recorder holding four minutes of
        singing in a tab that might not last four minutes. */
     rec.start(2000);
-    heldAdd(null, heldMeta());
-    heldTake = null;
+    heldAdd(null, heldMeta(tape));
+    /* Written down as "nothing is waiting on this song" rather than removed,
+       because a reading of the device may still be on its way back and it is a
+       reading of how things were before this take (see lookForHeld). */
+    if (heldTakes) heldTakes[song.id] = null;
     /* Where the mark already is, so a take opens on the chord it opened on
        rather than on the first one the player happens to move to. */
     tapeMark(following ? following.where() : 0);
@@ -18148,6 +18247,7 @@
   function offerTape() {
     if (!tape || !tape.bits.length) return;
     askTake({
+      song: tape.song,
       blob: new Blob(tape.bits, { type: tape.mime }),
       mime: tape.mime,
       marks: tape.marks.slice(),
@@ -18174,20 +18274,73 @@
 
   /* Everything about the take except the sound, written beside it every time a
      piece lands, so that what comes back knows which song it belongs to, how
-     far it got, and where the mark was as it went. */
-  function heldMeta() {
-    var song = state.takeSong;
+     far it got, and where the mark was as it went.
+
+     THE SONG COMES OFF THE TAKE AND NOT OFF THE PAGE, which is the same rule
+     as everywhere else here: a piece of sound landing while another song is
+     open is still a piece of this take. The two settings the ear holds are
+     read while its song is on the screen and remembered on the take, because
+     the ear is put down when the page is left (see draw) and a meta written
+     after that would say the capo had been taken off. */
+  function heldMeta(t) {
+    if (t && state.ear && taping()) {
+      t.page = state.ear.page();
+      t.capo = state.ear.capo();
+    }
     return {
-      song: song ? song.id : "",
-      slug: song ? song.slug : "",
-      title: song ? song.title : "",
-      mime: tape ? tape.mime : "",
-      marks: tape ? tape.marks.slice() : [],
+      song: t ? t.song : "",
+      slug: t ? t.slug : "",
+      title: t ? t.title : "",
+      mime: t ? t.mime : "",
+      marks: t ? t.marks.slice() : [],
       seconds: Math.max(0, Math.round(tapeAt() / 100) / 10),
-      page: state.ear ? state.ear.page() : 0,
-      capo: state.ear ? state.ear.capo() : 0,
+      page: t ? t.page : 0,
+      capo: t ? t.capo : 0,
       at: Date.now(),
     };
+  }
+
+  /* --- PUTTING A TAKE DOWN ON ITS OWN SONG -----------------------------------
+     Not an answer and not an end: the recorder is let go and everything it was
+     holding is left on the device, under the song it is of, exactly as a take
+     that outlived its tab is. From here the two are the same thing, which is
+     the point: whatever a take was left by, what it is waiting for is an
+     answer, and it waits on its own song without standing in the way of any
+     other.
+
+     WHAT THE RECORDER IS STILL SITTING ON IS ASKED FOR FIRST, so the last two
+     seconds of playing are behind the mark like the rest. And the trace goes
+     down here, once, rather than beside every piece: it is up to four thousand
+     readings, and rewriting all of them every two seconds to save a diary of
+     the performance would be paid for by the performance itself. */
+  function parkTape() {
+    if (!tape) return Promise.resolve();
+    return gatherTape().then(function () {
+      var t = tape;
+      if (!t) return;
+      var meta = heldMeta(t);
+      meta.trace = t.trace.slice();
+      tape = null;
+      if (heldTakes && meta.song) heldTakes[meta.song] = meta;
+      /* THE RECORDER STOPS WITHOUT ITS PIECES GOING ANYWHERE NEAR THE NEXT
+         TAKE. Stopping makes it hand over one last piece, and the handler it
+         was made with pushes whatever arrives onto whatever `tape` is by then,
+         which after this line is the recording of a different song: two songs
+         in one file, and the second one unplayable from the middle. So that
+         handler goes, and the last piece is written to the take it belongs
+         to. */
+      t.rec.ondataavailable = null;
+      t.rec.addEventListener("dataavailable", function (event) {
+        if (event.data && event.data.size) heldAdd(event.data, meta);
+      }, { once: true });
+      try { t.rec.stop(); } catch (e) { /* already inactive */ }
+      return heldAdd(null, meta);
+    }).then(function () {
+      /* the microphone belonged to the take that has just been put down, and
+         the next one opens its own (see afresh) */
+      shutEar();
+      paintTape();
+    });
   }
 
   /* --- AND WHAT WAS LEFT UNANSWERED, WHEN THE SONG IS OPENED AGAIN -----------
@@ -18202,50 +18355,82 @@
      was missing anyway, which is an answer: finish it, hear it, and keep it or
      throw it away. */
   function lookForHeld() {
-    if (heldTake !== undefined) return Promise.resolve(heldTake);
+    if (heldTakes !== undefined) return Promise.resolve(heldTakes);
+    /* Marked as asked before the answer lands, so that opening three songs in
+       a second reads the device once rather than three times. */
+    heldTakes = {};
     return heldRead().then(function (found) {
-      heldTake = found;
+      /* Whatever a take that started in the meantime says about its own song
+         wins: this is a reading of how things were before it. */
+      Object.keys(found).forEach(function (song) {
+        if (!(song in heldTakes)) heldTakes[song] = found[song];
+      });
       paintTape();
-      return found;
+      return heldTakes;
     });
   }
 
   function heldHere() {
     var song = state.takeSong;
-    return heldTake && song && heldTake.song === song.id ? heldTake : null;
+    return heldTakes && song && heldTakes[song.id] ? heldTakes[song.id] : null;
   }
 
-  /* Finishing a recovered take: there is no recorder to stop, only a question
-     to ask. */
+  /* Finishing a take that was put down: there is no recorder to stop, only a
+     question to ask. The sound is read off the device now rather than carried
+     in the tab since the take was left (see heldBits), so the press and the
+     panel are a beat apart, and a second press in that beat is not a second
+     panel. */
+  var askingHeld = false;
+
   function askHeld() {
     var held = heldHere();
-    if (!held) return;
-    askTake({
-      blob: new Blob(held.bits, { type: held.mime || "audio/webm" }),
-      mime: held.mime || "audio/webm",
-      marks: Array.isArray(held.marks) ? held.marks : [],
-      seconds: held.seconds || 0,
-      held: true,
-    });
+    if (!held || askingHeld) return;
+    askingHeld = true;
+    heldBits(held.song).then(function (bits) {
+      askingHeld = false;
+      /* A take whose sound is not on the device is not a take, and a button
+         that keeps offering one is a button that lies every time it is
+         pressed: it goes, and the song is back to being recordable. */
+      if (!bits.length) {
+        endTape(held.song);
+        return toast("ההקלטה כבר לא במכשיר");
+      }
+      askTake({
+        song: held.song,
+        blob: new Blob(bits, { type: held.mime || "audio/webm" }),
+        mime: held.mime || "audio/webm",
+        marks: Array.isArray(held.marks) ? held.marks : [],
+        trace: Array.isArray(held.trace) ? held.trace : null,
+        seconds: held.seconds || 0,
+        held: true,
+      });
+    }, function () { askingHeld = false; });
   }
 
-  /* The end of it, and the only thing that reaches here is an answer.
+  /* The end of ONE SONG'S take, and the only thing that reaches here is an
+     answer to it.
 
      WHAT IT HANDS BACK IS THE FORGETTING, because the next recording begins the
      moment this one is answered (see afresh) and it writes into the same two
-     stores. A clear still running when the first piece of the new take lands
-     takes that piece with it, and a take missing its first piece is a file with
-     no header: a recording that cannot be played at all. So the next one waits
-     for this to finish. */
-  function endTape() {
+     stores. A forgetting still running when the first piece of the new take
+     lands takes that piece with it, and a take missing its first piece is a
+     file with no header: a recording that cannot be played at all. So the next
+     one waits for this to finish. */
+  function endTape(song) {
+    song = song || (tape && tape.song) || (state.takeSong && state.takeSong.id) || "";
     /* The device copy goes with it either way: an answered take is either a
        row in the library or a decision to forget it, and both of those are the
-       end of the thing that was waiting. */
-    heldTake = null;
-    var gone = heldDrop();
-    if (!tape) { paintTape(); return gone; }
+       end of the thing that was waiting. Only this song's: the takes waiting
+       on other songs were not asked about and have not been answered. */
+    if (heldTakes) delete heldTakes[song];
+    var gone = heldDrop(song);
+    if (!tape || tape.song !== song) { paintTape(); return gone; }
     var rec = tape.rec;
     tape = null;
+    /* and the piece it hands over on the way out goes nowhere: it belongs to a
+       take that has just been answered, and the next one is already starting
+       (see afresh) */
+    rec.ondataavailable = null;
     try { rec.stop(); } catch (e) { /* already inactive */ }
     paintTape();
     return gone;
@@ -18529,7 +18714,7 @@
     var actions = el("div", "dlg-actions");
     var toss = button("הפעלה ללא שמירה", null, "ghost far toss", function () {
       done = true;
-      over = endTape();
+      over = endTape(made.song);
       dlg.close();
     });
     /* AND THE ONE THAT KEEPS IT SAYS WHAT COMES NEXT TOO. Both answers end with
@@ -18548,7 +18733,7 @@
       relabel(save, "שומר…");
       keepTakeIn(made).then(function () {
         done = true;
-        over = endTape();
+        over = endTape(made.song);
         dlg.close();
         toast("ההקלטה נשמרה");
         if (state.redrawTakes) state.redrawTakes();
@@ -18610,7 +18795,13 @@
      played and cannot be told apart from one that can. */
   function keepTakeIn(made) {
     var song = state.takeSong;
-    if (!song) return Promise.reject(new Error("אין שיר לשמור אליו"));
+    /* AND IT IS THE SONG THE TAKE IS OF. The panel is opened over that song
+       and answered there, so the two agree; asked while the page has moved on,
+       what saving means is a recording of one song filed under another, and
+       there is no undoing that from the outside. */
+    if (!song || (made.song && made.song !== song.id)) {
+      return Promise.reject(new Error("אין שיר לשמור אליו"));
+    }
     if (!auth.session || !auth.session.id) return Promise.reject(new Error("צריך להתחבר"));
 
     var id = freshId();
