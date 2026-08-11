@@ -961,9 +961,21 @@ body.sifting .find-extra { display: none; }
      that, so that what is left under the bar is the same band it would have
      been if the bar had been standing on it. */
   height: calc(40vw + var(--top-h));
+  /* --- AND THE BAR STANDS ON PAPER AND NOT ON THE PICTURE --------------------
+     The room the bar takes is given back to the drawing above, and then handed
+     straight to this padding: what is behind the mark and the search box is a
+     band of the drawing's own colour, and the drawing itself begins under
+     them. Nothing of it is covered, which is the whole difference between a
+     picture that runs behind a bar and a picture with a bar sitting on its
+     people.
+
+     The colour is the top edge of the drawing, exactly, so the two meet with no
+     seam. That is also why the wash in strip.svg runs straight down rather than
+     on the diagonal: a diagonal has a different colour at each end of its top
+     edge, and one of them would always be the wrong one. */
+  padding-top: var(--top-h);
+  background: #f2f9f7;
   overflow: hidden;
-  /* the drawing's own paper, for the moment before it arrives */
-  background: #eef6f4;
 }
 .strip img {
   display: block; width: 100%; height: 100%;

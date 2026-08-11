@@ -32,9 +32,13 @@
      at the two sides are for the width a desk has and a phone has not.
      ========================================================================== -->
 <defs>
-  <linearGradient id="wash" x1="0" y1="0" x2="1" y2="1">
+  <!-- STRAIGHT DOWN, and not on the diagonal it used to run on. The band above
+       this drawing, the one the bar stands on, is a flat colour laid on by the
+       page (see .strip), and a flat colour can only meet a gradient without a
+       seam where the gradient's whole top edge is that one colour. -->
+  <linearGradient id="wash" x1="0" y1="0" x2="0" y2="1">
     <stop offset="0" stop-color="#f2f9f7"/>
-    <stop offset="1" stop-color="#dfece8"/>
+    <stop offset="1" stop-color="#e2eeea"/>
   </linearGradient>
   <!-- The light they are standing in. -->
   <radialGradient id="glow" cx=".5" cy=".5" r=".5">
