@@ -4488,6 +4488,9 @@
        left with the wall held down to what was typed in it. The sieve belongs
        to the page, so the words come back up with it. */
     if (findField && state.sift) findField.value = state.sift.q || "";
+    /* and a wall that came back narrowed comes back with everything over it
+       still out of the way */
+    siftMark();
 
     var h = layer.head;
     /* where() wipes the slots around the name, so it goes first and what
@@ -7070,6 +7073,24 @@
     findAt = -1;
   }
 
+  /* --- AND WHILE THE BOX HOLDS THE PAGE DOWN, THE PAGE IS THE SONGS ----------
+     On the library the box does not answer with a panel, it sieves the wall
+     (see state.sift in viewIndex). What went on standing over that wall was
+     everything the page opens with: the doors, the drawing, the band of shelves
+     and the row of counts. Every one of those is about the WHOLE library, and
+     none of them is about the four songs somebody has just narrowed it to, so
+     the answer to what was typed began a screen and a half down. A page being
+     sieved is the box and the songs and nothing else (see body.sifting in the
+     stylesheet), and all of it comes back the moment the box is emptied.
+
+     Marked as a class rather than left to the sieve, because a page put aside
+     and uncovered again comes back still narrowed (see reveal), and what is
+     over the songs has to know that too. */
+  function siftMark() {
+    var q = state.sift && String(state.sift.q || "").trim();
+    document.body.classList.toggle("sifting", !!q);
+  }
+
   /* A new page is a new question, and the answer to the old one hanging over
      it is a panel about where you have just been. */
   function clearFind() {
@@ -7535,9 +7556,12 @@
 
          So the library hands the box a sieve (see state.sift in buildFind) and
          typing narrows what is drawn: the songs by everything they are made of,
-         and the band of shelves over them by name, so a page held down to one
-         word is that word's shelves and songs and nothing else.
-         A band with nothing left in it goes, rather than standing empty. */
+         and the band of shelves over them by name.
+         A band with nothing left in it goes, rather than standing empty. The
+         band as a whole is off the screen for as long as there are letters in
+         the box (see body.sifting), and it is still sieved underneath, because
+         what comes back when the box is emptied has to be the page and not the
+         page as it was three letters ago. */
       var sifted = "";
 
       function passes(hay) {
@@ -7743,6 +7767,7 @@
              it has to be the reader's own letters (see reveal) */
           sift.q = String(typed || "");
           sifted = sift.q.trim().toLowerCase();
+          siftMark();
           paint();
           paintBands();
         };
@@ -15891,6 +15916,9 @@
        every page that is not an evening. */
     state.sift = null;
     state.pick = null;
+    /* and with no sieve there is nothing being held down, whatever the last
+       page was holding down when it was left */
+    siftMark();
     paintHeader();
     var p = parts();
 

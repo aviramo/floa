@@ -447,15 +447,26 @@ body.unnamed .top-name { display: none; }
    going anywhere. */
 .top-find input[type="search"]::-webkit-search-cancel-button { display: none; }
 /* Not the browser's cross, which empties the field and leaves you inside the
-   search. This one closes it. It is there only while the box has taken the
-   whole bar, so on a desk the box is still a field and a glass and nothing
-   else. */
+   search. This one ends the search: it empties the box AND hands the whole page
+   back, which on the library is the wall with everything over it (see
+   body.sifting). */
 .top-find .find-x {
   display: none;
   flex: none; align-items: center; justify-content: center;
   width: 24px; height: 24px; margin-inline-end: -3px;
   appearance: none; background: none; border: 0; padding: 0;
   color: var(--ink-soft); cursor: pointer;
+}
+/* AND IT IS THERE FROM THE FIRST LETTER, AT EVERY WIDTH. It used to appear only
+   where the box had taken the whole bar, which is a phone, so on a desk the one
+   way out of a search was to select the letters and delete them, or to know
+   about Escape. The way back is worth a picture the moment there is something
+   to come back from, and not before: an empty box is not a search anybody is
+   inside of.
+   Asked of the placeholder rather than of a class, because the placeholder is
+   shown exactly while the field is empty, whoever emptied it and however. */
+.top-find .find:has(input[type="search"]:not(:placeholder-shown)) .find-x {
+  display: flex;
 }
 .top-find .find-x > svg { width: 16px; height: 16px; }
 
@@ -810,6 +821,22 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    a band of their own. */
 .kinds-row .tallies { justify-content: center; }
 
+/* --- AND WHILE THE BOX IS HOLDING THE PAGE DOWN, NONE OF IT IS THERE ---------
+   The library opens with the doors, the drawing, the band of shelves and the
+   row of counts, and then the songs. Every one of those is about the whole
+   library. Somebody who has typed three letters is not asking about the whole
+   library, and what they asked for was starting a screen and a half below the
+   answer they were reading.
+   So the sieve empties the page down to itself: the box, and the songs it
+   found. The counts go with them, wherever they are standing (on a desk they
+   are inside the box, see .find-extra), because a count of what the library
+   holds is a fact about the wall that is no longer on the screen.
+   All of it comes back the moment the box is empty (see siftMark). */
+body.sifting .kinds-row,
+body.sifting .strip,
+body.sifting .shelves,
+body.sifting .find-extra { display: none; }
+
 /* All five in the one colour a state wears, and the word on each is which of
    them it is (see the states at the top of this file). They were five
    different colours, which made this row a key to a code, and the code said
@@ -891,8 +918,15 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
      in every one of them. */
   object-fit: cover;
 }
+/* A HEIGHT, AND NOT A RATIO WITH A CEILING ON IT. aspect-ratio and max-height
+   together do not do what they look like they do: the ratio is kept, so a box
+   whose height is cut to the ceiling gives up the width to match, and a band
+   that is meant to run to both edges of the glass comes back off them. The
+   height is asked for outright instead, a quarter of the window until that
+   reaches three hundred pixels, and the width is left alone at the whole of
+   it. */
 @media (min-width: 621px) {
-  .strip { aspect-ratio: 4 / 1; max-height: 300px; }
+  .strip { aspect-ratio: auto; height: min(300px, 25vw); }
 }
 /* A drawing is not a fact about a song, and paper gets the facts. */
 @media print { .strip { display: none !important; } }
