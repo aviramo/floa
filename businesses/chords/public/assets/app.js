@@ -7498,6 +7498,31 @@
          is made of: the first thing on the page of songs was a handful of
          appointments that only the signed-in reader had. They live on
          /evenings, a click away in the bar. */
+      /* --- AND OVER THE SHELVES, THE ONE DRAWING IN THE APP --------------------
+         Everything under it is a row, a chip or a card, and this page is the
+         only one that is about what all of them ARE: songs somebody plays and
+         sings. It is a band of line art in the app's own two colours, cropped
+         to whatever shape the width gives it (see .strip in the stylesheet).
+
+         Not on a shelf, and for the reason the shelves themselves are not on
+         one: /style/<name> is the library already narrowed to one word, walked
+         into from the wall below, and a picture at the head of it is a second
+         opening to a page that has been opened.
+
+         It carries no words and says nothing a reader needs, so it is empty to
+         anything reading the page rather than looking at it. */
+      if (!shelf) {
+        var art = el("div", "strip");
+        var drawing = el("img");
+        drawing.src = BASE + "/assets/strip.svg";
+        drawing.alt = "";
+        drawing.width = 1600;
+        drawing.height = 320;
+        drawing.setAttribute("aria-hidden", "true");
+        art.appendChild(drawing);
+        app.appendChild(art);
+      }
+
       var bands = el("div", "shelves");
       app.appendChild(bands);
 

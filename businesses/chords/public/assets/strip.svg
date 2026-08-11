@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 320" width="1600" height="320">
+<!-- ==========================================================================
+     THE BAND OVER THE LIBRARY, and the only drawing in the app.
+
+     Abstract on purpose, and line art on purpose: everything else here is
+     drawn with a stroke a couple of pixels wide in two colours, the app's
+     green and the red a chord is written in, and a photograph over a wall of
+     cards drawn like that would be a different app's first screen.
+
+     What it is: six strings across the whole width, flat where a hand holds
+     them and moving where a hand strums them, over the round face of a body
+     with its soundhole; a grip on the strings in the red of a chord; and a
+     voice, which is the one thing about this library that is not the guitar.
+
+     IT IS WIDER THAN EITHER FRAME IT IS SHOWN IN. A phone gets it in
+     landscape and a desk gets a strip of it (see .strip in style.css), so the
+     drawing is cropped rather than reshaped, and everything that matters
+     stands inside the middle of it: x from 520 to 1080, y from 40 to 280. The
+     strings run past both ends, which is what a string does, and the notes out
+     at the two sides are for the width a desk has and a phone has not.
+     ========================================================================== -->
+<defs>
+  <linearGradient id="wash" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#f2f9f7"/>
+    <stop offset="1" stop-color="#dfece8"/>
+  </linearGradient>
+  <radialGradient id="glow" cx=".5" cy=".5" r=".5">
+    <stop offset="0" stop-color="#ffffff" stop-opacity=".85"/>
+    <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+  </radialGradient>
+</defs>
+
+<rect width="1600" height="320" fill="url(#wash)"/>
+<ellipse cx="800" cy="167" rx="540" ry="250" fill="url(#glow)"/>
+
+<!-- The face of the body: two curves entering and leaving the band, which is a
+     round thing far too big for it, and the paper between them. -->
+<path d="M300 -30C470 90 1130 90 1300 -30L1300 350C1130 230 470 230 300 350Z" fill="#ffffff" fill-opacity=".42"/>
+<path d="M300 -30C470 90 1130 90 1300 -30" fill="none" stroke="#0e8c7e" stroke-opacity=".22" stroke-width="2.5"/>
+<path d="M300 350C470 230 1130 230 1300 350" fill="none" stroke="#0e8c7e" stroke-opacity=".22" stroke-width="2.5"/>
+
+<!-- The soundhole, and the ring round it said as a row of dots rather than
+     drawn: a rosette is an ornament, and an ornament here is a dashed line. -->
+<circle cx="800" cy="167" r="104" fill="#ffffff" fill-opacity=".5"/>
+<circle cx="800" cy="167" r="104" fill="none" stroke="#0e8c7e" stroke-opacity=".3" stroke-width="2.5"/>
+<circle cx="800" cy="167" r="86" fill="none" stroke="#0e8c7e" stroke-opacity=".14" stroke-width="8"/>
+<circle cx="800" cy="167" r="70" fill="none" stroke="#0e8c7e" stroke-opacity=".3" stroke-width="2" stroke-dasharray="3 10"/>
+
+<!-- The frets, closing up towards the body the way frets do. -->
+<g stroke="#17202a" stroke-opacity=".1">
+  <path d="M450 48V286" stroke-width="3"/>
+  <path d="M545 48V286" stroke-width="1.5"/>
+  <path d="M630 48V286" stroke-width="1.5"/>
+  <path d="M700 48V286" stroke-width="1.5"/>
+</g>
+
+<!-- THE STRINGS, AND THEY ARE ONLY MOVING WHERE THEY ARE BEING PLAYED.
+     Flat from the far end to the last fret, and then two long waves over the
+     soundhole, which is where a hand strums. A string that waved along the
+     whole of its length would be a pattern; a string that waves in one place
+     is somebody playing it.
+
+     Thin at the top and thick at the bottom, in the six weights a set comes
+     in, and each a little darker than the one above it: the thickest string
+     is the one you see. -->
+<g fill="none" stroke="#17202a" stroke-linecap="round">
+  <path d="M-20 62L700 62C775 67 845 67 920 62C995 57 1065 57 1140 62L1620 62" stroke-width="1.3" stroke-opacity=".16"/>
+  <path d="M-20 104L700 104C775 96 845 96 920 104C995 112 1065 112 1140 104L1620 104" stroke-width="1.6" stroke-opacity=".18"/>
+  <path d="M-20 146L700 146C775 158 845 158 920 146C995 134 1065 134 1140 146L1620 146" stroke-width="2" stroke-opacity=".2"/>
+  <path d="M-20 188L700 188C775 174 845 174 920 188C995 202 1065 202 1140 188L1620 188" stroke-width="2.5" stroke-opacity=".22"/>
+  <path d="M-20 230L700 230C775 239 845 239 920 230C995 221 1065 221 1140 230L1620 230" stroke-width="3.2" stroke-opacity=".26"/>
+  <path d="M-20 272L700 272C775 266 845 266 920 272C995 278 1065 278 1140 272L1620 272" stroke-width="4" stroke-opacity=".3"/>
+</g>
+
+<!-- A grip: three fingers on three strings between two frets, in the red every
+     chord in this app is written in, each with the pale ring that colour wears
+     wherever it is said quietly. -->
+<g fill="#fde7ef">
+  <circle cx="587" cy="104" r="19"/>
+  <circle cx="665" cy="188" r="19"/>
+  <circle cx="587" cy="230" r="19"/>
+</g>
+<g fill="#e11d63">
+  <circle cx="587" cy="104" r="10.5"/>
+  <circle cx="665" cy="188" r="10.5"/>
+  <circle cx="587" cy="230" r="10.5"/>
+</g>
+
+<!-- AND THE VOICE, in the same red, because it is the other half of what this
+     library is for: three arcs off a point, opening away from the guitar. -->
+<circle cx="975" cy="160" r="6" fill="#e11d63" fill-opacity=".55"/>
+<g fill="none" stroke="#e11d63" stroke-linecap="round">
+  <path d="M997.7 134.7A34 34 0 0 1 997.7 185.3" stroke-width="3" stroke-opacity=".55"/>
+  <path d="M1013.8 116.9A58 58 0 0 1 1013.8 203.1" stroke-width="2.6" stroke-opacity=".4"/>
+  <path d="M1029.9 99.1A82 82 0 0 1 1029.9 220.9" stroke-width="2.2" stroke-opacity=".26"/>
+</g>
+
+<!-- The app's own mark, three times, out where a wide screen has room for it.
+     Same two circles and same stem as the one in the corner of the bar. -->
+<g fill="none" stroke="#0e8c7e" stroke-opacity=".34" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+  <g transform="translate(210 70) scale(1.45)"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></g>
+  <g transform="translate(1195 42) scale(1.7)"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></g>
+  <g transform="translate(1310 104) scale(1.2)"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></g>
+</g>
+</svg>
