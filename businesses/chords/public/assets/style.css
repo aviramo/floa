@@ -336,6 +336,19 @@ body.at-home .brand { display: none; }
    different kind of thing from the two next to it, and it is not. */
 .top-actions .btn.ghost { background: var(--card); }
 
+/* AND THE FORK IS IN THE APP'S GREEN. It keeps the white the row is drawn in,
+   so it is still one of three white buttons on the bar, and only its ink and
+   its line are the green: the one control up here that is a tool rather than a
+   way somewhere else, said in the colour the app uses for itself. Solid green
+   is spoken for by the one button on the page that adds a song, and two solid
+   greens is two first things.
+
+   Written with the ghost on it, because the quiet grey it is overruling is the
+   later rule in the file (see .btn.ghost:hover) and a tie goes to the later
+   one. */
+.top-actions .btn.ghost.tuner { color: var(--accent); border-color: var(--accent); }
+.top-actions .btn.ghost.tuner:hover { background: var(--accent-soft); border-color: var(--accent); }
+
 /* --- WHAT PAGE THIS IS ----------------------------------------------------
    The app's name used to stand here beside its own mark, which is one word
    saying what the mark already said and the only word on the bar nobody is
