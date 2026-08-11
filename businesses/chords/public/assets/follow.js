@@ -293,12 +293,6 @@
      once. Half a second of agreement is what separates a player who skipped a
      chord from a reading that was wrong, and there is no cheaper way to tell
      them apart than waiting. */
-  /* How far ahead the arithmetic may be before the mark stops walking after it
-     and starts treating it as a jump. Six chords is a bar or two: past that,
-     whatever happened was not the playing carrying on, and running the mark
-     through six places to get there would be drawing a passage nobody played.
-     Which then needs the same patience as any other jump. */
-  var LEAP = 6;
   /* HALF A SECOND, WRITTEN AS READINGS, and the two are only the same number
      for as long as a reading is what it is. A reading is a thirtieth of a
      second on a song page (see EAR_GAP_CHORD in app.js), so eighteen of them is
@@ -463,15 +457,36 @@
          over the ones in between, and a reader cannot tell that from a mark
          that is simply wrong. This is the whole of what "one after the other"
          means, and it is worth more than the fraction of a second it costs. */
-      else if (at > here && at - here <= LEAP) {
-        want = -1; waited = 0;
-        if (++pushed >= STEP) { here++; moved = true; pushed = 0; }
-      }
-      else {
+      /* --- HOW FAR AWAY IT IS DECIDES HOW LONG IT HAS TO HOLD ---------------
+         AND NOT WHETHER THE MARK WALKS. The mark always walks, one place at a
+         time, in whichever direction the arithmetic has gone; what changes
+         with distance is how long the arithmetic has to keep saying it before
+         the first step is taken.
+
+         IT USED TO BE THE OTHER WAY ROUND. Anything within six places was
+         walked after at once and anything past six had to hold for six hundred
+         milliseconds, and the hole in the middle is what a real recording
+         walked straight through: for three tenths of a second the ear said G,
+         plainly, while a C was being played, and G lived four places away.
+         Four is inside six, so the mark went after it, and three places later
+         the playing pulled it on to the next chord of that name two lines
+         further down. One confident third of a second cost a line and a half.
+
+         Four readings for the next chord along, which is what a song does and
+         must stay cheap; four for each place beyond that, up to the patience a
+         jump has always needed. So a reading that disagrees by four places has
+         to mean it for half a second, and a third of a second of nonsense
+         moves nothing at all. */
+      else if (at !== here) {
         pushed = 0;
+        var far = at > here ? at - here : here - at;
+        var need = far <= 1 ? STEP : Math.min(PATIENCE, STEP * far);
         if (at === want) waited++;
         else { want = at; waited = 1; }
-        if (waited >= PATIENCE) { here = at; moved = true; want = -1; waited = 0; }
+        if (waited >= need) {
+          here += at > here ? 1 : -1;
+          moved = true;
+        }
       }
 
       return { at: at, here: here, alike: alike, moved: moved };
