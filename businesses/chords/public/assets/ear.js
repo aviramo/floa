@@ -324,10 +324,20 @@
      cents off and for the bin grid never landing exactly on a note. Taken as
      the loudest bin within a quarter tone, because that is the width inside
      which it is still the same note. */
-  function at(f) {
+  /* HALF A SEMITONE WIDE BY DEFAULT, and narrower when the caller says so.
+     Half a semitone is the width inside which a note is still that note, which
+     is what asking "is this note in the chord" wants. It is the wrong width
+     for asking "which note is LOWEST": there the band of one note reaches the
+     bin of the note a semitone above it, and a search that runs upwards takes
+     the lower one every time. Down at the bottom string a bin is most of a
+     semitone across, so the reach is real rather than theoretical. */
+  var HALF_STEP = 0.0293;
+  var QUARTER_STEP = 0.014;
+
+  function at(f, width) {
     var b = f / binHz;
     if (b < 1 || b >= spec.length - 1) return 0;
-    var w = b * 0.0293;
+    var w = b * (width || HALF_STEP);
     var lo = Math.max(1, Math.round(b - w));
     var hi = Math.min(spec.length - 1, Math.round(b + w));
     var best = -1000;
@@ -499,7 +509,10 @@
     var own = [];
     var top = 0;
     for (n = BASS_LOW; n <= BASS_HIGH; n++) {
-      var here = at(freqs[n - LOW_NOTE]);
+      /* A quarter tone, so that one note cannot be read off the bin of its
+         neighbour: the whole search is "the lowest one that is really there",
+         and half a semitone of reach downward defeats it entirely. */
+      var here = at(freqs[n - LOW_NOTE], QUARTER_STEP);
       own.push(here);
       if (here > top) top = here;
     }
