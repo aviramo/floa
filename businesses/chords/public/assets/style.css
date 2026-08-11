@@ -913,9 +913,9 @@ body.sifting .find-extra { display: none; }
 .strip img {
   display: block; width: 100%; height: 100%;
   /* FILLED, NEVER STRETCHED. Both frames are narrower than the drawing, so
-     what a frame does not have room for is cut off the sides or the ends and
-     the middle of it, where the soundhole and the grip and the voice are, is
-     in every one of them. */
+     what a frame has no room for is cut off its sides or its ends, and the
+     middle of it, where the two of them are standing, is in every one of
+     them. */
   object-fit: cover;
 }
 /* A HEIGHT, AND NOT A RATIO WITH A CEILING ON IT. aspect-ratio and max-height
