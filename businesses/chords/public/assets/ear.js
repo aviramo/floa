@@ -591,10 +591,14 @@
     return scored.slice(0, 6);
   }
 
-  function dot(t) {
+  /* `low` is the note this chord is written as standing on, when that is not
+     its root: the B of a C/B. Left out, a chord stands on its own root, which
+     is what all but a handful of them do. */
+  function dot(t, low) {
     var s = 0;
     for (var i = 0; i < 12; i++) s += unit[i] * t.v[i];
-    if (bass >= 0 && bass === t.root) s += BASS_HELP * bassSure;
+    var under = low === undefined || low < 0 ? t.root : low;
+    if (bass >= 0 && bass === under) s += BASS_HELP * bassSure;
     return s;
   }
 
@@ -605,10 +609,22 @@
 
      Answered against the reading already taken, so asking about eight chords
      costs eight dot products and not eight readings. */
-  function score(root, colour) {
+  /* --- AND A SLASH CHORD IS A CHORD WITH ITS BASS WRITTEN DOWN --------------
+     THE THREE NOTES OF A C/B ARE THE THREE NOTES OF A C, so this file reduces
+     one to the other (see shapeOf) and always did. Which left a page saying
+     C and C/B in the same line with two places nothing could ever tell apart,
+     and worse: the sound of a C/B is not the sound of a C, because the note
+     underneath is a fact about the sound too. Read off a real take, a C/B
+     matched the printed G better than it matched the printed C, the follower
+     believed it, and the mark walked backwards two places to reach a G.
+
+     The bass is what a slash chord IS, and this app can hear one now. So the
+     caller says which note the chord stands on and the bass is asked about
+     THAT rather than about the root. C and C/B stop being the same question. */
+  function score(root, colour, low) {
     var want = shapeOf(colour);
     for (var i = 0; i < TEMPLATES.length; i++) {
-      if (TEMPLATES[i].root === root && TEMPLATES[i].quality === want) return dot(TEMPLATES[i]);
+      if (TEMPLATES[i].root === root && TEMPLATES[i].quality === want) return dot(TEMPLATES[i], low);
     }
     return 0;
   }

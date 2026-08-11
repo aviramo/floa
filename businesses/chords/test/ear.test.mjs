@@ -156,5 +156,32 @@ eq("and it scores well rather than merely better", gScore > 0.9, true);
   eq("and with a C underneath, the C is", gap("C") < -0.1, true);
 }
 
+/* --- AND A SLASH CHORD IS ASKED ABOUT ITS OWN BASS -------------------------
+   The three notes of a C/B are the three notes of a C, so nothing in the
+   twelve numbers will ever separate them, and this file reduces one to the
+   other on purpose. What is NOT the same is the note underneath, which is the
+   whole of what the writing "/B" says, and the ear can hear one now.
+
+   Read off a real take: with the bass ignored, a C/B matched the printed G
+   better than the printed C and the mark walked backwards two places to reach
+   a G. */
+{
+  const three = { C: 1, E: 0.95, G: 0.9 };
+  const B = N.indexOf("B"), C = N.indexOf("C");
+
+  ear.weigh(chroma(three), B);
+  const asSlash = ear.score(C, "/B", B);
+  const asPlain = ear.score(C, "", C);
+  eq("with a B underneath, the C/B is the better answer of the two",
+    asSlash > asPlain, true);
+
+  ear.weigh(chroma(three), C);
+  eq("and with a C underneath, the plain C is",
+    ear.score(C, "", C) > ear.score(C, "/B", B), true);
+
+  eq("and a chord not told what it stands on stands on its root",
+    ear.score(C, "") === ear.score(C, "", C), true);
+}
+
 console.log(failed ? `\n${failed} failed` : "\nall passed");
 process.exit(failed ? 1 : 0);

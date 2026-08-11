@@ -16856,6 +16856,20 @@
     return (ROOTS[parts[1]] + earCapo()) % 12;
   }
 
+  /* --- AND THE NOTE THE CHORD STANDS ON -------------------------------------
+     Which is the slash of a slash chord, sounding, and the root itself for
+     every ordinary chord. It is what makes a C/B a different question from a
+     C: the three notes over it are the same three notes and the note
+     underneath is not, and the ear can hear one now (see score in ear.js).
+     Read off a take: a C/B was matching the printed G better than the printed
+     C, and the mark walked backwards two places to get to a G. */
+  function standsOn(label) {
+    var parts = CHORD_RE.exec(String(label || "").trim());
+    if (!parts || !(parts[1] in ROOTS)) return -1;
+    var low = parts[3] && parts[3] in ROOTS ? parts[3] : parts[1];
+    return (ROOTS[low] + earCapo()) % 12;
+  }
+
   /* The rest of the name, which a capo does not touch: a minor shape held
      three frets up is still minor. */
   function colourOf(label) {
@@ -17053,7 +17067,7 @@
          what the room is hearing, not what the page is printing. */
       var root = sounding(kinds[i]);
       if (root >= 0) {
-        scores[i] = window.CHORDS_EAR.score(root, colourOf(kinds[i]));
+        scores[i] = window.CHORDS_EAR.score(root, colourOf(kinds[i]), standsOn(kinds[i]));
         sum += scores[i];
         count++;
       } else scores[i] = -1;
