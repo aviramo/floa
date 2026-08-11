@@ -1091,12 +1091,6 @@ body.sifting .find-extra { display: none; }
      offering to open while it is being done. */
   .list a:hover:has(.has-takes:hover) { border-color: var(--line); transform: none; }
 }
-/* AND NO WASH OF COLOUR OVER THE WHOLE CARD WHEN SOMETHING ON IT IS PRESSED.
-   A phone paints a link it is touching, the card is the link, and the button
-   standing on it that plays a recording is not a way of opening the song. What
-   marks a press here is the border and the lift above, which are about the
-   card, and the button has a pressed look of its own. */
-.list a { -webkit-tap-highlight-color: transparent; }
 /* The label inside the button is words in the middle of a link, so a press
    that lands a hair off centre selects them and paints them instead. */
 .when.has-takes { user-select: none; -webkit-user-select: none; }
