@@ -477,16 +477,39 @@
          jump has always needed. So a reading that disagrees by four places has
          to mean it for half a second, and a third of a second of nonsense
          moves nothing at all. */
-      else if (at !== here) {
+      else if (at > here) {
         pushed = 0;
-        var far = at > here ? at - here : here - at;
+        var far = at - here;
         var need = far <= 1 ? STEP : Math.min(PATIENCE, STEP * far);
         if (at === want) waited++;
         else { want = at; waited = 1; }
-        if (waited >= need) {
-          here += at > here ? 1 : -1;
-          moved = true;
-        }
+        if (waited >= need) { here++; moved = true; }
+      }
+      /* --- AND THE MARK NEVER GOES BACKWARDS ---------------------------------
+         The arithmetic still can, and it should: a player who goes round the
+         verse again is somewhere behind, the costs above are shaped for that,
+         and knowing it is how the next reading gets scored properly. What
+         changed is that the MARK does not follow it there.
+
+         Asked for by the person playing, and the takes are why. Every
+         backwards move on a real recording was wrong: a moment of confusion
+         two chords back, a chord ringing into the next one, a slash chord
+         matching something behind it. What a reader sees when the mark goes
+         backwards is the song undoing itself, and there is no reading of that
+         which helps: a mark that has fallen behind can still be read from, and
+         a mark that has walked back has to be argued with.
+
+         AND A REPEAT IS NOT LOST BY IT, which is the part worth knowing. The
+         mark stops at the end of the part being played again and waits there,
+         and when the playing comes round to that place a second time it is
+         already standing on it. It looks like patience rather than like a
+         mistake, and it is right again without anything having to be undone.
+
+         A finger still goes anywhere (see put). Somebody who has gone back and
+         wants the page with them says so, and that is worth more than any
+         amount of listening. */
+      else {
+        pushed = 0; want = -1; waited = 0;
       }
 
       return { at: at, here: here, alike: alike, moved: moved };

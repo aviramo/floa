@@ -194,52 +194,43 @@ const play = (follow, chord, frames = 6, high, low) => {
 }
 
 /* --- PLAYING THE VERSE AGAIN -----------------------------------------------
-   Reported from a real song, "שיר של תקווה", and it is the failure that says
-   most about how this has to be shaped.
+   THE MARK NEVER GOES BACKWARDS, and this is the case that used to be the
+   reason it could.
 
-   The song runs Am D Am D, then F C E Am. The player reaches the second D,
-   wants the verse again, and plays Am. The Am they mean is two places BEHIND
-   them. The next Am the song has written down is four places AHEAD, in the
-   part after. And with no way to go backwards except the anywhere jump, going
-   forward was fifty times cheaper: the follower answered a repeat by leaping
-   over F, C and E into the next section. It was not lost. It was wrong, and
-   confident, and it took the page with it. */
+   The song runs Am D Am D, then F C E Am. A player who reaches the second D
+   and wants the verse again plays Am, and the Am they mean is two places
+   BEHIND them. The follower used to walk back to it, and on real recordings
+   every backwards move it ever made was wrong: a moment of confusion two
+   chords back, a chord ringing into the next, a slash chord matching something
+   behind it. What a reader sees when the mark goes backwards is the song
+   undoing itself.
+
+   SO IT WAITS INSTEAD, and a repeat costs nothing for it. The mark stops at
+   the end of the part being played again and stands there, and when the
+   playing comes round to that place a second time it is already on it. Right
+   again, with nothing undone. The arithmetic underneath still knows perfectly
+   well where the player went, which is what keeps the next reading honest. */
 {
   const song = ["Am", "D", "Am", "D", "F", "C", "E", "Am", "G"];
   const f = F.make(song);
   ["Am", "D", "Am", "D"].forEach((c) => play(f, c, 8));
   eq("through the verse once", f.where(), 3);
 
-  /* A second of it, which is what going back has to be held for before it is
-     believed: a repeat is a thing people do on purpose and a reading that
-     names something behind us is usually a reading that was wrong. */
-  play(f, "Am", 30);
-  eq("and the verse again goes back to the verse, not on to the next Am",
-    f.where() < 4, true);
+  /* a second time round the verse, at length */
+  ["Am", "D", "Am", "D"].forEach((c) => play(f, c, 24));
+  eq("the verse again does not walk the mark back through it", f.where(), 3);
 
-  /* AND THE WHOLE VERSE AGAIN, which is what actually happens: nobody plays
-     one chord over again, they play the part over again. So the repeat is
-     followed and then the verse is WALKED a second time, in order, and the
-     part after it is still waiting where it was. */
-  const twice = F.make(song);
-  ["Am", "D", "Am", "D"].forEach((c) => play(twice, c, 8));
-  const round = ["Am", "D", "Am", "D"].map((c) => play(twice, c, 24).here);
-  eq("a verse played again is walked again rather than run past",
-    round.every((at) => at < 4) && round[3] > round[0], true);
-  ["F", "C", "E"].forEach((c) => play(twice, c, 24));
-  eq("and the part after it is still there when it comes", twice.where(), 6);
+  /* and the part after it arrives to a mark that is already in the right place */
+  ["F", "C", "E"].forEach((c) => play(f, c, 24));
+  eq("and the part after it is walked into without anything being undone",
+    f.where(), 6);
 
-  /* AND WHERE THE PARTS BEGIN IS KNOWN, so a repeat lands on the top of the
-     verse rather than merely somewhere inside it. Which is what a repeat is:
-     nobody plays one chord over again. */
-  const parts = F.make(song, [0, 4]);
-  ["Am", "D", "Am", "D"].forEach((c) => play(parts, c, 8));
-  play(parts, "Am", 30);
-  eq("and it lands on the top of the verse, because that is what a repeat is",
-    parts.where(), 0);
+  /* AND IT NEVER GOES BACK EVEN WHEN THE SOUND INSISTS. A D is written twice
+     in this song and both are behind us by now. */
+  const was = f.where();
+  play(f, "D", 40);
+  eq("a chord that only exists behind us moves nothing", f.where(), was);
 
-  /* And the part after is still reachable when it is what is actually played:
-     this is a cost, not a wall. */
   const g = F.make(song);
   ["Am", "D", "Am", "D"].forEach((c) => play(g, c, 8));
   ["F", "C", "E"].forEach((c) => play(g, c, 8));
