@@ -261,6 +261,11 @@ body.on-air .top {
    A phone holds the whole row at eight already, so there is nothing to take
    there and the rule is undone in the narrow block. */
 .brand { margin-inline-end: -8px; }
+/* AND ON THE LIBRARY IT IS NOT IN THE ROW. Everywhere else the corner holds the
+   way back, which is the most useful thing in the bar; at home it held a link
+   to the page it was standing on. The row there is the search box and the fork,
+   and the box starts at the edge (see paintBrand). */
+body.at-home .brand { display: none; }
 /* THERE WAS A .top-pick HERE, a slot between the mark and the name holding a
    tick that took every song on the page, and a .picking beside it holding what
    could then be done to them. Both are gone with the ticking itself: see the

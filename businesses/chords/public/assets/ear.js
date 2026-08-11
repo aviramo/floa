@@ -465,7 +465,7 @@
   var bassSure = 0;
 
   function chord() {
-    var out = { rms: 0, chroma: chroma, bass: -1, best: [] };
+    var out = { rms: 0, chroma: chroma, bass: -1, sure: 0, best: [] };
     if (!ctx) return out;
 
     out.rms = loudness();
@@ -532,10 +532,17 @@
       for (n = BASS_LOW; n <= BASS_HIGH; n++) {
         var mine = own[n - BASS_LOW];
         if (mine <= 0 || mine < top * FLOOR) continue;
-        /* A semitone either side, which is where a chord almost never puts a
-           second note and where a room puts everything. */
+        /* A WHOLE TONE EITHER SIDE, AND NOT A SEMITONE, because a semitone is
+           inside the window's own skirt. An FFT does not put a string in one
+           bin: it spreads it over about three, so the pitch a semitone away
+           holds the energy of the note itself, every note looks exactly as
+           broad as the room, and the answer is "no bass" on a guitar being
+           strummed in a quiet room. Which is what came back.
+
+           Two semitones is past the skirt and still closer than any second
+           note a chord puts down there. */
         var f = freqs[n - LOW_NOTE];
-        var side = Math.max(at(f * 0.9439, QUARTER_STEP), at(f * 1.0595, QUARTER_STEP));
+        var side = Math.max(at(f * 0.8909, QUARTER_STEP), at(f * 1.1225, QUARTER_STEP));
         if (side > 0 && mine < side * PEAK) continue;
         bass = n % 12;
         /* How far it stands above what is beside it, and never mind that it is
@@ -545,6 +552,7 @@
       }
     }
     out.bass = bass;
+    out.sure = bassSure;
 
     out.best = weigh(chroma);
     return out;

@@ -5938,6 +5938,20 @@
     }
 
     var deep = parts().length > 0;
+    /* AND AT HOME THE CORNER IS NOT SPENT ON IT AT ALL. Off the library the
+       mark is the way back and it is the most useful thing in the row; ON the
+       library it is a link to the page it is standing on, next to a wall of
+       songs that says which app this is better than any mark does. What it
+       costs there is the width, and the width belongs to the search box, which
+       now runs from one end of the row to the fork at the other (see
+       body.at-home in the stylesheet).
+       The press that restarts the app goes with it. It was a gesture nobody was
+       told about, and a refresh is the same thing said in the browser's own
+       words.
+       Said here rather than in `where`, because a nameless bar is also what a
+       song looks like while it is still loading, and hiding the way back from
+       somebody waiting on a slow line is the one moment they want it. */
+    document.body.classList.toggle("at-home", !deep);
     if (brand._deep === deep) return;
     brand._deep = deep;
     brand.innerHTML = deep ? "" : theMark;
@@ -16690,7 +16704,7 @@
        Only on a reading there is something in. See followOn: a follower that
        steps on silence walks off on the noise of the microphone being switched
        on, before a single string has been touched. */
-    if (following) followOn(quiet);
+    if (following) followOn(r, quiet);
 
     c.now.textContent = heardNow || "·";
     c.node.classList.toggle("is-quiet", !heardNow);
@@ -16698,6 +16712,8 @@
        A score of 0.8 means nothing on its own; 0.8 with 0.79 underneath it
        means the ear is choosing between two chords by a coin toss, and that is
        the number somebody deciding whether this can work needs to see. */
+    earBass = r.bass;
+    earSure = r.sure === undefined ? 0 : r.sure;
     /* AND THE NOTE UNDERNEATH, which is the one thing that separates chords
        sharing two notes out of three (see BASS_HELP in ear.js) and therefore
        the one number to look at when the follower is slow on a song built out
@@ -16825,6 +16841,10 @@
      through in the right order is a row nobody works through. */
   var tapeBar = null;
 
+  /* the note heard underneath on the last reading, for the trace and the panel */
+  var earBass = -1;
+  var earSure = 0;
+
   var following = null;
   var followSpans = null;
   var followWas = "";
@@ -16949,7 +16969,7 @@
      is already on the screen, directly underneath, which is the whole reason
      lighting a line works at all. */
 
-  function followOn(quiet) {
+  function followOn(r, quiet) {
     /* The page underneath may have become a different page: a song closed, the
        library opened, a version being read. There is nothing to follow on any
        of those and the mark goes with them. */
@@ -16968,7 +16988,7 @@
 
        And it is the right rule for the rest of the song too: the pause between
        two verses is not the song moving on. */
-    if (quiet) return followSay(following.where());
+    if (quiet) { traceOn(null, r); return followSay(following.where()); }
 
     /* One number per DISTINCT chord in the song, which is eight or so rather
        than the two hundred places those eight stand in. */
@@ -17001,7 +17021,52 @@
        song is written in. */
     if (top < HEARD_ENOUGH) return followSay(following.where());
 
+    traceOn(scores, r);
     followSay(following.step(scores).here);
+  }
+
+  /* ==========================================================================
+     WHAT THE EAR WAS SAYING, KEPT WITH THE TAKE.
+
+     Everything about the following that has ever been wrong was found by
+     somebody playing a guitar into a phone and saying what the page did. That
+     is a slow way to find anything: the panel that shows the working changes
+     thirty times a second and cannot be read by a person, so what came back
+     was "it skipped the C", and the numbers that would have said WHY were
+     gone a thirtieth of a second later.
+
+     So a take carries them. While the recording runs, every third reading is
+     written down: what the room was, what each chord of this song scored
+     against it, what note was heard underneath, and where the follower thought
+     it was. It goes to the database beside the marks, and it can be read back
+     afterwards against the words of the song.
+
+     EVERY THIRD, which is ten a second, because a chord held for a tenth of a
+     second is three readings and that is the shortest thing worth seeing. And
+     it stops at four thousand, which is six minutes: a take longer than that
+     has said whatever it had to say.
+
+     Nothing is collected unless a take is running. This is the diary of a
+     performance, not of a page being read. */
+  var TRACE_EVERY = 3;
+  var TRACE_MOST = 4000;
+  var traceSkip = 0;
+
+  function traceOn(scores, r) {
+    if (!tape || !tape.trace || tape.trace.length >= TRACE_MOST) return;
+    if (traceSkip++ % TRACE_EVERY) return;
+    var two = function (n) { return Math.round(n * 100) / 100; };
+    tape.trace.push({
+      t: Math.round(tapeAt()),
+      /* the note underneath, as a pitch class, and how sure of it */
+      b: earBass, s: two(earSure),
+      /* how loud, so that a stretch of nothing is readable as nothing */
+      v: two(r ? r.rms : 0),
+      /* where the follower had got to */
+      h: following ? following.where() : -1,
+      /* and every chord of this song, in the song's own order of kinds */
+      k: scores ? scores.map(two) : [],
+    });
   }
 
   /* The mark, and the same thing in words on the strip. One call, because the
@@ -17663,7 +17728,7 @@
 
     tape = {
       rec: rec, bits: [], marks: [], mime: rec.mimeType || kind || "audio/webm",
-      began: Date.now(), still: 0, since: 0, seconds: 0,
+      began: Date.now(), still: 0, since: 0, seconds: 0, trace: [],
     };
     /* GUARDED, because this fires after the answer. Stopping a recorder makes
        it hand over one last piece, and by the time that arrives the take has
@@ -17745,6 +17810,7 @@
         blob: new Blob(tape.bits, { type: tape.mime }),
         mime: tape.mime,
         marks: tape.marks.slice(),
+        trace: tape.trace.slice(),
         seconds: Math.max(0, Math.round(tapeAt() / 100) / 10),
       });
     });
@@ -18185,6 +18251,8 @@
           body: {
             id: id, song_id: song.id, take: next, path: path, mime: made.mime,
             seconds: made.seconds, marks: made.marks,
+            /* what the ear was saying while it was played (see traceOn) */
+            trace: made.trace || null,
             page: state.ear ? state.ear.page() : 0,
             capo: state.ear ? state.ear.capo() : 0,
           },
