@@ -25,11 +25,15 @@ THREE THINGS ARE DONE TO IT, and each one is a thing the page cannot do:
    that runs to both edges of the glass cannot have one: it would read as a
    picture stuck on the page rather than as the head of it.
 
-3. It is given room above the heads and paper below the feet. The band on a
-   wide screen is a slice of a drawing nearly as tall as its people, so the
-   slice has to be able to sit high without standing on anybody's hair; and the
-   fade at the bottom is the page's own white, so the picture ends by turning
-   into the paper it is printed on rather than by stopping at a line.
+3. It is given room above the heads, and it fades out below the feet. The band
+   on a wide screen is a slice of a drawing nearly as tall as its people, so
+   the slice has to be able to sit high without standing on anybody's hair.
+
+   THE FADE IS TO NOTHING AND NOT TO WHITE. It was white first, and white is a
+   colour: the page under it is a shade off white, so the picture ended in a
+   pale band lying on a page that was not the same pale, which is the seam it
+   was put there to avoid. Fading the alpha instead ends it in whatever the
+   page happens to be, on any page it is ever put on.
 
 The top edge of the result is one flat colour on purpose. The page paints the
 strip behind the bar in that same value (see .strip in style.css), so the room
@@ -125,16 +129,16 @@ def edge_colour(row):
 
 top_c, bot_c = edge_colour(2), edge_colour(bh - 3)
 
-out = Image.new("RGB", (bw, ROOM + bh + FADE), top_c)
-out.paste(band, (0, ROOM))
+out = Image.new("RGBA", (bw, ROOM + bh + FADE), top_c + (255,))
+out.paste(band.convert("RGBA"), (0, ROOM))
 o = out.load()
 for i in range(FADE):
     t = i / (FADE - 1.0)
     t = t * t * (3 - 2 * t)          # eased, so the fade has no edge of its own
-    c = tuple(int(round(bot_c[k] + (255 - bot_c[k]) * t)) for k in range(3))
+    a = int(round(255 * (1 - t)))
     y = ROOM + bh + i
     for x in range(bw):
-        o[x, y] = c
+        o[x, y] = bot_c + (a,)
 
 out.save(OUT, "WEBP", quality=90, method=6)
 print("wrote %s  %dx%d  %d bytes" % (OUT, out.size[0], out.size[1], os.path.getsize(OUT)))

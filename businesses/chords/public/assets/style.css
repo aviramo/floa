@@ -62,9 +62,9 @@
   --published-ink: var(--state-ink); --published-soft: var(--state-soft);
   --offer-ink: var(--state-ink);     --offer-soft: var(--state-soft);
 
-  /* THE SAME FACT AS A MARK RATHER THAN AS A WORD: the dot on the corner that
+  /* THE SAME FACT AS A MARK RATHER THAN AS A WORD: the dot on the button that
      hides the row about it, where there is no room for the word (see
-     .has-news). Full rather than soft, because nine pixels of a pale colour on
+     .more-news). Full rather than soft, because nine pixels of a pale colour on
      a white bar is nothing at all. */
   --state-mark: #e0a010;
 
@@ -981,9 +981,15 @@ body.sifting .list:not(.band) { min-height: calc(100dvh - var(--top-h)); }
      The colour is the top edge of the drawing, exactly, so the two meet with no
      seam. The drawing was prepared to make that possible: its white borders
      were cut off and the band of its own colour was carried on upwards, so its
-     whole top edge is this one flat value (see scripts/strip.py). */
+     whole top edge is this one flat value (see scripts/strip.py).
+
+     AND IT IS ONLY BEHIND THE BAR. It was the whole box once, which was fine
+     while the drawing was opaque to its last row; it fades out to nothing now,
+     and a colour laid under the whole box is exactly what a fade to nothing
+     must not find waiting for it. Painted to the height of the padding and no
+     further, so what the fade ends in is the page. */
   padding-top: var(--top-h);
-  background: #f3f7f6;
+  background: linear-gradient(#f3f7f6, #f3f7f6) top / 100% var(--top-h) no-repeat;
   overflow: hidden;
 }
 .strip img {
@@ -1893,7 +1899,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    empty box still spends the row's gap, so it goes when it is empty. */
 /* Nothing of the SONG'S stands here any more: who wrote it is the line under
    its name (see .top-under) and what state it is in is a dot on the three dots
-   (see .has-news). What the slot holds now is what a page has to say about
+   (see .more-news). What the slot holds now is what a page has to say about
    itself in a word or a number, which so far is one page and one number: what
    the readings cost (see .top-bill). Empty, it takes nothing. */
 .top-facts {
@@ -1921,88 +1927,92 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 }
 .top-under:empty { display: none; }
 
-/* --- AND THE DOT ON THE THREE DOTS -----------------------------------------
+/* --- AND THE DOT ON THE ROW IT IS ABOUT ------------------------------------
    A song that is not published looks exactly like one that is. It is the same
    page, the same words, the same green everywhere: nothing on the screen says
    that nobody else can see this, and the one row that would say so is behind a
-   corner nobody has a reason to press.
+   button nobody has a reason to press.
 
-   So the corner says there is something in it. A dot half off the button, and
-   the same dot again on the row it is about, so that pressing the corner leads
+   So the button says there is something in it (see .more-news), and the same
+   dot stands again on the row it is about, so that pressing the button leads
    the eye straight to the thing the dot was for. What it MEANS takes a word,
    and the bar has nowhere to put one; the word is on the row, which is where
    the dot goes.
 
-   It is the colour a state is written in, because a state is what it is
-   saying: this song is not out yet, in the same yellow the library says it in
-   on the card (see the states at the top of this file). It was the green of
-   the button that publishes, which named the cure and not the thing, and put
-   the app's press-me colour on a corner that is not the press. Not a warning
-   colour either: nothing here has gone wrong. */
+   AT THE END OF THE LINE, because a row in the panel is a line of text across
+   the whole width and its top corner is half a panel away from the word it
+   would be marking. Where reading it leaves you, and with no ring around it:
+   there is nothing underneath here for it to be lifted off. */
 .has-news { position: relative; }
 .has-news::after {
-  content: ""; position: absolute; top: -2px; inset-inline-start: -2px;
-  width: 9px; height: 9px; border-radius: 50%;
-  border: 2px solid var(--card); background: var(--state-mark);
-}
-/* ON A ROW THE CORNER IS NOWHERE. A row in the panel is a line of text across
-   the whole width, and its top corner is half a panel away from the word it
-   would be marking. So the same dot stands at the end of the line instead,
-   where reading it leaves you, and it needs no ring around it: there is no
-   picture underneath for it to be lifted off. */
-.print-menu .btn.has-news::after {
-  top: 50%; inset-inline-start: auto; inset-inline-end: 12px;
-  width: 7px; height: 7px; margin-top: -3px; border: 0;
+  content: ""; position: absolute;
+  top: 50%; inset-inline-end: 12px; margin-top: -3px;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--state-mark);
 }
 /* and on the row under the pointer, which fills with the app's green, the dot
    goes white: a yellow mark on a green fill is the one thing on the row that
    would have to be looked for */
 .print-menu .btn.has-news.is-on::after { background: #fff; }
 
-/* --- AND THE SAME DOORWAY, WHEN WHAT IS BEHIND IT IS A SOUND ---------------
-   The recordings of a song are behind these dots too, and until now the only
-   way to find out there were any was to open the panel and look. So the button
-   says it: where there is nothing waiting on a person it carries the play
-   shape as well, and a song somebody has played says so from across the bar.
+/* --- ONE SLOT BESIDE THE DOTS, FOR WHATEVER THE BUTTON HAS TO SAY ----------
+   What is behind these dots is a panel, and a shut panel says nothing: a song
+   of yours that nobody else can see yet, details somebody has offered, or
+   simply recordings, all of them found only by opening it and looking. So the
+   button says which, in one place, beside the dots (see songMore, which puts
+   exactly one mark in here at a time).
 
-   INSIDE THE BUTTON AND NOT ON ITS CORNER. It was drawn for a while as the
-   badge the record button wears (see .tape-new), a small white disc with a
-   ring hung half off the edge, on the argument that this app already has one
-   way of saying "there is something in here". The two sentences are not the
-   same one: a badge is a notification, a thing that has just happened and is
-   waiting on you, and it hangs off the corner because it belongs to no part of
-   the button in particular. Recordings are not news. They are simply what is
-   in here, which is what the picture on a button is for, so the shape steps
-   inside and stands beside the dots as the second half of the label.
+   INSIDE THE BUTTON AND NOT ON ITS CORNER, for either of them. They were both
+   drawn on the corner for a while, in the language of the badge the record
+   button wears (see .tape-new): a small thing hung half off the edge, because
+   this app already had one way of saying "there is something in here". That
+   language is a notification's, a thing that has just happened and is waiting
+   on you, and it hangs off the corner because it belongs to no part of the
+   button in particular. What is behind this one is not news. It is what is in
+   here, which is what a picture on a button is for, so the mark steps inside
+   and stands beside the dots as the second half of the label.
 
    And it costs nothing to read: a mark half off a corner has to be told apart
    from the edge it overlaps, and there is nothing here to tell it apart from.
 
    THE BUTTON GROWS TO HOLD IT, sideways only. It is a square while it holds
-   one picture and a short row while it holds two, and the height never moves,
+   one thing and a short row while it holds two, and the height never moves,
    because the row it stands in is a line of controls whose tops and bottoms
-   are the thing holding the row together.
-
-   IN THE GREEN A RECORDING IS COUNTED IN ON A CARD (see .when.has-takes),
-   which is the same fact about the same thing, and it is not the yellow of the
-   dot on the corner above: the two marks are on one button now, which makes
-   the difference between them worth saying twice. */
+   are the thing holding the row together. */
 .icon-btn.has-mark {
   width: auto; padding: 0 7px;
   display: inline-flex; align-items: center; gap: 5px;
 }
-/* THE SIZE OF THE PICTURE BESIDE IT, and it is not written here at all: it is
+/* Neither of them takes a press of its own, so a fingertip landing on one
+   opens the panel like anywhere else on the button. */
+.more-takes, .more-news { display: inline-flex; pointer-events: none; }
+
+/* THE RECORDINGS, IN THE GREEN THEY ARE COUNTED IN ON A CARD (see
+   .when.has-takes), which is the same fact about the same thing.
+
+   THE SIZE OF THE PICTURE BESIDE IT, and it is not written here at all: it is
    an icon inside an icon button and takes the size every icon in one takes
    (see .icon-btn svg). It was drawn smaller for a while, on the thought that
    the dots are what the button does and this is only what it happens to hold,
    and a shape that small beside a full-sized one reads as a leftover of the
    badge it used to be rather than as the other half of the label. Two pictures
-   on one button are two pictures.
+   on one button are two pictures. */
+.more-takes { color: var(--accent); }
 
-   It takes no press of its own, so a fingertip landing on it opens the panel
-   like anywhere else on the button. */
-.more-takes {
-  display: inline-flex; color: var(--accent); pointer-events: none;
+/* AND THE STATE, WHICH IS A DOT AND NOT A PICTURE. It is the one mark here
+   that is about the song rather than about what is inside the panel, and it
+   has no picture to be: "not published" is a state, and a state is a colour in
+   this app (see the states at the top of this file). The same yellow the
+   library writes it in on the card, and the same dot again on the row that
+   publishes (see .has-news), so the two are one sentence read in two presses.
+
+   Smaller than the picture beside it, because it is not one: a nine pixel
+   circle standing as tall as the dots would be a third dot in a column of
+   three. It keeps the height of the row it is in without claiming to be
+   drawn. */
+.more-news {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--state-mark);
 }
 
 /* THREE CONTROLS, AND NOTHING DRAWN ROUND THEM. Each of them is already a box

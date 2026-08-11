@@ -5781,9 +5781,9 @@
         closeUnder();
         out();
       });
-      /* THE SAME DOT THAT IS ON THE CORNER, on the row it was about. The dot up
+      /* THE SAME DOT THAT IS ON THE BUTTON, on the row it was about. The dot up
          there says there is something in here; this one says which of these it
-         meant, so the two are one sentence read in two presses (see .has-news
+         meant, so the two are one sentence read in two presses (see .more-news
          and songMore). */
       hand.classList.add("has-news");
       rows.push(hand);
@@ -5826,8 +5826,8 @@
       });
       /* AND THE SAME DOT, on the row it is about. Somebody has offered other
          people or another kind for this song, and the panel behind this row is
-         where that is answered: the dot on the corner says there is something
-         in here, and this one says which of these it meant (see .has-news and
+         where that is answered: the dot on the button says there is something
+         in here, and this one says which of these it meant (see .more-news and
          songMore). */
       if (told.news && told.news()) door.classList.add("has-news");
       rows.push(door);
@@ -5862,16 +5862,16 @@
     return rows;
   }
 
-  /* AND A DOT ON THE CORNER WHEN THERE IS SOMETHING BEHIND IT. A song that is
+  /* AND A MARK ON THE BUTTON WHEN THERE IS SOMETHING BEHIND IT. A song that is
      not published looks exactly like one that is: same page, same words,
      nothing anywhere saying that nobody else can see this. The word that says
      it is on the row inside (see songRows), and a word inside a panel is a word
      nobody has been given a reason to open.
 
-     So the corner carries the reason, and it is the smallest thing that can:
-     one green dot, meaning there is something in here, in the colour of the
-     thing it turns out to be. What it is takes a word, and the bar has nowhere
-     to put one.
+     So the button carries the reason, and it is the smallest thing that can:
+     one dot beside the dots, meaning there is something in here, in the colour
+     of the thing it turns out to be. What it is takes a word, and the bar has
+     nowhere to put one.
 
      Painted rather than built, because the state moves under the page: a
      published song typed into is a draft again from that keystroke on, and the
@@ -5884,21 +5884,15 @@
       made.setAttribute("aria-expanded", "false");
       return made;
     });
-    /* Two things can be waiting behind the dots and the corner says neither of
+    /* Two things can be waiting behind the dots and the mark says neither of
        them apart: a song of your own that is not out in the world, and details
        somebody has offered for one that is (see songRows). One dot for both,
-       because what the corner is for is the reason to open the panel at all. */
+       because what the mark is for is the reason to open the panel at all. */
     var news = !!(state.songOut && state.songOut()) ||
       !!(state.songDetails && state.songDetails.news && state.songDetails.news());
-    node.classList.toggle("has-news", news);
     /* AND WHERE THERE IS NOTHING TO DO, WHAT THERE IS TO HEAR. The recordings
        are behind these same dots (see songRows) and a shut panel says nothing,
-       so a song somebody has played is a song whose corner says so.
-
-       AND IT GOES INSIDE THE BUTTON, beside the dots, and not on the corner
-       with the dot: a corner mark is news, a thing waiting on you, and
-       recordings are not news. They are what is in here, which is what the
-       picture on a button says (see .more-takes).
+       so a song somebody has played is a song whose button says so.
 
        THE DOT WINS WHEREVER THERE IS ONE. Both say "there is something in
        here", and the two things are not worth the same: one is a song of yours
@@ -5907,30 +5901,33 @@
        enjoyed and will still be there tomorrow. So the button says the one
        that is waiting on a person, and the sound waits its turn. */
     var sound = !news && !!(state.takesCount && state.takesOpen);
-    /* The button is kept and painted rather than built (see keep), so the mark
-       is put on and taken off the one node rather than made with it.
+    /* ONE SLOT, ONE MARK, BESIDE THE DOTS AND NOT ON THE CORNER. Both of them
+       are the same sentence about the same panel, so they stand in the same
+       place and differ in what they are (see .more-news and .more-takes), and
+       the button is a square until one of them is there.
+
+       The button is kept and painted rather than built (see keep), so the mark
+       is put on and taken off the one node rather than made with it, and a
+       mark of the wrong kind is swapped rather than left standing.
 
        BEFORE THE DOTS AND NOT AFTER THEM, which on this page is to their
        right: the page is the thing that decides which side that is, and the
        order in the markup is the only part of it written here. */
-    var worn = node.querySelector(".more-takes");
-    node.classList.toggle("has-mark", sound);
-    if (sound && !worn) node.insertBefore(takesMark(), node.firstChild);
-    if (!sound && worn) worn.remove();
+    var want = news ? "more-news" : (sound ? "more-takes" : "");
+    var worn = node.querySelector(".more-news, .more-takes");
+    if (worn && !worn.classList.contains(want)) { worn.remove(); worn = null; }
+    if (want && !worn) node.insertBefore(moreMark(want), node.firstChild);
+    node.classList.toggle("has-mark", !!want);
     return node;
   }
 
-  /* THE PLAY TRIANGLE, SMALL, BESIDE THE DOTS. What waits behind this button
-     when nothing waits on a person: recordings, on a song, behind a panel
-     nobody has been given a reason to open.
-
-     Green, because that is the colour a recording is counted in on a card (see
-     .when.has-takes), which is the same fact about the same thing.
-
-     It does not take the press. What is under it is the whole button. */
-  function takesMark() {
-    var mark = el("span", "more-takes");
-    mark.appendChild(svg(ICON.play));
+  /* WHAT THE BUTTON IS CARRYING, in the one slot beside the dots. The state is
+     a dot, because "not published" has no picture to be and every state in this
+     app is a colour; the recordings are the play shape, which is the same
+     picture the thing that plays them wears everywhere else. */
+  function moreMark(kind) {
+    var mark = el("span", kind);
+    if (kind === "more-takes") mark.appendChild(svg(ICON.play));
     return mark;
   }
 
@@ -10025,7 +10022,7 @@
         /* AND A GREEN DOT ON IT WHEN SOMEBODY HAS OFFERED OTHER ONES. A panel
            that is shut says nothing, so the row that opens it carries the fact
            that there is something inside worth opening it for, in the same dot
-           the corner and the publish row already use (see .has-news). What was
+           the button and the publish row already use (see .has-news). What was
            offered takes a panel; that it is there takes a dot. */
         news: function () { return metaWaiting().length > 0; },
         open: function () { openSheet(metaPanel); },
