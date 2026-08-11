@@ -469,7 +469,29 @@
      two notes of three, and so do its Am and C. The twelve numbers cannot
      separate any of those pairs and the note underneath separates all of them,
      so this is the only lever there is. */
-  var BASS_HELP = 0.25;
+  var BASS_HELP = 0.12;
+  /* --- AND IT WENT TO 0.25 AND CAME BACK, WHICH IS THE MEASUREMENT WORKING ---
+     0.25 was set on a measured 86%: two takes' worth of readings where the
+     note heard underneath agreed with the chord being followed. The next take
+     measured 63%, and the misses in it are one thing said 114 times: an Am
+     heard as G, a C heard as G.
+
+     There is a reason and it is not a fault in the arithmetic. WITH A CAPO ON
+     THE THIRD, THE OPEN SIXTH STRING SOUNDS G. It is the lowest note on the
+     instrument, it rings through every chord somebody strums across all six
+     strings, and lowest is the whole of how the bass is chosen here. So "the
+     lowest note" is G for every chord in the song, which is perfectly true and
+     says nothing whatever about which chord it is.
+
+     Useless would be survivable. It is worse than useless at a heavy weight,
+     because G is what this song's printed Em stands on: a note that is always
+     there was pushing every reading towards the Em places, and that is where
+     the mark went. Half the weight is what the 63% supports.
+
+     THE REAL ANSWER IS NOT A NUMBER. The bass wanted here is the lowest note
+     newly STRUCK, not the lowest note ringing, and telling those apart means
+     hearing the attack rather than the level. That is a proper piece of work
+     and it is worth more than another guess at this constant. */
   /* --- AND WHAT MAKES A NOTE DOWN THERE A NOTE ------------------------------
      NOT "MOST OF THE LOUDEST", WHICH WAS THE MISTAKE. The bass string is
      usually not the loudest thing in its own range: on an open C the fretted
