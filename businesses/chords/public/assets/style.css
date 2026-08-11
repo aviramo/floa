@@ -1948,76 +1948,46 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    would have to be looked for */
 .print-menu .btn.has-news.is-on::after { background: #fff; }
 
-/* --- AND THE SAME CORNER, WHEN WHAT IS IN THERE IS A SOUND -----------------
+/* --- AND THE SAME DOORWAY, WHEN WHAT IS BEHIND IT IS A SOUND ---------------
    The recordings of a song are behind these dots too, and until now the only
-   way to find out there were any was to open the panel and look. So the corner
-   answers that as well: where there is nothing waiting on a person it carries
-   the play shape instead, and a song somebody has played says so from across
-   the bar.
+   way to find out there were any was to open the panel and look. So the button
+   says it: where there is nothing waiting on a person it carries the play
+   shape as well, and a song somebody has played says so from across the bar.
 
-   AND IT IS THE MARK THE RECORD BUTTON ALREADY WEARS (see .tape-new): a round
-   badge half off the corner of a button, with a small picture inside saying
-   which kind of thing is waiting. One shape for "there is something in here",
-   drawn the same size in the same place, and the picture is the difference.
-   Two ways of drawing that sentence would be two things to learn.
+   INSIDE THE BUTTON AND NOT ON ITS CORNER. It was drawn for a while as the
+   badge the record button wears (see .tape-new), a small white disc with a
+   ring hung half off the edge, on the argument that this app already has one
+   way of saying "there is something in here". The two sentences are not the
+   same one: a badge is a notification, a thing that has just happened and is
+   waiting on you, and it hangs off the corner because it belongs to no part of
+   the button in particular. Recordings are not news. They are simply what is
+   in here, which is what the picture on a button is for, so the shape steps
+   inside and stands beside the dots as the second half of the label.
 
-   WHITE WITH A COLOURED RING AND THE PICTURE IN THE SAME COLOUR, which is the
-   whole of what the other one is, down to the ring being a ring and not a fill.
-   It was drawn filled green for a while, on the argument that the badge should
-   take whichever colour its button is not, and that is a rule about contrast
-   rather than about language: a white badge with a pink ring and a filled green
-   disc are two different objects on one bar, however well each of them reads
-   where it stands. One object, in two colours, and the colour is the only thing
-   that differs.
+   And it costs nothing to read: a mark half off a corner has to be told apart
+   from the edge it overlaps, and there is nothing here to tell it apart from.
 
-   The green is the colour a recording is counted in on a card (see
-   .when.has-takes), and it is not the yellow of the dot beside it, which the
-   two marks sharing a corner makes worth saying twice.
+   THE BUTTON GROWS TO HOLD IT, sideways only. It is a square while it holds
+   one picture and a short row while it holds two, and the height never moves,
+   because the row it stands in is a line of controls whose tops and bottoms
+   are the thing holding the row together.
 
-   AND IT HANGS FURTHER OFF THE CORNER THAN THE OTHER ONE DOES. The record
-   button is a circle, and a badge on the corner of a circle is already mostly
-   outside it; these dots sit in a square box, whose corner reaches out further
-   than its middle does, so the same offset leaves the mark sitting on the
-   button instead of on its edge. The number differs because the shape under it
-   differs, which is the only thing that ever moves it. */
-.has-mark { position: relative; }
+   IN THE GREEN A RECORDING IS COUNTED IN ON A CARD (see .when.has-takes),
+   which is the same fact about the same thing, and it is not the yellow of the
+   dot on the corner above: the two marks are on one button now, which makes
+   the difference between them worth saying twice. */
+.icon-btn.has-mark {
+  width: auto; padding: 0 7px;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+/* A shade under the dots beside it, the way a second word is quieter than the
+   first: the dots are what the button does, and this is what it happens to
+   hold. And it takes no press of its own, so a fingertip landing on it opens
+   the panel like anywhere else on the button. */
 .more-takes {
-  position: absolute;
-  top: -4px; inset-inline-start: -8px;
-  width: 17px; height: 17px; border-radius: 999px;
-  display: grid; place-items: center;
-  background: #fff; color: var(--accent);
-  border: 1.5px solid var(--accent);
-  box-shadow: 0 1px 3px rgba(15, 32, 45, .18);
-  pointer-events: none;
+  display: inline-flex; color: var(--accent); pointer-events: none;
 }
-/* Small enough to keep the ring around it, the same as the microphone in the
-   other one: these are marks inside a badge and not the transport shapes,
-   which fill their box on purpose (see --transport).
-
-   AND THE TRIANGLE IS CENTRED BY ITS OWN EDGES AND NOT BY ITS BOX. The play
-   shape is drawn from 7 to 20.2 across a box 24 wide (see ICON.play), so its
-   middle is a fifteenth of the box right of the middle of the box: centring the
-   box leaves the shape sitting off to one side inside the ring, which is the
-   one place in this app where a picture has a circle drawn round it close
-   enough to be measured against. The microphone beside it needs none of this
-   because it is drawn down the middle of its own box.
-
-   AND UP BY THE SAME, WHICH IS THE RING AND NOT THE SHAPE. The triangle is
-   drawn down the middle of its box from top to bottom, and it still sat low:
-   the ring is a pixel and a half thick, a browser does not always split that
-   evenly between the top and the bottom edge, and half a pixel of border on one
-   side is half a pixel of everything inside pushed to the other. Small enough
-   to be an accident and large enough to see on a mark this size.
-
-   In percent, so it stays true whatever size the mark is drawn at, and as a
-   transform rather than a margin because it is a physical nudge: an SVG is not
-   mirrored by the page being right to left, and the shape leans the same way
-   in both directions. */
-.more-takes svg {
-  width: 10px; height: 10px;
-  transform: translate(-6.7%, -6.7%);
-}
+.more-takes svg { width: 12px; height: 12px; }
 
 /* THREE CONTROLS, AND NOTHING DRAWN ROUND THEM. Each of them is already a box
    with a line round it, and a fourth line round all three is a box inside a box

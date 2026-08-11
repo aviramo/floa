@@ -5905,41 +5905,39 @@
        are behind these same dots (see songRows) and a shut panel says nothing,
        so a song somebody has played is a song whose corner says so.
 
-       THE SAME MARK THE RECORD BUTTON WEARS, and not a shape of its own: a
-       small round badge on the corner of a button, with a picture inside
-       saying which kind of thing is waiting, is already this app's way of
-       saying "there is something in here" (see newMark and .tape-new). This is
-       the same sentence about the same corner, so it is drawn the same way,
-       with the play triangle where the microphone stands there.
+       AND IT GOES INSIDE THE BUTTON, beside the dots, and not on the corner
+       with the dot: a corner mark is news, a thing waiting on you, and
+       recordings are not news. They are what is in here, which is what the
+       picture on a button says (see .more-takes).
 
-       THE DOT WINS WHEREVER THERE IS ONE. Both marks are the same corner
-       saying "there is something in here", and the two things are not worth
-       the same: one is a song of yours nobody else can see yet, and it stays
-       that way until somebody does something about it; the other is a
-       recording, which is there to be enjoyed and will still be there
-       tomorrow. So the corner carries the one that is waiting on a person, and
-       the sound waits its turn. */
+       THE DOT WINS WHEREVER THERE IS ONE. Both say "there is something in
+       here", and the two things are not worth the same: one is a song of yours
+       nobody else can see yet, and it stays that way until somebody does
+       something about it; the other is a recording, which is there to be
+       enjoyed and will still be there tomorrow. So the button says the one
+       that is waiting on a person, and the sound waits its turn. */
     var sound = !news && !!(state.takesCount && state.takesOpen);
     /* The button is kept and painted rather than built (see keep), so the mark
-       is put on and taken off the one node rather than made with it. */
+       is put on and taken off the one node rather than made with it.
+
+       BEFORE THE DOTS AND NOT AFTER THEM, which on this page is to their
+       right: the page is the thing that decides which side that is, and the
+       order in the markup is the only part of it written here. */
     var worn = node.querySelector(".more-takes");
     node.classList.toggle("has-mark", sound);
-    if (sound && !worn) node.appendChild(takesMark());
+    if (sound && !worn) node.insertBefore(takesMark(), node.firstChild);
     if (!sound && worn) worn.remove();
     return node;
   }
 
-  /* THE PLAY TRIANGLE, SMALL, IN THE CORNER OF THE DOTS. The mark the record
-     button wears when a take is waiting on the device, said about the other
-     thing that waits behind a corner: recordings, on a song, behind a panel
-     nobody has been given a reason to open (see newMark).
+  /* THE PLAY TRIANGLE, SMALL, BESIDE THE DOTS. What waits behind this button
+     when nothing waits on a person: recordings, on a song, behind a panel
+     nobody has been given a reason to open.
 
-     THE SAME BADGE DOWN TO THE RING: white, a coloured ring round it, and the
-     picture inside in that colour. Only the colour changes, and it is green
-     because that is the colour a recording is counted in on a card (see
+     Green, because that is the colour a recording is counted in on a card (see
      .when.has-takes), which is the same fact about the same thing.
 
-     It does not take the press either. What is under it is the whole button. */
+     It does not take the press. What is under it is the whole button. */
   function takesMark() {
     var mark = el("span", "more-takes");
     mark.appendChild(svg(ICON.play));
