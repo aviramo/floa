@@ -324,8 +324,12 @@ async function build(only) {
 
   /* A full build starts from nothing, so a page that was deleted or renamed
      cannot survive in dist/ and go on being published. A --only build must not:
-     it would take every other business's site down with it. */
-  if (!only) await rm(DIST, { recursive: true, force: true });
+     it would take every other business's site down with it.
+
+     Windows hands out EPERM on a folder something else is holding open for a
+     moment (an indexer, an editor, a browser reading the page it is serving),
+     so the delete waits it out instead of failing the whole build. */
+  if (!only) await rm(DIST, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
 
   /* written from ALL of them, never just the one being rendered: the Worker
      serves every business at once, so a --only build must not shrink its table */
