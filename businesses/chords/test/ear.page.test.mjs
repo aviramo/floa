@@ -665,6 +665,19 @@ try {
          and a bit, which is a person pressing record, playing, and stopping. */
       await sleep(1300);
       await evaluate('JSON.stringify((document.querySelector(".tape-bar .icon-btn").click(), true))');
+
+      /* --- AND THE QUESTION IS BEHIND A SECOND PRESS -------------------------
+         Stopping used to put the panel up on the press, and the press is the
+         worst moment for it: somebody has just finished playing, their hands
+         are on the guitar, and a panel over the song is answered in whatever
+         way makes it go away. So stopping now only stops, and what is left is
+         a mark on the button over the song saying there is a take unanswered.
+         Pressing that is what asks. */
+      const waiting = await until(evaluate,
+        'document.querySelector(".tape-bar .icon-btn .tape-new") && true');
+      check("stopping leaves a take waiting rather than a panel to be dismissed",
+        waiting, "no mark on the button");
+      await evaluate('JSON.stringify((document.querySelector(".tape-bar .icon-btn").click(), true))');
       const offered = await until(evaluate, 'document.querySelector("dialog[open] .take-play")');
       check("pausing offers the take to listen to", offered, "no panel came up");
       const asked = await evaluate(`JSON.stringify({
@@ -677,34 +690,42 @@ try {
         asked.answers.length >= 1 && !asked.answers.some((w) => /סגירה|ביטול/.test(w)),
         JSON.stringify(asked.answers));
 
-      /* --- AND CLOSING IT CARRIES ON ----------------------------------------
-         Not "leave it paused": whoever put the question up did so in order to
-         decide, and deciding not to decide means they are still playing. */
+      /* --- AND CLOSING IT LEAVES THE TAKE WHERE IT WAS -----------------------
+         Not "carries the recording on", which is what it used to do and what
+         it stopped doing when the question moved off the press: the playing is
+         already over by the time this panel is up. Walking away from the
+         question is not an answer to it, so the take is still there, still
+         unanswered, with the same mark on the button over the song, and
+         pressing that asks again. */
       await evaluate('JSON.stringify((document.querySelector("dialog[open]").close(), true))');
       await sleep(600);
       const back = await evaluate(CHORD_READ);
-      check("closing the question carries the recording on",
-        back.keys === 1 && back.taping === true && !back.open === false,
-        JSON.stringify({ keys: back.keys, taping: back.taping }));
+      check("closing the question leaves the take waiting to be asked again",
+        back.keys === 1 && !back.taping, JSON.stringify({ keys: back.keys, taping: back.taping }));
+      const stillMarked = await evaluate(
+        'JSON.stringify(!!document.querySelector(".tape-bar .icon-btn .tape-new"))');
+      check("and the mark on the button is still saying so", stillMarked, "the mark went");
 
-      /* And answering it is what ends it. */
       await evaluate('JSON.stringify((document.querySelector(".tape-bar .icon-btn").click(), true))');
       await until(evaluate, 'document.querySelector("dialog[open] .take-play")');
 
-      /* --- AND ANSWERING IT PUTS EVERYTHING BACK -----------------------------
-         Keeping the take and throwing it away are both the end of it, and what
-         is on the other side is a page nobody is playing to. The light in the
-         tab goes out, the mark comes off, and the button looks exactly as it
-         did before any of this was pressed. */
-      /* And answering it is what ends it. */
+      /* --- AND ANSWERING IT STARTS THE NEXT ONE ------------------------------
+         Which is not "puts everything back", and the difference is the whole
+         shape of the panel now. Both answers end THIS take: the mark comes off
+         the button and the question is settled either way. What follows is a
+         fresh take already running (see afresh), because somebody who has just
+         answered a question about a recording is somebody about to play again,
+         and the press they would have reached for next is the one they have
+         just made. */
       await evaluate('JSON.stringify(([...document.querySelectorAll("dialog[open] .dlg-actions .btn")][0].click(), true))');
       await sleep(600);
       const shut = await evaluate(CHORD_READ);
-      check("answering the take shuts the microphone and puts the page back",
-        !shut.open && !shut.padded && shut.marked.length === 0 && !shut.taping &&
-        shut.keys === 1 && shut.rec,
-        JSON.stringify({ open: shut.open, padded: shut.padded, marked: shut.marked,
-                         keys: shut.keys, rec: shut.rec }));
+      const gone = await evaluate(
+        'JSON.stringify(!document.querySelector(".tape-bar .icon-btn .tape-new"))');
+      check("answering the take takes the mark off and opens the next one",
+        shut.marked.length === 0 && shut.taping && shut.keys === 1 && shut.rec && gone,
+        JSON.stringify({ marked: shut.marked, keys: shut.keys, rec: shut.rec,
+                         taping: shut.taping, open: shut.open, markGone: gone }));
 
       check("and nothing threw along the way", shut.errors.length === 0, JSON.stringify(shut.errors));
     });
