@@ -147,14 +147,12 @@
     <path d="M50 -164L62 -154" stroke="#17202a" stroke-width="9" stroke-linecap="round"/>
   </g>
   <!-- and what is coming out of it -->
-  <!-- Out sideways from the microphone and a little down, and not up over her
-       head: the top of the drawing is a hand's width above her hair, and a
-       voice drawn upwards is a voice cut off by the frame. -->
-  <g fill="none" stroke="#e11d63" stroke-linecap="round">
-    <path d="M64.8 -178.8A20 20 0 0 1 61.3 -159.1" stroke-width="3.2" stroke-opacity=".6"/>
-    <path d="M74.2 -182.3A30 30 0 0 1 69 -152.7" stroke-width="2.8" stroke-opacity=".45"/>
-    <path d="M83.6 -185.7A40 40 0 0 1 76.6 -146.3" stroke-width="2.4" stroke-opacity=".3"/>
-  </g>
+  <!-- AND NOTHING COMING OUT OF THE MICROPHONE. There were three arcs off it,
+       which is the mark a loudspeaker wears in every icon set there is: it
+       said "sound" beside a drawing whose whole subject is somebody making it,
+       and the only thing it added was a second symbol in a picture that was
+       not otherwise using any. The head back, the mouth open and the mic at it
+       are the singing. -->
 </g>
 
 <!-- HE IS PLAYING IT. Same hips, same lean, the other way: into the guitar.
