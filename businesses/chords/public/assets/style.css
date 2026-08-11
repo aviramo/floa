@@ -478,9 +478,8 @@ body.unnamed .top-name { display: none; }
    going anywhere. */
 .top-find input[type="search"]::-webkit-search-cancel-button { display: none; }
 /* Not the browser's cross, which empties the field and leaves you inside the
-   search. This one ends the search: it empties the box AND hands the whole page
-   back, which on the library is the wall with everything over it (see
-   body.sifting). */
+   search. This one ends the search: it empties the box AND hands the whole
+   library back under the wall it was narrowed to. */
 .top-find .find-x {
   display: none;
   flex: none; align-items: center; justify-content: center;
@@ -852,24 +851,23 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    a band of their own. */
 .kinds-row .tallies { justify-content: center; }
 
-/* --- AND WHILE THE BOX IS HOLDING THE PAGE DOWN, NONE OF IT IS THERE ---------
+/* --- AND WHILE THE BOX IS HOLDING THE PAGE DOWN, THE WALL CAN REACH THE BAR --
    The library opens with the doors, the drawing, the band of shelves and the
    row of counts, and then the songs. Every one of those is about the whole
    library. Somebody who has typed three letters is not asking about the whole
    library, and what they asked for was starting a screen and a half below the
    answer they were reading.
-   So the sieve empties the page down to itself: the box, and the songs it
-   found. The counts go with them, wherever they are standing (on a desk they
-   are inside the box, see .find-extra), because a count of what the library
-   holds is a fact about the wall that is no longer on the screen.
-   FROM THE PRESS, not from the first letter: putting the cursor in that box is
-   already the whole of the decision, and waiting for a letter made the page
-   move twice for one gesture. All of it comes back when the box is empty and
-   nobody is standing in it (see siftMark). */
-body.sifting .kinds-row,
-body.sifting .strip,
-body.sifting .shelves,
-body.sifting .find-extra { display: none; }
+   All of that used to come off the page while the box was in use. Now it stays
+   and the page scrolls past it instead (see siftRoom in the script), so the
+   reader can bring it back with a thumb rather than by emptying the box.
+   What is left here is the floor that scroll lands on: a wall narrowed to four
+   songs is shorter than the head standing above it, and a document that ends
+   before the scroll does hands the scroll straight back, head and all. A
+   screen's worth under the top of the wall is enough for the head to clear the
+   glass at any height it comes to.
+   The band of shelves is not given one: it is above the wall, so it is part of
+   what the scroll is getting out of the way. */
+body.sifting .list:not(.band) { min-height: calc(100dvh - var(--top-h)); }
 
 /* All five in the one colour a state wears, and the word on each is which of
    them it is (see the states at the top of this file). They were five

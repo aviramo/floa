@@ -4493,8 +4493,8 @@
        left with the wall held down to what was typed in it. The sieve belongs
        to the page, so the words come back up with it. */
     if (findField && state.sift) findField.value = state.sift.q || "";
-    /* and a wall that came back narrowed comes back with everything over it
-       still out of the way */
+    /* and a wall that came back narrowed comes back with the floor under it
+       that its scroll is standing on (see siftMark) */
     siftMark();
 
     var h = layer.head;
@@ -7152,9 +7152,10 @@
          the page is as short as it is. */
       if (state.sift) {
         document.body.classList.remove("finding");
-        /* Which gives the page back too, unless there are words in the box: an
-           empty box somebody has stepped out of is not a search, and the doors
-           and the shelves over the wall belong to the page again. */
+        /* Which takes the floor back out from under the wall too, unless there
+           are words in the box: an empty box somebody has stepped out of is not
+           a search, and a page holding room for a scroll nobody made ends in a
+           screen of nothing (see siftMark). */
         siftMark();
         return findField.blur();
       }
@@ -7170,9 +7171,11 @@
   function openFind() {
     if (!findField) return;
     document.body.classList.add("finding");
-    /* and on a page being sieved, the press is what empties everything over the
-       songs, before a single letter (see siftMark) */
+    /* and on a page being sieved, the press is what takes the page down to the
+       songs, before a single letter: the room under the wall first (siftMark),
+       then the scroll that lands in it (siftRoom) */
     siftMark();
+    siftRoom();
     if (document.activeElement !== findField) findField.focus();
   }
 
@@ -7184,15 +7187,16 @@
     findAt = -1;
   }
 
-  /* --- AND WHILE THE BOX HOLDS THE PAGE DOWN, THE PAGE IS THE SONGS ----------
+  /* --- AND WHILE THE BOX HOLDS THE PAGE DOWN, THERE IS ROOM UNDER THE WALL ---
      On the library the box does not answer with a panel, it sieves the wall
-     (see state.sift in viewIndex). What went on standing over that wall was
-     everything the page opens with: the doors, the drawing, the band of shelves
-     and the row of counts. Every one of those is about the WHOLE library, and
-     none of them is about the four songs somebody has just narrowed it to, so
-     the answer to what was typed began a screen and a half down. A page being
-     sieved is the box and the songs and nothing else (see body.sifting in the
-     stylesheet), and all of it comes back the moment the box is emptied.
+     (see state.sift in viewIndex). What stands over that wall is everything the
+     page opens with: the doors, the drawing, the band of shelves and the row of
+     counts. Every one of those is about the WHOLE library, and none of them is
+     about the four songs somebody has just narrowed it to, so the answer to
+     what was typed begins a screen and a half down. The page goes to the wall
+     instead (see siftRoom), and this class is what leaves the scroll somewhere
+     to land: four songs are shorter than the head above them, and a document
+     that ends before the scroll does hands it straight back.
 
      AND IT STARTS AT THE PRESS, NOT AT THE FIRST LETTER. Somebody who has put
      the cursor in that box has already said what they are doing, and making
@@ -7203,13 +7207,43 @@
      and is anybody in it.
 
      Marked as a class rather than left to the sieve, because a page put aside
-     and uncovered again comes back still narrowed (see reveal), and what is
-     over the songs has to know that too. */
+     and uncovered again comes back still narrowed and still scrolled to its
+     wall (see reveal), and the floor under it has to come back too. */
   function siftMark() {
     if (!state.sift) return document.body.classList.remove("sifting");
     var live = String(state.sift.q || "").trim() ||
       document.body.classList.contains("finding");
     document.body.classList.toggle("sifting", !!live);
+  }
+
+  /* --- AND THE PRESS MOVES THE PAGE, IT DOES NOT EMPTY IT ---------------------
+     Everything over the wall used to be taken off the screen for as long as the
+     box was in use, and a page that empties itself under a finger has changed
+     while nobody moved it: the reader presses a box and the drawing, the doors
+     and the shelves are gone, with nothing to say where they went or how to get
+     back to them.
+
+     So nothing is taken away. The page scrolls until the head of it is above
+     the screen and the songs are against the bar, which is exactly where a
+     reader would have taken it by hand, and a thumb brings it back the way it
+     brings back any other scroll.
+
+     AND ONLY WHEN IT IS IN THE WAY. Somebody already down among the songs when
+     they reach for the box has done this themselves, and a page that jumps
+     under a finger that asked for nothing is worse than a page that stayed. */
+  function siftRoom() {
+    var wall = state.sift && state.sift.wall;
+    if (!wall || !wall.isConnected) return;
+    var head = document.querySelector(".top");
+    /* the bar is sticky, so the wall is out of the way once it is under the
+       bar rather than once it is off the top of the screen */
+    var over = wall.getBoundingClientRect().top -
+      (head ? head.getBoundingClientRect().height : 0);
+    if (over <= 1) return;
+    window.scrollTo({
+      top: (window.scrollY || window.pageYOffset || 0) + over,
+      behavior: "smooth",
+    });
   }
 
   /* A new page is a new question, and the answer to the old one hanging over
@@ -7362,9 +7396,9 @@
         findField.value = "";
         state.sift("");
         /* Escape is "done with this", so it steps out of the box as well as
-           emptying it, and everything over the wall comes back with the wall
-           (see siftMark). Without this the page stayed held down by a box
-           nobody was in and nothing was in. */
+           emptying it, and the whole library is under the reader again (see
+           siftMark). Without this the page stayed held down by a box nobody
+           was in and nothing was in. */
         document.body.classList.remove("finding");
         siftMark();
         return findField.blur();
@@ -7691,10 +7725,10 @@
          typing narrows what is drawn: the songs by everything they are made of,
          and the band of shelves over them by name.
          A band with nothing left in it goes, rather than standing empty. The
-         band as a whole is off the screen for as long as there are letters in
-         the box (see body.sifting), and it is still sieved underneath, because
-         what comes back when the box is emptied has to be the page and not the
-         page as it was three letters ago. */
+         band as a whole is above the wall and the press scrolls past it (see
+         siftRoom), and it is still sieved up there, because a reader who
+         thumbs back up to it has to find it saying the same thing the songs
+         under it say. */
       var sifted = "";
 
       function passes(hay) {
@@ -7905,6 +7939,11 @@
           paintBands();
         };
         sift.q = "";
+        /* and where the page has to stand for the box to be answered: the top
+           of the wall of songs, which is what the press scrolls to (see
+           siftRoom). Handed over rather than looked up, because only the page
+           knows which of the things on it is the answer. */
+        sift.wall = list;
         state.sift = sift;
       }
 
