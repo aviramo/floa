@@ -296,8 +296,13 @@ const play = (follow, chord, frames = 6, high, low) => {
      goes to them, and it goes ONE PLACE AT A TIME: what a reader sees is the
      mark running up the song to catch them, which is a thing they can follow,
      rather than a mark that vanishes from one line and appears on another. */
+  /* SIXTY READINGS, WHICH IS TWO SECONDS. Six places away is a big claim, so
+     the first step is not taken until the arithmetic has held it for over half
+     a second, and the five after it go at the ordinary pace of a walk. What is
+     being checked is that it arrives and how it travels, not that it is quick
+     about a thing it should not be quick about. */
   const walked = [];
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < 60; i++) {
     const at = f.step(reading(f, "E")).here;
     if (at !== walked[walked.length - 1]) walked.push(at);
   }

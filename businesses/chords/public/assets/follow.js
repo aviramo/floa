@@ -344,6 +344,9 @@
     var waited = 0;
     /* how many readings running have agreed that we are past `here` */
     var pushed = 0;
+    /* whether the mark is already on its way to `want`, which is what makes
+       the second step of a walk cost less than the first */
+    var walking = false;
     /* WHETHER THERE IS ANYTHING TO BE LOYAL TO YET. Everything below is built
        to be slow to leave a position it believes in, and at the very first
        reading it believes in nothing: the song has just been opened and where
@@ -357,7 +360,7 @@
        second verse. */
     function reset() {
       for (var j = 0; j < n; j++) prev[j] = 0;
-      here = 0; want = -1; waited = 0; pushed = 0; locked = false;
+      here = 0; want = -1; waited = 0; pushed = 0; walking = false; locked = false;
     }
 
     /* Somebody said where they are, by touching a chord on the page. Which is
@@ -366,7 +369,7 @@
     function put(at) {
       if (!(at >= 0 && at < n)) return here;
       for (var j = 0; j < n; j++) prev[j] = j === at ? 0 : -40;
-      here = at; want = -1; waited = 0; pushed = 0; locked = true;
+      here = at; want = -1; waited = 0; pushed = 0; walking = false; locked = true;
       return here;
     }
 
@@ -444,7 +447,7 @@
         if (at === want) { if (++waited >= 3) { locked = true; want = -1; waited = 0; } }
         else { want = at; waited = 1; }
         moved = true;
-      } else if (at === here) { want = -1; waited = 0; pushed = 0; }
+      } else if (at === here) { want = -1; waited = 0; pushed = 0; walking = false; }
       /* --- FORWARD IS ONE AT A TIME, ALWAYS -----------------------------------
          Not "one at a time unless it is further, in which case leap". The mark
          goes to the next chord and to no other, and where the arithmetic has
@@ -480,10 +483,22 @@
       else if (at > here) {
         pushed = 0;
         var far = at - here;
-        var need = far <= 1 ? STEP : Math.min(PATIENCE, STEP * far);
+        /* THE LONG WAIT IS TO DECIDE, AND IT IS PAID ONCE. How far away the
+           arithmetic is says how long it has to keep saying it before the mark
+           sets off; once the mark IS walking towards that same place, each
+           further step costs the ordinary one, because the question "is this
+           real" has already been answered and what is left is the walking. */
+        var need = walking && at === want ? STEP
+          : far <= 1 ? STEP : Math.min(PATIENCE, STEP * far);
         if (at === want) waited++;
-        else { want = at; waited = 1; }
-        if (waited >= need) { here++; moved = true; }
+        else { want = at; waited = 1; walking = false; }
+        /* AND EACH PLACE IS EARNED ON ITS OWN. Without putting the count
+           back, only the FIRST step is paid for: the wait is set by how far
+           away the arithmetic is, so the moment one step is taken the distance
+           is shorter, the price is lower, and the count already banked covers
+           the rest. Three places went by in two readings that way, which on
+           the page is the jump this was written to stop. */
+        if (waited >= need) { here++; moved = true; waited = 0; walking = true; }
       }
       /* --- AND THE MARK NEVER GOES BACKWARDS ---------------------------------
          The arithmetic still can, and it should: a player who goes round the
@@ -509,7 +524,7 @@
          wants the page with them says so, and that is worth more than any
          amount of listening. */
       else {
-        pushed = 0; want = -1; waited = 0;
+        pushed = 0; want = -1; waited = 0; walking = false;
       }
 
       return { at: at, here: here, alike: alike, moved: moved };
