@@ -3087,9 +3087,10 @@
   var paper = null;
 
   /* THE PIECE OF PAPER ITSELF, in millimetres, inside the margin the printer
-     is given. A5 upright (see @page in the stylesheet), and two places holding
-     one number is how they come to disagree: neither may be changed alone. */
-  var PAPER = { w: 128, h: 190 };
+     is given. A4 upright (see @page in the stylesheet), which is 210 by 297
+     less ten millimetres at each of the four edges, and two places holding one
+     number is how they come to disagree: neither may be changed alone. */
+  var PAPER = { w: 190, h: 277 };
   var MM = 96 / 25.4;
 
   /* AND HOW BIG THE WORDS ARE ON IT, WHICH IS NOT THE SIZE ON THE SCREEN. The
@@ -3269,7 +3270,7 @@
     /* AND NO PIECE OF PAPER IS A PHONE. The rule above reads a media query,
        which answers about the SCREEN this is running on, and a song printed
        from a phone is not printed onto a phone: left alone it would take the
-       margins off a sheet of A5 because the machine that sent it happened to
+       margins off a sheet of A4 because the machine that sent it happened to
        be small. */
     var glass = !paper && NARROW.matches;
     var apart = CARD_GAP;
@@ -3294,7 +3295,7 @@
        sticky and it covers the same strip of every page and not only the first,
        so its height comes off all of them. There was a second row under it on a
        phone and it counted here too; it is gone (see placeControls). */
-    /* AND ON PAPER IT IS THE PAPER. There is no bar on a sheet of A5 and no
+    /* AND ON PAPER IT IS THE PAPER. There is no bar on a sheet of A4 and no
        window either; what the first sheet has less of is the name standing
        over it, and that is one page's business rather than every page's (see
        `over` in pageUp, and toPaper). */
@@ -3627,7 +3628,7 @@
   }
 
   /* --- THE SONG AS IT WILL BE ON PAPER ---------------------------------------
-     A second copy of the song, laid out by everything above for a sheet of A5
+     A second copy of the song, laid out by everything above for a sheet of A4
      upright instead of for the window, standing off the screen until a printer
      asks for it (see .paper in the stylesheet).
 
@@ -5426,7 +5427,7 @@
        browser, and where it is not the copy was never built: what went to the
        printer was the page off the screen, with the chords over the words on a
        sheet that was asked for without them and the columns of a window on a
-       piece of A5. A press is a certainty and an event is not.
+       piece of A4. A press is a certainty and an event is not.
 
        It is built again at beforeprint, which costs one pouring of one song and
        buys the print nobody pressed this button for.
@@ -16312,13 +16313,15 @@
      calls. */
   if (NARROW.addEventListener) {
     NARROW.addEventListener("change", function () {
-      /* UNLESS IT IS A PRINT, AND THIS IS THE ONE THAT ACTUALLY DID IT. A sheet
-         of A5 is narrower than the line this asks about, so a preview opening
-         over a song on a desk crosses it, and what is on the other side of the
-         crossing is the song drawn again from nothing. That took the copy laid
-         out for the printer with it, and the printer was handed the reader's
-         own page instead: their size, their columns, and the chords still on
-         the sheet that was asked for without them (see printing). */
+      /* UNLESS IT IS A PRINT, AND THIS IS THE ONE THAT ACTUALLY DID IT. A
+         preview lays the page out at the width of the paper rather than at the
+         width of the window, and a sheet is on whichever side of the line the
+         window is not: from a phone it crosses going up and from a narrow
+         window on a desk it crossed going down. What is on the other side of
+         the crossing is the song drawn again from nothing. That took the copy
+         laid out for the printer with it, and the printer was handed the
+         reader's own page instead: their size, their columns, and the chords
+         still on the sheet that was asked for without them (see printing). */
       if (printing()) return;
       /* And every sheet under this one was drawn for the width that is no
          longer the width. */
