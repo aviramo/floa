@@ -7454,9 +7454,36 @@
          window that is already open, so it is written once as a function and
          the media query calls it again. The bar's slots are wiped by `where`
          on every page, so nothing here can be left standing over a song. */
-      /* THE WAYS OUT OF HERE STAND AT THE HEAD OF THE PAGE, and they are the
-         only thing up here: a door belongs to the app, and everything under
-         them belongs to the wall of songs.
+      /* --- THE DRAWING IS THE FIRST THING ON THE PAGE, AND IT TOUCHES THE BAR --
+         Everything under it is a row, a chip or a card, and this is the only
+         page here that is about what all of them ARE: songs somebody plays and
+         sings. It stands against the bar with nothing between them (see .strip
+         in the stylesheet, which takes back the air #app puts over every page),
+         because a picture with a band of desk above it is a picture ON the
+         page, and this one is the top of it.
+
+         Not on a shelf, and for the reason the shelves themselves are not on
+         one: /style/<name> is the library already narrowed to one word, walked
+         into from the wall below, and a picture at the head of it is a second
+         opening to a page that has been opened.
+
+         It carries no words and says nothing a reader needs, so it is empty to
+         anything reading the page rather than looking at it. */
+      if (!shelf) {
+        var art = el("div", "strip");
+        var drawing = el("img");
+        drawing.src = BASE + "/assets/strip.svg";
+        drawing.alt = "";
+        drawing.width = 1600;
+        drawing.height = 320;
+        drawing.setAttribute("aria-hidden", "true");
+        art.appendChild(drawing);
+        app.appendChild(art);
+      }
+
+      /* THE WAYS OUT OF HERE STAND UNDER IT, and they are everything up here
+         that is not the picture: a door belongs to the app, and everything
+         below them belongs to the wall of songs.
 
          Not on a shelf: /style/<name> is the library held down to one word,
          reached from the wall below and left by the arrow in the corner, and
@@ -7543,31 +7570,6 @@
          is made of: the first thing on the page of songs was a handful of
          appointments that only the signed-in reader had. They live on
          /evenings, a click away in the bar. */
-      /* --- AND OVER THE SHELVES, THE ONE DRAWING IN THE APP --------------------
-         Everything under it is a row, a chip or a card, and this page is the
-         only one that is about what all of them ARE: songs somebody plays and
-         sings. It is a band of line art in the app's own two colours, cropped
-         to whatever shape the width gives it (see .strip in the stylesheet).
-
-         Not on a shelf, and for the reason the shelves themselves are not on
-         one: /style/<name> is the library already narrowed to one word, walked
-         into from the wall below, and a picture at the head of it is a second
-         opening to a page that has been opened.
-
-         It carries no words and says nothing a reader needs, so it is empty to
-         anything reading the page rather than looking at it. */
-      if (!shelf) {
-        var art = el("div", "strip");
-        var drawing = el("img");
-        drawing.src = BASE + "/assets/strip.svg";
-        drawing.alt = "";
-        drawing.width = 1600;
-        drawing.height = 320;
-        drawing.setAttribute("aria-hidden", "true");
-        art.appendChild(drawing);
-        app.appendChild(art);
-      }
-
       var bands = el("div", "shelves");
       app.appendChild(bands);
 
@@ -17429,15 +17431,26 @@
     if (!tapeBar) return;
     tapeBar.innerHTML = "";
 
-    /* --- LEFT UNANSWERED LAST TIME --------------------------------------------
-       A take that outlived its page, put back on the song it belongs to. There
-       is no carrying on: the recorder was in a tab that is gone, and two
-       recordings joined end to end are two files rather than one. So what is
-       offered is the one thing that was missing, which is an answer. */
-    if (!taping() && heldHere()) {
-      var back = iconBtn(ICON.stop, "לסיים את ההקלטה שנשארה פתוחה", askHeld);
-      back.classList.add("is-rec");
-      tapeBar.appendChild(back);
+    /* --- A TAKE ON THE DEVICE, WAITING TO BE ANSWERED -------------------------
+       One shape for the two ways of getting here, because they are one thing to
+       whoever is looking: a recording that is on this phone and nowhere else.
+       Either it was stopped a moment ago, or it outlived the page it was made
+       on and was found again when the song was opened. Neither can be carried
+       on: a recorder is a thing in a tab, and two recordings joined end to end
+       are two files rather than one.
+
+       AND NOTHING COMES UP BY ITSELF. What stands here is the button that was
+       already standing here, with a microphone in the corner of it, the way
+       every app marks a thing that has something new waiting inside it. The
+       question is behind the press and only behind the press: a panel that
+       opens itself the moment somebody stops playing is a panel in the way of
+       the next thing they were about to do. */
+    var back = !taping() && heldHere();
+    if (back || tapeDone()) {
+      var ask = iconBtn(ICON.note, "יש הקלטה שלא נשמרה", back ? askHeld : offerTape);
+      ask.classList.add("is-rec");
+      ask.appendChild(newMark());
+      tapeBar.appendChild(ask);
       return;
     }
 
@@ -17451,14 +17464,14 @@
        of the way in and the only thing in this strip that starts anything.
        Everything else here is a setting, drawn quiet on purpose: a setting is
        read far more often than it is pressed. */
-    /* A TRIANGLE AND NOT A DOT. The red circle is the mark a tape machine puts
-       on the button that records, and it was the wrong picture here: what this
-       press starts is the microphone, the following and the take together, and
-       the whole of that is somebody beginning to play. A play and a stop are
-       one pair anybody can read across a room; a dot and a pause were two
-       halves of two different pairs. */
+    /* A NOTE AND NOT A TRIANGLE. It was the play triangle, and a triangle in a
+       filled pink circle is the mark every machine in the world puts on the
+       button that plays something back: pressed, it sounded like the song was
+       about to be played TO you. What this press starts is somebody playing,
+       so what stands on it is the one picture that means music here and means
+       nothing else (see ICON.note, and the key beside it). */
     if (!taping()) {
-      var go = iconBtn(ICON.play, "הקלטה", beginTake);
+      var go = iconBtn(ICON.note, "הקלטה", beginTake);
       go.classList.add("is-rec");
       tapeBar.appendChild(go);
       return;
@@ -17482,16 +17495,23 @@
        it breathes. A red mark that does not move reads as a decoration; one
        that pulses reads as live, which is the difference between "there is a
        recording here" and "it is going". */
-    /* AND IT ONLY BREATHES WHILE IT IS ACTUALLY RUNNING. Listening to a take
-       before answering closes the microphone, and the recorder goes with it
-       (see hushMic), so from that moment a red mark pulsing over a dead
-       microphone would be saying something untrue. What is left is a take
-       waiting to be answered, and this is still the button that asks. */
-    var live = tape.rec.state !== "inactive";
-    var hold = iconBtn(ICON.stop, live ? "עצירה" : "לסיים את ההקלטה", stopTape);
-    hold.classList.add("is-rec");
-    if (live) hold.classList.add("is-taping");
+    /* AND EVERYTHING THAT IS NOT RUNNING IS ANSWERED ABOVE (see tapeDone), so
+       what is left here is a recorder that is actually recording, and the red
+       mark that breathes is telling the truth about it. */
+    var hold = iconBtn(ICON.stop, "עצירה", stopTape);
+    hold.classList.add("is-rec", "is-taping");
     tapeBar.appendChild(hold);
+  }
+
+  /* THE MICROPHONE, SMALL, IN THE CORNER OF THE BUTTON. The dot every app puts
+     on a thing with something new inside it, drawn as the one thing that is
+     waiting here: a recording, on the device and nowhere else. It does not take
+     the press. What is under it is the whole button, so the mark and the note
+     it sits on are one thing to reach for and one thing to hit. */
+  function newMark() {
+    var mark = el("span", "tape-new");
+    mark.appendChild(svg(ICON.mic));
+    return mark;
   }
 
   /* --- AND WHILE IT IS RUNNING, THE HEADER IS NOT THERE ----------------------
@@ -17512,7 +17532,7 @@
      moment, which is where it stays. Both are read while the header is still
      in place, which is why this runs before the class goes on. */
   function airRoom() {
-    var on = taping() && !tapeHeld();
+    var on = taping() && !tapeDone();
     if (!tapeBar) return document.body.classList.toggle("on-air", false);
 
     if (on && !tapeBar.classList.contains("is-air")) {
@@ -17788,6 +17808,18 @@
     return !!tape && tape.rec.state === "paused";
   }
 
+  /* --- AND A TAKE THAT IS NOT BEING PLAYED INTO ANY MORE ---------------------
+     Which is not the same question as "is it paused". Stopping holds the
+     recorder, so it is usually paused; but listening to the take closes the
+     microphone and the recorder goes with it (see hushMic), and from that
+     moment it is inactive instead. Both are one thing on the screen: a
+     recording that was made, waiting for an answer. Asking only about the
+     pause left the second case drawn as a take still running, with the header
+     off the top of the page and a red mark breathing over a dead microphone. */
+  function tapeDone() {
+    return !!tape && tape.rec.state !== "recording";
+  }
+
   /* ONE PRESS FOR ALL OF IT. The microphone, the following and the recording
      are one thing somebody wants, so they are one thing to press for: if the
      ear is not open yet it is opened and the take starts the moment it is. */
@@ -17889,33 +17921,52 @@
     paintHeader();
   }
 
-  /* --- FINISHING IS ASKING, NOT ENDING ---------------------------------------
-     Stopping does not stop the recorder. It holds it, takes a copy of what has
-     been played so far, and offers that. If the offer is dismissed without an
-     answer the take is still there, still held, with the same two buttons over
-     the song and the same recording behind them, and pressing stop again asks
-     the same question.
+  /* --- FINISHING IS NEITHER ASKING NOR ENDING --------------------------------
+     Stopping does not stop the recorder and it does not put a question up. It
+     holds the recorder, asks it for the last piece it is sitting on, and leaves
+     the take exactly where it is: on the device, unanswered, with a microphone
+     in the corner of the button over the song saying so.
 
-     WHICH IS THE DIFFERENCE BETWEEN A QUESTION AND A TRAPDOOR. A panel that
-     ends the take the moment it appears is a panel nobody can back out of: a
-     stray press, or a hand on the glass, and a performance is over. What ends
-     a take is answering it, and there are exactly two answers. */
+     WHY THE QUESTION IS NOT ASKED HERE. It used to come up on the press, and
+     the press is the worst moment for it: somebody has just finished playing,
+     their hands are on the guitar, and a panel over the song asking what to do
+     with the recording is answered in whatever way makes it go away. The take
+     is theirs and it can wait. What waits with it is the mark, which is on the
+     screen until it is pressed (see paintTape), and pressing it is the whole of
+     what asks (see offerTape).
+
+     WHICH IS ALSO WHY STOPPING IS SAFE. Nothing here decides anything: a stray
+     press ends the playing and nothing else, and what was played is on the
+     device either way. */
   function stopTape() {
     /* NOT "unless the recorder has stopped". It may have stopped without the
        take being answered: listening to it closes the microphone, and the
        recorder goes with the microphone (see hushMic). What is left is still a
-       take waiting for an answer, and this is the button that asks. */
+       take waiting for an answer. */
     if (!tape) return;
     if (tape.rec.state === "recording") holdTape();
-    gatherTape().then(function () {
-      if (!tape || !tape.bits.length) return;
-      askTake({
-        blob: new Blob(tape.bits, { type: tape.mime }),
-        mime: tape.mime,
-        marks: tape.marks.slice(),
-        trace: tape.trace.slice(),
-        seconds: Math.max(0, Math.round(tapeAt() / 100) / 10),
-      });
+    /* The last couple of seconds, asked for while the recorder is still alive,
+       so that what stands behind the mark from this moment is the whole of what
+       was played. Repainted when it lands as well as now, because until it does
+       there may be nothing to offer yet. */
+    gatherTape().then(paintTape);
+    paintTape();
+  }
+
+  /* --- AND THE QUESTION, ASKED BY A PRESS AND NEVER BY ITSELF ----------------
+     Everything that was gathered by the time the playing stopped, offered. If
+     the panel is dismissed without an answer the take is still there, still on
+     the device, with the same mark over the song, and pressing it asks the same
+     question again. What ends a take is answering it, and there are exactly two
+     answers. */
+  function offerTape() {
+    if (!tape || !tape.bits.length) return;
+    askTake({
+      blob: new Blob(tape.bits, { type: tape.mime }),
+      mime: tape.mime,
+      marks: tape.marks.slice(),
+      trace: tape.trace.slice(),
+      seconds: Math.max(0, Math.round(tapeAt() / 100) / 10),
     });
   }
 
@@ -17992,18 +18043,41 @@
     });
   }
 
-  /* The end of it, and the only thing that reaches here is an answer. */
+  /* The end of it, and the only thing that reaches here is an answer.
+
+     WHAT IT HANDS BACK IS THE FORGETTING, because the next recording begins the
+     moment this one is answered (see afresh) and it writes into the same two
+     stores. A clear still running when the first piece of the new take lands
+     takes that piece with it, and a take missing its first piece is a file with
+     no header: a recording that cannot be played at all. So the next one waits
+     for this to finish. */
   function endTape() {
     /* The device copy goes with it either way: an answered take is either a
        row in the library or a decision to forget it, and both of those are the
        end of the thing that was waiting. */
     heldTake = null;
-    heldDrop();
-    if (!tape) return paintTape();
+    var gone = heldDrop();
+    if (!tape) { paintTape(); return gone; }
     var rec = tape.rec;
     tape = null;
     try { rec.stop(); } catch (e) { /* already inactive */ }
     paintTape();
+    return gone;
+  }
+
+  /* --- AND THE NEXT TAKE BEGINS -----------------------------------------------
+     An answer is the end of one recording and the start of the next, because
+     what somebody is doing here is playing the song: they played it, they said
+     what to do with what came out, and what they want after that is to play it
+     again. Only from the two buttons, never from a panel dismissed: walking
+     away from the question is not a decision to record anything.
+
+     THE MICROPHONE MAY BE GONE BY NOW. Listening to the take closes it (see
+     hushMic) and the panel it left standing is a panel over nothing, so it is
+     taken down first and the take asks for a microphone of its own. */
+  function afresh() {
+    if (earOpen() && !window.CHORDS_EAR.live()) shutEar();
+    beginTake();
   }
 
   /* --- THE SOUND ITSELF, WHICH IS NOT A ROW ---------------------------------
@@ -18187,28 +18261,26 @@
     audio.addEventListener("pause", function () { if (audio.ended) done(); });
   }
 
-  /* ONE OF THEM AT A TIME. A press on stop holds the recorder and puts this
-     up; a second press while it is standing there would hold an already held
-     recorder and put a second panel over the first, and what is underneath is
-     then a question nobody can answer: two panels about one take, and closing
-     the top one reveals another exactly like it. There is only ever one take
-     being asked about, so there is only ever one of these. */
+  /* ONE OF THEM AT A TIME. Two panels about one take is a question nobody can
+     answer: closing the top one reveals another exactly like it. There is only
+     ever one take being asked about, so there is only ever one of these. */
   var asking = false;
 
-  /* --- listening to what was just played ------------------------------------
+  /* --- listening to what was played -----------------------------------------
      Offered rather than saved. A take is a person singing, most of them are
      not worth keeping, and a library that fills with every attempt is a
      library nobody opens. So it is heard first and kept second, and the
      button that keeps it is the only one that writes anything down.
 
-     AND NOTHING IS WRITTEN AT THE TOP OF IT. There was a heading, a
-     microphone beside it, a sentence explaining that a recording can be
-     listened to, and a line saying how long it ran and how many chords it
-     passed. Every one of them was answering a question nobody had: what came
-     up is a player and two buttons, one press after somebody stopped
-     recording, and whoever pressed stop knows what this is about. The panel
-     says it in the one way that cannot be misread, which is by holding the
-     take itself. */
+     ONE LINE AT THE TOP OF IT AND NOTHING MORE. There was nothing at all here,
+     and that was right while this came up on the press of stop: a player and
+     two buttons, one press after somebody stopped recording, needs no heading.
+     It does not come up on the press any more (see stopTape). It comes up when
+     the microphone in the corner of the button is pressed, which may be a
+     minute later or a day later, on a phone that was closed and opened in
+     between, so the first thing it has to say is what this recording is and
+     where it is: on the device, not saved. The rest is still the take itself,
+     which says more about what it is than a heading ever did. */
   /* NOT hearTake, WHICH IS SOMETHING ELSE A FEW HUNDRED LINES DOWN: playing a
      recording that has already been saved. Two declarations of one name in one
      scope are one thing, and the second one wins for the whole file, so while
@@ -18221,6 +18293,9 @@
     asking = true;
     var dlg = el("dialog", "dlg");
     var box = el("div", "dlg-in");
+
+    box.appendChild(el("p", "take-says",
+      "ההקלטה שמורה במכשיר בלבד ועדיין לא נשמרה לשיר. אפשר לשמוע אותה, ואז לשמור אותה או להתחיל הקלטה חדשה בלעדיה."));
 
     var audio = el("audio", "take-play");
     audio.controls = true;
@@ -18239,11 +18314,11 @@
        recording either side of it: bad in this panel, right once it had been
        saved and played from the list, where nothing is listening.
 
-       ON THE FIRST PRESS OF PLAY, and not when this panel opens, which is what
-       keeps the other half of it working. Up to that press the recording is
-       merely held: dismissing this panel lifts the pause and the playing
-       carries on (see the close handler below). Pressing play is the one
-       gesture that says the playing is over and it is time to listen. */
+       ON THE FIRST PRESS OF PLAY, and not when this panel opens. Up to that
+       press the microphone is still there and the panel is only a question,
+       which can be walked away from and asked again; pressing play is the one
+       gesture that says the playing is over and it is time to listen, and from
+       there the next take opens a microphone of its own (see afresh). */
     audio.addEventListener("play", hushMic);
     box.appendChild(audio);
 
@@ -18257,11 +18332,18 @@
        away is still allowed, and it is what the dark behind the panel is for
        (see below), but it is not a button, because a button says a decision has
        been made and no decision has. */
+    /* AND THE ONE THAT THROWS IT AWAY SAYS WHAT COMES NEXT, not what it
+       destroys. It said "מחיקה", which is true about the file and is not what
+       anybody presses it for: what they are doing is playing the song again,
+       and this is the way to start over without keeping what was just played.
+       Drawn in a light red, because it is still the answer that loses a
+       recording, and that is worth a colour and not a warning. */
     var done = false;
+    var over = null;
     var actions = el("div", "dlg-actions");
-    var toss = button("מחיקה", null, "ghost far", function () {
+    var toss = button("הפעלה ללא שמירה", null, "ghost far toss", function () {
       done = true;
-      endTape();
+      over = endTape();
       dlg.close();
     });
     var save = button("שמירה לשיר", null, null, function () {
@@ -18269,7 +18351,7 @@
       relabel(save, "שומר…");
       keepTakeIn(made).then(function () {
         done = true;
-        endTape();
+        over = endTape();
         dlg.close();
         toast("ההקלטה נשמרה");
         if (state.redrawTakes) state.redrawTakes();
@@ -18288,8 +18370,8 @@
     /* THE DARK BEHIND IT IS THE WAY OUT WITHOUT ANSWERING, which is what the
        dark behind every panel here is for and not something to be taught (see
        openSheet). What is on the other side of it is the recording exactly as
-       it was left: held, with carry on and finish over the song, and finish
-       asks this again. */
+       it was left: on the device, with the microphone in the corner of the
+       button over the song, and a press on it asks this again. */
 
     dlg.appendChild(box);
     document.body.appendChild(dlg);
@@ -18298,27 +18380,23 @@
       URL.revokeObjectURL(url);
       showAt(-1);
       dlg.remove();
-      /* AND THE NEXT PRESS ON STOP MAY ASK AGAIN. Whatever this was closed by,
-         an answer or a hand on the dark behind it, there is no panel standing
-         over the take any more (see asking). */
+      /* AND THE NEXT PRESS ON THE MARK MAY ASK AGAIN. Whatever this was closed
+         by, an answer or a hand on the dark behind it, there is no panel
+         standing over the take any more (see asking). */
       asking = false;
-      /* ANSWERED, AND THE MICROPHONE GOES BACK TO BEING A DOOR. Keeping the
-         take and throwing it away are both the end of it, and on the other
-         side of that is a page nobody is playing to: the light goes out, the
-         mark comes off, and the button looks exactly as it did before any of
-         this was pressed.
+      /* ANSWERED, AND THE NEXT RECORDING BEGINS. Keeping the take and starting
+         over without it are both the end of it, and what somebody does after
+         either of them is play the song again: that is what they were doing
+         when they pressed stop. So the microphone opens and a take runs, which
+         is one press saved every time round (see afresh). Only after the device
+         copy of the old one has gone, or the first piece of the new take goes
+         with it.
 
-         DISMISSED, AND THE RECORDING CARRIES ON. Closing the question without
-         answering it is not "leave it paused", it is "not yet": whoever put it
-         up did so to decide, and deciding not to decide means they are still
-         playing. So the pause that opened it is lifted and the take is running
-         again, exactly where it was.
-
-         Only while the microphone is still there, which while a take is
-         running it always is: nothing closes it but answering this (see
-         shutEar). */
-      if (done) shutEar();
-      else if (earOpen() && tapeHeld()) holdTape();
+         DISMISSED, AND NOTHING HAPPENS. Closing the question without answering
+         it is "not yet", and not yet is the state the take is already in: it
+         stays on the device, unanswered, with the mark over the song. Nothing
+         starts recording off the back of a hand on the glass. */
+      if (done) (over || Promise.resolve()).then(afresh, afresh);
       else paintTape();
     });
     openSheet(dlg);

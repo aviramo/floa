@@ -307,7 +307,20 @@
      at the bottom of a chord is most of what says whether it is C or Am: they
      are the same three notes and a different one underneath. */
   var BASS_LOW = 40;
-  var BASS_HIGH = 55;
+  /* --- AND IT STOPS BELOW THE OPEN G STRING ---------------------------------
+     55 IS THE OPEN G, and it was the commonest wrong answer there was: over a
+     take's worth of readings, an Am came back as G eleven times and a C came
+     back as A, which are the two strings a hand is not holding down. They ring
+     through everything, they are the highest things in this range, and being
+     lowest is the whole test, so they only ever win when the note actually
+     being fretted is missed.
+
+     Nothing real is lost. The lowest note of a chord as a guitar plays one
+     lives between the bottom string and the third: an open E, an A at the
+     fifth string, a G at the third fret of the sixth, a D under a capo. F3 is
+     above all of them and below both open strings that were doing the
+     damage. */
+  var BASS_HIGH = 53;
 
   var freqs = null;
   var binHz = 0;
@@ -445,7 +458,18 @@
      than everything around it. At the old threshold it is worth what it always
      was, so the case that used to work is untouched, and only a bass somebody
      could point at gets more. */
-  var BASS_HELP = 0.12;
+  /* MEASURED, at last, rather than guessed. Read back off two takes, the note
+     heard underneath agreed with the chord being followed 86% of the time, and
+     the moment that sent the mark two chords early was one where it agreed and
+     lost anyway: the bass said C for the Am being played, the chroma preferred
+     the Em by seven hundredths, and a quarter of that was all the bass had to
+     offer. A number that is right six times in seven is worth more than that.
+
+     Under a capo this song's printed C and Em sound as D# and Gm, which share
+     two notes of three, and so do its Am and C. The twelve numbers cannot
+     separate any of those pairs and the note underneath separates all of them,
+     so this is the only lever there is. */
+  var BASS_HELP = 0.25;
   /* --- AND WHAT MAKES A NOTE DOWN THERE A NOTE ------------------------------
      NOT "MOST OF THE LOUDEST", WHICH WAS THE MISTAKE. The bass string is
      usually not the loudest thing in its own range: on an open C the fretted

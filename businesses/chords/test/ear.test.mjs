@@ -183,5 +183,30 @@ eq("and it scores well rather than merely better", gScore > 0.9, true);
     ear.score(C, "") === ear.score(C, "", C), true);
 }
 
+/* --- AND A BASS THAT IS RIGHT HAS TO BE ABLE TO WIN ------------------------
+   The case that sent the mark two chords early, written out from the trace it
+   was read off. A capo on three makes this song's printed Am sound as Cm and
+   its printed Em as Gm; the chroma preferred the Em by seven hundredths, the
+   bass said C, which is the Am's, and the Am lost anyway.
+
+   Cm is C D# G and Gm is G A# D. A guitar playing either of them into a room
+   leaves both ringing, so the twelve numbers hold all five notes and cannot
+   separate the two, ever. THE NOTE UNDERNEATH SEPARATES THEM, and it has to be
+   worth more than the wobble it is being asked to overrule. */
+{
+  const both = { C: 0.85, "D#": 1, G: 0.95, "A#": 0.9, D: 0.8 };
+  const Cn = N.indexOf("C"), G = N.indexOf("G");
+  const gap = () => ear.score(Cn, "m", Cn) - ear.score(G, "m", G);
+
+  ear.weigh(chroma(both), -1);
+  eq("with nothing underneath the pair is a coin toss", Math.abs(gap()) < 0.06, true);
+
+  ear.weigh(chroma(both), Cn);
+  eq("a C heard underneath puts the C minor plainly in front", gap() > 0.1, true);
+
+  ear.weigh(chroma(both), G);
+  eq("and a G underneath puts the G minor plainly in front", gap() < -0.1, true);
+}
+
 console.log(failed ? `\n${failed} failed` : "\nall passed");
 process.exit(failed ? 1 : 0);

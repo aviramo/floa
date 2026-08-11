@@ -47,7 +47,7 @@
        a mask on the group that carries the same transform. -->
   <mask id="soundhole">
     <rect x="-400" y="-400" width="1200" height="800" fill="#ffffff"/>
-    <circle cx="-62" cy="-38" r="14" fill="#000000"/>
+    <circle cx="-36" cy="-38" r="14" fill="#000000"/>
   </mask>
   <!-- One note, and one pair of notes beamed together, drawn once here and
        put down wherever they are wanted. They carry no colour of their own:
@@ -106,78 +106,109 @@
      is turning around, and the lean is the last thing done to her. -->
 <g transform="translate(636 240) rotate(-10)">
   <g fill="#17202a">
-    <!-- the hair goes first: it is behind her -->
-    <path d="M-12 -186C-32 -198 -50 -196 -60 -184C-46 -186 -36 -182 -28 -176C-44 -170 -52 -160 -54 -150C-42 -160 -28 -166 -16 -166Z"/>
+    <!-- the hair goes first: it is behind her, and it is behind her because
+         the head is going the other way -->
+    <path d="M-18 -180C-42 -180 -58 -168 -62 -148C-52 -162 -40 -168 -24 -168Z"/>
     <circle cx="0" cy="-168" r="23"/>
     <rect x="-9" y="-152" width="18" height="16"/>
-    <path d="M0 -146C-26 -144 -42 -130 -46 -110L-34 -50L-30 0L30 0L34 -50L46 -110C42 -130 26 -144 0 -146Z"/>
-    <circle cx="32" cy="-172" r="11"/>
-    <circle cx="-42" cy="-190" r="10"/>
+    <path d="M0 -146C-24 -144 -37 -130 -40 -110L-30 -50L-27 0L27 0L30 -50L40 -110C37 -130 24 -144 0 -146Z"/>
+    <!-- the fist at the end of the arm that is up, and the hand round the mic -->
+    <circle cx="-76" cy="-70" r="10"/>
+    <circle cx="60" cy="-150" r="10"/>
   </g>
-  <g fill="none" stroke="#17202a" stroke-linecap="round">
-    <path d="M-14 -4L-56 72" stroke-width="26"/>
-    <path d="M14 -4L44 76" stroke-width="26"/>
-    <!-- the arm with the microphone in it, and the arm that has nothing in it -->
-    <path d="M40 -108C66 -124 62 -146 48 -158" stroke-width="17"/>
-    <path d="M-34 -108C-58 -132 -52 -160 -42 -186" stroke-width="16"/>
-    <path d="M40 -164L50 -154" stroke-width="9"/>
+  <g fill="none" stroke="#17202a" stroke-linecap="round" stroke-linejoin="round">
+    <!-- KNEES. A leg drawn as one straight line from the hip is a stilt, and
+         two people on four stilts are standing still whatever else is going
+         on above them. -->
+    <path d="M-14 -4L-44 34L-58 72" stroke-width="25"/>
+    <path d="M14 -4L34 38L44 76" stroke-width="25"/>
+    <!-- THE TWO ARMS ARE OUT WHERE THEY CAN BE SEEN. An arm drawn down the side
+         of a silhouette is not an arm, it is a wider silhouette: one is thrown
+         out and back, the other bends out at the elbow and comes back in to
+         the mouth. They are doing two different things, which is the other
+         half of it: two arms doing the same thing is a pose. -->
+    <path d="M-34 -110C-58 -104 -70 -92 -74 -72" stroke-width="16"/>
+    <path d="M38 -108C74 -118 80 -138 62 -148" stroke-width="17"/>
   </g>
-  <!-- what is coming out of it -->
+  <!-- the microphone, out clear of the head so that the hand at her mouth does
+       not read as a hand on her head -->
+  <g fill="#17202a">
+    <circle cx="46" cy="-172" r="10.5"/>
+    <path d="M50 -164L62 -154" stroke="#17202a" stroke-width="9" stroke-linecap="round"/>
+  </g>
+  <!-- and what is coming out of it -->
+  <!-- Out sideways from the microphone and a little down, and not up over her
+       head: the top of the drawing is a hand's width above her hair, and a
+       voice drawn upwards is a voice cut off by the frame. -->
   <g fill="none" stroke="#e11d63" stroke-linecap="round">
-    <path d="M37.2 -191.3A20 20 0 0 1 51.3 -177.2" stroke-width="3.2" stroke-opacity=".6"/>
-    <path d="M39.8 -201A30 30 0 0 1 61 -179.8" stroke-width="2.8" stroke-opacity=".45"/>
-    <path d="M42.4 -210.6A40 40 0 0 1 70.6 -182.4" stroke-width="2.4" stroke-opacity=".3"/>
+    <path d="M64.8 -178.8A20 20 0 0 1 61.3 -159.1" stroke-width="3.2" stroke-opacity=".6"/>
+    <path d="M74.2 -182.3A30 30 0 0 1 69 -152.7" stroke-width="2.8" stroke-opacity=".45"/>
+    <path d="M83.6 -185.7A40 40 0 0 1 76.6 -146.3" stroke-width="2.4" stroke-opacity=".3"/>
   </g>
 </g>
 
 <!-- HE IS PLAYING IT. Same hips, same lean, the other way: into the guitar.
      The guitar is drawn over him and his arms over the guitar, which is the
      order the three of them are actually in. -->
-<g transform="translate(944 240) rotate(7)">
+<g transform="translate(956 240) rotate(7)">
   <g fill="#17202a">
-    <path d="M14 -184C34 -194 48 -186 52 -172C40 -178 30 -176 22 -172C34 -164 38 -154 38 -146C28 -156 16 -162 6 -164Z"/>
+    <path d="M18 -180C42 -180 58 -168 62 -148C52 -162 40 -168 24 -168Z"/>
     <circle cx="0" cy="-168" r="23"/>
     <rect x="-9" y="-152" width="18" height="16"/>
-    <path d="M0 -146C-26 -144 -42 -130 -46 -110L-34 -50L-30 0L30 0L34 -50L46 -110C42 -130 26 -144 0 -146Z"/>
+    <path d="M0 -146C-24 -144 -37 -130 -40 -110L-30 -50L-27 0L27 0L30 -50L40 -110C37 -130 24 -144 0 -146Z"/>
   </g>
-  <g fill="none" stroke="#17202a" stroke-linecap="round">
-    <path d="M-16 -4L-58 74" stroke-width="26"/>
-    <path d="M16 -4L46 72" stroke-width="26"/>
-  </g>
-
-  <!-- WHERE THE ARM HAS JUST BEEN, and the only reason anybody can tell this
-       hand is moving. Two thin arcs off the way it came, fainter the further
-       back they are. -->
-  <g fill="none" stroke="#17202a" stroke-linecap="round" stroke-width="3">
-    <path d="M52 -78C60 -44 48 -14 20 6" stroke-opacity=".2"/>
-    <path d="M64 -84C74 -46 60 -12 28 12" stroke-opacity=".12"/>
+  <g fill="none" stroke="#17202a" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M-16 -4L-46 34L-58 74" stroke-width="25"/>
+    <path d="M16 -4L36 36L46 72" stroke-width="25"/>
   </g>
 
+  <!-- THE GUITAR IS ACROSS HIM AND NOT BESIDE HIM, which is what lets the arm
+       be seen doing something: the face of it covers his middle, so the ink of
+       the forearm crosses the green instead of disappearing into his own
+       outline. -->
   <g mask="url(#soundhole)">
     <g fill="#0a6c61">
-      <circle cx="-46" cy="-24" r="48"/>
-      <circle cx="-96" cy="-68" r="38"/>
+      <circle cx="-20" cy="-24" r="48"/>
+      <circle cx="-70" cy="-68" r="38"/>
     </g>
     <g fill="none" stroke="#0a6c61" stroke-linecap="round">
-      <path d="M-124 -93L-196 -156" stroke-width="15"/>
-      <path d="M-196 -156L-212 -170" stroke-width="26"/>
+      <path d="M-98 -93L-164 -150" stroke-width="15"/>
+      <path d="M-164 -150L-179 -163" stroke-width="26"/>
     </g>
   </g>
-  <!-- The strings, over the hole the way strings are, and the sweep of the
-       hand still on them. -->
+  <!-- The strings, over the hole the way strings are, and three streaks down
+       the face of it: where the hand has just been. -->
   <g fill="none" stroke="#ffffff" stroke-linecap="round">
-    <path d="M-187.4 -155L-37.4 -19" stroke-width="1.5" stroke-opacity=".45"/>
-    <path d="M-192.6 -149L-42.6 -13" stroke-width="1.5" stroke-opacity=".45"/>
-    <path d="M-8 -36C-12 -24 -20 -14 -30 -8" stroke-width="4" stroke-opacity=".5"/>
-    <path d="M-2 -18C-6 -6 -14 2 -24 8" stroke-width="4" stroke-opacity=".38"/>
-    <path d="M-14 -2C-20 6 -28 12 -38 14" stroke-width="4" stroke-opacity=".26"/>
+    <path d="M-155.4 -149L-11.4 -19" stroke-width="1.5" stroke-opacity=".45"/>
+    <path d="M-160.6 -143L-16.6 -13" stroke-width="1.5" stroke-opacity=".45"/>
+    <path d="M10 -50C2 -36 -8 -26 -22 -20" stroke-width="4" stroke-opacity=".5"/>
+    <path d="M16 -32C8 -18 -2 -8 -16 -2" stroke-width="4" stroke-opacity=".38"/>
+    <path d="M6 -6C0 6 -10 14 -24 18" stroke-width="4" stroke-opacity=".26"/>
   </g>
 
-  <g fill="none" stroke="#17202a" stroke-linecap="round">
-    <!-- the hand that is through the strings, and the hand that is holding the
-         chord down -->
-    <path d="M38 -110C48 -66 22 -22 -16 -6" stroke-width="20"/>
-    <path d="M-38 -112C-78 -100 -122 -104 -156 -122" stroke-width="18"/>
+  <g fill="none" stroke="#17202a" stroke-linecap="round" stroke-linejoin="round">
+    <!-- THE STRUMMING ARM GOES OVER THE GUITAR, AND THE HAND IS PAST THE
+         STRINGS. An arm that stops at the edge of the instrument is an arm
+         holding it. The elbow is out clear of him at the top corner of the
+         body, the forearm crosses the whole face of it on the diagonal, and
+         the hand is under the soundhole, which is where a hand that has just
+         come through the strings is. -->
+    <path d="M36 -112L56 -58L-26 -14" stroke-width="19"/>
+    <!-- and the other one, closed on the neck at the fret it is holding. It
+         goes over the top of the guitar rather than along its edge: an arm
+         that runs down the line of the instrument is part of the instrument. -->
+    <path d="M-38 -116C-70 -134 -98 -128 -122 -117" stroke-width="16"/>
+  </g>
+  <g fill="#17202a">
+    <circle cx="-26" cy="-14" r="11"/>
+    <circle cx="-124" cy="-116" r="10"/>
+  </g>
+  <!-- WHERE THE ELBOW HAS JUST BEEN, on its outer side, over the page rather
+       than over the guitar: the streaks on the face are the same fact said in
+       the one other place it can be seen. -->
+  <g fill="none" stroke="#17202a" stroke-linecap="round" stroke-width="3">
+    <path d="M72 -74C78 -60 76 -46 70 -34" stroke-opacity=".2"/>
+    <path d="M84 -68C90 -54 88 -40 82 -30" stroke-opacity=".11"/>
   </g>
 </g>
 </svg>

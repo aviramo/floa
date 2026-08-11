@@ -155,8 +155,14 @@ body {
    page that carried its own top margin, which meant every new page was a page
    that had to remember to, and the ones that begin with a wall of cards did
    not: a card resting against the bottom edge of a sticky bar reads as part of
-   it. One rule here, and nothing below has a top margin of its own. */
-#app { padding-top: 22px; }
+   it. One rule here, and nothing below has a top margin of its own.
+
+   IT IS A NUMBER WITH A NAME because one thing on the library gives it back:
+   the picture at the head of the page is meant to touch the bar (see .strip),
+   and it can only take back exactly what was added here. Two places holding
+   one number is how they come to disagree. */
+:root { --bar-air: 22px; }
+#app { padding-top: var(--bar-air); }
 
 /* --- ONE SHEET PER PAGE ---------------------------------------------------
    #app is not the page any more, it is what the page is laid on. Every page
@@ -888,16 +894,19 @@ body.sifting .find-extra { display: none; }
   display: inline-block; max-width: 14ch;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-/* --- AND OVER THE SHELVES, ONE PICTURE -------------------------------------
+/* --- AND UNDER THE BAR, ONE PICTURE ----------------------------------------
    The library opens on a wall of names, and it is the only page here that is
    about the thing all of them are: songs somebody plays and sings. So the head
    of it carries a drawing (see public/assets/strip.svg), and it is the one
    thing on the page that is neither a row nor something to press.
 
-   FULL BLEED AT BOTH WIDTHS. #app keeps a gutter of sixteen pixels either side
-   (see .wrap) and everything else on the page stands inside it; a band that
-   stopped short of the glass would read as a card with a picture in it rather
-   than as the top of the page, so it hands the gutter back.
+   FULL BLEED, AND AGAINST THE BAR. #app keeps a gutter of sixteen pixels
+   either side and a band of air on top (see .wrap and --bar-air), and
+   everything else on the page stands inside all three; a picture that stopped
+   short of any of them would read as a card with a drawing in it rather than
+   as the head of the page, so it hands back the gutter and the air both. The
+   air comes back as exactly the number that was added, which is why that
+   number has a name.
 
    THE SHAPE IS WHAT CHANGES WITH THE WIDTH, and not the drawing. A phone gets
    a landscape frame, which is the most of it a hand-held screen can give away
@@ -907,7 +916,7 @@ body.sifting .find-extra { display: none; }
    frame and is cropped to it rather than reshaped, which is what the cover
    below is for. */
 .strip {
-  margin: 12px -16px 0;
+  margin: calc(var(--bar-air) * -1) -16px 18px;
   aspect-ratio: 16 / 9;
   overflow: hidden;
   /* the drawing's own paper, for the moment before it arrives */
