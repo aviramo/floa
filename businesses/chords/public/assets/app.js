@@ -4461,6 +4461,10 @@
     if (!layer || !layer.node.isConnected) return;
     layer.y = window.scrollY || window.pageYOffset || 0;
     layer.onSong = document.body.classList.contains("on-song");
+    /* and whether the bar was floating on a picture, which is the same kind of
+       fact as on-song: it belongs to the page rather than to the app, and a
+       sheet that comes back up has to come back with it (see hero) */
+    layer.hero = document.body.classList.contains("on-hero");
     var name = document.getElementById("topWhere");
     layer.head = {
       /* read off the bar rather than remembered from when it was written: a
@@ -4483,6 +4487,7 @@
     stack.appendChild(layer.node);
     at = layers.indexOf(layer);
     document.body.classList.toggle("on-song", !!layer.onSong);
+    hero(!!layer.hero);
     PAGE_STATE.forEach(function (name) { state[name] = layer.state[name]; });
     /* The box was emptied on the way out of here, and this page may have been
        left with the wall held down to what was typed in it. The sieve belongs
@@ -4512,6 +4517,65 @@
        rather than clamped against a document that has not been measured. */
     void stack.offsetHeight;
     window.scrollTo(0, layer.y || 0);
+    /* after the scroll and not before it: whether the bar has paper under it is
+       a fact about where this sheet is standing, and it has just been put back
+       where it was left (see hero) */
+    barClear();
+  }
+
+  /* --- THE BAR STANDING ON THE PICTURE --------------------------------------
+     The library runs its drawing up behind the bar to the very top of the
+     screen, and while nothing has been scrolled the bar gives up its paper: the
+     mark, the box and the buttons stand on the picture with nothing behind them
+     (see body.bar-clear in the stylesheet).
+
+     IT COMES BACK ON THE FIRST PIXEL. Four, actually, because a phone reports a
+     pixel or two of scroll from the rubber band at rest. What is behind the bar
+     once the page has moved is songs, and cards sliding under a mark with
+     nothing between them is the exact thing a glass bar is for.
+
+     AND THE HEIGHT OF THE BAR IS MEASURED. The picture has to give back the room
+     the bar takes in the flow, and that room is whatever the controls come to at
+     this width in this font: a number written into the stylesheet would be right
+     on one screen and leave a seam or a jump on the next. It is read here and
+     handed over as --top-h, the way the recording bar hands over --top-away. */
+  var barScroll = null;
+  var barSize = null;
+
+  function barHeight() {
+    var head = document.querySelector(".top");
+    if (head) {
+      document.body.style.setProperty("--top-h",
+        Math.round(head.getBoundingClientRect().height) + "px");
+    }
+  }
+
+  function barClear() {
+    var y = window.scrollY || window.pageYOffset || 0;
+    document.body.classList.toggle("bar-clear",
+      document.body.classList.contains("on-hero") && y < 4);
+  }
+
+  /* On, off, and off is the important one: this is a listener on the window,
+     and a page that walked away from here without taking it down would leave
+     the bar of every other page answering to a scroll it has nothing to do
+     with. */
+  function hero(on) {
+    document.body.classList.toggle("on-hero", !!on);
+    if (on) {
+      barHeight();
+      if (!barScroll) {
+        barScroll = function () { barClear(); };
+        barSize = function () { barHeight(); };
+        window.addEventListener("scroll", barScroll, { passive: true });
+        window.addEventListener("resize", barSize);
+      }
+    } else if (barScroll) {
+      window.removeEventListener("scroll", barScroll);
+      window.removeEventListener("resize", barSize);
+      barScroll = barSize = null;
+    }
+    barClear();
   }
 
   /* A sheet for a page about to be drawn. Whatever the forward button could
@@ -5839,9 +5903,14 @@
     node.classList.toggle("has-news", news);
     /* AND WHERE THERE IS NOTHING TO DO, WHAT THERE IS TO HEAR. The recordings
        are behind these same dots (see songRows) and a shut panel says nothing,
-       so a song somebody has played is a song whose corner says so: the play
-       shape, in the green this app says "out in the world" in, exactly where
-       the dot stands.
+       so a song somebody has played is a song whose corner says so.
+
+       THE SAME MARK THE RECORD BUTTON WEARS, and not a shape of its own: a
+       small round badge on the corner of a button, with a picture inside
+       saying which kind of thing is waiting, is already this app's way of
+       saying "there is something in here" (see newMark and .tape-new). This is
+       the same sentence about the same corner, so it is drawn the same way,
+       with the play triangle where the microphone stands there.
 
        THE DOT WINS WHEREVER THERE IS ONE. Both marks are the same corner
        saying "there is something in here", and the two things are not worth
@@ -5850,8 +5919,31 @@
        recording, which is there to be enjoyed and will still be there
        tomorrow. So the corner carries the one that is waiting on a person, and
        the sound waits its turn. */
-    node.classList.toggle("has-sound", !news && !!(state.takesCount && state.takesOpen));
+    var sound = !news && !!(state.takesCount && state.takesOpen);
+    /* The button is kept and painted rather than built (see keep), so the mark
+       is put on and taken off the one node rather than made with it. */
+    var worn = node.querySelector(".more-takes");
+    node.classList.toggle("has-mark", sound);
+    if (sound && !worn) node.appendChild(takesMark());
+    if (!sound && worn) worn.remove();
     return node;
+  }
+
+  /* THE PLAY TRIANGLE, SMALL, IN THE CORNER OF THE DOTS. The mark the record
+     button wears when a take is waiting on the device, said about the other
+     thing that waits behind a corner: recordings, on a song, behind a panel
+     nobody has been given a reason to open (see newMark).
+
+     THE SAME BADGE DOWN TO THE RING: white, a coloured ring round it, and the
+     picture inside in that colour. Only the colour changes, and it is green
+     because that is the colour a recording is counted in on a card (see
+     .when.has-takes), which is the same fact about the same thing.
+
+     It does not take the press either. What is under it is the whole button. */
+  function takesMark() {
+    var mark = el("span", "more-takes");
+    mark.appendChild(svg(ICON.play));
+    return mark;
   }
 
   /* --- AND AN EVENING HAS THE SAME PANEL --------------------------------------
@@ -7493,6 +7585,9 @@
         drawing.setAttribute("aria-hidden", "true");
         art.appendChild(drawing);
         app.appendChild(art);
+        /* and the bar comes off its paper and stands on the drawing, until the
+           first pixel of scroll puts it back (see hero) */
+        hero(true);
       }
 
       /* THE WAYS OUT OF HERE STAND UNDER IT, and they are everything up here
@@ -10943,6 +11038,19 @@
          somebody playing this song, and an offer standing beside it is not a
          second song to have been played. */
       state.takeSong = row;
+      /* AND WHATEVER WAS LEFT UNANSWERED ON THIS DEVICE, LOOKED FOR NOW. Every
+         piece of a take is written to the device as it arrives (see heldAdd),
+         and the whole point of writing it is that a tab which reloaded, crashed
+         or was closed comes back to the recording rather than to nothing. What
+         was missing was the asking: nothing ever read it back, so the take sat
+         in the store for the rest of its life and the button over the song said
+         there was nothing there.
+
+         HERE AND NOT WHEN THE STRIP IS BUILT, because a take belongs to one
+         song and the answer is only worth anything once the page knows which
+         song it is (see heldHere). Asked once for the life of the tab; what
+         lands repaints the button by itself. */
+      lookForHeld();
       state.redrawTakes = function () { drawTakes(takes, row); };
       state.redrawTakes();
       /* And the way in, which is a row in the panel behind the three dots (see
@@ -15903,6 +16011,9 @@
   function draw() {
     where("");
     document.body.classList.remove("on-song");
+    /* and the bar gets its paper back, because the picture it was floating on
+       belongs to the library and this is any page at all (see hero) */
+    hero(false);
     state.songControls = null;
     state.redrawSong = null;
     state.rehome = null;
@@ -17140,8 +17251,9 @@
        song is written in. */
     if (top < HEARD_ENOUGH) return followSay(following.where());
 
-    traceOn(scores, r);
-    followSay(following.step(scores).here);
+    var went = following.step(scores);
+    traceOn(scores, r, went.at);
+    followSay(went.here);
   }
 
   /* ==========================================================================
@@ -17171,7 +17283,7 @@
   var TRACE_MOST = 4000;
   var traceSkip = 0;
 
-  function traceOn(scores, r) {
+  function traceOn(scores, r, at) {
     if (!tape || !tape.trace || tape.trace.length >= TRACE_MOST) return;
     if (traceSkip++ % TRACE_EVERY) return;
     var two = function (n) { return Math.round(n * 100) / 100; };
@@ -17181,8 +17293,11 @@
       b: earBass, s: two(earSure),
       /* how loud, so that a stretch of nothing is readable as nothing */
       v: two(r ? r.rms : 0),
-      /* where the follower had got to */
+      /* where the mark is, and where the arithmetic wanted it. The two apart
+         is the whole difference between the mark walking and the sums jumping,
+         and without both there is no telling which happened. */
       h: following ? following.where() : -1,
+      a: at === undefined ? -1 : at,
       /* and every chord of this song, in the song's own order of kinds */
       k: scores ? scores.map(two) : [],
     });
@@ -18371,7 +18486,18 @@
       over = endTape();
       dlg.close();
     });
-    var save = button("שמירה לשיר", null, null, function () {
+    /* AND THE ONE THAT KEEPS IT SAYS WHAT COMES NEXT TOO. Both answers end with
+       the microphone open again on the next take (see afresh), so both name it:
+       one plays on without this recording and one plays on with it kept. A
+       button that said only "שמירה לשיר" was the one of the two that hid what
+       it was about to do.
+
+       IN THE FULL COLOUR THE OTHER ONE IS A WASH OF, and not in the app's
+       green. These two are one question with two answers, and a green button
+       beside a pink one reads as two unrelated things to press; the same colour
+       at two weights reads as the pair it is, with the weight saying which one
+       is the ordinary answer. */
+    var save = button("שמירה והפעלה", null, "keep", function () {
       save.disabled = true;
       relabel(save, "שומר…");
       keepTakeIn(made).then(function () {
@@ -18382,7 +18508,7 @@
         if (state.redrawTakes) state.redrawTakes();
       }, function (e) {
         save.disabled = false;
-        relabel(save, "שמירה לשיר");
+        relabel(save, "שמירה והפעלה");
         err.hidden = false;
         err.textContent = (e && e.message) || "לא הצלחנו לשמור";
       });

@@ -133,7 +133,11 @@
 
 * { box-sizing: border-box; }
 
-html { -webkit-text-size-adjust: 100%; }
+/* A phone paints a grey-blue wash over anything it thinks is a link the moment
+   a finger lands on it, and it paints the whole of it: a card, a row, a bar.
+   Every press here already has a look of its own, so the wash only arrives late
+   and over the wrong shape. It is off for the whole app, and inherits. */
+html { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
 
 body {
   margin: 0;
@@ -161,7 +165,7 @@ body {
    the picture at the head of the page is meant to touch the bar (see .strip),
    and it can only take back exactly what was added here. Two places holding
    one number is how they come to disagree. */
-:root { --bar-air: 22px; }
+:root { --bar-air: 22px; --top-h: 61px; }
 #app { padding-top: var(--bar-air); }
 
 /* --- ONE SHEET PER PAGE ---------------------------------------------------
@@ -211,9 +215,30 @@ body.on-song { background: var(--card); }
   /* The visibility carries no delay HERE, so that coming back is immediate:
      the bar is on the screen from the first frame of the slide down (see
      body.on-air, where the same property waits for the slide up to finish). */
-  transition: transform .28s ease, margin-block-end .28s ease, visibility 0s;
+  transition: transform .28s ease, margin-block-end .28s ease, visibility 0s,
+              background-color .2s ease, border-color .2s ease;
 }
 .top-in { display: flex; align-items: center; gap: 16px; min-height: 60px; }
+
+/* --- AND AT THE TOP OF THE LIBRARY THE BAR IS ONLY WHAT IS IN IT ------------
+   The picture runs up behind it to the very top of the screen (see .strip,
+   which takes back the height of this bar as well as the air under it), so
+   while nothing has been scrolled the bar has no paper of its own: the mark,
+   the box and the buttons stand on the drawing.
+
+   IT COMES BACK ON THE FIRST PIXEL OF SCROLL. What is behind the bar a moment
+   later is songs, and a row of cards sliding under a mark with nothing between
+   them is unreadable in the way a glass bar exists to prevent. The class is on
+   the body rather than here because the page decides it, and it is only ever
+   put there by the library (see hero in app.js).
+
+   The border goes with the background, in one move: a hairline hanging over a
+   drawing with no bar attached to it is a line drawn across the picture. */
+body.bar-clear .top {
+  background: transparent;
+  backdrop-filter: none;
+  border-bottom-color: transparent;
+}
 
 /* --- AND WHILE A TAKE IS RUNNING THERE IS NO HEADER ------------------------
    Somebody recording is playing the song, and the only thing on the screen
@@ -900,13 +925,20 @@ body.sifting .find-extra { display: none; }
    of it carries a drawing (see public/assets/strip.svg), and it is the one
    thing on the page that is neither a row nor something to press.
 
-   FULL BLEED, AND AGAINST THE BAR. #app keeps a gutter of sixteen pixels
-   either side and a band of air on top (see .wrap and --bar-air), and
-   everything else on the page stands inside all three; a picture that stopped
-   short of any of them would read as a card with a drawing in it rather than
-   as the head of the page, so it hands back the gutter and the air both. The
-   air comes back as exactly the number that was added, which is why that
-   number has a name.
+   FULL BLEED, AND UP BEHIND THE BAR TO THE TOP OF THE SCREEN. #app keeps a
+   gutter of sixteen pixels either side and a band of air on top (see .wrap and
+   --bar-air), and above that the bar itself stands in the flow; everything
+   else on the page stands under all of it. A picture that stopped short of any
+   of them would read as a card with a drawing in it rather than as the head of
+   the page, so it hands back the gutter, the air AND the height of the bar,
+   and the bar, which is sticky and painted over what follows it, floats on the
+   drawing (see body.bar-clear up in the header rules).
+
+   THE BAR'S OWN HEIGHT IS MEASURED AND NOT WRITTEN DOWN. It is a row of
+   controls whose height is whatever they come to at this width, in this font,
+   on this phone; a number typed here would be right on one screen and leave a
+   seam or a jump on the next. It arrives as --top-h (see barHeight in app.js)
+   and the fallback below is only for the frame before the first measurement.
 
    IT IS A BAND AND NOT A PICTURE OF A BAND. It was a landscape frame on a
    phone, three fifths as tall as it was wide, and the first thing under it was
@@ -924,8 +956,11 @@ body.sifting .find-extra { display: none; }
    screenful spent before the first song, and past about 1300 the ceiling stops
    it growing at all. */
 .strip {
-  margin: calc(var(--bar-air) * -1) -16px 18px;
-  aspect-ratio: 5 / 2;
+  margin: calc((var(--bar-air) + var(--top-h)) * -1) -16px 18px;
+  /* Two fifths of the glass for the drawing, and the bar's height on top of
+     that, so that what is left under the bar is the same band it would have
+     been if the bar had been standing on it. */
+  height: calc(40vw + var(--top-h));
   overflow: hidden;
   /* the drawing's own paper, for the moment before it arrives */
   background: #eef6f4;
@@ -955,7 +990,7 @@ body.sifting .find-extra { display: none; }
    in it; the ceiling, because past about 1650 pixels the band would go on
    growing into the screenful it was cut down from. */
 @media (min-width: 621px) {
-  .strip { aspect-ratio: auto; height: clamp(150px, 17vw, 280px); }
+  .strip { height: calc(clamp(150px, 17vw, 280px) + var(--top-h)); }
 }
 /* A drawing is not a fact about a song, and paper gets the facts. */
 @media print { .strip { display: none !important; } }
@@ -1914,27 +1949,68 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    the play shape instead, and a song somebody has played says so from across
    the bar.
 
-   A TRIANGLE AND NOT A SECOND DOT. Two dots of two colours is a key, and a key
-   has to be learned before the bar can be read; the play shape is the one mark
-   in this app that needs no learning at all, and it is the same shape the
-   button that plays a recording wears on a card and on the sheet below. In the
-   green, because that is the colour a recording is counted in there (see
-   .when.has-takes), and because it is not the yellow: the two marks stand in
-   the same corner and must never be mistaken for each other.
+   AND IT IS THE MARK THE RECORD BUTTON ALREADY WEARS (see .tape-new): a round
+   badge half off the corner of a button, with a small picture inside saying
+   which kind of thing is waiting. One shape for "there is something in here",
+   drawn the same size in the same place, and the picture is the difference.
+   Two ways of drawing that sentence would be two things to learn.
 
-   THE RING IS DRAWN ROUND THE SHAPE AND NOT ROUND A BOX. The dot lifts itself
-   off the button underneath with a border, which a triangle in a square box
-   cannot have: the border would draw the box. Two shadows of the card's own
-   colour follow the edge of the shape itself, which is the same ring by
-   another road. */
-.has-sound { position: relative; }
-.has-sound::after {
-  content: ""; position: absolute; top: -3px; inset-inline-start: -3px;
-  width: 10px; height: 11px; background: var(--accent);
-  /* pointing the way every play triangle in this app points, which is the
-     machine's own direction and not the page's (see ICON.play) */
-  clip-path: polygon(0 0, 100% 50%, 0 100%);
-  filter: drop-shadow(0 0 1px var(--card)) drop-shadow(0 0 1px var(--card));
+   WHITE WITH A COLOURED RING AND THE PICTURE IN THE SAME COLOUR, which is the
+   whole of what the other one is, down to the ring being a ring and not a fill.
+   It was drawn filled green for a while, on the argument that the badge should
+   take whichever colour its button is not, and that is a rule about contrast
+   rather than about language: a white badge with a pink ring and a filled green
+   disc are two different objects on one bar, however well each of them reads
+   where it stands. One object, in two colours, and the colour is the only thing
+   that differs.
+
+   The green is the colour a recording is counted in on a card (see
+   .when.has-takes), and it is not the yellow of the dot beside it, which the
+   two marks sharing a corner makes worth saying twice.
+
+   AND IT HANGS FURTHER OFF THE CORNER THAN THE OTHER ONE DOES. The record
+   button is a circle, and a badge on the corner of a circle is already mostly
+   outside it; these dots sit in a square box, whose corner reaches out further
+   than its middle does, so the same offset leaves the mark sitting on the
+   button instead of on its edge. The number differs because the shape under it
+   differs, which is the only thing that ever moves it. */
+.has-mark { position: relative; }
+.more-takes {
+  position: absolute;
+  top: -4px; inset-inline-start: -8px;
+  width: 17px; height: 17px; border-radius: 999px;
+  display: grid; place-items: center;
+  background: #fff; color: var(--accent);
+  border: 1.5px solid var(--accent);
+  box-shadow: 0 1px 3px rgba(15, 32, 45, .18);
+  pointer-events: none;
+}
+/* Small enough to keep the ring around it, the same as the microphone in the
+   other one: these are marks inside a badge and not the transport shapes,
+   which fill their box on purpose (see --transport).
+
+   AND THE TRIANGLE IS CENTRED BY ITS OWN EDGES AND NOT BY ITS BOX. The play
+   shape is drawn from 7 to 20.2 across a box 24 wide (see ICON.play), so its
+   middle is a fifteenth of the box right of the middle of the box: centring the
+   box leaves the shape sitting off to one side inside the ring, which is the
+   one place in this app where a picture has a circle drawn round it close
+   enough to be measured against. The microphone beside it needs none of this
+   because it is drawn down the middle of its own box.
+
+   AND UP BY THE SAME, WHICH IS THE RING AND NOT THE SHAPE. The triangle is
+   drawn down the middle of its box from top to bottom, and it still sat low:
+   the ring is a pixel and a half thick, a browser does not always split that
+   evenly between the top and the bottom edge, and half a pixel of border on one
+   side is half a pixel of everything inside pushed to the other. Small enough
+   to be an accident and large enough to see on a mark this size.
+
+   In percent, so it stays true whatever size the mark is drawn at, and as a
+   transform rather than a margin because it is a physical nudge: an SVG is not
+   mirrored by the page being right to left, and the shape leans the same way
+   in both directions. */
+.more-takes svg {
+  width: 10px; height: 10px;
+  transform: translate(-6.7%, -6.7%);
 }
 
 /* THREE CONTROLS, AND NOTHING DRAWN ROUND THEM. Each of them is already a box
@@ -3021,6 +3097,21 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   background: #fdeceb; color: #b3261e; border-color: #f3c9c5;
 }
 .btn.toss:hover { background: #fbdcd9; color: #8f1d18; border-color: #e8ada7; }
+
+/* --- AND THE ANSWER THAT KEEPS IT, IN THE SAME COLOUR AT FULL WEIGHT --------
+   The pair in this row is one question with two answers, and it was drawn as a
+   green button beside a pale red one: two colours is two unrelated things to
+   press, and the green is the app's own «this is the way on» wearing it on a
+   panel where both of them are. So they share a colour and differ in weight,
+   which is the thing actually being said: one of these is the ordinary answer
+   and the other is not.
+
+   The fill is the ink the light one is written in, and the hover is the ink it
+   goes to under a pointer, so there is one colour here and not three. */
+.btn.keep {
+  background: #b3261e; color: #fff; border-color: #b3261e;
+}
+.btn.keep:hover { background: #8f1d18; border-color: #8f1d18; }
 
 /* --- THE PANEL THE SONG'S FACTS ARE WRITTEN IN ----------------------------
    A form and not a question, so it is spaced like one: a heading, and air

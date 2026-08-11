@@ -2,10 +2,15 @@
 *, *::before, *::after { box-sizing: border-box; }
 * { margin: 0; }
 
+/* -webkit-tap-highlight-color: a phone washes anything it reads as a link in
+   grey-blue while a finger is down on it, over the whole shape and after the
+   press. Buttons and cards here already say they were pressed. It inherits, so
+   the page is done with it in one line. */
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 0;
   -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
