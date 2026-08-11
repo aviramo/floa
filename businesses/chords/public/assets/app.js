@@ -7616,10 +7616,13 @@
       if (!shelf) {
         var art = el("div", "strip");
         var drawing = el("img");
-        drawing.src = BASE + "/assets/strip.svg";
+        drawing.src = BASE + "/assets/strip.webp";
         drawing.alt = "";
-        drawing.width = 1600;
-        drawing.height = 320;
+        /* Its own size, so the band it will sit in is the right shape before it
+           has arrived: the frame is a height and a width of its own (see .strip)
+           and a picture that lands late must not move the songs under it. */
+        drawing.width = 2172;
+        drawing.height = 688;
         drawing.setAttribute("aria-hidden", "true");
         art.appendChild(drawing);
         app.appendChild(art);

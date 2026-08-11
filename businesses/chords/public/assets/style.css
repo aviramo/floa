@@ -931,8 +931,8 @@ body.sifting .list:not(.band) { min-height: calc(100dvh - var(--top-h)); }
 /* --- AND UNDER THE BAR, ONE PICTURE ----------------------------------------
    The library opens on a wall of names, and it is the only page here that is
    about the thing all of them are: songs somebody plays and sings. So the head
-   of it carries a drawing (see public/assets/strip.svg), and it is the one
-   thing on the page that is neither a row nor something to press.
+   of it carries a drawing (public/assets/strip.webp), and it is the one thing
+   on the page that is neither a row nor something to press.
 
    FULL BLEED, AND UP BEHIND THE BAR TO THE TOP OF THE SCREEN. #app keeps a
    gutter of sixteen pixels either side and a band of air on top (see .wrap and
@@ -955,14 +955,14 @@ body.sifting .list:not(.band) { min-height: calc(100dvh - var(--top-h)); }
    on songs. Two fifths, and the songs are back where the thumb is.
 
    WHAT THE SHORTER FRAME DOES IS SHOW MORE OF THE DRAWING, not less of it: the
-   art is a five to one strip and every frame here is narrower than that, so it
-   is filled by height and cut at the sides (see cover below). A shorter band is
-   a wider window onto the same drawing, which is why the two of them are drawn
-   with room either side of them and the notes are strewn well past it.
+   art is about three to one and every frame here is narrower than that, so it
+   is filled and cut rather than reshaped (see cover below). A shorter band is a
+   wider window onto the same drawing, which is why the two of them stand with
+   room either side of them and the notes are strewn well past it.
 
    THE SHAPE IS WHAT CHANGES WITH THE WIDTH, and not the drawing. A desk gets a
    thinner band still: the same height held across two thousand pixels is a
-   screenful spent before the first song, and past about 1300 the ceiling stops
+   screenful spent before the first song, and past about 1650 the ceiling stops
    it growing at all. */
 .strip {
   margin: calc((var(--bar-air) + var(--top-h)) * -1) -16px 18px;
@@ -979,11 +979,11 @@ body.sifting .list:not(.band) { min-height: calc(100dvh - var(--top-h)); }
      people.
 
      The colour is the top edge of the drawing, exactly, so the two meet with no
-     seam. That is also why the wash in strip.svg runs straight down rather than
-     on the diagonal: a diagonal has a different colour at each end of its top
-     edge, and one of them would always be the wrong one. */
+     seam. The drawing was prepared to make that possible: its white borders
+     were cut off and the band of its own colour was carried on upwards, so its
+     whole top edge is this one flat value (see scripts/strip.py). */
   padding-top: var(--top-h);
-  background: #f2f9f7;
+  background: #f3f7f6;
   overflow: hidden;
 }
 .strip img {
@@ -997,9 +997,11 @@ body.sifting .list:not(.band) { min-height: calc(100dvh - var(--top-h)); }
      a slice of a drawing that is nearly as tall as its people, and a slice
      taken from the middle takes the same off the top as off the bottom: their
      heads. Held up here, the wider the screen gets the more of the legs it
-     loses and never the heads, which is how a photographer would have framed
-     it anyway. */
-  object-position: 50% 25%;
+     loses and never the heads, which is how a photographer would have framed it
+     anyway. A tenth and not a quarter: the drawing carries a strip of its own
+     colour above the heads for exactly this, so the window can sit high without
+     standing on anybody's hair. */
+  object-position: 50% 10%;
 }
 /* A HEIGHT, AND NOT A RATIO WITH A CEILING ON IT. aspect-ratio and max-height
    together do not do what they look like they do: the ratio is kept, so a box
