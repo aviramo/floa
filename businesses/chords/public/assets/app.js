@@ -5834,9 +5834,23 @@
        them apart: a song of your own that is not out in the world, and details
        somebody has offered for one that is (see songRows). One dot for both,
        because what the corner is for is the reason to open the panel at all. */
-    node.classList.toggle("has-news",
-      !!(state.songOut && state.songOut()) ||
-      !!(state.songDetails && state.songDetails.news && state.songDetails.news()));
+    var news = !!(state.songOut && state.songOut()) ||
+      !!(state.songDetails && state.songDetails.news && state.songDetails.news());
+    node.classList.toggle("has-news", news);
+    /* AND WHERE THERE IS NOTHING TO DO, WHAT THERE IS TO HEAR. The recordings
+       are behind these same dots (see songRows) and a shut panel says nothing,
+       so a song somebody has played is a song whose corner says so: the play
+       shape, in the green this app says "out in the world" in, exactly where
+       the dot stands.
+
+       THE DOT WINS WHEREVER THERE IS ONE. Both marks are the same corner
+       saying "there is something in here", and the two things are not worth
+       the same: one is a song of yours nobody else can see yet, and it stays
+       that way until somebody does something about it; the other is a
+       recording, which is there to be enjoyed and will still be there
+       tomorrow. So the corner carries the one that is waiting on a person, and
+       the sound waits its turn. */
+    node.classList.toggle("has-sound", !news && !!(state.takesCount && state.takesOpen));
     return node;
   }
 
@@ -16371,9 +16385,15 @@
        THERE IS A BUTTON THAT MEANS IT, and it is on the screen for the whole
        of the recording: the header goes and it stays (see airRoom). So a take
        ends where it began, under one press, and the microphone is simply not
-       closable while one is running. Answering the offer closes it properly
-       (see askTake), which is how it was always meant to happen. */
-    if (taping()) return;
+       closable while one is RUNNING.
+
+       AND ONLY WHILE IT IS RUNNING. A take that has been stopped is not being
+       played into and may sit on the device unanswered for as long as somebody
+       likes (see stopTape), so a guard that asked only whether a take exists
+       was a microphone nothing on the page could close and a red light in the
+       tab with nothing behind it. What is protected is a performance in
+       progress, which is what this was always about. */
+    if (taping() && !tapeDone()) return;
     /* and a take that was asked for and never got a microphone is not asked
        for any more: the flag it left standing would keep the band away from
        the next person who opens it (see takeComing) */
@@ -17947,9 +17967,14 @@
     if (tape.rec.state === "recording") holdTape();
     /* The last couple of seconds, asked for while the recorder is still alive,
        so that what stands behind the mark from this moment is the whole of what
-       was played. Repainted when it lands as well as now, because until it does
-       there may be nothing to offer yet. */
-    gatherTape().then(paintTape);
+       was played. And then the microphone goes: the playing is over, the take
+       is on the device, and a phone listening to a room nobody is playing in is
+       a red light in the tab for no reason. It comes back with the next take
+       (see afresh). */
+    gatherTape().then(function () {
+      shutEar();
+      paintTape();
+    });
     paintTape();
   }
 
@@ -18612,11 +18637,27 @@
     state.takesCount = 0;
     if (!song || !song.id) return;
 
+    /* HOW MANY THERE ARE, AND THE TWO PLACES THAT ARE WAITING FOR IT. The
+       panel behind the dots offers a way in only where there is something to
+       go to (see songRows), and the corner of those dots says so before
+       anybody opens it (see songMore). Both read this number, and it lands
+       long after the bar was painted, so setting it is also repainting: the
+       row is decided at the press and the mark is not, because nobody presses
+       a corner to find out whether it is lit.
+
+       Said on the empty answer too. A song whose last recording has just been
+       deleted redraws this sheet, and a mark left standing over a corner with
+       nothing behind it is worse than no mark at all. */
+    function counted(n) {
+      state.takesCount = n;
+      paintHeader();
+    }
+
     rest(CFG.takeTable + "?song_id=eq." + song.id +
       "&select=id,owner,take,path,mime,seconds,marks,page,capo,published,created_at" +
       "&order=created_at.desc").then(function (rows) {
       if (!box.isConnected) return;
-      if (!rows || !rows.length) return;
+      if (!rows || !rows.length) return counted(0);
 
       /* --- IN THE ORDER THEY WILL BE HEARD --------------------------------
          Newest first, which is the order somebody who has been recording
@@ -18640,11 +18681,7 @@
         if (wanted && row.id === wanted && !first) first = made;
         list.appendChild(made);
       });
-      /* What the panel behind the dots needs to know: whether there is
-         anything on this sheet to offer a way to (see songRows). The answer
-         lands after the page is drawn, which is why the row is decided at the
-         press and not at the painting. */
-      state.takesCount = rows.length;
+      counted(rows.length);
       /* A LINK TO ONE RECORDING OPENS THE SHEET. It is the whole of what that
          address is about, and a sheet that stays down while the sound plays
          is a page with a voice on it and nothing to show for it. */

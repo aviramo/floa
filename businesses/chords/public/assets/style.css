@@ -1890,6 +1890,36 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    would have to be looked for */
 .print-menu .btn.has-news.is-on::after { background: #fff; }
 
+/* --- AND THE SAME CORNER, WHEN WHAT IS IN THERE IS A SOUND -----------------
+   The recordings of a song are behind these dots too, and until now the only
+   way to find out there were any was to open the panel and look. So the corner
+   answers that as well: where there is nothing waiting on a person it carries
+   the play shape instead, and a song somebody has played says so from across
+   the bar.
+
+   A TRIANGLE AND NOT A SECOND DOT. Two dots of two colours is a key, and a key
+   has to be learned before the bar can be read; the play shape is the one mark
+   in this app that needs no learning at all, and it is the same shape the
+   button that plays a recording wears on a card and on the sheet below. In the
+   green, because that is the colour a recording is counted in there (see
+   .when.has-takes), and because it is not the yellow: the two marks stand in
+   the same corner and must never be mistaken for each other.
+
+   THE RING IS DRAWN ROUND THE SHAPE AND NOT ROUND A BOX. The dot lifts itself
+   off the button underneath with a border, which a triangle in a square box
+   cannot have: the border would draw the box. Two shadows of the card's own
+   colour follow the edge of the shape itself, which is the same ring by
+   another road. */
+.has-sound { position: relative; }
+.has-sound::after {
+  content: ""; position: absolute; top: -3px; inset-inline-start: -3px;
+  width: 10px; height: 11px; background: var(--accent);
+  /* pointing the way every play triangle in this app points, which is the
+     machine's own direction and not the page's (see ICON.play) */
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  filter: drop-shadow(0 0 1px var(--card)) drop-shadow(0 0 1px var(--card));
+}
+
 /* THREE CONTROLS, AND NOTHING DRAWN ROUND THEM. Each of them is already a box
    with a line round it, and a fourth line round all three is a box inside a box
    on a row that is itself inside a bordered strip. What holds them together is
@@ -2965,6 +2995,16 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    is. */
 .dlg-actions .far { margin-inline-end: auto; }
 
+/* --- AND THE ANSWER THAT LOSES SOMETHING ----------------------------------
+   A light red, and light is the whole of it. It is not the dangerous button in
+   the row, which is drawn in the full colour and asked twice about; it is an
+   ordinary answer that happens to leave a recording behind, and the colour is
+   there to be noticed on the way past rather than to stop anybody. */
+.btn.toss {
+  background: #fdeceb; color: #b3261e; border-color: #f3c9c5;
+}
+.btn.toss:hover { background: #fbdcd9; color: #8f1d18; border-color: #e8ada7; }
+
 /* --- THE PANEL THE SONG'S FACTS ARE WRITTEN IN ----------------------------
    A form and not a question, so it is spaced like one: a heading, and air
    under it before the first field. The heading used to have a line of its own
@@ -3805,8 +3845,40 @@ body.on-ear.ear-small { padding-bottom: 78px; }
   width: 34px; height: 34px; border-radius: 999px;
   color: #fff; background: var(--chord); border-color: var(--chord);
   box-shadow: 0 1px 4px rgba(225, 29, 99, .32);
+  /* the corner the mark stands in is this button's corner */
+  position: relative;
 }
 .tape-bar .icon-btn.is-rec svg { width: var(--transport); height: var(--transport); }
+
+/* --- AND THE RECORDING NOBODY HAS ANSWERED YET -----------------------------
+   A microphone the size of a notification dot, on the corner of the button,
+   which is where every app on the phone puts "there is something new in here".
+   That is exactly what it means: a take was made, it is on this device and
+   nowhere else, and pressing this is the only thing that asks about it (see
+   paintTape).
+
+   WHITE WITH A PINK RING, and not a pink dot, for one reason: the button under
+   it is already pink, and a pink mark on a pink circle is a smudge on its edge.
+   The ring is what separates the two and the microphone inside it is what says
+   which kind of new thing is waiting.
+
+   AND IT DOES NOT TAKE THE PRESS. It is a mark and not a second button: it sits
+   in the corner of a thing 34 pixels across, which is small enough already, and
+   a fingertip covers both. What is underneath is the whole button. */
+.tape-bar .icon-btn.is-rec .tape-new {
+  position: absolute;
+  top: -4px; inset-inline-start: -4px;
+  width: 17px; height: 17px; border-radius: 999px;
+  display: grid; place-items: center;
+  background: #fff; color: var(--chord);
+  border: 1.5px solid var(--chord);
+  box-shadow: 0 1px 3px rgba(15, 32, 45, .18);
+  pointer-events: none;
+}
+/* Narrower than the transport shapes above it, which fill their box on purpose
+   (see --transport): this one is a mark inside a ring and has to keep the ring
+   around it. */
+.tape-bar .icon-btn.is-rec .tape-new svg { width: 10px; height: 10px; }
 .tape-bar .icon-btn.is-rec:hover {
   color: #fff; background: #c2185b; border-color: #c2185b;
   box-shadow: 0 2px 7px rgba(225, 29, 99, .45);
@@ -3988,9 +4060,15 @@ body.on-takes { padding-bottom: var(--takes-room, 240px); }
 .take-play { width: 100%; height: 34px; margin-top: 2px; }
 .take.is-mine { border-color: var(--chord-soft); }
 
-/* In the panel that offers the take just recorded, where it is the one thing
-   on the page and gets the whole width of it. */
+/* In the panel that offers the take, where it is the one thing on the page and
+   gets the whole width of it. */
 .dlg-in .take-play { margin: 10px 0 4px; }
+
+/* The one line above it. The panel is opened by a press on the mark over the
+   song, which may be a day and a closed phone after the recording was made, so
+   it says what the recording is and where it is before anything is asked about
+   it. Quiet, because the take under it is the thing being looked at. */
+.dlg-in .take-says { color: var(--ink-soft); line-height: 1.5; }
 
 /* Both doors are toggles and both say so, in the two places they stand.
 
