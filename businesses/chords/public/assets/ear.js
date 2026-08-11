@@ -446,11 +446,21 @@
      was, so the case that used to work is untouched, and only a bass somebody
      could point at gets more. */
   var BASS_HELP = 0.12;
-  /* How much of the strongest note in the bass range the LOWEST one has to
-     carry before it counts as being played rather than as the skirt of
-     something above it. Three fifths: plainly there, and well under what a
-     string actually struck comes back with. */
-  var LOW_ENOUGH = 0.6;
+  /* --- AND WHAT MAKES A NOTE DOWN THERE A NOTE ------------------------------
+     NOT "MOST OF THE LOUDEST", WHICH WAS THE MISTAKE. The bass string is
+     usually not the loudest thing in its own range: on an open C the fretted
+     C on the fifth string comes back at a third of the open G ringing above
+     it, so a test asking the lowest note to carry three fifths of the loudest
+     rejected the actual bass in every chord and handed the answer to the G.
+
+     A note is a PEAK. What tells a struck string from the room is not its
+     level, it is that it stands clear of the pitches either side of it: a
+     string is energy at one place and a table, a passing lorry and a hand on
+     the phone are energy everywhere at once. So a candidate has to be twice
+     what is sitting a semitone either side of it, and the floor below is only
+     there to keep the arithmetic away from silence. */
+  var PEAK = 2;
+  var FLOOR = 0.12;
   /* How much of BASS_HELP this reading's bass has earned. */
   var bassSure = 0;
 
@@ -521,12 +531,16 @@
     if (top > 0) {
       for (n = BASS_LOW; n <= BASS_HIGH; n++) {
         var mine = own[n - BASS_LOW];
-        if (mine < top * LOW_ENOUGH) continue;
+        if (mine <= 0 || mine < top * FLOOR) continue;
+        /* A semitone either side, which is where a chord almost never puts a
+           second note and where a room puts everything. */
+        var f = freqs[n - LOW_NOTE];
+        var side = Math.max(at(f * 0.9439, QUARTER_STEP), at(f * 1.0595, QUARTER_STEP));
+        if (side > 0 && mine < side * PEAK) continue;
         bass = n % 12;
-        /* All of it when the lowest note is also the strongest, which is what
-           a struck bass string looks like, and less as it fades towards the
-           floor this search stops at. */
-        bassSure = Math.min(1, (mine / top - LOW_ENOUGH) / (1 - LOW_ENOUGH));
+        /* How far it stands above what is beside it, and never mind that it is
+           quieter than the strings ringing over it. */
+        bassSure = side > 0 ? Math.min(1, (mine / side - PEAK) / PEAK) : 1;
         break;
       }
     }
