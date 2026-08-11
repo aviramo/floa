@@ -6582,6 +6582,14 @@
        that lands on the same page does not take the caret out of a name
        somebody is in the middle of typing (see whereEditable). */
     if (node.textContent !== (bar || "")) node.textContent = bar || "";
+    /* AND A BAR WITH NO NAME ON IT IS A DIFFERENT BAR. The column between the
+       mark and the box is not there at all, and on a phone the box stops being
+       a glass to be pressed and is a field across the whole row, with the fork
+       on the corner beyond it (see body.unnamed in the stylesheet).
+       Said as a class rather than read off the slot, because empty here is not
+       the same as nothing to show: a name being TYPED into is empty and still
+       standing, and whereEditable says so a moment after this. */
+    document.body.classList.toggle("unnamed", !bar);
     /* A plain name, until whereEditable says otherwise a line below. */
     if (layers[at]) layers[at].edit = null;
     node.removeAttribute("contenteditable");
@@ -6645,6 +6653,10 @@
 
     node.dataset.empty = empty;
     makeEditable(node);
+    /* A field with nothing in it yet is still a name in the bar: it carries its
+       own word while it is empty (see .top-where[contenteditable]:empty), so the
+       column stays and the bar is not the bare one. */
+    document.body.classList.remove("unnamed");
 
     node.oninput = function () { if (each) each(node.textContent.trim()); };
     node.onkeydown = function (event) {
@@ -7227,7 +7239,15 @@
        any of them carries: it says so in the bar, and nothing about it can be
        renamed, because there is no word there to rewrite. */
     var bare = shelf === NO_STYLE;
-    where(bare ? NO_STYLE_SAID : (shelf || "אקורדים"), shelf ? null : "אקורדים");
+    /* AND THE LIBRARY DOES NOT NAME ITSELF IN THE BAR. Every other page here is
+       called something nobody could have known before opening it: a song's
+       name, a person's, a shelf's. The library's was the app's own name,
+       standing against the mark that already says it, and it was the one word
+       in the row nobody was reading. What it cost is the room it took: the box
+       takes whatever the row has left over, and that word was eating the width
+       the box wanted. Kept in the tab, where a tab among thirty others IS asked
+       which app this is. */
+    where(bare ? NO_STYLE_SAID : (shelf || ""), shelf ? null : "אקורדים");
     setBusy("טוען שירים");
 
     /* The songs, and which of them has an offer standing on it, asked

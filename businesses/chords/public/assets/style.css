@@ -330,6 +330,12 @@ body.on-air .top {
   outline: none;
 }
 .top-where:empty { display: none; }
+/* AND WHERE THERE IS NO NAME, THE COLUMN IS NOT THERE AT ALL. Both lines in it
+   go on their own when they are empty, but the column that holds them still
+   spends the row's gap, and the room in this row belongs to the search box (see
+   .top-find). The library is the page this is about: it stopped naming itself
+   up here, and what it gave up is the box's now. */
+body.unnamed .top-name { display: none; }
 
 /* --- AND WHO MADE IT WAS UNDER ITS NAME, AND IS NOT ANY MORE ----------------
    There was a .top-sub here, a second line under the title holding the credits
@@ -576,6 +582,9 @@ body.on-air .top {
      end. The two of them are one row again and the space in front of them is
      what gives way.
 
+     ALL OF WHICH IS ABOUT A BAR THAT STILL CARRIES A NAME. Where it does not,
+     the box is a box here too, and the block further down is that.
+
      AND IN THE OTHER ORDER FROM THE ONE THEY STAND IN ON A DESK. There the
      box is a box, and it lies between the name of the page and the buttons
      because that stretch of bar is the only room nobody else wants. Here it
@@ -602,22 +611,43 @@ body.on-air .top {
   .top-find .find > svg { width: 18px; height: 18px; color: inherit; }
   .top-find input[type="search"] { width: 0; flex: 0 0 0; }
 
-  /* open, it is a field again: the room and the space around what is in it
+  /* Open, it is a field again: the room and the space around what is in it
      come back. The white is not mentioned here any more, because it never
-     went: closed it is a button and a button on this bar is white. */
-  body.finding .top-find { flex: 1 1 auto; width: auto; }
-  body.finding .top-find .find {
+     went: closed it is a button and a button on this bar is white.
+
+     AND IT IS OPEN FROM THE START ON A BAR WITH NO NAME ON IT. The whole of the
+     glass above is an answer to a row that is full: a mark, the name of the
+     page and four pictures, with ninety pixels left over. The library carries
+     no name any more (see where in app.js), so the row is the mark, the box and
+     the fork, and there is room for the box to BE a box. Which is also the only
+     way anybody meets it: a glass that has to be pressed before it says what it
+     is for is a search nobody looks for.
+     It goes back to the order it stands in on a desk, so the fork keeps the
+     corner and the box runs from the mark up to it. */
+  body.finding .top-find,
+  body.unnamed .top-find { flex: 1 1 auto; width: auto; order: 0; }
+  body.finding .top-find .find,
+  body.unnamed .top-find .find {
     padding: 0 12px; gap: 9px; justify-content: flex-start;
   }
-  body.finding .top-find input[type="search"] { width: auto; flex: 1 1 auto; }
+  body.finding .top-find input[type="search"],
+  body.unnamed .top-find input[type="search"] { width: auto; flex: 1 1 auto; }
   /* The facts go with the name, because they are the name's second half: what
      the song says about itself has nothing to do with the question being typed
      into the box, and one more picture standing there is one more bite out of
-     the ninety pixels the box was already short of. */
-  body.finding .brand, body.finding .top-actions, body.finding .top-name,
-  body.finding .top-facts, body.finding .top-in > .tools { display: none; }
-  /* everything that could have given the bar back is now hidden, so the box
-     carries its own way out */
+     the ninety pixels the box was already short of.
+
+     Not on the bare bar, where nothing is in the way: the box already runs the
+     width of the row, and there is no room to be had by taking the mark and the
+     fork off the screen. All that would be left is the flinch of a bar
+     rearranging itself under the thumb that touched it. */
+  body.finding:not(.unnamed) .brand, body.finding:not(.unnamed) .top-actions,
+  body.finding:not(.unnamed) .top-name, body.finding:not(.unnamed) .top-facts,
+  body.finding:not(.unnamed) .top-in > .tools { display: none; }
+  /* On a full bar, everything that could have given the bar back is hidden, so
+     the box has to carry its own way out. On the bare one it is the way out of
+     the SEARCH rather than out of the bar: a press empties the box and hands
+     the whole wall back, which is otherwise a field to be cleared by hand. */
   body.finding .top-find .find-x { display: flex; }
 
   /* the total beside the name comes down with the name: they are one line,
