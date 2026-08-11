@@ -3440,7 +3440,23 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    a monospace face because a chord in it is placed by COUNTING CHARACTERS,
    which is the one thing that can be done without measuring anything: the
    real sheet next door measures every letter and is right at any size.
+
+   AND IT HOLDS STILL BEFORE IT SHOWS ITSELF. On a load that went well the
+   script is here within a few hundred milliseconds, and all the seed does
+   there is put a page of plain markup on the screen and have it replaced by
+   the real one, which reads as a fault and not as a fallback. So it waits out
+   the length of a load that went well. Past that the script is late, somebody
+   is looking at a page with nothing on it, and the words are better than
+   nothing.
+
+   Whoever this is actually for is unaffected: a reader that does not run
+   scripts does not animate a stylesheet either and takes the markup as
+   written, and one that does run scripts is given the real page, which is
+   what app.js draws over this.
    ========================================================================== */
+#seed { animation: seed-wait 0s linear 600ms both; }
+@keyframes seed-wait { from { visibility: hidden; } to { visibility: visible; } }
+
 .seed { max-width: 720px; margin-inline: auto; padding: 20px 0 64px; }
 .seed h1 { font-size: 26px; margin: 0 0 6px; }
 .seed h2 { font-size: 17px; margin: 26px 0 8px; }
