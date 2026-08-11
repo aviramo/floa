@@ -480,18 +480,34 @@
        itself, capo or no capo. So the search runs upwards and stops at the
        first note carrying a real part of the energy in this range, and how
        much of it that note carries is how sure we are. */
-    var sal = [];
+    /* AND IT IS ASKED FOR AT ITS OWN PITCH AND NOWHERE ELSE, which is the
+       whole of the correction. Everything else in this file reads a note as
+       EVIDENCE spread over its harmonics (see salience), and that is right for
+       asking "is this note in the chord": a fundamental can be weak and the
+       note still plainly there.
+
+       IT IS EXACTLY WRONG FOR ASKING WHICH NOTE IS LOWEST. Reading a low note
+       off its harmonics invents notes underneath the music. A G2 nobody played
+       has its second multiple sitting on the G3 somebody did, and its third on
+       the D4 above that, so it scores well while being silent; and this search
+       runs upwards and takes the first thing it believes, so a note that does
+       not exist wins over the note that does simply by being lower. That is a
+       classic error and it has a name: hearing an octave down.
+
+       So a note counts here only if there is energy AT IT. Nothing invents a
+       fundamental: harmonics go up, never down. */
+    var own = [];
     var top = 0;
     for (n = BASS_LOW; n <= BASS_HIGH; n++) {
-      var s = salience(n, [1, 0.5, 0.3]);
-      sal.push(s);
-      if (s > top) top = s;
+      var here = at(freqs[n - LOW_NOTE]);
+      own.push(here);
+      if (here > top) top = here;
     }
     bass = -1;
     bassSure = 0;
     if (top > 0) {
       for (n = BASS_LOW; n <= BASS_HIGH; n++) {
-        var mine = sal[n - BASS_LOW];
+        var mine = own[n - BASS_LOW];
         if (mine < top * LOW_ENOUGH) continue;
         bass = n % 12;
         /* All of it when the lowest note is also the strongest, which is what
