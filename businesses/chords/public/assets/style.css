@@ -908,37 +908,54 @@ body.sifting .find-extra { display: none; }
    air comes back as exactly the number that was added, which is why that
    number has a name.
 
-   THE SHAPE IS WHAT CHANGES WITH THE WIDTH, and not the drawing. A phone gets
-   a landscape frame, which is the most of it a hand-held screen can give away
-   and still open on songs. A desk gets a strip: the same height held across
-   two thousand pixels is half a screen spent before the first song, and past
-   1200 the ceiling stops it growing at all. The drawing is wider than either
-   frame and is cropped to it rather than reshaped, which is what the cover
-   below is for. */
+   IT IS A BAND AND NOT A PICTURE OF A BAND. It was a landscape frame on a
+   phone, three fifths as tall as it was wide, and the first thing under it was
+   below the fold on a small screen: the library opened on a drawing instead of
+   on songs. Two fifths, and the songs are back where the thumb is.
+
+   WHAT THE SHORTER FRAME DOES IS SHOW MORE OF THE DRAWING, not less of it: the
+   art is a five to one strip and every frame here is narrower than that, so it
+   is filled by height and cut at the sides (see cover below). A shorter band is
+   a wider window onto the same drawing, which is why the two of them are drawn
+   with room either side of them and the notes are strewn well past it.
+
+   THE SHAPE IS WHAT CHANGES WITH THE WIDTH, and not the drawing. A desk gets a
+   thinner band still: the same height held across two thousand pixels is a
+   screenful spent before the first song, and past about 1300 the ceiling stops
+   it growing at all. */
 .strip {
   margin: calc(var(--bar-air) * -1) -16px 18px;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 5 / 2;
   overflow: hidden;
   /* the drawing's own paper, for the moment before it arrives */
   background: #eef6f4;
 }
 .strip img {
   display: block; width: 100%; height: 100%;
-  /* FILLED, NEVER STRETCHED. Both frames are narrower than the drawing, so
+  /* FILLED, NEVER STRETCHED. Every frame here is narrower than the drawing, so
      what a frame has no room for is cut off its sides or its ends, and the
      middle of it, where the two of them are standing, is in every one of
      them. */
   object-fit: cover;
+  /* AND WHAT IS CUT OFF A SHORT BAND IS THE FEET. On a wide screen the band is
+     a slice of a drawing that is nearly as tall as its people, and a slice
+     taken from the middle takes the same off the top as off the bottom: their
+     heads. Held up here, the wider the screen gets the more of the legs it
+     loses and never the heads, which is how a photographer would have framed
+     it anyway. */
+  object-position: 50% 25%;
 }
 /* A HEIGHT, AND NOT A RATIO WITH A CEILING ON IT. aspect-ratio and max-height
    together do not do what they look like they do: the ratio is kept, so a box
    whose height is cut to the ceiling gives up the width to match, and a band
    that is meant to run to both edges of the glass comes back off them. The
-   height is asked for outright instead, a quarter of the window until that
-   reaches three hundred pixels, and the width is left alone at the whole of
-   it. */
+   height is asked for outright instead, a sixth of the window between a floor
+   and a ceiling, and the width is left alone at the whole of it. The floor is
+   there because a sixth of a narrow desk window is a letterbox with two heads
+   in it; the ceiling, because past about 1650 pixels the band would go on
+   growing into the screenful it was cut down from. */
 @media (min-width: 621px) {
-  .strip { aspect-ratio: auto; height: min(300px, 25vw); }
+  .strip { aspect-ratio: auto; height: clamp(150px, 17vw, 280px); }
 }
 /* A drawing is not a fact about a song, and paper gets the facts. */
 @media print { .strip { display: none !important; } }
