@@ -5641,26 +5641,32 @@
     return band;
   }
 
-  /* THE TUNING FORK, ONE PRESS FROM THE LIBRARY, AND IT SAYS WHAT IT IS. It
-     stood here as a picture alone, which is the one thing a bar cannot do for
-     a control nobody has met before: a fork among grey pictures is found by
-     pressing until something happens. So it carries its word, "טיונר", and it
-     KEEPS that word on a phone, where the bar takes the word off everything
-     else it holds (see the media query for .tuner). Five letters are worth
-     the room here, because the picture on its own was not enough.
+  /* THE TUNING FORK, ONE PRESS FROM THE LIBRARY. It carried the word "טיונר"
+     beside its picture, on the reasoning that a fork is a shape most people
+     have never pressed and a grey picture among grey pictures is found by
+     pressing to see what happens. The word is gone and the reasoning is
+     answered another way: it is the one thing in the bar drawn in the app's
+     green and filled with it, which is louder than five letters were and costs
+     the row no width at all (see .icon-btn.tuner). The word is still on it for
+     anybody who hovers or listens, as its title and its label.
+
+     A picture alone is also the shape every other button up here is, so the row
+     is a row of pictures again, one of them green.
 
      The doors went down to the row over the wall and this did not follow them:
      it is not a door. It opens a panel over the page you are already on and
      leaves you there, and it is picked up in the middle of doing something
      else, with a guitar in both hands.
 
-     Kept like everything else up here, and lit the way the row for it in a
-     song's own panel is: it says whether the thing behind it is open at the
-     moment you look at it, which it can only do if it is painted rather than
-     built. */
+     Kept like everything else up here, and lit while the panel is open: green
+     until it is listening and red while it is, which is what the other door to
+     the microphone does in the band below (see .ear-door.is-on). It can only
+     say that if it is painted rather than built. */
   function tuner() {
     var node = keep("tuner", function () {
-      return button("טיונר", ICON.fork, "ghost small tuner", function () { askEar("tune"); });
+      var b = iconBtn(ICON.fork, "טיונר", function () { askEar("tune"); });
+      b.classList.add("tuner");
+      return b;
     });
     node.classList.toggle("is-on", earOpen() && earMode === "tune");
     return node;

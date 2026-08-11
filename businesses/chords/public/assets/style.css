@@ -331,23 +331,24 @@ body.at-home .brand { display: none; }
    round it. Which is what a ghost is EVERYWHERE ELSE, and rightly, because
    elsewhere it stands on white and the transparency is what keeps it quiet.
 
-   Up here the row is read as a row: the tuner beside the dots beside the
-   glass. Two of them white and one of them grey is one control saying it is a
-   different kind of thing from the two next to it, and it is not. */
+   Up here the row is read as a row: the dots beside the glass beside the fork.
+   One of them white and one of them grey is one control saying it is a
+   different kind of thing from the one next to it, and it is not. */
 .top-actions .btn.ghost { background: var(--card); }
 
-/* AND THE FORK IS IN THE APP'S GREEN. It keeps the white the row is drawn in,
-   so it is still one of three white buttons on the bar, and only its ink and
-   its line are the green: the one control up here that is a tool rather than a
-   way somewhere else, said in the colour the app uses for itself. Solid green
-   is spoken for by the one button on the page that adds a song, and two solid
-   greens is two first things.
-
-   Written with the ghost on it, because the quiet grey it is overruling is the
-   later rule in the file (see .btn.ghost:hover) and a tie goes to the later
-   one. */
-.top-actions .btn.ghost.tuner { color: var(--accent); border-color: var(--accent); }
-.top-actions .btn.ghost.tuner:hover { background: var(--accent-soft); border-color: var(--accent); }
+/* EXCEPT THE FORK, WHICH IS FILLED WITH THE APP'S GREEN. It is a picture and
+   no word now (see tuner in app.js), and a fork is a shape most people have
+   never pressed: white among white it was the one button on the bar nobody
+   could name without pressing it. Green is what the word used to do, in no
+   width at all. The other filled green on this page is the one button that adds
+   a song, and it is on the wall below rather than in the bar, so the two are
+   never read side by side. */
+.top-actions > .icon-btn.tuner {
+  color: #fff; background: var(--accent); border-color: var(--accent);
+}
+.top-actions > .icon-btn.tuner:hover {
+  color: #fff; background: var(--accent-ink); border-color: var(--accent-ink);
+}
 
 /* --- WHAT PAGE THIS IS ----------------------------------------------------
    The app's name used to stand here beside its own mark, which is one word
@@ -581,14 +582,11 @@ body.unnamed .top-name { display: none; }
    it sat up on the label's own line and squeezed it. */
 @media (max-width: 620px) {
   .top-actions .btn svg + .lb { display: none; }
-  /* EXCEPT THE FORK, which keeps its word here. Everything else in this bar
-     is a picture somebody already knows, a plus that adds and a face that is
-     an account; a tuning fork is a shape most people have never pressed, and
-     without the word it was found by pressing to see what happened. Five
-     letters, and the bar has the room for them now that the doors have gone
-     down to the wall (see .tally-door). */
-  .top-actions .btn.tuner svg + .lb { display: inline; }
-  /* AND THE WAY IN KEEPS ITS WORD TOO. Google's mark is known everywhere, and
+  /* The fork used to be the exception here, keeping its word on a phone
+     because a tuning fork is a shape most people have never pressed. It has no
+     word at any width now, on the bar or off it, and says what it is by being
+     the one thing up here filled with the app's green (see .icon-btn.tuner). */
+  /* AND THE WAY IN KEEPS ITS WORD. Google's mark is known everywhere, and
      it still says only "Google", never what pressing it here is for. It is
      left in the bar on the two pages that have no row of doors to hold it
      (see session in app.js), and on those it stands there alone, so the room
