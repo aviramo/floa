@@ -7048,6 +7048,10 @@
          the page is as short as it is. */
       if (state.sift) {
         document.body.classList.remove("finding");
+        /* Which gives the page back too, unless there are words in the box: an
+           empty box somebody has stepped out of is not a search, and the doors
+           and the shelves over the wall belong to the page again. */
+        siftMark();
         return findField.blur();
       }
       clearFind();
@@ -7062,6 +7066,9 @@
   function openFind() {
     if (!findField) return;
     document.body.classList.add("finding");
+    /* and on a page being sieved, the press is what empties everything over the
+       songs, before a single letter (see siftMark) */
+    siftMark();
     if (document.activeElement !== findField) findField.focus();
   }
 
@@ -7083,18 +7090,29 @@
      sieved is the box and the songs and nothing else (see body.sifting in the
      stylesheet), and all of it comes back the moment the box is emptied.
 
+     AND IT STARTS AT THE PRESS, NOT AT THE FIRST LETTER. Somebody who has put
+     the cursor in that box has already said what they are doing, and making
+     them earn the room by typing a letter meant the page shuffled itself twice:
+     once for the press and once for the letter. The room is theirs from the
+     moment the box is theirs. `finding` is the class the box wears while it is
+     in use, so the two questions here are the same one: is there anything in it,
+     and is anybody in it.
+
      Marked as a class rather than left to the sieve, because a page put aside
      and uncovered again comes back still narrowed (see reveal), and what is
      over the songs has to know that too. */
   function siftMark() {
-    var q = state.sift && String(state.sift.q || "").trim();
-    document.body.classList.toggle("sifting", !!q);
+    if (!state.sift) return document.body.classList.remove("sifting");
+    var live = String(state.sift.q || "").trim() ||
+      document.body.classList.contains("finding");
+    document.body.classList.toggle("sifting", !!live);
   }
 
   /* A new page is a new question, and the answer to the old one hanging over
      it is a panel about where you have just been. */
   function clearFind() {
     document.body.classList.remove("finding");
+    siftMark();
     if (!findField) return;
     findField.value = "";
     findField.blur();
@@ -7239,6 +7257,12 @@
       if (state.sift) {
         findField.value = "";
         state.sift("");
+        /* Escape is "done with this", so it steps out of the box as well as
+           emptying it, and everything over the wall comes back with the wall
+           (see siftMark). Without this the page stayed held down by a box
+           nobody was in and nothing was in. */
+        document.body.classList.remove("finding");
+        siftMark();
         return findField.blur();
       }
       return clearFind();

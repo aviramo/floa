@@ -831,7 +831,10 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    found. The counts go with them, wherever they are standing (on a desk they
    are inside the box, see .find-extra), because a count of what the library
    holds is a fact about the wall that is no longer on the screen.
-   All of it comes back the moment the box is empty (see siftMark). */
+   FROM THE PRESS, not from the first letter: putting the cursor in that box is
+   already the whole of the decision, and waiting for a letter made the page
+   move twice for one gesture. All of it comes back when the box is empty and
+   nobody is standing in it (see siftMark). */
 body.sifting .kinds-row,
 body.sifting .strip,
 body.sifting .shelves,
