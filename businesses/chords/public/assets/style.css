@@ -3266,6 +3266,8 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
      on the chords goes with it: what is being played at this second is the
      shortest lived fact in the app, and printing one is printing a moment. */
   .ear, .takes { display: none !important; }
+  /* and the glass the tuner puts the page behind is a grey page on paper */
+  body.on-ear::before { display: none !important; }
   /* and the band under the line goes with them: paper has no follower on it */
   .ln.is-here::before { display: none !important; }
   .chord.is-heard {
@@ -3414,13 +3416,44 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   animation: pop-up .22s ease;
   transition: transform .22s ease;
 }
-/* THE ONE THING IT DOES NOT TAKE FROM THE OTHER SHEETS IS THE DARK BEHIND IT.
-   This panel is read WHILE the song under it is being played from, and a page
-   behind glass is a page nobody can follow. Everything else about it is the
-   same: the shape, the bar across the top, the push down that puts it away,
-   the press outside, and back (see buildEar in app.js). */
+/* AND THE DARK BEHIND IT BELONGS TO ONE OF THE TWO SIDES AND NOT TO THE OTHER.
+   The measurement is read WHILE the song under it is being played from, and a
+   page behind glass is a page nobody can follow, so nothing is darkened for
+   it. THE TUNER IS THE OTHER THING ENTIRELY: a string is turned with the eyes
+   on the needle, the page behind it is not being read at all, and a panel that
+   asks to be looked at while the page stays lit is a panel that has to be
+   found. So it stands like every other panel in this app, over a page put
+   behind glass, and the dark is also what it is closed by: a press on it is a
+   press outside the band, which is the gesture that puts it away already (see
+   earOutside in app.js).
+
+   THE PAGE DRAWS IT AND NOT THE BAND, because a shape inside the band could
+   never cover the band's own edges. It exists for as long as the band does and
+   only turns dark for the tuner, so the fifth of a second of the sheet leaving
+   is not a fifth of a second of the page flashing back to white behind it (see
+   earRoom, and shutEar which takes the dark off as the sheet starts down).
+
+   Nothing under it is pressable while it is dark, which is what the glass
+   means, and while it is clear it must not eat a single press. */
+body.on-ear::before {
+  content: ""; position: fixed; inset: 0; z-index: 59;
+  background: rgba(23, 32, 42, .35);
+  opacity: 0; pointer-events: none;
+  transition: opacity .22s ease;
+}
+body.ear-dark::before { opacity: 1; pointer-events: auto; }
+/* THE GLASS COMES ON RATHER THAN BEING ON. The page is given it in the same
+   breath as the band is built, so the first style it is ever drawn with is the
+   dark one, and a transition from a style nothing was ever drawn with does not
+   run: the page would snap dark under a sheet still sliding up. This is where
+   it is told what it came from. A browser that does not know the rule loses
+   the fade and nothing else. */
+@starting-style {
+  body.ear-dark::before { opacity: 0; }
+}
 @media (prefers-reduced-motion: reduce) {
   .ear { animation: none; transition: none; }
+  body.on-ear::before { transition: none; }
 }
 /* Room under the song for the band standing over it, so the last line of a
    song is a line you can read rather than one behind the glass. */

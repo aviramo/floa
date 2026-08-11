@@ -1,16 +1,28 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 320" width="1600" height="320">
 <!-- ==========================================================================
-     THE BAND OVER THE LIBRARY, and the only drawing in the app.
+     THE BAND UNDER THE BAR, and the only drawing in the app.
 
-     Two people and a stave: somebody singing into a microphone, somebody
-     playing a guitar, and the music running behind them from one end of the
-     band to the other. Silhouettes, because a silhouette is anybody: this
+     Two people in the middle of a song: she is leaning back with a fist in the
+     air and the microphone at her mouth, he is bent over the guitar with his
+     arm through the strum. Silhouettes, because a silhouette is anybody: this
      library is sung by whoever opened it, and a drawn face would be a person
      who is not them.
 
+     THE WHOLE OF IT IS THE ONE SECOND IT IS DRAWING. Nobody is standing here:
+     both of them are off the upright, both stances are wide, her hair is
+     behind her and his arm has left a trail of where it just was. A silhouette
+     that stands straight with its arms down is a person waiting, and a library
+     of songs is not a queue.
+
+     AND HE IS PLAYING IT RATHER THAN HOLDING IT. The hand is past the strings
+     and below them with the streaks of the sweep still on the face of the
+     guitar, the other hand is closed on the neck, and the body is turned into
+     the instrument. A hand resting on a guitar is a photograph of somebody
+     about to begin.
+
      In the app's own colours rather than in black: the people are the ink
-     every word here is written in, the guitar is the green, and a note or two
-     is the red a chord is written in.
+     every word here is written in, the guitar is the green, and the voice and
+     a note or two are the red a chord is written in.
 
      IT IS WIDER THAN EITHER FRAME IT IS SHOWN IN. A phone gets it in
      landscape and a desk gets a strip of it (see .strip in style.css), so the
@@ -30,10 +42,12 @@
     <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
   </radialGradient>
   <!-- The soundhole is a hole, and not a paler circle painted on the guitar:
-       whatever is behind the drawing at that point is what shows through. -->
+       whatever is behind the drawing at that point is what shows through. It
+       is in the guitar's own coordinates, which is why it is a shape here and
+       a mask on the group that carries the same transform. -->
   <mask id="soundhole">
-    <rect width="1600" height="320" fill="#ffffff"/>
-    <circle cx="884" cy="227" r="15" fill="#000000"/>
+    <rect x="-400" y="-400" width="1200" height="800" fill="#ffffff"/>
+    <circle cx="-62" cy="-38" r="14" fill="#000000"/>
   </mask>
   <!-- One note, and one pair of notes beamed together, drawn once here and
        put down wherever they are wanted. They carry no colour of their own:
@@ -70,73 +84,100 @@
 <!-- The notes on it. The ones in red are the colour every chord in this app is
      written in, so the two things a song is made of are both in the picture. -->
 <g fill="#0e8c7e" fill-opacity=".55">
-  <!-- These two stand close in beside the singer, inside the part of the
-       drawing a phone is given: everything further out is a desk's. -->
-  <use href="#note" transform="translate(548 122) scale(1.1)"/>
-  <use href="#note" transform="translate(150 214) scale(1.15)"/>
-  <use href="#pair" transform="translate(268 190) scale(1)"/>
-  <use href="#note" transform="translate(430 152) scale(1.25)"/>
-  <use href="#pair" transform="translate(1148 106) scale(1.1)"/>
-  <use href="#note" transform="translate(1330 128) scale(1.25)"/>
-  <use href="#note" transform="translate(1470 150) scale(1)"/>
+  <!-- These two stand close in beside them, inside the part of the drawing a
+       phone is given: everything further out is a desk's. -->
+  <use href="#note" transform="translate(548 122) scale(1.1) rotate(-8)"/>
+  <use href="#note" transform="translate(150 214) scale(1.15) rotate(6)"/>
+  <use href="#pair" transform="translate(268 190)"/>
+  <use href="#note" transform="translate(430 152) scale(1.25) rotate(-7)"/>
+  <use href="#pair" transform="translate(1148 106) scale(1.1) rotate(5)"/>
+  <use href="#note" transform="translate(1330 128) scale(1.25) rotate(-6)"/>
+  <use href="#note" transform="translate(1470 150)"/>
 </g>
 <g fill="#e11d63" fill-opacity=".5">
-  <use href="#pair" transform="translate(1024 126) scale(1)"/>
-  <use href="#note" transform="translate(360 166) scale(1)"/>
-  <use href="#note" transform="translate(1268 112) scale(1.15)"/>
+  <use href="#pair" transform="translate(1024 126) rotate(-6)"/>
+  <use href="#note" transform="translate(360 166) rotate(8)"/>
+  <use href="#note" transform="translate(1268 112) scale(1.15) rotate(-9)"/>
 </g>
 
-<!-- SHE IS SINGING, and everything about her that says so is in one hand: the
-     arm up, the microphone at her mouth, and no instrument to hold. -->
-<g fill="#17202a">
-  <circle cx="640" cy="88" r="24"/>
-  <rect x="630" y="104" width="20" height="24"/>
-  <path d="M640 116C612 118 596 136 592 162L606 216L610 246L670 246L674 216L688 162C684 136 668 118 640 116Z"/>
-  <circle cx="673" cy="100" r="11.5"/>
-</g>
-<g fill="none" stroke="#17202a" stroke-linecap="round">
-  <path d="M622 244L612 318" stroke-width="26"/>
-  <path d="M658 244L668 318" stroke-width="26"/>
-  <!-- the arm with the microphone in it, and the arm that is only keeping time -->
-  <path d="M686 172C706 158 702 138 692 126" stroke-width="17"/>
-  <path d="M596 166C574 188 570 214 578 238" stroke-width="17"/>
-  <path d="M680 108L696 124" stroke-width="9"/>
-</g>
-
-<!-- HE IS PLAYING. The guitar is drawn over him and his arms over the guitar,
-     which is the order the three of them are actually in. -->
-<g fill="#17202a">
-  <circle cx="946" cy="90" r="25"/>
-  <rect x="936" y="106" width="20" height="24"/>
-  <path d="M940 116C912 118 896 136 892 162L906 216L910 246L970 246L974 216L988 162C984 136 968 118 940 116Z"/>
-</g>
-<g fill="none" stroke="#17202a" stroke-linecap="round">
-  <path d="M922 246L912 318" stroke-width="26"/>
-  <path d="M958 246L968 318" stroke-width="26"/>
-</g>
-
-<g mask="url(#soundhole)">
-  <g fill="#0a6c61">
-    <!-- the two bouts and the waist between them, which is the whole shape of
-         a guitar said in three pieces -->
-    <circle cx="900" cy="240" r="50"/>
-    <circle cx="848" cy="196" r="40"/>
-    <path d="M862 230C846 218 838 206 840 192C856 200 872 208 884 218Z"/>
+<!-- SHE IS SINGING, and every line of her says so: off the upright and going
+     back, the stance open, one fist up, and the hair still catching up with
+     the head. Everything is drawn about her hips, which is the one point she
+     is turning around, and the lean is the last thing done to her. -->
+<g transform="translate(636 240) rotate(-10)">
+  <g fill="#17202a">
+    <!-- the hair goes first: it is behind her -->
+    <path d="M-12 -186C-32 -198 -50 -196 -60 -184C-46 -186 -36 -182 -28 -176C-44 -170 -52 -160 -54 -150C-42 -160 -28 -166 -16 -166Z"/>
+    <circle cx="0" cy="-168" r="23"/>
+    <rect x="-9" y="-152" width="18" height="16"/>
+    <path d="M0 -146C-26 -144 -42 -130 -46 -110L-34 -50L-30 0L30 0L34 -50L46 -110C42 -130 26 -144 0 -146Z"/>
+    <circle cx="32" cy="-172" r="11"/>
+    <circle cx="-42" cy="-190" r="10"/>
   </g>
-  <g fill="none" stroke="#0a6c61" stroke-linecap="round">
-    <path d="M820 173L736 102" stroke-width="16"/>
-    <path d="M736 102L718 87" stroke-width="28"/>
+  <g fill="none" stroke="#17202a" stroke-linecap="round">
+    <path d="M-14 -4L-56 72" stroke-width="26"/>
+    <path d="M14 -4L44 76" stroke-width="26"/>
+    <!-- the arm with the microphone in it, and the arm that has nothing in it -->
+    <path d="M40 -108C66 -124 62 -146 48 -158" stroke-width="17"/>
+    <path d="M-34 -108C-58 -132 -52 -160 -42 -186" stroke-width="16"/>
+    <path d="M40 -164L50 -154" stroke-width="9"/>
+  </g>
+  <!-- what is coming out of it -->
+  <g fill="none" stroke="#e11d63" stroke-linecap="round">
+    <path d="M37.2 -191.3A20 20 0 0 1 51.3 -177.2" stroke-width="3.2" stroke-opacity=".6"/>
+    <path d="M39.8 -201A30 30 0 0 1 61 -179.8" stroke-width="2.8" stroke-opacity=".45"/>
+    <path d="M42.4 -210.6A40 40 0 0 1 70.6 -182.4" stroke-width="2.4" stroke-opacity=".3"/>
   </g>
 </g>
-<!-- The strings, over the hole the way strings are. -->
-<g fill="none" stroke="#ffffff" stroke-opacity=".45" stroke-width="1.5">
-  <path d="M739 99L903 235"/>
-  <path d="M733 106L897 242"/>
-</g>
 
-<g fill="none" stroke="#17202a" stroke-linecap="round">
-  <!-- the hand on the strings, and the hand on the neck -->
-  <path d="M980 168C974 200 950 226 926 234" stroke-width="20"/>
-  <path d="M902 166C866 180 818 160 782 134" stroke-width="18"/>
+<!-- HE IS PLAYING IT. Same hips, same lean, the other way: into the guitar.
+     The guitar is drawn over him and his arms over the guitar, which is the
+     order the three of them are actually in. -->
+<g transform="translate(944 240) rotate(7)">
+  <g fill="#17202a">
+    <path d="M14 -184C34 -194 48 -186 52 -172C40 -178 30 -176 22 -172C34 -164 38 -154 38 -146C28 -156 16 -162 6 -164Z"/>
+    <circle cx="0" cy="-168" r="23"/>
+    <rect x="-9" y="-152" width="18" height="16"/>
+    <path d="M0 -146C-26 -144 -42 -130 -46 -110L-34 -50L-30 0L30 0L34 -50L46 -110C42 -130 26 -144 0 -146Z"/>
+  </g>
+  <g fill="none" stroke="#17202a" stroke-linecap="round">
+    <path d="M-16 -4L-58 74" stroke-width="26"/>
+    <path d="M16 -4L46 72" stroke-width="26"/>
+  </g>
+
+  <!-- WHERE THE ARM HAS JUST BEEN, and the only reason anybody can tell this
+       hand is moving. Two thin arcs off the way it came, fainter the further
+       back they are. -->
+  <g fill="none" stroke="#17202a" stroke-linecap="round" stroke-width="3">
+    <path d="M52 -78C60 -44 48 -14 20 6" stroke-opacity=".2"/>
+    <path d="M64 -84C74 -46 60 -12 28 12" stroke-opacity=".12"/>
+  </g>
+
+  <g mask="url(#soundhole)">
+    <g fill="#0a6c61">
+      <circle cx="-46" cy="-24" r="48"/>
+      <circle cx="-96" cy="-68" r="38"/>
+    </g>
+    <g fill="none" stroke="#0a6c61" stroke-linecap="round">
+      <path d="M-124 -93L-196 -156" stroke-width="15"/>
+      <path d="M-196 -156L-212 -170" stroke-width="26"/>
+    </g>
+  </g>
+  <!-- The strings, over the hole the way strings are, and the sweep of the
+       hand still on them. -->
+  <g fill="none" stroke="#ffffff" stroke-linecap="round">
+    <path d="M-187.4 -155L-37.4 -19" stroke-width="1.5" stroke-opacity=".45"/>
+    <path d="M-192.6 -149L-42.6 -13" stroke-width="1.5" stroke-opacity=".45"/>
+    <path d="M-8 -36C-12 -24 -20 -14 -30 -8" stroke-width="4" stroke-opacity=".5"/>
+    <path d="M-2 -18C-6 -6 -14 2 -24 8" stroke-width="4" stroke-opacity=".38"/>
+    <path d="M-14 -2C-20 6 -28 12 -38 14" stroke-width="4" stroke-opacity=".26"/>
+  </g>
+
+  <g fill="none" stroke="#17202a" stroke-linecap="round">
+    <!-- the hand that is through the strings, and the hand that is holding the
+         chord down -->
+    <path d="M38 -110C48 -66 22 -22 -16 -6" stroke-width="20"/>
+    <path d="M-38 -112C-78 -100 -122 -104 -156 -122" stroke-width="18"/>
+  </g>
 </g>
 </svg>

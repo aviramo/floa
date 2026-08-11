@@ -16389,6 +16389,10 @@
        moves while it is still standing there (see sheetDown). */
     var going = ear;
     ear = null;
+    /* The glass goes as the sheet starts down and not when it has landed: a
+       page that stays dark for a fifth of a second after the panel over it has
+       gone is a page waiting for something that is no longer there. */
+    document.body.classList.remove("ear-dark");
     sheetDown(going, function () {
       going.remove();
       /* unless one was asked for again while this one was still on its way
@@ -16510,9 +16514,11 @@
     document.body.classList.add("on-ear");
     /* The same sheet as everything else that stands over the page, down to the
        bar across the top of it and the push downwards that puts it away (see
-       gripUp). The one thing it does not take from openSheet is the dark: this
-       panel is read WHILE the song under it is being played from, and a page
-       behind glass is a page nobody can follow. */
+       gripUp). The dark behind it is the one thing it takes only on one of its
+       two sides: the tuner is looked at instead of the page and stands over
+       glass like every other panel, the measurement is read WHILE the song
+       under it is being played from and a page behind glass is a page nobody
+       can follow (see earRoom). */
     gripUp(ear, shutEar);
     document.addEventListener("pointerdown", earOutside, true);
     document.addEventListener("keydown", earEscape, true);
@@ -17386,6 +17392,12 @@
     /* On the BODY and not on the band, because what it changes is how much
        room the page keeps under itself, and the page is not inside the band. */
     document.body.classList.toggle("on-ear", !away);
+    /* AND THE DARK BEHIND IT IS THE TUNER'S ALONE. Turning a string is done
+       with the eyes on the needle and the page behind it unread, so the tuner
+       stands over a page behind glass like every other panel here. The
+       measurement is the opposite: it is read while the song under it is being
+       played from, and a page behind glass is a page nobody can follow. */
+    document.body.classList.toggle("ear-dark", earMode === "tune" && !away);
     earParts.chord.node.classList.toggle("is-following", on);
     earParts.chord.go.classList.toggle("is-on", !!following);
     paintTape();
