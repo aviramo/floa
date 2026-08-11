@@ -1980,14 +1980,19 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   width: auto; padding: 0 7px;
   display: inline-flex; align-items: center; gap: 5px;
 }
-/* A shade under the dots beside it, the way a second word is quieter than the
-   first: the dots are what the button does, and this is what it happens to
-   hold. And it takes no press of its own, so a fingertip landing on it opens
-   the panel like anywhere else on the button. */
+/* THE SIZE OF THE PICTURE BESIDE IT, and it is not written here at all: it is
+   an icon inside an icon button and takes the size every icon in one takes
+   (see .icon-btn svg). It was drawn smaller for a while, on the thought that
+   the dots are what the button does and this is only what it happens to hold,
+   and a shape that small beside a full-sized one reads as a leftover of the
+   badge it used to be rather than as the other half of the label. Two pictures
+   on one button are two pictures.
+
+   It takes no press of its own, so a fingertip landing on it opens the panel
+   like anywhere else on the button. */
 .more-takes {
   display: inline-flex; color: var(--accent); pointer-events: none;
 }
-.more-takes svg { width: 12px; height: 12px; }
 
 /* THREE CONTROLS, AND NOTHING DRAWN ROUND THEM. Each of them is already a box
    with a line round it, and a fourth line round all three is a box inside a box
