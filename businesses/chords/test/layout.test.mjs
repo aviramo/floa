@@ -117,6 +117,18 @@ const SONG = ${JSON.stringify(s)};
 window.fetch = (url) => Promise.resolve(new Response(
   JSON.stringify(String(url).includes("/rest/v1/songs") ? [SONG] : []),
   { status: 200, headers: { "content-type": "application/json" } }));
+/* THE LINES OF THE PAGE, which are not the lines of the song and not always
+   the rows either: where two rows share one line of the page they stand in a
+   pair, and the pair is the line. Which is the thing a repeat bar is drawn by
+   (see repBox in app.js), so it is the thing these checks count. */
+window.pageLines = () => {
+  const out = [];
+  for (const ln of document.querySelectorAll(".sheet .ln")) {
+    const box = ln.parentNode.classList.contains("ln-row") ? ln.parentNode : ln;
+    if (out[out.length - 1] !== box) out.push(box);
+  }
+  return out;
+};
 <\/script>
 </head><body>
 <header class="top"><div class="wrap top-in"><a class="brand" href="/chords/">א</a><div class="top-where" id="topWhere"></div><div class="top-find" id="topFind"></div><div class="top-actions" id="topActions"></div></div></header>
@@ -1538,10 +1550,10 @@ try {
        AND THE MARKS ARE NOT LINES. `|:` and `:|3` are two rows in the text and
        no rows on the page, so the song here is six lines of text and four of
        song, and a page that drew them would say so by having six. */
-    await open(`http://127.0.0.1:${port}/chords/_t/rep/`, async ({ evaluate }) => {
+    await open(`http://127.0.0.1:${port}/chords/_t/rep/`, async ({ send, evaluate }) => {
       await sleep(400);
       const seen = await evaluate(`JSON.stringify((() => {
-        const rows = [...document.querySelectorAll(".sheet .ln")];
+        const rows = pageLines();
         const bars = rows.filter(ln => ln.classList.contains("is-rep"));
         const rect = (ln) => {
           const s = getComputedStyle(ln, "::after");
@@ -1591,6 +1603,36 @@ try {
       check("the gutter is opened on the song and not on the block", seen.gutter === true, "");
       check("and the pieces line up into one rule", seen.edges.length === 1, JSON.stringify(seen.edges));
       check("and the song still fits the glass", seen.wide === false, "");
+
+      /* --- AND ON A PHONE, WHERE THE ROWS ARE NOT THE LINES -----------------
+         The narrow page is where a repeat is actually read from, and it is
+         where every way the bar can come apart lives at once: lines broken
+         into two rows, a leftover row sharing a line of the page with the head
+         of the next line, and a gutter that took room the words needed. */
+      await send("Emulation.setDeviceMetricsOverride", { width: 390, height: 780, deviceScaleFactor: 1, mobile: false });
+      await sleep(700);
+      const small = await evaluate(`JSON.stringify((() => {
+        const rows = pageLines();
+        const bars = rows.filter(ln => ln.classList.contains("is-rep"));
+        const at = (ln) => {
+          const r = ln.getBoundingClientRect(), s = getComputedStyle(ln, "::after");
+          return { edge: Math.round(getComputedStyle(ln).direction === "rtl" ? r.right : r.left), off: s.insetInlineStart || s.left };
+        };
+        return {
+          rows: rows.length,
+          marked: bars.length,
+          run: [rows.indexOf(bars[0]), rows.indexOf(bars[bars.length - 1])],
+          pairs: bars.filter(ln => ln.classList.contains("ln-row")).length,
+          /* every piece against the same edge, or the bar is a staircase */
+          edges: [...new Set(bars.map(ln => at(ln).edge))],
+          wide: document.documentElement.scrollWidth > innerWidth + 1,
+        };
+      })())`);
+      await send("Emulation.clearDeviceMetricsOverride");
+      await sleep(400);
+      check("narrow: the bar is one run and not several", small.run[1] - small.run[0] === small.marked - 1, JSON.stringify(small));
+      check("narrow: every piece stands against the same edge", small.edges.length === 1, JSON.stringify(small));
+      check("narrow: and the song still fits the glass", small.wide === false, JSON.stringify(small));
     });
 
     /* And a repeat is made and unmade from the page it is drawn on. */
@@ -1615,7 +1657,7 @@ try {
       await sleep(400);
       const after = await evaluate(`JSON.stringify({
         errors: window.__errors,
-        marked: document.querySelectorAll(".sheet .ln.is-rep").length,
+        marked: document.querySelectorAll(".sheet .is-rep").length,
         gutter: document.querySelector(".sheet").classList.contains("has-rep"),
         rows: document.querySelectorAll(".sheet .ln").length,
       })`);
@@ -1653,7 +1695,7 @@ try {
          is: what has to be true is that the bar covers those two lines of the
          SONG and stops before the next one. */
       const made = await evaluate(`JSON.stringify((() => {
-        const rows = [...document.querySelectorAll(".sheet .ln")];
+        const rows = pageLines();
         const bars = rows.filter(ln => ln.classList.contains("is-rep"));
         const next = rows[rows.indexOf(bars[bars.length - 1]) + 1] || document.createElement("i");
         return {

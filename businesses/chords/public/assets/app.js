@@ -3175,56 +3175,99 @@
      on the row itself, so it moves when the row moves and needs no second pass
      when the window changes: what is done here is only saying which row is
      which. */
-  var REP_EDGE = ["is-rep", "is-rep-a", "is-rep-z"];
+  var REP_EDGE = ["is-rep", "is-rep-a", "is-rep-z", "is-rep-up", "is-rep-dn"];
+
+  /* --- THE BAR IS DRAWN BY THE LINE OF THE PAGE, NOT BY THE LINE OF THE SONG -
+     Where two lines of the song share one line of the page they stand in a
+     pair, and the second of them BEGINS IN THE MIDDLE OF THE PAGE: a bar drawn
+     against its own start edge comes out as a stroke through the words, which
+     is what a verse with a repeat round it looked like. The pair is the thing
+     that has a margin and an edge to stand against, so the pair is what draws,
+     and a pair carrying any line of a block carries the block. */
+  function repBox(ln) {
+    var up = ln.parentNode;
+    return up && up.classList && up.classList.contains("ln-row") ? up : ln;
+  }
 
   function markRepeats(root) {
-    var rows = Array.prototype.slice.call(root.querySelectorAll(".ln"));
-    /* THE NUMBER GOES ON THE BLOCK'S LAST ROW AND NOWHERE ELSE, which is why
+    /* This runs again after every pouring, over rows that may already carry
+       what the last one gave them. The count is a real element, so it is taken
+       away and put back rather than left to accumulate. */
+    Array.prototype.forEach.call(root.querySelectorAll(".rep-n"), function (n) { n.remove(); });
+    Array.prototype.forEach.call(root.querySelectorAll(".is-rep"), function (box) {
+      box.classList.remove.apply(box.classList, REP_EDGE);
+      /* A pair carries nothing of its own, so what it was told last time goes
+         with the marking. A row of the song keeps its own, which is where the
+         block was written down in the first place (see the drawing of the
+         sheet). */
+      if (box.classList.contains("ln-row")) delete box.dataset.rep;
+    });
+
+    /* The lines of the PAGE, in order, each with whatever block it carries. */
+    var order = [], held = null;
+    Array.prototype.forEach.call(root.querySelectorAll(".ln"), function (ln) {
+      var box = repBox(ln);
+      var rep = ln.dataset.rep || "";
+      if (box !== held) {
+        order.push({ box: box, rep: rep, times: ln.dataset.times || "" });
+        held = box;
+      } else if (rep && !order[order.length - 1].rep) {
+        order[order.length - 1].rep = rep;
+        order[order.length - 1].times = ln.dataset.times || "";
+      }
+    });
+
+    /* THE NUMBER GOES ON THE BLOCK'S LAST LINE AND NOWHERE ELSE, which is why
        the ends of the block are found before the runs are. A block broken over
        a column has two runs and one number: a bar that stops at the foot of a
        column has plainly not finished, and a "2" at the bottom of one column
        and another at the bottom of the next is two repeats where there is one. */
     var first = Object.create(null), last = Object.create(null);
-    /* This runs again after every pouring, over rows that may already carry
-       what the last one gave them. The count is a real element, so it is taken
-       away and put back rather than left to accumulate. */
-    Array.prototype.forEach.call(root.querySelectorAll(".rep-n"), function (n) { n.remove(); });
-    rows.forEach(function (ln, i) {
-      ln.classList.remove.apply(ln.classList, REP_EDGE);
-      var rep = ln.dataset.rep;
-      if (!rep) return;
-      if (!(rep in first)) first[rep] = i;
-      last[rep] = i;
+    order.forEach(function (row, i) {
+      if (!row.rep) return;
+      if (!(row.rep in first)) first[row.rep] = i;
+      last[row.rep] = i;
     });
 
     var run = [];
     function close() {
       if (!run.length) return;
-      var rep = run[0].dataset.rep;
-      run.forEach(function (ln) { ln.classList.add("is-rep"); });
-      if (rows.indexOf(run[0]) === first[rep]) run[0].classList.add("is-rep-a");
+      var rep = run[0].rep;
+      run.forEach(function (row, i) {
+        row.box.classList.add("is-rep");
+        /* Said on the box as well as on the row inside it, because the box is
+           what a press on the count arrives at (see openRepeat) and a pair is
+           not a row of the song and carries nothing of its own. */
+        row.box.dataset.rep = rep;
+        /* Which of its neighbours this piece has to meet. A piece that joins
+           the one above reaches up through the gap between them, and one that
+           joins the one below reaches down: where a run ends, at the foot of
+           the block or at the foot of a column, the bar ends with the row. */
+        if (i) row.box.classList.add("is-rep-up");
+        if (i < run.length - 1) row.box.classList.add("is-rep-dn");
+      });
+      if (order.indexOf(run[0]) === first[rep]) run[0].box.classList.add("is-rep-a");
       var end = run[run.length - 1];
-      if (rows.indexOf(end) === last[rep]) {
-        end.classList.add("is-rep-z");
-        var times = run[0].dataset.times || String(REP_TIMES);
-        end.dataset.times = times;
+      if (order.indexOf(end) === last[rep]) {
+        end.box.classList.add("is-rep-z");
+        var times = run[0].times || String(REP_TIMES);
+        end.box.dataset.times = times;
         var n = el("button", "rep-n", times);
         n.type = "button";
         n.title = "חוזר " + times + " פעמים";
-        end.appendChild(n);
+        end.box.appendChild(n);
       }
       run = [];
     }
 
-    rows.forEach(function (ln, i) {
-      var rep = ln.dataset.rep || "";
+    order.forEach(function (row, i) {
       var was = run.length ? run[run.length - 1] : null;
-      /* A break in the block, and also a break in the ROW ORDER: two rows of
-         one block that ended up in different columns are not one bar with a
-         hole in it, they are two bars. */
-      if (was && (was.dataset.rep !== rep || was.parentNode !== ln.parentNode)) close();
-      if (rep) run.push(ln);
-      if (i === rows.length - 1) close();
+      /* A break in the block, and also a break in the ORDER: two lines of one
+         block that ended up in different columns are not one bar with a hole in
+         it, they are two bars. */
+      if (was && (was.rep !== row.rep || was.box.parentNode !== row.box.parentNode)) close();
+      if (row.rep) run.push(row);
+      if (i === order.length - 1) close();
     });
   }
 
@@ -13014,7 +13057,10 @@
 
     function openRepeat(node) {
       shutRepeat();
-      var row = node.closest(".ln");
+      /* Whatever the count is standing in: a row of the song, or the pair two
+         of them share a line of the page in. Both say which block they carry
+         (see markRepeats), and that is the only thing asked of them here. */
+      var row = node.closest("[data-rep]");
       var span = row && repSpan(row.dataset.rep);
       if (!span) return;
 

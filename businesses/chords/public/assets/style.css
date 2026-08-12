@@ -2331,6 +2331,14 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   min-height: calc(100dvh - 60px);
   overflow-x: auto;
   font-family: var(--song-font);
+  /* The chord lane's height, said once: it is also where the words start,
+     which is where a repeat bar starts (see .is-rep), and two rules holding
+     the same number is how they come to disagree. Declared HERE and not on the
+     root because this is the element --song-size is written on, and a var()
+     resolved above it would be resolved against the default size and stay
+     there whatever the reader picks. */
+  --lane-h: calc(var(--song-size) * .61);
+  --rep-gutter: calc(var(--song-size) * 1.15);
   /* TWO FINGERS ON THE SONG SET THE SONG'S SIZE, not the page's zoom (see the
      wheel and touch handlers in app.js). Panning is left alone, so the sheet
      still scrolls both ways; it is the pinch that is taken, and taken because
@@ -2532,16 +2540,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    enough to read as a blank line at the small end and gone altogether at the
    large. The space between two lines is a fact about the words, so it is
    measured in them. */
-.ln {
-  position: relative; margin-bottom: calc(var(--song-size) * .14);
-  /* The lane's height, said once. It is also where the words start, which is
-     where a repeat bar starts (see .is-rep below), and two rules holding the
-     same number is how they come to disagree. Declared HERE and not on the
-     root: the sheet is where --song-size is written, so a var() resolved above
-     it would be resolved against the default size and stay there. */
-  --lane-h: calc(var(--song-size) * .61);
-  --rep-gutter: calc(var(--song-size) * 1.15);
-}
+.ln { position: relative; margin-bottom: calc(var(--song-size) * .14); }
 /* IN SONG SIZES, NOT IN EM. An em here is the APP's sixteen pixels, because
    the lane inherits the page's font and only .ln-t is set in the song's, so
    this was a fixed fifteen pixels at every size the song was ever read at.
@@ -2968,19 +2967,25 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    that opened and closed down the page would move the words sideways at every
    block, and the words are the thing that must not move. A song with no
    repeat keeps every pixel it had. */
-.sheet.has-rep .ln { margin-inline-start: var(--rep-gutter); }
-/* Two lines of the song sharing a line of the page. The pair is one row of the
-   page and it opens one gutter, so the second line in it does not open another
-   in the middle. */
-.sheet.has-rep .ln-row > .ln ~ .ln { margin-inline-start: 0; }
+/* --- AND THE THING THAT DRAWS IS THE LINE OF THE PAGE ---------------------
+   A row of the song usually is one, and where two of them share a line of the
+   page they stand in a pair (see buildRow) and the PAIR is one. This matters
+   for one reason and it is not tidiness: the second line in a pair begins in
+   the middle of the page, so a bar drawn against its own start edge is a
+   stroke through the words. Reported exactly that way, on a verse whose lines
+   had been broken. Which element draws is decided in markRepeats; what is
+   here is that both kinds have the same margin, so their bars stand against
+   the same edge and the pieces make one rule. */
+.sheet.has-rep .ln,
+.sheet.has-rep .ln-row { margin-inline-start: var(--rep-gutter); }
+.sheet.has-rep .ln-row > .ln { margin-inline-start: 0; }
+/* and the pair has to be a box a bar can be placed against */
+.ln-row { position: relative; }
 
-.ln.is-rep::after {
+.sheet .is-rep::after {
   content: "";
   position: absolute;
-  /* Down through the gap under the row, so the piece drawn by the next row
-     meets it and the two read as one line. The ends of the block put this
-     back (see below). */
-  inset-block: calc(var(--song-size) * -.14) calc(var(--song-size) * -.14);
+  inset-block: 0;
   inset-inline-start: calc(var(--rep-gutter) * -1);
   width: calc(var(--rep-gutter) * .58);
   /* The bar is the edge of this box nearest the words, and the number sits in
@@ -2990,19 +2995,24 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   border-inline-end: 2px solid var(--ink-soft);
   pointer-events: none;
 }
-/* --- WHERE IT STARTS IS WHERE THE WORDS DO --------------------------------
+/* --- AND EACH PIECE REACHES ONLY AS FAR AS IT HAS A NEIGHBOUR -------------
+   Through the gap above it or below it, so two pieces meet and read as one
+   line, and no further: where the run ends, at the foot of the block or at the
+   foot of a column, the bar ends with its row. Half a size covers every gap
+   between two rows here, and the overlap it makes in the middle of a run is
+   under the piece that is already there. */
+.sheet .is-rep-up::after { inset-block-start: calc(var(--song-size) * -.5); }
+.sheet .is-rep-dn::after { inset-block-end: calc(var(--song-size) * -.5); }
+/* --- AND WHERE IT STARTS IS WHERE THE WORDS DO ----------------------------
    Not at the top of the row, which is the top of the chord lane. What is being
    repeated is the words; the chords are a label standing over them, and a bar
    that starts above them reads as beginning half a line early. */
-.ln.is-rep-a::after { inset-block-start: var(--lane-h); }
+.sheet .is-rep-a::after { inset-block-start: var(--lane-h); }
 /* Except where there is no lane: a blank line, a leftover row that carries no
    chords, and a sheet of words alone. */
-.ln.is-rep-a.is-blank::after,
-.ln.is-rep-a.is-cont.is-tight::after,
-.paper.words .ln.is-rep-a::after { inset-block-start: 0; }
-/* And the foot of the bar is the foot of the last row, with the count beside
-   it: at the end, which is where `:|2` puts it and where the eye looks for it. */
-.ln.is-rep-z::after { inset-block-end: 0; }
+.sheet .is-rep-a.is-blank::after,
+.sheet .is-rep-a.is-cont.is-tight::after,
+.paper.words .is-rep-a::after { inset-block-start: 0; }
 
 /* --- AND THE COUNT IS A REAL THING, NOT DRAWN TEXT ------------------------
    It was `content: attr(data-times)` on the bar itself, which is one element
@@ -3013,7 +3023,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 
    Placed against the row and not the block, like the foot of the bar it
    stands at: the block's height is not a number any row knows. */
-.ln.is-rep-z > .rep-n {
+.sheet .is-rep-z > .rep-n {
   position: absolute;
   inset-block: 0;
   inset-inline-start: calc(var(--rep-gutter) * -1);
@@ -3029,8 +3039,8 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 }
 /* Pressed only where it can be answered. On a page being read it is the number
    and nothing else; a reader who presses it has not asked for anything. */
-.sheet.ed .ln.is-rep-z > .rep-n { cursor: pointer; }
-.sheet:not(.ed) .ln.is-rep-z > .rep-n { pointer-events: none; }
+.sheet.ed .is-rep-z > .rep-n { cursor: pointer; }
+.sheet:not(.ed) .is-rep-z > .rep-n { pointer-events: none; }
 
 /* --- editor ------------------------------------------------------------- */
 
