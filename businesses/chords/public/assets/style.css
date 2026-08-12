@@ -23,6 +23,9 @@
      tune, the recordings on a card */
   --accent-soft: #dcf1e9;
   --chord: #e11d63;
+  /* the red pressed down, for the same job --accent-ink does for the green:
+     a red fill that has to darken under the hand and stay red doing it */
+  --chord-ink: #b3164d;
   --chord-soft: #fde7ef;
 
   /* THE PAGE TALKING ABOUT WHAT IS UNDER IT rather than being it: what a
@@ -336,18 +339,31 @@ body.at-home .brand { display: none; }
    different kind of thing from the one next to it, and it is not. */
 .top-actions .btn.ghost { background: var(--card); }
 
-/* EXCEPT THE FORK, WHICH IS FILLED WITH THE APP'S GREEN. It is a picture and
-   no word now (see tuner in app.js), and a fork is a shape most people have
-   never pressed: white among white it was the one button on the bar nobody
-   could name without pressing it. Green is what the word used to do, in no
-   width at all. The other filled green on this page is the one button that adds
-   a song, and it is on the wall below rather than in the bar, so the two are
-   never read side by side. */
+/* EXCEPT THE FORK, WHICH IS FILLED. It is a picture and no word now (see tuner
+   in app.js), and a fork is a shape most people have never pressed: white among
+   white it was the one button on the bar nobody could name without pressing it.
+   The fill is what the word used to do, in no width at all.
+
+   AND THE FILL IS RED. Behind this button is a microphone that listens, which
+   is the one thing in the app that is not the app doing something for you but
+   the app taking something in, and red is the colour that already says so
+   everywhere else: the record button, the door to the microphone under a song
+   (see .ear-door.is-on). It was green, which is the colour of a thing that
+   acts, and it also put a second filled green on the page beside the button
+   that adds a song. Now the one green thing adds and the one red thing
+   listens.
+
+   Pressed and while it is listening it darkens and stays red, the way the
+   green did: the state is a shade of the same fact, not another colour. The
+   .is-on here outranks the softer one written further down the file, which is
+   for the door that stands beside the words rather than in the bar. */
 .top-actions > .icon-btn.tuner {
-  color: #fff; background: var(--accent); border-color: var(--accent);
+  color: #fff; background: var(--chord); border-color: var(--chord);
 }
-.top-actions > .icon-btn.tuner:hover {
-  color: #fff; background: var(--accent-ink); border-color: var(--accent-ink);
+.top-actions > .icon-btn.tuner:hover,
+.top-actions > .icon-btn.tuner.is-on,
+.top-actions > .icon-btn.tuner.is-on:hover {
+  color: #fff; background: var(--chord-ink); border-color: var(--chord-ink);
 }
 
 /* --- WHAT PAGE THIS IS ----------------------------------------------------
@@ -585,7 +601,8 @@ body.unnamed .top-name { display: none; }
   /* The fork used to be the exception here, keeping its word on a phone
      because a tuning fork is a shape most people have never pressed. It has no
      word at any width now, on the bar or off it, and says what it is by being
-     the one thing up here filled with the app's green (see .icon-btn.tuner). */
+     the one thing up here filled at all, and filled in the microphone's red
+     (see .icon-btn.tuner). */
   /* AND THE WAY IN KEEPS ITS WORD. Google's mark is known everywhere, and
      it still says only "Google", never what pressing it here is for. It is
      left in the bar on the two pages that have no row of doors to hold it
@@ -4202,7 +4219,12 @@ body.on-takes { padding-bottom: var(--takes-room, 240px); }
    microphone that is listening, which is the one thing in here that is not the
    app doing something for you but the app taking something in. Red is the
    colour that already means that: it is the chords' red and it is the colour
-   of the button that records. Green here read as another thing switched on. */
+   of the button that records. Green here read as another thing switched on.
+
+   This is the soft red, for a door standing among the words, where a filled
+   box would be the loudest thing on the page. The fork in the bar is filled
+   red whether it is listening or not, and darkens instead (see
+   .icon-btn.tuner), which is written above and outranks this. */
 .tools .ear-door.is-on, .top-actions .icon-btn.is-on {
   color: var(--chord); border-color: var(--chord); background: var(--chord-soft);
 }

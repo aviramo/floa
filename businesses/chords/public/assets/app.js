@@ -1223,7 +1223,7 @@
 
   /* How many recordings of each song are OUT, by song id. THE BUTTON THAT
      PLAYS ONE IS PART OF A SONG CARD, and a song card is drawn in more than
-     one place: the library, a person's page, an evening's list. So this is
+     one place: the library, a person's page, an playlist's list. So this is
      read by every page that draws one, and a page that forgets to ask draws
      the same cards with the button quietly missing from all of them. Kept
      here, because it is one question for a whole page of cards. */
@@ -1501,7 +1501,7 @@
         });
     },
     /* --- deleting, which does not delete --------------------------------------
-       A song is an evening's worth of typing, and half of the ones that get
+       A song is an playlist's worth of typing, and half of the ones that get
        deleted are deleted by somebody meaning to delete the other one. So the
        row stays exactly as it is and only says when: the library reads the
        living, and everything else is still there to be brought back.
@@ -1616,13 +1616,13 @@
 
     /* Every song's name against its id, and nothing else. For a page that
        lists songs without drawing any of them: the index asks for whole rows
-       because it shows the chords, and an evening's one line does not.
+       because it shows the chords, and an playlist's one line does not.
 
-       A failure here is not worth a red screen either. The evening still
+       A failure here is not worth a red screen either. The playlist still
        knows what it was told the songs were called when they went in. */
     /* id -> what the song is called and where it lives. The address comes along
        because a name of a song is almost always a way to it (see the chips on
-       an evening's card), and it is one more column on a request that is
+       an playlist's card), and it is one more column on a request that is
        already being made. */
     titles: function () {
       return rest(T + "?select=id,title,slug").then(function (rows) {
@@ -1704,7 +1704,7 @@
     },
   };
 
-  /* --- evenings of singing --------------------------------------------------
+  /* --- playlists of singing --------------------------------------------------
      The library's second table, and the only other one this app owns. See the
      comments over `setlists` in schema.sql for what a row holds and why.
 
@@ -1732,12 +1732,12 @@
       return rest(SET + "?select=" + SET_FIELDS + "&id=eq." + encodeURIComponent(id) + "&limit=1")
         .then(function (rows) { return rows && rows[0]; });
     },
-    insert: function (evening) {
-      return rest(SET, { method: "POST", body: evening, prefer: "return=representation" })
+    insert: function (playlist) {
+      return rest(SET, { method: "POST", body: playlist, prefer: "return=representation" })
         .then(function (rows) { return rows[0]; });
     },
-    update: function (id, evening) {
-      return rest(SET + "?id=eq." + encodeURIComponent(id), { method: "PATCH", body: evening, prefer: "return=representation" })
+    update: function (id, playlist) {
+      return rest(SET + "?id=eq." + encodeURIComponent(id), { method: "PATCH", body: playlist, prefer: "return=representation" })
         .then(function (rows) { return rows[0]; });
     },
     remove: function (id) {
@@ -1991,7 +1991,7 @@
      called one of them, because the address would be the app's answer rather
      than the song's. */
   var RESERVED_SLUGS = {
-    "new": true, "edit": true, "evenings": true, "deleted": true,
+    "new": true, "edit": true, "playlists": true, "deleted": true,
     "creators": true, "creator": true, "style": true, "reads": true,
   };
 
@@ -3095,7 +3095,7 @@
 
   /* AND HOW BIG THE WORDS ARE ON IT, WHICH IS NOT THE SIZE ON THE SCREEN. The
      reading size answers a question about the reader's own glass: how far their
-     face is from it, how good their eyes are that evening, how much of the song
+     face is from it, how good their eyes are that playlist, how much of the song
      they want to see at once, and it is turned up and down with two fingers all
      the time (see readingSize). A sheet of paper is none of that. It is one
      size, always, the size a printed song is set in, and a page that came out
@@ -5032,7 +5032,7 @@
   /* --- THE ONE YOU HAD OPEN LAST STANDS FIRST -------------------------------
      The library was ordered by when a song last CHANGED, which is the right
      answer for a library being written and the wrong one for a library being
-     used: reading a song is not writing it, so an evening spent going back to
+     used: reading a song is not writing it, so an playlist spent going back to
      the same four songs left them exactly where they were, and the way back to
      the one you closed a minute ago was to look for it.
 
@@ -5043,7 +5043,7 @@
 
      UNDER THIS READER, AND ON THE ACCOUNT RATHER THAN IN THE BROWSER. Where
      you got to inside a song is kept in the browser, because it is about one
-     evening on one screen; which songs you have been on is not. Somebody works
+     playlist on one screen; which songs you have been on is not. Somebody works
      on a song at the desk and opens the library on the phone an hour later to
      play it, and a library that only knew what THIS browser had opened handed
      them the alphabet again on the second screen.
@@ -5229,7 +5229,7 @@
      the key of a song nobody asked it to change.
 
      Said once, here, by everything that has to say it: the page that opens the
-     song, the row in the library and the evening. A row that says one thing
+     song, the row in the library and the playlist. A row that says one thing
      and a page that does another is worse than neither of them saying
      anything.
 
@@ -5547,7 +5547,7 @@
      So the ones that are DOORS TO OTHER PAGES came out of the bar, and for a
      while they stood behind three dots in the corner. THE DOTS ARE GONE TOO.
      A picture of three dots says "there is more" and never says more than
-     that, so half the app, the evenings and the people and the account, sat
+     that, so half the app, the playlists and the people and the account, sat
      behind a press that had to be spent before it could be read. What was
      inside was three words, and three words fit on the page perfectly well.
 
@@ -5610,13 +5610,13 @@
        spare. */
     if (auth.in) row.appendChild(doorChip(auth.name() || "החשבון", ICON.person, askMe));
     else row.appendChild(signInChip());
-    row.appendChild(doorChip("אירועים", ICON.calendar, function () { go(addr("evenings")); }));
+    row.appendChild(doorChip("פלייליסטים", ICON.calendar, function () { go(addr("playlists")); }));
     row.appendChild(doorChip("יוצרים", ICON.people, function () { go(addr("creators")); }));
     /* AND THE BILL IS A DOOR LIKE THEM, for the one account that gets it. It
        stood inside the account panel for a while, on the grounds that what the
        readings cost is the account's own business, and what that cost was a
        press to open a panel about a name before a page about money could be
-       reached at all. It is a page like the evenings and the people, it is
+       reached at all. It is a page like the playlists and the people, it is
        reached the way they are, and it says so in the same shape: a picture
        and a word, in the same band.
 
@@ -5646,23 +5646,30 @@
      beside its picture, on the reasoning that a fork is a shape most people
      have never pressed and a grey picture among grey pictures is found by
      pressing to see what happens. The word is gone and the reasoning is
-     answered another way: it is the one thing in the bar drawn in the app's
-     green and filled with it, which is louder than five letters were and costs
-     the row no width at all (see .icon-btn.tuner). The word is still on it for
-     anybody who hovers or listens, as its title and its label.
+     answered another way: it is the one thing in the bar that is filled at all,
+     which is louder than five letters were and costs the row no width at all
+     (see .icon-btn.tuner). The word is still on it for anybody who hovers or
+     listens, as its title and its label.
+
+     And the fill is the microphone's red, not the app's green. Behind this
+     button is a microphone taking something in, which is what red says
+     everywhere else in the app, and the green it wore put a second filled
+     green on the page beside the button that adds a song.
 
      A picture alone is also the shape every other button up here is, so the row
-     is a row of pictures again, one of them green.
+     is a row of pictures again, one of them red.
 
      The doors went down to the row over the wall and this did not follow them:
      it is not a door. It opens a panel over the page you are already on and
      leaves you there, and it is picked up in the middle of doing something
      else, with a guitar in both hands.
 
-     Kept like everything else up here, and lit while the panel is open: green
-     until it is listening and red while it is, which is what the other door to
-     the microphone does in the band below (see .ear-door.is-on). It can only
-     say that if it is painted rather than built. */
+     Kept like everything else up here, and lit while the panel is open: red
+     either way, and the red pressed down while it is listening, the way it
+     darkens under the hand. The other door to the microphone, standing among
+     the words rather than in the bar, says the same in the soft red (see
+     .ear-door.is-on). It can only say that if it is painted rather than
+     built. */
   function tuner() {
     var node = keep("tuner", function () {
       var b = iconBtn(ICON.fork, "טיונר", function () { askEar("tune"); });
@@ -5933,7 +5940,7 @@
   }
 
   /* --- AND AN EVENING HAS THE SAME PANEL --------------------------------------
-     The two things there are to do to a whole evening stood in the bar as two
+     The two things there are to do to a whole playlist stood in the bar as two
      pictures: a printer and a wastebasket, side by side, the same size and the
      same grey. Two pictures in the corner is the row nobody reads (see more),
      and here it was worse than elsewhere, because one of them cannot be taken
@@ -5943,12 +5950,12 @@
      So they go behind the dots, in words, exactly as a song's do (see
      songRows). The panel is the same panel, the corner is one button wide, and
      printing is now a press further away, which is right for the thing you do
-     to an evening once, at the end, and nowhere near the thing you must never
+     to an playlist once, at the end, and nowhere near the thing you must never
      do by mistake.
 
      The rows are made at the press and not kept, because both read off what
-     this page is holding at that second: an evening still loading has neither. */
-  function eveningRows() {
+     this page is holding at that second: an playlist still loading has neither. */
+  function playlistRows() {
     var rows = [];
     if (state.printer) {
       var paper = state.printer;
@@ -5959,7 +5966,7 @@
     }
     if (state.killer) {
       var kill = state.killer;
-      rows.push(button("מחיקת האירוע", ICON.trash, "ghost small", function () {
+      rows.push(button("מחיקת הפלייליסט", ICON.trash, "ghost small", function () {
         closeUnder();
         kill();
       }));
@@ -5967,9 +5974,9 @@
     return rows;
   }
 
-  function eveningMore() {
-    return keep("eveningMore", function () {
-      var node = iconBtn(ICON.dots, "עוד", function () { menuUnder(node, eveningRows()); });
+  function playlistMore() {
+    return keep("playlistMore", function () {
+      var node = iconBtn(ICON.dots, "עוד", function () { menuUnder(node, playlistRows()); });
       node.setAttribute("aria-haspopup", "menu");
       node.setAttribute("aria-expanded", "false");
       return node;
@@ -5983,7 +5990,7 @@
      On the library there is nothing above the page, so the mark is the mark:
      it names the app and it opens the app. On every other page there IS
      something above it, and it is whatever the reader came from, which is
-     hardly ever the library: a song opened from an evening, a version opened
+     hardly ever the library: a song opened from an playlist, a version opened
      from a song, a person opened from a song's credits. A mark that always
      went to the list threw that away every time, and the only control on the
      screen that did not was the browser's own arrow, which on a phone is at
@@ -6140,29 +6147,29 @@
        gives way for it. The library is one press away on every one of those
        pages, in the corner, which is where somebody who wants to look for
        another song is going anyway. */
-    /* EXCEPT WHERE THE BOX IS HOW SOMETHING GETS PICKED. An evening is built
+    /* EXCEPT WHERE THE BOX IS HOW SOMETHING GETS PICKED. An playlist is built
        out of the library, so the library has to be reachable from inside it,
        and it was reachable as a panel nailed to the foot of the page: a search
-       field and every song under it, standing open under an evening of three
+       field and every song under it, standing open under an playlist of three
        songs whether or not anybody was adding one. The box in the bar is the
        same field, already there, already known, and it costs the page nothing
-       while it is shut (see state.pick in renderEvening). */
+       while it is shut (see state.pick in renderPlaylist). */
     var glass = document.getElementById("topFind");
     if (glass) glass.hidden = p.length > 0 && !state.pick;
     /* And it says which of the two it is. One word either way, because the box
        is not the thing to explain, but they are not the same word: everywhere
-       else typing here leads somewhere, and on an evening it puts a song in. */
+       else typing here leads somewhere, and on an playlist it puts a song in. */
     if (findField) {
       findField.placeholder = state.pick ? "הוספת שיר..." : "חיפוש...";
       findField.setAttribute("aria-label",
-        state.pick ? "חיפוש שיר להוספה לאירוע" : "חיפוש שיר, יוצר או אירוע");
+        state.pick ? "חיפוש שיר להוספה לפלייליסט" : "חיפוש שיר, יוצר או פלייליסט");
     }
 
-    /* The evenings are a list like the library is a list, so their page gets
+    /* The playlists are a list like the library is a list, so their page gets
        the same two buttons the library's does: the one that adds to it, and
-       the one that says who you are. An evening that is open has tools of its
+       the one that says who you are. An playlist that is open has tools of its
        own, and none of these. */
-    if (p[0] === "evenings") {
+    if (p[0] === "playlists") {
       /* Nothing here is readable without an account, so the one button that
          matters is the way in. */
       if (!auth.in) return fill(bar, [session()]);
@@ -6173,10 +6180,10 @@
            the word off everything it holds, and a green plus between two grey
            pictures says nothing about what it makes. So it comes down to the
            row over the wall, written out, exactly as adding a song does (see
-           the chip in viewEvenings and the one in the library). */
+           the chip in viewPlaylists and the one in the library). */
         if (!NARROW.matches) {
-          evs.push(keep("newEvening", function () {
-            return button("אירוע חדש", ICON.plus, "small", newEvening);
+          evs.push(keep("newPlaylist", function () {
+            return button("פלייליסט חדש", ICON.plus, "small", newPlaylist);
           }));
         }
         /* AND NO TUNING FORK HERE. It stands in the bar on the pages about
@@ -6185,14 +6192,14 @@
            away on every song, which is where the tuning happens.
 
            The ways on from here are not in the bar either: they are the row of
-           chips over the wall (see doorsBand in viewEvenings). */
+           chips over the wall (see doorsBand in viewPlaylists). */
         return fill(bar, evs);
       }
-      /* An evening that is open: the two things there are to do to the whole
+      /* An playlist that is open: the two things there are to do to the whole
          of it, behind one picture, in the panel that says what each of them is
-         (see eveningRows). Only once there is one of them to offer: an evening
+         (see playlistRows). Only once there is one of them to offer: an playlist
          still loading is this same address and has neither. */
-      return fill(bar, state.printer || state.killer ? [eveningMore()] : []);
+      return fill(bar, state.printer || state.killer ? [playlistMore()] : []);
     }
 
     /* The two pages about people. Neither has anything to do TO what is on
@@ -6200,7 +6207,7 @@
        empty here but for the one thing that is not a door: the way in, for
        somebody who has not signed in.
 
-       AND NO TUNING FORK HERE EITHER, for the reason the evenings have none: a
+       AND NO TUNING FORK HERE EITHER, for the reason the playlists have none: a
        list of names is read, not played, and nobody stands on it with a guitar
        in both hands. It is on the library, where the songs are, and on every
        song, which is the whole of where the tuning happens. */
@@ -6251,7 +6258,7 @@
         return add;
       }));
     }
-    /* The evenings, the people and the account are not up here at all: they
+    /* The playlists, the people and the account are not up here at all: they
        are the row of chips over the wall (see paintDoors), and the account is
        there whether it has a name yet or not. The fork is, because it is not
        a door (see tuner). */
@@ -6261,7 +6268,7 @@
 
   /* THE WAY IN, FOR THE PAGES THAT HAVE NOWHERE ELSE TO PUT IT. On the library
      the account is a chip over the wall, signed in or out (see paintDoors),
-     and that is where somebody looks for it. The evenings and the people have
+     and that is where somebody looks for it. The playlists and the people have
      no such row, and neither has anything on it to read without an account, so
      there the way in stands in the bar: a way forward hidden anywhere is no
      way forward.
@@ -6743,7 +6750,7 @@
   }
 
   /* AND WHERE THAT NAME IS A THING, IT IS THE FIELD FOR IT. A song, an
-     evening and a person are each called something, and the bar is where that
+     playlist and a person are each called something, and the bar is where that
      something is now typed: the page carried a second copy as a heading, and
      two editable copies of one name are two places for it to go wrong.
 
@@ -6791,7 +6798,7 @@
      search box is worth least: the songs are already on the screen and the
      chips over them narrow the wall. Where it is actually wanted is
      everywhere else. You are inside a song and you want the next one. You are
-     planning an evening and you want to remember what you played in March.
+     planning an playlist and you want to remember what you played in March.
      You have a name in your head and you want everything that person wrote.
 
      None of those is a filter on the page you are on. They are all the way
@@ -6799,7 +6806,7 @@
 
      SO IT SEARCHES EVERY KIND OF THING THERE IS: songs by their name, their
      credits, their style AND their words; the people who wrote them; and the
-     evenings they were sung at. Which means a row of results is a row of
+     playlists they were sung at. Which means a row of results is a row of
      three different kinds of thing, so every one of them carries the word for
      what it is. Without that the list is a column of names and the only way
      to find out where a press would take you is to press it.
@@ -6842,21 +6849,21 @@
     s.hay = (s.said + " " + styles(s).join(" ")).toLowerCase();
   }
 
-  /* An evening is remembered by four different things and never by the same
+  /* An playlist is remembered by four different things and never by the same
      one twice: its name, the room, the date in words, or a song that was
      sung at it. */
-  function eveningHay(evening, titles) {
+  function playlistHay(playlist, titles) {
     return [
-      evening.title || "",
-      evening.venue || "",
-      dateWords(evening.event_date),
-      songNames(evening, titles || {}).join(" "),
+      playlist.title || "",
+      playlist.venue || "",
+      dateWords(playlist.event_date),
+      songNames(playlist, titles || {}).join(" "),
     ].join(" ").toLowerCase();
   }
 
   /* --- what the box has to look through ------------------------------------
      Both lists whole, in the browser, because both are small: a library is a
-     few hundred rows of text and an evening is a name and a list of ids. So a
+     few hundred rows of text and an playlist is a name and a list of ids. So a
      keystroke costs a search and no request.
 
      Kept for a minute and no longer. A search that opens a song written on
@@ -6866,7 +6873,7 @@
      ordinary case costs nothing at all. */
   var FIND_FRESH = 60000;
   var findSongs = null, findSongsAt = 0;
-  var findEvenings = null, findEveningsAt = 0;
+  var findPlaylists = null, findPlaylistsAt = 0;
 
   function seedSongs(rows) {
     findSongs = rows || [];
@@ -6874,10 +6881,10 @@
     return findSongs;
   }
 
-  function seedEvenings(rows) {
-    findEvenings = rows || [];
-    findEveningsAt = Date.now();
-    return findEvenings;
+  function seedPlaylists(rows) {
+    findPlaylists = rows || [];
+    findPlaylistsAt = Date.now();
+    return findPlaylists;
   }
 
   /* A search that cannot reach the database still has whatever it last saw,
@@ -6888,13 +6895,13 @@
     return db.list().then(seedSongs).catch(function () { return findSongs || []; });
   }
 
-  /* An evening belongs to an account and the database answers nothing at all
+  /* An playlist belongs to an account and the database answers nothing at all
      without one, so a signed out reader is not asked to wait for an empty
      list. */
-  function findEveningList() {
+  function findPlaylistList() {
     if (!auth.in) return Promise.resolve([]);
-    if (findEvenings && Date.now() - findEveningsAt < FIND_FRESH) return Promise.resolve(findEvenings);
-    return sets.list().then(seedEvenings).catch(function () { return findEvenings || []; });
+    if (findPlaylists && Date.now() - findPlaylistsAt < FIND_FRESH) return Promise.resolve(findPlaylists);
+    return sets.list().then(seedPlaylists).catch(function () { return findPlaylists || []; });
   }
 
   /* How many rows the panel will hold. A search that answers with sixty songs
@@ -6911,7 +6918,7 @@
   var HIT_NEAR = 2;
   var HIT_DEEP = 1;
 
-  function findAll(q, songs, evenings) {
+  function findAll(q, songs, playlists) {
     q = String(q || "").trim().toLowerCase();
     if (!q) return [];
 
@@ -6966,17 +6973,17 @@
       });
     });
 
-    evenings.forEach(function (evening) {
-      var near = [evening.title || "", evening.venue || "", dateWords(evening.event_date)]
+    playlists.forEach(function (playlist) {
+      var near = [playlist.title || "", playlist.venue || "", dateWords(playlist.event_date)]
         .join(" ").toLowerCase();
-      var hit = near.indexOf(q) >= 0 ? HIT_NEAR : (eveningHay(evening, titles).indexOf(q) >= 0 ? HIT_DEEP : 0);
+      var hit = near.indexOf(q) >= 0 ? HIT_NEAR : (playlistHay(playlist, titles).indexOf(q) >= 0 ? HIT_DEEP : 0);
       if (!hit) return;
       out.push({
         hit: hit, order: 3,
-        name: evening.title || "אירוע בלי שם",
-        said: whenWhere(evening),
-        tags: [{ kind: "kind", words: "אירוע" }],
-        href: addr("evenings", evening.id),
+        name: playlist.title || "פלייליסט בלי שם",
+        said: whenWhere(playlist),
+        tags: [{ kind: "kind", words: "פלייליסט" }],
+        href: addr("playlists", playlist.id),
       });
     });
 
@@ -7019,7 +7026,7 @@
        is still there for a reader who is being read to, where it costs nothing
        and is the only way to know. */
     findField.placeholder = "חיפוש...";
-    findField.setAttribute("aria-label", "חיפוש שיר, יוצר או אירוע");
+    findField.setAttribute("aria-label", "חיפוש שיר, יוצר או פלייליסט");
     findBox.appendChild(findField);
 
     /* --- AND THE FAR END OF THE BOX IS THE PAGE'S ----------------------------
@@ -7086,7 +7093,7 @@
 
     /* --- AND ON THE LIBRARY IT IS NOT A PANEL, IT IS THE PAGE -----------------
        A panel of results is a way to somewhere else, and everywhere else is
-       what it is for: inside a song, planning an evening, on a person's page.
+       what it is for: inside a song, planning an playlist, on a person's page.
        On the library itself the songs are ALREADY on the screen, in cards with
        their chords and their state on them, and hanging a list of names over
        them is answering with less than what is underneath.
@@ -7107,7 +7114,7 @@
       if (state.sift) return;
       /* --- AND WHERE IT PICKS, IT OPENS ON THE WHOLE SHELF --------------------
          Everywhere else an empty box is an empty question and there is nothing
-         to answer it with. On an evening the question is "which song", the
+         to answer it with. On an playlist the question is "which song", the
          answer is the library, and it is a list somebody browses as often as
          they search it: the name is on the tip of the tongue about as often as
          it is in the hand. So the press opens the shelf, and typing shortens
@@ -7249,14 +7256,14 @@
     if (!findField) return;
     var q = findField.value.trim();
     /* The page that is picking answers out of what it is already holding: the
-       evening read the library to draw itself, and reading it a second time to
+       playlist read the library to draw itself, and reading it a second time to
        say which of it is in the list would be the same request twice. Nothing
        is in the air, so nothing has to be waited for or beaten to the panel. */
     if (state.pick) return paintPick(q);
     if (!q) return shutFind();
 
     var mine = ++findAsked;
-    Promise.all([findSongList(), findEveningList()]).then(function (both) {
+    Promise.all([findSongList(), findPlaylistList()]).then(function (both) {
       if (mine !== findAsked || !findField) return;
       paintFind(q, findAll(q, both[0] || [], both[1] || []));
     });
@@ -7304,8 +7311,8 @@
 
   /* --- AND THE SAME PANEL, WHERE A RESULT IS NOT A WAY ANYWHERE --------------
      Every row above opens a page and the box shuts behind it. Here a row is a
-     song going into the evening under the box, the page it would open is not
-     where anybody is going, and an evening is usually built several songs at a
+     song going into the playlist under the box, the page it would open is not
+     where anybody is going, and an playlist is usually built several songs at a
      time. So the panel stays, the row says what it now is, and the next song
      is the next press.
 
@@ -7338,10 +7345,10 @@
       if (item.said) main.appendChild(el("div", "find-said", item.said));
       row.appendChild(main);
 
-      /* ONE ROW, ONE PRESS, BOTH WAYS. A song is in the evening or it is not,
+      /* ONE ROW, ONE PRESS, BOTH WAYS. A song is in the playlist or it is not,
          and the same row says which and changes it: adding from one place and
          taking out from another would be two answers to one question. */
-      var mark = el("span", "find-mark", item.inside ? "באירוע" : "הוספה");
+      var mark = el("span", "find-mark", item.inside ? "בפלייליסט" : "הוספה");
       row.appendChild(mark);
 
       row.addEventListener("click", function () {
@@ -7352,7 +7359,7 @@
            whatever slid into the place. */
         item.inside = !item.inside;
         row.classList.toggle("is-in", item.inside);
-        mark.textContent = item.inside ? "באירוע" : "הוספה";
+        mark.textContent = item.inside ? "בפלייליסט" : "הוספה";
         /* and the typing goes on from where it left off: the press moved the
            focus onto the button it landed on, and the box is the thing being
            used */
@@ -7697,11 +7704,11 @@
          already one style, and a page that opened narrowed to one kind of song
          has no business offering the other eleven above it.
 
-         The evenings are NOT here. They were, in a band of their own at the
+         The playlists are NOT here. They were, in a band of their own at the
          top, and they are somebody's own rows rather than anything the library
          is made of: the first thing on the page of songs was a handful of
          appointments that only the signed-in reader had. They live on
-         /evenings, a click away in the bar. */
+         /playlists, a click away in the bar. */
       var bands = el("div", "shelves");
       app.appendChild(bands);
 
@@ -8253,7 +8260,7 @@
       }
 
       /* ONE READING IS ONE CARD, the same card a song is in the library and an
-         evening is on its own page: the white, the hairline and the shadow.
+         playlist is on its own page: the white, the hairline and the shadow.
          The title used to be a link INSIDE a card, which the stylesheet paints
          as a card of its own (see `.list a`), so every row was a box in a box.
 
@@ -8359,7 +8366,7 @@
 
      Counted in days on the calendar rather than in twenty four hour steps. A
      song saved last night at eleven was saved yesterday, and subtracting
-     milliseconds would go on calling it "היום" until this evening. */
+     milliseconds would go on calling it "היום" until this playlist. */
   function midnight(t) {
     var d = new Date(t);
     return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
@@ -8919,7 +8926,7 @@
     if (brief) top.appendChild(countTag(person.songs.length));
     box.appendChild(top);
 
-    /* The songs by name, the way an evening shows what is in it and for the
+    /* The songs by name, the way an playlist shows what is in it and for the
        same reason: a count is a number you have to open the page to use, and
        the names are the answer to "is this the person I meant". Cut to two
        lines by the stylesheet, so somebody with forty songs is still a card. */
@@ -9066,7 +9073,7 @@
     db.list().then(function (songs) {
       seedSongs(songs || []);
       app.innerHTML = "";
-      /* No row of doors here, for the reason the evenings have none: this page
+      /* No row of doors here, for the reason the playlists have none: this page
          is one of the places that row leads TO, and the way back from it is
          the arrow in the corner, where every inner page keeps it (see
          doorsBand). */
@@ -11656,7 +11663,7 @@
        there is nothing about the song that the string leaves out.
 
        A song is a few hundred characters and this holds one string per change,
-       so the whole history of an evening's editing is smaller than the picture
+       so the whole history of an playlist's editing is smaller than the picture
        it was read from.
 
        IT IS CALLED `trail` AND NOT `history`, WHICH IS NOT A PREFERENCE. It was
@@ -14266,7 +14273,7 @@
   /* Read, and not taken. The offer stays exactly where it is, with its words
      in it: the person who wrote it can see what became of it and go on working
      on it, and touching it puts it back in front of you (see commitOffer).
-     Nothing here deletes anybody's evening of typing. */
+     Nothing here deletes anybody's playlist of typing. */
   function declineOffer(song, offer) {
     if (!window.confirm("לדחות את ההצעה?\n\nהשיר לא ישתנה. ההצעה תישאר אצל מי שכתב אותה, והוא יוכל לתקן אותה ולהציע שוב.")) return;
 
@@ -14559,46 +14566,28 @@
     }).catch(function (e) { toast("השחזור נכשל: " + e.message, true); });
   }
 
-  /* --- an evening of singing -----------------------------------------------
-     A name, a date, and songs in the order they will be sung.
+  /* --- a playlist ------------------------------------------------------------
+     A name, a line about what it is, and songs in the order they will be sung.
 
      The library answers "which songs are there". This answers the question
      that comes next and that nothing else here answers: what are we playing
      tonight, and in what order. So it is a list of the library's own rows
      rather than a copy of them, and every row is one tap from the song it
      names, because the whole reason to write the list down is to play from it.
+
+     IT WAS AN EVENING, WITH A DATE AND A ROOM. Two fields that only ever
+     answered one kind of list, the one being planned for a night that has a
+     date; a list of everything worth learning, or of what the band knows, or
+     of the songs for one person, had to leave both empty and then sorted
+     itself in among the dated ones as an undated sketch. What all of them
+     have instead is one line of writing that says whatever this particular
+     list is: a date is one thing somebody can write in it.
      --------------------------------------------------------------------- */
 
-  /* "2026-08-06" as a person says it. Split by hand rather than handed to
-     Date, because a bare date string is parsed as midnight UTC and a browser
-     west of Greenwich would name the day before. */
-  function dateWords(value) {
-    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value || ""));
-    if (!m) return "";
-    var day = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-    try {
-      return day.toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-    } catch (e) {
-      return m[3] + "." + m[2] + "." + m[1];
-    }
-  }
-
-  function todayISO() {
-    var now = new Date();
-    function two(n) { return (n < 10 ? "0" : "") + n; }
-    return now.getFullYear() + "-" + two(now.getMonth() + 1) + "-" + two(now.getDate());
-  }
-
-  /* When and where, as one line, with whichever of the two has been filled in.
-     Two facts about the same evening that are always read together and never
-     mean much apart. */
-  function whenWhere(evening) {
-    var said = [];
-    var when = dateWords(evening.event_date);
-    if (when) said.push(when);
-    var where = String(evening.venue || "").trim();
-    if (where) said.push(where);
-    return said.join("  •  ");
+  /* What the list says about itself, on one line, whatever length it was
+     typed at. A card holds a taste of it and the page holds all of it. */
+  function saidOf(playlist) {
+    return String(playlist.description || "").trim();
   }
 
   /* Whatever is in the column, as a list of {id, title}. Anything without an
@@ -14614,8 +14603,8 @@
     }).filter(Boolean);
   }
 
-  function newEvening() {
-    requireAuth(function () { go(addr("evenings", "new")); });
+  function newPlaylist() {
+    requireAuth(function () { go(addr("playlists", "new")); });
   }
 
   /* The table is created by schema.sql, and deploying this file does not run
@@ -14624,27 +14613,27 @@
   function needSchema() {
     app.innerHTML = "";
     var box = el("div", "center");
-    box.appendChild(el("p", null, "טבלת האירועים עוד לא קיימת. צריך להריץ פעם אחת את schema.sql ב-Supabase."));
+    box.appendChild(el("p", null, "טבלת הפלייליסטים עוד לא קיימת. צריך להריץ פעם אחת את schema.sql ב-Supabase."));
     box.appendChild(button("לרשימת השירים", null, "ghost", function () { go(addr()); }));
     app.appendChild(box);
   }
 
-  function noEvening() {
+  function noPlaylist() {
     where("לא נמצא");
     app.innerHTML = "";
     var box = el("div", "center");
-    box.appendChild(el("p", null, "האירוע הזה לא נמצא. אולי הוא נמחק, ואולי הוא של חשבון אחר."));
-    box.appendChild(button("לרשימת האירועים", null, "ghost", function () { go(addr("evenings")); }));
+    box.appendChild(el("p", null, "הפלייליסט הזה לא נמצא. אולי הוא נמחק, ואולי הוא של חשבון אחר."));
+    box.appendChild(button("לרשימת הפלייליסטים", null, "ghost", function () { go(addr("playlists")); }));
     app.appendChild(box);
   }
 
-  /* An evening belongs to the account that made it, so without one there is
+  /* A playlist belongs to the account that made it, so without one there is
      nothing here to show and no honest way to pretend otherwise. Said as a
      page rather than as a dialog over an empty screen: a dialog that is closed
-     leaves nothing behind, and "there are no evenings" is a different sentence
+     leaves nothing behind, and "there are no playlists" is a different sentence
      from "you are not signed in". */
   /* Three pages send people here now, so the sentence is theirs to write: the
-     evenings, what was deleted, and the versions of a song are three different
+     playlists, what was deleted, and the versions of a song are three different
      things that all belong to an account, and "you are not signed in" is not
      the answer to any of them on its own. The title is the page's own state
      rather than any of the three. */
@@ -14652,7 +14641,7 @@
     where("צריך חשבון");
     app.innerHTML = "";
     var box = el("div", "center");
-    box.appendChild(el("p", null, said || "האירועים שייכים לחשבון. כל אחד רואה, מתכנן ומוחק רק את שלו."));
+    box.appendChild(el("p", null, said || "הפלייליסטים שייכים לחשבון. כל אחד רואה, מתכנן ומוחק רק את שלו."));
     var actions = el("div", "row-actions");
     actions.appendChild(googleButton("התחברות עם גוגל"));
     actions.appendChild(button("לרשימת השירים", null, "ghost", function () { go(addr()); }));
@@ -14660,32 +14649,30 @@
     app.appendChild(box);
   }
 
-  /* The next evening first, then the one after it, and the ones that already
-     happened underneath in the order they happened. Which is what a list of
-     evenings is for: the one being planned is almost always the nearest one
-     that has not happened yet, and it should not have to be looked for. */
-  function byWhen(evenings) {
-    var now = todayISO();
-    return evenings.slice().sort(function (a, b) {
-      var da = a.event_date || "", db_ = b.event_date || "";
-      /* undated last: it is a sketch, not a plan */
-      if (!da !== !db_) return da ? -1 : 1;
-      if (!da) return String(b.updated_at || "") < String(a.updated_at || "") ? -1 : 1;
-      var ahead = da >= now, bhead = db_ >= now;
-      if (ahead !== bhead) return ahead ? -1 : 1;
-      if (da === db_) return 0;
-      return ahead ? (da < db_ ? -1 : 1) : (da > db_ ? -1 : 1);
+  /* THE ONE TOUCHED LAST, FIRST. The dates are gone and with them the only
+     order a list of these ever had that was about the world rather than about
+     the person: the next evening, then the one after it, then the ones that
+     had already happened.
+
+     What is left is the same order the library itself is kept in, and it is
+     the right one for the same reason: the list being worked on is the list
+     that was worked on, and it should not have to be looked for. */
+  function byTouch(playlists) {
+    return playlists.slice().sort(function (a, b) {
+      var ta = String(a.updated_at || ""), tb = String(b.updated_at || "");
+      if (ta === tb) return String(a.title || "").localeCompare(String(b.title || ""), "he");
+      return ta < tb ? 1 : -1;
     });
   }
 
-  /* What is in the evening, by name, in the order it will be sung.
+  /* What is in the playlist, by name, in the order it will be sung.
 
      The name the song has NOW, read out of the library, with the one it was
      called when it went in as the fallback: a song that has since been
      renamed is the same song, and a song that has since been deleted is still
      worth naming. */
-  function songsIn(evening, titles) {
-    return normalizeSet(evening.songs).map(function (item) {
+  function songsIn(playlist, titles) {
+    return normalizeSet(playlist.songs).map(function (item) {
       var known = titles[item.id];
       var name = (known && known.title) || item.title || "";
       /* A song that has since been deleted has no address left to go to, and
@@ -14694,46 +14681,44 @@
     }).filter(Boolean);
   }
 
-  function songNames(evening, titles) {
-    return songsIn(evening, titles).map(function (s) { return s.title; });
+  function songNames(playlist, titles) {
+    return songsIn(playlist, titles).map(function (s) { return s.title; });
   }
 
-  /* ONE EVENING, AS A CARD. The same card a song is and a person is, because
+  /* ONE PLAYLIST, AS A CARD. The same card a song is and a person is, because
      the app has one card (see .list a). `titles` is the library by id, for the
      names of the songs in it. */
-  function eveningRow(evening, titles) {
+  function playlistRow(playlist, titles) {
     var li = el("li");
     var a = el("a");
-    a.href = addr("evenings", evening.id);
+    a.href = addr("playlists", playlist.id);
     a.addEventListener("click", function (event) {
       event.preventDefault();
       go(a.getAttribute("href"));
     });
 
     var box = el("div");
-    box.appendChild(el("div", "t", evening.title || "אירוע בלי שם"));
+    box.appendChild(el("div", "t", playlist.title || "פלייליסט בלי שם"));
 
-    /* WHEN, AND THEN WHERE, EACH ON ITS OWN LINE AND BOTH UNDER THE NAME. They
-       stood beside it as one line with a dot between them, which on a card this
-       wide is a line that wraps in the middle of an address: the room came out
-       split across two lines and the date pushed the name of the evening over.
-       Two facts, two lines, directly under the thing they are about, the same
-       way a song's card carries who wrote it. */
-    var when = dateWords(evening.event_date);
-    var where = String(evening.venue || "").trim();
-    if (when) box.appendChild(el("div", "by", when));
-    if (where) box.appendChild(el("div", "by", where));
+    /* WHAT IT IS, UNDER THE NAME, the way a song's card carries who wrote it.
+       It was a date on one line and a room on the next; it is whatever the
+       person wrote, and what a card can hold of it is the beginning: a
+       description is as long as somebody felt like making it, and a card that
+       let one run is a card that pushes the next one off the screen. Two
+       lines, clamped, and the whole of it is on the page this card opens. */
+    var said = saidOf(playlist);
+    if (said) box.appendChild(el("div", "by names", said));
 
     /* THE SONGS THEMSELVES, AND EACH ONE IS THE WAY TO IT. They were a sentence
        of names with dots between them, which reads as one thing said about the
-       evening; they are a list of songs, and the reason to look at one on this
+       playlist; they are a list of songs, and the reason to look at one on this
        card is almost always to open it. So each is a chip, and a press on it
-       goes to the song rather than to the evening around it.
+       goes to the song rather than to the playlist around it.
 
        A button and not a link, because this card IS a link: an anchor inside an
        anchor is not a thing, and what a press means here is written below
        either way. */
-    var songs = songsIn(evening, titles || {});
+    var songs = songsIn(playlist, titles || {});
     if (!songs.length) {
       box.appendChild(el("div", "a names", "עוד בלי שירים"));
     } else {
@@ -14761,20 +14746,20 @@
 
     a.appendChild(box);
 
-    /* NO CHIP SAYING "אירוע". Every card on the evenings page is one, so the word
-       is a label on a shelf where nothing else is stocked. It is worth saying
-       among the search results, where an evening stands next to songs and
-       people, and it is worth saying nowhere else. */
+    /* NO CHIP SAYING "פלייליסט". Every card on the playlists page is one, so the
+       word is a label on a shelf where nothing else is stocked. It is worth
+       saying among the search results, where a playlist stands next to songs
+       and people, and it is worth saying nowhere else. */
     li.appendChild(a);
     return li;
   }
 
-  function viewEvenings() {
-    where("אירועים");
-    setBusy("טוען אירועים");
+  function viewPlaylists() {
+    where("פלייליסטים");
+    setBusy("טוען פלייליסטים");
 
     /* The names come along, because they are what a row of this list shows.
-       Only the names: an evening's card does not draw chords, so it has no
+       Only the names: a playlist's card does not draw chords, so it has no
        use for the rest of a song. */
     Promise.all([sets.list(), db.titles()]).then(function (both) {
       app.innerHTML = "";
@@ -14784,15 +14769,15 @@
          of doors over a page you have just walked into is a second way out
          that nobody was looking for. */
       /* what the box in the bar looks through, read here anyway */
-      seedEvenings(both[0] || []);
-      var evenings = byWhen(both[0] || []);
+      seedPlaylists(both[0] || []);
+      var playlists = byTouch(both[0] || []);
       var titles = both[1] || {};
 
-      if (!evenings.length) {
+      if (!playlists.length) {
         var empty = el("div", "center");
-        empty.appendChild(el("p", null, "עוד לא תוכנן כאן אירוע. אירוע הוא שם, תאריך, מיקום ורשימת שירים לפי הסדר."));
+        empty.appendChild(el("p", null, "עוד אין כאן פלייליסט. פלייליסט הוא שם, שורה שאומרת מה הוא, ורשימת שירים לפי הסדר."));
         var actions = el("div", "row-actions");
-        actions.appendChild(button("אירוע חדש", ICON.plus, null, newEvening));
+        actions.appendChild(button("פלייליסט חדש", ICON.plus, null, newPlaylist));
         empty.appendChild(actions);
         app.appendChild(empty);
         return;
@@ -14807,7 +14792,7 @@
          write it out.
 
          The same chip, in the same place, from the same width down (see
-         addChip in the library), because a wall of evenings and a wall of
+         addChip in the library), because a wall of playlists and a wall of
          songs are the same page asked about two things.
 
          Built once and handed back, so a repaint cannot leave anything
@@ -14817,16 +14802,16 @@
       overWall.appendChild(row);
       app.appendChild(overWall);
 
-      var addEvening = null;
+      var addPlaylist = null;
       function addChip() {
-        if (addEvening) return addEvening;
-        addEvening = el("button", "tally tally-add");
-        addEvening.type = "button";
-        addEvening.appendChild(svg(ICON.plus));
-        addEvening.appendChild(el("span", "tally-l", "הוספת אירוע"));
-        addEvening.title = "אירוע חדש";
-        addEvening.addEventListener("click", newEvening);
-        return addEvening;
+        if (addPlaylist) return addPlaylist;
+        addPlaylist = el("button", "tally tally-add");
+        addPlaylist.type = "button";
+        addPlaylist.appendChild(svg(ICON.plus));
+        addPlaylist.appendChild(el("span", "tally-l", "הוספת פלייליסט"));
+        addPlaylist.title = "פלייליסט חדש";
+        addPlaylist.addEventListener("click", newPlaylist);
+        return addPlaylist;
       }
 
       /* Which of the two places it stands in is a width, and a width changes
@@ -14841,19 +14826,19 @@
       rehome();
       state.rehome = rehome;
 
-      /* THE SAME WALL THE SONGS STAND IN. An evening is a card like a song is
+      /* THE SAME WALL THE SONGS STAND IN. A playlist is a card like a song is
          a card, so it is the same list, in the same columns, at the same
          width: two halves of one app should not be two different shapes.
 
          The box that used to stand over it is in the bar now, and it searches
-         further than this one could: an evening is remembered by its name, by
-         the room, by the date, or by a song that was sung at it, and the box
-         up there reads all four along with the songs and the people. */
+         further than this one could: a playlist is remembered by its name, by
+         what it says about itself, or by a song that is in it, and the box up
+         there reads all three along with the songs and the people. */
       var list = el("ul", "list");
       app.appendChild(list);
 
-      evenings.forEach(function (evening) {
-        list.appendChild(eveningRow(evening, titles));
+      playlists.forEach(function (playlist) {
+        list.appendChild(playlistRow(playlist, titles));
       });
     }).catch(function (error) {
       if (missingTable(error)) return needSchema();
@@ -14861,14 +14846,14 @@
     });
   }
 
-  function viewEvening(id) {
-    setBusy(id === null ? "טוען את המאגר" : "טוען את האירוע");
+  function viewPlaylist(id) {
+    setBusy(id === null ? "טוען את המאגר" : "טוען את הפלייליסט");
 
-    var blank = { id: null, title: "", event_date: todayISO(), songs: [] };
+    var blank = { id: null, title: "", description: "", songs: [] };
 
-    /* The library comes along every time, because every row of an evening is
+    /* The library comes along every time, because every row of a playlist is
        drawn from it: the name a song has NOW, who wrote it, and which chords
-       it needs. An evening that stored those itself would go stale the first
+       it needs. A playlist that stored those itself would go stale the first
        time a song was corrected. */
     /* And the recordings that are out, for the same reason the library asks
        for them: the button that plays one is part of a song card, and every
@@ -14878,28 +14863,28 @@
       db.list(),
       db.outTakes(),
     ]).then(function (both) {
-      if (!both[0]) return noEvening();
+      if (!both[0]) return noPlaylist();
       takesOut = both[2] || {};
-      var evening = both[0];
-      evening.songs = normalizeSet(evening.songs);
-      renderEvening(evening, both[1] || []);
+      var playlist = both[0];
+      playlist.songs = normalizeSet(playlist.songs);
+      renderPlaylist(playlist, both[1] || []);
     }).catch(function (error) {
       if (missingTable(error)) return needSchema();
       /* 22P02: the address is not a uuid at all, so it names nothing */
-      if (String(error.code) === "22P02") return noEvening();
+      if (String(error.code) === "22P02") return noPlaylist();
       fail(error);
     });
   }
 
-  function renderEvening(evening, library) {
+  function renderPlaylist(playlist, library) {
 
     /* Everything here can be changed, and there is no other state for this
-       page to be in: an evening is its account's, so whoever is looking at one
+       page to be in: a playlist is its account's, so whoever is looking at one
        is the person whose it is. That is the difference from the song page,
        which is a library everybody reads and a few people write.
 
        Unlike the song editor it is also not shut on a phone. Every gesture it
-       has is a whole row wide, which a finger can do, and an evening gets
+       has is a whole row wide, which a finger can do, and an playlist gets
        planned wherever the person planning it happens to be standing. */
 
     var byId = {};
@@ -14918,38 +14903,38 @@
     /* --- the head: the name, the date ---
 
        Like the song page, no arrow back: the app's name in the bar goes home,
-       and the evenings are one press from there. */
+       and the playlists are one press from there. */
 
     var head = el("div", "song-head");
 
     /* The name is in the bar, like a song's, and the heading here is for
-       paper: an evening is printed and handed round, and a sheet with no name
+       paper: an playlist is printed and handed round, and a sheet with no name
        on it is a list of songs. */
-    var title = el("h1", "ev-title on-paper", evening.title);
-    whereEditable(evening.title, "שם האירוע", function (typed) {
-      evening.title = typed;
+    var title = el("h1", "ev-title on-paper", playlist.title);
+    whereEditable(playlist.title, "שם הפלייליסט", function (typed) {
+      playlist.title = typed;
       title.textContent = typed;
-      document.title = (typed || "אירוע חדש") + " | אקורדים";
+      document.title = (typed || "פלייליסט חדש") + " | אקורדים";
       mark();
     });
-    document.title = (evening.title || "אירוע חדש") + " | אקורדים";
+    document.title = (playlist.title || "פלייליסט חדש") + " | אקורדים";
     head.appendChild(title);
 
     /* When and where, twice, and only ever one of the two visible: the fields
        that set them on the screen, and the sentence they make on paper. A date
        input prints as an empty-looking box with a calendar icon in it, which
-       is the one thing an evening's printout must not be vague about. */
-    var whenWords = el("div", "by ev-when on-paper", whenWhere(evening));
+       is the one thing an playlist's printout must not be vague about. */
+    var whenWords = el("div", "by ev-when on-paper", whenWhere(playlist));
 
     var meta = el("div", "ev-meta");
 
     var whenLabel = el("label", null, "תאריך");
     var when = el("input");
     when.type = "date";
-    when.value = evening.event_date || "";
+    when.value = playlist.event_date || "";
     when.addEventListener("change", function () {
-      evening.event_date = when.value || null;
-      whenWords.textContent = whenWhere(evening);
+      playlist.event_date = when.value || null;
+      whenWords.textContent = whenWhere(playlist);
       mark(true);
     });
     /* The calendar button at the end of the field is gone (see the CSS), and
@@ -14970,15 +14955,15 @@
     var whereLabel = el("label", null, "מיקום");
     var where = el("textarea");
     where.rows = 1;
-    where.value = evening.venue || "";
+    where.value = playlist.venue || "";
     where.placeholder = "איפה זה קורה";
     function fitWhere() {
       where.style.height = "auto";
       where.style.height = where.scrollHeight + "px";
     }
     where.addEventListener("input", function () {
-      evening.venue = where.value;
-      whenWords.textContent = whenWhere(evening);
+      playlist.venue = where.value;
+      whenWords.textContent = whenWhere(playlist);
       fitWhere();
       mark();
     });
@@ -15000,7 +14985,7 @@
     /* --- where the writing got to --------------------------------------------
        All that is left of a toolbar. Printing and deleting are in the top bar,
        where the actions about the page you are on live; how many songs are in
-       the evening is what the list itself says, in numbers down its side, and
+       the playlist is what the list itself says, in numbers down its side, and
        saying it again in words over it was the same fact twice.
 
        This one word cannot move up there: it is not an action, it is an
@@ -15008,20 +14993,20 @@
     var stateNode = el("span", "save-state ev-state");
     app.appendChild(stateNode);
 
-    /* the two things worth doing to a whole evening, in the bar */
+    /* the two things worth doing to a whole playlist, in the bar */
     state.printer = function () { window.print(); };
-    state.killer = removeEvening;
+    state.killer = removePlaylist;
     /* --- AND WHERE THE SONGS COME FROM, ALSO IN THE BAR ----------------------
-       The songs are everybody's and the evening is one account's, which is why
-       the library has to be reachable from in here at all: an evening is a
+       The songs are everybody's and the playlist is one account's, which is why
+       the library has to be reachable from in here at all: an playlist is a
        choice out of a shelf that is not itself private.
 
        It was a panel at the foot of the page, a heading, a sentence explaining
        itself, a field and the whole library under it, standing open under an
-       evening of three songs whether or not anybody was adding one. Which is
+       playlist of three songs whether or not anybody was adding one. Which is
        the second search box on a page that already has one: the box in the bar
        is the field everybody in this app already types songs into, it is empty
-       until it is pressed, and it hangs its answer over the evening instead of
+       until it is pressed, and it hangs its answer over the playlist instead of
        pushing it up the screen.
 
        So the page hands the box a shelf to pick out of, exactly as the library
@@ -15039,18 +15024,18 @@
     var listEl = el("ol", "set");
     app.appendChild(listEl);
 
-    /* An empty evening is the one time the way to add to it has to be said in
+    /* An empty playlist is the one time the way to add to it has to be said in
        words: there is nothing on the page to press, and the box that fills it
        is a glass in the corner of the bar. */
-    var emptyNote = el("p", "hint", "אין עדיין שירים באירוע. אפשר להוסיף אותם בחיפוש שבסרגל למעלה, ואחר כך לגרור בידית כדי לסדר.");
+    var emptyNote = el("p", "hint", "אין עדיין שירים בפלייליסט. אפשר להוסיף אותם בחיפוש שבסרגל למעלה, ואחר כך לגרור בידית כדי לסדר.");
     app.appendChild(emptyNote);
 
     /* --- drawing ------------------------------------------------------------ */
 
     function draw() {
       listEl.innerHTML = "";
-      evening.songs.forEach(function (item) { listEl.appendChild(setRow(item)); });
-      emptyNote.hidden = evening.songs.length > 0;
+      playlist.songs.forEach(function (item) { listEl.appendChild(setRow(item)); });
+      emptyNote.hidden = playlist.songs.length > 0;
     }
 
     function setRow(item) {
@@ -15071,7 +15056,7 @@
          it, then what it is to play, each on its own line and always in that
          order (see the wall's cards). Beside the name, the two shared the width
          of a row with each other: a long name and a long name is one line that
-         wraps in the middle of somebody, and on a phone the same evening had
+         wraps in the middle of somebody, and on a phone the same playlist had
          some rows saying the name on its own and some saying it with a person
          hanging off the end of it. Which of the two lines was the song was left
          to the weight of the letters, and it came out differently on every row. */
@@ -15079,7 +15064,7 @@
 
       if (song) {
         /* One tap to the song itself, which is the point of writing the
-           evening down in the first place. */
+           playlist down in the first place. */
         var a = el("a", "set-t", song.title);
         a.href = addr(song.slug);
         a.addEventListener("click", function (event) {
@@ -15090,7 +15075,7 @@
         said = creditNames(song).join(", ");
       } else {
         /* The song was deleted from the library after it was put in the
-           evening. Saying which one is gone is the only useful thing left to
+           playlist. Saying which one is gone is the only useful thing left to
            say, and a silently shorter list is the one answer that is worse. */
         top.appendChild(el("span", "set-t", item.title || "שיר"));
         said = "כבר לא במאגר";
@@ -15099,7 +15084,7 @@
       if (said) box.appendChild(el("div", "by", said));
 
       /* The shapes this reader's hand will make, the same way the index says
-         them. On an evening they are worth more than on the index: this is the
+         them. On an playlist they are worth more than on the index: this is the
          list somebody is holding a guitar over.
 
          AND THE FRET IS NOT AMONG THEM, for the reason the sheet gave up its
@@ -15144,15 +15129,15 @@
          carries (see playRow). Here it is worth more than on the wall: the
          wall is being scanned by somebody deciding what to pick up, and this
          is a list somebody is about to sing from, where "how does this one go
-         again" is the question of the evening. One at a time and a player at
+         again" is the question of the playlist. One at a time and a player at
          the foot of the screen, exactly as it is everywhere else. */
       var takes = song && takesOut[song.id];
       if (takes) li.appendChild(playRow(song, takes));
 
-      var out = iconBtn(ICON.trash, "הוצאה מהאירוע", function () {
-        var at = evening.songs.indexOf(item);
+      var out = iconBtn(ICON.trash, "הוצאה מהפלייליסט", function () {
+        var at = playlist.songs.indexOf(item);
         if (at < 0) return;
-        evening.songs.splice(at, 1);
+        playlist.songs.splice(at, 1);
         draw();
         mark(true);
       });
@@ -15179,7 +15164,7 @@
       var rows = rowsOf();
       var from = rows.indexOf(li);
       if (from < 0 || to === from || to < 0 || to >= rows.length) return false;
-      evening.songs.splice(to, 0, evening.songs.splice(from, 1)[0]);
+      playlist.songs.splice(to, 0, playlist.songs.splice(from, 1)[0]);
       if (to > from) listEl.insertBefore(li, rows[to].nextSibling);
       else listEl.insertBefore(li, rows[to]);
       return true;
@@ -15272,13 +15257,13 @@
        (see paintPick).
 
        Asked afresh on every keystroke rather than filtered from a list handed
-       over once: what is in the evening changes while the box is open, and a
+       over once: what is in the playlist changes while the box is open, and a
        row still saying "הוספה" about a song that is already in the list is the
        panel disagreeing with the page under it. */
     function pickList(q) {
       q = String(q || "").trim().toLowerCase();
       var inside = {};
-      evening.songs.forEach(function (item) { inside[item.id] = true; });
+      playlist.songs.forEach(function (item) { inside[item.id] = true; });
 
       return library.filter(function (song) {
         /* a song still being read has no words yet, so it cannot be sung from */
@@ -15298,17 +15283,17 @@
       });
     }
 
-    /* One row, one press, both ways. A song is in the evening or it is not,
+    /* One row, one press, both ways. A song is in the playlist or it is not,
        and the same row says which and changes it: adding from one place and
        removing from another would be two answers to one question.
 
-       So the same song twice is not offered. An evening that really wants an
+       So the same song twice is not offered. An playlist that really wants an
        encore of something can say so in its name. */
     function toggle(song) {
       var at = -1;
-      evening.songs.forEach(function (item, i) { if (item.id === song.id) at = i; });
-      if (at >= 0) evening.songs.splice(at, 1);
-      else evening.songs.push({ id: song.id, title: song.title });
+      playlist.songs.forEach(function (item, i) { if (item.id === song.id) at = i; });
+      if (at >= 0) playlist.songs.splice(at, 1);
+      else playlist.songs.push({ id: song.id, title: song.title });
       draw();
       mark(true);
     }
@@ -15366,23 +15351,23 @@
       inFlight = true;
 
       var payload = {
-        title: String(evening.title || "").trim(),
-        event_date: evening.event_date || null,
-        venue: String(evening.venue || "").trim(),
-        songs: evening.songs.map(function (item) {
+        title: String(playlist.title || "").trim(),
+        event_date: playlist.event_date || null,
+        venue: String(playlist.venue || "").trim(),
+        songs: playlist.songs.map(function (item) {
           var song = byId[item.id];
           return { id: item.id, title: song ? song.title : item.title };
         }),
       };
 
-      var request = evening.id ? sets.update(evening.id, payload) : sets.insert(payload);
+      var request = playlist.id ? sets.update(playlist.id, payload) : sets.insert(payload);
       request.then(function (row) {
         inFlight = false;
-        var born = !evening.id;
-        evening.id = row.id;
+        var born = !playlist.id;
+        playlist.id = row.id;
         /* it exists now, so it has an address of its own, and a refresh from
-           here comes back to it rather than to an empty new evening */
-        if (born) history.replaceState(history.state, "", addr("evenings", row.id));
+           here comes back to it rather than to an empty new playlist */
+        if (born) history.replaceState(history.state, "", addr("playlists", row.id));
         /* and the line about what went wrong goes with the thing going right */
         note("");
         if (again) { again = false; commit(); }
@@ -15396,15 +15381,15 @@
       });
     }
 
-    function removeEvening() {
-      if (!window.confirm('למחוק את "' + (evening.title || "האירוע הזה") + '" לצמיתות?')) return;
+    function removePlaylist() {
+      if (!window.confirm('למחוק את "' + (playlist.title || "הפלייליסט הזה") + '" לצמיתות?')) return;
       clearTimeout(timer);
       timer = null;
       flushPending = null;
-      if (!evening.id) return go(addr("evenings"));
-      sets.remove(evening.id).then(function () {
-        toast("האירוע נמחק");
-        go(addr("evenings"));
+      if (!playlist.id) return go(addr("playlists"));
+      sets.remove(playlist.id).then(function () {
+        toast("הפלייליסט נמחק");
+        go(addr("playlists"));
       }).catch(function (error) {
         toast("המחיקה נכשלה: " + error.message, true);
       });
@@ -15412,7 +15397,7 @@
 
     draw();
     flushPending = flush;
-    if (!evening.id) title.focus();
+    if (!playlist.id) title.focus();
   }
 
   /* --- reading a photo or a PDF -------------------------------------------- */
@@ -16091,8 +16076,8 @@
     /* and the box in the bar goes back to being a way to other pages, until a
        page that can be sieved says otherwise (see state.sift in viewIndex), or
        one that is built out of the library does (see state.pick in
-       renderEvening). The second one also takes the box off the bar again on
-       every page that is not an evening. */
+       renderPlaylist). The second one also takes the box off the bar again on
+       every page that is not an playlist. */
     state.sift = null;
     state.pick = null;
     /* and with no sieve there is nothing being held down, whatever the last
@@ -16113,20 +16098,20 @@
        address without leaving the page, so the two cannot disagree. */
     if (p[0] === "style") return viewIndex(p[1] || null);
 
-    /* --- the evenings ---
-       /evenings          the list of them
-       /evenings/new      one that does not exist yet
-       /evenings/<id>     one that does
+    /* --- the playlists ---
+       /playlists          the list of them
+       /playlists/new      one that does not exist yet
+       /playlists/<id>     one that does
 
-       All three need an account, and not only to write: an evening belongs to
+       All three need an account, and not only to write: an playlist belongs to
        one, and the database hands back nothing at all without it. Checked
        here as well as there so the answer is a sentence rather than an empty
        list, which is what the same refusal looks like from the other side. */
-    if (p[0] === "evenings") {
+    if (p[0] === "playlists") {
       if (!auth.in) return needSignIn();
-      if (p[1] === "new") return viewEvening(null);
-      if (p[1]) return viewEvening(p[1]);
-      return viewEvenings();
+      if (p[1] === "new") return viewPlaylist(null);
+      if (p[1]) return viewPlaylist(p[1]);
+      return viewPlaylists();
     }
 
     /* What was deleted and is still there. An account's own, so it needs one. */
@@ -16205,7 +16190,7 @@
     return viewSong(p[0]);
   }
 
-  /* An evening, a version, an editor, a song written a minute ago: GitHub Pages
+  /* An playlist, a version, an editor, a song written a minute ago: GitHub Pages
      has no file at any of those, so the domain's 404.html sends the browser
      here with the path in ?p=. Put the real address back before anything
      renders, so the bar reads /chords/<slug>/ and a refresh works.
@@ -16906,7 +16891,7 @@
 
     /* Asked every reading rather than once when the tab opened, because the
        page underneath changes without this panel being told: a song opened
-       from the library, a different song from an evening, a song that has
+       from the library, a different song from an playlist, a song that has
        finished being read from a photograph. Each of those is a song to follow
        arriving, and none of them is a press. */
     if (!following && !followRefused) startFollowing(false);
