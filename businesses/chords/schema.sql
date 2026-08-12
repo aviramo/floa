@@ -1007,6 +1007,19 @@ create table if not exists public.song_takes (
   -- them (see followRead in app.js).
   marks    jsonb not null default '[]'::jsonb,
 
+  -- WHICH COUNTING THOSE NUMBERS ARE IN, and it is here because the answer
+  -- changed. A song is written once and may be sung more than once: a block
+  -- between `|:` and `:|3` stands at three places in the song as it is PLAYED
+  -- and at one place on the page. The follower walks the played order, so that
+  -- is what a mark now names.
+  --
+  -- 0 is every take recorded before repeats existed, whose numbers count the
+  -- chords down the page. The two are the same number in a song with no repeat
+  -- in it, which is nearly every song and every take ever made so far; they
+  -- part company the moment somebody puts a bar round a verse, and a take made
+  -- last month must not start pointing at the second time round.
+  marks_of smallint not null default 0,
+
   -- THE KEY IT WAS PLAYED IN, because a take is a sound at a pitch and the
   -- page is a drawing that moves. Somebody playing it back after taking the
   -- song down two is hearing a recording that no longer matches what is
@@ -1029,6 +1042,11 @@ create table if not exists public.song_takes (
 
   created_at timestamptz not null default now()
 );
+
+-- and onto the table as it already stands, since this file is made to be run
+-- again. The default is the honest one: a row that was written before the
+-- column existed is a take whose marks count the page.
+alter table public.song_takes add column if not exists marks_of smallint not null default 0;
 
 -- one song's takes, newest first, which is the only question asked of it
 create index if not exists song_takes_song_idx

@@ -2532,7 +2532,16 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    enough to read as a blank line at the small end and gone altogether at the
    large. The space between two lines is a fact about the words, so it is
    measured in them. */
-.ln { position: relative; margin-bottom: calc(var(--song-size) * .14); }
+.ln {
+  position: relative; margin-bottom: calc(var(--song-size) * .14);
+  /* The lane's height, said once. It is also where the words start, which is
+     where a repeat bar starts (see .is-rep below), and two rules holding the
+     same number is how they come to disagree. Declared HERE and not on the
+     root: the sheet is where --song-size is written, so a var() resolved above
+     it would be resolved against the default size and stay there. */
+  --lane-h: calc(var(--song-size) * .61);
+  --rep-gutter: calc(var(--song-size) * 1.15);
+}
 /* IN SONG SIZES, NOT IN EM. An em here is the APP's sixteen pixels, because
    the lane inherits the page's font and only .ln-t is set in the song's, so
    this was a fixed fifteen pixels at every size the song was ever read at.
@@ -2554,7 +2563,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    three, and three is a pixel at a reading size and nothing at all at a small
    one. The margin is not spare room, it is what a word carrying vowel points
    needs: a holam sits above the letter, and above that box. */
-.ln-c { position: relative; height: calc(var(--song-size) * .61); }
+.ln-c { position: relative; height: var(--lane-h); }
 
 /* --- AND ON A PHONE IT IS ALSO SOMETHING TO PRESS -------------------------
    The height above is the height a chord needs and not a pixel more, which is
@@ -2903,7 +2912,18 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 
    Small, though. It is standing over words somebody has just marked and is
    still reading, and a marking is not a request for a toolbar. */
-.chord-offer { position: fixed; z-index: 50; }
+/* A ROW, because there is more than one thing to offer over a marking now: the
+   chords of the last copy, and a repeat around the lines. They are two answers
+   to one gesture and they stand side by side. */
+.chord-offer { position: fixed; z-index: 50; display: flex; gap: 6px; }
+/* The panel behind the count, which is the same floating thing with smaller
+   buttons in it: fewer, wider, and the number between them is not a button. */
+.rep-pop .chord-btn { padding: 0 7px; }
+.rep-pop .rep-count {
+  display: flex; align-items: center; padding: 0 2px;
+  font-size: 12px; line-height: 1; color: var(--ink);
+  min-width: 14px; justify-content: center;
+}
 .chord-btn {
   display: flex; align-items: center; gap: 5px;
   height: 25px; padding: 0 8px;
@@ -2923,6 +2943,94 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 .ln.is-blank { margin-bottom: .22em; }
 .ln.is-blank .ln-c { height: 0; }
 .ln.is-blank .ln-t { min-height: 1em; }
+
+/* ==========================================================================
+   A REPEAT: A BAR DOWN THE MARGIN AND A NUMBER BESIDE IT.
+
+   The mark every musician already reads, and the reason the song stores it as
+   `|:` and `:|3` rather than as a word: the word "repeat" appears nowhere on
+   the page, so it has no business being one in the file either.
+
+   A LINE AND NOT A BRACKET. A bracket with hooks on its ends is more ink than
+   this needs, and the ink on a chord sheet is already spoken for: the chords
+   are the coloured thing and the eye goes to them. A rule down the side reads
+   as structure at a glance and competes with nothing.
+
+   AND IT IS DRAWN BY THE ROWS THEMSELVES, one piece each, joined through the
+   gap underneath. Nothing measures it and nothing positions it, so it follows
+   its rows wherever the pouring puts them: broken lines, two lines sharing a
+   line of the page, a column that ends halfway down a verse. Which rows are
+   the ends of a block is decided in markRepeats, in the order the rows came
+   out in, because that is the only place the answer exists.
+
+   THE ROOM IT STANDS IN IS REAL ROOM. The margin is on every row of a song
+   that has a repeat anywhere in it, not only on the rows inside one: a gutter
+   that opened and closed down the page would move the words sideways at every
+   block, and the words are the thing that must not move. A song with no
+   repeat keeps every pixel it had. */
+.sheet.has-rep .ln { margin-inline-start: var(--rep-gutter); }
+/* Two lines of the song sharing a line of the page. The pair is one row of the
+   page and it opens one gutter, so the second line in it does not open another
+   in the middle. */
+.sheet.has-rep .ln-row > .ln ~ .ln { margin-inline-start: 0; }
+
+.ln.is-rep::after {
+  content: "";
+  position: absolute;
+  /* Down through the gap under the row, so the piece drawn by the next row
+     meets it and the two read as one line. The ends of the block put this
+     back (see below). */
+  inset-block: calc(var(--song-size) * -.14) calc(var(--song-size) * -.14);
+  inset-inline-start: calc(var(--rep-gutter) * -1);
+  width: calc(var(--rep-gutter) * .58);
+  /* The bar is the edge of this box nearest the words, and the number sits in
+     the box on the far side of it. One pseudo-element for both, because the
+     other one is the follower's band and a row can be lit and repeated at the
+     same time. */
+  border-inline-end: 2px solid var(--ink-soft);
+  pointer-events: none;
+}
+/* --- WHERE IT STARTS IS WHERE THE WORDS DO --------------------------------
+   Not at the top of the row, which is the top of the chord lane. What is being
+   repeated is the words; the chords are a label standing over them, and a bar
+   that starts above them reads as beginning half a line early. */
+.ln.is-rep-a::after { inset-block-start: var(--lane-h); }
+/* Except where there is no lane: a blank line, a leftover row that carries no
+   chords, and a sheet of words alone. */
+.ln.is-rep-a.is-blank::after,
+.ln.is-rep-a.is-cont.is-tight::after,
+.paper.words .ln.is-rep-a::after { inset-block-start: 0; }
+/* And the foot of the bar is the foot of the last row, with the count beside
+   it: at the end, which is where `:|2` puts it and where the eye looks for it. */
+.ln.is-rep-z::after { inset-block-end: 0; }
+
+/* --- AND THE COUNT IS A REAL THING, NOT DRAWN TEXT ------------------------
+   It was `content: attr(data-times)` on the bar itself, which is one element
+   fewer and cannot be pressed: a pseudo-element takes no listener, and the
+   count is the control. Pressing it is how a repeat is changed to three or
+   taken away, and there is nowhere else that gesture could live without
+   putting a second thing on the page that means the same thing.
+
+   Placed against the row and not the block, like the foot of the bar it
+   stands at: the block's height is not a number any row knows. */
+.ln.is-rep-z > .rep-n {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: calc(var(--rep-gutter) * -1);
+  width: calc(var(--rep-gutter) * .48);
+  display: flex; align-items: center; justify-content: center;
+  font-size: calc(var(--song-size) * .6);
+  line-height: 1;
+  color: var(--ink-soft);
+  background: none; border: 0; padding: 0; margin: 0;
+  font-family: inherit;
+  user-select: none; -webkit-user-select: none;
+  cursor: default;
+}
+/* Pressed only where it can be answered. On a page being read it is the number
+   and nothing else; a reader who presses it has not asked for anything. */
+.sheet.ed .ln.is-rep-z > .rep-n { cursor: pointer; }
+.sheet:not(.ed) .ln.is-rep-z > .rep-n { pointer-events: none; }
 
 /* --- editor ------------------------------------------------------------- */
 

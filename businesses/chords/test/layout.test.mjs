@@ -55,7 +55,21 @@ const BODY_LONG = ["{בית}"].concat(
   Array.from({ length: 24 }, () => BODY_RTL.split("\n").slice(1).join("\n"))
 ).join("\n");
 
-const BODIES = { rtl: BODY_RTL, ltr: BODY_LTR, long: BODY_LONG };
+/* A SONG WITH A BAR ROUND TWO OF ITS LINES. What is being checked here is the
+   one thing about a repeat that cannot be read off the code: the bar is drawn
+   by each of the block's rows, one piece each, in a gutter opened by a margin,
+   and whether those pieces line up into one rule beside the right two lines is
+   a question about a browser laying out a page. */
+const BODY_REP = [
+  "{בית}",
+  "|:",
+  "[Am]בנקיק [G]נסתר בצוקים [F]אילה שותה [Am]מים",
+  "מה [F#m7]לי וללה [G/B]אלא צוקי לב[Am]י",
+  ":|3",
+  "[Am]שלום[C]     [G]",
+].join("\n");
+
+const BODIES = { rtl: BODY_RTL, ltr: BODY_LTR, long: BODY_LONG, rep: BODY_REP };
 
 /* WHOSE SONG THIS IS, and it is the account the page below signs in as. The
    editor is the song's own account and nobody else's: everybody else gets the
@@ -532,6 +546,11 @@ await mkdir(join(root, "long"), { recursive: true });
 await mkdir(join(root, "longed"), { recursive: true });
 await writeFile(join(root, "long/index.html"), page("long", false), "utf8");
 await writeFile(join(root, "longed/index.html"), page("long", true), "utf8");
+/* A song with a bar round two of its lines, read and written. */
+await mkdir(join(root, "rep"), { recursive: true });
+await mkdir(join(root, "reped"), { recursive: true });
+await writeFile(join(root, "rep/index.html"), page("rep", false), "utf8");
+await writeFile(join(root, "reped/index.html"), page("rep", true), "utf8");
 
 try {
   await withChrome(async (open) => {
@@ -1506,6 +1525,152 @@ try {
         rows.indexOf("פרסום") >= 0 && rows.indexOf("עריכה") < 0, rows);
       check("and being rid of it is a row in there too",
         rows.indexOf("מחיקת השיר") >= 0, rows);
+    });
+
+    /* --- 11. A REPEAT IS A BAR DOWN THE MARGIN -----------------------------
+       The one thing about it that cannot be read off the code. The bar is not
+       one element measured and placed: it is a piece drawn by each row of the
+       block, in a gutter opened by a margin on every row of the song, joined
+       through the gap under each row. Whether those pieces line up into a
+       single rule beside exactly the right lines, and whether the words moved
+       for it, are questions about a browser laying out a page.
+
+       AND THE MARKS ARE NOT LINES. `|:` and `:|3` are two rows in the text and
+       no rows on the page, so the song here is six lines of text and four of
+       song, and a page that drew them would say so by having six. */
+    await open(`http://127.0.0.1:${port}/chords/_t/rep/`, async ({ evaluate }) => {
+      await sleep(400);
+      const seen = await evaluate(`JSON.stringify((() => {
+        const rows = [...document.querySelectorAll(".sheet .ln")];
+        const bars = rows.filter(ln => ln.classList.contains("is-rep"));
+        const rect = (ln) => {
+          const s = getComputedStyle(ln, "::after");
+          return { top: s.top, left: s.left, right: s.right, border: s.borderInlineEndWidth };
+        };
+        const words = rows.map(ln => (ln.querySelector(".ln-t") || {}).textContent || "");
+        return {
+          errors: window.__errors,
+          rows: rows.length,
+          marked: bars.length,
+          words: bars.map(ln => ((ln.querySelector(".ln-t") || {}).textContent || "").slice(0, 6)),
+          ends: [
+            bars.filter(ln => ln.classList.contains("is-rep-a")).length,
+            bars.filter(ln => ln.classList.contains("is-rep-z")).length,
+          ],
+          count: (document.querySelector(".rep-n") || {}).textContent || "",
+          /* The rows the block covers have to be a run with nothing of the
+             song caught in the middle of it and nothing of it left outside:
+             where it begins, where it ends, and what stands just past it. */
+          run: [rows.indexOf(bars[0]), rows.indexOf(bars[bars.length - 1])],
+          after: (((rows[rows.indexOf(bars[bars.length - 1]) + 1] || document.createElement("i"))
+            .querySelector(".ln-t") || {}).textContent || "").slice(0, 6),
+          gutter: document.querySelector(".sheet").classList.contains("has-rep"),
+          /* Every bar piece stands at the same distance from its row's start
+             edge, which is what makes them one rule and not a staircase. */
+          edges: [...new Set(bars.map(ln => rect(ln).border + "@" + (getComputedStyle(ln).direction === "rtl" ? rect(ln).right : rect(ln).left)))],
+          /* And nothing of the song runs off the glass to make room for it. */
+          wide: document.documentElement.scrollWidth > innerWidth + 1,
+          any: words.some(w => w.indexOf("|:") >= 0 || w.indexOf(":|") >= 0),
+        };
+      })())`);
+
+      check("a song with a repeat in it had no errors", seen.errors.length === 0, JSON.stringify(seen.errors));
+      check("the marks are not lines of the song", seen.any === false, JSON.stringify(seen));
+      /* A LINE OF THE SONG IS NOT ALWAYS A ROW OF THE PAGE, which is why this
+         asks where the run begins and ends rather than how long it is: the
+         first line here is longer than the window and comes out as two rows,
+         and both of them stand inside the block. That is the pouring carrying
+         the block onto the pieces of a broken line (see shape in app.js), and
+         it is worth this test noticing rather than being told. */
+      check("the bar stands beside the two lines inside it",
+        seen.marked >= 2 && seen.run[1] - seen.run[0] === seen.marked - 1 &&
+        seen.words[0].indexOf("בנקיק") >= 0 && seen.after.indexOf("שלום") >= 0,
+        JSON.stringify(seen));
+      check("with one top and one foot", JSON.stringify(seen.ends) === "[1,1]", JSON.stringify(seen.ends));
+      check("the count is beside the foot and says three", seen.count === "3", seen.count);
+      check("the gutter is opened on the song and not on the block", seen.gutter === true, "");
+      check("and the pieces line up into one rule", seen.edges.length === 1, JSON.stringify(seen.edges));
+      check("and the song still fits the glass", seen.wide === false, "");
+    });
+
+    /* And a repeat is made and unmade from the page it is drawn on. */
+    await open(`http://127.0.0.1:${port}/chords/_t/reped/`, async ({ evaluate }) => {
+      await sleep(500);
+      const gone = await evaluate(`JSON.stringify((() => {
+        document.querySelector(".rep-n").click();
+        return "ok";
+      })())`);
+      await sleep(250);
+      const panel = await evaluate(`JSON.stringify({
+        open: !!document.querySelector(".rep-pop"),
+        count: (document.querySelector(".rep-pop .rep-count") || {}).textContent || "",
+      })`);
+      check("pressing the count opens the one panel a repeat has",
+        panel.open === true && panel.count === "3", JSON.stringify(panel) + " " + gone);
+
+      await evaluate(`JSON.stringify((() => {
+        [...document.querySelectorAll(".rep-pop .chord-btn")].pop().click();
+        return "ok";
+      })())`);
+      await sleep(400);
+      const after = await evaluate(`JSON.stringify({
+        errors: window.__errors,
+        marked: document.querySelectorAll(".sheet .ln.is-rep").length,
+        gutter: document.querySelector(".sheet").classList.contains("has-rep"),
+        rows: document.querySelectorAll(".sheet .ln").length,
+      })`);
+      check("and the bin takes the bar away and leaves the words",
+        after.marked === 0 && after.rows === 4 && after.gutter === false, JSON.stringify(after));
+      check("with nothing thrown on the way", after.errors.length === 0, JSON.stringify(after.errors));
+
+      /* AND BACK AGAIN, FROM THE MARKING. Which is the way in: lines are
+         chosen by dragging over them, and what the drag puts up offers this
+         beside the chords of the last copy. */
+      await evaluate(`JSON.stringify((() => {
+        const rows = [...document.querySelectorAll(".sheet .ln")].filter(ln => ln.querySelector(".ln-t"));
+        const a = rows[0].querySelector(".ln-t"), b = rows[1].querySelector(".ln-t");
+        const r = document.createRange();
+        r.setStart(a.firstChild, 0);
+        r.setEnd(b.lastChild, b.lastChild.childNodes.length);
+        const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+        return "ok";
+      })())`);
+      await sleep(400);
+      const offered = await evaluate(`JSON.stringify(
+        [...document.querySelectorAll(".chord-offer .chord-btn span")].map(s => s.textContent))`);
+      check("a marking across lines is offered a repeat", offered.indexOf("חזרה") >= 0, JSON.stringify(offered));
+
+      await evaluate(`JSON.stringify((() => {
+        const b = [...document.querySelectorAll(".chord-offer .chord-btn")]
+          .find(b => b.textContent.indexOf("חזרה") >= 0);
+        if (b) b.click();
+        return "ok";
+      })())`);
+      await sleep(400);
+      /* THE GUTTER IS REAL ROOM, so putting a bar round a verse makes every row
+         of the song narrower by it, and a line that only just fitted is poured
+         into two. Which is why this asks where the run ends and not how long it
+         is: what has to be true is that the bar covers those two lines of the
+         SONG and stops before the next one. */
+      const made = await evaluate(`JSON.stringify((() => {
+        const rows = [...document.querySelectorAll(".sheet .ln")];
+        const bars = rows.filter(ln => ln.classList.contains("is-rep"));
+        const next = rows[rows.indexOf(bars[bars.length - 1]) + 1] || document.createElement("i");
+        return {
+          errors: window.__errors,
+          marked: bars.length,
+          run: [rows.indexOf(bars[0]), rows.indexOf(bars[bars.length - 1])],
+          first: ((bars[0].querySelector(".ln-t") || {}).textContent || "").slice(0, 6),
+          after: ((next.querySelector(".ln-t") || {}).textContent || "").slice(0, 6),
+          count: (document.querySelector(".rep-n") || {}).textContent || "",
+          gutter: document.querySelector(".sheet").classList.contains("has-rep"),
+        };
+      })())`);
+      check("and the press puts a bar round exactly those lines, twice",
+        made.marked >= 2 && made.run[1] - made.run[0] === made.marked - 1 &&
+        made.first.indexOf("בנקיק") >= 0 && made.after.indexOf("שלום") >= 0 &&
+        made.count === "2" && made.gutter === true, JSON.stringify(made));
+      check("with nothing thrown there either", made.errors.length === 0, JSON.stringify(made.errors));
     });
   });
 } finally {

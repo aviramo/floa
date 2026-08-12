@@ -124,6 +124,13 @@
        are the ones on «who wrote the tune», because a note is a note wherever
        it is drawn here. */
     chordsOnly: '<path d="M3.5 20.5h17"/><path d="M8 5.5v6.6"/><ellipse cx="6.3" cy="12.6" rx="1.8" ry="1.5" fill="currentColor" stroke="none"/><path d="M17 5.5v6.6"/><ellipse cx="15.3" cy="12.6" rx="1.8" ry="1.5" fill="currentColor" stroke="none"/>',
+    /* THE REPEAT SIGN ITSELF, which is the picture the page already draws: a
+       thick rule, a thin one beside it, and the two dots. Not an arrow going
+       round in a circle, which is what every app means by "again" and what
+       this button does not mean: it does not do the thing twice, it says the
+       song does. Sharing the drawing with the bar in the margin is the point,
+       so that pressing this and seeing that is one thing learnt and not two. */
+    repeat: '<path d="M14.6 5v14" stroke-width="3"/><path d="M17.8 5v14"/><circle cx="10.4" cy="9.6" r="1.15" fill="currentColor" stroke="none"/><circle cx="10.4" cy="14.4" r="1.15" fill="currentColor" stroke="none"/>',
     /* The i in its ring, the way every app draws "there is more to know about
        this here". The dot first and the stem under it. */
     info: '<circle cx="12" cy="12" r="9"/><path d="M12 7.9h.01"/><path d="M12 11.4v5"/>',
@@ -1399,7 +1406,7 @@
          it on. The times were written down while this was played (see
          alongTake), so opening the song from here is opening it with the
          performance already walking through it. */
-      alongTake(audio, Array.isArray(take.marks) ? take.marks : []);
+      alongTake(audio, take.marks, take.marks_of);
 
       showDock(function (box) {
         /* --- AND THE NAME IS THE WAY TO THE SONG -----------------------------
@@ -1696,7 +1703,7 @@
        about libraries is a worse failure than a row with nothing on it. */
     outTakes: function () {
       return rest(CFG.takeTable +
-        "?select=id,song_id,owner,path,mime,marks,created_at&published=eq.true&order=created_at.desc"
+        "?select=id,song_id,owner,path,mime,marks,marks_of,created_at&published=eq.true&order=created_at.desc"
       ).then(function (rows) {
         var by = {};
         /* Newest first out of the database, so the first one seen for a song is
@@ -2578,15 +2585,110 @@
      time the song is drawn (see dirOf), so a marker in the document could only
      ever agree with them or be wrong about them, and a stored fact that can go
      stale is a stored fact that will. */
+  /* --- AND A REPEAT IS PUNCTUATION, NOT A WORD ------------------------------
+     `|:` on a line of its own opens a block and `:|3` closes it, which is the
+     mark every musician already reads and which is why it is not `{חזרה}`.
+
+     A HEADING IS CONTENT AND A REPEAT MARK IS NOT, and that is the whole of
+     the reason. `{פזמון}` is a word the reader sees on the page; a repeat is
+     drawn as a bar down the margin with a number beside it, and the word
+     "repeat" appears nowhere. Something nobody reads should not be a word, and
+     a Hebrew word inside a marker line is also a bidi run in a text field
+     that is otherwise punctuation, which is the fight this file already has
+     with chord labels.
+
+     AND IT IS CARRIED ON THE LINES, not stored as two lines of its own.
+     `repOpen` on the first line of the block and `repShut` on the last, so
+     there is nothing invisible in the song for the editor to walk into: no row
+     with no height, no Tab that lands on nothing, and deleting the lines of a
+     block takes the block with them. The two marker rows exist in the TEXT,
+     which is the only place they are a thing at all. */
+  var REP_OPEN = /^\s*\|:\s*$/;
+  var REP_SHUT = /^\s*:\|\s*[×xX*]?\s*(\d+)?\s*$/;
+  /* What a closing mark with no number means. Two, because a block written
+     without a count is a block somebody wants twice; nobody writes a repeat to
+     ask for one. */
+  var REP_TIMES = 2;
+  var REP_MOST = 99;
+
+  function repTimes(line) {
+    var n = Math.round(Number(line && line.repShut) || 0);
+    return n >= 2 ? Math.min(n, REP_MOST) : 0;
+  }
+
+  /* --- THE SONG AS IT IS PLAYED, OUT OF THE SONG AS IT IS WRITTEN -----------
+     `parts` is the sheet cut at every repeat boundary: a run of things and how
+     many times it is sung, with a flag on each saying whether a part of the
+     song begins on it. Out comes the same things laid end to end in the order
+     they are reached, a block appearing as many times as it is sung.
+
+     WHICH IS THE WHOLE OF THE REPEAT ARITHMETIC, and it is here, with the
+     model, rather than beside the walk that reads it off the page. It is what
+     turns going back into going on: written out, the second pass over a verse
+     is not a return at all, it is the song carrying on, and everything in
+     follow.js that was built for a song carrying on works on it unchanged. So
+     it is worth being able to check without a browser, and it takes anything
+     at all in `at`: the page hands it chord nodes and a test hands it letters.
+
+     AND EVERY PASS OPENS A PART. "Somebody went back to the top of the verse"
+     is already the most specific thing a backwards move can mean; coming round
+     again is that same statement made in advance. Where a pass begins on
+     something that already opened a part the two say so twice, which is no
+     answer at all: what reads this only asks whether a place is an opening. */
+  function playOrder(parts) {
+    var out = { at: [], starts: [] };
+    (parts || []).forEach(function (part) {
+      var times = Math.max(1, Math.min(REP_MOST, Math.round(Number(part.times) || 1)));
+      var opens = part.opens || [];
+      for (var t = 0; t < times; t++) {
+        var base = out.at.length;
+        if (times > 1) out.starts.push(base);
+        (part.at || []).forEach(function (item, i) {
+          if (opens[i]) out.starts.push(base + i);
+          out.at.push(item);
+        });
+      }
+    });
+    return out;
+  }
+
+  /* Which block each line stands in, walked once down the song. One object per
+     block, shared by every line in it, so the count written on the closing
+     line is the count all of them report. */
+  function repRuns(lines) {
+    var out = new Array(lines.length), open = null, id = 0;
+    (lines || []).forEach(function (line, i) {
+      if (line.repOpen && !open) open = { rep: String(++id), times: REP_TIMES };
+      if (open) out[i] = open;
+      if (open && repTimes(line)) { open.times = repTimes(line); open = null; }
+    });
+    return out;
+  }
+
   function songToText(lines) {
-    return normalizeLines(lines).map(function (line) {
-      return line.type === "section" ? "{" + line.text + "}" : toChordPro(line);
-    }).join("\n");
+    var out = [];
+    normalizeLines(lines).forEach(function (line) {
+      if (line.repOpen) out.push("|:");
+      out.push(line.type === "section" ? "{" + line.text + "}" : toChordPro(line));
+      if (repTimes(line)) out.push(":|" + repTimes(line));
+    });
+    return out.join("\n");
   }
 
   function textToSong(body, fallback) {
     var dir = fallback === "ltr" ? "ltr" : "rtl";
     var out = [];
+    /* A `|:` that has not met its first line yet, and the line that ended up
+       carrying it. Together they are also what refuses a nested block: while
+       one is open a second `|:` is not read, because a bar inside a bar is a
+       tree, and everything downstream of this is a list. */
+    var waiting = false, opened = -1;
+
+    function opens(line) {
+      if (waiting) { line.repOpen = true; waiting = false; opened = out.length; }
+      return line;
+    }
+
     String(body).replace(/\r\n?/g, "\n").split("\n").forEach(function (row) {
       /* THROWN AWAY RATHER THAN OBEYED. A song written while the direction was
          a setting carries these, and the words underneath them are the better
@@ -2594,18 +2696,40 @@
          once said it was and may have typed past ever since. */
       if (DIR_MARK.test(row)) return;
 
+      /* Read BEFORE the general `{...}` rule below and before the words, so
+         that neither can claim them. They carry no direction of their own and
+         deliberately leave `dir` alone: a mark is not a line of the song and
+         has no opinion about which way the next one runs. */
+      if (REP_OPEN.test(row)) {
+        if (opened < 0) waiting = true;
+        return;
+      }
+      var shut = REP_SHUT.exec(row);
+      if (shut) {
+        /* A close with nothing open, or with nothing between the two marks, is
+           a mark that says nothing, and the honest thing is to drop it rather
+           than to leave half a block on the song. */
+        if (opened >= 0) out[out.length - 1].repShut = Math.min(REP_MOST, Math.max(REP_TIMES, Math.round(Number(shut[1]) || REP_TIMES)));
+        waiting = false;
+        opened = -1;
+        return;
+      }
+
       /* The words decide, and a line with no letters in it keeps whatever the
          line before it settled on. */
       var heading = /^\s*\{(.*)\}\s*$/.exec(row);
       if (heading) {
         var title = heading[1].trim();
         dir = textDir(title) || dir;
-        return out.push({ type: "section", text: title, chords: [], dir: dir });
+        return out.push(opens({ type: "section", text: title, chords: [], dir: dir }));
       }
       var parsed = fromChordPro(row);
       dir = textDir(parsed.text) || dir;
-      out.push({ type: "line", text: parsed.text, chords: parsed.chords, dir: dir });
+      out.push(opens({ type: "line", text: parsed.text, chords: parsed.chords, dir: dir }));
     });
+    /* A block nobody closed is not a block. The song is the witness that
+       survives, so what goes is the mark rather than the lines. */
+    if (opened >= 0 && out[opened]) delete out[opened].repOpen;
     return out;
   }
 
@@ -2630,8 +2754,13 @@
 
      A departure is offered before an arrival at the same place, so a line that
      was rewritten reads downwards: this was there, and this is there now. */
+  /* THE MARKS ARE PART OF THE KEY, by the same rule that puts a line's chords
+     in it: a line that is now sung twice is not the line it was, and a version
+     that only put a repeat around a verse would otherwise say that nothing
+     happened. */
   function lineKey(line) {
-    return line.type === "section" ? "{" + line.text + "}" : toChordPro(line);
+    var body = line.type === "section" ? "{" + line.text + "}" : toChordPro(line);
+    return (line.repOpen ? "|:" : "") + body + (repTimes(line) ? ":|" + repTimes(line) : "");
   }
 
   function diffLines(before, after) {
@@ -2692,9 +2821,18 @@
 
     /* A line that does not say which way it runs runs the way the line before
        it did, and the first one runs the way the song does. */
-    return fillDirs(lines.map(function (l) {
+    /* A line is rebuilt here rather than passed through, so anything it
+       carries has to be carried on purpose. The repeat marks are facts about
+       the song and not about the words, so they ride along untouched. */
+    function keepRep(from, to) {
+      if (from && from.repOpen) to.repOpen = true;
+      if (from && repTimes(from)) to.repShut = repTimes(from);
+      return to;
+    }
+
+    return fillDirs(repair(lines.map(function (l) {
       var raw = String(l && l.text != null ? l.text : "");
-      if (l && l.type === "section") return { type: "section", text: raw, chords: [], dir: l.dir };
+      if (l && l.type === "section") return keepRep(l, { type: "section", text: raw, chords: [], dir: l.dir });
 
       /* Written down with brackets. A song saved before that, with a separate
          list of offsets, still opens: its own list is used and the brackets
@@ -2720,10 +2858,36 @@
          right: the real spaces it was padded with come out artificial, so the
          line is the same length, the chords stand over the same cells, and the
          WORDS end where the words end. */
-      var line = { type: "line", text: parsed.text, chords: chords, dir: l && l.dir };
+      var line = keepRep(l, { type: "line", text: parsed.text, chords: chords, dir: l && l.dir });
       fitPadding(line);
       return line;
-    }), fallback);
+    })), fallback);
+  }
+
+  /* --- A BLOCK THAT LOST AN END IS NOT A BLOCK -------------------------------
+     Every way a song is edited can leave one: deleting the last line of a
+     repeat leaves the `|:` on a line with no close, pasting half a block
+     brings in a close with no open, and a block that survived one of those
+     would draw a bar down the rest of the song and unroll it forever.
+
+     So the marks are read straight through once, in order, and anything that
+     does not pair is dropped. Nesting goes the same way and for the same
+     reason it does when reading the text: a bar inside a bar is a tree, and
+     the plan the follower walks is a list. */
+  function repair(lines) {
+    var open = -1;
+    lines.forEach(function (line, i) {
+      if (line.repOpen) {
+        if (open >= 0) delete line.repOpen;
+        else open = i;
+      }
+      if (repTimes(line)) {
+        if (open < 0) delete line.repShut;
+        else open = -1;
+      }
+    });
+    if (open >= 0) delete lines[open].repOpen;
+    return lines;
   }
 
   /* Text pasted out of a document, Word or anywhere else: a line of chords,
@@ -2988,6 +3152,80 @@
       if (plan) plans.push(plan);
     });
     plans.forEach(drawPlan);
+    markRepeats(root);
+  }
+
+  /* --- WHERE THE BAR STARTS AND WHERE IT ENDS -------------------------------
+     Not on the song, on the ROWS, and in the order they came out in. Which is
+     the only place the answer is: a line of a block may have been broken into
+     three rows, two of them may share a line of the page with a line from
+     outside the block, and the block may run over the foot of one column and
+     carry on at the head of the next. None of that is knowable from the song
+     and all of it is plain here.
+
+     So the rows are read straight through in document order, and every run of
+     them carrying the same block gets its ends marked: the first draws the top
+     of the bar, the last draws the foot and the number, everything between
+     draws a straight piece that joins its neighbours through the gap under the
+     row (see the stylesheet). A block split across two columns comes out as
+     two runs, each with its own ends, which is what a repeat that carries on
+     over a column break looks like on paper.
+
+     NOTHING IS MEASURED AND NOTHING IS POSITIONED. The bar is a pseudo-element
+     on the row itself, so it moves when the row moves and needs no second pass
+     when the window changes: what is done here is only saying which row is
+     which. */
+  var REP_EDGE = ["is-rep", "is-rep-a", "is-rep-z"];
+
+  function markRepeats(root) {
+    var rows = Array.prototype.slice.call(root.querySelectorAll(".ln"));
+    /* THE NUMBER GOES ON THE BLOCK'S LAST ROW AND NOWHERE ELSE, which is why
+       the ends of the block are found before the runs are. A block broken over
+       a column has two runs and one number: a bar that stops at the foot of a
+       column has plainly not finished, and a "2" at the bottom of one column
+       and another at the bottom of the next is two repeats where there is one. */
+    var first = Object.create(null), last = Object.create(null);
+    /* This runs again after every pouring, over rows that may already carry
+       what the last one gave them. The count is a real element, so it is taken
+       away and put back rather than left to accumulate. */
+    Array.prototype.forEach.call(root.querySelectorAll(".rep-n"), function (n) { n.remove(); });
+    rows.forEach(function (ln, i) {
+      ln.classList.remove.apply(ln.classList, REP_EDGE);
+      var rep = ln.dataset.rep;
+      if (!rep) return;
+      if (!(rep in first)) first[rep] = i;
+      last[rep] = i;
+    });
+
+    var run = [];
+    function close() {
+      if (!run.length) return;
+      var rep = run[0].dataset.rep;
+      run.forEach(function (ln) { ln.classList.add("is-rep"); });
+      if (rows.indexOf(run[0]) === first[rep]) run[0].classList.add("is-rep-a");
+      var end = run[run.length - 1];
+      if (rows.indexOf(end) === last[rep]) {
+        end.classList.add("is-rep-z");
+        var times = run[0].dataset.times || String(REP_TIMES);
+        end.dataset.times = times;
+        var n = el("button", "rep-n", times);
+        n.type = "button";
+        n.title = "חוזר " + times + " פעמים";
+        end.appendChild(n);
+      }
+      run = [];
+    }
+
+    rows.forEach(function (ln, i) {
+      var rep = ln.dataset.rep || "";
+      var was = run.length ? run[run.length - 1] : null;
+      /* A break in the block, and also a break in the ROW ORDER: two rows of
+         one block that ended up in different columns are not one bar with a
+         hole in it, they are two bars. */
+      if (was && (was.dataset.rep !== rep || was.parentNode !== ln.parentNode)) close();
+      if (rep) run.push(ln);
+      if (i === rows.length - 1) close();
+    });
   }
 
   /* --- THE SONG IN SCREENFULS ----------------------------------------------
@@ -3898,6 +4136,10 @@
     return {
       node: ln, text: text, chords: chords, cells: cells, advance: advance,
       rtl: rowRtl(ln),
+      /* Which repeat block this line stands in, so that the pieces it is
+         broken into stand in it too. A line that fits is carried through as
+         the row it already is and brings it along by itself. */
+      rep: ln.dataset.rep || "", times: ln.dataset.times || "",
       size: parseFloat(getComputedStyle(t).fontSize) || 18,
       pieces: [],
     };
@@ -4204,6 +4446,14 @@
 
     /* What the pouring has to say about a row, whoever built it. */
     function shape(ln, piece) {
+      /* A row built from a piece is a piece of a line that stood in a block,
+         so it stands in it too. Said before anything else here because the
+         drawing reads it off the row and does not care which of these a row
+         is. */
+      if (piece.line.rep) {
+        ln.dataset.rep = piece.line.rep;
+        ln.dataset.times = piece.line.times;
+      }
       if (piece.tail) {
         ln.classList.add("is-cont");
         ln.style.setProperty("--cont", indent + "px");
@@ -11742,8 +11992,23 @@
       /* Every row on screen is new, so the one that was being typed into is
          not one of them any more (see holdOff). */
       typing = null;
+      /* Which block a row stands in is said on the row, once, here. Everything
+         after this reads it off the row rather than off the song: the pouring
+         carries it onto the pieces a broken line becomes (see shape), and the
+         bar itself is drawn from the rows in the order they ended up in (see
+         markRepeats), which is the only place that knows what a column did. */
+      var runs = repRuns(song.lines);
+      /* The gutter belongs to the SONG and not to the block: a margin that
+         opened and closed down the page would move the words sideways at every
+         repeat, and the words are the thing that must not move. */
+      sheet.classList.toggle("has-rep", runs.some(Boolean));
       song.lines.forEach(function (line, index) {
-        sheet.appendChild(editing ? editRow(line, index) : viewLine(line, semis));
+        var row = editing ? editRow(line, index) : viewLine(line, semis);
+        if (runs[index]) {
+          row.dataset.rep = runs[index].rep;
+          row.dataset.times = runs[index].times;
+        }
+        sheet.appendChild(row);
       });
       /* Breaking first and placing second, because a chord belongs to the row
          its syllable ended up on and there is no telling which that is until
@@ -12660,17 +12925,143 @@
       mark();
     }
 
+    /* --- ANY BLOCK THAT TOUCHES THESE LINES GOES ------------------------------
+       Blocks do not nest and do not cross, so a new one over lines that are
+       already inside one replaces it whole rather than cutting it in half. The
+       alternative is a block with one end left standing, which is not a block
+       and which the reading would drop anyway (see repair). */
+    function clearRepeats(a, b) {
+      var runs = repRuns(song.lines);
+      var kill = Object.create(null);
+      for (var i = a; i <= b; i++) if (runs[i]) kill[runs[i].rep] = true;
+      song.lines.forEach(function (line, n) {
+        if (!runs[n] || !kill[runs[n].rep]) return;
+        delete line.repOpen;
+        delete line.repShut;
+      });
+    }
+
+    /* Which lines a block on the page is, asked of the song. The blocks are
+       numbered by the same walk that stamped the rows (see repRuns), so the
+       name on a row is the name here. */
+    function repSpan(rep) {
+      var runs = repRuns(song.lines), a = -1, b = -1;
+      runs.forEach(function (run, i) {
+        if (!run || run.rep !== rep) return;
+        if (a < 0) a = i;
+        b = i;
+      });
+      return a < 0 ? null : { a: a, b: b, times: runs[a].times };
+    }
+
+    /* --- THE PANEL BEHIND THE COUNT -------------------------------------------
+       How many times, and a bin. Two things, because they are the only two
+       things there are to say about a repeat once it exists.
+
+       IT DOES NOT MOVE WHILE IT IS OPEN. Changing the count redraws the song
+       and the row the count stood on is built again, but nothing on the page
+       has moved: the block is the same lines in the same places. So the panel
+       stays where it was put and only the number in it changes, and three is
+       one press away from four. */
+    var repPop = null;
+
+    function shutRepeat() {
+      if (!repPop) return;
+      repPop.remove();
+      repPop = null;
+      document.removeEventListener("pointerdown", repOutside, true);
+      window.removeEventListener("scroll", shutRepeat, true);
+      window.removeEventListener("resize", shutRepeat);
+    }
+
+    function repOutside(event) {
+      if (repPop && !repPop.contains(event.target)) shutRepeat();
+    }
+
+    /* The most a stepper offers. Nine of anything is already a note somebody
+       writes in words, and the format itself takes more (see REP_MOST) for a
+       song that arrives carrying one. */
+    var REP_STEP_MOST = 9;
+
+    function openRepeat(node) {
+      shutRepeat();
+      var row = node.closest(".ln");
+      var span = row && repSpan(row.dataset.rep);
+      if (!span) return;
+
+      var box = node.getBoundingClientRect();
+      repPop = el("div", "chord-offer rep-pop");
+      var count = el("span", "rep-count", String(span.times));
+
+      function step(label, title, by) {
+        var b = el("button", "chord-btn", label);
+        b.type = "button";
+        b.title = title;
+        b.setAttribute("aria-label", title);
+        b.addEventListener("pointerdown", function (event) { event.preventDefault(); });
+        b.addEventListener("click", function () {
+          var was = repSpan(row.dataset.rep) || span;
+          var times = Math.max(REP_TIMES, Math.min(REP_STEP_MOST, was.times + by));
+          if (times === was.times) return;
+          span = { a: was.a, b: was.b, times: times };
+          count.textContent = String(times);
+          setRepeat(was.a, was.b, times);
+        });
+        return b;
+      }
+
+      repPop.appendChild(step("−", "פעם אחת פחות", -1));
+      repPop.appendChild(count);
+      repPop.appendChild(step("+", "עוד פעם", 1));
+
+      var kill = el("button", "chord-btn");
+      kill.type = "button";
+      kill.title = "להוריד את החזרה";
+      kill.setAttribute("aria-label", kill.title);
+      kill.appendChild(svg(ICON.trash));
+      kill.addEventListener("pointerdown", function (event) { event.preventDefault(); });
+      kill.addEventListener("click", function () {
+        var was = repSpan(row.dataset.rep) || span;
+        shutRepeat();
+        setRepeat(was.a, was.b, 0);
+      });
+      repPop.appendChild(kill);
+
+      document.body.appendChild(repPop);
+      var wide = repPop.offsetWidth, tall = repPop.offsetHeight;
+      repPop.style.left = Math.min(Math.max(4, box.left + box.width / 2 - wide / 2), window.innerWidth - wide - 4) + "px";
+      repPop.style.top = Math.min(box.bottom + 4, window.innerHeight - tall - 4) + "px";
+
+      document.addEventListener("pointerdown", repOutside, true);
+      window.addEventListener("scroll", shutRepeat, true);
+      window.addEventListener("resize", shutRepeat);
+    }
+
+    function setRepeat(a, b, times) {
+      if (!song.lines[a] || !song.lines[b] || a > b) return;
+      clearRepeats(a, b);
+      if (times >= REP_TIMES) {
+        song.lines[a].repOpen = true;
+        song.lines[b].repShut = Math.min(REP_MOST, times);
+      }
+      draw();
+      mark();
+    }
+
     function offerChords() {
       hideChordOffer();
-      if (!sheet.isConnected || !chordClip || !chordClip.length) return;
+      if (!sheet.isConnected) return;
 
       var selection = window.getSelection && window.getSelection();
       if (!selection || !selection.rangeCount || selection.isCollapsed) return;
 
-      /* Asked for before the button is built, so a marking with nothing in it
-         to answer for never puts one up. */
-      var where = markedLines();
-      if (!where) return;
+      /* Asked for before the buttons are built, so a marking with nothing in it
+         to answer for never puts one up. Two different questions: the chords
+         want the characters that were marked, and a repeat wants whole lines,
+         which is what a drag that left its line hands back. */
+      var where = chordClip && chordClip.length ? markedLines() : null;
+      var span = acrossLines();
+      if (!where && !span) return;
 
       /* The last of the boxes the marking is drawn in, which is the row it
          ends on: the button belongs under the end of the gesture and not under
@@ -12680,17 +13071,36 @@
       if (!box || (!box.width && !box.height)) return;
 
       chordOffer = el("div", "chord-offer");
-      var put = el("button", "chord-btn");
-      put.type = "button";
-      put.title = "להעמיד את האקורדים שהועתקו מעל מה שסומן, בלי המילים";
-      put.setAttribute("aria-label", put.title);
-      put.appendChild(svg(ICON.chordsOnly));
-      put.appendChild(el("span", null, "אקורדים בלבד"));
-      /* the marking is the whole of where this goes, so a press must not take
+      /* the marking is the whole of where these go, so a press must not take
          it away before the press is answered */
-      put.addEventListener("pointerdown", function (event) { event.preventDefault(); });
-      put.addEventListener("click", function () { dropChords(where); });
-      chordOffer.appendChild(put);
+      function offer(label, title, icon, go) {
+        var put = el("button", "chord-btn");
+        put.type = "button";
+        put.title = title;
+        put.setAttribute("aria-label", title);
+        if (icon) put.appendChild(svg(icon));
+        put.appendChild(el("span", null, label));
+        put.addEventListener("pointerdown", function (event) { event.preventDefault(); });
+        put.addEventListener("click", go);
+        chordOffer.appendChild(put);
+      }
+
+      if (where) {
+        offer("אקורדים בלבד", "להעמיד את האקורדים שהועתקו מעל מה שסומן, בלי המילים", ICON.chordsOnly, function () {
+          dropChords(where);
+        });
+      }
+      /* --- AND THE COUNT IS NOT ASKED FOR HERE --------------------------------
+         It makes two, because a repeat is almost always two, and the number on
+         the page is what changes it. A menu row that stopped to ask would put
+         the rare answer in everybody's way, and the number has to be pressable
+         anyway: it is the only thing on the page that says a repeat is there. */
+      if (span) {
+        offer("חזרה", "לסמן את השורות שסומנו כחוזרות. המספר שליד הסימון משנה כמה פעמים", ICON.repeat, function () {
+          hideChordOffer();
+          setRepeat(span.a, span.b, REP_TIMES);
+        });
+      }
       document.body.appendChild(chordOffer);
 
       var width = chordOffer.offsetWidth, height = chordOffer.offsetHeight;
@@ -13195,6 +13605,13 @@
       return !!(target && target.closest && target.closest(".ln-c"));
     }
 
+    /* The count beside a repeat bar stands inside a row and is not a word in
+       it: pressing it is a gesture about the block, so the row it happens to
+       be standing in must not answer for it with a caret. */
+    function fromRepeat(target) {
+      return !!(target && target.closest && target.closest(".rep-n"));
+    }
+
     if (editing && !coming) {
       /* DOWN SHUTS EVERYTHING. Whatever happens between here and letting go is
          a selection, and a selection has to be free to leave the line it
@@ -13221,8 +13638,23 @@
       sheet.addEventListener("pointerdown", function (event) {
         if (event.button) return;
         if (fromChords(event.target)) return;
+        if (fromRepeat(event.target)) return void event.preventDefault();
         if (event.pointerType === "touch" && armLine(hostOf(event.target))) return;
         shutLines();
+      });
+
+      /* --- THE COUNT IS THE CONTROL ------------------------------------------
+         Pressing it opens the one panel a repeat has: how many times, and a
+         bin. There is nowhere else this could live. A block has no row of its
+         own to hang a menu on, and the number is already on the page saying
+         the block is there, so making it pressable adds a gesture and no
+         picture. */
+      sheet.addEventListener("click", function (event) {
+        var n = event.target && event.target.closest && event.target.closest(".rep-n");
+        if (!n) return;
+        event.preventDefault();
+        event.stopPropagation();
+        openRepeat(n);
       });
 
       /* UP OPENS THE ONE UNDER THE POINTER, at the character under it.
@@ -13233,6 +13665,7 @@
       sheet.addEventListener("pointerup", function (event) {
         if (event.button) return;
         if (fromChords(event.target)) return;
+        if (fromRepeat(event.target)) return;
 
         /* A FINGER HAS ALREADY BEEN ANSWERED. Its line was opened on the way
            down and the phone did the rest itself: it put the caret where the
@@ -14341,11 +14774,24 @@
       any = true;
     }
 
+    /* The repeat marks come along, because a verse copied without the bar
+       beside it is not the verse that was copied. Half a block copied lands as
+       a mark with no partner, and that is dropped when it is read back in (see
+       repair): what cannot happen is a paste that repeats something nobody
+       asked to repeat. */
+    function opened(ln) { if (ln.classList.contains("is-rep-a")) put("|:"); }
+    function shut(ln) {
+      if (ln.classList.contains("is-rep-z")) put(":|" + (Number(ln.dataset.times) || REP_TIMES));
+    }
+
     Array.prototype.forEach.call(sheet.querySelectorAll(".ln"), function (ln) {
       var head = ln.querySelector(".ln-section");
       if (head) {
-        if (selection.containsNode(head, true)) put("{" + head.textContent.trim() + "}");
-        else gaps++;
+        if (selection.containsNode(head, true)) {
+          opened(ln);
+          put("{" + head.textContent.trim() + "}");
+          shut(ln);
+        } else gaps++;
         return;
       }
 
@@ -14375,8 +14821,11 @@
       /* A row the reader broke off the line above is that line continuing, so
          it goes back onto it. Only when the row above was taken too: a
          selection that starts in the middle of a broken line starts a line. */
-      if (!gaps && lines.length && ln.classList.contains("is-cont")) lines[lines.length - 1] += written;
+      var cont = !gaps && lines.length && ln.classList.contains("is-cont");
+      if (!cont) opened(ln);
+      if (cont) lines[lines.length - 1] += written;
       else put(written);
+      shut(ln);
     });
 
     return lines.join("\n");
@@ -17982,7 +18431,9 @@
       return;
     }
     markHeard(null);
-    document.addEventListener("pointerdown", followTap, true);
+    document.addEventListener("pointerdown", followPress, true);
+    document.addEventListener("pointerup", followTap, true);
+    document.addEventListener("pointercancel", followLetGo, true);
     ["wheel", "touchmove", "keydown"].forEach(function (name) {
       window.addEventListener(name, handOnPage, { passive: true });
     });
@@ -17997,7 +18448,10 @@
     /* And the band under the line, which is the same mark said the other way
        round and has to leave with it (see showLine). */
     showLine(null);
-    document.removeEventListener("pointerdown", followTap, true);
+    tapFrom = null;
+    document.removeEventListener("pointerdown", followPress, true);
+    document.removeEventListener("pointerup", followTap, true);
+    document.removeEventListener("pointercancel", followLetGo, true);
     ["wheel", "touchmove", "keydown"].forEach(function (name) {
       window.removeEventListener(name, handOnPage);
     });
@@ -18210,22 +18664,66 @@
      Read off the page and not out of the data on purpose. Every chord in the
      sheet is already a node, in the order the song reaches it, and taking the
      order from the same nodes that will be marked is what makes the two
-     impossible to disagree about. */
+     impossible to disagree about.
+
+     --- AND IT IS THE SONG AS IT IS PLAYED, NOT AS IT IS WRITTEN --------------
+     A block between `|:` and `:|3` is written once and sung three times, so it
+     is laid out here three times: the same chord node appears at three places
+     in this list, and the follower walks all of them in order.
+
+     WHICH TURNS A REPEAT INTO GOING FORWARD, and that is the whole of why it is
+     done here rather than in follow.js. Going back is the expensive guess and
+     the one the mark refuses to draw (see the costs in follow.js); going on to
+     the next chord is the cheap one and the one the mark already walks. Written
+     out, the second pass over a verse is not a return at all, it is the song
+     carrying on, and every part of this that was built for a song carrying on
+     works on it unchanged.
+
+     AND EVERY PASS OPENS A PART. "Somebody went back to the top of the verse"
+     is already the most specific thing a backwards move can mean; coming round
+     again is the same statement made in advance. */
   function songSpans(sheet) {
     sheet = sheet || document.querySelector(".sheet");
-    var out = { spans: [], names: [], starts: [] };
+    /* `spans` is the song as it is PLAYED and `page` is the song as it is
+       WRITTEN: the same nodes, each of them once, down the sheet. The two are
+       the same list in a song with no repeat in it. `page` is here for one
+       reader only, a take recorded before repeats existed, whose marks count
+       the page (see inPlan). */
+    var out = { spans: [], names: [], starts: [], page: [] };
     if (!sheet) return out;
     var rows = sheet.querySelectorAll(".ln");
     var opening = true;
+
+    /* The page cut at every repeat boundary. Everything outside a block is sung
+       once, so a run of ordinary rows is a part like any other with a count of
+       one, and there is no second case anywhere below. */
+    var parts = [], part = null, was = null;
+
     for (var r = 0; r < rows.length; r++) {
-      if (rows[r].classList.contains("is-section")) { opening = true; continue; }
-      var here = rows[r].querySelectorAll(".chord");
+      var ln = rows[r];
+      var rep = ln.dataset.rep || "";
+      if (!part || rep !== was) {
+        part = {
+          times: rep ? Math.max(REP_TIMES, Math.min(REP_MOST, Number(ln.dataset.times) || REP_TIMES)) : 1,
+          at: [], opens: [],
+        };
+        parts.push(part);
+        was = rep;
+      }
+      if (ln.classList.contains("is-section")) { opening = true; continue; }
+      var here = ln.querySelectorAll(".chord");
       for (var k = 0; k < here.length; k++) {
-        if (opening) { out.starts.push(out.spans.length); opening = false; }
-        out.spans.push(here[k]);
-        out.names.push(here[k].textContent.trim());
+        out.page.push(here[k]);
+        part.at.push(here[k]);
+        part.opens.push(opening);
+        opening = false;
       }
     }
+
+    var played = playOrder(parts);
+    out.spans = played.at;
+    out.starts = played.starts;
+    out.names = out.spans.map(function (node) { return node.textContent.trim(); });
     return out;
   }
 
@@ -18315,6 +18813,20 @@
      rounding, and must not be read as having fallen below the line. */
   var THIRD_SLACK = 6;
 
+  /* --- AND A REPEAT ASKED NOTHING NEW OF THIS -------------------------------
+     Worth writing down, because it looked like it would. A block written once
+     and sung twice ends with the mark going back up the page, and the rule
+     here is one-sided on purpose: under the line the page moves, above it
+     nothing happens. Which is right, and it is also already right about this.
+     "Above the line" means still on the screen, where there is nothing to fix;
+     a mark that has gone off the TOP of the screen is out of the band either
+     way and is brought back to the line, up, exactly as one that ran off the
+     bottom is brought back down.
+
+     So a page turning back to the verse turns back by itself, and the reason
+     it does is the reason the plan is unrolled at all (see songSpans): the
+     mark is going FORWARD through the song as it is played, and this was
+     always built to follow it there. */
   function keepInView(node) {
     if (Date.now() < scrollHold) return;
     var box = node.getBoundingClientRect();
@@ -18352,26 +18864,106 @@
     scrollHold = Date.now() + 700;
   }
 
-  /* A finger on a chord says where we are, which is worth more than any amount
-     of listening. Read on pointerdown rather than click so that it lands
-     before anything else on the page has a chance to move, and refused inside
-     the editor, where a press on a chord already means something else. */
+  /* --- A FINGER ON THE SONG SAYS WHERE WE ARE -------------------------------
+     Worth more than any amount of listening, and refused inside the editor,
+     where a press on a chord already means something else.
+
+     ON A WORD AS WELL AS ON A CHORD, and the words are the important half. A
+     chord label is a small target pressed on purpose; a word is what somebody
+     playing is actually looking at, and «I am here» is a thing said about the
+     line being sung, not about a label over it. What a word resolves to is the
+     chord it is sung on, which is the last one at or before it.
+
+     AND IT IS READ ON THE WAY UP, WITH A LIMIT ON HOW FAR IT MOVED. It used to
+     be pointerdown, on the grounds that it lands before anything else can move
+     the page, and that was safe while the only target was a chord. It stops
+     being safe the moment most of the page is a target: a phone held while
+     playing is a phone being touched, and every drag to scroll begins with a
+     press on a word. A press that travelled is a scroll and is not an answer,
+     and there is no way to know which it was until it is over. */
+  var TAP_SLIP = 10;
+  var tapFrom = null;
+
+  function followPress(event) {
+    tapFrom = { x: event.clientX, y: event.clientY, id: event.pointerId };
+  }
+
+  function followLetGo() { tapFrom = null; }
+
   function followTap(event) {
-    if (!following || !followSpans) return;
-    var hit = event.target && event.target.closest && event.target.closest(".chord");
-    if (!hit) return;
-    var sheet = hit.closest(".sheet");
+    var from = tapFrom;
+    tapFrom = null;
+    if (!following || !followSpans || !from || from.id !== event.pointerId) return;
+    if (Math.abs(event.clientX - from.x) > TAP_SLIP || Math.abs(event.clientY - from.y) > TAP_SLIP) return;
+
+    var target = event.target;
+    if (!target || !target.closest) return;
+    var sheet = target.closest(".sheet");
     if (!sheet || sheet.classList.contains("ed")) return;
-    for (var i = 0; i < followSpans.length; i++) {
-      if (followSpans[i] === hit) {
-        /* A FINGER SAYS WHICH CHORD IS BEING PLAYED, which is what the
-           follower's answer is, and the band lights the line it is on. */
-        following.put(i);
-        scrollHold = 0;
-        markAt(i);
-        return;
-      }
+
+    var hit = chordUnder(target);
+    var at = hit ? placeOf(hit) : -1;
+    if (at < 0) return;
+    /* WHICH CHORD IS BEING PLAYED is what the follower's answer is, and the
+       band lights the line it is on. */
+    following.put(at);
+    scrollHold = 0;
+    markAt(at);
+  }
+
+  /* The chord a press landed on, or the chord the word it landed on is sung
+     over. Both answers are a node in the chord lane, so everything after this
+     is the same question either way. */
+  function chordUnder(target) {
+    var chord = target.closest(".chord");
+    if (chord) return chord;
+
+    var t = target.closest(".ln-t");
+    /* The mark between two lines of the song sharing one line of the page is
+       not a line and has nothing under it (see buildSep). */
+    if (!t || t.classList.contains("ln-sep")) return null;
+    var row = t.closest(".ln");
+    if (!row) return null;
+
+    /* Which character, which is the index of its own span: every character has
+       one, which is what puts a chord over a syllable in the first place. A
+       press past the end of the words is the end of the words. */
+    var at = Array.prototype.indexOf.call(t.children, target);
+    if (at < 0) at = t.children.length - 1;
+
+    var here = row.querySelectorAll(".ln-c .chord");
+    var best = null;
+    for (var i = 0; i < here.length; i++) {
+      if ((Number(here[i].dataset.pos) || 0) <= at) best = here[i];
     }
+    if (best) return best;
+
+    /* Nothing before it on this row, so what is ringing over these words is
+       the last chord of the row above: a line that begins under the chord that
+       ended the one before it, which is most lines of most songs. */
+    var rows = Array.prototype.slice.call((row.closest(".sheet") || document).querySelectorAll(".ln"));
+    for (var r = rows.indexOf(row) - 1; r >= 0; r--) {
+      var back = rows[r].querySelectorAll(".ln-c .chord");
+      if (back.length) return back[back.length - 1];
+    }
+    return null;
+  }
+
+  /* WHICH TIME ROUND, which is a question only a song with a repeat in it
+     asks. One chord on the page stands at two or three places in the song as
+     it is played (see songSpans), and what somebody touching it means is «I am
+     here NOW»: the next of them from where the mark is standing. Behind it
+     only if there is none ahead, and then the nearest, because a press that
+     resolved to nothing would be a press that did nothing. */
+  function placeOf(node) {
+    var here = following.where();
+    var back = -1;
+    for (var i = 0; i < followSpans.length; i++) {
+      if (followSpans[i] !== node) continue;
+      if (i >= here) return i;
+      back = i;
+    }
+    return back;
   }
 
   /* How much of the screen the band is allowed. While the follower is running
@@ -19033,6 +19625,12 @@
     return now - tape.began - tape.still;
   }
 
+  /* WHICH COUNTING A TAKE'S MARKS ARE IN (see marks_of in schema.sql). Written
+     onto every take made from here on, because from here on a mark names a
+     place in the song as it is PLAYED, which in a song with a repeat in it is
+     not the same list as the chords down the page. */
+  var MARKS_PLAYED = 1;
+
   function tapeMark(at) {
     if (!tape || at < 0 || tape.rec.state !== "recording") return;
     var last = tape.marks[tape.marks.length - 1];
@@ -19450,7 +20048,30 @@
     paintTape();
   }
 
-  function alongTake(audio, marks) {
+  /* --- A TAKE FROM BEFORE THERE WERE REPEATS --------------------------------
+     Its marks count the chords down the PAGE, because that is what the mark
+     was when they were written (see marks_of in schema.sql). The two countings
+     are the same in a song with no repeat, so this changes nothing for any
+     take made so far; it matters the day somebody puts a bar round a verse,
+     and then what an old take should point at is the FIRST time round, which
+     is where the playing it recorded actually was.
+
+     Translated once, when the take starts, and not on every tick: it is a
+     lookup per mark and a take is a few hundred of them. */
+  function inPlan(marks, of) {
+    var list = Array.isArray(marks) ? marks : [];
+    if (Number(of) === MARKS_PLAYED || !list.length) return list;
+    var read = songSpans();
+    if (!read.page.length) return list;
+    return list.map(function (m) {
+      var node = read.page[m.at];
+      var at = node ? read.spans.indexOf(node) : -1;
+      return { t: m.t, at: at < 0 ? m.at : at };
+    });
+  }
+
+  function alongTake(audio, marks, of) {
+    marks = inPlan(marks, of);
     var was = -1;
 
     function look() {
@@ -19527,7 +20148,7 @@
     var url = URL.createObjectURL(made.blob);
     audio.src = url;
     tellLength(audio);
-    alongTake(audio, made.marks);
+    alongTake(audio, made.marks, MARKS_PLAYED);
     /* --- AND THE MICROPHONE GOES BEFORE THE TAKE IS HEARD --------------------
        A take played back while the microphone is still open does not sound
        like the take. A phone with a live capture on it is a phone in a call:
@@ -19701,7 +20322,7 @@
           prefer: "return=representation",
           body: {
             id: id, song_id: song.id, take: next, path: path, mime: made.mime,
-            seconds: made.seconds, marks: made.marks,
+            seconds: made.seconds, marks: made.marks, marks_of: MARKS_PLAYED,
             /* what the ear was saying while it was played (see traceOn) */
             trace: made.trace || null,
             page: state.ear ? state.ear.page() : 0,
@@ -19899,7 +20520,7 @@
     }
 
     rest(CFG.takeTable + "?song_id=eq." + song.id +
-      "&select=id,owner,take,path,mime,seconds,marks,page,capo,published,created_at" +
+      "&select=id,owner,take,path,mime,seconds,marks,marks_of,page,capo,published,created_at" +
       "&order=created_at.desc").then(function (rows) {
       if (!box.isConnected) return;
       if (!rows || !rows.length) return counted(0);

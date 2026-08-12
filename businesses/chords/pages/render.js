@@ -162,10 +162,18 @@ export function sheet(song) {
   const lines = model.normalizeLines(song.lines, song.dir);
   const rows = [];
   for (const line of lines) {
-    if (line.type === "section") { rows.push("", `{${line.text}}`); continue; }
-    const chords = chordRow(line).replace(/\s+$/, "");
-    if (chords) rows.push(chords);
-    rows.push(model.GAP ? line.text.split(model.GAP).join(" ").replace(/\s+$/, "") : line.text);
+    /* The repeat marks go into the seed as themselves. A crawler reading this
+       gets what a musician reading it gets: `|:` above the block and `:|2`
+       under it. The app draws them as a bar down the margin, and the seed has
+       no margin to draw in. */
+    if (line.repOpen) rows.push("|:");
+    if (line.type === "section") rows.push("", `{${line.text}}`);
+    else {
+      const chords = chordRow(line).replace(/\s+$/, "");
+      if (chords) rows.push(chords);
+      rows.push(model.GAP ? line.text.split(model.GAP).join(" ").replace(/\s+$/, "") : line.text);
+    }
+    if (line.repShut) rows.push(`:|${line.repShut}`);
   }
   return rows.join("\n").replace(/^\n+/, "");
 }

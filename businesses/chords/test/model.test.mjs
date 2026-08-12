@@ -9,7 +9,7 @@ const end = src.indexOf("/* ----------------------------------------------------
 if (start < 0 || end < 0) throw new Error("could not find the model block");
 
 const block = src.slice(start, end);
-const api = new Function(block + "\nreturn { slugify, transposeChord, remapChords, parsePasted, looksLikeChord, isChord, suggestChords, chordsUsed, easyVersion, keyChoices, toChordPro, fromChordPro, songToText, textToSong, normalizeLines, songDir, splitLine, joinLines, padTo, padTail, growHead, fitPadding, GAP, diffLines, changeCount };")();
+const api = new Function(block + "\nreturn { slugify, transposeChord, remapChords, parsePasted, looksLikeChord, isChord, suggestChords, chordsUsed, easyVersion, keyChoices, toChordPro, fromChordPro, songToText, textToSong, normalizeLines, songDir, splitLine, joinLines, padTo, padTail, growHead, fitPadding, GAP, diffLines, changeCount, playOrder, repRuns };")();
 
 /* The artificial space (see GAP): room on the screen and nothing in the words,
    which is what a line grows by when a chord is dragged past its last one. */
@@ -102,6 +102,130 @@ eq("brackets survive a round trip untouched",
 
 eq("a heading is a line in braces",
   api.textToSong("{פזמון}")[0], { type: "section", text: "פזמון", chords: [], dir: "rtl" });
+
+/* --- a repeat -------------------------------------------------------------
+   `|:` and `:|3` on lines of their own, which is the mark every musician reads
+   and the reason it is not a Hebrew word: nothing on the page ever says
+   "repeat", it says a bar down the margin and a number.
+
+   CARRIED ON THE LINES AND NOT AS LINES OF THEIR OWN, which is what the second
+   group is about: there is nothing invisible in the song for the editor to
+   walk into, so a block whose lines are deleted goes with them, and a mark
+   that lost its partner in any of the dozen ways a song is edited is dropped
+   rather than left to run a bar down the rest of the page. */
+const TWICE = ["|:", "ש[Am]ורה אחת", "ו[G]שורה שנייה", ":|2"].join("\n");
+
+eq("a repeat survives a round trip", api.songToText(api.textToSong(TWICE)), TWICE);
+
+eq("the marks ride on the first line and the last, not on lines of their own",
+  api.textToSong(TWICE).map((l) => [!!l.repOpen, l.repShut || 0]),
+  [[true, 0], [false, 2]]);
+
+eq("a count is read off the closing mark",
+  api.textToSong(["|:", "אחת", "שתיים", ":|3"].join("\n")).map((l) => l.repShut || 0), [0, 3]);
+
+eq("a close with no number means twice",
+  api.songToText(api.textToSong(["|:", "שורה", ":|"].join("\n"))),
+  ["|:", "שורה", ":|2"].join("\n"));
+
+eq("×2 is read the same as 2", api.songToText(api.textToSong(["|:", "שורה", ":|×2"].join("\n"))),
+  ["|:", "שורה", ":|2"].join("\n"));
+
+eq("a block of one line opens and closes on it",
+  api.textToSong(["|:", "שורה", ":|4"].join("\n")).map((l) => [!!l.repOpen, l.repShut || 0]),
+  [[true, 4]]);
+
+eq("a heading can be the whole of a block",
+  api.songToText(api.textToSong(["|:", "{פזמון}", "שורה", ":|2"].join("\n"))),
+  ["|:", "{פזמון}", "שורה", ":|2"].join("\n"));
+
+eq("an open with nothing after it is not a block",
+  api.songToText(api.textToSong(["שורה", "|:"].join("\n"))), "שורה");
+
+eq("a close with nothing open is dropped",
+  api.songToText(api.textToSong([":|2", "שורה"].join("\n"))), "שורה");
+
+eq("an open with nothing between it and the close is dropped",
+  api.songToText(api.textToSong(["|:", ":|2", "שורה"].join("\n"))), "שורה");
+
+eq("a block inside a block is one block",
+  api.songToText(api.textToSong(["|:", "אחת", "|:", "שתיים", ":|2", "שלוש"].join("\n"))),
+  ["|:", "אחת", "שתיים", ":|2", "שלוש"].join("\n"));
+
+/* Every way a song is edited can leave half a block behind: the last line of
+   one deleted, half of one pasted somewhere else. Reading the song back is
+   where that is put right, and it is put right by dropping the mark rather
+   than the words. */
+eq("a mark whose partner was deleted goes, and the words stay",
+  api.songToText(api.normalizeLines([
+    { type: "line", text: "אחת", chords: [], repOpen: true },
+    { type: "line", text: "שתיים", chords: [] },
+  ])), ["אחת", "שתיים"].join("\n"));
+
+eq("and a close on its own goes the same way",
+  api.songToText(api.normalizeLines([
+    { type: "line", text: "אחת", chords: [] },
+    { type: "line", text: "שתיים", chords: [], repShut: 3 },
+  ])), ["אחת", "שתיים"].join("\n"));
+
+eq("a count under two is not a repeat",
+  api.songToText(api.normalizeLines([
+    { type: "line", text: "אחת", chords: [], repOpen: true },
+    { type: "line", text: "שתיים", chords: [], repShut: 1 },
+  ])), ["אחת", "שתיים"].join("\n"));
+
+/* --- and the song as it is played -----------------------------------------
+   Which is what the follower walks. A block written once and sung three times
+   stands at three places in it, so what was a jump BACKWARDS becomes the song
+   carrying on, which is the cheap move in follow.js and the only one the mark
+   will draw.
+
+   `at` takes anything, so these are letters. On the page they are the chord
+   nodes themselves. */
+const part = (times, at, opens) => ({ times: times, at: at.split(""), opens: opens || [] });
+
+eq("a song with no repeat is itself",
+  api.playOrder([part(1, "abcd")]).at.join(""), "abcd");
+
+eq("a block is laid out as many times as it is sung",
+  api.playOrder([part(1, "ab"), part(2, "cd"), part(1, "ef")]).at.join(""), "abcdcdef");
+
+eq("three times is three",
+  api.playOrder([part(3, "xy")]).at.join(""), "xyxyxy");
+
+eq("two blocks in a row keep their own counts",
+  api.playOrder([part(2, "ab"), part(3, "c")]).at.join(""), "ababccc");
+
+/* Nobody plays one chord over again; they play the verse over again. So the
+   top of every pass is handed to the follower as a place a part begins, which
+   is what makes "somebody went back" a guess about a verse rather than about a
+   chord (see BACK_START in follow.js). */
+eq("every pass opens a part",
+  api.playOrder([part(1, "ab", [true]), part(2, "cd")]).starts, [0, 2, 4]);
+
+eq("and a heading inside a block opens one on every pass",
+  api.playOrder([part(2, "abc", [false, true])]).starts, [0, 1, 3, 4]);
+
+eq("a count of one is not a repeat and opens nothing extra",
+  api.playOrder([part(1, "ab", [true])]).starts, [0]);
+
+eq("nothing in, nothing out", api.playOrder([]).at, []);
+
+/* The count is a fact about a block, so it is the block's rows that carry it,
+   and every row of one carries the same one: the closing line is where it is
+   written and the first line is where it is read. */
+eq("every line of a block reports the block's count",
+  api.repRuns(api.textToSong(["אחת", "|:", "שתיים", "שלוש", ":|3"].join("\n")))
+    .map((r) => (r ? r.times : 0)), [undefined, 3, 3]);
+
+/* A version that only put a bar round a verse changed the verse: it is sung
+   twice now and it was not before, and a diff that reported nothing would be
+   a diff that missed the whole of what happened. */
+eq("a repeat added is a change",
+  api.changeCount(api.diffLines(
+    api.textToSong(["אחת", "שתיים"].join("\n")),
+    api.textToSong(["|:", "אחת", "שתיים", ":|2"].join("\n")))),
+  { add: 2, gone: 2 });
 
 /* --- which way each line runs -------------------------------------------
    A DIRECTION IS NOT STORED AND NOT CHOSEN. It is read off the line every time
