@@ -283,6 +283,61 @@ const play = (follow, chord, frames = 6, high, low) => {
   eq("and it is walked through rather than jumped over", seen, [0, 1, 2]);
 }
 
+/* --- and a chord nobody played is not bought for a thirtieth of a second ----
+   THE CASE THIS WAS WRITTEN FROM, off a real recording of a real song, and the
+   numbers below are that recording's own.
+
+   «שר ליבי» runs Am C Em. An Am was being played; the ear had Em ahead of Am by
+   seven hundredths and C well behind both, and it held that for a third of a
+   second. The C after the Am never led at a single reading.
+
+   And the follower went TWO PLACES FORWARD, onto the Em, which means it
+   asserted that the C had happened as well. It had evidence for the second of
+   those and none at all for the first. Seven hundredths a reading is worth
+   1.26, and passing over the C used to cost 1.8 once, so nine readings of a
+   slightly better Em bought a chord nobody played. Reported as "it skipped the
+   C", and it had not skipped it: it had paid for it, at a price no chord is
+   worth (see DWELL in follow.js).
+
+   Read from the arithmetic and not from the mark, deliberately. The mark walks
+   and would cross the C either way; what went wrong went wrong before that. */
+{
+  /* THE NUMBERS ARE THE RECORDING'S OWN, read off the trace kept beside it (see
+     traceOn in app.js): while the Am was being played the ear reported Am 0.63,
+     C 0.53, Em 0.70, over and over. Five kinds, in the song's own order. */
+  const song = ["Am", "C", "Em", "Am", "C", "C/B", "Am"];
+  const f = F.make(song, [0]);
+  const say = (map, frames) => {
+    let last;
+    for (let i = 0; i < frames; i++) {
+      last = f.step(f.kinds.map((k) => (k in map ? map[k] : 0.45)));
+    }
+    return last;
+  };
+
+  say({ Am: 0.65, C: 0.45, Em: 0.35 }, 30);
+  eq("an Am, plainly, and it is on the Am", f.where(), 0);
+
+  /* TWO THIRDS OF A SECOND OF IT, and measured rather than picked: the model
+     without the wait gives way after thirteen readings of this, which is 433
+     milliseconds, and with it after twenty six. Twenty is in between, so this
+     line is the whole of the difference and it fails on the old arithmetic. */
+  eq("two thirds of a second of the ear preferring the chord two places along moves nothing",
+    say({ Am: 0.63, C: 0.53, Em: 0.70 }, 20).at, 0);
+
+  /* AND IT IS A DELAY AND NOT A REFUSAL, which is the other half of it. An ear
+     wrong for a moment must not move the mark; an ear saying the same thing for
+     a second and a half is not a moment, and a follower that would not believe
+     it is one that has stopped listening.
+
+     Which is also what the recording this came from went on to do, and it is
+     worth being straight about it: half a second later the ear had the Am at
+     0.47 against the Em at 0.65 and held it. Eighteen hundredths is not a
+     wobble. Nothing in this file should survive that and nothing in it does. */
+  eq("but a second and a half of it is the song having moved on",
+    say({ Am: 0.63, C: 0.53, Em: 0.70 }, 25).at, 2);
+}
+
 /* --- and being lost is survivable ------------------------------------------
    The difference between a follower that recovers and one that spends the rest
    of the song insisting it is somewhere it is not. */

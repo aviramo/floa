@@ -281,6 +281,63 @@
      proof. */
   var BELIEF = 18;
 
+  /* --- AND HOW SHORT A CHORD IS ALLOWED TO HAVE BEEN -------------------------
+     THE HOLE THIS FILLS, and it is worth writing out in full because it was
+     invisible from every direction until a recording was read back.
+
+     Going one place forward costs NEXT and then ONE reading of that place's own
+     score. Which is right for a chord that is being played, and is exactly
+     wrong for a chord that is merely being passed THROUGH on the way to a
+     better one further along: a thirtieth of a second is not a length of time
+     any chord in any song has ever lasted, so a place nobody played could be
+     bought for a thirtieth of a second of its own bad score.
+
+     WHAT THAT LOOKED LIKE. In a song running Am C Em, the ear had Em ahead of
+     Am by seven hundredths for a third of a second. Am was being played and the
+     C after it never led at any reading. Seven hundredths a reading is 1.26
+     against the one-off 1.8 that passing over the C cost, so nine readings of a
+     slightly better Em bought BOTH the C and the Em, and the arithmetic went
+     two places forward on the evidence of the second one alone. Reported as
+     "it skipped the C", and it had not: it had paid for it, at a price no chord
+     is worth.
+
+     SO A PLACE IS ENTERED AND THEN HELD. Every place is three states rather
+     than one: arrived, still there, settled, and only the settled one may go on
+     to the next place. Nothing may leave a place it entered less than three
+     readings ago, which is a tenth of a second, and passing through one now
+     costs THREE readings of its score rather than one. On the reading above,
+     what had to be paid went from 1.8 to 5.4 and the third of a second stopped
+     being enough.
+
+     SIX, AND THE NUMBER IS PENNED IN AT BOTH ENDS RATHER THAN CHOSEN. Below
+     the ear's own window, which is 170 milliseconds and 5 readings (see the
+     8192-sample window in ear.js), a wait buys nothing: a chord change cannot
+     be seen faster than that, so a shorter floor is claiming a resolution the
+     input does not have. Above a quarter of a second, which is about the
+     shortest chord anybody actually plays, a wait starts refusing chord changes
+     that really happened. That leaves five to seven readings, and six is in the
+     middle of it: 200 milliseconds.
+
+     AND WHAT IT IS WORTH, MEASURED rather than argued for. Fed the recording's
+     own numbers, over and over, the arithmetic used to give way after thirteen
+     readings of them and now gives way after twenty six: 433 milliseconds
+     against 866. Inside the model it is the deficit of the place two along:
+     5.2 behind the Am at the moment the ear starts preferring the Em where it
+     is now 14.9, and 0.9 four hundred milliseconds later where it is now 9.7.
+     A line of the test holds it to exactly that, and fails without the wait.
+
+     WHAT IT DOES NOT DO IS SAVE THAT RECORDING, and it is worth being straight
+     about that. Half a second later the ear reported Am at 0.47 against Em at
+     0.65, and eighteen hundredths held for over a second is not a wobble, it is
+     the ear saying something definite and wrong. Nothing here should survive
+     that, and nothing here can: what is left is a question for ear.js.
+
+     AND THE PHASES BEFORE THE LAST ARE FREE, deliberately. Time passing is not
+     a choice and must not be charged for: a chord genuinely being played costs
+     what it always cost, so nothing above is retuned and nothing that worked
+     moves. What is being made expensive is the place nobody stayed at. */
+  var DWELL = 6;
+
   /* ONE FORWARD IS FREE AND NOTHING ELSE IS. A song moves to the next chord,
      so that step is taken the moment it is worked out and the mark keeps up
      with the playing. Everything else, including two forward, has to hold for
@@ -333,8 +390,15 @@
       of[i] = which[name];
     }
 
-    var prev = new Float64Array(n);
-    var cur = new Float64Array(n);
+    /* THREE STATES TO A PLACE AND NOT ONE (see DWELL): arrived, still there,
+       settled. Held flat, place by place, so that the state for phase `d` of
+       place `j` is at `j * DWELL + d`. */
+    var m = n * DWELL;
+    var prev = new Float64Array(m);
+    var cur = new Float64Array(m);
+    /* The best value standing at each place, whichever of its phases that is
+       in, which is what everything outside the place itself asks of it. */
+    var top = new Float64Array(n);
     /* The best place AHEAD of each one, so that "come back to here from
        anywhere later in the song" is one lookup rather than a search. Filled
        from the far end backwards, once a reading. */
@@ -359,16 +423,22 @@
        the beginning": somebody may well have pressed this in the middle of the
        second verse. */
     function reset() {
-      for (var j = 0; j < n; j++) prev[j] = 0;
+      for (var i = 0; i < m; i++) prev[i] = 0;
       here = 0; want = -1; waited = 0; pushed = 0; walking = false; locked = false;
     }
 
     /* Somebody said where they are, by touching a chord on the page. Which is
        worth more than any amount of listening, so everything else is put a
-       long way behind it rather than merely nudged. */
+       long way behind it rather than merely nudged.
+
+       INTO THE SETTLED PHASE, so that a finger says where we are and not also
+       "and now wait a tenth of a second before the song may move on". It is an
+       answer about this moment, and the next chord is allowed to follow it as
+       closely as it likes. */
     function put(at) {
       if (!(at >= 0 && at < n)) return here;
-      for (var j = 0; j < n; j++) prev[j] = j === at ? 0 : -40;
+      for (var i = 0; i < m; i++) prev[i] = -40;
+      prev[at * DWELL + DWELL - 1] = 0;
       here = at; want = -1; waited = 0; pushed = 0; walking = false; locked = true;
       return here;
     }
@@ -378,49 +448,79 @@
     function step(scores) {
       if (!n) return { at: -1, here: -1, alike: 0, moved: false };
 
-      var j, best = -Infinity, at = 0;
+      var j, d, best = -Infinity, at = 0;
+
+      /* WHAT EACH PLACE IS WORTH, whichever of its phases that turns out to be
+         in. Everything outside a place asks this and nothing outside it cares
+         how long we have been standing there. */
       var was = -Infinity;
-      for (j = 0; j < n; j++) if (prev[j] > was) was = prev[j];
+      for (j = 0; j < n; j++) {
+        var high = -Infinity;
+        for (d = 0; d < DWELL; d++) if (prev[j * DWELL + d] > high) high = prev[j * DWELL + d];
+        top[j] = high;
+        if (high > was) was = high;
+      }
       var anywhere = was + LOST;
 
       /* Everything later in the song than each place, so that going back to it
          costs one comparison. Backwards from the end, which is the only
          direction this can be worked out in. */
       ahead[n - 1] = -Infinity;
-      for (j = n - 2; j >= 0; j--) ahead[j] = prev[j + 1] > ahead[j + 1] ? prev[j + 1] : ahead[j + 1];
+      for (j = n - 2; j >= 0; j--) ahead[j] = top[j + 1] > ahead[j + 1] ? top[j + 1] : ahead[j + 1];
 
       for (j = 0; j < n; j++) {
-        var v = prev[j] + STAY;
-        if (j >= 1 && prev[j - 1] + NEXT > v) v = prev[j - 1] + NEXT;
-        /* Somebody playing the verse again, which arrives here from further on
-           in the song rather than from just behind, and which lands on the top
-           of a part far more often than in the middle of one. */
-        var home = ahead[j] + (opens[j] ? BACK_START : BACK);
-        if (home > v) v = home;
-        if (anywhere > v) v = anywhere;
-        v += BELIEF * scores[of[j]];
-        /* And the reason to stay near where we already are, which is the only
+        /* What this place is worth on this reading, before anything about how
+           we came to be standing in it. The same for every phase of it: how
+           long we have been here is not a fact about the sound.
+
+           And the reason to stay near where we already are, which is the only
            evidence there is when the sound cannot tell two places apart. The
            place we are ON gets more than the places beside it, because "have
            we moved along" and "have we leapt across the song" are different
            questions and only one of them is answered by nearness. */
-        if (j === here) v += SIT;
-        else if (j > here && j <= here + NEAR) v += HOME;
-        cur[j] = v;
+        var gain = BELIEF * scores[of[j]];
+        if (j === here) gain += SIT;
+        else if (j > here && j <= here + NEAR) gain += HOME;
+
+        /* --- ARRIVING, which is the first phase and the only one anything
+           arrives in. From the SETTLED phase of the place behind, so that
+           nothing may be walked through in less than the wait; from anywhere
+           later in the song, which is somebody playing the verse again and
+           lands on the top of a part far more often than in the middle of one;
+           or from anywhere at all. */
+        var v = j >= 1 ? prev[(j - 1) * DWELL + DWELL - 1] + NEXT : -Infinity;
+        var home = ahead[j] + (opens[j] ? BACK_START : BACK);
+        if (home > v) v = home;
+        if (anywhere > v) v = anywhere;
+        cur[j * DWELL] = v + gain;
+
+        /* --- STILL HERE. Time passing and not a choice, so it is free: a
+           chord genuinely being played costs exactly what it always did, and
+           what these readings charge for is the place's own score. */
+        for (d = 1; d < DWELL - 1; d++) cur[j * DWELL + d] = prev[j * DWELL + d - 1] + gain;
+
+        /* --- AND SETTLED, which is where a place is held and the only phase
+           it may be left from. */
+        var held = prev[j * DWELL + DWELL - 1] + STAY;
+        var come = prev[j * DWELL + DWELL - 2];
+        cur[j * DWELL + DWELL - 1] = (held > come ? held : come) + gain;
+
         /* THE NEAREST OF THE EQUALS. Where two places explain the readings
            exactly as well as each other, which in a song of four chords played
            forty times is most of them, the one to believe is the one closest
            to where we already were. Deciding it by which comes first in the
            song puts the mark on the first line and the page back at the top. */
-        if (v > best || (v === best && Math.abs(j - here) < Math.abs(at - here))) {
-          best = v; at = j;
+        var pick = -Infinity;
+        for (d = 0; d < DWELL; d++) if (cur[j * DWELL + d] > pick) pick = cur[j * DWELL + d];
+        if (pick > best || (pick === best && Math.abs(j - here) < Math.abs(at - here))) {
+          best = pick; at = j;
         }
       }
 
       /* Kept relative to the best, so the numbers stay where double precision
          is exact instead of walking off towards minus infinity over a song. It
          changes nothing: every comparison here is between two of them. */
-      for (j = 0; j < n; j++) cur[j] -= best;
+      for (j = 0; j < m; j++) cur[j] -= best;
       var swap = prev; prev = cur; cur = swap;
 
       /* HOW MANY PLACES IN THE SONG CARRY THIS SAME CHORD, which is the only
