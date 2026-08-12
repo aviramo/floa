@@ -1544,7 +1544,21 @@ body.sifting .list:not(.band) { min-height: calc(100dvh - var(--top-h)); }
   /* a song in a playlist is a card like a song in the library (see .list a) */
   background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 14px 18px;
+  padding: 14px 18px; transition: border-color .15s, transform .15s;
+}
+/* AND IT LIFTS UNDER A POINTER, the way the library's card does, because it is
+   the same card and a press on it goes to the same place. Lit off the part of
+   it that is the way in and not off the whole: the corner holds a grip, a
+   wastebasket and a play button, and a card that offers to open while the hand
+   is on the wastebasket is a card saying the wrong thing.
+
+   Only where there is a pointer to say it with. A touch screen fakes a hover
+   on the last thing tapped and leaves it there, which reads as a card that
+   stayed selected after a press that was never about the card (see .list a). */
+@media (hover: hover) {
+  .set-row:has(.set-main.is-way:hover) {
+    border-color: var(--accent); transform: translateY(-1px);
+  }
 }
 /* The number is the card's, not the row's: it stands at the top beside the
    name rather than in the middle of a card whose height it knows nothing
