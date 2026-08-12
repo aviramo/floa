@@ -73,20 +73,6 @@ export function indexPage(songs) {
   });
 }
 
-/* --- one shelf of it ------------------------------------------------------- */
-export function stylePage(kind) {
-  return page({
-    title: `${kind.name}, אקורדים ומילים`,
-    description: trim(`כל השירים מסוג ${kind.name} באינדקס האקורדים, ${kind.songs.length} שירים, ${PROMISE}.`),
-    canonical: url("style", kind.name),
-    seed: shelfSeed({
-      heading: kind.name,
-      blurb: `כל השירים מסוג ${kind.name}.`,
-      songs: kind.songs,
-    }),
-  });
-}
-
 /* --- one person, and everybody ---------------------------------------------
    There is no table of creators: a person is what the songs say, gathered (see
    creators in render.js, and creatorsOf in app.js, which is the same answer for

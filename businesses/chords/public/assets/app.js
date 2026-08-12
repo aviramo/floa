@@ -4461,7 +4461,7 @@
      `songs` is not one of them: it is the library itself, one copy for
      everybody, and every sheet showing it is showing the same songs. */
   var PAGE_STATE = ["printable", "printer", "killer", "editToggle",
-    "songControls", "redrawSong", "rehome", "doors", "wake", "sift", "ear",
+    "songControls", "redrawSong", "rehome", "doors", "wake", "sift", "kindMenu", "ear",
     "takeSong", "redrawTakes", "takesOpen", "takesCount",
     "songMoves", "songDetails", "songOut", "songPast", "songKill", "songShare",
     "songUndo", "songRevert", "up"];
@@ -4500,6 +4500,10 @@
       tab: document.title,
       facts: takeKids(document.getElementById("topFacts")),
       extra: takeKids(findExtra),
+      /* and what the page was held down to, which is a chip in the front of
+         that same box (see siftKind): a library left narrowed to one kind of
+         song comes back narrowed, and the chip is what says so */
+      kind: takeKids(findKind),
     };
     layer.state = {};
     PAGE_STATE.forEach(function (name2) { layer.state[name2] = state[name2]; });
@@ -4532,6 +4536,7 @@
     if (document.title !== h.tab) document.title = h.tab;
     putKids(document.getElementById("topFacts"), h.facts);
     putKids(findExtra, h.extra);
+    putKids(findKind, h.kind);
     paintHeader();
     /* A list that stopped looking at itself while it was out of the document
        starts again (see poll in viewIndex). */
@@ -5845,6 +5850,31 @@
     return node;
   }
 
+  /* --- AND WHILE ONE STYLE IS ON, THE FORK STANDS DOWN FOR IT ----------------
+     A style had a page and its own two gestures were on it: the name in the bar
+     was the field that renamed it. It is a sieve over the library now (see
+     pickKind), the library names itself nothing in the bar, and a shelf still
+     has two things anybody wants to do to it. So they hang in the corner for as
+     long as one is on: three dots, and the panel behind them says which.
+
+     IN THE FORK'S SLOT AND NOT BESIDE IT. The bar on a phone is a mark, a box
+     and one picture, and a second grey picture in a row read by shape alone is
+     a row nobody reads. The fork is picked up in the middle of playing;
+     somebody who has just pressed a shelf is sorting the library rather than
+     playing from it, and the cross on the chip hands the fork straight back.
+
+     Kept like everything else up here. The rows are made at the press, because
+     they are about whichever style is on at that second (see kindRows). */
+  function kindMore() {
+    var made = keep("kindMore", function () {
+      return iconBtn(ICON.dots, "מה לעשות עם הסגנון", function () {
+        menuUnder(made, state.kindMenu ? state.kindMenu() : []);
+      });
+    });
+    made.setAttribute("aria-haspopup", "menu");
+    return made;
+  }
+
   /* --- AND A SONG HAS A PANEL OF ITS OWN ------------------------------------
      The same three dots, over the song, holding the two things there are to do
      to the page it is on: print it, and write on it.
@@ -5946,24 +5976,15 @@
         askPrint(anchor);
       }));
     }
-    /* WHAT THE SONG SAYS ABOUT ITSELF, AND IT IS ON THE WAY INTO THE EDITOR.
-       A song that is not published is a song still being worked on, so the
-       state and the pencil are one sentence: "טיוטה" over the row that opens
-       the editor says what this is and what to do about it in the width of
-       one. Published says nothing, because published is the ordinary song and
-       a word for it would be true of the whole library; then the row is what
-       it always was.
-
-       Not while the editor is open. Then the row is the way out of it, and
-       the way out is the one thing it can say. */
-    /* ONE ROW, AND WHICH OF THE TWO IT IS, IS THE STATE OF THE SONG. A song of
+    /* AND THE ONE THING A DRAFT IS WAITING FOR, HIGH IN THE PANEL. A song of
        yours that is not published is open for writing already (see editing), so
-       there is no door to offer and the thing to do with it is hand it over:
-       פרסום. Once it is published the page is a page you read, and the thing to
-       do with it is the pencil.
+       there is nothing to unlock and the only thing left to do with it is hand
+       it over: פרסום. It is what a person came into this panel for on that one
+       kind of song, and it is the one row in here that somebody else is waiting
+       on, so it stands where the eye lands rather than at the foot with the
+       things done to a finished song.
 
-       So publishing wins the row wherever there is anything to publish, which
-       includes the one state that is both: a published song typed into is a
+       Which includes the state that is both: a published song typed into is a
        draft again from that keystroke on (see mark), and what it wants then is
        to go out again rather than to be closed.
 
@@ -5983,17 +6004,6 @@
          and songMore). */
       hand.classList.add("has-news");
       rows.push(hand);
-    } else if (state.editToggle) {
-      var edit = state.editToggle;
-      var row = button(edit.on ? "סיום עריכה" : "עריכה", edit.on ? ICON.check : ICON.pencil,
-        "ghost small", function () {
-          closeUnder();
-          edit.flip();
-        });
-      /* the panel says which way it is facing the same way the picture in the
-         bar used to (see .print-menu .btn.is-on) */
-      row.classList.toggle("is-on", !!edit.on);
-      rows.push(row);
     }
     /* AND WHAT TO DO ABOUT IT, IN A ROW OF ITS OWN. What the song is and what
        to do about it are two sentences: publishing a draft, opening an offer
@@ -6054,9 +6064,11 @@
        count is the whole of what somebody standing on a song wants to know,
        and where there is one it is also the reason to open the panel at all.
 
-       Above the wastebasket, because everything above the wastebasket is
-       something you might do to a song and the wastebasket is the end of it.
-       (see askPlaylists for what is behind it) */
+       THE LAST OF THE ROWS THAT LEAVE THE SONG ALONE. A list is a fact about
+       your library and not about the song in it, so nothing here writes a word
+       of the page; the two rows under it do, which is why they are under it
+       (see the pencil and the wastebasket below, and askPlaylists for what is
+       behind this one). */
     if (state.songLists) {
       var mine = state.songLists;
       var many = listsWith(mine.id).length;
@@ -6069,6 +6081,37 @@
              replaces the panel it was asked from (see askPrint) */
           askPlaylists(anchor, mine);
         }));
+    }
+    /* AND THE WAY INTO THE WORDS, LAST BUT ONE, IMMEDIATELY OVER THE
+       WASTEBASKET. It used to stand halfway up the panel, among the things you
+       do WITH a song: print it, tune to it, pass it on. It is not one of those.
+       Everything above it leaves the song exactly as it was, and this row is
+       where that stops: from here down the panel is what changes the song, the
+       pencil and then the bin, in the order of how far each one goes.
+
+       Which is also the order somebody reads the panel in. A person opens it
+       on a page they are reading, and the rows they want are the reading ones;
+       the pencil is a decision, and a decision is better met at the end of a
+       list than in the middle of one.
+
+       Only where there is a door to open. A draft of your own is open for
+       writing already and its row is פרסום, higher up (see out); the two are
+       still never both here, they are simply no longer one line in the
+       panel.
+
+       Not while the editor is open. Then the row is the way out of it, and the
+       way out is the one thing it can say. */
+    if (!out && state.editToggle) {
+      var edit = state.editToggle;
+      var pencil = button(edit.on ? "סיום עריכה" : "עריכה", edit.on ? ICON.check : ICON.pencil,
+        "ghost small", function () {
+          closeUnder();
+          edit.flip();
+        });
+      /* the panel says which way it is facing the same way the picture in the
+         bar used to (see .print-menu .btn.is-on) */
+      pencil.classList.toggle("is-on", !!edit.on);
+      rows.push(pencil);
     }
     if (state.songKill) {
       var kill = state.songKill;
@@ -6482,8 +6525,11 @@
     /* The playlists, the people and the account are not up here at all: they
        are the row of chips over the wall (see paintDoors), and the account is
        there whether it has a name yet or not. The fork is, because it is not
-       a door (see tuner). */
-    shelf.push(tuner());
+       a door (see tuner).
+
+       UNLESS THE LIBRARY IS HELD DOWN TO ONE STYLE, and then the corner belongs
+       to that style instead (see kindMore). */
+    shelf.push(state.kindMenu ? kindMore() : tuner());
     fill(bar, shelf);
   }
 
@@ -6947,6 +6993,10 @@
        that is open puts something there and the next page must not inherit
        it. The box itself is built once and lives through every view. */
     if (findExtra) findExtra.textContent = "";
+    /* And the chip in the front of it, which is the same loan from the other
+       end: the library lends the box what it is holding the wall down to (see
+       siftKind), and the next page is holding nothing down. */
+    if (findKind) findKind.textContent = "";
     return node;
   }
 
@@ -7217,6 +7267,7 @@
 
   var findBox = null;
   var findField = null;
+  var findKind = null;
   var findExtra = null;
   var findOut = null;
   var findRows = [];
@@ -7235,6 +7286,26 @@
 
     findBox = el("div", "find");
     findBox.appendChild(svg(ICON.search));
+
+    /* --- AND WHAT THE PAGE IS ALREADY HELD DOWN TO STANDS IN FRONT OF IT -----
+       A style used to be a page: pressing a shelf left the library and drew it
+       again with one kind of song on it. It is a sieve now, and a sieve that is
+       on has to be somewhere a reader looks for the reason the page is short.
+       Which is this box: the letters typed here narrow the same wall, so the
+       two of them stand in the same control and read as one sentence, this kind
+       of song and these letters in it.
+
+       The cross on the chip is the way off, and it is the page's own answer
+       rather than the box's: what a sieve means is the page's business (see
+       siftKind, and pickKind in viewIndex). */
+    findKind = el("div", "find-kind");
+    /* A press on the box opens the search. A press on the chip is not one: it
+       is about the page under the box, and it must not put a keyboard on a
+       phone. Exactly what the far end of the box does with its own (see
+       findExtra below). */
+    findKind.addEventListener("click", function (event) { event.stopPropagation(); });
+    findBox.appendChild(findKind);
+
     findField = el("input");
     findField.type = "search";
     findField.autocomplete = "off";
@@ -7411,6 +7482,34 @@
      Marked as a class rather than left to the sieve, because a page put aside
      and uncovered again comes back still narrowed and still scrolled to its
      wall (see reveal), and the floor under it has to come back too. */
+  /* WHAT THE PAGE IS HELD DOWN TO, IN THE BOX THAT HOLDS IT DOWN. One chip and
+     never two: the library takes one style at a time (see pickKind), and a
+     second chip would have to say whether it means both or either, which is a
+     question about a library of a thousand songs and not about this one.
+
+     The word alone, and no "סגנון" in front of it: it stands inside a box that
+     is being typed into, and a chip there is read as the thing the typing is
+     happening inside of. Handed a name it draws it; handed nothing it goes,
+     and an empty slot takes no room in the row (see .find-kind). */
+  function siftKind(said, off) {
+    if (!findKind) return;
+    findKind.textContent = "";
+    if (!said) return;
+    var chip = el("span", "tag tag-style");
+    chip.appendChild(el("span", null, said));
+    var x = el("button", "tag-x", "×");
+    x.type = "button";
+    x.title = "הצגת כל השירים";
+    x.setAttribute("aria-label", "הסרת הסינון לפי סגנון");
+    x.addEventListener("click", function (event) {
+      /* and the press goes no further: it is not a press on the box */
+      event.stopPropagation();
+      off();
+    });
+    chip.appendChild(x);
+    findKind.appendChild(chip);
+  }
+
   function siftMark() {
     if (!state.sift) return document.body.classList.remove("sifting");
     var live = String(state.sift.q || "").trim() ||
@@ -7568,15 +7667,14 @@
 
   /* --- the index ---------------------------------------------------------- */
 
-  /* `shelf`, when there is one, is the style this page opened narrowed to, and
-     the address is the only way to it: the search box offers the shelf, the
-     shelf is a page, and the bar says its name. */
-  function viewIndex(shelf) {
-    /* The shelf of songs with no style is a shelf like the others everywhere
-       except in its name, which is a sentence about them rather than a word
-       any of them carries: it says so in the bar, and nothing about it can be
-       renamed, because there is no word there to rewrite. */
-    var bare = shelf === NO_STYLE;
+  /* `asked`, when there is one, is a style the library opens already narrowed
+     to. It is not a page and it is not an address: a style is a SIEVE on this
+     page, put on by pressing a shelf and taken off by the cross on the chip in
+     the search box (see pickKind). What arrives here is the address a shelf
+     used to have, which is written down in other people's bookmarks and on the
+     songs themselves, and whoever comes that way lands on the library with the
+     sieve already on (see the router). */
+  function viewIndex(asked) {
     /* AND THE LIBRARY DOES NOT NAME ITSELF IN THE BAR. Every other page here is
        called something nobody could have known before opening it: a song's
        name, a person's, a shelf's. The library's was the app's own name,
@@ -7585,7 +7683,7 @@
        takes whatever the row has left over, and that word was eating the width
        the box wanted. Kept in the tab, where a tab among thirty others IS asked
        which app this is. */
-    where(bare ? NO_STYLE_SAID : (shelf || ""), shelf ? null : "אקורדים");
+    where("", "אקורדים");
     setBusy("טוען שירים");
 
     /* The songs, and which of them has an offer standing on it, asked
@@ -7606,43 +7704,6 @@
          request twice */
       seedSongs(state.songs);
       app.innerHTML = "";
-
-      /* --- AND ON A SHELF, THE NAME IN THE BAR IS THE FIELD FOR IT ------------
-         A style has no row of its own anywhere: it is a word on each of the
-         songs that carry it, gathered up into a shelf on the way out. So the
-         only place it can be called something else is the place its name is
-         written, which is the bar, exactly as a person's is on theirs.
-
-         After the list, because renaming it is rewriting the word on every song
-         that has it and those are the songs. It commits when the typing is
-         finished rather than on the keystroke: every letter would otherwise be
-         a write to a dozen rows and a new address for the page. */
-      if (shelf && !bare && auth.in) {
-        /* Named, so that a name that came to nothing can put the field back as
-           a field rather than leaving the shelf with a name that cannot be
-           typed in until the page is opened again. */
-        var shelfField = function () {
-          whereEditable(shelf, "שם הסגנון", null, renameShelf);
-        };
-        var renameShelf = function (typed) {
-          var next = tidyStyles([typed])[0];
-          if (!next || next === shelf) return shelfField();
-          renameStyle(shelf, next).then(function (count) {
-            if (!count.done) return toast("לא הצלחנו לשנות את שם הסגנון", true);
-            /* A RENAME IS ALL OF THEM OR IT IS SAID OUT LOUD. A shelf left in
-               two halves is the one outcome nobody can see from the page they
-               land on, so the songs that did not take the word are named as a
-               number rather than quietly left behind. */
-            var left = count.of - count.done;
-            toast(left ? "הסגנון שונה ב-" + count.done + " שירים, ו-" + left + " לא השתנו"
-              : count.done === 1 ? "הסגנון שונה בשיר אחד"
-              : "הסגנון שונה ב-" + count.done + " שירים", !!left);
-            /* the address is the name, so it moves with it */
-            go(addr("style", next));
-          });
-        };
-        shelfField();
-      }
 
       /* --- SEVERAL AT ONCE, AND NOT ANY MORE -----------------------------------
          There was a checkbox on the corner of every card here, a tick in the
@@ -7716,9 +7777,110 @@
          no amount of typing can answer. */
       var tallies = el("div", "tallies");
 
-      /* Set by the address and never from the page: /style/<name> is a shelf,
-         and every other way into the library shows all of it. */
-      var kind = shelf || null;
+      /* --- ONE KIND OF SONG, AND THE PAGE STAYS WHERE IT IS ------------------
+         A style was a page. Pressing a shelf left the library, drew it again
+         with one kind of song on it and no drawing, no doors and no other
+         shelves, and the way back was the arrow in the corner. Which is a lot
+         of page to lose in order to answer "show me only these": the shelves
+         are the thing somebody is reading across when they press one, and the
+         press took them off the screen.
+
+         It is a sieve now, exactly like the counts standing beside it: the wall
+         underneath is held down to one kind of song and everything else stays
+         where it was, including the scroll and the shelf that was pressed.
+
+         ONE AT A TIME. Pressing another shelf swaps it, pressing the one that
+         is on lets it go, and so does the cross on the chip in the search box.
+         Two at once would have to say whether it means both or either, which is
+         a question about a library ten times this size.
+
+         AND WHAT IS TYPED STILL NARROWS WHAT IS LEFT, because the chip stands
+         IN the box: the style holds the wall to one shelf and the letters look
+         through what that leaves (see passes in paint). */
+      var kind = asked || null;
+
+      /* The chip in the box says which, the corner says what can be done to it,
+         and neither is drawn by the wall: what a sieve means is this page's
+         business and the bar and the box are lent it (see siftKind, kindMore).
+
+         Nothing to do to the songs with no style: that shelf is a sentence
+         about them rather than a word any of them carries, so there is no word
+         to rewrite and none to take off. Nothing to do without an account
+         either, because only the account that owns a song may write to it. */
+      function showKind() {
+        siftKind(kind === NO_STYLE ? NO_STYLE_SAID : kind, function () { pickKind(null); });
+        state.kindMenu = kind && kind !== NO_STYLE && auth.in ? kindRows : null;
+        paintHeader();
+      }
+
+      function pickKind(name) {
+        kind = name && name !== kind ? name : null;
+        showKind();
+        paintBands();
+        paint();
+      }
+
+      /* --- THE TWO THINGS THERE ARE TO DO TO A SHELF -------------------------
+         Both of them are done to the SONGS. A style is a word tied onto each of
+         them and gathered into a shelf on the way out, so calling one something
+         else is rewriting that word on every song that carries it, and being
+         rid of one is taking the word off them (see renameStyle and dropStyle).
+         The songs themselves are not touched by either.
+
+         Which is also why both say afterwards how many songs actually took it:
+         only the account that owns a song may write to it, and a library holds
+         other people's songs. */
+      function kindRows() {
+        var was = kind;
+        return [
+          button("שינוי שם הסגנון", ICON.pencil, "ghost small", function () {
+            closeUnder();
+            askKindName(was, function (next) {
+              return renameStyle(was, next).then(function (count) {
+                if (!count.done) throw new Error("לא הצלחנו לשנות את שם הסגנון");
+                /* A RENAME IS ALL OF THEM OR IT IS SAID OUT LOUD. A shelf left
+                   in two halves is the one outcome nobody can see from the page
+                   they are standing on, so the songs that did not take the word
+                   are named as a number rather than quietly left behind. */
+                var left = count.of - count.done;
+                toast(left ? "הסגנון שונה ב-" + count.done + " שירים, ו-" + left + " לא השתנו"
+                  : count.done === 1 ? "הסגנון שונה בשיר אחד"
+                  : "הסגנון שונה ב-" + count.done + " שירים", !!left);
+                /* the sieve is the word, so it follows it: the wall stays held
+                   down to the same songs under their new name */
+                kind = next;
+                showKind();
+                paintBands();
+                paint();
+              });
+            });
+          }),
+          button("מחיקת הסגנון", ICON.trash, "ghost small", function () {
+            closeUnder();
+            var many = state.songs.filter(function (song) {
+              return styles(song).indexOf(was) >= 0;
+            }).length;
+            /* IT ASKS, because there is nothing to undo. A shelf is not a row
+               anywhere: it is what the songs say, so a word taken off them is
+               gone, and the only way back is to type it onto each of them
+               again. And it says what it does NOT do, because "delete" over a
+               shelf holding fifty songs reads as fifty songs. */
+            if (!window.confirm('למחוק את הסגנון "' + was + '"?\n\nהמילה תרד מ' +
+              (many === 1 ? "שיר אחד" : "-" + many + " שירים") +
+              ". השירים עצמם יישארו במאגר.")) return;
+            dropStyle(was).then(function (count) {
+              if (!count.done) return toast("לא הצלחנו למחוק את הסגנון", true);
+              var left = count.of - count.done;
+              toast(left ? "הסגנון ירד מ-" + count.done + " שירים, ומ-" + left + " לא ירד"
+                : count.done === 1 ? "הסגנון ירד משיר אחד"
+                : "הסגנון ירד מ-" + count.done + " שירים", !!left);
+              /* and the wall it was holding down is the whole library again:
+                 there is no shelf left to stand on */
+              pickKind(null);
+            });
+          }),
+        ];
+      }
 
       /* --- ON A DESK, NONE OF THIS IS ON THE PAGE ------------------------------
          There was a row over the wall holding the state chips, and on a wide
@@ -7741,39 +7903,33 @@
          because a picture with a band of desk above it is a picture ON the
          page, and this one is the top of it.
 
-         Not on a shelf, and for the reason the shelves themselves are not on
-         one: /style/<name> is the library already narrowed to one word, walked
-         into from the wall below, and a picture at the head of it is a second
-         opening to a page that has been opened.
+         AND IT STAYS WHILE THE LIBRARY IS HELD DOWN TO ONE STYLE, which is the
+         whole of what changed when a shelf stopped being a page: narrowing the
+         wall is not opening a second page, so the page it is at the head of is
+         still standing.
 
          It carries no words and says nothing a reader needs, so it is empty to
          anything reading the page rather than looking at it. */
-      if (!shelf) {
-        var art = el("div", "strip");
-        var drawing = el("img");
-        drawing.src = BASE + "/assets/strip.webp";
-        drawing.alt = "";
-        /* Its own size, so the band it will sit in is the right shape before it
-           has arrived: the frame is a height and a width of its own (see .strip)
-           and a picture that lands late must not move the songs under it. */
-        drawing.width = 2172;
-        drawing.height = 688;
-        drawing.setAttribute("aria-hidden", "true");
-        art.appendChild(drawing);
-        app.appendChild(art);
-        /* and the bar comes off its paper and stands on the drawing, until the
-           first pixel of scroll puts it back (see hero) */
-        hero(true);
-      }
+      var art = el("div", "strip");
+      var drawing = el("img");
+      drawing.src = BASE + "/assets/strip.webp";
+      drawing.alt = "";
+      /* Its own size, so the band it will sit in is the right shape before it
+         has arrived: the frame is a height and a width of its own (see .strip)
+         and a picture that lands late must not move the songs under it. */
+      drawing.width = 2172;
+      drawing.height = 688;
+      drawing.setAttribute("aria-hidden", "true");
+      art.appendChild(drawing);
+      app.appendChild(art);
+      /* and the bar comes off its paper and stands on the drawing, until the
+         first pixel of scroll puts it back (see hero) */
+      hero(true);
 
       /* THE WAYS OUT OF HERE STAND UNDER IT, and they are everything up here
          that is not the picture: a door belongs to the app, and everything
-         below them belongs to the wall of songs.
-
-         Not on a shelf: /style/<name> is the library held down to one word,
-         reached from the wall below and left by the arrow in the corner, and
-         it never carried these in the bar either. */
-      if (!shelf) app.appendChild(doorsBand());
+         below them belongs to the wall of songs. */
+      app.appendChild(doorsBand());
 
       /* Made here and PUT ON THE PAGE FURTHER DOWN, at the top of the wall of
          songs: what stands in this row adds a song and narrows that wall, so
@@ -7804,11 +7960,7 @@
 
          Made once and handed back, because the panel it opens hangs off it:
          a chip built again on every repaint would leave the open panel
-         pointing at a button that is no longer on the page.
-
-         Not on a shelf. /style/<name> never carried this button in the bar
-         either, and a page narrowed to one kind of song is not where anybody
-         starts a new one. */
+         pointing at a button that is no longer on the page. */
       var addSong = null;
 
       function addChip() {
@@ -7826,7 +7978,7 @@
 
       function paintTallies() {
         tallies.textContent = "";
-        if (NARROW.matches && !shelf) tallies.appendChild(addChip());
+        if (NARROW.matches) tallies.appendChild(addChip());
         TAGS.forEach(function (t) {
           var n = state.songs.filter(t.is).length;
           /* A count of nothing is not a fact worth a chip. It is a row of
@@ -7846,9 +7998,10 @@
         });
       }
 
-      /* The styles, over the songs. Only on the library itself: a shelf is
-         already one style, and a page that opened narrowed to one kind of song
-         has no business offering the other eleven above it.
+      /* The styles, over the songs, and they stay there while one of them is
+         holding the wall down: pressing a shelf is not opening a page, it is
+         narrowing the page they are standing on, and the eleven other shelves
+         are how somebody gets to another one or back to all of them.
 
          The playlists are NOT here. They were, in a band of their own at the
          top, and they are somebody's own rows rather than anything the library
@@ -7881,7 +8034,6 @@
 
       function paintBands() {
         bands.textContent = "";
-        if (shelf) return;
 
         var counted = {};
         var bareN = 0;
@@ -7895,7 +8047,7 @@
         var names = Object.keys(counted).filter(passes)
           .sort(function (a, b) { return a.localeCompare(b, "he"); });
         var cards = names.map(function (name) {
-          return shelfRow(name, counted[name], addr("style", name));
+          return shelfRow(name, counted[name], kind === name, function () { pickKind(name); });
         });
         /* AND LAST OF ALL, THE ONES WITH NO WORD ON THEM. Last because the
            shelves before it are sorted by name and this one has none to sort
@@ -7903,7 +8055,8 @@
            not drawn when there are none, like every other shelf, and it
            answers to its own words in the box over it. */
         if (bareN && passes(NO_STYLE_SAID)) {
-          cards.push(shelfRow(NO_STYLE_SAID, bareN, addr("style", NO_STYLE)));
+          cards.push(shelfRow(NO_STYLE_SAID, bareN, kind === NO_STYLE,
+            function () { pickKind(NO_STYLE); }));
         }
         if (cards.length) bands.appendChild(wall(cards));
       }
@@ -7962,14 +8115,18 @@
         return marks;
       }
 
-      /* WHAT THE CHIPS LEFT, and on a shelf, what the address left. Looking a
-         song up by NAME, by who wrote it or by a line of it is the box in the
-         bar, on every page and not only on this one. */
+      /* WHAT THE CHIPS AND THE SHELF LEFT. Looking a song up by NAME, by who
+         wrote it or by a line of it is the box in the bar, on every page and
+         not only on this one. */
       function paint() {
         list.innerHTML = "";
         paintTallies();
         var marks = marksFor(state.songs);
         var only = tag && TAGS.filter(function (t) { return t.key === tag; })[0];
+        /* The shelf of songs with no style at all is a shelf like the others
+           everywhere except in its name, which is a sentence about them rather
+           than a word any of them carries. */
+        var bare = kind === NO_STYLE;
         var shown = state.songs.filter(function (s) {
           if (only && !only.is(s)) return false;
           if (bare && styles(s).length) return false;
@@ -8040,6 +8197,9 @@
         }).catch(function () { /* a failed refresh is not worth a red screen */ });
       }
 
+      /* and if the library opened already narrowed to one, the box and the
+         corner say so before anything else is drawn (see showKind) */
+      showKind();
       paintBands();
       paint();
       poll();
@@ -8068,28 +8228,26 @@
       };
 
       /* THE SIEVE IS THE LIBRARY'S OWN, and it is handed to the box in the bar
-         for as long as this page is the page. A shelf is left out on purpose:
-         it is one kind of song already, and what somebody types there is
-         almost always the way OFF it, which is what the panel is for. */
-      if (!shelf) {
-        var sift = function (typed) {
-          /* what was typed, kept as it was typed: the page is put aside and
-             uncovered with the box emptied in between, and what goes back in
-             it has to be the reader's own letters (see reveal) */
-          sift.q = String(typed || "");
-          sifted = sift.q.trim().toLowerCase();
-          siftMark();
-          paint();
-          paintBands();
-        };
-        sift.q = "";
-        /* and where the page has to stand for the box to be answered: the top
-           of the wall of songs, which is what the press scrolls to (see
-           siftRoom). Handed over rather than looked up, because only the page
-           knows which of the things on it is the answer. */
-        sift.wall = list;
-        state.sift = sift;
-      }
+         for as long as this page is the page. It is the second half of what
+         that box holds: the chip in front of the field is one kind of song and
+         the letters after it look through what that leaves (see siftKind). */
+      var sift = function (typed) {
+        /* what was typed, kept as it was typed: the page is put aside and
+           uncovered with the box emptied in between, and what goes back in
+           it has to be the reader's own letters (see reveal) */
+        sift.q = String(typed || "");
+        sifted = sift.q.trim().toLowerCase();
+        siftMark();
+        paint();
+        paintBands();
+      };
+      sift.q = "";
+      /* and where the page has to stand for the box to be answered: the top
+         of the wall of songs, which is what the press scrolls to (see
+         siftRoom). Handed over rather than looked up, because only the page
+         knows which of the things on it is the answer. */
+      sift.wall = list;
+      state.sift = sift;
 
       /* The way to what was deleted, under everything and only when there is
          something there. A library with an empty bin says nothing about bins:
@@ -8990,27 +9148,31 @@
     return box;
   }
 
-  /* A style is a shelf, and a shelf is a page: /style/<name> is the library
-     narrowed to one kind of song, and this is the card that opens it. The
-     address is handed in rather than made from the name, because one of these
-     shelves is called something no song is called (see NO_STYLE). */
-  function shelfRow(name, n, to) {
+  /* A style is a shelf, and pressing one holds the library down to it without
+     moving the page (see pickKind in viewIndex). It was a link to a page of its
+     own; it is a button now, because what a press does happens here, and the
+     one that is on says so the way every other thing on this page that narrows
+     the wall says so.
+
+     What it does is handed in rather than worked out from the name, because one
+     of these shelves is not a name: the songs with no style at all are a shelf
+     too, and they are called something no song is called (see NO_STYLE). */
+  function shelfRow(name, n, on, press) {
     var li = el("li");
-    var a = el("a");
-    a.href = to || addr("style", name);
-    a.addEventListener("click", function (event) {
-      event.preventDefault();
-      go(a.getAttribute("href"));
-    });
+    var card = el("button", "shelf" + (on ? " is-on" : ""));
+    card.type = "button";
+    card.setAttribute("aria-pressed", on ? "true" : "false");
+    card.title = on ? "לחיצה מחזירה את כל השירים" : "לחיצה מציגה רק את אלה";
+    card.addEventListener("click", press);
 
     var box = el("div");
     var top = el("div", "t-row");
     top.appendChild(el("div", "t", name));
     top.appendChild(countTag(n));
     box.appendChild(top);
-    a.appendChild(box);
+    card.appendChild(box);
 
-    li.appendChild(a);
+    li.appendChild(card);
     return li;
   }
 
@@ -9211,6 +9373,111 @@
         song.styles = next;
       }).catch(function () { /* counted by not being counted */ });
     })).then(function () { return { done: done, of: songs.length }; });
+  }
+
+  /* --- AND BEING RID OF ONE ------------------------------------------------
+     The same rewriting as a rename with nothing to put in its place: the word
+     comes off every song that carries it, and the songs themselves are not
+     touched by it. There is no row anywhere to delete, because a shelf is what
+     the songs say (see paintBands), so a word nobody says any more is a shelf
+     that is not there.
+
+     WHICH IS ALSO WHY IT CANNOT BE UNDONE, and why the press that reaches here
+     has already asked (see kindRows). The only way back is to type the word
+     onto each of the songs again.
+
+     Somebody else's song is not touched, exactly as in a rename: the database
+     answers a write to one with an empty list and a perfectly good 200, so what
+     comes back is counted rather than what went out. */
+  function dropStyle(name) {
+    var songs = (state.songs || []).filter(function (song) {
+      return styles(song).indexOf(name) >= 0;
+    });
+    var done = 0;
+
+    return Promise.all(songs.map(function (song) {
+      var next = styles(song).filter(function (other) { return other !== name; });
+      return db.update(song.id, { styles: next }).then(function (row) {
+        if (!row) return;
+        done++;
+        /* the row in hand follows the write, so nothing on the page is reading
+           a word the database no longer holds */
+        song.styles = next;
+      }).catch(function () { /* counted by not being counted */ });
+    })).then(function () { return { done: done, of: songs.length }; });
+  }
+
+  /* --- AND THE NEW NAME IS ASKED FOR IN A PANEL ------------------------------
+     It was typed in the bar, where the name of a page is typed, because a shelf
+     was a page and that name was its own. A shelf is a sieve over the library
+     now and the library is called nothing in the bar, so there is no name up
+     there to type over: the asking is a panel of its own, one field with the
+     word already in it and the two answers under it.
+
+     The browser's own prompt is the other way to ask one question and it is not
+     this app's shape: a grey box in the corner of the window, in the browser's
+     own words, with nowhere to say what happened after it is answered.
+
+     `then` hands back a promise, so the panel stays open while the rows are
+     being written and says so if they could not be. */
+  function askKindName(was, then) {
+    var dlg = el("dialog", "dlg");
+    var box = el("div", "dlg-in");
+    box.appendChild(el("h2", null, "שם הסגנון"));
+    /* What renaming a shelf actually does, in one line, because both halves of
+       it are surprising: it writes on every song that carries the word, and a
+       name that is already a shelf merges the two. The second is not a mishap,
+       it is one of the two reasons anybody does this (see renameStyle). */
+    box.appendChild(el("p", "muted",
+      "השם מתחלף בכל השירים שנושאים אותו. שם של סגנון שכבר קיים מאחד את שני המדפים לאחד."));
+
+    var field = el("input");
+    field.type = "text";
+    field.value = was;
+    field.setAttribute("aria-label", "שם הסגנון");
+    box.appendChild(field);
+
+    var err = el("p", "err");
+    err.hidden = true;
+    box.appendChild(err);
+
+    var actions = el("div", "dlg-actions");
+    actions.appendChild(button("ביטול", null, "ghost", function () { dlg.close(); }));
+    var save = button("שמירה", null, null, keep);
+    actions.appendChild(save);
+    box.appendChild(actions);
+
+    function keep() {
+      var next = tidyStyles([field.value])[0];
+      /* A name that came to nothing, or the name it already has, is not a
+         rename: nothing is written and the panel closes. */
+      if (!next || next === was) return dlg.close();
+      save.disabled = true;
+      relabel(save, "שומר…");
+      then(next).then(function () { dlg.close(); }, function (e) {
+        save.disabled = false;
+        relabel(save, "שמירה");
+        err.hidden = false;
+        err.textContent = (e && e.message) || "לא הצלחנו לשנות את שם הסגנון";
+      });
+    }
+
+    /* One field and one answer: Enter is the button under it. */
+    field.addEventListener("keydown", function (event) {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      keep();
+    });
+
+    dlg.appendChild(box);
+    document.body.appendChild(dlg);
+    dlg.addEventListener("close", function () { dlg.remove(); });
+    openSheet(dlg);
+    /* after the panel is up, or the focus lands on a field that is not on the
+       screen yet, and the word to be typed over is selected because that is
+       what somebody who opened this is about to replace */
+    field.focus();
+    field.select();
   }
 
   /* AND THIS PAGE DOES NOT NAME ITSELF IN THE BAR, for the reason the library
@@ -9466,10 +9733,12 @@
      reader who wants to know who wrote this had nowhere to press.
 
      AND WHAT IS IN IT LEADS SOMEWHERE. A name is a page of everything that
-     person wrote and a style is a shelf of everything like this, so both are
-     links: on a page you cannot change, "who else, what else" is the only
-     thing left to want, and this is the one place on the song that can answer
-     it. The credits under the title cannot: they are the second line of a
+     person wrote, and a style is the library held down to everything like
+     this, so both are links: on a page you cannot change, "who else, what
+     else" is the only thing left to want, and this is the one place on the
+     song that can answer it. A style has no page of its own any more, and it
+     does not need one: the address it had opens the library with that shelf
+     already sieved (see the router). The credits under the title cannot: they are the second line of a
      name and a link there would make them a control.
 
      Nothing to say is nothing to open, so a song with neither hands back
@@ -16611,6 +16880,10 @@
        words in the box (see renderPlaylist). This also takes the box off the
        bar again on every page that is neither. */
     state.sift = null;
+    /* and the same for the other half of that box: what the library was held
+       down to is the library's, and the next page is not holding a shelf (see
+       siftKind). The chip itself goes with `where` a moment later. */
+    state.kindMenu = null;
     /* and with no sieve there is nothing being held down, whatever the last
        page was holding down when it was left */
     siftMark();
@@ -16622,12 +16895,29 @@
     /* --- one shelf of it ---
        /style/<name>   the library, narrowed to one kind of song
 
-       A style is a word tied onto a song and it is also a shelf, and a shelf
-       is a thing worth having an address for: it is what somebody means when
-       they go looking for "the circle songs", and it is what the search box
-       hands back when they type one. Narrowing by hand writes the same
-       address without leaving the page, so the two cannot disagree. */
-    if (p[0] === "style") return viewIndex(p[1] || null);
+       A SHELF IS NOT A PAGE ANY MORE. It was one: this address drew the library
+       again with one kind of song on it, and pressing a shelf wrote the address
+       without leaving the page. What that cost is the page itself, because the
+       shelves are what somebody is reading across when they press one and the
+       press took them off the screen. Narrowing is a sieve now and it has no
+       address, exactly as narrowing to the drafts has none (see pickKind in
+       viewIndex).
+
+       The address still answers, because it is written down: on the songs
+       themselves for as long as they were built with it in them, in whatever
+       anybody bookmarked, and in a search result somewhere. What it opens is
+       the library with the sieve already on, and the address in the bar becomes
+       the library's own, because that is the page this is.
+
+       Rewritten before the bar is painted a second time: what stands in it is
+       decided by the address (see paintHeader), and a library painted as a song
+       page has no search box in it. */
+    if (p[0] === "style") {
+      var narrowed = p[1] || null;
+      history.replaceState(history.state, "", addr());
+      paintHeader();
+      return viewIndex(narrowed);
+    }
 
     /* THESE WERE /evenings, AND SOMEBODY HAS THAT ADDRESS WRITTEN DOWN. The
        word changed, the rows did not: the same table, the same account, the

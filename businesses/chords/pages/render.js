@@ -131,17 +131,11 @@ export function creators(songs) {
   return [...by.values()].sort((a, b) => a.name.localeCompare(b.name, "he"));
 }
 
-export function styles(songs) {
-  const by = new Map();
-  for (const song of songs) {
-    for (const name of song.styles || []) {
-      const rec = by.get(name) || { name, songs: [] };
-      rec.songs.push(song);
-      by.set(name, rec);
-    }
-  }
-  return [...by.values()].sort((a, b) => a.name.localeCompare(b.name, "he"));
-}
+/* THE STYLES ARE NOT GATHERED HERE ANY MORE. They were, into a page each, and
+   a shelf is not a page now: it is the library held down to one kind of song,
+   which is a state and not an address (see pickKind in app.js). Nothing on
+   disk is a style, so nothing here has to know what the styles are. The app
+   still gathers them, off the same songs, for the band of shelves it draws. */
 
 /* --- the song, as a sheet -------------------------------------------------- */
 
@@ -179,6 +173,11 @@ export function sheet(song) {
 /* --- the seeds ------------------------------------------------------------- */
 export const list = (items) => `<ul class="seed-list">\n${items.map((i) => `      <li><a href="${esc(i.href)}">${esc(i.text)}</a>${i.note ? ` <span class="seed-note">${esc(i.note)}</span>` : ""}</li>`).join("\n")}\n    </ul>`;
 
+/* What kind of song it is is a WORD here and not a link, since a style stopped
+   being a page: it is a state of the library (see pickKind in app.js), and a
+   crawler offered a link to an address with no file behind it is a crawler sent
+   to the domain's 404. It is still worth saying, because it is one of the few
+   things the page says about the song besides the song itself. */
 export function songSeed(song) {
   const credit = creditLine(song);
   const kinds = (song.styles || []).filter(Boolean);
@@ -186,20 +185,21 @@ export function songSeed(song) {
     <h1>${esc(song.title)}</h1>
     ${credit ? `<p class="seed-by">${esc(credit)}</p>` : ""}
     <pre class="seed-sheet">${esc(sheet(song))}</pre>
-    ${kinds.length ? `<p class="seed-kinds">${kinds.map((k) => `<a href="${esc(href("style", k))}">${esc(k)}</a>`).join(" ")}</p>` : ""}
+    ${kinds.length ? `<p class="seed-kinds">${esc(kinds.join(", "))}</p>` : ""}
     <p class="seed-back"><a href="${esc(href())}">כל השירים</a></p>
   </article>`;
 }
 
+/* The songs and the people, and no band of styles between them: a style has no
+   page to link to any more (see above), and a list of words that lead nowhere
+   is a heading spent on nothing. */
 export function indexSeed(songs) {
-  const kinds = styles(songs);
   const who = creators(songs);
   return `<div id="seed" class="seed">
     <h1>אקורדים</h1>
     <p>אינדקס שירים עם אקורדים. כל שיר בדף משלו, והאקורדים בדיוק מעל המילים.</p>
     <h2>השירים</h2>
     ${list(songs.map((s) => ({ href: href(s.slug), text: s.title, note: creditLine(s) })))}
-    ${kinds.length ? `<h2>לפי סוג</h2>\n    ${list(kinds.map((k) => ({ href: href("style", k.name), text: k.name, note: `${k.songs.length} שירים` })))}` : ""}
     ${who.length ? `<h2>מי כתב</h2>\n    ${list(who.map((c) => ({ href: href("creator", c.name), text: c.name, note: `${c.songs.length} שירים` })))}` : ""}
   </div>`;
 }

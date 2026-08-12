@@ -17,9 +17,16 @@
 
      /chords/                    the library, with a link to every song
      /chords/<שיר>/              the song, words and chords in the page
-     /chords/style/<סוג>/        one shelf of it
      /chords/creator/<שם>/       one person, and everything they wrote
      /chords/creators/           all of them
+
+   A STYLE IS NOT AMONG THEM ANY MORE. It had a page here, /chords/style/<סוג>/,
+   because it had a page in the app. It does not: pressing a shelf holds the
+   library down to one kind of song without leaving it (see pickKind in app.js),
+   which is a state of the library and not an address, and a file written for an
+   address nothing links to is a file nobody arrives at. The old addresses fall
+   through the domain's 404 to the app, which still answers them by opening the
+   library already narrowed, so what was bookmarked still lands somewhere true.
 
    None of that replaces the app. Each of those files is the app's own shell
    with the words already in it, and app.js takes the words out and draws the
@@ -32,9 +39,9 @@
    ========================================================================== */
 import { nameable, songs as library } from "./library.js";
 import {
-  creatorPage, creatorsPage, indexPage, songPage, songSaid, stylePage,
+  creatorPage, creatorsPage, indexPage, songPage, songSaid,
 } from "./song.js";
-import { creators, styles, url } from "./render.js";
+import { creators, url } from "./render.js";
 
 /* ONE ASK. `pages` and `siteMap` are two questions about the same library, and
    the build asks both; a second request would be a second answer, and two
@@ -42,7 +49,6 @@ import { creators, styles, url } from "./render.js";
 let asked = null;
 const shelves = () => (asked ??= library().then((songs) => ({
   songs,
-  kinds: onDisk(styles(songs), "סוג"),
   who: onDisk(creators(songs), "יוצר"),
 })));
 
@@ -61,11 +67,10 @@ function onDisk(shelves, what) {
 }
 
 export const pages = async () => {
-  const { songs, kinds, who } = await shelves();
+  const { songs, who } = await shelves();
   return [
     { out: "index.html", render: () => indexPage(songs) },
     ...songs.map((song) => ({ out: `${song.slug}/index.html`, render: () => songPage(song) })),
-    ...kinds.map((kind) => ({ out: `style/${kind.name}/index.html`, render: () => stylePage(kind) })),
     ...who.map((one) => ({ out: `creator/${one.name}/index.html`, render: () => creatorPage(one) })),
     ...(who.length ? [{ out: "creators/index.html", render: () => creatorsPage(who) }] : []),
   ];
@@ -75,11 +80,10 @@ export const pages = async () => {
    in build.mjs, and robots.txt at the root of the domain names the file, which
    is the only way a folder's sitemap is ever found. */
 export const siteMap = async () => {
-  const { songs, kinds, who } = await shelves();
+  const { songs, who } = await shelves();
   return [
     { loc: url(), title: "אקורדים", description: "אינדקס שירים עם אקורדים, כל שיר בדף משלו והאקורדים בדיוק מעל המילים." },
     ...songs.map((song) => ({ loc: url(song.slug), ...songSaid(song) })),
-    ...kinds.map((kind) => ({ loc: url("style", kind.name), title: kind.name, description: `כל השירים מסוג ${kind.name} באינדקס האקורדים.` })),
     ...who.map((one) => ({ loc: url("creator", one.name), title: one.name, description: `השירים ש${one.name} כתב או הלחין, עם האקורדים.` })),
     ...(who.length ? [{ loc: url("creators"), title: "מי כתב", description: "כל מי שכתב או הלחין שיר באינדקס." }] : []),
   ];

@@ -462,6 +462,29 @@ body.unnamed .top-name { display: none; }
 .top-find .find:hover { border-color: #cdd8de; }
 .top-find .find:focus-within { border-color: var(--accent); }
 .top-find .find > svg { flex: none; width: 17px; height: 17px; color: var(--ink-soft); }
+/* --- WHAT THE PAGE IS HELD DOWN TO, IN FRONT OF THE FIELD -------------------
+   A style is a sieve over the library rather than a page of its own (see
+   pickKind in app.js), and this is where it says so: a chip in the front of the
+   box, and the typing carries on after it. One control, read as one sentence,
+   this kind of song and these letters in it.
+
+   It never wraps and never gives way: the field beside it is what has the room
+   to lose. Empty it is not there at all, so on every page that is holding
+   nothing down the box is a box (see .find-kind:empty). */
+.find-kind { flex: none; display: flex; align-items: center; margin-inline-start: -3px; }
+.find-kind:empty { display: none; }
+/* Inside the box it is not a card on a page: the box is the white, so the chip
+   is the soft green the app says "this is what is narrowing things" in, rather
+   than the outlined grey it wears on a song, where it is a fact about the song
+   and not a thing being done (see .tag-style). */
+.find-kind .tag-style {
+  color: var(--accent-ink); background: var(--accent-soft); box-shadow: none;
+  max-width: 40vw; overflow: hidden;
+}
+.find-kind .tag-style > span {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.find-kind .tag-x { color: var(--accent-ink); }
 /* The type is written into the selector because the bare `input` rules below
    are as specific as a class and come after these: without it the field wears
    the form styling, and a white rounded box inside a white rounded box is
@@ -1098,7 +1121,7 @@ body.sifting .list:not(.band), body.sifting .set { min-height: calc(100dvh - var
   display: flex; min-width: 0; position: relative;
   break-inside: avoid; margin-bottom: 12px;
 }
-.list li > a, .list li > .row { flex: 1 1 auto; min-width: 0; }
+.list li > a, .list li > .row, .list li > .shelf { flex: 1 1 auto; min-width: 0; }
 /* THERE WAS A CHECKBOX OVER THE CORNER OF EVERY CARD, and a gutter left in the
    card for it. A whole second way of using the library hung off it: tick a few
    songs and a row of buttons appeared to do something to all of them at once.
@@ -1110,7 +1133,7 @@ body.sifting .list:not(.band), body.sifting .set { min-height: calc(100dvh - var
    height of the tallest of them, so a song with a short name and no chords
    centred what little it has in the middle of a card sized for something else,
    and the wall stopped having a line to read along. */
-.list a {
+.list a, .list .shelf {
   display: flex; align-items: flex-start; gap: 14px; text-decoration: none; color: inherit;
   /* ONE CARD IS ONE CARD, WHEREVER IT IS. A song in the library and a song in
      a playlist are the same sheet of paper on the same desk, and they carry
@@ -1130,7 +1153,7 @@ body.sifting .list:not(.band), body.sifting .set { min-height: calc(100dvh - var
    that looked like was a card that stayed selected after its play button was
    pressed, on a press that was never about the card at all. */
 @media (hover: hover) {
-  .list a:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .list a:hover, .list .shelf:hover { border-color: var(--accent); transform: translateY(-1px); }
   /* AND NOT WHILE THE POINTER IS ON THE BUTTON STANDING ON IT. Playing a
      recording is not a way of opening the song, so the card should not be
      offering to open while it is being done. */
@@ -1316,8 +1339,27 @@ body.sifting .list:not(.band), body.sifting .set { min-height: calc(100dvh - var
    at the top because it has four corners with a different fact in each; these
    have a name at one end and a word about it at the other, on one line, and
    anything else lines up with that line. */
-.list.band a { align-items: center; }
+.list.band a, .list.band .shelf { align-items: center; }
 .list.band .side { align-self: auto; justify-content: center; }
+/* --- AND A SHELF IS A BUTTON, BECAUSE PRESSING ONE DOES NOT LEAVE THE PAGE ---
+   It was a link to a page of its own. It holds the library down to one kind of
+   song now and the page stays where it is (see pickKind in app.js), so the card
+   is a button wearing exactly the card the songs under it wear: everything a
+   browser puts on a button of its own is taken back off, and what is left is
+   the white, the hairline and the shadow that .list a above already said. */
+.list .shelf {
+  appearance: none; font: inherit; text-align: start; cursor: pointer;
+  width: 100%;
+}
+/* AND THE ONE THAT IS ON SAYS SO, in the same soft green everything in this app
+   that is currently narrowing something says it in (see .tally.is-on). It is
+   the one card in the band that is not a way to somewhere: pressing it again is
+   the way back to all of them, which is what the cross on the chip in the
+   search box also does. */
+.list .shelf.is-on {
+  border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink);
+}
+.list .shelf.is-on .tag-count { color: var(--accent-ink); background: #fff; }
 /* AND THE NAME ON ONE OF THESE IS SMALLER THAN THE NAME ON A SONG. A band
    stands ABOVE the wall the page is for, and it was set in the same seventeen
    pixels: two or three shelves in the type of the thing they are shelves of,
