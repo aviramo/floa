@@ -7512,7 +7512,7 @@
 
   function siftMark() {
     if (!state.sift) return document.body.classList.remove("sifting");
-    var live = String(state.sift.q || "").trim() ||
+    var live = String(state.sift.q || "").trim() || state.sift.kind ||
       document.body.classList.contains("finding");
     document.body.classList.toggle("sifting", !!live);
   }
@@ -7810,14 +7810,36 @@
       function showKind() {
         siftKind(kind === NO_STYLE ? NO_STYLE_SAID : kind, function () { pickKind(null); });
         state.kindMenu = kind && kind !== NO_STYLE && auth.in ? kindRows : null;
+        /* AND A WALL HELD DOWN TO ONE SHELF NEEDS THE SAME FLOOR UNDER IT that
+           a wall held down to what was typed needs: the page about to be
+           scrolled past its own head can be four cards tall, and a document
+           that ends before the scroll does hands it straight back (see
+           siftMark). One narrowing, one floor, whichever of the two did it. */
+        if (state.sift) {
+          state.sift.kind = !!kind;
+          siftMark();
+        }
         paintHeader();
       }
 
+      /* --- AND THE PRESS TAKES THE PAGE DOWN TO THE SONGS ---------------------
+         Exactly what a press on the search box does, and for the same reason
+         (see siftRoom): everything over the wall is about the WHOLE library,
+         the drawing, the doors and the shelves themselves, and the answer to
+         "only these" begins a screen and a half below it. So the page scrolls
+         until the wall is against the bar, which is where a reader would have
+         taken it by hand, and a thumb brings the shelves back.
+
+         ONLY WHEN A SHELF IS BEING PUT ON. Letting one go is standing back up,
+         and the whole library under a page already scrolled to its wall is the
+         page somebody is already looking at. */
       function pickKind(name) {
-        kind = name && name !== kind ? name : null;
+        var took = !!(name && name !== kind);
+        kind = took ? name : null;
         showKind();
         paintBands();
         paint();
+        if (took) siftRoom();
       }
 
       /* --- THE TWO THINGS THERE ARE TO DO TO A SHELF -------------------------
@@ -8247,7 +8269,13 @@
          siftRoom). Handed over rather than looked up, because only the page
          knows which of the things on it is the answer. */
       sift.wall = list;
+      /* and whether the OTHER half of that box is holding anything, which is
+         the same fact to the floor under the wall (see showKind and siftMark).
+         Answered here as well, because a library opened on a shelf is narrowed
+         before anybody has touched the box. */
+      sift.kind = !!kind;
       state.sift = sift;
+      siftMark();
 
       /* The way to what was deleted, under everything and only when there is
          something there. A library with an empty bin says nothing about bins:
@@ -9421,7 +9449,13 @@
      `then` hands back a promise, so the panel stays open while the rows are
      being written and says so if they could not be. */
   function askKindName(was, then) {
-    var dlg = el("dialog", "dlg");
+    /* IN THE MIDDLE OF THE SCREEN AND NOT UP FROM THE FOOT OF IT, which is the
+       shape the account's own panel has (see openPop). A sheet is a place you
+       go into and come out of, with a bar to push it back down by; this is one
+       field and two answers, and it is asked from a panel hanging off the bar
+       at the top of the page. A question that small rising the whole height of
+       the window reads as somewhere being opened. */
+    var dlg = el("dialog", "dlg pop");
     var box = el("div", "dlg-in");
     box.appendChild(el("h2", null, "שם הסגנון"));
     /* What renaming a shelf actually does, in one line, because both halves of
@@ -9472,7 +9506,7 @@
     dlg.appendChild(box);
     document.body.appendChild(dlg);
     dlg.addEventListener("close", function () { dlg.remove(); });
-    openSheet(dlg);
+    openPop(dlg);
     /* after the panel is up, or the focus lands on a field that is not on the
        screen yet, and the word to be typed over is selected because that is
        what somebody who opened this is about to replace */
