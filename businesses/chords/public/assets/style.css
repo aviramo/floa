@@ -4148,6 +4148,19 @@ body.on-ear.ear-small { padding-bottom: 78px; }
   box-shadow: 0 0 0 3px var(--chord-soft);
   border-radius: 3px;
 }
+/* --- AND WHILE A TAKE IS RUNNING IT IS A RING AND NOT A FILL ---------------
+   Because there is a second mark on the page then, and the two must not read
+   as one. The band under the line being played is drawn in --chord-soft, so a
+   chord filled in --chord-soft that lands inside it disappears into it exactly
+   where it matters most: on the line the follower thinks we are on.
+
+   A ring in the ink the chords are already written in stands out of the band
+   instead of dissolving into it, and it says a different kind of thing from a
+   filled shape: this one is the SOUND, and the band is the PLACE. */
+.sheet.is-taping .chord.is-heard {
+  background: none;
+  box-shadow: 0 0 0 2px var(--chord);
+}
 
 /* --- AND WHERE WE ARE, WHICH IS DRAWN ON THE LINE AND NOT ON THE CHORD -----
    `.chord.is-at` HAS NO PICTURE, on purpose. It was a filled chord, in the ink

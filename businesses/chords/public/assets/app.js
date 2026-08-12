@@ -18317,10 +18317,25 @@
        still Am and the marks were on nodes that no longer existed or had never
        been asked.
 
-       ONE MARK ON THE SONG AT A TIME. While the follower is running it owns
-       the marking, and lighting every chord of the same name underneath it
-       would be two answers to one question. */
-    if (!following) markHeard(heardNow);
+       ONE MARK ON THE SONG AT A TIME, EXCEPT WHILE A TAKE IS RUNNING. While
+       the follower is running it owns the marking, and lighting every chord of
+       the same name underneath it is two answers to one question.
+
+       AND WHILE SOMEBODY IS RECORDING, TWO ANSWERS IS EXACTLY WHAT IS WANTED.
+       They are not the same question: the band says WHERE IN THE SONG we think
+       we are, and this says WHAT THE ROOM SOUNDS LIKE at this instant. When
+       those two disagree the disagreement is the whole story, and until now the
+       only way to see it was to record a take, save it, and read its trace back
+       out of the database afterwards.
+
+       IT LIGHTS EVERY CHORD OF THAT NAME, and that is not a fault to be fixed:
+       it is the honest answer. The ear hears an Am; it cannot know which of the
+       twelve Am's on the page it is, and the one thing on the screen that does
+       know is the band. Read together, "the ear says Am, and we think we are
+       HERE" is a sentence. Read alone, as it was on the measuring strip, it
+       looks like a follower that has come apart, which is why it is off at
+       every other moment. */
+    if (!following || onTape()) markHeard(heardNow);
 
     /* --- and where in the song that puts us ---------------------------------
        Only on a reading there is something in. See followOn: a follower that
@@ -19253,9 +19268,21 @@
      MATCHED ON THE ROOT AND THE THIRD, not on the text. A page that says Am7
      where the ear says Am is the same chord being played, and a highlight that
      insisted on the seventh would go dark exactly where the song is richest. */
+  /* Whether a take is being written right now, which is the one moment the
+     song carries both marks at once. Paused counts as not: a recorder that has
+     been stopped is not listening to the room. */
+  function onTape() {
+    return !!(tape && tape.rec && tape.rec.state === "recording");
+  }
+
   function markHeard(name) {
     var sheet = document.querySelector(".sheet");
     if (!sheet) return;
+    /* Which of the two marks this is, said on the sheet so that the stylesheet
+       can draw it differently while the band is on the page underneath it: a
+       soft fill on top of a soft band is one shape, and what is wanted there is
+       two. */
+    sheet.classList.toggle("is-taping", !!name && onTape() && !!following);
     /* The name the ear said is already a SOUND, so it carries no capo; the
        names on the page are shapes, so they do. */
     var want = name ? thirdOf(name, 0) : null;
@@ -19957,6 +19984,9 @@
        (see afresh) */
     rec.ondataavailable = null;
     try { rec.stop(); } catch (e) { /* already inactive */ }
+    /* The second mark goes with the take it belongs to. The follower carries
+       on, and its band is the one answer again (see markHeard). */
+    markHeard(null);
     paintTape();
     return gone;
   }

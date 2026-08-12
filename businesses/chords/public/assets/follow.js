@@ -309,34 +309,44 @@
      what had to be paid went from 1.8 to 5.4 and the third of a second stopped
      being enough.
 
-     SIX, AND THE NUMBER IS PENNED IN AT BOTH ENDS RATHER THAN CHOSEN. Below
-     the ear's own window, which is 170 milliseconds and 5 readings (see the
-     8192-sample window in ear.js), a wait buys nothing: a chord change cannot
-     be seen faster than that, so a shorter floor is claiming a resolution the
-     input does not have. Above a quarter of a second, which is about the
-     shortest chord anybody actually plays, a wait starts refusing chord changes
-     that really happened. That leaves five to seven readings, and six is in the
-     middle of it: 200 milliseconds.
+     THREE, AND BOTH ENDS OF THAT WERE MEASURED OFF RECORDINGS RATHER THAN
+     ARGUED FOR. It was six first, on the reasoning that six is 200 milliseconds
+     and therefore sits between the ear's own window (170, below which a wait
+     buys nothing because a chord change cannot be seen faster than that) and
+     the shortest chord anybody plays (about 250). The reasoning was sound and
+     the number was wrong, and a second recording said so within the hour.
 
-     AND WHAT IT IS WORTH, MEASURED rather than argued for. Fed the recording's
-     own numbers, over and over, the arithmetic used to give way after thirteen
-     readings of them and now gives way after twenty six: 433 milliseconds
-     against 866. Inside the model it is the deficit of the place two along:
-     5.2 behind the Am at the moment the ear starts preferring the Em where it
-     is now 14.9, and 0.9 four hundred milliseconds later where it is now 9.7.
-     A line of the test holds it to exactly that, and fails without the wait.
+     WHAT IT IS WORTH, at three: fed the first recording's numbers over and
+     over, the arithmetic used to give way after thirteen readings of them and
+     now gives way after twenty three. A line of the test holds it to that and
+     fails without the wait.
 
-     WHAT IT DOES NOT DO IS SAVE THAT RECORDING, and it is worth being straight
-     about that. Half a second later the ear reported Am at 0.47 against Em at
-     0.65, and eighteen hundredths held for over a second is not a wobble, it is
-     the ear saying something definite and wrong. Nothing here should survive
-     that, and nothing here can: what is left is a question for ear.js.
+     AND WHAT THE CEILING IS, which is the part no amount of thinking found.
+     WHERE A VERSE ENDS ON THE CHORD IT BEGINS ON, and a great many do, a repeat
+     puts those two identical chords side by side (see songSpans in app.js).
+     Nothing in the sound can ever separate them, so the mark sits on the first
+     until the chord AFTER them arrives and pulls it across both. Crossing the
+     second one is therefore paid for entirely in the bonus for standing still
+     (SIT against HOME, seven tenths a reading) with no difference in score to
+     earn it back, so the wait is charged at full price there and nowhere else.
+     At four readings and above the second recording never crossed that seam at
+     all: the mark stopped at the end of the first verse and stayed there for
+     the remaining twenty four seconds. At three it crosses exactly as it did
+     before there was any wait. The whole of that recording's seam is in the
+     test, because nothing shorter reproduced it.
+
+     WHAT IT DOES NOT DO IS SAVE THE FIRST RECORDING, and it is worth being
+     straight about that. Half a second past the drift the ear reported Am at
+     0.47 against Em at 0.65, and eighteen hundredths held for over a second is
+     not a wobble, it is the ear saying something definite and wrong. Nothing
+     here should survive that, and nothing here can: what is left is a question
+     for ear.js.
 
      AND THE PHASES BEFORE THE LAST ARE FREE, deliberately. Time passing is not
      a choice and must not be charged for: a chord genuinely being played costs
      what it always cost, so nothing above is retuned and nothing that worked
      moves. What is being made expensive is the place nobody stayed at. */
-  var DWELL = 6;
+  var DWELL = 3;
 
   /* ONE FORWARD IS FREE AND NOTHING ELSE IS. A song moves to the next chord,
      so that step is taken the moment it is worked out and the mark keeps up
