@@ -690,22 +690,18 @@ body.unnamed .top-name { display: none; }
      It goes back to the order it stands in on a desk, so the fork keeps the
      corner and the box runs from the mark up to it.
 
-     AND ON A PAGE THAT ASKS FOR IT, for the same reason said the other way
-     round: the wall of playlists, the wall of people and an open playlist each
-     carry the way back, their own name, and nothing else or one button on the
-     end (see sift.open in app.js). The room the library has by having no name
-     at all, those pages have by having no row of pictures, so the box is a box
-     there and the button, where there is one, keeps the corner. */
+     AND THE WALL OF PLAYLISTS AND THE WALL OF PEOPLE ARE THE SAME BAR. Neither
+     names itself any more either (see viewPlaylists and viewCreators in
+     app.js), for the reason the library does not, and so the same one rule
+     answers all three: a bar with no name on it has the room, and the box
+     takes it. */
   body.finding .top-find,
-  body.open-find .top-find,
   body.unnamed .top-find { flex: 1 1 auto; width: auto; order: 0; }
   body.finding .top-find .find,
-  body.open-find .top-find .find,
   body.unnamed .top-find .find {
     padding: 0 12px; gap: 9px; justify-content: flex-start;
   }
   body.finding .top-find input[type="search"],
-  body.open-find .top-find input[type="search"],
   body.unnamed .top-find input[type="search"] { width: auto; flex: 1 1 auto; }
   /* The facts go with the name, because they are the name's second half: what
      the song says about itself has nothing to do with the question being typed
@@ -3192,11 +3188,15 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    do on a narrow screen (see .top-actions .btn svg + .lb).
 
    Quiet until the hand is on it, and then red: the colour belongs to what the
-   press does, not to a button sitting in a row. */
-.btn.drop { padding-inline: 11px; color: var(--ink-soft); }
-.btn.drop .lb { display: none; }
-.btn.drop svg { width: 18px; height: 18px; }
-.btn.drop:hover { background: #fdeceb; color: #b3261e; border-color: #f3c9c5; }
+   press does, not to a button sitting in a row.
+
+   Called .bin and not .drop, which is taken: .drop is the dashed box a file is
+   dragged into, and it is written as a bare class, so it would have reached
+   this button and made it one too. */
+.btn.bin { padding-inline: 11px; color: var(--ink-soft); }
+.btn.bin .lb { display: none; }
+.btn.bin svg { width: 18px; height: 18px; }
+.btn.bin:hover { background: #fdeceb; color: #b3261e; border-color: #f3c9c5; }
 
 /* --- AND THE ANSWER THAT KEEPS IT, IN THE SAME COLOUR AT FULL WEIGHT --------
    The pair in this row is one question with two answers, and it was drawn as a

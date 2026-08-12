@@ -6343,14 +6343,11 @@
        while it is empty (see state.sift in renderPlaylist). */
     var glass = document.getElementById("topFind");
     if (glass) glass.hidden = p.length > 0 && !state.sift;
-    /* AND ON SOME PAGES IT IS A BOX ON A PHONE TOO, NOT A GLASS TO BE PRESSED.
-       The narrow bar turns it into one more picture in a row of pictures
-       because the row is full: a mark, the name of the page and four buttons.
-       A page whose bar is nearly empty has the room to leave the box a box,
-       and a box that has to be pressed before it says what it is for is a
-       search nobody looks for. Asked for by the page (see sift.open), because
-       only the page knows what else is standing on its bar. */
-    document.body.classList.toggle("open-find", !!(state.sift && state.sift.open));
+    /* AND WHETHER IT IS A BOX OR A GLASS TO BE PRESSED IS NOT DECIDED HERE. On
+       a narrow bar it is one more picture in a row of pictures when the row is
+       full, and a field across the whole row when the page has taken its own
+       name off the bar (see body.unnamed in the stylesheet). Which is the same
+       question asked once: the room is there or it is not. */
     /* And it says which of them it is. One word either way, because the box is
        not the thing to explain, but they are not the same word: everywhere else
        typing here narrows or leads somewhere, on a playlist what it leaves is a
@@ -9193,8 +9190,13 @@
     })).then(function () { return { done: done, of: songs.length }; });
   }
 
+  /* AND THIS PAGE DOES NOT NAME ITSELF IN THE BAR, for the reason the library
+     does not (see where in viewIndex): a wall of people under a back arrow is
+     not a page anybody has to be told the name of, and the word was eating the
+     width the box wanted. Kept in the tab, where a tab among thirty others IS
+     asked which page this is. */
   function viewCreators() {
-    where("יוצרים");
+    where("", "יוצרים | אקורדים");
     setBusy("טוען יוצרים");
 
     db.list().then(function (songs) {
@@ -9259,10 +9261,6 @@
         hint: "חיפוש יוצר...",
         label: "חיפוש לפי שם יוצר, או שם שיר שלו",
       };
-      /* and it stands here open, on a phone as on a desk: this bar carries the
-         way back and the name of the page and nothing else, so there is room
-         for the box to be a box (see body.open-find in the stylesheet) */
-      sift.open = true;
       state.sift = sift;
       /* the bar was painted before this page had a sieve, and the glass stands
          on a page only while there is one (see paintHeader) */
@@ -14944,8 +14942,14 @@
     return li;
   }
 
+  /* AND THIS PAGE DOES NOT NAME ITSELF IN THE BAR EITHER, for the reason the
+     library does not (see where in viewIndex): the word was standing beside a
+     back arrow, over a wall of playlists, saying what anybody can see, and what
+     it cost is the room. The box takes whatever the row has left over, and now
+     that is the whole of it. Kept in the tab, where a tab among thirty others
+     IS asked which page this is. */
   function viewPlaylists() {
-    where("פלייליסטים");
+    where("", "פלייליסטים | אקורדים");
     setBusy("טוען פלייליסטים");
 
     /* The names come along, because they are what a row of this list shows.
@@ -15075,10 +15079,6 @@
         hint: "חיפוש פלייליסט...",
         label: "חיפוש לפי שם פלייליסט, תיאור, או שם שיר שבתוכו",
       };
-      /* and it stands here open, on a phone as on a desk: this bar carries the
-         way back and the name of the page and nothing else, so there is room
-         for the box to be a box (see body.open-find in the stylesheet) */
-      sift.open = true;
       state.sift = sift;
       /* the bar was painted before this page had a sieve, and the glass stands
          on a page only while there is one (see paintHeader) */
@@ -15313,15 +15313,13 @@
     /* the one thing this sieve does that the library's does not, which is what
        the box says of itself while it is here (see paintHeader) */
     sift.adds = true;
-    /* and it stands open here too, on a phone as on a desk. The bar of an open
-       playlist is the way back, the name of the list, and one button on the far
-       end, which is not the full row the glass exists to save room on. And this
-       is the page where the box is not a way somewhere else: it is the only way
-       to put a song in the list, and the line under an empty playlist has to
-       send people to it in words. A picture that has to be pressed before it
-       says what it is for is the wrong shape for that (see body.open-find in
-       the stylesheet). */
-    sift.open = true;
+    /* AND HERE IT IS A GLASS TO BE PRESSED, not a field standing open. This is
+       the one page of the three that keeps its name on the bar, and it has to:
+       the name of a playlist is the page, and it is a field somebody types
+       their own words into. A box across the row leaves the row nothing, and
+       the name of the list came out as three letters and a dot. So on a narrow
+       bar this one stays a picture in the corner until it is pressed, and the
+       press is what hands it the whole row (see body.finding). */
     state.sift = sift;
     paintHeader();
 
@@ -19217,14 +19215,16 @@
        phrase in the row would make the question look like it has three equal
        sides. A bin is what that press is called everywhere, and it goes red
        under the hand, where the thing it does is worth saying. */
-    var drop = button("מחיקת ההקלטה", ICON.trash, "ghost drop", function () {
+    /* .bin and not .drop: .drop is already the dashed box a file is dragged
+       into, and a bare class in this stylesheet reaches anything wearing it. */
+    var bin = button("מחיקת ההקלטה", ICON.trash, "ghost bin", function () {
       /* No confirming. Nothing has been written down: this take is on the
          device and nowhere else, and "throw it away" beside it asks nothing
          either. */
       endTape(made.song);
       dlg.close();
     });
-    drop.title = "מחיקת ההקלטה";
+    bin.title = "מחיקת ההקלטה";
     var toss = button("הפעלה ללא שמירה", null, "ghost far toss", function () {
       done = true;
       over = endTape(made.song);
@@ -19257,7 +19257,7 @@
         err.textContent = (e && e.message) || "לא הצלחנו לשמור";
       });
     });
-    actions.appendChild(drop);
+    actions.appendChild(bin);
     actions.appendChild(toss);
     if (auth.in) actions.appendChild(save);
     else box.appendChild(el("p", "muted", "כדי לשמור הקלטה צריך להיות מחובר לחשבון."));
