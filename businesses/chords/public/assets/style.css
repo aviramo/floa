@@ -3292,6 +3292,14 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    on the corner. */
 .pop .dlg-in { padding: 24px; }
 
+/* AND A BAR IT WAS GIVEN BEFORE IS NOT SHOWN. The account never has one, but
+   the creators and the style are a sheet on a phone and a pop on a wide screen
+   (see openByWindow in app.js), and the panel is built once: one opened at the
+   foot of a narrow window keeps the bar it was given there. A handle offering a
+   gesture that has nowhere to go is worse than no handle, so it comes off with
+   the shape, and the push comes off with it (see gripUp). */
+.pop .grip { display: none; }
+
 /* IT COMES UP OUT OF ITSELF, rather than up from an edge. A shape that grows
    the last few percent into place says the same thing the rise from the foot
    of the screen says, that this arrived and the page under it is still the

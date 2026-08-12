@@ -7005,6 +7005,13 @@
 
     card.addEventListener("pointerdown", function (event) {
       if (event.button || live || waiting) return;
+      /* AND A PANEL WITH NO BAR ON IT HAS NO PUSH. The bar is the whole of what
+         says this can be pushed down, so a panel that is not showing one is not
+         standing on an edge and has nowhere to be pushed to: a panel that is a
+         sheet on a phone and a pop in the middle of a wide screen keeps the bar
+         it was given the first time it opened, hidden (see openByWindow, and
+         .pop .grip in the stylesheet). The gesture stays with the handle. */
+      if (!grip.offsetHeight) return;
       var onGrip = !!(event.target.closest && event.target.closest(".grip"));
       var press = null;
       if (!onGrip) {
@@ -7092,6 +7099,28 @@
      a gesture that has nowhere to go. */
   function openPop(dlg) {
     showOver(dlg);
+  }
+
+  /* --- AND ONE PANEL IS EACH OF THEM, DEPENDING ON THE WINDOW ---------------
+     The creators and the style. A sheet is the right shape for it on a phone,
+     where the panel comes up under the thumb that asked for it and the song is
+     directly behind it. On a wide screen neither of those is true: the hand is
+     halfway up the page where the row was pressed, the foot of a tall window is
+     nowhere near the eye, and a panel of fields pinned to the bottom edge is a
+     long way to look. So there it opens in the middle, the shape the account
+     already has (see .dlg.pop in the stylesheet).
+
+     The shape is chosen on the way in and not once at the start, because a
+     window is resized and a panel here is built once and opened many times. The
+     class carries it, so what was a sheet a moment ago opens as a pop the next
+     time it is asked for. */
+  function openByWindow(dlg) {
+    if (NARROW.matches) {
+      dlg.classList.remove("pop");
+      return openSheet(dlg);
+    }
+    dlg.classList.add("pop");
+    openPop(dlg);
   }
 
   /* Everything both of them are, less the shape: this is what a dialog here
@@ -10778,7 +10807,7 @@
            the button and the publish row already use (see .has-news). What was
            offered takes a panel; that it is there takes a dot. */
         news: function () { return metaWaiting().length > 0; },
-        open: function () { openSheet(metaPanel); },
+        open: function () { openByWindow(metaPanel); },
       };
 
       /* The direction used to be one button up here, and it belonged to the
@@ -11097,7 +11126,7 @@
         state.songDetails = {
           said: "יוצרים וסגנון", icon: ICON.tag,
           news: function () { return metaWaiting().length > 0; },
-          open: function () { openSheet(metaPanel); },
+          open: function () { openByWindow(metaPanel); },
         };
       } else {
         var told = songTold(song);
@@ -11126,7 +11155,7 @@
             /* the same two things it holds while it is being written, read
                rather than filled in */
             said: "יוצרים וסגנון", icon: ICON.tag,
-            open: function () { openSheet(metaPanel); },
+            open: function () { openByWindow(metaPanel); },
           };
 
           /* On the way DOWN, so it lands before the link's own handler does: a
