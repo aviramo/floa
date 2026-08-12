@@ -4451,7 +4451,7 @@
     doors: null, wake: null, ear: null, takeSong: null, redrawTakes: null,
     takesOpen: null, takesCount: 0,
     songMoves: null, songDetails: null,
-    songOut: null, songPast: null, songKill: null,
+    songOut: null, songPast: null, songKill: null, songShare: null,
     songUndo: null, songRevert: null,
     up: null,
   };
@@ -4463,7 +4463,7 @@
   var PAGE_STATE = ["printable", "printer", "killer", "editToggle",
     "songControls", "redrawSong", "rehome", "doors", "wake", "sift", "ear",
     "takeSong", "redrawTakes", "takesOpen", "takesCount",
-    "songMoves", "songDetails", "songOut", "songPast", "songKill",
+    "songMoves", "songDetails", "songOut", "songPast", "songKill", "songShare",
     "songUndo", "songRevert", "up"];
 
   function takeKids(node) {
@@ -5910,6 +5910,29 @@
     });
     fork.classList.toggle("is-on", earOpen() && earMode === "tune");
     rows.push(fork);
+
+    /* AND THE WAY TO HAND THE SONG TO SOMEBODY ELSE, which is the one thing in
+       here that is about a second person. A song is read off a screen by
+       whoever is holding it and then shown to the person next to them, and
+       until now the way to do that was to select the address out of the bar,
+       which a phone barely has.
+
+       ONLY WHILE THE SONG IS PUBLISHED, for the same reason the button on a
+       recording is not there until the recording is out (see takeRow): a link
+       to a page nobody else may open is a dead link, and handing one over is
+       worse than offering nothing. A draft simply has no row here, and the way
+       to make it live is פרסום, a few rows down.
+
+       Asked at the press rather than built with the page, because the answer
+       moves under it: a published song typed into is a draft again from that
+       keystroke on (see mark), and the row has to go with it. */
+    var pass = state.songShare && state.songShare();
+    if (pass) {
+      rows.push(button("שיתוף השיר", ICON.share, "ghost small", function () {
+        closeUnder();
+        pass();
+      }));
+    }
 
     /* AND THE MEASUREMENT IS NOT OFFERED HERE. The working, the twelve numbers
        and what the ear nearly said, is a thing for whoever is asking why the
@@ -11222,6 +11245,24 @@
     if (!past && owned && !coming) {
       state.songOut = function () {
         return song.published ? null : publishSong;
+      };
+    }
+
+    /* AND THE OPPOSITE OF IT: once the song IS out, there is an address worth
+       giving somebody. Whose song it is does not come into this. A link to a
+       published song is a link anybody holding it may follow, so passing it on
+       is reading, not writing, and it is offered on every song in the library.
+
+       Not on a version being read. That page is what the song used to say, and
+       the address for it is a way back into somebody's own history rather than
+       a song to send anybody to.
+
+       The SONG and not what the editor is holding: `row` is the published
+       words, `song` may be an offer standing beside them (see offerSong), and
+       what a link opens is the song. */
+    if (!past) {
+      state.songShare = function () {
+        return row.published ? function () { shareSong(row); } : null;
       };
     }
 
@@ -16554,6 +16595,9 @@
     state.songPast = null;
     state.songKill = null;
     state.songLists = null;
+    /* and the address worth passing on, which was that song's and not the
+       next page's */
+    state.songShare = null;
     /* and the ways back through a song that is not on the screen any more */
     state.songUndo = null;
     state.songRevert = null;
@@ -19732,26 +19776,44 @@
 
      Now the button is not there at all until both are out (see takeRow), so
      what this passes on is an address in the library like any other, with one
-     recording named on the end of it.
-
-     Handed to whatever the machine has. A phone opens the sheet every app on
-     it is listed in; a desk has no such thing and gets the link on the
-     clipboard, which is what it would have done with it anyway. */
+     recording named on the end of it. */
   function shareTake(row, song) {
     /* With the slash on the end, which is the address the app itself writes
        (see addr): the one without it is answered by a redirect, and a redirect
        is one more place the "?t=" can be dropped on the way. */
     var where = (window.SITE_ORIGIN || location.origin) + addr(song.slug) + "?t=" + row.id;
-    var note = { title: song.title || "הקלטה", url: where };
+    return passOn(where, song.title || "הקלטה", "הקישור להקלטה");
+  }
+
+  /* --- AND A LINK TO THE SONG ITSELF ----------------------------------------
+     The same address without a recording named on it: the words and the
+     chords, as the library holds them. Offered from the panel over a song
+     (see songRows), and only while the song is published, for the reason the
+     take's own button is not there until it is out: an offer to pass on
+     something nobody else may open is an offer to send somebody a dead link. */
+  function shareSong(song) {
+    var where = (window.SITE_ORIGIN || location.origin) + addr(song.slug);
+    return passOn(where, song.title || "שיר", "הקישור לשיר");
+  }
+
+  /* --- HANDING AN ADDRESS TO WHATEVER THE MACHINE HAS -----------------------
+     A phone opens the sheet every app on it is listed in; a desk has no such
+     thing and gets the link on the clipboard, which is what it would have done
+     with it anyway, and a machine with neither is asked to copy it by hand.
+
+     Written once, because a song and a recording of it are the same act done
+     to two addresses: pass this on. What differs is the address and the word
+     for the thing, and both are asked for. */
+  function passOn(where, title, asked) {
     if (navigator.share) {
-      return navigator.share(note).catch(function () { /* waved off */ });
+      return navigator.share({ title: title, url: where }).catch(function () { /* waved off */ });
     }
     if (navigator.clipboard && navigator.clipboard.writeText) {
       return navigator.clipboard.writeText(where)
         .then(function () { toast("הקישור הועתק"); })
-        .catch(function () { window.prompt("הקישור להקלטה", where); });
+        .catch(function () { window.prompt(asked, where); });
     }
-    window.prompt("הקישור להקלטה", where);
+    window.prompt(asked, where);
     return Promise.resolve();
   }
 
