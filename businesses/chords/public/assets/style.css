@@ -1548,8 +1548,11 @@ body.sifting .list:not(.band), body.sifting .set { min-height: calc(100dvh - var
   /* THE WHOLE CARD IS THE HANDLE (see the move in renderPlaylist), and a card
      being dragged with a mouse would otherwise take the words on it with it:
      a press that travels across text is the browser selecting the text, and
-     the move would come with half a song title painted blue behind it. */
-  user-select: none; -webkit-user-select: none;
+     the move would come with half a song title painted blue behind it. And on
+     a phone the same press held over the name is the browser offering to open
+     the link somewhere else, which is a panel arriving in the middle of a
+     move. */
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
 }
 /* AND IT LIFTS UNDER A POINTER, the way the library's card does, because it is
    the same card and a press on it goes to the same place. Lit off the part of

@@ -15597,6 +15597,15 @@
       if (dragging && event.cancelable) event.preventDefault();
     }, { passive: false });
 
+    /* AND A LONG PRESS ON A PHONE IS THE BROWSER'S OWN GESTURE TOO: held over a
+       link it offers to open it elsewhere, which would arrive half a second
+       into a move and over the card being moved. The card asked first, so the
+       menu is refused while one is travelling. A right click never gets this
+       far, because a press that starts a move is the first button only. */
+    listEl.addEventListener("contextmenu", function (event) {
+      if (dragging) event.preventDefault();
+    });
+
     listEl.addEventListener("pointermove", function (event) {
       if (press && event.pointerId === held) {
         var went = Math.abs(event.clientX - atX) + Math.abs(event.clientY - atY);
