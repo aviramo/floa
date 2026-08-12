@@ -26,7 +26,7 @@
    real page over them the moment it starts. What a person gets is unchanged.
 
    Everything else under /chords/ is still the app alone, and still arrives
-   through the domain's 404: an evening, a version, an editor, a song written
+   through the domain's 404: a playlist, a version, an editor, a song written
    in the last minute. A private page is not in a sitemap and a page that
    changes every minute is not worth a file.
    ========================================================================== */

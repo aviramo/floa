@@ -153,7 +153,7 @@ body {
 /* THE WHOLE WINDOW, ON EVERY PAGE. It used to be a column of about eighty
    characters, with the library alone allowed out of it, and that rule came
    from a page of prose. Nothing here is prose: the library is a wall of
-   cards, an evening is a wall of cards, and a song is a sheet that answers a
+   cards, a playlist is a wall of cards, and a song is a sheet that answers a
    wide screen by standing in two or three columns rather than by running down
    the middle of it. So the gutter is the only thing left of it. */
 .wrap { width: calc(100% - 32px); margin-inline: auto; }
@@ -306,7 +306,7 @@ body.at-home .brand { display: none; }
    note over .list. */
 .top-actions { margin-inline-start: auto; display: flex; align-items: center; gap: 8px; }
 /* AND WITH NOTHING IN IT, IT IS NOT THERE AT ALL. A page whose corner holds
-   nothing (the bill, the people, an evening with nothing to do to it) still
+   nothing (the bill, the people, a playlist with nothing to do to it) still
    spent the row's gap on this box, and worse than the gap: the auto margin
    above is what holds a corner, and TWO of them in one row split the space
    between them rather than one of them taking it. Which is what stood between
@@ -370,10 +370,10 @@ body.at-home .brand { display: none; }
    The app's name used to stand here beside its own mark, which is one word
    saying what the mark already said and the only word on the bar nobody is
    looking for. In its place goes the name of the page you are on: the song,
-   the evening, the person, the shelf.
+   the playlist, the person, the shelf.
 
    And on the three pages where that name is a THING rather than a label, it
-   is the field itself. A song's name, an evening's name and a person's name
+   is the field itself. A song's name, a playlist's name and a person's name
    are typed here and nowhere else. The page carried a second copy as a
    heading, and two editable copies of one name are two places for it to be
    wrong. On paper the heading comes back (see .on-paper), because paper has
@@ -431,7 +431,7 @@ body.unnamed .top-name { display: none; }
    It used to be on the library's own page, which is the one page where a
    search box is worth least: the songs are already on the screen. Where it is
    actually wanted is everywhere else. You are inside a song and you want the
-   next one. You are planning an evening and you want to remember what you
+   next one. You are planning a playlist and you want to remember what you
    played in March. You have a name in your head and you want everything that
    person wrote.
 
@@ -448,7 +448,7 @@ body.unnamed .top-name { display: none; }
    AND IT TAKES WHATEVER THE BAR HAS LEFT. It was capped at 420px, which on a
    wide screen left a stretch of empty bar between the name of the page and the
    row of buttons: room nothing was using, next to the one control that could
-   use it. A song's name is long, an evening's is longer, and what you type
+   use it. A song's name is long, a playlist's is longer, and what you type
    here is one of them. Everything else on the bar is either fixed or asks for
    only as much as its own words need, so the space that is left over is the
    search box's by default. */
@@ -561,7 +561,7 @@ body.unnamed .top-name { display: none; }
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .find-tags { flex: none; display: flex; gap: 4px; }
-/* AND WHERE A ROW IS NOT A WAY ANYWHERE, WHAT PRESSING IT DOES. On an evening
+/* AND WHERE A ROW IS NOT A WAY ANYWHERE, WHAT PRESSING IT DOES. On a playlist
    the panel is the library being picked out of (see state.pick), so the end of
    the row carries the one press there is to make rather than a label saying
    what kind of thing this is: it is a song, they all are.
@@ -569,7 +569,7 @@ body.unnamed .top-name { display: none; }
    A word and not a plus: what the press does is not the same both ways, and
    the row is where somebody finds out which way it is facing. */
 .find-mark { flex: none; font-size: 13px; font-weight: 700; color: var(--accent); }
-/* already in the evening: the row says so, and the press takes it out */
+/* already in the playlist: the row says so, and the press takes it out */
 .find-row.is-in { background: #eef5f4; }
 .find-row.is-in:hover, .find-row.is-in.is-on { background: #e4efed; }
 .find-row.is-in .find-mark { color: var(--ink-soft); }
@@ -581,7 +581,7 @@ body.unnamed .top-name { display: none; }
    The account is a chip over the wall now, with the other doors (see
    .tally-door), and it is that chip either way round: a name signed in, and
    the word התחברות over Google's mark signed out. The bar on the library
-   holds none of it. The evenings and the people still carry the way in
+   holds none of it. The playlists and the people still carry the way in
    themselves, having no such row (see session in app.js). */
 
 /* On a phone the bar holds four things and the screen holds about two of
@@ -834,11 +834,11 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    and a title that repeats that only pushed the songs down the screen. */
 /* AND THERE WAS A .search HERE, and now there is no box on a page at all. It
    was the library's own, with the state chips riding inside it; searching
-   moved into the bar, where it reaches the people and the evenings as well and
+   moved into the bar, where it reaches the people and the playlists as well and
    stands on every page rather than on one, and the chips moved down onto the
    row over the wall, where they are filtering and nothing else.
 
-   The shape outlived it by one box, the shelf at the foot of an evening, and
+   The shape outlived it by one box, the shelf at the foot of a playlist, and
    that box is the bar's now too (see state.pick). Which is the whole point of
    there being one: a person types the name of a song into the same field
    wherever in this app they happen to be standing. */
@@ -924,7 +924,7 @@ body.sifting .list:not(.band) { min-height: calc(100dvh - var(--top-h)); }
 .tally-add svg { width: 16px; height: 16px; }
 
 /* --- AND ABOVE THAT ROW, THE DOORS TO THE REST OF THE APP -------------------
-   The evenings, the people, and whoever is signed in. They were three rows
+   The playlists, the people, and whoever is signed in. They were three rows
    behind three dots in the corner of the bar, and a picture of three dots
    says "there is more" and nothing else: half the app sat behind a press
    that had to be spent before it could be read. They are chips over the wall
@@ -1091,7 +1091,7 @@ body.sifting .list:not(.band) { min-height: calc(100dvh - var(--top-h)); }
    was four :has() rules counting up to four cards, which is the one case the
    count and the answer agree on. The band of shelves and the bill middle
    themselves, further down. */
-.list:not(.band):not(.ledger) { margin-inline: auto; }
+.list:not(.band):not(.ledger):not(.sets) { margin-inline: auto; }
 /* A card is never split down the middle of itself by a column ending, and it
    carries its own space underneath: in a column layout there is no gap
    property to do it. */
@@ -1114,7 +1114,7 @@ body.sifting .list:not(.band) { min-height: calc(100dvh - var(--top-h)); }
 .list a {
   display: flex; align-items: flex-start; gap: 14px; text-decoration: none; color: inherit;
   /* ONE CARD IS ONE CARD, WHEREVER IT IS. A song in the library and a song in
-     an evening are the same sheet of paper on the same desk, and they carry
+     a playlist are the same sheet of paper on the same desk, and they carry
      the same three things: the white, the hairline round it and the shadow
      under it (see .card). Half of them had no shadow, which on the same grey
      read as a box drawn on the desk beside a card rather than as another card.
@@ -1142,9 +1142,9 @@ body.sifting .list:not(.band) { min-height: calc(100dvh - var(--top-h)); }
 .when.has-takes { user-select: none; -webkit-user-select: none; }
 .list .t { font-weight: 700; font-size: 17px; }
 .list .a { color: var(--ink-soft); font-size: 14px; }
-/* What is in the evening, by name. Two lines at most: a line in an index is a
-   taste of the list, not the list, and an evening of thirty songs would push
-   the next evening off the screen. */
+/* What is in the playlist, by name. Two lines at most: a line in an index is a
+   taste of the list, not the list, and a playlist of thirty songs would push
+   the next playlist off the screen. */
 .list .names {
   margin-top: 2px;
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
@@ -1152,23 +1152,36 @@ body.sifting .list:not(.band) { min-height: calc(100dvh - var(--top-h)); }
 }
 /* --- WHAT IS IN AN EVENING, AS CHIPS --------------------------------------
    They were a sentence of names with dots between them, which reads as one
-   thing said about the evening. They are a list of songs, and what somebody
+   thing said about the playlist. They are a list of songs, and what somebody
    looking at one on this card almost always wants is to open it, so each is a
-   chip and a press on it goes to the song rather than to the evening around
-   it (see eveningRow).
+   chip and a press on it goes to the song rather than to the playlist around
+   it (see playlistRow).
 
    No clamp on it. Two lines of a sentence was a taste of a list; chips wrap
-   into a block that is plainly a list, and an evening with twenty songs in it
-   is an evening with twenty songs in it. */
-.ev-songs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+   into a block that is plainly a list, and a playlist with twenty songs in it
+   is a playlist with twenty songs in it. */
+.pl-songs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 /* A button drawn as the chip it is standing among: the reset first, then the
    two things .tag would have given it, because `font` is a shorthand and this
    rule comes after it. */
-.ev-song {
+.pl-song {
   appearance: none; cursor: pointer; border: 0;
   font: inherit; font-size: 12px; font-weight: 600; line-height: 1.6;
 }
-.ev-song:hover { color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.pl-song:hover { color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+
+/* --- AND A PLAYLIST'S CARD IS AS WIDE AS THE PAGE --------------------------
+   The songs stand in columns of 340 because a song card is a name, a line of
+   credit and three chords: narrow things, many of them, read by scanning down
+   a shelf. A playlist card is a name with a LIST inside it, and the list is
+   the whole of what somebody came to look at. Poured into one 340 column it
+   broke a set of fifteen songs into fifteen lines of one chip each, a tall
+   thin ribbon of names beside an empty half of a screen.
+
+   So this wall is one card wide. Full width, one under the next, and the
+   chips wrap across the room they need. The script leaves it alone: middling
+   a wall is for a wall that has columns to count (see middleWalls). */
+.list.sets { columns: auto; }
 
 /* The name, and what the reading of it cost, which is the only thing that
    shares its line. */
@@ -1179,8 +1192,8 @@ body.sifting .list:not(.band) { min-height: calc(100dvh - var(--top-h)); }
 .list .by { color: var(--ink-soft); font-size: 14px; }
 /* Only the one standing under the row, and not the count of songs that still
    sits inside it on a person's card. The same two pixels under a name that has
-   no row around it, which is an evening's card: when and where sit against the
-   name they are about, and against each other. */
+   no row around it, which is a playlist's card: what the list says about
+   itself sits against the name it is about. */
 .list .t-row + .by, .list .t + .by { margin-top: 2px; }
 /* Which of the songs by this name. Only appears where a name repeats, so an
    index of songs that are each the only one of themselves never grows a column
@@ -1195,7 +1208,7 @@ body.sifting .list:not(.band) { min-height: calc(100dvh - var(--top-h)); }
    the page's own direction: the first one the song plays is the first one you
    read.
 
-   The same three on a row of an evening, which is the list somebody is
+   The same three on a row of a playlist, which is the list somebody is
    actually holding a guitar over. Two places, one look, one rule. */
 .list .keys, .set-main .keys {
   display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 6px;
@@ -1235,7 +1248,7 @@ body.sifting .list:not(.band) { min-height: calc(100dvh - var(--top-h)); }
    The count stays inside it: what is being pressed is "the recordings of this
    song", and how many there are is part of what that means. */
 /* AND IT IS NOT THE WALL'S. The button is part of a song card, and a song
-   card is drawn on the library, on a person's page and on an evening's list,
+   card is drawn on the library, on a person's page and on a playlist's list,
    so what it looks like cannot hang off the list it happened to be born in.
    Everything it needs it carries itself: the width it wants, and a refusal to
    be squeezed by whatever it is standing beside. */
@@ -1445,91 +1458,126 @@ body.sifting .list:not(.band) { min-height: calc(100dvh - var(--top-h)); }
 .coming { text-align: center; padding: 30px 0 34px; }
 .coming p { margin: 12px 0 0; font-size: 14px; }
 
-/* --- an evening of singing ----------------------------------------------
-   A name, a date, and songs in the order they will be sung. The head and the
-   tools are the song page's own, because it is the same shape of page: one
-   thing, open, with its controls above it. What is new starts at .set.
+/* --- a playlist ----------------------------------------------------------
+   A name, a line saying what the list is, and the songs in the order they will
+   be sung. The head and the tools are the song page's own, because it is the
+   same shape of page: one thing, open, with its controls above it. What is new
+   starts at .set.
    ------------------------------------------------------------------------ */
 
 /* A name that has not been typed yet still has to be somewhere to click. An
    empty contenteditable is zero pixels wide, so it says what it is instead.
-   Both names on this app work that way, a song's and an evening's. */
-/* The headings a song, an evening and a person carry are for PAPER now: the
+   Both names on this app work that way, a song's and a playlist's. */
+/* The headings a song, a playlist and a person carry are for PAPER now: the
    name itself is typed in the bar, and a page that showed it twice would have
    two places for it to be wrong. Paper has no bar. */
-.song-head h1.on-paper, .ev-title.on-paper { margin: 0 0 6px; }
-/* When and where, on one line under the name, and written the way the name is
-   written: a line to put words on rather than a box to fill in. The fields
-   themselves are styled with the song's, down at .song-meta. The date takes the
-   width a date needs and the place takes the rest. */
-/* AND THE AIR IS UNDER IT, NOT OVER IT. It had none of its own over it and
+.song-head h1.on-paper, .pl-title.on-paper { margin: 0 0 6px; }
+
+/* WHAT THE LIST IS, IN ONE FIELD UNDER THE NAME. It was two, a date and a
+   room, laid out as a little grid of labels and answers: a form, on a page
+   whose whole point is that there is nothing to fill in. What is here now is
+   a line of writing, so it is drawn the way the name above it is drawn, as
+   words on the page rather than as a box to complete.
+
+   AND THE AIR IS UNDER IT, NOT OVER IT. It had none of its own over it and
    four pixels under it, which put it in the middle of the band the bar leaves
-   over every page (see #app) and then dropped the first song of the evening
+   over every page (see #app) and then dropped the first song of the list
    straight onto it. It is the second line of a name that is in the bar: it
-   belongs up against what it is about, and the list below it is a different
-   thing and wants saying so. So ten of the band is taken back and spent on the
-   other side of the line.
-
-   The two stand at their tops, not at their bottoms: the place can take a
-   second line and the date never can, and aligning their ends would drop the
-   date half a line down the row to keep the two feet level.
-
-   AND TWENTY PIXELS BETWEEN WHEN AND WHERE WAS A HOLE IN THE MIDDLE OF A
-   SENTENCE. The row reads "תאריך 14/08/2026 מיקום שבט", four words in one
-   breath, and the widest gap on it stood between the two halves rather than
-   around them. Twelve is still half again what holds a word to its own field,
-   which is all the row has to say about where one of them ends. */
-.ev-meta {
-  display: grid; align-items: start; gap: 4px 12px;
-  grid-template-columns: auto minmax(0, 1fr);
-  margin: -10px 0 16px; max-width: 560px;
-}
-.ev-when:empty { display: none; }
-/* the same date the field above holds, kept back for the printer */
+   belongs up against what it is about, and the songs below are a different
+   thing and want saying so. So ten of the band is taken back and spent on the
+   other side of the line. */
+.pl-meta { margin: -10px 0 16px; max-width: 640px; }
+.pl-said:empty { display: none; }
+/* what the field above holds, as plain words, kept back for the printer. The
+   lines it was typed on are lines it keeps: a description of three things on
+   three lines prints as three lines. */
 .on-paper { display: none; }
+.pl-said { white-space: pre-line; }
 
 /* What the save button on the song page says by appearing and disappearing.
    There is no button here (every change writes itself), so the word carries
    it alone. */
 /* Where the writing got to. In the top bar on a song, beside the ways back,
-   because it is about the page rather than about the song; on an evening it is
+   because it is about the page rather than about the song; on a playlist it is
    all that a toolbar left behind, so it stands on its own line there. */
 .save-state { font-size: 13px; font-weight: 600; color: var(--ink-soft); white-space: nowrap; }
-/* on the evening it is the whole of what a toolbar left behind, so it stands
+/* on the playlist it is the whole of what a toolbar left behind, so it stands
    on its own line rather than at the end of a row of controls */
-.ev-state { display: block; margin: 6px 0 18px; }
+.pl-state { display: block; margin: 6px 0 18px; }
 /* And it is empty unless a write failed, which is the only thing it has left
    to say (see note): an empty line still spends its margins, so it goes. */
-.ev-state:empty { display: none; }
+.pl-state:empty { display: none; }
 .save-state.is-bad { color: var(--danger); }
 
-/* The songs. An ol, so the numbers are the browser's own counter: a drag
-   moves one row and never redraws the list, and a number written by hand
-   would have to be rewritten by hand too. */
-.set { list-style: none; counter-reset: song; margin: 0 0 18px; padding: 0; display: grid; gap: 8px; }
+/* --- THE SONGS, AND THEY ARE THE WALL THE LIBRARY IS ------------------------
+   This was a column of ribbons: one row per song, each the full width of the
+   window, each holding a name and two short lines at one end and a hand's
+   width of nothing across the middle. A song in a list looked nothing like the
+   same song on the shelf it came from, and the two halves of the app read as
+   two apps.
+
+   So it is the same wall, in the same columns, at the same width (see .list).
+   The card is the same card: white, a hairline round it, the shadow under it,
+   the name over the people over the shapes. What it carries that the library's
+   does not is the number it stands at and the two tools that move it and take
+   it out.
+
+   COLUMNS AND NOT A GRID, for the reason the library gives at length: a grid
+   puts its rows in step, so every card in a row is the height of the tallest
+   in it, and a song with no chords is either stretched or followed by a hole.
+   Columns have no rows.
+
+   An ol either way, so the numbers are the browser's own counter: a drag moves
+   one card and never redraws the list, and a number written by hand would have
+   to be rewritten by hand too. */
+.set {
+  list-style: none; counter-reset: song; margin: 0 0 18px; padding: 0;
+  columns: auto 340px; column-gap: 12px;
+}
+/* A card is never split down the middle of itself by a column ending, and it
+   carries its own space underneath: in a column layout there is no gap
+   property to do it (see .list li). */
 .set-row {
   counter-increment: song;
-  display: flex; align-items: center; gap: 12px;
-  /* a song in an evening is a card like a song in the library (see .list a) */
+  break-inside: avoid; margin-bottom: 12px;
+  display: flex; align-items: flex-start; gap: 12px;
+  /* a song in a playlist is a card like a song in the library (see .list a) */
   background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 12px 16px;
+  padding: 14px 18px;
 }
+/* The number is the card's, not the row's: it stands at the top beside the
+   name rather than in the middle of a card whose height it knows nothing
+   about.
+
+   And it is the SIZE of the name, which it was not on the ribbon this used to
+   be: two pieces of text on one line, at two sizes and two line heights, do
+   not sit on the same line, they sit a pixel and a half apart, and on a wall
+   of cards that is a column of numbers that all look mispositioned. Same size,
+   same line box, and what keeps it quiet is the grey. */
 .set-row::before {
   content: counter(song) ".";
   flex: none; min-width: 2ch;
-  font-weight: 700; font-size: 15px; color: var(--ink-soft);
+  font-weight: 700; font-size: 17px; color: var(--ink-soft);
   font-variant-numeric: tabular-nums;
 }
 .set-row.is-moving { opacity: .55; }
-/* the song was deleted from the library after it was put in the evening */
+/* the song was deleted from the library after it was put in the playlist */
 .set-row.is-gone { border-style: dashed; color: var(--ink-soft); }
+
+/* --- THE FAR CORNER OF THE CARD, which is where the library's keeps its own
+   (see .list .side). The tools first, because they are what this page is for
+   doing, and whatever there is to hear under them. */
+.set-side {
+  flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
+}
+.set-tools { display: flex; align-items: center; }
 
 .set-main { flex: 1 1 auto; min-width: 0; }
 .set-main .t-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 /* Who wrote it, on the line under the name, in the same ink and at the same
    two pixels the wall's cards hold it at (see .list .by). One song is one card
-   wherever it is shown, and an evening is the list of the same songs. */
+   wherever it is shown, and a playlist is the list of the same songs. */
 .set-main .by { color: var(--ink-soft); font-size: 14px; }
 .set-main .t-row + .by { margin-top: 2px; }
 .set-t { font-weight: 700; font-size: 17px; color: inherit; text-decoration: none; }
@@ -1541,10 +1589,10 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 .set-main.is-way:hover .set-t { color: var(--accent); }
 
 /* Always there, unlike the song editor's grip, which appears under the
-   pointer. A row of an evening is a whole row wide and gets dragged on a
-   phone, where there is no pointer to appear under. */
+   pointer. A card in a playlist gets dragged on a phone, where there is no
+   pointer for anything to appear under. */
 .set-grip {
-  flex: none; width: 30px; height: 34px; padding: 0;
+  flex: none; width: 30px; height: 30px; padding: 0;
   border: 0; background: none; color: var(--ink-soft);
   display: inline-grid; place-items: center;
   cursor: grab; touch-action: none;
@@ -1555,14 +1603,14 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 .set-grip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--corner); }
 
 /* THERE WAS A .pool HERE: the library, as a panel nailed to the foot of every
-   evening. A heading, a sentence explaining itself, a second search field and
+   playlist. A heading, a sentence explaining itself, a second search field and
    the whole shelf under it, open on a page of three songs whether or not
-   anybody was adding one, and the evening above it pushed up the screen by it.
+   anybody was adding one, and the playlist above it pushed up the screen by it.
 
    It is the box in the bar now, which is the field this app already searches
    songs in and which costs the page nothing while it is shut (see state.pick).
    What is left of the panel is two lines further up this file: a mark on the
-   end of a result saying whether that song is already in the evening. */
+   end of a result saying whether that song is already in the playlist. */
 
 /* --- song page ---------------------------------------------------------- */
 
@@ -1636,7 +1684,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 
 /* --- WHAT KIND OF THING THIS IS -------------------------------------------
    The four above say what state a song is in. These say what a thing IS: a
-   song, a person who wrote one, an evening it was sung at. One box searches
+   song, a person who wrote one, a playlist it was sung at. One box searches
    all of them now, so a row of results is a row of three different kinds of
    thing, and without a word on each the list is a list of names with no way
    to tell which page a press would open.
@@ -1771,7 +1819,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   display: none !important; opacity: 0; width: 0;
 }
 
-/* The head of a song and the head of an evening are written, not filled in.
+/* The head of a song and the head of a playlist are written, not filled in.
    The title above them is a bare line of text with no box around it, and a
    boxed field under it would say that the two are different kinds of thing when
    they are the same kind of thing. So the box goes and a rule stays: a line
@@ -1781,77 +1829,37 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    Two selectors deep on purpose. The shared field rule is an attribute
    selector, so it outranks a single class and would put the border, the white
    fill and the padding straight back. */
-.ev-meta label {
-  display: block; font-size: 13px; font-weight: 600; color: var(--ink-soft);
-}
-/* THE WORD SITS BESIDE ITS FIELD, ON EVERY SCREEN. It waited for a wide one
-   for a while, because a label of two words on a line of its own is cheaper
-   than a label of two words folded into a narrow row. These are one word each
-   and they live in a fixed column now, so even a phone can spare the fifty
-   pixels, and the form is three lines instead of six on the screen with the
-   least room to spare.
+/* And so is the line that says what the list is. Same page, same hand, and
+   the field is a line to READ on a list that has been made: the writing was
+   the ten seconds it took. So at rest it is words, and the rule arrives under
+   the pointer and stays while the field is being typed in, which is exactly
+   when there is a field.
 
-   AND THE WORD IS NOT RULED. The line ran under the whole row, the label
-   included, which draws the word as one more thing to fill in: "מילים" is the
-   question, not an answer anybody types over. It belongs to the field, so it is
-   the field's, and it starts where the field starts.
-
-   THE RULE UNDER THE NAME IS GONE WITH THE FIELD THAT HELD IT. A row is chips
-   and a plus at rest, and the line under the field arrives with the field, when
-   the plus is pressed (see .kinds-field above). */
-
-/* THE WHOLE OF WHEN AND WHERE IS ONE LINE, on every screen. It waited for a
-   wide one, because a narrow row had no answer for a date field: the browser
-   gives it a calendar button and a fixed width whether or not there is room.
-   The button is gone now (see below) and the field is as wide as the date
-   written in it, some ninety pixels, which even a phone can give the row
-   without folding it. So the two words stand beside their fields, and the
-   evening says when and where in one sentence rather than in a form of four
-   rows. */
-.ev-meta label { display: flex; align-items: baseline; gap: 8px; }
-.ev-meta label input, .ev-meta label textarea { flex: 1 1 auto; min-width: 0; }
-.ev-meta label input[type="date"] { flex: 0 0 auto; }
+   No label over it. A word saying "תיאור" over the one box on the page would
+   be a form growing back a row at a time; what the box is for is said by the
+   words already in it, or by the placeholder while there are none. */
 .song-meta input[type="text"],
-.ev-meta input[type="text"], .ev-meta input[type="date"], .ev-meta textarea {
+.pl-meta textarea {
   margin-top: 0; padding: 4px 2px; border-radius: 0;
   background: none; border: 0;
-}
-/* --- AND NOTHING IS RULED UNTIL IT IS REACHED FOR ---------------------------
-   The line under these two ran the width of the row, under the word as well as
-   under the field, and past the end of what was typed to the far edge of the
-   page: a rule under "מיקום" says the word is something to fill in, and a rule
-   across four inches of nothing says there is a field there wanting four inches
-   of answer. Neither is true. When and where are a line to READ on an evening
-   that has been planned, and the writing is the ten seconds it took.
-
-   So at rest they are words. The line arrives under the pointer and stays while
-   the field is being typed in, which is exactly when there is a field. */
-.ev-meta input[type="text"], .ev-meta input[type="date"], .ev-meta textarea {
   border-bottom: 1px solid transparent;
 }
-/* THE DATE IS THE WIDTH OF THE DATE. The browser hangs a little calendar on
-   the end of the field and holds room for it, so a date of ten characters sat
-   in a field wide enough for a sentence, with a picture in the gap. On a row
-   that reads "תאריך 14/08/2026 מיקום …" that gap is what breaks the sentence
-   in two. The button goes and the field closes to its own text; pressing the
-   date opens the calendar in its place (see the click handler). */
-.ev-meta input[type="date"] { width: auto; min-width: 0; }
-.ev-meta input[type="date"]::-webkit-calendar-picker-indicator,
-.ev-meta input[type="date"]::-webkit-inner-spin-button {
-  display: none !important; opacity: 0; width: 0;
-}
-/* And the place wraps rather than scrolling: a long address takes a second
-   line inside its own field, and the field grows to it (see fitWhere). */
-.ev-meta textarea {
+/* It wraps rather than scrolling, and it grows a line at a time to whatever
+   was typed into it (see fitSaid): a description is as long as somebody felt
+   like making it, and a field that hides its own second line is a field you
+   cannot read back. */
+.pl-meta textarea {
+  display: block; width: 100%;
   resize: none; overflow: hidden; line-height: 1.5;
+  font-size: 15px; color: var(--ink-soft);
   white-space: pre-wrap; overflow-wrap: break-word;
 }
-.ev-meta input:hover, .ev-meta textarea:hover { border-bottom-color: var(--line); }
+.pl-meta textarea:hover { border-bottom-color: var(--line); }
 /* The focus ring would be a box again, which is the one shape this field is
    trying not to be. The line answers instead, in the accent and a pixel
    heavier, and the weight is a shadow rather than a border so that nothing on
    the row moves when it arrives. */
-.ev-meta input:focus-visible, .ev-meta textarea:focus-visible {
+.pl-meta textarea:focus-visible {
   outline: none;
   border-bottom-color: var(--accent); box-shadow: 0 1px 0 var(--accent);
 }
@@ -3270,6 +3278,24 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   padding: 6px;
   background: #fff; border: 1px solid var(--line); border-radius: var(--corner);
   box-shadow: 0 6px 20px rgba(23, 32, 42, .16);
+  /* Every panel in here used to be three rows written by hand. One of them is
+     a list of whatever somebody has made (see askPlaylists), so it can be
+     twenty, and twenty rows hanging off a button in the corner is a panel
+     whose foot is below the screen and cannot be reached. */
+  max-height: 70vh; overflow-y: auto;
+}
+/* A LIST OF NAMES SOMEBODY ELSE WROTE, so the panel cannot be sized by what is
+   in it: one playlist called "שירים" and one called a sentence would give the
+   panel the width of the sentence. It stops at a readable line and the rest is
+   said by the end of it. */
+.print-menu .btn.pl-row > .lb {
+  max-width: 26ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* What a panel says when it is not a list of things to press: it is loading,
+   or there is nothing there yet. Not a row, because there is nothing to press,
+   and the rows around it are all presses. */
+.under-note {
+  padding: 9px 14px; font-size: 14px; color: var(--ink-soft);
 }
 /* A ROW IS A LINE OF A MENU, NOT A BUTTON IN A BOX. The panel already has a
    border and a shadow around it, and drawing a second border around every row
@@ -3502,18 +3528,22 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   .ln.is-gone { display: none; }
   body { background: #fff; }
 
-  /* An evening on paper is the name, the date and the songs in order. The
-     grips that reordered it and the buttons that emptied it are tools, and a
-     tool on a printed page is ink spent on something nobody can press. The
+  /* A playlist on paper is the name, the line under it and the songs in order.
+     The grips that reordered it and the buttons that emptied it are tools, and
+     a tool on a printed page is ink spent on something nobody can press. The
      library it was built from is not here to be hidden any more: it is the box
      in the bar, and the bar does not print (see state.pick). */
-  .ev-meta, .hint, .set-grip, .set-row button { display: none !important; }
+  .pl-meta, .hint, .set-grip, .set-row button { display: none !important; }
   .on-paper { display: block; }
   /* and one of them is left out when there is nothing to say (see sayWho): the
      class turns these on for the printer, so it has to be told when not to */
   .on-paper[hidden] { display: none; }
-  .set-row { border: none; padding: 4px 0; break-inside: avoid; }
-  .set { gap: 0; }
+  .set-row { border: none; padding: 4px 0; break-inside: avoid; margin: 0; box-shadow: none; }
+  /* AND ONE COLUMN ON PAPER, whatever the screen was doing. The wall is
+     columns as wide as the room allows, and a sheet of A4 has room for two:
+     a list somebody is going to sing from, in two columns, is a list read in
+     the wrong order by whoever is holding it. */
+  .set { columns: 1; }
   /* --- ONE MARGIN, AND EVERYTHING ON THE PAGE STANDS ON IT ------------------
      The margin used to belong to the sheet, then to #app: a little room at the
      start of the line, because the first chord of a line is centred on its

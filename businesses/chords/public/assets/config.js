@@ -11,10 +11,10 @@ window.CHORDS_CONFIG = {
   supabaseUrl: window.SUPABASE.url,
   supabaseAnonKey: window.SUPABASE.anonKey,
 
-  /* The tables this app owns inside that project: the library, the evenings of
-     singing planned out of it, every version of a song that was published, and
-     what the readings cost, which is a table of its own because only the
-     account that pays for them may read it. */
+  /* The tables this app owns inside that project: the library, the playlists
+     made out of it, every version of a song that was published, and what the
+     readings cost, which is a table of its own because only the account that
+     pays for them may read it. */
   table: "songs",
   setlistTable: "setlists",
   versionTable: "song_versions",

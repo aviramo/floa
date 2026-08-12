@@ -22,7 +22,7 @@ import { leadPages, pages, siteMap } from "./pages/index.js";
                   below is what lets the app post to it at all.
 
      the 404      everything the build cannot know is still routed by
-                  businesses/floa/domain/404.html: an evening, a version, an
+                  businesses/floa/domain/404.html: a playlist, a version, an
                   editor, a song added since the last build.
 
    `lead.to` names FLOA's own inbox and `leadPages` is empty, which together

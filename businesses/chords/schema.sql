@@ -126,8 +126,8 @@ alter table public.songs add column if not exists published   boolean not null d
 -- the account that wrote it the moment it is written, and there is no other
 -- way to write one.
 --
--- The same shape the evenings have had from the start, and for the same
--- reason. The difference is what the two do with it: an evening is its
+-- The same shape the playlists have had from the start, and for the same
+-- reason. The difference is what the two do with it: a playlist is its
 -- owner's and nobody else's ever, and a song is its owner's until they
 -- publish it.
 alter table public.songs add column if not exists owner uuid
@@ -165,7 +165,7 @@ alter table public.songs add column if not exists styles      text[] not null de
 create index if not exists songs_styles_idx on public.songs using gin (styles);
 
 -- WHEN IT WAS DELETED, because deleting a song does not delete it. A song is
--- an evening's worth of typing and half of them are deleted by somebody
+-- an evening of typing and half of them are deleted by somebody
 -- meaning to delete the other one; so the row stays exactly as it was and this
 -- column is the whole of the difference, and the library reads only the rows
 -- where it is null.
@@ -361,15 +361,21 @@ create policy "a version is written by its author"
 -- above, and that is the only way out.
 
 -- ==========================================================================
--- Evenings of singing.
+-- Playlists.
 --
--- A name, a date, and songs in the order they will be sung. A table of its
--- own rather than a column on a song, because the two do not belong to each
--- other: a song does not know which evenings it is in, and an evening whose
--- song was deleted from the library is still an evening.
+-- A name, a line saying what the list is, and songs in the order they will be
+-- sung. A table of its own rather than a column on a song, because the two do
+-- not belong to each other: a song does not know which lists it is in, and a
+-- list whose song was deleted from the library is still a list.
+--
+-- IT WAS AN EVENING, with a date and a room, and those two columns are gone
+-- below. What they could say is one kind of list, the one being planned for a
+-- night that has a date; a list of everything worth learning, or of what the
+-- band knows, or of the songs for one person, had to leave both empty. One
+-- line of free text says any of them, the date included.
 --
 -- THIS TABLE IS NOT LIKE THE SONGS ONE. The library is public: everyone reads
--- it and a signed-in user writes it. An evening belongs to the account that
+-- it and a signed-in user writes it. A playlist belongs to the account that
 -- made it and to nobody else, which is the whole of the rule below: it is
 -- read, changed and deleted by its owner alone, and a visitor without an
 -- account does not see that it exists.
@@ -378,24 +384,21 @@ create policy "a version is written by its author"
 create table if not exists public.setlists (
   id          uuid primary key default gen_random_uuid(),
 
-  -- Whose evening. Filled in by the database from the token the request
-  -- carried, never by the browser, so it cannot be claimed: an evening is the
-  -- account's the moment it is written and there is no other way to write
-  -- one. The policy below is one line of arithmetic on this column.
+  -- Whose list. Filled in by the database from the token the request carried,
+  -- never by the browser, so it cannot be claimed: a playlist is the account's
+  -- the moment it is written and there is no other way to write one. The
+  -- policy below is one line of arithmetic on this column.
   owner       uuid default auth.uid() references auth.users (id) on delete cascade,
 
-  -- May be empty. An evening usually gets its songs before it gets its name,
+  -- May be empty. A playlist usually gets its songs before it gets its name,
   -- and refusing to save one until it is named would mean losing the songs.
   title       text not null default '',
 
-  -- A DAY, not a moment. An evening happens on a date, nobody plans one to
-  -- the second, and a timestamp would drag a timezone in behind it.
-  event_date  date,
-
-  -- Where. Free text, because the answer is "אצל דנה", "מועדון הזמר" or a
-  -- street address depending on the evening, and a form that insisted on one
-  -- of them would be wrong about the other two.
-  venue       text not null default '',
+  -- WHAT THIS LIST IS, in the words of whoever made it. Free text and one
+  -- field, because the answer is "14/08/2026, שבט", "מה שהלהקה יודעת" or
+  -- "שירים ללמוד עם דנה" depending on the list, and a form that insisted on a
+  -- date and a room was wrong about two of those three.
+  description text not null default '',
 
   -- The songs, in order:  [{"id": "…", "title": "…"}, …]
   --
@@ -415,15 +418,47 @@ create table if not exists public.setlists (
 );
 
 -- added after the first version of this table; safe to re-run
-alter table public.setlists add column if not exists venue text not null default '';
 alter table public.setlists add column if not exists owner uuid
   default auth.uid() references auth.users (id) on delete cascade;
+alter table public.setlists add column if not exists description text not null default '';
 
--- An evening written before there was an owner has none, and a row whose
+-- --------------------------------------------------------------------------
+-- AND THE EVENING BECOMES A DESCRIPTION BEFORE THE TWO COLUMNS GO.
+--
+-- What was in them was typed by a person and it is not the app's to throw
+-- away: a date and a room are exactly the kind of thing the new line is for.
+-- So they are written into it, in the order they were read on the page, and
+-- only into rows that have nothing there yet.
+--
+-- Guarded on the column still existing, because this file is run again and
+-- again and the columns are dropped four lines below: unguarded, the second
+-- run would fail on a name that is no longer there.
+-- --------------------------------------------------------------------------
+do $$
+begin
+  if exists (select 1 from information_schema.columns
+              where table_schema = 'public' and table_name = 'setlists'
+                and column_name = 'venue') then
+    execute $mv$
+      update public.setlists
+         set description = btrim(
+               coalesce(to_char(event_date, 'DD/MM/YYYY'), '') ||
+               case when btrim(coalesce(venue, '')) <> ''
+                    then case when event_date is null then '' else ', ' end || btrim(venue)
+                    else '' end)
+       where btrim(description) = ''
+    $mv$;
+  end if;
+end $$;
+
+alter table public.setlists drop column if exists event_date;
+alter table public.setlists drop column if exists venue;
+
+-- A playlist written before there was an owner has none, and a row whose
 -- owner is null is invisible to everybody, because no uid equals null. So it
 -- goes to the account that has been here longest, which in a project with one
--- account is that account. This is the difference between an evening kept and
--- an evening lost, and it is why the backfill runs before the policy does.
+-- account is that account. This is the difference between a list kept and a
+-- list lost, and it is why the backfill runs before the policy does.
 update public.setlists
    set owner = (select id from auth.users order by created_at limit 1)
  where owner is null;
@@ -444,7 +479,7 @@ alter table public.setlists enable row level security;
 -- The first version of this table was public the way the songs are. Those
 -- policies are dropped by name and the lines stay here forever: on a project
 -- that never had them this does nothing, and on the one that did it is the
--- only thing standing between "an evening belongs to its account" and an
+-- only thing standing between "a playlist belongs to its account" and an
 -- older, more permissive rule still sitting underneath it. Postgres ORs its
 -- policies together, so a leftover `using (true)` would quietly undo all of
 -- this.
@@ -452,17 +487,20 @@ drop policy if exists "evenings are readable by everyone" on public.setlists;
 drop policy if exists "signed in users may add evenings" on public.setlists;
 drop policy if exists "signed in users may edit evenings" on public.setlists;
 drop policy if exists "signed in users may delete evenings" on public.setlists;
-
--- One rule for all four verbs, because there is only one thing to say: an
--- evening is its owner's. `using` decides which rows can be seen, changed and
--- deleted; `with check` decides what may be written, and it is what stops an
--- evening from being handed to somebody else.
---
--- Not granted to anon at all, so a visitor without an account does not read
--- an evening, and a link to one answers as though it were not there. Which it
--- is not, for them.
+-- and the one that said the same thing this one says, under the word this
+-- table used before it was called a playlist
 drop policy if exists "an evening belongs to its account" on public.setlists;
-create policy "an evening belongs to its account"
+
+-- One rule for all four verbs, because there is only one thing to say: a
+-- playlist is its owner's. `using` decides which rows can be seen, changed and
+-- deleted; `with check` decides what may be written, and it is what stops a
+-- list from being handed to somebody else.
+--
+-- Not granted to anon at all, so a visitor without an account does not read a
+-- playlist, and a link to one answers as though it were not there. Which it is
+-- not, for them.
+drop policy if exists "a playlist belongs to its account" on public.setlists;
+create policy "a playlist belongs to its account"
   on public.setlists for all to authenticated
   using (owner = auth.uid())
   with check (owner = auth.uid());
@@ -687,7 +725,7 @@ create policy "a person renames themselves"
 -- ordered on every read, for a fact worth two seconds of looking. The order
 -- IS the value, an array already has one, and the app caps it at sixty: past
 -- that the library's own order is the answer again. The same argument, and
--- the same shape, as the songs in an evening (see setlists.songs).
+-- the same shape, as the songs in a playlist (see setlists.songs).
 --
 -- The ids are ids and nothing more. A song deleted, or one belonging to
 -- somebody else and since unpublished, is an id that matches nothing in the
@@ -717,7 +755,7 @@ create trigger song_opens_touch_updated_at
 
 alter table public.song_opens enable row level security;
 
--- One rule for all four verbs, the same as an evening: this is the account's
+-- One rule for all four verbs, the same as a playlist: this is the account's
 -- own and nobody else's, ever. Not granted to anon at all, so a reader with no
 -- account is answered as though the table were empty, which for them it is;
 -- their order is their browser's, which is where it always was.
@@ -921,7 +959,7 @@ create trigger song_published_again
 --
 -- A song is words and chords, and that is the same for everybody who ever sang
 -- it. A take is one person playing it once: their tempo, their strumming,
--- their voice, on an evening. The two are different kinds of thing, which is
+-- their voice, on an evening of singing. The two are different kinds of thing, which is
 -- why this is a table rather than a column, and why a song can have any number
 -- of them from any number of accounts.
 --
@@ -942,7 +980,7 @@ create table if not exists public.song_takes (
   song_id  uuid not null references public.songs (id) on delete cascade,
 
   -- Whose. Filled in by the database from the token the request carried, never
-  -- by the browser, exactly as on a song and on an evening: a take belongs to
+  -- by the browser, exactly as on a song and on a playlist: a take belongs to
   -- the account that recorded it the moment it is recorded, and there is no
   -- other way to record one.
   owner    uuid default auth.uid() references auth.users (id) on delete cascade,
@@ -1195,7 +1233,7 @@ create table if not exists public.song_offers (
   song_id  uuid not null references public.songs (id) on delete cascade,
 
   -- WHOSE OFFER. Filled in by the database from the token the request carried,
-  -- never by the browser, exactly as on a song, an evening and a take: an
+  -- never by the browser, exactly as on a song, a playlist and a take: an
   -- offer is made by the account that makes it and there is no other way to
   -- make one.
   owner    uuid not null default auth.uid() references auth.users (id) on delete cascade,

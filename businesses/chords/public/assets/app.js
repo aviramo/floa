@@ -161,7 +161,13 @@
     note: '<path d="M10.2 17.4V4.8c3.7 1 5.6 2.7 5.6 5.5"/><ellipse cx="7.4" cy="17.8" rx="2.8" ry="2.3" fill="currentColor" stroke="none"/>',
     undo: '<path d="M4 10h9a4.5 4.5 0 0 1 0 9h-5"/><path d="M8 6l-4 4 4 4"/>',
     print: '<path d="M7 9V4h10v5M7 18H5v-6h14v6h-2M8 14h8v6H8z"/>',
-    calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+    /* A LIST WITH A PLAY SHAPE AT THE END OF IT, which is what a playlist is
+       everywhere anybody has seen one. It was a calendar, from when this was
+       an evening with a date on it: a page of lists of songs drawn as a month
+       is a picture of the one thing these no longer hold. The lines shorten
+       as they go down, the way a list does, and the last of them makes room
+       for the same triangle the recordings are played from. */
+    playlist: '<path d="M4 7h16M4 12h16M4 17h9"/><path d="M14.5 14.2v5.6l4.7-2.8Z" fill="currentColor" stroke-width="1"/>',
     person: '<circle cx="12" cy="8" r="3.6"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/>',
     /* two of them, which is what a page of everybody who wrote a song is */
     people: '<circle cx="9.5" cy="8.5" r="3.2"/><path d="M3.5 19.5a6 6 0 0 1 12 0"/><path d="M16 5.6a3.2 3.2 0 0 1 0 6"/><path d="M17.5 14.2a6 6 0 0 1 3 5.3"/>',
@@ -1503,7 +1509,7 @@
         });
     },
     /* --- deleting, which does not delete --------------------------------------
-       A song is an playlist's worth of typing, and half of the ones that get
+       A song is an evening's worth of typing, and half of the ones that get
        deleted are deleted by somebody meaning to delete the other one. So the
        row stays exactly as it is and only says when: the library reads the
        living, and everything else is still there to be brought back.
@@ -1618,13 +1624,13 @@
 
     /* Every song's name against its id, and nothing else. For a page that
        lists songs without drawing any of them: the index asks for whole rows
-       because it shows the chords, and an playlist's one line does not.
+       because it shows the chords, and a playlist's one line does not.
 
        A failure here is not worth a red screen either. The playlist still
        knows what it was told the songs were called when they went in. */
     /* id -> what the song is called and where it lives. The address comes along
        because a name of a song is almost always a way to it (see the chips on
-       an playlist's card), and it is one more column on a request that is
+       a playlist's card), and it is one more column on a request that is
        already being made. */
     titles: function () {
       return rest(T + "?select=id,title,slug").then(function (rows) {
@@ -1724,7 +1730,7 @@
     return !!(error && NO_SUCH_TABLE[String(error.code)]);
   }
 
-  var SET_FIELDS = "id,title,event_date,venue,songs";
+  var SET_FIELDS = "id,title,description,songs";
 
   var sets = {
     list: function () {
@@ -1992,9 +1998,13 @@
   /* Words the app has taken for itself under /chords/. A song may not be
      called one of them, because the address would be the app's answer rather
      than the song's. */
+  /* "evenings" is in here for a word that is not on the screen any more: it is
+     the address the playlists were kept at, it still answers (see route), and
+     a song that took the name would be answered by the list instead. */
   var RESERVED_SLUGS = {
-    "new": true, "edit": true, "playlists": true, "deleted": true,
-    "creators": true, "creator": true, "style": true, "reads": true,
+    "new": true, "edit": true, "playlists": true, "evenings": true,
+    "deleted": true, "creators": true, "creator": true, "style": true,
+    "reads": true,
   };
 
   /* Two decimals is finer than any eye and any font, and it keeps a stored
@@ -5034,7 +5044,7 @@
   /* --- THE ONE YOU HAD OPEN LAST STANDS FIRST -------------------------------
      The library was ordered by when a song last CHANGED, which is the right
      answer for a library being written and the wrong one for a library being
-     used: reading a song is not writing it, so an playlist spent going back to
+     used: reading a song is not writing it, so an evening spent going back to
      the same four songs left them exactly where they were, and the way back to
      the one you closed a minute ago was to look for it.
 
@@ -5398,6 +5408,19 @@
     if (event.key === "Escape") closeUnder();
   }
 
+  /* WHERE IT HANGS, MEASURED RATHER THAN GUESSED, and measured again whenever
+     what is in it changes: a panel that opens on one word and then fills with
+     a list of names is two different widths, and the first of them is the one
+     the corner was worked out from. Under the button, and never past either
+     edge of the window. */
+  function placeUnder() {
+    if (!underMenu || !underAnchor) return;
+    var box = underAnchor.getBoundingClientRect();
+    var width = underMenu.offsetWidth;
+    underMenu.style.top = (box.bottom + 8) + "px";
+    underMenu.style.left = Math.min(Math.max(6, box.right - width), window.innerWidth - width - 6) + "px";
+  }
+
   function menuUnder(anchor, rows) {
     /* pressing the open one is asking for it to shut */
     var again = underAnchor === anchor;
@@ -5409,10 +5432,7 @@
     rows.forEach(function (row) { underMenu.appendChild(row); });
     document.body.appendChild(underMenu);
 
-    var box = anchor.getBoundingClientRect();
-    var width = underMenu.offsetWidth;
-    underMenu.style.top = (box.bottom + 8) + "px";
-    underMenu.style.left = Math.min(Math.max(6, box.right - width), window.innerWidth - width - 6) + "px";
+    placeUnder();
     anchor.setAttribute("aria-expanded", "true");
 
     document.addEventListener("pointerdown", underOutside, true);
@@ -5461,6 +5481,138 @@
       button("אקורדים", ICON.chordsOnly, "ghost small", function () { printNow(false); }),
       button("מילים בלבד", ICON.section, "ghost small", function () { printNow(true); }),
     ]);
+  }
+
+  /* --- WHICH OF YOUR LISTS THIS SONG IS IN, ASKED FROM THE SONG ---------------
+     A playlist was built in one direction only: open the list, search the
+     library from the bar, press a song in. Which is the right way round while
+     a list is being planned, and the wrong way round for the other half of the
+     same job, standing on a song and knowing it belongs in the Friday list.
+     That meant leaving the song, opening the list, finding the song again by
+     name, and pressing it.
+
+     So the same question is asked from this end too, and it is the same
+     question: one row per list, saying whether this song is in it, and a press
+     changes that. Nothing here leaves the page, because putting one song into
+     three lists is three presses and should not be three journeys.
+
+     THE ROWS ARE THE ACCOUNT'S OWN LISTS AND THE SONG IS ANYBODY'S. A playlist
+     belongs to whoever made it and the library belongs to everybody, so this
+     is offered on every song to whoever is signed in, and not only on songs of
+     your own (see state.songLists). */
+
+  /* Which lists hold this song, out of whatever the box in the bar last read.
+     Read rather than fetched, because the row that opens this panel has to say
+     how many BEFORE anybody presses it, and a row cannot wait. */
+  function listsWith(id) {
+    return (findPlaylists || []).filter(function (pl) { return holds(pl, id); });
+  }
+
+  function holds(pl, id) {
+    var songs = normalizeSet(pl.songs);
+    for (var i = 0; i < songs.length; i++) if (songs[i].id === id) return true;
+    return false;
+  }
+
+  function askPlaylists(anchor, song) {
+    closeUnder();
+    /* Opened on whatever is known this second, which is usually all of it: the
+       song page asks for the lists as it draws (see state.songLists), so by the
+       time anybody has reached the dots the answer is in. The word is for the
+       one time it is not, and what arrives replaces it where it stands rather
+       than as a second panel, so nothing blinks under the hand. */
+    menuUnder(anchor, [el("div", "under-note", "טוען פלייליסטים")]);
+    var box = underMenu;
+    findPlaylistList().then(function (lists) {
+      if (!box || !box.isConnected) return;
+      box.textContent = "";
+      fillPlaylists(box, byTouch(lists || []), song);
+      placeUnder();
+    });
+  }
+
+  function fillPlaylists(box, lists, song) {
+    if (!lists.length) box.appendChild(el("div", "under-note", "עוד אין פלייליסטים"));
+
+    lists.forEach(function (pl) {
+      var inside = holds(pl, song.id);
+      var named = pl.title || "פלייליסט בלי שם";
+      /* The name of the list, and the picture says which way the press goes: a
+         tick on the ones it is already in, a plus on the ones it is not. The
+         row is lit as well, because a panel of eight names is read at a glance
+         and a small picture at the start of each is not a glance. */
+      var row = button(named, inside ? ICON.check : ICON.plus, "ghost small pl-row", function () {
+        if (!row.disabled) flip();
+      });
+
+      /* THE ROW CHANGES WHERE IT STANDS AND THE PANEL STAYS OPEN, which is the
+         rule the box in the bar already follows and for the same reason: a song
+         goes into three lists in three presses, and a panel that shut on the
+         first would make that three journeys.
+
+         The row is changed before the write lands and put back if it does not.
+         Everything else on this page saves that way (see mark), and a tick
+         that waits for a round trip is a press that did nothing for a moment. */
+      function flip() {
+        var songs = normalizeSet(pl.songs);
+        if (inside) songs = songs.filter(function (item) { return item.id !== song.id; });
+        else songs.push({ id: song.id, title: song.title });
+
+        var was = inside;
+        inside = !inside;
+        paint();
+        /* held while the write is in the air, so two presses on one row cannot
+           race each other onto the same list */
+        row.disabled = true;
+        sets.update(pl.id, { songs: songs }).then(function (back) {
+          row.disabled = false;
+          /* the list the bar's box and this panel both read is the one that has
+             to be told, or the next opening answers with the old truth */
+          pl.songs = songs;
+          if (back && back.updated_at) pl.updated_at = back.updated_at;
+        }).catch(function (error) {
+          row.disabled = false;
+          inside = was;
+          paint();
+          toast(error.status === 401 || error.status === 403
+            ? "אין הרשאה. נסו להתחבר שוב."
+            : "לא נשמר: " + error.message, true);
+        });
+      }
+
+      function paint() {
+        row.classList.toggle("is-on", inside);
+        reicon(row, inside ? ICON.check : ICON.plus);
+        /* the word stays the name of the list; what the press will do is said
+           to whoever is being read to, and to a pointer that waits on it */
+        row.title = (inside ? "להוציא מ" : "להוסיף ל") + named;
+        row.setAttribute("aria-pressed", inside ? "true" : "false");
+      }
+      paint();
+
+      box.appendChild(row);
+    });
+
+    /* AND THE ONE ROW IN HERE THAT IS NOT A LIST: the way to one that does not
+       exist yet, with this song already in it. Without it, a panel opened by an
+       account that has never made a list is a panel with nothing in it, and the
+       way on from there is four presses in another direction: out of the song,
+       into the playlists, a new one, and the song found again by name. This row
+       does leave the page, which is honest: it is the one press in here that
+       makes something rather than changing it. */
+    box.appendChild(button("פלייליסט חדש עם השיר", ICON.playlist, "ghost small", function () {
+      closeUnder();
+      sets.insert({ title: "", description: "", songs: [{ id: song.id, title: song.title }] })
+        .then(function (made) {
+          /* what the bar's box is holding is now one list short of the truth */
+          findPlaylistsAt = 0;
+          go(addr("playlists", made.id));
+        }).catch(function (error) {
+          toast(missingTable(error)
+            ? "צריך להריץ פעם אחת את schema.sql ב-Supabase"
+            : "לא נוצר: " + error.message, true);
+        });
+    }));
   }
 
   /* Adding a song, signing in and signing out belong to the library, so they
@@ -5612,7 +5764,7 @@
        spare. */
     if (auth.in) row.appendChild(doorChip(auth.name() || "החשבון", ICON.person, askMe));
     else row.appendChild(signInChip());
-    row.appendChild(doorChip("פלייליסטים", ICON.calendar, function () { go(addr("playlists")); }));
+    row.appendChild(doorChip("פלייליסטים", ICON.playlist, function () { go(addr("playlists")); }));
     row.appendChild(doorChip("יוצרים", ICON.people, function () { go(addr("creators")); }));
     /* AND THE BILL IS A DOOR LIKE THEM, for the one account that gets it. It
        stood inside the account panel for a while, on the grounds that what the
@@ -5862,6 +6014,31 @@
         past.open();
       }));
     }
+    /* WHICH OF YOUR LISTS THIS SONG IS IN, and it says so before it is pressed.
+       A row that only said "פלייליסטים" would have to be opened to find out
+       whether the answer is none, and the answer is none on most songs: the
+       count is the whole of what somebody standing on a song wants to know,
+       and where there is one it is also the reason to open the panel at all.
+
+       Above the wastebasket, because everything above the wastebasket is
+       something you might do to a song and the wastebasket is the end of it.
+       (see askPlaylists for what is behind it) */
+    if (state.songLists) {
+      var mine = state.songLists;
+      var many = listsWith(mine.id).length;
+      var lists = button(many ? "פלייליסטים (" + many + ")" : "פלייליסטים", ICON.playlist,
+        "ghost small", function () {
+          /* not closeUnder: this row asks a second question, and asking it
+             replaces the panel it was asked from (see askPrint) */
+          askPlaylists(anchor, mine);
+        });
+      /* AND THE ROW IS LIT WHEN THE ANSWER IS YES. The count says the same
+         thing in a number, and a number is read second: a lit row is what a
+         glance down the panel picks up, and this is the one row in here whose
+         state is a fact about the song rather than about the page. */
+      lists.classList.toggle("is-on", many > 0);
+      rows.push(lists);
+    }
     if (state.songKill) {
       var kill = state.songKill;
       rows.push(button("מחיקת השיר", ICON.trash, "ghost small", function () {
@@ -5952,11 +6129,11 @@
      So they go behind the dots, in words, exactly as a song's do (see
      songRows). The panel is the same panel, the corner is one button wide, and
      printing is now a press further away, which is right for the thing you do
-     to an playlist once, at the end, and nowhere near the thing you must never
+     to a playlist once, at the end, and nowhere near the thing you must never
      do by mistake.
 
      The rows are made at the press and not kept, because both read off what
-     this page is holding at that second: an playlist still loading has neither. */
+     this page is holding at that second: a playlist still loading has neither. */
   function playlistRows() {
     var rows = [];
     if (state.printer) {
@@ -5992,7 +6169,7 @@
      On the library there is nothing above the page, so the mark is the mark:
      it names the app and it opens the app. On every other page there IS
      something above it, and it is whatever the reader came from, which is
-     hardly ever the library: a song opened from an playlist, a version opened
+     hardly ever the library: a song opened from a playlist, a version opened
      from a song, a person opened from a song's credits. A mark that always
      went to the list threw that away every time, and the only control on the
      screen that did not was the browser's own arrow, which on a phone is at
@@ -6149,10 +6326,10 @@
        gives way for it. The library is one press away on every one of those
        pages, in the corner, which is where somebody who wants to look for
        another song is going anyway. */
-    /* EXCEPT WHERE THE BOX IS HOW SOMETHING GETS PICKED. An playlist is built
+    /* EXCEPT WHERE THE BOX IS HOW SOMETHING GETS PICKED. A playlist is built
        out of the library, so the library has to be reachable from inside it,
        and it was reachable as a panel nailed to the foot of the page: a search
-       field and every song under it, standing open under an playlist of three
+       field and every song under it, standing open under a playlist of three
        songs whether or not anybody was adding one. The box in the bar is the
        same field, already there, already known, and it costs the page nothing
        while it is shut (see state.pick in renderPlaylist). */
@@ -6160,7 +6337,7 @@
     if (glass) glass.hidden = p.length > 0 && !state.pick;
     /* And it says which of the two it is. One word either way, because the box
        is not the thing to explain, but they are not the same word: everywhere
-       else typing here leads somewhere, and on an playlist it puts a song in. */
+       else typing here leads somewhere, and on a playlist it puts a song in. */
     if (findField) {
       findField.placeholder = state.pick ? "הוספת שיר..." : "חיפוש...";
       findField.setAttribute("aria-label",
@@ -6169,7 +6346,7 @@
 
     /* The playlists are a list like the library is a list, so their page gets
        the same two buttons the library's does: the one that adds to it, and
-       the one that says who you are. An playlist that is open has tools of its
+       the one that says who you are. A playlist that is open has tools of its
        own, and none of these. */
     if (p[0] === "playlists") {
       /* Nothing here is readable without an account, so the one button that
@@ -6197,9 +6374,9 @@
            chips over the wall (see doorsBand in viewPlaylists). */
         return fill(bar, evs);
       }
-      /* An playlist that is open: the two things there are to do to the whole
+      /* A playlist that is open: the two things there are to do to the whole
          of it, behind one picture, in the panel that says what each of them is
-         (see playlistRows). Only once there is one of them to offer: an playlist
+         (see playlistRows). Only once there is one of them to offer: a playlist
          still loading is this same address and has neither. */
       return fill(bar, state.printer || state.killer ? [playlistMore()] : []);
     }
@@ -6800,7 +6977,7 @@
      search box is worth least: the songs are already on the screen and the
      chips over them narrow the wall. Where it is actually wanted is
      everywhere else. You are inside a song and you want the next one. You are
-     planning an playlist and you want to remember what you played in March.
+     planning a playlist and you want to remember what you played in March.
      You have a name in your head and you want everything that person wrote.
 
      None of those is a filter on the page you are on. They are all the way
@@ -6851,21 +7028,20 @@
     s.hay = (s.said + " " + styles(s).join(" ")).toLowerCase();
   }
 
-  /* An playlist is remembered by four different things and never by the same
-     one twice: its name, the room, the date in words, or a song that was
-     sung at it. */
+  /* A playlist is remembered by three different things and never by the same
+     one twice: its name, whatever it says about itself, or a song that is in
+     it. */
   function playlistHay(playlist, titles) {
     return [
       playlist.title || "",
-      playlist.venue || "",
-      dateWords(playlist.event_date),
+      saidOf(playlist),
       songNames(playlist, titles || {}).join(" "),
     ].join(" ").toLowerCase();
   }
 
   /* --- what the box has to look through ------------------------------------
      Both lists whole, in the browser, because both are small: a library is a
-     few hundred rows of text and an playlist is a name and a list of ids. So a
+     few hundred rows of text and a playlist is a name and a list of ids. So a
      keystroke costs a search and no request.
 
      Kept for a minute and no longer. A search that opens a song written on
@@ -6897,7 +7073,7 @@
     return db.list().then(seedSongs).catch(function () { return findSongs || []; });
   }
 
-  /* An playlist belongs to an account and the database answers nothing at all
+  /* A playlist belongs to an account and the database answers nothing at all
      without one, so a signed out reader is not asked to wait for an empty
      list. */
   function findPlaylistList() {
@@ -6976,14 +7152,13 @@
     });
 
     playlists.forEach(function (playlist) {
-      var near = [playlist.title || "", playlist.venue || "", dateWords(playlist.event_date)]
-        .join(" ").toLowerCase();
+      var near = [playlist.title || "", saidOf(playlist)].join(" ").toLowerCase();
       var hit = near.indexOf(q) >= 0 ? HIT_NEAR : (playlistHay(playlist, titles).indexOf(q) >= 0 ? HIT_DEEP : 0);
       if (!hit) return;
       out.push({
         hit: hit, order: 3,
         name: playlist.title || "פלייליסט בלי שם",
-        said: whenWhere(playlist),
+        said: saidOf(playlist),
         tags: [{ kind: "kind", words: "פלייליסט" }],
         href: addr("playlists", playlist.id),
       });
@@ -7095,7 +7270,7 @@
 
     /* --- AND ON THE LIBRARY IT IS NOT A PANEL, IT IS THE PAGE -----------------
        A panel of results is a way to somewhere else, and everywhere else is
-       what it is for: inside a song, planning an playlist, on a person's page.
+       what it is for: inside a song, planning a playlist, on a person's page.
        On the library itself the songs are ALREADY on the screen, in cards with
        their chords and their state on them, and hanging a list of names over
        them is answering with less than what is underneath.
@@ -7116,7 +7291,7 @@
       if (state.sift) return;
       /* --- AND WHERE IT PICKS, IT OPENS ON THE WHOLE SHELF --------------------
          Everywhere else an empty box is an empty question and there is nothing
-         to answer it with. On an playlist the question is "which song", the
+         to answer it with. On a playlist the question is "which song", the
          answer is the library, and it is a list somebody browses as often as
          they search it: the name is on the tip of the tongue about as often as
          it is in the hand. So the press opens the shelf, and typing shortens
@@ -7314,7 +7489,7 @@
   /* --- AND THE SAME PANEL, WHERE A RESULT IS NOT A WAY ANYWHERE --------------
      Every row above opens a page and the box shuts behind it. Here a row is a
      song going into the playlist under the box, the page it would open is not
-     where anybody is going, and an playlist is usually built several songs at a
+     where anybody is going, and a playlist is usually built several songs at a
      time. So the panel stays, the row says what it now is, and the next song
      is the next press.
 
@@ -8929,7 +9104,7 @@
     if (brief) top.appendChild(countTag(person.songs.length));
     box.appendChild(top);
 
-    /* The songs by name, the way an playlist shows what is in it and for the
+    /* The songs by name, the way a playlist shows what is in it and for the
        same reason: a count is a number you have to open the page to use, and
        the names are the answer to "is this the person I meant". Cut to two
        lines by the stylesheet, so somebody with forty songs is still a card. */
@@ -10982,6 +11157,25 @@
        editor first: a page you have to change in order to delete. They are rows
        in the panel now (see songRows), and the panel is on the page in both
        states. */
+    /* AND WHICH LISTS IT IS IN IS NOT ABOUT OWNING IT AT ALL. A playlist
+       belongs to the account that made it and the songs in it belong to
+       everybody, so putting somebody else's song into your own list is most of
+       what a playlist is for. Offered to whoever is signed in, on any song that
+       exists, and not only on your own.
+
+       The lists are asked for HERE rather than at the press, because the row
+       that opens them has to say how many before anybody presses it (see
+       songRows), and a row cannot wait for an answer. One request a minute at
+       worst and usually none: the box in the bar keeps the same answer for the
+       same minute, and this is that same list (see findPlaylistList). */
+    if (!past && song.id && auth.in) {
+      state.songLists = { id: song.id, title: song.title };
+      /* and nothing is done with the answer here: it lands in the list the
+         box in the bar keeps, and the press reads it from there (see
+         listsWith). Asking is the whole of the point. */
+      findPlaylistList();
+    }
+
     if (!past && owned && song.id) {
       state.songKill = removeSong;
       /* THE DOOR APPEARS WHEN THERE IS A ROOM BEHIND IT, the same way the way
@@ -11658,7 +11852,7 @@
        there is nothing about the song that the string leaves out.
 
        A song is a few hundred characters and this holds one string per change,
-       so the whole history of an playlist's editing is smaller than the picture
+       so the whole history of a playlist's editing is smaller than the picture
        it was read from.
 
        IT IS CALLED `trail` AND NOT `history`, WHICH IS NOT A PREFERENCE. It was
@@ -14717,13 +14911,13 @@
     if (!songs.length) {
       box.appendChild(el("div", "a names", "עוד בלי שירים"));
     } else {
-      var chips = el("div", "ev-songs");
+      var chips = el("div", "pl-songs");
       songs.forEach(function (song) {
         /* The same chip a style is, because it is the same kind of thing: a
            small quiet word standing beside others of its kind (see .tag-style).
            A song that is not there any more is the word without the press. */
         var chip = el(song.slug ? "button" : "span",
-          "tag tag-style" + (song.slug ? " ev-song" : ""), song.title);
+          "tag tag-style" + (song.slug ? " pl-song" : ""), song.title);
         if (song.slug) {
           chip.type = "button";
           chip.addEventListener("click", function (event) {
@@ -14821,15 +15015,20 @@
       rehome();
       state.rehome = rehome;
 
-      /* THE SAME WALL THE SONGS STAND IN. A playlist is a card like a song is
-         a card, so it is the same list, in the same columns, at the same
-         width: two halves of one app should not be two different shapes.
+      /* THE SAME CARD THE SONGS WEAR, AND NOT THE SAME WALL. A playlist is
+         drawn as a song is drawn, white sheet and hairline and shadow, because
+         two halves of one app should not be two different sheets of paper. But
+         a song card holds a name and three chords and a playlist card holds a
+         LIST, and that list is the whole of what somebody came here to read.
+         In a 340 wide column it came out one song per line, a thin ribbon of
+         names down one side of the screen. So this wall is one card wide and
+         the songs in it wrap across the room (see .list.sets).
 
          The box that used to stand over it is in the bar now, and it searches
          further than this one could: a playlist is remembered by its name, by
          what it says about itself, or by a song that is in it, and the box up
          there reads all three along with the songs and the people. */
-      var list = el("ul", "list");
+      var list = el("ul", "list sets");
       app.appendChild(list);
 
       playlists.forEach(function (playlist) {
@@ -14879,8 +15078,9 @@
        which is a library everybody reads and a few people write.
 
        Unlike the song editor it is also not shut on a phone. Every gesture it
-       has is a whole row wide, which a finger can do, and an playlist gets
-       planned wherever the person planning it happens to be standing. */
+       has is a whole card, and on a phone a card is the width of the screen
+       (the wall falls to one column, see .set), which is a thing a finger can
+       do. A playlist gets made wherever the person making it is standing. */
 
     var byId = {};
     library.forEach(function (song) { byId[song.id] = song; });
@@ -14895,7 +15095,7 @@
 
     app.innerHTML = "";
 
-    /* --- the head: the name, the date ---
+    /* --- the head: the name, and what this list is ---
 
        Like the song page, no arrow back: the app's name in the bar goes home,
        and the playlists are one press from there. */
@@ -14903,9 +15103,9 @@
     var head = el("div", "song-head");
 
     /* The name is in the bar, like a song's, and the heading here is for
-       paper: an playlist is printed and handed round, and a sheet with no name
+       paper: a playlist is printed and handed round, and a sheet with no name
        on it is a list of songs. */
-    var title = el("h1", "ev-title on-paper", playlist.title);
+    var title = el("h1", "pl-title on-paper", playlist.title);
     whereEditable(playlist.title, "שם הפלייליסט", function (typed) {
       playlist.title = typed;
       title.textContent = typed;
@@ -14915,67 +15115,54 @@
     document.title = (playlist.title || "פלייליסט חדש") + " | אקורדים";
     head.appendChild(title);
 
-    /* When and where, twice, and only ever one of the two visible: the fields
-       that set them on the screen, and the sentence they make on paper. A date
-       input prints as an empty-looking box with a calendar icon in it, which
-       is the one thing an playlist's printout must not be vague about. */
-    var whenWords = el("div", "by ev-when on-paper", whenWhere(playlist));
+    /* WHAT THIS LIST IS, IN THE PERSON'S OWN WORDS, and it is the first thing
+       under the name because it is the only thing on the page that is not a
+       song. It was a date and a room, two fields, both of them about an
+       evening that is going to happen; a list of what the band knows is not
+       an evening and had to leave both empty.
 
-    var meta = el("div", "ev-meta");
+       One field, free text, as long as it needs to be. Written twice and only
+       ever one of the two visible: the field it is typed into on the screen,
+       and the same words as a plain line on paper, because a textarea prints
+       as a box with a scrollbar in it. */
+    var saidWords = el("div", "by pl-said on-paper", saidOf(playlist));
 
-    var whenLabel = el("label", null, "תאריך");
-    var when = el("input");
-    when.type = "date";
-    when.value = playlist.event_date || "";
-    when.addEventListener("change", function () {
-      playlist.event_date = when.value || null;
-      whenWords.textContent = whenWhere(playlist);
-      mark(true);
-    });
-    /* The calendar button at the end of the field is gone (see the CSS), and
-       with it the only thing on the row that was not the date itself. So the
-       date opens the calendar: pressing anywhere on it asks for the picker,
-       which is what pressing the little button did. */
-    when.addEventListener("click", function () {
-      if (typeof when.showPicker === "function") { try { when.showPicker(); } catch (e) {} }
-    });
-    whenLabel.appendChild(when);
-    meta.appendChild(whenLabel);
+    var meta = el("div", "pl-meta");
 
-    /* A place is longer than a date and it is written the way an address is
-       written: "שבט, פאול קור 16 תל אביב" is one answer, and on a phone it is
-       wider than the room the row has left. An input has one line and no
-       second one, so what does not fit scrolls out of sight while it is being
-       typed. This one wraps instead, and grows a line at a time. */
-    var whereLabel = el("label", null, "מיקום");
-    var where = el("textarea");
-    where.rows = 1;
-    where.value = playlist.venue || "";
-    where.placeholder = "איפה זה קורה";
-    function fitWhere() {
-      where.style.height = "auto";
-      where.style.height = where.scrollHeight + "px";
+    /* No label over it. "תיאור" said over an empty box says exactly what the
+       empty box already says, and on this page the box under the name is the
+       one thing it could be. The placeholder does the whole of the asking. */
+    var saidField = el("textarea", "pl-desc");
+    saidField.rows = 1;
+    saidField.value = playlist.description || "";
+    saidField.placeholder = "על מה הרשימה הזאת. אפשר גם תאריך ומקום";
+    saidField.setAttribute("aria-label", "תיאור הפלייליסט");
+    /* An input has one line and no second one, so what does not fit scrolls
+       out of sight while it is being typed. This grows a line at a time, and
+       the height is read off the page rather than counted, so it is right for
+       the words that are actually in it at the width it actually has. */
+    function fitSaid() {
+      saidField.style.height = "auto";
+      saidField.style.height = saidField.scrollHeight + "px";
     }
-    where.addEventListener("input", function () {
-      playlist.venue = where.value;
-      whenWords.textContent = whenWhere(playlist);
-      fitWhere();
+    saidField.addEventListener("input", function () {
+      playlist.description = saidField.value;
+      saidWords.textContent = saidOf(playlist);
+      fitSaid();
       mark();
     });
-    /* It is one line of an answer even when it takes two lines to write, so
-       Enter finishes it rather than opening a second paragraph in it. */
-    where.addEventListener("keydown", function (event) {
-      if (event.key === "Enter") { event.preventDefault(); where.blur(); }
-    });
-    whereLabel.appendChild(where);
-    meta.appendChild(whereLabel);
+    /* AND ENTER OPENS A LINE HERE. The place it replaced was one line of an
+       answer even when it wrapped, so Enter finished it; a description is
+       whatever somebody wants to say about the list, and a list of three
+       things on three lines is one of the ways to say it. */
+    meta.appendChild(saidField);
 
     head.appendChild(meta);
-    head.appendChild(whenWords);
+    head.appendChild(saidWords);
 
     app.appendChild(head);
     /* the height is read off the page, so it is measured once the page has it */
-    fitWhere();
+    fitSaid();
 
     /* --- where the writing got to --------------------------------------------
        All that is left of a toolbar. Printing and deleting are in the top bar,
@@ -14985,7 +15172,7 @@
 
        This one word cannot move up there: it is not an action, it is an
        answer, and it belongs beside the thing it is answering about. */
-    var stateNode = el("span", "save-state ev-state");
+    var stateNode = el("span", "save-state pl-state");
     app.appendChild(stateNode);
 
     /* the two things worth doing to a whole playlist, in the bar */
@@ -14993,11 +15180,11 @@
     state.killer = removePlaylist;
     /* --- AND WHERE THE SONGS COME FROM, ALSO IN THE BAR ----------------------
        The songs are everybody's and the playlist is one account's, which is why
-       the library has to be reachable from in here at all: an playlist is a
+       the library has to be reachable from in here at all: a playlist is a
        choice out of a shelf that is not itself private.
 
        It was a panel at the foot of the page, a heading, a sentence explaining
-       itself, a field and the whole library under it, standing open under an
+       itself, a field and the whole library under it, standing open under a
        playlist of three songs whether or not anybody was adding one. Which is
        the second search box on a page that already has one: the box in the bar
        is the field everybody in this app already types songs into, it is empty
@@ -15015,7 +15202,16 @@
 
     /* An ol, so the numbers are the browser's own counter. Which matters: a
        drag moves one element and never redraws the list, so a number written
-       into each row by hand would have to be rewritten by hand too. */
+       into each row by hand would have to be rewritten by hand too.
+
+       AND IT IS THE SAME WALL THE LIBRARY IS, not a column of full-width
+       rows. A song in a playlist is a song: the same white card, the same
+       hairline, the same name over the same people over the same shapes, at
+       the same width. It was a band of ribbons across the whole screen, each
+       one holding four words at one end and a hand's width of nothing in the
+       middle, and the two halves of this app looked like two apps. What the
+       card carries here that the library's does not is the number it is at
+       and the two tools that move it and take it out. */
     var listEl = el("ol", "set");
     app.appendChild(listEl);
 
@@ -15036,14 +15232,6 @@
     function setRow(item) {
       var song = byId[item.id];
       var li = el("li", "set-row" + (song ? "" : " is-gone"));
-
-      var grip = el("button", "set-grip");
-      grip.type = "button";
-      grip.title = "גרירה כדי לשנות את הסדר";
-      grip.setAttribute("aria-label", "הזזת " + (song ? song.title : item.title) + " ברשימה");
-      grip.appendChild(svg(ICON.grip));
-      /* nothing is bound to it: the list listens for all of them, see below */
-      li.appendChild(grip);
 
       var box = el("div", "set-main");
       var top = el("div", "t-row");
@@ -15079,7 +15267,7 @@
       if (said) box.appendChild(el("div", "by", said));
 
       /* The shapes this reader's hand will make, the same way the index says
-         them. On an playlist they are worth more than on the index: this is the
+         them. On a playlist they are worth more than on the index: this is the
          list somebody is holding a guitar over.
 
          AND THE FRET IS NOT AMONG THEM, for the reason the sheet gave up its
@@ -15120,14 +15308,26 @@
 
       li.appendChild(box);
 
-      /* AND THE RECORDINGS OF IT, on the same button every other song card
-         carries (see playRow). Here it is worth more than on the wall: the
-         wall is being scanned by somebody deciding what to pick up, and this
-         is a list somebody is about to sing from, where "how does this one go
-         again" is the question of the playlist. One at a time and a player at
-         the foot of the screen, exactly as it is everywhere else. */
-      var takes = song && takesOut[song.id];
-      if (takes) li.appendChild(playRow(song, takes));
+      /* --- THE FAR COLUMN, WHICH IS WHERE THE LIBRARY'S CARD KEEPS ITS OWN ---
+         Everything here is about the card rather than in it: what to hear,
+         where to move it, and the way out of the list. The same corner the
+         wall's cards give to the state and the recordings (see .side), so a
+         song in a playlist and a song in the library are read the same way and
+         differ only in what is standing in that corner. */
+      var side = el("div", "set-side");
+
+      /* THE TWO TOOLS, SIDE BY SIDE AND ABOVE THE REST. Moving the card and
+         taking it out are the only two things this page does to a song, and
+         they are the two things the library's card has no need of. */
+      var tools = el("div", "set-tools");
+
+      var grip = el("button", "set-grip");
+      grip.type = "button";
+      grip.title = "גרירה כדי לשנות את הסדר";
+      grip.setAttribute("aria-label", "הזזת " + (song ? song.title : item.title) + " ברשימה");
+      grip.appendChild(svg(ICON.grip));
+      /* nothing is bound to it: the list listens for all of them, see below */
+      tools.appendChild(grip);
 
       var out = iconBtn(ICON.trash, "הוצאה מהפלייליסט", function () {
         var at = playlist.songs.indexOf(item);
@@ -15137,7 +15337,19 @@
         mark(true);
       });
       out.classList.add("quiet");
-      li.appendChild(out);
+      tools.appendChild(out);
+      side.appendChild(tools);
+
+      /* AND THE RECORDINGS OF IT, on the same button every other song card
+         carries (see playRow). Here it is worth more than on the wall: the
+         wall is being scanned by somebody deciding what to pick up, and this
+         is a list somebody is about to sing from, where "how does this one go
+         again" is the question of the evening. One at a time and a player at
+         the foot of the screen, exactly as it is everywhere else. */
+      var takes = takesHeard(song);
+      if (takes) side.appendChild(playRow(song, takes));
+
+      li.appendChild(side);
 
       return li;
     }
@@ -15187,7 +15399,7 @@
       var grip = gripOf(event.target);
       if (!grip) return;
       event.preventDefault();
-      dragging = grip.parentNode;
+      dragging = grip.closest(".set-row");
       dragged = false;
       grip.classList.add("is-held");
       dragging.classList.add("is-moving");
@@ -15201,18 +15413,35 @@
       var from = rows.indexOf(dragging);
       if (from < 0) return;
 
-      /* Where the pointer is, said in rows. Going up it is the first row above
-         whose middle has been passed, going down the last one below. Midpoints
-         rather than edges, so a row swaps when the pointer is properly over it
-         and not the moment it grazes its border. */
-      var to = from;
-      for (var i = 0; i < rows.length; i++) {
-        if (i === from) continue;
-        var box = rows[i].getBoundingClientRect();
-        var middle = box.top + box.height / 2;
-        if (i < from && event.clientY < middle) { to = i; break; }
-        if (i > from && event.clientY > middle) to = i;
+      /* WHERE THE POINTER IS, SAID IN CARDS, AND IT IS A PLACE ON A WALL AND
+         NOT A HEIGHT DOWN A COLUMN. This was one number, clientY against the
+         middle of each row, which is the whole answer while the list is one
+         card wide and no answer at all once it is three: every card in the
+         second column shares its height with a card in the first, and half of
+         every drag would have landed in the wrong one.
+
+         So it is the card the pointer is INSIDE. Two numbers, no midpoints,
+         and nothing at all while the pointer is in the gap between two cards
+         or outside the wall: a drag that is between two answers has not given
+         one yet, and the list holds still until it does.
+
+         The card being dragged is checked first and answers with silence,
+         which is what stops the wall shuffling under a held finger: the moment
+         a move succeeds, the pointer is over the dragged card in its new
+         place, and every frame after it says nothing until the hand moves on
+         to another card. */
+      var x = event.clientX, y = event.clientY;
+      function over(node) {
+        var box = node.getBoundingClientRect();
+        return x >= box.left && x <= box.right && y >= box.top && y <= box.bottom;
       }
+      if (over(dragging)) return;
+
+      var to = -1;
+      for (var i = 0; i < rows.length; i++) {
+        if (i !== from && over(rows[i])) { to = i; break; }
+      }
+      if (to < 0) return;
       if (moveRow(dragging, to)) dragged = true;
     });
 
@@ -15237,7 +15466,7 @@
       var step = event.key === "ArrowUp" ? -1 : event.key === "ArrowDown" ? 1 : 0;
       if (!step) return;
       event.preventDefault();
-      var li = grip.parentNode;
+      var li = grip.closest(".set-row");
       if (moveRow(li, rowsOf().indexOf(li) + step)) {
         grip.focus();
         mark(true);
@@ -15282,7 +15511,7 @@
        and the same row says which and changes it: adding from one place and
        removing from another would be two answers to one question.
 
-       So the same song twice is not offered. An playlist that really wants an
+       So the same song twice is not offered. A playlist that really wants an
        encore of something can say so in its name. */
     function toggle(song) {
       var at = -1;
@@ -15317,9 +15546,9 @@
        different things. So the line is empty until then. */
     function note(text, bad) {
       stateNode.textContent = text || "";
-      /* ev-state kept: it is what puts the word on a line of its own, and
+      /* pl-state kept: it is what puts the word on a line of its own, and
          rebuilding the class list without it left it inline mid-page */
-      stateNode.className = "save-state ev-state" + (bad ? " is-bad" : "");
+      stateNode.className = "save-state pl-state" + (bad ? " is-bad" : "");
     }
 
     function mark(now) {
@@ -15347,8 +15576,7 @@
 
       var payload = {
         title: String(playlist.title || "").trim(),
-        event_date: playlist.event_date || null,
-        venue: String(playlist.venue || "").trim(),
+        description: String(playlist.description || "").trim(),
         songs: playlist.songs.map(function (item) {
           var song = byId[item.id];
           return { id: item.id, title: song ? song.title : item.title };
@@ -16061,6 +16289,7 @@
     state.songOut = null;
     state.songPast = null;
     state.songKill = null;
+    state.songLists = null;
     /* and the ways back through a song that is not on the screen any more */
     state.songUndo = null;
     state.songRevert = null;
@@ -16072,7 +16301,7 @@
        page that can be sieved says otherwise (see state.sift in viewIndex), or
        one that is built out of the library does (see state.pick in
        renderPlaylist). The second one also takes the box off the bar again on
-       every page that is not an playlist. */
+       every page that is not a playlist. */
     state.sift = null;
     state.pick = null;
     /* and with no sieve there is nothing being held down, whatever the last
@@ -16093,12 +16322,24 @@
        address without leaving the page, so the two cannot disagree. */
     if (p[0] === "style") return viewIndex(p[1] || null);
 
+    /* THESE WERE /evenings, AND SOMEBODY HAS THAT ADDRESS WRITTEN DOWN. The
+       word changed, the rows did not: the same table, the same account, the
+       same list. So the old address is answered by the new one and the bar
+       says so, once, in place of the entry that brought them here. Not a page
+       and not a message, because nothing happened that anybody needs telling
+       about: a list somebody kept is where they left it. */
+    if (p[0] === "evenings") {
+      var moved = addr.apply(null, ["playlists"].concat(p.slice(1)));
+      history.replaceState(history.state, "", moved);
+      p = parts();
+    }
+
     /* --- the playlists ---
        /playlists          the list of them
        /playlists/new      one that does not exist yet
        /playlists/<id>     one that does
 
-       All three need an account, and not only to write: an playlist belongs to
+       All three need an account, and not only to write: a playlist belongs to
        one, and the database hands back nothing at all without it. Checked
        here as well as there so the answer is a sentence rather than an empty
        list, which is what the same refusal looks like from the other side. */
@@ -16185,7 +16426,7 @@
     return viewSong(p[0]);
   }
 
-  /* An playlist, a version, an editor, a song written a minute ago: GitHub Pages
+  /* A playlist, a version, an editor, a song written a minute ago: GitHub Pages
      has no file at any of those, so the domain's 404.html sends the browser
      here with the path in ?p=. Put the real address back before anything
      renders, so the bar reads /chords/<slug>/ and a refresh works.
@@ -16364,7 +16605,7 @@
 
   function middleWalls() {
     Array.prototype.forEach.call(
-      document.querySelectorAll(".list:not(.band):not(.ledger)"), middleWall);
+      document.querySelectorAll(".list:not(.band):not(.ledger):not(.sets)"), middleWall);
   }
 
   /* Every wall, whenever one is built or sieved and whenever the room changes.
@@ -16886,7 +17127,7 @@
 
     /* Asked every reading rather than once when the tab opened, because the
        page underneath changes without this panel being told: a song opened
-       from the library, a different song from an playlist, a song that has
+       from the library, a different song from a playlist, a song that has
        finished being read from a photograph. Each of those is a song to follow
        arriving, and none of them is a press. */
     if (!following && !followRefused) startFollowing(false);
