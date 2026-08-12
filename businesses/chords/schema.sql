@@ -977,10 +977,16 @@ create table if not exists public.song_takes (
   page     int not null default 0,
   capo     int not null default 0,
 
-  -- Out in the world, and exactly like a song's own `published`: the only
-  -- thing that makes it readable by anybody else. A take is a recording of a
-  -- person singing, which is a more personal thing than a chord sheet, so it
-  -- starts private and stays that way until it is offered.
+  -- Offered to the world. A take is a recording of a person singing, which is
+  -- a more personal thing than a chord sheet, so it starts private and stays
+  -- that way until this is pressed.
+  --
+  -- IT IS HALF OF WHAT MAKES IT HEARABLE AND NOT ALL OF IT. The other half is
+  -- the song: a recording is played over words, so one anybody may hear on a
+  -- song nobody may read is a sound with nowhere to stand. The policy below
+  -- asks both, which is why this stays true while the song is a draft: the
+  -- offer was made and nobody took it back, and the song coming out again
+  -- brings its recordings back exactly as they were.
   published boolean not null default false,
 
   created_at timestamptz not null default now()
@@ -993,22 +999,75 @@ create index if not exists song_takes_owner_idx on public.song_takes (owner);
 
 alter table public.song_takes enable row level security;
 
--- Anybody at all for the ones that are out, and the account's own either way,
--- which is the same rule the songs live under.
+-- THE SONG IS THE CONDITION, AND THIS IS THE WHOLE OF THAT RULE.
+--
+-- A recording that is out on a song that is not out was possible here, and it
+-- was on purpose: the song came back through the recording, so that passing on
+-- one performance would not cost the whole song its privacy. What that bought
+-- was a second door into a song its author had not published, and two answers
+-- to the one question a person is actually asking when they publish something:
+-- who can read this. One song can then be both out and not out depending on
+-- which link somebody holds, which is not a thing anybody can hold in mind.
+--
+-- So there is one answer. A recording is heard by other people when the
+-- recording was offered AND the song it is of is in the world, and at every
+-- other moment it is its account's own. The account that made it hears it
+-- always, which is what makes recording onto a draft worth doing at all.
+--
+-- ASKED OF THE SONG RATHER THAN WRITTEN ONTO THE TAKE. Nothing copies the
+-- song's state across, so taking a song down, and typing into a published one
+-- (which puts it back to a draft, see mark in app.js), take every recording of
+-- it out of the world for exactly as long as the song is out of it. The song
+-- comes back and so do they, as they were. A fix to a chord does not cost
+-- somebody the recordings they published last month.
+--
+-- A DELETED SONG IS OUT OF THE WORLD TOO. Its `published` is cleared when it
+-- goes into the wastebasket (see db.remove), so this would hold anyway; it is
+-- said out loud because the sound is the one thing a deletion cannot reach.
 drop policy if exists "a take that is out is readable" on public.song_takes;
 create policy "a take that is out is readable"
   on public.song_takes for select
-  using (published or owner = auth.uid());
+  using (
+    owner = auth.uid()
+    or (published and exists (
+      select 1 from public.songs s
+       where s.id = song_takes.song_id
+         and s.published
+         and s.deleted_at is null
+    ))
+  );
 
+-- And offered only while there is something to offer it on. The rule above is
+-- what decides who hears it, so this changes nothing about that; what it stops
+-- is the press itself being made on a song still being written, which is a
+-- person told "published" about something nobody can reach. The button says
+-- the same thing before the request is made (see offerTake in app.js), and
+-- this is the half of it that does not depend on a browser.
 drop policy if exists "a take is recorded by its account" on public.song_takes;
 create policy "a take is recorded by its account"
   on public.song_takes for insert to authenticated
-  with check (owner = auth.uid());
+  with check (
+    owner = auth.uid()
+    and (not published or exists (
+      select 1 from public.songs s
+       where s.id = song_takes.song_id and s.published and s.deleted_at is null
+    ))
+  );
 
+-- Taking one down is always allowed, whatever state the song is in: `not
+-- published` passes this on its own, and a person who wants their voice off
+-- the internet is never made to publish a song first.
 drop policy if exists "a take is changed by its account" on public.song_takes;
 create policy "a take is changed by its account"
   on public.song_takes for update to authenticated
-  using (owner = auth.uid()) with check (owner = auth.uid());
+  using (owner = auth.uid())
+  with check (
+    owner = auth.uid()
+    and (not published or exists (
+      select 1 from public.songs s
+       where s.id = song_takes.song_id and s.published and s.deleted_at is null
+    ))
+  );
 
 drop policy if exists "a take is deleted by its account" on public.song_takes;
 create policy "a take is deleted by its account"
@@ -1016,70 +1075,26 @@ create policy "a take is deleted by its account"
   using (owner = auth.uid());
 
 -- --------------------------------------------------------------------------
--- AND THE SONG A SHARED RECORDING IS OF.
+-- AND THE DOOR THAT IS GONE.
 --
--- A take is a recording OF something, so a link to one opens the SONG with the
--- performance playing over it. Which used to mean that passing on a recording
--- of a song that was not published was an offer to publish the SONG, asked as
--- a question at the moment of sharing: the other person could not read the
--- page, so the page had to be put into the world, into everybody's library and
--- into the sitemap along with it.
+-- There was a function here, song_of_take, and it was the other half of the
+-- arrangement the policy above has just ended. A link to a recording opens the
+-- SONG with the performance playing over it, so a recording that was out on a
+-- song that was not needed some way to hand over the words: this read past the
+-- songs policy, as a definer, and answered one question, "the song this
+-- published recording is of".
 --
--- That is a much larger thing than the button was pressed for. Publishing a
--- song is a decision about the song; passing on a recording is a decision
--- about the recording; and neither should be the price of the other.
+-- Nothing asks it any more, because there is nothing left for it to answer. A
+-- recording is only ever hearable while its song is out (see the policy above),
+-- and a song that is out is read by the ordinary front door, by slug, like
+-- every other song in the library. A definer function that reads past a policy
+-- and is called by nobody is not harmless: it is the one piece of this file
+-- that could hand out an unpublished song's words, kept alive for a reason
+-- that has gone.
 --
--- So the song comes back THROUGH THE TAKE, and only through it. The policy on
--- songs above is untouched, which is what keeps the difference: the library
--- lists the published ones and the build writes exactly those to disk, because
--- both ask the TABLE and the table still answers what it always did. What this
--- answers is one question, which the table cannot be asked without losing that
--- difference: "the song this published recording is of". Whoever holds the id
--- of a recording that is out gets the words it was played over. Whoever does
--- not gets nothing, and there is no way in here from a song id, a slug or a
--- list.
---
--- SECURITY DEFINER, because reading past the policy is the whole of what it is
--- for, which is also why it names its columns one at a time instead of handing
--- back the row: `reads` is there for measuring the reader and is nobody's
--- business, and a `setof songs` would have carried it out with everything
--- else. search_path is pinned for the same reason every definer function pins
--- it: one that resolves its own names is one somebody else can point
--- somewhere.
--- --------------------------------------------------------------------------
--- The argument is `take_id` and not `take`, which is what it was: `take` is
--- already a COLUMN on song_takes (which recording of this song this is), a
--- column beats a parameter of the same name inside the body, and `t.id = take`
--- was quietly comparing a uuid with that integer. Postgres said so and refused
--- to create the function, which is the good version of this mistake.
+-- The drop stays so that a project this file has already been run on loses it
+-- too.
 drop function if exists public.song_of_take(uuid);
-create function public.song_of_take(take_id uuid)
-returns table (
-  id uuid, slug text, title text, lyrics_by text, music_by text,
-  dir text, lines jsonb, styles text[], status text, status_note text,
-  review boolean, draft boolean, published boolean, owner uuid,
-  created_at timestamptz, updated_at timestamptz, deleted_at timestamptz
-)
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select s.id, s.slug, s.title, s.lyrics_by, s.music_by,
-         s.dir, s.lines, s.styles, s.status, s.status_note,
-         s.review, s.draft, s.published, s.owner,
-         s.created_at, s.updated_at, s.deleted_at
-    from public.song_takes t
-    join public.songs s on s.id = t.song_id
-   where t.id = take_id
-     and t.published
-     -- A song in the wastebasket is a song its owner took out of the world,
-     -- and a link somebody sent last week is not a reason to hand it back.
-     and s.deleted_at is null
-$$;
-
-revoke all on function public.song_of_take(uuid) from public;
-grant execute on function public.song_of_take(uuid) to anon, authenticated;
 
 -- ==========================================================================
 -- And the bucket the sound itself is in.
@@ -1116,6 +1131,11 @@ on conflict (id) do update
 -- Readable exactly when the row that names it is readable. `name` in
 -- storage.objects is the path within the bucket, which is what song_takes.path
 -- holds, so the two are the same string and this is one lookup.
+--
+-- THE SAME TWO CONDITIONS, WRITTEN OUT AGAIN. This is the sound, and the sound
+-- is the thing that would actually be heard: a rule that let go of the song
+-- here would mean a recording nobody may see a row for, sitting at a path that
+-- plays. So the song is asked about here too, in the same words.
 drop policy if exists "a take sound follows its row" on storage.objects;
 create policy "a take sound follows its row"
   on storage.objects for select
@@ -1123,7 +1143,13 @@ create policy "a take sound follows its row"
     bucket_id = 'takes' and exists (
       select 1 from public.song_takes t
        where t.path = storage.objects.name
-         and (t.published or t.owner = auth.uid())
+         and (
+           t.owner = auth.uid()
+           or (t.published and exists (
+             select 1 from public.songs s
+              where s.id = t.song_id and s.published and s.deleted_at is null
+           ))
+         )
     )
   );
 

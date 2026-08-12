@@ -1223,11 +1223,26 @@
 
   /* How many recordings of each song are OUT, by song id. THE BUTTON THAT
      PLAYS ONE IS PART OF A SONG CARD, and a song card is drawn in more than
-     one place: the library, a person's page, an playlist's list. So this is
+     one place: the library, a person's page, a playlist's list. So this is
      read by every page that draws one, and a page that forgets to ask draws
      the same cards with the button quietly missing from all of them. Kept
      here, because it is one question for a whole page of cards. */
   var takesOut = {};
+
+  /* --- AND ONLY WHERE THE SONG ITSELF IS OUT --------------------------------
+     The question above is asked of the recordings alone, and a recording is
+     out only while the song it is of is (see song_takes in schema.sql). For
+     everybody else the two are the same answer, because a recording of a song
+     that is not out never comes back from the database at all. For the account
+     that made one it is not: its own offered recording of its own draft is
+     readable BY IT, and a card that counted it would be telling its owner that
+     something is out in the world when nobody can reach it.
+
+     A song that has gone back to being a draft, which is what typing into a
+     published one does, is the ordinary way this happens. */
+  function takesHeard(song) {
+    return song && song.published ? takesOut[song.id] : null;
+  }
 
   /* ==========================================================================
      THE RECORDINGS ON A ROW OF THE WALL, AND THE BUTTON THAT PLAYS ONE.
@@ -1462,26 +1477,13 @@
         });
     },
 
-    /* --- THE SONG ONE RECORDING IS OF ---------------------------------------
-       For a reader holding a link to a take of a song that is not in the
-       library. A recording that is out is out: whoever has it may hear it, and
-       what it is a recording OF is the page it plays over, so the words come
-       with it. Sharing a performance never publishes the song (see shareTake).
-
-       NOT A SECOND WAY INTO THE LIBRARY. The database answers this question and
-       no other, and only for a recording that is published: there is no way in
-       here from a song id, from a slug, or from a list (see song_of_take in
-       schema.sql). Everything else on this page still asks the table and is
-       still answered by the same rule as before.
-
-       A project whose SQL has not been run since this arrived has no such
-       function and says so; the answer then is the same as no song, which is
-       the page the reader was going to get anyway. */
-    byTake: function (id) {
-      return rest("rpc/song_of_take?take_id=" + encodeURIComponent(id))
-        .then(function (rows) { return (rows && rows[0]) || null; })
-        .catch(function () { return null; });
-    },
+    /* THERE WAS A SECOND WAY IN HERE, byTake, and it is gone with the function
+       it asked (see song_of_take in schema.sql). It was for a reader holding a
+       link to a recording of a song that was not in the library: the recording
+       was out, the song was not, and the words had to come from somewhere. A
+       recording is only out while its song is out now, so the link opens the
+       song by its slug like every other, and one that opens nothing is a song
+       whose author has taken it back. */
     insert: function (song) {
       var self = this;
       return rest(T, { method: "POST", body: shed(song), prefer: "return=representation" })
@@ -8785,8 +8787,9 @@
          Only the ones that are OUT. An account's own unpublished attempts are
          readable by it (see song_takes in schema.sql) and they are not a
          reason for anybody, including its owner, to pick this row off a
-         wall. */
-      var out = takesOut[s.id];
+         wall. Nor are its offered ones on a song it has not published, which
+         nobody else can reach either (see takesHeard). */
+      var out = takesHeard(s);
       if (out) side.appendChild(playRow(s, out));
 
       a.appendChild(side);
@@ -9188,22 +9191,14 @@
     }
 
     setBusy("טוען את השיר");
+    /* ONE WAY IN, WHICH IS THE SLUG. There was a second one here for a reader
+       holding a link to a recording: nothing came back for the address, so the
+       song was asked for through the take instead, and a performance that was
+       out carried the words of a song that was not. A recording is out only
+       while its song is (see song_takes in schema.sql), so a link with a
+       recording on it is a link to a song anybody may read, and this reads it
+       the same way it reads any other. Nothing back means nothing to show. */
     db.bySlug(slug).then(function (song) {
-      if (song) return song;
-      /* --- OR THE SONG A RECORDING WAS SENT WITH ---------------------------
-         Nothing came back, and there are two ways that happens: there is no
-         such song, or there is one and this reader is not allowed to read it.
-         The second has an answer whenever the address names a recording,
-         because a recording that is out is out: whoever holds the link may
-         hear it, and what it is a recording OF is the page it plays over.
-
-         So the song is asked for through the take instead, which is a door
-         that opens on nothing else (see db.byTake). Somebody who was passed a
-         performance gets the words under it, and the song is not in anybody's
-         library for it. */
-      var wanted = takeWanted();
-      return wanted ? db.byTake(wanted) : null;
-    }).then(function (song) {
       if (!song) return notFound(slug);
 
       /* A song whose reading FAILED is a song with a name and no words yet,
@@ -19086,26 +19081,45 @@
       node.appendChild(off);
     }
 
+    /* --- AND WHETHER IT IS WAITING FOR THE SONG -------------------------------
+       A recording that was offered on a song that is not out is a recording
+       nobody can reach: the two are one thing to a listener, so the song is
+       the condition (see song_takes in schema.sql). It is not a mistake and it
+       is not undone, it is a state, and it is the ordinary state of a song
+       being worked on after somebody typed into it. Said here rather than
+       guessed at from a button that would otherwise be claiming the world. */
+    var heard = !!row.published && !!song.published;
+    if (mine && !song.published) {
+      /* In the same small print "בסולם אחר" is in, because it is the same kind
+         of thing: one line about this recording that is not the ordinary case.
+         Drawn on every row of a song being worked on and shown only where it is
+         true, so that taking one down here takes its words with it (see
+         offerTake). */
+      var held = el("span", "take-off take-wait", "מחכה לפרסום השיר");
+      held.title = "ההקלטה מפורסמת, אבל השיר לא. אף אחד לא ישמע אותה עד שהשיר יפורסם";
+      held.hidden = !row.published;
+      node.appendChild(held);
+    }
+
     /* --- SHARING, WHICH ONLY A RECORDING THAT IS OUT CAN DO -------------------
        What a link to a take opens is the song with that performance playing
        over it, so a link to a take nobody else may hear opens nothing. On a
-       take of your own that is not published yet the button is NOT THERE: an
-       offer to pass on something that cannot be passed on is an offer to send
-       somebody a dead link, and the way to make it live is the button beside
-       it. Published, and it appears.
+       take that is not out the button is NOT THERE: an offer to pass on
+       something that cannot be passed on is an offer to send somebody a dead
+       link, and the way to make it live is the button beside it. Out, and it
+       appears.
 
        Somebody else's take that is out has one too. Passing on a link that
        already exists is passing on a link.
 
-       AND IT COSTS THE SONG NOTHING. The recording is what is being passed on,
-       and the words come with it because a performance has to be played over
-       something; the song is not published, not listed and not indexed for it
-       (see shareTake). */
+       AND OUT MEANS BOTH. The link opens the song with the performance over
+       it, so a recording on a song still being written has nowhere to send
+       anybody, however published the recording itself is (see heard). */
     var pass = iconBtn(ICON.share, "שיתוף ההקלטה", function () {
       shareTake(row, song);
     });
     pass.classList.add("take-pass");
-    pass.hidden = !row.published;
+    pass.hidden = !heard;
     node.appendChild(pass);
 
     if (mine) {
@@ -19115,11 +19129,17 @@
          something", so a tick pressed in was the one thing on the row that had
          to be worked out. A globe is not a state of a button, it is a fact
          about the recording: the world, in the same picture every other place
-         a person has posted anything says it with. */
+         a person has posted anything says it with.
+
+         WHAT THE PICTURE IS ABOUT IS THE OFFER, which is the thing this button
+         changes: pressed in means "I have put this out", and whether anybody
+         can actually hear it is the song's answer, which the words underneath
+         give. Taking it down is one press either way, and it is never refused:
+         nobody is made to publish a song to get their own voice off the
+         internet. */
       var out = iconBtn(row.published ? ICON.globe : ICON.upload,
-        row.published ? "ציבורית: כל מי שיש לו את הקישור יכול לשמוע. לחיצה מורידה מפרסום"
-                      : "פרסום ההקלטה", function () {
-          offerTake(row, out, pass);
+        outSaid(row, song), function () {
+          offerTake(row, out, pass, song);
         });
       out.classList.add("take-out");
       out.classList.toggle("is-on", !!row.published);
@@ -19134,6 +19154,21 @@
 
   function said0(seconds) {
     return said(seconds || 0);
+  }
+
+  /* The four things this one button can be standing in front of, in the two
+     answers that make them: whether the recording was offered, and whether the
+     song it is of is out. Kept in one place because the button is written
+     twice, once when the row is drawn and once when it is pressed. */
+  function outSaid(row, song) {
+    if (row.published) {
+      return song.published
+        ? "ציבורית: כל מי שיש לו את הקישור יכול לשמוע. לחיצה מורידה מפרסום"
+        : "מפורסמת, אבל השיר לא: אף אחד לא ישמע אותה עד שהשיר יפורסם. לחיצה מורידה מפרסום";
+    }
+    return song.published
+      ? "פרסום ההקלטה"
+      : "אפשר לפרסם הקלטה רק אחרי שהשיר עצמו פורסם";
   }
 
   /* WHICH RECORDING THIS PAGE WAS OPENED FOR, if it was opened for one. Read
@@ -19154,19 +19189,16 @@
      playing over them. Not a file: a file is a recording, and this is a
      recording OF a song, which is a page.
 
-     AND IT SHARES THE RECORDING, NOT THE SONG. It used to ask, whenever the
-     song was not published, whether to publish it: the other person had to be
-     able to read the page, and the only way in was the front door, which is
-     the library and the sitemap and every reader there will ever be. So
-     passing one recording to one person cost the whole song, and the question
-     came up at the worst possible moment, with the sheet already open and the
-     press already made.
+     AND IT ASKS NOTHING, because by the time this button exists there is
+     nothing left to ask. It used to offer to publish the song, at the worst
+     possible moment: the sheet was open, the press had been made, and the
+     other person could not read the page. Then it stopped asking and handed
+     the words over through the recording instead, which made one song both out
+     and not out depending on which link somebody was holding.
 
-     What goes out is what was pressed: this performance, to whoever is handed
-     the link, and the words underneath it because a recording without them is
-     a sound with nowhere to stand. The song stays exactly as private as it
-     was, out of the library and out of the sitemap, and the way in is the
-     recording itself (see song_of_take in schema.sql, and db.byTake).
+     Now the button is not there at all until both are out (see takeRow), so
+     what this passes on is an address in the library like any other, with one
+     recording named on the end of it.
 
      Handed to whatever the machine has. A phone opens the sheet every app on
      it is listed in; a desk has no such thing and gets the link on the
@@ -19350,15 +19382,27 @@
     tellLength(audio, function () { startAudio(audio); });
   }
 
-  /* PUBLISHING A RECORDING SAYS NOTHING ABOUT THE SONG, and it used to have to:
-     what anybody else opens is the song with the recording playing over it, so
-     a public take on a private song was a link to a page they were not allowed
-     to read, and this said so and sharing offered to publish both. It does not
-     any more. A recording that is out carries the words it was played over to
-     whoever holds it, and the song stays where its author left it (see
-     song_of_take in schema.sql). One button, one thing said. */
-  function offerTake(row, out, pass) {
+  /* --- PUTTING A RECORDING OUT, WHICH THE SONG HAS TO BE FIRST ---------------
+     A recording is heard over the words it was played over, so a recording out
+     in the world on a song that is not is a link to a page the person holding
+     it may not read. It has been answered two ways before this one: publish
+     both, which made passing on one performance cost the whole song, and a
+     door of its own into the song, which made the song out and not out at the
+     same time depending on which link somebody held.
+
+     So the song is the condition, and it is one sentence: a song is published,
+     and then recordings of it can be. The database says the same thing and is
+     the one that means it (see song_takes in schema.sql); this is here so that
+     a press is answered where it was made, in words, rather than by a request
+     coming back refused.
+
+     TAKING ONE DOWN IS NEVER REFUSED. Whatever state the song is in, a person
+     who wants their voice off the internet presses this once. */
+  function offerTake(row, out, pass, song) {
     var want = !row.published;
+    if (want && !song.published) {
+      return toast("קודם מפרסמים את השיר, ואז אפשר לפרסם הקלטות שלו");
+    }
     out.disabled = true;
     rest(CFG.takeTable + "?id=eq." + row.id, {
       method: "PATCH", body: { published: want },
@@ -19367,12 +19411,15 @@
       out.disabled = false;
       out.classList.toggle("is-on", want);
       reicon(out, want ? ICON.globe : ICON.upload);
-      retitle(out, want ? "ציבורית: כל מי שיש לו את הקישור יכול לשמוע. לחיצה מורידה מפרסום"
-                        : "פרסום ההקלטה");
+      retitle(out, outSaid(row, song));
       /* And the way to pass it on comes with it, because that is what has just
          become possible, and goes with it when it is taken down: a link that
          stopped working is worse than no button (see takeRow). */
-      if (pass) pass.hidden = !want;
+      if (pass) pass.hidden = !(want && song.published);
+      /* And the line that says it is waiting for the song, which is only ever
+         on a row of a song that is not out (see takeRow). */
+      var wait = out.parentNode ? out.parentNode.querySelector(".take-wait") : null;
+      if (wait) wait.hidden = !want;
       toast(want ? "ההקלטה פורסמה" : "ההקלטה ירדה מפרסום");
     }).catch(function () {
       out.disabled = false;
