@@ -256,11 +256,8 @@ const listOf = async (v) => (typeof v === "function" ? await v() : v);
 /* One business, one site. Everything it emits lands under its own `out`, and
    every path inside it is relative to that — which is why the same folder can be
    served from floa.co.il/<key>/ today and from its own domain tomorrow. */
-async function renderBusiness(business, bundle, sitemaps) {
+async function renderBusiness(business, { pages, siteMap }, bundle, sitemaps) {
   const { key, out, root, site, runtime } = business;
-
-  const pages = await listOf(business.pages);
-  const siteMap = await listOf(business.siteMap);
 
   /* checkCollisions ran before any of this, on a list that could not include
      these: a name nobody can see yet cannot be checked against the ones that
@@ -322,6 +319,16 @@ async function build(only) {
   const chosen = only ? all.filter((b) => b.key === only) : all;
   if (!chosen.length) throw new Error(`build: no business named "${only}" under businesses/`);
 
+  /* Asked BEFORE anything is deleted, because this is the one question that
+     leaves the machine: a business whose pages come out of a database can fail
+     here, and a build that fails must leave what is already published exactly
+     as it was. Emptying dist/ first would answer "no network" by taking the
+     whole site down. */
+  const lists = await Promise.all(chosen.map(async (b) => ({
+    pages: await listOf(b.pages),
+    siteMap: await listOf(b.siteMap),
+  })));
+
   /* A full build starts from nothing, so a page that was deleted or renamed
      cannot survive in dist/ and go on being published. A --only build must not:
      it would take every other business's site down with it.
@@ -341,8 +348,8 @@ async function build(only) {
   const root = all.find((b) => b.root);
   const sitemaps = root ? sitemapsOf(all, root.site.origin) : [];
 
-  for (const business of chosen) {
-    const written = await renderBusiness(business, bundle, sitemaps);
+  for (const [i, business] of chosen.entries()) {
+    const written = await renderBusiness(business, lists[i], bundle, sitemaps);
     console.log(`✓ ${business.key} — ${written.length} files`);
     for (const f of written) console.log(`  ${f.replaceAll("\\", "/")}`);
   }
