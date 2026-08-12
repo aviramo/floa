@@ -6026,18 +6026,15 @@
     if (state.songLists) {
       var mine = state.songLists;
       var many = listsWith(mine.id).length;
-      var lists = button(many ? "פלייליסטים (" + many + ")" : "פלייליסטים", ICON.playlist,
+      /* The count is the whole of the answer, and it says it in the same voice
+         as every other row here: a lit row would pull the eye down the panel
+         to the one thing that is not more urgent than the rest. */
+      rows.push(button(many ? "פלייליסטים (" + many + ")" : "פלייליסטים", ICON.playlist,
         "ghost small", function () {
           /* not closeUnder: this row asks a second question, and asking it
              replaces the panel it was asked from (see askPrint) */
           askPlaylists(anchor, mine);
-        });
-      /* AND THE ROW IS LIT WHEN THE ANSWER IS YES. The count says the same
-         thing in a number, and a number is read second: a lit row is what a
-         glance down the panel picks up, and this is the one row in here whose
-         state is a fact about the song rather than about the page. */
-      lists.classList.toggle("is-on", many > 0);
-      rows.push(lists);
+        }));
     }
     if (state.songKill) {
       var kill = state.songKill;
