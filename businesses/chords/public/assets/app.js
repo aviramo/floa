@@ -89,7 +89,6 @@
     upload: '<path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>',
     paste: '<rect x="7" y="4" width="10" height="16" rx="2"/><path d="M10 4h4"/>',
     section: '<path d="M5 6h14M5 12h9M5 18h12"/>',
-    grip: '<path d="M8 9h8M8 15h8"/>',
     up: '<path d="M12 19V5m0 0l-6 6m6-6l6 6"/>',
     down: '<path d="M12 5v14m0 0l-6-6m6 6l6-6"/>',
     copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/>',
@@ -4450,7 +4449,7 @@
      `songs` is not one of them: it is the library itself, one copy for
      everybody, and every sheet showing it is showing the same songs. */
   var PAGE_STATE = ["printable", "printer", "killer", "editToggle",
-    "songControls", "redrawSong", "rehome", "doors", "wake", "sift", "pick", "ear",
+    "songControls", "redrawSong", "rehome", "doors", "wake", "sift", "ear",
     "takeSong", "redrawTakes", "takesOpen", "takesCount",
     "songMoves", "songDetails", "songOut", "songPast", "songKill",
     "songUndo", "songRevert", "up"];
@@ -6329,16 +6328,30 @@
        field and every song under it, standing open under a playlist of three
        songs whether or not anybody was adding one. The box in the bar is the
        same field, already there, already known, and it costs the page nothing
-       while it is shut (see state.pick in renderPlaylist). */
+       while it is empty (see state.sift in renderPlaylist). */
     var glass = document.getElementById("topFind");
-    if (glass) glass.hidden = p.length > 0 && !state.pick;
-    /* And it says which of the two it is. One word either way, because the box
-       is not the thing to explain, but they are not the same word: everywhere
-       else typing here leads somewhere, and on a playlist it puts a song in. */
+    if (glass) glass.hidden = p.length > 0 && !state.sift;
+    /* AND ON SOME PAGES IT IS A BOX ON A PHONE TOO, NOT A GLASS TO BE PRESSED.
+       The narrow bar turns it into one more picture in a row of pictures
+       because the row is full: a mark, the name of the page and four buttons.
+       A page whose bar is nearly empty has the room to leave the box a box,
+       and a box that has to be pressed before it says what it is for is a
+       search nobody looks for. Asked for by the page (see sift.open), because
+       only the page knows what else is standing on its bar. */
+    document.body.classList.toggle("open-find", !!(state.sift && state.sift.open));
+    /* And it says which of them it is. One word either way, because the box is
+       not the thing to explain, but they are not the same word: everywhere else
+       typing here narrows or leads somewhere, on a playlist what it leaves is a
+       shelf to pick out of (see sift.adds), and on the wall of playlists it
+       searches those and nothing else (see sift.says). A page that has
+       something else to say about its own box says it there; the rest get the
+       app's own sentence. */
+    var says = (state.sift && state.sift.says) || null;
+    var adds = !!(state.sift && state.sift.adds);
     if (findField) {
-      findField.placeholder = state.pick ? "הוספת שיר..." : "חיפוש...";
-      findField.setAttribute("aria-label",
-        state.pick ? "חיפוש שיר להוספה לפלייליסט" : "חיפוש שיר, יוצר או פלייליסט");
+      findField.placeholder = says ? says.hint : (adds ? "הוספת שיר..." : "חיפוש...");
+      findField.setAttribute("aria-label", says ? says.label
+        : (adds ? "חיפוש שיר להוספה לפלייליסט" : "חיפוש שיר, יוצר או פלייליסט"));
     }
 
     /* The playlists are a list like the library is a list, so their page gets
@@ -7285,22 +7298,10 @@
     });
     findField.addEventListener("focus", function () {
       openFind();
+      /* A page being sieved has no panel to open: the answer is the wall
+         underneath, and the press has already taken the page down to it (see
+         openFind). This is both the library and a playlist. */
       if (state.sift) return;
-      /* --- AND WHERE IT PICKS, IT OPENS ON THE WHOLE SHELF --------------------
-         Everywhere else an empty box is an empty question and there is nothing
-         to answer it with. On a playlist the question is "which song", the
-         answer is the library, and it is a list somebody browses as often as
-         they search it: the name is on the tip of the tongue about as often as
-         it is in the hand. So the press opens the shelf, and typing shortens
-         it.
-
-         Only while it is shut: a song put in from halfway down the list leaves
-         the panel open and the field focused, and asking again on the way back
-         into it would send the list to the top under the finger. */
-      if (state.pick) {
-        if (findOut.hidden) askFind();
-        return;
-      }
       if (findField.value.trim()) askFind();
     });
     findField.addEventListener("keydown", onFindKey);
@@ -7429,11 +7430,6 @@
   function askFind() {
     if (!findField) return;
     var q = findField.value.trim();
-    /* The page that is picking answers out of what it is already holding: the
-       playlist read the library to draw itself, and reading it a second time to
-       say which of it is in the list would be the same request twice. Nothing
-       is in the air, so nothing has to be waited for or beaten to the panel. */
-    if (state.pick) return paintPick(q);
     if (!q) return shutFind();
 
     var mine = ++findAsked;
@@ -7483,70 +7479,14 @@
     if (over > 0) findOut.appendChild(el("div", "find-more", "ועוד " + over + ", אפשר להקליד עוד אות"));
   }
 
-  /* --- AND THE SAME PANEL, WHERE A RESULT IS NOT A WAY ANYWHERE --------------
-     Every row above opens a page and the box shuts behind it. Here a row is a
-     song going into the playlist under the box, the page it would open is not
-     where anybody is going, and a playlist is usually built several songs at a
-     time. So the panel stays, the row says what it now is, and the next song
-     is the next press.
+  /* THERE WAS A SECOND PANEL HERE, the one a playlist answered with: a list of
+     names in a drop under the box, each with "הוספה" or "בפלייליסט" on the end
+     of it. Which made the same song two different things in two places, a card
+     on the wall and a line in a drop, and the line said the least about it: no
+     shapes, no state, nothing to decide by.
 
-     Not cut at eighteen either. Up there a cut list is a list of ways to a
-     page and one more letter finds the way; this is a shelf being looked
-     along, and a shelf that stops halfway is missing songs. It scrolls, which
-     is what a shelf does. */
-  function paintPick(q) {
-    var found = state.pick(q) || [];
-    /* Rebuilt where it was, so a list browsed halfway down does not jump back
-       to the top the moment something is taken off it. */
-    var was = findOut.scrollTop;
-    findOut.textContent = "";
-    findRows = [];
-    findAt = -1;
-    findOut.hidden = false;
-
-    if (!found.length) {
-      findOut.appendChild(el("div", "find-none",
-        q ? 'לא נמצא שיר עבור "' + q + '".' : "המאגר עוד ריק."));
-      return;
-    }
-
-    found.forEach(function (item) {
-      var row = el("button", "find-row" + (item.inside ? " is-in" : ""));
-      row.type = "button";
-
-      var main = el("div", "find-main");
-      main.appendChild(el("div", "find-t", item.name));
-      if (item.said) main.appendChild(el("div", "find-said", item.said));
-      row.appendChild(main);
-
-      /* ONE ROW, ONE PRESS, BOTH WAYS. A song is in the playlist or it is not,
-         and the same row says which and changes it: adding from one place and
-         taking out from another would be two answers to one question. */
-      var mark = el("span", "find-mark", item.inside ? "בפלייליסט" : "הוספה");
-      row.appendChild(mark);
-
-      row.addEventListener("click", function () {
-        item.take();
-        /* The row is changed where it stands and the list is NOT drawn again:
-           a panel that rebuilds itself under a finger takes the row that was
-           just pressed out from under it, and the press after it lands on
-           whatever slid into the place. */
-        item.inside = !item.inside;
-        row.classList.toggle("is-in", item.inside);
-        mark.textContent = item.inside ? "בפלייליסט" : "הוספה";
-        /* and the typing goes on from where it left off: the press moved the
-           focus onto the button it landed on, and the box is the thing being
-           used */
-        findField.focus();
-      });
-      row.addEventListener("mousemove", function () { markFind(findRows.indexOf(row)); });
-
-      findRows.push(row);
-      findOut.appendChild(row);
-    });
-
-    findOut.scrollTop = was;
-  }
+     A playlist sieves its own wall now, exactly as the library does (see
+     state.sift in renderPlaylist), so what a search leaves is cards. */
 
   function markFind(index) {
     if (index < 0 || index >= findRows.length) return;
@@ -15021,16 +14961,66 @@
          names down one side of the screen. So this wall is one card wide and
          the songs in it wrap across the room (see .list.sets).
 
-         The box that used to stand over it is in the bar now, and it searches
-         further than this one could: a playlist is remembered by its name, by
-         what it says about itself, or by a song that is in it, and the box up
-         there reads all three along with the songs and the people. */
+         The box that used to stand over it is in the bar now, where every other
+         page in this app keeps its own, and it reads a playlist the way it is
+         remembered: by its name, by what it says about itself, or by a song
+         that is in it. */
       var list = el("ul", "list sets");
       app.appendChild(list);
 
-      playlists.forEach(function (playlist) {
-        list.appendChild(playlistRow(playlist, titles));
-      });
+      /* --- AND HERE THE BOX NARROWS THE WALL, IT DOES NOT HANG A LIST OVER IT -
+         Everywhere else the glass answers with a panel of names, because what
+         is being asked for is somewhere ELSE. Here it is not: the playlists are
+         already on the screen, in cards carrying what each one says about
+         itself and every song in it, and a drop of names over them is the same
+         playlists said with less. So the wall does the answering, exactly as
+         the library's does (see state.sift in viewIndex).
+
+         By the same three things the panel reads a playlist by, and there is
+         only one place that is written down (see playlistHay): its name, the
+         line under it, and the songs in it by the names they carry NOW. */
+      var sifted = "";
+      var nothing = el("p", "hint");
+      nothing.hidden = true;
+      app.appendChild(nothing);
+
+      function paint() {
+        list.textContent = "";
+        playlists.forEach(function (playlist) {
+          if (sifted && playlistHay(playlist, titles).indexOf(sifted) < 0) return;
+          list.appendChild(playlistRow(playlist, titles));
+        });
+        nothing.textContent = 'לא נמצא פלייליסט עבור "' + sift.q.trim() + '".';
+        nothing.hidden = !sifted || list.children.length > 0;
+      }
+
+      var sift = function (typed) {
+        /* kept as it was typed, because a page put aside and uncovered comes
+           back with the box emptied in between (see reveal) */
+        sift.q = String(typed || "");
+        sifted = sift.q.trim().toLowerCase();
+        siftMark();
+        paint();
+      };
+      sift.q = "";
+      /* where the page has to stand for the box to be answered */
+      sift.wall = list;
+      /* what this box is, said in its own words: the app's sentence names songs
+         and people, and neither of those is on this page */
+      sift.says = {
+        hint: "חיפוש פלייליסט...",
+        label: "חיפוש לפי שם פלייליסט, תיאור, או שם שיר שבתוכו",
+      };
+      /* and it stands here open, on a phone as on a desk: this bar carries the
+         way back and the name of the page and nothing else, so there is room
+         for the box to be a box (see body.open-find in the stylesheet) */
+      sift.open = true;
+      state.sift = sift;
+      /* the bar was painted before this page had a sieve, and the glass stands
+         on a page only while there is one (see paintHeader) */
+      paintHeader();
+
+      paint();
     }).catch(function (error) {
       if (missingTable(error)) return needSchema();
       fail(error);
@@ -15173,7 +15163,14 @@
     app.appendChild(stateNode);
 
     /* the two things worth doing to a whole playlist, in the bar */
-    state.printer = function () { window.print(); };
+    state.printer = function () {
+      /* A sheet is the playlist. While there are words in the box this wall is
+         the library narrowed to them (see sift), and printing that would hand
+         somebody a page of songs they have not chosen, so the search is put
+         back first and the playlist is what goes on the paper. */
+      if (sifted) { sift(""); clearFind(); }
+      window.print();
+    };
     state.killer = removePlaylist;
     /* --- AND WHERE THE SONGS COME FROM, ALSO IN THE BAR ----------------------
        The songs are everybody's and the playlist is one account's, which is why
@@ -15184,16 +15181,14 @@
        itself, a field and the whole library under it, standing open under a
        playlist of three songs whether or not anybody was adding one. Which is
        the second search box on a page that already has one: the box in the bar
-       is the field everybody in this app already types songs into, it is empty
-       until it is pressed, and it hangs its answer over the playlist instead of
-       pushing it up the screen.
+       is the field everybody in this app already types songs into, and it is
+       empty until somebody types in it.
 
-       So the page hands the box a shelf to pick out of, exactly as the library
-       hands it a sieve (see state.sift), and the box does the rest: pressed it
-       opens on all of them, typed into it narrows, and a press on a row puts
-       that song in or takes it out. */
-    state.pick = pickList;
-    paintHeader();
+       So the page hands the box a sieve, exactly as the library does (see
+       state.sift in viewIndex), and the box does the rest: typing turns this
+       wall into the library narrowed to those words, and a press on a card
+       puts that song in the playlist or takes it out. See sift below, which is
+       what the bar is painted from, so the box is handed over first. */
 
     /* --- the songs, in order --- */
 
@@ -15207,23 +15202,143 @@
        the same width. It was a band of ribbons across the whole screen, each
        one holding four words at one end and a hand's width of nothing in the
        middle, and the two halves of this app looked like two apps. What the
-       card carries here that the library's does not is the number it is at
-       and the two tools that move it and take it out. */
+       card carries here that the library's does not is the number it is at,
+       the way out of the list, and a place in an order it can be dragged
+       along. */
     var listEl = el("ol", "set");
     app.appendChild(listEl);
 
     /* An empty playlist is the one time the way to add to it has to be said in
        words: there is nothing on the page to press, and the box that fills it
-       is a glass in the corner of the bar. */
-    var emptyNote = el("p", "hint", "אין עדיין שירים בפלייליסט. אפשר להוסיף אותם בחיפוש שבסרגל למעלה, ואחר כך לגרור בידית כדי לסדר.");
+       is a glass in the corner of the bar. The same line answers for a search
+       that found nothing, because it is the same wall saying why it is empty. */
+    var EMPTY_SAID = "אין עדיין שירים בפלייליסט. אפשר להוסיף אותם בחיפוש שבסרגל למעלה, ואחר כך לגרור כרטיס כדי לסדר.";
+    var emptyNote = el("p", "hint", EMPTY_SAID);
     app.appendChild(emptyNote);
+
+    /* --- WHAT THE BOX IN THE BAR IS SIEVING THIS PAGE DOWN TO -----------------
+       The library's own box narrows the wall of cards under it rather than
+       hanging a list of names over it, and there is no reason a playlist should
+       answer the same question differently: what somebody types here is the
+       name of a song, and a song in this app is a card, with who wrote it and
+       the shapes it is played in on it. A line in a drop is the same song said
+       with less.
+
+       So while there are words in the box this wall IS the library, narrowed
+       to them, and while there are none it is the playlist. Nothing is
+       covered, nothing is pushed down the screen, and the press that opens the
+       box has already taken the page down to this wall (see siftRoom).
+
+       AND WHAT IS ALREADY IN THE PLAYLIST SAYS SO, in the place the playlist
+       says it: the number the card stands at. A shelf where the songs already
+       chosen look like the ones that are not is a shelf somebody picks the
+       same song off twice. */
+    var sifted = "";
+
+    var sift = function (typed) {
+      /* kept as it was typed, because a page put aside and uncovered comes
+         back with the box emptied in between (see reveal) */
+      sift.q = String(typed || "");
+      sifted = sift.q.trim().toLowerCase();
+      siftMark();
+      draw();
+    };
+    sift.q = "";
+    /* where the page has to stand for the box to be answered */
+    sift.wall = listEl;
+    /* the one thing this sieve does that the library's does not, which is what
+       the box says of itself while it is here (see paintHeader) */
+    sift.adds = true;
+    state.sift = sift;
+    paintHeader();
 
     /* --- drawing ------------------------------------------------------------ */
 
     function draw() {
       listEl.innerHTML = "";
-      playlist.songs.forEach(function (item) { listEl.appendChild(setRow(item)); });
-      emptyNote.hidden = playlist.songs.length > 0;
+      if (sifted) drawShelf();
+      else playlist.songs.forEach(function (item) { listEl.appendChild(setRow(item)); });
+      emptyNote.textContent = sifted
+        ? 'לא נמצא שיר עבור "' + sift.q.trim() + '".' : EMPTY_SAID;
+      emptyNote.hidden = listEl.children.length > 0;
+    }
+
+    /* THE LIBRARY, NARROWED, AND THE PLAYLIST MARKED IN IT. By everything a
+       song is made of, the way the library's own box asks (see songSaid): a
+       name, whoever wrote it, or a line of it that somebody remembers.
+
+       A song still being read is left out. It has no words yet, so it cannot
+       be sung from, and a playlist is a list to sing from. */
+    function drawShelf() {
+      var inside = {};
+      playlist.songs.forEach(function (item, i) { inside[item.id] = i + 1; });
+
+      library.forEach(function (song) {
+        if (song.status && song.status !== "ready") return;
+        if (songSaid(song).indexOf(sifted) < 0) return;
+        listEl.appendChild(shelfCard(song, inside[song.id] || 0));
+      });
+    }
+
+    /* The same card the playlist draws, and it has to be: the wall is the same
+       wall, and a song that changes shape when it is searched for is a
+       different song. What it carries instead of the wastebasket is the one
+       press it has, which is in or out. */
+    function shelfCard(song, at) {
+      var li = el("li", "set-row is-pick" + (at ? " is-in" : ""));
+      li.title = at ? "לחיצה מוציאה מהפלייליסט" : "לחיצה מוסיפה לפלייליסט";
+
+      /* Where the counter stands on the cards below (see .set-row::before).
+         Written by hand here, because the number is the song's place in the
+         PLAYLIST and this wall is the library: the cards between two chosen
+         songs are not numbers of anything. Empty on those, and it still holds
+         its width, so every name on the wall starts at the same line. */
+      li.appendChild(el("span", "set-n", at ? at + "." : ""));
+
+      /* NOT is-way, which is the class that says "this card opens the song":
+         it lights the name like a link, and the press here does not go
+         anywhere. The card says it is pressable in its own way (see
+         .set-row.is-pick). */
+      var box = el("div", "set-main");
+      var top = el("div", "t-row");
+      top.appendChild(el("span", "set-t", song.title));
+      box.appendChild(top);
+
+      var by = creditNames(song).join(", ");
+      if (by) box.appendChild(el("div", "by", by));
+
+      var mine = shapesFor(song);
+      if (mine.shapes.length) {
+        var keys = el("div", "keys");
+        keys.title = "השיר עצמו: " + mine.used.join("  ");
+        mine.shapes.forEach(function (shape) { keys.appendChild(el("span", "k", shape)); });
+        box.appendChild(keys);
+      }
+      li.appendChild(box);
+
+      /* THE WORD IS IN THE CORNER THE TOOLS STAND IN, on the cards below and
+         on this one, and it says the state rather than the gesture on the ones
+         that are in: "בפלייליסט" is what a reader scanning the wall needs to
+         read off it, and the press is the same press either way. */
+      var side = el("div", "set-side");
+      var tools = el("div", "set-tools");
+      tools.appendChild(button(at ? "בפלייליסט" : "הוספה", at ? ICON.check : ICON.plus,
+        at ? "ghost small" : "small", function () { toggle(song); }));
+      side.appendChild(tools);
+      li.appendChild(side);
+
+      /* ONE CARD, ONE PRESS, BOTH WAYS, and the whole card is it: the button
+         is where the word is, and a wall of cards where only a corner of each
+         one answers is a wall that has to be aimed at. The name is NOT a way
+         to the song here, unlike on the cards below: a press that sometimes
+         adds a song and sometimes leaves the playlist is one card with two
+         answers, and the song is one press away once it is in the list. */
+      li.addEventListener("click", function (event) {
+        if (event.target.closest("button")) return;
+        toggle(song);
+      });
+
+      return li;
     }
 
     function setRow(item) {
@@ -15306,25 +15421,20 @@
       li.appendChild(box);
 
       /* --- THE FAR COLUMN, WHICH IS WHERE THE LIBRARY'S CARD KEEPS ITS OWN ---
-         Everything here is about the card rather than in it: what to hear,
-         where to move it, and the way out of the list. The same corner the
-         wall's cards give to the state and the recordings (see .side), so a
-         song in a playlist and a song in the library are read the same way and
-         differ only in what is standing in that corner. */
+         Everything here is about the card rather than in it: what to hear, and
+         the way out of the list. The same corner the wall's cards give to the
+         state and the recordings (see .side), so a song in a playlist and a
+         song in the library are read the same way and differ only in what is
+         standing in that corner. */
       var side = el("div", "set-side");
 
-      /* THE TWO TOOLS, SIDE BY SIDE AND ABOVE THE REST. Moving the card and
-         taking it out are the only two things this page does to a song, and
-         they are the two things the library's card has no need of. */
+      /* THE ONE TOOL, ABOVE THE REST. There were two, and the other was a grip:
+         two short lines drawn in the corner of every card, saying that the card
+         could be dragged. The card can be dragged, all of it (see below), so
+         the drawing was a picture of a gesture standing next to the gesture,
+         and it took the width of a thumb out of every row to say it. Taking a
+         song out is the only thing left that has nowhere else to live. */
       var tools = el("div", "set-tools");
-
-      var grip = el("button", "set-grip");
-      grip.type = "button";
-      grip.title = "גרירה כדי לשנות את הסדר";
-      grip.setAttribute("aria-label", "הזזת " + (song ? song.title : item.title) + " ברשימה");
-      grip.appendChild(svg(ICON.grip));
-      /* nothing is bound to it: the list listens for all of them, see below */
-      tools.appendChild(grip);
 
       var out = iconBtn(ICON.trash, "הוצאה מהפלייליסט", function () {
         var at = playlist.songs.indexOf(item);
@@ -15374,37 +15484,132 @@
       return true;
     }
 
-    /* THE POINTER IS HELD BY THE LIST, NOT BY THE GRIP, and that is the whole
-       of making this work.
+    /* --- AND THE HANDLE IS THE CARD, ALL OF IT --------------------------------
+       It was a thirty pixel square in the corner of every row, and everywhere
+       else in this app a card is the thing you reach for: on a phone the grip
+       was the one part of a card wide enough to hold a whole song that a thumb
+       still had to be aimed at. So the card is the handle now and the corner is
+       the wastebasket's alone.
+
+       WHICH LEAVES THE CARD DOING TWO THINGS, and telling them apart is the
+       whole of the work here. A press on a card opens the song. A press that
+       travels is moving the card, and it must not also open anything.
+
+       WITH A POINTER, DISTANCE ANSWERS IT: a mouse that has gone a few pixels
+       with the button down was never clicking.
+
+       WITH A FINGER, DISTANCE ANSWERS THE WRONG QUESTION. A finger that moves
+       down a page is scrolling it, which is most of what fingers do here, and a
+       wall that rearranged itself under every scroll would be unusable. So it
+       is time instead: a finger that stays still on a card for a third of a
+       second is not reading and not scrolling, it is holding the card, and from
+       then on what it does is the card's. A finger that moves before that has
+       said it was scrolling, and the card lets it go.
+
+       AND THE SCROLL HAS TO BE TAKEN BACK BY HAND. touch-action would say it
+       once and for the whole card, and a card that cannot be scrolled past is
+       most of a playlist on a phone. The browser makes up its mind at the first
+       movement, by which time the hold has either happened or failed, so what
+       says it is a touchmove refused while a card is travelling.
+
+       THE POINTER IS HELD BY THE LIST, NOT BY THE CARD, and that is the whole
+       of making the move itself work.
 
        Moving a row means insertBefore, which takes the row out of the document
        for an instant, and an element that leaves the document loses the
-       pointer with it. A grip holding its own pointer therefore lets go the
+       pointer with it. A card holding its own pointer therefore lets go the
        first time it succeeds at anything, and the rest of the drag, including
        the release that would have saved it, lands somewhere else.
 
        The list never moves. So it holds the pointer, and it listens: one
        handler for every row there will ever be, which also means a redrawn
        list does not have to be rewired. */
-    var dragging = null, dragged = false;
+    var HELD = 320;   /* how long a finger sits still before it is holding a card */
+    var STILL = 8;    /* and how far it may wander while it sits */
+    var MOVED = 6;    /* how far a pointer travels before a press is a move */
 
-    function gripOf(node) {
-      return node && node.closest ? node.closest(".set-grip") : null;
+    var dragging = null, dragged = false;
+    /* the card a press landed on, while it is still only a press */
+    var press = null, held = 0, atX = 0, atY = 0, byHand = false, wait = 0;
+
+    /* --- AND THE PRESS THAT BECAME A MOVE IS NOT ALSO A PRESS ----------------
+       The card under the hand never heard the pointer leave, so it is still
+       going to make a click out of it, and that click would open the song that
+       was just moved. Eaten on the way up, with a timer behind it for the hold
+       that ends where it began (the same shape as a sheet being pushed, see
+       gripUp). */
+    var clicks = 0;
+    function offClick() {
+      clearTimeout(clicks);
+      listEl.removeEventListener("click", eatClick, true);
+    }
+    function eatClick(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      offClick();
+    }
+
+    function take() {
+      clearTimeout(wait);
+      dragging = press;
+      press = null;
+      dragged = false;
+      dragging.classList.add("is-moving");
+      /* and the wall says so under the hand, wherever on it the hand is */
+      listEl.classList.add("is-moving");
+      try { listEl.setPointerCapture(held); } catch (e) { /* the pointer is gone */ }
+      listEl.addEventListener("click", eatClick, true);
+      clicks = setTimeout(offClick, 800);
+    }
+
+    function forget() {
+      clearTimeout(wait);
+      press = null;
     }
 
     listEl.addEventListener("pointerdown", function (event) {
-      var grip = gripOf(event.target);
-      if (!grip) return;
-      event.preventDefault();
-      dragging = grip.closest(".set-row");
-      dragged = false;
-      grip.classList.add("is-held");
-      dragging.classList.add("is-moving");
-      listEl.setPointerCapture(event.pointerId);
+      if (event.button || dragging || press) return;
+      var li = event.target.closest ? event.target.closest(".set-row") : null;
+      if (!li) return;
+      /* the shelf is not a list with an order: while the box in the bar has
+         words in it these cards are the library, and one press puts a song in
+         or takes it out (see shelfCard) */
+      if (li.classList.contains("is-pick")) return;
+      /* a control keeps its own press: the wastebasket, and whatever plays */
+      if (event.target.closest("button, input, textarea, select, audio, video, [contenteditable]")) return;
+      press = li;
+      held = event.pointerId;
+      atX = event.clientX;
+      atY = event.clientY;
+      byHand = event.pointerType !== "mouse";
+      if (byHand) wait = setTimeout(take, HELD);
     });
 
+    /* A CARD BEING MOVED IS NOT A LINK BEING DRAGGED. The name on it is an
+       anchor, and a mouse that presses an anchor and moves hands the browser
+       its own gesture: a ghost of the link under the cursor, and a pointercancel
+       that ends the move on its first frame. */
+    listEl.addEventListener("dragstart", function (event) { event.preventDefault(); });
+
+    /* the finger is holding a card, so it is not scrolling the page, and the
+       browser has to hear that before it decides otherwise */
+    listEl.addEventListener("touchmove", function (event) {
+      if (dragging && event.cancelable) event.preventDefault();
+    }, { passive: false });
+
     listEl.addEventListener("pointermove", function (event) {
-      if (!dragging) return;
+      if (press && event.pointerId === held) {
+        var went = Math.abs(event.clientX - atX) + Math.abs(event.clientY - atY);
+        /* a finger that moved before the wait was out is scrolling the page,
+           and the card it set off from is not a card it is holding */
+        if (byHand) {
+          if (went > STILL) forget();
+          return;
+        }
+        if (went < MOVED) return;
+        take();
+      }
+      if (!dragging || event.pointerId !== held) return;
 
       var rows = rowsOf();
       var from = rows.indexOf(dragging);
@@ -15443,11 +15648,11 @@
     });
 
     function endDrag(event) {
+      forget();
       if (!dragging) return;
       if (event && listEl.hasPointerCapture(event.pointerId)) listEl.releasePointerCapture(event.pointerId);
-      var grip = dragging.querySelector(".set-grip");
-      if (grip) grip.classList.remove("is-held");
       dragging.classList.remove("is-moving");
+      listEl.classList.remove("is-moving");
       dragging = null;
       if (dragged) mark(true);
     }
@@ -15455,61 +15660,43 @@
     listEl.addEventListener("pointerup", endDrag);
     listEl.addEventListener("pointercancel", endDrag);
 
-    /* The same move for a keyboard, and for anyone who cannot hold a pointer
-       steady over a list that is rearranging itself under it. */
+    /* THE SAME MOVE FOR A KEYBOARD, and for anyone who cannot hold a pointer
+       steady over a list that is rearranging itself under it. It hung off the
+       grip while there was one, and the grip was the only thing on a card a
+       keyboard ever landed on. What a keyboard lands on now is the name of the
+       song, so the name moves the card, with Alt held down: a bare arrow on a
+       list of links is how the page is read, and a page that rearranged itself
+       instead is a page nobody can read. */
     listEl.addEventListener("keydown", function (event) {
-      var grip = gripOf(event.target);
-      if (!grip) return;
+      if (!event.altKey) return;
       var step = event.key === "ArrowUp" ? -1 : event.key === "ArrowDown" ? 1 : 0;
       if (!step) return;
+      var li = event.target.closest ? event.target.closest(".set-row") : null;
+      if (!li || li.classList.contains("is-pick")) return;
       event.preventDefault();
-      var li = grip.closest(".set-row");
+      /* the row leaves the document for an instant on its way to its new place,
+         and whatever was focused inside it is dropped when it does */
+      var on = document.activeElement;
       if (moveRow(li, rowsOf().indexOf(li) + step)) {
-        grip.focus();
+        if (on && on.focus) on.focus();
         mark(true);
       }
     });
 
     /* --- adding and taking out ---------------------------------------------- */
 
-    /* WHAT THE BOX IN THE BAR IS OFFERING, at the moment it is asked. The
-       shelf is this page's and the panel is the app's, so what crosses between
-       them is a list of names and, on each one, the one press there is to make
-       (see paintPick).
-
-       Asked afresh on every keystroke rather than filtered from a list handed
-       over once: what is in the playlist changes while the box is open, and a
-       row still saying "הוספה" about a song that is already in the list is the
-       panel disagreeing with the page under it. */
-    function pickList(q) {
-      q = String(q || "").trim().toLowerCase();
-      var inside = {};
-      playlist.songs.forEach(function (item) { inside[item.id] = true; });
-
-      return library.filter(function (song) {
-        /* a song still being read has no words yet, so it cannot be sung from */
-        if (song.status && song.status !== "ready") return false;
-        if (!q) return true;
-        var hay = song.title + " " + credits(song).map(function (c) { return c.name; }).join(" ");
-        return hay.toLowerCase().indexOf(q) >= 0;
-      }).map(function (song) {
-        return {
-          name: song.title,
-          /* the names, once each: whoever wrote the words usually wrote the
-             tune as well, and one person is one name (see creditNames) */
-          said: creditNames(song).join(", "),
-          inside: !!inside[song.id],
-          take: function () { toggle(song); },
-        };
-      });
-    }
-
-    /* One row, one press, both ways. A song is in the playlist or it is not,
-       and the same row says which and changes it: adding from one place and
+    /* One card, one press, both ways. A song is in the playlist or it is not,
+       and the same card says which and changes it: adding from one place and
        removing from another would be two answers to one question.
 
        So the same song twice is not offered. A playlist that really wants an
-       encore of something can say so in its name. */
+       encore of something can say so in its name.
+
+       THE WALL IS DRAWN AGAIN under the finger, and nothing moves while it is:
+       the order is the shelf's, by name, and it does not depend on what is in
+       the playlist. The card that was pressed stays exactly where it was and
+       changes what it says, and the numbers on the cards after it, which are
+       places in a list that just got shorter, change with it. */
     function toggle(song) {
       var at = -1;
       playlist.songs.forEach(function (item, i) { if (item.id === song.id) at = i; });
@@ -16295,12 +16482,11 @@
        above) */
     state.up = null;
     /* and the box in the bar goes back to being a way to other pages, until a
-       page that can be sieved says otherwise (see state.sift in viewIndex), or
-       one that is built out of the library does (see state.pick in
-       renderPlaylist). The second one also takes the box off the bar again on
-       every page that is not a playlist. */
+       page that can be sieved says otherwise: the library (see state.sift in
+       viewIndex) or a playlist, whose wall is the library while there are
+       words in the box (see renderPlaylist). This also takes the box off the
+       bar again on every page that is neither. */
     state.sift = null;
-    state.pick = null;
     /* and with no sieve there is nothing being held down, whatever the last
        page was holding down when it was left */
     siftMark();
@@ -18915,12 +19101,13 @@
     err.hidden = true;
     box.appendChild(err);
 
-    /* TWO ANSWERS AND NO THIRD. There was a "close" here, beside them, and it
-       was the wrong thing to offer: the question is what to do with the take,
-       and "neither" is not an answer to it, it is walking away from it. Walking
-       away is still allowed, and it is what the dark behind the panel is for
-       (see below), but it is not a button, because a button says a decision has
-       been made and no decision has. */
+    /* EVERY BUTTON HERE IS AN ANSWER, AND "close" IS NOT ONE. There was a
+       "close" beside them once and it was the wrong thing to offer: the
+       question is what to do with the take, and "neither" is not an answer to
+       it, it is walking away from it. Walking away is still allowed, and it is
+       what the dark behind the panel is for (see below), but it is not a
+       button, because a button says a decision has been made and no decision
+       has. */
     /* AND THE ONE THAT THROWS IT AWAY SAYS WHAT COMES NEXT, not what it
        destroys. It said "מחיקה", which is true about the file and is not what
        anybody presses it for: what they are doing is playing the song again,
@@ -18930,6 +19117,32 @@
     var done = false;
     var over = null;
     var actions = el("div", "dlg-actions");
+    /* --- AND THE ANSWER THAT IS FINISHED PLAYING ----------------------------
+       "Throw it away" and "keep it" both end with the microphone open again,
+       because both of them are said by somebody who is about to play the song
+       once more. Somebody who has stopped playing had neither: keeping a take
+       they do not want was the only way to leave the question behind, and
+       dismissing the panel left the recording on the device with the mark on
+       the button, to be asked about again tomorrow.
+
+       So there is a third: it loses the take exactly as tossing it does, and
+       then it stops. It is the ONLY one of the three that does not open a
+       microphone, which is the whole of what it is for.
+
+       A PICTURE AND NO WORD, and quiet. The two answers to "what about this
+       recording" are the two that read as sentences and hold the weight; this
+       one is the way out for somebody already reaching for it, and a third
+       phrase in the row would make the question look like it has three equal
+       sides. A bin is what that press is called everywhere, and it goes red
+       under the hand, where the thing it does is worth saying. */
+    var drop = button("מחיקת ההקלטה", ICON.trash, "ghost drop", function () {
+      /* No confirming. Nothing has been written down: this take is on the
+         device and nowhere else, and "throw it away" beside it asks nothing
+         either. */
+      endTape(made.song);
+      dlg.close();
+    });
+    drop.title = "מחיקת ההקלטה";
     var toss = button("הפעלה ללא שמירה", null, "ghost far toss", function () {
       done = true;
       over = endTape(made.song);
@@ -18962,6 +19175,7 @@
         err.textContent = (e && e.message) || "לא הצלחנו לשמור";
       });
     });
+    actions.appendChild(drop);
     actions.appendChild(toss);
     if (auth.in) actions.appendChild(save);
     else box.appendChild(el("p", "muted", "כדי לשמור הקלטה צריך להיות מחובר לחשבון."));

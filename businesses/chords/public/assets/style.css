@@ -561,19 +561,10 @@ body.unnamed .top-name { display: none; }
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .find-tags { flex: none; display: flex; gap: 4px; }
-/* AND WHERE A ROW IS NOT A WAY ANYWHERE, WHAT PRESSING IT DOES. On a playlist
-   the panel is the library being picked out of (see state.pick), so the end of
-   the row carries the one press there is to make rather than a label saying
-   what kind of thing this is: it is a song, they all are.
-
-   A word and not a plus: what the press does is not the same both ways, and
-   the row is where somebody finds out which way it is facing. */
-.find-mark { flex: none; font-size: 13px; font-weight: 700; color: var(--accent); }
-/* already in the playlist: the row says so, and the press takes it out */
-.find-row.is-in { background: #eef5f4; }
-.find-row.is-in:hover, .find-row.is-in.is-on { background: #e4efed; }
-.find-row.is-in .find-mark { color: var(--ink-soft); }
-.find-row.is-in:hover .find-mark, .find-row.is-in.is-on .find-mark { color: var(--danger); }
+/* THERE WAS A .find-mark HERE, on the rows a playlist answered with: "הוספה"
+   or "בפלייליסט" at the end of a line of names in the drop. A playlist sieves
+   its own wall now, into cards, and the word is in the corner of the card (see
+   .set-row.is-pick). */
 .find-none { padding: 14px 12px; color: var(--ink-soft); font-size: 14px; }
 .find-more { padding: 8px 12px 6px; color: var(--ink-soft); font-size: 12px; }
 
@@ -698,13 +689,20 @@ body.unnamed .top-name { display: none; }
      is for is a search nobody looks for.
      It goes back to the order it stands in on a desk, so the fork keeps the
      corner and the box runs from the mark up to it. */
+     AND ON A PAGE THAT ASKS FOR IT, for the same reason said the other way
+     round: the wall of playlists carries the way back and its own name and
+     nothing else on the bar (see sift.open in app.js), so the room the library
+     has by having no name at all, that page has by having no buttons. */
   body.finding .top-find,
+  body.open-find .top-find,
   body.unnamed .top-find { flex: 1 1 auto; width: auto; order: 0; }
   body.finding .top-find .find,
+  body.open-find .top-find .find,
   body.unnamed .top-find .find {
     padding: 0 12px; gap: 9px; justify-content: flex-start;
   }
   body.finding .top-find input[type="search"],
+  body.open-find .top-find input[type="search"],
   body.unnamed .top-find input[type="search"] { width: auto; flex: 1 1 auto; }
   /* The facts go with the name, because they are the name's second half: what
      the song says about itself has nothing to do with the question being typed
@@ -895,7 +893,9 @@ label input, label textarea, label select { margin-top: 5px; font-weight: 400; c
    glass at any height it comes to.
    The band of shelves is not given one: it is above the wall, so it is part of
    what the scroll is getting out of the way. */
-body.sifting .list:not(.band) { min-height: calc(100dvh - var(--top-h)); }
+/* And the same floor under a playlist's wall, which the same box sieves into
+   the same library (see state.sift in renderPlaylist). */
+body.sifting .list:not(.band), body.sifting .set { min-height: calc(100dvh - var(--top-h)); }
 
 /* All five in the one colour a state wears, and the word on each is which of
    them it is (see the states at the top of this file). They were five
@@ -1545,12 +1545,17 @@ body.sifting .list:not(.band) { min-height: calc(100dvh - var(--top-h)); }
   background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 14px 18px; transition: border-color .15s, transform .15s;
+  /* THE WHOLE CARD IS THE HANDLE (see the move in renderPlaylist), and a card
+     being dragged with a mouse would otherwise take the words on it with it:
+     a press that travels across text is the browser selecting the text, and
+     the move would come with half a song title painted blue behind it. */
+  user-select: none; -webkit-user-select: none;
 }
 /* AND IT LIFTS UNDER A POINTER, the way the library's card does, because it is
    the same card and a press on it goes to the same place. Lit off the part of
-   it that is the way in and not off the whole: the corner holds a grip, a
-   wastebasket and a play button, and a card that offers to open while the hand
-   is on the wastebasket is a card saying the wrong thing.
+   it that is the way in and not off the whole: the corner holds a wastebasket
+   and a play button, and a card that offers to open while the hand is on the
+   wastebasket is a card saying the wrong thing.
 
    Only where there is a pointer to say it with. A touch screen fakes a hover
    on the last thing tapped and leaves it there, which reads as a card that
@@ -1575,9 +1580,45 @@ body.sifting .list:not(.band) { min-height: calc(100dvh - var(--top-h)); }
   font-weight: 700; font-size: 17px; color: var(--ink-soft);
   font-variant-numeric: tabular-nums;
 }
-.set-row.is-moving { opacity: .55; }
+/* A CARD BEING CARRIED, AND IT HAS TO SAY SO PLAINLY. On a phone the move
+   begins with a third of a second of holding still, and a card that looks
+   exactly as it did afterwards is a gesture that gave no answer: the hand does
+   not know whether to move yet. So it lifts off the wall and pales, and the
+   wall under the hand says the same thing with the cursor. */
+.set-row.is-moving {
+  opacity: .55; border-color: var(--accent); transform: translateY(-2px) scale(1.01);
+}
+.set.is-moving { cursor: grabbing; }
 /* the song was deleted from the library after it was put in the playlist */
 .set-row.is-gone { border-style: dashed; color: var(--ink-soft); }
+
+/* --- AND THE SAME WALL, WHILE THE BOX IS BEING TYPED IN ---------------------
+   Words in the box turn this wall into the library narrowed to them (see
+   state.sift in renderPlaylist), so every card here is a song that MIGHT go in
+   the list rather than one that is in it. Same card, same width, same column:
+   what changes is what the corner offers and what the number means.
+
+   The counter goes, because it counts cards on this wall and the number a card
+   wants to show is its place in the PLAYLIST. That one is written in (see
+   .set-n), and the cards that are not in the list show none. */
+.set-row.is-pick::before { content: none; }
+.set-n {
+  flex: none; min-width: 2ch;
+  font-weight: 700; font-size: 17px; color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+/* The whole card is the press, so the whole card says so: the hand over any
+   part of it and the same lift the cards below give a pointer. The name is not
+   lit, because it is not a way to the song here. */
+.set-row.is-pick { cursor: pointer; }
+@media (hover: hover) {
+  .set-row.is-pick:hover { border-color: var(--accent); transform: translateY(-1px); }
+}
+/* ALREADY IN THE LIST, AND IT HAS TO BE READABLE AT A GLANCE: a shelf where
+   the songs already chosen look like the ones that are not is a shelf somebody
+   picks the same song off twice. A tint, its number in accent ink, and the
+   word in the corner, which is what the eye lands on last and confirms with. */
+.set-row.is-pick.is-in { background: #eef5f4; border-color: #cfe1de; }
 
 /* --- THE FAR CORNER OF THE CARD, which is where the library's keeps its own
    (see .list .side). The tools first, because they are what this page is for
@@ -1602,19 +1643,11 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 .set-main.is-way { cursor: pointer; }
 .set-main.is-way:hover .set-t { color: var(--accent); }
 
-/* Always there, unlike the song editor's grip, which appears under the
-   pointer. A card in a playlist gets dragged on a phone, where there is no
-   pointer for anything to appear under. */
-.set-grip {
-  flex: none; width: 30px; height: 30px; padding: 0;
-  border: 0; background: none; color: var(--ink-soft);
-  display: inline-grid; place-items: center;
-  cursor: grab; touch-action: none;
-}
-.set-grip svg { width: 20px; height: 20px; }
-.set-grip:hover { color: var(--ink); }
-.set-grip.is-held { cursor: grabbing; color: var(--accent); }
-.set-grip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--corner); }
+/* THERE WAS A .set-grip HERE, two short lines in the corner of every card and
+   the only place a card could be dragged from. The card is the handle now, all
+   of it, so there is nothing left to draw: the picture of the gesture stood
+   next to the gesture and took a thumb's width out of every row to do it. What
+   is left of it is a class on the card while it is travelling, two rules up. */
 
 /* THERE WAS A .pool HERE: the library, as a panel nailed to the foot of every
    playlist. A heading, a sentence explaining itself, a second search field and
@@ -3139,6 +3172,26 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 }
 .btn.toss:hover { background: #fbdcd9; color: #8f1d18; border-color: #e8ada7; }
 
+/* --- AND THE ANSWER THAT LOSES IT AND STOPS -------------------------------
+   A bin and no word. It stands in a row with two answers written as sentences,
+   and a third sentence there would read as a third equal side to the question,
+   which it is not: the two are what to do with the recording, and this is the
+   way out for somebody who has finished playing (see askTake).
+
+   It is a .btn and not an .icon-btn, because it stands in a line of buttons
+   and the thing holding that line together is that their tops and bottoms
+   agree; an icon button here is thirty pixels beside thirty-eight. Its word is
+   hidden rather than never written, so the button still says what it is to a
+   screen reader and to a pointer resting on it, exactly as the bar's buttons
+   do on a narrow screen (see .top-actions .btn svg + .lb).
+
+   Quiet until the hand is on it, and then red: the colour belongs to what the
+   press does, not to a button sitting in a row. */
+.btn.drop { padding-inline: 11px; color: var(--ink-soft); }
+.btn.drop .lb { display: none; }
+.btn.drop svg { width: 18px; height: 18px; }
+.btn.drop:hover { background: #fdeceb; color: #b3261e; border-color: #f3c9c5; }
+
 /* --- AND THE ANSWER THAT KEEPS IT, IN THE SAME COLOUR AT FULL WEIGHT --------
    The pair in this row is one question with two answers, and it was drawn as a
    green button beside a pale red one: two colours is two unrelated things to
@@ -3543,11 +3596,11 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   body { background: #fff; }
 
   /* A playlist on paper is the name, the line under it and the songs in order.
-     The grips that reordered it and the buttons that emptied it are tools, and
-     a tool on a printed page is ink spent on something nobody can press. The
-     library it was built from is not here to be hidden any more: it is the box
-     in the bar, and the bar does not print (see state.pick). */
-  .pl-meta, .hint, .set-grip, .set-row button { display: none !important; }
+     The buttons that emptied it and played it are tools, and a tool on a
+     printed page is ink spent on something nobody can press. The library it was
+     built from is not here to be hidden any more: it is the box in the bar, and
+     the bar does not print (see state.pick). */
+  .pl-meta, .hint, .set-row button { display: none !important; }
   .on-paper { display: block; }
   /* and one of them is left out when there is nothing to say (see sayWho): the
      class turns these on for the printer, so it has to be told when not to */
