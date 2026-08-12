@@ -688,11 +688,14 @@ body.unnamed .top-name { display: none; }
      way anybody meets it: a glass that has to be pressed before it says what it
      is for is a search nobody looks for.
      It goes back to the order it stands in on a desk, so the fork keeps the
-     corner and the box runs from the mark up to it. */
+     corner and the box runs from the mark up to it.
+
      AND ON A PAGE THAT ASKS FOR IT, for the same reason said the other way
-     round: the wall of playlists carries the way back and its own name and
-     nothing else on the bar (see sift.open in app.js), so the room the library
-     has by having no name at all, that page has by having no buttons. */
+     round: the wall of playlists, the wall of people and an open playlist each
+     carry the way back, their own name, and nothing else or one button on the
+     end (see sift.open in app.js). The room the library has by having no name
+     at all, those pages have by having no row of pictures, so the box is a box
+     there and the button, where there is one, keeps the corner. */
   body.finding .top-find,
   body.open-find .top-find,
   body.unnamed .top-find { flex: 1 1 auto; width: auto; order: 0; }

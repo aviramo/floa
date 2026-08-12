@@ -809,6 +809,18 @@
     });
   }
 
+  /* WHAT A PERSON IS LOOKED FOR BY, on the page that is a wall of them (see
+     viewCreators). Their own name, and about as often a song of theirs: "who
+     wrote אל הגן" and "what else did אמיר פייס write" are one question asked
+     from either end. Both are already on the card, so both answer here, and
+     the songs are read by the names they carry NOW rather than by anything
+     kept beside them. */
+  function creatorHay(person) {
+    return (person.name + " " + person.songs.map(function (song) {
+      return song.title || "";
+    }).join(" ")).toLowerCase();
+  }
+
   /* How many songs there are of something, in words, because "1 שירים" is not
      Hebrew. Said the same way wherever it is said: on a person's card, on a
      style's, and in the answer the search box offers for either. */
@@ -9203,8 +9215,60 @@
       }
 
       var list = el("ul", "list");
-      people.forEach(function (person) { list.appendChild(creatorRow(person)); });
       app.appendChild(list);
+
+      /* --- AND THE BOX IN THE BAR NARROWS THIS WALL TOO -------------------------
+         The glass was not even on this page: the box was the library's, and
+         anywhere else it was a question about somewhere you are not. But this
+         page is a list of names, and a list of names is the one thing nobody
+         reads from the top: you come here holding a person. Scrolling past
+         forty cards to reach them is the work the box exists to save.
+
+         So the wall answers, exactly as the library's does (see state.sift in
+         viewIndex) and the playlists' does: what is typed narrows the people on
+         the screen, and nothing is hung over them. */
+      var sifted = "";
+      var nothing = el("p", "hint");
+      nothing.hidden = true;
+      app.appendChild(nothing);
+
+      function paint() {
+        list.textContent = "";
+        people.forEach(function (person) {
+          if (sifted && creatorHay(person).indexOf(sifted) < 0) return;
+          list.appendChild(creatorRow(person));
+        });
+        nothing.textContent = 'לא נמצא יוצר עבור "' + sift.q.trim() + '".';
+        nothing.hidden = !sifted || list.children.length > 0;
+      }
+
+      var sift = function (typed) {
+        /* kept as it was typed, because a page put aside and uncovered comes
+           back with the box emptied in between (see reveal) */
+        sift.q = String(typed || "");
+        sifted = sift.q.trim().toLowerCase();
+        siftMark();
+        paint();
+      };
+      sift.q = "";
+      /* where the page has to stand for the box to be answered */
+      sift.wall = list;
+      /* what this box is, said in its own words: the app's sentence names songs
+         and playlists, and this page is neither */
+      sift.says = {
+        hint: "חיפוש יוצר...",
+        label: "חיפוש לפי שם יוצר, או שם שיר שלו",
+      };
+      /* and it stands here open, on a phone as on a desk: this bar carries the
+         way back and the name of the page and nothing else, so there is room
+         for the box to be a box (see body.open-find in the stylesheet) */
+      sift.open = true;
+      state.sift = sift;
+      /* the bar was painted before this page had a sieve, and the glass stands
+         on a page only while there is one (see paintHeader) */
+      paintHeader();
+
+      paint();
     }).catch(fail);
   }
 
@@ -15249,6 +15313,15 @@
     /* the one thing this sieve does that the library's does not, which is what
        the box says of itself while it is here (see paintHeader) */
     sift.adds = true;
+    /* and it stands open here too, on a phone as on a desk. The bar of an open
+       playlist is the way back, the name of the list, and one button on the far
+       end, which is not the full row the glass exists to save room on. And this
+       is the page where the box is not a way somewhere else: it is the only way
+       to put a song in the list, and the line under an empty playlist has to
+       send people to it in words. A picture that has to be pressed before it
+       says what it is for is the wrong shape for that (see body.open-find in
+       the stylesheet). */
+    sift.open = true;
     state.sift = sift;
     paintHeader();
 
