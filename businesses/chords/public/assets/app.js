@@ -11869,7 +11869,22 @@
        song being drawn again around the caret. */
     if (!past && owned && !coming) {
       state.songOut = function () {
-        return song.published ? null : publishSong;
+        if (song.published) return null;
+        /* AND NOT ON A PAGE WITH NOTHING ON IT. "Finished, let people have it"
+           needs an it. A reading that never landed leaves exactly this row: a
+           name off a filename, a note saying what went wrong, and no song, and
+           the press would hand that blank page to everybody and write it to the
+           shelf as a version. It would also take the note with it, because a
+           save is what makes a failed read stop being failed (see commit), so
+           the one line on the page saying why there is nothing here would go
+           out with the nothing.
+           This is the whole of the reading's other end. While it runs there is
+           no row at all (see coming); a reading that stalled or came back
+           refused is empty, and empty is what this asks. The way out of both is
+           the same one the note offers, to type the song, and the row comes back
+           with the first word: it is asked at the press, not built with the
+           page. */
+        return songToText(song.lines).trim() ? publishSong : null;
       };
     }
 
