@@ -18328,14 +18328,14 @@
        only way to see it was to record a take, save it, and read its trace back
        out of the database afterwards.
 
-       IT LIGHTS EVERY CHORD OF THAT NAME, and that is not a fault to be fixed:
-       it is the honest answer. The ear hears an Am; it cannot know which of the
-       twelve Am's on the page it is, and the one thing on the screen that does
-       know is the band. Read together, "the ear says Am, and we think we are
-       HERE" is a sentence. Read alone, as it was on the measuring strip, it
-       looks like a follower that has come apart, which is why it is off at
-       every other moment. */
-    if (!following || onTape()) markHeard(heardNow);
+       AND IT IS ONE CHORD AND NOT EVERY CHORD OF THAT NAME. Lighting them all
+       is what the measuring strip does, and on a song built out of four chords
+       it is a wall of marks that reads as a follower come apart. The ear alone
+       cannot pick one of the twelve Am's on the page; the arithmetic can,
+       because it has the other half of the question. So the second mark is
+       drawn where the arithmetic says (see markSounding) and this one stays
+       off. */
+    if (!following) markHeard(heardNow);
 
     /* --- and where in the song that puts us ---------------------------------
        Only on a reading there is something in. See followOn: a follower that
@@ -18539,6 +18539,7 @@
        round and has to leave with it (see showLine). */
     showLine(null);
     tapFrom = null;
+    markSounding(-1);
     document.removeEventListener("pointerdown", followPress, true);
     document.removeEventListener("pointerup", followTap, true);
     document.removeEventListener("pointercancel", followLetGo, true);
@@ -18680,6 +18681,36 @@
     var went = following.step(scores);
     traceOn(scores, r, went.at);
     followSay(went.here);
+    markSounding(went.at);
+  }
+
+  /* --- ONE CHORD, AND IT IS THE ONE BEING PLAYED ----------------------------
+     Not every chord of that name, which is what the measuring strip lights and
+     which is a wall of marks down a song built out of four chords. The ear
+     alone cannot pick one of them: it hears an Am and there are twelve on the
+     page. What CAN pick one is the arithmetic, which is exactly the thing that
+     has both halves, the sound and where we were a moment ago.
+
+     SO THIS IS THE ARITHMETIC'S ANSWER AND THE BAND IS THE MARK'S, and the
+     whole worth of drawing both is that they are allowed to disagree. The mark
+     walks, one place at a time and never backwards, and the arithmetic does
+     not: when it has gone on ahead, the ring is ahead of the band and what a
+     player sees is the page catching up. When it has gone somewhere the mark
+     will not follow, the ring is there and the band is not, and that is the
+     one failure that used to be invisible without saving a take and reading
+     its trace out of the database afterwards.
+
+     Only while a take is running (see markHeard). At every other moment the
+     song carries one answer, because at every other moment nobody is asking
+     this question. */
+  var soundMark = null;
+
+  function markSounding(at) {
+    var want = onTape() && followSpans && at >= 0 ? followSpans[at] : null;
+    if (want === soundMark) return;
+    if (soundMark && soundMark.isConnected) soundMark.classList.remove("is-sounding");
+    soundMark = want;
+    if (soundMark) soundMark.classList.add("is-sounding");
   }
 
   /* ==========================================================================
@@ -19278,11 +19309,6 @@
   function markHeard(name) {
     var sheet = document.querySelector(".sheet");
     if (!sheet) return;
-    /* Which of the two marks this is, said on the sheet so that the stylesheet
-       can draw it differently while the band is on the page underneath it: a
-       soft fill on top of a soft band is one shape, and what is wanted there is
-       two. */
-    sheet.classList.toggle("is-taping", !!name && onTape() && !!following);
     /* The name the ear said is already a SOUND, so it carries no capo; the
        names on the page are shapes, so they do. */
     var want = name ? thirdOf(name, 0) : null;
@@ -19985,8 +20011,8 @@
     rec.ondataavailable = null;
     try { rec.stop(); } catch (e) { /* already inactive */ }
     /* The second mark goes with the take it belongs to. The follower carries
-       on, and its band is the one answer again (see markHeard). */
-    markHeard(null);
+       on, and its band is the one answer again (see markSounding). */
+    markSounding(-1);
     paintTape();
     return gone;
   }

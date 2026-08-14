@@ -4148,18 +4148,38 @@ body.on-ear.ear-small { padding-bottom: 78px; }
   box-shadow: 0 0 0 3px var(--chord-soft);
   border-radius: 3px;
 }
-/* --- AND WHILE A TAKE IS RUNNING IT IS A RING AND NOT A FILL ---------------
-   Because there is a second mark on the page then, and the two must not read
-   as one. The band under the line being played is drawn in --chord-soft, so a
-   chord filled in --chord-soft that lands inside it disappears into it exactly
-   where it matters most: on the line the follower thinks we are on.
+/* --- AND WHILE A TAKE IS RUNNING, ONE CHORD CARRIES A RING -----------------
+   The arithmetic's own answer, on the one chord it is about (see markSounding
+   in app.js), standing beside the band that says where the MARK is. The two
+   are allowed to disagree and the disagreement is the whole reason to draw
+   both: a ring ahead of the band is the page catching up with the playing, and
+   a ring the band never reaches is the failure that used to be invisible.
 
-   A ring in the ink the chords are already written in stands out of the band
-   instead of dissolving into it, and it says a different kind of thing from a
-   filled shape: this one is the SOUND, and the band is the PLACE. */
-.sheet.is-taping .chord.is-heard {
-  background: none;
-  box-shadow: 0 0 0 2px var(--chord);
+   THE CHORD ITSELF AND NOT A BOX ROUND IT. A box was the first drawing and it
+   was wrong twice: it lands inside the band, which is the one place it has to
+   be readable, and a rectangle round two letters at a reading size is mostly
+   rectangle. What is being pointed at is a chord, so the picture is the chord.
+
+   BIGGER AND DARKER, AND NOT BOLDER, because a chord is already at 700 and
+   most of what --chord-font resolves to on a phone has nothing above it: a
+   weight that is not there is a mark that does not appear, and this is the one
+   mark that must never fail to. A tenth more size and the deeper of the two
+   inks the chords are written in are both there in any font.
+
+   AND IT IS A TRANSFORM AND NOT A FONT SIZE, which is what keeps it over its
+   own syllable. A chord is CENTRED on the character it names (see planLine in
+   app.js) and its place on the line was measured and written at the size it
+   was: growing the type would widen the box from a left edge that is already
+   fixed, and the label would slide off its letter by half of what it gained. A
+   scale grows it about its own middle, which is the anchor, so it stays where
+   it was pointing and the tick under it grows with it.
+
+   UPWARDS, because the room above a chord is room the line's own leading
+   leaves empty anyway, and the room below it is the words. */
+.chord.is-sounding {
+  color: var(--chord-ink);
+  transform: scale(1.14);
+  transform-origin: 50% 100%;
 }
 
 /* --- AND WHERE WE ARE, WHICH IS DRAWN ON THE LINE AND NOT ON THE CHORD -----
