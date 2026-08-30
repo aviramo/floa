@@ -4539,7 +4539,21 @@ body.on-takes { padding-bottom: var(--takes-room, 240px); }
 }
 .take-go { flex: none; width: 34px; height: 34px; border-radius: 999px; }
 .take-go svg { width: var(--transport); height: var(--transport); }
-.take-said { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+/* --- AND THE WORDS ARE NEVER THE THING THAT GIVES WAY ----------------------
+   This was `min-width: 0`, which is the usual thing to write beside `flex: 1`
+   and was exactly wrong here. The row wraps, and a wrapping row only moves
+   something down to the next line when what is on it cannot be made narrower;
+   `min-width: 0` says the words CAN, so the browser took the whole row's
+   shortfall out of them rather than wrapping anything. On a phone with a chip,
+   a button and a bin on the same row that left about a centimetre for the
+   name, and "הקלטה חדשה" came down the sheet one word per line.
+
+   So the words are given a floor. Whatever does not fit beside them goes to
+   the next line, which is what the wrap was for. */
+.take-said { flex: 1; min-width: 9rem; display: flex; flex-direction: column; gap: 3px; }
+/* The name and where the recording stands, side by side: one is who played it
+   and the other is who can hear it, which is one sentence. */
+.take-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .take-who { font-size: 14px; color: var(--ink); font-weight: 600; }
 .take-when { font-size: 12px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
 /* A take is a sound at a pitch and the page is a drawing that moves, so a
@@ -4572,7 +4586,40 @@ body.on-takes { padding-bottom: var(--takes-room, 240px); }
    the same kind of thing: one line about this recording that is not the
    ordinary case. In the state's own ink, so the row says it twice in one
    colour rather than in two. */
+/* --- WHERE A RECORDING OF YOURS STANDS, IN ONE WORD -------------------------
+   Beside the name, inside the column of words, and never in the row itself:
+   the row is a play button, a name, a date and up to three controls, and a
+   chip among them is the thing that pushes a control down onto a second line
+   (see .take-line).
+
+   Smaller than the name it stands beside and not as small as the date under
+   it: it is a fact about the recording rather than a heading, and it has to be
+   readable at arm's length by somebody deciding whether to take it down. */
+.take-mark {
+  font-size: 11px; font-weight: 600; white-space: nowrap;
+  padding: 2px 8px; border-radius: 999px;
+  color: var(--ink-soft); background: var(--bg);
+}
+/* NOT PUBLISHED, in the yellow this app writes every "not out yet" in: the
+   draft on the device, and a saved take nobody has offered. The middle case,
+   a recording that is out on a song that is not, is yellow too, because from
+   a listener's side it is the same fact: nobody can hear it. */
 .take-yet { color: var(--state-ink); background: var(--state-soft); }
+/* AND THE OTHER END OF THE SAME SENTENCE: a recording of yours that anybody
+   with the link can hear. In the app's green, which is the colour of the ring
+   round the button that put it there, so the word and the control that takes
+   it back are read as one thing (see .take-out.is-on). */
+.take-is-out { color: var(--accent); background: #eefaf7; }
+
+/* AND A SENTENCE IS NOT A CHIP. Why the recording cannot be kept is a line of
+   prose, and a line of prose squeezed in beside a play button, a chip and a
+   bin is four things fighting over one row. It takes the whole width and
+   therefore its own line, under the row it is about, which is where a note
+   about something goes. */
+.take-note {
+  flex-basis: 100%; margin: 2px 0 0;
+  font-size: 12px; color: var(--ink-soft);
+}
 
 /* In the panel that offers the take, where it is the one thing on the page and
    gets the whole width of it. */

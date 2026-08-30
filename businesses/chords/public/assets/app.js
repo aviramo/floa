@@ -21179,8 +21179,16 @@
     node.appendChild(go);
 
     var said = el("div", "take-said");
+    /* THE NAME AND WHERE THE RECORDING STANDS, ON ONE LINE, INSIDE THE COLUMN
+       OF WORDS. The word was a chip in the row itself for an afternoon, beside
+       the buttons, and on a phone that was one item too many: the row is a
+       play button, a name, a date, a chip, a share, a globe and a bin, and
+       something had to come down onto a second line. The word belongs with the
+       words, and putting it there gives the row back to the controls. */
+    var line = el("div", "take-line");
     var who = el("span", "take-who", mine ? "שלי" : "");
-    said.appendChild(who);
+    line.appendChild(who);
+    said.appendChild(line);
     if (!mine) db.who(row.owner).then(function (name) {
       if (who.isConnected) who.textContent = name || "מישהו";
     });
@@ -21202,24 +21210,26 @@
       node.appendChild(off);
     }
 
-    /* --- AND WHETHER IT IS WAITING FOR THE SONG -------------------------------
-       A recording that was offered on a song that is not out is a recording
-       nobody can reach: the two are one thing to a listener, so the song is
-       the condition (see song_takes in schema.sql). It is not a mistake and it
-       is not undone, it is a state, and it is the ordinary state of a song
-       being worked on after somebody typed into it. Said here rather than
-       guessed at from a button that would otherwise be claiming the world. */
+    /* --- AND WHERE IT STANDS, IN A WORD ---------------------------------------
+       On every recording of yours and not only on the ones that are waiting.
+       There was one word here and it appeared in one case: a take that was out
+       on a song that was not, "מחכה לפרסום השיר". The other two states said
+       nothing at all, and one of those is the one somebody comes to this sheet
+       to change: a recording that is out in the world, with no word anywhere
+       saying so and nothing saying it can be taken back. What said it was a
+       globe with a green ring, and the sentence behind it was a `title`, which
+       on a phone is a sentence nobody will ever read.
+
+       So the row says which of the three it is, in the same small print
+       "בסולם אחר" is in, and the button beside it is what changes the word.
+       The draft on this device says it in the same place and the same colour
+       (see draftRow), so the three of them are one vocabulary: not published,
+       waiting for the song, out. */
     var heard = !!row.published && !!song.published;
-    if (mine && !song.published) {
-      /* In the same small print "בסולם אחר" is in, because it is the same kind
-         of thing: one line about this recording that is not the ordinary case.
-         Drawn on every row of a song being worked on and shown only where it is
-         true, so that taking one down here takes its words with it (see
-         offerTake). */
-      var held = el("span", "take-off take-wait", "מחכה לפרסום השיר");
-      held.title = "ההקלטה מפורסמת, אבל השיר לא. אף אחד לא ישמע אותה עד שהשיר יפורסם";
-      held.hidden = !row.published;
-      node.appendChild(held);
+    var word = null;
+    if (mine) {
+      word = el("span", "take-mark");
+      line.appendChild(word);
     }
 
     /* --- SHARING, WHICH ONLY A RECORDING THAT IS OUT CAN DO -------------------
@@ -21257,20 +21267,50 @@
          can actually hear it is the song's answer, which the words underneath
          give. Taking it down is one press either way, and it is never refused:
          nobody is made to publish a song to get their own voice off the
-         internet. */
+         internet.
+
+         AND THE WORD BESIDE IT IS THE OTHER HALF OF THE SAME SENTENCE. A
+         picture alone can say "this is out"; it cannot say "press me and it
+         will not be", and that is the press somebody comes here to make (see
+         standsAt). */
       var out = iconBtn(row.published ? ICON.globe : ICON.upload,
         outSaid(row, song), function () {
-          offerTake(row, out, pass, song);
+          offerTake(row, out, pass, song, word);
         });
       out.classList.add("take-out");
       out.classList.toggle("is-on", !!row.published);
       node.appendChild(out);
+      standsAt(word, row, song);
 
       var kill = iconBtn(ICON.trash, "מחיקת ההקלטה", function () { dropTake(row, node); });
       kill.classList.add("quiet");
       node.appendChild(kill);
     }
     return node;
+  }
+
+  /* WHERE A RECORDING OF YOURS STANDS, IN ONE WORD, AND THE THREE IT CAN BE.
+
+     Written into the same span every time rather than a span per state, so the
+     press that changes the state changes the word under the same hand: the row
+     is not drawn again, the sheet does not move, and what a person sees is the
+     one thing they pressed for.
+
+     A GREEN WORD AND A YELLOW ONE, which is this app's whole vocabulary for
+     "out" and "not out yet" and is what the draft on the device wears (see
+     draftRow). The middle case is yellow too, because from a listener's side
+     it is the same fact: nobody can hear it. */
+  function standsAt(word, row, song) {
+    if (!word) return;
+    var out = !!row.published;
+    word.textContent = out
+      ? (song.published ? "פורסמה" : "מחכה לפרסום השיר")
+      : "לא פורסמה";
+    /* The whole sentence, for a machine reading the row out loud and for a
+       pointer that has somewhere to rest (see outSaid). */
+    word.title = outSaid(row, song);
+    word.classList.toggle("take-yet", !out || !song.published);
+    word.classList.toggle("take-is-out", out && !!song.published);
   }
 
   function said0(seconds) {
@@ -21311,12 +21351,25 @@
     node.appendChild(go);
 
     var says = el("div", "take-said");
-    says.appendChild(el("span", "take-who", "שלי"));
+    /* The name and the state on one line, exactly as a saved take says them
+       (see takeRow): same place, same shape, same colour, so the sheet reads
+       as one list and not as a draft with a language of its own. */
+    var line = el("div", "take-line");
+    line.appendChild(el("span", "take-who", "שלי"));
+    var mark = el("span", "take-mark take-yet", "לא פורסמה");
+    mark.title = "ההקלטה נמצאת רק במכשיר הזה. אף אחד אחר לא יכול לשמוע אותה";
+    line.appendChild(mark);
+    says.appendChild(line);
     /* WHICH TAKE THIS IS, and it has no number: the ones in the database are
        counted, and this one is not in it. What it is instead is the newest
-       one there is, which is what "הקלטה חדשה" says. */
-    says.appendChild(el("span", "take-when",
-      "הקלטה חדשה  ·  " + said0(held.seconds) + "  ·  שמורה במכשיר הזה בלבד"));
+       one there is, which is what "הקלטה חדשה" says.
+
+       AND IT SAID WHERE IT WAS TOO, which was the same sentence the chip
+       beside it is and the same sentence the yellow edge is. Three ways of
+       saying "this is only on your phone" on one row is not three times as
+       clear, it is a row nobody reads to the end. The chip keeps the word and
+       the whole of it is under the pointer (see the title below). */
+    says.appendChild(el("span", "take-when", "הקלטה חדשה  ·  " + said0(held.seconds)));
     node.appendChild(says);
 
     /* The same small print a saved take wears, for the same reason: the page
@@ -21328,13 +21381,6 @@
       off.title = "ההקלטה נוגנה בסולם או בקפו אחרים ממה שכתוב עכשיו";
       node.appendChild(off);
     }
-
-    /* AND THE ONE WORD THAT IS ONLY TRUE OF THIS ROW. Every other row on the
-       sheet is in the library; this one is not, and the yellow it is drawn in
-       is the yellow this app writes "not published" in everywhere else. */
-    var mark = el("span", "take-off take-yet", "לא פורסמה");
-    mark.title = "ההקלטה נמצאת רק במכשיר הזה. אף אחד אחר לא יכול לשמוע אותה";
-    node.appendChild(mark);
 
     /* --- KEEPING IT, WHICH IS THE ONLY THING IT IS WAITING FOR ---------------
        The same arrow the rows under it wear, and the same sentence one step
@@ -21351,8 +21397,6 @@
       });
       keep.classList.add("take-out");
       node.appendChild(keep);
-    } else {
-      node.appendChild(el("span", "take-off", "כדי לשמור צריך להתחבר"));
     }
 
     /* AND LOSING IT, WHICH IS ASKED ABOUT. Nothing else on this sheet can be
@@ -21364,6 +21408,15 @@
     });
     kill.classList.add("quiet");
     node.appendChild(kill);
+
+    /* AND WHY THERE IS NOWHERE TO KEEP IT, ON ITS OWN LINE, LAST. A sentence
+       is not a chip: squeezed in beside the buttons it took the row apart, and
+       what it is about is the row above it rather than a control in it. Said
+       here rather than as a button that is refused every time it is pressed. */
+    if (!auth.in) {
+      node.appendChild(el("p", "take-note",
+        "ההקלטה נמצאת רק במכשיר הזה. כדי לשמור אותה לשיר צריך להתחבר לחשבון."));
+    }
     return node;
   }
 
@@ -21691,7 +21744,7 @@
 
      TAKING ONE DOWN IS NEVER REFUSED. Whatever state the song is in, a person
      who wants their voice off the internet presses this once. */
-  function offerTake(row, out, pass, song) {
+  function offerTake(row, out, pass, song, word) {
     var want = !row.published;
     if (want && !song.published) {
       return toast("קודם מפרסמים את השיר, ואז אפשר לפרסם הקלטות שלו");
@@ -21709,10 +21762,10 @@
          become possible, and goes with it when it is taken down: a link that
          stopped working is worse than no button (see takeRow). */
       if (pass) pass.hidden = !(want && song.published);
-      /* And the line that says it is waiting for the song, which is only ever
-         on a row of a song that is not out (see takeRow). */
-      var wait = out.parentNode ? out.parentNode.querySelector(".take-wait") : null;
-      if (wait) wait.hidden = !want;
+      /* AND THE WORD THAT SAYS WHERE IT STANDS MOVES WITH THE PRESS. It is the
+         thing the press was about: the picture changed and so did the ring
+         round it, and neither of those is a word (see standsAt). */
+      standsAt(word, row, song);
       toast(want ? "ההקלטה פורסמה" : "ההקלטה ירדה מפרסום");
     }).catch(function () {
       out.disabled = false;
