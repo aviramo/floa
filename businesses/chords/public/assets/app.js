@@ -18481,11 +18481,56 @@
   var stable = null;
   var heardNow = null;
   var heardTape = [];
-  /* Where the needle is standing, which is not where the last reading put it:
-     a string wavers by a few cents as it decays, and a needle that follows
-     that exactly is a needle nobody can read. */
-  var pinCents = 0;
-  var pinNote = -1;
+  /* --- WHAT THE NEEDLE IS STANDING ON ---------------------------------------
+     Not the last reading. A plucked string is not one pitch: it starts sharp
+     and settles, it wavers by a few cents the whole time it decays, and one
+     reading in a handful comes back an octave out or lands on the room rather
+     than the string. A needle drawn straight from the readings shakes exactly
+     as much as they do, and a shaking needle cannot be tuned to: the eye
+     cannot tell a string that is two cents flat from one that is ten.
+
+     So there are three things between the microphone and the needle, and each
+     one takes out a different kind of shake.
+
+     THE TAPE takes out the reading that is simply wrong. The last third of a
+     second is kept and the MIDDLE one of them is used, so a single octave jump
+     or a single scrape is stepped over rather than averaged in.
+
+     THE EASING takes out the wavering. The needle walks a seventh of the way
+     to the reading each time, which is about half a second to settle, and that
+     is what makes it look like an instrument rather than a meter.
+
+     THE HOLD takes out the blanking. The reading falls apart well before the
+     sound does, and a panel that emptied on the first poor reading emptied
+     while the note was still plainly ringing, then came back on the next
+     pluck. It keeps what it last knew until the room has really gone quiet. */
+  var TUNE_SPAN = 360;   /* how long a reading stays evidence, in ms */
+  var TUNE_TAPE = 9;     /* and how many are kept at once */
+  var TUNE_HOLD = 1400;  /* how long the last reading stays on screen, in ms */
+  var TUNE_EASE = 0.14;  /* how far the needle goes towards the reading */
+  /* Past this the needle is being MOVED and not wavering: a hand on the peg or
+     another string plucked. Nobody wants that arriving half a second late, so
+     it is met halfway rather than walked to. */
+  var TUNE_LEAP = 25;
+  /* And how far past the halfway mark the sound has to go before the note
+     being named gives way. A string sitting a half semitone off rounds to one
+     note on one reading and to its neighbour on the next, and the needle
+     crosses the whole dial every time it does. */
+  var NOTE_HOLD = 0.62;
+
+  var tuneTape = [];     /* the readings themselves, newest last */
+  var tuneHeard = 0;     /* when the last clear one landed */
+  var pinCents = 0;      /* where the needle is standing */
+  var pinNote = -1;      /* and which note it is standing under */
+  var pinShown = 99;     /* the number printed beside it, which holds its own */
+
+  function tuneForget() {
+    tuneTape.length = 0;
+    tuneHeard = 0;
+    pinCents = 0;
+    pinNote = -1;
+    pinShown = 99;
+  }
 
   function earOpen() {
     return !!ear;
@@ -18572,7 +18617,7 @@
     });
     earParts = null;
     stable = null; heardNow = null; heardTape = [];
-    pinNote = -1;
+    tuneForget();
     stopFollowing();
     markHeard(null);
     paintHeader();
@@ -18704,7 +18749,7 @@
        and a follower running while nothing is being asked about chords is a
        mark on the song that has stopped being kept true. */
     if (earMode === "tune") { markHeard(null); stopFollowing(); }
-    pinNote = -1;
+    tuneForget();
     earRoom();
     paintHeader();
   }
@@ -18715,7 +18760,10 @@
      the right on every tuner anybody has ever used, and a Hebrew page is not a
      reason to be the one that is the other way round. */
   function buildTune() {
-    var node = el("div", "tune");
+    /* Quiet to begin with, because nothing has been played into it yet: red is
+       what «not yet» looks like and a tuner that opens red is telling somebody a
+       string is wrong before they have touched one (see .tune-dial). */
+    var node = el("div", "tune is-quiet");
     node.dir = "ltr";
 
     /* THERE WAS A HAIRLINE DOWN THE MIDDLE OF THE DIAL, marking the note
@@ -18752,23 +18800,47 @@
     return { node: node, pin: pin, name: name, oct: oct, cents: cents, pegs: pegs, dial: dial };
   }
 
+  /* The middle reading of the tape, and the middle one rather than the average
+     on purpose: an average carries a bad reading wherever it goes, in
+     proportion to how bad it was, and the bad readings here are octaves. A
+     middle reading steps over one entirely. It is also a reading that was
+     really taken, so nothing is invented by taking it. */
+  function tuneMid() {
+    var a = tuneTape.slice().sort(function (p, q) { return p - q; });
+    return a[(a.length - 1) >> 1];
+  }
+
   function paintTune(r) {
     var t = earParts.tune;
-    /* Clear enough to name. YIN hands back how well the wave repeated itself,
+    var now = Date.now();
+    /* Clear enough to keep. YIN hands back how well the wave repeated itself,
        and a room, a cough and a chair all come back poorly; naming them anyway
        is a tuner that reports notes nobody played. */
-    var clear = r.hz > 0 && r.clarity >= 0.55;
-    t.node.classList.toggle("is-quiet", !clear);
-    if (!clear) {
-      t.name.textContent = "·";
+    if (r.hz > 0 && r.clarity >= 0.55) {
+      tuneTape.push(r.midi);
+      tuneHeard = now;
+      if (tuneTape.length > TUNE_TAPE) tuneTape.shift();
+    }
+    /* And a reading from a third of a second ago says nothing about the string
+       ringing now (see TUNE_SPAN). */
+    if (now - tuneHeard > TUNE_SPAN) tuneTape.length = 0;
+
+    if (!tuneTape.length) {
+      /* Standing empty already, and nothing to let go of. */
+      if (pinNote < 0) return;
+      /* Or holding the last reading, which is what a tuner does between one
+         pluck and the next. */
+      if (now - tuneHeard <= TUNE_HOLD) return;
+      t.node.classList.add("is-quiet");
+      t.node.classList.remove("is-true");
+      t.name.textContent = "\u00b7";
       t.oct.textContent = "";
       t.cents.textContent = "";
       t.pegs.forEach(function (p) { p.classList.remove("is-on"); });
-      pinNote = -1;
+      tuneForget();
       return;
     }
-
-    var midi = Math.round(r.midi);
+    t.node.classList.remove("is-quiet");
     /* AND THE PANEL OPENS WITHOUT THE ROW THE NOTE GOES IN. It is the height of
        a forty pixel letter, and before a string has been plucked there is
        nothing in it: a band of empty white over the dial, which is most of what
@@ -18777,16 +18849,32 @@
        between one pluck and the next, and a row that came and went with it
        would be a panel breathing while somebody tunes. */
     t.node.classList.add("has-read");
-    /* The needle is eased towards the reading, and thrown straight to it when
-       the note changes: following a decaying string smoothly is right, and
-       sliding across four semitones because somebody moved to the next string
-       is a needle that arrives after the string has stopped ringing. */
-    if (midi !== pinNote) { pinCents = r.cents; pinNote = midi; }
-    else pinCents += (r.cents - pinCents) * 0.25;
 
-    t.name.textContent = SHARPS[((midi % 12) + 12) % 12];
-    t.oct.textContent = String(Math.floor(midi / 12) - 1);
-    var off = Math.round(pinCents);
+    var mid = tuneMid();
+    var note = Math.round(mid);
+    if (pinNote >= 0 && Math.abs(mid - pinNote) < NOTE_HOLD) note = pinNote;
+
+    var want = (mid - note) * 100;
+    if (note !== pinNote) {
+      /* A different note is a different string, and sliding four semitones
+         across to it is a needle that arrives after the string has stopped
+         ringing. */
+      pinNote = note;
+      pinCents = want;
+      pinShown = 99;
+    } else {
+      var gap = want - pinCents;
+      pinCents += gap * (Math.abs(gap) > TUNE_LEAP ? 0.5 : TUNE_EASE);
+    }
+
+    t.name.textContent = SHARPS[((note % 12) + 12) % 12];
+    t.oct.textContent = String(Math.floor(note / 12) - 1);
+    /* The number holds its ground the way the note does. A needle resting on
+       three and a half cents prints 3 and 4 in turn for as long as it rests
+       there, and a number that will not stand still reads as a string that
+       will not, which is the one thing this panel must not say wrongly. */
+    if (Math.abs(pinCents - pinShown) >= 1.4) pinShown = Math.round(pinCents);
+    var off = pinShown;
     t.cents.textContent = (off > 0 ? "+" : "") + off;
     t.node.classList.toggle("is-true", Math.abs(off) <= IN_TUNE);
     /* Half the dial is fifty cents, which is the whole way to the next note:
@@ -18798,10 +18886,10 @@
        and the only thing that says so is which peg lit up. */
     var near = 0;
     for (var i = 1; i < STRINGS.length; i++) {
-      if (Math.abs(midi - STRINGS[i].midi) < Math.abs(midi - STRINGS[near].midi)) near = i;
+      if (Math.abs(note - STRINGS[i].midi) < Math.abs(note - STRINGS[near].midi)) near = i;
     }
     t.pegs.forEach(function (p, at) {
-      p.classList.toggle("is-on", at === near && Math.abs(midi - STRINGS[at].midi) <= 2);
+      p.classList.toggle("is-on", at === near && Math.abs(note - STRINGS[at].midi) <= 2);
     });
   }
 
