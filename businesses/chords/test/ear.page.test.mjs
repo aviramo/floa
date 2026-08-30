@@ -666,67 +666,80 @@ try {
       await sleep(1300);
       await evaluate('JSON.stringify((document.querySelector(".tape-bar .icon-btn").click(), true))');
 
-      /* --- AND THE QUESTION IS BEHIND A SECOND PRESS -------------------------
-         Stopping used to put the panel up on the press, and the press is the
-         worst moment for it: somebody has just finished playing, their hands
-         are on the guitar, and a panel over the song is answered in whatever
-         way makes it go away. So stopping now only stops, and what is left is
-         a mark on the button over the song saying there is a take unanswered.
-         Pressing that is what asks. */
-      const waiting = await until(evaluate,
-        'document.querySelector(".tape-bar .icon-btn .tape-new") && true');
-      check("stopping leaves a take waiting rather than a panel to be dismissed",
-        waiting, "no mark on the button");
-      await evaluate('JSON.stringify((document.querySelector(".tape-bar .icon-btn").click(), true))');
-      const offered = await until(evaluate, 'document.querySelector("dialog[open] .take-play")');
-      check("pausing offers the take to listen to", offered, "no panel came up");
-      const asked = await evaluate(`JSON.stringify({
-        answers: [...document.querySelectorAll("dialog[open] .dlg-actions .btn")].map((b) => b.textContent),
+      /* --- AND THE RECORDING IS WHERE THE RECORDINGS ARE ---------------------
+         Stopping used to leave a microphone hung on the corner of the record
+         button, and pressing that put a panel up asking what to do with the
+         take. Both are gone. Stopping puts the take down on the device, the
+         button goes back to being the one that records, and the recording is a
+         row on the sheet behind the three dots with the rest of this song's.
+
+         So the first thing to be true of the button is that there is nothing
+         on it: one round button, and it is not recording. */
+      await sleep(600);
+      const stopped = await evaluate(CHORD_READ);
+      check("stopping leaves the button saying record and nothing else",
+        stopped.keys === 1 && stopped.rec && !stopped.taping,
+        JSON.stringify({ keys: stopped.keys, rec: stopped.rec, taping: stopped.taping }));
+
+      /* --- AND THE MARK IS BESIDE THE DOTS, IN THE COLOUR OF THE STATE -------
+         The play shape in yellow: there is a recording of this song in here,
+         and it has not been published (see .more-yet). It wins over the dot
+         that says the song itself is a draft, because it is the only one of
+         the marks waiting on a decision nobody has made. */
+      const litYellow = await until(evaluate,
+        `document.querySelector('#topActions [aria-label^="עוד"] .more-yet') && true`);
+      check("and the dots say there is a recording here that is not published",
+        litYellow, "no yellow mark beside the dots");
+
+      /* --- AND BEHIND THEM, THE ROW, AND BEHIND THAT, THE SHEET --------------- */
+      await evaluate(`JSON.stringify((
+        document.querySelector('#topActions [aria-label^="עוד"]').click(), true))`);
+      await sleep(250);
+      const wayIn = await evaluate(`JSON.stringify((function () {
+        var row = [...document.querySelectorAll(".print-menu .btn")]
+          .find(function (b) { return /הקלטות/.test(b.textContent); });
+        if (!row) return { row: false };
+        var news = row.classList.contains("has-news");
+        row.click();
+        return { row: true, news: news };
+      })())`);
+      check("the panel offers the recordings, with the dot carried in",
+        wayIn.row && wayIn.news, JSON.stringify(wayIn));
+
+      /* --- AND THE DRAFT IS A ROW LIKE THE REST, WITH ONE WORD OF ITS OWN ----
+         Same shape, same player, same bin. What is only true of this one is
+         that it is on the device and nobody else can hear it, and that is what
+         the word beside it says. Keeping it needs an account and this harness
+         has none, so what stands where the keep button would is the sentence
+         saying why. */
+      await until(evaluate, 'document.querySelector(".takes .take.is-draft")');
+      const draft = await evaluate(`JSON.stringify({
+        rows: document.querySelectorAll(".takes .take").length,
+        drafts: document.querySelectorAll(".takes .take.is-draft").length,
+        plays: document.querySelectorAll(".takes .take.is-draft .take-go").length,
+        yet: (document.querySelector(".takes .take.is-draft .take-yet") || {}).textContent,
       })`);
-      /* Saving needs an account and this harness has none, so what is offered
-         here is the one answer that does not: throwing it away. What matters
-         either way is that WALKING AWAY IS NOT A BUTTON. */
-      check("nothing on offer is a way of not answering",
-        asked.answers.length >= 1 && !asked.answers.some((w) => /סגירה|ביטול/.test(w)),
-        JSON.stringify(asked.answers));
+      check("the recording is one row on the sheet, and it says it is not out",
+        draft.rows === 1 && draft.drafts === 1 && draft.plays === 1 &&
+        /לא פורסמה/.test(draft.yet || ""),
+        JSON.stringify(draft));
 
-      /* --- AND CLOSING IT LEAVES THE TAKE WHERE IT WAS -----------------------
-         Not "carries the recording on", which is what it used to do and what
-         it stopped doing when the question moved off the press: the playing is
-         already over by the time this panel is up. Walking away from the
-         question is not an answer to it, so the take is still there, still
-         unanswered, with the same mark on the button over the song, and
-         pressing that asks again. */
-      await evaluate('JSON.stringify((document.querySelector("dialog[open]").close(), true))');
-      await sleep(600);
-      const back = await evaluate(CHORD_READ);
-      check("closing the question leaves the take waiting to be asked again",
-        back.keys === 1 && !back.taping, JSON.stringify({ keys: back.keys, taping: back.taping }));
-      const stillMarked = await evaluate(
-        'JSON.stringify(!!document.querySelector(".tape-bar .icon-btn .tape-new"))');
-      check("and the mark on the button is still saying so", stillMarked, "the mark went");
-
+      /* --- AND RECORDING AGAIN RECORDS OVER IT, WITHOUT ASKING ---------------
+         There is one draft per song, because two of them are two performances
+         of the same words whose marks count chords along the same sheet. This
+         press used to be REFUSED because of that, which put a question about
+         an old recording in front of somebody holding a guitar. A press on the
+         record button means record, and it is answered: the draft goes, the
+         mark beside the dots goes with it, and a take is running. */
       await evaluate('JSON.stringify((document.querySelector(".tape-bar .icon-btn").click(), true))');
-      await until(evaluate, 'document.querySelector("dialog[open] .take-play")');
-
-      /* --- AND ANSWERING IT STARTS THE NEXT ONE ------------------------------
-         Which is not "puts everything back", and the difference is the whole
-         shape of the panel now. Both answers end THIS take: the mark comes off
-         the button and the question is settled either way. What follows is a
-         fresh take already running (see afresh), because somebody who has just
-         answered a question about a recording is somebody about to play again,
-         and the press they would have reached for next is the one they have
-         just made. */
-      await evaluate('JSON.stringify(([...document.querySelectorAll("dialog[open] .dlg-actions .btn")][0].click(), true))');
-      await sleep(600);
+      await until(evaluate, 'document.querySelector(".tape-bar .icon-btn.is-taping")');
+      await sleep(400);
       const shut = await evaluate(CHORD_READ);
       const gone = await evaluate(
-        'JSON.stringify(!document.querySelector(".tape-bar .icon-btn .tape-new"))');
-      check("answering the take takes the mark off and opens the next one",
-        shut.marked.length === 0 && shut.taping && shut.keys === 1 && shut.rec && gone,
-        JSON.stringify({ marked: shut.marked, keys: shut.keys, rec: shut.rec,
-                         taping: shut.taping, open: shut.open, markGone: gone }));
-
+        `JSON.stringify(!document.querySelector('#topActions [aria-label^="עוד"] .more-yet'))`);
+      check("recording again takes the draft and its mark, and a take is running",
+        shut.taping && shut.keys === 1 && shut.rec && gone,
+        JSON.stringify({ keys: shut.keys, rec: shut.rec, taping: shut.taping, markGone: gone }));
       check("and nothing threw along the way", shut.errors.length === 0, JSON.stringify(shut.errors));
     });
 

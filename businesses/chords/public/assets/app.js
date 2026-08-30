@@ -21337,10 +21337,10 @@
     node.appendChild(mark);
 
     /* --- KEEPING IT, WHICH IS THE ONLY THING IT IS WAITING FOR ---------------
-       The same arrow the row above it wears, and the same sentence one step
+       The same arrow the rows under it wear, and the same sentence one step
        earlier: a recording moves out from the device, to the song, and then to
        the world. Pressed here it becomes an ordinary take of this song, in the
-       list, with its own button for the step after this one.
+       list, with its own arrow for the step after this one.
 
        WITHOUT AN ACCOUNT THERE IS NOWHERE TO PUT IT, so the button is not
        there and the row says why: a button that is refused every time it is
