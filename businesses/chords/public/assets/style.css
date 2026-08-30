@@ -1672,6 +1672,37 @@ body.sifting .list:not(.band), body.sifting .set { min-height: calc(100dvh - var
    word in the corner, which is what the eye lands on last and confirms with. */
 .set-row.is-pick.is-in { background: #eef5f4; border-color: #cfe1de; }
 
+/* --- THE ROW THAT ASKS WHAT ELSE BELONGS ON THE LIST ----------------------
+   A press, not a panel standing open: suggestions under every playlist would
+   be a second wall of songs under the one wall somebody came here to read (see
+   the row in renderPlaylist). So it is one quiet button at the foot of the
+   list, and the chevron on it turns over when the wall behind it is open,
+   which is how every drawer in this app says which way it is (see .read-turn).
+
+   Aligned with the start of the cards above it rather than centred, because it
+   is a thing to do to the list and not a full stop under it. */
+.pl-more { margin: 0 0 14px; }
+.pl-more[hidden] { display: none; }
+.pl-turn { transition: transform .15s ease; }
+.pl-more.is-on .pl-turn { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) {
+  .pl-turn { transition: none; }
+}
+/* THE SAME WALL, ONE STEP BACK. It is the same cards at the same width in the
+   same columns, because a song is a song wherever it is offered; what says
+   these are not the list is that they stand under the button that asked for
+   them, each carrying the line that says why it is here. */
+.pl-suggest { margin-top: 2px; }
+.pl-suggest[hidden] { display: none; }
+/* WHY THIS CARD IS ON THE WALL. In the app's own colour rather than in the
+   grey the credits are in: the credits are a fact about the song and this is
+   the page speaking, and a reader has to be able to tell the two apart at a
+   glance. A suggestion that cannot say where it came from is an opinion with
+   nothing behind it (see suggestFor). */
+.pl-why {
+  margin-top: 4px; font-size: 13px; font-weight: 600; color: var(--accent-ink);
+}
+
 /* --- THE FAR CORNER OF THE CARD, which is where the library's keeps its own
    (see .list .side). The tools first, because they are what this page is for
    doing, and whatever there is to hear under them. */
@@ -3843,7 +3874,10 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
      printed page is ink spent on something nobody can press. The library it was
      built from is not here to be hidden any more: it is the box in the bar, and
      the bar does not print (see state.pick). */
-  .pl-meta, .hint, .set-row button { display: none !important; }
+  /* And the row that asks what else belongs on the list, with the wall behind
+     it: a page being handed to somebody to sing from is finished, and a
+     question about what to add to it is a thing for the screen. */
+  .pl-meta, .hint, .set-row button, .pl-more, .pl-suggest { display: none !important; }
   .on-paper { display: block; }
   /* and one of them is left out when there is nothing to say (see sayWho): the
      class turns these on for the printer, so it has to be told when not to */

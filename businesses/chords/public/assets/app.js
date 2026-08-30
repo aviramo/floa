@@ -1862,6 +1862,33 @@
     },
   };
 
+  /* --- WHAT KEEPS TURNING UP BESIDE THESE SONGS ------------------------------
+     Out of every playlist in the project and not only this account's, which is
+     the whole value of the answer: what belongs on an evening is a thing the
+     pile already knows and no single person does.
+
+     A COUNT AND AN ID, AND NOTHING ELSE COMES BACK. Reading somebody's
+     playlist is not something a policy can half allow, so the counting happens
+     where no policy applies and what leaves is arithmetic (see songs_beside in
+     schema.sql). Nothing here can be turned back into a list, a name or a
+     person.
+
+     A failure is an empty answer rather than a red screen: this is one of four
+     things a suggestion is made of (see suggestFor), and the other three are
+     worked out in the browser out of the library that is already on the page.
+     A project whose schema.sql has not been run since simply suggests by the
+     other three. */
+  function songsBeside(ids) {
+    if (!ids.length) return Promise.resolve({});
+    return rest("rpc/songs_beside", { method: "POST", body: { ids: ids }, quiet: true })
+      .then(function (rows) {
+        var by = {};
+        (rows || []).forEach(function (row) { by[row.song] = row.together; });
+        return by;
+      })
+      .catch(function () { return {}; });
+  }
+
   /* --- every version that was published --------------------------------------
      A song writes itself every few seconds while it is being typed, so its own
      row is only ever the latest word. This is the other thing: what the song
@@ -16242,6 +16269,250 @@
     }
   }
 
+  /* ==========================================================================
+     WHAT ELSE BELONGS ON THIS LIST.
+
+     A playlist is a handful of songs somebody chose, and the next one they
+     want is almost never a stranger: it is by the same person, it is the same
+     kind of song, it uses the same words, or it has been sung beside these
+     ones on somebody else's evening. Four ways of being related, and none of
+     them is the same question, so none of them is folded into the others.
+
+     WHY FOUR SIGNALS AND NOT ONE NUMBER. A single score would rank the wall
+     and be unable to say why anything is on it, and "why is this here" is the
+     first thing anybody asks of a suggestion. So each signal scores on its
+     own, the points are added, and the card is labelled with the signal that
+     contributed most: the sentence on the row is not a decoration, it is the
+     reason the row exists.
+
+     THREE OF THE FOUR COST NOTHING. The library is already on the page, whole,
+     with its words, its people and its styles in it, so they are worked out
+     here and never asked for. The fourth cannot be: what is on other people's
+     lists is behind row level security, and it arrives as a count and an id
+     (see songsBeside).
+     ========================================================================== */
+
+  /* The points each signal is worth at its best. Deliberately coarse, and
+     deliberately in one place: what they say is that having been sung beside
+     these songs beats sharing a writer with them, which beats sharing the
+     words, which beats sharing a kind. Nothing here is tuned, and nothing here
+     should be: the moment these become fifteen decimal places, nobody can say
+     what the wall is ordered by. */
+  /* The first is what standing beside EVERY song on the list is worth, and a
+     song that has stood beside some of them gets that share of it. The rest
+     are per person, per style, and one ceiling for the words. */
+  var WITH_LIST = 18;
+  var WITH_MAKER = 5;  /* per person who wrote both, up to two */
+  var WITH_WORDS = 4;  /* at the very most, and it is a guess: see below */
+  var WITH_KIND = 3;   /* per style they share, up to two */
+
+  /* AND THE WORDS ARE WORTH LESS THAN THE PEOPLE ON PURPOSE. Who wrote a song
+     is written on the song; that two songs use some of the same words is
+     something this file worked out, and an inference should never outrank a
+     fact somebody typed. */
+
+  /* WHAT COUNTS AS A LETTER, and everything else is where one word ends and
+     the next begins. The range is the Hebrew block from end to end, and the
+     Latin letters beside it because a song is called Guidance Protection as
+     often as it is called אל הגן. Numbers are deliberately out: a number in a
+     song is a verse mark, not a thing the song is about.
+
+     One and two letter pieces are dropped below. In Hebrew they are the joints
+     of the language and never the subject of anything. */
+  var WORD_SPLIT = /[^֐-׿a-zA-Z]+/;
+
+  /* THE WORDS OF A SONG, AS A SET, and no stemming of any kind.
+     Hebrew glues its prefixes on, so "בשמים" and "שמים" are two words here and
+     a match between them is missed. That is a real loss and it is smaller than
+     the alternative: taking one letter off the front of a word without a
+     dictionary turns "שמים" into "מים", and a suggestion built on that is
+     confidently about the wrong thing. Missing a match costs a row on a wall;
+     inventing one costs the reader's trust in the whole wall.
+
+     Kept on the song, beside the two haystacks the search box builds, because
+     it is the same expensive read of the same lines (see sortHay). */
+  function wordsOf(song) {
+    if (song.words) return song.words;
+    var set = {};
+    withoutGaps(normalizeLines(song.lines).map(function (l) { return l.text; }).join(" "))
+      .toLowerCase().split(WORD_SPLIT).forEach(function (w) {
+        if (w.length > 2) set[w] = true;
+      });
+    song.words = set;
+    return set;
+  }
+
+  /* HOW MUCH A WORD IS WORTH, WHICH IS HOW RARE IT IS. Two songs sharing "את"
+     share nothing; two songs sharing "כנפי" are about something. So a word is
+     weighed by how few songs in this library hold it, which is the oldest
+     measure there is and the only one that needs no vocabulary of Hebrew: a
+     word in every song weighs nothing, a word in one song weighs the most.
+
+     Worked out over the library on the page rather than kept anywhere. It is a
+     few hundred songs and it is asked for once per press. */
+  function wordWeights(library) {
+    var seen = {}, n = 0;
+    library.forEach(function (song) {
+      n++;
+      var words = wordsOf(song);
+      for (var w in words) if (words.hasOwnProperty(w)) seen[w] = (seen[w] || 0) + 1;
+    });
+    var weight = {};
+    for (var w2 in seen) {
+      if (seen.hasOwnProperty(w2)) weight[w2] = Math.log(n / seen[w2]) || 0;
+    }
+    return weight;
+  }
+
+  /* The length of a set of words, measured the way the angle between two of
+     them is measured. Kept out of the loop below because the playlist's own is
+     the same number for every candidate. */
+  function wordSize(words, weight) {
+    var sum = 0;
+    for (var w in words) {
+      if (!words.hasOwnProperty(w)) continue;
+      var v = weight[w] || 0;
+      sum += v * v;
+    }
+    return Math.sqrt(sum);
+  }
+
+  /* --- and the answer -------------------------------------------------------
+     `chosen` is the songs already in the playlist, resolved out of the
+     library; `library` is everything this reader may open; `together` is what
+     came back from the database, by song id.
+
+     Songs still being read are left out, exactly as they are left out of the
+     shelf the box in the bar offers: a song with no words yet cannot be sung
+     from, and a playlist is a list to sing from. */
+  function suggestFor(chosen, library, together, howMany) {
+    var inList = {};
+    chosen.forEach(function (song) { inList[song.id] = true; });
+
+    var pool = library.filter(function (song) {
+      if (inList[song.id]) return false;
+      if (song.status && song.status !== "ready") return false;
+      return true;
+    });
+    if (!pool.length || !chosen.length) return [];
+
+    /* WHAT THE PLAYLIST IS MADE OF, gathered once. Everything below is one
+       candidate measured against these three piles and one number. */
+    var makers = {}, kinds = {}, want = {};
+    chosen.forEach(function (song) {
+      creditNames(song).forEach(function (name) { makers[name] = true; });
+      styles(song).forEach(function (kind) { kinds[kind.toLowerCase()] = true; });
+      var words = wordsOf(song);
+      for (var w in words) if (words.hasOwnProperty(w)) want[w] = true;
+    });
+
+    var weight = wordWeights(library);
+    var wantSize = wordSize(want, weight);
+
+    /* AND A KIND THAT MOST OF THE LIBRARY WEARS IS NOT A KIND. Two songs
+       sharing "שירי מעגל" in a library that is seventy percent circle songs
+       have said nothing to each other, and a wall filled with that reason is a
+       wall of forty songs in alphabetical order. The same measure the words
+       are weighed by, said as a threshold rather than as a weight, because a
+       style is either worth naming on a card or it is not. */
+    var common = {};
+    var kindSeen = {};
+    library.forEach(function (song) {
+      styles(song).forEach(function (kind) {
+        var k = kind.toLowerCase();
+        kindSeen[k] = (kindSeen[k] || 0) + 1;
+      });
+    });
+    for (var k2 in kindSeen) {
+      if (kindSeen.hasOwnProperty(k2) && kindSeen[k2] * 3 > library.length) common[k2] = true;
+    }
+
+    var out = [];
+    pool.forEach(function (song) {
+      var points = 0, best = 0, why = "";
+
+      /* --- SUNG BESIDE THEM, ON SOMEBODY'S EVENING ---
+         In proportion and never as a flat count. What comes back is how many
+         of THESE songs it has shared a list with (see songs_beside), and a
+         song that has stood beside eleven of fifteen is not the same answer as
+         one that shared an evening with a single one of them. Counted flat,
+         every song in every overlapping playlist ties at the top and the wall
+         comes out in alphabetical order, which is the library again. */
+      /* Never more than there are songs to have stood beside. The database
+         was asked about every id in the list and `chosen` is the ones that are
+         still in the library, so a playlist holding a song somebody has since
+         deleted would otherwise answer with a fraction over one. */
+      var n = Math.min(together[song.id] || 0, chosen.length);
+      if (n) {
+        var got = Math.round(WITH_LIST * (n / chosen.length));
+        if (got) {
+          points += got;
+          if (got > best) {
+            best = got;
+            why = n === 1 ? "מופיע ברשימות עם שיר אחד מכאן"
+              : "מופיע ברשימות עם " + n + " מהשירים כאן";
+          }
+        }
+      }
+
+      /* --- written by somebody who wrote one of them --- */
+      var same = creditNames(song).filter(function (name) { return makers[name]; });
+      if (same.length) {
+        var gotMaker = Math.min(same.length, 2) * WITH_MAKER;
+        points += gotMaker;
+        if (gotMaker > best) { best = gotMaker; why = "של " + same.slice(0, 2).join(", "); }
+      }
+
+      /* --- and made of the same words --- */
+      if (wantSize) {
+        var words2 = wordsOf(song);
+        var shared = 0;
+        for (var w3 in words2) {
+          if (!words2.hasOwnProperty(w3) || !want[w3]) continue;
+          var v = weight[w3] || 0;
+          shared += v * v;
+        }
+        var size = wordSize(words2, weight);
+        var near = size ? shared / (size * wantSize) : 0;
+        /* Quantized on purpose. What the number is good for is ranking, and a
+           hundredth of a cosine is not a thing anybody should be able to see on
+           a wall. A third is as alike as two different songs ever get, so a
+           third is what the signal is worth in full. Below two points it is
+           noise, and noise wearing the words "מילים דומות" is worse than a
+           shorter list. */
+        var gotWords = Math.round(near * 12);
+        if (gotWords >= 2) {
+          gotWords = Math.min(gotWords, WITH_WORDS);
+          points += gotWords;
+          if (gotWords > best) { best = gotWords; why = "מילים דומות"; }
+        }
+      }
+
+      /* --- and the same kind of song --- */
+      var alike = styles(song).filter(function (kind) {
+        var k = kind.toLowerCase();
+        return kinds[k] && !common[k];
+      });
+      if (alike.length) {
+        var gotKind = Math.min(alike.length, 2) * WITH_KIND;
+        points += gotKind;
+        if (gotKind > best) { best = gotKind; why = alike.slice(0, 2).join(", "); }
+      }
+
+      if (points > 0) out.push({ song: song, points: points, why: why });
+    });
+
+    /* The best first, and a tie broken by the name rather than by whatever
+       order the library happened to arrive in: a wall that comes out in a
+       different order on two presses that found the same songs is a wall
+       nobody trusts. */
+    out.sort(function (a, b) {
+      if (a.points !== b.points) return b.points - a.points;
+      return String(a.song.title || "").localeCompare(String(b.song.title || ""), "he");
+    });
+    return out.slice(0, howMany);
+  }
+
   function viewPlaylist(id) {
     setBusy(id === null ? "טוען את המאגר" : "טוען את הפלייליסט");
 
@@ -16520,6 +16791,122 @@
     var emptyNote = el("p", "hint", EMPTY_SAID);
     app.appendChild(emptyNote);
 
+    /* --- AND THE ROW UNDER THE LIST, WHICH ASKS WHAT ELSE BELONGS ON IT -------
+       A playlist is finished the way a sentence is finished: the last three
+       songs are the hard ones, and the way people find them is by scrolling
+       the whole library hoping to recognise something. This is the other way
+       round. The list already says what it is about, in four different
+       languages at once, and this asks the library to answer in all four (see
+       suggestFor).
+
+       A PRESS AND NOT A PANEL THAT IS ALWAYS THERE. Suggestions standing open
+       under every playlist would be a second wall of songs nobody asked for,
+       under the one wall somebody came here to read, and one of the two is the
+       list. So it is shut until it is asked for, and shut again by the same
+       press: the mark on it turns over, which is how every drawer in this app
+       says which way it is (see .read-turn).
+
+       ASKED AGAIN ON EVERY OPENING, AND NOT WHILE IT IS OPEN. Adding a song
+       changes what the list is about, so the honest answer would move under
+       the finger that is adding them, and a wall that rearranges itself while
+       it is being picked from is a wall somebody loses their place on. So the
+       cards stay exactly where they were put and only change what they SAY,
+       and the next press is the next question. */
+    var moreRow = el("div", "pl-more");
+    var moreOpen = false, moreAsking = false;
+    var moreFound = [];
+
+    /* How many are worth offering. A wall of forty suggestions is the library
+       again, which is the thing this exists instead of; what somebody wants
+       here is the handful that finishes the evening, and the way to get more
+       of them is to put one in and press again. */
+    var MORE_SHOW = 12;
+
+    var moreBtn = button("מה עוד מתאים לרשימה", ICON.turn, "ghost small pl-more-btn", function () {
+      if (moreAsking) return;
+      if (moreOpen) return shutMore();
+      openMore();
+    });
+    /* The chevron is turned over by the stylesheet when it is open, so the
+       same mark says both states (see .pl-more.is-on). */
+    var moreTurn = moreBtn.querySelector("svg");
+    if (moreTurn) moreTurn.setAttribute("class", "pl-turn");
+    moreRow.appendChild(moreBtn);
+    app.appendChild(moreRow);
+
+    /* THE SAME WALL, THE SAME CARDS, THE SAME PRESS. A song offered here is a
+       song, so it wears what a song wears everywhere else in this app, and one
+       press puts it in the list exactly as it does on the shelf the box in the
+       bar narrows to (see shelfCard). What it carries that the shelf's card
+       does not is the line saying why it is here at all. */
+    var moreWall = el("ol", "set pl-suggest");
+    moreWall.hidden = true;
+    app.appendChild(moreWall);
+
+    var moreNote = el("p", "hint");
+    moreNote.hidden = true;
+    app.appendChild(moreNote);
+
+    function shutMore() {
+      moreOpen = false;
+      moreFound = [];
+      showMore();
+    }
+
+    function openMore() {
+      moreAsking = true;
+      showMore();
+
+      /* The one thing that has to be asked for. The other three are worked out
+         of the library that is already on this page, so a failure here is a
+         shorter answer and never a page that will not open (see songsBeside). */
+      var ids = playlist.songs.map(function (item) { return item.id; });
+      songsBeside(ids).then(function (together) {
+        moreAsking = false;
+        /* the page was left, or the list was closed again, while the question
+           was in the air */
+        if (!moreRow.isConnected) return;
+        moreOpen = true;
+        moreFound = suggestFor(
+          playlist.songs.map(function (item) { return byId[item.id]; }).filter(Boolean),
+          library, together, MORE_SHOW);
+        showMore();
+      });
+    }
+
+    /* What the row and the wall look like at this second, said in one place so
+       the three states cannot drift apart: shut, asking, and open. */
+    function showMore() {
+      moreBtn.disabled = moreAsking;
+      relabel(moreBtn, moreAsking ? "מחפשים שירים" : moreOpen ? "לסגור את ההצעות" : "מה עוד מתאים לרשימה");
+      moreRow.classList.toggle("is-on", moreOpen);
+      moreBtn.setAttribute("aria-expanded", moreOpen ? "true" : "false");
+
+      moreWall.textContent = "";
+      moreWall.hidden = !moreOpen || !moreFound.length;
+      moreNote.hidden = !moreOpen || !!moreFound.length;
+      moreNote.textContent =
+        "לא נמצאו שירים נוספים שקשורים לרשימה הזאת. אפשר להוסיף שיר בחיפוש שבסרגל למעלה.";
+
+      if (!moreOpen) return;
+      var inside = {};
+      playlist.songs.forEach(function (item, i) { inside[item.id] = i + 1; });
+      moreFound.forEach(function (found) {
+        moreWall.appendChild(shelfCard(found.song, inside[found.song.id] || 0, found.why));
+      });
+    }
+
+    /* WHERE THE ROW IS ALLOWED TO STAND AT ALL. Not over an empty playlist,
+       because there is nothing yet for a song to be related TO; and not while
+       there are words in the box, because then this wall IS the library and a
+       second wall of songs under it would be the same shelf offered twice. */
+    function placeMore() {
+      var room = !sifted && playlist.songs.length > 0;
+      moreRow.hidden = !room;
+      if (!room && moreOpen) shutMore();
+      else showMore();
+    }
+
     /* --- WHAT THE BOX IN THE BAR IS SIEVING THIS PAGE DOWN TO -----------------
        The library's own box narrows the wall of cards under it rather than
        hanging a list of names over it, and there is no reason a playlist should
@@ -16572,6 +16959,9 @@
       emptyNote.textContent = sifted
         ? 'לא נמצא שיר עבור "' + sift.q.trim() + '".' : EMPTY_SAID;
       emptyNote.hidden = listEl.children.length > 0;
+      /* and the row under it, which is about the playlist and therefore about
+         what has just changed (see placeMore) */
+      placeMore();
     }
 
     /* THE LIBRARY, NARROWED, AND THE PLAYLIST MARKED IN IT. By everything a
@@ -16595,7 +16985,11 @@
        wall, and a song that changes shape when it is searched for is a
        different song. What it carries instead of the wastebasket is the one
        press it has, which is in or out. */
-    function shelfCard(song, at) {
+    /* `why` is written only where the card came from the row of suggestions
+       under the list (see paintMore). On the shelf the box in the bar narrows,
+       there is nothing to explain: the cards are there because they were typed
+       for. */
+    function shelfCard(song, at, why) {
       var li = el("li", "set-row is-pick" + (at ? " is-in" : ""));
       li.title = at ? "לחיצה מוציאה מהפלייליסט" : "לחיצה מוסיפה לפלייליסט";
 
@@ -16617,6 +17011,13 @@
 
       var by = creditNames(song).join(", ");
       if (by) box.appendChild(el("div", "by", by));
+
+      /* WHY THIS ONE IS ON THE WALL, and it is not a decoration: a suggestion
+         that cannot say where it came from is a machine's opinion, and the
+         only thing to do with one of those is take it or leave it. With the
+         reason on it, a reader can disagree with the reason (see suggestFor,
+         which is what these words are read off). */
+      if (why) box.appendChild(el("div", "pl-why", why));
 
       var mine = shapesFor(song);
       if (mine.shapes.length) {

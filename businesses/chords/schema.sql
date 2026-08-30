@@ -796,6 +796,90 @@ $fn$;
 
 grant execute on function public.setlist_invite(uuid) to anon, authenticated;
 
+-- --------------------------------------------------------------------------
+-- WHAT STANDS BESIDE THESE SONGS, IN EVERYBODY'S LISTS.
+--
+-- A playlist is private and stays private. What is not private, and is the
+-- most useful thing this project knows, is the shape of the whole pile: songs
+-- that keep turning up on the same evening as each other belong together, and
+-- nobody had to say so. That is a fact about the LIBRARY, gathered out of the
+-- lists, and it is what the row of suggestions under a playlist is built on
+-- (see suggestFor in app.js).
+--
+-- IT CANNOT BE A POLICY AND IT CANNOT BE A SELECT. Row level security is
+-- about rows: a reader who may not see a playlist may not see any part of it,
+-- and there is no policy that says "you may count this row but not read it".
+-- So it is a function that reads every list where no policy applies and hands
+-- back a COUNT, and the counting is the whole of the privacy: an id and a
+-- number.
+--
+-- WHAT IT NEVER SAYS: which playlist, whose it is, what it is called, what
+-- else is on it, or when. Somebody who asks about every song in the library
+-- gets the graph of what tends to be sung together, which is exactly the
+-- thing this is for and is not about any person. Nothing here can be worked
+-- backwards into a list.
+--
+-- And only songs anybody may open come back. A song that is not published is
+-- not a suggestion, it is the existence of a draft, which is the one thing an
+-- id on its own could still have leaked.
+-- --------------------------------------------------------------------------
+create or replace function public.songs_beside(ids uuid[])
+returns table (song uuid, together integer)
+language sql
+stable
+security definer
+set search_path = public
+as $fn$
+  with wanted as (
+    select distinct unnest(ids) as id
+  ),
+  -- Every song in every list, as a pair. The join to songs is what turns the
+  -- text in the column into an id: casting it would raise on the first row
+  -- somebody's browser ever wrote badly, and a join simply drops it. It also
+  -- drops an id naming a song that has since been deleted, which is a place in
+  -- a list and not a song to suggest.
+  placed as (
+    select s.id as list, g.id as song
+      from public.setlists s
+      cross join lateral jsonb_array_elements(s.songs) as e(value)
+      join public.songs g on g.id::text = e.value ->> 'id'
+  ),
+  -- Every place one of the songs asked about is standing: a list, and which
+  -- of them is on it.
+  beside as (
+    select p.list, p.song as seed
+      from placed p
+      join wanted w on w.id = p.song
+  )
+  -- AND THE NUMBER IS HOW MANY OF THESE SONGS IT HAS STOOD BESIDE, not how
+  -- many lists it has stood in. Counting lists sounds like the same thing and
+  -- is not: in a project with three playlists that overlap, every song in any
+  -- of them has stood in "one list" with the others, and the answer comes back
+  -- as forty songs all tied at one, sorted by name. Which is not a ranking, it
+  -- is the library again.
+  --
+  -- Counting the SONGS separates them. A song that has been sung beside eleven
+  -- of the fifteen on this list is what somebody is looking for; one that
+  -- happened to share an evening with a single one of them is a coincidence,
+  -- and now the two are eleven and one instead of one and one.
+  select p.song, count(distinct b.seed)::int as together
+    from placed p
+    join beside b on b.list = p.list
+    join public.songs g on g.id = p.song
+   where not exists (select 1 from wanted w where w.id = p.song)
+     and g.published
+     and g.deleted_at is null
+   group by p.song
+   order by together desc, p.song
+   limit 80
+$fn$;
+
+-- The page that asks is a playlist, and a playlist needs an account. Not
+-- granted to anon, which is one fewer door on a function that reads past every
+-- policy in the file.
+revoke execute on function public.songs_beside(uuid[]) from public, anon;
+grant execute on function public.songs_beside(uuid[]) to authenticated;
+
 -- ==========================================================================
 -- What the readings cost.
 --
