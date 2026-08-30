@@ -411,6 +411,14 @@ create table if not exists public.setlists (
   -- An array rather than a row per song with a position column, because the
   -- order IS the point and an array already has one. A column of positions is
   -- a set of numbers somebody has to keep true across every drag.
+  --
+  -- AND A THIRD KEY ON A SHARED LIST, `by`: the account singing this one, out
+  -- of the people who are on the playlist (see setlist_members below). It is
+  -- an id and not a name, so somebody who renames themselves is still the
+  -- person singing it, and it is missing on every song nobody has been given
+  -- yet, which is most of them. Not a column and not a table of its own: it
+  -- is a fact about a song's place in ONE list, it dies with that place, and
+  -- taking the song out has to take it with it.
   songs       jsonb not null default '[]'::jsonb,
 
   created_at  timestamptz not null default now(),
@@ -491,19 +499,302 @@ drop policy if exists "signed in users may delete evenings" on public.setlists;
 -- table used before it was called a playlist
 drop policy if exists "an evening belongs to its account" on public.setlists;
 
--- One rule for all four verbs, because there is only one thing to say: a
--- playlist is its owner's. `using` decides which rows can be seen, changed and
--- deleted; `with check` decides what may be written, and it is what stops a
--- list from being handed to somebody else.
+-- --------------------------------------------------------------------------
+-- AND A PLAYLIST IS SHARED BY HANDING SOMEBODY THE LINK.
 --
--- Not granted to anon at all, so a visitor without an account does not read a
--- playlist, and a link to one answers as though it were not there. Which it is
--- not, for them.
+-- It was one rule for all four verbs, because there was only one thing to
+-- say: a playlist is its owner's. That is still true of who may throw one
+-- away, and it stopped being true of everything else the moment two people
+-- sang off the same list.
+--
+-- SO THERE IS A SECOND TABLE, and it is the whole of the change: a row per
+-- person per playlist, saying that this list is theirs to open. The owner is
+-- one of those rows, written by the database the instant the playlist is (see
+-- the trigger below), so "who is on this list" is one question with one
+-- answer and the owner is not a special case inside it.
+--
+-- WHAT THE OWNER STILL HAS ALONE is deleting it. Everything else, the name,
+-- the line under it, the songs and their order, belongs to whoever is on the
+-- list, because a list two people sing from is a list two people write. A
+-- person who wants out takes their own row away, and the playlist does not
+-- notice: leaving is not deleting, and the two must never be one button.
+--
+-- Nothing here is granted to anon. A visitor without an account still does
+-- not read a playlist, and the link below is exactly how they stop being a
+-- visitor without one.
+-- --------------------------------------------------------------------------
+
+-- THE LINK, AND IT IS NOT THE ID. The id stands in the address bar of
+-- everybody already on the list, in every bookmark they made and in whatever
+-- they pasted to each other; a value that opens a door has to be one that is
+-- only ever handed over on purpose. So the door has a key of its own, and the
+-- address of a playlist stays a name for it and nothing more.
+alter table public.setlists add column if not exists share uuid not null default gen_random_uuid();
+
+-- gen_random_uuid() is volatile, so a table that already had rows gets a
+-- different value in each of them rather than one value in all of them, which
+-- is the difference between a key per playlist and one key to every playlist.
+create unique index if not exists setlists_share_idx on public.setlists (share);
+
+-- WHO IS ON A PLAYLIST. Two columns and a date, and the pair of them is the
+-- key: a person is on a list once or not at all.
+create table if not exists public.setlist_members (
+  setlist uuid not null references public.setlists (id) on delete cascade,
+  person  uuid not null references auth.users (id) on delete cascade,
+
+  -- WHEN THEY CAME, and it is what the roster is ordered by, so the owner
+  -- stands first and everybody else stands in the order they arrived.
+  joined  timestamptz not null default now(),
+
+  primary key (setlist, person)
+);
+
+-- The other direction, which is the one the app asks in most: every playlist
+-- this account is on. The primary key already indexes the first column.
+create index if not exists setlist_members_person_idx on public.setlist_members (person);
+
+alter table public.setlist_members enable row level security;
+
+-- --------------------------------------------------------------------------
+-- AND THE ONE QUESTION EVERY RULE BELOW ASKS, ASKED WHERE RLS CANNOT SEE IT.
+--
+-- "Is this person on this list" has to be answered inside the policy on
+-- setlists AND inside the policy on setlist_members. The second of those is a
+-- policy on a table reading that same table, which Postgres answers by
+-- applying the policy again, and again: a policy that selects from its own
+-- table recurses until the query dies.
+--
+-- A security definer function is not subject to the policy, so it is the one
+-- place the question can be asked plainly. It is stable and it takes both
+-- sides as arguments, so it tells the caller nothing they did not already
+-- name: given a list and a person, whether that person is on it.
+-- --------------------------------------------------------------------------
+create or replace function public.in_setlist(list uuid, who uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $fn$
+  select exists (
+    select 1 from public.setlist_members m
+     where m.setlist = list and m.person = who
+  )
+$fn$;
+
+-- THE OWNER IS ON THE LIST BECAUSE THE DATABASE PUT THEM THERE, not because
+-- the browser remembered to. Security definer, because the row is written
+-- while the insert policy on that table refuses everything: joining is not
+-- something a client does directly, in either direction (see join_setlist).
+create or replace function public.setlist_owner_joins()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $fn$
+begin
+  if new.owner is not null then
+    insert into public.setlist_members (setlist, person)
+    values (new.id, new.owner)
+    on conflict do nothing;
+  end if;
+  return new;
+end
+$fn$;
+
+drop trigger if exists setlists_owner_joins on public.setlists;
+create trigger setlists_owner_joins
+  after insert on public.setlists
+  for each row execute function public.setlist_owner_joins();
+
+-- And every playlist that existed before this table did. Without it the
+-- policies below would hide from an owner what the old one showed them: the
+-- roster of each would be empty, which is a list nobody is on, and the owner
+-- clause would be the only thing left holding those rows up.
+insert into public.setlist_members (setlist, person)
+select id, owner from public.setlists where owner is not null
+on conflict do nothing;
+
+-- --------------------------------------------------------------------------
+-- THREE COLUMNS AN UPDATE DOES NOT TOUCH, AND A POLICY CANNOT SAY SO.
+--
+-- `with check` is asked about the row that would result, and it has no way to
+-- see the row that was there: a member updating a playlist and setting
+-- `owner` to themselves passes "owner = auth.uid()" perfectly, and the
+-- playlist is theirs from then on. The same is true of the key in the link,
+-- which anybody on the list could otherwise roll over and lock everybody else
+-- out of inviting with.
+--
+-- So the three are pinned here, where old IS in scope, and no policy has to
+-- try. Everything a playlist is FOR, the name, the line and the songs, is
+-- left alone.
+-- --------------------------------------------------------------------------
+create or replace function public.setlist_holds_its_own()
+returns trigger
+language plpgsql
+as $fn$
+begin
+  new.id := old.id;
+  new.owner := old.owner;
+  new.share := old.share;
+  return new;
+end
+$fn$;
+
+drop trigger if exists setlists_hold_own on public.setlists;
+create trigger setlists_hold_own
+  before update on public.setlists
+  for each row execute function public.setlist_holds_its_own();
+
+-- The rule these replace, dropped by name. It said all four verbs at once and
+-- said "owner" in every one of them, so leaving it would quietly grant back
+-- exactly what the four below are being careful about: Postgres ORs its
+-- policies together.
 drop policy if exists "a playlist belongs to its account" on public.setlists;
-create policy "a playlist belongs to its account"
-  on public.setlists for all to authenticated
-  using (owner = auth.uid())
+
+-- Read by whoever is on it. The owner clause is not the same sentence twice:
+-- it is what a playlist written before this file ran leans on if the backfill
+-- above ever failed to reach it.
+drop policy if exists "a playlist is read by whoever is on it" on public.setlists;
+create policy "a playlist is read by whoever is on it"
+  on public.setlists for select to authenticated
+  using (owner = auth.uid() or public.in_setlist(id, auth.uid()));
+
+-- Written by the account it will belong to, and by nobody in anybody else's
+-- name. A playlist is made by one person; it becomes several people's after.
+drop policy if exists "a playlist is written by its account" on public.setlists;
+create policy "a playlist is written by its account"
+  on public.setlists for insert to authenticated
   with check (owner = auth.uid());
+
+-- AND CHANGED BY EVERYBODY ON IT, which is the whole of what sharing one
+-- means: the name, the line under it, the songs, their order, and who is
+-- singing each of them. What cannot be changed is pinned by the trigger
+-- above rather than by this rule.
+drop policy if exists "a playlist is changed by whoever is on it" on public.setlists;
+create policy "a playlist is changed by whoever is on it"
+  on public.setlists for update to authenticated
+  using (owner = auth.uid() or public.in_setlist(id, auth.uid()))
+  with check (owner = auth.uid() or public.in_setlist(id, auth.uid()));
+
+-- And thrown away by one person, the one whose it is. Everybody else has a
+-- row of their own to take away, which takes the list off their screen and
+-- leaves it standing (see the delete rule on the members).
+drop policy if exists "a playlist is deleted by its account" on public.setlists;
+create policy "a playlist is deleted by its account"
+  on public.setlists for delete to authenticated
+  using (owner = auth.uid());
+
+-- --------------------------------------------------------------------------
+-- AND WHO IS ON A PLAYLIST IS READ BY THE PEOPLE ON IT.
+--
+-- Which is not a nicety: a song in a shared list says who is singing it, and
+-- it says it in a uuid. A uuid that cannot be turned into one of the people
+-- here is a row that cannot draw itself.
+-- --------------------------------------------------------------------------
+drop policy if exists "the people on a playlist are read by them" on public.setlist_members;
+create policy "the people on a playlist are read by them"
+  on public.setlist_members for select to authenticated
+  using (public.in_setlist(setlist, auth.uid()));
+
+-- NO INSERT POLICY, AND THAT IS THE DESIGN. A row here is somebody gaining
+-- sight of a playlist, so it is never written by a browser saying so: it is
+-- written by the trigger above when the playlist is made, and by join_setlist
+-- below when somebody follows a link. Both are security definer and both
+-- decide for themselves. With no policy the table refuses every insert that
+-- arrives through the API, which is every insert a client can make.
+drop policy if exists "somebody joins a playlist" on public.setlist_members;
+
+-- LEAVING, AND BEING TAKEN OFF. A person takes their own row away, and the
+-- owner may take anybody's; the owner's own row is not removable by either,
+-- because a playlist nobody is on is a playlist its owner cannot open. Being
+-- rid of it altogether is the other button, and it is the owner's alone.
+--
+-- The subquery reads setlists under the reader's own rules, which is exactly
+-- what is wanted: somebody on the list can see whose it is. Where it answers
+-- nothing, the coalesce compares the person to themselves and the row stands.
+-- A rule that cannot see what it is deciding about refuses.
+drop policy if exists "somebody leaves a playlist, or is taken off it" on public.setlist_members;
+create policy "somebody leaves a playlist, or is taken off it"
+  on public.setlist_members for delete to authenticated
+  using (
+    person <> coalesce((select s.owner from public.setlists s where s.id = setlist), person)
+    and (
+      person = auth.uid()
+      or exists (select 1 from public.setlists s where s.id = setlist and s.owner = auth.uid())
+    )
+  );
+
+-- --------------------------------------------------------------------------
+-- FOLLOWING THE LINK.
+--
+-- The one thing a person who is not on a playlist may do to it, and it cannot
+-- be a policy: reading the row is what they are asking permission for, and
+-- the permission is the key they arrived holding. So it is a function that
+-- looks that key up where no policy applies, writes the row that makes them a
+-- member, and hands back the id of what they just joined.
+--
+-- Idempotent, because a link is a thing people press twice: somebody already
+-- on the list gets the id back and nothing happens. A key that names nothing
+-- answers null, which the page turns into a sentence rather than an error.
+-- --------------------------------------------------------------------------
+create or replace function public.join_setlist(token uuid)
+returns uuid
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $fn$
+declare
+  list uuid;
+begin
+  if auth.uid() is null then
+    raise exception 'a playlist is joined by an account' using errcode = '42501';
+  end if;
+
+  select s.id into list from public.setlists s where s.share = token;
+  if list is null then
+    return null;
+  end if;
+
+  insert into public.setlist_members (setlist, person)
+  values (list, auth.uid())
+  on conflict do nothing;
+
+  return list;
+end
+$fn$;
+
+revoke execute on function public.join_setlist(uuid) from public, anon;
+grant execute on function public.join_setlist(uuid) to authenticated;
+
+-- --------------------------------------------------------------------------
+-- AND WHAT THE LINK SAYS BEFORE ANYBODY HAS SIGNED IN.
+--
+-- Somebody arriving on a shared playlist without an account has to sign in
+-- before the database will show them a single row of it, and "sign in to see
+-- what this is" is a door with nothing written on it. What the link already
+-- promises is the name of a list, so this hands back that name, how many
+-- songs are in it and whose it is, to whoever holds the key and to nobody
+-- else.
+--
+-- Deliberately not the songs. Those are the playlist, and reading the
+-- playlist is what joining is for.
+-- --------------------------------------------------------------------------
+create or replace function public.setlist_invite(token uuid)
+returns table (list uuid, named text, howmany integer, whose text)
+language sql
+stable
+security definer
+set search_path = public
+as $fn$
+  select s.id, s.title, jsonb_array_length(s.songs), coalesce(p.name, '')
+    from public.setlists s
+    left join public.people p on p.id = s.owner
+   where s.share = token
+$fn$;
+
+grant execute on function public.setlist_invite(uuid) to anon, authenticated;
 
 -- ==========================================================================
 -- What the readings cost.

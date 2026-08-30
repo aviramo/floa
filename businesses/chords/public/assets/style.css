@@ -1192,6 +1192,14 @@ body.sifting .list:not(.band), body.sifting .set { min-height: calc(100dvh - var
 }
 .pl-song:hover { color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 
+/* --- AND WHOSE IT IS, ON THE ONES THAT ARE NOT YOURS ----------------------
+   Almost every card on this wall is the reader's own and says nothing here at
+   all, so this line is not part of how a playlist's card is read: it is a mark
+   on the few that came from somebody else. Quiet, and above the description,
+   because it belongs to the name rather than to what the list says about
+   itself (see playlistRow). */
+.pl-from { margin-top: 2px; font-weight: 600; }
+
 /* --- AND A PLAYLIST'S CARD IS AS WIDE AS THE PAGE --------------------------
    The songs stand in columns of 340 because a song card is a name, a line of
    credit and three chords: narrow things, many of them, read by scanning down
@@ -1679,6 +1687,38 @@ body.sifting .list:not(.band), body.sifting .set { min-height: calc(100dvh - var
    wherever it is shown, and a playlist is the list of the same songs. */
 .set-main .by { color: var(--ink-soft); font-size: 14px; }
 .set-main .t-row + .by { margin-top: 2px; }
+/* --- WHO IS SINGING THIS ONE ----------------------------------------------
+   On a shared playlist only, under whoever wrote the song, because a card is
+   read down: what it is, who made it, who is doing it tonight, then the shapes
+   (see whoSings in app.js).
+
+   Its own line and not beside the credits. The two are different kinds of
+   fact, one about the song and one about this evening, and side by side at the
+   same size they read as one list of people. */
+.pl-by { margin-top: 6px; }
+/* The same outlined chip a style is, because it is the same kind of small
+   quiet word standing among the facts of a card (see .tag-style). What it has
+   that a style has not is a press, so the reset comes first: `font` is a
+   shorthand and this rule stands after .tag. */
+.pl-who {
+  display: inline-flex; align-items: center; gap: 5px;
+  appearance: none; cursor: pointer; border: 0;
+  font: inherit; font-size: 12px; font-weight: 600; line-height: 1.6;
+  color: var(--ink-soft); background: none;
+  box-shadow: inset 0 0 0 1px var(--line);
+  border-radius: var(--corner); padding: 2px 10px;
+}
+.pl-who > svg { width: 13px; height: 13px; flex: none; }
+.pl-who:hover { color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+/* SOMEBODY IS SINGING IT, WHICH IS NOT THE SAME AS THE QUESTION BEING ASKED.
+   Unnamed, the chip is an empty box inviting a press; named, it is a fact
+   about the evening, and a list read at a glance has to say which of its songs
+   are already handed out. Same shape, filled in. */
+.pl-who.is-on {
+  color: var(--state-ink); background: var(--state-soft); box-shadow: none;
+}
+.pl-who.is-on:hover { color: var(--state-ink); box-shadow: inset 0 0 0 1px var(--state-ink); }
+
 .set-t { font-weight: 700; font-size: 17px; color: inherit; text-decoration: none; }
 a.set-t:hover { color: var(--accent); text-decoration: underline; }
 /* The whole card opens the song, not the name on it (see setRow), so the whole
@@ -2101,7 +2141,7 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
 }
 /* Neither of them takes a press of its own, so a fingertip landing on one
    opens the panel like anywhere else on the button. */
-.more-takes, .more-news { display: inline-flex; pointer-events: none; }
+.more-takes, .more-news, .more-yet { display: inline-flex; pointer-events: none; }
 
 /* THE RECORDINGS, IN THE GREEN THEY ARE COUNTED IN ON A CARD (see
    .when.has-takes), which is the same fact about the same thing.
@@ -2130,6 +2170,15 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
   width: 9px; height: 9px; border-radius: 50%;
   background: var(--state-mark);
 }
+
+/* AND THE ONE THAT IS BOTH: a recording of this song that is on the device and
+   has not been published (see draftRow). The play shape, because what is
+   behind the dots is a recording; the yellow of the state, because what is
+   true of it is that nobody else can hear it yet. Read together it is one
+   sentence, and it is the mark that wins wherever it is there (see songMore),
+   since it is the only one of the three that is waiting on a decision nobody
+   has made yet. */
+.more-yet { color: var(--state-mark); }
 
 /* THREE CONTROLS, AND NOTHING DRAWN ROUND THEM. Each of them is already a box
    with a line round it, and a fourth line round all three is a box inside a box
@@ -3574,6 +3623,26 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    row of chips over the wall (see .tally-door). What is left in these rows is
    what is done TO the page they were opened over. */
 
+/* --- THE PEOPLE ON A PLAYLIST, INSIDE THE PANEL THAT SHARES IT ------------
+   Two shapes for one list, because two different things can be done to a name
+   in it. A person the reader may take off the playlist is a row like every
+   other row in here, with a wastebasket in the picture column. A person they
+   may not, which is the account that made the list and, for everybody but that
+   account, everybody else, is a line and not a press.
+
+   The line is written where the rows are written, in the same column, so a
+   roster of four does not come out as two lists at two indents: .under-note
+   already has the panel's own padding, and this is the one place it stands
+   among rows rather than instead of them (see askShare). */
+.print-menu .crew-one {
+  padding-inline-start: 38px; font-weight: 600; color: var(--ink);
+}
+/* AND TAKING SOMEBODY OFF IS NOT A RED BUTTON. It is one of the ordinary rows
+   of the panel, and it says what it does by the picture beside the name; the
+   colour arrives under the pointer, at the moment somebody is about to press
+   it, which is the moment it is worth saying. */
+.print-menu .btn.crew-out:hover { color: var(--danger); }
+
 /* THERE WAS A .styler HERE, the same small panel holding every style the
    library already uses, for naming a handful of ticked songs at once. It went
    with the ticking. A song is given its style on the song's own page. */
@@ -4292,40 +4361,18 @@ body.on-ear.ear-small { padding-bottom: 78px; }
   width: 34px; height: 34px; border-radius: 999px;
   color: #fff; background: var(--chord); border-color: var(--chord);
   box-shadow: 0 1px 4px rgba(225, 29, 99, .32);
-  /* the corner the mark stands in is this button's corner */
-  position: relative;
 }
 .tape-bar .icon-btn.is-rec svg { width: var(--transport); height: var(--transport); }
 
-/* --- AND THE RECORDING NOBODY HAS ANSWERED YET -----------------------------
-   A microphone the size of a notification dot, on the corner of the button,
-   which is where every app on the phone puts "there is something new in here".
-   That is exactly what it means: a take was made, it is on this device and
-   nowhere else, and pressing this is the only thing that asks about it (see
-   paintTape).
+/* --- THERE WAS A MICROPHONE ON THE CORNER OF THIS BUTTON -------------------
+   A mark the size of a notification dot, meaning a take had been made, was on
+   this device and nowhere else, and a press here would ask what to do with it.
 
-   WHITE WITH A PINK RING, and not a pink dot, for one reason: the button under
-   it is already pink, and a pink mark on a pink circle is a smudge on its edge.
-   The ring is what separates the two and the microphone inside it is what says
-   which kind of new thing is waiting.
-
-   AND IT DOES NOT TAKE THE PRESS. It is a mark and not a second button: it sits
-   in the corner of a thing 34 pixels across, which is small enough already, and
-   a fingertip covers both. What is underneath is the whole button. */
-.tape-bar .icon-btn.is-rec .tape-new {
-  position: absolute;
-  top: -4px; inset-inline-start: -4px;
-  width: 17px; height: 17px; border-radius: 999px;
-  display: grid; place-items: center;
-  background: #fff; color: var(--chord);
-  border: 1.5px solid var(--chord);
-  box-shadow: 0 1px 3px rgba(15, 32, 45, .18);
-  pointer-events: none;
-}
-/* Narrower than the transport shapes above it, which fill their box on purpose
-   (see --transport): this one is a mark inside a ring and has to keep the ring
-   around it. */
-.tape-bar .icon-btn.is-rec .tape-new svg { width: 10px; height: 10px; }
+   IT IS GONE, AND SO IS THE QUESTION BEHIND IT. A recording belongs with the
+   recordings: it is a row on the sheet behind the three dots now (see
+   .take.is-draft), and what says so from the bar is the mark beside those dots
+   (see .more-yet). This button starts a recording and does nothing else, which
+   is what a filled circle with a note in it should have meant all along. */
 .tape-bar .icon-btn.is-rec:hover {
   color: #fff; background: #c2185b; border-color: #c2185b;
   box-shadow: 0 2px 7px rgba(225, 29, 99, .45);
@@ -4506,6 +4553,26 @@ body.on-takes { padding-bottom: var(--takes-room, 240px); }
 .take-out.is-on { color: var(--accent); border-color: var(--accent); background: #eefaf7; }
 .take-play { width: 100%; height: 34px; margin-top: 2px; }
 .take.is-mine { border-color: var(--chord-soft); }
+
+/* --- AND THE ONE THAT IS ONLY ON THIS DEVICE ------------------------------
+   The recording that has been made and not kept (see draftRow in app.js). It
+   stands at the top of the same list, in the same shape as the rest, and the
+   one thing that separates it is the colour: the yellow this app writes "not
+   published" in, on its edge and on the triangle that plays it, which is the
+   same mark the dots above are wearing while it is there (see .more-yet).
+
+   A LINE AND A TRIANGLE, AND NOT A FILL. A yellow card in a column of white
+   ones reads as a warning, and there is nothing wrong here: a draft is the
+   ordinary state of a take a minute after it was played, and it survives the
+   tab, the reload and the closed phone. The edge says which row it is; it does
+   not say anything has gone wrong. */
+.take.is-draft { border-color: var(--state-mark); }
+.take.is-draft .take-go { color: var(--state-mark); border-color: var(--state-mark); }
+/* The word beside it, in the same small print "בסולם אחר" is in, because it is
+   the same kind of thing: one line about this recording that is not the
+   ordinary case. In the state's own ink, so the row says it twice in one
+   colour rather than in two. */
+.take-yet { color: var(--state-ink); background: var(--state-soft); }
 
 /* In the panel that offers the take, where it is the one thing on the page and
    gets the whole width of it. */

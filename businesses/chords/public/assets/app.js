@@ -1678,6 +1678,50 @@
       return whoKnown[id];
     },
 
+    /* A HANDFUL OF THEM, IN ONE REQUEST. The one above is asked about a song's
+       owner, one song at a time, and a handful of accounts asked one at a time
+       is a handful of requests: a playlist shared between four people draws
+       four names on every row it has, and a wall of playlists draws one per
+       card. Whatever comes back is put where `who` would have looked for it,
+       so the two are never two answers.
+
+       Names that were already known are not asked for again, and an id with no
+       row is remembered as the empty answer it is: an account that has not
+       opened the app since the table existed simply has no name yet, and
+       asking again on every repaint would not change that. */
+    whoSome: function (ids) {
+      var all = [];
+      var want = [];
+      (ids || []).forEach(function (id) {
+        if (!id || all.indexOf(id) >= 0) return;
+        all.push(id);
+        if (!whoKnown[id]) want.push(id);
+      });
+
+      if (want.length) {
+        var asked = rest(WHO + "?select=id,name&id=in.(" + want.map(encodeURIComponent).join(",") + ")")
+          .then(function (rows) {
+            var by = {};
+            (rows || []).forEach(function (row) { by[row.id] = String(row.name || "").trim(); });
+            return by;
+          });
+        want.forEach(function (id) {
+          whoKnown[id] = asked.then(function (by) { return by[id] || ""; })
+            .catch(function () { delete whoKnown[id]; return ""; });
+        });
+      }
+
+      /* Read back out through `who`, one entry per id that was asked for,
+         so a caller gets the whole map whether it came from this request or
+         from one somebody made a page ago. */
+      return Promise.all(all.map(function (id) { return db.who(id); }))
+        .then(function (names) {
+          var by = {};
+          all.forEach(function (id, i) { by[id] = names[i]; });
+          return by;
+        });
+    },
+
     /* AND EVERYBODY AT ONCE, for the one page that names accounts rather than
        an account: a list of readings gathered by who paid for them asks the
        question once per group, and one request is one request however many
@@ -1748,7 +1792,12 @@
     return !!(error && NO_SUCH_TABLE[String(error.code)]);
   }
 
-  var SET_FIELDS = "id,title,description,songs";
+  /* `owner` and `share` come along everywhere, because they are what a
+     playlist IS to whoever is looking at it: whose it is decides whether the
+     corner offers deleting or leaving, and the key is the link that is handed
+     on. Both are read only from here (the database pins them, see
+     setlist_holds_its_own in schema.sql), so they are never written back. */
+  var SET_FIELDS = "id,owner,share,title,description,songs";
 
   var sets = {
     list: function () {
@@ -1768,6 +1817,48 @@
     },
     remove: function (id) {
       return rest(SET + "?id=eq." + encodeURIComponent(id), { method: "DELETE" });
+    },
+  };
+
+  /* --- and who is on one -----------------------------------------------------
+     A playlist belonged to one account. It belongs to whoever is on it now,
+     and this is the list of them: the account that made it, first, and
+     everybody who has followed the link since, in the order they came.
+
+     NOTHING HERE INSERTS. Joining is a link being followed, which the database
+     answers for (see join_setlist in schema.sql), because the row that makes
+     somebody a member is the permission and cannot be the thing asking for it.
+     What is left on this side is reading the roster, and taking a row out of
+     it, which is somebody leaving or being taken off. */
+  var MEM = CFG.memberTable;
+
+  var crew = {
+    of: function (id) {
+      return rest(MEM + "?select=person,joined&setlist=eq." + encodeURIComponent(id) + "&order=joined")
+        .then(function (rows) { return rows || []; });
+    },
+
+    /* One row, named by both halves of its key. The database decides whether
+       it may go: your own always, anybody's if the playlist is yours, and the
+       owner's never. */
+    out: function (id, person) {
+      return rest(MEM + "?setlist=eq." + encodeURIComponent(id) +
+        "&person=eq." + encodeURIComponent(person), { method: "DELETE" });
+    },
+
+    /* THE LINK, FOLLOWED. Answers the id of the playlist that was joined, or
+       null where the key names nothing: a list that has since been deleted,
+       or an address somebody mistyped. Pressed twice it answers the same id
+       and changes nothing. */
+    join: function (token) {
+      return rest("rpc/join_setlist", { method: "POST", body: { token: token } });
+    },
+
+    /* And what the link says before anybody has signed in: the name of the
+       list, how many songs are in it and whose it is. One row, or none. */
+    peek: function (token) {
+      return rest("rpc/setlist_invite", { method: "POST", body: { token: token }, quiet: true })
+        .then(function (rows) { return (rows && rows[0]) || null; });
     },
   };
 
@@ -4740,6 +4831,9 @@
 
   var state = {
     songs: null, printable: false, printer: null, killer: null,
+    /* the two the playlists added: handing the list to somebody, and walking
+       out of one that was handed to you (see playlistRows) */
+    sharer: null, leaver: null,
     editToggle: null, songControls: null, redrawSong: null, rehome: null,
     doors: null, wake: null, ear: null, takeSong: null, redrawTakes: null,
     takesOpen: null, takesCount: 0,
@@ -4753,7 +4847,7 @@
      on the screen and not about the tab, so they go under the sheet with it.
      `songs` is not one of them: it is the library itself, one copy for
      everybody, and every sheet showing it is showing the same songs. */
-  var PAGE_STATE = ["printable", "printer", "killer", "editToggle",
+  var PAGE_STATE = ["printable", "printer", "killer", "sharer", "leaver", "editToggle",
     "songControls", "redrawSong", "rehome", "doors", "wake", "sift", "kindMenu", "ear",
     "takeSong", "redrawTakes", "takesOpen", "takesCount",
     "songMoves", "songDetails", "songOut", "songPast", "songKill", "songShare",
@@ -6215,10 +6309,17 @@
        They come up on a sheet now (see openTakes) and this is the way to it,
        offered only where there is something on it. */
     if (state.takesCount && state.takesOpen) {
-      rows.push(button("הקלטות", ICON.play, "ghost small", function () {
+      var hear = button("הקלטות", ICON.play, "ghost small", function () {
         closeUnder();
         state.takesOpen();
-      }));
+      });
+      /* AND THE DOT THE BUTTON OUTSIDE WAS WEARING, CARRIED IN. The mark
+         beside the dots says there is a recording of this song on the device
+         and nowhere else (see songMore); opening the panel would otherwise
+         answer "there is something in here" with a list of rows that all look
+         the same, and the one it was about is behind this one. */
+      if (heldHere()) hear.classList.add("has-news");
+      rows.push(hear);
     }
     /* THE TUNER IS OFFERED HERE TOO. On every other page it is a picture beside
        the dots (see tuner); on a song the bar holds the song's own controls and
@@ -6438,27 +6539,33 @@
       made.setAttribute("aria-expanded", "false");
       return made;
     });
-    /* Two things can be waiting behind the dots and the mark says neither of
-       them apart: a song of your own that is not out in the world, and details
-       somebody has offered for one that is (see songRows). One dot for both,
-       because what the mark is for is the reason to open the panel at all. */
-    var news = !!(state.songOut && state.songOut()) ||
-      !!(state.songDetails && state.songDetails.news && state.songDetails.news());
+    /* --- FIRST OF ALL, A RECORDING THAT IS ONLY ON THIS DEVICE ---------------
+       Stopping a take leaves it on the sheet behind these dots, kept nowhere
+       else and offered to nobody (see draftRow), and this is the whole of what
+       says so from the outside: the same play shape the recordings wear, in
+       the yellow this app writes "not published" in.
+
+       IT WINS OVER BOTH OF THE OTHERS. The song being a draft is a state that
+       will still be true tomorrow, and takes that are already saved are there
+       to be enjoyed; this one is a performance that has just happened, sitting
+       on one phone, waiting for the person holding it to say whether it is
+       kept. That is the most perishable thing this button can be carrying, so
+       it is the thing it says. */
+    var yet = !!heldHere();
+    /* Two more things can be waiting behind the dots and the mark says neither
+       of them apart: a song of your own that is not out in the world, and
+       details somebody has offered for one that is (see songRows). One dot for
+       both, because what the mark is for is the reason to open the panel. */
+    var news = !yet && (!!(state.songOut && state.songOut()) ||
+      !!(state.songDetails && state.songDetails.news && state.songDetails.news()));
     /* AND WHERE THERE IS NOTHING TO DO, WHAT THERE IS TO HEAR. The recordings
        are behind these same dots (see songRows) and a shut panel says nothing,
-       so a song somebody has played is a song whose button says so.
-
-       THE DOT WINS WHEREVER THERE IS ONE. Both say "there is something in
-       here", and the two things are not worth the same: one is a song of yours
-       nobody else can see yet, and it stays that way until somebody does
-       something about it; the other is a recording, which is there to be
-       enjoyed and will still be there tomorrow. So the button says the one
-       that is waiting on a person, and the sound waits its turn. */
-    var sound = !news && !!(state.takesCount && state.takesOpen);
-    /* ONE SLOT, ONE MARK, BESIDE THE DOTS AND NOT ON THE CORNER. Both of them
-       are the same sentence about the same panel, so they stand in the same
-       place and differ in what they are (see .more-news and .more-takes), and
-       the button is a square until one of them is there.
+       so a song somebody has played is a song whose button says so. */
+    var sound = !yet && !news && !!(state.takesCount && state.takesOpen);
+    /* ONE SLOT, ONE MARK, BESIDE THE DOTS AND NOT ON THE CORNER. All three of
+       them are the same sentence about the same panel, so they stand in the
+       same place and differ in what they are (see .more-yet, .more-news and
+       .more-takes), and the button is a square until one of them is there.
 
        The button is kept and painted rather than built (see keep), so the mark
        is put on and taken off the one node rather than made with it, and a
@@ -6467,8 +6574,8 @@
        BEFORE THE DOTS AND NOT AFTER THEM, which on this page is to their
        right: the page is the thing that decides which side that is, and the
        order in the markup is the only part of it written here. */
-    var want = news ? "more-news" : (sound ? "more-takes" : "");
-    var worn = node.querySelector(".more-news, .more-takes");
+    var want = yet ? "more-yet" : (news ? "more-news" : (sound ? "more-takes" : ""));
+    var worn = node.querySelector(".more-yet, .more-news, .more-takes");
     if (worn && !worn.classList.contains(want)) { worn.remove(); worn = null; }
     if (want && !worn) node.insertBefore(moreMark(want), node.firstChild);
     node.classList.toggle("has-mark", !!want);
@@ -6478,10 +6585,12 @@
   /* WHAT THE BUTTON IS CARRYING, in the one slot beside the dots. The state is
      a dot, because "not published" has no picture to be and every state in this
      app is a colour; the recordings are the play shape, which is the same
-     picture the thing that plays them wears everywhere else. */
+     picture the thing that plays them wears everywhere else. And a recording
+     of yours that has not been published is both at once: the play shape, in
+     the colour of the state, which is the whole sentence in one mark. */
   function moreMark(kind) {
     var mark = el("span", kind);
-    if (kind === "more-takes") mark.appendChild(svg(ICON.play));
+    if (kind !== "more-news") mark.appendChild(svg(ICON.play));
     return mark;
   }
 
@@ -6501,7 +6610,7 @@
 
      The rows are made at the press and not kept, because both read off what
      this page is holding at that second: a playlist still loading has neither. */
-  function playlistRows() {
+  function playlistRows(anchor) {
     var rows = [];
     if (state.printer) {
       var paper = state.printer;
@@ -6510,6 +6619,25 @@
         paper();
       }));
     }
+
+    /* HANDING THE LIST TO SOMEBODY, and it opens a second panel rather than
+       doing anything: the link is one half of that question and who is already
+       holding it is the other, and the two belong on one screen (see askShare).
+       Asked at the press, because a playlist that has not been written down
+       yet has no link to give (see state.sharer). */
+    var pass = state.sharer && state.sharer();
+    if (pass) {
+      rows.push(button("שיתוף הפלייליסט", ICON.share, "ghost small", function () {
+        /* not closeUnder: this row asks a second question, and asking it
+           replaces the panel it was asked from (see askPrint) */
+        pass(anchor);
+      }));
+    }
+
+    /* AND THE LAST ROW IS ONE OF TWO. A playlist you made is deleted; one you
+       were invited to is left, which takes it off your screen and off nobody
+       else's. They are never both here, because a playlist is one or the
+       other (see renderPlaylist). */
     if (state.killer) {
       var kill = state.killer;
       rows.push(button("מחיקת הפלייליסט", ICON.trash, "ghost small", function () {
@@ -6517,12 +6645,19 @@
         kill();
       }));
     }
+    if (state.leaver) {
+      var leave = state.leaver;
+      rows.push(button("הסרה מהרשימה שלי", ICON.close, "ghost small", function () {
+        closeUnder();
+        leave();
+      }));
+    }
     return rows;
   }
 
   function playlistMore() {
     return keep("playlistMore", function () {
-      var node = iconBtn(ICON.dots, "עוד", function () { menuUnder(node, playlistRows()); });
+      var node = iconBtn(ICON.dots, "עוד", function () { menuUnder(node, playlistRows(node)); });
       node.setAttribute("aria-haspopup", "menu");
       node.setAttribute("aria-expanded", "false");
       return node;
@@ -6756,7 +6891,7 @@
          of it, behind one picture, in the panel that says what each of them is
          (see playlistRows). Only once there is one of them to offer: a playlist
          still loading is this same address and has neither. */
-      return fill(bar, state.printer || state.killer ? [playlistMore()] : []);
+      return fill(bar, state.printer || state.killer || state.leaver ? [playlistMore()] : []);
     }
 
     /* The two pages about people. Neither has anything to do TO what is on
@@ -15661,8 +15796,13 @@
     return String(playlist.description || "").trim();
   }
 
-  /* Whatever is in the column, as a list of {id, title}. Anything without an
-     id names no song, so it is not one. */
+  /* Whatever is in the column, as a list of {id, title, by}. Anything without
+     an id names no song, so it is not one.
+
+     `by` is the account singing it on a shared list, and it is left off
+     entirely where there is none rather than carried as an empty string: a
+     playlist nobody has divided up should not be a column of nulls in the
+     database. */
   function normalizeSet(value) {
     var raw = value;
     if (typeof raw === "string") {
@@ -15670,8 +15810,18 @@
     }
     if (!Array.isArray(raw)) return [];
     return raw.map(function (item) {
-      return item && item.id ? { id: String(item.id), title: String(item.title || "") } : null;
+      if (!item || !item.id) return null;
+      var one = { id: String(item.id), title: String(item.title || "") };
+      if (item.by) one.by = String(item.by);
+      return one;
     }).filter(Boolean);
+  }
+
+  /* Whose the playlist is, which decides one thing on the page and one thing
+     in the corner: the name it is filed under on the wall, and whether the
+     last row of the panel throws it away or only walks out of it. */
+  function myPlaylist(playlist) {
+    return !!(playlist && playlist.owner && auth.session && playlist.owner === auth.session.id);
   }
 
   function newPlaylist() {
@@ -15698,6 +15848,96 @@
     app.appendChild(box);
   }
 
+  /* --- BEING LET INTO A PLAYLIST -------------------------------------------
+     /playlists/join/<key>
+
+     THE ONE ADDRESS UNDER /playlists THAT IS WORTH OPENING WITHOUT AN ACCOUNT,
+     and it is the only one that asks for the account after saying why. A link
+     to a playlist arrives in a message from somebody, usually on a phone, and
+     what it lands on has to be the name of the list and not a sign in wall
+     with nothing written on it.
+
+     The key is not the playlist's address. It is a value of its own that the
+     database will trade for a place on the list (see join_setlist in
+     schema.sql), which is why this address can be handed round and the other
+     one cannot.
+
+     WHOEVER IS SIGNED IN NEVER SEES THIS PAGE. They asked for the playlist by
+     opening the link, so they get the playlist: joined, saved, and standing on
+     its own address, with the entry in the history replaced so that the way
+     back is where they came from rather than a door they have already walked
+     through. */
+  function viewJoin(token) {
+    setBusy("פותחים את הפלייליסט");
+    if (!token) return noInvite();
+
+    crew.peek(token).then(function (invite) {
+      if (!invite) return noInvite();
+      if (!auth.in) return askJoin(invite);
+
+      return crew.join(token).then(function (id) {
+        /* The key answered a moment ago and names nothing now: the playlist was
+           deleted in between. Rare, and it has to be said rather than shown as
+           an empty page. */
+        if (!id) return noInvite();
+        /* what the box in the bar looks through is now one playlist short of
+           the truth */
+        findPlaylistsAt = 0;
+        history.replaceState(history.state, "", addr("playlists", id));
+        paintHeader();
+        viewPlaylist(id);
+      });
+    }).catch(function (error) {
+      if (missingTable(error)) return needSchema();
+      fail(error);
+    });
+  }
+
+  /* The name of the list, whose it is, how big it is, and the one thing that
+     has to happen before any of it can be opened. Nothing about the songs
+     themselves: those are the playlist, and reading the playlist is what
+     joining is for (see setlist_invite in schema.sql). */
+  function askJoin(invite) {
+    where("", "הצטרפות לפלייליסט | אקורדים");
+    app.innerHTML = "";
+
+    var box = el("div", "center");
+    box.appendChild(el("h1", "pl-title", invite.named || "פלייליסט בלי שם"));
+
+    /* An empty playlist is worth saying out loud rather than counting to
+       nought: somebody following a link to one should not think the link is
+       broken. Everything above nought is said the way the app says it
+       everywhere else (see songsSaid). */
+    var whose = String(invite.whose || "").trim();
+    var many = invite.howmany || 0;
+    box.appendChild(el("p", "names",
+      (whose ? "הפלייליסט של " + whose + ", " : "פלייליסט, ") +
+      (many ? songsSaid(many) : "עוד בלי שירים") + "."));
+
+    box.appendChild(el("p", null,
+      "כדי לשמור אותו צריך חשבון. אחרי ההתחברות הוא יופיע ברשימת הפלייליסטים שלכם ויישאר שם, ותמיד אפשר להסיר אותו."));
+
+    var actions = el("div", "row-actions");
+    actions.appendChild(googleButton("התחברות עם גוגל"));
+    actions.appendChild(button("לרשימת השירים", null, "ghost", function () { go(addr()); }));
+    box.appendChild(actions);
+
+    app.appendChild(box);
+  }
+
+  /* A key that names nothing. Half a link that was copied, or a playlist that
+     has since been deleted, and from out here the two look the same and the
+     answer to both is the same. */
+  function noInvite() {
+    where("לא נמצא");
+    app.innerHTML = "";
+    var box = el("div", "center");
+    box.appendChild(el("p", null,
+      "הקישור הזה לא מוביל לפלייליסט. אולי הפלייליסט נמחק, ואולי הועתק רק חלק מהקישור."));
+    box.appendChild(button("לרשימת השירים", null, "ghost", function () { go(addr()); }));
+    app.appendChild(box);
+  }
+
   /* A playlist belongs to the account that made it, so without one there is
      nothing here to show and no honest way to pretend otherwise. Said as a
      page rather than as a dialog over an empty screen: a dialog that is closed
@@ -15712,7 +15952,7 @@
     where("צריך חשבון");
     app.innerHTML = "";
     var box = el("div", "center");
-    box.appendChild(el("p", null, said || "הפלייליסטים שייכים לחשבון. כל אחד רואה, מתכנן ומוחק רק את שלו."));
+    box.appendChild(el("p", null, said || "הפלייליסטים שייכים לחשבון: מה שיצרתם, ומה ששיתפו אתכם בקישור."));
     var actions = el("div", "row-actions");
     actions.appendChild(googleButton("התחברות עם גוגל"));
     actions.appendChild(button("לרשימת השירים", null, "ghost", function () { go(addr()); }));
@@ -15759,7 +15999,7 @@
   /* ONE PLAYLIST, AS A CARD. The same card a song is and a person is, because
      the app has one card (see .list a). `titles` is the library by id, for the
      names of the songs in it. */
-  function playlistRow(playlist, titles) {
+  function playlistRow(playlist, titles, whose) {
     var li = el("li");
     var a = el("a");
     a.href = addr("playlists", playlist.id);
@@ -15770,6 +16010,22 @@
 
     var box = el("div");
     box.appendChild(el("div", "t", playlist.title || "פלייליסט בלי שם"));
+
+    /* --- AND WHOSE IT IS, ON THE ONES THAT ARE NOT YOURS ---------------------
+       A wall where a list you planned and a list somebody handed you look
+       exactly alike is a wall where the name of the person is the only thing
+       that tells them apart, and the name is inside the list. It matters at
+       the moment somebody is deciding what to open, and it matters more at the
+       moment they reach for the wastebasket: one of these two is theirs to
+       delete and the other one is not.
+
+       Said only where there is something to say. Almost every playlist here is
+       the reader's own, and a line under every card repeating that would be a
+       fact about nothing. */
+    if (!myPlaylist(playlist)) {
+      var from = (whose || {})[playlist.owner];
+      box.appendChild(el("div", "by pl-from", from ? "של " + from : "משותף אתכם"));
+    }
 
     /* WHAT IT IS, UNDER THE NAME, the way a song's card carries who wrote it.
        It was a date on one line and a room on the next; it is whatever the
@@ -15838,7 +16094,22 @@
     /* The names come along, because they are what a row of this list shows.
        Only the names: a playlist's card does not draw chords, so it has no
        use for the rest of a song. */
+    /* AND WHO MADE THE ONES THAT ARE NOT YOURS. A shared playlist is filed
+       under the person who made it, and the column that says so is a uuid (see
+       playlistRow). Asked here, in one request for the whole wall, and not
+       asked at all on a screen holding nothing but its own lists, which is
+       most screens. */
     Promise.all([sets.list(), db.titles()]).then(function (both) {
+      var others = (both[0] || []).filter(function (pl) { return !myPlaylist(pl); })
+        .map(function (pl) { return pl.owner; });
+      return db.whoSome(others).catch(function () { return {}; })
+        .then(function (whose) { fillWall(both, whose || {}); });
+    }).catch(function (error) {
+      if (missingTable(error)) return needSchema();
+      fail(error);
+    });
+
+    function fillWall(both, whose) {
       app.innerHTML = "";
       /* NO ROW OF DOORS HERE. It stands on the library and nowhere else (see
          doorsBand): this page is one of the places it leads TO, the way back
@@ -15939,7 +16210,7 @@
         list.textContent = "";
         playlists.forEach(function (playlist) {
           if (sifted && playlistHay(playlist, titles).indexOf(sifted) < 0) return;
-          list.appendChild(playlistRow(playlist, titles));
+          list.appendChild(playlistRow(playlist, titles, whose));
         });
         nothing.textContent = 'לא נמצא פלייליסט עבור "' + sift.q.trim() + '".';
         nothing.hidden = !sifted || list.children.length > 0;
@@ -15968,16 +16239,21 @@
       paintHeader();
 
       paint();
-    }).catch(function (error) {
-      if (missingTable(error)) return needSchema();
-      fail(error);
-    });
+    }
   }
 
   function viewPlaylist(id) {
     setBusy(id === null ? "טוען את המאגר" : "טוען את הפלייליסט");
 
-    var blank = { id: null, title: "", description: "", songs: [] };
+    /* A playlist that does not exist yet has one person on it, the person
+       making it, and their row will be written by the database the moment it
+       is saved (see setlist_owner_joins in schema.sql). So the page is drawn
+       with the roster it is about to have rather than with none: nothing on
+       the screen changes when the first write lands. */
+    var blank = {
+      id: null, title: "", description: "", songs: [],
+      owner: (auth.session && auth.session.id) || null,
+    };
 
     /* The library comes along every time, because every row of a playlist is
        drawn from it: the name a song has NOW, who wrote it, and which chords
@@ -15986,16 +16262,37 @@
     /* And the recordings that are out, for the same reason the library asks
        for them: the button that plays one is part of a song card, and every
        row here is a song card (see setRow). */
+    /* AND WHO IS ON IT, which every row of the page needs and not only the
+       panel that lists them: a song on a shared list says who is singing it in
+       a uuid, and a uuid is not a name (see setlist_members in schema.sql).
+       Asked here rather than inside the drawing, so the page arrives whole
+       rather than growing names a moment after it is read.
+
+       A roster that cannot be read is an empty one, and an empty one draws a
+       playlist exactly as it was drawn before any of this: the performer is
+       the one thing on the page that a list of one person has no use for. */
     Promise.all([
       id === null ? Promise.resolve(blank) : sets.byId(id),
       db.list(),
       db.outTakes(),
+      id === null ? Promise.resolve([{ person: blank.owner }]) : crew.of(id).catch(function () { return []; }),
     ]).then(function (both) {
       if (!both[0]) return noPlaylist();
       takesOut = both[2] || {};
       var playlist = both[0];
       playlist.songs = normalizeSet(playlist.songs);
-      renderPlaylist(playlist, both[1] || []);
+
+      var people = (both[3] || []).filter(function (row) { return row && row.person; });
+      /* Everybody but the reader, who is named by the account in the bar and
+         never by this table. On the ordinary playlist, the one nobody has
+         shared, that leaves nothing to ask and no request goes out at all. */
+      var others = people.map(function (row) { return row.person; })
+        .filter(function (id) { return !(auth.session && id === auth.session.id); });
+      return db.whoSome(others)
+        .catch(function () { return {}; })
+        .then(function (names) {
+          renderPlaylist(playlist, both[1] || [], people, names || {});
+        });
     }).catch(function (error) {
       if (missingTable(error)) return needSchema();
       /* 22P02: the address is not a uuid at all, so it names nothing */
@@ -16004,12 +16301,17 @@
     });
   }
 
-  function renderPlaylist(playlist, library) {
+  function renderPlaylist(playlist, library, people, names) {
 
     /* Everything here can be changed, and there is no other state for this
-       page to be in: a playlist is its account's, so whoever is looking at one
-       is the person whose it is. That is the difference from the song page,
-       which is a library everybody reads and a few people write.
+       page to be in: a playlist is open to whoever is on it, so whoever is
+       looking at one is one of the people whose it is. That is the difference
+       from the song page, which is a library everybody reads and a few people
+       write.
+
+       THE ONE THING THAT IS NOT EVERYBODY'S is being rid of it. The account
+       that made it deletes it; everybody else walks out of it, which takes it
+       off their screen and off nobody else's (see removePlaylist and leave).
 
        Unlike the song editor it is also not shut on a phone. Every gesture it
        has is a whole card, and on a phone a card is the width of the screen
@@ -16018,6 +16320,37 @@
 
     var byId = {};
     library.forEach(function (song) { byId[song.id] = song; });
+
+    /* --- who is on this playlist ---------------------------------------------
+       Kept as a list rather than as a number, because two different things
+       read it: the panel behind "שיתוף", which names them, and every row on
+       the page, which offers them as the person singing that song.
+
+       IT IS ALSO WHAT SAYS WHETHER THIS LIST IS SHARED AT ALL. One person on
+       it is a playlist as it has always been, and a control asking who is
+       singing each song when there is only one possible answer is a control
+       that costs a press to say nothing. So the rows grow it when somebody
+       else arrives, and not before. */
+    var crewNow = (people || []).slice();
+    var named = names || {};
+    var ours = myPlaylist(playlist);
+
+    function nameOf(id) {
+      if (!id) return "";
+      if (auth.session && id === auth.session.id) return auth.name() || "אני";
+      return named[id] || "";
+    }
+
+    /* Somebody on the list whose name has not arrived, or who never set one,
+       is still somebody on the list. Saying so is better than a row that shows
+       nothing where a person should be. */
+    function saidOfPerson(id) {
+      return nameOf(id) || "בלי שם";
+    }
+
+    function shared() {
+      return crewNow.length > 1;
+    }
 
     /* The shelf below is ordered by name, and the index next door is ordered
        by when a song last changed. Two lists of the same songs and two orders,
@@ -16118,7 +16451,31 @@
       if (sifted) { sift(""); clearFind(); }
       window.print();
     };
-    state.killer = removePlaylist;
+
+    /* --- AND THE THIRD THING, WHICH IS HANDING THE LIST TO SOMEBODY ----------
+       Behind the same dots, in words, beside printing and being rid of it,
+       because it is the same kind of thing: something done to the whole
+       playlist rather than to a song in it.
+
+       OFFERED TO EVERYBODY ON THE LIST AND NOT ONLY TO THE ACCOUNT THAT MADE
+       IT. A shared playlist is written by everybody on it, and a band whose
+       fourth member can only be added by whoever happened to press "פלייליסט
+       חדש" is a list with a bottleneck in it for no reason. It is one panel:
+       the link at the top of it and the people already on it underneath.
+
+       Not while the playlist has never been saved. There is no key yet,
+       because there is no row yet, and a link to a playlist that does not
+       exist is a link to nothing. The first keystroke writes it (see mark),
+       so this is a state that lasts a second. */
+    state.sharer = function () { return playlist.share ? askShare : null; };
+
+    /* AND THE LAST ROW IS ONE OF TWO, NEVER BOTH. The account that made the
+       playlist deletes it; everybody else leaves it, which takes it off their
+       own screen and changes nothing for anybody else. Two different acts, two
+       different words, and the wrong one in that place would be somebody
+       throwing away a list they were invited to. */
+    if (ours) state.killer = removePlaylist;
+    else state.leaver = leavePlaylist;
     /* --- AND WHERE THE SONGS COME FROM, ALSO IN THE BAR ----------------------
        The songs are everybody's and the playlist is one account's, which is why
        the library has to be reachable from in here at all: a playlist is a
@@ -16295,6 +16652,114 @@
       return li;
     }
 
+    /* --- WHO IS SINGING THIS ONE ---------------------------------------------
+       The question a shared list exists to answer. Two people planning an
+       evening agree on the songs in about a minute and then spend the rest of
+       it on this, and until now the answer lived in whatever they were writing
+       to each other beside the list.
+
+       AN ID AND NOT A NAME, kept in the song's own place in the list (see
+       `songs` in schema.sql): somebody who renames themselves is still the
+       person singing it, and taking the song out of the list takes it with it,
+       which is right, because it was never a fact about the song.
+
+       A NAME THAT IS NOT ON THE LIST IS NOT DRAWN. Somebody can walk out of a
+       playlist from their own screen, and the rows here would go on naming
+       them from everybody else's: a row that says a person is singing a song
+       when that person cannot open the list is a row saying something that is
+       no longer true. The next press writes over it. */
+    function whoSings(item) {
+      var box = el("div", "pl-by");
+
+      /* The same chip a style is on a song, because it is the same kind of
+         thing: one small word standing where the card's facts stand. What it
+         has that a style has not is a press. */
+      var chip = el("button", "tag pl-who");
+      chip.type = "button";
+      chip.appendChild(svg(ICON.person));
+      var word = el("span", "lb");
+      chip.appendChild(word);
+
+      /* AND THE SAME FACT AS A PLAIN LINE FOR PAPER. Every button on a card is
+         hidden when the page is printed, and this one carries a word that has
+         to survive it: a list handed round on paper with the names taken off
+         is the list without the half somebody printed it for. */
+      var said = el("div", "by on-paper");
+
+      function on() {
+        if (!item.by) return "";
+        for (var i = 0; i < crewNow.length; i++) if (crewNow[i].person === item.by) return item.by;
+        return "";
+      }
+
+      function paint() {
+        var who = on() ? nameOf(item.by) || "בלי שם" : "";
+        word.textContent = who || "מי מבצע";
+        chip.classList.toggle("is-on", !!who);
+        chip.title = who ? "בביצוע: " + who : "לבחור מי מבצע את השיר";
+        chip.setAttribute("aria-label", chip.title);
+        said.textContent = who ? "בביצוע: " + who : "";
+        said.hidden = !who;
+      }
+
+      chip.addEventListener("click", function (event) {
+        /* the press was for the chip and not for the card it is standing on,
+           and the card would otherwise open the song */
+        event.preventDefault();
+        event.stopPropagation();
+        askWho(chip, item, paint);
+      });
+
+      paint();
+      box.appendChild(chip);
+      box.appendChild(said);
+      return box;
+    }
+
+    /* The people on the list, one row each, with a tick on whoever is singing
+       it. The panel shuts on the press, unlike the one that puts a song into
+       three playlists: a song has one performer, so the answer given is the
+       last one there is to give. */
+    function askWho(anchor, item, paint) {
+      closeUnder();
+
+      var rows = crewNow.map(function (row) {
+        var is = item.by === row.person;
+        var one = button(saidOfPerson(row.person), is ? ICON.check : ICON.person,
+          "ghost small pl-row" + (is ? " is-on" : ""), function () {
+            closeUnder();
+            /* pressing the one that is already ticked is taking it back, which
+               is the same rule the playlists panel on a song follows */
+            setWho(item, is ? "" : row.person, paint);
+          });
+        one.setAttribute("aria-pressed", is ? "true" : "false");
+        return one;
+      });
+
+      /* And the way to say nobody, which the row above only offers on the one
+         person who is already named. A song nobody has been given yet has no
+         row to press twice. */
+      if (item.by) {
+        rows.push(button("בלי מבצע", ICON.close, "ghost small", function () {
+          closeUnder();
+          setWho(item, "", paint);
+        }));
+      }
+
+      menuUnder(anchor, rows);
+    }
+
+    /* One chip is repainted and nothing else is, which is why the paint
+       travels with the press: the list is not redrawn, so a card in the middle
+       of being dragged, or a page somebody has scrolled halfway down, stays
+       exactly where it is. */
+    function setWho(item, person, paint) {
+      if (person) item.by = person;
+      else delete item.by;
+      paint();
+      mark(true);
+    }
+
     function setRow(item) {
       var song = byId[item.id];
       var li = el("li", "set-row" + (song ? "" : " is-gone"));
@@ -16331,6 +16796,16 @@
       }
       box.appendChild(top);
       if (said) box.appendChild(el("div", "by", said));
+
+      /* AND WHO IS SINGING IT, which is a fact about this song in THIS list
+         and not about the song. It stands under whoever wrote it, in the same
+         column, because a card is read down: what it is, who made it, who is
+         doing it tonight, then the shapes the hand will make.
+
+         ONLY ON A LIST MORE THAN ONE PERSON IS ON. A control offering one
+         answer is a press that says nothing, and every playlist ever made
+         starts as a list of one (see shared). */
+      if (shared()) box.appendChild(whoSings(item));
 
       /* The shapes this reader's hand will make, the same way the index says
          them. On a playlist they are worth more than on the index: this is the
@@ -16726,7 +17201,12 @@
         description: String(playlist.description || "").trim(),
         songs: playlist.songs.map(function (item) {
           var song = byId[item.id];
-          return { id: item.id, title: song ? song.title : item.title };
+          var one = { id: item.id, title: song ? song.title : item.title };
+          /* and who is singing it, where somebody has been given it. Left off
+             entirely otherwise, so a playlist nobody has divided up is the
+             same two keys per song it has always been. */
+          if (item.by) one.by = item.by;
+          return one;
         }),
       };
 
@@ -16735,6 +17215,12 @@
         inFlight = false;
         var born = !playlist.id;
         playlist.id = row.id;
+        /* AND THE KEY THAT IS THE LINK, which the database made along with the
+           row and the browser has no way to guess (see `share` in
+           schema.sql). Without it the corner would offer to share a playlist
+           and have nothing to hand over until the page was opened again. */
+        playlist.share = row.share || playlist.share;
+        playlist.owner = row.owner || playlist.owner;
         /* it exists now, so it has an address of its own, and a refresh from
            here comes back to it rather than to an empty new playlist */
         if (born) history.replaceState(history.state, "", addr("playlists", row.id));
@@ -16758,10 +17244,127 @@
       flushPending = null;
       if (!playlist.id) return go(addr("playlists"));
       sets.remove(playlist.id).then(function () {
+        /* the list the box in the bar looks through is now one longer than the
+           truth, and the next thing typed into it would offer a page that is
+           not there any more */
+        findPlaylistsAt = 0;
         toast("הפלייליסט נמחק");
         go(addr("playlists"));
       }).catch(function (error) {
         toast("המחיקה נכשלה: " + error.message, true);
+      });
+    }
+
+    /* --- AND WALKING OUT OF ONE, WHICH IS NOT THE SAME ACT --------------------
+       A playlist somebody was invited to is not theirs to throw away, and
+       taking it off their own screen must not take it off anybody else's. So
+       the row they are offered removes their own place on the list and nothing
+       more: the songs stay, the order stays, and whoever else is on it does
+       not learn that anything happened.
+
+       The sentence says so, because "להסיר" over a list of somebody's songs
+       reads like deleting until it is spelled out, and this is the one press
+       on the page that cannot be taken back by pressing it again. What can be
+       taken back is the whole act: the link still works. */
+    function leavePlaylist() {
+      if (!window.confirm('להסיר את "' + (playlist.title || "הפלייליסט הזה") +
+        '" מהרשימה שלכם? הפלייליסט עצמו נשאר, ואפשר לחזור אליו דרך הקישור.')) return;
+      clearTimeout(timer);
+      timer = null;
+      flushPending = null;
+      crew.out(playlist.id, auth.session.id).then(function () {
+        findPlaylistsAt = 0;
+        toast("הוסר מהרשימה שלכם");
+        go(addr("playlists"));
+      }).catch(function (error) {
+        toast("ההסרה נכשלה: " + error.message, true);
+      });
+    }
+
+    /* --- THE LINK, AND WHO HAS ALREADY FOLLOWED IT ----------------------------
+       One panel and not two rows, because they are one question: handing the
+       list to somebody and seeing who is holding it are the two halves of
+       "who can open this". A row that only copied a link would leave the
+       second half nowhere at all, and a playlist whose people cannot be seen
+       is a playlist whose people cannot be taken off.
+
+       The link first, because that is what somebody opened this to do. The
+       sentence under it says what the link DOES, which is the part nobody can
+       guess: a link that adds a playlist to somebody's own screen forever is
+       not what a link usually is.
+
+       Built at the press rather than kept, because the roster changes under
+       it: somebody taken off is a panel that has to be one row shorter, and
+       the shortest way to say that is to ask for it again. */
+    function askShare(anchor) {
+      closeUnder();
+
+      var rows = [];
+      var link = (window.SITE_ORIGIN || location.origin) + addr("playlists", "join", playlist.share);
+
+      rows.push(button("העתקת קישור לפלייליסט", ICON.share, "ghost small", function () {
+        closeUnder();
+        passOn(link, playlist.title || "פלייליסט", "הקישור לפלייליסט");
+      }));
+      rows.push(el("div", "under-note",
+        "מי שפותח את הקישור מצטרף לפלייליסט, והוא נשמר אצלו עד שיסיר אותו."));
+
+      crewNow.forEach(function (row) {
+        var isOwner = row.person === playlist.owner;
+        var isMe = !!(auth.session && row.person === auth.session.id);
+        /* Two words at most beside the name: whose the list is, and which of
+           these people is the one reading. Both are things somebody scanning a
+           roster of four is actually asking. */
+        var said = saidOfPerson(row.person) +
+          (isOwner ? " (בעלים)" : isMe ? " (אתם)" : "");
+
+        /* The owner may take anybody off, and cannot take themselves off:
+           a playlist nobody is on is a playlist its owner cannot open, and
+           being rid of it altogether is the row below. Everybody else reads
+           the roster and leaves it by their own row in the panel behind the
+           dots. */
+        if (ours && !isOwner) {
+          rows.push(button(said, ICON.trash, "ghost small crew-out", function () {
+            closeUnder();
+            takeOff(row.person);
+          }));
+        } else {
+          rows.push(el("div", "under-note crew-one", said));
+        }
+      });
+
+      menuUnder(anchor, rows);
+    }
+
+    /* Somebody off the list, and then the songs they were singing handed back
+       to nobody. In that order, and not the other way round: a removal that
+       fails after the songs have been swept has cleared an evening's worth of
+       decisions about a person who is still on the list.
+
+       The account doing this is the one that made the playlist, so it is still
+       on the list when the second write goes out. The name would otherwise
+       have nowhere to be read from: the roster is where the names come from,
+       and a row naming somebody who is not on it draws nothing at all (see
+       whoSings). */
+    function takeOff(person) {
+      if (!window.confirm("להוציא את " + saidOfPerson(person) + " מהפלייליסט?")) return;
+
+      crew.out(playlist.id, person).then(function () {
+        crewNow = crewNow.filter(function (row) { return row.person !== person; });
+
+        var swept = false;
+        playlist.songs.forEach(function (item) {
+          if (item.by === person) { delete item.by; swept = true; }
+        });
+        /* marked and then flushed, which is how everything on this page writes
+           at once: mark puts it on the clock, flush is the clock going off now
+           (see mark and flush below) */
+        if (swept) { mark(true); flush(); }
+
+        toast("הוצאתם את " + saidOfPerson(person) + " מהפלייליסט");
+        draw();
+      }).catch(function (error) {
+        toast("ההוצאה נכשלה: " + error.message, true);
       });
     }
 
@@ -17407,6 +18010,10 @@
     state.printable = false;
     state.printer = null;
     state.killer = null;
+    /* and the two a playlist hung there: the link it is passed on with, and
+       the way out of one somebody else made */
+    state.sharer = null;
+    state.leaver = null;
     state.editToggle = null;
     /* A TAKE DOES NOT GO ON RECORDING UNDER ANOTHER PAGE. Walking off a song
        is not a decision about the recording, so it is held rather than ended:
@@ -17514,6 +18121,14 @@
        here as well as there so the answer is a sentence rather than an empty
        list, which is what the same refusal looks like from the other side. */
     if (p[0] === "playlists") {
+      /* --- and the link somebody was handed ---
+         /playlists/join/<key>   a playlist being opened to whoever holds it
+
+         Answered BEFORE the account is asked for, unlike everything else under
+         this address, and that is the whole of what it is for: this is the one
+         page here worth opening without one, because what it says is the
+         reason to have one (see viewJoin). */
+      if (p[1] === "join") return viewJoin(p[2] || "");
       if (!auth.in) return needSignIn();
       if (p[1] === "new") return viewPlaylist(null);
       if (p[1]) return viewPlaylist(p[1]);
@@ -19163,33 +19778,25 @@
     if (!tapeBar) return;
     tapeBar.innerHTML = "";
 
-    /* --- A TAKE ON THE DEVICE, WAITING TO BE ANSWERED -------------------------
-       One shape for the two ways of getting here, because they are one thing to
-       whoever is looking: a recording that is on this phone and nowhere else.
-       Either it was stopped a moment ago, or it outlived the page it was made
-       on and was found again when the song was opened. Neither can be carried
-       on: a recorder is a thing in a tab, and two recordings joined end to end
-       are two files rather than one.
+    /* --- A TAKE ON THE DEVICE IS NOT DRAWN HERE ANY MORE ----------------------
+       There was a third state in this strip: a microphone hung on the corner of
+       the button, meaning a recording had been made and was waiting to be
+       answered, and pressing it put a panel up asking what to do with it.
 
-       AND NOTHING COMES UP BY ITSELF. What stands here is the button that was
-       already standing here, with a microphone in the corner of it, the way
-       every app marks a thing that has something new waiting inside it. The
-       question is behind the press and only behind the press: a panel that
-       opens itself the moment somebody stops playing is a panel in the way of
-       the next thing they were about to do.
+       IT WAS THE WRONG PLACE FOR IT, in two ways at once. The mark sat on the
+       one button whose whole job is to START something, so the thing that says
+       "there is a recording here" and the thing that says "record" were one
+       press apart on one 34 pixel circle. And what it led to was a panel, which
+       is a second list of recordings on a page that already has one.
 
-       AND THE ONE IT ASKS ABOUT IS THIS SONG'S. Every question here is asked
-       of the song being drawn (see taping), so a take left unanswered on
-       another song draws nothing on this one: what stands here is the button
-       that records, and pressing it records THIS song. */
-    var back = !taping() && heldHere();
-    if (back || tapeDone()) {
-      var ask = iconBtn(ICON.note, "יש הקלטה שלא נשמרה", back ? askHeld : offerTape);
-      ask.classList.add("is-rec");
-      ask.appendChild(newMark());
-      tapeBar.appendChild(ask);
-      return;
-    }
+       So the recording goes where every other recording of this song already
+       is, the sheet behind the three dots, and it is drawn there as what it is:
+       a take of yours that is on this device and has not been published (see
+       draftRow). What says so from the bar is the mark beside the dots, in the
+       yellow this app writes "not published" in everywhere (see songMore).
+
+       Which leaves this button with the one thing it was always for. It
+       records, and it records over the draft (see beginTake). */
 
     /* --- NOT STARTED: ONE BUTTON, AND IT RECORDS ------------------------------
        There is no separate microphone to switch on first. Opening the
@@ -19207,7 +19814,14 @@
        about to be played TO you. What this press starts is somebody playing,
        so what stands on it is the one picture that means music here and means
        nothing else (see ICON.note, and the key beside it). */
-    if (!taping()) {
+    /* A RECORDER THAT HAS STOPPED WITHOUT BEING PUT DOWN IS NOT ONE THAT IS
+       RUNNING, and it is drawn as the button that starts, not as the button
+       that stops. Stopping puts the take down on the device by itself (see
+       stopTape), so this is the odd way in: a recorder that died with its own
+       stream, which leaves a take in the tab and nothing on the screen it
+       belongs to. Pressing record puts it down and starts over (see
+       beginTake), which is the only thing left to want. */
+    if (!taping() || tapeDone()) {
       var go = iconBtn(ICON.note, "הקלטה", beginTake);
       go.classList.add("is-rec");
       tapeBar.appendChild(go);
@@ -19240,16 +19854,11 @@
     tapeBar.appendChild(hold);
   }
 
-  /* THE MICROPHONE, SMALL, IN THE CORNER OF THE BUTTON. The dot every app puts
-     on a thing with something new inside it, drawn as the one thing that is
-     waiting here: a recording, on the device and nowhere else. It does not take
-     the press. What is under it is the whole button, so the mark and the note
-     it sits on are one thing to reach for and one thing to hit. */
-  function newMark() {
-    var mark = el("span", "tape-new");
-    mark.appendChild(svg(ICON.mic));
-    return mark;
-  }
+  /* THERE WAS A MICROPHONE IN THE CORNER OF THIS BUTTON, the dot every app puts
+     on a thing with something new inside it. What is waiting is a recording,
+     and a recording belongs with the recordings: it is a row on the sheet
+     behind the dots now, and the mark that says so is beside them (see
+     songMore). */
 
   /* --- AND WHILE IT IS RUNNING, THE HEADER IS NOT THERE ----------------------
      Somebody recording is playing the song, and while they are playing the
@@ -19677,12 +20286,28 @@
        its sound into a store that already holds another take of this song, and
        the two of them together are one file that plays as neither. */
     if (heldTakes === undefined) return lookForHeld().then(beginTake);
-    /* TWO UNANSWERED TAKES OF ONE SONG IS A QUESTION NOBODY CAN ANSWER,
-       because the second buries the first: they are two performances of the
-       same words, and the marks in both of them count chords along the same
-       sheet. Of ANOTHER song it is no such thing, and it is not asked about
-       here (see parkTape). */
-    if (heldHere()) return toast("יש כאן הקלטה שלא הוחלט עליה");
+    /* --- AND THE DRAFT OF THIS SONG IS RECORDED OVER, WITHOUT BEING ASKED ----
+       There is one draft per song, because two of them are two performances of
+       the same words whose marks count chords along the same sheet, and the
+       second buries the first. This press used to be REFUSED because of that,
+       with a line of toast explaining why, which put a question about an old
+       recording in front of somebody holding a guitar about to play.
+
+       A press on the record button means "record", and it is answered. The
+       draft it lands on is one take of this song that was never kept, on this
+       device, and the person pressing is the person who made it: that is
+       exactly the recording somebody records over. What is NOT recorded over
+       is a take that was saved to the song, which is not on the device at all
+       and is not touched here.
+
+       Kept takes of other songs are not touched either, and were never the
+       question: that one is put down on its own song (see parkTape). */
+    if (heldHere()) {
+      return endTape(state.takeSong.id).then(function () {
+        takesAgain();
+        beginTake();
+      }, beginTake);
+    }
     /* AND THE TAKE THAT WAS LEFT ON ANOTHER SONG STEPS ASIDE FOR THIS ONE.
        There is one microphone, so there is one recorder, and it is holding a
        performance of a song that is not on the screen. That take is not being
@@ -19794,59 +20419,35 @@
     paintHeader();
   }
 
-  /* --- FINISHING IS NEITHER ASKING NOR ENDING --------------------------------
-     Stopping does not stop the recorder and it does not put a question up. It
-     holds the recorder, asks it for the last piece it is sitting on, and leaves
-     the take exactly where it is: on the device, unanswered, with a microphone
-     in the corner of the button over the song saying so.
+  /* --- FINISHING IS PUTTING THE TAKE DOWN, AND NOTHING ELSE ------------------
+     Stopping does not ask anything. It writes what was played to the device
+     under the song it is of, lets the recorder go, and leaves the take where
+     every other recording of this song is: on the sheet behind the three dots,
+     with a yellow mark beside them saying there is one there that has not been
+     published (see draftRow, songMore).
 
      WHY THE QUESTION IS NOT ASKED HERE. It used to come up on the press, and
      the press is the worst moment for it: somebody has just finished playing,
      their hands are on the guitar, and a panel over the song asking what to do
-     with the recording is answered in whatever way makes it go away. The take
-     is theirs and it can wait. What waits with it is the mark, which is on the
-     screen until it is pressed (see paintTape), and pressing it is the whole of
-     what asks (see offerTape).
+     with the recording is answered in whatever way makes it go away. It then
+     moved behind a mark on this button, which was better and still wrong: the
+     recording was in a place of its own, reachable only through a panel, while
+     the list of recordings of this song sat behind the dots.
 
      WHICH IS ALSO WHY STOPPING IS SAFE. Nothing here decides anything: a stray
      press ends the playing and nothing else, and what was played is on the
-     device either way. */
+     device either way, waiting to be kept or recorded over. */
   function stopTape() {
-    /* NOT "unless the recorder has stopped". It may have stopped without the
-       take being answered: listening to it closes the microphone, and the
-       recorder goes with the microphone (see hushMic). What is left is still a
-       take waiting for an answer. */
+    /* NOT "unless the recorder has stopped". It may have stopped with its own
+       stream: what is left is still a take, and putting it down is still the
+       thing to do with it. */
     if (!tape) return;
-    if (tape.rec.state === "recording") holdTape();
-    /* The last couple of seconds, asked for while the recorder is still alive,
-       so that what stands behind the mark from this moment is the whole of what
-       was played. And then the microphone goes: the playing is over, the take
-       is on the device, and a phone listening to a room nobody is playing in is
-       a red light in the tab for no reason. It comes back with the next take
-       (see afresh). */
-    gatherTape().then(function () {
-      shutEar();
-      paintTape();
-    });
+    /* Everything the recorder is still holding, then the take on the device
+       and the microphone shut: the playing is over, and a phone listening to a
+       room nobody is playing in is a red light in the tab for no reason. It
+       comes back with the next recording. */
+    parkTape().then(takesAgain, takesAgain);
     paintTape();
-  }
-
-  /* --- AND THE QUESTION, ASKED BY A PRESS AND NEVER BY ITSELF ----------------
-     Everything that was gathered by the time the playing stopped, offered. If
-     the panel is dismissed without an answer the take is still there, still on
-     the device, with the same mark over the song, and pressing it asks the same
-     question again. What ends a take is answering it, and there are exactly two
-     answers. */
-  function offerTape() {
-    if (!tape || !tape.bits.length) return;
-    askTake({
-      song: tape.song,
-      blob: new Blob(tape.bits, { type: tape.mime }),
-      mime: tape.mime,
-      marks: tape.marks.slice(),
-      trace: tape.trace.slice(),
-      seconds: Math.max(0, Math.round(tapeAt() / 100) / 10),
-    });
   }
 
   /* What has been played so far, without ending anything. A recorder hands
@@ -19959,6 +20560,12 @@
         if (!(song in heldTakes)) heldTakes[song] = found[song];
       });
       paintTape();
+      /* AND THE SHEET, because this is the answer it was drawn without. The
+         recordings are asked for the moment a song opens and the device is
+         read a beat later, so the first drawing of the sheet cannot know
+         whether there is a draft on it: the row and the mark beside the dots
+         both arrive here (see takesAgain). */
+      takesAgain();
       return heldTakes;
     });
   }
@@ -19968,36 +20575,19 @@
     return heldTakes && song && heldTakes[song.id] ? heldTakes[song.id] : null;
   }
 
-  /* Finishing a take that was put down: there is no recorder to stop, only a
-     question to ask. The sound is read off the device now rather than carried
-     in the tab since the take was left (see heldBits), so the press and the
-     panel are a beat apart, and a second press in that beat is not a second
-     panel. */
-  var askingHeld = false;
+  /* --- THE TWO PLACES A DRAFT IS DRAWN, REDRAWN TOGETHER ---------------------
+     A take that is on the device and nowhere else is a row on the sheet behind
+     the dots and a yellow mark beside them, and the two are one fact: they are
+     never repainted apart, or the mark says there is a recording on a sheet
+     that has none, or the sheet holds one nothing points to.
 
-  function askHeld() {
-    var held = heldHere();
-    if (!held || askingHeld) return;
-    askingHeld = true;
-    heldBits(held.song).then(function (bits) {
-      askingHeld = false;
-      /* A take whose sound is not on the device is not a take, and a button
-         that keeps offering one is a button that lies every time it is
-         pressed: it goes, and the song is back to being recordable. */
-      if (!bits.length) {
-        endTape(held.song);
-        return toast("ההקלטה כבר לא במכשיר");
-      }
-      askTake({
-        song: held.song,
-        blob: new Blob(bits, { type: held.mime || "audio/webm" }),
-        mime: held.mime || "audio/webm",
-        marks: Array.isArray(held.marks) ? held.marks : [],
-        trace: Array.isArray(held.trace) ? held.trace : null,
-        seconds: held.seconds || 0,
-        held: true,
-      });
-    }, function () { askingHeld = false; });
+     The sheet redraws itself off the database, so it is also how the count the
+     mark is read from is refreshed (see counted in drawTakes); the header is
+     painted here as well because a draft that has just been recorded over has
+     to lose its mark now and not when a request comes back. */
+  function takesAgain() {
+    if (state.redrawTakes) state.redrawTakes();
+    paintHeader();
   }
 
   /* The end of ONE SONG'S take, and the only thing that reaches here is an
@@ -20032,20 +20622,12 @@
     return gone;
   }
 
-  /* --- AND THE NEXT TAKE BEGINS -----------------------------------------------
-     An answer is the end of one recording and the start of the next, because
-     what somebody is doing here is playing the song: they played it, they said
-     what to do with what came out, and what they want after that is to play it
-     again. Only from the two buttons, never from a panel dismissed: walking
-     away from the question is not a decision to record anything.
-
-     THE MICROPHONE MAY BE GONE BY NOW. Listening to the take closes it (see
-     hushMic) and the panel it left standing is a panel over nothing, so it is
-     taken down first and the take asks for a microphone of its own. */
-  function afresh() {
-    if (earOpen() && !window.CHORDS_EAR.live()) shutEar();
-    beginTake();
-  }
+  /* THERE WAS A NEXT TAKE THAT BEGAN BY ITSELF HERE. Answering the panel that
+     asked about a recording ended one take and opened the next in the same
+     press, which was right while the answer was given a second after the
+     playing stopped. There is no panel and no answer now: stopping puts the
+     take down and the button goes back to saying "record", which is the same
+     one press, made when the person is ready rather than for them. */
 
   /* --- THE SOUND ITSELF, WHICH IS NOT A ROW ---------------------------------
      A row is a few hundred bytes and a take is a megabyte, so the sound is in
@@ -20251,187 +20833,22 @@
     audio.addEventListener("pause", function () { if (audio.ended) done(); });
   }
 
-  /* ONE OF THEM AT A TIME. Two panels about one take is a question nobody can
-     answer: closing the top one reveals another exactly like it. There is only
-     ever one take being asked about, so there is only ever one of these. */
-  var asking = false;
+  /* THE PANEL THAT ASKED ABOUT A RECORDING IS GONE, and with it the last place
+     in this app where a take lived somewhere other than with the takes.
 
-  /* --- listening to what was played -----------------------------------------
-     Offered rather than saved. A take is a person singing, most of them are
-     not worth keeping, and a library that fills with every attempt is a
-     library nobody opens. So it is heard first and kept second, and the
-     button that keeps it is the only one that writes anything down.
+     It came up on the press of the mark over the song and held a player and
+     three answers: throw it away, throw it away and play on, or keep it. What
+     it really was is a list of one recording, drawn over the list of this
+     song's recordings, with its own player, its own word for keeping and its
+     own way of deleting. Two lists of the same thing is one too many, and the
+     one behind the dots is the one that was already there and already holds
+     everybody else's.
 
-     ONE LINE AT THE TOP OF IT AND NOTHING MORE. There was nothing at all here,
-     and that was right while this came up on the press of stop: a player and
-     two buttons, one press after somebody stopped recording, needs no heading.
-     It does not come up on the press any more (see stopTape). It comes up when
-     the microphone in the corner of the button is pressed, which may be a
-     minute later or a day later, on a phone that was closed and opened in
-     between, so the first thing it has to say is what this recording is and
-     where it is: on the device, not saved. The rest is still the take itself,
-     which says more about what it is than a heading ever did. */
-  /* NOT hearTake, WHICH IS SOMETHING ELSE A FEW HUNDRED LINES DOWN: playing a
-     recording that has already been saved. Two declarations of one name in one
-     scope are one thing, and the second one wins for the whole file, so while
-     both were called hearTake this panel could not come up at all: pressing
-     stop on a recording called the player with a take it had never heard of.
-     A recording could be made and never answered. See names.test.mjs, which is
-     what found it. */
-  function askTake(made) {
-    if (asking) return;
-    asking = true;
-    var dlg = el("dialog", "dlg");
-    var box = el("div", "dlg-in");
-
-    box.appendChild(el("p", "take-says",
-      "ההקלטה שמורה במכשיר בלבד ועדיין לא נשמרה לשיר. אפשר לשמוע אותה, ואז לשמור אותה או להתחיל הקלטה חדשה בלעדיה."));
-
-    var audio = el("audio", "take-play");
-    audio.controls = true;
-    audio.dir = "ltr";
-    audio.preload = "metadata";
-    var url = URL.createObjectURL(made.blob);
-    audio.src = url;
-    tellLength(audio);
-    alongTake(audio, made.marks, MARKS_PLAYED);
-    /* --- AND THE MICROPHONE GOES BEFORE THE TAKE IS HEARD --------------------
-       A take played back while the microphone is still open does not sound
-       like the take. A phone with a live capture on it is a phone in a call:
-       the sound comes out of the earpiece instead of the speaker, and the
-       echo canceller the operating system runs in that mode ducks whatever it
-       hears itself playing. Reported exactly that way, and it was the same
-       recording either side of it: bad in this panel, right once it had been
-       saved and played from the list, where nothing is listening.
-
-       ON THE FIRST PRESS OF PLAY, and not when this panel opens. Up to that
-       press the microphone is still there and the panel is only a question,
-       which can be walked away from and asked again; pressing play is the one
-       gesture that says the playing is over and it is time to listen, and from
-       there the next take opens a microphone of its own (see afresh). */
-    audio.addEventListener("play", hushMic);
-    box.appendChild(audio);
-
-    var err = el("p", "err");
-    err.hidden = true;
-    box.appendChild(err);
-
-    /* EVERY BUTTON HERE IS AN ANSWER, AND "close" IS NOT ONE. There was a
-       "close" beside them once and it was the wrong thing to offer: the
-       question is what to do with the take, and "neither" is not an answer to
-       it, it is walking away from it. Walking away is still allowed, and it is
-       what the dark behind the panel is for (see below), but it is not a
-       button, because a button says a decision has been made and no decision
-       has. */
-    /* AND THE ONE THAT THROWS IT AWAY SAYS WHAT COMES NEXT, not what it
-       destroys. It said "מחיקה", which is true about the file and is not what
-       anybody presses it for: what they are doing is playing the song again,
-       and this is the way to start over without keeping what was just played.
-       Drawn in a light red, because it is still the answer that loses a
-       recording, and that is worth a colour and not a warning. */
-    var done = false;
-    var over = null;
-    var actions = el("div", "dlg-actions");
-    /* --- AND THE ANSWER THAT IS FINISHED PLAYING ----------------------------
-       "Throw it away" and "keep it" both end with the microphone open again,
-       because both of them are said by somebody who is about to play the song
-       once more. Somebody who has stopped playing had neither: keeping a take
-       they do not want was the only way to leave the question behind, and
-       dismissing the panel left the recording on the device with the mark on
-       the button, to be asked about again tomorrow.
-
-       So there is a third: it loses the take exactly as tossing it does, and
-       then it stops. It is the ONLY one of the three that does not open a
-       microphone, which is the whole of what it is for.
-
-       A PICTURE AND NO WORD, and quiet. The two answers to "what about this
-       recording" are the two that read as sentences and hold the weight; this
-       one is the way out for somebody already reaching for it, and a third
-       phrase in the row would make the question look like it has three equal
-       sides. A bin is what that press is called everywhere, and it goes red
-       under the hand, where the thing it does is worth saying. */
-    /* .bin and not .drop: .drop is already the dashed box a file is dragged
-       into, and a bare class in this stylesheet reaches anything wearing it. */
-    var bin = button("מחיקת ההקלטה", ICON.trash, "ghost bin", function () {
-      /* No confirming. Nothing has been written down: this take is on the
-         device and nowhere else, and "throw it away" beside it asks nothing
-         either. */
-      endTape(made.song);
-      dlg.close();
-    });
-    bin.title = "מחיקת ההקלטה";
-    var toss = button("הפעלה ללא שמירה", null, "ghost far toss", function () {
-      done = true;
-      over = endTape(made.song);
-      dlg.close();
-    });
-    /* AND THE ONE THAT KEEPS IT SAYS WHAT COMES NEXT TOO. Both answers end with
-       the microphone open again on the next take (see afresh), so both name it:
-       one plays on without this recording and one plays on with it kept. A
-       button that said only "שמירה לשיר" was the one of the two that hid what
-       it was about to do.
-
-       IN THE FULL COLOUR THE OTHER ONE IS A WASH OF, and not in the app's
-       green. These two are one question with two answers, and a green button
-       beside a pink one reads as two unrelated things to press; the same colour
-       at two weights reads as the pair it is, with the weight saying which one
-       is the ordinary answer. */
-    var save = button("שמירה והפעלה", null, "keep", function () {
-      save.disabled = true;
-      relabel(save, "שומר…");
-      keepTakeIn(made).then(function () {
-        done = true;
-        over = endTape(made.song);
-        dlg.close();
-        toast("ההקלטה נשמרה");
-        if (state.redrawTakes) state.redrawTakes();
-      }, function (e) {
-        save.disabled = false;
-        relabel(save, "שמירה והפעלה");
-        err.hidden = false;
-        err.textContent = (e && e.message) || "לא הצלחנו לשמור";
-      });
-    });
-    actions.appendChild(bin);
-    actions.appendChild(toss);
-    if (auth.in) actions.appendChild(save);
-    else box.appendChild(el("p", "muted", "כדי לשמור הקלטה צריך להיות מחובר לחשבון."));
-    box.appendChild(actions);
-
-    /* THE DARK BEHIND IT IS THE WAY OUT WITHOUT ANSWERING, which is what the
-       dark behind every panel here is for and not something to be taught (see
-       openSheet). What is on the other side of it is the recording exactly as
-       it was left: on the device, with the microphone in the corner of the
-       button over the song, and a press on it asks this again. */
-
-    dlg.appendChild(box);
-    document.body.appendChild(dlg);
-    dlg.addEventListener("close", function () {
-      audio.pause();
-      URL.revokeObjectURL(url);
-      showAt(-1);
-      dlg.remove();
-      /* AND THE NEXT PRESS ON THE MARK MAY ASK AGAIN. Whatever this was closed
-         by, an answer or a hand on the dark behind it, there is no panel
-         standing over the take any more (see asking). */
-      asking = false;
-      /* ANSWERED, AND THE NEXT RECORDING BEGINS. Keeping the take and starting
-         over without it are both the end of it, and what somebody does after
-         either of them is play the song again: that is what they were doing
-         when they pressed stop. So the microphone opens and a take runs, which
-         is one press saved every time round (see afresh). Only after the device
-         copy of the old one has gone, or the first piece of the new take goes
-         with it.
-
-         DISMISSED, AND NOTHING HAPPENS. Closing the question without answering
-         it is "not yet", and not yet is the state the take is already in: it
-         stays on the device, unanswered, with the mark over the song. Nothing
-         starts recording off the back of a hand on the glass. */
-      if (done) (over || Promise.resolve()).then(afresh, afresh);
-      else paintTape();
-    });
-    openSheet(dlg);
-  }
+     So the draft is a row on that sheet (see draftRow), and everything this
+     panel did is what a row on that sheet already does: press play to hear it,
+     press the arrow to keep it to the song, press the bin to lose it, press
+     record to play the song again over the top of it. See keepTakeIn, which is
+     what the keeping answer called and is called by the row now. */
 
   function said(seconds) {
     var whole = Math.round(seconds || 0);
@@ -20444,10 +20861,10 @@
      played and cannot be told apart from one that can. */
   function keepTakeIn(made) {
     var song = state.takeSong;
-    /* AND IT IS THE SONG THE TAKE IS OF. The panel is opened over that song
-       and answered there, so the two agree; asked while the page has moved on,
-       what saving means is a recording of one song filed under another, and
-       there is no undoing that from the outside. */
+    /* AND IT IS THE SONG THE TAKE IS OF. The row is drawn on the sheet under
+       that song and pressed there, so the two agree; pressed while the page
+       has moved on, what saving means is a recording of one song filed under
+       another, and there is no undoing that from the outside. */
     if (!song || (made.song && made.song !== song.id)) {
       return Promise.reject(new Error("אין שיר לשמור אליו"));
     }
@@ -20471,8 +20888,16 @@
             seconds: made.seconds, marks: made.marks, marks_of: MARKS_PLAYED,
             /* what the ear was saying while it was played (see traceOn) */
             trace: made.trace || null,
-            page: state.ear ? state.ear.page() : 0,
-            capo: state.ear ? state.ear.capo() : 0,
+            /* --- THE KEY IT WAS PLAYED IN, AND NOT THE ONE ON SCREEN NOW ----
+               Read off the take, which carries the two settings as they were
+               while it was being recorded (see heldMeta). It used to be read
+               off the ear at the moment of saving, which was the same answer
+               while saving happened a second after the playing; a draft can
+               now be kept an hour later, after the reader has moved the song
+               up two, and that would file the recording under a key it was
+               never played in. Where the take says nothing, the ear does. */
+            page: made.page != null ? made.page : (state.ear ? state.ear.page() : 0),
+            capo: made.capo != null ? made.capo : (state.ear ? state.ear.capo() : 0),
           },
         });
       });
@@ -20665,11 +21090,28 @@
       paintHeader();
     }
 
-    rest(CFG.takeTable + "?song_id=eq." + song.id +
-      "&select=id,owner,take,path,mime,seconds,marks,marks_of,page,capo,published,created_at" +
-      "&order=created_at.desc").then(function (rows) {
+    /* --- AND THE ONE THAT IS NOT IN THE DATABASE AT ALL ---------------------
+       The take on this device, waiting to be kept or recorded over. It is a
+       recording of this song made by the person reading, which is what every
+       other row here is, so it is a row here: same shape, same player, same
+       bin, and one thing of its own, which is that keeping it is still to be
+       done (see draftRow).
+
+       FIRST, AND NOT BY DATE. The rest are newest first, and this one is
+       newer than all of them by definition; more than that, it is the only row
+       on the sheet that is waiting on the person looking at it. */
+    function paint(rows) {
       if (!box.isConnected) return;
-      if (!rows || !rows.length) return counted(0);
+      var draft = heldHere();
+      if (!rows.length && !draft) {
+        /* AND A SHEET STANDING OPEN OVER NOTHING GOES DOWN WITH IT. This is
+           drawn again whenever what is on it changes, and one of those changes
+           is the last thing on it leaving: the draft recorded over, the last
+           take deleted. What was left was an open sheet with nothing on it,
+           holding the room it had taken off the song. */
+        if (takesSheet === box) closeTakes();
+        return counted(0);
+      }
 
       /* --- IN THE ORDER THEY WILL BE HEARD --------------------------------
          Newest first, which is the order somebody who has been recording
@@ -20687,13 +21129,14 @@
       box.appendChild(el("h2", "takes-head", "הקלטות"));
       var list = el("div", "takes-list");
       box.appendChild(list);
+      if (draft) list.appendChild(draftRow(draft));
       var first = null;
       rows.forEach(function (row) {
         var made = takeRow(row, song);
         if (wanted && row.id === wanted && !first) first = made;
         list.appendChild(made);
       });
-      counted(rows.length);
+      counted(rows.length + (draft ? 1 : 0));
       /* A LINK TO ONE RECORDING OPENS THE SHEET. It is the whole of what that
          address is about, and a sheet that stays down while the sound plays
          is a page with a voice on it and nothing to show for it. */
@@ -20711,10 +21154,19 @@
         if (go) go.click();
         takeAsked = true;
       }
-    }).catch(function (error) {
+    }
+
+    rest(CFG.takeTable + "?song_id=eq." + song.id +
+      "&select=id,owner,take,path,mime,seconds,marks,marks_of,page,capo,published,created_at" +
+      "&order=created_at.desc").then(function (rows) {
+      paint(rows || []);
+    }).catch(function () {
       /* A project whose SQL has not been run since this arrived has no table,
-         and a song page is not the place to say so. */
-      if (error && (error.code === "42P01" || error.status === 404)) return;
+         and a song page is not the place to say so. THE DRAFT IS STILL DRAWN:
+         it is on the device and owes the database nothing, and a recording
+         somebody has just made vanishing because a request failed is the one
+         thing here that could lose a performance. */
+      paint([]);
     });
   }
 
@@ -20823,6 +21275,140 @@
 
   function said0(seconds) {
     return said(seconds || 0);
+  }
+
+  /* ==========================================================================
+     THE TAKE THAT IS ONLY HERE, on the top of the same list.
+
+     A recording that has been stopped and not kept is on this device and
+     nowhere else: not in the database, not in the bucket, not on the reader's
+     other phone. It used to be reachable only through a panel of its own, and
+     that hid the one thing about it worth knowing, which is that it is a take
+     of this song sitting beside the takes of this song that are saved.
+
+     SO IT IS A ROW LIKE THE REST, and it says the three things they cannot:
+     that it is on the device, that nobody else can hear it, and that the way
+     to change both of those is the button on the end. What it does NOT say is
+     that it is in danger, because it is not: it survives the tab, the reload
+     and the closed phone (see the held store above), and the only thing that
+     loses it is a person pressing record or the bin.
+
+     Drawn from the meta alone. The sound is megabytes and it is read off the
+     device when somebody asks to hear it or asks to keep it, never to draw a
+     row (see heldBits). */
+  function draftRow(held) {
+    var node = el("div", "take is-mine is-draft");
+    /* A pretend row, for the two things that play a recording: they want the
+       marks and what kind of sound it is, and a draft has both. `draft` is
+       what tells the player to read the device instead of the bucket. */
+    var as = {
+      draft: true, song: held.song, mime: held.mime || "audio/webm",
+      marks: Array.isArray(held.marks) ? held.marks : [], marks_of: MARKS_PLAYED,
+    };
+
+    var go = iconBtn(ICON.play, "השמעה", function () { playTake(as, node, go); });
+    go.classList.add("take-go");
+    node.appendChild(go);
+
+    var says = el("div", "take-said");
+    says.appendChild(el("span", "take-who", "שלי"));
+    /* WHICH TAKE THIS IS, and it has no number: the ones in the database are
+       counted, and this one is not in it. What it is instead is the newest
+       one there is, which is what "הקלטה חדשה" says. */
+    says.appendChild(el("span", "take-when",
+      "הקלטה חדשה  ·  " + said0(held.seconds) + "  ·  שמורה במכשיר הזה בלבד"));
+    node.appendChild(says);
+
+    /* The same small print a saved take wears, for the same reason: the page
+       is a drawing that moves and the recording is a sound at a pitch, so a
+       reader who has taken the song down two is about to hear something that
+       no longer agrees with the chords in front of them (see takeRow). */
+    if (state.ear && (state.ear.page() !== (held.page || 0) || state.ear.capo() !== (held.capo || 0))) {
+      var off = el("span", "take-off", "בסולם אחר");
+      off.title = "ההקלטה נוגנה בסולם או בקפו אחרים ממה שכתוב עכשיו";
+      node.appendChild(off);
+    }
+
+    /* AND THE ONE WORD THAT IS ONLY TRUE OF THIS ROW. Every other row on the
+       sheet is in the library; this one is not, and the yellow it is drawn in
+       is the yellow this app writes "not published" in everywhere else. */
+    var mark = el("span", "take-off take-yet", "לא פורסמה");
+    mark.title = "ההקלטה נמצאת רק במכשיר הזה. אף אחד אחר לא יכול לשמוע אותה";
+    node.appendChild(mark);
+
+    /* --- KEEPING IT, WHICH IS THE ONLY THING IT IS WAITING FOR ---------------
+       The same arrow the row above it wears, and the same sentence one step
+       earlier: a recording moves out from the device, to the song, and then to
+       the world. Pressed here it becomes an ordinary take of this song, in the
+       list, with its own button for the step after this one.
+
+       WITHOUT AN ACCOUNT THERE IS NOWHERE TO PUT IT, so the button is not
+       there and the row says why: a button that is refused every time it is
+       pressed is worse than a sentence. */
+    if (auth.in) {
+      var keep = iconBtn(ICON.upload, "שמירת ההקלטה לשיר", function () {
+        keepDraft(held, keep);
+      });
+      keep.classList.add("take-out");
+      node.appendChild(keep);
+    } else {
+      node.appendChild(el("span", "take-off", "כדי לשמור צריך להתחבר"));
+    }
+
+    /* AND LOSING IT, WHICH IS ASKED ABOUT. Nothing else on this sheet can be
+       pressed by mistake and cost a performance: a saved take is asked about
+       too (see dropTake), and this one is the only copy there is. */
+    var kill = iconBtn(ICON.trash, "מחיקת ההקלטה", function () {
+      if (!window.confirm("למחוק את ההקלטה?")) return;
+      endTape(held.song).then(takesAgain, takesAgain);
+    });
+    kill.classList.add("quiet");
+    node.appendChild(kill);
+    return node;
+  }
+
+  /* The sound of a draft, off the device, as one blob. An empty answer is not
+     a take: the store was cleared, the browser threw the database away, or a
+     private window closed. Said out loud rather than swallowed, because the
+     row promising it is on the screen. */
+  function draftBlob(row) {
+    return heldBits(row.song).then(function (bits) {
+      if (!bits.length) {
+        endTape(row.song).then(takesAgain, takesAgain);
+        throw new Error("ההקלטה כבר לא במכשיר");
+      }
+      return new Blob(bits, { type: row.mime || "audio/webm" });
+    });
+  }
+
+  /* --- AND KEEPING IT: THE SOUND UP FIRST, THEN THE DEVICE COPY LET GO -------
+     In that order and never the other way about. Forgetting it first and
+     failing to upload is a recording that no longer exists anywhere, which is
+     the one outcome this whole store was built to prevent. Uploading first and
+     failing to forget leaves a draft beside its own saved copy, which is a
+     duplicate row on a sheet and nothing worse. */
+  function keepDraft(held, keep) {
+    keep.disabled = true;
+    draftBlob({ song: held.song, mime: held.mime }).then(function (blob) {
+      return keepTakeIn({
+        song: held.song,
+        blob: blob,
+        mime: held.mime || "audio/webm",
+        marks: Array.isArray(held.marks) ? held.marks : [],
+        trace: Array.isArray(held.trace) ? held.trace : null,
+        seconds: held.seconds || 0,
+        page: held.page || 0,
+        capo: held.capo || 0,
+      });
+    }).then(function () {
+      return endTape(held.song);
+    }).then(function () {
+      toast("ההקלטה נשמרה לשיר");
+      takesAgain();
+    }).catch(function (e) {
+      keep.disabled = false;
+      toast((e && e.message) || "לא הצלחנו לשמור");
+    });
   }
 
   /* The four things this one button can be standing in front of, in the two
@@ -20991,13 +21577,27 @@
     }
     if (node._url) return hearTake(row, node, go);
     go.disabled = true;
-    store(row.path).then(function (r) { return r.blob(); }).then(function (blob) {
+    /* TWO PLACES A RECORDING CAN BE, AND ONE PLAYER. A saved take is in the
+       bucket and is fetched rather than pointed at, because the bucket is not
+       public and an element cannot carry a token (see store). A draft is on
+       this device and is read out of the held store. From the blob down they
+       are the same recording and the same row (see draftRow). */
+    (row.draft ? draftBlob(row) : store(row.path).then(function (r) { return r.blob(); }))
+      .then(function (blob) {
       go.disabled = false;
       node._url = URL.createObjectURL(blob.slice(0, blob.size, row.mime || blob.type));
+      /* AND THE MICROPHONE GOES BEFORE THE DRAFT IS HEARD. A take played back
+         while the microphone is still open does not sound like the take: a
+         phone with a live capture on it is a phone in a call, the sound comes
+         out of the earpiece, and the echo canceller ducks whatever it hears
+         itself playing. Stopping a recording closes the microphone by itself
+         (see stopTape), so this is only for the draft that outlived its page
+         and is being heard on a song whose ear somebody has since opened. */
+      if (row.draft) hushMic();
       hearTake(row, node, go);
-    }).catch(function () {
+    }).catch(function (e) {
       go.disabled = false;
-      toast("לא הצלחנו להשמיע את ההקלטה");
+      toast((e && e.message) || "לא הצלחנו להשמיע את ההקלטה");
     });
   }
 
@@ -21010,7 +21610,13 @@
     node._audio = audio;
     node.appendChild(audio);
     takeOpen = { node: node, audio: audio, go: go };
-    alongTake(audio, Array.isArray(row.marks) ? row.marks : []);
+    /* WITH THE COUNTING THE MARKS ARE IN, which was being left off here: a
+       take made since repeats arrived counts the chords as they are PLAYED,
+       and a translation run over marks that are already in that counting moves
+       every one of them (see inPlan and marks_of in schema.sql). It made no
+       difference on a song with no repeat, where the two countings are the
+       same list, and moved the mark down the page on one that has one. */
+    alongTake(audio, Array.isArray(row.marks) ? row.marks : [], row.marks_of);
     go.hidden = true;
     /* --- AND THE ONE PLAYING IS THE ONLY ONE ON THE SHEET -------------------
        Three recordings of the same song are three rows that say very nearly

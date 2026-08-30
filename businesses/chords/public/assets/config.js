@@ -56,6 +56,13 @@ window.CHORDS_CONFIG = {
      app.js. */
   keyTable: "song_keys",
 
+  /* And a tenth, which is not about a song at all: who is on a playlist. A
+     playlist used to belong to the account that made it and to nobody else,
+     and a row here is somebody else it is also open to. Nothing writes to it
+     directly, in either direction: joining happens by following a link, which
+     is a function in the database (see setlist_members in schema.sql). */
+  memberTable: "setlist_members",
+
   /* The Worker holds the Anthropic key and reads an uploaded photo or PDF.
      Same deployment that sends the leads for every other business here. */
   transcribeEndpoint: "https://floa-lead.floa-il.workers.dev/transcribe",
