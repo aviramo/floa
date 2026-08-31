@@ -6,8 +6,8 @@
 
    מסך אחד בלי גלילה, כמה מילים בלבד, ופעולה אחת שאין לה מתחרה. אין תפריט,
    אין טופס, אין קישור יוצא ואין מספר טלפון ללחוץ עליו במקום. הדבר הצבעוני
-   היחיד על רקע רגוע הוא כפתור הוואטסאפ, ומתחתיו פס שמתרוקן ואומר בלי מילים
-   שההעברה קורית בין כה וכה.
+   היחיד על רקע רגוע הוא כפתור הוואטסאפ, והוא גם הדבר היחיד שמזיז את הדף:
+   הדף לא עובר לשום מקום מעצמו.
    ========================================================================== */
 
 :root {
@@ -144,42 +144,6 @@ h1 {
   0%   { opacity: 0.9; transform: scale(0.98); }
   70%  { opacity: 0; transform: scale(1.07); }
   100% { opacity: 0; transform: scale(1.07); }
-}
-
-/* --- הספירה, שאומרת שזה קורה בכל מקרה ------------------------------------ */
-.timer {
-  margin: 14px 0 0;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--ink-soft);
-}
-
-.timer b {
-  color: var(--teal-700);
-  font-family: "Rubik", "Segoe UI", Arial, sans-serif;
-  font-size: 18px;
-}
-
-.bar {
-  height: 6px;
-  margin-top: 8px;
-  border-radius: 99px;
-  background: var(--teal-100);
-  overflow: hidden;
-}
-
-.bar i {
-  display: block;
-  height: 100%;
-  border-radius: 99px;
-  background: linear-gradient(90deg, var(--wa-deep), var(--wa));
-  transform-origin: 100% 50%;
-  animation: drain 5s linear forwards;
-}
-
-@keyframes drain {
-  from { transform: scaleX(1); }
-  to   { transform: scaleX(0); }
 }
 
 .hint {

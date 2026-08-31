@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>ניקיון פרפקטי | מעבירים אותך לוואטסאפ</title>
-  <meta name="description" content="ניקיון פרפקטי, בבעלותו של דוד, 27 שנות ניסיון. ניקוי שטיחים, ריפודים, ספות עור ובד, פוליש והברקה קריסטלית והדברות. לחצו ותועברו לשיחה בוואטסאפ." />
+  <title>ניקיון פרפקטי | דברו איתנו בוואטסאפ</title>
+  <meta name="description" content="ניקיון פרפקטי, בבעלותו של דוד, 27 שנות ניסיון. ניקוי שטיחים, ריפודים, ספות עור ובד, פוליש והברקה קריסטלית והדברות. לחיצה אחת ונפתחת שיחה בוואטסאפ." />
   <meta name="theme-color" content="#17636b" />
   <link rel="canonical" href="https://floa.co.il/perfecti/" />
 
@@ -63,7 +63,7 @@
     </div>
 
     <div class="card__body">
-      <h1>מיד מעבירים אותך לוואטסאפ</h1>
+      <h1>לחיצה אחת, ואתם בשיחה עם דוד</h1>
       <p class="sub">ניקוי שטיחים, ריפודים, ספות, פוליש והדברות. <b>דוד, 27 שנות ניסיון.</b></p>
 
       <!-- הקישור היחיד בדף. הסקריפט קורא ממנו את הכתובת, כדי שלא יהיו שתי גרסאות
@@ -76,10 +76,7 @@
         לדבר עם דוד עכשיו
       </a>
 
-      <p class="timer" id="timer">מעבירים אותך אוטומטית בעוד <b id="left">5 שניות</b></p>
-      <div class="bar" aria-hidden="true"><i></i></div>
-
-      <p class="hint">לא הועברתם? לחצו על הכפתור הירוק.</p>
+      <p class="hint">הכפתור פותח את וואטסאפ עם ההודעה כבר כתובה. רק לשלוח.</p>
     </div>
 
   </main>
@@ -95,17 +92,17 @@
 
        אז הלחיצה על הכפתור, שהיא כן מגע, הולכת ישירות אל whatsapp://, שהוא
        האפליקציה עצמה. אם היא לא נפתחה בשנייה וחצי (אין אפליקציה במכשיר), הדף
-       עדיין כאן ואפשר ליפול חזרה אל wa.me, שיציע להתקין אותה. בדסקטופ אין
-       אפליקציה לקפוץ אליה, אז שם הכפתור מוביל לוואטסאפ ווב.
+       עדיין כאן ונופל חזרה אל wa.me, שיציע להתקין אותה. בדסקטופ אין אפליקציה
+       לקפוץ אליה, אז שם הכפתור מוביל לוואטסאפ ווב.
 
-       הספירה מנסה את אותו הדבר בדיוק. דפדפן שיחסום אותה בגלל שלא נגעו בדף
-       פשוט יגיע ל-wa.me, כלומר למסך שממנו לחיצה אחת פותחת את השיחה. הכתובת,
-       המספר וההודעה נקראים מהקישור שבדף ולא נכתבים כאן שוב. */
+       הדף לא זז מעצמו לעולם: רק לחיצה מזיזה אותו. העברה אוטומטית הייתה חייבת
+       לעצור במסך הביניים של wa.me, כי לא נגעו בדף, וזה בדיוק הצעד המיותר
+       שהיא הייתה אמורה לחסוך.
+
+       הכתובת, המספר וההודעה נקראים מהקישור שבדף ולא נכתבים כאן שוב. */
     (function () {
       "use strict";
       var link = document.getElementById("wa");
-      var timer = document.getElementById("timer");
-      var left = document.getElementById("left");
 
       var url = new URL(link.href);
       var query = "phone=" + url.pathname.replace(/\D/g, "") +
@@ -118,34 +115,15 @@
 
       if (!phone) link.href = web;
 
-      function open() {
-        if (!phone) { window.location.href = web; return; }
+      link.addEventListener("click", function (event) {
+        if (!phone) return;            /* ה-href כבר מצביע לוואטסאפ ווב */
+        event.preventDefault();
 
         window.location.href = app;
         setTimeout(function () {
           if (document.visibilityState === "visible") window.location.href = page;
         }, 1500);
-      }
-
-      link.addEventListener("click", function (event) {
-        if (!phone) return;            /* ה-href כבר מצביע לוואטסאפ ווב */
-        event.preventDefault();
-        open();
       });
-
-      var seconds = 5;
-      var tick = setInterval(function () {
-        seconds -= 1;
-
-        if (seconds > 0) {
-          left.textContent = seconds > 1 ? seconds + " שניות" : "שנייה אחת";
-          return;
-        }
-
-        clearInterval(tick);
-        timer.textContent = "פותחים את וואטסאפ…";
-        open();
-      }, 1000);
     })();
   </script>
 
