@@ -85,18 +85,55 @@
   </main>
 
   <script>
-    /* חמש שניות, ואז אותה כתובת בדיוק שעל הכפתור. הכתובת נקראת מהקישור ולא
-       נכתבת כאן שוב, כדי שהמספר וההודעה יישארו במקום אחד.
+    /* פתיחת השיחה, ובלי דף ביניים.
 
-       ההעברה היא ניווט של הלשונית עצמה ולא חלון קופץ, ולכן שום דפדפן לא חוסם
-       אותה. מי שלוחץ קודם פשוט מגיע מוקדם יותר. */
+       ‎wa.me הוא דף אינטרנט, לא האפליקציה: הוא פותח את האפליקציה בעצמו רק אם
+       הדפדפן הרשה לו, ודפדפן בטלפון מרשה לפתוח אפליקציה רק אחרי מגע של
+       המשתמש בדף. הלחיצה על המודעה בגוגל היא לא מגע בדף הזה, היא קרתה לפניו.
+       לכן מי שהגיע לכאן וחיכה היה רואה את מסך ה"Open app" של wa.me במקום
+       שיחה.
+
+       אז הלחיצה על הכפתור, שהיא כן מגע, הולכת ישירות אל whatsapp://, שהוא
+       האפליקציה עצמה. אם היא לא נפתחה בשנייה וחצי (אין אפליקציה במכשיר), הדף
+       עדיין כאן ואפשר ליפול חזרה אל wa.me, שיציע להתקין אותה. בדסקטופ אין
+       אפליקציה לקפוץ אליה, אז שם הכפתור מוביל לוואטסאפ ווב.
+
+       הספירה מנסה את אותו הדבר בדיוק. דפדפן שיחסום אותה בגלל שלא נגעו בדף
+       פשוט יגיע ל-wa.me, כלומר למסך שממנו לחיצה אחת פותחת את השיחה. הכתובת,
+       המספר וההודעה נקראים מהקישור שבדף ולא נכתבים כאן שוב. */
     (function () {
       "use strict";
       var link = document.getElementById("wa");
       var timer = document.getElementById("timer");
       var left = document.getElementById("left");
-      var seconds = 5;
 
+      var url = new URL(link.href);
+      var query = "phone=" + url.pathname.replace(/\D/g, "") +
+                  "&text=" + encodeURIComponent(url.searchParams.get("text") || "");
+
+      var app = "whatsapp://send?" + query;                  /* האפליקציה */
+      var web = "https://web.whatsapp.com/send?" + query;    /* מסך גדול */
+      var page = link.href;                                  /* wa.me, הנפילה הרכה */
+      var phone = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+      if (!phone) link.href = web;
+
+      function open() {
+        if (!phone) { window.location.href = web; return; }
+
+        window.location.href = app;
+        setTimeout(function () {
+          if (document.visibilityState === "visible") window.location.href = page;
+        }, 1500);
+      }
+
+      link.addEventListener("click", function (event) {
+        if (!phone) return;            /* ה-href כבר מצביע לוואטסאפ ווב */
+        event.preventDefault();
+        open();
+      });
+
+      var seconds = 5;
       var tick = setInterval(function () {
         seconds -= 1;
 
@@ -107,7 +144,7 @@
 
         clearInterval(tick);
         timer.textContent = "פותחים את וואטסאפ…";
-        window.location.href = link.href;
+        open();
       }, 1000);
     })();
   </script>
