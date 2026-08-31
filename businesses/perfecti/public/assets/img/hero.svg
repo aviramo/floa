@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 64 1200 700" width="1200" height="700" role="img" aria-label="סלון מואר ונקי, ספה ושטיח אחרי ניקוי יסודי">
+  <defs>
+    <linearGradient id="p-wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e6f2f6"/>
+      <stop offset="1" stop-color="#fbfdfd"/>
+    </linearGradient>
+    <linearGradient id="p-floor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e6dccd"/>
+      <stop offset="1" stop-color="#d9cdba"/>
+    </linearGradient>
+    <linearGradient id="p-pane" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#cfe6ef"/>
+      <stop offset="0.55" stop-color="#eaf6fa"/>
+      <stop offset="1" stop-color="#bcdbe7"/>
+    </linearGradient>
+    <linearGradient id="p-back" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1c6f79"/>
+      <stop offset="1" stop-color="#155a63"/>
+    </linearGradient>
+    <linearGradient id="p-seat" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#238a95"/>
+      <stop offset="1" stop-color="#1a6d77"/>
+    </linearGradient>
+    <linearGradient id="p-rug" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fbf6ee"/>
+      <stop offset="1" stop-color="#f0e6d8"/>
+    </linearGradient>
+    <radialGradient id="p-glow" cx="0.78" cy="0.3" r="0.6">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <path id="p-star" d="M0,-34 C5,-11 11,-5 34,0 C11,5 5,11 0,34 C-5,11 -11,5 -34,0 C-11,-5 -5,-11 0,-34 Z"/>
+  </defs>
+
+  <rect width="1200" height="800" fill="url(#p-wall)"/>
+  <rect y="612" width="1200" height="188" fill="url(#p-floor)"/>
+  <rect y="600" width="1200" height="14" fill="#f4f8f9"/>
+  <rect width="1200" height="800" fill="url(#p-glow)"/>
+
+  <!-- window -->
+  <g>
+    <rect x="792" y="96" width="296" height="330" rx="14" fill="#ffffff"/>
+    <rect x="806" y="110" width="268" height="302" rx="8" fill="url(#p-pane)"/>
+    <rect x="936" y="110" width="8" height="302" fill="#ffffff" opacity="0.9"/>
+    <rect x="806" y="256" width="268" height="8" fill="#ffffff" opacity="0.9"/>
+    <path d="M826 412 L916 110 L966 110 L876 412 Z" fill="#ffffff" opacity="0.45"/>
+    <rect x="776" y="418" width="328" height="16" rx="8" fill="#ffffff"/>
+  </g>
+
+  <!-- light beams -->
+  <g opacity="0.5">
+    <path d="M806 130 L1040 130 L610 612 L300 612 Z" fill="#ffffff" opacity="0.55"/>
+    <path d="M880 130 L960 130 L520 612 L400 612 Z" fill="#ffffff" opacity="0.5"/>
+  </g>
+
+  <!-- rug -->
+  <g>
+    <path d="M140 786 L318 656 L858 656 L1046 786 Z" fill="url(#p-rug)"/>
+    <path d="M196 758 L346 678 L830 678 L992 758 Z" fill="none" stroke="#cbe2e6" stroke-width="7"/>
+    <path d="M300 736 L392 700 L790 700 L900 736 Z" fill="none" stroke="#e0d3c0" stroke-width="6"/>
+  </g>
+
+  <!-- sofa -->
+  <g>
+    <ellipse cx="512" cy="640" rx="330" ry="26" fill="#b9ab97" opacity="0.32"/>
+    <rect x="236" y="366" width="556" height="176" rx="34" fill="url(#p-back)"/>
+    <rect x="272" y="392" width="238" height="130" rx="22" fill="#2a99a4" opacity="0.55"/>
+    <rect x="522" y="392" width="238" height="130" rx="22" fill="#2a99a4" opacity="0.55"/>
+    <rect x="206" y="430" width="80" height="200" rx="30" fill="#1a6a74"/>
+    <rect x="742" y="430" width="80" height="200" rx="30" fill="#1a6a74"/>
+    <rect x="216" y="510" width="596" height="112" rx="30" fill="url(#p-seat)"/>
+    <rect x="256" y="524" width="256" height="84" rx="22" fill="#2ca0ab" opacity="0.5"/>
+    <rect x="524" y="524" width="256" height="84" rx="22" fill="#2ca0ab" opacity="0.5"/>
+    <rect x="262" y="614" width="26" height="42" rx="10" fill="#b98b5e"/>
+    <rect x="740" y="614" width="26" height="42" rx="10" fill="#b98b5e"/>
+    <g transform="translate(322 452) rotate(-9)">
+      <rect x="-52" y="-52" width="104" height="104" rx="24" fill="#f3e6cf"/>
+      <rect x="-30" y="-30" width="60" height="60" rx="16" fill="#e7d3b2" opacity="0.7"/>
+    </g>
+    <g transform="translate(706 452) rotate(8)">
+      <rect x="-52" y="-52" width="104" height="104" rx="24" fill="#eadfd0"/>
+      <rect x="-30" y="-30" width="60" height="60" rx="16" fill="#d9c9b4" opacity="0.7"/>
+    </g>
+  </g>
+
+  <!-- plant -->
+  <g>
+    <path d="M1002 780 L1020 660 L1132 660 L1150 780 Z" fill="#cf7a52"/>
+    <rect x="1010" y="644" width="132" height="26" rx="10" fill="#e08c62"/>
+    <g fill="#2f8f6f">
+      <ellipse cx="1076" cy="560" rx="30" ry="66"/>
+      <ellipse cx="1030" cy="590" rx="26" ry="54" transform="rotate(-24 1030 590)"/>
+      <ellipse cx="1124" cy="590" rx="26" ry="54" transform="rotate(24 1124 590)"/>
+    </g>
+    <ellipse cx="1076" cy="536" rx="18" ry="40" fill="#3aa981"/>
+  </g>
+
+  <!-- sparkles -->
+  <g fill="#ffffff">
+    <use href="#p-star" transform="translate(300 300) scale(1.15)" opacity="0.95"/>
+    <use href="#p-star" transform="translate(196 380) scale(0.6)" opacity="0.8"/>
+    <use href="#p-star" transform="translate(636 250) scale(0.8)" opacity="0.85"/>
+  </g>
+  <g fill="#ffd166">
+    <use href="#p-star" transform="translate(560 320) scale(0.55)" opacity="0.95"/>
+    <use href="#p-star" transform="translate(880 520) scale(0.7)" opacity="0.9"/>
+  </g>
+</svg>

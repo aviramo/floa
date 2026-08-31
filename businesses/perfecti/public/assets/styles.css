@@ -1,0 +1,201 @@
+/* ==========================================================================
+   ניקיון פרפקטי, גיליון סגנון אחד לדף אחד.
+
+   הדף הזה הוא לא דף קריאה. הוא המסך שבין הקלקה על מודעה בגוגל לבין שיחה
+   בוואטסאפ, והוא נקרא כמעט תמיד בטלפון, ביד אחת, בשלוש שניות. לכן:
+
+   מסך אחד בלי גלילה, כמה מילים בלבד, ופעולה אחת שאין לה מתחרה. אין תפריט,
+   אין טופס, אין קישור יוצא ואין מספר טלפון ללחוץ עליו במקום. הדבר הצבעוני
+   היחיד על רקע רגוע הוא כפתור הוואטסאפ, ומתחתיו פס שמתרוקן ואומר בלי מילים
+   שההעברה קורית בין כה וכה.
+   ========================================================================== */
+
+:root {
+  --teal-900: #0f4a52;
+  --teal-700: #17636b;
+  --teal-500: #238a95;
+  --teal-100: #e2f1f3;
+  --sand-50: #fbf8f3;
+  --ink: #16302f;
+  --ink-soft: #4a625f;
+  --line: #e7ded2;
+  --wa: #25d366;
+  --wa-deep: #12a34c;
+  --white: #ffffff;
+  --radius: 22px;
+  --shadow: 0 18px 44px rgba(15, 74, 82, 0.16);
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: radial-gradient(120% 80% at 50% 0%, var(--teal-100) 0%, var(--sand-50) 62%);
+  color: var(--ink);
+  font-family: "Assistant", "Segoe UI", Arial, sans-serif;
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+img { max-width: 100%; display: block; }
+
+/* --- הכרטיס, וזה כל הדף -------------------------------------------------- */
+.card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  text-align: center;
+}
+
+.card__art {
+  position: relative;
+  background: var(--teal-100);
+}
+
+.card__art img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 12 / 5;
+  object-fit: cover;
+  object-position: 50% 62%;
+}
+
+.brand {
+  position: absolute;
+  inset-inline-start: 14px;
+  bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 13px;
+  border-radius: 999px;
+  background: rgba(15, 74, 82, 0.92);
+  color: var(--white);
+  font-family: "Rubik", "Segoe UI", Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.brand svg { width: 15px; height: 15px; fill: #ffd166; flex: none; }
+
+.card__body { padding: 20px 20px 22px; }
+
+h1 {
+  margin: 0;
+  font-family: "Rubik", "Segoe UI", Arial, sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--teal-900);
+}
+
+.sub {
+  margin: 9px 0 0;
+  font-size: 16px;
+  color: var(--ink-soft);
+}
+
+.sub b { color: var(--teal-700); font-weight: 700; }
+
+/* --- הפעולה היחידה ------------------------------------------------------- */
+.cta {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  margin-top: 18px;
+  padding: 18px 20px;
+  border-radius: 16px;
+  background: linear-gradient(160deg, var(--wa), var(--wa-deep));
+  color: var(--white);
+  font-family: "Rubik", "Segoe UI", Arial, sans-serif;
+  font-size: 21px;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 12px 26px rgba(18, 163, 76, 0.4);
+}
+
+.cta::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 22px;
+  border: 2px solid var(--wa);
+  opacity: 0;
+  animation: ring 2s ease-out infinite;
+}
+
+.cta:active { transform: translateY(1px); }
+.cta svg { width: 28px; height: 28px; fill: currentColor; flex: none; }
+
+@keyframes ring {
+  0%   { opacity: 0.9; transform: scale(0.98); }
+  70%  { opacity: 0; transform: scale(1.07); }
+  100% { opacity: 0; transform: scale(1.07); }
+}
+
+/* --- הספירה, שאומרת שזה קורה בכל מקרה ------------------------------------ */
+.timer {
+  margin: 14px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.timer b {
+  color: var(--teal-700);
+  font-family: "Rubik", "Segoe UI", Arial, sans-serif;
+  font-size: 18px;
+}
+
+.bar {
+  height: 6px;
+  margin-top: 8px;
+  border-radius: 99px;
+  background: var(--teal-100);
+  overflow: hidden;
+}
+
+.bar i {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--wa-deep), var(--wa));
+  transform-origin: 100% 50%;
+  animation: drain 5s linear forwards;
+}
+
+@keyframes drain {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+
+.hint {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: #8b9c99;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta::before { animation: none; }
+}
+
+/* --- מסך גבוה, יש מקום לנשום ---------------------------------------------- */
+@media (min-height: 720px) {
+  .card { max-width: 460px; }
+  .card__art img { aspect-ratio: 12 / 6; }
+  .card__body { padding: 24px 24px 26px; }
+  h1 { font-size: 29px; }
+}

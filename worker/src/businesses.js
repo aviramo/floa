@@ -37,6 +37,12 @@ export const BUSINESSES = {
     "origins": [],
     "pages": []
   },
+  "perfecti": {
+    "brand": "ניקיון פרפקטי",
+    "to": "LEAD_TO_PERFECTI",
+    "origins": [],
+    "pages": []
+  },
   "prolink": {
     "brand": "ProLink",
     "to": "LEAD_TO_PROLINK",
