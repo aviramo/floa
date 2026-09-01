@@ -35,6 +35,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Rubik:wght@700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/styles.css?v=1" />
 
+  <!-- תגית גוגל, בשביל מדידת ההמרות של הקמפיין. היא יושבת רק בדף הזה ולא
+       בשאר הדומיין, כי הקמפיין הוא של העסק הזה בלבד. `async` כדי שהיא לא
+       תעכב את הציור: הכפתור חייב להיות על המסך לפני שהיא בכלל הגיעה. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18418106264"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'AW-18418106264');
+  </script>
+
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
