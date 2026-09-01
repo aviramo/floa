@@ -106,7 +106,13 @@ h1 {
   color: var(--ink-soft);
 }
 
-.sub b { color: var(--teal-700); font-weight: 700; }
+.who {
+  margin: 8px 0 0;
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+.sub b, .who b { color: var(--teal-700); font-weight: 700; }
 
 /* --- הפעולה היחידה ------------------------------------------------------- */
 .cta {
