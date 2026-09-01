@@ -132,7 +132,20 @@
 
       if (!phone) link.href = web;
 
+      /* ההמרה של הקמפיין: פעולת "איש קשר" בחשבון. מדווחת על הלחיצה ולא על
+         השיחה, כי זה הדבר האחרון שהדף הזה יכול לראות. gtag שולח אותה כ-beacon,
+         שיוצא גם כשהדף כבר בדרך לוואטסאפ, ולכן מותר לדווח לפני הניווט.
+
+         מי שחוסם פרסומות חוסם גם את זה. השורה עוטפת את עצמה בבדיקה כדי
+         שהכפתור ימשיך לעבוד גם אז: מדידה שנכשלת לא תפיל פנייה. */
+      function report() {
+        if (typeof gtag !== "function") return;
+        gtag("event", "conversion", { send_to: "AW-18418106264/s311CKn57OscEJj_t85E" });
+      }
+
       link.addEventListener("click", function (event) {
+        report();
+
         if (!phone) return;            /* ה-href כבר מצביע לוואטסאפ ווב */
         event.preventDefault();
 
