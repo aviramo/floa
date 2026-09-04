@@ -1,13 +1,17 @@
 /* ==========================================================================
    ניקיון פרפקטי, גיליון סגנון אחד לדף אחד.
 
-   הדף הזה הוא לא דף קריאה. הוא המסך שבין הקלקה על מודעה בגוגל לבין שיחה
-   בוואטסאפ, והוא נקרא כמעט תמיד בטלפון, ביד אחת, בשלוש שניות. לכן:
+   הדף הזה הוא לא דף קריאה. הוא המסך שבין הקלקה על מודעה בגוגל לבין הודעה
+   בוואטסאפ, והוא נקרא כמעט תמיד בטלפון, ביד אחת, בשלוש שניות. לכן מובייל
+   תחילה, והמסך הרחב הוא התוספת.
 
-   מסך אחד בלי גלילה, כמה מילים בלבד, ופעולה אחת שאין לה מתחרה. אין תפריט,
-   אין טופס, אין קישור יוצא ואין מספר טלפון ללחוץ עליו במקום. הדבר הצבעוני
-   היחיד על רקע רגוע הוא כפתור הוואטסאפ, והוא גם הדבר היחיד שמזיז את הדף:
-   הדף לא עובר לשום מקום מעצמו.
+   סדר העדיפויות על המסך הראשון, לפני כל גלילה: מה מקבלים, איך מקבלים, ואיפה
+   לוחצים. התמונה קצרה בכוונה כדי שהכפתור יישאר מעל הקיפול גם במסך נמוך.
+
+   פעולה אחת, ואין לה מתחרה: אין תפריט, אין טופס, אין קישור יוצא ואין מספר
+   טלפון ללחוץ עליו במקום. הירוק הוא הצבע הרווי היחיד בדף, והוא שמור לכפתור
+   בלבד. המחירים, הניסיון והשירותים הם אפור ושקט: הם עונים על "האם זה מתאים
+   לי", לא מתחרים על הלחיצה.
    ========================================================================== */
 
 :root {
@@ -24,6 +28,7 @@
   --white: #ffffff;
   --radius: 22px;
   --shadow: 0 18px 44px rgba(15, 74, 82, 0.16);
+  --dock: 86px;
 }
 
 * { box-sizing: border-box; }
@@ -34,22 +39,24 @@ body {
   margin: 0;
   min-height: 100svh;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  background: radial-gradient(120% 80% at 50% 0%, var(--teal-100) 0%, var(--sand-50) 62%);
+  padding: 12px 12px calc(12px + var(--dock));
+  background: radial-gradient(120% 70% at 50% 0%, var(--teal-100) 0%, var(--sand-50) 58%);
   color: var(--ink);
   font-family: "Assistant", "Segoe UI", Arial, sans-serif;
   font-size: 17px;
-  line-height: 1.55;
+  line-height: 1.5;
 }
 
 img { max-width: 100%; display: block; }
 
-/* --- הכרטיס, וזה כל הדף -------------------------------------------------- */
+/* --- הכרטיס, וזה כל הדף --------------------------------------------------
+   `margin: auto` ולא `align-items: center`: כשהתוכן גבוה מהמסך, מרכוז של פלקס
+   גוזר את החלק העליון ואי אפשר לגלול אליו. שוליים אוטומטיים מרכזים כשיש מקום
+   ומוותרים כשאין. */
 .card {
   width: 100%;
   max-width: 440px;
+  margin: auto;
   background: var(--white);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
@@ -57,77 +64,67 @@ img { max-width: 100%; display: block; }
   text-align: center;
 }
 
-.card__art {
-  position: relative;
-  background: var(--teal-100);
-}
+.card__art { position: relative; background: var(--teal-100); }
 
 .card__art img {
   width: 100%;
   height: auto;
-  aspect-ratio: 12 / 5;
+  aspect-ratio: 12 / 4.2;
   object-fit: cover;
-  object-position: 50% 62%;
+  object-position: 50% 64%;
 }
 
 .brand {
   position: absolute;
-  inset-inline-start: 14px;
-  bottom: 12px;
+  inset-inline-start: 12px;
+  bottom: 10px;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 6px 13px;
+  gap: 6px;
+  padding: 5px 12px;
   border-radius: 999px;
   background: rgba(15, 74, 82, 0.92);
   color: var(--white);
   font-family: "Rubik", "Segoe UI", Arial, sans-serif;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
 }
 
-.brand svg { width: 15px; height: 15px; fill: #ffd166; flex: none; }
+.brand svg { width: 14px; height: 14px; fill: #ffd166; flex: none; }
 
-.card__body { padding: 20px 20px 22px; }
+.card__body { padding: 18px 18px 20px; }
 
+/* --- מה מקבלים ------------------------------------------------------------ */
 h1 {
   margin: 0;
   font-family: "Rubik", "Segoe UI", Arial, sans-serif;
-  font-size: 26px;
+  font-size: 27px;
   font-weight: 800;
-  line-height: 1.2;
-  letter-spacing: -0.01em;
+  line-height: 1.18;
+  letter-spacing: -0.015em;
   color: var(--teal-900);
 }
 
 .sub {
   margin: 9px 0 0;
-  font-size: 16px;
+  font-size: 16.5px;
   color: var(--ink-soft);
 }
 
-.who {
-  margin: 8px 0 0;
-  font-size: 15px;
-  color: var(--ink-soft);
-}
-
-.sub b, .who b { color: var(--teal-700); font-weight: 700; }
-
-/* --- הפעולה היחידה ------------------------------------------------------- */
+/* --- הפעולה היחידה -------------------------------------------------------- */
 .cta {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 11px;
-  margin-top: 18px;
-  padding: 18px 20px;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 18px 16px;
   border-radius: 16px;
   background: linear-gradient(160deg, var(--wa), var(--wa-deep));
   color: var(--white);
   font-family: "Rubik", "Segoe UI", Arial, sans-serif;
-  font-size: 21px;
+  font-size: 20px;
   font-weight: 700;
   text-decoration: none;
   box-shadow: 0 12px 26px rgba(18, 163, 76, 0.4);
@@ -144,28 +141,128 @@ h1 {
 }
 
 .cta:active { transform: translateY(1px); }
-.cta svg { width: 28px; height: 28px; fill: currentColor; flex: none; }
+.cta svg { width: 26px; height: 26px; fill: currentColor; flex: none; }
 
 @keyframes ring {
   0%   { opacity: 0.9; transform: scale(0.98); }
-  70%  { opacity: 0; transform: scale(1.07); }
-  100% { opacity: 0; transform: scale(1.07); }
-}
-
-.hint {
-  margin: 12px 0 0;
-  font-size: 13px;
-  color: #8b9c99;
+  70%  { opacity: 0; transform: scale(1.06); }
+  100% { opacity: 0; transform: scale(1.06); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .cta::before { animation: none; }
 }
 
-/* --- מסך גבוה, יש מקום לנשום ---------------------------------------------- */
-@media (min-height: 720px) {
-  .card { max-width: 460px; }
-  .card__art img { aspect-ratio: 12 / 6; }
-  .card__body { padding: 24px 24px 26px; }
+.micro {
+  margin: 11px 0 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--teal-700);
+}
+
+.micro i { color: #b7cdcf; font-style: normal; margin: 0 3px; }
+
+.services {
+  margin: 14px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+/* --- המחירים --------------------------------------------------------------
+   טבלה בלי טבלה: שם מימין, מחיר משמאל, וקו דק בין שורות. המספרים מיושרים
+   לקצה אחד כדי שאפשר יהיה לסרוק אותם במבט אחד מלמעלה למטה. */
+.prices__head {
+  margin: 16px 0 0;
+  font-family: "Rubik", "Segoe UI", Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--teal-900);
+  letter-spacing: 0.01em;
+}
+
+.prices {
+  margin: 8px 0 0;
+  padding: 4px 12px;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fdfbf8;
+  text-align: start;
+}
+
+.prices li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+.prices li + li { border-top: 1px solid #f0e9df; }
+
+.prices b {
+  font-family: "Rubik", "Segoe UI", Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--teal-900);
+  white-space: nowrap;
+}
+
+.note {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: #8b9c99;
+}
+
+.trust {
+  margin: 14px 0 0;
+  padding-top: 13px;
+  border-top: 1px solid var(--line);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--teal-700);
+}
+
+/* --- הכפתור הצף -----------------------------------------------------------
+   הוא מוסתר כל עוד הכפתור הראשי על המסך, כי שני כפתורים ירוקים זהים זה מעל
+   זה נראים כמו באנר ולא כמו פעולה. ברגע שהראשי נגלל החוצה, הצף עולה במקומו
+   ומלווה את הקריאה עד למטה. */
+.dock {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 20;
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+  background: rgba(251, 248, 243, 0.94);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--line);
+  transform: translateY(115%);
+  transition: transform 0.22s ease-out;
+}
+
+.dock--on { transform: none; }
+
+.dock .cta { margin: 0; padding: 15px 16px; font-size: 19px; }
+.dock .cta::before { animation: none; }
+
+/* --- מסך גבוה, יש מקום לנשום --------------------------------------------- */
+@media (min-height: 740px) {
+  .card__art img { aspect-ratio: 12 / 5; }
+  .card__body { padding: 22px 22px 24px; }
   h1 { font-size: 29px; }
+}
+
+/* --- מסך רחב --------------------------------------------------------------
+   אין כאן מובייל ואין דסקטופ, יש כרטיס אחד. במסך רחב הוא רק מתרווח קצת,
+   והכפתור הצף מיותר: הכרטיס כולו נראה בלי לגלול. */
+@media (min-width: 900px) {
+  body { padding-bottom: 24px; font-size: 18px; }
+  .card { max-width: 480px; }
+  h1 { font-size: 31px; }
+  .cta { font-size: 21px; }
+  .dock { display: none; }
 }
