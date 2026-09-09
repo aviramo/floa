@@ -11,13 +11,46 @@
    The architect CV leads with solution design: architecture, integrations, IAM
    and IDM, enterprise applications. This one leads with what most of those
    fifteen years actually consisted of, day to day: analysing and specifying web
-   applications and mobile applications, from the first requirement through the
-   user journey, the screens, the business logic and the data model, to the
-   interfaces between a client and the services behind it.
+   applications, mobile applications and the organisation's core systems, and
+   the interfaces between them.
 
-   So the role titles here name the analysis rather than the architecture, the
-   summary opens on Mobile and Web, and every bullet is rewritten toward the
-   product and the interface. Nothing is added that did not happen.
+   AND IT STAYS THERE. NO TITLE ON IT IS ANYTHING BUT AN ANALYST.
+
+   The risk this document runs is not that it says too little. It is that a
+   hiring manager reads "Solution Architect", "Product Owner", "Technical Lead"
+   or "Developer" and concludes the man is too big for the job and will leave
+   inside a year, and never calls. So none of those words appear. Every role is
+   titled Systems Analyst, the product section was folded into the employment
+   history rather than standing over it, and the one line about writing code is
+   there for a reason an analyst can use: a specification that has been built
+   and tested is a specification a developer can build and a tester can check.
+
+   Everything cut is still true and still on the architect CV. It is the same
+   career; this document is simply the analyst's half of it, and it does not
+   apologise for the half it leaves out.
+
+   WHAT IT IS AIMED AT, AND WHY IT SAYS WHAT IT SAYS
+
+   It is sent to systems-analyst openings, and those openings ask for the same
+   short list over and over. Every item on it is something Ofir has done; the
+   only thing this file does is make sure the document SAYS so, in the words the
+   posting used, rather than leaving a reader to infer it:
+
+     business requirements gathering        the first line of every posting
+     functional and technical specs         named as documents, HLD and DD
+     interfaces between systems             web services, integration flows
+     data structure design                  asked for by name, not "modeling"
+     SQL                                    asked for explicitly
+     testing, UAT, implementation           the tail end of the job
+     task and project tracking              "ניהול ומעקב אחר משימות ופרויקטים"
+     development teams, users, vendors      the three parties named
+     UX and UI                              the fourth, in the Web/Mobile role
+     Agile                                  named in all three
+
+   Nothing was added that did not happen. Where a posting named a tool Ofir has
+   not used (Control-M, for one), the CV says what he DID do that is adjacent
+   (scheduled ETL and synchronisation jobs) and does not claim the tool. A CV
+   that wins the screening and loses the interview has not won anything.
 
    WHERE THEY LAND
      dist/cv/analyst/index.html      ->  floa.co.il/cv/analyst/
@@ -36,18 +69,18 @@ import { CONTACT, DEMO, SHARE_IMAGE, SHARE_TITLE, address, pdf } from "./cv-shar
    because the share card's description IS its first paragraph. Written twice it
    would be written differently within a month.
 
-   The first sentence is the whole positioning of this document: the years, and
-   what the majority of them were spent on. */
+   Three sentences, and each one answers a different question a screener asks:
+   what he is and for how long, what he produces, and how he gets it delivered. */
 const SUMMARY_EN = [
-  "Mobile and Web Systems Analyst with 15+ years of experience, most of them spent analyzing and specifying web and mobile applications for large organizations.",
-  "Works from the user inward: requirements gathering, user journeys, screen and UX and UI flows, business logic, data models, API contracts between a client and the services behind it, and acceptance testing through to production.",
-  "Recently took a mobile product from concept to the app stores end to end, and brings that hands-on product view back into enterprise analysis work, using Node.js, TypeScript, Supabase and AI-assisted development tools.",
+  "Systems Analyst with 15+ years of experience, most of them analyzing and specifying Web and Mobile systems, organizational core systems and the interfaces between them.",
+  "Gathers business requirements and writes what follows: functional and technical specifications, high level and detailed design, data structures, interface and web service definitions, SQL queries and acceptance criteria.",
+  "Carries it to production: task and project tracking, guiding development teams, working with business users, UX and UI, QA and vendors, through acceptance testing, implementation and support, in Agile delivery.",
 ];
 
 const SUMMARY_HE = [
-  "מנתח מערכות Mobile ו-Web עם מעל 15 שנות ניסיון, שרובן עברו על אפיון ותכנון של אפליקציות Web ומובייל בארגונים גדולים.",
-  "עובד מהמשתמש פנימה: איסוף דרישות, מסעות משתמש, אפיון מסכים וזרימות UX ו-UI, לוגיקה עסקית, מודל נתונים, חוזי API בין הלקוח לשירותים שמאחוריו ובדיקות קבלה עד לייצור.",
-  "לאחרונה הוביל מוצר מובייל מרעיון ועד חנויות האפליקציות מקצה לקצה, ומביא את המבט המעשי הזה גם לעבודת האפיון בארגון, באמצעות Node.js, TypeScript, Supabase וכלי פיתוח מבוססי AI.",
+  "מנתח מערכות עם מעל 15 שנות ניסיון, שרובן עברו על ניתוח ואפיון של מערכות Web ומובייל, מערכות ליבה ארגוניות והממשקים ביניהן.",
+  "אוסף דרישות עסקיות וכותב את המסמכים שנגזרים מהן: אפיון פונקציונלי, אפיון טכני ברמת High Level ו-Detailed Design, מבני נתונים, הגדרות ממשקים ו-Web Services, שאילתות SQL וקריטריוני קבלה.",
+  "מלווה את התהליך עד לייצור: מעקב אחר משימות ולוחות זמנים, הנחיית צוותי פיתוח, עבודה מול משתמשים עסקיים, UX ו-UI, בדיקות וספקים, ועד בדיקות קבלה, הטמעה ותמיכה שוטפת, בעבודה במתודולוגיית Agile.",
 ];
 
 /* --- English ---------------------------------------------------------------- */
@@ -57,8 +90,8 @@ export const analystEn = {
   dir: "ltr",
 
   meta: {
-    title: "Ofir Aviram | Mobile and Web Systems Analyst",
-    description: "CV of Ofir Aviram. Mobile and Web Systems Analyst with 15+ years, most of them spent analyzing and specifying web and mobile applications: requirements, user journeys, UX and UI flows, business logic, data models and APIs.",
+    title: "Ofir Aviram | Systems Analyst, Web, Mobile and Core Systems",
+    description: "CV of Ofir Aviram. Systems Analyst with 15+ years, most of them analyzing and specifying Web and Mobile systems, core systems and the interfaces between them: requirements gathering, functional and technical specifications, data structures, SQL, testing and implementation.",
   },
 
   share: { title: SHARE_TITLE, description: SUMMARY_EN[0], locale: "en_US", image: SHARE_IMAGE },
@@ -66,8 +99,8 @@ export const analystEn = {
 
   name: "Ofir Aviram",
   roles: [
-    "Mobile & Web Systems Analyst",
-    "Requirements, User Journeys, UX and UI Flows and End-to-End Delivery",
+    "Systems Analyst | Web, Mobile & Core Systems",
+    "Requirements, Functional and Technical Specifications, Interfaces and End-to-End Delivery",
   ],
   contact: [
     { text: "Hod Hasharon, Israel" },
@@ -88,45 +121,20 @@ export const analystEn = {
       title: "Core Expertise",
       groups: [
         {
-          title: "Mobile and Web Systems Analysis",
-          terms: ["Analyzing and specifying web applications, mobile applications and the services behind them, from the first requirement through the user journey and the screens to the data model and the interfaces"],
+          title: "Requirements and Specification",
+          terms: ["Business Requirements Gathering", "Functional and Technical Specifications", "High Level and Detailed Design", "Use Cases", "Acceptance Criteria"],
         },
         {
-          title: "Requirements and Specification",
-          terms: ["Requirements Gathering", "Functional and Technical Specifications", "Use Cases and User Stories", "Business Process Modeling", "Acceptance Criteria"],
+          title: "Interfaces and Data",
+          terms: ["Core Systems: ERP, Billing, Identity", "System Interfaces", "Web Services", "REST APIs", "Integration of Existing and New Systems", "Data Structure Design", "SQL Queries", "ETL and Scheduled Jobs"],
         },
         {
           title: "Product and Interface",
-          terms: ["User Journeys", "Screen Flows", "UX and UI Specification", "Field-Level Behavior", "Permissions and States", "Error and Edge Cases"],
+          terms: ["User Journeys", "Screen Flows", "UX and UI Specification", "Permissions, States and Edge Cases"],
         },
         {
-          title: "Data and Interfaces",
-          terms: ["Data Modeling", "SQL", "REST APIs", "Client and Server Contracts", "Integration Flows", "ETL"],
-        },
-        {
-          title: "Delivery",
-          terms: ["Stakeholder Management", "Cross-Functional Leadership", "Testing", "UAT", "Production Deployment", "Agile Delivery"],
-        },
-      ],
-    },
-
-    {
-      type: "roles",
-      title: "Selected Product Experience",
-      jobs: [
-        {
-          role: "Product Owner & Mobile Systems Analyst",
-          org: "Once | Self-Employed",
-          dates: "2026 - Present",
-          bullets: [
-            "Specified a mobile product end to end: user journeys, screen flows, states, permissions and the edge cases the app has to answer for",
-            "Modeled the data, the business logic and the real-time processes behind the screens, and defined the contracts between the app and its backend",
-            "Analyzed and specified authentication, location services, matching, real-time chat, credit mechanisms, social Circles and notifications",
-            "Implemented what was specified with Node.js, TypeScript, Supabase, PostgreSQL, Edge Functions, RPC functions and APIs, so the specification was checked against a working system daily",
-            "Used Claude and ChatGPT for prototyping, coding, debugging, refactoring, problem-solving and test-data generation",
-            "Prepared and submitted production releases for Google Play and the Apple App Store",
-          ],
-          link: { label: "Product demo:", href: DEMO },
+          title: "Delivery and Project Tracking",
+          terms: ["Task and Project Tracking", "Development Teams, Business Users, QA and Vendors", "Testing and UAT", "System Implementation", "Production Deployment", "Maintenance and Upgrades", "Agile", "Jira"],
         },
       ],
     },
@@ -136,68 +144,80 @@ export const analystEn = {
       title: "Professional Experience",
       jobs: [
         {
-          role: "Senior Systems Analyst | Web Applications & Integrations",
+          role: "Mobile Systems Analyst",
+          org: "Once | Self-Employed",
+          dates: "2026 - Present",
+          bullets: [
+            "Specified a mobile application end to end: business requirements, user journeys, screen flows, states, permissions and edge cases",
+            "Wrote the high level and detailed design for authentication, location services, matching, real-time chat, credit mechanisms, social Circles and notifications: data structures, business logic and the service contracts between the app and its backend",
+            "Planned and tracked the work as a backlog, from each requirement through to acceptance testing against it",
+            "Worked hands-on in the stack it runs on, Node.js, TypeScript, Supabase, PostgreSQL and REST APIs, which keeps a specification something a developer can build and a tester can check",
+          ],
+          link: { label: "Live demo:", href: DEMO },
+        },
+        {
+          role: "Senior Systems Analyst | Web Applications & Core System Interfaces",
           org: "Tidhar Group | Israel | Hybrid",
           dates: "2025 - 2026",
           bullets: [
-            "Analyzed and specified web-based business processes, automations and integrations across Salesforce, Priority ERP and Workato",
-            "Translated business requirements into functional and technical specifications, down to screens, fields, validations and user flows",
-            "Designed data mappings, business logic, integration flows, system interfaces and SQL and ETL processes",
-            "Coordinated business stakeholders, IT teams, vendors, testing and production deployment",
+            "Analyzed and specified Web-based business processes, automations and interfaces between core systems on Salesforce, Priority ERP and Workato",
+            "Gathered business requirements and wrote functional and technical specifications, down to screens, fields, validations and acceptance criteria",
+            "Designed data structures, data mappings, business logic, integration flows, service interfaces and scheduled SQL and ETL jobs",
+            "Tracked tasks and timelines across business users, IT teams and vendors, and led testing, implementation and production deployment",
           ],
         },
         {
-          role: "Senior Systems Analyst | Web Portals & Identity Processes",
+          /* The fold, and it sits a job higher than the Hebrew document's: the
+             same career sets longer in Latin, and an employment entry is never
+             cut across a sheet, so page one ends where the last whole one fits.
+             Page one ends with Tidhar, page two opens here. */
+          breakBefore: true,
+          role: "Senior Systems Analyst | Web Portals & Core Identity Systems",
           org: "Brillix | Israel | Remote",
           dates: "2021 - 2025",
           bullets: [
-            "Analyzed and specified web-based Identity Management solutions for Clalit Health Services, Migdal, Ayalon and LivePerson",
-            "Wrote functional and technical specifications for self-service screens, approval flows, identity processes, interfaces and data transformations",
-            "Designed business logic, data mappings, ETL processes and the interfaces between the portal and the systems behind it",
-            "Led delivery across cybersecurity, DBA, DevOps, infrastructure, IT and business teams",
+            "Analyzed and specified Web-based core Identity Management systems for Clalit Health Services, Migdal, Ayalon and LivePerson",
+            "Wrote functional and technical specifications for self-service screens, approval flows, interfaces and data transformations",
+            "Designed data structures, business logic, data mappings, scheduled ETL and synchronization jobs, and the interfaces behind the portal",
+            "Led delivery across cybersecurity, DBA, DevOps, IT and business teams, through acceptance testing, implementation and support",
           ],
         },
         {
-          /* the fold: page one ends with Brillix, page two opens here */
-          breakBefore: true,
           role: "Systems Analyst | Web Solution, UX and UI Flows",
           org: "Tel Aviv-Yafo Municipality",
           dates: "2020 - 2021",
           bullets: [
-            "Led the analysis and design of a web solution connecting municipal departments and automating cross-organizational workflows",
-            "Modeled business processes, data structures, user journeys and UX and UI flows, screen by screen",
-            "Designed SQL and SSIS integrations and coordinated users, development, DBA, QA and UAT",
+            "Led the analysis and design of a Web solution connecting municipal departments and automating cross-organizational workflows",
+            "Gathered requirements from business users and modeled processes, data structures, user journeys and UX and UI flows",
+            "Designed SQL and SSIS interfaces and coordinated users, development, DBA, QA and UAT",
           ],
         },
         {
-          role: "Web Systems Analyst & Technical Lead | Identity Management",
+          role: "Systems Analyst | Core Identity Systems",
           org: "Amdocs | Israel",
           dates: "2017 - 2020",
           bullets: [
-            "Translated business and security requirements into technical processes, business logic, screens, interfaces and integrations",
-            "Specified system workflows and data flows and guided a Java and JSP web development team",
-            "Coordinated development, cybersecurity, infrastructure, DBA, DevOps, testing and production delivery",
+            "Translated business and security requirements into technical specifications: processes, business logic, screens, interfaces and integrations",
+            "Specified system workflows, data flows and data structures, and accompanied a Java and JSP Web team through implementation, testing and production delivery",
           ],
         },
         {
-          role: "Systems Analyst & Implementation Consultant | Web Identity Platforms",
+          role: "Systems Analyst & Implementation Consultant | Core Identity Platforms",
           org: "ProLink Identity Management Architects | Israel",
           dates: "2014 - 2017",
           bullets: [
-            "Independently analyzed, customized and implemented the Aveksa web platform for Harel, Migdal, Phoenix and Amdocs",
-            "Owned the application-level analysis and implementation, excluding infrastructure",
-            "Specified business logic, workflows, rules, approval screens, data mappings and synchronization processes",
-            "Built integrations with enterprise systems, databases and directories and led testing, deployment and production support",
+            "Independently analyzed, customized and implemented the Aveksa Web platform for Harel, Migdal, Phoenix and Amdocs, at the application level",
+            "Specified business logic, workflows, rules, approval screens, data mappings and scheduled synchronization jobs, and built the interfaces to enterprise systems, databases and directories",
+            "Led testing, implementation and production support",
           ],
         },
         {
-          role: "Systems Analyst & Developer | Enterprise Billing Systems",
+          role: "Systems Analyst | Core Billing Systems",
           org: "Varonis | Israel",
           dates: "2008 - 2014",
           bullets: [
-            "Analyzed, developed and maintained an enterprise billing platform using Microsoft SQL Server, Microsoft Access and VBA",
-            "Translated business requirements into database queries, reports, automations and system enhancements",
-            "Investigated production issues and worked directly with finance and operational stakeholders",
+            "Analyzed, developed and maintained a core enterprise billing system on Microsoft SQL Server, Microsoft Access and VBA",
+            "Translated business requirements into SQL queries, reports, automations and system enhancements, and investigated production issues directly with finance and operations",
           ],
         },
       ],
@@ -208,20 +228,20 @@ export const analystEn = {
       title: "Technical Skills",
       groups: [
         {
-          title: "Web and Mobile",
-          terms: ["Node.js", "TypeScript", "JavaScript", "REST APIs", "Supabase", "Edge Functions", "RPC Functions", "Java", "JSP", "Google Play", "Apple App Store"],
+          title: "Data and Interfaces",
+          terms: ["SQL", "Microsoft SQL Server", "PostgreSQL", "Database Design", "ETL", "SSIS", "Scheduled Jobs", "REST APIs", "Web Services"],
         },
         {
-          title: "Analysis and Data",
-          terms: ["SQL", "Microsoft SQL Server", "PostgreSQL", "Data Modeling", "ETL", "SSIS", "Microsoft Access", "VBA", "Git"],
-        },
-        {
-          title: "Enterprise Platforms",
+          title: "Core Systems and Platforms",
           terms: ["Salesforce", "Priority ERP", "Workato", "Aveksa", "IAM", "IDM", "IGA"],
         },
         {
-          title: "AI and Delivery",
-          terms: ["Claude", "ChatGPT", "AI-Assisted Development", "Rapid Prototyping", "Jira", "Agile", "UAT"],
+          title: "Development Literacy",
+          terms: ["Node.js", "TypeScript", "JavaScript", "Java", "JSP", "Supabase", "Git"],
+        },
+        {
+          title: "Method and Tools",
+          terms: ["Agile", "Jira", "UAT", "Claude", "ChatGPT"],
         },
       ],
     },
@@ -261,8 +281,8 @@ export const analystHe = {
   dir: "rtl",
 
   meta: {
-    title: "אופיר אבירם | מנתח מערכות Mobile ו-Web",
-    description: "קורות החיים של אופיר אבירם. מנתח מערכות Mobile ו-Web עם מעל 15 שנות ניסיון, שרובן עברו על אפיון ותכנון של אפליקציות Web ומובייל: דרישות, מסעות משתמש, זרימות UX ו-UI, לוגיקה עסקית, מודל נתונים וממשקי API.",
+    title: "אופיר אבירם | מנתח מערכות Web, Mobile ומערכות ליבה",
+    description: "קורות החיים של אופיר אבירם. מנתח מערכות עם מעל 15 שנות ניסיון, שרובן עברו על ניתוח ואפיון של מערכות Web ומובייל, מערכות ליבה ארגוניות והממשקים ביניהן: איסוף דרישות, מסמכי אפיון פונקציונליים וטכניים, מבני נתונים, SQL, בדיקות והטמעה.",
   },
 
   share: { title: SHARE_TITLE, description: SUMMARY_HE[0], locale: "he_IL", image: SHARE_IMAGE },
@@ -270,11 +290,11 @@ export const analystHe = {
 
   name: "אופיר אבירם",
   roles: [
-    "מנתח מערכות Mobile ו-Web",
-    "אפיון דרישות, מסעות משתמש, זרימות UX ו-UI ואספקה מקצה לקצה",
+    "מנתח מערכות | Web, Mobile ומערכות ליבה",
+    "איסוף דרישות, אפיון פונקציונלי וטכני, ממשקים ואספקה מקצה לקצה",
   ],
   contact: [
-    { text: "הוד השרון, ישראל" },
+    { text: "הוד השרון" },
     { text: "058-707-8708", href: CONTACT.phoneHref },
     { text: CONTACT.mail, href: CONTACT.mailHref },
     { text: CONTACT.linkedin, href: CONTACT.linkedinHref },
@@ -292,45 +312,20 @@ export const analystHe = {
       title: "תחומי מומחיות",
       groups: [
         {
-          title: "ניתוח מערכות Mobile ו-Web",
-          terms: ["אפיון ותכנון של אפליקציות Web, אפליקציות מובייל והשירותים שמאחוריהן, מהדרישה הראשונה דרך מסע המשתמש והמסכים ועד מודל הנתונים והממשקים"],
+          title: "דרישות ומסמכי אפיון",
+          terms: ["איסוף דרישות עסקיות", "אפיון פונקציונלי", "אפיון טכני", "High Level Design", "Detailed Design", "תרחישי שימוש וסיפורי משתמש", "קריטריוני קבלה"],
         },
         {
-          title: "דרישות ואפיון",
-          terms: ["איסוף דרישות", "אפיון פונקציונלי וטכני", "תרחישי שימוש וסיפורי משתמש", "מידול תהליכים עסקיים", "קריטריוני קבלה"],
+          title: "ממשקים ונתונים",
+          terms: ["מערכות ליבה: ERP, חיוב, זהויות", "ממשקים בין מערכות", "Web Services", "REST APIs", "אינטגרציה בין מערכות קיימות לחדשות", "תכנון ועיצוב מבני נתונים", "שאילתות SQL", "ETL ותהליכים מתוזמנים"],
         },
         {
           title: "מוצר וממשק",
           terms: ["מסעות משתמש", "זרימות מסכים", "אפיון UX ו-UI", "התנהגות ברמת השדה", "הרשאות ומצבים", "מקרי קצה ושגיאות"],
         },
         {
-          title: "נתונים וממשקים",
-          terms: ["מידול נתונים", "SQL", "REST APIs", "חוזים בין לקוח לשרת", "זרימות אינטגרציה", "ETL"],
-        },
-        {
-          title: "הובלת אספקה",
-          terms: ["ניהול בעלי עניין", "הובלה חוצת ארגון", "בדיקות", "בדיקות קבלה", "עלייה לייצור ועבודה במתודולוגיית Agile"],
-        },
-      ],
-    },
-
-    {
-      type: "roles",
-      title: "ניסיון מוצר נבחר",
-      jobs: [
-        {
-          role: "מנהל מוצר ומנתח מערכות מובייל",
-          org: "Once | עצמאי",
-          dates: "2026 - היום",
-          bullets: [
-            "אפיון מוצר מובייל מקצה לקצה: מסעות משתמש, זרימות מסכים, מצבים, הרשאות ומקרי הקצה שהאפליקציה צריכה לענות עליהם",
-            "מידול הנתונים, הלוגיקה העסקית והתהליכים בזמן אמת שמאחורי המסכים, והגדרת החוזים בין האפליקציה לשרת",
-            "אפיון מנגנוני הזדהות, שירותי מיקום, התאמות, צ'אט בזמן אמת, מנגנון קרדיטים, מעגלים חברתיים והתראות",
-            "מימוש מה שאופיין באמצעות Node.js, TypeScript, Supabase, PostgreSQL, Edge Functions, RPC Functions וממשקי API, כך שהאפיון נבחן מול מערכת עובדת מדי יום",
-            "שימוש ב-Claude וב-ChatGPT לאב טיפוס, כתיבת קוד, פתרון תקלות, ריפקטורינג ויצירת נתוני בדיקה",
-            "הכנה והגשה של גרסאות ייצור ל-Google Play ול-Apple App Store",
-          ],
-          link: { label: "הדגמת המוצר:", href: DEMO },
+          title: "הובלת אספקה ומעקב פרויקטים",
+          terms: ["ניהול ומעקב אחר משימות ופרויקטים", "הנחיית צוותי פיתוח", "עבודה מול משתמשים עסקיים, בדיקות וספקים", "בדיקות ובדיקות קבלה", "הטמעת מערכות", "עלייה לייצור", "תחזוקה ושדרוגים", "Agile", "Jira"],
         },
       ],
     },
@@ -340,25 +335,37 @@ export const analystHe = {
       title: "ניסיון תעסוקתי",
       jobs: [
         {
-          role: "מנתח מערכות בכיר | אפליקציות Web ואינטגרציות",
-          org: "קבוצת תדהר | ישראל | היברידי",
+          role: "מנתח מערכות מובייל",
+          org: "Once | עצמאי",
+          dates: "2026 - היום",
+          bullets: [
+            "אפיון אפליקציית מובייל מקצה לקצה: דרישות עסקיות, מסעות משתמש, זרימות מסכים, מצבים, הרשאות ומקרי קצה",
+            "אפיון מנגנוני הזדהות, שירותי מיקום, התאמות, צ'אט בזמן אמת, מנגנון קרדיטים, מעגלים חברתיים והתראות",
+            "תכנון ומעקב אחר המשימות כ-Backlog, מכל דרישה ועד בדיקות קבלה מול ההגדרה שממנה הגיעה",
+            "עבודה מעשית בסביבה שבה האפליקציה רצה, Node.js, TypeScript, Supabase, PostgreSQL וממשקי REST, מה ששומר על אפיון שמפתח יכול לממש ובודק יכול לבדוק",
+          ],
+          link: { label: "הדגמה חיה:", href: DEMO },
+        },
+        {
+          role: "מנתח מערכות בכיר | אפליקציות Web וממשקים למערכות ליבה",
+          org: "קבוצת תדהר | היברידי",
           dates: "2025 - 2026",
           bullets: [
-            "אפיון תהליכים עסקיים, אוטומציות ואינטגרציות מבוססי Web על גבי Salesforce, Priority ERP ו-Workato",
-            "תרגום דרישות עסקיות לאפיונים פונקציונליים וטכניים, עד לרמת המסכים, השדות, הוולידציות וזרימות המשתמש",
-            "תכנון מיפויי נתונים, לוגיקה עסקית, זרימות אינטגרציה, ממשקי מערכת ותהליכי SQL ו-ETL",
-            "תיאום בין גורמים עסקיים, צוותי IT, ספקים, בדיקות ועלייה לייצור",
+            "ניתוח ואפיון של תהליכים עסקיים, אוטומציות וממשקים בין מערכות ליבה על גבי Salesforce, Priority ERP ו-Workato",
+            "איסוף דרישות עסקיות וכתיבת מסמכי אפיון פונקציונליים וטכניים, עד לרמת המסכים, השדות, הוולידציות, זרימות המשתמש וקריטריוני הקבלה",
+            "תכנון מבני נתונים, מיפויי נתונים, לוגיקה עסקית, זרימות אינטגרציה, ממשקי שירות ותהליכי SQL ו-ETL מתוזמנים",
+            "מעקב אחר משימות ולוחות זמנים מול משתמשים עסקיים, צוותי IT וספקים, והובלת בדיקות, הטמעה ועלייה לייצור",
           ],
         },
         {
-          role: "מנתח מערכות בכיר | פורטלי Web ותהליכי זהות",
-          org: "בריליקס | ישראל | מרחוק",
+          role: "מנתח מערכות בכיר | פורטלי Web ומערכות ליבה של זהויות",
+          org: "בריליקס | מרחוק",
           dates: "2021 - 2025",
           bullets: [
-            "אפיון ותכנון של פתרונות ניהול זהויות מבוססי Web עבור שירותי בריאות כללית, מגדל, איילון ו-LivePerson",
-            "כתיבת אפיונים פונקציונליים וטכניים למסכי שירות עצמי, תהליכי אישור, תהליכי זהות, ממשקים וטרנספורמציות נתונים",
-            "תכנון לוגיקה עסקית, מיפויי נתונים, תהליכי ETL והממשקים בין הפורטל למערכות שמאחוריו",
-            "הובלת האספקה מול צוותי סייבר, DBA, DevOps, תשתיות, IT וגורמים עסקיים",
+            "ניתוח ואפיון של מערכות ליבה לניהול זהויות מבוססות Web עבור שירותי בריאות כללית, מגדל, איילון ו-LivePerson",
+            "כתיבת מסמכי אפיון פונקציונליים וטכניים למסכי שירות עצמי, תהליכי אישור, תהליכי זהות, ממשקים וטרנספורמציות נתונים",
+            "תכנון מבני נתונים, לוגיקה עסקית, מיפויי נתונים, תהליכי ETL וסנכרון מתוזמנים, והממשקים בין הפורטל למערכות שמאחוריו",
+            "הובלת האספקה מול צוותי סייבר, DBA, DevOps, תשתיות, IT וגורמים עסקיים, ועד בדיקות קבלה, הטמעה ותמיכה בייצור",
           ],
         },
         {
@@ -368,39 +375,39 @@ export const analystHe = {
           org: "עיריית תל אביב-יפו",
           dates: "2020 - 2021",
           bullets: [
-            "הובלת האפיון והתכנון של פתרון Web שחיבר בין יחידות עירוניות וביצע אוטומציה של תהליכים חוצי ארגון",
-            "מידול תהליכים עסקיים, מבני נתונים, מסעות משתמשים וזרימות UX ו-UI, מסך אחרי מסך",
-            "תכנון אינטגרציות SQL ו-SSIS ותיאום בין משתמשים, פיתוח, DBA, QA ובדיקות קבלה",
+            "הובלת הניתוח והאפיון של פתרון Web שחיבר בין יחידות עירוניות וביצע אוטומציה של תהליכים חוצי ארגון",
+            "איסוף דרישות ממשתמשים עסקיים ומידול תהליכים עסקיים, מבני נתונים, מסעות משתמשים וזרימות UX ו-UI, מסך אחרי מסך",
+            "תכנון ממשקי SQL ו-SSIS ותיאום בין משתמשים, פיתוח, DBA, QA ובדיקות קבלה",
           ],
         },
         {
-          role: "מנתח מערכות Web וראש צוות טכני | ניהול זהויות",
-          org: "אמדוקס | ישראל",
+          role: "מנתח מערכות | מערכות ליבה לניהול זהויות",
+          org: "אמדוקס",
           dates: "2017 - 2020",
           bullets: [
-            "תרגום דרישות עסקיות ודרישות אבטחת מידע לתהליכים טכניים, לוגיקה עסקית, מסכים, ממשקים ואינטגרציות",
-            "אפיון תהליכי מערכת וזרימות נתונים והנחיית צוות פיתוח Web שעבד ב-Java וב-JSP",
+            "תרגום דרישות עסקיות ודרישות אבטחת מידע למסמכי אפיון טכניים: תהליכים, לוגיקה עסקית, מסכים, ממשקים ואינטגרציות",
+            "אפיון תהליכי מערכת, זרימות נתונים ומבני נתונים, וליווי צוות פיתוח Web שעבד ב-Java וב-JSP לאורך היישום, הבדיקות והעלייה לייצור",
             "תיאום בין צוותי פיתוח, סייבר, תשתיות, DBA, DevOps, בדיקות ועלייה לייצור",
           ],
         },
         {
-          role: "מנתח מערכות ויועץ הטמעה | פלטפורמות זהות מבוססות Web",
-          org: "פרולינק ניהול זהויות | ישראל",
+          role: "מנתח מערכות ויועץ הטמעה | פלטפורמות ליבה לניהול זהויות",
+          org: "פרולינק ניהול זהויות",
           dates: "2014 - 2017",
           bullets: [
-            "אפיון, התאמה והטמעה עצמאית של פלטפורמת Aveksa מבוססת Web בהראל, מגדל, הפניקס ואמדוקס",
-            "אחריות על האפיון והמימוש בשכבת האפליקציה, למעט תשתיות",
-            "אפיון לוגיקה עסקית, תהליכי עבודה, חוקים, מסכי אישור, מיפויי נתונים ותהליכי סנכרון",
-            "בניית אינטגרציות למערכות ארגוניות, בסיסי נתונים ושירותי Directory והובלת בדיקות, הטמעה ותמיכה בייצור",
+            "ניתוח, התאמה והטמעה עצמאית של פלטפורמת Aveksa מבוססת Web בהראל, מגדל, הפניקס ואמדוקס",
+            "אחריות על הניתוח והמימוש בשכבת האפליקציה, למעט תשתיות",
+            "אפיון לוגיקה עסקית, תהליכי עבודה, חוקים, מסכי אישור, מיפויי נתונים ותהליכי סנכרון מתוזמנים",
+            "בניית ממשקים למערכות ארגוניות, בסיסי נתונים ושירותי Directory והובלת בדיקות, הטמעה ותמיכה בייצור",
           ],
         },
         {
-          role: "מנתח מערכות ומפתח | מערכות חיוב ארגוניות",
-          org: "Varonis | ישראל",
+          role: "מנתח מערכות | מערכות ליבה לחיוב",
+          org: "Varonis",
           dates: "2008 - 2014",
           bullets: [
-            "אפיון, פיתוח ותחזוקה של מערכת חיוב ארגונית באמצעות Microsoft SQL Server, Microsoft Access ו-VBA",
-            "תרגום דרישות עסקיות לשאילתות, דוחות, אוטומציות ושיפורים במערכת",
+            "ניתוח, פיתוח ותחזוקה של מערכת ליבה לחיוב ארגוני באמצעות Microsoft SQL Server, Microsoft Access ו-VBA",
+            "תרגום דרישות עסקיות לשאילתות SQL, דוחות, אוטומציות ושיפורים במערכת",
             "חקירת תקלות בייצור ועבודה ישירה מול גורמי כספים ותפעול",
           ],
         },
@@ -412,20 +419,20 @@ export const analystHe = {
       title: "כישורים טכניים",
       groups: [
         {
-          title: "Web ומובייל",
-          terms: ["Node.js", "TypeScript", "JavaScript", "REST APIs", "Supabase", "Edge Functions", "RPC Functions", "Java", "JSP", "Google Play", "Apple App Store"],
+          title: "נתונים וממשקים",
+          terms: ["SQL", "Microsoft SQL Server", "PostgreSQL", "Database Design", "ETL", "SSIS", "תהליכים מתוזמנים", "REST APIs", "Web Services"],
         },
         {
-          title: "ניתוח ונתונים",
-          terms: ["SQL", "Microsoft SQL Server", "PostgreSQL", "Data Modeling", "ETL", "SSIS", "Microsoft Access", "VBA", "Git"],
-        },
-        {
-          title: "פלטפורמות ארגוניות",
+          title: "מערכות ליבה ופלטפורמות",
           terms: ["Salesforce", "Priority ERP", "Workato", "Aveksa", "IAM", "IDM", "IGA"],
         },
         {
-          title: "כלי AI ואספקה",
-          terms: ["Claude", "ChatGPT", "AI-Assisted Development", "Rapid Prototyping", "Jira", "Agile", "UAT"],
+          title: "היכרות עם סביבת הפיתוח",
+          terms: ["Node.js", "TypeScript", "JavaScript", "Java", "JSP", "Supabase", "Git"],
+        },
+        {
+          title: "מתודולוגיה וכלים",
+          terms: ["Agile", "Jira", "UAT", "Claude", "ChatGPT", "AI-Assisted Development"],
         },
       ],
     },

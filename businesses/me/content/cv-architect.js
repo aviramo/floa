@@ -258,7 +258,7 @@ export const architectHe = {
     "אפליקציות ארגוניות, אינטגרציות ופיתוח מוצר בעזרת AI",
   ],
   contact: [
-    { text: "הוד השרון, ישראל" },
+    { text: "הוד השרון" },
     { text: "058-707-8708", href: CONTACT.phoneHref },
     { text: CONTACT.mail, href: CONTACT.mailHref },
     { text: CONTACT.linkedin, href: CONTACT.linkedinHref },
@@ -321,7 +321,7 @@ export const architectHe = {
       jobs: [
         {
           role: "מנתח מערכות בכיר | אינטגרציות ותכנון פתרונות",
-          org: "קבוצת תדהר | ישראל | היברידי",
+          org: "קבוצת תדהר | היברידי",
           dates: "2025 - 2026",
           bullets: [
             "הובלת ניתוח ואספקה של תהליכים עסקיים, אוטומציות ואינטגרציות על גבי Salesforce, Priority ERP ו-Workato",
@@ -332,7 +332,7 @@ export const architectHe = {
         },
         {
           role: "מנתח מערכות בכיר | תכנון פתרונות IDM",
-          org: "בריליקס | ישראל | מרחוק",
+          org: "בריליקס | מרחוק",
           dates: "2021 - 2025",
           bullets: [
             "תכנון והטמעה של פתרונות ניהול זהויות עבור שירותי בריאות כללית, מגדל, איילון ו-LivePerson",
@@ -355,7 +355,7 @@ export const architectHe = {
         },
         {
           role: "מנתח מערכות ניהול זהויות וראש צוות טכני",
-          org: "אמדוקס | ישראל",
+          org: "אמדוקס",
           dates: "2017 - 2020",
           bullets: [
             "תרגום דרישות עסקיות ודרישות אבטחת מידע לתהליכים טכניים, לוגיקה עסקית, ממשקים ואינטגרציות",
@@ -365,7 +365,7 @@ export const architectHe = {
         },
         {
           role: "יועץ הטמעה ומפתח פתרונות IDM",
-          org: "פרולינק ניהול זהויות | ישראל",
+          org: "פרולינק ניהול זהויות",
           dates: "2014 - 2017",
           bullets: [
             "התאמה והטמעה עצמאית של פלטפורמת Aveksa לניהול זהויות וממשל הרשאות בהראל, מגדל, הפניקס ואמדוקס",
@@ -376,7 +376,7 @@ export const architectHe = {
         },
         {
           role: "מפתח תוכנה | מערכות חיוב ארגוניות",
-          org: "Varonis | ישראל",
+          org: "Varonis",
           dates: "2008 - 2014",
           bullets: [
             "פיתוח ותחזוקה של מערכת חיוב ארגונית באמצעות Microsoft SQL Server, Microsoft Access ו-VBA",
