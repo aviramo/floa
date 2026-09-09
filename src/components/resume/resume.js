@@ -90,7 +90,7 @@ const BLOCK = {
      Auto means each group decides for itself, and nothing here names a
      language. */
   keywords: (s, t) => s.groups.map((group) => html`
-        <p class="cv-kw" dir="auto"><span class="cv-kw__title">${group.title}:</span> ${t(group.terms.join(", "))}</p>`),
+        <p class="cv-kw" dir="auto"><span class="cv-kw__title">${t(group.title)}:</span> ${t(group.terms.join(", "))}</p>`),
 
   roles: (s, t) => s.jobs.map((job) => html`
         <div class="${job.breakBefore ? "cv-job cv-job--page" : "cv-job"}">
