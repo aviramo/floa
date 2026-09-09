@@ -35,11 +35,16 @@ const DIST = join(ROOT, "dist");
 /* The PDFs are files of the BUSINESS, like its share cards (scripts/gen_og.mjs):
    they land in its public/ folder, the build copies them into its site, and the
    CV page links to them. So they are committed — generated source, but source. */
-const OUT = join(ROOT, "businesses/me/public/cv/architect");
+const OUT = join(ROOT, "businesses/me/public");
 
+/* One row per page the business publishes. A document's PDF sits beside the
+   page it was printed from, under the same slug, which is the shape
+   cv-shared.js writes the download link in. */
 const PAGES = [
-  { path: "/me/cv/architect/", file: "ofir-aviram-cv.pdf" },
-  { path: "/me/cv/architect/he/", file: "ofir-aviram-cv-he.pdf" },
+  { path: "/cv/architect/", file: "architect/ofir-aviram-cv.pdf" },
+  { path: "/cv/architect/he/", file: "architect/ofir-aviram-cv-he.pdf" },
+  { path: "/cv/analyst/", file: "analyst/ofir-aviram-cv.pdf" },
+  { path: "/cv/analyst/he/", file: "analyst/ofir-aviram-cv-he.pdf" },
 ];
 
 /* --- the browser ----------------------------------------------------------- */
@@ -65,7 +70,7 @@ if (!chrome) {
    actually live rather than from a rehearsal of it. */
 const TYPES = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".svg": "image/svg+xml", ".png": "image/png", ".webp": "image/webp", ".ico": "image/x-icon" };
 
-if (!existsSync(join(DIST, "me/cv/architect/index.html"))) {
+if (!existsSync(join(DIST, "cv/architect/index.html"))) {
   console.error("gen_cv_pdf: dist/ has no CV in it. Run `node build.mjs` first.");
   process.exit(1);
 }
@@ -84,7 +89,7 @@ const server = createServer((req, res) => {
 await new Promise((ok) => server.listen(0, "127.0.0.1", ok));
 const origin = `http://127.0.0.1:${server.address().port}`;
 
-mkdirSync(OUT, { recursive: true });
+for (const page of PAGES) mkdirSync(dirname(join(OUT, page.file)), { recursive: true });
 
 /* --- print -----------------------------------------------------------------
    --no-pdf-header-footer is the whole point of the file. The virtual time
@@ -110,7 +115,7 @@ try {
   for (const page of PAGES) {
     const out = join(OUT, page.file);
     await print(origin + page.path, out);
-    console.log(`✓ businesses/me/public/cv/architect/${page.file}`);
+    console.log(`✓ businesses/me/public/${page.file}`);
   }
 } finally {
   server.close();

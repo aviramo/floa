@@ -7,7 +7,8 @@
    favicon, and that is the whole of what is needed here.
 
    `folder` is where its files sit on the domain. Every business gets one, and
-   this one is /me/.
+   this one is /cv/ — the documents it ships are CVs, and the address a person
+   is handed should say so.
    ========================================================================== */
 export const site = {
   brand: "Ofir Aviram",
@@ -15,7 +16,7 @@ export const site = {
   dir: "ltr",
   locale: "en_US",
   origin: "https://floa.co.il",
-  folder: "me/",
+  folder: "cv/",
   tagline: "Solution Architect and Senior Systems Analyst",
   slogan: "Enterprise applications, integrations and AI-assisted product delivery",
 

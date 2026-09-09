@@ -6,16 +6,19 @@ import { render as renderCv } from "./cv.js";
 /* ==========================================================================
    What this business emits, and where.
 
-     dist/me/cv/architect/index.html      floa.co.il/me/cv/architect/
-     dist/me/cv/architect/he/index.html   floa.co.il/me/cv/architect/he/
+     dist/cv/architect/index.html      floa.co.il/cv/architect/
+     dist/cv/architect/he/index.html   floa.co.il/cv/architect/he/
+     dist/cv/analyst/index.html        floa.co.il/cv/analyst/
+     dist/cv/analyst/he/index.html     floa.co.il/cv/analyst/he/
 
-   Nothing is emitted at /me/ or at /me/cv/. On a static host an address exists
-   only if a file was written for it, so both of those 404 — which is the point:
-   the document has one address, and a shortened guess at it leads nowhere.
+   Nothing is emitted at /cv/ itself. On a static host an address exists only if
+   a file was written for it, so it 404s — which is the point: there is no index
+   of the résumés, and a shortened guess at one leads nowhere.
 
    Each page carries its own depth. `base` is how it reaches this business's
    stylesheet, `homeHref` how it would reach a homepage — there is none here, so
-   it points at the business folder and nothing links to it.
+   it points at the business folder and nothing links to it. Both come out of
+   ../content/cv-shared.js, from the document's slug and language.
    ========================================================================== */
 export const pages = cvPages.map((cv) => ({
   out: cv.out,
