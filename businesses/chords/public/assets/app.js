@@ -3434,11 +3434,24 @@
      two segments where there were four has been given exactly what a printed
      page gives them when they hold it closer. */
 
-  /* AND NEVER MORE THAN FOUR ACROSS. A count and not a width, which is why it
-     is still a number: past four, finding the top of the next segment means
-     crossing a screen's width of other people's lines, and whoever is reading
-     this has a guitar in their hands and is two steps back from the screen. */
-  var COL_MAX = 4;
+  /* THERE WAS A CEILING HERE, four segments, and what it was afraid of was a
+     reader two steps back from the screen having to cross the whole of it to
+     find the top of the next one. What it actually bought was the opposite.
+
+     HOW MANY SEGMENTS THERE ARE IS ALREADY ANSWERED BY THE SONG, further down:
+     the count comes back off the top until there is no segment the song has
+     nothing to put in (see the second loop in planColumns). So a short song on
+     a wide screen stands in two whatever a ceiling says, and the ceiling could
+     only ever bite on a song that needed MORE than four. Which is exactly the
+     song that then had to be read a screenful at a time, with the room for
+     another three segments held empty at the two ends of every one of them.
+
+     A PAGE TURN WAS BEING BOUGHT WITH WIDTH THAT WAS GOING UNUSED, and a page
+     turn is the one thing a person playing from a screen cannot afford: both
+     hands are on the instrument. The room answers it now, the same way it
+     answers everything else here. As many segments as the song can stand at
+     the width there is, and never more than the song has song to fill them
+     with. */
 
   /* HOW MANY SEGMENTS THERE WERE LAST TIME, and how many there must go on
      being while two fingers are on the song. The words follow the fingers, as
@@ -3783,7 +3796,7 @@
        rather than about a class of device. */
     var need = Math.max(song.middle, song.word);
     var cols = 1;
-    while (cols < COL_MAX && share(cols + 1) >= need) cols++;
+    while (share(cols + 1) >= need) cols++;
 
     /* AND NEVER MORE THAN THE SONG HAS SONG TO FILL THEM WITH. A fourth
        segment with nothing in it is a quarter of the window held empty. Asked

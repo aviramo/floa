@@ -14,20 +14,32 @@
    applications, mobile applications and the organisation's core systems, and
    the interfaces between them.
 
-   AND IT STAYS THERE. NO TITLE ON IT IS ANYTHING BUT AN ANALYST.
+   NO TITLE ON IT IS ANYTHING BUT AN ANALYST. THE KNOWLEDGE UNDER THEM IS ALL
+   STILL THERE.
 
-   The risk this document runs is not that it says too little. It is that a
-   hiring manager reads "Solution Architect", "Product Owner", "Technical Lead"
-   or "Developer" and concludes the man is too big for the job and will leave
-   inside a year, and never calls. So none of those words appear. Every role is
-   titled Systems Analyst, the product section was folded into the employment
-   history rather than standing over it, and the one line about writing code is
-   there for a reason an analyst can use: a specification that has been built
-   and tested is a specification a developer can build and a tester can check.
+   Two opposite mistakes are available here and the document has to miss both.
 
-   Everything cut is still true and still on the architect CV. It is the same
-   career; this document is simply the analyst's half of it, and it does not
-   apologise for the half it leaves out.
+   The first is over-qualifying. A hiring manager who reads "Solution
+   Architect", "Product Owner", "Technical Lead" or "Developer" in a TITLE
+   concludes the man is too big for the job, will leave inside a year, and does
+   not call. So none of those words title anything. Every role is Systems
+   Analyst, and the product work was folded into the employment history rather
+   than standing in a section above it.
+
+   The second is hiding what he knows. Development knowledge, hands-on, is
+   something these employers actively want in an analyst: it is why a
+   specification of his is one a developer can actually build. So the stack is
+   named, in the summary, in the Once entry and in its own row of Technical
+   Skills, and guiding a development team stays in the Amdocs bullets.
+
+   The line between the two is a job title against a skill. He is not applying
+   as a developer; he is an analyst who has built the thing he specifies.
+
+   And data. Reading the source data is where each of these specifications
+   actually started, so it is said: Varonis is titled Systems and Data Analyst,
+   and the analysis of source data opens the design bullet at Tidhar, Brillix
+   and Tel Aviv. Data Analysis is named in Core Expertise rather than left to be
+   inferred from the letters S, Q and L.
 
    WHAT IT IS AIMED AT, AND WHY IT SAYS WHAT IT SAYS
 
@@ -75,12 +87,14 @@ const SUMMARY_EN = [
   "Systems Analyst with 15+ years of experience, most of them analyzing and specifying Web and Mobile systems, organizational core systems and the interfaces between them.",
   "Gathers business requirements and writes what follows: functional and technical specifications, high level and detailed design, data structures, interface and web service definitions, SQL queries and acceptance criteria.",
   "Carries it to production: task and project tracking, guiding development teams, working with business users, UX and UI, QA and vendors, through acceptance testing, implementation and support, in Agile delivery.",
+  "Knows the technology hands-on: Node.js, TypeScript, Supabase, PostgreSQL, SQL and AI-assisted development tools, which is what keeps a specification something a developer can actually build.",
 ];
 
 const SUMMARY_HE = [
   "מנתח מערכות עם מעל 15 שנות ניסיון, שרובן עברו על ניתוח ואפיון של מערכות Web ומובייל, מערכות ליבה ארגוניות והממשקים ביניהן.",
   "אוסף דרישות עסקיות וכותב את המסמכים שנגזרים מהן: אפיון פונקציונלי, אפיון טכני ברמת High Level ו-Detailed Design, מבני נתונים, הגדרות ממשקים ו-Web Services, שאילתות SQL וקריטריוני קבלה.",
   "מלווה את התהליך עד לייצור: מעקב אחר משימות ולוחות זמנים, הנחיית צוותי פיתוח, עבודה מול משתמשים עסקיים, UX ו-UI, בדיקות וספקים, ועד בדיקות קבלה, הטמעה ותמיכה שוטפת, בעבודה במתודולוגיית Agile.",
+  "ומכיר את הטכנולוגיה hands-on: Node.js, TypeScript, Supabase, PostgreSQL, SQL וכלי פיתוח מבוססי AI, וזה מה ששומר על אפיון שמפתח באמת יכול לממש.",
 ];
 
 /* --- English ---------------------------------------------------------------- */
@@ -126,7 +140,7 @@ export const analystEn = {
         },
         {
           title: "Interfaces and Data",
-          terms: ["Core Systems: ERP, Billing, Identity", "System Interfaces", "Web Services", "REST APIs", "Integration of Existing and New Systems", "Data Structure Design", "SQL Queries", "ETL and Scheduled Jobs"],
+          terms: ["Core Systems: ERP, Billing, Identity", "System Interfaces", "Web Services", "REST APIs", "Integration of Existing and New Systems", "Data Analysis", "Data Structure Design", "SQL Queries and Reports", "ETL and Scheduled Jobs"],
         },
         {
           title: "Product and Interface",
@@ -151,7 +165,8 @@ export const analystEn = {
             "Specified a mobile application end to end: business requirements, user journeys, screen flows, states, permissions and edge cases",
             "Wrote the high level and detailed design for authentication, location services, matching, real-time chat, credit mechanisms, social Circles and notifications: data structures, business logic and the service contracts between the app and its backend",
             "Planned and tracked the work as a backlog, from each requirement through to acceptance testing against it",
-            "Worked hands-on in the stack it runs on, Node.js, TypeScript, Supabase, PostgreSQL and REST APIs, which keeps a specification something a developer can build and a tester can check",
+            "Hands-on across the stack it runs on, Node.js, TypeScript, Supabase, PostgreSQL, Edge Functions, RPC functions and REST APIs, with Claude and ChatGPT for prototyping, debugging and test data",
+            "Prepared and submitted the production releases for Google Play and the Apple App Store",
           ],
           link: { label: "Live demo:", href: DEMO },
         },
@@ -162,7 +177,7 @@ export const analystEn = {
           bullets: [
             "Analyzed and specified Web-based business processes, automations and interfaces between core systems on Salesforce, Priority ERP and Workato",
             "Gathered business requirements and wrote functional and technical specifications, down to screens, fields, validations and acceptance criteria",
-            "Designed data structures, data mappings, business logic, integration flows, service interfaces and scheduled SQL and ETL jobs",
+            "Analyzed the source data and designed data structures, mappings, business logic, integration flows, service interfaces and scheduled SQL and ETL jobs",
             "Tracked tasks and timelines across business users, IT teams and vendors, and led testing, implementation and production deployment",
           ],
         },
@@ -178,7 +193,7 @@ export const analystEn = {
           bullets: [
             "Analyzed and specified Web-based core Identity Management systems for Clalit Health Services, Migdal, Ayalon and LivePerson",
             "Wrote functional and technical specifications for self-service screens, approval flows, interfaces and data transformations",
-            "Designed data structures, business logic, data mappings, scheduled ETL and synchronization jobs, and the interfaces behind the portal",
+            "Analyzed the source data and designed data structures, business logic, mappings, scheduled ETL and synchronization jobs, and the interfaces behind the portal",
             "Led delivery across cybersecurity, DBA, DevOps, IT and business teams, through acceptance testing, implementation and support",
           ],
         },
@@ -189,7 +204,7 @@ export const analystEn = {
           bullets: [
             "Led the analysis and design of a Web solution connecting municipal departments and automating cross-organizational workflows",
             "Gathered requirements from business users and modeled processes, data structures, user journeys and UX and UI flows",
-            "Designed SQL and SSIS interfaces and coordinated users, development, DBA, QA and UAT",
+            "Analyzed the departments' data, designed SQL and SSIS interfaces, and coordinated users, development, DBA, QA and UAT",
           ],
         },
         {
@@ -198,7 +213,7 @@ export const analystEn = {
           dates: "2017 - 2020",
           bullets: [
             "Translated business and security requirements into technical specifications: processes, business logic, screens, interfaces and integrations",
-            "Specified system workflows, data flows and data structures, and accompanied a Java and JSP Web team through implementation, testing and production delivery",
+            "Specified system workflows, data flows and data structures, and guided a Java and JSP Web development team through implementation, testing and production delivery",
           ],
         },
         {
@@ -212,12 +227,12 @@ export const analystEn = {
           ],
         },
         {
-          role: "Systems Analyst | Core Billing Systems",
+          role: "Systems and Data Analyst | Core Billing Systems",
           org: "Varonis | Israel",
           dates: "2008 - 2014",
           bullets: [
             "Analyzed, developed and maintained a core enterprise billing system on Microsoft SQL Server, Microsoft Access and VBA",
-            "Translated business requirements into SQL queries, reports, automations and system enhancements, and investigated production issues directly with finance and operations",
+            "Analyzed billing data and turned business questions into SQL queries, reports and automations, and investigated production issues directly with finance and operations",
           ],
         },
       ],
@@ -236,8 +251,8 @@ export const analystEn = {
           terms: ["Salesforce", "Priority ERP", "Workato", "Aveksa", "IAM", "IDM", "IGA"],
         },
         {
-          title: "Development Literacy",
-          terms: ["Node.js", "TypeScript", "JavaScript", "Java", "JSP", "Supabase", "Git"],
+          title: "Development Knowledge, Hands-On",
+          terms: ["Node.js", "TypeScript", "JavaScript", "Supabase", "Edge Functions", "RPC Functions", "Java", "JSP", "VBA", "Git"],
         },
         {
           title: "Method and Tools",
@@ -248,7 +263,7 @@ export const analystEn = {
 
     {
       type: "entries",
-      title: "Education",
+      title: "Education and Service",
       entries: [
         {
           title: "PRODUCT MANAGEMENT PROGRAM",
@@ -258,13 +273,6 @@ export const analystEn = {
           title: "B.SC. INDUSTRIAL ENGINEERING AND MANAGEMENT",
           lines: ["Information Systems Specialization", "Ben-Gurion University of the Negev | 2004 - 2008"],
         },
-      ],
-    },
-
-    {
-      type: "entries",
-      title: "Military Service",
-      entries: [
         {
           title: "COMBAT SOLDIER AND COMMANDER",
           lines: ["Combat Engineering Corps | 1999 - 2002"],
@@ -317,7 +325,7 @@ export const analystHe = {
         },
         {
           title: "ממשקים ונתונים",
-          terms: ["מערכות ליבה: ERP, חיוב, זהויות", "ממשקים בין מערכות", "Web Services", "REST APIs", "אינטגרציה בין מערכות קיימות לחדשות", "תכנון ועיצוב מבני נתונים", "שאילתות SQL", "ETL ותהליכים מתוזמנים"],
+          terms: ["מערכות ליבה: ERP, חיוב, זהויות", "ממשקים בין מערכות", "Web Services", "REST APIs", "אינטגרציה בין מערכות קיימות לחדשות", "ניתוח נתונים", "תכנון ועיצוב מבני נתונים", "שאילתות SQL ודוחות", "ETL ותהליכים מתוזמנים"],
         },
         {
           title: "מוצר וממשק",
@@ -342,7 +350,8 @@ export const analystHe = {
             "אפיון אפליקציית מובייל מקצה לקצה: דרישות עסקיות, מסעות משתמש, זרימות מסכים, מצבים, הרשאות ומקרי קצה",
             "אפיון מנגנוני הזדהות, שירותי מיקום, התאמות, צ'אט בזמן אמת, מנגנון קרדיטים, מעגלים חברתיים והתראות",
             "תכנון ומעקב אחר המשימות כ-Backlog, מכל דרישה ועד בדיקות קבלה מול ההגדרה שממנה הגיעה",
-            "עבודה מעשית בסביבה שבה האפליקציה רצה, Node.js, TypeScript, Supabase, PostgreSQL וממשקי REST, מה ששומר על אפיון שמפתח יכול לממש ובודק יכול לבדוק",
+            "עבודה hands-on בסביבה שבה האפליקציה רצה, Node.js, TypeScript, Supabase, PostgreSQL, Edge Functions, RPC Functions וממשקי REST, בעזרת Claude ו-ChatGPT לאב טיפוס, פתרון תקלות ונתוני בדיקה",
+            "הכנה והגשה של גרסאות הייצור ל-Google Play ול-Apple App Store",
           ],
           link: { label: "הדגמה חיה:", href: DEMO },
         },
@@ -353,7 +362,7 @@ export const analystHe = {
           bullets: [
             "ניתוח ואפיון של תהליכים עסקיים, אוטומציות וממשקים בין מערכות ליבה על גבי Salesforce, Priority ERP ו-Workato",
             "איסוף דרישות עסקיות וכתיבת מסמכי אפיון פונקציונליים וטכניים, עד לרמת המסכים, השדות, הוולידציות, זרימות המשתמש וקריטריוני הקבלה",
-            "תכנון מבני נתונים, מיפויי נתונים, לוגיקה עסקית, זרימות אינטגרציה, ממשקי שירות ותהליכי SQL ו-ETL מתוזמנים",
+            "ניתוח נתוני המקור ותכנון מבני נתונים, מיפויים, לוגיקה עסקית, זרימות אינטגרציה, ממשקי שירות ותהליכי SQL ו-ETL מתוזמנים",
             "מעקב אחר משימות ולוחות זמנים מול משתמשים עסקיים, צוותי IT וספקים, והובלת בדיקות, הטמעה ועלייה לייצור",
           ],
         },
@@ -364,7 +373,7 @@ export const analystHe = {
           bullets: [
             "ניתוח ואפיון של מערכות ליבה לניהול זהויות מבוססות Web עבור שירותי בריאות כללית, מגדל, איילון ו-LivePerson",
             "כתיבת מסמכי אפיון פונקציונליים וטכניים למסכי שירות עצמי, תהליכי אישור, תהליכי זהות, ממשקים וטרנספורמציות נתונים",
-            "תכנון מבני נתונים, לוגיקה עסקית, מיפויי נתונים, תהליכי ETL וסנכרון מתוזמנים, והממשקים בין הפורטל למערכות שמאחוריו",
+            "ניתוח נתוני המקור ותכנון מבני נתונים, לוגיקה עסקית, מיפויים, תהליכי ETL וסנכרון מתוזמנים, והממשקים למערכות שמאחורי הפורטל",
             "הובלת האספקה מול צוותי סייבר, DBA, DevOps, תשתיות, IT וגורמים עסקיים, ועד בדיקות קבלה, הטמעה ותמיכה בייצור",
           ],
         },
@@ -377,7 +386,7 @@ export const analystHe = {
           bullets: [
             "הובלת הניתוח והאפיון של פתרון Web שחיבר בין יחידות עירוניות וביצע אוטומציה של תהליכים חוצי ארגון",
             "איסוף דרישות ממשתמשים עסקיים ומידול תהליכים עסקיים, מבני נתונים, מסעות משתמשים וזרימות UX ו-UI, מסך אחרי מסך",
-            "תכנון ממשקי SQL ו-SSIS ותיאום בין משתמשים, פיתוח, DBA, QA ובדיקות קבלה",
+            "ניתוח הנתונים של היחידות, תכנון ממשקי SQL ו-SSIS ותיאום בין משתמשים, פיתוח, DBA, QA ובדיקות קבלה",
           ],
         },
         {
@@ -386,7 +395,7 @@ export const analystHe = {
           dates: "2017 - 2020",
           bullets: [
             "תרגום דרישות עסקיות ודרישות אבטחת מידע למסמכי אפיון טכניים: תהליכים, לוגיקה עסקית, מסכים, ממשקים ואינטגרציות",
-            "אפיון תהליכי מערכת, זרימות נתונים ומבני נתונים, וליווי צוות פיתוח Web שעבד ב-Java וב-JSP לאורך היישום, הבדיקות והעלייה לייצור",
+            "אפיון תהליכי מערכת, זרימות נתונים ומבני נתונים, והנחיית צוות פיתוח Web שעבד ב-Java וב-JSP לאורך היישום, הבדיקות והעלייה לייצור",
             "תיאום בין צוותי פיתוח, סייבר, תשתיות, DBA, DevOps, בדיקות ועלייה לייצור",
           ],
         },
@@ -402,12 +411,12 @@ export const analystHe = {
           ],
         },
         {
-          role: "מנתח מערכות | מערכות ליבה לחיוב",
+          role: "מנתח מערכות ונתונים | מערכות ליבה לחיוב",
           org: "Varonis",
           dates: "2008 - 2014",
           bullets: [
             "ניתוח, פיתוח ותחזוקה של מערכת ליבה לחיוב ארגוני באמצעות Microsoft SQL Server, Microsoft Access ו-VBA",
-            "תרגום דרישות עסקיות לשאילתות SQL, דוחות, אוטומציות ושיפורים במערכת",
+            "ניתוח נתוני החיוב ותרגום שאלות עסקיות לשאילתות SQL, דוחות ואוטומציות",
             "חקירת תקלות בייצור ועבודה ישירה מול גורמי כספים ותפעול",
           ],
         },
@@ -427,8 +436,8 @@ export const analystHe = {
           terms: ["Salesforce", "Priority ERP", "Workato", "Aveksa", "IAM", "IDM", "IGA"],
         },
         {
-          title: "היכרות עם סביבת הפיתוח",
-          terms: ["Node.js", "TypeScript", "JavaScript", "Java", "JSP", "Supabase", "Git"],
+          title: "ידע בפיתוח, hands-on",
+          terms: ["Node.js", "TypeScript", "JavaScript", "Supabase", "Edge Functions", "RPC Functions", "Java", "JSP", "VBA", "Git"],
         },
         {
           title: "מתודולוגיה וכלים",
