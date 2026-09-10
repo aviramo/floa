@@ -3683,6 +3683,32 @@
     });
     var pad = Math.ceil(half) + 2;
 
+    /* --- AND THE GUTTER A REPEAT OPENS DOWN THE PAGE -------------------------
+       Room the words have not got, and it was not being counted here at all.
+       A song with a repeat anywhere in it carries the gutter on EVERY row and
+       not only on the rows inside a block, because a gutter that opened and
+       closed down the page would move the words sideways at every block (see
+       .sheet.has-rep .ln). So it comes off the inside of every segment, and
+       the pour knows that: it breaks the lines to the room a row actually has.
+
+       WHAT THIS MEASURED WAS THE INK. The segment was then made exactly as
+       wide as the longest line, the margin took twenty pixels back off the
+       inside of it, and every line within twenty pixels of the longest was
+       broken for want of room that had been measured and then given away. A
+       third of this song, on a screen with eleven hundred pixels of margin
+       beside it. And the song then stood taller than the arithmetic here
+       thought it did, so the count came out one segment short and the rest of
+       the song went to a second screenful: a page turn, bought with room that
+       was never used.
+
+       ASKED OF A ROW AND NOT OF THE VARIABLE, because what is wanted is what
+       the browser actually took off, and that is a margin on an element. */
+    var gutter = 0;
+    Array.prototype.forEach.call(sheet.querySelectorAll(".ln"), function (node) {
+      var m = parseFloat(getComputedStyle(node).marginInlineStart) || 0;
+      if (m > gutter) gutter = m;
+    });
+
     var box = getComputedStyle(sheet);
     var padded = (parseFloat(box.paddingLeft) || 0) + (parseFloat(box.paddingRight) || 0);
     /* On paper the room is the paper, and not what a box happens to have come
@@ -3755,9 +3781,13 @@
        one segment too many rather than one too few, and a segment too many is
        a tail of empty paper while a segment too few is a page turn. */
     function heightAt(w) {
+      /* The segment less the gutter every row of it stands behind, which is
+         the width the pour will actually break to. */
+      var room = w - gutter;
+      if (!(room > 0)) return Infinity;
       var tall = 0;
       song.rows.forEach(function (r) {
-        tall += r.h * (r.w > w ? Math.ceil(r.w / w) : 1);
+        tall += r.h * (r.w > room ? Math.ceil(r.w / room) : 1);
       });
       return tall;
     }
@@ -3794,7 +3824,7 @@
        one would take the segments under the song's own middle line still gets
        one, because that is what `need` says, and it says it about this song
        rather than about a class of device. */
-    var need = Math.max(song.middle, song.word);
+    var need = Math.max(song.middle, song.word) + gutter;
     var cols = 1;
     while (share(cols + 1) >= need) cols++;
 
@@ -3837,7 +3867,7 @@
        the segment IS the glass, and the same arithmetic would take a strip off
        the side of a screen that has none to give and hand it back the moment
        the reader turned the size up. */
-    var colW = glass ? share(cols) : Math.min(share(cols), Math.ceil(song.widest) + 2);
+    var colW = glass ? share(cols) : Math.min(share(cols), Math.ceil(song.widest) + 2 + gutter);
     if (!(colW > 0)) return null;
 
     return {
@@ -5762,16 +5792,16 @@
     app.appendChild(box);
   }
 
-  /* Both ways in are offered on every screen now. Typing a song out is the
-     thing a phone is worst at and reading a photograph is the thing it is
-     best at, the camera being already in your hand, and for a while that was
-     reason enough to hide the typing on one: a button that answers a press
-     with a refusal is worse than no button.
+  /* TYPING A SONG OUT IS THE THING A PHONE IS WORST AT, and reading a
+     photograph is the thing it is best at, the camera being already in your
+     hand. For a while both were offered on both, on the strength of an editor
+     that had been opened to phones; the editor is a desk again (see the song
+     page), so this door leads to a page that would open read only, and a
+     button that answers a press with a refusal is worse than no button.
 
-     It is not hidden any more because it no longer refuses. The editor works
-     on a phone (see the song page), so the button leads somewhere, and which
-     of the two is the easier way in on the screen in front of you is a
-     judgement the person holding it can make. */
+     So on a phone this one is not offered at all (see askAdd and the empty
+     library), and the address behind it answers with the library rather than
+     with an empty song nobody could type into (see the routing). */
   function newSong() {
     requireAuth(function () { go(addr("new")); });
   }
@@ -5786,6 +5816,11 @@
      way. It is the same panel printing uses, in the same words the empty
      library offers: typing it out, or handing over a photograph. */
   function askAdd(anchor) {
+    /* AND ON A PHONE THERE IS NOTHING TO ASK. One of the two answers is a
+       page that cannot be typed into there (see newSong), and a panel with one
+       row in it is a question with one answer: the press goes straight to the
+       camera. */
+    if (NARROW.matches) return void uploadSong();
     menuUnder(anchor, [
       button("להקליד שיר", ICON.plus, "ghost small", function () { closeUnder(); newSong(); }),
       button("מתמונה או PDF", ICON.upload, "ghost small", function () { closeUnder(); uploadSong(); }),
@@ -8489,9 +8524,11 @@
         addSong.appendChild(svg(ICON.plus));
         addSong.appendChild(el("span", "tally-l", "הוספת שיר"));
         addSong.title = "הוספת שיר";
-        addSong.setAttribute("aria-haspopup", "menu");
-        addSong.setAttribute("aria-expanded", "false");
-        addSong.addEventListener("click", function () { askAdd(addSong); });
+        /* Straight to the photograph, and nothing here says otherwise: this
+           chip stands on a phone and only on one, and there is one way in on a
+           phone (see askAdd). A button that promises a panel and then opens a
+           file picker has told the reader something untrue about itself. */
+        addSong.addEventListener("click", function () { uploadSong(); });
         return addSong;
       }
 
@@ -8602,8 +8639,13 @@
       var empty = el("div", "center");
       var emptyText = el("p");
       var emptyActions = el("div", "row-actions");
-      emptyActions.appendChild(button("להקליד שיר", ICON.plus, null, newSong));
-      emptyActions.appendChild(button("מתמונה או PDF", ICON.upload, "ghost", uploadSong));
+      /* THE SAME TWO WAYS IN AS THE BAR OFFERS, and the same one of them is
+         missing on a phone: a song is typed out on a computer (see newSong).
+         An empty library that offered it there would answer the press with a
+         page that opens read only. */
+      if (!NARROW.matches) emptyActions.appendChild(button("להקליד שיר", ICON.plus, null, newSong));
+      emptyActions.appendChild(button("מתמונה או PDF", ICON.upload,
+        NARROW.matches ? null : "ghost", uploadSong));
       empty.appendChild(emptyText);
       empty.appendChild(emptyActions);
 
@@ -10479,7 +10521,17 @@
        Not a song still coming out of the machine either. That one is not a
        draft somebody is writing, it is a reading in progress, and the words
        under the caret would be replaced as they were typed. */
-    var editing = !past && auth.in && (owned
+    /* AND WRITING IS SOMETHING DONE AT A DESK. The editor was opened to
+       phones for a while and it is closed again: what it asks for is a caret
+       placed on a character, a chord dragged onto a syllable and a line read
+       whole while it is being typed into, and a thumb on a piece of glass is
+       none of those. A song is read on a phone and written on a computer.
+
+       ASKED OF THE WIDTH AND NOT OF THE DEVICE, because what is short here is
+       room and pointing, and a window dragged narrow on a desk is short of
+       both in the same way. Crossing the line redraws the song (see the NARROW
+       listener), so it comes back as whichever of the two that width means. */
+    var editing = !past && auth.in && !NARROW.matches && (owned
       ? ((!song.published && !coming) || state.editAsked === editKey)
       : state.editAsked === editKey);
 
@@ -10521,11 +10573,13 @@
        unfinished song of your own is already open (see editing above), so a row
        saying "עריכה" over it would be a door onto the room it is standing in.
 
-       The same on every width. It used to depend on how wide the window was,
-       which meant the way into the editor stood in the panel on a phone and
-       nowhere at all on a desk, where the page simply arrived writable. One
-       page, one door, and the press is what says the change is meant. */
-    if (!past && auth.in && (!owned || song.published)) {
+       One page, one door, and the press is what says the change is meant.
+
+       AND THE DOOR IS ON A DESK, because that is where the room behind it is
+       (see editing above). A pencil on a phone would be a door onto a page
+       that opens read only whatever the press said, which is worse than no
+       pencil: it would look like the app had lost the words. */
+    if (!past && auth.in && !NARROW.matches && (!owned || song.published)) {
       state.editToggle = {
         on: editing,
         flip: function () {
@@ -18570,9 +18624,17 @@
     }
 
     /* A new song is the song page with nothing on it yet, and it needs somebody
-       signed in to be worth opening at all. A phone used to be sent back to
-       the library from here, because there was no editor on one; there is now,
-       so a song can be started wherever somebody happens to be. */
+       signed in to be worth opening at all. And a computer: an empty song is
+       nothing to read, so on a phone this address would open a blank page that
+       could not be typed into (see the editor gate in renderSong). It answers
+       with the library instead, which is what a phone came here for.
+
+       THE ADDRESS GOES WITH IT. Left in the bar it would be a page saying
+       "library" that a refresh turns back into a blank song. */
+    if (p[0] === "new" && NARROW.matches) {
+      history.replaceState(history.state, "", addr());
+      return viewIndex(null);
+    }
     if (p[0] === "new") {
       /* Off to Google, and back to this same address with an account, which is
          where the song then opens. The page says where it has gone rather than
