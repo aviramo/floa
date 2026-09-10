@@ -313,6 +313,10 @@ const COLUMNS = `(() => {
     pageH: Math.round((sheet.querySelector(".page") || { getBoundingClientRect: () => ({ height: 0 }) }).getBoundingClientRect().height),
     roomH: innerHeight - Math.round(document.querySelector(".top").getBoundingClientRect().height),
     poured: document.querySelectorAll(".sheet .ln.is-cont").length,
+    /* The size the words are actually set in, which on a desk is not the one
+       the reader was left at but the one the whole song fits at (see
+       sizeToFit in app.js). */
+    size: Math.round(parseFloat(getComputedStyle(sheet).getPropertyValue("--song-size")) || 0),
     /* Reading, the sheet keeps the whole room; writing it is only as wide as
        its columns need and stands in the middle of what is left. */
     fills: sheet.getBoundingClientRect().width > innerWidth - 40,
@@ -747,6 +751,16 @@ try {
           exact || (c.off > 0 && c.off <= (c.nudged ? 60 : 1)), `off by ${c.off}px`);
       }
 
+      /* --- AND THE SIZE ON A PHONE IS THE READER'S OWN ------------------------
+         Twenty eight is what was written down before this page opened, and it
+         is what the song is set in. A desk works the size out for itself (see
+         the check below), and doing that here would throw away a size somebody
+         set for the screen in their hand. */
+      const narrowSize = await evaluate(`JSON.stringify(Math.round(parseFloat(
+        getComputedStyle(document.querySelector(".sheet")).getPropertyValue("--song-size"))))`);
+      check("narrow: the song opens at the size this reader chose",
+        narrowSize === 28, `${narrowSize}px, not 28`);
+
       /* The reading size is one setting for one reader, and the next page
          opened here is the same reader. Left behind, it would quietly draw the
          editor's song a third larger than the drag below expects. */
@@ -790,9 +804,45 @@ try {
         laid.fills, JSON.stringify(laid));
       check("wide: every column it built is a column with song in it",
         laid.given === laid.cols, `built ${laid.given}, filled ${laid.cols}`);
-      check("wide: a page is the window under the header",
-        laid.pages > 0 && Math.abs(laid.pageH - laid.roomH) <= 2,
+      /* A PAGE IS THE WINDOW UNDER THE HEADER, and the last one ends where the
+         song does (see pageUp). Which of the two this is depends on whether
+         there is anything under it, and reading on a desk there usually is
+         not: the song opens at the size that puts all of it on one screenful
+         (see sizeToFit), so the only page is also the last one and it takes
+         its own height. What has to hold either way is that it never runs past
+         the bottom of the window, which is the failure this was written for.
+
+         The editor below is the other half of it. The size is not chosen there
+         (type that resized itself as lines were added would be a page fighting
+         the person writing it), so that song still stands in more than one
+         screenful and the first of them is measured against the window. */
+      /* --- AND ON A DESK THE SIZE IS WORKED OUT FROM THE SONG ----------------
+         Nothing was written down, so the fallback is eighteen; what the song
+         is actually set in is the largest size that keeps all of it on one
+         screenful (see sizeToFit in app.js). Both halves are checked, because
+         either alone can pass while the thing is broken: a size that moved but
+         left the song on two pages is a page turn nobody asked for, and one
+         page at eighteen is the old behaviour with the room still unspent.
+
+         AND HERE IT COMES DOWN RATHER THAN UP. This fixture is the same verse
+         twenty four times over, which is more song than a window holds at any
+         comfortable size, so the largest that fits it all is smaller than the
+         fallback. That is the answer working and not failing: what was asked
+         for is one page, and on an ordinary song on an ordinary screen the
+         same arithmetic goes the other way and spends the room on the words. */
+      check("wide: the song opens at a size worked out from the song",
+        laid.size !== 18, `${laid.size}px, which is the fallback`);
+      check("wide: and all of it is on one screenful",
+        laid.pages === 1, `${laid.pages} pages`);
+
+      check("wide: no page runs past the bottom of the window",
+        laid.pages > 0 && laid.pageH <= laid.roomH + 2,
         `page ${laid.pageH}, room ${laid.roomH}, ${laid.pages} pages`);
+      if (laid.pages > 1) {
+        check("wide: and a page with one under it is the window exactly",
+          Math.abs(laid.pageH - laid.roomH) <= 2,
+          `page ${laid.pageH}, room ${laid.roomH}`);
+      }
 
       /* The first few are enough: they are the same three lines fifteen times
          over, and a chord that slipped slipped on all of them. */

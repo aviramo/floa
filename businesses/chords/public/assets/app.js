@@ -3652,9 +3652,17 @@
      asked of the song standing flat: how tall it is depends on how wide a
      segment is, and how wide a segment is is what is being decided. So it is
      asked of each candidate in turn, of the width that candidate would give. */
-  function planColumns(sheet) {
-    if (!sheet || !sheet.isConnected || !sheet.classList.contains("sheet")) return null;
+  /* --- WHAT THE BROWSER HAS TO BE ASKED, AND ASKED ONCE ---------------------
+     Everything below this is arithmetic. This is the part that is not: four
+     things measured off the page as it stands, each of them a walk over the
+     song or a read of a computed style, and each of them a distance in the
+     font the reader actually has at the size they actually chose.
 
+     WHICH IS WHY IT IS SEPARATE. A size that puts the whole song on one page
+     is found by asking the same question of a dozen sizes (see sizeToFit), and
+     a dozen walks over every character of every line is not a thing to do
+     while a song is opening. Measured once, scaled a dozen times. */
+  function measureSong(sheet) {
     var texts = sheet.querySelectorAll(".ln-t");
     if (!texts.length) return null;
 
@@ -3670,54 +3678,98 @@
        HALF OF THE WIDEST LABEL IN THE SONG, asked of the labels themselves.
        That is exactly what the overhang needs and nothing beyond it, and it is
        ONE NUMBER: the same at both ends of every segment, on a phone and on a
-       desk, for the chords and for the words. Between two segments the two
-       halves meet and make the margin a segment keeps inside its own edge,
-       which used to be a wide multiple of the type because that space alone
-       had to say where one segment ended. There is a rule down the middle of
-       the desk now (see .rule), so the space says nothing on its own and can
-       be no more than the ink needs. */
+       desk, for the chords and for the words. */
     var half = size * 0.4;
     Array.prototype.forEach.call(sheet.querySelectorAll(".chord"), function (node) {
       var w = node.getBoundingClientRect().width / 2;
       if (w > half) half = w;
     });
-    var pad = Math.ceil(half) + 2;
 
     /* --- AND THE GUTTER A REPEAT OPENS DOWN THE PAGE -------------------------
-       Room the words have not got, and it was not being counted here at all.
-       A song with a repeat anywhere in it carries the gutter on EVERY row and
-       not only on the rows inside a block, because a gutter that opened and
-       closed down the page would move the words sideways at every block (see
-       .sheet.has-rep .ln). So it comes off the inside of every segment, and
-       the pour knows that: it breaks the lines to the room a row actually has.
+       Room the words have not got. A song with a repeat anywhere in it carries
+       the gutter on EVERY row and not only on the rows inside a block, because
+       a gutter that opened and closed down the page would move the words
+       sideways at every block (see .sheet.has-rep .ln). So it comes off the
+       inside of every segment, and the pour knows that: it breaks the lines to
+       the room a row actually has.
 
-       WHAT THIS MEASURED WAS THE INK. The segment was then made exactly as
-       wide as the longest line, the margin took twenty pixels back off the
-       inside of it, and every line within twenty pixels of the longest was
-       broken for want of room that had been measured and then given away. A
-       third of this song, on a screen with eleven hundred pixels of margin
-       beside it. And the song then stood taller than the arithmetic here
-       thought it did, so the count came out one segment short and the rest of
-       the song went to a second screenful: a page turn, bought with room that
-       was never used.
+       WHAT THIS ONCE MEASURED WAS THE INK ALONE. The segment was then made
+       exactly as wide as the longest line, the margin took twenty pixels back
+       off the inside of it, and every line within twenty pixels of the longest
+       was broken for want of room that had been measured and then given away.
+       A third of one song, on a screen with eleven hundred pixels of margin
+       beside it. And the song then stood taller than the arithmetic thought it
+       did, so the count came out one segment short and the rest of the song
+       went to a second screenful: a page turn, bought with room that was never
+       used.
 
        ASKED OF A ROW AND NOT OF THE VARIABLE, because what is wanted is what
        the browser actually took off, and that is a margin on an element. */
     var gutter = 0;
     Array.prototype.forEach.call(sheet.querySelectorAll(".ln"), function (node) {
-      var m = parseFloat(getComputedStyle(node).marginInlineStart) || 0;
-      if (m > gutter) gutter = m;
+      var edge = parseFloat(getComputedStyle(node).marginInlineStart) || 0;
+      if (edge > gutter) gutter = edge;
     });
 
     var box = getComputedStyle(sheet);
-    var padded = (parseFloat(box.paddingLeft) || 0) + (parseFloat(box.paddingRight) || 0);
+    var song = songMeasure(sheet);
+    if (!song) return null;
+
+    return {
+      size: size, half: half, gutter: gutter, song: song,
+      padded: (parseFloat(box.paddingLeft) || 0) + (parseFloat(box.paddingRight) || 0),
+    };
+  }
+
+  /* --- AND THE SAME QUESTION, ASKED OF A SIZE THE SONG IS NOT SET IN --------
+     `at` is a size in pixels, and what comes back is the page this song WOULD
+     stand in if it were set in it. Nothing is drawn and nothing is measured
+     again: everything the arithmetic below asks of the song is a distance in
+     the same font, so all of it scales with the size and none of it has to be
+     asked of the browser twice. That is what makes hunting for a size cheap
+     enough to do while a song is opening (see sizeToFit).
+
+     `m` is one such measurement, handed back on every plan and handed in again
+     for the next question. Asking for it once is the whole saving: a walk over
+     every character of every line, which is what songMeasure is, costs more
+     than the eight sums that follow it.
+
+     A HYPOTHETICAL LEAVES NOTHING BEHIND. The count a real plan writes down
+     for a pinch to hold still (see lastCols) is a fact about the page on the
+     screen, and a page nobody is looking at must not overwrite it. */
+  function planColumns(sheet, at, m) {
+    if (!sheet || !sheet.isConnected || !sheet.classList.contains("sheet")) return null;
+
+    if (!m) {
+      m = measureSong(sheet);
+      if (!m) return null;
+    }
+
+    /* Every length the song has, at the size being asked about rather than at
+       the size it is standing in. */
+    var scale = at > 0 && m.size > 0 ? at / m.size : 1;
+    var song = m.song;
+    if (scale !== 1) {
+      song = {
+        rows: song.rows.map(function (r) { return { w: r.w * scale, h: r.h * scale }; }),
+        middle: song.middle * scale,
+        widest: song.widest * scale,
+        word: song.word * scale,
+      };
+    }
+
+    /* The margin a segment keeps inside its own edge for a chord hanging past
+       the end of a line, and the gutter a repeat opens down the page. Both are
+       measured off the song and both are lengths in the type (see
+       measureSong), so both follow the size being asked about. */
+    var pad = Math.ceil(m.half * scale) + 2;
+    var gutter = m.gutter * scale;
+
+    var padded = m.padded;
     /* On paper the room is the paper, and not what a box happens to have come
        out at in a window nobody is printing (see toPaper). */
     var room = paper ? paper.w : sheet.clientWidth - padded;
     if (!(room > 0)) return null;
-
-    var song = songMeasure(sheet);
-    if (!song) return null;
 
     /* THE PAGE'S OWN AIR AT THE TWO ENDS. Not on a phone: there the segment is
        the glass itself, and thirty two pixels of a phone is a word and a half
@@ -3843,8 +3895,14 @@
        what they are holding still is the page under them; the sheet being laid
        out for the printer is a second one, standing nowhere, and it must
        neither take that number nor leave one behind for the screen to find. */
-    if (heldCols && !paper) cols = heldCols;
-    if (!paper) lastCols = cols;
+    if (heldCols && !paper && !at) cols = heldCols;
+    if (!paper && !at) lastCols = cols;
+
+    /* HOW MANY SCREENFULS THIS COMES TO, which is the one thing a caller
+       hunting for a size wants to know: the song stands on one page when the
+       segments it needs are segments this page has (see sizeToFit). */
+    var stands = Math.ceil(heightAt(share(cols)) / fits);
+    if (!(stands > 0)) stands = 1;
 
     /* THE SEGMENTS DIVIDE THE ROOM, AND THE LAST THING THAT IS HELD BACK IS
        WIDTH NO LINE WOULD USE. Past the longest line in the song a segment is
@@ -3873,6 +3931,11 @@
     return {
       cols: cols, colW: colW, pad: pad, apart: apart, air: air,
       pageH: pageH, padded: padded, ends: ends,
+      /* how many screenfuls the song comes to at this size, and the
+         measurement the next question can be asked of without walking the
+         song again */
+      pages: Math.max(1, Math.ceil(stands / cols)),
+      measured: m,
       /* what stands over the FIRST page and no other (see toPaper) */
       head: paper ? paper.head || 0 : 0,
     };
@@ -4021,9 +4084,25 @@
          between nothing and nothing is a line down a blank half of a page.
 
          COUNTED IN SEGMENTS AND NOT IN CHILDREN: the desks stand in the row
-         too now, so a page with three segments in it has five children. */
+         too now, so a page with three segments in it has five children.
+
+         AND A PAGE WITH NOTHING ABOVE OR BELOW IT KEEPS NO SHAPE FOR ANYBODY.
+         Every page is the same width so that the segments line up down the
+         window (a page is centred in what it is given, so a narrower one would
+         stand its columns somewhere else). One page is not lining up with
+         anything, and holding a slot open on it is a column's width of blank
+         paper at one end and the song pushed off the middle of the screen by
+         half of it. The count asked for here is honestly a little high (see
+         heightAt: it does not know which leftover rows the pour will pair up,
+         and it errs towards a segment too many rather than a page turn), so
+         this is the ordinary case on a desk and not a corner. */
+      var alone = built.childNodes.length === 1;
       Array.prototype.forEach.call(built.childNodes, function (pg) {
         var have = pg.querySelectorAll(".col").length;
+        if (alone) {
+          pg.style.width = (have * slot + (have - 1) * plan.apart + plan.air) + "px";
+          return;
+        }
         while (have < plan.cols) {
           pg.appendChild(desk(true));
           var spare = el("div", "col is-empty");
@@ -4090,6 +4169,55 @@
     sheet.style.maxWidth = "";
 
     pageUp(sheet, plan);
+  }
+
+  /* --- AND HOW BIG THE WORDS CAN BE AND STILL ALL BE THERE AT ONCE -----------
+     The largest size at which the whole song stands on ONE page, which is the
+     size a song opens at on a desk (see the song page).
+
+     WHY THAT IS THE RIGHT DEFAULT AND NOT THE LARGEST THAT IS READABLE. What
+     a page turn costs here is not a moment, it is both hands: whoever is
+     reading this is holding an instrument, and scrolling is the one thing they
+     cannot do while playing. So the song being all on the screen is worth more
+     than any particular size of type, and the biggest type that keeps it there
+     is the best of both. A screen with room to spare then spends it on the
+     words rather than on margins, which is what a desk screen was doing with
+     it before.
+
+     ASKED OF THE SONG AND NOT WORKED OUT FROM THE ROOM. How tall a song stands
+     at a size is not the room divided by anything: lines break, a broken line
+     costs a row, and a row that is nearly empty takes the head of the next
+     line onto itself. The only honest answer is to ask the same question that
+     lays the page out, and to ask it of each size in turn.
+
+     WHICH IS CHEAP BECAUSE THE SONG IS MEASURED ONCE. Everything the plan asks
+     of the browser is a distance in the type, so it scales with the size and
+     is handed from one question to the next (see measureSong). What is left is
+     eight or nine passes of arithmetic over a list of rows, and no drawing at
+     all: nothing here touches the page.
+
+     A SONG TOO LONG FOR ONE PAGE AT ANY SIZE GETS NOTHING. Then there is no
+     answer to give, and the reader's own size is the right thing to leave the
+     song at: the smallest type in the range would be a page nobody can read
+     bought for a page turn that is happening anyway. */
+  function sizeToFit(sheet) {
+    var m = measureSong(sheet);
+    if (!m) return 0;
+
+    /* Downward from a size that fits and upward from one that does not, which
+       is a halving and not a walk: the range is eighty odd sizes wide and the
+       answer is found in seven questions. Bigger words are never fewer pages,
+       so the two halves are on the two sides of one line. */
+    var low = SIZE_MIN;
+    var high = SIZE_MAX;
+    var best = 0;
+    while (low <= high) {
+      var mid = (low + high) >> 1;
+      var plan = planColumns(sheet, mid, m);
+      if (plan && plan.pages === 1) { best = mid; low = mid + 1; }
+      else high = mid - 1;
+    }
+    return best;
   }
 
   /* --- THE SONG AS IT WILL BE ON PAPER ---------------------------------------
@@ -10608,8 +10736,15 @@
     var myCapo = capoOf(played);
 
     /* the size follows the reader from song to song. The key does not: it
-       belongs to the one song it was chosen for. */
+       belongs to the one song it was chosen for.
+
+       AND ON A DESK THIS IS ONLY WHERE IT STARTS FROM. The song opens at the
+       size that puts all of it on one screenful, worked out when the rows are
+       standing (see pour), and this is what it falls back to when there is no
+       such size and what it is on a phone. `sizeChosen` is the reader taking
+       the question back with a pinch or a wheel. */
     var size = readingSize();
+    var sizeChosen = false;
 
     app.innerHTML = "";
 
@@ -12368,6 +12503,41 @@
       var host = typing && typing.isConnected ? typing : null;
       var index = host ? lineIndexOf(host) : -1;
       var caret = host ? caretAt(host) : null;
+
+      /* --- AND ON A DESK THE SONG OPENS AT THE SIZE IT ALL FITS AT ------------
+         The biggest type that keeps the whole song on one screenful (see
+         sizeToFit), instead of the size the reader was last left at. Whoever
+         is reading this has both hands on an instrument, so a page turn is the
+         one thing they cannot do while playing, and a screen with room to
+         spare should spend it on the words rather than on margins.
+
+         BEFORE THE POUR AND NOT AFTER IT. The rows are standing flat and
+         unbroken here, which is the only state a size can be chosen from: what
+         the pour does is break them to a width worked out from the size, so
+         the size has to be settled first. Nothing is drawn twice.
+
+         UNTIL THE READER SAYS OTHERWISE. A pinch or a wheel is somebody
+         answering this question for themselves, and from then on the answer is
+         theirs for as long as the song is open (see setSize). What is being
+         set here is where the song STARTS, not what it is held at.
+
+         AND NOT WHILE IT IS BEING WRITTEN INTO. The editor draws again on
+         every pause in the typing, and type that resized itself as lines were
+         added is a page fighting the person writing it.
+
+         NOR ON A PHONE, which is where the reader's own size is the right
+         answer: a phone is one column of glass held at reading distance, the
+         largest type that fits a song on it would be too small to read at
+         arm's length, and the size somebody set there they set for that
+         screen. It is kept exactly as it was (see readingSize). */
+      if (!sizeChosen && !editing && !NARROW.matches) {
+        var want = sizeToFit(sheet);
+        if (want && want !== size) {
+          size = want;
+          sheet.style.setProperty("--song-size", size + "px");
+        }
+      }
+
       fitColumns(sheet);
       layoutAll(sheet);
       /* The page is as tall as it was again, so the place it was at is a
@@ -12480,6 +12650,9 @@
     function setSize(next) {
       var want = readingSize(next);
       if (want === size) return;
+      /* THE READER HAS ANSWERED, so the page stops answering for them: the
+         size this song opened at is a default and not a rule (see pour). */
+      sizeChosen = true;
       size = want;
       sheet.style.setProperty("--song-size", size + "px");
     }

@@ -2797,6 +2797,20 @@ a.set-t:hover { color: var(--accent); text-decoration: underline; }
    follows on from. */
 .ln-row { display: flex; align-items: baseline; margin-bottom: .45em; }
 .ln-row > .ln { margin-bottom: 0; }
+/* AND THE ROW THAT ENDED A LINE KEEPS NO AIR EITHER, which the rule above
+   says and was not winning. The air under the last row of a broken line
+   (see .ln.is-cont.is-last) is written with one class more than that rule has,
+   so inside a pair it stood: and inside a pair it is not air under anything.
+   The items here are aligned on the baseline, so a margin under one of them is
+   not a gap after the line, it is depth added to the flex line itself, and the
+   pair came out twenty pixels taller than the words in it. A blank strip
+   under two lines that had already ended, and a wider one than the space
+   between two verses.
+
+   The pair is what says where the shared line ends (the two rules under this
+   one), and it was saying it as well: the same air, once inside the box and
+   once after it. */
+.ln-row > .ln.is-cont.is-last { margin-bottom: 0; }
 .ln-row.has-cont { margin-bottom: 0; }
 .ln-row.is-last { margin-bottom: 1.35em; }
 /* Neither of them gives way: what fits on this line was worked out in pixels
