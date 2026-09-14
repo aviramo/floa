@@ -513,6 +513,23 @@ async function withChrome(run) {
            why. Asked for again, once, a couple of seconds in. */
         if (i === 4 || i === 16) await send("Page.navigate", { url });
       }
+
+      /* A PAGE THAT NEVER CAME UP SAYS SO, ONCE.
+
+         The wait above is bounded, and when it runs out the file used to carry
+         on and measure a page that has nothing on it: thirty assertions fail,
+         every one of them describing a rule that was never broken, and the log
+         says nothing about the only thing that actually went wrong. This is
+         the difference between a report you can act on and one you cannot, and
+         on a runner that is not this machine it is the whole of the report. */
+      {
+        const n = await send("Runtime.evaluate", { expression: 'document.querySelectorAll(".sheet .chord").length', returnByValue: true });
+        if (!(n.result.value > 0)) {
+          const where = await send("Runtime.evaluate", { returnByValue: true, expression:
+            'JSON.stringify({ url: location.href, state: document.readyState, sheets: document.querySelectorAll(".sheet").length, body: document.body ? document.body.innerHTML.length : -1, errors: (window.__errors || []).slice(0, 5) })' });
+          throw new Error("the page never drew a chord within the wait: " + where.result.value);
+        }
+      }
       /* FONTS, AND THE RELAYOUT THEY TRIGGER.
 
          This was a fixed wait, and a fixed wait is a guess about how fast the
@@ -546,7 +563,7 @@ async function withChrome(run) {
           for (let i = 0; i < 240; i++) {
             await frame();
             const now = shape();
-            if (now === last) return true;
+            if (now && now === last) return true;
             last = now;
           }
           return false;                     /* never settled; let the assertions say so */
