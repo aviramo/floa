@@ -513,7 +513,45 @@ async function withChrome(run) {
            why. Asked for again, once, a couple of seconds in. */
         if (i === 4 || i === 16) await send("Page.navigate", { url });
       }
-      await sleep(500);                     // fonts, and the relayout they trigger
+      /* FONTS, AND THE RELAYOUT THEY TRIGGER.
+
+         This was a fixed wait, and a fixed wait is a guess about how fast the
+         machine is. On a loaded runner the guess comes out wrong, every
+         measurement below lands in the middle of a relayout, and the file
+         fails all at once saying nothing about why: not one broken rule, but
+         thirty, which is the shape of a test that measured too early rather
+         than a page that is wrong. It went red in CI on a commit that touched
+         nothing here, ten minutes after the same code went green.
+
+         So the page is asked instead of timed. It is ready when the fonts have
+         resolved and two consecutive frames measure the same, which is the
+         condition every assertion in this file already depended on without
+         ever saying so. A slow machine simply takes more frames to get there. */
+      await send("Runtime.evaluate", {
+        awaitPromise: true,
+        returnByValue: true,
+        expression: `(async () => {
+          /* rAF, with a floor under it: a headless tab that has stopped
+             painting would otherwise never hand the frame back. */
+          const frame = () => new Promise((r) => {
+            let done = false;
+            requestAnimationFrame(() => { done = true; r(); });
+            setTimeout(() => { if (!done) r(); }, 50);
+          });
+          const shape = () => [...document.querySelectorAll(".sheet .chord")].slice(0, 32)
+            .map((c) => { const b = c.getBoundingClientRect(); return Math.round(b.x) + "," + Math.round(b.y); })
+            .join("|");
+          try { await document.fonts.ready; } catch (e) { /* no font API, no wait */ }
+          let last = null;
+          for (let i = 0; i < 240; i++) {
+            await frame();
+            const now = shape();
+            if (now === last) return true;
+            last = now;
+          }
+          return false;                     /* never settled; let the assertions say so */
+        })()`,
+      });
 
       const result = await body({ send, evaluate });
       socket.close();
