@@ -18,7 +18,7 @@
      Once, the title          End-to-End Development. It is the one entry
                               where the work really was building the thing,
                               and this document is the one that says so
-     Once, the tech bullet    "built the application himself", not "hands-on"
+     Once, the tech bullet    the application was built, not "hands-on with"
      Varonis, the title       Systems Analyst and Developer, not and Data
      Technical Skills         the development row moves to the top of the four
 
@@ -132,7 +132,7 @@ export const developerEn = {
             "Specified a mobile application end to end: business requirements, user journeys, screen flows, states, permissions and edge cases",
             "Wrote the high level and detailed design for authentication, location services, matching, real-time chat, credit mechanisms, social Circles and notifications: data structures, business logic and the service contracts between the app and its backend",
             "Planned and tracked the work as a backlog, from each requirement through to acceptance testing against it",
-            "Built the application himself with Node.js, TypeScript, Supabase, PostgreSQL, Edge Functions, RPC functions and REST APIs, with Claude and ChatGPT for prototyping, debugging and test data",
+            "Built the application end to end with Node.js, TypeScript, Supabase, PostgreSQL, Edge Functions, RPC functions and REST APIs, with Claude and ChatGPT for prototyping, debugging and test data",
             "Prepared and submitted the production releases for Google Play and the Apple App Store",
           ],
           link: { label: "Live demo:", href: DEMO },
@@ -317,7 +317,7 @@ export const developerHe = {
             "אפיון אפליקציית מובייל מקצה לקצה: דרישות עסקיות, מסעות משתמשים, זרימות מסכים, מצבים, הרשאות ומקרי קצה",
             "אפיון מנגנוני הזדהות, שירותי מיקום, התאמות, צ'אט בזמן אמת, מנגנון קרדיטים, מעגלים חברתיים והתראות",
             "תכנון ומעקב אחר המשימות כ-Backlog, מכל דרישה ועד בדיקות קבלה מול ההגדרה שממנה הגיעה",
-            "פיתוח האפליקציה בעצמו ב-Node.js, TypeScript, Supabase, PostgreSQL, Edge Functions וממשקי REST, בעזרת Claude ו-ChatGPT, כך שכל אפיון נבחן מול מערכת עובדת",
+            "פיתוח עצמאי של האפליקציה ב-Node.js, TypeScript, Supabase, PostgreSQL, Edge Functions וממשקי REST, בעזרת Claude ו-ChatGPT, כך שכל אפיון נבחן מול מערכת עובדת",
             "הכנה והגשה של גרסאות הייצור ל-Google Play ול-Apple App Store",
           ],
           link: { label: "הדגמה חיה:", href: DEMO },
