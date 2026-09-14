@@ -45,6 +45,8 @@ const PAGES = [
   { path: "/cv/architect/he/", file: "architect/ofir-aviram-cv-he.pdf" },
   { path: "/cv/analyst/", file: "analyst/ofir-aviram-cv.pdf" },
   { path: "/cv/analyst/he/", file: "analyst/ofir-aviram-cv-he.pdf" },
+  { path: "/cv/developer/", file: "developer/ofir-aviram-cv.pdf" },
+  { path: "/cv/developer/he/", file: "developer/ofir-aviram-cv-he.pdf" },
 ];
 
 /* --- the browser ----------------------------------------------------------- */

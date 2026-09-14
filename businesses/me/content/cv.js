@@ -7,10 +7,16 @@
 
      cv-architect.js   floa.co.il/cv/architect/   solution design first
      cv-analyst.js     floa.co.il/cv/analyst/     mobile and web analysis first
+     cv-developer.js   floa.co.il/cv/developer/   the code first
 
-   A third one is a third file and one more line in the list below.
+   A fourth one is a fourth file and one more line in the list below.
    ========================================================================== */
 import { architectEn, architectHe } from "./cv-architect.js";
 import { analystEn, analystHe } from "./cv-analyst.js";
+import { developerEn, developerHe } from "./cv-developer.js";
 
-export const cvPages = [architectEn, architectHe, analystEn, analystHe];
+export const cvPages = [
+  architectEn, architectHe,
+  analystEn, analystHe,
+  developerEn, developerHe,
+];
