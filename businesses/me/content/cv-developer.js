@@ -15,6 +15,9 @@
      the meta title           says the same thing, for a search result
      the summary's last line  names the six years and the product he built,
                               instead of only naming the technologies
+     Once, the title          End-to-End Development. It is the one entry
+                              where the work really was building the thing,
+                              and this document is the one that says so
      Once, the tech bullet    "built the application himself", not "hands-on"
      Varonis, the title       Systems Analyst and Developer, not and Data
      Technical Skills         the development row moves to the top of the four
@@ -122,7 +125,7 @@ export const developerEn = {
       title: "Professional Experience",
       jobs: [
         {
-          role: "Mobile Systems Analyst",
+          role: "End-to-End Development",
           org: "Once | Self-Employed",
           dates: "2026 - Present",
           bullets: [
@@ -307,7 +310,7 @@ export const developerHe = {
       title: "ניסיון תעסוקתי",
       jobs: [
         {
-          role: "מנתח מערכות מובייל",
+          role: "פיתוח מקצה לקצה",
           org: "Once | עצמאי",
           dates: "2026 - היום",
           bullets: [
