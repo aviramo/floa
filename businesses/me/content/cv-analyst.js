@@ -85,16 +85,16 @@ import { CONTACT, DEMO, SHARE_IMAGE, SHARE_TITLE, address, pdf } from "./cv-shar
    what he is and for how long, what he produces, and how he gets it delivered. */
 const SUMMARY_EN = [
   "Systems Analyst with 15+ years of experience, most of them analyzing and specifying Web and Mobile systems, organizational core systems and the interfaces between them.",
-  "Gathers business requirements and writes what follows: functional and technical specifications, high level and detailed design, data structures, interface and web service definitions, SQL queries and acceptance criteria.",
-  "Carries it to production: task and project tracking, guiding development teams, working with business users, UX and UI, QA and vendors, through acceptance testing, implementation and support, in Agile delivery.",
-  "Knows the technology hands-on: Node.js, TypeScript, Supabase, PostgreSQL, SQL and AI-assisted development tools, which is what keeps a specification something a developer can actually build.",
+  "Business requirements gathering and the documents that follow from them: functional and technical specifications, high level and detailed design, data structures, interface and web service definitions, SQL queries and acceptance criteria.",
+  "Delivery through to production: task and project tracking, guiding development teams, working with business users, UX and UI, QA and vendors, acceptance testing, implementation and support, in Agile delivery.",
+  "Hands-on knowledge of the technology: Node.js, TypeScript, Supabase, PostgreSQL, SQL and AI-assisted development tools, which is what keeps a specification something a developer can actually build.",
 ];
 
 const SUMMARY_HE = [
   "מנתח מערכות עם מעל 15 שנות ניסיון, שרובן עברו על ניתוח ואפיון של מערכות Web ומובייל, מערכות ליבה ארגוניות והממשקים ביניהן.",
-  "אוסף דרישות עסקיות וכותב את המסמכים שנגזרים מהן: אפיון פונקציונלי, אפיון טכני ברמת High-Level Design (HLD) ו-Low-Level Design (LLD), מבני נתונים, הגדרות ממשקים ו-Web Services, שאילתות SQL וקריטריוני קבלה.",
-  "מלווה את התהליך עד לייצור: מעקב אחר משימות ולוחות זמנים, הנחיית צוותי פיתוח, עבודה מול משתמשים עסקיים, UX ו-UI, בדיקות וספקים, ועד בדיקות קבלה, הטמעה ותמיכה שוטפת, בעבודה במתודולוגיית Agile.",
-  "בעל היכרות Hands-on עם טכנולוגיות פיתוח, בסיסי נתונים וכלי AI, המאפשרת כתיבת אפיונים ישימים, מדויקים וברורים לצוותי פיתוח.",
+  "איסוף דרישות עסקיות וכתיבת המסמכים שנגזרים מהן: אפיון פונקציונלי, אפיון טכני ברמת High-Level Design (HLD) ו-Low-Level Design (LLD), מבני נתונים, הגדרות ממשקים ו-Web Services, שאילתות SQL וקריטריוני קבלה.",
+  "ליווי התהליך עד לייצור: מעקב אחר משימות ולוחות זמנים, הנחיית צוותי פיתוח, עבודה מול משתמשים עסקיים, UX ו-UI, בדיקות וספקים, ועד בדיקות קבלה, הטמעה ותמיכה שוטפת, בעבודה במתודולוגיית Agile.",
+  "היכרות Hands-on עם טכנולוגיות פיתוח, בסיסי נתונים וכלי AI, שמאפשרת כתיבת אפיונים ישימים, מדויקים וברורים לצוותי פיתוח.",
 ];
 
 /* --- English ---------------------------------------------------------------- */

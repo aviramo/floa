@@ -33,13 +33,13 @@ import { CONTACT, DEMO, SHARE_IMAGE, SHARE_TITLE, address, pdf } from "./cv-shar
 const SUMMARY_EN = [
   "Solution Architect and Senior Systems Analyst with 15+ years of experience designing enterprise applications, system integrations, IAM and IDM solutions and business-process automation.",
   "Strong in requirements analysis, functional and technical specifications, business logic, data flows, SQL, ETL, APIs and end-to-end production delivery.",
-  "Combines extensive enterprise systems experience with hands-on product development using Node.js, TypeScript, Supabase and AI-assisted development tools.",
+  "Extensive enterprise systems experience combined with hands-on product development using Node.js, TypeScript, Supabase and AI-assisted development tools.",
 ];
 
 const SUMMARY_HE = [
   "ארכיטקט פתרונות ומנתח מערכות בכיר עם מעל 15 שנות ניסיון בתכנון אפליקציות ארגוניות, אינטגרציות בין מערכות, פתרונות IAM ו-IDM ואוטומציה של תהליכים עסקיים.",
-  "בעל ניסיון משמעותי בניתוח דרישות, כתיבת אפיונים פונקציונליים וטכניים, תכנון לוגיקה עסקית, זרימות נתונים, SQL, ETL, ממשקי API והובלת פתרונות עד לייצור.",
-  "משלב ניסיון במערכות ארגוניות עם יכולת מעשית לפתח מוצרים באמצעות Node.js, TypeScript, Supabase וכלי פיתוח מבוססי AI.",
+  "ניסיון משמעותי בניתוח דרישות, בכתיבת אפיונים פונקציונליים וטכניים, בתכנון לוגיקה עסקית, זרימות נתונים, SQL, ETL, ממשקי API ובהובלת פתרונות עד לייצור.",
+  "שילוב של ניסיון במערכות ארגוניות עם יכולת מעשית לפתח מוצרים באמצעות Node.js, TypeScript, Supabase וכלי פיתוח מבוססי AI.",
 ];
 
 /* --- English ---------------------------------------------------------------- */
