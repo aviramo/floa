@@ -1,15 +1,37 @@
 /* ==========================================================================
    The architect CV, twice: once in English, once in Hebrew.
 
-   Two documents, one structure. Everything below is copy and data — the way it
-   is DRAWN lives in src/components/resume/, so the two versions can never drift
-   apart in anything but language. Change the layout once and both change.
+   Two documents, one structure. Everything below is copy and data, and the way
+   it is DRAWN lives in src/components/resume/, so the two versions can never
+   drift apart in anything but language.
 
-   Both texts are Ofir's, verbatim. Nothing here is rewritten, shortened,
-   expanded, translated or invented, and every company and technology keeps its
-   exact spelling. The one liberty is punctuation the repo does not allow on a
-   page: an en dash is written as a plain hyphen in a date range, and as a colon
-   where it separated a language from its level.
+   WHAT THIS ONE LEADS WITH
+
+   Solution design, and the product. Where cv-analyst.js opens on specifying
+   systems, this one opens on designing them: the architecture of a solution,
+   the integrations between enterprise systems, and a product owned from an
+   idea to a release in both stores. Same career, same facts, different half in
+   front.
+
+   THE SHAPE, WHICH IS THE ANALYST DOCUMENT'S
+
+   That file was rewritten to open every role on OWNERSHIP rather than on the
+   first activity in it, to carry the complexity in the bullets under it, to
+   give the recent years room and the old ones brevity, and to say each skill
+   once instead of spreading it over two lists. The same pass has been applied
+   here, without moving the emphasis: "Selected Product Experience" still
+   stands as a section of its own, because the product IS half of what this
+   document is for.
+
+   NO NUMBER IN HERE WAS INVENTED. Not a user count, not a saving, not a
+   percentage, not a system count, not a team size. Where a figure would have
+   made a line land harder it is absent.
+
+   Both texts are Ofir's. Nothing is expanded, translated or invented, and every
+   company and technology keeps its exact spelling. The one liberty is
+   punctuation the repo does not allow on a page: an en dash is written as a
+   plain hyphen in a date range, and as a colon where it separated a language
+   from its level.
 
    Every date range is rendered inside <bdi dir="ltr">, so "2014 - 2017" reads
    the same way on the RTL page as on the LTR one.
@@ -21,25 +43,26 @@
    The addresses themselves are worked out in cv-shared.js, which every CV of
    this business shares. This file is copy and nothing else.
 
-   This is the same career the analyst CV tells (cv-analyst.js). The facts, the
-   companies and the dates are identical in both; what differs is which part of
-   the work each one puts in front.
+   A NOTE ON VOICE. Nothing here is in the third person: a summary that says
+   "he combines" is somebody else describing him, inside a document he sends
+   himself. The summary is nominal, and so are the bullets.
    ========================================================================== */
 import { CONTACT, DEMO, SHARE_IMAGE, SHARE_TITLE, address, pdf } from "./cv-shared.js";
 
-/* The professional summary, held here rather than inline in the section below,
-   because the share card's description IS its first paragraph. Written twice it
-   would be written differently within a month. */
+/* The summary, held here rather than inline in the section below, because the
+   share card's description IS its first paragraph. Three sentences: what he is
+   and for how long, what he turns a business need into, and the product that
+   sits beside it. */
 const SUMMARY_EN = [
-  "Solution Architect and Senior Systems Analyst with 15+ years of experience designing enterprise applications, system integrations, IAM and IDM solutions and business-process automation.",
-  "Strong in requirements analysis, functional and technical specifications, business logic, data flows, SQL, ETL, APIs and end-to-end production delivery.",
-  "Extensive enterprise systems experience combined with hands-on product development using Node.js, TypeScript, Supabase and AI-assisted development tools.",
+  "Solution Architect and Senior Systems Analyst with 15+ years of experience designing end-to-end solutions for enterprise applications, system integrations and IAM and IDM systems.",
+  "Translating a business need into a solution architecture: business logic, system interfaces, data model and data flows, and carrying it through to production.",
+  "Alongside that, end-to-end ownership of a product, from an idea to a release in both app stores, with Node.js, TypeScript, Supabase and AI-assisted development tools.",
 ];
 
 const SUMMARY_HE = [
-  "ארכיטקט פתרונות ומנתח מערכות בכיר עם מעל 15 שנות ניסיון בתכנון אפליקציות ארגוניות, אינטגרציות בין מערכות, פתרונות IAM ו-IDM ואוטומציה של תהליכים עסקיים.",
-  "ניסיון משמעותי בניתוח דרישות, בכתיבת אפיונים פונקציונליים וטכניים, בתכנון לוגיקה עסקית, זרימות נתונים, SQL, ETL, ממשקי API ובהובלת פתרונות עד לייצור.",
-  "שילוב של ניסיון במערכות ארגוניות עם יכולת מעשית לפתח מוצרים באמצעות Node.js, TypeScript, Supabase וכלי פיתוח מבוססי AI.",
+  "ארכיטקט פתרונות ומנתח מערכות בכיר עם מעל 15 שנות ניסיון בתכנון פתרונות מקצה לקצה לאפליקציות ארגוניות, אינטגרציות בין מערכות ומערכות IAM ו-IDM.",
+  "התמחות בתרגום צורך עסקי לארכיטקטורת פתרון: לוגיקה עסקית, ממשקי מערכת, מודל נתונים וזרימות נתונים, והובלתה עד לייצור.",
+  "לצד זה בעלות על מוצר מקצה לקצה, מרעיון ועד גרסה בשתי חנויות האפליקציות, ב-Node.js, TypeScript, Supabase וכלי פיתוח מבוססי AI.",
 ];
 
 /* --- English ---------------------------------------------------------------- */
@@ -50,7 +73,7 @@ export const architectEn = {
 
   meta: {
     title: "Ofir Aviram | Solution Architect and Senior Systems Analyst",
-    description: "CV of Ofir Aviram. Solution Architect and Senior Systems Analyst with 15+ years designing enterprise applications, system integrations, IAM and IDM solutions and business-process automation.",
+    description: "CV of Ofir Aviram. Solution Architect and Senior Systems Analyst with 15+ years designing end-to-end solutions for enterprise applications, integrations and IAM and IDM systems, alongside a product owned from an idea to release.",
   },
 
   share: { title: SHARE_TITLE, description: SUMMARY_EN[0], locale: "en_US", image: SHARE_IMAGE },
@@ -59,7 +82,7 @@ export const architectEn = {
   name: "Ofir Aviram",
   roles: [
     "Solution Architect | Senior Systems Analyst",
-    "Enterprise Applications, Integrations & AI-Assisted Product Development",
+    "Enterprise Applications, Integrations and End-to-End Product",
   ],
   contact: [
     { text: "Hod Hasharon, Israel" },
@@ -75,25 +98,31 @@ export const architectEn = {
       body: SUMMARY_EN,
     },
 
+    /* ONE list. This was "Core Expertise" and "Technical Skills", which between
+       them said SQL and Agile twice each and product development three times. */
     {
       type: "keywords",
       title: "Core Expertise",
       groups: [
         {
-          title: "End-to-End Full-Stack Product Development",
-          terms: ["Turning an idea or business requirement into a working product, including product definition, analysis, UX, architecture, data modeling, business logic, integrations, development, testing and production deployment"],
-        },
-        {
-          title: "Solution Design",
+          title: "Solution Architecture",
           terms: ["End-to-End Solution Design", "Enterprise Applications", "Integration Architecture", "Business Logic", "System Interfaces", "Data Flows"],
         },
         {
-          title: "Systems Analysis",
-          terms: ["Requirements Gathering", "Functional and Technical Specifications", "Business Process Modeling", "Data Modeling", "UAT"],
+          title: "Analysis and Specification",
+          terms: ["Requirements Gathering", "Functional and Technical Specifications", "High-Level Design (HLD)", "Detailed Design (DD)", "Business Process Modeling", "UAT"],
         },
         {
-          title: "Delivery",
-          terms: ["Stakeholder Management", "Cross-Functional Leadership", "Testing", "Troubleshooting", "Production Deployment", "Agile Delivery"],
+          title: "Platforms and Integration",
+          terms: ["Salesforce", "Priority ERP", "Workato", "Aveksa", "IAM", "IDM", "IGA", "REST APIs", "ETL", "SSIS"],
+        },
+        {
+          title: "Data and Development",
+          terms: ["SQL", "Microsoft SQL Server", "PostgreSQL", "Node.js", "TypeScript", "JavaScript", "Supabase", "Edge Functions", "RPC Functions", "Java", "JSP", "Git"],
+        },
+        {
+          title: "Product and Delivery",
+          terms: ["End-to-End Product Ownership", "Claude", "ChatGPT", "AI-Assisted Development", "Agile", "Jira", "Production Deployment"],
         },
       ],
     },
@@ -107,12 +136,10 @@ export const architectEn = {
           org: "Once | Self-Employed",
           dates: "2026 - Present",
           bullets: [
-            "Took Once from concept to a production-ready mobile product, owning product definition, UX, architecture, development, testing and release",
-            "Designed the database model, business logic, backend workflows, permissions and real-time processes",
-            "Built authentication, location services, matching, real-time chat, credit mechanisms, social Circles and notifications",
-            "Developed with Node.js, TypeScript, Supabase, PostgreSQL, Edge Functions, RPC functions and APIs",
-            "Used Claude and ChatGPT for prototyping, coding, debugging, refactoring, problem-solving and test-data generation",
-            "Prepared and submitted production releases for Google Play and the Apple App Store",
+            "Full ownership of Once from concept to a production mobile product: product definition, UX, architecture, development, testing and the releases",
+            "Designed the architecture behind it: the data model, the business logic, the backend workflows, the permission model and the real-time processes",
+            "Built authentication, location services, matching, real-time chat, credit mechanisms, social Circles and notifications with Node.js, TypeScript, Supabase, PostgreSQL, Edge Functions, RPC functions and APIs",
+            "Used Claude and ChatGPT for prototyping, coding, debugging, refactoring and test-data generation, and prepared and submitted the production releases for Google Play and the Apple App Store",
           ],
           link: { label: "Product demo:", href: DEMO },
         },
@@ -128,10 +155,9 @@ export const architectEn = {
           org: "Tidhar Group | Israel | Hybrid",
           dates: "2025 - 2026",
           bullets: [
-            "Led the analysis and delivery of enterprise processes, automations and integrations across Salesforce, Priority ERP and Workato",
-            "Translated business requirements into functional and technical specifications",
-            "Designed data mappings, business logic, integration flows, system interfaces and SQL and ETL processes",
-            "Coordinated business stakeholders, IT teams, vendors, testing and production deployment",
+            "Responsible for the design and delivery of cross-system business processes, automations and integrations across Salesforce, Priority ERP and Workato, from the business requirement through to production",
+            "Designed the integration architecture: data mappings, business logic, integration flows, system interfaces and SQL and ETL processes",
+            "Translated business requirements into functional and technical specifications, and coordinated business stakeholders, IT teams and vendors through testing and implementation",
           ],
         },
         {
@@ -139,9 +165,8 @@ export const architectEn = {
           org: "Brillix | Israel | Remote",
           dates: "2021 - 2025",
           bullets: [
-            "Designed and implemented enterprise Identity Management solutions for Clalit Health Services, Migdal, Ayalon and LivePerson",
-            "Created functional and technical specifications for identity processes, interfaces, data transformations and integrations",
-            "Designed business logic, data mappings, ETL processes and system interfaces",
+            "Responsible for the design and implementation of enterprise Identity Management solutions at Clalit Health Services, Migdal, Ayalon and LivePerson",
+            "Designed the solution end to end: identity processes, interfaces, data transformations, data mappings and ETL processes, alongside the functional and technical specifications for them",
             "Led delivery across cybersecurity, DBA, DevOps, infrastructure, IT and business teams",
           ],
         },
@@ -152,9 +177,8 @@ export const architectEn = {
           org: "Tel Aviv-Yafo Municipality",
           dates: "2020 - 2021",
           bullets: [
-            "Led the analysis and design of a web solution connecting municipal departments and automating cross-organizational workflows",
-            "Modeled business processes, data structures, user journeys and UX and UI flows",
-            "Designed SQL and SSIS integrations and coordinated users, development, DBA, QA and UAT",
+            "Led the analysis and design of a Web solution connecting municipal departments and automating cross-organizational workflows",
+            "Modeled the processes, the data structures and the user journeys, and designed the SQL and SSIS integrations through to acceptance testing",
           ],
         },
         {
@@ -162,9 +186,8 @@ export const architectEn = {
           org: "Amdocs | Israel",
           dates: "2017 - 2020",
           bullets: [
-            "Translated business and security requirements into technical processes, business logic, interfaces and integrations",
-            "Designed system workflows and data flows and guided a Java and JSP development team",
-            "Coordinated development, cybersecurity, infrastructure, DBA, DevOps, testing and production delivery",
+            "Designed the organization's identity management solution, from business and security requirements through to processes, business logic, interfaces and integrations",
+            "Designed system workflows and data flows, and guided a Java and JSP development team through to production delivery",
           ],
         },
         {
@@ -172,10 +195,8 @@ export const architectEn = {
           org: "ProLink Identity Management Architects | Israel",
           dates: "2014 - 2017",
           bullets: [
-            "Independently customized and implemented the Aveksa IAM and Identity Governance platform for Harel, Migdal, Phoenix and Amdocs",
-            "Owned the application-level solution design and implementation, excluding infrastructure",
-            "Designed business logic, workflows, rules, approval processes, data mappings and synchronization processes",
-            "Built integrations with enterprise systems, databases and directories and led testing, deployment and production support",
+            "Owned the solution design and implementation at application level, excluding infrastructure, of the Aveksa IAM and Identity Governance platform at Harel, Migdal, Phoenix and Amdocs",
+            "Built business logic, workflows, rules, approval processes, data mappings and synchronization processes, and the integrations with enterprise systems, databases and directories",
           ],
         },
         {
@@ -184,35 +205,15 @@ export const architectEn = {
           dates: "2008 - 2014",
           bullets: [
             "Developed and maintained an enterprise billing platform using Microsoft SQL Server, Microsoft Access and VBA",
-            "Translated business requirements into database queries, reports, automations and system enhancements",
-            "Investigated production issues and worked directly with finance and operational stakeholders",
+            "Turned business requirements into database queries, reports, automations and system enhancements, working directly with finance and operational stakeholders",
           ],
         },
       ],
     },
 
     {
-      type: "keywords",
-      title: "Technical Skills",
-      groups: [
-        {
-          title: "Platforms and Integration",
-          terms: ["Salesforce", "Priority ERP", "Workato", "Aveksa", "IAM", "IDM", "IGA", "REST APIs", "ETL", "SSIS"],
-        },
-        {
-          title: "Data and Development",
-          terms: ["SQL", "Microsoft SQL Server", "PostgreSQL", "Node.js", "TypeScript", "JavaScript", "Supabase", "Edge Functions", "RPC Functions", "Java", "JSP", "Git", "Microsoft Access", "VBA"],
-        },
-        {
-          title: "AI and Delivery",
-          terms: ["Claude", "ChatGPT", "AI-Assisted Development", "Rapid Prototyping", "Jira", "Agile", "UAT"],
-        },
-      ],
-    },
-
-    {
       type: "entries",
-      title: "Education",
+      title: "Education and Service",
       entries: [
         {
           title: "PRODUCT MANAGEMENT PROGRAM",
@@ -222,13 +223,6 @@ export const architectEn = {
           title: "B.SC. INDUSTRIAL ENGINEERING AND MANAGEMENT",
           lines: ["Information Systems Specialization", "Ben-Gurion University of the Negev | 2004 - 2008"],
         },
-      ],
-    },
-
-    {
-      type: "entries",
-      title: "Military Service",
-      entries: [
         {
           title: "COMBAT SOLDIER AND COMMANDER",
           lines: ["Combat Engineering Corps | 1999 - 2002"],
@@ -246,7 +240,7 @@ export const architectHe = {
 
   meta: {
     title: "אופיר אבירם | ארכיטקט פתרונות ומנתח מערכות בכיר",
-    description: "קורות החיים של אופיר אבירם. ארכיטקט פתרונות ומנתח מערכות בכיר עם מעל 15 שנות ניסיון בתכנון אפליקציות ארגוניות, אינטגרציות, פתרונות IAM ו-IDM ואוטומציה של תהליכים עסקיים.",
+    description: "קורות החיים של אופיר אבירם. ארכיטקט פתרונות ומנתח מערכות בכיר עם מעל 15 שנות ניסיון בתכנון פתרונות מקצה לקצה לאפליקציות ארגוניות, אינטגרציות ומערכות IAM ו-IDM, לצד בעלות על מוצר מרעיון ועד גרסה בחנויות.",
   },
 
   share: { title: SHARE_TITLE, description: SUMMARY_HE[0], locale: "he_IL", image: SHARE_IMAGE },
@@ -255,7 +249,7 @@ export const architectHe = {
   name: "אופיר אבירם",
   roles: [
     "ארכיטקט פתרונות | מנתח מערכות בכיר",
-    "אפליקציות ארגוניות, אינטגרציות ופיתוח מוצר בעזרת AI",
+    "אפליקציות ארגוניות, אינטגרציות ומוצר מקצה לקצה",
   ],
   contact: [
     { text: "הוד השרון" },
@@ -276,20 +270,24 @@ export const architectHe = {
       title: "תחומי מומחיות",
       groups: [
         {
-          title: "פיתוח מוצר Full-Stack מקצה לקצה",
-          terms: ["הפיכת רעיון או דרישה עסקית למוצר עובד, כולל הגדרת המוצר, אפיון, חוויית משתמש, ארכיטקטורה, מודל נתונים, לוגיקה עסקית, אינטגרציות, פיתוח, בדיקות ועלייה לייצור"],
+          title: "ארכיטקטורת פתרונות",
+          terms: ["תכנון פתרון מקצה לקצה", "אפליקציות ארגוניות", "ארכיטקטורת אינטגרציה", "לוגיקה עסקית", "ממשקי מערכת", "זרימות נתונים"],
         },
         {
-          title: "תכנון פתרונות",
-          terms: ["תכנון פתרון מקצה לקצה", "אפליקציות ארגוניות", "ארכיטקטורת אינטגרציה", "לוגיקה עסקית", "ממשקי מערכת וזרימות נתונים"],
+          title: "ניתוח ואפיון",
+          terms: ["איסוף דרישות", "אפיון פונקציונלי וטכני", "High-Level Design (HLD)", "Detailed Design (DD)", "מידול תהליכים עסקיים", "UAT"],
         },
         {
-          title: "ניתוח מערכות",
-          terms: ["איסוף דרישות", "אפיון פונקציונלי וטכני", "מידול תהליכים עסקיים", "מידול נתונים ובדיקות קבלה"],
+          title: "פלטפורמות ואינטגרציה",
+          terms: ["Salesforce", "Priority ERP", "Workato", "Aveksa", "IAM", "IDM", "IGA", "REST APIs", "ETL", "SSIS"],
         },
         {
-          title: "הובלת אספקה",
-          terms: ["ניהול בעלי עניין", "הובלה חוצת ארגון", "בדיקות", "פתרון תקלות", "עלייה לייצור ועבודה במתודולוגיית Agile"],
+          title: "נתונים ופיתוח",
+          terms: ["SQL", "Microsoft SQL Server", "PostgreSQL", "Node.js", "TypeScript", "JavaScript", "Supabase", "Edge Functions", "RPC Functions", "Java", "JSP", "Git"],
+        },
+        {
+          title: "מוצר ואספקה",
+          terms: ["בעלות על מוצר מקצה לקצה", "Claude", "ChatGPT", "AI-Assisted Development", "Agile", "Jira", "עלייה לייצור"],
         },
       ],
     },
@@ -303,12 +301,10 @@ export const architectHe = {
           org: "Once | עצמאי",
           dates: "2026 - היום",
           bullets: [
-            "הובלת Once מרעיון ראשוני למוצר מובייל מוכן לייצור, כולל הגדרת המוצר, חוויית המשתמש, הארכיטקטורה, הפיתוח, הבדיקות והגרסאות",
-            "תכנון מודל הנתונים, הלוגיקה העסקית, תהליכי הצד השרת ומודל ההרשאות",
-            "פיתוח מנגנוני הזדהות, שירותי מיקום, התאמות, צ'אט בזמן אמת, מנגנון קרדיטים, מעגלים חברתיים והתראות",
-            "פיתוח באמצעות Node.js, TypeScript, Supabase, PostgreSQL, Edge Functions, RPC Functions וממשקי API",
-            "שימוש ב-Claude וב-ChatGPT לאב טיפוס, כתיבת קוד, פתרון תקלות, ריפקטורינג ויצירת נתוני בדיקה",
-            "הכנה והגשה של גרסאות ייצור ל-Google Play ול-Apple App Store",
+            "בעלות מלאה על Once מרעיון ועד מוצר מובייל בייצור: הגדרת המוצר, חוויית המשתמש, הארכיטקטורה, הפיתוח, הבדיקות והגרסאות",
+            "תכנון הארכיטקטורה שמאחוריו: מודל הנתונים, הלוגיקה העסקית, תהליכי צד השרת, מודל ההרשאות והתהליכים בזמן אמת",
+            "פיתוח מנגנוני הזדהות, שירותי מיקום, התאמות, צ'אט בזמן אמת, מנגנון קרדיטים, מעגלים חברתיים והתראות ב-Node.js, TypeScript, Supabase, PostgreSQL, Edge Functions, RPC Functions וממשקי API",
+            "שימוש ב-Claude וב-ChatGPT לאב טיפוס, כתיבת קוד, פתרון תקלות, ריפקטורינג ויצירת נתוני בדיקה, והכנה והגשה של גרסאות הייצור ל-Google Play ול-Apple App Store",
           ],
           link: { label: "הדגמת המוצר:", href: DEMO },
         },
@@ -324,10 +320,9 @@ export const architectHe = {
           org: "קבוצת תדהר | היברידי",
           dates: "2025 - 2026",
           bullets: [
-            "הובלת ניתוח ואספקה של תהליכים עסקיים, אוטומציות ואינטגרציות על גבי Salesforce, Priority ERP ו-Workato",
-            "תרגום דרישות עסקיות לאפיונים פונקציונליים וטכניים",
-            "תכנון מיפויי נתונים, לוגיקה עסקית, זרימות אינטגרציה, ממשקי מערכת ותהליכי SQL ו-ETL",
-            "תיאום בין גורמים עסקיים, צוותי IT, ספקים, בדיקות ועלייה לייצור",
+            "אחריות על התכנון והאספקה של תהליכים עסקיים, אוטומציות ואינטגרציות חוצות מערכות על גבי Salesforce, Priority ERP ו-Workato, מהדרישה העסקית ועד העלייה לייצור",
+            "תכנון ארכיטקטורת האינטגרציה: מיפויי נתונים, לוגיקה עסקית, זרימות אינטגרציה, ממשקי מערכת ותהליכי SQL ו-ETL",
+            "תרגום דרישות עסקיות לאפיונים פונקציונליים וטכניים, ותיאום בין גורמים עסקיים, צוותי IT וספקים עד לבדיקות ולהטמעה",
           ],
         },
         {
@@ -335,9 +330,8 @@ export const architectHe = {
           org: "בריליקס | מרחוק",
           dates: "2021 - 2025",
           bullets: [
-            "תכנון והטמעה של פתרונות ניהול זהויות עבור שירותי בריאות כללית, מגדל, איילון ו-LivePerson",
-            "כתיבת אפיונים פונקציונליים וטכניים לתהליכי זהות, ממשקים, טרנספורמציות נתונים ואינטגרציות",
-            "תכנון לוגיקה עסקית, מיפויי נתונים, תהליכי ETL וממשקי מערכת",
+            "אחריות על התכנון וההטמעה של פתרונות ניהול זהויות ארגוניים בשירותי בריאות כללית, מגדל, איילון ו-LivePerson",
+            "תכנון הפתרון מקצה לקצה: תהליכי זהות, ממשקים, טרנספורמציות נתונים, מיפויי נתונים ותהליכי ETL, לצד כתיבת האפיונים הפונקציונליים והטכניים",
             "הובלת האספקה מול צוותי סייבר, DBA, DevOps, תשתיות, IT וגורמים עסקיים",
           ],
         },
@@ -349,8 +343,7 @@ export const architectHe = {
           dates: "2020 - 2021",
           bullets: [
             "הובלת האפיון והתכנון של פתרון Web שחיבר בין יחידות עירוניות וביצע אוטומציה של תהליכים חוצי ארגון",
-            "מידול תהליכים עסקיים, מבני נתונים, מסעות משתמשים וזרימות UX ו-UI",
-            "תכנון אינטגרציות SQL ו-SSIS ותיאום בין משתמשים, פיתוח, DBA, QA ובדיקות קבלה",
+            "מידול התהליכים, מבני הנתונים ומסעות המשתמשים, ותכנון אינטגרציות SQL ו-SSIS עד לבדיקות הקבלה",
           ],
         },
         {
@@ -358,9 +351,8 @@ export const architectHe = {
           org: "אמדוקס",
           dates: "2017 - 2020",
           bullets: [
-            "תרגום דרישות עסקיות ודרישות אבטחת מידע לתהליכים טכניים, לוגיקה עסקית, ממשקים ואינטגרציות",
-            "תכנון תהליכי מערכת וזרימות נתונים והנחיית צוות פיתוח שעבד ב-Java וב-JSP",
-            "תיאום בין צוותי פיתוח, סייבר, תשתיות, DBA, DevOps, בדיקות ועלייה לייצור",
+            "תכנון פתרון ניהול הזהויות בארגון, מדרישות עסקיות ומדרישות אבטחת מידע ועד תהליכים, לוגיקה עסקית, ממשקים ואינטגרציות",
+            "תכנון תהליכי מערכת וזרימות נתונים, והנחיית צוות פיתוח שעבד ב-Java וב-JSP עד לעלייה לייצור",
           ],
         },
         {
@@ -368,10 +360,8 @@ export const architectHe = {
           org: "פרולינק ניהול זהויות",
           dates: "2014 - 2017",
           bullets: [
-            "התאמה והטמעה עצמאית של פלטפורמת Aveksa לניהול זהויות וממשל הרשאות בהראל, מגדל, הפניקס ואמדוקס",
-            "אחריות על תכנון הפתרון והמימוש בשכבת האפליקציה, למעט תשתיות",
-            "תכנון לוגיקה עסקית, תהליכי עבודה, חוקים, תהליכי אישור, מיפויי נתונים ותהליכי סנכרון",
-            "בניית אינטגרציות למערכות ארגוניות, בסיסי נתונים ושירותי Directory והובלת בדיקות, הטמעה ותמיכה בייצור",
+            "אחריות מלאה על תכנון הפתרון והמימוש בשכבת האפליקציה, למעט תשתיות, של פלטפורמת Aveksa לניהול זהויות וממשל הרשאות בהראל, מגדל, הפניקס ואמדוקס",
+            "בניית לוגיקה עסקית, תהליכי עבודה, חוקים, תהליכי אישור, מיפויי נתונים ותהליכי סנכרון, ואינטגרציות למערכות ארגוניות, בסיסי נתונים ושירותי Directory",
           ],
         },
         {
@@ -380,28 +370,8 @@ export const architectHe = {
           dates: "2008 - 2014",
           bullets: [
             "פיתוח ותחזוקה של מערכת חיוב ארגונית באמצעות Microsoft SQL Server, Microsoft Access ו-VBA",
-            "תרגום דרישות עסקיות לשאילתות, דוחות, אוטומציות ושיפורים במערכת",
-            "חקירת תקלות בייצור ועבודה ישירה מול גורמי כספים ותפעול",
+            "תרגום דרישות עסקיות לשאילתות, דוחות, אוטומציות ושיפורים במערכת, בעבודה ישירה מול גורמי כספים ותפעול",
           ],
-        },
-      ],
-    },
-
-    {
-      type: "keywords",
-      title: "כישורים טכניים",
-      groups: [
-        {
-          title: "פלטפורמות ואינטגרציה",
-          terms: ["Salesforce", "Priority ERP", "Workato", "Aveksa", "IAM", "IDM", "IGA", "REST APIs", "ETL", "SSIS"],
-        },
-        {
-          title: "נתונים ופיתוח",
-          terms: ["SQL", "Microsoft SQL Server", "PostgreSQL", "Node.js", "TypeScript", "JavaScript", "Supabase", "Edge Functions", "RPC Functions", "Java", "JSP", "Git", "Microsoft Access", "VBA"],
-        },
-        {
-          title: "כלי AI ואספקה",
-          terms: ["Claude", "ChatGPT", "AI-Assisted Development", "Rapid Prototyping", "Jira", "Agile", "UAT"],
         },
       ],
     },
