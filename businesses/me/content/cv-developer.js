@@ -1,7 +1,13 @@
 /* ==========================================================================
    The analyst CV again, with the development background brought forward.
 
-   THIS IS cv-analyst.js. It is a copy of it, and it is meant to stay one.
+   THIS WAS A COPY OF cv-analyst.js, AND IT IS NO LONGER ONE.
+
+   The analyst document was rewritten on its own (ownership-first bullets, a
+   shorter summary, one merged skills list). That pass was asked for on the
+   analyst alone, so the two have parted company: the list of differences below
+   describes the fork as it stood, not the file as it is today. The FACTS still
+   agree, and must; the shape no longer does.
 
    It goes to the same openings: systems analysis, Web, Mobile and core
    systems. It is NOT for a development role and must never be sent to one.
