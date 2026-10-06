@@ -60,5 +60,11 @@ export const BUSINESSES = {
     "pages": [
       "פרולינק"
     ]
+  },
+  "test": {
+    "brand": "test",
+    "to": "LEAD_TO_TEST",
+    "origins": [],
+    "pages": []
   }
 };
