@@ -6,6 +6,12 @@
    allowed to post on its behalf, and the pages that may send.
    ========================================================================== */
 export const BUSINESSES = {
+  "aum": {
+    "brand": "AUM",
+    "to": "LEAD_TO_AUM",
+    "origins": [],
+    "pages": []
+  },
   "chords": {
     "brand": "אקורדים",
     "to": "LEAD_TO",
