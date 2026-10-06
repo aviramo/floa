@@ -229,3 +229,10 @@ a { color: inherit; }
 .callme { display: grid; gap: 2px; justify-items: center; margin: 22px 0 0; }
 .callme span { color: #F3DDB0; font-size: 1.25rem; }
 .callme a { color: #FFE08A; font: 800 clamp(2rem, 9vw, 2.8rem)/1.1 "Rubik", sans-serif; text-decoration: none; letter-spacing: .02em; }
+
+/* חותמת קטנה בתחתית: מי בנה את הדף. מובילה לאתר של FLOA */
+.made { justify-self: center; display: inline-flex; align-items: center; gap: 7px; margin-top: 14px; padding: 6px 16px; border: 1px solid rgba(255, 246, 220, .28); border-radius: 999px; color: #F3DDB0; font-size: .92rem; text-decoration: none; transition: background .2s, border-color .2s, color .2s; }
+.made svg { width: 14px; height: 14px; fill: var(--gold); transition: transform .4s; }
+.made:hover { background: rgba(255, 246, 220, .1); border-color: var(--gold); color: #fff; }
+.made:hover svg { transform: rotate(90deg) scale(1.2); }
+@media (prefers-reduced-motion: reduce) { .made, .made svg { transition: none; } }
