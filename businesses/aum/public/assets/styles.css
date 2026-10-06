@@ -61,6 +61,8 @@ a { color: inherit; }
 .topbar { background: var(--night); color: var(--cream); font-size: .95rem; border-bottom: 3px solid var(--gold); }
 .topbar__in { width: min(1120px, 100% - 40px); margin-inline: auto; min-height: 44px; padding: 6px 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 18px; text-align: center; }
 .topbar__label { font-family: "Amatic SC", cursive; font-size: 1.5rem; color: var(--gold); line-height: 1; }
+.topbar__when { font-weight: 800; }
+.topbar__where { color: #F3DDB0; }
 .topbar__price { background: var(--gold); color: var(--night); font-weight: 800; padding: 1px 14px; border-radius: 999px; }
 .topbar__spots { color: #FFE08A; font-weight: 700; }
 

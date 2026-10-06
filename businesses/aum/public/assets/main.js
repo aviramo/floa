@@ -49,7 +49,9 @@
       soon.className = "topbar__label";
       soon.textContent = "מועד הריטריט הבא יפורסם בקרוב";
       inner.appendChild(soon);
-      $("#heroDate").textContent = "המועד הבא יפורסם בקרוב";
+      $("#tbWhen").textContent = DAYS[d.getDay()] + ", " + d.getDate() + "." + (d.getMonth() + 1) + " · " + hm(ev.from) + " עד " + hm(ev.to);
+    $("#tbWhere").textContent = ev.location;
+    $("#heroDate").textContent = "המועד הבא יפורסם בקרוב";
       $("#heroTime").hidden = true;
       var p = $("#faqPrice");
       if (p) p.textContent = "המחיר והמועד הבא יפורסמו בקרוב. אפשר לשאול את טל ישירות.";
@@ -57,6 +59,8 @@
     }
 
     var d = new Date(ev.date + "T12:00:00");
+    $("#tbWhen").textContent = DAYS[d.getDay()] + ", " + d.getDate() + "." + (d.getMonth() + 1) + " · " + hm(ev.from) + " עד " + hm(ev.to);
+    $("#tbWhere").textContent = ev.location;
     $("#heroDate").textContent = "יום " + DAYS[d.getDay()] + ", " + d.getDate() + " " + MONTHS[d.getMonth()];
     $("#heroTime").textContent = hm(ev.from) + " עד " + hm(ev.to) + " · " + (ev.location.split(",").pop().trim());
 
