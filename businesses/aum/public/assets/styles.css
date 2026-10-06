@@ -72,6 +72,7 @@ a { color: inherit; }
   background: radial-gradient(ellipse 80% 70% at 50% 38%, #FFF1B0 0%, #FBD360 38%, #F29A22 78%, #B8541A 100%); }
 .hero::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; box-shadow: inset 0 0 120px 20px rgba(74, 31, 16, .55); }
 .hero__grid { display: grid; gap: 36px; align-items: center; position: relative; }
+.hero__copy { position: relative; z-index: 2; }       /* הטקסט תמיד מעל המנדלה */
 .hero__hand { font-size: 2.3rem; }
 .hero h1 { font-size: clamp(2.2rem, 8.6vw, 3.7rem); font-weight: 800; }
 .hl { color: var(--red); }
@@ -86,10 +87,10 @@ a { color: inherit; }
 .ribbon--small { background: linear-gradient(180deg, #E8501B, #C1191F); font-size: 1.05rem; padding: 6px 34px; }
 .hero__cta { display: flex; flex-wrap: wrap; gap: 12px; }
 .micro { color: var(--muted); font-size: .98rem; margin-top: 16px; }
-.hero__photo { margin: 0; position: relative; width: min(100%, 460px); justify-self: center; }
-.hero__photo img { border-radius: 50%; aspect-ratio: 1; object-fit: cover; width: 100%; border: 8px solid var(--rust); position: relative;
+.hero__photo { margin: 0; position: relative; z-index: 1; width: min(100%, 460px); justify-self: center; }
+.hero__photo img { z-index: 1; border-radius: 50%; aspect-ratio: 1; object-fit: cover; width: 100%; border: 8px solid var(--rust); position: relative;
   box-shadow: 0 0 0 6px var(--gold), 0 0 70px 24px rgba(255, 226, 120, .75), 0 30px 60px -20px rgba(74, 31, 16, .6); }
-.mandala { position: absolute; left: 50%; top: 50%; width: 150%; max-width: none; aspect-ratio: 1; margin: -75% 0 0 -75%; color: rgba(138, 74, 20, .55); animation: spin 180s linear infinite; pointer-events: none; }
+.mandala { position: absolute; left: 50%; top: 50%; width: 128%; max-width: none; aspect-ratio: 1; margin: -64% 0 0 -64%; z-index: 0; color: rgba(138, 74, 20, .55); animation: spin 180s linear infinite; pointer-events: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .credit { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); white-space: nowrap; z-index: 2; font-size: .78rem; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,.6); }
 
