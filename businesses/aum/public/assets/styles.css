@@ -183,24 +183,6 @@ a { color: inherit; }
 .join h2 { color: var(--cream); font-size: clamp(2rem, 6vw, 3.2rem); }
 .join .hand { color: var(--gold); font-size: 2.4rem; }
 .join .sub { color: #F3DDB0; margin-inline: auto; }
-.form { background: var(--paper); color: var(--ink); border-radius: var(--radius); padding: 26px 24px; margin: 28px 0 22px; text-align: start; }
-.field { display: block; margin-bottom: 14px; }
-.field span { display: block; font-weight: 700; font-size: 1.08rem; color: var(--muted); margin-bottom: 4px; }
-.field input { width: 100%; height: 54px; border: 2px solid var(--line); border-radius: 16px; padding: 0 16px; font: inherit; background: #fff; }
-.field input:focus { border-color: var(--red); outline: none; }
-.check { display: flex; gap: 10px; align-items: center; margin: 4px 0 18px; font-size: 1.12rem; cursor: pointer; }
-.check input { width: 22px; height: 22px; accent-color: var(--red); flex: 0 0 auto; }
-.hp { position: absolute; inset-inline-start: -9999px; width: 1px; height: 1px; overflow: hidden; }
-.err { color: var(--red); font-weight: 700; margin: 12px 0 0; }
-.fine { font-size: 1rem; color: var(--muted); margin: 14px 0 0; }
-.join .fine { color: #E3C99A; }
-.join .link { color: #FFE08A; }
-.form .fine { color: var(--muted); }
-.thanks { background: var(--paper); color: var(--ink); border-radius: var(--radius); padding: 30px 24px; margin: 28px 0 22px; }
-.thanks h3 { font-size: 1.6rem; color: var(--red); margin-bottom: 6px; }
-.thanks p { margin: 0; }
-.or { display: flex; align-items: center; gap: 14px; color: #E3C99A; margin: 8px 0 18px; font-size: 1.08rem; }
-.or::before, .or::after { content: ""; flex: 1; height: 1px; background: rgba(255, 246, 220, .3); }
 
 /* ----- תחתית ----- */
 .foot { background: var(--red-deep); color: var(--cream); padding: 30px 0 100px; text-align: center; font-size: 1.08rem; }

@@ -6,9 +6,8 @@
 --
 -- מי רואה מה:
 --   * מנהל מחובר (מייל ב-aum_admins, כניסה עם גוגל של floa): הכול.
---   * מבקר באתר (anon): שום טבלה. רק שתי פונקציות שהדף קורא להן:
+--   * מבקר באתר (anon): שום טבלה. פונקציה אחת בלבד:
 --       aum_next()    המפגש הקרוב ומספר הנרשמים, בלי אף שם
---       aum_signup()  הרשמה: שם, טלפון, ואם זו הפעם הראשונה
 -- ==========================================================================
 
 -- 1. טבלאות
@@ -183,7 +182,9 @@ begin
   return res;
 end $$;
 revoke all on function public.aum_signup(text, text, boolean) from public;
-grant execute on function public.aum_signup(text, text, boolean) to anon, authenticated;
+-- אין בדף טופס הרשמה, ולכן הפונקציה סגורה לציבור: מי שלא משתמש בה לא צריך להיות מסוגל לכתוב איתה.
+-- להחזרת טופס: grant execute on function public.aum_signup(text, text, boolean) to anon;
+grant execute on function public.aum_signup(text, text, boolean) to authenticated;
 
 -- 7. זמן אמת בדף הניהול (Realtime מכבד RLS: רק מנהל מחובר מקבל שינויים)
 do $$
