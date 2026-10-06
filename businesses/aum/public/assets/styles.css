@@ -25,7 +25,7 @@
 html { scroll-behavior: smooth; }
 body {
   margin: 0; background: var(--cream); color: var(--ink);
-  font-family: "Assistant", system-ui, sans-serif; font-size: 18px; line-height: 1.6;
+  font-family: "Assistant", system-ui, sans-serif; font-size: 20.5px; line-height: 1.65;
   -webkit-font-smoothing: antialiased;
 }
 img { display: block; max-width: 100%; height: auto; }
@@ -38,15 +38,15 @@ a { color: inherit; }
 .narrow { width: min(760px, 100% - 40px); }
 
 .hand { font-family: "Amatic SC", cursive; font-weight: 700; font-size: 2rem; color: var(--red); margin: 0 0 .2em; line-height: 1; }
-.eyebrow { font-weight: 700; font-size: .95rem; letter-spacing: .02em; color: var(--red); margin: 0 0 .6em; }
-.sub { color: var(--muted); font-size: 1.1rem; max-width: 40em; }
+.eyebrow { font-weight: 700; font-size: 1.1rem; letter-spacing: .02em; color: var(--red); margin: 0 0 .6em; }
+.sub { color: var(--muted); font-size: 1.25rem; max-width: 40em; }
 .link { color: var(--red); font-weight: 700; text-underline-offset: 4px; }
 
 /* ----- כפתורים ----- */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: .6em;
   min-height: 56px; padding: 0 30px; border-radius: 999px; border: 2px solid var(--red);
-  background: var(--red); color: var(--paper); font: 700 1.15rem "Rubik", sans-serif;
+  background: var(--red); color: var(--paper); font: 700 1.28rem "Rubik", sans-serif;
   text-decoration: none; cursor: pointer; transition: background .2s, transform .2s;
 }
 .btn:hover { background: var(--red-deep); border-color: var(--red-deep); }
@@ -58,7 +58,7 @@ a { color: inherit; }
 .btn svg { width: 24px; height: 24px; fill: currentColor; }
 
 /* ----- באנר ----- */
-.topbar { background: var(--night); color: var(--cream); font-size: .95rem; border-bottom: 3px solid var(--gold); }
+.topbar { background: var(--night); color: var(--cream); font-size: 1.08rem; border-bottom: 3px solid var(--gold); }
 .topbar__in { width: min(1120px, 100% - 40px); margin-inline: auto; min-height: 44px; padding: 6px 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 18px; text-align: center; }
 .topbar__label { font-family: "Amatic SC", cursive; font-size: 1.5rem; color: var(--gold); line-height: 1; }
 .topbar__when { font-weight: 800; }
@@ -78,15 +78,15 @@ a { color: inherit; }
 .hl { color: var(--red); }
 .hero .micro { color: #6B3A22; }
 .hero .hand { color: var(--red-deep); }
-.lead { font-size: 1.2rem; margin: 22px 0 28px; max-width: 34em; }
+.lead { font-size: 1.4rem; margin: 22px 0 28px; max-width: 34em; }
 .ribbons { display: grid; gap: 8px; justify-items: start; margin: 0 0 26px; }
-.ribbon { margin: 0; color: var(--paper); font: 700 1.2rem "Rubik", sans-serif; text-align: center;
+.ribbon { margin: 0; color: var(--paper); font: 700 1.3rem "Rubik", sans-serif; text-align: center;
   background: linear-gradient(180deg, #F2761C, #D9531A); padding: 8px 40px; filter: drop-shadow(0 3px 0 rgba(90, 36, 16, .35));
   clip-path: polygon(0 0, 100% 0, calc(100% - 18px) 50%, 100% 100%, 0 100%, 18px 50%); }
-.ribbon--big { font-size: 1.45rem; }
-.ribbon--small { background: linear-gradient(180deg, #E8501B, #C1191F); font-size: 1.05rem; padding: 6px 34px; }
+.ribbon--big { font-size: 1.6rem; }
+.ribbon--small { background: linear-gradient(180deg, #E8501B, #C1191F); font-size: 1.18rem; padding: 6px 34px; }
 .hero__cta { display: flex; flex-wrap: wrap; gap: 12px; }
-.micro { color: var(--muted); font-size: .98rem; margin-top: 16px; }
+.micro { color: var(--muted); font-size: 1.12rem; margin-top: 16px; }
 .hero__photo { margin: 0; position: relative; z-index: 1; width: min(100%, 460px); justify-self: center; }
 .hero__photo img { z-index: 1; border-radius: 50%; aspect-ratio: 1; object-fit: cover; width: 100%; border: 8px solid var(--rust); position: relative;
   box-shadow: 0 0 0 6px var(--gold), 0 0 70px 24px rgba(255, 226, 120, .75), 0 30px 60px -20px rgba(74, 31, 16, .6); }
@@ -100,7 +100,7 @@ a { color: inherit; }
 .door__list { list-style: none; margin: 8px 0 22px; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 22px; }
 .door__list li { font: 800 clamp(1.7rem, 5.6vw, 3rem) "Rubik", sans-serif; line-height: 1.25; }
 .door__list li:nth-child(3n+2) { color: #FFE08A; }
-.door__yes { font: 600 clamp(1.2rem, 3.5vw, 1.7rem) "Rubik", sans-serif; margin: 0; }
+.door__yes { font: 600 clamp(1.35rem, 4vw, 1.9rem) "Rubik", sans-serif; margin: 0; }
 
 /* ----- סקשנים ----- */
 .section { padding: 84px 0; }
@@ -110,7 +110,7 @@ a { color: inherit; }
   -webkit-mask: radial-gradient(circle 6px at 50% 50%, transparent 98%, #000 100%) , linear-gradient(#000, #000); mask-composite: exclude; -webkit-mask-composite: xor; }
 .section h2 { font-size: clamp(1.9rem, 5vw, 3rem); font-weight: 700; margin-bottom: .5em; }
 .quote { margin: 32px 0 0; padding: 26px 28px; background: var(--paper); border-radius: var(--radius); border-inline-start: 6px solid var(--red); }
-.quote p { font-size: 1.12rem; margin-bottom: .6em; }
+.quote p { font-size: 1.3rem; margin-bottom: .6em; }
 .quote cite { font-style: normal; font-weight: 700; color: var(--red); }
 
 /* ----- 12 שלבים ----- */
@@ -123,8 +123,8 @@ a { color: inherit; }
 .stages li { --c: var(--red); display: flex; gap: 16px; align-items: center; background: var(--paper); color: var(--ink); border-radius: 22px; padding: 16px 18px; border: 2px solid transparent; transition: border-color .25s, transform .25s; }
 .stages li:hover { border-color: var(--c); transform: translateY(-2px); }
 .stages b { flex: 0 0 auto; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--c); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.35); font: 700 1.15rem "Rubik", sans-serif; }
-.stages h3 { font-size: 1.25rem; font-weight: 600; }
-.stages p { margin: 2px 0 0; color: var(--muted); font-size: 1rem; line-height: 1.4; }
+.stages h3 { font-size: 1.4rem; font-weight: 600; }
+.stages p { margin: 2px 0 0; color: var(--muted); font-size: 1.15rem; line-height: 1.4; }
 /* המסע: אדום (כעס) > כתום > זהב (צחוק) > ורד של אהבה > חום עמוק (שקט) */
 .stages li:nth-child(1)  { --c: #B3141B; }
 .stages li:nth-child(2)  { --c: #C02A1A; }
@@ -142,16 +142,16 @@ a { color: inherit; }
 /* ----- תמונות ----- */
 .photo { margin: 0; }
 .photo img { border-radius: var(--radius); width: 100%; box-shadow: 0 24px 48px -28px rgba(58, 42, 38, .5); }
-.photo figcaption { margin-top: 14px; font: 600 1.15rem/1.5 "Rubik", sans-serif; color: var(--red-deep); text-align: center; }
+.photo figcaption { margin-top: 14px; font: 600 1.32rem/1.5 "Rubik", sans-serif; color: var(--red-deep); text-align: center; }
 .grid2 { display: grid; gap: 40px; align-items: center; }
 
 /* ----- איך נראה היום ----- */
 .day { max-width: 760px; list-style: none; margin: 36px 0 0; padding: 0; display: grid; gap: 0; position: relative; }
-.day li { display: grid; grid-template-columns: 132px 1fr; gap: 16px; padding: 0 0 28px; position: relative; }
-.day li::before { content: ""; position: absolute; inset-inline-start: 65px; top: 34px; bottom: -2px; width: 2px; background: repeating-linear-gradient(var(--red) 0 6px, transparent 6px 12px); }
+.day li { display: grid; grid-template-columns: 130px 1fr; gap: 12px; padding: 0 0 28px; position: relative; }
+.day li::before { content: ""; position: absolute; inset-inline-start: 64px; top: 34px; bottom: -2px; width: 2px; background: repeating-linear-gradient(var(--red) 0 6px, transparent 6px 12px); }
 .day li:last-child::before { display: none; }
-.day time { font: 800 1.2rem "Rubik", sans-serif; white-space: nowrap; color: var(--red); text-align: center; background: var(--paper); border: 2px solid var(--red); border-radius: 16px; height: 44px; line-height: 40px; }
-.day h3 { font-size: 1.35rem; margin-bottom: 4px; }
+.day time { font: 800 .98rem "Rubik", sans-serif; white-space: nowrap; color: var(--red); text-align: center; background: var(--paper); border: 2px solid var(--red); border-radius: 16px; height: 44px; line-height: 40px; }
+.day h3 { font-size: 1.5rem; margin-bottom: 4px; }
 .day p { margin: 0; color: var(--ink); }
 
 /* ----- בטוח ----- */
@@ -165,14 +165,14 @@ a { color: inherit; }
 /* ----- טל ----- */
 .portrait { margin: 0; }
 .portrait img { border-radius: 50%; aspect-ratio: 1; object-fit: cover; object-position: 50% 28%; width: 100%; max-width: 420px; margin-inline: auto; border: 8px solid var(--rust); outline: 6px solid var(--gold); outline-offset: 0; box-shadow: 0 0 60px 16px rgba(255, 226, 120, .6); }
-.pull { font: 600 1.25rem/1.55 "Rubik", sans-serif; color: var(--red-deep); }
+.pull { font: 600 1.4rem/1.55 "Rubik", sans-serif; color: var(--red-deep); }
 .sign { font-weight: 700; color: var(--red); }
 
 /* ----- שאלות ----- */
 .faq { display: grid; gap: 10px; margin-top: 28px; }
 .faq details { background: var(--paper); border-radius: 22px; padding: 4px 22px; border: 2px solid var(--line); }
 .faq details[open] { border-color: var(--red); }
-.faq summary { cursor: pointer; font: 600 1.15rem "Rubik", sans-serif; padding: 16px 0; list-style: none; display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.faq summary { cursor: pointer; font: 600 1.32rem "Rubik", sans-serif; padding: 16px 0; list-style: none; display: flex; justify-content: space-between; gap: 12px; align-items: center; }
 .faq summary::-webkit-details-marker { display: none; }
 .faq summary::after { content: "+"; font-size: 1.6rem; color: var(--red); line-height: 1; transition: transform .2s; }
 .faq details[open] summary::after { transform: rotate(45deg); }
@@ -185,25 +185,25 @@ a { color: inherit; }
 .join .sub { color: #F3DDB0; margin-inline: auto; }
 .form { background: var(--paper); color: var(--ink); border-radius: var(--radius); padding: 26px 24px; margin: 28px 0 22px; text-align: start; }
 .field { display: block; margin-bottom: 14px; }
-.field span { display: block; font-weight: 700; font-size: .95rem; color: var(--muted); margin-bottom: 4px; }
+.field span { display: block; font-weight: 700; font-size: 1.08rem; color: var(--muted); margin-bottom: 4px; }
 .field input { width: 100%; height: 54px; border: 2px solid var(--line); border-radius: 16px; padding: 0 16px; font: inherit; background: #fff; }
 .field input:focus { border-color: var(--red); outline: none; }
-.check { display: flex; gap: 10px; align-items: center; margin: 4px 0 18px; font-size: 1rem; cursor: pointer; }
+.check { display: flex; gap: 10px; align-items: center; margin: 4px 0 18px; font-size: 1.12rem; cursor: pointer; }
 .check input { width: 22px; height: 22px; accent-color: var(--red); flex: 0 0 auto; }
 .hp { position: absolute; inset-inline-start: -9999px; width: 1px; height: 1px; overflow: hidden; }
 .err { color: var(--red); font-weight: 700; margin: 12px 0 0; }
-.fine { font-size: .88rem; color: var(--muted); margin: 14px 0 0; }
+.fine { font-size: 1rem; color: var(--muted); margin: 14px 0 0; }
 .join .fine { color: #E3C99A; }
 .join .link { color: #FFE08A; }
 .form .fine { color: var(--muted); }
 .thanks { background: var(--paper); color: var(--ink); border-radius: var(--radius); padding: 30px 24px; margin: 28px 0 22px; }
 .thanks h3 { font-size: 1.6rem; color: var(--red); margin-bottom: 6px; }
 .thanks p { margin: 0; }
-.or { display: flex; align-items: center; gap: 14px; color: #E3C99A; margin: 8px 0 18px; font-size: .95rem; }
+.or { display: flex; align-items: center; gap: 14px; color: #E3C99A; margin: 8px 0 18px; font-size: 1.08rem; }
 .or::before, .or::after { content: ""; flex: 1; height: 1px; background: rgba(255, 246, 220, .3); }
 
 /* ----- תחתית ----- */
-.foot { background: var(--red-deep); color: var(--cream); padding: 30px 0 100px; text-align: center; font-size: .95rem; }
+.foot { background: var(--red-deep); color: var(--cream); padding: 30px 0 100px; text-align: center; font-size: 1.08rem; }
 .foot .wrap { display: grid; gap: 4px; }
 .foot b { font: 800 1.4rem "Rubik", sans-serif; letter-spacing: .08em; }
 .foot small { opacity: .7; }
@@ -218,7 +218,7 @@ a { color: inherit; }
 .js .reveal.in { opacity: 1; transform: none; }
 
 @media (min-width: 820px) {
-  body { font-size: 19px; }
+  body { font-size: 22px; }
   .hero { padding: 56px 0 96px; }
   .hero__grid { grid-template-columns: 1.1fr .9fr; gap: 56px; }
   .mark { margin-top: 0; }
@@ -239,11 +239,11 @@ a { color: inherit; }
 /* "מה זה AUM": השאלה והמשפט הראשון בולטים, והטקסט גדול יותר */
 .ask { display: inline-block; font: 800 clamp(3rem, 12.5vw, 4.8rem)/1.1 "Rubik", sans-serif; color: var(--red); margin: 0 0 .2em; padding: 0 .15em; background: linear-gradient(transparent 62%, rgba(242, 176, 30, .55) 62% 92%, transparent 92%); }
 .what h2 { font-size: clamp(2.3rem, 7.4vw, 3.6rem); font-weight: 800; }
-.what p { font-size: 1.28rem; line-height: 1.7; }
-.what .quote p { font-size: 1.22rem; }
+.what p { font-size: 1.42rem; line-height: 1.7; }
+.what .quote p { font-size: 1.32rem; }
 .gift { font: 700 1.55rem/1.4 "Rubik", sans-serif; color: var(--red); margin: 1.4em 0; padding-inline-start: 16px; border-inline-start: 5px solid var(--gold); }
 
 /* הטלפון של טל: גדול, כי זה מה שחלק מהאנשים יעשו, לחיצה וחיוג */
 .callme { display: grid; gap: 2px; justify-items: center; margin: 22px 0 0; }
-.callme span { color: #F3DDB0; font-size: 1.1rem; }
+.callme span { color: #F3DDB0; font-size: 1.25rem; }
 .callme a { color: #FFE08A; font: 800 clamp(2rem, 9vw, 2.8rem)/1.1 "Rubik", sans-serif; text-decoration: none; letter-spacing: .02em; }
