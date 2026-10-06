@@ -20,6 +20,7 @@ create table if not exists public.aum_events (
   title       text not null default 'ריטריט AUM',
   location    text not null default 'גדרה',
   price       int,                              -- ב-₪; ריק = המחיר לא מוצג
+  price_pair  int,                              -- ב-₪, לשניים שבאים יחד; ריק = לא מוצג
   capacity    int,                              -- ריק = בלי הגבלה
   created_at  timestamptz not null default now()
 );
@@ -44,6 +45,8 @@ create table if not exists public.aum_registrations (
   created_at      timestamptz not null default now(),
   primary key (participant_id, event_id)
 );
+
+alter table public.aum_events add column if not exists price_pair int;   -- נוסף אחרי הגרסה הראשונה, בטוח להרצה חוזרת
 
 alter table public.aum_events        enable row level security;
 alter table public.aum_participants  enable row level security;
@@ -123,7 +126,7 @@ returns json language sql stable security definer set search_path = public as $$
   select coalesce((
     select json_build_object(
       'date', e.event_date, 'from', to_char(e.start_time, 'HH24:MI'), 'to', to_char(e.end_time, 'HH24:MI'),
-      'title', e.title, 'location', e.location, 'price', e.price, 'capacity', e.capacity,
+      'title', e.title, 'location', e.location, 'price', e.price, 'price_pair', e.price_pair, 'capacity', e.capacity,
       'taken', (select count(*) from public.aum_registrations r
                 where r.event_id = e.id and r.status in ('new', 'confirmed')))
     from public.aum_events e

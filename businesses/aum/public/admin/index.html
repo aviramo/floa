@@ -171,9 +171,10 @@
         <label class="field"><span>סיום</span><input name="to" type="time" required /></label>
       </div>
       <div class="two">
-        <label class="field"><span>מחיר ב-₪ (ריק = לא מוצג)</span><input name="price" type="number" min="0" inputmode="numeric" /></label>
-        <label class="field"><span>מקומות (ריק = בלי הגבלה)</span><input name="capacity" type="number" min="1" inputmode="numeric" /></label>
+        <label class="field"><span>מחיר ליחיד ב-₪ (ריק = לא מוצג)</span><input name="price" type="number" min="0" inputmode="numeric" /></label>
+        <label class="field"><span>מחיר לזוג ב-₪ (ריק = לא מוצג)</span><input name="pair" type="number" min="0" inputmode="numeric" /></label>
       </div>
+      <label class="field"><span>מקומות (ריק = בלי הגבלה)</span><input name="capacity" type="number" min="1" inputmode="numeric" /></label>
       <p class="msg" id="eMsg" role="alert"></p>
       <div class="actions"><button class="primary" type="submit" id="eSave">שמירה</button><button class="danger" type="button" id="eDel">מחיקה</button></div>
     </form>
@@ -366,7 +367,7 @@
           el("b", { text: live + (ev.capacity ? " מתוך " + ev.capacity : "") + " נרשמו" }),
           el("span", { text: paid + " שילמו" }),
           wait ? el("span", { text: wait + " בהמתנה" }) : null,
-          ev.price ? el("span", { text: ev.price + " ₪" }) : null,
+          ev.price ? el("span", { text: ev.price + " ₪" + (ev.price_pair ? " · לזוג " + ev.price_pair + " ₪" : "") }) : null,
         ]));
         bar.appendChild(el("button", { class: "linkbtn", type: "button", text: "עריכת הריטריט", onclick: function () { openEvent(ev); } }));
       } else bar.hidden = true;
@@ -480,6 +481,7 @@
       eForm.from.value = ev ? ev.start_time.slice(0, 5) : "09:00";
       eForm.to.value = ev ? ev.end_time.slice(0, 5) : "16:00";
       eForm.price.value = ev && ev.price != null ? ev.price : "";
+      eForm.pair.value = ev && ev.price_pair != null ? ev.price_pair : "";
       eForm.capacity.value = ev && ev.capacity != null ? ev.capacity : "";
       $("#eDel").hidden = !ev;
       $("#eMsg").textContent = "";
@@ -491,6 +493,7 @@
         event_date: eForm.date.value, start_time: eForm.from.value, end_time: eForm.to.value,
         location: eForm.location.value.trim() || "גדרה",
         price: eForm.price.value === "" ? null : Number(eForm.price.value),
+        price_pair: eForm.pair.value === "" ? null : Number(eForm.pair.value),
         capacity: eForm.capacity.value === "" ? null : Number(eForm.capacity.value),
       };
       $("#eSave").disabled = true;

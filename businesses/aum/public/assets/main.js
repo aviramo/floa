@@ -97,7 +97,8 @@
 
     if (ev.price) {
       set("#tbPrice", ev.price + " ₪ ליום");
-      set("#faqPrice", ev.price + " ₪ למשתתף או משתתפת ליום, כולל ארוחת צהריים משותפת.");
+      set("#faqPrice", ev.price + " ₪ למשתתפ.ת" + (ev.price_pair ? ", " + ev.price_pair + " ₪ לבאים בזוג" : "") +
+        ". כולל פינת קפה רצה ואירוח בוילה מפנקת עם אולם ייעודי, חדר אוכל וחצר חיצונית.");
     } else {
       hide("#tbPrice");
       set("#faqPrice", "את המחיר אפשר לברר אצל טל.");

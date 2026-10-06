@@ -142,16 +142,15 @@ a { color: inherit; }
 /* ----- תמונות ----- */
 .photo { margin: 0; }
 .photo img { border-radius: var(--radius); width: 100%; box-shadow: 0 24px 48px -28px rgba(58, 42, 38, .5); }
-.photo--tilt img { transform: rotate(-1.6deg); }
-.photo--tilt2 img { transform: rotate(1.6deg); }
+.photo figcaption { margin-top: 14px; font: 600 1.15rem/1.5 "Rubik", sans-serif; color: var(--red-deep); text-align: center; }
 .grid2 { display: grid; gap: 40px; align-items: center; }
 
 /* ----- איך נראה היום ----- */
 .day { max-width: 760px; list-style: none; margin: 36px 0 0; padding: 0; display: grid; gap: 0; position: relative; }
-.day li { display: grid; grid-template-columns: 84px 1fr; gap: 16px; padding: 0 0 28px; position: relative; }
-.day li::before { content: ""; position: absolute; inset-inline-start: 41px; top: 34px; bottom: -2px; width: 2px; background: repeating-linear-gradient(var(--red) 0 6px, transparent 6px 12px); }
+.day li { display: grid; grid-template-columns: 132px 1fr; gap: 16px; padding: 0 0 28px; position: relative; }
+.day li::before { content: ""; position: absolute; inset-inline-start: 65px; top: 34px; bottom: -2px; width: 2px; background: repeating-linear-gradient(var(--red) 0 6px, transparent 6px 12px); }
 .day li:last-child::before { display: none; }
-.day time { font: 800 1.5rem "Rubik", sans-serif; color: var(--red); text-align: center; background: var(--paper); border: 2px solid var(--red); border-radius: 16px; height: 44px; line-height: 40px; }
+.day time { font: 800 1.2rem "Rubik", sans-serif; white-space: nowrap; color: var(--red); text-align: center; background: var(--paper); border: 2px solid var(--red); border-radius: 16px; height: 44px; line-height: 40px; }
 .day h3 { font-size: 1.35rem; margin-bottom: 4px; }
 .day p { margin: 0; color: var(--ink); }
 
@@ -236,3 +235,15 @@ a { color: inherit; }
   .stages li, .btn, .dock { transition: none; }
   .mandala { animation: none; }
 }
+
+/* "מה זה AUM": השאלה והמשפט הראשון בולטים, והטקסט גדול יותר */
+.ask { display: inline-block; font: 800 clamp(3rem, 12.5vw, 4.8rem)/1.1 "Rubik", sans-serif; color: var(--red); margin: 0 0 .2em; padding: 0 .15em; background: linear-gradient(transparent 62%, rgba(242, 176, 30, .55) 62% 92%, transparent 92%); }
+.what h2 { font-size: clamp(2.3rem, 7.4vw, 3.6rem); font-weight: 800; }
+.what p { font-size: 1.28rem; line-height: 1.7; }
+.what .quote p { font-size: 1.22rem; }
+.gift { font: 700 1.55rem/1.4 "Rubik", sans-serif; color: var(--red); margin: 1.4em 0; padding-inline-start: 16px; border-inline-start: 5px solid var(--gold); }
+
+/* הטלפון של טל: גדול, כי זה מה שחלק מהאנשים יעשו, לחיצה וחיוג */
+.callme { display: grid; gap: 2px; justify-items: center; margin: 22px 0 0; }
+.callme span { color: #F3DDB0; font-size: 1.1rem; }
+.callme a { color: #FFE08A; font: 800 clamp(2rem, 9vw, 2.8rem)/1.1 "Rubik", sans-serif; text-decoration: none; letter-spacing: .02em; }
