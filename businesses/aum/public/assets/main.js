@@ -34,55 +34,90 @@
   }
 
   /* ----- 1. הבאנר ----- */
+  /* כל מה שקשור למועד, תאריך, שעות, מקום, מחיר ומקומות, בא מהדאטהבייס ומשם
+     בלבד. ב-HTML אין אף אחד מהם: מה שכתוב שם הוא נוסח ניטרלי שמוסתר עד שיש מה
+     להציג, כדי שתאריך ישן לא יהבהב, לא ייכנס לתצוגה המקדימה בוואטסאפ ולא יישב
+     בגוגל. שינוי ריטריט ב-/aum/admin/ משנה את הדף בלי פרסום. */
   var MONTHS = ["בינואר", "בפברואר", "במרץ", "באפריל", "במאי", "ביוני", "ביולי", "באוגוסט", "בספטמבר", "באוקטובר", "בנובמבר", "בדצמבר"];
   var DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
   function hm(t) { return String(t).replace(/^0/, ""); }
 
-  function paintBanner(ev) {
-    var bar = $("#topbar");
-    if (!bar) return;
-    var inner = bar.querySelector(".topbar__in");
+  function set(sel, text) { var n = $(sel); if (n) { n.textContent = text; n.hidden = false; } }
+  function hide(sel) { var n = $(sel); if (n) n.hidden = true; }
 
-    if (!ev) {
-      inner.innerHTML = "";
-      var soon = document.createElement("span");
-      soon.className = "topbar__label";
-      soon.textContent = "מועד הריטריט הבא יפורסם בקרוב";
-      inner.appendChild(soon);
-      $("#tbWhen").textContent = DAYS[d.getDay()] + ", " + d.getDate() + "." + (d.getMonth() + 1) + " · " + hm(ev.from) + " עד " + hm(ev.to);
-    $("#tbWhere").textContent = ev.location;
-    $("#heroDate").textContent = "המועד הבא יפורסם בקרוב";
-      $("#heroTime").hidden = true;
-      var p = $("#faqPrice");
-      if (p) p.textContent = "המחיר והמועד הבא יפורסמו בקרוב. אפשר לשאול את טל ישירות.";
-      return;
-    }
+  /* אין מועד ידוע: אין ריטריט עתידי במסד, או שהמסד לא ענה */
+  function paintUnknown(text) {
+    set(".topbar__label", text);
+    ["#tbWhen", "#tbWhere", "#tbPrice", "#heroTime"].forEach(hide);
+    set("#heroDate", text);
+    set("#faqPrice", "המחיר והמועד מתעדכנים כאן. אפשר לשאול את טל ישירות.");
+  }
+
+  /* היסט שעון ישראל בתאריך הזה (+03:00 בקיץ, +02:00 בחורף), בשביל ה-JSON-LD */
+  function israelOffset(iso) {
+    try {
+      var parts = new Intl.DateTimeFormat("en", { timeZone: "Asia/Jerusalem", timeZoneName: "longOffset" }).formatToParts(new Date(iso + "T12:00:00Z"));
+      var tz = parts.filter(function (p) { return p.type === "timeZoneName"; })[0].value.replace("GMT", "");
+      return tz || "+02:00";
+    } catch (e) { return "+02:00"; }
+  }
+
+  /* Event לגוגל, נבנה מהמפגש הקרוב במקום להיכתב בדף */
+  function paintSchema(ev) {
+    var off = israelOffset(ev.date);
+    var data = {
+      "@context": "https://schema.org", "@type": "Event",
+      name: ev.title,
+      description: "ריטריט יומי של מדיטציית AUM: 12 שלבים בתנועה ובקול, מכעס לאהבה ומבכי לצחוק, בהנחיית טל אמיתי-לביא.",
+      startDate: ev.date + "T" + ev.from + ":00" + off,
+      endDate: ev.date + "T" + ev.to + ":00" + off,
+      eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+      eventStatus: "https://schema.org/EventScheduled",
+      location: { "@type": "Place", name: ev.location, address: { "@type": "PostalAddress", addressLocality: "גדרה", addressCountry: "IL" } },
+      image: "https://floa.co.il/aum/assets/img/og.jpg",
+      performer: { "@type": "Person", name: "טל אמיתי-לביא" },
+      organizer: { "@type": "Person", name: "טל אמיתי-לביא", telephone: "+972-52-849-7146" },
+    };
+    if (ev.price) data.offers = { "@type": "Offer", price: String(ev.price), priceCurrency: "ILS", availability: "https://schema.org/InStock", url: "https://floa.co.il/aum/" };
+    var s = document.createElement("script");
+    s.type = "application/ld+json";
+    s.textContent = JSON.stringify(data);
+    document.head.appendChild(s);
+  }
+
+  function paintBanner(ev) {
+    if (!ev) return paintUnknown("מועד הריטריט הבא יפורסם בקרוב");
 
     var d = new Date(ev.date + "T12:00:00");
-    $("#tbWhen").textContent = DAYS[d.getDay()] + ", " + d.getDate() + "." + (d.getMonth() + 1) + " · " + hm(ev.from) + " עד " + hm(ev.to);
-    $("#tbWhere").textContent = ev.location;
-    $("#heroDate").textContent = "יום " + DAYS[d.getDay()] + ", " + d.getDate() + " " + MONTHS[d.getMonth()];
-    $("#heroTime").textContent = hm(ev.from) + " עד " + hm(ev.to) + " · " + (ev.location.split(",").pop().trim());
+    set("#tbWhen", DAYS[d.getDay()] + ", " + d.getDate() + "." + (d.getMonth() + 1) + " · " + hm(ev.from) + " עד " + hm(ev.to));
+    set("#tbWhere", ev.location);
+    set(".topbar__label", "הריטריט הבא");
+    set("#heroDate", "יום " + DAYS[d.getDay()] + ", " + d.getDate() + " " + MONTHS[d.getMonth()]);
+    set("#heroTime", hm(ev.from) + " עד " + hm(ev.to) + " · " + ev.location.split(",").pop().trim());
 
-    var price = $("#tbPrice");
-    if (ev.price) price.textContent = ev.price + " ₪ ליום";
-    else price.hidden = true;
-
-    var faq = $("#faqPrice");
-    if (faq && ev.price) faq.textContent = ev.price + " ₪ למשתתף או משתתפת ליום, כולל ארוחת צהריים משותפת.";
+    if (ev.price) {
+      set("#tbPrice", ev.price + " ₪ ליום");
+      set("#faqPrice", ev.price + " ₪ למשתתף או משתתפת ליום, כולל ארוחת צהריים משותפת.");
+    } else {
+      hide("#tbPrice");
+      set("#faqPrice", "את המחיר אפשר לברר אצל טל.");
+    }
 
     /* מקומות: רק אם נקבעה קיבולת, ורק כשנשאר מעט. מספר שאינו אמיתי לא מוצג. */
     if (ev.capacity) {
       var left = ev.capacity - ev.taken;
-      var note = document.createElement("span");
-      note.className = "topbar__spots";
-      if (left <= 0) note.textContent = "הריטריט מלא, אפשר להצטרף לרשימת המתנה";
-      else if (left <= 6) note.textContent = "נותרו " + left + " מקומות";
-      if (note.textContent) inner.appendChild(note);
+      var text = left <= 0 ? "הריטריט מלא, אפשר להצטרף לרשימת המתנה" : left <= 6 ? "נותרו " + left + " מקומות" : "";
+      if (text) {
+        var note = document.createElement("span");
+        note.className = "topbar__spots";
+        note.textContent = text;
+        $(".topbar__in").appendChild(note);
+      }
     }
+    paintSchema(ev);
   }
 
-  rpc("aum_next").then(paintBanner).catch(function () { /* הנוסח שב-HTML נשאר */ });
+  rpc("aum_next").then(paintBanner).catch(function () { paintUnknown("לפרטים על מועד הריטריט אפשר לכתוב לטל"); });
 
   /* ----- 2. הרשמה ----- */
   /* אותה לוגיקה בדיוק כמו aum_normalize_phone ב-schema.sql: לשנות בשניהם יחד */
