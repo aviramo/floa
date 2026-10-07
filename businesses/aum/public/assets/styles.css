@@ -144,7 +144,7 @@ a { color: inherit; }
 /* ----- איך נראה היום ----- */
 .day { max-width: 760px; list-style: none; margin: 0; padding: 0; display: grid; gap: 0; position: relative; }
 .day li { display: grid; grid-template-columns: 130px 1fr; gap: 12px; padding: 0 0 28px; position: relative; }
-.day li::before { content: ""; position: absolute; z-index: 0; inset-inline-start: 64px; top: 22px; bottom: -22px; width: 2px; background: repeating-linear-gradient(var(--red) 0 6px, transparent 6px 12px); }
+.day li::before { content: ""; position: absolute; inset-inline-start: 64px; top: 48px; bottom: 4px; width: 0; border-inline-start: 2px dashed var(--red); }
 .day li:last-child::before { display: none; }
 .day time { position: relative; z-index: 1; font: 800 .98rem "Rubik", sans-serif; white-space: nowrap; color: var(--red); text-align: center; background: var(--paper); border: 2px solid var(--red); border-radius: 16px; height: 44px; line-height: 40px; }
 .day h3 { font-size: 1.5rem; margin-bottom: 4px; }
