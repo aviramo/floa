@@ -36,6 +36,7 @@
                       its `to` in the table
    ========================================================================== */
 import { BUSINESSES } from "./businesses.js";
+import { CV_MEDIA, parseCv } from "./cv.js";
 import { MEDIA_TYPES, readChordSheet } from "./transcribe.js";
 import { measure } from "./ocr.js";          // temporary, for /boxes
 
@@ -467,6 +468,42 @@ async function readByModel(request, env) {
   return new Response(stream, { headers: { "content-type": "text/plain; charset=utf-8" } });
 }
 
+/* --- /parse-cv ------------------------------------------------------------
+   The jobs app: one CV in, one profile out. Same guards as /transcribe, since
+   every call costs money: the origin and a real signed-in Supabase user. */
+const MAX_CV_BASE64 = 6 * 1024 * 1024;
+
+async function handleParseCv(request, env, origin) {
+  if (!env.ANTHROPIC_API_KEY) return json({ ok: false, error: "config" }, 502, origin);
+
+  const header = request.headers.get("authorization") || "";
+  const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
+  if (!(await signedIn(env, token))) return json({ ok: false, error: "auth" }, 401, origin);
+
+  const ip = request.headers.get("cf-connecting-ip") || "unknown";
+  if (await rateLimited("cv", ip, 10)) return json({ ok: false, error: "rate" }, 429, origin);
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ ok: false, error: "body" }, 400, origin);
+  }
+  const catalog = Array.isArray(body.catalog) ? body.catalog.map(String).slice(0, 200) : [];
+  if (!CV_MEDIA.includes(body.media_type) || typeof body.data !== "string" || !body.data
+      || body.data.length > MAX_CV_BASE64 || !catalog.length) {
+    return json({ ok: false, error: "file" }, 400, origin);
+  }
+
+  try {
+    const profile = await parseCv(env, { media_type: body.media_type, data: body.data, catalog });
+    return json({ ok: true, profile }, 200, origin);
+  } catch (err) {
+    console.error("parse-cv failed", err && err.message);
+    return json({ ok: false, error: "read" }, 502, origin);
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
     const origin = request.headers.get("origin") || "";
@@ -486,6 +523,7 @@ export default {
     switch (new URL(request.url).pathname) {
       case "/lead": return handleLead(request, env, origin);
       case "/transcribe": return handleTranscribe(request, env, ctx, origin);
+      case "/parse-cv": return handleParseCv(request, env, origin);
       default: return json({ ok: false, error: "not found" }, 404, origin);
     }
   },

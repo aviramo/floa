@@ -1,8 +1,27 @@
-:root { --bg: #fafaf7; --ink: #1c1c1a; --accent: #1f6feb; }
+:root { --bg:#f7f7f4; --card:#fff; --ink:#1c1c1a; --mute:#6b6b66; --line:#e3e3dc; --accent:#1f6feb; --bad:#c62828; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#141413; --card:#1e1e1c; --ink:#f0f0ea; --mute:#a0a09a; --line:#33332f; --accent:#6aa3ff; --bad:#ef6b6b; }
+}
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 system-ui, "Segoe UI", Arial, sans-serif; }
-main { max-width: 720px; margin: 0 auto; padding: 24px 16px; }
-h1 { font-size: 2rem; }
-.job { background: #fff; border: 1px solid #e4e4de; border-radius: 12px; padding: 16px; margin-block: 12px; }
-.job h2 { margin: 0 0 4px; font-size: 1.2rem; }
-.job a { color: var(--accent); font-weight: 600; }
+body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.6 system-ui,"Segoe UI",Arial,sans-serif; }
+.bar { display:flex; justify-content:space-between; align-items:center; max-width:760px; margin:0 auto; padding:14px 16px; }
+main { max-width:760px; margin:0 auto; padding:8px 16px 48px; }
+h1 { font-size:1.6rem; margin:8px 0 16px; }
+h2 { font-size:1.05rem; margin:24px 0 8px; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-block:12px; }
+.row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+.grow { flex:1; }
+.mute { color:var(--mute); font-size:.9rem; }
+.bad { color:var(--bad); }
+button, .btn { font:inherit; cursor:pointer; border-radius:10px; border:1px solid var(--line); background:var(--card); color:var(--ink); padding:8px 14px; }
+button.primary { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+button.link { border:0; background:none; color:var(--mute); padding:0; }
+button:disabled { opacity:.5; cursor:default; }
+input[type=text], input[type=number] { font:inherit; padding:8px 10px; border-radius:10px; border:1px solid var(--line); background:var(--bg); color:var(--ink); width:100%; }
+label { display:block; margin:12px 0 4px; font-weight:600; }
+.roles { display:flex; flex-wrap:wrap; gap:8px; }
+.roles label { display:inline-flex; align-items:center; gap:6px; margin:0; font-weight:400; border:1px solid var(--line); border-radius:999px; padding:4px 12px; cursor:pointer; }
+.roles input:checked + span { font-weight:700; color:var(--accent); }
+.profile dt { font-weight:600; margin-top:8px; }
+.profile dd { margin:0; }
+.center { text-align:center; padding:48px 0; }

@@ -4,15 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>משרות</title>
-<meta name="description" content="משרות פתוחות במקום אחד">
+<meta name="description" content="סוכנים ששולחים את קורות החיים שלך למשרות מתאימות">
+<meta name="robots" content="noindex">
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
-<main>
-  <h1>משרות</h1>
-  <div id="list">טוען…</div>
-</main>
+<header class="bar">
+  <strong>משרות</strong>
+  <button id="out" class="link" hidden>התנתקות</button>
+</header>
+<main id="app">טוען…</main>
 <script src="/supabase.js"></script>
+<script src="assets/config.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

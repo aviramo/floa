@@ -1,25 +1,44 @@
--- Jobs: the Supabase schema. Run once, whole, in the SQL editor
--- (or: node scripts/sql.mjs < businesses/jobs/schema.sql).
--- Everyone may read published jobs; only a signed-in user may change anything.
+-- Jobs: the Supabase schema. Run once, whole:
+--   node scripts/sql.mjs < businesses/jobs/schema.sql
+-- Every row belongs to the account that made it, and the database enforces
+-- that, not the browser: the anon key can only ever reach its own user's rows.
 
-create table if not exists public.jobs (
+drop table if exists public.jobs;  -- the placeholder board from the first scaffold
+
+create table if not exists public.job_agents (
   id          uuid primary key default gen_random_uuid(),
-  slug        text not null unique,
-  title       text not null,
-  company     text not null default '',
-  location    text not null default '',
-  description text not null default '',
-  apply_url   text not null default '',
-  published   boolean not null default false,
+  owner       uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  name        text not null default 'סוכן חדש',
+
+  -- the uploaded CV, in the private bucket "job-cvs", under <owner>/<file>
+  cv_path     text not null default '',
+  cv_name     text not null default '',
+  -- what was read from it: headline, years_experience, skills, languages, city, summary
+  profile     jsonb not null default '{}'::jsonb,
+
+  -- what the person is looking for
+  roles       text[] not null default '{}',
+  city        text not null default '',
+  radius_km   int not null default 20 check (radius_km between 0 and 300),
+
   created_at  timestamptz not null default now()
 );
 
-alter table public.jobs enable row level security;
+alter table public.job_agents enable row level security;
 
-drop policy if exists "jobs read published" on public.jobs;
-create policy "jobs read published" on public.jobs
-  for select using (published or auth.uid() is not null);
+drop policy if exists "agents are the owner's" on public.job_agents;
+create policy "agents are the owner's" on public.job_agents
+  for all to authenticated
+  using (owner = auth.uid())
+  with check (owner = auth.uid());
 
-drop policy if exists "jobs write signed in" on public.jobs;
-create policy "jobs write signed in" on public.jobs
-  for all to authenticated using (true) with check (true);
+-- Private storage for the CVs: a folder per account, and only that account in it.
+insert into storage.buckets (id, name, public)
+values ('job-cvs', 'job-cvs', false)
+on conflict (id) do nothing;
+
+drop policy if exists "cvs are the owner's" on storage.objects;
+create policy "cvs are the owner's" on storage.objects
+  for all to authenticated
+  using (bucket_id = 'job-cvs' and (storage.foldername(name))[1] = auth.uid()::text)
+  with check (bucket_id = 'job-cvs' and (storage.foldername(name))[1] = auth.uid()::text);
