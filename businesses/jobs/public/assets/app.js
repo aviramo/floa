@@ -166,6 +166,61 @@
     return Object.keys(names);
   }
 
+  /* --- finding a role from a few words ------------------------------------
+     639 roles, so a search box and not a list. It forgives the endings Hebrew
+     ads put on a title (/ת, /ה), a letter out of place, and a field name: "תוכנה"
+     finds every role filed under software even if the role does not say it. */
+  function norm(s) {
+    return String(s).toLowerCase().replace(/\s*\/\s*(ת|ה|ית|ות|ים)(?![א-ת])/g, "").replace(/["'״׳.,()\-–\/]/g, " ").replace(/\s+/g, " ").trim();
+  }
+  function near(a, b) {
+    if (a === b) return true;
+    if (Math.abs(a.length - b.length) > 1) return false;
+    var i = 0, j = 0, miss = 0;
+    while (i < a.length && j < b.length) {
+      if (a[i] === b[j]) { i++; j++; continue; }
+      if (++miss > 1) return false;
+      if (a.length > b.length) i++; else if (a.length < b.length) j++; else { i++; j++; }
+    }
+    return miss + (a.length - i) + (b.length - j) <= 1;
+  }
+  function buildIndex(c) {
+    var by = {};
+    c.fields.forEach(function (f) {
+      f.roles.forEach(function (r) {
+        var e = by[r.name] || (by[r.name] = { name: r.name, fields: [], tokens: norm(r.name).split(" ") });
+        e.fields.push(f.field);
+      });
+    });
+    return Object.keys(by).map(function (k) {
+      var e = by[k];
+      e.field = e.fields[0];
+      e.ftext = norm(e.fields.join(" "));
+      return e;
+    });
+  }
+  function findRoles(index, text) {
+    var qs = norm(text).split(" ").filter(Boolean);
+    if (!qs.length) return [];
+    var out = [];
+    index.forEach(function (e) {
+      var total = 0, hit = 0;
+      qs.forEach(function (qt) {
+        var best = 0;
+        e.tokens.forEach(function (t) {
+          var s = t === qt ? 3 : t.indexOf(qt) === 0 ? 2.5 : qt.length > 1 && t.indexOf(qt) > 0 ? 2 : qt.length > 3 && near(t, qt) ? 1.5 : 0;
+          if (s > best) best = s;
+        });
+        if (!best && qt.length > 1 && e.ftext.indexOf(qt) >= 0) best = 0.8;
+        if (best) hit++;
+        total += best;
+      });
+      if (hit * 2 >= qs.length && hit) out.push({ name: e.name, field: e.field, score: total / qs.length + hit / qs.length });
+    });
+    out.sort(function (x, y) { return y.score - x.score || x.name.length - y.name.length; });
+    return out.slice(0, 12);
+  }
+
   function agent(a) {
     signOutButton.hidden = false;
     app.innerHTML = "";
@@ -180,8 +235,9 @@
       '<p class="mute" id="fs">PDF או תמונה. קובץ Word עדיין לא נתמך.</p></div>' +
 
       '<div class="card"><h2 style="margin-top:0">מה אני מחפש</h2><div class="roles" id="picked"></div>' +
-      '<div class="row"><select id="field"></select><input type="text" id="q" placeholder="חיפוש תפקיד"></div>' +
-      '<div class="roles" id="roles"></div>' +
+      '<div id="recs-box"><h3>מומלצים לפי קורות החיים</h3><div id="recs"></div></div>' +
+      '<label for="q">חיפוש תפקיד</label><input type="text" id="q" autocomplete="off" placeholder="הקלד תפקיד, כישור או תחום">' +
+      '<div id="roles"></div>' +
       '<div class="row"><div class="grow"><label for="c">עיר</label><input type="text" id="c" list="cities" autocomplete="off" placeholder="התחל להקליד ובחר מהרשימה"><datalist id="cities"></datalist></div>' +
       '<div><label for="r">רדיוס (ק״מ)</label><input type="number" id="r" min="0" max="300"></div></div></div>' +
 
@@ -203,54 +259,62 @@
     }
     showCv();
 
-    /* The roles: Drushim's own fields and roles. What is chosen stays visible
-       at the top whichever field is open; below it, one field at a time or a
-       search across all of them. */
+    /* The roles. What is chosen is always on show at the top. Below it, what
+       the CV suggests, best fit first, and a search box that takes any words and
+       brings the closest of Drushim's roles. */
     var rolesBox = view.querySelector("#roles");
     var pickedBox = view.querySelector("#picked");
-    var fieldSel = view.querySelector("#field");
+    var recsBox = view.querySelector("#recs");
     var q = view.querySelector("#q");
-    var catalog = null;
+    var index = null;
 
-    function chip(role, on) {
-      var l = el('<label><input type="checkbox"><span></span></label>');
-      l.querySelector("span").textContent = role;
+    function row(name, on, note) {
+      var l = el('<label class="pick"><input type="checkbox"><span class="grow"></span><span class="mute note"></span></label>');
+      l.querySelector(".grow").textContent = name;
+      l.querySelector(".note").textContent = note || "";
       var box = l.querySelector("input");
       box.checked = on;
-      box.onchange = function () { box.checked ? chosen.add(role) : chosen.delete(role); drawRoles(); };
+      box.onchange = function () { box.checked ? chosen.add(name) : chosen.delete(name); drawRoles(); };
       return l;
+    }
+
+    /* The CV's suggestions, from the last reading. An older reading kept only
+       names: those show without a score. */
+    function suggestions() {
+      var p = a.profile || {};
+      var list = p.recommended || (p.roles || []).map(function (n) { return { name: n, score: 0 }; });
+      return list.slice().sort(function (x, y) { return y.score - x.score; });
     }
 
     function drawRoles() {
       pickedBox.innerHTML = "";
-      Array.from(chosen).forEach(function (role) { pickedBox.appendChild(chip(role, true)); });
-      pickedBox.style.display = chosen.size ? "" : "none";
-      rolesBox.innerHTML = "";
-      if (!catalog) { rolesBox.textContent = "טוען תפקידים…"; return; }
-      var text = q.value.trim().toLowerCase();
-      var seen = {};
-      catalog.fields.forEach(function (f) {
-        if (!text && f.field !== fieldSel.value) return;
-        f.roles.forEach(function (r) {
-          if (seen[r.name] || chosen.has(r.name)) return;
-          if (text && r.name.toLowerCase().indexOf(text) < 0) return;
-          seen[r.name] = true;
-          rolesBox.appendChild(chip(r.name, false));
-        });
+      Array.from(chosen).forEach(function (role) {
+        var l = row(role, true);
+        l.classList.add("chip");
+        pickedBox.appendChild(l);
       });
+      pickedBox.style.display = chosen.size ? "" : "none";
+
+      var recs = suggestions();
+      view.querySelector("#recs-box").style.display = recs.length ? "" : "none";
+      recsBox.innerHTML = "";
+      recs.forEach(function (r) {
+        recsBox.appendChild(row(r.name, chosen.has(r.name), r.score ? r.score + "% התאמה" : ""));
+      });
+
+      rolesBox.innerHTML = "";
+      var text = q.value.trim();
+      if (!text) return;
+      if (!index) { rolesBox.textContent = "טוען תפקידים…"; return; }
+      var hits = findRoles(index, text);
+      if (!hits.length) { rolesBox.innerHTML = '<p class="mute">לא נמצא תפקיד קרוב. נסה מילה אחרת.</p>'; return; }
+      hits.forEach(function (h) { rolesBox.appendChild(row(h.name, chosen.has(h.name), h.field)); });
     }
 
-    fieldSel.onchange = drawRoles;
     q.oninput = drawRoles;
     drawRoles();
     loadCatalog().then(function (c) {
-      catalog = c;
-      fieldSel.innerHTML = "";
-      c.fields.forEach(function (f) {
-        var o = document.createElement("option");
-        o.textContent = f.field;
-        fieldSel.appendChild(o);
-      });
+      index = buildIndex(c);
       drawRoles();
     }).catch(function () { rolesBox.textContent = "לא הצלחנו לטעון את רשימת התפקידים."; });
 
@@ -313,6 +377,9 @@
       }).then(function (r) { return r.json(); }).then(function (res) {
         if (!res.ok) throw new Error(res.error);
         profile = res.profile;
+        /* What the reader returns as roles is a ranked suggestion, not a choice. */
+        profile.recommended = (profile.roles || []).map(function (r) { return typeof r === "string" ? { name: r, score: 0 } : r; });
+        delete profile.roles;
         return token().then(function (t) {
           return fetch(CFG.supabaseUrl + "/storage/v1/object/" + CFG.bucket + "/" + path, {
             method: "POST",
@@ -322,13 +389,12 @@
         });
       }).then(function (r) {
         if (!r.ok) throw new Error("upload");
-        profile.roles.forEach(function (role) { chosen.add(role); });
         if (!view.querySelector("#c").value && profile.city) view.querySelector("#c").value = profile.city;
         return save({ cv_path: path, cv_name: file.name, profile: profile });
       }).then(function () {
         drawRoles();
         showCv();
-        fs.textContent = "הקובץ נקרא. סימנתי תפקידים שנראים לי מתאימים, אפשר לתקן.";
+        fs.textContent = "הקובץ נקרא. למטה, בבחירת התפקידים, יש המלצות לפי קורות החיים.";
       }).catch(function () {
         fs.className = "bad";
         fs.textContent = "לא הצלחנו לקרוא את הקובץ. נסה PDF אחר או תמונה ברורה.";

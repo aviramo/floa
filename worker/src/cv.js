@@ -18,7 +18,18 @@ const PROFILE = {
     languages: { type: "array", items: { type: "string" } },
     city: { type: "string", description: "city of residence if the CV says, else empty" },
     summary: { type: "string", description: "two or three sentences, Hebrew" },
-    roles: { type: "array", items: { type: "string" }, description: "ONLY values copied exactly from the catalog" },
+    roles: {
+      type: "array",
+      description: "Up to 10 roles from the catalog, best fit first",
+      items: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "copied exactly from the catalog" },
+          score: { type: "integer", description: "0-100: how well this CV fits the role" },
+        },
+        required: ["name", "score"],
+      },
+    },
   },
   required: ["headline", "years_experience", "skills", "languages", "city", "summary", "roles"],
 };
@@ -47,8 +58,9 @@ export async function parseCv(env, { media_type, data, catalog }) {
           {
             type: "text",
             text:
-              "Read this CV and fill the profile. Write in Hebrew. For `roles`, pick the 1 to 4 roles from this " +
-              "catalog that best fit the person, copying each exactly:\n" + catalog.join("\n"),
+              "Read this CV and fill the profile. Write in Hebrew. For `roles`, rate how well the CV fits the roles of " +
+              "this catalog and return up to 10 with a score of 40 or more, best first. Each name is copied exactly:\n" +
+              catalog.join("\n"),
           },
         ],
       }],
@@ -60,6 +72,10 @@ export async function parseCv(env, { media_type, data, catalog }) {
   const used = (out.content || []).find((part) => part.type === "tool_use");
   if (!used) throw new Error("no profile in the answer");
   const profile = used.input;
-  profile.roles = (profile.roles || []).filter((role) => catalog.includes(role));
+  profile.roles = (profile.roles || [])
+    .filter((role) => role && catalog.includes(role.name))
+    .map((role) => ({ name: role.name, score: Math.max(0, Math.min(100, Math.round(role.score))) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10);
   return profile;
 }
