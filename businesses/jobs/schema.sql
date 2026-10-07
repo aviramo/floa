@@ -93,3 +93,27 @@ create policy "runs are the owner's" on public.job_runs
 drop policy if exists "applications are the owner's" on public.job_applications;
 create policy "applications are the owner's" on public.job_applications
   for all to authenticated using (owner = auth.uid()) with check (owner = auth.uid());
+
+-- ==========================================================================
+-- Which job sites the person is signed in to. A row per account and site, NOT
+-- per agent: one login serves every agent. The sign-in itself happens in a
+-- Chrome window the local runner opens on the person's machine; only its
+-- STATUS lands here. No password and no cookie is ever stored in the database.
+-- ==========================================================================
+create table if not exists public.job_connections (
+  owner       uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  site        text not null check (site in ('alljobs', 'drushim', 'linkedin')),
+  -- requested: the person pressed connect; connecting: the window is open;
+  -- connected: signed in; expired: a send found the site asking to sign in again
+  status      text not null default 'requested'
+              check (status in ('disconnected', 'requested', 'connecting', 'connected', 'expired')),
+  note        text not null default '',
+  updated_at  timestamptz not null default now(),
+  primary key (owner, site)
+);
+
+alter table public.job_connections enable row level security;
+
+drop policy if exists "connections are the owner's" on public.job_connections;
+create policy "connections are the owner's" on public.job_connections
+  for all to authenticated using (owner = auth.uid()) with check (owner = auth.uid());

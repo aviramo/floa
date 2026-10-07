@@ -7,7 +7,7 @@
 ```
 cd businesses/jobs/runner
 npm install
-npm run login      # פעם אחת: מתחברים לאתרים בחלון שנפתח, וסוגרים
+
 npm start          # משאיר פתוח בזמן שעובדים באתר
 ```
 

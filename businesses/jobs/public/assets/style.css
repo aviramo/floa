@@ -36,3 +36,5 @@ h3 { font-size:.95rem; margin:16px 0 6px; }
 #picked .chip { display:inline-flex; width:auto; border:1px solid var(--accent); border-radius:999px; padding:4px 12px; margin:0 0 6px 6px; font-weight:700; color:var(--accent); }
 #picked .chip .note { display:none; }
 #roles { margin-top:6px; }
+.conn { padding:8px 0; border-bottom:1px solid var(--line); }
+.conn strong { min-width:5em; }

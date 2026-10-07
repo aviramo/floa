@@ -14,6 +14,7 @@
    Sending is only ever the second kind. A scan never sends anything.
    ========================================================================== */
 import { lit, sql } from "./db.mjs";
+import { connections, expire } from "./connect.mjs";
 import { open } from "./browser.mjs";
 import { refine, score } from "./score.mjs";
 import { SITES } from "./sites.mjs";
@@ -110,6 +111,7 @@ async function queue() {
       `sent_at = ${result.status === "sent" ? "now()" : "null"} where id = ${lit(row.id)}`,
   );
   log("תוצאה:", result.status, result.note);
+  if (/התחברות/.test(result.note)) await expire(row.owner, row.source).catch(() => {});
   /* A person does not apply to twenty jobs in twenty seconds, and a site
      notices. */
   if (!ONCE) await new Promise((r) => setTimeout(r, 20000 + Math.random() * 20000));
@@ -120,7 +122,7 @@ log(ONCE ? "מטפל במה שמחכה" : "מאזין לבקשות. Ctrl+C לע�
 for (;;) {
   let worked = false;
   try {
-    worked = (await runs()) || (await queue());
+    worked = (await connections(log)) || (await runs()) || (await queue());
   } catch (err) {
     log("שגיאה:", err.message);
   }

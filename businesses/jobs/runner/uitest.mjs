@@ -28,6 +28,7 @@ await page.addInitScript((s) => localStorage.setItem("jobs.session", s), JSON.st
 await page.route("**/rest/v1/**", (route) => {
   const u = route.request().url(); calls.push(route.request().method() + " " + u.split("/rest/v1/")[1]);
   const json = (v) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(v) });
+  if (u.includes("job_connections")) return json(route.request().method() === "GET" ? [{ site: "alljobs", status: "connected", note: "" }] : [{}]);
   if (u.includes("job_applications") && route.request().method() === "GET") return json(apps);
   if (u.includes("job_runs") && route.request().method() === "GET") return json([]);
   if (u.includes("job_runs")) return json([{ id: "r1" }]);
@@ -38,6 +39,10 @@ await page.route("**/supabase.js", (r) => r.fulfill({ contentType: "text/javascr
 await page.goto("http://localhost:5599/jobs/");
 await page.waitForSelector(".card");
 console.log("dashboard:", (await page.textContent("main")).replace(/\s+/g, " ").slice(0, 120));
+await page.waitForSelector("#conns .conn");
+console.log("connections:", (await page.locator("#conns .conn").allInnerTexts()).map((t) => t.replace(/s+/g, " ").slice(0, 60)).join(" | "));
+await page.locator("#conns button").nth(1).click();
+await page.waitForTimeout(300);
 await page.click("button:text-is(\"פתח\")");
 await page.waitForSelector("#found .card"); console.log("city options:", await page.locator("#cities option").count(), "| fields:", await page.locator("#field option").count());
 console.log("agent cards:", await page.locator("#found .card").count(), "| checkbox only on scored:", await page.locator("#found input[type=checkbox]").count());
@@ -47,5 +52,5 @@ await page.waitForTimeout(300);
 console.log("queued msg:", await page.textContent("#runmsg"));
 await page.click("#send");
 await page.waitForTimeout(500);
-console.log("calls:", calls.filter((c) => !c.startsWith("GET")).join(" | "));
+console.log("calls:", calls.join(" | "));
 await b.close(); server.close();

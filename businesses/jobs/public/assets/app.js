@@ -106,7 +106,9 @@
 
   function dashboard() {
     signOutButton.hidden = false;
-    app.innerHTML = "<h1>הסוכנים שלי</h1>";
+    app.innerHTML = "";
+    app.appendChild(connectionsCard());
+    app.appendChild(el("<h1>הסוכנים שלי</h1>"));
     var list = el("<div>טוען…</div>");
     var add = el('<button class="primary">סוכן חדש</button>');
     add.onclick = function () {
@@ -129,6 +131,70 @@
     }).catch(function () {
       list.innerHTML = '<p class="bad">לא הצלחנו לטעון. אם זו הפעם הראשונה, ייתכן שהטבלה עדיין לא נוצרה במסד.</p>';
     });
+  }
+
+  /* --- the job sites the account is signed in to ---------------------------
+     Pressing connect asks the runner on the person's own machine to open Chrome
+     on that site; they sign in THERE, and only the status comes back here. */
+  var SITES = [
+    { key: "alljobs", name: "AllJobs", note: "" },
+    { key: "drushim", name: "דרושים", note: "" },
+    { key: "linkedin", name: "LinkedIn", note: "החיבור נשמר, אבל חיפוש והגשה בו עדיין לא נתמכים." },
+  ];
+  var CONN_TEXT = {
+    connected: "מחובר ✓",
+    requested: "ממתין לסורק במחשב שלך. אם לא קורה כלום, הרץ npm start בתיקיית businesses/jobs/runner.",
+    connecting: "נפתח חלון Chrome במחשב שלך. התחבר לאתר שם, והוא יסגר לבד.",
+    expired: "פג תוקף. התחבר מחדש.",
+    disconnected: "לא מחובר",
+  };
+
+  function connectionsCard() {
+    var card = el('<div class="card"><h2 style="margin-top:0">חיבורים לאתרים</h2>' +
+      '<p class="mute">מתחברים פעם אחת לכל אתר, וכל הסוכנים משתמשים באותו חיבור.</p><div id="conns"></div></div>');
+    var box = card.querySelector("#conns");
+    var timer = null;
+
+    function draw(rows) {
+      var by = {};
+      rows.forEach(function (r) { by[r.site] = r; });
+      box.innerHTML = "";
+      var waiting = false;
+      SITES.forEach(function (s) {
+        var c = by[s.key];
+        var status = c ? c.status : "disconnected";
+        if (status === "requested" || status === "connecting") waiting = true;
+        var line = el('<div class="row conn"><strong></strong><span class="grow mute"></span><button></button></div>');
+        line.querySelector("strong").textContent = s.name;
+        line.querySelector(".grow").textContent = (CONN_TEXT[status] || "") + (c && c.note ? " (" + c.note + ")" : "") + (s.note ? " " + s.note : "");
+        var b = line.querySelector("button");
+        b.textContent = status === "connected" ? "התחבר מחדש" : "התחבר";
+        b.disabled = status === "requested" || status === "connecting";
+        b.onclick = function () {
+          b.disabled = true;
+          api("/rest/v1/job_connections?on_conflict=owner,site", {
+            method: "POST",
+            headers: { "content-type": "application/json", prefer: "resolution=merge-duplicates,return=representation" },
+            body: JSON.stringify({ site: s.key, status: "requested", note: "", updated_at: new Date().toISOString() }),
+          }).then(refresh).catch(function () { b.disabled = false; alert("לא הצלחנו לבקש חיבור."); });
+        };
+        box.appendChild(line);
+      });
+      if (waiting && !timer) timer = setInterval(refresh, 3000);
+      if (!waiting && timer) { clearInterval(timer); timer = null; }
+    }
+
+    function refresh() {
+      if (!document.body.contains(card)) { if (timer) clearInterval(timer); timer = null; return Promise.resolve(); }
+      return api("/rest/v1/job_connections?select=*").then(draw).catch(function () {
+        box.innerHTML = '<p class="bad">לא הצלחנו לטעון את החיבורים.</p>';
+      });
+    }
+    document.addEventListener("visibilitychange", function () { if (!document.hidden) refresh(); });
+    /* After the caller has put the card on the page: refresh() gives up on a
+       card that is not in the document yet. */
+    setTimeout(refresh, 0);
+    return card;
   }
 
   function profileView(p) {
@@ -485,6 +551,9 @@
       });
     };
     view.querySelector("#back").addEventListener("click", stop);
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden && document.body.contains(view)) refresh();
+    });
     refresh();
 
     app.appendChild(view);
