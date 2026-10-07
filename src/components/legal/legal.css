@@ -46,6 +46,10 @@
   padding-top: var(--s-6);
   border-top: 1px solid var(--hairline-2);
 }
+.legal h3 {
+  font-size: 1.05rem;
+  margin: var(--s-6) 0 var(--s-2);
+}
 .legal p { color: var(--ink-2); margin-bottom: var(--s-4); }
 
 .legal-list {

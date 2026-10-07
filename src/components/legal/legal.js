@@ -4,9 +4,10 @@ import { waButton } from "../whatsapp-button/whatsapp-button.js";
 /* Privacy and accessibility: prose, but still built from blocks rather than a
    hand-written page, so both stay in the site's voice and shape.
 
-   Blocks are authored in src/content/legal.js as { h2 } | { p } | { list }. */
+   Blocks are authored in src/content/legal.js as { h2 } | { h3 } | { p } | { list }. */
 const block = (b) =>
   b.h2 ? html`<h2>${b.h2}</h2>`
+  : b.h3 ? html`<h3>${b.h3}</h3>`
   : b.list ? html`<ul class="legal-list">${b.list.map((li) => html`<li>${li}</li>`)}</ul>`
   : html`<p>${b.p}</p>`;
 
