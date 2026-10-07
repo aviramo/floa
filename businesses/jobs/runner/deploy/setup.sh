@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Installs the jobs runner on a fresh Ubuntu server (an Oracle Always Free VM
-# works, ARM or x86). Run it ONCE as the normal user, not as root:
+# Installs the jobs runner on a fresh server. Works on Ubuntu/Debian (apt) and on
+# Oracle Linux / RHEL-family (dnf), ARM or x86. Run it ONCE as the normal user
+# (ubuntu or opc), not as root:
 #
 #   curl -fsSL https://raw.githubusercontent.com/aviramo/floa/main/businesses/jobs/runner/deploy/setup.sh | bash
 #
@@ -13,20 +14,39 @@ set -euo pipefail
 REPO="https://github.com/aviramo/floa.git"
 DIR="$HOME/floa"
 
-sudo apt-get update -y
-sudo apt-get install -y git curl ca-certificates xvfb
+if command -v apt-get >/dev/null; then
+  sudo apt-get update -y
+  sudo apt-get install -y git curl ca-certificates xvfb
+  NODE_SETUP="https://deb.nodesource.com/setup_22.x"
+  NODE_INSTALL="sudo apt-get install -y nodejs"
+else
+  sudo dnf install -y git curl ca-certificates xorg-x11-server-Xvfb xorg-x11-xauth
+  NODE_SETUP="https://rpm.nodesource.com/setup_22.x"
+  NODE_INSTALL="sudo dnf install -y nodejs"
+fi
 
 if ! command -v node >/dev/null || [ "$(node -v | cut -d. -f1 | tr -d v)" -lt 20 ]; then
-  curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-  sudo apt-get install -y nodejs
+  curl -fsSL "$NODE_SETUP" | sudo -E bash -
+  $NODE_INSTALL
+fi
+
+# Oracle's small VMs have little memory and no swap. Chromium needs room.
+if [ "$(free -m | awk '/^Mem:/{print $2}')" -lt 4000 ] && ! swapon --show | grep -q .; then
+  sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
+  echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab >/dev/null
 fi
 
 [ -d "$DIR/.git" ] || git clone "$REPO" "$DIR"
 cd "$DIR/businesses/jobs/runner"
 git pull --ff-only
 npm install --omit=dev
-# Playwright's own Chromium, plus the system libraries it needs
-sudo "$(command -v node)" node_modules/playwright-core/cli.js install-deps chromium
+# Playwright's own Chromium, plus the system libraries it needs. On a distro it
+# does not know (Oracle Linux), the libraries are installed by hand below.
+if command -v apt-get >/dev/null; then
+  sudo "$(command -v node)" node_modules/playwright-core/cli.js install-deps chromium
+else
+  sudo dnf install -y nss nspr atk at-spi2-atk cups-libs libdrm libxkbcommon libXcomposite libXdamage libXfixes libXrandr mesa-libgbm alsa-lib pango cairo libX11 libXext libxcb at-spi2-core liberation-fonts dejavu-sans-fonts || true
+fi
 node node_modules/playwright-core/cli.js install chromium
 
 sudo tee /etc/systemd/system/jobs-runner.service >/dev/null <<UNIT
@@ -39,7 +59,7 @@ Wants=network-online.target
 User=$USER
 WorkingDirectory=$DIR/businesses/jobs/runner
 Environment=RUNNER_ENV=server
-ExecStart=/usr/bin/xvfb-run -a --server-args="-screen 0 1366x850x24" $(command -v node) run.mjs
+ExecStart=$(command -v xvfb-run) -a --server-args="-screen 0 1366x850x24" $(command -v node) run.mjs
 Restart=always
 RestartSec=10
 

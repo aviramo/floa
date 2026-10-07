@@ -46,7 +46,7 @@ npm start          # משאיר פתוח בזמן שעובדים באתר
 
 **1. שרת.** פותחים חשבון ב-https://www.oracle.com/cloud/free (דורש כרטיס אשראי לאימות בלבד). יוצרים Instance: Ubuntu 24.04, Shape `VM.Standard.A1.Flex` עם 2 OCPU ו-12GB. מורידים את מפתח ה-SSH. הסורק רק יוצא החוצה, אז לא צריך לפתוח שום פורט.
 
-**2. התקנה.** מתחברים (`ssh -i המפתח ubuntu@הכתובת`) ומריצים:
+**2. התקנה.** מתחברים (`ssh -i המפתח opc@הכתובת (או ubuntu, לפי ה-Image)`) ומריצים:
 
 ```
 curl -fsSL https://raw.githubusercontent.com/aviramo/floa/main/businesses/jobs/runner/deploy/setup.sh | bash
@@ -59,7 +59,7 @@ curl -fsSL https://raw.githubusercontent.com/aviramo/floa/main/businesses/jobs/r
 ```
 cd businesses/jobs/runner
 npm run login          # מתחברים בחלון שנפתח וסוגרים אותו
-scp -i המפתח sessions.json ubuntu@הכתובת:floa/businesses/jobs/runner/
+scp -i המפתח sessions.json opc@הכתובת:floa/businesses/jobs/runner/
 ```
 
 `sessions.json` מחזיק את העוגיות של האתרים שהתחברת אליהם, כלומר גישה לחשבונות שלך. הוא ב-`.gitignore`, ואסור להעלות אותו לשום מקום חוץ מהשרת שלך.
