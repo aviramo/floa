@@ -39,3 +39,31 @@ npm start          # משאיר פתוח בזמן שעובדים באתר
 - **תפקידים:** הרשימה של דרושים עצמם (35 תחומים, 639 תפקידים), `public/assets/roles.json`, נוצרת עם `node roles.mjs`. דרושים נסרק לפי קוד התפקיד, לא לפי מילים.
 - **ערים:** GeoNames (https://www.geonames.org, רישיון CC BY 4.0), כל יישוב מעל 8,000 תושבים, `public/assets/cities.json`, נוצר עם `node cities-build.mjs IL.txt`.
 - AllJobs עדיין נסרק לפי מילות התפקיד, כי לא מצאתי לו רשימת תפקידים ציבורית.
+
+## להעביר לשרת
+
+הסורק יכול לרוץ על שרת במקום על המחשב שלך (הצעה: Oracle Cloud Always Free). אותו קוד, רק איפה שהוא רץ משתנה.
+
+**1. שרת.** פותחים חשבון ב-https://www.oracle.com/cloud/free (דורש כרטיס אשראי לאימות בלבד). יוצרים Instance: Ubuntu 24.04, Shape `VM.Standard.A1.Flex` עם 2 OCPU ו-12GB. מורידים את מפתח ה-SSH. הסורק רק יוצא החוצה, אז לא צריך לפתוח שום פורט.
+
+**2. התקנה.** מתחברים (`ssh -i המפתח ubuntu@הכתובת`) ומריצים:
+
+```
+curl -fsSL https://raw.githubusercontent.com/aviramo/floa/main/businesses/jobs/runner/deploy/setup.sh | bash
+```
+
+**3. `.env` בשרת.** יוצרים `~/floa/.env` עם `SUPABASE_ACCESS_TOKEN` ו-`SUPABASE_PROJECT_REF` (ואופציונלי `ANTHROPIC_API_KEY`). כדאי ליצור ב-Supabase טוקן נפרד לשרת (לדוגמה בשם `jobs-server`), כדי שאפשר יהיה לבטל אותו בלי לגעת בשלך. **הטוקן הזה יכול לנהל את מסד הנתונים כולו**, ולכן הוא יושב רק בשרת, לעולם לא בריפו.
+
+**4. החיבור לאתרים.** בשרת אין חלון להתחבר בו, אז מתחברים במחשב שלך ומעתיקים את החיבור:
+
+```
+cd businesses/jobs/runner
+npm run login          # מתחברים בחלון שנפתח וסוגרים אותו
+scp -i המפתח sessions.json ubuntu@הכתובת:floa/businesses/jobs/runner/
+```
+
+`sessions.json` מחזיק את העוגיות של האתרים שהתחברת אליהם, כלומר גישה לחשבונות שלך. הוא ב-`.gitignore`, ואסור להעלות אותו לשום מקום חוץ מהשרת שלך.
+
+**5. הפעלה.** `sudo systemctl start jobs-runner`. לוגים: `journalctl -u jobs-runner -f`. ב-`/jobs/`, במסך חיבורים, לחיצה על "התחבר" בודקת מהשרת שהחיבור עובד. מרגע זה אפשר לעצור את `npm start` במחשב. עדכון קוד: `bash ~/floa/businesses/jobs/runner/deploy/update.sh`.
+
+**מה לא בטוח:** אתרים חוסמים לפעמים כתובות של שרתי ענן (דרושים חסם Chrome בלי ממשק), וחיבור שנוצר ממחשב אחד עלול להתבטל כשהוא מופיע מכתובת אחרת, בעיקר ב-LinkedIn. אם הסורק נחסם, הסריקה תעצור באתר הזה ותכתוב מה קרה בהערת הריצה.

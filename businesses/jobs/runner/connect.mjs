@@ -12,7 +12,7 @@
    keeps a cookie that exists only while signed in.
    ========================================================================== */
 import { lit, sql } from "./db.mjs";
-import { open } from "./browser.mjs";
+import { open, SERVER } from "./browser.mjs";
 
 const SITES = {
   alljobs: { name: "AllJobs", url: "https://www.alljobs.co.il/" },
@@ -49,6 +49,30 @@ export async function connections(log) {
   if (!row) return false;
   const site = SITES[row.site];
   log("חיבור:", site.name);
+
+  /* On a server there is no window to sign in at. The sign-in was done on the
+     person's own machine (npm run login) and its cookies copied here, so
+     "connect" means: check that they still open the site. */
+  if (SERVER) {
+    const check = await open();
+    try {
+      const page = check.pages()[0] || (await check.newPage());
+      await page.goto(site.url, { waitUntil: "load", timeout: 45000 }).catch(() => {});
+      await page.waitForTimeout(4000);
+      if (await signedIn(check, site)) {
+        await set(row.owner, row.site, "connected");
+        log("מחובר:", site.name);
+      } else {
+        await set(row.owner, row.site, "disconnected", "לא זוהתה התחברות בשרת. הרץ npm run login במחשב והעתק את sessions.json לשרת");
+        log("לא מחובר בשרת:", site.name);
+      }
+    } catch (err) {
+      await set(row.owner, row.site, "disconnected", String(err.message).slice(0, 150));
+    } finally {
+      await check.close().catch(() => {});
+    }
+    return true;
+  }
 
   const context = await open();
   let closed = false;
