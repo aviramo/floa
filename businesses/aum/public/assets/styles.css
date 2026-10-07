@@ -92,7 +92,6 @@ a { color: inherit; }
   box-shadow: 0 0 0 6px var(--gold), 0 0 70px 24px rgba(255, 226, 120, .75), 0 30px 60px -20px rgba(74, 31, 16, .6); }
 .mandala { position: absolute; left: 50%; top: 50%; width: 128%; max-width: none; aspect-ratio: 1; margin: -64% 0 0 -64%; z-index: 0; color: rgba(138, 74, 20, .55); animation: spin 180s linear infinite; pointer-events: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.credit { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); white-space: nowrap; z-index: 2; font-size: .78rem; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,.6); }
 
 /* ----- שאלת הדלת ----- */
 .door { background: linear-gradient(160deg, var(--rust), var(--red) 70%); color: var(--cream); padding: 64px 0; text-align: center; }
@@ -145,9 +144,9 @@ a { color: inherit; }
 /* ----- איך נראה היום ----- */
 .day { max-width: 760px; list-style: none; margin: 0; padding: 0; display: grid; gap: 0; position: relative; }
 .day li { display: grid; grid-template-columns: 130px 1fr; gap: 12px; padding: 0 0 28px; position: relative; }
-.day li::before { content: ""; position: absolute; inset-inline-start: 64px; top: 34px; bottom: -2px; width: 2px; background: repeating-linear-gradient(var(--red) 0 6px, transparent 6px 12px); }
+.day li::before { content: ""; position: absolute; z-index: 0; inset-inline-start: 64px; top: 22px; bottom: -22px; width: 2px; background: repeating-linear-gradient(var(--red) 0 6px, transparent 6px 12px); }
 .day li:last-child::before { display: none; }
-.day time { font: 800 .98rem "Rubik", sans-serif; white-space: nowrap; color: var(--red); text-align: center; background: var(--paper); border: 2px solid var(--red); border-radius: 16px; height: 44px; line-height: 40px; }
+.day time { position: relative; z-index: 1; font: 800 .98rem "Rubik", sans-serif; white-space: nowrap; color: var(--red); text-align: center; background: var(--paper); border: 2px solid var(--red); border-radius: 16px; height: 44px; line-height: 40px; }
 .day h3 { font-size: 1.5rem; margin-bottom: 4px; }
 .day p { margin: 0; color: var(--ink); }
 
