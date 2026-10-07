@@ -4,6 +4,7 @@ import { home } from "../content/home.js";
 import { solutions } from "../content/solutions.js";
 import { landingOffer } from "../content/landing-offer.js";
 import { accessibility, privacy } from "../content/legal.js";
+import { terms } from "../content/terms.js";
 
 import { render as renderHome } from "./home.js";
 import { render as renderLegal } from "./legal-page.js";
@@ -75,7 +76,7 @@ export const pages = [
     render: (assets) => renderLandingOffer(inFolder(assets)),
   },
 
-  ...[privacy, accessibility].map((doc) => ({
+  ...[privacy, accessibility, terms].map((doc) => ({
     out: doc.out,
     render: (assets) => renderLegal(inRoot(assets), doc),
   })),
@@ -96,7 +97,7 @@ export const siteMap = [
   { loc: `${site.origin}/`, title: home.meta.title, description: home.meta.description },
   ...solutions.map((s) => ({ loc: `${site.origin}/${site.folder}${s.slug}/`, title: s.meta.title, description: s.meta.description })),
   { loc: `${site.origin}/${site.folder}${landingOffer.slug}/`, title: landingOffer.meta.title, description: landingOffer.meta.description },
-  ...[privacy, accessibility].map((doc) => ({ loc: `${site.origin}/${site.folder}${doc.out}`, title: doc.meta.title, description: doc.meta.description })),
+  ...[privacy, accessibility, terms].map((doc) => ({ loc: `${site.origin}/${site.folder}${doc.out}`, title: doc.meta.title, description: doc.meta.description })),
 ];
 
 /* The pages that may send a lead, by the name that lands in the email's subject.

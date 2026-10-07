@@ -200,6 +200,7 @@ export const footerContent = (ctx) => ({
        because that is the one a visitor to FLOA is looking for. */
     { href: "/cv/architect/he/", label: "קורות חיים" },
     { href: ctx.url("privacy.html"), label: "מדיניות פרטיות" },
+    { href: ctx.url("terms.html"), label: "תנאי שימוש" },
     { href: ctx.url("accessibility.html"), label: "הצהרת נגישות" },
     { href: "#", label: "WhatsApp", whatsapp: true },
   ].filter(Boolean),
