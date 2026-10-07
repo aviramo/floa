@@ -117,3 +117,12 @@ alter table public.job_connections enable row level security;
 drop policy if exists "connections are the owner's" on public.job_connections;
 create policy "connections are the owner's" on public.job_connections
   for all to authenticated using (owner = auth.uid()) with check (owner = auth.uid());
+
+-- What the person keeps of what the CV reader suggested: the skills and the
+-- languages, as tags they can switch off or add to. The reader's own list stays
+-- in profile; these are the person's choice, and what scoring uses.
+alter table public.job_agents add column if not exists skills    text[] not null default '{}';
+alter table public.job_agents add column if not exists languages text[] not null default '{}';
+
+-- The ad's own text, kept so it can be read inside the app.
+alter table public.job_applications add column if not exists description text not null default '';

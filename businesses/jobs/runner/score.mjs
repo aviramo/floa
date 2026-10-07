@@ -41,7 +41,8 @@ export function score(agent, job) {
   parts.push(role ? `תפקיד: ${which}` : "התפקיד לא מופיע במשרה");
 
   /* 2. Skills from the CV, up to 30: six distinct hits is a full house. */
-  const skills = (agent.profile?.skills || []).map(plain).filter((s) => s.length > 1);
+  const kept = agent.skills?.length ? agent.skills : agent.profile?.skills || [];
+  const skills = kept.map(plain).filter((s) => s.length > 1);
   const hits = skills.filter((s) => title.includes(s) || body.includes(s));
   total += Math.min(30, hits.length * 5);
   if (hits.length) parts.push(`כישורים: ${hits.slice(0, 4).join(", ")}`);

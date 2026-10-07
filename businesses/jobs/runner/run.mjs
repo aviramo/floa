@@ -59,9 +59,9 @@ async function scan(run) {
     /* A job already written down for this account stays as it is: its status
        may be "sent" and a rescan must not forget that. */
     await sql(
-      `insert into job_applications (owner, agent_id, source, url, title, company, location, score, reason) values ` +
+      `insert into job_applications (owner, agent_id, source, url, title, company, location, score, reason, description) values ` +
         best
-          .map((j) => `(${lit(agent.owner)}, ${lit(agent.id)}, ${lit(j.source)}, ${lit(j.url)}, ${lit(j.title)}, ${lit(j.company)}, ${lit(j.location)}, ${lit(j.score)}, ${lit(j.reason)})`)
+          .map((j) => `(${lit(agent.owner)}, ${lit(agent.id)}, ${lit(j.source)}, ${lit(j.url)}, ${lit(j.title)}, ${lit(j.company)}, ${lit(j.location)}, ${lit(j.score)}, ${lit(j.reason)}, ${lit((j.description || "").slice(0, 4000))})`)
           .join(",") +
         ` on conflict (owner, url) do nothing`,
     );
