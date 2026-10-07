@@ -105,9 +105,6 @@ a { color: inherit; }
 /* ----- סקשנים ----- */
 .section { padding: 84px 0; }
 .section--sand { background: var(--sand); }
-.section h2::after, .journey h2::after, .join h2::after { content: ""; display: block; width: 120px; height: 14px; margin-top: 14px;
-  background: linear-gradient(90deg, transparent, var(--gold) 20%, var(--gold) 80%, transparent) center / 100% 2px no-repeat;
-  -webkit-mask: radial-gradient(circle 6px at 50% 50%, transparent 98%, #000 100%) , linear-gradient(#000, #000); mask-composite: exclude; -webkit-mask-composite: xor; }
 .section h2 { font-size: clamp(1.9rem, 5vw, 3rem); font-weight: 700; margin-bottom: .5em; }
 .quote { margin: 32px 0 0; padding: 26px 28px; background: var(--paper); border-radius: var(--radius); border-inline-start: 6px solid var(--red); }
 .quote p { font-size: 1.3rem; margin-bottom: .6em; }
