@@ -25,3 +25,7 @@ label { display:block; margin:12px 0 4px; font-weight:600; }
 .profile dt { font-weight:600; margin-top:8px; }
 .profile dd { margin:0; }
 .center { text-align:center; padding:48px 0; }
+.job label { margin:0; font-weight:400; cursor:pointer; align-items:flex-start; }
+.score { min-width:2.4em; text-align:center; font-weight:700; border-radius:8px; padding:2px 6px; background:var(--bg); border:1px solid var(--line); }
+.job a { color:var(--ink); font-weight:600; }
+.st { white-space:nowrap; }

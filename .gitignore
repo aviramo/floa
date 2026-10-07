@@ -29,3 +29,6 @@ node_modules/
 Thumbs.db
 .DS_Store
 
+
+# The jobs runner's Chrome profile: the cookies of the sites it is signed in to.
+businesses/jobs/runner/.profile/

@@ -1,0 +1,13 @@
+{
+  "name": "jobs-runner",
+  "private": true,
+  "type": "module",
+  "description": "The local half of the jobs app: opens a real Chrome, scans job sites and sends applications. Runs on your machine, not in the build.",
+  "scripts": {
+    "start": "node run.mjs",
+    "login": "node login.mjs"
+  },
+  "dependencies": {
+    "playwright-core": "^1.50.0"
+  }
+}

@@ -166,9 +166,10 @@
       '<div><label for="r">רדיוס (ק״מ)</label><input type="number" id="r" min="0" max="300"></div></div></div>' +
 
       '<div class="row"><button class="primary" id="save">שמירה</button>' +
-      '<button id="send" disabled title="בקרוב">שלח משרות (בקרוב)</button>' +
+      '<button id="send">שלח משרות</button>' +
       '<span class="grow"></span><button class="link bad" id="del">מחיקת הסוכן</button></div>' +
-      '<p class="mute" id="msg"></p></div>');
+      '<p class="mute" id="msg"></p>' +
+      '<h2>משרות שנמצאו</h2><p class="mute" id="runmsg"></p><div id="found"></div></div>');
     view.querySelector("h1").textContent = a.name;
     view.querySelector("#n").value = a.name;
     view.querySelector("#c").value = a.city;
@@ -255,6 +256,89 @@
         fs.textContent = "לא הצלחנו לקרוא את הקובץ. נסה PDF אחר או תמונה ברורה.";
       });
     };
+
+    /* --- the scan, and what it found ------------------------------------
+       "שלח משרות" asks; the runner on the person's machine answers. Nothing is
+       applied to until a job is ticked and sent. */
+    var STATUS = { scored: "", queued: "בתור לשליחה", sent: "נשלח", manual: "דורש הגשה ידנית", failed: "נכשל" };
+    var found = view.querySelector("#found");
+    var runmsg = view.querySelector("#runmsg");
+    var picked = new Set();
+    var timer = null;
+
+    function stop() { if (timer) clearInterval(timer); timer = null; }
+
+    function draw(rows) {
+      if (!rows.length) { found.innerHTML = '<p class="mute">עוד לא נסרק. לחץ על "שלח משרות".</p>'; return; }
+      found.innerHTML = "";
+      rows.forEach(function (j) {
+        var open = j.status === "scored";
+        var card = el('<div class="card job"><label class="row">' +
+          (open ? '<input type="checkbox">' : "") +
+          '<span class="score"></span><span class="grow"><a target="_blank" rel="noopener"></a>' +
+          '<div class="mute meta"></div><div class="mute why"></div></span>' +
+          '<span class="mute st"></span></label></div>');
+        var box = card.querySelector("input");
+        if (box) {
+          box.checked = picked.has(j.id);
+          box.onchange = function () { box.checked ? picked.add(j.id) : picked.delete(j.id); };
+        }
+        card.querySelector(".score").textContent = j.score;
+        var a = card.querySelector("a");
+        a.textContent = j.title;
+        a.href = j.url;
+        card.querySelector(".meta").textContent = [j.company, j.location, j.source === "drushim" ? "דרושים" : "AllJobs"].filter(Boolean).join(" · ");
+        card.querySelector(".why").textContent = j.reason;
+        card.querySelector(".st").textContent = STATUS[j.status] + (j.note ? " (" + j.note + ")" : "");
+        found.appendChild(card);
+      });
+      var go = el('<button class="primary">שלח את המסומנות</button>');
+      go.onclick = function () {
+        if (!picked.size) { runmsg.textContent = "סמן משרות לשליחה."; return; }
+        var ids = Array.from(picked);
+        api("/rest/v1/job_applications?id=in.(" + ids.join(",") + ")&status=eq.scored", {
+          method: "PATCH", headers: JSON_HEADERS, body: JSON.stringify({ status: "queued" }),
+        }).then(function () {
+          picked.clear();
+          runmsg.textContent = "נכנסו לתור. השליחה מתבצעת בחלון Chrome שנפתח במחשב שלך, אחת אחרי השנייה.";
+          refresh();
+        }).catch(function () { runmsg.textContent = "לא הצלחנו לשלוח לתור."; });
+      };
+      found.appendChild(go);
+    }
+
+    function refresh() {
+      return Promise.all([
+        api("/rest/v1/job_applications?agent_id=eq." + a.id + "&select=*&order=score.desc,created_at.desc"),
+        api("/rest/v1/job_runs?agent_id=eq." + a.id + "&select=*&order=created_at.desc&limit=1"),
+      ]).then(function (res) {
+        var rows = res[0], run = res[1][0];
+        if (run && (run.status === "requested" || run.status === "running")) {
+          runmsg.textContent = run.status === "requested"
+            ? "ממתין לסורק במחשב שלך. אם לא קורה כלום, הרץ npm start בתיקיית businesses/jobs/runner."
+            : "סורק את אתרי הדרושים…";
+        } else if (run) {
+          runmsg.textContent = run.status === "failed" ? "הסריקה נכשלה: " + run.note : "הסריקה האחרונה: " + run.note;
+        }
+        var busy = (run && (run.status === "requested" || run.status === "running")) ||
+          rows.some(function (r) { return r.status === "queued"; });
+        if (!document.body.contains(view)) { stop(); return; }
+        draw(rows);
+        if (busy && !timer) timer = setInterval(refresh, 4000);
+        if (!busy) stop();
+      }).catch(function () { runmsg.textContent = "לא הצלחנו לטעון את התוצאות."; });
+    }
+
+    view.querySelector("#send").onclick = function () {
+      msg.textContent = "";
+      save().then(function () {
+        if (!a.roles.length) { msg.textContent = "בחר לפחות תפקיד אחד."; return; }
+        return api("/rest/v1/job_runs", { method: "POST", headers: JSON_HEADERS, body: JSON.stringify({ agent_id: a.id }) })
+          .then(refresh);
+      }).catch(function () { msg.textContent = "לא הצלחנו להתחיל סריקה."; });
+    };
+    view.querySelector("#back").addEventListener("click", stop);
+    refresh();
 
     app.appendChild(view);
   }
