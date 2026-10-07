@@ -37,6 +37,16 @@ export const BUSINESSES = {
       "דף נחיתה החל מ־500 ₪"
     ]
   },
+  "jobs": {
+    "brand": "משרות",
+    "to": "LEAD_TO",
+    "origins": [
+      "https://floa.co.il",
+      "https://www.floa.co.il",
+      "http://localhost:5173"
+    ],
+    "pages": []
+  },
   "me": {
     "brand": "Ofir Aviram",
     "to": "LEAD_TO_ME",

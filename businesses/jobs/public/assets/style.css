@@ -1,0 +1,8 @@
+:root { --bg: #fafaf7; --ink: #1c1c1a; --accent: #1f6feb; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 system-ui, "Segoe UI", Arial, sans-serif; }
+main { max-width: 720px; margin: 0 auto; padding: 24px 16px; }
+h1 { font-size: 2rem; }
+.job { background: #fff; border: 1px solid #e4e4de; border-radius: 12px; padding: 16px; margin-block: 12px; }
+.job h2 { margin: 0 0 4px; font-size: 1.2rem; }
+.job a { color: var(--accent); font-weight: 600; }
