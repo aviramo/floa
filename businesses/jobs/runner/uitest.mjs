@@ -53,17 +53,26 @@ await page.route("**/rest/v1/**", (route) => {
 });
 await page.route("**/supabase.js", (r) => r.fulfill({ contentType: "text/javascript", body: 'window.SUPABASE={url:"http://localhost:5599/sb",anonKey:"k"}' }));
 await page.route("**/fonts.googleapis.com/**", (r) => r.abort());
+
+/* THE RULE: the page never scrolls, only a list does. */
+const noPageScroll = async (name) => {
+  const r = await page.evaluate(() => ({ doc: document.documentElement.scrollHeight - innerHeight, body: document.body.scrollHeight - innerHeight }));
+  console.log("page does not scroll (" + name + "):", r.doc <= 0 && r.body <= 0, JSON.stringify(r));
+};
 const shot = async (name) => { if (SHOTS) await page.screenshot({ path: join(SHOTS, name + ".png"), fullPage: false }); };
 
 await page.goto("http://localhost:5599/jobs/");
 await page.waitForSelector(".figures");
 console.log("nav:", (await page.locator(".nav-item").allInnerTexts()).map((t) => t.replace(/\s+/g, " ")).join(" | "));
 console.log("figures:", (await page.locator(".figure").allInnerTexts()).map((t) => t.replace(/\s+/g, " ")).join(" | "));
+await noPageScroll("overview");
 await shot("1-overview");
 
 await page.locator(".grid .agent").click();
 await page.waitForSelector(".job");
 console.log("agent jobs:", await page.locator(".job").count(), "| checkboxes (only unsent):", await page.locator(".job input").count());
+await noPageScroll("agent jobs");
+console.log("list scrolls inside itself:", await page.evaluate(() => { const l = document.querySelector("#list"); return l.scrollHeight > l.clientHeight || getComputedStyle(l).overflowY === "auto"; }));
 await shot("2-agent-jobs");
 
 await page.locator(".job").first().click();
@@ -96,6 +105,7 @@ await page.fill("#q", "אנליסט");
 await page.waitForTimeout(150);
 console.log("search hits:", (await page.locator("#roles .pick .grow").allInnerTexts()).slice(0, 3).join(" | "));
 await page.evaluate(() => window.scrollTo(0, 0));
+await noPageScroll("settings");
 await shot("5-settings");
 
 await page.setViewportSize({ width: 390, height: 844 });
@@ -104,6 +114,7 @@ await page.waitForTimeout(350);
 await shot("6-mobile-menu");
 await page.click('.nav-item:has-text("סקירה")');
 await page.waitForTimeout(300);
+await noPageScroll("mobile overview");
 await shot("7-mobile-overview");
 
 console.log("writes:", calls.filter((c) => !c.startsWith("GET")).join(" | "));

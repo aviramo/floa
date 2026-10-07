@@ -40,7 +40,7 @@ async function scan(run) {
         log(`${site.name}: ${jobs.length}`);
         all.push(...jobs);
       } catch (err) {
-        notes.push(`${site.name}: ${err.message}`);
+        notes.push(`${site.name}: ${/closed|Target page/.test(err.message) ? "חלון Chrome נסגר באמצע הסריקה" : err.message}`);
         log(`${site.name} נכשל:`, err.message);
       }
     }

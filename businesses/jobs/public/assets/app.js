@@ -277,7 +277,7 @@
 
   /* --- overview ------------------------------------------------------------------------ */
   function overviewPage() {
-    var box = el("<div></div>");
+    var box = el('<div class="wrap"></div>');
     view.appendChild(box);
 
     function draw() {
@@ -298,7 +298,7 @@
           esc(open.map(function (s) { return s.name; }).join(" ו")) + ' לא מחובר, ובלי זה אי אפשר להגיש.</span></div>' +
           '<button class="btn sm" data-go="connections">לחיבורים</button></div>';
       }
-      html += '<div class="section"><div class="section-head"><h2>הסוכנים שלי</h2></div>';
+      html += '<div class="section fill"><div class="section-head"><h2>הסוכנים שלי</h2></div><div class="scroll">';
       if (!state.agents.length) {
         html += '<div class="empty"><div class="empty-radar">' + radarGlyph(5) + "</div><h2>הסוכן הראשון שלך</h2>" +
           '<p>מעלים קורות חיים, בוחרים תפקיד ועיר, והסוכן סורק משרות ומדרג אותן לפי ההתאמה אליך.</p>' +
@@ -306,7 +306,7 @@
       } else {
         html += '<div class="grid">' + state.agents.map(agentCard).join("") + "</div>";
       }
-      html += "</div>";
+      html += "</div></div>";
       box.innerHTML = html;
 
       var n1 = box.querySelector("#new"), n2 = box.querySelector("#new2");
@@ -350,11 +350,11 @@
   };
 
   function connectionsPage() {
-    var box = el("<div></div>");
+    var box = el('<div class="wrap"></div>');
     view.appendChild(box);
     function draw() {
       var waiting = SITES.some(function (s) { return connStatus(s.key) === "requested"; });
-      var html = '<div class="page-head"><div><h1>חיבורים</h1><p class="sub">מתחברים פעם אחת לכל אתר, וכל הסוכנים משתמשים באותו חיבור. את הסיסמה מקלידים באתר עצמו.</p></div></div><div class="tiles">';
+      var html = '<div class="page-head"><div><h1>חיבורים</h1><p class="sub">מתחברים פעם אחת לכל אתר, וכל הסוכנים משתמשים באותו חיבור. את הסיסמה מקלידים באתר עצמו.</p></div></div><div class="scroll"><div class="tiles">';
       SITES.forEach(function (s) {
         var st = connStatus(s.key), c = state.conns[s.key], look = CONN[st];
         html += '<div class="tile"><div class="tile-top"><span class="tile-name">' + s.name + '</span><span class="state ' + look[0] + '"><i class="dot"></i>' + look[1] + "</span></div>" +
@@ -365,6 +365,7 @@
       html += "</div>";
       if (waiting) html += '<div class="hint">הבקשה ממתינה לסורק שרץ על המחשב שלך. אם לא נפתח חלון, הרץ <b dir="ltr">npm start</b> בתיקיית <b dir="ltr">businesses/jobs/runner</b>.</div>';
       html += '<p class="muted small" style="margin-top:20px">לחיצה על "התחבר" פותחת חלון Chrome במחשב שלך. אחרי שמתחברים באתר, החלון נסגר לבד.</p>';
+      html += "</div>";
       box.innerHTML = html;
       Array.prototype.forEach.call(box.querySelectorAll("[data-site]"), function (b) {
         b.onclick = function () {
@@ -458,7 +459,7 @@
     var picked = new Set();
     var saveTimer = null;
 
-    var box = el('<div>' +
+    var box = el('<div class="wrap">' +
       '<div class="page-head"><div class="grow">' +
         '<input class="title-input" id="name" aria-label="שם הסוכן" maxlength="60">' +
         '<p class="sub" id="summary"></p></div>' +
@@ -539,8 +540,8 @@
     function closeBar() { if (bar) { bar.remove(); bar = null; } }
 
     function jobsTab() {
-      var wrap = el('<div><div class="toolbar"><div class="seg" id="seg"></div><span class="grow"></span>' +
-        '<button class="btn sm" id="pickhi">סמן את כל ה-' + HIGH + "+</button></div><div id=\"list\"></div></div>");
+      var wrap = el('<div class="wrap"><div class="toolbar"><div class="seg" id="seg"></div><span class="grow"></span>' +
+        '<button class="btn sm" id="pickhi">סמן את כל ה-' + HIGH + "+</button></div><div id=\"list\" class=\"scroll jobs-scroll\"></div></div>");
       pane.appendChild(wrap);
       var FILTERS = [["all", "הכל"], ["hi", HIGH + "+"], ["todo", "ממתינות"], ["done", "נשלחו"]];
       var seg = wrap.querySelector("#seg");
@@ -639,7 +640,7 @@
     /* --- settings --- */
     function settingsTab() {
       var p = a.profile || {};
-      var wrap = el('<div>' +
+      var wrap = el('<div class="scroll">' +
         '<div class="card"><div class="step"><span class="step-n">1</span><div class="step-body"><h2>קורות חיים</h2>' +
         '<p class="sub">הסוכן קורא אותם כדי להבין מה אתה יודע, ומדרג לפיהם.</p>' +
         '<label class="drop"><span class="drop-icon">' + icon("upload") + '</span><span class="grow"><b id="cvname"></b><br><span class="muted small" id="fs">PDF או תמונה. קובץ Word עדיין לא נתמך.</span></span>' +
