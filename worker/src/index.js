@@ -489,7 +489,7 @@ async function handleParseCv(request, env, origin) {
   } catch {
     return json({ ok: false, error: "body" }, 400, origin);
   }
-  const catalog = Array.isArray(body.catalog) ? body.catalog.map(String).slice(0, 200) : [];
+  const catalog = Array.isArray(body.catalog) ? body.catalog.map(String).slice(0, 1000) : [];
   if (!CV_MEDIA.includes(body.media_type) || typeof body.data !== "string" || !body.data
       || body.data.length > MAX_CV_BASE64 || !catalog.length) {
     return json({ ok: false, error: "file" }, 400, origin);

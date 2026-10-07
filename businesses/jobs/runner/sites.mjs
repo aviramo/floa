@@ -10,6 +10,9 @@
    stops on that site and says so; a person solves it in the open window.
    ========================================================================== */
 
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 const pause = (page, ms = 1200) => page.waitForTimeout(ms + Math.random() * 800);
 
 /* "מפתח/ת Full Stack" is how a role is NAMED; sites are searched by what an ad
@@ -63,6 +66,16 @@ const alljobs = {
   },
 };
 
+/* A role chosen in the dashboard is one of Drushim's own, so Drushim can be asked
+   for it by code (/jobs/subcat/<code>/), which is exact, instead of by words. */
+const CODES = new Map();
+try {
+  const { fields } = JSON.parse(readFileSync(join(import.meta.dirname, "..", "public", "assets", "roles.json"), "utf8"));
+  for (const f of fields) for (const r of f.roles) CODES.set(r.name, r.drushim);
+} catch {
+  /* no catalog: Drushim is searched by words */
+}
+
 /* --- Drushim --------------------------------------------------------------- */
 const drushim = {
   key: "drushim",
@@ -71,7 +84,11 @@ const drushim = {
   async search(page, roles, limit = 30) {
     const found = [];
     for (const role of roles) {
-      const url = "https://www.drushim.co.il/jobs/search/" + encodeURIComponent(searchTerm(role)) + "/";
+      const codes = (CODES.get(role) || []).slice(0, 2);
+      const urls = codes.length
+        ? codes.map((c) => "https://www.drushim.co.il/jobs/subcat/" + c + "/")
+        : ["https://www.drushim.co.il/jobs/search/" + encodeURIComponent(searchTerm(role)) + "/"];
+      for (const url of urls) {
       await page.goto(url, { waitUntil: "load", timeout: 45000 }).catch(() => {});
       await pause(page, 4000);
       if (/captcha/i.test(await page.title())) throw new Error("דרושים הציג בדיקת בוט");
@@ -97,6 +114,7 @@ const drushim = {
         return out;
       });
       found.push(...rows.slice(0, limit).map((r) => ({ ...r, source: "drushim" })));
+      }
     }
     return found;
   },

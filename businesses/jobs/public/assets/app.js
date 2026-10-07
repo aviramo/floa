@@ -149,10 +149,28 @@
     });
   }
 
+  /* Drushim's fields and roles, loaded once. */
+  var catalogLoaded = null;
+  var catalogData = null;
+  function loadCatalog() {
+    return catalogLoaded || (catalogLoaded = fetch(CFG.rolesFile).then(function (r) {
+      if (!r.ok) throw new Error("roles");
+      return r.json();
+    }).then(function (c) { catalogData = c; return c; }));
+  }
+  function allRoleNames() {
+    var names = {};
+    ((catalogData && catalogData.fields) || []).forEach(function (f) {
+      f.roles.forEach(function (r) { names[r.name] = true; });
+    });
+    return Object.keys(names);
+  }
+
   function agent(a) {
     signOutButton.hidden = false;
     app.innerHTML = "";
     var chosen = new Set(a.roles);
+    var allRoles = [];
     var view = el('<div><button class="link" id="back">← כל הסוכנים</button><h1></h1>' +
       '<div class="card"><label for="n">שם הסוכן</label><input type="text" id="n">' +
 
@@ -161,8 +179,10 @@
       '<input type="file" id="f" accept="application/pdf,image/png,image/jpeg,image/webp">' +
       '<p class="mute" id="fs">PDF או תמונה. קובץ Word עדיין לא נתמך.</p></div>' +
 
-      '<div class="card"><h2 style="margin-top:0">מה אני מחפש</h2><div class="roles" id="roles"></div>' +
-      '<div class="row"><div class="grow"><label for="c">עיר</label><input type="text" id="c"></div>' +
+      '<div class="card"><h2 style="margin-top:0">מה אני מחפש</h2><div class="roles" id="picked"></div>' +
+      '<div class="row"><select id="field"></select><input type="text" id="q" placeholder="חיפוש תפקיד"></div>' +
+      '<div class="roles" id="roles"></div>' +
+      '<div class="row"><div class="grow"><label for="c">עיר</label><input type="text" id="c" list="cities" autocomplete="off" placeholder="התחל להקליד ובחר מהרשימה"><datalist id="cities"></datalist></div>' +
       '<div><label for="r">רדיוס (ק״מ)</label><input type="number" id="r" min="0" max="300"></div></div></div>' +
 
       '<div class="row"><button class="primary" id="save">שמירה</button>' +
@@ -183,17 +203,75 @@
     }
     showCv();
 
+    /* The roles: Drushim's own fields and roles. What is chosen stays visible
+       at the top whichever field is open; below it, one field at a time or a
+       search across all of them. */
     var rolesBox = view.querySelector("#roles");
-    CFG.roles.forEach(function (role) {
+    var pickedBox = view.querySelector("#picked");
+    var fieldSel = view.querySelector("#field");
+    var q = view.querySelector("#q");
+    var catalog = null;
+
+    function chip(role, on) {
       var l = el('<label><input type="checkbox"><span></span></label>');
       l.querySelector("span").textContent = role;
       var box = l.querySelector("input");
-      box.checked = chosen.has(role);
-      box.onchange = function () { box.checked ? chosen.add(role) : chosen.delete(role); };
-      rolesBox.appendChild(l);
-    });
+      box.checked = on;
+      box.onchange = function () { box.checked ? chosen.add(role) : chosen.delete(role); drawRoles(); };
+      return l;
+    }
+
+    function drawRoles() {
+      pickedBox.innerHTML = "";
+      Array.from(chosen).forEach(function (role) { pickedBox.appendChild(chip(role, true)); });
+      pickedBox.style.display = chosen.size ? "" : "none";
+      rolesBox.innerHTML = "";
+      if (!catalog) { rolesBox.textContent = "טוען תפקידים…"; return; }
+      var text = q.value.trim().toLowerCase();
+      var seen = {};
+      catalog.fields.forEach(function (f) {
+        if (!text && f.field !== fieldSel.value) return;
+        f.roles.forEach(function (r) {
+          if (seen[r.name] || chosen.has(r.name)) return;
+          if (text && r.name.toLowerCase().indexOf(text) < 0) return;
+          seen[r.name] = true;
+          rolesBox.appendChild(chip(r.name, false));
+        });
+      });
+    }
+
+    fieldSel.onchange = drawRoles;
+    q.oninput = drawRoles;
+    drawRoles();
+    loadCatalog().then(function (c) {
+      catalog = c;
+      fieldSel.innerHTML = "";
+      c.fields.forEach(function (f) {
+        var o = document.createElement("option");
+        o.textContent = f.field;
+        fieldSel.appendChild(o);
+      });
+      drawRoles();
+    }).catch(function () { rolesBox.textContent = "לא הצלחנו לטעון את רשימת התפקידים."; });
+
+    /* The city is one of a list, not free text: the radius is measured from a
+       place that has a position. */
+    var cityList = null;
+    fetch(CFG.citiesFile).then(function (r) { return r.json(); }).then(function (c) {
+      cityList = c.cities;
+      var dl = view.querySelector("#cities");
+      c.cities.forEach(function (city) {
+        var o = document.createElement("option");
+        o.value = city.name;
+        dl.appendChild(o);
+      });
+    }).catch(function () { /* the field still takes text */ });
 
     function save(extra) {
+      var typed = view.querySelector("#c").value.trim();
+      if (typed && cityList && !cityList.some(function (c) { return c.name === typed; })) {
+        return Promise.reject(new Error("city"));
+      }
       var patch = Object.assign({
         name: view.querySelector("#n").value.trim() || "סוכן חדש",
         roles: Array.from(chosen),
@@ -208,7 +286,9 @@
     view.querySelector("#save").onclick = function () {
       msg.textContent = "שומר…";
       save().then(function () { msg.textContent = "נשמר."; })
-        .catch(function () { msg.textContent = "השמירה נכשלה."; });
+        .catch(function (e) {
+          msg.textContent = e && e.message === "city" ? "בחר עיר מהרשימה." : "השמירה נכשלה.";
+        });
     };
     view.querySelector("#del").onclick = function () {
       if (!confirm("למחוק את הסוכן?")) return;
@@ -227,7 +307,7 @@
           return fetch(CFG.parseEndpoint, {
             method: "POST",
             headers: { "content-type": "application/json", authorization: "Bearer " + t },
-            body: JSON.stringify({ media_type: file.type, data: data, catalog: CFG.roles }),
+            body: JSON.stringify({ media_type: file.type, data: data, catalog: allRoleNames() }),
           });
         });
       }).then(function (r) { return r.json(); }).then(function (res) {
@@ -246,9 +326,7 @@
         if (!view.querySelector("#c").value && profile.city) view.querySelector("#c").value = profile.city;
         return save({ cv_path: path, cv_name: file.name, profile: profile });
       }).then(function () {
-        Array.prototype.forEach.call(rolesBox.querySelectorAll("input"), function (box, i) {
-          box.checked = chosen.has(CFG.roles[i]);
-        });
+        drawRoles();
         showCv();
         fs.textContent = "הקובץ נקרא. סימנתי תפקידים שנראים לי מתאימים, אפשר לתקן.";
       }).catch(function () {
@@ -333,9 +411,12 @@
       msg.textContent = "";
       save().then(function () {
         if (!a.roles.length) { msg.textContent = "בחר לפחות תפקיד אחד."; return; }
+        if (!a.city) { msg.textContent = "בחר עיר."; return; }
         return api("/rest/v1/job_runs", { method: "POST", headers: JSON_HEADERS, body: JSON.stringify({ agent_id: a.id }) })
           .then(refresh);
-      }).catch(function () { msg.textContent = "לא הצלחנו להתחיל סריקה."; });
+      }).catch(function (e) {
+        msg.textContent = e && e.message === "city" ? "בחר עיר מהרשימה." : "לא הצלחנו להתחיל סריקה.";
+      });
     };
     view.querySelector("#back").addEventListener("click", stop);
     refresh();

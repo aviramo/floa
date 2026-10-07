@@ -39,7 +39,7 @@ await page.goto("http://localhost:5599/jobs/");
 await page.waitForSelector(".card");
 console.log("dashboard:", (await page.textContent("main")).replace(/\s+/g, " ").slice(0, 120));
 await page.click("button:text-is(\"פתח\")");
-await page.waitForSelector("#found .card");
+await page.waitForSelector("#found .card"); console.log("city options:", await page.locator("#cities option").count(), "| fields:", await page.locator("#field option").count());
 console.log("agent cards:", await page.locator("#found .card").count(), "| checkbox only on scored:", await page.locator("#found input[type=checkbox]").count());
 await page.locator("#found input[type=checkbox]").check();
 await page.click("text=שלח את המסומנות");

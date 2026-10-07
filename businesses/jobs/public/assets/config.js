@@ -9,16 +9,12 @@ window.JOBS_CONFIG = {
   /* the app lives at /jobs/ */
   base: "/jobs/",
 
-  /* The catalog an agent's roles are picked from. The CV reader chooses from
-     this same list, so the two can never disagree about a name. */
-  roles: [
-    "מפתח/ת Full Stack", "מפתח/ת Frontend", "מפתח/ת Backend", "מפתח/ת מובייל", "DevOps",
-    "QA ובדיקות תוכנה", "מדעי הנתונים", "אנליסט/ית נתונים", "BI", "מנהל/ת מוצר",
-    "מעצב/ת UX/UI", "מנהל/ת פרויקטים", "מנהל/ת תפעול", "איש/ת מכירות", "מנהל/ת חשבון",
-    "שירות לקוחות", "נציג/ת תמיכה טכנית", "שיווק דיגיטלי", "מנהל/ת תוכן", "קופירייטר/ית",
-    "הנהלת חשבונות", "כלכלן/ית", "מנהל/ת כספים", "משאבי אנוש", "גיוס ומשאבי אנוש",
-    "מזכיר/ה ואדמיניסטרציה", "לוגיסטיקה ושרשרת אספקה", "מחסנאי/ת", "נהג/ת", "טכנאי/ת",
-    "מהנדס/ת חשמל", "מהנדס/ת מכונות", "מהנדס/ת תעשייה וניהול", "אדריכל/ית", "עורך/ת דין",
-    "מורה ומחנך/ת", "אח/ות ורפואה", "מנהל/ת מסעדה", "טבח/ית", "מנהל/ת חנות"
-  ]
+  /* The roles an agent is picked from are not written here: they are Drushim's
+     own list of fields and roles, in assets/roles.json (made by
+     runner/roles.mjs). The CV reader chooses from the same list. */
+  rolesFile: "assets/roles.json",
+
+  /* The cities, from GeoNames (runner/cities-build.mjs), each with a position
+     so that a radius means something. */
+  citiesFile: "assets/cities.json"
 };
