@@ -1,6 +1,0 @@
-:root { --ink: #1a1a1a; --paper: #fff; }
-* { box-sizing: border-box; }
-html, body { margin: 0; }
-body { font-family: system-ui, "Segoe UI", Arial, sans-serif; color: var(--ink); background: #eee; }
-.flyer { max-width: 210mm; min-height: 100vh; margin: 0 auto; padding: 24mm 16mm; background: var(--paper); }
-@media print { body { background: none; } .flyer { padding: 0; } }
