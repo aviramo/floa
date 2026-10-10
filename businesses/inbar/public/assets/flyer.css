@@ -77,18 +77,18 @@ h1, h2, h3, p, ul { margin: 0; padding: 0; }
 /* ===================== FRONT ===================== */
 .front { padding: 10mm 14mm 9mm; display: flex; flex-direction: column; }
 .front .brand { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-bottom: 1.5px solid rgba(196, 89, 63, .45); padding-bottom: 2.5mm; }
-.front .brand .name { font-size: clamp(2.2rem, 8vw, 3rem); line-height: 1; color: var(--clay); letter-spacing: 0; }
+.front .brand .name { font-size: clamp(2.6rem, 9vw, 3.6rem); line-height: 1; color: var(--clay); letter-spacing: 0; }
 .front .brand .studio { display: flex; flex-direction: column; line-height: 1.1; color: var(--ink); }
-.front .brand .studio .en { font-family: "Frank Ruhl Libre", serif; font-weight: 700; font-size: 1.7rem; letter-spacing: .01em; }
-.front .brand .studio .he { font-family: "Frank Ruhl Libre", serif; font-weight: 500; font-size: 1.35rem; color: var(--clay); }
+.front .brand .studio .en { font-family: "Frank Ruhl Libre", serif; font-weight: 900; font-size: clamp(1.9rem, 6.5vw, 2.6rem); letter-spacing: 0; }
+.front .brand .studio .he { font-family: "Frank Ruhl Libre", serif; font-weight: 900; font-size: clamp(1.9rem, 6.5vw, 2.6rem); color: var(--clay); }
 
 .front h1 {
-  margin-top: 3mm; font-size: clamp(2.4rem, 9.5vw, 3.9rem); line-height: 1.02; color: var(--ink);
+  margin-top: 3mm; font-size: clamp(2.3rem, 9vw, 3.4rem); line-height: 1.02; color: var(--ink);
 }
 .front h1 .clay { color: var(--clay); }
 .front .sub { margin-top: 3mm; font-size: 1.2rem; line-height: 1.5; max-width: 30em; color: var(--soft); }
 
-.front .photo.hero { margin-top: 5mm; height: 34mm; }
+.front .photo.hero { margin-top: 5mm; height: 30mm; }
 
 .hook { margin-top: 8mm; }
 .hook .big { font-size: clamp(1.3rem, 4.6vw, 1.8rem); line-height: 1.25; color: var(--ink); }
