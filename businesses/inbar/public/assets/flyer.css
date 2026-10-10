@@ -4,15 +4,15 @@
    והכותרות נכתבות ביד. שני עמודי A4, צד קדמי ואחורי.
    ========================================================================== */
 :root {
-  --ink: #3a2a2d;
-  --soft: #5f4e52;
-  --clay: #c4593f;
-  --clay-soft: #e7a48c;
-  --ochre: #e0a63c;
-  --sage: #8fa57e;
-  --sage-deep: #5d7550;
-  --rose: #e9b7b0;
-  --paper: #fbf5ea;
+  --ink: #3b2314;
+  --soft: #6b5546;
+  --clay: #9f4f2c;
+  --clay-soft: #d9a98c;
+  --ochre: #d9b374;
+  --sage: #8fa57a;
+  --sage-deep: #6a8058;
+  --rose: #e6cdb4;
+  --paper: #fbf4ea;
   --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .35  0 0 0 0 .25  0 0 0 0 .2  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.5'/></svg>");
 }
 * { box-sizing: border-box; }
@@ -25,7 +25,7 @@ body {
   line-height: 1.5;
 }
 h1, h2, h3, p, ul { margin: 0; padding: 0; }
-.hand { font-family: "Gveret Levin", "Amatic SC", cursive; }
+.hand { font-family: "Frank Ruhl Libre", "David Libre", serif; font-weight: 500; }
 .display { font-family: "Frank Ruhl Libre", "David Libre", Georgia, serif; font-weight: 900; letter-spacing: -.01em; }
 
 /* ---- the two sheets ---- */
@@ -67,17 +67,12 @@ h1, h2, h3, p, ul { margin: 0; padding: 0; }
 
 /* a print stuck onto the page: white paper border, tilted, with tape */
 .photo {
-  position: relative; margin: 0; background: #fffdf8; padding: 2.2mm;
-  box-shadow: 0 2px 3px rgba(58, 42, 45, .25), 0 10px 18px -8px rgba(58, 42, 45, .35);
-  transform: rotate(var(--tilt, -1.5deg));
+  position: relative; margin: 0; background: #fffaf2; padding: 1.4mm; border-radius: 16px;
+  border: 1px solid rgba(159, 79, 44, .22);
+  box-shadow: 0 10px 24px -14px rgba(59, 35, 20, .45);
 }
+.photo img { border-radius: 12px; }
 .photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.photo::before {
-  content: ""; position: absolute; top: -3.2mm; left: 50%; width: 22mm; height: 6.5mm; margin-left: -11mm;
-  background: rgba(238, 205, 140, .72); transform: rotate(var(--tape, 3deg));
-  box-shadow: 0 1px 2px rgba(58, 42, 45, .18);
-  clip-path: polygon(0 8%, 4% 0, 8% 10%, 12% 0, 100% 0, 96% 50%, 100% 100%, 8% 100%, 4% 88%, 0 100%, 3% 50%);
-}
 
 /* ===================== FRONT ===================== */
 .front { padding: 10mm 14mm 9mm; display: flex; flex-direction: column; }
@@ -91,17 +86,20 @@ h1, h2, h3, p, ul { margin: 0; padding: 0; }
 .front h1 .clay { color: var(--clay); }
 .front .sub { margin-top: 3mm; font-size: 1.2rem; line-height: 1.5; max-width: 30em; color: var(--soft); }
 
-.front .photo.hero { margin-top: 6mm; height: 44mm; --tilt: -1deg; --tape: -2deg; }
+.front .photo.hero { margin-top: 5mm; height: 34mm; }
 
 .hook { margin-top: 8mm; }
 .hook .big { font-size: clamp(1.3rem, 4.6vw, 1.8rem); line-height: 1.25; color: var(--ink); }
 .hook p + p { margin-top: 4px; color: var(--soft); font-size: 1.08rem; line-height: 1.5; max-width: 40em; }
 
 /* four ideas, scattered like notes in the margin: no boxes */
-.ideas { display: grid; grid-template-columns: 1fr 1fr; gap: 3.5mm 9mm; margin-top: 6mm; }
-.idea { position: relative; padding-inline-start: 11mm; }
+.ideas { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm 5mm; margin-top: 5mm; }
+.idea {
+  position: relative; padding: 3mm 4mm 3mm 4mm; padding-inline-start: 13mm;
+  background: rgba(255, 252, 246, .78); border: 1px solid rgba(159, 79, 44, .18); border-radius: 14px;
+}
 .idea::before {
-  content: ""; position: absolute; inset-inline-start: 0; top: .15em; width: 7.5mm; height: 7.5mm;
+  content: ""; position: absolute; inset-inline-start: 3mm; top: 50%; margin-top: -3.5mm; width: 7mm; height: 7mm;
   background: var(--c, var(--clay)); opacity: .85; filter: url(#rough);
   border-radius: 58% 42% 48% 52% / 46% 56% 44% 54%;
 }
@@ -128,16 +126,19 @@ h1, h2, h3, p, ul { margin: 0; padding: 0; }
 
 /* call to action: a painted splash with the number written on it */
 .cta { margin-top: auto; padding-top: 7mm; display: grid; place-items: center; }
-.splash {
-  position: relative; z-index: 0; text-align: center; color: #fff; padding: 5mm 12mm; max-width: 150mm;
+.splash { position: relative; text-align: center; max-width: 150mm; }
+.splash h2 { font-size: 1.7rem; line-height: 1.1; color: var(--ink); }
+.splash p { font-size: 1rem; color: var(--soft); margin-top: 2px; }
+.splash .tel {
+  display: inline-block; background: var(--clay); color: #fff; text-decoration: none;
+  font-weight: 700; font-size: 1.15rem; padding: 3mm 9mm; border-radius: 999px;
+  box-shadow: 0 8px 18px -8px rgba(159, 79, 44, .7);
 }
-.splash::before {
-  content: ""; position: absolute; inset: 0; z-index: -1; background: var(--clay); filter: url(#rough);
-  border-radius: 46% 54% 50% 50% / 62% 52% 48% 38%; transform: rotate(-1.2deg);
+.splash .chips { display: flex; justify-content: center; align-items: center; gap: 3mm; margin-top: 3mm; flex-wrap: wrap; }
+.splash .chip {
+  color: var(--clay); text-decoration: none; font-size: .95rem; padding: 1.4mm 5mm;
+  border: 1px solid rgba(159, 79, 44, .4); border-radius: 999px; background: rgba(255, 252, 246, .85);
 }
-.splash h2 { font-size: 1.55rem; line-height: 1; }
-.splash p { font-size: .98rem; opacity: .95; margin-top: 2px; }
-.splash .tel { display: inline-block; margin-top: 3px; font-size: 1.7rem; color: #fff; text-decoration: none; }
 
 /* ===================== BACK ===================== */
 .back { padding: 9mm 13mm 8mm; display: flex; flex-direction: column; }
@@ -147,8 +148,8 @@ h1, h2, h3, p, ul { margin: 0; padding: 0; }
 .ws { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm 9mm; margin-top: 6mm; }
 .w { position: relative; padding-top: 1mm; }
 .w:nth-child(even) { margin-top: 3mm; }
-.w .photo { height: 19mm; --tilt: 1.2deg; --tape: -4deg; margin-inline: 1.5mm; }
-.w:nth-child(even) .photo { --tilt: -1.4deg; --tape: 5deg; }
+.w .photo { height: 19mm; margin-inline: 1.5mm; }
+.w:nth-child(even) .photo { }
 .w .num {
   position: absolute; top: 11mm; inset-inline-start: -1mm; z-index: 3;
   width: 11mm; height: 11mm; display: grid; place-items: center; color: #fff; font-size: 1.7rem; line-height: 1;
