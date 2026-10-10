@@ -85,13 +85,13 @@ h1, h2, h3, p, ul { margin: 0; padding: 0; }
   margin-top: 3mm; font-size: clamp(2.4rem, 9.5vw, 3.9rem); line-height: 1.02; color: var(--ink);
 }
 .front h1 .clay { color: var(--clay); }
-.front .sub { margin-top: 2.5mm; font-size: 1rem; max-width: 30em; color: var(--soft); }
+.front .sub { margin-top: 3mm; font-size: 1.2rem; line-height: 1.5; max-width: 30em; color: var(--soft); }
 
-.front .photo.hero { margin-top: 8mm; height: 60mm; --tilt: -1deg; --tape: -2deg; }
+.front .photo.hero { margin-top: 6mm; height: 44mm; --tilt: -1deg; --tape: -2deg; }
 
 .hook { margin-top: 8mm; }
 .hook .big { font-size: clamp(1.3rem, 4.6vw, 1.8rem); line-height: 1.25; color: var(--ink); }
-.hook p + p { margin-top: 3px; color: var(--soft); font-size: .9rem; line-height: 1.4; max-width: 40em; }
+.hook p + p { margin-top: 4px; color: var(--soft); font-size: 1.08rem; line-height: 1.5; max-width: 40em; }
 
 /* four ideas, scattered like notes in the margin: no boxes */
 .ideas { display: grid; grid-template-columns: 1fr 1fr; gap: 3.5mm 9mm; margin-top: 6mm; }
@@ -104,8 +104,8 @@ h1, h2, h3, p, ul { margin: 0; padding: 0; }
 .idea:nth-child(2) { --c: var(--sage); }
 .idea:nth-child(3) { --c: var(--ochre); }
 .idea:nth-child(4) { --c: var(--rose); }
-.idea b { display: block; font-size: 1.02rem; line-height: 1.2; color: var(--clay); }
-.idea span { font-size: .84rem; line-height: 1.3; display: block; color: var(--soft); }
+.idea b { display: block; font-size: 1.15rem; line-height: 1.2; color: var(--clay); }
+.idea span { font-size: .98rem; line-height: 1.4; display: block; color: var(--soft); }
 
 /* price: two hand-drawn rings */
 .price { display: flex; gap: 6mm; margin-top: 7mm; align-items: center; flex-wrap: wrap; }
@@ -138,15 +138,15 @@ h1, h2, h3, p, ul { margin: 0; padding: 0; }
 /* ===================== BACK ===================== */
 .back { padding: 9mm 13mm 8mm; display: flex; flex-direction: column; }
 .back h2.title { font-size: clamp(1.7rem, 6vw, 2.1rem); line-height: 1.1; }
-.back .lead { margin-top: 2mm; font-size: .95rem; color: var(--soft); max-width: 36em; }
+.back .lead { margin-top: 2mm; font-size: 1.05rem; color: var(--soft); max-width: 36em; }
 
 .ws { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm 9mm; margin-top: 6mm; }
 .w { position: relative; padding-top: 1mm; }
 .w:nth-child(even) { margin-top: 3mm; }
-.w .photo { height: 27mm; --tilt: 1.2deg; --tape: -4deg; margin-inline: 1.5mm; }
+.w .photo { height: 19mm; --tilt: 1.2deg; --tape: -4deg; margin-inline: 1.5mm; }
 .w:nth-child(even) .photo { --tilt: -1.4deg; --tape: 5deg; }
 .w .num {
-  position: absolute; top: 18mm; inset-inline-start: -1mm; z-index: 3;
+  position: absolute; top: 11mm; inset-inline-start: -1mm; z-index: 3;
   width: 11mm; height: 11mm; display: grid; place-items: center; color: #fff; font-size: 1.7rem; line-height: 1;
   font-family: "Frank Ruhl Libre", serif; font-weight: 900;
 }
@@ -159,10 +159,10 @@ h1, h2, h3, p, ul { margin: 0; padding: 0; }
 .w:nth-child(4) .num::before { background: var(--clay-soft); }
 .w:nth-child(5) .num::before { background: var(--sage); }
 .w:nth-child(6) .num::before { background: var(--clay); }
-.w h3 { margin-top: 4mm; font-size: 1.25rem; line-height: 1.15; color: var(--clay); }
-.w .line { font-size: 1.02rem; line-height: 1.15; color: var(--sage-deep); margin-top: 1px; }
-.w p.t { margin-top: 3px; font-size: .86rem; color: var(--soft); line-height: 1.3; }
-.w p.g { margin-top: 3px; font-size: .82rem; color: var(--ink); line-height: 1.3; }
+.w h3 { margin-top: 3.5mm; font-size: 1.4rem; line-height: 1.15; color: var(--clay); }
+.w .line { font-size: 1.12rem; line-height: 1.15; color: var(--sage-deep); margin-top: 1px; }
+.w p.t { margin-top: 3px; font-size: .96rem; color: var(--soft); line-height: 1.4; }
+.w p.g { margin-top: 4px; font-size: .92rem; color: var(--ink); line-height: 1.3; }
 .w p.g b { color: var(--clay); }
 
 .foot { display: grid; grid-template-columns: 28mm 1fr; gap: 8mm; align-items: center; margin-top: auto; padding-top: 4mm; }
@@ -173,7 +173,7 @@ h1, h2, h3, p, ul { margin: 0; padding: 0; }
 }
 .portrait img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; border: 1.6mm solid #fffdf8; box-shadow: 0 4px 10px rgba(58, 42, 45, .3); display: block; }
 .foot h2 { font-size: 1.3rem; line-height: 1; color: var(--clay); }
-.foot p { font-size: .82rem; color: var(--soft); margin-top: 3px; line-height: 1.4; }
+.foot p { font-size: .92rem; color: var(--soft); margin-top: 3px; line-height: 1.4; }
 .foot .for { margin-top: 5px; color: var(--ink); }
 .foot .for b { color: var(--clay); }
 
