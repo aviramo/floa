@@ -37,6 +37,12 @@ export const BUSINESSES = {
       "דף נחיתה החל מ־500 ₪"
     ]
   },
+  "inbar": {
+    "brand": "Inbar",
+    "to": "LEAD_TO_INBAR",
+    "origins": [],
+    "pages": []
+  },
   "jobs": {
     "brand": "משרות",
     "to": "LEAD_TO",
