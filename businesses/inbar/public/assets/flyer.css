@@ -90,7 +90,7 @@ h1, h2, h3, p, ul { margin: 0; padding: 0; }
 .front .photo.hero { margin-top: 8mm; height: 60mm; --tilt: -1deg; --tape: -2deg; }
 
 .hook { margin-top: 8mm; }
-.hook .big { font-size: clamp(1.6rem, 5vw, 2.15rem); line-height: 1.25; color: var(--ink); }
+.hook .big { font-size: clamp(1.3rem, 4.6vw, 1.8rem); line-height: 1.25; color: var(--ink); }
 .hook p + p { margin-top: 3px; color: var(--soft); font-size: .9rem; line-height: 1.4; max-width: 40em; }
 
 /* four ideas, scattered like notes in the margin: no boxes */
