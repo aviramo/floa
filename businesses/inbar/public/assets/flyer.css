@@ -208,3 +208,10 @@ h1, h2, h3, p, ul { margin: 0; padding: 0; }
   .page:last-of-type { page-break-after: auto; break-after: auto; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* the studio table, bleached into the paper behind the front side */
+.front::before {
+  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background: url("supplies.jpg") center / cover no-repeat;
+  opacity: .13; filter: saturate(.8) brightness(1.3);
+}
