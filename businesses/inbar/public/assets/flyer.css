@@ -69,6 +69,11 @@ ul { margin: 0; }
 .why b { display: block; color: var(--clay-dark); }
 .why span { color: var(--soft); font-size: .93rem; }
 
+.price { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 7mm; }
+.price div { border: 2px solid var(--clay); border-radius: 14px; padding: 10px 14px; text-align: center; }
+.price strong { display: block; font-family: "Suez One", serif; font-weight: 400; font-size: 1.8rem; color: var(--clay-dark); }
+.price span { color: var(--soft); font-size: .92rem; }
+
 .facts {
   display: flex; flex-wrap: wrap; gap: 8px; margin: 7mm 0 0; padding: 0; list-style: none;
 }
@@ -133,7 +138,7 @@ ul { margin: 0; }
 
 @media (max-width: 640px) {
   .page { min-height: 0; }
-  .why, .grid { grid-template-columns: 1fr; }
+  .why, .grid, .price { grid-template-columns: 1fr; }
   .about { grid-template-columns: 1fr; justify-items: center; text-align: center; }
   .shot { height: 34mm; }
 }
