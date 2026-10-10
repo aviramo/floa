@@ -43,6 +43,9 @@ h1, h2, h3, p, ul { margin: 0; padding: 0; }
 }
 .page > * { position: relative; z-index: 2; }
 
+/* poured paint: SVG pools, drips and splashes behind everything on the sheet */
+.page > .paint { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: .68; }
+
 /* watercolor washes: soft pools of colour behind everything */
 .wash {
   position: absolute !important; z-index: 0 !important; pointer-events: none;
