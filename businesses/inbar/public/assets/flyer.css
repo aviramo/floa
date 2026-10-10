@@ -1,12 +1,19 @@
+/* ==========================================================================
+   פלייר של ענבר גיל: נייר, צבעי מים ויד חופשית.
+   אין כאן קופסאות וכרטיסים. הצורות אורגניות, התמונות מודבקות בהטיה,
+   והכותרות נכתבות ביד. שני עמודי A4, צד קדמי ואחורי.
+   ========================================================================== */
 :root {
-  --ink: #34272b;
-  --soft: #62525a;
-  --clay: #c2644a;
-  --clay-dark: #9c4a35;
-  --sage: #6f8160;
-  --cream: #faf4ec;
-  --sand: #f0e4d3;
-  --paper: #fffdf9;
+  --ink: #3a2a2d;
+  --soft: #5f4e52;
+  --clay: #c4593f;
+  --clay-soft: #e7a48c;
+  --ochre: #e0a63c;
+  --sage: #8fa57e;
+  --sage-deep: #5d7550;
+  --rose: #e9b7b0;
+  --paper: #fbf5ea;
+  --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .35  0 0 0 0 .25  0 0 0 0 .2  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.5'/></svg>");
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -14,131 +21,186 @@ body {
   margin: 0;
   font-family: "Heebo", system-ui, "Segoe UI", Arial, sans-serif;
   color: var(--ink);
-  background: #e9dfd2;
+  background: #d9cbb8;
   line-height: 1.5;
 }
-h1, h2, h3 { font-family: "Suez One", "Heebo", serif; font-weight: 400; line-height: 1.2; margin: 0; }
-p { margin: 0; }
-ul { margin: 0; }
+h1, h2, h3, p, ul { margin: 0; padding: 0; }
+.hand { font-family: "Gveret Levin", "Amatic SC", cursive; }
+.display { font-family: "Frank Ruhl Libre", "David Libre", Georgia, serif; font-weight: 900; letter-spacing: -.01em; }
 
-/* a flyer is two A4 sheets: front and back. On screen they stack and grow
-   with the content; in print each is exactly one side of the paper. */
+/* ---- the two sheets ---- */
 .page {
+  position: relative;
   width: 100%;
   max-width: 210mm;
   min-height: 297mm;
   margin: 0 auto 24px;
-  background: var(--paper);
-  box-shadow: 0 0 40px rgba(52, 39, 43, .12);
-  display: flex;
-  flex-direction: column;
+  background-color: var(--paper);
+  background-image: var(--grain);
+  box-shadow: 0 6px 40px rgba(58, 42, 45, .25);
   overflow: hidden;
+  isolation: isolate;
 }
-.pad { padding-inline: 12mm; }
-.side-label {
-  font-size: .7rem; letter-spacing: .12em; color: var(--soft); opacity: .6; text-align: center; padding: 8px 0 0;
+.page > * { position: relative; z-index: 2; }
+
+/* watercolor washes: soft pools of colour behind everything */
+.wash {
+  position: absolute !important; z-index: 0 !important; pointer-events: none;
+  border-radius: 50%; filter: url(#rough) blur(14px); mix-blend-mode: multiply; opacity: .75;
+}
+.w-clay   { background: radial-gradient(closest-side, var(--clay-soft), rgba(231,164,140,0)); }
+.w-ochre  { background: radial-gradient(closest-side, #f0c97a, rgba(240,201,122,0)); }
+.w-sage   { background: radial-gradient(closest-side, #b9c9a8, rgba(185,201,168,0)); }
+.w-rose   { background: radial-gradient(closest-side, var(--rose), rgba(233,183,176,0)); }
+
+/* ---- shared pieces ---- */
+.mark { position: relative; display: inline-block; z-index: 0; }
+.mark::after {
+  content: ""; position: absolute; inset: 45% -.15em -.02em; z-index: -1;
+  background: var(--ochre); opacity: .55; border-radius: 40% 60% 45% 55% / 60% 40% 60% 40%;
+  transform: rotate(-1.2deg); filter: url(#rough);
+}
+.mark.clay::after { background: var(--clay-soft); opacity: .7; }
+
+/* a print stuck onto the page: white paper border, tilted, with tape */
+.photo {
+  position: relative; margin: 0; background: #fffdf8; padding: 2.2mm;
+  box-shadow: 0 2px 3px rgba(58, 42, 45, .25), 0 10px 18px -8px rgba(58, 42, 45, .35);
+  transform: rotate(var(--tilt, -1.5deg));
+}
+.photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.photo::before {
+  content: ""; position: absolute; top: -3.2mm; left: 50%; width: 22mm; height: 6.5mm; margin-left: -11mm;
+  background: rgba(238, 205, 140, .72); transform: rotate(var(--tape, 3deg));
+  box-shadow: 0 1px 2px rgba(58, 42, 45, .18);
+  clip-path: polygon(0 8%, 4% 0, 8% 10%, 12% 0, 100% 0, 96% 50%, 100% 100%, 8% 100%, 4% 88%, 0 100%, 3% 50%);
 }
 
-/* ===== front ===== */
-.top {
-  background: var(--clay);
-  color: #fff;
-  padding: 14mm 12mm 12mm;
-}
-.top .brand { font-size: .9rem; letter-spacing: .1em; opacity: .9; }
-.top h1 { font-size: clamp(2.1rem, 7vw, 3.3rem); margin-top: 6px; }
-.top .sub { font-size: clamp(1.05rem, 2.8vw, 1.3rem); margin-top: 10px; max-width: 30em; }
+/* ===================== FRONT ===================== */
+.front { padding: 10mm 14mm 9mm; display: flex; flex-direction: column; }
+.front .brand { display: flex; align-items: center; gap: 10px; font-size: 1.1rem; color: var(--clay); }
+.front .brand .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--clay); filter: url(#rough); }
 
-.hero-slot { margin: 0; height: 64mm; }
-.hero-slot img, .shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.front h1 {
+  margin-top: 3mm; font-size: clamp(2.4rem, 9.5vw, 3.9rem); line-height: 1.02; color: var(--ink);
+}
+.front h1 .clay { color: var(--clay); }
+.front .sub { margin-top: 2.5mm; font-size: 1rem; max-width: 30em; color: var(--soft); }
+
+.front .photo.hero { margin-top: 8mm; height: 60mm; --tilt: -1deg; --tape: -2deg; }
 
 .hook { margin-top: 8mm; }
-.hook .big {
-  font-family: "Suez One", serif; font-size: clamp(1.3rem, 3.6vw, 1.7rem); color: var(--clay-dark);
-}
-.hook p + p { margin-top: 8px; color: var(--soft); }
+.hook .big { font-size: clamp(1.6rem, 5vw, 2.15rem); line-height: 1.25; color: var(--ink); }
+.hook p + p { margin-top: 3px; color: var(--soft); font-size: .9rem; line-height: 1.4; max-width: 40em; }
 
-.why { display: grid; gap: 10px; margin-top: 7mm; grid-template-columns: repeat(2, 1fr); }
-.why div { background: var(--cream); border-radius: 12px; padding: 11px 14px; }
-.why b { display: block; color: var(--clay-dark); }
-.why span { color: var(--soft); font-size: .93rem; }
+/* four ideas, scattered like notes in the margin: no boxes */
+.ideas { display: grid; grid-template-columns: 1fr 1fr; gap: 3.5mm 9mm; margin-top: 6mm; }
+.idea { position: relative; padding-inline-start: 11mm; }
+.idea::before {
+  content: ""; position: absolute; inset-inline-start: 0; top: .15em; width: 7.5mm; height: 7.5mm;
+  background: var(--c, var(--clay)); opacity: .85; filter: url(#rough);
+  border-radius: 58% 42% 48% 52% / 46% 56% 44% 54%;
+}
+.idea:nth-child(2) { --c: var(--sage); }
+.idea:nth-child(3) { --c: var(--ochre); }
+.idea:nth-child(4) { --c: var(--rose); }
+.idea b { display: block; font-size: 1.02rem; line-height: 1.2; color: var(--clay); }
+.idea span { font-size: .84rem; line-height: 1.3; display: block; color: var(--soft); }
 
-.price { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 7mm; }
-.price div { border: 2px solid var(--clay); border-radius: 14px; padding: 10px 14px; text-align: center; }
-.price strong { display: block; font-family: "Suez One", serif; font-weight: 400; font-size: 1.8rem; color: var(--clay-dark); }
-.price span { color: var(--soft); font-size: .92rem; }
+/* price: two hand-drawn rings */
+.price { display: flex; gap: 6mm; margin-top: 7mm; align-items: center; flex-wrap: wrap; }
+.price .ring {
+  position: relative; width: 48mm; height: 24mm; display: grid; place-items: center; text-align: center;
+  transform: rotate(var(--r, -2deg));
+}
+.price .ring::before {
+  content: ""; position: absolute; inset: 0; border: 2.5px solid var(--c, var(--clay)); filter: url(#rough);
+  border-radius: 52% 48% 55% 45% / 58% 46% 54% 42%;
+}
+.price .ring:nth-child(2) { --c: var(--sage-deep); --r: 2deg; }
+.price .ring strong { display: block; font-size: 1.7rem; line-height: 1; font-family: "Frank Ruhl Libre", serif; font-weight: 900; }
+.price .ring span { font-size: .78rem; color: var(--soft); line-height: 1.2; display: block; padding-inline: 10px; }
+.price .where { font-size: 1.1rem; color: var(--clay); flex: 1; min-width: 40mm; line-height: 1.2; }
 
-.facts {
-  display: flex; flex-wrap: wrap; gap: 8px; margin: 7mm 0 0; padding: 0; list-style: none;
+/* call to action: a painted splash with the number written on it */
+.cta { margin-top: auto; padding-top: 7mm; display: grid; place-items: center; }
+.splash {
+  position: relative; z-index: 0; text-align: center; color: #fff; padding: 5mm 12mm; max-width: 150mm;
 }
-.facts li {
-  background: var(--ink); color: #fff; border-radius: 999px; padding: 6px 16px; font-size: .95rem;
+.splash::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; background: var(--clay); filter: url(#rough);
+  border-radius: 46% 54% 50% 50% / 62% 52% 48% 38%; transform: rotate(-1.2deg);
 }
+.splash h2 { font-size: 1.55rem; line-height: 1; }
+.splash p { font-size: .98rem; opacity: .95; margin-top: 2px; }
+.splash .tel { display: inline-block; margin-top: 3px; font-size: 1.7rem; color: #fff; text-decoration: none; }
 
-.cta {
-  margin: auto 12mm 12mm; background: var(--ink); color: #fff; border-radius: 18px;
-  padding: 7mm 8mm; text-align: center; break-inside: avoid;
-}
-.cta h2 { font-size: clamp(1.3rem, 4vw, 1.8rem); }
-.cta p { margin-top: 6px; opacity: .85; }
-.cta .btn {
-  display: inline-block; margin-top: 12px; background: var(--clay); color: #fff; text-decoration: none;
-  font-weight: 700; font-size: 1.15rem; padding: 12px 28px; border-radius: 999px;
-}
-.front-body { padding-bottom: 8mm; }
+/* ===================== BACK ===================== */
+.back { padding: 9mm 13mm 8mm; display: flex; flex-direction: column; }
+.back h2.title { font-size: clamp(1.7rem, 6vw, 2.1rem); line-height: 1.1; }
+.back .lead { margin-top: 2mm; font-size: .95rem; color: var(--soft); max-width: 36em; }
 
-/* ===== back ===== */
-.back-head { padding: 10mm 12mm 0; }
-.back-head h2 { font-size: clamp(1.5rem, 4.5vw, 2rem); color: var(--clay-dark); }
-.back-head p { color: var(--soft); margin-top: 4px; }
+.ws { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm 9mm; margin-top: 6mm; }
+.w { position: relative; padding-top: 1mm; }
+.w:nth-child(even) { margin-top: 3mm; }
+.w .photo { height: 27mm; --tilt: 1.2deg; --tape: -4deg; margin-inline: 1.5mm; }
+.w:nth-child(even) .photo { --tilt: -1.4deg; --tape: 5deg; }
+.w .num {
+  position: absolute; top: 18mm; inset-inline-start: -1mm; z-index: 3;
+  width: 11mm; height: 11mm; display: grid; place-items: center; color: #fff; font-size: 1.7rem; line-height: 1;
+  font-family: "Frank Ruhl Libre", serif; font-weight: 900;
+}
+.w .num::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; background: var(--c, var(--clay)); filter: url(#rough);
+  border-radius: 55% 45% 52% 48% / 48% 58% 42% 52%;
+}
+.w:nth-child(2) .num::before { background: var(--sage-deep); }
+.w:nth-child(3) .num::before { background: var(--ochre); }
+.w:nth-child(4) .num::before { background: var(--clay-soft); }
+.w:nth-child(5) .num::before { background: var(--sage); }
+.w:nth-child(6) .num::before { background: var(--clay); }
+.w h3 { margin-top: 4mm; font-size: 1.25rem; line-height: 1.15; color: var(--clay); }
+.w .line { font-size: 1.02rem; line-height: 1.15; color: var(--sage-deep); margin-top: 1px; }
+.w p.t { margin-top: 3px; font-size: .86rem; color: var(--soft); line-height: 1.3; }
+.w p.g { margin-top: 3px; font-size: .82rem; color: var(--ink); line-height: 1.3; }
+.w p.g b { color: var(--clay); }
 
-.grid {
-  display: grid; gap: 12px; grid-template-columns: repeat(2, 1fr); padding: 6mm 12mm 0;
+.foot { display: grid; grid-template-columns: 28mm 1fr; gap: 8mm; align-items: center; margin-top: auto; padding-top: 4mm; }
+.portrait { position: relative; z-index: 0; width: 28mm; height: 28mm; }
+.portrait::before {
+  content: ""; position: absolute; inset: -3mm; z-index: -1; background: var(--sage); opacity: .6; filter: url(#rough);
+  border-radius: 54% 46% 50% 50% / 48% 56% 44% 52%; transform: rotate(8deg);
 }
-.card {
-  border: 1px solid var(--sand); border-radius: 14px; overflow: hidden; background: #fff;
-  display: flex; flex-direction: column; break-inside: avoid;
-}
-.shot {
-  margin: 0; height: 30mm;
-}
-.card .body { padding: 10px 13px 12px; display: flex; flex-direction: column; gap: 5px; flex: 1; }
-.card h3 { font-size: 1.1rem; }
-.card .hookline { color: var(--clay-dark); font-weight: 600; font-size: .88rem; }
-.card p { color: var(--soft); font-size: .86rem; }
-.card .gives {
-  margin-top: auto; padding-top: 6px; border-top: 1px solid var(--sand); font-size: .83rem; color: var(--ink);
-}
-.card .gives b { color: var(--sage); }
+.portrait img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; border: 1.6mm solid #fffdf8; box-shadow: 0 4px 10px rgba(58, 42, 45, .3); display: block; }
+.foot h2 { font-size: 1.3rem; line-height: 1; color: var(--clay); }
+.foot p { font-size: .82rem; color: var(--soft); margin-top: 3px; line-height: 1.4; }
+.foot .for { margin-top: 5px; color: var(--ink); }
+.foot .for b { color: var(--clay); }
 
-.back-foot { padding: 6mm 12mm 0; display: grid; gap: 12px; grid-template-columns: 1fr; }
-.about { display: grid; grid-template-columns: 26mm 1fr; gap: 14px; align-items: center; background: var(--cream); border-radius: 14px; padding: 12px 14px; }
-.about img { width: 26mm; height: 26mm; object-fit: cover; border-radius: 50%; border: 3px solid var(--sand); }
-.about h2 { font-size: 1.15rem; margin-bottom: 3px; }
-.about p { color: var(--soft); font-size: .86rem; }
-.for { color: var(--soft); font-size: .86rem; padding: 0 2px; }
-.for b { color: var(--ink); }
-.back-cta {
-  margin: 6mm 12mm 10mm; padding: 5mm 7mm; border-radius: 16px; background: var(--ink); color: #fff;
-  display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
-}
-.back-cta strong { font-family: "Suez One", serif; font-weight: 400; font-size: 1.25rem; }
-.back-cta .btn {
-  background: var(--clay); color: #fff; text-decoration: none; font-weight: 700; padding: 10px 22px; border-radius: 999px;
-}
+.back-cta { margin-top: 3mm; text-align: center; font-size: 1.3rem; }
+.back-cta a { color: var(--clay); text-decoration: none; }
+.back-cta .mark a { padding-inline: 4px; }
 
+/* ===================== small screens ===================== */
 @media (max-width: 640px) {
   .page { min-height: 0; }
-  .why, .grid, .price { grid-template-columns: 1fr; }
-  .about { grid-template-columns: 1fr; justify-items: center; text-align: center; }
-  .shot { height: 34mm; }
+  .front { padding: 10mm 6mm 8mm; }
+  .back { padding: 8mm 6mm 8mm; }
+  .front .photo.hero { height: 48mm; }
+  .ideas, .ws { grid-template-columns: 1fr; }
+  .w:nth-child(even) { margin-top: 0; }
+  .w .photo { height: 44mm; }
+  .w .num { top: 33mm; }
+  .foot { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+  .cta { padding-top: 6mm; }
+  .splash { padding: 6mm 8mm; }
 }
 
+/* ===================== print: exactly two A4 sides ===================== */
 @page { size: A4; margin: 0; }
 @media print {
   body { background: none; }
-  .page { box-shadow: none; max-width: none; width: 210mm; height: 297mm; min-height: 0; margin: 0; page-break-after: always; break-after: page; }
-  .page:last-child { page-break-after: auto; break-after: auto; }
-  .side-label { display: none; }
+  .page { width: 210mm; height: 297mm; min-height: 0; max-width: none; margin: 0; box-shadow: none; page-break-after: always; break-after: page; }
+  .page:last-of-type { page-break-after: auto; break-after: auto; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
