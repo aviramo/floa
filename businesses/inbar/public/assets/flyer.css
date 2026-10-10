@@ -81,8 +81,9 @@ h1, h2, h3, p, ul { margin: 0; padding: 0; }
 
 /* ===================== FRONT ===================== */
 .front { padding: 10mm 14mm 9mm; display: flex; flex-direction: column; }
-.front .brand { display: flex; align-items: center; gap: 10px; font-size: 1.1rem; color: var(--clay); }
-.front .brand .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--clay); filter: url(#rough); }
+.front .brand { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-bottom: 1.5px solid rgba(196, 89, 63, .45); padding-bottom: 2.5mm; }
+.front .brand .name { font-size: clamp(2.2rem, 8vw, 3rem); line-height: 1; color: var(--clay); letter-spacing: 0; }
+.front .brand .studio { font-size: 1.15rem; color: var(--ink); }
 
 .front h1 {
   margin-top: 3mm; font-size: clamp(2.4rem, 9.5vw, 3.9rem); line-height: 1.02; color: var(--ink);
