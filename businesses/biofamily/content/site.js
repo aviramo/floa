@@ -7,7 +7,7 @@ export const site = {
   dir: "rtl",
   origin: "https://floa.co.il",
   folder: "biofamily/",
-  tagline: "ביודנסה למשפחה, לילדים בגילאי 3 עד 10",
+  tagline: "בואו לרקוד את הקשר שלכם: ביודנסה להורים וילדים בגילאי 3 עד 10",
   slogan: "מפגשי תנועה, מוזיקה ומשחק להורים ולילדים",
 };
 
