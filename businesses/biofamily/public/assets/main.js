@@ -66,6 +66,24 @@
     window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(fill, 200); });
   }
 
+  /* כפתור וואטסאפ צף: מופיע אחרי שה-hero יצא מהמסך, ונעלם כשהקריאה האחרונה או הפוטר בתצוגה */
+  var fab = document.getElementById('fab');
+  if (fab) {
+    var hero = document.querySelector('.hero');
+    var zones = [document.getElementById('signup'), document.querySelector('footer')].filter(Boolean);
+    var heroGone = false, inZone = false;
+    var upd = function () { fab.classList.toggle('show', heroGone && !inZone); };
+    if ('IntersectionObserver' in window) {
+      if (hero) new IntersectionObserver(function (es) { heroGone = !es[0].isIntersecting; upd(); }, { threshold: 0 }).observe(hero);
+      var seen = new Set();
+      var zo = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.isIntersecting) seen.add(e.target); else seen.delete(e.target); });
+        inZone = seen.size > 0; upd();
+      }, { threshold: 0 });
+      zones.forEach(function (z) { zo.observe(z); });
+    }
+  }
+
   /* המפגש הבא: אחרי שעבר, השורה נעלמת ונשארים "ימי שלישי" */
   var next = document.getElementById('nextEvent');
   if (next) {
