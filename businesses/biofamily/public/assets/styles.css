@@ -185,3 +185,14 @@
 
     .meta{ display:flex; flex-wrap:wrap; gap:.6rem; justify-content:center; margin:0 0 1.6rem; }
     .meta span{ background:var(--sand); border-radius:999px; padding:.15rem 1.1rem; font-size:1.15rem; }
+
+    .hero-pic{ margin-top:1.8rem; }
+    .wide{ margin-top:2.4rem; }
+    .wide img{ aspect-ratio:16/8; object-fit:cover; object-position:center 40%; }
+    .split{ display:grid; gap:1.8rem; align-items:start; }
+    .split .steps{ max-width:none; margin:0; }
+    .tall img{ aspect-ratio:3/4; object-fit:cover; }
+    @media (min-width:860px){
+      .split{ grid-template-columns:5fr 6fr; align-items:center; }
+      .tall{ transform:rotate(-2deg); }
+    }
