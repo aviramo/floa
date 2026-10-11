@@ -42,41 +42,4 @@
     var until = Date.parse(next.getAttribute('data-until'));
     if (until && Date.now() > until) next.hidden = true;
   }
-
-  /* הטופס: שולח ל-Worker המשותף. company הוא פח דבש. */
-  var ENDPOINT = 'https://floa-lead.floa-il.workers.dev/lead';
-  var form = document.getElementById('leadForm');
-  var note = document.getElementById('formNote');
-  if (!form) return;
-  var sending = false;
-  function say(msg, ok) { note.textContent = msg; note.className = 'note ' + (ok ? 'ok' : 'err'); note.hidden = false; }
-  form.addEventListener('submit', function (e) {
-    e.preventDefault();
-    if (sending) return;
-    var d = new FormData(form);
-    var name = (d.get('name') || '').toString().trim();
-    var phone = (d.get('phone') || '').toString().trim();
-    if (name.length < 2 || phone.replace(/\D/g, '').length < 9) { say('נא למלא שם וטלפון תקינים', false); return; }
-    var btn = form.querySelector('button[type=submit]');
-    sending = true; btn.disabled = true;
-    fetch(ENDPOINT, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        business: 'biofamily', page: 'ביודנסה למשפחה',
-        name: name, phone: phone,
-        company: (d.get('company') || '').toString().trim(),
-        url: window.location.href
-      })
-    }).then(function (r) {
-      if (!r.ok) throw new Error('http ' + r.status);
-      return r.json().catch(function () { return {}; });
-    }).then(function (b) {
-      if (b && b.ok === false) throw new Error('send');
-      say('תודה, הפרטים התקבלו. נחזור אליכם בהקדם', true);
-      form.reset();
-    }).catch(function () {
-      say('לא הצלחנו לשלוח. אפשר לנסות שוב בעוד רגע', false);
-    }).then(function () { sending = false; btn.disabled = false; });
-  });
 })();

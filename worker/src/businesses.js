@@ -20,9 +20,7 @@ export const BUSINESSES = {
       "https://www.floa.co.il",
       "http://localhost:5173"
     ],
-    "pages": [
-      "ביודנסה למשפחה"
-    ]
+    "pages": []
   },
   "chords": {
     "brand": "אקורדים",
