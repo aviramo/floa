@@ -282,3 +282,11 @@ footer{ padding:2.2rem 0 5.5rem; text-align:center; font-size:.95rem; color:var(
 }
 .eyebrow i{ width:.8rem; height:.8rem; border-radius:50%; background:var(--sky); display:inline-block; margin-bottom:.4rem; }
 .eyebrow i.d2{ background:var(--leaf); }
+
+/* סטיקר הגילאים: גלולה עם ריווח נדיב, על פינת התמונה */
+.sticker-age{
+  position:absolute; bottom:-1.2rem; right:1.2rem; z-index:3; transform:rotate(-4deg);
+  background:var(--sun); color:var(--ink); border:3px solid var(--paper); border-radius:999px;
+  padding:.65rem 1.6rem; width:auto; height:auto; display:inline-block; white-space:nowrap;
+  font:700 1.3rem/1.2 "Fredoka",sans-serif; box-shadow:0 12px 24px -14px rgba(63,56,47,.7);
+}
