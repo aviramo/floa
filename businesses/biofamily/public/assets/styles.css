@@ -302,3 +302,10 @@ footer{ padding:2.2rem 0 5.5rem; text-align:center; font-size:.95rem; color:var(
 .signup .hand{ color:#FFD98A !important; }
 .signup .h-sect, .signup .lead{ text-shadow:0 1px 0 rgba(63,56,47,.25); }
 .signup .hand{ margin-bottom:.5rem; } .signup .h-sect{ margin-bottom:.4rem; }
+
+/* כפתורי וואטסאפ גדולים: שורה אחת במובייל, בלי ריפוד עצום */
+.btn{ white-space:nowrap; }
+@media (max-width:640px){
+  .btn-lg{ font-size:1.2rem; padding:.95rem 1.5rem; }
+  .signup{ padding:2rem 1.2rem; }
+}
