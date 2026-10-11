@@ -290,3 +290,15 @@ footer{ padding:2.2rem 0 5.5rem; text-align:center; font-size:.95rem; color:var(
   padding:.65rem 1.6rem; width:auto; height:auto; display:inline-block; white-space:nowrap;
   font:700 1.3rem/1.2 "Fredoka",sans-serif; box-shadow:0 12px 24px -14px rgba(63,56,47,.7);
 }
+
+/* באנר ההצטרפות: משבצות עדינות מאוד על טרקוטה כהה, כדי שהטקסט יהיה קריא */
+.gingham{
+  background-color:#A9533A;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255,253,249,.07) 0 28px, transparent 28px 56px),
+    repeating-linear-gradient(90deg, rgba(255,253,249,.07) 0 28px, transparent 28px 56px);
+}
+.signup{ background-color:#A9533A; }
+.signup .hand{ color:#FFD98A !important; }
+.signup .h-sect, .signup .lead{ text-shadow:0 1px 0 rgba(63,56,47,.25); }
+.signup .hand{ margin-bottom:.5rem; } .signup .h-sect{ margin-bottom:.4rem; }
