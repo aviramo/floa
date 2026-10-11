@@ -36,6 +36,13 @@
     }
   }
 
+  /* המפגש הבא: אחרי שעבר, השורה נעלמת ונשארים "ימי שלישי" */
+  var next = document.getElementById('nextEvent');
+  if (next) {
+    var until = Date.parse(next.getAttribute('data-until'));
+    if (until && Date.now() > until) next.hidden = true;
+  }
+
   /* הטופס: שולח ל-Worker המשותף. company הוא פח דבש. */
   var ENDPOINT = 'https://floa-lead.floa-il.workers.dev/lead';
   var form = document.getElementById('leadForm');
