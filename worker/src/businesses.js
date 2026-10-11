@@ -12,6 +12,18 @@ export const BUSINESSES = {
     "origins": [],
     "pages": []
   },
+  "biofamily": {
+    "brand": "ביודנסה למשפחה",
+    "to": "LEAD_TO_BIOFAMILY",
+    "origins": [
+      "https://floa.co.il",
+      "https://www.floa.co.il",
+      "http://localhost:5173"
+    ],
+    "pages": [
+      "ביודנסה למשפחה"
+    ]
+  },
   "chords": {
     "brand": "אקורדים",
     "to": "LEAD_TO",
