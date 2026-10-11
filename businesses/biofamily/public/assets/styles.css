@@ -208,3 +208,6 @@
     .or{ margin-top:1.6rem; }
     .signup .btn-ghost.btn-sm{ padding:.55rem 1.8rem; }
     .next[hidden]{ display:none; }
+    /* כפתור וואטסאפ בתוך הבאנר הטרקוטה: לבן עם טקסט כהה, קריא ובולט */
+    .signup .btn-what{ background:var(--paper); color:#8F3F27; font-size:1.3rem; padding:1.05rem 2.4rem; box-shadow:0 16px 32px -18px rgba(63,56,47,.8); }
+    .btn-wa{ color:var(--paper); }
