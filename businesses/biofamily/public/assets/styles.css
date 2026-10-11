@@ -82,7 +82,7 @@
 
     /* ===== סטריפ מילים ===== */
     .marquee{ background:var(--terra); color:var(--paper); overflow:hidden; padding:.7rem 0; direction:ltr; }
-    .marquee div{ display:flex; width:max-content; animation:slide 28s linear infinite; }
+    .marquee div{ display:flex; width:max-content; animation:slide 40s linear infinite; }
     .marquee span{ font-family:"Fredoka",sans-serif; font-size:1.5rem; padding-inline:1.4rem; white-space:nowrap; }
     .marquee span::after{ content:"✦"; margin-inline-start:2.8rem; color:var(--sun); }
     @keyframes slide{ from{ transform:translateX(-50%); } to{ transform:translateX(0); } }
