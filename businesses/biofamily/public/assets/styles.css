@@ -272,3 +272,13 @@ footer{ padding:2.2rem 0 5.5rem; text-align:center; font-size:.95rem; color:var(
   .lines .card p{ font-size:1rem; line-height:1.5; }
   .lines .shape{ width:4.6rem; height:4.6rem; font-size:2rem; }
 }
+
+/* שורת פתיחה מעל הכותרת: כתב יד עם קו גלי ושלוש נקודות צבע */
+.eyebrow{ display:flex; align-items:center; justify-content:center; gap:.8rem; margin-bottom:.7rem; }
+@media (min-width:900px){ .hero-split .eyebrow{ justify-content:flex-start; } }
+.eyebrow .hand{
+  font-size:2.5rem; color:var(--terra); position:relative; padding-bottom:.55rem;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='8' viewBox='0 0 60 8'%3E%3Cpath d='M0 4 Q7.5 0 15 4 T30 4 T45 4 T60 4' fill='none' stroke='%23F2B544' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") center bottom/60px 8px repeat-x;
+}
+.eyebrow i{ width:.8rem; height:.8rem; border-radius:50%; background:var(--sky); display:inline-block; margin-bottom:.4rem; }
+.eyebrow i.d2{ background:var(--leaf); }
