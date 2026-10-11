@@ -196,3 +196,9 @@
       .split{ grid-template-columns:5fr 6fr; align-items:center; }
       .tall{ transform:rotate(-2deg); }
     }
+
+    .hosts{ display:flex; flex-wrap:wrap; gap:1.6rem; justify-content:center; }
+    .host{ background:var(--paper); border-radius:var(--r-md); padding:1.6rem 2.2rem; text-align:center; box-shadow:var(--shadow); min-width:210px; }
+    .host h3{ font-size:1.4rem; margin-top:.8rem; }
+    .avatar{ width:7.5rem; height:7.5rem; border-radius:50%; object-fit:cover; display:inline-block; border:5px solid var(--blush); }
+    .avatar.initial{ background:var(--sun); display:inline-grid; place-items:center; font:600 3rem "Fredoka",sans-serif; border-color:var(--paper); }
