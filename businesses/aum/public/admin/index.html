@@ -8,585 +8,1660 @@
   <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Rubik:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Amatic+SC:wght@700&family=Assistant:wght@400;600;700&family=Rubik:wght@500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --red: #C1191F; --brown: #5A2410; --night: #4A1F10; --rust: #E0661C; --gold: #F2B01E;
-      --cream: #FFF6DC; --sand: #F8E0A6; --paper: #FFFBEF; --ink: #4A2514; --muted: #8A6A55; --line: #EBD08F;
-      --green: #1F8F55; --green-bg: #DFF2E6; --red-bg: #FBE1D8; --amber-bg: #FCEBBF;
+      --cream: #FFF6DC; --sand: #F8E0A6; --terra: #C1191F; --coral: #E0661C;
+      --sage: #C9B79C; --olive: #5A2410; --plum: #4A1F10; --ink: #4A2514;
+      --paper: #FFFBEF; --muted: #8A6A55; --line: #EBD08F; --gold: #F2B01E;
+      --green: #1F8F55; --green-bg: #DFF2E6; --red: #B3261E; --red-bg: #FBE1D8;
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; }
-    body { background: var(--cream); color: var(--ink); font: 17px/1.4 "Assistant", system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
-    button, input, select, textarea { font: inherit; color: inherit; }
+    body {
+      background: var(--cream); color: var(--ink);
+      font-family: "Assistant", system-ui, sans-serif; font-size: 17px; line-height: 1.4;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button, input, textarea { font: inherit; color: inherit; }
     button { cursor: pointer; border: 0; background: none; padding: 0; }
-    :focus-visible { outline: 3px solid var(--night); outline-offset: 2px; }
-    [hidden] { display: none !important; }
+    :focus-visible { outline: 3px solid var(--plum); outline-offset: 2px; }
 
-    .wrap { max-width: 720px; margin: 0 auto; padding: 0 16px 120px; }
-    header.top { position: sticky; top: 0; z-index: 5; background: var(--cream); padding: 14px 16px 8px; margin: 0 -16px; }
-    .title-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-    h1 { font: 700 26px "Rubik", sans-serif; margin: 0; display: flex; align-items: center; gap: 10px; }
-    .dot { width: 10px; height: 10px; border-radius: 50%; background: #C9B79C; flex: 0 0 auto; }
-    .dot.on { background: var(--green); }
-    .who { color: var(--muted); font-size: 14px; display: flex; gap: 10px; align-items: center; }
-    .linkbtn { color: var(--red); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; font-size: 14px; }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px 120px; }
 
-    .search { display: block; margin-top: 10px; }
-    .search input { width: 100%; height: 48px; border-radius: 16px; border: 1.5px solid var(--line); background: var(--paper); padding: 0 14px; font-size: 17px; }
-    .search input:focus { border-color: var(--rust); outline: none; }
+    header.top {
+      position: sticky; top: 0; z-index: 5; background: var(--cream);
+      padding: 16px 0 10px; margin: 0 -16px; padding-inline: 16px;
+    }
+    .title-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+    h1 { font-family: "Rubik", sans-serif; font-size: 26px; margin: 0; }
+    .brand { color: var(--muted); font-size: 14px; }
 
-    .chips { display: flex; gap: 8px; overflow-x: auto; padding: 12px 16px 4px; margin: 0 -16px; scrollbar-width: none; }
+    .search { display: block; margin-top: 12px; position: relative; }
+    .search input {
+      width: 100%; height: 48px; border-radius: 16px; border: 1.5px solid var(--line);
+      background: var(--paper); padding: 0 44px 0 14px; font-size: 17px;
+    }
+    .search input::-webkit-search-cancel-button, .search input::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
+    .sclear { display: none; position: absolute; left: 8px; top: 50%; transform: translateY(-50%); width: 30px; height: 30px; border-radius: 50%; background: rgba(74,37,20,.10); color: var(--ink); font-size: 20px; line-height: 1; place-items: center; }
+    .search input:not(:placeholder-shown) ~ .sclear { display: grid; }
+    .search input:focus { border-color: var(--terra); outline: none; }
+    .search svg { position: absolute; right: 12px; top: 12px; width: 20px; height: 20px; color: var(--muted); }
+
+    .chips {
+      display: flex; gap: 8px; overflow-x: auto; padding: 12px 16px 4px; margin: 0 -16px;
+      scrollbar-width: none;
+    }
     .chips::-webkit-scrollbar { display: none; }
-    .chip { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: 999px; background: var(--paper); border: 1.5px solid var(--line); font-weight: 600; white-space: nowrap; }
+    .chip {
+      flex: 0 0 auto; display: inline-flex; align-items: center; gap: 8px;
+      height: 54px; padding: 0 16px; border-radius: 20px;
+      background: var(--paper); border: 1.5px solid var(--line); font-weight: 600; white-space: nowrap;
+    }
+    .chip .cd { display: flex; flex-direction: column; align-items: center; line-height: 1.15; }
+    .chip .cd b { font-family: "Rubik", sans-serif; font-weight: 600; font-size: 16px; }
+    .chip .cd small { font-size: 12.5px; font-weight: 600; color: var(--muted); margin-top: 2px; }
+    .chip[aria-pressed="true"] .cd small { color: var(--sand); }
     .chip .count { font-weight: 600; color: var(--muted); font-size: 14px; }
-    .chip[aria-pressed="true"] { background: var(--night); border-color: var(--night); color: var(--paper); }
-    .chip[aria-pressed="true"] .count { color: var(--gold); }
+    .chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+    .chip[aria-pressed="true"] .count { color: var(--sand); }
     .chip.past:not([aria-pressed="true"]) { opacity: .6; }
-    .chip.add { border-style: dashed; color: var(--red); border-color: var(--rust); background: transparent; }
+    .chip.add { border-style: dashed; color: var(--terra); border-color: var(--coral); background: transparent; }
 
-    .bar { margin-top: 10px; padding: 10px 14px; border-radius: 16px; background: var(--sand); font-size: 15px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; }
-    .bar b { font: 600 15px "Rubik", sans-serif; }
-    .stats { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+    .meeting-bar {
+      display: none; align-items: center; justify-content: space-between; gap: 12px;
+      margin-top: 10px; padding: 10px 14px; border-radius: 16px; background: var(--sand);
+      font-size: 15px;
+    }
+    .meeting-bar.show { display: flex; }
+    .meeting-bar b { font-family: "Rubik", sans-serif; font-weight: 600; }
+    .link-btn { color: var(--plum); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 
-    .list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
-    .row { display: flex; align-items: center; gap: 10px; background: var(--paper); border-radius: 20px; padding: 12px 14px; box-shadow: 0 1px 0 rgba(74,37,20,.06); }
-    .row.cancelled { opacity: .55; }
-    .row .main { flex: 1; min-width: 0; text-align: right; cursor: pointer; }
+    .list { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @media (min-width: 760px) { .list { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; } }
+    .list .empty, .list .group { grid-column: 1 / -1; }
+    .list .group { color: var(--muted); font-weight: 700; font-size: 14px; padding: 6px 4px 0; }
+    .list .group.newp { padding: 0; }
+    .row.other { background: transparent; box-shadow: none; border: 1.5px dashed var(--coral); }
+    .addm { height: 30px; padding: 0 12px; border-radius: 999px; background: var(--terra); color: #fff; font-weight: 700; font-size: 14px; }
+    .addm.wide { width: 100%; height: 38px; background: transparent; color: var(--terra); border: 1.5px dashed var(--coral); }
+    .row {
+      display: flex; flex-direction: column; justify-content: space-between; gap: 12px;
+      background: var(--paper); border-radius: 20px; padding: 14px 14px 12px;
+      box-shadow: 0 1px 0 rgba(74,37,20,.05), 0 0 0 1px rgba(235,208,143,.6);
+    }
+    .row .main { flex: 1; min-width: 0; text-align: right; }
+    .row .acts { display: flex; align-items: center; justify-content: flex-start; gap: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
     .row .name { font-weight: 700; font-size: 18px; }
-    .row .phone { font-size: 15px; direction: ltr; unicode-bidi: isolate; display: inline-block; }
+    .row .age { display: inline-block; color: var(--muted); background: #F6E7B8; border-radius: 999px; padding: 1px 10px; font-weight: 600; margin-inline-start: 10px; font-size: 14px; vertical-align: middle; white-space: nowrap; }
+    .row .nm { min-width: 0; display: flex; align-items: center; gap: 6px; }
+    .row .meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 5px; margin-top: 3px; }
+    .row .meta .age, .row .meta .ptag { font-size: 13px; padding: 1px 8px; margin: 0; }
+    .row .adtag { flex: 0 0 auto; display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #E3EEF3; color: #1F5C6B; }
+    .row .adtag svg { width: 13px; height: 13px; }
+    .row .meta > * { flex: 0 0 auto; }
+    .row .age .gl { font-weight: 800; color: var(--ink); }
+    .row .nm .name { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; line-height: 1.2; }
+    .row .nm .age { margin-inline-start: 0; flex: 0 0 auto; }
+    .row .ptag { display: inline-block; border-radius: 999px; padding: 1px 10px; font-weight: 700; font-size: 14px; white-space: nowrap; background: var(--red-bg); color: var(--red); }
+    .row .ptag.paid { background: var(--green-bg); color: var(--green); }
+    .row .ptag.requested { background: #FBEBC8; color: #8A5A00; }
+    .row .ptag.unpaid { background: var(--red-bg); color: var(--red); }
+    .row .ptag.exempt { background: #E4E9EE; color: #4B5A6A; }
+    .row { cursor: pointer; }
+    .row .main { cursor: pointer; }
+    .pay.pi { width: 36px; height: 36px; padding: 0; display: grid; place-items: center; font-size: 18px; font-weight: 800; line-height: 1; }
+    .pay.pi svg { width: 20px; height: 20px; }
+    .row .phone { color: var(--ink); font-size: 15px; direction: ltr; unicode-bidi: isolate; }
     .row .note { color: var(--muted); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .row .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
-    .tag { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--amber-bg); color: #8A5A00; }
-    .tag.first { background: #FBD9E2; color: #A12A52; }
-    .tag.confirmed { background: var(--green-bg); color: var(--green); }
-    .tag.waitlist { background: #E3E0F5; color: #4C3F9A; }
-    .tag.cancelled { background: #E8E1D8; color: #6E6258; }
-    .pay { flex: 0 0 auto; height: 36px; padding: 0 12px; border-radius: 999px; font-weight: 700; font-size: 14px; background: var(--red-bg); color: var(--red); }
+    .tag { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--red-bg); color: var(--red); }
+    .tag.paid { background: var(--green-bg); color: var(--green); }
+    .tag.neutral { background: rgba(74,37,20,.10); color: var(--ink); }
+    button.tag { cursor: pointer; border: 2px solid transparent; font-family: inherit; }
+    button.tag[aria-pressed="true"] { border-color: currentColor; }
+    .tools { --ctl: 44px; display: flex; align-items: center; gap: 6px; margin-top: 12px; }
+    .tools .search { margin-top: 0; flex: 1 1 auto; min-width: 0; }
+    .tools .search input { height: var(--ctl); padding-right: 40px; border-radius: 999px; box-sizing: border-box; }
+    .tools .search svg { top: 12px; }
+    .facets { display: flex; flex: 0 1 auto; gap: 6px; min-width: 0; }
+    .fx .li, .fx .gi { display: none; }
+    /* במובייל החיפוש מכווץ לאייקון ומתרחב בלחיצה (ואז הסינונים מוסתרים זמנית) */
+    @media (max-width: 759px) {
+      .tools .search { flex: 0 0 var(--ctl); transition: flex-basis .15s; }
+      .tools .search input { padding: 0; cursor: pointer; }
+      .tools .search:not(:focus-within) input:placeholder-shown::placeholder { color: transparent; }
+      .tools .search:focus-within, .tools:has(.search input:not(:placeholder-shown)) .search { flex: 1 1 auto; }
+      .tools .search:focus-within input, .tools .search input:not(:placeholder-shown) { padding-right: 40px; cursor: text; }
+      .tools:has(.search:focus-within) .facets, .tools:has(.search input:not(:placeholder-shown)) .facets, .tools:has(.search:focus-within) .sortwrap, .tools:has(.search input:not(:placeholder-shown)) .sortwrap { display: none; }
+      .facets .fx { padding: 0 6px; gap: 3px; font-size: 12.5px; }
+      @media (max-width: 400px) { .facets .fx { padding: 0 3px; gap: 2px; } .fgroup { padding: 3px 4px; gap: 1px; } .facets, .tools { gap: 4px; } }
+      .facets .fx b { font-size: 13.5px; }
+      .fx .lw.pay-lw { display: none; }
+      .fx .li { display: inline; font-size: 15px; }
+      .fx .lw.gen-lw { display: none; }
+      .fx .gi { display: inline-grid; place-items: center; }
+      .fx .gi svg { width: 17px; height: 23px; }
+      .fx .gi.gm { color: #3F6FB5; }
+      .fx .gi.gf { color: #C2547A; }
+      .fx[aria-pressed="true"] .gi { color: inherit; }
+    }
+    .facets:empty { display: none; }
+    .fgroup { display: inline-flex; align-items: center; height: var(--ctl); box-sizing: border-box; background: var(--paper); border: 1.5px solid var(--line); border-radius: 999px; padding: 3px 6.5px; gap: 2px; }   /* ריווח מהמסגרת לתוכן = הריווח הפנימי בין הכפתורים (2 + 6 + 6 = 14) */
+    .fx { display: inline-flex; align-items: center; gap: 6px; height: 35px; padding: 0 12px; border-radius: 999px; font-size: 14px; font-weight: 700; color: var(--ink); white-space: nowrap; transition: background .15s, color .15s, opacity .15s; }
+    .fx b { font-family: "Rubik", sans-serif; font-size: 15px; font-weight: 700; }
+    .fx.zero { opacity: .45; }
+    .fx[aria-pressed="true"] { background: var(--ink); color: var(--paper); opacity: 1; }
+    .fx.ok b { color: var(--green); }
+    .fx.no b { color: var(--red); }
+    .fx.wait b { color: #8A5A00; }
+    .fx.free b { color: #4B5A6A; }
+    .fx[aria-pressed="true"] b { color: inherit; }
+    .fx.ok[aria-pressed="true"] { background: var(--green); color: #fff; }
+    .fx.no[aria-pressed="true"] { background: var(--red); color: #fff; }
+    .fx.wait[aria-pressed="true"] { background: #B7791F; color: #fff; }
+    .fx.free[aria-pressed="true"] { background: #4B5A6A; color: #fff; }
+    .bar-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+
+    .pay {
+      flex: 0 0 auto; height: 36px; padding: 0 12px; border-radius: 999px; font-weight: 700; font-size: 14px;
+      background: var(--red-bg); color: var(--red);
+    }
     .pay.paid { background: var(--green-bg); color: var(--green); }
-    .circ { flex: 0 0 auto; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--green); color: #fff; text-decoration: none; }
-    .circ svg { width: 24px; height: 24px; fill: currentColor; }
-    .circ.disabled { background: var(--line); pointer-events: none; }
-    .circ.call { background: #3F6FB5; }
+    .pay.requested { background: #FBEBC8; color: #8A5A00; }
+    .pay.exempt { background: #E4E9EE; color: #4B5A6A; }
+    .stsheet { padding-top: 14px; }
+    .stscope { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 12px; scrollbar-width: none; position: sticky; top: 0; background: var(--paper); z-index: 2; }
+    .stscope::-webkit-scrollbar { display: none; }
+    .stchip { flex: 0 0 auto; height: 38px; padding: 0 14px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--paper); font-weight: 700; font-size: 15px; white-space: nowrap; }
+    .stchip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+    .stkpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+    @media (min-width: 640px) { .stkpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    .kpi { background: var(--cream); border-radius: 18px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+    .kpi b { font-family: "Rubik", sans-serif; font-size: 26px; line-height: 1.1; }
+    .kpi span { font-weight: 700; font-size: 14px; }
+    .kpi i { font-style: normal; font-size: 13px; color: var(--muted); }
+    .kpi.good b { color: var(--green); } .kpi.warn b { color: #8A5A00; } .kpi.bad b { color: var(--red); }
+    /* סולם ריווח אחיד: 4 / 8 / 12 / 16 */
+    .stsec { background: #fff; border: 1.5px solid var(--line); border-radius: 20px; padding: 16px; margin-bottom: 12px; }
+    .stsec.flat { background: transparent; border: 0; padding: 4px 0 0; }   /* תובנות מרכזיות: בלי מסגרת ורקע */
+    .stsec h3 { margin: 0 0 12px; font-family: "Rubik", sans-serif; font-size: 18px; line-height: 1.2; }
+    .stsec h3:has(+ .sthint) { margin-bottom: 4px; }
+    .sthint { margin: 0 0 12px; color: var(--muted); font-size: 13.5px; line-height: 1.4; }
+    .stsec p.stline { margin: 8px 0 0; font-size: 14.5px; }
+    .insights { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: 1fr; gap: 8px; }
+    @media (min-width: 640px) { .insights { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .insights li.ins { display: flex; align-items: center; gap: 14px; padding: 12px 14px; background: var(--cream); border-radius: 18px; }
+    .ins .ring { position: relative; flex: 0 0 auto; width: 58px; height: 58px; display: grid; place-items: center; }
+    .ins .ring svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .ins .ring b { position: relative; font-family: "Rubik", sans-serif; font-size: 15px; font-weight: 700; }
+    .ins .trend { flex: 0 0 auto; width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; align-content: center; gap: 0; }
+    .ins .trend i { font-style: normal; font-size: 13px; line-height: 1; }
+    .ins .trend b { font-family: "Rubik", sans-serif; font-size: 15px; font-weight: 700; line-height: 1.1; }
+    .ins .trend.up { background: var(--green-bg); color: var(--green); } .ins .trend.down { background: var(--red-bg); color: var(--red); }
+    .ins .itx { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .ins .itx b { font-family: "Rubik", sans-serif; font-weight: 600; font-size: 16px; }
+    .ins .itx span { color: var(--muted); font-size: 13.5px; line-height: 1.45; }
+    .brow { display: grid; grid-template-columns: 92px 1fr auto; align-items: center; gap: 8px; margin: 7px 0; font-size: 14px; }
+    .brow .bl { font-weight: 700; }
+    .brow .bt { height: 12px; background: rgba(74,37,20,.08); border-radius: 999px; overflow: hidden; }
+    .brow .bt i { display: block; height: 100%; border-radius: 999px; }
+    .brow .bv { color: var(--muted); white-space: nowrap; font-size: 13.5px; } .brow .bv b { color: var(--ink); }
+    .cols { display: flex; align-items: flex-end; gap: 4px; height: 118px; margin-top: 6px; }
+    .cols .col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px; height: 100%; }
+    .cols .col i { display: block; width: 100%; max-width: 30px; border-radius: 6px 6px 2px 2px; min-height: 2px; }
+    .cols.dense { gap: 2px; }
+    .cols.dense .cl { font-size: 9.5px; position: relative; }
+    .cols .cv { font-size: 11.5px; font-weight: 700; color: var(--ink); min-height: 14px; }
+    .cols .cl { font-size: 10.5px; color: var(--muted); white-space: nowrap; }
+    .sttable { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    .sttable th { text-align: right; color: var(--muted); font-weight: 700; font-size: 12px; padding: 4px 4px; }
+    .sttable td { padding: 7px 4px; border-top: 1px solid var(--line); }
+    .sttable td.num { font-family: "Rubik", sans-serif; font-weight: 600; }
+    .up { color: var(--green); } .down { color: var(--red); }
+    .ptabs { position: relative; display: flex; border-bottom: 1.5px solid var(--line); margin-bottom: 10px; }
+    .ptab { flex: 1 1 0; height: 44px; font-weight: 700; font-size: 15px; color: var(--muted); position: relative; z-index: 1; transition: color .25s; background: none; }
+    .ptab[hidden] { display: none; }
+    .ptab { position: relative; z-index: 1; transition: color .25s; }
+    .ptab[aria-selected="true"] { color: var(--ink); }
+    .pind { position: absolute; z-index: 2; bottom: -1.5px; height: 3px; left: 0; width: 0; border-radius: 3px; background: var(--terra); pointer-events: none; will-change: transform, width; }
+    /* גובה קבוע לפופאפ המשתתף בכל הלשוניות: הכותרת והלשוניות לא זזות, והתוכן נגלל בתוך הלשונית */
+    #pDlg { height: min(84vh, 520px); overflow: visible; }
+    #pDlg:focus { outline: none; }
+    #pDlg .close, #pDlg .close:focus, #pDlg .close:focus-visible { outline: none; }   /* בלי מסגרת כהה סביב כפתור הסגירה */
+    #pDlg .sheet { display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-radius: inherit; overflow: hidden; padding: 30px 24px 24px; }
+    /* כותרת (שם המשתתף) ממורכזת; כפתור הסגירה מרחף מעל הפופאפ במרכז, כמו בפופאפ ההרשמה באתר */
+    #pDlg .sheet-head { position: relative; justify-content: center; text-align: center; min-height: 36px; }
+    #pDlg .sheet-head .saved { position: absolute; left: 0; top: 50%; transform: translateY(-50%); }
+    #pDlg .close { position: absolute; top: -3.5rem; left: 50%; margin-left: -22px; width: 44px; height: 44px; background: var(--paper); box-shadow: 0 4px 14px rgba(0,0,0,.25); font-size: 26px; }
+    #pDlg .sheet-head, #pDlg .ptabs { flex: 0 0 auto; }
+    #pDlg .pager { flex: 1 1 auto; min-height: 0; display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none; }
+    #pDlg .pager::-webkit-scrollbar { display: none; }
+    #pDlg .ppanel { flex: 0 0 100%; height: 100%; box-sizing: border-box; scroll-snap-align: start; scroll-snap-stop: always; overflow-y: auto; overflow-x: hidden; overscroll-behavior-y: contain; padding: 4px 1px; }
+    dialog, #pDlg .ppanel { scrollbar-width: none; }
+    dialog::-webkit-scrollbar, #pDlg .ppanel::-webkit-scrollbar { display: none; }
+    #pDlg #pSubmit { flex: 0 0 auto; margin-top: 10px; }
+    .ppanel[hidden] { display: none; }
+    .ptab[aria-selected="false"] .tcount { background: var(--muted); }
+    .ptab .tcount { display: inline-block; min-width: 20px; height: 20px; line-height: 20px; padding: 0 5px; margin-inline-start: 4px; border-radius: 10px; background: var(--terra); color: #fff; font-size: 12px; font-weight: 700; text-align: center; vertical-align: 1px; }
+    .ptab .tcount:empty { display: none; }
+    .nform { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 14px; }
+    .nform textarea { flex: 1 1 auto; min-width: 0; min-height: 46px; max-height: 140px; resize: none; border-radius: 14px; border: 1.5px solid var(--line); background: #fff; padding: 10px 12px; font-size: 16px; line-height: 1.4; }
+    .nform textarea:focus { border-color: var(--terra); outline: none; }
+    #pDlg .nform .nadd { flex: 0 0 auto; width: auto; height: 46px; padding: 0 18px; margin: 0; font-size: 16px; }
+    .nitem { background: var(--cream); border-radius: 16px; padding: 10px 14px 12px; margin-bottom: 8px; }
+    .nmeta { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); margin-bottom: 4px; }
+    .nmeta b { color: var(--ink); }
+    .ndel { width: 26px; height: 26px; border-radius: 50%; font-size: 18px; line-height: 1; color: var(--muted); }
+    .ntext { white-space: pre-wrap; font-size: 15px; line-height: 1.5; overflow-wrap: anywhere; }
+    .ctop { display: flex; gap: 10px; margin-bottom: 18px; }
+    .cbtn { flex: 1 1 0; height: 46px; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; font-size: 16px; text-decoration: none; }
+    .cbtn svg { width: 20px; height: 20px; }
+    .cbtn.cb-wa { background: #E3F4E9; color: #1E7A45; }
+    .cbtn.cb-call { background: #E4ECF8; color: #2F5EA8; }
+    .cbtn.off { background: var(--line); color: var(--muted); }
+    .clabel { font-size: 13px; font-weight: 700; color: var(--muted); margin: 0 4px 8px; }
+    .crow { display: flex; align-items: center; gap: 8px; padding: 12px 14px; background: var(--cream); border-radius: 16px; margin-bottom: 8px; }
+    .crow .ct { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+    .crow .ct b { font-family: "Rubik", sans-serif; font-size: 16px; }
+    .crow .ct span { color: var(--muted); font-size: 13.5px; line-height: 1.35; }
+    .crow.off { opacity: .75; }
+    .csend { flex: 0 0 auto; height: 38px; padding: 0 14px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; background: var(--green); color: #fff; font-weight: 700; font-size: 14.5px; text-decoration: none; }
+    .csend svg { width: 17px; height: 17px; }
+    .ccopy { flex: 0 0 auto; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: #fff; border: 1.5px solid var(--line); color: var(--muted); }
+    .ccopy svg { width: 18px; height: 18px; }
+    .mnone { color: var(--muted); font-size: 14.5px; margin: 0 4px 10px; }
+    .sopts { display: grid; gap: 8px; margin-bottom: 8px; }
+    .sopt { height: 50px; border-radius: 16px; font-size: 17px; font-weight: 700; border: 2px solid transparent; }
+    .sopt.paid { background: var(--green-bg); color: var(--green); }
+    .sopt.requested { background: #FBEBC8; color: #8A5A00; }
+    .sopt.unpaid { background: var(--red-bg); color: var(--red); }
+    .sopt.exempt { background: #E4E9EE; color: #4B5A6A; }
+    .sopt[aria-pressed="true"] { border-color: currentColor; }
+    .sopt[aria-pressed="true"]::after { content: " ✓"; }
+    .wa {
+      flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+      background: var(--green); color: #fff;
+    }
+    .wa svg { width: 17px; height: 17px; }
+    .wa.disabled { background: var(--line); pointer-events: none; }
+    .call { background: #3F6FB5; }   /* שיחת טלפון */
+
+    /* ---------- כניסה עם גוגל ---------- */
+    body.locked .wrap, body.locked #addBtn, body.locked #statsBtn { display: none !important; }
+    .gate { max-width: 420px; margin: 0 auto; padding: 72px 20px; text-align: center; }
+    .gate[hidden] { display: none; }
+    .gate h1 { font-size: 30px; margin-bottom: 0; }
+    .gate .hand { font-family: "Amatic SC", cursive; font-weight: 700; font-size: 2.4rem; color: var(--terra); margin: 0 0 22px; line-height: 1; }
+    .gate p { color: var(--muted); margin-bottom: 26px; }
+    .gate .gbtn { display: inline-flex; align-items: center; gap: 10px; background: var(--paper); color: var(--ink); border: 2px solid var(--line); border-radius: 999px; padding: 12px 22px; font-weight: 700; font-size: 17px; box-shadow: 0 1px 0 rgba(74,37,20,.05); cursor: pointer; }
+    .gate .gbtn svg { width: 22px; height: 22px; }
+    .gate .gerr { color: #A8141A; font-weight: 600; margin-top: 18px; min-height: 1.2em; }
+    .gate .glink[hidden] { display: none; }
+    .gate .glink { display: inline-block; margin-top: 16px; color: var(--muted); text-decoration: underline; cursor: pointer; background: none; font-size: 15px; }
+    .sortwrap { position: relative; margin-inline-start: auto; flex: 0 0 auto; }
+    .sortbtn { width: var(--ctl, 44px); height: var(--ctl, 44px); display: grid; place-items: center; border-radius: 999px; border: 1.5px solid var(--line); background: var(--paper); color: var(--muted); box-sizing: border-box; }
+    .sortbtn svg { width: 20px; height: 20px; }
+    .sortbtn.on { color: var(--terra); border-color: var(--coral); }
+    .sortmenu { position: absolute; top: calc(100% + 6px); left: 0; z-index: 20; min-width: 190px; background: var(--paper); border-radius: 16px; border: 1.5px solid var(--line); box-shadow: 0 10px 30px rgba(74,37,20,.18); padding: 6px; }
+    .sortmenu[hidden] { display: none; }
+    .sortmenu button { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 12px; text-align: right; font-size: 16px; font-weight: 600; }
+    .sortmenu button[aria-checked="true"] { background: rgba(193,25,31,.12); color: var(--terra); }
+    .sortmenu button[aria-checked="true"]::after { content: "✓"; font-weight: 800; }
+    .signout { background: none; color: var(--muted); text-decoration: underline; font-size: 14px; cursor: pointer; margin-inline-start: 12px; }
 
     .empty { text-align: center; color: var(--muted); padding: 48px 16px; }
-    .empty b { display: block; color: var(--ink); font: 600 19px "Rubik", sans-serif; margin-bottom: 6px; }
-    .error-box { background: var(--red-bg); border-radius: 16px; padding: 14px; margin-top: 12px; }
+    .empty b { display: block; color: var(--ink); font-family: "Rubik", sans-serif; font-size: 19px; margin-bottom: 6px; }
+    .error-box { background: var(--red-bg); color: var(--ink); border-radius: 16px; padding: 14px; margin-top: 12px; }
 
-    .fab { position: fixed; left: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 6; height: 56px; padding: 0 22px; border-radius: 999px; background: var(--red); color: #fff; font-weight: 700; font-size: 18px; box-shadow: 0 6px 18px rgba(193,25,31,.35); }
-    @media (min-width: 760px) { .fab { left: calc(50% - 344px); } }
+    .fab[hidden] { display: none; }
+    .fab.edit { background: var(--plum); box-shadow: 0 6px 18px rgba(74,31,16,.35); }
+    .fab.round { left: auto; right: 16px; width: 56px; padding: 0; display: grid; place-items: center; background: var(--ink); box-shadow: 0 6px 18px rgba(74,37,20,.3); }
+    .fab.round svg { width: 26px; height: 26px; }
+    .fab {
+      position: fixed; left: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 6;
+      height: 56px; padding: 0 22px; border-radius: 999px; background: var(--terra); color: #fff;
+      font-weight: 700; font-size: 18px; box-shadow: 0 6px 18px rgba(193,25,31,.35);
+    }
+    @media (min-width: 1152px) { .fab { left: calc(50% - 544px); } .fab.round { left: auto; right: calc(50% - 544px); } }
 
-    /* כניסה */
-    .gate { max-width: 420px; margin: 0 auto; padding: 72px 20px; text-align: center; }
-    .gate h1 { justify-content: center; font-size: 30px; margin-bottom: 6px; }
-    .gate p { color: var(--muted); margin-bottom: 26px; }
-    .gbtn { display: inline-flex; align-items: center; gap: 10px; background: var(--paper); border: 2px solid var(--line); border-radius: 999px; padding: 12px 22px; font-weight: 700; font-size: 17px; }
-    .gbtn svg { width: 22px; height: 22px; }
-    .gerr { color: var(--red); font-weight: 600; margin-top: 18px; min-height: 1.2em; }
-    body.locked .wrap, body.locked .fab { display: none !important; }
-
-    /* חלונות */
-    dialog { border: 0; padding: 0; background: var(--paper); color: var(--ink); width: 100%; max-width: 520px; border-radius: 28px 28px 0 0; margin: auto auto 0; max-height: 92vh; }
-    @media (min-width: 560px) { dialog { margin: auto; border-radius: 28px; } }
-    dialog::backdrop { background: rgba(74,37,20,.45); }
+    /* חלונות (bottom sheet במובייל) */
+    dialog {
+      border: 0; padding: 0; background: var(--paper); color: var(--ink);
+      width: 100%; max-width: 520px; border-radius: 0;
+      margin: auto auto 0; max-height: 92vh;
+    }
+    @media (min-width: 560px) { dialog { margin: auto; border-radius: 0; } }
+    dialog::backdrop { background: rgba(74,31,16,.78); }   /* אותו רקע כהה כמו בפופאפ ההרשמה באתר */
+    /* מגירה: כל הפופאפים עולים מלמטה, נסגרים בהחלקה למטה, בלחיצה בחוץ או בלחיצה על הפס */
+    dialog { overflow-y: auto; overscroll-behavior: contain; }
+    dialog .sheet { padding-top: 30px; }
+    .grab { position: sticky; top: 0; height: 30px; margin-bottom: -30px; display: grid; place-items: center; cursor: grab; touch-action: none; z-index: 2; }
+    .grab i { width: 44px; height: 5px; border-radius: 3px; background: rgba(74,37,20,.28); }
+    html.dlg-lock, html.dlg-lock body { overflow: hidden; overscroll-behavior: none; }
     .sheet { padding: 20px 20px calc(20px + env(safe-area-inset-bottom)); }
     .sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-    .sheet h2 { font: 600 21px "Rubik", sans-serif; margin: 0; }
+    .sheet h2 { font-family: "Rubik", sans-serif; font-size: 21px; margin: 0; }
     .close { width: 40px; height: 40px; border-radius: 50%; background: var(--cream); font-size: 22px; line-height: 1; }
     .field { display: block; margin-bottom: 12px; }
     .field span { display: block; font-size: 14px; font-weight: 700; color: var(--muted); margin-bottom: 4px; }
-    .field input, .field select, .field textarea { width: 100%; min-height: 48px; border-radius: 14px; border: 1.5px solid var(--line); background: #fff; padding: 0 14px; }
-    .field textarea { padding: 10px 14px; min-height: 84px; }
-    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--rust); outline: none; }
-    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .check { display: flex; gap: 10px; align-items: center; margin: 2px 0 14px; }
-    .check input { width: 22px; height: 22px; accent-color: var(--red); }
-    .actions { display: flex; gap: 10px; margin-top: 8px; }
-    .primary { flex: 1; height: 52px; border-radius: 999px; background: var(--red); color: #fff; font-weight: 700; font-size: 18px; }
-    .primary:disabled { opacity: .6; }
-    .danger { height: 52px; padding: 0 18px; border-radius: 999px; background: var(--red-bg); color: var(--red); font-weight: 700; }
-    .msg { color: var(--red); font-weight: 600; margin: 8px 0 0; min-height: 1.2em; }
-    .toast { position: fixed; right: 50%; transform: translateX(50%); bottom: 90px; background: var(--night); color: #fff; padding: 10px 18px; border-radius: 999px; z-index: 20; font-weight: 600; }
-  </style>
+    .name-row { display: flex; gap: 8px; align-items: flex-end; }
+    .name-row .field { flex: 1; min-width: 0; }
+    .seg { display: flex; gap: 6px; margin-bottom: 12px; }
+    .seg label { position: relative; display: block; }
+    .seg input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; width: 100%; height: 100%; }
+    .seg span { display: block; height: 48px; line-height: 45px; padding: 0 12px; border-radius: 14px; border: 1.5px solid var(--line); background: #fff; font-weight: 700; font-size: 16px; }
+    .seg input:checked + span { background: var(--terra); border-color: var(--terra); color: #fff; }
+    .field select { width: 100%; height: 48px; border-radius: 14px; border: 1.5px solid var(--line); background: #fff; padding: 0 8px; font-size: 17px; }
+    .gfield { flex: 0 0 112px !important; }
+    .gfield select { appearance: none; -webkit-appearance: none; padding: 0 12px 0 30px; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235A2410' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: left 9px center; background-size: 16px; }
+    .field input {
+      width: 100%; height: 48px; border-radius: 14px; border: 1.5px solid var(--line);
+      background: #fff; padding: 0 12px; font-size: 17px;
+    }
+    .field input:focus { border-color: var(--terra); outline: none; }
+    .field input[type="tel"] { direction: ltr; text-align: right; }
+    .two { display: grid; grid-template-columns: 1fr 110px; gap: 10px; }
+    .hint { font-size: 13px; color: var(--muted); margin-top: 4px; }
+    .sect-title { font-size: 14px; font-weight: 700; color: var(--muted); margin: 6px 0 6px; }
+    .mlist { display: grid; gap: 6px; margin-bottom: 14px; }
+    /* שורת ריטריט: כרטיס אחד, סימון הריטריט מימין והסטטוס משולב בתוכה משמאל */
+    .mrow { display: flex; align-items: center; gap: 8px; min-height: 54px; padding: 0 8px 0 6px; border-radius: 16px; border: 1.5px solid var(--line); background: #fff; transition: border-color .15s, background .15s; }
+    .mrow.on { border-color: var(--terra); background: rgba(193,25,31,.06); }
+    .mtoggle { flex: 1; display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 6px; border: 0; background: transparent; font-weight: 600; text-align: right; border-radius: 12px; }
+    .mtoggle .box {
+      width: 22px; height: 22px; border-radius: 7px; border: 2px solid var(--sand); display: grid; place-items: center;
+      color: #fff; font-size: 14px; flex: 0 0 auto;
+    }
+    .mtoggle[aria-pressed="true"] .box { background: var(--terra); border-color: var(--terra); }
+    .mrow .pay { height: 34px; padding: 0 12px; font-size: 14px; }
+    .mrow .pay::after { content: "▾"; margin-inline-start: 6px; font-size: 11px; opacity: .7; }
+    .mrow .pay[hidden] { display: none; }
+    .btn {
+      width: 100%; height: 52px; border-radius: 16px; background: var(--terra); color: #fff; font-weight: 700; font-size: 18px;
+    }
+    .btn:disabled { opacity: .5; }
+    .btn.ghost { background: transparent; color: var(--red); height: 44px; font-size: 16px; margin-top: 6px; }
+    .saved { font-size: 14px; color: var(--green); font-weight: 700; opacity: 0; transition: opacity .2s; }
+    .saved.on { opacity: 1; }
+
+    .toast {
+      position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%) translateY(20px);
+      background: var(--ink); color: var(--paper); padding: 10px 16px; border-radius: 14px; font-weight: 600;
+      opacity: 0; pointer-events: none; transition: .2s; z-index: 50; max-width: calc(100% - 32px);
+    }
+    .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .test-note { font-size: 13px; color: var(--muted); text-align: center; margin-top: 28px; }
+      /* ===== תצוגת טבלה קומפקטית (במקום כרטיסים): שורה לכל משתתף, עמודות מיושרות ===== */
+    .list { display: block; margin-top: 10px; background: var(--paper); border-radius: 16px; box-shadow: 0 0 0 1px rgba(235,208,143,.6); overflow: hidden; }
+    @media (min-width: 760px) { .list { display: block; } }
+    .list .group { padding: 8px 12px 4px; background: var(--cream); font-size: 13px; }
+    .list .empty { padding: 24px 12px; }
+    .row { display: block; background: transparent; border-radius: 0; box-shadow: none; padding: 0; border-bottom: 1px solid var(--line); }
+    .row:last-child { border-bottom: 0; }
+    .row:nth-child(even) { background: rgba(255,246,220,.45); }
+    .row .main { padding: 7px 12px; display: grid; grid-template-columns: 54px minmax(0, max-content) minmax(0, 1fr) 24px 66px; column-gap: 0; align-items: center; height: 44px; box-sizing: border-box; }
+    .row .nm { display: contents; }
+    .row .nm .name { grid-column: 2; grid-row: 1; }
+    .row .nm .adtag { grid-column: 4; grid-row: 1; justify-self: center; }
+    .row .meta { display: contents; }
+    .row .meta > * { text-align: center; grid-row: 1; }
+    .row .meta .age { grid-column: 1; margin-inline-end: 8px; }
+    .row .meta .ptag { grid-column: 5; }
+    .row .name { font-size: 15.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row .nm .name { overflow-wrap: normal; }
+    .row .adtag { width: 18px; height: 18px; }
+    .row .adtag svg { width: 11px; height: 11px; }
+    .row .meta .age, .row .meta .ptag { font-size: 12.5px; padding: 1px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row .note { grid-column: 3; grid-row: 1; font-size: 12.5px; margin: 0; margin-inline-start: 6px; min-width: 0; }
+    .row .acts { padding: 0 12px 7px; border-top: 0; }
+    .row.other { border: 0; border-bottom: 1.5px dashed var(--coral); background: transparent; }
+    .list .group.newp { background: transparent; }
+
+    /* ---------- שפת העיצוב של AUM: מגירות מעוגלות, זהב בכותרת, אמתיק לאותיות ---------- */
+    header.top { border-bottom: 3px solid var(--gold); padding-bottom: 12px; margin-bottom: 2px; }
+    h1 .aum { font-family: "Amatic SC", cursive; font-weight: 700; font-size: 1.28em; color: var(--terra); letter-spacing: .02em; line-height: .8; }
+    h1 .brand { font-size: 17px; }
+    dialog, #pDlg .sheet { border-radius: 28px 28px 0 0; }
+    @media (min-width: 560px) { dialog, #pDlg .sheet { border-radius: 28px; } }
+    .list { border-radius: 22px; }
+    .chip { border-radius: 22px; }
+    .chip[aria-pressed="true"] { background: var(--plum); border-color: var(--plum); }
+    .chip[aria-pressed="true"] .count { color: var(--gold); }
+    .fx[aria-pressed="true"] { background: var(--plum); }
+    .sheet h2 { font-weight: 600; }
+    .btn { border-radius: 999px; box-shadow: 0 8px 20px -8px rgba(193,25,31,.55); }
+    .btn.ghost { box-shadow: none; }
+    .fab { box-shadow: 0 8px 22px -6px rgba(193,25,31,.55); }
+    .fab.edit { background: var(--plum); box-shadow: 0 8px 22px -6px rgba(74,31,16,.55); }
+</style>
 </head>
 <body class="locked">
-
-  <!-- ===== כניסה עם גוגל, הזדהות של floa ===== -->
-  <div class="gate" id="gate">
-    <h1>AUM · משתתפים</h1>
-    <p id="gateText">הדף הזה פתוח רק למנהלים.</p>
-    <button class="gbtn" id="gBtn" type="button">
-      <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.5 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C.9 16.4 0 20.100 0 24s.9 7.600 2.600 10.800l7.900-6.100z"/><path fill="#34A853" d="M24 48c6.500 0 11.900-2.100 15.900-5.800l-7.500-5.800c-2.100 1.400-4.800 2.300-8.400 2.300-6.300 0-11.600-4-13.500-9.800l-7.900 6.100C6.500 42.600 14.600 48 24 48z"/></svg>
+  <div class="gate" id="gate" hidden>
+    <h1>משתתפים</h1>
+    <p class="hand">AUM</p>
+    <button type="button" class="gbtn" id="gLogin">
+      <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.3 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
       כניסה עם גוגל
     </button>
-    <p class="gerr" id="gErr" role="alert"></p>
-    <button class="linkbtn" id="gOut" type="button" hidden>התנתקות</button>
+    <div class="gerr" id="gErr" role="alert"></div>
+    <button type="button" class="glink" id="gOut" hidden>יציאה והחלפת חשבון</button>
   </div>
 
   <div class="wrap">
     <header class="top">
       <div class="title-row">
-        <h1><span class="dot" id="live" title="זמן אמת"></span>AUM · משתתפים</h1>
-        <span class="who"><span id="me"></span><button class="linkbtn" id="out" type="button">יציאה</button></span>
+        <h1><span class="aum">AUM</span> <span class="brand">· משתתפים</span></h1>
+        <button type="button" class="signout" id="signOut">יציאה</button>
       </div>
-      <label class="search"><input id="q" type="search" placeholder="חיפוש לפי שם או טלפון" autocomplete="off" /></label>
-      <div class="chips" id="chips" role="group" aria-label="סינון לפי ריטריט"></div>
-      <div class="bar" id="bar" hidden></div>
+      <nav class="chips" id="chips" aria-label="סינון לפי ריטריט"></nav>
+      <div class="tools">
+        <label class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input id="q" type="search" placeholder="חיפוש לפי שם או טלפון" autocomplete="off" aria-label="חיפוש" />
+          <button type="button" class="sclear" id="qClear" aria-label="ניקוי החיפוש" tabindex="-1">×</button>
+        </label>
+        <div class="facets" id="facets" role="group" aria-label="סינון לפי מגדר ותשלום"></div>
+        <div class="sortwrap">
+          <button type="button" class="sortbtn" id="sortBtn" aria-haspopup="menu" aria-expanded="false" aria-label="מיון" title="מיון"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v15M7 19l-3-3M7 19l3-3M17 20V5M17 5l-3 3M17 5l3 3"/></svg></button>
+          <div class="sortmenu" id="sortMenu" role="menu" hidden></div>
+        </div>
+      </div>
     </header>
-    <div id="err"></div>
+
+    <div id="status"></div>
     <ul class="list" id="list"></ul>
   </div>
 
-  <button class="fab" id="add" type="button">+ משתתף</button>
+  <button class="fab" id="addBtn" type="button">+ משתתף</button>
+  <button class="fab round" id="statsBtn" type="button" aria-label="סטטיסטיקות" title="סטטיסטיקות"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg></button>
 
-  <!-- משתתף: עריכה או הוספה -->
-  <dialog id="pDlg">
-    <form class="sheet" id="pForm" method="dialog">
-      <div class="sheet-head"><h2 id="pTitle">משתתף</h2><button class="close" type="button" data-close aria-label="סגירה">×</button></div>
-      <label class="field"><span>שם</span><input name="name" required maxlength="60" /></label>
-      <label class="field"><span>טלפון</span><input name="phone" type="tel" dir="ltr" inputmode="tel" /></label>
-      <label class="check"><input name="first" type="checkbox" /><span>הפעם הראשונה שלו או שלה במדיטציה אקטיבית</span></label>
-      <div class="two" id="regFields">
-        <label class="field"><span>סטטוס</span>
-          <select name="status"><option value="new">חדש</option><option value="confirmed">אושר</option><option value="waitlist">רשימת המתנה</option><option value="cancelled">בוטל</option></select></label>
-        <label class="field"><span>תשלום</span>
-          <select name="paid"><option value="false">טרם שילם</option><option value="true">שילם</option></select></label>
+  <!-- משתתף -->
+  <dialog id="pDlg" aria-labelledby="pTitle">
+    <form class="sheet" id="pForm" method="dialog" novalidate>
+      <div class="sheet-head">
+        <h2 id="pTitle">משתתף חדש</h2>
+        <span class="saved" id="savedMark">נשמר ✓</span>
       </div>
-      <label class="field"><span>הערה</span><textarea name="note"></textarea></label>
-      <p class="msg" id="pMsg" role="alert"></p>
-      <div class="actions"><button class="primary" type="submit" id="pSave">שמירה</button><button class="danger" type="button" id="pDel">מחיקה</button></div>
+      <div class="ptabs" id="pTabs" role="tablist" aria-label="עריכת משתתף">
+        <i class="pind" aria-hidden="true"></i>
+        <button type="button" role="tab" class="ptab" data-tab="meets" aria-selected="true">ריטריטים <span class="tcount"></span></button>
+        <button type="button" role="tab" class="ptab" data-tab="contact" aria-selected="false">התקשרות <span class="tcount"></span></button>
+        <button type="button" role="tab" class="ptab" data-tab="info" aria-selected="false">פרטים</button>
+      </div>
+      <div class="pager" id="pPager">
+      <div class="ppanel" data-panel="meets" role="tabpanel">
+        <div class="mlist" id="pMeetings"></div>
+      </div>
+      <div class="ppanel" data-panel="contact" role="tabpanel">
+        <div id="pMsgs"></div>
+        <div class="clabel">הערות</div>
+        <div class="nform">
+          <textarea id="nText" rows="2" maxlength="1000" aria-label="הערה חדשה" placeholder="הערה חדשה..."></textarea>
+          <button type="button" class="btn nadd" id="nAdd">הוספה</button>
+        </div>
+        <div id="nList"></div>
+      </div>
+      <div class="ppanel" data-panel="info" role="tabpanel">
+        <div class="name-row">
+          <label class="field"><span>שם</span><input name="name" required maxlength="60" autocomplete="off" /></label>
+          <label class="field gfield"><span>מגדר</span><select name="gender"><option value="">לא צוין</option><option value="male">גבר</option><option value="female">אישה</option></select></label>
+        </div>
+        <div class="two">
+          <label class="field"><span>טלפון</span><input name="phone" type="tel" inputmode="tel" maxlength="20" autocomplete="off" /></label>
+          <label class="field"><span>גיל</span><input name="age" type="number" inputmode="numeric" min="18" max="99" /></label>
+        </div>
+        <div class="note" id="pRegLine" style="color:var(--muted);font-size:14px;margin:2px 4px 10px"></div>
+        <button class="btn ghost" id="pDelete" type="button">מחיקת משתתף</button>
+      </div>
+      </div>
+      <button class="btn" id="pSubmit" type="submit">הוספה</button>
     </form>
   </dialog>
 
   <!-- ריטריט -->
-  <dialog id="eDlg">
-    <form class="sheet" id="eForm" method="dialog">
-      <div class="sheet-head"><h2 id="eTitle">ריטריט</h2><button class="close" type="button" data-close aria-label="סגירה">×</button></div>
-      <div class="two">
+  <dialog id="mDlg" aria-labelledby="mTitle">
+    <form class="sheet" id="mForm" method="dialog" novalidate>
+      <div class="sheet-head">
+        <h2 id="mTitle">ריטריט חדש</h2>
+      </div>
+      <div class="two" style="grid-template-columns: 1fr 1fr">
         <label class="field"><span>תאריך</span><input name="date" type="date" required /></label>
-        <label class="field"><span>מקום</span><input name="location" /></label>
+        <label class="field"><span>מקום</span><input name="location" maxlength="120" /></label>
       </div>
-      <div class="two">
-        <label class="field"><span>התחלה</span><input name="from" type="time" required /></label>
-        <label class="field"><span>סיום</span><input name="to" type="time" required /></label>
+      <div class="two" style="grid-template-columns: 1fr 1fr">
+        <label class="field"><span>התחלה</span><input name="time" type="time" required value="09:00" /></label>
+        <label class="field"><span>סיום</span><input name="to" type="time" required value="16:00" /></label>
       </div>
-      <div class="two">
-        <label class="field"><span>מחיר ליחיד ב-₪ (ריק = לא מוצג)</span><input name="price" type="number" min="0" inputmode="numeric" /></label>
-        <label class="field"><span>מחיר לזוג ב-₪ (ריק = לא מוצג)</span><input name="pair" type="number" min="0" inputmode="numeric" /></label>
+      <div class="two" style="grid-template-columns: 1fr 1fr">
+        <label class="field"><span>מחיר ליחיד ב-₪</span><input name="price" type="number" min="0" inputmode="numeric" /></label>
+        <label class="field"><span>מחיר לזוג ב-₪</span><input name="pair" type="number" min="0" inputmode="numeric" /></label>
       </div>
       <label class="field"><span>מקומות (ריק = בלי הגבלה)</span><input name="capacity" type="number" min="1" inputmode="numeric" /></label>
-      <p class="msg" id="eMsg" role="alert"></p>
-      <div class="actions"><button class="primary" type="submit" id="eSave">שמירה</button><button class="danger" type="button" id="eDel">מחיקה</button></div>
+      <button class="btn" id="mSubmit" type="submit">יצירת ריטריט</button>
+      <button class="btn ghost" id="mDelete" type="button">מחיקת ריטריט</button>
     </form>
   </dialog>
 
+  <dialog id="sDlg" aria-labelledby="sTitle" style="max-width:420px">
+    <form class="sheet" method="dialog" novalidate>
+      <h2 id="sTitle" style="margin-bottom:6px">סטטוס תשלום</h2>
+      <p id="sText" style="color:var(--muted);margin:0 0 14px"></p>
+      <div class="sopts" id="sOpts"></div>
+      <button class="btn ghost" id="sNo" type="button" style="color:var(--muted)">ביטול</button>
+    </form>
+  </dialog>
+
+  <dialog id="stDlg" aria-labelledby="stTitle" style="max-width:760px">
+    <div class="sheet stsheet">
+      <div class="sheet-head">
+        <h2 id="stTitle">סטטיסטיקות</h2>
+      </div>
+      <div id="stBody"></div>
+    </div>
+  </dialog>
+
+  <dialog id="cDlg" aria-labelledby="cTitle" style="max-width:420px">
+    <form class="sheet" method="dialog" novalidate>
+      <h2 id="cTitle" style="margin-bottom:6px"></h2>
+      <p id="cText" style="color:var(--muted);margin:0 0 16px"></p>
+      <button class="btn" id="cYes" type="button">אישור</button>
+      <button class="btn ghost" id="cNo" type="button" style="color:var(--muted)">ביטול</button>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
   <script src="/supabase.js"></script>
   <script>
-  (function () {
-    "use strict";
+  /* הדאטהבייס של הדומיין (/supabase.js). המפתח ציבורי מעצם הגדרתו;
+     מה שמותר באמת נקבע במדיניות RLS שב-businesses/aum/schema.sql */
+  const DB = { url: window.SUPABASE.url, key: window.SUPABASE.anonKey };
+  const T = { p: 'aum_participants', m: 'aum_events', a: 'aum_registrations', n: 'aum_notes' };
+  /* בשפת המסך "ריטריט" הוא שורת aum_events (event_date, start_time) והשיוך הוא aum_registrations (event_id) */
+  const toMeeting = (e) => ({ ...e, meeting_date: e.event_date, meeting_time: e.start_time });
+  const toLink = (r) => ({ ...r, meeting_id: r.event_id });
 
-    var DB = window.SUPABASE;
-    var KEY = "aum.admin.session";
-    var BACK = location.origin + "/aum/admin/";
-    var STATUS = { new: "חדש", confirmed: "אושר", waitlist: "המתנה", cancelled: "בוטל" };
-    var WA_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.47 14.38c-.3-.15-1.75-.86-2.02-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.35.22-.64.07-.3-.15-1.25-.46-2.38-1.47-.88-.79-1.47-1.76-1.64-2.06-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.61-.92-2.21-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.01-1.04 2.47s1.06 2.87 1.21 3.07c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.63.71.23 1.36.19 1.87.12.57-.09 1.75-.72 2-1.41.25-.69.25-1.28.17-1.41-.07-.13-.27-.2-.57-.35Z"/><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2Zm0 18.13a8.2 8.2 0 0 1-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.17 8.17 0 0 1-1.26-4.36c0-4.54 3.7-8.24 8.25-8.24 2.2 0 4.27.86 5.83 2.42a8.2 8.2 0 0 1 2.41 5.83c0 4.54-3.7 8.21-8.24 8.21Z"/></svg>';
-    var PHONE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.300.2 2.500.6 3.600.1.300 0 .700-.2 1l-2.300 2.200Z"/></svg>';
+  const state = { participants: [], meetings: [], att: [], notes: [], filter: null, q: '', pay: null, gender: null, sort: 'new' };
+  /* קישור עמוק מהמייל: ?m=<ריטריט>&p=<משתתף>; נשמר בזמן הכניסה עם גוגל (שמחזירה בלי הפרמטרים) */
+  let deep = null;
+  try {
+    const sp = new URLSearchParams(location.search);
+    if (['m', 'p', 'pay', 'q', 'em', 'g', 's', 'st', 'pt'].some((k) => sp.get(k))) { deep = { m: sp.get('m'), p: sp.get('p'), pay: sp.get('pay'), q: sp.get('q'), em: sp.get('em'), g: sp.get('g'), s: sp.get('s'), st: sp.get('st'), pt: sp.get('pt') }; sessionStorage.setItem('aum_deep', JSON.stringify(deep)); }
+    else { deep = JSON.parse(sessionStorage.getItem('aum_deep') || 'null'); }
+  } catch (e) {}
+  const $ = (s) => document.querySelector(s);
 
-    function $(s) { return document.querySelector(s); }
-    function el(tag, attrs, kids) {
-      var n = document.createElement(tag);
-      Object.keys(attrs || {}).forEach(function (k) {
-        if (k === "text") n.textContent = attrs[k];
-        else if (k === "html") n.innerHTML = attrs[k];          /* רק קבועים שלנו, אף פעם לא נתונים */
-        else if (k.slice(0, 2) === "on") n.addEventListener(k.slice(2), attrs[k]);
-        else if (attrs[k] !== false && attrs[k] != null) n.setAttribute(k, attrs[k]);
-      });
-      (kids || []).forEach(function (c) { if (c) n.appendChild(c); });
-      return n;
-    }
-    function toast(msg) {
-      var t = el("div", { class: "toast", text: msg, role: "status" });
-      document.body.appendChild(t);
-      setTimeout(function () { t.remove(); }, 2400);
-    }
+  /* מצב המסך נשמר ב-URL (ריטריט, סינון תשלום, חיפוש, חלון פתוח) כדי שאפשר יהיה לשתף */
+  let urlReady = false, openPid = null;
+  function syncUrl() {
+    if (!urlReady) return;
+    const sp = new URLSearchParams();
+    if (state.filter) sp.set('m', state.filter);
+    if (state.pay) sp.set('pay', state.pay);
+    if (state.gender) sp.set('g', state.gender);
+    if (state.sort !== 'new') sp.set('s', state.sort);
+    if (state.q.trim()) sp.set('q', state.q.trim());
+    if (openPid) { sp.set('p', openPid); if (pTab !== 'contact') sp.set('pt', pTab); }
+    if (editingMeeting && mDlg.open) sp.set('em', editingMeeting.id);
+    if ($('#stDlg').open) sp.set('st', '1');
+    const s = sp.toString();
+    try { history.replaceState(null, '', location.pathname + (s ? '?' + s : '')); } catch (e) {}
+  }
 
-    /* ====================================================================
-       הזדהות: גוגל דרך Supabase של floa, כמו אצל Chords. הדפדפן יוצא,
-       חוזר לכאן עם הסשן בכתובת, והכתובת מתנקה מיד.
-       ==================================================================== */
-    var auth = {
-      s: null,
-      load: function () { try { this.s = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) { this.s = null; } },
-      keep: function () { try { localStorage.setItem(KEY, JSON.stringify(this.s)); } catch (e) {} },
-      save: function (d) {
-        var u = d.user || null;
-        this.s = {
-          access: d.access_token,
-          refresh: d.refresh_token || (this.s && this.s.refresh) || "",
-          exp: Date.now() + (d.expires_in || 3600) * 1000,
-          email: (u && u.email) || (this.s && this.s.email) || "",
-        };
-        this.keep();
-      },
-      clear: function () { this.s = null; try { localStorage.removeItem(KEY); } catch (e) {} },
-      get on() { return !!(this.s && this.s.refresh); },
-      google: function () {
-        location.assign(DB.url + "/auth/v1/authorize?provider=google&redirect_to=" + encodeURIComponent(BACK));
-      },
-      out: function () {
-        var t = this.s && this.s.access;
-        this.clear();
-        if (t) fetch(DB.url + "/auth/v1/logout", { method: "POST", headers: { apikey: DB.anonKey, authorization: "Bearer " + t } }).catch(function () {});
-      },
-      pending: null,
-      /* טוקן תקף, ורענון אחד בכל רגע גם כשכמה קריאות מבקשות יחד */
-      token: function () {
-        var self = this;
-        if (!this.on) return Promise.resolve(null);
-        if (this.s.exp - Date.now() > 60000) return Promise.resolve(this.s.access);
-        if (this.pending) return this.pending;
-        this.pending = fetch(DB.url + "/auth/v1/token?grant_type=refresh_token", {
-          method: "POST",
-          headers: { apikey: DB.anonKey, "content-type": "application/json" },
-          body: JSON.stringify({ refresh_token: this.s.refresh }),
-        }).then(function (r) { if (!r.ok) throw new Error("refresh"); return r.json(); })
-          .then(function (b) { self.save(b); return self.s.access; })
-          .catch(function () { self.clear(); return null; })
-          .then(function (t) { self.pending = null; return t; });
-        return this.pending;
-      },
+  /* ---------- כניסה עם גוגל (הזדהות של floa ב-Supabase, בלי SDK) ---------- */
+  const ADMINS = ['ofir.aviram@gmail.com', 'tal.amitai1@gmail.com'];            // תצוגה בלבד; האכיפה האמיתית ב-RLS (schema.sql, טבלת aum_admins)
+  const SKEY = 'aum_admin_session_v1';
+  let session = null;
+  const jwtData = (tok) => { try { return JSON.parse(decodeURIComponent(escape(atob(tok.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))))); } catch (e) { return {}; } };
+  const saveSession = (s) => { session = s; try { localStorage.setItem(SKEY, JSON.stringify(s)); } catch (e) {} };
+  const clearSession = () => { session = null; try { localStorage.removeItem(SKEY); } catch (e) {} };
+  const sessionOk = (s) => s && s.access_token && (jwtData(s.access_token).exp || 0) * 1000 > Date.now() + 30000;
+  async function refreshSession() {
+    if (!session || !session.refresh_token) return false;
+    try {
+      const r = await fetch(DB.url + '/auth/v1/token?grant_type=refresh_token', { method: 'POST', headers: { apikey: DB.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: session.refresh_token }) });
+      if (!r.ok) return false;
+      const d = await r.json(); saveSession({ access_token: d.access_token, refresh_token: d.refresh_token });
+      if (typeof rtSend === 'function') rtSend({ topic: RT_TOPIC, event: 'access_token', payload: { access_token: d.access_token }, ref: String(Date.now()) });
+      return true;
+    } catch (e) { return false; }
+  }
+  const emailOf = () => String((session && jwtData(session.access_token).email) || '').toLowerCase();
+  const gateMsg = (m) => { $('#gErr').textContent = m || ''; };
+  function showGate(msg, canSwitch) {
+    document.body.classList.add('locked'); $('#gate').hidden = false; gateMsg(msg); $('#gOut').hidden = !canSwitch;
+  }
+  /* ---------- זמן אמת (Supabase Realtime, WebSocket ישיר בלי SDK) ----------
+     כל שינוי בטבלאות (מהטופס באתר, מהדר או מכל מכשיר אחר) מרענן את המסך. דורש שהטבלאות ב-publication (admin/realtime.sql) */
+  let rtWs = null, rtHb = 0, rtRetry = 1000, rtDebounce = 0, rtAlive = false;
+  const RT_TOPIC = 'realtime:aum';
+  const rtSend = (o) => { if (rtWs && rtWs.readyState === 1) rtWs.send(JSON.stringify(o)); };
+  function scheduleRefresh() { clearTimeout(rtDebounce); rtDebounce = setTimeout(() => load(true), 350); }
+  function startRealtime() {
+    if (!session || rtWs) return;
+    let ws;
+    try { ws = new WebSocket(DB.url.replace(/^http/, 'ws') + '/realtime/v1/websocket?apikey=' + encodeURIComponent(DB.key) + '&vsn=1.0.0'); } catch (e) { return; }
+    rtWs = ws;
+    ws.onopen = () => {
+      rtRetry = 1000;
+      rtSend({ topic: RT_TOPIC, event: 'phx_join', ref: '1', payload: { config: { broadcast: { ack: false, self: false }, presence: { key: '' }, private: false,
+        postgres_changes: [T.p, T.m, T.a, T.n].map((table) => ({ event: '*', schema: 'public', table })) }, access_token: session.access_token } });
+      rtHb = setInterval(() => rtSend({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: String(Date.now()) }), 25000);
     };
+    ws.onmessage = (e) => {
+      let m; try { m = JSON.parse(e.data); } catch (x) { return; }
+      if (m.event === 'phx_reply' && m.topic === RT_TOPIC && m.ref === '1') {
+        rtAlive = m.payload && m.payload.status === 'ok';
+        if (rtAlive) scheduleRefresh();   // מה שהוחמץ בזמן שהחיבור היה סגור
+      } else if (m.event === 'postgres_changes') scheduleRefresh();
+      else if (m.event === 'system' && m.payload && m.payload.status === 'error') { rtAlive = false; }
+    };
+    ws.onclose = () => {
+      clearInterval(rtHb); rtWs = null; rtAlive = false;
+      if (session) setTimeout(startRealtime, rtRetry), rtRetry = Math.min(rtRetry * 2, 30000);
+    };
+    ws.onerror = () => { try { ws.close(); } catch (x) {} };
+  }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && session) { load(true); if (!rtWs) startRealtime(); } });
 
-    function absorbGoogle() {
-      var hash = String(location.hash || "").replace(/^#/, "");
-      if (!hash || hash.indexOf("=") < 0) return "";
-      var got = new URLSearchParams(hash);
-      var token = got.get("access_token");
-      var trouble = got.get("error_description") || got.get("error");
-      if (!token && !trouble) return "";
-      history.replaceState(history.state, "", location.pathname);   /* הטוקן לא נשאר בשורת הכתובת */
-      if (token) {
-        auth.save({ access_token: token, refresh_token: got.get("refresh_token") || "", expires_in: Number(got.get("expires_in")) || 3600 });
-        return "";
-      }
-      return /denied|cancel/i.test(trouble) ? "ההתחברות בוטלה" : "ההתחברות דרך גוגל נכשלה";
+  async function startAuth() {
+    const h = new URLSearchParams(location.hash.replace(/^#/, ''));
+    if (h.get('access_token')) {
+      saveSession({ access_token: h.get('access_token'), refresh_token: h.get('refresh_token') });
+      history.replaceState(null, '', location.pathname + location.search);
+    } else if (h.get('error_description')) {
+      history.replaceState(null, '', location.pathname + location.search);
+      showGate('הכניסה נכשלה: ' + h.get('error_description').replace(/\+/g, ' ')); return;
+    } else {
+      try { session = JSON.parse(localStorage.getItem(SKEY) || 'null'); } catch (e) { session = null; }
     }
+    if (session && !sessionOk(session) && !(await refreshSession())) clearSession();
+    if (!session) { showGate(''); return; }
+    if (!ADMINS.includes(emailOf())) { showGate('אין הרשאה לחשבון ' + emailOf(), true); return; }
+    document.body.classList.remove('locked'); $('#gate').hidden = true;
+    load();
+    startRealtime();
+  }
 
-    /* ====================================================================
-       REST ישיר, מבעד ל-RLS: מה שהמפתח של המשתמש לא רואה לא מגיע לכאן.
-       ==================================================================== */
-    function api(path, opts) {
-      opts = opts || {};
-      return auth.token().then(function (t) {
-        if (!t) throw new Error("auth");
-        return fetch(DB.url + "/rest/v1/" + path, {
-          method: opts.method || "GET",
-          headers: Object.assign({ apikey: DB.anonKey, authorization: "Bearer " + t, "content-type": "application/json", prefer: opts.prefer || "return=representation" }, opts.headers || {}),
-          body: opts.body == null ? undefined : JSON.stringify(opts.body),
-        });
-      }).then(function (r) {
-        if (r.status === 401) { auth.clear(); gate(); throw new Error("auth"); }
-        if (r.status === 204) return null;
-        return r.json().then(function (j) {
-          if (!r.ok) { var e = new Error((j && j.message) || String(r.status)); e.code = j && j.code; throw e; }
-          return j;
-        });
-      });
+  async function api(path, { method = 'GET', body, prefer } = {}) {
+    const headers = { apikey: DB.key, Authorization: 'Bearer ' + ((session && session.access_token) || DB.key) };
+    if (body) headers['Content-Type'] = 'application/json';
+    if (prefer) headers.Prefer = prefer;
+    let res = await fetch(DB.url + '/rest/v1/' + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+    if (res.status === 401 && session && await refreshSession()) {
+      headers.Authorization = 'Bearer ' + session.access_token;
+      res = await fetch(DB.url + '/rest/v1/' + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
     }
-
-    /* ====================================================================
-       מצב
-       ==================================================================== */
-    var events = [], people = [], sel = null /* מזהה ריטריט, או "all" */, query = "";
-
-    function norm(phone) {          /* אותה לוגיקה כמו aum_normalize_phone */
-      var raw = String(phone || "").trim(); if (!raw) return "";
-      var plus = raw.charAt(0) === "+", d = raw.replace(/\D/g, ""); if (!d) return "";
-      if (d.slice(0, 2) === "00") { plus = true; d = d.slice(2); }
-      if (plus) {
-        if (d.slice(0, 4) === "9720") d = "972" + d.slice(4);
-        if (d.length < 8 || d.length > 15 || d.charAt(0) === "0") return "";
-        if (d.slice(0, 3) === "972" && !/^(5\d{8}|7\d{8}|[23489]\d{7})$/.test(d.slice(3))) return "";
-        return "+" + d;
-      }
-      if (d.charAt(0) === "0") return /^0(5\d{8}|7\d{8}|[23489]\d{7})$/.test(d) ? "+972" + d.slice(1) : "";
-      return "";
+    const text = await res.text();
+    const data = text ? JSON.parse(text) : null;
+    if (!res.ok) {
+      const err = new Error((data && data.message) || ('HTTP ' + res.status));
+      err.code = data && data.code;
+      throw err;
     }
-    function show(phone) { var n = norm(phone); return n ? "0" + n.slice(4) : (phone || ""); }
-    function fmtDate(iso) { var d = new Date(iso + "T12:00:00"); return d.getDate() + "." + (d.getMonth() + 1); }
-    function todayIso() { return new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Jerusalem" }); }
-    function evById(id) { return events.filter(function (e) { return e.id === id; })[0]; }
-    function regOf(p, eid) { return (p.aum_registrations || []).filter(function (r) { return r.event_id === eid; })[0]; }
+    return data;
+  }
 
-    function load() {
-      return Promise.all([
-        api("aum_events?select=*&order=event_date.desc,start_time.desc"),
-        api("aum_participants?select=*,aum_registrations(event_id,status,paid)&order=created_at.desc"),
-      ]).then(function (r) {
-        events = r[0]; people = r[1];
-        if (!sel || (sel !== "all" && !evById(sel))) {
-          var next = events.filter(function (e) { return e.event_date >= todayIso(); }).pop();   /* הקרוב ביותר */
-          sel = next ? next.id : (events[0] ? events[0].id : "all");
-        }
-        $("#err").innerHTML = "";
-        paint();
-      }).catch(function (e) {
-        if (e.message === "auth") return;
-        $("#err").innerHTML = "";
-        $("#err").appendChild(el("div", { class: "error-box", text: "לא הצלחנו לטעון: " + e.message }));
-      });
+  /* ---------- עזרים ---------- */
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const digits = (s) => String(s || '').replace(/\D/g, '');
+  const todayISO = () => {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  };
+
+  /* גיל מוצג = הגיל שהוקלד + שנים מלאות מאז שהוקלד */
+  function shownAge(p) {
+    if (p.age == null) return null;
+    const [y, m, d] = String(p.age_set_at || todayISO()).split('-').map(Number);
+    const now = new Date();
+    let years = now.getFullYear() - y;
+    if (now.getMonth() + 1 < m || (now.getMonth() + 1 === m && now.getDate() < d)) years--;
+    return p.age + Math.max(0, years);
+  }
+
+  const CALL_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1l-2.3 2.2z"/></svg>';
+  /* קישור שיחה (tel:) בפורמט בינלאומי; מספר ישראלי מקומי הופך ל-+972 */
+  function telLink(phone) {
+    const raw = String(phone || '').trim();
+    let n = digits(raw);
+    if (!n) return null;
+    if (raw.startsWith('+')) return 'tel:+' + n;
+    if (n.startsWith('00')) return 'tel:+' + n.slice(2);
+    if (n.startsWith('0')) return 'tel:+972' + n.slice(1);
+    if (n.length === 9) return 'tel:+972' + n;
+    return 'tel:+' + n;
+  }
+  /* תאריך הרשמה/יצירה (created_at), בשעון ישראל: 5.10.26 */
+  function regDate(p) {
+    if (!p.created_at) return '';
+    const d = new Date(p.created_at); if (isNaN(d)) return '';
+    const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Jerusalem', day: 'numeric', month: 'numeric', year: '2-digit' }).formatToParts(d);
+    const g = (k) => parts.find((x) => x.type === k).value;
+    return g('day') + '.' + g('month') + '.' + g('year');
+  }
+  /* תאריך ושעה (שעון ישראל), למשל 11.10.26 בשעה 20:35 */
+  function regDateTime(p) {
+    const base = regDate(p); if (!base) return '';
+    const tm = new Intl.DateTimeFormat('he-IL', { timeZone: 'Asia/Jerusalem', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(p.created_at));
+    return base + ' בשעה ' + tm;
+  }
+  function waLink(phone) {
+    let n = digits(phone);
+    if (!n) return null;
+    if (n.startsWith('0')) n = '972' + n.slice(1);
+    else if (n.length === 9) n = '972' + n;
+    return 'https://wa.me/' + n;
+  }
+
+  /* מספר ישראלי בפורמט בינלאומי (+972...) מוצג כמספר מקומי שמתחיל באפס */
+  function localPhone(phone) {
+    const s = String(phone || '').trim(), d = digits(s);
+    return /^\+?972\d{8,9}$/.test(s.replace(/[\s-]/g, '')) ? '0' + d.slice(3) : s;
+  }
+
+  const phoneHay = (p) => digits(p.phone) + ' ' + digits(localPhone(p.phone));   // חיפוש גם לפי 05... וגם לפי 972...
+
+  /* ולידציה ונרמול טלפון (זהה ללוגיקה באתר ול-harpatka_normalize_phone): ריק, או מספר ישראלי / בינלאומי תקין */
+  function normPhone(raw) {
+    const s = String(raw || '').trim();
+    if (!s) return '';
+    let plus = s[0] === '+', d = s.replace(/\D/g, '');
+    if (!d) return '';
+    if (d.startsWith('00')) { plus = true; d = d.slice(2); }
+    const IL = /^(5\d{8}|7\d{8}|[23489]\d{7})$/;
+    if (plus) {
+      if (d.startsWith('9720')) d = '972' + d.slice(4);
+      if (d.length < 8 || d.length > 15 || d[0] === '0') return '';
+      if (d.startsWith('972') && !IL.test(d.slice(3))) return '';
+      return '+' + d;
     }
+    if (d[0] === '0') return IL.test(d.slice(1)) ? '+972' + d.slice(1) : '';
+    return '';
+  }
+  /* מחזיר את הערך לשמירה (ישראלי: 05XXXXXXXX), '' לריק, או null אם לא תקין */
+  function phoneToSave(raw) {
+    if (!String(raw || '').trim()) return '';
+    const n = normPhone(raw);
+    return n ? localPhone(n) : null;
+  }
+  function badPhone(on) {
+    pForm.phone.style.borderColor = on ? 'var(--red)' : '';
+    if (on) { toast('מספר הטלפון לא תקין'); pForm.phone.focus(); }
+  }
 
-    /* ====================================================================
-       ציור
-       ==================================================================== */
-    function countFor(eid) {
-      return people.filter(function (p) { var r = regOf(p, eid); return r && r.status !== "cancelled"; }).length;
-    }
+  function fmtPhone(phone) {
+    const n = digits(phone);
+    if (n.length === 10 && n.startsWith('0')) return n.slice(0, 3) + ' ' + n.slice(3, 6) + ' ' + n.slice(6);
+    return phone || '';
+  }
 
-    function paint() {
-      var chips = $("#chips"); chips.innerHTML = "";
-      chips.appendChild(el("button", { class: "chip", type: "button", "aria-pressed": String(sel === "all"), onclick: function () { sel = "all"; paint(); } },
-        [el("span", { text: "כולם" }), el("span", { class: "count", text: String(people.length) })]));
-      events.forEach(function (e) {
-        chips.appendChild(el("button", { class: "chip" + (e.event_date < todayIso() ? " past" : ""), type: "button", "aria-pressed": String(sel === e.id), onclick: function () { sel = e.id; paint(); } },
-          [el("span", { text: fmtDate(e.event_date) }), el("span", { class: "count", text: String(countFor(e.id)) })]));
-      });
-      chips.appendChild(el("button", { class: "chip add", type: "button", onclick: function () { openEvent(null); }, text: "+ ריטריט" }));
+  const DAYS = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
+  function meetingLabel(m, withDay) {
+    const [y, mo, d] = m.meeting_date.split('-').map(Number);
+    const day = DAYS[new Date(y, mo - 1, d).getDay()];
+    return (withDay ? 'יום ' + day + ' ' : '') + d + '.' + mo + ' · ' + String(m.meeting_time).slice(0, 5);
+  }
+  const isPast = (m) => m.meeting_date < todayISO();
+  const sortMeetings = () => state.meetings.sort((a, b) => (b.meeting_date + b.meeting_time).localeCompare(a.meeting_date + a.meeting_time));   // מהחדש לישן
 
-      /* פס הריטריט הנבחר */
-      var bar = $("#bar");
-      var ev = sel === "all" ? null : evById(sel);
-      if (ev) {
-        var rows = people.map(function (p) { return regOf(p, ev.id); }).filter(Boolean);
-        var live = rows.filter(function (r) { return r.status !== "cancelled"; }).length;
-        var paid = rows.filter(function (r) { return r.paid && r.status !== "cancelled"; }).length;
-        var wait = rows.filter(function (r) { return r.status === "waitlist"; }).length;
-        bar.hidden = false; bar.innerHTML = "";
-        bar.appendChild(el("span", { class: "stats" }, [
-          el("b", { text: live + (ev.capacity ? " מתוך " + ev.capacity : "") + " נרשמו" }),
-          el("span", { text: paid + " שילמו" }),
-          wait ? el("span", { text: wait + " בהמתנה" }) : null,
-          ev.price ? el("span", { text: ev.price + " ₪" + (ev.price_pair ? " · לזוג " + ev.price_pair + " ₪" : "") }) : null,
-        ]));
-        bar.appendChild(el("button", { class: "linkbtn", type: "button", text: "עריכת הריטריט", onclick: function () { openEvent(ev); } }));
-      } else bar.hidden = true;
+  const linksOf = (pid) => state.att.filter((a) => a.participant_id === pid);
+  const linkOf = (pid, mid) => state.att.find((a) => a.participant_id === pid && a.meeting_id === mid);
 
-      /* הרשימה */
-      var q = query.trim().toLowerCase(), qd = q.replace(/\D/g, "");
-      var list = people.filter(function (p) {
-        if (ev && !regOf(p, ev.id)) return false;
-        if (!q) return true;
-        return p.name.toLowerCase().indexOf(q) >= 0 || (qd && (p.phone_norm || p.phone || "").replace(/\D/g, "").indexOf(qd) >= 0);
-      });
-      var ul = $("#list"); ul.innerHTML = "";
-      if (!list.length) {
-        ul.appendChild(el("li", { class: "empty" }, [el("b", { text: q ? "לא נמצא" : "עדיין אין נרשמים" }), el("span", { text: q ? "אפשר לנסות שם או מספר אחר" : "מי שישאיר פרטים בדף יופיע כאן מיד" })]));
+  let toastTimer;
+  function toast(msg) {
+    const t = $('#toast');
+    t.textContent = msg;
+    t.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('on'), 2600);
+  }
+  function fail(err) {
+    console.error(err);
+    toast('משהו השתבש, לא נשמר. נסו שוב');
+  }
+
+  /* ---------- טעינה ---------- */
+  async function load(silent) {
+    if (!silent) $('#status').innerHTML = '<div class="empty">טוען…</div>';
+    try {
+      const [p, m, a, nn] = await Promise.all([
+        api(T.p + '?select=*'),
+        api(T.m + '?select=*'),
+        api(T.a + '?select=participant_id,event_id,status,paid,pay_requested_at,created_at,exempt'),
+        api(T.n + '?select=*&order=created_at.desc'),
+      ]);
+      state.participants = p; state.meetings = m.map(toMeeting); state.att = a.map(toLink); state.notes = nn; rebuildNotes();
+      sortMeetings();
+      if (!silent) $('#status').innerHTML = '';
+      if (deep) {
+        const d = deep; deep = null;
+        try { sessionStorage.removeItem('aum_deep'); } catch (e) {}
+        if (d.m && state.meetings.some((x) => x.id === d.m)) state.filter = d.m;
+        if (['paid', 'unpaid', 'requested'].includes(d.pay)) state.pay = d.pay;
+        if (d.g === 'male' || d.g === 'female' || d.g === 'none') state.gender = d.g;
+        if (d.s && SORTS.some((x) => x[0] === d.s)) state.sort = d.s;
+        if (d.q) { state.q = d.q; $('#q').value = d.q; }
+        urlReady = true;
+        render();
+        if (d.p && state.participants.some((x) => x.id === d.p)) openParticipant(d.p, ['meets', 'contact', 'info'].includes(d.pt) ? d.pt : 'contact');
+        else if (d.em && state.meetings.some((x) => x.id === d.em)) openMeeting(d.em);
+        else if (d.st) { renderStats(); $('#stDlg').showModal(); syncUrl(); }
         return;
       }
-      list.forEach(function (p) { ul.appendChild(row(p, ev)); });
+      urlReady = true;
+      render();
+    } catch (err) {
+      console.error(err);
+      if (silent) return;   // רענון שקט שנכשל: משאירים את מה שמוצג
+      const missing = err.code === 'PGRST205' || err.code === '42P01' || /does not exist|schema cache/i.test(err.message);
+      $('#status').innerHTML = '<div class="error-box">' + (missing
+        ? '<b>הטבלאות עוד לא קיימות.</b><br>צריך להריץ פעם אחת את <code>businesses/aum/schema.sql</code> (<code>node scripts/sql.mjs &lt; businesses/aum/schema.sql</code>)'
+        : '<b>אין חיבור לנתונים.</b><br>' + esc(err.message)) + '</div>';
     }
+  }
 
-    function row(p, ev) {
-      var reg = ev ? regOf(p, ev.id) : null;
-      var n = norm(p.phone);
-      var tags = [];
-      if (p.first_time) tags.push(el("span", { class: "tag first", text: "הפעם הראשונה" }));
-      if (reg && reg.status !== "new") tags.push(el("span", { class: "tag " + reg.status, text: STATUS[reg.status] }));
-      if (!ev) tags.push(el("span", { class: "tag", text: ((p.aum_registrations || []).length) + " ריטריטים" }));
-      if (p.source === "site") tags.push(el("span", { class: "tag", text: "דרך האתר" }));
+  /* ---------- רינדור ---------- */
+  function render() { renderChips(); renderSort(); renderList(); { const fab = $('#addBtn'); fab.classList.toggle('edit', !!state.filter); fab.textContent = state.filter ? 'עריכת ריטריט' : '+ משתתף'; } syncUrl(); }   // בתוך ריטריט מוסיפים דרך החיפוש
 
-      var main = el("div", { class: "main", onclick: function () { openPerson(p); } }, [
-        el("div", { class: "name", text: p.name }),
-        el("span", { class: "phone", text: show(p.phone) }),
-        p.note ? el("div", { class: "note", text: p.note }) : null,
-        tags.length ? el("div", { class: "tags" }, tags) : null,
-      ]);
+  function renderChips() {
+    const all = '<button type="button" class="chip" data-filter="" aria-pressed="' + (state.filter === null) + '">הכל <span class="count">' + state.participants.length + '</span></button>';
+    const ms = state.meetings.map((m) => {
+      const n = state.att.filter((a) => a.meeting_id === m.id).length;
+      return '<button type="button" class="chip' + (isPast(m) ? ' past' : '') + '" data-filter="' + m.id + '" aria-pressed="' + (state.filter === m.id) + '">' +
+        '<span class="cd"><b>' + esc(meetingLabel(m).split(' · ')[0]) + '</b><small>' + esc(meetingLabel(m, true).split(' ').slice(0, 2).join(' ')) + ' · ' + esc(String(m.meeting_time).slice(0, 5)) + '</small></span> <span class="count">' + n + '</span></button>';
+    }).join('');
+    $('#chips').innerHTML = all + '<button type="button" class="chip add" id="addMeeting">+ ריטריט</button>' + ms;
+    const sel = $('#chips [aria-pressed="true"]');
+    if (sel) sel.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
 
-      var kids = [main];
-      if (reg) {
-        kids.push(el("button", { class: "pay" + (reg.paid ? " paid" : ""), type: "button", text: reg.paid ? "שילם" : "טרם שילם", onclick: function () { setReg(p, ev.id, { paid: !reg.paid }); } }));
+  const WA_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.7.1-.2.3-.8.9-.9 1.1-.2.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.6l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 4.9 4.3.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3zM12 21.5c-1.7 0-3.4-.5-4.8-1.3l-.3-.2-3.6.9 1-3.5-.2-.4C3.2 15.6 2.7 13.8 2.7 12c0-5.1 4.2-9.3 9.3-9.3 2.5 0 4.8 1 6.6 2.7 1.8 1.8 2.7 4.1 2.7 6.6 0 5.2-4.2 9.5-9.3 9.5zM20 4C17.9 1.8 15 .7 12 .7 5.8.7.7 5.8.7 12c0 2 .5 3.9 1.5 5.6L.6 23.4l6-1.6c1.6.9 3.5 1.4 5.4 1.4 6.2 0 11.3-5.1 11.3-11.3 0-3-1.2-5.8-3.3-7.9z"/></svg>';
+
+  /* סטטוס תשלום של משתתף: בריטריט מסוים לפי הריטריט; בתצוגת הכל: שילם = כל הריטריטים שלו שולמו, טרם שילם = יש לפחות ריטריט אחד שלא שולם, null = בלי ריטריטים */
+  /* סימוני שירותים ציבוריים: איש ואישה בשמלה */
+  const MAN_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="3.4" r="2.4"/><rect x="8" y="7" width="8" height="8.6" rx="1.3"/><rect x="4.9" y="7.4" width="2.2" height="7.6" rx="1.1"/><rect x="16.9" y="7.4" width="2.2" height="7.6" rx="1.1"/><rect x="8.3" y="16" width="3.2" height="7" rx="1.2"/><rect x="12.5" y="16" width="3.2" height="7" rx="1.2"/></svg>';
+  const WOMAN_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="3.4" r="2.4"/><path d="M9.7 7h4.6c.7 0 1.2.4 1.4 1l3.1 9H5.2l3.1-9c.2-.6.7-1 1.4-1z"/><rect x="9.4" y="17.2" width="2.2" height="5.8" rx="1"/><rect x="12.4" y="17.2" width="2.2" height="5.8" rx="1"/></svg>';
+  const FREE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true" style="width:16px;height:16px;vertical-align:-2px"><circle cx="12" cy="12" r="8.5"/><path d="M6 18L18 6"/></svg>';
+  const REQ_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:16px;height:16px;vertical-align:-2px"><path d="M6 3h12M6 21h12"/><path d="M7 3v3.5c0 1.6 1.1 2.8 2.7 3.6L12 12l2.3-1.9C15.9 9.3 17 8.1 17 6.5V3"/><path d="M7 21v-3.5c0-1.6 1.1-2.8 2.7-3.6L12 12l2.3 1.9c1.6.8 2.7 2 2.7 3.6V21"/></svg>';   // בבדיקה: שעון חול
+  const NEW_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width:16px;height:16px;vertical-align:-2px"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z"/></svg>';   // חדש: ניצוץ
+  const linkStatus = (l) => l.exempt ? 'exempt' : l.paid ? 'paid' : (l.pay_requested_at ? 'requested' : 'unpaid');   // לא משלם (בחינם ביודעין) / שילם / נשלחה בקשת תשלום / טרם שילם
+  const STATUS_LABEL = { paid: 'שילם', requested: 'בבדיקה', unpaid: 'חדש', exempt: 'חינם' };
+  /* סינון "שילמו" כולל גם את מי שמסומן "לא משלם" (הסדירו הכול); שאר הסטטוסים נבדקים כמו שהם */
+  const payMatch = (ps, f) => f === 'paid' ? (ps === 'paid' || ps === 'exempt') : ps === f;
+  function paidState(p) {
+    if (state.filter) { const l = linkOf(p.id, state.filter); return l ? linkStatus(l) : null; }
+    const ls = linksOf(p.id);
+    if (!ls.length) return null;
+    const st = ls.map(linkStatus).filter((s) => s !== 'exempt');   // "לא משלם" לא נספר בחוב ובהמרה
+    if (!st.length) return 'exempt';
+    if (st.every((s) => s === 'paid')) return 'paid';
+    return st.includes('unpaid') ? 'unpaid' : 'requested';   // בתצוגת הכל: טרם שילם = יש ריטריט בלי בקשה, בקשה נשלחה = על כל החוסרים כבר נשלחה בקשה
+  }
+
+  /* מונים וסינון: גברים/נשים ושילמו/טרם שילמו. כל מונה סופר לפי הסינון האחר והחיפוש, כך שהמספר הוא בדיוק מה שיוצג בלחיצה */
+  function renderFacets() {
+    const q = state.q.trim().toLowerCase(), qd = digits(q);
+    const base = state.participants.filter((p) => {
+      if (state.filter && !linkOf(p.id, state.filter)) return false;
+      if (!q) return true;
+      return p.name.toLowerCase().includes(q) || (qd.length >= 2 && phoneHay(p).includes(qd)) || hasNote(p, q);
+    });
+    const payOk = (p) => !state.pay || payMatch(paidState(p), state.pay);
+    const genOk = (p) => state.gender === 'none' ? !p.gender : (!state.gender || p.gender === state.gender);
+    const nG = (g) => base.filter((p) => payOk(p) && (g === 'none' ? !p.gender : p.gender === g)).length;
+    const nP = (st) => base.filter((p) => genOk(p) && payMatch(paidState(p), st)).length;
+    const btn = (kind, val, label, n, cls, on, aria) => '<button type="button"' + (aria ? ' aria-label="' + aria + ' ' + n + '" title="' + aria + '"' : '') + ' class="fx' + (cls ? ' ' + cls : '') + (n ? '' : ' zero') + '" data-fx="' + kind + ':' + val + '" aria-pressed="' + on + '">' + label + ' <b>' + n + '</b></button>';
+    const none = nG('none');
+    let h = '<div class="fgroup">' +
+      btn('g', 'male', '<span class="lw gen-lw">גברים</span><span class="gi gm">' + MAN_ICON + '</span>', nG('male'), '', state.gender === 'male', 'גברים') +
+      btn('g', 'female', '<span class="lw gen-lw">נשים</span><span class="gi gf">' + WOMAN_ICON + '</span>', nG('female'), '', state.gender === 'female', 'נשים') +
+      (none || state.gender === 'none' ? btn('g', 'none', 'ללא', none, '', state.gender === 'none', 'ללא מגדר') : '') + '</div>';
+    h += '<div class="fgroup">' +
+      btn('p', 'unpaid', '<span class="lw pay-lw">חדשים</span><span class="li">' + NEW_ICON + '</span>', nP('unpaid'), 'no', state.pay === 'unpaid', 'חדשים') +
+      btn('p', 'requested', '<span class="lw pay-lw">בבדיקה</span><span class="li">' + REQ_ICON + '</span>', nP('requested'), 'wait', state.pay === 'requested', 'בבדיקה') +
+      btn('p', 'paid', '<span class="lw pay-lw">שילמו</span><span class="li">✓</span>', nP('paid'), 'ok', state.pay === 'paid', 'שילמו') + '</div>';
+    $('#facets').innerHTML = base.length || state.gender || state.pay ? h : '';
+  }
+
+  /* מיון הרשימה */
+  const SORTS = [
+    ['new', 'חדשים ראשונים'], ['old', 'ישנים ראשונים'], ['name', 'שם (א עד ת)'],
+    ['age_asc', 'גיל: מהצעיר'], ['age_desc', 'גיל: מהמבוגר'], ['unpaid', 'חדשים קודם'],
+  ];
+  function sortCmp() {
+    const byNew = (a, b) => String(b.created_at || '').localeCompare(String(a.created_at || ''));
+    const byName = (a, b) => a.name.localeCompare(b.name, 'he');
+    const ageOf = (p) => { const x = shownAge(p); return x == null ? null : x; };
+    const byAge = (dir) => (a, b) => { const x = ageOf(a), y = ageOf(b); if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1; return dir * (x - y); };
+    switch (state.sort) {
+      case 'old': return (a, b) => -byNew(a, b) || byName(a, b);
+      case 'name': return byName;
+      case 'age_asc': return (a, b) => byAge(1)(a, b) || byNew(a, b);
+      case 'age_desc': return (a, b) => byAge(-1)(a, b) || byNew(a, b);
+      case 'unpaid': return (a, b) => { const o = { unpaid: 0, requested: 1, paid: 2, exempt: 3 }, x = o[paidState(a)] ?? 3, y = o[paidState(b)] ?? 3; return x - y || byNew(a, b); };
+      default: return (a, b) => byNew(a, b) || byName(a, b);
+    }
+  }
+  function renderSort() {
+    $('#sortBtn').classList.toggle('on', state.sort !== 'new');
+    $('#sortBtn').title = 'מיון: ' + (SORTS.find((s) => s[0] === state.sort) || SORTS[0])[1];
+    $('#sortMenu').innerHTML = SORTS.map((s) => '<button type="button" role="menuitemradio" data-sort="' + s[0] + '" aria-checked="' + (state.sort === s[0]) + '">' + s[1] + '</button>').join('');
+  }
+  const closeSort = () => { $('#sortMenu').hidden = true; $('#sortBtn').setAttribute('aria-expanded', 'false'); };
+  $('#sortBtn').addEventListener('click', (e) => { e.stopPropagation(); const m = $('#sortMenu'); m.hidden = !m.hidden; $('#sortBtn').setAttribute('aria-expanded', String(!m.hidden)); });
+  $('#sortMenu').addEventListener('click', (e) => { const b = e.target.closest('[data-sort]'); if (!b) return; state.sort = b.dataset.sort; closeSort(); render(); });
+  document.addEventListener('click', (e) => { if (!e.target.closest('.sortwrap')) closeSort(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSort(); });
+
+  /* הודעה כשאין תוצאות, לפי הסינון הפעיל */
+  function emptyMsg() {
+    const g = state.gender, pay = state.pay, scope = state.filter ? ' בריטריט הזה' : '';
+    const clear = '<button type="button" class="link-btn" id="clearFx" style="margin-top:14px">ניקוי סינונים</button>';
+    if (g || pay) {
+      if (!g && pay === 'requested' && !state.q) return '<b>אין משתתפים בבדיקה</b>כשנשלחת הודעת תשלום בוואטסאפ מתוך פרטי המשתתף, הסטטוס מסומן כאן' + '<br>' + clear;
+      if (!g && pay === 'unpaid' && !state.q) {
+        const nReq = state.participants.filter((x) => (!state.filter || linkOf(x.id, state.filter)) && paidState(x) === 'requested').length;
+        return nReq
+          ? '<b>אין משתתפים חדשים</b>כל מי שטרם שילם' + scope + ' כבר בבדיקה (' + nReq + ')<br>' + clear
+          : '<b>כולם שילמו</b>אין משתתפים חדשים' + scope + '<br>' + clear;
       }
-      kids.push(n ? el("a", { class: "circ", href: "https://wa.me/" + n.slice(1), target: "_blank", rel: "noopener", "aria-label": "וואטסאפ", html: WA_SVG })
-                  : el("span", { class: "circ disabled", html: WA_SVG }));
-      kids.push(n ? el("a", { class: "circ call", href: "tel:" + n, "aria-label": "חיוג", html: PHONE_SVG }) : null);
-      return el("li", { class: "row" + (reg && reg.status === "cancelled" ? " cancelled" : "") }, kids);
+      if (!g && pay === 'paid' && !state.q) return '<b>עוד אף אחד לא שילם</b>' + (state.filter ? 'אפשר לסמן תשלום בלחיצה על התגית "חדש" בכרטיס' : 'תשלום מסמנים בפרטי המשתתף, בתוך הריטריט') + '<br>' + clear;
+      const who = g === 'male' ? 'גברים' : g === 'female' ? 'נשים' : g === 'none' ? 'משתתפים ללא מגדר' : 'משתתפים';
+      const what = pay === 'paid' ? ' ששילמו' : pay === 'unpaid' ? ' חדשים' : pay === 'requested' ? ' בבדיקה' : '';
+      return '<b>אין ' + who + what + scope + (state.q ? ' שמתאימים לחיפוש' : '') + '</b>אפשר לנקות את הסינון ולנסות שוב<br>' + clear;
     }
+    if (state.q) return '<b>לא נמצא אף אחד</b>אפשר לנסות שם או מספר אחר';
+    return state.filter ? '<b>עוד אין משתתפים בריטריט הזה</b>אפשר להוסיף דרך החיפוש: מחפשים שם או טלפון ולוחצים "הוספה לריטריט"'
+                        : '<b>עוד אין משתתפים</b>לחיצה על "+ משתתף" למטה מוסיפה את הראשון';
+  }
 
-    /* ====================================================================
-       כתיבה
-       ==================================================================== */
-    function setReg(p, eid, patch) {
-      var r = regOf(p, eid); if (r) Object.assign(r, patch);      /* מיד על המסך, ואם נכשל נטען מחדש */
-      paint();
-      return api("aum_registrations?participant_id=eq." + p.id + "&event_id=eq." + eid, { method: "PATCH", body: patch })
-        .catch(function () { toast("השמירה נכשלה"); return load(); });
-    }
-
-    var pDlg = $("#pDlg"), pForm = $("#pForm"), editing = null;
-    function openPerson(p) {
-      editing = p;
-      var ev = sel === "all" ? null : evById(sel);
-      $("#pTitle").textContent = p ? "עריכת משתתף" : "משתתף חדש";
-      pForm.name.value = p ? p.name : "";
-      pForm.phone.value = p ? show(p.phone) : "";
-      pForm.first.checked = p ? !!p.first_time : false;
-      pForm.note.value = p ? p.note : "";
-      var reg = p && ev ? regOf(p, ev.id) : null;
-      $("#regFields").hidden = !ev;                                     /* סטטוס ותשלום שייכים לריטריט */
-      pForm.status.value = reg ? reg.status : "new";
-      pForm.paid.value = reg && reg.paid ? "true" : "false";
-      $("#pDel").hidden = !p;
-      $("#pMsg").textContent = "";
-      pDlg.showModal();
-    }
-
-    pForm.addEventListener("submit", function (e) {
-      e.preventDefault();
-      var msg = $("#pMsg"), ev = sel === "all" ? null : evById(sel);
-      var name = pForm.name.value.trim(), raw = pForm.phone.value.trim(), n = norm(raw);
-      if (name.length < 2) { msg.textContent = "צריך שם"; return; }
-      if (raw && !n) { msg.textContent = "מספר הטלפון לא תקין"; return; }
-      var body = { name: name, phone: n || raw, first_time: pForm.first.checked, note: pForm.note.value.trim() };
-      $("#pSave").disabled = true;
-
-      var saved = editing
-        ? api("aum_participants?id=eq." + editing.id, { method: "PATCH", body: body }).then(function (r) { return r[0]; })
-        : api("aum_participants", { method: "POST", body: Object.assign({ source: "admin" }, body) }).then(function (r) { return r[0]; });
-
-      saved.then(function (p) {
-        if (!ev) return null;
-        var reg = { status: pForm.status.value, paid: pForm.paid.value === "true" };
-        return editing && regOf(editing, ev.id)
-          ? api("aum_registrations?participant_id=eq." + p.id + "&event_id=eq." + ev.id, { method: "PATCH", body: reg })
-          : api("aum_registrations", { method: "POST", body: Object.assign({ participant_id: p.id, event_id: ev.id }, reg) });
-      }).then(function () { pDlg.close(); return load(); })
-        .catch(function (err) { msg.textContent = err.code === "23505" ? "המספר הזה כבר קיים ברשימה" : "השמירה נכשלה: " + err.message; })
-        .then(function () { $("#pSave").disabled = false; });
+  function renderList() {
+    renderFacets();
+    const q = state.q.trim().toLowerCase();
+    const qd = digits(q);
+    let rows = state.participants.filter((p) => {
+      if (state.filter && !linkOf(p.id, state.filter)) return false;
+      if (state.pay && !payMatch(paidState(p), state.pay)) return false;
+      if (state.gender === 'none' ? p.gender : (state.gender && p.gender !== state.gender)) return false;
+      if (!q) return true;
+      return p.name.toLowerCase().includes(q) || (qd.length >= 2 && phoneHay(p).includes(qd)) || hasNote(p, q);
     });
+    rows.sort(sortCmp());
 
-    $("#pDel").addEventListener("click", function () {
-      if (!editing || !confirm("למחוק את " + editing.name + " לגמרי, מכל הריטריטים?")) return;
-      api("aum_participants?id=eq." + editing.id, { method: "DELETE" })
-        .then(function () { pDlg.close(); return load(); })
-        .catch(function (err) { $("#pMsg").textContent = "המחיקה נכשלה: " + err.message; });
-    });
-
-    var eDlg = $("#eDlg"), eForm = $("#eForm"), editingEv = null;
-    function openEvent(ev) {
-      editingEv = ev;
-      $("#eTitle").textContent = ev ? "עריכת ריטריט" : "ריטריט חדש";
-      eForm.date.value = ev ? ev.event_date : "";
-      eForm.location.value = ev ? ev.location : "בית כאן ועכשיו, פינס 44, גדרה";
-      eForm.from.value = ev ? ev.start_time.slice(0, 5) : "09:00";
-      eForm.to.value = ev ? ev.end_time.slice(0, 5) : "16:00";
-      eForm.price.value = ev && ev.price != null ? ev.price : "";
-      eForm.pair.value = ev && ev.price_pair != null ? ev.price_pair : "";
-      eForm.capacity.value = ev && ev.capacity != null ? ev.capacity : "";
-      $("#eDel").hidden = !ev;
-      $("#eMsg").textContent = "";
-      eDlg.showModal();
+    /* במסך ריטריט + חיפוש: מציגים גם מי שלא רשום לריטריט, כדי להוסיף אותם בלחיצה (למשל מי שהגיע בלי להודיע) */
+    let others = [];
+    if (state.filter && q) {
+      others = state.participants.filter((p) => !linkOf(p.id, state.filter) &&
+        (p.name.toLowerCase().includes(q) || (qd.length >= 2 && phoneHay(p).includes(qd)) || hasNote(p, q)));
+      others.sort((a, b) => a.name.localeCompare(b.name, 'he'));
     }
-    eForm.addEventListener("submit", function (e) {
-      e.preventDefault();
-      var body = {
-        event_date: eForm.date.value, start_time: eForm.from.value, end_time: eForm.to.value,
-        location: eForm.location.value.trim() || "גדרה",
-        price: eForm.price.value === "" ? null : Number(eForm.price.value),
-        price_pair: eForm.pair.value === "" ? null : Number(eForm.pair.value),
-        capacity: eForm.capacity.value === "" ? null : Number(eForm.capacity.value),
+    const othersHtml = others.length
+      ? '<li class="group">לא רשומים לריטריט הזה</li>' + others.map((p) => {
+          const age = shownAge(p);
+          return '<li class="row other"><div class="main" role="button" tabindex="0" data-edit="' + p.id + '"><div class="nm"><bdi class="name">' + esc(p.name) + '</bdi></div>' +
+            ((age != null || p.gender) ? '<div class="meta">' + ((age != null || p.gender) ? '<span class="age" title="' + (p.gender ? (p.gender === 'male' ? 'זכר' : 'נקבה') + ' · ' : '') + 'גיל"><bdi>' + (p.gender ? '<b class="gl">' + (p.gender === 'male' ? 'ז' : 'נ') + '</b> ' : '') + (age != null ? age : '') + '</bdi></span>' : '') + '</div>' : '') + '</div>' +
+            '<div class="acts"><button type="button" class="addm" data-addm="' + p.id + '">+ הוספה לריטריט</button></div></li>';
+        }).join('')
+      : '';
+    const newBtn = (state.filter && q)
+      ? '<li class="group newp"><button type="button" class="addm wide" id="addNew">+ משתתף חדש: ' + esc(state.q.trim()) + '</button></li>' : '';
+
+    if (!rows.length && !others.length) {
+      $('#list').innerHTML = newBtn || '<li class="empty">' + emptyMsg() + '</li>';
+      return;
+    }
+
+    const rowsHtml = rows.map((p) => {
+      const age = shownAge(p);
+      const wa = waLink(p.phone);
+      const tel = telLink(p.phone);
+      let side = '';
+      if (state.filter) {
+        const l = linkOf(p.id, state.filter);
+        const st = linkStatus(l);
+        side = '<span class="ptag ' + st + '">' + STATUS_LABEL[st] + '</span>';   // תצוגה בלבד: לחיצה על הכרטיס פותחת את פרטי המשתתף, ושם משנים סטטוס
+      }
+      let tags = '';
+      if (!state.filter) {
+        const ls = linksOf(p.id);
+        if (ls.length) {
+          const payable = ls.filter((l) => !l.exempt), np = payable.filter((l) => l.paid).length, ps = paidState(p);
+          tags = '<span class="ptag ' + ps + '" title="תשלום לפי ריטריטים">' +
+            (ls.length === 1 || ps === 'exempt' ? STATUS_LABEL[ps] : (ps === 'requested' ? 'בבדיקה' : '<bdi>' + np + '/' + payable.length + '</bdi> שילמו')) + '</span>';
+        } else tags = '<span class="age">ללא ריטריט</span>';
+      }
+      return '<li class="row">' +
+        '<div class="main" role="button" tabindex="0" data-edit="' + p.id + '">' +
+          '<div class="nm"><bdi class="name">' + esc(p.name) + '</bdi>' + (p.source === 'site-ad' ? '<span class="adtag" title="ממומן: הגיע ממודעה בתשלום" aria-label="ממומן"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15.5 9a4 4 0 0 1 0 6"/></svg></span>' : '') + '</div>' +
+          ((age != null || side || tags) ? '<div class="meta">' + ((age != null || p.gender) ? '<span class="age" title="' + (p.gender ? (p.gender === 'male' ? 'זכר' : 'נקבה') + ' · ' : '') + 'גיל"><bdi>' + (p.gender ? '<b class="gl">' + (p.gender === 'male' ? 'ז' : 'נ') + '</b> ' : '') + (age != null ? age : '') + '</bdi></span>' : '') + side + tags + '</div>' : '') +
+          (noteLatest.get(p.id) ? '<div class="note" title="' + esc(noteLatest.get(p.id).author_name || '') + '">' + esc(noteLatest.get(p.id).body) + '</div>' : '') +
+        '</div>' +
+      '</li>';
+    }).join('');
+    $('#list').innerHTML = rowsHtml + othersHtml + newBtn;
+  }
+
+
+  /* ---------- סטטיסטיקות ---------- */
+  const ilDay = (iso) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jerusalem' }).format(new Date(iso));
+  const dnum = (s) => { const [y, m, d] = s.split('-').map(Number); return Date.UTC(y, m - 1, d) / 864e5; };
+  const ilHour = (iso) => Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Jerusalem', hour: '2-digit', hour12: false }).format(new Date(iso)).slice(0, 2)) % 24;
+  const wdayOf = (n) => new Date(n * 864e5).getUTCDay();   // 0 = יום ראשון
+  const P = (a, b) => b ? Math.round(a / b * 100) : null;
+  const Ps = (a, b) => b ? Math.round(a / b * 100) + '%' : '-';
+  const nfm = (n) => Math.round(n).toLocaleString('he-IL');
+  const priceAtReg = (m) => Number(m.price) || 0;   // המחיר של הריטריט עצמו (ריק = 0)
+
+  function computeStats() {
+    const asc = state.meetings.slice().sort((a, b) => (a.meeting_date + a.meeting_time).localeCompare(b.meeting_date + b.meeting_time));
+    const mById = new Map(state.meetings.map((m) => [m.id, m])), pById = new Map(state.participants.map((p) => [p.id, p]));
+    const all = state.att.filter((l) => mById.has(l.meeting_id) && pById.has(l.participant_id)).map((l) => ({ ...l, m: mById.get(l.meeting_id), p: pById.get(l.participant_id), st: linkStatus(l) }));
+    const links = all;
+    // לכל ריטריט: נרשמים, שילמו, הכנסה, חדשים/חוזרים, שימור מהריטריט הקודם
+    const seen = new Set(); let prev = new Set();
+    const perMeeting = asc.map((m) => {
+      const ls = all.filter((l) => l.meeting_id === m.id), S = new Set(ls.map((l) => l.participant_id));
+      const ret = [...S].filter((id) => seen.has(id)).length, kept = [...S].filter((id) => prev.has(id)).length;
+      const row = { m, regs: ls.length, ad: ls.filter((l) => l.p.source === 'site-ad').length, ex: ls.filter((l) => l.exempt).length, paid: ls.filter((l) => l.paid && !l.exempt).length, rev: ls.filter((l) => l.paid && !l.exempt).reduce((s, l) => s + priceAtReg(m, l.created_at), 0),
+        news: S.size - ret, ret, kept, prevN: prev.size };
+      S.forEach((id) => seen.add(id)); prev = S;
+      return row;
+    });
+    return { asc, links, all, perMeeting };
+  }
+
+  const kpi = (v, label, sub, tone) => '<div class="kpi ' + (tone || '') + '"><b>' + v + '</b><span>' + label + '</span>' + (sub ? '<i>' + sub + '</i>' : '') + '</div>';
+  const sec = (title, hint, body) => '<section class="stsec"><h3>' + title + '</h3>' + (hint ? '<p class="sthint">' + hint + '</p>' : '') + body + '</section>';
+  const barRow = (label, n, total, color, extra) => { const w = total ? Math.round(n / total * 100) : 0; return '<div class="brow"><span class="bl">' + label + '</span><span class="bt"><i style="width:' + w + '%;background:' + color + '"></i></span><span class="bv"><b>' + n + '</b>' + (total ? ' · ' + w + '%' : '') + (extra ? ' · ' + extra : '') + '</span></div>'; };
+  const colsChart = (items, color, dense) => { const max = Math.max(1, ...items.map((i) => i.v)); return '<div class="cols' + (dense ? ' dense' : '') + '">' + items.map((i) => '<div class="col">' + (dense ? '' : '<span class="cv">' + (i.v || '') + '</span>') + '<i style="height:' + Math.round(i.v / max * 72) + 'px;background:' + (i.color || color) + '"></i><span class="cl">' + i.l + '</span></div>').join('') + '</div>'; };
+  const median = (a) => { if (!a.length) return null; const s = a.slice().sort((x, y) => x - y), h = s.length >> 1; return s.length % 2 ? s[h] : (s[h - 1] + s[h]) / 2; };
+
+  function renderStats() {
+    const S = computeStats(), links = S.links;   // תמיד התמונה הכוללת של כל הריטריטים
+    if (!links.length) { $('#stBody').innerHTML = '<div class="empty"><b>אין עדיין נתונים</b>כשיהיו הרשמות, הסטטיסטיקות יופיעו כאן</div>'; return; }
+
+    const n = links.length, uniq = new Set(links.map((l) => l.participant_id)), people = [...uniq].map((id) => state.participants.find((x) => x.id === id));
+    const paid = links.filter((l) => l.st === 'paid'), req = links.filter((l) => l.st === 'requested'), unp = links.filter((l) => l.st === 'unpaid'), exm = links.filter((l) => l.st === 'exempt'), nPay = n - exm.length;   // nPay: הרשמות שמשלמים (בלי "לא משלם")
+    const price = (l) => priceAtReg(l.m, l.created_at);
+    const rev = paid.reduce((s, l) => s + price(l), 0), owed = [...req, ...unp].reduce((s, l) => s + price(l), 0);
+    const today = dnum(todayISO());
+    const waiting3 = links.filter((l) => (l.st === 'unpaid' || l.st === 'requested') && l.created_at && today - dnum(ilDay(l.created_at)) > 3);
+    const reqHours = req.concat(paid.filter((l) => l.pay_requested_at)).filter((l) => l.pay_requested_at && l.created_at).map((l) => (new Date(l.pay_requested_at) - new Date(l.created_at)) / 36e5).filter((h) => h >= 0);
+    const male = people.filter((p) => p.gender === 'male'), female = people.filter((p) => p.gender === 'female'), noG = people.length - male.length - female.length;
+    const ages = people.map(shownAge).filter((a) => a != null);
+    const convBy = (pred) => { const ls = links.filter((l) => pred(l.p) && l.st !== 'exempt'); return { n: ls.length, paid: ls.filter((l) => l.paid).length }; };
+    const cM = convBy((p) => p.gender === 'male'), cF = convBy((p) => p.gender === 'female');
+    const src = (p) => p.source === 'site-ad' ? 'ad' : p.source === 'site' ? 'site' : 'other';
+    const SRC = { site: ['אתר (אורגני)', '#5A2410'], ad: ['מודעה ממומנת', '#C1191F'], other: ['ידני או אחר', '#C9B79C'] };
+    const regs = links.filter((l) => l.created_at);
+    const last3 = regs.filter((l) => dnum(l.m.meeting_date) - dnum(ilDay(l.created_at)) <= 3);
+    const out = [];
+
+    // ---- תובנות: כל תובנה עם טבעת אחוז או תג מגמה, כותרת ופירוט ----
+    const ring = (pctVal, color) => { const v = Math.max(0, Math.min(100, pctVal || 0)); return '<span class="ring"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20" fill="none" stroke="rgba(74,37,20,.10)" stroke-width="6"/><circle cx="24" cy="24" r="20" fill="none" stroke="' + color + '" stroke-width="6" stroke-linecap="round" stroke-dasharray="' + (v * 1.2566).toFixed(1) + ' 125.7" transform="rotate(-90 24 24)"/></svg><b>' + (pctVal == null ? '-' : v + '%') + '</b></span>'; };
+    const insItem = (visual, title, detail) => '<li class="ins">' + visual + '<div class="itx"><b>' + title + '</b><span>' + detail + '</span></div></li>';
+    const ins = [];
+    ins.push(insItem(ring(P(paid.length, nPay), '#2F7D4F'), 'המרה לתשלום', paid.length + ' מתוך ' + nPay + ' הרשמות שולמו' + (exm.length ? ' (בלי ' + exm.length + ' שלא משלמים)' : '') + (waiting3.length ? '<br>' + waiting3.length + ' ממתינים מעל 3 ימים' : '')));
+    if (male.length + female.length) ins.push(insItem(ring(P(female.length, male.length + female.length), '#C2547A'), 'הרכב מגדרי', P(female.length, male.length + female.length) + '% נשים · ' + P(male.length, male.length + female.length) + '% גברים' + (cM.n && cF.n ? '<br>המרה: נשים ' + Ps(cF.paid, cF.n) + ' · גברים ' + Ps(cM.paid, cM.n) : '')));
+    if (ages.length) ins.push(insItem(ring(P(ages.filter((a) => a < 50).length, ages.length), '#5A2410'), 'עד גיל 49', 'גיל ממוצע ' + (ages.reduce((a, b) => a + b, 0) / ages.length).toFixed(1) + ' · חציון ' + median(ages)));
+    if (regs.length >= 5) ins.push(insItem(ring(P(last3.length, regs.length), '#C1191F'), 'נרשמים ברגע האחרון', 'ב-3 הימים שלפני הריטריט' + (last3.length / regs.length > .4 ? '<br>כדאי לחזק פרסום ותזכורות בימים האחרונים' : '')));
+    const adN = links.filter((l) => src(l.p) === 'ad').length;
+    if (adN) ins.push(insItem(ring(P(adN, n), '#B7791F'), 'מגיעים ממודעה ממומנת', 'המרה לתשלום ממודעות: ' + Ps(links.filter((l) => src(l.p) === 'ad' && l.paid).length, links.filter((l) => src(l.p) === 'ad' && l.st !== 'exempt').length)));
+    const pm = S.perMeeting.filter((r) => r.regs);
+    if (pm.length >= 2) { const a = pm[pm.length - 1], b = pm[pm.length - 2], ch = P(a.regs - b.regs, b.regs) || 0, up = a.regs >= b.regs;
+      ins.push(insItem('<span class="trend ' + (up ? 'up' : 'down') + '"><i>' + (up ? '▲' : '▼') + '</i><b>' + Math.abs(ch) + '%</b></span>', 'הריטריט האחרון ' + (up ? 'בעלייה' : 'בירידה'), a.regs + ' נרשמים לעומת ' + b.regs + ' בריטריט שלפניו')); }
+    out.push(sec('תובנות מרכזיות', '', '<ul class="insights">' + ins.join('') + '</ul>').replace('<section class="stsec">', '<section class="stsec flat">').replace(/<h3>.*?<\/h3>/, ''));
+
+    // ---- מדדים ראשיים ----
+    const kp = [];
+    kp.push(kpi(n, 'הרשמות', uniq.size + ' אנשים ייחודיים'));
+    const adLinks = links.filter((l) => src(l.p) === 'ad'), adPaidN = adLinks.filter((l) => l.st === 'paid').length;
+    kp.push(kpi(adLinks.length, 'הגיעו מפרסום ממומן', Ps(adLinks.length, n) + ' מההרשמות' + (adLinks.length ? ' · ' + adPaidN + ' שילמו' : '')));
+    kp.push(kpi(paid.length, 'שילמו', Ps(paid.length, nPay) + ' ממי שמשלמים', 'good'));
+    kp.push(kpi(req.length, 'בבדיקה', Ps(req.length, nPay), 'warn'));
+    kp.push(kpi(unp.length, 'חדשים', Ps(unp.length, nPay), unp.length ? 'bad' : ''));
+    if (exm.length) kp.push(kpi(exm.length, 'לא משלמים', Ps(exm.length, n) + ' מההרשמות (נרשמו בחינם)'));
+    kp.push(kpi('₪' + nfm(rev), 'הכנסה משוערת', 'חוב פתוח משוער ₪' + nfm(owed)));
+    kp.push(kpi(nfm(n / Math.max(1, pm.length)), 'ממוצע נרשמים לריטריט', 'ממוצע ששילמו ' + (paid.length / Math.max(1, pm.length)).toFixed(1)));
+    out.push('<div class="stkpis">' + kp.join('') + '</div>');
+
+    // ---- המרה וגבייה ----
+    let conv = barRow(exm.length ? 'נרשמו (בלי לא משלמים)' : 'נרשמו', nPay, nPay, '#C9B79C') + barRow('בבדיקה או שילמו', req.length + paid.length, nPay, '#B7791F') + barRow('שילמו', paid.length, nPay, '#2F7D4F');
+    conv += '<p class="stline">ממתינים לתשלום מעל 3 ימים: <b>' + waiting3.length + '</b>' + (reqHours.length ? ' · זמן ממוצע משליחת בקשה מההרשמה: <b>' + (reqHours.reduce((a, b) => a + b, 0) / reqHours.length < 48 ? (reqHours.reduce((a, b) => a + b, 0) / reqHours.length).toFixed(1) + ' שעות' : (reqHours.reduce((a, b) => a + b, 0) / reqHours.length / 24).toFixed(1) + ' ימים') + '</b>' : '') + '</p>';
+    out.push(sec('המרה וגבייה', 'כמה מהנרשמים הגיעו עד תשלום, והיכן "נתקעים"', conv));
+
+    // ---- קהל ----
+    let aud = barRow('נשים', female.length, people.length, '#C2547A') + barRow('גברים', male.length, people.length, '#3F6FB5') + (noG ? barRow('לא צוין', noG, people.length, '#B9B2A5') : '');
+    if (male.length && female.length) aud += '<p class="stline">יחס גברים:נשים <b>1:' + (female.length / male.length).toFixed(1) + '</b></p>';
+    const convRows = (cF.n ? barRow('המרה נשים', cF.paid, cF.n, '#C2547A') : '') + (cM.n ? barRow('המרה גברים', cM.paid, cM.n, '#3F6FB5') : '');
+    if (convRows) aud += '<p class="sthint" style="margin-top:10px">אחוז ששילמו מכל מין</p>' + convRows;
+    out.push(sec('הרכב הקהל לפי מגדר', 'אנשים ייחודיים בטווח הנבחר', aud));
+    if (ages.length) {
+      const bk = [['עד 29', (a) => a < 30], ['30 עד 39', (a) => a >= 30 && a < 40], ['40 עד 49', (a) => a >= 40 && a < 50], ['50 עד 59', (a) => a >= 50 && a < 60], ['60 ומעלה', (a) => a >= 60]];
+      let ag = bk.map(([l, f]) => barRow(l, ages.filter(f).length, ages.length, '#5A2410')).join('');
+      ag += '<p class="stline">גיל ממוצע <b>' + (ages.reduce((a, b) => a + b, 0) / ages.length).toFixed(1) + '</b> · חציון <b>' + median(ages) + '</b> · טווח <b>' + Math.min(...ages) + ' עד ' + Math.max(...ages) + '</b></p>';
+      out.push(sec('גילאים', 'פילוג הגילאים של הנרשמים', ag));
+    }
+
+    // ---- מקורות ----
+    const sk = ['site', 'ad', 'other'].map((k) => { const ls = links.filter((l) => src(l.p) === k); return { k, n: ls.length, nx: ls.filter((l) => l.st !== 'exempt').length, paid: ls.filter((l) => l.paid).length }; });
+    out.push(sec('מקורות הגעה', 'איפה נרשמים ואיזה מקור נסגר בתשלום', sk.map((x) => barRow(SRC[x.k][0], x.n, n, SRC[x.k][1], 'שילמו ' + Ps(x.paid, x.nx))).join('')));
+
+    // ---- מתי נרשמים ----
+    if (regs.length) {
+      const wd = [0, 1, 2, 3, 4, 5, 6].map((d) => ({ l: HE_DAYS[d].slice(0, 3), v: regs.filter((l) => wdayOf(dnum(ilDay(l.created_at))) === d).length }));
+      const tb = [['בוקר 6 עד 12', (h) => h >= 6 && h < 12], ['צהריים 12 עד 17', (h) => h >= 12 && h < 17], ['ערב 17 עד 22', (h) => h >= 17 && h < 22], ['לילה 22 עד 6', (h) => h >= 22 || h < 6]];
+      out.push(sec('מתי נרשמים', 'ימי השבוע ושעות היום (שעון ישראל), לתזמון פרסום והודעות', colsChart(wd, '#5A2410') + tb.map(([l, f]) => barRow(l, regs.filter((x) => f(ilHour(x.created_at))).length, regs.length, '#C9B79C')).join('')));
+    }
+
+    // ---- ציר זמן ----
+    {
+      const pmr = S.perMeeting.filter((r) => r.regs);
+
+      // הרשמות לפי יום על ציר הזמן (ימי ריטריט בסגול)
+      const byDay = new Map(); regs.forEach((x) => { const d = dnum(ilDay(x.created_at)); byDay.set(d, (byDay.get(d) || 0) + 1); });
+      if (byDay.size) {
+        const lastD = Math.max(dnum(todayISO()), ...byDay.keys()), from = Math.max(Math.min(...byDay.keys()), lastD - 44);
+        const mdays = new Set(S.asc.map((m) => dnum(m.meeting_date))), dl = (d) => { const x = new Date(d * 864e5); return x.getUTCDate() + '.' + (x.getUTCMonth() + 1); };
+        const items = []; for (let d = from; d <= lastD; d++) items.push({ l: ((d - from) % 6 === 0 || mdays.has(d)) ? dl(d) : '', v: byDay.get(d) || 0, color: mdays.has(d) ? '#4A1F10' : '#C1191F', dense: true });
+        const total = items.reduce((s, x) => s + x.v, 0), peak = items.slice().sort((a, b) => b.v - a.v)[0];
+        out.push(sec('הרשמות לאורך זמן', 'כל יום, עד 45 הימים האחרונים. בסגול: ימי ריטריט', colsChart(items, '#C1191F', true) + '<p class="stline">' + total + ' הרשמות בתקופה, ממוצע <b>' + (total / items.length).toFixed(1) + '</b> ליום' + (peak && peak.v ? ' · היום החזק: <b>' + peak.l.replace(/^$/, '') + '</b>' : '') + '</p>'));
+      }
+      // קצב הרשמה מצטבר לפני כל ריטריט, מונח זה על זה
+      const curves = pmr.map((r) => { const ls = regs.filter((x) => x.meeting_id === r.m.id); const arr = []; for (let d = 14; d >= 0; d--) arr.push(ls.filter((x) => dnum(r.m.meeting_date) - dnum(ilDay(x.created_at)) >= d).length); return { r, arr }; }).filter((c) => c.arr[14] > 0);
+      if (curves.length) {
+        const W = 320, H = 130, maxY = Math.max(...curves.map((c) => c.arr[14])), COL = ['#C1191F', '#3F6FB5', '#5A2410', '#C2547A', '#B7791F', '#4A1F10'];
+        const X = (i) => (W - 6) - (i / 14) * (W - 12), Y = (v) => H - 4 - (v / maxY) * (H - 12);   // ימין = 14 ימים לפני, שמאל = יום הריטריט
+        const lines = curves.map((c, k) => '<polyline fill="none" stroke="' + COL[(curves.length - 1 - k) % COL.length] + '" stroke-width="' + (k === curves.length - 1 ? 3.2 : 2) + '" stroke-linecap="round" stroke-linejoin="round" points="' + c.arr.map((v, i) => X(i).toFixed(1) + ',' + Y(v).toFixed(1)).join(' ') + '"/>').join('');
+        const grid = [0, .5, 1].map((f) => '<line x1="0" x2="' + W + '" y1="' + Y(maxY * f).toFixed(1) + '" y2="' + Y(maxY * f).toFixed(1) + '" stroke="rgba(74,37,20,.12)"/>').join('');
+        const legend = curves.map((c, k) => '<span style="display:inline-flex;align-items:center;gap:5px;margin:4px 0 0 12px"><i style="width:14px;height:4px;border-radius:2px;background:' + COL[(curves.length - 1 - k) % COL.length] + '"></i>' + esc(dm(c.r.m)) + ' <b>' + c.arr[14] + '</b></span>').join('');
+        out.push(sec('קצב ההרשמה לפני כל ריטריט', 'הרשמות מצטברות לפי ימים שנותרו עד הריטריט. רואים אם ההרשמה מתחילה מוקדם או מאוחר יותר מריטריט לריטריט', '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;direction:ltr" role="img" aria-label="קצב הרשמה">' + grid + lines + '</svg><div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted)"><span>יום הריטריט</span><span>14 ימים לפני</span></div><div>' + legend + '</div>'));
+      }
+      let tb = '<table class="sttable"><tr><th>ריטריט</th><th>נרשמו</th><th>ממומן</th><th>שילמו</th><th>המרה</th><th>חדשים/חוזרים</th><th>הכנסה</th></tr>' +
+        pmr.slice().reverse().map((r, i, arr) => { const b = arr[i + 1]; const tr = b ? (r.regs > b.regs ? ' <span class="up">▲</span>' : r.regs < b.regs ? ' <span class="down">▼</span>' : '') : ''; return '<tr><td>' + esc(dm(r.m)) + '</td><td class="num">' + r.regs + tr + '</td><td class="num">' + r.ad + '</td><td class="num">' + r.paid + '</td><td class="num">' + Ps(r.paid, r.regs - r.ex) + '</td><td class="num">' + r.news + '/' + r.ret + '</td><td class="num">₪' + nfm(r.rev) + '</td></tr>'; }).join('') + '</table>';
+      out.push(sec('הריטריטים לאורך זמן', 'כל ריטריט, מהחדש לישן. החצים משווים לריטריט הקודם', colsChart(pmr.map((r) => ({ l: dm(r.m), v: r.regs })), '#5A2410') + tb));
+      // נאמנות
+      const per = new Map(); S.all.forEach((l) => per.set(l.participant_id, (per.get(l.participant_id) || 0) + 1));
+      const rep2 = [...per.values()].filter((c) => c >= 2).length;
+      const kept = pmr.filter((r) => r.prevN);
+      out.push(sec('נאמנות וחזרה', 'האם אנשים חוזרים מריטריט לריטריט', barRow('נרשמו ליותר מריטריט אחד', rep2, per.size, '#3F6FB5') + '<p class="stline">ממוצע ריטריטים לאדם: <b>' + (S.all.length / Math.max(1, per.size)).toFixed(2) + '</b>' + (kept.length ? ' · שימור ממוצע בין ריטריטים עוקבים: <b>' + Ps(kept.reduce((a, r) => a + r.kept, 0), kept.reduce((a, r) => a + r.prevN, 0)) + '</b>' : '') + '</p>' +
+        colsChart(pmr.map((r) => ({ l: dm(r.m), v: r.ret, color: '#3F6FB5' })), '#3F6FB5') + '<p class="sthint">כחול: חוזרים לכל ריטריט. החדשים: ' + pmr.map((r) => dm(r.m) + ' ' + r.news).join(' · ') + '</p>'));
+      // צמיחה שבועית
+      const wk = (arr, f) => { const m = new Map(); arr.forEach((x) => { const dn = dnum(ilDay(f(x))); const ws = dn - wdayOf(dn); m.set(ws, (m.get(ws) || 0) + 1); }); return m; };
+      const wp = wk(state.participants.filter((x) => x.created_at), (x) => x.created_at), wl = wk(regs, (x) => x.created_at);
+      const keys = [...new Set([...wp.keys(), ...wl.keys()])].sort((a, b) => a - b); const lastK = keys.slice(-12);
+      if (lastK.length) {
+        const wl2 = lastK.map((k) => ({ l: (() => { const d = new Date(k * 864e5); return d.getUTCDate() + '.' + (d.getUTCMonth() + 1); })(), v: wp.get(k) || 0 }));
+        let cum = 0; const tot = state.participants.length;
+        out.push(sec('צמיחה שבועית', 'אנשים חדשים במאגר בכל שבוע (תחילת שבוע, יום ראשון)', colsChart(wl2, '#C1191F') + '<p class="stline">סה"כ אנשים במאגר: <b>' + tot + '</b> · ' + 'בשבוע האחרון: <b>' + (wp.get(keys[keys.length - 1]) || 0) + '</b></p>'));
+      }
+    }
+
+    // ---- איכות נתונים ----
+    const allP = state.participants;
+    out.push(sec('איכות נתונים', 'כמה מהמאגר מלא', barRow('עם מגדר', allP.filter((p) => p.gender).length, allP.length, '#5A2410') + barRow('עם גיל', allP.filter((p) => p.age != null).length, allP.length, '#5A2410') + barRow('עם טלפון', allP.filter((p) => p.phone).length, allP.length, '#5A2410')));
+    $('#stBody').innerHTML = out.join('');
+  }
+  $('#statsBtn').addEventListener('click', () => { renderStats(); $('#stDlg').showModal(); syncUrl(); });
+  $('#stDlg').addEventListener('close', syncUrl);
+
+  /* ---------- אישור לפני שינוי: סטטוס תשלום, הוספה לריטריט והסרה ממנו ---------- */
+  const nameB = (n) => '<b style="color:var(--ink);font-weight:800">' + esc(n) + '</b>';   // שם מודגש בפופאפים
+  function confirmAct(title, pid, mid, fn) {
+    const p = state.participants.find((x) => x.id === pid), m = state.meetings.find((x) => x.id === mid);
+    $('#cTitle').textContent = title;
+    $('#cText').innerHTML = nameB(p ? p.name : '') + ' · ' + esc(m ? meetingLabel(m, true) : '');
+    const dlg = $('#cDlg');
+    $('#cYes').onclick = () => { dlg.close(); fn(); };
+    $('#cNo').onclick = () => dlg.close();
+    dlg.showModal();
+  }
+  /* בחירת סטטוס תשלום (שילם / נשלחה בקשת תשלום / טרם שילם), עם פופאפ */
+  function pickPayStatus(pid, mid) {
+    const l = linkOf(pid, mid); if (!l) return;
+    const p = state.participants.find((x) => x.id === pid), m = state.meetings.find((x) => x.id === mid);
+    const cur = linkStatus(l);
+    $('#sText').innerHTML = nameB(p ? p.name : '') + ' · ' + esc(m ? meetingLabel(m, true) : '');
+    $('#sOpts').innerHTML = ['paid', 'requested', 'unpaid', 'exempt'].map((s) => '<button type="button" class="sopt ' + s + '" data-st="' + s + '" aria-pressed="' + (s === cur) + '">' + STATUS_LABEL[s] + '</button>').join('');
+    const dlg = $('#sDlg');
+    dlg.querySelectorAll('[data-st]').forEach((b) => b.onclick = () => { dlg.close(); if (b.dataset.st !== cur) setPayStatus(pid, mid, b.dataset.st); });
+    $('#sNo').onclick = () => dlg.close();
+    dlg.showModal();
+  }
+  const confirmLink = (pid, mid, on, after) => confirmAct(on ? 'להוסיף לריטריט?' : 'להסיר מהריטריט?', pid, mid, () => { setLinked(pid, mid, on); if (after) after(); });
+
+  async function setPayStatus(pid, mid, st) {
+    const l = linkOf(pid, mid);
+    if (!l) return;
+    const prev = { paid: l.paid, pay_requested_at: l.pay_requested_at, exempt: l.exempt };
+    const body = st === 'paid' ? { paid: true, exempt: false } : st === 'requested' ? { paid: false, exempt: false, pay_requested_at: new Date().toISOString() } : st === 'exempt' ? { paid: false, exempt: true, pay_requested_at: null } : { paid: false, exempt: false, pay_requested_at: null };
+    Object.assign(l, body); render(); refreshSheetMeetings();
+    try {
+      await api(T.a + '?participant_id=eq.' + pid + '&event_id=eq.' + mid, { method: 'PATCH', body });
+    } catch (err) { Object.assign(l, prev); render(); refreshSheetMeetings(); fail(err); }
+  }
+
+  async function setLinked(pid, mid, on) {
+    if (on) {
+      const row = { participant_id: pid, meeting_id: mid, event_id: mid, paid: false };
+      state.att.push(row); render(); refreshSheetMeetings();
+      try { await api(T.a, { method: 'POST', body: { participant_id: pid, event_id: mid, paid: false }, prefer: 'resolution=ignore-duplicates' }); }
+      catch (err) { state.att = state.att.filter((a) => a !== row); render(); refreshSheetMeetings(); fail(err); }
+    } else {
+      const prev = state.att;
+      state.att = state.att.filter((a) => !(a.participant_id === pid && a.meeting_id === mid));
+      render(); refreshSheetMeetings();
+      try { await api(T.a + '?participant_id=eq.' + pid + '&event_id=eq.' + mid, { method: 'DELETE' }); }
+      catch (err) { state.att = prev; render(); refreshSheetMeetings(); fail(err); }
+    }
+  }
+
+  /* ---------- חלון משתתף ---------- */
+  const pDlg = $('#pDlg'), pForm = $('#pForm');
+  let sheet = null; // { id } לעריכה, או { id: null, links: Map } למשתתף חדש
+
+
+  /* ---------- הערות (CRM): כמה הערות לכל משתתף, עם מי כתב ומתי; בכרטיס מוצגת האחרונה ---------- */
+  const noteLatest = new Map(), noteText = new Map();
+  function rebuildNotes() {
+    noteLatest.clear(); noteText.clear();
+    state.notes.slice().sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))).forEach((n) => {   // מהחדשה לישנה
+      if (!noteLatest.has(n.participant_id)) noteLatest.set(n.participant_id, n);
+      noteText.set(n.participant_id, ((noteText.get(n.participant_id) || '') + ' ' + n.body).toLowerCase());
+    });
+  }
+  const notesOf = (pid) => state.notes.filter((n) => n.participant_id === pid).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+  const hasNote = (p, q) => (noteText.get(p.id) || '').includes(q);
+  function fmtDT(iso) {
+    const d = new Date(iso); if (isNaN(d)) return '';
+    const dd = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Jerusalem', day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(d);
+    return dd.replace(',', '').replace(/\//g, '.');
+  }
+
+  /* ---------- שולח ההודעות והקישורים ---------- */
+  const SENDERS = { 'ofir.aviram@gmail.com': 'אופיר', 'tal.amitai1@gmail.com': 'טל' };
+  const HE_DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+  const dm = (m) => { const [, mo, d] = m.meeting_date.split('-').map(Number); return d + '.' + mo; };
+  const authorName = () => SENDERS[emailOf()] || emailOf().split('@')[0] || 'לא ידוע';
+
+  /* לשונית "התקשרות": וואטסאפ וחיוג (רק פותחים שיחה/מחייגים) וקישור קבוצת הפייבוקס להעתקה */
+  let copyTexts = [];
+  function renderContact() {
+    const box = $('#pMsgs'); if (!box) return;
+    const p = sheet && sheet.id ? state.participants.find((x) => x.id === sheet.id) : null;
+    if (!p) { box.innerHTML = ''; return; }
+    const base = waLink(p.phone), tel = telLink(p.phone);
+    let h = '<div class="ctop">' +
+      (base ? '<a class="cbtn cb-wa" href="' + base + '" target="_blank" rel="noopener">' + WA_ICON + 'וואטסאפ</a>' : '<span class="cbtn off">' + WA_ICON + 'וואטסאפ</span>') +
+      (tel ? '<a class="cbtn cb-call" href="' + tel + '">' + CALL_ICON + 'חיוג</a>' : '<span class="cbtn off">' + CALL_ICON + 'חיוג</span>') + '</div>';
+    if (!base) h += '<p class="mnone">אין מספר טלפון תקין למשתתף. אפשר להוסיף בלשונית "פרטים"</p>';
+    box.innerHTML = h;
+  }
+  $('#pMsgs').addEventListener('click', (e) => {
+    const c = e.target.closest('[data-copy]');
+    if (c) { const txt = copyTexts[Number(c.dataset.copy)] || ''; (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => toast('הקישור הועתק'), () => toast('אי אפשר להעתיק מכאן')); }
+  });
+
+  /* לשונית "הערות": הוספה, רשימה מהחדשה לישנה (מי כתב ומתי), ומחיקה */
+  function renderNotes() {
+    const list = $('#nList'); if (!list) return;
+    const p = sheet && sheet.id ? state.participants.find((x) => x.id === sheet.id) : null;
+    if (!p) { list.innerHTML = ''; return; }
+    const ns = notesOf(p.id);
+    const cnt = $('#pTabs [data-tab="contact"] .tcount'); if (cnt) cnt.textContent = ns.length ? ns.length : '';
+    list.innerHTML = ns.length ? ns.map((n) => '<div class="nitem"><div class="nmeta"><span><b>' + esc(n.author_name || 'לא ידוע') + '</b> · ' + esc(fmtDT(n.created_at)) + '</span>' +
+      '<button type="button" class="ndel" data-del="' + n.id + '" aria-label="מחיקת הערה" title="מחיקת הערה">×</button></div><div class="ntext">' + esc(n.body) + '</div></div>').join('')
+      : '<p class="mnone">עוד אין הערות. אפשר לרשום למעלה מה דיברתם, מה הוחלט ומה צריך לזכור</p>';
+  }
+  $('#nAdd').addEventListener('click', async () => {
+    if (!sheet || !sheet.id) return;
+    const ta = $('#nText'), body = ta.value.trim(); if (!body) { ta.focus(); return; }
+    const btn = $('#nAdd'); btn.disabled = true;
+    try {
+      const [row] = await api(T.n, { method: 'POST', body: { participant_id: sheet.id, body, author_email: emailOf(), author_name: authorName() }, prefer: 'return=representation' });
+      if (row && !state.notes.some((x) => x.id === row.id)) state.notes.push(row);
+      rebuildNotes(); ta.value = ''; renderNotes(); render(); toast('ההערה נשמרה');
+    } catch (err) { fail(err); }
+    btn.disabled = false;
+  });
+  $('#nList').addEventListener('click', async (e) => {
+    const d = e.target.closest('[data-del]'); if (!d) return;
+    if (!confirm('למחוק את ההערה?')) return;
+    const id = d.dataset.del, prev = state.notes;
+    state.notes = state.notes.filter((n) => n.id !== id); rebuildNotes(); renderNotes(); render();
+    try { await api(T.n + '?id=eq.' + id, { method: 'DELETE' }); } catch (err) { state.notes = prev; rebuildNotes(); renderNotes(); render(); fail(err); }
+  });
+
+  let pTab = 'contact';
+  /* פייג'ר: הלשוניות והדפים מחוברים. החלקה ימינה ושמאלה בין הדפים, או בחירת לשונית, והמחוון נע יחד עם הגלילה */
+  const reducedMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const pager = $('#pPager');
+  const pagerTabs = () => [...pager.children].filter((c) => !c.hidden).map((c) => c.dataset.panel);
+  const pagerSign = () => (getComputedStyle(pager).direction === 'rtl' ? -1 : 1);
+  let pagerTarget = null, pagerSettle = 0;
+  function moveInd() {
+    const ind = $('#pTabs .pind'), names = pagerTabs(); if (!ind || !names.length) return;
+    const w = pager.clientWidth || 1, pos = Math.min(names.length - 1, Math.max(0, Math.abs(pager.scrollLeft) / w));
+    const el = (n) => $('#pTabs [data-tab="' + n + '"]');
+    const a = el(names[Math.floor(pos)]), b = el(names[Math.min(names.length - 1, Math.ceil(pos))]), f = pos - Math.floor(pos);
+    if (!a || !b || !a.offsetWidth) return;
+    ind.style.width = (a.offsetWidth + (b.offsetWidth - a.offsetWidth) * f) + 'px';
+    ind.style.transform = 'translateX(' + (a.offsetLeft + (b.offsetLeft - a.offsetLeft) * f) + 'px)';
+  }
+  function setPTab(tab, instant) {
+    const names = pagerTabs(); if (names.indexOf(tab) < 0) tab = names[0];
+    pTab = tab;
+    document.querySelectorAll('#pTabs [data-tab]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
+    const i = names.indexOf(tab);
+    pagerTarget = i;
+    pager.scrollTo({ left: pagerSign() * i * pager.clientWidth, behavior: instant || reducedMotion() ? 'instant' : 'smooth' });
+    if (instant) { pagerTarget = null; moveInd(); }
+    if (tab === 'contact') { renderContact(); renderNotes(); }
+    syncUrl();
+  }
+  pager.addEventListener('scroll', () => {
+    moveInd();
+    const names = pagerTabs(), pos = Math.abs(pager.scrollLeft) / (pager.clientWidth || 1), idx = Math.round(pos);
+    if (pagerTarget != null) { if (Math.abs(pos - pagerTarget) < 0.02) pagerTarget = null; return; }
+    clearTimeout(pagerSettle);
+    pagerSettle = setTimeout(() => {
+      const n = names[idx]; if (!n || n === pTab) return;
+      pTab = n;
+      document.querySelectorAll('#pTabs [data-tab]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === n)));
+      if (n === 'contact') { renderContact(); renderNotes(); }
+      syncUrl();
+    }, 60);
+  }, { passive: true });
+  window.addEventListener('resize', () => { if (pDlg.open) setPTab(pTab, true); });
+  $('#pTabs').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) setPTab(b.dataset.tab); });
+
+  /* מעטפת אחת לכל הפופאפים (משתתף, ריטריט, סטטיסטיקה, אישור): עולים מלמטה, נסגרים באנימציה,
+     פס גרירה בראש כמו מגירה (אפשר להחליק למטה לסגירה), לחיצה בחוץ סוגרת, והדף מאחור נעול לגלילה */
+  (function () {
+    const proto = HTMLDialogElement.prototype, rawShow = proto.showModal, rawClose = proto.close;
+    const reduced = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const root = document.documentElement;
+    const offset = (d) => Math.max(120, window.innerHeight - d.getBoundingClientRect().top);
+    const backdrop = (d, from, to, ms) => { try { d.animate([{ opacity: from }, { opacity: to }], { duration: ms, easing: 'ease', fill: 'both', pseudoElement: '::backdrop' }); } catch (e) {} };
+    const unlock = () => { if (!document.querySelector('dialog[open]')) root.classList.remove('dlg-lock'); };
+    proto.showModal = function () {
+      if (this.open) return;
+      rawShow.call(this);
+      root.classList.add('dlg-lock');
+      this._closing = false;
+      this.getAnimations().forEach((a) => a.cancel());
+      if (reduced()) return;
+      const y = offset(this);
+      this.animate([{ transform: 'translateY(' + y + 'px)' }, { transform: 'none' }], { duration: 340, easing: 'cubic-bezier(.22,.8,.2,1)' });
+      backdrop(this, 0, 1, 340);
+    };
+    proto.close = function (rv, from) {
+      if (!this.open || this._closing) return;
+      if (reduced()) { rawClose.call(this, rv); unlock(); return; }
+      this._closing = true;
+      const d = this, cur = from == null ? 0 : from, y = offset(d);
+      d.getAnimations().forEach((a) => a.cancel());
+      backdrop(d, 1, 0, 240);
+      const a = d.animate([{ transform: 'translateY(' + cur + 'px)' }, { transform: 'translateY(' + y + 'px)' }], { duration: 240, easing: 'cubic-bezier(.4,0,.8,.6)', fill: 'both' });
+      const fin = () => { d._closing = false; d.getAnimations().forEach((x) => x.cancel()); rawClose.call(d, rv); unlock(); };
+      a.onfinish = fin; a.oncancel = () => { if (d._closing) fin(); };
+    };
+    document.querySelectorAll('dialog').forEach((d) => {
+      const g = document.createElement('div'); g.className = 'grab'; g.innerHTML = '<i></i>'; g.setAttribute('aria-hidden', 'true');
+      d.insertBefore(g, d.firstChild);
+      d.addEventListener('cancel', (e) => { e.preventDefault(); d.close(); });   // Escape
+      d.addEventListener('click', (e) => { if (e.target === d) d.close(); });    // לחיצה בחוץ
+      let sy = 0, dy = 0, t0 = 0, drag = false, moved = false;
+      const down = (e) => {
+        if (e.button > 0 || d._closing) return;
+        drag = true; moved = false; sy = e.clientY; dy = 0; t0 = performance.now();
+        d.getAnimations().forEach((a) => a.cancel());
+        try { e.currentTarget.setPointerCapture(e.pointerId); } catch (x) {}
       };
-      $("#eSave").disabled = true;
-      (editingEv ? api("aum_events?id=eq." + editingEv.id, { method: "PATCH", body: body })
-                 : api("aum_events", { method: "POST", body: body }))
-        .then(function (r) { if (!editingEv && r && r[0]) sel = r[0].id; eDlg.close(); return load(); })
-        .catch(function (err) { $("#eMsg").textContent = err.code === "23505" ? "כבר יש ריטריט בתאריך ובשעה האלה" : "השמירה נכשלה: " + err.message; })
-        .then(function () { $("#eSave").disabled = false; });
+      const move = (e) => {
+        if (!drag) return;
+        dy = Math.max(0, e.clientY - sy); if (dy > 4) moved = true;
+        d.style.transform = 'translateY(' + dy + 'px)';
+      };
+      const up = () => {
+        if (!drag) return; drag = false;
+        const v = dy / Math.max(1, performance.now() - t0), tap = !moved;
+        if (tap || dy > 110 || (v > 0.6 && dy > 30)) { d.style.transform = ''; d.close(undefined, tap ? 0 : dy); return; }
+        d.style.transition = 'transform .2s ease'; d.style.transform = '';
+        setTimeout(() => { d.style.transition = ''; }, 220);
+      };
+      const bind = (el) => { el.addEventListener('pointerdown', down); el.addEventListener('pointermove', move); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); };
+      bind(g);
+      d.querySelectorAll('.sheet-head').forEach((h) => { h.style.touchAction = 'none'; bind(h); });
     });
-    $("#eDel").addEventListener("click", function () {
-      if (!editingEv || !confirm("למחוק את הריטריט ב-" + fmtDate(editingEv.event_date) + "? ההרשמות אליו יימחקו, המשתתפים יישארו.")) return;
-      api("aum_events?id=eq." + editingEv.id, { method: "DELETE" })
-        .then(function () { sel = null; eDlg.close(); return load(); })
-        .catch(function (err) { $("#eMsg").textContent = "המחיקה נכשלה: " + err.message; });
-    });
-
-    [pDlg, eDlg].forEach(function (d) {
-      d.addEventListener("click", function (e) { if (e.target === d) d.close(); });
-      d.querySelectorAll("[data-close]").forEach(function (b) { b.addEventListener("click", function () { d.close(); }); });
-    });
-
-    $("#q").addEventListener("input", function (e) { query = e.target.value; paint(); });
-    $("#add").addEventListener("click", function () { openPerson(null); });
-
-    /* ====================================================================
-       זמן אמת: חיבור ישיר ל-Supabase Realtime, בלי SDK. כל שינוי בטבלאות
-       טוען מחדש. Realtime מכבד RLS, ולכן רק מנהל מחובר מקבל משהו.
-       ==================================================================== */
-    var ws = null, hb = null, retry = null, later = null;
-    function live(on) { $("#live").classList.toggle("on", on); }
-    function startRealtime() {
-      if (!auth.on) return;
-      auth.token().then(function (t) {
-        if (!t) return;
-        ws = new WebSocket(DB.url.replace(/^http/, "ws") + "/realtime/v1/websocket?apikey=" + DB.anonKey + "&vsn=1.0.0");
-        ws.onopen = function () {
-          ws.send(JSON.stringify({ topic: "realtime:aum", event: "phx_join", ref: "1", payload: {
-            config: { postgres_changes: ["aum_participants", "aum_registrations", "aum_events"].map(function (table) { return { event: "*", schema: "public", table: table }; }) },
-            access_token: t,
-          } }));
-          hb = setInterval(function () { if (ws.readyState === 1) ws.send(JSON.stringify({ topic: "phoenix", event: "heartbeat", payload: {}, ref: "hb" })); }, 25000);
-        };
-        ws.onmessage = function (m) {
-          var d; try { d = JSON.parse(m.data); } catch (e) { return; }
-          if (d.event === "phx_reply" && d.ref === "1") live(d.payload && d.payload.status === "ok");
-          if (d.event === "postgres_changes") { clearTimeout(later); later = setTimeout(load, 250); }
-        };
-        ws.onclose = function () { live(false); clearInterval(hb); retry = setTimeout(startRealtime, 5000); };
-      });
-    }
-    function stopRealtime() { clearTimeout(retry); clearInterval(hb); if (ws) { ws.onclose = null; ws.close(); } live(false); }
-
-    /* ====================================================================
-       שער: מי נכנס. שני תנאים: חשבון גוגל, ומייל שברשימת המנהלים. השני נאכף
-       במסד (aum_is_admin ב-RLS), הבדיקה כאן רק מסבירה למה אין כלום.
-       ==================================================================== */
-    function gate(message) {
-      stopRealtime();
-      document.body.classList.add("locked");
-      $("#gate").hidden = false;
-      $("#gErr").textContent = message || "";
-      $("#gBtn").hidden = false; $("#gOut").hidden = true;
-      $("#gateText").textContent = "הדף הזה פתוח רק למנהלים.";
-    }
-
-    function enter() {
-      return auth.token().then(function (t) {
-        if (!t) return gate();
-        return fetch(DB.url + "/rest/v1/rpc/aum_is_admin", { method: "POST", headers: { apikey: DB.anonKey, authorization: "Bearer " + t, "content-type": "application/json" }, body: "{}" })
-          .then(function (r) { return r.ok ? r.json() : false; })
-          .then(function (ok) {
-            if (!ok) {
-              gate();
-              $("#gBtn").hidden = true; $("#gOut").hidden = false;
-              $("#gateText").textContent = "החשבון " + (auth.s.email || "") + " לא ברשימת המנהלים.";
-              return;
-            }
-            $("#gate").hidden = true;
-            document.body.classList.remove("locked");
-            $("#me").textContent = auth.s.email || "";
-            return load().then(startRealtime);
-          });
-      }).catch(function () { gate("לא הצלחנו להתחבר. אפשר לנסות שוב"); });
-    }
-
-    $("#gBtn").addEventListener("click", function () { auth.google(); });
-    $("#gOut").addEventListener("click", function () { auth.out(); gate(); });
-    $("#out").addEventListener("click", function () { auth.out(); gate(); });
-
-    auth.load();
-    var trouble = absorbGoogle();
-    if (trouble) { gate(trouble); } else { enter(); }
   })();
+
+  function openParticipant(id, tab, fromEl) {
+    const p = id ? state.participants.find((x) => x.id === id) : null;
+    sheet = p ? { id: p.id } : { id: null, links: new Map(state.filter ? [[state.filter, false]] : []) };
+    pForm.reset();
+    pForm.name.value = p ? p.name : '';
+    pForm.phone.value = p ? localPhone(p.phone) : '';
+    pForm.age.value = p ? (shownAge(p) ?? '') : '';
+    pForm.gender.value = p && p.gender ? p.gender : '';
+    $('#pTitle').textContent = p ? p.name : 'משתתף חדש';
+    $('#pRegLine').textContent = p && regDate(p) ? ('תאריך הרשמה: ' + regDateTime(p) + (p.source === 'site' ? ' (דרך האתר)' : p.source === 'site-ad' ? ' (דרך האתר, ממומן)' : '')) : '';
+    renderContact();
+    $('#pSubmit').hidden = !!p;
+    $('#pTabs [data-tab="contact"]').hidden = !p;
+    pager.querySelector('[data-panel="contact"]').hidden = !p;
+    $('#nText').value = '';
+    if (p) { const c = notesOf(p.id).length, el = $('#pTabs [data-tab="contact"] .tcount'); if (el) el.textContent = c ? c : ''; }
+    $('#pDelete').hidden = !p;
+    $('#savedMark').classList.remove('on');
+    refreshSheetMeetings();
+    openPid = p ? p.id : null;
+    pDlg.showModal();
+    pDlg.setAttribute('tabindex', '-1'); pDlg.focus({ preventScroll: true });   // בלי טבעת פוקוס על כפתור הסגירה
+    setPTab(p ? (tab || 'contact') : 'info', true);
+    requestAnimationFrame(() => setPTab(pTab, true));
+    if (!p) setTimeout(() => pForm.name.focus(), 50);
+  }
+
+  function refreshSheetMeetings() {
+    if (!sheet) return;
+    { const n = sheet.id ? linksOf(sheet.id).length : sheet.links.size, el = $('#pTabs [data-tab="meets"] .tcount'); if (el) el.textContent = n ? n : ''; moveInd(true); }
+    renderContact();
+    const box = $('#pMeetings');
+    box.innerHTML = state.meetings.map((m) => {
+      let on, st;
+      if (sheet.id) { const l = linkOf(sheet.id, m.id); on = !!l; st = l ? linkStatus(l) : 'unpaid'; }
+      else { on = sheet.links.has(m.id); st = sheet.links.get(m.id) ? 'paid' : 'unpaid'; }
+      return '<div class="mrow' + (on ? ' on' : '') + '">' +
+        '<button type="button" class="mtoggle" data-mt="' + m.id + '" aria-pressed="' + on + '"><span class="box">' + (on ? '✓' : '') + '</span>' + esc(meetingLabel(m, true)) + '</button>' +
+        '<button type="button" class="pay ' + st + '" data-mp="' + m.id + '"' + (on ? '' : ' hidden') + '>' + STATUS_LABEL[st] + '</button>' +
+      '</div>';
+    }).join('');
+  }
+
+  $('#pMeetings').addEventListener('click', (e) => {
+    const t = e.target.closest('[data-mt]'), pay = e.target.closest('[data-mp]');
+    if (t) {
+      const mid = t.dataset.mt, on = t.getAttribute('aria-pressed') !== 'true';
+      if (sheet.id) confirmLink(sheet.id, mid, on);
+      else { on ? sheet.links.set(mid, false) : sheet.links.delete(mid); refreshSheetMeetings(); }
+    } else if (pay) {
+      const mid = pay.dataset.mp;
+      if (sheet.id) pickPayStatus(sheet.id, mid);
+      else { sheet.links.set(mid, !sheet.links.get(mid)); refreshSheetMeetings(); }
+    }
+  });
+
+  function readForm() {
+    const age = parseInt(pForm.age.value, 10);
+    return {
+      name: pForm.name.value.trim(),
+      phone: pForm.phone.value.trim(),
+      age: Number.isFinite(age) ? age : null,
+      gender: pForm.gender.value || null,
+    };
+  }
+
+  /* עריכה: שמירה אוטומטית של כל שדה ששונה */
+  let savedTimer;
+  pForm.addEventListener('change', async (e) => {
+    if (!sheet || !sheet.id || !e.target.name) return;
+    const p = state.participants.find((x) => x.id === sheet.id);
+    const v = readForm();
+    const field = e.target.name;
+    if (field === 'name' && !v.name) { pForm.name.value = p.name; return; }
+    if (field === 'phone') {
+      const ph = phoneToSave(pForm.phone.value);
+      if (ph === null) { badPhone(true); return; }
+      v.phone = ph; pForm.phone.value = ph;
+    }
+    const patch = { [field]: v[field] };
+    if (field === 'age') patch.age_set_at = todayISO();
+    const prev = { ...p };
+    Object.assign(p, patch); render();
+    if (field === 'name') $('#pTitle').textContent = p.name;
+    try {
+      await api(T.p + '?id=eq.' + p.id, { method: 'PATCH', body: patch });
+      const mark = $('#savedMark');
+      mark.classList.add('on'); clearTimeout(savedTimer);
+      savedTimer = setTimeout(() => mark.classList.remove('on'), 1500);
+    } catch (err) { Object.assign(p, prev); render(); fail(err); }
+  });
+
+  /* משתתף חדש */
+  pForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!sheet || sheet.id) { pDlg.close(); return; }
+    const v = readForm();
+    if (!v.name) { pForm.name.focus(); toast('חסר שם'); return; }
+    const ph = phoneToSave(pForm.phone.value);
+    if (ph === null) { badPhone(true); return; }
+    v.phone = ph;
+    const btn = $('#pSubmit'); btn.disabled = true;
+    try {
+      const [p] = await api(T.p, { method: 'POST', body: { ...v, age_set_at: todayISO() }, prefer: 'return=representation' });
+      state.participants.push(p);
+      const rows = [...sheet.links].map(([mid, paid]) => ({ participant_id: p.id, event_id: mid, paid: !!paid }));
+      if (rows.length) { await api(T.a, { method: 'POST', body: rows }); state.att.push(...rows.map(toLink)); }
+      pDlg.close(); render(); toast('✓ ' + p.name + ' ברשימה');
+    } catch (err) { fail(err); }
+    btn.disabled = false;
+  });
+
+  $('#pDelete').addEventListener('click', async () => {
+    const p = state.participants.find((x) => x.id === sheet.id);
+    if (!p || !confirm('למחוק את ' + p.name + '?')) return;
+    try {
+      await api(T.p + '?id=eq.' + p.id, { method: 'DELETE' });
+      state.participants = state.participants.filter((x) => x !== p);
+      state.att = state.att.filter((a) => a.participant_id !== p.id);
+      pDlg.close(); render(); toast('נמחק');
+    } catch (err) { fail(err); }
+  });
+
+  /* ---------- חלון ריטריט ---------- */
+  const mDlg = $('#mDlg'), mForm = $('#mForm');
+  let editingMeeting = null;
+
+  function openMeeting(id) {
+    const m = id ? state.meetings.find((x) => x.id === id) : null;
+    editingMeeting = m;
+    mForm.date.value = m ? m.meeting_date : '';
+    mForm.time.value = m ? String(m.start_time).slice(0, 5) : '09:00';
+    mForm.to.value = m ? String(m.end_time).slice(0, 5) : '16:00';
+    mForm.location.value = m ? m.location : 'בית כאן ועכשיו, פינס 44, גדרה';
+    mForm.price.value = m && m.price != null ? m.price : '';
+    mForm.pair.value = m && m.price_pair != null ? m.price_pair : '';
+    mForm.capacity.value = m && m.capacity != null ? m.capacity : '';
+    $('#mTitle').textContent = m ? 'עריכת ריטריט' : 'ריטריט חדש';
+    $('#mSubmit').textContent = m ? 'שמירה' : 'יצירת ריטריט';
+    $('#mDelete').hidden = !m;
+    mDlg.showModal();
+    syncUrl();
+  }
+
+  mForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const num = (v) => (v === '' ? null : Number(v));
+    const body = { event_date: mForm.date.value, start_time: mForm.time.value || '09:00', end_time: mForm.to.value || '16:00',
+      location: mForm.location.value.trim() || 'גדרה', price: num(mForm.price.value), price_pair: num(mForm.pair.value), capacity: num(mForm.capacity.value) };
+    if (!body.event_date) { mForm.date.focus(); toast('חסר תאריך'); return; }
+    const btn = $('#mSubmit'); btn.disabled = true;
+    try {
+      if (editingMeeting) {
+        await api(T.m + '?id=eq.' + editingMeeting.id, { method: 'PATCH', body });
+        Object.assign(editingMeeting, toMeeting(body));
+      } else {
+        const [m] = await api(T.m, { method: 'POST', body, prefer: 'return=representation' });
+        state.meetings.push(toMeeting(m));
+        state.filter = m.id;
+      }
+      sortMeetings(); mDlg.close(); render();
+    } catch (err) { fail(err); }
+    btn.disabled = false;
+  });
+
+  $('#mDelete').addEventListener('click', async () => {
+    const m = editingMeeting;
+    const n = state.att.filter((a) => a.meeting_id === m.id).length;
+    if (!confirm('למחוק את הריטריט ' + meetingLabel(m) + '?' + (n ? '\n' + n + ' משתתפים ינותקו ממנו (הם עצמם לא יימחקו)' : ''))) return;
+    try {
+      await api(T.m + '?id=eq.' + m.id, { method: 'DELETE' });
+      state.meetings = state.meetings.filter((x) => x !== m);
+      state.att = state.att.filter((a) => a.meeting_id !== m.id);
+      state.filter = null; mDlg.close(); render();
+    } catch (err) { fail(err); }
+  });
+
+  /* ---------- אירועים כלליים ---------- */
+  pDlg.addEventListener('close', () => { sheet = null; openPid = null; syncUrl(); });
+  mDlg.addEventListener('close', syncUrl);
+  pForm.phone.addEventListener('input', () => badPhone(false));
+
+  $('#qClear').addEventListener('mousedown', (e) => e.preventDefault());
+  $('#qClear').addEventListener('click', () => { const q = $('#q'); q.value = ''; state.q = ''; renderList(); syncUrl(); q.focus(); });
+  $('#q').addEventListener('input', (e) => { state.q = e.target.value; renderList(); syncUrl(); });
+  $('#addBtn').addEventListener('click', () => (state.filter ? openMeeting(state.filter) : openParticipant(null)));
+
+  $('#chips').addEventListener('click', (e) => {
+    if (e.target.closest('#addMeeting')) return openMeeting(null);
+    const c = e.target.closest('[data-filter]');
+    if (!c) return;
+    state.filter = c.dataset.filter || null;
+    render();
+  });
+  $('#list').addEventListener('click', (e) => { if (e.target.closest('#clearFx')) { state.gender = null; state.pay = null; render(); } });
+  $('#facets').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-fx]'); if (!b) return;
+    const [k, v] = b.dataset.fx.split(':');
+    if (k === 'g') state.gender = state.gender === v ? null : v;
+    else state.pay = state.pay === v ? null : v;
+    render();
+  });
+
+  $('#list').addEventListener('keydown', (e) => {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-edit]')) { e.preventDefault(); openParticipant(e.target.dataset.edit, undefined, e.target.closest('li.row')); }
+  });
+  $('#list').addEventListener('click', (e) => {
+    const am = e.target.closest('[data-addm]');
+    if (am) { confirmLink(am.dataset.addm, state.filter, true, () => { state.q = ''; $('#q').value = ''; renderList(); toast('נוסף לריטריט'); }); return; }
+    if (e.target.closest('#addNew')) {
+      const q = state.q.trim(); openParticipant(null);
+      if (digits(q).length >= 6) pForm.phone.value = q; else pForm.name.value = q;
+      return;
+    }
+    const row = e.target.closest('li.row'), ed = row && row.querySelector('[data-edit]');   // לחיצה בכל מקום בכרטיס פותחת את פרטי המשתתף
+    if (ed) openParticipant(ed.dataset.edit, undefined, row);
+  });
+
+  const goGoogle = () => { location.href = DB.url + '/auth/v1/authorize?provider=google&redirect_to=' + encodeURIComponent(location.origin + location.pathname); };
+  $('#gLogin').addEventListener('click', goGoogle);
+  const signOut = () => { clearSession(); try { if (rtWs) rtWs.close(); } catch (e) {} location.reload(); };
+  $('#gOut').addEventListener('click', signOut);
+  $('#signOut').addEventListener('click', signOut);
+  startAuth();
   </script>
 </body>
 </html>

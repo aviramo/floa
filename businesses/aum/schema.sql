@@ -6,8 +6,9 @@
 --
 -- מי רואה מה:
 --   * מנהל מחובר (מייל ב-aum_admins, כניסה עם גוגל של floa): הכול.
---   * מבקר באתר (anon): שום טבלה. פונקציה אחת בלבד:
+--   * מבקר באתר (anon): שום טבלה. שתי פונקציות בלבד:
 --       aum_next()    המפגש הקרוב ומספר הנרשמים, בלי אף שם
+--       aum_signup()  הרשמה מהטופס: שם, טלפון, גיל ומגדר (נכתבת ל-aum_participants)
 -- ==========================================================================
 
 -- 1. טבלאות
@@ -30,7 +31,10 @@ create table if not exists public.aum_participants (
   name        text not null,
   phone       text not null default '',
   phone_norm  text not null default '',
-  first_time  boolean not null default false,   -- "זו הפעם הראשונה שלי": למי טל חוזרת קודם
+  first_time  boolean not null default false,   -- היה בטופס הישן. נשאר בטבלה, כבר לא נאסף
+  gender      text check (gender in ('male', 'female')),
+  age         int,                              -- הגיל כפי שהוקלד. המוצג = age + שנים מלאות מאז age_set_at
+  age_set_at  date not null default current_date,
   source      text not null default '',
   note        text not null default '',
   created_at  timestamptz not null default now()
@@ -41,11 +45,38 @@ create table if not exists public.aum_registrations (
   event_id        uuid not null references public.aum_events(id) on delete cascade,
   status          text not null default 'new' check (status in ('new', 'confirmed', 'waitlist', 'cancelled')),
   paid            boolean not null default false,
+  pay_requested_at timestamptz,                  -- נשלחה בקשת תשלום (סטטוס "בבדיקה")
+  exempt          boolean not null default false, -- לא משלם (נרשם בחינם ביודעין)
   created_at      timestamptz not null default now(),
   primary key (participant_id, event_id)
 );
 
-alter table public.aum_events add column if not exists price_pair int;   -- נוסף אחרי הגרסה הראשונה, בטוח להרצה חוזרת
+-- נוספו אחרי הגרסה הראשונה. בטוח להרצה חוזרת
+alter table public.aum_events        add column if not exists price_pair int;
+alter table public.aum_participants  add column if not exists gender text check (gender in ('male', 'female'));
+alter table public.aum_participants  add column if not exists age int;
+alter table public.aum_participants  add column if not exists age_set_at date not null default current_date;
+alter table public.aum_registrations add column if not exists pay_requested_at timestamptz;
+alter table public.aum_registrations add column if not exists exempt boolean not null default false;
+
+-- הערות על משתתפים (כמו CRM): כמה הערות לכל משתתף, עם מי כתב ומתי
+create table if not exists public.aum_notes (
+  id             uuid primary key default gen_random_uuid(),
+  participant_id uuid not null references public.aum_participants(id) on delete cascade,
+  body           text not null,
+  author_email   text,
+  author_name    text,
+  created_at     timestamptz not null default now()
+);
+create index if not exists aum_notes_participant_idx on public.aum_notes (participant_id, created_at desc);
+alter table public.aum_notes enable row level security;
+
+-- העברת ההערה הקצרה הישנה (aum_participants.note) להערה ראשונה, פעם אחת בלבד
+insert into public.aum_notes (participant_id, body, author_name)
+select p.id, trim(p.note), 'מערכת'
+from public.aum_participants p
+where coalesce(trim(p.note), '') <> ''
+  and not exists (select 1 from public.aum_notes n where n.participant_id = p.id);
 
 alter table public.aum_events        enable row level security;
 alter table public.aum_participants  enable row level security;
@@ -113,9 +144,11 @@ drop policy if exists "aum admin all" on public.aum_registrations;
 create policy "aum admin all" on public.aum_events        for all to authenticated using (public.aum_is_admin()) with check (public.aum_is_admin());
 create policy "aum admin all" on public.aum_participants  for all to authenticated using (public.aum_is_admin()) with check (public.aum_is_admin());
 create policy "aum admin all" on public.aum_registrations for all to authenticated using (public.aum_is_admin()) with check (public.aum_is_admin());
+drop policy if exists "aum admin all" on public.aum_notes;
+create policy "aum admin all" on public.aum_notes         for all to authenticated using (public.aum_is_admin()) with check (public.aum_is_admin());
 
-revoke all on public.aum_events, public.aum_participants, public.aum_registrations from anon;
-grant select, insert, update, delete on public.aum_events, public.aum_participants, public.aum_registrations to authenticated;
+revoke all on public.aum_events, public.aum_participants, public.aum_registrations, public.aum_notes from anon;
+grant select, insert, update, delete on public.aum_events, public.aum_participants, public.aum_registrations, public.aum_notes to authenticated;
 
 -- 5. המפגש הקרוב, לבאנר: תאריך, מקום, מחיר ומקומות, בלי אף פרט של אדם.
 --    "הקרוב" = התאריך הקרוב ביותר שעוד לא עבר, בשעון ישראל.
@@ -136,14 +169,18 @@ $$;
 revoke all on function public.aum_next() from public;
 grant execute on function public.aum_next() to anon, authenticated;
 
--- 6. הרשמה מהאתר. מחזירה: created | exists | invalid_name | invalid_phone
+-- 6. הרשמה מהאתר (הטופס שנפתח מ"אני רוצה לחוות"). מחזירה:
+--    created | exists | invalid_name | invalid_phone | invalid_age | invalid_gender
 --    נקשרת למפגש הקרוב. מפגש מלא (capacity) מכניס לרשימת המתנה, והמבקר לא
---    צריך לדעת: בשני המקרים טל חוזרת אליו.
-create or replace function public.aum_signup(p_name text, p_phone text, p_first_time boolean default false)
+--    צריך לדעת: בשני המקרים טל חוזרת אליו. מספר שכבר קיים לא נחשף ("exists").
+--    p_src = 'p' מסמן הגעה ממודעה בתשלום (?s=p בכתובת): source = 'site-ad'.
+drop function if exists public.aum_signup(text, text, boolean);   -- הגרסה הישנה
+create or replace function public.aum_signup(p_name text, p_phone text, p_age int, p_gender text, p_src text default null)
 returns text language plpgsql security definer set search_path = public as $$
 declare
   n    text := public.aum_normalize_phone(p_phone);
   nm   text := trim(coalesce(p_name, ''));
+  src  text := case when p_src = 'p' then 'site-ad' else 'site' end;
   pid  uuid;
   ev   public.aum_events;
   res  text := 'created';
@@ -151,6 +188,8 @@ declare
 begin
   if char_length(nm) < 2 or char_length(nm) > 60 then return 'invalid_name'; end if;
   if n = '' then return 'invalid_phone'; end if;
+  if p_age is null or p_age < 18 or p_age > 99 then return 'invalid_age'; end if;
+  if p_gender is null or p_gender not in ('male', 'female') then return 'invalid_gender'; end if;
 
   select * into ev from public.aum_events
     where event_date >= (now() at time zone 'Asia/Jerusalem')::date
@@ -159,11 +198,12 @@ begin
   select id into pid from public.aum_participants where phone_norm = n limit 1;
   if pid is not null then
     res := 'exists';
-    if p_first_time then update public.aum_participants set first_time = true where id = pid; end if;
+    update public.aum_participants set age = p_age, age_set_at = current_date where id = pid and age is null;
+    update public.aum_participants set gender = p_gender where id = pid and gender is null;
   else
     begin
-      insert into public.aum_participants (name, phone, first_time, source)
-        values (nm, n, coalesce(p_first_time, false), 'site')
+      insert into public.aum_participants (name, phone, age, age_set_at, gender, source)
+        values (nm, n, p_age, current_date, p_gender, src)   -- phone_norm נקבע בטריגר
         returning id into pid;
     exception when unique_violation then
       select id into pid from public.aum_participants where phone_norm = n limit 1;
@@ -181,16 +221,14 @@ begin
   end if;
   return res;
 end $$;
-revoke all on function public.aum_signup(text, text, boolean) from public;
--- אין בדף טופס הרשמה, ולכן הפונקציה סגורה לציבור: מי שלא משתמש בה לא צריך להיות מסוגל לכתוב איתה.
--- להחזרת טופס: grant execute on function public.aum_signup(text, text, boolean) to anon;
-grant execute on function public.aum_signup(text, text, boolean) to authenticated;
+revoke all on function public.aum_signup(text, text, int, text, text) from public;
+grant execute on function public.aum_signup(text, text, int, text, text) to anon, authenticated;
 
 -- 7. זמן אמת בדף הניהול (Realtime מכבד RLS: רק מנהל מחובר מקבל שינויים)
 do $$
 declare t text;
 begin
-  foreach t in array array['aum_events', 'aum_participants', 'aum_registrations'] loop
+  foreach t in array array['aum_events', 'aum_participants', 'aum_registrations', 'aum_notes'] loop
     if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = t) then
       execute format('alter publication supabase_realtime add table public.%I', t);
     end if;

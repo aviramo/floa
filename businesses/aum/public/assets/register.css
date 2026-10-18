@@ -1,0 +1,51 @@
+/* טופס ההרשמה של AUM: מגירה שיורדת מלמעלה. אותו מבנה כמו הפופאפ של יוצאים להרפתקה, בשפה של AUM. */
+.modal { position: fixed; inset: 0; z-index: 60; display: flex; align-items: flex-start; justify-content: center; padding: 0; background: rgba(74, 31, 16, .8); opacity: 0; transition: opacity .3s ease; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.modal[hidden] { display: none; }
+.modal.open { opacity: 1; }
+.modal-box { position: relative; width: 100%; max-width: 30rem; margin: 0 auto auto; background: var(--paper); border-radius: 0 0 28px 28px; padding: calc(1.6rem + env(safe-area-inset-top)) 1.25rem 2.8rem; text-align: center; transform: translateY(-110%); transition: transform .34s cubic-bezier(.22, .8, .2, 1); will-change: transform; border-bottom: 4px solid var(--gold); }
+.modal.open .modal-box { transform: none; }
+.modal-box:focus { outline: none; }
+/* החלקה למעלה בפס שבתחתית, לחיצה בחוץ או Esc סוגרות */
+.modal-grab { position: absolute; left: 0; right: 0; bottom: 0; height: 2.2rem; display: grid; place-items: center; cursor: grab; touch-action: none; }
+.modal-grab i { width: 2.7rem; height: .3rem; border-radius: .2rem; background: rgba(74, 37, 20, .28); }
+
+.su-hand { font-family: "Amatic SC", cursive; font-weight: 700; font-size: 2.2rem; line-height: 1; color: var(--red); margin: 0; }
+.su-title { font-family: "Rubik", sans-serif; font-weight: 700; font-size: 1.5rem; line-height: 1.2; color: var(--ink); margin: .1rem 0 .7rem; }
+.mt-badge { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: .35rem; margin: 0 auto 1.1rem; font-size: 1rem; color: var(--ink); }
+.mt-badge svg { width: 1.1rem; height: 1.1rem; color: var(--red); }
+.mt-badge b { font-weight: 700; }
+.mt-badge span:not(:empty)::before { content: "· "; }
+.mt-badge[hidden] { display: none; }
+
+.su-grid { display: grid; grid-template-columns: minmax(0, 1fr) 7.5rem; gap: .6rem .5rem; align-items: start; }
+.su-grid > *, .su-cell { min-width: 0; }
+.su-input { width: 100%; background: #fff; border: 2px solid var(--line); border-radius: 16px; padding: .7rem 1rem; font: 1.05rem "Assistant", system-ui, sans-serif; color: var(--ink); }
+.su-input::placeholder { color: #B39A82; }
+.su-input:focus { outline: none; border-color: var(--red); }
+.su-input.bad { border-color: #B3261E; }
+.su-input:-webkit-autofill, .su-input:-webkit-autofill:hover, .su-input:-webkit-autofill:focus { -webkit-box-shadow: 0 0 0 1000px #fff inset !important; -webkit-text-fill-color: var(--ink) !important; caret-color: var(--ink); }
+.su-select { appearance: none; -webkit-appearance: none; padding-inline-end: 2.2rem; cursor: pointer; text-align: start; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23C1191F' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: left .75rem center; background-size: 1.15rem; }
+.su-select:invalid { color: #B39A82; }
+.su-select option { color: var(--ink); }
+.su-err { color: #A8141A; font-size: .85rem; font-weight: 700; margin-top: .25rem; line-height: 1.25; text-align: center; }
+.su-err:empty { display: none; }
+.su-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.su-send { width: 100%; margin-top: 1rem; white-space: nowrap; transition: opacity .25s ease, background-color .4s ease; }
+.su-send:disabled { opacity: .7; cursor: default; }
+.su-send.swap { opacity: 0; }
+.su-send.saved, .su-send:disabled.saved { opacity: 1; background: #E9D9A8; border-color: #E9D9A8; color: #8A6A55; cursor: not-allowed; pointer-events: none; }
+
+/* אחרי ההרשמה: הטופס נסגר מלמעלה (קיפול), ואז נחשפים הטקסט ופתיחת שיחה עם טל */
+.su-fold { display: grid; grid-template-rows: 1fr; opacity: 1; transition: grid-template-rows .55s cubic-bezier(.22, .8, .2, 1), opacity .4s ease; }
+.su-fold > div { min-height: 0; overflow: hidden; }
+.su-fold.shut { grid-template-rows: 0fr; opacity: 0; }
+.su-after.shut { pointer-events: none; }
+.su-after > div { padding-top: 1rem; }
+.su-thanks { font-family: "Rubik", sans-serif; font-weight: 600; font-size: 1.25rem; line-height: 1.45; color: var(--ink); margin: 0 0 .4rem; }
+.su-thanks-sub { color: var(--muted); font-size: 1.05rem; margin: 0 0 1rem; }
+.su-fail a { color: var(--red); font-weight: 800; }
+
+html.modal-lock { overflow: hidden; overscroll-behavior: none; }
+html.modal-lock body { overflow: hidden; overscroll-behavior: none; touch-action: none; }
+html.modal-lock .modal { touch-action: pan-y; }
+@media (prefers-reduced-motion: reduce) { .modal, .modal-box, .su-fold, .su-send { transition: none; } }

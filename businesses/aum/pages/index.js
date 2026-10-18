@@ -18,6 +18,6 @@ export const siteMap = [
   },
 ];
 
-/* אין טופס שעובר דרך ה-Worker: ההרשמה כותבת ישר לדאטהבייס. רשימה ריקה אומרת
-   שה-Worker דוחה כל ליד שמתיימר להגיע מכאן. */
+/* הטופס (public/assets/register.js) לא עובר דרך ה-Worker: הוא קורא ל-aum_signup
+   ישר בדאטהבייס. רשימה ריקה אומרת שה-Worker דוחה כל ליד שמתיימר להגיע מכאן. */
 export const leadPages = [];
