@@ -232,3 +232,24 @@ a { color: inherit; }
 .made:hover { background: rgba(255, 246, 220, .1); border-color: var(--gold); color: #fff; }
 .made:hover svg { transform: rotate(90deg) scale(1.2); }
 @media (prefers-reduced-motion: reduce) { .made, .made svg { transition: none; } }
+
+/* ----- המלצות: קרוסלה איטית על רקע כהה. בלי JS כולן מוצגות ברשימה ----- */
+.voices { background: var(--night); color: var(--cream); padding: 84px 0 76px; text-align: center; }
+.voices .eyebrow { color: var(--gold); font-family: "Amatic SC", cursive; font-size: 2.2rem; letter-spacing: 0; }
+.voices__lead { font-family: "Rubik", "Assistant", sans-serif; font-weight: 600; font-size: clamp(1.5rem, 5vw, 2.3rem); line-height: 1.3; color: var(--gold); margin: 0 0 1.4em; }
+.voices__lead span, .voices__slide figcaption { display: block; margin-top: .6em; font-family: "Assistant", sans-serif; font-weight: 700; font-size: 1rem; color: var(--sand); }
+.voices__slide { margin: 0 0 1.6em; }
+.voices__slide blockquote { margin: 0; font-size: 1.05rem; line-height: 1.7; color: #F3DDB0; }
+.voices__nav { display: none; }
+.js .voices__stage { display: grid; }
+.js .voices__slide { grid-area: 1 / 1; margin: 0; opacity: 0; transform: translateY(10px); visibility: hidden; transition: opacity .8s, transform .8s, visibility 0s .8s; display: flex; flex-direction: column; justify-content: center; }
+.js .voices__slide.is-on { opacity: 1; transform: none; visibility: visible; transition: opacity .8s, transform .8s; }
+.js .voices__nav { display: flex; justify-content: center; align-items: center; gap: 14px; margin-top: 28px; }
+.voices__dots { display: flex; gap: 4px; }
+.voices__dots button { width: 28px; height: 28px; padding: 0; border: 0; background: none; cursor: pointer; display: grid; place-items: center; }
+.voices__dots button::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--sand); opacity: .35; transition: opacity .3s, transform .3s; }
+.voices__dots button[aria-selected="true"]::before { opacity: 1; transform: scale(1.3); background: var(--gold); }
+.voices__arrow { width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(248, 224, 166, .4); background: none; color: var(--cream); font-size: 1.6rem; line-height: 1; cursor: pointer; }
+.voices :focus-visible { outline-color: var(--gold); }
+@media (min-width: 820px) { .voices__slide blockquote { font-size: 1.2rem; } }
+@media (prefers-reduced-motion: reduce) { .js .voices__slide, .js .voices__slide.is-on { transition: none; transform: none; } }

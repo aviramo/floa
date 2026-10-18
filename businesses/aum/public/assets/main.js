@@ -166,6 +166,57 @@
     sync();
   }
 
+  /* ----- המלצות: מתחלפות לבד, נעצרות במגע וכשהלשונית לא פעילה ----- */
+  (function () {
+    var stage = $(".voices__stage");
+    if (!stage) return;
+    var slides = all(".voices__slide");
+    var dotsBox = $(".voices__dots");
+    var cur = 0, timer = null;
+    var dots = slides.map(function (s, i) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.setAttribute("role", "tab");
+      b.setAttribute("aria-label", "המלצה " + (i + 1));
+      b.addEventListener("click", function () { show(i); restart(); });
+      dotsBox.appendChild(b);
+      return b;
+    });
+    function show(i) {
+      cur = (i + slides.length) % slides.length;
+      slides.forEach(function (s, k) {
+        s.classList.toggle("is-on", k === cur);
+        s.setAttribute("aria-hidden", k === cur ? "false" : "true");
+        dots[k].setAttribute("aria-selected", k === cur ? "true" : "false");
+      });
+    }
+    function stop() { if (timer) { clearInterval(timer); timer = null; } }
+    function start() { if (!reduce && !timer) timer = setInterval(function () { show(cur + 1); }, 8000); }
+    function restart() { stop(); start(); }
+    all(".voices__arrow").forEach(function (a) {
+      a.addEventListener("click", function () { show(cur + Number(a.dataset.dir)); restart(); });
+    });
+    var box = $("#voices");
+    box.addEventListener("mouseenter", stop);
+    box.addEventListener("mouseleave", start);
+    box.addEventListener("focusin", stop);
+    box.addEventListener("focusout", start);
+    var x0 = null;
+    stage.addEventListener("touchstart", function (e) { x0 = e.touches[0].clientX; stop(); }, { passive: true });
+    stage.addEventListener("touchend", function (e) {
+      if (x0 !== null) {
+        var dx = e.changedTouches[0].clientX - x0;
+        if (Math.abs(dx) > 40) show(cur + (dx > 0 ? 1 : -1));
+      }
+      x0 = null; start();
+    });
+    document.addEventListener("visibilitychange", function () { document.hidden ? stop() : start(); });
+    show(0);
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(function (en) { en[0].isIntersecting ? start() : stop(); }).observe(box);
+    } else start();
+  })();
+
   /* ----- כניסה עדינה ----- */
   var items = all(".stages li, .day li, .faq details, .quote, .photo, .portrait");
   items.forEach(function (el) { el.classList.add("reveal"); });
