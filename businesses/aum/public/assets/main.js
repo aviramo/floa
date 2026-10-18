@@ -166,7 +166,7 @@
     sync();
   }
 
-  /* ----- המלצות: מתחלפות לבד, נעצרות במגע וכשהלשונית לא פעילה ----- */
+  /* ----- המלצות: פייג'ר. מתחלף לבד, נגרר באצבע, ובכניסה הראשונה לקטע זז פעם אחת כדי להראות שיש עוד ----- */
   (function () {
     var stage = $(".voices__stage");
     if (!stage) return;
@@ -176,53 +176,85 @@
       var r = Math.floor(Math.random() * (s + 1)), t = slides[s];
       slides[s] = slides[r]; slides[r] = t;
     }
+    var track = document.createElement("div");
+    track.className = "voices__track";
+    stage.appendChild(track);
     slides.forEach(function (el, n) {
-      stage.appendChild(el);
+      track.appendChild(el);
       el.setAttribute("aria-label", (n + 1) + " מתוך " + slides.length);
     });
     var dotsBox = $(".voices__dots");
-    var cur = 0, timer = null;
+    var cur = 0, timer = null, hint = null;
     var dots = slides.map(function (s, i) {
       var b = document.createElement("button");
       b.type = "button";
       b.setAttribute("role", "tab");
       b.setAttribute("aria-label", "המלצה " + (i + 1));
-      b.addEventListener("click", function () { show(i); restart(); });
+      b.addEventListener("click", function () { act(function () { show(i); }); });
       dotsBox.appendChild(b);
       return b;
     });
+    /* בעברית ההמלצה הבאה יושבת משמאל, אז המסילה זזה ימינה (חיובי) כדי להביא אותה */
+    function place(dx) { track.style.transform = "translateX(calc(" + cur * 100 + "% + " + (dx || 0) + "px))"; }
     function show(i) {
       cur = (i + slides.length) % slides.length;
+      track.style.transition = "";
+      place(0);
       slides.forEach(function (s, k) {
-        s.classList.toggle("is-on", k === cur);
         s.setAttribute("aria-hidden", k === cur ? "false" : "true");
         dots[k].setAttribute("aria-selected", k === cur ? "true" : "false");
       });
     }
     function stop() { if (timer) { clearInterval(timer); timer = null; } }
     function start() { if (!reduce && !timer) timer = setInterval(function () { show(cur + 1); }, 8000); }
-    function restart() { stop(); start(); }
+    function cancelHint() { if (hint) { clearTimeout(hint); hint = null; } }
+    function act(fn) { cancelHint(); fn(); stop(); start(); }
     all(".voices__arrow").forEach(function (a) {
-      a.addEventListener("click", function () { show(cur + Number(a.dataset.dir)); restart(); });
+      a.addEventListener("click", function () { act(function () { show(cur + Number(a.dataset.dir)); }); });
     });
     var box = $("#voices");
     box.addEventListener("mouseenter", stop);
     box.addEventListener("mouseleave", start);
     box.addEventListener("focusin", stop);
     box.addEventListener("focusout", start);
-    var x0 = null;
-    stage.addEventListener("touchstart", function (e) { x0 = e.touches[0].clientX; stop(); }, { passive: true });
-    stage.addEventListener("touchend", function (e) {
-      if (x0 !== null) {
-        var dx = e.changedTouches[0].clientX - x0;
-        if (Math.abs(dx) > 40) show(cur + (dx > 0 ? 1 : -1));
-      }
-      x0 = null; start();
+
+    /* גרירה: המסילה הולכת אחרי האצבע ואז נצמדת להמלצה הקרובה */
+    var x0 = null, dx = 0;
+    stage.addEventListener("pointerdown", function (e) {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      cancelHint(); stop();
+      x0 = e.clientX; dx = 0;
+      track.style.transition = "none";
+      stage.setPointerCapture(e.pointerId);
     });
+    stage.addEventListener("pointermove", function (e) {
+      if (x0 === null) return;
+      dx = e.clientX - x0;
+      place(dx);
+    });
+    function release() {
+      if (x0 === null) return;
+      var moved = dx;
+      x0 = null; dx = 0;
+      show(Math.abs(moved) > stage.offsetWidth * 0.18 ? cur + (moved > 0 ? 1 : -1) : cur);
+      start();
+    }
+    stage.addEventListener("pointerup", release);
+    stage.addEventListener("pointercancel", release);
     document.addEventListener("visibilitychange", function () { document.hidden ? stop() : start(); });
+
     show(0);
+    /* כניסה ראשונה לקטע: הפייג'ר זז לבד להמלצה הבאה, כדי שיהיה ברור שיש עוד */
+    var seen = false;
     if ("IntersectionObserver" in window) {
-      new IntersectionObserver(function (en) { en[0].isIntersecting ? start() : stop(); }).observe(box);
+      new IntersectionObserver(function (en) {
+        if (!en[0].isIntersecting) { cancelHint(); stop(); return; }
+        if (!seen) {
+          seen = true;
+          if (!reduce) hint = setTimeout(function () { hint = null; show(1); start(); }, 900);
+          else start();
+        } else start();
+      }, { threshold: 0.55 }).observe(box);
     } else start();
   })();
 
