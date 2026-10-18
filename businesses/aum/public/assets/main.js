@@ -170,7 +170,16 @@
   (function () {
     var stage = $(".voices__stage");
     if (!stage) return;
+    /* סדר אקראי בכל טעינה, כדי שהראשונה לא תהיה תמיד אותה אחת. המלצה חדשה היא פשוט עוד figure ב-HTML */
     var slides = all(".voices__slide");
+    for (var s = slides.length - 1; s > 0; s--) {
+      var r = Math.floor(Math.random() * (s + 1)), t = slides[s];
+      slides[s] = slides[r]; slides[r] = t;
+    }
+    slides.forEach(function (el, n) {
+      stage.appendChild(el);
+      el.setAttribute("aria-label", (n + 1) + " מתוך " + slides.length);
+    });
     var dotsBox = $(".voices__dots");
     var cur = 0, timer = null;
     var dots = slides.map(function (s, i) {
