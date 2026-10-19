@@ -33,6 +33,21 @@
       position: sticky; top: 0; z-index: 5; background: var(--cream);
       padding: 16px 0 10px; margin: 0 -16px; padding-inline: 16px;
     }
+    .msel { position: relative; }
+    #mSel { font: inherit; display: inline-flex; align-items: center; gap: 8px; background: none; color: inherit; padding: 0; cursor: pointer; }
+    #mSel svg { width: 20px; height: 20px; color: var(--terra); transition: transform .2s; }
+    #mSel[aria-expanded="true"] svg { transform: rotate(180deg); }
+    .mmenu { left: auto; right: 0; min-width: 270px; max-height: 70vh; overflow-y: auto; }
+    .mmenu button .mc { color: var(--muted); font-weight: 600; font-size: 14px; margin-inline-start: auto; padding-inline: 8px; }
+    .mmenu button[aria-checked="true"] .mc { color: inherit; }
+    .mmenu button { white-space: nowrap; display: grid; grid-template-columns: minmax(0, 1fr) 32px 18px; align-items: center; column-gap: 4px; justify-content: stretch; }
+    .mmenu button::after { content: "" !important; display: inline-block; width: 18px; flex: 0 0 18px; text-align: center; }
+    .mmenu button[aria-checked="true"]::after { content: "✓" !important; }
+    .mmenu button .mc { margin: 0; padding: 0; text-align: center; }
+    .mmenu button.addm2 { display: block; }
+    .mmenu button.past { opacity: .6; }
+    .mmenu button.addm2 { color: var(--terra); font-weight: 700; border-top: 1px solid var(--line); border-radius: 0 0 12px 12px; margin-top: 4px; }
+    .mmenu button.addm2::after { content: none !important; }
     .title-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
     h1 { font-family: "Rubik", sans-serif; font-size: 26px; margin: 0; }
     .brand { color: var(--muted); font-size: 14px; }
@@ -249,6 +264,16 @@
     .nform textarea { flex: 1 1 auto; min-width: 0; min-height: 46px; max-height: 140px; resize: none; border-radius: 14px; border: 1.5px solid var(--line); background: #fff; padding: 10px 12px; font-size: 16px; line-height: 1.4; }
     .nform textarea:focus { border-color: var(--terra); outline: none; }
     #pDlg .nform .nadd { flex: 0 0 auto; width: auto; height: 46px; padding: 0 18px; margin: 0; font-size: 16px; }
+    .nattach { flex: 0 0 auto; width: 46px; height: 46px; border-radius: 14px; border: 1.5px solid var(--line); background: #fff; color: var(--muted); display: grid; place-items: center; }
+    .nattach svg { width: 22px; height: 22px; }
+    .nprev { position: relative; flex: 1 1 auto; min-width: 0; height: 60px; display: flex; align-items: center; }
+    .nprev[hidden] { display: none; }
+    .nprev img { height: 60px; width: 60px; object-fit: cover; border-radius: 10px; border: 1.5px solid var(--line); }
+    .nprev button { position: absolute; top: -7px; inset-inline-start: -7px; width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: #fff; font-size: 15px; line-height: 1; }
+    .nimg { display: block; margin-top: 6px; }
+    .nimg img { display: block; width: 100%; max-height: 220px; object-fit: cover; object-position: top; border-radius: 12px; border: 1px solid var(--line); cursor: zoom-in; background: #fff; min-height: 60px; }
+    .nimg .nload { color: var(--muted); font-size: 13px; padding: 14px 0; text-align: center; }
+    .row .note svg { width: 13px; height: 13px; vertical-align: -2px; margin-inline-end: 3px; }
     .nitem { background: var(--cream); border-radius: 16px; padding: 10px 14px 12px; margin-bottom: 8px; }
     .nmeta { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); margin-bottom: 4px; }
     .nmeta b { color: var(--ink); }
@@ -408,6 +433,7 @@
     .row .meta > * { text-align: center; grid-row: 1; }
     .row .meta .age { grid-column: 1; margin-inline-end: 8px; }
     .row .meta .ptag { grid-column: 5; }
+    .row .meta .age:not([title]) { grid-column: 5; margin-inline-end: 0; }   /* "ללא ריטריט": בעמודת הסטטוס, לא בעמודת הגיל */
     .row .name { font-size: 15.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .row .nm .name { overflow-wrap: normal; }
     .row .adtag { width: 18px; height: 18px; }
@@ -417,23 +443,6 @@
     .row .acts { padding: 0 12px 7px; border-top: 0; }
     .row.other { border: 0; border-bottom: 1.5px dashed var(--coral); background: transparent; }
     .list .group.newp { background: transparent; }
-
-    /* ---------- שפת העיצוב של AUM: מגירות מעוגלות, זהב בכותרת, אמתיק לאותיות ---------- */
-    header.top { border-bottom: 3px solid var(--gold); padding-bottom: 12px; margin-bottom: 2px; }
-    h1 .aum { font-family: "Amatic SC", cursive; font-weight: 700; font-size: 1.28em; color: var(--terra); letter-spacing: .02em; line-height: .8; }
-    h1 .brand { font-size: 17px; }
-    dialog, #pDlg .sheet { border-radius: 28px 28px 0 0; }
-    @media (min-width: 560px) { dialog, #pDlg .sheet { border-radius: 28px; } }
-    .list { border-radius: 22px; }
-    .chip { border-radius: 22px; }
-    .chip[aria-pressed="true"] { background: var(--plum); border-color: var(--plum); }
-    .chip[aria-pressed="true"] .count { color: var(--gold); }
-    .fx[aria-pressed="true"] { background: var(--plum); }
-    .sheet h2 { font-weight: 600; }
-    .btn { border-radius: 999px; box-shadow: 0 8px 20px -8px rgba(193,25,31,.55); }
-    .btn.ghost { box-shadow: none; }
-    .fab { box-shadow: 0 8px 22px -6px rgba(193,25,31,.55); }
-    .fab.edit { background: var(--plum); box-shadow: 0 8px 22px -6px rgba(74,31,16,.55); }
 </style>
 </head>
 <body class="locked">
@@ -451,10 +460,12 @@
   <div class="wrap">
     <header class="top">
       <div class="title-row">
-        <h1><span class="aum">AUM</span> <span class="brand">· משתתפים</span></h1>
+        <div class="msel">
+          <h1><button type="button" id="mSel" aria-haspopup="menu" aria-expanded="false"><span id="mSelTxt">כל המשתתפים</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></h1>
+          <div class="sortmenu mmenu" id="mMenu" role="menu" hidden></div>
+        </div>
         <button type="button" class="signout" id="signOut">יציאה</button>
       </div>
-      <nav class="chips" id="chips" aria-label="סינון לפי ריטריט"></nav>
       <div class="tools">
         <label class="search">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
@@ -498,6 +509,9 @@
         <div class="clabel">הערות</div>
         <div class="nform">
           <textarea id="nText" rows="2" maxlength="1000" aria-label="הערה חדשה" placeholder="הערה חדשה..."></textarea>
+          <div class="nprev" id="nPrev" hidden><img id="nPrevImg" alt="תצוגה מקדימה" /><button type="button" id="nPrevX" aria-label="הסרת התמונה">×</button></div>
+          <button type="button" class="nattach" id="nAttach" aria-label="צירוף צילום מסך" title="צירוף צילום מסך"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="9" cy="11" r="1.8"/><path d="M21 16l-5-5-8 8"/></svg></button>
+          <input type="file" id="nFile" accept="image/*" hidden />
           <button type="button" class="btn nadd" id="nAdd">הוספה</button>
         </div>
         <div id="nList"></div>
@@ -559,6 +573,10 @@
       </div>
       <div id="stBody"></div>
     </div>
+  </dialog>
+
+  <dialog id="iDlg" aria-label="צילום מסך" style="max-width:520px">
+    <div class="sheet" style="padding-bottom:20px"><img id="iImg" alt="צילום מסך" style="width:100%;max-height:78vh;object-fit:contain;border-radius:12px;display:block" /></div>
   </dialog>
 
   <dialog id="cDlg" aria-labelledby="cTitle" style="max-width:420px">
@@ -830,7 +848,7 @@
         api(T.p + '?select=*'),
         api(T.m + '?select=*'),
         api(T.a + '?select=participant_id,event_id,status,paid,pay_requested_at,created_at,exempt'),
-        api(T.n + '?select=*&order=created_at.desc'),
+        api(T.n + '?select=id,participant_id,body,author_email,author_name,created_at,has_image&order=created_at.desc'),
       ]);
       state.participants = p; state.meetings = m.map(toMeeting); state.att = a.map(toLink); state.notes = nn; rebuildNotes();
       sortMeetings();
@@ -865,17 +883,18 @@
   /* ---------- רינדור ---------- */
   function render() { renderChips(); renderSort(); renderList(); { const fab = $('#addBtn'); fab.classList.toggle('edit', !!state.filter); fab.textContent = state.filter ? 'עריכת ריטריט' : '+ משתתף'; } syncUrl(); }   // בתוך ריטריט מוסיפים דרך החיפוש
 
+  /* בורר הריטריט בכותרת (במקום שורת התגיות): כל המשתתפים, ריטריט אחד לסינון, או יצירת ריטריט */
   function renderChips() {
-    const all = '<button type="button" class="chip" data-filter="" aria-pressed="' + (state.filter === null) + '">הכל <span class="count">' + state.participants.length + '</span></button>';
-    const ms = state.meetings.map((m) => {
-      const n = state.att.filter((a) => a.meeting_id === m.id).length;
-      return '<button type="button" class="chip' + (isPast(m) ? ' past' : '') + '" data-filter="' + m.id + '" aria-pressed="' + (state.filter === m.id) + '">' +
-        '<span class="cd"><b>' + esc(meetingLabel(m).split(' · ')[0]) + '</b><small>' + esc(meetingLabel(m, true).split(' ').slice(0, 2).join(' ')) + ' · ' + esc(String(m.meeting_time).slice(0, 5)) + '</small></span> <span class="count">' + n + '</span></button>';
-    }).join('');
-    $('#chips').innerHTML = all + '<button type="button" class="chip add" id="addMeeting">+ ריטריט</button>' + ms;
-    const sel = $('#chips [aria-pressed="true"]');
-    if (sel) sel.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    const cur = state.filter ? state.meetings.find((m) => m.id === state.filter) : null;
+    $('#mSelTxt').textContent = cur ? 'ריטריט ' + meetingLabel(cur).split(' · ')[0] : 'כל המשתתפים';
+    const dayTime = (m) => esc(meetingLabel(m).split(' · ')[0]) + ' · ' + esc(meetingLabel(m, true).split(' ').slice(0, 2).join(' ')) + ' · ' + esc(String(m.meeting_time).slice(0, 5));
+    $('#mMenu').innerHTML = '<button type="button" role="menuitemradio" data-filter="" aria-checked="' + (state.filter === null) + '"><span>כל המשתתפים</span><span class="mc">' + state.participants.length + '</span></button>' +
+      state.meetings.map((m) => '<button type="button" role="menuitemradio" class="' + (isPast(m) ? 'past' : '') + '" data-filter="' + m.id + '" aria-checked="' + (state.filter === m.id) + '"><span>' + dayTime(m) + '</span><span class="mc">' + state.att.filter((a) => a.meeting_id === m.id).length + '</span></button>').join('') +
+      '<button type="button" role="menuitem" class="addm2" id="addMeeting">+ ריטריט חדש</button>';
   }
+  const closeMSel = () => { $('#mMenu').hidden = true; $('#mSel').setAttribute('aria-expanded', 'false'); };
+  $('#mSel').addEventListener('click', (e) => { e.stopPropagation(); const m = $('#mMenu'); m.hidden = !m.hidden; $('#mSel').setAttribute('aria-expanded', String(!m.hidden)); });
+  document.addEventListener('click', (e) => { if (!e.target.closest('.msel')) closeMSel(); });
 
   const WA_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.7.1-.2.3-.8.9-.9 1.1-.2.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.6l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 4.9 4.3.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3zM12 21.5c-1.7 0-3.4-.5-4.8-1.3l-.3-.2-3.6.9 1-3.5-.2-.4C3.2 15.6 2.7 13.8 2.7 12c0-5.1 4.2-9.3 9.3-9.3 2.5 0 4.8 1 6.6 2.7 1.8 1.8 2.7 4.1 2.7 6.6 0 5.2-4.2 9.5-9.3 9.5zM20 4C17.9 1.8 15 .7 12 .7 5.8.7.7 5.8.7 12c0 2 .5 3.9 1.5 5.6L.6 23.4l6-1.6c1.6.9 3.5 1.4 5.4 1.4 6.2 0 11.3-5.1 11.3-11.3 0-3-1.2-5.8-3.3-7.9z"/></svg>';
 
@@ -1035,8 +1054,8 @@
       return '<li class="row">' +
         '<div class="main" role="button" tabindex="0" data-edit="' + p.id + '">' +
           '<div class="nm"><bdi class="name">' + esc(p.name) + '</bdi>' + (p.source === 'site-ad' ? '<span class="adtag" title="ממומן: הגיע ממודעה בתשלום" aria-label="ממומן"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15.5 9a4 4 0 0 1 0 6"/></svg></span>' : '') + '</div>' +
-          ((age != null || side || tags) ? '<div class="meta">' + ((age != null || p.gender) ? '<span class="age" title="' + (p.gender ? (p.gender === 'male' ? 'זכר' : 'נקבה') + ' · ' : '') + 'גיל"><bdi>' + (p.gender ? '<b class="gl">' + (p.gender === 'male' ? 'ז' : 'נ') + '</b> ' : '') + (age != null ? age : '') + '</bdi></span>' : '') + side + tags + '</div>' : '') +
-          (noteLatest.get(p.id) ? '<div class="note" title="' + esc(noteLatest.get(p.id).author_name || '') + '">' + esc(noteLatest.get(p.id).body) + '</div>' : '') +
+          (true ? '<div class="meta">' + (true ? '<span class="age" title="' + (p.gender ? (p.gender === 'male' ? 'זכר' : 'נקבה') + ' · ' : '') + 'גיל"><bdi>' + (p.gender ? '<b class="gl">' + (p.gender === 'male' ? 'ז' : 'נ') + '</b> ' : '') + (age != null ? age : (p.gender ? '' : '-')) + '</bdi></span>' : '') + side + tags + '</div>' : '') +
+          (noteLatest.get(p.id) ? '<div class="note" title="' + esc(noteLatest.get(p.id).author_name || '') + '">' + (noteLatest.get(p.id).has_image && !noteLatest.get(p.id).body ? IMG_ICON + 'צילום מסך' : esc(noteLatest.get(p.id).body)) + '</div>' : '') +
         '</div>' +
       '</li>';
     }).join('');
@@ -1050,7 +1069,7 @@
   const ilHour = (iso) => Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Jerusalem', hour: '2-digit', hour12: false }).format(new Date(iso)).slice(0, 2)) % 24;
   const wdayOf = (n) => new Date(n * 864e5).getUTCDay();   // 0 = יום ראשון
   const P = (a, b) => b ? Math.round(a / b * 100) : null;
-  const Ps = (a, b) => b ? Math.round(a / b * 100) + '%' : '-';
+  const Ps = (a, b) => b ? Math.round(a / b * 100) + '%' : '—';
   const nfm = (n) => Math.round(n).toLocaleString('he-IL');
   const priceAtReg = (m) => Number(m.price) || 0;   // המחיר של הריטריט עצמו (ריק = 0)
 
@@ -1100,7 +1119,7 @@
     const out = [];
 
     // ---- תובנות: כל תובנה עם טבעת אחוז או תג מגמה, כותרת ופירוט ----
-    const ring = (pctVal, color) => { const v = Math.max(0, Math.min(100, pctVal || 0)); return '<span class="ring"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20" fill="none" stroke="rgba(74,37,20,.10)" stroke-width="6"/><circle cx="24" cy="24" r="20" fill="none" stroke="' + color + '" stroke-width="6" stroke-linecap="round" stroke-dasharray="' + (v * 1.2566).toFixed(1) + ' 125.7" transform="rotate(-90 24 24)"/></svg><b>' + (pctVal == null ? '-' : v + '%') + '</b></span>'; };
+    const ring = (pctVal, color) => { const v = Math.max(0, Math.min(100, pctVal || 0)); return '<span class="ring"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20" fill="none" stroke="rgba(74,37,20,.10)" stroke-width="6"/><circle cx="24" cy="24" r="20" fill="none" stroke="' + color + '" stroke-width="6" stroke-linecap="round" stroke-dasharray="' + (v * 1.2566).toFixed(1) + ' 125.7" transform="rotate(-90 24 24)"/></svg><b>' + (pctVal == null ? '—' : v + '%') + '</b></span>'; };
     const insItem = (visual, title, detail) => '<li class="ins">' + visual + '<div class="itx"><b>' + title + '</b><span>' + detail + '</span></div></li>';
     const ins = [];
     ins.push(insItem(ring(P(paid.length, nPay), '#2F7D4F'), 'המרה לתשלום', paid.length + ' מתוך ' + nPay + ' הרשמות שולמו' + (exm.length ? ' (בלי ' + exm.length + ' שלא משלמים)' : '') + (waiting3.length ? '<br>' + waiting3.length + ' ממתינים מעל 3 ימים' : '')));
@@ -1141,7 +1160,7 @@
     if (ages.length) {
       const bk = [['עד 29', (a) => a < 30], ['30 עד 39', (a) => a >= 30 && a < 40], ['40 עד 49', (a) => a >= 40 && a < 50], ['50 עד 59', (a) => a >= 50 && a < 60], ['60 ומעלה', (a) => a >= 60]];
       let ag = bk.map(([l, f]) => barRow(l, ages.filter(f).length, ages.length, '#5A2410')).join('');
-      ag += '<p class="stline">גיל ממוצע <b>' + (ages.reduce((a, b) => a + b, 0) / ages.length).toFixed(1) + '</b> · חציון <b>' + median(ages) + '</b> · טווח <b>' + Math.min(...ages) + ' עד ' + Math.max(...ages) + '</b></p>';
+      ag += '<p class="stline">גיל ממוצע <b>' + (ages.reduce((a, b) => a + b, 0) / ages.length).toFixed(1) + '</b> · חציון <b>' + median(ages) + '</b> · טווח <b>' + Math.min(...ages) + '–' + Math.max(...ages) + '</b></p>';
       out.push(sec('גילאים', 'פילוג הגילאים של הנרשמים', ag));
     }
 
@@ -1264,12 +1283,13 @@
 
 
   /* ---------- הערות (CRM): כמה הערות לכל משתתף, עם מי כתב ומתי; בכרטיס מוצגת האחרונה ---------- */
-  const noteLatest = new Map(), noteText = new Map();
+  const IMG_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="9" cy="11" r="1.6"/><path d="M21 16l-5-5-8 8"/></svg>';
+  const noteLatest = new Map(), noteText = new Map(), imgCache = new Map();
   function rebuildNotes() {
     noteLatest.clear(); noteText.clear();
     state.notes.slice().sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))).forEach((n) => {   // מהחדשה לישנה
       if (!noteLatest.has(n.participant_id)) noteLatest.set(n.participant_id, n);
-      noteText.set(n.participant_id, ((noteText.get(n.participant_id) || '') + ' ' + n.body).toLowerCase());
+      noteText.set(n.participant_id, ((noteText.get(n.participant_id) || '') + ' ' + (n.body || '')).toLowerCase());
     });
   }
   const notesOf = (pid) => state.notes.filter((n) => n.participant_id === pid).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
@@ -1286,7 +1306,7 @@
   const dm = (m) => { const [, mo, d] = m.meeting_date.split('-').map(Number); return d + '.' + mo; };
   const authorName = () => SENDERS[emailOf()] || emailOf().split('@')[0] || 'לא ידוע';
 
-  /* לשונית "התקשרות": וואטסאפ וחיוג (רק פותחים שיחה/מחייגים) וקישור קבוצת הפייבוקס להעתקה */
+  /* לשונית "התקשרות": וואטסאפ וחיוג (רק פותחים שיחה/מחייגים), ומתחתיהם ההערות */
   let copyTexts = [];
   function renderContact() {
     const box = $('#pMsgs'); if (!box) return;
@@ -1312,17 +1332,54 @@
     const ns = notesOf(p.id);
     const cnt = $('#pTabs [data-tab="contact"] .tcount'); if (cnt) cnt.textContent = ns.length ? ns.length : '';
     list.innerHTML = ns.length ? ns.map((n) => '<div class="nitem"><div class="nmeta"><span><b>' + esc(n.author_name || 'לא ידוע') + '</b> · ' + esc(fmtDT(n.created_at)) + '</span>' +
-      '<button type="button" class="ndel" data-del="' + n.id + '" aria-label="מחיקת הערה" title="מחיקת הערה">×</button></div><div class="ntext">' + esc(n.body) + '</div></div>').join('')
-      : '<p class="mnone">עוד אין הערות. אפשר לרשום למעלה מה דיברתם, מה הוחלט ומה צריך לזכור</p>';
+      '<button type="button" class="ndel" data-del="' + n.id + '" aria-label="מחיקת הערה" title="מחיקת הערה">×</button></div>' +
+      (n.has_image ? '<a class="nimg" data-img="' + n.id + '"><div class="nload">טוען תמונה…</div></a>' : '<div class="ntext">' + esc(n.body) + '</div>') + '</div>').join('')
+      : '<p class="mnone">עוד אין הערות. אפשר לרשום למעלה מה דיברתם, מה הוחלט ומה צריך לזכור, או לצרף צילום מסך משיחה</p>';
+    list.querySelectorAll('[data-img]').forEach(loadNoteImg);
   }
+  /* תמונת ההערה נטענת רק כשרואים אותה (לא נכללת בטעינה הכללית) */
+  async function loadNoteImg(a) {
+    const id = a.dataset.img;
+    try {
+      if (!imgCache.has(id)) { const [r] = await api(T.n + '?id=eq.' + id + '&select=image'); imgCache.set(id, r && r.image); }
+      const src = imgCache.get(id); if (!src || !a.isConnected) return;
+      a.innerHTML = '<img alt="צילום מסך" loading="lazy" />'; a.firstChild.src = src;
+    } catch (e) { if (a.isConnected) a.innerHTML = '<div class="nload">לא ניתן לטעון את התמונה</div>'; }
+  }
+  /* צירוף תמונה: דחיסה בדפדפן (עד 1600px, JPEG) כדי שהשמירה תהיה קטנה ומהירה */
+  let pendingImg = null;
+  function setPending(src) {
+    pendingImg = src || null;
+    $('#nPrev').hidden = !pendingImg; $('#nText').hidden = !!pendingImg;
+    if (pendingImg) $('#nPrevImg').src = pendingImg; else $('#nFile').value = '';
+  }
+  function compressImage(file) {
+    return new Promise((ok, no) => {
+      const url = URL.createObjectURL(file), im = new Image();
+      im.onload = () => {
+        const k = Math.min(1, 1600 / Math.max(im.width, im.height)), c = document.createElement('canvas');
+        c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+        const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(im, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url); ok(c.toDataURL('image/jpeg', 0.74));
+      };
+      im.onerror = () => { URL.revokeObjectURL(url); no(new Error('bad image')); };
+      im.src = url;
+    });
+  }
+  async function takeFile(f) { if (!f || !/^image\//.test(f.type)) return; try { setPending(await compressImage(f)); } catch (e) { toast('לא ניתן לקרוא את התמונה'); } }
+  $('#nAttach').addEventListener('click', () => $('#nFile').click());
+  $('#nFile').addEventListener('change', (e) => takeFile(e.target.files[0]));
+  $('#nPrevX').addEventListener('click', () => setPending(null));
+  $('#nText').addEventListener('paste', (e) => { const f = [...(e.clipboardData ? e.clipboardData.files : [])].find((x) => /^image\//.test(x.type)); if (f) { e.preventDefault(); takeFile(f); } });
+  $('#nList').addEventListener('click', (e) => { const a = e.target.closest('[data-img] img'); if (!a) return; $('#iImg').src = a.src; $('#iDlg').showModal(); });
   $('#nAdd').addEventListener('click', async () => {
     if (!sheet || !sheet.id) return;
-    const ta = $('#nText'), body = ta.value.trim(); if (!body) { ta.focus(); return; }
+    const ta = $('#nText'), body = pendingImg ? '' : ta.value.trim(); if (!body && !pendingImg) { ta.focus(); return; }
     const btn = $('#nAdd'); btn.disabled = true;
     try {
-      const [row] = await api(T.n, { method: 'POST', body: { participant_id: sheet.id, body, author_email: emailOf(), author_name: authorName() }, prefer: 'return=representation' });
-      if (row && !state.notes.some((x) => x.id === row.id)) state.notes.push(row);
-      rebuildNotes(); ta.value = ''; renderNotes(); render(); toast('ההערה נשמרה');
+      const [row] = await api(T.n, { method: 'POST', body: Object.assign({ participant_id: sheet.id, body, author_email: emailOf(), author_name: authorName() }, pendingImg ? { image: pendingImg } : {}), prefer: 'return=representation' });
+      if (row) { if (row.image) { imgCache.set(row.id, row.image); delete row.image; row.has_image = true; } if (!state.notes.some((x) => x.id === row.id)) state.notes.push(row); }
+      rebuildNotes(); ta.value = ''; setPending(null); renderNotes(); render(); toast('ההערה נשמרה');
     } catch (err) { fail(err); }
     btn.disabled = false;
   });
@@ -1335,6 +1392,10 @@
   });
 
   let pTab = 'contact';
+  /* הלשונית האחרונה שנבחרה בפופאפ המשתתף נזכרת בפתיחה הבאה (נשמר בדפדפן) */
+  const PT_KEY = 'aum_admin_ptab';
+  const lastTab = () => { try { const v = localStorage.getItem(PT_KEY); return ['meets', 'contact', 'info'].includes(v) ? v : null; } catch (e) { return null; } };
+  const rememberTab = (v) => { try { localStorage.setItem(PT_KEY, v); } catch (e) {} };
   /* פייג'ר: הלשוניות והדפים מחוברים. החלקה ימינה ושמאלה בין הדפים, או בחירת לשונית, והמחוון נע יחד עם הגלילה */
   const reducedMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const pager = $('#pPager');
@@ -1352,7 +1413,7 @@
   }
   function setPTab(tab, instant) {
     const names = pagerTabs(); if (names.indexOf(tab) < 0) tab = names[0];
-    pTab = tab;
+    pTab = tab; if (!instant) rememberTab(tab);
     document.querySelectorAll('#pTabs [data-tab]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
     const i = names.indexOf(tab);
     pagerTarget = i;
@@ -1368,7 +1429,7 @@
     clearTimeout(pagerSettle);
     pagerSettle = setTimeout(() => {
       const n = names[idx]; if (!n || n === pTab) return;
-      pTab = n;
+      pTab = n; rememberTab(n);
       document.querySelectorAll('#pTabs [data-tab]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === n)));
       if (n === 'contact') { renderContact(); renderNotes(); }
       syncUrl();
@@ -1452,7 +1513,7 @@
     $('#pSubmit').hidden = !!p;
     $('#pTabs [data-tab="contact"]').hidden = !p;
     pager.querySelector('[data-panel="contact"]').hidden = !p;
-    $('#nText').value = '';
+    $('#nText').value = ''; setPending(null);
     if (p) { const c = notesOf(p.id).length, el = $('#pTabs [data-tab="contact"] .tcount'); if (el) el.textContent = c ? c : ''; }
     $('#pDelete').hidden = !p;
     $('#savedMark').classList.remove('on');
@@ -1460,7 +1521,7 @@
     openPid = p ? p.id : null;
     pDlg.showModal();
     pDlg.setAttribute('tabindex', '-1'); pDlg.focus({ preventScroll: true });   // בלי טבעת פוקוס על כפתור הסגירה
-    setPTab(p ? (tab || 'contact') : 'info', true);
+    setPTab(p ? (tab || lastTab() || 'contact') : 'info', true);
     requestAnimationFrame(() => setPTab(pTab, true));
     if (!p) setTimeout(() => pForm.name.focus(), 50);
   }
@@ -1625,10 +1686,11 @@
   $('#q').addEventListener('input', (e) => { state.q = e.target.value; renderList(); syncUrl(); });
   $('#addBtn').addEventListener('click', () => (state.filter ? openMeeting(state.filter) : openParticipant(null)));
 
-  $('#chips').addEventListener('click', (e) => {
-    if (e.target.closest('#addMeeting')) return openMeeting(null);
+  $('#mMenu').addEventListener('click', (e) => {
+    if (e.target.closest('#addMeeting')) { closeMSel(); return openMeeting(null); }
     const c = e.target.closest('[data-filter]');
     if (!c) return;
+    closeMSel();
     state.filter = c.dataset.filter || null;
     render();
   });

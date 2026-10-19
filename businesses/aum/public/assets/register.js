@@ -12,7 +12,6 @@
       '<div data-su-root>' +
         '<div data-su="formWrap">' +
           '<div class="su-fold"><div>' +
-            '<p class="su-hand">מקומך איתנו</p>' +
             '<h2 class="su-title" id="suTitle">ריטריט AUM</h2>' +
             '<div class="mt-badge" role="note" data-meeting hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><b data-meeting-when></b><span data-meeting-place></span></div>' +
           '</div></div>' +

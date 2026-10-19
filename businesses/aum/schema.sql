@@ -71,6 +71,15 @@ create table if not exists public.aum_notes (
 create index if not exists aum_notes_participant_idx on public.aum_notes (participant_id, created_at desc);
 alter table public.aum_notes enable row level security;
 
+-- הערה היא טקסט או צילום מסך (תמונה דחוסה ב-image כ-data URL), אחד מהשניים
+alter table public.aum_notes add column if not exists image text;
+alter table public.aum_notes alter column body set default '';
+alter table public.aum_notes add column if not exists has_image boolean generated always as (image is not null) stored;
+do $$ begin
+  alter table public.aum_notes add constraint aum_notes_content check (coalesce(btrim(body), '') <> '' or image is not null);
+exception when duplicate_object then null;
+end $$;
+
 -- העברת ההערה הקצרה הישנה (aum_participants.note) להערה ראשונה, פעם אחת בלבד
 insert into public.aum_notes (participant_id, body, author_name)
 select p.id, trim(p.note), 'מערכת'
