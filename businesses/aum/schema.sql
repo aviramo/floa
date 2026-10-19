@@ -178,6 +178,36 @@ $$;
 revoke all on function public.aum_next() from public;
 grant execute on function public.aum_next() to anon, authenticated;
 
+-- 5ב. התראת מייל לטל על כל הרשמה חדשה מהטופס, באותו אופן כמו ביוצאים להרפתקה:
+--     pg_net קורא ל-Google Apps Script (notify-apps-script.gs) שמייצר מייל אחד.
+--     ההגדרה (URL וטוקן) בטבלת aum_settings. בלי הגדרה: אין מייל, וההרשמה עוברת כרגיל.
+--     המייל נשלח רק כשנוצר משתתף חדש (לא על כפילות של אותו טלפון), וכשל בו לא מפיל את ההרשמה.
+create extension if not exists pg_net;
+
+create table if not exists public.aum_settings (key text primary key, value text not null default '');
+alter table public.aum_settings enable row level security;          -- בלי מדיניות: רק פונקציות security definer קוראות
+revoke all on public.aum_settings from anon, authenticated;
+
+create or replace function public.aum_notify_signup(p_name text, p_phone text, p_age int, p_gender text, p_edate date, p_etime time, p_pid uuid, p_eid uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare u text; tok text;
+begin
+  select value into u   from public.aum_settings where key = 'notify_url';
+  select value into tok from public.aum_settings where key = 'notify_token';
+  if coalesce(u, '') = '' then return; end if;
+  perform net.http_post(
+    url     := u,
+    body    := jsonb_build_object('token', tok, 'name', p_name, 'phone', p_phone, 'age', p_age, 'gender', p_gender,
+                                  'meeting_date', p_edate, 'meeting_time', to_char(p_etime, 'HH24:MI'), 'created_at', now(),
+                                  'participant_id', p_pid, 'meeting_id', p_eid),
+    headers := jsonb_build_object('Content-Type', 'application/json'),
+    timeout_milliseconds := 30000
+  );
+exception when others then
+  null;   -- התראה שנכשלה לא מפילה את ההרשמה
+end $$;
+revoke all on function public.aum_notify_signup(text, text, int, text, date, time, uuid, uuid) from public, anon, authenticated;
+
 -- 6. הרשמה מהאתר (הטופס שנפתח מ"אני רוצה לחוות"). מחזירה:
 --    created | exists | invalid_name | invalid_phone | invalid_age | invalid_gender
 --    נקשרת למפגש הקרוב. מפגש מלא (capacity) מכניס לרשימת המתנה, והמבקר לא
@@ -228,6 +258,10 @@ begin
     insert into public.aum_registrations (participant_id, event_id, status) values (pid, ev.id, st)
       on conflict (participant_id, event_id) do nothing;
   end if;
+
+  if res = 'created' then
+    perform public.aum_notify_signup(nm, n, p_age, p_gender, ev.event_date, ev.start_time, pid, ev.id);
+  end if;
   return res;
 end $$;
 revoke all on function public.aum_signup(text, text, int, text, text) from public;
@@ -251,3 +285,15 @@ insert into public.aum_events (event_date, start_time, end_time, title, location
   on conflict do nothing;
 
 notify pgrst, 'reload schema';
+
+-- ==========================================================================
+-- אחרי שפרסמת את ה-Apps Script (notify-apps-script.gs): להריץ שורה אחת (עם הערכים שלך):
+--
+--   insert into public.aum_settings (key, value) values
+--     ('notify_url',   'https://script.google.com/macros/s/XXXXXXXX/exec'),
+--     ('notify_token', 'סיסמה-אקראית-ארוכה')
+--   on conflict (key) do update set value = excluded.value;
+--
+-- הטוקן חייב להיות זהה ל-NOTIFY_TOKEN ב-Script Properties של ה-Apps Script.
+-- לכיבוי ההתראות: delete from public.aum_settings where key = 'notify_url';
+-- ==========================================================================
