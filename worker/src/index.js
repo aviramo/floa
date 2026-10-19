@@ -39,6 +39,7 @@ import { BUSINESSES } from "./businesses.js";
 import { CV_MEDIA, parseCv } from "./cv.js";
 import { MEDIA_TYPES, readChordSheet } from "./transcribe.js";
 import { measure } from "./ocr.js";          // temporary, for /boxes
+import { sendPush } from "./webpush.js";
 
 /* A lead sent before the sites were rebuilt carries no `business` field. It can
    only have come from FLOA, because FLOA is the only business that existed then. */
@@ -504,12 +505,43 @@ async function handleParseCv(request, env, origin) {
   }
 }
 
+
+/* --- /aum-push: browser notifications for AUM's admin ----------------------
+   Called by the database, not by a browser: aum_signup (businesses/aum/schema.sql)
+   POSTs here when a new person registers, with the endpoints the admins
+   subscribed. There is no origin to check, so the shared token is the whole
+   lock, and a subscription the push service reports dead is named in the reply.
+
+   POST /aum-push  { token, endpoints: [https://...] }  ->  { ok, sent, gone: [...] }
+   Secrets: AUM_PUSH_TOKEN, VAPID_PUBLIC, VAPID_PRIVATE (see worker/README.md). */
+async function handleAumPush(request, env) {
+  const reply = (body, status) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8" } });
+  let body;
+  try { body = await request.json(); } catch { return reply({ ok: false, error: "json" }, 400); }
+
+  const want = String(env.AUM_PUSH_TOKEN || "");
+  const got = String(body.token || "");
+  let diff = want.length === got.length ? 0 : 1;
+  for (let i = 0; i < Math.max(want.length, got.length); i++) diff |= (want.charCodeAt(i) || 0) ^ (got.charCodeAt(i) || 0);
+  if (!want || diff) return reply({ ok: false, error: "forbidden" }, 403);
+
+  if (!env.VAPID_PUBLIC || !env.VAPID_PRIVATE) return reply({ ok: false, error: "vapid" }, 500);
+  const endpoints = (Array.isArray(body.endpoints) ? body.endpoints : []).filter((e) => typeof e === "string").slice(0, 20);
+  const vapid = { publicKey: env.VAPID_PUBLIC, privateKey: env.VAPID_PRIVATE, subject: env.VAPID_SUBJECT || "mailto:ofir.aviram@gmail.com" };
+  const results = await Promise.all(endpoints.map((e) => sendPush(e, vapid)));
+  return reply({ ok: true, sent: results.filter((r) => r === "sent").length, gone: endpoints.filter((_, i) => results[i] === "gone") }, 200);
+}
+
 export default {
   async fetch(request, env, ctx) {
     const origin = request.headers.get("origin") || "";
 
     if (request.method === "POST" && new URL(request.url).pathname === "/read-model") {
       return readByModel(request, env);
+    }
+
+    if (request.method === "POST" && new URL(request.url).pathname === "/aum-push") {
+      return handleAumPush(request, env);
     }
 
     if (request.method === "POST" && new URL(request.url).pathname === "/boxes") {

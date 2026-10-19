@@ -178,35 +178,59 @@ $$;
 revoke all on function public.aum_next() from public;
 grant execute on function public.aum_next() to anon, authenticated;
 
--- 5ב. התראת מייל לטל על כל הרשמה חדשה מהטופס, באותו אופן כמו ביוצאים להרפתקה:
---     pg_net קורא ל-Google Apps Script (notify-apps-script.gs) שמייצר מייל אחד.
---     ההגדרה (URL וטוקן) בטבלת aum_settings. בלי הגדרה: אין מייל, וההרשמה עוברת כרגיל.
---     המייל נשלח רק כשנוצר משתתף חדש (לא על כפילות של אותו טלפון), וכשל בו לא מפיל את ההרשמה.
+-- 5ב. התראת דפדפן (Web Push) למנהלים על כל הרשמה חדשה מהטופס.
+--     המנהל לוחץ על פעמון בדף הניהול ומאשר התראות, והדפדפן שלו נשמר ב-aum_push_subs.
+--     ההרשמה קוראת (pg_net) ל-Worker ב-/aum-push עם הכתובות האלה, וה-Worker דוחף.
+--     ההגדרה (כתובת ה-Worker, טוקן, מפתח VAPID ציבורי) בטבלת aum_settings.
+--     בלי הגדרה: אין התראה, וההרשמה עוברת כרגיל. התראה שנכשלה לא מפילה את ההרשמה.
+--     ההתראה נשלחת רק כשנוצר משתתף חדש (לא על כפילות של אותו טלפון).
 create extension if not exists pg_net;
 
 create table if not exists public.aum_settings (key text primary key, value text not null default '');
 alter table public.aum_settings enable row level security;          -- בלי מדיניות: רק פונקציות security definer קוראות
 revoke all on public.aum_settings from anon, authenticated;
 
-create or replace function public.aum_notify_signup(p_name text, p_phone text, p_age int, p_gender text, p_edate date, p_etime time, p_pid uuid, p_eid uuid)
+create table if not exists public.aum_push_subs (
+  endpoint   text primary key,
+  p256dh     text not null default '',
+  auth       text not null default '',
+  email      text not null default '',
+  created_at timestamptz not null default now()
+);
+alter table public.aum_push_subs enable row level security;
+drop policy if exists "aum admin all" on public.aum_push_subs;
+create policy "aum admin all" on public.aum_push_subs for all to authenticated using (public.aum_is_admin()) with check (public.aum_is_admin());
+revoke all on public.aum_push_subs from anon;
+grant select, insert, update, delete on public.aum_push_subs to authenticated;
+
+-- המפתח הציבורי שהדפדפן נרשם מולו. רק מנהל מקבל אותו.
+create or replace function public.aum_push_key()
+returns text language sql stable security definer set search_path = public as $$
+  select case when public.aum_is_admin() then (select value from public.aum_settings where key = 'vapid_public') end;
+$$;
+revoke all on function public.aum_push_key() from public;
+grant execute on function public.aum_push_key() to authenticated;
+
+drop function if exists public.aum_notify_signup(text, text, int, text, date, time, uuid, uuid);
+create or replace function public.aum_notify_signup()
 returns void language plpgsql security definer set search_path = public as $$
-declare u text; tok text;
+declare u text; tok text; eps jsonb;
 begin
   select value into u   from public.aum_settings where key = 'notify_url';
   select value into tok from public.aum_settings where key = 'notify_token';
   if coalesce(u, '') = '' then return; end if;
+  select coalesce(jsonb_agg(endpoint), '[]'::jsonb) into eps from public.aum_push_subs;
+  if eps = '[]'::jsonb then return; end if;
   perform net.http_post(
     url     := u,
-    body    := jsonb_build_object('token', tok, 'name', p_name, 'phone', p_phone, 'age', p_age, 'gender', p_gender,
-                                  'meeting_date', p_edate, 'meeting_time', to_char(p_etime, 'HH24:MI'), 'created_at', now(),
-                                  'participant_id', p_pid, 'meeting_id', p_eid),
+    body    := jsonb_build_object('token', tok, 'endpoints', eps),
     headers := jsonb_build_object('Content-Type', 'application/json'),
     timeout_milliseconds := 30000
   );
 exception when others then
   null;   -- התראה שנכשלה לא מפילה את ההרשמה
 end $$;
-revoke all on function public.aum_notify_signup(text, text, int, text, date, time, uuid, uuid) from public, anon, authenticated;
+revoke all on function public.aum_notify_signup() from public, anon, authenticated;
 
 -- 6. הרשמה מהאתר (הטופס שנפתח מ"אני רוצה לחוות"). מחזירה:
 --    created | exists | invalid_name | invalid_phone | invalid_age | invalid_gender
@@ -260,7 +284,7 @@ begin
   end if;
 
   if res = 'created' then
-    perform public.aum_notify_signup(nm, n, p_age, p_gender, ev.event_date, ev.start_time, pid, ev.id);
+    perform public.aum_notify_signup();
   end if;
   return res;
 end $$;
@@ -287,13 +311,18 @@ insert into public.aum_events (event_date, start_time, end_time, title, location
 notify pgrst, 'reload schema';
 
 -- ==========================================================================
--- אחרי שפרסמת את ה-Apps Script (notify-apps-script.gs): להריץ שורה אחת (עם הערכים שלך):
+-- הקמת ההתראות (פעם אחת):
+--   1. node scripts/vapid.mjs                  מדפיס זוג מפתחות
+--   2. cd worker && npx wrangler secret put VAPID_PRIVATE   (ואותו דבר ל-VAPID_PUBLIC ול-AUM_PUSH_TOKEN, סיסמה אקראית ארוכה)
+--      npx wrangler deploy
+--   3. להריץ כאן שורה אחת, עם הערכים שלך:
 --
 --   insert into public.aum_settings (key, value) values
---     ('notify_url',   'https://script.google.com/macros/s/XXXXXXXX/exec'),
---     ('notify_token', 'סיסמה-אקראית-ארוכה')
+--     ('notify_url',   'https://floa-lead.floa-il.workers.dev/aum-push'),
+--     ('notify_token', 'אותו AUM_PUSH_TOKEN'),
+--     ('vapid_public', 'ה-VAPID_PUBLIC')
 --   on conflict (key) do update set value = excluded.value;
 --
--- הטוקן חייב להיות זהה ל-NOTIFY_TOKEN ב-Script Properties של ה-Apps Script.
+--   4. בדף הניהול (/aum/admin/): ללחוץ על הפעמון ולאשר התראות, בכל מכשיר ודפדפן שרוצים.
 -- לכיבוי ההתראות: delete from public.aum_settings where key = 'notify_url';
 -- ==========================================================================

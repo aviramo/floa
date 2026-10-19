@@ -106,6 +106,20 @@ npx wrangler deploy                      # src/businesses.js כבר נבנה מ�
 שנוחתת בשקט בתיבה הלא נכונה היא נזק שאין ממנו חזרה, ופנייה שנכשלת בקול היא באג
 שמתקנים.
 
+## `/aum-push`: התראות דפדפן למנהלי AUM
+
+לא נקרא מדפדפן אלא מהדאטהבייס: כש`aum_signup` יוצרת משתתף חדש היא שולחת לכאן (pg_net) את כתובות ה־Push של המנהלים שהפעילו התראות בדף הניהול, וה־Worker דוחף לכל אחת (Web Push, חתימת VAPID, בלי תוכן). אין origin לבדוק, ולכן הטוקן המשותף הוא כל המנעול.
+
+```
+node scripts/vapid.mjs                      # זוג מפתחות, פעם אחת
+npx wrangler secret put VAPID_PRIVATE       # מדביקים את ה-private
+npx wrangler secret put VAPID_PUBLIC        # מדביקים את ה-public
+npx wrangler secret put AUM_PUSH_TOKEN      # סיסמה אקראית ארוכה
+npx wrangler deploy
+```
+
+המפתח הציבורי והטוקן נכנסים גם ל־`aum_settings` בדאטהבייס (ראו סוף `businesses/aum/schema.sql`). את זוג המפתחות עושים פעם אחת: דפדפנים נרשמים מול המפתח הציבורי, והחלפה אחר כך מנתקת את כולם בשקט.
+
 ## מה ה־Worker אוכף
 
 | הגנה | מה קורה |

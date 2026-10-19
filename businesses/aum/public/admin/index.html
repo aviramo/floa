@@ -333,6 +333,13 @@
     .sortmenu button { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 12px; text-align: right; font-size: 16px; font-weight: 600; }
     .sortmenu button[aria-checked="true"] { background: rgba(193,25,31,.12); color: var(--terra); }
     .sortmenu button[aria-checked="true"]::after { content: "✓"; font-weight: 800; }
+    .who { display: inline-flex; align-items: center; gap: 12px; }
+    .who .signout { margin-inline-start: 0; }
+    .bell { position: relative; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; color: var(--muted); background: var(--paper); border: 1.5px solid var(--line); }
+    .bell[hidden] { display: none; }
+    .bell svg { width: 20px; height: 20px; }
+    .bell[aria-pressed="true"] { color: var(--terra); border-color: var(--coral); }
+    .bell[aria-pressed="true"]::after { content: ""; position: absolute; top: 5px; inset-inline-end: 6px; width: 9px; height: 9px; border-radius: 50%; background: var(--green); border: 2px solid var(--paper); }
     .signout { background: none; color: var(--muted); text-decoration: underline; font-size: 14px; cursor: pointer; margin-inline-start: 12px; }
 
     .empty { text-align: center; color: var(--muted); padding: 48px 16px; }
@@ -464,7 +471,10 @@
           <h1><button type="button" id="mSel" aria-haspopup="menu" aria-expanded="false"><span id="mSelTxt">כל המשתתפים</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></h1>
           <div class="sortmenu mmenu" id="mMenu" role="menu" hidden></div>
         </div>
-        <button type="button" class="signout" id="signOut">יציאה</button>
+        <span class="who">
+          <button type="button" class="bell" id="pushBtn" aria-pressed="false" aria-label="התראות על הרשמות חדשות" title="התראות על הרשמות חדשות" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></button>
+          <button type="button" class="signout" id="signOut">יציאה</button>
+        </span>
       </div>
       <div class="tools">
         <label class="search">
@@ -595,7 +605,7 @@
   /* הדאטהבייס של הדומיין (/supabase.js). המפתח ציבורי מעצם הגדרתו;
      מה שמותר באמת נקבע במדיניות RLS שב-businesses/aum/schema.sql */
   const DB = { url: window.SUPABASE.url, key: window.SUPABASE.anonKey };
-  const T = { p: 'aum_participants', m: 'aum_events', a: 'aum_registrations', n: 'aum_notes' };
+  const T = { p: 'aum_participants', m: 'aum_events', a: 'aum_registrations', n: 'aum_notes', push: 'aum_push_subs' };
   /* בשפת המסך "ריטריט" הוא שורת aum_events (event_date, start_time) והשיוך הוא aum_registrations (event_id) */
   const toMeeting = (e) => ({ ...e, meeting_date: e.event_date, meeting_time: e.start_time });
   const toLink = (r) => ({ ...r, meeting_id: r.event_id });
@@ -700,6 +710,7 @@
     document.body.classList.remove('locked'); $('#gate').hidden = true;
     load();
     startRealtime();
+    pushState(); refreshSub();
   }
 
   async function api(path, { method = 'GET', body, prefer } = {}) {
@@ -1069,7 +1080,7 @@
   const ilHour = (iso) => Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Jerusalem', hour: '2-digit', hour12: false }).format(new Date(iso)).slice(0, 2)) % 24;
   const wdayOf = (n) => new Date(n * 864e5).getUTCDay();   // 0 = יום ראשון
   const P = (a, b) => b ? Math.round(a / b * 100) : null;
-  const Ps = (a, b) => b ? Math.round(a / b * 100) + '%' : '—';
+  const Ps = (a, b) => b ? Math.round(a / b * 100) + '%' : '-';
   const nfm = (n) => Math.round(n).toLocaleString('he-IL');
   const priceAtReg = (m) => Number(m.price) || 0;   // המחיר של הריטריט עצמו (ריק = 0)
 
@@ -1119,7 +1130,7 @@
     const out = [];
 
     // ---- תובנות: כל תובנה עם טבעת אחוז או תג מגמה, כותרת ופירוט ----
-    const ring = (pctVal, color) => { const v = Math.max(0, Math.min(100, pctVal || 0)); return '<span class="ring"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20" fill="none" stroke="rgba(74,37,20,.10)" stroke-width="6"/><circle cx="24" cy="24" r="20" fill="none" stroke="' + color + '" stroke-width="6" stroke-linecap="round" stroke-dasharray="' + (v * 1.2566).toFixed(1) + ' 125.7" transform="rotate(-90 24 24)"/></svg><b>' + (pctVal == null ? '—' : v + '%') + '</b></span>'; };
+    const ring = (pctVal, color) => { const v = Math.max(0, Math.min(100, pctVal || 0)); return '<span class="ring"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20" fill="none" stroke="rgba(74,37,20,.10)" stroke-width="6"/><circle cx="24" cy="24" r="20" fill="none" stroke="' + color + '" stroke-width="6" stroke-linecap="round" stroke-dasharray="' + (v * 1.2566).toFixed(1) + ' 125.7" transform="rotate(-90 24 24)"/></svg><b>' + (pctVal == null ? '-' : v + '%') + '</b></span>'; };
     const insItem = (visual, title, detail) => '<li class="ins">' + visual + '<div class="itx"><b>' + title + '</b><span>' + detail + '</span></div></li>';
     const ins = [];
     ins.push(insItem(ring(P(paid.length, nPay), '#2F7D4F'), 'המרה לתשלום', paid.length + ' מתוך ' + nPay + ' הרשמות שולמו' + (exm.length ? ' (בלי ' + exm.length + ' שלא משלמים)' : '') + (waiting3.length ? '<br>' + waiting3.length + ' ממתינים מעל 3 ימים' : '')));
@@ -1160,7 +1171,7 @@
     if (ages.length) {
       const bk = [['עד 29', (a) => a < 30], ['30 עד 39', (a) => a >= 30 && a < 40], ['40 עד 49', (a) => a >= 40 && a < 50], ['50 עד 59', (a) => a >= 50 && a < 60], ['60 ומעלה', (a) => a >= 60]];
       let ag = bk.map(([l, f]) => barRow(l, ages.filter(f).length, ages.length, '#5A2410')).join('');
-      ag += '<p class="stline">גיל ממוצע <b>' + (ages.reduce((a, b) => a + b, 0) / ages.length).toFixed(1) + '</b> · חציון <b>' + median(ages) + '</b> · טווח <b>' + Math.min(...ages) + '–' + Math.max(...ages) + '</b></p>';
+      ag += '<p class="stline">גיל ממוצע <b>' + (ages.reduce((a, b) => a + b, 0) / ages.length).toFixed(1) + '</b> · חציון <b>' + median(ages) + '</b> · טווח <b>' + Math.min(...ages) + ' עד ' + Math.max(...ages) + '</b></p>';
       out.push(sec('גילאים', 'פילוג הגילאים של הנרשמים', ag));
     }
 
@@ -1717,6 +1728,51 @@
     const row = e.target.closest('li.row'), ed = row && row.querySelector('[data-edit]');   // לחיצה בכל מקום בכרטיס פותחת את פרטי המשתתף
     if (ed) openParticipant(ed.dataset.edit, undefined, row);
   });
+
+
+  /* ---------- התראות דפדפן על הרשמה חדשה (Web Push) ----------
+     הפעמון מבקש רשות, נרשם ל-push מול המפתח הציבורי של ה-Worker (aum_push_key) ושומר את
+     הדפדפן ב-aum_push_subs. כשמישהו נרשם, ה-Worker דוחף ו-sw.js מציג את ההתראה. בכל מכשיר ודפדפן בנפרד. */
+  const pushOk = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  const keyBytes = (k) => Uint8Array.from(atob(k.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0));
+  const b64u = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  async function pushReg() { return navigator.serviceWorker.register('sw.js', { scope: './' }).then(() => navigator.serviceWorker.ready); }
+  async function pushState() {
+    const btn = $('#pushBtn');
+    if (!pushOk) { btn.hidden = false; btn.setAttribute('aria-pressed', 'false'); return; }
+    btn.hidden = false;
+    let on = false;
+    try { const reg = await navigator.serviceWorker.getRegistration('./'); on = !!(reg && await reg.pushManager.getSubscription()) && Notification.permission === 'granted'; } catch (e) {}
+    btn.setAttribute('aria-pressed', String(on));
+    btn.title = on ? 'התראות פועלות בדפדפן הזה. לחיצה מכבה' : 'להפעלת התראות על הרשמות חדשות';
+  }
+  async function saveSub(sub) {
+    const j = sub.toJSON();
+    await api(T.push, { method: 'POST', body: { endpoint: j.endpoint, p256dh: (j.keys && j.keys.p256dh) || '', auth: (j.keys && j.keys.auth) || '', email: emailOf() }, prefer: 'resolution=merge-duplicates' });
+  }
+  async function togglePush() {
+    if (!pushOk) { toast('הדפדפן הזה לא תומך בהתראות. באייפון צריך קודם להוסיף את הדף למסך הבית'); return; }
+    const reg = await pushReg();
+    const cur = await reg.pushManager.getSubscription();
+    if (cur && Notification.permission === 'granted') {
+      try { await api(T.push + '?endpoint=eq.' + encodeURIComponent(cur.endpoint), { method: 'DELETE' }); } catch (e) {}
+      await cur.unsubscribe(); toast('ההתראות כובו בדפדפן הזה'); return pushState();
+    }
+    if (Notification.permission === 'denied') { toast('ההתראות חסומות בדפדפן. אפשר לאשר אותן בהגדרות האתר'); return; }
+    if (await Notification.requestPermission() !== 'granted') { toast('לא אושרו התראות'); return; }
+    let key;
+    try { key = await fetch(DB.url + '/rest/v1/rpc/aum_push_key', { method: 'POST', headers: { apikey: DB.key, Authorization: 'Bearer ' + session.access_token, 'Content-Type': 'application/json' }, body: '{}' }).then((r) => r.json()); } catch (e) {}
+    if (!key || typeof key !== 'string') { toast('ההתראות עוד לא הוגדרו בשרת'); return; }
+    const sub = cur || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(key) });
+    await saveSub(sub);
+    toast('התראות על הרשמות חדשות פועלות בדפדפן הזה'); pushState();
+  }
+  $('#pushBtn').addEventListener('click', () => togglePush().catch((err) => { console.error(err); toast('לא הצלחנו להפעיל התראות'); }));
+  /* מי שכבר הפעיל: מרעננים את השמירה (הכתובת של הדפדפן יכולה להתחלף) */
+  async function refreshSub() {
+    if (!pushOk || Notification.permission !== 'granted') return;
+    try { const reg = await navigator.serviceWorker.getRegistration('./'); const sub = reg && await reg.pushManager.getSubscription(); if (sub) await saveSub(sub); } catch (e) {}
+  }
 
   const goGoogle = () => { location.href = DB.url + '/auth/v1/authorize?provider=google&redirect_to=' + encodeURIComponent(location.origin + location.pathname); };
   $('#gLogin').addEventListener('click', goGoogle);
