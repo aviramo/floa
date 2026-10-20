@@ -41,7 +41,7 @@
       position: sticky; top: 0; z-index: 5; background: var(--cream);
       padding: 16px 0 10px; margin: 0 -16px; padding-inline: 16px;
     }
-    .msel { position: relative; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .msel { position: relative; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; }
     #mSel { font: inherit; display: inline-flex; align-items: center; gap: 8px; background: none; color: inherit; padding: 0; cursor: pointer; }
     #mSel svg { width: 20px; height: 20px; color: var(--terra); transition: transform .2s; }
     #mSel[aria-expanded="true"] svg { transform: rotate(180deg); }
@@ -61,7 +61,7 @@
     .mtr .medit:hover { background: rgba(74,37,20,.08); color: var(--ink); }
     .mmenu button.addm2 { display: block; width: 100%; color: var(--terra); font-weight: 700; border-top: 1px solid var(--line); border-radius: 0 0 12px 12px; margin-top: 4px; text-align: right; padding: 12px 10px; }
     .title-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-    h1 { font-family: "Rubik", sans-serif; font-size: 26px; margin: 0; }
+    h1 { font-family: "Rubik", sans-serif; font-size: clamp(19px, 5.6vw, 26px); margin: 0; min-width: 0; }
     .brand { color: var(--muted); font-size: 14px; }
 
     .search { display: block; margin-top: 12px; position: relative; }
@@ -452,7 +452,11 @@
     .bell svg { width: 20px; height: 20px; }
     .bell[aria-pressed="true"] { color: var(--terra); border-color: var(--coral); }
     .bell[aria-pressed="true"]::after { content: ""; position: absolute; top: 5px; inset-inline-end: 6px; width: 9px; height: 9px; border-radius: 50%; background: var(--green); border: 2px solid var(--paper); }
-    .hicons { display: flex; gap: 8px; align-self: center; }
+    .hicons { display: flex; gap: 8px; align-self: center; flex: 0 0 auto; }
+    /* הכותרת תמיד בשורה אחת: במסך צר האייקונים מצטמצמים והכותרת מתכווצת במקום לרדת שורה */
+    #mSel { white-space: nowrap; max-width: 100%; }
+    #mSelTxt { overflow: hidden; text-overflow: ellipsis; }
+    @media (max-width: 440px) { .hicons { gap: 5px; } .hicon { width: 38px; height: 38px; } .hicon svg { width: 19px; height: 19px; } }
     .hicon { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; background: var(--paper); color: var(--ink); box-shadow: 0 0 0 1.5px var(--line); }
     .hicon svg { width: 21px; height: 21px; }
     .signout { background: none; color: var(--muted); text-decoration: underline; font-size: 14px; cursor: pointer; margin-inline-start: 12px; }
