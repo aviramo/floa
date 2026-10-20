@@ -37,10 +37,11 @@ const res = await post({ token: "secret-token", endpoints: [FCM, DEAD, "https://
 assert.equal(res.status, 200);
 const out = await res.json();
 assert.deepEqual(out, { ok: true, sent: 1, gone: [DEAD] });
-assert.deepEqual(calls.map((c) => c.url), [FCM, DEAD]);
+/* the pushes run in parallel, so which one reaches fetch first is not defined */
+assert.deepEqual(calls.map((c) => c.url).sort(), [FCM, DEAD].sort());
 
 /* the signature verifies, and says who it is for */
-const auth = calls[0].headers.authorization;
+const auth = calls.find((c) => c.url === FCM).headers.authorization;
 const m = auth.match(/^vapid t=([\w-]+)\.([\w-]+)\.([\w-]+), k=([\w-]+)$/);
 assert.ok(m, "Authorization has the vapid scheme");
 assert.equal(m[4], env.VAPID_PUBLIC);
@@ -50,6 +51,6 @@ assert.ok(claims.exp > Date.now() / 1000 && claims.exp <= Date.now() / 1000 + 12
 assert.match(claims.sub, /^mailto:/);
 const verifyKey = await crypto.subtle.importKey("raw", unb64u(env.VAPID_PUBLIC), { name: "ECDSA", namedCurve: "P-256" }, false, ["verify"]);
 assert.ok(await crypto.subtle.verify({ name: "ECDSA", hash: "SHA-256" }, verifyKey, unb64u(m[3]), new TextEncoder().encode(`${m[1]}.${m[2]}`)), "ES256 signature verifies");
-assert.equal(calls[0].headers.ttl, "86400");
+assert.equal(calls.find((c) => c.url === FCM).headers.ttl, "86400");
 
 console.log("webpush: ok");
