@@ -1696,7 +1696,7 @@
   const chaseMessage = (p) => {
     const who = SENDERS[emailOf()] || authorName(), first = String(p.name || '').trim().split(/\s+/)[0] || '';
     const ms = pendingLinks(p).map((l) => state.meetings.find((x) => x.id === l.meeting_id)).filter(Boolean).sort((x, y) => (x.meeting_date + x.meeting_time).localeCompare(y.meeting_date + y.meeting_time)), m = ms[0];
-    let lines = ['היי ' + first + ', כאן ' + who + ' מ-AUM 🙂'];
+    let lines = ['היי ' + first + ', כאן ' + who + ' מ-AUM'];
     if (m) {
       const dmy = (iso) => { const [, mo, d] = iso.split('-').map(Number); return d + '.' + mo; };
       const day = HE_DAYS[new Date(m.meeting_date + 'T12:00:00Z').getUTCDay()];
