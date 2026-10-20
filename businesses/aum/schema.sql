@@ -308,6 +308,70 @@ insert into public.aum_events (event_date, start_time, end_time, title, location
   values ('2026-10-10', '09:00', '16:00', 'ריטריט AUM', 'בית כאן ועכשיו, פינס 44, גדרה', 300)
   on conflict do nothing;
 
+-- 9. יחצנים, תשלומים והגעה: אותה מערכת ניהול כמו ביוצאים להרפתקה, על הטבלאות של AUM.
+--    תשלום הוא שורה ביומן (payment / refund / credit), לא רק סימון "שולם".
+create table if not exists public.aum_promoters (
+  id         uuid primary key default gen_random_uuid(),
+  name       text not null,
+  rate_type  text not null default 'fixed' check (rate_type in ('fixed', 'percent')),   -- fixed = סכום קבוע בשקלים, percent = אחוז מהתשלום
+  rate       numeric not null default 0,
+  created_at timestamptz not null default now()
+);
+create table if not exists public.aum_promoter_payments (
+  id          uuid primary key default gen_random_uuid(),
+  promoter_id uuid not null references public.aum_promoters(id) on delete cascade,
+  amount      numeric not null check (amount > 0),
+  paid_at     date not null default current_date,
+  note        text,
+  created_at  timestamptz not null default now()
+);
+create index if not exists aum_promoter_payments_idx on public.aum_promoter_payments (promoter_id, paid_at desc);
+
+alter table public.aum_participants  add column if not exists promoter_id uuid references public.aum_promoters(id) on delete set null;
+alter table public.aum_registrations add column if not exists paid_amount numeric;
+alter table public.aum_registrations add column if not exists promoter_id uuid references public.aum_promoters(id) on delete set null;
+alter table public.aum_registrations add column if not exists commission numeric;
+alter table public.aum_registrations add column if not exists paid_at timestamptz;
+alter table public.aum_registrations add column if not exists attended boolean not null default false;
+alter table public.aum_registrations add column if not exists attended_at timestamptz;
+
+create table if not exists public.aum_payments (
+  id             uuid primary key default gen_random_uuid(),
+  participant_id uuid not null references public.aum_participants(id) on delete cascade,
+  meeting_id     uuid references public.aum_events(id) on delete set null,
+  kind           text not null check (kind in ('payment', 'refund', 'credit')),
+  amount         numeric not null default 0,   -- תמיד חיובי; החזר = כסף שחזר למשתתף
+  from_credit    boolean not null default false,
+  promoter_id    uuid references public.aum_promoters(id) on delete set null,
+  commission     numeric,                      -- תמיד חיובי; בהחזר = העמלה שמבוטלת
+  author_name    text,
+  created_at     timestamptz not null default now()
+);
+create index if not exists aum_payments_p_idx  on public.aum_payments (participant_id, created_at desc);
+create index if not exists aum_payments_pr_idx on public.aum_payments (promoter_id, created_at desc);
+
+do $$
+declare t text;
+begin
+  foreach t in array array['aum_promoters', 'aum_promoter_payments', 'aum_payments'] loop
+    execute format('alter table public.%I enable row level security', t);
+    execute format('drop policy if exists "aum admin all" on public.%I', t);
+    execute format('create policy "aum admin all" on public.%I for all to authenticated using (public.aum_is_admin()) with check (public.aum_is_admin())', t);
+    execute format('revoke all on public.%I from anon', t);
+    execute format('grant select, insert, update, delete on public.%I to authenticated', t);
+    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = t) then
+      execute format('alter publication supabase_realtime add table public.%I', t);
+    end if;
+  end loop;
+end $$;
+
+-- תשלומים שכבר סומנו "שולם" לפני יומן התשלומים נכנסים אליו פעם אחת, במחיר הריטריט שלהם
+insert into public.aum_payments (participant_id, meeting_id, kind, amount, promoter_id, commission, author_name, created_at)
+select r.participant_id, r.event_id, 'payment', coalesce(r.paid_amount, e.price, 0), r.promoter_id, r.commission, 'מערכת', coalesce(r.paid_at, r.created_at, now())
+from public.aum_registrations r join public.aum_events e on e.id = r.event_id
+where r.paid = true and r.exempt = false
+  and not exists (select 1 from public.aum_payments);
+
 notify pgrst, 'reload schema';
 
 -- ==========================================================================
