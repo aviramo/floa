@@ -1752,6 +1752,8 @@
   }
   async function togglePush() {
     if (!pushOk) { toast('הדפדפן הזה לא תומך בהתראות. באייפון צריך קודם להוסיף את הדף למסך הבית'); return; }
+    /* הבקשה לרשות חייבת לצאת מיד מהלחיצה, לפני כל await: דפדפנים (ספארי במיוחד) מתעלמים ממנה אחרי שהלחיצה "נגמרה" */
+    const asked = Notification.permission === 'default' ? Notification.requestPermission() : null;
     const reg = await pushReg();
     const cur = await reg.pushManager.getSubscription();
     if (cur && Notification.permission === 'granted') {
@@ -1759,7 +1761,7 @@
       await cur.unsubscribe(); toast('ההתראות כובו בדפדפן הזה'); return pushState();
     }
     if (Notification.permission === 'denied') { toast('ההתראות חסומות בדפדפן. אפשר לאשר אותן בהגדרות האתר'); return; }
-    if (await Notification.requestPermission() !== 'granted') { toast('לא אושרו התראות'); return; }
+    if ((asked ? await asked : Notification.permission) !== 'granted') { toast('לא אושרו התראות'); return; }
     let key;
     try { key = await fetch(DB.url + '/rest/v1/rpc/aum_push_key', { method: 'POST', headers: { apikey: DB.key, Authorization: 'Bearer ' + session.access_token, 'Content-Type': 'application/json' }, body: '{}' }).then((r) => r.json()); } catch (e) {}
     if (!key || typeof key !== 'string') { toast('ההתראות עוד לא הוגדרו בשרת'); return; }
