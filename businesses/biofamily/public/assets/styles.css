@@ -319,7 +319,7 @@ a, button, summary, .btn, .choose-opt{ -webkit-tap-highlight-color:transparent; 
 .btn:focus:not(:focus-visible), .choose-opt:focus:not(:focus-visible), .choose-x:focus:not(:focus-visible){ outline:none; }
 
 /* קריאה אחרונה: אותה מעטפת פסים של הפתיחה, כדי שהדף ייסגר באותה שפה שבה נפתח */
-#signup{ position:relative; overflow:hidden; padding-bottom:4rem; }
+#signup{ position:relative; overflow:hidden; padding-bottom:2.2rem; }
 #signup .blob.b1{ top:auto; bottom:-5rem; right:auto; left:-5rem; width:12rem; height:12rem; }
 #signup .blob.b2{ bottom:auto; top:1rem; left:auto; right:-4rem; width:9rem; height:9rem; }
 .signup .h-sect{ margin-bottom:.4rem; }
