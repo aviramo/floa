@@ -248,6 +248,7 @@ details p{ margin-top:.7rem; }
 .signup .btn-wa{ background:var(--paper); color:var(--wa-d); box-shadow:0 16px 32px -18px rgba(63,56,47,.85); }
 .signup .btn-ghost.btn-sm{ padding:.55rem 1.8rem; }
 .signup .or{ margin-top:1.6rem; }
+.signup .btn-row .btn{ min-width:min(100%,17rem); justify-content:center; }
 
 .prose{ max-width:42rem; margin-inline:auto; display:grid; gap:1.1rem; }
 .prose h2{ margin-bottom:.4rem; }
