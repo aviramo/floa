@@ -448,16 +448,22 @@ async function withChrome(run) {
   const child = spawn(binary, [
     "--headless=new", `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
     "--no-first-run", "--no-default-browser-check", "--disable-gpu",
+    /* On a CI runner Chrome runs as a user it cannot sandbox itself under and
+       with a /dev/shm too small for it; either one makes it exit or stall
+       before the debugging port ever opens. */
+    ...(process.platform === "linux" ? ["--no-sandbox", "--disable-dev-shm-usage"] : []),
     "--window-size=1200,900", "about:blank",
   ], { stdio: "ignore" });
+  let exited = null;
+  child.on("exit", (code) => { exited = code; });
 
   try {
     let ready = false;
-    for (let i = 0; i < 60 && !ready; i++) {
+    for (let i = 0; i < 240 && !ready && exited === null; i++) {
       await sleep(250);
       try { ready = (await fetch(`http://127.0.0.1:${port}/json/version`)).ok; } catch { /* not up */ }
     }
-    if (!ready) throw new Error("Chrome never answered on the debugging port");
+    if (!ready) throw new Error(exited === null ? "Chrome never answered on the debugging port" : "Chrome exited (code " + exited + ") before it answered");
 
     return await run(async (url, body) => {
       /* OPENED BLANK ON PURPOSE. Handing the address to the tab as it is

@@ -333,3 +333,7 @@ footer{ padding:2.2rem 0 5.5rem; text-align:center; font-size:.95rem; color:var(
 .choose-opt{ display:flex; align-items:center; gap:1rem; padding:.7rem 1rem; border-radius:var(--r-md); background:#fff; box-shadow:var(--shadow); text-decoration:none; color:inherit; font-weight:700; font-size:1.1rem; white-space:nowrap; }
 .choose-opt .avatar{ width:4rem; height:4rem; border-width:3px; flex:none; }
 .choose-opt::after{ content:"וואטסאפ"; margin-inline-start:auto; background:var(--wa); color:#fff; border-radius:999px; padding:.3rem .75rem; font-size:.85rem; }
+
+/* בלי ההבהוב הכחול של הדפדפן בלחיצה על כפתורים וקישורים */
+a, button, summary, .btn, .choose-opt{ -webkit-tap-highlight-color:transparent; }
+.btn:focus:not(:focus-visible), .choose-opt:focus:not(:focus-visible), .choose-x:focus:not(:focus-visible){ outline:none; }

@@ -338,6 +338,10 @@ async function withChrome(run) {
   const child = spawn(browser, [
     "--headless=new", `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
     "--no-first-run", "--no-default-browser-check", "--disable-gpu",
+    /* On a CI runner Chrome runs as a user it cannot sandbox itself under and
+       with a /dev/shm too small for it; either one makes it exit or stall
+       before the debugging port ever opens. */
+    ...(process.platform === "linux" ? ["--no-sandbox", "--disable-dev-shm-usage"] : []),
     /* A real microphone that is not a microphone: a stream the machine makes
        up, which getUserMedia hands over without asking anybody. Real enough
        for MediaRecorder, which is what the recording is built on. */
@@ -345,14 +349,16 @@ async function withChrome(run) {
     "--autoplay-policy=no-user-gesture-required",
     "--window-size=1200,900", "about:blank",
   ], { stdio: "ignore" });
+  let exited = null;
+  child.on("exit", (code) => { exited = code; });
 
   try {
     let ready = false;
-    for (let i = 0; i < 60 && !ready; i++) {
+    for (let i = 0; i < 240 && !ready && exited === null; i++) {
       await sleep(250);
       try { ready = (await fetch(`http://127.0.0.1:${port}/json/version`)).ok; } catch { /* not up */ }
     }
-    if (!ready) throw new Error("Chrome never answered on the debugging port");
+    if (!ready) throw new Error(exited === null ? "Chrome never answered on the debugging port" : "Chrome exited (code " + exited + ") before it answered");
 
     return await run(async (url, body) => {
       const target = await (await fetch(`http://127.0.0.1:${port}/json/new?about:blank`, { method: "PUT" })).json();
