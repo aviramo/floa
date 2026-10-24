@@ -322,3 +322,14 @@ footer{ padding:2.2rem 0 5.5rem; text-align:center; font-size:.95rem; color:var(
   .btn-lg{ font-size:1.2rem; padding:.95rem 1.5rem; }
   .signup{ padding:2rem 1.2rem; }
 }
+
+/* בחירת מנחה בוואטסאפ */
+.choose{ border:0; border-radius:var(--r-lg); padding:2rem 1.6rem 1.6rem; width:min(92vw,26rem); background:var(--paper); color:inherit; text-align:center; box-shadow:0 30px 80px -20px rgba(63,56,47,.6); }
+.choose::backdrop{ background:rgba(63,56,47,.55); }
+.choose h2{ font-size:1.7rem; }
+.choose p{ margin-top:.4rem; }
+.choose-x{ position:absolute; top:.6rem; inset-inline-start:.8rem; background:none; border:0; font-size:2rem; line-height:1; cursor:pointer; color:inherit; }
+.choose-list{ display:grid; gap:.8rem; margin-top:1.3rem; }
+.choose-opt{ display:flex; align-items:center; gap:1rem; padding:.7rem 1rem; border-radius:var(--r-md); background:#fff; box-shadow:var(--shadow); text-decoration:none; color:inherit; font-weight:700; font-size:1.1rem; white-space:nowrap; }
+.choose-opt .avatar{ width:4rem; height:4rem; border-width:3px; flex:none; }
+.choose-opt::after{ content:"וואטסאפ"; margin-inline-start:auto; background:var(--wa); color:#fff; border-radius:999px; padding:.3rem .75rem; font-size:.85rem; }

@@ -2,6 +2,17 @@
 (function () {
   'use strict';
 
+
+  /* כפתורי "כתבו בוואטסאפ" הכלליים פותחים בחירה בין נתן לשושי (בלי JS הם פותחים את נתן) */
+  var choose = document.getElementById('choose');
+  if (choose && choose.showModal) {
+    document.addEventListener('click', function (e) {
+      var b = e.target.closest && e.target.closest('[data-choose]');
+      if (b) { e.preventDefault(); choose.showModal(); return; }
+      if (e.target === choose || (e.target.closest && e.target.closest('.choose-opt'))) choose.close();
+    });
+  }
+
   /* חשיפה בגלילה */
   var items = document.querySelectorAll('.reveal');
   if ('IntersectionObserver' in window) {
