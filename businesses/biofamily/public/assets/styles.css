@@ -241,14 +241,6 @@ details[open] summary::after{ content:"\2212"; }
 details p{ margin-top:.7rem; }
 
 /* קריאה אחרונה */
-.signup{ color:var(--paper); border-radius:var(--r-lg); padding:clamp(2rem, 6vw, 3.6rem); text-align:center; box-shadow:var(--shadow); background-color:var(--terra); }
-.signup.gingham{ }
-.signup .h-sect{ color:var(--paper); }
-.signup p{ margin-top:.8rem; }
-.signup .btn-wa{ background:var(--paper); color:var(--wa-d); box-shadow:0 16px 32px -18px rgba(63,56,47,.85); }
-.signup .btn-ghost.btn-sm{ padding:.55rem 1.8rem; }
-.signup .or{ margin-top:1.6rem; }
-.signup .btn-row .btn{ min-width:min(100%,17rem); justify-content:center; }
 
 .prose{ max-width:42rem; margin-inline:auto; display:grid; gap:1.1rem; }
 .prose h2{ margin-bottom:.4rem; }
@@ -304,23 +296,11 @@ footer{ padding:2.2rem 0 5.5rem; text-align:center; font-size:.95rem; color:var(
   font:700 1.3rem/1.2 "Fredoka",sans-serif; box-shadow:0 12px 24px -14px rgba(63,56,47,.7);
 }
 
-/* באנר ההצטרפות: משבצות עדינות מאוד על טרקוטה כהה, כדי שהטקסט יהיה קריא */
-.gingham{
-  background-color:#A9533A;
-  background-image:
-    repeating-linear-gradient(0deg, rgba(255,253,249,.07) 0 28px, transparent 28px 56px),
-    repeating-linear-gradient(90deg, rgba(255,253,249,.07) 0 28px, transparent 28px 56px);
-}
-.signup{ background-color:#A9533A; }
-.signup .hand{ color:#FFD98A !important; }
-.signup .h-sect, .signup .lead{ text-shadow:0 1px 0 rgba(63,56,47,.25); }
-.signup .hand{ margin-bottom:.5rem; } .signup .h-sect{ margin-bottom:.4rem; }
 
 /* כפתורי וואטסאפ גדולים: שורה אחת במובייל, בלי ריפוד עצום */
 .btn{ white-space:nowrap; }
 @media (max-width:640px){
   .btn-lg{ font-size:1.2rem; padding:.95rem 1.5rem; }
-  .signup{ padding:2rem 1.2rem; }
 }
 
 /* בחירת מנחה בוואטסאפ */
@@ -337,3 +317,11 @@ footer{ padding:2.2rem 0 5.5rem; text-align:center; font-size:.95rem; color:var(
 /* בלי ההבהוב הכחול של הדפדפן בלחיצה על כפתורים וקישורים */
 a, button, summary, .btn, .choose-opt{ -webkit-tap-highlight-color:transparent; }
 .btn:focus:not(:focus-visible), .choose-opt:focus:not(:focus-visible), .choose-x:focus:not(:focus-visible){ outline:none; }
+
+/* קריאה אחרונה: אותה מעטפת פסים של הפתיחה, כדי שהדף ייסגר באותה שפה שבה נפתח */
+#signup{ position:relative; overflow:hidden; padding-bottom:4rem; }
+#signup .blob.b1{ top:auto; bottom:-5rem; right:auto; left:-5rem; width:12rem; height:12rem; }
+#signup .blob.b2{ bottom:auto; top:1rem; left:auto; right:-4rem; width:9rem; height:9rem; }
+.signup .h-sect{ margin-bottom:.4rem; }
+.signup .lead{ max-width:34rem; margin:.8rem auto 1.6rem; }
+.signup .btn-row .btn{ min-width:min(100%,17rem); justify-content:center; }
