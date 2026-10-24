@@ -325,3 +325,8 @@ a, button, summary, .btn, .choose-opt{ -webkit-tap-highlight-color:transparent; 
 .signup .h-sect{ margin-bottom:.4rem; }
 .signup .lead{ max-width:34rem; margin:.8rem auto 1.6rem; }
 .signup .btn-row .btn{ min-width:min(100%,17rem); justify-content:center; }
+
+/* כותרת עליונה בלי כפתור: המותג לבדו, במרכז, וקצת גדול יותר */
+header.top.solo .wrap{ justify-content:center; }
+header.top.solo{ padding:1.3rem 0 .6rem; }
+header.top.solo .brand{ font-size:1.5rem; }
