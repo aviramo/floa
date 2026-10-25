@@ -330,3 +330,6 @@ a, button, summary, .btn, .choose-opt{ -webkit-tap-highlight-color:transparent; 
 header.top.solo .wrap{ justify-content:center; }
 header.top.solo{ padding:1.3rem 0 .6rem; }
 header.top.solo .brand{ font-size:1.5rem; }
+
+/* מצב בהיר בלבד: בלי כהות אוטומטית של הדפדפן (Force Dark, כהות של אנדרואיד וסמסונג) */
+:root{ color-scheme:only light; }
