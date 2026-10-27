@@ -572,30 +572,47 @@ create or replace function public.aum_pay_status(p_paid boolean, p_exempt boolea
 language sql immutable as $$
   select case when p_exempt then 'חינם' when p_paid then 'שילם' when p_req is not null then 'בטיפול' else 'טרם טופל' end;
 $$;
-create or replace function public.aum_sys_note(p_pid uuid, p_body text, p_event text, p_meeting uuid) returns void
+create or replace function public.aum_pay_code(p_paid boolean, p_exempt boolean, p_req timestamptz) returns text
+language sql immutable as $$
+  select case when coalesce(p_exempt, false) then 'exempt' when coalesce(p_paid, false) then 'paid' when p_req is not null then 'requested' else 'unpaid' end;
+$$;
+drop function if exists public.aum_sys_note(uuid, text, text, uuid);
+create or replace function public.aum_sys_note(p_pid uuid, p_body text, p_event text, p_meeting uuid, p_old text default null, p_new text default null, p_amount numeric default null, p_method text default null) returns void
 language plpgsql security definer set search_path = public as $$
 declare mail text := auth.jwt() ->> 'email';
 begin
-  insert into public.aum_notes (participant_id, body, author_email, author_name, system, event_type, meeting_id)
-  values (p_pid, p_body, mail, case when mail is null then 'מערכת' else 'טל' end, true, p_event, p_meeting);   -- בלי מנהל מחובר (הרשמה מהאתר): בלי מייל, והשם "מערכת"
+  if current_setting('aum.skip_note', true) = '1' then return; end if;
+  insert into public.aum_notes (participant_id, body, author_email, author_name, system, event_type, meeting_id, old_status, new_status, amount, method)
+  values (p_pid, p_body, mail, case when mail is null then 'מערכת' else 'טל' end, true, p_event, p_meeting, p_old, p_new, p_amount, p_method);   -- בלי מנהל מחובר (הרשמה מהאתר): בלי מייל, והשם "מערכת"
 exception when others then null;
 end $$;
-revoke all on function public.aum_sys_note(uuid, text, text, uuid) from public, anon, authenticated;
+revoke all on function public.aum_sys_note(uuid, text, text, uuid, text, text, numeric, text) from public, anon, authenticated;
 
 create or replace function public.aum_reg_notes() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare lbl text; os text; ns text; ol text; nl text;
 begin
   if tg_op = 'INSERT' then
-    perform public.aum_sys_note(new.participant_id, case when auth.jwt() ->> 'email' is null then 'נרשם/ה מהאתר למפגש ' else 'שויך/ה למפגש ' end || public.aum_meeting_label(new.event_id), 'meeting_linked', new.event_id);
+    if coalesce(new.attended, false) then
+      perform public.aum_sys_note(new.participant_id, 'הגיע/ה למפגש ' || public.aum_meeting_label(new.event_id) || ' (ללא הרשמה מראש)', 'walk_in', new.event_id);
+    else
+      perform public.aum_sys_note(new.participant_id, case when auth.jwt() ->> 'email' is null then 'נרשם/ה מהאתר למפגש ' else 'שויך/ה למפגש ' end || public.aum_meeting_label(new.event_id), 'meeting_linked', new.event_id);
+    end if;
   elsif tg_op = 'UPDATE' then
     lbl := public.aum_meeting_label(new.event_id);
     os := public.aum_pay_status(old.paid, old.exempt, old.pay_requested_at); ns := public.aum_pay_status(new.paid, new.exempt, new.pay_requested_at);
     if os <> ns then
-      perform public.aum_sys_note(new.participant_id, 'סטטוס תשלום במפגש ' || lbl || ': ' || os || ' ← ' || ns || case when new.paid and not new.exempt and new.paid_amount is not null then ' (₪' || trim(to_char(new.paid_amount, 'FM999999990.##')) || ')' else '' end, 'pay_status', new.event_id);
+      perform public.aum_sys_note(new.participant_id, 'סטטוס למפגש ' || lbl || ': ' || ns
+        || case when ns = 'שילם' and new.paid_amount is not null then ' ₪' || trim(to_char(new.paid_amount, 'FM999990.##')) else '' end
+        || case when ns = 'שילם' and new.pay_method is not null then ' ב' || public.aum_method_label(new.pay_method, new.pay_method_note) else '' end || ' (היה: ' || os || ')',
+        'status_changed', new.event_id, public.aum_pay_code(old.paid, old.exempt, old.pay_requested_at), public.aum_pay_code(new.paid, new.exempt, new.pay_requested_at), case when ns = 'שילם' then new.paid_amount end, case when ns = 'שילם' then new.pay_method end);
     end if;
     if coalesce(old.attended, false) <> coalesce(new.attended, false) then
-      perform public.aum_sys_note(new.participant_id, case when new.attended then 'הגיע/ה למפגש ' else 'סימון ההגעה למפגש בוטל: ' end || lbl, 'attended', new.event_id);
+      perform public.aum_sys_note(new.participant_id, case when new.attended then 'הגיע/ה למפגש ' else 'סימון ההגעה בוטל למפגש ' end || lbl, case when new.attended then 'attended' else 'attended_cancel' end, new.event_id);
+    end if;
+    if (old.details_sent_at is null) <> (new.details_sent_at is null) then
+      perform public.aum_sys_note(new.participant_id, case when new.details_sent_at is not null then 'נשלחו פרטי המפגש (וואטסאפ) למפגש ' else 'סימון שליחת פרטי המפגש בוטל למפגש ' end || lbl,
+        case when new.details_sent_at is not null then 'details_sent' else 'details_unsent' end, new.event_id);
     end if;
     if old.status_key is distinct from new.status_key then
       select label into ol from public.aum_statuses where key = old.status_key; select label into nl from public.aum_statuses where key = new.status_key;
@@ -606,7 +623,7 @@ begin
       perform public.aum_sys_note(new.participant_id, 'סטטוס אחרי המפגש ' || lbl || ': ' || coalesce(ol, 'ללא') || ' ← ' || coalesce(nl, 'ללא'), 'status', new.event_id);
     end if;
   elsif tg_op = 'DELETE' then
-    perform public.aum_sys_note(old.participant_id, 'הוסר/ה מהמפגש ' || public.aum_meeting_label(old.event_id), 'meeting_unlinked', old.event_id);
+    perform public.aum_sys_note(old.participant_id, 'הוסר/ה מהמפגש ' || public.aum_meeting_label(old.event_id), 'meeting_removed', old.event_id);
   end if;
   return null;
 exception when others then return null;
@@ -624,7 +641,7 @@ begin
       when 'deposit' then 'הפקדה ' || a || ' ליתרה' || case when m <> '' then ' (' || m || ')' else '' end
       when 'refund'  then case when new.from_credit then 'הוחזרו ' || a || ' מהיתרה' else 'הוחזר תשלום ' || a || ' למפגש ' || lbl end
       else 'ביטול שנשאר ביתרה ' || a || ' (מפגש ' || lbl || ')' end,
-    'payment_' || new.kind, new.meeting_id);
+    'payment_' || new.kind, new.meeting_id, null, null, new.amount, new.method);
   return null;
 exception when others then return null;
 end $$;
