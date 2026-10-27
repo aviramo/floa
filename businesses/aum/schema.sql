@@ -372,6 +372,98 @@ from public.aum_registrations r join public.aum_events e on e.id = r.event_id
 where r.paid = true and r.exempt = false
   and not exists (select 1 from public.aum_payments);
 
+-- 10. כספים: הוצאות והכנסות שאינן תשלומי משתתפים (חד פעמיות או מחזוריות), עם יומן שינויים.
+--     כל התנועות נרשמות על טל (by_email), המנהלת היחידה בכספים. הוספה בלבד: שום טבלה קיימת לא משתנה.
+create table if not exists public.aum_finance (
+  id         uuid primary key default gen_random_uuid(),
+  kind       text not null check (kind in ('expense', 'income')),
+  amount     numeric(10, 2) not null check (amount > 0),
+  entry_date date not null default current_date,
+  title      text not null,
+  meeting_id uuid references public.aum_events(id) on delete set null,
+  by_email   text not null default 'tal.amitai1@gmail.com',
+  created_at timestamptz not null default now()
+);
+create table if not exists public.aum_finance_recurring (
+  id         uuid primary key default gen_random_uuid(),
+  kind       text not null check (kind in ('expense', 'income')),
+  amount     numeric(10, 2) not null check (amount > 0),
+  title      text not null,
+  period     text not null check (period in ('weekly', 'monthly', 'yearly')),
+  start_date date not null default current_date,
+  end_date   date,
+  active     boolean not null default true,
+  by_email   text not null default 'tal.amitai1@gmail.com',
+  created_at timestamptz not null default now()
+);
+create table if not exists public.aum_finance_log (
+  id        uuid primary key default gen_random_uuid(),
+  at        timestamptz not null default now(),
+  actor     text,
+  action    text not null,
+  entity    text not null,
+  entity_id uuid,
+  summary   text not null
+);
+
+do $$
+declare t text;
+begin
+  foreach t in array array['aum_finance', 'aum_finance_recurring'] loop
+    execute format('alter table public.%I enable row level security', t);
+    execute format('drop policy if exists "aum admin all" on public.%I', t);
+    execute format('create policy "aum admin all" on public.%I for all to authenticated using (public.aum_is_admin()) with check (public.aum_is_admin())', t);
+    execute format('revoke all on public.%I from anon', t);
+    execute format('grant select, insert, update, delete on public.%I to authenticated', t);
+    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = t) then
+      execute format('alter publication supabase_realtime add table public.%I', t);
+    end if;
+  end loop;
+end $$;
+alter table public.aum_finance_log enable row level security;
+drop policy if exists "aum admin read" on public.aum_finance_log;
+create policy "aum admin read" on public.aum_finance_log for select to authenticated using (public.aum_is_admin());
+revoke all on public.aum_finance_log from anon;
+grant select on public.aum_finance_log to authenticated;
+
+create or replace function public.aum_finance_log_fn() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare
+  rec boolean := (tg_table_name = 'aum_finance_recurring');
+  o jsonb := case when tg_op in ('UPDATE','DELETE') then to_jsonb(old) end;
+  n jsonb := case when tg_op in ('INSERT','UPDATE') then to_jsonb(new) end;
+  r jsonb := coalesce(n, o);
+  word text := (case when r->>'kind' = 'income' then 'הכנסה' else 'הוצאה' end) || (case when rec then ' מחזורית' else '' end);
+  per text := case r->>'period' when 'weekly' then 'כל שבוע' when 'monthly' then 'כל חודש' when 'yearly' then 'כל שנה' else '' end;
+  who text := coalesce(auth.jwt()->>'email', 'מערכת');
+  base text := '₪' || trim(to_char((r->>'amount')::numeric, 'FM999999990.##')) || ' · ' || (r->>'title') || (case when rec then ' · ' || per else '' end);
+  diff text := '';
+  k text;
+  lab jsonb := '{"amount":"סכום","title":"תיאור","entry_date":"תאריך","start_date":"תאריך התחלה","end_date":"תאריך סיום","period":"חזרתיות","active":"פעיל","kind":"סוג","meeting_id":"שיוך למפגש"}';
+  txt text;
+begin
+  if tg_op = 'INSERT' then
+    txt := 'נוספה ' || word || ': ' || base;
+  elsif tg_op = 'DELETE' then
+    txt := 'נמחקה ' || word || ': ' || base;
+  else
+    for k in select jsonb_object_keys(lab) loop
+      if (o->k) is distinct from (n->k) then
+        diff := diff || (case when diff = '' then '' else ', ' end) || (lab->>k) || ' ' || coalesce(o->>k, '-') || ' ← ' || coalesce(n->>k, '-');
+      end if;
+    end loop;
+    if diff = '' then return null; end if;
+    txt := 'עודכנה ' || word || ' "' || (n->>'title') || '": ' || diff;
+  end if;
+  insert into public.aum_finance_log (actor, action, entity, entity_id, summary)
+  values (who, lower(tg_op), case when rec then 'recurring' else 'entry' end, (r->>'id')::uuid, txt);
+  return null;
+end $$;
+drop trigger if exists aum_finance_log_t on public.aum_finance;
+create trigger aum_finance_log_t after insert or update or delete on public.aum_finance for each row execute function public.aum_finance_log_fn();
+drop trigger if exists aum_finance_log_t on public.aum_finance_recurring;
+create trigger aum_finance_log_t after insert or update or delete on public.aum_finance_recurring for each row execute function public.aum_finance_log_fn();
+
 notify pgrst, 'reload schema';
 
 -- ==========================================================================
