@@ -551,6 +551,85 @@ do $$ begin
   end if;
 end $$;
 
+-- 15. הערות מערכת: כל שיוך, שינוי סטטוס תשלום, הגעה ותשלום נרשמים אוטומטית כהערה על המשתתף (יומן אירועים).
+--     הוספה בלבד: הערות קיימות לא משתנות, והטריגרים כותבים רק על אירועים חדשים. הערה שנכשלה לא מפילה את הפעולה.
+alter table public.aum_notes add column if not exists system     boolean not null default false;
+alter table public.aum_notes add column if not exists event_type text;
+alter table public.aum_notes add column if not exists meeting_id uuid;
+
+create or replace function public.aum_meeting_label(p_event uuid) returns text
+language sql stable security definer set search_path = public as $$
+  select coalesce((select to_char(e.event_date, 'DD.MM') from public.aum_events e where e.id = p_event), 'לא ידוע');
+$$;
+create or replace function public.aum_method_label(p_method text, p_note text) returns text
+language sql stable security definer set search_path = public as $$
+  select case when p_method is null or p_method = '' then ''
+    when p_method = 'other' then 'אחר' || coalesce(': ' || nullif(btrim(p_note), ''), '')
+    else coalesce((select m.name from public.aum_pay_methods m where m.key = p_method), p_method) end;
+$$;
+create or replace function public.aum_pay_status(p_paid boolean, p_exempt boolean, p_req timestamptz) returns text
+language sql immutable as $$
+  select case when p_exempt then 'חינם' when p_paid then 'שילם' when p_req is not null then 'בטיפול' else 'טרם טופל' end;
+$$;
+create or replace function public.aum_sys_note(p_pid uuid, p_body text, p_event text, p_meeting uuid) returns void
+language plpgsql security definer set search_path = public as $$
+declare mail text := auth.jwt() ->> 'email';
+begin
+  insert into public.aum_notes (participant_id, body, author_email, author_name, system, event_type, meeting_id)
+  values (p_pid, p_body, coalesce(mail, 'system'), case when mail is null then 'מערכת' else 'טל' end, true, p_event, p_meeting);
+exception when others then null;
+end $$;
+revoke all on function public.aum_sys_note(uuid, text, text, uuid) from public, anon, authenticated;
+
+create or replace function public.aum_reg_notes() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare lbl text; os text; ns text; ol text; nl text;
+begin
+  if tg_op = 'INSERT' then
+    perform public.aum_sys_note(new.participant_id, case when auth.jwt() ->> 'email' is null then 'נרשם/ה מהאתר למפגש ' else 'שויך/ה למפגש ' end || public.aum_meeting_label(new.event_id), 'meeting_linked', new.event_id);
+  elsif tg_op = 'UPDATE' then
+    lbl := public.aum_meeting_label(new.event_id);
+    os := public.aum_pay_status(old.paid, old.exempt, old.pay_requested_at); ns := public.aum_pay_status(new.paid, new.exempt, new.pay_requested_at);
+    if os <> ns then
+      perform public.aum_sys_note(new.participant_id, 'סטטוס תשלום במפגש ' || lbl || ': ' || os || ' ← ' || ns || case when new.paid and not new.exempt and new.paid_amount is not null then ' (₪' || trim(to_char(new.paid_amount, 'FM999999990.##')) || ')' else '' end, 'pay_status', new.event_id);
+    end if;
+    if coalesce(old.attended, false) <> coalesce(new.attended, false) then
+      perform public.aum_sys_note(new.participant_id, case when new.attended then 'הגיע/ה למפגש ' else 'סימון ההגעה למפגש בוטל: ' end || lbl, 'attended', new.event_id);
+    end if;
+    if old.status_key is distinct from new.status_key then
+      select label into ol from public.aum_statuses where key = old.status_key; select label into nl from public.aum_statuses where key = new.status_key;
+      perform public.aum_sys_note(new.participant_id, 'סטטוס במפגש ' || lbl || ': ' || coalesce(ol, 'ללא') || ' ← ' || coalesce(nl, 'ללא'), 'status', new.event_id);
+    end if;
+    if old.after_key is distinct from new.after_key then
+      select label into ol from public.aum_statuses where key = old.after_key; select label into nl from public.aum_statuses where key = new.after_key;
+      perform public.aum_sys_note(new.participant_id, 'סטטוס אחרי המפגש ' || lbl || ': ' || coalesce(ol, 'ללא') || ' ← ' || coalesce(nl, 'ללא'), 'status', new.event_id);
+    end if;
+  elsif tg_op = 'DELETE' then
+    perform public.aum_sys_note(old.participant_id, 'הוסר/ה מהמפגש ' || public.aum_meeting_label(old.event_id), 'meeting_unlinked', old.event_id);
+  end if;
+  return null;
+exception when others then return null;
+end $$;
+drop trigger if exists aum_reg_notes_t on public.aum_registrations;
+create trigger aum_reg_notes_t after insert or update or delete on public.aum_registrations for each row execute function public.aum_reg_notes();
+
+create or replace function public.aum_pay_notes() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare a text := '₪' || trim(to_char(new.amount, 'FM999999990.##')); lbl text := public.aum_meeting_label(new.meeting_id); m text := public.aum_method_label(new.method, new.method_note);
+begin
+  perform public.aum_sys_note(new.participant_id,
+    case new.kind
+      when 'payment' then case when new.from_credit then 'שימוש ביתרה ' || a || ' למפגש ' || lbl else 'התקבל תשלום ' || a || ' למפגש ' || lbl || case when m <> '' then ' (' || m || ')' else '' end end
+      when 'deposit' then 'הפקדה ' || a || ' ליתרה' || case when m <> '' then ' (' || m || ')' else '' end
+      when 'refund'  then case when new.from_credit then 'הוחזרו ' || a || ' מהיתרה' else 'הוחזר תשלום ' || a || ' למפגש ' || lbl end
+      else 'ביטול שנשאר ביתרה ' || a || ' (מפגש ' || lbl || ')' end,
+    'payment_' || new.kind, new.meeting_id);
+  return null;
+exception when others then return null;
+end $$;
+drop trigger if exists aum_pay_notes_t on public.aum_payments;
+create trigger aum_pay_notes_t after insert on public.aum_payments for each row execute function public.aum_pay_notes();
+
 notify pgrst, 'reload schema';
 
 -- ==========================================================================

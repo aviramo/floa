@@ -325,6 +325,8 @@
     .nimg img { display: block; width: 100%; max-height: 220px; object-fit: cover; object-position: top; border-radius: 12px; border: 1px solid var(--line); cursor: zoom-in; background: #fff; min-height: 60px; }
     .nimg .nload { color: var(--muted); font-size: 13px; padding: 14px 0; text-align: center; }
     .row .note svg { width: 13px; height: 13px; vertical-align: -2px; margin-inline-end: 3px; }
+    .nitem.sys { background: transparent; border: 1px dashed var(--line); padding: 7px 12px 8px; }
+    .nitem.sys .ntext { color: var(--muted); font-size: 14.5px; }
     .nitem { background: var(--cream); border-radius: 16px; padding: 10px 14px 12px; margin-bottom: 8px; }
     .nmeta { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); margin-bottom: 4px; }
     .nmeta b { color: var(--ink); }
@@ -1327,7 +1329,7 @@
         api(T.p + '?select=*'),
         api(T.m + '?select=*'),
         api(T.a + '?select=participant_id,meeting_id,status,paid,pay_requested_at,created_at,exempt,attended,paid_amount,promoter_id,commission,paid_at,pay_method,pay_method_note,status_key,after_key'),
-        api(T.n + '?select=id,participant_id,body,author_email,author_name,created_at,has_image&order=created_at.desc'),
+        api(T.n + '?select=id,participant_id,body,author_email,author_name,created_at,has_image,system,event_type&order=created_at.desc'),
         api(T.pr + '?select=*&order=name.asc'),
         api(T.pp + '?select=*&order=paid_at.desc'),
         api(T.pay + '?select=*&order=created_at.desc'),
@@ -2060,8 +2062,8 @@
   function rebuildNotes() {
     noteLatest.clear(); noteText.clear();
     state.notes.slice().sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))).forEach((n) => {   // מהחדשה לישנה
-      if (!noteLatest.has(n.participant_id)) noteLatest.set(n.participant_id, n);
-      noteText.set(n.participant_id, ((noteText.get(n.participant_id) || '') + ' ' + (n.body || '')).toLowerCase());
+      if (!n.system && !noteLatest.has(n.participant_id)) noteLatest.set(n.participant_id, n);
+      if (!n.system) noteText.set(n.participant_id, ((noteText.get(n.participant_id) || '') + ' ' + (n.body || '')).toLowerCase());
     });
   }
   const notesOf = (pid) => state.notes.filter((n) => n.participant_id === pid).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
@@ -2145,8 +2147,8 @@
     const p = sheet && sheet.id ? state.participants.find((x) => x.id === sheet.id) : null;
     if (!p) { list.innerHTML = ''; return; }
     const ns = notesOf(p.id);   // הערות וצילומי מסך יחד, מהחדש לישן
-    list.innerHTML = ns.length ? ns.map((n) => '<div class="nitem"><div class="nmeta"><span><b>' + esc(n.author_name || 'לא ידוע') + '</b> · ' + esc(fmtDT(n.created_at)) + '</span>' +
-      '<button type="button" class="ndel" data-del="' + n.id + '" aria-label="מחיקת הערה" title="מחיקת הערה">×</button></div>' +
+    list.innerHTML = ns.length ? ns.map((n) => '<div class="nitem' + (n.system ? ' sys' : '') + '"><div class="nmeta"><span><b>' + esc(n.author_name || 'לא ידוע') + '</b> · ' + esc(fmtDT(n.created_at)) + '</span>' +
+      (n.system ? '' : '<button type="button" class="ndel" data-del="' + n.id + '" aria-label="מחיקת הערה" title="מחיקת הערה">×</button>') + '</div>' +
       (n.has_image ? '<a class="nimg" data-img="' + n.id + '"><div class="nload">טוען תמונה…</div></a>' : '<div class="ntext">' + esc(n.body) + '</div>') + '</div>').join('')
       : '<p class="mnone">עוד אין הערות. אפשר לרשום למעלה מה דיברתם, מה הוחלט ומה צריך לזכור, או לצרף צילום מסך משיחה</p>';
     list.querySelectorAll('[data-img]').forEach(loadNoteImg);
