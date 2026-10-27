@@ -636,6 +636,7 @@ create table if not exists public.aum_admin_prefs (
   event_msg  text,
   event_open text
 );
+alter table public.aum_admin_prefs add column if not exists att_lead text;   -- מתי נפתח סימון ההגעה (דקות לפני, day או always)
 alter table public.aum_admin_prefs enable row level security;
 drop policy if exists "aum admin all" on public.aum_admin_prefs;
 create policy "aum admin all" on public.aum_admin_prefs for all to authenticated using (public.aum_is_admin()) with check (public.aum_is_admin());

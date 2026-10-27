@@ -945,7 +945,7 @@
       </div>
       <div class="setgrp">
         <button type="button" class="setrow setlink" data-goset="st"><svg class="seti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12V4h8l9 9-8 8z"/><circle cx="8" cy="9" r="1.3"/></svg><div class="setl"><b>תגיות וסטטוסים</b><small id="setStHint"></small></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="22" height="22"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg></button>
-        <button type="button" class="setrow setlink" data-goset="em"><svg class="seti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg><div class="setl"><b>הודעה ביום המפגש</b><small>נוסח ושעת פתיחה של כפתור הוואטסאפ ברשימה</small></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="22" height="22"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg></button>
+        <button type="button" class="setrow setlink" data-goset="em"><svg class="seti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg><div class="setl"><b>יום המפגש</b><small>הודעת וואטסאפ ביום המפגש ומתי נפתח סימון ההגעה</small></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="22" height="22"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg></button>
         <button type="button" class="setrow setlink" data-goset="tiers"><svg class="seti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19h5v-5h5V9h6V5"/></svg><div class="setl"><b>מדרגות מחיר</b><small id="setTierHint"></small></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="22" height="22"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg></button>
         <button type="button" class="setrow setlink" data-goset="pm"><svg class="seti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18"/></svg><div class="setl"><b>דרכי תשלום</b><small id="setPmHint"></small></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="22" height="22"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg></button>
       </div>
@@ -968,6 +968,8 @@
         <textarea class="setinp" id="emText" rows="9" maxlength="800" aria-label="נוסח ההודעה" style="width:100%;box-sizing:border-box;border-radius:14px;border:1px solid var(--line);padding:12px 14px;line-height:1.55;font-size:16px;font-weight:600;background:#fff"></textarea>
         <div class="emvars" id="emVars"><button type="button" data-v="{התכנסות}">{התכנסות}</button><button type="button" data-v="{התחלה}">{התחלה}</button><button type="button" data-v="{סיום}">{סיום}</button><button type="button" data-v="{מקום}">{מקום}</button></div>
         <button type="button" class="btn ghost" id="emReset" style="height:40px;font-size:15px">שחזור נוסח ברירת מחדל</button>
+        <div class="stpart">מתי נפתח סימון ההגעה ברשימה</div>
+        <div class="attopts" id="attOpenOpts" role="radiogroup" aria-label="מתי נפתח סימון ההגעה"></div>
       </div>
       <div data-sv="tiers" hidden>
         <p class="sthint" style="margin:0 2px 12px">המחיר חל מכמה ימים לפני המפגש, ואחר כך עובר למדרגה הבאה. המחיר הנוכחי מוצג גם בדף הבית. בלי מדרגות המחיר הוא זה שמוגדר במפגש עצמו</p>
@@ -1334,7 +1336,10 @@
     const [d, tm] = s.split(' '), [y, mo, da] = d.split('-').map(Number), [h, mi] = tm.split(':').map(Number);
     return Date.UTC(y, mo - 1, da, h % 24, mi);
   };
-  const attendOpen = (m) => { if (!m) return false; const [y, mo, da] = m.meeting_date.split('-').map(Number), [h, mi] = String(m.meeting_time).split(':').map(Number); return nowIL() >= Date.UTC(y, mo - 1, da, h, mi) - 30 * 60000; };
+  /* מתי נפתח סימון ההגעה: ברירת מחדל חצי שעה לפני המפגש, וניתן לשינוי בהגדרות */
+  const ATT_OPTS = [['15', '15 דקות לפני'], ['30', 'חצי שעה לפני'], ['60', 'שעה לפני'], ['120', 'שעתיים לפני'], ['day', 'מתחילת יום המפגש'], ['always', 'תמיד']];
+  const attLead = () => { const v = (state.prefs[emailOf()] || {}).att_lead; return ATT_OPTS.some((o) => o[0] === v) ? v : '30'; };
+  const attendOpen = (m) => { if (!m) return false; const lead = attLead(); if (lead === 'always') return true; const [y, mo, da] = m.meeting_date.split('-').map(Number), [h, mi] = String(m.meeting_time).split(':').map(Number); return nowIL() >= (lead === 'day' ? Date.UTC(y, mo - 1, da, 0, 0) : Date.UTC(y, mo - 1, da, h, mi) - Number(lead) * 60000); };
   const sortMeetings = () => state.meetings.sort((a, b) => (b.meeting_date + b.meeting_time).localeCompare(a.meeting_date + a.meeting_time));   // מהחדש לישן
 
   const linksOf = (pid) => state.att.filter((a) => a.participant_id === pid);
@@ -1672,9 +1677,14 @@
     // ----- כספים -----
     const credit = state.participants.reduce((s, q) => s + Math.max(0, creditOf(q.id)), 0);
     const refunds = state.payments.filter((x) => x.kind === 'refund').reduce((s, x) => s + Number(x.amount), 0);
+    /* רווח והפסד לפי הכסף שנכנס ויצא בפועל: תשלומי משתתפים והפקדות פחות החזרים, הכנסות והוצאות אחרות, ותשלומים ליחצנים */
+    const cashIn = state.payments.reduce((s, x) => s + (((x.kind === 'payment' || x.kind === 'deposit') && !x.from_credit) ? Number(x.amount) : x.kind === 'refund' ? -Number(x.amount) : 0), 0);
+    const finAll = finRowsAll(), othInc = finAll.filter((x) => x.kind === 'income').reduce((s, x) => s + x.amount, 0), expAll = finAll.filter((x) => x.kind === 'expense').reduce((s, x) => s + x.amount, 0), expCh = finAll.filter((x) => x.channel).reduce((s, x) => s + x.amount, 0), profit = cashIn + othInc - expAll;
+    const sgn = (v) => (Math.round(v) < 0 ? '-' : '') + ilsB(Math.abs(v));
     const maxRev = Math.max(1, ...pm.map((r) => r.rev));
     const money = part('הכנסה לפי מפגש', tbl(['מפגש', 'הכנסה', 'שילמו', 'מגמה'], pm.map((r, k) => [dlab(r.m), ilsB(r.rev), r.paid + '/' + (r.regs - r.ex), k ? trend(r.rev, pm[k - 1].rev) : '—']))) +
       part('מצב תשלומים', '<div class="stkpis">' + kpi(paid.length, 'שילמו', Ps(paid.length, nPay), 'good') + kpi(req.length, 'בטיפול', ilsB(owed), 'warn') + kpi(unp.length, 'טרם טופלו', '', unp.length ? 'bad' : '') + kpi(exm.length, 'חינם', '') + '</div>') +
+      part('רווח והפסד', tbl(['מדד', 'ערך'], [['הכנסות ממשתתפים (כסף שנכנס, נטו)', ilsB(cashIn)], ['הכנסות אחרות', ilsB(othInc)], ['הוצאות', ilsB(expAll)], ['מתוכן ליחצנים', ilsB(expCh)], ['רווח', sgn(profit)]])) +
       part('גבייה', tbl(['מדד', 'ערך'], [['המרה לתשלום', Ps(paid.length, nPay)], ['ממוצע לתשלום', paid.length ? ilsB(rev / paid.length) : '—'], ['נטו אחרי עמלות', ilsB(rev - comm)], ['עמלות ליחצנים', ilsB(comm)], ['קרדיט פתוח', ilsB(credit)], ['הוחזר', ilsB(refunds)]])) +
       (() => { const byM = {}; paid.forEach((l) => { const k = ilDay(l.paid_at || l.created_at || new Date().toISOString()).slice(0, 7); byM[k] = (byM[k] || 0) + price(l); }); const ks = Object.keys(byM).sort(), mx = Math.max(1, ...ks.map((k) => byM[k])); return ks.length > 1 ? part('הכנסה לפי חודש', ks.map((k) => barRow(k.slice(5) + '/' + k.slice(2, 4), byM[k], mx, '#2F7D4F', ilsB(byM[k]))).join('')) : ''; })();
 
@@ -1702,7 +1712,7 @@
     // ----- מסך ראשי: שורה תחתונה לכל נושא -----
     const bottom = '<div class="stbottom"><div><b>' + ilsB(rev - comm) + '</b><small>הכנסה נטו</small></div><div><b>' + paid.length + '/' + nPay + '</b><small>שילמו</small></div><div><b>' + (conv == null ? '—' : conv + '%') + '</b><small>המרה</small></div></div>';
     const main = bottom +
-      topic('money', 'כספים', last && prev ? trend(last.rev, prev.rev) : '', num(ilsB(rev), 'הכנסה') + num(ilsB(owed), 'בטיפול') + num(ilsB(credit), 'קרדיט')) +
+      topic('money', 'כספים', last && prev ? trend(last.rev, prev.rev) : '', num(ilsB(cashIn + othInc), 'הכנסות') + num(ilsB(expAll), 'הוצאות') + num(sgn(profit), 'רווח')) +
       topic('promo', 'יחצנים ופרסום', '', num(ilsB(proInc), 'דרך יחצנים') + num(adL.length, 'ממודעה') + num(ilsB(proOwed), 'לתשלום ליחצנים')) +
       topic('demo', 'דמוגרפיה', last && prev ? trend(last.news, prev.news) : '', num(Ps(female.length, people.length), 'נשים') + num(avgAge ? avgAge.toFixed(0) : '—', 'גיל ממוצע') + num(Ps(target.length, ages.length), '40 עד 49'));
 
@@ -2899,12 +2909,12 @@
 
   /* ---------- הגדרות: מסך ראשי ותתי-מסכים (דרכי תשלום ועוד) ---------- */
   let setView = 'main';
-  const SET_TITLES = { main: 'הגדרות', pm: 'דרכי תשלום', tiers: 'מדרגות מחיר', em: 'הודעה ביום המפגש', st: 'תגיות וסטטוסים' };
+  const SET_TITLES = { main: 'הגדרות', pm: 'דרכי תשלום', tiers: 'מדרגות מחיר', em: 'יום המפגש', st: 'תגיות וסטטוסים' };
   let stScope = 'participant';
   function showSetView(v) {
     setView = v; document.querySelectorAll('#setDlg [data-sv]').forEach((el) => { el.hidden = el.dataset.sv !== v; });
     $('#setBack').hidden = v === 'main'; $('#setTitle').textContent = SET_TITLES[v] || 'הגדרות'; $('#setDlg').scrollTop = 0;
-    if (v === 'pm') renderPm(); if (v === 'tiers') renderTiers(); if (v === 'st') renderStSettings(); if (v === 'em') { const ta = $('#emText'); if (document.activeElement !== ta) ta.value = eventTemplate(); renderEmOpen(); } syncUrl();
+    if (v === 'pm') renderPm(); if (v === 'tiers') renderTiers(); if (v === 'st') renderStSettings(); if (v === 'em') { const ta = $('#emText'); if (document.activeElement !== ta) ta.value = eventTemplate(); renderEmOpen(); renderAttOpts(); } syncUrl();
   }
   $('#setBack').addEventListener('click', () => showSetView('main'));
   $('#setDlg').addEventListener('click', (e) => { const g = e.target.closest('[data-goset]'); if (g) showSetView(g.dataset.goset); });
@@ -2962,6 +2972,8 @@
     catch (err) { if (prev) state.prefs[em] = prev; else delete state.prefs[em]; render(); fail(err); }
   }
   const renderEmOpen = () => { const cur = evOpenPref(); $('#emOpenOpts').innerHTML = EV_OPEN_OPTS.map((o) => '<button type="button" role="radio" class="stc" data-eo="' + o[0] + '" aria-pressed="' + (o[0] === cur) + '">' + o[1] + '</button>').join(''); };
+  const renderAttOpts = () => { const cur = attLead(); $('#attOpenOpts').innerHTML = ATT_OPTS.map((o) => '<button type="button" role="radio" class="stc" data-al="' + o[0] + '" aria-pressed="' + (o[0] === cur) + '">' + o[1] + '</button>').join(''); };
+  $('#attOpenOpts').addEventListener('click', (e) => { const b = e.target.closest('[data-al]'); if (!b) return; savePref({ att_lead: b.dataset.al }); renderAttOpts(); });
   $('#emOpenOpts').addEventListener('click', (e) => { const b = e.target.closest('[data-eo]'); if (!b) return; savePref({ event_open: b.dataset.eo }); renderEmOpen(); });
   $('#emText').addEventListener('change', () => savePref({ event_msg: $('#emText').value.trim() === DEFAULT_EVENT_MSG.trim() ? '' : $('#emText').value }));
   $('#emReset').addEventListener('click', () => { $('#emText').value = DEFAULT_EVENT_MSG; savePref({ event_msg: '' }); });
