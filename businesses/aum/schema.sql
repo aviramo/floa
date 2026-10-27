@@ -518,6 +518,16 @@ do $$ begin
   end if;
 end $$;
 
+-- 13. הפקדה: כסף שהמשתתף נתן בלי שיוך למפגש, ונכנס ליתרה שלו (קרדיט) לשימוש במפגשים. הרחבת הרשימה בלבד.
+do $$
+declare c text;
+begin
+  for c in select conname from pg_constraint where conrelid = 'public.aum_payments'::regclass and contype = 'c' and pg_get_constraintdef(oid) like '%kind%' loop
+    execute format('alter table public.aum_payments drop constraint %I', c);
+  end loop;
+  alter table public.aum_payments add constraint aum_payments_kind_check check (kind in ('payment', 'refund', 'credit', 'deposit'));
+end $$;
+
 notify pgrst, 'reload schema';
 
 -- ==========================================================================
