@@ -528,6 +528,29 @@ begin
   alter table public.aum_payments add constraint aum_payments_kind_check check (kind in ('payment', 'refund', 'credit', 'deposit'));
 end $$;
 
+-- 14. תגיות על משתתפים (ובהמשך סטטוסים על מפגשים): שם, צבע וסדר, ומערך תגיות לכל משתתף.
+create table if not exists public.aum_statuses (
+  key   text primary key,
+  label text not null,
+  color text not null default 'sky',
+  sort  int not null default 0,
+  scope text not null default 'participant' check (scope in ('participant', 'meeting')),
+  phase text not null default 'before' check (phase in ('before', 'after'))
+);
+alter table public.aum_statuses enable row level security;
+drop policy if exists "aum admin all" on public.aum_statuses;
+create policy "aum admin all" on public.aum_statuses for all to authenticated using (public.aum_is_admin()) with check (public.aum_is_admin());
+revoke all on public.aum_statuses from anon;
+grant select, insert, update, delete on public.aum_statuses to authenticated;
+alter table public.aum_participants  add column if not exists tags text[] not null default '{}';
+alter table public.aum_registrations add column if not exists status_key text;
+alter table public.aum_registrations add column if not exists after_key text;
+do $$ begin
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'aum_statuses') then
+    alter publication supabase_realtime add table public.aum_statuses;
+  end if;
+end $$;
+
 notify pgrst, 'reload schema';
 
 -- ==========================================================================
