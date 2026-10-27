@@ -649,6 +649,32 @@ do $$ begin
   end if;
 end $$;
 
+-- 17. התאמה לדף הניהול המלא (אותו דף כמו יוצאים להרפתקה): עמודות נוספות בלבד, בלי לשנות שורות קיימות.
+alter table public.aum_participants  add column if not exists source_code text;
+alter table public.aum_participants  add column if not exists status_key  text;
+alter table public.aum_registrations add column if not exists will_pay boolean not null default false;
+alter table public.aum_registrations add column if not exists maybe    boolean not null default false;
+alter table public.aum_registrations add column if not exists no_pay   boolean;
+alter table public.aum_notes add column if not exists amount     numeric;
+alter table public.aum_notes add column if not exists method     text;
+alter table public.aum_notes add column if not exists old_status text;
+alter table public.aum_notes add column if not exists new_status text;
+alter table public.aum_notes add column if not exists source     text;
+alter table public.aum_promoters add column if not exists code text;
+alter table public.aum_promoters add column if not exists color text not null default 'red';
+alter table public.aum_promoters add column if not exists cost_from_payment boolean not null default false;
+alter table public.aum_promoters add column if not exists cost_on_lead boolean not null default false;
+alter table public.aum_promoter_payments add column if not exists by_email text;
+alter table public.aum_payments add column if not exists pkg boolean not null default false;
+alter table public.aum_payments add column if not exists pkg_n int;
+alter table public.aum_price_tiers add column if not exists id uuid not null default gen_random_uuid();
+create unique index if not exists aum_price_tiers_id_uq on public.aum_price_tiers (id);
+alter table public.aum_pay_methods add column if not exists id uuid not null default gen_random_uuid();
+create unique index if not exists aum_pay_methods_id_uq on public.aum_pay_methods (id);
+alter table public.aum_pay_methods add column if not exists owner_email text;
+alter table public.aum_admin_prefs add column if not exists sender_name text;
+alter table public.aum_admin_prefs add column if not exists wa_intro text;
+
 notify pgrst, 'reload schema';
 
 -- ==========================================================================

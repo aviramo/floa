@@ -1348,6 +1348,8 @@
   let toastTimer;
   function toast(msg) {
     const t = $('#toast');
+    /* פופאפ פתוח (dialog) יושב בשכבה העליונה ומסתיר הכול: ההודעה עוברת לתוכו כשיש כזה */
+    const host = [...document.querySelectorAll('dialog[open]')].pop() || document.body; if (t.parentNode !== host) host.appendChild(t);
     t.textContent = msg;
     t.classList.add('on');
     clearTimeout(toastTimer);
@@ -2763,6 +2765,7 @@
     const j = sub.toJSON();
     await api(T.push, { method: 'POST', body: { endpoint: j.endpoint, p256dh: (j.keys && j.keys.p256dh) || '', auth: (j.keys && j.keys.auth) || '', email: emailOf() }, prefer: 'resolution=merge-duplicates' });
   }
+  const pushNote = (m) => { const h = $('#setPushHint'); if (h) h.textContent = m; toast(m); };
   async function togglePush() {
     if (!pushOk) { toast('הדפדפן הזה לא תומך בהתראות. באייפון צריך קודם להוסיף את הדף למסך הבית'); return; }
     /* הבקשה לרשות חייבת לצאת מיד מהלחיצה, לפני כל await: דפדפנים (ספארי במיוחד) מתעלמים ממנה אחרי שהלחיצה "נגמרה" */
@@ -2773,16 +2776,16 @@
       try { await api(T.push + '?endpoint=eq.' + encodeURIComponent(cur.endpoint), { method: 'DELETE' }); } catch (e) {}
       await cur.unsubscribe(); toast('ההתראות כובו בדפדפן הזה'); return pushState();
     }
-    if (Notification.permission === 'denied') { toast('ההתראות חסומות בדפדפן. אפשר לאשר אותן בהגדרות האתר'); return; }
-    if ((asked ? await asked : Notification.permission) !== 'granted') { toast('לא אושרו התראות'); return; }
+    if (Notification.permission === 'denied') { pushNote('ההתראות חסומות בדפדפן. צריך לאשר אותן בהגדרות האתר של הדפדפן'); return; }
+    if ((asked ? await asked : Notification.permission) !== 'granted') { pushNote('לא אושרו התראות בדפדפן'); return pushState(); }
     let key;
     try { key = await fetch(DB.url + '/rest/v1/rpc/aum_push_key', { method: 'POST', headers: { apikey: DB.key, Authorization: 'Bearer ' + session.access_token, 'Content-Type': 'application/json' }, body: '{}' }).then((r) => r.json()); } catch (e) {}
-    if (!key || typeof key !== 'string') { toast('ההתראות עוד לא הוגדרו בשרת'); return; }
+    if (!key || typeof key !== 'string') { pushNote('ההתראות עוד לא הוגדרו בשרת (חסר מפתח)'); return; }
     const sub = cur || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(key) });
     await saveSub(sub);
     toast('התראות על הרשמות חדשות פועלות בדפדפן הזה'); pushState();
   }
-  $('#setPushRow').addEventListener('click', () => togglePush().catch((err) => { console.error(err); toast('לא הצלחנו להפעיל התראות'); }));
+  $('#setPushRow').addEventListener('click', () => { $('#setPushHint').textContent = 'מפעיל…'; togglePush().catch((err) => { console.error(err); pushNote('לא הצלחנו להפעיל התראות: ' + ((err && err.message) || err)); }); });
   /* מי שכבר הפעיל: מרעננים את השמירה (הכתובת של הדפדפן יכולה להתחלף) */
   async function refreshSub() {
     if (!pushOk || Notification.permission !== 'granted') return;
