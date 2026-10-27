@@ -596,6 +596,22 @@
     .balic.zero { background: #fff; color: var(--muted); border: 1px solid var(--line); }
     .balic.fr::after, .balic.zero::after, .tg .cx::after { content: ''; position: absolute; left: -1px; right: -1px; top: 50%; height: 1px; background: currentColor; transform: rotate(-35deg); }
     .tg .cx { position: relative; font-weight: 800; margin-inline-end: 4px; }
+    .row { position: relative; }
+    .row .rowic { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 6px; z-index: 2; }
+    .row.hasic .main { padding-left: 52px; }
+    .row.hasic2 .main { padding-left: 90px; }
+    .row .rowic .here { position: static; grid-column: auto; width: 34px; height: 34px; border-width: 2.5px; }
+    .row .rowic .here.no { border-color: #D2C3AC; }
+    .evc { width: 30px; height: 30px; border-radius: 50%; border: 1px dashed var(--sky); background: #fff; color: var(--sky); display: grid; place-items: center; text-decoration: none; transition: transform .12s; padding: 0; }
+    .evc svg { width: 16px; height: 16px; }
+    .evc:active { transform: scale(.92); }
+    .evc.sent { background: var(--sky); border-style: solid; color: #fff; }
+    .evc.off { border-color: var(--sand); color: var(--muted); }
+    #setDlg .emvars { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 12px; }
+    #setDlg .emvars button { height: 32px; padding: 0 12px; border-radius: 999px; background: var(--cream); color: var(--ink); font-weight: 700; font-size: 14px; }
+    #setDlg .attopts { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    #setDlg .attopts .stc { height: 34px; padding: 0 12px; border-radius: 999px; background: #fff; color: var(--ink); border: 1px solid var(--line); font-weight: 700; font-size: 14.5px; }
+    #setDlg .attopts .stc[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
     .bell { position: relative; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; color: var(--muted); background: var(--paper); border: 1.5px solid var(--line); }
     .bell[hidden] { display: none; }
     .bell svg { width: 20px; height: 20px; }
@@ -729,6 +745,12 @@
     .row .adtag { width: 18px; height: 18px; }
     .row .adtag svg { width: 11px; height: 11px; }
     .row .meta .age, .row .meta .ptag { font-size: 12.5px; padding: 1px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row .xtra { grid-column: 3; grid-row: 1; display: flex; align-items: center; gap: 4px; min-width: 0; overflow: hidden; margin-inline-start: 6px; }
+    .row .xtra > * { flex: 0 0 auto; }
+    .row .xtra > .tg { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; display: block; }
+    .row .xtra .tgs { margin-inline-start: 0; }
+    .row .xtra .balic { margin-inline-start: 0; }
+    .row .xtra .note { flex: 1 1 0; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; }
     .row .note { grid-column: 3; grid-row: 1; font-size: 12.5px; margin: 0; margin-inline-start: 6px; min-width: 0; }
     .row .acts { padding: 0 12px 7px; border-top: 0; }
     .row.other { border: 0; border-bottom: 1.5px dashed var(--coral); background: transparent; }
@@ -923,6 +945,7 @@
       </div>
       <div class="setgrp">
         <button type="button" class="setrow setlink" data-goset="st"><svg class="seti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12V4h8l9 9-8 8z"/><circle cx="8" cy="9" r="1.3"/></svg><div class="setl"><b>תגיות וסטטוסים</b><small id="setStHint"></small></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="22" height="22"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg></button>
+        <button type="button" class="setrow setlink" data-goset="em"><svg class="seti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg><div class="setl"><b>הודעה ביום המפגש</b><small>נוסח ושעת פתיחה של כפתור הוואטסאפ ברשימה</small></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="22" height="22"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg></button>
         <button type="button" class="setrow setlink" data-goset="tiers"><svg class="seti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19h5v-5h5V9h6V5"/></svg><div class="setl"><b>מדרגות מחיר</b><small id="setTierHint"></small></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="22" height="22"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg></button>
         <button type="button" class="setrow setlink" data-goset="pm"><svg class="seti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18"/></svg><div class="setl"><b>דרכי תשלום</b><small id="setPmHint"></small></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="22" height="22"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg></button>
       </div>
@@ -936,6 +959,15 @@
         <div class="stpart" id="stSecAfter" hidden>אחרי המפגש</div>
         <div id="stListAfter"></div>
         <button type="button" class="btn ghost" id="stAddAfter" hidden>+ סטטוס חדש אחרי המפגש</button>
+      </div>
+      <div data-sv="em" hidden>
+        <p class="sthint" style="margin:0 2px 10px">הנוסח של הודעת פרטי המפגש (העיגול הכחול ברשימה ביום המפגש). {התכנסות}, {התחלה}, {סיום} ו-{מקום} מוחלפים בנתוני אותו מפגש</p>
+        <div class="stpart" style="margin-top:0">מתי הכפתור נפתח</div>
+        <div class="attopts" id="emOpenOpts" role="radiogroup" aria-label="מתי הכפתור נפתח"></div>
+        <div class="stpart">נוסח ההודעה</div>
+        <textarea class="setinp" id="emText" rows="9" maxlength="800" aria-label="נוסח ההודעה" style="width:100%;box-sizing:border-box;border-radius:14px;border:1px solid var(--line);padding:12px 14px;line-height:1.55;font-size:16px;font-weight:600;background:#fff"></textarea>
+        <div class="emvars" id="emVars"><button type="button" data-v="{התכנסות}">{התכנסות}</button><button type="button" data-v="{התחלה}">{התחלה}</button><button type="button" data-v="{סיום}">{סיום}</button><button type="button" data-v="{מקום}">{מקום}</button></div>
+        <button type="button" class="btn ghost" id="emReset" style="height:40px;font-size:15px">שחזור נוסח ברירת מחדל</button>
       </div>
       <div data-sv="tiers" hidden>
         <p class="sthint" style="margin:0 2px 12px">המחיר חל מכמה ימים לפני המפגש, ואחר כך עובר למדרגה הבאה. המחיר הנוכחי מוצג גם בדף הבית. בלי מדרגות המחיר הוא זה שמוגדר במפגש עצמו</p>
@@ -1040,9 +1072,9 @@
   /* הדאטהבייס של הדומיין (/supabase.js). המפתח ציבורי מעצם הגדרתו;
      מה שמותר באמת נקבע במדיניות RLS שב-businesses/aum/schema.sql */
   const DB = { url: window.SUPABASE.url, key: window.SUPABASE.anonKey };
-  const T = { st: 'aum_statuses', tr: 'aum_price_tiers', pm: 'aum_pay_methods', fin: 'aum_finance', finr: 'aum_finance_recurring', finlog: 'aum_finance_log', p: 'aum_participants', m: 'aum_events', a: 'aum_registrations', n: 'aum_notes', pr: 'aum_promoters', pp: 'aum_promoter_payments', pay: 'aum_payments', push: 'aum_push_subs' };
+  const T = { pf: 'aum_admin_prefs', st: 'aum_statuses', tr: 'aum_price_tiers', pm: 'aum_pay_methods', fin: 'aum_finance', finr: 'aum_finance_recurring', finlog: 'aum_finance_log', p: 'aum_participants', m: 'aum_events', a: 'aum_registrations', n: 'aum_notes', pr: 'aum_promoters', pp: 'aum_promoter_payments', pay: 'aum_payments', push: 'aum_push_subs' };
 
-  const state = { participants: [], meetings: [], att: [], notes: [], promoters: [], promoPays: [], payments: [], bal: null, statuses: [], tagF: new Set(), stF: new Set(), tiers: [], payMethods: [{ key: 'paybox', name: 'פייבוקס' }, { key: 'bit', name: 'ביט' }, { key: 'cash', name: 'מזומן' }, { key: 'bank', name: 'בנק' }], fin: [], finRec: [], finPeriod: 'month', finFilter: null, filter: null, q: '', pay: null, gender: null, sort: 'new' };
+  const state = { participants: [], meetings: [], att: [], notes: [], promoters: [], promoPays: [], payments: [], prefs: {}, bal: null, statuses: [], tagF: new Set(), stF: new Set(), tiers: [], payMethods: [{ key: 'paybox', name: 'פייבוקס' }, { key: 'bit', name: 'ביט' }, { key: 'cash', name: 'מזומן' }, { key: 'bank', name: 'בנק' }], fin: [], finRec: [], finPeriod: 'month', finFilter: null, filter: null, q: '', pay: null, gender: null, sort: 'new' };
   /* קישור עמוק מהמייל: ?m=<מפגש>&p=<משתתף>; נשמר בזמן הכניסה עם גוגל (שמחזירה בלי הפרמטרים) */
   let deep = null;
   try {
@@ -1108,7 +1140,7 @@
     ws.onopen = () => {
       rtRetry = 1000;
       rtSend({ topic: RT_TOPIC, event: 'phx_join', ref: '1', payload: { config: { broadcast: { ack: false, self: false }, presence: { key: '' }, private: false,
-        postgres_changes: [T.p, T.m, T.a, T.n, T.pr, T.pp, T.pay, T.fin, T.finr, T.pm, T.tr, T.st].map((table) => ({ event: '*', schema: 'public', table })) }, access_token: session.access_token } });
+        postgres_changes: [T.p, T.m, T.a, T.n, T.pr, T.pp, T.pay, T.fin, T.finr, T.pm, T.tr, T.st, T.pf].map((table) => ({ event: '*', schema: 'public', table })) }, access_token: session.access_token } });
       rtHb = setInterval(() => rtSend({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: String(Date.now()) }), 25000);
     };
     ws.onmessage = (e) => {
@@ -1325,10 +1357,10 @@
   async function load(silent) {
     if (!silent) $('#status').innerHTML = '<div class="empty">טוען…</div>';
     try {
-      const [p, m, a, nn, prs, pps, pays, fin, finr, pms, trs, sts] = await Promise.all([
+      const [p, m, a, nn, prs, pps, pays, fin, finr, pms, trs, sts, pfs] = await Promise.all([
         api(T.p + '?select=*'),
         api(T.m + '?select=*'),
-        api(T.a + '?select=participant_id,meeting_id,status,paid,pay_requested_at,created_at,exempt,attended,paid_amount,promoter_id,commission,paid_at,pay_method,pay_method_note,status_key,after_key'),
+        api(T.a + '?select=participant_id,meeting_id,status,paid,pay_requested_at,created_at,exempt,attended,paid_amount,promoter_id,commission,paid_at,pay_method,pay_method_note,status_key,after_key,details_sent_at'),
         api(T.n + '?select=id,participant_id,body,author_email,author_name,created_at,has_image,system,event_type&order=created_at.desc'),
         api(T.pr + '?select=*&order=name.asc'),
         api(T.pp + '?select=*&order=paid_at.desc'),
@@ -1338,11 +1370,12 @@
         api(T.pm + '?select=*&order=sort.asc'),
         api(T.tr + '?select=*&order=days.desc'),
         api(T.st + '?select=*&order=sort.asc'),
+        api(T.pf + '?select=*'),
       ]);
       /* משתתף לא פעיל (הוסר) מוסתר מכל המסכים; הנתונים נשמרים ויחזרו אם יירשם שוב עם אותו טלפון. תשלומים נשארים (כספים) */
       state.inactiveNames = new Map(p.filter((x) => x.active === false).map((x) => [x.id, x.name]));
       const act = p.filter((x) => x.active !== false), actIds = new Set(act.map((x) => x.id));
-      state.participants = act; state.meetings = m; state.att = a.filter((x) => actIds.has(x.participant_id)); state.notes = nn.filter((x) => actIds.has(x.participant_id)); state.promoters = prs; state.promoPays = pps; state.payments = pays; state.fin = fin; state.finRec = finr; if (pms && pms.length) state.payMethods = pms; state.tiers = trs || []; state.statuses = sts || []; rebuildNotes();
+      state.participants = act; state.meetings = m; state.att = a.filter((x) => actIds.has(x.participant_id)); state.notes = nn.filter((x) => actIds.has(x.participant_id)); state.promoters = prs; state.promoPays = pps; state.payments = pays; state.fin = fin; state.finRec = finr; if (pms && pms.length) state.payMethods = pms; state.tiers = trs || []; state.statuses = sts || []; state.prefs = Object.fromEntries((pfs || []).map((x) => [String(x.email).toLowerCase(), x])); rebuildNotes();
       sortMeetings();
       if (!silent) $('#status').innerHTML = '';
       if (deep) {
@@ -1548,7 +1581,7 @@
       if (state.filter) {
         const l = linkOf(p.id, state.filter);
         const st = linkStatus(l);
-        side = '<span class="ptag ' + st + '">' + STATUS_LABEL[st] + '</span>' + (l.status_key && stByKey(l.status_key) ? ' ' + tgChip(stByKey(l.status_key)) : '') + (l.after_key && stByKey(l.after_key) ? ' ' + tgChip(stByKey(l.after_key)) : '');   // תצוגה בלבד: לחיצה על הכרטיס פותחת את פרטי המשתתף, ושם משנים סטטוס
+        side = '<span class="ptag ' + st + '">' + STATUS_LABEL[st] + '</span>';   // תצוגה בלבד: לחיצה על הכרטיס פותחת את פרטי המשתתף, ושם משנים סטטוס
       }
       let tags = '';
       if (!state.filter) {
@@ -1559,13 +1592,14 @@
             (ls.length === 1 || ps === 'exempt' ? STATUS_LABEL[ps] : (ps === 'requested' ? 'בטיפול' : '<bdi>' + np + '/' + payable.length + '</bdi> שילמו')) + '</span>';
         } else tags = '<span class="age">ללא מפגש</span>';
       }
-      const hl = state.filter ? linkOf(p.id, state.filter) : null;
-      return '<li class="row' + (hl && hl.attended && attendOpen(state.meetings.find((x) => x.id === state.filter)) ? ' arrived' : '') + '">' +
+      const hl = state.filter ? linkOf(p.id, state.filter) : null, hm = state.filter ? state.meetings.find((x) => x.id === state.filter) : null;
+      const ic = { ev: evCircle(p), here: hl && attendOpen(hm) ? '<button type="button" class="here' + (hl.attended ? '' : ' no') + '" data-hr="' + p.id + '" aria-pressed="' + !!hl.attended + '" aria-label="' + (hl.attended ? 'הגיע' : 'סימון הגעה') + '" title="סימון הגעה">✓</button>' : '' }; ic.n = (ic.ev ? 1 : 0) + (ic.here ? 1 : 0);
+      return '<li class="row' + (ic.n === 2 ? ' hasic2' : ic.n ? ' hasic' : '') + (hl && hl.attended && attendOpen(hm) ? ' arrived' : '') + '">' +
         '<div class="main" role="button" tabindex="0" data-edit="' + p.id + '">' +
-          '<div class="nm"><bdi class="name">' + esc(p.name) + '</bdi>' + tagsHtml(p) + (state.filter ? '' : balIcon(p)) + ((p.source === 'site-ad' || p.promoter_id) ? '<span class="ptags">' + (p.source === 'site-ad' ? '<span class="adtag" title="ממומן: הגיע ממודעה בתשלום" aria-label="ממומן"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15.5 9a4 4 0 0 1 0 6"/></svg></span>' : '') + (p.promoter_id ? '<span class="prtag" title="יחצן: ' + esc((promoterOf(p.promoter_id) || {}).name || '') + '" aria-label="יחצן"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15.5 9a4 4 0 0 1 0 6"/></svg></span>' : '') + '</span>' : '') + '</div>' +
+          '<div class="nm"><bdi class="name">' + esc(p.name) + '</bdi>' + ((p.source === 'site-ad' || p.promoter_id) ? '<span class="ptags">' + (p.source === 'site-ad' ? '<span class="adtag" title="ממומן: הגיע ממודעה בתשלום" aria-label="ממומן"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15.5 9a4 4 0 0 1 0 6"/></svg></span>' : '') + (p.promoter_id ? '<span class="prtag" title="יחצן: ' + esc((promoterOf(p.promoter_id) || {}).name || '') + '" aria-label="יחצן"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15.5 9a4 4 0 0 1 0 6"/></svg></span>' : '') + '</span>' : '') + '</div>' +
           (true ? '<div class="meta">' + (true ? '<span class="age" title="' + (p.gender ? (p.gender === 'male' ? 'זכר' : 'נקבה') + ' · ' : '') + 'גיל"><bdi>' + (p.gender ? '<b class="gl">' + (p.gender === 'male' ? 'ז' : 'נ') + '</b> ' : '') + (age != null ? age : (p.gender ? '' : '—')) + '</bdi></span>' : '') + side + tags + '</div>' : '') +
-          (noteLatest.get(p.id) ? '<div class="note" title="' + esc(noteLatest.get(p.id).author_name || '') + '">' + (noteLatest.get(p.id).has_image && !noteLatest.get(p.id).body ? IMG_ICON : esc(noteLatest.get(p.id).body)) + '</div>' : '') +
-        '</div>' +
+          xtraHtml(p, hl) +
+        '</div>' + (ic.n ? '<div class="rowic">' + ic.ev + ic.here + '</div>' : '') +
       '</li>';
     }).join('');
     $('#list').innerHTML = rowsHtml + othersHtml + newBtn;
@@ -2484,6 +2518,11 @@
     const list = stList('meeting', kind), cur = kind === 'before' ? l.status_key : l.after_key;
     openPick(b, { title: (kind === 'before' ? 'סטטוס במפגש · ' : 'אחרי המפגש · ') + dmShort(m), items: list.concat([{ key: '', label: 'ללא סטטוס' }]), on: new Set([cur || '']), multi: false, editScope: 'meeting', onPick: (k) => setMeetingStatus(sheet.id, mid, kind, k) });
   }, true);
+  $('#list').addEventListener('click', (e) => {
+    const hr = e.target.closest('[data-hr]'); if (hr) { e.stopPropagation(); setAttended(hr.dataset.hr, state.filter, hr.getAttribute('aria-pressed') !== 'true'); return; }
+    const eu = e.target.closest('[data-evun]'); if (eu) { e.stopPropagation(); setDetailsSent(eu.dataset.evun, state.filter, false); return; }
+    const er = e.target.closest('[data-evrow]'); if (er) { e.stopPropagation(); evAwait = { pid: er.dataset.evrow, mid: state.filter }; }
+  }, true);
   $('#pMore').addEventListener('click', () => { mLimit += 3; refreshSheetMeetings(); });
   $('#pMeetings').addEventListener('click', (e) => {
     const ht = e.target.closest('[data-ht]');
@@ -2740,6 +2779,41 @@
     try { const reg = await navigator.serviceWorker.getRegistration('./'); const sub = reg && await reg.pushManager.getSubscription(); if (sub) await saveSub(sub); } catch (e) {}
   }
 
+  /* ---------- פרטי המפגש ביום המפגש: עיגול וואטסאפ ברשימה, עם הנוסח מההגדרות ---------- */
+  const PIN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.6"/></svg>';
+  const EV_OPEN_OPTS = [['day', 'מתחילת יום המפגש'], ['08', 'מ-08:00'], ['09', 'מ-09:00'], ['12', 'מ-12:00'], ['180', '3 שעות לפני'], ['120', 'שעתיים לפני'], ['60', 'שעה לפני'], ['always', 'תמיד']];
+  const prefOf = () => state.prefs[emailOf()] || {};
+  const evOpenPref = () => { const v = prefOf().event_open; return EV_OPEN_OPTS.some((o) => o[0] === v) ? v : 'day'; };
+  const evOpenAt = (m) => { const [y, mo, d] = m.meeting_date.split('-').map(Number), [h, mi] = String(m.meeting_time).split(':').map(Number), v = evOpenPref(); if (v === 'always') return -Infinity; if (v === 'day') return Date.UTC(y, mo - 1, d, 0, 0); if (v === '08' || v === '09' || v === '12') return Date.UTC(y, mo - 1, d, Number(v), 0); return Date.UTC(y, mo - 1, d, h, mi) - Number(v) * 60000; };
+  const DEFAULT_EVENT_MSG = ['היום זה קורה!', 'נפגשים היום ב{מקום}.', 'התכנסות: {התכנסות}, מתחילים ב-{התחלה} ועד {סיום}.', '', 'מומלץ להגיע בבגדים נוחים ובקבוק מים.', 'מחכה לכם, טל'].join('\n');
+  const eventTemplate = () => (prefOf().event_msg || '').trim() ? prefOf().event_msg : DEFAULT_EVENT_MSG;
+  const eventDayMessage = (m) => {
+    const [h, mi] = String(m.meeting_time).split(':').map(Number), hm = (min) => String(Math.floor(min / 60) % 24).padStart(2, '0') + ':' + String(min % 60).padStart(2, '0'), start = h * 60 + mi;
+    const [eh, em] = String(m.end_time || '16:00').split(':').map(Number);
+    return eventTemplate().split('{התכנסות}').join(hm(start - 15)).split('{התחלה}').join(hm(start)).split('{סיום}').join(hm(eh * 60 + em)).split('{מקום}').join(String(m.location || '').trim());
+  };
+  const evElig = (l) => !!l && (linkStatus(l) === 'paid' || linkStatus(l) === 'exempt');   // שילם או חינם
+  const evMeeting = () => { const m = state.filter && state.meetings.find((x) => x.id === state.filter); if (!m) return null; const today = new Date(nowIL()).toISOString().slice(0, 10); return (evOpenPref() === 'always' ? m.meeting_date >= today : m.meeting_date === today) ? m : null; };
+  const evCircle = (p) => {
+    const m = evMeeting(); if (!m || (attendOpen(m) && evOpenPref() !== 'always') || nowIL() < evOpenAt(m)) return '';
+    const l = linkOf(p.id, m.id); if (!evElig(l)) return '';
+    if (l.details_sent_at) return '<button type="button" class="evc sent" data-evun="' + p.id + '" title="פרטי המפגש נשלחו (לחיצה מחזירה ללא נשלח)" aria-label="פרטי המפגש נשלחו, לחיצה מחזירה ללא נשלח">' + PIN_ICON + '</button>';
+    const base = waLink(p.phone);
+    return base ? '<a class="evc" data-evrow="' + p.id + '" href="' + base + '?text=' + encodeURIComponent(eventDayMessage(m)) + '" target="_blank" rel="noopener" title="שליחת פרטי המפגש בוואטסאפ" aria-label="שליחת פרטי המפגש בוואטסאפ">' + PIN_ICON + '</a>' : '<span class="evc off" title="אין טלפון" aria-label="אין טלפון">' + PIN_ICON + '</span>';
+  };
+  async function setDetailsSent(pid, mid, val) {
+    const l = linkOf(pid, mid); if (!l) return; const prev = l.details_sent_at; l.details_sent_at = val === false ? null : new Date().toISOString(); render();
+    try { await api(T.a + '?participant_id=eq.' + pid + '&meeting_id=eq.' + mid, { method: 'PATCH', body: { details_sent_at: l.details_sent_at } }); }
+    catch (err) { l.details_sent_at = prev; render(); fail(err); }
+  }
+  /* אחרי החזרה מהוואטסאפ שואלים אם ההודעה נשלחה */
+  let evAwait = null;
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden || !evAwait) return; const a = evAwait; evAwait = null;
+    const p = state.participants.find((x) => x.id === a.pid); if (!p || !linkOf(a.pid, a.mid) || linkOf(a.pid, a.mid).details_sent_at) return;
+    setTimeout(() => { if (confirm('נשלחה הודעת פרטי המפגש ל' + p.name + '?')) { setDetailsSent(a.pid, a.mid); toast('סומן שפרטי המפגש נשלחו'); } }, 250);
+  });
+
   /* ---------- תגיות על משתתפים וסטטוסים על מפגשים (שם, צבע וסדר; הכול תווית בלבד) ---------- */
   const PALETTE = { green: ['var(--green-bg)', 'var(--green)', 'ירוק'], red: ['var(--red-bg)', 'var(--red)', 'אדום'], amber: ['var(--yellow-bg)', 'var(--yellow)', 'צהוב'], sky: ['var(--sky-bg)', 'var(--sky)', 'כחול'], orange: ['#FDE3CC', '#B4500B', 'כתום'], neutral: ['#EFE6D2', '#6F5A44', 'אפור'] };
   const COLOR_KEYS = Object.keys(PALETTE);
@@ -2761,6 +2835,14 @@
   const BAL_LABEL = { n: 'מאוזן', '1': 'זכאי', '0': 'חייב', f: 'חינם' };
   const BAL_STYLE = { n: 'background:#fff;color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)', '1': 'background:var(--green-bg);color:var(--green)', '0': 'background:var(--red-bg);color:var(--red)', f: 'background:var(--line);color:var(--muted)' };
   const balIcon = (p) => { const n = Math.round(balNet(p.id) * 100) / 100, fa = n === 0 && freeAll(p); return '<span class="balic ' + (n < 0 ? 'pos' : n > 0 ? 'neg' : fa ? 'fr' : 'zero') + '" title="' + (n < 0 ? 'זכאי: יתרה לטובתו ₪' + nfm(-n) : n > 0 ? 'חייב: יתרת חובה ₪' + nfm(n) : fa ? 'חינם: בכל המפגשים שנרשם אליהם' : 'מאוזן') + '">₪</span>'; };
+
+  /* תא אמצעי ברשימה: תגיות, מצב יתרה (בתצוגת הכל), סטטוסי מפגש (בתוך מפגש) והערה אחרונה */
+  const xtraHtml = (p, hl) => {
+    const n = noteLatest.get(p.id), note = n ? '<span class="note" title="' + esc(n.author_name || '') + '">' + (n.has_image && !n.body ? IMG_ICON : esc(n.body)) + '</span>' : '';
+    const sts = hl ? [hl.status_key, hl.after_key].map((k) => k && stByKey(k) ? tgChip(stByKey(k)) : '').join('') : '';
+    const h = tagsHtml(p) + (state.filter ? '' : balIcon(p)) + sts + note;
+    return h ? '<div class="xtra">' + h + '</div>' : '';
+  };
 
   /* תפריט בחירה קטן צמוד לכפתור: אחד או כמה צ'יפים, ולחיצה מחוץ לו סוגרת */
   const pickMenu = document.createElement('div'); pickMenu.className = 'pickmenu'; pickMenu.hidden = true; document.body.appendChild(pickMenu);
@@ -2817,12 +2899,12 @@
 
   /* ---------- הגדרות: מסך ראשי ותתי-מסכים (דרכי תשלום ועוד) ---------- */
   let setView = 'main';
-  const SET_TITLES = { main: 'הגדרות', pm: 'דרכי תשלום', tiers: 'מדרגות מחיר', st: 'תגיות וסטטוסים' };
+  const SET_TITLES = { main: 'הגדרות', pm: 'דרכי תשלום', tiers: 'מדרגות מחיר', em: 'הודעה ביום המפגש', st: 'תגיות וסטטוסים' };
   let stScope = 'participant';
   function showSetView(v) {
     setView = v; document.querySelectorAll('#setDlg [data-sv]').forEach((el) => { el.hidden = el.dataset.sv !== v; });
     $('#setBack').hidden = v === 'main'; $('#setTitle').textContent = SET_TITLES[v] || 'הגדרות'; $('#setDlg').scrollTop = 0;
-    if (v === 'pm') renderPm(); if (v === 'tiers') renderTiers(); if (v === 'st') renderStSettings(); syncUrl();
+    if (v === 'pm') renderPm(); if (v === 'tiers') renderTiers(); if (v === 'st') renderStSettings(); if (v === 'em') { const ta = $('#emText'); if (document.activeElement !== ta) ta.value = eventTemplate(); renderEmOpen(); } syncUrl();
   }
   $('#setBack').addEventListener('click', () => showSetView('main'));
   $('#setDlg').addEventListener('click', (e) => { const g = e.target.closest('[data-goset]'); if (g) showSetView(g.dataset.goset); });
@@ -2873,6 +2955,17 @@
   $('#setDlg').addEventListener('change', (e) => { const inp = e.target.closest('.stname'); if (!inp) return; const key = inp.closest('.strow').dataset.k, v = inp.value.trim().slice(0, 14); if (!v) { renderStSettings(); return; } saveStatus(key, { label: v }); });
   $('#stAdd').addEventListener('click', () => addStatus(stScope, 'before'));
   $('#stAddAfter').addEventListener('click', () => addStatus('meeting', 'after'));
+
+  async function savePref(patch) {
+    const em = emailOf(), prev = state.prefs[em]; state.prefs[em] = Object.assign({}, prev, { email: em }, patch); render();
+    try { await api(T.pf, { method: 'POST', body: Object.assign({ email: em }, patch), prefer: 'resolution=merge-duplicates' }); }
+    catch (err) { if (prev) state.prefs[em] = prev; else delete state.prefs[em]; render(); fail(err); }
+  }
+  const renderEmOpen = () => { const cur = evOpenPref(); $('#emOpenOpts').innerHTML = EV_OPEN_OPTS.map((o) => '<button type="button" role="radio" class="stc" data-eo="' + o[0] + '" aria-pressed="' + (o[0] === cur) + '">' + o[1] + '</button>').join(''); };
+  $('#emOpenOpts').addEventListener('click', (e) => { const b = e.target.closest('[data-eo]'); if (!b) return; savePref({ event_open: b.dataset.eo }); renderEmOpen(); });
+  $('#emText').addEventListener('change', () => savePref({ event_msg: $('#emText').value.trim() === DEFAULT_EVENT_MSG.trim() ? '' : $('#emText').value }));
+  $('#emReset').addEventListener('click', () => { $('#emText').value = DEFAULT_EVENT_MSG; savePref({ event_msg: '' }); });
+  $('#emVars').addEventListener('click', (e) => { const b = e.target.closest('[data-v]'); if (!b) return; const ta = $('#emText'), a = ta.selectionStart ?? ta.value.length, z = ta.selectionEnd ?? a; ta.value = ta.value.slice(0, a) + b.dataset.v + ta.value.slice(z); ta.focus(); ta.selectionStart = ta.selectionEnd = a + b.dataset.v.length; ta.dispatchEvent(new Event('change')); });
   const sortedTiers = () => state.tiers.slice().sort((a, b) => b.days - a.days);
   const tierSummary = () => state.tiers.length ? sortedTiers().map((t) => (t.days > 0 ? 'מ-' + t.days + ' ימים לפני: ' : 'בימים האחרונים: ') + '₪' + t.price).join(' · ') : 'המחיר של המפגש עצמו';
   function renderSettings() { $('#setPmHint').textContent = state.payMethods.map((x) => x.name).join(' · '); $('#setTierHint').textContent = tierSummary(); $('#setStHint').textContent = stList('participant').length + ' תגיות · ' + (stList('meeting', 'before').length + stList('meeting', 'after').length) + ' סטטוסי מפגש'; }

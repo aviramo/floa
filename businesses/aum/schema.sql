@@ -630,6 +630,24 @@ end $$;
 drop trigger if exists aum_pay_notes_t on public.aum_payments;
 create trigger aum_pay_notes_t after insert on public.aum_payments for each row execute function public.aum_pay_notes();
 
+-- 16. פרטי המפגש ביום המפגש: הודעת וואטסאפ מוכנה לכל משתתף (נוסח ושעת פתיחה ניתנים להגדרה), וסימון מי קיבל.
+create table if not exists public.aum_admin_prefs (
+  email      text primary key,
+  event_msg  text,
+  event_open text
+);
+alter table public.aum_admin_prefs enable row level security;
+drop policy if exists "aum admin all" on public.aum_admin_prefs;
+create policy "aum admin all" on public.aum_admin_prefs for all to authenticated using (public.aum_is_admin()) with check (public.aum_is_admin());
+revoke all on public.aum_admin_prefs from anon;
+grant select, insert, update, delete on public.aum_admin_prefs to authenticated;
+alter table public.aum_registrations add column if not exists details_sent_at timestamptz;
+do $$ begin
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'aum_admin_prefs') then
+    alter publication supabase_realtime add table public.aum_admin_prefs;
+  end if;
+end $$;
+
 notify pgrst, 'reload schema';
 
 -- ==========================================================================
