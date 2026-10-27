@@ -3976,6 +3976,7 @@
     const bar = document.querySelector('.listbar'); if (!bar) return; const br = bar.getBoundingClientRect();
     [['#listPay', '#list .payic'], ['#listHere', '#list .here'], ['#listSent', '#list .evc'], ['#listBal', '#list .balic']].forEach(([box, ref]) => {
       const b = document.querySelector(box), r = document.querySelector(ref); if (!b) return;
+      if (box === '#listSent') b.style.visibility = (!r && !state.sent) ? 'hidden' : '';   // אין אף עיגול שליחה ברשימה (אף משתתף לא זכאי): אין מה לסנן, והאייקון לא נערם על אייקון התשלום
       if (r) { const rr = r.getBoundingClientRect(), bb = (b.firstElementChild || b).getBoundingClientRect(); b.style.left = Math.round(rr.left + rr.width / 2 - br.left - (bb.left - b.getBoundingClientRect().left) - bb.width / 2) + 'px'; }
     });
   }
