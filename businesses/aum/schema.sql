@@ -681,6 +681,7 @@ alter table public.aum_admin_prefs add column if not exists view_tags boolean;
 alter table public.aum_admin_prefs add column if not exists view_pay  boolean;
 alter table public.aum_admin_prefs add column if not exists view_sent boolean;
 alter table public.aum_admin_prefs add column if not exists view_att  boolean;
+alter table public.aum_admin_prefs add column if not exists view_scopes jsonb;   -- העדפות תצוגה לפי מפגש ולמצב הכללי ("all")
 
 notify pgrst, 'reload schema';
 
