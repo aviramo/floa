@@ -70,8 +70,16 @@
     .mtr.mhead span:first-child { text-align: right; }
     .mtr.mrow2 { min-height: 46px; cursor: pointer; font-size: 16px; }
     .mtr.mrow2:hover { background: rgba(63,56,47,.05); }
-    .mtr.mrow2[aria-checked="true"] { background: rgba(201,111,82,.13); color: var(--terra); font-weight: 700; }
+    .mtr.mrow2[aria-checked="true"] { background: rgba(63,56,47,.08); color: var(--ink); font-weight: 700; }   /* הנבחר ניטרלי ועדין: המפגש הקרוב (כהה) תמיד הכי בולט */
     .mtr.mrow2.past { opacity: .6; }
+    .mtr.mrow2.next { background: var(--ink); color: #FFFDF9; font-weight: 800; font-size: 18px; min-height: 64px; margin: 6px 0; box-shadow: 0 6px 16px -6px rgba(63,56,47,.55); }
+    .mtr.mrow2.next:hover { background: var(--ink); }
+    .mtr.mrow2.next[aria-checked="true"] { box-shadow: inset 0 0 0 1px var(--terra), 0 6px 16px -6px rgba(63,56,47,.55); }
+    .mtr.mrow2.next .mc, .mtr.mrow2.next .medit { color: #FFFDF9; }
+    .mtr.mrow2.next .mc.dim { color: rgba(255,253,249,.7); }
+    .mtr.mrow2.next .medit:hover { background: rgba(255,253,249,.16); color: #FFFDF9; }
+    .mtr .mnext { display: inline-block; margin-inline-start: 8px; font-size: 12.5px; font-weight: 800; border-radius: 999px; padding: 3px 10px; background: var(--terra); color: #FFFDF9; vertical-align: middle; }
+    .mtr.mrow2.next .mc { font-size: 17px; }
     .mtr .mc { text-align: center; font-weight: 600; font-size: 15px; font-variant-numeric: tabular-nums; }
     .mtr .mc.dim { color: var(--muted); }
     .mtr .medit { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; color: var(--muted); }
@@ -1199,6 +1207,17 @@
     .row .nm .name { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
     .hfilt.neu { background: var(--line); border: 1px solid var(--line); color: var(--muted); }   /* ניטרלי (בלי קו חוצה): עוד אין מידע, מפגש עתידי, לא משויכים */
     .fopt .hfilt { font-weight: 800; }
+  .mt2 { border: 1px solid var(--line); border-radius: 14px; background: #fff; overflow: hidden; }
+  .mt2row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--line); font-size: 14px; font-weight: 600; color: var(--muted); }
+  .mt2row:last-child { border-bottom: 0; }
+  .mt2row .mtp { display: flex; align-items: center; gap: 6px; direction: ltr; }
+  .mt2row .mtp input { width: 70px; height: 40px; box-sizing: border-box; border-radius: 10px; border: 1px solid var(--line); background: var(--cream); text-align: center; font-size: 18px; font-weight: 800; color: var(--ink); }
+  .mt2row .mtp b { font-size: 16px; color: var(--ink); }
+  .mt2row .mtlbl { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; white-space: nowrap; }
+  .mt2row select { height: 36px; min-width: 56px; border-radius: 10px; border: 1px solid var(--line); background-color: var(--cream); font-size: 15px; font-weight: 700; color: var(--ink); padding: 0 8px; }
+  .mt2row .mtdel { width: 28px; height: 28px; border: 0; background: transparent; color: var(--muted); font-size: 20px; cursor: pointer; flex: 0 0 28px; }
+  .mt2add { display: flex; gap: 8px; margin-top: 8px; }
+  .mt2add button { flex: 1 1 0; height: 38px; border-radius: 12px; border: 1px solid var(--line); background: #fff; color: var(--terra); font-weight: 700; font-size: 14px; cursor: pointer; }
     /* טל היא המנהלת היחידה: בלי בחירת מנהל, בלי התחשבנות בין מנהלים ובלי "הקופה של" */
     #finSetBtn, label.field:has(select[name="by"]), .pmown { display: none !important; }
     .reddot { position: absolute; top: 5px; inset-inline-end: 5px; width: 10px; height: 10px; border-radius: 50%; background: #E5342B; border: 2px solid var(--paper); box-sizing: border-box; }
@@ -1382,20 +1401,22 @@
       <div class="sheet-head">
         <h2 id="mTitle">מפגש חדש</h2>
       </div>
+      <label class="field"><span>שם המפגש (אופציונלי)</span><input name="mname" type="text" maxlength="80" placeholder="למשל: מפגש פתיחת עונה" /></label>
       <div class="two" style="grid-template-columns: 1fr 1fr">
         <label class="field"><span>תאריך</span><input name="date" type="date" required /></label>
+        <label class="field"><span>התחלה</span><input name="time" type="time" required value="09:00" /></label>
+      </div>
+      <div class="two" style="grid-template-columns: 1fr 1fr">
+        <label class="field"><span>סיום</span><input name="to" type="time" required value="16:00" /></label>
         <label class="field"><span>מקום</span><input name="location" maxlength="120" /></label>
       </div>
-      <div class="two" style="grid-template-columns: 1fr 1fr">
-        <label class="field"><span>התחלה</span><input name="time" type="time" required value="09:00" /></label>
-        <label class="field"><span>סיום</span><input name="to" type="time" required value="16:00" /></label>
-      </div>
-      <div class="two" style="grid-template-columns: 1fr 1fr">
-        <label class="field"><span>מחיר ליחיד ב-₪</span><input name="price" type="number" min="0" inputmode="numeric" /></label>
-        <label class="field"><span>מחיר לזוג ב-₪</span><input name="pair" type="number" min="0" inputmode="numeric" /></label>
-      </div>
-      <label class="field"><span>מקומות (ריק = בלי הגבלה)</span><input name="capacity" type="number" min="1" inputmode="numeric" /></label>
+      <label class="field"><span>כמות משתתפים</span><input name="max" type="number" inputmode="numeric" min="1" max="500" step="1" placeholder="ללא הגבלה" /></label>
       <label class="field"><span>הוראות הגעה</span><textarea name="directions" id="mDirs" rows="1" maxlength="800" placeholder="כתובת, חנייה, איך מגיעים"></textarea></label>
+      <div class="field"><span>מחירים</span>
+        <div class="mt2" id="mTierList"></div>
+        <div class="mt2add"><button type="button" id="mTierAdd">+ מדרגה</button></div>
+      </div>
+      <label class="field"><span>מחיר לזוג ב-₪ (אם יש)</span><input name="pair" type="number" min="0" inputmode="numeric" /></label>
       <button class="btn" id="mSubmit" type="submit">יצירת מפגש</button>
       <button class="btn ghost" id="mDelete" type="button">מחיקת מפגש</button>
     </form>
@@ -1439,7 +1460,6 @@
         </div>
         <div class="setgrp">
           <button type="button" class="setrow setlink" id="setSrcBtn"><svg class="seti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h11M11 7l5 5-5 5M20 5v14"/></svg><div class="setl"><b>דרכי הגעה</b><small id="setSrcHint"></small></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="22" height="22"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg></button>
-          <button type="button" class="setrow setlink" id="setPayBtn"><svg class="seti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19h5v-5h5V9h6V5"/></svg><div class="setl"><b>תשלומים</b><small id="setPayHint"></small></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="22" height="22"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg></button>
           <button type="button" class="setrow setlink" id="setPmBtn"><svg class="seti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18"/></svg><div class="setl"><b>דרכי תשלום</b><small id="setPmHint"></small></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="22" height="22"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg></button>
           <button type="button" class="setrow setlink" id="setStBtn"><svg class="seti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg><div class="setl"><b>סטטוסים על מפגשים</b><small>שם, צבע וסדר לכל סטטוס</small></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="22" height="22"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg></button>
           <button type="button" class="setrow setlink" id="setTagBtn"><svg class="seti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12V4h8l9 9-8 8z"/><circle cx="8" cy="9" r="1.3"/></svg><div class="setl"><b>תגיות על משתתפים</b><small>שם וסדר לכל תגית</small></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="22" height="22"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg></button>
@@ -1465,12 +1485,6 @@
         <p class="sthint" style="margin:0 2px 10px">כל דרך הגעה (פייסבוק, קרן, חבר מביא חבר) עם שם, צבע, קוד משלה בקישור <bdi dir="ltr">floa.co.il/aum/?s=<b>קוד</b></bdi> ועלות לליד. ההתחשבנות בכפתור בכל כרטיס</p>
         <div id="srcPrList"></div>
         <button type="button" class="btn ghost" id="srcPrAdd">+ דרך הגעה חדשה</button>
-      </div>
-      <div id="setPay" hidden>
-        <p class="sthint" style="margin:0 2px 12px">המחיר חל עד מספר הימים שנקבע לפני המפגש, ואחר כך עובר למדרגה הבאה. אפשר להוסיף כמה מדרגות שרוצים</p>
-        <div id="tierList"></div>
-        <button type="button" class="btn ghost" id="tierAdd">+ מדרגה חדשה</button>
-        <p class="sthint" id="tierPrev" style="margin:10px 2px 0"></p>
       </div>
       <div id="setDel" hidden>
         <p id="setDelText" style="margin:2px 0 14px;line-height:1.55"></p>
@@ -1742,7 +1756,7 @@
 
   /* בשפת המסך "מפגש" הוא שורת aum_events (event_date, start_time) והשיוך הוא aum_registrations (event_id); שם המשתתף
      הוא עמודה אחת (name) ובמסך שם פרטי ושם משפחה. ההמרה כאן, בגבול עם הדאטהבייס, ושאר הקוד מדבר בשפה של המסך */
-  const W_M = { meeting_date: 'event_date', meeting_time: 'start_time' }, W_A = { meeting_id: 'event_id' };
+  const W_M = { meeting_date: 'event_date', meeting_time: 'start_time', max_participants: 'capacity' }, W_A = { meeting_id: 'event_id' };
   const toDb = (map, o) => { if (Array.isArray(o)) return o.map((x) => toDb(map, x)); if (!o || typeof o !== 'object') return o; const r = {}; for (const k in o) r[map[k] || k] = o[k]; return r; };
   const nameParts = (n) => { const t = String(n || '').trim().split(/\s+/); return [t[0] || '', t.slice(1).join(' ')]; };
   const pBody = (b, path) => {
@@ -1753,13 +1767,13 @@
     delete r.first_name; delete r.last_name; r.name = f + (l ? ' ' + l : ''); return r;
   };
   const fromDb = (table, rows) => {
-    const one = (r) => table === T.m ? { ...r, meeting_date: r.event_date, meeting_time: r.start_time } : table === T.a ? { ...r, meeting_id: r.event_id } : table === T.p ? (() => { const [f, l] = nameParts(r.name); return { ...r, first_name: f, last_name: l }; })() : r;
+    const one = (r) => table === T.m ? { ...r, meeting_date: r.event_date, meeting_time: r.start_time, max_participants: r.capacity } : table === T.a ? { ...r, meeting_id: r.event_id } : table === T.p ? (() => { const [f, l] = nameParts(r.name); return { ...r, first_name: f, last_name: l }; })() : r;
     return Array.isArray(rows) ? rows.map(one) : rows && typeof rows === 'object' ? one(rows) : rows;
   };
   async function api(path, { method = 'GET', body, prefer } = {}) {
     const table = path.split('?')[0];
     const map = table === T.m ? W_M : table === T.a ? W_A : null;
-    if (map) path = path.replace(/\bmeeting_id\b/g, 'event_id').replace(/\bmeeting_date\b/g, 'event_date').replace(/\bmeeting_time\b/g, 'start_time');
+    if (map) path = path.replace(/\bmeeting_id\b/g, 'event_id').replace(/\bmeeting_date\b/g, 'event_date').replace(/\bmeeting_time\b/g, 'start_time').replace(/\bmax_participants\b/g, 'capacity');
     if (body) body = map ? toDb(map, body) : table === T.p ? pBody(body, path) : body;
     const headers = { apikey: DB.key, Authorization: 'Bearer ' + ((session && session.access_token) || DB.key) };
     if (body) headers['Content-Type'] = 'application/json';
@@ -1883,14 +1897,14 @@
   /* המפגש שעליו מסמנים הגעה ברשימה הראשית: המפגש שנבחר בכותרת, אחרת הקרוב ביותר (או של היום) */
   const attTarget = () => state.filter ? state.meetings.find((m) => m.id === state.filter) : state.meetings.filter((m) => !isPast(m)).sort((a, b) => (a.meeting_date + a.meeting_time).localeCompare(b.meeting_date + b.meeting_time))[0];
   /* מחיר ברירת מחדל לפי מועד התשלום: 80 ₪ עד יומיים לפני ההתייקרות, ומשלושה ימים לפני המפגש 100 ₪ */
-  /* מדרגות מחיר לפי ימים שנותרו עד המפגש (ניתנות לעריכה בהגדרות ← תשלומים): מחיר המדרגה הגבוהה ביותר ש-days שלה קטן או שווה לימים שנותרו; המדרגה האחרונה (days=0) היא "עד המפגש" */
-  state.tiers = [];   // מדרגות מחיר מוגדרות בהגדרות; בלי מדרגות המחיר הוא זה של המפגש עצמו
-  let PRICE_EARLY = 300, PRICE_LATE = 300;
-  const nextMeeting = () => state.meetings.filter((x) => x.meeting_date >= todayISO()).sort((a, b) => a.meeting_date.localeCompare(b.meeting_date))[0] || null;
-  const quickPrices = (m) => { const mm = m || nextMeeting(); const v = [...new Set(sortedTiers().map((x) => x.price).concat(mm ? [Number(mm.price), Number(mm.price_pair)] : []).filter(Boolean))]; return v.length ? v : [PRICE_EARLY]; };
-  const sortedTiers = () => state.tiers.slice().sort((a, b) => b.days - a.days);
-  const syncPriceVars = () => { const s = sortedTiers(); if (s.length) { PRICE_EARLY = s[0].price; PRICE_LATE = s[s.length - 1].price; } };
-  const priceForDays = (left, m) => { const hit = sortedTiers().find((x) => left >= x.days); return hit ? hit.price : ((m && Number(m.price)) || PRICE_EARLY); };
+  /* מדרגות מחיר לכל מפגש (העמודה price_tiers, מועתקת למפגש חדש מהמפגש הקודם): { base, steps: [{ days, price }], final }.
+     base = המחיר הרגיל (מתחילת ההרשמה), כל שלב = "החל מ-N ימים לפני המפגש" והמחיר שלו (האחרון חל עד יום המפגש).
+     המחיר ביום מסוים: המדרגה שמתחילה הכי קרוב למפגש מבין אלה שכבר התחילו, אחרת base */
+  const DEFAULT_TIERS = { base: 300, steps: [] };   // רק למפגש שעדיין אין לו מדרגות
+  const tiersOf = (m) => { const q = m && m.price_tiers; if (q && !Array.isArray(q) && Number.isFinite(Number(q.base))) return { base: Number(q.base), steps: (Array.isArray(q.steps) ? q.steps : []).map((x) => ({ days: Number(x.days), price: Number(x.price) })).filter((x) => x.days >= 1 && Number.isFinite(x.price)).sort((a, b) => b.days - a.days) }; return { base: (m && Number(m.price)) || DEFAULT_TIERS.base, steps: [] }; };
+  const PRICE_EARLY = 300;
+  const quickPrices = (m) => { const q = tiersOf(m); return [...new Set([q.base].concat(q.steps.map((x) => x.price)))]; };
+  const priceForDays = (left, m) => { const q = tiersOf(m); const s = q.steps.filter((x) => left <= x.days).sort((a, b) => a.days - b.days)[0]; return s ? s.price : q.base; };
   const daysTo = (m, iso) => { const a = m.meeting_date.split('-').map(Number), b = (iso || todayISO()).split('-').map(Number); return Math.round((Date.UTC(a[0], a[1] - 1, a[2]) - Date.UTC(b[0], b[1] - 1, b[2])) / 864e5); };
   const defaultPrice = (m, iso) => priceForDays(daysTo(m, iso), m);
   /* קרדיט משתתף: סכומים שנשארו אצלנו בביטול בלי החזר כסף, פחות מה ששימש לתשלום חדש */
@@ -1988,7 +2002,7 @@
   async function load(silent) {
     if (!silent) $('#status').innerHTML = '<div class="empty">טוען…</div>';
     try {
-      const [p, m, a, nn, prs, pps, pays, sts, pfs, trs, pms, fin0, finr0] = await Promise.all([
+      const [p, m, a, nn, prs, pps, pays, sts, pfs, pms, fin0, finr0] = await Promise.all([
         api(T.p + '?select=*'),
         api(T.m + '?select=*'),
         api(T.a + '?select=after_key,participant_id,meeting_id,paid,pay_requested_at,status_key,created_at,exempt,attended,paid_amount,promoter_id,commission,paid_at,details_sent_at,will_pay,maybe,no_pay'),
@@ -1998,14 +2012,12 @@
         api(T.pay + '?select=*&order=created_at.desc'),
         api(T.st + '?select=*').catch(() => null),
         api(T.pf + '?select=*').catch(() => null),
-        api(T.tr + '?select=*').catch(() => null),
         api(T.pm + '?select=*&order=sort.asc').catch(() => null),
         api(T.fin + '?select=*&order=entry_date.desc,created_at.desc').catch(() => null),
         api(T.finr + '?select=*&order=created_at.desc').catch(() => null),
       ]);
       state.fin = fin0 || []; state.finRec = finr0 || [];
       if (pms && pms.length) state.payMethods = pms.map((x) => Object.assign({}, x));
-      if (trs && trs.length) { state.tiers = trs.map((x) => ({ id: x.id, days: x.days, price: x.price })); syncPriceVars(); }
       if (pfs) { state.prefs = Object.fromEntries(pfs.map((x) => [String(x.email).toLowerCase(), x])); applyViewPrefs(); }
       if (sts && sts.length) { const ps = sts.filter((x) => x.scope === 'participant'); state.pstatuses = ps.map((x) => Object.assign({}, x)).sort((a, b) => a.sort - b.sort); }
       if (sts && sts.length) { state.astatuses = sts.filter((x) => x.scope !== 'participant' && x.phase === 'after').map((x) => Object.assign({}, x)); const extra = sts.filter((x) => x.scope !== 'participant' && x.phase !== 'after' && !BUILTIN.includes(x.key)).map((x) => Object.assign({}, x)); state.statuses = DEFAULT_STATUSES.filter((d) => d.key === SYSTEM_STATUS || sts.some((x) => x.key === d.key && x.scope !== 'participant')).map((d) => Object.assign({}, d, sts.find((x) => x.key === d.key && x.scope !== 'participant') || {}, d.key === SYSTEM_STATUS ? { sort: d.sort } : {})).concat(extra); applyStatuses(); }
@@ -2046,7 +2058,7 @@
           const v = d.set;
           if (d.pr && promoterOf(d.pr)) { showSetView('src'); showPromoterDetail(d.pr); $('#prDlg').showModal(); }
           else if (v === 'st' || v === 'tag') { stScope = v === 'st' ? 'meeting' : 'participant'; showSetView('st'); }
-          else if (['pay', 'src', 'pm', 'em'].includes(v)) showSetView(v);
+          else if (['src', 'pm', 'em'].includes(v)) showSetView(v);
           if (document.activeElement && document.activeElement.closest('#setDlg')) document.activeElement.blur(); syncUrl();
         }
         else if (d.fin) { openFinance(d.fin); }
@@ -2075,12 +2087,13 @@
     $('#mSelTxt').textContent = cur ? meetingLabel(cur).split(' · ')[0] : 'הכל';
     const dayTime = (m) => esc(meetingLabel(m).split(' · ')[0]) + ' · ' + esc(meetingLabel(m, true).split(' ').slice(0, 2).join(' ')) + ' · ' + esc(String(m.meeting_time).slice(0, 5));
     const EDIT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z"/><path d="M14 7l3 3"/></svg>';
+    const nextM = state.meetings.filter((m) => !isPast(m)).sort((a, b) => (a.meeting_date + a.meeting_time).localeCompare(b.meeting_date + b.meeting_time))[0] || null;   // המפגש הקרוב: מודגש בתפריט
     const paidAll = state.participants.filter((x) => { const ls = linksOf(x.id).filter((l) => !l.exempt); return ls.length && ls.every((l) => l.paid); }).length;
     $('#mMenu').innerHTML = '<div class="mtr mhead" aria-hidden="true"><span>מפגש</span><span>נרשמו</span><span>שילמו</span><span></span></div>' +
       '<div class="mtr mrow2" role="menuitemradio" tabindex="0" data-filter="" aria-checked="' + (state.filter === null) + '"><span>כל המשתתפים</span><span class="mc">' + state.participants.length + '</span><span class="mc dim">' + paidAll + '</span><span></span></div>' +
       state.meetings.map((m) => {
-        const ls = state.att.filter((a) => a.meeting_id === m.id);
-        return '<div class="mtr mrow2' + (isPast(m) ? ' past' : '') + '" role="menuitemradio" tabindex="0" data-filter="' + m.id + '" aria-checked="' + (state.filter === m.id) + '"><span>' + dayTime(m) + '</span><span class="mc">' + ls.length + '</span><span class="mc dim">' + ls.filter((a) => a.paid).length + '</span>' +
+        const ls = state.att.filter((a) => a.meeting_id === m.id), isNext = nextM === m;
+        return '<div class="mtr mrow2' + (isPast(m) ? ' past' : '') + (isNext ? ' next' : '') + '" role="menuitemradio" tabindex="0" data-filter="' + m.id + '" aria-checked="' + (state.filter === m.id) + '"><span>' + dayTime(m) + '' + '</span><span class="mc">' + ls.length + '</span><span class="mc dim">' + ls.filter((a) => a.paid).length + '</span>' +
           '<button type="button" class="medit" data-edit-m="' + m.id + '" aria-label="עריכת מפגש" title="עריכת מפגש">' + EDIT_ICON + '</button></div>';
       }).join('') +
       '<button type="button" role="menuitem" class="addm2" id="addMeeting">+ מפגש חדש</button>';
@@ -2432,7 +2445,7 @@
   const P = (a, b) => b ? Math.round(a / b * 100) : null;
   const Ps = (a, b) => b ? Math.round(a / b * 100) + '%' : '-';
   const nfm = (n) => Math.round(n).toLocaleString('he-IL');
-  const priceAtReg = (m, created) => priceForDays(daysTo(m, created ? ilDay(created) : todayISO()));
+  const priceAtReg = (m, created) => priceForDays(daysTo(m, created ? ilDay(created) : todayISO()), m);
 
   function computeStats() {
     const asc = state.meetings.slice().sort((a, b) => (a.meeting_date + a.meeting_time).localeCompare(b.meeting_date + b.meeting_time));
@@ -3498,7 +3511,7 @@
     { const pp = state.participants.find((x) => x.id === pid), lk = m && linkOf(pid, m.id), np = !!(m && pp && noPayOf(pp, lk)); $('#depFields').hidden = np; $('#depFree').hidden = !np; }
     $('#depIntro').textContent = m ? 'מפגש ' + dmShort(m) : 'תשלום שהתקבל בלי קשר למפגש. הוא נכנס ליתרה, ואפשר לקחת ממנה בשיוך למפגש';
     $('#depPkgLbl').textContent = m ? 'על כמה מפגשים' : 'חבילה'; f.pay_pkg.options[0].textContent = m ? '1' : '-';
-    $('#depQuick').innerHTML = quickPrices().map((v) => '<button type="button" data-q="' + v + '">' + v + ' ₪</button>').join('');
+    $('#depQuick').innerHTML = quickPrices(m).map((v) => '<button type="button" data-q="' + v + '">' + v + ' ₪</button>').join('');
     $('#depQuick').onclick = (e) => { const b = e.target.closest('[data-q]'); if (b) { f.pay_dep.value = b.dataset.q; paintPkg(); } };
     const METH = state.payMethods.map((x) => [x.key, x.name]);
     f.pay_depm.innerHTML = METH.map((x) => '<option value="' + esc(x[0]) + '">' + esc(x[1]) + '</option>').join('') + '<option value="other">אחר</option>'; f.pay_depm.value = METH.length ? METH[0][0] : 'other';
@@ -3943,24 +3956,54 @@
 
   /* ---------- חלון מפגש ---------- */
   const mDlg = $('#mDlg'), mForm = $('#mForm');
-  let editingMeeting = null;
+  let editingMeeting = null, mTiers = { base: 80, steps: [] };
+  /* עורך המחירים של המפגש (קומפקטי, מהמוקדם למאוחר): מחיר רגיל (בלי מספר ימים) ומדרגות "החל מ-N ימים לפני" (N נבחר מרשימה); המדרגה האחרונה חלה עד יום המפגש */
+  const mtOpt = (n, sel) => '<option value="' + n + '"' + (n === sel ? ' selected' : '') + '>' + n + '</option>';
+  function renderMTiers() {
+    mTiers.steps.sort((a, b) => b.days - a.days);
+    const pr = (v, k) => '<span class="mtp"><b>₪</b><input data-k="' + k + '" type="number" inputmode="numeric" min="0" max="9999" value="' + v + '" aria-label="מחיר" /></span>';
+    let h = '<div class="mt2row">' + pr(mTiers.base, 'base') + '<span class="mtlbl">' + (mTiers.steps.length ? 'מחיר רגיל, מתחילת ההרשמה' : 'מחיר הכרטיס') + '</span></div>';
+    mTiers.steps.forEach((x, i) => {
+      const days = []; for (let d = 1; d <= 30; d++) days.push(d); if (!days.includes(x.days)) days.push(x.days);
+      h += '<div class="mt2row">' + pr(x.price, 's' + i) + '<span class="mtlbl">החל מ<select data-k="d' + i + '" aria-label="ימים לפני המפגש">' + days.sort((a, b) => a - b).map((d) => mtOpt(d, x.days)).join('') + '</select>ימים לפני</span><button type="button" class="mtdel" data-del="s' + i + '" aria-label="מחיקת מדרגה" title="מחיקת מדרגה">×</button></div>';
+    });
+    $('#mTierList').innerHTML = h;
+  }
+  $('#mTierList').addEventListener('input', (e) => {
+    const inp = e.target.closest('input'); if (!inp) return; const v = inp.value === '' ? '' : Math.max(0, Math.round(Number(inp.value))), k = inp.dataset.k;
+    if (k === 'base') mTiers.base = v; else if (k[0] === 's') mTiers.steps[Number(k.slice(1))].price = v;
+  });
+  $('#mTierList').addEventListener('change', (e) => {
+    const sel = e.target.closest('select'); if (!sel) return; const i = Number(sel.dataset.k.slice(1)), d = Number(sel.value);
+    if (mTiers.steps.some((x, j) => j !== i && x.days === d)) { toast('כבר יש מדרגה שמתחילה באותו מספר ימים'); renderMTiers(); return; }
+    mTiers.steps[i].days = d; renderMTiers();
+  });
+  $('#mTierList').addEventListener('click', (e) => { const d = e.target.closest('[data-del]'); if (!d) return; mTiers.steps.splice(Number(d.dataset.del.slice(1)), 1); renderMTiers(); });
+  $('#mTierAdd').addEventListener('click', () => {
+    let d = 1; while (mTiers.steps.some((x) => x.days === d)) d++;
+    const last = mTiers.steps.length ? mTiers.steps[mTiers.steps.length - 1].price : Number(mTiers.base) || 0;
+    mTiers.steps.push({ days: d, price: last + 20 }); renderMTiers();
+  });
 
   function openMeeting(id) {
     const m = id ? state.meetings.find((x) => x.id === id) : null;
     editingMeeting = m;
     mForm.date.value = m ? m.meeting_date : '';
-    mForm.time.value = m ? String(m.meeting_time).slice(0, 5) : '09:00';
-    mForm.to.value = m ? String(m.end_time).slice(0, 5) : '16:00';
-    mForm.location.value = m ? m.location : 'בית כאן ועכשיו, פינס 44, גדרה';
-    mForm.price.value = m && m.price != null ? m.price : '';
-    mForm.pair.value = m && m.price_pair != null ? m.price_pair : '';
-    mForm.capacity.value = m && m.capacity != null ? m.capacity : '';
-    mForm.directions.value = (m && m.directions) || '';
+    /* מפגש חדש: משכפלים את פרטי המקום מהמפגש האחרון (הוראות הגעה, שני קישורי הניווט ומקסימום משתתפים); אפשר לערוך אחר כך */
+    const prev = m ? null : state.meetings.slice().sort((a, b) => (b.meeting_date + b.meeting_time).localeCompare(a.meeting_date + a.meeting_time))[0] || null;
+    const src = m || prev || {};
+    mForm.time.value = m ? String(m.meeting_time).slice(0, 5) : prev ? String(prev.meeting_time).slice(0, 5) : '09:00';   // מפגש חדש: כל השדות חוץ מהתאריך מועתקים מהמפגש הקודם
+    mForm.mname.value = src.name || '';
+    mForm.to.value = String(src.end_time || '16:00').slice(0, 5); mForm.location.value = src.location || 'בית כאן ועכשיו, פינס 44, גדרה'; mForm.pair.value = src.price_pair != null ? src.price_pair : '';
+    mForm.directions.value = src.directions || '';
+    mForm.max.value = src.max_participants == null ? (m || prev ? '' : '40') : src.max_participants;
+    mTiers = tiersOf(src); renderMTiers();   // מפגש חדש: מדרגות המחיר מועתקות מהמפגש הקודם
     $('#mTitle').textContent = m ? 'עריכת מפגש' : 'מפגש חדש';
     $('#mSubmit').textContent = m ? 'שמירה' : 'יצירת מפגש';
     $('#mDelete').hidden = !m;
     { const linked = !!(m && state.att.some((x) => x.meeting_id === m.id)); $('#mDelete').classList.toggle('locked', linked); $('#mDelete').title = linked ? 'לא ניתן למחוק מפגש שמשויכים אליו משתתפים' : ''; }
     mDlg.showModal();
+    if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();   // בלי פוקוס אוטומטי: המקלדת לא עולה בפתיחה
     autoGrow($('#mDirs'));
     syncUrl();
   }
@@ -3970,9 +4013,12 @@
 
   mForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const num = (v) => (v === '' ? null : Number(v));
-    const body = { meeting_date: mForm.date.value, meeting_time: mForm.time.value || '09:00', end_time: mForm.to.value || '16:00', location: mForm.location.value.trim() || 'גדרה', price: num(mForm.price.value), price_pair: num(mForm.pair.value), capacity: num(mForm.capacity.value), directions: mForm.directions.value.trim() };
+    const body = { meeting_date: mForm.date.value, meeting_time: mForm.time.value || '09:00', end_time: mForm.to.value || '16:00', location: mForm.location.value.trim() || 'גדרה', price_pair: mForm.pair.value === '' ? null : Number(mForm.pair.value), name: mForm.mname.value.trim() || null, directions: mForm.directions.value.trim(), max_participants: mForm.max.value === '' ? null : Math.max(1, Math.min(500, parseInt(mForm.max.value, 10) || 1)) };
     if (!body.meeting_date) { mForm.date.focus(); toast('חסר תאריך'); return; }
+    const pt = { base: Number(mTiers.base), steps: mTiers.steps.map((x) => ({ days: Number(x.days), price: Number(x.price) })) };
+    if (!Number.isFinite(pt.base) || pt.base < 0 || mTiers.base === '' || pt.steps.some((x) => !Number.isFinite(x.price) || x.price < 0) || mTiers.steps.some((x) => x.price === '')) { toast('מחיר חסר או לא תקין'); return; }
+    body.price_tiers = { base: pt.base, steps: pt.steps.sort((a, b) => b.days - a.days) };
+    body.price = pt.base;   // המחיר הרגיל נשמר גם בעמודת המחיר של המפגש
     const btn = $('#mSubmit'); btn.disabled = true;
     try {
       if (editingMeeting) {
@@ -4277,7 +4323,7 @@
     const em = emailOf();
     $('#setMail').textContent = '';   // בלי אימייל בממשק: המנהל מזוהה בשם שהגדיר
     { const si = $('#setSender'); if (document.activeElement !== si) si.value = senderName(); }
-    renderAttOpts(); $('#setPayHint').textContent = tierSummary(); $('#setSrcHint').textContent = state.promoters.length + ' דרכי הגעה'; $('#setPmHint').textContent = state.payMethods.map((x) => x.name).join(' · ');
+    renderAttOpts(); $('#setSrcHint').textContent = state.promoters.length + ' דרכי הגעה'; $('#setPmHint').textContent = state.payMethods.map((x) => x.name).join(' · ');
   }
   $('#setSender').addEventListener('change', async () => {
     const em = emailOf(), v = $('#setSender').value.trim().slice(0, 20), prev = state.prefs[em];
@@ -4327,13 +4373,12 @@
   const allSt = () => state.statuses.concat(state.astatuses, state.pstatuses);
   function showSetView(v) {
     setView = v;
-    $('#setMain').hidden = v !== 'main'; $('#setSt').hidden = v !== 'st'; $('#setDel').hidden = v !== 'del'; $('#setPay').hidden = v !== 'pay'; $('#setSrc').hidden = v !== 'src'; $('#setPm').hidden = v !== 'pm'; $('#setEm').hidden = v !== 'em'; $('#setBack').hidden = v === 'main';
-    $('#setTitle').textContent = v === 'st' ? (stScope === 'meeting' ? 'סטטוסים על מפגשים' : 'תגיות על משתתפים') : v === 'del' ? 'מחיקת סטטוס' : v === 'pay' ? 'תשלומים' : v === 'src' ? 'דרכי הגעה' : v === 'pm' ? 'דרכי תשלום' : v === 'em' ? 'הודעה לפני המפגש' : 'הגדרות';
+    $('#setMain').hidden = v !== 'main'; $('#setSt').hidden = v !== 'st'; $('#setDel').hidden = v !== 'del'; $('#setSrc').hidden = v !== 'src'; $('#setPm').hidden = v !== 'pm'; $('#setEm').hidden = v !== 'em'; $('#setBack').hidden = v === 'main';
+    $('#setTitle').textContent = v === 'st' ? (stScope === 'meeting' ? 'סטטוסים על מפגשים' : 'תגיות על משתתפים') : v === 'del' ? 'מחיקת סטטוס' : v === 'src' ? 'דרכי הגעה' : v === 'pm' ? 'דרכי תשלום' : v === 'em' ? 'הודעה לפני המפגש' : 'הגדרות';
     if (v === 'src') renderSources();
     if (v === 'pm') renderPm();
     if (v === 'em') { const ta = $('#emText'); if (document.activeElement !== ta) ta.value = eventTemplate(); renderEmOpen(); }
     if (v === 'st') renderStSettings();
-    if (v === 'pay') renderTiers();
     navSync($('#setDlg')); syncUrl();
   }
   $('#setSt').addEventListener('click', (e) => { const b = e.target.closest('[data-sc]'); if (!b) return; stScope = b.dataset.sc; renderStSettings(); });
@@ -4370,7 +4415,6 @@
   $('#setTagBtn').addEventListener('click', () => { stScope = 'participant'; showSetView('st'); });
   $('#setBack').addEventListener('click', () => showSetView(setView === 'del' ? 'st' : 'main'));
   /* הגדרות תשלומים: מדרגות מחיר לפי ימים שנותרו עד המפגש */
-  $('#setPayBtn').addEventListener('click', () => showSetView('pay'));
   /* דרכי הגעה בהגדרות: ערוצי פרסום ממומן (שם, צבע, קוד) ודרכי הגעה (שם, צבע, עמלה), בעיצוב דומה לסטטוסים */
   const colDot = (c, who) => '<button type="button" class="swcur" data-who="' + who + '" data-c="' + c + '" aria-haspopup="menu" aria-label="צבע" title="שינוי צבע" style="background:' + (PALETTE[c] || PALETTE.sky)[0] + '"></button>';
   const nameStyle = (c) => 'background:' + (PALETTE[c] || PALETTE.sky)[0] + ';color:' + (PALETTE[c] || PALETTE.sky)[1];
@@ -4507,42 +4551,6 @@
     const used = new Set(state.promoters.map((s) => s.code).filter(Boolean)), code = 'abcdefghijklmnopqrstuvwxyz'.split('').find((c) => !used.has(c)) || null;
     const row = { name: 'דרך הגעה חדשה', rate_type: 'fixed', rate: 0, color: 'red', code, cost_on_lead: true, cost_from_payment: false };
     try { const [r] = await api(T.pr, { method: 'POST', body: row, prefer: 'return=representation' }); if (r && !promoterOf(r.id)) state.promoters.push(r); renderSources(); const inp = document.querySelector('#srcPrList [data-w="pr:' + r.id + '"] .stname'); if (inp) { inp.focus(); inp.select(); } }
-    catch (err) { fail(err); }
-  });
-  function tierSummary() { const s = sortedTiers(); return s.map((x) => '₪' + x.price).join(' · '); }
-  function renderTiers() {
-    const s = sortedTiers();
-    $('#tierList').innerHTML = s.map((x, i) => {
-      const last = i === s.length - 1;
-      return '<div class="tierrow" data-i="' + (x.id || ('n' + i)) + '">' +
-        (last ? '<span class="tierlbl" style="grid-column: 1 / 4">אחר כך, עד המפגש</span>'
-          : '<span class="tierlbl">עד</span><input class="tierin" data-f="days" type="number" inputmode="numeric" min="1" max="365" value="' + x.days + '" aria-label="ימים לפני המפגש" /><span class="tierlbl">ימים לפני</span>') +
-        '<span class="tierprice"><input class="tierin" data-f="price" type="number" inputmode="numeric" min="0" max="9999" value="' + x.price + '" aria-label="מחיר" /><b>₪</b></span>' +
-        (!last ? '<button type="button" class="stdel" data-tdel="' + x.id + '" aria-label="מחיקת מדרגה" title="מחיקת מדרגה">×</button>' : '<span class="stspacer" style="flex:0 0 30px"></span>') + '</div>';
-    }).join('');
-    const nx = state.meetings.filter((m) => !isPast(m)).sort((a, b) => (a.meeting_date + a.meeting_time).localeCompare(b.meeting_date + b.meeting_time))[0];
-    $('#tierPrev').textContent = nx ? 'למפגש הקרוב (' + dmShort(nx) + '): היום ₪' + defaultPrice(nx) + (daysTo(nx) > 0 ? ' (נשארו ' + daysTo(nx) + ' ימים)' : '') : '';
-    $('#setPayHint').textContent = tierSummary();
-  }
-  $('#tierList').addEventListener('change', async (e) => {
-    const inp = e.target.closest('.tierin'); if (!inp) return;
-    const row = inp.closest('.tierrow'), id = row.dataset.i, tier = state.tiers.find((x) => x.id === id); if (!tier) return;
-    const f = inp.dataset.f, v = Math.max(0, Math.round(Number(inp.value)));
-    if (f === 'days' && (!(v >= 1) || state.tiers.some((x) => x !== tier && x.days === v))) { toast('מספר הימים כבר קיים במדרגה אחרת'); renderTiers(); return; }
-    const prev = tier[f]; tier[f] = v; syncPriceVars(); renderTiers(); render();
-    try { await api(T.tr + '?id=eq.' + id, { method: 'PATCH', body: { [f]: v } }); }
-    catch (err) { tier[f] = prev; syncPriceVars(); renderTiers(); render(); fail(err); }
-  });
-  $('#tierList').addEventListener('click', async (e) => {
-    const d = e.target.closest('[data-tdel]'); if (!d) return;
-    const id = d.dataset.tdel, prev = state.tiers.slice();
-    state.tiers = state.tiers.filter((x) => x.id !== id); syncPriceVars(); renderTiers(); render();
-    try { await api(T.tr + '?id=eq.' + id, { method: 'DELETE' }); }
-    catch (err) { state.tiers = prev; syncPriceVars(); renderTiers(); render(); fail(err); }
-  });
-  $('#tierAdd').addEventListener('click', async () => {
-    const s = sortedTiers(), days = (s[0] ? s[0].days : 0) + 7, price = s[0] ? Math.max(0, s[0].price - 10) : ((nextMeeting() && Number(nextMeeting().price)) || PRICE_EARLY);
-    try { const [row] = await api(T.tr, { method: 'POST', body: { days, price }, prefer: 'return=representation' }); state.tiers.push({ id: row.id, days: row.days, price: row.price }); syncPriceVars(); renderTiers(); render(); }
     catch (err) { fail(err); }
   });
   $('#setDlg').addEventListener('close', () => showSetView('main'));

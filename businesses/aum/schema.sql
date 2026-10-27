@@ -170,12 +170,14 @@ returns json language sql stable security definer set search_path = public as $$
   select coalesce((
     select json_build_object(
       'date', e.event_date, 'from', to_char(e.start_time, 'HH24:MI'), 'to', to_char(e.end_time, 'HH24:MI'),
-      'title', e.title, 'location', e.location,
-      -- מדרגות מחיר (aum_price_tiers): המחיר הנוכחי לפי כמה ימים נשארו למפגש. בלי מדרגות, או כשאף מדרגה לא חלה: המחיר של המפגש עצמו
-      'price', coalesce((select t.price from public.aum_price_tiers t
-                         where t.days <= (e.event_date - (now() at time zone 'Asia/Jerusalem')::date)
-                         order by t.days desc limit 1), e.price),
-      'tiers', (select coalesce(json_agg(json_build_object('days', t.days, 'price', t.price) order by t.days desc), '[]'::json) from public.aum_price_tiers t),
+      'title', e.title, 'name', e.name, 'location', e.location,
+      -- מדרגות מחיר לכל מפגש (price_tiers = { base, steps: [{ days, price }] }): המחיר הנוכחי לפי כמה ימים נשארו.
+      -- שלב חל כשנשארו עד days ימים; בין כמה שלבים חל זה שמתחיל הכי קרוב למפגש. בלי מדרגות: המחיר של המפגש עצמו
+      'price', coalesce((select (st ->> 'price')::int from jsonb_array_elements(coalesce(e.price_tiers -> 'steps', '[]'::jsonb)) st
+                         where (e.event_date - (now() at time zone 'Asia/Jerusalem')::date) <= (st ->> 'days')::int
+                         order by (st ->> 'days')::int asc limit 1),
+                        (e.price_tiers ->> 'base')::int, e.price),
+      'tiers', e.price_tiers,
       'price_pair', e.price_pair, 'capacity', e.capacity,
       'taken', (select count(*) from public.aum_registrations r
                 where r.event_id = e.id and r.status in ('new', 'confirmed')))
@@ -699,6 +701,18 @@ alter table public.aum_admin_prefs add column if not exists view_pay  boolean;
 alter table public.aum_admin_prefs add column if not exists view_sent boolean;
 alter table public.aum_admin_prefs add column if not exists view_att  boolean;
 alter table public.aum_admin_prefs add column if not exists view_scopes jsonb;   -- העדפות תצוגה לפי מפגש ולמצב הכללי ("all")
+
+-- 18. שם למפגש ומדרגות מחיר לכל מפגש (במקום ההגדרה הגלובלית aum_price_tiers, שנשארת בלי שימוש).
+--     price_tiers = { "base": 300, "steps": [{ "days": 3, "price": 350 }] }: base = המחיר הרגיל, וכל שלב חל כשנשארו עד days ימים.
+alter table public.aum_events add column if not exists name text;
+alter table public.aum_events add column if not exists price_tiers jsonb;
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'aum_events_name_chk') then
+    alter table public.aum_events add constraint aum_events_name_chk check (name is null or char_length(name) <= 80);
+  end if;
+end $$;
+-- מפגש קיים בלי מדרגות מקבל מדרגה אחת: המחיר שלו (העמודה החדשה בלבד, שום ערך קיים לא משתנה)
+update public.aum_events set price_tiers = jsonb_build_object('base', price, 'steps', '[]'::jsonb) where price_tiers is null and price is not null;
 
 notify pgrst, 'reload schema';
 

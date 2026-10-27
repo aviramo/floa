@@ -118,18 +118,18 @@
     paintSchema(ev);
   }
 
-  /* מדרגות מחיר (מוגדרות בדף הניהול): המחיר שמוצג כבר הנוכחי, וכאן מוסיפים מתי הוא עולה, אם יש מדרגה הבאה */
+  /* מדרגות מחיר (מוגדרות בדף הניהול, לכל מפגש): המחיר שמוצג כבר הנוכחי, וכאן מוסיפים מתי הוא משתנה, אם יש שלב הבא */
   function tierNote(ev) {
-    var tiers = ev.tiers || [];
-    if (!tiers.length) return "";
+    var t = ev.tiers;
+    if (!t || !t.steps || !t.steps.length) return "";
     var today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem" }).format(new Date()).split("-");
     var evd = ev.date.split("-");
     var left = Math.round((Date.UTC(+evd[0], evd[1] - 1, +evd[2]) - Date.UTC(+today[0], today[1] - 1, +today[2])) / 864e5);
-    var sorted = tiers.slice().sort(function (a, b) { return b.days - a.days; });
-    var cur = null, next = null;
-    for (var i = 0; i < sorted.length; i++) { if (sorted[i].days <= left) { cur = sorted[i]; next = sorted[i + 1] || null; break; } }
-    if (!cur || !next || next.price === cur.price) return "";
-    var d = new Date(Date.UTC(+evd[0], evd[1] - 1, +evd[2] - (cur.days - 1)));
+    /* שלבים מהרחוק לקרוב: שלב חל כשנשארו עד days ימים. הבא הוא הראשון שעוד לא התחיל */
+    var steps = t.steps.slice().sort(function (a, b) { return b.days - a.days; }), next = null;
+    for (var i = 0; i < steps.length; i++) { if (left > steps[i].days) { next = steps[i]; break; } }
+    if (!next || next.price <= ev.price) return "";
+    var d = new Date(Date.UTC(+evd[0], evd[1] - 1, +evd[2] - next.days));
     return " המחיר עולה ל-" + next.price + " ₪ החל מ-" + d.getUTCDate() + "." + (d.getUTCMonth() + 1) + ".";
   }
 
