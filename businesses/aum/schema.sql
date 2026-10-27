@@ -675,6 +675,7 @@ create unique index if not exists aum_pay_methods_id_uq on public.aum_pay_method
 alter table public.aum_pay_methods add column if not exists owner_email text;
 alter table public.aum_admin_prefs add column if not exists sender_name text;
 alter table public.aum_admin_prefs add column if not exists wa_intro text;
+alter table public.aum_events add column if not exists directions text not null default '';   -- הוראות הגעה למפגש (כתובת, חנייה), טקסט חופשי
 
 notify pgrst, 'reload schema';
 
