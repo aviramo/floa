@@ -676,6 +676,11 @@ alter table public.aum_pay_methods add column if not exists owner_email text;
 alter table public.aum_admin_prefs add column if not exists sender_name text;
 alter table public.aum_admin_prefs add column if not exists wa_intro text;
 alter table public.aum_events add column if not exists directions text not null default '';   -- הוראות הגעה למפגש (כתובת, חנייה), טקסט חופשי
+-- העדפות תצוגה לכל מנהל: תגיות ותשלום (true/false), שליחה והגעה (ריק = אוטומטי לפי התזמונים)
+alter table public.aum_admin_prefs add column if not exists view_tags boolean;
+alter table public.aum_admin_prefs add column if not exists view_pay  boolean;
+alter table public.aum_admin_prefs add column if not exists view_sent boolean;
+alter table public.aum_admin_prefs add column if not exists view_att  boolean;
 
 notify pgrst, 'reload schema';
 
