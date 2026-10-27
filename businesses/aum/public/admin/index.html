@@ -859,8 +859,15 @@
         </button>
       </div>
       <div class="setgrp">
+        <button type="button" class="setrow setlink" data-goset="tiers"><svg class="seti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19h5v-5h5V9h6V5"/></svg><div class="setl"><b>מדרגות מחיר</b><small id="setTierHint"></small></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="22" height="22"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg></button>
         <button type="button" class="setrow setlink" data-goset="pm"><svg class="seti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18"/></svg><div class="setl"><b>דרכי תשלום</b><small id="setPmHint"></small></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="22" height="22"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg></button>
       </div>
+      </div>
+      <div data-sv="tiers" hidden>
+        <p class="sthint" style="margin:0 2px 12px">המחיר חל מכמה ימים לפני המפגש, ואחר כך עובר למדרגה הבאה. המחיר הנוכחי מוצג גם בדף הבית. בלי מדרגות המחיר הוא זה שמוגדר במפגש עצמו</p>
+        <div id="tierList"></div>
+        <button type="button" class="btn ghost" id="tierAdd">+ מדרגה חדשה</button>
+        <p class="sthint" id="tierPrev" style="margin:10px 2px 0"></p>
       </div>
       <div data-sv="pm" hidden>
         <p class="sthint" style="margin:0 2px 10px">הדרכים שמופיעות בקבלת תשלום (פייבוקס, ביט, מזומן...). אפשר להוסיף, לשנות שם ולמחוק</p>
@@ -959,9 +966,9 @@
   /* הדאטהבייס של הדומיין (/supabase.js). המפתח ציבורי מעצם הגדרתו;
      מה שמותר באמת נקבע במדיניות RLS שב-businesses/aum/schema.sql */
   const DB = { url: window.SUPABASE.url, key: window.SUPABASE.anonKey };
-  const T = { pm: 'aum_pay_methods', fin: 'aum_finance', finr: 'aum_finance_recurring', finlog: 'aum_finance_log', p: 'aum_participants', m: 'aum_events', a: 'aum_registrations', n: 'aum_notes', pr: 'aum_promoters', pp: 'aum_promoter_payments', pay: 'aum_payments', push: 'aum_push_subs' };
+  const T = { tr: 'aum_price_tiers', pm: 'aum_pay_methods', fin: 'aum_finance', finr: 'aum_finance_recurring', finlog: 'aum_finance_log', p: 'aum_participants', m: 'aum_events', a: 'aum_registrations', n: 'aum_notes', pr: 'aum_promoters', pp: 'aum_promoter_payments', pay: 'aum_payments', push: 'aum_push_subs' };
 
-  const state = { participants: [], meetings: [], att: [], notes: [], promoters: [], promoPays: [], payments: [], payMethods: [{ key: 'paybox', name: 'פייבוקס' }, { key: 'bit', name: 'ביט' }, { key: 'cash', name: 'מזומן' }, { key: 'bank', name: 'בנק' }], fin: [], finRec: [], finPeriod: 'month', finFilter: null, filter: null, q: '', pay: null, gender: null, sort: 'new' };
+  const state = { participants: [], meetings: [], att: [], notes: [], promoters: [], promoPays: [], payments: [], tiers: [], payMethods: [{ key: 'paybox', name: 'פייבוקס' }, { key: 'bit', name: 'ביט' }, { key: 'cash', name: 'מזומן' }, { key: 'bank', name: 'בנק' }], fin: [], finRec: [], finPeriod: 'month', finFilter: null, filter: null, q: '', pay: null, gender: null, sort: 'new' };
   /* קישור עמוק מהמייל: ?m=<מפגש>&p=<משתתף>; נשמר בזמן הכניסה עם גוגל (שמחזירה בלי הפרמטרים) */
   let deep = null;
   try {
@@ -1027,7 +1034,7 @@
     ws.onopen = () => {
       rtRetry = 1000;
       rtSend({ topic: RT_TOPIC, event: 'phx_join', ref: '1', payload: { config: { broadcast: { ack: false, self: false }, presence: { key: '' }, private: false,
-        postgres_changes: [T.p, T.m, T.a, T.n, T.pr, T.pp, T.pay, T.fin, T.finr, T.pm].map((table) => ({ event: '*', schema: 'public', table })) }, access_token: session.access_token } });
+        postgres_changes: [T.p, T.m, T.a, T.n, T.pr, T.pp, T.pay, T.fin, T.finr, T.pm, T.tr].map((table) => ({ event: '*', schema: 'public', table })) }, access_token: session.access_token } });
       rtHb = setInterval(() => rtSend({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: String(Date.now()) }), 25000);
     };
     ws.onmessage = (e) => {
@@ -1205,7 +1212,10 @@
   const isPast = (m) => m.meeting_date < todayISO();
   /* מחיר ברירת מחדל: המחיר של המפגש עצמו */
   const PRICE_EARLY = 300, PRICE_LATE = 300;   // רק כשאין מפגש בכלל; המחיר האמיתי בא מהמפגש (price, price_pair)
-  const defaultPrice = (m) => (m && Number(m.price)) || PRICE_EARLY;
+  /* מדרגות מחיר: המחיר חל מ-days ימים לפני המפגש; בלי מדרגות (או כשאף אחת לא חלה) זה המחיר של המפגש */
+  const daysTo = (iso) => { const [y, mo, d] = iso.split('-').map(Number), t = todayISO().split('-').map(Number); return Math.round((Date.UTC(y, mo - 1, d) - Date.UTC(t[0], t[1] - 1, t[2])) / 864e5); };
+  const tierPrice = (m) => { if (!m || !state.tiers.length) return null; const left = daysTo(m.meeting_date), t = state.tiers.filter((x) => x.days <= left).sort((a, b) => b.days - a.days)[0]; return t ? Number(t.price) : null; };
+  const defaultPrice = (m) => { const t = tierPrice(m); return t != null ? t : ((m && Number(m.price)) || PRICE_EARLY); };
   /* קרדיט משתתף: סכומים שנשארו אצלנו בביטול בלי החזר כסף, פחות מה ששימש לתשלום חדש */
   const creditOf = (pid) => state.payments.filter((x) => x.participant_id === pid).reduce((s, x) => s + (x.kind === 'credit' ? Number(x.amount) : ((x.kind === 'payment' || x.kind === 'refund') && x.from_credit ? -Number(x.amount) : 0)), 0);
   const promoterOf = (id) => state.promoters.find((x) => x.id === id);
@@ -1241,7 +1251,7 @@
   async function load(silent) {
     if (!silent) $('#status').innerHTML = '<div class="empty">טוען…</div>';
     try {
-      const [p, m, a, nn, prs, pps, pays, fin, finr, pms] = await Promise.all([
+      const [p, m, a, nn, prs, pps, pays, fin, finr, pms, trs] = await Promise.all([
         api(T.p + '?select=*'),
         api(T.m + '?select=*'),
         api(T.a + '?select=participant_id,meeting_id,status,paid,pay_requested_at,created_at,exempt,attended,paid_amount,promoter_id,commission,paid_at,pay_method,pay_method_note'),
@@ -1252,11 +1262,12 @@
         api(T.fin + '?select=*&order=entry_date.desc'),
         api(T.finr + '?select=*&order=start_date.desc'),
         api(T.pm + '?select=*&order=sort.asc'),
+        api(T.tr + '?select=*&order=days.desc'),
       ]);
       /* משתתף לא פעיל (הוסר) מוסתר מכל המסכים; הנתונים נשמרים ויחזרו אם יירשם שוב עם אותו טלפון. תשלומים נשארים (כספים) */
       state.inactiveNames = new Map(p.filter((x) => x.active === false).map((x) => [x.id, x.name]));
       const act = p.filter((x) => x.active !== false), actIds = new Set(act.map((x) => x.id));
-      state.participants = act; state.meetings = m; state.att = a.filter((x) => actIds.has(x.participant_id)); state.notes = nn.filter((x) => actIds.has(x.participant_id)); state.promoters = prs; state.promoPays = pps; state.payments = pays; state.fin = fin; state.finRec = finr; if (pms && pms.length) state.payMethods = pms; rebuildNotes();
+      state.participants = act; state.meetings = m; state.att = a.filter((x) => actIds.has(x.participant_id)); state.notes = nn.filter((x) => actIds.has(x.participant_id)); state.promoters = prs; state.promoPays = pps; state.payments = pays; state.fin = fin; state.finRec = finr; if (pms && pms.length) state.payMethods = pms; state.tiers = trs || []; rebuildNotes();
       sortMeetings();
       if (!silent) $('#status').innerHTML = '';
       if (deep) {
@@ -1895,7 +1906,7 @@
     let dirty = l.commission != null;
     f.pay_commission.value = l.commission != null ? Number(l.commission) : calcCommission(commPr, amount);
     $('#commField').hidden = !commPr; $('#commLabel').textContent = pr ? 'עמלה ל' + pr.name + ' (₪)' : 'עמלה ליחצן (₪)';
-    $('#payQuick').innerHTML = [...new Set([(m && Number(m.price)) || PRICE_EARLY, m && Number(m.price_pair)].filter(Boolean))].map((v) => '<button type="button" data-q="' + v + '">' + v + ' ₪</button>').join('');
+    $('#payQuick').innerHTML = [...new Set([m && defaultPrice(m), m && Number(m.price_pair)].filter(Boolean).concat(m ? [] : [PRICE_EARLY]))].map((v) => '<button type="button" data-q="' + v + '">' + v + ' ₪</button>').join('');
     const recalc = () => { if (!dirty) f.pay_commission.value = calcCommission(commPr, f.pay_amount.value); };
     f.pay_amount.oninput = recalc;
     f.pay_commission.oninput = () => { dirty = true; };
@@ -2587,15 +2598,43 @@
 
   /* ---------- הגדרות: מסך ראשי ותתי-מסכים (דרכי תשלום ועוד) ---------- */
   let setView = 'main';
-  const SET_TITLES = { main: 'הגדרות', pm: 'דרכי תשלום' };
+  const SET_TITLES = { main: 'הגדרות', pm: 'דרכי תשלום', tiers: 'מדרגות מחיר' };
   function showSetView(v) {
     setView = v; document.querySelectorAll('#setDlg [data-sv]').forEach((el) => { el.hidden = el.dataset.sv !== v; });
     $('#setBack').hidden = v === 'main'; $('#setTitle').textContent = SET_TITLES[v] || 'הגדרות'; $('#setDlg').scrollTop = 0;
-    if (v === 'pm') renderPm(); syncUrl();
+    if (v === 'pm') renderPm(); if (v === 'tiers') renderTiers(); syncUrl();
   }
   $('#setBack').addEventListener('click', () => showSetView('main'));
   $('#setDlg').addEventListener('click', (e) => { const g = e.target.closest('[data-goset]'); if (g) showSetView(g.dataset.goset); });
-  function renderSettings() { $('#setPmHint').textContent = state.payMethods.map((x) => x.name).join(' · '); }
+  const sortedTiers = () => state.tiers.slice().sort((a, b) => b.days - a.days);
+  const tierSummary = () => state.tiers.length ? sortedTiers().map((t) => (t.days > 0 ? 'מ-' + t.days + ' ימים לפני: ' : 'בימים האחרונים: ') + '₪' + t.price).join(' · ') : 'המחיר של המפגש עצמו';
+  function renderSettings() { $('#setPmHint').textContent = state.payMethods.map((x) => x.name).join(' · '); $('#setTierHint').textContent = tierSummary(); }
+  function renderTiers() {
+    $('#tierList').innerHTML = sortedTiers().map((t) => '<div class="pmrow" data-days="' + t.days + '"><input class="tierd" type="number" inputmode="numeric" min="0" value="' + t.days + '" aria-label="ימים לפני המפגש" style="flex:0 0 74px" /><span>ימים לפני, ₪</span><input class="tierp" type="number" inputmode="numeric" min="0" value="' + t.price + '" aria-label="מחיר" style="flex:0 0 90px" /><span style="flex:1"></span><button type="button" class="pmdel" data-tdel="' + t.days + '" aria-label="מחיקה" title="מחיקה">×</button></div>').join('') || '<p class="mnone">אין מדרגות. המחיר הוא זה שמוגדר בכל מפגש</p>';
+    const nx = state.meetings.filter((m) => m.meeting_date >= todayISO()).sort((a, b) => a.meeting_date.localeCompare(b.meeting_date))[0];
+    $('#tierPrev').textContent = nx && state.tiers.length ? 'למפגש הקרוב (' + dmShort(nx) + ') המחיר היום: ₪' + nfm(defaultPrice(nx)) : '';
+    renderSettings();
+  }
+  $('#tierList').addEventListener('change', async (e) => {
+    const row = e.target.closest('.pmrow'); if (!row) return; const d0 = Number(row.dataset.days), t = state.tiers.find((x) => x.days === d0); if (!t) return;
+    const nd = Math.max(0, Math.round(Number(row.querySelector('.tierd').value))), np = Math.max(0, Math.round(Number(row.querySelector('.tierp').value)));
+    if (!Number.isFinite(nd) || !Number.isFinite(np)) { renderTiers(); return; }
+    if (nd !== d0 && state.tiers.some((x) => x.days === nd)) { toast('כבר יש מדרגה עם מספר הימים הזה'); renderTiers(); return; }
+    const prev = { days: t.days, price: t.price }; t.days = nd; t.price = np; renderTiers();
+    try { await api(T.tr + '?days=eq.' + d0, { method: 'PATCH', body: { days: nd, price: np } }); }
+    catch (err) { t.days = prev.days; t.price = prev.price; renderTiers(); fail(err); }
+  });
+  $('#tierList').addEventListener('click', async (e) => {
+    const d = e.target.closest('[data-tdel]'); if (!d) return; const days = Number(d.dataset.tdel), prev = state.tiers.slice();
+    state.tiers = state.tiers.filter((x) => x.days !== days); renderTiers();
+    try { await api(T.tr + '?days=eq.' + days, { method: 'DELETE' }); } catch (err) { state.tiers = prev; renderTiers(); fail(err); }
+  });
+  $('#tierAdd').addEventListener('click', async () => {
+    let days = 0; while (state.tiers.some((x) => x.days === days)) days++;
+    const base = state.meetings.length ? Number(state.meetings[0].price) || PRICE_EARLY : PRICE_EARLY, row = { days, price: base };
+    try { const [r] = await api(T.tr, { method: 'POST', body: row, prefer: 'return=representation' }); state.tiers.push(r || row); renderTiers(); }
+    catch (err) { fail(err); }
+  });
   function renderPm() {
     $('#pmList').innerHTML = state.payMethods.map((x) => '<div class="pmrow" data-k="' + esc(x.key) + '"><input class="pmname" value="' + esc(x.name) + '" maxlength="20" aria-label="שם דרך התשלום" /><button type="button" class="pmdel" data-pdel="' + esc(x.key) + '" aria-label="מחיקה" title="מחיקה"' + (state.payMethods.length < 2 ? ' disabled' : '') + '>×</button></div>').join('');
     renderSettings();

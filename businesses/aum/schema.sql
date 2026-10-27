@@ -170,7 +170,13 @@ returns json language sql stable security definer set search_path = public as $$
   select coalesce((
     select json_build_object(
       'date', e.event_date, 'from', to_char(e.start_time, 'HH24:MI'), 'to', to_char(e.end_time, 'HH24:MI'),
-      'title', e.title, 'location', e.location, 'price', e.price, 'price_pair', e.price_pair, 'capacity', e.capacity,
+      'title', e.title, 'location', e.location,
+      -- מדרגות מחיר (aum_price_tiers): המחיר הנוכחי לפי כמה ימים נשארו למפגש. בלי מדרגות, או כשאף מדרגה לא חלה: המחיר של המפגש עצמו
+      'price', coalesce((select t.price from public.aum_price_tiers t
+                         where t.days <= (e.event_date - (now() at time zone 'Asia/Jerusalem')::date)
+                         order by t.days desc limit 1), e.price),
+      'tiers', (select coalesce(json_agg(json_build_object('days', t.days, 'price', t.price) order by t.days desc), '[]'::json) from public.aum_price_tiers t),
+      'price_pair', e.price_pair, 'capacity', e.capacity,
       'taken', (select count(*) from public.aum_registrations r
                 where r.event_id = e.id and r.status in ('new', 'confirmed')))
     from public.aum_events e
@@ -492,6 +498,23 @@ alter table public.aum_payments      add column if not exists method_note text;
 do $$ begin
   if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'aum_pay_methods') then
     alter publication supabase_realtime add table public.aum_pay_methods;
+  end if;
+end $$;
+
+-- 12. מדרגות מחיר: המחיר חל מ"days" ימים לפני המפגש, ועובר למדרגה הבאה ככל שהמפגש מתקרב.
+--     בלי מדרגות המחיר הוא זה של המפגש עצמו. aum_next() מחזירה את המחיר הנוכחי לדף הבית.
+create table if not exists public.aum_price_tiers (
+  days  int primary key check (days >= 0),
+  price int not null check (price >= 0)
+);
+alter table public.aum_price_tiers enable row level security;
+drop policy if exists "aum admin all" on public.aum_price_tiers;
+create policy "aum admin all" on public.aum_price_tiers for all to authenticated using (public.aum_is_admin()) with check (public.aum_is_admin());
+revoke all on public.aum_price_tiers from anon;
+grant select, insert, update, delete on public.aum_price_tiers to authenticated;
+do $$ begin
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'aum_price_tiers') then
+    alter publication supabase_realtime add table public.aum_price_tiers;
   end if;
 end $$;
 

@@ -98,7 +98,7 @@
     if (ev.price) {
       set("#tbPrice", ev.price + " ₪ ליום");
       set("#faqPrice", ev.price + " ₪ למשתתפ.ת" + (ev.price_pair ? ", " + ev.price_pair + " ₪ לבאים בזוג" : "") +
-        ". כולל פינת קפה רצה ואירוח בוילה מפנקת עם אולם ייעודי, חדר אוכל וחצר חיצונית.");
+        ". כולל פינת קפה רצה ואירוח בוילה מפנקת עם אולם ייעודי, חדר אוכל וחצר חיצונית." + tierNote(ev));
     } else {
       hide("#tbPrice");
       set("#faqPrice", "את המחיר אפשר לברר אצל טל.");
@@ -116,6 +116,21 @@
       }
     }
     paintSchema(ev);
+  }
+
+  /* מדרגות מחיר (מוגדרות בדף הניהול): המחיר שמוצג כבר הנוכחי, וכאן מוסיפים מתי הוא עולה, אם יש מדרגה הבאה */
+  function tierNote(ev) {
+    var tiers = ev.tiers || [];
+    if (!tiers.length) return "";
+    var today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem" }).format(new Date()).split("-");
+    var evd = ev.date.split("-");
+    var left = Math.round((Date.UTC(+evd[0], evd[1] - 1, +evd[2]) - Date.UTC(+today[0], today[1] - 1, +today[2])) / 864e5);
+    var sorted = tiers.slice().sort(function (a, b) { return b.days - a.days; });
+    var cur = null, next = null;
+    for (var i = 0; i < sorted.length; i++) { if (sorted[i].days <= left) { cur = sorted[i]; next = sorted[i + 1] || null; break; } }
+    if (!cur || !next || next.price === cur.price) return "";
+    var d = new Date(Date.UTC(+evd[0], evd[1] - 1, +evd[2] - (cur.days - 1)));
+    return " המחיר עולה ל-" + next.price + " ₪ החל מ-" + d.getUTCDate() + "." + (d.getUTCMonth() + 1) + ".";
   }
 
   rpc("aum_next").then(paintBanner).catch(function () { paintUnknown("לפרטים על מועד הריטריט אפשר לכתוב לטל"); });
