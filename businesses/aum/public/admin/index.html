@@ -369,7 +369,7 @@
     .call { background: #3F6FB5; }   /* שיחת טלפון */
 
     /* ---------- כניסה עם גוגל ---------- */
-    body.locked .wrap, body.locked #statsBtn { display: none !important; }
+    body.locked .wrap, body.locked #statsBtn, body.locked .hicons { display: none !important; }
     .gate { max-width: 420px; margin: 0 auto; padding: 72px 20px; text-align: center; }
     .gate[hidden] { display: none; }
     .gate h1 { font-size: 30px; margin-bottom: 0; }
@@ -447,6 +447,26 @@
     .pst { flex: 0 0 auto; border-radius: 999px; padding: 2px 12px; font-weight: 700; font-size: 13.5px; background: var(--red-bg); color: var(--red); }
     .pst.paid { background: var(--green-bg); color: var(--green); } .pst.requested { background: #FBEBC8; color: #8A5A00; } .pst.exempt { background: #E4E9EE; color: #4B5A6A; } .pst.none { background: #F6E7B8; color: var(--muted); }
     .prnew { width: 100%; height: 44px; border-radius: 14px; border: 1.5px dashed var(--coral); color: var(--terra); font-weight: 700; margin-top: 4px; }
+    .hicons { position: relative; }
+    .reddot { position: absolute; top: 2px; inset-inline-end: 2px; width: 11px; height: 11px; border-radius: 50%; background: #E5342B; border: 2px solid var(--paper); box-sizing: border-box; }
+    .reddot.inline { position: static; flex: 0 0 auto; width: 10px; height: 10px; border: 0; }
+    .reddot[hidden] { display: none; }
+    .hmenu { position: absolute; top: calc(100% + 8px); left: 0; z-index: 30; min-width: 210px; background: var(--paper); border-radius: 18px; border: 1px solid var(--line); box-shadow: 0 12px 34px rgba(63,56,47,.2); padding: 6px; }
+    .hmenu[hidden] { display: none; }
+    .hmi { display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 12px; border-radius: 12px; font-size: 17px; font-weight: 600; text-align: right; background: none; }
+    .hmi:active { background: rgba(193,25,31,.1); }
+    .hmi svg { width: 21px; height: 21px; color: var(--terra); flex: 0 0 auto; }
+    .hmi span:not(.reddot) { flex: 1 1 auto; }
+    .hmi.out { margin-top: 4px; border-top: 1px solid var(--line); border-radius: 0 0 12px 12px; color: var(--muted); }
+    .hmi.out svg { color: var(--muted); }
+    #setDlg .setgrp { background: var(--cream); border-radius: 18px; padding: 4px 14px; margin-bottom: 14px; }
+    #setDlg .setrow { display: flex; align-items: center; gap: 12px; padding: 12px 0; width: 100%; text-align: right; background: none; }
+    #setDlg .setrow svg.seti { flex: 0 0 auto; width: 22px; height: 22px; color: var(--terra); }
+    #setDlg .setl { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    #setDlg .setl b { font-size: 16.5px; }
+    #setDlg .setl small { font-size: 13.5px; color: var(--muted); line-height: 1.4; }
+    #setDlg .setsw { flex: 0 0 auto; padding: 6px 14px; border-radius: 999px; font-weight: 800; font-size: 14px; background: var(--terra); color: #fff; }
+    #setDlg .setsw.on { background: var(--green); }
     .bell { position: relative; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; color: var(--muted); background: var(--paper); border: 1.5px solid var(--line); }
     .bell[hidden] { display: none; }
     .bell svg { width: 20px; height: 20px; }
@@ -607,10 +627,13 @@
           <div class="sortmenu mmenu" id="mMenu" role="menu" hidden></div>
         </div>
         <div class="hicons">
-          <button type="button" class="hicon" id="prBtn" aria-label="יחצנים" title="יחצנים"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10v4a1 1 0 0 0 1 1h2.5l5.5 4V5L7.5 9H5a1 1 0 0 0-1 1z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg></button>
-          <button type="button" class="hicon bell" id="pushBtn" aria-pressed="false" aria-label="התראות על הרשמות חדשות" title="התראות על הרשמות חדשות" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></button>
-          <button type="button" class="hicon" id="statsBtn" aria-label="סטטיסטיקות" title="סטטיסטיקות"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg></button>
-          <button type="button" class="hicon" id="signOut" aria-label="יציאה" title="יציאה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="M15 8l4 4-4 4M19 12H9"/></svg></button>
+          <button type="button" class="hicon" id="menuBtn" aria-label="תפריט" title="תפריט" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.8"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.8"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.8"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.8"/></svg><span class="reddot" id="menuDot" hidden></span></button>
+          <div class="hmenu" id="hMenu" role="menu" hidden>
+            <button type="button" role="menuitem" class="hmi" id="prBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10v4a1 1 0 0 0 1 1h2.5l5.5 4V5L7.5 9H5a1 1 0 0 0-1 1z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg><span>יחצנים</span></button>
+            <button type="button" role="menuitem" class="hmi" id="statsBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg><span>סטטיסטיקות</span></button>
+            <button type="button" role="menuitem" class="hmi" id="setBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>הגדרות</span><span class="reddot inline" id="setDot" hidden></span></button>
+            <button type="button" role="menuitem" class="hmi out" id="signOut"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="M15 8l4 4-4 4M19 12H9"/></svg><span>יציאה</span></button>
+          </div>
         </div>
       </div>
       <div class="tools">
@@ -738,6 +761,19 @@
     <div class="sheet" style="padding-bottom:20px"><img id="iImg" alt="צילום מסך" style="width:100%;max-height:78vh;object-fit:contain;border-radius:12px;display:block" /></div>
   </dialog>
 
+  <dialog id="setDlg" aria-labelledby="setTitle" style="max-width:480px">
+    <div class="sheet">
+      <div class="sheet-head"><h2 id="setTitle">הגדרות</h2></div>
+      <div class="setgrp">
+        <button type="button" class="setrow" id="setPushRow">
+          <svg class="seti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
+          <div class="setl"><b>התראות על הרשמות חדשות</b><small id="setPushHint"></small></div>
+          <span class="setsw" id="setPushSw"></span>
+        </button>
+      </div>
+    </div>
+  </dialog>
+
   <dialog id="prDlg" aria-labelledby="prTitle" style="max-width:480px">
     <div class="sheet">
       <div class="sheet-head"><button type="button" class="hbtn hback" id="prArrow" aria-label="חזרה" title="חזרה" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button><h2 id="prTitle">יחצנים</h2></div>
@@ -799,7 +835,7 @@
   let deep = null;
   try {
     const sp = new URLSearchParams(location.search);
-    if (['m', 'p', 'pay', 'q', 'em', 'g', 's', 'st', 'pt'].some((k) => sp.get(k))) { deep = { m: sp.get('m'), p: sp.get('p'), pay: sp.get('pay'), q: sp.get('q'), em: sp.get('em'), g: sp.get('g'), s: sp.get('s'), st: sp.get('st'), pt: sp.get('pt') }; sessionStorage.setItem('aum_deep', JSON.stringify(deep)); }
+    if (['m', 'p', 'pay', 'q', 'em', 'g', 's', 'st', 'pt', 'set'].some((k) => sp.get(k))) { deep = { m: sp.get('m'), p: sp.get('p'), pay: sp.get('pay'), q: sp.get('q'), em: sp.get('em'), g: sp.get('g'), s: sp.get('s'), st: sp.get('st'), pt: sp.get('pt'), set: sp.get('set') }; sessionStorage.setItem('aum_deep', JSON.stringify(deep)); }
     else { deep = JSON.parse(sessionStorage.getItem('aum_deep') || 'null'); }
   } catch (e) {}
   const $ = (s) => document.querySelector(s);
@@ -817,6 +853,7 @@
     if (openPid) { sp.set('p', openPid); if (pTab === 'info') sp.set('pt', 'info'); }
     if (editingMeeting && mDlg.open) sp.set('em', editingMeeting.id);
     if ($('#stDlg').open) sp.set('st', '1');
+    if ($('#setDlg').open) sp.set('set', '1');
     const s = sp.toString();
     try { history.replaceState(null, '', location.pathname + (s ? '?' + s : '')); } catch (e) {}
   }
@@ -1097,6 +1134,7 @@
         if (d.p && state.participants.some((x) => x.id === d.p)) openParticipant(d.p, ['meets', 'contact', 'info'].includes(d.pt) ? d.pt : 'contact');
         else if (d.em && state.meetings.some((x) => x.id === d.em)) openMeeting(d.em);
         else if (d.st) { renderStats(); $('#stDlg').showModal(); syncUrl(); }
+        else if (d.set) { pushState(); $('#setDlg').showModal(); syncUrl(); }
         return;
       }
       urlReady = true;
@@ -2220,13 +2258,13 @@
   const b64u = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   async function pushReg() { return navigator.serviceWorker.register('sw.js', { scope: './' }).then(() => navigator.serviceWorker.ready); }
   async function pushState() {
-    const btn = $('#pushBtn');
-    if (!pushOk) { btn.hidden = false; btn.setAttribute('aria-pressed', 'false'); return; }
-    btn.hidden = false;
     let on = false;
-    try { const reg = await navigator.serviceWorker.getRegistration('./'); on = !!(reg && await reg.pushManager.getSubscription()) && Notification.permission === 'granted'; } catch (e) {}
-    btn.setAttribute('aria-pressed', String(on));
-    btn.title = on ? 'התראות פועלות בדפדפן הזה. לחיצה מכבה' : 'להפעלת התראות על הרשמות חדשות';
+    if (pushOk) { try { const reg = await navigator.serviceWorker.getRegistration('./'); on = !!(reg && await reg.pushManager.getSubscription()) && Notification.permission === 'granted'; } catch (e) {} }
+    $('#menuDot').hidden = $('#setDot').hidden = on;   // נקודה אדומה על התפריט ועל "הגדרות" כל עוד ההתראות לא פועלות בדפדפן הזה
+    const sw = $('#setPushSw'); sw.textContent = on ? 'פועלות' : 'להפעיל'; sw.classList.toggle('on', on);
+    $('#setPushHint').textContent = !pushOk ? 'הדפדפן הזה לא תומך. באייפון צריך קודם להוסיף את הדף למסך הבית'
+      : Notification.permission === 'denied' ? 'חסומות בדפדפן. אפשר לאשר אותן בהגדרות האתר'
+      : on ? 'הדפדפן הזה יקבל התראה על כל הרשמה חדשה. לחיצה מכבה' : 'לחיצה מפעילה ומבקשת אישור. כל מכשיר ודפדפן בנפרד';
   }
   async function saveSub(sub) {
     const j = sub.toJSON();
@@ -2251,12 +2289,19 @@
     await saveSub(sub);
     toast('התראות על הרשמות חדשות פועלות בדפדפן הזה'); pushState();
   }
-  $('#pushBtn').addEventListener('click', () => togglePush().catch((err) => { console.error(err); toast('לא הצלחנו להפעיל התראות'); }));
+  $('#setPushRow').addEventListener('click', () => togglePush().catch((err) => { console.error(err); toast('לא הצלחנו להפעיל התראות'); }));
   /* מי שכבר הפעיל: מרעננים את השמירה (הכתובת של הדפדפן יכולה להתחלף) */
   async function refreshSub() {
     if (!pushOk || Notification.permission !== 'granted') return;
     try { const reg = await navigator.serviceWorker.getRegistration('./'); const sub = reg && await reg.pushManager.getSubscription(); if (sub) await saveSub(sub); } catch (e) {}
   }
+
+  const closeHMenu = () => { $('#hMenu').hidden = true; $('#menuBtn').setAttribute('aria-expanded', 'false'); };
+  $('#menuBtn').addEventListener('click', (e) => { e.stopPropagation(); const m = $('#hMenu'); m.hidden = !m.hidden; $('#menuBtn').setAttribute('aria-expanded', String(!m.hidden)); });
+  $('#hMenu').addEventListener('click', closeHMenu);
+  document.addEventListener('click', (e) => { if (!e.target.closest('.hicons')) closeHMenu(); });
+  $('#setBtn').addEventListener('click', () => { pushState(); $('#setDlg').showModal(); syncUrl(); });
+  $('#setDlg').addEventListener('close', syncUrl);
 
   const goGoogle = () => { location.href = DB.url + '/auth/v1/authorize?provider=google&redirect_to=' + encodeURIComponent(location.origin + location.pathname); };
   $('#gLogin').addEventListener('click', goGoogle);
