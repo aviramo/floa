@@ -1400,12 +1400,12 @@
         </div>
       </div>
       <div id="setEm" hidden>
-        <p class="sthint" style="margin:0 2px 10px">הנוסח של הודעת פרטי הערב (העיגול הכחול ברשימה ביום המפגש). {התכנסות}, {התחלה}, {סיום} ו-{מקום} מוחלפים בנתוני אותו מפגש</p>
+        <p class="sthint" style="margin:0 2px 10px">הנוסח של הודעת פרטי הערב (העיגול הכחול ברשימה ביום המפגש). {מקום} מוחלף במקום המפגש, {מיקום} בהוראות ההגעה שהוזנו למפגש (בעריכת המפגש), ו-{התכנסות}, {התחלה} ו-{סיום} בשעות של אותו מפגש</p>
         <div class="settitle" style="padding-top:0">מתי הכפתור נפתח</div>
         <div class="attopts" id="emOpenOpts" role="radiogroup" aria-label="מתי הכפתור נפתח"></div>
         <div class="settitle">נוסח ההודעה</div>
         <textarea class="setinp" id="emText" rows="12" maxlength="800" aria-label="נוסח ההודעה לפני המפגש" style="height:auto;padding:12px 14px;line-height:1.55;font-size:16px;font-weight:600;width:100%;box-sizing:border-box"></textarea>
-        <div class="emvars" id="emVars"><button type="button" data-v="{התכנסות}">{התכנסות}</button><button type="button" data-v="{התחלה}">{התחלה}</button><button type="button" data-v="{סיום}">{סיום}</button><button type="button" data-v="{מקום}">{מקום}</button></div>
+        <div class="emvars" id="emVars"><button type="button" data-v="{מקום}">{מקום}</button><button type="button" data-v="{מיקום}">{מיקום}</button><button type="button" data-v="{התכנסות}">{התכנסות}</button><button type="button" data-v="{התחלה}">{התחלה}</button><button type="button" data-v="{סיום}">{סיום}</button></div>
         <button type="button" class="btn ghost" id="emReset" style="height:40px;font-size:15px">שחזור נוסח ברירת מחדל</button>
       </div>
       <div id="setPm" hidden>
@@ -3206,12 +3206,15 @@
     return base ? '<a class="evc" data-evrow="' + p.id + '" href="' + base + '?text=' + encodeURIComponent(eventDayMessage(m)) + '" target="_blank" rel="noopener" title="שליחת פרטי הערב בוואטסאפ" aria-label="שליחת פרטי הערב בוואטסאפ">' + PIN_ICON + '</a>'
       : '<span class="evc off" title="אין טלפון" aria-label="אין טלפון">' + PIN_ICON + '</span>';
   };
-  const DEFAULT_EVENT_MSG = ['היום זה קורה!', 'נפגשים היום ב{מקום}.', 'התכנסות: {התכנסות}, מתחילים ב-{התחלה} ועד {סיום}.', '', 'מומלץ להגיע בבגדים נוחים ובקבוק מים.', 'מחכה לכם, טל'].join('\n');
+  const DEFAULT_EVENT_MSG = ['היום זה קורה!', 'נפגשים היום ב{מקום}.', '{מיקום}', 'התכנסות: {התכנסות}, מתחילים ב-{התחלה} ועד {סיום}.', '', 'מומלץ להגיע בבגדים נוחים ובקבוק מים.', 'מחכה לכם, טל'].join('\n');
   const eventTemplate = () => ((state.prefs[emailOf()] || {}).event_msg || '').trim() ? (state.prefs[emailOf()] || {}).event_msg : DEFAULT_EVENT_MSG;
   const eventDayMessage = (m) => {
     const [h, mi] = String(m.meeting_time).split(':').map(Number), hm = (min) => String(Math.floor(min / 60) % 24).padStart(2, '0') + ':' + String(min % 60).padStart(2, '0');
     const start = h * 60 + mi, [eh, em] = String(m.end_time || '16:00').split(':').map(Number);
-    return eventTemplate().split('{התכנסות}').join(hm(start - 15)).split('{התחלה}').join(hm(start)).split('{סיום}').join(hm(eh * 60 + em)).split('{מקום}').join(String(m.location || '').trim());
+    const loc = String(m.directions || '').trim();   // {מיקום}: הוראות ההגעה שהוזנו למפגש; בלי הוראות השורה נמחקת
+    let tpl = eventTemplate();
+    if (loc) tpl = tpl.split('{מיקום}').join(loc); else tpl = tpl.split('\n').filter((ln) => !ln.includes('{מיקום}')).join('\n');
+    return tpl.split('{התכנסות}').join(hm(start - 15)).split('{התחלה}').join(hm(start)).split('{סיום}').join(hm(eh * 60 + em)).split('{מקום}').join(String(m.location || '').trim());
   };
   function renderContact() {
     const box = $('#pMsgs'); if (!box) return;
