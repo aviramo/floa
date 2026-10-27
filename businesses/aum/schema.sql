@@ -253,6 +253,7 @@ declare
   n    text := public.aum_normalize_phone(p_phone);
   nm   text := trim(coalesce(p_name, ''));
   src  text := case when p_src = 'p' then 'site-ad' else 'site' end;
+  code text := nullif(lower(left(regexp_replace(coalesce(p_src, ''), '[^a-zA-Z0-9_-]', '', 'g'), 20)), '');   -- קוד דרך ההגעה מהקישור ?s=קוד
   pid  uuid;
   ev   public.aum_events;
   act  boolean;
@@ -280,8 +281,8 @@ begin
     end if;
   else
     begin
-      insert into public.aum_participants (name, phone, age, age_set_at, gender, source)
-        values (nm, n, p_age, current_date, p_gender, src)   -- phone_norm נקבע בטריגר
+      insert into public.aum_participants (name, phone, age, age_set_at, gender, source, source_code)
+        values (nm, n, p_age, current_date, p_gender, src, code)   -- phone_norm נקבע בטריגר
         returning id into pid;
     exception when unique_violation then
       select id into pid from public.aum_participants where phone_norm = n limit 1;
@@ -576,7 +577,7 @@ language plpgsql security definer set search_path = public as $$
 declare mail text := auth.jwt() ->> 'email';
 begin
   insert into public.aum_notes (participant_id, body, author_email, author_name, system, event_type, meeting_id)
-  values (p_pid, p_body, coalesce(mail, 'system'), case when mail is null then 'מערכת' else 'טל' end, true, p_event, p_meeting);
+  values (p_pid, p_body, mail, case when mail is null then 'מערכת' else 'טל' end, true, p_event, p_meeting);   -- בלי מנהל מחובר (הרשמה מהאתר): בלי מייל, והשם "מערכת"
 exception when others then null;
 end $$;
 revoke all on function public.aum_sys_note(uuid, text, text, uuid) from public, anon, authenticated;

@@ -91,12 +91,14 @@
     g.addEventListener("pointerup", end); g.addEventListener("pointercancel", end);
   })();
 
-  /* ----- הגעה ממודעה בתשלום: ?s=p בכתובת. נשמר למשך הביקור ונשלח עם ההרשמה ----- */
-  var PAID = (function () {
-    var v = new URLSearchParams(location.search).get("s") === "p";
-    try { if (v) sessionStorage.setItem("aum_s", "p"); else v = sessionStorage.getItem("aum_s") === "p"; } catch (e) {}
-    return v;
+  /* ----- דרך ההגעה: ?s=קוד בכתובת (p = מודעה בתשלום). נשמר למשך הביקור ונשלח עם ההרשמה ----- */
+  var SRC = (function () {
+    var v = new URLSearchParams(location.search).get("s");
+    v = v && /^[a-zA-Z0-9_-]{1,20}$/.test(v) ? v.toLowerCase() : null;
+    try { if (v) sessionStorage.setItem("aum_s", v); else v = sessionStorage.getItem("aum_s"); } catch (e) {}
+    return v && /^[a-z0-9_-]{1,20}$/.test(v) ? v : null;
   })();
+  var PAID = SRC === "p";
 
   /* נרמול טלפון (E.164), אותה לוגיקה כמו aum_normalize_phone בדאטהבייס */
   function normPhone(raw) {
@@ -164,7 +166,7 @@
 
     btn.disabled = true; btn.textContent = "שולחים...";
     var body = { p_name: name, p_phone: norm, p_age: age, p_gender: gender };
-    if (PAID) body.p_src = "p";
+    if (SRC) body.p_src = SRC;
     send(body).then(function (res) {
       return res.ok ? res.json() : null;
     }).then(function (out) {
