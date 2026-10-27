@@ -539,7 +539,7 @@
     .hint { font-size: 13px; color: var(--muted); margin-top: 4px; }
     .sect-title { font-size: 14px; font-weight: 700; color: var(--muted); margin: 6px 0 6px; }
     .mlist { display: grid; gap: 6px; margin-bottom: 14px; }
-    /* שורת ריטריט: כרטיס אחד, סימון הריטריט מימין והסטטוס משולב בתוכה משמאל */
+    /* שורת מפגש: כרטיס אחד, סימון המפגש מימין והסטטוס משולב בתוכה משמאל */
     .mrow { display: flex; align-items: center; gap: 8px; min-height: 54px; padding: 0 8px 0 6px; border-radius: 16px; border: 1.5px solid var(--line); background: #fff; transition: border-color .15s, background .15s; }
     .mrow.on { border-color: var(--terra); background: rgba(193,25,31,.06); }
     .mtoggle { flex: 1; display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 6px; border: 0; background: transparent; font-weight: 600; text-align: right; border-radius: 12px; }
@@ -594,7 +594,7 @@
     .mrow .here.sm[aria-pressed="true"] { color: #fff; }
     .hcount { display: inline-block; font-size: 13px; font-weight: 700; color: #2F7D4F; background: var(--green-bg); padding: 2px 10px; border-radius: 999px; }
     .hcount[hidden] { display: none; }
-    .row .meta .age:not([title]) { grid-column: 5; margin-inline-end: 0; }   /* "ללא ריטריט": בעמודת הסטטוס, לא בעמודת הגיל */
+    .row .meta .age:not([title]) { grid-column: 5; margin-inline-end: 0; }   /* "ללא מפגש": בעמודת הסטטוס, לא בעמודת הגיל */
     .row .name { font-size: 15.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .row .nm .name { overflow-wrap: normal; }
     .row .adtag { width: 18px; height: 18px; }
@@ -622,7 +622,7 @@
     <header class="top">
       <div class="title-row">
         <div class="msel">
-          <h1><button type="button" id="mSel" aria-haspopup="menu" aria-expanded="false"><span id="mSelTxt">לא נבחר ריטריט</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></h1>
+          <h1><button type="button" id="mSel" aria-haspopup="menu" aria-expanded="false"><span id="mSelTxt">לא נבחר מפגש</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></h1>
           <div class="hcount" id="hereCount" hidden></div>
           <div class="sortmenu mmenu" id="mMenu" role="menu" hidden></div>
         </div>
@@ -669,7 +669,7 @@
       <p id="pViewSub" class="pviewsub" hidden></p>
       <div class="ppanel" data-panel="main">
         <div class="paychip" id="pPayChip" hidden></div>
-        <div class="clabel">ריטריטים</div>
+        <div class="clabel">מפגשים</div>
         <div class="mlist" id="pMeetings"></div>
         <button type="button" class="more" id="pMore" hidden>טען עוד</button>
         <div class="clabel">הערות</div>
@@ -723,11 +723,11 @@
     </form>
   </dialog>
 
-  <!-- ריטריט -->
+  <!-- מפגש -->
   <dialog id="mDlg" aria-labelledby="mTitle">
     <form class="sheet" id="mForm" method="dialog" novalidate>
       <div class="sheet-head">
-        <h2 id="mTitle">ריטריט חדש</h2>
+        <h2 id="mTitle">מפגש חדש</h2>
       </div>
       <div class="two" style="grid-template-columns: 1fr 1fr">
         <label class="field"><span>תאריך</span><input name="date" type="date" required /></label>
@@ -742,8 +742,8 @@
         <label class="field"><span>מחיר לזוג ב-₪</span><input name="pair" type="number" min="0" inputmode="numeric" /></label>
       </div>
       <label class="field"><span>מקומות (ריק = בלי הגבלה)</span><input name="capacity" type="number" min="1" inputmode="numeric" /></label>
-      <button class="btn" id="mSubmit" type="submit">יצירת ריטריט</button>
-      <button class="btn ghost" id="mDelete" type="button">מחיקת ריטריט</button>
+      <button class="btn" id="mSubmit" type="submit">יצירת מפגש</button>
+      <button class="btn ghost" id="mDelete" type="button">מחיקת מפגש</button>
     </form>
   </dialog>
 
@@ -831,7 +831,7 @@
   const T = { p: 'aum_participants', m: 'aum_events', a: 'aum_registrations', n: 'aum_notes', pr: 'aum_promoters', pp: 'aum_promoter_payments', pay: 'aum_payments', push: 'aum_push_subs' };
 
   const state = { participants: [], meetings: [], att: [], notes: [], promoters: [], promoPays: [], payments: [], filter: null, q: '', pay: null, gender: null, sort: 'new' };
-  /* קישור עמוק מהמייל: ?m=<ריטריט>&p=<משתתף>; נשמר בזמן הכניסה עם גוגל (שמחזירה בלי הפרמטרים) */
+  /* קישור עמוק מהמייל: ?m=<מפגש>&p=<משתתף>; נשמר בזמן הכניסה עם גוגל (שמחזירה בלי הפרמטרים) */
   let deep = null;
   try {
     const sp = new URLSearchParams(location.search);
@@ -840,7 +840,7 @@
   } catch (e) {}
   const $ = (s) => document.querySelector(s);
 
-  /* מצב המסך נשמר ב-URL (ריטריט, סינון תשלום, חיפוש, חלון פתוח) כדי שאפשר יהיה לשתף */
+  /* מצב המסך נשמר ב-URL (מפגש, סינון תשלום, חיפוש, חלון פתוח) כדי שאפשר יהיה לשתף */
   let urlReady = false, openPid = null;
   function syncUrl() {
     if (!urlReady) return;
@@ -934,7 +934,7 @@
     pushState(); refreshSub();
   }
 
-  /* בשפת המסך "ריטריט" הוא שורת aum_events (event_date, start_time) והשיוך הוא aum_registrations (event_id).
+  /* בשפת המסך "מפגש" הוא שורת aum_events (event_date, start_time) והשיוך הוא aum_registrations (event_id).
      ההמרה כאן, בגבול עם הדאטהבייס, ושאר הקוד מדבר meeting_* בלבד */
   const W_M = { meeting_date: 'event_date', meeting_time: 'start_time' }, W_A = { meeting_id: 'event_id' };
   const toDb = (map, o) => { if (Array.isArray(o)) return o.map((x) => toDb(map, x)); if (!o || typeof o !== 'object') return o; const r = {}; for (const k in o) r[map[k] || k] = o[k]; return r; };
@@ -1071,8 +1071,8 @@
     return (withDay ? 'יום ' + day + ' ' : '') + d + '.' + mo + ' · ' + String(m.meeting_time).slice(0, 5);
   }
   const isPast = (m) => m.meeting_date < todayISO();
-  /* מחיר ברירת מחדל: המחיר של הריטריט עצמו */
-  const PRICE_EARLY = 300, PRICE_LATE = 300;   // רק כשאין ריטריט בכלל; המחיר האמיתי בא מהריטריט (price, price_pair)
+  /* מחיר ברירת מחדל: המחיר של המפגש עצמו */
+  const PRICE_EARLY = 300, PRICE_LATE = 300;   // רק כשאין מפגש בכלל; המחיר האמיתי בא מהמפגש (price, price_pair)
   const defaultPrice = (m) => (m && Number(m.price)) || PRICE_EARLY;
   /* קרדיט משתתף: סכומים שנשארו אצלנו בביטול בלי החזר כסף, פחות מה ששימש לתשלום חדש */
   const creditOf = (pid) => state.payments.filter((x) => x.participant_id === pid).reduce((s, x) => s + (x.kind === 'credit' ? Number(x.amount) : ((x.kind === 'payment' || x.kind === 'refund') && x.from_credit ? -Number(x.amount) : 0)), 0);
@@ -1080,7 +1080,7 @@
   const rateLabel = (pr) => pr ? (pr.rate_type === 'percent' ? Number(pr.rate) + '%' : '₪' + Number(pr.rate)) : '';
   const calcCommission = (pr, amount) => { if (!pr) return ''; const v = pr.rate_type === 'percent' ? Math.round((Number(amount) || 0) * Number(pr.rate)) / 100 : Number(pr.rate); return Number.isFinite(v) ? v : ''; };
   const fillPromoterSelect = (sel, val, none) => { sel.innerHTML = '<option value="">' + (none || 'ללא') + '</option>' + state.promoters.map((x) => '<option value="' + x.id + '">' + esc(x.name) + ' (' + rateLabel(x) + ')</option>').join('') + '<option value="__new">+ יחצן חדש</option>'; sel.value = val || ''; };
-  /* תצוגת ההגעה (מונה, הדגשת שורה, כפתור "הגיע") מופיעה החל מחצי שעה לפני תחילת הריטריט (שעון ישראל) */
+  /* תצוגת ההגעה (מונה, הדגשת שורה, כפתור "הגיע") מופיעה החל מחצי שעה לפני תחילת המפגש (שעון ישראל) */
   const nowIL = () => {
     const s = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Jerusalem', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date());
     const [d, tm] = s.split(' '), [y, mo, da] = d.split('-').map(Number), [h, mi] = tm.split(':').map(Number);
@@ -1150,24 +1150,24 @@
   }
 
   /* ---------- רינדור ---------- */
-  function render() { renderChips(); renderSort(); renderList();  syncUrl(); }   // בתוך ריטריט מוסיפים דרך החיפוש
+  function render() { renderChips(); renderSort(); renderList();  syncUrl(); }   // בתוך מפגש מוסיפים דרך החיפוש
 
-  /* בורר הריטריט בכותרת (במקום שורת התגיות): כל המשתתפים, ריטריט אחד לסינון, או יצירת ריטריט */
+  /* בורר המפגש בכותרת (במקום שורת התגיות): כל המשתתפים, מפגש אחד לסינון, או יצירת מפגש */
   function renderChips() {
     const cur = state.filter ? state.meetings.find((m) => m.id === state.filter) : null;
     { const hc = $('#hereCount'), ls = cur ? state.att.filter((a) => a.meeting_id === cur.id) : []; hc.hidden = !(cur && attendOpen(cur)); if (cur) hc.textContent = 'הגיעו ' + ls.filter((a) => a.attended).length + ' מתוך ' + ls.length; }
-    $('#mSelTxt').textContent = cur ? meetingLabel(cur).split(' · ')[0] : 'לא נבחר ריטריט';
+    $('#mSelTxt').textContent = cur ? meetingLabel(cur).split(' · ')[0] : 'לא נבחר מפגש';
     const dayTime = (m) => esc(meetingLabel(m).split(' · ')[0]) + ' · ' + esc(meetingLabel(m, true).split(' ').slice(0, 2).join(' ')) + ' · ' + esc(String(m.meeting_time).slice(0, 5));
     const EDIT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z"/><path d="M14 7l3 3"/></svg>';
     const paidAll = state.participants.filter((x) => { const ls = linksOf(x.id).filter((l) => !l.exempt); return ls.length && ls.every((l) => l.paid); }).length;
-    $('#mMenu').innerHTML = '<div class="mtr mhead" aria-hidden="true"><span>ריטריט</span><span>נרשמו</span><span>שילמו</span><span></span></div>' +
+    $('#mMenu').innerHTML = '<div class="mtr mhead" aria-hidden="true"><span>מפגש</span><span>נרשמו</span><span>שילמו</span><span></span></div>' +
       '<div class="mtr mrow2" role="menuitemradio" tabindex="0" data-filter="" aria-checked="' + (state.filter === null) + '"><span>כל המשתתפים</span><span class="mc">' + state.participants.length + '</span><span class="mc dim">' + paidAll + '</span><span></span></div>' +
       state.meetings.map((m) => {
         const ls = state.att.filter((a) => a.meeting_id === m.id);
         return '<div class="mtr mrow2' + (isPast(m) ? ' past' : '') + '" role="menuitemradio" tabindex="0" data-filter="' + m.id + '" aria-checked="' + (state.filter === m.id) + '"><span>' + dayTime(m) + '</span><span class="mc">' + ls.length + '</span><span class="mc dim">' + ls.filter((a) => a.paid).length + '</span>' +
-          '<button type="button" class="medit" data-edit-m="' + m.id + '" aria-label="עריכת ריטריט" title="עריכת ריטריט">' + EDIT_ICON + '</button></div>';
+          '<button type="button" class="medit" data-edit-m="' + m.id + '" aria-label="עריכת מפגש" title="עריכת מפגש">' + EDIT_ICON + '</button></div>';
       }).join('') +
-      '<button type="button" role="menuitem" class="addm2" id="addMeeting">+ ריטריט חדש</button>';
+      '<button type="button" role="menuitem" class="addm2" id="addMeeting">+ מפגש חדש</button>';
   }
   const closeMSel = () => { $('#mMenu').hidden = true; $('#mSel').setAttribute('aria-expanded', 'false'); };
   $('#mSel').addEventListener('click', (e) => { e.stopPropagation(); const m = $('#mMenu'); m.hidden = !m.hidden; $('#mSel').setAttribute('aria-expanded', String(!m.hidden)); });
@@ -1175,7 +1175,7 @@
 
   const WA_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.7.1-.2.3-.8.9-.9 1.1-.2.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.6l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 4.9 4.3.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3zM12 21.5c-1.7 0-3.4-.5-4.8-1.3l-.3-.2-3.6.9 1-3.5-.2-.4C3.2 15.6 2.7 13.8 2.7 12c0-5.1 4.2-9.3 9.3-9.3 2.5 0 4.8 1 6.6 2.7 1.8 1.8 2.7 4.1 2.7 6.6 0 5.2-4.2 9.5-9.3 9.5zM20 4C17.9 1.8 15 .7 12 .7 5.8.7.7 5.8.7 12c0 2 .5 3.9 1.5 5.6L.6 23.4l6-1.6c1.6.9 3.5 1.4 5.4 1.4 6.2 0 11.3-5.1 11.3-11.3 0-3-1.2-5.8-3.3-7.9z"/></svg>';
 
-  /* סטטוס תשלום של משתתף: בריטריט מסוים לפי הריטריט; בתצוגת הכל: שילם = כל הריטריטים שלו שולמו, טרם שילם = יש לפחות ריטריט אחד שלא שולם, null = בלי ריטריטים */
+  /* סטטוס תשלום של משתתף: במפגש מסוים לפי המפגש; בתצוגת הכל: שילם = כל המפגשים שלו שולמו, טרם שילם = יש לפחות מפגש אחד שלא שולם, null = בלי מפגשים */
   /* סימוני שירותים ציבוריים: איש ואישה בשמלה */
   const MAN_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="3.4" r="2.4"/><rect x="8" y="7" width="8" height="8.6" rx="1.3"/><rect x="4.9" y="7.4" width="2.2" height="7.6" rx="1.1"/><rect x="16.9" y="7.4" width="2.2" height="7.6" rx="1.1"/><rect x="8.3" y="16" width="3.2" height="7" rx="1.2"/><rect x="12.5" y="16" width="3.2" height="7" rx="1.2"/></svg>';
   const WOMAN_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="3.4" r="2.4"/><path d="M9.7 7h4.6c.7 0 1.2.4 1.4 1l3.1 9H5.2l3.1-9c.2-.6.7-1 1.4-1z"/><rect x="9.4" y="17.2" width="2.2" height="5.8" rx="1"/><rect x="12.4" y="17.2" width="2.2" height="5.8" rx="1"/></svg>';
@@ -1193,7 +1193,7 @@
     const st = ls.map(linkStatus).filter((s) => s !== 'exempt');   // "לא משלם" לא נספר בחוב ובהמרה
     if (!st.length) return 'exempt';
     if (st.every((s) => s === 'paid')) return 'paid';
-    return st.includes('unpaid') ? 'unpaid' : 'requested';   // בתצוגת הכל: טרם שילם = יש ריטריט בלי בקשה, בקשה נשלחה = על כל החוסרים כבר נשלחה בקשה
+    return st.includes('unpaid') ? 'unpaid' : 'requested';   // בתצוגת הכל: טרם שילם = יש מפגש בלי בקשה, בקשה נשלחה = על כל החוסרים כבר נשלחה בקשה
   }
 
   /* מונים וסינון: גברים/נשים ושילמו/טרם שילמו. כל מונה סופר לפי הסינון האחר והחיפוש, כך שהמספר הוא בדיוק מה שיוצג בלחיצה */
@@ -1253,7 +1253,7 @@
 
   /* הודעה כשאין תוצאות, לפי הסינון הפעיל */
   function emptyMsg() {
-    const g = state.gender, pay = state.pay, scope = state.filter ? ' בריטריט הזה' : '';
+    const g = state.gender, pay = state.pay, scope = state.filter ? ' במפגש הזה' : '';
     const clear = '<button type="button" class="link-btn" id="clearFx" style="margin-top:14px">ניקוי סינונים</button>';
     if (g || pay) {
       if (!g && pay === 'requested' && !state.q) return '<b>אין משתתפים בטיפול</b>כשנשלחת הודעת תשלום בוואטסאפ מתוך פרטי המשתתף, הסטטוס מסומן כאן' + '<br>' + clear;
@@ -1263,13 +1263,13 @@
           ? '<b>אין משתתפים שטרם טופלו</b>כל מי שטרם שילם' + scope + ' כבר בטיפול (' + nReq + ')<br>' + clear
           : '<b>כולם שילמו</b>אין משתתפים שטרם טופלו' + scope + '<br>' + clear;
       }
-      if (!g && pay === 'paid' && !state.q) return '<b>עוד אף אחד לא שילם</b>' + (state.filter ? 'אפשר לסמן תשלום בלחיצה על התגית "טרם טופל" בכרטיס' : 'תשלום מסמנים בפרטי המשתתף, בתוך הריטריט') + '<br>' + clear;
+      if (!g && pay === 'paid' && !state.q) return '<b>עוד אף אחד לא שילם</b>' + (state.filter ? 'אפשר לסמן תשלום בלחיצה על התגית "טרם טופל" בכרטיס' : 'תשלום מסמנים בפרטי המשתתף, בתוך המפגש') + '<br>' + clear;
       const who = g === 'male' ? 'גברים' : g === 'female' ? 'נשים' : g === 'none' ? 'משתתפים ללא מגדר' : 'משתתפים';
       const what = pay === 'paid' ? ' ששילמו' : pay === 'unpaid' ? ' שטרם טופלו' : pay === 'requested' ? ' בטיפול' : '';
       return '<b>אין ' + who + what + scope + (state.q ? ' שמתאימים לחיפוש' : '') + '</b>אפשר לנקות את הסינון ולנסות שוב<br>' + clear;
     }
     if (state.q) return '<b>לא נמצא אף אחד</b>אפשר לנסות שם או מספר אחר';
-    return state.filter ? '<b>עוד אין משתתפים בריטריט הזה</b>אפשר להוסיף דרך החיפוש: מחפשים שם או טלפון ולוחצים "הוספה לריטריט"'
+    return state.filter ? '<b>עוד אין משתתפים במפגש הזה</b>אפשר להוסיף דרך החיפוש: מחפשים שם או טלפון ולוחצים "הוספה למפגש"'
                         : '<b>עוד אין משתתפים</b>לחיצה על "+ משתתף" למטה מוסיפה את הראשון';
   }
 
@@ -1286,7 +1286,7 @@
     });
     rows.sort(sortCmp());
 
-    /* במסך ריטריט + חיפוש: מציגים גם מי שלא רשום לריטריט, כדי להוסיף אותם בלחיצה (למשל מי שהגיע בלי להודיע) */
+    /* במסך מפגש + חיפוש: מציגים גם מי שלא רשום למפגש, כדי להוסיף אותם בלחיצה (למשל מי שהגיע בלי להודיע) */
     let others = [];
     if (state.filter && q) {
       others = state.participants.filter((p) => !linkOf(p.id, state.filter) &&
@@ -1294,11 +1294,11 @@
       others.sort((a, b) => a.name.localeCompare(b.name, 'he'));
     }
     const othersHtml = others.length
-      ? '<li class="group">לא רשומים לריטריט הזה</li>' + others.map((p) => {
+      ? '<li class="group">לא רשומים למפגש הזה</li>' + others.map((p) => {
           const age = shownAge(p);
           return '<li class="row other"><div class="main" role="button" tabindex="0" data-edit="' + p.id + '"><div class="nm"><bdi class="name">' + esc(p.name) + '</bdi></div>' +
             ((age != null || p.gender) ? '<div class="meta">' + ((age != null || p.gender) ? '<span class="age" title="' + (p.gender ? (p.gender === 'male' ? 'זכר' : 'נקבה') + ' · ' : '') + 'גיל"><bdi>' + (p.gender ? '<b class="gl">' + (p.gender === 'male' ? 'ז' : 'נ') + '</b> ' : '') + (age != null ? age : '') + '</bdi></span>' : '') + '</div>' : '') + '</div>' +
-            '<div class="acts"><button type="button" class="addm" data-addm="' + p.id + '">+ הוספה לריטריט</button></div></li>';
+            '<div class="acts"><button type="button" class="addm" data-addm="' + p.id + '">+ הוספה למפגש</button></div></li>';
         }).join('')
       : '';
     const newBtn = q
@@ -1324,9 +1324,9 @@
         const ls = linksOf(p.id);
         if (ls.length) {
           const payable = ls.filter((l) => !l.exempt), np = payable.filter((l) => l.paid).length, ps = paidState(p);
-          tags = '<span class="ptag ' + ps + '" title="תשלום לפי ריטריטים">' +
+          tags = '<span class="ptag ' + ps + '" title="תשלום לפי מפגשים">' +
             (ls.length === 1 || ps === 'exempt' ? STATUS_LABEL[ps] : (ps === 'requested' ? 'בטיפול' : '<bdi>' + np + '/' + payable.length + '</bdi> שילמו')) + '</span>';
-        } else tags = '<span class="age">ללא ריטריט</span>';
+        } else tags = '<span class="age">ללא מפגש</span>';
       }
       const hl = state.filter ? linkOf(p.id, state.filter) : null;
       return '<li class="row' + (hl && hl.attended && attendOpen(state.meetings.find((x) => x.id === state.filter)) ? ' arrived' : '') + '">' +
@@ -1349,14 +1349,14 @@
   const P = (a, b) => b ? Math.round(a / b * 100) : null;
   const Ps = (a, b) => b ? Math.round(a / b * 100) + '%' : '—';
   const nfm = (n) => Math.round(n).toLocaleString('he-IL');
-  const priceAtReg = (m) => (m && Number(m.price)) || 0;   // המחיר של הריטריט עצמו (ריק = 0)
+  const priceAtReg = (m) => (m && Number(m.price)) || 0;   // המחיר של המפגש עצמו (ריק = 0)
 
   function computeStats() {
     const asc = state.meetings.slice().sort((a, b) => (a.meeting_date + a.meeting_time).localeCompare(b.meeting_date + b.meeting_time));
     const mById = new Map(state.meetings.map((m) => [m.id, m])), pById = new Map(state.participants.map((p) => [p.id, p]));
     const all = state.att.filter((l) => mById.has(l.meeting_id) && pById.has(l.participant_id)).map((l) => ({ ...l, m: mById.get(l.meeting_id), p: pById.get(l.participant_id), st: linkStatus(l) }));
     const links = all;
-    // לכל ריטריט: נרשמים, שילמו, הכנסה, חדשים/חוזרים, שימור מהריטריט הקודם
+    // לכל מפגש: נרשמים, שילמו, הכנסה, חדשים/חוזרים, שימור מהמפגש הקודם
     const seen = new Set(); let prev = new Set();
     const perMeeting = asc.map((m) => {
       const ls = all.filter((l) => l.meeting_id === m.id), S = new Set(ls.map((l) => l.participant_id));
@@ -1408,7 +1408,7 @@
     const credit = state.participants.reduce((s, q) => s + Math.max(0, creditOf(q.id)), 0);
     const refunds = state.payments.filter((x) => x.kind === 'refund').reduce((s, x) => s + Number(x.amount), 0);
     const maxRev = Math.max(1, ...pm.map((r) => r.rev));
-    const money = part('הכנסה לפי ריטריט', tbl(['ריטריט', 'הכנסה', 'שילמו', 'מגמה'], pm.map((r, k) => [dlab(r.m), ilsB(r.rev), r.paid + '/' + (r.regs - r.ex), k ? trend(r.rev, pm[k - 1].rev) : '—']))) +
+    const money = part('הכנסה לפי מפגש', tbl(['מפגש', 'הכנסה', 'שילמו', 'מגמה'], pm.map((r, k) => [dlab(r.m), ilsB(r.rev), r.paid + '/' + (r.regs - r.ex), k ? trend(r.rev, pm[k - 1].rev) : '—']))) +
       part('מצב תשלומים', '<div class="stkpis">' + kpi(paid.length, 'שילמו', Ps(paid.length, nPay), 'good') + kpi(req.length, 'בטיפול', ilsB(owed), 'warn') + kpi(unp.length, 'טרם טופלו', '', unp.length ? 'bad' : '') + kpi(exm.length, 'חינם', '') + '</div>') +
       part('גבייה', tbl(['מדד', 'ערך'], [['המרה לתשלום', Ps(paid.length, nPay)], ['ממוצע לתשלום', paid.length ? ilsB(rev / paid.length) : '—'], ['נטו אחרי עמלות', ilsB(rev - comm)], ['עמלות ליחצנים', ilsB(comm)], ['קרדיט פתוח', ilsB(credit)], ['הוחזר', ilsB(refunds)]])) +
       (() => { const byM = {}; paid.forEach((l) => { const k = ilDay(l.paid_at || l.created_at || new Date().toISOString()).slice(0, 7); byM[k] = (byM[k] || 0) + price(l); }); const ks = Object.keys(byM).sort(), mx = Math.max(1, ...ks.map((k) => byM[k])); return ks.length > 1 ? part('הכנסה לפי חודש', ks.map((k) => barRow(k.slice(5) + '/' + k.slice(2, 4), byM[k], mx, '#2F7D4F', ilsB(byM[k]))).join('')) : ''; })();
@@ -1421,7 +1421,7 @@
     const srcCount = (r, k) => links.filter((l) => l.meeting_id === r.m.id && src(l) === k).length;
     const promo = part('נתונים עיקריים', '<div class="stkpis">' + kpi(ilsB(proInc), 'הכנסה דרך יחצנים', Ps(proInc, rev) + ' מההכנסה') + kpi(ilsB(proOwed), 'נשאר לשלם ליחצנים', '', proOwed ? 'warn' : '') + kpi(adL.length, 'נרשמו ממודעה', Ps(adL.length, n) + ' מההרשמות') + kpi(Ps(adPaid.length, adL.filter((l) => !l.exempt).length), 'המרה ממודעה', adPaid.length + ' שילמו') + '</div>') +
       (proRows.length ? part('יחצנים', tbl(['יחצן', 'הכנסה', 'עמלה', 'יתרה'], proRows.map((r) => [esc(r.x.name), ilsB(r.inc), ilsB(r.cm), r.bal > 0 ? ilsB(r.bal) : '✓']))) : part('יחצנים', '<p class="sthint">עוד אין יחצנים. אפשר להוסיף באייקון המגפון</p>')) +
-      part('מקורות לפי ריטריט', tbl(['ריטריט', 'אתר', 'מודעה', 'יחצן', 'אחר'], pm.map((r) => [dlab(r.m), srcCount(r, 'site'), srcCount(r, 'ad'), srcCount(r, 'promo'), srcCount(r, 'other')])));
+      part('מקורות לפי מפגש', tbl(['מפגש', 'אתר', 'מודעה', 'יחצן', 'אחר'], pm.map((r) => [dlab(r.m), srcCount(r, 'site'), srcCount(r, 'ad'), srcCount(r, 'promo'), srcCount(r, 'other')])));
 
     // ----- דמוגרפיה -----
     const male = people.filter((q) => q.gender === 'male'), female = people.filter((q) => q.gender === 'female'), noG = people.length - male.length - female.length;
@@ -1432,7 +1432,7 @@
     const demo = part('מגדר', barRow('נשים', female.length, people.length, '#C2547A') + barRow('גברים', male.length, people.length, '#3F6FB5') + (noG ? barRow('לא צוין', noG, people.length, '#B9B2A5') : '') +
         tbl(['המרה לתשלום', 'ערך'], [['נשים', Ps(cF.paid, cF.n)], ['גברים', Ps(cM.paid, cM.n)]])) +
       part('גילאים', barRow('עד 39', bucket(0, 39), ages.length, '#9A9A75') + barRow('40 עד 44', bucket(40, 44), ages.length, '#5A2410') + barRow('45 עד 49', bucket(45, 49), ages.length, '#5A2410') + barRow('50 ומעלה', bucket(50, 120), ages.length, '#B7791F') + '<p class="stline">בטווח היעד 40–49: <b>' + Ps(target.length, ages.length) + '</b> · גיל ממוצע <b>' + avgAge.toFixed(1) + '</b></p>') +
-      part('חדשים וחוזרים', tbl(['ריטריט', 'חדשים', 'חוזרים', 'מגמה'], pm.map((r, k) => [dlab(r.m), r.news, r.ret, k ? trend(r.news + r.ret, pm[k - 1].news + pm[k - 1].ret) : '—'])));
+      part('חדשים וחוזרים', tbl(['מפגש', 'חדשים', 'חוזרים', 'מגמה'], pm.map((r, k) => [dlab(r.m), r.news, r.ret, k ? trend(r.news + r.ret, pm[k - 1].news + pm[k - 1].ret) : '—'])));
 
     // ----- מסך ראשי: שורה תחתונה לכל נושא -----
     const bottom = '<div class="stbottom"><div><b>' + ilsB(rev - comm) + '</b><small>הכנסה נטו</small></div><div><b>' + paid.length + '/' + nPay + '</b><small>שילמו</small></div><div><b>' + (conv == null ? '—' : conv + '%') + '</b><small>המרה</small></div></div>';
@@ -1447,7 +1447,7 @@
   $('#statsBtn').addEventListener('click', () => { renderStats(); $('#stDlg').showModal(); syncUrl(); });
   $('#stDlg').addEventListener('close', syncUrl);
 
-  /* ---------- אישור לפני שינוי: סטטוס תשלום, הוספה לריטריט והסרה ממנו ---------- */
+  /* ---------- אישור לפני שינוי: סטטוס תשלום, הוספה למפגש והסרה ממנו ---------- */
   const nameB = (n) => '<b style="color:var(--ink);font-weight:800">' + esc(n) + '</b>';   // שם מודגש בפופאפים
   function confirmAct(title, pid, mid, fn, extraHtml, yesLabel, alt) {
     const p = state.participants.find((x) => x.id === pid), m = state.meetings.find((x) => x.id === mid);
@@ -1476,22 +1476,22 @@
     setPTab('status');
   }
   function openRefundView(pid, mid, st) {
-    $('#refundText').innerHTML = refundNote(pid, mid) + '<br><br>או: <b>לא להחזיר כסף</b>, והסכום יישאר כקרדיט למשתתף לתשלום על ריטריט אחר.';
+    $('#refundText').innerHTML = refundNote(pid, mid) + '<br><br>או: <b>לא להחזיר כסף</b>, והסכום יישאר כקרדיט למשתתף לתשלום על מפגש אחר.';
     $('#refundYes').onclick = () => { setPayStatus(pid, mid, st, null, { mode: 'refund' }); toMain(); };
     $('#creditYes').onclick = () => { setPayStatus(pid, mid, st, null, { mode: 'credit' }); toMain(); };
     $('#refundNo').onclick = () => setPTab(viewStack.pop() || 'main');
     goView('refund');
   }
-  /* יציאה מסטטוס "שילם" (או הסרה מריטריט) = החזר תשלום: מתריעים בבירור, והמערכת רושמת רשומת החזר */
+  /* יציאה מסטטוס "שילם" (או הסרה ממפגש) = החזר תשלום: מתריעים בבירור, והמערכת רושמת רשומת החזר */
   function refundNote(pid, mid) {
     const l = linkOf(pid, mid), amt = l && l.paid_amount != null ? Number(l.paid_amount) : PRICE_EARLY, pr = l && promoterOf(l.promoter_id);
     return 'המערכת תבצע <b>החזרה של תשלום בסך ₪' + nfm(amt) + '</b>. תירשם רשומת החזר ביומן התשלומים' + (pr && l.commission ? ', והעמלה ליחצן ' + esc(pr.name) + ' (₪' + nfm(l.commission) + ') תבוטל' : '') + '.';
   }
   function confirmRefund(pid, mid, fn) { confirmAct('החזרת תשלום', pid, mid, fn, refundNote(pid, mid), 'כן, להחזיר תשלום'); }
   $('#cDlg').addEventListener('close', () => { $('#cYes').textContent = 'אישור'; $('#cAlt').hidden = true; });
-  const confirmLink = (pid, mid, on, after) => (!on && (linkOf(pid, mid) || {}).paid && !(linkOf(pid, mid) || {}).exempt) ? confirmAct('הסרה מהריטריט: מה עם התשלום?', pid, mid, () => { setLinked(pid, mid, false, 'refund'); if (after) after(); }, refundNote(pid, mid) + '<br><br>אפשר גם להשאיר את הסכום כקרדיט למשתתף, בלי להחזיר כסף.', 'הסר והחזר תשלום', { label: 'הסר ושמור קרדיט (בלי החזר)', fn: () => { setLinked(pid, mid, false, 'credit'); if (after) after(); } }) : confirmAct(on ? 'להוסיף לריטריט?' : 'להסיר מהריטריט?', pid, mid, () => { setLinked(pid, mid, on); if (after) after(); });
+  const confirmLink = (pid, mid, on, after) => (!on && (linkOf(pid, mid) || {}).paid && !(linkOf(pid, mid) || {}).exempt) ? confirmAct('הסרה מהמפגש: מה עם התשלום?', pid, mid, () => { setLinked(pid, mid, false, 'refund'); if (after) after(); }, refundNote(pid, mid) + '<br><br>אפשר גם להשאיר את הסכום כקרדיט למשתתף, בלי להחזיר כסף.', 'הסר והחזר תשלום', { label: 'הסר ושמור קרדיט (בלי החזר)', fn: () => { setLinked(pid, mid, false, 'credit'); if (after) after(); } }) : confirmAct(on ? 'להוסיף למפגש?' : 'להסיר מהמפגש?', pid, mid, () => { setLinked(pid, mid, on); if (after) after(); });
 
-  /* סימון הגעה לריטריט (זמן אמת: מעדכן מיד, נשמר ומתעדכן אצל כולם) */
+  /* סימון הגעה למפגש (זמן אמת: מעדכן מיד, נשמר ומתעדכן אצל כולם) */
   /* יחצנים: רשימה עם יתרה, דף התחשבנות לכל יחצן (עמלות שנצברו מול תשלומים ליחצן), הוספה, עריכה ומחיקה */
   let prEditing = null, prAfterSave = null, prCur = null;
   const fmtD = (iso) => { if (!iso) return ''; const [y, m, d] = String(iso).slice(0, 10).split('-'); return Number(d) + '.' + Number(m) + '.' + y.slice(2); };
@@ -1500,7 +1500,7 @@
   function ledgerOf(id) {
     const acc = state.payments.filter((x) => x.promoter_id === id && x.commission != null && Number(x.commission) > 0).map((x) => {
       const pp = state.participants.find((q) => q.id === x.participant_id), m = state.meetings.find((q) => q.id === x.meeting_id), isR = x.kind === 'refund' || x.kind === 'credit';
-      return { kind: isR ? 'r' : 'c', date: ilDay(x.created_at), amount: (isR ? -1 : 1) * Number(x.commission), who: pp ? pp.name : '', sub: (isR ? (x.kind === 'credit' ? 'ביטול לקרדיט · ' : 'החזר תשלום · ') : '') + (m ? 'ריטריט ' + meetingLabel(m).split(' · ')[0] + ' · ' : '') + (isR ? 'הוחזר ' : 'שילם ') + Number(x.amount), key: x.id };
+      return { kind: isR ? 'r' : 'c', date: ilDay(x.created_at), amount: (isR ? -1 : 1) * Number(x.commission), who: pp ? pp.name : '', sub: (isR ? (x.kind === 'credit' ? 'ביטול לקרדיט · ' : 'החזר תשלום · ') : '') + (m ? 'מפגש ' + meetingLabel(m).split(' · ')[0] + ' · ' : '') + (isR ? 'הוחזר ' : 'שילם ') + Number(x.amount), key: x.id };
     });
     const pays = state.promoPays.filter((x) => x.promoter_id === id).map((x) => ({ kind: 'p', date: x.paid_at, amount: -Number(x.amount), who: 'תשלום ליחצן', sub: x.note || '', id: x.id, key: x.id }));
     const all = acc.concat(pays).sort((a, b) => String(a.date).localeCompare(String(b.date)) || (a.kind === 'c' ? -1 : 1));
@@ -1529,7 +1529,7 @@
       (r.kind === 'p' ? '<button type="button" class="ndel" data-delpay="' + r.id + '" aria-label="מחיקת תשלום" title="מחיקת תשלום">×</button>' : '<span class="bl" title="יתרה אחרי התנועה">' + nfm(r.bal) + '</span>') + '</div>').join('') : '<p class="mnone">עוד אין תנועות. עמלה נרשמת אוטומטית כשמסמנים תשלום של משתתף שהביא היחצן</p>';
     /* משתתפים שהגיעו דרך היחצן, ומי שילם ומי לא */
     const brought = state.participants.filter((q) => q.promoter_id === id).sort((a, b) => a.name.localeCompare(b.name, 'he'));
-    const stOf = (q) => { const ls = linksOf(q.id); if (ls.some((l) => l.paid && !l.exempt)) return ['paid', 'שילם']; if (ls.some((l) => linkStatus(l) === 'requested')) return ['requested', 'בטיפול']; if (ls.some((l) => l.exempt)) return ['exempt', 'חינם']; return ls.length ? ['unpaid', 'טרם טופל'] : ['none', 'ללא ריטריט']; };
+    const stOf = (q) => { const ls = linksOf(q.id); if (ls.some((l) => l.paid && !l.exempt)) return ['paid', 'שילם']; if (ls.some((l) => linkStatus(l) === 'requested')) return ['requested', 'בטיפול']; if (ls.some((l) => l.exempt)) return ['exempt', 'חינם']; return ls.length ? ['unpaid', 'טרם טופל'] : ['none', 'ללא מפגש']; };
     $('#prBroughtLbl').textContent = 'משתתפים שהגיעו דרך ' + x.name + ' (' + brought.length + ', ' + brought.filter((q) => stOf(q)[0] === 'paid').length + ' שילמו)';
     $('#prBrought').innerHTML = brought.length ? brought.map((q) => { const s = stOf(q); return '<div class="bq"><span class="n">' + esc(q.name) + '</span><span class="pst ' + s[0] + '">' + s[1] + '</span></div>'; }).join('') : '<p class="mnone">עוד אין משתתפים עם היחצן הזה. בוחרים יחצן באייקון המגפון בכותרת הפופאפ של המשתתף</p>';
     $('#ppForm').hidden = true; $('#ppOpen').hidden = false;
@@ -1611,7 +1611,7 @@
     f.pay_amount.value = amount;
     /* היחצן הוא של המשתתף (האייקון בכותרת); עמלה מוצגת ונערכת רק כשיש יחצן */
     const prId = (p && p.promoter_id) || l.promoter_id || '', pr = promoterOf(prId);
-    /* עמלה ליחצן רק על הריטריט הראשון של המשתתף: אם כבר יש לו תשלום על ריטריט אחר, אין עמלה (ההכנסה עדיין משויכת ליחצן) */
+    /* עמלה ליחצן רק על המפגש הראשון של המשתתף: אם כבר יש לו תשלום על מפגש אחר, אין עמלה (ההכנסה עדיין משויכת ליחצן) */
     const isFirst = !state.payments.some((x) => x.participant_id === pid && x.kind === 'payment' && x.meeting_id && x.meeting_id !== mid), commPr = isFirst ? pr : null;
     let dirty = l.commission != null;
     f.pay_commission.value = l.commission != null ? Number(l.commission) : calcCommission(commPr, amount);
@@ -1734,7 +1734,7 @@
   }
   document.addEventListener('visibilitychange', () => { if (!document.hidden && markAwait) setTimeout(askMarkRequested, 250); });
   window.addEventListener('focus', () => { if (markAwait) setTimeout(askMarkRequested, 250); });
-  /* הודעת הפתיחה בוואטסאפ: למשתתף שטרם טופל. המועד, המקום והמחיר באים מהריטריט עצמו */
+  /* הודעת הפתיחה בוואטסאפ: למשתתף שטרם טופל. המועד, המקום והמחיר באים מהמפגש עצמו */
   const chaseMessage = (p) => {
     const who = SENDERS[emailOf()] || authorName(), first = String(p.name || '').trim().split(/\s+/)[0] || '';
     const ms = pendingLinks(p).map((l) => state.meetings.find((x) => x.id === l.meeting_id)).filter(Boolean).sort((x, y) => (x.meeting_date + x.meeting_time).localeCompare(y.meeting_date + y.meeting_time)), m = ms[0];
@@ -1742,7 +1742,7 @@
     if (m) {
       const dmy = (iso) => { const [, mo, d] = iso.split('-').map(Number); return d + '.' + mo; };
       const day = HE_DAYS[new Date(m.meeting_date + 'T12:00:00Z').getUTCDay()];
-      lines.push('שמחתי שנרשמת לריטריט ביום ' + day + ' ' + dmy(m.meeting_date) + ', ' + String(m.meeting_time).slice(0, 5) + (m.location ? ', ב' + m.location : '') + '!', '');
+      lines.push('שמחתי שנרשמת למפגש ביום ' + day + ' ' + dmy(m.meeting_date) + ', ' + String(m.meeting_time).slice(0, 5) + (m.location ? ', ב' + m.location : '') + '!', '');
       if (Number(m.price)) lines.push('כדי לשמור את המקום: ' + m.price + ' ₪' + (Number(m.price_pair) ? ' ליחיד, ' + m.price_pair + ' ₪ לבאים בזוג' : '') + '.');
     } else lines.push('שמחתי שנרשמת!', '');
     lines.push(PAYBOX, 'המקום נשמר ברגע שהתשלום מתקבל. אם יש שאלה, אני כאן.');
@@ -1837,7 +1837,7 @@
     try { await api(T.n + '?id=eq.' + id, { method: 'DELETE' }); } catch (err) { state.notes = prev; rebuildNotes(); renderNotes(); render(); fail(err); }
   });
 
-  /* מסך אחד: ראשי (וואטסאפ וחיוג, ריטריטים אחרונים, הערות) או פרטים (אייקון בכותרת; חץ חזרה בתוכו) */
+  /* מסך אחד: ראשי (וואטסאפ וחיוג, מפגשים אחרונים, הערות) או פרטים (אייקון בכותרת; חץ חזרה בתוכו) */
   let pTab = 'main', mLimit = 3;
   const reducedMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const SUBVIEW = { status: 'סטטוס תשלום', pay: 'פרטי תשלום', promoter: 'יחצן', refund: 'ביטול תשלום', credit: 'החזרת קרדיט' };
@@ -1893,7 +1893,7 @@
   const goView = (v) => { viewStack.push(pTab); setPTab(v); };
   const toMain = () => { viewStack = []; setPTab('main'); };
 
-  /* מעטפת אחת לכל הפופאפים (משתתף, ריטריט, סטטיסטיקה, אישור): עולים מלמטה, נסגרים באנימציה,
+  /* מעטפת אחת לכל הפופאפים (משתתף, מפגש, סטטיסטיקה, אישור): עולים מלמטה, נסגרים באנימציה,
      פס גרירה בראש כמו מגירה (אפשר להחליק למטה לסגירה), לחיצה בחוץ סוגרת, והדף מאחור נעול לגלילה */
   (function () {
     const proto = HTMLDialogElement.prototype, rawShow = proto.showModal, rawClose = proto.close;
@@ -2039,10 +2039,10 @@
     if (!sheet) return;
     renderContact();
     const box = $('#pMeetings');
-    /* שלושת הריטריטים האחרונים (כל הריטריטים, לא רק שלו) וכפתור לטעינת עוד */
+    /* שלושת המפגשים האחרונים (כל המפגשים, לא רק שלו) וכפתור לטעינת עוד */
     const desc = state.meetings.slice().sort((a, b) => (b.meeting_date + b.meeting_time).localeCompare(a.meeting_date + a.meeting_time)), shown = desc.slice(0, mLimit);
     $('#pMore').hidden = desc.length <= mLimit;
-    { /* מספר אחד: יתרה = חוב פחות קרדיט. חוב רק על ריטריטים שביקשנו עליהם תשלום (סטטוס "בטיפול"); רשום בלבד (טרם טופל) הוא עוד לא חוב */
+    { /* מספר אחד: יתרה = חוב פחות קרדיט. חוב רק על מפגשים שביקשנו עליהם תשלום (סטטוס "בטיפול"); רשום בלבד (טרם טופל) הוא עוד לא חוב */
       const owed = sheet.id ? linksOf(sheet.id).filter((l) => linkStatus(l) === 'requested').reduce((s, l) => { const m = state.meetings.find((q) => q.id === l.meeting_id); return s + (m ? defaultPrice(m) : PRICE_EARLY); }, 0) : 0;
       const net = owed - (sheet.id ? creditOf(sheet.id) : 0), chip = $('#pPayChip');
       chip.hidden = !sheet.id || net === 0;
@@ -2144,7 +2144,7 @@
     } catch (err) { fail(err); }
   });
 
-  /* ---------- חלון ריטריט ---------- */
+  /* ---------- חלון מפגש ---------- */
   const mDlg = $('#mDlg'), mForm = $('#mForm');
   let editingMeeting = null;
 
@@ -2158,8 +2158,8 @@
     mForm.price.value = m && m.price != null ? m.price : '';
     mForm.pair.value = m && m.price_pair != null ? m.price_pair : '';
     mForm.capacity.value = m && m.capacity != null ? m.capacity : '';
-    $('#mTitle').textContent = m ? 'עריכת ריטריט' : 'ריטריט חדש';
-    $('#mSubmit').textContent = m ? 'שמירה' : 'יצירת ריטריט';
+    $('#mTitle').textContent = m ? 'עריכת מפגש' : 'מפגש חדש';
+    $('#mSubmit').textContent = m ? 'שמירה' : 'יצירת מפגש';
     $('#mDelete').hidden = !m;
     mDlg.showModal();
     syncUrl();
@@ -2189,7 +2189,7 @@
   $('#mDelete').addEventListener('click', async () => {
     const m = editingMeeting;
     const n = state.att.filter((a) => a.meeting_id === m.id).length;
-    if (!confirm('למחוק את הריטריט ' + meetingLabel(m) + '?' + (n ? '\n' + n + ' משתתפים ינותקו ממנו (הם עצמם לא יימחקו)' : ''))) return;
+    if (!confirm('למחוק את המפגש ' + meetingLabel(m) + '?' + (n ? '\n' + n + ' משתתפים ינותקו ממנו (הם עצמם לא יימחקו)' : ''))) return;
     try {
       await api(T.m + '?id=eq.' + m.id, { method: 'DELETE' });
       state.meetings = state.meetings.filter((x) => x !== m);
@@ -2234,7 +2234,7 @@
   });
   $('#list').addEventListener('click', (e) => {
     const am = e.target.closest('[data-addm]');
-    if (am) { confirmLink(am.dataset.addm, state.filter, true, () => { state.q = ''; $('#q').value = ''; renderList(); toast('נוסף לריטריט'); }); return; }
+    if (am) { confirmLink(am.dataset.addm, state.filter, true, () => { state.q = ''; $('#q').value = ''; renderList(); toast('נוסף למפגש'); }); return; }
     if (e.target.closest('#addNew')) {
       const q = state.q.trim(); openParticipant(null);
       if (digits(q).length >= 6) pForm.phone.value = q; else pForm.name.value = q;
