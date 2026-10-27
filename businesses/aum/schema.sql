@@ -56,6 +56,9 @@ alter table public.aum_events        add column if not exists price_pair int;
 alter table public.aum_participants  add column if not exists gender text check (gender in ('male', 'female'));
 alter table public.aum_participants  add column if not exists age int;
 alter table public.aum_participants  add column if not exists age_set_at date not null default current_date;
+-- "מחיקת משתתף" בדף הניהול היא active=false: מוסתר מכל המסכים, והנתונים נשמרים ויחזרו אם יירשם שוב עם אותו טלפון
+alter table public.aum_participants  add column if not exists active boolean not null default true;
+alter table public.aum_participants  add column if not exists no_pay boolean not null default false;   -- מארגן, אורח או פטור: לא משלם על מפגשים
 alter table public.aum_registrations add column if not exists pay_requested_at timestamptz;
 alter table public.aum_registrations add column if not exists exempt boolean not null default false;
 
@@ -246,6 +249,7 @@ declare
   src  text := case when p_src = 'p' then 'site-ad' else 'site' end;
   pid  uuid;
   ev   public.aum_events;
+  act  boolean;
   res  text := 'created';
   st   text := 'new';
 begin
@@ -258,11 +262,16 @@ begin
     where event_date >= (now() at time zone 'Asia/Jerusalem')::date
     order by event_date, start_time limit 1;
 
-  select id into pid from public.aum_participants where phone_norm = n limit 1;
+  select id, active into pid, act from public.aum_participants where phone_norm = n limit 1;
   if pid is not null then
-    res := 'exists';
-    update public.aum_participants set age = p_age, age_set_at = current_date where id = pid and age is null;
-    update public.aum_participants set gender = p_gender where id = pid and gender is null;
+    -- הטלפון הוא המפתח: משתתף לא פעיל (הוסר) חוזר להיות פעיל בלי לעדכן את שאר השדות
+    if act then
+      res := 'exists';
+      update public.aum_participants set age = p_age, age_set_at = current_date where id = pid and age is null;
+      update public.aum_participants set gender = p_gender where id = pid and gender is null;
+    else
+      update public.aum_participants set active = true where id = pid;
+    end if;
   else
     begin
       insert into public.aum_participants (name, phone, age, age_set_at, gender, source)
@@ -463,6 +472,28 @@ drop trigger if exists aum_finance_log_t on public.aum_finance;
 create trigger aum_finance_log_t after insert or update or delete on public.aum_finance for each row execute function public.aum_finance_log_fn();
 drop trigger if exists aum_finance_log_t on public.aum_finance_recurring;
 create trigger aum_finance_log_t after insert or update or delete on public.aum_finance_recurring for each row execute function public.aum_finance_log_fn();
+
+-- 11. דרכי תשלום (פייבוקס, ביט, מזומן...): רשימה שאפשר להגדיר בדף הניהול, ושדה "דרך העברה" בכל תשלום.
+create table if not exists public.aum_pay_methods (
+  key  text primary key,
+  name text not null,
+  sort int not null default 0
+);
+alter table public.aum_pay_methods enable row level security;
+drop policy if exists "aum admin all" on public.aum_pay_methods;
+create policy "aum admin all" on public.aum_pay_methods for all to authenticated using (public.aum_is_admin()) with check (public.aum_is_admin());
+revoke all on public.aum_pay_methods from anon;
+grant select, insert, update, delete on public.aum_pay_methods to authenticated;
+insert into public.aum_pay_methods (key, name, sort) values ('paybox', 'פייבוקס', 1), ('bit', 'ביט', 2), ('cash', 'מזומן', 3), ('bank', 'בנק', 4) on conflict (key) do nothing;
+alter table public.aum_registrations add column if not exists pay_method text;
+alter table public.aum_registrations add column if not exists pay_method_note text;
+alter table public.aum_payments      add column if not exists method text;
+alter table public.aum_payments      add column if not exists method_note text;
+do $$ begin
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'aum_pay_methods') then
+    alter publication supabase_realtime add table public.aum_pay_methods;
+  end if;
+end $$;
 
 notify pgrst, 'reload schema';
 

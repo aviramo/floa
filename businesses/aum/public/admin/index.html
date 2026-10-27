@@ -544,6 +544,12 @@
     #finForm .two { grid-template-columns: 1fr 1fr; }
     .finlogbtn2 { }
     :root { --yellow: #8A6200; --yellow-bg: #FFF1C2; --sky: #1F5F8F; --sky-bg: #DCEBF7; }
+    #setDlg .setlink svg:last-child { color: var(--muted); }
+    #setDlg .setgrp .setrow + .setrow { border-top: 1px solid var(--line); }
+    #setDlg .sthint { color: var(--muted); font-size: 14px; line-height: 1.5; }
+    #setDlg .pmrow { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    #setDlg .pmname { flex: 1 1 auto; min-width: 0; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: #fff; padding: 0 14px; font-size: 16px; }
+    #setDlg .pmdel { flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%; background: var(--red-bg); color: var(--red); font-size: 20px; font-weight: 800; }
     .bell { position: relative; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; color: var(--muted); background: var(--paper); border: 1.5px solid var(--line); }
     .bell[hidden] { display: none; }
     .bell svg { width: 20px; height: 20px; }
@@ -768,6 +774,8 @@
           <label class="field"><span>סכום ששולם (₪)</span><input name="pay_amount" type="number" inputmode="decimal" min="0" step="any" /></label>
           <div class="pquick" id="payQuick"></div>
         </div>
+        <label class="field payfield"><span>דרך העברה</span><select name="pay_method"></select></label>
+        <label class="field" id="payOtherField" hidden><span>פירוט קצר</span><input name="pay_method_note" maxlength="60" autocomplete="off" placeholder="למשל: פייפאל, צ׳ק" /></label>
         <button type="button" class="promolink" id="creditToggle" hidden aria-pressed="false"></button>
         <label class="field" id="commField" hidden><span id="commLabel">עמלה ליחצן (₪)</span><input name="pay_commission" type="number" inputmode="decimal" min="0" step="any" /></label>
         <div class="payact"><button class="btn" id="paySave" type="button">שמירה</button></div>
@@ -795,7 +803,7 @@
           <label class="field"><span>גיל</span><input name="age" type="number" inputmode="numeric" min="18" max="99" /></label>
         </div>
         <div class="note" id="pRegLine" style="color:var(--muted);font-size:14px;margin:2px 4px 10px"></div>
-        <button class="btn ghost" id="pDelete" type="button">מחיקת משתתף</button>
+        <button class="btn ghost" id="pDelete" type="button">הסרת משתתף</button>
       </div>
       <button class="btn" id="pSubmit" type="submit">הוספה</button>
     </form>
@@ -841,13 +849,23 @@
 
   <dialog id="setDlg" aria-labelledby="setTitle" style="max-width:480px">
     <div class="sheet">
-      <div class="sheet-head"><h2 id="setTitle">הגדרות</h2></div>
+      <div class="sheet-head"><button type="button" class="hbtn hback" id="setBack" aria-label="חזרה" title="חזרה" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button><h2 id="setTitle">הגדרות</h2></div>
+      <div data-sv="main">
       <div class="setgrp">
         <button type="button" class="setrow" id="setPushRow">
           <svg class="seti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
           <div class="setl"><b>התראות על הרשמות חדשות</b><small id="setPushHint"></small></div>
           <span class="setsw" id="setPushSw"></span>
         </button>
+      </div>
+      <div class="setgrp">
+        <button type="button" class="setrow setlink" data-goset="pm"><svg class="seti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18"/></svg><div class="setl"><b>דרכי תשלום</b><small id="setPmHint"></small></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="22" height="22"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg></button>
+      </div>
+      </div>
+      <div data-sv="pm" hidden>
+        <p class="sthint" style="margin:0 2px 10px">הדרכים שמופיעות בקבלת תשלום (פייבוקס, ביט, מזומן...). אפשר להוסיף, לשנות שם ולמחוק</p>
+        <div id="pmList"></div>
+        <button type="button" class="btn ghost" id="pmAdd">+ דרך תשלום חדשה</button>
       </div>
     </div>
   </dialog>
@@ -941,9 +959,9 @@
   /* הדאטהבייס של הדומיין (/supabase.js). המפתח ציבורי מעצם הגדרתו;
      מה שמותר באמת נקבע במדיניות RLS שב-businesses/aum/schema.sql */
   const DB = { url: window.SUPABASE.url, key: window.SUPABASE.anonKey };
-  const T = { fin: 'aum_finance', finr: 'aum_finance_recurring', finlog: 'aum_finance_log', p: 'aum_participants', m: 'aum_events', a: 'aum_registrations', n: 'aum_notes', pr: 'aum_promoters', pp: 'aum_promoter_payments', pay: 'aum_payments', push: 'aum_push_subs' };
+  const T = { pm: 'aum_pay_methods', fin: 'aum_finance', finr: 'aum_finance_recurring', finlog: 'aum_finance_log', p: 'aum_participants', m: 'aum_events', a: 'aum_registrations', n: 'aum_notes', pr: 'aum_promoters', pp: 'aum_promoter_payments', pay: 'aum_payments', push: 'aum_push_subs' };
 
-  const state = { participants: [], meetings: [], att: [], notes: [], promoters: [], promoPays: [], payments: [], fin: [], finRec: [], finPeriod: 'month', finFilter: null, filter: null, q: '', pay: null, gender: null, sort: 'new' };
+  const state = { participants: [], meetings: [], att: [], notes: [], promoters: [], promoPays: [], payments: [], payMethods: [{ key: 'paybox', name: 'פייבוקס' }, { key: 'bit', name: 'ביט' }, { key: 'cash', name: 'מזומן' }, { key: 'bank', name: 'בנק' }], fin: [], finRec: [], finPeriod: 'month', finFilter: null, filter: null, q: '', pay: null, gender: null, sort: 'new' };
   /* קישור עמוק מהמייל: ?m=<מפגש>&p=<משתתף>; נשמר בזמן הכניסה עם גוגל (שמחזירה בלי הפרמטרים) */
   let deep = null;
   try {
@@ -966,7 +984,7 @@
     if (openPid) { sp.set('p', openPid); if (pTab === 'info') sp.set('pt', 'info'); }
     if (editingMeeting && mDlg.open) sp.set('em', editingMeeting.id);
     if ($('#stDlg').open) sp.set('st', '1');
-    if ($('#setDlg').open) sp.set('set', '1');
+    if ($('#setDlg').open) sp.set('set', setView === 'main' ? '1' : setView);
     if ($('#finDlg').open) sp.set('fin', finV === 'log' ? 'log' : '1');
     const s = sp.toString();
     try { history.replaceState(null, '', location.pathname + (s ? '?' + s : '')); } catch (e) {}
@@ -1009,7 +1027,7 @@
     ws.onopen = () => {
       rtRetry = 1000;
       rtSend({ topic: RT_TOPIC, event: 'phx_join', ref: '1', payload: { config: { broadcast: { ack: false, self: false }, presence: { key: '' }, private: false,
-        postgres_changes: [T.p, T.m, T.a, T.n, T.pr, T.pp, T.pay, T.fin, T.finr].map((table) => ({ event: '*', schema: 'public', table })) }, access_token: session.access_token } });
+        postgres_changes: [T.p, T.m, T.a, T.n, T.pr, T.pp, T.pay, T.fin, T.finr, T.pm].map((table) => ({ event: '*', schema: 'public', table })) }, access_token: session.access_token } });
       rtHb = setInterval(() => rtSend({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: String(Date.now()) }), 25000);
     };
     ws.onmessage = (e) => {
@@ -1223,18 +1241,22 @@
   async function load(silent) {
     if (!silent) $('#status').innerHTML = '<div class="empty">טוען…</div>';
     try {
-      const [p, m, a, nn, prs, pps, pays, fin, finr] = await Promise.all([
+      const [p, m, a, nn, prs, pps, pays, fin, finr, pms] = await Promise.all([
         api(T.p + '?select=*'),
         api(T.m + '?select=*'),
-        api(T.a + '?select=participant_id,meeting_id,status,paid,pay_requested_at,created_at,exempt,attended,paid_amount,promoter_id,commission,paid_at'),
+        api(T.a + '?select=participant_id,meeting_id,status,paid,pay_requested_at,created_at,exempt,attended,paid_amount,promoter_id,commission,paid_at,pay_method,pay_method_note'),
         api(T.n + '?select=id,participant_id,body,author_email,author_name,created_at,has_image&order=created_at.desc'),
         api(T.pr + '?select=*&order=name.asc'),
         api(T.pp + '?select=*&order=paid_at.desc'),
         api(T.pay + '?select=*&order=created_at.desc'),
         api(T.fin + '?select=*&order=entry_date.desc'),
         api(T.finr + '?select=*&order=start_date.desc'),
+        api(T.pm + '?select=*&order=sort.asc'),
       ]);
-      state.participants = p; state.meetings = m; state.att = a; state.notes = nn; state.promoters = prs; state.promoPays = pps; state.payments = pays; state.fin = fin; state.finRec = finr; rebuildNotes();
+      /* משתתף לא פעיל (הוסר) מוסתר מכל המסכים; הנתונים נשמרים ויחזרו אם יירשם שוב עם אותו טלפון. תשלומים נשארים (כספים) */
+      state.inactiveNames = new Map(p.filter((x) => x.active === false).map((x) => [x.id, x.name]));
+      const act = p.filter((x) => x.active !== false), actIds = new Set(act.map((x) => x.id));
+      state.participants = act; state.meetings = m; state.att = a.filter((x) => actIds.has(x.participant_id)); state.notes = nn.filter((x) => actIds.has(x.participant_id)); state.promoters = prs; state.promoPays = pps; state.payments = pays; state.fin = fin; state.finRec = finr; if (pms && pms.length) state.payMethods = pms; rebuildNotes();
       sortMeetings();
       if (!silent) $('#status').innerHTML = '';
       if (deep) {
@@ -1251,7 +1273,7 @@
         else if (d.em && state.meetings.some((x) => x.id === d.em)) openMeeting(d.em);
         else if (d.st) { renderStats(); $('#stDlg').showModal(); syncUrl(); }
         else if (d.fin) openFinance(d.fin === 'log' ? 'log' : undefined);
-        else if (d.set) { pushState(); $('#setDlg').showModal(); syncUrl(); }
+        else if (d.set) { pushState(); renderSettings(); showSetView(SET_TITLES[d.set] && d.set !== 'main' ? d.set : 'main'); $('#setDlg').showModal(); syncUrl(); }
         return;
       }
       urlReady = true;
@@ -1753,7 +1775,7 @@
   function ledgerOf(id) {
     const acc = state.payments.filter((x) => x.promoter_id === id && x.commission != null && Number(x.commission) > 0).map((x) => {
       const pp = state.participants.find((q) => q.id === x.participant_id), m = state.meetings.find((q) => q.id === x.meeting_id), isR = x.kind === 'refund' || x.kind === 'credit';
-      return { kind: isR ? 'r' : 'c', date: ilDay(x.created_at), amount: (isR ? -1 : 1) * Number(x.commission), who: pp ? pp.name : '', sub: (isR ? (x.kind === 'credit' ? 'ביטול לקרדיט · ' : 'החזר תשלום · ') : '') + (m ? 'מפגש ' + meetingLabel(m).split(' · ')[0] + ' · ' : '') + (isR ? 'הוחזר ' : 'שילם ') + Number(x.amount), key: x.id };
+      return { kind: isR ? 'r' : 'c', date: ilDay(x.created_at), amount: (isR ? -1 : 1) * Number(x.commission), who: pp ? pp.name : ((state.inactiveNames && state.inactiveNames.get(x.participant_id)) || ''), sub: (isR ? (x.kind === 'credit' ? 'ביטול לקרדיט · ' : 'החזר תשלום · ') : '') + (m ? 'מפגש ' + meetingLabel(m).split(' · ')[0] + ' · ' : '') + (isR ? 'הוחזר ' : 'שילם ') + Number(x.amount), key: x.id };
     });
     const pays = state.promoPays.filter((x) => x.promoter_id === id).map((x) => ({ kind: 'p', date: x.paid_at, amount: -Number(x.amount), who: 'תשלום ליחצן', sub: x.note || '', id: x.id, key: x.id }));
     const all = acc.concat(pays).sort((a, b) => String(a.date).localeCompare(String(b.date)) || (a.kind === 'c' ? -1 : 1));
@@ -1862,6 +1884,10 @@
     const f = pForm;
     const amount = l.paid_amount != null ? Number(l.paid_amount) : (m ? defaultPrice(m) : PRICE_EARLY);
     f.pay_amount.value = amount;
+    f.pay_method.innerHTML = state.payMethods.map((x) => '<option value="' + esc(x.key) + '">' + esc(x.name) + '</option>').join('') + '<option value="other">אחר</option>';
+    f.pay_method.value = l.pay_method && [...f.pay_method.options].some((o) => o.value === l.pay_method) ? l.pay_method : state.payMethods[0].key; f.pay_method_note.value = l.pay_method_note || '';
+    const paintOther = () => { $('#payOtherField').hidden = f.pay_method.value !== 'other'; };
+    f.pay_method.onchange = () => { paintOther(); if (f.pay_method.value === 'other') f.pay_method_note.focus(); }; paintOther();
     /* היחצן הוא של המשתתף (האייקון בכותרת); עמלה מוצגת ונערכת רק כשיש יחצן */
     const prId = (p && p.promoter_id) || l.promoter_id || '', pr = promoterOf(prId);
     /* עמלה ליחצן רק על המפגש הראשון של המשתתף: אם כבר יש לו תשלום על מפגש אחר, אין עמלה (ההכנסה עדיין משויכת ליחצן) */
@@ -1884,7 +1910,7 @@
       const amt = parseFloat(f.pay_amount.value); if (!(amt >= 0)) { f.pay_amount.focus(); return; }
       const cm = commPr && f.pay_commission.value !== '' ? parseFloat(f.pay_commission.value) : null;
       const fromCredit = useCredit && credit > 0, amtFinal = fromCredit ? Math.min(amt, credit) : amt;
-      setPayStatus(pid, mid, 'paid', { paid_amount: amtFinal, promoter_id: pr ? pr.id : null, commission: Number.isFinite(cm) ? cm : null, paid_at: l.paid_at || new Date().toISOString() }, { fromCredit });
+      setPayStatus(pid, mid, 'paid', { paid_amount: amtFinal, promoter_id: pr ? pr.id : null, commission: Number.isFinite(cm) ? cm : null, paid_at: l.paid_at || new Date().toISOString(), pay_method: f.pay_method.value, pay_method_note: f.pay_method.value === 'other' ? (f.pay_method_note.value.trim().slice(0, 60) || null) : null }, { fromCredit });
       toMain();
     };
     $('#paySave').onclick = save;
@@ -1893,8 +1919,8 @@
   async function setPayStatus(pid, mid, st, extra, opts) {
     const l = linkOf(pid, mid);
     if (!l) return;
-    const prev = { paid: l.paid, pay_requested_at: l.pay_requested_at, exempt: l.exempt, paid_amount: l.paid_amount, promoter_id: l.promoter_id, commission: l.commission, paid_at: l.paid_at };
-    const CLR = { paid_amount: null, promoter_id: null, commission: null, paid_at: null };
+    const prev = { paid: l.paid, pay_requested_at: l.pay_requested_at, exempt: l.exempt, paid_amount: l.paid_amount, promoter_id: l.promoter_id, commission: l.commission, paid_at: l.paid_at, pay_method: l.pay_method, pay_method_note: l.pay_method_note };
+    const CLR = { paid_amount: null, promoter_id: null, commission: null, paid_at: null, pay_method: null, pay_method_note: null };
     const body = st === 'paid' ? Object.assign({ paid: true, exempt: false }, extra || {}) : st === 'requested' ? Object.assign({ paid: false, exempt: false, pay_requested_at: new Date().toISOString() }, CLR) : st === 'exempt' ? Object.assign({ paid: false, exempt: true, pay_requested_at: null }, CLR) : Object.assign({ paid: false, exempt: false, pay_requested_at: null }, CLR);
     Object.assign(l, body); render(); refreshSheetMeetings();
     try {
@@ -1903,8 +1929,8 @@
     try { await recordLedger(pid, mid, prev, st, extra, opts); } catch (err) { fail(err); }
   }
   /* יומן תשלומים: כל סימון תשלום או החזר יוצר רשומה חדשה (תיקון תשלום = החזר של הישן + תשלום חדש) */
-  async function addPayRecord(pid, mid, kind, amount, promoterId, commission, fromCredit) {
-    const body = { participant_id: pid, meeting_id: mid || null, kind, from_credit: !!fromCredit, amount: Number(amount) || 0, promoter_id: promoterId || null, commission: commission != null && commission !== '' ? Number(commission) : null, author_name: authorName() };
+  async function addPayRecord(pid, mid, kind, amount, promoterId, commission, fromCredit, method, methodNote) {
+    const body = { participant_id: pid, meeting_id: mid || null, kind, from_credit: !!fromCredit, method: method || null, method_note: methodNote || null, amount: Number(amount) || 0, promoter_id: promoterId || null, commission: commission != null && commission !== '' ? Number(commission) : null, author_name: authorName() };
     const [row] = await api(T.pay, { method: 'POST', body, prefer: 'return=representation' });
     if (row && !state.payments.some((x) => x.id === row.id)) state.payments.push(row);
     if (sheet && sheet.id) refreshSheetMeetings();
@@ -1913,8 +1939,8 @@
     opts = opts || {};
     const wasPaid = !!prev.paid && !prev.exempt, oldAmt = prev.paid_amount != null ? Number(prev.paid_amount) : PRICE_EARLY;
     const changed = st === 'paid' && wasPaid && extra && (Number(prev.paid_amount != null ? prev.paid_amount : PRICE_EARLY) !== Number(extra.paid_amount) || (prev.promoter_id || null) !== (extra.promoter_id || null) || Number(prev.commission || 0) !== Number(extra.commission || 0));
-    if (wasPaid && (st !== 'paid' || changed)) await addPayRecord(pid, mid, (opts.mode === 'credit' && st !== 'paid') ? 'credit' : 'refund', oldAmt, prev.promoter_id, prev.commission);
-    if (st === 'paid' && (!wasPaid || changed)) await addPayRecord(pid, mid, 'payment', extra.paid_amount, extra.promoter_id, extra.commission, opts.fromCredit);
+    if (wasPaid && (st !== 'paid' || changed)) await addPayRecord(pid, mid, (opts.mode === 'credit' && st !== 'paid') ? 'credit' : 'refund', oldAmt, prev.promoter_id, prev.commission, false, prev.pay_method, prev.pay_method_note);
+    if (st === 'paid' && (!wasPaid || changed)) await addPayRecord(pid, mid, 'payment', extra.paid_amount, extra.promoter_id, extra.commission, opts.fromCredit, extra.pay_method, extra.pay_method_note);
   }
 
   async function setLinked(pid, mid, on, mode) {
@@ -2377,7 +2403,15 @@
     v.phone = ph;
     const btn = $('#pSubmit'); btn.disabled = true;
     try {
-      const [p] = await api(T.p, { method: 'POST', body: { ...v, age_set_at: todayISO() }, prefer: 'return=representation' });
+      let p;
+      try { [p] = await api(T.p, { method: 'POST', body: { ...v, age_set_at: todayISO() }, prefer: 'return=representation' }); }
+      catch (err) {
+        /* הטלפון קיים אצל משתתף לא פעיל: מחזירים אותו להיות פעיל (בלי לעדכן את שאר השדות) */
+        const norm = normPhone(v.phone) || '';
+        const [back] = norm ? await api(T.p + '?phone_norm=eq.' + encodeURIComponent(norm) + '&active=eq.false', { method: 'PATCH', body: { active: true }, prefer: 'return=representation' }) : [];
+        if (!back) throw err;
+        toast('המשתתף שהוסר חזר להיות פעיל'); pDlg.close(); load(true); btn.disabled = false; return;
+      }
       state.participants.push(p);
       const rows = [...sheet.links].map(([mid, paid]) => ({ participant_id: p.id, meeting_id: mid, paid: !!paid }));
       if (rows.length) { await api(T.a, { method: 'POST', body: rows }); state.att.push(...rows); }
@@ -2388,12 +2422,14 @@
 
   $('#pDelete').addEventListener('click', async () => {
     const p = state.participants.find((x) => x.id === sheet.id);
-    if (!p || !confirm('למחוק את ' + p.name + '?')) return;
+    if (!p || !confirm('להסיר את ' + p.name + '? הוא יוסתר מכל המסכים, והנתונים נשמרים ויחזרו אם יירשם שוב עם אותו טלפון')) return;
     try {
-      await api(T.p + '?id=eq.' + p.id, { method: 'DELETE' });
+      await api(T.p + '?id=eq.' + p.id, { method: 'PATCH', body: { active: false } });
       state.participants = state.participants.filter((x) => x !== p);
+      if (state.inactiveNames) state.inactiveNames.set(p.id, p.name);
       state.att = state.att.filter((a) => a.participant_id !== p.id);
-      pDlg.close(); render(); toast('נמחק');
+      state.notes = state.notes.filter((n) => n.participant_id !== p.id);
+      pDlg.close(); render(); toast('הוסר');
     } catch (err) { fail(err); }
   });
 
@@ -2549,11 +2585,45 @@
     try { const reg = await navigator.serviceWorker.getRegistration('./'); const sub = reg && await reg.pushManager.getSubscription(); if (sub) await saveSub(sub); } catch (e) {}
   }
 
+  /* ---------- הגדרות: מסך ראשי ותתי-מסכים (דרכי תשלום ועוד) ---------- */
+  let setView = 'main';
+  const SET_TITLES = { main: 'הגדרות', pm: 'דרכי תשלום' };
+  function showSetView(v) {
+    setView = v; document.querySelectorAll('#setDlg [data-sv]').forEach((el) => { el.hidden = el.dataset.sv !== v; });
+    $('#setBack').hidden = v === 'main'; $('#setTitle').textContent = SET_TITLES[v] || 'הגדרות'; $('#setDlg').scrollTop = 0;
+    if (v === 'pm') renderPm(); syncUrl();
+  }
+  $('#setBack').addEventListener('click', () => showSetView('main'));
+  $('#setDlg').addEventListener('click', (e) => { const g = e.target.closest('[data-goset]'); if (g) showSetView(g.dataset.goset); });
+  function renderSettings() { $('#setPmHint').textContent = state.payMethods.map((x) => x.name).join(' · '); }
+  function renderPm() {
+    $('#pmList').innerHTML = state.payMethods.map((x) => '<div class="pmrow" data-k="' + esc(x.key) + '"><input class="pmname" value="' + esc(x.name) + '" maxlength="20" aria-label="שם דרך התשלום" /><button type="button" class="pmdel" data-pdel="' + esc(x.key) + '" aria-label="מחיקה" title="מחיקה"' + (state.payMethods.length < 2 ? ' disabled' : '') + '>×</button></div>').join('');
+    renderSettings();
+  }
+  $('#pmList').addEventListener('change', async (e) => {
+    const inp = e.target.closest('.pmname'); if (!inp) return; const k = inp.closest('.pmrow').dataset.k, x = state.payMethods.find((m) => m.key === k); if (!x) return;
+    const v = inp.value.trim().slice(0, 20); if (!v) { renderPm(); return; }
+    const prev = x.name; x.name = v; renderPm();
+    try { await api(T.pm + '?key=eq.' + encodeURIComponent(k), { method: 'PATCH', body: { name: v } }); }
+    catch (err) { x.name = prev; renderPm(); fail(err); }
+  });
+  $('#pmList').addEventListener('click', async (e) => {
+    const d = e.target.closest('[data-pdel]'); if (!d || state.payMethods.length < 2) return; const k = d.dataset.pdel, x = state.payMethods.find((m) => m.key === k); if (!x) return;
+    const prev = state.payMethods.slice(); state.payMethods = state.payMethods.filter((m) => m !== x); renderPm();   // תשלומים קודמים שומרים את המפתח, ולכן לא נפגעים
+    try { await api(T.pm + '?key=eq.' + encodeURIComponent(k), { method: 'DELETE' }); }
+    catch (err) { state.payMethods = prev; renderPm(); fail(err); }
+  });
+  $('#pmAdd').addEventListener('click', async () => {
+    const key = 'x_' + Math.random().toString(36).slice(2, 7), row = { key, name: 'דרך תשלום חדשה', sort: state.payMethods.length + 1 };
+    try { const [r] = await api(T.pm, { method: 'POST', body: row, prefer: 'return=representation' }); state.payMethods.push(r || row); renderPm(); const inp = document.querySelector('#pmList [data-k="' + key + '"] .pmname'); if (inp) { inp.focus(); inp.select(); } }
+    catch (err) { fail(err); }
+  });
+
   const closeHMenu = () => { $('#hMenu').hidden = true; $('#menuBtn').setAttribute('aria-expanded', 'false'); };
   $('#menuBtn').addEventListener('click', (e) => { e.stopPropagation(); const m = $('#hMenu'); m.hidden = !m.hidden; $('#menuBtn').setAttribute('aria-expanded', String(!m.hidden)); });
   $('#hMenu').addEventListener('click', closeHMenu);
   document.addEventListener('click', (e) => { if (!e.target.closest('.hicons')) closeHMenu(); });
-  $('#setBtn').addEventListener('click', () => { pushState(); $('#setDlg').showModal(); syncUrl(); });
+  $('#setBtn').addEventListener('click', () => { pushState(); renderSettings(); showSetView('main'); $('#setDlg').showModal(); syncUrl(); });
   $('#setDlg').addEventListener('close', syncUrl);
 
   const goGoogle = () => { location.href = DB.url + '/auth/v1/authorize?provider=google&redirect_to=' + encodeURIComponent(location.origin + location.pathname); };
