@@ -574,10 +574,6 @@ create or replace function public.aum_pay_status(p_paid boolean, p_exempt boolea
 language sql immutable as $$
   select case when p_exempt then 'חינם' when p_paid then 'שילם' when p_req is not null then 'בטיפול' else 'טרם טופל' end;
 $$;
-create or replace function public.aum_pay_code(p_paid boolean, p_exempt boolean, p_req timestamptz) returns text
-language sql immutable as $$
-  select case when coalesce(p_exempt, false) then 'exempt' when coalesce(p_paid, false) then 'paid' when p_req is not null then 'requested' else 'unpaid' end;
-$$;
 drop function if exists public.aum_sys_note(uuid, text, text, uuid);
 create or replace function public.aum_sys_note(p_pid uuid, p_body text, p_event text, p_meeting uuid, p_old text default null, p_new text default null, p_amount numeric default null, p_method text default null) returns void
 language plpgsql security definer set search_path = public as $$
@@ -590,9 +586,20 @@ exception when others then null;
 end $$;
 revoke all on function public.aum_sys_note(uuid, text, text, uuid, text, text, numeric, text) from public, anon, authenticated;
 
+create or replace function public.aum_pay_code(p_paid boolean, p_exempt boolean, p_req timestamptz, p_will boolean default false, p_maybe boolean default false) returns text
+language sql immutable as $$
+  select case when coalesce(p_exempt, false) then 'exempt' when coalesce(p_paid, false) then 'paid' when coalesce(p_will, false) then 'willpay' when coalesce(p_maybe, false) then 'maybe' when p_req is not null then 'requested' else 'unpaid' end;
+$$;
+-- שם הסטטוס לפי מפתח: מהטבלה (כולל שמות ששונו בהגדרות), ואם אין (נמחק) שם ברירת המחדל
+create or replace function public.aum_status_label(k text) returns text
+language sql stable security definer set search_path = public as $$
+  select coalesce((select s.label from public.aum_statuses s where s.key = k),
+    case k when 'paid' then 'שילם' when 'willpay' then 'ישלם' when 'exempt' then 'חינם' when 'maybe' then 'ספונטני' when 'requested' then 'בטיפול' when 'unpaid' then 'משויך' else null end);
+$$;
+
 create or replace function public.aum_reg_notes() returns trigger
 language plpgsql security definer set search_path = public as $$
-declare lbl text; os text; ns text; ol text; nl text;
+declare lbl text; ok text; nk text;
 begin
   if tg_op = 'INSERT' then
     if coalesce(new.attended, false) then
@@ -602,12 +609,18 @@ begin
     end if;
   elsif tg_op = 'UPDATE' then
     lbl := public.aum_meeting_label(new.event_id);
-    os := public.aum_pay_status(old.paid, old.exempt, old.pay_requested_at); ns := public.aum_pay_status(new.paid, new.exempt, new.pay_requested_at);
-    if os <> ns then
-      perform public.aum_sys_note(new.participant_id, 'סטטוס למפגש ' || lbl || ': ' || ns
-        || case when ns = 'שילם' and new.paid_amount is not null then ' ₪' || trim(to_char(new.paid_amount, 'FM999990.##')) else '' end
-        || case when ns = 'שילם' and new.pay_method is not null then ' ב' || public.aum_method_label(new.pay_method, new.pay_method_note) else '' end || ' (היה: ' || os || ')',
-        'status_changed', new.event_id, public.aum_pay_code(old.paid, old.exempt, old.pay_requested_at), public.aum_pay_code(new.paid, new.exempt, new.pay_requested_at), case when ns = 'שילם' then new.paid_amount end, case when ns = 'שילם' then new.pay_method end);
+    ok := coalesce(old.status_key, public.aum_pay_code(old.paid, old.exempt, old.pay_requested_at, old.will_pay, old.maybe));
+    nk := coalesce(new.status_key, public.aum_pay_code(new.paid, new.exempt, new.pay_requested_at, new.will_pay, new.maybe));
+    if ok <> nk then
+      perform public.aum_sys_note(new.participant_id, 'סטטוס למפגש ' || lbl || ': ' || coalesce(public.aum_status_label(nk), nk)
+        || case when nk = 'paid' and new.paid_amount is not null then ' ₪' || trim(to_char(new.paid_amount, 'FM999990.##')) else '' end
+        || case when nk = 'paid' and new.pay_method is not null then ' ב' || public.aum_method_label(new.pay_method, new.pay_method_note) else '' end
+        || ' (היה: ' || coalesce(public.aum_status_label(ok), ok) || ')',
+        'status_changed', new.event_id, ok, nk, case when nk = 'paid' then new.paid_amount end, case when nk = 'paid' then new.pay_method end);
+    end if;
+    if new.after_key is distinct from old.after_key then
+      perform public.aum_sys_note(new.participant_id, 'סטטוס אחרי המפגש ' || lbl || ': ' || coalesce(public.aum_status_label(new.after_key), 'ללא') || ' (היה: ' || coalesce(public.aum_status_label(old.after_key), 'ללא') || ')',
+        'after_status_changed', new.event_id, old.after_key, new.after_key);
     end if;
     if coalesce(old.attended, false) <> coalesce(new.attended, false) then
       perform public.aum_sys_note(new.participant_id, case when new.attended then 'הגיע/ה למפגש ' else 'סימון ההגעה בוטל למפגש ' end || lbl, case when new.attended then 'attended' else 'attended_cancel' end, new.event_id);
@@ -615,14 +628,6 @@ begin
     if (old.details_sent_at is null) <> (new.details_sent_at is null) then
       perform public.aum_sys_note(new.participant_id, case when new.details_sent_at is not null then 'נשלחו פרטי המפגש (וואטסאפ) למפגש ' else 'סימון שליחת פרטי המפגש בוטל למפגש ' end || lbl,
         case when new.details_sent_at is not null then 'details_sent' else 'details_unsent' end, new.event_id);
-    end if;
-    if old.status_key is distinct from new.status_key then
-      select label into ol from public.aum_statuses where key = old.status_key; select label into nl from public.aum_statuses where key = new.status_key;
-      perform public.aum_sys_note(new.participant_id, 'סטטוס במפגש ' || lbl || ': ' || coalesce(ol, 'ללא') || ' ← ' || coalesce(nl, 'ללא'), 'status', new.event_id);
-    end if;
-    if old.after_key is distinct from new.after_key then
-      select label into ol from public.aum_statuses where key = old.after_key; select label into nl from public.aum_statuses where key = new.after_key;
-      perform public.aum_sys_note(new.participant_id, 'סטטוס אחרי המפגש ' || lbl || ': ' || coalesce(ol, 'ללא') || ' ← ' || coalesce(nl, 'ללא'), 'status', new.event_id);
     end if;
   elsif tg_op = 'DELETE' then
     perform public.aum_sys_note(old.participant_id, 'הוסר/ה מהמפגש ' || public.aum_meeting_label(old.event_id), 'meeting_removed', old.event_id);
@@ -713,6 +718,31 @@ do $$ begin
 end $$;
 -- מפגש קיים בלי מדרגות מקבל מדרגה אחת: המחיר שלו (העמודה החדשה בלבד, שום ערך קיים לא משתנה)
 update public.aum_events set price_tiers = jsonb_build_object('base', price, 'steps', '[]'::jsonb) where price_tiers is null and price is not null;
+
+-- 19. עיר ותמונה למפגש, הגדרות ציבוריות (שם ותמונת ברירת מחדל למפגש), ודלי תמונות למפגשים.
+--     הנתונים נשמרים כאן ומוכנים לשימוש בעתיד; דף הבית של AUM לא קורא אותם. הוספה בלבד.
+alter table public.aum_events add column if not exists city text;
+alter table public.aum_events add column if not exists image_url text;
+create table if not exists public.aum_public_settings (key text primary key, value text, updated_at timestamptz not null default now());
+alter table public.aum_public_settings enable row level security;
+drop policy if exists "aum admin all" on public.aum_public_settings;
+create policy "aum admin all" on public.aum_public_settings for all to authenticated using (public.aum_is_admin()) with check (public.aum_is_admin());
+drop policy if exists "aum public read" on public.aum_public_settings;
+create policy "aum public read" on public.aum_public_settings for select to anon, authenticated using (true);
+grant select on public.aum_public_settings to anon;
+grant select, insert, update, delete on public.aum_public_settings to authenticated;
+do $$ begin
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'aum_public_settings') then
+    alter publication supabase_realtime add table public.aum_public_settings;
+  end if;
+end $$;
+insert into storage.buckets (id, name, public) values ('aum-meeting-images', 'aum-meeting-images', true) on conflict (id) do nothing;
+drop policy if exists "aum meeting images insert" on storage.objects;
+create policy "aum meeting images insert" on storage.objects for insert to authenticated with check (bucket_id = 'aum-meeting-images' and public.aum_is_admin());
+drop policy if exists "aum meeting images update" on storage.objects;
+create policy "aum meeting images update" on storage.objects for update to authenticated using (bucket_id = 'aum-meeting-images' and public.aum_is_admin());
+drop policy if exists "aum meeting images delete" on storage.objects;
+create policy "aum meeting images delete" on storage.objects for delete to authenticated using (bucket_id = 'aum-meeting-images' and public.aum_is_admin());
 
 notify pgrst, 'reload schema';
 
