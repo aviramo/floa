@@ -692,6 +692,7 @@ alter table public.aum_promoters add column if not exists cost_on_lead boolean n
 alter table public.aum_promoter_payments add column if not exists by_email text;
 alter table public.aum_payments add column if not exists pkg boolean not null default false;
 alter table public.aum_payments add column if not exists pkg_n int;
+alter table public.aum_payments add column if not exists reason text;   -- סיבת הרישום (למשל alloc_removed: כסף שחזר ליתרה במחיקת הקצאה)
 alter table public.aum_price_tiers add column if not exists id uuid not null default gen_random_uuid();
 create unique index if not exists aum_price_tiers_id_uq on public.aum_price_tiers (id);
 alter table public.aum_pay_methods add column if not exists id uuid not null default gen_random_uuid();
