@@ -638,22 +638,44 @@ end $$;
 drop trigger if exists aum_reg_notes_t on public.aum_registrations;
 create trigger aum_reg_notes_t after insert or update or delete on public.aum_registrations for each row execute function public.aum_reg_notes();
 
-create or replace function public.aum_pay_notes() returns trigger
-language plpgsql security definer set search_path = public as $$
-declare a text := '₪' || trim(to_char(new.amount, 'FM999999990.##')); lbl text := public.aum_meeting_label(new.meeting_id); m text := public.aum_method_label(new.method, new.method_note);
+-- הערות על תשלומים: קבלת תשלום (הפקדה או תשלום ישיר), החזר כסף, והקצאות למפגש (kind = 'payment' עם מפגש): הקצאה חדשה, שינוי סכום והסרה.
+-- הפקדה שנוצרה ממחיקת הקצאה (reason alloc_removed) לא מקבלת הערת קבלה.
+create or replace function public.aum_pay_notes()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare r public.aum_payments; src text; lbl text;
 begin
-  perform public.aum_sys_note(new.participant_id,
-    case new.kind
-      when 'payment' then case when new.from_credit then 'שימוש ביתרה ' || a || ' למפגש ' || lbl else 'התקבל תשלום ' || a || ' למפגש ' || lbl || case when m <> '' then ' (' || m || ')' else '' end end
-      when 'deposit' then 'הפקדה ' || a || ' ליתרה' || case when m <> '' then ' (' || m || ')' else '' end
-      when 'refund'  then case when new.from_credit then 'הוחזרו ' || a || ' מהיתרה' else 'הוחזר תשלום ' || a || ' למפגש ' || lbl end
-      else 'ביטול שנשאר ביתרה ' || a || ' (מפגש ' || lbl || ')' end,
-    'payment_' || new.kind, new.meeting_id, null, null, new.amount, new.method);
+  r := case when tg_op = 'DELETE' then old else new end;
+  if r.kind = 'deposit' then
+    if tg_op = 'INSERT' and coalesce(r.reason, '') not like 'alloc_removed%' then
+      perform public.aum_sys_note(r.participant_id, 'התקבל תשלום ₪' || trim(to_char(r.amount, 'FM999990.##')) || coalesce(' ב' || public.aum_method_label(r.method, r.method_note), ''), 'payment_received', null, null, null, r.amount, null);
+    end if;
+    return null;
+  end if;
+  if r.kind = 'refund' then
+    if tg_op = 'INSERT' then
+      perform public.aum_sys_note(r.participant_id, 'הוחזרו ₪' || trim(to_char(r.amount, 'FM999990.##')) || ' למשתתף' || case when r.meeting_id is not null then ' (למפגש ' || public.aum_meeting_label(r.meeting_id) || ')' else '' end || coalesce(' ב' || public.aum_method_label(r.method, r.method_note), ''), 'refund', r.meeting_id, null, null, r.amount, null);
+    end if;
+    return null;
+  end if;
+  if r.kind <> 'payment' or r.meeting_id is null then return null; end if;
+  src := case when coalesce(r.from_credit, false) then 'מהיתרה' else coalesce('ב' || public.aum_method_label(r.method, r.method_note), 'ישירות') end;
+  lbl := public.aum_meeting_label(r.meeting_id);
+  if tg_op = 'INSERT' then
+    if not coalesce(r.from_credit, false) then perform public.aum_sys_note(r.participant_id, 'התקבל תשלום ₪' || trim(to_char(r.amount, 'FM999990.##')) || coalesce(' ב' || public.aum_method_label(r.method, r.method_note), ''), 'payment_received', null, null, null, r.amount, null); end if;
+    perform public.aum_sys_note(r.participant_id, 'הוקצו ₪' || trim(to_char(r.amount, 'FM999990.##')) || ' למפגש ' || lbl, 'alloc_added', r.meeting_id, null, null, r.amount, null);
+  elsif tg_op = 'UPDATE' then
+    if new.amount is distinct from old.amount then
+      perform public.aum_sys_note(r.participant_id, 'הקצאה למפגש ' || lbl || ' שונתה מ-₪' || trim(to_char(old.amount, 'FM999990.##')) || ' ל-₪' || trim(to_char(new.amount, 'FM999990.##')), 'alloc_changed', r.meeting_id, null, null, new.amount, null);
+    end if;
+  elsif tg_op = 'DELETE' then
+    perform public.aum_sys_note(r.participant_id, 'הוסרה הקצאה של ₪' || trim(to_char(r.amount, 'FM999990.##')) || ' למפגש ' || lbl, 'alloc_removed', r.meeting_id, null, null, r.amount, null);
+  end if;
   return null;
 exception when others then return null;
 end $$;
 drop trigger if exists aum_pay_notes_t on public.aum_payments;
-create trigger aum_pay_notes_t after insert on public.aum_payments for each row execute function public.aum_pay_notes();
+create trigger aum_pay_notes_t after insert or update or delete on public.aum_payments for each row execute function public.aum_pay_notes();
+
 
 -- 16. פרטי המפגש ביום המפגש: הודעת וואטסאפ מוכנה לכל משתתף (נוסח ושעת פתיחה ניתנים להגדרה), וסימון מי קיבל.
 create table if not exists public.aum_admin_prefs (
@@ -680,6 +702,8 @@ alter table public.aum_participants  add column if not exists status_key  text;
 alter table public.aum_registrations add column if not exists will_pay boolean not null default false;
 alter table public.aum_registrations add column if not exists maybe    boolean not null default false;
 alter table public.aum_registrations add column if not exists no_pay   boolean;
+alter table public.aum_registrations add column if not exists pay_reported_at     timestamptz;   -- דיווח תשלום של המשתתף (אזור אישי, אם יהיה)
+alter table public.aum_registrations add column if not exists pay_reported_amount numeric;
 alter table public.aum_notes add column if not exists amount     numeric;
 alter table public.aum_notes add column if not exists method     text;
 alter table public.aum_notes add column if not exists old_status text;

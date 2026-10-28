@@ -94,6 +94,7 @@
     .search input:not(:placeholder-shown) ~ .sclear, .search:focus-within .sclear { display: grid; }
     .search input:focus { border-color: var(--terra); outline: none; }
     .hgrp { display: flex; align-items: center; gap: 8px; align-self: center; }
+    #listTags { display: flex; align-items: center; gap: 8px; }   /* תצוגה ומיון: אותו רווח כמו בין שאר הכפתורים */
     .title-row { position: relative; height: 44px; align-items: center; }
     .title-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; }   /* חיפוש בימין, כותרת המפגש במרכז, תפריט בשמאל */
     .title-row > .msel { grid-column: 1; }
@@ -574,7 +575,7 @@
     .nprev img { height: 60px; width: 60px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); }
     .nprev button { position: absolute; top: -7px; inset-inline-start: -7px; width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: #fff; font-size: 15px; line-height: 1; }
     .nimg { display: block; margin-top: 6px; }
-    .nimg img { display: block; width: 100%; max-height: 220px; object-fit: cover; object-position: top; border-radius: 12px; border: 1px solid var(--line); cursor: zoom-in; background: #fff; min-height: 60px; }
+    .nimg img { display: block; width: 100%; aspect-ratio: 4 / 1; object-fit: cover; object-position: 50% 85%; border-radius: 12px; border: 1px solid var(--line); cursor: zoom-in; background: #fff; min-height: 60px; }
     .nimg .nload { color: var(--muted); font-size: 13px; padding: 14px 0; text-align: center; }
     .row .note svg { width: 13px; height: 13px; vertical-align: -2px; margin-inline-end: 3px; }
     .nitem { background: var(--cream); border-radius: 16px; padding: 10px 14px 12px; margin-bottom: 8px; }
@@ -643,7 +644,8 @@
     .sortbtn { width: var(--ctl, 44px); height: var(--ctl, 44px); display: grid; place-items: center; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); color: var(--muted); box-sizing: border-box; }
     .sortbtn svg { width: 20px; height: 20px; }
     .sortbtn.on { color: var(--terra); border-color: var(--coral); }
-    .sortmenu { position: fixed; top: 0; left: 0; z-index: 300; min-width: 190px; background: var(--paper); border-radius: 16px; border: 1px solid var(--line); box-shadow: 0 10px 30px rgba(63,56,47,.18); padding: 6px; }
+    #sortMenu { position: fixed; top: 0; left: 0; z-index: 300; }   /* תפריט המיון: צף (מועבר ל-body) */
+    .sortmenu { position: absolute; top: calc(100% + 6px); left: 0; z-index: 20; min-width: 190px; background: var(--paper); border-radius: 16px; border: 1px solid var(--line); box-shadow: 0 10px 30px rgba(63,56,47,.18); padding: 6px; }
     .sortmenu[hidden] { display: none; }
     .cntmenu { position: fixed; z-index: 300; width: min(340px, calc(100vw - 24px)); max-height: 70vh; overflow-y: auto; padding: 16px 16px 8px; text-align: right; }
     .cntmenu h4 { margin: 0 0 12px; font-size: 17px; font-weight: 800; line-height: 1.3; }
@@ -800,6 +802,7 @@
     .walrow.rcpt { background: var(--green-bg); } .walrow.rcpt .wamt.wamt { color: var(--green); }
     .walrow.usecr { background: var(--yellow-bg); } .walrow.usecr .wamt.wamt { color: var(--yellow); }   /* שימוש ביתרה למפגש: צהוב */
     .walrow.alloc { background: rgba(201,111,82,.13); } .walrow.alloc .wamt.wamt { color: var(--terra); }   /* הקצאה למפגש: כתום, כמו כל מה שקשור למפגש */
+    .walrow.balmv, .walrow.balmv .wl b, .walrow.balmv .wl small { color: var(--muted); } .walrow.balmv .wamt.wamt { color: var(--muted); }   /* תנועות של היתרה (הקצאה מהיתרה, מחיקת הקצאה, החזר מהיתרה): טקסט וסכום באפור */
     .walrow.tobal .wamt.wamt { color: var(--yellow); }   /* כסף שחזר ליתרה במחיקת הקצאה: צהוב (צבע היתרה) */
     .walrow.rfnd { background: var(--red-bg); } .walrow.rfnd .wamt.wamt { color: var(--red); }
     #walAdd, #depSave { background: var(--green-bg); color: var(--green); }
@@ -2199,7 +2202,7 @@
         api(T.p + '?select=*'),
         api(T.m + '?select=*'),
         api(T.a + '?select=after_key,participant_id,meeting_id,paid,pay_requested_at,status_key,created_at,exempt,attended,paid_amount,promoter_id,commission,paid_at,details_sent_at,will_pay,maybe,no_pay,pay_reported_at,pay_reported_amount'),
-        api(T.n + '?select=id,participant_id,body,author_email,author_name,created_at,has_image,system,event_type,old_status,new_status,meeting_id&order=created_at.desc'),
+        api(T.n + '?select=id,participant_id,body,author_email,author_name,created_at,has_image,system,event_type,old_status,new_status,meeting_id,amount&order=created_at.desc'),
         api(T.pr + '?select=*&order=name.asc'),
         api(T.pp + '?select=*&order=paid_at.desc'),
         api(T.pay + '?select=*&order=created_at.desc'),
@@ -2296,7 +2299,7 @@
       '<button type="button" role="menuitem" class="addm2" id="addMeeting">+ מפגש חדש</button>';
   }
   const closeMSel = () => { $('#mMenu').hidden = true; $('#mSel').setAttribute('aria-expanded', 'false'); };
-  $('#mSel').addEventListener('click', (e) => { e.stopPropagation(); const m = $('#mMenu'); m.hidden = !m.hidden; $('#mSel').setAttribute('aria-expanded', String(!m.hidden)); });
+  $('#mSel').addEventListener('click', (e) => { e.stopPropagation(); const m = $('#mMenu'); m.hidden = !m.hidden; $('#mSel').setAttribute('aria-expanded', String(!m.hidden)); if (!m.hidden) { const host = m.offsetParent || m.parentElement, hr = host.getBoundingClientRect(); m.style.right = 'auto'; m.style.left = Math.round((window.innerWidth - m.offsetWidth) / 2 - hr.left) + 'px'; } });   // ממורכז אופקית במסך
   document.addEventListener('click', (e) => { if (!e.target.closest('.msel')) closeMSel(); });
 
   const WA_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.7.1-.2.3-.8.9-.9 1.1-.2.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.6l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 4.9 4.3.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3zM12 21.5c-1.7 0-3.4-.5-4.8-1.3l-.3-.2-3.6.9 1-3.5-.2-.4C3.2 15.6 2.7 13.8 2.7 12c0-5.1 4.2-9.3 9.3-9.3 2.5 0 4.8 1 6.6 2.7 1.8 1.8 2.7 4.1 2.7 6.6 0 5.2-4.2 9.5-9.3 9.5zM20 4C17.9 1.8 15 .7 12 .7 5.8.7.7 5.8.7 12c0 2 .5 3.9 1.5 5.6L.6 23.4l6-1.6c1.6.9 3.5 1.4 5.4 1.4 6.2 0 11.3-5.1 11.3-11.3 0-3-1.2-5.8-3.3-7.9z"/></svg>';
@@ -2398,8 +2401,8 @@
   const sentView = (m) => !!(m && state.showSent !== false && (state.showSent === true || evOnFor(m) || hasSent(m) || evRecent(m)));
   /* עמודת ההגעה ועמודת השליחה בשורות (ואייקון הסינון שלהן) קיימות רק כשיש בהן מה להציג: לפחות משתתף אחד עם עיגול, או סינון פעיל;
      בלי זה לא נשמרת עמודה ריקה שמצמצמת את השמות ודוחפת את התשלום הצידה */
-  const colHere = () => { const m = state.meetings.find((x) => x.id === state.filter); return !!(state.filter && m && attVisible(m) && (state.here || state.att.some((a) => a.meeting_id === m.id && (dispStatus(a) !== SYSTEM_STATUS || a.attended)))); };
-  const colSent = () => { const m = state.meetings.find((x) => x.id === state.filter); return !!(state.filter && m && sentView(m) && (state.sent || state.att.some((a) => a.meeting_id === m.id && (a.details_sent_at || evElig(a.participant_id, a))))); };
+  const colHere = (ids) => { const m = state.meetings.find((x) => x.id === state.filter); return !!(state.filter && m && attVisible(m) && (state.here || state.att.some((a) => a.meeting_id === m.id && (!ids || ids.has(a.participant_id)) && (dispStatus(a) !== SYSTEM_STATUS || a.attended)))); };
+  const colSent = (ids) => { const m = state.meetings.find((x) => x.id === state.filter); return !!(state.filter && m && sentView(m) && (state.sent || state.att.some((a) => a.meeting_id === m.id && (!ids || ids.has(a.participant_id))))); };   // הטוגל דולק: העמודה קיימת (עם עיגול לא פעיל למי שעוד לא זכאי)
   const sentMatch = (pid, l, v) => !!l && (v === '1' ? !!l.details_sent_at : (!l.details_sent_at && evElig(pid, l)));
   const effSent = () => (state.q.trim() || !state.filter || !sentView(state.meetings.find((x) => x.id === state.filter))) ? null : state.sent;
   /* מצב יתרה (רק בתצוגת הכל): זכאי (יש יתרה לטובתו), חייב (יתרת חובה), מאוזן */
@@ -2476,7 +2479,7 @@
     $('#moreBtn').classList.toggle('on', moreOn());   // יש סינון פעיל: "הכל" לא מסומן, ולחיצה עליו מאפסת הכול
     { const sc = state.participants.filter((q) => state.filter ? linkOf(q.id, state.filter) : q.active !== false), both = sc.some((q) => q.gender === 'male') && sc.some((q) => q.gender === 'female'), allN = base.filter((p) => payOk(p)).length;
       $('#genderChips').innerHTML = '<button type="button" class="stc gall' + (allN ? '' : ' zero') + '" data-stg="all" aria-pressed="' + !anyF + '" title="' + (anyF ? 'איפוס סינוני השורה' : 'כל המוצגים ברשימה') + '">הכל <small>' + allN + '</small></button>' + ((eg || both) ? gchip('male', 'ז', 'gm') + gchip('female', 'נ', 'gf') : ''); }   // ליד כפתור התפריט בכותרת
-    const attOn = colHere(), evOn = colSent();
+    const attOn = colHere(), evOn = !!(state.filter && sentView(state.meetings.find((x) => x.id === state.filter)));   // סינון השליחה מוצג כשהטוגל דולק (גם כשאף אחד עוד לא זכאי)
     const hereOkNoSent = (p) => { const h = effHere(); return !h || (((linkOf(p.id, state.filter) || {}).attended) ? '1' : '0') === h; };   // הגעה רק מחצי שעה לפני המפגש (או במצב הגעה פתוח)
     const paidN = (v) => base.filter((p) => genOk(p) && hereOk(p) && matchPay(p, epk) && payF(p, v)).length;
     const pchip = (v, label, cls) => { const n = paidN(v); return '<button type="button" class="stc ' + cls + (n ? '' : ' zero') + '" data-stp="' + v + '" aria-pressed="' + (state.paidF === v && !!state.filter) + '">' + label + ' <small>' + n + '</small></button>'; };
@@ -2550,7 +2553,7 @@
   }
   const closeSort = () => { $('#sortMenu').hidden = true; const b = $('#sortBtnH'); if (b) b.setAttribute('aria-expanded', 'false'); };   // התפריט הצף (מועבר ל-body) נפתח מכפתור המיון בכותרת
   document.body.appendChild($('#sortMenu'));
-  $('#listTags').addEventListener('click', (e) => { const b = e.target.closest('#sortBtnH'); if (!b) return; e.stopPropagation(); const m = $('#sortMenu'); if (!m.hidden) { closeSort(); return; } m.hidden = false; b.setAttribute('aria-expanded', 'true'); const r = b.getBoundingClientRect(), mw = m.offsetWidth; m.style.left = Math.min(Math.max(8, r.left), window.innerWidth - mw - 8) + 'px'; m.style.top = (r.bottom + 6) + 'px'; });
+  $('#listTags').addEventListener('click', (e) => { const b = e.target.closest('#sortBtnH'); if (!b) return; e.stopPropagation(); const m = $('#sortMenu'); if (!m.hidden) { closeSort(); return; } m.hidden = false; b.setAttribute('aria-expanded', 'true'); const r = b.getBoundingClientRect(), mw = m.offsetWidth; m.style.left = Math.max(8, Math.round((window.innerWidth - mw) / 2)) + 'px'; m.style.top = (r.bottom + 6) + 'px'; });
   $('#sortMenu').addEventListener('click', (e) => { const b = e.target.closest('[data-sort]'); if (!b) return; state.sort = b.dataset.sort; closeSort(); render(); });
   document.addEventListener('click', (e) => { if (!e.target.closest('#sortMenu, #sortBtnH')) closeSort(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSort(); });
@@ -2616,7 +2619,7 @@
     };
     const pAll = state.participants.filter((p) => p.active !== false).map(persist).filter((x) => x.total > 0), pAvg = pAll.length ? pAll.reduce((s, x) => s + x.came, 0) / pAll.reduce((s, x) => s + x.total, 0) : 0, BAND = 0.1, K = 0;
     cntCtx = { persist, started, startedMs, pAvg, BAND };
-    const anyEv = colSent(), hereColOn = colHere();   // עמודות שמורות רק כשיש בהן מה להציג
+    const visIds = new Set(rows.concat(others).map((q) => q.id)), anyEv = colSent(visIds), hereColOn = colHere(visIds);   // עמודה שמורה רק אם יש עיגול באחת מהשורות המוצגות (אחרת השמות נדחסים)   // עמודות שמורות רק כשיש בהן מה להציג
     const rowHtml = (p) => {
       const age = shownAge(p);
       const wa = waLink(p.phone);
@@ -3540,7 +3543,8 @@
     const m = state.meetings.find((x) => x.id === state.filter), l = m && linkOf(p.id, m.id); if (!l) return '';
     const inert = evStarted(m);
     if (l.details_sent_at) return inert ? '<span class="evc sent inert" title="פרטי המפגש נשלחו" aria-label="פרטי המפגש נשלחו">' + PIN_ICON + '</span>' : '<button type="button" class="evc sent" data-evun="' + p.id + '" title="פרטי המפגש נשלחו (לחיצה מחזירה ללא נשלח)" aria-label="פרטי המפגש נשלחו, לחיצה מחזירה ללא נשלח">' + PIN_ICON + '</button>';   // נשאר מוצג גם אחרי שהחלון נסגר: רואים למי נשלחו
-    if (!(state.showSent === true || evOnFor(m) || hasSent(m) || evRecent(m)) || !evElig(p.id, l)) return '';   // גם אחרי שחלון השליחה נסגר: במפגש שנשלחו בו פרטים, ביטול סימון "נשלח" מחזיר עיגול "לא נשלח" ולא גורם לו להיעלם   // בהפעלה ידנית: גם לפני החלון ובמפגש שטרם התחיל   // עוד לא נשלח: רק בחלון השליחה (עד שנפתחת ההגעה) ולמי שלא בסטטוס ברירת המחדל
+    if (!(state.showSent === true || evOnFor(m) || hasSent(m) || evRecent(m))) return '';   // גם אחרי שחלון השליחה נסגר: במפגש שנשלחו בו פרטים, ביטול סימון "נשלח" מחזיר עיגול "לא נשלח" ולא גורם לו להיעלם   // בהפעלה ידנית: גם לפני החלון ובמפגש שטרם התחיל   // עוד לא נשלח: רק בחלון השליחה (עד שנפתחת ההגעה) ולמי שלא בסטטוס ברירת המחדל
+    if (!evElig(p.id, l)) return '<span class="evc off" title="עוד לא זכאי לשליחה (סטטוס ברירת מחדל)" aria-label="עוד לא זכאי לשליחת פרטי המפגש">' + PIN_ICON + '</span>';   // עמודה תמיד מלאה כשהטוגל דולק
     if (inert) return '<span class="evc inert" title="פרטי המפגש לא נשלחו" aria-label="פרטי המפגש לא נשלחו">' + PIN_ICON + '</span>';
     const base = waLink(p.phone);
     return base ? '<a class="evc" data-evrow="' + p.id + '" href="' + base + '?text=' + encodeURIComponent(eventDayMessage(m)) + '" target="_blank" rel="noopener" title="שליחת פרטי המפגש בוואטסאפ" aria-label="שליחת פרטי המפגש בוואטסאפ">' + PIN_ICON + '</a>'
@@ -3596,7 +3600,9 @@
     const id = a.dataset.img;
     try {
       const src = await noteImage(id); if (!src || !a.isConnected) return;
-      a.innerHTML = '<img alt="צילום מסך" loading="lazy" />'; a.firstChild.src = src;
+      a.innerHTML = '<img alt="צילום מסך" loading="lazy" />'; const im = a.firstChild;
+      im.onload = () => { const f = im.naturalWidth / (4 * im.naturalHeight), pos = f >= 1 ? 50 : Math.max(0, Math.min(100, (0.85 - f / 2) / (1 - f) * 100)); im.style.objectPosition = '50% ' + pos.toFixed(1) + '%'; };   // החלון 4:1 ממורכז על העשירון השני מלמטה (80% עד 90% מגובה התמונה)
+      im.src = src;
     } catch (e) { if (a.isConnected) a.innerHTML = '<div class="nload">לא ניתן לטעון את התמונה</div>'; }
   }
   /* צירוף תמונה: דחיסה בדפדפן (עד 1600px, JPEG) כדי שהשמירה תהיה קטנה ומהירה */
@@ -3720,17 +3726,19 @@
     const mlabel = (x) => { const m = state.meetings.find((q) => q.id === x.meeting_id); return m ? ' ' + dmShort(m) : ''; };
     const rows = state.payments.filter((x) => x.participant_id === pid && x.kind !== 'credit').slice().sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))).flatMap((x) => {
       const a = Number(x.amount), mt = methodName(x); let lab, cls, sign;
-      if (x.kind === 'deposit') { lab = x.reason === 'alloc_removed' ? 'קבלת סכום ליתרה · מחיקת הקצאה' : 'קבלת תשלום' + (mt ? ' · ' + mt : ''); cls = 'up'; sign = ''; }
+      if (x.kind === 'deposit') { lab = 'קבלת תשלום' + (mt ? ' · ' + mt : ''); cls = 'up'; sign = ''; }
       else if (x.kind === 'credit') { lab = 'ביטול מפגש' + mlabel(x) + ', נשאר ביתרה'; cls = 'up'; sign = ''; }
-      else if (x.kind === 'payment') { lab = 'הקצאה למפגש' + mlabel(x) + ' · ' + (x.from_credit ? 'מהיתרה' : (mt || 'תשלום')); cls = 'flat'; sign = ''; }
-      else if (x.kind === 'refund' && x.from_credit) { lab = 'החזרת כסף מהיתרה'; cls = 'down'; sign = ''; }
-      else { lab = 'החזר כספי למפגש' + mlabel(x); cls = 'flat'; sign = ''; }
-      const rc = x.kind === 'deposit' ? (x.reason === 'alloc_removed' ? ' tobal' : ' rcpt') : (x.kind === 'credit' || x.kind === 'refund') ? ' rfnd' : x.kind === 'payment' ? ' alloc' : '';   // קבלה בירוק, זיכוי/החזר באדום
-      const row = (lb, c, cl) => '<div class="walrow' + c + '"><div class="wl"><b>' + esc(lb) + '</b><small>' + fmtD(x.created_at) + (x.author_name ? ' · ' + esc(noteAuthor(x.author_email, x.author_name)) : '') + '</small></div><span class="wamt ' + cl + '"><bdi dir="ltr">' + sign + '₪' + nfm(a) + '</bdi></span></div>';
-      if (x.kind === 'payment' && !x.from_credit) return [row('הקצאה למפגש' + mlabel(x), ' alloc', 'flat'), row('קבלת תשלום' + (mt ? ' · ' + mt : ''), ' rcpt', 'up')];   // תשלום ישיר למפגש = שתי שורות: קבלת הכסף (ירוק) וההקצאה (כתום)
+      else if (x.kind === 'payment') { lab = 'הקצאה למפגש' + mlabel(x); cls = 'flat'; sign = ''; }
+      else if (x.kind === 'refund' && x.from_credit) { lab = 'החזרת כסף' + (mt ? ' · ' + mt : ''); cls = 'down'; sign = ''; }
+      else { lab = 'החזרת כסף למפגש' + mlabel(x); cls = 'flat'; sign = ''; }
+      const rc = x.kind === 'deposit' ? ' rcpt' : (x.kind === 'credit' || x.kind === 'refund') ? ' rfnd' : x.kind === 'payment' ? ' balmv' : '';   // קבלה בירוק, זיכוי/החזר באדום
+      const row = (lb, c, cl, tm) => ({ t: String(tm || x.created_at), h: '<div class="walrow' + c + '"><div class="wl"><b>' + esc(lb) + '</b><small>' + fmtDT(tm || x.created_at) + (x.author_name ? ' · ' + esc(noteAuthor(x.author_email, x.author_name)) : '') + '</small></div><span class="wamt ' + cl + '"><bdi dir="ltr">' + sign + '₪' + nfm(a) + '</bdi></span></div>' });
+      if (x.kind === 'deposit' && String(x.reason || '').startsWith('alloc_removed')) return [row('קבלת תשלום' + (mt ? ' · ' + mt : ''), ' rcpt', 'up')];   // הקצאה שנמחקה לא מוצגת (לא ההקצאה ולא המחיקה); נשאר רק התשלום שהתקבל
+      if (x.kind === 'payment' && !x.from_credit) return [row('הקצאה למפגש' + mlabel(x), ' balmv', 'flat'), row('קבלת תשלום' + (mt ? ' · ' + mt : ''), ' rcpt', 'up')];   // תשלום ישיר למפגש = שתי שורות: קבלת הכסף (ירוק) וההקצאה (כתום)
       return [row(lab, rc, cls)];
     });
-    $('#walHist').innerHTML = rows.length ? rows.join('') : '<p class="mnone" style="text-align:center">עוד אין תשלומים</p>';
+    rows.sort((p1, p2) => p2.t.localeCompare(p1.t));   // מהחדש לישן (שורות עם אותו מועד נשארות בסדר: מחיקה, הקצאה, קבלה)
+    $('#walHist').innerHTML = rows.length ? rows.map((r) => r.h).join('') : '<p class="mnone" style="text-align:center">עוד אין תשלומים</p>';
   }
   const dmShort = (m) => { const [, mo, d] = m.meeting_date.split('-').map(Number); return d + '.' + mo; };
   /* צ'יפ מצב המפגש בכותרת (במסך ההקצאה): תפריט עם "לתשלום" ו"חינם" (המצבים שרשומים בפרטי המפגש בכרטיס המשתתף), ומעבר ביניהם עם פופאפ אישור בהתאם */
@@ -3795,7 +3803,7 @@
       const a = Number(r.amount);
       if (a <= rem + 0.001) { await removeAlloc(r); rem -= a; }
       else {
-        if (!r.from_credit) await addPayRecord(pid, null, 'deposit', rem, r.promoter_id || null, null, false, r.method || null, r.method_note || null, { reason: 'alloc_removed' });
+        if (!r.from_credit) await addPayRecord(pid, null, 'deposit', rem, r.promoter_id || null, null, false, r.method || null, r.method_note || null, { reason: 'alloc_removed:' + (r.meeting_id || '') + ':' + new Date().toISOString(), created_at: r.created_at });
         await api(T.pay + '?id=eq.' + r.id, { method: 'PATCH', body: { amount: a - rem } }); r.amount = a - rem; rem = 0;
       }
     }
@@ -3832,7 +3840,7 @@
   async function removeAlloc(row) {
     {
       // תשלום ישיר בדרך העברה: הכסף כבר התקבל, ולכן מסירים רק את ההקצאה למפגש והכסף נשאר ביתרה (הפקדה באותו סכום ודרך העברה, עם אותה עמלה); הקצאה מהיתרה פשוט חוזרת ליתרה
-      if (!row.from_credit) await addPayRecord(row.participant_id, null, 'deposit', Number(row.amount), row.promoter_id || null, row.commission != null ? Number(row.commission) : null, false, row.method || null, row.method_note || null, { reason: 'alloc_removed' });
+      if (!row.from_credit) await addPayRecord(row.participant_id, null, 'deposit', Number(row.amount), row.promoter_id || null, row.commission != null ? Number(row.commission) : null, false, row.method || null, row.method_note || null, { reason: 'alloc_removed:' + (row.meeting_id || '') + ':' + new Date().toISOString(), created_at: row.created_at });
       payTomb.set(row.id, Date.now() + 8000);
       await api(T.pay + '?id=eq.' + row.id, { method: 'DELETE' }); state.payments = state.payments.filter((x) => x.id !== row.id);
     }
@@ -4583,7 +4591,7 @@
     const m = $('#viewMenu'); if (!m.hidden) { closeView(); return; }
     renderViewMenu(); m.hidden = false; e.target.closest('#viewBtn').setAttribute('aria-expanded', 'true');
     const r = e.target.closest('#viewBtn').getBoundingClientRect(), mw = m.offsetWidth;
-    m.style.left = Math.min(Math.max(8, r.left), window.innerWidth - mw - 8) + 'px'; m.style.top = (r.bottom + 6) + 'px';
+    m.style.left = Math.max(8, Math.round((window.innerWidth - mw) / 2)) + 'px'; m.style.top = (r.bottom + 6) + 'px';
   });
   $('#viewMenu').addEventListener('click', (e) => {
     const b = e.target.closest('[data-vt]'); if (!b) return;
@@ -4602,12 +4610,12 @@
     const bar = document.querySelector('.listbar'); if (!bar) return; const br = bar.getBoundingClientRect();
     [['#listPay', '#list .payic'], ['#listHere', '#list .here'], ['#listSent', '#list .evc'], ['#listBal', '#list .balic'], ['#listAtt', '#list .ptag.cnt']].forEach(([box, ref]) => {
       const b = document.querySelector(box), r = document.querySelector(ref); if (!b) return;
-      if (box === '#listSent') b.style.visibility = (!r && !state.sent) ? 'hidden' : '';   // אין אף עיגול שליחה ברשימה (אף משתתף לא זכאי): אין מה לסנן, והאייקון לא נערם על אייקון התשלום
+      if (box === '#listSent') b.style.visibility = '';   // אין אף עיגול שליחה ברשימה (אף משתתף לא זכאי): אין מה לסנן, והאייקון לא נערם על אייקון התשלום
       if (!r && box !== '#listSent') b.style.left = '';   // אין שורות להתיישר מולן (למשל מפגש ריק): חוזרים למיקום הרגיל ולא נשארים במקום של המפגש הקודם
       if (r) { const rr = r.getBoundingClientRect(), bb = (b.firstElementChild || b).getBoundingClientRect(); b.style.left = Math.round(rr.left + rr.width / 2 - br.left - (bb.left - b.getBoundingClientRect().left) - bb.width / 2) + 'px'; }
       else if (box === '#listSent') {   // אין בשורות עיגולי שליחה (למשל כשהחלון נסגר והסינון "לא נשלחו" פעיל): האייקון באמצע בין אייקון התשלום להגעה, ולא נערם על אחד מהם
         const ic = (id) => { const e = document.querySelector(id + ' > *'); return e && e.getBoundingClientRect().width ? e.getBoundingClientRect() : null; }, a1 = ic('#listPay'), a2 = ic('#listHere'), bb = (b.firstElementChild || b).getBoundingClientRect();
-        const cx = a1 && a2 ? (a1.left + a1.width / 2 + a2.left + a2.width / 2) / 2 : a1 ? a1.left + a1.width / 2 - 36 : a2 ? a2.left + a2.width / 2 + 36 : null;
+        const cx = a1 && a2 ? (a1.left + a1.width / 2 + a2.left + a2.width / 2) / 2 : a1 ? a1.left + a1.width / 2 + 40 : a2 ? a2.left + a2.width / 2 + 36 : null;
         if (cx != null && bb.width) b.style.left = Math.round(cx - br.left - (bb.left - b.getBoundingClientRect().left) - bb.width / 2) + 'px';
       }
     });
