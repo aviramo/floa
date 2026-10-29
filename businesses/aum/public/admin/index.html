@@ -437,6 +437,7 @@
     .tchip.ad b, .tchip.pr b { color: inherit; }
     #pTitle.tap { cursor: pointer; }
     #pMsgs { display: contents; }
+    #pDlg .sheet-head #pBack { order: -2; } #pDlg .sheet-head #pMsgs .ctop { order: -1; } #pDlg .sheet-head #pBack, #pDlg .sheet-head #pMsgs .ctop, #pDlg .sheet-head #pMsgs .cico { width: 40px; height: 40px; flex: 0 0 40px; margin: 0; padding: 0; box-sizing: border-box; }   /* חץ החזרה והוואטסאפ באותו גודל ובדיוק באותו מקום (קצה ימין): לעולם לא מוצגים יחד */   /* הוואטסאפ מימין לתגית הגיל והמגדר ולשם */
     #pCall[hidden] { display: none; }
     #pCall { margin-inline-start: auto; background: var(--ink); color: var(--paper); }   /* מלא בשחור-חום כהה (צבע הצ'יפ הנבחר), סמל בהיר */
     #pMsgs[hidden] { display: none; }
@@ -994,13 +995,32 @@
     .field { display: block; margin-bottom: 12px; }
     .field[hidden] { display: none; }
     .nitem.fold { cursor: pointer; }
-    #nList .nitem, #nList .nitem.sys { background: transparent; border-radius: 0; margin: 0; padding: 12px 4px; border-bottom: 1px solid var(--line); }   /* היסטוריית הערות כרשימה: בלי רקע לכל הערה, רק קו מפריד */
+    .nrow { display: flex; align-items: center; gap: 10px; }
+    .nrow .ntext { flex: 1 1 auto; min-width: 0; }
+    .nch.nago { flex: 0 0 auto; align-self: center; background: none; height: auto; padding: 0; color: var(--muted); font-weight: 600; font-size: 13.5px; line-height: 1; }   /* לפני כמה זמן: טקסט רגיל בצד שמאל, ממורכז אנכית לשורה */
+    .nrow .ntext, .nrow .ntext.chips { line-height: 1; padding: 0; margin: 0; }   /* הצ'יפים והזמן שעבר ממורכזים אנכית יחד */
+    .nrow { padding: 3px 0; }
+    .ntext.chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .nch { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 999px; font-size: 14px; font-weight: 700; white-space: nowrap; }
+    .nch.pay { height: 28px; }
+    .nch.nm { background: rgba(201,111,82,.13); color: var(--terra); }   /* מפגש: תמיד כתום, ראשון */
+    .nch.ny { background: var(--yellow-bg); color: var(--yellow); }   /* הקצאות: צהוב */
+    .nch.ng { background: var(--green-bg); color: var(--green); }
+    .nch.nr { background: var(--red-bg); color: var(--red); }
+    .nch.nf { background: #fff; box-shadow: inset 0 0 0 1px var(--line); color: var(--muted); }   /* חינם: לבן עם גבול דק, כמו עיגול ה-₪ של חינם */
+    .nch.nn { background: var(--line); color: var(--muted); }
+    .narw { color: var(--muted); font-weight: 800; font-size: 16px; }
+    #nList .nitem, #nList .nitem.sys { background: transparent; border-radius: 0; margin: 0; padding: 2px 4px; border-bottom: 0; }   /* היסטוריית הערות כרשימה: בלי רקע לכל הערה, רק קו מפריד */
     #nList .nitem:last-child { border-bottom: 0; }
     .nitem:not(.sys) .ntext { font-weight: 800; }   /* הערה שנכתבה ידנית (לא הערת מערכת): הטקסט מודגש */
     .nitem .nmw { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .28s ease, opacity .22s ease; }
     .nitem.open .nmw { grid-template-rows: 1fr; opacity: 1; }
     .nitem .nmi { overflow: hidden; min-height: 0; }
     .nitem .nmw .nmeta { margin: 6px 0 0; }
+    .nitem .nmw .nmeta { justify-content: flex-end; padding-inline-end: 0; gap: 10px; }   /* שם ומועד בהערה פתוחה: בצד שמאל, באותו קו עם הזמן שעבר */
+    .nitem .nmw .nmeta b { font-weight: 400; color: inherit; }   /* שם הכותב לא מודגש */
+    .nrow .ntext:not(.chips) { padding-inline-start: 12px; }   /* הערה ידנית: הטקסט מיושר לטקסט שבתוך הצ'יפים, לא לקצה שלהם */   /* השם והמועד בהערה פתוחה מיושרים לטקסט שבתוך הצ'יף הראשון, ולא לקצה הצ'יף */
+    .nitem:not(.sys) .nrow .ntext:not(.chips) { font-size: 14px; font-weight: 700; line-height: 1.35; }   /* טיפוגרפיה כמו הטקסט בצ'יפים */
     @media (prefers-reduced-motion: reduce) { .nitem .nmw { transition: none; } }
     .nitem.sys { background: var(--cream); }   /* אותו רקע כמו הערת צילום המסך */
     .nitem.sys .ntext { color: var(--ink); font-size: 16.5px; }   /* קריא: גם הערות מערכת בצבע הטקסט הרגיל */
@@ -1091,6 +1111,7 @@
     .btn.ghost { background: transparent; color: var(--red); height: 44px; font-size: 16px; margin-top: 6px; }
     .saved { font-size: 14px; color: var(--green); font-weight: 700; opacity: 0; transition: opacity .2s; }
     .saved.on { opacity: 1; }
+    #savedMark { display: none !important; }   /* בלי סימון "נשמר" בפופאפ המשתתף */
 
     .toast {
       position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%) translateY(20px);
@@ -2141,7 +2162,7 @@
   }
 
   const closeHMenu = () => { $('#hMenu').hidden = true; $('#menuBtn').setAttribute('aria-expanded', 'false'); };
-  $('#menuBtn').addEventListener('click', (e) => { e.stopPropagation(); const m = $('#hMenu'); m.hidden = !m.hidden; $('#menuBtn').setAttribute('aria-expanded', String(!m.hidden)); });
+  $('#menuBtn').addEventListener('click', (e) => { e.stopPropagation(); const m = $('#hMenu'); m.hidden = !m.hidden; $('#menuBtn').setAttribute('aria-expanded', String(!m.hidden)); if (!m.hidden) { const r = $('#menuBtn').getBoundingClientRect(); m.style.position = 'fixed'; m.style.right = 'auto'; m.style.top = Math.round(r.bottom + 8) + 'px'; m.style.left = Math.max(8, Math.min(Math.round(r.left), window.innerWidth - m.offsetWidth - 8)) + 'px'; } });   // התפריט הראשי מיושר לשמאל עם הכפתור שלו
   $('#hMenu').addEventListener('click', closeHMenu);
   /* תפריט פתוח: לחיצה בחוץ רק סוגרת אותו (לא מפעילה את מה שמתחתיו); הלחיצה הבאה פועלת כרגיל */
   /* כלל כללי לכל התפריטים הצפים: כשתפריט פתוח, לחיצה בכל מקום מחוצה לו (גם על כפתור או צ'יפ אחר) רק סוגרת אותו ושום דבר אחר לא נפתח או משתנה. מותר רק לתוך התפריט ולכפתור שפותח אותו (שסוגר אותו) */
@@ -2553,7 +2574,7 @@
   }
   const closeSort = () => { $('#sortMenu').hidden = true; const b = $('#sortBtnH'); if (b) b.setAttribute('aria-expanded', 'false'); };   // התפריט הצף (מועבר ל-body) נפתח מכפתור המיון בכותרת
   document.body.appendChild($('#sortMenu'));
-  $('#listTags').addEventListener('click', (e) => { const b = e.target.closest('#sortBtnH'); if (!b) return; e.stopPropagation(); const m = $('#sortMenu'); if (!m.hidden) { closeSort(); return; } m.hidden = false; b.setAttribute('aria-expanded', 'true'); const r = b.getBoundingClientRect(), mw = m.offsetWidth; m.style.left = Math.max(8, Math.round((window.innerWidth - mw) / 2)) + 'px'; m.style.top = (r.bottom + 6) + 'px'; });
+  $('#listTags').addEventListener('click', (e) => { const b = e.target.closest('#sortBtnH'); if (!b) return; e.stopPropagation(); const m = $('#sortMenu'); if (!m.hidden) { closeSort(); return; } m.hidden = false; b.setAttribute('aria-expanded', 'true'); const r = b.getBoundingClientRect(), mw = m.offsetWidth; m.style.left = Math.max(8, Math.min(Math.round(r.left), window.innerWidth - mw - 8)) + 'px'; m.style.top = (r.bottom + 6) + 'px'; });   // תפריט המיון מיושר לשמאל עם הכפתור שלו
   $('#sortMenu').addEventListener('click', (e) => { const b = e.target.closest('[data-sort]'); if (!b) return; state.sort = b.dataset.sort; closeSort(); render(); });
   document.addEventListener('click', (e) => { if (!e.target.closest('#sortMenu, #sortBtnH')) closeSort(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSort(); });
@@ -3448,6 +3469,73 @@
   const noteAuthor = (email, name) => { const e = String(email || '').toLowerCase(), pr = ((state.prefs[e] || {}).sender_name || '').trim(); if (pr || SENDERS[e]) return pr || SENDERS[e]; return e ? 'מנהל' : (name || 'מערכת'); };
   /* תאריך ושעה בתוך הערה (25.10 · 20:00) מוצגים כיחידה אחת משמאל לימין, כדי שהסדר לא יתהפך בתוך משפט בעברית */
   const noteTextHtml = (s) => esc(s).replace(/(\d{1,2}\.\d{1,2}(?:\.\d{2,4})?(?:\s*·\s*\d{1,2}:\d{2})?|\d{1,2}:\d{2})/g, '<bdi dir="ltr">$1</bdi>');
+  /* הערות מערכת כצ'יפים: המפגש תמיד ראשון (כתום), ואחריו הפעולה; שינוי (סטטוס, סכום הקצאה) הוא "ישן ← חדש", הכול בצבעי המערכת */
+  const NCH = (txt, cls) => '<span class="nch ' + cls + '">' + txt + '</span>';
+  const NARW = '<span class="narw" aria-hidden="true">←</span>';
+  const nStKey = (name) => { const s = state.statuses.concat(state.astatuses).find((x) => x.label === name); return s ? s.key : null; };
+  const NLEGACY = { 'שילם': 'paid', 'ישלם': 'willpay', 'ספונטני': 'maybe', 'אולי': 'maybe', 'בטיפול': 'requested', 'חינם': 'exempt', 'חדש': 'unpaid', 'טרם טופל': 'unpaid', 'משויך': 'unpaid' };   // שמות ישנים של סטטוסים מובנים בהערות: מוצגים בשם ובצבע הנוכחיים של אותו סטטוס
+  const nStChip = (name) => { let k = nStKey(name), lb = name; if (!k && NLEGACY[name]) { const s = state.statuses.find((x) => x.key === NLEGACY[name]); if (s) { k = s.key; lb = s.label; } } return NCH(esc(lb), k ? 'pay ' + k : 'nn'); };
+  function sysChips(n) {
+    const b = String(n.body || ''), ev = n.event_type || '';
+    const mo = n.meeting_id && state.meetings.find((x) => x.id === n.meeting_id), md = mo ? dmShort(mo) : ((/(\d{1,2}\.\d{1,2})/.exec(b) || [])[1] || '');
+    const M = md ? NCH('<bdi dir="ltr">' + esc(md) + '</bdi>', 'nm') : '';
+    const amt = (n.amount != null && n.amount !== '') ? Number(n.amount) : Number((/₪\s*([\d.]+)/.exec(b) || [])[1] || 0);
+    const sh = (v) => '<bdi dir="ltr">₪' + nfm(v) + '</bdi>';
+    const meth = ((/ ב([^\s(][^()]*)$/.exec(b) || [])[1] || '').trim();
+    switch (ev) {
+      case 'status_changed': case 'after_status_changed': {
+        const m = /:\s*(.+?)\s*\(היה:\s*(.+)\)\s*$/.exec(b); if (!m) return null;
+        const pm = /^(.+?)\s*₪\s*([\d.]+)(?:\s+ב.+)?$/.exec(m[1]);   // "שילם ₪100 בפייבוקס": הסטטוס, ואחריו צ'יף תשלום כמו בשאר ההערות
+        return M + nStChip(m[2]) + NARW + nStChip(pm ? pm[1] : m[1]) + (pm ? NCH('תשלום&nbsp;' + sh(Number(pm[2])), 'ng') : '');
+      }
+      case 'meeting_linked': {   // שיוך = מעבר מ"לא משויך" לסטטוס שבו נוצר השיוך: ה"היה" של שינוי הסטטוס הראשון אחריו, ואם אין, הסטטוס הנוכחי של השיוך (לא השתנה), ואם הוסר, סטטוס ברירת המחדל
+        const later = state.notes.filter((x) => x.participant_id === n.participant_id && x.meeting_id === n.meeting_id && x.event_type === 'status_changed' && String(x.created_at) > String(n.created_at)).sort((p1, p2) => String(p1.created_at).localeCompare(String(p2.created_at)))[0];
+        const wm = later && /\(היה:\s*(.+)\)\s*$/.exec(later.body), ds = state.statuses.find((x) => x.key === SYSTEM_STATUS);
+        let from = wm ? wm[1] : '';
+        if (!from) { const lk = linkOf(n.participant_id, n.meeting_id), st = lk && state.statuses.find((x) => x.key === linkStatus(lk)); if (st) from = st.label; }
+        if (!from && ds) from = ds.label;
+        return M + NCH('לא משויך', 'nn') + NARW + (from ? nStChip(from) : '');
+      }   // שיוך למפגש = סטטוס ברירת המחדל (בצבע ובשם הנוכחיים)
+      case 'meeting_removed': {   // הסרה = מעבר מהסטטוס שהיה למפגש ל"לא משויך": הסטטוס נלקח מהערת השינוי האחרונה לפני ההסרה, ואם אין, מסטטוס ברירת המחדל
+        const prev = state.notes.filter((x) => x.participant_id === n.participant_id && x.meeting_id === n.meeting_id && x.event_type === 'status_changed' && String(x.created_at) < String(n.created_at)).sort((p1, p2) => String(p2.created_at).localeCompare(String(p1.created_at)))[0];
+        const pm = prev && /:\s*(.+?)\s*(?:₪\s*[\d.]+(?:\s+ב[^()]*?)?)?\s*\(היה:/.exec(prev.body), ds = state.statuses.find((x) => x.key === SYSTEM_STATUS);
+        const from = pm ? pm[1] : (ds ? ds.label : '');
+        return M + (from ? nStChip(from) + NARW : '') + NCH('לא משויך', 'nn');
+      }
+      case 'free_on': return M + NCH('לתשלום', 'nn') + NARW + NCH('חינם', 'nf');   // מעבר בין מצבי התשלום של המפגש, בשורה אחת: ישן ← חדש
+      case 'free_off': return M + NCH('חינם', 'nf') + NARW + NCH('לתשלום', 'nn');
+      case 'attended': return M + NCH('הגיע/ה', 'ng');
+      case 'walk_in': return M + NCH('הגיע/ה ללא הרשמה', 'ng');
+      case 'attendance_cancelled': return M + NCH('ההגעה בוטלה', 'nn');
+      case 'details_sent': return M + NCH('נשלחו פרטי המפגש', 'nn');
+      case 'details_unsent': return M + NCH('שליחת הפרטים בוטלה', 'nn');
+      case 'alloc_added': return M + NCH('הקצאה&nbsp;' + sh(amt), 'ny');
+      case 'alloc_removed': return M + NCH('הוסרה הקצאה&nbsp;' + sh(amt), 'ny');
+      case 'alloc_changed': { const m = /מ-₪([\d.]+) ל-₪([\d.]+)/.exec(b); return m ? M + NCH('הקצאה&nbsp;' + sh(Number(m[1])), 'ny') + NARW + NCH(sh(Number(m[2])), 'ny') : M + NCH('הקצאה שונתה&nbsp;' + sh(amt), 'ny'); }
+      case 'payment_received': case 'deposit': return NCH('תשלום&nbsp;' + sh(amt), 'ng');
+      case 'refund': return M + NCH('החזרת כסף&nbsp;' + sh(amt) + (meth ? '&nbsp;·&nbsp;' + esc(meth) : ''), 'nr');
+      case 'registered': case 'reregistered': { const tx = b.replace(/\s*ושויך\/ה למפגש.*$/, '').replace(/\s*\(כבר משויך.*\)\s*$/, ''); return M + NCH(esc(tx), 'nn'); }
+      case 'deactivated': return NCH(esc(b), 'nr');
+      case 'reactivated': return NCH(esc(b), 'ng');
+      default: return null;
+    }
+  }
+  /* "לפני כמה זמן": דקות, שעות, ימים, שבועות, חודשים ושנים (עם צורות היחיד והזוגי בעברית) */
+  const agoText = (iso) => {   // מתי זה קרה, בעברית טבעית: עכשיו, לפני 5 דקות, לפני 5 שעות, אתמול, שלשום, לפני 4 ימים, לפני שבוע, לפני חודשיים...
+    const then = new Date(iso), s = Math.max(0, (Date.now() - then.getTime()) / 1000);
+    const pl = (n, one, two, many) => n === 1 ? one : n === 2 ? two : n + ' ' + many;
+    if (s < 60) return 'עכשיו';
+    if (s < 3600) return pl(Math.floor(s / 60), 'דקה', 'שתי דקות', 'דקות');
+    if (s < 86400) return pl(Math.floor(s / 3600), 'שעה', 'שעתיים', 'שעות');
+    const dk = (d) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jerusalem' }).format(d), dd = Math.round((new Date(dk(new Date())) - new Date(dk(then))) / 86400000);   // הפרש ימי לוח (שעון ישראל)
+    if (dd <= 1) return 'אתמול';
+    if (dd === 2) return 'שלשום';
+    if (dd < 7) return dd + ' ימים';
+    if (dd < 30) return pl(Math.floor(dd / 7), 'שבוע', 'שבועיים', 'שבועות');
+    if (dd < 365) return pl(Math.floor(dd / 30.4), 'חודש', 'חודשיים', 'חודשים');
+    return pl(Math.floor(dd / 365), 'שנה', 'שנתיים', 'שנים');
+  };
+  setInterval(() => { document.querySelectorAll('.nago[data-ts]').forEach((e) => { e.textContent = agoText(e.dataset.ts); }); }, 30000);
   const authorName = () => SENDERS[emailOf()] || 'מנהל';
 
   /* לשונית "התקשרות": וואטסאפ וחיוג (רק פותחים שיחה/מחייגים), ומתחתיהם ההערות */
@@ -3591,7 +3679,7 @@
     sheet.nOpen = sheet.nOpen || new Set();
     const meta = (n) => '<div class="nmeta"><span><b>' + esc(noteAuthor(n.author_email, n.author_name)) + '</b> · ' + esc(fmtDT(n.created_at)) + '</span>' + (n.system ? '' : '<button type="button" class="ndel" data-del="' + n.id + '" aria-label="מחיקת הערה" title="מחיקת הערה">×</button>') + '</div>';
     list.innerHTML = ns.length ? ns.map((n) => '<div class="nitem' + (n.system ? ' sys' : '') + (n.has_image ? ' img' : ' fold' + (sheet.nOpen.has(n.id) ? ' open' : '')) + '" data-nid="' + n.id + '"' + (n.event_type ? ' data-ev="' + esc(n.event_type) + '"' : '') + (n.new_status ? ' data-st="' + esc(n.new_status) + '"' : '') + '>' +
-      (n.has_image ? meta(n) + '<a class="nimg" data-img="' + n.id + '"><div class="nload">טוען תמונה…</div></a>' : '<div class="ntext">' + noteTextHtml(n.body) + '</div><div class="nmw"><div class="nmi">' + meta(n) + '</div></div>') + '</div>').join('')
+      (n.has_image ? meta(n) + '<a class="nimg" data-img="' + n.id + '"><div class="nload">טוען תמונה…</div></a>' : '<div class="nrow"><div class="ntext' + (n.system && sysChips(n) ? ' chips' : '') + '">' + ((n.system && sysChips(n)) || noteTextHtml(n.body)) + '</div><span class="nch nago" data-ts="' + esc(n.created_at) + '" title="' + esc(fmtDT(n.created_at)) + '">' + agoText(n.created_at) + '</span></div><div class="nmw"><div class="nmi">' + meta(n) + '</div></div>') + '</div>').join('')
       : '<p class="mnone">עוד אין הערות. אפשר לרשום למעלה מה דיברתם, מה הוחלט ומה צריך לזכור, או לצרף צילום מסך משיחה</p>';
     list.querySelectorAll('[data-img]').forEach(loadNoteImg);
   }

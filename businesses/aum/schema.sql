@@ -623,7 +623,11 @@ begin
         'after_status_changed', new.event_id, old.after_key, new.after_key);
     end if;
     if coalesce(old.attended, false) <> coalesce(new.attended, false) then
-      perform public.aum_sys_note(new.participant_id, case when new.attended then 'הגיע/ה למפגש ' else 'סימון ההגעה בוטל למפגש ' end || lbl, case when new.attended then 'attended' else 'attended_cancel' end, new.event_id);
+      perform public.aum_sys_note(new.participant_id, case when new.attended then 'הגיע/ה למפגש ' else 'סימון ההגעה בוטל למפגש ' end || lbl, case when new.attended then 'attended' else 'attendance_cancelled' end, new.event_id);
+    end if;
+    if coalesce(old.no_pay, false) <> coalesce(new.no_pay, false) then   -- סימון "חינם" במסך ההקצאה
+      perform public.aum_sys_note(new.participant_id, case when coalesce(new.no_pay, false) then 'המפגש ' || lbl || ' סומן כחינם' else 'החינם בוטל למפגש ' || lbl end,
+        case when coalesce(new.no_pay, false) then 'free_on' else 'free_off' end, new.event_id);
     end if;
     if (old.details_sent_at is null) <> (new.details_sent_at is null) then
       perform public.aum_sys_note(new.participant_id, case when new.details_sent_at is not null then 'נשלחו פרטי המפגש (וואטסאפ) למפגש ' else 'סימון שליחת פרטי המפגש בוטל למפגש ' end || lbl,
