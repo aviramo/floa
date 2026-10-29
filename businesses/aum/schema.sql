@@ -791,3 +791,6 @@ notify pgrst, 'reload schema';
 --   4. בדף הניהול (/aum/admin/): ללחוץ על הפעמון ולאשר התראות, בכל מכשיר ודפדפן שרוצים.
 -- לכיבוי ההתראות: delete from public.aum_settings where key = 'notify_url';
 -- ==========================================================================
+
+-- 20: דחיית דיווח תשלום
+alter table public.aum_registrations add column if not exists pay_rejected_at timestamptz;
