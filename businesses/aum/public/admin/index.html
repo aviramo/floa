@@ -1093,11 +1093,9 @@
     .mlist { display: flex; gap: 8px; overflow-x: auto; overflow-y: hidden; padding: 2px 3px 8px; scroll-padding-inline: 3px; margin: 0 0 10px; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; scrollbar-width: none; }
     .mlist::-webkit-scrollbar { display: none; }
     .mlist .mrow { flex: 0 0 auto; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 6px; min-height: 0; padding: 8px; scroll-snap-align: start; }
-    #pDlg .sheet-head #pPayChip { order: 1; } #pDlg .sheet-head #pMeetN { order: 2; }   /* היתרה לפני מונה המפגשים: מונה המפגשים הכי שמאלי */
-    .sheet-head:has(#pPayChip[hidden]) #pMeetN, .sheet-head:has(#pPayChip[data-tab]:not([data-tab="main"])) #pMeetN { display: none !important; }   /* מונה המפגשים רק במסך הראשי של הכרטיס */
-    .clrow:not(:has(.addm:not([hidden]))) { display: none; }
+    .clrow:not(:has(.addm:not([hidden]), .pmeetn:not([hidden]))) { display: none; }
     .pmeetn[hidden] { display: none; }
-    #pMeetN { background: var(--meet-bg); color: var(--meet); cursor: default; font-size: 15px; font-weight: 800; height: 34px; padding: 0 14px; gap: 6px; }   /* בדיוק כמו צ'יף היתרה (אותו גודל וגופן); רק הצבע כתום */
+    #pMeetN { background: var(--meet-bg); color: var(--meet); cursor: default; font-size: 14px; font-weight: 700; height: 28px; padding: 0 12px; gap: 6px; }   /* אותו גודל כמו "+ שיוך למפגש" (28px, 14px), ברוחב לפי התוכן; בשורה של המפגשים, משמאל לצ'יף השיוך */   /* בדיוק כמו צ'יף היתרה (אותו גודל וגופן); רק הצבע כתום */
     .mlist .mrow .mlabel { flex: none; text-align: center; font-size: 17px; font-weight: 800; padding: 0; }
     .mlist .mrow .pay { display: flex; align-items: center; justify-content: center; width: 100%; height: 34px; font-size: 14px; }
     .mlist .mrow .mline { display: flex; gap: 6px; }
@@ -1107,9 +1105,9 @@
     .rowwa { position: absolute; inset-inline-start: 12px; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; border-radius: 50%; background: var(--green-bg); color: var(--green); display: grid; place-items: center; z-index: 1; }
     .rowwa svg { width: 16px; height: 16px; }
     .rowwa.nophone { background: var(--red-bg); color: var(--red); cursor: default; }   /* אין טלפון: אדום ולא עושה כלום */
-    .clrow { display: flex; align-items: center; }
+    .clrow { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }   /* מונה המפגשים ושיוך למפגש בצד שמאל של השורה (בעברית flex-end = שמאל) */
     #qMenu .qi[data-am] { display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 14px; border-radius: 999px; background: var(--cream); color: var(--ink); font-weight: 700; font-size: 15px; width: auto; }
-    .clrow .addm { margin-inline-start: auto; height: 28px; padding: 0 12px; border-radius: 999px; background: #fff; border: 1px solid var(--line); color: var(--terra); font-weight: 700; font-size: 14px; }
+    .clrow .addm { height: 28px; padding: 0 12px; border-radius: 999px; background: #fff; border: 1px solid var(--line); color: var(--terra); font-weight: 700; font-size: 14px; }
     .clrow .addm[hidden] { display: none; }
     #mDelete.locked { opacity: .45; }   /* מפגש עם משתתפים משויכים: לא נמחק */
     .mlist .mrow { width: 174px; box-sizing: border-box; }   /* רוחב קבוע: מעבר בין הגיע ל-לא הגיע (או שינוי הסכום) לא משנה את הכרטיס */
@@ -1432,7 +1430,7 @@
       <div class="sheet-head">
         <button type="button" class="hbtn hback" id="pBack" aria-label="חזרה" title="חזרה" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></button>
         <h2 id="pTitle">משתתף חדש</h2>
-        <span class="paychip zero pmeetn" id="pMeetN" title="מספר המפגשים של המשתתף" hidden></span>
+        <button type="button" class="hbtn" id="pInfoBtn" aria-label="פרטי המשתתף" title="פרטי המשתתף" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button>
         <div class="paychip" id="pPayChip" hidden></div>
         <button type="button" class="paychip allocchip" id="pAllocChip" hidden></button>
         <div id="pMsgs"></div>
@@ -1442,7 +1440,7 @@
       <p id="pViewSub" class="pviewsub" hidden></p>
       <div class="ppanel" data-panel="main">
         <div id="pTagsSlot" hidden></div>
-        <div class="clabel clrow"><button type="button" class="addm" id="pAddMeet" hidden>+ שיוך למפגש</button></div>
+        <div class="clabel clrow"><button type="button" class="addm" id="pAddMeet" hidden>+ שיוך למפגש</button><span class="paychip zero pmeetn" id="pMeetN" title="מספר המפגשים של המשתתף" hidden></span></div>
         <div class="mlist" id="pMeetings"></div>
         <button type="button" class="more" id="pMore" hidden>טען עוד</button>
         <div class="nform">
@@ -2356,7 +2354,7 @@
       '<button type="button" role="menuitem" class="addm2" id="addMeeting">+ מפגש חדש</button>';
   }
   const closeMSel = () => { $('#mMenu').hidden = true; $('#mSel').setAttribute('aria-expanded', 'false'); };
-  $('#mSel').addEventListener('click', (e) => { e.stopPropagation(); const m = $('#mMenu'); m.hidden = !m.hidden; $('#mSel').setAttribute('aria-expanded', String(!m.hidden)); if (!m.hidden) { const host = m.offsetParent || m.parentElement, hr = host.getBoundingClientRect(); m.style.right = 'auto'; m.style.left = Math.round((window.innerWidth - m.offsetWidth) / 2 - hr.left) + 'px'; } });   // ממורכז אופקית במסך
+  $('#mSel').addEventListener('click', (e) => { e.stopPropagation(); const m = $('#mMenu'); m.hidden = !m.hidden; $('#mSel').setAttribute('aria-expanded', String(!m.hidden)); if (!m.hidden) { const host = m.offsetParent || m.parentElement, hr = host.getBoundingClientRect(); m.style.right = 'auto'; { const br = $('#mSel').getBoundingClientRect(); const x = window.innerWidth >= 700 ? Math.max(8, Math.min(Math.round(br.right - m.offsetWidth), window.innerWidth - m.offsetWidth - 8)) : Math.round((window.innerWidth - m.offsetWidth) / 2); m.style.left = Math.round(x - hr.left) + 'px'; } } });   // דסקטופ: הקצה הימני של התפריט בקו ישר עם הקצה הימני של הכותרת; במובייל ממורכז
   document.addEventListener('click', (e) => { if (!e.target.closest('.msel')) closeMSel(); });
 
   const WA_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.7.1-.2.3-.8.9-.9 1.1-.2.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.6l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 4.9 4.3.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3zM12 21.5c-1.7 0-3.4-.5-4.8-1.3l-.3-.2-3.6.9 1-3.5-.2-.4C3.2 15.6 2.7 13.8 2.7 12c0-5.1 4.2-9.3 9.3-9.3 2.5 0 4.8 1 6.6 2.7 1.8 1.8 2.7 4.1 2.7 6.6 0 5.2-4.2 9.5-9.3 9.5zM20 4C17.9 1.8 15 .7 12 .7 5.8.7.7 5.8.7 12c0 2 .5 3.9 1.5 5.6L.6 23.4l6-1.6c1.6.9 3.5 1.4 5.4 1.4 6.2 0 11.3-5.1 11.3-11.3 0-3-1.2-5.8-3.3-7.9z"/></svg>';
@@ -3830,7 +3828,7 @@
     });
     const ex = !!(sheet && sheet.id);
     { const pp0 = ex && state.participants.find((x) => x.id === sheet.id), tl = pp0 && telLink(pp0.phone), ca = $('#pCall'); ca.hidden = !(tab === 'info' && tl); if (tl) ca.href = tl; }   // כניסה לאזור האישי כפי שהמשתתף רואה: בפרטי המשתתף, בשמאל למעלה
-    $('#pBack').hidden = !(ex && tab !== 'main'); $('#pPayChip').dataset.tab = tab; if (tab !== 'deposit') { const c1 = $('#pAllocChip'); if (c1) c1.hidden = true; } $('#pTitle').classList.toggle('tap', ex && tab === 'main'); $('#pTitle').tabIndex = (ex && tab === 'main') ? 0 : -1; $('#pTitle').setAttribute('role', (ex && tab === 'main') ? 'button' : 'heading'); $('#pMsgs').hidden = tab !== 'main';
+    $('#pBack').hidden = !(ex && tab !== 'main'); $('#pPayChip').dataset.tab = tab; if (tab !== 'deposit') { const c1 = $('#pAllocChip'); if (c1) c1.hidden = true; } $('#pInfoBtn').hidden = !(ex && tab === 'main'); $('#pTitle').classList.remove('tap'); $('#pTitle').tabIndex = -1; $('#pTitle').setAttribute('role', 'heading'); $('#pMsgs').hidden = tab !== 'main';
     { const sub = tab === 'confirm' ? cvTitle : (tab === 'deposit' && sheet && sheet.depMid) ? 'הקצאה' : SUBVIEW[tab], pp0 = ex ? state.participants.find((x) => x.id === sheet.id) : null;
       const pm = sub && payCtx && state.meetings.find((x) => x.id === payCtx.mid);
       $('#pViewSub').hidden = !(sub && pm);
@@ -4197,8 +4195,8 @@
   /* לחיצה על הכותרת (השם והתגית, כל האזור) במסך הראשי פותחת את פרטי המשתתף */
   const openInfo = () => { if (pTab === 'main' && sheet && sheet.id) { viewStack = []; setPTab('info'); } };
   /* מאזינים על כל הכותרת ובודקים אם הלחיצה באזור השם והתגית (הכותרת נבנית מחדש בעדכונים, ולכן היעד של הלחיצה יכול להיות ההורה) */
-  $('#pDlg .sheet-head').addEventListener('click', (e) => { if (e.target.closest('#pBack, #pMsgs, #pCall, #pAllocChip, .saved')) return; { const cr = $('#pPayChip').getBoundingClientRect(); if (!$('#pPayChip').hidden && $('#pPayChip').offsetParent && e.clientX >= cr.left && e.clientX <= cr.right && e.clientY >= cr.top && e.clientY <= cr.bottom) { if (!e.target.closest('#pPayChip')) $('#pPayChip').click(); return; } } const r = $('#pTitle').getBoundingClientRect(); if (e.target.closest('#pTitle') || (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom)) openInfo(); });
-  $('#pTitle').addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && $('#pTitle').classList.contains('tap')) { e.preventDefault(); openInfo(); } });
+  $('#pDlg .sheet-head').addEventListener('click', (e) => { if (e.target.closest('#pBack, #pMsgs, #pCall, #pAllocChip, #pInfoBtn, .saved')) return; { const cr = $('#pPayChip').getBoundingClientRect(); if (!$('#pPayChip').hidden && $('#pPayChip').offsetParent && e.clientX >= cr.left && e.clientX <= cr.right && e.clientY >= cr.top && e.clientY <= cr.bottom) { if (!e.target.closest('#pPayChip')) $('#pPayChip').click(); return; } } });
+  $('#pInfoBtn').addEventListener('click', () => openInfo());   // אייקון הפרטים (ליד היתרה): פותח את פרטי המשתתף (במקום לחיצה על השם)
   $('#pBack').addEventListener('click', () => { if (pTab === 'promoter') promoFromPay = null; setPTab(viewStack.pop() || 'main'); });
   const goView = (v) => { viewStack.push(pTab); setPTab(v); };
   const toMain = () => { viewStack = []; setPTab('main'); };
@@ -4756,7 +4754,7 @@
     const m = $('#viewMenu'); if (!m.hidden) { closeView(); return; }
     renderViewMenu(); m.hidden = false; e.target.closest('#viewBtn').setAttribute('aria-expanded', 'true');
     const r = e.target.closest('#viewBtn').getBoundingClientRect(), mw = m.offsetWidth;
-    m.style.left = Math.max(8, Math.round((window.innerWidth - mw) / 2)) + 'px'; m.style.top = (r.bottom + 6) + 'px';
+    m.style.left = (window.innerWidth >= 700 ? Math.max(8, Math.min(Math.round(r.left), window.innerWidth - mw - 8)) : Math.max(8, Math.round((window.innerWidth - mw) / 2))) + 'px'; m.style.top = (r.bottom + 6) + 'px';   // דסקטופ: הקצה השמאלי של התפריט בקו ישר עם הקצה השמאלי של הכפתור; במובייל ממורכז
   });
   $('#viewMenu').addEventListener('click', (e) => {
     const b = e.target.closest('[data-vt]'); if (!b) return;
