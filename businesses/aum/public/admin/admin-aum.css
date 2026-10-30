@@ -1,0 +1,10 @@
+/* תוספות של אום לגיליון העיצוב של דף הניהול (admin.css מועתק מהרפתקה כמו שהוא) */
+/* טל היא המנהלת היחידה: בלי בחירת מנהל, בלי התחשבנות בין מנהלים ובלי "הקופה של" */
+#finSetBtn, label.field:has(select[name="by"]), .pmown { display: none !important; }
+.finlogbtn { margin-inline-start: auto; }
+.reddot { position: absolute; top: 5px; inset-inline-end: 5px; width: 10px; height: 10px; background: var(--red); border: 2px solid var(--bg); box-sizing: border-box; border-radius: 50% !important; }
+.reddot.inline { position: static; flex: 0 0 10px !important; min-width: 10px; border: 0; margin-inline-start: 6px; }
+.reddot[hidden] { display: none !important; }
+#setDlg .setsw { flex: 0 0 auto; padding: 6px 14px; font-weight: 800; font-size: 14px; background: var(--orange-ink); color: #fff; }
+#setDlg .setsw.on { background: var(--green); }
+#setDlg .setbtnrow { width: 100%; text-align: right; background: none; }
