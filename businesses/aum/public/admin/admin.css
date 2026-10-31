@@ -263,6 +263,7 @@ dialog::-webkit-scrollbar, dialog *::-webkit-scrollbar { display: none; width: 0
 .qmenu .qi { height: 40px; padding: 0 12px; font-weight: 600; font-size: 15px; border: 1px solid transparent; }
 .qmenu .qi:not([data-qk]):not([data-qm]):not([data-sf]):not([data-at]), .qmenu .qedit, .qmenu .qhd { flex: 1 1 100%; }
 .qmenu .qhd { padding: 8px 0 0; font-size: 12px; font-weight: 700; color: var(--text-2); text-align: center; }
+.qmenu .qtop { flex: 1 1 100%; display: flex; justify-content: center; }   /* "הסרה מהמפגש" בשורה משלה בראש התפריט */
 .qmenu .qedit, .qeditlink { display: flex; align-items: center; justify-content: center; gap: 8px; height: 32px; background: transparent; color: var(--text-2); font-size: 13px; font-weight: 600; }
 
 /* 3.10 שורת רשימה (שטוחה): תנועות, יומנים, שורות הגדרה */
@@ -949,7 +950,8 @@ html.is-loading .hgrp { visibility: hidden; }
 .listbar .hsearch { position: relative; flex: 1 1 auto; min-width: 0; height: 100%; margin: 0; }
 .listbar .hsearch input { display: block; width: 100%; height: 100%; padding: 0 9px 0 calc(var(--ind) + 8px); border: 0; background: transparent; font-size: 16px; color: var(--text); cursor: text; }
 .listbar .hsearch input:focus { outline: none; }
-.listbar .hsearch input::placeholder { color: var(--text-3); }
+.listbar .hsearch input::placeholder { color: var(--text-3); text-overflow: ellipsis; }
+.listbar .hsearch input:placeholder-shown:not(:focus) { padding-left: 9px; text-overflow: ellipsis; }   /* כשהשדה ריק ולא בפוקוס אין איקס, ולכן לא שומרים לו מקום: הטקסט "חיפוש או הוספת משתתף" לא נחתך בשדה צר (31.10.26) */
 
 /* ---------- שורת הסינון והמיון: שתי תגיות (סינון, מיון); נקודה = יש סינון שלא רואים בשורה / מיון שאינו ברירת המחדל ---------- */
 .vbar { position: relative; display: flex; align-items: center; gap: 8px; padding: 0 var(--gut); }
@@ -991,8 +993,8 @@ html.is-loading .vbar { display: none; }
 #sortBtnH { position: relative; }
 #sortBtnH::before { content: ''; position: absolute; top: -4px; bottom: -4px; left: -12px; right: -24px; }
 .listbar .hsearch { margin-left: var(--srch-end, calc(var(--ind) + 8px)); }   /* השדה נגמר איפה שנגמרת עמודת השמות (JS: alignFilters); האיקס בקצה שלו */
-.listbar::after { content: ''; position: absolute; bottom: 0; inset-inline: var(--gut) calc(var(--gut) + var(--srch-end, calc(var(--ind) + 8px))); border-bottom: 1px solid var(--line); pointer-events: none; }   /* קו מתחת לשדה החיפוש */
-.listbar:has(.search:focus-within)::after { border-bottom-color: var(--text); }
+.listbar .hsearch { box-shadow: inset 0 -1px 0 var(--line); }   /* הקו מתחת לשדה החיפוש בלבד (לא מתחת לסמל הסינון); כהה בפוקוס */
+.listbar .hsearch:focus-within { box-shadow: inset 0 -1px 0 var(--text); }
 .listbar .lbsort { position: absolute; left: var(--gut); top: 50%; margin-top: calc(var(--ind) / -2); display: flex; }
 
 /* ---------- דסקטופ רחב (מ-1024px, 31.10.26): הרשימה בעמודה בצד ימין, וכרטיס המשתתף בצד שמאל במקום פופאפ ---------- */

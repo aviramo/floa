@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=9c1f0685" />
+  <link rel="stylesheet" href="admin.css?v=5d9c8a99" />
   <link rel="stylesheet" href="admin-aum.css?v=addde193" />
 </head>
 <body class="locked">
@@ -487,6 +487,7 @@
   window.addEventListener('popstate', () => {
     if (NAV.ignore > 0) { NAV.ignore--; return; }
     const top = NAV.stack[NAV.stack.length - 1]; if (!top) return;
+    if (top.d.tagName === 'DIALOG' && !top.d.open) { NAV.stack.pop(); return; }   // רשומה ישנה של פופאפ שכבר סגור (נסגר מחוץ ל-close שלנו): החזרה הזו שייכת לה, לא סוגרים כלום
     NAV.fromPop = true;
     try {
       const dep = navDepthOf(top.d);   // ההחלטה לפי המסך שמוצג בפועל (לא לפי מונה שמור שעלול להתפספס): בתוך מסך משנה חוזרים צעד, רק במסך הראשי סוגרים
@@ -1210,7 +1211,7 @@
   const payKeys = (s) => s ? String(s).split(',').filter(Boolean) : [];   // סינון סטטוסים מרובה: state.pay הוא מפתחות מופרדים בפסיק
   /* סינון בתוך מפגש: איחוד (אחד מהסטטוסים). בתצוגת הכל: חיתוך (כל התגיות שנבחרו יחד) */
   /* חיתוך בין קבוצות: סטטוסים של מפגש (אחד מהם) וגם תגיות של משתתף (כולן); תגיות מוצגות בתוך מפגש רק כשהכפתור פעיל */
-  const matchPay = (p, keys) => { if (!keys.length) return true; const S = keys.filter((k) => !isPKey(k)), T = keys.filter((k) => isPKey(k)); return (!S.length || S.some((k) => stMatchEff(p, k))) && (!T.length || T.every((k) => stMatchEff(p, k))); };
+  const matchPay = (p, keys) => { if (!keys.length) return true; const S = keys.filter((k) => !isPKey(k)), T = keys.filter((k) => isPKey(k)); return (!S.length || S.some((k) => stMatch(p, k))) && (!T.length || T.every((k) => stMatch(p, k))); };
   const effPay = () => state.q.trim() ? null : state.pay;
   /* טוגל "הגעה למפגש": ידני בלבד (31.10.26), בלי פתיחה אוטומטית לפי שעת המפגש; בתצוגה הכללית null = דולק (התמדה) */
   /* העדפות תצוגה ברמת המשתמש ובמפגש (27.10.26): לכל מנהל, לכל מפגש ולתמונת המצב הכללית ("all") ערכים משלהם לטוגלים (תגיות, תשלום: true/false; שליחה, הגעה: null = אוטומטי לפי התזמונים של אותו מפגש). state.showTags וחבריו הם מאפיינים שמחזירים וכותבים את ערכי ההקשר הנוכחי (המפגש הנבחר או "all"), כך שבמעבר בין מפגשים התצוגה מתחלפת איתם. נשמר ב-harpatka_admin_prefs.view_scopes */
@@ -1304,10 +1305,8 @@
     return mtSet.s.has(p.id);
   };
   /* סינון וספירה לפי סטטוס: משתתף נספר ומוצג גם בסטטוס של לפני המפגש וגם בסטטוס של אחרי המפגש שיש לו (בשורה עצמה מוצג רק של אחרי המפגש, אם יש, `dispStatus`) */
-  const hasStatus = (l, key) => linkStatus(l) === key || meetingKeyOf(l) === key;
-  const stMatch = (p, key) => { if (key === PNONE) return !ptagsOf(p).length; if (isPKey(key)) return ptagsOf(p).includes(key); if (state.filter) { const l = linkOf(p.id, state.filter); return !!l && hasStatus(l, key); } return linksOf(p.id).some((l) => hasStatus(l, key)); };
-  /* הסינון בפס הצ'יפים: לפי הסטטוס שמוצג (סטטוס מפגש גובר על סטטוס הרשמה, `dispStatus`); הספירות בצ'יפים נשארות לפי stMatch (נספרים לפי שני הסטטוסים) */
-  const stMatchEff = (p, key) => { if (key === PNONE) return !ptagsOf(p).length; if (isPKey(key)) return ptagsOf(p).includes(key); if (state.filter) { const l = linkOf(p.id, state.filter); return !!l && dispStatus(l) === key; } return linksOf(p.id).some((l) => dispStatus(l) === key); };
+  /* סטטוס של משתתף בפס הצ'יפים (סינון, ספירה והצגת הצ'יפ): לפי הסטטוס שמוצג בשורה, סטטוס מפגש גובר על סטטוס הרשמה (`dispStatus`), כך שהמספר בצ'יף שווה למה שמוצג אחרי הלחיצה (31.10.26) */
+  const stMatch = (p, key) => { if (key === PNONE) return !ptagsOf(p).length; if (isPKey(key)) return ptagsOf(p).includes(key); if (state.filter) { const l = linkOf(p.id, state.filter); return !!l && dispStatus(l) === key; } return linksOf(p.id).some((l) => dispStatus(l) === key); };
   function renderFacets() {
     normFilter();
     const q = state.q.trim().toLowerCase(), qd = digits(q), eg = effGender(), ep = effPay();
@@ -1483,7 +1482,7 @@
       let side = '';
       if (state.filter) {
         const l = linkOf(p.id, state.filter);
-        if (!l) side = UI.tag('לא משויך', 'ptag unpaid', { 'data-qs': p.id, role: 'button', tabindex: 0, title: 'לא משויך למפגש (לחיצה לבחירת סטטוס ושיוך)' });
+        if (!l) side = UI.tag('שיוך למפגש', 'ptag unpaid', { 'data-qs': p.id, role: 'button', tabindex: 0, title: 'לא משויך למפגש (לחיצה לבחירת סטטוס ושיוך)' });
         else { const st = dispStatus(l); side = UI.tag(STATUS_LABEL[st], 'ptag ' + st, { 'data-qs': p.id, role: 'button', tabindex: 0, title: 'סטטוס (לחיצה לשינוי)' }); }   // תצוגה בלבד: לחיצה על הכרטיס פותחת את פרטי המשתתף, ושם משנים סטטוס
       }
       let tags = '', payIc = '';
@@ -2078,7 +2077,7 @@
     const up = ls.filter((l) => { const m = state.meetings.find((x) => x.id === l.meeting_id); return m && !isPast(m); }).sort((a, b) => key(a).localeCompare(key(b)))[0];
     return up || ls.slice().sort((a, b) => key(b).localeCompare(key(a)))[0] || null;
   };
-  const closeQ = () => { $('#qMenu').hidden = true; $('#qMenu').className = 'qmenu'; };
+  const closeQ = () => { const q = $('#qMenu'); q.hidden = true; q.className = 'qmenu'; q.style.width = ''; };
   /* קישור קטן "עריכה" בכל מקום שבוחרים סטטוס: פותח את ניהול הסטטוסים בהגדרות על הסוג המתאים */
   const editBtn = () => '';   // עריכת סטטוסים ותוויות רק דרך ההגדרות
   function openStatusSettings(scope) {
@@ -2101,6 +2100,15 @@
     const h = pendBegin(pid, mid, body); Object.assign(l, body); refresh();
     try { await api(T.a + '?participant_id=eq.' + pid + '&meeting_id=eq.' + mid, { method: 'PATCH', body }); pendDone(h); toast(next ? 'הסטטוס עודכן: ' + STATUS_LABEL[next] : 'הסטטוס הוסר'); }
     catch (err) { pendFail(h); const l2 = linkOf(pid, mid); if (l2) Object.assign(l2, { meeting_key: prevKey }); refresh(); fail(err); }
+  }
+  /* רוחב תפריט הסטטוס המהיר לפי התוכן: השורה הרחבה ביותר של הצ'יפים (עד הרוחב המרבי), בלי שוליים ריקים בצדדים; אותה חלוקה לשורות כמו ברוחב המלא */
+  function fitQMenu(menu) {
+    menu.style.width = '';
+    const cs = getComputedStyle(menu), padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + 2, max = menu.getBoundingClientRect().width;
+    const rows = new Map();
+    menu.querySelectorAll('button.qi').forEach((b) => { const r = b.getBoundingClientRect(), k = Math.round(r.top), o = rows.get(k) || { l: Infinity, r: -Infinity }; o.l = Math.min(o.l, r.left); o.r = Math.max(o.r, r.right); rows.set(k, o); });
+    let w = 0; rows.forEach((o) => { w = Math.max(w, o.r - o.l); });
+    if (w > 0) menu.style.width = Math.min(max, Math.ceil(w + padX)) + 'px';
   }
   function openQuickMenu(pid, anchor, mid) {
     const menu = $('#qMenu'), inMeeting = !!(mid || state.filter);
@@ -2127,13 +2135,13 @@
       const held = meetingKeyOf(ll);
       return '<div class="qhd">סטטוס מפגש</div>' + list.map((s) => '<button type="button" role="menuitem" class="qi ' + s.key + '" data-qm="' + s.key + '" aria-pressed="' + (held === s.key) + '">' + esc(s.label) + '</button>').join('');
     };
-    const phSecs = phaseSecs();   // כשיש גם סטטוס מפגש, סטטוסי ההרשמה מקבלים כותרת, לעקביות
+    const phSecs = phaseSecs();   // מקטע סטטוס מפגש (רק מ-שעה לפני תחילת המפגש); סטטוסי ההרשמה תמיד עם כותרת
     menu.innerHTML =
-      (phSecs ? '<div class="qhd">סטטוס הרשמה</div>' : '') +
-      (noneOk ? '<button type="button" role="menuitem" class="qi tone-red" data-qk="__none" aria-pressed="false">הסרה מהמפגש</button>' : '') +
+      (noneOk ? '<div class="qtop"><button type="button" role="menuitem" class="qi tone-red" data-qk="__none" aria-pressed="false">הסרה מהמפגש</button></div>' : '') +   // "הסרה מהמפגש" בשורה משלה בראש התפריט, מעל סטטוס הרשמה
+      (inMeeting ? '<div class="qhd">סטטוס הרשמה</div>' : '') +   // הכותרת תמיד בתוך מפגש, גם כשעוד אין מקטע "סטטוס מפגש" (לפני שעה מתחילת המפגש)
       (inMeeting ? statusList(qTid) : pstatusList().slice().reverse()).map((s) => '<button type="button" role="menuitem" class="qi ' + s.key + '" data-qk="' + s.key + '" aria-pressed="' + (inMeeting ? s.key === cur : tagSet.has(s.key)) + '">' + esc(s.label) + '</button>').join('') +
       phSecs;
-    menu.hidden = false;
+    menu.hidden = false; fitQMenu(menu);   // רוחב התפריט לפי התוכן (השורה הרחבה ביותר של הצ'יפים), לא קבוע
     const r = anchor.getBoundingClientRect(), mw = menu.offsetWidth, mh = menu.offsetHeight;
     let left = Math.min(Math.max(8, r.left), window.innerWidth - mw - 8), top = r.bottom + 8;
     if (top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 8);
@@ -2156,7 +2164,7 @@
     const free = state.meetings.filter((m) => !linkOf(pid, m.id)).sort((a, b) => (b.meeting_date + b.meeting_time).localeCompare(a.meeting_date + a.meeting_time));
     if (!free.length) return;
     const host = anchor.closest('dialog') || document.body; if (menu.parentNode !== host) host.appendChild(menu);
-    menu.className = 'qmenu am';
+    menu.className = 'qmenu am'; menu.style.width = '';
     menu.innerHTML = free.map((m) => '<button type="button" role="menuitem" class="qi" data-am="' + m.id + '">' + esc(dmShort(m)) + ' · ' + esc(String(m.meeting_time).slice(0, 5)) + '</button>').join('');
     menu.hidden = false;
     const r = anchor.getBoundingClientRect(), mw = menu.offsetWidth, mh = menu.offsetHeight;
@@ -2722,7 +2730,7 @@
     { const sub = tab === 'confirm' ? cvTitle : (tab === 'deposit' && sheet && sheet.depMid) ? 'הקצאה' : SUBVIEW[tab], pp0 = ex ? state.participants.find((x) => x.id === sheet.id) : null;
       const allocScr = tab === 'deposit' && sheet && sheet.depMid, pm = sub && state.meetings.find((x) => x.id === (allocScr ? sheet.depMid : payCtx && payCtx.mid));
       $('#pViewSub').hidden = !(sub && pm);
-      if (sub) { $('#pTitle').innerHTML = esc(sub) + (pp0 ? ' <span class="tsubname">· ' + esc(pp0.name) + '</span>' : ''); $('#pViewSub').innerHTML = !pm ? '' : allocScr ? [(pm.name || (typeById(typeIdOf(pm)) || {}).name || ''), meetingLabel(pm, true)].filter(Boolean).map(esc).join(' · ') : esc(meetingLabel(pm, true)); }   // מסך ההקצאה: "<שם המפגש> · <יום תאריך שעה>" בטקסט קטן מתחת לכותרת, מיושר אליה וצמוד אליה   // שם המשתתף ליד הכותרת
+      if (sub) { $('#pTitle').innerHTML = esc(sub) + (pp0 ? ' <span class="tsubname">· ' + esc(pp0.name) + '</span>' : ''); $('#pViewSub').innerHTML = !pm ? '' : allocScr ? esc(meetingLabel(pm, true)) : esc(meetingLabel(pm, true)); }   // מסך ההקצאה: "<יום תאריך שעה>" (בלי שם המפגש) בטקסט קטן מתחת לכותרת, מיושר אליה וצמוד אליה   // שם המשתתף ליד הכותרת
       else if (ex) setTitle(pp0); }
     if (tab === 'main') { renderContact(); renderNotes(); }
     if (tab === 'wallet') renderWallet();
@@ -2770,7 +2778,7 @@
     if (!menu.hidden) { closeQ(); return; }
     if (menu.parentNode !== host) host.appendChild(menu);
     const fr = sheet.modeApi.free(), alv = Math.round(allocatedOf(sheet.id, sheet.depMid) * 100) / 100;
-    menu.className = 'qmenu am2';
+    menu.className = 'qmenu am2'; menu.style.width = '';
     const rpt = !fr && !(alv > 0) && reportedOf(sheet.id, sheet.depMid);
     menu.innerHTML = (rpt ? '<button type="button" role="menuitem" class="qi rej" data-md="reject" aria-pressed="false">דחיית דיווח</button>' : '') + (fr ? '<button type="button" role="menuitem" class="qi" data-md="pay" aria-pressed="false">לתשלום</button>' : (alv > 0 ? '<button type="button" role="menuitem" class="qi del" data-md="del" aria-pressed="false">מחיקת הקצאה</button>' : '') + '<button type="button" role="menuitem" class="qi free" data-md="free" aria-pressed="false"><span class="nps">₪</span>חינם</button>');   // בדיוק כמו המצבים בכרטיס המפגש: לתשלום (ניטרלי), חינם (לבן עם ₪ מחוק)
     menu.hidden = false;
@@ -3197,6 +3205,7 @@
       if (DRAWERS.includes(d.id)) { const h = d.querySelector('.sheet-head'); if (h) { const x = document.createElement('button'); x.type = 'button'; x.className = 'hbtn dclose'; x.setAttribute('aria-label', 'סגירה'); x.title = 'סגירה'; x.innerHTML = icon('close'); x.addEventListener('click', () => d.close()); h.appendChild(x); } }   // כפתור סגירה לפאנל מצד שמאל (מוצג רק בדסקטופ)
       const g = document.createElement('div'); g.className = 'grab'; g.innerHTML = '<i></i>'; g.setAttribute('aria-hidden', 'true');
       d.insertBefore(g, d.firstChild);
+      d.addEventListener('close', () => { navClose(d); });   // סגירה שלא עברה דרך close שלנו (form method=dialog, או הדפדפן סוגר דיאלוג בלחיצה על "חזרה" כשאי אפשר לבטל): מחזירים את רשומת ההיסטוריה שנוספה בפתיחה, אחרת המחסנית של "חזרה" מתמלאת
       d.addEventListener('cancel', (e) => {   // Escape או כפתור "חזרה" של הדפדפן/אנדרואיד (Chrome סוגר דיאלוג מודלי לפני ההיסטוריה): בתוך מסך משנה חוזרים צעד אחד כמו בחץ שבפופאפ, ורק במסך הראשי סוגרים
         e.preventDefault();
         const top = NAV.stack.find((x) => x.d === d), bk = top && navDepthOf(d) > 0 && NAV_BACK[d.id] ? $(NAV_BACK[d.id]) : null;
@@ -3371,7 +3380,7 @@
       const freeL = !!(sheet.id && on && noPayOf(state.participants.find((x) => x.id === sheet.id), linkOf(sheet.id, m.id)));   // לא משלם על המפגש: מוצג "חינם" ולא "תשלום"
       return '<div class="mrow' + (on ? ' on' : '') + (sheet.hl === m.id ? ' hl' : '') + '" data-mrow="' + m.id + '">' +
         UI.tag(dmShort(m), 'mlabel') +
-        '<button type="button" class="pay ' + (on ? st : 'none') + '" data-mp="' + m.id + '" title="' + (on ? 'שינוי סטטוס' : 'לא משויך למפגש') + '">' + (on ? esc(STATUS_LABEL[st]) : 'לא משויך') + '</button>' +
+        '<button type="button" class="pay ' + (on ? st : 'none') + '" data-mp="' + m.id + '" title="' + (on ? 'שינוי סטטוס' : 'לא משויך למפגש') + '">' + (on ? esc(STATUS_LABEL[st]) : 'שיוך למפגש') + '</button>' +
         '<div class="mline">' + (sheet.id ? '<button type="button" class="mmoney' + (allocatedOf(sheet.id, m.id) > 0 ? ' has' : freeL ? ' free' : reportedOf(sheet.id, m.id) ? ' wait' : '') + '" data-mm="' + m.id + '"' + (on ? '' : ' hidden') + ' title="תשלום למפגש">' + (allocatedOf(sheet.id, m.id) > 0 ? '₪' + nfm(allocatedOf(sheet.id, m.id)) : freeL ? '<span class="nps">₪</span>חינם' : reportedOf(sheet.id, m.id) ? 'דווח' + reportedAmt(sheet.id, m.id) : 'תשלום') + '</button>' : '') +
         '</div>' +
       '</div>';
