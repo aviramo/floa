@@ -881,3 +881,139 @@ begin
   update public.aum_statuses set type_id = v_id where type_id is null and coalesce(scope, 'meeting') <> 'participant' and key <> 'unpaid';
 end $$;
 notify pgrst, 'reload schema';
+
+
+-- 23: סטטוס "במפגש" (הגיע), ציון התמדה לסטטוס, ותבניות הודעה לוואטסאפ (מהרפתקה). הכול תוספתי.
+alter table public.aum_statuses drop constraint if exists aum_statuses_phase_check;
+alter table public.aum_statuses add constraint aum_statuses_phase_check check (phase in ('before','during','after'));
+alter table public.aum_registrations add column if not exists during_key text;
+alter table public.aum_statuses add column if not exists points integer not null default 0;
+do $c$ begin
+  if not exists (select 1 from pg_constraint where conname = 'aum_statuses_points_range' and conrelid = 'public.aum_statuses'::regclass) then
+    alter table public.aum_statuses add constraint aum_statuses_points_range check (points between -5 and 5);
+  end if;
+end $c$;
+insert into public.aum_statuses (key, label, color, sort, scope, phase, points, type_id)
+select 'arrived', 'הגיע', 'green', 0, 'meeting', 'during', 1, (select id from public.aum_meeting_types order by sort, created_at limit 1)
+on conflict (key) do nothing;
+
+create or replace function public.aum_att_during_mirror() returns trigger language plpgsql as $f$
+begin
+  if tg_op = 'UPDATE' and new.during_key is not distinct from old.during_key and coalesce(new.attended, false) is distinct from coalesce(old.attended, false) then
+    if new.attended then new.during_key := 'arrived'; elsif new.during_key = 'arrived' then new.during_key := null; end if;
+  elsif tg_op = 'INSERT' and coalesce(new.attended, false) and new.during_key is null then
+    new.during_key := 'arrived';
+  end if;
+  new.attended := coalesce(new.during_key = 'arrived', false);
+  if new.attended then
+    new.attended_at := case when tg_op = 'UPDATE' and coalesce(old.attended, false) then coalesce(old.attended_at, now()) else coalesce(new.attended_at, now()) end;
+  else
+    new.attended_at := null;
+  end if;
+  return new;
+end $f$;
+drop trigger if exists aum_att_during_mirror on public.aum_registrations;
+create trigger aum_att_during_mirror before insert or update on public.aum_registrations for each row execute function public.aum_att_during_mirror();
+
+CREATE OR REPLACE FUNCTION public.aum_reg_notes()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare lbl text; ok text; nk text;
+begin
+  if current_setting('aum.skip_note', true) = '1' then return null; end if;
+  if tg_op = 'INSERT' then
+    if coalesce(new.attended, false) then
+      perform public.aum_sys_note(new.participant_id, 'הגיע/ה למפגש ' || public.aum_meeting_label(new.event_id) || ' (ללא הרשמה מראש)', 'walk_in', new.event_id);
+    else
+      perform public.aum_sys_note(new.participant_id, case when auth.jwt() ->> 'email' is null then 'נרשם/ה מהאתר למפגש ' else 'שויך/ה למפגש ' end || public.aum_meeting_label(new.event_id), 'meeting_linked', new.event_id);
+    end if;
+  elsif tg_op = 'UPDATE' then
+    lbl := public.aum_meeting_label(new.event_id);
+    ok := coalesce(old.status_key, public.aum_pay_code(old.paid, old.exempt, old.pay_requested_at, old.will_pay, old.maybe));
+    nk := coalesce(new.status_key, public.aum_pay_code(new.paid, new.exempt, new.pay_requested_at, new.will_pay, new.maybe));
+    if ok <> nk then
+      perform public.aum_sys_note(new.participant_id, 'סטטוס למפגש ' || lbl || ': ' || coalesce(public.aum_status_label(nk), nk)
+        || case when nk = 'paid' and new.paid_amount is not null then ' ₪' || trim(to_char(new.paid_amount, 'FM999990.##')) else '' end
+        || case when nk = 'paid' and new.pay_method is not null then ' ב' || public.aum_method_label(new.pay_method, new.pay_method_note) else '' end
+        || ' (היה: ' || coalesce(public.aum_status_label(ok), ok) || ')',
+        'status_changed', new.event_id, ok, nk, case when nk = 'paid' then new.paid_amount end, case when nk = 'paid' then new.pay_method end);
+    end if;
+    if new.after_key is distinct from old.after_key then
+      perform public.aum_sys_note(new.participant_id, 'סטטוס אחרי המפגש ' || lbl || ': ' || coalesce(public.aum_status_label(new.after_key), 'ללא') || ' (היה: ' || coalesce(public.aum_status_label(old.after_key), 'ללא') || ')',
+        'after_status_changed', new.event_id, old.after_key, new.after_key);
+    end if;
+    if new.during_key is distinct from old.during_key and not ((old.during_key is null and new.during_key = 'arrived') or (old.during_key = 'arrived' and new.during_key is null)) then
+      perform public.aum_sys_note(new.participant_id, 'סטטוס במפגש ' || lbl || ': ' || coalesce(public.aum_status_label(new.during_key), 'ללא') || ' (היה: ' || coalesce(public.aum_status_label(old.during_key), 'ללא') || ')',
+        'during_status_changed', new.event_id, old.during_key, new.during_key);
+    end if;
+    if coalesce(old.attended, false) <> coalesce(new.attended, false) then
+      perform public.aum_sys_note(new.participant_id, case when new.attended then 'הגיע/ה למפגש ' else 'סימון ההגעה בוטל למפגש ' end || lbl, case when new.attended then 'attended' else 'attendance_cancelled' end, new.event_id);
+    end if;
+    if coalesce(old.no_pay, false) <> coalesce(new.no_pay, false) then   -- סימון "חינם" במסך ההקצאה
+      perform public.aum_sys_note(new.participant_id, case when coalesce(new.no_pay, false) then 'המפגש ' || lbl || ' סומן כחינם' else 'החינם בוטל למפגש ' || lbl end,
+        case when coalesce(new.no_pay, false) then 'free_on' else 'free_off' end, new.event_id);
+    end if;
+    if (old.details_sent_at is null) <> (new.details_sent_at is null) then
+      perform public.aum_sys_note(new.participant_id, case when new.details_sent_at is not null then 'נשלחו פרטי המפגש (וואטסאפ) למפגש ' else 'סימון שליחת פרטי המפגש בוטל למפגש ' end || lbl,
+        case when new.details_sent_at is not null then 'details_sent' else 'details_unsent' end, new.event_id);
+    end if;
+  elsif tg_op = 'DELETE' then
+    perform public.aum_sys_note(old.participant_id, 'הוסר/ה מהמפגש ' || public.aum_meeting_label(old.event_id), 'meeting_removed', old.event_id);
+  end if;
+  return null;
+exception when others then return null;
+end $function$
+;
+drop trigger if exists aum_reg_notes_t on public.aum_registrations;
+create trigger aum_reg_notes_t after insert or delete or update of paid, exempt, pay_requested_at, will_pay, maybe, status_key, after_key, during_key, attended, details_sent_at, no_pay on public.aum_registrations for each row execute function public.aum_reg_notes();
+
+do $m$ begin
+  perform set_config('aum.skip_note', '1', true);
+  update public.aum_registrations set during_key = 'arrived' where attended and during_key is distinct from 'arrived';
+  perform set_config('aum.skip_note', '', true);
+end $m$;
+
+create table if not exists public.aum_msg_templates (
+  id uuid primary key default gen_random_uuid(),
+  type_id uuid references public.aum_meeting_types(id) on delete cascade,
+  meeting_id uuid references public.aum_events(id) on delete cascade,
+  name text not null default '' check (char_length(name) <= 60),
+  body text not null default '' check (char_length(body) <= 2000),
+  sort int not null default 0,
+  created_at timestamptz not null default now(),
+  check ((type_id is null) <> (meeting_id is null))
+);
+create index if not exists aum_msg_templates_type on public.aum_msg_templates (type_id);
+create index if not exists aum_msg_templates_meeting on public.aum_msg_templates (meeting_id);
+alter table public.aum_msg_templates enable row level security;
+drop policy if exists "aum admin all" on public.aum_msg_templates;
+create policy "aum admin all" on public.aum_msg_templates for all to authenticated using (public.aum_is_admin()) with check (public.aum_is_admin());
+grant all on public.aum_msg_templates to authenticated, service_role;
+do $$ begin alter publication supabase_realtime add table public.aum_msg_templates; exception when duplicate_object then null; when undefined_object then null; end $$;
+
+insert into public.aum_msg_templates (type_id, name, body, sort)
+select mt.id, 'הודעה לפני המפגש',
+  coalesce(nullif(btrim(mt.event_msg), ''), E'היום זה קורה!\nנפגשים היום ב{מקום}.\n{הוראות הגעה}\nהתכנסות: {התכנסות}, מתחילים ב-{התחלה} ועד {סיום}.\n\nמומלץ להגיע בבגדים נוחים ובקבוק מים.\nמחכה לכם, טל'),
+  0
+from public.aum_meeting_types mt
+where not exists (select 1 from public.aum_msg_templates x where x.type_id = mt.id);
+
+create table if not exists public.aum_msg_sent (
+  id uuid primary key default gen_random_uuid(),
+  participant_id uuid not null references public.aum_participants(id) on delete cascade,
+  meeting_id uuid not null references public.aum_events(id) on delete cascade,
+  tpl_key text not null,
+  sent_at timestamptz not null default now(),
+  sent_by text,
+  unique (participant_id, meeting_id, tpl_key)
+);
+create index if not exists aum_msg_sent_meeting on public.aum_msg_sent (meeting_id);
+alter table public.aum_msg_sent enable row level security;
+drop policy if exists "aum admin all" on public.aum_msg_sent;
+create policy "aum admin all" on public.aum_msg_sent for all to authenticated using (public.aum_is_admin()) with check (public.aum_is_admin());
+grant all on public.aum_msg_sent to authenticated, service_role;
+do $$ begin alter publication supabase_realtime add table public.aum_msg_sent; exception when duplicate_object then null; when undefined_object then null; end $$;
+notify pgrst, 'reload schema';
