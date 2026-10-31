@@ -794,3 +794,88 @@ notify pgrst, 'reload schema';
 
 -- 20: דחיית דיווח תשלום
 alter table public.aum_registrations add column if not exists pay_rejected_at timestamptz;
+
+-- 21: סוגי מפגשים (מהרפתקה). לכל מפגש סוג, ולכל סוג: ברירות מחדל למפגש חדש, הגדרות סימון הגעה והודעה לפני המפגש, וסטטוסים משלו.
+-- מפגש יורש שדה שנשאר ריק ("כמו בסוג"): הערך נשמר בעמודות המפגש עצמן, כך שדף הבית וה-RPC קוראים כרגיל. הכול תוספתי.
+create table if not exists public.aum_meeting_types (
+  id uuid primary key default gen_random_uuid(),
+  name text not null default '' check (char_length(name) <= 80),
+  sort int not null default 0,
+  meeting_time time,
+  place text,
+  city text check (city is null or char_length(city) <= 40),
+  max_participants int,
+  directions text check (directions is null or char_length(directions) <= 800),
+  price_tiers jsonb,
+  image_url text,
+  att_lead text,
+  event_open text,
+  event_msg text,
+  created_at timestamptz not null default now()
+);
+alter table public.aum_meeting_types enable row level security;
+drop policy if exists "aum admin all" on public.aum_meeting_types;
+create policy "aum admin all" on public.aum_meeting_types for all to authenticated using (public.aum_is_admin()) with check (public.aum_is_admin());
+grant all on public.aum_meeting_types to authenticated, service_role;
+do $$ begin alter publication supabase_realtime add table public.aum_meeting_types; exception when duplicate_object then null; when undefined_object then null; end $$;
+
+alter table public.aum_events add column if not exists type_id uuid references public.aum_meeting_types(id) on delete restrict;
+alter table public.aum_events add column if not exists inherit text[] not null default '{}';
+alter table public.aum_statuses add column if not exists type_id uuid references public.aum_meeting_types(id) on delete cascade;
+
+create or replace function public.aum_meeting_inherit() returns trigger
+language plpgsql as $fn$
+declare t public.aum_meeting_types%rowtype;
+begin
+  if new.type_id is not null and coalesce(cardinality(new.inherit), 0) > 0 then
+    select * into t from public.aum_meeting_types where id = new.type_id;
+    if t.id is not null then
+      if 'name' = any(new.inherit) then new.name := nullif(btrim(coalesce(t.name, '')), ''); end if;
+      if 'meeting_time' = any(new.inherit) then new.start_time := coalesce(t.meeting_time, new.start_time, '09:00'); end if;
+      if 'place' = any(new.inherit) then new.location := t.place; end if;
+      if 'city' = any(new.inherit) then new.city := t.city; end if;
+      if 'max_participants' = any(new.inherit) then new.capacity := t.max_participants; end if;
+      if 'directions' = any(new.inherit) then new.directions := coalesce(t.directions, ''); end if;
+      if 'price_tiers' = any(new.inherit) then new.price_tiers := t.price_tiers; end if;
+      if 'image_url' = any(new.inherit) then new.image_url := t.image_url; end if;
+    end if;
+  end if;
+  if new.location is null then new.location := 'גדרה'; end if;
+  if new.price_tiers is not null and (new.price_tiers->>'base') ~ '^[0-9]+(\.[0-9]+)?$' then new.price := round((new.price_tiers->>'base')::numeric)::int; end if;
+  return new;
+end $fn$;
+drop trigger if exists aum_meeting_inherit on public.aum_events;
+create trigger aum_meeting_inherit before insert or update on public.aum_events
+  for each row execute function public.aum_meeting_inherit();
+
+create or replace function public.aum_type_propagate() returns trigger
+language plpgsql security definer set search_path to 'public' as $fn$
+begin
+  if (new.name, new.meeting_time, new.place, new.city, new.max_participants, new.directions, new.price_tiers::text, new.image_url)
+     is not distinct from (old.name, old.meeting_time, old.place, old.city, old.max_participants, old.directions, old.price_tiers::text, old.image_url) then return new; end if;
+  update public.aum_events set inherit = inherit
+   where type_id = new.id and cardinality(inherit) > 0 and event_date >= (now() at time zone 'Asia/Jerusalem')::date;
+  return new;
+end $fn$;
+drop trigger if exists aum_type_propagate on public.aum_meeting_types;
+create trigger aum_type_propagate after update on public.aum_meeting_types
+  for each row execute function public.aum_type_propagate();
+
+-- הסוג הראשון, מהמפגש האחרון (פעם אחת, רק כשעוד אין אף סוג). מפגשים וסטטוסי מפגש קיימים משויכים אליו; הנתונים של המפגשים לא משתנים.
+do $$
+declare v_id uuid; v_al text; v_eo text; v_em text;
+begin
+  if exists (select 1 from public.aum_meeting_types) then return; end if;
+  select att_lead, event_open, event_msg into v_al, v_eo, v_em from public.aum_admin_prefs
+   where att_lead is not null or event_open is not null or event_msg is not null order by (lower(email) = 'tal.amitai1@gmail.com') desc, email limit 1;
+  insert into public.aum_meeting_types (name, sort, meeting_time, place, city, max_participants, directions, price_tiers, image_url, att_lead, event_open, event_msg)
+  select 'מפגש AUM', 1, start_time, location, city, capacity, directions, price_tiers, image_url, v_al, v_eo, nullif(btrim(coalesce(v_em, '')), '')
+    from public.aum_events order by event_date desc, start_time desc limit 1;
+  if not found then
+    insert into public.aum_meeting_types (name, sort, meeting_time, att_lead, event_open, event_msg) values ('מפגש AUM', 1, '09:00', v_al, v_eo, nullif(btrim(coalesce(v_em, '')), ''));
+  end if;
+  select id into v_id from public.aum_meeting_types order by sort, created_at limit 1;
+  update public.aum_events set type_id = v_id where type_id is null;
+  update public.aum_statuses set type_id = v_id where type_id is null and coalesce(scope, 'meeting') <> 'participant' and key <> 'unpaid';
+end $$;
+notify pgrst, 'reload schema';
