@@ -1089,3 +1089,8 @@ end $function$
 ;
 create trigger aum_reg_notes_t after insert or delete or update of paid, exempt, pay_requested_at, will_pay, maybe, status_key, meeting_key, attended, details_sent_at, no_pay on public.aum_registrations for each row execute function public.aum_reg_notes();
 notify pgrst, 'reload schema';
+
+-- 25: שורה לסטטוס המערכת "משויך" (unpaid). בלי שורה, שינוי שם או צבע נשמר בדף ולא בדאטהבייס, ונעלם בטעינה הבאה.
+insert into public.aum_statuses (key, label, color, sort, scope, phase)
+values ('unpaid', 'משויך', 'red', 99, 'meeting', 'before')
+on conflict (key) do nothing;
