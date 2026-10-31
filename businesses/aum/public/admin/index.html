@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=0e035908" />
+  <link rel="stylesheet" href="admin.css?v=1193f8ac" />
   <link rel="stylesheet" href="admin-aum.css?v=addde193" />
 </head>
 <body class="locked">
@@ -281,15 +281,12 @@
       <div id="setSt" hidden>
         <p class="sthint" id="stHint" style="margin:0 0 12px"></p>
         <div id="stBoth">
-        <div class="stpart" id="stSecBefore" hidden>לפני המפגש</div>
+        <div class="stpart" id="stSecBefore" hidden>סטטוס הרשמה</div>
         <div id="stList"></div>
         <button type="button" class="btn ghost" id="stAdd" hidden>+ תגית חדשה</button>
-        <div class="stpart" id="stSecDuring" hidden>במפגש</div>
-        <div id="stListDuring"></div>
-        <button type="button" class="btn ghost" id="stAddDuring" hidden>+ סטטוס חדש במפגש</button>
-        <div class="stpart" id="stSecAfter" hidden>אחרי המפגש</div>
-        <div id="stListAfter"></div>
-        <button type="button" class="btn ghost" id="stAddAfter" hidden>+ סטטוס חדש אחרי המפגש</button>
+        <div class="stpart" id="stSecMeeting" hidden>סטטוס מפגש</div>
+        <div id="stListMeeting"></div>
+        <button type="button" class="btn ghost" id="stAddMeeting" hidden>+ סטטוס מפגש חדש</button>
         </div>
       </div>
     </div>
@@ -949,7 +946,7 @@
     if (sheet.depLock && Date.now() < sheet.depLock) { sheetSig = ''; setTimeout(refreshOpenSheet, Math.max(100, sheet.depLock - Date.now() + 50)); return; }   // באמצע מעבר בין משלם / חינם / חוב: לא מציירים מחדש מנתוני ביניים
     /* חתימה של כל מה שמוצג בכרטיס המשתתף: הערות, שיוכים וסטטוסים, תשלומים והקצאות, ופרטי המשתתף; כשמשהו מזה משתנה (גם ממנהל אחר) הכרטיס והמסך הפתוח מתעדכנים בזמן אמת */
     const pid = sheet.id, pp = state.participants.find((x) => x.id === pid) || {};
-    const sig = notesOf(pid).map((n) => n.id).join(',') + '|' + state.att.filter((a) => a.participant_id === pid).map((a) => [a.meeting_id, a.paid, a.exempt, a.pay_requested_at, a.attended, a.paid_amount, a.details_sent_at, a.will_pay, a.maybe, a.status_key, a.after_key, a.during_key, a.no_pay, a.pay_reported_at, a.pay_reported_amount].join(':')).join(',')
+    const sig = notesOf(pid).map((n) => n.id).join(',') + '|' + state.att.filter((a) => a.participant_id === pid).map((a) => [a.meeting_id, a.paid, a.exempt, a.pay_requested_at, a.attended, a.paid_amount, a.details_sent_at, a.will_pay, a.maybe, a.status_key, a.meeting_key, a.no_pay, a.pay_reported_at, a.pay_reported_amount].join(':')).join(',')
       + '|' + state.payments.filter((x) => x.participant_id === pid).map((x) => [x.id, x.kind, x.amount, x.method, x.meeting_id, x.from_credit].join(':')).join(',')
       + '|' + [pp.name, pp.phone, pp.age, pp.gender, pp.promoter_id, pp.source_code, (pp.tags || []).join('+'), pp.active].join(':');
     if (sig === sheetSig) return; sheetSig = sig;
@@ -1004,7 +1001,7 @@
       const [p, m, a, nn, prs, pps, pays, sts, pfs, pms, pubs, fin0, finr0, mem0, mts, tpls0, sent0] = await Promise.all([
         api(T.p + '?select=*'),
         api(T.m + '?select=*'),
-        api(T.a + '?select=after_key,during_key,participant_id,meeting_id,paid,pay_requested_at,status_key,created_at,exempt,attended,paid_amount,promoter_id,commission,paid_at,details_sent_at,will_pay,maybe,no_pay,pay_reported_at,pay_reported_amount'),
+        api(T.a + '?select=meeting_key,participant_id,meeting_id,paid,pay_requested_at,status_key,created_at,exempt,attended,paid_amount,promoter_id,commission,paid_at,details_sent_at,will_pay,maybe,no_pay,pay_reported_at,pay_reported_amount'),
         api(T.n + '?select=id,participant_id,body,author_email,author_name,created_at,has_image,system,event_type,old_status,new_status,meeting_id,amount&order=created_at.desc'),
         api(T.pr + '?select=*&order=name.asc'),
         api(T.pp + '?select=*&order=paid_at.desc'),
@@ -1030,7 +1027,7 @@
       if (pms && pms.length) state.payMethods = pms.map((x) => Object.assign({}, x));
       if (pfs) { state.prefs = Object.fromEntries(pfs.map((x) => [String(x.email).toLowerCase(), x])); applyViewPrefs(); }
       if (sts && sts.length) { const ps = sts.filter((x) => x.scope === 'participant'); state.pstatuses = ps.map((x) => Object.assign({}, x)).sort((a, b) => a.sort - b.sort); }
-      if (sts && sts.length) { state.astatuses = sts.filter((x) => x.scope !== 'participant' && x.phase === 'after').map((x) => Object.assign({}, x)); state.dstatuses = sts.filter((x) => x.scope !== 'participant' && x.phase === 'during').map((x) => Object.assign({}, x)); const extra = sts.filter((x) => x.scope !== 'participant' && x.phase !== 'after' && x.phase !== 'during' && !BUILTIN.includes(x.key)).map((x) => Object.assign({}, x)); state.statuses = DEFAULT_STATUSES.filter((d) => d.key === SYSTEM_STATUS || sts.some((x) => x.key === d.key && x.scope !== 'participant')).map((d) => Object.assign({}, d, sts.find((x) => x.key === d.key && x.scope !== 'participant') || {}, d.key === SYSTEM_STATUS ? { sort: d.sort } : {})).concat(extra); applyStatuses(); }
+      if (sts && sts.length) { state.mstatuses = sts.filter((x) => x.scope !== 'participant' && MPHASES.includes(x.phase)).map((x) => Object.assign({}, x)); const extra = sts.filter((x) => x.scope !== 'participant' && !MPHASES.includes(x.phase) && !BUILTIN.includes(x.key)).map((x) => Object.assign({}, x)); state.statuses = DEFAULT_STATUSES.filter((d) => d.key === SYSTEM_STATUS || sts.some((x) => x.key === d.key && x.scope !== 'participant')).map((d) => Object.assign({}, d, sts.find((x) => x.key === d.key && x.scope !== 'participant') || {}, d.key === SYSTEM_STATUS ? { sort: d.sort } : {})).concat(extra); applyStatuses(); }
       /* משתתף שהוסר (active = false) מוסתר רק מרשימת כל המשתתפים (כשלא נבחר מפגש); במסך מפגש הוא מופיע כל עוד הוא משויך אליו, וכל הנתונים וההיסטוריה נשארים. יחזור אם יירשם שוב עם אותו טלפון */
       for (const x of p) if (!String(x.name || '').trim()) { x.name = localPhone(x.phone_norm || x.phone) || 'ללא שם'; x.noName = true; }   // נרשם עם גוגל ועוד לא השלים פרטים: במקום השם מוצג הטלפון (רק בתצוגה; השם נשמר בשדות שם פרטי ומשפחה)
       state.inactiveNames = new Map(p.filter((x) => x.active === false).map((x) => [x.id, x.name]));
@@ -1045,7 +1042,7 @@
         try { sessionStorage.removeItem('aum_deep'); } catch (e) {}
         if (d.m && state.meetings.some((x) => x.id === d.m)) state.filter = d.m;
         if (d.mt && typeById(d.mt) && !state.filter) state.mtype = d.mt;   // בחירה אחת: מפגש גובר על סוג
-        { const ks = payKeys(d.pay).filter((k) => baseK(k) === PNONE || state.statuses.concat(state.astatuses, state.dstatuses, state.pstatuses).some((x) => x.key === baseK(k))); if (ks.length) state.pay = ks.join(','); }   // סינון לפי סטטוס אחד שנבחר מהרשימה
+        { const ks = payKeys(d.pay).filter((k) => baseK(k) === PNONE || state.statuses.concat(state.mstatuses, state.pstatuses).some((x) => x.key === baseK(k))); if (ks.length) state.pay = ks.join(','); }   // סינון לפי סטטוס אחד שנבחר מהרשימה
         if (d.pd === '1' || d.pd === '0' || d.pd === 'n' || d.pd === 'w' || /^a\d+$/.test(d.pd || '') || /^m[A-Za-z0-9_]+$/.test(d.pd || '')) state.paidF = d.pd;
         if (d.sv === '1' || d.sv === '0') state.sent = d.sv;
         if (d.bl === '1' || d.bl === '0' || d.bl === 'n' || d.bl === 'f' || d.bl === 'w') state.bal = d.bl;
@@ -1138,7 +1135,7 @@
   const FREE_ICON = icon('free', 'i16');
   const REQ_ICON = icon('hourglass', 'i16');   // בבדיקה: שעון חול
   const NEW_ICON = icon('spark', 'i16');   // חדש: ניצוץ
-  const dispStatus = (l) => afterOf(l) || duringOf(l) || linkStatus(l);   // הסטטוס שמוצג ברשימה: אחרי המפגש אם יש, אחרת במפגש ("הגיע"), אחרת לפני המפגש
+  const dispStatus = (l) => meetingKeyOf(l) || linkStatus(l);   // הסטטוס שמוצג ברשימה: סטטוס המפגש שנבחר (אחד לכל משתתף), ואם אין, סטטוס ההרשמה
   /* סטטוסי "במפגש" ו"אחרי המפגש" זמינים מ-שעה לפני תחילת המפגש (31.10.26); ההתמדה נמדדת רק על מפגשים שהתחילו בפועל (meetingStarted) */
   const PHASE_LEAD_MS = 3600000;
   const phaseOpen = (m) => { const [y, mo, da] = m.meeting_date.split('-').map(Number), [h, mi] = String(m.meeting_time).split(':').map(Number); return nowIL() >= Date.UTC(y, mo - 1, da, h, mi) - PHASE_LEAD_MS; };
@@ -1152,8 +1149,7 @@
   const PSYSTEM = '__none__';   // אין סטטוס מערכת למשתתף; סטטוס משתתף הוא תווית בלבד, בלי לוגיקה, וברירת המחדל ריקה
   const PDEFAULT = null;
   state.pstatuses = DEFAULT_PSTATUSES.map((s) => Object.assign({}, s));
-  state.astatuses = [];   // סטטוסי "אחרי המפגש" (phase = 'after'): נבחרים בנפרד מסטטוס "לפני המפגש" ומוצגים במקומו ברשימה
-  state.dstatuses = [];   // סטטוסי "במפגש" (phase = 'during'), בראשם "הגיע": עוקפים את "לפני המפגש" ונדרסים על ידי "אחרי המפגש"
+  state.mstatuses = [];   // סטטוס מפגש (phase = 'meeting'): רשימה אחת, סטטוס אחד לכל משתתף (meeting_key); הוא המוצג ברשימה, ואם אין, סטטוס ההרשמה
   const pstatusList = () => state.pstatuses.slice().sort((a, b) => ((a.key === PSYSTEM) - (b.key === PSYSTEM)) || (a.sort - b.sort));
   const ptagsOf = (p) => (p.tags || []).filter((k) => state.pstatuses.some((s) => s.key === k));   // תגיות המשתתף (בחירה מרובה, תווית בלבד)
   const PNONE = '__pnone';   // סינון "בלי סטטוס"
@@ -1166,21 +1162,14 @@
   const curTid = () => state.filter ? typeIdOf(state.meetings.find((x) => x.id === state.filter)) : null;
   const isSysKey = (k) => k === SYSTEM_STATUS;   // סטטוסי מערכת: משותפים לכל הסוגים ונעולים בראש הרשימה
   const ofType = (s, tid) => !tid || isSysKey(s.key) || (s.type_id || firstTypeId()) === tid;
-  const astatusList = (tid) => { const t = tid === undefined ? curTid() : tid; return state.astatuses.filter((s) => ofType(s, t)).sort((a, b) => a.sort - b.sort); };
-  const afterOf = (l) => (l && l.after_key && state.astatuses.some((s) => s.key === l.after_key)) ? l.after_key : null;
-  const isAfterKey = (k) => state.astatuses.some((s) => s.key === k);
-  const dstatusList = (tid) => { const t = tid === undefined ? curTid() : tid; return state.dstatuses.filter((s) => ofType(s, t)).sort((a, b) => a.sort - b.sort); };
-  const duringOf = (l) => (l && l.during_key && state.dstatuses.some((s) => s.key === l.during_key)) ? l.during_key : null;
-  const isDuringKey = (k) => state.dstatuses.some((s) => s.key === k);
-  /* שלבי הסטטוס המאוחרים: העמודה בשיוך, הרשימה בזיכרון, והכותרת (אחרי המפגש דורס את במפגש, שדורס את לפני המפגש) */
-  const PHASES = { during: { col: 'during_key', arr: 'dstatuses', title: 'במפגש' }, after: { col: 'after_key', arr: 'astatuses', title: 'אחרי המפגש' } };
-  const phaseOf = (l, ph) => ph === 'during' ? duringOf(l) : afterOf(l);
-  const phaseList = (ph, tid) => ph === 'during' ? dstatusList(tid) : astatusList(tid);
-  const keyPhase = (k) => isDuringKey(k) ? 'during' : isAfterKey(k) ? 'after' : null;
+  const MPHASES = ['meeting', 'during', 'after'];   // הערכים הישנים (during, after) נקראים כסטטוס מפגש, למקרה שהנתונים עוד לא הועברו
+  const mstatusList = (tid) => { const t = tid === undefined ? curTid() : tid; return state.mstatuses.filter((s) => ofType(s, t)).sort((a, b) => a.sort - b.sort); };
+  const meetingKeyOf = (l) => (l && l.meeting_key && state.mstatuses.some((s) => s.key === l.meeting_key)) ? l.meeting_key : null;   // סטטוס מפגש: אחד לכל שיוך, כמו סטטוס ההרשמה
+  const isMeetingKey = (k) => state.mstatuses.some((s) => s.key === k);
   const statusList = (tid) => { const t = tid === undefined ? curTid() : tid; return state.statuses.filter((s) => ofType(s, t)).sort((a, b) => ((b.key === SYSTEM_STATUS) - (a.key === SYSTEM_STATUS)) || (a.sort - b.sort)); };   // סטטוס ברירת המחדל תמיד ראשון, ואחריו לפי סדר; חדש נוסף בסוף
   function applyStatuses() {
     let css = '';
-    state.statuses.concat(state.astatuses, state.dstatuses, state.pstatuses).forEach((s) => {
+    state.statuses.concat(state.mstatuses, state.pstatuses).forEach((s) => {
       STATUS_LABEL[s.key] = s.label;
       if (String(s.key).startsWith('p_')) return;   // תוויות משתתף בלי צבע
       if (s.color === 'orange') s.color = 'red';   // כתום הוסר מהפלטה (היה כמעט זהה לאדום)
@@ -1273,8 +1262,8 @@
   const ATT_GLYPH = { bars: () => PERSIST_ICON, ok: () => '✓', no: () => '✕', cal: () => icon('cal'), none: () => '∅' };
   const attCls = (c) => c === 'g' ? 'yes' : c === 'r' ? 'no' : c === 'y' ? 'mid' : 'neu';
   let attCache = null;
-  /* ציון התמדה של שיוך למפגש: סכום הציונים של הסטטוס במפגש ושל הסטטוס אחרי המפגש (סטטוס לפני המפגש בלי ציון). הגיע +1 ויצא -1 = 0 */
-  const ptsOf = (l) => { if (!l) return 0; const g = (arr, k) => { const x = k && arr.find((y) => y.key === k); return x ? (Number(x.points) || 0) : 0; }; return g(state.dstatuses, duringOf(l)) + g(state.astatuses, afterOf(l)); };
+  /* ציון התמדה של שיוך למפגש: הציון של סטטוס המפגש שנבחר (סטטוס הרשמה בלי ציון) */
+  const ptsOf = (l) => Number((state.mstatuses.find((y) => y.key === meetingKeyOf(l)) || {}).points) || 0;
   function attCtx() {
     if (attCache) return attCache;
     const started = (m) => { const [y, mo, da] = m.meeting_date.split('-').map(Number), [h, mi] = String(m.meeting_time).split(':').map(Number); return nowIL() >= Date.UTC(y, mo - 1, da, h, mi); };
@@ -1310,7 +1299,7 @@
     return mtSet.s.has(p.id);
   };
   /* סינון וספירה לפי סטטוס: משתתף נספר ומוצג גם בסטטוס של לפני המפגש וגם בסטטוס של אחרי המפגש שיש לו (בשורה עצמה מוצג רק של אחרי המפגש, אם יש, `dispStatus`) */
-  const hasStatus = (l, key) => linkStatus(l) === key || duringOf(l) === key || afterOf(l) === key;
+  const hasStatus = (l, key) => linkStatus(l) === key || meetingKeyOf(l) === key;
   const stMatch = (p, key) => { if (key === PNONE) return !ptagsOf(p).length; if (isPKey(key)) return ptagsOf(p).includes(key); if (state.filter) { const l = linkOf(p.id, state.filter); return !!l && hasStatus(l, key); } return linksOf(p.id).some((l) => hasStatus(l, key)); };
   function renderFacets() {
     normFilter();
@@ -1382,7 +1371,7 @@
     $('#listBal').innerHTML = !state.filter && state.showPay ? fbtn('bal', effBal(), '', '') : '';
     $('#listAtt').innerHTML = !state.filter && state.showAtt !== false ? '<button type="button" class="hfilt ' + (() => { const k = effAttF(), o = k && ATT_OPTS_F.find((x) => x[0] === k); return !o ? 'all' : attCls(o[2]); })() + '" data-fk="att" aria-haspopup="menu" aria-label="סינון לפי התמדה" title="סינון לפי התמדה והגעה (לחיצה לפתיחת תפריט)">' + (() => { const k = effAttF(), o = k && ATT_OPTS_F.find((x) => x[0] === k); return o ? ATT_GLYPH[o[3]]() : PERSIST_ICON; })() + '</button>' : '';
     $('#lbSort').innerHTML = '<button type="button" class="hfilt all' + (state.sort !== 'new' ? ' on' : '') + '" id="sortBtnH" aria-haspopup="menu" aria-expanded="' + !$('#sortMenu').hidden + '" aria-label="מיון הרשימה" title="מיון: ' + (SORTS.find((s) => s[0] === state.sort) || SORTS[0])[1] + '">' + icon('sort') + '</button>';   // נקודה בתגית = יש סינון שלא רואים בשורת הסינון / מיון שאינו ברירת המחדל
-    const stItems = (state.filter ? ((state.showTags && state.pstatuses.length) ? [{ key: PNONE, label: 'ללא תגית' }].concat(pstatusList().slice().reverse()) : []).concat(statusList()).concat(((m0) => (m0 && phaseOpen(m0)) ? dstatusList().concat(astatusList()) : [])(state.meetings.find((x) => x.id === state.filter))) : ((state.showTags && state.pstatuses.length) ? [{ key: PNONE, label: 'ללא תגית' }].concat(pstatusList().slice().reverse()) : [])).filter((s) => isPKey(s.key) || epk.includes(s.key) || epk.includes(NEG + s.key) || state.participants.some((p) => (!state.filter || linkOf(p.id, state.filter)) && stMatch(p, s.key)));   // תגיות על משתתפים: כשכפתור התגיות מסומן הן מוצגות תמיד, גם בלי משתתפים (31.10.26); סטטוסים רק כשיש בהם משתתפים
+    const stItems = (state.filter ? ((state.showTags && state.pstatuses.length) ? [{ key: PNONE, label: 'ללא תגית' }].concat(pstatusList().slice().reverse()) : []).concat(statusList()).concat(((m0) => (m0 && phaseOpen(m0)) ? mstatusList() : [])(state.meetings.find((x) => x.id === state.filter))) : ((state.showTags && state.pstatuses.length) ? [{ key: PNONE, label: 'ללא תגית' }].concat(pstatusList().slice().reverse()) : [])).filter((s) => isPKey(s.key) || epk.includes(s.key) || epk.includes(NEG + s.key) || state.participants.some((p) => (!state.filter || linkOf(p.id, state.filter)) && stMatch(p, s.key)));   // תגיות על משתתפים: כשכפתור התגיות מסומן הן מוצגות תמיד, גם בלי משתתפים (31.10.26); סטטוסים רק כשיש בהם משתתפים
     $('#stStrip').innerHTML = stItems.map((s) => { const n = nP(s.key), on = epk.includes(s.key), neg = epk.includes(NEG + s.key); return '<button type="button" class="stc ' + (isPKey(s.key) ? 'tagc' : s.key) + (n || on || neg ? '' : ' zero') + '" data-stc="' + s.key + '" aria-pressed="' + on + '"' + (neg ? ' data-neg="1" title="בלי ' + esc(s.label) + '" aria-label="בלי ' + esc(s.label) + '"' : '') + '>' + esc(s.label) + ' <small>' + n + '</small></button>'; }).join('');   // לחיצה ראשונה: מי שיש לו; שנייה (data-neg): מי שאין לו, הטקסט עם קו חוצה; שלישית: ביטול   // "חינם" (לא משלם) נמצא בפאנל הסינון, לא כצ'יפ נפרד
   }
 
@@ -1488,7 +1477,7 @@
       if (state.filter) {
         const l = linkOf(p.id, state.filter);
         if (!l) side = UI.tag('לא משויך', 'ptag unpaid', { 'data-qs': p.id, role: 'button', tabindex: 0, title: 'לא משויך למפגש (לחיצה לבחירת סטטוס ושיוך)' });
-        else { const st = dispStatus(l); side = UI.tag(STATUS_LABEL[st], 'ptag ' + st, { 'data-qs': p.id, role: 'button', tabindex: 0, title: 'סטטוס במפגש (לחיצה לשינוי)' }); }   // תצוגה בלבד: לחיצה על הכרטיס פותחת את פרטי המשתתף, ושם משנים סטטוס
+        else { const st = dispStatus(l); side = UI.tag(STATUS_LABEL[st], 'ptag ' + st, { 'data-qs': p.id, role: 'button', tabindex: 0, title: 'סטטוס (לחיצה לשינוי)' }); }   // תצוגה בלבד: לחיצה על הכרטיס פותחת את פרטי המשתתף, ושם משנים סטטוס
       }
       let tags = '', payIc = '';
       if (state.showPay && state.filter && linkOf(p.id, state.filter)) { const al = allocatedOf(p.id, state.filter), mt = state.meetings.find((x) => x.id === state.filter), lk = linkOf(p.id, state.filter), need = mt ? (pkgNetFor(p.id, state.filter) > 0 ? al : expectedPrice(p.id, mt, ilDay(lk.created_at || new Date().toISOString()))) : 0;
@@ -2089,24 +2078,22 @@
     closeQ(); stScope = scope; if (scope !== 'meeting') setRoot = 'st'; renderSettings(); $('#setDlg').showModal(); if (scope === 'meeting') { tyId = stType = curTid() || firstTypeId(); showSetView('type'); } showSetView('st');
     const ae = document.activeElement; if (ae && ae.closest && ae.closest('#setDlg')) ae.blur();
   }
-  /* סטטוס במפגש או אחרי המפגש: נשמרים בנפרד מהסטטוס שלפני המפגש (during_key, after_key), בלי שום השפעה אחרת מעבר לנראות ולציון ההתמדה.
+  /* סטטוס מפגש: רשימה אחת, אחד לכל משתתף (meeting_key), כמו סטטוס ההרשמה: בחירה בסטטוס אחר מחליפה אותו, ובנבחר מבטלת. לכל סטטוס ציון התמדה, ובלי שום השפעה אחרת.
      בלי שיוך למפגש: נוצר שיוך עם הסטטוס */
-  async function setPhaseStatus(pid, mid, ph, key) {
-    const col = PHASES[ph].col;
-    const body = { [col]: key || null }, refresh = () => { render(); if (sheet && sheet.id) { refreshSheetMeetings(); renderContact(); } };
-    let l = linkOf(pid, mid);
+  async function setMeetingStatus(pid, mid, key) {
+    const refresh = () => { render(); if (sheet && sheet.id) { refreshSheetMeetings(); renderContact(); } };
+    const l = linkOf(pid, mid), prevKey = l ? (l.meeting_key || null) : null, next = prevKey === key ? null : key, body = { meeting_key: next };
     if (!l) {
-      if (!key) return;
+      if (!next) return;
       const row = Object.assign({ participant_id: pid, meeting_id: mid, paid: false }, body), h = pendBegin(pid, mid, body, row);
       state.att.push(row); refresh();
-      try { await api(T.a, { method: 'POST', body: { participant_id: pid, meeting_id: mid, paid: false, [col]: key }, prefer: 'resolution=ignore-duplicates' }); pendDone(h); toast('הסטטוס עודכן: ' + STATUS_LABEL[key] + ' (לא היה משויך למפגש)'); }
+      try { await api(T.a, { method: 'POST', body: { participant_id: pid, meeting_id: mid, paid: false, meeting_key: next }, prefer: 'resolution=ignore-duplicates' }); pendDone(h); toast('סטטוס מפגש: ' + STATUS_LABEL[next] + ' (לא היה משויך למפגש)'); }
       catch (err) { pendFail(h); state.att = state.att.filter((x) => x !== row); refresh(); fail(err); }
       return;
     }
-    const prev = { [col]: l[col] || null };
     const h = pendBegin(pid, mid, body); Object.assign(l, body); refresh();
-    try { await api(T.a + '?participant_id=eq.' + pid + '&meeting_id=eq.' + mid, { method: 'PATCH', body: { [col]: key || null } }); pendDone(h); toast(key ? 'הסטטוס עודכן: ' + STATUS_LABEL[key] : 'הסטטוס הוסר'); }
-    catch (err) { pendFail(h); const l2 = linkOf(pid, mid); if (l2) Object.assign(l2, prev); refresh(); fail(err); }
+    try { await api(T.a + '?participant_id=eq.' + pid + '&meeting_id=eq.' + mid, { method: 'PATCH', body }); pendDone(h); toast(next ? 'הסטטוס עודכן: ' + STATUS_LABEL[next] : 'הסטטוס הוסר'); }
+    catch (err) { pendFail(h); const l2 = linkOf(pid, mid); if (l2) Object.assign(l2, { meeting_key: prevKey }); refresh(); fail(err); }
   }
   function openQuickMenu(pid, anchor, mid) {
     const menu = $('#qMenu'), inMeeting = !!(mid || state.filter);
@@ -2124,16 +2111,18 @@
     }
     const noneOk = inMeeting && cur !== '__none';   // "הסרה מהמפגש": רק למי שמשויך ועוד לא סומנה לו הגעה
     const tagSet = new Set(inMeeting ? [] : ptagsOf(state.participants.find((x) => x.id === pid)));
-    /* מקטעי "במפגש" (הגיע) ו"אחרי המפגש": רק מ-שעה לפני תחילת המפגש; "אחרי המפגש" רק למשויכים, "הגיע" גם למי שלא משויך (הגיע בלי הרשמה) */
+    /* מקטע "סטטוס מפגש": רק מ-שעה לפני תחילת המפגש; בחירה אחת כמו סטטוס ההרשמה, וגם למי שלא משויך (נוצר שיוך) */
     const phaseSecs = () => {
       if (!inMeeting) return '';
       const ll = mid ? linkOf(pid, mid) : quickLink(pid), mm = state.meetings.find((x) => x.id === (mid || (ll && ll.meeting_id)));
       if (!mm || !phaseOpen(mm)) return '';
-      return ['during', 'after'].map((ph) => { const list = phaseList(ph, qTid); if (!list.length || (ph === 'after' && !ll)) return ''; return '<div class="qhd">' + PHASES[ph].title + '</div>' + list.slice().reverse().map((s) => '<button type="button" role="menuitem" class="qi ' + s.key + '" data-qp="' + ph + ':' + s.key + '" aria-pressed="' + (phaseOf(ll, ph) === s.key) + '">' + esc(s.label) + '</button>').join(''); }).join('');
+      const list = mstatusList(qTid); if (!list.length) return '';
+      const held = meetingKeyOf(ll);
+      return '<div class="qhd">סטטוס מפגש</div>' + list.map((s) => '<button type="button" role="menuitem" class="qi ' + s.key + '" data-qm="' + s.key + '" aria-pressed="' + (held === s.key) + '">' + esc(s.label) + '</button>').join('');
     };
-    const phSecs = phaseSecs();   // כשיש קטעי "במפגש" / "אחרי המפגש" גם הסטטוסים של לפני המפגש מקבלים כותרת, לעקביות
+    const phSecs = phaseSecs();   // כשיש גם סטטוס מפגש, סטטוסי ההרשמה מקבלים כותרת, לעקביות
     menu.innerHTML =
-      (phSecs ? '<div class="qhd">לפני המפגש</div>' : '') +
+      (phSecs ? '<div class="qhd">סטטוס הרשמה</div>' : '') +
       (noneOk ? '<button type="button" role="menuitem" class="qi tone-red" data-qk="__none" aria-pressed="false">הסרה מהמפגש</button>' : '') +
       (inMeeting ? statusList(qTid) : pstatusList().slice().reverse()).map((s) => '<button type="button" role="menuitem" class="qi ' + s.key + '" data-qk="' + s.key + '" aria-pressed="' + (inMeeting ? s.key === cur : tagSet.has(s.key)) + '">' + esc(s.label) + '</button>').join('') +
       phSecs;
@@ -2144,7 +2133,7 @@
     menu.style.left = left + 'px'; menu.style.top = top + 'px';
     menu.onclick = (e) => {
       const ed = e.target.closest('[data-qedit]'); if (ed) { openStatusSettings(ed.dataset.qedit); return; }
-      const qp = e.target.closest('[data-qp]'); if (qp) { const [ph, k0] = qp.dataset.qp.split(':'), l0 = mid ? linkOf(pid, mid) : quickLink(pid); closeQ(); setPhaseStatus(pid, mid || (l0 && l0.meeting_id), ph, phaseOf(l0, ph) === k0 ? null : k0); return; }
+      const qm = e.target.closest('[data-qm]'); if (qm) { const l0 = mid ? linkOf(pid, mid) : quickLink(pid); closeQ(); setMeetingStatus(pid, mid || (l0 && l0.meeting_id), qm.dataset.qm); return; }
       const b = e.target.closest('[data-qk]'); if (!b) return;
       const k = b.dataset.qk;
       if (!inMeeting) { b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')); toggleTag(pid, k); return; }   // תגיות: בחירה מרובה, התפריט נשאר פתוח
@@ -2322,7 +2311,7 @@
   /* הערות מערכת כצ'יפים: המפגש תמיד ראשון (כתום), ואחריו הפעולה; שינוי (סטטוס, סכום הקצאה) הוא "ישן ← חדש", הכול בצבעי המערכת */
   const NCH = (txt, cls) => UI.tag(txt, 'nch ' + cls);
   const NARW = '<span class="narw" aria-hidden="true">' + icon('go', 'i16') + '</span>';   // חץ כ-SVG: ממורכז אנכית באמת (התו ← יושב נמוך בגופן)
-  const nStKey = (name) => { const s = state.statuses.concat(state.astatuses, state.dstatuses).find((x) => x.label === name); return s ? s.key : null; };
+  const nStKey = (name) => { const s = state.statuses.concat(state.mstatuses).find((x) => x.label === name); return s ? s.key : null; };
   const NLEGACY = { 'שילם': 'paid', 'ישלם': 'willpay', 'ספונטני': 'maybe', 'אולי': 'maybe', 'בטיפול': 'requested', 'חינם': 'exempt', 'חדש': 'unpaid', 'טרם טופל': 'unpaid', 'משויך': 'unpaid' };   // שמות ישנים של סטטוסים מובנים בהערות: מוצגים בשם ובצבע הנוכחיים של אותו סטטוס
   const nStChip = (name) => { let k = nStKey(name), lb = name; if (!k && NLEGACY[name]) { const s = state.statuses.find((x) => x.key === NLEGACY[name]); if (s) { k = s.key; lb = s.label; } } return NCH(esc(lb), k ? 'pay ' + k : 'nn'); };
   function sysChips(n) {
@@ -2333,7 +2322,7 @@
     const sh = (v) => '<bdi dir="ltr">₪' + nfm(v) + '</bdi>';
     const meth = ((/ ב([^\s(][^()]*)$/.exec(b) || [])[1] || '').trim();
     switch (ev) {
-      case 'status_changed': case 'after_status_changed': case 'during_status_changed': {
+      case 'status_changed': case 'meeting_status_changed': case 'after_status_changed': case 'during_status_changed': {
         const m = /:\s*(.+?)\s*\(היה:\s*(.+)\)\s*$/.exec(b); if (!m) return null;
         const pm = /^(.+?)\s*₪\s*([\d.]+)(?:\s+ב.+)?$/.exec(m[1]);   // "שילם ₪100 בפייבוקס": הסטטוס, ואחריו צ'יף תשלום כמו בשאר ההערות
         return M + nStChip(m[2]) + NARW + nStChip(pm ? pm[1] : m[1]) ;   // התשלום לא שייך לשורת שינוי סטטוס: הוא נרשם בהערה נפרדת
@@ -4135,16 +4124,16 @@
       if (!st && !l) return '';
       usedTypes.add(typeIdOf(mt));
       const lab = dmShort(mt) + ' <small>' + (l ? 'רשום' : 'לא רשום') + '</small>';
-      const sc = ptsOf(l), sg = (n) => '<bdi dir="ltr">' + (n > 0 ? '+' : '') + n + '</bdi>', snames = l ? [duringOf(l), afterOf(l)].filter(Boolean).map((k) => STATUS_LABEL[k]).filter(Boolean).join(' · ') : '', chipH = !st ? UI.tag('עתידי', 'cst f') : UI.tag((snames ? esc(snames) + ' · ' : '') + sg(sc), 'cst ' + (sc > 0 ? 'y' : sc < 0 ? 'n' : 'f'));   // לכל מפגש: ציון ההתמדה שלו (סכום הציונים של הסטטוס במפגש ואחרי המפגש)
+      const sc = ptsOf(l), sg = (n) => '<bdi dir="ltr">' + (n > 0 ? '+' : '') + n + '</bdi>', snames = l ? (STATUS_LABEL[meetingKeyOf(l)] || '') : '', chipH = !st ? UI.tag('עתידי', 'cst f') : UI.tag((snames ? esc(snames) + ' · ' : '') + sg(sc), 'cst ' + (sc > 0 ? 'y' : sc < 0 ? 'n' : 'f'));   // לכל מפגש: ציון ההתמדה שלו (סכום הציונים של הסטטוס במפגש ואחרי המפגש)
       return '<div class="cnr"><span>' + lab + '</span>' + chipH + '</div>';
     }).join('');
     /* הציונים שהוגדרו בפועל לסטטוסים של סוג המפגש (לא דוגמה קבועה: השמות והציונים נקבעים בהגדרות) */
     const tset = usedTypes.size ? [...usedTypes] : [curTid()], scoredSeen = new Set(), scoredList = [];
-    tset.forEach((t) => [...dstatusList(t), ...astatusList(t)].forEach((x) => { if (scoredSeen.has(x.key)) return; scoredSeen.add(x.key); const n = Number(x.points) || 0; if (n) scoredList.push('<b>' + esc(x.label) + '</b>' + (tset.length > 1 && x.type_id && typeById(x.type_id) ? ' (' + esc(typeById(x.type_id).name) + ')' : '') + ' <bdi dir="ltr">' + (n > 0 ? '+' : '') + n + '</bdi>'); }));
+    tset.forEach((t) => mstatusList(t).forEach((x) => { if (scoredSeen.has(x.key)) return; scoredSeen.add(x.key); const n = Number(x.points) || 0; if (n) scoredList.push('<b>' + esc(x.label) + '</b>' + (tset.length > 1 && x.type_id && typeById(x.type_id) ? ' (' + esc(typeById(x.type_id).name) + ')' : '') + ' <bdi dir="ltr">' + (n > 0 ? '+' : '') + n + '</bdi>'); }));
     const scoreNote = scoredList.length ? ' הציונים שהוגדרו: ' + scoredList.join(' · ') + '.' : ' עוד לא הוגדרו ציונים לסטטוסים.';
     m.innerHTML = '<h4>' + esc(p.name) + ': ציון התמדה ' + pr.score + (pr.total ? ' ב-' + pr.total + ' מפגשים' : '') + '</h4>' +
       '<div class="cwhy ' + cls + '">' + why + '</div>' +
-      '<div class="cnote">נספרים כל המפגשים שהתחילו מאז המפגש הראשון שהמשתתף שויך אליו. מפגש שלא נרשם אליו נחשב מפגש בלי ציון, ומפגש שעוד לא התקיים לא משפיע על הצבע. הציון של כל מפגש הוא סכום ציוני ההתמדה של הסטטוס במפגש והסטטוס אחרי המפגש.' + scoreNote + ' הציונים נקבעים בהגדרות הסטטוסים של סוג המפגש.</div>' + rows;
+      '<div class="cnote">נספרים כל המפגשים שהתחילו מאז המפגש הראשון שהמשתתף שויך אליו. מפגש שלא נרשם אליו נחשב מפגש בלי ציון, ומפגש שעוד לא התקיים לא משפיע על הצבע. הציון של כל מפגש הוא ציון ההתמדה של סטטוס המפגש שנבחר למשתתף.' + scoreNote + ' הציונים נקבעים בהגדרות הסטטוסים של סוג המפגש.</div>' + rows;
     m.dataset.pid = pid; m.hidden = false;
     const r = chip.getBoundingClientRect(), w = m.offsetWidth, h = m.offsetHeight;
     m.style.left = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), window.innerWidth - w - 8) + 'px';
@@ -4268,7 +4257,7 @@
   /* מסך הסוג: שורות (פרטי ברירת מחדל, סטטוסים) ומחיקה */
   function renderType() {
     const t = typeById(tyId); if (!t) return;
-    const n = statusList(t.id).length + dstatusList(t.id).length + astatusList(t.id).length;
+    const n = statusList(t.id).length + mstatusList(t.id).length;
     $('#tyStHint').textContent = n + ' סטטוסים · שם, צבע וסדר לכל סטטוס';
     const tm = t.meeting_time ? String(t.meeting_time).slice(0, 5) : '', tp = tiersOf(t);
     $('#tyDetHint').textContent = [tm, t.city, t.place, '₪' + tp.base + (tp.steps.length ? '+' : '')].filter(Boolean).join(' · ') || 'שם, שעה, מקום, מחירים ותמונה';
@@ -4346,7 +4335,7 @@
       await api(T.mt + '?id=eq.' + t.id, { method: 'DELETE' });
       state.meetings = state.meetings.filter((m) => !ms.includes(m));
       if (ms.some((m) => m.id === state.filter)) state.filter = null;
-      state.mtypes = state.mtypes.filter((x) => x !== t); state.statuses = state.statuses.filter((s) => s.type_id !== t.id); state.astatuses = state.astatuses.filter((s) => s.type_id !== t.id); state.dstatuses = state.dstatuses.filter((s) => s.type_id !== t.id);
+      state.mtypes = state.mtypes.filter((x) => x !== t); state.statuses = state.statuses.filter((s) => s.type_id !== t.id); state.mstatuses = state.mstatuses.filter((s) => s.type_id !== t.id);
       if (state.mtype === t.id) state.mtype = null;
       applyStatuses(); $('#setDlg').close(); render(); toast('סוג המפגש נמחק');
     } catch (err) { fail(err); }
@@ -4362,7 +4351,7 @@
   }
   const curSt = () => stScope === 'meeting' ? statusList(stType || firstTypeId()) : pstatusList();
   const curSys = () => stScope === 'meeting' ? SYSTEM_STATUS : PSYSTEM;
-  const allSt = () => state.statuses.concat(state.astatuses, state.dstatuses, state.pstatuses);
+  const allSt = () => state.statuses.concat(state.mstatuses, state.pstatuses);
   function showSetView(v) {
     setView = v;
     $('#setMain').hidden = v !== 'main'; $('#setType').hidden = v !== 'type'; $('#setTyDet').hidden = v !== 'tydet'; $('#setSt').hidden = v !== 'st'; $('#setDel').hidden = v !== 'del'; $('#setSrc').hidden = v !== 'src'; $('#setPm').hidden = v !== 'pm'; $('#setEm').hidden = v !== 'em'; $('#setBack').hidden = setIsRoot(v);   // המסך שהפופאפ נפתח עליו, וסוג חדש (מסך הפרטים הוא הראשי): אין לאן לחזור
@@ -4380,8 +4369,8 @@
   function renderStSettings() {
     const list = curSt(), sys = curSys();
     document.querySelectorAll('#setSt [data-sc]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.sc === stScope)));
-    $('#stHint').textContent = stScope === 'meeting' ? 'סטטוס של משתתף בתוך מפגש' + ((typeById(stType) || {}).name ? ' מסוג "' + typeById(stType).name + '"' : '') + '. שם, צבע וסדר, ואפשר ליצור סטטוס חדש. "' + (STATUS_LABEL[SYSTEM_STATUS] || 'משויך') + '" משותף לכל סוגי המפגשים. הסטטוס המוצג ברשימה: אחרי המפגש, ואם אין, במפגש, ואם אין, לפני המפגש. לסטטוס במפגש ואחרי המפגש יש ציון התמדה (מ-5- עד 5), וסכום הציונים של המשתתף במפגש נכנס לחישוב ההתמדה' : 'תגיות של המשתתף (ברשימה כשלא בוחרים מפגש). אפשר לסמן כמה תגיות לכל משתתף. תגית בלבד, בלי לוגיקה מאחוריה. שם וסדר, ואפשר ליצור תגית חדשה';
-    $('#stAdd').hidden = false; $('#stAdd').textContent = stScope === 'meeting' ? '+ סטטוס מפגש חדש' : '+ תגית חדשה';
+    $('#stHint').textContent = stScope === 'meeting' ? 'סטטוס של משתתף בתוך מפגש' + ((typeById(stType) || {}).name ? ' מסוג "' + typeById(stType).name + '"' : '') + '. לכל משתתף במפגש סטטוס הרשמה אחד וסטטוס מפגש אחד (שם, צבע וסדר, ואפשר ליצור חדשים; "' + (STATUS_LABEL[SYSTEM_STATUS] || 'משויך') + '" משותף לכל סוגי המפגשים). לכל סטטוס מפגש ציון התמדה (מ-5- עד 5), שנכנס לציון ההתמדה של המשתתף. הסטטוס המוצג ברשימה הוא סטטוס המפגש, ואם אין, סטטוס ההרשמה' : 'תגיות של המשתתף (ברשימה כשלא בוחרים מפגש). אפשר לסמן כמה תגיות לכל משתתף. תגית בלבד, בלי לוגיקה מאחוריה. שם וסדר, ואפשר ליצור תגית חדשה';
+    $('#stAdd').hidden = false; $('#stAdd').textContent = stScope === 'meeting' ? '+ סטטוס הרשמה חדש' : '+ תגית חדשה';
     const noCol = stScope === 'participant';   // תוויות משתתף בלי צבעים
     /* ציון התמדה: בחירה פשוטה בין מינוס 5 ל-5 (רק לסטטוס במפגש ואחרי המפגש) */
     const ptsSel = (s) => '<select class="stpts" data-pts="' + s.key + '" aria-label="ציון התמדה" title="ציון התמדה">' + [5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5].map((n) => '<option value="' + n + '"' + (Number(s.points || 0) === n ? ' selected' : '') + '>' + (n > 0 ? '+' + n : n) + '</option>').join('') + '</select>';
@@ -4399,8 +4388,7 @@
  (pts ? ptsSel(s) : '') + (s.key !== SYSTEM_STATUS ? '<button type="button" class="stdel" data-del="' + s.key + '" aria-label="מחיקת הסטטוס" title="מחיקת הסטטוס">×</button>' : '') + '</div>').join('');
     $('#stList').innerHTML = mkRows(list);
     const two = stScope === 'meeting';
-    $('#stSecBefore').hidden = !two; $('#stSecDuring').hidden = !two; $('#stAddDuring').hidden = !two; $('#stListDuring').innerHTML = two ? mkRows(dstatusList(stType || firstTypeId()), true) : '';
-    $('#stSecAfter').hidden = !two; $('#stAddAfter').hidden = !two; $('#stListAfter').innerHTML = two ? mkRows(astatusList(stType || firstTypeId()), true) : '';
+    $('#stSecBefore').hidden = !two; $('#stSecMeeting').hidden = !two; $('#stAddMeeting').hidden = !two; $('#stListMeeting').innerHTML = two ? mkRows(mstatusList(stType || firstTypeId()), true) : '';
   }
   async function saveStatus(key, patch) {
     const s = allSt().find((x) => x.key === key); if (!s) return;
@@ -4562,24 +4550,23 @@
     catch (err) { const k = arr.indexOf(row); if (k >= 0) arr.splice(k, 1); applyStatuses(); renderStSettings(); fail(err); return; }
     const inp = document.querySelector('#stBoth .strow[data-k="' + row.key + '"] .stname'); if (inp) { inp.focus(); inp.select(); }
   });
-  async function addPhase(ph) {
-    const arr = state[PHASES[ph].arr], mx = Math.max(0, ...arr.map((x) => x.sort));
-    const row = { key: 'm_' + Math.random().toString(36).slice(2, 7), label: 'סטטוס חדש', color: 'neutral', sort: mx + 1, scope: 'meeting', phase: ph, points: 0 };
+  async function addMeetingStatus() {
+    const arr = state.mstatuses, mx = Math.max(0, ...arr.map((x) => x.sort));
+    const row = { key: 'm_' + Math.random().toString(36).slice(2, 7), label: 'סטטוס חדש', color: 'neutral', sort: mx + 1, scope: 'meeting', phase: 'meeting', points: 0 };
     if (state.mtypes.length) row.type_id = stType || firstTypeId();
     arr.push(row); applyStatuses(); renderStSettings();
     try { await api(T.st, { method: 'POST', body: row, prefer: 'return=minimal' }); }
     catch (err) { const k = arr.indexOf(row); if (k >= 0) arr.splice(k, 1); applyStatuses(); renderStSettings(); fail(err); return; }
     const inp = document.querySelector('#stBoth .strow[data-k="' + row.key + '"] .stname'); if (inp) { inp.focus(); inp.select(); }
   }
-  $('#stAddDuring').addEventListener('click', () => addPhase('during'));
-  $('#stAddAfter').addEventListener('click', () => addPhase('after'));
-  async function removePhase(ph, k, to, used) {
-    const col = PHASES[ph].col;
-    used.forEach((l) => { l[col] = to || null; });
-    state[PHASES[ph].arr] = state[PHASES[ph].arr].filter((x) => x.key !== k);
+  $('#stAddMeeting').addEventListener('click', addMeetingStatus);
+  /* מחיקת סטטוס מפגש: המשתתפים שסומנו בו עוברים לסטטוס אחר או מוסרים ממנו */
+  async function removeMeetingStatus(k, to, used) {
+    used.forEach((l) => { l.meeting_key = to || null; });
+    state.mstatuses = state.mstatuses.filter((x) => x.key !== k);
     applyStatuses(); showSetView('st'); render(); if (sheet && sheet.id) { refreshSheetMeetings(); renderContact(); }
     try {
-      for (const l of used) await api(T.a + '?participant_id=eq.' + l.participant_id + '&meeting_id=eq.' + l.meeting_id, { method: 'PATCH', body: { [col]: to || null } });
+      for (const l of used) await api(T.a + '?participant_id=eq.' + l.participant_id + '&meeting_id=eq.' + l.meeting_id, { method: 'PATCH', body: { meeting_key: to || null } });
       await api(T.st + '?key=eq.' + k, { method: 'DELETE' }); toast('הסטטוס נמחק');
     } catch (err) { fail(err); load(true); }
   }
@@ -4599,14 +4586,12 @@
     const del = e.target.closest('[data-del]');
     if (del) {
       const k = del.dataset.del;
-      const ph = keyPhase(k);
-      if (ph) {   // סטטוס במפגש או אחרי המפגש ("הגיע" נעול)
-        if (isSysKey(k)) return;
-        const col = PHASES[ph].col, s0 = state[PHASES[ph].arr].find((x) => x.key === k), used0 = state.att.filter((l) => l[col] === k);
-        if (!used0.length) { await removePhase(ph, k, null, used0); return; }
-        $('#setDelText').innerHTML = 'יש <b>' + used0.length + '</b> משתתפים בסטטוס <b>"' + esc(s0.label) + '"</b> (' + PHASES[ph].title + '). להחליף אותו בסטטוס אחר, או רק להסיר?';
-        $('#setDelOpts').innerHTML = phaseList(ph, stType || firstTypeId()).filter((x) => x.key !== k).map((x) => '<button type="button" class="sopt ' + x.key + '" data-to="' + x.key + '">' + esc(x.label) + '</button>').join('') + '<button type="button" class="sopt psnone" data-to="">רק להסיר</button>';
-        $('#setDelOpts').onclick = async (ev) => { const b = ev.target.closest('[data-to]'); if (!b) return; await removePhase(ph, k, b.dataset.to || null, used0); };
+      if (isMeetingKey(k)) {   // סטטוס מפגש
+        const s0 = state.mstatuses.find((x) => x.key === k), used0 = state.att.filter((l) => l.meeting_key === k);
+        if (!used0.length) { await removeMeetingStatus(k, null, used0); return; }
+        $('#setDelText').innerHTML = 'יש <b>' + used0.length + '</b> משתתפים בסטטוס <b>"' + esc(s0.label) + '"</b> (סטטוס מפגש). להחליף אותו בסטטוס אחר, או רק להסיר?';
+        $('#setDelOpts').innerHTML = mstatusList(stType || firstTypeId()).filter((x) => x.key !== k).map((x) => '<button type="button" class="sopt ' + x.key + '" data-to="' + x.key + '">' + esc(x.label) + '</button>').join('') + '<button type="button" class="sopt psnone" data-to="">רק להסיר</button>';
+        $('#setDelOpts').onclick = async (ev) => { const b = ev.target.closest('[data-to]'); if (!b) return; await removeMeetingStatus(k, b.dataset.to || null, used0); };
         showSetView('del'); return;
       }
       const isM = stScope === 'meeting', s = (isM ? state.statuses : state.pstatuses).find((x) => x.key === k); if (!s || k === SYSTEM_STATUS) return;

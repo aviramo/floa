@@ -1017,3 +1017,75 @@ create policy "aum admin all" on public.aum_msg_sent for all to authenticated us
 grant all on public.aum_msg_sent to authenticated, service_role;
 do $$ begin alter publication supabase_realtime add table public.aum_msg_sent; exception when duplicate_object then null; when undefined_object then null; end $$;
 notify pgrst, 'reload schema';
+
+
+-- 24: סטטוס מפגש אחד (איחוד "במפגש" ו"אחרי המפגש"), "הגיע" כסטטוס רגיל (מהרפתקה). העמודות הישנות נשארות כהיסטוריה.
+drop trigger if exists aum_reg_notes_t on public.aum_registrations;
+drop trigger if exists aum_att_during_mirror on public.aum_registrations;
+drop function if exists public.aum_att_during_mirror();
+alter table public.aum_registrations add column if not exists meeting_key text;
+do $m$ begin
+  perform set_config('aum.skip_note', '1', true);
+  update public.aum_registrations set meeting_key = coalesce(after_key, during_key) where meeting_key is null and (during_key is not null or after_key is not null);
+  perform set_config('aum.skip_note', '', true);
+end $m$;
+alter table public.aum_statuses drop constraint if exists aum_statuses_phase_check;
+alter table public.aum_statuses add constraint aum_statuses_phase_check check (phase in ('before','during','after','meeting'));
+with ord as (
+  select key, row_number() over (partition by coalesce(type_id, '00000000-0000-0000-0000-000000000000'::uuid) order by case phase when 'during' then 0 else 1 end, sort, key) as rn
+    from public.aum_statuses where scope <> 'participant' and phase in ('during', 'after')
+)
+update public.aum_statuses s set phase = 'meeting', sort = ord.rn from ord where s.key = ord.key;
+CREATE OR REPLACE FUNCTION public.aum_reg_notes()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare lbl text; ok text; nk text;
+begin
+  if current_setting('aum.skip_note', true) = '1' then return null; end if;
+  if tg_op = 'INSERT' then
+    if coalesce(new.attended, false) then
+      perform public.aum_sys_note(new.participant_id, 'הגיע/ה למפגש ' || public.aum_meeting_label(new.event_id) || ' (ללא הרשמה מראש)', 'walk_in', new.event_id);
+    else
+      perform public.aum_sys_note(new.participant_id, case when auth.jwt() ->> 'email' is null then 'נרשם/ה מהאתר למפגש ' else 'שויך/ה למפגש ' end || public.aum_meeting_label(new.event_id), 'meeting_linked', new.event_id);
+    end if;
+    if new.meeting_key is not null then
+      perform public.aum_sys_note(new.participant_id, 'סטטוס מפגש ' || public.aum_meeting_label(new.event_id) || ': ' || coalesce(public.aum_status_label(new.meeting_key), new.meeting_key) || ' (היה: ללא)', 'meeting_status_changed', new.event_id, null, new.meeting_key);
+    end if;
+  elsif tg_op = 'UPDATE' then
+    lbl := public.aum_meeting_label(new.event_id);
+    ok := coalesce(old.status_key, public.aum_pay_code(old.paid, old.exempt, old.pay_requested_at, old.will_pay, old.maybe));
+    nk := coalesce(new.status_key, public.aum_pay_code(new.paid, new.exempt, new.pay_requested_at, new.will_pay, new.maybe));
+    if ok <> nk then
+      perform public.aum_sys_note(new.participant_id, 'סטטוס למפגש ' || lbl || ': ' || coalesce(public.aum_status_label(nk), nk)
+        || case when nk = 'paid' and new.paid_amount is not null then ' ₪' || trim(to_char(new.paid_amount, 'FM999990.##')) else '' end
+        || case when nk = 'paid' and new.pay_method is not null then ' ב' || public.aum_method_label(new.pay_method, new.pay_method_note) else '' end
+        || ' (היה: ' || coalesce(public.aum_status_label(ok), ok) || ')',
+        'status_changed', new.event_id, ok, nk, case when nk = 'paid' then new.paid_amount end, case when nk = 'paid' then new.pay_method end);
+    end if;
+    if new.meeting_key is distinct from old.meeting_key then
+      perform public.aum_sys_note(new.participant_id, 'סטטוס מפגש ' || lbl || ': ' || coalesce(public.aum_status_label(new.meeting_key), 'ללא') || ' (היה: ' || coalesce(public.aum_status_label(old.meeting_key), 'ללא') || ')',
+        'meeting_status_changed', new.event_id, old.meeting_key, new.meeting_key);
+    end if;
+    if coalesce(old.attended, false) <> coalesce(new.attended, false) then
+      perform public.aum_sys_note(new.participant_id, case when new.attended then 'הגיע/ה למפגש ' else 'סימון ההגעה בוטל למפגש ' end || lbl, case when new.attended then 'attended' else 'attendance_cancelled' end, new.event_id);
+    end if;
+    if coalesce(old.no_pay, false) <> coalesce(new.no_pay, false) then   -- סימון "חינם" במסך ההקצאה
+      perform public.aum_sys_note(new.participant_id, case when coalesce(new.no_pay, false) then 'המפגש ' || lbl || ' סומן כחינם' else 'החינם בוטל למפגש ' || lbl end,
+        case when coalesce(new.no_pay, false) then 'free_on' else 'free_off' end, new.event_id);
+    end if;
+    if (old.details_sent_at is null) <> (new.details_sent_at is null) then
+      perform public.aum_sys_note(new.participant_id, case when new.details_sent_at is not null then 'נשלחו פרטי המפגש (וואטסאפ) למפגש ' else 'סימון שליחת פרטי המפגש בוטל למפגש ' end || lbl,
+        case when new.details_sent_at is not null then 'details_sent' else 'details_unsent' end, new.event_id);
+    end if;
+  elsif tg_op = 'DELETE' then
+    perform public.aum_sys_note(old.participant_id, 'הוסר/ה מהמפגש ' || public.aum_meeting_label(old.event_id), 'meeting_removed', old.event_id);
+  end if;
+  return null;
+exception when others then return null;
+end $function$
+;
+create trigger aum_reg_notes_t after insert or delete or update of paid, exempt, pay_requested_at, will_pay, maybe, status_key, meeting_key, attended, details_sent_at, no_pay on public.aum_registrations for each row execute function public.aum_reg_notes();
+notify pgrst, 'reload schema';
