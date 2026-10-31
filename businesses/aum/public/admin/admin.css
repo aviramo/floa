@@ -8,7 +8,7 @@
 
 /* ---------- 1. טוקנים ---------- */
 :root {
-  --scrim: rgba(16, 20, 26, .55);   /* הכהיה מאחורי פופאפים ומאחורי פאנל הסינון */
+  --scrim: rgba(16, 20, 26, .55);   /* הכהיה מאחורי פופאפים */
   --bg: #FFFFFF;
   --surface: #F5F6F8;      /* אפור 50: פאנלים, ריחוף */
   --surface-2: #ECEEF1;    /* אפור 100: צ'יפ ניטרלי, לחיצה */
@@ -108,7 +108,7 @@ dialog::-webkit-scrollbar, dialog *::-webkit-scrollbar { display: none; width: 0
 /* צבעוני: מילוי בצבע, הגבול באותו צבע */
 .cico.cb-wa { background: var(--green-bg); border-color: var(--green-bg); color: var(--green); }
 .cico.off { background: var(--surface-2); border-color: var(--surface-2); color: var(--text-3); }
-#pCall { background: var(--text); border-color: var(--text); color: #fff; }
+/* כפתור החיוג בכותרת הפרטים: כמו כפתור העין, בלי רקע שחור (31.10.26) */
 .newbtn .plus { background: var(--text); border-color: var(--text); color: #fff; font-size: 20px; font-weight: 600; }   /* תגית אייקון בעמודת הוואטסאפ */
 .dline .ddel { background: var(--red-bg); border-color: var(--red-bg); color: var(--red); font-weight: 700; }
 /* שקט: פעולה בתוך שורה (גרירה, עריכה, מחיקה), אותו גודל בלי מילוי */
@@ -289,9 +289,9 @@ body.locked .wrap, body.locked #statsBtn { display: none !important; }
 
 /* העמוד בגובה המסך: הכותרת והסינון קבועים, רק הרשימה נגללת. לכל רוחב המסך, בלי רווחים בצדדים */
 .wrap { width: 100%; height: 100vh; height: 100dvh; margin-top: 0; display: flex; flex-direction: column; padding: 0; }
-.wrap > header.top { flex: 0 0 auto; position: relative; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+.wrap > header.top { flex: 0 0 auto; position: relative; z-index: 5; background: var(--bg); }   /* בלי קו מעל שורת החיפוש (31.10.26) */
 .wrap > #status { flex: 0 0 auto; }
-.wrap > .listbar { flex: 0 0 var(--ctl); }
+.wrap > .listbar { flex: 0 0 36px; }
 .wrap > .list { flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior-y: auto; scrollbar-width: none; }
 .wrap > .list::-webkit-scrollbar { display: none; }
 .wrap > .list:empty { display: none; }
@@ -341,7 +341,7 @@ h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.01em; line-
 .ststrip:empty { display: none; }
 
 /* שורת הסינונים מעל הטבלה (כמו כותרת טבלה): חיפוש, הכל / ז / נ / ⋯, ואייקוני סינון מעל העמודות */
-.listbar { position: relative; height: var(--ctl); display: flex; gap: 8px; align-items: center; padding: 0 var(--gut); background: var(--bg); border-bottom: 1px solid var(--line); }
+.listbar { position: relative; height: 36px; display: flex; gap: 8px; align-items: center; padding: 0 var(--gut); background: var(--bg); }   /* בלי קו בין שורת החיפוש לשורת הסינון (31.10.26) */
 /* חיפוש: סגור הוא תגית אייקון (ריבוע בגובה התגית, גבול מתאר), ונפתח לכל רוחב השורה באותו גובה */
 .search { position: relative; display: block; }
 .hsearch input::-webkit-search-cancel-button, .hsearch input::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
@@ -401,6 +401,7 @@ h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.01em; line-
 .rowwa.nophone { background: var(--red-bg); border-color: var(--red-bg); color: var(--red); cursor: default; }
 /* הוספת משתתף חדש מהחיפוש: שורה מתחת לטבלה */
 .addbox:empty { display: none; }
+.addbox .newbtn > .tg + span { margin-inline-start: 9.5px; }   /* הטקסט מתחיל בקו של טקסט המגדר והגיל בשורות (עמודה של 44px, הטקסט ממורכז בה) */
 .addbox .newbtn { display: flex; align-items: center; gap: 8px; width: 100%; min-height: var(--ctl); padding: 8px var(--gut); background: var(--bg); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: 16px; font-weight: 600; color: var(--text); text-align: right; margin-bottom: env(safe-area-inset-bottom); }
 .newbtn b { color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -412,7 +413,7 @@ h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.01em; line-
 #fMenu .fopt .fcnt { margin-inline-start: auto; font-size: 13.5px; color: var(--text-2); font-weight: 700; font-variant-numeric: tabular-nums; }
 #fMenu .fsep { height: 0; border-top: 1px solid var(--line); margin: 4px; }
 /* תפריט תצוגה: טוגלים */
-#viewMenu { display: block; width: min(420px, calc(100vw - 16px)); overflow-y: auto; overscroll-behavior: contain; padding: 4px 12px 12px; }
+#viewMenu { display: block; width: min(360px, calc(100vw - 16px)); overflow-y: auto; overscroll-behavior: contain; padding: 4px 12px 12px; }
 #viewMenu .vrow { display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px; background: transparent; text-align: start; }
 #viewMenu .vrow + .vrow { border-top: 1px solid var(--line); }
 #viewMenu .vic { flex: 0 0 auto; width: 36px; height: 36px; display: grid; place-items: center; background: transparent; color: var(--text); }   /* סמל בלי רקע */
@@ -518,8 +519,14 @@ html.dlg-lock { overflow: hidden; overscroll-behavior: none; }
 #pInfoBtn .ibadge { position: absolute; right: 2px; bottom: 2px; display: flex; align-items: center; justify-content: center; width: 16px; height: 16px; background: var(--bg); color: var(--text-2); pointer-events: none; }
 #pInfoBtn .ibadge.red { color: var(--red); }
 #pMsgs { display: contents; }
-#pDlg .sheet-head #pBack { order: -2; }
-#pDlg .sheet-head #pMsgs .ctop { order: -1; display: flex; margin: 0; }
+/* כותרת כרטיס המשתתף, מימין לשמאל: חזרה, פרטי המשתתף, תגית הגיל והשם, היתרה, ובקצה השמאלי וואטסאפ (31.10.26) */
+#pDlg .sheet-head #pBack { order: -3; }
+/* השורה השנייה במסך משנה (שם המפגש ומועדו): מיושרת לטקסט הכותרת (אחרי חץ החזרה) וצמודה אליה */
+#pDlg .sheet-head:has(+ .pviewsub:not([hidden])) { margin-bottom: 0; }
+#pDlg .pviewsub { margin-top: -8px; padding-inline-start: calc(var(--ib) + 8px); line-height: 1.3; }
+#pDlg .sheet-head #pInfoBtn { order: -2; }
+#pDlg .sheet-head #pPayChip, #pDlg .sheet-head #pAllocChip { order: 1; }
+#pDlg .sheet-head #pMsgs .ctop { order: 2; display: flex; margin: 0; }
 #pViewAs { margin-inline-start: auto; }
 #pDlg .ppanel { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior-y: contain; padding: 4px 0; }
 #pDlg .ppanel[data-panel="main"] { display: flex; flex-direction: column; overflow: hidden; margin-inline: calc(var(--gut) * -1); padding-inline: var(--gut); }
@@ -554,9 +561,14 @@ html.dlg-lock { overflow: hidden; overscroll-behavior: none; }
 .mlist .mrow { flex: 0 0 auto; width: 156px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 8px; border: 1px solid transparent; background: var(--surface); scroll-snap-align: start; }
 .mlist .mrow .mlabel { grid-column: 1; grid-row: 1; width: 100%; background: transparent; color: var(--text); font-weight: 800; }
 .mlist .mrow.hl .mlabel { background: var(--orange-bg); color: var(--orange-ink); }
-.mlist .mrow .pay { grid-column: 2; grid-row: 1; width: 100%; padding: 0 4px; background: var(--red-bg); color: var(--red); }
+.mlist .mrow .pay { grid-column: 2; grid-row: 1; width: 100%; padding: 0 4px; }   /* הצבע מהסטטוס עצמו (applyStatuses); בלי ברירת מחדל אדומה שדרסה אותו */
 .mlist .mrow .pay.none { color: var(--text-2); }
 .mlist .mrow .mline { display: contents; }
+/* מפגש דמה: משתתף שנפתח מתוך מפגש שהוא עוד לא משויך אליו (31.10.26); בגודל של מפגש רגיל */
+.mlist .mrow.dummy { padding: 0; background: transparent; border: 1px dashed var(--line-2); min-height: 78px; }
+.mlist .mrow.dummy .mdummy { grid-column: 1 / -1; grid-row: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 100%; height: 100%; border: 0; background: transparent; color: var(--text-2); cursor: pointer; font-family: inherit; }
+.mlist .mrow.dummy .mdl { font-size: 15px; font-weight: 700; color: var(--orange-ink); }
+.mlist .mrow.dummy .mdd { font-size: 14px; font-weight: 700; }
 .mlist .mrow .mmoney, .mlist .mrow .here.sm { width: 100%; padding: 0 4px; }
 .mlist .mrow .mmoney { grid-column: 1; grid-row: 2; }
 .mlist .mrow .here.sm { grid-column: 2; grid-row: 2; }
@@ -729,6 +741,7 @@ html.dlg-lock { overflow: hidden; overscroll-behavior: none; }
 #setDlg .sethead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 #setDlg .setfield span { font-size: 13px; font-weight: 600; color: var(--text-2); }
 #setDlg .setinp { font-weight: 600; }
+#setDlg .setval { display: flex; align-items: center; justify-content: flex-end; min-height: var(--ctl); padding: 0 12px; background: var(--surface-2); color: var(--text); font-size: 16px; font-weight: 600; text-align: right; overflow-wrap: anywhere; user-select: text; }   /* חשבון הגוגל המחובר: לקריאה בלבד, בלי מסגרת של שדה */
 #emText { height: auto !important; padding: 12px !important; line-height: 1.55; font-size: 15.5px; }
 .emvars { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 12px; }
 .emvars button { background: var(--surface-2); color: var(--text); border-color: transparent; }
@@ -923,7 +936,8 @@ html.menu-open .fm-open, html.menu-open .fm-open * { pointer-events: auto !impor
 html.is-loading .hgrp { visibility: hidden; }
 
 /* ---------- שורת החיפוש: מספר הרשומות במקום הזכוכית (עמודת הוואטסאפ), ומשמאלו תיבת חיפוש פתוחה תמיד בלי מסגרת (31.10.26) ---------- */
-.listbar .listcount { flex: 0 0 var(--tag); min-width: var(--tag); text-align: center; font-size: 14px; font-weight: 700; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.listbar .lbfilt { flex: 0 0 var(--tag); display: flex; align-items: center; justify-content: center; }
+.listbar .listcount, .vbar .listcount, #viewMenu .fsh .listcount { flex: 0 0 var(--tag); min-width: var(--tag); text-align: center; font-size: 14px; font-weight: 700; color: var(--text-2); font-variant-numeric: tabular-nums; }
 .listbar .hsearch { position: relative; flex: 1 1 auto; min-width: 0; height: 100%; margin: 0; }
 .listbar .hsearch input { display: block; width: 100%; height: 100%; padding: 0 9px 0 calc(var(--ind) + 8px); border: 0; background: transparent; font-size: 16px; color: var(--text); cursor: text; }
 .listbar .hsearch input:focus { outline: none; }
@@ -932,7 +946,7 @@ html.is-loading .hgrp { visibility: hidden; }
 /* ---------- שורת הסינון והמיון: שתי תגיות (סינון, מיון); נקודה = יש סינון שלא רואים בשורה / מיון שאינו ברירת המחדל ---------- */
 .vbar { position: relative; display: flex; align-items: center; gap: 8px; padding: 0 var(--gut); }
 .vbar .lbend { position: absolute; top: 50%; left: var(--gut); z-index: 2; margin-top: calc(var(--ind) / -2); line-height: 0; }   /* אייקוני הסינון של העמודות, מיושרים ב-JS מעל העמודות (alignFilters) */
-.wrap > .vbar { flex: 0 0 var(--ctl); height: var(--ctl); background: var(--bg); border-bottom: 1px solid var(--line); }   /* מתחת לשורת החיפוש, באותו גובה, ומעל הרשימה */
+.wrap > .vbar { flex: 0 0 36px; height: 36px; background: var(--bg); border-bottom: 2px solid var(--line); }   /* מתחת לשורת החיפוש, באותו גובה, ומעל הרשימה; הקו מעל השורה הראשונה בעובי 2px (לבקשת בעל האתר) */
 :is(#filtBtn, #sortBtnH) { width: var(--tag); min-width: var(--tag); height: var(--tag); padding: 0; border: 0; background: transparent; color: var(--text); }   /* סינון ומיון: סמל בלבד, בלי רקע אפור */
 #listTags.vbar .stc:not([aria-pressed="true"]) { background: transparent; }   /* זכר / נקבה בשורת הסינון: בלי רקע אפור; נבחר נשאר מלא בשחור */
 :is(#filtBtn, #sortBtnH) svg { width: 16px; height: 16px; }
@@ -947,7 +961,6 @@ html.is-loading .vbar { display: none; }
 #viewMenu .mgc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 #viewMenu .mc.zero { opacity: .45; }
 #viewMenu .fclear { display: block; width: 100%; height: var(--ctl); margin-top: 4px; background: var(--surface-2); color: var(--text); font-weight: 700; }
-@media (max-width: 699px) { #viewMenu { width: auto; border-inline-width: 0; } }
 
 /* ---------- סמל המצב ליד השם: צמוד למילה האחרונה ובגובה הטקסט, כחלק מהשורה ---------- */
 .row .nm .name .nwrap { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }   /* המילה האחרונה והסמל יחידה אחת: הסמל ממורכז אנכית מול שורת הטקסט של המילה */
@@ -962,6 +975,9 @@ html.is-loading .vbar { display: none; }
 .listbar .sclear { left: 0; width: var(--ind); height: var(--ind); margin-top: calc(var(--ind) / -2); font-size: 18px; }
 
 /* כפתור המיון בשורת החיפוש, בעמודת ריבועי ההגעה (כמו כפתור ניקוי החיפוש); כשיש טקסט בחיפוש או שהוא בפוקוס, כפתור הניקוי מכסה אותו */
+/* שטח הלחיצה של כפתור המיון גדול מהסמל, בעיקר ימינה (31.10.26): פספוס קטן לא פותח את החיפוש והמקלדת; ::before כי ::after תפוס לנקודת המיון הפעיל */
+#sortBtnH { position: relative; }
+#sortBtnH::before { content: ''; position: absolute; top: -4px; bottom: -4px; left: -12px; right: -24px; }
 .listbar .lbsort { position: absolute; left: var(--gut); top: 50%; margin-top: calc(var(--ind) / -2); display: flex; }
 .listbar:has(.search input:not(:placeholder-shown)) .lbsort, .listbar:has(.search:focus-within) .lbsort { visibility: hidden; }
 
@@ -990,11 +1006,6 @@ dialog .dclose { display: none; }
 @media (min-width: 1024px) {
   :is(#setDlg, #stDlg, #finDlg, #prDlg).drawer { width: calc(100vw - var(--listw)); }
 }
-
-/* ---------- מאחורי פאנל הסינון: הדף כהה למחצה, בדהייה (31.10.26) ---------- */
-#menuShade { position: fixed; inset: 0; z-index: 299; background: var(--scrim); opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .22s ease, visibility 0s linear .22s; }
-#menuShade.on { opacity: 1; visibility: visible; transition: opacity .22s ease, visibility 0s; }
-@media (prefers-reduced-motion: reduce) { #menuShade, #menuShade.on { transition: none; } }
 
 /* ---------- סטטיסטיקות וכספים בפאנל רחב (31.10.26): מנצלים את הרוחב, לפי הרוחב של הפאנל עצמו (container query) ---------- */
 @media (min-width: 760px) { #stDlg.drawer #stBody, #finDlg.drawer #finMain { container-type: inline-size; } }   /* המכיל הוא אזור התוכן ולא ה-sheet: container יוצר מסגרת לאלמנטים fixed, ותפריט התקופה של הכספים נמצא ב-sheet */
