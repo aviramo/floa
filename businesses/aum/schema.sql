@@ -249,11 +249,13 @@ revoke all on function public.aum_notify_signup() from public, anon, authenticat
 --    צריך לדעת: בשני המקרים טל חוזרת אליו. מספר שכבר קיים לא נחשף ("exists").
 --    p_src = 'p' מסמן הגעה ממודעה בתשלום (?s=p בכתובת): source = 'site-ad'.
 drop function if exists public.aum_signup(text, text, boolean);   -- הגרסה הישנה
-create or replace function public.aum_signup(p_name text, p_phone text, p_age int, p_gender text, p_src text default null)
+-- 22: שם פרטי ושם משפחה בנפרד (p_first, p_last). p_name נשאר לתאימות עם דפים שבמטמון של הדפדפן
+drop function if exists public.aum_signup(text, text, int, text, text);
+create or replace function public.aum_signup(p_name text default null, p_phone text default null, p_age int default null, p_gender text default null, p_src text default null, p_first text default null, p_last text default null)
 returns text language plpgsql security definer set search_path = public as $$
 declare
   n    text := public.aum_normalize_phone(p_phone);
-  nm   text := trim(coalesce(p_name, ''));
+  nm   text := coalesce(nullif(trim(concat_ws(' ', regexp_replace(trim(coalesce(p_first, '')), '\s+', ' ', 'g'), regexp_replace(trim(coalesce(p_last, '')), '\s+', ' ', 'g'))), ''), regexp_replace(trim(coalesce(p_name, '')), '\s+', ' ', 'g'));
   src  text := case when p_src = 'p' then 'site-ad' else 'site' end;
   code text := nullif(lower(left(regexp_replace(coalesce(p_src, ''), '[^a-zA-Z0-9_-]', '', 'g'), 20)), '');   -- קוד דרך ההגעה מהקישור ?s=קוד
   pid  uuid;
@@ -306,8 +308,8 @@ begin
   end if;
   return res;
 end $$;
-revoke all on function public.aum_signup(text, text, int, text, text) from public;
-grant execute on function public.aum_signup(text, text, int, text, text) to anon, authenticated;
+revoke all on function public.aum_signup(text, text, int, text, text, text, text) from public;
+grant execute on function public.aum_signup(text, text, int, text, text, text, text) to anon, authenticated;
 
 -- 7. זמן אמת בדף הניהול (Realtime מכבד RLS: רק מנהל מחובר מקבל שינויים)
 do $$

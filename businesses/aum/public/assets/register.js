@@ -19,10 +19,13 @@
             '<input type="text" name="website" data-su="hp" class="su-hp" tabindex="-1" autocomplete="off" aria-hidden="true">' +
             '<div class="su-fold"><div>' +
               '<div class="su-grid">' +
-                '<div class="su-cell"><input id="suName" data-autofocus data-su="name" name="name" type="text" class="su-input" autocomplete="name" maxlength="60" placeholder="שם" aria-label="שם" required><div data-su="nameErr" class="su-err" role="alert"></div></div>' +
-                '<div class="su-cell"><select data-su="gender" name="gender" class="su-input su-select" aria-label="מגדר" required><option value="" selected disabled>מגדר</option><option value="male">גבר</option><option value="female">אישה</option></select><div data-su="genderErr" class="su-err" role="alert"></div></div>' +
+                '<div class="su-cell" style="grid-column:1/-1"><div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:.5rem">' +
+                  '<input id="suName" data-autofocus data-su="first" name="first_name" type="text" class="su-input" autocomplete="given-name" maxlength="30" placeholder="שם פרטי" aria-label="שם פרטי" required>' +
+                  '<input data-su="last" name="last_name" type="text" class="su-input" autocomplete="family-name" maxlength="30" placeholder="שם משפחה" aria-label="שם משפחה" required>' +
+                '</div><div data-su="nameErr" class="su-err" role="alert"></div></div>' +
                 '<div class="su-cell"><input id="suPhone" data-su="phone" name="phone" type="tel" dir="ltr" inputmode="tel" class="su-input" style="text-align:end" autocomplete="tel" maxlength="24" placeholder="טלפון" aria-label="טלפון" required><div data-su="phoneErr" class="su-err" role="alert"></div></div>' +
                 '<div class="su-cell"><input id="suAge" data-su="age" name="age" type="number" inputmode="numeric" min="18" max="99" class="su-input" autocomplete="off" placeholder="גיל" aria-label="גיל" required><div data-su="ageErr" class="su-err" role="alert"></div></div>' +
+                '<div class="su-cell" style="grid-column:1/-1"><select data-su="gender" name="gender" class="su-input su-select" aria-label="מגדר" required><option value="" selected disabled>מגדר</option><option value="male">גבר</option><option value="female">אישה</option></select><div data-su="genderErr" class="su-err" role="alert"></div></div>' +
               '</div>' +
             '</div></div>' +
             '<button data-su="btn" type="submit" class="btn su-send">הרשמה</button>' +
@@ -126,7 +129,7 @@
 
   var root = modal.querySelector("[data-su-root]");
   function q(k) { return root.querySelector('[data-su="' + k + '"]'); }
-  var form = q("form"), nameI = q("name"), phoneI = q("phone"), ageI = q("age"), genderI = q("gender"), btn = q("btn");
+  var form = q("form"), nameI = q("first"), lastI = q("last"), phoneI = q("phone"), ageI = q("age"), genderI = q("gender"), btn = q("btn");
   var t0 = Date.now(), saved = false;
 
   function setErr(input, errEl, msg) { errEl.textContent = msg || ""; input.classList.toggle("bad", !!msg); }
@@ -138,7 +141,9 @@
     setTimeout(function () { q("after").classList.remove("shut"); }, 700);
   }
 
-  nameI.addEventListener("input", function () { setErr(nameI, q("nameErr"), ""); });
+  function clearName() { setErr(nameI, q("nameErr"), ""); lastI.classList.remove("bad"); }
+  nameI.addEventListener("input", clearName);
+  lastI.addEventListener("input", clearName);
   phoneI.addEventListener("input", function () { setErr(phoneI, q("phoneErr"), ""); });
   ageI.addEventListener("input", function () { setErr(ageI, q("ageErr"), ""); });
   genderI.addEventListener("change", function () { setErr(genderI, q("genderErr"), ""); });
@@ -154,8 +159,8 @@
   form.addEventListener("submit", function (e) {
     e.preventDefault();
     q("fail").textContent = "";
-    var name = nameI.value.trim().replace(/\s+/g, " "), norm = normPhone(phoneI.value), ok = true;
-    if (name.length < 2) { setErr(nameI, q("nameErr"), "נא למלא שם"); ok = false; }
+    var first = nameI.value.trim().replace(/\s+/g, " "), last = lastI.value.trim().replace(/\s+/g, " "), norm = normPhone(phoneI.value), ok = true;
+    if (!first || !last) { setErr(first ? lastI : nameI, q("nameErr"), "נא למלא שם פרטי ושם משפחה"); if (!first && !last) lastI.classList.add("bad"); ok = false; }
     var gender = genderI.value || null;
     if (!gender) { setErr(genderI, q("genderErr"), "נא לבחור"); ok = false; }
     if (!norm) { setErr(phoneI, q("phoneErr"), "מספר לא תקין"); ok = false; }
@@ -165,7 +170,7 @@
     if (q("hp").value || Date.now() - t0 < 1500) { showDone(); return; }   /* בוט: מציגים הצלחה בלי לשמור */
 
     btn.disabled = true; btn.textContent = "שולחים...";
-    var body = { p_name: name, p_phone: norm, p_age: age, p_gender: gender };
+    var body = { p_first: first, p_last: last, p_phone: norm, p_age: age, p_gender: gender };
     if (SRC) body.p_src = SRC;
     send(body).then(function (res) {
       return res.ok ? res.json() : null;
@@ -173,7 +178,7 @@
       /* כפילות: אותה הודעה, בלי לחשוף שהמספר כבר רשום */
       if (out === "created" || out === "exists") return showDone();
       if (out === "invalid_phone") setErr(phoneI, q("phoneErr"), "מספר לא תקין");
-      else if (out === "invalid_name") setErr(nameI, q("nameErr"), "נא למלא שם");
+      else if (out === "invalid_name") setErr(nameI, q("nameErr"), "נא למלא שם פרטי ושם משפחה");
       else if (out === "invalid_age") setErr(ageI, q("ageErr"), "גיל לא תקין");
       else if (out === "invalid_gender") setErr(genderI, q("genderErr"), "נא לבחור");
       else throw new Error("signup failed");
