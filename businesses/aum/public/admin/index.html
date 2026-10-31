@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=1193f8ac" />
+  <link rel="stylesheet" href="admin.css?v=9c1f0685" />
   <link rel="stylesheet" href="admin-aum.css?v=addde193" />
 </head>
 <body class="locked">
@@ -818,6 +818,10 @@
     return (withDay ? 'יום ' + day + ' ' : '') + d + '.' + mo + ' · ' + String(m.meeting_time).slice(0, 5);
   }
   const isPast = (m) => m.meeting_date < todayISO();
+  /* המפגש הקרוב: הראשון שעוד לא עבר (לפי תאריך ושעה). בטעינה הראשונה של הדף נפתחים עליו, אלא אם הגיעו בקישור עמוק או שבחרו במפורש "כל המשתתפים" (נשמר בלשונית, ולכן גם רענון משאיר את הבחירה) */
+  const nextMeetingOf = () => state.meetings.filter((m) => !isPast(m)).sort((a, b) => (a.meeting_date + a.meeting_time).localeCompare(b.meeting_date + b.meeting_time))[0] || null;
+  let autoMeetDone = false;
+  const allChosen = (v) => { try { if (v === undefined) return sessionStorage.getItem('harpatka_all_chosen') === '1'; if (v) sessionStorage.setItem('harpatka_all_chosen', '1'); else sessionStorage.removeItem('harpatka_all_chosen'); } catch (e) {} return false; };
   /* המפגש שעליו מסמנים הגעה ברשימה הראשית: המפגש שנבחר בכותרת, אחרת הקרוב ביותר (או של היום) */
   /* מחיר ברירת מחדל לפי מועד התשלום: 80 ₪ עד יומיים לפני ההתייקרות, ומשלושה ימים לפני המפגש 100 ₪ */
   /* מדרגות מחיר לכל מפגש (העמודה price_tiers, מועתקת למפגש חדש מהמפגש הקודם): { base, steps: [{ days, price }], final }.
@@ -1037,12 +1041,13 @@
       if (mem0) applyMembers(mem0);   // מצב חשבון הגוגל של כל משתתף (סמל ליד השם, סינון "אזור אישי"), לפני הציור
       if (!silent) { $('#status').innerHTML = ''; document.documentElement.classList.remove('is-loading'); }   // הנתונים הגיעו: יוצאים ממצב הטעינה (הציור באותו רגע, גם בקישור עמוק)
       setTimeout(prefetchNoteImages, 1500);   // טעינה מוקדמת של צילומי ההערות למטמון
+      if (!silent && !autoMeetDone) { autoMeetDone = true; if (!deep && !allChosen()) { const nm = nextMeetingOf(); if (nm) state.filter = nm.id; } }   // בטעינה הראשונה נפתחים על המפגש הקרוב
       if (deep) {
         const d = deep; deep = null;
         try { sessionStorage.removeItem('aum_deep'); } catch (e) {}
         if (d.m && state.meetings.some((x) => x.id === d.m)) state.filter = d.m;
         if (d.mt && typeById(d.mt) && !state.filter) state.mtype = d.mt;   // בחירה אחת: מפגש גובר על סוג
-        { const ks = payKeys(d.pay).filter((k) => baseK(k) === PNONE || state.statuses.concat(state.mstatuses, state.pstatuses).some((x) => x.key === baseK(k))); if (ks.length) state.pay = ks.join(','); }   // סינון לפי סטטוס אחד שנבחר מהרשימה
+        { const ks = payKeys(d.pay).filter((k) => k === PNONE || state.statuses.concat(state.mstatuses, state.pstatuses).some((x) => x.key === k)); if (ks.length) state.pay = ks.join(','); }   // סינון לפי סטטוס אחד שנבחר מהרשימה
         if (d.pd === '1' || d.pd === '0' || d.pd === 'n' || d.pd === 'w' || /^a\d+$/.test(d.pd || '') || /^m[A-Za-z0-9_]+$/.test(d.pd || '')) state.paidF = d.pd;
         if (d.sv === '1' || d.sv === '0') state.sent = d.sv;
         if (d.bl === '1' || d.bl === '0' || d.bl === 'n' || d.bl === 'f' || d.bl === 'w') state.bal = d.bl;
@@ -1202,12 +1207,10 @@
   const AGE_MID = Math.floor((AGE_MIN + AGE_MAX) / 2), AGE_B = [['u', 'עד ' + (AGE_MIN - 1), 0, AGE_MIN - 1], ['lo', AGE_MIN + ' עד ' + AGE_MID, AGE_MIN, AGE_MID], ['hi', (AGE_MID + 1) + ' עד ' + AGE_MAX, AGE_MID + 1, AGE_MAX], ['o', (AGE_MAX + 1) + ' ומעלה', AGE_MAX + 1, 200]];   // קבוצות הגיל לפי טווח היעד (shared/age.js)
   const moreOk = (p) => { if (state.q.trim()) return true; if (state.loginF && loginOf(p) !== state.loginF) return false; if (state.srcF) { const c = channelOf(p); if (state.srcF === '__none' ? !!c : !(c && c.id === state.srcF)) return false; } if (state.ageF) { const b = AGE_B.find((x) => x[0] === state.ageF), a = shownAge(p); if (b && (a == null || a < b[2] || a > b[3])) return false; } return true; };
   const moreOn = () => !state.q.trim() && !!(state.srcF || state.ageF || state.loginF);
-  /* סינון שלילי בפס הצ'יפים: מפתח עם קידומת ! = מי שאין לו את הסטטוס / התגית (לחיצה ראשונה: יש, שנייה: אין, שלישית: ביטול) */
-  const NEG = '!', isNegK = (k) => String(k).startsWith(NEG), baseK = (k) => isNegK(k) ? String(k).slice(1) : String(k);
   const payKeys = (s) => s ? String(s).split(',').filter(Boolean) : [];   // סינון סטטוסים מרובה: state.pay הוא מפתחות מופרדים בפסיק
   /* סינון בתוך מפגש: איחוד (אחד מהסטטוסים). בתצוגת הכל: חיתוך (כל התגיות שנבחרו יחד) */
   /* חיתוך בין קבוצות: סטטוסים של מפגש (אחד מהם) וגם תגיות של משתתף (כולן); תגיות מוצגות בתוך מפגש רק כשהכפתור פעיל */
-  const matchPay = (p, keys) => { if (!keys.length) return true; const S = keys.filter((k) => !isNegK(k) && !isPKey(k)), T = keys.filter((k) => !isNegK(k) && isPKey(k)), N = keys.filter(isNegK).map(baseK); return (!S.length || S.some((k) => stMatch(p, k))) && (!T.length || T.every((k) => stMatch(p, k))) && N.every((k) => !stMatch(p, k)); };
+  const matchPay = (p, keys) => { if (!keys.length) return true; const S = keys.filter((k) => !isPKey(k)), T = keys.filter((k) => isPKey(k)); return (!S.length || S.some((k) => stMatchEff(p, k))) && (!T.length || T.every((k) => stMatchEff(p, k))); };
   const effPay = () => state.q.trim() ? null : state.pay;
   /* טוגל "הגעה למפגש": ידני בלבד (31.10.26), בלי פתיחה אוטומטית לפי שעת המפגש; בתצוגה הכללית null = דולק (התמדה) */
   /* העדפות תצוגה ברמת המשתמש ובמפגש (27.10.26): לכל מנהל, לכל מפגש ולתמונת המצב הכללית ("all") ערכים משלהם לטוגלים (תגיות, תשלום: true/false; שליחה, הגעה: null = אוטומטי לפי התזמונים של אותו מפגש). state.showTags וחבריו הם מאפיינים שמחזירים וכותבים את ערכי ההקשר הנוכחי (המפגש הנבחר או "all"), כך שבמעבר בין מפגשים התצוגה מתחלפת איתם. נשמר ב-harpatka_admin_prefs.view_scopes */
@@ -1217,7 +1220,9 @@
   const viewDef = () => state.filter ? MEETING_DEF : VIEW_DEF;   // הקשר התצוגה: מפגש, סוג מפגש (31.10.26) או כל המשתתפים
   const viewCtx = () => { const k = viewKey(); return state.viewScopes[k] || (state.viewScopes[k] = Object.assign({}, viewDef())); };
   ['showPay', 'showGender'].forEach((prop) => Object.defineProperty(state, prop, { get: () => true, set() {}, enumerable: true }));   // תשלום ומגדר מוצגים תמיד (31.10.26)
-  [['showSent', 'sent'], ['showAtt', 'att']].forEach(([prop, key]) => Object.defineProperty(state, prop, { get() { const c = state.viewScopes[viewKey()]; return c && c[key] !== undefined && c[key] !== null ? c[key] : viewDef()[key]; }, set(v) { viewCtx()[key] = v; }, enumerable: true }));
+  /* ההתמדה (צ'יף "ציון" ברשימה ואייקון הסינון שלה) מוצגת תמיד בתצוגת "הכל" ובסוג: אין טוגל (31.10.26) */
+  Object.defineProperty(state, 'showAtt', { get() { return true; }, set() {}, enumerable: true });
+  [['showSent', 'sent']].forEach(([prop, key]) => Object.defineProperty(state, prop, { get() { const c = state.viewScopes[viewKey()]; return c && c[key] !== undefined && c[key] !== null ? c[key] : viewDef()[key]; }, set(v) { viewCtx()[key] = v; }, enumerable: true }));
   /* כפתור התגיות (31.10.26): הגדרה אחת לכל התצוגות (כל המשתתפים, סוגי מפגשים ומפגשים), לכל מנהל בנפרד; נשמר ב-view_scopes._g */
   Object.defineProperty(state, 'showTags', { get() { const c = state.viewScopes._g; return c && c.tags !== undefined ? c.tags : VIEW_DEF.tags; }, set(v) { (state.viewScopes._g || (state.viewScopes._g = {})).tags = v; }, enumerable: true });
   function applyViewPrefs() { const pr = state.prefs[emailOf()] || {}; state.viewScopes = (pr.view_scopes && typeof pr.view_scopes === 'object') ? JSON.parse(JSON.stringify(pr.view_scopes)) : {}; }
@@ -1290,7 +1295,7 @@
   const paidVia = (pid, mid, key) => state.payments.some((x) => x.participant_id === pid && x.meeting_id === mid && (x.kind === 'payment' || x.kind === 'deposit') && x.method === key);
   const payF = (p, f) => (f && f[0] === 'm') ? (!noPayOf(p, linkOf(p.id, state.filter)) && paidVia(p.id, state.filter, f.slice(1))) : (f && f[0] === 'a') ? (!noPayOf(p, linkOf(p.id, state.filter)) && Math.round(allocatedOf(p.id, state.filter)) === Number(f.slice(1))) : payStateOf(p) === f;   // 'a80': ששולם בדיוק 80 למפגש הזה
   const paidOk = (p) => { const f = effPaidF(); return (!f || payF(p, f)) && sentOk(p); };
-  const normFilter = () => { if (state.pay) { const ks = payKeys(state.pay).filter((k) => state.filter ? (!isPKey(baseK(k)) || state.showTags) : (isPKey(baseK(k)) && state.showTags)); const tg = ks.filter((k) => isPKey(baseK(k))), keep = ks.filter((k) => !isPKey(baseK(k))).slice(-1).concat(tg.slice(-1)); state.pay = keep.length ? keep.join(',') : null; } };   // תגית אחת בלבד (גם מקישור ישן); סטטוסים רק בתוך מפגש, תגיות בתצוגת הכל או כשהתגיות מוצגות
+  const normFilter = () => { if (state.pay) { const ks = payKeys(state.pay).filter((k) => state.filter ? (!isPKey(k) || state.showTags) : (isPKey(k) && state.showTags)); const tg = ks.filter((k) => isPKey(k)), keep = ks.filter((k) => !isPKey(k)).slice(-1).concat(tg.slice(-1)); state.pay = keep.length ? keep.join(',') : null; } };   // תגית אחת בלבד (גם מקישור ישן); סטטוסים רק בתוך מפגש, תגיות בתצוגת הכל או כשהתגיות מוצגות
   /* סוג מפגש שנבחר בתפריט (בלי מפגש מסוים): התצוגה היא כמו "כל המשתתפים", רק עם מי שמשויך לפחות למפגש אחד מהסוג */
   let mtSet = null;
   const mtypeOk = (p) => {
@@ -1301,6 +1306,8 @@
   /* סינון וספירה לפי סטטוס: משתתף נספר ומוצג גם בסטטוס של לפני המפגש וגם בסטטוס של אחרי המפגש שיש לו (בשורה עצמה מוצג רק של אחרי המפגש, אם יש, `dispStatus`) */
   const hasStatus = (l, key) => linkStatus(l) === key || meetingKeyOf(l) === key;
   const stMatch = (p, key) => { if (key === PNONE) return !ptagsOf(p).length; if (isPKey(key)) return ptagsOf(p).includes(key); if (state.filter) { const l = linkOf(p.id, state.filter); return !!l && hasStatus(l, key); } return linksOf(p.id).some((l) => hasStatus(l, key)); };
+  /* הסינון בפס הצ'יפים: לפי הסטטוס שמוצג (סטטוס מפגש גובר על סטטוס הרשמה, `dispStatus`); הספירות בצ'יפים נשארות לפי stMatch (נספרים לפי שני הסטטוסים) */
+  const stMatchEff = (p, key) => { if (key === PNONE) return !ptagsOf(p).length; if (isPKey(key)) return ptagsOf(p).includes(key); if (state.filter) { const l = linkOf(p.id, state.filter); return !!l && dispStatus(l) === key; } return linksOf(p.id).some((l) => dispStatus(l) === key); };
   function renderFacets() {
     normFilter();
     const q = state.q.trim().toLowerCase(), qd = digits(q), eg = effGender(), ep = effPay();
@@ -1371,8 +1378,8 @@
     $('#listBal').innerHTML = !state.filter && state.showPay ? fbtn('bal', effBal(), '', '') : '';
     $('#listAtt').innerHTML = !state.filter && state.showAtt !== false ? '<button type="button" class="hfilt ' + (() => { const k = effAttF(), o = k && ATT_OPTS_F.find((x) => x[0] === k); return !o ? 'all' : attCls(o[2]); })() + '" data-fk="att" aria-haspopup="menu" aria-label="סינון לפי התמדה" title="סינון לפי התמדה והגעה (לחיצה לפתיחת תפריט)">' + (() => { const k = effAttF(), o = k && ATT_OPTS_F.find((x) => x[0] === k); return o ? ATT_GLYPH[o[3]]() : PERSIST_ICON; })() + '</button>' : '';
     $('#lbSort').innerHTML = '<button type="button" class="hfilt all' + (state.sort !== 'new' ? ' on' : '') + '" id="sortBtnH" aria-haspopup="menu" aria-expanded="' + !$('#sortMenu').hidden + '" aria-label="מיון הרשימה" title="מיון: ' + (SORTS.find((s) => s[0] === state.sort) || SORTS[0])[1] + '">' + icon('sort') + '</button>';   // נקודה בתגית = יש סינון שלא רואים בשורת הסינון / מיון שאינו ברירת המחדל
-    const stItems = (state.filter ? ((state.showTags && state.pstatuses.length) ? [{ key: PNONE, label: 'ללא תגית' }].concat(pstatusList().slice().reverse()) : []).concat(statusList()).concat(((m0) => (m0 && phaseOpen(m0)) ? mstatusList() : [])(state.meetings.find((x) => x.id === state.filter))) : ((state.showTags && state.pstatuses.length) ? [{ key: PNONE, label: 'ללא תגית' }].concat(pstatusList().slice().reverse()) : [])).filter((s) => isPKey(s.key) || epk.includes(s.key) || epk.includes(NEG + s.key) || state.participants.some((p) => (!state.filter || linkOf(p.id, state.filter)) && stMatch(p, s.key)));   // תגיות על משתתפים: כשכפתור התגיות מסומן הן מוצגות תמיד, גם בלי משתתפים (31.10.26); סטטוסים רק כשיש בהם משתתפים
-    $('#stStrip').innerHTML = stItems.map((s) => { const n = nP(s.key), on = epk.includes(s.key), neg = epk.includes(NEG + s.key); return '<button type="button" class="stc ' + (isPKey(s.key) ? 'tagc' : s.key) + (n || on || neg ? '' : ' zero') + '" data-stc="' + s.key + '" aria-pressed="' + on + '"' + (neg ? ' data-neg="1" title="בלי ' + esc(s.label) + '" aria-label="בלי ' + esc(s.label) + '"' : '') + '>' + esc(s.label) + ' <small>' + n + '</small></button>'; }).join('');   // לחיצה ראשונה: מי שיש לו; שנייה (data-neg): מי שאין לו, הטקסט עם קו חוצה; שלישית: ביטול   // "חינם" (לא משלם) נמצא בפאנל הסינון, לא כצ'יפ נפרד
+    const stItems = (state.filter ? ((state.showTags && state.pstatuses.length) ? [{ key: PNONE, label: 'ללא תגית' }].concat(pstatusList().slice().reverse()) : []).concat(statusList()).concat(((m0) => (m0 && phaseOpen(m0)) ? mstatusList() : [])(state.meetings.find((x) => x.id === state.filter))) : ((state.showTags && state.pstatuses.length) ? [{ key: PNONE, label: 'ללא תגית' }].concat(pstatusList().slice().reverse()) : [])).filter((s) => isPKey(s.key) || epk.includes(s.key) || state.participants.some((p) => (!state.filter || linkOf(p.id, state.filter)) && stMatch(p, s.key)));   // תגיות על משתתפים: כשכפתור התגיות מסומן הן מוצגות תמיד, גם בלי משתתפים (31.10.26); סטטוסים רק כשיש בהם משתתפים
+    $('#stStrip').innerHTML = stItems.map((s) => { const n = nP(s.key), on = epk.includes(s.key); return '<button type="button" class="stc ' + (isPKey(s.key) ? 'tagc' : s.key) + (n || on ? '' : ' zero') + '" data-stc="' + s.key + '" aria-pressed="' + on + '">' + esc(s.label) + ' <small>' + n + '</small></button>'; }).join('');   // "חינם" (לא משלם) נמצא בפאנל הסינון, לא כצ'יף נפרד
   }
 
   /* מיון הרשימה */
@@ -1417,7 +1424,7 @@
     const clear = '<button type="button" class="link-btn" id="clearFx" style="margin-top:16px">ניקוי סינונים</button>';
     if (g || pay) {
       const who = g === 'male' ? 'זכרים' : g === 'female' ? 'נקבות' : g === 'none' ? 'משתתפים ללא מגדר' : 'משתתפים';
-      const pks = payKeys(pay), stl = pks.length === 1 && pks[0] === PNONE ? 'בלי תגיות' : pks.map((k) => { const b = baseK(k), lb = b === PNONE ? 'בלי תגיות' : STATUS_LABEL[b]; return lb && isNegK(k) ? 'לא ' + lb : lb; }).filter(Boolean).join(', ');
+      const pks = payKeys(pay), stl = pks.length === 1 && pks[0] === PNONE ? 'בלי תגיות' : pks.map((k) => k === PNONE ? 'בלי תגיות' : STATUS_LABEL[k]).filter(Boolean).join(', ');
       return '<b>אין ' + who + (stl ? (pay === PNONE ? ' ' : ' בסטטוס "') + esc(stl) + (pay === PNONE ? '' : '"') : '') + scope + (state.q ? ' שמתאימים לחיפוש' : '') + '</b>אפשר לנקות את הסינון ולנסות שוב<br>' + clear;
     }
     if (state.q) return '<b>לא נמצא אף אחד</b>אפשר לנסות שם או מספר אחר';
@@ -1457,7 +1464,7 @@
     $('#addBox').innerHTML = q ? '<button type="button" class="newbtn" id="addNew"><span class="tg ico plus" aria-hidden="true">+</span><span>הוספת משתתף חדש</span><b>' + esc(state.q.trim()) + '</b></button>' : '';   // מנותק מהרשימה, מתחתיה
     const hasNew = !!q;
 
-    state.listCnt = String(rows.length + others.length); ['#listCount', '#menuCount'].forEach((s) => { const lc = $(s); if (lc) lc.textContent = state.listCnt; });   // מספר הרשומות המוצגות כרגע (בשורת הסינון, מימין, ובתפריט הסינון בשורת "תצוגה")
+    state.listCnt = String(rows.length + others.length); { const lc = $('#listCount'); if (lc) lc.textContent = state.listCnt; const mc = $('#menuCount'); if (mc) mc.textContent = cntLabel(state.listCnt); }   // מספר הרשומות המוצגות כרגע (בשורת הסינון, מימין, ובתפריט הסינון בשורת "תצוגה")
     if (!rows.length && !others.length) {
       $('#list').innerHTML = '';   // רשימה ריקה: בלי הודעות (נשאר רק "הוספת משתתף חדש" בחיפוש)
       requestAnimationFrame(alignFilters);
@@ -1486,7 +1493,7 @@
       if (!state.filter) {
         const pr = persist(p), rate = pr.total ? pr.score / pr.total : 0, st = attCtx().by[p.id] || { cls: 'n', rank: 0, n: 0 }, cls = st.cls;
         const fut = linksOf(p.id).filter((l) => { const m = state.meetings.find((x) => x.id === l.meeting_id); return m && !started(m); }).length;   // מפגשים עתידיים שהמשתתף רשום אליהם נספרים במכנה; הצבע נקבע רק לפי מפגשים שהתחילו
-        if (state.showAtt !== false) tags = UI.tag('ציון <bdi dir="ltr">' + (pr.score > 0 ? '+' : '') + pr.score + '</bdi>', 'ptag cnt ' + cls, { title: 'ציון התמדה ' + pr.score + (pr.total ? ' ב-' + pr.total + ' מפגשים (ממוצע ' + (Math.round(rate * 10) / 10) + ' למפגש), דירוג ' + st.rank + ' מתוך ' + st.n : '') + (fut ? '. ' + fut + ' מפגשים עתידיים' : '') });
+        if (state.showAtt !== false) tags = UI.tag('<bdi dir="ltr">' + (pr.score > 0 ? '+' : '') + pr.score + '</bdi>', 'ptag cnt ' + cls, { title: 'ציון התמדה ' + pr.score + (pr.total ? ' ב-' + pr.total + ' מפגשים (ממוצע ' + (Math.round(rate * 10) / 10) + ' למפגש), דירוג ' + st.rank + ' מתוך ' + st.n : '') + (fut ? '. ' + fut + ' מפגשים עתידיים' : '') });
       }
       const evc = evCircle(p);
       return '<li class="row">' +
@@ -3889,20 +3896,20 @@
     const et = e.target.closest('[data-edit-t]');
     if (et) { closeMSel(); return openTypeEditor(et.dataset.editT); }
     const ty = e.target.closest('[data-mt]');
-    if (ty) { closeMSel(); state.mtype = ty.dataset.mt; state.filter = null; render(); return; }   // בחירת סוג: תצוגה כמו "כל המשתתפים" מסוננת לסוג, והתפריט מציג רק את המפגשים שלו
+    if (ty) { closeMSel(); allChosen(false); state.mtype = ty.dataset.mt; state.filter = null; render(); return; }   // בחירת סוג: תצוגה כמו "כל המשתתפים" מסוננת לסוג, והתפריט מציג רק את המפגשים שלו
     const ed = e.target.closest('[data-edit-m]');
     if (ed) { closeMSel(); return openMeeting(ed.dataset.editM); }
     const c = e.target.closest('[data-filter]');
     if (!c) return;
     closeMSel();
     state.filter = c.dataset.filter || null;
+    allChosen(!state.filter);   // "כל המשתתפים" שנבחר במפורש נשמר בלשונית (רענון לא קופץ למפגש הקרוב)
     state.mtype = null;   // בחירה אחת בלבד בתפריט: כל המשתתפים, סוג מפגש או מפגש (בחירת מפגש מבטלת את בחירת הסוג)
     render();
   });
   /* פאנל הסינון והתצוגה (31.10.26): כל הסינונים והטוגלים במקום אחד, נפתח מתגית הסינון שבשורת "סינון ומיון".
      לכל נושא כותרת עם טוגל תצוגה ("בשורה" / "ברשימה") ומתחתיה האפשרויות כתגיות עם הכמות; לחיצה נוספת על תגית נבחרת מבטלת אותה */
   const fsec = (title, body, extra) => '<div class="fsec"><div class="fsh"><b>' + title + '</b>' + (extra || '') + '</div>' + (body ? '<div class="mgc">' + body + '</div>' : '') + '</div>';
-  const ftgl = (k, title, on, aria) => '<button type="button" class="mc" data-vt="' + k + '" aria-pressed="' + !!on + '" aria-label="' + aria + '" title="' + aria + '">' + title + '</button>';   // תגית תצוגה: מסומנת = מוצג, לחיצה מחליפה (כמו תגיות הסינון)
   const FK = { src: 'srcF', login: 'loginF', age: 'ageF' };   // סוג הסינון בפאנל ← השדה ב-state
   function moreSecs() {
     const scope = state.participants.filter((p) => (state.filter ? linkOf(p.id, state.filter) : p.active !== false) && mtypeOk(p));
@@ -3912,15 +3919,17 @@
       fsec('גיל', AGE_B.map((b) => chip('age', b[0], b[1], cnt((p) => { const a = shownAge(p); return a != null && a >= b[2] && a <= b[3]; }))).join('')) +
       fsec('אזור אישי', [['yes', 'רשומים'], ['no', 'לא רשומים'], ['blocked', 'חסומים']].map((o) => chip('login', o[0], o[1], cnt((p) => loginOf(p) === o[0]))).join(''));
   }
+  /* מונה הרשומות בתפריט הסינון: "33 משתתפים" (בשורת הסינון נשאר המספר בלבד) */
+  const cntLabel = (n) => n == null || n === '' ? '' : Number(n) === 1 ? 'משתתף אחד' : n + ' משתתפים';
   const curMeeting = () => state.meetings.find((x) => x.id === state.filter) || null;
   /* יש סינון פעיל שלא רואים בשורת הסינון (כל מה שבפאנל חוץ ממגדר שמוצג בשורה): נקודה בתגית הסינון */
   const panelOn = () => !!(state.srcF || state.ageF || state.loginF || (state.gender && !state.showGender));   // סינוני העמודות (תשלום, שליחה, הגעה, יתרה, התמדה) נראים באייקונים שמעל העמודות ולא נספרים כאן
   function renderViewMenu() {
-    const m = curMeeting(), sentOn = !!(m && sentView(m)), attOnM = state.showAtt !== false;
+    const m = curMeeting();
     /* "תצוגה": מגדר, תשלום / יתרה, שליחת פרטי המפגש, הגעה / התמדה כתגיות (כמו "דרך הגעה"); תגית מסומנת = מוצג ברשימה או בשורת הסינון */
     /* שורה אחת בראש התפריט, בלי כותרת (31.10.26): טוגל סימון ההגעה (במפגש) או ההתמדה (בתצוגה הכללית) ומונה הרשומות בקצה השמאלי. מגדר ותשלום מוצגים תמיד */
-    let h = '<div class="fsec"><div class="fsh"><div class="mgc">' + (state.filter ? '' : ftgl('here', 'התמדה', attOnM, 'הצגת ההתמדה ברשימה')) + '</div>' +
-      '<span class="listcount" id="menuCount" title="מספר הרשומות המוצגות">' + (state.listCnt == null ? '' : state.listCnt) + '</span></div></div>';
+    let h = '<div class="fsec"><div class="fsh"><div class="mgc"></div>' +
+      '<span class="listcount" id="menuCount" title="מספר הרשומות המוצגות">' + cntLabel(state.listCnt) + '</span></div></div>';
     h += moreSecs();
     if (panelOn() || state.gender) h += '<button type="button" class="fclear" data-fclear="1">ניקוי סינונים</button>';
     $('#viewMenu').innerHTML = h;
@@ -3928,7 +3937,7 @@
   /* כפתור התגיות בכותרת (משמאל לכפתור התפריט): מציג ומסתיר את התגיות בשורת הסינון; בלי תגיות מוגדרות פותח את הגדרת התגיות */
   $('#tagBtn').addEventListener('click', () => {
     if (!state.pstatuses.length) { openStatusSettings('participant'); return; }
-    state.showTags = !state.showTags; if (!state.showTags && state.pay) { const ks = payKeys(state.pay).filter((k) => !isPKey(baseK(k))); state.pay = ks.length ? ks.join(',') : null; }
+    state.showTags = !state.showTags; if (!state.showTags && state.pay) { const ks = payKeys(state.pay).filter((k) => !isPKey(k)); state.pay = ks.length ? ks.join(',') : null; }
     render(); saveViewPrefs();
   });
   /* סינון לפי העמודות (תשלום, שליחת פרטי המפגש, הגעה; בתצוגה הכללית יתרה והתמדה): אייקון מעל כל עמודה, לחיצה פותחת תפריט עם המצבים, אייקוניהם והכמות; הבחירה מבצעת את הסינון */
@@ -4065,10 +4074,6 @@
     const mk = e.target.closest('[data-mk]');
     if (mk) { const f = FK[mk.dataset.mk], v = mk.dataset.mv; if (f) state[f] = state[f] === v ? null : v; syncUrl(); return after(); }
     if (e.target.closest('[data-fclear]')) { state.gender = null; state.paidF = null; state.sent = null; state.bal = null; state.srcF = null; state.ageF = null; state.loginF = null; state.attF = null; return after(); }
-    const b = e.target.closest('[data-vt]'); if (!b) return;
-    if (b.dataset.vt === 'here') { state.showAtt = state.showAtt === false ? null : false; if (state.showAtt === false) state.attF = null; }   // תמונת מצב כללית: התמדה וסימון ההגעה למפגש הקרוב
-    else { const m0 = curMeeting() || eventMeeting(), cur = !!(m0 && sentView(m0)), auto = !!(m0 && (evOnFor(m0) || hasSent(m0))); state.showSent = !cur === auto ? null : !cur; if (cur) state.sent = null; }
-    after(true);
   });
   /* חזרה בדפדפן במצב חיפוש פתוח (בפוקוס או עם טקסט) סוגרת את החיפוש ומנקה אותו */
   const searchNav = { id: 'search', close() { const i = NAV.stack.findIndex((x) => x.d === searchNav); if (i >= 0) NAV.stack.splice(i, 1); const q = $('#q'); q.value = ''; state.q = ''; q.blur(); renderList(); syncUrl(); } };
@@ -4088,7 +4093,7 @@
     const pb = e.target.closest('[data-stp]'); if (pb) { state.paidF = state.paidF === pb.dataset.stp ? null : pb.dataset.stp; render(); syncUrl(); return; }
     const eb = e.target.closest('[data-qedit]'); if (eb) { openStatusSettings(eb.dataset.qedit); return; }
     const gb = e.target.closest('[data-stg]'); if (gb) { state.gender = gb.dataset.stg === 'all' || state.gender === gb.dataset.stg ? null : gb.dataset.stg; render(); syncUrl(); return; }   // גברים או נשים (אחד מהם), בחיתוך עם הסטטוסים
-    const b = e.target.closest('[data-stc]'); if (!b) return; const k = b.dataset.stc, cur = payKeys(state.pay), tg = isPKey(k), nx = cur.includes(k) ? cur.map((x) => x === k ? NEG + k : x) : cur.includes(NEG + k) ? cur.filter((x) => x !== NEG + k) : cur.filter((x) => isPKey(baseK(x)) !== tg).concat(k);   // יש ← אין ← ביטול; סטטוס אחד ותגית אחת בכל פעם (בחירה באחר באותה קבוצה מחליפה)
+    const b = e.target.closest('[data-stc]'); if (!b) return; const k = b.dataset.stc, cur = payKeys(state.pay), tg = isPKey(k), nx = cur.includes(k) ? cur.filter((x) => x !== k) : cur.filter((x) => isPKey(x) !== tg).concat(k);   // לחיצה מסננת לפי הסטטוס או התגית, לחיצה נוספת מבטלת; סטטוס אחד ותגית אחת בכל פעם (בחירה באחר באותה קבוצה מחליפה)
     state.pay = nx.length ? nx.join(',') : null; render(); syncUrl();
   });
   $('#list').addEventListener('click', (e) => { if (e.target.closest('#clearFx')) { state.gender = null; state.pay = null; state.paidF = null; state.sent = null; state.bal = null; render(); } });

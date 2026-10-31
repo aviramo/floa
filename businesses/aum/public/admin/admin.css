@@ -7,7 +7,7 @@
    ===================================================================== */
 
 /* ---------- 1. טוקנים ---------- */
-:root {
+:root { --safe-b: max(env(safe-area-inset-bottom, 0px), 28px);   /* אזור בטוח בתחתית: פס המחוות / הבית של המכשיר, ולפחות 28px */
   --scrim: rgba(16, 20, 26, .55);   /* הכהיה מאחורי פופאפים */
   --bg: #FFFFFF;
   --surface: #F5F6F8;      /* אפור 50: פאנלים, ריחוף */
@@ -292,7 +292,8 @@ body.locked .wrap, body.locked #statsBtn { display: none !important; }
 .wrap > header.top { flex: 0 0 auto; position: relative; z-index: 5; background: var(--bg); }   /* בלי קו מעל שורת החיפוש (31.10.26) */
 .wrap > #status { flex: 0 0 auto; }
 .wrap > .listbar { flex: 0 0 36px; }
-.wrap > .list { flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior-y: auto; scrollbar-width: none; }
+.wrap > .list { flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior-y: auto; scrollbar-width: none; padding-bottom: var(--safe-b); }   /* הרשימה מסתיימת מעל פס המחוות של המכשיר (31.10.26): השורה האחרונה נגללת עד אזור בטוח */
+.wrap > .list:has(~ .addbox:not(:empty)) { padding-bottom: 0; }   /* כשכרטיס "הוספת משתתף חדש" מתחתיה, האזור הבטוח נשאר מתחתיו */
 .wrap > .list::-webkit-scrollbar { display: none; }
 .wrap > .list:empty { display: none; }
 .wrap > .addbox { flex: 0 0 auto; }
@@ -361,7 +362,7 @@ h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.01em; line-
 .row .main { display: grid; grid-template-columns: 44px minmax(0, 1fr) 0 auto auto; column-gap: 8px; align-items: center; min-height: var(--ctl); padding: 8px var(--gut); padding-inline-end: calc(var(--gut) + var(--tag) + 8px); cursor: pointer; }   /* עמודת הוואטסאפ (.rowwa) בקצה השמאלי, אחרי כל העמודות */
 .row .main.att, .row .main.ev { grid-template-columns: 44px minmax(0, 1fr) 0 auto auto var(--ind); }   /* עמודת הסטטוס ברוחב התגית (לא 112px קבוע): התגיות עדיין מיושרות בקצה השמאלי, והשם מקבל את כל השאר */
 .row .main.att.ev { grid-template-columns: 44px minmax(0, 1fr) 0 auto auto var(--ind) var(--ind); }
-.row .main.bl { grid-template-columns: 44px minmax(0, 1fr) 0 auto 82px var(--ind); }
+.row .main.bl { grid-template-columns: 44px minmax(0, 1fr) 0 auto 44px var(--ind); }   /* עמודת ההתמדה ברוחב הצ'יף וצמודה לתשלום ברווח אחיד של 8px, כמו בין התשלום לוואטסאפ */
 .row .main.bl.nosum { grid-template-columns: 44px minmax(0, 1fr) 0 auto var(--ind); }
 .row .nm, .row .meta { display: contents; }
 .row .meta > * { grid-row: 1; text-align: center; }
@@ -379,7 +380,8 @@ h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.01em; line-
 .row .meta .age[style] .gl, .tchip[style] b { color: inherit; }
 .row .meta .age:not([title]) { grid-column: 5; }
 .row .sidewrap { grid-column: 5; grid-row: 1; display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 0; }
-.row .main.bl .sidewrap { justify-content: flex-start; }
+.row .main.bl .sidewrap { justify-content: flex-end; }
+.row .main.bl .sidewrap .ptag.cnt { width: 44px; min-width: 0; padding-inline: 0; justify-content: center; }
 .row .main.bl.nosum .sidewrap { display: none; }
 /* תג סטטוס בשורה */
 .row .ptag { background: var(--red-bg); color: var(--red); }
@@ -401,7 +403,7 @@ h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.01em; line-
 .addbox:empty { display: none; }
 .addbox .newbtn > .tg { order: 9; margin-inline-start: auto; }
 .addbox .newbtn > .tg + span { margin-inline-start: 9.5px; }   /* הטקסט מתחיל בקו של טקסט המגדר והגיל בשורות (עמודה של 44px, הטקסט ממורכז בה) */
-.addbox .newbtn { display: flex; align-items: center; gap: 8px; width: 100%; min-height: var(--ctl); padding: 8px var(--gut); background: var(--bg); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: 16px; font-weight: 600; color: var(--text); text-align: right; margin-bottom: env(safe-area-inset-bottom); }
+.addbox .newbtn { display: flex; align-items: center; gap: 8px; width: 100%; min-height: var(--ctl); padding: 8px var(--gut); background: var(--bg); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: 16px; font-weight: 600; color: var(--text); text-align: right; margin-bottom: var(--safe-b); }
 .newbtn b { color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* תפריטי הסינון: הגעה, שליחה, תשלום, יתרה, התמדה */
@@ -1088,7 +1090,3 @@ dialog .dclose { display: none; }
 .mtinh2 { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
 .mtinh2 small { flex: 1 0 100%; color: var(--text-2); font-size: 13px; font-weight: 600; }
 .mtinh2 span { display: inline-flex; align-items: center; height: var(--tag); padding: 0 12px; background: var(--surface-2); color: var(--text); font-size: 14px; font-weight: 600; }
-
-/* סינון שלילי בפס הצ'יפים (לחיצה שנייה): מי שאין לו את הסטטוס / התגית. הרקע הבהיר נשאר, הטקסט עם קו חוצה וטבעת של 1px בצבע הטקסט (בלי צבע חדש) */
-.ststrip .stc[data-neg="1"] { text-decoration: line-through; box-shadow: inset 0 0 0 1px currentColor; }
-.ststrip .stc[data-neg="1"] small { text-decoration: none; }
