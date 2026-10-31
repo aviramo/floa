@@ -17,7 +17,7 @@
   --text: #16191D;
   --text-2: #5A626C;
   --text-3: #8A929B;
-  --orange: #E5562D;       /* הכתום של האתר: רק לסימון מפגשים (תגית מפגש, בורר המפגש, שיוך ומפגש חדש). כל השאר בשחור */
+  --orange: #E5562D;       /* הכתום של האתר: רק בגרפי הסטטיסטיקה. כל מה שקשור למפגשים וכל השאר בשחור (1.11.26) */
   --orange-ink: #C2410C;   /* כתום כהה: טקסט על לבן וכפתורים ראשיים (ניגודיות) */
   --orange-bg: #FDEBE3;
   --red: #C81E3A;          --red-bg: #FCE7EB;
@@ -37,7 +37,7 @@
   /* שמות ישנים שהקוד משתמש בהם (תווית בלבד, ממופים לפלטה החדשה) */
   --ink: var(--text); --muted: var(--text-2); --paper: var(--bg); --cream: var(--surface); --sand: var(--line-2);
   --terra: var(--orange); --coral: var(--orange); --plum: var(--orange); --olive: var(--green); --sage: var(--text-3);
-  --sky: var(--blue); --sky-bg: var(--blue-bg); --meet: var(--orange-ink); --meet-bg: var(--orange-bg);
+  --sky: var(--blue); --sky-bg: var(--blue-bg); --meet: var(--text); --meet-bg: var(--surface-2);
 }
 @media (min-width: 760px) { :root { --gut: 20px; } }
 /* ===== סטנדרט ריווח (קבוע לכל המסכים) =====
@@ -276,7 +276,7 @@ dialog::-webkit-scrollbar, dialog *::-webkit-scrollbar { display: none; width: 0
 .tone-yellow { background: var(--yellow-bg) !important; color: var(--yellow) !important; }
 .tone-blue { background: var(--blue-bg) !important; color: var(--blue) !important; }
 .tone-gray { background: var(--gray-bg) !important; color: var(--gray) !important; }
-.tone-orange { background: var(--orange-bg) !important; color: var(--orange-ink) !important; }
+.tone-orange { background: var(--surface-2) !important; color: var(--text) !important; }
 
 /* ---------- 4. מסגרת הדף ---------- */
 body.locked .wrap, body.locked #statsBtn { display: none !important; }
@@ -307,7 +307,7 @@ body:has(#status .empty) .listbar, body:has(#status .empty) .ststrip, body:has(#
 .msel { position: relative; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.01em; line-height: 1.2; }
 #mSel { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
-#mSel svg { width: 18px; height: 18px; color: var(--orange); transition: transform .2s; }
+#mSel svg { width: 18px; height: 18px; color: var(--text); transition: transform .2s; }
 #mSel[aria-expanded="true"] svg { transform: rotate(180deg); }
 .hgrp { display: flex; align-items: center; gap: 8px; }
 #listTags { display: flex; align-items: center; gap: 8px; }
@@ -330,7 +330,7 @@ h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.01em; line-
 .mtr.mhead span { text-align: center; }
 .mtr.mhead span:first-child { text-align: right; }
 .mtr.mrow2 { min-height: 46px; cursor: pointer; font-size: 15.5px; }
-.mtr.mrow2[aria-checked="true"] { background: var(--orange-bg); color: var(--orange-ink); font-weight: 700; }
+.mtr.mrow2[aria-checked="true"] { background: var(--surface-2); color: var(--text); font-weight: 700; }
 .mtr.mrow2.past { color: var(--text-2); }
 .mtr.mrow2.next, .mtr.mrow2.next .mc { font-weight: 800; }
 .mtr .mc { text-align: center; font-weight: 600; font-size: 15px; font-variant-numeric: tabular-nums; }
@@ -338,7 +338,7 @@ h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.01em; line-
 .mtr .mc .mci { display: inline-grid; place-items: center; width: 14px; height: 14px; font-style: normal; color: var(--text-3); flex: 0 0 auto; }   /* הסמל שאומר מה המספר סופר */
 .mtr.mrow2[aria-checked="true"] .mc .mci { color: inherit; opacity: .7; }
 .mtr .mc.dim { color: var(--text-2); }
-.mmenu button.addm2 { display: block; width: 100%; min-height: 46px; margin-top: 4px; padding: 0 12px; border-top: 1px solid var(--line); color: var(--orange-ink); font-weight: 700; text-align: right; }
+.mmenu button.addm2 { display: block; width: 100%; min-height: 46px; margin-top: 4px; padding: 0 12px; border-top: 1px solid var(--line); color: var(--text); font-weight: 700; text-align: right; }
 
 /* פס הסינון: סטטוסים (בתוך מפגש) או תגיות (בתצוגת הכל), בשורות */
 .ststrip { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 8px; padding: 0 var(--gut) 12px; }
@@ -442,7 +442,7 @@ h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.01em; line-
 /* תפריט שיוך למפגש ותפריט מצב ההקצאה */
 #qMenu.am, #qMenu.am2 { width: max-content; min-width: 0; max-width: calc(100vw - 16px); display: flex; flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 8px; padding: 8px; }
 #qMenu.am .qi, #qMenu.am2 .qi { flex: 0 0 auto; height: var(--ctl); min-width: 160px; padding: 0 24px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; border: 1px solid transparent; font-size: 16px; font-weight: 600; }
-#qMenu.am .qi { background: var(--orange-bg); color: var(--orange-ink); }
+#qMenu.am .qi { background: var(--surface-2); color: var(--text); }
 #qMenu.am2 .qi { background: var(--surface); color: var(--text-2); }
 #qMenu.am2 .qi.del, #qMenu.am2 .qi.rej { background: var(--red-bg); color: var(--red); }
 #qMenu.am2 .qi[aria-pressed="true"] { background: var(--surface-2); color: var(--text); }
@@ -557,21 +557,21 @@ html.dlg-lock { overflow: hidden; overscroll-behavior: none; }
 .clrow { display: flex; align-items: center; justify-content: flex-end; gap: 0; margin: 0 0 8px; }   /* "+ שיוך למפגש" ומונה המפגשים מחוברים לתגית אחת (31.10.26) */
 .clrow:has(.addm:not([hidden])) #pMeetN { cursor: pointer; }   /* מחוברים בלי שום רווח, ולחיצה על כל אחד מהם פותחת את תפריט השיוך */
 .clrow:not(:has(.addm:not([hidden]), .pmeetn:not([hidden]))) { display: none; }
-.clrow .addm { background: var(--orange-bg); border-color: transparent; color: var(--orange-ink); font-weight: 700; }
-#pMeetN { background: var(--orange-bg); color: var(--orange-ink); cursor: default; font-weight: 700; }
+.clrow .addm { background: var(--surface-2); border-color: transparent; color: var(--text); font-weight: 700; }
+#pMeetN { background: var(--surface-2); color: var(--text); cursor: default; font-weight: 700; }
 /* רצועת המפגשים: כרטיס לכל מפגש (תאריך | סטטוס, תשלום | הגעה) */
 .mlist { display: flex; gap: 8px; overflow-x: auto; overflow-y: hidden; margin: 0 calc(var(--gut) * -1) 12px; padding: 4px var(--gut); scroll-padding-inline: var(--gut); scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; scrollbar-width: none; }
 .mlist::-webkit-scrollbar { display: none; }
-.mlist .mrow { flex: 0 0 auto; width: 156px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 8px; border: 1px solid transparent; background: var(--surface); scroll-snap-align: start; }
+.mlist .mrow { flex: 0 0 auto; width: 156px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 8px; border: 0; background: transparent; scroll-snap-align: start; }   /* מפגש בכרטיס המשתתף: בלי רקע ובלי מסגרת */
 .mlist .mrow .mlabel { grid-column: 1; grid-row: 1; width: 100%; background: transparent; color: var(--text); font-weight: 800; }
-.mlist .mrow.hl .mlabel { background: var(--orange-bg); color: var(--orange-ink); }
+.mlist .mrow.hl .mlabel { background: var(--text); color: var(--bg); }   /* המפגש המסומן: שחור כהה עם טקסט לבן, כמו צ'יף נבחר */
 .mlist .mrow .pay { grid-column: 2; grid-row: 1; width: 100%; padding: 0 4px; }   /* הצבע מהסטטוס עצמו (applyStatuses); בלי ברירת מחדל אדומה שדרסה אותו */
 .mlist .mrow .pay.none { color: var(--text-2); }
 .mlist .mrow .mline { display: contents; }
 /* מפגש דמה: משתתף שנפתח מתוך מפגש שהוא עוד לא משויך אליו (31.10.26); בגודל של מפגש רגיל */
 .mlist .mrow.dummy { padding: 0; background: transparent; border: 1px dashed var(--line-2); min-height: 78px; }
 .mlist .mrow.dummy .mdummy { grid-column: 1 / -1; grid-row: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 100%; height: 100%; border: 0; background: transparent; color: var(--text-2); cursor: pointer; font-family: inherit; }
-.mlist .mrow.dummy .mdl { font-size: 15px; font-weight: 700; color: var(--orange-ink); }
+.mlist .mrow.dummy .mdl { font-size: 15px; font-weight: 700; color: var(--text); }
 .mlist .mrow.dummy .mdd { font-size: 14px; font-weight: 700; }
 .mlist .mrow .mmoney { width: 100%; padding: 0 4px; }
 .mlist .mrow .mmoney { grid-column: 1; grid-row: 2; }
@@ -594,7 +594,7 @@ html.dlg-lock { overflow: hidden; overscroll-behavior: none; }
 .nrow .ntext { flex: 1 1 auto; min-width: 0; margin: 0; padding: 0; line-height: 1; }
 .ntext { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text); }
 .ntext.chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.nch.nm { background: var(--orange-bg); color: var(--orange-ink); }
+.nch.nm { background: var(--surface-2); color: var(--text); }
 .nch.ny { background: var(--yellow-bg); color: var(--yellow); }
 .nch.ng { background: var(--green-bg); color: var(--green); }
 .nch.nr { background: var(--red-bg); color: var(--red); }
@@ -644,7 +644,7 @@ html.dlg-lock { overflow: hidden; overscroll-behavior: none; }
 .walrow .wamt { font-weight: 800; font-size: 16.5px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .walrow.rcpt .wamt.wamt, .walrow .wamt.up { color: var(--green); }
 .walrow.usecr .wamt.wamt, .walrow.tobal .wamt.wamt { color: var(--yellow); }
-.walrow.alloc .wamt.wamt { color: var(--orange-ink); }
+.walrow.alloc .wamt.wamt { color: var(--text); }
 .walrow.rfnd, .walrow.rfnd .wl b, .walrow.rfnd .wl small, .walrow.rfnd .wamt.wamt, .walrow .wamt.down { color: var(--red); }
 .walrow.balmv, .walrow.balmv .wl b, .walrow.balmv .wl small, .walrow.balmv .wamt.wamt, .walrow .wamt.flat { color: var(--text-2); }
 /* קבלת תשלום והקצאה למפגש */
@@ -723,7 +723,7 @@ html.dlg-lock { overflow: hidden; overscroll-behavior: none; }
 .mmenu .maddrow { min-height: 46px; }
 .mmenu .maddrow.addt { margin-bottom: 8px; border-bottom: 1px solid var(--line); }
 .mmenu .maddrow:not(.addt) { margin-top: 0; }   /* בלי קו בין המפגש האחרון לפלוס */
-.mmenu .medit.madd { color: var(--orange-ink); }
+.mmenu .medit.madd { color: var(--text); }
 .mmenu .medit.madd svg { stroke-width: 2.4; }
 .mmenu .mtop { position: sticky; top: 0; z-index: 1; margin: -8px -8px 8px; padding: 8px 8px 4px; background: var(--bg); }   /* בלי קו בין "כל המשתתפים" לסוג הראשון (31.10.26). "כל המשתתפים" בראש התפריט, מעל סוגי המפגשים, וקבוע בזמן גלילה */
 
@@ -958,7 +958,7 @@ html.is-loading .hgrp { visibility: hidden; }
 /* ---------- שורת הסינון והמיון: שתי תגיות (סינון, מיון); נקודה = יש סינון שלא רואים בשורה / מיון שאינו ברירת המחדל ---------- */
 .vbar { position: relative; display: flex; align-items: center; gap: 8px; padding: 0 var(--gut); }
 .vbar .lbend { position: absolute; top: 50%; left: var(--gut); z-index: 2; margin-top: calc(var(--ind) / -2); line-height: 0; }   /* אייקוני הסינון של העמודות, מיושרים ב-JS מעל העמודות (alignFilters) */
-.wrap > .vbar { flex: 0 0 36px; height: 36px; background: var(--bg); border-bottom: 2px solid var(--line); }   /* מתחת לשורת החיפוש, באותו גובה, ומעל הרשימה; הקו מעל השורה הראשונה בעובי 2px (לבקשת בעל האתר) */
+.wrap > .vbar { flex: 0 0 calc(var(--ctl) + 1px); height: calc(var(--ctl) + 1px); background: var(--bg); border-bottom: 2px solid var(--line); }   /* מתחת לשורת החיפוש, באותו גובה, ומעל הרשימה; הקו מעל השורה הראשונה בעובי 2px (לבקשת בעל האתר) */
 :is(#filtBtn, #sortBtnH) { width: var(--tag); min-width: var(--tag); height: var(--tag); padding: 0; border: 0; background: transparent; color: var(--text); }   /* סינון ומיון: סמל בלבד, בלי רקע אפור */
 #listTags.vbar .stc:not([aria-pressed="true"]) { background: transparent; }   /* זכר / נקבה בשורת הסינון: בלי רקע אפור; נבחר נשאר מלא בשחור */
 :is(#filtBtn, #sortBtnH) svg { width: 16px; height: 16px; }
@@ -972,7 +972,6 @@ html.is-loading .vbar { display: none; }
 #viewMenu .fsh b { flex: 1 1 auto; font-size: 14px; font-weight: 700; color: var(--text); }
 #viewMenu .mgc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 #viewMenu .fsh .mgc { flex: 1 1 auto; margin: 0; }   /* שורת הטוגל והמונה בראש התפריט, בלי כותרת */
-#viewMenu .fsh #menuCount { flex: 0 0 auto; min-width: 0; white-space: nowrap; }   /* "33 משתתפים" בשורה אחת, לא נחתך לשתי שורות ברוחב של תגית */
 #waMenu .wcap { padding: 8px 12px 4px; font-size: 13px; font-weight: 700; color: var(--text-2); }
 #viewMenu .mc[data-sc] { background: var(--sbg); color: var(--sfg); }   /* דרך הגעה בצבע שלה; נבחרת: מתמלאת בגוון הכהה */
 #viewMenu .mc[data-sc][aria-pressed="true"] { background: var(--sfg); color: var(--bg); }
