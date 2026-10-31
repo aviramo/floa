@@ -312,6 +312,8 @@ h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.01em; line-
 .hgrp { display: flex; align-items: center; gap: 8px; }
 #listTags { display: flex; align-items: center; gap: 8px; }
 .hicons { position: relative; display: flex; }
+.hgrp .hicon { width: var(--tag); height: var(--tag); }   /* אייקוני הכותרת (תגיות, תפריט) בגודל מחווני השורות (28px), רווח של 8px ביניהם, והקצה השמאלי בקו אחד עם הוואטסאפ והמיון שמתחת (31.10.26) */
+.hgrp .hicon::before { content: ''; position: absolute; inset: -8px -4px; }   /* שטח הלחיצה נשאר גדול */
 
 /* תפריט הכותרת */
 .hmenu { position: absolute; top: calc(100% + 8px); left: 0; z-index: 30; min-width: 220px; }
@@ -970,6 +972,7 @@ html.is-loading .vbar { display: none; }
 #viewMenu .fsh b { flex: 1 1 auto; font-size: 14px; font-weight: 700; color: var(--text); }
 #viewMenu .mgc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 #viewMenu .fsh .mgc { flex: 1 1 auto; margin: 0; }   /* שורת הטוגל והמונה בראש התפריט, בלי כותרת */
+#viewMenu .fsh #menuCount { flex: 0 0 auto; min-width: 0; white-space: nowrap; }   /* "33 משתתפים" בשורה אחת, לא נחתך לשתי שורות ברוחב של תגית */
 #waMenu .wcap { padding: 8px 12px 4px; font-size: 13px; font-weight: 700; color: var(--text-2); }
 #viewMenu .mc[data-sc] { background: var(--sbg); color: var(--sfg); }   /* דרך הגעה בצבע שלה; נבחרת: מתמלאת בגוון הכהה */
 #viewMenu .mc[data-sc][aria-pressed="true"] { background: var(--sfg); color: var(--bg); }
@@ -983,7 +986,7 @@ html.is-loading .vbar { display: none; }
 
 /* כפתור התגיות בכותרת (משמאל לכפתור התפריט): דולק = נקודה קטנה בפינה הימנית התחתונה, כמו המיון והסינון */
 .hgrp .tagbtn { position: relative; }
-.hgrp .tagbtn[aria-pressed="true"]::after { content: ''; position: absolute; right: 8px; bottom: 8px; width: 7px; height: 7px; background: var(--text); box-shadow: 0 0 0 2px var(--bg); }
+.hgrp .tagbtn[aria-pressed="true"]::after { content: ''; position: absolute; right: 2px; bottom: 2px; width: 7px; height: 7px; background: var(--text); box-shadow: 0 0 0 2px var(--bg); }
 
 /* כפתור ניקוי החיפוש: בגודל ריבועי ההגעה (--ind) ובאותה עמודה שלהם, בקצה השמאלי */
 .listbar .sclear { left: 0; width: var(--ind); height: var(--ind); margin-top: calc(var(--ind) / -2); font-size: 18px; }
