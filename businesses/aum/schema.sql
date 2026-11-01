@@ -1109,3 +1109,26 @@ drop policy if exists "aum meeting media admin update" on storage.objects;
 create policy "aum meeting media admin update" on storage.objects for update to authenticated using (bucket_id = 'aum-meeting-media' and public.aum_is_admin());
 drop policy if exists "aum meeting media admin delete" on storage.objects;
 create policy "aum meeting media admin delete" on storage.objects for delete to authenticated using (bucket_id = 'aum-meeting-media' and public.aum_is_admin());
+
+-- 27: תשלום חלקי שמנהל רושם ("נשאר לשלם"): ההקצאה נרשמת עם reason = 'partial_due:<סכום>', הסכום נשמר בהרשמה, והמשתתף נשאר עם שארית. תשלום רגיל אחר כך מנקה אותה. תוספתי.
+alter table public.aum_registrations add column if not exists pay_due_amount numeric;
+create or replace function public.aum_clear_pay_reported() returns trigger
+language plpgsql security definer set search_path = public as $function$
+declare rem numeric;
+begin
+  if new.meeting_id is not null and new.kind = 'payment' then
+    rem := nullif(substring(coalesce(new.reason, '') from '^partial_due:([0-9.]+)$'), '')::numeric;
+    update public.aum_registrations set pay_reported_at = null, pay_rejected_at = null, pay_due_amount = rem
+      where participant_id = new.participant_id and event_id = new.meeting_id and (rem is not null or pay_reported_at is not null or pay_rejected_at is not null or pay_due_amount is not null);
+    if rem is not null then
+      begin
+        perform public.aum_sys_note(new.participant_id, 'נשאר לשלם ₪' || trim_scale(rem)::text || ' למפגש ' || public.aum_meeting_label(new.meeting_id), 'payment_due', new.meeting_id);
+      exception when others then null;
+      end;
+    end if;
+  end if;
+  return new;
+end $function$;
+drop trigger if exists aum_clear_pay_reported_t on public.aum_payments;
+create trigger aum_clear_pay_reported_t after insert on public.aum_payments for each row execute function public.aum_clear_pay_reported();
+notify pgrst, 'reload schema';
