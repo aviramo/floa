@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=20261104br" />
+  <link rel="stylesheet" href="admin.css?v=20261104by" />
 </head>
 <body class="locked">
   <div class="gate" id="gate" hidden>
@@ -2395,7 +2395,7 @@
   const noteAuthor = (email, name) => { const e = String(email || '').toLowerCase(), pr = ((state.prefs[e] || {}).sender_name || '').trim(); if (pr || SENDERS[e]) return pr || SENDERS[e]; return e ? 'מנהל' : (name || 'מערכת'); };
   /* תאריך ושעה בתוך הערה (25.10 · 20:00) מוצגים כיחידה אחת משמאל לימין, כדי שהסדר לא יתהפך בתוך משפט בעברית */
   const noteTextHtml = (s) => esc(s).replace(/(\d{1,2}\.\d{1,2}(?:\.\d{2,4})?(?:\s*·\s*\d{1,2}:\d{2})?|\d{1,2}:\d{2})/g, '<bdi dir="ltr">$1</bdi>');
-  /* הערות מערכת כצ'יפים: המפגש תמיד ראשון (כתום), ואחריו הפעולה; שינוי (סטטוס, סכום הקצאה) הוא "ישן ← חדש", הכול בצבעי המערכת */
+  /* הערות מערכת: טקסט בלבד בצבעי המערכת. המפגש תמיד ראשון ואחריו חץ, ואז הפעולה; שינוי (סטטוס, סכום הקצאה) הוא "ישן ← חדש" */
   const NCH = (txt, cls) => UI.tag(txt, 'nch ' + cls);
   const NARW = '<span class="narw" aria-hidden="true">' + icon('go', 'i16') + '</span>';   // חץ כ-SVG: ממורכז אנכית באמת (התו ← יושב נמוך בגופן)
   const nStKey = (name) => { const s = state.statuses.concat(state.mstatuses).find((x) => x.label === name); return s ? s.key : null; };
@@ -2404,7 +2404,7 @@
   function sysChips(n) {
     const b = String(n.body || ''), ev = n.event_type || '';
     const mo = n.meeting_id && state.meetings.find((x) => x.id === n.meeting_id), md = mo ? dmShort(mo) : ((/(\d{1,2}\.\d{1,2})/.exec(b) || [])[1] || '');
-    const M = md ? NCH('<bdi dir="ltr">' + esc(md) + '</bdi>', 'nm') : '';
+    const M0 = md ? NCH('<bdi dir="ltr">' + esc(md) + '</bdi>', 'nm') : '', M = M0 && M0 + NARW;   // M: התאריך והחץ שאחריו
     const amt = (n.amount != null && n.amount !== '') ? Number(n.amount) : Number((/₪\s*([\d.]+)/.exec(b) || [])[1] || 0);
     const sh = (v) => '<bdi dir="ltr">₪' + nfm(v) + '</bdi>';
     const meth = ((/ ב([^\s(][^()]*)$/.exec(b) || [])[1] || '').trim();
@@ -2420,7 +2420,7 @@
         let from = wm ? wm[1] : '';
         if (!from) { const lk = linkOf(n.participant_id, n.meeting_id), st = lk && state.statuses.find((x) => x.key === linkStatus(lk)); if (st) from = st.label; }
         if (!from && ds) from = ds.label;
-        return M + (from ? nStChip(from) : '');   // שיוך: המפגש והסטטוס שבו נוצר השיוך, בלי חץ ובלי צ'יף "לא משויך"
+        return from ? M + nStChip(from) : M0;   // שיוך: המפגש והסטטוס שבו נוצר השיוך, בלי חץ ובלי צ'יף "לא משויך"
       }   // שיוך למפגש = סטטוס ברירת המחדל (בצבע ובשם הנוכחיים)
       case 'meeting_removed': {   // הסרה = מעבר מהסטטוס שהיה למפגש ל"לא משויך": הסטטוס נלקח מהערת השינוי האחרונה לפני ההסרה, ואם אין, מסטטוס ברירת המחדל
         const prev = state.notes.filter((x) => x.participant_id === n.participant_id && x.meeting_id === n.meeting_id && x.event_type === 'status_changed' && String(x.created_at) < String(n.created_at)).sort((p1, p2) => String(p2.created_at).localeCompare(String(p1.created_at)))[0];
@@ -2440,7 +2440,7 @@
       case 'profile_changed': {   // המשתתף שינה ערך באזור האישי: צ'יף שם הערך, הערך הישן, חץ, והערך החדש
         const pm = /^([^:]+):\s*(.*?)\s*←\s*(.*)$/.exec(b); if (!pm) return null;
         const fx = (v) => pm[1] === 'טלפון' && v ? localPhone(v) : v;
-        const cv = (v) => NCH(v ? '<bdi dir="ltr">' + esc(fx(v.trim())) + '</bdi>' : 'ריק', 'nw');
+        const cv = (v) => NCH(v ? '<bdi dir="ltr">' + esc(fx(v.trim())) + '</bdi>' : 'ריק', 'nm');
         return NCH(esc(pm[1]), 'nn') + cv(pm[2]) + NARW + cv(pm[3]);
       }
       case 'google_linked': { const gm = /^חובר חשבון גוגל\s+(\S+)\s+·\s*(.*)$/.exec(b); if (!gm) return null; return NCH('<bdi dir="ltr">' + esc(gm[1]) + '</bdi>', 'nn') + (gm[2].trim() ? NCH('<bdi dir="ltr">' + esc(localPhone(gm[2].trim())) + '</bdi>', 'nn') : ''); }   // חיבור חשבון גוגל: צ'יף האימייל ואחריו צ'יף הטלפון
@@ -2452,7 +2452,7 @@
       case 'registered': case 'reregistered': { const phm = /\s*·\s*טלפון\s*(\S+)\s*$/.exec(b), tx = b.replace(/\s*·\s*טלפון\s*\S+\s*$/, '').replace(/\s*ושויך\/ה למפגש.*$/, '').replace(/\s*\(כבר משויך.*\)\s*$/, ''); const rp = state.participants.find((x) => x.id === n.participant_id), rph = phm ? localPhone(phm[1]) : (rp && rp.phone ? localPhone(rp.phone) : ''); return M + NCH(esc(tx) + (rph ? '&nbsp;·&nbsp;<bdi dir="ltr">' + esc(rph) + '</bdi>' : ''), 'nn'); }   // הרשמה: מספר הטלפון בתוך הצ'יף
       case 'deactivated': return NCH(esc(b), 'nr');
       case 'reactivated': return NCH(esc(b), 'ng');
-      default: return null;
+      default: return M ? M + NCH(noteTextHtml(b.replace(/\s*למפגש\s+\d{1,2}\.\d{1,2}(?:\.\d{2,4})?\s*$/, '')), 'nn') : null;   // הערת מערכת בלי תצוגה משלה (למשל מייל אישור תשלום): התאריך, חץ והטקסט בלי התאריך
     }
   }
   /* "לפני כמה זמן": דקות, שעות, ימים, שבועות, חודשים ושנים (עם צורות היחיד והזוגי בעברית) */
@@ -2690,9 +2690,9 @@
     if (!p) { list.innerHTML = ''; return; }
     const ns = notesOf(p.id);   // הערות וצילומי מסך יחד, מהחדש לישן
     sheet.nOpen = sheet.nOpen || new Set();
-    const meta = (n) => (n.system ? '' : '<button type="button" class="ndel" data-del="' + n.id + '" aria-label="מחיקת הערה" title="מחיקת הערה">מחיקה</button>') + '<span><b>' + esc(noteAuthor(n.author_email, n.author_name)) + '</b> · ' + esc(fmtDT(n.created_at)) + '</span>';   // מוצג בצד שמאל במקום הזמן שעבר, כשלוחצים על ההערה
+    const meta = (n) => '<span><bdi>' + esc(noteAuthor(n.author_email, n.author_name)) + '</bdi> · ' + esc(fmtDT(n.created_at)) + '</span>' + (n.system ? '' : '<button type="button" class="ndel" data-del="' + n.id + '" aria-label="מחיקת הערה" title="מחיקת הערה">מחיקה</button>');   // השורה שנפתחת מתחת להערה: שם · מועד מדויק
     list.innerHTML = ns.length ? ns.map((n) => '<div class="nitem' + (n.system ? ' sys' : '') + ' fold' + (n.has_image ? ' img' : '') + (sheet.nOpen.has(n.id) ? ' open' : '') + '" data-nid="' + n.id + '"' + (n.event_type ? ' data-ev="' + esc(n.event_type) + '"' : '') + (n.new_status ? ' data-st="' + esc(n.new_status) + '"' : '') + '>' +
-      ('<div class="nrow"><div class="ntext' + (n.system && sysChips(n) ? ' chips' : '') + '">' + (n.has_image ? '<a class="nimg" data-img="' + n.id + '"><div class="nload">טוען תמונה…</div></a>' : ((n.system && sysChips(n)) || '<span class="nch nw">' + noteTextHtml(n.body) + '</span>')) + '</div><span class="nch nago"><span class="nsw a"><span class="nswi nagot" data-ts="' + esc(n.created_at) + '">' + agoText(n.created_at) + '</span></span><span class="nsw b"><span class="nswi">' + meta(n) + '</span></span></span></div>') + '</div>').join('')
+      ('<div class="nrow"><div class="ntext' + (n.system && sysChips(n) ? ' chips' : '') + '">' + (n.has_image ? '<a class="nimg" data-img="' + n.id + '"><div class="nload">טוען תמונה…</div></a>' : ((n.system && sysChips(n)) || '<span class="nch ' + (n.system ? 'nn' : 'nw') + '">' + noteTextHtml(n.body) + '</span>')) + '</div><span class="nch nago"><span class="nagot" data-ts="' + esc(n.created_at) + '">' + agoText(n.created_at) + '</span></span></div><div class="nmeta"><div class="nmetai">' + meta(n) + '</div></div>') + '</div>').join('')
       : '<p class="mnone">עוד אין הערות. אפשר לרשום למעלה מה דיברתם, מה הוחלט ומה צריך לזכור, או לצרף צילום מסך משיחה</p>';
     list.querySelectorAll('[data-img]').forEach(loadNoteImg);
   }
@@ -3034,10 +3034,11 @@
       pickChoice(b, cb);
     };
     sheet.modeApi = { free: isFree, go: (md) => switchLocked(md), del: async () => {
-      sheet.depLock = Date.now() + 60000;
-      try { await reduceAlloc(pid, m.id, Math.max(0, Math.round(allocatedOf(pid, m.id) * 100) / 100)); toast('ההקצאה נמחקה והכסף נשאר ביתרה'); depLinesRefresh(); }
+      const sh = sheet;   // סגירת הפופאפ כשנפתח מהרשימה מאפסת את sheet
+      sh.depLock = Date.now() + 60000;
+      try { await reduceAlloc(pid, m.id, Math.max(0, Math.round(allocatedOf(pid, m.id) * 100) / 100)); toast('ההקצאה נמחקה והכסף נשאר ביתרה'); closePayCard(); }   // אחרי מחיקה הפופאפ נסגר, כמו אחרי תשלום
       catch (err) { fail(err); }
-      finally { sheet.depLock = Date.now() + 1500; setTimeout(refreshOpenSheet, 1600); }
+      finally { sh.depLock = Date.now() + 1500; setTimeout(refreshOpenSheet, 1600); }
     } };
     sheet.paintMeth = paintMeth; paintMeth();
     const paintPkg = () => { const n = parseInt(f.pay_pkg.value, 10), a = parseFloat(f.pay_dep.value); $('#depPkgHint').innerHTML = n >= 2 && a > 0 ? 'מחיר למפגש בחבילה: <b>₪' + nfm(Math.round(a / n)) + '</b>. ' + (m ? 'המפגש הזה ועוד עד ' + (n - 1) + ' מפגשים קרובים משויכים ייפרעו מיד, והשאר ייפרעו בשיוך' : 'כל שיוך למפגש ייקח את הסכום הזה מהיתרה, עד ' + n + ' מפגשים') : ''; };

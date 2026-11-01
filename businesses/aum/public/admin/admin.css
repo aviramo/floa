@@ -154,13 +154,12 @@ dialog::-webkit-scrollbar, dialog *::-webkit-scrollbar { display: none; width: 0
 .hcount { background: var(--green-bg); color: var(--green); }
 .attforce { background: var(--yellow-bg); color: var(--yellow); cursor: pointer; }
 .frec { margin-inline-start: 8px; }
-/* תגית מתאר (לבנה עם גבול): הערה ידנית; כפתורים (לא משויך, חינם, תגיות המשתתף) בלי מסגרת, במילוי אפור בהיר מאוד (31.10.26) */
-.nch.nf, .nch.nw { background: var(--bg); border-color: var(--line-2); }
+/* כפתורים (לא משויך, חינם, תגיות המשתתף) בלי מסגרת, במילוי אפור בהיר מאוד (31.10.26) */
 .row .ptag.empty, .mlist .mrow .pay.none, .mlist .mrow .mmoney.free, .pstchips .sopt, .paychip.allocchip.free { background: var(--surface); border-color: transparent; }
-/* הערה ידנית: אותה תגית, ושוברת שורות כשהטקסט ארוך */
-.nch.nw { height: auto; min-height: var(--tag); padding: 4px 12px; line-height: 18px; white-space: pre-wrap; overflow-wrap: anywhere; text-align: start; overflow: visible; color: var(--text); }
-/* תגיות בהערות המערכת: הטקסט המלא תמיד מוצג, ושובר שורות כשהוא ארוך (בלי חיתוך ב-"…"); תגית קצרה נשארת בגובה רגיל */
-.nch:not(.nago) { height: auto; min-height: var(--tag); padding: 4px 8px; line-height: 18px; white-space: normal; overflow-wrap: anywhere; overflow: visible; text-overflow: clip; text-align: start; }
+/* הערות: טקסט בלבד, בלי רקע ובלי מסגרת (1.11.26). מה שהיה לו רקע נשאר בצבע שלו בטקסט. הטקסט המלא תמיד מוצג ושובר שורות כשהוא ארוך. #nList כדי לגבור על צבעי הסטטוסים שמוזרקים מהקוד */
+#nList .nch:not(.nago) { height: auto; min-height: var(--tag); padding: 4px 0; border: 0; background: transparent; font-weight: 400; line-height: 18px; white-space: normal; overflow-wrap: anywhere; overflow: visible; text-overflow: clip; text-align: start; }
+/* הערה שכתבנו ידנית: המקום היחיד עם הדגשה, ושומרת על שבירות השורה שהוקלדו */
+#nList .nch.nw { font-weight: 700; white-space: pre-wrap; color: var(--text); }
 /* הזמן שעבר ליד הערה: טקסט, לא תגית */
 .nch.nago { display: flex; align-items: center; height: var(--tag); padding: 0; border: 0; background: none; line-height: var(--tag); overflow: visible; color: var(--text-2); font-weight: 500; font-size: 13px; }
 
@@ -258,7 +257,7 @@ dialog::-webkit-scrollbar, dialog *::-webkit-scrollbar { display: none; width: 0
 .vsw.on::after { transform: translateX(-18px); }
 
 /* 3.8 פאנל: קבוצת תוכן באפור בהיר, בלי מסגרת. שורות בתוכו עם קו מפריד */
-.setgrp, .srccard, .pmrow, .strow, .mt2, .gacc, .bdc, .prrow, .topic, .stsec, .fsc, .ins, .dline, .tb, .cwhy { background: var(--surface); border: 0; }
+.setgrp, .srccard, .pmrow, .strow, .gacc, .bdc, .prrow, .topic, .stsec, .fsc, .ins, .dline, .tb, .cwhy { background: var(--surface); border: 0; }
 
 /* 3.9 שכבה צפה (תפריט): לבן, גבול דק, צל אחד. כל התפריטים בדף */
 .qmenu, .sortmenu, .hmenu, #fMenu, #viewMenu, #moreMenu, #finPerMenu, .colmenu, .attmenu {
@@ -456,7 +455,9 @@ h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.01em; line-
 /* תפריט שיוך למפגש ותפריט מצב ההקצאה */
 #qMenu.am, #qMenu.am2 { width: max-content; min-width: 0; max-width: calc(100vw - 16px); display: flex; flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 8px; padding: 8px; }
 #qMenu.am .qi, #qMenu.am2 .qi { flex: 0 0 auto; height: var(--ctl); min-width: 160px; padding: 0 24px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; border: 1px solid transparent; font-size: 16px; font-weight: 600; }
-#qMenu.am .qi { background: var(--surface-2); color: var(--text); }
+#qMenu.am .qi { background: transparent; color: var(--text); }   /* תפריט בחירת מפגש: בלי רקע אפור (1.11.26); אפור רק בריחוף ובלחיצה */
+#qMenu.am .qi:active { background: var(--surface-2); }
+@media (hover: hover) { #qMenu.am .qi:hover { background: var(--surface-2); } }
 #qMenu.am2 .qi { background: transparent; color: var(--text-2); }   /* בלי רקע (1.11.26) */
 #qMenu.am2 .qi.del, #qMenu.am2 .qi.rej { background: transparent; color: var(--red); }
 #qMenu.am2 .qi[aria-pressed="true"] { background: transparent; color: var(--text); }
@@ -622,6 +623,7 @@ html.dlg-lock { overflow: hidden; overscroll-behavior: none; }
 .mlist .mrow .mmoney { width: 100%; padding: 0 4px; }
 .mlist .mrow .mmoney { grid-column: 1; grid-row: 3; }
 .mlist .mrow .mmoney, .mlist .mrow .mmoney.free { background: transparent; }   /* מצב תשלום בכרטיס המפגש: שולם (הוקצה כסף) ודווח עם רקע, לא שולם וחינם בלי רקע (1.11.26) */
+.mlist .mrow .pay, .mlist .mrow .mmoney { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }   /* הסטטוס והתשלום בכרטיס לחיצים: קו תחתון בצבע הטקסט (1.11.26) */
 .mlist .mrow .mmoney.has { color: var(--green); }
 .mlist .mrow .mmoney.wait { color: var(--yellow); }
 .mlist .mrow .mmoney.free { color: var(--text-2); }
@@ -629,41 +631,38 @@ html.dlg-lock { overflow: hidden; overscroll-behavior: none; }
 /* הערה חדשה: שדה וצירוף צילום מסך */
 .nform { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 12px; border-bottom: 1px solid var(--line-2); }   /* הערה חדשה: בלי מסגרת, קו תחתון אחד לכל הרוחב, שכולל גם את כפתור התמונה (1.11.26) */
 .nform:focus-within { border-bottom-color: var(--text); }
-.nform textarea { border-width: 0; background: transparent; flex: 1 1 auto; min-width: 0; height: auto; min-height: var(--ib); max-height: 140px; padding: 8px 12px; resize: none; line-height: 1.4; font-size: 16px; }
+.nform textarea { border-width: 0; background: transparent; flex: 1 1 auto; min-width: 0; height: auto; min-height: var(--ib); max-height: 140px; padding: 8px 0; resize: none; line-height: 1.4; font-size: 16px; }
 .nattach { color: var(--text-2); }
 .nprev { position: relative; flex: 1 1 auto; min-width: 0; height: 60px; display: flex; align-items: center; }
 .nprev img { width: 60px; height: 60px; object-fit: cover; border: 1px solid var(--line); }
 .nprev button { position: absolute; top: -7px; inset-inline-start: -7px; width: 22px; height: 22px; background: var(--text); color: #fff; font-size: 15px; line-height: 1; }
-/* רשימת ההערות: שורות צפופות, צ'יפים צבעוניים להערות מערכת, הערה ידנית בצ'יף לבן */
+/* רשימת ההערות: שורות צפופות עם קו דק כמעט בלתי נראה ביניהן */
 #nList .nitem { margin: 0; padding: 0; background: transparent; }
+#nList .nitem + .nitem { border-top: 1px solid var(--surface-2); }
 .nitem.fold { cursor: pointer; }
 .nrow { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
 .nrow .ntext { flex: 1 1 auto; min-width: 0; margin: 0; padding: 0; line-height: 1; }
 .ntext { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text); }
 .ntext.chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.nch.nm { background: var(--surface-2); color: var(--text); }
-.nch.ny { background: var(--yellow-bg); color: var(--yellow); }
-.nch.ng { background: var(--green-bg); color: var(--green); }
-.nch.nr { background: var(--red-bg); color: var(--red); }
+.nch.nm { color: var(--text); }
+.nch.ny { color: var(--yellow); }
+.nch.ng { color: var(--green); }
+.nch.nr { color: var(--red); }
 .nch.nf { color: var(--text-2); }
-.nch.nn { background: var(--surface-2); color: var(--text-2); }
-.nch.nago { flex: 0 0 auto; align-self: flex-start; position: relative; }   /* בשורה הראשונה של ההערה (לא באמצע הערה של כמה שורות); הרוחב קבוע לפי הזמן שעבר, כך שהפתיחה לא משנה את פריסת ההערה */
+.nch.nn { color: var(--text-2); }
+.nch.nago { flex: 0 0 auto; align-self: flex-start; }   /* בשורה הראשונה של ההערה, גם בהערה של כמה שורות */
 .nitem.img .nrow { align-items: flex-start; }
 .nitem.img .nch.nago { align-self: flex-start; display: block; height: var(--tag); line-height: var(--tag); }
 .narw { display: inline-flex; align-items: center; justify-content: center; height: var(--tag); color: var(--text-3); }
-/* הצד השמאלי של ההערה: הזמן שעבר מוחלף באנימציה (רוחב ושקיפות) בשם הכותב, המועד המדויק והמחיקה, ולחיצה נוספת מחזירה (1.11.26; לפי הסקיל ui-ux-pro-max: האלמנט הנסתר יוצא מהפוקוס, ובלי תנועה ב-reduced-motion) */
-.nago .nsw.a { display: grid; grid-template-columns: 1fr; opacity: 1; visibility: visible; transition: opacity .2s ease, visibility 0s; }
-.nitem.open .nago .nsw.a { opacity: 0; visibility: hidden; transition: opacity .2s ease, visibility 0s .2s; }
-/* שם ומועד: עולים מעל ההערה (שכבה על הקצה השמאלי, רקע אטום) ולא דוחפים את התגיות לשורה נוספת */
-.nago .nsw.b { position: absolute; inset-inline-end: 0; top: 0; z-index: 2; display: flex; align-items: center; width: max-content; height: var(--tag); padding-inline-start: 8px; background: var(--bg); opacity: 0; visibility: hidden; transition: opacity .2s ease, visibility 0s .2s; }
-.nitem.open .nago .nsw.b { opacity: 1; visibility: visible; transition: opacity .2s ease .06s, visibility 0s; }
-.nago .nswi { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; white-space: nowrap; }
-.nago .nsw.b .nswi { gap: 12px; }
-.nago b { font-weight: 400; color: inherit; }
-.nago .ndel { flex: 0 0 auto; width: auto; height: auto; padding: 0; font-size: 13px; color: var(--red); text-decoration: underline; background: none; }
-@media (prefers-reduced-motion: reduce) { .nago .nsw.a, .nago .nsw.b { transition: none !important; } }
+/* לחיצה על הערה: נפתחת מתחתיה שורה, שם · מועד מדויק, מיושרת לימין, עם אנימציית פתיחה וסגירה (גובה ושקיפות; הסגירה מהירה מהפתיחה). הריפוד בתוך הילדים, כי ריפוד על .nmetai לא מתכווץ לאפס */
+.nmeta { display: grid; grid-template-rows: 0fr; opacity: 0; visibility: hidden; transition: grid-template-rows .18s ease-in, opacity .14s ease-in, visibility 0s .18s; }
+.nitem.open .nmeta { grid-template-rows: 1fr; opacity: 1; visibility: visible; transition: grid-template-rows .26s ease-out, opacity .22s ease-out .04s, visibility 0s; }
+.nmetai { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; min-height: 0; overflow: hidden; color: var(--text-2); font-size: 13px; font-weight: 400; line-height: 18px; }
+.nmetai > span { min-width: 0; padding-bottom: 8px; }
+.nmeta .ndel { flex: 0 0 auto; width: auto; height: auto; padding: 0 0 8px; font-size: 13px; line-height: 18px; color: var(--red); text-decoration: underline; background: none; }
+@media (prefers-reduced-motion: reduce) { .nmeta, .nitem.open .nmeta { transition: none; } }
 .nimg { display: block; margin-top: 4px; }
-.nimg img { display: block; width: 100%; aspect-ratio: 4 / 1; object-fit: cover; object-position: 50% 85%; border: 1px solid var(--line); background: var(--bg); min-height: 60px; cursor: zoom-in; }
+.nimg img { display: block; width: 100%; aspect-ratio: 4 / 1; object-fit: cover; object-position: 50% 85%; min-height: 60px; cursor: zoom-in; }
 .nimg .nload { padding: 12px 0; color: var(--text-2); font-size: 13px; text-align: center; }
 /* פרטי המשתתף */
 #pTagsField { margin-bottom: 12px; }
@@ -748,7 +747,7 @@ html.dlg-lock { overflow: hidden; overscroll-behavior: none; }
 .mimgbtns button { color: var(--text-2); }
 #mImgPrev, #setMImgPrev, #tyImgPrev { display: block; width: 100%; aspect-ratio: 4 / 1; object-fit: cover; margin: 0 0 12px; border: 1px solid var(--line); background: var(--surface); }
 .mt2 { padding: 0; }
-.mt2row { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); font-size: 14px; font-weight: 600; color: var(--text-2); }
+.mt2row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; font-weight: 600; color: var(--text-2); }
 .mt2row:last-child { border-bottom: 0; }
 .mt2row .mtp { display: flex; align-items: center; gap: 4px; direction: ltr; }
 .mt2row .mtp input { width: 72px; height: 40px; padding: 0 4px; text-align: center; font-size: 17px; font-weight: 800; }
@@ -761,7 +760,7 @@ html.dlg-lock { overflow: hidden; overscroll-behavior: none; }
 #mDelete.locked, #tyDelete.locked { opacity: .45; }
 /* מפגש: שדה ריק = "כמו בסוג המפגש", הערך של הסוג מוצג כפלייסהולדר */
 .field input::placeholder, .field textarea::placeholder { color: var(--text-3); opacity: 1; }
-.mtinh { display: flex; align-items: center; gap: 8px; min-height: var(--ctl); padding: 4px 12px; background: var(--surface); color: var(--text-3); font-size: 15px; }
+.mtinh { display: flex; align-items: center; gap: 8px; min-height: var(--ctl); padding: 4px 0; color: var(--text-2); font-size: 15px; }
 .mtinh span { flex: 1 1 auto; min-width: 0; }
 .mtinh[hidden], #mTierEd[hidden] { display: none; }
 .mtinh button { flex: 0 0 auto; height: 36px; padding: 0 12px; background: var(--surface-2); color: var(--text); font-weight: 600; font-size: 14.5px; }
@@ -1125,8 +1124,8 @@ dialog .dclose { display: none; }
 #waMenu .wbot { margin-top: 4px; border-top: 1px solid var(--line); }   /* הקו האופקי: מתחתיו סינון השליחה (כשנבחרה תבנית) והוספת תבנית */
 #waMenu .wadd { font-weight: 700; }
 .mtlist { display: grid; gap: 8px; margin-bottom: 8px; }
-.mtitem { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: var(--ctl); padding: 0 12px; background: var(--surface); color: var(--text); font-weight: 600; font-size: 15.5px; text-align: start; }
-.mtitem svg { flex: none; color: var(--text-2); }
+.mtitem { display: flex; align-items: center; gap: 8px; width: 100%; min-height: var(--ctl); background: var(--surface); color: var(--text); font-weight: 600; font-size: 15.5px; position: relative; justify-content: center; text-align: center; padding-inline: calc(var(--ib) + 4px); }   /* שם התבנית ממורכז כמו הכפתורים שמעליו ומתחתיו; החץ נשאר בקצה השמאלי */
+.mtitem svg { position: absolute; inset-inline-end: 12px; top: 50%; transform: translateY(-50%); color: var(--text-2); }
 .mtitem span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mf.editing > :not(.mtedit) { display: none; }   /* מסך עריכת תבנית: כל שאר הטופס מוסתר */
 #mDlg:has(#mMF.editing) .sheet-head, #mDlg:has(#mMF.editing) #mDelete { display: none; }   /* במסך עריכת תבנית בתוך מפגש: בלי הכותרת "עריכת מפגש" ובלי "מחיקת מפגש"; לתבנית יש כותרת משלה */
