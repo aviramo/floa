@@ -1094,3 +1094,18 @@ notify pgrst, 'reload schema';
 insert into public.aum_statuses (key, label, color, sort, scope, phase)
 values ('unpaid', 'משויך', 'red', 99, 'meeting', 'before')
 on conflict (key) do nothing;
+
+-- 26: תגיות לפי סוג מפגש, ותמונה או סרטון בהוראות ההגעה (דלי aum-meeting-media). תוספתי.
+update public.aum_statuses set type_id = (select id from public.aum_meeting_types order by sort, created_at limit 1)
+ where scope = 'participant' and type_id is null;
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('aum-meeting-media', 'aum-meeting-media', true, 52428800, array['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/quicktime', 'video/webm'])
+on conflict (id) do update set public = true, file_size_limit = 52428800, allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/quicktime', 'video/webm'];
+drop policy if exists "aum meeting media read" on storage.objects;
+create policy "aum meeting media read" on storage.objects for select to anon, authenticated using (bucket_id = 'aum-meeting-media');
+drop policy if exists "aum meeting media admin insert" on storage.objects;
+create policy "aum meeting media admin insert" on storage.objects for insert to authenticated with check (bucket_id = 'aum-meeting-media' and public.aum_is_admin());
+drop policy if exists "aum meeting media admin update" on storage.objects;
+create policy "aum meeting media admin update" on storage.objects for update to authenticated using (bucket_id = 'aum-meeting-media' and public.aum_is_admin());
+drop policy if exists "aum meeting media admin delete" on storage.objects;
+create policy "aum meeting media admin delete" on storage.objects for delete to authenticated using (bucket_id = 'aum-meeting-media' and public.aum_is_admin());
