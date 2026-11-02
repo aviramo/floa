@@ -1252,3 +1252,11 @@ dialog { border-radius: var(--r) var(--r) 0 0; }
 .fdot.yellow { background: var(--yellow-fill); }
 .fdot.red { background: var(--red); }
 .fdot.gray { background: var(--text-3); }
+/* פס הסטטוסים והתגיות: הנבחר לא משנה רקע, ויש לו נקודה (של סטטוס בצבע שלו, מ-applyStatuses; של תגית בשחור) */
+.ststrip .stc { position: relative; }
+.ststrip .stc.tagc[aria-pressed="true"] { background: transparent; border-color: transparent; color: var(--text); }
+/* תפריט הסינון: הנבחר לא משנה רקע, ויש לו נקודה (דרך הגעה בצבע שלה, והשאר בשחור) */
+#viewMenu .mc { position: relative; }
+#viewMenu .mc[aria-pressed="true"] { background: transparent; border-color: transparent; color: var(--text); }
+#viewMenu .mc[data-sc][aria-pressed="true"] { background: transparent; color: var(--sfg); }
+.fdot.sc { background: var(--sfg); }

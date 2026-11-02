@@ -1132,3 +1132,17 @@ end $function$;
 drop trigger if exists aum_clear_pay_reported_t on public.aum_payments;
 create trigger aum_clear_pay_reported_t after insert on public.aum_payments for each row execute function public.aum_clear_pay_reported();
 notify pgrst, 'reload schema';
+
+-- 28: סגירת תשלום בלי שום תשלום: נשמר כ-no_pay, ו-pay_closed_at מבדיל בתצוגה בין "נסגר" ל"חינם". תוספתי.
+alter table public.aum_registrations add column if not exists pay_closed_at timestamptz;
+do $$
+declare d text;
+begin
+  select pg_get_functiondef(p.oid) into d from pg_proc p where p.proname = 'aum_reg_notes' and p.pronamespace = 'public'::regnamespace;
+  if d not like '%pay_closed_at%' then
+    d := replace(d, 'if coalesce(old.no_pay, false) <> coalesce(new.no_pay, false) then', 'if coalesce(old.no_pay, false) <> coalesce(new.no_pay, false) and new.pay_closed_at is null and old.pay_closed_at is null then');
+    if d not like '%pay_closed_at%' then raise exception 'aum_reg_notes patch did not apply'; end if;
+    execute d;
+  end if;
+end $$;
+notify pgrst, 'reload schema';
