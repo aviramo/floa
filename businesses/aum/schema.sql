@@ -1146,3 +1146,22 @@ begin
   end if;
 end $$;
 notify pgrst, 'reload schema';
+
+-- 29: בלי המושג "חינם": מפגש בלי תשלום נקרא "לא לתשלום". כאן רק הניסוח בפונקציות שכותבות הערות; הנתונים לא משתנים.
+do $do$
+declare r record; d text;
+begin
+  for r in select p.oid from pg_proc p where p.pronamespace = 'public'::regnamespace and p.proname in ('aum_reg_notes', 'aum_pay_status', 'aum_status_label')
+  loop
+    d := pg_get_functiondef(r.oid);
+    if d like '%חינם%' then
+      d := replace(d, $q$' סומן כחינם'$q$, $q$' סומן לא לתשלום'$q$);
+      d := replace(d, $q$'החינם בוטל למפגש '$q$, $q$'חזרה לתשלום למפגש '$q$);
+      d := replace(d, $q$'חינם'$q$, $q$'לא לתשלום'$q$);
+      d := replace(d, 'סימון "חינם"', 'סימון "לא לתשלום"');
+      if d like '%חינם%' then raise exception 'wording left in %', r.oid; end if;
+      execute d;
+    end if;
+  end loop;
+end $do$;
+notify pgrst, 'reload schema';
