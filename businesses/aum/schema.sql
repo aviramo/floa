@@ -1170,3 +1170,50 @@ notify pgrst, 'reload schema';
 alter table public.aum_notes add column if not exists mail_id uuid;
 alter table public.aum_notes add column if not exists mail_failed boolean not null default false;
 notify pgrst, 'reload schema';
+
+-- 31: מה שנכתב בהערה לא משתנה: בכל הערת מערכת נשמרים השם והצבע של הסטטוס ותאריך המפגש ברגע היצירה. וגם: מתי סטטוסי המפגש זמינים לכל סוג (status_lead). תוספתי.
+alter table public.aum_notes add column if not exists meeting_short text, add column if not exists status_label text, add column if not exists status_color text, add column if not exists mail_noaddr boolean not null default false;
+alter table public.aum_meeting_types add column if not exists status_lead text not null default '60';
+
+create or replace function public.aum_note_freeze() returns trigger
+language plpgsql security definer set search_path = public as $f$
+declare lb text; cl text;
+begin
+  if new.system then
+    new.meeting_short := coalesce(new.meeting_short, substring(new.body from 'מפגש\s+(?:יום\s+\S+\s+)?(\d{1,2}\.\d{1,2})'),
+      case when new.meeting_id is not null then public.aum_meeting_label(new.meeting_id) end);
+    if new.new_status is not null then
+      select t.label, t.color into lb, cl from public.aum_statuses t where t.key = new.new_status limit 1;
+      new.status_label := coalesce(new.status_label, lb, public.aum_status_label(new.new_status));
+      new.status_color := coalesce(new.status_color, cl);
+    end if;
+  end if;
+  return new;
+exception when others then return new;
+end $f$;
+revoke all on function public.aum_note_freeze() from public, anon, authenticated;
+drop trigger if exists aum_note_freeze_t on public.aum_notes;
+create trigger aum_note_freeze_t before insert on public.aum_notes for each row execute function public.aum_note_freeze();
+
+-- הערת השיוך שומרת את הסטטוס שבו נוצר השיוך
+do $do$
+declare d text; a text := $x$'meeting_linked', new.event_id);$x$;
+begin
+  select pg_get_functiondef(p.oid) into d from pg_proc p where p.pronamespace = 'public'::regnamespace and p.proname = 'aum_reg_notes';
+  if position(a in d) > 0 then
+    execute replace(d, a, $x$'meeting_linked', new.event_id, null, coalesce(new.status_key, public.aum_pay_code(new.paid, new.exempt, new.pay_requested_at, new.will_pay, new.maybe)));$x$);
+  elsif position($x$'meeting_linked', new.event_id, null,$x$ in d) = 0 then
+    raise exception 'aum_reg_notes: meeting_linked call not found';
+  end if;
+end $do$;
+
+-- הערות קיימות: תאריך המפגש, ושם וצבע הסטטוס כפי שנכתב
+update public.aum_notes n set meeting_short = coalesce(substring(n.body from 'מפגש\s+(?:יום\s+\S+\s+)?(\d{1,2}\.\d{1,2})'), case when n.meeting_id is not null then public.aum_meeting_label(n.meeting_id) end)
+  where n.system and n.meeting_short is null;
+update public.aum_notes n set status_label = coalesce(n.status_label, t.label), status_color = coalesce(n.status_color, t.color)
+  from public.aum_statuses t where t.key = n.new_status and (n.status_label is null or n.status_color is null);
+update public.aum_notes n set status_label = substring(n.body from ':\s*([^(₪]+?)\s*(?:₪|\(היה:)')
+  where n.system and n.event_type in ('status_changed', 'meeting_status_changed', 'during_status_changed', 'after_status_changed')
+    and substring(n.body from ':\s*([^(₪]+?)\s*(?:₪|\(היה:)') is not null
+    and n.status_label is distinct from substring(n.body from ':\s*([^(₪]+?)\s*(?:₪|\(היה:)');
+notify pgrst, 'reload schema';
