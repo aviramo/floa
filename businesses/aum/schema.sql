@@ -1165,3 +1165,8 @@ begin
   end loop;
 end $do$;
 notify pgrst, 'reload schema';
+
+-- 30: עמודות הערה למעקב מייל למשתתף (מהרפתקה). לאום אין מיילים למשתתפים, והעמודות נשארות ריקות; הדף קורא אותן בטעינה.
+alter table public.aum_notes add column if not exists mail_id uuid;
+alter table public.aum_notes add column if not exists mail_failed boolean not null default false;
+notify pgrst, 'reload schema';
