@@ -20,12 +20,12 @@
             '<div class="su-fold"><div>' +
               '<div class="su-grid">' +
                 '<div class="su-cell" style="grid-column:1/-1"><div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:.5rem">' +
-                  '<input id="suName" data-autofocus data-su="first" name="first_name" type="text" class="su-input" autocomplete="given-name" maxlength="30" placeholder="שם פרטי" aria-label="שם פרטי" required>' +
-                  '<input data-su="last" name="last_name" type="text" class="su-input" autocomplete="family-name" maxlength="30" placeholder="שם משפחה" aria-label="שם משפחה" required>' +
+                  '<label class="pf-field"><span>שם פרטי</span><input id="suName" data-autofocus data-su="first" name="first_name" type="text" class="pf-input" autocomplete="given-name" maxlength="30" placeholder=" " aria-label="שם פרטי" required></label>' +
+                  '<label class="pf-field"><span>שם משפחה</span><input data-su="last" name="last_name" type="text" class="pf-input" autocomplete="family-name" maxlength="30" placeholder=" " aria-label="שם משפחה" required></label>' +
                 '</div><div data-su="nameErr" class="su-err" role="alert"></div></div>' +
-                '<div class="su-cell"><input id="suPhone" data-su="phone" name="phone" type="tel" dir="ltr" inputmode="tel" class="su-input" style="text-align:end" autocomplete="tel" maxlength="24" placeholder="טלפון" aria-label="טלפון" required><div data-su="phoneErr" class="su-err" role="alert"></div></div>' +
-                '<div class="su-cell"><input id="suAge" data-su="age" name="age" type="number" inputmode="numeric" min="18" max="99" class="su-input" autocomplete="off" placeholder="גיל" aria-label="גיל" required><div data-su="ageErr" class="su-err" role="alert"></div></div>' +
-                '<div class="su-cell" style="grid-column:1/-1"><select data-su="gender" name="gender" class="su-input su-select" aria-label="מגדר" required><option value="" selected disabled>מגדר</option><option value="male">גבר</option><option value="female">אישה</option></select><div data-su="genderErr" class="su-err" role="alert"></div></div>' +
+                '<div class="su-cell"><label class="pf-field"><span>טלפון</span><input id="suPhone" data-su="phone" name="phone" type="tel" dir="ltr" inputmode="tel" class="pf-input" autocomplete="tel" maxlength="24" placeholder=" " aria-label="טלפון" required></label><div data-su="phoneErr" class="su-err" role="alert"></div></div>' +
+                '<div class="su-cell"><label class="pf-field"><span>גיל</span><input id="suAge" data-su="age" name="age" type="number" inputmode="numeric" min="18" max="99" class="pf-input" autocomplete="off" placeholder=" " aria-label="גיל" required></label><div data-su="ageErr" class="su-err" role="alert"></div></div>' +
+                '<div class="su-cell" style="grid-column:1/-1"><label class="pf-field"><span>מגדר</span><select data-su="gender" name="gender" class="pf-input" aria-label="מגדר" required><option value="" selected disabled hidden></option><option value="male">גבר</option><option value="female">אישה</option></select></label><div data-su="genderErr" class="su-err" role="alert"></div></div>' +
               '</div>' +
             '</div></div>' +
             '<button data-su="btn" type="submit" class="btn su-send">הרשמה</button>' +

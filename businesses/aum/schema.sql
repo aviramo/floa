@@ -1217,3 +1217,35 @@ update public.aum_notes n set status_label = substring(n.body from ':\s*([^(₪]
     and substring(n.body from ':\s*([^(₪]+?)\s*(?:₪|\(היה:)') is not null
     and n.status_label is distinct from substring(n.body from ':\s*([^(₪]+?)\s*(?:₪|\(היה:)');
 notify pgrst, 'reload schema';
+
+-- 32: מחיקת דרך הגעה והעברת כל מה שמקושר אליה לדרך הגעה אחרת, בטרנזקציה אחת (מהרפתקה). רץ בהרשאות המשתמש, ולכן ה-RLS (מנהלים בלבד) חל עליו.
+create or replace function public.aum_promoter_replace(p_from uuid, p_to uuid default null)
+returns text language plpgsql set search_path = public as $$
+declare f public.aum_promoters; t public.aum_promoters;
+begin
+  select * into f from public.aum_promoters where id = p_from;
+  if not found then return 'not_found'; end if;
+  if p_to is null then
+    if exists (select 1 from public.aum_participants where promoter_id = p_from or (f.code is not null and source_code = f.code) or (f.code = 'p' and source = 'site-ad' and source_code is null and promoter_id is null))
+      or exists (select 1 from public.aum_registrations where promoter_id = p_from)
+      or exists (select 1 from public.aum_payments where promoter_id = p_from)
+      or exists (select 1 from public.aum_promoter_payments where promoter_id = p_from) then
+      return 'has_links';
+    end if;
+  else
+    if p_to = p_from then return 'same'; end if;
+    select * into t from public.aum_promoters where id = p_to;
+    if not found then return 'no_target'; end if;
+    update public.aum_participants
+      set promoter_id = p_to, source_code = case when source_code = f.code then t.code else source_code end
+      where promoter_id = p_from or (f.code is not null and source_code = f.code) or (f.code = 'p' and source = 'site-ad' and source_code is null and promoter_id is null);
+    update public.aum_registrations set promoter_id = p_to where promoter_id = p_from;
+    update public.aum_payments set promoter_id = p_to where promoter_id = p_from;
+    update public.aum_promoter_payments set promoter_id = p_to where promoter_id = p_from;
+  end if;
+  delete from public.aum_promoters where id = p_from;
+  return 'ok';
+end $$;
+revoke all on function public.aum_promoter_replace(uuid, uuid) from public, anon;
+grant execute on function public.aum_promoter_replace(uuid, uuid) to authenticated;
+notify pgrst, 'reload schema';
