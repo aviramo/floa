@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=20261104ij" />
+  <link rel="stylesheet" href="admin.css?v=20261104iq" />
 </head>
 <body class="locked">
   <div class="gate" id="gate" hidden>
@@ -4224,7 +4224,7 @@
     m.getAnimations().forEach((x) => x.cancel()); m._closing = false;
     renderViewMenu(); m.hidden = false; fb.setAttribute('aria-expanded', 'true');
     if (!noMotion()) m.animate([{ opacity: 0, transform: 'translateY(-8px)' }, { opacity: 1, transform: 'none' }], { duration: 200, easing: 'ease-out' });
-    const r = fb.getBoundingClientRect(), vb = $('#listTags').getBoundingClientRect(), top = Math.round(vb.bottom);   // הקצה העליון של התפריט בקו שמתחת לשורת הסינון (המונה וסמלי העמודות נשארים גלויים)
+    const r = fb.getBoundingClientRect(), top = Math.round(r.bottom + 8);   // התפריט נפתח ישר מתחת לכפתור הסינון בכותרת
     m.style.right = 'auto'; m.style.left = menuX(m, fb) + 'px';
     m.style.top = top + 'px'; m.style.maxHeight = Math.max(240, window.innerHeight - top - 12) + 'px';
   };

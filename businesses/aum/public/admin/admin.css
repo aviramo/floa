@@ -754,7 +754,7 @@ html.dlg-lock { overflow: hidden; overscroll-behavior: none; }
 .mf .mfted[hidden] { display: none; }
 /* תמונה: אריח אחד ביחס 4:1 (כמו בעמוד הבית). ריק: מסגרת מקווקוות ו"הוספת תמונה"; עם תמונה: התמונה, תגית "החלפת תמונה" ו-× להסרה על התמונה עצמה */
 .mfimg { position: relative; margin-bottom: 12px; }
-.mfimg-pick { position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 4 / 1; min-height: 88px; overflow: hidden; border: 1px dashed var(--line-2); background: var(--surface); color: var(--text-2); cursor: pointer; }
+.mfimg-pick { position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 2 / 1; overflow: hidden; border: 1px dashed var(--line-2); background: var(--surface); color: var(--text-2); cursor: pointer; }
 .mfimg-pick img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .mfimg-pick img[hidden] { display: none; }
 .mfimg.has .mfimg-pick { border: 1px solid var(--line); }
@@ -772,7 +772,7 @@ html.dlg-lock { overflow: hidden; overscroll-behavior: none; }
 .mimgbtns { display: flex; gap: 8px; }
 .mimgpick, .mimgbtns button { flex: 1 1 0; height: var(--ctl); display: grid; place-items: center; border: 1px solid transparent; background: var(--surface-2); color: var(--text); font-weight: 600; font-size: 14.5px; cursor: pointer; }
 .mimgbtns button { color: var(--text-2); }
-#mImgPrev, #setMImgPrev, #tyImgPrev { display: block; width: 100%; aspect-ratio: 4 / 1; object-fit: cover; margin: 0 0 12px; border: 1px solid var(--line); background: var(--surface); }
+#mImgPrev, #setMImgPrev, #tyImgPrev { display: block; width: 100%; aspect-ratio: 2 / 1; object-fit: cover; margin: 0 0 12px; border: 1px solid var(--line); background: var(--surface); }
 .mt2 { padding: 0; }
 .mt2row { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 14px; font-weight: 600; color: var(--text-2); }
 .mt2row .mtp { display: flex; align-items: center; gap: 4px; direction: ltr; }
@@ -1471,3 +1471,13 @@ html.is-loading .hsearch { visibility: hidden; }
 .afc.pin { background: transparent; }   /* עין פקוחה: תוויות המגדר בלי רקע, נקודה כשהסינון פעיל */
 .mmenu .maddrow.addt + .mtr { margin-top: 16px; }   /* מרווח מעל המפגשים, כמו מעל סוגי המפגשים (3.11.26) */
 .mmenu .maddrow:not(.addt) { margin-bottom: 8px; }   /* ומתחת למפגש חדש */
+#allocDlg .sheet-head h2, #ppDlg .sheet-head h2 { padding-top: 0; min-height: 0; }   /* הכותרת מיושרת למעלה, בקו העליון של הצ'יף (3.11.26) */
+#viewMenu { width: max-content; min-width: 0; max-width: calc(100vw - 16px); }   /* תפריט הסינון צמוד לתוכן ולא ברוחב קבוע (3.11.26) */
+
+/* רקע הפייג'ר בכרטיס המשתתף אפור בהיר, ומה שהיה אפור בתוכו (אריחים, מפגש מסומן, תגיות ניטרליות) הפך ללבן (3.11.26) */
+#pPager { background: var(--surface); }
+#pPager .mlist .mrow.hl, #pPager .mlist .mrow .pay.none, #pPager .mlist .mrow .mmoney.free, #pPager .ptag.empty, #pPager .paychip.allocchip.free { background: var(--bg); }
+#pPager .mlist .mrow { background: var(--bg); }
+#pPager .maddw, #pPager #pMeetPad, #pPager .nattach, #pPager .nform, #pPager #pAddMeet { background: transparent; }   /* בלי בלוקים לבנים על הרקע האפור, בארבעת הדפים */
+
+.mtr.mrow2:has(.mrname) { padding-block: 12px; }   /* מפגש עם שם: אותו ריפוד אנכי כמו בשורת סוג המפגש (3.11.26) */
