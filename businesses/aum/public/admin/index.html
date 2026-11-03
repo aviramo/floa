@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=20261104fb" />
+  <link rel="stylesheet" href="admin.css?v=20261104fh" />
 </head>
 <body class="locked">
   <div class="gate" id="gate" hidden>
@@ -209,6 +209,13 @@
   </dialog>
 
   <!-- פופאפ הקצאה: עולה מלמטה מעל כרטיס המשתתף (או לבד כשנפתח מהרשימה). מסך ההקצאה עצמו, הצ'יף והשורה השנייה עוברים אליו בפתיחה וחוזרים לכרטיס בסגירה (allocMount / allocUnmount) -->
+  <dialog id="tplDlg" aria-labelledby="tplTitle">
+    <div class="sheet">
+      <div class="sheet-head"><h2 id="tplTitle">תבנית הודעה</h2></div>
+      <p class="sthint stintro" id="tplIntro"></p>
+      <div class="mtedit" id="tplFields"></div>
+    </div>
+  </dialog>
   <dialog id="mailDlg" aria-labelledby="mailTitle">
     <div class="sheet" id="mailSheet">
       <div class="sheet-head"><h2 id="mailTitle">מייל</h2><button type="button" class="hbtn" id="mailTheme" aria-pressed="false" aria-label="הדמיית מצב כהה" title="הדמיית מצב כהה"><svg data-i="moon"></svg></button></div>
@@ -239,10 +246,23 @@
   <dialog id="stDlg" aria-labelledby="stTitle" style="max-width:760px">
     <div class="sheet stsheet">
       <div class="sheet-head">
-        <button type="button" class="hbtn hback" id="stArrow" aria-label="חזרה" title="חזרה" hidden><svg data-i="back"></svg></button>
         <h2 id="stTitle">סטטיסטיקות</h2>
       </div>
-      <div id="stBody"></div>
+      <div id="stBody">
+        <div class="ptabs" id="stTabs" role="tablist" aria-label="נושאי הסטטיסטיקות">
+          <button type="button" role="tab" id="stTabM" aria-controls="stPgM" aria-selected="true" tabindex="0">מפגשים</button>
+          <button type="button" role="tab" id="stTabF" aria-controls="stPgF" aria-selected="false" tabindex="-1">כספים</button>
+          <button type="button" role="tab" id="stTabP" aria-controls="stPgP" aria-selected="false" tabindex="-1">דרכי הגעה</button>
+          <button type="button" role="tab" id="stTabA" aria-controls="stPgA" aria-selected="false" tabindex="-1">קהל</button>
+          <span class="ptabi" aria-hidden="true"></span>
+        </div>
+        <div class="ppager" id="stPager">
+          <section class="ppage" id="stPgM" role="tabpanel" aria-labelledby="stTabM"></section>
+          <section class="ppage" id="stPgF" role="tabpanel" aria-labelledby="stTabF" inert></section>
+          <section class="ppage" id="stPgP" role="tabpanel" aria-labelledby="stTabP" inert></section>
+          <section class="ppage" id="stPgA" role="tabpanel" aria-labelledby="stTabA" inert></section>
+        </div>
+      </div>
     </div>
   </dialog>
 
@@ -502,13 +522,12 @@
     else { menu.style.maxHeight = Math.floor(above) + 'px'; menu.style.top = minTop + 'px'; }
   }
   const NAV = { stack: [], ignore: 0, fromPop: false };
-  const NAV_BACK = { pDlg: '#pBack', setDlg: '#setBack', stDlg: '#stArrow', prDlg: '#prArrow', finDlg: '#finArrow' };
+  const NAV_BACK = { pDlg: '#pBack', setDlg: '#setBack', prDlg: '#prArrow', finDlg: '#finArrow' };
   const navDepthOf = (d) => {
     try {
       if (d.id === 'pDlg') return (sheet && sheet.id && pTab !== 'main') ? Math.max(1, viewStack.filter((x) => x !== 'main').length + 1) : 0;
       if (d.id === 'mDlg') return d.querySelector('.mf.editing') ? 1 : 0;   // עריכת תבנית הודעה היא מסך משנה
       if (d.id === 'setDlg') return (setView === 'tydet' && d.querySelector('.mf.editing')) ? 1 : setIsRoot(setView) ? 0 : setView === 'del' ? (setRoot === 'st' ? 1 : 2) : 1;   // עריכת סוג מפגש נפתחת מתפריט המפגשים: מסך הסוג הוא הראשי, והסטטוסים וההודעה שלו מסכי משנה
-      if (d.id === 'stDlg') return stCur === 'main' ? 0 : 1;
       if (d.id === 'finDlg') return finV === 'main' ? 0 : 1;
       if (d.id === 'prDlg') return RANK[prView] || 0;
     } catch (e) {}
@@ -548,7 +567,7 @@
   let deep = null;
   try {
     const sp = new URLSearchParams(location.search);
-    if (['m', 'p', 'pay', 'at', 'pd', 'sv', 'bl', 'tg', 'tga', 'q', 'em', 'g', 's', 'st', 'pt', 'pm', 'set', 'stv', 'pr', 'fin', 'sc', 'ag', 'lg', 'af', 'se', 'sp', 'sa', 'mt'].some((k) => sp.get(k))) { deep = { mt: sp.get('mt'), m: sp.get('m'), p: sp.get('p'), pay: sp.get('pay'), at: sp.get('at'), pd: sp.get('pd'), sv: sp.get('sv'), bl: sp.get('bl'), tg: sp.get('tg'), tga: sp.get('tga'), q: sp.get('q'), em: sp.get('em'), g: sp.get('g'), s: sp.get('s'), st: sp.get('st'), pt: sp.get('pt'), pm: sp.get('pm'), set: sp.get('set'), stv: sp.get('stv'), pr: sp.get('pr'), fin: sp.get('fin'), sc: sp.get('sc'), ag: sp.get('ag'), lg: sp.get('lg'), ml: sp.get('ml'), se: sp.get('se'), sp: sp.get('sp'), sa: sp.get('sa'), af: sp.get('af') }; sessionStorage.setItem('aum_deep', JSON.stringify(deep)); }
+    if (['m', 'p', 'pay', 'at', 'pd', 'sv', 'bl', 'tg', 'tga', 'q', 'em', 'g', 's', 'st', 'pt', 'pm', 'set', 'stv', 'pr', 'fin', 'sc', 'ag', 'lg', 'af', 'se', 'sp', 'sa', 'mt', 'tpl'].some((k) => sp.get(k))) { deep = { tpl: sp.get('tpl'), mt: sp.get('mt'), m: sp.get('m'), p: sp.get('p'), pay: sp.get('pay'), at: sp.get('at'), pd: sp.get('pd'), sv: sp.get('sv'), bl: sp.get('bl'), tg: sp.get('tg'), tga: sp.get('tga'), q: sp.get('q'), em: sp.get('em'), g: sp.get('g'), s: sp.get('s'), st: sp.get('st'), pt: sp.get('pt'), pm: sp.get('pm'), set: sp.get('set'), stv: sp.get('stv'), pr: sp.get('pr'), fin: sp.get('fin'), sc: sp.get('sc'), ag: sp.get('ag'), lg: sp.get('lg'), ml: sp.get('ml'), se: sp.get('se'), sp: sp.get('sp'), sa: sp.get('sa'), af: sp.get('af') }; sessionStorage.setItem('aum_deep', JSON.stringify(deep)); }
     else { deep = JSON.parse(sessionStorage.getItem('aum_deep') || 'null'); }
   } catch (e) {}
   const $ = (s) => document.querySelector(s);
@@ -570,11 +589,12 @@
     if (state.ageF) sp.set('ag', state.ageF);
     if (state.loginF) sp.set('lg', state.loginF);
     if (state.q.trim()) sp.set('q', state.q.trim());
-    if (openPid) { sp.set('p', openPid); if (pTab && pTab !== 'main' && pTab !== 'contact' && pTab !== 'meets' && pTab !== 'deposit') { sp.set('pt', pTab); } if (sheet && sheet.mailId && document.getElementById('mailDlg').open) sp.set('ml', sheet.mailId); if (pTab === 'main' && pgCur) sp.set('pg', PG_IDS[pgCur]); }
+    if (openPid) { sp.set('p', openPid); if (pTab && pTab !== 'main' && pTab !== 'contact' && pTab !== 'meets' && pTab !== 'deposit') { sp.set('pt', pTab); } if (sheet && sheet.mailId && document.getElementById('mailDlg').open) sp.set('ml', sheet.mailId); if (pTab === 'main' && PG.cur) sp.set('pg', PG_IDS[PG.cur]); }
     if ($('#setDlg').open) sp.set('set', setView === 'main' ? '1' : setView === 'tydet' ? 'tydet:' + (tyId || '') : (setView === 'st' || setView === 'del') ? ((stScope === 'meeting' ? 'st:' : 'tag:') + (stType || '')) : setView === 'em' ? 'em:' + (stType || '') : setView);   // סוג מפגש: עריכת הסוג, הסטטוסים וההודעה שלו
     if ($('#prDlg').open && prCur) sp.set('pr', prCur);
     if (mDlg.open) sp.set('em', editingMeeting ? editingMeeting.id : 'new');   // עריכת מפגש או מפגש חדש
-    if ($('#stDlg').open) { sp.set('st', '1'); if (stCur && stCur !== 'main') sp.set('stv', stCur); }
+    if ($('#tplDlg').open && tplEd) sp.set('tpl', tplEd.id);   // עריכת תבנית הודעה
+    if ($('#stDlg').open) { sp.set('st', '1'); if (stPg.cur) sp.set('stv', ST_IDS[stPg.cur]); }
     if ($('#finDlg').open) sp.set('fin', finV === 'log' ? 'log' : finV === 'settle' ? 'settle' : finV === 'form' ? (finEdit && finEdit.id ? 'edit-' + finEdit.type + '-' + finEdit.id : 'new-' + ((finEdit && finEdit.kind) || 'expense')) : '1');   // כל שלב בכספים: ראשי, יומן, התחשבנות, טופס חדש או עריכה
     const s = sp.toString();
     try { history.replaceState(null, '', location.pathname + (s ? '?' + s : '')); } catch (e) {}
@@ -1134,6 +1154,7 @@
           if (d.ml) openMail(d.ml);
           if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
         }
+        else if (d.tpl && state.tpls.some((x) => x.id === d.tpl)) openTplPop(d.tpl);
         else if (d.em === 'new') openMeeting(null);
         else if (d.em && state.meetings.some((x) => x.id === d.em)) openMeeting(d.em);
         else if (d.set || d.pr) {
@@ -1146,7 +1167,7 @@
           if (document.activeElement && document.activeElement.closest('#setDlg')) document.activeElement.blur(); syncUrl();
         }
         else if (d.fin) { openFinance(d.fin); }
-        else if (d.st) { renderStats(); $('#stDlg').showModal(); if (d.stv && ST_TITLES[d.stv] && d.stv !== 'main') stView(d.stv, true); if (document.activeElement && document.activeElement.closest('#stDlg')) document.activeElement.blur(); syncUrl(); }
+        else if (d.st) openStats(d.stv);
         return;
       }
       urlReady = true;
@@ -1638,7 +1659,7 @@
       const ls = all.filter((l) => l.meeting_id === m.id), S = new Set(ls.map((l) => l.participant_id));
       const ret = [...S].filter((id) => seen.has(id)).length, kept = [...S].filter((id) => prev.has(id)).length;
       const row = { m, regs: ls.length, ad: ls.filter((l) => adCodeOf(l.p)).length, ex: ls.filter((l) => l.no_pay).length, paid: ls.filter((l) => allocatedOf(l.participant_id, l.meeting_id) > 0).length, rev: ls.reduce((s, l) => s + Math.max(0, allocatedOf(l.participant_id, l.meeting_id)), 0),
-        news: S.size - ret, ret, kept, prevN: prev.size };
+        news: S.size - ret, ret, kept, prevN: prev.size, started: meetingStarted(m), came: ls.filter((l) => meetingKeyOf(l)).length, women: ls.filter((l) => l.p.gender === 'female').length, men: ls.filter((l) => l.p.gender === 'male').length };
       S.forEach((id) => seen.add(id)); prev = S;
       return row;
     });
@@ -1648,97 +1669,184 @@
   const kpi = (v, label, sub, tone) => UI.metric(label, v, { sub, tone: tone === 'good' ? 'pos' : tone === 'bad' ? 'neg' : tone === 'warn' ? 'yel' : '' });
   const sec = (title, hint, body) => '<section class="stsec"><h3>' + title + '</h3>' + (hint ? '<p class="sthint">' + hint + '</p>' : '') + body + '</section>';
   const bars = (rows) => '<div class="bars">' + rows + '</div>';   // כל הסרגלים בקבוצה באותו רוחב: העמודה של הערך לפי הערך הרחב ביותר
-  const barRow = (label, n, total, color, extra) => { const w = total ? Math.round(n / total * 100) : 0; return '<div class="brow"><span class="bl">' + label + '</span><span class="bt"><i style="width:' + w + '%;background:' + color + '"></i></span><span class="bv"><b>' + n + '</b>' + (total ? ' · ' + w + '%' : '') + (extra ? ' · ' + extra : '') + '</span></div>'; };
+  const barRow = (label, n, total, color, extra, shown) => { const w = total ? Math.max(0, Math.round(n / total * 100)) : 0; return '<div class="brow"><span class="bl">' + label + '</span><span class="bt"><i style="width:' + w + '%;background:' + color + '"></i></span><span class="bv"><b>' + (shown != null ? shown : n) + '</b>' + (total ? ' · ' + w + '%' : '') + (extra ? ' · ' + extra : '') + '</span></div>'; };
   const colsChart = (items, color, dense) => { const max = Math.max(1, ...items.map((i) => i.v)); return '<div class="cols' + (dense ? ' dense' : '') + '">' + items.map((i) => '<div class="col">' + (dense ? '' : '<span class="cv">' + (i.v || '') + '</span>') + '<i style="height:' + Math.round(i.v / max * 72) + 'px;background:' + (i.color || color) + '"></i><span class="cl">' + i.l + '</span></div>').join('') + '</div>'; };
   const median = (a) => { if (!a.length) return null; const s = a.slice().sort((x, y) => x - y), h = s.length >> 1; return s.length % 2 ? s[h] : (s[h - 1] + s[h]) / 2; };
 
-  /* סטטיסטיקות: שלושה נושאים (כספים, דרכי הגעה, דמוגרפיה); במסך הראשי השורה התחתונה של כל נושא, ולחיצה פותחת פירוט (אותה מעטפת כמו פרטי המשתתף, חץ חזרה) */
-  const ST_TITLES = { main: 'סטטיסטיקות', money: 'כספים', promo: 'דרכי הגעה', demo: 'דמוגרפיה' };
-  let stCur = 'main';
-  function stView(v, instant) {
-    const forward = v !== 'main'; stCur = v;
-    document.querySelectorAll('#stBody [data-sp]').forEach((d) => { const on = d.dataset.sp === v; d.hidden = !on; d.classList.remove('enter-l', 'enter-r'); if (on && !instant && !reducedMotion()) { void d.offsetWidth; d.classList.add(forward ? 'enter-l' : 'enter-r'); } });
-    $('#stArrow').hidden = v === 'main'; $('#stTitle').textContent = ST_TITLES[v] || ST_TITLES.main; navSync($('#stDlg')); syncUrl();
-    const dlg = $('#stDlg'); dlg.scrollTop = 0;
+  /* פייג'ר עם אטבים: רכיב אחד לכרטיס המשתתף ולסטטיסטיקות. הדפים זה לצד זה עם הצמדה, המחוון עוקב אחרי הגלילה, הדף שלא מוצג לא מקבל פוקוס, ומעבר בין דפים לא מוסיף רשומת היסטוריה */
+  function tabPager(tabsEl, box, tabs, pages, off) {
+    const T = { cur: 0, lock: 0 };
+    T.mark = (i) => {
+      const ch = i !== T.cur; T.cur = i;
+      tabs.forEach((t, k) => { t.setAttribute('aria-selected', String(k === i)); t.tabIndex = k === i ? 0 : -1; });
+      pages.forEach((d, k) => { d.inert = k !== i; });
+      if (ch) { try { syncUrl(); } catch (e) {} }
+    };
+    T.apply = () => { box.scrollLeft = -T.cur * box.clientWidth; tabsEl.style.setProperty('--pg', T.cur); T.mark(T.cur); };
+    T.go = (i) => { box.scrollTo({ left: -i * box.clientWidth, behavior: reducedMotion() ? 'auto' : 'smooth' }); T.mark(i); };
+    box.addEventListener('scroll', () => { const w = box.clientWidth; if (!w || (off && off())) return; const q = Math.abs(box.scrollLeft) / w; tabsEl.style.setProperty('--pg', q); if (Date.now() > T.lock) { const i = Math.round(q); if (i !== T.cur) T.mark(i); } }, { passive: true });
+    tabs.forEach((t, i) => t.addEventListener('click', () => { T.lock = Date.now() + 500; T.go(i); }));   // בזמן הגלילה אחרי לחיצה על אטב לא מסמנים דף ביניים
+    tabsEl.addEventListener('keydown', (e) => { if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return; e.preventDefault(); const i = Math.min(tabs.length - 1, Math.max(0, T.cur + (e.key === 'ArrowLeft' ? 1 : -1))); T.lock = Date.now() + 500; T.go(i); tabs[i].focus(); });
+    { let w0 = 0; new ResizeObserver(() => { const w = box.clientWidth; if (w && w !== w0) { w0 = w; box.scrollLeft = -T.cur * w; } }).observe(box); }
+    return T;
   }
-  $('#stArrow').addEventListener('click', () => stView('main'));
-  $('#stBody').addEventListener('click', (e) => { const b = e.target.closest('[data-topic]'); if (b) stView(b.dataset.topic); });
+
+  /* סטטיסטיקות בארבעה אטבים. מה שבעל העסק רוצה לדעת: מה מצב המפגש הקרוב ואיפה נושרים (מפגשים), האם זה משתלם ומה הכסף שעוד בדרך (כספים), מה שווה לקדם ומתי (דרכי הגעה), ומי מגיע וחוזר (קהל) */
+  const ST_IDS = ['meet', 'money', 'promo', 'demo'], stPages = ['#stPgM', '#stPgF', '#stPgP', '#stPgA'].map((x) => $(x));
+  const stPg = tabPager($('#stTabs'), $('#stPager'), ['#stTabM', '#stTabF', '#stTabP', '#stTabA'].map((x) => $(x)), stPages);
+  function openStats(v) {
+    renderStats(); stPg.cur = Math.max(0, ST_IDS.indexOf(v));
+    $('#stDlg').showModal(); stPg.apply(); stPages.forEach((d) => { d.scrollTop = 0; });
+    if (document.activeElement && document.activeElement.closest('#stDlg')) document.activeElement.blur();   // בלי מסגרת פוקוס על האטב הראשון בפתיחה
+    syncUrl();
+  }
   function renderStats() {
     const S = computeStats(), links = S.links;
-    if (!state.participants.length) { $('#stBody').innerHTML = '<div class="empty"><b>אין עדיין נתונים</b>כשיהיו הרשמות, הסטטיסטיקות יופיעו כאן</div>'; $('#stArrow').hidden = true; return; }
+    if (!state.participants.length) { stPages[0].innerHTML = '<div class="empty"><b>אין עדיין נתונים</b>כשיהיו הרשמות, הסטטיסטיקות יופיעו כאן</div>'; return; }
     const ilsB = (n) => '<bdi dir="ltr">₪' + nfm(n) + '</bdi>';
     const dlab = (m) => meetingLabel(m).split(' · ')[0];
-    const price = (l) => (l.st === 'paid' && l.paid_amount != null) ? Number(l.paid_amount) : priceAtReg(l.m, l.created_at);
     const trend = (a, b) => { if (!(b > 0)) return ''; const ch = Math.round((a - b) / b * 100), up = ch >= 0; return UI.tag('<i>' + (up ? '▲' : '▼') + '</i><b>' + Math.abs(ch) + '%</b>', 'trend ' + (up ? 'up' : 'down')); };
-    const num = (v, label) => UI.metric(label, v);
-    const topic = (key, title, tr, nums, hint) => '<button type="button" class="topic" data-topic="' + key + '"><div class="th"><b>' + title + '</b><span class="thr">' + (tr || '') + '<span class="tmore">' + (hint || 'פרטים') + ' ›</span></span></div><div class="tnums">' + nums + '</div></button>';
     const tbl = (head, rows) => '<div class="tb' + (head.length === 2 ? ' mv' : '') + '"><div class="tr th2">' + head.map((h) => '<span>' + h + '</span>').join('') + '</div>' + rows.map((r) => '<div class="tr">' + r.map((c) => '<span>' + c + '</span>').join('') + '</div>').join('') + '</div>';
     const part = (title, body) => '<section class="stp"><h4>' + title + '</h4>' + body + '</section>';
+    const kpis = (...items) => '<div class="stkpis">' + items.join('') + '</div>';
+    const sgn = (v) => '<span class="' + (Math.round(v) > 0 ? 'cpos' : Math.round(v) < 0 ? 'cneg' : '') + '">' + ilsB(Math.abs(v)) + '</span>';   // צבע במקום פלוס ומינוס
+    const pctS = (a, b) => b ? ' <small>(' + Math.round(a / b * 100) + '%)</small>' : '';
+    const sum = (a, f) => a.reduce((t, x) => t + f(x), 0);
 
     /* כל המדדים לפי כל המשתתפים הפעילים (גם מי שלא שויך לאף מפגש), והכסף לפי רשומות התשלום: הכנסה נטו = תשלומים והפקדות (בלי הקצאה מהיתרה) פחות החזרים, בדיוק כמו במסך הכספים */
-    const allP = state.participants, n = allP.length, pmAll = S.perMeeting;
+    const allP = state.participants, n = allP.length;
     const paidBy = new Map(allP.map((p) => [p.id, netPaid(p.id)]));
     const isFreeP = (p) => { const ls = linksOf(p.id); return ls.length > 0 && ls.every((l) => l.no_pay); };
-    const payers = allP.filter((p) => paidBy.get(p.id) > 0), freeP = allP.filter(isFreeP), cohort = allP.filter((p) => !isFreeP(p)), unpaidP = cohort.filter((p) => !(paidBy.get(p.id) > 0));
-    const noMeetingN = allP.filter((p) => !linksOf(p.id).length).length;
-    const cash = state.payments.reduce((s, x) => s + cashOf(x), 0), conv = P(payers.length, cohort.length);
-    const credHold = [...new Set(state.payments.map((x) => x.participant_id))].map((id) => Math.round(creditOf(id) * 100) / 100).filter((c) => c > 0), credit = credHold.reduce((s, c) => s + c, 0);
-    const refunds = state.payments.filter((x) => x.kind === 'refund').reduce((s, x) => s + Number(x.amount), 0);
-    const pm = S.perMeeting.filter((r) => r.regs), last = pm[pm.length - 1], prev = pm[pm.length - 2];
-    const fr = finRowsAll(), expAll = fr.filter((x) => x.kind === 'expense').reduce((s, x) => s + x.amount, 0), incOther = fr.filter((x) => x.kind === 'income').reduce((s, x) => s + x.amount, 0), profit = cash + incOther - expAll;
-    const sgn = (v) => '<span class="' + (Math.round(v) > 0 ? 'cpos' : Math.round(v) < 0 ? 'cneg' : '') + '">' + ilsB(Math.abs(v)) + '</span>';   // צבע במקום פלוס ומינוס
+    const payers = allP.filter((p) => paidBy.get(p.id) > 0), cohort = allP.filter((p) => !isFreeP(p));
+    const cash = sum(state.payments, cashOf);
+    const credHold = [...new Set(state.payments.map((x) => x.participant_id))].map((id) => Math.round(creditOf(id) * 100) / 100).filter((c) => c > 0), credit = sum(credHold, (c) => c);
+    const refunds = sum(state.payments.filter((x) => x.kind === 'refund'), (x) => Number(x.amount));
+    const pm = S.perMeeting.filter((r) => r.regs), pmD = pm.slice().reverse(), started = pm.filter((r) => r.started);
+    const fr = finRowsAll(), expAll = sum(fr.filter((x) => x.kind === 'expense'), (x) => x.amount), incOther = sum(fr.filter((x) => x.kind === 'income'), (x) => x.amount), profit = cash + incOther - expAll;
+    const allocOf = (l) => allocatedOf(l.participant_id, l.meeting_id);
+    const owed = (ls) => sum(ls, (l) => oweOf(l.participant_id, l.m));
+    const cameP = allP.filter((p) => links.some((l) => l.participant_id === p.id && l.m && meetingStarted(l.m) && meetingKeyOf(l)));
+    const backP = cameP.filter((p) => new Set(linksOf(p.id).map((l) => l.meeting_id)).size >= 2);
 
-    // ----- כספים -----
-    const money = part('הכנסה לפי מפגש', '<p class="sthint">לפי התשלום ששויך לכל מפגש. הפקדות ויתרות שלא שויכו למפגש לא נספרות בטבלה, אבל נכללות בהכנסה הכוללת</p>' + tbl(['מפגש', 'נרשמו', 'שילמו', 'הכנסה', 'מגמה'], pm.map((r, k) => [dlab(r.m), r.regs, r.paid + '/' + (r.regs - r.ex), ilsB(r.rev), k ? trend(r.rev, pm[k - 1].rev) : '-']))) +
-      part('כל המשתתפים לפי תשלום', '<p class="sthint">' + n + ' משתתפים במערכת, מהם ' + noMeetingN + ' שלא שויכו לאף מפגש</p><div class="stkpis">' + kpi(payers.length, 'שילמו', Ps(payers.length, cohort.length) + ' מהמשתתפים', 'good') + kpi(unpaidP.length, 'עוד לא שילמו', '', unpaidP.length ? 'warn' : '') + kpi(freeP.length, 'לא לתשלום', '') + kpi(credHold.length, 'עם קרדיט פתוח', ilsB(credit), credHold.length ? 'warn' : '') + '</div>') +
-      part('סיכום', tbl(['מדד', 'ערך'], [['הכנסה נטו ממשתתפים (אחרי החזרים)', ilsB(cash)], ['הכנסות אחרות', ilsB(incOther)], ['הוצאות (כולל תשלומים לדרכי הגעה)', ilsB(expAll)], ['רווח', sgn(profit)], ['המרה לתשלום (מכלל המשתתפים)', Ps(payers.length, cohort.length)], ['ממוצע לשולם', payers.length ? ilsB(Math.round(cash / payers.length)) : '-'], ['הוחזר', ilsB(refunds)], ['קרדיט פתוח', '<bdi dir="ltr" class="cyel">₪' + nfm(credit) + '</bdi>']])) +
-      (() => { const byM = {}; state.payments.forEach((x) => { const v = cashOf(x); if (!v) return; const k = ilDay(x.created_at || new Date().toISOString()).slice(0, 7); byM[k] = (byM[k] || 0) + v; }); const ks = Object.keys(byM).sort(), mx = Math.max(1, ...ks.map((k) => byM[k])); return ks.length > 1 ? part('הכנסה לפי חודש', bars(ks.map((k) => barRow(k.slice(5) + '/' + k.slice(2, 4), byM[k], mx, 'var(--green)', ilsB(byM[k]))).join(''))) : ''; })();
+    // ----- מפגשים: המפגש הקרוב, המשפך, וכל מפגש -----
+    const nx = nextMeetingOf(), nxR = nx && S.perMeeting.find((r) => r.m.id === nx.id), nxL = nx ? links.filter((l) => l.meeting_id === nx.id) : [];
+    let nextPart = '';
+    if (nx) {
+      const left = daysTo(nx), open = nxL.filter((l) => !l.no_pay && !(allocOf(l) > 0)), rep = open.filter((l) => l.pay_reported_at), un = open.filter((l) => !l.pay_reported_at);
+      const prevM = pm.filter((r) => r.m.id !== nx.id && isPast(r.m)).slice(-1)[0];
+      const pace = prevM ? links.filter((l) => l.meeting_id === prevM.m.id && l.created_at && daysTo(prevM.m, ilDay(l.created_at)) >= left).length : null;
+      nextPart = part('המפגש הקרוב · ' + dlab(nx), kpis(
+        kpi(nxL.length, 'נרשמו', left > 1 ? 'עוד ' + left + ' ימים' : left === 1 ? 'מחר' : 'היום'),
+        kpi(nxR.paid, 'שילמו', Ps(nxR.paid, nxL.length - nxR.ex) + (nxR.ex ? ' · ועוד ' + nxR.ex + ' לא לתשלום' : ''), nxR.paid ? 'good' : ''),
+        kpi(un.length, 'עוד לא שילמו', un.length ? ilsB(owed(un)) + ' צפויים' : '', un.length ? 'warn' : ''),
+        kpi(rep.length, 'דיווחו וממתינים לאישור', rep.length ? ilsB(owed(rep)) : '', rep.length ? 'warn' : ''),
+        kpi(nxR.women, 'נקבה', Ps(nxR.women, nxL.length)),
+        kpi(nxR.men, 'זכר', Ps(nxR.men, nxL.length))
+      ) + (prevM ? '<p class="stline">באותו שלב לפני המפגש של ' + dlab(prevM.m) + ' נרשמו <b>' + pace + '</b>, ועכשיו <b>' + nxL.length + '</b> ' + trend(nxL.length, pace) + '</p>' : ''));
+    }
+    const everLinked = allP.filter((p) => linksOf(p.id).length);
+    const funnel = part('איפה נושרים', '<p class="sthint">מכל מי שהשאיר פרטים ועד מי שחזר למפגש נוסף</p>' + bars(
+      barRow('השאירו פרטים', n, n, 'var(--blue)') + barRow('נרשמו למפגש', everLinked.length, n, 'var(--blue)') + barRow('שילמו', payers.length, n, 'var(--blue)') + barRow('הגיעו', cameP.length, n, 'var(--blue)') + barRow('חזרו שוב', backP.length, n, 'var(--green)')));
+    const lastS = started[started.length - 1], prevS = started[started.length - 2], cameAll = sum(started, (r) => r.came), regsAll = sum(started, (r) => r.regs);
+    const perMeet = part('כל המפגשים', (started.length ? kpis(
+        kpi(started.length, 'מפגשים שהתקיימו'),
+        kpi(Math.round(regsAll / started.length), 'נרשמים בממוצע', lastS && prevS ? 'באחרון ' + lastS.regs + ' ' + trend(lastS.regs, prevS.regs) : ''),
+        kpi(Ps(cameAll, regsAll), 'הגיעו מתוך הנרשמים', cameAll + ' מתוך ' + regsAll),
+        kpi(ilsB(sum(started, (r) => r.rev) / started.length), 'הכנסה ממוצעת למפגש')
+      ) : '') + tbl(['מפגש', 'נרשמו', 'שילמו', 'הגיעו', 'הכנסה'], pmD.map((r) => [dlab(r.m), r.regs, r.paid + '/' + (r.regs - r.ex), r.started ? r.came : '-', ilsB(r.rev)])));
+    const meet = nextPart + funnel + perMeet;
 
-    // ----- דרכי הגעה -----
+    // ----- כספים: האם זה משתלם, מה עוד בדרך, ואיך הכסף נכנס -----
+    const expOf = (mid) => sum(fr.filter((x) => x.kind === 'expense' && x.meeting_id === mid), (x) => x.amount);
+    const pl = S.perMeeting.filter((r) => r.regs || expOf(r.m.id)).reverse();
+    const be = S.perMeeting.filter((r) => r.started && r.paid && expOf(r.m.id)).slice(-1)[0];
+    const beLine = be ? (() => { const ex = expOf(be.m.id), avg = be.rev / be.paid; return '<p class="stline">כדי לכסות את ' + ilsB(ex) + ' ההוצאות של ' + dlab(be.m) + ' צריך <b>' + Math.ceil(ex / avg) + '</b> משלמים, לפי ממוצע של ' + ilsB(avg) + ' למשלם. שילמו ' + be.paid + '</p>'; })() : '';
+    const isOpen = (l) => !l.no_pay && !(allocOf(l) > 0);
+    const openFuture = links.filter((l) => !meetingStarted(l.m) && isOpen(l) && !l.pay_reported_at), openPast = links.filter((l) => meetingStarted(l.m) && isOpen(l) && !l.pay_reported_at), reported = links.filter((l) => isOpen(l) && l.pay_reported_at);
+    const dues = links.filter((l) => dueOf(l.participant_id, l.meeting_id) > 0), noPay = links.filter((l) => l.no_pay);
+    const cnt = (txt, k) => txt + (k ? ' <small>(' + k + ')</small>' : '');
+    const waitDays = links.map((l) => { const ps = state.payments.filter((x) => x.kind === 'payment' && x.participant_id === l.participant_id && x.meeting_id === l.meeting_id && x.created_at).map((x) => x.created_at).sort(); return ps.length && l.created_at ? Math.max(0, (new Date(ps[0]) - new Date(l.created_at)) / 864e5) : null; }).filter((d) => d != null), waitMed = median(waitDays);
+    const byMethod = {}; state.payments.forEach((x) => { const v = cashOf(x); if (!(v > 0)) return; const k = methodName(x) || 'לא צוין'; byMethod[k] = (byMethod[k] || 0) + v; });   // רק כסף שנכנס, כדי שהאחוזים יסתכמו ל-100
+    const methodRows = Object.keys(byMethod).sort((a, b) => byMethod[b] - byMethod[a]), methodSum = sum(methodRows, (k) => byMethod[k]);
+    const months = {}; const mo = (k) => months[k] || (months[k] = { inc: 0, exp: 0 });
+    state.payments.forEach((x) => { const v = cashOf(x); if (v) mo(ilDay(x.created_at || new Date().toISOString()).slice(0, 7)).inc += v; });
+    fr.forEach((x) => { if (x.date) mo(String(x.date).slice(0, 7))[x.kind === 'income' ? 'inc' : 'exp'] += x.amount; });
+    const monthKeys = Object.keys(months).sort().reverse();
+    const money = part('האם זה משתלם', kpis(
+        kpi(ilsB(cash + incOther), 'הכנסות', incOther ? 'מתוכן ' + ilsB(incOther) + ' הכנסות אחרות' : ''),
+        kpi(ilsB(expAll), 'הוצאות'),
+        kpi(sgn(profit), 'רווח', '', profit > 0 ? 'good' : profit < 0 ? 'bad' : ''),
+        kpi(payers.length ? ilsB(cash / payers.length) : '-', 'הכנסה ממוצעת למשלם', payers.length + ' משלמים')
+      )) +
+      (pl.length ? part('רווח לפי מפגש', '<p class="sthint">הוצאות ששויכו למפגש. הוצאות כלליות ותשלומים לדרכי הגעה נספרים רק ברווח הכולל</p>' + tbl(['מפגש', 'הכנסה', 'הוצאות', 'רווח'], pl.map((r) => { const e = expOf(r.m.id); return [dlab(r.m), ilsB(r.rev), ilsB(e), sgn(r.rev - e)]; })) + beLine) : '') +
+      part('כסף שעוד בדרך', tbl(['מדד', 'ערך'], [
+        [cnt('נרשמו למפגשים קרובים ועוד לא שילמו', openFuture.length), ilsB(owed(openFuture))],
+        [cnt('דיווחו על תשלום וממתינים לאישור', reported.length), ilsB(owed(reported))],
+        [cnt('שילמו חלק, ונשאר לשלם', dues.length), ilsB(owed(dues))],
+        [cnt('נרשמו למפגשים שעברו ולא שילמו', openPast.length), ilsB(owed(openPast))],
+        [cnt('קרדיט פתוח: הכסף אצלנו ועוד לא נוצל', credHold.length), '<bdi dir="ltr" class="cyel">₪' + nfm(credit) + '</bdi>'],
+        ['הוחזר למשתתפים', ilsB(refunds)],
+        ['מקומות לא לתשלום', noPay.length],
+        ['זמן מהרשמה לתשלום (חציון)', waitMed == null ? '-' : waitMed < 1 ? 'פחות מיום' : Math.round(waitMed) + ' ימים']
+      ])) +
+      (methodRows.length ? part('לפי דרך תשלום', bars(methodRows.map((k) => barRow(esc(k), byMethod[k], methodSum, 'var(--green)', '', ilsB(byMethod[k]))).join(''))) : '') +
+      (monthKeys.length ? part('לפי חודש', tbl(['חודש', 'הכנסות', 'הוצאות', 'רווח'], monthKeys.map((k) => [k.slice(5) + '/' + k.slice(2, 4), ilsB(months[k].inc), ilsB(months[k].exp), sgn(months[k].inc - months[k].exp)]))) : '');
+
+    // ----- דרכי הגעה: מה משתלם ומתי נרשמים -----
     const src = (p) => channelOf(p) ? 'promo' : String(p.source || '').startsWith('site') ? 'site' : 'other';
-    const adP = allP.filter((p) => channelOf(p)), adPaid = adP.filter((p) => paidBy.get(p.id) > 0 && !isFreeP(p));
-    const proRows = state.promoters.map((x) => { const L = ledgerOf(x.id), recs = state.payments.filter((q) => q.promoter_id === x.id), leads = srcLeads(x.id), paidN = leads.filter((q) => paidBy.get(q.id) > 0).length, inc = leads.reduce((s, q) => s + paidBy.get(q.id), 0), cm = (!x.cost_from_payment ? leads.length * Number(x.rate || 0) : 0) + recs.reduce((s, q) => s + (q.kind === 'payment' ? 1 : -1) * (Number(q.commission) || 0), 0); return { x, inc, cm, bal: L.balance, leadsN: leads.length, paidN }; });
-    const noCh = allP.filter((q) => !channelOf(q)), noChPaid = noCh.filter((q) => paidBy.get(q.id) > 0);
-    const proOwed = proRows.reduce((s, r) => s + Math.max(0, r.bal), 0), proInc = proRows.reduce((s, r) => s + r.inc, 0);
-    const proCost = proRows.reduce((s, r) => s + r.cm, 0), proLeads = proRows.reduce((s, r) => s + r.leadsN, 0), proPaidN = proRows.reduce((s, r) => s + r.paidN, 0);
+    const cameSet = new Set(cameP.map((p) => p.id));
+    const funnelOf = (ps) => ({ leads: ps.length, reg: ps.filter((q) => linksOf(q.id).length).length, paid: ps.filter((q) => paidBy.get(q.id) > 0).length, came: ps.filter((q) => cameSet.has(q.id)).length, inc: sum(ps, (q) => paidBy.get(q.id)) });
+    const proRows = state.promoters.map((x) => { const L = ledgerOf(x.id), recs = state.payments.filter((q) => q.promoter_id === x.id), f = funnelOf(srcLeads(x.id)), cm = (!x.cost_from_payment ? f.leads * Number(x.rate || 0) : 0) + sum(recs, (q) => (q.kind === 'payment' ? 1 : -1) * (Number(q.commission) || 0)); return Object.assign(f, { x, cm, bal: L.balance, name: esc(x.name) }); }).sort((a, b) => (b.inc - b.cm) - (a.inc - a.cm));
+    const noCh = Object.assign(funnelOf(allP.filter((q) => !channelOf(q))), { name: 'אורגני', cm: 0 });
+    const chRows = proRows.concat(noCh.leads ? [noCh] : []);
+    const proOwed = sum(proRows, (r) => Math.max(0, r.bal)), proInc = sum(proRows, (r) => r.inc), proCost = sum(proRows, (r) => r.cm), proLeads = sum(proRows, (r) => r.leads), proPaid = sum(proRows, (r) => r.paid);
     const srcCount = (r, k) => links.filter((l) => l.meeting_id === r.m.id && src(l.p) === k).length;
-    // שעות הרשמה (שעון ישראל): מתי ביום נרשמים דרך האתר, כדי לתזמן מודעות ופוסטים
-    const hourFmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Jerusalem', hour: '2-digit', hour12: false });
-    const hrs = Array.from({ length: 24 }, () => 0);
-    allP.filter((q) => q.created_at && String(q.source || '').startsWith('site')).forEach((q) => { const h = Number(hourFmt.format(new Date(q.created_at))) % 24; hrs[h]++; });
-    const hrsTotal = hrs.reduce((s, v) => s + v, 0), peak = hrs.indexOf(Math.max(...hrs)), hh = (h) => String(h % 24).padStart(2, '0') + ':00';
-    const win = (h0, h1) => hrs.slice(h0, h1).reduce((s, v) => s + v, 0);
-    const hoursPart = hrsTotal ? '<p class="sthint">כמה נרשמו בכל שעה ביום (שעון ישראל), לפי כל ההרשמות מהאתר</p>' +
-      colsChart(hrs.map((v, h) => ({ l: h % 3 === 0 ? String(h) : '', v, color: h === peak ? 'var(--orange)' : 'var(--blue)' })), 'var(--blue)', true) +
-      '<div class="stkpis">' + kpi('<bdi dir="ltr">' + hh(peak) + '</bdi>', 'שעת השיא', hrs[peak] + ' הרשמות (' + Ps(hrs[peak], hrsTotal) + ')', 'good') + kpi(Ps(win(18, 23), hrsTotal), '<bdi dir="ltr">18:00-23:00</bdi>', win(18, 23) + ' הרשמות') + kpi(Ps(win(6, 12), hrsTotal), '<bdi dir="ltr">06:00-12:00</bdi>', win(6, 12) + ' הרשמות') + '</div>' : '<p class="sthint">עוד אין הרשמות מהאתר</p>';
-    const promo = part('נתונים עיקריים', '<div class="stkpis">' + kpi(ilsB(proCost), 'עלות דרכי הגעה', proLeads ? 'ליד ממוצע ₪' + nfm(Math.round(proCost / proLeads)) : '') + kpi(proPaidN ? ilsB(Math.round(proCost / proPaidN)) : '-', 'עלות למשלם', proPaidN + ' משלמים מתוך ' + proLeads + ' לידים') + kpi(ilsB(proInc), 'הכנסה דרך דרכי הגעה', Ps(proInc, cash) + ' מההכנסה') + kpi(ilsB(proOwed), 'נשאר לשלם לדרכי הגעה', '', proOwed ? 'warn' : '') + kpi(adP.length, 'לידים', Ps(adP.length, n) + ' מהמשתתפים') + kpi(Ps(adPaid.length, adP.filter((q) => !isFreeP(q)).length), 'המרה מדרכי הגעה', adPaid.length + ' שילמו') + '</div>') +
-      part('שעות הרשמה', hoursPart) +
-      part('דרכי הגעה', tbl(['דרך הגעה', 'לידים', 'שילמו', 'הכנסה', 'עלות'], proRows.map((r) => [esc(r.x.name), r.leadsN, r.paidN + (r.leadsN ? ' <small>(' + Math.round(r.paidN / r.leadsN * 100) + '%)</small>' : ''), ilsB(r.inc), ilsB(r.cm)]).concat([['−', noCh.length, noChPaid.length + (noCh.length ? ' <small>(' + Math.round(noChPaid.length / noCh.length * 100) + '%)</small>' : ''), ilsB(noChPaid.reduce((s, q) => s + paidBy.get(q.id), 0)), '-']]))) +
-      part('מקורות לפי מפגש', tbl(['מפגש', 'אתר', 'דרך הגעה', 'אחר'], pm.map((r) => [dlab(r.m), srcCount(r, 'site'), srcCount(r, 'promo'), srcCount(r, 'other')])));
+    // מתי נרשמים: כמה ימים לפני המפגש, באיזה יום ובאיזו שעה (שעון ישראל), כדי לתזמן מודעות ופוסטים
+    const LEAD = [['<bdi dir="ltr">15+</bdi>', 15, 1e4], ['<bdi dir="ltr">8-14</bdi>', 8, 14], ['<bdi dir="ltr">4-7</bdi>', 4, 7], ['<bdi dir="ltr">2-3</bdi>', 2, 3], ['יום לפני', 1, 1], ['ביום', -1e4, 0]];
+    const leadDays = links.filter((l) => l.created_at).map((l) => daysTo(l.m, ilDay(l.created_at)));
+    const leadPart = leadDays.length ? '<p class="sthint">כמה ימים לפני המפגש נרשמים</p>' + colsChart(LEAD.map((b) => ({ l: b[0], v: leadDays.filter((d) => d >= b[1] && d <= b[2]).length })), 'var(--blue)') : '';
+    const regP = allP.filter((q) => q.created_at && String(q.source || '').startsWith('site'));
+    const wd = Array.from({ length: 7 }, () => 0); regP.forEach((q) => { wd[wdayOf(dnum(ilDay(q.created_at)))]++; });
+    const wdPeak = wd.indexOf(Math.max(...wd));
+    const wdPart = regP.length ? '<p class="sthint">באיזה יום בשבוע משאירים פרטים</p>' + colsChart(['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'].map((l, i) => ({ l, v: wd[i], color: i === wdPeak ? 'var(--orange)' : 'var(--blue)' })), 'var(--blue)') : '';
+    const hrs = Array.from({ length: 24 }, () => 0); regP.forEach((q) => { hrs[ilHour(q.created_at)]++; });
+    const hrsTotal = sum(hrs, (v) => v), peak = hrs.indexOf(Math.max(...hrs)), win = (h0, h1) => sum(hrs.slice(h0, h1), (v) => v);
+    const dayParts = [['בוקר', '06:00-12:00', win(6, 12)], ['צהריים', '12:00-18:00', win(12, 18)], ['ערב', '18:00-23:00', win(18, 23)], ['לילה', '23:00-06:00', win(23, 24) + win(0, 6)]], dayMax = Math.max(...dayParts.map((x) => x[2]));
+    const hoursPart = hrsTotal ? '<p class="sthint">באיזו שעה ביום</p>' + colsChart(hrs.map((v, h) => ({ l: h % 3 === 0 ? String(h) : '', v, color: h === peak ? 'var(--orange)' : 'var(--blue)' })), 'var(--blue)', true) +
+      kpis(...dayParts.map((x) => kpi(Ps(x[2], hrsTotal), x[0] + ' <bdi dir="ltr">' + x[1] + '</bdi>', x[2] + ' הרשמות', x[2] === dayMax ? 'good' : ''))) : '';
+    const promo = part('האם הפרסום משתלם', kpis(
+        kpi(proPaid ? ilsB(proCost / proPaid) : '-', 'עלות למשלם', proLeads ? 'ליד עולה ' + ilsB(proCost / proLeads) : ''),
+        kpi(proPaid ? ilsB(proInc / proPaid) : '-', 'משלם מכניס בממוצע', proPaid + ' משלמים מתוך ' + proLeads + ' לידים'),
+        kpi(ilsB(proInc), 'הכנסה דרך דרכי הגעה', Ps(proInc, cash) + ' מההכנסה'),
+        kpi(ilsB(proCost), 'עלות דרכי הגעה', proOwed ? ilsB(proOwed) + ' נשאר לשלם' : '', proOwed ? 'warn' : '')
+      )) +
+      part('מה מביא אנשים', tbl(['דרך הגעה', 'לידים', 'נרשמו', 'שילמו', 'הגיעו'], chRows.map((r) => [r.name, r.leads, r.reg, r.paid + pctS(r.paid, r.leads), r.came]))) +
+      part('מה משתלם', tbl(['דרך הגעה', 'הכנסה', 'עלות', 'נטו', 'למשלם'], chRows.map((r) => [r.name, ilsB(r.inc), ilsB(r.cm), sgn(r.inc - r.cm), r.paid && r.cm ? ilsB(r.cm / r.paid) : '-']))) +
+      ((leadPart || wdPart || hoursPart) ? part('מתי נרשמים', leadPart + wdPart + hoursPart) : '') +
+      (pm.length ? part('מקורות לפי מפגש', tbl(['מפגש', 'אתר', 'דרך הגעה', 'אחר'], pmD.map((r) => [dlab(r.m), srcCount(r, 'site'), srcCount(r, 'promo'), srcCount(r, 'other')]))) : '');
 
-    // ----- דמוגרפיה (כל המשתתפים) -----
-    const people = allP, male = people.filter((q) => q.gender === 'male'), female = people.filter((q) => q.gender === 'female'), noG = people.length - male.length - female.length;
-    const ages = people.map(shownAge).filter((a) => a != null), avgAge = ages.length ? ages.reduce((a, b) => a + b, 0) / ages.length : 0, target = ages.filter((a) => a >= AGE_MIN && a <= AGE_MAX);
-    const bucket = (lo, hi) => ages.filter((a) => a >= lo && a <= hi).length;
-    const convBy = (pred) => { const ls = people.filter((q) => pred(q) && !isFreeP(q)); return { n: ls.length, paid: ls.filter((q) => paidBy.get(q.id) > 0).length }; };
-    const cM = convBy((q) => q.gender === 'male'), cF = convBy((q) => q.gender === 'female');
-    const demo = part('מגדר', bars(barRow('נקבה', female.length, people.length, 'var(--red)') + barRow('זכר', male.length, people.length, 'var(--sky)') + (noG ? barRow('לא צוין', noG, people.length, 'var(--text-3)') : '')) +
-        tbl(['המרה לתשלום', 'ערך'], [['נקבה', Ps(cF.paid, cF.n)], ['זכר', Ps(cM.paid, cM.n)]])) +
-      part('גילאים', bars(AGE_B.map((g, i) => barRow(g[1], bucket(g[2], Math.min(g[3], 120)), ages.length, i === 0 ? 'var(--text-3)' : i === 3 ? 'var(--yellow)' : 'var(--orange)')).join('')) + '<p class="stline">בטווח היעד ' + ageText('range') + ': <b>' + Ps(target.length, ages.length) + '</b> · גיל ממוצע <b>' + avgAge.toFixed(1) + '</b>' + (people.length - ages.length ? ' · ' + (people.length - ages.length) + ' בלי גיל' : '') + '</p>') +
-      part('חדשים וחוזרים', tbl(['מפגש', 'חדשים', 'חוזרים', 'מגמה'], pm.map((r, k) => [dlab(r.m), r.news, r.ret, k ? trend(r.news + r.ret, pm[k - 1].news + pm[k - 1].ret) : '-'])));
+    // ----- קהל: מי מגיע, והאם חוזרים -----
+    const male = allP.filter((q) => q.gender === 'male'), female = allP.filter((q) => q.gender === 'female'), noG = n - male.length - female.length;
+    const ages = allP.map(shownAge).filter((a) => a != null), avgAge = ages.length ? sum(ages, (a) => a) / ages.length : 0, target = ages.filter((a) => a >= AGE_MIN && a <= AGE_MAX);
+    const convS = (pred) => { const ls = allP.filter((q) => pred(q) && !isFreeP(q)); return { n: ls.length, paid: ls.filter((q) => paidBy.get(q.id) > 0).length }; };
+    const convLine = (c) => c.n ? 'שילמו ' + Ps(c.paid, c.n) : '';
+    const meetCount = allP.map((p) => new Set(linksOf(p.id).map((l) => l.meeting_id)).size).filter((k) => k > 0), mcN = meetCount.length;
+    const audience = part('מי בקהל', kpis(
+        kpi(n, 'משתתפים', everLinked.length + ' נרשמו למפגש'),
+        kpi(Ps(backP.length, cameP.length), 'חזרו למפגש נוסף', backP.length + ' מתוך ' + cameP.length + ' שהגיעו', backP.length ? 'good' : ''),
+        kpi(Ps(target.length, ages.length), 'בטווח היעד ' + ageText('range')),
+        kpi(avgAge ? avgAge.toFixed(1) : '-', 'גיל ממוצע', n - ages.length ? (n - ages.length) + ' בלי גיל' : '')
+      )) +
+      (pm.length ? part('חדשים וחוזרים', '<p class="sthint">"מהקודם" הוא כמה מהמשתתפים במפגש הקודם נרשמו גם לזה</p>' + tbl(['מפגש', 'חדשים', 'חוזרים', 'מהקודם'], pmD.map((r) => [dlab(r.m), r.news, r.ret, r.prevN ? r.kept + '/' + r.prevN + pctS(r.kept, r.prevN) : '-']))) : '') +
+      (mcN ? part('לכמה מפגשים נרשמו', bars(barRow('מפגש אחד', meetCount.filter((k) => k === 1).length, mcN, 'var(--blue)') + barRow('2 מפגשים', meetCount.filter((k) => k === 2).length, mcN, 'var(--blue)') + barRow('3 ומעלה', meetCount.filter((k) => k >= 3).length, mcN, 'var(--green)'))) : '') +
+      (pm.length ? part('איזון מגדרי לפי מפגש', tbl(['מפגש', 'נקבה', 'זכר', 'נקבה %'], pmD.map((r) => [dlab(r.m), r.women, r.men, Ps(r.women, r.women + r.men)]))) : '') +
+      part('מגדר', bars(barRow('נקבה', female.length, n, 'var(--red)', convLine(convS((q) => q.gender === 'female'))) + barRow('זכר', male.length, n, 'var(--sky)', convLine(convS((q) => q.gender === 'male'))) + (noG ? barRow('לא צוין', noG, n, 'var(--text-3)') : ''))) +
+      part('גילאים', bars(AGE_B.map((g, i) => { const inB = (q) => { const a = shownAge(q); return a != null && a >= g[2] && a <= Math.min(g[3], 120); }; return barRow(g[1], ages.filter((a) => a >= g[2] && a <= Math.min(g[3], 120)).length, ages.length, i === 0 ? 'var(--text-3)' : i === 3 ? 'var(--yellow)' : 'var(--orange)', convLine(convS(inB))); }).join('')));
 
-    // ----- מסך ראשי: שורה תחתונה לכל נושא -----
-    const bottom = '<div class="stbottom">' + UI.metric('הכנסה נטו', ilsB(cash)) + UI.metric('שילמו', payers.length + '/' + cohort.length) + UI.metric('המרה', conv == null ? '-' : conv + '%') + '</div>';
-    const main = bottom +
-      topic('money', 'כספים', last && prev ? trend(last.rev, prev.rev) : '', num(ilsB(cash), 'הכנסות') + num(ilsB(expAll), 'הוצאות') + num(sgn(profit), 'רווח')) +
-      topic('promo', 'דרכי הגעה', '', num(ilsB(proInc), 'הכנסה') + num(adP.length, 'לידים') + num(ilsB(proCost), 'עלות')) +
-      topic('demo', 'דמוגרפיה', last && prev ? trend(last.news, prev.news) : '', num(Ps(female.length, people.length), 'נקבה') + num(avgAge ? avgAge.toFixed(0) : '-', 'גיל ממוצע') + num(Ps(target.length, ages.length), ageText('to')));
-
-    $('#stBody').innerHTML = '<div class="ppanel" data-sp="main">' + main + '</div><div class="ppanel" data-sp="money" hidden>' + money + '</div><div class="ppanel" data-sp="promo" hidden>' + promo + '</div><div class="ppanel" data-sp="demo" hidden>' + demo + '</div>';
-    stView('main', true);
+    [meet, money, promo, audience].forEach((h, i) => { stPages[i].innerHTML = h; });
   }
   $('#moneyBtn').addEventListener('click', () => openFinance());   // כספים: ניהול הוצאות והכנסות
-  $('#statsBtn').addEventListener('click', () => { renderStats(); $('#stDlg').showModal(); if (document.activeElement && document.activeElement.closest('#stDlg')) document.activeElement.blur(); syncUrl(); });   // בלי מסגרת פוקוס על הכרטיס הראשון בפתיחה
+  $('#statsBtn').addEventListener('click', () => openStats());
   $('#stDlg').addEventListener('close', syncUrl);
   /* ===== כספים: הוצאות והכנסות שאינן תשלומי משתתפים (חד פעמיות או מחזוריות, כלליות או לפי מפגש) ===== */
   let finV = 'main', finEdit = null;   // finEdit: { type: 'entry' | 'rec', id } בעריכה, או { kind } בהוספה
@@ -2599,6 +2707,13 @@
      תבנית = שם ונוסח עם שדות; של סוג מפגש (לכל מפגשיו) או של מפגש אחד (בנוסף לאלה של הסוג). בעמודת הוואטסאפ של הרשימה בוחרים תבנית,
      וקישור הוואטסאפ של כל משתתף ברשימה נפתח עם ההודעה המוכנה. שדות: {שם} (שם פרטי), {תאריך}, {מקום} (עיר ומיקום), {הוראות הגעה}, {התכנסות}, {התחלה}, {סיום} */
   const MSG_VARS = ['{שם}', '{תאריך}', '{מקום}', '{הוראות הגעה}', '{התכנסות}', '{התחלה}', '{סיום}'];
+  /* שדות עריכת תבנית הודעה: רכיב אחד, בטופס מפגש וסוג מפגש ובפופאפ שנפתח מתפריט הוואטסאפ */
+  const tplFieldsHtml = (I) =>
+    '<label class="field"><span>שם התבנית</span><input type="text" class="mtname" id="' + I('TplName') + '" maxlength="60" autocomplete="off" /></label>' +
+    '<label class="field"><span>נוסח ההודעה</span><textarea class="mtbody" id="' + I('TplBody') + '" rows="6" maxlength="2000"></textarea></label>' +
+    '<div class="emvars" id="' + I('TplVars') + '">' + MSG_VARS.map((v) => '<button type="button" data-v="' + v + '">' + v + '</button>').join('') + '</div>' +
+    '<button type="button" class="mtdel" id="' + I('TplDel') + '">מחיקת התבנית</button>';
+  const insertMsgVar = (ta, v) => { const a = ta.selectionStart == null ? ta.value.length : ta.selectionStart, b = ta.selectionEnd == null ? a : ta.selectionEnd; ta.setRangeText(v, a, b, 'end'); autoGrow(ta); ta.focus(); };
   const DAY_FULL = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
   function fillMsg(tpl, m, p) {   // רכיב אחד: גם ההודעה לפני המפגש וגם תבניות הוואטסאפ
     let t = String(tpl || '');
@@ -2816,7 +2931,7 @@
   const SUBVIEW = { deposit: 'קבלת תשלום', status: 'סטטוס מפגש', pay: 'תשלום למפגש', promoter: 'דרך הגעה', refund: 'ביטול תשלום', credit: 'החזרת קרדיט', zikuy: 'זיכוי' };
   let viewStack = [], payCtx = null;
   function setPTab(tab, instant) {
-    if ((tab === 'info' || tab === 'wallet') && sheet && sheet.id) pgMark(tab === 'info' ? 3 : 1);   // פרטים ויתרה הם דפים בפייג'ר
+    if ((tab === 'info' || tab === 'wallet') && sheet && sheet.id) PG.mark(tab === 'info' ? 3 : 1);   // פרטים ויתרה הם דפים בפייג'ר
     if (tab === 'info' || tab === 'wallet' || !sheet || !sheet.id) tab = 'main';   // משתתף חדש: רק דף הפרטים (newp)
     const prev = pTab; pTab = tab; paintMailTheme();
     document.querySelectorAll('#pDlg [data-panel]').forEach((d) => {
@@ -3251,7 +3366,7 @@
     if (e.target.closest('#pBack, #pMsgs, #pCall, #pAllocChip, .saved')) return;
     /* לחיצה על כל שורת הכותרת (השם והתגית וכל הרווח), מחוץ לכפתורים ולצ'יפים: עוברת לדף הפרטים, ומדף הפרטים חוזרת למפגשים */
     if (e.target.closest('a, button, input, select, textarea, .dclose') || !sheet || !sheet.id) return;
-    if (pTab === 'main') { pgLock = Date.now() + 500; pgGo(pgCur === 3 ? 0 : 3); } });
+    if (pTab === 'main') { PG.lock = Date.now() + 500; PG.go(PG.cur === 3 ? 0 : 3); } });
   $('#pBack').addEventListener('click', () => { if (pTab === 'promoter') promoFromPay = null; setPTab(viewStack.pop() || 'main'); });
   const goView = (v) => { if (v === 'wallet') { viewStack = []; setPTab(v); return; } viewStack.push(pTab); setPTab(v); };   // היתרה היא דף בפייג'ר, לא מסך משנה
   /* המייל שנשלח למשתתף, כפי שנשמר בשליחה. בלי סקריפטים (sandbox), וקישורים נפתחים בלשונית חדשה */
@@ -3357,7 +3472,7 @@
         const ae = document.activeElement, typing = ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && ae.type !== 'file';
         const kb = typing ? Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)) : 0;
         document.querySelectorAll('dialog[open]').forEach((d) => {
-          const full = ['pDlg', 'setDlg', 'stDlg', 'prDlg', 'finDlg'].includes(d.id);   // פופאפים בגובה מלא: ממלאים בדיוק את האזור שמעל המקלדת, בלי רווח למעלה
+          const full = ['pDlg', 'setDlg', 'stDlg', 'prDlg', 'finDlg'].includes(d.id) && !(d.id === 'setDlg' && ['main', 'pm', 'src'].includes(setView));   // פופאפים בגובה מלא: ממלאים בדיוק את האזור שמעל המקלדת, בלי רווח למעלה
           if (kb > 80) { d.style.marginBottom = kb + 'px'; d.style.maxHeight = Math.round(vv.height - (full ? 0 : 12)) + 'px'; if (full) d.style.height = Math.round(vv.height) + 'px'; }
           else { d.style.marginBottom = ''; d.style.maxHeight = ''; d.style.height = ''; }
         });
@@ -3522,7 +3637,7 @@
     if (pDlg._side) { try { syncUrl(); } catch (e) {} markSel(); }   // בצד הרשימה: מעבר ממשתתף למשתתף בלי לסגור את הכרטיס
     pDlg.setAttribute('tabindex', '-1'); pDlg.focus({ preventScroll: true });   // בלי טבעת פוקוס על כפתור הסגירה
     viewStack = []; payCtx = null; promoFromPay = null;
-    pgCur = pgDeep != null ? pgDeep : 0; pgDeep = null;   // תמיד נפתח על המפגשים (קישור: על הדף שבקישור)
+    PG.cur = pgDeep != null ? pgDeep : 0; pgDeep = null;   // תמיד נפתח על המפגשים (קישור: על הדף שבקישור)
     setPTab(p ? (tab === 'info' ? 'info' : 'main') : 'info', true);
     meetTop(true);
     if (!p) setTimeout(() => pForm.first_name.focus(), 50);
@@ -3544,20 +3659,9 @@
   };
   /* פייג'ר בכרטיס המשתתף: מפגשים (מימין, הכרטיס תמיד נפתח עליו), יתרה, הערות ופרטים. החלקה עם הצמדה, והאטבים והמחוון עוקבים אחרי הגלילה. בלי רשומות היסטוריה: "חזרה" סוגרת את הכרטיס */
   const pgBox = $('#pPager'), pgTabs = [$('#pTabM'), $('#pTabW'), $('#pTabN'), $('#pTabI')], pgPages = [$('#pgM'), $('#pgW'), $('#pgN'), $('#pgI')], PG_IDS = ['m', 'w', 'n', 'i'];
-  let pgCur = 0, pgDeep = (() => { const u = new URLSearchParams(location.search).get('pg'); const i = PG_IDS.indexOf(u); return i > 0 ? i : null; })();   // pgDeep: הדף מהכתובת, לפתיחה הראשונה בלבד
-  function pgMark(i) {
-    const ch = i !== pgCur; pgCur = i;
-    pgTabs.forEach((t, k) => { t.setAttribute('aria-selected', String(k === i)); t.tabIndex = k === i ? 0 : -1; });
-    pgPages.forEach((d, k) => { d.inert = k !== i; });   // הדף שלא מוצג לא מקבל פוקוס
-    if (ch) { try { syncUrl(); } catch (e) {} }
-  }
-  function pgApply() { if (sheet && !sheet.id) { pgBox.scrollLeft = 0; pgPages[3].inert = false; return; } pgBox.scrollLeft = -pgCur * pgBox.clientWidth; $('#pTabs').style.setProperty('--pg', pgCur); pgMark(pgCur); }
-  function pgGo(i) { pgBox.scrollTo({ left: -i * pgBox.clientWidth, behavior: reducedMotion() ? 'auto' : 'smooth' }); pgMark(i); }
-  let pgLock = 0;
-  pgBox.addEventListener('scroll', () => { const w = pgBox.clientWidth; if (!w || (sheet && !sheet.id)) return; const p = Math.abs(pgBox.scrollLeft) / w; $('#pTabs').style.setProperty('--pg', p); if (Date.now() > pgLock) { const i = Math.round(p); if (i !== pgCur) pgMark(i); } }, { passive: true });
-  pgTabs.forEach((t, i) => t.addEventListener('click', () => { pgLock = Date.now() + 500; pgGo(i); }));   // בזמן הגלילה אחרי לחיצה על אטב לא מסמנים דף ביניים
-  $('#pTabs').addEventListener('keydown', (e) => { if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return; e.preventDefault(); const i = Math.min(pgTabs.length - 1, Math.max(0, pgCur + (e.key === 'ArrowLeft' ? 1 : -1))); pgLock = Date.now() + 500; pgGo(i); pgTabs[i].focus(); });
-  { let w0 = 0; new ResizeObserver(() => { const w = pgBox.clientWidth; if (w && w !== w0) { w0 = w; pgBox.scrollLeft = -pgCur * w; } }).observe(pgBox); }
+  let pgDeep = (() => { const u = new URLSearchParams(location.search).get('pg'); const i = PG_IDS.indexOf(u); return i > 0 ? i : null; })();   // pgDeep: הדף מהכתובת, לפתיחה הראשונה בלבד
+  const PG = tabPager($('#pTabs'), pgBox, pgTabs, pgPages, () => sheet && !sheet.id);
+  function pgApply() { if (sheet && !sheet.id) { pgBox.scrollLeft = 0; pgPages[3].inert = false; return; } PG.apply(); }
   /* המפגש שממנו הגענו בראש הרשימה: גלילה אליו בפתיחה, ומקום בסוף הרשימה כדי שיגיע לראש גם כשיש מעט מפגשים */
   function meetTop(scroll) {
     const box = $('#pMeetings'), pg = $('#pgM'), row = box.querySelector('.mrow.hl');
@@ -3854,10 +3958,7 @@
         (isType ? '' : '<button type="button" id="' + I('TierReset') + '" hidden>כמו בסוג המפגש</button>') + '</div></div></div>' +
       '<div class="mtedit" id="' + I('TplEd') + '" hidden>' +
         '<div class="mthead"><button type="button" class="hbtn hback" id="' + I('TplBack') + '" aria-label="חזרה" title="חזרה">' + icon('back') + '</button><b>עריכת תבנית</b></div>' +
-        '<label class="field"><span>שם התבנית</span><input type="text" class="mtname" id="' + I('TplName') + '" maxlength="60" autocomplete="off" /></label>' +
-        '<label class="field"><span>נוסח ההודעה</span><textarea class="mtbody" id="' + I('TplBody') + '" rows="6" maxlength="2000"></textarea></label>' +
-        '<div class="emvars" id="' + I('TplVars') + '">' + MSG_VARS.map((v) => '<button type="button" data-v="' + v + '">' + v + '</button>').join('') + '</div>' +
-        '<button type="button" class="mtdel" id="' + I('TplDel') + '">מחיקת התבנית</button></div>';
+        tplFieldsHtml(I) + '</div>';
     { const tf = !isType && $('#' + p + 'TypeF'), slot = q('TypeSlot'); if (slot) { if (tf) slot.replaceWith(tf); else slot.remove(); } }   // סוג המפגש באותה שורה עם שם המפגש
     const F = { te: tierEditor('#' + I('TierList'), '#' + I('TierAdd'), () => F.changed()), img: { url: null, blob: null, objUrl: null, inh: false }, tiersInh: false };
     const ty = () => (typOf ? typOf() : null);
@@ -3942,8 +4043,7 @@
     ed('Body').addEventListener('input', () => { const r = F.tpl.rows[F.tpl.cur]; if (r) r.body = ed('Body').value; autoGrow(ed('Body')); });
     ed('Vars').addEventListener('click', (e) => {
       const v = e.target.closest('[data-v]'), r = F.tpl.rows[F.tpl.cur]; if (!v || !r) return;
-      const ta = ed('Body'), a = ta.selectionStart == null ? ta.value.length : ta.selectionStart, b = ta.selectionEnd == null ? a : ta.selectionEnd;
-      ta.setRangeText(v.dataset.v, a, b, 'end'); r.body = ta.value; autoGrow(ta); ta.focus();
+      insertMsgVar(ed('Body'), v.dataset.v); r.body = ed('Body').value;
     });
     ed('Back').addEventListener('click', () => {
       const r = F.tpl.rows[F.tpl.cur];
@@ -4314,7 +4414,7 @@
     /* מתחת לקו: סינון לפי שליחה (רק כשנבחרה תבנית, לא בהודעה ריקה) ואחריו הוספת תבנית */
     const cn = sel ? waCounts() : null, seg = sel ? '<div class="wseg" role="group" aria-label="סינון הרשימה לפי שליחה של התבנית שנבחרה" title="מציג ברשימה את כולם, רק מי שנשלחה לו התבנית שנבחרה, או רק מי שלא">' + [['', 'הכל'], ['1', 'נשלח'], ['0', 'לא נשלח']].map((o) => '<button type="button" class="stc tagc' + (cn[o[0]] || f === o[0] ? '' : ' zero') + '" data-wsf="' + o[0] + '" aria-pressed="' + (f === o[0]) + '">' + o[1] + ' <small>' + cn[o[0]] + '</small>' + UI.fdot(f === o[0] && (o[0] === '1' ? 'green' : o[0] === '0' ? 'red' : 'ink')) + '</button>').join('') + '</div>' : '', bot = seg + addRows();
     $('#waMenu').innerHTML = item('', WA_ICON, 'הודעה ריקה', '', !sel) +
-      waList().map((x) => item(x.id, PIN_ICON, x.name || 'ללא שם', x.tag || '', !!sel && sel.id === x.id)).join('') +
+      waList().map((x) => { const on = !!sel && sel.id === x.id, b = item(x.id, PIN_ICON, x.name || 'ללא שם', x.tag || '', on); return on ? '<div class="wrow">' + b + '<button type="button" class="wedit" role="menuitem" data-wedit="' + esc(x.id) + '" title="עריכת ההודעה" aria-label="עריכת ההודעה">' + icon('edit', 'i18') + '</button></div>' : b; }).join('') +
       (bot ? '<div class="wbot">' + bot + '</div>' : '');
     function addRows() {
       const inM = !!(state.filter && curMeeting()), ty = typeById(inM ? typeIdOf(curMeeting()) : state.mtype), row = (k, label) => '<button type="button" class="wadd" data-wadd="' + k + '"><span class="wmi">' + icon('plus') + '<span class="wmn">' + esc(label) + '</span></span></button>';
@@ -4345,7 +4445,46 @@
     if (!tid || !typeById(tid)) { toast('אין סוג מפגש להוספת תבנית'); return; }
     openTypeEditor(tid); tyFormFor = null; showSetView('tydet'); tyF.tpl.add();
   }
+  /* עריכת תבנית הודעה בפופאפ עצמאי (העיפרון בתפריט הוואטסאפ): בראש שם סוג המפגש, ומתחתיו השדות. נשמר אוטומטית, גם בעזיבת שדה וגם בסגירה; בלי שם או נוסח לא נשמר */
+  let tplEd = null;
+  const tplW = (n) => $('#wt' + n);
+  $('#tplFields').innerHTML = tplFieldsHtml((n) => 'wt' + n);
+  const tplRowsOf = (e) => (e.scope.type_id ? tplsOfType(e.scope.type_id) : tplsOfMeeting(e.scope.meeting_id)).map((r) => ({ id: r.id, name: r.name, body: r.body }));
+  function openTplPop(id) {
+    const t = state.tpls.find((x) => x.id === id); if (!t) return;
+    const m = t.meeting_id ? state.meetings.find((x) => x.id === t.meeting_id) : null, ty = typeById(t.type_id || (m && typeIdOf(m)));
+    tplEd = { id, scope: t.type_id ? { type_id: t.type_id } : { meeting_id: t.meeting_id } };
+    $('#tplTitle').textContent = ty && ty.name ? ty.name : 'תבנית הודעה';
+    $('#tplIntro').textContent = m ? 'ההודעה שייכת למפגש ' + dm(m) + ' בלבד' : 'ההודעה שייכת לסוג המפגש, וחלה על כל המפגשים שלו';
+    tplW('TplName').value = t.name || ''; tplW('TplBody').value = t.body || '';
+    const del = tplW('TplDel'); del.dataset.sure = ''; del.textContent = 'מחיקת התבנית';
+    $('#tplDlg').showModal(); autoGrow(tplW('TplBody'));
+    const ae = document.activeElement; if (ae && ae.closest && ae.closest('#tplDlg')) ae.blur();   // בלי מקלדת בפתיחה
+    syncUrl();
+  }
+  async function tplPopSave(e) {
+    const t = e && state.tpls.find((x) => x.id === e.id); if (!t) return;
+    const name = tplW('TplName').value.trim(), body = tplW('TplBody').value.replace(/\s+$/, '');
+    if (t.name === name && t.body === body) return;
+    if (!name || !body) { toast(!name ? 'חסר שם לתבנית, השינוי לא נשמר' : 'חסר נוסח לתבנית, השינוי לא נשמר'); return; }
+    try { await saveTemplates(e.scope, tplRowsOf(e).map((r) => r.id === e.id ? { id: r.id, name, body } : r)); render(); toast('ההודעה נשמרה'); }
+    catch (err) { fail(err); }
+  }
+  tplW('TplName').addEventListener('change', () => tplPopSave(tplEd));
+  tplW('TplBody').addEventListener('change', () => tplPopSave(tplEd));
+  tplW('TplBody').addEventListener('input', () => autoGrow(tplW('TplBody')));
+  tplW('TplVars').addEventListener('click', (e) => { const v = e.target.closest('[data-v]'); if (v) insertMsgVar(tplW('TplBody'), v.dataset.v); });
+  tplW('TplDel').addEventListener('click', async () => {
+    const e = tplEd, del = tplW('TplDel'); if (!e) return;
+    if (del.dataset.sure !== '1') { del.dataset.sure = '1'; del.textContent = 'בטוח? לחיצה נוספת מוחקת'; return; }   // נמחקת מיד, יחד עם סימוני השליחה שלה
+    tplEd = null; $('#tplDlg').close();
+    try { await saveTemplates(e.scope, tplRowsOf(e).filter((r) => r.id !== e.id)); render(); toast('התבנית נמחקה'); }
+    catch (err) { fail(err); }
+  });
+  $('#tplDlg').addEventListener('close', () => { const e = tplEd; tplEd = null; tplPopSave(e); });
   $('#waMenu').addEventListener('click', (e) => {
+    const we = e.target.closest('[data-wedit]');
+    if (we) { closeWa(); openTplPop(we.dataset.wedit); return; }
     const sf = e.target.closest('[data-wsf]');
     if (sf) { waSetFilter(sf.dataset.wsf); refreshWa(); return; }
     const wa = e.target.closest('[data-wadd]');
