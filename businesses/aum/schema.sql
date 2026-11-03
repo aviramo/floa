@@ -1249,3 +1249,158 @@ end $$;
 revoke all on function public.aum_promoter_replace(uuid, uuid) from public, anon;
 grant execute on function public.aum_promoter_replace(uuid, uuid) to authenticated;
 notify pgrst, 'reload schema';
+
+-- 33: תגיות במקום סטטוסים, סימון הגעה בשדה נפרד, תשלום בהמשך, ודרך הגעה לכל הרשמה (מהרפתקה). תוספתי בלבד: שום סטטוס ושום עמודה ישנה לא נמחקים, והעמודות הישנות (paid, exempt, meeting_key וכו') נשארות בלי שימוש.
+alter table public.aum_registrations add column if not exists pay_later_at timestamptz;
+alter table public.aum_registrations add column if not exists source_promoter_id uuid references public.aum_promoters(id) on delete set null;
+alter table public.aum_promoters add column if not exists cost_total boolean not null default false;
+alter table public.aum_promoter_payments add column if not exists method text;
+
+-- מי שסומן "הגיע" (סטטוס מפגש) נחשב שהגיע, בלי הערות מערכת
+do $m$ begin
+  perform set_config('aum.skip_note', '1', true);
+  update public.aum_registrations set attended = true, attended_at = coalesce(attended_at, now()) where meeting_key = 'arrived' and not coalesce(attended, false);
+  perform set_config('aum.skip_note', '', true);
+end $m$;
+
+-- הערות מערכת: תגית אחת, הגעה בנפרד, ותשלום בהמשך
+create or replace function public.aum_reg_notes() returns trigger
+language plpgsql security definer set search_path to 'public' as $function$
+declare lbl text;
+begin
+  if current_setting('aum.skip_note', true) = '1' then return null; end if;
+  if tg_op = 'INSERT' then
+    if coalesce(new.attended, false) then
+      perform public.aum_sys_note(new.participant_id, 'הגיע/ה למפגש ' || public.aum_meeting_label(new.event_id) || ' (ללא הרשמה מראש)', 'walk_in', new.event_id);
+    else
+      perform public.aum_sys_note(new.participant_id, case when auth.jwt() ->> 'email' is null then 'נרשם/ה מהאתר למפגש ' else 'שויך/ה למפגש ' end || public.aum_meeting_label(new.event_id), 'meeting_linked', new.event_id, null, new.status_key);
+    end if;
+  elsif tg_op = 'UPDATE' then
+    lbl := public.aum_meeting_label(new.event_id);
+    if new.status_key is distinct from old.status_key then
+      perform public.aum_sys_note(new.participant_id, 'תגית למפגש ' || lbl || ': ' || coalesce(public.aum_status_label(new.status_key), 'בלי תגית') || ' (היה: ' || coalesce(public.aum_status_label(old.status_key), 'בלי תגית') || ')',
+        'status_changed', new.event_id, old.status_key, new.status_key);
+    end if;
+    if coalesce(old.attended, false) <> coalesce(new.attended, false) then
+      perform public.aum_sys_note(new.participant_id, case when new.attended then 'הגיע/ה למפגש ' else 'סימון ההגעה בוטל למפגש ' end || lbl, case when new.attended then 'attended' else 'attendance_cancelled' end, new.event_id);
+    end if;
+    if coalesce(old.no_pay, false) <> coalesce(new.no_pay, false) and new.pay_closed_at is null and old.pay_closed_at is null then
+      perform public.aum_sys_note(new.participant_id, case when coalesce(new.no_pay, false) then 'המפגש ' || lbl || ' סומן לא לתשלום' else 'חזרה לתשלום למפגש ' || lbl end,
+        case when coalesce(new.no_pay, false) then 'free_on' else 'free_off' end, new.event_id);
+    end if;
+    if (old.pay_later_at is null) <> (new.pay_later_at is null) and not (new.pay_later_at is null and coalesce(new.no_pay, false)) then
+      perform public.aum_sys_note(new.participant_id, case when new.pay_later_at is not null then 'המפגש ' || lbl || ' סומן תשלום בהמשך' else 'בוטל תשלום בהמשך למפגש ' || lbl end,
+        case when new.pay_later_at is not null then 'pay_later_on' else 'pay_later_off' end, new.event_id);
+    end if;
+    if (old.details_sent_at is null) <> (new.details_sent_at is null) then
+      perform public.aum_sys_note(new.participant_id, case when new.details_sent_at is not null then 'נשלחו פרטי המפגש (וואטסאפ) למפגש ' else 'סימון שליחת פרטי המפגש בוטל למפגש ' end || lbl,
+        case when new.details_sent_at is not null then 'details_sent' else 'details_unsent' end, new.event_id);
+    end if;
+  elsif tg_op = 'DELETE' then
+    perform public.aum_sys_note(old.participant_id, 'הוסר/ה מהמפגש ' || public.aum_meeting_label(old.event_id), 'meeting_removed', old.event_id);
+  end if;
+  return null;
+exception when others then return null;
+end $function$;
+drop trigger if exists aum_reg_notes_t on public.aum_registrations;
+create trigger aum_reg_notes_t after insert or delete or update of status_key, attended, details_sent_at, no_pay, pay_later_at on public.aum_registrations for each row execute function public.aum_reg_notes();
+
+-- דרך ההגעה לכל הרשמה למפגש: ההרשמה הראשונה מקבלת את דרך ההגעה של המשתתף, הרשמה נוספת לפי הקישור שממנו נרשם (?s=)
+create or replace function public.aum_channel_of(p_pid uuid) returns uuid language sql stable set search_path = public as $$
+  select coalesce(
+    (select pr.id from public.aum_promoters pr where pr.id = p.promoter_id),
+    (select pr.id from public.aum_promoters pr where pr.code = coalesce(p.source_code, case when p.source = 'site-ad' then 'p' end) limit 1))
+  from public.aum_participants p where p.id = p_pid
+$$;
+create or replace function public.aum_att_source() returns trigger language plpgsql security definer set search_path = public as $$
+declare c text := nullif(current_setting('aum.src', true), '');
+begin
+  if new.source_promoter_id is not null then return new; end if;
+  if c is not null then select id into new.source_promoter_id from public.aum_promoters where code = c limit 1; end if;
+  if new.source_promoter_id is null and not exists (select 1 from public.aum_registrations where participant_id = new.participant_id) then
+    new.source_promoter_id := public.aum_channel_of(new.participant_id);
+  end if;
+  return new;
+end $$;
+drop trigger if exists aum_att_source_t on public.aum_registrations;
+create trigger aum_att_source_t before insert on public.aum_registrations for each row execute function public.aum_att_source();
+
+create or replace function public.aum_participant_source_sync() returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  update public.aum_registrations a set source_promoter_id = public.aum_channel_of(new.id)
+    where a.participant_id = new.id and a.event_id = (select a2.event_id from public.aum_registrations a2 where a2.participant_id = new.id order by a2.created_at, a2.event_id limit 1);
+  return new;
+end $$;
+drop trigger if exists aum_participant_source_sync_t on public.aum_participants;
+create trigger aum_participant_source_sync_t after update of promoter_id, source, source_code on public.aum_participants for each row
+  when (old.promoter_id is distinct from new.promoter_id or old.source is distinct from new.source or old.source_code is distinct from new.source_code)
+  execute function public.aum_participant_source_sync();
+
+update public.aum_registrations a set source_promoter_id = public.aum_channel_of(a.participant_id)
+  where a.source_promoter_id is null
+    and not exists (select 1 from public.aum_registrations b where b.participant_id = a.participant_id and (b.created_at, b.event_id) < (a.created_at, a.event_id));
+
+-- ההרשמה מהאתר: הקישור שממנו נרשמו (p_src) עובר לטריגר
+CREATE OR REPLACE FUNCTION public.aum_signup(p_name text DEFAULT NULL::text, p_phone text DEFAULT NULL::text, p_age integer DEFAULT NULL::integer, p_gender text DEFAULT NULL::text, p_src text DEFAULT NULL::text, p_first text DEFAULT NULL::text, p_last text DEFAULT NULL::text)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  n    text := public.aum_normalize_phone(p_phone);
+  nm   text := coalesce(nullif(trim(concat_ws(' ', regexp_replace(trim(coalesce(p_first, '')), '\s+', ' ', 'g'), regexp_replace(trim(coalesce(p_last, '')), '\s+', ' ', 'g'))), ''), regexp_replace(trim(coalesce(p_name, '')), '\s+', ' ', 'g'));
+  src  text := case when p_src = 'p' then 'site-ad' else 'site' end;
+  code text := nullif(lower(left(regexp_replace(coalesce(p_src, ''), '[^a-zA-Z0-9_-]', '', 'g'), 20)), '');   -- קוד דרך ההגעה מהקישור ?s=קוד
+  pid  uuid;
+  ev   public.aum_events;
+  act  boolean;
+  res  text := 'created';
+  st   text := 'new';
+begin
+  if p_src is not null then perform set_config('aum.src', p_src, true); end if;
+  if char_length(nm) < 2 or char_length(nm) > 60 then return 'invalid_name'; end if;
+  if n = '' then return 'invalid_phone'; end if;
+  if p_age is null or p_age < 18 or p_age > 99 then return 'invalid_age'; end if;
+  if p_gender is null or p_gender not in ('male', 'female') then return 'invalid_gender'; end if;
+
+  select * into ev from public.aum_events
+    where event_date >= (now() at time zone 'Asia/Jerusalem')::date
+    order by event_date, start_time limit 1;
+
+  select id, active into pid, act from public.aum_participants where phone_norm = n limit 1;
+  if pid is not null then
+    -- הטלפון הוא המפתח: משתתף לא פעיל (הוסר) חוזר להיות פעיל בלי לעדכן את שאר השדות
+    if act then
+      res := 'exists';
+      update public.aum_participants set age = p_age, age_set_at = current_date where id = pid and age is null;
+      update public.aum_participants set gender = p_gender where id = pid and gender is null;
+    else
+      update public.aum_participants set active = true where id = pid;
+    end if;
+  else
+    begin
+      insert into public.aum_participants (name, phone, age, age_set_at, gender, source, source_code)
+        values (nm, n, p_age, current_date, p_gender, src, code)   -- phone_norm נקבע בטריגר
+        returning id into pid;
+    exception when unique_violation then
+      select id into pid from public.aum_participants where phone_norm = n limit 1;
+      res := 'exists';
+    end;
+  end if;
+
+  if ev.id is not null and pid is not null then
+    if ev.capacity is not null and (select count(*) from public.aum_registrations r
+         where r.event_id = ev.id and r.status in ('new', 'confirmed')) >= ev.capacity then
+      st := 'waitlist';
+    end if;
+    insert into public.aum_registrations (participant_id, event_id, status) values (pid, ev.id, st)
+      on conflict (participant_id, event_id) do nothing;
+  end if;
+
+  if res = 'created' then
+    perform public.aum_notify_signup();
+  end if;
+  return res;
+end $function$;
+notify pgrst, 'reload schema';
