@@ -27,18 +27,25 @@ const media = (ctx, { shots, href, ariaLabel }) => {
 
 /* A client with nothing to open (the work is real, but there is no site or app to
    link to) has no capture, so it has no picture area either. Its mark is carried
-   small at the head of the card, the way every other card carries its own logo
-   inside the picture, and it is not a link, because there is nowhere to go. */
+   small, on the heading's own line and at the far end of it (the left, in
+   Hebrew), where every other card carries its logo inside the picture: logo at
+   one end, headline at the other. It is not a link, because there is nowhere to
+   go. */
 const mark = (ctx, { href, shots }) => (!href && shots?.length ? image(ctx, { ...shots[0], className: "project-mark" }) : "");
+
+const heading = (ctx, project) => {
+  const h3 = html`<h3>${project.href ? html`<a href="${project.href}"${attrs(external)}>${project.title}</a>` : project.title}</h3>`;
+  const m = mark(ctx, project);
+  return m ? html`<div class="project-head">${h3}${m}</div>` : h3;
+};
 
 /* A case study: what it was, what we built, and a way in. { project } */
 export const projectCard = (ctx, project) => html`
         <article class="project-card reveal">
           ${project.href ? media(ctx, project) : ""}
           <div class="project-body">
-            ${mark(ctx, project)}
             ${project.name && html`<span class="project-name">${project.name}</span>`}
-            <h3>${project.href ? html`<a href="${project.href}"${attrs(external)}>${project.title}</a>` : project.title}</h3>
+            ${heading(ctx, project)}
 
             ${project.parts.map((part) => html`
             <div class="project-part">

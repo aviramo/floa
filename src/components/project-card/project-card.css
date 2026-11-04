@@ -136,12 +136,19 @@
    Small, like the logo inside the other cards' pictures: a mark to recognise the
    client by, not a picture. `contain` keeps it whole, and the height cap keeps a
    small source from being stretched. */
+.project-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;     /* the heading at one end, the mark at the other */
+  gap: var(--s-4);
+  margin: var(--s-2) 0 var(--s-6);
+}
+.project-head h3 { margin: 0; min-width: 0; }
 .project-mark {
-  align-self: flex-start;
+  flex: 0 0 auto;
   width: auto;
   height: 52px;
   max-width: 150px;
-  margin-bottom: var(--s-5);
   object-fit: contain;
 }
 
