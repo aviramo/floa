@@ -1147,9 +1147,7 @@ dialog .dclose { display: none; }
 /* חריגים לרדיוס הפינות: אלמנט עם קו בצד אחד (הקו היה מתעקל בקצוות), שטח מקצה לקצה, ופופאפ שצמוד לקצוות המסך */
 .row, .wrap, .wrap > .vbar, .sheet-head, .finrow, .walrow, .logrow, .mtr.mhead, #fMenu .fsep, .nform, #nList .nitem, .ptabs, .ptabi, .mmenu button.addm2, .mmenu .maddrow, .srccard, .tb .tr, #waMenu .wbot, .hsearch, .hmi.out, .fsl.hd, .tokf, .nform textarea, .srccard .codein, .srccard .ratetype, #listTags .hsearch input { border-radius: 0; }
 @media (max-width: 699px) { #mMenu { border-radius: 0; } }   /* במובייל התפריט מקצה לקצה */
-dialog { border-radius: var(--r) var(--r) 0 0; }
-#pDlg, #setDlg, #stDlg, #finDlg, #prDlg, #mDlg, #meDlg { border-radius: 0; }
-@media (min-width: 760px) { dialog:not(.drawer):not(.side):not(#meDlg) { border-radius: var(--r); } }
+dialog { border-radius: 0; }   /* כל הפופאפים בלי פינות מעוגלות (4.11.26, לבקשת בעל האתר), גם במובייל וגם בדסקטופ */
 /* רצועת המפגשים: האריח והכרטיס האחרון סוגרים את הפינות של הרצועה */
 
 /* סינון פעיל בשורת הסינון (2.11.26): נקודה בצבע התואם, רכיב אחד (UI.fdot) לתשלום, יתרה, התמדה, שליחה, וואטסאפ, מגדר, סינון ומיון. זכר / נקבה בלי מילוי; אייקוני העמודות נשארים עם הרקע של המצב */
@@ -1566,7 +1564,7 @@ html.is-loading #fabBar { display: none; }
 
 /* המונה נגלל עם הכרטיסים, והחלק הלבן העליון עם צל: הכרטיסים נעים מתחתיו */
 .countline { display: none !important; }
-.countli { grid-column: 1 / -1; list-style: none; padding: 0 2px; text-align: center; color: var(--text-2); font-size: 13px; font-weight: 600; }
+.countli { grid-column: 1 / -1; list-style: none; padding: 8px 2px; text-align: center; color: var(--text-2); font-size: 13px; font-weight: 600; }
 .wrap > .vbar { position: relative; z-index: 3; }
 
 /* תגית בכרטיס: טקסט מלא, יורד שורה כשצריך */

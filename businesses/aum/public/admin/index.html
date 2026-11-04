@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=1e7d00d7" />
+  <link rel="stylesheet" href="admin.css?v=72d2a91a" />
   <link rel="stylesheet" href="admin-aum.css?v=cc8350e2" />
 </head>
 <body class="locked">
@@ -953,7 +953,9 @@
   const sortMeetings = () => state.meetings.sort(meetDesc);   // מהחדש לישן
 
   const linksOf = (pid) => state.att.filter((a) => a.participant_id === pid);
-  const meetCountOf = (p) => { const ls = linksOf(p.id).filter((l) => l.attended); return state.mtype ? ls.filter((l) => { const m = meetOf(l.meeting_id); return m && typeIdOf(m) === state.mtype; }).length : ls.length; };   // רק מפגשים שהגיע אליהם; בסוג מפגש: רק של הסוג
+  /* כמות המפגשים של משתתף: מפגשים שהגיע אליהם (came) ועוד מפגשים שעוד לא עברו שהוא משוריין אליהם (next); בסוג מפגש: רק של הסוג */
+  const meetCounts = (p) => { let came = 0, next = 0; linksOf(p.id).forEach((l) => { const m = meetOf(l.meeting_id); if (state.mtype && !(m && typeIdOf(m) === state.mtype)) return; if (l.attended) came++; else if (m && !isPast(m) && reservedOf(p.id, l.meeting_id)) next++; }); return { came, next }; };
+  const meetCountOf = (p) => { const c = meetCounts(p); return c.came + c.next; };
   const linkOf = (pid, mid) => state.att.find((a) => a.participant_id === pid && a.meeting_id === mid);
 
   let toastTimer;
@@ -1572,7 +1574,7 @@
         if (noPayOf(p, lk)) payIc = '<span class="payic free" title="לא לתשלום">' + ptx + '</span>';
         else payIc = reportedOf(p.id, state.filter) ? '<span class="payic wait" title="דווח' + reportedAmt(p.id, state.filter) + (al > 0 ? ' (שולם ₪' + nfm(al) + ')' : '') + ': המשתתף דיווח ששילם, ממתין לאימות">' + ptx + '</span>' : laterOf(p.id, state.filter) ? '<span class="payic later" title="תשלום בהמשך, משוריין למפגש' + (al > 0 ? ' (שולם ₪' + nfm(al) + ', נשאר ₪' + nfm(dueOf(p.id, state.filter)) + ')' : '') + '">' + ptx + '</span>' : dueOf(p.id, state.filter) > 0 ? '<span class="payic" title="שולם ₪' + nfm(al) + ', נשאר לשלם ₪' + nfm(dueOf(p.id, state.filter)) + '">' + ptx + '</span>' : al <= 0 ? '<span class="payic" title="לתשלום">' + ptx + '</span>' : '<span class="payic ok" title="שולם ₪' + nfm(al) + '">' + ptx + '</span>'; }   // אין "שולם חלקית": יש כסף שהוקצה למפגש = שולם   // סמל תשלום (לפי רשומות התשלום, לא לפי תגית) מימין לתגית
       let mcntHtml = '';
-      if (!state.filter) { const n = meetCountOf(p); if (n) mcntHtml = '<span class="mcnt" title="הגיע ל' + (n === 1 ? 'מפגש אחד' : '-' + n + ' מפגשים') + '">' + icon('cal', 'i14') + n + '</span>'; }   // בלי שיוך: התא ריק, והעמודה נשמרת
+      if (!state.filter) { const c = meetCounts(p), n = c.came + c.next; if (n) mcntHtml = '<span class="mcnt" title="' + [c.came ? 'הגיע ל' + (c.came === 1 ? 'מפגש אחד' : '-' + c.came + ' מפגשים') : '', c.next ? 'משוריין ל' + (c.next === 1 ? 'מפגש הבא אחד' : '-' + c.next + ' מפגשים הבאים') : ''].filter(Boolean).join(' · ') + '">' + icon('cal', 'i14') + n + '</span>'; }   // בלי שיוך: התא ריק, והעמודה נשמרת
       const evc = evCircle(p);
       return '<li class="row">' +
         (attM ? attTag(p) : wa ? UI.tag(wsel ? (wsent ? icon('check') : PIN_ICON) : WA_ICON, 'ico rowwa' + (wsent ? ' sent' : ''), Object.assign({ href: wa }, /^https?:/.test(wa) ? { target: '_blank', rel: 'noopener' } : {}, wsel ? { 'data-wsend': p.id } : {}, { 'aria-label': 'וואטסאפ ל' + esc(p.name) + (wsent ? ', ההודעה נשלחה' : ''), title: wsel ? esc(wsent ? 'נשלחה ההודעה "' + wsel.name + '" · ' + fmtDT(wsent.sent_at) + ' · לחיצה לביטול הסימון' : 'וואטסאפ עם ההודעה: ' + wsel.name) : 'וואטסאפ' }), 'a') : UI.tag(WA_ICON, 'ico rowwa nophone', { role: 'img', 'aria-label': 'אין טלפון', title: 'אין טלפון' })) +
