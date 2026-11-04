@@ -39,6 +39,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  actions: read             # to ask which run was the last one that published
 
 # One deploy at a time, and the newest push wins: a queued run for a commit that
 # has already been superseded has nothing to say.
@@ -51,6 +52,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0    # the step below diffs against an older commit
 
       - uses: actions/setup-node@v4
         with:
@@ -63,15 +66,48 @@ jobs:
 
       - run: node build.mjs
 
+      # THE TWO BROWSER TESTS BELOW ARE ABOUT CHORDS AND NOTHING ELSE, and they
+      # cost about half a minute, so they run when something Chords is built
+      # from has changed and not on a push that only touched another business.
+      #
+      # "Changed" is measured against the last run that PUBLISHED, not against
+      # the previous commit. The two differ when a run is cancelled by a newer
+      # push (see `concurrency` above): a Chords change in the cancelled push
+      # would then sit in neither push's own diff and ship untested. Against
+      # the last publication it is always in the diff, until something that
+      # tested it has published.
+      #
+      # Anything this cannot work out (a manual run, no earlier publication,
+      # a commit that is gone) runs them. Skipping is only ever the answer to
+      # "I looked, and nothing Chords depends on moved".
+      - name: did anything Chords is built from change?
+        id: chords
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run=true
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            base=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/deploy.yml/runs?branch=main&status=success&per_page=1" --jq '.workflow_runs[0].head_sha // empty')
+            if [ -n "$base" ] && git cat-file -e "$base^{commit}" 2>/dev/null; then
+              if git diff --quiet "$base" HEAD -- businesses/chords src build.mjs package.json businesses/floa/domain .github/workflows/deploy.yml; then
+                run=false
+              fi
+            fi
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+          echo "chords browser tests: $run (last publication: ${base:-none})"
+
       # A chord that does not sit on its syllable is the one way this can be
       # broken while every unit test still passes, and reading the code does
       # not settle it. So a real browser opens the built page and measures.
-      - run: npm run test:layout
+      - if: steps.chords.outputs.run == 'true'
+        run: npm run test:layout
 
       # And the same browser presses back, because a page that was left has to
       # come back as the page it was and not as a fresh one at the top of
       # itself. Also unreadable from the code: it is all about the address.
-      - run: npm run test:stack
+      - if: steps.chords.outputs.run == 'true'
+        run: npm run test:stack
 
       # The generated Worker table must match what was committed. If it does
       # not, someone changed a business and pushed without rebuilding — and the
