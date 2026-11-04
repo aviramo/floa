@@ -96,5 +96,15 @@ export const BUSINESSES = {
       "http://localhost:5173"
     ],
     "pages": []
+  },
+  "roster": {
+    "brand": "Roster",
+    "to": "LEAD_TO",
+    "origins": [
+      "https://floa.co.il",
+      "https://www.floa.co.il",
+      "http://localhost:5173"
+    ],
+    "pages": []
   }
 };
