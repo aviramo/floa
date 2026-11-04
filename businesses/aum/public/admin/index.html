@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=7777c775" />
+  <link rel="stylesheet" href="admin.css?v=1e7d00d7" />
   <link rel="stylesheet" href="admin-aum.css?v=cc8350e2" />
 </head>
 <body class="locked">
@@ -240,10 +240,10 @@
     <form class="sheet" id="mForm" method="dialog" novalidate>
       <div class="sheet-head">
         <h2 id="mTitle">מפגש חדש</h2>
+        <button class="btn" id="mSubmit" type="submit" disabled>יצירת מפגש</button>
       </div>
       <label class="field" id="mTypeF" hidden><span>סוג מפגש</span><select id="mType" aria-label="סוג מפגש"></select></label>
       <div class="mf" id="mMF"></div>   <!-- פרטי המפגש: אותו אלמנט כמו פרטי סוג המפגש (meetingFields) -->
-      <button class="btn" id="mSubmit" type="submit">יצירת מפגש</button>
       <button class="btn ghost danger" id="mDelete" type="button">מחיקת מפגש</button>
     </form>
   </dialog>
@@ -3277,8 +3277,11 @@
       this.animate([{ transform: 'translateY(' + y + 'px)' }, { transform: 'none' }], { duration: 340, easing: 'cubic-bezier(.22,.8,.2,1)' });
       backdrop(this, 0, 1, 340);
     };
+    /* סגירת פופאפ סוגרת גם את המקלדת (virtualKeyboard.hide, כי blur לבדו לא תמיד סוגר מקלדת שנפתחה בפקודה) */
+    const hideKb = () => { try { const a = document.activeElement; if (!a || a === document.body || !a.matches || !a.matches('input, textarea, select, [contenteditable]')) return; const vk = navigator.virtualKeyboard, can = vk && vk.hide && 'virtualKeyboardPolicy' in a; if (can) { a.virtualKeyboardPolicy = 'manual'; vk.hide(); } a.blur(); if (can) a.virtualKeyboardPolicy = ''; } catch (e) {} };
     proto.close = function (rv, from) {
       if (!this.open || this._closing) return;
+      hideKb();
       navClose(this);
       if (this._side) {   // כרטיס בצד הרשימה: נסגר מיד, והאזור חוזר להודעה "בחרו משתתף"
         this._side = false; this.classList.remove('side'); this.getAnimations().forEach((a) => a.cancel());
@@ -3875,13 +3878,15 @@
     const mfBox = q('MF'), tplBox = q('Tpl');
     /* שמירה אוטומטית של מפגש או סוג שכבר קיימים (F.owner, F.write): בכל שינוי בטופס; בשדות טקסט בעזיבת השדה, ובסגירת הפופאפ גם מה שהוקלד ועוד לא נעזב. שמירה אחת בכל פעם. מפגש או סוג חדשים נוצרים בכפתור */
     let saving = false, again = false;
-    F.changed = async () => {
-      F.dirty = false; if (!F.write) return;
+    F.edited = false;   // יש שינוי שעוד לא נשמר: מפעיל את כפתור השמירה (שמירה רק בלחיצה עליו)
+    F.changed = () => { F.dirty = false; if (!F.write) return; F.edited = true; if (F.onEdit) F.onEdit(); };
+    F.save = async () => {
+      if (!F.write) return;
       if (saving) { again = true; return; }
       saving = true;
-      try { do { again = false; await F.write(); } while (again); } finally { saving = false; }
+      try { do { again = false; await F.write(); } while (again); F.edited = false; } finally { saving = false; if (F.onEdit) F.onEdit(); }
     };
-    mfBox.addEventListener('input', () => { F.dirty = true; });
+    mfBox.addEventListener('input', () => { F.dirty = true; if (F.write) { F.edited = true; if (F.onEdit) F.onEdit(); } });
     mfBox.addEventListener('change', (e) => { if (e.target.type !== 'file' && !e.target.closest('#' + I('TierList'))) F.changed(); });
     F.tpl = { rows: [], ownerId: null };
     F.tpl.scope = () => F.tpl.ownerId ? (isType ? { type_id: F.tpl.ownerId } : { meeting_id: F.tpl.ownerId }) : null;
@@ -4037,7 +4042,7 @@
     fillTypeSel(tid);
     fillMeetingForm(m);
     $('#mTitle').textContent = m ? 'עריכת מפגש' : 'מפגש חדש';
-    $('#mSubmit').hidden = !!m; $('#mSubmit').textContent = 'יצירת מפגש';   // מפגש קיים נשמר אוטומטית
+    $('#mSubmit').hidden = false; $('#mSubmit').textContent = m ? 'שמירה' : 'יצירת מפגש'; mf.edited = false;   // מפגש קיים נשמר רק בלחיצה על שמירה (כבוי עד שינוי)
     $('#mDelete').hidden = !m;
     { const linked = !!(m && state.att.some((x) => x.meeting_id === m.id)); $('#mDelete').classList.toggle('locked', linked); $('#mDelete').title = linked ? 'לא ניתן למחוק מפגש שמשויכים אליו משתתפים' : ''; }
     mDlg.showModal();
@@ -4070,7 +4075,7 @@
   };
   mForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (editingMeeting) { const a = document.activeElement; if (a && a.blur) a.blur(); return; }   // מפגש קיים נשמר אוטומטית: אנטר רק עוזב את השדה
+    if (editingMeeting) { const a = document.activeElement; if (a && a.blur) a.blur(); if (!mf.edited) return; const btn0 = $('#mSubmit'); btn0.disabled = true; await mf.save(); toast('נשמר'); syncCreate(); return; }   // מפגש קיים: נשמר רק בלחיצה על שמירה
     const body = await meetingBody(); if (!body) return;
     const btn = $('#mSubmit'); btn.disabled = true;
     try {
@@ -4100,7 +4105,7 @@
 
   /* ---------- אירועים כלליים ---------- */
   pDlg.addEventListener('close', () => { if (pDlg.open) return; lastPid = sheet && sheet.id || null; sheet = null; openPid = null; syncUrl(); markSel(); });   // האירוע מגיע אחרי הסגירה: אם הפופאפ כבר נפתח מחדש (משתתף חדש מעל כרטיס שבצד), לא מאפסים אותו
-  mDlg.addEventListener('close', () => { if (mf.dirty) mf.changed(); syncUrl(); });
+  mDlg.addEventListener('close', () => { mf.edited = false; syncUrl(); });
   pForm.phone.addEventListener('input', () => badPhone(false));
 
   { const q = $('#q'); q.addEventListener('focus', () => { q.placeholder = 'חיפוש או הוספת משתתף'; });  }   // בשורה הצרה רק "חיפוש"; בפוקוס התיבה נפתחת ומוצג הטקסט המלא
@@ -4573,7 +4578,7 @@
     const t = tyCur(); if (!t) return;
     const key = tyId || 'new';
     if (tyFormFor !== key) { tyFormFor = key; fillTypeForm(t); }
-    $('#tySave').hidden = !!tyId; $('#tySave').textContent = 'יצירת סוג מפגש';   // סוג קיים נשמר אוטומטית
+    $('#tySave').hidden = false; $('#tySave').textContent = tyId ? 'שמירה' : 'יצירת סוג מפגש'; tyF.edited = false;   // סוג קיים נשמר רק בלחיצה על שמירה (כבוי עד שינוי)
     renderTyDelete();
   }
   function openTypeEditor(id) {
@@ -4591,7 +4596,17 @@
     renderSettings(); $('#setDlg').showModal(); showSetView('tydet');   // סוג חדש נפתח ישר על הפרטים
     blurIn('#setDlg');
   }
+  /* כפתור היצירה כבוי כל עוד חסר שדה חובה (תאריך ומחירים תקינים למפגש, שם לסוג מפגש) */
+  const syncCreate = () => {
+    const ms = $('#mSubmit'); if (ms && !ms.hidden) { let bad = !$('#mDate').value; try { if (!bad) bad = !!mf.read().err; } catch (e) { bad = true; } ms.disabled = bad || (!!editingMeeting && !mf.edited); }
+    const ts = $('#tySave'); if (ts && !ts.hidden) { let bad = true; try { bad = !!tyF.read().err; } catch (e) {} ts.disabled = bad || (!!tyId && !tyF.edited); }
+  };
+  ['input', 'change', 'click'].forEach((ev) => { $('#mDlg').addEventListener(ev, () => setTimeout(syncCreate, 0)); $('#setTyDet').addEventListener(ev, () => setTimeout(syncCreate, 0)); });
+  mf.onEdit = syncCreate; tyF.onEdit = syncCreate;
+  new MutationObserver(syncCreate).observe($('#mDlg'), { attributes: true, attributeFilter: ['open'] });
+  new MutationObserver(syncCreate).observe($('#setTyDet'), { attributes: true, attributeFilter: ['hidden'] });
   $('#tySave').addEventListener('click', async () => {
+    if (tyId) { if (!tyF.edited) return; $('#tySave').disabled = true; await tyF.save(); toast('נשמר'); syncCreate(); return; }   // סוג קיים: נשמר רק בלחיצה על שמירה
     const t = tyCur(); if (!t || tyId) return;
     const r = tyF.read(); if (r.err) { toast(r.err); if (r.el) r.el.focus(); return; }
     const body = r.body;
@@ -4831,7 +4846,7 @@
   [$('#setSrc'), $('#prForm')].forEach((box) => { box.addEventListener('change', srcChange); box.addEventListener('click', srcClick); });
   $('#srcPrAdd').addEventListener('click', startSrcDraft);
   $('#srcPrDraft').addEventListener('focusout', () => setTimeout(() => { if (!srcDraftOn) return; const b = $('#srcPrDraft'), n = b.querySelector('[data-f="name"]'), m = $('#colMenu'); if (n && !n.value.trim() && !b.contains(document.activeElement) && !(m && !m.hidden)) dropSrcDraft(); }, 150));   // יצאו בלי שם: הכרטיס נעלם, ושום דבר לא נשמר
-  $('#setDlg').addEventListener('close', () => { if (tyF.dirty) tyF.changed(); setRoot = 'main'; showSetView('main'); tyId = null; stType = null; tyNew = null; tyFormFor = null; syncUrl(); });
+  $('#setDlg').addEventListener('close', () => { tyF.edited = false; setRoot = 'main'; showSetView('main'); tyId = null; stType = null; tyNew = null; tyFormFor = null; syncUrl(); });
   $('#stBoth').addEventListener('change', (e) => {
     const inp = e.target.closest('.stname'); if (!inp) return;
     const k = inp.closest('.strow').dataset.k, v = inp.value.trim().slice(0, 14);

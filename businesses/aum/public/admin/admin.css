@@ -32,7 +32,7 @@
   --agecol: 44px;         /* עמודת תגית הגיל והמגדר בשורת משתתף: גם המונה בשורת הסינון יושב בה, ו"זכר / נקבה" מתחילים בקו של השם */
   --ctl: 44px;             /* גובה שדה וכפתור טקסט (אחד לכל הכפתורים עם מילים) */
   --ib: 40px;              /* כפתור אייקון: ריבוע אחד לכל המערכת (וואטסאפ, חזרה, פרטים, תפריט, חיפוש...) */
-  --r: 4px;                /* רדיוס הפינות של כל דף הניהול */
+  --r: 10px;                /* רדיוס הפינות של כל דף הניהול (10px מ-4.11.26) */
   --tag: 28px;             /* תגית: גובה אחד לכל התגיות */
   --tag-lg: var(--ib);     /* תגית בכותרת פופאפ, ליד כפתורי האייקון (יתרה, הקצאה, גיל ומגדר) */
   --chip: var(--tag);
@@ -1629,3 +1629,14 @@ html.is-loading #fabBar { display: none; }
 #pPager .mlist .mrow.hl { background: var(--bg); border-color: var(--line); box-shadow: -3px 3px 6px rgba(22, 25, 29, .12); }
 #pPager .mlist .mrow.hl .mdt, .mlist .mrow.hl .mdt { font-weight: 500; }
 #pPager .mlist .mrow.hl .mnm, .mlist .mrow.hl .mnm { font-weight: 400; color: var(--text-2); }
+/* כפתור היצירה בכותרת הפופאפ (משמאל), כבוי כשחסר שדה חובה */
+#mDlg .sheet-head #mSubmit { width: auto; min-height: 40px; padding: 0 16px; margin-inline-start: auto; flex: none; font-size: 15px; }
+#mDlg .sheet-head #mSubmit:disabled { opacity: .4; cursor: default; }
+/* עריכת מפגש: הכותרת (עם כפתור היצירה) קבועה למעלה ולא נגללת עם הטופס */
+#mDlg .sheet-head { position: sticky; top: 0; z-index: 1; background: var(--bg); margin-top: -28px; padding-top: 28px; margin-bottom: 0; padding-bottom: 16px; }
+#mDlg .sheet-head { z-index: 5; background: #fff; }   /* רקע אטום מעל שדות הטופס (שדות עם תווית צפה הם position: relative) */
+#mDlg .grab { z-index: 6; }
+/* שורת המדיה: כל הפריטים (תווית, פתיחה, הסרה, החלפה) באותו קו, במרכז האנכי */
+#mMF .dmcur, #tyMF .dmcur { align-items: center; }
+#mMF .dmcur > *, #tyMF .dmcur > * { align-self: center; line-height: 20px; }
+#mMF .dmcur .dmadd, #tyMF .dmcur .dmadd { display: inline-flex; align-items: center; margin: 0; max-width: none; width: auto; line-height: 20px; }
