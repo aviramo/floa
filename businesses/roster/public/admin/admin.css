@@ -1458,6 +1458,7 @@ html.is-loading .hsearch { visibility: hidden; }
 #listTags .hsearch input::placeholder { text-align: center; }
 #fabBar { position: fixed; bottom: calc(var(--safe-b) + 8px); left: 50%; transform: translateX(-50%); z-index: 30; display: flex; align-items: center; gap: 8px; }   /* סינון, וואטסאפ ומיון: כפתורים צפים למטה */
 #fabBar .wafab { position: static; transform: none; bottom: auto; left: auto; }
+@media (min-width: 1024px) { #fabBar { left: auto; right: calc(var(--listw) / 2); transform: translateX(50%); } }   /* בדסקטופ הרשימה היא עמודה בצד ימין ברוחב --listw: הכפתורים הצפים במרכזה ולא במרכז החלון (אחרי כלל הבסיס, כי עוצמת הסלקטור זהה) */
 #fabBar #listFS { position: static; display: contents; margin: 0; }
 #fabBar #listMore { display: flex; order: -1; }
 #fabBar .wafab { order: 0; }
