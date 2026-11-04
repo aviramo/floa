@@ -66,11 +66,55 @@ export const home = {
     ],
   },
 
-  /* The three short proof cards: what was actually built, for whom. Every line
-     here is drawn from the client's own testimonial or from the project page —
-     nothing is claimed that the site cannot already back up. */
+  /* Working with AI and agents. It sits inside the work section, directly under
+     "not presentations, things that work": the claim and its evidence belong
+     together. Every card names something that exists (Chords reads a photographed
+     sheet through the Worker, the Facebook account is run by agents, this very
+     site is built beside a coding agent) and the last one says who decides. */
+  ai: {
+    lead: {
+      icon: "sparkle",
+      badge: "AI וסוכנים",
+      title: "עובדים עם AI וסוכנים, בעבודה עצמה",
+      text: "לא כקישוט בעמוד אלא ככלי עבודה: סוכנים שמריצים קמפיינים, מודלים שקוראים תמונות, וסוכני קוד שבונים איתנו את המוצר. כך מגיעים מהר יותר למשהו שרץ, ועם פחות עבודה ידנית",
+    },
+    items: [
+      {
+        icon: "automation",
+        title: "סוכנים לפייסבוק",
+        text: "סוכנים שמנהלים קמפיינים: קוראים את הנתונים, מזהים מה עובד ומה שורף תקציב, ומריצים שינויים בחשבון הפרסום",
+      },
+      {
+        icon: "picture",
+        title: "עיבוד תמונה",
+        text: "מצלמים דף אקורדים או מעלים PDF, והמודל קורא אותו ומציב כל אקורד על ההברה שלו. כך עובדת האפליקציה אקורדים",
+      },
+      {
+        icon: "code",
+        title: "פיתוח עם סוכני קוד",
+        text: "אתרים ואפליקציות נבנים לצד סוכן קוד, עם בדיקות אוטומטיות. מהר יותר, והקוד נשאר קוד רגיל שאפשר להמשיך לעבוד איתו",
+      },
+      {
+        icon: "link",
+        title: "אוטומציות בין המערכות",
+        text: "מיילים, טפסים והודעות הופכים אוטומטית למשימות בתהליך עבודה מסודר, כמו אצל דפוס אאוטלט, בלי הקלדה ידנית",
+      },
+      {
+        icon: "chart",
+        title: "נתונים שמסתכמים לבד",
+        text: "נתוני פרסום, הרשמות ותשלומים נאספים למקום אחד ומסוכמים, כדי להחליט לפי מה שקורה ולא לפי תחושה",
+      },
+      {
+        icon: "shield",
+        title: "אדם מחליט ומאשר",
+        text: "הסוכנים עושים את העבודה החוזרת. שינוי בחשבון, בדף או בנתונים לא קורה בלי אישור, כי האחריות נשארת אצלכם",
+      },
+    ],
+  },
+
+  /* What else is running, beside the projects above: clients whose work has no
+     picture to show. Every line is drawn from the client's own testimonial. */
   proof: {
-    head: { eyebrow: "הוכחה", title: "מה כבר נבנה ורץ בפועל" },
     items: [
       {
         icon: "system",
@@ -81,16 +125,6 @@ export const home = {
         icon: "automation",
         title: "דפוס אאוטלט",
         text: "מיילים מלקוחות הופכים אוטומטית לכרטיסי עבודה ב־Trello ונכנסים לתהליך טיפול מסודר",
-      },
-      {
-        icon: "app",
-        title: "Once",
-        text: "מוצר דיגיטלי שנבנה מאפיון הרעיון ועד אפליקציה פעילה, מערכת ניהול ומדידה",
-      },
-      {
-        icon: "target",
-        title: "יוצאים להרפתקה",
-        text: "דף נחיתה ומערך הרשמה לאירועים, מחידוד המסרים ועד טופס ההרשמה, התשלום והחיבור ל־WhatsApp",
       },
     ],
   },

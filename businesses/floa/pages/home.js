@@ -101,24 +101,29 @@ ${quotes({ items: pickQuotes("erez", "itzik") })}`,
 })}
 
 ${section({
-  id: "proof",
-  className: "solutions",
-  children: html`${sectionHead(home.proof.head)}
+  id: "projects",
+  className: "projects",
+  /* One section, one claim: not presentations, things that work. It says HOW
+     they get made (AI and agents, the dark panel) and then shows WHAT was made
+     (the projects, and the clients whose work has no picture). It used to be
+     two sections that both answered "what has been built". */
+  children: html`${sectionHead(projectsHead)}
 ${cardGrid({
-    cols: 4,
+    cols: 3,
+    className: "ai-grid",
+    children: html`${card(ctx, { ...home.ai.lead, wide: true, accent: "teal" })}
+${home.ai.items.map((item) => card(ctx, { ...item, accent: "teal", size: "sm" }))}`,
+  })}
+${projectGrid(ctx, { items: pickProjects("once", "chords", "harpatka", "roster", "aum", "perfecti") })}
+${cardGrid({
+    cols: 2,
+    className: "more-grid",
     /* proof is amber, here and on every solution page */
     children: home.proof.items.map((item) => card(ctx, { ...item, accent: "amber" })),
   })}`,
 })}
 
 ${ctaBand(ctx, { ...defaultCta, cta: home.waLabel })}
-
-${section({
-  id: "projects",
-  className: "projects",
-  children: html`${sectionHead(projectsHead)}
-${projectGrid(ctx, { items: pickProjects("once", "chords", "harpatka", "roster") })}`,
-})}
 
 ${section({
   id: "process",

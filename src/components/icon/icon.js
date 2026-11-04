@@ -21,6 +21,12 @@ const ICONS = {
   target:     `<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>`,
   /* an arrow coming back round: taking something that exists and lifting it */
   upgrade:    `<path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"/><path d="M19.5 3.5V6.5H16.5"/><path d="M12 15.5V9M9 12l3-3 3 3"/>`,
+  /* a four-point spark and a small one beside it: AI, and what it adds to the work */
+  sparkle:    `<path d="M10.5 3c.9 5.3 3.2 7.6 8.5 8.5-5.3.9-7.6 3.2-8.5 8.5-.9-5.300-3.2-7.600-8.500-8.500C7.300 10.600 9.600 8.300 10.500 3Z"/><path d="M19 3v4M17 5h4"/>`,
+  /* angle brackets: code, written alongside an agent */
+  code:       `<path d="m8 7-5 5 5 5"/><path d="m16 7 5 5-5 5"/><path d="m13.500 5-3 14"/>`,
+  /* a shield with a tick: a person still decides and approves */
+  shield:     `<path d="M12 3 4.500 6v5.500c0 4.400 3 7.700 7.500 9.500 4.500-1.800 7.500-5.100 7.500-9.500V6z"/><path d="m9 12 2.200 2.200L15.500 10"/>`,
 
   check:      { strokeWidth: 2.2, body: `<path d="M20 6 9 17l-5-5"/>` },
   arrow:      { viewBox: "0 0 40 24", strokeWidth: 1.6, body: `<path d="M38 12H2"/><path d="M10 4 2 12l8 8"/>` },

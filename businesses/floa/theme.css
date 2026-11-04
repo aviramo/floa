@@ -1,0 +1,95 @@
+/* ==========================================================================
+   FLOA's own theme. It comes LAST in the stylesheet, so it wins over every
+   component, and it holds only what is true of FLOA and of no other business.
+   ========================================================================== */
+
+/* --- the AI panel, on the homepage ---------------------------------------
+   The one place the site says "we work with AI and agents", and it has to be
+   seen: a dark panel in a page that is otherwise light and airy. It is still
+   the one card component and the one card grid, re-lit; nothing in it is a
+   second recipe. Teal stays the action colour, so on the dark ground it is the
+   light teal-tint, never the base teal, which would sink. */
+.ai-grid {
+  position: relative;
+  isolation: isolate;
+  margin-bottom: var(--s-9);
+  padding: var(--pad-panel);
+  background:
+    radial-gradient(60% 90% at 88% 0%, rgba(14, 140, 126, .55), transparent 62%),
+    radial-gradient(50% 70% at 6% 100%, rgba(53, 143, 188, .35), transparent 60%),
+    linear-gradient(160deg, #0F2A33 0%, #0B1F26 100%);
+  border-radius: var(--r-lg);
+  box-shadow: 0 30px 60px -28px rgba(15, 42, 51, .55);
+  overflow: hidden;
+}
+/* a fine grid of dots behind the cards: the surface of a screen, not decoration */
+.ai-grid::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: radial-gradient(rgba(255, 255, 255, .09) 1px, transparent 1.4px);
+  background-size: 22px 22px;
+  mask-image: linear-gradient(180deg, #000, transparent 85%);
+}
+
+.ai-grid .card {
+  --accent: var(--teal-tint);
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(255, 255, 255, .13);
+  border-top: 2px solid rgba(201, 230, 222, .75);
+  box-shadow: none;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.ai-grid .card:hover {
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, .1);
+  border-color: rgba(201, 230, 222, .45);
+  border-top-color: rgba(201, 230, 222, .9);
+  box-shadow: 0 18px 36px -18px rgba(0, 0, 0, .5);
+}
+.ai-grid .card h3 { color: #fff; }
+.ai-grid .card p  { color: rgba(226, 238, 235, .82); }
+.ai-grid .card-icon {
+  background: rgba(201, 230, 222, .2);
+  color: #E6F4F0;
+}
+
+/* the lead card carries the claim: bigger type, a lit badge, and the pill that
+   names the subject */
+.ai-grid .card-wide {
+  padding: var(--pad-panel);
+  background: linear-gradient(135deg, rgba(14, 140, 126, .32), rgba(255, 255, 255, .05));
+  border-color: rgba(201, 230, 222, .3);
+  border-top-color: rgba(201, 230, 222, .9);
+}
+.ai-grid .card-wide .card-icon-tile {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: var(--teal-tint);
+  color: var(--teal-dark);
+  box-shadow: 0 0 0 8px rgba(201, 230, 222, .12), 0 0 40px rgba(14, 140, 126, .6);
+}
+.ai-grid .card-wide .card-icon-tile svg { width: 36px; height: 36px; }
+.ai-grid .card-wide h3 { font-size: clamp(1.6rem, 3vw, 2.3rem); line-height: 1.15; }
+.ai-grid .card-wide p {
+  max-width: 52rem;
+  font-size: var(--fs-lead);
+  color: rgba(236, 246, 243, .9);
+}
+/* the pill names the subject, so it reads BEFORE the headline, not after the copy */
+.ai-grid .card-wide .card-body { display: flex; flex-direction: column; }
+.ai-grid .card-wide .card-badge {
+  order: -1;
+  margin-top: 0;
+  margin-bottom: var(--s-3);
+  background: var(--teal-tint);
+  color: var(--teal-dark);
+  font-size: .8rem;
+  letter-spacing: .06em;
+}
+
+/* the clients with no picture to show, under the projects: close, not a new section */
+.more-grid { margin-top: var(--gap); }
