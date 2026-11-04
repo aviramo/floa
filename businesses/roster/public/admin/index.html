@@ -693,7 +693,7 @@
       if (method === 'PATCH' && pr.match && body) ov = { table, match: pr.match, patch: body };
       else if (method === 'DELETE' && pr.match) ov = { table, match: pr.match, del: true };
       else if (method === 'POST' && body && !Array.isArray(body)) {
-        const cols = (pr.conflict ? pr.conflict.split(',') : ['email', 'key', 'id'].filter((c) => body[c] != null).slice(0, 1));
+        const cols = (pr.conflict ? pr.conflict.split(',').filter((c) => c !== 'business_id') : ['email', 'key', 'id'].filter((c) => body[c] != null).slice(0, 1));   // business_id לא נשלח בגוף הבקשה (הדאטהבייס ממלא אותו), וכל השורות בזיכרון הן של העסק הזה
         if (/merge-duplicates/.test(prefer || '') && cols.length && cols.every((c) => body[c] != null)) ov = { table, upsert: { cols, row: body } };
       }
       if (ov) { ov.doneAt = null; ov.exp = Date.now() + 60000; WOV.push(ov); }
@@ -1272,7 +1272,7 @@
   async function saveViewPrefs() {
     const em = emailOf(), body = { email: em, view_scopes: state.viewScopes };
     state.prefs[em] = Object.assign({}, state.prefs[em], body);
-    try { await api(T.pf, { method: 'POST', body, prefer: 'resolution=merge-duplicates,return=minimal' }); } catch (err) { fail(err); }
+    try { await api(T.pf + '?on_conflict=business_id,email', { method: 'POST', body, prefer: 'resolution=merge-duplicates,return=minimal' }); } catch (err) { fail(err); }
   }
   /* סימון ההגעה הוא שדה נפרד (attended), ונקבע בעמודת הסימון ברשימה (תפריט העמודה: הגיע / לא הגיע). הוא לא קשור לתגיות */
   const effPaidF = () => (state.q.trim() || !state.filter || !state.showPay) ? null : state.paidF;   // שולם / לתשלום (לפי רשומות התשלום), רק בתוך מפגש
@@ -3636,7 +3636,7 @@
       '<div class="mfrow">' +
         '<label class="field"><span>עיר</span><input placeholder=" " id="' + I('City') + '" name="city" type="text" maxlength="40" autocomplete="off" /></label>' +
         '<label class="field"><span>מיקום</span><input placeholder=" " id="' + I('Place') + '" name="place" type="text" maxlength="60" autocomplete="off" /></label></div>' +
-      '<div class="field"><span>הוראות הגעה</span><textarea placeholder=" " id="' + I('Dirs') + '" name="directions" rows="1"></textarea></div>' +
+      '<div class="field"><span>הוראות הגעה</span><textarea placeholder=" " id="' + I('Dirs') + '" name="directions" rows="1" maxlength="800"></textarea></div>' +
       (isType ? '' : '<div class="mtinh2" id="' + I('TplInh') + '" hidden></div>') + '<div class="mtlist" id="' + I('Tpl') + '"></div>' +
       '<button type="button" class="mtpladd" id="' + I('TplAdd') + '">הוספת הודעה</button>' +
       '<div class="field"><span class="mtl">מחירים' + (isType ? '' : '<button type="button" class="lnk" id="' + I('TierOwn') + '" hidden>שינוי למפגש הזה</button><button type="button" class="lnk" id="' + I('TierReset') + '" hidden>כמו בסוג המפגש</button>') + '</span>' +
@@ -4215,7 +4215,7 @@
   $('#setSender').addEventListener('change', async () => {
     const em = emailOf(), v = $('#setSender').value.trim().slice(0, 20), prev = state.prefs[em];
     state.prefs[em] = Object.assign({}, prev, { email: em, sender_name: v || null });
-    try { await api(T.pf, { method: 'POST', body: { email: em, sender_name: v || null }, prefer: 'resolution=merge-duplicates,return=minimal' }); toast(v ? 'שם השולח עודכן: ' + v : 'שם השולח חזר לברירת המחדל'); }
+    try { await api(T.pf + '?on_conflict=business_id,email', { method: 'POST', body: { email: em, sender_name: v || null }, prefer: 'resolution=merge-duplicates,return=minimal' }); toast(v ? 'שם השולח עודכן: ' + v : 'שם השולח חזר לברירת המחדל'); }
     catch (err) { if (prev) state.prefs[em] = prev; else delete state.prefs[em]; fail(err); }
     renderSettings();
   });
