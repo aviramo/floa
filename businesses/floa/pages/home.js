@@ -9,7 +9,7 @@ import { contact } from "#components/contact/contact.js";
 import { ctaBand } from "#components/cta-band/cta-band.js";
 import { ecoGrid } from "#components/eco-grid/eco-grid.js";
 import { hero } from "#components/hero/hero.js";
-import { heroSystem } from "#components/hero-system/hero-system.js";
+import { heroMotion } from "#components/hero-motion/hero-motion.js";
 import { projectGrid } from "#components/project-card/project-card.js";
 import { quotes } from "#components/quote-card/quote-card.js";
 import { section } from "#components/section/section.js";
@@ -20,7 +20,7 @@ import { waButton } from "#components/whatsapp-button/whatsapp-button.js";
 import { home } from "../content/home.js";
 import { pick as pickProjects } from "../content/projects.js";
 import { pick as pickQuotes } from "../content/quotes.js";
-import { contactContent, formCta, heroNote, processContent, projectsHead, runtime, site, testimonialsHead } from "../content/site.js";
+import { contactContent, formCta, heroNote, processContent, projectsHead, site, testimonialsHead } from "../content/site.js";
 import { defaultCta, ecosystem, solutions } from "../content/solutions.js";
 import { page } from "#layouts/base.js";
 
@@ -56,7 +56,9 @@ export const render = (ctx) => page(ctx, {
 ${hero(ctx, {
   ...home.hero,
   note: heroNote,
-  art: heroSystem({ caption: runtime.systemLabels[0] }),
+  /* the picture is a film, and the copy arrives with it (hero-motion.css) */
+  className: "hero-sync",
+  art: heroMotion(ctx, home.heroMotion),
   /* WhatsApp first — it is the primary action on every page of the site */
   actions: html`${waButton(ctx, { label: home.waLabel })}
           ${button(ctx, { href: "#contact", label: formCta, variant: "ghost", size: "lg", analytics: "hero_form_cta" })}`,

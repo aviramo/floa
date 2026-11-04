@@ -38,7 +38,7 @@ export const css = [
   "components/cta-band/cta-band.css",
   "components/contact/contact.css",
   "components/hero/hero.css",
-  "components/hero-system/hero-system.css",
+  "components/hero-motion/hero-motion.css",
   "components/hero-art/hero-art.css",
   "components/footer/footer.css",
   "components/legal/legal.css",
@@ -57,5 +57,5 @@ export const js = [
   "components/contact/contact.client.js",
   "components/faq/faq.client.js",
   "components/cta-dock/cta-dock.client.js",
-  "components/hero-system/hero-system.client.js",
+  "components/hero-motion/hero-motion.client.js",
 ];

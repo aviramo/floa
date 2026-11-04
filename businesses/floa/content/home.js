@@ -24,8 +24,19 @@ export const home = {
   waLabel: "לשיחת WhatsApp",
 
   hero: {
-    title: "אתרים, אפליקציות ואוטומציות שעוזרים לעסק לעבוד טוב יותר",
-    text: "מחדדים את המסר, בונים את הממשק ומחברים את התהליכים, מדף נחיתה ועד מערכת שמנהלת את העבודה",
+    title: "אתרים, אפליקציות ואוטומציות שהופכים בלגן לזרימה אחת",
+    text: "מבינים מה מעכב את העסק, ובונים את מה שמחבר הכול: דף נחיתה, אפליקציה, אוטומציה וסוכני AI שעובדים יחד",
+  },
+
+  /* The film beside the opening: the mess of a business becomes one flow, through
+     advice, websites and landing pages, apps, automations and AI. Its source
+     (scene, settings, how to render it again) is businesses/floa/motion-hero-flow/. */
+  heroMotion: {
+    src: "assets/hero-flow.mp4",
+    poster: "assets/hero-flow-poster.webp",
+    width: 1640,
+    height: 940,
+    label: "אנימציה: הבלגן של עסק הופך לזרימה אחת, דרך ייעוץ, אתרים ודפי נחיתה, אפליקציות, אוטומציות ו־AI",
   },
 
   solutions: {

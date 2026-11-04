@@ -11,9 +11,12 @@ import { html } from "../../lib/html.js";
    The note sits under the buttons — small and quiet — and, like the actions,
    comes BEFORE the art so it stays inside the first screen on a phone.
 
-   { title, text, chip, art, actions, note } */
-export const hero = (ctx, { title, text, chip, art, actions, note }) => html`
-  <section class="hero" id="hero">
+   `className` is for a hero whose picture is a film: "hero-sync" (hero-motion.css)
+   makes the copy arrive when the film starts.
+
+   { title, text, chip, art, actions, note, className } */
+export const hero = (ctx, { title, text, chip, art, actions, note, className }) => html`
+  <section class="${className ? `hero ${className}` : "hero"}" id="hero">
     <div class="container">
       <div class="hero-inner">
         ${ctx.isHome

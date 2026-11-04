@@ -112,15 +112,6 @@ export const runtime = {
   leadEndpoint: "https://floa-lead.floa-il.workers.dev/lead",
 
   formError: "לא הצלחנו לשלוח את הפרטים. אפשר לנסות שוב או לפנות אלינו ב־WhatsApp",
-
-  /* the captions the hero diagram cycles through, in node order */
-  systemLabels: [
-    "אתרים ודפי נחיתה",
-    "אפליקציות ומערכות",
-    "WhatsApp והתראות",
-    "טפסים ותשלומים",
-    "אוטומציות, נתונים ודוחות",
-  ],
 };
 
 /* --- the ask: IDENTICAL on every page --------------------------------------
