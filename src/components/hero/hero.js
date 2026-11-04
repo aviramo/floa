@@ -11,11 +11,13 @@ import { html } from "../../lib/html.js";
    The note sits under the buttons — small and quiet — and, like the actions,
    comes BEFORE the art so it stays inside the first screen on a phone.
 
-   `className` is for a hero whose picture is a film: "hero-sync" (hero-motion.css)
-   makes the copy arrive when the film starts.
+   `artFirst` puts the picture ABOVE the headline, for an opening that is led by
+   a film which says what the business is, with the words coming after it.
+   `className` "hero-sync" (hero-motion.css) makes that copy arrive once the film
+   has started.
 
-   { title, text, chip, art, actions, note, className } */
-export const hero = (ctx, { title, text, chip, art, actions, note, className }) => html`
+   { title, text, chip, art, actions, note, className, artFirst } */
+export const hero = (ctx, { title, text, chip, art, actions, note, className, artFirst }) => html`
   <section class="${className ? `hero ${className}` : "hero"}" id="hero">
     <div class="container">
       <div class="hero-inner">
@@ -23,6 +25,7 @@ export const hero = (ctx, { title, text, chip, art, actions, note, className }) 
           ? html`<span class="hero-logo">${ctx.brand}</span>`
           : html`<a href="${ctx.home()}" class="hero-logo">${ctx.brand}</a>`}
         ${chip && html`<p class="hero-chip"><span>${chip}</span></p>`}
+        ${artFirst && art}
         <h1 class="hero-title">${title}</h1>
         <p class="hero-text">${text}</p>
 
@@ -30,7 +33,7 @@ export const hero = (ctx, { title, text, chip, art, actions, note, className }) 
           ${actions}
         </div>
         ${note && html`<p class="hero-note">${note}</p>`}
-        ${art}
+        ${!artFirst && art}
       </div>
     </div>
   </section>`;

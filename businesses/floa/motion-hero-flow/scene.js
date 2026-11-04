@@ -215,7 +215,7 @@
     // --- pill: FLOA, and under it what FLOA does
     const gPill = grp(inner, 0, 0);
     txt(gPill, 'FLOA', { x: 0, y: 0, size: 52, font: F.RUBIK, weight: 700, color: C.WHITE, ls: 0.1 });
-    const line = L(cam, 'אתרים, אפליקציות ואוטומציות, עם AI', 0, 92, 44, C.INK2, 500);
+    const line = L(cam, 'ייעוץ, פיתוח וליווי: אתרים, אפליקציות ואוטומציות, עם AI', 0, 96, 42, C.INK2, 500);   // what FLOA is, said at the open and at the close
     ups.push(t => { const v = win(t, T.close + 0.05, SEAM); put(gPill, v); tf(line, { o: win(t, T.close + 0.05, SEAM), y: (1 - win(t, T.close + 0.05, SEAM)) * 12 }); });
 
     // --- gate 1: advice (a chat, then the three steps)

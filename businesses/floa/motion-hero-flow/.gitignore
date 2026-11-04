@@ -6,3 +6,4 @@ core.js
 render.py
 audio.py
 fonts/
+*.log

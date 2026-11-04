@@ -1,0 +1,9 @@
+# renders and review images
+out/
+stills/
+# copies of the motion-studio skill's own files: restore them from the skill (see README.md)
+core.js
+render.py
+audio.py
+fonts/
+*.log

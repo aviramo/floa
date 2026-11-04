@@ -2,7 +2,12 @@
    no component may invent a colour, a radius or a spacing step of its own.
 
    FLOA — "Clear Water": Swiss-precise, light and airy. One teal accent, large
-   type, generous air. RTL, mobile-first. */
+   type, generous air. RTL, mobile-first.
+
+   This is the ENGINE's default look, for the businesses built from it. A
+   business overrides any of it in its own theme.css, and FLOA does (see
+   businesses/floa/theme.css and "חופש עיצובי" in CLAUDE.md): the rules in this
+   file, including "colour is never decoration", do not bind it. */
 :root {
   /* --- colour: four hues, each with a job ---------------------------------
      Paper is a cool tinted ground, cards are pure white. Previously both were

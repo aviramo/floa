@@ -42,7 +42,7 @@ export const site = {
     metaPixel: "1729984108015909",          // Events Manager -> Data sources -> "המרות"
     ga4: "",
   },
-  themeColor: "#0E8C7E",
+  themeColor: "#1B74B3",
   tagline: "פתרונות דיגיטליים שעובדים עם העסק",
   slogan: "כל העסק. מערכת אחת. כתובת אחת",
   founder: "אופיר אבירם",

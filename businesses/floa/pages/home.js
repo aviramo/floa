@@ -56,8 +56,10 @@ export const render = (ctx) => page(ctx, {
 ${hero(ctx, {
   ...home.hero,
   note: heroNote,
-  /* the picture is a film, and the copy arrives with it (hero-motion.css) */
+  /* the opening is led by a film that says what FLOA is, and the words follow it
+     (hero-motion.css) */
   className: "hero-sync",
+  artFirst: true,
   art: heroMotion(ctx, home.heroMotion),
   /* WhatsApp first — it is the primary action on every page of the site */
   actions: html`${waButton(ctx, { label: home.waLabel })}

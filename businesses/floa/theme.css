@@ -1,92 +1,380 @@
 /* ==========================================================================
-   FLOA's own theme. It comes LAST in the stylesheet, so it wins over every
-   component, and it holds only what is true of FLOA and of no other business.
+   FLOA's own theme: "Morning Current". It comes LAST in the stylesheet, so it
+   wins over every component, and it holds only what is true of FLOA and of no
+   other business. FLOA has full design freedom (see CLAUDE.md); what binds this
+   file is quality, not style.
+
+   The idea is one: the page is a surface of water at first light, and the work
+   FLOA does is the current that runs through it. So there is light on the page
+   (a slow aurora of aqua and pearl behind everything), cards are glass with a
+   fleck of reflection, sections are separated by a slow wave and not by a line,
+   and the signature motion is the current itself: the wave edges that drift,
+   and the river down the side of the page that fills as you read.
+
+   What this file keeps:
+   - motion is ambient and slow, one or two things move per screen, and only
+     transform and opacity move (the waves are the one exception: a mask that
+     slides in a strip 68px high)
+   - everything that moves stops for a visitor who asked for less motion, and
+     the phone gets the still version of the page
+   - text on glass keeps 4.5:1 against what is behind it
    ========================================================================== */
 
-/* --- the AI panel, on the homepage ---------------------------------------
-   The one place the site says "we work with AI and agents", and it has to be
-   seen: a dark panel in a page that is otherwise light and airy. It is still
-   the one card component and the one card grid, re-lit; nothing in it is a
-   second recipe. Teal stays the action colour, so on the dark ground it is the
-   light teal-tint, never the base teal, which would sink. */
+/* --- the water: colour -------------------------------------------------- */
+:root {
+  --paper:        #E8F1F7;
+  --surface-sunk: #EEF5FA;
+
+  --ink:    #0C2A45;
+  --ink-2:  #27496A;
+  --muted:  #53697F;
+  --muted-2:#5D7288;
+
+  /* FLOA itself: the water's own blue. -dark carries text, -tint is the soft fill */
+  --teal:       #1B74B3;
+  --teal-dark:  #0F4F7F;
+  --teal-tint:  #CFE6F5;
+
+  /* "how it works" stays a hue of its own: the clear aqua at the shallow end */
+  --water:      #3FB2D6;
+  --water-soft: #9BDDF0;
+  --water-dark: #0F6C8C;
+  --water-tint: #D2EEF7;
+
+  --hairline:   #D4E3EE;
+  --hairline-2: #E3EDF5;
+
+  --sea-light:  #4FAEE8;     /* the lit side of a gradient */
+  --sea-deep:   #0E4278;     /* the deep side */
+}
+
+/* --- the light on the page ----------------------------------------------- */
+html { background: linear-gradient(180deg, #F1F8FC 0%, #E4F0F8 45%, #D9E9F4 100%); }
+body { background: transparent; isolation: isolate; }
+body::before {                              /* the aurora: soft light that drifts, behind everything */
+  content: "";
+  position: fixed;
+  inset: -12vmax;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(42vmax 34vmax at 12% 8%,  rgba(255, 255, 255, .95), rgba(255, 255, 255, 0) 70%),
+    radial-gradient(46vmax 38vmax at 92% 20%, rgba(96, 178, 232, .42),  rgba(96, 178, 232, 0) 70%),
+    radial-gradient(50vmax 40vmax at 6% 80%,  rgba(140, 214, 238, .40), rgba(140, 214, 238, 0) 70%),
+    radial-gradient(44vmax 36vmax at 90% 94%, rgba(255, 255, 255, .75), rgba(255, 255, 255, 0) 70%);
+  animation: aurora 48s ease-in-out infinite alternate;
+}
+@keyframes aurora {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(2.5vmax, -2vmax, 0) scale(1.05); }
+  100% { transform: translate3d(-2vmax, 2.5vmax, 0) scale(1); }
+}
+
+/* --- the current: a slow wave between sections --------------------------- */
+.section > .container { position: relative; z-index: 1; }
+.section::before,
+.section::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  z-index: 0;
+  -webkit-mask-repeat: repeat-x;
+  mask-repeat: repeat-x;
+}
+.section::before {
+  top: -34px;
+  height: 68px;
+  background: linear-gradient(180deg, rgba(96, 178, 232, .34), rgba(96, 178, 232, 0) 94%);
+  -webkit-mask-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 64' preserveAspectRatio='none'%3E%3Cpath d='M0,41.8 L20,44.5 L40,45.6 L60,45.2 L80,44.2 L100,43.1 L120,42.6 L140,43.1 L160,44.6 L180,46.8 L200,48.8 L220,49.9 L240,49.4 L260,47.1 L280,43.0 L300,37.6 L320,31.8 L340,26.5 L360,22.6 L380,20.5 L400,20.5 L420,22.0 L440,24.6 L460,27.3 L480,29.4 L500,30.6 L520,30.6 L540,30.0 L560,29.2 L580,29.1 L600,30.2 L620,32.9 L640,37.0 L660,42.0 L680,47.2 L700,51.5 L720,54.1 L740,54.7 L760,53.2 L780,50.0 L800,45.8 L820,41.5 L840,37.9 L860,35.5 L880,34.4 L900,34.4 L920,34.8 L940,34.9 L960,34.1 L980,32.1 L1000,29.0 L1020,25.2 L1040,21.6 L1060,18.9 L1080,17.9 L1100,18.9 L1120,22.1 L1140,26.8 L1160,32.2 L1180,37.5 L1200,41.8 L1200,64 L0,64 Z' fill='black'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 64' preserveAspectRatio='none'%3E%3Cpath d='M0,41.8 L20,44.5 L40,45.6 L60,45.2 L80,44.2 L100,43.1 L120,42.6 L140,43.1 L160,44.6 L180,46.8 L200,48.8 L220,49.9 L240,49.4 L260,47.1 L280,43.0 L300,37.6 L320,31.8 L340,26.5 L360,22.6 L380,20.5 L400,20.5 L420,22.0 L440,24.6 L460,27.3 L480,29.4 L500,30.6 L520,30.6 L540,30.0 L560,29.2 L580,29.1 L600,30.2 L620,32.9 L640,37.0 L660,42.0 L680,47.2 L700,51.5 L720,54.1 L740,54.7 L760,53.2 L780,50.0 L800,45.8 L820,41.5 L840,37.9 L860,35.5 L880,34.4 L900,34.4 L920,34.8 L940,34.9 L960,34.1 L980,32.1 L1000,29.0 L1020,25.2 L1040,21.6 L1060,18.9 L1080,17.9 L1100,18.9 L1120,22.1 L1140,26.8 L1160,32.2 L1180,37.5 L1200,41.8 L1200,64 L0,64 Z' fill='black'/%3E%3C/svg%3E");
+  -webkit-mask-size: 1200px 100%;
+  mask-size: 1200px 100%;
+  animation: current-a 64s linear infinite;
+}
+.section::after {
+  top: -24px;
+  height: 52px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .8), rgba(255, 255, 255, 0) 94%);
+  -webkit-mask-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 64' preserveAspectRatio='none'%3E%3Cpath d='M0,44.9 L20,45.8 L40,44.4 L60,40.0 L80,33.6 L100,27.0 L120,22.3 L140,21.0 L160,23.0 L180,27.1 L200,31.4 L220,34.4 L240,35.5 L260,35.5 L280,35.7 L300,37.5 L320,41.2 L340,45.9 L360,49.9 L380,51.3 L400,49.2 L420,44.0 L440,37.4 L460,31.4 L480,27.8 L500,27.0 L520,28.1 L540,29.6 L560,30.0 L580,28.9 L600,27.1 L620,26.2 L640,27.6 L660,32.0 L680,38.4 L700,45.0 L720,49.7 L740,51.0 L760,49.0 L780,44.9 L800,40.6 L820,37.6 L840,36.5 L860,36.5 L880,36.3 L900,34.5 L920,30.8 L940,26.1 L960,22.1 L980,20.7 L1000,22.8 L1020,28.0 L1040,34.6 L1060,40.6 L1080,44.2 L1100,45.0 L1120,43.9 L1140,42.4 L1160,42.0 L1180,43.1 L1200,44.9 L1200,64 L0,64 Z' fill='black'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 64' preserveAspectRatio='none'%3E%3Cpath d='M0,44.9 L20,45.8 L40,44.4 L60,40.0 L80,33.6 L100,27.0 L120,22.3 L140,21.0 L160,23.0 L180,27.1 L200,31.4 L220,34.4 L240,35.5 L260,35.5 L280,35.7 L300,37.5 L320,41.2 L340,45.9 L360,49.9 L380,51.3 L400,49.2 L420,44.0 L440,37.4 L460,31.4 L480,27.8 L500,27.0 L520,28.1 L540,29.6 L560,30.0 L580,28.9 L600,27.1 L620,26.2 L640,27.6 L660,32.0 L680,38.4 L700,45.0 L720,49.7 L740,51.0 L760,49.0 L780,44.9 L800,40.6 L820,37.6 L840,36.5 L860,36.5 L880,36.3 L900,34.5 L920,30.8 L940,26.1 L960,22.1 L980,20.7 L1000,22.8 L1020,28.0 L1040,34.6 L1060,40.6 L1080,44.2 L1100,45.0 L1120,43.9 L1140,42.4 L1160,42.0 L1180,43.1 L1200,44.9 L1200,64 L0,64 Z' fill='black'/%3E%3C/svg%3E");
+  -webkit-mask-size: 1200px 100%;
+  mask-size: 1200px 100%;
+  animation: current-b 90s linear infinite reverse;
+}
+@keyframes current-a { to { -webkit-mask-position: 1200px 0; mask-position: 1200px 0; } }
+@keyframes current-b { to { -webkit-mask-position: 1200px 0; mask-position: 1200px 0; } }
+
+/* the water line under a heading: calm, fixed */
+.section-head::after {
+  content: "";
+  display: block;
+  width: 200px;
+  height: 18px;
+  margin: 18px auto 0;
+  background: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='18' viewBox='0 0 200 18'%3E%3Cdefs%3E%3ClinearGradient id='g'%3E%3Cstop offset='0' stop-color='%234FAEE8' stop-opacity='0'/%3E%3Cstop offset='.5' stop-color='%231B74B3'/%3E%3Cstop offset='1' stop-color='%234FAEE8' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0 9 C25 1 50 17 75 9 S125 1 150 9 S185 13 200 9' fill='none' stroke='url(%23g)' stroke-width='3.2' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+/* --- glass --------------------------------------------------------------- */
+.card,
+.project-card,
+.tl-item,
+.contact-panel {
+  background: linear-gradient(150deg, rgba(255, 255, 255, .84), rgba(255, 255, 255, .54));
+  border-color: rgba(255, 255, 255, .95);
+  box-shadow: 0 22px 44px -24px rgba(15, 79, 127, .38), inset 0 1px 0 #fff, inset 0 -1px 0 rgba(255, 255, 255, .4);
+}
+.card { position: relative; overflow: hidden; isolation: isolate; }
+.card-teal, .card-water, .card-clay, .card-amber { border-top-color: var(--accent); }
+
+/* the reflection: a fleck of light on the glass, and a sheen that crosses it when you touch it */
+.card::after {
+  content: "";
+  position: absolute;
+  top: 9px;
+  left: 14px;
+  width: 74px;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 30% 35%, rgba(255, 255, 255, .95), rgba(255, 255, 255, 0) 70%);
+  transform: rotate(-18deg);
+  pointer-events: none;
+}
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 36%, rgba(255, 255, 255, .6) 48%, transparent 60%);
+  transform: translateX(-130%);
+  transition: transform .9s var(--ease);
+}
+@media (hover: hover) { .card:hover::before { transform: translateX(130%); } }
+.card-icon {
+  background: linear-gradient(145deg, rgba(255, 255, 255, .98), var(--teal-tint));
+  box-shadow: inset 0 1px 0 #fff, 0 8px 16px -8px rgba(15, 79, 127, .4);
+}
+.eyebrow { background: rgba(255, 255, 255, .72); border: 1px solid rgba(255, 255, 255, .95); }
+
+/* --- buttons: lit water ---------------------------------------------------- */
+.btn { position: relative; overflow: hidden; isolation: isolate; }
+.btn:active { transform: scale(.97); }
+.btn-primary, .btn-wa {
+  background: linear-gradient(180deg, #2882C6 0%, #1A6FAD 100%);
+  border-color: rgba(255, 255, 255, .45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), 0 16px 30px -14px rgba(27, 116, 179, .75);
+}
+.btn-primary:hover, .btn-wa:hover {
+  background: linear-gradient(180deg, #1F78BC 0%, #0F4F7F 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45), 0 18px 36px -14px rgba(27, 116, 179, .6);
+}
+.btn-ghost {
+  background: rgba(255, 255, 255, .6);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-color: rgba(255, 255, 255, .95);
+}
+.btn-ghost:hover { border-color: rgba(27, 116, 179, .4); }
+.btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, .5) 50%, transparent 62%);
+  transform: translateX(-130%);
+  transition: transform .8s var(--ease);
+}
+@media (hover: hover) { .btn:hover::after { transform: translateX(130%); } }
+
+/* --- the opening ---------------------------------------------------------- */
+.hero-title {
+  background: linear-gradient(180deg, var(--ink) 28%, #1F72B8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+/* the film is a pane of glass on the water, and the drop in it sends rings behind it */
+.hero-motion { position: relative; isolation: isolate; }
+.hero-motion::before {
+  content: "";
+  position: absolute;
+  inset: -16% -12%;
+  z-index: -1;
+  pointer-events: none;
+  background: repeating-radial-gradient(ellipse 50% 42% at 50% 54%, rgba(27, 116, 179, 0) 0 52px, rgba(27, 116, 179, .11) 53px 55px);
+  -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 54%, #000 18%, transparent 72%);
+  mask-image: radial-gradient(ellipse 50% 50% at 50% 54%, #000 18%, transparent 72%);
+}
+.hero-motion-video {
+  border-radius: 28px;
+  box-shadow: 0 34px 64px -34px rgba(15, 79, 127, .5), 0 0 0 1px rgba(255, 255, 255, .85);
+}
+
+/* --- the process: the rail is the river ------------------------------------ */
+.timeline::before { width: 3px; border-radius: 3px; opacity: .7; box-shadow: 0 0 14px rgba(79, 174, 232, .45); }
+.tl-num { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .6), 0 10px 20px -8px rgba(15, 79, 127, .45); }
+
+/* --- the current down the side of the page: it fills as you read ------------ */
+@supports (animation-timeline: scroll()) {
+  body::after {
+    content: "";
+    position: fixed;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: 4px;
+    z-index: 70;
+    pointer-events: none;
+    background: linear-gradient(180deg, #9BDDF0, #1B74B3 55%, #0F4F7F);
+    box-shadow: 0 0 12px rgba(79, 174, 232, .7);
+    border-radius: 0 4px 4px 0;
+    transform-origin: 50% 0;
+    transform: scaleY(0);
+    animation: river-fill linear both;
+    animation-timeline: scroll(root block);
+  }
+  @keyframes river-fill { to { transform: scaleY(1); } }
+}
+
+/* --- the AI panel: deep water -------------------------------------------- */
 .ai-grid {
   position: relative;
   isolation: isolate;
   margin-bottom: var(--s-9);
   padding: var(--pad-panel);
-  background:
-    radial-gradient(60% 90% at 88% 0%, rgba(14, 140, 126, .55), transparent 62%),
-    radial-gradient(50% 70% at 6% 100%, rgba(53, 143, 188, .35), transparent 60%),
-    linear-gradient(160deg, #0F2A33 0%, #0B1F26 100%);
+  background: linear-gradient(155deg, #17639F 0%, #0F4D88 46%, #0A3566 100%);
+  border: 1px solid rgba(255, 255, 255, .4);
   border-radius: var(--r-lg);
-  box-shadow: 0 30px 60px -28px rgba(15, 42, 51, .55);
+  box-shadow: 0 34px 64px -26px rgba(14, 66, 120, .7), inset 0 1px 0 rgba(255, 255, 255, .55);
   overflow: hidden;
 }
-/* a fine grid of dots behind the cards: the surface of a screen, not decoration */
-.ai-grid::before {
+.ai-grid::before {                          /* light moving under the surface */
+  content: "";
+  position: absolute;
+  inset: -25%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(34% 28% at 22% 18%, rgba(255, 255, 255, .20), transparent 70%),
+    radial-gradient(30% 26% at 78% 70%, rgba(120, 215, 255, .22), transparent 70%),
+    radial-gradient(26% 22% at 60% 12%, rgba(255, 255, 255, .10), transparent 70%);
+  animation: caustic 26s ease-in-out infinite alternate;
+}
+.ai-grid::after {                           /* faint ripples across the surface */
   content: "";
   position: absolute;
   inset: 0;
   z-index: -1;
-  background-image: radial-gradient(rgba(255, 255, 255, .09) 1px, transparent 1.4px);
-  background-size: 22px 22px;
+  pointer-events: none;
+  background: repeating-linear-gradient(100deg, rgba(255, 255, 255, .06) 0 2px, transparent 2px 28px);
+  -webkit-mask-image: linear-gradient(180deg, #000, transparent 85%);
   mask-image: linear-gradient(180deg, #000, transparent 85%);
 }
-
+@keyframes caustic {
+  0%   { transform: translate3d(-3%, -2%, 0) scale(1); }
+  100% { transform: translate3d(4%, 3%, 0) scale(1.08); }
+}
 .ai-grid .card {
-  --accent: var(--teal-tint);
-  background: rgba(255, 255, 255, .06);
-  border: 1px solid rgba(255, 255, 255, .13);
-  border-top: 2px solid rgba(201, 230, 222, .75);
-  box-shadow: none;
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+  background: linear-gradient(150deg, rgba(6, 38, 78, .30), rgba(6, 38, 78, .16));
+  border: 1px solid rgba(255, 255, 255, .42);
+  border-top-color: rgba(255, 255, 255, .62);
+  box-shadow: 0 18px 36px -20px rgba(4, 30, 64, .65), inset 0 1px 0 rgba(255, 255, 255, .6);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
 }
-.ai-grid .card:hover {
-  transform: translateY(-4px);
-  background: rgba(255, 255, 255, .1);
-  border-color: rgba(201, 230, 222, .45);
-  border-top-color: rgba(201, 230, 222, .9);
-  box-shadow: 0 18px 36px -18px rgba(0, 0, 0, .5);
-}
+.ai-grid .card::after { background: radial-gradient(ellipse at 30% 35%, rgba(255, 255, 255, .7), rgba(255, 255, 255, 0) 70%); }
 .ai-grid .card h3 { color: #fff; }
-.ai-grid .card p  { color: rgba(226, 238, 235, .82); }
-.ai-grid .card-icon {
-  background: rgba(201, 230, 222, .2);
-  color: #E6F4F0;
-}
+.ai-grid .card p  { color: #F1F8FF; }
+.ai-grid .card-icon { background: linear-gradient(145deg, #fff, var(--teal-tint)); color: var(--teal-dark); }
 
-/* the lead card carries the claim: bigger type, a lit badge, and the pill that
-   names the subject */
+/* the lead card carries the claim: bigger type, a lit tile, and the pill that names the subject */
 .ai-grid .card-wide {
   padding: var(--pad-panel);
-  background: linear-gradient(135deg, rgba(14, 140, 126, .32), rgba(255, 255, 255, .05));
-  border-color: rgba(201, 230, 222, .3);
-  border-top-color: rgba(201, 230, 222, .9);
+  background: linear-gradient(135deg, rgba(6, 38, 78, .34), rgba(6, 38, 78, .14));
 }
 .ai-grid .card-wide .card-icon-tile {
   width: 72px;
   height: 72px;
   border-radius: 20px;
-  background: var(--teal-tint);
-  color: var(--teal-dark);
-  box-shadow: 0 0 0 8px rgba(201, 230, 222, .12), 0 0 40px rgba(14, 140, 126, .6);
+  background: #fff;
+  color: var(--teal);
+  box-shadow: 0 0 0 8px rgba(255, 255, 255, .18), 0 14px 32px -8px rgba(4, 30, 64, .5);
 }
 .ai-grid .card-wide .card-icon-tile svg { width: 36px; height: 36px; }
 .ai-grid .card-wide h3 { font-size: clamp(1.6rem, 3vw, 2.3rem); line-height: 1.15; }
-.ai-grid .card-wide p {
-  max-width: 52rem;
-  font-size: var(--fs-lead);
-  color: rgba(236, 246, 243, .9);
-}
-/* the pill names the subject, so it reads BEFORE the headline, not after the copy */
+.ai-grid .card-wide p { max-width: 52rem; font-size: var(--fs-lead); color: #fff; }
 .ai-grid .card-wide .card-body { display: flex; flex-direction: column; }
 .ai-grid .card-wide .card-badge {
   order: -1;
   margin-top: 0;
   margin-bottom: var(--s-3);
-  background: var(--teal-tint);
+  background: #fff;
   color: var(--teal-dark);
   font-size: .8rem;
   letter-spacing: .06em;
+}
+
+/* --- the ask: deep water too ------------------------------------------------ */
+.cta-inner {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(60% 80% at 15% 0%, rgba(255, 255, 255, .16), transparent 70%),
+    radial-gradient(50% 70% at 100% 100%, rgba(120, 215, 255, .20), transparent 70%),
+    linear-gradient(155deg, #17639F 0%, #0F4D88 50%, #0A3566 100%);
+  border: 1px solid rgba(255, 255, 255, .4);
+  box-shadow: 0 34px 64px -28px rgba(14, 66, 120, .65), inset 0 1px 0 rgba(255, 255, 255, .55);
+}
+.cta-inner h2 { color: #fff; }
+.cta-inner p  { color: #F1F8FF; }
+.cta-inner .btn { background: #fff; color: var(--teal-dark); border-color: #fff; box-shadow: 0 16px 30px -14px rgba(4, 30, 64, .6); }
+.cta-inner .btn:hover { background: #F4FAFF; color: var(--teal-dark); box-shadow: 0 18px 36px -14px rgba(4, 30, 64, .6); }
+.cta-inner .btn::after { background: linear-gradient(105deg, transparent 38%, rgba(27, 116, 179, .22) 50%, transparent 62%); }
+
+/* --- the form: a pane of glass --------------------------------------------- */
+.contact-panel { -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.field input, .field textarea { background-color: rgba(255, 255, 255, .78); border-color: rgba(255, 255, 255, .95); box-shadow: inset 0 2px 6px rgba(30, 90, 150, .08); }
+.field input:focus { box-shadow: 0 0 0 4px rgba(27, 116, 179, .16); }
+.form-success { border-color: rgba(27, 116, 179, .22); }
+
+/* --- the foot: the sea floor ------------------------------------------------ */
+.site-footer { background: linear-gradient(180deg, #0F4F7F 0%, #0C2A45 100%); }
+.site-footer::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -40px;
+  height: 41px;
+  background: #0F4F7F;
+  pointer-events: none;
+  -webkit-mask: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 64' preserveAspectRatio='none'%3E%3Cpath d='M0,41.8 L20,44.5 L40,45.6 L60,45.2 L80,44.2 L100,43.1 L120,42.6 L140,43.1 L160,44.6 L180,46.8 L200,48.8 L220,49.9 L240,49.4 L260,47.1 L280,43.0 L300,37.6 L320,31.8 L340,26.5 L360,22.6 L380,20.5 L400,20.5 L420,22.0 L440,24.6 L460,27.3 L480,29.4 L500,30.6 L520,30.6 L540,30.0 L560,29.2 L580,29.1 L600,30.2 L620,32.9 L640,37.0 L660,42.0 L680,47.2 L700,51.5 L720,54.1 L740,54.7 L760,53.2 L780,50.0 L800,45.8 L820,41.5 L840,37.9 L860,35.5 L880,34.4 L900,34.4 L920,34.8 L940,34.9 L960,34.1 L980,32.1 L1000,29.0 L1020,25.2 L1040,21.6 L1060,18.9 L1080,17.9 L1100,18.9 L1120,22.1 L1140,26.8 L1160,32.2 L1180,37.5 L1200,41.8 L1200,64 L0,64 Z' fill='black'/%3E%3C/svg%3E") 0 100% / 1200px 100% repeat-x;
+  mask: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 64' preserveAspectRatio='none'%3E%3Cpath d='M0,41.8 L20,44.5 L40,45.6 L60,45.2 L80,44.2 L100,43.1 L120,42.6 L140,43.1 L160,44.6 L180,46.8 L200,48.8 L220,49.9 L240,49.4 L260,47.1 L280,43.0 L300,37.6 L320,31.8 L340,26.5 L360,22.6 L380,20.5 L400,20.5 L420,22.0 L440,24.6 L460,27.3 L480,29.4 L500,30.6 L520,30.6 L540,30.0 L560,29.2 L580,29.1 L600,30.2 L620,32.9 L640,37.0 L660,42.0 L680,47.2 L700,51.5 L720,54.1 L740,54.7 L760,53.2 L780,50.0 L800,45.8 L820,41.5 L840,37.9 L860,35.5 L880,34.4 L900,34.4 L920,34.8 L940,34.9 L960,34.1 L980,32.1 L1000,29.0 L1020,25.2 L1040,21.6 L1060,18.9 L1080,17.9 L1100,18.9 L1120,22.1 L1140,26.8 L1160,32.2 L1180,37.5 L1200,41.8 L1200,64 L0,64 Z' fill='black'/%3E%3C/svg%3E") 0 100% / 1200px 100% repeat-x;
+}
+
+/* --- the remaining hard-coded teal of the components, in the new blue ------- */
+.flow-step:last-child .flow-label { border-color: rgba(27, 116, 179, .45); }
+.project-card:hover { border-color: rgba(27, 116, 179, .3); }
+.hero-illust .bar-tint   { fill: rgba(27, 116, 179, .22); }
+.hero-illust .hub-glow   { filter: drop-shadow(0 10px 16px rgba(27, 116, 179, .4)); }
+
+/* --- less motion: for anyone who asked, and on a phone ---------------------- */
+@media (prefers-reduced-motion: reduce) {
+  body::before, .section::before, .section::after, .ai-grid::before { animation: none !important; }
+  body::after { animation: none !important; transform: scaleY(1) !important; opacity: .55; }
+  .card::before, .btn::after { transition: none !important; }
+}
+@media (max-width: 899px) {
+  /* the still version: the light stays, the drifting stops, one wave instead of two,
+     and no blur behind glass (it costs a phone more than it gives) */
+  body::before, .section::before, .ai-grid::before { animation: none; }
+  .section::after { display: none; }
+  .ai-grid .card, .contact-panel, .btn-ghost { -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+@media (forced-colors: active) {
+  .hero-title { background: none; -webkit-text-fill-color: currentColor; color: CanvasText; }
 }

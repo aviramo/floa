@@ -7,8 +7,8 @@ export const home = {
   showTestimonials: false,
 
   meta: {
-    title: "FLOA | אתרים, אפליקציות ואוטומציות לעסק",
-    description: "מחדדים את המסר, בונים את הממשק ומחברים את התהליכים. מדף נחיתה ועד מערכת שמנהלת את העבודה, בכתובת אחת.",
+    title: "FLOA | ייעוץ, פיתוח וליווי: אתרים, אפליקציות ואוטומציות לעסק",
+    description: "ייעוץ, פיתוח וליווי לעסק: מבינים מה מעכב אותו, בונים אתר, אפליקציה, אוטומציה וסוכני AI שמחברים את העבודה, ונשארים לצידכם אחרי העלייה.",
   },
 
   /* the share card. `title` is the ONLY text on it, so it has to carry the page
@@ -24,19 +24,17 @@ export const home = {
   waLabel: "לשיחת WhatsApp",
 
   hero: {
-    title: "אתרים, אפליקציות ואוטומציות שהופכים בלגן לזרימה אחת",
-    text: "מבינים מה מעכב את העסק, ובונים את מה שמחבר הכול: דף נחיתה, אפליקציה, אוטומציה וסוכני AI שעובדים יחד",
+    title: "ייעוץ, פיתוח וליווי שהופכים בלגן לזרימה אחת",
+    text: "אתרים, אפליקציות, אוטומציות וסוכני AI שבנויים סביב העסק שלכם: מבינים מה מעכב אותו, בונים את מה שמחבר הכול, ונשארים איתכם אחרי העלייה",
   },
 
   /* The film beside the opening: the mess of a business becomes one flow, through
      advice, websites and landing pages, apps, automations and AI. Its source
      (scene, settings, how to render it again) is businesses/floa/motion-hero-flow/. */
   heroMotion: {
-    src: "assets/hero-flow.mp4",
-    poster: "assets/hero-flow-poster.webp",
-    width: 1640,
-    height: 940,
-    label: "אנימציה: הבלגן של עסק הופך לזרימה אחת, דרך ייעוץ, אתרים ודפי נחיתה, אפליקציות, אוטומציות ו־AI",
+    label: "אנימציה: FLOA, ייעוץ, פיתוח וליווי של אתרים, אפליקציות ואוטומציות עם AI. הבלגן של עסק הופך לזרימה אחת, דרך ייעוץ, אתרים ודפי נחיתה, אפליקציות, אוטומציות ו־AI",
+    wide: { src: "assets/hero-flow.mp4", poster: "assets/hero-flow-poster.webp", width: 1640, height: 940 },
+    tall: { src: "assets/hero-flow-tall.mp4", poster: "assets/hero-flow-tall-poster.webp", width: 880, height: 1100 },
   },
 
   solutions: {
