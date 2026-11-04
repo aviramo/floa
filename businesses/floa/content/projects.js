@@ -108,13 +108,13 @@ export const projects = {
     ],
   },
 
-  /* Two clients with nothing public to open, so no `href`: the card shows the
-     client's mark where a capture would be, and says what was built in the
-     client's own testimonial words, with no label and no link. */
+  /* Two clients with nothing public to open, so no `href`: the card has no
+     picture, carries the client's mark small at its head, and says what was built
+     in the client's own testimonial words, with no label and no link. */
   telaviv: {
     title: "עיריית תל אביב",
     shots: [
-      { src: "assets/client-telaviv.webp", width: 900, height: 491, alt: "הסמל של עיריית תל אביב-יפו" },
+      { src: "assets/client-telaviv.webp", width: 420, height: 229, alt: "הסמל של עיריית תל אביב-יפו" },
     ],
     parts: [
       { text: "תהליך בין־מחלקתי שבו משימה באגף אחד מפעילה פעולה באגף אחר, עם ממשק משתמש, בקרות ותהליך עבודה מוסדר" },

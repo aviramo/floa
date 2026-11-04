@@ -1,16 +1,15 @@
 import { readFileSync } from "node:fs";
-import { html } from "#lib/html.js";
+
+import { faqContent, processContent } from "./site.js";
 
 /* Each solution's hero shapes live beside this file as plain SVG, so the picture
    can be edited as a picture. */
 const shapes = (slug) => readFileSync(new URL(`./hero-art/${slug}.svg`, import.meta.url), "utf8").trimEnd();
 
-/* a link to the other solution, from inside a line of copy */
-const to = (ctx, slug, text) => html`<a href="${ctx.url(`${slug}/`)}">${text}</a>`;
-
-/* --- shared by both: the ecosystem row, which sits BELOW the form ------------
-   The link to the other solution must not compete with the ask, so it waits
-   until after it. */
+/* --- the ecosystem row: the HOMEPAGE's, below the form --------------------------
+   It is the one place the two solutions are shown side by side. A solution page
+   is about its own subject and nothing else, so it does not carry this row and
+   does not link across to the other solution. */
 export const ecosystem = {
   head: {
     eyebrow: "התמונה המלאה",
@@ -117,7 +116,7 @@ export const solutions = [
         { title: "UX/UI", text: "היררכיה ברורה, מסך שנוח לעבוד בו ופעולה אחת שאי אפשר לפספס" },
         { title: "פיתוח", text: "אתר, דף נחיתה או אפליקציה שנבנים יציב, מהיר ומוכן לגדול" },
         { title: "התאמה למובייל", text: "נטען מהר, נקי וקריא בכל מסך, כי שם רוב המשתמשים" },
-        { title: "חיבורים", text: "טפסים, תשלומים, WhatsApp והמערכות שכבר עובדות אצלכם, מחוברים לתוך המוצר" },
+        { title: "חיבורים", text: "טפסים, תשלומים ו־WhatsApp מחוברים לתוך המוצר, כדי שהמבקר יוכל להשלים את הפעולה במקום" },
       ],
     },
 
@@ -126,7 +125,7 @@ export const solutions = [
         eyebrow: "עבודות",
         title: "מוצרים דיגיטליים שנבנו מהרעיון ועד השימוש בפועל",
       },
-      projects: ["once", "chords", "harpatka", "roster", "aum", "perfecti"],
+      projects: ["once", "chords", "harpatka", "aum", "perfecti"],
     },
 
     cta: {
@@ -134,18 +133,37 @@ export const solutions = [
       text: "בשיחה קצרה נבין מה נכון לבנות, ואיך זה נראה בפועל",
     },
 
-    ecoNote: (ctx) => html`אתר, דף נחיתה או אפליקציה הם המקום שבו הלקוח פוגש אתכם. כשמחברים אליהם גם ${to(ctx, "business-systems", "מערכת ואוטומציות")}, כל פנייה ממשיכה לתהליך עבודה מסודר.`,
-
     advantage: {
       head: {
         eyebrow: "היתרון",
         title: "למה לבנות את המוצר הדיגיטלי דווקא עם FLOA",
-        text: "כי מוצר דיגיטלי הוא לא רק מסך. הוא צריך לעבוד גם אחרי הקליק",
+        text: "כי מוצר דיגיטלי הוא לא רק מסך: הוא צריך להסביר, להוביל לפעולה ולעבוד בכל מכשיר",
       },
       items: [
         { title: "מאפיון ועד קוד, כתובת אחת", text: "לא מתאמים בנפרד בין ספק אפיון, מעצב ומפתח" },
-        { title: "מוצר שהוא חלק ממערכת", text: "לא מסך מנותק, אלא כזה שמתחבר לתהליכי העבודה של העסק" },
-        { title: "15+ שנות ניסיון במוצרים", text: "אתרים, אפליקציות ומערכות שנבנו ורצו בעולם האמיתי" },
+        { title: "מסר לפני עיצוב", text: "קודם מחדדים מה מציעים ולמי, ורק אחר כך מעצבים ובונים" },
+        { title: "15+ שנות ניסיון במוצרים", text: "אתרים, דפי נחיתה ואפליקציות שנבנו ורצו בעולם האמיתי" },
+      ],
+    },
+
+    /* the questions and the steps are this page's own: a shared list would answer
+       for systems on a page about a website */
+    faq: {
+      ...faqContent,
+      items: [
+        { q: "יש כבר אתר, צריך לבנות מחדש?", a: "לא תמיד. קודם בודקים מה אפשר לשמור, לחדד או לשפר" },
+        faqContent.items[1],
+        faqContent.items[2],
+        { q: "אפשר להתחיל מדף אחד?", a: "כן. מתחילים במה שהכי משפיע ומרחיבים רק כשיש צורך" },
+      ],
+    },
+    process: {
+      ...processContent,
+      steps: [
+        processContent.steps[0],
+        { title: "תכנון", text: "מפשטים את המסלול של המשתמש ומגדירים פתרון ברור לפני שמתחילים לבנות" },
+        { title: "בנייה", text: "מקימים את האתר, דף הנחיתה או האפליקציה ומחברים אליהם טפסים, תשלום ו־WhatsApp" },
+        processContent.steps[3],
       ],
     },
   },
@@ -243,6 +261,7 @@ export const solutions = [
         { title: "מעבר בין צוותים", steps: ["משימה הסתיימה", "המחלקה הבאה מתחילה"] },
         { title: "מסמך והתראה", steps: ["טופס", "מסמך", "הודעה"] },
       ],
+      projects: ["roster"],
       quotes: ["erez", "itzik"],
     },
 
@@ -273,8 +292,6 @@ export const solutions = [
       text: "נמפה את התהליך, נזהה את הפעולות שחוזרות על עצמן ונראה מה אפשר להפוך למסודר",
     },
 
-    ecoNote: (ctx) => html`מערכת חזקה מתחילה במקום שבו הלקוח פוגש אתכם. כשמחברים אותה ל${to(ctx, "digital-products", "אתר, לדף הנחיתה או לאפליקציה")}, המידע זורם מהפנייה ועד לביצוע.`,
-
     advantage: {
       head: {
         eyebrow: "היתרון",
@@ -285,6 +302,25 @@ export const solutions = [
         { title: "מבינים את התהליך לפני הכלי", text: "קודם ממפים איך העסק באמת עובד, ורק אז מחליטים מה נבנה" },
         { title: "פחות ידיים, פחות טעויות", text: "מה שרץ אוטומטית לא נשכח ולא מוקלד לא נכון" },
         { title: "חיבור של מה שכבר יש", text: "לא עוד כלי חדש, אלא לגרום לקיים לעבוד יחד" },
+      ],
+    },
+
+    faq: {
+      ...faqContent,
+      items: [
+        faqContent.items[0],
+        faqContent.items[1],
+        faqContent.items[2],
+        { q: "אפשר להתחיל מתהליך אחד?", a: "כן. מתחילים בתהליך שכואב הכי הרבה ומרחיבים רק כשיש צורך" },
+      ],
+    },
+    process: {
+      ...processContent,
+      steps: [
+        processContent.steps[0],
+        processContent.steps[1],
+        { title: "בנייה וחיבור", text: "מקימים את המערכת או האוטומציות ומחברים בין הכלים שכבר עובדים אצלכם" },
+        processContent.steps[3],
       ],
     },
   },

@@ -5,7 +5,6 @@ import { card, cardGrid } from "#components/card/card.js";
 import { chips } from "#components/chips/chips.js";
 import { contact } from "#components/contact/contact.js";
 import { ctaBand } from "#components/cta-band/cta-band.js";
-import { ecoGrid } from "#components/eco-grid/eco-grid.js";
 import { faq } from "#components/faq/faq.js";
 import { flow, flowCards } from "#components/flow/flow.js";
 import { hero } from "#components/hero/hero.js";
@@ -20,8 +19,8 @@ import { waButton } from "#components/whatsapp-button/whatsapp-button.js";
 
 import { pick as pickProjects } from "../content/projects.js";
 import { pick as pickQuotes } from "../content/quotes.js";
-import { contactContent, faqContent, formCta, heroNote, processContent, site, testimonialsHead } from "../content/site.js";
-import { defaultCta, ecosystem, solutions } from "../content/solutions.js";
+import { contactContent, formCta, heroNote, site, testimonialsHead } from "../content/site.js";
+import { defaultCta } from "../content/solutions.js";
 import { page } from "#layouts/base.js";
 
 /* ==========================================================================
@@ -29,8 +28,10 @@ import { page } from "#layouts/base.js";
 
    A solution page is: the promise, the pain, WHAT can be built, what you get,
    the PROOF that it works, why FLOA, the ask, the process, the objections, the
-   form — and only THEN the link to the other solution, so it never competes
-   with the ask above it.
+   form. And that is all: a solution page is about its own subject. It has no row
+   that shows the other solution and no line that links across to it (the
+   homepage is where the two sit side by side), and its questions and steps are
+   its own, so nothing on it answers for the other page.
 
    Every page differs only through the data in src/content/solutions.js:
      afterHero — a block straight under the opening
@@ -186,34 +187,21 @@ ${ctaBand(ctx, { ...(solution.cta ?? defaultCta), cta: solution.waLabel })}
 ${section({
   id: "process",
   className: "process",
-  children: html`${sectionHead(processContent.head)}
-${timeline({ items: processContent.steps })}`,
+  children: html`${sectionHead(solution.process.head)}
+${timeline({ items: solution.process.steps })}`,
 })}
 
 ${section({
   id: "faq",
   className: "faq-section",
-  children: html`${sectionHead(faqContent.head)}
-${faq({ items: faqContent.items })}`,
+  children: html`${sectionHead(solution.faq.head)}
+${faq({ items: solution.faq.items })}`,
 })}
 
 ${section({
   id: "contact",
   className: "contact",
   children: contact(ctx, contactContent, { page: solution.pageName, waLabel: solution.waLabel }),
-})}
-
-<!-- the other solution: AFTER the ask, never competing with it -->
-${section({
-  id: "ecosystem",
-  className: "solutions",
-  children: html`${sectionHead(ecosystem.head)}
-${ecoGrid(ctx, {
-    solutions,
-    current: solution.slug,
-    badge: ecosystem.badge,
-    note: solution.ecoNote(ctx),
-  })}`,
 })}
 </main>`,
 });

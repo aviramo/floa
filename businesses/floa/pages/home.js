@@ -27,9 +27,10 @@ import { page } from "#layouts/base.js";
 /* The homepage: the whole offer in one scroll. Every block below is a component
    fed by content — there is no markup on this page that is unique to it.
 
-   The order earns the ask: the problem, the approach, the clients who say it
-   worked, the proof of what was actually built — and only then the form. The
-   links into the two solutions close the page, under the form. */
+   The order earns the ask: the problem, the approach, how it gets made and the
+   proof of what was actually built (the clients' quotes come between the two
+   when `home.showTestimonials` is on) — and only then the form. The links into
+   the two solutions close the page, under the form. */
 export const render = (ctx) => page(ctx, {
   path: "",
   meta: home.meta,
@@ -92,8 +93,7 @@ ${section({
 ${approach(ctx, home.approach)}`,
 })}
 
-<!-- the clients speak straight after the approach, then the work behind them -->
-${section({
+${home.showTestimonials && section({
   id: "testimonial",
   className: "testimonial",
   children: html`${sectionHead(testimonialsHead)}

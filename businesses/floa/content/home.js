@@ -1,6 +1,11 @@
 /* The homepage's own copy. Everything it shares with the solution pages — the
    process, the projects, the quotes, the form, the footer — it imports instead. */
 export const home = {
+  /* "What clients say" is hidden on the homepage, on purpose and for now. The
+     quotes themselves stay in content/quotes.js; turning this on brings the
+     section back exactly as it was. */
+  showTestimonials: false,
+
   meta: {
     title: "FLOA | אתרים, אפליקציות ואוטומציות לעסק",
     description: "מחדדים את המסר, בונים את הממשק ומחברים את התהליכים. מדף נחיתה ועד מערכת שמנהלת את העבודה, בכתובת אחת.",
