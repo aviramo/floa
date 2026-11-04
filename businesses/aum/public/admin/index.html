@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="admin.css?v=7777c775" />
-  <link rel="stylesheet" href="admin-aum.css?v=addde193" />
+  <link rel="stylesheet" href="admin-aum.css?v=cc8350e2" />
 </head>
 <body class="locked">
   <div class="gate" id="gate" hidden>
@@ -288,11 +288,8 @@
       <div class="sheet-head"><button type="button" class="hbtn hback" id="setBack" aria-label="חזרה" title="חזרה" hidden><svg data-i="back"></svg></button><h2 id="setTitle">החשבון שלי</h2></div>
       <div id="setMain">
         <div class="setgrp">
-          <button type="button" class="setrow setbtnrow" id="setPushRow">
-            <svg class="seti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
-            <div class="setl"><b>התראות על הרשמות חדשות</b><small id="setPushHint"></small></div>
-            <span class="setsw" id="setPushSw"></span>
-          </button>
+          <button type="button" class="field setpush" id="setPushRow"><span>התראות על הרשמות חדשות</span><div class="setval"><span class="setsw" id="setPushSw"></span></div></button>
+          <small class="sethint" id="setPushHint"></small>
         </div>
         <div class="setgrp">
           <label class="field"><span>השם שלי במערכת</span><input placeholder=" " class="setinp" id="setSender" maxlength="20" autocomplete="off" aria-label="שם השולח בהודעות" /></label>
