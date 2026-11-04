@@ -6,6 +6,11 @@ const external = { target: "_blank", rel: "noopener" };
 /* one or more real shots sharing the card's media area; each shot may link out.
    Every project on the site has real captures — nothing here fakes one. */
 const media = (ctx, { shots, href, ariaLabel }) => {
+  /* A client with nothing to open (the work is real, but there is no site or app
+     to link to): its mark stands where the capture would, in a band of its own.
+     Not a link, because there is nowhere to go. */
+  if (!href) return html`<div class="project-media project-media-mark">${shots.map((shot) => image(ctx, shot))}</div>`;
+
   const duo = shots.length > 1;
   const pictures = shots.map((shot) => {
     const link = shot.href ?? (duo ? null : href);
@@ -30,16 +35,16 @@ export const projectCard = (ctx, project) => html`
         <article class="project-card reveal">
           ${media(ctx, project)}
           <div class="project-body">
-            <span class="project-name">${project.name}</span>
-            <h3><a href="${project.href}"${attrs(external)}>${project.title}</a></h3>
+            ${project.name && html`<span class="project-name">${project.name}</span>`}
+            <h3>${project.href ? html`<a href="${project.href}"${attrs(external)}>${project.title}</a>` : project.title}</h3>
 
             ${project.parts.map((part) => html`
             <div class="project-part">
-              <span class="project-label">${part.label}</span>
+              ${part.label && html`<span class="project-label">${part.label}</span>`}
               <p>${part.text}</p>
             </div>`)}
 
-            <a class="project-link" href="${project.href}"${attrs(external)}>${project.linkLabel}</a>
+            ${project.href && html`<a class="project-link" href="${project.href}"${attrs(external)}>${project.linkLabel}</a>`}
           </div>
         </article>`;
 

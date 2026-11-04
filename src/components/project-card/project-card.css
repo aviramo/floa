@@ -132,6 +132,26 @@
 .project-card:hover .project-media-duo img { transform: none; }
 .project-media-duo a.duo-item:hover img { transform: translateY(-3px); }
 
+/* --- a client's mark, where a capture would be ----------------------------
+   A band, not a square: a logo does not need 520px of height to be seen. On
+   white, so a logo cut out of a white page has no edge to give away. `contain`
+   keeps it whole, and the size cap keeps a small source from being stretched. */
+.project-media-mark {
+  aspect-ratio: 2 / 1;
+  display: grid;
+  place-items: center;
+  padding: var(--pad-card);
+  background: var(--surface);
+}
+.project-media-mark img {
+  width: auto;
+  height: auto;
+  max-width: 62%;
+  max-height: clamp(96px, 11vw, 150px);
+  object-fit: contain;
+}
+.project-card:hover .project-media-mark img { transform: none; }
+
 @media (max-width: 1080px) { .projects-grid { grid-template-columns: 1fr; } }
 @media (max-width: 640px) {
   .project-media-duo { flex-direction: column; }

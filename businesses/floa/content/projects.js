@@ -107,6 +107,29 @@ export const projects = {
       { label: "מה נבנה", text: "מודעות חיפוש, תמונות ולוגו למודעה, דף נחיתה עם מחירי התחלה וכפתור וואטסאפ, ומדידת המרה על כל פנייה" },
     ],
   },
+
+  /* Two clients with nothing public to open, so no `href`: the card shows the
+     client's mark where a capture would be, and says what was built in the
+     client's own testimonial words, with no label and no link. */
+  telaviv: {
+    title: "עיריית תל אביב",
+    shots: [
+      { src: "assets/client-telaviv.webp", width: 900, height: 491, alt: "הסמל של עיריית תל אביב-יפו" },
+    ],
+    parts: [
+      { text: "תהליך בין־מחלקתי שבו משימה באגף אחד מפעילה פעולה באגף אחר, עם ממשק משתמש, בקרות ותהליך עבודה מוסדר" },
+    ],
+  },
+
+  outlet: {
+    title: "דפוס אאוטלט",
+    shots: [
+      { src: "assets/client-outlet.webp", width: 488, height: 304, alt: "הלוגו של דפוס אאוטלט" },
+    ],
+    parts: [
+      { text: "מיילים מלקוחות הופכים אוטומטית לכרטיסי עבודה ב־Trello ונכנסים לתהליך טיפול מסודר" },
+    ],
+  },
 };
 
 /* pick("harpatka", "once") -> those two, in that order */

@@ -90,6 +90,3 @@
   font-size: .8rem;
   letter-spacing: .06em;
 }
-
-/* the clients with no picture to show, under the projects: close, not a new section */
-.more-grid { margin-top: var(--gap); }

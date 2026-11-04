@@ -112,23 +112,6 @@ export const home = {
     ],
   },
 
-  /* What else is running, beside the projects above: clients whose work has no
-     picture to show. Every line is drawn from the client's own testimonial. */
-  proof: {
-    items: [
-      {
-        icon: "system",
-        title: "עיריית תל אביב",
-        text: "תהליך בין־מחלקתי שבו משימה באגף אחד מפעילה פעולה באגף אחר, עם ממשק משתמש, בקרות ותהליך עבודה מוסדר",
-      },
-      {
-        icon: "automation",
-        title: "דפוס אאוטלט",
-        text: "מיילים מלקוחות הופכים אוטומטית לכרטיסי עבודה ב־Trello ונכנסים לתהליך טיפול מסודר",
-      },
-    ],
-  },
-
   advantage: {
     head: {
       eyebrow: "היתרון",
