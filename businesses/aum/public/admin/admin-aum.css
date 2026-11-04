@@ -8,6 +8,3 @@
 #setDlg .setsw { flex: 0 0 auto; padding: 6px 14px; font-weight: 800; font-size: 14px; background: var(--orange-ink); color: #fff; }
 #setDlg .setsw.on { background: var(--green); }
 #setDlg .setbtnrow { width: 100%; text-align: right; background: none; }
-/* בלי הדגשת הכרטיס שנבחר או האחרון שנפתח: לא צל ולא מסגרת חזקה. במקום זה נקודה אפורה בפינה השמאלית התחתונה */
-.wrap > .list > .row.last, .wrap > .list > .row.sel, .wrap > .list > .row.sel:hover { border-color: var(--line); box-shadow: none; position: relative; }
-.wrap > .list > .row.last::after, .wrap > .list > .row.sel::after { content: ""; position: absolute; left: 8px; bottom: 8px; width: 8px; height: 8px; border-radius: 50% !important; background: var(--text-3); pointer-events: none; }
