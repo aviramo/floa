@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=9a7f6537" />
+  <link rel="stylesheet" href="admin.css?v=7777c775" />
   <link rel="stylesheet" href="admin-aum.css?v=addde193" />
 </head>
 <body class="locked">
@@ -1363,7 +1363,12 @@
   const reportedAmt = (pid, mid) => { const l = linkOf(pid, mid); return l && l.pay_reported_amount ? ' ₪' + nfm(l.pay_reported_amount) : ''; };   // הסכום שדווח (המחיר ברגע הדיווח)
   /* הסכום המוצע לתשלום במסך התשלום: אם המשתתף דיווח על תשלום, הסכום שדווח (מה שהוא אמור לשלם); אחרת מחיר המפגש לפי המדרגות */
   const suggestPrice = (pid, m) => { const l = m && linkOf(pid, m.id), rep = l && l.pay_reported_at && Number(l.pay_reported_amount) > 0 ? Number(l.pay_reported_amount) : 0; return rep || expectedPrice(pid, m); };
-  const dueOf = (pid, mid) => { const l = linkOf(pid, mid); return l && allocatedOf(pid, mid) > 0 ? Number(l.pay_due_amount) || 0 : 0; };   // שולם חלק ונשאר לשלם (לא הנחה)
+  const dueOf = (pid, mid) => {
+    const l = linkOf(pid, mid), al = l ? allocatedOf(pid, mid) : 0; if (!(al > 0)) return 0;
+    const stored = Number(l.pay_due_amount) || 0, m = meetOf(mid);
+    if (stored > 0 && l.pay_later_at && !l.no_pay && m) return Math.max(0, Math.round((defaultPrice(m) - al) * 100) / 100);   // תשלום בהמשך: מה שנשאר מתעדכן למחיר הנוכחי של הכרטיס פחות מה ששולם
+    return stored;
+  };   // שולם חלק ונשאר לשלם (לא הנחה)
   const oweOf = (pid, m) => dueOf(pid, m.id) || Math.max(0, suggestPrice(pid, m) - Math.max(0, allocatedOf(pid, m.id)));   // כמה עוד צריך לשלם על המפגש
   /* תשלום בהמשך: מחכים לתשלום לפני המפגש, בזמנו או אחריו, בלי מועד ידוע. פעיל כל עוד התשלום לא נסגר */
   const laterOf = (pid, mid) => { const l = linkOf(pid, mid); return !!(l && l.pay_later_at && !l.no_pay) && !(allocatedOf(pid, mid) > 0 && !(dueOf(pid, mid) > 0)); };
@@ -2874,7 +2879,7 @@
       const fr = !!(linkOf(pid, m.id) && noPayOf(null, linkOf(pid, m.id)));
       chip.hidden = false; const rp = !fr && !(al > 0) && reportedOf(pid, m.id), lt = laterOf(pid, m.id), closed = al > 0 && !(dueOf(pid, m.id) > 0); chip.classList.toggle('free', fr && !(al > 0)); chip.classList.toggle('topay', !fr && !(al > 0) && !rp && !lt); chip.classList.toggle('rep', !!rp); chip.classList.toggle('later', lt && !rp);
             const opts = [].concat(!fr && al > 0 && dueOf(pid, m.id) > 0 ? [['close', 'סגירת תשלום']] : [], rp ? [['reject', 'דחיית דיווח']] : [], fr ? [['pay', 'לתשלום']] : [], lt ? [['unlater', 'לתשלום']] : !fr && !closed ? [['later', 'תשלום בהמשך']] : [], !fr && al > 0 ? [['del', 'מחיקת הקצאה']] : [], fr || al > 0 ? [] : [['free', 'לא לתשלום']]);   // בלי המצב הנוכחי: הוא כתוב על הכפתור
-      const chipH = (al > 0 ? '₪' + nfm(al) : fr ? 'לא לתשלום' : rp ? 'דיווח' + reportedAmt(pid, m.id).replace(' ', '&nbsp;') : lt ? 'תשלום בהמשך' : 'לתשלום') + icon('chev', 'i14') + '<select aria-label="מצב המפגש">' + opts.map((o) => '<option value="' + o[0] + '">' + esc(o[1]) + '</option>').join('') + '</select>';
+      const chipH = (al > 0 ? '₪' + nfm(al) : fr ? 'לא לתשלום' : rp ? 'דיווח' + reportedAmt(pid, m.id).replace(' ', '&nbsp;') : lt ? 'בהמשך ₪' + nfm(dueOf(pid, m.id) > 0 ? dueOf(pid, m.id) : defaultPrice(m)) : 'לתשלום') + icon('chev', 'i14') + '<select aria-label="מצב המפגש">' + opts.map((o) => '<option value="' + o[0] + '">' + esc(o[1]) + '</option>').join('') + '</select>';
       if (chip.dataset.h !== chipH) { chip.innerHTML = chipH; chip.dataset.h = chipH; }   // בלי ציור מחדש כשאין שינוי: עדכון בזמן אמת לא יסגור תפריט פתוח
       { const cs = chip.querySelector('select'); if (document.activeElement !== cs) cs.selectedIndex = -1; }   // אף אפשרות לא נבחרת מראש, כך שגם בחירה באפשרות היחידה נקלטת
       chip.title = 'מצב המפגש';
@@ -3478,7 +3483,7 @@
 
   /* מפגש בכרטיס המשתתף, ככרטיס: מועד (וה-✕ בפינה), שם המפגש, תגית ומצב תשלום */
   /* כיתוב מצב התשלום של משתתף במפגש: רכיב אחד לכרטיס המפגש בכרטיס המשתתף ולכרטיס ברשימה */
-  const payTxt = (pid, mid, free) => reportedOf(pid, mid) ? 'דווח' + reportedAmt(pid, mid) : laterOf(pid, mid) ? (dueOf(pid, mid) > 0 ? 'בהמשך ₪' + nfm(dueOf(pid, mid)) : 'תשלום בהמשך') : dueOf(pid, mid) > 0 ? 'נשאר ₪' + nfm(dueOf(pid, mid)) : allocatedOf(pid, mid) > 0 ? '₪' + nfm(allocatedOf(pid, mid)) : free ? 'לא לתשלום' : 'לתשלום';
+  const payTxt = (pid, mid, free) => reportedOf(pid, mid) ? 'דווח' + reportedAmt(pid, mid) : laterOf(pid, mid) ? 'בהמשך ₪' + nfm(dueOf(pid, mid) > 0 ? dueOf(pid, mid) : (meetOf(mid) ? defaultPrice(meetOf(mid)) : 0)) : dueOf(pid, mid) > 0 ? 'נשאר ₪' + nfm(dueOf(pid, mid)) : allocatedOf(pid, mid) > 0 ? '₪' + nfm(allocatedOf(pid, mid)) : free ? 'לא לתשלום' : 'לתשלום';
   const cntTxt = (n) => n == null || n === '' ? '' : String(n) === '1' ? 'משתתף אחד מוצג' : n + ' משתתפים מוצגים';   // שורת המונה מעל הכרטיסים
   const meetName = (m) => String(m.name || '').trim() || String((typeById(m.type_id) || {}).name || '').trim();
   const meetRow = (m) => {

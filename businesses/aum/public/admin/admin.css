@@ -1624,3 +1624,8 @@ html.is-loading #fabBar { display: none; }
 .mlist .mrow .pay.nolabel { gap: 4px; }
 #pDlg, #pDlg .ppanel, #pDlg .ppager, #pDlg .ppage { border-radius: 0 !important; }   /* כרטיס המשתתף בלי פינות מעוגלות */
 .chiprow .gpair { display: inline-flex; flex: 0 0 auto; gap: 8px; }   /* גברים ונשים תמיד יחד באותה שורה */
+.wrap > .list > .row.last, .wrap > .list > .row.sel, .wrap > .list > .row.sel:hover { box-shadow: -3px 3px 6px rgba(22, 25, 29, .12); }   /* הכרטיס שנבחר: צל אפור עדין בצד שמאל למטה */
+/* המפגש שנבחר בכרטיס המשתתף: כמו משתתף מסומן ברשימה (צל עדין בצד שמאל למטה), בלי הבלטת טקסט */
+#pPager .mlist .mrow.hl { background: var(--bg); border-color: var(--line); box-shadow: -3px 3px 6px rgba(22, 25, 29, .12); }
+#pPager .mlist .mrow.hl .mdt, .mlist .mrow.hl .mdt { font-weight: 500; }
+#pPager .mlist .mrow.hl .mnm, .mlist .mrow.hl .mnm { font-weight: 400; color: var(--text-2); }
