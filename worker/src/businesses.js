@@ -86,5 +86,15 @@ export const BUSINESSES = {
     "pages": [
       "פרולינק"
     ]
+  },
+  "quit": {
+    "brand": "quit",
+    "to": "LEAD_TO",
+    "origins": [
+      "https://floa.co.il",
+      "https://www.floa.co.il",
+      "http://localhost:5173"
+    ],
+    "pages": []
   }
 };

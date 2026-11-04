@@ -1,0 +1,202 @@
+/* ==========================================================================
+   Quit. One green on a quiet ground, and the number of days is the largest
+   thing on the screen. Everything a person can press looks pressable.
+
+   THE PAGE NEVER SCROLLS. The app is a column exactly as tall as the window:
+   the header, the habits, the counter and its buttons stay where they are, and
+   the one region at the bottom (.scroll) is the only thing that moves.
+   ========================================================================== */
+:root {
+  --bg: #eef3ef;
+  --surface: #ffffff;
+  --ink: #12201a;
+  --muted: #5a6b62;
+  --line: #d9e3dc;
+  --accent: #1f7a52;
+  --accent-ink: #ffffff;
+  --accent-soft: #dcefe4;
+  --accent-text: #14573a;
+  --slip: #b4531f;
+  --slip-soft: #f8e6da;
+  --bad: #c62828;
+  --radius: 16px;
+  --shadow: 0 1px 2px rgba(18, 32, 26, .05), 0 3px 10px rgba(18, 32, 26, .06);
+  --shadow-up: 0 -8px 30px rgba(18, 32, 26, .18);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d1612;
+    --surface: #14221b;
+    --ink: #e9f2ec;
+    --muted: #8aa196;
+    --line: #20332a;
+    --accent: #4cc38a;
+    --accent-ink: #08140e;
+    --accent-soft: #17301f;
+    --accent-text: #8ee0b5;
+    --slip: #e8895a;
+    --slip-soft: #2e1b12;
+    --bad: #ef6b6b;
+    --shadow: none;
+    --shadow-up: 0 -8px 30px rgba(0, 0, 0, .6);
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; overflow: hidden; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.5 "Heebo", system-ui, "Segoe UI", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+[hidden] { display: none !important; }
+svg { width: 1.15em; height: 1.15em; flex: none; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* --- the column ------------------------------------------------------------- */
+#app { height: 100%; }
+.wrap {
+  height: 100%; max-width: 640px; margin: 0 auto;
+  display: flex; flex-direction: column;
+  padding: max(10px, env(safe-area-inset-top)) 16px max(10px, env(safe-area-inset-bottom));
+}
+.wrap > * { flex: none; }
+.wrap > .scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+
+/* --- header ------------------------------------------------------------------ */
+.top { display: flex; align-items: center; gap: 10px; padding: 4px 0 10px; position: relative; }
+.brand { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 1.25rem; letter-spacing: -.01em; }
+.mark { width: 32px; height: 32px; border-radius: 10px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; }
+.grow { flex: 1; }
+.me { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); display: grid; place-items: center; font-weight: 700; color: var(--accent-text); overflow: hidden; padding: 0; }
+.me img { width: 100%; height: 100%; object-fit: cover; }
+.menu { position: absolute; inset-inline-end: 0; top: 52px; z-index: 20; min-width: 220px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-up); padding: 6px; }
+.menu .who { padding: 8px 10px; color: var(--muted); font-size: .88rem; overflow-wrap: anywhere; }
+.menu button { width: 100%; display: flex; align-items: center; gap: 10px; text-align: right; border: 0; background: none; padding: 10px; border-radius: 10px; font-weight: 600; }
+.menu button:hover { background: var(--bg); }
+
+/* --- habits ------------------------------------------------------------------ */
+.chips { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 12px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 16px; font-weight: 600; color: var(--muted); display: flex; align-items: center; gap: 6px; max-width: 70vw; }
+.chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip[aria-current="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+/* --- the counter --------------------------------------------------------------- */
+.hero { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; box-shadow: var(--shadow); padding: 16px 18px 16px; position: relative; }
+.hero-name { color: var(--muted); font-weight: 600; padding-inline-end: 44px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.edit { position: absolute; inset-inline-end: 12px; top: 10px; width: 36px; height: 36px; border-radius: 50%; border: 0; background: none; color: var(--muted); display: grid; place-items: center; }
+.edit:hover { background: var(--bg); color: var(--ink); }
+.days { display: flex; align-items: baseline; gap: 10px; line-height: 1; margin-top: 2px; }
+.days b { font-size: 4.6rem; font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; color: var(--accent-text); }
+.days span { font-size: 1.3rem; font-weight: 700; color: var(--muted); }
+.clock { direction: ltr; text-align: right; font-size: 1.15rem; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; margin-top: 6px; }
+.next { margin-top: 12px; }
+.next-line { display: flex; justify-content: space-between; gap: 10px; font-size: .88rem; color: var(--muted); font-weight: 500; }
+.bar { height: 8px; border-radius: 99px; background: var(--accent-soft); overflow: hidden; margin-top: 6px; }
+.bar i { display: block; height: 100%; background: var(--accent); border-radius: 99px; transition: width .6s ease; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; margin-top: 14px; }
+.stats.four { grid-template-columns: 1fr 1fr; }
+.stat { background: var(--bg); border-radius: 12px; padding: 8px 10px; min-width: 0; }
+.stat b { display: block; font-size: 1.05rem; font-weight: 700; overflow-wrap: anywhere; }
+.stat small { color: var(--muted); font-size: .78rem; }
+
+/* --- buttons -------------------------------------------------------------------- */
+.actions { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; padding: 12px 0; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 14px; padding: 13px 16px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.06); }
+.btn.slip { color: var(--slip); }
+.btn.danger { background: var(--slip); border-color: var(--slip); color: #fff; }
+.btn.quiet { border-color: transparent; background: none; color: var(--muted); }
+.btn[disabled] { opacity: .55; cursor: default; }
+
+/* --- the list ------------------------------------------------------------------- */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); }
+.tab { border: 0; background: none; padding: 10px 14px; font-weight: 700; color: var(--muted); border-bottom: 3px solid transparent; margin-bottom: -1px; }
+.tab[aria-selected="true"] { color: var(--accent-text); border-bottom-color: var(--accent); }
+.scroll { padding: 10px 0 6px; }
+.row { display: flex; align-items: center; gap: 12px; padding: 11px 4px; border-bottom: 1px solid var(--line); }
+.row:last-child { border-bottom: 0; }
+.dot { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--line); color: var(--muted); flex: none; }
+.dot.on { background: var(--accent); color: var(--accent-ink); }
+.dot.slip { background: var(--slip-soft); color: var(--slip); }
+.dot.hold { background: var(--accent-soft); color: var(--accent-text); }
+.row .main { flex: 1; min-width: 0; }
+.row .main b { display: block; font-weight: 600; }
+.row .main small { color: var(--muted); overflow-wrap: anywhere; }
+.row.off .main b { color: var(--muted); }
+.row .side { color: var(--muted); font-size: .85rem; white-space: nowrap; }
+.empty { text-align: center; color: var(--muted); padding: 28px 12px; }
+
+/* --- first screens ------------------------------------------------------------------ */
+.center { flex: 1; display: grid; place-items: center; text-align: center; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; box-shadow: var(--shadow); padding: 28px 22px; max-width: 420px; width: 100%; }
+.card .mark { width: 48px; height: 48px; border-radius: 14px; margin: 0 auto 14px; }
+.card .mark svg { width: 26px; height: 26px; }
+.card h1 { margin: 0 0 8px; font-size: 1.6rem; letter-spacing: -.01em; }
+.card p { margin: 0 0 20px; color: var(--muted); }
+.card .btn { width: 100%; }
+.ideas { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 0 0 18px; }
+.ideas .chip { color: var(--ink); }
+.spin { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--accent); animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* --- sheets -------------------------------------------------------------------------- */
+.scrim { position: fixed; inset: 0; background: rgba(8, 16, 12, .5); z-index: 50; display: flex; align-items: flex-end; justify-content: center; }
+.sheet { background: var(--surface); width: 100%; max-width: 520px; border-radius: 24px 24px 0 0; padding: 20px 18px max(18px, env(safe-area-inset-bottom)); max-height: 92dvh; overflow-y: auto; box-shadow: var(--shadow-up); }
+@media (min-width: 640px) { .scrim { align-items: center; } .sheet { border-radius: 24px; } }
+.sheet h2 { margin: 0 0 4px; font-size: 1.3rem; }
+.sheet .lead { margin: 0 0 14px; color: var(--muted); }
+.field { display: block; margin-bottom: 12px; }
+.field > span { display: block; font-weight: 600; font-size: .9rem; margin-bottom: 4px; }
+.field input, .field textarea { width: 100%; border: 1px solid var(--line); background: var(--bg); border-radius: 12px; padding: 11px 12px; }
+.field textarea { min-height: 76px; resize: vertical; }
+.field input:focus, .field textarea:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.err { color: var(--bad); font-weight: 600; margin: 0 0 10px; min-height: 0; }
+.btns { display: flex; gap: 10px; margin-top: 6px; }
+.btns .btn { flex: 1; }
+.why { background: var(--accent-soft); color: var(--accent-text); border-radius: 14px; padding: 12px 14px; margin: 0 0 14px; font-weight: 600; overflow-wrap: anywhere; }
+.why small { display: block; font-weight: 500; opacity: .8; }
+.timer { text-align: center; font-size: 3.4rem; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; direction: ltr; color: var(--accent-text); margin: 4px 0 2px; }
+.timer-note { text-align: center; color: var(--muted); margin: 0 0 16px; }
+
+.toast { position: fixed; inset-inline: 0; bottom: max(20px, env(safe-area-inset-bottom)); display: flex; justify-content: center; z-index: 60; pointer-events: none; }
+.toast span { background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 99px; font-weight: 600; box-shadow: var(--shadow-up); }
+
+/* A short window (a phone on its side): the counter gives up its extras so the
+   list under it still has room, and the page still does not scroll. */
+@media (max-height: 640px) {
+  .days b { font-size: 3rem; }
+  .next, .stats { display: none; }
+  .hero { padding: 10px 16px; }
+  .chips { padding-bottom: 8px; }
+  .actions { padding: 8px 0; }
+  .btn { min-height: 42px; padding: 9px 14px; }
+}
+@media (max-height: 460px) {
+  .wrap { padding-top: max(4px, env(safe-area-inset-top)); padding-bottom: max(4px, env(safe-area-inset-bottom)); }
+  .top { padding: 0 0 4px; }
+  .me { width: 32px; height: 32px; }
+  .chips { padding-bottom: 6px; }
+  .chip { padding: 4px 14px; }
+  /* the counter becomes one row: the days, the clock, and the edit button */
+  .hero { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 14px; border-radius: 16px; }
+  .hero-name { display: none; }
+  .edit { position: static; flex: none; }
+  .days { margin: 0; }
+  .days b { font-size: 2.2rem; }
+  .days span { font-size: 1rem; }
+  .clock { margin: 0; font-size: 1rem; flex: 1; text-align: left; }
+  .actions { padding: 6px 0; }
+  .btn { min-height: 38px; padding: 6px 12px; }
+  .tab { padding: 6px 12px; }
+  .scroll { padding-top: 4px; }
+}
+@media (prefers-reduced-motion: reduce) { .bar i, .spin { transition: none; animation-duration: 2s; } }
