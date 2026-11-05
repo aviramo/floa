@@ -26,8 +26,8 @@
   --waveflip: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 64' preserveAspectRatio='none'%3E%3Cpath d='M0,0 L1200,0 L1200,41.8 L1180,37.5 L1160,32.2 L1140,26.8 L1120,22.1 L1100,18.9 L1080,17.9 L1060,18.9 L1040,21.6 L1020,25.2 L1000,29.0 L980,32.1 L960,34.1 L940,34.9 L920,34.8 L900,34.4 L880,34.4 L860,35.5 L840,37.9 L820,41.5 L800,45.8 L780,50.0 L760,53.2 L740,54.7 L720,54.1 L700,51.5 L680,47.2 L660,42.0 L640,37.0 L620,32.9 L600,30.2 L580,29.1 L560,29.2 L540,30.0 L520,30.6 L500,30.6 L480,29.4 L460,27.3 L440,24.6 L420,22.0 L400,20.5 L380,20.5 L360,22.6 L340,26.5 L320,31.8 L300,37.6 L280,43.0 L260,47.1 L240,49.4 L220,49.9 L200,48.8 L180,46.8 L160,44.6 L140,43.1 L120,42.6 L100,43.1 L80,44.2 L60,45.2 L40,45.6 L20,44.5 L0,41.8 Z' fill='black'/%3E%3C/svg%3E");
   --waveline: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='132' height='10' viewBox='0 0 132 10'%3E%3Cpath d='M0 5 C22 0.5 44 9.5 66 5 S110 0.5 132 5' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
   --waveline-w: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='18' viewBox='0 0 200 18'%3E%3Cdefs%3E%3ClinearGradient id='g'%3E%3Cstop offset='0' stop-color='%234FAEE8' stop-opacity='0'/%3E%3Cstop offset='.5' stop-color='%231B74B3'/%3E%3Cstop offset='1' stop-color='%234FAEE8' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0 9 C25 1 50 17 75 9 S125 1 150 9 S185 13 200 9' fill='none' stroke='url(%23g)' stroke-width='3.2' stroke-linecap='round'/%3E%3C/svg%3E");
-  --wordmark: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 64'%3E%3Cdefs%3E%3ClinearGradient id='g' gradientUnits='userSpaceOnUse' x1='0' y1='0' x2='220' y2='0'%3E%3Cstop offset='0' stop-color='%232E8FD6'/%3E%3Cstop offset='1' stop-color='%230E4A80'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg fill='none' stroke='url(%23g)' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 8V56'/%3E%3Cpath d='M12 12q8-9 16 0t16 0'/%3E%3Cpath d='M12 32q6-7 12 0t12 0'/%3E%3Cpath d='M62 8V56q7.5-9 15 0t15 0'/%3E%3Cellipse cx='130' cy='32' rx='22' ry='24'/%3E%3Cpath d='M113 33q8.5-8 17 0t17 0' stroke-width='7'/%3E%3Cpath d='M166 56L186 10L206 56'/%3E%3Cpath d='M173 41q6.5-8 13 0t13 0' stroke-width='7'/%3E%3C/g%3E%3C/svg%3E");
-  --wordmark-w: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 64'%3E%3Cg fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 8V56'/%3E%3Cpath d='M12 12q8-9 16 0t16 0'/%3E%3Cpath d='M12 32q6-7 12 0t12 0'/%3E%3Cpath d='M62 8V56q7.5-9 15 0t15 0'/%3E%3Cellipse cx='130' cy='32' rx='22' ry='24'/%3E%3Cpath d='M113 33q8.5-8 17 0t17 0' stroke-width='7'/%3E%3Cpath d='M166 56L186 10L206 56'/%3E%3Cpath d='M173 41q6.5-8 13 0t13 0' stroke-width='7'/%3E%3C/g%3E%3C/svg%3E");
+  --wordmark: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 234 64'%3E%3Cdefs%3E%3ClinearGradient id='g' gradientUnits='userSpaceOnUse' x1='82' y1='0' x2='234' y2='0'%3E%3Cstop offset='0' stop-color='%232E8FD6'/%3E%3Cstop offset='1' stop-color='%230E4A80'/%3E%3C/linearGradient%3E%3C/defs%3E%3ClinearGradient id='t' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2356B4EE'/%3E%3Cstop offset='1' stop-color='%230E4A80'/%3E%3C/linearGradient%3E%3Crect width='64' height='64' rx='15.4' fill='url(%23t)'/%3E%3Cg fill='none' stroke='%23fff' stroke-width='8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 34.5q4-4.5 8 0t8 0' opacity='.84'/%3E%3Cpath d='M21 18.75q5.75-5.5 11.5 0t11.5 0'/%3E%3Cpath d='M21 16V49'/%3E%3C/g%3E%3Cg transform='translate(20.5 0)' fill='none' stroke='url(%23g)' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M62 8V56q7.5-9 15 0t15 0'/%3E%3Cellipse cx='130' cy='32' rx='22' ry='24'/%3E%3Cpath d='M113 33q8.5-8 17 0t17 0' stroke-width='7'/%3E%3Cpath d='M166 56L186 10L206 56'/%3E%3Cpath d='M173 41q6.5-8 13 0t13 0' stroke-width='7'/%3E%3C/g%3E%3C/svg%3E");
+  --wordmark-w: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 234 64'%3E%3ClinearGradient id='t' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2356B4EE'/%3E%3Cstop offset='1' stop-color='%230E4A80'/%3E%3C/linearGradient%3E%3Crect width='64' height='64' rx='15.4' fill='url(%23t)'/%3E%3Cg fill='none' stroke='%23fff' stroke-width='8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 34.5q4-4.5 8 0t8 0' opacity='.84'/%3E%3Cpath d='M21 18.75q5.75-5.5 11.5 0t11.5 0'/%3E%3Cpath d='M21 16V49'/%3E%3C/g%3E%3Cg transform='translate(20.5 0)' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M62 8V56q7.5-9 15 0t15 0'/%3E%3Cellipse cx='130' cy='32' rx='22' ry='24'/%3E%3Cpath d='M113 33q8.5-8 17 0t17 0' stroke-width='7'/%3E%3Cpath d='M166 56L186 10L206 56'/%3E%3Cpath d='M173 41q6.5-8 13 0t13 0' stroke-width='7'/%3E%3C/g%3E%3C/svg%3E");
 }
 
 
@@ -112,10 +112,10 @@ body::before {                              /* the aurora: soft light that drift
   mask-image: var(--wave2);
   -webkit-mask-size: 1200px 100%;
   mask-size: 1200px 100%;
-  animation: current-b 90s linear infinite reverse;
+  animation: current-b 90s linear infinite;
 }
-@keyframes current-a { to { -webkit-mask-position: 1200px 0; mask-position: 1200px 0; } }
-@keyframes current-b { to { -webkit-mask-position: 1200px 0; mask-position: 1200px 0; } }
+@keyframes current-a { to { -webkit-mask-position: -1200px 0; mask-position: -1200px 0; } }
+@keyframes current-b { to { -webkit-mask-position: -1200px 0; mask-position: -1200px 0; } }
 
 /* the water line under a heading: calm, fixed */
 .section-head::after {
@@ -510,11 +510,11 @@ body { overflow-x: clip; }                  /* the bands run edge to edge; nothi
 }
 
 /* ---- the brand as a word: drawn, not typeset. The same F as the icon (a stem with arms that are currents),
-        then L with a wave for a foot, O with water in it, A with a wave for a bar. Text stays for readers and search. ---- */
+        then LOA, the L with a wave for a foot, the O with water in it, the A with a wave for a bar. Text stays for readers and search. ---- */
 .hero-logo, .logo-mark {
   display: block;
-  width: clamp(128px, 15vw, 176px);
-  aspect-ratio: 220 / 64;
+  width: clamp(120px, 14vw, 164px);
+  aspect-ratio: 234 / 64;
   height: auto;
   margin: 0 auto var(--s-6);
   font-size: 0;

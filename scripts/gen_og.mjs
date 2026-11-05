@@ -97,19 +97,18 @@ const waveD = (x0, y0, w, amp, cycles, phase = 0, n = 56) =>
 const glyph = (name, cx, cy, size, color) =>
   icon(name).toString().replace("<svg ", `<svg x="${cx - size / 2}" y="${cy - size / 2}" width="${size}" height="${size}" color="${color}" `);
 
-/* --- the mark: the F of the icon, and the word, drawn ------------------------- */
+/* --- the logo: ONE special F (the icon's tile) and then LOA, drawn (the word's own F is not drawn, or it would read FFLOA) ---- */
 const MARK = `
-<svg class="mark" viewBox="0 0 300 64" role="img" aria-label="FLOA">
+<svg class="mark" viewBox="0 0 234 64" role="img" aria-label="FLOA">
   <defs>
     <linearGradient id="mt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#56B4EE"/><stop offset="1" stop-color="#0E4A80"/></linearGradient>
-    <linearGradient id="mw" gradientUnits="userSpaceOnUse" x1="80" y1="0" x2="300" y2="0"><stop offset="0" stop-color="#2E8FD6"/><stop offset="1" stop-color="#0E4A80"/></linearGradient>
+    <linearGradient id="mw" gradientUnits="userSpaceOnUse" x1="82" y1="0" x2="234" y2="0"><stop offset="0" stop-color="#2E8FD6"/><stop offset="1" stop-color="#0E4A80"/></linearGradient>
   </defs>
   <rect width="64" height="64" rx="15.4" fill="url(#mt)"/>
   <g fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
     <path d="M21 34.5q4-4.5 8 0t8 0" opacity=".84"/><path d="M21 18.75q5.75-5.5 11.5 0t11.5 0"/><path d="M21 16V49"/>
   </g>
-  <g transform="translate(80 0)" fill="none" stroke="url(#mw)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M12 8V56"/><path d="M12 12q8-9 16 0t16 0"/><path d="M12 32q6-7 12 0t12 0"/>
+  <g transform="translate(20.5 0)" fill="none" stroke="url(#mw)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
     <path d="M62 8V56q7.5-9 15 0t15 0"/>
     <ellipse cx="130" cy="32" rx="22" ry="24"/><path d="M113 33q8.5-8 17 0t17 0" stroke-width="7"/>
     <path d="M166 56L186 10L206 56"/><path d="M173 41q6.5-8 13 0t13 0" stroke-width="7"/>
@@ -230,7 +229,7 @@ body {
 }
 .wind { position: absolute; inset: 0; width: 1200px; height: 630px; }
 .copy { position: relative; flex: 0 0 470px; min-width: 0; }
-.mark { display: block; width: 280px; height: auto; margin-bottom: 40px; }
+.mark { display: block; width: 250px; height: auto; margin-bottom: 40px; }
 h1 { font-family: "Rubik", sans-serif; font-weight: 700; font-size: 66px; line-height: 1.16; letter-spacing: -.012em; text-wrap: balance; color: ${INK}; }
 .line { width: 132px; height: 12px; margin-top: 34px; background: ${TEAL}; opacity: .8;
   -webkit-mask: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='132' height='12' viewBox='0 0 132 12'%3E%3Cpath d='M0 6 C22 1 44 11 66 6 S110 1 132 6' fill='none' stroke='black' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") center / 132px 12px no-repeat; }

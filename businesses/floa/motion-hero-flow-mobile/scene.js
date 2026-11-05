@@ -69,11 +69,11 @@
     svgEl('stop', wg, { offset: 1, 'stop-color': '#6FB6E8', 'stop-opacity': 0 });
     const WIND = [   // y (of the frame height), amplitude, wavelength, dash, gap, loops, direction, opacity, width
       [-0.40, 46, 640, 240, 420, 3, 1, 0.20, 4],
-      [-0.27, 30, 480, 160, 300, 4, -1, 0.16, 2.5],
+      [-0.27, 30, 480, 160, 300, 4, 1, 0.16, 2.5],
       [-0.13, 56, 760, 300, 520, 2, 1, 0.18, 3.5],
-      [0.02, 34, 560, 200, 360, 3, -1, 0.15, 2.5],
+      [0.02, 34, 560, 200, 360, 3, 1, 0.15, 2.5],
       [0.16, 50, 700, 260, 440, 3, 1, 0.19, 3],
-      [0.29, 28, 420, 140, 260, 4, -1, 0.14, 2],
+      [0.29, 28, 420, 140, 260, 4, 1, 0.14, 2],
       [0.40, 44, 600, 220, 380, 2, 1, 0.17, 3],
     ];
     WIND.forEach(([yf, amp, wl, dash, gap, loops, dir, op, wdh], n) => {
@@ -154,8 +154,10 @@
       return d;
     };
     const lock = grp(cam, 0, -450), lockS = grp(lock, 0, 0);
-    lockS.style.transform = `scale(${1.0})`;
-    const tile = svgBox(lockS, -130, -32, 64, 64);
+    lockS.style.transform = `scale(${1.3})`;
+    // the logo is ONE special F (the icon's tile, with its two arms that are currents) and then LOA. The word's own F
+    // is not drawn: with it the lockup reads FFLOA.
+    const tile = svgBox(lockS, -98.5, -32, 64, 64);
     const tdef = svgEl('defs', tile);
     const tgr = svgEl('linearGradient', tdef, { id: 'lkT', x1: 0, y1: 0, x2: 1, y2: 1 });
     svgEl('stop', tgr, { offset: 0, 'stop-color': '#56B4EE' }); svgEl('stop', tgr, { offset: 1, 'stop-color': '#0E4A80' });
@@ -163,13 +165,11 @@
     const tmG = svgEl('g', tile, { fill: 'none', stroke: '#fff', 'stroke-width': 8, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
     const tA2 = svgEl('path', tmG, { opacity: 0.84 }), tA1 = svgEl('path', tmG);
     svgEl('path', tmG, { d: 'M21 16V49' });
-    const word = svgBox(lockS, -46, -25.6, 176, 51.2);
+    const word = svgBox(lockS, -70.5, -25.6, 176, 51.2);
     const wdef = svgEl('defs', word);
-    const wgr = svgEl('linearGradient', wdef, { id: 'lkW', gradientUnits: 'userSpaceOnUse', x1: 0, y1: 0, x2: 220, y2: 0 });
+    const wgr = svgEl('linearGradient', wdef, { id: 'lkW', gradientUnits: 'userSpaceOnUse', x1: 62, y1: 0, x2: 220, y2: 0 });
     svgEl('stop', wgr, { offset: 0, 'stop-color': '#2E8FD6' }); svgEl('stop', wgr, { offset: 1, 'stop-color': '#0E4A80' });
     const wmG = svgEl('g', word, { transform: 'scale(0.8)', fill: 'none', stroke: 'url(#lkW)', 'stroke-width': 9, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
-    svgEl('path', wmG, { d: 'M12 8V56' });
-    const wF1 = svgEl('path', wmG), wF2 = svgEl('path', wmG);
     svgEl('path', wmG, { d: 'M62 8V56' });
     const wL = svgEl('path', wmG);
     svgEl('ellipse', wmG, { cx: 130, cy: 32, rx: 22, ry: 24 });
@@ -179,7 +179,6 @@
     ups.push(() => {
       const ph = 2 * Math.PI * 10 * (RT / DUR);
       tA1.setAttribute('d', wavePt(21, 18.75, 23, 2.8, ph)); tA2.setAttribute('d', wavePt(21, 34.5, 16.25, 2.3, ph));
-      wF1.setAttribute('d', wavePt(12, 12, 32, 4.5, ph)); wF2.setAttribute('d', wavePt(12, 32, 24, 3.6, ph));
       wL.setAttribute('d', 'M62 56' + wavePt(62, 56, 30, 4.5, ph).slice(1 + 0).replace(/^[^L]*/, ''));
       wO.setAttribute('d', wavePt(113, 33, 34, 4, ph)); wA.setAttribute('d', wavePt(173, 41, 26, 4, ph));
     });

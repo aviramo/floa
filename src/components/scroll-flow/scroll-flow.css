@@ -64,9 +64,9 @@
   opacity: .5;
   animation: fs-wind 26s linear infinite;
 }
-.fs-wind path:nth-child(2) { animation-duration: 34s; animation-direction: reverse; opacity: .35; }
+.fs-wind path:nth-child(2) { animation-duration: 34s; opacity: .35; }
 .fs-wind path:nth-child(3) { animation-duration: 30s; }
-@keyframes fs-wind { to { stroke-dashoffset: -2640; } }
+@keyframes fs-wind { to { stroke-dashoffset: 2640; } }
 
 /* the current */
 .fs-river { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -74,7 +74,8 @@
 .fs-band { stroke: var(--teal-tint); stroke-width: 44px; opacity: .85; }
 .fs-core { stroke: var(--teal); stroke-width: 2px; opacity: .35; }
 .fs-flow { stroke: var(--teal); stroke-width: 4px; stroke-dasharray: 26 24; animation: fs-run 2.6s linear infinite; }
-@keyframes fs-run { to { stroke-dashoffset: -50; } }
+/* the river path is drawn from the left, and the things are carried to the left: a positive offset moves the dashes back toward the start of the path, which is the same way */
+@keyframes fs-run { to { stroke-dashoffset: 50; } }
 
 /* the things: circles that float, scattered, and then ride the current */
 .fs-tiles {
