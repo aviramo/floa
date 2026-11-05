@@ -63,7 +63,7 @@ export const solutions = [
 
     /* the share card: one short line over this page's own illustration */
     og: {
-      image: "assets/og-digital-products-v2.png",
+      image: "assets/og-digital-products-v2.jpg",
       title: "אתרים, אפליקציות ודפי נחיתה",
       alt: "FLOA. אתרים, אפליקציות ודפי נחיתה: מחשב נייד וטלפון על המים",
     },
@@ -195,7 +195,7 @@ export const solutions = [
     },
 
     og: {
-      image: "assets/og-business-systems-v2.png",
+      image: "assets/og-business-systems-v2.jpg",
       title: "מערכות, אוטומציות וניהול העסק",
       alt: "FLOA. מערכות, אוטומציות וניהול העסק: טופס שהופך למשימה והודעה",
     },

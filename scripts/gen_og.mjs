@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Generate the share cards, ONE PER PAGE (assets/og-*-v2.png).
+   Generate the share cards, ONE PER PAGE (assets/og-*-v2.jpg).
 
    A share card is seen at about 300px wide, for about half a second, usually in
    a WhatsApp thread. So each card says exactly ONE thing: FLOA's mark, one short
@@ -18,11 +18,17 @@
    site. Rubik is fetched from Google, cut to just the glyphs used, and inlined as
    data: URIs, so the render never depends on network timing.
 
+   The cards are JPEG, about 50 to 70 KB each. As PNG they were 400 KB, and WhatsApp
+   skips a preview image that is much over 300 KB, so a heavy card is a card nobody
+   sees. Chrome prints a PNG; Pillow (the same library scripts/gen_favicon.py uses)
+   turns it into the JPEG, so this needs Python with `pip install pillow`.
+
    The file names carry a version (-v2). A social network keeps a card for as long
    as the same address is served, so a new look needs a new address.
 
    Run:  node scripts/gen_og.mjs        (after changing any og.title or a picture)
          CHROME=/path/to/chrome node scripts/gen_og.mjs   (if Chrome is somewhere else)
+         PYTHON=/path/to/python  node scripts/gen_og.mjs   (if `python` is not the right one)
    ========================================================================== */
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -50,6 +56,12 @@ const CHROME = [
   "/usr/bin/chromium",
 ].find((p) => p && existsSync(p));
 if (!CHROME) throw new Error("No Chrome found. Set CHROME=/path/to/chrome.");
+
+/* --- Python with Pillow, for the PNG to JPEG step ---------------------------------- */
+const PYTHON = [process.env.PYTHON, "python", "python3", "py"].filter(Boolean).find((c) => {
+  try { execFileSync(c, ["-c", "import PIL"], { stdio: "ignore" }); return true; } catch { return false; }
+});
+if (!PYTHON) throw new Error("No Python with Pillow found. Run: pip install pillow (or set PYTHON=/path/to/python).");
 
 /* --- the palette: the site's water (businesses/floa/theme.css) ---------------- */
 const INK = "#0C2A45", TEAL = "#1B74B3", DARK = "#0F4F7F", TINT = "#CFE6F5", LIGHT = "#4FAEE8", LINE = "#D4E3EE";
@@ -237,11 +249,13 @@ const tmp = join(tmpdir(), "floa-og");
 mkdirSync(tmp, { recursive: true });
 for (const [i, card] of cards.entries()) {
   const file = join(tmp, `card-${i}.html`);
-  const png = join(PUBLIC, card.out);
+  const png = join(tmp, `card-${i}.png`);
+  const jpg = join(PUBLIC, card.out);
   writeFileSync(file, page(card, fontCss));
   execFileSync(CHROME, [
     "--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=1",
     "--window-size=1200,630", "--virtual-time-budget=4000", `--screenshot=${png}`, pathToFileURL(file).href,
   ], { stdio: "ignore" });
-  console.log(`  ${card.out}  ${(readFileSync(png).length / 1024).toFixed(0)} KB  "${card.title}"`);
+  execFileSync(PYTHON, ["-c", "import sys; from PIL import Image; Image.open(sys.argv[1]).convert('RGB').save(sys.argv[2], 'JPEG', quality=88, optimize=True, progressive=True)", png, jpg]);
+  console.log(`  ${card.out}  ${(readFileSync(jpg).length / 1024).toFixed(0)} KB  "${card.title}"`);
 }

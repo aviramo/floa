@@ -14,7 +14,7 @@ export const work = {
 
   /* the share card (made by scripts/gen_og.mjs) */
   og: {
-    image: "assets/og-work-v2.png",
+    image: "assets/og-work-v2.jpg",
     title: "לא מצגות. דברים שעובדים",
     alt: "FLOA. לא מצגות, דברים שעובדים: שלושה פרויקטים אמיתיים",
   },

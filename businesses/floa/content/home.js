@@ -18,7 +18,7 @@ export const home = {
   /* the share card. `title` is the ONLY text on it, so it has to carry the page
      on its own, at a glance, on a phone. See scripts/gen_og.mjs. */
   og: {
-    image: "assets/og-home-v2.png",
+    image: "assets/og-home-v2.jpg",
     title: "ייעוץ, פיתוח וליווי לעסק",
     alt: "FLOA. ייעוץ, פיתוח וליווי לעסק: חמישה שערים על נהר אחד, מייעוץ ועד AI",
   },
