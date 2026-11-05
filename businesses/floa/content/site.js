@@ -54,10 +54,10 @@ export const site = {
      because every card is generated at the OG spec size.
      Cards are built by scripts/gen_og.mjs — not by build.mjs. */
   og: {
-    image: "assets/og-home.png",
+    image: "assets/og-home-v2.png",
     width: 1200,
     height: 630,
-    alt: "FLOA. אתרים, אפליקציות ואוטומציות לעסק",
+    alt: "FLOA. ייעוץ, פיתוח וליווי לעסק",
   },
 
   fonts: "https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=JetBrains+Mono:wght@400;500&family=Rubik:wght@500;600;700&display=swap",

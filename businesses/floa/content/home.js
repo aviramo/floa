@@ -8,15 +8,19 @@ export const home = {
 
   meta: {
     title: "\u200FFLOA | ייעוץ, פיתוח וליווי דיגיטלי לעסק",
+    share: {
+      title: "ייעוץ, פיתוח וליווי לעסק | FLOA",
+      description: "אתרים, אפליקציות, אוטומציות וסוכני AI שבנויים סביב העסק שלכם. מבינים מה מעכב, בונים, ונשארים איתכם אחרי העלייה.",
+    },
     description: "ייעוץ, פיתוח וליווי לעסק, עם AI וסוכנים. מבינים מה מעכב אתכם, בונים אתר, אפליקציה או אוטומציה שמחברים את העבודה, ונשארים איתכם גם אחרי העלייה.",
   },
 
   /* the share card. `title` is the ONLY text on it, so it has to carry the page
      on its own, at a glance, on a phone. See scripts/gen_og.mjs. */
   og: {
-    image: "assets/og-home.png",
-    title: "אתרים, אפליקציות ואוטומציות לעסק",
-    alt: "FLOA. אתרים, אפליקציות ואוטומציות לעסק",
+    image: "assets/og-home-v2.png",
+    title: "ייעוץ, פיתוח וליווי לעסק",
+    alt: "FLOA. ייעוץ, פיתוח וליווי לעסק: חמישה שערים על נהר אחד, מייעוץ ועד AI",
   },
 
   pageName: "דף הבית",

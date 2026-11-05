@@ -20,7 +20,7 @@ import { page } from "#layouts/base.js";
 export const render = (ctx) => page(ctx, {
   path: `${site.folder}${work.slug}/`,
   meta: work.meta,
-  og: home.og,
+  og: work.og,
   waText: work.waText,
   ctaLabel: work.waLabel,
   jsonLd: {

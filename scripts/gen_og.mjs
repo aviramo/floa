@@ -1,208 +1,247 @@
 /* ==========================================================================
-   Generate the share cards — ONE PER PAGE (assets/og-*.png).
-
-   There used to be a single card for the whole site, and it was doing the job
-   badly: it carried a headline, a paragraph AND a row of pills, so on a phone
-   the sub-line and the pills were a grey smudge nobody could read — and the
-   pills still advertised CRM, a service the site no longer offers.
+   Generate the share cards, ONE PER PAGE (assets/og-*-v2.png).
 
    A share card is seen at about 300px wide, for about half a second, usually in
-   a WhatsApp thread. So each card here says exactly ONE thing: the FLOA mark,
-   one short line, and the illustration from that page's own hero. Nothing else.
-   The line is `og.title` in the content — never the <title>, which is written
-   for a search engine and is far too long to read at that size.
+   a WhatsApp thread. So each card says exactly ONE thing: FLOA's mark, one short
+   line, and one picture of that page's subject. Nothing else. The line is
+   `og.title` in the content, never the <title>, which is written for a search
+   engine and is far too long to read at that size.
 
-   The art is not redrawn here: the solution pages' hero SVGs are read straight
-   from src/content/hero-art/, and their palette from the real stylesheets, so a
-   card cannot drift away from the page it advertises.
+   The cards wear the same language as the site: water at first light, a wind of
+   thin currents behind everything, pebbles (two big corners, two tight) instead
+   of boxes, and a mark that is drawn (the F of the icon, then L with a wave for a
+   foot, O with water in it, A with a wave for a bar). Each picture is drawn here,
+   in the site's palette, so no card can drift back to an older look.
 
-   Rendered in Chromium so Hebrew (RTL) and the brand fonts come out exactly as
-   they do on the page. The fonts are fetched from Google, subset to just the
-   glyphs used, and inlined as data: URIs so the render never depends on network
-   timing.
+   No library: the page is written to a file and a real Chrome prints it
+   (chrome --headless --screenshot), so Hebrew (RTL) comes out exactly as on the
+   site. Rubik is fetched from Google, cut to just the glyphs used, and inlined as
+   data: URIs, so the render never depends on network timing.
 
-   Run:  node scripts/gen_og.mjs        (after changing any og.title or hero art)
+   The file names carry a version (-v2). A social network keeps a card for as long
+   as the same address is served, so a new look needs a new address.
+
+   Run:  node scripts/gen_og.mjs        (after changing any og.title or a picture)
+         CHROME=/path/to/chrome node scripts/gen_og.mjs   (if Chrome is somewhere else)
    ========================================================================== */
 import { execFileSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-/* the share cards are files of the business, not of the build: they land in its
-   public/ folder and are copied into its site verbatim */
 const PUBLIC = join(ROOT, "businesses/floa/public");
-const read = (p) => readFileSync(join(ROOT, p), "utf8");
+const load = (p) => import(pathToFileURL(join(ROOT, p)).href);
 
-const pw = await import(process.env.PW || "playwright");
-const chromium = pw.chromium || pw.default?.chromium;
+const { home } = await load("businesses/floa/content/home.js");
+const { solutions } = await load("businesses/floa/content/solutions.js");
+const { landingOffer } = await load("businesses/floa/content/landing-offer.js");
+const { work } = await load("businesses/floa/content/work.js");
+const { icon } = await load("src/components/icon/icon.js");
 
-const { home } = await import(pathToFileURL(join(ROOT, "businesses/floa/content/home.js")).href);
-const { solutions } = await import(pathToFileURL(join(ROOT, "businesses/floa/content/solutions.js")).href);
-const { landingOffer } = await import(pathToFileURL(join(ROOT, "businesses/floa/content/landing-offer.js")).href);
-const { deviceMockSvg } = await import(pathToFileURL(join(ROOT, "src/components/device-mock/device-mock.js")).href);
+/* --- where Chrome is -------------------------------------------------------- */
+const CHROME = [
+  process.env.CHROME,
+  "C:/Program Files/Google/Chrome/Application/chrome.exe",
+  "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  "/usr/bin/google-chrome",
+  "/usr/bin/chromium",
+].find((p) => p && existsSync(p));
+if (!CHROME) throw new Error("No Chrome found. Set CHROME=/path/to/chrome.");
 
-/* --- fonts: subset to exactly the glyphs the cards render ------------------ */
+/* --- the palette: the site's water (businesses/floa/theme.css) ---------------- */
+const INK = "#0C2A45", TEAL = "#1B74B3", DARK = "#0F4F7F", TINT = "#CFE6F5", LIGHT = "#4FAEE8", LINE = "#D4E3EE";
+
+/* --- fonts: Rubik 700, cut to exactly the glyphs the cards print ------------ */
 function curl(url) {
-  return execFileSync("curl", [
-    "-s", "-A",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
-      "(KHTML, like Gecko) Chrome/120.0 Safari/537.36",
-    url,
-  ]);
+  return execFileSync("curl", ["-s", "-A", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36", url]);
 }
-
 function embeddedFontCss(chars) {
-  const api =
-    "https://fonts.googleapis.com/css2?family=Rubik:wght@700" +
-    "&text=" + encodeURIComponent([...new Set(chars)].join("")) +
-    "&display=swap";
+  const api = "https://fonts.googleapis.com/css2?family=Rubik:wght@700&text=" + encodeURIComponent([...new Set(chars)].join("")) + "&display=swap";
   let css = curl(api).toString();
-  for (const u of [...new Set(css.match(/https:\/\/[^)]+\.woff2/g) || [])]) {
+  /* the font files are served from fonts.gstatic.com, some at addresses that do not end in .woff2 */
+  for (const u of [...new Set(css.match(/https:\/\/fonts\.gstatic\.com\/[^)]+/g) || [])]) {
     css = css.split(u).join(`data:font/woff2;base64,${curl(u).toString("base64")}`);
   }
+  if (!css.includes("data:font")) throw new Error("Could not fetch Rubik from Google Fonts.");
   return css;
 }
 
-/* --- the art --------------------------------------------------------------
-   A solution page's card wears that page's own hero illustration. The shapes
-   and the palette both come from the real files, so this is the same picture
-   the visitor lands on. */
-const HERO_ART_CSS = read("src/components/hero-art/hero-art.css");
-const TOKENS_CSS = read("src/design/tokens.css");
+/* --- shapes ------------------------------------------------------------------ */
+/* a pebble: two opposite corners generous, two tight */
+const pebble = (x, y, w, h, big, small) =>
+  `M${x + small} ${y}H${x + w - big}A${big} ${big} 0 0 1 ${x + w} ${y + big}V${y + h - small}A${small} ${small} 0 0 1 ${x + w - small} ${y + h}` +
+  `H${x + big}A${big} ${big} 0 0 1 ${x} ${y + h - big}V${y + small}A${small} ${small} 0 0 1 ${x + small} ${y}Z`;
 
-const heroArt = (slug) => `
-<svg class="hero-illust" viewBox="-24 -14 768 488" role="img">
-${read(`businesses/floa/content/hero-art/${slug}.svg`)}
-</svg>`;
+const waveD = (x0, y0, w, amp, cycles, phase = 0, n = 56) =>
+  "M" + Array.from({ length: n + 1 }, (_, i) => {
+    const k = i / n;
+    return `${(x0 + w * k).toFixed(1)} ${(y0 - amp * Math.sin(2 * Math.PI * cycles * k + phase)).toFixed(1)}`;
+  }).join(" L");
 
-/* The homepage has no hero SVG of its own — its hero is the animated system
-   diagram. This is that diagram, frozen in the state it settles into: every
-   solution wired into one hub. Lifted from hero-system.js, with the classes
-   resolved to the colours they compute to, so it needs no stylesheet. */
-const DIAGRAM = `
-<svg class="sys" viewBox="0 0 820 470" role="img">
+/* an icon from the site's own set, placed and sized inside an svg */
+const glyph = (name, cx, cy, size, color) =>
+  icon(name).toString().replace("<svg ", `<svg x="${cx - size / 2}" y="${cy - size / 2}" width="${size}" height="${size}" color="${color}" `);
+
+/* --- the mark: the F of the icon, and the word, drawn ------------------------- */
+const MARK = `
+<svg class="mark" viewBox="0 0 300 64" role="img" aria-label="FLOA">
   <defs>
-    <linearGradient id="wire" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#7FC5E4"/><stop offset="1" stop-color="#0E8C7E"/>
-    </linearGradient>
-    <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="150%">
-      <feDropShadow dx="0" dy="6" stdDeviation="9" flood-color="#0F2A33" flood-opacity=".10"/>
-    </filter>
-    <filter id="hubGlow" x="-60%" y="-60%" width="220%" height="220%">
-      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#0E8C7E" flood-opacity=".38"/>
-    </filter>
+    <linearGradient id="mt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#56B4EE"/><stop offset="1" stop-color="#0E4A80"/></linearGradient>
+    <linearGradient id="mw" gradientUnits="userSpaceOnUse" x1="80" y1="0" x2="300" y2="0"><stop offset="0" stop-color="#2E8FD6"/><stop offset="1" stop-color="#0E4A80"/></linearGradient>
   </defs>
-  <g fill="none" stroke="url(#wire)" stroke-width="2.4" stroke-linecap="round">
-    <path d="M284 150 C 320 176, 344 200, 370 224"/>
-    <path d="M592 122 C 545 158, 500 192, 458 222"/>
-    <path d="M644 286 C 590 274, 510 258, 460 250"/>
-    <path d="M430 384 C 424 342, 420 306, 416 280"/>
-    <path d="M236 352 C 288 322, 332 288, 366 262"/>
+  <rect width="64" height="64" rx="15.4" fill="url(#mt)"/>
+  <g fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 34.5q4-4.5 8 0t8 0" opacity=".84"/><path d="M21 18.75q5.75-5.5 11.5 0t11.5 0"/><path d="M21 16V49"/>
   </g>
-  <g>
-    <rect x="96" y="52" width="188" height="118" rx="16" filter="url(#cardShadow)" fill="#fff"/>
-    <circle cx="118" cy="74" r="4" fill="#C6D3D6"/><circle cx="132" cy="74" r="4" fill="#C6D3D6"/><circle cx="146" cy="74" r="4" fill="#C6D3D6"/>
-    <rect x="116" y="94" width="86" height="10" rx="5" fill="#0E8C7E"/>
-    <rect x="116" y="114" width="148" height="8" rx="4" fill="#D9E3E1"/>
-    <rect x="116" y="132" width="120" height="8" rx="4" fill="#D9E3E1"/>
-    <rect x="116" y="150" width="60" height="8" rx="4" fill="#7FC5E4"/>
-  </g>
-  <g>
-    <rect x="592" y="36" width="86" height="150" rx="16" filter="url(#cardShadow)" fill="#fff"/>
-    <rect x="606" y="56" width="58" height="30" rx="8" fill="#0E8C7E"/>
-    <rect x="606" y="96" width="58" height="8" rx="4" fill="#D9E3E1"/>
-    <rect x="606" y="112" width="44" height="8" rx="4" fill="#D9E3E1"/>
-    <rect x="606" y="140" width="58" height="22" rx="8" fill="#7FC5E4"/>
-  </g>
-  <g>
-    <path d="M660 250 h84 a16 16 0 0 1 16 16 v34 a16 16 0 0 1 -16 16 h-56 l-22 20 v-20 h-6 a16 16 0 0 1 -16 -16 v-34 a16 16 0 0 1 16 -16 z" filter="url(#cardShadow)" fill="#fff"/>
-    <rect x="676" y="272" width="52" height="8" rx="4" fill="#D9E3E1"/>
-    <rect x="676" y="288" width="34" height="8" rx="4" fill="#0E8C7E"/>
-  </g>
-  <g>
-    <rect x="352" y="384" width="160" height="60" rx="12" filter="url(#cardShadow)" fill="#fff"/>
-    <rect x="368" y="398" width="128" height="12" rx="6" fill="#0E8C7E"/>
-    <rect x="368" y="420" width="70" height="8" rx="4" fill="#D9E3E1"/>
-    <rect x="452" y="420" width="44" height="8" rx="4" fill="#7FC5E4"/>
-  </g>
-  <g>
-    <rect x="86" y="330" width="150" height="72" rx="14" filter="url(#cardShadow)" fill="#fff"/>
-    <circle cx="106" cy="350" r="5" fill="#0E8C7E"/><rect x="120" y="346" width="98" height="8" rx="4" fill="#D9E3E1"/>
-    <circle cx="106" cy="372" r="5" fill="#7FC5E4"/><rect x="120" y="368" width="76" height="8" rx="4" fill="#D9E3E1"/>
-    <circle cx="106" cy="392" r="5" fill="#C6D3D6"/><rect x="120" y="388" width="56" height="8" rx="4" fill="#D9E3E1"/>
-  </g>
-  <g>
-    <rect x="368" y="212" width="90" height="66" rx="20" fill="#0E8C7E" filter="url(#hubGlow)"/>
-    <g stroke="#fff" stroke-width="2.4" stroke-linecap="round" fill="none">
-      <path d="M386 245 h16"/><path d="M402 245 L 418 231"/><path d="M402 245 L 418 259"/>
-      <circle cx="422" cy="231" r="3.4" fill="#fff" stroke="none"/>
-      <circle cx="422" cy="259" r="3.4" fill="#fff" stroke="none"/>
-      <circle cx="402" cy="245" r="4.4" fill="#fff" stroke="none"/>
-    </g>
+  <g transform="translate(80 0)" fill="none" stroke="url(#mw)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 8V56"/><path d="M12 12q8-9 16 0t16 0"/><path d="M12 32q6-7 12 0t12 0"/>
+    <path d="M62 8V56q7.5-9 15 0t15 0"/>
+    <ellipse cx="130" cy="32" rx="22" ry="24"/><path d="M113 33q8.5-8 17 0t17 0" stroke-width="7"/>
+    <path d="M166 56L186 10L206 56"/><path d="M173 41q6.5-8 13 0t13 0" stroke-width="7"/>
   </g>
 </svg>`;
 
-/* --- the cards ------------------------------------------------------------ */
+/* --- the pictures: one per card, each 600 x 440 -------------------------------- */
+const defs = `<defs>
+  <radialGradient id="glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="${LIGHT}" stop-opacity=".34"/><stop offset="1" stop-color="${LIGHT}" stop-opacity="0"/></radialGradient>
+  <linearGradient id="sea" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4FAEE8"/><stop offset="1" stop-color="#0F4F7F"/></linearGradient>
+  <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#E4F1FA"/></linearGradient>
+  <linearGradient id="riv" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="600" y2="0"><stop offset="0" stop-color="${TINT}" stop-opacity="0"/><stop offset=".1" stop-color="${TINT}" stop-opacity=".9"/><stop offset=".9" stop-color="${TINT}" stop-opacity=".9"/><stop offset="1" stop-color="${TINT}" stop-opacity="0"/></linearGradient>
+  <linearGradient id="rivl" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="600" y2="0"><stop offset="0" stop-color="${TEAL}" stop-opacity="0"/><stop offset=".12" stop-color="${TEAL}"/><stop offset=".88" stop-color="${TEAL}"/><stop offset="1" stop-color="${TEAL}" stop-opacity="0"/></linearGradient>
+  <linearGradient id="fade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${LIGHT}" stop-opacity="0"/><stop offset=".5" stop-color="${TEAL}"/><stop offset="1" stop-color="${LIGHT}" stop-opacity="0"/></linearGradient>
+  <filter id="soft" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="16" stdDeviation="14" flood-color="${DARK}" flood-opacity=".28"/></filter>
+</defs>`;
+const rings = (cx, cy, rx) =>
+  [1, 1.6, 2.3].map((k, i) => `<ellipse cx="${cx}" cy="${cy}" rx="${rx * k}" ry="${rx * k * 0.3}" fill="none" stroke="${TEAL}" stroke-width="1.6" opacity="${[0.5, 0.3, 0.16][i]}"/>`).join("");
+
+/* home: the five gates on one river, the first on the right (Hebrew reads right to left) */
+const river = () => {
+  const y = (x) => 226 + 46 * Math.sin(x / 84);
+  const pts = Array.from({ length: 61 }, (_, i) => `${i * 10} ${y(i * 10).toFixed(1)}`).join(" L");
+  const gates = [["target", 520], ["website", 410], ["app", 300], ["automation", 190], ["sparkle", 80]];
+  return `<svg viewBox="0 0 600 440" role="img">${defs}
+    <ellipse cx="300" cy="238" rx="300" ry="120" fill="url(#glow)"/>
+    <path d="M${pts}" fill="none" stroke="url(#riv)" stroke-width="104" stroke-linecap="round"/>
+    <path d="M${pts}" fill="none" stroke="url(#rivl)" stroke-width="3" opacity=".3"/>
+    <path d="M${pts}" fill="none" stroke="url(#rivl)" stroke-width="6" stroke-linecap="round" stroke-dasharray="26 24"/>
+    ${gates.map(([n, x], i) => {
+      const cy = y(x), last = i === gates.length - 1;
+      return `<circle cx="${x}" cy="${cy}" r="54" fill="none" stroke="${TEAL}" stroke-width="1.6" opacity=".3"/>
+      <circle cx="${x}" cy="${cy}" r="42" fill="${last ? "url(#sea)" : "#fff"}" stroke="${last ? "#fff" : TINT}" stroke-width="7" filter="url(#soft)"/>
+      ${glyph(n, x, cy, 36, last ? "#fff" : DARK)}`;
+    }).join("")}
+    <g opacity=".9"><circle cx="560" cy="96" r="18" fill="#fff" stroke="${TINT}" stroke-width="6"/><circle cx="560" cy="96" r="7" fill="${LIGHT}"/>
+    <circle cx="40" cy="372" r="14" fill="#fff" stroke="${TINT}" stroke-width="5"/><circle cx="40" cy="372" r="5" fill="${LIGHT}"/></g>
+  </svg>`;
+};
+
+/* websites, apps, landing pages: the laptop and the phone (the same drawing the homepage shows) */
+const devices = () => {
+  const svg = readFileSync(join(PUBLIC, "assets/systems-devices.svg"), "utf8");
+  return svg.replace(/<style>[\s\S]*?<\/style>/, "").replace("viewBox=\"0 0 800 600\"", "viewBox=\"0 40 800 560\"");
+};
+
+/* systems and automations: a form becomes a task becomes a message, on one current */
+const pipeline = () => `<svg viewBox="0 0 600 440" role="img">${defs}
+  <ellipse cx="300" cy="222" rx="300" ry="130" fill="url(#glow)"/>
+  <path d="${pebble(30, 96, 540, 250, 100, 30)}" fill="url(#glass)" filter="url(#soft)"/>
+  <path d="M388 221H212" stroke="${LINE}" stroke-width="9" stroke-linecap="round"/>
+  <path d="M470 221H388" stroke="${TEAL}" stroke-width="9" stroke-linecap="round"/>
+  <path d="M212 221H130" stroke="${LINE}" stroke-width="9" stroke-linecap="round"/>
+  <path d="M388 221H300" stroke="${TEAL}" stroke-width="9" stroke-linecap="round"/>
+  ${[["doc", 470, true], ["automation", 300, true], ["whatsapp", 130, false]].map(([n, x, lit]) =>
+    `<circle cx="${x}" cy="221" r="58" fill="${lit ? "url(#sea)" : "#fff"}" stroke="${lit ? "#fff" : TINT}" stroke-width="7"/>
+     <circle cx="${x}" cy="221" r="78" fill="none" stroke="${TEAL}" stroke-width="1.6" opacity=".26"/>
+     ${glyph(n, x, 221, 50, lit ? "#fff" : DARK)}`).join("")}
+  <path d="${waveD(40, 392, 520, 8, 4)}" fill="none" stroke="url(#fade)" stroke-width="5" stroke-linecap="round"/>
+</svg>`;
+
+/* the landing page offer: a page with a form, and a price tag on the corner */
+const landing = () => `<svg viewBox="0 0 600 440" role="img">${defs}
+  <ellipse cx="300" cy="240" rx="300" ry="130" fill="url(#glow)"/>
+  <path d="${pebble(50, 40, 500, 330, 76, 24)}" fill="url(#glass)" filter="url(#soft)"/>
+  <path d="M50 100H550V94H50Z" fill="#EAF4FB"/>
+  <circle cx="518" cy="70" r="7" fill="${LINE}"/><circle cx="496" cy="70" r="7" fill="${LINE}"/><circle cx="474" cy="70" r="7" fill="${LINE}"/>
+  <path d="${waveD(330, 148, 170, 6, 2)}" fill="none" stroke="${TEAL}" stroke-width="9" stroke-linecap="round"/>
+  <path d="${waveD(330, 178, 120, 5, 1.6, 1)}" fill="none" stroke="${LINE}" stroke-width="7" stroke-linecap="round"/>
+  <path d="${pebble(90, 142, 190, 190, 46, 14)}" fill="#fff" stroke="${LINE}" stroke-width="3"/>
+  <path d="${pebble(112, 168, 146, 36, 18, 8)}" fill="#EAF4FB"/><path d="${pebble(112, 218, 146, 36, 18, 8)}" fill="#EAF4FB"/>
+  <path d="${pebble(112, 272, 146, 40, 20, 8)}" fill="url(#sea)"/>
+  <path d="${pebble(330, 232, 76, 76, 28, 10)}" fill="#EAF4FB"/><path d="${pebble(420, 232, 76, 76, 28, 10)}" fill="#EAF4FB"/>
+  <g transform="rotate(-6 150 372)"><path d="${pebble(60, 340, 190, 74, 34, 12)}" fill="url(#sea)" filter="url(#soft)"/>
+  <path d="${waveD(88, 377, 134, 6, 2.5)}" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round"/></g>
+</svg>`;
+
+/* the work: three real projects, cut to pebbles and laid over one another */
+const workArt = () => {
+  const img = (name) => `data:image/webp;base64,${readFileSync(join(PUBLIC, `assets/project-${name}.webp`)).toString("base64")}`;
+  const one = (name, x, y, w, rot, id) => `<g transform="translate(${x} ${y}) rotate(${rot} ${w / 2} ${w / 2})" filter="url(#soft)">
+    <path d="${pebble(0, 0, w, w, w * 0.2, w * 0.06)}" fill="#fff"/>
+    <clipPath id="${id}"><path d="${pebble(6, 6, w - 12, w - 12, w * 0.19, w * 0.05)}"/></clipPath>
+    <image href="${img(name)}" x="6" y="6" width="${w - 12}" height="${w - 12}" clip-path="url(#${id})" preserveAspectRatio="xMidYMid slice"/></g>`;
+  return `<svg viewBox="0 0 600 440" role="img">${defs}
+    <ellipse cx="300" cy="230" rx="300" ry="150" fill="url(#glow)"/>
+    ${one("chords", 0, 150, 270, -4, "c1")}${one("once", 330, 120, 270, 3, "c2")}${one("roster", 150, 10, 300, -1.5, "c3")}
+  </svg>`;
+};
+
+/* --- the cards --------------------------------------------------------------- */
 const cards = [
-  { out: home.og.image, title: home.og.title, art: DIAGRAM },
-  ...solutions.map((s) => ({ out: s.og.image, title: s.og.title, art: heroArt(s.slug) })),
-  { out: landingOffer.og.image, title: landingOffer.og.title, art: deviceMockSvg({ label: landingOffer.hero.mockAlt }).toString() },
+  { out: home.og.image, title: home.og.title, art: river() },
+  { out: solutions[0].og.image, title: solutions[0].og.title, art: devices() },
+  { out: solutions[1].og.image, title: solutions[1].og.title, art: pipeline() },
+  { out: landingOffer.og.image, title: landingOffer.og.title, art: landing() },
+  { out: work.og.image, title: work.og.title, art: workArt() },
 ];
 
-const page = (card) => `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8">
-<style>
-${embeddedFontCss(cards.map((c) => c.title).join("") + "FLOA")}
-${TOKENS_CSS}
-${HERO_ART_CSS}
-/* a card is a still: nothing may be caught mid-animation */
-*, *::before, *::after { animation: none !important; transition: none !important; }
+const WIND = [[70, 60, 3.4, 1], [150, 38, 2.6, -1], [250, 70, 4, 1], [340, 44, 3, -1], [450, 66, 3.6, 1], [560, 40, 2.8, -1]]
+  .map(([y, a, w, d], i) => `<path d="${waveD(-40, y + i * 14, 1280, a, 2 + (i % 3), i * 1.3, 90)}" fill="none" stroke="${LIGHT}" stroke-width="${w}" stroke-linecap="round" stroke-dasharray="${180 + i * 30} ${300 + i * 20}" opacity=".30"/>`).join("");
 
+const page = (card, fontCss) => `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8">
+<style>
+${fontCss}
+*, *::before, *::after { animation: none !important; transition: none !important; }
 * { margin: 0; box-sizing: border-box; }
-html, body { width: 1200px; height: 630px; }
+html, body { width: 1200px; height: 630px; overflow: hidden; }
 body {
-  display: flex; align-items: center; gap: 40px;
-  padding: 72px 84px;
+  position: relative; display: flex; align-items: center; gap: 24px;
+  padding: 56px 72px 56px 28px;
   background:
-    radial-gradient(1100px 620px at 88% -10%, rgba(127,197,228,.20), transparent 60%),
-    radial-gradient(900px 560px at 6% 118%, rgba(14,140,126,.12), transparent 60%),
-    #E9F0EE;
-  color: #0F2A33;
+    radial-gradient(60vmax 44vmax at 12% 10%, rgba(255,255,255,.95), rgba(255,255,255,0) 70%),
+    radial-gradient(52vmax 40vmax at 96% 8%, rgba(96,178,232,.46), rgba(96,178,232,0) 70%),
+    radial-gradient(54vmax 40vmax at 4% 100%, rgba(140,214,238,.46), rgba(140,214,238,0) 70%),
+    linear-gradient(170deg, #F4FAFD, #D9E9F4);
+  color: ${INK};
 }
-.copy { flex: 1 1 50%; min-width: 0; }
-.logo {
-  font-family: "Rubik", sans-serif; font-weight: 700; font-size: 42px;
-  letter-spacing: .14em; color: #0E8C7E; margin-bottom: 34px;
-}
-/* ONE line, and it is allowed to be big. Nothing competes with it. */
-h1 {
-  font-family: "Rubik", sans-serif; font-weight: 700; font-size: 68px;
-  line-height: 1.18; letter-spacing: -.01em; text-wrap: balance;
-}
-.rule { width: 96px; height: 6px; border-radius: 3px; background: #0E8C7E; margin-top: 38px; }
-.art { flex: 1 1 50%; display: flex; align-items: center; justify-content: center; min-width: 0; }
-.art svg { width: 100%; height: auto; filter: drop-shadow(0 24px 40px rgba(15,42,51,.10)); }
+.wind { position: absolute; inset: 0; width: 1200px; height: 630px; }
+.copy { position: relative; flex: 0 0 470px; min-width: 0; }
+.mark { display: block; width: 280px; height: auto; margin-bottom: 40px; }
+h1 { font-family: "Rubik", sans-serif; font-weight: 700; font-size: 66px; line-height: 1.16; letter-spacing: -.012em; text-wrap: balance; color: ${INK}; }
+.line { width: 132px; height: 12px; margin-top: 34px; background: ${TEAL}; opacity: .8;
+  -webkit-mask: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='132' height='12' viewBox='0 0 132 12'%3E%3Cpath d='M0 6 C22 1 44 11 66 6 S110 1 132 6' fill='none' stroke='black' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") center / 132px 12px no-repeat; }
+.art { position: relative; flex: 1 1 auto; min-width: 0; display: flex; align-items: center; justify-content: center; }
+.art svg { width: 100%; height: auto; max-height: 520px; }
 </style></head>
 <body>
-  <div class="copy">
-    <div class="logo">FLOA</div>
-    <h1>${card.title}</h1>
-    <div class="rule"></div>
-  </div>
+  <svg class="wind" viewBox="0 0 1200 630" aria-hidden="true">${WIND}</svg>
+  <div class="copy">${MARK}<h1>${card.title}</h1><div class="line"></div></div>
   <div class="art">${card.art}</div>
 </body></html>`;
 
-const browser = await chromium.launch(process.env.PW_EXECUTABLE ? { executablePath: process.env.PW_EXECUTABLE } : {});
-for (const card of cards) {
-  const p = await browser.newPage({
-    viewport: { width: 1200, height: 630 },
-    deviceScaleFactor: 1,        // the OG spec size; keeps the file light for WhatsApp
-  });
-  await p.setContent(page(card), { waitUntil: "load" });
-  await p.evaluate(() => document.fonts.ready);
-  const buf = await p.screenshot({ type: "png" });
-  writeFileSync(join(PUBLIC, card.out), buf);
-  console.log(`  ${card.out}  ${(buf.length / 1024).toFixed(0)} KB  "${card.title}"`);
-  await p.close();
+/* --- print them ---------------------------------------------------------------- */
+const fontCss = embeddedFontCss(cards.map((c) => c.title).join("") + "FLOA");
+const tmp = join(tmpdir(), "floa-og");
+mkdirSync(tmp, { recursive: true });
+for (const [i, card] of cards.entries()) {
+  const file = join(tmp, `card-${i}.html`);
+  const png = join(PUBLIC, card.out);
+  writeFileSync(file, page(card, fontCss));
+  execFileSync(CHROME, [
+    "--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=1",
+    "--window-size=1200,630", "--virtual-time-budget=4000", `--screenshot=${png}`, pathToFileURL(file).href,
+  ], { stdio: "ignore" });
+  console.log(`  ${card.out}  ${(readFileSync(png).length / 1024).toFixed(0)} KB  "${card.title}"`);
 }
-await browser.close();

@@ -20,9 +20,9 @@ export const landingOffer = {
   },
 
   og: {
-    image: "assets/og-landing-offer.png",
+    image: "assets/og-landing-offer-v2.png",
     title: "דף נחיתה מקצועי החל מ־500 ₪",
-    alt: "FLOA. דף נחיתה מקצועי החל מ־500 ₪",
+    alt: "FLOA. דף נחיתה מקצועי החל מ־500 ₪: דף עם טופס ותווית מחיר",
   },
 
   hero: {

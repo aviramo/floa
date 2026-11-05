@@ -38,6 +38,10 @@ export function page(ctx, { path = "", meta, og = {}, jsonLd, waText, ctaLabel, 
   const card = { ...site.og, ...og };
   const ogImage = `${site.origin}/${site.folder ?? ""}${card.image}`;
 
+  /* what a social network prints is not what a tab prints: the tab wants the brand first, the share wants the
+     subject first. A page may give `meta.share` ({ title, description }); without it the page's own are used. */
+  const share = { title: meta.share?.title ?? meta.title, description: meta.share?.description ?? meta.description };
+
   const social = og !== false && html`
   <!-- Open Graph. The image must be an absolute URL on the host that actually
        serves the site. Social crawlers reject a relative path. -->
@@ -45,15 +49,15 @@ export function page(ctx, { path = "", meta, og = {}, jsonLd, waText, ctaLabel, 
   <meta property="og:locale" content="${site.locale}">
   <meta property="og:site_name" content="${site.brand}">
   <meta property="og:url" content="${url}">
-  <meta property="og:title" content="${meta.title}">
-  <meta property="og:description" content="${meta.description}">
+  <meta property="og:title" content="${share.title}">
+  <meta property="og:description" content="${share.description}">
   <meta property="og:image" content="${ogImage}">
   <meta property="og:image:width" content="${card.width}">
   <meta property="og:image:height" content="${card.height}">
   <meta property="og:image:alt" content="${card.alt}">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="${meta.title}">
-  <meta name="twitter:description" content="${meta.description}">
+  <meta name="twitter:title" content="${share.title}">
+  <meta name="twitter:description" content="${share.description}">
   <meta name="twitter:image" content="${ogImage}">`;
 
   return html`<!DOCTYPE html>
