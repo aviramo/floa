@@ -3,6 +3,7 @@ import { footerContent, site } from "../content/site.js";
 import { home } from "../content/home.js";
 import { solutions } from "../content/solutions.js";
 import { landingOffer } from "../content/landing-offer.js";
+import { work } from "../content/work.js";
 import { accessibility, privacy } from "../content/legal.js";
 import { terms } from "../content/terms.js";
 
@@ -10,6 +11,7 @@ import { render as renderHome } from "./home.js";
 import { render as renderLegal } from "./legal-page.js";
 import { render as renderSolution } from "./solution.js";
 import { render as renderLandingOffer } from "./landing-offer.js";
+import { render as renderWork } from "./work.js";
 
 /* ==========================================================================
    FLOA's pages, and where they land.
@@ -76,6 +78,12 @@ export const pages = [
     render: (assets) => renderLandingOffer(inFolder(assets)),
   },
 
+  /* the portfolio: the homepage shows a small strip and points here */
+  {
+    out: `${work.slug}/index.html`,
+    render: (assets) => renderWork(inFolder(assets)),
+  },
+
   ...[privacy, accessibility, terms].map((doc) => ({
     out: doc.out,
     render: (assets) => renderLegal(inRoot(assets), doc),
@@ -93,11 +101,15 @@ export const pages = [
    sitemap.xml and llms.txt are generated from this in build.mjs, so a
    crawler-facing file can never list a page the build doesn't emit, or omit one
    it does. */
+/* titles go to crawlers and to llms.txt without the invisible right-to-left mark that keeps the brand visible in a tab */
+const plain = (s) => s.replace(/\u200F/g, "");
+
 export const siteMap = [
-  { loc: `${site.origin}/`, title: home.meta.title, description: home.meta.description },
-  ...solutions.map((s) => ({ loc: `${site.origin}/${site.folder}${s.slug}/`, title: s.meta.title, description: s.meta.description })),
-  { loc: `${site.origin}/${site.folder}${landingOffer.slug}/`, title: landingOffer.meta.title, description: landingOffer.meta.description },
-  ...[privacy, accessibility, terms].map((doc) => ({ loc: `${site.origin}/${site.folder}${doc.out}`, title: doc.meta.title, description: doc.meta.description })),
+  { loc: `${site.origin}/`, title: plain(home.meta.title), description: home.meta.description },
+  ...solutions.map((s) => ({ loc: `${site.origin}/${site.folder}${s.slug}/`, title: plain(s.meta.title), description: s.meta.description })),
+  { loc: `${site.origin}/${site.folder}${landingOffer.slug}/`, title: plain(landingOffer.meta.title), description: landingOffer.meta.description },
+  { loc: `${site.origin}/${site.folder}${work.slug}/`, title: plain(work.meta.title), description: work.meta.description },
+  ...[privacy, accessibility, terms].map((doc) => ({ loc: `${site.origin}/${site.folder}${doc.out}`, title: plain(doc.meta.title), description: doc.meta.description })),
 ];
 
 /* The pages that may send a lead, by the name that lands in the email's subject.

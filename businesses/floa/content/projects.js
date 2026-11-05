@@ -2,6 +2,7 @@
    restates them. */
 export const projects = {
   once: {
+    icon: "app",
     name: "Once",
     title: "אפליקציית היכרות בזמן אמת",
     href: "https://once-lake.vercel.app/",
@@ -20,6 +21,7 @@ export const projects = {
   },
 
   chords: {
+    icon: "doc",
     name: "אקורדים",
     title: "אפליקציית ספריית שירים ואקורדים",
     href: "https://floa.co.il/chords/",
@@ -91,6 +93,7 @@ export const projects = {
   },
 
   perfecti: {
+    icon: "leads",
     name: "ניקיון פרפקטי",
     title: "פרסום ממומן בגוגל לעסק ניקיון",
     href: "https://floa.co.il/perfecti/",

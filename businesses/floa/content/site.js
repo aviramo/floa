@@ -43,8 +43,8 @@ export const site = {
     ga4: "",
   },
   themeColor: "#1B74B3",
-  tagline: "פתרונות דיגיטליים שעובדים עם העסק",
-  slogan: "כל העסק. מערכת אחת. כתובת אחת",
+  tagline: "ייעוץ, פיתוח וליווי לעסק",
+  slogan: "ייעוץ, פיתוח וליווי: אתרים, אפליקציות ואוטומציות עם AI",
   founder: "אופיר אבירם",
   email: "info@floa.co.il",
   copyright: "© FLOA. כל הזכויות שמורות",
@@ -180,7 +180,7 @@ export const footerContent = (ctx) => ({
   links: [
     !ctx.isHome && { href: ctx.home(), label: "דף הבית" },
     { href: ctx.home("#solutions"), label: "פתרונות" },
-    { href: ctx.home("#projects"), label: "עבודות" },
+    { href: ctx.url("work/"), label: "עבודות" },
     { href: ctx.home("#process"), label: "איך זה עובד" },
     { href: ctx.home("#about"), label: "אודות" },
     /* Root-absolute, and it has to be: the CV is not one of FLOA's pages, it is

@@ -10,15 +10,15 @@ import { ctaBand } from "#components/cta-band/cta-band.js";
 import { ecoGrid } from "#components/eco-grid/eco-grid.js";
 import { hero } from "#components/hero/hero.js";
 import { heroMotion } from "#components/hero-motion/hero-motion.js";
-import { projectGrid } from "#components/project-card/project-card.js";
 import { quotes } from "#components/quote-card/quote-card.js";
+import { scrollFlow } from "#components/scroll-flow/scroll-flow.js";
 import { section } from "#components/section/section.js";
 import { sectionHead } from "#components/section-head/section-head.js";
 import { timeline } from "#components/timeline/timeline.js";
 import { waButton } from "#components/whatsapp-button/whatsapp-button.js";
 
 import { home } from "../content/home.js";
-import { pick as pickProjects } from "../content/projects.js";
+import { pick as pickProjects, projects } from "../content/projects.js";
 import { pick as pickQuotes } from "../content/quotes.js";
 import { contactContent, formCta, heroNote, processContent, projectsHead, site, testimonialsHead } from "../content/site.js";
 import { defaultCta, ecosystem, solutions } from "../content/solutions.js";
@@ -65,6 +65,8 @@ ${hero(ctx, {
   actions: html`${waButton(ctx, { label: home.waLabel })}
           ${button(ctx, { href: "#contact", label: formCta, variant: "ghost", size: "lg", analytics: "hero_form_cta" })}`,
 })}
+
+${scrollFlow(ctx, home.flowStory)}
 
 ${section({
   id: "solutions",
@@ -119,7 +121,14 @@ ${cardGrid({
     children: html`${card(ctx, { ...home.ai.lead, wide: true, accent: "teal" })}
 ${home.ai.items.map((item) => card(ctx, { ...item, accent: "teal", size: "sm" }))}`,
   })}
-${projectGrid(ctx, { items: pickProjects("once", "chords", "harpatka", "roster", "aum", "perfecti", "telaviv", "outlet") })}`,
+${cardGrid({
+    cols: 4,
+    className: "work-strip",
+    /* a strip, not a gallery: three of the works, and the tile that opens all of them */
+    children: html`${pickProjects(...home.workStrip.featured).map((p) =>
+      card(ctx, { icon: p.icon, title: p.name, text: p.title, href: "work/", size: "sm", accent: "water" }))}
+${card(ctx, { icon: home.workStrip.all.icon, title: home.workStrip.all.title, text: `${Object.keys(projects).length} פרויקטים: אפליקציות, אתרים, אוטומציות וקמפיינים`, href: "work/", cta: home.workStrip.all.cta, size: "sm", accent: "teal" })}`,
+  })}`,
 })}
 
 ${ctaBand(ctx, { ...defaultCta, cta: home.waLabel })}

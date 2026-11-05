@@ -12,7 +12,8 @@ import { html } from "../../lib/html.js";
    comes BEFORE the art so it stays inside the first screen on a phone.
 
    `artFirst` puts the picture ABOVE the headline, for an opening that is led by
-   a film which says what the business is, with the words coming after it.
+   a film which says what the business is, with the words coming after it. That
+   film carries the brand's mark, so the wordmark above it is not drawn.
    `className` "hero-sync" (hero-motion.css) makes that copy arrive once the film
    has started.
 
@@ -21,7 +22,7 @@ export const hero = (ctx, { title, text, chip, art, actions, note, className, ar
   <section class="${className ? `hero ${className}` : "hero"}" id="hero">
     <div class="container">
       <div class="hero-inner">
-        ${ctx.isHome
+        ${artFirst ? "" : ctx.isHome
           ? html`<span class="hero-logo">${ctx.brand}</span>`
           : html`<a href="${ctx.home()}" class="hero-logo">${ctx.brand}</a>`}
         ${chip && html`<p class="hero-chip"><span>${chip}</span></p>`}

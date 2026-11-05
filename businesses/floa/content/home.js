@@ -7,8 +7,8 @@ export const home = {
   showTestimonials: false,
 
   meta: {
-    title: "FLOA | ייעוץ, פיתוח וליווי: אתרים, אפליקציות ואוטומציות לעסק",
-    description: "ייעוץ, פיתוח וליווי לעסק: מבינים מה מעכב אותו, בונים אתר, אפליקציה, אוטומציה וסוכני AI שמחברים את העבודה, ונשארים לצידכם אחרי העלייה.",
+    title: "\u200FFLOA | ייעוץ, פיתוח וליווי דיגיטלי לעסק",
+    description: "ייעוץ, פיתוח וליווי לעסק, עם AI וסוכנים. מבינים מה מעכב אתכם, בונים אתר, אפליקציה או אוטומציה שמחברים את העבודה, ונשארים איתכם גם אחרי העלייה.",
   },
 
   /* the share card. `title` is the ONLY text on it, so it has to carry the page
@@ -26,6 +26,27 @@ export const home = {
   hero: {
     title: "ייעוץ, פיתוח וליווי שהופכים בלגן לזרימה אחת",
     text: "אתרים, אפליקציות, אוטומציות וסוכני AI שבנויים סביב העסק שלכם: מבינים מה מעכב אותו, בונים את מה שמחבר הכול, ונשארים איתכם אחרי העלייה",
+  },
+
+  /* The scroll scene between the opening and the question. Three sentences, told in
+     turn as the page is scrolled (see components/scroll-flow). It claims nothing about
+     numbers: the two counters count the twelve things on the stage itself. */
+  flowStory: {
+    label: "איך עסק שזורם נראה, בגלילה: הדברים שמפוזרים מתחברים לזרם אחד",
+    icons: ["whatsapp", "doc", "leads", "link", "app", "system", "chart", "automation", "picture", "website", "target", "sparkle"],
+    lines: [
+      { title: "כשהעבודה מפוזרת, העסק מתעכב", text: "הודעה נשכחת, משימה נופלת בין הכיסאות, ומה שחשוב מחכה בתור" },
+      { title: "כשהכול מחובר, העבודה מתחילה לזרום", text: "כל פנייה מגיעה למקום הנכון, בלי להעתיק ובלי לרדוף" },
+      { title: "עסק שזורם הוא עסק טוב", text: "פחות עבודה ידנית, ויותר זמן למה שחשוב באמת" },
+    ],
+    counters: { lost: "נופלים בין הכיסאות", flowing: "זורמים למקום הנכון" },
+  },
+
+  /* The portfolio on the homepage is a strip, not a gallery: three of the works, and
+     a tile that opens the page with all of them. */
+  workStrip: {
+    featured: ["once", "chords", "perfecti"],
+    all: { title: "כל העבודות", cta: "לתיק העבודות", icon: "picture" },
   },
 
   /* The film beside the opening: the mess of a business becomes one flow, through

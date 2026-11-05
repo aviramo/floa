@@ -1,0 +1,212 @@
+/* The scroll scene, as CSS scroll-driven animation (see scroll-flow.js).
+
+   The timeline is the section's own passage through the screen (`view-timeline`),
+   and every animation below is attached to it over the stretch where the stage is
+   pinned (--a to --b). The browser advances them with the scroll, off the main
+   thread, so there is nothing to throttle and nothing to stutter.
+
+     0%   to  24%   scattered: things drift, the first sentence
+     24%  to  54%   drawn together: they line up on the current, the second sentence
+     54%  to 100%   flowing: the current carries them on, the third sentence and the counters
+
+   Without support for it, or with less motion asked for, none of the animated rules
+   apply: the section has normal height and shows the ending, standing still. */
+
+@property --n { syntax: "<integer>"; inherits: true; initial-value: 0; }
+@property --e { syntax: "<number>"; inherits: true; initial-value: 1; }
+
+.flow-story { position: relative; }
+
+.fs-stage {
+  position: relative;
+  height: clamp(540px, 82svh, 780px);
+  container-type: size;
+  overflow: hidden;
+}
+
+/* the text: three sentences, one at a time (still: only the last) */
+.fs-lines {
+  position: absolute;
+  inset-inline: 0;
+  top: 8%;
+  display: grid;
+  max-width: 800px;
+  margin-inline: auto;
+  padding-inline: var(--gutter, 20px);
+  text-align: center;
+  z-index: 2;
+}
+.fs-line { grid-area: 1 / 1; }
+.fs-title, .fs-line h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 5.2cqw, 3.4rem);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -.02em;
+  text-wrap: balance;
+}
+.fs-text { margin: var(--s-4, 16px) auto 0; max-width: 34rem; color: var(--muted); font-size: var(--fs-lead, 1.3rem); }
+.fs-l1 .fs-title { color: var(--clay-dark); }
+.fs-l2 .fs-title { color: var(--water-dark); }
+.fs-l3 h2 { color: var(--ink); }
+.fs-l1, .fs-l2 { display: none; }
+
+/* the wind: long strokes that slide the other way, so the page feels crossed by air */
+.fs-wind { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .6; }
+.fs-wind path {
+  fill: none;
+  stroke: var(--sea-light, #4FAEE8);
+  stroke-width: 2.5px;
+  stroke-linecap: round;
+  stroke-dasharray: 240 420;
+  vector-effect: non-scaling-stroke;
+  opacity: .5;
+  animation: fs-wind 26s linear infinite;
+}
+.fs-wind path:nth-child(2) { animation-duration: 34s; animation-direction: reverse; opacity: .35; }
+.fs-wind path:nth-child(3) { animation-duration: 30s; }
+@keyframes fs-wind { to { stroke-dashoffset: -2640; } }
+
+/* the current */
+.fs-river { position: absolute; inset: 0; width: 100%; height: 100%; }
+.fs-river path { fill: none; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.fs-band { stroke: var(--teal-tint); stroke-width: 44px; opacity: .85; }
+.fs-core { stroke: var(--teal); stroke-width: 2px; opacity: .35; }
+.fs-flow { stroke: var(--teal); stroke-width: 4px; stroke-dasharray: 26 24; animation: fs-run 2.6s linear infinite; }
+@keyframes fs-run { to { stroke-dashoffset: -50; } }
+
+/* the things: circles that float, scattered, and then ride the current */
+.fs-tiles {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  --ts: clamp(54px, 8cqw, 96px);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 9%, #000 91%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 9%, #000 91%, transparent 100%);
+}
+.fs-tiles li {
+  --xe: var(--x1);
+  --tx: calc((var(--xe) - var(--x0)) * 1cqw);
+  --ty: calc((60 - var(--y0)) * 1cqh);
+  position: absolute;
+  left: calc(var(--x0) * 1cqw);
+  top: calc(var(--y0) * 1cqh);
+  width: var(--ts);
+  height: var(--ts);
+  margin: calc(var(--ts) / -2) 0 0 calc(var(--ts) / -2);
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: color-mix(in srgb, var(--clay-dark) calc((1 - var(--e)) * 100%), var(--teal-dark));
+  background: radial-gradient(circle at 36% 30%, #fff, color-mix(in srgb, var(--clay-tint) calc((1 - var(--e)) * 100%), var(--teal-tint)) 78%);
+  box-shadow: 0 16px 28px -16px color-mix(in srgb, var(--clay) calc((1 - var(--e)) * 70%), var(--teal)),
+              0 0 0 6px color-mix(in srgb, var(--clay) calc((1 - var(--e)) * 14%), color-mix(in srgb, var(--teal) 14%, transparent));
+  transform: translate(var(--tx), var(--ty)) scale(.84);          /* still: on the current */
+}
+.fs-tiles svg { width: 46%; height: 46%; }
+.fs-clone { display: none; }
+
+/* the numbers are the stage's own: of the things you see, how many are still lost, how many are flowing */
+.fs-counters {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 6%;
+  display: flex;
+  justify-content: center;
+  gap: clamp(28px, 9cqw, 120px);
+  padding-inline: var(--gutter, 20px);
+  counter-reset: lost var(--n) flow calc(12 - var(--n));
+  z-index: 2;
+}
+.fs-counters p { display: grid; justify-items: center; gap: 2px; min-width: clamp(110px, 20cqw, 200px); margin: 0; }
+.fs-counters b {
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 7cqw, 4.2rem);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.fs-n-lost { color: var(--clay-dark); }
+.fs-n-flow { color: var(--teal-dark); }
+.fs-n-lost::after { content: counter(lost); }
+.fs-n-flow::after { content: counter(flow); }
+.fs-counters span { color: var(--ink-2); font-size: 1.05rem; font-weight: 600; text-align: center; }
+
+@media (max-width: 640px) {
+  .fs-hide-sm { display: none; }
+  .fs-tiles li { --xe: var(--x1m); }
+  .fs-tiles { --ts: clamp(46px, 12cqw, 64px); }
+  .fs-lines { top: 6%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fs-flow, .fs-wind path { animation: none; }
+}
+
+/* ======================= the scroll-driven version ======================= */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .flow-story {
+      /* 290svh tall, so the stage is pinned from 1svh to 2.9svh of a 3.9svh passage */
+      height: 290vh;
+      height: 290svh;
+      view-timeline: --fs block;
+      --a: 25.64%;
+      --b: 74.36%;
+    }
+    .fs-stage { position: sticky; top: 0; height: 100vh; height: 100svh; }
+
+    .fs-l1, .fs-l2 { display: block; }
+    .fs-line, .fs-wind, .fs-river, .fs-counters, .fs-stage, .fs-tiles li {
+      animation-timeline: --fs;
+      animation-range: cover var(--a) cover var(--b);
+      animation-fill-mode: both;
+      animation-timing-function: linear;
+    }
+
+    .fs-l1 { animation-name: fs-l1; }
+    .fs-l2 { animation-name: fs-l2; }
+    .fs-l3 { animation-name: fs-l3; }
+    @keyframes fs-l1 { 0% { opacity: 0; transform: translateY(18px); } 4%, 18% { opacity: 1; transform: none; } 28%, 100% { opacity: 0; transform: translateY(-14px); } }
+    @keyframes fs-l2 { 0%, 28% { opacity: 0; transform: translateY(18px); } 38%, 58% { opacity: 1; transform: none; } 68%, 100% { opacity: 0; transform: translateY(-14px); } }
+    @keyframes fs-l3 { 0%, 66% { opacity: 0; transform: translateY(18px); } 78%, 100% { opacity: 1; transform: none; } }
+
+    .fs-river { animation-name: fs-river; }
+    @keyframes fs-river { 0%, 24% { opacity: 0; } 50%, 100% { opacity: 1; } }
+    .fs-wind { animation: fs-windx linear both; animation-timeline: --fs; animation-range: cover var(--a) cover var(--b); }
+    @keyframes fs-windx { from { transform: translateX(0); opacity: .35; } to { transform: translateX(-140px); opacity: .85; } }
+
+    /* the things: scattered -> drifting -> on the current -> carried off to the left */
+    .fs-tiles li {
+      --i: 0;
+      animation-name: fs-move, fs-e;
+      animation-timeline: --fs, --fs;
+      animation-range: cover calc(var(--a) + var(--i) * .25%) cover calc(var(--b) - (11 - var(--i)) * .25%);
+      animation-timing-function: linear, linear;
+      animation-fill-mode: both, both;
+      transform: none;
+    }
+    @keyframes fs-move {
+      0%   { transform: translate(0, 0) rotate(var(--r0)) scale(1); }
+      24%  { transform: translate(calc(var(--d) * .4px), calc(var(--d) * -1px)) rotate(var(--r0)) scale(1); }
+      54%  { transform: translate(var(--tx), var(--ty)) rotate(0deg) scale(.84); }
+      100% { transform: translate(calc(var(--tx) - 110cqw), var(--ty)) rotate(0deg) scale(.84); }
+    }
+    @keyframes fs-e { 0%, 22% { --e: 0; } 54%, 100% { --e: 1; } }
+
+    /* the second set waits off-screen to the right, and takes the first set's place */
+    .fs-tiles li.fs-clone { display: grid; --e: 1; animation-name: fs-move-clone; animation-timeline: --fs; animation-range: cover calc(var(--a) + var(--i) * .25%) cover calc(var(--b) - (11 - var(--i)) * .25%); }
+    @keyframes fs-move-clone {
+      0%, 54% { transform: translate(calc(var(--tx) + 110cqw), var(--ty)) rotate(0deg) scale(.84); }
+      100%    { transform: translate(var(--tx), var(--ty)) rotate(0deg) scale(.84); }
+    }
+    @media (max-width: 640px) { .fs-tiles li.fs-clone.fs-hide-sm { display: none; } }
+
+    /* the counters appear when the current carries, and count what is carried */
+    .fs-counters { animation-name: fs-counters; }
+    @keyframes fs-counters { 0%, 72% { opacity: 0; transform: translateY(16px); } 84%, 100% { opacity: 1; transform: none; } }
+    .fs-stage { animation-name: fs-count; animation-range: cover var(--a) cover var(--b); }
+    @keyframes fs-count { 0%, 76% { --n: 12; } 100% { --n: 0; } }
+  }
+}

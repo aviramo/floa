@@ -5,7 +5,7 @@
 (() => {
   'use strict';
 
-  const SY = -30;                                             // the shape's centre y, in world units (0,0 = frame centre)
+  const SY = 10;                                              // the shape's centre y, in world units (0,0 = frame centre)
   const RY = 410, LAB = 468;                                  // river line y, gate labels y
   const GX = [340, 170, 0, -170, -340];                       // gate x: the first gate is on the right (Hebrew reads right to left)
   const GN = ['ייעוץ', 'אתרים', 'אפליקציות', 'אוטומציות', 'AI'];
@@ -13,6 +13,25 @@
   const T = {
     calm: 1.4, chaos: 1.45, jit: 3.85, dropIn: 3.5, drop: 3.95, hit: 4.35, sweep: 4.55,
     g: [5.35, 7.85, 9.6, 11.35, 13.1], panel: 15.25, close: 16.95,
+  };
+  const SD = 18.4;                                            // the script's own length: every time below is in script seconds
+  /* The film runs DUR seconds, and it is not stretched evenly. After the last thing that happens in a
+     gate (the last step ticked, the button pressed, the person's "approve") it WAITS, so a message is
+     on screen long enough to be read before the next scene starts to move in. [script time, seconds to wait] */
+  const HOLDS = [[7.5, 1.1], [9.3, 1.1], [11.25, 1.1], [12.9, 1.1], [15.0, 1.4], [15.75, 1.2]];
+  const KM = (DUR - HOLDS.reduce((a, h) => a + h[1], 0)) / SD;   // real seconds per script second while things move
+  const WARP = (() => {
+    const pts = [[0, 0]]; let r = 0, u0 = 0;
+    for (const [u, h] of HOLDS) { r += (u - u0) * KM; pts.push([r, u]); r += h; pts.push([r, u]); u0 = u; }
+    r += (SD - u0) * KM; pts.push([r, SD]);
+    return pts;
+  })();
+  const scriptTime = t => {
+    for (let i = 1; i < WARP.length; i++) {
+      const [r1, u1] = WARP[i], [r0, u0] = WARP[i - 1];
+      if (t <= r1 || i === WARP.length - 1) return r1 === r0 ? u1 : u0 + (u1 - u0) * clamp((t - r0) / (r1 - r0), 0, 1);
+    }
+    return SD;
   };
   const SEAM = DUR + 1.45;                                    // a window that crosses the loop seam ends here (next loop)
 
@@ -36,6 +55,36 @@
   scene('main', 0, DUR, { bg: C.PAPER }, (root) => {
     const cam = grp(root, W / 2, H / 2);
     const ups = [];
+    let RT = 0;                                                  // the real clock, for what never stops: the wind and the river
+
+    // ===== the wind on the water: long soft streaks that drift across the whole frame ==========
+    // The film is not a box with a colour in it: its background is the same air and water the page
+    // has around it, and the edges fade into the page (see hero-motion.css). The streaks are dashes
+    // on a wave, and each travels a whole number of dash periods over the loop, so the loop is seamless.
+    const windSvg = mkSvg(cam);
+    const wd = svgEl('defs', windSvg);
+    const wg = svgEl('linearGradient', wd, { id: 'windg', x1: 0, x2: 1, y1: 0, y2: 0 });
+    svgEl('stop', wg, { offset: 0, 'stop-color': '#6FB6E8', 'stop-opacity': 0 });
+    svgEl('stop', wg, { offset: 0.5, 'stop-color': '#4FA3DE', 'stop-opacity': 1 });
+    svgEl('stop', wg, { offset: 1, 'stop-color': '#6FB6E8', 'stop-opacity': 0 });
+    const WIND = [   // y (of the frame height), amplitude, wavelength, dash, gap, loops, direction, opacity, width
+      [-0.40, 46, 640, 240, 420, 3, 1, 0.20, 4],
+      [-0.27, 30, 480, 160, 300, 4, -1, 0.16, 2.5],
+      [-0.13, 56, 760, 300, 520, 2, 1, 0.18, 3.5],
+      [0.02, 34, 560, 200, 360, 3, -1, 0.15, 2.5],
+      [0.16, 50, 700, 260, 440, 3, 1, 0.19, 3],
+      [0.29, 28, 420, 140, 260, 4, -1, 0.14, 2],
+      [0.40, 44, 600, 220, 380, 2, 1, 0.17, 3],
+    ];
+    WIND.forEach(([yf, amp, wl, dash, gap, loops, dir, op, wdh], n) => {
+      const y0 = yf * H, ph = n * 1.7, pts = [];
+      for (let x = -W / 2 - 120; x <= W / 2 + 120; x += 20) {
+        const y = y0 + amp * Math.sin(2 * Math.PI * x / wl + ph) + amp * 0.35 * Math.sin(2 * Math.PI * x / (wl * 0.43) + ph * 2);
+        pts.push(`${x},${y.toFixed(1)}`);
+      }
+      const path = svgEl('path', windSvg, { d: 'M' + pts.join(' L'), fill: 'none', stroke: 'url(#windg)', 'stroke-width': wdh, 'stroke-linecap': 'round', 'stroke-dasharray': `${dash} ${gap}`, opacity: Math.min(0.55, op * 2.2) });
+      ups.push(t => path.setAttribute('stroke-dashoffset', (dir * loops * (dash + gap) * (RT / DUR)).toFixed(2)));
+    });
 
     // ===== the river and its five gates ======================================================
     const under = mkSvg(cam);
@@ -44,7 +93,7 @@
     svgEl('path', under, { d, fill: 'none', stroke: C.TINT, 'stroke-width': 40, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', opacity: 0.8 });
     svgEl('path', under, { d, fill: 'none', stroke: C.TEAL, 'stroke-width': 3, opacity: 0.3 });
     const flow = svgEl('path', under, { d, fill: 'none', stroke: C.TEAL, 'stroke-width': 5, 'stroke-linecap': 'round', 'stroke-dasharray': '26 24' });
-    ups.push(t => flow.setAttribute('stroke-dashoffset', (-125 * t).toFixed(2)));   // 125 px/s * 18.4 s = 46 dash periods: a seamless loop
+    ups.push(() => flow.setAttribute('stroke-dashoffset', (-2300 * (RT / DUR)).toFixed(2)));   // 46 dash periods over the loop: seamless   
 
     GX.forEach((x, i) => {
       const y = RY + wave(x);
@@ -74,14 +123,76 @@
       });
     });
 
-    // the label of the gate the story is in
+
+    // the name of the gate the story is in: plain type with a wave drawn under it, not a pill
+    const wavePath = w => {
+      const n = Math.max(2, Math.round(w / 64)), s = w / n; let d = 'M0 9';
+      for (let k = 0; k < n; k++) d += ` q ${s / 4} -8 ${s / 2} 0 q ${s / 4} 8 ${s / 2} 0`;
+      return d;
+    };
     CHIPS.forEach((s, i) => {
-      const g = grp(cam, 0, -470);
-      R(g, 0, 0, measure(s, { size: 38, font: F.RUBIK, weight: 600 }).w + 76, 72, 36, C.TINT);
-      L(g, s, 0, 0, 38, C.TEALD, 600);
+      const g = grp(cam, 0, -372);
+      const w = measure(s, { size: 44, font: F.RUBIK, weight: 700 }).w;
+      L(g, s, 0, 0, 44, C.INK, 700);
+      const sv = svgBox(g, -w / 2 - 14, 44 * 0.62, w + 28, 18);
+      svgEl('path', sv, { d: wavePath(w + 28), fill: 'none', stroke: C.TEAL, 'stroke-width': 3.4, 'stroke-linecap': 'round', opacity: 0.85 });
       const end = i < 4 ? T.g[i + 1] : T.panel;
       ups.push(t => { const v = win(t, T.g[i], end); tf(g, { o: v, y: (1 - v) * 14, blur: (1 - v) * 5 }); });
     });
+
+
+    // ===== the mark: FLOA's symbol and its word, fixed at the top, in motion the whole film ===========
+    // The F is a stem with two arms that are currents. The arms keep waving, and so do the foot of the L,
+    // the water in the O and the bar of the A: one wave travels through all of them, ten cycles over the
+    // loop, so the film closes. The symbol is the one in the site's icon (scripts/gen_favicon.py).
+    const wavePt = (x0, y0, len, amp, ph, n = 22) => {
+      let d = '';
+      for (let i = 0; i <= n; i++) {
+        const k = i / n, x = x0 + len * k, y = y0 - amp * Math.min(1, k * 2.4) * Math.sin(2 * Math.PI * k - ph);
+        d += (i ? 'L' : 'M') + x.toFixed(2) + ' ' + y.toFixed(2);
+      }
+      return d;
+    };
+    const lock = grp(cam, 0, -450), lockS = grp(lock, 0, 0);
+    lockS.style.transform = `scale(${1.0})`;
+    const tile = svgBox(lockS, -130, -32, 64, 64);
+    const tdef = svgEl('defs', tile);
+    const tgr = svgEl('linearGradient', tdef, { id: 'lkT', x1: 0, y1: 0, x2: 1, y2: 1 });
+    svgEl('stop', tgr, { offset: 0, 'stop-color': '#56B4EE' }); svgEl('stop', tgr, { offset: 1, 'stop-color': '#0E4A80' });
+    svgEl('rect', tile, { width: 64, height: 64, rx: 15.4, fill: 'url(#lkT)' });
+    const tmG = svgEl('g', tile, { fill: 'none', stroke: '#fff', 'stroke-width': 8, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+    const tA2 = svgEl('path', tmG, { opacity: 0.84 }), tA1 = svgEl('path', tmG);
+    svgEl('path', tmG, { d: 'M21 16V49' });
+    const word = svgBox(lockS, -46, -25.6, 176, 51.2);
+    const wdef = svgEl('defs', word);
+    const wgr = svgEl('linearGradient', wdef, { id: 'lkW', gradientUnits: 'userSpaceOnUse', x1: 0, y1: 0, x2: 220, y2: 0 });
+    svgEl('stop', wgr, { offset: 0, 'stop-color': '#2E8FD6' }); svgEl('stop', wgr, { offset: 1, 'stop-color': '#0E4A80' });
+    const wmG = svgEl('g', word, { transform: 'scale(0.8)', fill: 'none', stroke: 'url(#lkW)', 'stroke-width': 9, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+    svgEl('path', wmG, { d: 'M12 8V56' });
+    const wF1 = svgEl('path', wmG), wF2 = svgEl('path', wmG);
+    svgEl('path', wmG, { d: 'M62 8V56' });
+    const wL = svgEl('path', wmG);
+    svgEl('ellipse', wmG, { cx: 130, cy: 32, rx: 22, ry: 24 });
+    const wO = svgEl('path', wmG, { 'stroke-width': 7 });
+    svgEl('path', wmG, { d: 'M166 56L186 10L206 56' });
+    const wA = svgEl('path', wmG, { 'stroke-width': 7 });
+    ups.push(() => {
+      const ph = 2 * Math.PI * 10 * (RT / DUR);
+      tA1.setAttribute('d', wavePt(21, 18.75, 23, 2.8, ph)); tA2.setAttribute('d', wavePt(21, 34.5, 16.25, 2.3, ph));
+      wF1.setAttribute('d', wavePt(12, 12, 32, 4.5, ph)); wF2.setAttribute('d', wavePt(12, 32, 24, 3.6, ph));
+      wL.setAttribute('d', 'M62 56' + wavePt(62, 56, 30, 4.5, ph).slice(1 + 0).replace(/^[^L]*/, ''));
+      wO.setAttribute('d', wavePt(113, 33, 34, 4, ph)); wA.setAttribute('d', wavePt(173, 41, 26, 4, ph));
+    });
+
+    // a small tag: the word and a short wave under it, in the language of the mark (never a pill)
+    const tagWave = w => { const n = Math.max(2, Math.round(w / 30)), s = w / n; let d = 'M0 5'; for (let k = 0; k < n; k++) d += ` q ${s / 4} -4 ${s / 2} 0 q ${s / 4} 4 ${s / 2} 0`; return d; };
+    const TAG = (p, s, x, y, size, color, wcol) => {
+      const g = grp(p, x, y), w = measure(s, { size, font: F.RUBIK, weight: 700 }).w;
+      L(g, s, 0, 0, size, color, 700);
+      const sv = svgBox(g, -w / 2 - 6, size * 0.6, w + 12, 10);
+      svgEl('path', sv, { d: tagWave(w + 12), fill: 'none', stroke: wcol || color, 'stroke-width': 2.6, 'stroke-linecap': 'round', opacity: 0.8 });
+      return g;
+    };
 
     const rip = mkSvg(cam);                                     // the water: under the mess, so the ripples pass behind it
 
@@ -97,15 +208,15 @@
       { k: 'mail', x: 250, y: -290, w: 140, h: 104, r: 9, fx: 700, fy: -500 },
       { k: 'badge', s: '!', x: -250, y: 255, w: 76, h: 76, r: 0, fx: -500, fy: 700 },
     ];
-    const K = 1.1;
-    SPEC.forEach(sp => { sp.x *= K; sp.y *= K; });
+    const MS = 1.1;
+    SPEC.forEach(sp => { sp.x *= MS; sp.y *= MS; });
     const order = SPEC.map((_, i) => i).sort((a, b) => SPEC[a].x - SPEC[b].x);
     const RAD = { bubble: 30, sticky: 14, file: 20, sheet: 20, bell: 36, mail: 22, badge: 38 };
     const SOFT = { boxShadow: '0 8px 18px -10px rgba(15,42,51,.35)' };
 
     SPEC.forEach((sp, i) => {
       const anchor = grp(cam, 0, 0), g = grp(anchor, 0, 0), rad = RAD[sp.k];
-      g.style.transform = `scale(${K})`;
+      g.style.transform = `scale(${MS})`;
       const card = { border: `2px solid ${C.LINE}`, boxSizing: 'border-box' };
       const base = sp.k === 'badge' ? R(g, 0, 0, sp.w, sp.h, rad, C.CLAY)
         : sp.k === 'sticky' ? R(g, 0, 0, sp.w, sp.h, rad, C.CLAYT, SOFT)
@@ -183,17 +294,15 @@
 
     // ===== the one shape: born from the drop, morphs through every gate =====================
     // [w, h, radius, y, ink, teal, zoom]: the zoom is the camera, so each state fills the frame
-    const PILL = [320, 112, 56, SY, 1, 0, 1];
-    const shapeAt = track(PILL, [
-      [T.calm, [10, 10, 5, SY, 1, 0, 1], 24, 1],                           // the pill collapses into the mess
-      [3.9, [38, 38, 19, SY, 0, 1, 1], 40, 1],                             // set while hidden: the size and colour of the drop
+    const DOT = [10, 10, 5, SY, 0, 1, 1];
+    const shapeAt = track(DOT, [
+      [3.9, [38, 38, 19, SY, 0, 1, 1], 40, 1],                            // set while hidden: the size and colour of the drop
       [T.g[0] - 0.05, [760, 420, 44, SY, 0, 0, 1], 13, 0.84],              // gate 1: a chat
-      [T.g[1], [760, 640, 40, SY, 0, 0, 1], 13, 0.84],                     // gate 2: a landing page
-      [T.g[2], [340, 620, 60, SY, 0, 0, 1.22], 13, 0.84],                  // gate 3: an app
+      [T.g[1], [760, 600, 40, SY, 0, 0, 1], 13, 0.84],                     // gate 2: a landing page
+      [T.g[2], [340, 620, 60, SY, 0, 0, 1.0], 13, 0.84],                  // gate 3: an app
       [T.g[3], [760, 330, 44, SY, 0, 0, 1], 13, 0.84],                     // gate 4: an automation
-      [T.g[4], [800, 640, 44, SY, 0, 0, 1], 13, 0.84],                     // gate 5: the agent, then the panel
-      [T.close, [null, null, null, null, 1, 0, null], 40, 1],              // back to the pill: the colour turns dark first, fast,
-      [T.close, [320, 112, 56, SY, null, null, 1], 14, 0.84],              // and then the shape shrinks: no grey in between
+      [T.g[4], [800, 600, 44, SY, 0, 0, 1], 13, 0.84],                     // gate 5: the agent, then the panel
+      [T.close, DOT, 14, 0.84],                                            // the shape thins back to nothing; the mark has not moved
     ]);
     const shCol = (ink, teal) => {
       const A = hex(C.WHITE), I = hex(C.INK), Tl = hex(C.TEAL);
@@ -205,22 +314,22 @@
     const bgEl = div(sh, { overflow: 'hidden', boxSizing: 'border-box', border: '1.5px solid rgba(15,42,51,.07)' });
     const inner = grp(bgEl, 0, 0);
     ups.push(t => {
-      const [w, h, r, y, ink, teal, z] = shapeAt(t), o = win(t, 4.33, SEAM);
+      const [w, h, r, y, ink, teal, z] = shapeAt(t), o = win(t, 4.33, T.close + 0.7);
       tf(sh, { y, s: z });
-      for (const e of [shadow, bgEl]) Object.assign(e.style, { left: -w / 2 + 'px', top: -h / 2 + 'px', width: w + 'px', height: h + 'px', borderRadius: r + 'px' });
+      const asym = clamp((h - 130) / 120, 0, 1), rb = r * (1 + 0.75 * asym), ra = r * (1 - 0.5 * asym);   // the pill stays a pill; the cards are pebbles
+      const radius = `${rb.toFixed(1)}px ${ra.toFixed(1)}px ${rb.toFixed(1)}px ${ra.toFixed(1)}px`;
+      for (const e of [shadow, bgEl]) Object.assign(e.style, { left: -w / 2 + 'px', top: -h / 2 + 'px', width: w + 'px', height: h + 'px', borderRadius: radius });
       bgEl.style.background = shCol(ink, teal);
       inner.style.left = (w / 2 - 1.5) + 'px'; inner.style.top = (h / 2 - 1.5) + 'px';
       tf(bgEl, { o });
       tf(shadow, { y: 18, o: 0.2 * o, blur: 26 });
     });
 
-    // --- pill: FLOA, and under it what FLOA does
-    const gPill = grp(inner, 0, 0);
-    txt(gPill, 'FLOA', { x: 0, y: 0, size: 58, font: F.RUBIK, weight: 700, color: C.WHITE, ls: 0.1 });
-    const line = grp(cam, 0, SY + 158);
-    L(line, 'ייעוץ, פיתוח וליווי', 0, -50, 52, C.INK, 600);   // what FLOA is, said at the open and at the close
-    L(line, 'אתרים, אפליקציות', 0, 10, 46, C.INK2, 500); L(line, 'ואוטומציות, עם AI', 0, 62, 46, C.INK2, 500);
-    ups.push(t => { const v = win(t, T.close + 0.05, SEAM); put(gPill, v); tf(line, { o: v, y: (1 - v) * 12 }); });
+    // --- what FLOA is, said in the middle at the open and at the close, under the mark
+    const line = grp(cam, 0, -10);
+    L(line, 'ייעוץ, פיתוח וליווי', 0, -78, 64, C.INK, 700);
+    L(line, 'אתרים, אפליקציות', 0, 4, 48, C.INK2, 500); L(line, 'ואוטומציות, עם AI', 0, 62, 48, C.INK2, 500);
+    ups.push(t => { const v = win(t, T.close + 0.05, SEAM); tf(line, { o: v, y: (1 - v) * 12 }); });
 
     // --- gate 1: advice (a chat, then the three steps)
     const gChat = grp(inner, 0, 0);
@@ -292,7 +401,7 @@
     R(gNew, 0, 0, 290, 88, 24, C.WHITE, { border: `2px solid ${C.TEAL}`, boxSizing: 'border-box' });
     R(gNew, 105, 0, 46, 46, 23, C.TEAL);
     L(gNew, 'מה המחיר?', 76, 0, 26, C.INK, 600, 'r');
-    R(gNew, -106, 0, 66, 34, 17, C.TEAL); L(gNew, 'חדש', -106, 0, 22, C.WHITE, 600);
+    TAG(gNew, 'חדש', -106, 0, 24, C.TEALD, C.TEAL);
     L(gApp, 'התראות', 128, 175, 30, C.INK, 600, 'r');
     const tg = R(gApp, -85, 175, 92, 50, 25, C.LINE);
     const knob = R(gApp, -85, 175, 38, 38, 19, C.WHITE, SOFT);
@@ -350,7 +459,7 @@
       const y = -135 + 92 * k, g = grp(gAgent, 0, y), tg2 = grp(gAgent, -360 + 20 + tw / 2, y);   // the tag sits at the row's left end
       R(g, 0, 0, 720, 76, 24, C.SUNK);
       L(g, s, 335, 0, 34, C.INK, 500, 'r');
-      R(tg2, 0, 0, tw, 52, 26, hot ? C.TEAL : C.LINE); L(tg2, tag, 0, 0, 27, hot ? C.WHITE : C.INK2, 600);
+      TAG(tg2, tag, 0, 0, 29, hot ? C.TEALD : C.INK2, hot ? C.TEAL : C.GREY);
       return { g, tg: tg2, t0: 13.4 + 0.1 * k, t1: 13.8 + 0.1 * k };
     });
     const gBar = grp(gAgent, 0, 175);
@@ -378,14 +487,14 @@
       const g = grp(gPanel, 0, -120 + 100 * k);
       R(g, 0, 0, 720, 80, 26, C.SUNK);
       L(g, s, 335, 0, 36, C.INK, 500, 'r');
-      R(g, -290, 0, 130, 52, 26, C.TINT); L(g, 'טופל', -290, 0, 29, C.TEALD, 600);
+      TAG(g, 'טופל', -290, 0, 30, C.TEALD, C.TEAL);
       return { g, t0: 15.3 + 0.06 * k };
     });
     ups.push(t => { put(gPanel, win(t, 15.3, 16.82)); prows.forEach(({ g, t0 }) => tf(g, appear(t, t0, 18))); });
 
     // ===== the cursor: it does what a person does, and nothing else ==========================
     // world position of what it touches: the local spot times the state's zoom, plus the shape's y
-    const BTN = [0, 160 + SY], TOGGLE = [-85 * 1.22, 175 * 1.22 + SY], TAB2 = [0, 262 * 1.22 + SY], APPROVE = [-125, 175 + SY];
+    const BTN = [0, 160 + SY], TOGGLE = [-85 * 1.0, 175 * 1.0 + SY], TAB2 = [0, 262 * 1.0 + SY], APPROVE = [-125, 175 + SY];
     const cur = cursor(cam, 64, C.INK, C.WHITE);
     const OFF = [560, 200];
     const curAt = track(OFF, [
@@ -402,6 +511,6 @@
       CLICKS.forEach(([c], i) => { const p = clamp((t - c) / 0.5, 0, 1); tf(clk[i], { s: 0.35 + 0.95 * E.o3(p), o: t > c && t < c + 0.5 ? 0.7 * (1 - p) : 0 }); });
     });
 
-    return t => ups.forEach(f => f(t));
+    return t => { RT = t; const u = scriptTime(t); ups.forEach(f => f(u)); };
   });
 })();

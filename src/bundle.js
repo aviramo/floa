@@ -39,6 +39,7 @@ export const css = [
   "components/contact/contact.css",
   "components/hero/hero.css",
   "components/hero-motion/hero-motion.css",
+  "components/scroll-flow/scroll-flow.css",
   "components/hero-art/hero-art.css",
   "components/footer/footer.css",
   "components/legal/legal.css",
