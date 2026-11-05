@@ -168,7 +168,8 @@
     .fs-l1 { animation-name: fs-l1; }
     .fs-l2 { animation-name: fs-l2; }
     .fs-l3 { animation-name: fs-l3; }
-    @keyframes fs-l1 { 0% { opacity: 0; transform: translateY(18px); } 4%, 18% { opacity: 1; transform: none; } 28%, 100% { opacity: 0; transform: translateY(-14px); } }
+    /* the first sentence is on screen from the moment the stage appears: before the pinned stretch the animation holds its first frame, so this frame must be the visible one */
+    @keyframes fs-l1 { 0%, 18% { opacity: 1; transform: none; } 28%, 100% { opacity: 0; transform: translateY(-14px); } }
     @keyframes fs-l2 { 0%, 28% { opacity: 0; transform: translateY(18px); } 38%, 58% { opacity: 1; transform: none; } 68%, 100% { opacity: 0; transform: translateY(-14px); } }
     @keyframes fs-l3 { 0%, 66% { opacity: 0; transform: translateY(18px); } 78%, 100% { opacity: 1; transform: none; } }
 
