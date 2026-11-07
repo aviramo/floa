@@ -1403,4 +1403,22 @@ begin
   end if;
   return res;
 end $function$;
+-- ==========================================================================
+-- "אישור מקום" (7.11.26, סנכרון מהרפתקה): הודעת ברירת מחדל של המערכת, אחת לכל המפגשים,
+-- שאפשר לערוך. היא מופיעה בתפריט הוואטסאפ של הרשימה ובכרטיס המשתתף, ובה השדות {תשלום},
+-- {פרטי המפגש} ו-{איך מגיעים} שדף הניהול ממלא. שורה בטבלת תבניות ההודעה בלי סוג ובלי מפגש,
+-- עם system_key = 'confirm'. default_body הוא הנוסח לשחזור. תוספתי ואידמפוטנטי: לא נוגע
+-- בתבניות הקיימות, ובנוסח שכבר נערך (על conflict מתעדכן רק default_body).
+-- ==========================================================================
+alter table public.aum_msg_templates add column if not exists system_key text;
+alter table public.aum_msg_templates add column if not exists default_body text;
+create unique index if not exists aum_msg_templates_system on public.aum_msg_templates (system_key) where system_key is not null;
+alter table public.aum_msg_templates drop constraint if exists aum_msg_templates_check;
+alter table public.aum_msg_templates add constraint aum_msg_templates_check check (
+  (system_key is not null and type_id is null and meeting_id is null) or (system_key is null and (type_id is null) <> (meeting_id is null)));
+
+insert into public.aum_msg_templates (name, body, default_body, sort, system_key)
+values ('אישור מקום', E'שלום {שם} 🙂\n{תשלום}\n\n{פרטי המפגש}\n\n{איך מגיעים}\n\nנתראה,\nטל', E'שלום {שם} 🙂\n{תשלום}\n\n{פרטי המפגש}\n\n{איך מגיעים}\n\nנתראה,\nטל', 0, 'confirm')
+on conflict (system_key) where system_key is not null do update set default_body = excluded.default_body;
+
 notify pgrst, 'reload schema';
