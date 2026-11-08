@@ -161,6 +161,8 @@ svg { display: block; }
   .cv b { margin: 0; }
 }
 @media (max-width: 899px) {
+  .thread { display: none; }
+  .doors { margin-top: 28px; }
   .hero { padding-top: 0; }
   .hero-grid { gap: 0; }
   .portrait { order: -1; width: calc(100% + 40px); margin-inline: -20px; }
