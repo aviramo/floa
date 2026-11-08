@@ -1,6 +1,6 @@
 /* ==========================================================================
    AUM שולח דף בנוי ביד, לא דפים שהמנוע מרנדר: public/index.html ו-public/admin/
-   מועתקים כמו שהם ל-dist/aum/.
+   מועתקים כמו שהם ל-dist/tal/aum/.
    ========================================================================== */
 
 /* אין דפים מנועיים. */
@@ -9,7 +9,7 @@ export const pages = [];
 import { site } from "../content/site.js";
 
 /* הדף פתוח לגוגל, ולכן הוא ב-sitemap: אחרת הוא נמצא רק מקישור. ה-sitemap הוא
-   של העסק הזה, ב-/aum/sitemap.xml, ו-robots.txt של הדומיין מפנה אליו. */
+   של העסק הזה, ב-/tal/aum/sitemap.xml, ו-robots.txt של הדומיין מפנה אליו. */
 export const siteMap = [
   {
     loc: `${site.origin}/${site.folder}`,

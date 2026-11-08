@@ -5,7 +5,7 @@ import { leadPages, pages, siteMap } from "./pages/index.js";
    AUM, ריטריט יומי של מדיטציית AUM בהנחיית טל אמיתי-לביא. עסק ידני, כמו
    ProLink ו-Perfecti: הבילד מעתיק את public/ כמו שהוא ולא מרנדר כלום.
 
-   `out` היא התיקייה שאליה הוא נבנה, ולכן גם הכתובת: floa.co.il/aum/.
+   `out` היא התיקייה שאליה הוא נבנה, ולכן גם הכתובת: floa.co.il/tal/aum/.
    הוא לא בעל הדומיין, אז `root` הוא false ואין לו קבצים בשורש.
 
    ההרשמה (הטופס שנפתח מ"אני רוצה לחוות": שם, מגדר, טלפון, גיל) לא עוברת דרך
@@ -14,7 +14,7 @@ import { leadPages, pages, siteMap } from "./pages/index.js";
    ========================================================================== */
 export const business = {
   key: "aum",
-  out: "aum",
+  out: "tal/aum",
   root: false,
 
   lead: {

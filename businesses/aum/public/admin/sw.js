@@ -2,7 +2,7 @@
    AUM, דף הניהול: מקבל התראות דחיפה (Web Push).
 
    ה-Worker דוחף בלי תוכן: כל מה שהוא אומר הוא "קרה משהו". כאן מחליטים מה
-   מציגים, ולחיצה על ההתראה פותחת את דף הניהול. ה-scope הוא /aum/admin/ בלבד.
+   מציגים, ולחיצה על ההתראה פותחת את דף הניהול. ה-scope הוא /tal/aum/admin/ בלבד.
    ========================================================================== */
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));

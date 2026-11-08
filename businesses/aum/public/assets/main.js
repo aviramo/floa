@@ -4,7 +4,7 @@
      1. הבאנר: המפגש הקרוב נטען מהדאטהבייס (aum_next), והוא היחיד שקובע תאריך,
         שעות, מקום ומחיר. ההרשמה היא הטופס שנפתח מ"אני רוצה לחוות"
         (register.js, aum_signup), או וואטסאפ וטלפון של טל. המשתתפים
-        מתנהלים ב-/aum/admin/.
+        מתנהלים ב-/tal/aum/admin/.
      2. וואטסאפ: האפליקציה ישר בטלפון, וואטסאפ ווב בדסקטופ.
      3. גלילה: לחיצה על עוגן גוללת בלי לכתוב #fragment לשורת הכתובת.
    ========================================================================== */
@@ -37,7 +37,7 @@
   /* כל מה שקשור למועד, תאריך, שעות, מקום, מחיר ומקומות, בא מהדאטהבייס ומשם
      בלבד. ב-HTML אין אף אחד מהם: מה שכתוב שם הוא נוסח ניטרלי שמוסתר עד שיש מה
      להציג, כדי שתאריך ישן לא יהבהב, לא ייכנס לתצוגה המקדימה בוואטסאפ ולא יישב
-     בגוגל. שינוי ריטריט ב-/aum/admin/ משנה את הדף בלי פרסום. */
+     בגוגל. שינוי ריטריט ב-/tal/aum/admin/ משנה את הדף בלי פרסום. */
   var MONTHS = ["בינואר", "בפברואר", "במרץ", "באפריל", "במאי", "ביוני", "ביולי", "באוגוסט", "בספטמבר", "באוקטובר", "בנובמבר", "בדצמבר"];
   var DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
   function hm(t) { return String(t).replace(/^0/, ""); }
@@ -74,11 +74,11 @@
       eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
       eventStatus: "https://schema.org/EventScheduled",
       location: { "@type": "Place", name: ev.location, address: { "@type": "PostalAddress", addressLocality: "גדרה", addressCountry: "IL" } },
-      image: "https://floa.co.il/aum/assets/img/og.jpg",
+      image: "https://floa.co.il/tal/aum/assets/img/og.jpg",
       performer: { "@type": "Person", name: "טל אמיתי-לביא" },
       organizer: { "@type": "Person", name: "טל אמיתי-לביא", telephone: "+972-52-849-7146" },
     };
-    if (ev.price) data.offers = { "@type": "Offer", price: String(ev.price), priceCurrency: "ILS", availability: "https://schema.org/InStock", url: "https://floa.co.il/aum/" };
+    if (ev.price) data.offers = { "@type": "Offer", price: String(ev.price), priceCurrency: "ILS", availability: "https://schema.org/InStock", url: "https://floa.co.il/tal/aum/" };
     var s = document.createElement("script");
     s.type = "application/ld+json";
     s.textContent = JSON.stringify(data);
