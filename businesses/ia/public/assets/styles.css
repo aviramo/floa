@@ -1,214 +1,236 @@
-/* ביודנסה, ריקוד החיים: "גינה בשעת זהב".
-   דשא עמוק, בוגנוויליה, שמש וקצף של ים, על קרם חם. הכול נושם ונע לאט. */
+/* ביודנסה, ריקוד החיים: "שמש פתוחה".
+   התמונה היא השמש. מתחתיה גבעות נושמות, דשא מתנודד, ציפורים, עננים ופרפרים.
+   הכול נע רק ב-transform וב-opacity, ונעצר ב-prefers-reduced-motion. */
 :root {
-  --cream: #FFF9EC;
-  --sand: #F6E9CC;
-  --leaf: #1F3D2B;
-  --leaf-2: #2F5A3A;
-  --meadow: #6FA04A;
-  --coral: #C9344A;
-  --petal: #EE8FA6;
-  --sun: #F2B544;
-  --sea: #5FB3B5;
-  --sea-bg: #DDF0EC;
-  --ink: #22331F;
-  --muted: #4F5E48;
-  --clay: #A8501B;
-  --radius: 28px;
+  --sky: #9FD4EC;
+  --sky-2: #D8EFF0;
+  --horizon: #FFEFCF;
+  --paper: #F2F8EC;
+  --leaf: #173A2A;
+  --leaf-2: #2F6B3A;
+  --meadow: #3F7F46;
+  --grass: #5BA352;
+  --coral: #C72F59;
+  --rose: #8E2748;
+  --petal: #F28BA8;
+  --sun: #FFC247;
+  --sun-2: #FF9F43;
+  --ink: #1D2E22;
   --font: "Heebo", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --serif: "Frank Ruhl Libre", "Heebo", Georgia, serif;
-  --hand: "Amatic SC", "Heebo", cursive;
+  --display: "Secular One", "Heebo", system-ui, sans-serif;
+  --ease: cubic-bezier(.2, .7, .2, 1);
 }
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { margin: 0; background: var(--cream); color: var(--ink); font-family: var(--font); font-size: 18px; line-height: 1.7; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font); font-size: 18px; line-height: 1.7; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 img { display: block; max-width: 100%; height: auto; }
 a { color: inherit; }
-h1, h2, h3 { margin: 0; line-height: 1.08; color: var(--leaf); font-family: var(--serif); font-weight: 900; }
+h1, h2, h3 { margin: 0; line-height: 1.06; color: var(--leaf); font-family: var(--display); font-weight: 400; }
 p { margin: 0 0 1rem; }
-:focus-visible { outline: 3px solid var(--coral); outline-offset: 3px; }
 svg { display: block; }
+:focus-visible { outline: 3px solid var(--coral); outline-offset: 3px; }
 [hidden] { display: none !important; }
-
 .wrap { width: min(1120px, 100% - 40px); margin-inline: auto; position: relative; }
-.narrow { max-width: 760px; }
+.narrow { max-width: 780px; }
 .center { text-align: center; }
-.hand { font-family: var(--hand); font-weight: 700; font-size: 2.4rem; line-height: 1; color: var(--clay); margin: 0 0 .4rem; }
 .lead { font-size: 1.3rem; line-height: 1.65; }
 
-/* סרגל עליון, זכוכית */
-.top { position: fixed; inset: 0 0 auto 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; padding: 10px 22px; background: rgba(255, 249, 236, .78); backdrop-filter: blur(14px) saturate(1.4); -webkit-backdrop-filter: blur(14px) saturate(1.4); border-bottom: 1px solid rgba(31, 61, 43, .1); }
-.top-brand { font-family: var(--hand); font-weight: 700; font-size: 2rem; line-height: 1; color: var(--leaf); text-decoration: none; }
-.top-cta { padding: 9px 20px; border-radius: 999px; background: var(--leaf); color: #fff; font-weight: 700; font-size: .95rem; text-decoration: none; transition: transform .2s ease, background .2s ease; }
-.top-cta:hover { background: var(--coral); transform: translateY(-1px); }
+/* סרגל עליון */
+.top { position: fixed; inset: 0 0 auto 0; z-index: 30; display: flex; align-items: center; justify-content: space-between; padding: 10px 22px; background: rgba(242, 248, 236, .72); backdrop-filter: blur(14px) saturate(1.4); -webkit-backdrop-filter: blur(14px) saturate(1.4); border-bottom: 1px solid rgba(23, 58, 42, .1); }
+.top-brand { font-family: var(--display); font-size: 1.5rem; line-height: 1; color: var(--leaf); text-decoration: none; }
+.top-cta { padding: 10px 22px; min-height: 44px; display: inline-flex; align-items: center; border-radius: 999px; background: var(--leaf); color: #fff; font-weight: 700; font-size: .95rem; text-decoration: none; transition: background .2s ease; }
+.top-cta:hover { background: var(--coral); }
 
-/* עלים ועלי כותרת */
-.sprig { position: absolute; color: var(--leaf-2); pointer-events: none; opacity: .9; }
-.sprig svg { width: 100%; height: auto; fill: currentColor; }
-.sprig--gold { color: var(--sun); }
-.sprig--cream { color: rgba(255, 249, 236, .22); }
-
-/* פתיחה */
-.hero { position: relative; overflow: hidden; padding: 92px 0 90px; background:
-  radial-gradient(60% 55% at 18% 18%, rgba(242, 181, 68, .35), transparent 70%),
-  radial-gradient(55% 50% at 85% 85%, rgba(95, 179, 181, .28), transparent 70%),
-  linear-gradient(180deg, #FFF3D6 0%, var(--cream) 70%); }
-.hero-inner { display: grid; gap: 38px; align-items: center; position: relative; z-index: 2; }
-.hero-art { position: relative; width: min(400px, 82vw); margin-inline: auto; }
-.arch { position: relative; aspect-ratio: 4 / 5; border-radius: 999px 999px 36px 36px; overflow: hidden; box-shadow: 0 40px 70px -34px rgba(31, 61, 43, .7); background: var(--leaf-2); }
-.arch img { width: 100%; height: 100%; object-fit: cover; object-position: 52% 38%; transform: scale(1.04); animation: breathe 14s ease-in-out infinite alternate; }
-.sun-disc { position: absolute; z-index: -1; width: 78%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #FFD98A, var(--sun) 60%, #E89B2B); inset-block-start: -8%; inset-inline-start: -22%; animation: glow 9s ease-in-out infinite alternate; }
-.ring { position: absolute; z-index: -1; inset: -16px; border: 2px dashed rgba(31, 61, 43, .3); border-radius: 999px 999px 48px 48px; }
-.hero-art .sprig--a { width: 92px; inset-block-end: -26px; inset-inline-end: -48px; transform: rotate(18deg); }
-.hero-art .sprig--b { width: 70px; inset-block-start: 22%; inset-inline-start: -44px; transform: rotate(-28deg) scaleX(-1); color: var(--meadow); }
-.stamp { position: absolute; inset-block-end: 6%; inset-inline-start: -18px; z-index: 3; display: grid; place-items: center; width: 108px; aspect-ratio: 1; border-radius: 50%; background: var(--coral); color: #fff; text-align: center; font-family: var(--hand); font-weight: 700; font-size: 1.5rem; line-height: .95; transform: rotate(-9deg); box-shadow: 0 14px 28px -12px rgba(201, 52, 74, .8); }
-.stamp b { display: block; font-size: 2.4rem; }
-
-.hero-text { text-align: center; }
-.eyebrow { font-family: var(--hand); font-weight: 700; font-size: 2rem; line-height: 1; color: var(--clay); margin: 0 0 .5rem; }
-.hero h1 { font-size: clamp(3.4rem, 14vw, 6.6rem); letter-spacing: -.02em; }
-.hero h1 span { display: block; background: linear-gradient(100deg, var(--leaf) 20%, var(--coral) 90%); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.hero-lead { font-size: 1.28rem; margin: 1.1rem auto 1.4rem; max-width: 33rem; }
-.facts { list-style: none; margin: 0 0 1.7rem; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
-.facts li { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 999px; background: rgba(255, 255, 255, .72); border: 1px solid rgba(31, 61, 43, .14); color: var(--leaf); font-weight: 700; font-size: 1rem; backdrop-filter: blur(6px); }
-.facts svg { width: 20px; height: 20px; fill: none; stroke: var(--coral); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
-
-/* עלי בוגנוויליה נופלים */
-.petals { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+/* ============ פתיחה: שמיים, שמש, גבעות ============ */
+.hero { position: relative; overflow: hidden; isolation: isolate; padding: 96px 0 0; min-height: 100svh; display: flex; flex-direction: column; background: linear-gradient(180deg, var(--sky) 0%, var(--sky-2) 52%, var(--horizon) 88%); }
+.sky { position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.cloud { position: absolute; inset-inline-start: 0; fill: #fff; opacity: .85; animation: drift var(--t, 90s) linear var(--w, 0s) infinite; }
+.bird { position: absolute; inset-inline-start: 0; width: var(--s, 34px); color: var(--leaf); animation: fly var(--t, 28s) linear var(--w, 0s) infinite; }
+.bird svg { width: 100%; fill: currentColor; transform-origin: 50% 70%; animation: flap .55s ease-in-out infinite alternate; animation-delay: var(--f, 0s); }
+.pollen { position: absolute; inset-block-end: 22%; width: 7px; height: 7px; border-radius: 50%; background: #fff7c8; box-shadow: 0 0 12px 3px rgba(255, 236, 150, .9); opacity: 0; animation: float-up var(--t, 12s) ease-in-out var(--w, 0s) infinite; inset-inline-start: var(--x); }
+.petals { position: absolute; inset: 0; }
 .petal { position: absolute; inset-block-start: -40px; width: 16px; height: 22px; border-radius: 80% 0 80% 0; background: var(--petal); opacity: 0; animation: fall var(--d, 16s) linear var(--w, 0s) infinite; inset-inline-start: var(--x); }
 .petal:nth-child(3n) { background: var(--coral); width: 12px; height: 17px; }
 .petal:nth-child(4n) { background: var(--sun); }
+.butterfly { position: absolute; width: 34px; inset-inline-start: 0; inset-block-start: 0; animation: flutter var(--t, 34s) ease-in-out var(--w, 0s) infinite; }
+.butterfly svg { width: 100%; }
+.butterfly .wing { transform-origin: 50% 50%; animation: wing .22s ease-in-out infinite alternate; }
 
-/* כפתורים */
-.cta-row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
-.cta-row--stack { justify-content: flex-start; }
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 54px; padding: 12px 26px; border-radius: 999px; font: 700 1.05rem/1.2 var(--font); text-decoration: none; color: #fff; transition: transform .2s ease, box-shadow .2s ease, background .2s ease; }
-.btn:hover { transform: translateY(-3px); box-shadow: 0 16px 28px -14px rgba(31, 61, 43, .7); }
-.btn .wa { width: 24px; height: 24px; fill: currentColor; flex: none; }
-.btn--tal { background: var(--leaf); }
-.btn--tal:hover { background: var(--leaf-2); }
-.btn--talia { background: var(--coral); }
-.btn--sm { min-height: 46px; padding: 10px 20px; font-size: 1rem; }
+.hero-inner { position: relative; z-index: 3; flex: 1; display: grid; gap: 28px; align-items: center; padding-bottom: 150px; }
+.hero-text { text-align: center; position: relative; z-index: 3; }
+.eyebrow { font-weight: 800; font-size: 1.05rem; color: var(--rose); margin: 0 0 .5rem; }
+.hero h1 { font-size: clamp(3.8rem, 16vw, 8rem); letter-spacing: -.01em; line-height: .96; color: var(--leaf); }
+.hero h1 span { display: block; }
+.hero h1 .h1-2 { margin-inline-start: .7em; color: var(--leaf-2); }
+.hero-lead { font-size: 1.28rem; margin: 1.1rem auto 1.3rem; max-width: 31rem; font-weight: 500; }
+.facts { list-style: none; margin: 0 0 1.6rem; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.facts li { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: rgba(255, 255, 255, .78); color: var(--leaf); font-weight: 700; font-size: .95rem; backdrop-filter: blur(6px); }
+.facts svg { width: 20px; height: 20px; fill: none; stroke: var(--coral); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 
-/* קצוות גל בין הסקשנים */
+/* השמש היא התמונה */
+.sun-stage { position: relative; width: min(440px, 76vw); aspect-ratio: 1; margin-inline: auto; z-index: 2; }
+.sun-parallax { position: absolute; inset: 0; transform: translate3d(var(--mx, 0px), calc(var(--sy, 0) * -.12px + var(--my, 0px)), 0); will-change: transform; }
+.rays { position: absolute; inset: -34%; width: 168%; height: 168%; animation: spin 90s linear infinite; opacity: .9; }
+.glow { position: absolute; inset: -12%; border-radius: 50%; background: radial-gradient(circle, rgba(255, 214, 120, .85) 0%, rgba(255, 214, 120, .35) 45%, transparent 70%); animation: pulse 7s ease-in-out infinite; }
+.ring-text { position: absolute; inset: -9%; width: 118%; height: 118%; animation: spin 60s linear infinite reverse; }
+.ring-text text { font-family: var(--display); font-size: 17px; fill: var(--leaf); letter-spacing: .06em; }
+.sun-photo { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; border: 6px solid #fff; box-shadow: 0 30px 60px -20px rgba(23, 58, 42, .6), 0 0 0 14px rgba(255, 255, 255, .35); }
+.sun-photo img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 32%; transform: scale(1.12); }
+.sun-parallax .stamp { position: absolute; inset-block-end: 2%; inset-inline-start: -4%; z-index: 3; display: grid; place-items: center; width: 104px; aspect-ratio: 1; border-radius: 50%; background: var(--coral); color: #fff; text-align: center; font-family: var(--display); font-size: .95rem; line-height: 1.05; transform: rotate(-10deg); box-shadow: 0 14px 28px -12px rgba(199, 47, 89, .8); }
+.stamp b { display: block; font-size: 2.1rem; font-weight: 400; }
+
+/* גבעות ודשא */
+.land { position: absolute; inset-inline: 0; inset-block-end: -1px; height: clamp(150px, 26vh, 260px); z-index: 2; pointer-events: none; direction: ltr; }
+.hill { position: absolute; inset-block-end: 0; inset-inline-start: 0; width: 200%; height: 100%; animation: sway var(--t, 60s) linear infinite; }
+.hill svg { width: 100%; height: 100%; }
+.hill--1 { --t: 90s; height: 100%; opacity: .55; transform: translateY(calc(var(--sy, 0) * .02px)); }
+.hill--1 path { fill: #9ACB86; }
+.hill--2 { --t: 60s; height: 82%; animation-direction: reverse; }
+.hill--2 path { fill: var(--grass); }
+.hill--3 { --t: 42s; height: 58%; }
+.hill--3 path { fill: var(--meadow); }
+.tufts { position: absolute; inset-inline: 0; inset-block-end: 0; height: 100%; }
+.tuft { position: absolute; inset-block-end: -4px; width: var(--w, 46px); color: var(--c, #2F6B3A); transform-origin: 50% 100%; animation: grass var(--t, 4s) ease-in-out var(--d, 0s) infinite alternate; left: var(--x); }
+.tuft svg { width: 100%; fill: currentColor; }
+
+/* ============ רצועת החופש ============ */
+.sec { position: relative; padding: 96px 0; }
+.sec h2 { font-size: clamp(2.3rem, 7vw, 4rem); margin-bottom: 1.1rem; }
+.sec--free { background: linear-gradient(180deg, var(--meadow) 0%, #2F6B3A 30%, var(--leaf) 100%); color: #fff; overflow: hidden; padding: 70px 0 120px; }
+.sec--free h2 { color: #fff; font-size: clamp(2.8rem, 9vw, 5.6rem); }
+.sec--free .lead { color: #F4F7E8; margin-inline: auto; max-width: 42rem; }
+.sec--free p { color: #E4EDD8; max-width: 40rem; margin-inline: auto; }
+.marquee { direction: ltr; overflow: hidden; margin-bottom: 64px; display: grid; gap: 6px; }
+.track { display: flex; width: max-content; animation: marquee var(--t, 46s) linear infinite; font-family: var(--display); font-size: clamp(3rem, 9vw, 6rem); line-height: 1.1; white-space: nowrap; }
+.track span { display: inline-flex; align-items: center; gap: .5em; padding-inline: .25em; color: transparent; -webkit-text-stroke: 1.5px rgba(255, 255, 255, .6); }
+.track span:nth-child(3n+1) { color: var(--sun); -webkit-text-stroke: 0; }
+.track svg { width: .55em; height: .55em; fill: var(--petal); animation: spin 14s linear infinite; }
+.track--b { --t: 60s; animation-direction: reverse; }
 .edge { position: absolute; inset-inline: 0; width: 100%; height: 70px; pointer-events: none; }
 .edge--bottom { inset-block-end: -1px; }
 .edge--top { inset-block-start: -1px; transform: rotate(180deg); }
 
-/* סקשנים */
-.sec { position: relative; padding: 96px 0; }
-.sec h2 { font-size: clamp(2.2rem, 7vw, 3.6rem); margin-bottom: 1.1rem; }
-
-/* ההזמנה, על דשא עמוק */
-.sec--invite { background: radial-gradient(70% 80% at 20% 0%, #2F5A3A 0%, var(--leaf) 70%); color: var(--cream); overflow: hidden; padding: 120px 0; }
-.sec--invite h2 { color: #fff; font-size: clamp(2.6rem, 9vw, 5rem); }
-.sec--invite .hand { color: var(--sun); font-size: 2.8rem; }
-.sec--invite .lead { color: #F4EBD2; }
-.sec--invite p { color: #E9E1C6; max-width: 40rem; margin-inline: auto; }
-.sec--invite .lead { margin-inline: auto; max-width: 42rem; }
-.sec--invite .sprig--l { width: 150px; inset-block-start: 18%; inset-inline-start: -30px; transform: rotate(30deg); }
-.sec--invite .sprig--r { width: 130px; inset-block-end: 12%; inset-inline-end: -26px; transform: rotate(-24deg) scaleX(-1); }
-
-/* שלושה דברים */
-.sec--three { background: var(--cream); }
+/* שלוש תנועות */
+.sec--three { background: var(--paper); padding-top: 70px; }
 .three { list-style: none; margin: 0; padding: 0; display: grid; gap: 26px; grid-template-columns: 1fr; }
-.three li { position: relative; padding: 38px 28px 34px; text-align: center; border-radius: 60% 40% 55% 45% / 48% 52% 48% 52%; transition: transform .35s ease; }
-.three li:nth-child(1) { background: #FFE9B8; }
-.three li:nth-child(2) { background: var(--sea-bg); border-radius: 45% 55% 40% 60% / 55% 45% 55% 45%; }
-.three li:nth-child(3) { background: #FFDCE3; border-radius: 55% 45% 60% 40% / 45% 55% 45% 55%; }
-.three li:hover { transform: translateY(-6px) rotate(-1deg); }
-.three svg { width: 52px; height: 52px; margin-inline: auto; fill: none; stroke: var(--leaf); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-.three h3 { font-size: 1.9rem; margin: 12px 0 8px; }
-.three p { margin: 0; color: var(--ink); max-width: 17rem; margin-inline: auto; }
+.three li { padding: 40px 28px 36px; text-align: center; border-radius: 60% 40% 55% 45% / 48% 52% 48% 52%; animation: bob 7s ease-in-out infinite; }
+.three li:nth-child(1) { background: #FFE3A1; }
+.three li:nth-child(2) { background: #CDEBE4; border-radius: 45% 55% 40% 60% / 55% 45% 55% 45%; animation-delay: -2.3s; }
+.three li:nth-child(3) { background: #FFCFDA; border-radius: 55% 45% 60% 40% / 45% 55% 45% 55%; animation-delay: -4.6s; }
+.three svg { width: 54px; height: 54px; margin-inline: auto; fill: none; stroke: var(--leaf); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.three h3 { font-size: 2rem; margin: 12px 0 8px; }
+.three p { margin: 0 auto; max-width: 17rem; }
 
-/* הפרטים, על ים */
-.sec--when { overflow: hidden; background: linear-gradient(180deg, var(--cream) 0%, var(--sea-bg) 100%); }
-.when { display: grid; gap: 44px; align-items: center; }
-.when-poster { position: relative; width: min(400px, 100%); margin-inline: auto; }
-.when-poster::before { content: ""; position: absolute; inset: -18px; border-radius: 40px; background: linear-gradient(135deg, var(--sun), var(--petal)); transform: rotate(-4deg); opacity: .85; }
-.when-poster img { position: relative; width: 100%; border-radius: 26px; box-shadow: 0 34px 60px -28px rgba(31, 61, 43, .7); transform: rotate(2deg); transition: transform .5s ease; }
-.when-poster:hover img { transform: rotate(0); }
-.details { margin: 1.4rem 0 1.5rem; display: grid; gap: 12px; }
-.details div { display: flex; gap: 14px; align-items: baseline; padding: 14px 18px; border-radius: 18px; background: rgba(255, 255, 255, .7); border: 1px solid rgba(31, 61, 43, .1); }
-.details dt { flex: 0 0 5.5rem; font-weight: 800; color: var(--clay); }
+/* הפרטים */
+.sec--when { background: linear-gradient(180deg, var(--paper) 0%, #DCEFE6 100%); overflow: hidden; }
+.when { display: grid; gap: 48px; align-items: center; }
+.when-poster { position: relative; width: min(390px, 100%); margin-inline: auto; }
+.when-poster::before { content: ""; position: absolute; inset: -20% -24%; z-index: -1; border-radius: 50%; background: radial-gradient(circle, rgba(255, 194, 71, .75) 0%, rgba(255, 194, 71, .25) 50%, transparent 70%); animation: pulse 8s ease-in-out infinite; }
+.when-poster img { width: 100%; border-radius: 26px; box-shadow: 0 34px 60px -28px rgba(23, 58, 42, .7); animation: bob-r 9s ease-in-out infinite; }
+.details { margin: 1.4rem 0 1.5rem; display: grid; border-top: 1px solid rgba(23, 58, 42, .25); }
+.details div { display: flex; gap: 14px; align-items: baseline; padding: 12px 0; border-bottom: 1px solid rgba(23, 58, 42, .25); }
+.details dt { flex: 0 0 5.5rem; font-weight: 800; color: var(--rose); }
 .details dd { margin: 0; font-weight: 700; color: var(--leaf); }
 
-/* מי אנחנו */
-.sec--meet { background: var(--cream); }
-.meet { display: grid; gap: 54px; margin-top: 44px; }
-.person { position: relative; }
-.person-photo { width: min(300px, 78%); aspect-ratio: 4 / 5; margin: 0 auto 22px; border-radius: 999px 999px 30px 30px; overflow: hidden; box-shadow: 0 30px 50px -28px rgba(31, 61, 43, .65); outline: 4px solid var(--cream); outline-offset: -4px; position: relative; }
-.person:nth-child(1) .person-photo { box-shadow: 0 30px 50px -28px rgba(31, 61, 43, .65), 0 0 0 10px rgba(242, 181, 68, .35); }
-.person:nth-child(2) .person-photo { box-shadow: 0 30px 50px -28px rgba(31, 61, 43, .65), 0 0 0 10px rgba(238, 143, 166, .4); }
-.person-photo img { width: 100%; height: 100%; object-fit: cover; }
-.person h3 { font-size: 2.1rem; text-align: center; }
-.person .role { margin: .4rem auto 1.2rem; color: var(--clay); font-weight: 700; font-size: 1.02rem; line-height: 1.5; text-align: center; max-width: 26rem; }
+/* המנחות */
+.sec--meet { background: #DCEFE6; }
+.meet { display: grid; gap: 56px; margin-top: 44px; }
+.person-photo { width: min(300px, 78%); aspect-ratio: 4 / 5; margin: 0 auto 22px; border-radius: 999px 999px 30px 30px; overflow: hidden; box-shadow: 0 30px 50px -28px rgba(23, 58, 42, .65), 0 0 0 10px rgba(255, 255, 255, .55); }
+.person-photo img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s var(--ease); }
+.person:hover .person-photo img { transform: scale(1.06); }
+.person h3 { font-size: 2.2rem; text-align: center; }
+.person .role { margin: .4rem auto 1.2rem; color: var(--rose); font-weight: 700; font-size: 1.02rem; line-height: 1.5; text-align: center; max-width: 26rem; }
 .person p { font-size: 1.06rem; }
 .more { margin: 0 0 1.2rem; }
-.more summary { cursor: pointer; font-weight: 800; color: var(--coral); list-style: none; padding: 6px 0; }
+.more summary { cursor: pointer; font-weight: 800; color: var(--coral); list-style: none; padding: 12px 0; min-height: 44px; text-decoration: underline; text-underline-offset: 5px; }
 .more summary::-webkit-details-marker { display: none; }
-.more summary::after { content: " ↓"; }
-.more[open] summary::after { content: " ↑"; }
-.more[open] summary { margin-bottom: .6rem; }
+.more[open] summary { margin-bottom: .4rem; }
 .person .btn { display: flex; width: fit-content; margin-inline: auto; }
 
-/* הזמנה אחרונה, על התמונה */
-.sec--final { position: relative; color: #fff; padding: 130px 0 120px; overflow: hidden; isolation: isolate; }
-.final-bg { position: absolute; inset: 0; z-index: -2; }
-.final-bg img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 35%; }
-.sec--final::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(31, 61, 43, .78), rgba(31, 61, 43, .88)); }
-.sec--final h2 { color: #fff; font-size: clamp(2.8rem, 10vw, 5.4rem); }
-.sec--final .hand { color: var(--sun); font-size: 2.8rem; }
-.sec--final .lead { color: #F4EBD2; margin-bottom: 1.8rem; }
+/* כפתורים */
+.cta-row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+.cta-row--stack { justify-content: flex-start; }
+.btn { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 54px; padding: 12px 28px; border-radius: 999px; font: 700 1.05rem/1.2 var(--font); text-decoration: none; color: #fff; overflow: hidden; transition: box-shadow .2s ease, background .2s ease; }
+.btn:hover { box-shadow: 0 14px 26px -12px rgba(23, 58, 42, .75); }
+.btn .wa { width: 24px; height: 24px; fill: currentColor; flex: none; }
+.btn--tal { background: var(--leaf); }
+.btn--tal:hover { background: var(--leaf-2); }
+.btn--talia { background: var(--coral); }
+.btn--sm { min-height: 46px; padding: 10px 22px; font-size: 1rem; }
+.btn--tal:not(.btn--sm)::after { content: ""; position: absolute; inset-block: 0; inset-inline-start: 0; width: 40%; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .35), transparent); transform: translateX(-160%) skewX(-18deg); animation: shine 5.5s ease-in-out 2s infinite; }
+
+/* ============ סיום: שקיעה ============ */
+.sec--final { position: relative; color: #fff; padding: 110px 0 clamp(320px, 46vh, 420px); overflow: hidden; isolation: isolate; background: linear-gradient(180deg, #1B3A3A 0%, #4B3A5A 38%, #A8425B 66%, #F08A4B 100%); }
+.dusk { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+.setting-sun { position: absolute; inset-inline: 0; margin-inline: auto; inset-block-end: 6%; width: min(360px, 62vw); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #FFE7A0, var(--sun) 55%, var(--sun-2)); box-shadow: 0 0 120px 40px rgba(255, 180, 90, .55); animation: set 14s ease-in-out infinite alternate; }
+.star { position: absolute; width: 4px; height: 4px; border-radius: 50%; background: #fff; opacity: .2; animation: twinkle var(--t, 4s) ease-in-out var(--w, 0s) infinite alternate; inset-block-start: var(--y); inset-inline-start: var(--x); }
+.sec--final .land { height: clamp(150px, 26vh, 260px); }
+.sec--final .hill--1 path { fill: #5A2E4E; }
+.sec--final .hill--1 { opacity: .8; }
+.sec--final .hill--2 path { fill: #2F3A33; }
+.sec--final .hill--3 path { fill: #14281C; }
+.sec--final h2 { color: #fff; font-size: clamp(3rem, 11vw, 6rem); text-shadow: 0 4px 30px rgba(20, 20, 40, .35); }
+.sec--final .lead { color: #FFF4E2; margin-bottom: 1.8rem; }
 .sec--final .btn--tal { background: #fff; color: var(--leaf); }
 .sec--final .btn--tal:hover { background: var(--sun); }
 .cta-row--center { justify-content: center; }
+.sec--final .wrap { z-index: 3; }
 
-.foot { padding: 24px 20px; text-align: center; background: #14281C; color: #D6D0B4; font-size: .95rem; }
+.foot { padding: 24px 20px; text-align: center; background: #0E1F15; color: #D3DCC8; font-size: .95rem; }
 .foot p { margin: 0; }
 
 /* כניסה בגלילה */
-.js .rv { opacity: 0; transform: translateY(26px); transition: opacity .9s ease, transform .9s cubic-bezier(.2, .7, .2, 1); transition-delay: var(--i, 0s); }
+.js .rv { opacity: 0; transform: translateY(30px); transition: opacity 1s var(--ease), transform 1s var(--ease); transition-delay: var(--i, 0s); }
 .js .rv.in { opacity: 1; transform: none; }
+/* כניסה של הפתיחה בטעינה */
+.in0 { animation: unveil 1.2s var(--ease) both; }
+.in1, .in2, .in3, .in4 { animation: rise .9s var(--ease) both; }
+.in1 { animation-delay: .3s; } .in2 { animation-delay: .45s; } .in3 { animation-delay: .65s; } .in4 { animation-delay: .85s; }
 
-@keyframes breathe { to { transform: scale(1.1) translateY(-1.5%); } }
-@keyframes glow { to { transform: scale(1.08); opacity: .85; } }
-@keyframes fall {
-  0% { transform: translate3d(0, 0, 0) rotate(0); opacity: 0; }
-  8% { opacity: .9; }
-  50% { transform: translate3d(40px, 52vh, 0) rotate(160deg); }
-  92% { opacity: .8; }
-  100% { transform: translate3d(-30px, 110vh, 0) rotate(340deg); opacity: 0; }
-}
+@keyframes rise { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+@keyframes unveil { from { opacity: 0; transform: translateY(60px) scale(.9); } to { opacity: 1; transform: none; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse { 0%, 100% { transform: scale(1); opacity: .9; } 50% { transform: scale(1.1); opacity: 1; } }
+@keyframes drift { from { transform: translateX(-30vw); } to { transform: translateX(130vw); } }
+@keyframes fly { from { transform: translate3d(-12vw, 0, 0); } 50% { transform: translate3d(55vw, -40px, 0); } to { transform: translate3d(115vw, 10px, 0); } }
+@keyframes flap { from { transform: scaleY(1); } to { transform: scaleY(.35); } }
+@keyframes float-up { 0% { transform: translate3d(0, 0, 0); opacity: 0; } 20% { opacity: .9; } 100% { transform: translate3d(36px, -46vh, 0); opacity: 0; } }
+@keyframes fall { 0% { transform: translate3d(0, 0, 0) rotate(0); opacity: 0; } 8% { opacity: .9; } 50% { transform: translate3d(50px, 52vh, 0) rotate(160deg); } 92% { opacity: .8; } 100% { transform: translate3d(-34px, 110vh, 0) rotate(340deg); opacity: 0; } }
+@keyframes flutter { 0% { transform: translate3d(-10vw, 55vh, 0); } 20% { transform: translate3d(22vw, 38vh, 0); } 40% { transform: translate3d(40vw, 52vh, 0); } 60% { transform: translate3d(62vw, 34vh, 0); } 80% { transform: translate3d(85vw, 48vh, 0); } 100% { transform: translate3d(112vw, 36vh, 0); } }
+@keyframes wing { from { transform: scaleX(1); } to { transform: scaleX(.25); } }
+@keyframes sway { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes grass { from { transform: rotate(-4deg); } to { transform: rotate(5deg); } }
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+@keyframes bob-r { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-12px) rotate(1deg); } }
+@keyframes shine { 0%, 60% { transform: translateX(-160%) skewX(-18deg); } 100% { transform: translateX(420%) skewX(-18deg); } }
+@keyframes set { from { transform: translateY(-6%); } to { transform: translateY(14%); } }
+@keyframes twinkle { to { opacity: .95; } }
 
 @media (min-width: 900px) {
   .top { padding-inline: 48px; }
-  .hero { padding: 96px 0 100px; min-height: 100svh; display: flex; align-items: center; }
-  .hero-inner { grid-template-columns: 1.1fr .9fr; gap: 56px; }
+  .hero { padding-top: 84px; }
+  .hero-inner { grid-template-columns: 1.05fr .95fr; gap: 40px; padding-bottom: 190px; }
   .hero-text { text-align: right; }
-  .hero-art { width: min(440px, 100%, calc((100svh - 190px) * .8)); margin-inline: 0 auto; }
-  .facts, .cta-row { justify-content: flex-start; }
+  .hero .facts, .hero .cta-row { justify-content: flex-start; }
   .hero-lead { margin-inline: 0; }
+  .sun-stage { width: min(470px, 100%, calc((100svh - 330px) * 1)); min-width: 300px; }
   .three { grid-template-columns: repeat(3, 1fr); gap: 34px; }
-  .three li:nth-child(2) { margin-top: 40px; }
-  .when { grid-template-columns: 5fr 6fr; gap: 80px; }
+  .three li:nth-child(2) { margin-top: 44px; }
+  .when { grid-template-columns: 5fr 6fr; gap: 90px; }
   .meet { grid-template-columns: 1fr 1fr; align-items: start; gap: 70px; }
-  .person:nth-child(2) { margin-top: 56px; }
+  .person:nth-child(2) { margin-top: 60px; }
 }
 @media (max-width: 899px) {
   .hero { padding-top: 84px; }
-  .hero-art { order: -1; }
-  .facts li { padding: 7px 12px; font-size: .92rem; }
-  .facts { gap: 8px; }
-  .hero-art .sprig--a { inset-inline-end: -22px; width: 70px; }
-  .hero-art .sprig--b { inset-inline-start: -20px; width: 54px; }
-  .stamp { inset-inline-start: -8px; width: 92px; font-size: 1.3rem; }
-  .stamp b { font-size: 2rem; }
+  .sun-stage { order: -1; width: min(300px, 70vw); margin-top: 24px; }
+  .hero-inner { padding-bottom: 130px; }
+  .sun-parallax .stamp { width: 86px; font-size: .8rem; }
+  .stamp b { font-size: 1.7rem; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .btn, .top-cta, .three li, .when-poster img { transition: none; }
-  .arch img, .sun-disc, .petal { animation: none; }
-  .petals { display: none; }
-  .js .rv { opacity: 1; transform: none; transition: none; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .js .rv { opacity: 1; transform: none; }
+  .petals, .pollen, .butterfly, .bird { display: none; }
 }
