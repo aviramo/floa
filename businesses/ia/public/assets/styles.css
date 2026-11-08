@@ -38,7 +38,7 @@ svg { display: block; }
 /* סרגל עליון */
 .top { position: fixed; inset: 0 0 auto 0; z-index: 30; display: flex; align-items: center; justify-content: space-between; padding: 10px 22px; background: rgba(242, 248, 236, .72); backdrop-filter: blur(14px) saturate(1.4); -webkit-backdrop-filter: blur(14px) saturate(1.4); border-bottom: 1px solid rgba(23, 58, 42, .1); }
 .top-brand { font-family: var(--display); font-size: 1.5rem; line-height: 1; color: var(--leaf); text-decoration: none; }
-.top-cta { padding: 10px 22px; min-height: 44px; display: inline-flex; align-items: center; border-radius: 999px; background: var(--leaf); color: #fff; font-weight: 700; font-size: .95rem; text-decoration: none; transition: background .2s ease; }
+.top-cta { order: -1; padding: 10px 22px; min-height: 44px; display: inline-flex; align-items: center; border-radius: 999px; background: var(--leaf); color: #fff; font-weight: 700; font-size: .95rem; text-decoration: none; transition: background .2s ease; }
 .top-cta:hover { background: var(--coral); }
 
 /* ============ פתיחה: שמיים, שמש, גבעות ============ */
