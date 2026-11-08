@@ -109,7 +109,7 @@ dialog::-webkit-scrollbar, dialog *::-webkit-scrollbar { display: none; width: 0
 /* שקט: פעולה בתוך שורה (גרירה, עריכה, מחיקה), אותו גודל בלי מילוי */
 .medit, .sthandle, .stdel, .mt2row .mtdel { background: transparent; border-color: transparent; color: var(--text-2); }
 .sthandle { color: var(--text-3); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
-@media (hover: hover) { .stdel:hover { background: var(--red-bg); color: var(--red); } }
+@media (hover: hover) { .stdel:hover { background: var(--surface); } }
 .close { font-size: 22px; }
 .ndel { background: none; }
 
@@ -198,7 +198,7 @@ dialog::-webkit-scrollbar, dialog *::-webkit-scrollbar { display: none; width: 0
   width: 100%; height: var(--ctl); padding: 0 12px; border: 1px solid var(--line-2); background: var(--bg); color: var(--text); font-size: 16px; font-family: var(--font); }
 .field input:focus, .field select:focus, .field textarea:focus, #finForm select:focus, .nform textarea:focus, .setinp:focus, .pmname:focus, .pmown:focus, .mt2row input:focus, .mt2row select:focus, .dline input:focus, .srccard .srcin:focus-within, .srccard .srcsel:focus:focus { outline: none; border-color: var(--text); }
 .field textarea { height: auto; min-height: var(--ctl); max-height: 260px; padding: 8px 12px; line-height: 26px; resize: none; overflow-y: auto; text-align: start; }
-.field input[type="tel"] { direction: ltr; text-align: right; }
+.field input[type="tel"], .field input[type="email"] { direction: ltr; text-align: right; }
 /* רשימה נפתחת, תאריך ושעה: חץ אחד משלנו, בצד שמאל */
 .field select, #finForm select, .pmown, .mt2row select, .srccard .srcin .ratetype, .srccard .srcsel, .field input[type="date"], .field input[type="time"] {
   appearance: none; -webkit-appearance: none; padding-inline: 12px 32px; text-align: start; cursor: pointer;
@@ -452,7 +452,7 @@ html.dlg-lock { overflow: hidden; overscroll-behavior: none; }
 @keyframes pviewL { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: none; } }
 @keyframes pviewR { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
 /* פופאפים בגובה מלא */
-#pDlg, #setDlg, #stDlg, #prDlg, #finDlg, #mDlg { height: 100dvh; max-height: 100dvh; }
+#pDlg, #setDlg, #stDlg, #prDlg, #finDlg, #mDlg, #mailDlg { height: 100dvh; max-height: 100dvh; }
 #setDlg .sheet, #stDlg .sheet, #prDlg .sheet, #mDlg .sheet { min-height: 100%; }
 @media (max-width: 759px) {   /* "החשבון שלי", "דרכי תשלום" ו"דרכי הגעה": בגובה התוכן; שאר המסכים של הפופאפ בגובה מלא. בדסקטופ פאנל בצד, בלי שינוי */
   #setDlg:has(:is(#setMain, #setSt, #setPm, #setSrc, #setDel):not([hidden])) { height: fit-content; max-height: 92vh; }
@@ -472,7 +472,7 @@ html.dlg-lock { overflow: hidden; overscroll-behavior: none; }
 /* דסקטופ (31.10.26): כל הפופאפים במרכז המסך בגודל התוכן (עד 90% מהגובה, ואז גלילה בתוכם), בלי פס גרירה; נפתחים ונסגרים בדהייה */
 @media (min-width: 760px) {
   dialog { margin: auto; max-height: min(90vh, 920px); }
-  #pDlg, #setDlg, #stDlg, #prDlg, #finDlg, #mDlg { height: auto; max-height: min(90vh, 920px); }
+  #pDlg, #setDlg, #stDlg, #prDlg, #finDlg, #mDlg, #mailDlg { height: auto; max-height: min(90vh, 920px); }   /* גם המייל (5.11.26): פופאפ רגיל וממורכז בגובה התוכן, עם גלילה בתוכו, ולא עד קצוות המסך */
   #pDlg .sheet, #finDlg .sheet { height: auto; max-height: min(90vh, 920px); }
   #setDlg .sheet, #stDlg .sheet, #prDlg .sheet, #mDlg .sheet { min-height: 0; }
   
@@ -507,7 +507,6 @@ html.dlg-lock { overflow: hidden; overscroll-behavior: none; }
 /* השורה השנייה במסך משנה (שם המפגש ומועדו): מיושרת לטקסט הכותרת (אחרי חץ החזרה) וצמודה אליה */
 #pDlg .sheet-head:has(+ .psub:not([hidden])) { margin-bottom: 0; }
 #pDlg .psub { margin-top: -8px; padding-inline-start: calc(var(--tag) + 18px); line-height: 1.3; }
-#pDlg .sheet-head.navrow { cursor: pointer; }   /* כל שורת הכותרת לחיצה: עוברת לדף הפרטים, ומדף הפרטים חוזרת להערות */
 /* שורת הכפתורים מימין לשמאל: צפייה כמשתתף, תגית, חיוג, וואטסאפ */
 #pDlg .sheet-head #pAllocChip { order: 3; }
 #pDlg .sheet-head #pMsgs .ctop { order: 5; display: flex; margin: 0; }
@@ -587,12 +586,12 @@ html.dlg-lock { overflow: hidden; overscroll-behavior: none; }
 #pAddMeet { width: auto; height: var(--ctl); min-height: 0; padding: 0 8px; }   /* אזור הלחיצה: הכיתוב עם קצת ריפוד, בלי אפקט לחיצה (הגובה נשאר 44px למגע) */
 .more { display: block; width: 100%; height: var(--ctl); margin: 4px 0 8px; border: 1px solid transparent; background: var(--surface-2); color: var(--text); font-weight: 600; font-size: 15px; }
 /* הערה חדשה: שדה וצירוף צילום מסך */
-#pDelete { background: transparent; border-color: transparent; }   /* מחיקת משתתף: בלי רקע, רק הטקסט האדום; רקע אדום בהיר בריחוף ובלחיצה */
-#pDelete:active { background: var(--red-bg); }
-@media (hover: hover) { #pDelete:hover { background: var(--red-bg); } }
+#pDelete { background: transparent; border-color: transparent; }   /* מחיקת משתתף: בלי רקע, רק הטקסט האדום; ריחוף ולחיצה באפור ניטרלי, כמו שאר הכפתורים */
+#pDelete:active { background: var(--surface-2); }
+@media (hover: hover) { #pDelete:hover { background: var(--surface); } }
 #pRestore { background: transparent; border-color: transparent; color: var(--green); }   /* משתתף מחוק: במקום "מחיקת משתתף", באותה טיפוגרפיה ובירוק */
-#pRestore:active { background: var(--green-bg); }
-@media (hover: hover) { #pRestore:hover { background: var(--green-bg); } }
+#pRestore:active { background: var(--surface-2); }
+@media (hover: hover) { #pRestore:hover { background: var(--surface); } }
 .nform { display: flex; gap: 8px; align-items: flex-end; margin: 16px 0 12px; border-bottom: 1px solid var(--line-2); }   /* הערה חדשה: בלי מסגרת, קו תחתון אחד לכל הרוחב, שכולל גם את כפתור התמונה (1.11.26) */
 .nform:focus-within { border-bottom-color: var(--text); }
 .nform textarea { border-width: 0; background: transparent; flex: 1 1 auto; min-width: 0; height: auto; min-height: 24px; max-height: 140px; padding: 0; resize: none; line-height: 1.4; font-size: 16px; }
@@ -745,7 +744,8 @@ html.dlg-lock { overflow: hidden; overscroll-behavior: none; }
 .strow { --namh: 32px; display: grid; align-items: center; gap: 2px 8px; margin-bottom: 4px; padding: 0; background: transparent; border: 0;}   /* סטטוסים ותגיות: קומפקטי, בלי רקע (אפור רק בכפתורים) */
 .strow .sthandle, .strow .stdel, .pmrow .sthandle, .pmrow .stdel { flex: 0 0 28px; width: 28px; height: 32px; }
 .strow .sthandle { grid-column: 1; }
-.strow .stdel { grid-column: 4; }
+.strow .stdel { grid-column: 5; }
+.strow .stshow { grid-column: 4; }
 .strow.dragging, .pmrow.dragging { position: relative; z-index: 5; background: var(--bg); box-shadow: var(--pop); }
 .strow.dragging .sthandle, .pmrow.dragging .sthandle { cursor: grabbing; }
 .strow .stname, .srccard .stname { flex: 1 1 0; min-width: 0; height: var(--namh); padding: 0 8px; border: 0; font-size: 15.5px; font-weight: 600; text-align: right; }
@@ -879,7 +879,7 @@ p.stline { margin: 8px 0 0; font-size: 14.5px; }
 .iwrap { position: relative; flex: 1 1 auto; min-height: 0; touch-action: pan-y; }
 .iwrap img { display: block; width: 100%; height: 100%; object-fit: contain; border-radius: 0; }
 @media (min-width: 760px) {   /* בדסקטופ: במרכז המסך בגובה התמונה, עד 90% מהגובה */
-  #iDlg { height: auto; max-height: min(90vh, 920px); }
+  #iDlg { height: auto; max-height: min(90vh, 920px); border-radius: var(--r); }
   #iDlg .sheet { height: auto; padding: 16px var(--gut); }
   .iwrap img { height: auto; max-height: calc(min(90vh, 920px) - 58px); border-radius: var(--r); }
 }
@@ -970,7 +970,7 @@ html.is-loading .vbar { display: none; }
 /* ---------- דסקטופ רחב (מ-1024px, 31.10.26): הרשימה בעמודה בצד ימין, וכרטיס המשתתף בצד שמאל במקום פופאפ ---------- */
 #splitEmpty { display: none; }
 @media (min-width: 1024px) {
-  :root { --listw: clamp(440px, 45vw, 600px); }   /* ב-1024 בערך 460, מ-1334 ומעלה 600 */
+  :root { --listw: 50vw; }   /* חלוקת ברירת המחדל בדסקטופ: חצי מסך לרשימה וחצי לכרטיס (5.11.26); אפשר לגרור את הקו ולשנות, וההעדפה נשמרת */
   .wrap { max-width: var(--listw); margin-inline: 0 auto; border-inline-end: 1px solid var(--line); }
     #pDlg.side { position: fixed; inset: var(--envtop, 0px) var(--listw) 0 0; z-index: 20; width: auto; max-width: none; height: auto; max-height: none; margin: 0; box-shadow: none; overflow: hidden; --gut: 32px; }   /* ריווח הצד של הכרטיס: רצועת המפגשים ממשיכה עד הקצה, והמפגש האחרון נעצר בקו של הכותרת וההערות */
   #pDlg.side .sheet { height: 100%; max-height: none; padding: 24px 32px 20px; }
@@ -1018,7 +1018,7 @@ dialog .dclose { display: none; }
 /* ---------- יתרה ותשלומים בכרטיס רחב (31.10.26): הסיכום והכפתורים בטור צר מימין, וההיסטוריה בטור משמאל ---------- */
 @media (min-width: 1024px) { #pDlg.side #pForm { container-type: inline-size; } }   /* התפריטים הצפים של הכרטיס מחוברים לדיאלוג ולא לטופס, ולכן לא מושפעים */
 @container (min-width: 720px) {
-  #pForm .mlist { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
   #pForm #pgW { position: relative; }
   #pForm #pgW > #walSum { width: 300px; grid-template-columns: minmax(0, 1fr); margin: 0; }
   #pForm #pgW > .payact { width: 300px; flex-direction: column; margin: 12px 0 0 !important; }
@@ -1055,8 +1055,8 @@ dialog .dclose { display: none; }
 .mtedit .emvars { margin: 0; }
 .mtdel { height: var(--ctl); padding: 0 16px; background: transparent; border-color: transparent; color: var(--red); font-weight: 700; font-size: 15px; }   /* בלי רקע, כמו "מחיקת משתתף": אדום בהיר רק בריחוף ובלחיצה */
 .mtdel[hidden] { display: none; }
-.mtdel:active { background: var(--red-bg); }
-@media (hover: hover) { .mtdel:hover { background: var(--red-bg); } }
+.mtdel:active { background: var(--surface-2); }
+@media (hover: hover) { .mtdel:hover { background: var(--surface); } }
 .mtpladd { display: block; width: 100%; height: var(--ctl); margin-bottom: 8px; border: 1px solid transparent; background: var(--surface-2); color: var(--text); font-weight: 600; font-size: 14.5px; }
 /* כפתורי הוספה ("+ ..."): בלי רקע, רק הטקסט; אפור בריחוף ובלחיצה בלבד (2.11.26) */
 :is(#pmAdd, #srcPrAdd, #stAdd, #pAddMeet, .prnew, .mtpladd, .mt2add button) { background: transparent; border-color: transparent; color: var(--text); }
@@ -1096,7 +1096,8 @@ dialog .dclose { display: none; }
 /* חריגים לרדיוס הפינות: אלמנט עם קו בצד אחד (הקו היה מתעקל בקצוות), שטח מקצה לקצה, ופופאפ שצמוד לקצוות המסך */
 .row, .wrap, .wrap > .vbar, .sheet-head, .finrow, .walrow, .logrow, #fMenu .fsep, .nform, #nList .nitem, .ptabs, .ptabi, .mmenu .maddrow, .srccard, .tb .tr, #waMenu .wbot, .hsearch, .hmi.out, .fsl.hd, .tokf, .nform textarea, .srccard .codein, .srccard .ratetype, #listTags .hsearch input { border-radius: 0; }
 @media (max-width: 699px) { #mMenu { border-radius: 0; } }   /* במובייל התפריט מקצה לקצה */
-dialog { border-radius: 0; }   /* כל הפופאפים בלי פינות מעוגלות (4.11.26, לבקשת בעל האתר), גם במובייל וגם בדסקטופ */
+dialog { border-radius: 0; }   /* במובייל הפופאפים עולים מלמטה וצמודים לקצה המסך: בלי פינות מעוגלות */
+@media (min-width: 760px) { dialog:not(.drawer):not(.side) { border-radius: var(--r); } }   /* בדסקטופ (5.11.26, לבקשת בעל האתר): כל הפופאפים הממורכזים עם פינות מעוגלות. הפאנלים שצמודים לקצה המסך (הגדרות, סטטיסטיקות, כספים, וכרטיס המשתתף שליד הרשימה) נשארים ישרים */
 /* רצועת המפגשים: האריח והכרטיס האחרון סוגרים את הפינות של הרצועה */
 
 /* סינון פעיל בשורת הסינון (2.11.26): נקודה בצבע התואם, רכיב אחד (UI.fdot) לתשלום, יתרה, התמדה, שליחה, וואטסאפ, מגדר, סינון ומיון. זכר / נקבה בלי מילוי; אייקוני העמודות נשארים עם הרקע של המצב */
@@ -1121,15 +1122,28 @@ dialog { border-radius: 0; }   /* כל הפופאפים בלי פינות מעו
 #viewMenu .mc[data-sc][aria-pressed="true"] { background: transparent; color: var(--sfg); }
 .fdot.sc { background: var(--sfg); }
 /* קישור למייל בסוף הערת האירוע, ומסך הצפייה במייל */
-
+.nmail { position: relative; display: inline-flex; align-items: center; height: 28px; padding: 0; border: 0; background: transparent; color: var(--text); font: inherit; font-size: 14px; text-decoration: underline; cursor: pointer; }
+.nmail::before { content: ''; position: absolute; inset: -8px -6px; }
+.mailmeta { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; font-size: 14px; color: var(--text-2); }
+.mailmeta b { font-size: 16px; font-weight: 700; color: var(--text); }
+.mailmeta .mailto { color: var(--text); overflow-wrap: anywhere; }   /* הכתובת כפי שנשמרה ביומן ברגע השליחה, לא מהמשתתף */
+#mailDlg .sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+#mailFrame { display: block; width: 100%; min-height: 240px; border: 0; background: var(--bg); pointer-events: none; }   /* נגיעות עוברות לפופאפ: גלילה והחלקה לסגירה מכל מקום; קישורים נפתחים ב-JS */
+#mailFrame[hidden] { display: none; }
+.nmail.bad { gap: 4px; color: var(--red); }   /* מייל שלא נשלח: סמל אזהרה */
+.mailbad { display: flex; align-items: flex-start; gap: 4px; margin-bottom: 8px; font-weight: 700; color: var(--red); }
+#pDlg .sheet-head #mailTheme { order: 3; }   /* בקצה השמאלי של הכותרת */
+#pDlg .sheet-head #mailTheme[hidden] { display: none; }
 /* הדמיית מצב כהה: הפופאפ כולו, כולל הכותרת, בפלטה הפוכה. המייל בלי צבעי מצב כהה משלו, ולכן הופכים אותו כמו שאפליקציות מייל עושות */
-
+#mailDlg.maildark { --yellow: #F5B400; --bg: #16191D; --surface: #16191D; --surface-2: #5A626C; --text: #FFFFFF; --text-2: #C7CCD3; --text-3: #8A929B; --line: #5A626C; --line-2: #5A626C; background: var(--bg); color: var(--text); }
+#mailDlg.maildark #mailFrame { background: #FFFFFF; filter: invert(.91) hue-rotate(180deg); }   /* רקע המסגרת לבן: אחרי ההיפוך הוא כהה כמו הפופאפ */
 /* המפגש הנבחר בכרטיס המשתתף (2.11.26): בלי רקע על הכרטיס והתאריך מודגש. הסטטוס הוא רכיב התגית עצמו, בלי שום דריסה; כאן רק המיקום במרכז. "שיוך למפגש" נשאר קישור */
 /* תפריט בחירת הסטטוס והתגיות: הנבחר לא משנה רקע, ויש לו נקודה (של סטטוס בצבע שלו, מ-applyStatuses; של תגית בשחור). הנקודה תמיד בסימון ומוצגת רק בנבחר, כי תגיות מתחלפות במקום */
 #qMenu.qlist .qi { position: relative; }
 #qMenu.qlist .qi[aria-pressed="true"] { border-color: transparent; display: inline-flex; align-items: center; gap: 4px; }   /* התגית הנבחרת: ✕ שמסיר אותה */
 #qMenu.qlist .qi svg { flex: none; width: 14px; height: 14px; margin: 0; }
 /* מייל שלא נשלח כי למשתתף אין חשבון גוגל: צהוב. תקלה אמיתית נשארת אדומה */
+.nmail.bad.noacc, .mailbad.noacc { color: var(--yellow); }
 
 /* שדה עם התווית בתוך המסגרת (3.11.26): התווית תמיד גלויה, בלי שורה נפרדת מעל, וכל שורת שדות קצרה ב-20 פיקסל. רכיב אחד: כל <label class="field"><span>תווית</span><input|select|textarea></label> */
 :root { --fld: 46px; }
@@ -1170,8 +1184,9 @@ dialog { border-radius: 0; }   /* כל הפופאפים בלי פינות מעו
 /* שדה טקסט עם תוויות (tokenField): נוסח תבנית הודעה והוראות הגעה. אותו מראה כמו שאר השדות: קו תחתון ותווית צפה; מתחיל בשורה אחת וגדל עם ההקלדה */
 .field > textarea.tokta { display: none; }
 .field:has(> .tokf:focus) > span:first-child { transform: scale(.75) !important; inset-inline-end: -33% !important; }
-.tokf { min-height: var(--fld); max-height: 260px; overflow-y: auto; padding: 19px 0 3px; border-bottom: 1px solid var(--line-2); color: var(--text); font-size: 16px; line-height: 22px; white-space: pre-wrap; overflow-wrap: anywhere; text-align: start; outline: none; cursor: text; transition: border-color .16s ease-out; }
+.tokf { margin-top: 19px; min-height: calc(var(--fld) - 19px); max-height: 241px; overflow-y: auto; padding: 0 0 3px; border-bottom: 1px solid var(--line-2); color: var(--text); font-size: 16px; line-height: 22px; white-space: pre-wrap; overflow-wrap: anywhere; text-align: start; outline: none; cursor: text; transition: border-color .16s ease-out; }
 .tokf:focus { border-bottom-color: var(--text); }
+.field:has(> .tokf) > span:first-child { background: var(--bg); }   /* התווית עם רקע מלא (לא שקוף): הטקסט הארוך שנגלל בשדה לא נראה דרכה. הטקסט נגלל מתחת לשורת התווית (margin-top ולא padding), כך שהוא נחתך בקצה העליון שלו */
 .tokf.isempty::before { content: attr(data-ph); color: var(--text-3); pointer-events: none; }
 .tokf.isempty[data-hint]:not(:focus)::before { content: none; }
 .tok { display: inline-block; padding: 0 6px; margin-inline: 1px; border-radius: var(--r); background: var(--surface-2); color: var(--text); font-size: 14px; font-weight: 600; line-height: 20px; white-space: nowrap; unicode-bidi: isolate; cursor: default; }
@@ -1223,11 +1238,22 @@ dialog { border-radius: 0; }   /* כל הפופאפים בלי פינות מעו
 .srccard .srcfld.wide2 { grid-column: span 2; }
 .srccard[data-w="new"] .srcfld.wide2 { grid-column: 1 / -1; }
 /* שורת סטטוס: הצבע לפני השם */
-.strow { grid-template-columns: 28px var(--tag) minmax(0, 1fr) 28px; }   /* תגיות: ידית גרירה, צבע, שם, מחיקה */
+.strow { grid-template-columns: 28px var(--tag) minmax(0, 1fr) 28px 28px; }   /* תגיות: ידית גרירה, צבע, שם, מחיקה */
 .strow .swcur { justify-self: center; grid-column: 2; }
 .strow .stname { grid-column: 3; }
 
 /* חשבון גוגל בפרטי המשתתף: שורה אחת כמו שדה, בלי מלבן. המצב כתוב בתווית, והפעולות סמלים */
+.gacc { margin: 0 0 8px; }
+.gacc .grow { display: flex; align-items: center; gap: 16px; min-height: var(--fld); border-bottom: 1px solid var(--line-2); }
+.gacc .gtxt { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; padding-top: 3px; }
+.gacc small { font-size: 12px; line-height: 16px; color: var(--text-2); }
+.gacc small.blk { color: var(--red); }
+.gacc .gem { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: ltr; text-align: right; font-size: 16px; line-height: 22px; }
+.gacc .gico { position: relative; flex: 0 0 28px; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; background: transparent; color: var(--text-2); cursor: pointer; }
+.gacc .gico::after { content: ""; position: absolute; inset: -8px; }   /* שטח לחיצה של 44px */
+.gacc .gico.gred { color: var(--red); }
+.gacc .gico:active { opacity: .6; }
+.gacc, .gacc .grow { border-radius: 0; }
 
 /* צפייה בתבנית הודעה */
 #tplDlg .sheet-head h2 { flex: 1 1 auto; min-width: 0; }
@@ -1353,16 +1379,11 @@ html.is-loading .hsearch { visibility: hidden; }
 #viewMenu .fsh { align-self: end; min-height: 28px; }
 
 /* סינון ומיון בשורת הסינון (4.11.26): מימין לאייקון התשלום, הסינון ואחריו המיון מימין */
-#listFS { position: absolute; top: 50%; left: var(--gut); margin-top: calc(var(--tag) / -2); z-index: 3; display: flex; align-items: center; gap: 8px; line-height: 0; }
-#listFS #sortBtnH, #listFS #listMore .hfilt { position: relative; width: var(--tag); height: var(--tag); min-width: var(--tag); padding: 0; background: transparent; color: var(--text); }
-#listFS #listMore { display: flex; align-items: center; }
-#listFS svg { width: 20px; height: 20px; }
-#listFS #sortBtnH::before, #listFS #listMore .hfilt::before { content: ''; position: absolute; inset: -8px -4px; }
-#listFS .fdot { right: 2px; bottom: 2px; }
 
 /* צ'יפים מהירים: מסומן ברקע בהיר ובמסגרת בצבע (לא מילוי שחור) (4.11.26) */
 .chiprow .stc[aria-pressed="true"] { background: var(--surface-2); color: var(--text); border-color: var(--text); }
 .chiprow .stc[data-cr="res"][aria-pressed="true"] { background: var(--green-bg); color: var(--green); border-color: var(--green); }
+.chiprow .stc[data-cr="arr"][aria-pressed="true"]:not(.neg) { background: var(--green-bg); color: var(--green); border-color: var(--green); }
 .chiprow .stc.neg[aria-pressed="true"] { background: var(--red-bg); color: var(--red); border-color: var(--red); }
 .chiprow .stc[data-cr="male"][aria-pressed="true"], .chiprow .stc[data-cr="female"][aria-pressed="true"] { background: var(--surface-2); color: var(--text); border-color: var(--text); }   /* גברים ונשים מסומנים: נשארים באפור (מסגרת כהה), לא כחול */
 .chiprow .stc[data-sc][aria-pressed="true"] { background: var(--sbg); color: var(--sfg); border-color: var(--sfg); }
@@ -1371,7 +1392,7 @@ html.is-loading .hsearch { visibility: hidden; }
 .mlist .mrow .pay.missed { color: var(--text-2); }
 .mtinh2 { margin-top: 16px; }
 .mtinh2 .emvars, .mtlist .emvars { margin: 0; }
-.mtlist .mtcap { display: block; margin-top: 16px; margin-bottom: 8px; color: var(--text-2); font-size: 13px; font-weight: 600; }
+
 #mMF .mtpladd, #tyMF .mtpladd { width: auto; height: auto; padding: 0; background: none; text-decoration: underline; font-weight: 700; font-size: 14px; margin-bottom: 8px; }
 .mtl .lnk { margin-inline-start: 16px; padding: 0; height: auto; border: 0; background: none; color: var(--text); font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
 .mtl .lnk[hidden] { display: none; }
@@ -1385,13 +1406,12 @@ html.is-loading .hsearch { visibility: hidden; }
 #chipRow { flex-wrap: wrap; }
 .chiprow .stlast { display: inline-flex; align-items: center; gap: 8px; flex: none; }
 #mMF .mtpladd, #tyMF .mtpladd { display: block; width: fit-content; max-width: 100%; margin: 8px 0 0 auto; text-align: start; }
+.mtinh2 { margin-top: 0; }
 
-.mtinh2 { margin-top: 32px; }
-.mtlist .mtcap { margin-top: 32px; }
 .field:has(> .mtl) { margin-top: 32px; }
 #tplDlg .sheet, #tplPrevDlg .sheet { display: flex; flex-direction: column; max-height: 92dvh; }
 #tplPrevDlg .tplprev { max-height: none; flex: 1 1 auto; min-height: 0; overflow-y: auto; }   /* הצפייה גדלה לאורך הפופאפ עד סופו, ורק אז גוללת בתוכה */
-.mlist { grid-template-columns: repeat(2, minmax(0, 1fr)); }   /* מפגשים בגריד של שתי עמודות */
+
 .mlist .mrow { align-content: start; }
 .mlist .mrow .mdt { font-weight: 500; }
 .mlist .mrow.hl .mdt, .mlist .mrow.hl .mnm { font-weight: 800; color: var(--text); }   /* המפגש הנבחר: התאריך והשם מודגשים */
@@ -1417,13 +1437,10 @@ html.is-loading .hsearch { visibility: hidden; }
 .wrap > .list .row .main .nm .name, .wrap > .list .row .main .age { margin: 0; }
 .wrap > .list .row .main .sidewrap { flex-direction: row-reverse; gap: 4px; }   /* בכרטיס: קודם התשלום (מימין) ומשמאלו התגית */
 .wrap > .list { background: var(--surface); }   /* מתחת לקו: רקע אפור בהיר, והכרטיסים לבנים ובולטים */
+@media (max-width: 639px) { .wrap > .list { grid-template-columns: minmax(0, 1fr); } }   /* בטלפון עמודה אחת (כרטיס ברוחב מלא); בטאבלט ובדסקטופ כמה עמודות שנכנסות */
 .wrap > .list > .row { background: var(--bg); }
 .wrap > .list > .row.last, .wrap > .list > .row.sel { background: var(--surface-2); }
-.chiprow .stc.pt-ok[aria-pressed="true"] { background: var(--green-bg); color: var(--green); border-color: var(--green); }   /* צ'יף תשלומים: הרקע בצבע הערך שנבחר */
-.chiprow .stc.pt-no[aria-pressed="true"] { background: var(--red-bg); color: var(--red); border-color: var(--red); }
-.chiprow .stc.pt-wait[aria-pressed="true"] { background: var(--yellow-bg); color: var(--yellow); border-color: var(--yellow); }
-.chiprow .stc.pt-later[aria-pressed="true"] { background: var(--sky-bg); color: var(--sky); border-color: var(--sky); }
-.chiprow .stc.pt-free[aria-pressed="true"] { background: var(--surface-2); color: var(--text-2); border-color: var(--text-2); }
+
 .wrap > .list { flex: 1 1 auto; }   /* הרקע האפור של הרשימה ממלא את המסך עד התחתית */
 .wrap > .list:has(~ .addbox:not(:empty)) { flex: 0 1 auto; }
 .wrap > .addbox:empty { display: none; }
@@ -1448,30 +1465,17 @@ html.is-loading .hsearch { visibility: hidden; }
 .wrap > .addbox:not(:empty) { padding: 8px var(--gut); }   /* כפתור ההוספה ככרטיס, כמו כרטיסי המשתתפים */
 .wrap > .addbox .newbtn { min-height: 64px; padding: 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg); gap: 12px; font-size: 16px; font-weight: 700; justify-content: flex-start; }
 .wrap > .addbox .newbtn > .tg { flex: 0 0 32px; width: 32px; height: 32px; padding: 0; place-items: center; border-radius: 50%; background: var(--text); color: #fff; font-size: 20px; }
-.chiprow .stc.pt-wait[aria-pressed="true"] { background: var(--yellow-bg); color: var(--yellow); border-color: var(--yellow); }
-#listFS #listMore { order: 1; }   /* סינון מימין ומיון משמאלו */
-#listFS #sortBtnH { order: 2; }
+
 .mlist .mrow .mmoney { order: -1; }   /* בכרטיס המפגש: קודם התשלום (מימין) ומשמאלו התגית */
 .row .meta .age > bdi, .tchip > bdi { display: inline-flex; flex-direction: row-reverse; align-items: center; gap: 4px; }   /* המגדר מימין והגיל משמאלו */
 .sclear, .hsearch .sclear, #qClear { background: transparent; }   /* X הניקוי בלי רקע לבן (הוא כיסה את הקו שמתחת לשורה) */
 #listTags .hsearch input, #listTags .hsearch:focus-within input, #listTags .hsearch:has(input:not(:placeholder-shown)) input { text-align: center; padding-inline: 0; }   /* החיפוש במרכז, וגם הטקסט שמוקלד */
 #listTags .hsearch input::placeholder { text-align: center; }
-#fabBar { position: fixed; bottom: calc(var(--safe-b) + 8px); left: 50%; transform: translateX(-50%); z-index: 30; display: flex; align-items: center; gap: 8px; }   /* סינון, וואטסאפ ומיון: כפתורים צפים למטה */
-#fabBar .wafab { position: static; transform: none; bottom: auto; left: auto; }
-@media (min-width: 1024px) { #fabBar { left: auto; right: calc(var(--listw) / 2); transform: translateX(50%); } }   /* בדסקטופ הרשימה היא עמודה בצד ימין ברוחב --listw: הכפתורים הצפים במרכזה ולא במרכז החלון (אחרי כלל הבסיס, כי עוצמת הסלקטור זהה) */
-#fabBar #listFS { position: static; display: contents; margin: 0; }
-#fabBar #listMore { display: flex; order: -1; }
-#fabBar .wafab { order: 0; }
-#fabBar #sortBtnH { order: 1; }
-#fabBar #sortBtnH, #fabBar #listMore .hfilt { position: relative; width: 44px; height: 44px; min-width: 44px; padding: 0; border-radius: 50%; background: var(--bg); color: var(--text); box-shadow: var(--pop); border: 1px solid var(--line); }
-#fabBar #sortBtnH svg, #fabBar #listMore .hfilt svg { width: 20px; height: 20px; }
-html.is-loading #fabBar { display: none; }
-#fabBar .fdot { display: none; }   /* בלי נקודות הסימון על כפתורי הסינון והמיון */
-#fabBar #sortBtnH:has(.fdot), #fabBar #listMore .hfilt:has(.fdot) { background: var(--text); color: #fff; border-color: var(--text); }   /* סינון או מיון פעילים: הכפתור מתמלא בשחור והסמל לבן (במקום נקודה) */
+
 .wafab { background: var(--bg); color: var(--text); border: 1px solid var(--line); }   /* וואטסאפ (בלי בחירה): כפתור לבן, לא מסומן בצבע */
 .wafab.on { background: var(--text); color: #fff; border-color: var(--text); }   /* תבנית או הגיע / לא הגיע: מסומן בשחור */
-#fabBar #sortBtnH, #fabBar #listMore .hfilt, .wafab { background: var(--surface-2); border: 1px solid var(--text-3, var(--line-2)); box-shadow: 0 6px 18px rgba(22, 25, 29, .30); }   /* אפור עם מסגרת וצל חזק: בולט גם על כרטיסים לבנים */
-#fabBar #sortBtnH:has(.fdot), #fabBar #listMore .hfilt:has(.fdot), .wafab.on { background: var(--text); border-color: var(--text); }
+.wafab { background: var(--surface-2); border: 1px solid var(--text-3, var(--line-2)); box-shadow: 0 6px 18px rgba(22, 25, 29, .30); }   /* אפור עם מסגרת וצל חזק: בולט גם על כרטיסים לבנים */
+.wafab.on { background: var(--text); border-color: var(--text); }
 .wafab.on.f1 { background: var(--green-bg); color: var(--green); border-color: var(--green); }   /* סינון חיובי: ירוק */
 .wafab.on.f0 { background: var(--red-bg); color: var(--red); border-color: var(--red); }   /* סינון שלילי: אדום */
 .wrap > .list .row .main > .meta .sidewrap, .wrap > .list .row .main .sidewrap { flex: 0 1 auto; min-width: 0; max-width: 100%; }   /* תגית ארוכה לא חורגת מהכרטיס: מתקצרת עם שלוש נקודות */
@@ -1486,7 +1490,7 @@ html.is-loading #fabBar { display: none; }
 
 /* המונה נגלל עם הכרטיסים, והחלק הלבן העליון עם צל: הכרטיסים נעים מתחתיו */
 .countline { display: none !important; }
-.countli { grid-column: 1 / -1; list-style: none; padding: 8px 2px; text-align: center; color: var(--text-2); font-size: 13px; font-weight: 600; }
+
 .wrap > .vbar { position: relative; z-index: 3; }
 
 /* תגית בכרטיס: טקסט מלא, יורד שורה כשצריך */
@@ -1542,7 +1546,7 @@ html.is-loading #fabBar { display: none; }
 .chiprow .cq { display: contents; }
 .wrap > .list .row .ptag.nolabel { display: none; }   /* בלי סמל תגית בכרטיס כשאין תגית */
 .mlist .mrow .pay.nolabel { gap: 4px; }
-#pDlg, #pDlg .ppanel, #pDlg .ppager, #pDlg .ppage { border-radius: 0 !important; }   /* כרטיס המשתתף בלי פינות מעוגלות */
+#pDlg .ppanel, #pDlg .ppager, #pDlg .ppage { border-radius: 0 !important; }   /* כרטיס המשתתף בלי פינות מעוגלות */
 .chiprow .gpair { display: inline-flex; flex: 0 0 auto; gap: 8px; }   /* גברים ונשים תמיד יחד באותה שורה */
 .wrap > .list > .row.last, .wrap > .list > .row.sel, .wrap > .list > .row.sel:hover { box-shadow: -3px 3px 6px rgba(22, 25, 29, .12); }   /* הכרטיס שנבחר: צל אפור עדין בצד שמאל למטה */
 /* המפגש שנבחר בכרטיס המשתתף: כמו משתתף מסומן ברשימה (צל עדין בצד שמאל למטה), בלי הבלטת טקסט */
@@ -1557,6 +1561,65 @@ html.is-loading #fabBar { display: none; }
 #mDlg .sheet-head { z-index: 5; background: #fff; }   /* רקע אטום מעל שדות הטופס (שדות עם תווית צפה הם position: relative) */
 #mDlg .grab { z-index: 6; }
 /* שורת המדיה: כל הפריטים (תווית, פתיחה, הסרה, החלפה) באותו קו, במרכז האנכי */
+/* שחזור נוסח ברירת מחדל של "אישור מקום": כפתור טקסט שקט, ריחוף ולחיצה באפור ניטרלי */
+.mtreset { height: var(--ctl); padding: 0 16px; background: transparent; border-color: transparent; color: var(--text-2); font-weight: 700; font-size: 15px; }
+.mtreset[hidden] { display: none; }
+.mtreset:active { background: var(--surface-2); }
+@media (hover: hover) { .mtreset:hover { background: var(--surface); } }
+/* כל כפתורי המחיקה (5.11.26, לבקשת בעל האתר): בלי רקע ובלי אפקט ריחוף או לחיצה, רק הטקסט או הסמל בצבע שלהם. כפתור מחיקה חדש נכנס לרשימה הזו. חריג: ה-× על התמונה בעריכת מפגש (.mfimg-del), שצריך רקע כדי להיראות על התמונה */
+:is(#pDelete, #mDelete, #tyDelete, #finDel, .mtdel, .stdel, .dline .ddel, .mt2row .mtdel, .ndel), :is(#pDelete, #mDelete, #tyDelete, #finDel, .mtdel, .stdel, .dline .ddel, .mt2row .mtdel, .ndel):hover, :is(#pDelete, #mDelete, #tyDelete, #finDel, .mtdel, .stdel, .dline .ddel, .mt2row .mtdel, .ndel):active, :is(#pDelete, #mDelete, #tyDelete, #finDel, .mtdel, .stdel, .dline .ddel, .mt2row .mtdel, .ndel):focus { background: transparent !important; border-color: transparent !important; box-shadow: none !important; }
+/* כותרות הסעיפים בטופס מפגש וסוג מפגש (5.11.26): מדיה, הודעות ומחירים. רווח אחיד של 32 פיקסל מעל כל כותרת, ו-8 מתחתיה; השדה שלפני כותרת לא מוסיף רווח משלו */
+#mMF .mfh, #tyMF .mfh { display: block; margin: 32px 0 8px; color: var(--text-2); font-size: 13px; font-weight: 600; line-height: 16px; }
+#mMF .mfh[hidden], #tyMF .mfh[hidden] { display: none; }
+#mMF .field:has(+ .mfh), #tyMF .field:has(+ .mfh) { margin-bottom: 0; }
+#mMF .field:has(> .mtl), #tyMF .field:has(> .mtl) { margin-top: 32px; }
+#mMF .field > .mtl, #tyMF .field > .mtl { margin-bottom: 8px; line-height: 16px; }
+/* שדה טקסט עם תוויות (tokenField): ה-margin-top של העורך קרס החוצה מה-.field, ולכן השדה היה בגובה 27 פיקסל והתווית (עם הרקע המלא) כיסתה את הקו התחתון. flow-root מונע את הקריסה: גובה 46 והקו במקומו */
+.field:has(> .tokf) { display: flow-root; }
+/* עריכת סוג מפגש (5.11.26): כמו עריכת מפגש: כפתור השמירה בכותרת (משמאל), והכותרת קבועה למעלה ולא נגללת עם הטופס */
+#setDlg .sheet-head #tySave { width: auto; min-height: 40px; margin: 0; margin-inline-start: auto; padding: 0 16px; flex: none; font-size: 15px; }
+#setDlg .sheet-head #tySave:disabled { opacity: .4; cursor: default; }
+#setDlg .sheet-head { position: sticky; top: 0; z-index: 5; background: #fff; margin-top: -28px; padding-top: 28px; margin-bottom: 0; padding-bottom: 16px; }
+#setDlg .grab { z-index: 6; }
+/* שדות סכום בשקלים (5.11.26): אותו דבר בכל המקומות: השקל בתוך השדה, צמוד לספרות (בצד ההתחלה, ימין), והספרות מיושרות לימין. בשדה רגיל הוא מופיע כשיש ערך או בפוקוס, כדי שלא יתנגש בתווית שיושבת על הקו בשדה ריק. שדה סכום חדש: class="field money" בלי (₪) בתווית */
+.field.money > input { padding-inline-start: 16px; text-align: start; }
+.field.money::before { content: '₪'; position: absolute; z-index: 1; inset-inline-start: 0; bottom: 5px; font-size: 16px; line-height: 22px; font-weight: 400; color: var(--text); opacity: 0; pointer-events: none; }
+.field.money:focus-within::before, .field.money:has(> input:not(:placeholder-shown))::before { opacity: 1; }
+/* מחירי המדרגות: הקו על המעטפת וכולל את השקל; מיושרים לימין, גם במובייל */
+.mt2row .mtp { position: relative; display: flex; align-items: center; gap: 4px; direction: rtl; width: 88px; flex: none; border-bottom: 1px solid var(--line-2); }
+.mt2row .mtp:focus-within { border-bottom-color: var(--text); }
+.mt2row .mtp input { flex: 1 1 auto; min-width: 0; width: auto; height: 40px; padding: 0; border: 0; text-align: start; font-size: 16px; font-weight: 400; }
+.mt2row .mtp b { flex: none; font-size: 16px; font-weight: 400; color: var(--text); }
+/* שורת החיפוש (7.11.26), מימין לשמאל: שדה החיפוש, מיון, סינון (עם מונה המשתתפים המוצגים) ווואטסאפ (סמל ושלוש נקודות, בלי טקסט). שלושת הכפתורים באותו גובה וצבע של שדה החיפוש.
+   מסומנים כמו הצ'יפים: הרקע לא משתנה, ויש מסגרת (סינון או מיון פעילים; וואטסאפ עם תבנית או הגעה: מסגרת שחורה, בסינון חיובי ירוקה ובשלילי אדומה) */
+#listTags .wafab, #listTags #sortBtnH, #listTags #listMore .hfilt { position: relative; inset: auto; transform: none; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; gap: 5px; width: auto; min-width: 36px; height: 36px; padding: 0 10px; border-radius: 18px; background: var(--surface-2); color: var(--text); border: 0; box-shadow: none; font-size: 15px; font-weight: 800; line-height: 1; }
+#listTags #sortBtnH { padding: 0; width: 36px; }
+#listTags #listMore { flex: 0 0 auto; display: flex; order: 0; }
+#listTags .wafab { font-size: 0; }
+#listTags .wafab svg, #listTags #sortBtnH svg, #listTags #listMore .hfilt svg { width: 18px; height: 18px; }
+#listTags .wafab::before, #listTags #sortBtnH::before, #listTags #listMore .hfilt::before { content: ""; position: absolute; inset: -4px; }   /* שטח לחיצה גדול מהכפתור */
+#listTags #listMore .fcnt { display: inline-block; min-width: calc(var(--nd, 2) * 1ch); text-align: center; font-variant-numeric: tabular-nums; }   /* רוחב קבוע לפי מספר הספרות של כל המשתתפים: הכפתור לא משנה רוחב כשהמונה משתנה */
+#listTags #sortBtnH .fdot, #listTags #listMore .fdot { display: none; }
+#listTags #sortBtnH:has(.fdot), #listTags #listMore .hfilt:has(.fdot), #listTags .wafab.on { background: var(--surface-2); color: var(--text); box-shadow: inset 0 0 0 1px var(--text); }
+#listTags .wafab.on.f1 { background: var(--surface-2); color: var(--green); box-shadow: inset 0 0 0 1px var(--green); }
+#listTags .wafab.on.f0 { background: var(--surface-2); color: var(--red); box-shadow: inset 0 0 0 1px var(--red); }
+#listTags .hsearch input#q:placeholder-shown:not(:focus) { padding-inline: 0 4px; }   /* שדה ריק: אין איקס, ולכן לא שומרים לו מקום והטקסט נכנס שלם גם עם שלושת הכפתורים בשורה */
+/* הצגה בשורת הצ'יפים (7.11.26): כותרת "הצגה" בראש פופאפ התגיות, ארבעת הצ'יפים של ברירת המחדל עם סימון הצגה, ולכל תגית סימון הצגה בשורה שלה */
+#stBoth .stsec + .stsec { margin-top: 24px; }
+#stBoth .sth { margin: 0 0 4px; font-size: 16px; font-weight: 800; color: var(--text); }
+#stBoth .stsec .sthint, #stBoth .stsec .sthint.stintro { margin: 0 0 12px; }
+.shrow { display: flex; align-items: center; gap: 12px; min-height: 44px; font-size: 15.5px; font-weight: 600; cursor: pointer; }
+.shrow input, .stshow input { width: 22px; height: 22px; margin: 0; accent-color: var(--text); cursor: pointer; }
+.strow .stshow { display: grid; place-items: center; width: 28px; height: 32px; cursor: pointer; }
+#stShow { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }   /* ארבעת צ'יפי ברירת המחדל בשתי עמודות */
+/* גריד אחד לרשימת המשתתפים ולרשימת המפגשים בכרטיס המשתתף (7.11.26): אותה פריסה, ורוחב מינימלי לכרטיס (--card-min) כמו כרטיס במובייל. בטלפון עמודה אחת ברוחב מלא;
+   בדסקטופ כמה עמודות, וכל עמודה לפחות ברוחב כרטיס של מובייל, כך שהשם והתגיות בתוך הכרטיס לא נשברים. ריפוד הכרטיס זהה בשתי הרשימות */
+:root { --card-min: 320px; }
+.wrap > .list, .mlist, #pForm .mlist { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(var(--card-min), 100%), 1fr)); gap: 8px; align-items: stretch; }
+.wrap > .list > .row, .mlist .mrow { padding: 12px; }
+.mdt .mn1 { flex: 1 1 auto; min-width: 0; margin: 0; padding: 0; }
+.mdt .mn1::before { content: "· "; }
+.mlist .mrow .mdt .mn1, .mlist .mrow.hl .mdt .mn1, #pPager .mlist .mrow.hl .mdt .mn1 { font-size: inherit; line-height: inherit; font-weight: inherit; color: inherit; }   /* שם המפגש באותה טיפוגרפיה בדיוק של התאריך והשעה: גודל, משקל וצבע */   /* שם המפגש בשורה הראשונה, אחרי התאריך והשעה (7.11.26); בשורה השנייה העיר והמיקום */
 
 /* ===== roster ===== */
 .bizname { padding: 8px var(--gut) 0; margin-inline-start: 5px; font-size: 12px; font-weight: 700; line-height: 1.2; color: var(--text-2); }   /* שם העסק מעל שורת הכותרת */

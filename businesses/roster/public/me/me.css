@@ -1,0 +1,110 @@
+/* האזור האישי של המשתתף (/roster/me/). אותה שפה כמו דף הניהול: לבן ואפורים, גבולות של 1px, שדות עם קו תחתון.
+   הדף עצמו תמיד בגובה החלון ואף פעם לא גולל: הכותרת נשארת במקומה, ורק הרשימה שמתחתיה (.scroll) גוללת. */
+:root {
+  --bg: #FFFFFF; --surface: #F5F6F8; --surface-2: #ECEEF1; --line: #E1E4E8; --line-2: #C7CCD3;
+  --text: #16191D; --text-2: #5A626C; --text-3: #8A929B;
+  --red: #C81E3A; --red-bg: #FCE7EB; --green: #067647; --green-bg: #DCF5E7; --yellow: #8A5A00; --yellow-bg: #FFF1C2; --blue: #175CD3; --blue-bg: #E1ECFD;
+  --r: 10px; --font: "Heebo", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; overflow: hidden; background: var(--surface); color: var(--text); font: 400 16px/1.5 var(--font); -webkit-text-size-adjust: 100%; }
+h1, h2, p { margin: 0; }
+button, input, select { font: inherit; color: inherit; }
+a { color: inherit; }
+
+/* ---------- מסגרת: כותרת קבועה ורשימה גוללת ---------- */
+.wrap { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+.top { flex: 0 0 auto; display: flex; align-items: center; gap: 10px; min-height: 64px; padding: 10px 16px; background: var(--bg); border-bottom: 1px solid var(--line); }
+.who { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.who small { font-size: 12.5px; font-weight: 700; line-height: 1.2; color: var(--text-2); }
+.who small:empty { display: none; }
+.top h1 { font-size: 20px; font-weight: 800; line-height: 1.3; overflow-wrap: anywhere; }
+.top > :not(.who) { flex: 0 0 auto; white-space: nowrap; }
+.scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 12px max(16px, calc((100% - 520px) / 2)) calc(24px + env(safe-area-inset-bottom, 0px)); }
+.center { padding: 40px 0; text-align: center; color: var(--text-2); }
+
+/* ---------- רכיבים ---------- */
+.card { margin-top: 12px; padding: 16px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--r); }
+.card:first-child { margin-top: 0; }
+.card h2 { font-size: 18px; font-weight: 800; line-height: 1.3; margin-bottom: 6px; }
+.muted { color: var(--text-2); font-size: 15px; }
+.chip { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 8px; background: var(--surface-2); color: var(--text-2); font-size: 14px; font-weight: 700; }
+.chip[hidden] { display: none; }
+.chip.ok { background: var(--green-bg); color: var(--green); }
+.chip.no { background: var(--red-bg); color: var(--red); }
+.chip.wait { background: var(--yellow-bg); color: var(--yellow); }
+.link { padding: 6px 2px; border: 0; background: none; color: var(--text-2); font-size: 15px; font-weight: 600; text-decoration: underline; cursor: pointer; }
+.link[hidden] { display: none; }
+.btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 48px; margin-top: 14px; padding: 10px 18px; border: 1px solid transparent; border-radius: var(--r); background: var(--text); color: #fff; font-size: 17px; font-weight: 700; text-align: center; text-decoration: none; cursor: pointer; }
+.btn svg { width: 22px; height: 22px; flex: 0 0 auto; }
+.btn.pay { background: var(--green); }
+.btn.wa { background: var(--green); }
+.btn.ghost { background: transparent; color: var(--text); border-color: var(--line-2); }
+.btn[disabled] { opacity: .5; cursor: default; }
+.gbtn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 48px; margin-top: 14px; padding: 10px; border: 1px solid var(--line-2); border-radius: var(--r); background: var(--bg); font-size: 17px; font-weight: 700; cursor: pointer; }
+.gbtn svg { width: 22px; height: 22px; }
+.lnk { padding: 6px 0; border: 0; background: none; color: var(--text-2); font-size: 15px; text-decoration: underline; cursor: pointer; }
+.lnk.sm { display: block; margin: 10px auto 0; font-size: 14px; }
+.msg { margin-top: 10px; font-size: 15px; font-weight: 600; }
+.msg:empty { display: none; }
+.msg.bad { color: var(--red); }
+.msg.good { color: var(--green); }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+/* ---------- שדות פרטים: קו תחתון ותווית צפה ---------- */
+.pf-field { position: relative; display: block; margin: 8px 0 0; }
+.pf-field > span { position: absolute; z-index: 1; top: .15rem; inset-inline: 0 -33%; margin: 0; font-size: max(16px, .95rem); line-height: 1.3rem; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; transform: scale(.75); transform-origin: 100% 0; transition: transform .16s ease, color .16s ease; }
+.pf-field:has(> input:placeholder-shown:not(:focus):not(:-webkit-autofill)) > span { transform: translateY(1.15rem); inset-inline-end: 0; }
+.pf-field:has(> select:not(:focus) option[value=""]:checked) > span { transform: translateY(1.15rem); inset-inline-end: 0; }
+.pf-field:focus-within > span { color: var(--text); }
+.pf-field:has(> .bad) > span { color: var(--red); }
+.pf-input { display: block; width: 100%; height: 3.1rem; margin: 0; padding: 1.3rem 0 3px; border: 0; border-bottom: 1px solid var(--line-2); border-radius: 0; background: transparent; font-size: max(16px, 1.1rem); line-height: 22px; transition: border-color .16s ease; }
+.pf-input:focus { outline: none; border-bottom-color: var(--text); box-shadow: inset 0 -1px 0 var(--text); }
+.pf-input.bad { border-bottom-color: var(--red); box-shadow: inset 0 -1px 0 var(--red); }
+.pf-input[type="tel"], .pf-input[type="email"] { direction: ltr; text-align: right; }
+.pf-input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+.pf-input[type="number"]::-webkit-outer-spin-button, .pf-input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.pf-input[readonly] { color: var(--text-2); }
+select.pf-input { -webkit-appearance: none; appearance: none; cursor: pointer; text-align: start; padding-inline: 0 20px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.4l5 5.2 5-5.2z' fill='%235A626C'/%3E%3C/svg%3E") no-repeat left 2px bottom 15px / 11px; }
+.pf-err { margin-top: 4px; color: var(--red); font-size: 13.5px; font-weight: 600; }
+.pf-err:empty { display: none; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* ---------- הפרטים שלי: נפתח ונסגר ---------- */
+.dethead { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0; border: 0; background: none; text-align: start; cursor: pointer; }
+.dethead h2 { margin: 0; }
+.dethead svg { width: 24px; height: 24px; color: var(--text-2); transition: transform .3s ease; }
+.dethead[aria-expanded="true"] svg { transform: rotate(180deg); }
+.detfold { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s ease; }
+.detfold.open { grid-template-rows: 1fr; }
+.detfold > div { overflow: hidden; min-height: 0; }
+.detfold:not(.open) > div { visibility: hidden; }
+.detfold > div > :first-child { margin-top: 10px; }
+
+/* ---------- מפגשים ---------- */
+.mtg { margin-top: 12px; }
+.mbox { overflow: hidden; background: var(--bg); border: 1px solid var(--line); border-radius: var(--r); }
+.mbox-in { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 14px 14px; text-align: center; }
+.mbox-name { font-size: 1rem; font-weight: 800; line-height: 1.25; color: var(--text-2); }
+.mbox-when { font-size: clamp(20px, 5.6vw, 24px); font-weight: 800; line-height: 1.2; }
+.mbox-where { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 2px 6px; font-size: 1rem; font-weight: 500; color: var(--text-2); }
+.mbox-where i { font-style: normal; }
+.mts { margin-top: 10px; }
+.mtfoot { align-self: stretch; margin-top: 4px; text-align: center; }
+.mtfoot > .btn:first-child { margin-top: 10px; }
+.payfold .btn { margin-top: 10px; }
+.crnote { margin-top: 8px; color: var(--text-2); font-size: 14.5px; }
+.paylinks { margin-top: 4px; }
+.mtfoot .msg { text-align: center; }
+
+/* ---------- הוראות הגעה: שורה עם חץ, הכיתוב במרכז והחץ צמוד אליו מצד שמאל ---------- */
+.dirbox { margin: 10px 0 4px; padding-top: 2px; border-top: 1px dashed var(--line-2); }
+.dirhead { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: 44px; font-weight: 700; font-size: 1.02rem; }
+.dirhead span { grid-column: 2; text-align: center; }
+.dirhead svg { grid-column: 3; justify-self: start; margin-inline-start: .4rem; width: 20px; height: 20px; }
+.dirtxt { margin: 0; padding: 2px 5px 10px; font-size: 1rem; line-height: 1.7; white-space: pre-line; text-align: center; text-wrap: balance; overflow-wrap: anywhere; }
+.dirtxt a.lnk { padding: 0; font-size: inherit; font-weight: 700; color: var(--text); }
+
+#toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 50; max-width: calc(100vw - 32px); padding: 10px 16px; border-radius: var(--r); background: var(--text); color: #fff; font-size: 15px; font-weight: 600; text-align: center; opacity: 0; transform: translate(-50%, 8px); pointer-events: none; transition: opacity .2s ease, transform .2s ease; }
+#toast.on { opacity: 1; transform: translate(-50%, 0); }
+@media (prefers-reduced-motion: reduce) { .pf-field > span, .pf-input, .dethead svg, .detfold, #toast { transition: none; } }

@@ -40,6 +40,7 @@ import { CV_MEDIA, parseCv } from "./cv.js";
 import { MEDIA_TYPES, readChordSheet } from "./transcribe.js";
 import { measure } from "./ocr.js";          // temporary, for /boxes
 import { sendPush } from "./webpush.js";
+import { handleRoster, isRosterPath, runRosterScheduled } from "./roster/routes.js";
 
 /* A lead sent before the sites were rebuilt carries no `business` field. It can
    only have come from FLOA, because FLOA is the only business that existed then. */
@@ -534,6 +535,10 @@ async function handleAumPush(request, env) {
 
 export default {
   async fetch(request, env, ctx) {
+    /* /roster/v1/* is the roster product's public API: its own door, its own
+       CORS, its own tests (src/roster/). Nothing below applies to it. */
+    if (isRosterPath(new URL(request.url).pathname)) return handleRoster(request, env, ctx);
+
     const origin = request.headers.get("origin") || "";
 
     if (request.method === "POST" && new URL(request.url).pathname === "/read-model") {
@@ -558,5 +563,11 @@ export default {
       case "/parse-cv": return handleParseCv(request, env, origin);
       default: return json({ ok: false, error: "not found" }, 404, origin);
     }
+  },
+
+  /* The cron (wrangler.toml, every minute): drains the roster outbox, which is
+     where webhooks and mails are delivered and where retries come due. */
+  async scheduled(_event, env, ctx) {
+    await runRosterScheduled(env, ctx);
   },
 };

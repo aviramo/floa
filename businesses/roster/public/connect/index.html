@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- No inline script anywhere on this page, so scripts may only come from this site. The page talks to ONE other host, the database.
+     Mail previews are frames that inherit this policy (no remote images). A page cannot refuse framing from a meta tag, so connect.js hides itself when framed. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://aexmnaxvahblveejsbup.supabase.co; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>חיבורים</title>
+<meta name="description" content="מפתחות API, Webhook ומיילים של העסק">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%2316191D'/%3E%3Cpath d='M12 11l-5 5 5 5M20 11l5 5-5 5M17.5 9l-3 14' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="../assets/manager.css?v=78143c65">
+<link rel="stylesheet" href="connect.css?v=2cc393fb">
+</head>
+<body>
+
+<!-- Not signed in, no access, no business chosen: the gate (its content is drawn by connect.js) -->
+<div class="gate" id="gate" hidden><div class="gate-in" id="gateIn"></div></div>
+
+<!-- Signed in: the header and the tabs never move, the panel under them scrolls inside itself -->
+<div class="wrap" id="wrap" hidden>
+  <header class="top">
+    <div class="col title-row">
+      <div class="ttl">
+        <span class="bizname" id="bizName"></span>
+        <h1>חיבורים</h1>
+      </div>
+      <button type="button" class="userbtn" id="userBtn" aria-haspopup="menu" aria-expanded="false" aria-label="החשבון שלי">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
+        <span id="whoName"></span>
+      </button>
+    </div>
+    <div class="tabs-wrap">
+      <div class="col tabs" id="tabs" role="tablist" aria-label="חלקי הדף">
+        <button type="button" role="tab" id="tab-keys" data-tab="keys" aria-selected="true" aria-controls="panel">מפתחות</button>
+        <button type="button" role="tab" id="tab-hook" data-tab="hook" aria-selected="false" aria-controls="panel" tabindex="-1">Webhook</button>
+        <button type="button" role="tab" id="tab-mail" data-tab="mail" aria-selected="false" aria-controls="panel" tabindex="-1">מיילים</button>
+        <button type="button" role="tab" id="tab-reg" data-tab="reg" aria-selected="false" aria-controls="panel" tabindex="-1">הרשמה</button>
+        <button type="button" role="tab" id="tab-log" data-tab="log" aria-selected="false" aria-controls="panel" tabindex="-1">יומן</button>
+      </div>
+    </div>
+  </header>
+  <main class="panel" id="panel" role="tabpanel" aria-labelledby="tab-keys" tabindex="0"></main>
+</div>
+
+<div class="menu" id="menu" role="menu" hidden></div>
+<dialog id="dlg" aria-labelledby="dlgT"></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="/supabase.js"></script>
+<script src="/auth.js"></script>
+<script src="mail-defaults.js?v=bda724a9"></script>
+<script src="connect.js?v=1ed35a7a"></script>
+</body>
+</html>

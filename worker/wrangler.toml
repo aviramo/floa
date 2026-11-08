@@ -59,3 +59,22 @@ LEAD_TO = "ofir.aviram@gmail.com"
 LEAD_FROM = "FLOA <no-reply@floa.co.il>"
 SUPABASE_URL = "https://aexmnaxvahblveejsbup.supabase.co"
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleG1uYXh2YWhibHZlZWpzYnVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5NzE5MjMsImV4cCI6MjEwMTU0NzkyM30.oXPojzklAqOl9pvH5R_GNGTda6OvYruDQjMLprcBA0Y"
+
+# The roster API (/roster/v1/*, src/roster/) is the only door to the roster
+# tables for the outside world. It calls the database's SECURITY DEFINER
+# functions with the Supabase SERVICE ROLE key. That key is the opposite of the
+# anon key above: it bypasses every RLS policy, so it is a SECRET and must never
+# appear in this file or anywhere in the repo (the repo is public):
+#   npx wrangler secret put SUPABASE_SERVICE_KEY
+# Without it every /roster/v1 route answers 503 and the cron below does nothing.
+# RESEND_API_KEY (already a secret) is what sends the roster mails.
+# ROSTER_IP_SALT is REQUIRED, also a secret: every per-address counter, here and
+# in the database, is a hash of the caller's address with it. Without it that hash
+# is a bare SHA-256 of an IPv4 address, which anybody can reverse, so without it
+# every /roster/v1 route answers 503 (with a log line naming it):
+#   npx wrangler secret put ROSTER_IP_SALT     (any long random string)
+
+# Once a minute the roster outbox is drained: webhooks and mails that an API
+# call did not already deliver, and retries that have come due.
+[triggers]
+crons = ["* * * * *"]

@@ -21,6 +21,9 @@
 (function () {
   "use strict";
 
+  /* Never inside somebody else's frame (a transparent frame over a "delete" button): hide, and do nothing. */
+  if (window.top !== window.self) { document.documentElement.hidden = true; return; }
+
   var A = window.FLOA_AUTH;
   var TITLE = "ניהול משתתפים";
   var MANY = 7;                                   /* above this many businesses the list gets a search field */

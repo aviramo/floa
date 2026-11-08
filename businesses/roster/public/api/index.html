@@ -1,0 +1,895 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- A document: no inline script, no request to anywhere but its own files and Google Fonts. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Roster API: תיעוד למפתחים</title>
+<meta name="description" content="איך מחברים אתר או שרת למערכת ניהול המשתתפים: מפגשים, הרשמה, תשלומים, Webhooks ומיילים. דוגמאות מוכנות להעתקה.">
+<link rel="canonical" href="https://floa.co.il/roster/api/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%2316191D'/%3E%3Cpath d='M12 11l-5 5 5 5M20 11l5 5-5 5M17.5 9l-3 14' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="api.css?v=51655925">
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="./">Roster API<small>תיעוד למפתחים</small></a>
+    <a class="top-link" href="../">כניסה לניהול</a>
+  </div>
+</header>
+
+<div class="layout">
+
+<aside class="toc-wrap" aria-label="תוכן העניינים">
+  <details class="toc" id="toc" open>
+    <summary>תוכן העניינים</summary>
+    <ol>
+      <li><a href="#intro">מה זה</a></li>
+      <li><a href="#base">כתובת הבסיס ועקרונות</a></li>
+      <li><a href="#keys">מפתחות והרשאות</a></li>
+      <li><a href="#quickstart">התחלה מהירה</a>
+        <ol>
+          <li><a href="#qs-signup">טופס הרשמה</a></li>
+          <li><a href="#qs-meetings">מפגשים בדף הבית</a></li>
+          <li><a href="#qs-pay">כפתור "שילמתי"</a></li>
+          <li><a href="#qs-me">אזור אישי באתר</a></li>
+        </ol>
+      </li>
+      <li><a href="#endpoints">כל הנקודות</a>
+        <ol>
+          <li><a href="#ep-meetings">קריאת מפגשים</a></li>
+          <li><a href="#ep-signup">הרשמה</a></li>
+          <li><a href="#ep-click">לחיצת "שילמתי"</a></li>
+          <li><a href="#ep-participant">משתתף</a></li>
+          <li><a href="#ep-registrations">רישום וביטול</a></li>
+          <li><a href="#ep-payments">רישום תשלום</a></li>
+          <li><a href="#ep-credit">תשלום מהיתרה</a></li>
+        </ol>
+      </li>
+      <li><a href="#webhooks">Webhooks</a>
+        <ol>
+          <li><a href="#wh-verify">אימות חתימה</a></li>
+        </ol>
+      </li>
+      <li><a href="#emails">מיילים</a></li>
+      <li><a href="#limits">מגבלות</a></li>
+      <li><a href="#errors">קודי שגיאה</a></li>
+      <li><a href="#security">הערות אבטחה</a></li>
+      <li><a href="#troubleshooting">פתרון תקלות</a></li>
+      <li><a href="#changelog">יומן שינויים</a></li>
+    </ol>
+  </details>
+</aside>
+
+<main class="doc">
+
+<h1>Roster API</h1>
+<p class="lead">חיבור של אתר או שרת למערכת ניהול המשתתפים: להציג מפגשים, לקבל הרשמות, לדווח על תשלומים, ולקבל עדכון לשרת שלכם בכל פעם שמשהו קורה.</p>
+
+<h2 id="intro">מה זה</h2>
+<p>לכל עסק במערכת יש ניהול משתתפים: מי נרשם, לאיזה מפגש, מי שילם. ה־API פותח את המידע והפעולות האלה לאתר של העסק, בלי שהאתר ידבר עם בסיס הנתונים. האתר מדבר רק עם ה־API, וכל בקשה נושאת <b>מפתח</b> שקובע לאיזה עסק היא שייכת ומה מותר לה לעשות.</p>
+<ul>
+  <li><b>טופס הרשמה באתר</b> שמכניס משתתפים ישר למערכת, עם הרשמה למפגש.</li>
+  <li><b>רשימת מפגשים</b> בדף הבית, עם מחיר ומקומות פנויים.</li>
+  <li><b>כפתור "שילמתי"</b> שמדווח על תשלום, והמנהל רואה אותו מיד.</li>
+  <li><b>אזור אישי</b> להטמעה באתר: כל משתתף רואה את המפגשים והתשלומים שלו.</li>
+  <li><b>מהשרת שלכם</b> (עם מפתח סודי): לקרוא משתתפים, לרשום ולבטל הרשמות, לתעד תשלומים מכל מערכת סליקה.</li>
+  <li><b>Webhooks</b>: הודעה חתומה לשרת שלכם על כל משתתף חדש, הרשמה או תשלום.</li>
+</ul>
+<div class="note">המפתחות, ה־Webhook והמיילים של העסק מנוהלים בדף <b>החיבורים</b> בניהול של העסק. כאן מתועד מה אפשר לעשות איתם.</div>
+
+<h2 id="base">כתובת הבסיס ועקרונות</h2>
+<p>כל הבקשות הולכות לכתובת הבסיס, ואחריה <code>/roster/v1</code>:</p>
+<figure class="code"><figcaption>כתובת הבסיס</figcaption><pre><code><span data-api-base>https://floa-lead.floa-il.workers.dev</span>/roster/v1</code></pre></figure>
+<ul>
+  <li><b>JSON בשני הכיוונים</b>, בקידוד UTF-8. בקשת <code>POST</code> חייבת לשלוח <code>Content-Type: application/json</code>, אחרת התשובה <code>400 bad_request</code>. גוף בקשה עד 16KB (גדול מזה מחזיר <code>400 bad_request</code>), ושדות לא מוכרים מתעלמים מהם.</li>
+  <li><b>כל בקשה נושאת מפתח</b>, בכותרת <code>Authorization: Bearer &lt;המפתח&gt;</code> (או בכותרת <code>X-Roster-Key</code>). המפתח קובע את העסק. מזהה עסק ששולחים בגוף הבקשה לא נקרא בכלל.</li>
+  <li><b>תאריכים ושעות</b> לפי שעון ישראל: תאריך <code>YYYY-MM-DD</code>, שעה <code>HH:MM</code>.</li>
+  <li><b>הצלחה</b> היא תמיד קוד 200, עם הגוף שמתואר בכל נקודה. <b>כישלון</b> מחזיר גוף בצורה הזאת, עם קוד מתוך <a href="#errors">הטבלה</a>:</li>
+</ul>
+<figure class="code"><figcaption>JSON, תשובת שגיאה</figcaption><pre><code>{
+  "error": {
+    "code": "validation",
+    "message": "phone is not a valid phone number",
+    "field": "phone"
+  }
+}</code></pre></figure>
+<p>ההודעה (<code>message</code>) באנגלית ונועדה למפתחים. למשתמשים כדאי להציג הודעה משלכם לפי ה־<code>code</code>, כמו בדוגמאות שבהמשך. השדה <code>field</code> מופיע בשגיאות <code>validation</code>.</p>
+<p>נתיב שלא קיים, או מזהה בנתיב שאינו UUID, מחזיר <code>404 not_found</code>. שיטה לא נכונה (למשל <code>GET</code> על נקודה של <code>POST</code>) מחזירה <code>405</code> עם הקוד <code>bad_request</code> והכותרת <code>Allow</code>.</p>
+<h3>CORS</h3>
+<ul>
+  <li>בקשת <code>OPTIONS</code> (preflight) נענית בכל נקודה, עם <code>Access-Control-Allow-Origin: *</code>. הכותרות המותרות: <code>authorization</code>, <code>content-type</code>, <code>x-roster-key</code>, <code>idempotency-key</code>.</li>
+  <li>תשובה לבקשה עצמה, אחרי שהמפתח אומת, מחזירה <code>Access-Control-Allow-Origin</code> עם הכתובת של האתר ששלח, וזה רק כשהאתר ברשימה של המפתח (ראו <a href="#keys">מפתחות</a>).</li>
+  <li>שגיאות שחוזרות לפני שנבדק המפתח (מפתח חסר או לא נראה כמו מפתח, גוף שלא ניתן לקרוא, נתיב שלא קיים) נושאות <code>Access-Control-Allow-Origin: *</code>, כדי שאפשר יהיה לקרוא אותן בדפדפן.</li>
+  <li>שתי שגיאות בכוונה לא נושאות שום כותרת CORS: <code>origin_not_allowed</code> ו־<code>secret_key_in_browser</code>. בדפדפן תראו אז שגיאת CORS בקונסול ולא את גוף ה־JSON (ראו <a href="#troubleshooting">פתרון תקלות</a>).</li>
+</ul>
+
+<h2 id="keys">מפתחות והרשאות</h2>
+<p>יש שני סוגי מפתחות. מייצרים אותם בדף החיבורים של העסק. המפתח מוצג פעם אחת בלבד ברגע היצירה, ואחר כך רואים רק את ההתחלה שלו.</p>
+<div class="tw"><table>
+  <thead><tr><th>סוג</th><th>נראה כך</th><th>איפה מותר להשתמש</th><th>מה מותר לו</th></tr></thead>
+  <tbody>
+    <tr><td><span class="kind pub">ציבורי</span></td><td><code>rk_pub_</code> ועוד 32 תווים</td><td>בדפדפן, בקוד האתר. אפשר להגביל לאתרים מסוימים.</td><td>שלוש פעולות בלבד: לקרוא מפגשים, להירשם, ללחוץ "שילמתי".</td></tr>
+    <tr><td><span class="kind sec">סודי</span></td><td><code>rk_sec_</code> ועוד 40 תווים</td><td>בשרת בלבד, לעולם לא בדפדפן.</td><td>הכול: קריאת משתתפים, רישום וביטול, תיעוד תשלומים.</td></tr>
+  </tbody>
+</table></div>
+<h3>מה כל מפתח מורשה לעשות</h3>
+<div class="tw"><table>
+  <thead><tr><th>פעולה</th><th class="c">ציבורי</th><th class="c">סודי</th></tr></thead>
+  <tbody>
+    <tr><td><code>GET /meetings</code></td><td class="c yes">כן</td><td class="c yes">כן</td></tr>
+    <tr><td><code>POST /signup</code></td><td class="c yes">כן</td><td class="c yes">כן</td></tr>
+    <tr><td><code>POST /payments/click</code></td><td class="c yes">כן</td><td class="c no">לא</td></tr>
+    <tr><td><code>GET /participants?phone=</code> ו־<code>GET /participants/{id}</code></td><td class="c no">לא</td><td class="c yes">כן</td></tr>
+    <tr><td><code>POST /participants/{id}/registrations</code> ו־<code>DELETE …/{meeting_id}</code></td><td class="c no">לא</td><td class="c yes">כן</td></tr>
+    <tr><td><code>POST /payments</code></td><td class="c no">לא</td><td class="c yes">כן</td></tr>
+    <tr><td><code>POST /participants/{id}/pay-from-credit</code></td><td class="c no">לא</td><td class="c yes">כן</td></tr>
+  </tbody>
+</table></div>
+<p>מפתח ציבורי שמנסה פעולה של מפתח סודי מקבל <code>403 wrong_key_kind</code>, ומפתח סודי בנקודה של מפתח ציבורי מקבל אותה שגיאה.</p>
+<h3>הדרך הבטוחה</h3>
+<ul>
+  <li><b>המפתח הציבורי הולך בדפדפן.</b> הוא בטוח לחשיפה כי הוא לא יכול לקרוא משתתפים, לא לשנות ולא לתעד כסף. מה שהוא יכול לעשות מוגבל בקצב (ראו <a href="#limits">מגבלות</a>).</li>
+  <li><b>המפתח הסודי נשאר בשרת:</b> במשתנה סביבה, בכספת סודות, לא בקוד שנשלח לדפדפן, לא ב־git ולא באפליקציית מובייל. המערכת מסרבת לבקשה עם מפתח סודי שמגיעה מדפדפן (<code>403 secret_key_in_browser</code>).</li>
+  <li><b>הגבילו מפתח ציבורי לאתר שלכם.</b> ברשימת האתרים המורשים כותבים כל כתובת במדויק, למשל <code>https://studio.example</code> (בלי נתיב ובלי כוכביות). רשימה ריקה אומרת שכל אתר יכול להשתמש במפתח.</li>
+  <li><b>מפתח אחד לכל מקום.</b> כך אפשר לבטל מפתח שדלף בלי לשבור את כל השאר.</li>
+</ul>
+<div class="note warn">הגבלת אתרים מגינה על דפדפנים בלבד. קוד שרץ מחוץ לדפדפן יכול לזייף את הכותרת <code>Origin</code>, ולכן מפתח ציבורי לעולם לא מקבל יותר משלוש הפעולות שלמעלה. עוד בנושא ב<a href="#security">הערות האבטחה למפתחים</a>.</div>
+
+<h2 id="quickstart">התחלה מהירה</h2>
+<p>ארבע הדוגמאות האלה מוכנות להעתקה. בכל אחת מחליפים את <code>rk_pub_REPLACE_ME</code> במפתח הציבורי של העסק.</p>
+
+<h3 id="qs-signup">טופס הרשמה מלא</h3>
+<p>טופס עם כל השדות, רשימת מפגשים שנטענת מה־API, ושדה סמוי נגד בוטים. הטופס שומר את <code>participant_token</code> שחוזר מההרשמה, כדי שכפתור "שילמתי" יוכל להשתמש בו.</p>
+<figure class="code"><figcaption>HTML + JavaScript</figcaption><pre><code>&lt;form id="roster-signup" novalidate&gt;
+  &lt;label&gt;שם פרטי &lt;input name="first_name" required autocomplete="given-name"&gt;&lt;/label&gt;
+  &lt;label&gt;שם משפחה &lt;input name="last_name" autocomplete="family-name"&gt;&lt;/label&gt;
+  &lt;label&gt;טלפון &lt;input name="phone" type="tel" required autocomplete="tel" inputmode="tel"&gt;&lt;/label&gt;
+  &lt;label&gt;אימייל &lt;input name="email" type="email" autocomplete="email"&gt;&lt;/label&gt;
+  &lt;label&gt;גיל &lt;input name="age" type="number" min="18" max="99" inputmode="numeric"&gt;&lt;/label&gt;
+  &lt;label&gt;מגדר
+    &lt;select name="gender"&gt;
+      &lt;option value=""&gt;לא צוין&lt;/option&gt;
+      &lt;option value="female"&gt;אישה&lt;/option&gt;
+      &lt;option value="male"&gt;גבר&lt;/option&gt;
+    &lt;/select&gt;
+  &lt;/label&gt;
+  &lt;label&gt;מפגש &lt;select name="meeting_id"&gt;&lt;option value=""&gt;טוען מפגשים...&lt;/option&gt;&lt;/select&gt;&lt;/label&gt;
+
+  &lt;!-- שדה פתיון: בני אדם לא רואים אותו, בוטים ממלאים. כשהוא מלא ה-API מחזיר הצלחה מזויפת ולא עושה כלום. --&gt;
+  &lt;div style="position:absolute;left:-9999px" aria-hidden="true"&gt;
+    &lt;label&gt;אל תמלאו &lt;input name="website" tabindex="-1" autocomplete="off"&gt;&lt;/label&gt;
+  &lt;/div&gt;
+
+  &lt;button type="submit"&gt;להרשמה&lt;/button&gt;
+  &lt;p id="roster-msg" role="status"&gt;&lt;/p&gt;
+&lt;/form&gt;
+
+&lt;script&gt;
+(async function () {
+  const API = "<span data-api-base>https://floa-lead.floa-il.workers.dev</span>/roster/v1";
+  const KEY = "rk_pub_REPLACE_ME";   // המפתח הציבורי: בטוח בדפדפן
+  const form = document.getElementById("roster-signup");
+  const msg = document.getElementById("roster-msg");
+  const FIELD_NAMES = { first_name: "שם פרטי", last_name: "שם משפחה", phone: "טלפון", email: "אימייל", age: "גיל", gender: "מגדר" };
+
+  async function call(path, options = {}) {
+    const res = await fetch(API + path, {
+      ...options,
+      headers: { Authorization: "Bearer " + KEY, ...(options.headers || {}) },
+    });
+    const data = await res.json().catch(() =&gt; ({}));
+    return { res, data };
+  }
+
+  // 1. רשימת המפגשים הקרובים
+  const select = form.elements.meeting_id;
+  select.length = 0;
+  select.add(new Option("בלי לבחור מפגש עכשיו", ""));
+  const { res: mres, data: mdata } = await call("/meetings?limit=20");
+  if (mres.ok) {
+    for (const m of mdata.meetings) {
+      const day = new Date(m.date + "T00:00").toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "numeric" });
+      const option = new Option((m.name || "מפגש") + ", " + day + " " + m.time + (m.full ? " (מלא)" : ""), m.id);
+      option.disabled = m.full;
+      select.add(option);
+    }
+  }
+
+  // 2. שליחת ההרשמה
+  form.addEventListener("submit", async (event) =&gt; {
+    event.preventDefault();
+    msg.textContent = "שולחים...";
+    const body = {};
+    for (const [name, value] of new FormData(form)) {
+      const text = String(value).trim();
+      if (text !== "") body[name] = text;          // שדות ריקים לא נשלחים
+    }
+    if (body.age) body.age = Number(body.age);
+
+    const { res, data } = await call("/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    if (res.ok) {
+      // participant_token מאפשר ללחוץ "שילמתי" ב-30 הימים הקרובים (ראו הדוגמה הבאה)
+      sessionStorage.setItem("roster_token", data.participant_token);
+      if (body.meeting_id) sessionStorage.setItem("roster_meeting", body.meeting_id);
+      msg.textContent = data.registered ? "נרשמת למפגש. נתראה!" : "הפרטים נקלטו.";
+      form.reset();
+      return;
+    }
+    const error = data.error || {};
+    msg.textContent = {
+      validation: "יש שדה שלא מולא כמו שצריך: " + (FIELD_NAMES[error.field] || "בדקו את הפרטים"),
+      closed: "ההרשמה סגורה כרגע.",
+      full: "המפגש כבר מלא. הפרטים שלך נשמרו, אפשר לבחור מפגש אחר.",
+      rate_limited: "ניסיונות רבים מדי. נסו שוב בעוד " + (res.headers.get("Retry-After") || "כמה") + " שניות.",
+    }[error.code] || "משהו השתבש. נסו שוב בעוד רגע.";
+  });
+})();
+&lt;/script&gt;</code></pre></figure>
+<p>רק <code>first_name</code> ו־<code>phone</code> חובה כברירת מחדל. העסק יכול לדרוש עוד שדות בדף החיבורים, ואז שדה חובה חסר מחזיר <code>422 validation</code> עם שם השדה.</p>
+
+<h3 id="qs-meetings">מפגשים בדף הבית</h3>
+<p>רשימה קצרה של המפגשים הקרובים, עם מחיר ומקומות פנויים. הטקסט נכתב עם <code>textContent</code>, כדי שתוכן מהמערכת לא ייכנס לדף כ־HTML.</p>
+<figure class="code"><figcaption>HTML + JavaScript</figcaption><pre><code>&lt;ul id="roster-meetings"&gt;&lt;/ul&gt;
+
+&lt;script&gt;
+(async function () {
+  const API = "<span data-api-base>https://floa-lead.floa-il.workers.dev</span>/roster/v1";
+  const KEY = "rk_pub_REPLACE_ME";
+  const list = document.getElementById("roster-meetings");
+
+  const res = await fetch(API + "/meetings?limit=6", { headers: { Authorization: "Bearer " + KEY } });
+  if (!res.ok) { list.textContent = "אין מפגשים להצגה כרגע."; return; }
+  const { meetings } = await res.json();
+  if (!meetings.length) { list.textContent = "אין מפגשים קרובים."; return; }
+
+  for (const m of meetings) {
+    const day = new Date(m.date + "T00:00").toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "numeric" });
+    const spots = m.full ? "מלא" : m.spots_left == null ? "" : "נשארו " + m.spots_left + " מקומות";
+    const item = document.createElement("li");
+    item.textContent = [
+      m.name,
+      day + ", " + m.time,
+      [m.place, m.city].filter(Boolean).join(", "),
+      m.price ? m.price + " ₪" : "חינם",
+      spots,
+    ].filter(Boolean).join(" | ");
+    list.append(item);
+  }
+})();
+&lt;/script&gt;</code></pre></figure>
+
+<h3 id="qs-pay">כפתור "שילמתי"</h3>
+<p>אחרי שמשתתף שילם (בביט, בפייבוקס או בכל דרך אחרת) הוא לוחץ על הכפתור, והמנהל מקבל סימון "דווח על תשלום" לבדיקה. הכפתור משתמש ב־<code>participant_token</code> שהתקבל בהרשמה. הטוקן תקף 30 יום, שייך למשתתף אחד בעסק אחד, ו<b>קשור למפגש שאליו נרשמו באותה קריאה</b>: הוא יכול לדווח רק על המפגש הזה. כדי לדווח על מפגש אחר צריך להירשם אליו, וזה מנפיק טוקן חדש.</p>
+<p>התשובה היא תמיד <code>{ "status": "ok" }</code>, כך שהכפתור לא יכול לדעת אם הדיווח נרשם בפועל, והוא לא מציג מצב. הוא אומר רק שהבקשה התקבלה. את המצב האמיתי רואה המנהל, ואפשר לקרוא אותו מהשרת עם מפתח סודי.</p>
+<figure class="code"><figcaption>HTML + JavaScript</figcaption><pre><code>&lt;button id="roster-paid" type="button"&gt;שילמתי&lt;/button&gt;
+&lt;p id="roster-paid-msg" role="status"&gt;&lt;/p&gt;
+
+&lt;script&gt;
+document.getElementById("roster-paid").addEventListener("click", async () =&gt; {
+  const API = "<span data-api-base>https://floa-lead.floa-il.workers.dev</span>/roster/v1";
+  const KEY = "rk_pub_REPLACE_ME";
+  const msg = document.getElementById("roster-paid-msg");
+  const token = sessionStorage.getItem("roster_token");      // נשמר בהרשמה
+  const meeting = sessionStorage.getItem("roster_meeting");  // המפגש שהטוקן קשור אליו
+  if (!token || !meeting) { msg.textContent = "כדי לדווח על תשלום צריך להירשם קודם למפגש."; return; }
+
+  const res = await fetch(API + "/payments/click", {
+    method: "POST",
+    headers: { Authorization: "Bearer " + KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({ participant_token: token, meeting_id: meeting }),
+  });
+  if (res.status === 401) { msg.textContent = "הקישור פג. אפשר להירשם שוב ולקבל חדש."; return; }
+
+  // התשובה זהה תמיד ({ "status": "ok" }), ולכן ההודעה זהה תמיד
+  msg.textContent = res.ok
+    ? "תודה, קיבלנו את הבקשה. המנהל יבדוק את התשלום ויאשר."
+    : "משהו השתבש. נסו שוב בעוד רגע.";
+});
+&lt;/script&gt;</code></pre></figure>
+
+<h3 id="qs-me">אזור אישי באתר</h3>
+<p>לכל עסק יש אזור אישי מוכן, שבו המשתתפים נכנסים עם Google, מקשרים את מספר הטלפון שלהם ורואים את המפגשים, התשלומים והיתרה. מטמיעים אותו באתר בשורה אחת. במקום <code>&lt;slug&gt;</code> כותבים את המזהה של העסק, שמופיע בכתובת של דף הניהול (<code>?biz=...</code>).</p>
+<figure class="code"><figcaption>HTML</figcaption><pre><code>&lt;iframe
+  src="https://floa.co.il/roster/me/?biz=&lt;slug&gt;"
+  title="האזור האישי"
+  style="width:100%;height:720px;border:0"&gt;&lt;/iframe&gt;</code></pre></figure>
+<p>הכניסה עם Google נפתחת בחלון קופץ וחוזרת לאותו דף. האזור האישי פעיל כשהאפשרות "אזור אישי" דולקת בדף החיבורים של העסק.</p>
+
+<h2 id="endpoints">כל הנקודות</h2>
+<p>כל הנתיבים מתחילים ב־<code>/roster/v1</code>. בדוגמאות ה־curl, <code>$ROSTER_KEY</code> הוא מפתח ציבורי או סודי לפי הסימון, ומזהי המפגשים והמשתתפים הם דוגמאות.</p>
+
+<h3 id="ep-meetings" class="endpoint-title"><span class="verb get">GET</span><span class="path">/meetings?limit=20</span><span class="kind pub">ציבורי</span><span class="kind sec">סודי</span></h3>
+<p>המפגשים הקרובים (מהיום ואילך, לפי שעון ישראל), מהמוקדם למאוחר. <code>limit</code> אופציונלי: מספר שלם מ־1 עד 100, וברירת המחדל 20. ערך גדול מ־100 נחתך ל־100, וערך שאינו מספר חיובי מחזיר <code>422 validation</code> עם <code>"field": "limit"</code>.</p>
+<figure class="code"><figcaption>curl</figcaption><pre><code>curl -s "<span data-api-base>https://floa-lead.floa-il.workers.dev</span>/roster/v1/meetings?limit=20" \
+  -H "Authorization: Bearer $ROSTER_KEY"</code></pre></figure>
+<figure class="code"><figcaption>200, JSON</figcaption><pre><code>{
+  "business": { "name": "דנה יוגה" },
+  "meetings": [
+    {
+      "id": "6b0b3c2e-1f0a-4a3c-9d3e-2a5b7c8d9e01",
+      "date": "2026-11-12",
+      "time": "20:00",
+      "name": "ערב יוגה",
+      "city": "תל אביב",
+      "place": "הסטודיו",
+      "capacity": 12,
+      "spots_left": 4,
+      "full": false,
+      "price": 80,
+      "price_tiers": { "base": 100, "steps": [ { "days": 3, "price": 80 } ] }
+    }
+  ]
+}</code></pre></figure>
+<div class="tw"><table>
+  <thead><tr><th>שדה</th><th>משמעות</th></tr></thead>
+  <tbody>
+    <tr><td><code>capacity</code>, <code>spots_left</code></td><td>מספר המקומות והמקומות הפנויים. <code>null</code> כשאין הגבלה למפגש. <code>full</code> הוא <code>true</code> כשאין מקום.</td></tr>
+    <tr><td><code>name</code></td><td>שם המפגש. אם אין, שם סוג המפגש.</td></tr>
+    <tr><td><code>price</code></td><td>המחיר הנוכחי בשקלים. נקבע לפי המדרגות: כשנשארו <code>L</code> ימים למפגש, בוחרים את המדרגה עם ה־<code>days</code> הקטן ביותר ש־<code>L</code> קטן או שווה לו, ואם אין כזאת, המחיר הבסיסי <code>base</code>. בלי מדרגות מחיר, המחיר 0.</td></tr>
+    <tr><td><code>price_tiers</code></td><td>מדרגות המחיר עצמן: <code>{ "base": 100, "steps": [ { "days": 3, "price": 80 } ] }</code>. בדוגמה, בשלושת הימים האחרונים המחיר 80 ולפני כן 100.</td></tr>
+  </tbody>
+</table></div>
+<p>עם מפתח סודי מתווספים לכל מפגש גם <code>directions</code> (הוראות הגעה), <code>registered</code> (כמות הרשומים) ו־<code>type</code> (סוג המפגש). הוראות הגעה לעולם לא מוחזרות למפתח ציבורי.</p>
+<p><b>שגיאות:</b> <code>invalid_key</code> 401, <code>origin_not_allowed</code> 403, <code>rate_limited</code> 429.</p>
+
+<h3 id="ep-signup" class="endpoint-title"><span class="verb post">POST</span><span class="path">/signup</span><span class="kind pub">ציבורי</span><span class="kind sec">סודי</span></h3>
+<p>יוצרת משתתף חדש (הטלפון הוא הזהות שלו בתוך העסק), או משתמשת בקיים, ואם נשלח <code>meeting_id</code>, גם רושמת אותו למפגש. היא <b>לא משנה שום פרט</b> של משתתף שכבר קיים: לא מייל ולא שום שדה אחר. מה שהיא כן עושה למשתתף קיים הוא להחזיר אותו לפעילות אם הוא הוסר, ולרשום אותו למפגש. הרשמה כפולה לאותו מפגש לא יוצרת כפילות. כך מי שמקליד טלפון של אדם אחר לא יכול לשנות את הפרטים שלו.</p>
+<div class="tw"><table>
+  <thead><tr><th>שדה</th><th>חובה?</th><th>כללים</th></tr></thead>
+  <tbody>
+    <tr><td><code>first_name</code></td><td>כן, כברירת מחדל</td><td>2 עד 40 תווים. שם פרטי ושם משפחה יחד עד 60.</td></tr>
+    <tr><td><code>last_name</code></td><td>לא, כברירת מחדל</td><td>2 עד 40 תווים.</td></tr>
+    <tr><td><code>phone</code></td><td>כן, כברירת מחדל</td><td>מספר ישראלי (<code>050-1234567</code>) או בינלאומי (<code>+972501234567</code>). המערכת מנרמלת אותו.</td></tr>
+    <tr><td><code>email</code></td><td>לא, כברירת מחדל</td><td>כתובת מייל תקינה, עד 254 תווים.</td></tr>
+    <tr><td><code>age</code></td><td>לא, כברירת מחדל</td><td>מספר שלם מ־18 עד 99 (מספר או מחרוזת של ספרות).</td></tr>
+    <tr><td><code>gender</code></td><td>לא, כברירת מחדל</td><td><code>"male"</code> או <code>"female"</code>.</td></tr>
+    <tr><td><code>meeting_id</code></td><td>לא</td><td>מזהה מפגש קיים, עתידי ולא מלא.</td></tr>
+    <tr><td><code>website</code></td><td>לא</td><td>שדה פתיון נגד בוטים. אם הוא לא ריק, התשובה היא הצלחה מזויפת בלי שום פעולה. בטופס אמיתי משאירים אותו סמוי וריק.</td></tr>
+  </tbody>
+</table></div>
+<p>אילו שדות חובה נקבע לכל עסק בדף החיבורים (<code>signup_required</code>). ההרשמה חייבת להיות פתוחה, אחרת התשובה <code>409 closed</code>. כדי שלא יציפו עסק במשתתפים, מפתח ציבורי יכול ליצור <b>עד 120 משתתפים חדשים בשעה</b> לכל עסק. אחרי זה התשובה <code>429 rate_limited</code> עם <code>Retry-After</code>. הרשמה של טלפון שכבר רשום לא נספרת כמשתתף חדש.</p>
+<figure class="code"><figcaption>curl</figcaption><pre><code>curl -s -X POST "<span data-api-base>https://floa-lead.floa-il.workers.dev</span>/roster/v1/signup" \
+  -H "Authorization: Bearer $ROSTER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "first_name": "דנה",
+    "last_name": "כהן",
+    "phone": "050-1234567",
+    "email": "dana@example.com",
+    "age": 34,
+    "gender": "female",
+    "meeting_id": "6b0b3c2e-1f0a-4a3c-9d3e-2a5b7c8d9e01"
+  }'</code></pre></figure>
+<figure class="code"><figcaption>200, JSON, מפתח ציבורי</figcaption><pre><code>{
+  "status": "ok",
+  "registered": true,
+  "participant_token": "pt_Qw3rTy7uIoP9aSdF1gHjK5lZxC8vBn2M"
+}</code></pre></figure>
+<p>התשובה אחידה בכוונה, כדי שאי אפשר יהיה לבדוק איתה אם טלפון מסוים כבר רשום: <code>registered</code> אומר רק אם קיימת הרשמה למפגש אחרי הקריאה, ו־<code>participant_token</code> חדש בכל קריאה. הטוקן תקף 30 יום ומתאים רק ללחיצת <a href="#ep-click">"שילמתי"</a>, ורק על <b>המפגש שאליו נרשמו בקריאה הזאת</b>. אם לא נשלח <code>meeting_id</code>, הטוקן לא קשור לאף מפגש ולא ישמש לדיווח. עם מפתח סודי התשובה כוללת גם את המשתתף עצמו:</p>
+<figure class="code"><figcaption>200, JSON, מפתח סודי</figcaption><pre><code>{
+  "status": "ok",
+  "registered": true,
+  "participant_token": "pt_Qw3rTy7uIoP9aSdF1gHjK5lZxC8vBn2M",
+  "participant_id": "0f6d5c1e-8a47-4a6e-bd0b-5b7a9a3c2d10",
+  "created": true
+}</code></pre></figure>
+<p><code>created</code> הוא <code>true</code> כשנוצר משתתף חדש. <b>שגיאות:</b> <code>validation</code> 422 (עם <code>field</code>), <code>closed</code> 409 (ההרשמה סגורה), <code>full</code> 409 (המפגש מלא: הפרטים נשמרו אבל המשתתף לא נרשם אליו), <code>rate_limited</code> 429, <code>invalid_key</code> 401, <code>origin_not_allowed</code> 403.</p>
+
+<h3 id="ep-click" class="endpoint-title"><span class="verb post">POST</span><span class="path">/payments/click</span><span class="kind pub">ציבורי</span></h3>
+<p>דיווח של משתתף ש"שילמתי". לא רושם כסף: הוא מסמן אצל המנהל שיש תשלום שממתין לבדיקה. בגוף הבקשה: <code>participant_token</code> מההרשמה ו־<code>meeting_id</code>.</p>
+<figure class="code"><figcaption>curl</figcaption><pre><code>curl -s -X POST "<span data-api-base>https://floa-lead.floa-il.workers.dev</span>/roster/v1/payments/click" \
+  -H "Authorization: Bearer $ROSTER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "participant_token": "pt_Qw3rTy7uIoP9aSdF1gHjK5lZxC8vBn2M",
+    "meeting_id": "6b0b3c2e-1f0a-4a3c-9d3e-2a5b7c8d9e01"
+  }'</code></pre></figure>
+<figure class="code"><figcaption>200, JSON</figcaption><pre><code>{ "status": "ok" }</code></pre></figure>
+<p>התשובה היא תמיד <code>{ "status": "ok" }</code> לכל טוקן תקף, גם כשלא נרשם דיווח. זה בכוונה: אילו התשובה הייתה מגלה אם המשתתף רשום, אם כבר שילם או אם המפגש חינם, אפשר היה להשתמש בנקודה הציבורית כדי לבדוק מי רשום ומי שילם. הדיווח נרשם בפועל רק כשכל התנאים האלה מתקיימים:</p>
+<ul>
+  <li><code>meeting_id</code> הוא <b>המפגש שהטוקן הונפק עבורו</b>, כלומר המפגש שאליו נרשמו בקריאת ההרשמה. טוקן של מפגש אחד לא מדווח על מפגש אחר.</li>
+  <li>המשתתף רשום למפגש, ועוד לא שילם עליו.</li>
+  <li>המפגש לא חינם, ועוד לא עבר.</li>
+  <li>עוד לא דווח עליו.</li>
+</ul>
+<p>כשהדיווח נרשם נוצר האירוע <code>payment.reported</code> (ל־Webhook ולמייל למנהלים), וסכום הדיווח הוא המחיר הנוכחי או מה שנשאר לשלם. מי שרוצה לדעת מה מצב המשתתף קורא אותו מהשרת עם מפתח סודי.</p>
+<p>טוקן לא תקף, שפג תוקפו או של עסק אחר מחזיר <code>401 invalid_token</code>. שגיאות נוספות: <code>rate_limited</code> 429, <code>invalid_key</code> 401, <code>wrong_key_kind</code> 403 (נקודה זו רק למפתח ציבורי).</p>
+
+<h3 id="ep-participant" class="endpoint-title"><span class="verb get">GET</span><span class="path">/participants?phone=…</span><span class="kind sec">סודי</span></h3>
+<p>כרטיס של משתתף לפי טלפון, או לפי מזהה: <code>GET /participants/{id}</code>. מחזיר פרטים, יתרה ואת המפגשים שלו. הטלפון נכתב ספרות בלבד או עם <code>+ - ( )</code> ורווחים (3 עד 40 תווים), ו־<code>{id}</code> חייב להיות UUID.</p>
+<figure class="code"><figcaption>curl</figcaption><pre><code>curl -s "<span data-api-base>https://floa-lead.floa-il.workers.dev</span>/roster/v1/participants?phone=0501234567" \
+  -H "Authorization: Bearer $ROSTER_KEY"</code></pre></figure>
+<figure class="code"><figcaption>200, JSON</figcaption><pre><code>{
+  "participant": {
+    "id": "0f6d5c1e-8a47-4a6e-bd0b-5b7a9a3c2d10",
+    "first_name": "דנה",
+    "last_name": "כהן",
+    "phone": "+972501234567",
+    "email": "dana@example.com",
+    "age": 34,
+    "gender": "female",
+    "active": true,
+    "balance": 0,
+    "meetings": [
+      {
+        "id": "6b0b3c2e-1f0a-4a3c-9d3e-2a5b7c8d9e01",
+        "date": "2026-11-12",
+        "time": "20:00",
+        "name": "ערב יוגה",
+        "city": "תל אביב",
+        "place": "הסטודיו",
+        "directions": "קומה 2, הכניסה מהחצר",
+        "registered": true,
+        "attended": false,
+        "paid": 0,
+        "price": 80,
+        "due": 80,
+        "reported": false,
+        "reported_amount": null,
+        "free": false,
+        "future": true
+      }
+    ]
+  }
+}</code></pre></figure>
+<p>הטלפון מוחזר תמיד בצורה המנורמלת (<code>+972501234567</code>), גם אם הוקלד כ־<code>050-1234567</code>. <code>balance</code> הוא היתרה לטובת המשתתף: הפקדות וזיכויים פחות החזרים ותשלומים שנלקחו מהיתרה. <code>paid</code>, <code>due</code> ו־<code>price</code> מחושבים לכל מפגש לפי מדרגות המחיר. הרשימה כוללת את כל המפגשים העתידיים (עם <code>registered: false</code> אם הוא לא רשום) ואת המפגשים שעברו שהוא היה רשום אליהם.</p>
+<p><b>שגיאות:</b> <code>not_found</code> 404 (אין משתתף כזה בעסק), <code>validation</code> 422, <code>wrong_key_kind</code> 403.</p>
+
+<h3 id="ep-registrations" class="endpoint-title"><span class="verb post">POST</span><span class="path">/participants/{id}/registrations</span><span class="kind sec">סודי</span></h3>
+<p>רושמת משתתף קיים למפגש. בגוף: <code>meeting_id</code>.</p>
+<figure class="code"><figcaption>curl</figcaption><pre><code>curl -s -X POST "<span data-api-base>https://floa-lead.floa-il.workers.dev</span>/roster/v1/participants/0f6d5c1e-8a47-4a6e-bd0b-5b7a9a3c2d10/registrations" \
+  -H "Authorization: Bearer $ROSTER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "meeting_id": "6b0b3c2e-1f0a-4a3c-9d3e-2a5b7c8d9e01" }'</code></pre></figure>
+<figure class="code"><figcaption>200, JSON</figcaption><pre><code>{ "status": "registered" }</code></pre></figure>
+<p><code>status</code> הוא אחד מאלה: <code>registered</code> (נרשם), <code>exists</code> (כבר היה רשום), <code>past</code> (המפגש עבר), <code>full</code> (המפגש מלא). שימו לב להבדל מ־<a href="#ep-signup">הרשמה</a>: כאן מפגש מלא הוא קוד 200 עם <code>{ "status": "full" }</code>, ובהרשמה הוא <code>409 full</code>.</p>
+<h3 class="endpoint-title"><span class="verb delete">DELETE</span><span class="path">/participants/{id}/registrations/{meeting_id}</span><span class="kind sec">סודי</span></h3>
+<p>מבטלת הרשמה. תשלומים שכבר נרשמו לא נוגעים בהם.</p>
+<figure class="code"><figcaption>curl</figcaption><pre><code>curl -s -X DELETE "<span data-api-base>https://floa-lead.floa-il.workers.dev</span>/roster/v1/participants/0f6d5c1e-8a47-4a6e-bd0b-5b7a9a3c2d10/registrations/6b0b3c2e-1f0a-4a3c-9d3e-2a5b7c8d9e01" \
+  -H "Authorization: Bearer $ROSTER_KEY"</code></pre></figure>
+<figure class="code"><figcaption>200, JSON</figcaption><pre><code>{ "status": "cancelled" }</code></pre></figure>
+<p><code>status</code>: <code>cancelled</code> (בוטלה), <code>not_registered</code> (לא היה רשום), <code>attended</code> (כבר סומן שהגיע, לא מבטלים), <code>past</code> (המפגש עבר). <b>שגיאות לשתי הנקודות:</b> <code>not_found</code> 404, <code>validation</code> 422, <code>wrong_key_kind</code> 403.</p>
+
+<h3 id="ep-payments" class="endpoint-title"><span class="verb post">POST</span><span class="path">/payments</span><span class="kind sec">סודי</span></h3>
+<p>רושמת תשלום, הפקדה או החזר, כמו שהמנהל היה רושם בניהול: מנקה סימון "דווח", סוגרת יתרה שנשארה, וכותבת הערת מערכת ואירוע. מתאימה לחיבור למערכת סליקה: כשהתשלום מאושר אצלכם, שולחים אותו לכאן.</p>
+<div class="tw"><table>
+  <thead><tr><th>שדה</th><th>חובה?</th><th>כללים</th></tr></thead>
+  <tbody>
+    <tr><td><code>participant_id</code></td><td>כן</td><td>מזהה המשתתף.</td></tr>
+    <tr><td><code>amount</code></td><td>כן</td><td>הסכום בשקלים.</td></tr>
+    <tr><td><code>external_ref</code></td><td>כן</td><td>מפתח כפילות שלכם, ייחודי לכל עסק. אפשר לשלוח אותו גם בכותרת <code>Idempotency-Key</code>.</td></tr>
+    <tr><td><code>kind</code></td><td>לא</td><td><code>payment</code> (ברירת מחדל), <code>deposit</code> או <code>refund</code>.</td></tr>
+    <tr><td><code>meeting_id</code></td><td>רק ב־<code>payment</code></td><td>המפגש ששולם.</td></tr>
+    <tr><td><code>method</code></td><td>לא</td><td>טקסט חופשי: <code>paybox</code>, <code>bit</code>, <code>cash</code>, <code>bank</code>, <code>card</code> או <code>other</code> (ברירת מחדל).</td></tr>
+    <tr><td><code>note</code></td><td>לא</td><td>הערה חופשית.</td></tr>
+  </tbody>
+</table></div>
+<figure class="code"><figcaption>curl</figcaption><pre><code>curl -s -X POST "<span data-api-base>https://floa-lead.floa-il.workers.dev</span>/roster/v1/payments" \
+  -H "Authorization: Bearer $ROSTER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "participant_id": "0f6d5c1e-8a47-4a6e-bd0b-5b7a9a3c2d10",
+    "meeting_id": "6b0b3c2e-1f0a-4a3c-9d3e-2a5b7c8d9e01",
+    "kind": "payment",
+    "amount": 80,
+    "method": "card",
+    "note": "הזמנה 10432",
+    "external_ref": "order-10432"
+  }'</code></pre></figure>
+<figure class="code"><figcaption>200, JSON</figcaption><pre><code>{ "status": "ok", "payment_id": "b4a1f3a0-2d7e-4c53-8f47-0a9f8e6d1c22", "duplicate": false }</code></pre></figure>
+<p>גבולות: <code>amount</code> מספר גדול מ־0 ועד מיליון, <code>method</code> עד 40 תווים (המערכת הופכת אותו לאותיות קטנות), <code>note</code> עד 500 תווים, <code>external_ref</code> עד 200 תווים. אם שולחים את מפתח הכפילות גם בגוף וגם בכותרת <code>Idempotency-Key</code>, הם חייבים להיות זהים, אחרת <code>422 validation</code>.</p>
+<p><b>אותה בקשה פעמיים בטוחה.</b> קריאה נוספת עם אותו <code>external_ref</code> מחזירה את התוצאה הראשונה עם <code>"duplicate": true</code> ולא רושמת שום דבר. לכן אפשר לנסות שוב בלי חשש אחרי תקלת רשת. <b>שגיאות:</b> <code>validation</code> 422 (עם <code>field</code>), <code>not_found</code> 404, <code>wrong_key_kind</code> 403.</p>
+
+<h3 id="ep-credit" class="endpoint-title"><span class="verb post">POST</span><span class="path">/participants/{id}/pay-from-credit</span><span class="kind sec">סודי</span></h3>
+<p>משלמת על מפגש מהיתרה של המשתתף. בגוף: <code>meeting_id</code>.</p>
+<figure class="code"><figcaption>curl</figcaption><pre><code>curl -s -X POST "<span data-api-base>https://floa-lead.floa-il.workers.dev</span>/roster/v1/participants/0f6d5c1e-8a47-4a6e-bd0b-5b7a9a3c2d10/pay-from-credit" \
+  -H "Authorization: Bearer $ROSTER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "meeting_id": "6b0b3c2e-1f0a-4a3c-9d3e-2a5b7c8d9e01" }'</code></pre></figure>
+<figure class="code"><figcaption>200, JSON</figcaption><pre><code>{ "status": "ok", "allocated": 80, "remaining": 0, "credit_left": 20 }</code></pre></figure>
+<div class="tw"><table>
+  <thead><tr><th><code>status</code></th><th>משמעות</th></tr></thead>
+  <tbody>
+    <tr><td><code>ok</code></td><td>שולם מהיתרה. <code>allocated</code> הסכום שהוקצה, <code>remaining</code> מה שנשאר לשלם, <code>credit_left</code> היתרה שנשארה.</td></tr>
+    <tr><td><code>already</code></td><td>המפגש כבר שולם.</td></tr>
+    <tr><td><code>free</code></td><td>המפגש לא כרוך בתשלום.</td></tr>
+    <tr><td><code>no_credit</code></td><td>אין יתרה.</td></tr>
+    <tr><td><code>missing</code></td><td>המפגש או המשתתף לא נמצאו.</td></tr>
+    <tr><td><code>not_registered</code></td><td>המשתתף לא רשום למפגש.</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="webhooks">Webhooks</h2>
+<p>במקום לשאול את ה־API כל כמה דקות מה השתנה, אפשר לקבל הודעה. בכל אירוע המערכת שולחת בקשת <code>POST</code> חתומה לכתובת שהעסק הגדיר. האירועים נוצרים בבסיס הנתונים, ולכן הם מגיעים מכל מקור: ה־API, מסך הניהול והאזור האישי.</p>
+<h3>הגדרה</h3>
+<p>בדף החיבורים של העסק, בלשונית Webhook: כתובת, סוד חתימה (שמוצג פעם אחת ואפשר לחדש), ורשימת האירועים שרוצים לקבל. אפשר לשלוח אירוע בדיקה ולראות ביומן מה קרה בכל ניסיון.</p>
+<div class="note"><b>כללי הכתובת:</b> https בלבד, בפורט הרגיל (443, אפשר לא לציין פורט), ושם אתר פומבי מלא. לא כתובת IP (בשום כתיבה, גם <code>2130706433</code> או IPv6), לא <code>localhost</code>, לא <code>*.workers.dev</code>, לא שם בלי נקודה (<code>intranet</code>), ולא שם שמסתיים ב־<code>.local</code>, <code>.internal</code> או <code>.invalid</code>. שירותים שהופכים כתובת IP לשם אתר, כמו <code>nip.io</code>, <code>sslip.io</code>, <code>xip.io</code>, <code>localtest.me</code>, <code>lvh.me</code>, <code>traefik.me</code>, <code>local.gd</code>, <code>vcap.me</code>, <code>lacolhost.com</code> ו־<code>1u.ms</code>, לא מתאימים, כי שם כמו <code>127.0.0.1.nip.io</code> מצביע פנימה אל רשת פרטית. בלי שם משתמש וסיסמה בתוך הכתובת, בלי רווחים (גם לא רווחים מיוחדים כמו רווח קשיח), תווי בקרה, תווי כיווניות או תווי רוחב אפס בשום מקום בה, ועד 500 תווים. הכללים נבדקים בשמירה, ושוב ברגע השליחה.</div>
+<h3>האירועים</h3>
+<div class="tw"><table>
+  <thead><tr><th>אירוע</th><th>מתי הוא נשלח</th></tr></thead>
+  <tbody>
+    <tr><td><code>participant.created</code></td><td>נוצר משתתף חדש.</td></tr>
+    <tr><td><code>registration.created</code></td><td>משתתף נרשם למפגש.</td></tr>
+    <tr><td><code>registration.cancelled</code></td><td>הרשמה למפגש בוטלה.</td></tr>
+    <tr><td><code>payment.reported</code></td><td>משתתף דיווח "שילמתי".</td></tr>
+    <tr><td><code>payment.recorded</code></td><td>נרשם תשלום, הפקדה או החזר (<code>kind</code>: <code>payment</code>, <code>deposit</code> או <code>refund</code>).</td></tr>
+    <tr><td><code>ping</code></td><td>אירוע בדיקה, מכפתור "שליחת בדיקה".</td></tr>
+  </tbody>
+</table></div>
+<p><code>payment.reported</code> נשלח רק כשדיווח "שילמתי" נרשם בפועל (ראו <a href="#ep-click">לחיצת "שילמתי"</a>), ולא על כל לחיצה. אירועים פנימיים, כמו קישור חשבון Google לכרטיס של משתתף קיים, לא נשלחים ל־Webhook בכלל. הם רק מתריעים למנהלים במייל.</p>
+<h3>מה נשלח</h3>
+<p>גוף ה־JSON כולל את מזהה האירוע, הסוג, הזמן, העסק, ובתוך <code>data</code> רק מה שרלוונטי לסוג: <code>participant</code>, <code>meeting</code> ו־<code>payment</code>.</p>
+<figure class="code"><figcaption>JSON, registration.created</figcaption><pre><code>{
+  "id": "1042",
+  "type": "registration.created",
+  "created_at": "2026-11-04T17:32:10.123Z",
+  "business": { "slug": "dana-yoga" },
+  "data": {
+    "participant": {
+      "id": "0f6d5c1e-8a47-4a6e-bd0b-5b7a9a3c2d10",
+      "first_name": "דנה",
+      "last_name": "כהן",
+      "phone": "+972501234567",
+      "email": "dana@example.com",
+      "age": 34,
+      "gender": "female"
+    },
+    "meeting": {
+      "id": "6b0b3c2e-1f0a-4a3c-9d3e-2a5b7c8d9e01",
+      "date": "2026-11-12",
+      "time": "20:00",
+      "name": "ערב יוגה",
+      "city": "תל אביב",
+      "place": "הסטודיו"
+    }
+  }
+}</code></pre></figure>
+<figure class="code"><figcaption>JSON, payment.recorded (השדה data.payment)</figcaption><pre><code>{
+  "id": "1043",
+  "type": "payment.recorded",
+  "created_at": "2026-11-04T17:40:02.511Z",
+  "business": { "slug": "dana-yoga" },
+  "data": {
+    "participant": { "id": "0f6d5c1e-8a47-4a6e-bd0b-5b7a9a3c2d10", "first_name": "דנה", "last_name": "כהן", "phone": "+972501234567", "email": "dana@example.com", "age": 34, "gender": "female" },
+    "meeting": { "id": "6b0b3c2e-1f0a-4a3c-9d3e-2a5b7c8d9e01", "date": "2026-11-12", "time": "20:00", "name": "ערב יוגה", "city": "תל אביב", "place": "הסטודיו" },
+    "payment": { "id": "b4a1f3a0-2d7e-4c53-8f47-0a9f8e6d1c22", "kind": "payment", "amount": 80, "method": "card", "meeting_id": "6b0b3c2e-1f0a-4a3c-9d3e-2a5b7c8d9e01" }
+  }
+}</code></pre></figure>
+<h3>הכותרות</h3>
+<div class="tw"><table>
+  <thead><tr><th>כותרת</th><th>תוכן</th></tr></thead>
+  <tbody>
+    <tr><td><code>Content-Type</code></td><td><code>application/json</code></td></tr>
+    <tr><td><code>X-Roster-Event</code></td><td>סוג האירוע, למשל <code>registration.created</code>.</td></tr>
+    <tr><td><code>X-Roster-Delivery</code></td><td>מזהה האירוע. אותו ערך בכל ניסיון חוזר, ולכן אפשר להשתמש בו כדי לא לטפל באותו אירוע פעמיים.</td></tr>
+    <tr><td><code>X-Roster-Signature</code></td><td><code>t=&lt;unix seconds&gt;,v1=&lt;hex&gt;</code>, כשה־hex הוא HMAC-SHA256 עם סוד החתימה, על המחרוזת <code>t + "." + גוף הבקשה הגולמי</code>.</td></tr>
+  </tbody>
+</table></div>
+<h3>תשובה וניסיונות חוזרים</h3>
+<ul>
+  <li>כל תשובה בקוד 2xx היא הצלחה. ענו מהר: ההמתנה המקסימלית היא 10 שניות.</li>
+  <li>הפניה (redirect) נחשבת כישלון. המערכת לא עוקבת אחריה, אז הכתובת צריכה לענות ישירות.</li>
+  <li>כישלון נוסה שוב אחרי דקה, 5 דקות, 30 דקות, שעתיים ו־12 שעות. אחרי זה האירוע מסומן כנכשל. כל ניסיון נרשם ביומן בדף החיבורים.</li>
+  <li>אירוע יכול להגיע יותר מפעם אחת (למשל אם השרת שלכם קיבל אבל לא הספיק לענות). טפלו לפי <code>X-Roster-Delivery</code>.</li>
+</ul>
+
+<h3 id="wh-verify">אימות חתימה</h3>
+<p>תמיד אמתו את החתימה לפני שאתם סומכים על הודעה, אחרת כל מי שמכיר את הכתובת יכול לשלוח לכם אירועים מזויפים. האימות:</p>
+<ol class="steps">
+  <li>קוראים את <b>גוף הבקשה הגולמי</b>, כמו שהגיע, לפני שמפענחים אותו ל־JSON. אם מפענחים וממירים חזרה, הרווחים והסדר משתנים והחתימה לא תתאים.</li>
+  <li>מפרקים את <code>X-Roster-Signature</code> ל־<code>t</code> ול־<code>v1</code>.</li>
+  <li>מחשבים HMAC-SHA256 עם סוד החתימה על <code>t + "." + גוף</code>, ובצורת hex.</li>
+  <li>משווים ל־<code>v1</code> בהשוואה בזמן קבוע (לא <code>==</code> רגיל).</li>
+  <li>דוחים הודעה שה־<code>t</code> שלה רחוק מהשעה עכשיו ביותר מ־5 דקות, כדי שאי אפשר יהיה לשחזר הודעה ישנה.</li>
+</ol>
+<h4>Node.js</h4>
+<figure class="code"><figcaption>JavaScript, Node.js</figcaption><pre id="sig-node"><code>import { createHmac, timingSafeEqual } from "node:crypto";
+
+// rawBody: מחרוזת או Buffer, כמו שהגיע. header: הערך של X-Roster-Signature.
+export function verifyRosterSignature(rawBody, header, secret, toleranceSeconds = 300) {
+  const parts = {};
+  for (const piece of String(header || "").split(",")) {
+    const i = piece.indexOf("=");
+    if (i &gt; 0) parts[piece.slice(0, i).trim()] = piece.slice(i + 1).trim();
+  }
+  if (!/^\d+$/.test(parts.t || "") || !parts.v1) return false;
+  if (Math.abs(Date.now() / 1000 - Number(parts.t)) &gt; toleranceSeconds) return false;
+
+  const hmac = createHmac("sha256", secret);
+  hmac.update(parts.t + ".");
+  hmac.update(rawBody);
+  const expected = Buffer.from(hmac.digest("hex"), "utf8");
+  const received = Buffer.from(parts.v1, "utf8");
+  return expected.length === received.length &amp;&amp; timingSafeEqual(expected, received);
+}</code></pre></figure>
+<p>שימוש עם Express: חשוב לקרוא את הגוף כ־<code>raw</code>, לא עם <code>express.json()</code>.</p>
+<figure class="code"><figcaption>JavaScript, Express</figcaption><pre><code>import express from "express";
+import { verifyRosterSignature } from "./verify-roster.js";
+
+const app = express();
+
+app.post("/roster-hook", express.raw({ type: "application/json" }), (req, res) =&gt; {
+  const ok = verifyRosterSignature(req.body, req.get("X-Roster-Signature"), process.env.ROSTER_WEBHOOK_SECRET);
+  if (!ok) return res.sendStatus(401);
+
+  const event = JSON.parse(req.body.toString("utf8"));
+  // כאן מטפלים באירוע. לפי event.type, ולפי req.get("X-Roster-Delivery") נמנעים מטיפול כפול.
+  res.sendStatus(200);
+});</code></pre></figure>
+<h4>PHP</h4>
+<figure class="code"><figcaption>PHP</figcaption><pre id="sig-php"><code>&lt;?php
+function verify_roster_signature(string $rawBody, string $header, string $secret, int $tolerance = 300): bool
+{
+    $parts = [];
+    foreach (explode(",", $header) as $piece) {
+        $pair = explode("=", trim($piece), 2);
+        if (count($pair) === 2) {
+            $parts[trim($pair[0])] = trim($pair[1]);
+        }
+    }
+    if (!isset($parts["t"], $parts["v1"]) || !ctype_digit($parts["t"])) {
+        return false;
+    }
+    if (abs(time() - (int) $parts["t"]) &gt; $tolerance) {
+        return false;
+    }
+    $expected = hash_hmac("sha256", $parts["t"] . "." . $rawBody, $secret);
+    return hash_equals($expected, $parts["v1"]);
+}
+
+// בנקודת הקבלה:
+$rawBody = file_get_contents("php://input");           // הגוף הגולמי, לפני json_decode
+$header  = $_SERVER["HTTP_X_ROSTER_SIGNATURE"] ?? "";
+if (!verify_roster_signature($rawBody, $header, getenv("ROSTER_WEBHOOK_SECRET"))) {
+    http_response_code(401);
+    exit;
+}
+$event = json_decode($rawBody, true);
+http_response_code(200);</code></pre></figure>
+<h4>Python</h4>
+<figure class="code"><figcaption>Python</figcaption><pre id="sig-python"><code>import hashlib
+import hmac
+import time
+
+
+def verify_roster_signature(raw_body: bytes, header: str, secret: str, tolerance: int = 300) -&gt; bool:
+    """raw_body: the request body as bytes, before any JSON parsing."""
+    parts = {}
+    for piece in (header or "").split(","):
+        key, sep, value = piece.partition("=")
+        if sep:
+            parts[key.strip()] = value.strip()
+    t, v1 = parts.get("t", ""), parts.get("v1", "")
+    if not t.isascii() or not t.isdigit() or not v1:
+        return False
+    if abs(time.time() - int(t)) &gt; tolerance:
+        return False
+    signed = t.encode() + b"." + raw_body
+    expected = hmac.new(secret.encode(), signed, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected.encode(), v1.encode())</code></pre></figure>
+<figure class="code"><figcaption>Python, Flask</figcaption><pre><code>import os
+from flask import Flask, request, abort
+
+app = Flask(__name__)
+
+@app.post("/roster-hook")
+def roster_hook():
+    raw = request.get_data()                       # הגוף הגולמי, בבתים
+    if not verify_roster_signature(raw, request.headers.get("X-Roster-Signature", ""), os.environ["ROSTER_WEBHOOK_SECRET"]):
+        abort(401)
+    event = request.get_json(force=True)
+    return "", 200</code></pre></figure>
+
+<h2 id="emails">מיילים</h2>
+<p>המערכת שולחת מיילים בשם העסק, דרך Resend, מהכתובת <code>no-reply@floa.co.il</code> בשם שהוגדר לעסק. כשיש כתובת למענה, תשובות לגוף המייל מגיעות אליה. כל מייל נשלח בעברית, ב־HTML פשוט עם טקסט חלופי, ונרשם ביומן המיילים בדף החיבורים, שם אפשר לפתוח את המייל המדויק שנשלח.</p>
+<div class="tw"><table>
+  <thead><tr><th>תבנית</th><th>למי</th><th>מתי</th></tr></thead>
+  <tbody>
+    <tr><td><code>admin_signup</code></td><td>מנהלים</td><td>נוצר משתתף חדש (באמת חדש).</td></tr>
+    <tr><td><code>admin_payment_reported</code></td><td>מנהלים</td><td>משתתף דיווח "שילמתי".</td></tr>
+    <tr><td><code>admin_account_linked</code></td><td>מנהלים</td><td>חשבון Google קושר, באזור האישי, למשתתף שכבר קיים: מי קישר איזה חשבון לאיזה כרטיס.</td></tr>
+    <tr><td><code>admin_phone_conflict</code></td><td>מנהלים</td><td>מישהו ניסה לקשר חשבון Google לטלפון שכבר מקושר לחשבון אחר.</td></tr>
+    <tr><td><code>registered</code></td><td>המשתתף</td><td>שמר מקום למפגש עתידי, יש לו מייל, עוד לא שילם והמפגש לא חינם: איך משלמים. במייל זה נקרא "שמירת מקום".</td></tr>
+    <tr><td><code>payment_confirmed</code></td><td>המשתתף</td><td>התשלום על מפגש הושלם (או שהיתרה נסגרה), פעם אחת לכל מפגש.</td></tr>
+    <tr><td><code>refund</code></td><td>המשתתף</td><td>נרשם עבורו החזר.</td></tr>
+    <tr><td><code>registration_cancelled</code></td><td>המשתתף</td><td>שמירת המקום שלו למפגש עתידי בוטלה.</td></tr>
+  </tbody>
+</table></div>
+<p>התראות למנהלים הולכות לרשימת המיילים שהוגדרה לעסק, ואם היא ריקה, לכתובות של חשבונות ה־Google של העסק.</p>
+<h3>התאמת תבנית</h3>
+<p>בדף החיבורים, בלשונית מיילים, אפשר לערוך נושא וגוף לכל תבנית, לראות תצוגה מקדימה חיה ולחזור לברירת המחדל. התצוגה משתמשת בנתוני דוגמה ובהגדרות האמיתיות של העסק, ולכן היא מראה מה באמת יישלח.</p>
+<h3>משתנים בתבנית</h3>
+<p>בתבנית משלבים משתנים בצורה <code>{{שם}}</code> (הערך מוגן מ־HTML) או <code>{{{שם}}}</code> (הערך נכנס כמו שהוא). שם משתנה שהמערכת לא מכירה יוצא ריק. הפרטים שהמשתתף עצמו הקליד (<code>first_name</code>, <code>last_name</code>, <code>full_name</code>, <code>phone</code>, <code>email</code>, <code>age</code>, <code>gender</code>), פרטי החשבון שקושר (<code>account_email</code>, <code>account_name</code>) וגם <code>method</code> <b>תמיד מוגנים</b>, אפילו בסוגריים משולשים, כדי שתבנית לעולם לא תכניס HTML של זר לתיבת המייל של המנהל.</p>
+<div class="tw"><table>
+  <thead><tr><th>משתנה</th><th>תוכן</th></tr></thead>
+  <tbody>
+    <tr><td><code>{{business_name}}</code></td><td>שם העסק.</td></tr>
+    <tr><td><code>{{first_name}}</code>, <code>{{last_name}}</code>, <code>{{full_name}}</code></td><td>שם פרטי, שם משפחה, ושם מלא (שניהם יחד).</td></tr>
+    <tr><td><code>{{phone}}</code>, <code>{{email}}</code>, <code>{{age}}</code></td><td>טלפון, אימייל וגיל של המשתתף.</td></tr>
+    <tr><td><code>{{gender}}</code></td><td>המגדר במילה בעברית: "גבר" או "אישה".</td></tr>
+    <tr><td><code>{{account_email}}</code>, <code>{{account_name}}</code></td><td>האימייל והשם של חשבון ה־Google שקושר למשתתף או ניסה להתחבר אליו. זמינים רק בתבניות <code>admin_account_linked</code> ו־<code>admin_phone_conflict</code>, ובשאר ריקים.</td></tr>
+    <tr><td><code>{{meeting_name}}</code></td><td>שם המפגש. אם אין, "המפגש".</td></tr>
+    <tr><td><code>{{meeting_date}}</code></td><td>התאריך בעברית, עם היום בשבוע ובלי שנה, למשל "יום חמישי, 12.11".</td></tr>
+    <tr><td><code>{{meeting_time}}</code></td><td>שעת המפגש, <code>HH:MM</code>.</td></tr>
+    <tr><td><code>{{place}}</code>, <code>{{city}}</code></td><td>מקום ועיר.</td></tr>
+    <tr><td><code>{{price}}</code>, <code>{{amount}}</code></td><td>מחיר המפגש, וסכום התשלום או ההחזר, בשקלים בלי אפסים מיותרים (80, 12.5).</td></tr>
+    <tr><td><code>{{method}}</code></td><td>דרך התשלום במילים: פייבוקס, ביט, מזומן, העברה בנקאית, כרטיס אשראי. דרך אחרת מוצגת כמו שהוזנה, ו־<code>other</code> יוצא ריק.</td></tr>
+    <tr><td><code>{{directions}}</code></td><td>הוראות הגעה. זמין רק בתבנית <code>payment_confirmed</code>, ובשאר ריק.</td></tr>
+    <tr><td><code>{{my_link}}</code></td><td>קישור לאזור האישי. ריק כשהאזור האישי כבוי.</td></tr>
+    <tr><td><code>{{pay_link}}</code></td><td>קישור התשלום שהעסק הגדיר. ריק כשלא הוגדר.</td></tr>
+    <tr><td><code>{{whatsapp_link}}</code></td><td>קישור לוואטסאפ של העסק. ריק כשלא הוגדר מספר.</td></tr>
+    <tr><td><code>{{admin_link}}</code></td><td>קישור לכרטיס המשתתף בניהול.</td></tr>
+  </tbody>
+</table></div>
+<h3>חלקים שנעלמים כשאין ערך</h3>
+<p>אלמנט <code>p</code>, <code>tr</code>, <code>li</code>, <code>a</code> או <code>span</code> עם התכונה <code>data-if</code> נמחק מהמייל כשאין ערך למשתנה שהיא מציינת, והתכונה עצמה מוסרת כשהאלמנט נשאר. כך תבניות ברירת המחדל נקיות בעסק בלי קישור תשלום או בלי מספר וואטסאפ:</p>
+<figure class="code"><figcaption>HTML</figcaption><pre><code>&lt;p data-if="pay_link"&gt;&lt;a href="{{pay_link}}"&gt;לתשלום&lt;/a&gt;&lt;/p&gt;
+&lt;tr data-if="phone"&gt;&lt;td&gt;טלפון&lt;/td&gt;&lt;td&gt;{{phone}}&lt;/td&gt;&lt;/tr&gt;</code></pre></figure>
+<p>האלמנטים האלה לא מקננים זה בזה. משתנה בלי <code>data-if</code> שאין לו ערך פשוט יוצא ריק, ולכן קישור כזה יהיה שבור.</p>
+<p>הנושא הוא טקסט ולא HTML: אין בו הגנה, שורה חדשה הופכת לרווח, והאורך עד 200 תווים.</p>
+<h3 id="mail-caps">מכסות מיילים</h3>
+<p>מיילים נשלחים לכתובות שזרים הקלידו, או בעקבות פעולות שזרים יכולים לעשות (הרשמה, קישור חשבון), ולכן לכל עסק יש תקרות:</p>
+<ul>
+  <li><b>מיילים למשתתפים:</b> עד 3 מיילים לכל כתובת ב־24 שעות, ועד 200 מיילים למשתתפים ב־24 שעות.</li>
+  <li><b>מיילים למנהלים:</b> עד 20 מיילים לכל כתובת ב־24 שעות, ועד 30 מיילים למנהלים בשעה.</li>
+  <li><b>בסך הכול:</b> עד 400 מיילים ב־24 שעות, מכל הסוגים יחד.</li>
+  <li>מייל שחורג מתקרה לא נשלח. הוא נרשם ביומן המיילים כנכשל, עם הסיבה (<code>limit_recipient</code>, <code>limit_admin_recipient</code>, <code>limit_admin_hour</code>, <code>limit_business</code> או <code>limit_business_day</code>), והפעולה שגרמה לו נשמרת כרגיל.</li>
+</ul>
+<h3>עוד על מיילים</h3>
+<ul>
+  <li>כל מייל למשתתף מסתיים בשורה שמסבירה שהוא נשלח כי הכתובת הוזנה בטופס ההרשמה של העסק. תבניות ברירת המחדל כוללות אותה. אם תבנית שהעסק כתב לא כוללת את המשפט "הוזנה בטופס ההרשמה", המערכת מוסיפה את השורה בעצמה בסוף המייל, ואי אפשר להסיר אותה.</li>
+  <li>עסק יכול לכבות את המיילים למשתתפים לגמרי. מיילים למנהלים ממשיכים להישלח, בתוך המכסות שלמעלה.</li>
+  <li>השם שהמיילים יוצאים בו, כתובת המענה ורשימת מקבלי ההתראות מוגדרים על ידי בעל המערכת בלבד. את התבניות עצמן ואת המיילים למשתתפים מנהלי העסק קובעים בעצמם.</li>
+  <li>כשל במייל לא עוצר את הפעולה שגרמה לו: ההרשמה או התשלום נשמרים גם אם המייל נכשל.</li>
+  <li>תבנית ארוכה מ־20,000 תווים, או עם יותר מ־50 תכונות <code>data-if</code>, לא נשמרת. אם כזאת כבר קיימת, המערכת שולחת במקומה את תבנית ברירת המחדל.</li>
+</ul>
+
+<h2 id="limits">מגבלות</h2>
+<p>המגבלות נאכפות בבסיס הנתונים לכל מפתח, ולכן אי אפשר לעקוף אותן, ובנוסף יש בדיקה זולה לפי כתובת IP. חריגה מחזירה <code>429 rate_limited</code> עם הכותרת <code>Retry-After</code> (בשניות).</p>
+<div class="tw"><table>
+  <thead><tr><th>מה</th><th>המגבלה</th></tr></thead>
+  <tbody>
+    <tr><td><code>POST /signup</code>, מפתח ציבורי</td><td>6 לכל כתובת IP ב־10 דקות, ו־120 לכל מפתח בשעה. בנוסף, עד 120 משתתפים חדשים בשעה לכל עסק (אחר כך <code>429 rate_limited</code>).</td></tr>
+    <tr><td><code>POST /payments/click</code></td><td>30 לכל כתובת IP ב־10 דקות.</td></tr>
+    <tr><td>קריאות (<code>GET</code>)</td><td>300 לכל מפתח בדקה, ובמפתח ציבורי גם 120 בדקה לכל כתובת IP (לכל מפתח), כדי שמבקר אחד לא יחסום את כל האחרים.</td></tr>
+    <tr><td>מפתח חסר, פגום או לא מוכר</td><td>60 ניסיונות ב־10 דקות לכל כתובת IP, ואז <code>429 rate_limited</code>.</td></tr>
+    <tr><td>מיילים</td><td>תקרות לכל עסק: ראו <a href="#mail-caps">מכסות מיילים</a>.</td></tr>
+    <tr><td>מפתח סודי</td><td>600 בדקה.</td></tr>
+    <tr><td>גוף בקשה</td><td>עד 16KB.</td></tr>
+    <tr><td>Webhook</td><td>המתנה עד 10 שניות לתשובה, וחמישה ניסיונות חוזרים.</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="errors">קודי שגיאה</h2>
+<p>כל שגיאה היא גוף JSON מהצורה <code>{ "error": { "code": "...", "message": "..." } }</code>. התנהגו לפי ה־<code>code</code> ולפי קוד ה־HTTP, לא לפי ההודעה.</p>
+<div class="tw"><table>
+  <thead><tr><th><code>code</code></th><th>HTTP</th><th>משמעות</th></tr></thead>
+  <tbody>
+    <tr><td><code>invalid_key</code></td><td>401</td><td>המפתח חסר, שגוי או מבוטל.</td></tr>
+    <tr><td><code>invalid_token</code></td><td>401</td><td>טוקן המשתתף (<code>pt_…</code>) שגוי או שפג תוקפו. מופיע ב־<code>/payments/click</code>.</td></tr>
+    <tr><td><code>wrong_key_kind</code></td><td>403</td><td>סוג המפתח לא מתאים לפעולה (ראו הטבלה בפרק המפתחות).</td></tr>
+    <tr><td><code>origin_not_allowed</code></td><td>403</td><td>האתר ששלח את הבקשה לא ברשימת האתרים של המפתח הציבורי.</td></tr>
+    <tr><td><code>secret_key_in_browser</code></td><td>403</td><td>מפתח סודי שימש בבקשה שמגיעה מדפדפן. המפתח הסודי שייך לשרת בלבד.</td></tr>
+    <tr><td><code>rate_limited</code></td><td>429</td><td>יותר מדי בקשות. מחכים את מספר השניות שב־<code>Retry-After</code>.</td></tr>
+    <tr><td><code>validation</code></td><td>422</td><td>שדה לא תקין או חסר. השדה מופיע ב־<code>field</code>.</td></tr>
+    <tr><td><code>not_found</code></td><td>404</td><td>המשתתף או המפגש לא נמצאו בעסק.</td></tr>
+    <tr><td><code>closed</code></td><td>409</td><td>ההרשמה לעסק סגורה.</td></tr>
+    <tr><td><code>full</code></td><td>409</td><td>המפגש מלא.</td></tr>
+    <tr><td><code>conflict</code></td><td>409</td><td>התנגשות עם מצב קיים.</td></tr>
+    <tr><td><code>bad_request</code></td><td>400</td><td>בקשה לא קריאה: JSON שבור או גוף גדול מדי.</td></tr>
+    <tr><td><code>server_error</code></td><td>500</td><td>תקלה אצלנו. אפשר לנסות שוב בעוד רגע.</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="security">הערות אבטחה למפתחים</h2>
+<p>כמה דברים שכדאי לדעת לפני שמחברים אתר אמיתי, כולל מה המערכת לא מבטיחה.</p>
+
+<h3>מפתח ציבורי בדפדפן, מפתח סודי רק בשרת</h3>
+<ul>
+  <li><b>המפתח הציבורי נמצא בקוד האתר, ולכל מי שפותח את האתר יש אותו.</b> לכן הוא מוגבל לשלוש פעולות: קריאת מפגשים קרובים (מידע שממילא מוצג באתר), הרשמה, ולחיצת "שילמתי" עם טוקן שהונפק בהרשמה. הוא לא יכול לקרוא משתתפים, לשנות כרטיס קיים או לרשום כסף.</li>
+  <li>מה כן אפשר לעשות בעזרתו: להירשם בשם אחרים. לכן ההרשמה מוגבלת בקצב (לפי כתובת IP, לפי מפתח ולפי עסק), ואין בה אימות שהטלפון שייך למי שהקליד אותו. אל תתייחסו להרשמה כהוכחת זהות.</li>
+  <li>רשימת האתרים המורשים של מפתח ציבורי מגינה על דפדפנים בלבד: קוד שרץ מחוץ לדפדפן יכול לשלוח כל כותרת <code>Origin</code>. היא מקטינה שימוש לא רצוי באתרים אחרים, והיא לא אימות.</li>
+  <li><b>המפתח הסודי שייך לשרת בלבד.</b> לא בקוד שנשלח לדפדפן, לא באפליקציית מובייל, לא ב־git ולא ביומנים. שמרו אותו במשתנה סביבה או בכספת סודות, והשתמשו במפתח נפרד לכל שירות כדי שאפשר יהיה לבטל אחד בלי לשבור את השאר.</li>
+  <li>אם מפתח דלף, או שהמערכת החזירה <code>secret_key_in_browser</code> (סימן שמפתח סודי הופעל מדפדפן): בטלו אותו בדף החיבורים ויצרו חדש. ביטול נכנס לתוקף מיד.</li>
+</ul>
+
+<h3>טוקן המשתתף</h3>
+<ul>
+  <li><code>participant_token</code> הוא סוד של המשתתף. הוא תקף 30 יום ומאפשר רק "שילמתי" על המפגש שאליו נרשמו. אל תשימו אותו בכתובת URL, בקישור שמשתפים או ביומן. <code>sessionStorage</code> בדפדפן מספיק.</li>
+</ul>
+
+<h3>Webhooks</h3>
+<ul>
+  <li><b>אמתו כל הודעה.</b> כל מי שמכיר את הכתובת שלכם יכול לשלוח אליה בקשה. חשבו חתימה על הגוף הגולמי, בדקו שהזמן קרוב לעכשיו (עד 5 דקות), והשוו בהשוואה בזמן קבוע. ראו <a href="#wh-verify">אימות חתימה</a>.</li>
+  <li>אירוע יכול להגיע יותר מפעם אחת. טפלו לפי <code>X-Roster-Delivery</code>, וענו 2xx מהר ואז עבדו.</li>
+  <li>סוד החתימה לא ב־git ולא ביומנים. סובבו אותו (יצירת סוד חדש) כשמי שהכיר אותו עוזב.</li>
+</ul>
+
+<h3>מידע אישי</h3>
+<ul>
+  <li>מה שה־API מחזיר ושולח הוא מידע אישי: שם, טלפון, אימייל, גיל, מגדר ומידע על תשלומים. חלים עליו דיני הגנת הפרטיות (בישראל חוק הגנת הפרטיות ותקנותיו, ואם יש משתתפים מהאיחוד האירופי גם ה־GDPR).</li>
+  <li>שמרו רק מה שצריך, לא יותר מהזמן שצריך, והגנו על מסד הנתונים שלכם. אל תכתבו גוף הודעת Webhook מלא ליומני שרת. מחקו מידע כשמשתתף מבקש.</li>
+</ul>
+
+<h3>מה המערכת מגינה עליכם ממנו, ומה לא</h3>
+<ul>
+  <li><b>מגינה:</b> מפתחות נשמרים רק כגיבוב. מפתח ציבורי מוגבל לשלוש פעולות. יש הגבלות קצב ותקרות מיילים. הרשמה ציבורית לא משנה משתתף קיים. התשובה של "שילמתי" אחידה ולכן לא חושפת מי רשום או מי שילם. חתימה על כל Webhook.</li>
+  <li><b>לא מגינה:</b> המערכת לא מוודאת שמי שמקליד טלפון הוא הבעלים שלו, גם באזור האישי (חשבון Google מתקשר למשתתף לפי הטלפון שהוקלד, והמנהלים מקבלים על כך מייל ויכולים לנתק או לחסום). ספאם בטופס אפשר להאט ולא למנוע לגמרי: אם יש אצלכם ספאם, הוסיפו CAPTCHA לטופס. הודעת Webhook לא מוכיחה כלום בלי אימות החתימה.</li>
+</ul>
+
+<h2 id="troubleshooting">פתרון תקלות</h2>
+
+<h3>בקונסול של הדפדפן יש שגיאת CORS, ואין תשובת JSON</h3>
+<p>זה הסימן של אחת משתי שגיאות שבכוונה לא נושאות כותרות CORS, כדי שדף לא יוכל להוציא מהן שום דבר. בלשונית Network תראו על הבקשה קוד 403. בודקים:</p>
+<ul>
+  <li><b><code>origin_not_allowed</code></b>: האתר ששלח את הבקשה לא ברשימת האתרים של המפתח הציבורי. מוסיפים אותו בדף החיבורים בדיוק כפי שהוא מופיע בשורת הכתובת, למשל <code>https://studio.example</code>, עם <code>www</code> אם צריך, בלי נתיב ובלי <code>/</code> בסוף. <code>http://localhost:3000</code> הוא אתר נפרד ונכתב בנפרד.</li>
+  <li><b><code>secret_key_in_browser</code></b>: בבקשה מדפדפן נשלח מפתח סודי (<code>rk_sec_</code>). מעבירים את הקריאה לשרת שלכם, או משתמשים במפתח ציבורי אם הפעולה מותרת לו.</li>
+</ul>
+<p>כדי לראות את השגיאה עצמה, אפשר לשחזר את הבקשה עם curl, שיכול לקרוא את הגוף גם כשהדפדפן חוסם אותו:</p>
+<figure class="code"><figcaption>curl</figcaption><pre><code>curl -i "<span data-api-base>https://floa-lead.floa-il.workers.dev</span>/roster/v1/meetings" \
+  -H "Authorization: Bearer $ROSTER_KEY" \
+  -H "Origin: https://studio.example"</code></pre></figure>
+
+<h3><code>401 invalid_key</code></h3>
+<p>המפתח חסר, נכתב לא נכון, בוטל, או נשלח בכותרת לא נכונה. הצורה הנכונה היא <code>Authorization: Bearer rk_pub_...</code> (רווח אחד אחרי <code>Bearer</code>) או <code>X-Roster-Key: rk_pub_...</code>. כדאי לבדוק בדף החיבורים שהמפתח לא בוטל.</p>
+
+<h3><code>403 wrong_key_kind</code></h3>
+<p>סוג המפתח לא מתאים לנקודה: מפתח ציבורי על נקודה של מפתח סודי, או מפתח סודי על <code>/payments/click</code>. הטבלה בפרק <a href="#keys">מפתחות והרשאות</a> אומרת מה מותר לכל סוג.</p>
+
+<h3><code>400 bad_request</code> או <code>405</code></h3>
+<ul>
+  <li>בקשת <code>POST</code> בלי <code>Content-Type: application/json</code>.</li>
+  <li>גוף שאינו JSON תקין, אינו UTF-8, אינו אובייקט (למשל מערך), או גדול מ־16KB.</li>
+  <li><code>405</code>: שיטה לא נכונה לנתיב, למשל <code>GET</code> על <code>/signup</code>. הכותרת <code>Allow</code> בתשובה מונה את השיטות שמותרות.</li>
+</ul>
+
+<h3><code>404 not_found</code></h3>
+<p>נתיב שגוי, מזהה בנתיב שאינו UUID, או משתתף או מפגש שלא שייכים לעסק של המפתח.</p>
+
+<h3><code>429 rate_limited</code></h3>
+<p>שלחתם יותר מדי בקשות. מחכים את מספר השניות שבכותרת <code>Retry-After</code>, שגם דפדפן יכול לקרוא (<code>res.headers.get("Retry-After")</code>), ומנסים שוב. ראו את הטבלה בפרק <a href="#limits">מגבלות</a>. בהרשמה זה יכול לקרות גם כשהעסק קיבל הרבה משתתפים חדשים בשעה האחרונה (עד 120), ולא רק בגללכם.</p>
+
+<h3>לחצתי "שילמתי" וקיבלתי <code>ok</code>, אבל אין דיווח אצל המנהל</h3>
+<p>זה צפוי כשאחד התנאים לא התקיים: התשובה זהה תמיד, בכוונה. בדקו שהטוקן הונפק בהרשמה <b>לאותו מפגש</b> שנשלח ב־<code>meeting_id</code>, שהמשתתף רשום אליו, שהמפגש לא חינם ולא עבר, ושהמשתתף עוד לא שילם ולא דיווח. אפשר לראות את המצב האמיתי עם מפתח סודי: <code>GET /participants?phone=...</code>.</p>
+
+<h3>ה־Webhook לא מגיע</h3>
+<ol class="steps">
+  <li>בדף החיבורים: הכתובת נשמרה, האירוע מסומן ברשימת האירועים, ושליחת בדיקה מופיעה ביומן. אם הכתובת לא נשמרת, היא לא עמדה בכללים של <a href="#webhooks">הכתובת</a>.</li>
+  <li>היומן מראה לכל ניסיון את קוד ה־HTTP או את השגיאה. שרת שלא ענה תוך 10 שניות נחשב ככשלון.</li>
+  <li>הפניה נחשבת כישלון. אם הכתובת מפנתת (למשל מ־http ל־https, או מוסיפה <code>/</code> בסוף), שמרו את הכתובת הסופית.</li>
+  <li>הקפידו להחזיר קוד 2xx. כל קוד אחר, וגם 3xx, הוא כישלון והאירוע ישלח שוב.</li>
+</ol>
+
+<h3>החתימה לא מתאימה</h3>
+<ul>
+  <li>מחשבים את החתימה על <b>הגוף הגולמי</b>, לפני <code>JSON.parse</code>. בדוגמת Express: <code>express.raw</code> ולא <code>express.json</code>.</li>
+  <li>משתמשים בסוד הנוכחי. אחרי יצירת סוד חדש הישן מפסיק לעבוד.</li>
+  <li>השעון בשרת שלכם מדויק: הודעה שה־<code>t</code> שלה רחוק מעל 5 דקות נדחית.</li>
+  <li>הגוף נקרא כ־UTF-8, בלי המרת קידוד באמצע.</li>
+</ul>
+
+<h2 id="changelog">יומן שינויים</h2>
+<ul class="cl">
+  <li><time datetime="2026-11-05">5.11.2026</time><b>גרסה 1.1, הידוק אבטחה.</b> לחיצת "שילמתי" מחזירה תמיד <code>{ "status": "ok" }</code> והטוקן קשור למפגש שהונפק עבורו. הרשמה לא משנה יותר פרטים של משתתף קיים. תקרת הרשמות חדשות לעסק בשעה, מגבלת קריאות לפי כתובת IP, ומגבלת ניסיונות עם מפתח לא מוכר. תקרות מיילים גם למנהלים, ושתי תבניות חדשות למנהלים (<code>admin_account_linked</code>, <code>admin_phone_conflict</code>). כתובת Webhook: פורט 443 בלבד, ושירותי nip.io ודומיהם לא מתאימים. טלפונים מוחזרים בצורה מנורמלת (<code>+972...</code>). שם השולח, כתובת המענה ורשימת ההתראות בידי בעל המערכת בלבד.</li>
+  <li><time datetime="2026-11-04">4.11.2026</time><b>גרסה 1.</b> הגרסה הראשונה: מפגשים, הרשמה, "שילמתי", משתתפים, הרשמות, תשלומים ותשלום מהיתרה. Webhooks חתומים וניסיונות חוזרים. מיילים לפי תבניות שאפשר להתאים. מפתחות ציבוריים וסודיים.</li>
+</ul>
+
+<p class="foot">שאלה או משהו שחסר? כתבו למי שמנהל את המערכת של העסק.</p>
+
+</main>
+</div>
+
+<script src="api.js?v=eb1d7be6"></script>
+</body>
+</html>
