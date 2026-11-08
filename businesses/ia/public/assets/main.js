@@ -47,14 +47,16 @@
     window.scrollTo({ top: y, behavior: calm ? "auto" : "smooth" });
   });
 
+  /* הכפתור הצף של וואטסאפ מופיע אחרי חצי מסך ראשון של גלילה, ונשאר */
   var fl = document.getElementById("float");
-  var targets = [document.querySelector(".hero .cta-row"), document.getElementById("join"), document.querySelector(".sec--final")].filter(Boolean);
-  if (fl && targets.length && "IntersectionObserver" in window) {
-    var seen = new Set();
-    var io2 = new IntersectionObserver(function (es) {
-      es.forEach(function (e) { if (e.isIntersecting) seen.add(e.target); else seen.delete(e.target); });
-      fl.classList.toggle("is-hidden", seen.size > 0);
-    }, { threshold: 0.35 });
-    targets.forEach(function (t) { io2.observe(t); });
+  if (fl) {
+    var shown = false;
+    var check = function () {
+      var on = window.scrollY > window.innerHeight * 0.5;
+      if (on !== shown) { shown = on; fl.classList.toggle("is-hidden", !on); }
+    };
+    window.addEventListener("scroll", check, { passive: true });
+    window.addEventListener("resize", check);
+    check();
   }
 })();

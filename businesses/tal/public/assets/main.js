@@ -10,11 +10,17 @@ document.addEventListener("click", function (ev) {
   window.scrollTo({ top: y, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
 });
 
-/* הכפתור הצף נעלם כשסקשן הפנייה כבר על המסך */
+/* הכפתור הצף מופיע אחרי חצי מסך ראשון של גלילה, ונעלם כשסקשן הפנייה כבר על המסך */
 (function () {
   var f = document.getElementById("float"), c = document.getElementById("contact");
-  if (!f || !c || !("IntersectionObserver" in window)) return;
-  new IntersectionObserver(function (es) {
-    f.classList.toggle("is-hidden", es[0].isIntersecting);
-  }, { threshold: 0.35 }).observe(c);
+  if (!f) return;
+  var past = false, atContact = false;
+  var apply = function () { f.classList.toggle("is-hidden", !past || atContact); };
+  var onScroll = function () { past = window.scrollY > window.innerHeight * 0.5; apply(); };
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll);
+  if (c && "IntersectionObserver" in window) {
+    new IntersectionObserver(function (es) { atContact = es[0].isIntersecting; apply(); }, { threshold: 0.35 }).observe(c);
+  }
+  onScroll();
 })();

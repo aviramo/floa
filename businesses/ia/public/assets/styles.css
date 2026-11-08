@@ -233,6 +233,7 @@ svg { display: block; }
 }
 
 /* כפתור הצטרפות צף למטה */
-.cta-float { position: fixed; z-index: 30; inset-inline: 0; inset-block-end: max(18px, env(safe-area-inset-bottom)); margin-inline: auto; width: max-content; display: inline-flex; align-items: center; min-height: 54px; padding: 12px 34px; border-radius: 999px; background: var(--leaf); color: #fff; font: 700 1.1rem/1.2 var(--font); text-decoration: none; box-shadow: 0 16px 34px -12px rgba(23, 58, 42, .6), 0 0 0 3px rgba(255, 255, 255, .85); transition: opacity .3s ease, transform .3s var(--ease), background .2s ease; }
-.cta-float:hover { background: var(--coral); }
+.cta-float { position: fixed; z-index: 30; inset-inline: 0; inset-block-end: max(18px, env(safe-area-inset-bottom)); margin-inline: auto; width: max-content; display: inline-flex; align-items: center; gap: 10px; min-height: 54px; padding: 12px 34px; border-radius: 999px; background: var(--leaf); color: #fff; font: 700 1.1rem/1.2 var(--font); text-decoration: none; box-shadow: 0 16px 34px -12px rgba(23, 58, 42, .6), 0 0 0 3px rgba(255, 255, 255, .85); transition: opacity .3s ease, transform .3s var(--ease), background .2s ease; }
+.cta-float .wa { width: 24px; height: 24px; fill: currentColor; flex: none; }
+.cta-float:hover { background: var(--leaf-2); }
 .cta-float.is-hidden { opacity: 0; transform: translateY(24px); pointer-events: none; }
