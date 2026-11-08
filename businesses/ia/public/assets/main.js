@@ -43,7 +43,18 @@
     var t = id === "top" ? document.body : document.getElementById(id);
     if (!t) return;
     ev.preventDefault();
-    var y = id === "top" ? 0 : t.getBoundingClientRect().top + window.scrollY - 84;
+    var y = id === "top" ? 0 : t.getBoundingClientRect().top + window.scrollY - 24;
     window.scrollTo({ top: y, behavior: calm ? "auto" : "smooth" });
   });
+
+  var fl = document.getElementById("float");
+  var targets = [document.querySelector(".hero .cta-row"), document.getElementById("join"), document.querySelector(".sec--final")].filter(Boolean);
+  if (fl && targets.length && "IntersectionObserver" in window) {
+    var seen = new Set();
+    var io2 = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) seen.add(e.target); else seen.delete(e.target); });
+      fl.classList.toggle("is-hidden", seen.size > 0);
+    }, { threshold: 0.35 });
+    targets.forEach(function (t) { io2.observe(t); });
+  }
 })();

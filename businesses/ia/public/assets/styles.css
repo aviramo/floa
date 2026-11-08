@@ -35,14 +35,8 @@ svg { display: block; }
 .center { text-align: center; }
 .lead { font-size: 1.3rem; line-height: 1.65; }
 
-/* סרגל עליון */
-.top { position: fixed; inset: 0 0 auto 0; z-index: 30; display: flex; align-items: center; justify-content: space-between; padding: 10px max(20px, calc((100vw - 1120px) / 2)); background: rgba(242, 248, 236, .72); backdrop-filter: blur(14px) saturate(1.4); -webkit-backdrop-filter: blur(14px) saturate(1.4); border-bottom: 1px solid rgba(23, 58, 42, .1); }
-.top-brand { font-family: var(--display); font-size: 1.5rem; line-height: 1; color: var(--leaf); text-decoration: none; }
-.top-cta { padding: 10px 22px; min-height: 44px; display: inline-flex; align-items: center; border-radius: 999px; background: var(--leaf); color: #fff; font-weight: 700; font-size: .95rem; text-decoration: none; transition: background .2s ease; }
-.top-cta:hover { background: var(--coral); }
-
 /* ============ פתיחה: שמיים, שמש, גבעות ============ */
-.hero { position: relative; overflow: hidden; isolation: isolate; padding: 96px 0 0; min-height: 100svh; display: flex; flex-direction: column; background: linear-gradient(180deg, var(--sky) 0%, var(--sky-2) 52%, var(--horizon) 88%); }
+.hero { position: relative; overflow: hidden; isolation: isolate; padding: 40px 0 0; min-height: 100svh; display: flex; flex-direction: column; background: linear-gradient(180deg, var(--sky) 0%, var(--sky-2) 52%, var(--horizon) 88%); }
 .sky { position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
 .cloud { position: absolute; inset-inline-start: 0; fill: #fff; opacity: .85; animation: drift var(--t, 90s) linear var(--w, 0s) infinite; }
 .bird { position: absolute; inset-inline-start: 0; width: var(--s, 34px); color: var(--leaf); animation: fly var(--t, 28s) linear var(--w, 0s) infinite; }
@@ -180,7 +174,7 @@ svg { display: block; }
 .cta-row--center { justify-content: center; }
 .sec--final .wrap { z-index: 3; }
 
-.foot { padding: 24px 20px; text-align: center; background: #0E1F15; color: #D3DCC8; font-size: .95rem; }
+.foot { padding: 24px 20px 96px; text-align: center; background: #0E1F15; color: #D3DCC8; font-size: .95rem; }
 .foot p { margin: 0; }
 
 /* כניסה בגלילה */
@@ -212,7 +206,7 @@ svg { display: block; }
 @keyframes twinkle { to { opacity: .95; } }
 
 @media (min-width: 900px) {
-  .hero { padding-top: 84px; }
+  .hero { padding-top: 28px; }
   .hero-inner { grid-template-columns: 1.05fr .95fr; gap: 40px; padding-bottom: 190px; }
   .hero-text { text-align: right; }
   .hero .facts, .hero .cta-row { justify-content: flex-start; }
@@ -225,7 +219,7 @@ svg { display: block; }
   .person:nth-child(2) { margin-top: 60px; }
 }
 @media (max-width: 899px) {
-  .hero { padding-top: 84px; }
+  .hero { padding-top: 28px; }
   .sun-stage { order: -1; width: min(300px, 70vw); margin-top: 24px; }
   .hero-inner { padding-bottom: 130px; }
   .sun-parallax .stamp { width: 86px; font-size: .8rem; }
@@ -237,3 +231,8 @@ svg { display: block; }
   .js .rv { opacity: 1; transform: none; }
   .petals, .pollen, .butterfly, .bird { display: none; }
 }
+
+/* כפתור הצטרפות צף למטה */
+.cta-float { position: fixed; z-index: 30; inset-inline: 0; inset-block-end: max(18px, env(safe-area-inset-bottom)); margin-inline: auto; width: max-content; display: inline-flex; align-items: center; min-height: 54px; padding: 12px 34px; border-radius: 999px; background: var(--leaf); color: #fff; font: 700 1.1rem/1.2 var(--font); text-decoration: none; box-shadow: 0 16px 34px -12px rgba(23, 58, 42, .6), 0 0 0 3px rgba(255, 255, 255, .85); transition: opacity .3s ease, transform .3s var(--ease), background .2s ease; }
+.cta-float:hover { background: var(--coral); }
+.cta-float.is-hidden { opacity: 0; transform: translateY(24px); pointer-events: none; }
