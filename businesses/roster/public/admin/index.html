@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=e69c1565" />
+  <link rel="stylesheet" href="admin.css?v=0e111d7c" />
 </head>
 <body class="locked">
   <div class="gate" id="gate" hidden>
@@ -20,13 +20,12 @@
       כניסה עם גוגל
     </button>
     <div class="gerr" id="gErr" role="alert"></div>
-    <a class="glink" id="gBack" href="../" hidden>חזרה לבחירת עסק</a>
+    <a class="glink" id="gBack" href="/roster/" hidden>חזרה לבחירת עסק</a>
     <button type="button" class="glink" id="gOut" hidden>יציאה והחלפת חשבון</button>
   </div>
 
   <div class="wrap">
     <header class="top">
-      <div class="bizname" id="bizName"></div>
       <div class="title-row">
 
         <div class="msel">
@@ -39,13 +38,14 @@
         <div class="hicons">
           <button type="button" class="hicon" id="menuBtn" aria-label="תפריט" title="תפריט" aria-haspopup="menu" aria-expanded="false"><svg data-i="grid"></svg></button>
           <div class="hmenu" id="hMenu" role="menu" hidden>
+            <div class="hmtitle" id="bizName" role="presentation"></div>
             <button type="button" role="menuitem" class="hmi" id="statsBtn"><svg data-i="stats"></svg><span>סטטיסטיקות</span></button>
             <button type="button" role="menuitem" class="hmi" id="moneyBtn"><svg data-i="money"></svg><span>כספים</span></button>
             <button type="button" role="menuitem" class="hmi" id="srcMenuBtn"><svg data-i="enter"></svg><span>שיווק ממומן</span></button>
             <button type="button" role="menuitem" class="hmi" id="pmMenuBtn"><svg data-i="card"></svg><span>דרכי תשלום</span></button>
             <button type="button" role="menuitem" class="hmi" id="setBtn"><svg data-i="user"></svg><span>החשבון שלי</span></button>
-            <a role="menuitem" class="hmi" id="connectLink" href="../connect/"><svg data-i="plug"></svg><span>חיבורים</span></a>
-            <a role="menuitem" class="hmi" id="bizSwitch" href="../" hidden><svg data-i="swap"></svg><span>החלפת עסק</span></a>
+            <a role="menuitem" class="hmi" id="connectLink" href="/roster/connect/"><svg data-i="plug"></svg><span>חיבורים</span></a>
+            <a role="menuitem" class="hmi" id="bizSwitch" href="/roster/" hidden><svg data-i="swap"></svg><span>החלפת עסק</span></a>
             <button type="button" role="menuitem" class="hmi out" id="signOut"><svg data-i="logout"></svg><span>יציאה</span></button>
           </div>
         </div>
@@ -413,6 +413,6 @@
   <script src="/auth.js"></script>
   <script src="age.js?v=816fedce"></script>
   <script src="rt.js?v=9f0bd1e7"></script>
-  <script src="admin.js?v=2dd9bbc9"></script>
+  <script src="admin.js?v=87d7d4d3"></script>
 </body>
 </html>

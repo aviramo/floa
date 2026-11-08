@@ -8,9 +8,11 @@ import { leadPages, pages, siteMap } from "./pages/index.js";
    `out` היא התיקייה שאליה הוא נבנה, ולכן גם הכתובת: floa.co.il/tal/aum/.
    הוא לא בעל הדומיין, אז `root` הוא false ואין לו קבצים בשורש.
 
-   ההרשמה (הטופס שנפתח מ"אני רוצה לחוות": שם, מגדר, טלפון, גיל) לא עוברת דרך
-   ה-Worker אלא ישר לדאטהבייס של הדומיין (schema.sql), דרך הפונקציה aum_signup. לכן `leadPages` ריקה ו-LEAD_TO_AUM לא צריך
-   להתקיים: ה-Worker ידחה כל דבר שיטען שהוא בא מכאן.
+   ההרשמה והבאנר של הדף (public/assets/api.js) עוברים ל-API הציבורי של roster, והמשתתפים
+   מתנהלים שם, בעסק aum: floa.co.il/roster/aum.
+   הטבלאות הישנות (aum_*, ב-schema.sql) נשארות כגיבוי, ו-move-to-roster.sql הוא מה שהעביר
+   אותן. לכן `leadPages` ריקה ו-LEAD_TO_AUM לא צריך להתקיים: ה-Worker ידחה כל דבר
+   שיטען שהוא בא מכאן.
    ========================================================================== */
 export const business = {
   key: "aum",

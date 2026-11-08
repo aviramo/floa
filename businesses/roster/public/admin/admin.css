@@ -1622,9 +1622,8 @@ html.is-loading .hsearch { visibility: hidden; }
 .mlist .mrow .mdt .mn1, .mlist .mrow.hl .mdt .mn1, #pPager .mlist .mrow.hl .mdt .mn1 { font-size: inherit; line-height: inherit; font-weight: inherit; color: inherit; }   /* שם המפגש באותה טיפוגרפיה בדיוק של התאריך והשעה: גודל, משקל וצבע */   /* שם המפגש בשורה הראשונה, אחרי התאריך והשעה (7.11.26); בשורה השנייה העיר והמיקום */
 
 /* ===== roster ===== */
-.bizname { padding: 8px var(--gut) 0; margin-inline-start: 5px; font-size: 12px; font-weight: 700; line-height: 1.2; color: var(--text-2); }   /* שם העסק מעל שורת הכותרת */
-.bizname:empty { display: none; }
-html.is-loading .bizname { visibility: hidden; }
+.hmtitle { padding: 12px 12px 10px; margin-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 15.5px; font-weight: 700; line-height: 1.3; color: var(--text); overflow-wrap: anywhere; cursor: default; }   /* שם העסק ככותרת התפריט */
+.hmtitle:empty { display: none; }
 a.hmi { text-decoration: none; }   /* "החלפת עסק" הוא קישור, ולא כפתור */
 .gate .glink + .glink { margin-inline-start: 16px; }
 /* תגיות: סימון ההצגה (הוי) בצד הימני, בקו אחד עם תיבות הסימון של "הצגה" שמעליו */

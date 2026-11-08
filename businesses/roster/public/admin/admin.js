@@ -153,7 +153,7 @@
   function syncUrl() {
     if (!urlReady) return;
     const sp = new URLSearchParams();
-    sp.set('biz', BIZ.slug);   // העסק לעולם לא נעלם מהכתובת
+    // העסק הוא הכתובת עצמה (/roster/<מזהה>), לא פרמטר בה
     if (state.mtype) sp.set('mt', state.mtype);   // סוג המפגש שנבחר בתפריט המפגשים
     { const nm0 = nextMeetingOf(); if (state.filter) { if (!nm0 || nm0.id !== state.filter) sp.set('m', state.filter); } else if (!state.mtype && nm0) sp.set('m', 'all'); }   // כתובת בלי מפגש = המפגש הקרוב, ולכן הוא לא נכתב בכתובת; "כל המשתתפים" שנבחר במפורש הוא m=all
     if (state.pay) sp.set('pay', state.pay);
@@ -174,7 +174,7 @@
     if ($('#stDlg').open) { sp.set('st', '1'); if (stPg.cur) sp.set('stv', ST_IDS[stPg.cur]); }
     if ($('#finDlg').open) sp.set('fin', finV === 'log' ? 'log' : finV === 'settle' ? 'settle' : finV === 'form' ? (finEdit && finEdit.id ? 'edit-' + finEdit.type + '-' + finEdit.id : 'new-' + ((finEdit && finEdit.kind) || 'expense')) : '1');   // כל שלב בכספים: ראשי, יומן, התחשבנות, טופס חדש או עריכה
     const s = sp.toString();
-    try { history.replaceState(null, '', location.pathname + (s ? '?' + s : '')); } catch (e) {}
+    try { history.replaceState(null, '', '/roster/' + encodeURIComponent(BIZ.slug) + (s ? '?' + s : '')); } catch (e) {}   // הכתובת היפה; רענון עובר דרך ה-404 של הדומיין, שמחזיר לכאן עם ?biz=
   }
 
   /* ---------- כניסה והעסק ----------
@@ -247,7 +247,7 @@
     if (!row) { showGate('אין לך גישה לעסק הזה', true); return; }
     BIZ = { slug: row.slug, id: row.id, name: row.name || row.slug };
     document.title = 'ניהול משתתפים · ' + BIZ.name; $('#bizName').textContent = BIZ.name;
-    $('#connectLink').href = '../connect/?biz=' + encodeURIComponent(BIZ.slug);
+    $('#connectLink').href = '/roster/connect/?biz=' + encodeURIComponent(BIZ.slug);
     $('#bizSwitch').hidden = !(row.is_super || mine.length > 1);   // החלפת עסק: למי שיש לו יותר מעסק אחד (הבעלים תמיד)
     document.body.classList.remove('locked'); $('#gate').hidden = true;
     load();
@@ -4009,7 +4009,7 @@
   $('#list').addEventListener('click', listClick);
   $('#addBox').addEventListener('click', listClick);
 
-  $('#gLogin').addEventListener('click', () => AUTH.signIn());
+  $('#gLogin').addEventListener('click', () => AUTH.signIn(location.origin + '/roster/admin/'));   // Google חוזרת רק לכתובת שמורשית ב-Supabase; העסק נשמר ב-roster_deep ומחזיר את הכתובת היפה
   const signOut = () => { try { if (rtWs) rtWs.close(); } catch (e) {} Promise.all([dropImages(), AUTH.signOut()]).then(() => location.reload()); };
   $('#gOut').addEventListener('click', signOut);
   $('#signOut').addEventListener('click', signOut);

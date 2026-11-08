@@ -1,9 +1,8 @@
-/* טופס ההרשמה: נפתח מכל כפתור עם data-contact, כותב ל-aum_signup (businesses/aum/schema.sql).
+/* טופס ההרשמה: נפתח מכל כפתור עם data-contact, ונרשם דרך api.js ל-roster (העסק aum).
  * שם, מגדר, טלפון וגיל. אותו תהליך כמו הפופאפ של יוצאים להרפתקה: מגירה מלמעלה, ולידציה, הצלחה מקופלת. */
 (function () {
   "use strict";
 
-  var DB = window.SUPABASE;
   var PHONE = "972528497146";
   var ASK = "היי טל, ניסיתי להירשם לריטריט AUM דרך הדף ואשמח לעזרה";
 
@@ -94,15 +93,6 @@
     g.addEventListener("pointerup", end); g.addEventListener("pointercancel", end);
   })();
 
-  /* ----- דרך ההגעה: ?s=קוד בכתובת (p = מודעה בתשלום). נשמר למשך הביקור ונשלח עם ההרשמה ----- */
-  var SRC = (function () {
-    var v = new URLSearchParams(location.search).get("s");
-    v = v && /^[a-zA-Z0-9_-]{1,20}$/.test(v) ? v.toLowerCase() : null;
-    try { if (v) sessionStorage.setItem("aum_s", v); else v = sessionStorage.getItem("aum_s"); } catch (e) {}
-    return v && /^[a-z0-9_-]{1,20}$/.test(v) ? v : null;
-  })();
-  var PAID = SRC === "p";
-
   /* נרמול טלפון (E.164), אותה לוגיקה כמו aum_normalize_phone בדאטהבייס */
   function normPhone(raw) {
     var s = String(raw || "").trim();
@@ -148,13 +138,7 @@
   ageI.addEventListener("input", function () { setErr(ageI, q("ageErr"), ""); });
   genderI.addEventListener("change", function () { setErr(genderI, q("genderErr"), ""); });
 
-  function send(body) {
-    return fetch(DB.url + "/rest/v1/rpc/aum_signup", {
-      method: "POST",
-      headers: { apikey: DB.anonKey, authorization: "Bearer " + DB.anonKey, "content-type": "application/json" },
-      body: JSON.stringify(body),
-    });
-  }
+  function send(body) { return window.AUM_API.signup(body); }
 
   form.addEventListener("submit", function (e) {
     e.preventDefault();
@@ -171,10 +155,7 @@
 
     btn.disabled = true; btn.textContent = "שולחים...";
     var body = { p_first: first, p_last: last, p_phone: norm, p_age: age, p_gender: gender };
-    if (SRC) body.p_src = SRC;
-    send(body).then(function (res) {
-      return res.ok ? res.json() : null;
-    }).then(function (out) {
+    send(body).then(function (out) {
       /* כפילות: אותה הודעה, בלי לחשוף שהמספר כבר רשום */
       if (out === "created" || out === "exists") return showDone();
       if (out === "invalid_phone") setErr(phoneI, q("phoneErr"), "מספר לא תקין");
@@ -191,12 +172,8 @@
 
   /* ----- הריטריט הקרוב בראש הטופס, מאותה פונקציה של הבאנר. עד שיש תשובה הוא מוסתר ----- */
   var HE_DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
-  if (DB) {
-    fetch(DB.url + "/rest/v1/rpc/aum_next", {
-      method: "POST",
-      headers: { apikey: DB.anonKey, authorization: "Bearer " + DB.anonKey, "content-type": "application/json" },
-      body: "{}",
-    }).then(function (r) { return r.ok ? r.json() : null; }).then(function (ev) {
+  {
+    window.AUM_API.next().then(function (ev) {
       if (!ev) return;
       var d = new Date(ev.date + "T12:00:00");
       modal.querySelector("[data-meeting-when]").textContent = "יום " + HE_DAYS[d.getDay()] + " " + d.getDate() + "." + (d.getMonth() + 1) + " · " + ev.from.replace(/^0/, "") + " עד " + ev.to.replace(/^0/, "");

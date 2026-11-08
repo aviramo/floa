@@ -59,6 +59,13 @@ create table if not exists public.roster_businesses (
 );
 alter table public.roster_businesses enable row level security;
 
+-- The identifier is the address of the business (floa.co.il/roster/<slug>) and the owner may change it. These are the names of the
+-- folders under /roster/ and of its router, so a business that took one of them could never be reached.
+alter table public.roster_businesses drop constraint if exists roster_businesses_slug_reserved;
+alter table public.roster_businesses add constraint roster_businesses_slug_reserved
+  check (slug not in ('admin', 'connect', 'me', 'api', 'assets', 'new', 'index')) not valid;
+alter table public.roster_businesses validate constraint roster_businesses_slug_reserved;
+
 -- The Google accounts of a business. The email is stored lower case and trimmed,
 -- and compared to the signed-in account's email (also lower case).
 create table if not exists public.roster_business_users (

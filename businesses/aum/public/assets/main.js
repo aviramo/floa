@@ -1,17 +1,16 @@
 /* ==========================================================================
    AUM, הדף. שלושה דברים ואין יותר:
 
-     1. הבאנר: המפגש הקרוב נטען מהדאטהבייס (aum_next), והוא היחיד שקובע תאריך,
+     1. הבאנר: המפגש הקרוב נטען מ-roster (api.js), והוא היחיד שקובע תאריך,
         שעות, מקום ומחיר. ההרשמה היא הטופס שנפתח מ"אני רוצה לחוות"
-        (register.js, aum_signup), או וואטסאפ וטלפון של טל. המשתתפים
-        מתנהלים ב-/tal/aum/admin/.
+        (register.js, api.js), או וואטסאפ וטלפון של טל. המשתתפים
+        מתנהלים ב-/roster/aum.
      2. וואטסאפ: האפליקציה ישר בטלפון, וואטסאפ ווב בדסקטופ.
      3. גלילה: לחיצה על עוגן גוללת בלי לכתוב #fragment לשורת הכתובת.
    ========================================================================== */
 (function () {
   "use strict";
 
-  var DB = window.SUPABASE;
   var PHONE = "972528497146";
   var ASK = "היי טל, ראיתי את הדף של ריטריט AUM ואשמח לשמוע פרטים";
 
@@ -20,24 +19,11 @@
   function $(sel) { return document.querySelector(sel); }
   function all(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); }
 
-  /* ----- הדאטהבייס: REST ישיר עם המפתח הציבורי, בלי SDK ----- */
-  function rpc(name, body) {
-    if (!DB) return Promise.reject(new Error("no db"));
-    return fetch(DB.url + "/rest/v1/rpc/" + name, {
-      method: "POST",
-      headers: { apikey: DB.anonKey, authorization: "Bearer " + DB.anonKey, "content-type": "application/json" },
-      body: JSON.stringify(body || {}),
-    }).then(function (r) {
-      if (!r.ok) throw new Error(name + " " + r.status);
-      return r.json();
-    });
-  }
-
   /* ----- 1. הבאנר ----- */
   /* כל מה שקשור למועד, תאריך, שעות, מקום, מחיר ומקומות, בא מהדאטהבייס ומשם
      בלבד. ב-HTML אין אף אחד מהם: מה שכתוב שם הוא נוסח ניטרלי שמוסתר עד שיש מה
      להציג, כדי שתאריך ישן לא יהבהב, לא ייכנס לתצוגה המקדימה בוואטסאפ ולא יישב
-     בגוגל. שינוי ריטריט ב-/tal/aum/admin/ משנה את הדף בלי פרסום. */
+     בגוגל. שינוי ריטריט ב-/roster/aum משנה את הדף בלי פרסום. */
   var MONTHS = ["בינואר", "בפברואר", "במרץ", "באפריל", "במאי", "ביוני", "ביולי", "באוגוסט", "בספטמבר", "באוקטובר", "בנובמבר", "בדצמבר"];
   var DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
   function hm(t) { return String(t).replace(/^0/, ""); }
@@ -133,7 +119,7 @@
     return " המחיר עולה ל-" + next.price + " ₪ החל מ-" + d.getUTCDate() + "." + (d.getUTCMonth() + 1) + ".";
   }
 
-  rpc("aum_next").then(paintBanner).catch(function () { paintUnknown("לפרטים על מועד הריטריט אפשר לכתוב לטל"); });
+  window.AUM_API.next().then(paintBanner).catch(function () { paintUnknown("לפרטים על מועד הריטריט אפשר לכתוב לטל"); });
 
   /* ----- 2. וואטסאפ ----- */
   var phoneDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);

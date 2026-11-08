@@ -28,6 +28,8 @@
   var TITLE = "ניהול משתתפים";
   var MANY = 7;                                   /* above this many businesses the list gets a search field */
   var SLUG_RE = /^[a-z][a-z0-9-]{1,39}$/;
+  /* names of the folders under /roster/: a business with one of them as its identifier would never be reached (the database refuses them too) */
+  var RESERVED = ["admin", "connect", "me", "api", "assets", "new", "index"];
   var MAIL_RE = /^[^\s@,;<>()]+@[^\s@,;<>()]+\.[^\s@,;<>()]{2,}$/;
 
   /* Every message the person can read. A raw error never reaches the screen. */
@@ -43,6 +45,7 @@
     slugStart: "המזהה צריך להתחיל באות לטינית.",
     slugChars: "במזהה אפשר רק אותיות לטיניות קטנות, ספרות ומקפים.",
     slugTaken: "כבר יש עסק עם המזהה הזה. כדאי לבחור מזהה אחר.",
+    slugReserved: "המזהה הזה שמור למערכת. כדאי לבחור מזהה אחר.",
     mailEmpty: "צריך לכתוב כתובת מייל של חשבון Google.",
     mailBad: "כתובת המייל לא נראית תקינה.",
     mailTaken: "החשבון הזה כבר מחובר לעסק.",
@@ -360,7 +363,7 @@
       menuId = id;
       openMenu(t,
         '<a class="mi" role="menuitem" href="admin/?biz=' + esc(encodeURIComponent(b.slug)) + '">' + icon("go") + "<span>פתיחה</span></a>" +
-        '<button type="button" class="mi" role="menuitem" data-act="rename">' + icon("edit") + "<span>שינוי שם</span></button>" +
+        '<button type="button" class="mi" role="menuitem" data-act="rename">' + icon("edit") + "<span>עריכה</span></button>" +
         '<button type="button" class="mi" role="menuitem" data-act="accounts">' + icon("users") + "<span>ניהול חשבונות</span></button>" +
         '<button type="button" class="mi danger" role="menuitem" data-act="delete">' + icon("trash") + "<span>מחיקה</span></button>");
     }
@@ -382,12 +385,13 @@
     if (name.length > 80) return T.nameLong;
     return "";
   }
-  function checkSlug(slug) {
+  function checkSlug(slug, ownId) {
     if (!slug) return T.slugEmpty;
     if (slug.length < 2 || slug.length > 40) return T.slugLen;
     if (!/^[a-z]/.test(slug)) return /^[a-z0-9-]+$/.test(slug) ? T.slugStart : T.slugChars;
     if (!SLUG_RE.test(slug)) return T.slugChars;
-    for (var i = 0; i < S.biz.length; i++) if (S.biz[i].slug === slug) return T.slugTaken;
+    if (RESERVED.indexOf(slug) > -1) return T.slugReserved;
+    for (var i = 0; i < S.biz.length; i++) if (S.biz[i].slug === slug && S.biz[i].id !== ownId) return T.slugTaken;
     return "";
   }
 
@@ -397,13 +401,14 @@
     var edit = !!b;
     ctx = { kind: "biz", id: id, busy: false, touched: false };
     afterClose = edit ? back(id, "menu") : null;
-    openDialog("form", edit ? "שינוי שם" : "עסק חדש",
+    openDialog("form", edit ? "עריכת עסק" : "עסק חדש",
       '<form id="bForm" novalidate>' +
       '<label class="field"><span>שם העסק</span><input id="bName" maxlength="80" autocomplete="off" autofocus value="' + esc(b ? b.name : "") + '"></label>' +
       (edit
-        ? '<div class="field"><span>מזהה</span><div class="static"><bdi dir="ltr">' + esc(b.slug) + '</bdi></div></div><p class="hint">אי אפשר לשנות את המזהה אחרי שהעסק נוצר.</p>'
+        ? '<label class="field"><span>מזהה באותיות לטיניות</span><input id="bSlug" class="ltr" dir="ltr" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" value="' + esc(b.slug) + '"></label>' +
+          '<p class="hint">אפשר לשנות. המזהה הוא הכתובת של דף הניהול: floa.co.il/roster/<bdi dir="ltr">' + esc(b.slug) + '</bdi>. אחרי שינוי הכתובת הישנה והקישורים שנוצרו איתה (חיבורים, אזור אישי שמוטמע באתר של העסק, קישורים במיילים שכבר נשלחו) יפסיקו לעבוד.</p>'
         : '<label class="field"><span>מזהה באותיות לטיניות</span><input id="bSlug" class="ltr" dir="ltr" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="dana-yoga"></label>' +
-          '<p class="hint">אותיות לטיניות קטנות, ספרות ומקפים, 2 עד 40 תווים, ומתחיל באות. המזהה מופיע בכתובת של דף הניהול של העסק, ואי אפשר לשנות אותו אחר כך.</p>') +
+          '<p class="hint">אותיות לטיניות קטנות, ספרות ומקפים, 2 עד 40 תווים, ומתחיל באות. המזהה הוא הכתובת של דף הניהול של העסק: floa.co.il/roster/המזהה. אפשר לשנות אותו אחר כך, אבל אז הכתובת משתנה.</p>') +
       '<div class="ferr" id="bErr" role="alert"></div>' +
       '<button type="submit" class="btn block" id="bGo">' + (edit ? "שמירה" : "יצירת עסק") + "</button></form>");
 
@@ -417,7 +422,7 @@
     function ok() { $("#bErr").textContent = ""; name.removeAttribute("aria-invalid"); if (slug) slug.removeAttribute("aria-invalid"); }
     name.addEventListener("input", function () {
       ok();
-      if (slug && !ctx.touched) slug.value = slugFrom(name.value.trim());
+      if (slug && !edit && !ctx.touched) slug.value = slugFrom(name.value.trim());
     });
     if (slug) slug.addEventListener("input", function () {
       ok();
@@ -433,19 +438,22 @@
       var nm = clean(name.value), sg = slug ? lc(slug.value) : "";
       var msg = checkName(nm);
       if (msg) return bad(msg, "bName");
-      if (!edit) { msg = checkSlug(sg); if (msg) return bad(msg, "bSlug"); }
-      if (edit && nm === b.name) return dlg.close();
+      if (!edit || sg !== b.slug) { msg = checkSlug(sg, edit ? b.id : null); if (msg) return bad(msg, "bSlug"); }
+      if (edit && nm === b.name && sg === b.slug) return dlg.close();
       c.busy = true; $("#bGo").disabled = true; ok();
 
+      var patch = {};
+      if (edit) { if (nm !== b.name) patch.name = nm; if (sg !== b.slug) patch.slug = sg; }
       var req = edit
-        ? api("/rest/v1/roster_businesses?id=eq." + encodeURIComponent(b.id), { method: "PATCH", json: { name: nm }, prefer: "return=representation" })
+        ? api("/rest/v1/roster_businesses?id=eq." + encodeURIComponent(b.id), { method: "PATCH", json: patch, prefer: "return=representation" })
         : api("/rest/v1/roster_businesses", { method: "POST", json: { slug: sg, name: nm }, prefer: "return=representation" });
       req.then(function (res) {
         if (edit) {
           if (!Array.isArray(res) || !res.length) throw new Error("not saved");
-          b.name = nm;
+          var renamed = b.slug !== sg;
+          b.name = nm; b.slug = sg;
           renderList();
-          toast("השם עודכן");
+          toast(renamed ? "העסק עודכן. הכתובת החדשה: floa.co.il/roster/" + sg : "השם עודכן");
           if (ctx === c) dlg.close();
           return;
         }
@@ -467,7 +475,8 @@
         if (err && err.signedOut) return;
         if (ctx !== c) return;
         c.busy = false; $("#bGo").disabled = false;
-        if (!edit && err && err.status === 409) bad(T.slugTaken, "bSlug");
+        if (err && err.status === 409 && (!edit || sg !== b.slug)) bad(T.slugTaken, "bSlug");
+        else if (err && err.status === 400 && (!edit || sg !== b.slug)) bad(T.slugReserved, "bSlug");
         else bad(T.generic, "");
       });
     });
