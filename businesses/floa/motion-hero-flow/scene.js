@@ -130,7 +130,7 @@
       return d;
     };
     CHIPS.forEach((s, i) => {
-      const g = grp(cam, -330, -368);
+      const g = grp(cam, 400, -368);   // the name of the gate: on the start side (the right, in Hebrew), so the logo can stand in the middle
       const w = measure(s, { size: 40, font: F.RUBIK, weight: 700 }).w;
       L(g, s, 0, 0, 40, C.INK, 700);
       const sv = svgBox(g, -w / 2 - 14, 40 * 0.62, w + 28, 18);
@@ -152,7 +152,7 @@
       }
       return d;
     };
-    const lock = grp(cam, 330, -368), lockS = grp(lock, 0, 0);
+    const lock = grp(cam, 0, -368), lockS = grp(lock, 0, 0);
     lockS.style.transform = `scale(${1.5})`;
     // the logo is ONE special F (the icon's tile, with its two arms that are currents) and then LOA. The word's own F
     // is not drawn: with it the lockup reads FFLOA.
