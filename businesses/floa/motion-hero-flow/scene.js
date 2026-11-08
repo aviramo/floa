@@ -295,10 +295,10 @@
     const shapeAt = track(DOT, [
       [3.9, [36, 36, 18, -20, 0, 1, 1], 40, 1],                            // set while hidden: the size and colour of the drop
       [T.g[0] - 0.05, [700, 360, 40, -20, 0, 0, 1.14], 13, 0.84],          // gate 1: a chat
-      [T.g[1], [860, 500, 30, -20, 0, 0, 1.14], 13, 0.84],                 // gate 2: a landing page
-      [T.g[2], [340, 620, 60, -10, 0, 0, 0.98], 13, 0.84],                 // gate 3: an app
+      [T.g[1], [860, 500, 30, -5, 0, 0, 1.04], 13, 0.84],                 // gate 2: a landing page
+      [T.g[2], [340, 620, 60, -5, 0, 0, 0.9], 13, 0.84],                 // gate 3: an app
       [T.g[3], [1000, 260, 40, -20, 0, 0, 1.14], 13, 0.84],                // gate 4: an automation
-      [T.g[4], [820, 500, 40, -20, 0, 0, 1.14], 13, 0.84],                 // gate 5: the agent, then the panel
+      [T.g[4], [820, 500, 40, -5, 0, 0, 1.04], 13, 0.84],                 // gate 5: the agent, then the panel
       [T.close, DOT, 14, 0.84],                                            // the shape thins back to nothing; the mark has not moved
     ]);
     const shCol = (ink, teal) => {
@@ -384,7 +384,7 @@
     const chip = grp(cam, 0, 0);
     R(chip, 0, 0, 250, 76, 28, C.WHITE, Object.assign({ border: `2px solid ${C.LINE}`, boxSizing: 'border-box' }, SOFT));
     R(chip, -4, -9, 170, 14, 7, C.INK2, { opacity: 0.55 }); R(chip, 26, 14, 110, 12, 6, C.LINE);   // the words arrive in the form, not on the way
-    const chipAt = track([270, 300], [[7.98, [-215 * 1.14, 10 * 1.14 - 20], 11, 0.9], [8.6, [270, 300], 30, 1]]);
+    const chipAt = track([270, 300], [[7.98, [-215 * 1.04, 10 * 1.04 - 5], 11, 0.9], [8.6, [270, 300], 30, 1]]);
     ups.push(t => { const [x, y] = chipAt(t); tf(chip, { x, y, s: lerp(0.5, 1, S(t - 7.95, 16, 0.8)), o: win(t, 7.95, 8.4, 30, 40) }); });
 
     // --- gate 3: an app
@@ -492,7 +492,7 @@
     ups.push(t => { put(gPanel, win(t, 15.3, 16.82)); prows.forEach(({ g, t0 }) => tf(g, appear(t, t0, 18))); });   // the rows are gone before the card starts to shrink
 
     // ===== the cursor: it does what a person does, and nothing else ==========================
-    const BTN = [-215 * 1.14, 92 * 1.14 - 20], TOGGLE = [-85 * 0.98, 175 * 0.98 - 10], TAB2 = [0, 262 * 0.98 - 10], APPROVE = [-170 * 1.14, 165 * 1.14 - 20];
+    const BTN = [-215 * 1.04, 92 * 1.04 - 5], TOGGLE = [-85 * 0.9, 175 * 0.9 - 5], TAB2 = [0, 262 * 0.9 - 5], APPROVE = [-170 * 1.04, 165 * 1.04 - 5];
     const cur = cursor(cam, 54, C.INK, C.WHITE);
     const curAt = track([900, 120], [
       [8.45, BTN, 9, 1], [9.3, [900, 120], 10, 1],
