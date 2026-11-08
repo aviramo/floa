@@ -54,7 +54,11 @@ svg { display: block; }
 .thread i:nth-child(1) { inset-inline-start: calc(16.66% - 9px); animation-delay: 1.1s; }
 .thread i:nth-child(2) { inset-inline-start: calc(50% - 9px); animation-delay: 1.5s; }
 .thread i:nth-child(3) { inset-inline-start: calc(83.33% - 9px); animation-delay: 1.9s; }
-.doors { display: grid; gap: 14px; margin-top: 0; }
+.doors { display: grid; gap: 22px; margin-top: 0; }
+.door-col { display: grid; gap: 12px; align-content: start; }
+.door-link { display: inline-flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 48px; padding: 8px 4px; border-bottom: 2px solid var(--ink); font-weight: 700; text-decoration: none; transition: color .2s ease, border-color .2s ease; }
+.door-link svg { width: 22px; height: 22px; flex: none; }
+.door-link:hover { color: var(--thread-text); border-color: var(--thread); }
 .door { position: relative; display: block; overflow: hidden; aspect-ratio: 4 / 3; border-radius: 6px; color: #fff; text-decoration: none; isolation: isolate; background: var(--ink-2); }
 .door img { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s var(--ease); }
 .door::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(10, 12, 14, .05) 30%, rgba(10, 12, 14, .82) 100%); }
@@ -136,8 +140,8 @@ svg { display: block; }
 @keyframes rise { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
 .hero h1, .hero-lead, .hero-bio, .facts, .portrait { animation: rise .9s var(--ease) both; }
 .hero-lead { animation-delay: .12s; } .hero-bio { animation-delay: .24s; } .facts { animation-delay: .36s; } .portrait { animation-delay: .1s; }
-.door { animation: rise .9s var(--ease) both; }
-.door:nth-child(1) { animation-delay: 1s; } .door:nth-child(2) { animation-delay: 1.3s; } .door:nth-child(3) { animation-delay: 1.6s; }
+.door-col { animation: rise .9s var(--ease) both; }
+.door-col:nth-child(1) { animation-delay: 1s; } .door-col:nth-child(2) { animation-delay: 1.3s; } .door-col:nth-child(3) { animation-delay: 1.6s; }
 
 @media (min-width: 900px) {
   .hero { padding: 80px 0 90px; }
