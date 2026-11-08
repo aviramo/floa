@@ -56,15 +56,33 @@
     if (e.key === KEY) session = read();
   });
 
+  /* A session in the address is accepted ONLY when this tab asked for one.
+     signIn() leaves a one-shot flag in sessionStorage just before it leaves for
+     Google, and this takes it back. Without that, a link that carries somebody
+     else's #access_token would silently sign the visitor in as that somebody,
+     and whatever they then typed would be saved under the wrong account (login
+     CSRF). If sessionStorage cannot be read at all there is nothing to check
+     against, and the old behaviour is kept rather than breaking sign-in. */
+  var ASKED = "floa.login";
+  function asked() {
+    try {
+      var yes = sessionStorage.getItem(ASKED) === "1";
+      sessionStorage.removeItem(ASKED);
+      return yes;
+    } catch (e) { return true; }
+  }
+
   function take() {
     if (location.hash.indexOf("#access_token") !== 0) return;
     var got = new URLSearchParams(location.hash.slice(1));
+    var wanted = asked();
+    history.replaceState(null, "", location.pathname + location.search);
+    if (!wanted) return;
     keep({
       access_token: got.get("access_token"),
       refresh_token: got.get("refresh_token") || "",
       expires_at: Date.now() + Number(got.get("expires_in") || 3600) * 1000,
     });
-    history.replaceState(null, "", location.pathname + location.search);
   }
   take();
 
@@ -138,6 +156,7 @@
   /* `back` is where Google sends the person afterwards. It must be one of the
      Redirect URLs in Supabase; by default it is the page they are on. */
   function signIn(back) {
+    try { sessionStorage.setItem(ASKED, "1"); } catch (e) { /* see take() */ }
     location.assign(S.url + "/auth/v1/authorize?provider=google&redirect_to=" +
       encodeURIComponent(back || location.origin + location.pathname));
   }
