@@ -53,6 +53,12 @@ export const BUSINESSES = {
       "דף נחיתה החל מ־500 ₪"
     ]
   },
+  "ia": {
+    "brand": "ביודנסה, ריקוד החיים",
+    "to": "LEAD_TO_IA",
+    "origins": [],
+    "pages": []
+  },
   "inbar": {
     "brand": "Inbar",
     "to": "LEAD_TO_INBAR",
