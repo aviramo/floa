@@ -157,7 +157,7 @@ svg { display: block; }
 .btn--tal:hover { background: var(--leaf-2); }
 .btn--talia { background: var(--coral); }
 .btn--sm { min-height: 46px; padding: 10px 22px; font-size: 1rem; }
-.btn--tal:not(.btn--sm)::after { content: ""; position: absolute; inset-block: 0; inset-inline-start: 0; width: 40%; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .35), transparent); transform: translateX(-160%) skewX(-18deg); animation: shine 5.5s ease-in-out 2s infinite; }
+.btn--tal:not(.btn--sm)::after { content: ""; position: absolute; inset-block: 0; left: 0; width: 40%; pointer-events: none; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .35), transparent); transform: translateX(-160%) skewX(-18deg); animation: shine 5.5s ease-in-out 2s infinite; }
 
 /* ============ סיום: שקיעה ============ */
 .sec--final { position: relative; color: #fff; padding: 110px 0 clamp(320px, 46vh, 420px); overflow: hidden; isolation: isolate; background: linear-gradient(180deg, #1B3A3A 0%, #4B3A5A 38%, #A8425B 66%, #F08A4B 100%); }
