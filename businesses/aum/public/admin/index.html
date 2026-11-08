@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=7ce9f12f" />
+  <link rel="stylesheet" href="admin.css?v=fd00c52e" />
   <link rel="stylesheet" href="admin-aum.css?v=cc8350e2" />
 </head>
 <body class="locked">
@@ -3116,10 +3116,10 @@
   /* תשלום בהמשך: המשתתף משוריין למפגש, והתשלום נשאר פתוח. תשלום שמשלים את הכרטיס גובר עליו */
   async function setPayLater(on) {
     const pid = sheet && sheet.id, mid = sheet && sheet.depMid, l = pid && mid && linkOf(pid, mid); if (!l) return;
-    const patch = { pay_later_at: on ? new Date().toISOString() : null }, prev = l.pay_later_at || null, h = pendBegin(pid, mid, patch);
+    const patch = on ? { pay_later_at: new Date().toISOString(), pay_reported_at: null, pay_reported_amount: null, pay_rejected_at: null } : { pay_later_at: null }, prev = Object.fromEntries(Object.keys(patch).map((k) => [k, l[k] ?? null])), h = pendBegin(pid, mid, patch);
     Object.assign(l, patch); paintDepLines(); render(); refreshSheetMeetings();
     try { await api(T.a + attQs(pid, mid), { method: 'PATCH', body: patch }); pendDone(h); toast(on ? 'סומן: תשלום בהמשך' : 'המפגש לתשלום'); }
-    catch (err) { pendFail(h); l.pay_later_at = prev; paintDepLines(); render(); refreshSheetMeetings(); fail(err); }
+    catch (err) { pendFail(h); Object.assign(l, prev); paintDepLines(); render(); refreshSheetMeetings(); fail(err); }
   }
   /* אחרי שהתשלום נרשם הפופאפ (כרטיס המשתתף) נסגר, והרשימה מתעדכנת (31.10.26) */
   /* פופאפ הקצאה (#allocDlg, 1.11.26): דיאלוג נפרד שעולה מלמטה מעל כרטיס המשתתף הפתוח, בלי לגעת בכרטיס (או לבד כשנפתח מעיגול ה-₪ ברשימה). מסך ההקצאה הקיים (הפאנל, הצ'יף "הקצאה" והשורה השנייה עם המועד) עובר אליו פיזית בפתיחה וחוזר לכרטיס בסגירה, כך שיש מימוש אחד של מסך ההקצאה. גם בדסקטופ רחב (כרטיס בצד הרשימה); אין יותר מסך הקצאה בתוך הכרטיס ואין לו כתובת */
@@ -3174,7 +3174,7 @@
   const closePayCard = () => { if (allocDlg.open) allocDlg.close(); };   // אחרי תשלום מלא פופאפ התשלום נסגר, וכרטיס המשתתף (אם פתוח) נשאר כמו שהוא
   const depSaveRun = async (dueAmt) => {   // dueAmt: נשאר לשלם על המפגש
     const f = pForm, pid = sheet && sheet.id; const amt = parseFloat(f.pay_dep.value); if (!pid) return;
-    const dueMeta = dueAmt > 0 ? { reason: 'partial_due:' + dueAmt } : null, setDue = (mid) => { const l = linkOf(pid, mid); if (l) l.pay_due_amount = dueMeta ? dueAmt : null; };
+    const dueMeta = dueAmt > 0 ? { reason: 'partial_due:' + dueAmt } : null, setDue = (mid) => { const l = linkOf(pid, mid); if (l) { l.pay_due_amount = dueMeta ? dueAmt : null; l.pay_reported_at = null; l.pay_reported_amount = null; l.pay_rejected_at = null; } };   // תשלום נרשם: הדיווח מתבטל (גם בשרת, בטריגר)
     if (!(amt > 0)) { f.pay_dep.focus(); return; }
     const payDone = () => { sheet.depTyped = false; if (dueAmt > 0) { f.pay_dep.value = dueAmt; depLinesRefresh(); } else { f.pay_dep.value = ''; render(); closePayCard(); } };   // עדיין נשאר לשלם: הפופאפ נשאר פתוח, עם השארית כסכום המוצע
     if (sheet.depCr && sheet.depMid) {   // תשלום מהיתרה: רשומת תשלום מהיתרה (from_credit) למפגש, בלי הפקדה חדשה
@@ -3197,7 +3197,7 @@
         toast('נרשם תשלום ₪' + nfm(amt)); payDone(); return;
       }
       await addPayRecord(pid, null, 'deposit', amt, payCm ? pr.id : null, Number.isFinite(cm) ? cm : null, false, method, mnote || null, pkgMeta); toast('התקבל תשלום ₪' + nfm(amt));
-      const mid = sheet.depMid;
+      const mid = sheet.depMid; if (mid) setDue(mid);
       if (mid) {   // תשלום מתוך מפגש: המפגש הזה נפרע (גם חלקית), וחבילה פורעת גם מפגשים קרובים משויכים
         await autoAllocate(pid, mid, true);
         if (pk >= 2) {
@@ -4222,28 +4222,34 @@
   const DEFCOL = { gen: 'neutral', upd: 'sky', tag: 'neutral', src: 'neutral', login: 'amber', age: 'green' };   // צבע ברירת מחדל לכל קטגוריה בתפריט הסינון
   const FK = { gen: 'gender', upd: 'updF', tag: 'pay', src: 'srcF', login: 'loginF', age: 'ageF' };   // סוג הסינון בפאנל ← השדה ב-state
   function moreSecs() {
-    const scope = state.participants.filter((p) => (state.filter ? linkOf(p.id, state.filter) : p.active !== false) && mtypeOk(p));
-    const cnt = (f) => scope.filter(f).length;
-    const chip = (kind, val, label, n, col) => { const on = payKeys(state[FK[kind]]).includes(val), pc = PALETTE[col || DEFCOL[kind]]; return '<button type="button" class="mc' + (n || on ? '' : ' zero') + '"' + (pc ? ' data-sc="1" style="--sbg:' + pc[0] + ';--sfg:' + pc[1] + '"' : '') + ' data-mk="' + kind + '" data-mv="' + esc(val) + '" aria-pressed="' + on + '">' + (kind === 'age' ? '<bdi dir="ltr">' + esc(label) + '</bdi>' : esc(label)) + ' <small>' + n + '</small></button>'; };
-    /* תשלום (בתוך מפגש) או יתרה (בכל המשתתפים ובסוג מפגש): קטגוריה ראשונה, בחירה אחת (לחיצה נוספת מבטלת); במקום הצ'יף שהיה בשורת הצ'יפים */
-    const pchip = (kind, val, label, n, col) => { const on = (kind === 'pay' ? state.paidF : state.bal) === val, pc = PALETTE[col]; return '<button type="button" class="mc' + (n || on ? '' : ' zero') + '" data-sc="1" style="--sbg:' + pc[0] + ';--sfg:' + pc[1] + '" data-mp="' + kind + '" data-mv="' + esc(val) + '" aria-pressed="' + on + '">' + esc(label) + ' <small>' + n + '</small></button>'; };
+    const scope = state.participants.filter((p) => (state.filter ? linkOf(p.id, state.filter) : p.active !== false) && mtypeOk(p));   // כל המשתתפים בתצוגה: מהם נקבע אילו ערכים קיימים בכל קטגוריה (הם לא נעלמים בגלל סינון)
+    /* הספירה בכל קטגוריה היא כמה מוצגים ברשימה אם בוחרים את הערך, לפי כל שאר הסינונים והחיפוש (בלי הסינון של אותה קטגוריה); המילוי הוא שיעור הערך מאותה קבוצה */
+    const poolW = (ks) => { const sv = ks.map((k) => [k, state[k]]); ks.forEach((k) => { state[k] = null; }); try { const q = state.q.trim().toLowerCase(), qd = digits(q); return state.participants.filter((p) => rowPass(p, q, qd)); } finally { sv.forEach((o) => { state[o[0]] = o[1]; }); } };
+    const mk = (ks) => { const pool = poolW(ks); return { pool, cnt: (f) => pool.filter(f).length, fill: (n) => '--fill:' + (pool.length ? Math.min(100, Math.round(n / pool.length * 100)) : 0) + '%' }; };
+    const chip = (kind, val, label, n, col, g) => { const on = payKeys(state[FK[kind]]).includes(val), pc = PALETTE[col || DEFCOL[kind]]; return '<button type="button" class="mc' + (n || on ? '' : ' zero') + '" style="' + g.fill(n) + (pc ? ';--sbg:' + pc[0] + ';--sfg:' + pc[1] : '') + '"' + (pc ? ' data-sc="1"' : '') + ' data-mk="' + kind + '" data-mv="' + esc(val) + '" aria-pressed="' + on + '">' + (kind === 'age' ? '<bdi dir="ltr">' + esc(label) + '</bdi>' : esc(label)) + ' <small>' + n + '</small></button>'; };
+    /* תשלום (בתוך מפגש) או יתרה (בכל המשתתפים ובסוג מפגש): בחירה אחת (לחיצה נוספת מבטלת) */
+    const pchip = (kind, val, label, n, col, g) => { const on = (kind === 'pay' ? state.paidF : state.bal) === val, pc = PALETTE[col]; return '<button type="button" class="mc' + (n || on ? '' : ' zero') + '" data-sc="1" style="' + g.fill(n) + ';--sbg:' + pc[0] + ';--sfg:' + pc[1] + '" data-mp="' + kind + '" data-mv="' + esc(val) + '" aria-pressed="' + on + '">' + esc(label) + ' <small>' + n + '</small></button>'; };
     let payCols = [];   // בתוך מפגש התשלום מפוצל לשתי קטגוריות: מצב התשלום, ודרך התשלום והסכום ששולם יחד
     if (state.filter) {
-      const lab = FLAB.pay, fc = FC.pay || {}, pmc = FC.payMeth || {}, am = FC.payAmts || {};
+      const lab = FLAB.pay, mid = state.filter, g = mk(['paidF']);
+      const amtOf = (p) => { const l = linkOf(p.id, mid); if (!l || noPayOf(p, l)) return 0; return Math.round(allocatedOf(p.id, mid)); };
+      const allAm = {}, allPm = {};   // כל הסכומים ודרכי התשלום שקיימים במפגש (הקטגוריה לא נעלמת בגלל סינון)
+      scope.forEach((p) => { const a = amtOf(p); if (a > 0) allAm[a] = 1; state.payMethods.forEach((pm) => { const l = linkOf(p.id, mid); if (l && !noPayOf(p, l) && paidVia(p.id, mid, pm.key)) allPm[pm.key] = 1; }); });
       payCols = [
-        { t: 'מצב תשלום', items: [['w', 'amber', lab[4]], ['0', 'red', lab[2]], ['l', 'sky', lab[5]], ['1', 'green', lab[1]], ['n', 'neutral', lab[3]]].map((o) => pchip('pay', o[0], o[2], fc[o[0]] || 0, o[1])) },   // דווח, לתשלום, תשלום בהמשך, שולם, לא לתשלום (אותו סדר כמו במיון)
-        { t: 'דרך תשלום וסכום', items: state.payMethods.filter((pm) => pmc[pm.key]).map((pm) => pchip('pay', 'm' + pm.key, pm.name, pmc[pm.key], 'green'))   // דרכי תשלום ששולם בהן במפגש
-          .concat(Object.keys(am).map(Number).sort((a, b) => b - a).map((a) => pchip('pay', 'a' + a, '₪' + nfm(a), am[a], 'green'))) },   // וסכומים ששולמו במפגש
-      ].filter((c) => c.items.length);   // קטגוריה בלי אפשרויות (עוד אין תשלומים בדרך או בסכום) לא מוצגת
+        { t: 'מצב תשלום', items: [['w', 'amber', lab[4]], ['0', 'red', lab[2]], ['l', 'sky', lab[5]], ['1', 'green', lab[1]], ['n', 'neutral', lab[3]]].map((o) => pchip('pay', o[0], o[2], g.cnt((p) => payF(p, o[0])), o[1], g)) },   // דווח, לתשלום, תשלום בהמשך, שולם, לא לתשלום (אותו סדר כמו במיון)
+        { t: 'דרך תשלום וסכום', items: state.payMethods.filter((pm) => allPm[pm.key]).map((pm) => pchip('pay', 'm' + pm.key, pm.name, g.cnt((p) => { const l = linkOf(p.id, mid); return !!l && !noPayOf(p, l) && paidVia(p.id, mid, pm.key); }), 'green', g))
+          .concat(Object.keys(allAm).map(Number).sort((a, b) => b - a).map((a) => pchip('pay', 'a' + a, '₪' + nfm(a), g.cnt((p) => amtOf(p) === a), 'green', g))) },
+      ];   // הקטגוריות מוצגות תמיד, גם כשאין בהן עדיין תשלומים
     } else if (state.showPay) {
-      const bl = FLAB.bal, fb = FC.bal || {};
-      payCols = [{ t: 'יתרה', items: [['1', 'amber', bl[1]], ['0', 'red', bl[2]]].map((o) => pchip('bal', o[0], o[2], fb[o[0]] || 0, o[1])) }];   // זכאי (יתרה לטובת המשתתף) וחייב
+      const bl = FLAB.bal, g = mk(['bal']);
+      payCols = [{ t: 'יתרה', items: [['1', 'amber', bl[1]], ['0', 'red', bl[2]]].map((o) => pchip('bal', o[0], o[2], g.cnt((p) => balMatch(p, o[0])), o[1], g)) }];   // זכאי (יתרה לטובת המשתתף) וחייב
     }
+    const gU = mk(['updF']), gS = mk(['srcF']), gA = mk(['ageF']), gL = mk(['loginF']);
     return [].concat(payCols, [   // עמודות הגריד: כותרת ותוויות
-      { t: 'עדכון אחרון', items: UPD_B.map((b) => chip('upd', b[0], b[1], cnt((p) => updWithin(p.id, b[2])))) },
-      { t: 'שיווק ממומן', items: [chip('src', '__none', 'ללא שיווק ממומן', cnt((p) => !channelAt(p, state.filter)))].concat(state.promoters.map((x) => chip('src', x.id, x.name, cnt((p) => (channelAt(p, state.filter) || {}).id === x.id), x.color || 'red'))) },
-      { t: 'גיל', items: AGE_B.map((b) => chip('age', b[0], b[1], cnt((p) => { const a = shownAge(p); return a != null && a >= b[2] && a <= b[3]; }))) },
-      { t: 'אזור אישי', items: [['yes', 'רשומים'], ['no', 'לא רשומים'], ['blocked', 'חסומים']].map((o) => chip('login', o[0], o[1], cnt((p) => loginOf(p) === o[0]))) },
+      { t: 'עדכון אחרון', items: UPD_B.map((b) => chip('upd', b[0], b[1], gU.cnt((p) => updWithin(p.id, b[2])), null, gU)) },
+      { t: 'שיווק ממומן', items: [chip('src', '__none', 'ללא שיווק ממומן', gS.cnt((p) => !channelAt(p, state.filter)), null, gS)].concat(state.promoters.map((x) => chip('src', x.id, x.name, gS.cnt((p) => (channelAt(p, state.filter) || {}).id === x.id), x.color || 'red', gS))) },
+      { t: 'גיל', items: AGE_B.map((b) => chip('age', b[0], b[1], gA.cnt((p) => { const a = shownAge(p); return a != null && a >= b[2] && a <= b[3]; }), null, gA)) },
+      { t: 'אזור אישי', items: [['yes', 'רשומים'], ['no', 'לא רשומים'], ['blocked', 'חסומים']].map((o) => chip('login', o[0], o[1], gL.cnt((p) => loginOf(p) === o[0]), null, gL)) },
     ]);
   }
   const curMeeting = () => meetOf(state.filter) || null;

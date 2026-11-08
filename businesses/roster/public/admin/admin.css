@@ -1627,3 +1627,14 @@ html.is-loading .hsearch { visibility: hidden; }
 html.is-loading .bizname { visibility: hidden; }
 a.hmi { text-decoration: none; }   /* "החלפת עסק" הוא קישור, ולא כפתור */
 .gate .glink + .glink { margin-inline-start: 16px; }
+/* תגיות: סימון ההצגה (הוי) בצד הימני, בקו אחד עם תיבות הסימון של "הצגה" שמעליו */
+.strow:has(.stshow) { grid-template-columns: 28px 28px var(--tag) minmax(0, 1fr) 28px; }
+.strow:has(.stshow) .stshow { grid-column: 1; }
+.strow:has(.stshow) .sthandle { grid-column: 2; }
+.strow:has(.stshow) .swcur { grid-column: 3; }
+.strow:has(.stshow) .stname { grid-column: 4; }
+.strow:has(.stshow) .stdel { grid-column: 5; }
+.strow:has(.stshow) > * { grid-row: 1; }
+/* תפריט הסינון: הרקע של כל תגית מתמלא בשיעור שלה מכלל המשתתפים בתצוגה (--fill), בגוון הכהה של הצבע שלה, מימין לשמאל */
+#viewMenu .mc, #viewMenu .mc[data-sc] { background: linear-gradient(to left, color-mix(in srgb, var(--sfg, var(--text)) 24%, var(--sbg, var(--surface-2))) var(--fill, 0%), var(--sbg, var(--surface-2)) var(--fill, 0%)); }
+#viewMenu .mc[aria-pressed="true"], #viewMenu .mc[data-sc][aria-pressed="true"] { background: var(--sfg, var(--text)); }
