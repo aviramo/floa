@@ -1421,4 +1421,86 @@ insert into public.aum_msg_templates (name, body, default_body, sort, system_key
 values ('אישור מקום', E'שלום {שם} 🙂\n{תשלום}\n\n{פרטי המפגש}\n\n{איך מגיעים}\n\nנתראה,\nטל', E'שלום {שם} 🙂\n{תשלום}\n\n{פרטי המפגש}\n\n{איך מגיעים}\n\nנתראה,\nטל', 0, 'confirm')
 on conflict (system_key) where system_key is not null do update set default_body = excluded.default_body;
 
+-- ==========================================================================
+-- כמה קודים לכל דרך הגעה (8.11.26, סנכרון מהרפתקה): כל שיווק ממומן יכול לקבל כמה קודים בקישור
+-- (?s=a, ?s=b ...). העמודה החדשה codes היא מערך. הקוד הישן code נשאר = הקוד הראשון ומתעדכן
+-- אוטומטית, כך שמי שקורא אותו ממשיך לעבוד. אותו קוד לא יכול להיות בשתי דרכי הגעה (נבדק בטריגר).
+-- וסדר ידני לדרכי ההגעה (עמודה sort, גרירה בדף הניהול), בהתחלה לפי השם. תוספתי ואידמפוטנטי.
+-- ==========================================================================
+alter table public.aum_promoters add column if not exists codes text[] not null default '{}';
+update public.aum_promoters set codes = array[code] where code is not null and cardinality(codes) = 0;
+
+create or replace function public.aum_promoter_codes_fn() returns trigger language plpgsql set search_path = public as $$
+begin
+  if tg_op = 'UPDATE' and new.codes is not distinct from old.codes and new.code is distinct from old.code then
+    -- עדכון ישן שכתב רק code: הוא הופך לקוד הראשון
+    new.codes := case when new.code is null then new.codes[2:] else array[new.code] || array_remove(new.codes, new.code) end;
+  end if;
+  new.codes := coalesce((select array_agg(c order by o) from (select c, min(o) o from unnest(new.codes) with ordinality u(c, o) where nullif(c, '') is not null group by c) z), '{}');
+  new.code := new.codes[1];
+  if exists (select 1 from public.aum_promoters p where p.id is distinct from new.id and p.codes && new.codes) then
+    raise exception 'promoter_code_taken';
+  end if;
+  return new;
+end $$;
+drop trigger if exists aum_promoter_codes on public.aum_promoters;
+create trigger aum_promoter_codes before insert or update of code, codes on public.aum_promoters for each row execute function public.aum_promoter_codes_fn();
+
+-- דרך ההגעה לפי כל אחד מהקודים שלה
+create or replace function public.aum_channel_of(p_pid uuid) returns uuid language sql stable set search_path = public as $$
+  select coalesce(
+    (select pr.id from public.aum_promoters pr where pr.id = p.promoter_id),
+    (select pr.id from public.aum_promoters pr where coalesce(p.source_code, case when p.source = 'site-ad' then 'p' end) = any(pr.codes) limit 1))
+  from public.aum_participants p where p.id = p_pid
+$$;
+create or replace function public.aum_att_source() returns trigger language plpgsql security definer set search_path = public as $$
+declare c text := nullif(current_setting('aum.src', true), '');
+begin
+  if new.source_promoter_id is not null then return new; end if;
+  if c is not null then select id into new.source_promoter_id from public.aum_promoters where c = any(codes) limit 1; end if;
+  if new.source_promoter_id is null and not exists (select 1 from public.aum_registrations where participant_id = new.participant_id) then
+    new.source_promoter_id := public.aum_channel_of(new.participant_id);
+  end if;
+  return new;
+end $$;
+
+-- מחיקת דרך הגעה עם העברה: כל הקודים של המקורית עוברים ליעד, והמשתתפים שנרשמו עם קוד שלה מקושרים אליו
+create or replace function public.aum_promoter_replace(p_from uuid, p_to uuid default null)
+returns text language plpgsql set search_path = public as $$
+declare f public.aum_promoters; t public.aum_promoters;
+begin
+  select * into f from public.aum_promoters where id = p_from;
+  if not found then return 'not_found'; end if;
+  if p_to is null then
+    if exists (select 1 from public.aum_participants where promoter_id = p_from or source_code = any(f.codes) or ('p' = any(f.codes) and source = 'site-ad' and source_code is null and promoter_id is null))
+      or exists (select 1 from public.aum_registrations where promoter_id = p_from or source_promoter_id = p_from)
+      or exists (select 1 from public.aum_payments where promoter_id = p_from)
+      or exists (select 1 from public.aum_promoter_payments where promoter_id = p_from) then
+      return 'has_links';
+    end if;
+  else
+    if p_to = p_from then return 'same'; end if;
+    select * into t from public.aum_promoters where id = p_to;
+    if not found then return 'no_target'; end if;
+    update public.aum_participants
+      set promoter_id = p_to
+      where promoter_id = p_from or source_code = any(f.codes) or ('p' = any(f.codes) and source = 'site-ad' and source_code is null and promoter_id is null);
+    update public.aum_registrations set promoter_id = p_to where promoter_id = p_from;
+    update public.aum_registrations set source_promoter_id = p_to where source_promoter_id = p_from;
+    update public.aum_payments set promoter_id = p_to where promoter_id = p_from;
+    update public.aum_promoter_payments set promoter_id = p_to where promoter_id = p_from;
+  end if;
+  delete from public.aum_promoters where id = p_from;
+  if p_to is not null and cardinality(f.codes) > 0 then
+    update public.aum_promoters set codes = codes || f.codes where id = p_to;   -- הקודים של המקורית ממשיכים להוביל ליעד
+  end if;
+  return 'ok';
+end $$;
+revoke all on function public.aum_promoter_replace(uuid, uuid) from public, anon;
+grant execute on function public.aum_promoter_replace(uuid, uuid) to authenticated;
+
+-- סדר ידני של דרכי ההגעה (גרירה, כמו תגיות): בהתחלה לפי השם, כמו שהוצגו עד עכשיו
+alter table public.aum_promoters add column if not exists sort int;
+update public.aum_promoters p set sort = r.rn from (select id, row_number() over (order by name) rn from public.aum_promoters) r where r.id = p.id and p.sort is null;
+
 notify pgrst, 'reload schema';

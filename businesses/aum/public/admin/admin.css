@@ -1709,3 +1709,34 @@ html.is-loading #fabBar { display: none; }
 .mdt .mn1 { flex: 1 1 auto; min-width: 0; margin: 0; padding: 0; }
 .mdt .mn1::before { content: "· "; }
 .mlist .mrow .mdt .mn1, .mlist .mrow.hl .mdt .mn1, #pPager .mlist .mrow.hl .mdt .mn1 { font-size: inherit; line-height: inherit; font-weight: inherit; color: inherit; }   /* שם המפגש באותה טיפוגרפיה בדיוק של התאריך והשעה: גודל, משקל וצבע */   /* שם המפגש בשורה הראשונה, אחרי התאריך והשעה (7.11.26); בשורה השנייה העיר והמיקום */
+/* כמה קודים בקישור: צ'יף לכל קוד (לחיצה מעתיקה את הקישור, × מסיר), ושדה "+ קוד" להוספה */
+.srccard .srcin.codes { flex-wrap: wrap; gap: 4px; height: auto; min-height: var(--fld); align-items: center; padding: 18px 0 2px; }
+.srccard .cchip { display: inline-flex; align-items: center; height: 24px; background: var(--surface-2); border-radius: var(--r); }
+.srccard .cchip .cc { padding: 0 4px 0 8px; font: 700 14px var(--font); color: var(--text); }
+.srccard .cchip .ccx { width: 20px; height: 24px; color: var(--text-2); font-size: 16px; line-height: 1; }
+.srccard .codeadd { flex: 0 0 44px; width: 44px; min-width: 0; height: 24px; font-size: 14px; text-align: center; }
+/* כרטיס שיווק ממומן: שורה ראשונה שם וצבע, שורה שנייה כל הקודים ברוחב מלא (8.11.26) */
+.srccard .srcgrid > .srcfld:first-child { grid-column: 1 / 3; order: -3; }
+.srccard .srcgrid > .srccolf { grid-column: 3; order: -2; }
+.srccard .srcgrid > .srccodes { grid-column: 1 / -1; order: -1; }
+/* שיווק ממומן: שורת תצוגה מקדימה ברשימה, ולחיצה פותחת את הכרטיס המלא (8.11.26) */
+.srcpv { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto 14px; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 8px 0; border-bottom: 1px solid var(--line); text-align: start; }
+.srcpv:hover { background: var(--surface-2); }
+.srcpv .pvdot { width: 14px; height: 14px; border-radius: 50%; }
+.srcpv .pvmain { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.srcpv .pvmain b { font: 700 16px var(--font); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.srcpv .pvmain small { font: 400 13px var(--font); color: var(--text-2); }
+.srcpv .pvcodes { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; margin-top: 4px; }   /* הקודים מתחת לשם, מיושרים לימין */
+.srcpv .pvcodes em { font: 700 13px var(--font); font-style: normal; background: var(--surface-2); border-radius: var(--r); padding: 2px 8px; color: var(--text); }
+.srcpv .pvcodes em.none { font-weight: 400; color: var(--text-2); background: transparent; padding: 0; }
+.srcpv .pvbal { font: 700 14px var(--font); white-space: nowrap; }
+.srcpv .pvbal.owe { color: var(--red); } .srcpv .pvbal.ok { color: var(--green); }
+.srcpv .ic { color: var(--text-2); }
+.srcpv .ic { transform: scaleX(-1); }   /* החץ פונה שמאלה, כמו בשאר המסכים */
+.srcpvrow { display: flex; align-items: center; gap: 4px; border-bottom: 1px solid var(--line); }
+.srcpvrow .srcpv { flex: 1 1 auto; min-width: 0; border-bottom: 0; }
+.srcpvrow.dragging { position: relative; z-index: 5; background: var(--bg); box-shadow: var(--pop); }
+.srcpvrow.dragging .sthandle { cursor: grabbing; }
+.srccard .srcin.codes { justify-content: flex-end; }   /* הקודים מיושרים לימין */
+.srccard .codeadd { text-align: right; direction: rtl; }
+.srccard .srcin.codes { padding-top: 26px; }   /* רווח סטנדרטי מעל הקודים */
