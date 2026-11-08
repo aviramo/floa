@@ -43,7 +43,7 @@
     var t = id === "top" ? document.body : document.getElementById(id);
     if (!t) return;
     ev.preventDefault();
-    var y = id === "top" ? 0 : t.getBoundingClientRect().top + window.scrollY - 56;
+    var y = id === "top" ? 0 : t.getBoundingClientRect().top + window.scrollY - 84;
     window.scrollTo({ top: y, behavior: calm ? "auto" : "smooth" });
   });
 })();
