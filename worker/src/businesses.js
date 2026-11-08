@@ -118,5 +118,11 @@ export const BUSINESSES = {
       "http://localhost:5173"
     ],
     "pages": []
+  },
+  "tal": {
+    "brand": "טל אמיתי-לביא",
+    "to": "LEAD_TO_TAL",
+    "origins": [],
+    "pages": []
   }
 };
