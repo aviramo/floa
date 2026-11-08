@@ -110,3 +110,5 @@ p { margin: 0 0 1rem; }
   .meet { grid-template-columns: 1fr 1fr; align-items: start; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .btn { transition: none; } }
+
+[hidden] { display: none !important; }   /* הכפתורים של טליה מוסתרים עד שיש מספר וואטסאפ */
