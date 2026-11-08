@@ -58,7 +58,11 @@ svg { display: block; }
 
 .hero-inner { position: relative; z-index: 3; flex: 1; display: grid; gap: 28px; align-items: center; padding-bottom: 150px; }
 .hero-text { text-align: center; position: relative; z-index: 3; }
-.eyebrow { font-weight: 800; font-size: 1.05rem; color: var(--rose); margin: 0 0 .5rem; }
+.eyebrow { display: inline-flex; align-items: center; gap: 10px; margin: 0 0 .9rem; padding: 7px 20px; border-radius: 999px; background: rgba(255, 255, 255, .72); backdrop-filter: blur(6px); font-family: var(--display); font-size: 1.35rem; line-height: 1.2; box-shadow: 0 10px 24px -16px rgba(23, 58, 42, .6); }
+.eyebrow b { font-weight: 400; color: var(--leaf-2); }
+.eyebrow span { color: var(--rose); font-size: 1.05rem; }
+.eyebrow svg { width: 20px; height: 20px; flex: none; fill: var(--grass); stroke: var(--leaf-2); stroke-width: 1.4; stroke-linejoin: round; stroke-linecap: round; }
+.eyebrow svg:last-child { transform: scaleX(-1); }
 .hero h1 { font-size: clamp(3.8rem, 16vw, 8rem); letter-spacing: -.01em; line-height: .96; color: var(--leaf); }
 .hero h1 span { display: block; }
 .hero h1 .h1-2 { margin-inline-start: .7em; color: var(--leaf-2); }
