@@ -135,7 +135,7 @@ svg { display: block; }
 /* המנחות */
 .sec--meet { background: #DCEFE6; }
 .meet { display: grid; gap: 56px; margin-top: 44px; }
-.person-photo { width: min(300px, 78%); aspect-ratio: 4 / 5; margin: 0 auto 22px; border-radius: 999px 999px 30px 30px; overflow: hidden; box-shadow: 0 30px 50px -28px rgba(23, 58, 42, .65), 0 0 0 10px rgba(255, 255, 255, .55); }
+.person-photo { width: min(420px, 100%); aspect-ratio: 1; margin: 0 auto 22px; border-radius: 22px; overflow: hidden; box-shadow: 0 24px 44px -26px rgba(23, 58, 42, .6); }
 .person-photo img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s var(--ease); }
 .person:hover .person-photo img { transform: scale(1.06); }
 .person h3 { font-size: 2.2rem; text-align: center; }
