@@ -6,6 +6,10 @@
 <title>הדף לא נמצא | FLOA</title>
 <meta name="robots" content="noindex">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#1B74B3">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Rubik:wght@700&display=swap">
 <script>
 /* The domain's 404 is also its router of last resort.
 
@@ -27,10 +31,26 @@
    404, which is the point: the old FLOA addresses were deleted on purpose and
    there are no redirects. */
 (function () {
-  var APPS = ["chords"];
+  var APPS = ["chords", "roster"];
   var path = location.pathname.replace(/^\/+/, "");
   var app = path.split("/")[0];
   if (APPS.indexOf(app) < 0) return;
+
+  /* /roster/<business> is the admin page of one business, and /roster/<business>/connect and /roster/<business>/me are its
+     other two pages. The business is the ADDRESS, not a parameter: the pages are real files that read it from ?biz=, and
+     the admin page puts the clean address back with replaceState. A business is not a file (the owner makes them
+     in the browser, the build never sees them), so every one of them lands here.
+     A name that is not a business identifier, or that is one of the folders of /roster/, stays a 404. */
+  if (app === "roster") {
+    var seg = path.split("/").slice(1).join("/").replace(/\/+$/, "").split("/");
+    var slug = (seg[0] || "").toLowerCase(), sub = (seg[1] || "").toLowerCase();
+    var PAGES = { "": "admin", connect: "connect", me: "me" };
+    var RESERVED = ["admin", "connect", "me", "api", "assets", "new", "index"];
+    if (!/^[a-z][a-z0-9-]{1,39}$/.test(slug) || RESERVED.indexOf(slug) > -1 || seg.length > 2 || !Object.prototype.hasOwnProperty.call(PAGES, sub)) return;
+    var qs = location.search.replace(/^\?/, "");
+    location.replace("/roster/" + PAGES[sub] + "/?biz=" + slug + (qs ? "&" + qs : "") + location.hash);
+    return;
+  }
   /* AND THE TAB IS THE APP'S FROM HERE. This document stays on the screen for
      as long as the next request takes, which on a phone is long enough to
      look at, and what it was showing for a song was the domain's mark over
@@ -89,21 +109,40 @@
 })();
 </script>
 <style>
+  /* The 404 wears the site's water (businesses/floa/theme.css): light at first light, the icon on it, and a button that is lit water.
+     It is a standalone file, so the few values it needs are written here. */
   *{box-sizing:border-box}
-  body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;
-       background:#E9F0EE;color:#0F2A33;
+  body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;overflow:hidden;
+       background:
+         radial-gradient(42vmax 34vmax at 12% 8%, rgba(255,255,255,.95), rgba(255,255,255,0) 70%),
+         radial-gradient(46vmax 38vmax at 92% 20%, rgba(96,178,232,.42), rgba(96,178,232,0) 70%),
+         radial-gradient(50vmax 40vmax at 6% 84%, rgba(140,214,238,.40), rgba(140,214,238,0) 70%),
+         linear-gradient(180deg,#F1F8FC 0%,#E4F0F8 55%,#D9E9F4 100%);
+       color:#0C2A45;
        font:16px/1.6 "Assistant","Rubik","Segoe UI",system-ui,-apple-system,sans-serif}
-  .box{max-width:460px;text-align:center}
-  .code{font-size:72px;font-weight:800;line-height:1;letter-spacing:-.04em;color:#0A6C61;margin:0}
-  h1{font-size:24px;margin:14px 0 8px}
-  p{color:#4A6068;margin:0 0 24px}
-  a{display:inline-block;background:#0E8C7E;color:#fff;text-decoration:none;
-    padding:11px 24px;border-radius:999px;font-weight:600}
-  a:hover{background:#0A6C61}
+  .box{position:relative;max-width:460px;text-align:center}
+  /* the icon, with water around it: two slow rings, as if it had just been dropped in */
+  .mark{position:relative;width:96px;height:96px;margin:0 auto 44px}
+  .mark img{position:relative;display:block;width:96px;height:96px;filter:drop-shadow(0 18px 28px rgba(15,79,127,.34))}
+  .mark::before,.mark::after{content:"";position:absolute;inset:0;border-radius:30%;border:1.5px solid #1B74B3;opacity:0;animation:ring 6s ease-out infinite}
+  .mark::after{animation-delay:-3s}
+  @keyframes ring{0%{transform:scale(1);opacity:.5}70%{opacity:0}100%{transform:scale(2.6);opacity:0}}
+  .code{font:700 88px/1 "Rubik","Assistant",system-ui,sans-serif;letter-spacing:-.03em;margin:0;
+        background:linear-gradient(180deg,#1B74B3,#0F4F7F);-webkit-background-clip:text;background-clip:text;
+        -webkit-text-fill-color:transparent;color:transparent}
+  h1{font:700 26px/1.25 "Rubik","Assistant",system-ui,sans-serif;margin:16px 0 8px}
+  p{color:#53697F;margin:0 0 26px}
+  a{display:inline-block;color:#fff;text-decoration:none;padding:12px 28px;border-radius:999px;font-weight:700;
+    background:linear-gradient(180deg,#2882C6 0%,#1A6FAD 100%);border:1px solid rgba(255,255,255,.45);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 16px 30px -14px rgba(27,116,179,.75)}
+  a:hover{background:linear-gradient(180deg,#1F78BC 0%,#0F4F7F 100%)}
+  a:focus-visible{outline:3px solid #0F4F7F;outline-offset:3px}
+  @media (prefers-reduced-motion:reduce){.mark::before,.mark::after{animation:none;opacity:0}}
 </style>
 </head>
 <body>
   <div class="box">
+    <div class="mark"><img src="/favicon.svg" width="96" height="96" alt="FLOA"></div>
     <p class="code">404</p>
     <h1>הדף הזה לא קיים</h1>
     <p>ייתכן שהכתובת השתנתה או שהדף הוסר. אפשר להתחיל מדף הבית.</p>
