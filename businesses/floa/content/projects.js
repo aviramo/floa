@@ -78,7 +78,7 @@ export const projects = {
   aum: {
     name: "AUM",
     title: "דף נחיתה והרשמה לריטריט יומי",
-    href: "https://floa.co.il/aum/",
+    href: "https://floa.co.il/tal/aum/",
     ariaLabel: "האתר AUM",
     linkLabel: "לצפייה באתר",
     /* Two captures of the live page, desktop beside phone, like harpatka. */
