@@ -1637,3 +1637,14 @@ a.hmi { text-decoration: none; }   /* "החלפת עסק" הוא קישור, ו�
 /* תפריט הסינון: הרקע של כל תגית מתמלא בשיעור שלה מכלל המשתתפים בתצוגה (--fill), בגוון הכהה של הצבע שלה, מימין לשמאל */
 #viewMenu .mc, #viewMenu .mc[data-sc] { background: linear-gradient(to left, color-mix(in srgb, var(--sfg, var(--text)) 24%, var(--sbg, var(--surface-2))) var(--fill, 0%), var(--sbg, var(--surface-2)) var(--fill, 0%)); }
 #viewMenu .mc[aria-pressed="true"], #viewMenu .mc[data-sc][aria-pressed="true"] { background: var(--sfg, var(--text)); }
+/* הסרה מהמפגש ברשימה (בתוך מפגש): ✕ בפינה השמאלית העליונה של הכרטיס, כמו בשורת המפגש בכרטיס המשתתף */
+.rowun { position: absolute; inset-inline-end: 8px; top: 8px; z-index: 2; display: grid; place-items: center; width: var(--tag); height: var(--tag); padding: 0; border: 0; background: transparent; color: var(--text-2); cursor: pointer; }
+.rowun::before { content: ""; position: absolute; inset: -8px; }
+@media (hover: hover) { .rowun:hover { color: var(--red); } }
+/* הוואטסאפ (והסימונים באותו מקום) בפינה הימנית העליונה, לפני הגיל והמגדר */
+.wrap > .list .row .rowwa { top: 6px; bottom: auto; margin-top: 0; inset-inline-end: auto; inset-inline-start: 8px; }
+.wrap > .list .row:has(> .rowwa) .main .age { margin-inline-start: calc(var(--tag) + 4px); }
+/* כרטיס משתתף: מגדר, גיל ושם באותה שורה וממורכזים אנכית (גובה שורה של תגית), והוואטסאפ והסימונים באותו קו */
+.wrap > .list .row .main .age { display: inline-flex; align-items: center; line-height: var(--tag); min-height: var(--tag); }
+.wrap > .list .row .main .nm .name { flex: 1 1 0; min-width: 0; display: flex; align-items: center; min-height: var(--tag); line-height: 1.25; }
+.wrap > .list .row .rowwa, .wrap > .list .row .rowun { top: 8px; }

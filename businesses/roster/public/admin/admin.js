@@ -1120,7 +1120,9 @@
       let mcntHtml = '';
       if (!state.filter) { const c = meetCounts(p), n = c.came + c.next; if (n) mcntHtml = '<span class="mcnt" title="' + [c.came ? 'הגיע ל' + (c.came === 1 ? 'מפגש אחד' : '-' + c.came + ' מפגשים') : '', c.next ? 'משוריין ל' + (c.next === 1 ? 'מפגש הבא אחד' : '-' + c.next + ' מפגשים הבאים') : ''].filter(Boolean).join(' · ') + '">' + icon('cal', 'i14') + n + '</span>'; }   // בלי שיוך: התא ריק, והעמודה נשמרת
       const evc = evCircle(p);
-      return '<li class="row">' +
+      const hasUn = !!(state.filter && linkOf(p.id, state.filter));   // בתוך מפגש: ✕ להסרת השיוך, באותו מקום של ה-✕ בשורת המפגש בכרטיס המשתתף
+      return '<li class="row' + (hasUn ? ' hasun' : '') + '">' +
+        (hasUn ? '<button type="button" class="rowun" data-rowun="' + p.id + '" aria-label="הסרה מהמפגש" title="הסרה מהמפגש">' + icon('close', 'i16') + '</button>' : '') +
         (attM ? attTag(p) : wa ? UI.tag(wsel ? (wsent ? icon('check') : PIN_ICON) : WA_ICON, 'ico rowwa' + (wsent ? ' sent' : ''), Object.assign({ href: wa }, /^https?:/.test(wa) ? { target: '_blank', rel: 'noopener' } : {}, wsel ? { 'data-wsend': p.id } : {}, { 'aria-label': 'וואטסאפ ל' + esc(p.name) + (wsent ? ', ההודעה נשלחה' : ''), title: wsel ? esc(wsent ? 'נשלחה ההודעה "' + wsel.name + '" · ' + fmtDT(wsent.sent_at) + ' · לחיצה לביטול הסימון' : 'וואטסאפ עם ההודעה: ' + wsel.name) : 'וואטסאפ' }), 'a') : UI.tag(WA_ICON, 'ico rowwa nophone', { role: 'img', 'aria-label': 'אין טלפון', title: 'אין טלפון' })) +
         '<div class="main' + ' hasw' + (anyEv ? ' ev' : '') + (!state.filter && state.showPay ? ' bl' : '') + '" role="button" tabindex="0" data-edit="' + p.id + '">' +
           '<div class="nm"><span class="name' + nameCls(p) + '" dir="rtl">' + nameMark(p) + mcntHtml + '</span>' + '</div>' +   // רק השם מבודד (שם באנגלית לא הופך את השורה), וסמל החשבון תמיד משמאל לשם
@@ -3984,6 +3986,7 @@
   const listClick = (e) => {
     { const ra = e.target.closest('[data-att]'); if (ra) { e.stopPropagation(); setAttended(ra.dataset.att, state.filter); return; } }   // הגיע / לא הגיע בעמודת הסימון: לא פותח את הכרטיס
     if (e.target.closest('.evc.inert')) { e.stopPropagation(); e.preventDefault(); return; }   // אחרי תחילת המפגש: עיגול שליחת הפרטים לא עושה כלום (לא וואטסאפ, לא שינוי נתונים, ולא פותח את הכרטיס)
+    { const ru = e.target.closest('[data-rowun]'); if (ru) { e.stopPropagation(); e.preventDefault(); confirmLink(ru.dataset.rowun, state.filter, false); return; } }   // הסרה מהמפגש מהכרטיס ברשימה: פופאפ אישור
     { const rw = e.target.closest('.rowwa'); if (rw) { e.stopPropagation(); const ws = rw.dataset.wsend && waSelected(); if (ws) { waAwait = { pid: rw.dataset.wsend, mid: ws.m.id, key: ws.id, name: ws.name }; if (rw.classList.contains('sent')) { e.preventDefault(); askMsgSent(); } } return; } }   // וואטסאפ מהרשימה: רק פותח את השיחה, לא את כרטיס המשתתף; עם תבנית: בחזרה מאשרים שנשלחה. הודעה שכבר סומנה כנשלחה: לא פותח וואטסאפ, רק פופאפ אישור לביטול הסימון
     const qs = e.target.closest('[data-qs]');
     if (qs) { e.stopPropagation(); if (!$('#qMenu').hidden) { closeQ(); return; } openQuickMenu(qs.dataset.qs, qs, state.filter || undefined); return; }

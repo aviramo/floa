@@ -226,12 +226,12 @@
       let foot = '';
       if (useCr) foot += '<div class="payfold"><button type="button" class="btn pay" data-paycredit="' + esc(m.id) + '">תשלום מהקרדיט · ' + ils(crAmt) + '</button>' +
         '<p class="crnote">' + (crFull ? 'יישאר לכם קרדיט ' + ils(credit - price) : 'הקרדיט כולו ינוצל על המפגש, ונשאר לשלם ' + ils(price - credit)) + '</p>' +
-        (waNum() ? '<div class="paylinks"><button type="button" class="lnk" data-other="' + esc(m.id) + '">רוצים לשמור מקום בדרך אחרת?</button></div>' : '') + '<div class="msg" data-pm="' + esc(m.id) + '"></div></div>';
+        (waNum() ? '<div class="paylinks"><button type="button" class="lnk" data-other="' + esc(m.id) + '" data-pay="1">רוצים לשמור מקום בדרך אחרת?</button></div>' : '') + '<div class="msg" data-pm="' + esc(m.id) + '"></div></div>';
       else if (((!paid && !free) || rem > 0) && (url || waNum())) {
         const amt = rem || price;
         foot += '<div class="payfold">' + (rem ? '<p class="crnote">שולם ' + ils(m.paid) + '. נשאר לשלם ' + ils(rem) + '</p>' : '') +
           (url ? '<a class="btn pay" data-paynow="' + esc(m.id) + '" href="' + esc(url) + '" target="_blank" rel="noopener">לתשלום' + (amt ? ' ' + ils(amt) : '') + '</a>' : '') +
-          (waNum() ? '<div class="paylinks"><button type="button" class="lnk" data-other="' + esc(m.id) + '">' + (url ? 'רוצים לשמור מקום בדרך אחרת?' : 'לשמירת מקום בוואטסאפ') + '</button></div>' : '') + '<div class="msg" data-pm="' + esc(m.id) + '"></div></div>';
+          (waNum() ? '<div class="paylinks"><button type="button" class="lnk" data-other="' + esc(m.id) + '"' + (url ? ' data-pay="1"' : '') + '>' + (url ? 'רוצים לשמור מקום בדרך אחרת?' : 'לשמירת מקום בוואטסאפ') + '</button></div>' : '') + '<div class="msg" data-pm="' + esc(m.id) + '"></div></div>';
       }
       if (m.future) foot += dirFold(m);
       if (m.future) { const sure = unregSure === m.id; foot += '<button type="button" class="lnk sm" data-unreg="' + esc(m.id) + '"' + (sure ? ' data-sure="1"' : '') + '>' + (sure ? 'לחיצה נוספת לאישור ביטול שמירת המקום' : 'ביטול שמירת מקום') + '</button><div class="msg" data-um="' + esc(m.id) + '"></div>'; }
@@ -308,7 +308,7 @@
     }); });
     app.querySelectorAll('[data-other]').forEach((ob) => { ob.onclick = () => {   // שמירת מקום בדרך אחרת: ישר לשיחת וואטסאפ עם העסק והודעה מוכנה, בלי חלון
       const m = ms.find((x) => x.id === ob.dataset.other); if (!m || !waNum()) return;
-      window.open(waLink('היי, אני רוצה לשמור מקום בדרך אחרת למפגש ' + fmtDate(m.date).replace(/^יום /, 'ביום ') + (m.time ? ' בשעה ' + String(m.time).slice(0, 5) : '')), '_blank', 'noopener');
+      window.open(waLink('היי, אני רוצה ' + (ob.dataset.pay ? 'להעביר תשלום' : 'לשמור מקום') + ' בדרך אחרת למפגש ' + fmtDate(m.date).replace(/^יום /, 'ביום ') + (m.time ? ' בשעה ' + String(m.time).slice(0, 5) : '')), '_blank', 'noopener');
     }; });
     app.querySelectorAll('[data-dir]').forEach((b) => { b.onclick = () => { const f = b.nextElementSibling; if (!f) return; const on = !f.classList.contains('open'); f.classList.toggle('open', on); b.setAttribute('aria-expanded', String(on)); if (on) dirOpen.add(b.dataset.dir); else dirOpen.delete(b.dataset.dir); }; });
     bindFields(app);

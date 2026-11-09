@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=0e111d7c" />
+  <link rel="stylesheet" href="admin.css?v=bc7985ce" />
 </head>
 <body class="locked">
   <div class="gate" id="gate" hidden>
@@ -62,11 +62,12 @@
     <div id="status"></div>
     <div class="chiprow"><div class="cq" id="chipRow" role="group" aria-label="סינון מהיר: משוריינים, גברים ונשים"></div></div>
     <div class="vbar" id="listTags" role="group" aria-label="חיפוש, סינון ומיון">   <!-- שורה אחת: מונה הרשומות (מימין, בעמודת הגיל), תיבת החיפוש, הסינון, המיון, זכר / נקבה (צמודים לאייקוני הסינון של העמודות), ואייקוני העמודות עצמם (נקבעים ב-JS מעל העמודות שלהם) -->
+      <button type="button" class="wafab" id="waFab" aria-haspopup="menu" aria-expanded="false" aria-label="מה מוצג בעמודה"></button>
       <label class="search hsearch" title="חיפוש והוספה">
           <span class="sicon" aria-hidden="true"></span><input id="q" type="search" placeholder="חיפוש והוספה" autocomplete="off" aria-label="חיפוש והוספה" />
           <button type="button" class="sclear" id="qClear" aria-label="ניקוי החיפוש" tabindex="-1">×</button>
         </label>
-      <div id="listMore"></div><button type="button" class="hicon" id="sortBtnH" aria-haspopup="menu" aria-expanded="false" aria-label="מיון הרשימה" title="מיון הרשימה"><svg data-i="sort"></svg></button><button type="button" class="wafab" id="waFab" aria-haspopup="menu" aria-expanded="false" aria-label="מה מוצג בעמודה"></button><div class="lbend" id="listWa"></div><div class="lbend" id="listPay"></div><div class="lbend" id="listSent"></div><div class="lbend" id="listBal"></div>
+      <div id="listMore"></div><button type="button" class="hicon" id="sortBtnH" aria-haspopup="menu" aria-expanded="false" aria-label="מיון הרשימה" title="מיון הרשימה"><svg data-i="sort"></svg></button><div class="lbend" id="listWa"></div><div class="lbend" id="listPay"></div><div class="lbend" id="listSent"></div><div class="lbend" id="listBal"></div>
     </div>
     <div class="countline" id="listCount" aria-live="polite" title="מספר הרשומות המוצגות"></div>
     <ul class="list" id="list"></ul>
@@ -413,6 +414,6 @@
   <script src="/auth.js"></script>
   <script src="age.js?v=816fedce"></script>
   <script src="rt.js?v=9f0bd1e7"></script>
-  <script src="admin.js?v=87d7d4d3"></script>
+  <script src="admin.js?v=83a25d82"></script>
 </body>
 </html>
