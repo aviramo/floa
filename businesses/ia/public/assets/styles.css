@@ -182,10 +182,6 @@ mark { background: none; color: var(--clay); font-style: normal; }
 .hero-text::before { content: ""; position: absolute; z-index: -1; inset-block-start: -14%; left: 50%; width: min(760px, 130vw); aspect-ratio: 1; margin: 0 0 0 calc(min(760px, 130vw) / -2); border-radius: 50%; background: radial-gradient(circle, rgba(240, 194, 94, .38), rgba(240, 194, 94, 0) 60%); animation: glow 10s ease-in-out infinite; }
 .hero-text { isolation: isolate; overflow-x: clip; }
 
-/* קו גלי מתחת לכותרות */
-.sec h2::after { content: ""; display: block; width: 120px; height: 20px; margin-top: 8px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 20'%3E%3Cpath d='M4 10c7-9 14-9 21 0s14 9 21 0 14-9 21 0 14 9 21 0 14-9 21 0' fill='none' stroke='%23D99A2B' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat; }
-.center h2::after, h2.center::after { margin-inline: auto; }
-.sec--contact h2::after { margin-inline: auto; }
 
 /* צורות עלה: פינות מעוגלות באלכסון */
 .card { border-radius: 34px 8px 34px 8px; border-top-width: 1px; border-top-color: rgba(30, 59, 44, .22); }
