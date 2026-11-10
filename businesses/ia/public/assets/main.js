@@ -1,12 +1,7 @@
-/* ביודנסה: הצבע נכנס בטעינה, כניסה בגלילה, שעון ספירה לאחור, גלילה חלקה בלי hash, וכפתור צף */
+/* ביודנסה: כניסה בגלילה, פרלקסה עדינה של השמש, וגלילה חלקה לעוגנים בלי hash בכתובת */
 (function () {
   var calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  /* הצבע נכנס: רגע אחרי הציור הראשון */
-  var hero = document.getElementById("hero");
-  if (hero) requestAnimationFrame(function () { requestAnimationFrame(function () { hero.classList.add("go"); }); });
-
-  /* כניסה בגלילה */
   var items = document.querySelectorAll(".rv");
   if (calm || !("IntersectionObserver" in window)) {
     items.forEach(function (el) { el.classList.add("in"); });
@@ -17,25 +12,30 @@
     items.forEach(function (el) { io.observe(el); });
   }
 
-  /* שעון ספירה לאחור למפגש הראשון */
-  var box = document.getElementById("count");
-  if (box) {
-    var to = new Date(box.getAttribute("data-to")).getTime();
-    var cells = {};
-    box.querySelectorAll("[data-u]").forEach(function (b) { cells[b.getAttribute("data-u")] = b; });
-    var pad = function (n) { return n < 10 ? "0" + n : String(n); };
-    var tick = function () {
-      var s = Math.max(0, Math.floor((to - Date.now()) / 1000));
-      cells.d.textContent = pad(Math.floor(s / 86400));
-      cells.h.textContent = pad(Math.floor(s % 86400 / 3600));
-      cells.m.textContent = pad(Math.floor(s % 3600 / 60));
-      cells.s.textContent = pad(s % 60);
+  var hero = document.getElementById("hero");
+  var sun = document.getElementById("sun");
+  if (hero && sun && !calm) {
+    var ticking = false;
+    var onScroll = function () {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(function () {
+        hero.style.setProperty("--sy", Math.min(window.scrollY, 900));
+        ticking = false;
+      });
     };
-    tick();
-    setInterval(tick, 1000);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    if (matchMedia("(pointer: fine)").matches) {
+      hero.addEventListener("pointermove", function (e) {
+        var r = hero.getBoundingClientRect();
+        var x = (e.clientX - r.left) / r.width - 0.5;
+        var y = (e.clientY - r.top) / r.height - 0.5;
+        sun.style.setProperty("--mx", (x * -26).toFixed(1) + "px");
+        sun.style.setProperty("--my", (y * -18).toFixed(1) + "px");
+      });
+    }
   }
 
-  /* גלילה חלקה לעוגנים בלי hash בכתובת */
   document.addEventListener("click", function (ev) {
     var a = ev.target.closest && ev.target.closest('a[href^="#"]');
     if (!a) return;
@@ -47,17 +47,35 @@
     window.scrollTo({ top: y, behavior: calm ? "auto" : "smooth" });
   });
 
-  /* הכפתור הצף מופיע אחרי חצי מסך ראשון, ונעלם כשסקשן הפנייה על המסך */
-  var f = document.getElementById("float"), c = document.getElementById("contact");
-  if (f) {
-    var past = false, atContact = false;
-    var apply = function () { f.classList.toggle("is-hidden", !past || atContact); };
-    var onScroll = function () { past = window.scrollY > window.innerHeight * 0.5; apply(); };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    if (c && "IntersectionObserver" in window) {
-      new IntersectionObserver(function (es) { atContact = es[0].isIntersecting; apply(); }, { threshold: 0.3 }).observe(c);
-    }
-    onScroll();
+  /* הכפתור הצף של וואטסאפ מופיע אחרי חצי מסך ראשון של גלילה, ונשאר */
+  var fl = document.getElementById("float");
+  if (fl) {
+    var shown = false;
+    var check = function () {
+      var on = window.scrollY > window.innerHeight * 0.5;
+      if (on !== shown) { shown = on; fl.classList.toggle("is-hidden", !on); }
+    };
+    window.addEventListener("scroll", check, { passive: true });
+    window.addEventListener("resize", check);
+    check();
   }
+})();
+
+/* שעון ספירה לאחור למפגש הראשון */
+(function () {
+  var box = document.getElementById("count");
+  if (!box) return;
+  var to = new Date(box.getAttribute("data-to")).getTime();
+  var cells = {};
+  box.querySelectorAll("[data-u]").forEach(function (b) { cells[b.getAttribute("data-u")] = b; });
+  var pad = function (n) { return n < 10 ? "0" + n : String(n); };
+  var tick = function () {
+    var s = Math.max(0, Math.floor((to - Date.now()) / 1000));
+    cells.d.textContent = pad(Math.floor(s / 86400));
+    cells.h.textContent = pad(Math.floor(s % 86400 / 3600));
+    cells.m.textContent = pad(Math.floor(s % 3600 / 60));
+    cells.s.textContent = pad(s % 60);
+  };
+  tick();
+  setInterval(tick, 1000);
 })();
