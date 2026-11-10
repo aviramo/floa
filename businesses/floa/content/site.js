@@ -77,8 +77,7 @@ export const site = {
 /* the reassurance under every hero's buttons */
 export const heroNote = "שיחת מיפוי ראשונית, בלי התחייבות ובלי מצגת מכירה";
 
-/* the label of the hero's SECOND button — the way down to the form. The same on
-   every page, because it is the same promise on every one. */
+/* the label of the hero's SECOND button: the way down to the form */
 export const formCta = "השארת פרטים";
 
 /* --- what the browser needs, straight from the same source ---------------- */
@@ -114,7 +113,7 @@ export const runtime = {
   formError: "לא הצלחנו לשלוח את הפרטים. אפשר לנסות שוב או לפנות אלינו ב־WhatsApp",
 };
 
-/* --- the ask: IDENTICAL on every page --------------------------------------
+/* --- the ask --------------------------------------------------------------
    The form asks for the two things a call-back actually needs and nothing else.
    Every extra field is friction. WhatsApp — the primary action everywhere else
    on the page — closes the panel underneath it, so the visitor who would rather
@@ -138,39 +137,22 @@ export const contactContent = {
   },
 };
 
-/* --- the objections, answered on every solution page just before the ask --- */
-export const faqContent = {
-  head: { eyebrow: "שאלות נפוצות", title: "מה שרוב העסקים שואלים לפני שמתחילים" },
-  items: [
-    { q: "צריך להחליף את המערכות הקיימות?", a: "לא. קודם בודקים מה אפשר להשאיר, לחבר או לשפר" },
-    { q: "איך מתחילים?", a: "בשיחת מיפוי קצרה שבה מגדירים את הבעיה, היעד והשלב הבא" },
-    { q: "כמה זמן זה לוקח?", a: "לאחר המיפוי מקבלים תכנית עבודה ולוחות זמנים בהתאם להיקף" },
-    { q: "אפשר להתחיל מפתרון אחד?", a: "כן. מתחילים במה שהכי משפיע ומרחיבים רק כשיש צורך" },
-  ],
-};
-
-/* --- the sections every page closes with ---------------------------------- */
-export const processContent = {
-  head: { eyebrow: "התהליך", title: "כך הופכים צורך עסקי לפתרון שעובד" },
-  steps: [
-    {
-      title: "מיפוי",
-      text: "מבינים איך העסק עובד היום, מה מעכב אותו ומה חשוב לשפר קודם",
-      note: "הניסיון שלי כמגשר בין צוותים עסקיים לטכנולוגיים מאפשר לזהות את הצורך האמיתי לפני שבוחרים כלי או מתחילים לפתח",
-    },
-    { title: "תכנון", text: "מפשטים את התהליך ומגדירים פתרון ברור לפני שמתחילים לבנות" },
-    { title: "בנייה וחיבור", text: "מקימים את האתר, המערכת, האפליקציה או האוטומציות ומחברים הכול יחד" },
-    { title: "עלייה וליווי", text: "עולים לאוויר, מטמיעים בעסק ומשפרים לפי השימוש והתוצאות בפועל" },
-  ],
-};
-
-export const projectsHead = {
-  eyebrow: "עבודות",
-  title: "לא מצגות. דברים שעובדים",
-  text: "מוצרים ומערכות שנבנו מקצה לקצה, מהרעיון והמסר ועד המוצר, התשלום והמדידה",
-};
-
 export const testimonialsHead = { title: "מה אומרים לקוחות" };
+
+/* --- the bar at the top of the homepage: the parts of the one page, and the one action.
+   Only the homepage draws it (see pages/index.js); the labels are the footer's, so a
+   part is called the same thing wherever it is named. ---------------------------- */
+export const navContent = (ctx) => ({
+  brand: site.brand,
+  links: [
+    { href: ctx.home("#solutions"), label: "מה בונים" },
+    { href: ctx.home("#projects"), label: "עבודות" },
+    { href: ctx.home("#process"), label: "איך עובדים" },
+    { href: ctx.home("#about"), label: "אודות" },
+    { href: ctx.home("#contact"), label: "יצירת קשר" },
+  ],
+  cta: { label: "שיחה ב־WhatsApp" },
+});
 
 /* --- the footer: one nav, resolved for whatever page renders it ------------ */
 export const footerContent = (ctx) => ({
@@ -179,9 +161,9 @@ export const footerContent = (ctx) => ({
   copyright: site.copyright,
   links: [
     !ctx.isHome && { href: ctx.home(), label: "דף הבית" },
-    { href: ctx.home("#solutions"), label: "פתרונות" },
-    { href: ctx.url("work/"), label: "עבודות" },
-    { href: ctx.home("#process"), label: "איך זה עובד" },
+    { href: ctx.home("#solutions"), label: "מה בונים" },
+    { href: ctx.home("#projects"), label: "עבודות" },
+    { href: ctx.home("#process"), label: "איך עובדים" },
     { href: ctx.home("#about"), label: "אודות" },
     /* Root-absolute, and it has to be: the CV is not one of FLOA's pages, it is
        another business of the domain (businesses/me/) sitting at /cv/. ctx.url()

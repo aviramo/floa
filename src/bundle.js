@@ -23,11 +23,13 @@ export const css = [
   "components/chips/chips.css",
   "components/urgency/urgency.css",
   "components/cta-dock/cta-dock.css",
+  "components/site-nav/site-nav.css",
   "components/section-head/section-head.css",
   "components/card/card.css",                         // THE box — every boxed item on the site
   "components/eco-grid/eco-grid.css",                 // refines .card for the ecosystem row
   "components/quote-card/quote-card.css",
   "components/project-card/project-card.css",
+  "components/solution-panel/solution-panel.css",
   "components/flow/flow.css",
   "components/timeline/timeline.css",
   "components/faq/faq.css",
@@ -58,5 +60,6 @@ export const js = [
   "components/contact/contact.client.js",
   "components/faq/faq.client.js",
   "components/cta-dock/cta-dock.client.js",
+  "components/site-nav/site-nav.client.js",
   "components/hero-motion/hero-motion.client.js",
 ];

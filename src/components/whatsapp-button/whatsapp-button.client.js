@@ -17,17 +17,23 @@
   var targets = document.querySelectorAll("[data-whatsapp]");
   if (!targets.length || !wa.number) return;
 
-  var text = encodeURIComponent(document.body.getAttribute("data-wa-text") || wa.greeting);
+  var pageText = document.body.getAttribute("data-wa-text") || wa.greeting;
 
   var mobile = (window.matchMedia && window.matchMedia("(max-width: 768px)").matches) ||
                /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-  var href = mobile
-    ? "https://wa.me/" + wa.number + "?text=" + text
-    : "https://web.whatsapp.com/send?phone=" + wa.number + "&text=" + text;
+  function hrefFor(message) {
+    var text = encodeURIComponent(message);
+    return mobile
+      ? "https://wa.me/" + wa.number + "?text=" + text
+      : "https://web.whatsapp.com/send?phone=" + wa.number + "&text=" + text;
+  }
 
+  /* A button may carry its own opening line (data-wa-text): a page that sells two
+     things lets each one open the conversation on its own subject. Without one it
+     says what the page says. */
   targets.forEach(function (el) {
-    el.setAttribute("href", href);
+    el.setAttribute("href", hrefFor(el.getAttribute("data-wa-text") || pageText));
     el.setAttribute("target", "_blank");
     el.setAttribute("rel", "noopener");
   });

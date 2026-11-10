@@ -39,15 +39,20 @@ const heading = (ctx, project) => {
   return m ? html`<div class="project-head">${h3}${m}</div>` : h3;
 };
 
-/* A case study: what it was, what we built, and a way in. { project } */
-export const projectCard = (ctx, project) => html`
-        <article class="project-card reveal">
+/* A case study: what it was, what we built, and a way in.
+
+   `compact` is the short form, for a page that shows the work as proof and not as
+   a read: the picture, the name, one line of what it is, and the way in. A client
+   with nothing to open has no picture to carry it, so it keeps the one sentence
+   that says what was built. { project, compact } */
+export const projectCard = (ctx, project, { compact } = {}) => html`
+        <article class="${compact ? "project-card project-card-compact reveal" : "project-card reveal"}">
           ${project.href ? media(ctx, project) : ""}
           <div class="project-body">
             ${project.name && html`<span class="project-name">${project.name}</span>`}
             ${heading(ctx, project)}
 
-            ${project.parts.map((part) => html`
+            ${(compact && project.href ? [] : project.parts).map((part) => html`
             <div class="project-part">
               ${part.label && html`<span class="project-label">${part.label}</span>`}
               <p>${part.text}</p>
@@ -57,7 +62,7 @@ export const projectCard = (ctx, project) => html`
           </div>
         </article>`;
 
-export const projectGrid = (ctx, { items }) => html`
-      <div class="projects-grid">
-        ${items.map((project) => projectCard(ctx, project))}
+export const projectGrid = (ctx, { items, compact }) => html`
+      <div class="${compact ? "projects-grid projects-grid-compact" : "projects-grid"}">
+        ${items.map((project) => projectCard(ctx, project, { compact }))}
       </div>`;

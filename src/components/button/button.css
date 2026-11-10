@@ -63,3 +63,20 @@
   transform: translateY(-2px);
   box-shadow: var(--sh-2);
 }
+
+/* the quietest skin: plain words and an arrow, no pill. For the place that offers a
+   conversation on one subject among several (see waButton, which is the only thing
+   that wears it). The arrow hangs off the label, not off the button: a theme may
+   own the button's own ::after (a light that crosses it). */
+.btn-link {
+  min-height: 0;
+  padding: var(--s-2) 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--teal-dark);
+  font-size: var(--fs-sm);
+}
+.btn-link .wa-label::after { content: "←"; display: inline-block; margin-inline-start: var(--s-2); transition: transform .2s var(--ease); }
+.btn-link:hover { color: var(--teal); }
+.btn-link:hover .wa-label::after { transform: translateX(-4px); }

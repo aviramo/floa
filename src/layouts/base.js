@@ -1,6 +1,7 @@
 import { attrs, html, raw } from "../lib/html.js";
 import { analyticsHead } from "../lib/analytics.js";
 import { ctaDock } from "../components/cta-dock/cta-dock.js";
+import { siteNav } from "../components/site-nav/site-nav.js";
 import { footer } from "../components/footer/footer.js";
 
 /* ==========================================================================
@@ -95,6 +96,7 @@ ${analyticsHead(site.analytics)}
 ${head ?? ""}
 </head>
 <body${attrs({ "data-wa-text": waText })}>
+${ctx.nav ? siteNav(ctx, ctx.nav(ctx)) : ""}
 ${body}
 ${ctaLabel ? ctaDock(ctx, { label: ctaLabel }) : ""}
 ${footer(ctx, ctx.footer(ctx))}

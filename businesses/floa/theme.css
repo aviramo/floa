@@ -548,3 +548,137 @@ body { overflow-x: clip; }                  /* the bands run edge to edge; nothi
 @media (forced-colors: active) {
   .hero-title { background: none; -webkit-text-fill-color: currentColor; color: CanvasText; }
 }
+
+/* ==========================================================================
+   FLOA is one page now. These are the parts that exist only because of that:
+   the bar at the top, the two things sold, the work as a row of pictures, and
+   the steps beside the picture. Same water, same rules: no boxes, a line of
+   water instead of a border, nothing moves but transform and opacity.
+   ========================================================================== */
+
+/* --- the bar: glass on the water, a wave for its lower edge ----------------- */
+.site-nav {
+  background: linear-gradient(180deg, rgba(244, 250, 253, .86), rgba(232, 243, 250, .78));
+  border-bottom: 0;
+  box-shadow: 0 14px 30px -26px rgba(15, 79, 127, .65);
+}
+.site-nav::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: -1px;
+  height: 7px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent 0, rgba(27, 116, 179, .5) 18%, rgba(27, 116, 179, .5) 82%, transparent 100%);
+  -webkit-mask: var(--waveline) center / 132px 10px repeat-x;
+  mask: var(--waveline) center / 132px 10px repeat-x;
+  opacity: .55;
+}
+/* the brand in the bar is the drawn one, small */
+.nav-brand {
+  width: 92px;
+  aspect-ratio: 234 / 64;
+  font-size: 0;
+  letter-spacing: 0;
+  color: transparent;
+  background: var(--wordmark) center / contain no-repeat;
+}
+.nav-brand span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }   /* text stays for readers and search */
+.nav-links a { color: var(--ink-2); }
+.nav-links a::after {                       /* a line of water under the word you point at */
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: -2px;
+  height: 7px;
+  background: var(--teal);
+  -webkit-mask: var(--waveline) center / 66px 10px repeat-x;
+  mask: var(--waveline) center / 66px 10px repeat-x;
+  opacity: 0;
+  transform: scaleX(.4);
+  transition: opacity .25s var(--ease), transform .35s var(--ease);
+}
+.nav-links a:hover::after, .nav-links a:focus-visible::after { opacity: .75; transform: none; }
+@media (max-width: 860px) {
+  .js .nav-links a::after { display: none; }
+}
+
+/* --- the two things sold: columns on the water, told apart by a line of it -- */
+.solution-panel { position: relative; padding-bottom: var(--s-8); }
+.solution-panel::after {                    /* the line of water under each */
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 8px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent 0, color-mix(in srgb, var(--accent) 78%, transparent) 22%, color-mix(in srgb, var(--accent) 78%, transparent) 78%, transparent 100%);
+  -webkit-mask: var(--waveline) center / 132px 10px repeat-x;
+  mask: var(--waveline) center / 132px 10px repeat-x;
+  opacity: .55;
+}
+.solution-panel:nth-child(2) { --accent: var(--water); --accent-dark: var(--water-dark); --accent-tint: var(--water-tint); }
+.solution-panel .card-icon { box-shadow: 0 0 0 7px color-mix(in srgb, var(--accent) 10%, transparent), inset 0 1px 0 #fff; }
+.solution-panel .sp-list li::before { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent); }
+.btn-wa.btn-link, .btn-wa.btn-link:hover {  /* the loud skin of .btn-wa does not apply to a link */
+  background: none;
+  border-color: transparent;
+  box-shadow: none;
+  transform: none;
+}
+.btn-wa.btn-link::after { display: none; }
+.btn-wa.btn-link .wa-mark svg { width: 20px; height: 20px; }
+
+/* --- the work: pictures that dissolve into the page, with a line under their name -- */
+.projects-grid-compact { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-8) var(--gap); }
+.project-card-compact .project-body { padding: var(--s-3) 0 0; }
+.project-card-compact .project-body h3 { margin: var(--s-1) 0 var(--s-3); font-size: 1.2rem; }
+.project-card-compact .project-part { border-top: 0; padding-block: 0; }
+.project-card-compact .project-link { padding-top: var(--s-3); margin-top: 0; }
+.project-card-compact .project-head { margin: var(--s-1) 0 var(--s-3); }
+.project-card-compact .project-part p { font-size: var(--fs-xs); }
+@media (max-width: 1080px) { .projects-grid-compact { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px)  { .projects-grid-compact { grid-template-columns: 1fr; } }
+
+/* more work, on the same page: a word with a wave under it, and the rest below it */
+.more-work { margin-top: var(--s-8); }
+.more-work > summary {
+  list-style: none;
+  display: flex;
+  justify-content: center;
+  cursor: pointer;
+}
+.more-work > summary::-webkit-details-marker { display: none; }
+.more-work > summary span {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2) 0 .85em;
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  color: var(--teal-dark);
+}
+.more-work > summary span::before { content: "+"; font-size: 1.3em; line-height: 1; transition: transform .3s var(--ease); }
+.more-work[open] > summary span::before { transform: rotate(45deg); }
+.more-work > summary span::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 7px;
+  background: var(--teal);
+  opacity: .5;
+  -webkit-mask: var(--waveline) center / 132px 10px repeat-x;
+  mask: var(--waveline) center / 132px 10px repeat-x;
+}
+.more-work > summary:focus-visible { outline: 3px solid color-mix(in srgb, var(--teal) 55%, transparent); outline-offset: 6px; border-radius: 6px; }
+.more-work[open] > .projects-grid { margin-top: var(--s-8); }
+
+/* --- the way the work goes: the steps beside the picture, the last one in the water's own blue --- */
+.approach-steps .timeline { max-width: none; }
+.approach-steps .tl-item:nth-child(3) { --accent: var(--teal); --accent-dark: var(--teal-dark); }
+.approach-grid .approach-media img { max-width: 520px; margin-inline: auto; display: block; }
+.approach-steps .tl-item:nth-child(2) { --accent: #2E8FD6; --accent-dark: #1B6FA8; }
+.approach-steps .timeline::before { background: linear-gradient(180deg, var(--water) 0%, #2E8FD6 50%, var(--teal) 100%); }
+.about + .cta-band { padding-top: var(--s-5); }     /* the face, then the ask: no empty stretch between them */

@@ -1,17 +1,13 @@
 import { context } from "#lib/context.js";
-import { footerContent, site } from "../content/site.js";
+import { footerContent, navContent, site } from "../content/site.js";
 import { home } from "../content/home.js";
-import { solutions } from "../content/solutions.js";
 import { landingOffer } from "../content/landing-offer.js";
-import { work } from "../content/work.js";
 import { accessibility, privacy } from "../content/legal.js";
 import { terms } from "../content/terms.js";
 
 import { render as renderHome } from "./home.js";
 import { render as renderLegal } from "./legal-page.js";
-import { render as renderSolution } from "./solution.js";
 import { render as renderLandingOffer } from "./landing-offer.js";
-import { render as renderWork } from "./work.js";
 
 /* ==========================================================================
    FLOA's pages, and where they land.
@@ -47,7 +43,7 @@ const at = (assets, base, homeHref) => context({
   homeHref,
 });
 
-/* one folder down inside /floa/: the solution pages and the campaign page */
+/* one folder down inside /floa/: the campaign page */
 const inFolder = (assets) => at(assets, "../", "../../");
 
 /* a file sitting directly in /floa/: the legal documents */
@@ -59,29 +55,20 @@ export const pages = [
     root: true,                          // the domain root, not /floa/
     render: (assets) => renderHome(context({
       assets, site, footer: footerContent,
+      /* the homepage is the one page that holds everything, so it is the one with a
+         bar at the top to say where everything is */
+      nav: navContent,
       base: "floa/",                     // its files are still FLOA's
       homeHref: "",
       isHome: true,
     })),
   },
 
-  ...solutions.map((solution) => ({
-    out: `${solution.slug}/index.html`,
-    render: (assets) => renderSolution(inFolder(assets), solution),
-  })),
-
-  /* the landing-page-offer campaign page: its own template, not a solution,
-     so it is not linked from the homepage or the ecosystem row on either
-     solution page. */
+  /* the landing-page-offer campaign page: its own template, and not linked from
+     the homepage: it exists to answer one ad, not to join the site's own menu. */
   {
     out: `${landingOffer.slug}/index.html`,
     render: (assets) => renderLandingOffer(inFolder(assets)),
-  },
-
-  /* the portfolio: the homepage shows a small strip and points here */
-  {
-    out: `${work.slug}/index.html`,
-    render: (assets) => renderWork(inFolder(assets)),
   },
 
   ...[privacy, accessibility, terms].map((doc) => ({
@@ -91,11 +78,11 @@ export const pages = [
 
 ];
 
-/* The old addresses (/digital-products/, /landing-page-offer/ and the rest) are
-   gone, deliberately: they 404 rather than redirect. The site is young enough
-   that a clean address space is worth more than the links pointing at the old
-   one. Anything that advertises them, the Facebook campaign above all, has to be
-   pointed at the new address by hand. */
+/* The old addresses (/digital-products/, /business-systems/, /work/ and the rest) are
+   gone, deliberately: they 404 rather than redirect. FLOA is one page now, and the
+   things those pages held are parts of it. The site is young enough that a clean
+   address space is worth more than the links pointing at the old one. Anything that
+   advertises them has to be pointed at the new address by hand. */
 
 /* Every page's live URL, title and description — one row per entry above.
    sitemap.xml and llms.txt are generated from this in build.mjs, so a
@@ -106,13 +93,11 @@ const plain = (s) => s.replace(/\u200F/g, "");
 
 export const siteMap = [
   { loc: `${site.origin}/`, title: plain(home.meta.title), description: home.meta.description },
-  ...solutions.map((s) => ({ loc: `${site.origin}/${site.folder}${s.slug}/`, title: plain(s.meta.title), description: s.meta.description })),
   { loc: `${site.origin}/${site.folder}${landingOffer.slug}/`, title: plain(landingOffer.meta.title), description: landingOffer.meta.description },
-  { loc: `${site.origin}/${site.folder}${work.slug}/`, title: plain(work.meta.title), description: work.meta.description },
   ...[privacy, accessibility, terms].map((doc) => ({ loc: `${site.origin}/${site.folder}${doc.out}`, title: plain(doc.meta.title), description: doc.meta.description })),
 ];
 
 /* The pages that may send a lead, by the name that lands in the email's subject.
    The Worker keeps a list of its own and rejects anything else; build.mjs
    generates that list from this one, so the two cannot drift apart. */
-export const leadPages = [home.pageName, ...solutions.map((s) => s.pageName), landingOffer.pageName];
+export const leadPages = [home.pageName, landingOffer.pageName];

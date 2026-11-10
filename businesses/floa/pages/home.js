@@ -2,35 +2,34 @@ import { html } from "#lib/html.js";
 
 import { about } from "#components/about/about.js";
 import { approach } from "#components/approach/approach.js";
-import { baStrip } from "#components/ba-strip/ba-strip.js";
 import { button } from "#components/button/button.js";
 import { card, cardGrid } from "#components/card/card.js";
 import { contact } from "#components/contact/contact.js";
 import { ctaBand } from "#components/cta-band/cta-band.js";
-import { ecoGrid } from "#components/eco-grid/eco-grid.js";
 import { hero } from "#components/hero/hero.js";
 import { heroMotion } from "#components/hero-motion/hero-motion.js";
+import { projectGrid } from "#components/project-card/project-card.js";
 import { quotes } from "#components/quote-card/quote-card.js";
 import { scrollFlow } from "#components/scroll-flow/scroll-flow.js";
 import { section } from "#components/section/section.js";
 import { sectionHead } from "#components/section-head/section-head.js";
-import { timeline } from "#components/timeline/timeline.js";
+import { solutionPanel, solutionPanels } from "#components/solution-panel/solution-panel.js";
 import { waButton } from "#components/whatsapp-button/whatsapp-button.js";
 
 import { home } from "../content/home.js";
-import { pick as pickProjects, projects } from "../content/projects.js";
+import { pick as pickProjects } from "../content/projects.js";
 import { pick as pickQuotes } from "../content/quotes.js";
-import { contactContent, formCta, heroNote, processContent, projectsHead, site, testimonialsHead } from "../content/site.js";
-import { defaultCta, ecosystem, solutions } from "../content/solutions.js";
+import { contactContent, formCta, heroNote, site, testimonialsHead } from "../content/site.js";
 import { page } from "#layouts/base.js";
 
-/* The homepage: the whole offer in one scroll. Every block below is a component
-   fed by content — there is no markup on this page that is unique to it.
+/* The homepage, and the site: everything FLOA offers in one scroll, each part one
+   jump away from the bar at the top.
 
-   The order earns the ask: the problem, the approach, how it gets made and the
-   proof of what was actually built (the clients' quotes come between the two
-   when `home.showTestimonials` is on) — and only then the form. The links into
-   the two solutions close the page, under the form. */
+   The order is the order the reader's questions come in. Is this about me (the
+   film and the scene that follows it)? What would it be for me (the two things
+   sold)? Has it been done (the work, and how it is done: AI)? How does it go (the
+   three steps)? Who is it (one paragraph and a face)? And then, once, the ask and
+   the form. Each of those is said once, in one place. */
 export const render = (ctx) => page(ctx, {
   path: "",
   meta: home.meta,
@@ -49,6 +48,11 @@ export const render = (ctx) => page(ctx, {
     logo: `${site.origin}${site.icons.apple}`,
     areaServed: "IL",
     founder: { "@type": "Person", name: site.founder },
+    /* what is offered, so a search engine that read two pages before reads it here */
+    makesOffer: home.build.panels.map((p) => ({
+      "@type": "Offer",
+      itemOffered: { "@type": "Service", name: p.title, description: p.items.join(", ") },
+    })),
   },
 
   body: html`
@@ -61,7 +65,7 @@ ${hero(ctx, {
   className: "hero-sync",
   artFirst: true,
   art: heroMotion(ctx, home.heroMotion),
-  /* WhatsApp first — it is the primary action on every page of the site */
+  /* WhatsApp first: it is the primary action */
   actions: html`${waButton(ctx, { label: home.waLabel })}
           ${button(ctx, { href: "#contact", label: formCta, variant: "ghost", size: "lg", analytics: "hero_form_cta" })}`,
 })}
@@ -71,32 +75,8 @@ ${scrollFlow(ctx, home.flowStory)}
 ${section({
   id: "solutions",
   className: "solutions",
-  children: html`${sectionHead(home.solutions)}
-${cardGrid({
-    /* each card is the way into its own solution page */
-    children: solutions.map((s) =>
-      card(ctx, { icon: s.icon, title: s.homeTitle, text: s.homeText, cta: s.homeCta, href: `${s.slug}/` })
-    ),
-  })}`,
-})}
-
-${section({
-  id: "problem",
-  className: "problem",
-  children: html`${sectionHead(home.problem.head)}
-${cardGrid({
-    cols: 3,
-    /* the pains are clay — the one hue on the site that means "this hurts" */
-    children: home.problem.items.map((item) => card(ctx, { ...item, accent: "clay", size: "sm" })),
-  })}
-${baStrip(home.problem.beforeAfter)}`,
-})}
-
-${section({
-  id: "approach",
-  className: "approach",
-  children: html`${sectionHead(home.approach.head)}
-${approach(ctx, home.approach)}`,
+  children: html`${sectionHead(home.build.head)}
+${solutionPanels({ children: home.build.panels.map((panel) => solutionPanel(ctx, panel)) })}`,
 })}
 
 ${home.showTestimonials && section({
@@ -109,45 +89,28 @@ ${quotes({ items: pickQuotes("erez", "itzik") })}`,
 ${section({
   id: "projects",
   className: "projects",
-  /* One section, one claim: not presentations, things that work. It says HOW
-     they get made (AI and agents, the dark panel) and then shows WHAT was made:
-     every card is the same project card, and a client with nothing public to
-     open shows its mark where a capture would be. It used to be two sections
-     that both answered "what has been built". */
-  children: html`${sectionHead(projectsHead)}
+  /* One section, one claim: not presentations, things that work. It shows WHAT was
+     made (three with a picture, the rest one click away on this same page), and
+     then HOW it gets made fast: AI and agents, in the dark band. */
+  children: html`${sectionHead(home.work.head)}
+${projectGrid(ctx, { items: pickProjects(...home.work.featured), compact: true })}
+<details class="more-work">
+  <summary><span>${home.work.moreLabel}</span></summary>
+  ${projectGrid(ctx, { items: pickProjects(...home.work.more), compact: true })}
+</details>
 ${cardGrid({
-    cols: 3,
+    cols: 4,
     className: "ai-grid",
     children: html`${card(ctx, { ...home.ai.lead, wide: true, accent: "teal" })}
 ${home.ai.items.map((item) => card(ctx, { ...item, accent: "teal", size: "sm" }))}`,
-  })}
-${cardGrid({
-    cols: 4,
-    className: "work-strip",
-    /* a strip, not a gallery: three of the works, and the tile that opens all of them */
-    children: html`${pickProjects(...home.workStrip.featured).map((p) =>
-      card(ctx, { icon: p.icon, title: p.name, text: p.title, href: "work/", size: "sm", accent: "water" }))}
-${card(ctx, { icon: home.workStrip.all.icon, title: home.workStrip.all.title, text: `${Object.keys(projects).length} פרויקטים: אפליקציות, אתרים, אוטומציות וקמפיינים`, href: "work/", cta: home.workStrip.all.cta, size: "sm", accent: "teal" })}`,
   })}`,
 })}
-
-${ctaBand(ctx, { ...defaultCta, cta: home.waLabel })}
 
 ${section({
   id: "process",
   className: "process",
-  children: html`${sectionHead(processContent.head)}
-${timeline({ items: processContent.steps })}`,
-})}
-
-${section({
-  id: "advantage",
-  className: "advantage",
-  children: html`${sectionHead(home.advantage.head)}
-${cardGrid({
-    cols: 3,
-    children: home.advantage.items.map((item) => card(ctx, { ...item, accent: "teal" })),
-  })}`,
+  children: html`${sectionHead(home.how.head)}
+${approach(ctx, { picture: home.how.picture, steps: home.how.steps })}`,
 })}
 
 ${section({
@@ -156,18 +119,12 @@ ${section({
   children: about(ctx, home.about),
 })}
 
+${ctaBand(ctx, { ...home.cta, cta: home.waLabel })}
+
 ${section({
   id: "contact",
   className: "contact",
   children: contact(ctx, contactContent, { page: home.pageName, waLabel: home.waLabel }),
-})}
-
-<!-- the two solutions: AFTER the ask, never competing with it -->
-${section({
-  id: "ecosystem",
-  className: "solutions",
-  children: html`${sectionHead(ecosystem.head)}
-${ecoGrid(ctx, { solutions, badge: ecosystem.badge })}`,
 })}
 </main>`,
 });

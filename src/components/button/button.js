@@ -8,10 +8,12 @@ import { attrs, cx, html } from "../../lib/html.js";
 
    whatsapp:true only marks the element — the real wa.me href is written at
    runtime from one number in site config (see whatsapp-button.client.js). */
-export function button(ctx, { href, label, variant = "primary", size, block, inline, whatsapp, analytics, type, className, children } = {}) {
+export function button(ctx, { href, label, variant = "primary", size, block, inline, whatsapp, waText, analytics, type, className, children } = {}) {
   const a = attrs({
     class: cx("btn", variant && `btn-${variant}`, size && `btn-${size}`, block && "btn-block", inline && "btn-inline", className),
     "data-whatsapp": whatsapp || null,
+    /* this one button's own opening message, over the page's (see whatsapp-button.client.js) */
+    "data-wa-text": whatsapp && waText ? waText : null,
     "data-analytics": analytics,
   });
   const body = children ?? label;

@@ -24,13 +24,19 @@ import { icon } from "../icon/icon.js";
    wa.me on a phone, WhatsApp Web on a desktop. It finds the button by
    [data-whatsapp], not by class, so the skin cannot break the link.
 
-   { label, variant, size, block, inline } */
-export const waButton = (ctx, { label, variant = "whatsapp", size = "lg", block, inline, className } = {}) =>
+   `variant: "link"` is the quietest skin of all: plain words with an arrow, for a
+   page that offers the conversation in several places (one per thing it sells)
+   and cannot make every one of them a pill. `waText` is that one button's own
+   opening line; without it the button says what the page says.
+
+   { label, variant, size, block, inline, waText } */
+export const waButton = (ctx, { label, variant = "whatsapp", size = "lg", block, inline, className, waText } = {}) =>
   button(ctx, {
     variant,
     size,
     block,
     inline,
+    waText,
     /* btn-wa carries the mark, the label and the one-line rule for BOTH skins */
     className: cx("btn-wa", className),
     whatsapp: true,

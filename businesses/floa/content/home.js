@@ -1,5 +1,6 @@
-/* The homepage's own copy. Everything it shares with the solution pages — the
-   process, the projects, the quotes, the form, the footer — it imports instead. */
+/* The homepage's copy, and the site's: FLOA is one page. What it sells, what it
+   built, how the work goes and who is behind it all live here, once each. What it
+   shares with the campaign page (the projects, the form, the footer) it imports. */
 export const home = {
   /* "What clients say" is hidden on the homepage, on purpose and for now. The
      quotes themselves stay in content/quotes.js; turning this on brings the
@@ -29,7 +30,7 @@ export const home = {
 
   hero: {
     title: "ייעוץ, פיתוח וליווי שהופכים בלגן לזרימה אחת",
-    text: "אתרים, אפליקציות, אוטומציות וסוכני AI שבנויים סביב העסק שלכם: מבינים מה מעכב אותו, בונים את מה שמחבר הכול, ונשארים איתכם אחרי העלייה",
+    text: "אתרים, אפליקציות, אוטומציות וסוכני AI שבנויים סביב העסק שלכם",
   },
 
   /* The scroll scene between the opening and the question. Three sentences, told in
@@ -46,13 +47,6 @@ export const home = {
     counters: { lost: "נופלים בין הכיסאות", flowing: "זורמים למקום הנכון" },
   },
 
-  /* The portfolio on the homepage is a strip, not a gallery: three of the works, and
-     a tile that opens the page with all of them. */
-  workStrip: {
-    featured: ["once", "chords", "perfecti"],
-    all: { title: "כל העבודות", cta: "לתיק העבודות", icon: "picture" },
-  },
-
   /* The film beside the opening: the mess of a business becomes one flow, through
      advice, websites and landing pages, apps, automations and AI. Its source
      (scene, settings, how to render it again) is businesses/floa/motion-hero-flow/. */
@@ -62,105 +56,106 @@ export const home = {
     tall: { src: "assets/hero-flow-tall.mp4", poster: "assets/hero-flow-tall-poster.webp", width: 880, height: 1100 },
   },
 
-  solutions: {
-    eyebrow: "פתרונות",
-    title: "מה מעכב את העסק עכשיו?",
-    text: "לא צריך לדעת איזה כלי לבקש. מספיק לזהות את הבעיה שמרגישים ביום־יום",
-  },
-
-  problem: {
+  /* What is sold. Two things, each as a column: the pain in the reader's own words, what gets
+     built, the one line that is true of how, and a way to talk about exactly this. The pain is
+     said HERE and nowhere else on the page (the film and the scroll scene set it up; this is
+     where it becomes a choice). */
+  build: {
     head: {
-      eyebrow: "המצב היום",
-      title: "כל יום שהחיבורים חסרים, העסק משלם על זה",
-      text: "פעולה שנעשית שוב ביד ומידע שיושב במקום הלא נכון עולים לעסק בזמן, בכסף ובטעויות",
+      eyebrow: "מה בונים",
+      title: "איפה זה תקוע אצלכם?",
+      text: "אפשר להתחיל מאחד, והשני מתחבר כשצריך",
     },
-    items: [
-      { title: "עבודה ידנית שחוזרת על עצמה", text: "העתקות, הודעות, מסמכים ותזכורות נעשים שוב ושוב במקום לקרות אוטומטית" },
-      { title: "מידע שמפוזר בין מערכות וקבצים", text: "משימות, מסמכים ונתונים יושבים בכלים שונים, ואף אחד לא רואה את התמונה המלאה" },
-      { title: "כלים שלא מדברים זה עם זה", text: "כל כלי עובד בפינה שלו, ושום דבר לא זורם ביניהם בלי שמישהו יעביר אותו ביד" },
+    panels: [
+      {
+        icon: "website",
+        title: "אתר, אפליקציה או דף נחיתה",
+        pain: "מבקרים נכנסים, לא מבינים מה לעשות, ועוזבים בלי להשאיר פרטים",
+        items: [
+          "אתר תדמית או אתר שירותים",
+          "דף נחיתה עם מסר מחודד",
+          "אפליקציית Web או Mobile",
+          "שדרוג של אתר או מוצר קיים",
+        ],
+        note: "מאפיון וחידוד המסר ועד עיצוב, פיתוח וחיבור לטופס, לתשלום ול־WhatsApp",
+        proof: "בין העבודות: Once, אקורדים ויוצאים להרפתקה",
+        cta: { label: "לשיחה על אתר או אפליקציה", waText: "היי, אני רוצה לבדוק אתר, אפליקציה או דף נחיתה" },
+      },
+      {
+        icon: "automation",
+        title: "מערכת, אוטומציה או סדר בתהליך",
+        pain: "העבודה נעשית ביד, בין כלים שלא מדברים, ומשהו תמיד נופל בין הכיסאות",
+        items: [
+          "מערכת ניהול מותאמת לעסק",
+          "אוטומציה של פעולות שחוזרות",
+          "חיבור בין מערכות קיימות",
+          "ממשק ניהול, בקרות והרשאות",
+        ],
+        note: "לא תמיד צריך מערכת חדשה: לפעמים מספיק לחבר את מה שכבר יש",
+        proof: "בין העבודות: עיריית תל אביב, דפוס אאוטלט ו־Roster",
+        cta: { label: "לשיחה על מערכת או אוטומציה", waText: "היי, אני רוצה לבדוק מערכת או אוטומציה לעסק" },
+      },
     ],
-    beforeAfter: {
-      before: { tag: "לפני FLOA", text: "Excel, טפסים, קבצים מפוזרים, ספקים שונים ומעקב ידני" },
-      after: { tag: "עם FLOA", text: "מוצר דיגיטלי ברור ותהליך עבודה אחד שמחבר בין הכלים" },
-    },
   },
 
-  approach: {
-    head: {
-      eyebrow: "הגישה",
-      title: "לא עוד פתרונות מנותקים. דיגיטל שעובד סביב העסק",
-      text: "קודם מבינים איך העסק עובד, איפה הוא נתקע ומה ייצור את השינוי הגדול ביותר, ורק אז מתכננים ומחברים את מה שבאמת צריך",
-    },
-    intro: "במשך שנים עבדתי בחברות וארגונים גדולים בנקודת החיבור שבין הצורך העסקי לפיתוח הטכנולוגי, להבין מה באמת צריך, לתרגם אותו למערכת נכונה ולוודא שהיא עובדת גם בפועל",
-    picture: {
-      src: "assets/systems-devices.svg",
-      width: 800,
-      height: 600,
-      alt: "מחשב נייד וטלפון עם ממשקים עסקיים נקיים ומודרניים",
-    },
-    principles: [
-      { title: "מבינים לפני שבונים", text: "לומדים את העסק, הלקוחות והתהליכים לפני שבוחרים טכנולוגיה" },
-      { title: "מחברים רק מה שצריך", text: "לא מוסיפים עוד כלים אם אפשר לפשט, לבטל או לחבר את מה שכבר קיים" },
-      { title: "בונים לשימוש אמיתי", text: "הפתרון צריך להיות ברור ונוח לעובדים וללקוחות ולא רק להיראות טוב בהדגמה" },
-    ],
+  /* The work: the proof. Three with a picture first (nothing to read, only to see), the rest
+     one click away on the same page. */
+  work: {
+    head: { eyebrow: "עבודות", title: "לא מצגות. דברים שעובדים" },
+    featured: ["once", "chords", "perfecti"],
+    more: ["harpatka", "roster", "aum", "telaviv", "outlet"],
+    moreLabel: "עוד עבודות",
   },
 
-  /* Working with AI and agents. It sits inside the work section, directly under
-     "not presentations, things that work": the claim and its evidence belong
-     together. Every card names something that exists (Chords reads a photographed
-     sheet through the Worker, the Facebook account is run by agents, this very
+  /* Working with AI and agents. It sits under the work, in a band of its own: the claim and
+     its evidence belong together. Every card names something that exists (Chords reads a
+     photographed sheet through the Worker, the Facebook account is run by agents, this very
      site is built beside a coding agent) and the last one says who decides. */
   ai: {
     lead: {
       icon: "sparkle",
       badge: "AI וסוכנים",
       title: "עובדים עם AI וסוכנים, בעבודה עצמה",
-      text: "לא כקישוט בעמוד אלא ככלי עבודה: סוכנים שמריצים קמפיינים, מודלים שקוראים תמונות, וסוכני קוד שבונים איתנו את המוצר. כך מגיעים מהר יותר למשהו שרץ, ועם פחות עבודה ידנית",
+      text: "סוכנים שמריצים קמפיינים, מודלים שקוראים תמונות וסוכני קוד שבונים איתנו את המוצר. כך מגיעים מהר יותר למשהו שרץ",
     },
     items: [
       {
         icon: "automation",
         title: "סוכנים לפייסבוק",
-        text: "סוכנים שמנהלים קמפיינים: קוראים את הנתונים, מזהים מה עובד ומה שורף תקציב, ומריצים שינויים בחשבון הפרסום",
+        text: "קוראים את הנתונים, מזהים מה עובד ומה שורף תקציב, ומריצים שינויים בחשבון הפרסום",
       },
       {
         icon: "picture",
         title: "עיבוד תמונה",
-        text: "מצלמים דף אקורדים או מעלים PDF, והמודל קורא אותו ומציב כל אקורד על ההברה שלו. כך עובדת האפליקציה אקורדים",
-      },
-      {
-        icon: "code",
-        title: "פיתוח עם סוכני קוד",
-        text: "אתרים ואפליקציות נבנים לצד סוכן קוד, עם בדיקות אוטומטיות. מהר יותר, והקוד נשאר קוד רגיל שאפשר להמשיך לעבוד איתו",
+        text: "מצלמים דף אקורדים, והמודל קורא אותו ומציב כל אקורד על ההברה שלו. כך עובדת האפליקציה אקורדים",
       },
       {
         icon: "link",
-        title: "אוטומציות בין המערכות",
-        text: "מיילים, טפסים והודעות הופכים אוטומטית למשימות בתהליך עבודה מסודר, כמו אצל דפוס אאוטלט, בלי הקלדה ידנית",
-      },
-      {
-        icon: "chart",
-        title: "נתונים שמסתכמים לבד",
-        text: "נתוני פרסום, הרשמות ותשלומים נאספים למקום אחד ומסוכמים, כדי להחליט לפי מה שקורה ולא לפי תחושה",
+        title: "אוטומציות ונתונים",
+        text: "מיילים, טפסים ונתוני פרסום הופכים אוטומטית למשימות ולסיכומים, כמו אצל דפוס אאוטלט",
       },
       {
         icon: "shield",
         title: "אדם מחליט ומאשר",
-        text: "הסוכנים עושים את העבודה החוזרת. שינוי בחשבון, בדף או בנתונים לא קורה בלי אישור, כי האחריות נשארת אצלכם",
+        text: "הסוכנים עושים את העבודה החוזרת. שינוי בחשבון, בדף או בנתונים לא קורה בלי אישור",
       },
     ],
   },
 
-  advantage: {
-    head: {
-      eyebrow: "היתרון",
-      title: "כשהכול מחובר, העסק יכול לזוז קדימה",
-      text: "FLOA מחזיקה את התמונה המלאה, מהמסר וחוויית המשתמש ועד המערכת והתפעול",
+  /* How the work goes. Three steps, and each one carries what used to be a section of its own
+     (understand before building, connect only what is needed, stay after the launch). */
+  how: {
+    head: { eyebrow: "איך עובדים", title: "כך עובדים, בשלושה שלבים" },
+    picture: {
+      src: "assets/systems-devices.svg",
+      width: 800,
+      height: 600,
+      alt: "מחשב נייד וטלפון על המים, עם ממשקים עסקיים נקיים",
     },
-    items: [
-      { title: "כתובת אחת במקום מספר ספקים", text: "לא צריך לתאם בנפרד בין בונה אתרים, מעצב, מפתח, איש אוטומציות וספק מערכות" },
-      { title: "פתרון אחד במקום טלאים", text: "כל רכיב נבנה כחלק מאותו תהליך עסקי ולא כפתרון זמני שיוצר בעיה חדשה" },
-      { title: "ליווי גם אחרי העלייה לאוויר", text: "הפתרון נטמע בעסק וממשיך להשתפר לפי השימוש האמיתי של העובדים והלקוחות" },
+    steps: [
+      { title: "מיפוי", text: "שיחה קצרה שבה מבינים איך העסק עובד ומה מעכב אותו, לפני שבוחרים כלי. בסופה מקבלים תכנית עבודה ולוחות זמנים" },
+      { title: "בנייה וחיבור", text: "מחברים את מה שכבר יש לפני שמוסיפים כלי חדש, ובונים למי שישתמש בזה בפועל" },
+      { title: "עלייה וליווי", text: "עולים לאוויר ונשארים איתכם, ומשפרים לפי השימוש האמיתי" },
     ],
   },
 
@@ -169,11 +164,13 @@ export const home = {
     title: "אני אופיר אבירם, המייסד של FLOA",
     portrait: { src: "assets/ofir.webp", width: 132, height: 132, alt: "אופיר אבירם, מייסד FLOA" },
     paragraphs: [
-      "כבר יותר מ־15 שנה אני מתכנן ובונה מערכות, מוצרים ותהליכים דיגיטליים",
-      "הניסיון שלי משלב אפיון, ארכיטקטורה, פיתוח ומוצר. השילוב הזה מאפשר ל־FLOA להבין גם את הצורך העסקי, גם את חוויית המשתמש וגם את הדרך להפוך את הרעיון לפתרון שעובד בפועל",
-      "הקמתי את FLOA כדי לתת לעסקים כתובת אחת שרואה את התמונה המלאה, מתכננת את הפתרון ומלווה מקצה לקצה",
+      "יותר מ־15 שנה אני מתכנן ובונה מערכות ומוצרים דיגיטליים בארגונים גדולים. הקמתי את FLOA כדי שלעסק תהיה כתובת אחת שמבינה את הצורך, בונה ומלווה עד שזה עובד",
     ],
-    chips: ["15+ שנות ניסיון", "אפיון", "ארכיטקטורה", "פיתוח", "מוצר"],
-    emphasis: "אני מתכנן דיגיטל לפי הצורך העסקי, לא לפי הכלי",
+  },
+
+  /* the one loud ask in the middle of the page, right before the form */
+  cta: {
+    title: "מספיק לבוא רק עם הבעיה",
+    text: "בשיחת מיפוי קצרה נבין מה מעכב את העסק ומה כדאי לבנות קודם",
   },
 };

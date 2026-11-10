@@ -19,12 +19,13 @@
    ========================================================================== */
 const ABSOLUTE = /^(?:https?:|mailto:|tel:|data:|#|\/)/;
 
-export const context = ({ base = "", homeHref = "", isHome = false, assets, site, footer }) => ({
+export const context = ({ base = "", homeHref = "", isHome = false, assets, site, footer, nav }) => ({
   base,
   isHome,
   assets,
   site,
   footer,                              // footerContent(ctx) — the layout calls it
+  nav,                                 // optional, same shape: navContent(ctx). A page without one has no top bar
   brand: site.brand,
   /* "assets/ofir.webp" -> "../assets/ofir.webp" on a page one level down */
   url: (path) => (ABSOLUTE.test(path) ? path : base + path),

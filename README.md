@@ -31,16 +31,15 @@ src/
     <name>.js              # הרינדור — מקבל פרמטרים, מחזיר HTML
     <name>.css             # הסגנון של אותה קומפוננטה בלבד
     <name>.client.js       # ההתנהגות שלה בדפדפן (אם יש)
-  content/                 # התוכן: site, solutions, projects, quotes, legal
-    hero-art/*.svg         # האיור הייחודי של כל דף פתרון
+  content/                 # התוכן: site, home, projects, quotes, legal
   layouts/base.js          # מעטפת המסמך: meta, OG, JSON-LD, פוטר, סקריפטים
   pages/
     index.js               # מפת האתר — כל דף שנוצר מופיע כאן
-    home.js / solution.js / legal-page.js
+    home.js / legal-page.js
 worker/                    # פונקציית השרת ששולחת את הטופס במייל (Cloudflare)
 ```
 
-**ששה דפים בלבד:** דף הבית וחמישה דפי פתרון. אין דף שביעי ואין אזור ניהול.
+**FLOA הוא דף אחד:** דף הבית מחזיק הכול (מה בונים, עבודות, איך עובדים, אודות, יצירת קשר), וסרגל עליון מפנה לכל חלק. מלבדו יש רק דף הקמפיין (`landing-page-offer`) והמסמכים המשפטיים. אין דפי פתרון ואין דף עבודות נפרד, ואין אזור ניהול.
 
 ### קומפוננטה אחת לכל דבר שחוזר על עצמו
 

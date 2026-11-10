@@ -1,0 +1,59 @@
+/* Two (or more) things sold, side by side. Each panel is a column: the pain, the
+   list, one line, one way in. The link sits at the foot, so panels of unequal
+   length still end on the same line. */
+.solution-panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(32px, 5vw, 72px);
+  min-width: 0;
+}
+.solution-panels > * { min-width: 0; }
+
+.solution-panel {
+  --accent: var(--teal);
+  --accent-dark: var(--teal-dark);
+  --accent-tint: var(--teal-tint);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.solution-panel .card-icon { color: var(--accent-dark); background: var(--accent-tint); }
+.solution-panel h3 { font-size: var(--fs-h3); margin-bottom: var(--s-3); }
+
+/* the pain: said the way the reader would say it */
+.sp-pain {
+  margin-bottom: var(--s-6);
+  font-size: var(--fs-lead);
+  color: var(--ink-2);
+}
+
+.sp-list {
+  display: grid;
+  gap: var(--s-3);
+  margin-bottom: var(--s-6);
+}
+.sp-list li {
+  position: relative;
+  padding-inline-start: var(--s-6);
+  color: var(--ink);
+  font-weight: 600;
+}
+.sp-list li::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: .62em;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* ink, not the muted greys: these sit straight on the water, whose blue corners take a grey below 4.5:1 */
+.sp-note { margin-bottom: var(--s-3); color: var(--ink-2); font-size: var(--fs-sm); }
+.sp-proof { margin-bottom: var(--s-5); color: var(--ink-2); font-size: var(--fs-xs); }
+.sp-cta { margin-top: auto; align-self: flex-start; }
+
+@media (max-width: 860px) {
+  .solution-panels { grid-template-columns: 1fr; gap: var(--s-10, 64px); }
+}

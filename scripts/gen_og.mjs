@@ -41,9 +41,7 @@ const PUBLIC = join(ROOT, "businesses/floa/public");
 const load = (p) => import(pathToFileURL(join(ROOT, p)).href);
 
 const { home } = await load("businesses/floa/content/home.js");
-const { solutions } = await load("businesses/floa/content/solutions.js");
 const { landingOffer } = await load("businesses/floa/content/landing-offer.js");
-const { work } = await load("businesses/floa/content/work.js");
 const { icon } = await load("src/components/icon/icon.js");
 
 /* --- where Chrome is -------------------------------------------------------- */
@@ -149,27 +147,6 @@ const river = () => {
   </svg>`;
 };
 
-/* websites, apps, landing pages: the laptop and the phone (the same drawing the homepage shows) */
-const devices = () => {
-  const svg = readFileSync(join(PUBLIC, "assets/systems-devices.svg"), "utf8");
-  return svg.replace(/<style>[\s\S]*?<\/style>/, "").replace("viewBox=\"0 0 800 600\"", "viewBox=\"0 40 800 560\"");
-};
-
-/* systems and automations: a form becomes a task becomes a message, on one current */
-const pipeline = () => `<svg viewBox="0 0 600 440" role="img">${defs}
-  <ellipse cx="300" cy="222" rx="300" ry="130" fill="url(#glow)"/>
-  <path d="${pebble(30, 96, 540, 250, 100, 30)}" fill="url(#glass)" filter="url(#soft)"/>
-  <path d="M388 221H212" stroke="${LINE}" stroke-width="9" stroke-linecap="round"/>
-  <path d="M470 221H388" stroke="${TEAL}" stroke-width="9" stroke-linecap="round"/>
-  <path d="M212 221H130" stroke="${LINE}" stroke-width="9" stroke-linecap="round"/>
-  <path d="M388 221H300" stroke="${TEAL}" stroke-width="9" stroke-linecap="round"/>
-  ${[["doc", 470, true], ["automation", 300, true], ["whatsapp", 130, false]].map(([n, x, lit]) =>
-    `<circle cx="${x}" cy="221" r="58" fill="${lit ? "url(#sea)" : "#fff"}" stroke="${lit ? "#fff" : TINT}" stroke-width="7"/>
-     <circle cx="${x}" cy="221" r="78" fill="none" stroke="${TEAL}" stroke-width="1.6" opacity=".26"/>
-     ${glyph(n, x, 221, 50, lit ? "#fff" : DARK)}`).join("")}
-  <path d="${waveD(40, 392, 520, 8, 4)}" fill="none" stroke="url(#fade)" stroke-width="5" stroke-linecap="round"/>
-</svg>`;
-
 /* the landing page offer: a page with a form, and a price tag on the corner */
 const landing = () => `<svg viewBox="0 0 600 440" role="img">${defs}
   <ellipse cx="300" cy="240" rx="300" ry="130" fill="url(#glow)"/>
@@ -186,26 +163,10 @@ const landing = () => `<svg viewBox="0 0 600 440" role="img">${defs}
   <path d="${waveD(88, 377, 134, 6, 2.5)}" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round"/></g>
 </svg>`;
 
-/* the work: three real projects, cut to pebbles and laid over one another */
-const workArt = () => {
-  const img = (name) => `data:image/webp;base64,${readFileSync(join(PUBLIC, `assets/project-${name}.webp`)).toString("base64")}`;
-  const one = (name, x, y, w, rot, id) => `<g transform="translate(${x} ${y}) rotate(${rot} ${w / 2} ${w / 2})" filter="url(#soft)">
-    <path d="${pebble(0, 0, w, w, w * 0.2, w * 0.06)}" fill="#fff"/>
-    <clipPath id="${id}"><path d="${pebble(6, 6, w - 12, w - 12, w * 0.19, w * 0.05)}"/></clipPath>
-    <image href="${img(name)}" x="6" y="6" width="${w - 12}" height="${w - 12}" clip-path="url(#${id})" preserveAspectRatio="xMidYMid slice"/></g>`;
-  return `<svg viewBox="0 0 600 440" role="img">${defs}
-    <ellipse cx="300" cy="230" rx="300" ry="150" fill="url(#glow)"/>
-    ${one("chords", 0, 150, 270, -4, "c1")}${one("once", 330, 120, 270, 3, "c2")}${one("roster", 150, 10, 300, -1.5, "c3")}
-  </svg>`;
-};
-
 /* --- the cards --------------------------------------------------------------- */
 const cards = [
   { out: home.og.image, title: home.og.title, art: river() },
-  { out: solutions[0].og.image, title: solutions[0].og.title, art: devices() },
-  { out: solutions[1].og.image, title: solutions[1].og.title, art: pipeline() },
   { out: landingOffer.og.image, title: landingOffer.og.title, art: landing() },
-  { out: work.og.image, title: work.og.title, art: workArt() },
 ];
 
 const WIND = [[70, 60, 3.4, 1], [150, 38, 2.6, -1], [250, 70, 4, 1], [340, 44, 3, -1], [450, 66, 3.6, 1], [560, 40, 2.8, -1]]

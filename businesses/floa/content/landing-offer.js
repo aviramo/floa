@@ -104,7 +104,7 @@ export const landingOffer = {
           "חיבור ל־CRM, אוטומציות ומדידת המרות",
         ],
         cta: "אני צריך משהו מתקדם יותר",
-        href: "digital-products/",
+        href: "/#solutions",
         accent: "teal",
         analytics: "advanced_track_select",
       },
