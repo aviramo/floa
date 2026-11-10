@@ -53,14 +53,14 @@ svg { display: block; }
 
 /* אוויר: קווי רוח, ציפורים וזרעים */
 .air { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
-.wind { position: absolute; inset-inline-start: 0; width: 200%; height: 90px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; opacity: .55; }
+.wind { position: absolute; left: 0; width: 200%; height: 90px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; opacity: .55; }
 .w1 { inset-block-start: 24%; animation: slide 44s linear infinite; }
 .w2 { inset-block-start: 40%; opacity: .4; animation: slide 62s linear -20s infinite; }
 .bird { position: absolute; inset-inline-start: 0; width: var(--s, 30px); fill: #fff; opacity: .9; animation: fly var(--t, 50s) linear var(--w, 0s) infinite; }
 .seed { position: absolute; inset-block-end: 14%; inset-inline-start: var(--x); width: 6px; height: 6px; border-radius: 50%; background: #fffbe8; box-shadow: 0 0 10px 3px rgba(255, 244, 200, .85); opacity: 0; animation: rise var(--t, 18s) ease-in-out var(--w, 0s) infinite; }
 
 /* רצועת המילים */
-.marquee { direction: ltr; position: relative; z-index: 2; display: flex; overflow: hidden; padding: 18px 0; border-block: 1px solid rgba(30, 59, 44, .25); background: var(--paper); color: var(--forest); }
+.marquee { direction: ltr; position: relative; z-index: 2; display: flex; overflow: hidden; padding: 18px 0; background: var(--paper); color: var(--forest); }
 .track { display: flex; flex: none; gap: 38px; padding-inline-end: 38px; animation: marquee 44s linear infinite; font-family: var(--display); font-weight: 500; font-size: 1.5rem; line-height: 1.2; white-space: nowrap; }
 .track span { display: inline-flex; align-items: center; gap: 38px; direction: rtl; }
 .track .dot { order: 2; width: 11px; height: 11px; }
@@ -140,7 +140,7 @@ mark { background: none; color: var(--clay); font-style: normal; }
 .js .rv.in { opacity: 1; transform: none; }
 
 @keyframes marquee { to { transform: translateX(-100%); } }
-@keyframes slide { to { transform: translateX(50%); } }
+@keyframes slide { to { transform: translateX(-50%); } }
 @keyframes breathe { to { transform: scale(1.07); } }
 @keyframes fly { 0% { transform: translate(-12vw, 0); } 50% { transform: translate(55vw, -26px); } 100% { transform: translate(115vw, 10px); } }
 @keyframes rise { 0% { transform: translate(0, 0); opacity: 0; } 15% { opacity: .9; } 85% { opacity: .6; } 100% { transform: translate(36px, -52svh); opacity: 0; } }
@@ -179,11 +179,11 @@ mark { background: none; color: var(--clay); font-style: normal; }
 .photo .edge--flip { inset-block-end: auto; inset-block-start: -1px; transform: scaleY(-1); }
 
 /* שמש זהובה מאחורי הכותרת */
-.hero-text::before { content: ""; position: absolute; z-index: -1; inset-block-start: 4%; left: 50%; width: min(760px, 130vw); aspect-ratio: 1; margin: 0 0 0 calc(min(760px, 130vw) / -2); border-radius: 50%; background: radial-gradient(circle, rgba(240, 194, 94, .42), rgba(240, 194, 94, 0) 66%); animation: glow 10s ease-in-out infinite; }
+.hero-text::before { content: ""; position: absolute; z-index: -1; inset-block-start: -14%; left: 50%; width: min(760px, 130vw); aspect-ratio: 1; margin: 0 0 0 calc(min(760px, 130vw) / -2); border-radius: 50%; background: radial-gradient(circle, rgba(240, 194, 94, .38), rgba(240, 194, 94, 0) 60%); animation: glow 10s ease-in-out infinite; }
 .hero-text { isolation: isolate; overflow-x: clip; }
 
 /* קו גלי מתחת לכותרות */
-.sec h2::after { content: ""; display: block; width: 118px; height: 14px; margin-top: 12px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 118 14'%3E%3Cpath d='M2 8c9-9 18-9 27 0s18 9 27 0 18-9 27 0 18 9 27 0' fill='none' stroke='%23D99A2B' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat; }
+.sec h2::after { content: ""; display: block; width: 120px; height: 20px; margin-top: 8px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 20'%3E%3Cpath d='M4 10c7-9 14-9 21 0s14 9 21 0 14-9 21 0 14 9 21 0 14-9 21 0' fill='none' stroke='%23D99A2B' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat; }
 .center h2::after, h2.center::after { margin-inline: auto; }
 .sec--contact h2::after { margin-inline: auto; }
 
@@ -199,9 +199,15 @@ mark { background: none; color: var(--clay); font-style: normal; }
 /* גבעות ורוח בסוף */
 .sec--contact { padding-bottom: 190px; overflow: hidden; }
 .hills { position: absolute; inset-inline: 0; inset-block-end: -1px; height: 150px; pointer-events: none; }
-.hill { position: absolute; inset-inline-start: 0; inset-block-end: 0; width: 200%; height: 100%; }
+.hill { position: absolute; left: 0; inset-block-end: 0; width: 200%; height: 100%; }
 .h1 { fill: #173325; height: 92%; animation: slide 70s linear infinite; }
 .h2 { fill: #14281D; height: 60%; animation: slide 46s linear -14s infinite; }
 
 @keyframes glow { 0%, 100% { transform: scale(1); opacity: .85; } 50% { transform: scale(1.1); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .hero-text::before, .quote::before { animation: none; } }
+
+.n, .n.c1, .n.c2, .n.c3, .n.c4, .n.c5, .n.c6 { background: none; color: var(--sun); }
+
+/* קצוות הבאנר גליים באמת: המסכה חותכת את התמונה, והרקע האמיתי נשאר מאחוריה */
+.photo { --eh: clamp(26px, 4vw, 56px); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 70' preserveAspectRatio='none'%3E%3Cpath d='M0 34c120 38 240 38 360 0s240-38 360 0 240 38 360 0 240-38 360 0v36H0z'/%3E%3C/svg%3E") top / 100% var(--eh) no-repeat, linear-gradient(#000, #000) center / 100% calc(100% - 2 * var(--eh) + 2px) no-repeat, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 70' preserveAspectRatio='none'%3E%3Cpath d='M0 34c120 38 240 38 360 0s240-38 360 0 240 38 360 0 240-38 360 0V0H0z'/%3E%3C/svg%3E") bottom / 100% var(--eh) no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 70' preserveAspectRatio='none'%3E%3Cpath d='M0 34c120 38 240 38 360 0s240-38 360 0 240 38 360 0 240-38 360 0v36H0z'/%3E%3C/svg%3E") top / 100% var(--eh) no-repeat, linear-gradient(#000, #000) center / 100% calc(100% - 2 * var(--eh) + 2px) no-repeat, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 70' preserveAspectRatio='none'%3E%3Cpath d='M0 34c120 38 240 38 360 0s240-38 360 0 240 38 360 0 240-38 360 0V0H0z'/%3E%3C/svg%3E") bottom / 100% var(--eh) no-repeat; }
+.photo .edge { display: none; }
