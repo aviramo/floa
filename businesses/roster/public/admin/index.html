@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://aexmnaxvahblveejsbup.supabase.co wss://aexmnaxvahblveejsbup.supabase.co; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
   <meta name="robots" content="noindex, nofollow" />
   <title>ניהול משתתפים</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%230E8C7E'/%3E%3Ccircle cx='36' cy='38' r='11' fill='%23fff'/%3E%3Ccircle cx='66' cy='38' r='11' fill='%23fff' opacity='.75'/%3E%3Cpath d='M16 80c0-13 9-21 20-21s20 8 20 21zM46 80c0-13 9-21 20-21s20 8 20 21z' fill='%23fff'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=bc7985ce" />
+  <link rel="stylesheet" href="admin.css?v=6b40480c" />
 </head>
 <body class="locked">
   <div class="gate" id="gate" hidden>
@@ -30,11 +30,12 @@
 
         <div class="msel">
           <h1><button type="button" id="mSel" aria-haspopup="menu" aria-expanded="false"><span class="mldg" aria-hidden="true">טוען<b>.</b><b>.</b><b>.</b></span><span id="mSelTxt">הכל</span><svg data-i="chev"></svg></button></h1>
+          <button type="button" class="hicon nextm" id="nextMBtn" hidden><svg data-i="arrowl"></svg><svg data-i="calnext"></svg></button>   <!-- קיצור דרך למפגש הקרוב: משמאל לחץ בחירת המפגש, עם חץ שמוביל אליו -->
           
           <div class="sortmenu mmenu" id="mMenu" role="menu" hidden></div>
         </div>
         <div class="hgrp">
-        <button type="button" class="hicon nextm" id="nextMBtn" hidden><svg data-i="calnext"></svg></button>   <!-- קיצור דרך למפגש הקרוב, מימין לכפתור התפריט -->
+        <button type="button" class="hicon" id="tagEditBtn" aria-label="עריכת תגיות" title="עריכת תגיות"><svg data-i="tag"></svg></button>   <!-- עריכת תגיות: מימין לכפתור התפריט -->
         <div class="hicons">
           <button type="button" class="hicon" id="menuBtn" aria-label="תפריט" title="תפריט" aria-haspopup="menu" aria-expanded="false"><svg data-i="grid"></svg></button>
           <div class="hmenu" id="hMenu" role="menu" hidden>
@@ -62,12 +63,13 @@
     <div id="status"></div>
     <div class="chiprow"><div class="cq" id="chipRow" role="group" aria-label="סינון מהיר: משוריינים, גברים ונשים"></div></div>
     <div class="vbar" id="listTags" role="group" aria-label="חיפוש, סינון ומיון">   <!-- שורה אחת: מונה הרשומות (מימין, בעמודת הגיל), תיבת החיפוש, הסינון, המיון, זכר / נקבה (צמודים לאייקוני הסינון של העמודות), ואייקוני העמודות עצמם (נקבעים ב-JS מעל העמודות שלהם) -->
-      <button type="button" class="wafab" id="waFab" aria-haspopup="menu" aria-expanded="false" aria-label="מה מוצג בעמודה"></button>
       <label class="search hsearch" title="חיפוש והוספה">
-          <span class="sicon" aria-hidden="true"></span><input id="q" type="search" placeholder="חיפוש והוספה" autocomplete="off" aria-label="חיפוש והוספה" />
+          <span class="scount" id="listCountS" aria-hidden="true"></span><span class="sicon" aria-hidden="true"></span><input id="q" type="search" placeholder=" " autocomplete="off" aria-label="חיפוש והוספה" />
           <button type="button" class="sclear" id="qClear" aria-label="ניקוי החיפוש" tabindex="-1">×</button>
         </label>
-      <div id="listMore"></div><button type="button" class="hicon" id="sortBtnH" aria-haspopup="menu" aria-expanded="false" aria-label="מיון הרשימה" title="מיון הרשימה"><svg data-i="sort"></svg></button><div class="lbend" id="listWa"></div><div class="lbend" id="listPay"></div><div class="lbend" id="listSent"></div><div class="lbend" id="listBal"></div>
+      <div id="listMore"></div>
+      <div class="wm3" id="waFab" role="group" aria-label="מה מוצג בעמודה: וואטסאפ, הודעה או הגעה"></div>
+      <div class="lbend" id="listWa"></div><div class="lbend" id="listPay"></div><div class="lbend" id="listSent"></div><div class="lbend" id="listBal"></div>
     </div>
     <div class="countline" id="listCount" aria-live="polite" title="מספר הרשומות המוצגות"></div>
     <ul class="list" id="list"></ul>
@@ -325,8 +327,8 @@
       </div>
       <div id="setSt" hidden>
         <div id="stBoth">
-        <section class="stsec"><h3 class="sth">הצגה</h3><p class="sthint">מה מוצג בשורת הצ'יפים שמעל הרשימה (ההגדרה שלך בלבד)</p><div id="stShow"></div></section>
-        <section class="stsec"><h3 class="sth">תגיות</h3><p class="sthint stintro" id="stIntro"></p>
+        <section class="stsec"><div id="stShow"></div></section>
+        <section class="stsec">
         <div id="stList"></div>
         <button type="button" class="btn ghost" id="stAdd">+ תגית חדשה</button></section>
         </div>
@@ -406,6 +408,7 @@
   <dialog id="sortDlg" class="mdlg" aria-label="מיון"><div class="sheet"><div class="sortmenu" id="sortMenu" role="menu" hidden></div></div></dialog>
   <dialog id="waDlg" class="mdlg" aria-label="וואטסאפ"><div class="sheet"><div class="sortmenu" id="waMenu" role="menu" hidden></div></div></dialog>
   <div class="qmenu" id="fMenu" role="menu" hidden></div>
+  <div class="qmenu" id="chipMenu" role="menu" hidden></div>
   <div id="splitHandle" role="separator" aria-orientation="vertical" aria-label="רוחב הרשימה (גרירה, חצים במקלדת, לחיצה כפולה לברירת המחדל)" title="גרירה לשינוי הרוחב · לחיצה כפולה: ברירת מחדל" tabindex="0"></div>
   <div id="splitEmpty" aria-hidden="true"><svg data-i="user"></svg><p>בחרו משתתף מהרשימה כדי לראות את הכרטיס שלו</p></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -414,6 +417,6 @@
   <script src="/auth.js"></script>
   <script src="age.js?v=816fedce"></script>
   <script src="rt.js?v=9f0bd1e7"></script>
-  <script src="admin.js?v=83a25d82"></script>
+  <script src="admin.js?v=83cc59f8"></script>
 </body>
 </html>
