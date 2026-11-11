@@ -2,6 +2,7 @@
    התמונה היא השמש. מתחתיה גבעות נושמות, דשא מתנודד, ציפורים, עננים ופרפרים.
    הכול נע רק ב-transform וב-opacity, ונעצר ב-prefers-reduced-motion. */
 :root {
+  color-scheme: only light;
   --sky: #9FD4EC;
   --sky-2: #D8EFF0;
   --horizon: #FFEFCF;
