@@ -341,3 +341,8 @@ svg { display: block; }
 .sec--final .btn--sm bdi { font-size: 1.4rem; }
 .sec--final .btn--tal { font-size: 1.25rem; min-height: 62px; }
 .foot { padding-bottom: 28px; }
+
+/* כפתורי הטלפון: שורה לשם, שורה למספר, בלי שבירה באמצע המספר */
+.sec--final .cta-row { flex-direction: column; align-items: center; gap: 14px; }
+.sec--final .btn--sm { flex-wrap: wrap; justify-content: center; row-gap: 0; width: min(100%, 340px); padding: 12px 24px; line-height: 1.25; }
+.sec--final .btn--sm bdi { flex-basis: 100%; text-align: center; white-space: nowrap; font-size: 1.5rem; letter-spacing: .02em; }
