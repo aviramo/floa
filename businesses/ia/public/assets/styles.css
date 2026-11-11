@@ -366,3 +366,12 @@ svg { display: block; }
 .list--for h3 { font-size: 1.3rem; }
 .n.emoji { background: rgba(255, 255, 255, .0) !important; font-size: 2rem; width: 52px; height: 52px; font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif; }
 .list li:has(.n.emoji) { align-items: center; }
+
+/* ===== סבב 4: בלי אימוגים, בלי צבעי גלידה, בלי דגשים ===== */
+.what-lead strong { color: inherit; font-size: inherit; }
+.what-cards li, .what-cards li:nth-child(n) { background: #fff; border: 1px solid rgba(23, 58, 42, .12); border-inline-start: 6px solid #E8590C; border-radius: 18px; }
+.what-cards p { font-size: 1.3rem; }
+.count-row div, .count-row div:nth-child(n) { background: var(--paper); border: 1px solid rgba(23, 58, 42, .14); }
+.dotm { flex: none; width: 14px; height: 14px; margin-top: .55rem; border-radius: 80% 0 80% 0; background: #E8590C; transform: rotate(-20deg); }
+.list li:has(.dotm) { align-items: flex-start; }
+.steps b:not(.n) { font-weight: inherit; }
