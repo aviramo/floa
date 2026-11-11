@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=6b40480c" />
+  <link rel="stylesheet" href="admin.css?v=da04b10a" />
 </head>
 <body class="locked">
   <div class="gate" id="gate" hidden>
@@ -35,15 +35,13 @@
           <div class="sortmenu mmenu" id="mMenu" role="menu" hidden></div>
         </div>
         <div class="hgrp">
-        <button type="button" class="hicon" id="tagEditBtn" aria-label="עריכת תגיות" title="עריכת תגיות"><svg data-i="tag"></svg></button>   <!-- עריכת תגיות: מימין לכפתור התפריט -->
+        <button type="button" class="hicon" id="tagEditBtn" aria-label="מה מוצג בשורת הצ'יפים" title="מה מוצג בשורת הצ'יפים"><svg data-i="eye"></svg></button>   <!-- עריכת תגיות: מימין לכפתור התפריט -->
         <div class="hicons">
           <button type="button" class="hicon" id="menuBtn" aria-label="תפריט" title="תפריט" aria-haspopup="menu" aria-expanded="false"><svg data-i="grid"></svg></button>
           <div class="hmenu" id="hMenu" role="menu" hidden>
             <div class="hmtitle" id="bizName" role="presentation"></div>
             <button type="button" role="menuitem" class="hmi" id="statsBtn"><svg data-i="stats"></svg><span>סטטיסטיקות</span></button>
             <button type="button" role="menuitem" class="hmi" id="moneyBtn"><svg data-i="money"></svg><span>כספים</span></button>
-            <button type="button" role="menuitem" class="hmi" id="srcMenuBtn"><svg data-i="enter"></svg><span>שיווק ממומן</span></button>
-            <button type="button" role="menuitem" class="hmi" id="pmMenuBtn"><svg data-i="card"></svg><span>דרכי תשלום</span></button>
             <button type="button" role="menuitem" class="hmi" id="setBtn"><svg data-i="user"></svg><span>החשבון שלי</span></button>
             <a role="menuitem" class="hmi" id="connectLink" href="/roster/connect/"><svg data-i="plug"></svg><span>חיבורים</span></a>
             <a role="menuitem" class="hmi" id="bizSwitch" href="/roster/" hidden><svg data-i="swap"></svg><span>החלפת עסק</span></a>
@@ -92,7 +90,7 @@
       <div class="ppanel" data-panel="main">
         <div class="ptabs" id="pTabs" role="tablist" aria-label="הערות ומפגשים">
           <button type="button" role="tab" id="pTabM" aria-controls="pgM" aria-selected="false" tabindex="-1"><span class="pmn" id="pMeetN"></span></button>
-          <button type="button" role="tab" id="pTabW" aria-controls="pgW" aria-selected="false" tabindex="-1"><span class="pmn">יתרה <span id="pBalN"></span></span></button>
+          <button type="button" role="tab" id="pTabW" aria-controls="pgW" aria-selected="false" tabindex="-1" aria-label="קרדיט" title="קרדיט"><span class="pmn"><span id="pBalN"></span></span></button>
           <button type="button" role="tab" id="pTabN" aria-controls="pgN" aria-selected="true">הערות</button>
           <button type="button" role="tab" id="pTabI" aria-controls="pgI" aria-selected="false" tabindex="-1"><span class="pmn">פרטים<span class="ptm" id="pTabMark"></span></span></button>
           <span class="ptabi" aria-hidden="true"></span>
@@ -147,7 +145,7 @@
         </div>
         <div class="pquick" id="payQuick"></div>
         <label class="field" id="payOtherField" hidden><span>פירוט קצר</span><input data-hint name="pay_method_note" maxlength="60" autocomplete="off" placeholder="למשל: פייפאל, צ׳ק" /></label>
-        <label class="field money" id="payBalField" hidden><span id="payBalLabel">מהיתרה</span><input placeholder=" " name="pay_bal" type="number" inputmode="decimal" min="0" step="any" /></label>
+        <label class="field money" id="payBalField" hidden><span id="payBalLabel">מהקרדיט</span><input placeholder=" " name="pay_bal" type="number" inputmode="decimal" min="0" step="any" /></label>
         <div class="payhint" id="payHint"></div>
       </div>
       <div class="ppanel" data-panel="deposit" hidden>
@@ -159,10 +157,11 @@
         <div class="payrow">
           <label class="field money"><span>סכום</span><input placeholder=" " form="pForm" name="pay_dep" type="number" inputmode="decimal" min="0" step="10" /></label>
           <label class="field" id="depMSelF"><span>דרך תשלום</span><select id="depMSel" aria-label="דרך תשלום"></select></label>
-          <label class="field" style="display: none !important" aria-hidden="true"><span id="depPkgLbl">על כמה מפגשים</span><select form="pForm" name="pay_pkg" id="depPkgSel"><option value="">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option></select></label>
+          <label class="field" id="depPkgF"><span id="depPkgLbl">מפגשים</span><input placeholder=" " form="pForm" name="pay_pkg" id="depPkgSel" type="number" inputmode="numeric" min="2" max="50" step="1" /></label>
           <button class="btn success paygo" id="depSave" type="button">תשלום</button>
         </div>
         <div class="pquick" id="depQuick"></div>
+        <div class="pquick" id="depPasses" hidden></div>
         <label class="field payfield" hidden><span>דרך העברה</span><select form="pForm" name="pay_depm"><option value="paybox">פייבוקס</option><option value="bit">ביט</option><option value="cash">מזומן</option><option value="bank">בנק</option><option value="other">אחר</option></select></label>
         <div class="payhint" id="depPkgHint"></div>
         <label class="field" id="depOtherField" hidden><span>פירוט קצר</span><input form="pForm" data-hint name="pay_depn" maxlength="60" autocomplete="off" placeholder="למשל: פייפאל, צ׳ק" /></label>
@@ -170,10 +169,10 @@
         <div id="depLines" class="deplines" hidden></div>
       </div>
       <div class="ppanel" data-panel="zikuy" hidden>
-        <p class="sthint" style="margin:0 0 12px">זיכוי של תשלום שהתקבל למפגש: הסכום יורד מהמפגש, ואפשר להשאיר אותו ביתרה של המשתתף או להחזיר לו כסף</p>
+        <p class="sthint" style="margin:0 0 12px">זיכוי של תשלום שהתקבל למפגש: הסכום יורד מהמפגש, ואפשר להשאיר אותו בקרדיט של המשתתף או להחזיר לו כסף</p>
         <label class="field"><span>מפגש לזיכוי</span><select name="zk_meeting" id="zkMeeting"></select></label>
         <label class="field money"><span>סכום לזיכוי</span><input placeholder=" " name="pay_zk" type="number" inputmode="decimal" min="0" step="any" /></label>
-        <div class="payact" style="flex-direction:column"><button class="btn soft-yel" id="zkCredit" type="button">זיכוי ליתרה (בלי להחזיר כסף)</button><button class="btn soft-red" id="zkRefund" type="button">להחזיר כסף למשתתף</button></div>
+        <div class="payact" style="flex-direction:column"><button class="btn soft-yel" id="zkCredit" type="button">זיכוי לקרדיט (בלי להחזיר כסף)</button><button class="btn soft-red" id="zkRefund" type="button">להחזיר כסף למשתתף</button></div>
       </div>
       <div class="ppanel" data-panel="promoter" hidden>
         <div class="sopts" id="pPromoOpts"></div>
@@ -182,6 +181,7 @@
       <div class="ppanel" data-panel="credit" hidden>
         <div class="payrow">
           <label class="field money"><span>סכום</span><input placeholder=" " form="pForm" name="pay_refund" type="number" inputmode="decimal" min="0" step="10" /></label>
+          <label class="field" id="refundPkF"><span>מפגשים להפחתה</span><input placeholder=" " form="pForm" name="pay_refpk" type="number" inputmode="numeric" min="0" step="1" /></label>
           <label class="field" id="refundMSelF"><span>דרך העברה</span><select id="refundMSel"></select></label>
           <button class="btn danger paygo" id="creditRefundBtn" type="button">החזרת כסף</button>
         </div>
@@ -367,6 +367,7 @@
       <div id="finLog" hidden></div>
       <div id="finSettle" hidden></div>
       <div id="finMain">
+        <div class="fscuts"><button type="button" class="fscut" id="finSrcBtn"><svg data-i="enter"></svg><span>שיווק ממומן</span></button><button type="button" class="fscut" id="finPmBtn"><svg data-i="card"></svg><span>דרכי תשלום</span></button></div>
         <div class="finsum" id="finSum"></div>
         <div class="fincmds"><button type="button" class="btn success finc" data-fadd="income">+ הכנסה</button><button type="button" class="btn danger fexp" data-fadd="expense">+ הוצאה</button></div>
         <div id="finScroll">
@@ -384,9 +385,11 @@
           <label class="field"><span>תאריך</span><input name="date" type="date" /></label>
         </div>
         <label class="field"><span>תיאור</span><input data-hint name="title" maxlength="80" autocomplete="off" placeholder="למשל שכירות אולם, פרסום, ציוד" /></label>
-        <label class="field"><span>דרך מי עבר הכסף</span><select name="by"></select></label>
         <label class="field" id="finMeetF"><span>שיוך</span><select name="meeting"></select></label>
-        <label class="field" id="finRepF"><span>חזרתיות</span><select name="period"><option value="">חד פעמי</option><option value="weekly">כל שבוע</option><option value="monthly">כל חודש</option><option value="yearly">כל שנה</option></select></label>
+        <div class="two">
+          <label class="field"><span>דרך מי עבר הכסף</span><select name="by"></select></label>
+          <label class="field" id="finRepF"><span>חזרתיות</span><select name="period"><option value="">חד פעמי</option><option value="weekly">כל שבוע</option><option value="monthly">כל חודש</option><option value="yearly">כל שנה</option></select></label>
+        </div>
         <button class="btn success" type="submit" id="finSave">שמירה</button>
         <button class="btn ghost danger" id="finDel" type="button" hidden>מחיקה</button>
       </form>
@@ -400,6 +403,24 @@
       <button class="btn" id="cYes" type="button">אישור</button>
       <button class="btn ghost" id="cAlt" type="button" hidden>אפשרות נוספת</button>
       <button class="btn ghost" id="cNo" type="button" style="color:var(--muted)">ביטול</button>
+    </form>
+  </dialog>
+  <dialog id="finFormDlg">
+    <div class="sheet"><div id="finFormBody"></div></div>
+  </dialog>
+  <dialog id="mfPopDlg" aria-labelledby="mfPopTitle">
+    <form class="sheet" method="dialog" novalidate>
+      <h2 id="mfPopTitle"></h2>
+      <div id="mfPopBody"></div>
+    </form>
+  </dialog>
+  <dialog id="lockDlg" aria-labelledby="lockTitle" style="max-width:420px">
+    <form class="sheet" method="dialog" novalidate>
+      <h2 id="lockTitle">סגירת מחיר הכרטיס</h2>
+      <p id="lockText" style="color:var(--muted);margin:0 0 8px"></p>
+      <label class="field money"><span>מחיר הכרטיס</span><input placeholder=" " id="lockPrice" type="number" inputmode="numeric" min="1" step="10" /></label>
+      <p id="lockErr" class="msg" style="color:var(--red);margin:8px 0 0" hidden>צריך להזין מחיר גדול מאפס</p>
+      <button class="btn" id="lockYes" type="button" style="margin-top:16px">תשלום בהמשך</button>
     </form>
   </dialog>
 
@@ -417,6 +438,6 @@
   <script src="/auth.js"></script>
   <script src="age.js?v=816fedce"></script>
   <script src="rt.js?v=9f0bd1e7"></script>
-  <script src="admin.js?v=25f8caea"></script>
+  <script src="admin.js?v=0cf04ac9"></script>
 </body>
 </html>

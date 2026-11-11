@@ -455,7 +455,7 @@ html.dlg-lock { overflow: hidden; overscroll-behavior: none; }
 #pDlg, #setDlg, #stDlg, #prDlg, #finDlg, #mDlg, #mailDlg { height: 100dvh; max-height: 100dvh; }
 #setDlg .sheet, #stDlg .sheet, #prDlg .sheet, #mDlg .sheet { min-height: 100%; }
 @media (max-width: 759px) {   /* "החשבון שלי", "דרכי תשלום" ו"דרכי הגעה": בגובה התוכן; שאר המסכים של הפופאפ בגובה מלא. בדסקטופ פאנל בצד, בלי שינוי */
-  #setDlg:has(:is(#setMain, #setSt, #setPm, #setSrc, #setDel):not([hidden])) { height: fit-content; max-height: 92vh; }
+  #setDlg:has(:is(#setMain, #setSt, #setPm, #setSrc, #setDel):not([hidden])) { height: fit-content; max-height: calc(100dvh - var(--envtop, 0px)); }
   #setDlg:has(:is(#setMain, #setSt, #setPm, #setSrc, #setDel):not([hidden])) .sheet { min-height: 0; }
 }
 /* פופאפ הקצאה (#allocDlg, 1.11.26): דיאלוג נפרד שעולה מלמטה בגובה התוכן, מעל כרטיס המשתתף הפתוח (או לבד כשנפתח מהרשימה). הפאנל, הצ'יף והשורה השנייה עוברים אליו מהכרטיס בפתיחה (allocMount) */
@@ -1159,8 +1159,8 @@ dialog { border-radius: 0; }   /* במובייל הפופאפים עולים מ�
 .field > input:not([type="date"], [type="time"]) { padding-block: 19px 3px; line-height: 22px; }
 .field > select, #finForm .field > select { padding-block: 19px 3px; line-height: 22px; }
 .field > textarea { min-height: var(--fld); padding-block: 19px 3px; line-height: 22px; }
-.field .dtbox .dtv { top: 1px; }
-
+.field .dtbox .dtv { top: 19px; bottom: 3px; line-height: 22px; }   /* הערך יושב על הקו כמו בשאר השדות (בין התווית לקו), לא באמצע השדה */
+.field > .setval { min-height: var(--fld); padding: 20px 0 3px; background: transparent; line-height: 22px; text-align: right; }
 /* כרטיס דרך הגעה: אותו מראה */
 .srccard .srcfld { position: relative; display: block; }
 .srccard .srcfld > small { position: absolute; z-index: 1; top: 5px; inset-inline: 0; font-size: 12px; font-weight: 400; line-height: 14px; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
@@ -1679,6 +1679,7 @@ a.hmi { text-decoration: none; }   /* "החלפת עסק" הוא קישור, ו�
 
 /* מתג שלושה מצבים לעמודת הסימון: וואטסאפ, הודעה, הגעה; המסומן בולט */
 #listTags .wm3 { display: inline-flex; align-items: center; flex: 0 0 auto; height: 36px; border-radius: 18px; background: var(--surface-2); padding: 3px; gap: 2px; }
+#listTags .wm3[hidden] { display: none; }
 .wm3 .wm3b { position: relative; width: 40px; height: 30px; border-radius: 15px; border: 0; background: transparent; color: var(--text-3); display: inline-flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; }
 .wm3 .wm3b svg { width: 18px; height: 18px; }
 .wm3 .wm3b::before { content: ""; position: absolute; inset: -6px -1px; }
@@ -1921,3 +1922,159 @@ svg.ic, .cico svg, .hicon svg, .hbtn svg { overflow: visible; }   /* סמלים 
 .wrap > .list .row .payic.free, .row .payic.free, .mlist .mrow .mmoney.free, #pPager .mlist .mrow .mmoney.free, .paychip.allocchip.free, #pDlg .paychip.allocchip.free, .hfilt.free, .chiprow .stc.pt-free[aria-pressed="true"] { background: var(--sky-bg); color: var(--sky); border-color: transparent; }
 .chiprow .stc.pt-free[aria-pressed="true"] { border-color: var(--sky); }
 .mlist .mrow .mmoney.free { background: var(--sky-bg); color: var(--sky); }
+
+/* איש קשר אופציונלי בכרטיס שיווק ממומן: שם, טלפון וכפתור וואטסאפ */
+.srccard .srcgrid > .srccn, .srccard .srcgrid > .srccp { grid-column: 1 / 3; }
+.srccard .srcgrid > .srccw { grid-column: 3; display: grid; place-items: center; }
+.srccard .srcwa { display: grid; place-items: center; width: 40px; height: 40px; color: var(--text); }
+.srccard .srcwa:hover { background: var(--surface-2); border-radius: var(--r); }
+
+/* שיווק ממומן: שורת תצוגה מקדימה שנפתחת כאקורדיון עם הכרטיס המלא מתחתיה (בלי מעבר למסך אחר) */
+.srcpvrow { display: block; }
+.srcpvrow .srcpvh { display: flex; align-items: center; gap: 4px; }
+.srcpvrow .srcpv > svg:last-child { transition: transform .25s ease; }
+.srcpvrow.open .srcpv > svg:last-child { transform: rotate(-90deg); }
+.srcacc { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s ease; }
+.srcpvrow.open > .srcacc { grid-template-rows: 1fr; }
+.srcacc-in { overflow: hidden; min-height: 0; }
+.srcpvrow.open .srcacc-in { padding-bottom: 12px; }
+@media (prefers-reduced-motion: reduce) { .srcacc, .srcpvrow .srcpv > svg:last-child { transition: none; } }
+
+/* בתצוגה המקדימה הקודים באותה שורה עם השם */
+.srcpv .pvt { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; min-width: 0; }
+.srcpv .pvt .pvcodes { margin-top: 0; justify-content: flex-start; }
+
+/* איש קשר: שם וטלפון באותה שורה, וכפתור וואטסאפ בסופה */
+.srccard .srcgrid > .srcct { grid-column: 1 / -1; display: flex; align-items: flex-end; gap: 12px; }
+.srccard .srcct .srccn { flex: 1.4 1 0; min-width: 0; }
+.srccard .srcct .srccp { flex: 1 1 0; min-width: 0; }
+.srccard .srcct .srccw { flex: 0 0 auto; }
+
+/* רקע שורת שיווק ממומן פתוחה: לכל רוחב הפופאפ, בלי פינות, וכולל את הפרטים שבאקורדיון */
+.srcpvrow, .srcpv { border-radius: 0; }
+#srcPrList .srcpvrow { margin-inline: -12px; padding-inline: 12px; }
+#srcPrList .srcpvrow.open { background: var(--surface-2); }
+#srcPrList .srcpvrow .srcpv { background: transparent; }
+/* איש קשר באותן עמודות גריד כמו השדות שמעליו: שם מתחת לסוג העלות, טלפון מתחת לסכום, וואטסאפ מתחת ללתשלום */
+.srccard .srcgrid > .srcct { display: contents; }
+.srccard .srcct .srccn { grid-column: 1; flex: none; }
+.srccard .srcct .srccp { grid-column: 2; flex: none; }
+.srccard .srcct .srccw { grid-column: 3; align-self: end; justify-self: start; }
+/* הפרטים באקורדיון מוזחים כך שמתחילים בקו של השם בשורה הסגורה; רקע עדין יותר; קוד חדש הכי שמאלי */
+#srcPrList .srcpvrow.open { background: var(--surface); }
+#srcPrList .srcacc-in { padding-inline-start: 70px; }
+.srccard .srcin.codes { flex-direction: row-reverse; justify-content: flex-end; }
+.srccard .srcin.codes .codeadd { margin-left: auto; margin-inline-end: 0; }
+/* כרטיס שיווק ממומן בשתי עמודות: בכל שורה שני שדות, והתחשבנות (תשלום) בשורה משלה בסוף */
+.srccard .srcgrid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.srccard .srcgrid > .srcfld:first-child { grid-column: 1; }
+.srccard .srcgrid > .srccolf { grid-column: 2; }
+.srccard .srcgrid > .srccodes { grid-column: 1 / -1; }
+.srccard[data-w="new"] .srcamt { grid-column: 2; }
+.srccard .srcct .srccn { grid-column: 1; }
+.srccard .srcct .srccp { grid-column: 2; position: relative; }
+.srccard .srcct .srccp input { padding-inline-start: 40px; }
+.srccard .srcct .srccw { grid-column: 2; align-self: end; justify-self: start; margin-bottom: 2px; z-index: 1; }
+.srccard .srcgrid > .srcfld:last-child:has(.prsettle) { grid-column: 1 / -1; }
+.srccard .srcgrid .prsettle { width: 100%; }
+.srccard .srcgrid > .srcfld:last-child:has(.prsettle) { order: 10; }
+.srccard .srccp .srcwa { position: absolute; inset-inline-start: 0; bottom: 0; width: 36px; height: 36px; }
+.srccard .srcct .srccw { display: none; }
+.srccard .srcin.codes .codeadd { margin-left: 0; }   /* הצ'יפים וההוספה מיושרים לימין, צמודים זה לזה */
+.srccard .srcgrid > .srcfld:has(> .prsettle) { grid-column: 1 / -1; order: 10; }
+.srccard .srccp .srcwa { inset-inline-start: auto; left: auto; right: 0; }
+.srccard .srcct .srccp input { padding-inline-start: 0; padding-right: 40px; }
+.srcpv .pvcodes .pvwa { display: inline-grid; place-items: center; width: 24px; height: 24px; color: var(--text); cursor: pointer; }
+.srcpv .pvcodes .pvwa:hover { background: var(--surface-2); border-radius: var(--r); }
+.srccard .srcin.codes { justify-content: flex-start; }   /* row-reverse: ההתחלה היא הצד הימני, כך שהצ'יפים וההוספה מיושרים לימין */
+.srccard .srcct .srccp input { padding: 0; text-align: right; }   /* ההקלדה מתחילה בקצה הימני של השדה, בלי ריפוד (כפתור הוואטסאפ כבר לא בתוכו) */
+.srcpv .pvcodes .pvwa { order: -1; }   /* הרשימה ltr: order שלילי = הכי שמאלי, אחרי הצ'יף האחרון */
+.srcpv .pvcodes .pvwa svg { transform: none; }
+.srccard .srcct .srccp input { padding: 19px 0 3px; }
+.srccard .srcct .srccp { grid-column: 1; }
+.srccard .srccol .stdel { margin-left: -5px; }   /* ה-X מיושר לקצה השמאלי של הכרטיס, בקו של שאר האלמנטים */
+.srcpv .pvcodes em[data-copylink] { cursor: pointer; }
+.srcpv .pvcodes em[data-copylink]:hover { background: var(--line); }
+/* טלפון (ימין) ולתשלום (שמאל) באותה שורה */
+.srccard .srcgrid > .srcfld:has(> .prsettle) { grid-column: 2; order: 5; }
+.srccard .srcct .srccp { grid-column: 1; order: 5; }
+.srccard .srcgrid { grid-auto-flow: row dense; }
+/* מחיקה: כפתור טקסט בתחתית הכרטיס, בלי רקע (כמו מחיקת משתתף) */
+.srccard .srcdelbtn { display: block; margin: 12px 0 0; padding: 0 4px; min-height: 44px; color: var(--red); font: 600 15px var(--font); background: transparent; }
+.srccard .srcdelbtn:hover, .srccard .srcdelbtn:active { background: var(--red-bg); border-radius: var(--r); }
+.srccard .srcdelbtn { padding: 0; text-align: right; }   /* מיושר לימין כמו השדות */
+
+/* ברשימת המשתתפים בתוך מפגש אין ✕ ו-+ (11.11.26): עיגול ההודעה, ההגעה או הוואטסאפ מיושר לקצה השמאלי של הכרטיס, במקום שבו היה ה-✕ */
+.wrap > .list .row:has(> .rowwa) > .rowwa { inset-inline-end: 12px; }
+/* סמל הוואטסאפ / הודעה / הגעה בכרטיס: בגודל עיגול ההגעה (28px), למעלה בשמאל, והסמל עצמו מיושר לקצה השמאלי של הטקסט שמתחתיו ("נבחר") */
+.wrap > .list .row:has(> .rowwa) > .rowwa { top: 14px; width: var(--ind); height: var(--ind); inset-inline-end: 8px; }
+.wrap > .list .row:has(> .rowwa) > .rowwa.ratt { inset-inline-end: 12px; }
+.wrap > .list .row:has(> .rowwa) > .rowwa svg { width: 20px; height: 20px; }
+.wrap > .list .row:has(> .rowwa) > .rowwa.ratt svg { width: 16px; height: 16px; }
+.wrap > .list .row:has(> .rowwa) > .rowwa.ratt svg, .wrap > .list .row:has(> .rowwa) > .rowwa.ratt.sent svg { width: 14px; height: 14px; }   /* סמל בתוך עיגול: קטן יותר */
+.pquick button.on { background: var(--green-bg); border-radius: var(--r); padding: 4px 8px; text-decoration: none; }
+#pgW { padding-top: 16px; }   /* 16px בין קו הטאבים לכרטיסי הסיכום, כמו בשאר הדפים */
+/* מחירים וכרטיסיות: אותו שדה כמו שאר השדות (קו תחתון ישר, בלי פינות מעוגלות ובלי צל) */
+.mt2row .mtp, .mt2row .mtp input { border-radius: 0 !important; box-shadow: none !important; background: transparent; }
+.mt2row .mtp { width: 120px; }
+.mt2row .mtp:first-child { width: 120px; }
+/* קיצורי דרך למחירים ולכרטיסיות בעריכת מפגש וסוג מפגש: שורה עם שם, סיכום וחץ, שנפתחת לפופאפ נוסף */
+.mfshort { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 48px; margin-top: 8px; padding: 0 4px; border: 0; border-bottom: 1px solid var(--line-2); background: transparent; border-radius: 0; font: inherit; font-size: 16px; color: var(--text); text-align: start; cursor: pointer; }
+.mfshort span { font-weight: 700; }
+.mfshort small { flex: 1 1 auto; min-width: 0; color: var(--muted); font-size: 14px; font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mfshort svg { flex: none; width: 16px; height: 16px; transform: rotate(90deg); color: var(--text-2); }
+.mfshort:active { background: var(--surface); }
+#mfPopBody .field { margin: 0; }
+#mfPopBody [id$="PassF"] > .mtl { display: none; }
+/* מחירים וכרטיסיות: שדות רגילים עם תווית צפה ופלייסהולדר, כמו שאר השדות */
+.mt2row { align-items: flex-end; gap: 12px; }
+.mt2row .mtf { flex: 1 1 0; min-width: 0; margin: 0; }
+.mt2row .mtdel, .mt2row .medit { flex: none; }
+#mfPopBody [id$="PriceF"] > .mtl { font-size: 0; }   /* בלי תת כותרת; כפתורי "שינוי למפגש הזה" / "כמו בסוג" נשארים */
+#mfPopBody [id$="PriceF"] > .mtl .lnk { font-size: 14px; }
+#depQuick, #depPasses { margin-top: 16px; }   /* רווח בין שורת התשלום להצעות ולכרטיסיות */
+#depQuick:empty, #depQuick[hidden] { margin-top: 0; }
+#depQuick + #depPasses { margin-top: 8px; }
+#finForm .two:has(> [hidden]) { grid-template-columns: minmax(0, 1fr); }   /* שדה אחד בשורה (למשל תנועה חד פעמית בלי חזרתיות) ברוחב מלא */
+/* כספים: קיצורי דרך לשיווק ממומן ולדרכי תשלום מעל כרטיסי הסיכום */
+.fscuts { display: flex; gap: 8px; margin-bottom: 12px; }
+.fscut { flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; border: 0; border-radius: var(--r); background: var(--surface-2); color: var(--text); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
+.fscut svg { width: 18px; height: 18px; flex: none; }
+.fscut:active { background: var(--line); }
+.pmn .pses { display: inline-flex; align-items: center; gap: 3px; }
+/* טאב הקרדיט: סכום ומפגשים באותו קו אנכי */
+#pBalN { display: inline-flex; align-items: center; gap: 14px; line-height: 1; }
+#pBalN bdi, #pBalN .pses { display: inline-flex; align-items: center; line-height: 1; }
+#pBalN .pses svg { width: 14px; height: 14px; }
+/* קבלת תשלום / הקצאה: שורה ראשונה סכום וכפתור, ומתחת לסכום בשורה אחת דרך תשלום ומפגשים */
+#depFields .payrow { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) auto; column-gap: 12px; row-gap: 8px; align-items: end; }
+#depFields .payrow > .field:first-child { grid-column: 1 / 3; grid-row: 1; }
+#depFields .payrow > .paygo { grid-column: 3; grid-row: 1; margin: 0; }
+#depFields .payrow > #depMSelF { grid-column: 1; grid-row: 2; flex: none; }
+#depFields .payrow > #depPkgF { grid-column: 2; grid-row: 2; }
+#depFields .payrow:has(> #depPkgF[hidden]) > #depMSelF { grid-column: 1 / 3; }
+/* סדר החלפה (11.11.26): למעלה דרך תשלום ומפגשים, ולמטה סכום וכפתור התשלום */
+#depFields .payrow > .field:first-child { grid-row: 2; }
+#depFields .payrow > .paygo { grid-row: 2; }
+#depFields .payrow > #depMSelF, #depFields .payrow > #depPkgF { grid-row: 1; }
+/* החזרת כסף: למעלה דרך העברה ומפגשים להפחתה, ולמטה סכום וכפתור */
+[data-panel="credit"] .payrow { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) auto; column-gap: 12px; row-gap: 8px; align-items: end; }
+[data-panel="credit"] .payrow > .field:first-child { grid-column: 1 / 3; grid-row: 2; }
+[data-panel="credit"] .payrow > .paygo { grid-column: 3; grid-row: 2; margin: 0; }
+[data-panel="credit"] .payrow > #refundMSelF { grid-column: 1; grid-row: 1; flex: none; }
+[data-panel="credit"] .payrow > #refundPkF { grid-column: 2; grid-row: 1; }
+[data-panel="credit"] .payrow:has(> #refundPkF[hidden]) > #refundMSelF { grid-column: 1 / 3; }
+/* שדה מספר המפגשים נמתח עד הקצה השמאלי (מעל עמודת הכפתור) */
+[data-panel="credit"] .payrow > #refundPkF, #depFields .payrow > #depPkgF { grid-column: 2 / 4; }
+#refundPkF input, #depPkgF input { width: 100%; }
+.row .balic.ses { gap: 4px; padding-inline: 10px; width: auto; min-width: var(--ind); }
+.row .balic.ses svg { width: 14px; height: 14px; }
+.row .balic.ses { display: inline-flex; flex-direction: row; align-items: center; justify-content: center; font-weight: 700; }
+/* הצעות הכרטיסיות: אחת מתחת לשנייה */
+#depPasses { flex-direction: column; align-items: flex-start; gap: 8px; }
+#depPasses button { white-space: nowrap; }
+#depPasses::before, #depQuick::before { content: none; }   /* בלי השורה "הצעות:" */
+#depFields #depPasses { margin-top: 20px !important; } #depFields #depQuick:not([hidden]):not(:empty) + #depPasses { margin-top: 8px !important; }
+
+/* הגיע בתפריט התגית: ירוק בהיר */
+#qMenu .qi.qarr { background: var(--green-bg); color: var(--green); }

@@ -355,6 +355,25 @@ create table if not exists public.roster_promoter_payments (
     references public.roster_promoters (business_id, id) on delete cascade
 );
 
+-- "I want to buy a pass" (harpatka's passes.sql): a participant pressed the pay button of a pass in the personal area
+-- (roster_me_buy_pass). A request, not a payment: the admin enters the money in "receive payment" with the pass, and the
+-- sessions are added then. The page does not read this table (the note on the participant is what the admin sees).
+create table if not exists public.roster_pass_requests (
+  id              uuid primary key default gen_random_uuid(),
+  business_id     uuid not null default public.roster_current_business() references public.roster_businesses(id) on delete cascade,
+  participant_id  uuid not null,
+  type_id         uuid,
+  n               int not null check (n between 1 and 1000),
+  price           numeric not null check (price >= 0),
+  status          text not null default 'pending',
+  created_at      timestamptz not null default now(),
+  unique (business_id, id),
+  constraint roster_pass_requests_participant_fk foreign key (business_id, participant_id)
+    references public.roster_participants (business_id, id) on delete cascade,
+  constraint roster_pass_requests_type_fk foreign key (business_id, type_id)
+    references public.roster_meeting_types (business_id, id) on delete set null (type_id)
+);
+
 -- Tags a participant can carry on a meeting. Belong to a meeting type.
 create table if not exists public.roster_statuses (
   business_id  uuid not null default public.roster_current_business() references public.roster_businesses(id) on delete cascade,
@@ -526,6 +545,9 @@ create index if not exists roster_payments_promoter_idx        on public.roster_
 create index if not exists roster_payments_business_idx        on public.roster_payments (business_id);
 create index if not exists roster_promoter_payments_idx        on public.roster_promoter_payments (promoter_id, paid_at desc);
 create index if not exists roster_promoter_payments_biz_idx    on public.roster_promoter_payments (business_id);
+create index if not exists roster_pass_requests_business_idx   on public.roster_pass_requests (business_id);
+create index if not exists roster_pass_requests_participant_idx on public.roster_pass_requests (participant_id, created_at desc);
+create index if not exists roster_pass_requests_type_idx       on public.roster_pass_requests (type_id);
 create index if not exists roster_statuses_type_idx            on public.roster_statuses (type_id);
 create index if not exists roster_finance_business_idx         on public.roster_finance (business_id);
 create index if not exists roster_finance_recurring_biz_idx    on public.roster_finance_recurring (business_id);
@@ -555,7 +577,7 @@ begin
     'roster_participants', 'roster_meeting_types', 'roster_meetings', 'roster_attendance', 'roster_notes',
     'roster_payments', 'roster_promoters', 'roster_promoter_payments', 'roster_statuses', 'roster_pay_methods',
     'roster_finance', 'roster_finance_recurring', 'roster_finance_transfers', 'roster_finance_log',
-    'roster_admin_prefs', 'roster_msg_templates', 'roster_msg_sent'
+    'roster_admin_prefs', 'roster_msg_templates', 'roster_msg_sent', 'roster_pass_requests'
   ] loop
     execute format('alter table public.%I enable row level security', t);
     execute format('revoke all on public.%I from anon', t);
@@ -1288,6 +1310,39 @@ alter table public.roster_payments add column if not exists external_ref text;
 create unique index if not exists roster_payments_external_ref_uq on public.roster_payments (business_id, external_ref) where external_ref is not null;
 create unique index if not exists roster_payments_business_id_uq on public.roster_payments (business_id, id);
 
+-- Passes ("כרטיסיות", harpatka's passes.sql, 11.11.26). A meeting type lists the passes it sells, [{"n": 5, "price": 400}];
+-- the sessions a participant has left are never stored, they are counted from the payments ledger (roster_sessions):
+-- deposits with pkg_n add, a meeting paid from a pass (pkg) takes one, a refund of a pass takes pkg_n.
+-- A payment that bought a pass remembers which type's pass it was (pass_type_id; a deleted type leaves it empty).
+alter table public.roster_meeting_types add column if not exists passes jsonb not null default '[]'::jsonb;
+alter table public.roster_payments      add column if not exists pass_type_id uuid;
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'roster_meeting_types_passes_array' and conrelid = 'public.roster_meeting_types'::regclass) then
+    alter table public.roster_meeting_types add constraint roster_meeting_types_passes_array check (jsonb_typeof(passes) = 'array');
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'roster_payments_pass_type_fk' and conrelid = 'public.roster_payments'::regclass) then
+    alter table public.roster_payments add constraint roster_payments_pass_type_fk foreign key (business_id, pass_type_id)
+      references public.roster_meeting_types (business_id, id) on delete set null (pass_type_id);
+  end if;
+end $$;
+create index if not exists roster_payments_pass_type_idx on public.roster_payments (pass_type_id);
+
+-- A price closed for one participant in one meeting (harpatka's ticket-price.sql): the admin sets it when a payment is
+-- postponed, and it stays that participant's price even when the price tiers go up later. Without it the tiers decide.
+-- The personal area and the admin page use it; the public API does not (its prices are the tiers', as before).
+alter table public.roster_attendance add column if not exists ticket_price integer;
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'roster_attendance_ticket_price_nonneg' and conrelid = 'public.roster_attendance'::regclass) then
+    alter table public.roster_attendance add constraint roster_attendance_ticket_price_nonneg check (ticket_price is null or ticket_price >= 0);
+  end if;
+end $$;
+
+-- an optional contact for a paid marketing source (harpatka's promoter-contact.sql)
+alter table public.roster_promoters add column if not exists contact_name  text;
+alter table public.roster_promoters add column if not exists contact_phone text;
+
 -- ---- 12.3 tables ---------------------------------------------------------
 
 -- One row per business: what the connections page edits. webhook_secret is never readable
@@ -1994,6 +2049,87 @@ begin
     'meetings', public.roster_person_meetings(b, pid, false));
 end $fn$;
 
+-- ---- 12.6b what the personal area and the admin page add (harpatka passes.sql and ticket-price.sql) -------------------
+-- THE API KEEPS ITS OWN ANSWERS. roster_balance, roster_person_meetings(.., false), roster_person_json, roster_report_core and
+-- roster_pay_credit_core above are what /roster/v1/ reports, and they are not changed: the API's balance counts pass money
+-- like any deposit, its price is the tiers' price, its "I paid" click reports the tiers' price. Everything below is for the
+-- personal area (roster_me_*) and is a copy with the new rules; a sibling is named <the original>_me.
+
+-- credit in MONEY: a pass is not money. A deposit that bought a pass (pkg_n) and a meeting paid from a pass (pkg) are left out;
+-- they are counted as sessions (roster_sessions).
+create or replace function public.roster_balance_money(b uuid, pid uuid)
+returns numeric language sql stable security definer set search_path = public as $fn$
+  select coalesce(sum(case when kind in ('credit', 'deposit') then amount
+                           when kind in ('payment', 'refund') and coalesce(from_credit, false) then -amount else 0 end), 0)
+    from public.roster_payments
+   where business_id = b and participant_id = pid
+     and not coalesce(pkg, false) and not (kind = 'deposit' and coalesce(pkg_n, 0) > 0);
+$fn$;
+
+-- the sessions a participant has left on passes: a deposit with pkg_n adds them, a meeting paid from a pass (pkg) takes one,
+-- an allocation taken back (credit with pkg) gives one back, and the refund of a pass takes the sessions it was for.
+create or replace function public.roster_sessions(b uuid, pid uuid)
+returns int language sql stable security definer set search_path = public as $fn$
+  select coalesce(sum(case when p.kind = 'deposit' and coalesce(p.pkg_n, 0) > 0 then p.pkg_n
+                           when p.kind = 'refund' and p.pkg then -coalesce(p.pkg_n, 0)
+                           when p.pkg and p.kind = 'payment' then -1
+                           when p.pkg and p.kind = 'credit' then 1 else 0 end), 0)::int
+    from public.roster_payments p where p.business_id = b and p.participant_id = pid;
+$fn$;
+
+-- the passes the business sells: [{type_id, type_name, n, price}], by type order, then size. A malformed entry is skipped.
+create or replace function public.roster_passes_json(b uuid)
+returns jsonb language sql stable security definer set search_path = public as $fn$
+  select coalesce(jsonb_agg(jsonb_build_object('type_id', mt.id, 'type_name', mt.name, 'n', (x->>'n')::int, 'price', (x->>'price')::numeric)
+                            order by mt.sort, (x->>'n')::int), '[]'::jsonb)
+    from public.roster_meeting_types mt,
+         lateral jsonb_array_elements(case when jsonb_typeof(mt.passes) = 'array' then mt.passes else '[]'::jsonb end) x
+   where mt.business_id = b and jsonb_typeof(x) = 'object'
+     and case when coalesce(x->>'n', '') ~ '^[0-9]{1,4}$' then (x->>'n')::int > 0 else false end
+     and coalesce(x->>'price', '') ~ '^[0-9]{1,7}(\.[0-9]{1,2})?$';
+$fn$;
+
+-- roster_person_meetings(b, pid, true) with the personal area's new rules: the price a participant sees is the one closed for
+-- them in that meeting (attendance.ticket_price) when there is one, and paid_via says how the money came ("מהקרדיט · בפייבוקס").
+create or replace function public.roster_person_meetings_me(b uuid, pid uuid)
+returns jsonb language plpgsql stable security definer set search_path = public as $fn$
+declare today date := public.roster_today(); out jsonb;
+begin
+  select coalesce(jsonb_agg(x order by (x->>'date'), (x->>'time')), '[]'::jsonb) into out from (
+    select jsonb_build_object(
+      'id', mt.id, 'date', to_char(mt.meeting_date, 'YYYY-MM-DD'), 'time', to_char(mt.meeting_time, 'HH24:MI'),
+      'name', coalesce(nullif(btrim(mt.name), ''), nullif(btrim(ty.name), '')), 'city', mt.city, 'place', mt.place,
+      -- the address is given after payment, exactly as roster_person_meetings does for the personal area
+      'directions', case when a.participant_id is not null
+                              and (coalesce(a.no_pay, false)
+                                   or coalesce(a.ticket_price, public.roster_meeting_price(mt.price_tiers, greatest(mt.meeting_date - today, 0))) <= 0
+                                   or (public.roster_paid_for(b, pid, mt.id) > 0 and coalesce(a.pay_due_amount, 0) = 0)) then mt.directions
+                         else null end,
+      'registered', a.participant_id is not null, 'attended', coalesce(a.attended, false),
+      'paid', public.roster_paid_for(b, pid, mt.id),
+      'paid_via', (select string_agg(case when t.lab in ('מהקרדיט', 'מהכרטיסייה') then t.lab else 'ב' || t.lab end, ' · ' order by t.lab)
+                     from (select case when p.pkg then 'מהכרטיסייה' when coalesce(p.from_credit, false) then 'מהקרדיט'
+                                       when coalesce(p.method, '') in ('', 'other') then 'אחר'
+                                       else coalesce(public.roster_method_label(b, p.method, null), 'אחר') end as lab
+                             from public.roster_payments p
+                            where p.business_id = b and p.participant_id = pid and p.meeting_id = mt.id and p.kind = 'payment'
+                            group by 1 having sum(p.amount) > 0) t),
+      'price', coalesce(a.ticket_price, public.roster_meeting_price(mt.price_tiers, greatest(mt.meeting_date - today, 0))),
+      'due', a.pay_due_amount, 'reported', a.pay_reported_at is not null,
+      'reported_amount', case when a.pay_reported_at is not null then a.pay_reported_amount end,
+      'free', coalesce(a.no_pay, false), 'future', mt.meeting_date >= today,
+      'max', mt.max_participants,
+      'rejected', a.pay_rejected_at is not null and a.pay_reported_at is null,
+      'full', coalesce(mt.max_participants is not null and public.roster_registered_count(b, mt.id) >= mt.max_participants, false),
+      'spots_left', case when mt.max_participants is null then null else greatest(mt.max_participants - public.roster_registered_count(b, mt.id), 0) end) as x
+    from public.roster_meetings mt
+    left join public.roster_meeting_types ty on ty.id = mt.type_id and ty.business_id = mt.business_id
+    left join public.roster_attendance a on a.business_id = mt.business_id and a.meeting_id = mt.id and a.participant_id = pid
+   where mt.business_id = b and (mt.meeting_date >= today or a.participant_id is not null)
+  ) s;
+  return out;
+end $fn$;
+
 -- ---- 12.7 effects shared by the API and the personal area -----------------
 
 -- Register a participant to a meeting. 'registered' | 'exists' | 'past' | 'full' | 'not_found'.
@@ -2056,6 +2192,67 @@ begin
     elsif public.roster_paid_for(b, pid, mid) > 0 then st := 'already';
     else
       price := public.roster_meeting_price(mt.price_tiers, greatest(mt.meeting_date - public.roster_today(), 0));
+      due := greatest(coalesce(price, 0), 0);
+      if due <= 0 then st := 'already';
+      elsif bal <= 0 then st := 'no_credit';
+      end if;
+    end if;
+  end if;
+  if st is not null then
+    return jsonb_build_object('status', st, 'allocated', 0, 'remaining', 0, 'credit_left', bal);
+  end if;
+  amt := least(bal, due);
+  select * into pa from public.roster_participants where id = pid and business_id = b;
+  insert into public.roster_payments (business_id, participant_id, meeting_id, kind, amount, from_credit, author_name)
+    values (b, pid, mid, 'payment', amt, true, coalesce(nullif(pa.name, ''), 'משתתף'));
+  rem := due - amt;
+  if rem > 0 then
+    update public.roster_attendance set pay_due_amount = rem where business_id = b and participant_id = pid and meeting_id = mid;
+  end if;
+  return jsonb_build_object('status', 'ok', 'allocated', amt, 'remaining', greatest(rem, 0), 'credit_left', bal - amt);
+end $fn$;
+
+-- The personal area's own copies of the two cores above (see 12.6b: the API keeps the originals). Differences, and only these:
+-- the price is the one closed for this participant in this meeting (attendance.ticket_price) when there is one, and the credit
+-- that can be spent is the money credit (roster_balance_money), never the money of a pass.
+create or replace function public.roster_report_core_me(b uuid, pid uuid, mid uuid)
+returns text language plpgsql security definer set search_path = public as $fn$
+declare mt public.roster_meetings; a public.roster_attendance; paid numeric; due numeric; amt numeric;
+begin
+  perform pg_advisory_xact_lock(hashtext(pid::text));   -- one report or spend of this participant at a time
+  select * into mt from public.roster_meetings where id = mid and business_id = b;
+  if not found then return 'past'; end if;
+  select * into a from public.roster_attendance where business_id = b and participant_id = pid and meeting_id = mid;
+  if not found then return 'not_registered'; end if;
+  paid := public.roster_paid_for(b, pid, mid);
+  due := nullif(a.pay_due_amount, 0);
+  if coalesce(a.no_pay, false) then return 'free'; end if;
+  if paid > 0 and due is null then return 'already_paid'; end if;
+  if a.pay_reported_at is not null then return 'already_reported'; end if;
+  amt := coalesce(due, a.ticket_price, public.roster_meeting_price(mt.price_tiers, greatest(mt.meeting_date - public.roster_today(), 0)));
+  update public.roster_attendance set pay_reported_at = now(), pay_reported_amount = amt, pay_rejected_at = null
+   where business_id = b and participant_id = pid and meeting_id = mid;
+  perform public.roster_sys_note(b, pid, 'דווח על תשלום' || coalesce(' ₪' || public.roster_money(amt), '') || ' למפגש ' || public.roster_meeting_short(b, mid) || ' (ממתין לאימות)',
+    'payment_reported', mid, null, amt);
+  return 'reported';
+end $fn$;
+
+create or replace function public.roster_pay_credit_core_me(b uuid, pid uuid, mid uuid)
+returns jsonb language plpgsql security definer set search_path = public as $fn$
+declare mt public.roster_meetings; a public.roster_attendance; pa public.roster_participants;
+        price numeric; due numeric; bal numeric; amt numeric; rem numeric; st text;
+begin
+  perform pg_advisory_xact_lock(hashtext(pid::text));   -- same lock as the original: two parallel calls never spend the same credit twice
+  bal := public.roster_balance_money(b, pid);
+  select * into mt from public.roster_meetings where id = mid and business_id = b;
+  if not found then st := 'missing';
+  else
+    select * into a from public.roster_attendance where business_id = b and participant_id = pid and meeting_id = mid;
+    if not found then st := 'not_registered';
+    elsif coalesce(a.no_pay, false) then st := 'free';
+    elsif public.roster_paid_for(b, pid, mid) > 0 then st := 'already';
+    else
+      price := coalesce(a.ticket_price, public.roster_meeting_price(mt.price_tiers, greatest(mt.meeting_date - public.roster_today(), 0)));
       due := greatest(coalesce(price, 0), 0);
       if due <= 0 then st := 'already';
       elsif bal <= 0 then st := 'no_credit';
@@ -2620,7 +2817,8 @@ begin
                  else array(select u.email from public.roster_business_users u where u.business_id = ev.business_id order by u.email) end;
 
   if mt.id is not null then
-    price := case when mt.price_tiers is null then null else public.roster_meeting_price(mt.price_tiers, greatest(mt.meeting_date - today, 0)) end;
+    -- the price closed for this participant in this meeting (attendance.ticket_price) wins over the tiers, in the mails too
+    price := case when mt.price_tiers is null then a.ticket_price else coalesce(a.ticket_price, public.roster_meeting_price(mt.price_tiers, greatest(mt.meeting_date - today, 0))) end;
     mfacts := jsonb_build_object('date', to_char(mt.meeting_date, 'YYYY-MM-DD'), 'time', to_char(mt.meeting_time, 'HH24:MI'),
       'name', coalesce(nullif(btrim(mt.name), ''), (select nullif(btrim(t.name), '') from public.roster_meeting_types t where t.id = mt.type_id and t.business_id = mt.business_id)),
       'city', mt.city, 'place', mt.place, 'directions', mt.directions, 'future', mt.meeting_date >= today, 'price', price,
@@ -2633,6 +2831,10 @@ begin
     conf := exists (select 1 from public.roster_mail_log l where l.business_id = ev.business_id and l.participant_id = pa.id and l.meeting_id = mt.id
                       and l.template = 'payment_confirmed' and l.status in ('sent', 'pending'));
   end if;
+  -- A payment an admin wrote from the page is not mailed on its own: the page asks first and queues the mail itself
+  -- (roster_close_payment_mail, source 'admin_mail'). Reporting it as "confirmation_sent" is what makes the Worker skip it
+  -- (skipped: already_confirmed). Payments of the participant (source me) and of the secret API (source api) are untouched.
+  if ev.type = 'payment.recorded' and ev.source = 'admin' then conf := true; end if;
   if pa.id is not null then
     part := jsonb_build_object('id', pa.id, 'first_name', pa.first_name, 'last_name', pa.last_name, 'email', pa.email, 'phone', pa.phone,
       'age', public.roster_current_age(pa.age, pa.age_set_at), 'gender', pa.gender);
@@ -2674,7 +2876,8 @@ begin
   return jsonb_build_object(
     'event', jsonb_build_object('id', ev.id, 'type', ev.type, 'payload', ev.payload, 'attempts', ev.attempts, 'created_at', ev.created_at, 'source', ev.source),
     'business', jsonb_build_object('id', bz.id, 'slug', bz.slug, 'name', bz.name,
-      'settings', jsonb_build_object('webhook_url', s.webhook_url, 'webhook_secret', s.webhook_secret, 'webhook_events', to_jsonb(s.webhook_events),
+      'settings', jsonb_build_object('webhook_url', case when ev.source = 'admin_mail' then null else s.webhook_url end,   -- a mail the admin asked for is never a webhook
+        'webhook_secret', s.webhook_secret, 'webhook_events', to_jsonb(s.webhook_events),
         'participant_mail_enabled', s.participant_mail_enabled, 'personal_area_enabled', s.personal_area_enabled,
         'contact_email', s.contact_email, 'sender_name', s.sender_name, 'contact_whatsapp', s.contact_whatsapp, 'payment_url', s.payment_url),
       'notify_emails', to_jsonb(admins)),
@@ -2923,7 +3126,8 @@ begin
   return jsonb_build_object('status', 'ok', 'business', binfo,
     'participant', jsonb_build_object('id', pa.id, 'first_name', pa.first_name, 'last_name', pa.last_name, 'phone', pa.phone, 'email', pa.email,
                                       'age', public.roster_current_age(pa.age, pa.age_set_at), 'gender', pa.gender),
-    'balance', public.roster_balance(b, pid), 'meetings', public.roster_person_meetings(b, pid, true));
+    'balance', public.roster_balance_money(b, pid), 'sessions', public.roster_sessions(b, pid), 'passes', public.roster_passes_json(b),
+    'meetings', public.roster_person_meetings_me(b, pid));
 end $fn$;
 
 -- link this Google account to a participant by phone: created | linked | reactivated | phone_taken | blocked |
@@ -3116,7 +3320,7 @@ declare r jsonb := public.roster_me_resolve(p_slug, true); st text := r->>'statu
 begin
   if st <> 'ok' then return jsonb_build_object('status', public.roster_me_text(st)); end if;
   perform set_config('roster.source', 'me', true);
-  return public.roster_pay_credit_core(b, pid, p_meeting);
+  return public.roster_pay_credit_core_me(b, pid, p_meeting);
 end $fn$;
 
 -- "I paid" click from the personal area: ok | reported | already | not_registered | past (harpatka's words)
@@ -3126,8 +3330,80 @@ declare r jsonb := public.roster_me_resolve(p_slug, true); st text := r->>'statu
 begin
   if st <> 'ok' then return public.roster_me_text(st); end if;
   perform set_config('roster.source', 'me', true);
-  c := public.roster_report_core(b, pid, p_meeting);
+  c := public.roster_report_core_me(b, pid, p_meeting);
   return case c when 'reported' then 'ok' when 'already_reported' then 'reported' when 'already_paid' then 'already' when 'free' then 'already' else c end;
+end $fn$;
+
+-- "I want to buy this pass": the pay button of a pass in the personal area (harpatka_me_buy_pass). The money goes through the
+-- business's payment link; this only records the request (and a note on the participant), and the admin enters the payment
+-- with the pass. ok | not_found (no such pass) | exists (the same request is already waiting, 24 hours) | rate_limited
+-- (| none, forbidden, disabled, blocked, auth). A stranger can link any phone, so 10 requests an hour per participant.
+create or replace function public.roster_me_buy_pass(p_slug text, p_type uuid, p_n int)
+returns text language plpgsql security definer set search_path = public as $fn$
+declare r jsonb := public.roster_me_resolve(p_slug, true); st text := r->>'status'; b uuid := nullif(r->>'business_id', '')::uuid; pid uuid := nullif(r->>'participant_id', '')::uuid;
+        pr numeric;
+begin
+  if st <> 'ok' then return public.roster_me_text(st); end if;
+  select (x->>'price')::numeric into pr
+    from public.roster_meeting_types t, lateral jsonb_array_elements(case when jsonb_typeof(t.passes) = 'array' then t.passes else '[]'::jsonb end) x
+   where t.id = p_type and t.business_id = b and jsonb_typeof(x) = 'object'
+     and case when coalesce(x->>'n', '') ~ '^[0-9]{1,4}$' then (x->>'n')::int = p_n else false end
+     and coalesce(x->>'price', '') ~ '^[0-9]{1,7}(\.[0-9]{1,2})?$'
+   limit 1;
+  if pr is null then return 'not_found'; end if;
+  if exists (select 1 from public.roster_pass_requests q where q.business_id = b and q.participant_id = pid and q.type_id = p_type and q.n = p_n
+                and q.status = 'pending' and q.created_at > now() - interval '1 day') then return 'exists'; end if;
+  if public.roster_rate_take('me_pass:' || b || ':' || pid, 60, 10) > 0 then return 'rate_limited'; end if;
+  insert into public.roster_pass_requests (business_id, participant_id, type_id, n, price) values (b, pid, p_type, p_n, pr);
+  perform public.roster_sys_note(b, pid, 'ביקש/ה לרכוש כרטיסייה ' || p_n || ' מפגשים ב-₪' || public.roster_money(pr) || ' דרך האזור האישי', 'pass_requested');
+  return 'ok';
+end $fn$;
+
+-- ---- 12.12b the admin page asks before it mails a payment confirmation (harpatka's mail-admin-confirm.sql) -------------
+-- harpatka stopped mailing a payment confirmation on its own when a manager closes a payment: the page asks first ("send the
+-- participant a mail?") and only a yes sends it. Roster's mails are made by the Worker from events (roster_event_item says
+-- what the Worker may do), so the two halves are:
+--   * roster_event_item treats a payment.recorded event written by an ADMIN (source 'admin', a signed-in account writing the
+--     row from the page) as already confirmed, so the Worker does not mail it. The webhook of that event is untouched.
+--     The participant's own actions (source 'me') and the secret API (source 'api') mail as before.
+--   * roster_close_payment_mail, below, is the page's yes: it queues one more payment.recorded event with the internal source
+--     'admin_mail', which the Worker answers with the payment_confirmed mail (and which never reaches a webhook).
+-- roster_close_payment_mail(p_pid, p_mid, p_dry) for the business of the x-business header (a member of it only):
+--   p_dry = true only checks. Answers: ready (a mail can go) | sent (queued: the Worker sends it within about a minute; the mail
+--   log and a note on the participant show the outcome) | no_email (the participant has no address) | no_mail (nothing to mail:
+--   a "not for payment" or "pay later" meeting has no mail in roster, or the business switched participant mails off) |
+--   already (a confirmation was mailed, or is waiting) | unpaid | skip (not registered, a remainder is still due, or the outbox is
+--   full) | past (the meeting is over or gone).
+create or replace function public.roster_close_payment_mail(p_pid uuid, p_mid uuid, p_dry boolean default false)
+returns text language plpgsql security definer set search_path = public as $fn$
+declare b uuid := public.roster_my_current(); s public.roster_business_settings; a public.roster_attendance; mt public.roster_meetings;
+        pa public.roster_participants; paid numeric;
+begin
+  if b is null then raise exception 'forbidden' using errcode = '42501'; end if;
+  select * into a from public.roster_attendance where business_id = b and participant_id = p_pid and meeting_id = p_mid;
+  if not found then return 'skip'; end if;
+  select * into mt from public.roster_meetings where id = p_mid and business_id = b;
+  if not found or mt.meeting_date < public.roster_today() then return 'past'; end if;
+  if exists (select 1 from public.roster_mail_log l where l.business_id = b and l.participant_id = p_pid and l.meeting_id = p_mid
+               and l.template = 'payment_confirmed' and l.status in ('sent', 'pending'))
+     or exists (select 1 from public.roster_events e where e.business_id = b and e.type = 'payment.recorded' and e.source = 'admin_mail'
+                  and e.status in ('pending', 'processing') and (e.payload #>> '{participant,id}') = p_pid::text and (e.payload #>> '{meeting,id}') = p_mid::text) then
+    return 'already';
+  end if;
+  s := public.roster_settings_of(b);
+  if coalesce(a.no_pay, false) or a.pay_later_at is not null or not coalesce(s.participant_mail_enabled, false) then return 'no_mail'; end if;
+  if coalesce(a.pay_due_amount, 0) > 0 then return 'skip'; end if;
+  paid := public.roster_paid_for(b, p_pid, p_mid);
+  if paid <= 0 then return 'unpaid'; end if;
+  select * into pa from public.roster_participants where id = p_pid and business_id = b;
+  if not found then return 'skip'; end if;
+  if coalesce(btrim(pa.email), '') = '' then return 'no_email'; end if;
+  if p_dry then return 'ready'; end if;
+  if (select count(*) from public.roster_events where business_id = b and status in ('pending', 'processing')) >= 500 then return 'skip'; end if;
+  insert into public.roster_events (business_id, type, payload, source)
+    values (b, 'payment.recorded', jsonb_build_object('participant', public.roster_participant_json(pa), 'meeting', public.roster_meeting_brief(mt),
+              'payment', jsonb_build_object('id', null, 'kind', 'payment', 'amount', paid, 'method', null, 'meeting_id', p_mid)), 'admin_mail');
+  return 'sent';
 end $fn$;
 
 -- The two counters of the earlier version (check, then add, not atomic) are gone: roster_rate_take does both in one step.
@@ -3175,6 +3451,8 @@ revoke all on function public.roster_me_unregister(text, uuid)                  
 revoke all on function public.roster_me_update(text, text, text, int, text, text, text) from public, anon;
 revoke all on function public.roster_me_pay_credit(text, uuid)                        from public, anon;
 revoke all on function public.roster_me_report_payment(text, uuid)                    from public, anon;
+revoke all on function public.roster_me_buy_pass(text, uuid, int)                     from public, anon;
+revoke all on function public.roster_close_payment_mail(uuid, uuid, boolean)          from public, anon;
 grant execute on function public.roster_key_create(text, text, text[])                to authenticated;
 grant execute on function public.roster_key_revoke(uuid)                              to authenticated;
 grant execute on function public.roster_webhook_secret_rotate()                       to authenticated;
@@ -3188,6 +3466,8 @@ grant execute on function public.roster_me_unregister(text, uuid)               
 grant execute on function public.roster_me_update(text, text, text, int, text, text, text) to authenticated;
 grant execute on function public.roster_me_pay_credit(text, uuid)                     to authenticated;
 grant execute on function public.roster_me_report_payment(text, uuid)                 to authenticated;
+grant execute on function public.roster_me_buy_pass(text, uuid, int)                  to authenticated;
+grant execute on function public.roster_close_payment_mail(uuid, uuid, boolean)       to authenticated;
 
 -- the four validators sit in CHECK constraints a signed-in account's writes run through: that needs EXECUTE (they are pure)
 revoke all on function public.roster_valid_email(text), public.roster_valid_emails(text[]), public.roster_valid_webhook_url(text), public.roster_valid_name(text) from public, anon;
@@ -3209,7 +3489,9 @@ begin
     'roster_report_core(uuid, uuid, uuid)', 'roster_pay_credit_core(uuid, uuid, uuid)', 'roster_event_source()',
     'roster_emit(uuid, text, jsonb)', 'roster_ev_participant()', 'roster_ev_attendance()', 'roster_meeting_brief(roster_meetings)',
     'roster_ev_pay_reported()', 'roster_ev_payment()', 'roster_webhook_wanted(roster_business_settings, text)',
-    'roster_event_item(bigint)', 'roster_my_current()', 'roster_me_resolve(text, boolean)', 'roster_me_text(text)'
+    'roster_event_item(bigint)', 'roster_my_current()', 'roster_me_resolve(text, boolean)', 'roster_me_text(text)',
+    'roster_balance_money(uuid, uuid)', 'roster_sessions(uuid, uuid)', 'roster_passes_json(uuid)', 'roster_person_meetings_me(uuid, uuid)',
+    'roster_report_core_me(uuid, uuid, uuid)', 'roster_pay_credit_core_me(uuid, uuid, uuid)'
   ] loop
     execute format('revoke all on function public.%s from public, anon, authenticated, service_role', f);
   end loop;

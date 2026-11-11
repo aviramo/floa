@@ -28,6 +28,7 @@
     if (!res.ok) { const e = new Error('HTTP ' + res.status); e.code = String((out && (out.message || out.hint || out.code)) || ''); throw e; }
     return out;
   }
+  const UNREG_SURE = 'לחיצה נוספת לביטול שמירת המקום';
   const statusOf = (r) => typeof r === 'string' ? r : (r && (r.status || r.error)) || '';   // טקסט (register, update...) או אובייקט {status}
 
   /* ---------- עזרים ---------- */
@@ -51,9 +52,13 @@
     $('#brand').textContent = brand || '';
     document.title = 'האזור האישי' + (brand ? ' · ' + brand : '');
   }
-  function setChip(credit) {
-    const bc = $('#balChip'); bc.hidden = !credit;
-    if (credit) { bc.className = 'chip ' + (credit > 0 ? 'wait' : 'no'); bc.innerHTML = (credit > 0 ? 'קרדיט ' : 'חוב ') + ils(credit); bc.title = credit > 0 ? 'קרדיט לטובתכם' : 'חוב'; }
+  /* צ'יף אחד לקרדיט כספי ולמפגשי כרטיסייה: "קרדיט ₪100 · 5 מפגשים בכרטיסייה". כרטיסייה היא לא כסף, ולכן הסכום והמפגשים באים נפרדים מהשרת */
+  function setChip(credit, sessions) {
+    const bc = $('#balChip'), n = Math.round(Number(sessions) || 0); bc.hidden = !credit && n <= 0;
+    if (!bc.hidden) {
+      const parts = []; if (credit || n <= 0) parts.push((credit < 0 ? 'חוב ' : 'קרדיט ') + ils(credit)); if (n > 0) parts.push((n === 1 ? 'מפגש אחד' : n + ' מפגשים') + ' בכרטיסייה');
+      bc.className = 'chip ' + (credit < 0 ? 'no' : 'wait'); bc.innerHTML = parts.join(' · '); bc.title = credit < 0 ? 'חוב' : n > 0 ? 'קרדיט לטובתכם: סכום ומפגשים בכרטיסייה' : 'קרדיט לטובתכם';
+    }
   }
   const showOut = (on) => { $('#outBtn').hidden = !on; };
 
@@ -110,8 +115,6 @@
   }
   const SERVER_ERR = { invalid_name: 'name', invalid_phone: 'phone', invalid_email: 'email', invalid_age: 'age', invalid_gender: 'gender' };
   function serverError(root, code) { if (!SERVER_ERR[code]) return false; setErr(root, SERVER_ERR[code], MSG[SERVER_ERR[code]]); return true; }
-  /* השם מחשבון הגוגל, כהצעה למילוי שם פרטי ומשפחה */
-  function googleName() { const full = trim(AUTH.name()); return { first: full.split(' ')[0] || '', last: full.split(' ').slice(1).join(' ') }; }
 
   /* ---------- כניסה עם גוגל, בחלון קופץ (גם מתוך iframe) ---------- */
   function loginPopup() {
@@ -206,14 +209,14 @@
 
   function viewMain() {
     const p = data.participant || {}, ms = Array.isArray(data.meetings) ? data.meetings : [];
-    const credit = Math.round(Number(data.balance) || 0);   // בשקלים שלמים: סכום זעיר לא מוצג כ"חוב 0"
+    const credit = Math.round(Number(data.balance) || 0), sessions = Math.round(Number(data.sessions) || 0);   // בשקלים שלמים: סכום זעיר לא מוצג כ"חוב 0"
     const scrollTop = app.scrollTop;
-    setHead(((p.first_name || '') + ' ' + (p.last_name || '')).trim() || localPhone(p.phone), biz.name || ''); setChip(credit); showOut(true);
-    const noName = trim(p.first_name).length < 2 || trim(p.last_name).length < 2, gnm = noName ? googleName() : {};
+    setHead(((p.first_name || '') + ' ' + (p.last_name || '')).trim() || localPhone(p.phone), biz.name || ''); setChip(credit, sessions); showOut(true);
+    const noName = trim(p.first_name).length < 2 || trim(p.last_name).length < 2, gnm = {};   // השם לא מתמלא אוטומטית מחשבון הגוגל: המשתתף מקליד בעצמו
     const missing = noName;   // חסר שם: מבחינת המשתתף הוא עוד לא רשום, ורואים רק את השלמת הפרטים עד שממלאים
     const open = missing || (detOpen === true);
     const ordered = ms.slice().sort((a, b) => (String(a.date) + String(a.time)).localeCompare(String(b.date) + String(b.time)));   // מהקרוב לרחוק
-    const upcoming = ordered.filter((m) => m.future), past = ordered.filter((m) => !m.future && m.registered).reverse();
+    const upcoming = ordered.filter((m) => m.future), past = ordered.filter((m) => !m.future && m.registered && m.attended).reverse();   // מפגש שעבר מוצג רק אם הגיעו אליו
     const url = payUrl();
 
     /* שורת מפגש שהמשתתף שמר בו מקום: מצב התשלום, פעולות תשלום, הוראות הגעה (כשהשרת מחזיר אותן) וביטול שמירת המקום */
@@ -222,32 +225,35 @@
     const rowHtml = (m) => {
       const paid = Number(m.paid) > 0, free = !!m.free, price = Number(m.price) || 0, rem = (paid && Number(m.due) > 0) ? Number(m.due) : 0;
       const useCr = !paid && !free && credit > 0 && price > 0, crAmt = Math.min(credit, price), crFull = useCr && credit >= price;
-      const pay = free ? '<span class="chip">לא לתשלום</span>' : rem ? '<span class="chip no">נשאר לשלם ' + ils(rem) + '</span>' : paid ? '<span class="chip ok">שולם ' + ils(m.paid) + '</span>' : '<span class="chip no">' + (m.future ? 'טרם שולם' : 'לא שולם') + '</span>';
+      const pay = free ? '<span class="chip">לא לתשלום</span>' : rem ? '<span class="chip no">נשאר לשלם ' + ils(rem) + '</span>' : paid ? '<span class="chip ok">שולם ' + ils(m.paid) + (m.paid_via ? ' · ' + esc(m.paid_via) : '') + '</span>' : '<span class="chip no">' + (m.future ? 'טרם שולם' : 'לא שולם') + '</span>';
       let foot = '';
       if (useCr) foot += '<div class="payfold"><button type="button" class="btn pay" data-paycredit="' + esc(m.id) + '">תשלום מהקרדיט · ' + ils(crAmt) + '</button>' +
         '<p class="crnote">' + (crFull ? 'יישאר לכם קרדיט ' + ils(credit - price) : 'הקרדיט כולו ינוצל על המפגש, ונשאר לשלם ' + ils(price - credit)) + '</p>' +
-        (waNum() ? '<div class="paylinks"><button type="button" class="lnk" data-other="' + esc(m.id) + '" data-pay="1">רוצים לשמור מקום בדרך אחרת?</button></div>' : '') + '<div class="msg" data-pm="' + esc(m.id) + '"></div></div>';
+        (waNum() ? '<div class="paylinks"><button type="button" class="lnk" data-other="' + esc(m.id) + '" data-pay="1">רוצים להעביר תשלום בדרך אחרת?</button></div>' : '') + '<div class="msg" data-pm="' + esc(m.id) + '"></div></div>';
       else if (((!paid && !free) || rem > 0) && (url || waNum())) {
         const amt = rem || price;
         foot += '<div class="payfold">' + (rem ? '<p class="crnote">שולם ' + ils(m.paid) + '. נשאר לשלם ' + ils(rem) + '</p>' : '') +
           (url ? '<a class="btn pay" data-paynow="' + esc(m.id) + '" href="' + esc(url) + '" target="_blank" rel="noopener">לתשלום' + (amt ? ' ' + ils(amt) : '') + '</a>' : '') +
-          (waNum() ? '<div class="paylinks"><button type="button" class="lnk" data-other="' + esc(m.id) + '"' + (url ? ' data-pay="1"' : '') + '>' + (url ? 'רוצים לשמור מקום בדרך אחרת?' : 'לשמירת מקום בוואטסאפ') + '</button></div>' : '') + '<div class="msg" data-pm="' + esc(m.id) + '"></div></div>';
+          (waNum() ? '<div class="paylinks"><button type="button" class="lnk" data-other="' + esc(m.id) + '"' + (url ? ' data-pay="1"' : '') + '>' + (url ? 'רוצים להעביר תשלום בדרך אחרת?' : 'לשמירת מקום בוואטסאפ') + '</button></div>' : '') + '<div class="msg" data-pm="' + esc(m.id) + '"></div></div>';
       }
       if (m.future) foot += dirFold(m);
-      if (m.future) { const sure = unregSure === m.id; foot += '<button type="button" class="lnk sm" data-unreg="' + esc(m.id) + '"' + (sure ? ' data-sure="1"' : '') + '>' + (sure ? 'לחיצה נוספת לאישור ביטול שמירת המקום' : 'ביטול שמירת מקום') + '</button><div class="msg" data-um="' + esc(m.id) + '"></div>'; }
+      if (m.future) { const sure = unregSure === m.id; foot += '<button type="button" class="lnk sm" data-unreg="' + esc(m.id) + '"' + (sure ? ' data-sure="1"' : '') + '>' + (sure ? UNREG_SURE : 'ביטול שמירת המקום') + '</button><div class="msg" data-um="' + esc(m.id) + '"></div>'; }
       return '<div class="mtg">' + meetingBox(m.future ? m : Object.assign({}, m, { max: 0, capacity: 0 }), '<div class="mts">' + pay + '</div>' + (foot ? '<div class="mtfoot">' + foot + '</div>' : '')) + '</div>';
     };
     /* מפגש עתידי שעוד לא שמרו בו מקום: כפתור שמירת מקום, עם המחיר */
     const regRow = (m) => { const price = Number(m.price) || 0; return '<div class="mtg">' + meetingBox(m, '<div class="mtfoot"><button type="button" class="btn" data-reg="' + esc(m.id) + '">שמירת מקום' + (price ? ' · ' + ils(price) : '') + '</button><div class="msg" data-rm="' + esc(m.id) + '"></div></div>') + '</div>'; };
     const rows = upcoming.filter((m) => m.registered).map(rowHtml).concat(upcoming.filter((m) => !m.registered).map(regRow), past.map(rowHtml));
     const meetHtml = rows.length ? rows.join('') : '<div class="card"><p class="muted">עוד לא נקבע מפגש קרוב</p></div>';
+    /* רכישת כרטיסייה: הכרטיסיות שהוגדרו בסוגי המפגש, למי שנגמרו לו המפגשים בכרטיסייה. התשלום עובר בקישור התשלום של העסק, ובמקביל נרשמת בקשה, והמנהל מזין את התשלום ומתווספים המפגשים */
+    const passes = Array.isArray(data.passes) ? data.passes : [];
+    const passHtml = (passes.length && sessions <= 0) ? '<div class="card" id="passCard"><h2>כרטיסיות</h2><p class="muted passnote">משלמים פעם אחת ומקבלים מפגשים בקרדיט. כל שמירת מקום מורידה מפגש אחד</p>' + passes.map((x) => '<div class="passrow"><div><b>כרטיסייה ' + esc(x.n) + ' מפגשים</b><small>' + (passes.some((y) => y.type_id !== x.type_id) ? esc(x.type_name || '') + ' · ' : '') + ils(Math.round(x.price / x.n)) + ' למפגש</small></div>' + (url ? '<a class="btn pay" data-buypass="' + esc(x.type_id) + '" data-n="' + esc(x.n) + '" href="' + esc(url) + '" target="_blank" rel="noopener">' + ils(x.price) + '</a>' : '') + '</div>').join('') + '</div>' : '';
 
     let h = '<div class="card"><button type="button" class="dethead" id="detHead" aria-expanded="' + open + '" aria-controls="detBody"><h2>' + (missing ? 'השלמת פרטים' : 'הפרטים שלי') + '</h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="detfold' + (open ? ' open' : '') + '" id="detBody"><div>' + (missing ? '<p class="muted">נא למלא שם פרטי ושם משפחה כדי להמשיך. שאר הפרטים לא חובה</p>' : '') + '<div class="two"><div>' +
       field('first', 'fn', p.first_name || gnm.first) + '</div><div>' + field('last', 'ln', p.last_name || gnm.last) + '</div></div>' + errBox('name') +
       field('phone', 'ph2', localPhone(p.phone), missing ? 'readonly' : '') + errBox('phone') + field('email', 'em', p.email || (missing ? trim(AUTH.email()) : '')) + errBox('email') +
       '<div class="two"><div>' + field('age', 'ag', p.age) + errBox('age') + '</div><div>' + field('gender', 'gn', p.gender || '') + errBox('gender') + '</div></div>' +
       '<button type="button" class="btn" id="saveBtn">שמירה</button><div class="msg" id="sm"></div></div></div></div>';
-    if (!missing) h += meetHtml;   // "הפרטים שלי" ראשון ומתחתיו המפגשים (רק אחרי שהפרטים הושלמו)
+    if (!missing) h += passHtml + meetHtml;   // "הפרטים שלי" ראשון ומתחתיו המפגשים (רק אחרי שהפרטים הושלמו)
     app.innerHTML = h;
     app.scrollTop = scrollTop;
     bindMain(p, ms, credit, missing);
@@ -269,6 +275,7 @@
     return { done: () => { pending--; }, fail: () => { pending--; load(true); } };
   }
   function bindMain(p, ms, credit, missing) {
+    app.querySelectorAll('[data-buypass]').forEach((a) => { a.addEventListener('click', () => { rpc('roster_me_buy_pass', { p_type: a.dataset.buypass, p_n: Number(a.dataset.n) }).catch(() => {}); }); });   // הקישור נפתח בלשונית חדשה; הבקשה נרשמת במקביל
     app.querySelectorAll('[data-reg]').forEach((rb) => { rb.onclick = async () => {
       if (rb.disabled) return; const id = rb.dataset.reg, msg = app.querySelector('[data-rm="' + CSS.escape(id) + '"]'); rb.disabled = true;
       try {
@@ -280,16 +287,16 @@
     app.querySelectorAll('[data-unreg]').forEach((ub) => { ub.onclick = async () => {   // שני שלבים: לחיצה ראשונה מבקשת אישור
       const id = ub.dataset.unreg, msg = app.querySelector('[data-um="' + CSS.escape(id) + '"]');
       if (!ub.dataset.sure) {
-        unregSure = id; ub.dataset.sure = '1'; ub.textContent = 'לחיצה נוספת לאישור ביטול שמירת המקום';
-        clearTimeout(unregT); unregT = setTimeout(() => { if (unregSure !== id) return; unregSure = null; const b = app.querySelector('[data-unreg="' + CSS.escape(id) + '"]'); if (b && !b.disabled) { delete b.dataset.sure; b.textContent = 'ביטול שמירת מקום'; } }, 8000);
+        unregSure = id; ub.dataset.sure = '1'; ub.textContent = UNREG_SURE;
+        clearTimeout(unregT); unregT = setTimeout(() => { if (unregSure !== id) return; unregSure = null; const b = app.querySelector('[data-unreg="' + CSS.escape(id) + '"]'); if (b && !b.disabled) { delete b.dataset.sure; b.textContent = 'ביטול שמירת המקום'; } }, 8000);
         return;
       }
       unregSure = null; clearTimeout(unregT); ub.disabled = true;
       try {
         const r = await rpc('roster_me_unregister', { p_meeting: id }), st = statusOf(r);
         if (st === 'cancelled' || st === 'not_registered') { optimistic(id, { registered: false, reported: false }).done(); load(true); }
-        else { say(msg, st === 'attended' ? 'אי אפשר לבטל, ההגעה כבר סומנה' : st === 'past' ? 'המפגש כבר עבר' : 'אי אפשר לבטל את שמירת המקום למפגש הזה', true); ub.disabled = false; delete ub.dataset.sure; ub.textContent = 'ביטול שמירת מקום'; }
-      } catch (e) { if (e.signedOut) { viewLogin(); return; } say(msg, 'משהו השתבש, אפשר לנסות שוב', true); ub.disabled = false; delete ub.dataset.sure; ub.textContent = 'ביטול שמירת מקום'; }
+        else { say(msg, st === 'attended' ? 'אי אפשר לבטל, ההגעה כבר סומנה' : st === 'past' ? 'המפגש כבר עבר' : 'אי אפשר לבטל את שמירת המקום למפגש הזה', true); ub.disabled = false; delete ub.dataset.sure; ub.textContent = 'ביטול שמירת המקום'; }
+      } catch (e) { if (e.signedOut) { viewLogin(); return; } say(msg, 'משהו השתבש, אפשר לנסות שוב', true); ub.disabled = false; delete ub.dataset.sure; ub.textContent = 'ביטול שמירת המקום'; }
     }; });
     /* תשלום מהקרדיט: הקרדיט מכסה את מחיר המפגש (או את חלקו), ומוקצה לו */
     app.querySelectorAll('[data-paycredit]').forEach((cb) => { cb.onclick = async () => {
