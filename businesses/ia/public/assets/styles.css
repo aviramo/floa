@@ -293,3 +293,51 @@ svg { display: block; }
 .sec--final .cta-row { justify-content: center; }
 .person p { text-align: start; }
 .person-link { margin-top: .6rem; }
+
+/* ===== הערות של טל, סבב 2 ===== */
+/* המילים זזות בכיוון ההפוך, קריאות, עם כתום */
+.track { animation-direction: reverse; font-size: clamp(2.6rem, 8vw, 5rem); }
+.track span, .track span:nth-child(3n+1) { color: #fff; -webkit-text-stroke: 0; }
+.track span:nth-child(2n) { color: #FF9F43; }
+.track span:nth-child(3n) { color: var(--sun); }
+.track svg { fill: #FF8A2B; }
+
+/* הגדלות בפתיחה */
+.hero-tag { font-size: clamp(1.45rem, 5.4vw, 1.9rem); gap: 10px 18px; }
+.hero-tag i { width: 12px; height: 12px; background: #FF8A2B; }
+.sun-parallax .stamp { width: 132px; font-size: 1.15rem; background: #E8590C; }
+.stamp b { font-size: 2.8rem; }
+@media (max-width: 899px) { .sun-parallax .stamp { width: 112px; font-size: 1rem; } .stamp b { font-size: 2.3rem; } }
+
+/* פרטים: טקסט, שעון, ובסוף התמונה */
+.sec--when .wrap { display: block; }
+.when-text > p { font-size: 1.15rem; }
+.when-poster { margin-top: 56px; }
+.when-poster::before { display: none; }
+
+/* תהליך המפגש */
+.steps { list-style: none; margin: 1.4rem 0 2.4rem; padding: 0; display: grid; gap: 14px; }
+.steps li { display: flex; gap: 16px; align-items: flex-start; padding: 16px 20px; border-radius: 22px; background: #fff; box-shadow: 0 16px 34px -26px rgba(23, 58, 42, .6); }
+.steps li:nth-child(odd) .n { background: #FF9F43; } .steps li:nth-child(even) .n { background: #8CCB86; }
+.steps p { margin: 0; }
+.steps b:not(.n) { color: var(--rose); }
+.sub-h { font-size: clamp(1.8rem, 5vw, 2.4rem); margin: 2rem 0 .8rem; color: var(--rose); }
+.closing { margin-top: 1.6rem; font-family: var(--display); font-size: 1.4rem; line-height: 1.5; color: var(--leaf); text-align: center; }
+.list--for h3 { font-size: 1.15rem; font-family: var(--font); font-weight: 700; line-height: 1.55; }
+.sec--fork { background: #FFF1D6; padding: 70px 0; }
+.sec--fork h2 { font-size: clamp(1.9rem, 5.4vw, 2.8rem); }
+
+/* שנכיר: פחות רווח */
+.sec--meet { padding-top: 56px; }
+.sec--meet h2 { margin-bottom: 0; }
+.meet { margin-top: 24px; }
+
+/* מנחות וטלפונים גדולים יותר */
+.person h3 { font-size: 2.5rem; }
+.person .role { font-size: 1.2rem; }
+.person p { font-size: 1.15rem; }
+.sec--final .ask { font-size: 1.3rem; }
+.sec--final .btn--sm { min-height: 64px; padding: 14px 30px; font-size: 1.3rem; }
+.sec--final .btn--sm bdi { font-size: 1.4rem; }
+.sec--final .btn--tal { font-size: 1.25rem; min-height: 62px; }
+.foot { padding-bottom: 28px; }
