@@ -332,6 +332,7 @@
         if (ov) { ov.doneAt = Date.now(); ov.exp = Date.now() + 15000; }
         if (mailFailHook && (table === T.pay || table === T.a)) mailFailHook();   // תשלום או שיוך נכתבו: אולי המערכת ניסתה לשלוח מייל
         if (mailOfferHook && (table === T.pay || table === T.a)) mailOfferHook(table, method, path, body);   // מנהל סגר תשלום או סימן "לא לתשלום": פופאפ לשליחה (מייל או וואטסאפ), בלי שליחה אוטומטית
+        if (method === 'DELETE' && window.ROSTER_KIT && window.ROSTER_KIT.deleted) window.ROSTER_KIT.deleted(table, path);   // roster kit: offers the undo of this delete (admin-kit.js)
         return data;
       }
       if (Array.isArray(data)) {
@@ -4713,4 +4714,5 @@
       openTemplates: (id) => { openTypeEditor(id); setTimeout(() => { const b = $('#tyMF'); if (b && b.scrollIntoView) b.scrollIntoView({ block: 'center' }); }, 60); },
       pref: { get: () => { const g = state.viewScopes._g; return (g && g.onb) || {}; }, set: (k, v) => { const g = state.viewScopes._g || (state.viewScopes._g = {}); (g.onb || (g.onb = {}))[k] = v; saveViewPrefs(); } } }; })();
 
-  if (!FRAMED) startAuth();
+    window.ROSTER_KIT = { api, toast, load, deleted: null };   // the handles admin-kit.js works through (roster kit, p14_kit)
+if (!FRAMED) startAuth();

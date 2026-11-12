@@ -22,6 +22,8 @@
   --warn: #7F5300;     --warn-bg: #FBEBC4;
   --info: #1D4F91;     --info-bg: #E3ECF8;
   --scrim: rgba(31, 27, 22, .55);
+  /* inverse set: a rule that swaps the page palette (the dark mail preview) cannot read the variable it defines, so it reads these, resolved at :root */
+  --inv-bg: var(--text);  --inv-text: var(--bg);  --inv-mid: var(--text-2);  --inv-soft: var(--line-strong);  --inv-low: var(--text-3);
 
   /* ---- spacing: THREE values and one hairline ---- */
   --sp-hair: 4px;   /* ONLY an icon next to its text inside the smallest components (chip, counter) and field label offsets */
