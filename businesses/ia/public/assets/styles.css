@@ -471,3 +471,6 @@ body { background-color: var(--paper); }
 html { -webkit-tap-highlight-color: transparent; }
 a, button, summary { -webkit-tap-highlight-color: transparent; }
 button:focus:not(:focus-visible), a:focus:not(:focus-visible) { outline: none; }
+
+/* מקום בסוף הדף כדי שהכפתור הקבוע לא יסתיר את הפוטר */
+.foot { padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px)); }
