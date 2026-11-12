@@ -429,7 +429,7 @@ dialog { border: 0; padding: 0; width: 100%; max-width: 560px; max-height: 92vh;
 dialog::backdrop { background: var(--scrim); }
 html.dlg-lock { overflow: hidden; overscroll-behavior: none; }
 .grab { position: sticky; top: 0; z-index: 2; height: 28px; margin-bottom: -28px; display: grid; place-items: center; cursor: grab; touch-action: none; }
-.grab i { width: 40px; height: 4px; background: var(--line-2); }
+
 .sheet { padding: 28px var(--gut) var(--sheet-b); }
 .sheet-head { display: flex; align-items: center; justify-content: flex-start; gap: 8px; min-height: var(--ib); margin-bottom: 16px; }
 /* שורת הכותרת של כל פופאפ: 16px בין כל שני פריטים נראים (סמל או טקסט), כמו בין כפתור התפריט לכפתור המפגש הקרוב בכותרת הדף. כפתור ברוחב 28px עם סמל של 20px ו-8px בין הכפתורים = 16px בין הסמלים; שטח הלחיצה ממשיך 4px לכל צד */
@@ -475,7 +475,7 @@ html.dlg-lock { overflow: hidden; overscroll-behavior: none; }
   #setDlg .sheet, #stDlg .sheet, #prDlg .sheet, #mDlg .sheet { min-height: 0; }
   
   
-  .grab { display: none; }
+
 }
 #cDlg .sheet h2 { margin-bottom: 16px; }
 #cDlg #cText { color: var(--text-2); margin: 0 0 16px; }
@@ -979,7 +979,7 @@ html.is-loading .vbar { display: none; }
 }
 
 /* ---------- דסקטופ (31.10.26): הגדרות, סטטיסטיקות וכספים כפאנל מצד שמאל שמחליק ימינה (בדסקטופ רחב: כל האזור שמשמאל לרשימה) ---------- */
-dialog .dclose { display: none; }
+
 @media (min-width: 760px) {
   :is(#setDlg, #stDlg, #finDlg, #prDlg).drawer { inset: var(--envtop, 0px) auto 0 0; width: min(600px, 92vw); max-width: none !important; height: auto; max-height: none; margin: 0; box-shadow: var(--pop); }
   :is(#setDlg, #stDlg, #finDlg, #prDlg).drawer .sheet { min-height: 100%; }
@@ -1094,7 +1094,7 @@ dialog .dclose { display: none; }
 .row, .wrap, .wrap > .vbar, .sheet-head, .finrow, .walrow, .logrow, #fMenu .fsep, .nform, #nList .nitem, .ptabs, .ptabi, .mmenu .maddrow, .srccard, .tb .tr, #waMenu .wbot, .hsearch, .hmi.out, .fsl.hd, .tokf, .nform textarea, .srccard .codein, .srccard .ratetype, #listTags .hsearch input { border-radius: 0; }
 @media (max-width: 699px) { #mMenu { border-radius: 0; } }   /* במובייל התפריט מקצה לקצה */
 dialog { border-radius: 0; }   /* במובייל הפופאפים עולים מלמטה וצמודים לקצה המסך: בלי פינות מעוגלות */
-@media (min-width: 760px) { dialog:not(.drawer):not(.side) { border-radius: var(--r); } }   /* בדסקטופ (5.11.26, לבקשת בעל האתר): כל הפופאפים הממורכזים עם פינות מעוגלות. הפאנלים שצמודים לקצה המסך (הגדרות, סטטיסטיקות, כספים, וכרטיס המשתתף שליד הרשימה) נשארים ישרים */
+   /* בדסקטופ (5.11.26, לבקשת בעל האתר): כל הפופאפים הממורכזים עם פינות מעוגלות. הפאנלים שצמודים לקצה המסך (הגדרות, סטטיסטיקות, כספים, וכרטיס המשתתף שליד הרשימה) נשארים ישרים */
 /* רצועת המפגשים: האריח והכרטיס האחרון סוגרים את הפינות של הרצועה */
 
 /* סינון פעיל בשורת הסינון (2.11.26): נקודה בצבע התואם, רכיב אחד (UI.fdot) לתשלום, יתרה, התמדה, שליחה, וואטסאפ, מגדר, סינון ומיון. זכר / נקבה בלי מילוי; אייקוני העמודות נשארים עם הרקע של המצב */
@@ -2078,3 +2078,18 @@ svg.ic, .cico svg, .hicon svg, .hbtn svg { overflow: visible; }   /* סמלים 
 /* ===== extensions of the shared field element (assets/field.css), admin only ===== */
 /* a value taken from the meeting type shows as a real placeholder (no data-hint): the label stays floated above it, as before the shared element */
 .rfield.field:not(:focus-within):has(> :is(input, textarea)[placeholder]:not([placeholder=" "]):not([data-hint])) > span:first-child { transform: scale(.75); inset-inline-end: -33%; }
+
+/* ===== roster popup rules for the admin dialogs (sec/p13_sheets.mjs) ===== */
+.grab i { width: 44px; height: 4px; background: #6B7280; }   /* the shell's bar: a square pill, 4.8:1 on white */
+.grab::before { content: ""; position: absolute; inset: 0 0 -16px; }   /* the touch target is taller than the pill */
+dialog.drawer .grab, dialog.side .grab { display: none; }   /* a side panel is not a bottom sheet */
+dialog .dclose { display: inline-grid; flex: 0 0 auto; width: 44px; min-width: 44px; height: 44px; margin-block: -6px; place-items: center; }   /* the X, in every head */
+dialog .dclose::before { inset: 0; }
+dialog { border-radius: 0 !important; }   /* iron rule: no rounded corners, wide screens included */
+dialog:not(.drawer):not(.side) { max-width: 560px; }
+:is(#tplDlg, #tplPrevDlg, #prDlg, #mailDlg, #cDlg, #lockDlg, #mfPopDlg, #finFormDlg, #viewDlg, #sortDlg, #waDlg) .sheet-head { position: sticky; top: 0; z-index: 5; background: var(--bg, #fff); margin-top: -28px; padding-top: 28px; margin-bottom: 0; padding-bottom: 16px; }   /* the dialogs where the dialog itself is the scroller: the header stays (the others are flex columns with an inner scroller, or already sticky) */
+.grab { z-index: 6; }
+#tplDlg .sheet, #tplPrevDlg .sheet { max-height: none; }   /* the sheet is as tall as its content, the dialog scrolls and the sticky header stays (a capped sheet let the header scroll away with the overflow) */
+#cDlg .sheet-head h2, #lockDlg .sheet-head h2, #mfPopDlg .sheet-head h2 { margin-bottom: 0; }
+#iDlg .sheet-head { padding-inline: var(--gut); }
+.mdlg .sheet-head { margin-bottom: 8px; }

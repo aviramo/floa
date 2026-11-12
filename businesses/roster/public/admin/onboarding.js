@@ -44,9 +44,10 @@
     dlg.id = 'onbDlg';
     dlg.setAttribute('aria-labelledby', 'onbTitle');
     dlg.style.maxWidth = '460px';
-    dlg.innerHTML = '<div class="sheet"><div class="onbstep" id="onbStep"></div><h2 id="onbTitle"></h2><p id="onbText"></p>' +
+    dlg.innerHTML = '<div class="sheet"><div class="sheet-head"><h2 id="onbTitle"></h2></div><div class="onbstep" id="onbStep"></div><p id="onbText"></p>' +
       '<button type="button" class="btn" id="onbGo"></button><button type="button" class="btn ghost" id="onbLater"></button></div>';
     document.body.appendChild(dlg);
+    if (window.__rosterSetupDlg) window.__rosterSetupDlg(dlg);   /* the admin page's popup setup (bar, swipe, X, history), the page created it before this popup existed */
     $('#onbGo').addEventListener('click', go);
     $('#onbLater').addEventListener('click', function () { dlg.close(); });
     dlg.addEventListener('close', function () { current = null; });

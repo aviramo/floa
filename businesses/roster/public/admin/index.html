@@ -12,7 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="onboarding.css?v=748bbc8d" />
   <link rel="stylesheet" href="../assets/field.css?v=097a02b7" />
-  <link rel="stylesheet" href="admin.css?v=c5a95208" />
+  <link rel="stylesheet" href="admin.css?v=bab02001" />
 </head>
 <body class="locked">
   <div class="gate" id="gate" hidden>
@@ -280,7 +280,7 @@
 
   <dialog id="iDlg" aria-label="צילום מסך" style="max-width:520px">
     <div class="sheet">
-      <div class="idate" id="iDate"></div>
+      <div class="sheet-head"><h2 id="iTitle">צילום מסך</h2></div><div class="idate" id="iDate"></div>
       <div class="iwrap" id="iWrap">
         <button type="button" class="inav inext" id="iNext" aria-label="הבאה" hidden><svg data-i="prev"></svg></button>
         <img id="iImg" alt="צילום מסך" />
@@ -400,7 +400,7 @@
 
   <dialog id="cDlg" aria-labelledby="cTitle" style="max-width:420px">
     <form class="sheet" method="dialog" novalidate>
-      <h2 id="cTitle"></h2>
+      <div class="sheet-head"><h2 id="cTitle"></h2></div>
       <p id="cText" style="color:var(--muted);margin:0 0 16px"></p>
       <button class="btn" id="cYes" type="button">אישור</button>
       <button class="btn ghost" id="cAlt" type="button" hidden>אפשרות נוספת</button>
@@ -408,17 +408,17 @@
     </form>
   </dialog>
   <dialog id="finFormDlg">
-    <div class="sheet"><div id="finFormBody"></div></div>
+    <div class="sheet"><div class="sheet-head"><h2 id="finFormTitle">הוצאה</h2></div><div id="finFormBody"></div></div>
   </dialog>
   <dialog id="mfPopDlg" aria-labelledby="mfPopTitle">
     <form class="sheet" method="dialog" novalidate>
-      <h2 id="mfPopTitle"></h2>
+      <div class="sheet-head"><h2 id="mfPopTitle"></h2></div>
       <div id="mfPopBody"></div>
     </form>
   </dialog>
   <dialog id="lockDlg" aria-labelledby="lockTitle" style="max-width:420px">
     <form class="sheet" method="dialog" novalidate>
-      <h2 id="lockTitle">סגירת מחיר הכרטיס</h2>
+      <div class="sheet-head"><h2 id="lockTitle">סגירת מחיר הכרטיס</h2></div>
       <p id="lockText" style="color:var(--muted);margin:0 0 8px"></p>
       <label class="rfield field money"><span>מחיר הכרטיס</span><input placeholder=" " id="lockPrice" type="number" inputmode="numeric" min="1" step="10" /></label>
       <p id="lockErr" class="msg" style="color:var(--red);margin:8px 0 0" hidden>צריך להזין מחיר גדול מאפס</p>
@@ -427,9 +427,9 @@
   </dialog>
 
   <div class="qmenu" id="qMenu" role="menu" hidden></div>
-  <dialog id="viewDlg" class="mdlg" aria-label="סינון"><div class="sheet"><div class="qmenu" id="viewMenu" role="menu" hidden></div></div></dialog>
-  <dialog id="sortDlg" class="mdlg" aria-label="מיון"><div class="sheet"><div class="sortmenu" id="sortMenu" role="menu" hidden></div></div></dialog>
-  <dialog id="waDlg" class="mdlg" aria-label="וואטסאפ"><div class="sheet"><div class="sortmenu" id="waMenu" role="menu" hidden></div></div></dialog>
+  <dialog id="viewDlg" class="mdlg" aria-label="סינון"><div class="sheet"><div class="sheet-head"><h2>סינון</h2></div><div class="qmenu" id="viewMenu" role="menu" hidden></div></div></dialog>
+  <dialog id="sortDlg" class="mdlg" aria-label="מיון"><div class="sheet"><div class="sheet-head"><h2>מיון</h2></div><div class="sortmenu" id="sortMenu" role="menu" hidden></div></div></dialog>
+  <dialog id="waDlg" class="mdlg" aria-label="וואטסאפ"><div class="sheet"><div class="sheet-head"><h2>וואטסאפ</h2></div><div class="sortmenu" id="waMenu" role="menu" hidden></div></div></dialog>
   <div class="qmenu" id="fMenu" role="menu" hidden></div>
   <div class="qmenu" id="chipMenu" role="menu" hidden></div>
   <div id="splitHandle" role="separator" aria-orientation="vertical" aria-label="רוחב הרשימה (גרירה, חצים במקלדת, לחיצה כפולה לברירת המחדל)" title="גרירה לשינוי הרוחב · לחיצה כפולה: ברירת מחדל" tabindex="0"></div>
@@ -441,7 +441,7 @@
   <script src="age.js?v=816fedce"></script>
   <script src="rt.js?v=9f0bd1e7"></script>
   <script src="../assets/field.js?v=37014b18"></script>
-  <script src="admin.js?v=ae5f8b87"></script>
-  <script src="onboarding.js?v=a4276d8a"></script>
+  <script src="admin.js?v=06c3e068"></script>
+  <script src="onboarding.js?v=544be310"></script>
 </body>
 </html>

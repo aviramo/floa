@@ -1490,7 +1490,7 @@
     else if (v && v.startsWith('edit-')) { const m = /^edit-(entry|rec)-(.+)$/.exec(v); if (m && (m[1] === 'rec' ? state.finRec : state.fin).some((x) => x.id === m[2])) openFinForm({ type: m[1], id: m[2] }); }
     if (document.activeElement && document.activeElement.closest('#finDlg')) document.activeElement.blur();
   }
-  const finSaveLabel = () => { const k = $('#finForm').dataset.kind; $('#finSave').textContent = k === 'income' ? 'שמירת הכנסה' : 'שמירת הוצאה'; $('#finFormDlg').setAttribute('aria-label', k === 'income' ? 'הכנסה' : 'הוצאה'); };
+  const finSaveLabel = () => { const k = $('#finForm').dataset.kind; $('#finSave').textContent = k === 'income' ? 'שמירת הכנסה' : 'שמירת הוצאה'; $('#finFormDlg').setAttribute('aria-label', k === 'income' ? 'הכנסה' : 'הוצאה'); $('#finFormTitle').textContent = k === 'income' ? 'הכנסה' : 'הוצאה'; };
   function openFinForm(edit) {
     finEdit = edit; const f = $('#finForm');
     const src = edit.type === 'rec' ? state.finRec.find((x) => x.id === edit.id) : edit.type === 'entry' ? state.fin.find((x) => x.id === edit.id) : null;
@@ -3077,11 +3077,11 @@
       if (bk && !bk.hidden) bk.click(); else d.close();
     });
     if (sideMQ) sideMQ.addEventListener('change', () => { const d = document.getElementById('pDlg'); if (d && d.open) d.close(); });   // מעבר בין מובייל לדסקטופ רחב עם כרטיס פתוח: סוגרים
-    document.querySelectorAll('dialog').forEach((d) => {
-      if (DRAWERS.includes(d.id)) { const h = d.querySelector('.sheet-head'); if (h) { const x = document.createElement('button'); x.type = 'button'; x.className = 'hbtn dclose'; x.setAttribute('aria-label', 'סגירה'); x.title = 'סגירה'; x.innerHTML = icon('close'); x.addEventListener('click', () => d.close()); h.appendChild(x); } }   // כפתור סגירה לפאנל מצד שמאל (מוצג רק בדסקטופ)
+    const setupDlg = (d) => {
+      { const h = d.querySelector('.sheet-head'); if (h && !h.querySelector('.dclose')) { const x = document.createElement('button'); x.type = 'button'; x.className = 'hbtn dclose'; x.setAttribute('aria-label', 'סגירה'); x.title = 'סגירה'; x.innerHTML = icon('close'); x.addEventListener('click', () => d.close()); h.appendChild(x); } }   // כפתור סגירה לפאנל מצד שמאל (מוצג רק בדסקטופ)
       const g = document.createElement('div'); g.className = 'grab'; g.innerHTML = '<i></i>'; g.setAttribute('aria-hidden', 'true');
       d.insertBefore(g, d.firstChild);
-      d.addEventListener('close', () => { if (d.open) return; navClose(d); unlock(); setTimeout(() => { try { syncUrl(); } catch (e) {} }, 0); });   // סגירה שלא עברה דרך close שלנו (form method=dialog, או הדפדפן סוגר דיאלוג בלחיצה על "חזרה" כשאי אפשר לבטל): מחזירים את רשומת ההיסטוריה שנוספה בפתיחה, אחרת המחסנית של "חזרה" מתמלאת
+      d.addEventListener('close', () => { if (d.open) return; { const ae = document.activeElement; if (ae && ae !== document.body && ae.matches && ae.matches('input, textarea, select, [contenteditable]')) ae.blur(); } navClose(d); unlock(); setTimeout(() => { try { syncUrl(); } catch (e) {} }, 0); });   // סגירה שלא עברה דרך close שלנו (form method=dialog, או הדפדפן סוגר דיאלוג בלחיצה על "חזרה" כשאי אפשר לבטל): מחזירים את רשומת ההיסטוריה שנוספה בפתיחה, אחרת המחסנית של "חזרה" מתמלאת
       d.addEventListener('cancel', (e) => {   // (אירוע cancel של שדה קובץ שבתוך הפופאפ, למשל סגירת בורר התמונות בלי בחירה, עולה בבועה אל הדיאלוג; מתעלמים ממנו, אחרת הפופאפ נסגר) Escape או כפתור "חזרה" של הדפדפן/אנדרואיד (Chrome סוגר דיאלוג מודלי לפני ההיסטוריה): בתוך מסך משנה חוזרים צעד אחד כמו בחץ שבפופאפ, ורק במסך הראשי סוגרים
         if (e.target !== d) return;
         e.preventDefault();
@@ -3148,7 +3148,8 @@
       };
       d.addEventListener('touchend', tEnd); d.addEventListener('touchcancel', tEnd);
       d.querySelectorAll('.sheet-head').forEach((h) => { h.style.touchAction = 'none'; bind(h); });
-    });
+    };
+    window.__rosterSetupDlg = setupDlg; document.querySelectorAll('dialog').forEach(setupDlg);
   })();
 
   /* כותרת הפופאפ: צ'יפ מגדר (ז/נ) וגיל לפני השם */
