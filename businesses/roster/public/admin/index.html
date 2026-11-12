@@ -11,7 +11,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="onboarding.css?v=748bbc8d" />
-  <link rel="stylesheet" href="admin.css?v=da04b10a" />
+  <link rel="stylesheet" href="../assets/field.css?v=097a02b7" />
+  <link rel="stylesheet" href="admin.css?v=c5a95208" />
 </head>
 <body class="locked">
   <div class="gate" id="gate" hidden>
@@ -120,18 +121,18 @@
           <section class="ppage" id="pgI" role="tabpanel" aria-labelledby="pTabI" inert>
         <div class="name-row">
           <div class="two">
-            <label class="field"><span>שם פרטי</span><input placeholder=" " name="first_name" required maxlength="40" autocomplete="off" /></label>
-            <label class="field"><span>שם משפחה</span><input placeholder=" " name="last_name" maxlength="40" autocomplete="off" /></label>
+            <label class="rfield field"><span>שם פרטי</span><input placeholder=" " name="first_name" required maxlength="40" autocomplete="off" /></label>
+            <label class="rfield field"><span>שם משפחה</span><input placeholder=" " name="last_name" maxlength="40" autocomplete="off" /></label>
           </div>
-          <label class="field gfield"><span>מגדר</span><select name="gender"><option value="">לא צוין</option><option value="male">זכר</option><option value="female">נקבה</option></select></label>
+          <label class="rfield field gfield"><span>מגדר</span><select name="gender"><option value="">לא צוין</option><option value="male">זכר</option><option value="female">נקבה</option></select></label>
         </div>
         <div class="three">
-          <label class="field"><span>טלפון</span><input placeholder=" " name="phone" type="tel" inputmode="tel" maxlength="20" autocomplete="off" /></label>
-          <label class="field"><span>גיל</span><input placeholder=" " name="age" type="number" inputmode="numeric" min="18" max="99" /></label>
-          <label class="field"><span>מקור</span><select name="promoter_sel" id="pPromoSel"></select></label>
+          <label class="rfield field"><span>טלפון</span><input placeholder=" " name="phone" type="tel" inputmode="tel" maxlength="20" autocomplete="off" /></label>
+          <label class="rfield field"><span>גיל</span><input placeholder=" " name="age" type="number" inputmode="numeric" min="18" max="99" /></label>
+          <label class="rfield field"><span>מקור</span><select name="promoter_sel" id="pPromoSel"></select></label>
         </div>
         <div class="gacc" id="pGoogle" hidden></div>
-        <label class="field"><span>אימייל</span><input placeholder=" " name="email" type="email" inputmode="email" maxlength="254" autocomplete="off" /></label>
+        <label class="rfield field"><span>אימייל</span><input placeholder=" " name="email" type="email" inputmode="email" maxlength="254" autocomplete="off" /></label>
         <div class="note" id="pRegLine" style="color:var(--muted);font-size:14px;margin:0 0 12px"></div>
         <button class="btn ghost danger" id="pDelete" type="button">מחיקת משתתף</button>
         <button class="btn ghost" id="pRestore" type="button" hidden>החזרה לפעילות</button>
@@ -140,13 +141,13 @@
       </div>
       <div class="ppanel" data-panel="pay" hidden>
         <div class="payrow">
-          <label class="field money"><span>סכום למפגש</span><input placeholder=" " name="pay_amount" type="number" inputmode="decimal" min="0" step="any" /></label>
-          <label class="field payfield"><span>דרך העברה</span><select name="pay_method"><option value="paybox">פייבוקס</option><option value="bit">ביט</option><option value="cash">מזומן</option><option value="bank">בנק</option><option value="other">אחר</option></select></label>
+          <label class="rfield field money"><span>סכום למפגש</span><input placeholder=" " name="pay_amount" type="number" inputmode="decimal" min="0" step="any" /></label>
+          <label class="rfield field payfield"><span>דרך העברה</span><select name="pay_method"><option value="paybox">פייבוקס</option><option value="bit">ביט</option><option value="cash">מזומן</option><option value="bank">בנק</option><option value="other">אחר</option></select></label>
           <button class="btn paygo" id="paySave" type="button">תשלום</button>
         </div>
         <div class="pquick" id="payQuick"></div>
-        <label class="field" id="payOtherField" hidden><span>פירוט קצר</span><input data-hint name="pay_method_note" maxlength="60" autocomplete="off" placeholder="למשל: פייפאל, צ׳ק" /></label>
-        <label class="field money" id="payBalField" hidden><span id="payBalLabel">מהקרדיט</span><input placeholder=" " name="pay_bal" type="number" inputmode="decimal" min="0" step="any" /></label>
+        <label class="rfield field" id="payOtherField" hidden><span>פירוט קצר</span><input data-hint name="pay_method_note" maxlength="60" autocomplete="off" placeholder="למשל: פייפאל, צ׳ק" /></label>
+        <label class="rfield field money" id="payBalField" hidden><span id="payBalLabel">מהקרדיט</span><input placeholder=" " name="pay_bal" type="number" inputmode="decimal" min="0" step="any" /></label>
         <div class="payhint" id="payHint"></div>
       </div>
       <div class="ppanel" data-panel="deposit" hidden>
@@ -156,23 +157,23 @@
         <div id="depFree" hidden><p class="sthint" style="margin:12px 0">המפגש לא לתשלום. אפשר להחזיר אותו לתשלום בתפריט שבכותרת</p></div>
         <div id="depFields">
         <div class="payrow">
-          <label class="field money"><span>סכום</span><input placeholder=" " form="pForm" name="pay_dep" type="number" inputmode="decimal" min="0" step="10" /></label>
-          <label class="field" id="depMSelF"><span>דרך תשלום</span><select id="depMSel" aria-label="דרך תשלום"></select></label>
-          <label class="field" id="depPkgF"><span id="depPkgLbl">מפגשים</span><input placeholder=" " form="pForm" name="pay_pkg" id="depPkgSel" type="number" inputmode="numeric" min="2" max="50" step="1" /></label>
+          <label class="rfield field money"><span>סכום</span><input placeholder=" " form="pForm" name="pay_dep" type="number" inputmode="decimal" min="0" step="10" /></label>
+          <label class="rfield field" id="depMSelF"><span>דרך תשלום</span><select id="depMSel" aria-label="דרך תשלום"></select></label>
+          <label class="rfield field" id="depPkgF"><span id="depPkgLbl">מפגשים</span><input placeholder=" " form="pForm" name="pay_pkg" id="depPkgSel" type="number" inputmode="numeric" min="2" max="50" step="1" /></label>
           <button class="btn success paygo" id="depSave" type="button">תשלום</button>
         </div>
         <div class="pquick" id="depQuick"></div>
         <div class="pquick" id="depPasses" hidden></div>
-        <label class="field payfield" hidden><span>דרך העברה</span><select form="pForm" name="pay_depm"><option value="paybox">פייבוקס</option><option value="bit">ביט</option><option value="cash">מזומן</option><option value="bank">בנק</option><option value="other">אחר</option></select></label>
+        <label class="rfield field payfield" hidden><span>דרך העברה</span><select form="pForm" name="pay_depm"><option value="paybox">פייבוקס</option><option value="bit">ביט</option><option value="cash">מזומן</option><option value="bank">בנק</option><option value="other">אחר</option></select></label>
         <div class="payhint" id="depPkgHint"></div>
-        <label class="field" id="depOtherField" hidden><span>פירוט קצר</span><input form="pForm" data-hint name="pay_depn" maxlength="60" autocomplete="off" placeholder="למשל: פייפאל, צ׳ק" /></label>
+        <label class="rfield field" id="depOtherField" hidden><span>פירוט קצר</span><input form="pForm" data-hint name="pay_depn" maxlength="60" autocomplete="off" placeholder="למשל: פייפאל, צ׳ק" /></label>
         </div>
         <div id="depLines" class="deplines" hidden></div>
       </div>
       <div class="ppanel" data-panel="zikuy" hidden>
         <p class="sthint" style="margin:0 0 12px">זיכוי של תשלום שהתקבל למפגש: הסכום יורד מהמפגש, ואפשר להשאיר אותו בקרדיט של המשתתף או להחזיר לו כסף</p>
-        <label class="field"><span>מפגש לזיכוי</span><select name="zk_meeting" id="zkMeeting"></select></label>
-        <label class="field money"><span>סכום לזיכוי</span><input placeholder=" " name="pay_zk" type="number" inputmode="decimal" min="0" step="any" /></label>
+        <label class="rfield field"><span>מפגש לזיכוי</span><select name="zk_meeting" id="zkMeeting"></select></label>
+        <label class="rfield field money"><span>סכום לזיכוי</span><input placeholder=" " name="pay_zk" type="number" inputmode="decimal" min="0" step="any" /></label>
         <div class="payact" style="flex-direction:column"><button class="btn soft-yel" id="zkCredit" type="button">זיכוי לקרדיט (בלי להחזיר כסף)</button><button class="btn soft-red" id="zkRefund" type="button">להחזיר כסף למשתתף</button></div>
       </div>
       <div class="ppanel" data-panel="promoter" hidden>
@@ -181,9 +182,9 @@
       </div>
       <div class="ppanel" data-panel="credit" hidden>
         <div class="payrow">
-          <label class="field money"><span>סכום</span><input placeholder=" " form="pForm" name="pay_refund" type="number" inputmode="decimal" min="0" step="10" /></label>
-          <label class="field" id="refundPkF"><span>מפגשים להפחתה</span><input placeholder=" " form="pForm" name="pay_refpk" type="number" inputmode="numeric" min="0" step="1" /></label>
-          <label class="field" id="refundMSelF"><span>דרך העברה</span><select id="refundMSel"></select></label>
+          <label class="rfield field money"><span>סכום</span><input placeholder=" " form="pForm" name="pay_refund" type="number" inputmode="decimal" min="0" step="10" /></label>
+          <label class="rfield field" id="refundPkF"><span>מפגשים להפחתה</span><input placeholder=" " form="pForm" name="pay_refpk" type="number" inputmode="numeric" min="0" step="1" /></label>
+          <label class="rfield field" id="refundMSelF"><span>דרך העברה</span><select id="refundMSel"></select></label>
           <button class="btn danger paygo" id="creditRefundBtn" type="button">החזרת כסף</button>
         </div>
       </div>
@@ -222,13 +223,13 @@
       <div class="sheet-head"><h2 id="ppTitle">רישום תשלום</h2></div>
       <form id="ppForm" novalidate>
         <div class="two">
-          <label class="field"><span>תאריך</span><input name="date" type="date" /></label>
-          <label class="field"><span>שולם דרך מי</span><select name="by"></select></label>
+          <label class="rfield field"><span>תאריך</span><input name="date" type="date" /></label>
+          <label class="rfield field"><span>שולם דרך מי</span><select name="by"></select></label>
         </div>
-        <label class="field"><span>הערה (אופציונלי)</span><input placeholder=" " name="note" maxlength="120" autocomplete="off" /></label>
+        <label class="rfield field"><span>הערה (אופציונלי)</span><input placeholder=" " name="note" maxlength="120" autocomplete="off" /></label>
         <div class="payrow">
-          <label class="field money"><span>סכום</span><input placeholder=" " name="amount" type="number" inputmode="decimal" min="0" step="10" /></label>
-          <label class="field" id="ppMSelF"><span>דרך תשלום</span><select name="method" aria-label="דרך תשלום"></select></label>
+          <label class="rfield field money"><span>סכום</span><input placeholder=" " name="amount" type="number" inputmode="decimal" min="0" step="10" /></label>
+          <label class="rfield field" id="ppMSelF"><span>דרך תשלום</span><select name="method" aria-label="דרך תשלום"></select></label>
           <button class="btn success paygo" type="submit">תשלום</button>
         </div>
       </form>
@@ -248,7 +249,7 @@
         <h2 id="mTitle">מפגש חדש</h2>
         <button class="btn" id="mSubmit" type="submit" disabled>יצירת מפגש</button>
       </div>
-      <label class="field" id="mTypeF" hidden><span>סוג מפגש</span><select id="mType" aria-label="סוג מפגש"></select></label>
+      <label class="rfield field" id="mTypeF" hidden><span>סוג מפגש</span><select id="mType" aria-label="סוג מפגש"></select></label>
       <div class="mf" id="mMF"></div>   <!-- פרטי המפגש: אותו אלמנט כמו פרטי סוג המפגש (meetingFields) -->
       <button class="btn ghost danger" id="mDelete" type="button">מחיקת מפגש</button>
     </form>
@@ -294,8 +295,8 @@
       <div class="sheet-head"><button type="button" class="hbtn hback" id="setBack" aria-label="חזרה" title="חזרה" hidden><svg data-i="back"></svg></button><h2 id="setTitle">החשבון שלי</h2><button type="button" class="btn" id="tySave" hidden>שמירה</button></div>
       <div id="setMain">
         <div class="setgrp">
-          <label class="field"><span>השם שלי במערכת</span><input placeholder=" " class="setinp" id="setSender" maxlength="20" autocomplete="off" aria-label="שם השולח בהודעות" /></label>
-          <label class="field" id="setWaF" hidden><span>וואטסאפ להתקשרות עם משתתפים</span><select id="setWaApp"><option value="biz">וואטסאפ ביזנס</option><option value="reg">וואטסאפ רגיל</option></select></label>   <!-- לקריאה בלבד: החשבון שאיתו נכנסו, בלי שדה לעריכה -->
+          <label class="rfield field"><span>השם שלי במערכת</span><input placeholder=" " class="setinp" id="setSender" maxlength="20" autocomplete="off" aria-label="שם השולח בהודעות" /></label>
+          <label class="rfield field" id="setWaF" hidden><span>וואטסאפ להתקשרות עם משתתפים</span><select id="setWaApp"><option value="biz">וואטסאפ ביזנס</option><option value="reg">וואטסאפ רגיל</option></select></label>   <!-- לקריאה בלבד: החשבון שאיתו נכנסו, בלי שדה לעריכה -->
         </div>
       </div>
       <!-- עריכת סוג מפגש: נפתח ישר על הטופס (כמו עריכת מפגש): שם הסוג והפרטים שמפגש חדש מהסוג מקבל; נשמר בכפתור (בסוג חדש: יצירה), ומחיקה בתחתית -->
@@ -382,14 +383,14 @@
       <form id="finForm" novalidate hidden>
         <div class="finseg" id="finKind" role="radiogroup" aria-label="סוג"><button type="button" role="radio" data-fk="income">הכנסה</button><button type="button" role="radio" data-fk="expense">הוצאה</button></div>
         <div class="two">
-          <label class="field money"><span>סכום</span><input placeholder=" " name="amount" type="number" inputmode="decimal" min="0" step="any" /></label>
-          <label class="field"><span>תאריך</span><input name="date" type="date" /></label>
+          <label class="rfield field money"><span>סכום</span><input placeholder=" " name="amount" type="number" inputmode="decimal" min="0" step="any" /></label>
+          <label class="rfield field"><span>תאריך</span><input name="date" type="date" /></label>
         </div>
-        <label class="field"><span>תיאור</span><input data-hint name="title" maxlength="80" autocomplete="off" placeholder="למשל שכירות אולם, פרסום, ציוד" /></label>
-        <label class="field" id="finMeetF"><span>שיוך</span><select name="meeting"></select></label>
+        <label class="rfield field"><span>תיאור</span><input data-hint name="title" maxlength="80" autocomplete="off" placeholder="למשל שכירות אולם, פרסום, ציוד" /></label>
+        <label class="rfield field" id="finMeetF"><span>שיוך</span><select name="meeting"></select></label>
         <div class="two">
-          <label class="field"><span>דרך מי עבר הכסף</span><select name="by"></select></label>
-          <label class="field" id="finRepF"><span>חזרתיות</span><select name="period"><option value="">חד פעמי</option><option value="weekly">כל שבוע</option><option value="monthly">כל חודש</option><option value="yearly">כל שנה</option></select></label>
+          <label class="rfield field"><span>דרך מי עבר הכסף</span><select name="by"></select></label>
+          <label class="rfield field" id="finRepF"><span>חזרתיות</span><select name="period"><option value="">חד פעמי</option><option value="weekly">כל שבוע</option><option value="monthly">כל חודש</option><option value="yearly">כל שנה</option></select></label>
         </div>
         <button class="btn success" type="submit" id="finSave">שמירה</button>
         <button class="btn ghost danger" id="finDel" type="button" hidden>מחיקה</button>
@@ -419,7 +420,7 @@
     <form class="sheet" method="dialog" novalidate>
       <h2 id="lockTitle">סגירת מחיר הכרטיס</h2>
       <p id="lockText" style="color:var(--muted);margin:0 0 8px"></p>
-      <label class="field money"><span>מחיר הכרטיס</span><input placeholder=" " id="lockPrice" type="number" inputmode="numeric" min="1" step="10" /></label>
+      <label class="rfield field money"><span>מחיר הכרטיס</span><input placeholder=" " id="lockPrice" type="number" inputmode="numeric" min="1" step="10" /></label>
       <p id="lockErr" class="msg" style="color:var(--red);margin:8px 0 0" hidden>צריך להזין מחיר גדול מאפס</p>
       <button class="btn" id="lockYes" type="button" style="margin-top:16px">תשלום בהמשך</button>
     </form>
@@ -439,7 +440,8 @@
   <script src="/auth.js"></script>
   <script src="age.js?v=816fedce"></script>
   <script src="rt.js?v=9f0bd1e7"></script>
-  <script src="admin.js?v=b92acf4c"></script>
+  <script src="../assets/field.js?v=37014b18"></script>
+  <script src="admin.js?v=ae5f8b87"></script>
   <script src="onboarding.js?v=a4276d8a"></script>
 </body>
 </html>

@@ -2246,8 +2246,8 @@
   const MSG_TOK = { re: /\{(?:שם|תאריך|מקום|פרטי המפגש|תשלום|הוראות הגעה|איך מגיעים|מיקום|התכנסות|התחלה|סיום)\}/g, label: (v) => v === '{מיקום}' ? 'הוראות הגעה' : v.slice(1, -1), max: 2000 };   // {מיקום}: השם הישן של הוראות הגעה
   /* שדות עריכת תבנית הודעה: רכיב אחד, בטופס מפגש וסוג מפגש ובפופאפ שנפתח מתפריט הוואטסאפ */
   const tplFieldsHtml = (I) =>
-    '<label class="field"><span>שם התבנית</span><input placeholder=" " type="text" class="mtname" id="' + I('TplName') + '" maxlength="60" autocomplete="off" /></label>' +
-    '<div class="field"><span>נוסח ההודעה</span><textarea placeholder=" " class="mtbody" id="' + I('TplBody') + '" rows="1"></textarea></div>' +
+    '<label class="rfield field"><span>שם התבנית</span><input placeholder=" " type="text" class="mtname" id="' + I('TplName') + '" maxlength="60" autocomplete="off" /></label>' +
+    '<div class="rfield field"><span>נוסח ההודעה</span><textarea placeholder=" " class="mtbody" id="' + I('TplBody') + '" rows="1"></textarea></div>' +
     '<div class="emvars" id="' + I('TplVars') + '">' + MSG_VARS.map((v) => '<button type="button" data-v="' + v + '">' + MSG_TOK.label(v) + '</button>').join('') + '</div>' +
     '<button type="button" class="mtreset" id="' + I('TplReset') + '" hidden>שחזור נוסח ברירת מחדל</button>' +
     '<button type="button" class="mtdel" id="' + I('TplDel') + '">מחיקת התבנית</button>';
@@ -3454,10 +3454,10 @@
     const ed = { t: { base: 0, steps: [] } }, list = $(listSel), done = () => { if (onChange) onChange(); };
     ed.render = () => {
       const t = ed.t; t.steps.sort((a, b) => b.days - a.days);
-      const pr = (v, k, lab) => '<label class="field money mtf"><span>' + lab + '</span><input placeholder=" " data-k="' + k + '" type="number" inputmode="numeric" min="0" max="9999" value="' + v + '" /></label>';
+      const pr = (v, k, lab) => '<label class="rfield field money mtf"><span>' + lab + '</span><input placeholder=" " data-k="' + k + '" type="number" inputmode="numeric" min="0" max="9999" value="' + v + '" /></label>';
       let h = '<div class="mt2row">' + pr(t.base, 'base', t.steps.length ? 'מחיר רגיל, מתחילת ההרשמה' : 'מחיר הכרטיס') + '</div>';
       t.steps.forEach((x, i) => {
-        h += '<div class="mt2row">' + pr(x.price, 's' + i, 'מחיר') + '<label class="field mtf"><span>ימים לפני המפגש</span><input placeholder=" " data-k="d' + i + '" type="number" inputmode="numeric" min="1" max="365" step="1" value="' + x.days + '" /></label><button type="button" class="mtdel" data-del="s' + i + '" aria-label="מחיקת מדרגה" title="מחיקת מדרגה">×</button></div>';
+        h += '<div class="mt2row">' + pr(x.price, 's' + i, 'מחיר') + '<label class="rfield field mtf"><span>ימים לפני המפגש</span><input placeholder=" " data-k="d' + i + '" type="number" inputmode="numeric" min="1" max="365" step="1" value="' + x.days + '" /></label><button type="button" class="mtdel" data-del="s' + i + '" aria-label="מחיקת מדרגה" title="מחיקת מדרגה">×</button></div>';
       });
       list.innerHTML = h;
     };
@@ -3502,9 +3502,9 @@
   const TOK_VAL = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
   function tokenField(ta, o) {
     const ZW = '​', ed = document.createElement('div'), lab = ta.parentNode.querySelector(':scope > span');
-    ed.className = 'tokf'; ed.id = ta.id + 'Ed'; ed.contentEditable = 'true'; ed.dir = 'rtl'; ed.setAttribute('role', 'textbox'); ed.setAttribute('aria-multiline', 'true');
+    ed.className = 'rf-box tokf'; ed.id = ta.id + 'Ed'; ed.contentEditable = 'true'; ed.dir = 'rtl'; ed.setAttribute('role', 'textbox'); ed.setAttribute('aria-multiline', 'true');
     if (lab) { lab.id = ta.id + 'Lab'; ed.setAttribute('aria-labelledby', lab.id); }
-    ta.classList.add('tokta'); ta.after(ed);
+    ta.__rf = 1; ta.classList.add('tokta'); ta.after(ed);
     const chip = (v) => '<span class="tok" contenteditable="false" data-v="' + esc(v) + '">' + esc(o.label(v)) + '</span>' + ZW;   // סימן בלתי נראה אחרי התווית: כדי שאפשר יהיה להעמיד אחריה את הסמן (לא נשמר)
     const plain = (s) => esc(s).replace(/\n/g, '<br>');
     const toHtml = (s) => { let h = '', i = 0; for (const m of String(s).matchAll(o.re)) { h += plain(s.slice(i, m.index)) + chip(m[0]); i = m.index + m[0].length; } return h + plain(s.slice(i)); };
@@ -3521,7 +3521,7 @@
     };
     const sync = () => { const v = read(ed), ch = TOK_VAL.get.call(ta) !== v; ed.classList.toggle('isempty', !v); if (ch) { TOK_VAL.set.call(ta, v); ta.dispatchEvent(new Event('input', { bubbles: true })); } };
     const paintPh = () => { ed.dataset.ph = String(ta.getAttribute('placeholder') || '').trim().replace(o.re, (m) => o.label(m)); ed.toggleAttribute('data-hint', ta.hasAttribute('data-hint')); };
-    Object.defineProperty(ta, 'value', { configurable: true, get() { return TOK_VAL.get.call(this); }, set(x) { const v = String(x == null ? '' : x); TOK_VAL.set.call(this, v); ed.innerHTML = toHtml(v); ed.classList.toggle('isempty', !v); } });
+    Object.defineProperty(ta, 'value', { configurable: true, get() { return TOK_VAL.get.call(this); }, set(x) { const v = String(x == null ? '' : x); TOK_VAL.set.call(this, v); ed.innerHTML = toHtml(v); ed.classList.toggle('isempty', !v); if (window.RField) RField.sync(); } });
     new MutationObserver(paintPh).observe(ta, { attributes: true, attributeFilter: ['placeholder', 'data-hint'] });
     let saved = null, was = '';
     document.addEventListener('selectionchange', () => { const s = getSelection(); if (s && s.rangeCount && ed.contains(s.anchorNode)) saved = s.getRangeAt(0).cloneRange(); });
@@ -3564,7 +3564,7 @@
   const keepCaret = (box) => box.addEventListener('mousedown', (e) => { if (e.target.closest('[data-v]')) e.preventDefault(); });
   function dtField(inp) {
     if (!inp || inp.dtPaint) return inp;
-    const box = document.createElement('span'); box.className = 'dtbox';
+    const box = document.createElement('span'); box.className = 'rf-box dtbox';
     inp.parentNode.insertBefore(box, inp); box.append(inp);
     const v = document.createElement('i'); v.className = 'dtv'; v.setAttribute('aria-hidden', 'true'); box.append(v);
     const paint = () => {
@@ -3590,32 +3590,32 @@
     const q = (s) => $('#' + p + s), I = (s) => p + s;
     q('MF').innerHTML =
       (isType ? '' : '<div class="mfrow mfname">') +
-      '<label class="field"><span>' + (isType ? 'שם סוג המפגש' : 'שם המפגש') + '</span><input placeholder=" " id="' + I('Name') + '" type="text" maxlength="80" autocomplete="off" /></label>' +
+      '<label class="rfield field"><span>' + (isType ? 'שם סוג המפגש' : 'שם המפגש') + '</span><input placeholder=" " id="' + I('Name') + '" type="text" maxlength="80" autocomplete="off" /></label>' +
       (isType ? '' : '<span id="' + I('TypeSlot') + '"></span></div>') +
       '<div class="mfrow">' +
-        (isType ? '' : '<label class="field"><span>תאריך</span><input id="' + I('Date') + '" name="date" type="date" required /></label>') +
-        '<label class="field"><span>שעה</span><input id="' + I('Time') + '" name="time" type="time" /></label>' +
-        '<label class="field"><span>משתתפים</span><input placeholder=" " id="' + I('Max') + '" name="max" type="number" inputmode="numeric" min="1" max="500" step="1" /></label></div>' +
+        (isType ? '' : '<label class="rfield field"><span>תאריך</span><input id="' + I('Date') + '" name="date" type="date" required /></label>') +
+        '<label class="rfield field"><span>שעה</span><input id="' + I('Time') + '" name="time" type="time" /></label>' +
+        '<label class="rfield field"><span>משתתפים</span><input placeholder=" " id="' + I('Max') + '" name="max" type="number" inputmode="numeric" min="1" max="500" step="1" /></label></div>' +
       '<div class="mfrow">' +
-        '<label class="field"><span>עיר</span><input placeholder=" " id="' + I('City') + '" name="city" type="text" maxlength="40" autocomplete="off" /></label>' +
-        '<label class="field"><span>מיקום</span><input placeholder=" " id="' + I('Place') + '" name="place" type="text" maxlength="60" autocomplete="off" /></label></div>' +
-      '<div class="field"><span>הוראות הגעה</span><textarea placeholder=" " id="' + I('Dirs') + '" name="directions" rows="1"></textarea></div>' +
+        '<label class="rfield field"><span>עיר</span><input placeholder=" " id="' + I('City') + '" name="city" type="text" maxlength="40" autocomplete="off" /></label>' +
+        '<label class="rfield field"><span>מיקום</span><input placeholder=" " id="' + I('Place') + '" name="place" type="text" maxlength="60" autocomplete="off" /></label></div>' +
+      '<div class="rfield field"><span>הוראות הגעה</span><textarea placeholder=" " id="' + I('Dirs') + '" name="directions" rows="1"></textarea></div>' +
       '<small class="mfh" id="' + I('TplHead') + '"' + (isType ? '' : ' hidden') + '>הודעות</small>' +
       (isType ? '' : '<div class="mtinh2" id="' + I('TplInh') + '" hidden></div>') + '<div class="mtlist" id="' + I('Tpl') + '"></div>' +
       '<button type="button" class="mtpladd" id="' + I('TplAdd') + '">הוספת הודעה</button>' +
       '<button type="button" class="mfshort" id="' + I('PriceBtn') + '"><span>מחירים</span><small></small>' + icon('chev') + '</button>' +
       (isType ? '<button type="button" class="mfshort" id="' + I('PassBtn') + '"><span>כרטיסיות</span><small></small>' + icon('chev') + '</button>' : '') +
-      '<div class="mfstore" hidden><div class="field" id="' + I('PriceF') + '"><span class="mtl">מחירים' + (isType ? '' : '<button type="button" class="lnk" id="' + I('TierOwn') + '" hidden>שינוי למפגש הזה</button><button type="button" class="lnk" id="' + I('TierReset') + '" hidden>כמו בסוג המפגש</button>') + '</span>' +
+      '<div class="mfstore" hidden><div class="rfield field" id="' + I('PriceF') + '"><span class="mtl">מחירים' + (isType ? '' : '<button type="button" class="lnk" id="' + I('TierOwn') + '" hidden>שינוי למפגש הזה</button><button type="button" class="lnk" id="' + I('TierReset') + '" hidden>כמו בסוג המפגש</button>') + '</span>' +
         (isType ? '' : '<div class="mtinh" id="' + I('TierInh') + '" hidden><span id="' + I('TierInhTxt') + '"></span></div>') +
         '<div class="mfted" id="' + I('TierEd') + '"><div class="mt2" id="' + I('TierList') + '"></div><div class="mt2add"><button type="button" id="' + I('TierAdd') + '">הוספת מדרגה</button></div></div></div>' +
-      (isType ? '<div class="field" id="' + I('PassF') + '"><span class="mtl">כרטיסיות</span><div class="mt2" id="' + I('PassList') + '"></div><div class="mt2add"><button type="button" id="' + I('PassAdd') + '">הוספת כרטיסייה</button></div></div>' : '') + '</div>';
+      (isType ? '<div class="rfield field" id="' + I('PassF') + '"><span class="mtl">כרטיסיות</span><div class="mt2" id="' + I('PassList') + '"></div><div class="mt2add"><button type="button" id="' + I('PassAdd') + '">הוספת כרטיסייה</button></div></div>' : '') + '</div>';
     { const tf = !isType && $('#' + p + 'TypeF'), slot = q('TypeSlot'); if (slot) { if (tf) slot.replaceWith(tf); else slot.remove(); } }   // סוג המפגש באותה שורה עם שם המפגש
     const F = { te: tierEditor('#' + I('TierList'), '#' + I('TierAdd'), () => F.changed()), tiersInh: false, passes: [] };
     const ty = () => (typOf ? typOf() : null);
     /* כרטיסיות (רק בסוג מפגש): שורות {n מפגשים, price}; נשמרות בעמודה passes */
     F.paintPasses = () => {
       const L = q('PassList'); if (!L) return;
-      L.innerHTML = F.passes.map((x, i) => '<div class="mt2row"><label class="field mtf"><span>מספר מפגשים</span><input placeholder=" " data-pk="n' + i + '" type="number" inputmode="numeric" min="2" max="50" value="' + (x.n || '') + '" /></label><label class="field money mtf"><span>מחיר</span><input placeholder=" " data-pk="p' + i + '" type="number" inputmode="numeric" min="1" max="99999" value="' + (x.price || '') + '" /></label><button type="button" class="medit" data-pdel="' + i + '" aria-label="הסרת כרטיסייה">' + icon('close', 'i16') + '</button></div>').join('');
+      L.innerHTML = F.passes.map((x, i) => '<div class="mt2row"><label class="rfield field mtf"><span>מספר מפגשים</span><input placeholder=" " data-pk="n' + i + '" type="number" inputmode="numeric" min="2" max="50" value="' + (x.n || '') + '" /></label><label class="rfield field money mtf"><span>מחיר</span><input placeholder=" " data-pk="p' + i + '" type="number" inputmode="numeric" min="1" max="99999" value="' + (x.price || '') + '" /></label><button type="button" class="medit" data-pdel="' + i + '" aria-label="הסרת כרטיסייה">' + icon('close', 'i16') + '</button></div>').join('');
     };
     if (isType) {
       q('PassList').addEventListener('input', (e) => { const i = e.target.closest('input'); if (!i) return; const k = i.dataset.pk, v = i.value === '' ? '' : Math.round(Number(i.value)); F.passes[Number(k.slice(1))][k[0] === 'n' ? 'n' : 'price'] = v; });
@@ -4443,7 +4443,7 @@
           (fp ? '<select class="ratetype" data-f="rate_type" aria-label="סוג"><option value="fixed"' + (x.rate_type !== 'percent' ? ' selected' : '') + '>₪</option><option value="percent"' + (x.rate_type === 'percent' ? ' selected' : '') + '>%</option></select>' : '<i>₪</i>') +
           '<input class="codein ratein" data-f="rate" type="number" inputmode="decimal" min="0" value="' + (isNew && !Number(x.rate) ? '' : Number(x.rate || 0)) + '" placeholder="0" aria-label="עלות" /></span></label>') +
         (isNew ? '' : '<div class="srcfld">' + (!ct && bal > 0 ? '<small>לתשלום</small>' : '') + '<button type="button" class="prsettle" data-settle="' + x.id + '" aria-label="' + esc('התחשבנות עם ' + x.name + ': ' + (ct ? 'תשלומים' : bal > 0 ? nfx(bal) + ' שקלים לתשלום' : 'מסולק')) + '"><b' + (ct ? '' : ' class="' + (bal > 0 ? 'owe' : 'ok') + '"') + '>' + (ct ? 'תשלומים' : bal > 0 ? '₪' + nfx(bal) : 'מסולק') + '</b>' + icon('next', 'i14') + '</button></div>') +
-        '<div class="srcct"><label class="field srcfld srccp"><span>טלפון</span><input class="stname" data-f="contact_phone" type="tel" inputmode="tel" dir="ltr" value="' + esc(x.contact_phone || '') + '" maxlength="20" aria-label="טלפון איש הקשר" placeholder=" " autocomplete="off" />' + '</label></div>' +
+        '<div class="srcct"><label class="rfield field srcfld srccp"><span>טלפון</span><input class="stname" data-f="contact_phone" type="tel" inputmode="tel" dir="ltr" value="' + esc(x.contact_phone || '') + '" maxlength="20" aria-label="טלפון איש הקשר" placeholder=" " autocomplete="off" />' + '</label></div>' +
       '</div>' + (isNew ? '' : '<button type="button" class="srcdelbtn" data-sdel="' + w + '">מחיקה</button>') + '</div>';
   }
   function renderSources() { $('#srcPrList').innerHTML = state.promoters.map((x) => srcCard(x, 'pr:' + x.id)).join('') || '<p class="mnone">אין שיווק ממומן</p>'; }
@@ -4544,7 +4544,7 @@
       } catch (err) { b.disabled = false; fail(err); }
     };
     if (!ps.length && !money) { confirmAct('מחיקת שיווק ממומן', null, null, () => run(null), 'למחוק את ' + nm + '?', 'כן, למחוק', null, { plain: true }); return; }
-    confirmAct('מחיקת שיווק ממומן', null, null, () => run(($('#srcDelTo') || {}).value), linked + '<br><br>לאיזה שיווק ממומן להעביר אותם?<label class="field" style="margin-top:12px"><span>העברה אל</span><select id="srcDelTo">' + others.map((o) => '<option value="' + o.id + '">' + esc(o.name) + '</option>').join('') + '</select></label>', 'מחיקה והעברה', null, { plain: true });
+    confirmAct('מחיקת שיווק ממומן', null, null, () => run(($('#srcDelTo') || {}).value), linked + '<br><br>לאיזה שיווק ממומן להעביר אותם?<label class="rfield field" style="margin-top:12px"><span>העברה אל</span><select id="srcDelTo">' + others.map((o) => '<option value="' + o.id + '">' + esc(o.name) + '</option>').join('') + '</select></label>', 'מחיקה והעברה', null, { plain: true });
   }
   const srcTarget = (w) => ({ tbl: T.pr, row: w === 'new' ? prDraft : promoterOf(w.slice(3)), kind: 'pr' });
   async function saveSrc(w, patch) {

@@ -191,24 +191,22 @@ dialog::-webkit-scrollbar, dialog *::-webkit-scrollbar { display: none; width: 0
 /* מצב תשלום על מפגש (2.11.26): שולם (ירוק), דווח (צהוב) ולתשלום (אדום בהיר) עם רקע; לא לתשלום והכל בלי רקע, רק הסמל. עיגול ה-₪ ברשימה, אייקון הסינון ותפריט הסינון של התשלום */
 .row .payic.free, .hfilt[data-fk="pay"].all, .hfilt[data-fk="pay"].free, .hfilt[data-fk="pay"].fr, #fMenu[data-kind="pay"] .hfilt.all, #fMenu[data-kind="pay"] .hfilt.free, #fMenu[data-kind="pay"] .hfilt.fr { background: transparent; }
 
-/* 3.5 שדה: תווית מעל, מסגרת אפורה, מיקוד בכתום */
-.field { display: block; min-width: 0;}
-.field > span{ display: block; margin-bottom: 4px; font-size: 13px; font-weight: 600; color: var(--text-2); }
-.field input, .field select, .field textarea, #finForm select, .nform textarea, .setinp, .pmname, .pmown, .mt2row input, .mt2row select, .dline input, .srccard .srcin, .srccard .srcsel {
+
+
+.nform textarea, .setinp, .pmname, .pmown, .mt2row input, .mt2row select, .dline input, .srccard .srcin, .srccard .srcsel {
   width: 100%; height: var(--ctl); padding: 0 12px; border: 1px solid var(--line-2); background: var(--bg); color: var(--text); font-size: 16px; font-family: var(--font); }
-.field input:focus, .field select:focus, .field textarea:focus, #finForm select:focus, .nform textarea:focus, .setinp:focus, .pmname:focus, .pmown:focus, .mt2row input:focus, .mt2row select:focus, .dline input:focus, .srccard .srcin:focus-within, .srccard .srcsel:focus:focus { outline: none; border-color: var(--text); }
-.field textarea { height: auto; min-height: var(--ctl); max-height: 260px; padding: 8px 12px; line-height: 26px; resize: none; overflow-y: auto; text-align: start; }
-.field input[type="tel"], .field input[type="email"] { direction: ltr; text-align: right; }
+.nform textarea:focus, .setinp:focus, .pmname:focus, .pmown:focus, .mt2row input:focus, .mt2row select:focus, .dline input:focus, .srccard .srcin:focus-within, .srccard .srcsel:focus:focus { outline: none; border-color: var(--text); }
+
+
 /* רשימה נפתחת, תאריך ושעה: חץ אחד משלנו, בצד שמאל */
-.field select, #finForm select, .pmown, .mt2row select, .srccard .srcin .ratetype, .srccard .srcsel, .field input[type="date"], .field input[type="time"] {
+.pmown, .mt2row select, .srccard .srcin .ratetype, .srccard .srcsel {
   appearance: none; -webkit-appearance: none; padding-inline: 12px 32px; text-align: start; cursor: pointer;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.4l5 5.2 5-5.2z' fill='%235A626C'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: left 12px center; background-size: 11px 7px; }
-.field input[type="date"], .field input[type="time"] { position: relative; }
-.field input[type="date"]::-webkit-calendar-picker-indicator, .field input[type="time"]::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; opacity: 0; cursor: pointer; }
-/* תאריך ושעה: הטקסט מיושר לימין כמו בכל השדות (31.10.26). הערך עצמו נכתב משמאל לימין (25/10/2026, 20:00), והחץ שלנו נשאר משמאל */
-.field input[type="date"], .field input[type="time"] { direction: ltr; text-align: right;}
-.field input[type="date"]::-webkit-date-and-time-value, .field input[type="time"]::-webkit-date-and-time-value { text-align: right; margin: 0; }
+
+
+
+
 /* שדה תאריך / שעה אחיד (dtField): הערך כטקסט שלנו מעל השדה, מיושר לימין (12px מהקצה) עד החץ שמשמאל; הטקסט של הדפדפן שקוף */
 .dtbox, .field > .dtbox { position: relative; display: block; margin: 0; font-size: 16px; font-weight: 400; color: var(--text); }   /* לא לרשת את עיצוב התווית (.field > span) */
 .field .dtbox input[type="date"], .field .dtbox input[type="time"] { color: transparent; }
@@ -710,8 +708,7 @@ html.dlg-lock { overflow: hidden; overscroll-behavior: none; }
 .mt2add { display: flex; gap: 8px; margin-top: 8px; }
 .mt2add button { flex: 1 1 0; height: var(--ctl); border: 1px solid transparent; background: var(--surface-2); color: var(--text); font-weight: 600; font-size: 14.5px; }
 #mDelete.locked, #tyDelete.locked { opacity: .45; }
-/* מפגש: שדה ריק = "כמו בסוג המפגש", הערך של הסוג מוצג כפלייסהולדר */
-.field input::placeholder, .field textarea::placeholder { color: var(--text-3); opacity: 1; }
+
 .mtinh { display: flex; align-items: center; gap: 8px; min-height: var(--ctl); padding: 4px 0; color: var(--text-2); font-size: 15px; }
 .mtinh span { flex: 1 1 auto; min-width: 0; }
 .mtinh[hidden] { display: none; }
@@ -1147,18 +1144,17 @@ dialog { border-radius: 0; }   /* במובייל הפופאפים עולים מ�
 
 /* שדה עם התווית בתוך המסגרת (3.11.26): התווית תמיד גלויה, בלי שורה נפרדת מעל, וכל שורת שדות קצרה ב-20 פיקסל. רכיב אחד: כל <label class="field"><span>תווית</span><input|select|textarea></label> */
 :root { --fld: 46px; }
-.field { position: relative; margin-bottom: 8px; }
-.field:has(> input, > select, > textarea, > .dtbox) > span:first-child { position: absolute; z-index: 1; top: 3px; inset-inline: 0 -33%; margin: 0; font-size: 16px; line-height: 22px; font-weight: 400; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; transform: scale(.75); transform-origin: 100% 0; transition: transform .16s ease-out, color .16s ease-out; }
-/* תווית צפה: שדה ריק בלי פוקוס, והשם יושב על הקו בדיוק במקום הטקסט; בפוקוס או כשיש ערך הוא עולה למעלה בקטן. בתזוזה בלבד (transform), בלי לשנות את הפריסה */
-.field:has(> :is(input, textarea):is([placeholder=" "], [data-hint]):placeholder-shown:not(:focus)) > span:first-child { transform: translateY(16px); inset-inline-end: 0; }
-.field > :is(input, textarea)[data-hint]:not(:focus)::placeholder { color: transparent; }
-.field:focus-within > span:first-child { color: var(--text); }
-.field > input, .field > select, .field > textarea { transition: border-color .16s ease-out; }
-@media (prefers-reduced-motion: reduce) { .field > span:first-child, .field > input, .field > select, .field > textarea { transition: none !important; } }
-.field > input, .field > select, .field > .dtbox > input, #finForm .field > select { height: var(--fld); }
-.field > input:not([type="date"], [type="time"]) { padding-block: 19px 3px; line-height: 22px; }
-.field > select, #finForm .field > select { padding-block: 19px 3px; line-height: 22px; }
-.field > textarea { min-height: var(--fld); padding-block: 19px 3px; line-height: 22px; }
+
+
+
+
+
+
+
+.field > .dtbox > input { height: var(--fld); }
+
+
+
 .field .dtbox .dtv { top: 19px; bottom: 3px; line-height: 22px; }   /* הערך יושב על הקו כמו בשאר השדות (בין התווית לקו), לא באמצע השדה */
 .field > .setval { min-height: var(--fld); padding: 20px 0 3px; background: transparent; line-height: 22px; text-align: right; }
 /* כרטיס דרך הגעה: אותו מראה */
@@ -1169,15 +1165,15 @@ dialog { border-radius: 0; }   /* במובייל הפופאפים עולים מ�
 .srccard .srcin { height: var(--fld); padding: 18px 0 2px; }
 
 /* בלי מסגרת ובלי רקע: קו תחתון בלבד, כהה בפוקוס (3.11.26), כמו שורת ההערה החדשה. הטקסט והתווית בקו של כותרת הפופאפ. בלי פינות, כי הקו רק בצד אחד */
-.field input, .field select, .field textarea, #finForm select, .setinp, .pmname, .pmown, .mt2row input, .mt2row select, .dline input, .srccard .srcin, .srccard .srcsel, .srccard .stname, .strow .stname { border: 0; border-bottom: 1px solid var(--line-2); border-radius: 0; background-color: transparent; padding-inline: 0; }
-.field select, #finForm select, .pmown, .mt2row select, .srccard .srcsel { padding-inline: 0 20px; background-position: left 2px center; }
+.setinp, .pmname, .pmown, .mt2row input, .mt2row select, .dline input, .srccard .srcin, .srccard .srcsel, .srccard .stname, .strow .stname { border: 0; border-bottom: 1px solid var(--line-2); border-radius: 0; background-color: transparent; padding-inline: 0; }
+.pmown, .mt2row select, .srccard .srcsel { padding-inline: 0 20px; background-position: left 2px center; }
 .dtbox .dtv { right: 0; left: 20px; }
 /* בלי מסגרות צריך יותר אוויר בין השדות באותה שורה */
 .two, .three, .name-row, .mf .mfrow, .payrow, .srccard .srcgrid { column-gap: 12px; }
 .three { grid-template-columns: calc((100% - 24px) / 3) 56px minmax(0, 1fr); }
 /* החץ של רשימה נפתחת, תאריך ושעה בקו של הטקסט ולא באמצע השדה */
-.field > select, #finForm .field > select, .srccard .srcsel { background-position: left 2px bottom 10px; }
-.field input[type="date"], .field input[type="time"] { padding: 0 0 0 20px; background-position: left 2px bottom 12px; }   /* מספרים יושבים גבוה יותר מאותיות עבריות */
+.srccard .srcsel { background-position: left 2px bottom 10px; }
+   /* מספרים יושבים גבוה יותר מאותיות עבריות */
 /* בקוביות הממולאות (צבע, התחשבנות) התווית לא צמודה לקצה */
 .srccard .srcfld:has(> .srccol) > small { inset-inline: 9px; }
 
@@ -2078,3 +2074,7 @@ svg.ic, .cico svg, .hicon svg, .hbtn svg { overflow: visible; }   /* סמלים 
 
 /* הגיע בתפריט התגית: ירוק בהיר */
 #qMenu .qi.qarr { background: var(--green-bg); color: var(--green); }
+
+/* ===== extensions of the shared field element (assets/field.css), admin only ===== */
+/* a value taken from the meeting type shows as a real placeholder (no data-hint): the label stays floated above it, as before the shared element */
+.rfield.field:not(:focus-within):has(> :is(input, textarea)[placeholder]:not([placeholder=" "]):not([data-hint])) > span:first-child { transform: scale(.75); inset-inline-end: -33%; }
