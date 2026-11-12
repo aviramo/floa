@@ -192,7 +192,7 @@ export const aiHe = {
   dir: "rtl",
 
   meta: {
-    title: "אופיר אבירם | AI Solutions Architecture, Full Stack ופיתוח בסיוע AI",
+    title: "אופיר אבירם | ארכיטקטורת פתרונות AI, פיתוח Full Stack ופיתוח תוכנה בסיוע AI",
     description: "קורות החיים של אופיר אבירם. ארכיטקט פתרונות עם למעלה מ-15 שנות ניסיון במערכות מידע ארגוניות, שמתכנן ובונה מערכות תוכנה מורכבות מקצה לקצה בעזרת Generative AI: ארכיטקטורה, מודלי נתונים, אינטגרציות ופיתוח Full Stack.",
   },
 
@@ -201,7 +201,7 @@ export const aiHe = {
 
   name: "אופיר אבירם",
   roles: [
-    "AI Solutions Architecture | Full Stack Development | AI-Assisted Software Development",
+    "ארכיטקטורת פתרונות AI | פיתוח Full Stack | פיתוח תוכנה בסיוע AI",
     "ארכיטקט פתרונות עם למעלה מ-15 שנות ניסיון במערכות מידע ארגוניות",
   ],
   contact: [
