@@ -483,3 +483,7 @@ button:focus:not(:focus-visible), a:focus:not(:focus-visible) { outline: none; }
 /* בלי מצב כהה: גם דפדפנים שמכהים דפים בכוח (סמסונג, כרום) מקבלים את הצבעים הבהירים כמות שהם */
 html { color-scheme: light; background-color: #F2F8EC; }
 @media (prefers-color-scheme: dark) { :root { color-scheme: light; } html { background-color: #F2F8EC; } }
+
+/* כותרות הכרטיסים גדולות יותר */
+.list h3 { font-size: 1.65rem; }
+.list--for h3 { font-size: 1.5rem; }
