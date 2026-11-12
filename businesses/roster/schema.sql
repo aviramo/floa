@@ -1885,7 +1885,9 @@ begin
   get diagnostics h = row_count;
   delete from public.roster_mail_log where id in (select x.id from public.roster_mail_log x where x.created_at < now() - interval '90 days' limit 5000);
   get diagnostics m = row_count;
+  perform set_config('roster.purging', 'on', true);   -- old revoked keys are housekeeping, not something a person deleted: no copy in the trash (12.14)
   delete from public.roster_api_keys where revoked_at is not null and revoked_at < now() - interval '90 days';
+  perform set_config('roster.purging', 'off', true);
   perform public.roster_rate_cleanup();
   return jsonb_build_object('events', e, 'html_blanked', h, 'mail_log', m);
 end $fn$;
@@ -3564,5 +3566,383 @@ begin
     revoke all on sequence public.roster_webhook_deliveries_id_seq from public, anon, authenticated;
   end if;
 end $$;
+
+-- ---- 12.14 nothing is really deleted: the trash (sync 14) ---------------------------------------------------------------
+-- Every delete of something a person made goes to roster_trash first (the whole row as json, who and when), and then the
+-- delete goes ahead as before. So the live tables, every policy, every function and every API answer behave exactly as if
+-- the delete were real (that is the rule of the frozen API), and nothing is lost: roster_restore puts the row back, with
+-- what was deleted together with it. Only the platform owner can erase for good (roster_purge). There is no time limit.
+-- The trash is read and written only by the functions below: nobody signed in has a privilege on it, because the payload
+-- is a whole row (it can hold a key hash or a webhook secret).
+
+create table if not exists public.roster_trash (
+  id           uuid primary key default gen_random_uuid(),
+  business_id  uuid not null,          -- no foreign key on purpose: the trash of a deleted business must outlive the business
+  kind         text not null,
+  payload      jsonb not null,
+  relinks      jsonb not null default '[]'::jsonb,   -- links that the delete set to NULL on other rows, to put back on restore
+  deleted_at   timestamptz not null default now(),
+  deleted_by   text,                   -- the signed-in account, NULL for the API or the database itself
+  xact         bigint not null default txid_current(),
+  ref          text,                   -- the id of the deleted row, when it has one (what the rows that hang on it point at)
+  parents      jsonb not null default '[]'::jsonb,   -- what this row hangs on: [{"k": kind, "id": that row's id}]
+  constraint roster_trash_kind_chk check (kind in (
+    'business', 'business_settings', 'business_user', 'member', 'api_key', 'mail_template', 'admin_pref',
+    'meeting_type', 'promoter', 'pay_method', 'status', 'participant', 'meeting', 'msg_template', 'attendance', 'note',
+    'payment', 'promoter_payment', 'pass_request', 'finance', 'finance_recurring', 'finance_transfer', 'msg_sent'))
+);
+create index if not exists roster_trash_business_idx on public.roster_trash (business_id, kind, deleted_at desc);
+create index if not exists roster_trash_xact_idx     on public.roster_trash (xact);
+create index if not exists roster_trash_ref_idx      on public.roster_trash (business_id, kind, ref);
+create index if not exists roster_trash_parents_idx  on public.roster_trash using gin (parents jsonb_path_ops);
+alter table public.roster_trash enable row level security;
+revoke all on public.roster_trash from anon, authenticated;
+
+-- What was erased for good: kind, how many rows, by whom. Nothing about the person.
+create table if not exists public.roster_trash_audit (
+  id           uuid primary key default gen_random_uuid(),
+  business_id  uuid,
+  kind         text not null,
+  entry_id     uuid,
+  rows_erased  int not null default 0,
+  by_email     text,
+  at           timestamptz not null default now()
+);
+alter table public.roster_trash_audit enable row level security;
+revoke all on public.roster_trash_audit from anon, authenticated;
+
+-- kind -> table, and the order rows go back in (parents before children)
+create or replace function public.roster_trash_table(k text) returns text
+language sql immutable set search_path = public as $fn$
+  select case k
+    when 'business' then 'roster_businesses' when 'business_settings' then 'roster_business_settings'
+    when 'business_user' then 'roster_business_users' when 'member' then 'roster_members'
+    when 'api_key' then 'roster_api_keys' when 'mail_template' then 'roster_mail_templates' when 'admin_pref' then 'roster_admin_prefs'
+    when 'meeting_type' then 'roster_meeting_types' when 'promoter' then 'roster_promoters' when 'pay_method' then 'roster_pay_methods'
+    when 'status' then 'roster_statuses' when 'participant' then 'roster_participants' when 'meeting' then 'roster_meetings'
+    when 'msg_template' then 'roster_msg_templates' when 'attendance' then 'roster_attendance' when 'note' then 'roster_notes'
+    when 'payment' then 'roster_payments' when 'promoter_payment' then 'roster_promoter_payments' when 'pass_request' then 'roster_pass_requests'
+    when 'finance' then 'roster_finance' when 'finance_recurring' then 'roster_finance_recurring' when 'finance_transfer' then 'roster_finance_transfers'
+    when 'msg_sent' then 'roster_msg_sent' end;
+$fn$;
+
+create or replace function public.roster_trash_rank(k text) returns int
+language sql immutable set search_path = public as $fn$
+  select coalesce(array_position(array['business', 'business_settings', 'business_user', 'meeting_type', 'promoter', 'pay_method', 'status',
+    'participant', 'meeting', 'msg_template', 'attendance', 'note', 'payment', 'promoter_payment', 'pass_request', 'finance',
+    'finance_recurring', 'finance_transfer', 'msg_sent', 'mail_template', 'api_key', 'admin_pref', 'member'], k), 99);
+$fn$;
+
+-- what hangs on what: a row of child_kind whose child_field names a row of parent_kind goes with it
+create or replace function public.roster_trash_dep() returns table (child_kind text, child_field text, parent_kind text)
+language sql immutable set search_path = public as $fn$
+  select * from (values
+    ('attendance', 'participant_id', 'participant'), ('attendance', 'meeting_id', 'meeting'),
+    ('note', 'participant_id', 'participant'), ('payment', 'participant_id', 'participant'),
+    ('pass_request', 'participant_id', 'participant'),
+    ('msg_sent', 'participant_id', 'participant'), ('msg_sent', 'meeting_id', 'meeting'),
+    ('promoter_payment', 'promoter_id', 'promoter'),
+    ('status', 'type_id', 'meeting_type'), ('msg_template', 'type_id', 'meeting_type'), ('msg_template', 'meeting_id', 'meeting'),
+    ('meeting', 'type_id', 'meeting_type')
+  ) as v(child_kind, child_field, parent_kind);
+$fn$;
+
+-- the links a delete would set to NULL on other rows (the foreign keys with ON DELETE SET NULL), taken BEFORE the delete
+create or replace function public.roster_trash_relinks(k text, r jsonb) returns jsonb
+language plpgsql security definer set search_path = public as $fn$
+declare b uuid := (r ->> 'business_id')::uuid; i uuid := (r ->> 'id')::uuid; out jsonb := '[]'::jsonb;
+begin
+  if k = 'promoter' then
+    select coalesce(jsonb_agg(x), '[]'::jsonb) into out from (
+      select jsonb_build_object('t', 'roster_participants', 'pk', jsonb_build_object('id', id), 'col', 'promoter_id', 'val', promoter_id) x
+        from public.roster_participants where business_id = b and promoter_id = i
+      union all select jsonb_build_object('t', 'roster_attendance', 'pk', jsonb_build_object('participant_id', participant_id, 'meeting_id', meeting_id), 'col', 'promoter_id', 'val', promoter_id)
+        from public.roster_attendance where business_id = b and promoter_id = i
+      union all select jsonb_build_object('t', 'roster_attendance', 'pk', jsonb_build_object('participant_id', participant_id, 'meeting_id', meeting_id), 'col', 'source_promoter_id', 'val', source_promoter_id)
+        from public.roster_attendance where business_id = b and source_promoter_id = i
+      union all select jsonb_build_object('t', 'roster_payments', 'pk', jsonb_build_object('id', id), 'col', 'promoter_id', 'val', promoter_id)
+        from public.roster_payments where business_id = b and promoter_id = i) s;
+  elsif k = 'meeting' then
+    select coalesce(jsonb_agg(x), '[]'::jsonb) into out from (
+      select jsonb_build_object('t', 'roster_notes', 'pk', jsonb_build_object('id', id), 'col', 'meeting_id', 'val', meeting_id) x
+        from public.roster_notes where business_id = b and meeting_id = i
+      union all select jsonb_build_object('t', 'roster_payments', 'pk', jsonb_build_object('id', id), 'col', 'meeting_id', 'val', meeting_id)
+        from public.roster_payments where business_id = b and meeting_id = i
+      union all select jsonb_build_object('t', 'roster_finance', 'pk', jsonb_build_object('id', id), 'col', 'meeting_id', 'val', meeting_id)
+        from public.roster_finance where business_id = b and meeting_id = i) s;
+  elsif k = 'meeting_type' then
+    select coalesce(jsonb_agg(x), '[]'::jsonb) into out from (
+      select jsonb_build_object('t', 'roster_pass_requests', 'pk', jsonb_build_object('id', id), 'col', 'type_id', 'val', type_id) x
+        from public.roster_pass_requests where business_id = b and type_id = i
+      union all select jsonb_build_object('t', 'roster_payments', 'pk', jsonb_build_object('id', id), 'col', 'pass_type_id', 'val', pass_type_id)
+        from public.roster_payments where business_id = b and pass_type_id = i) s;
+  end if;
+  return out;
+end $fn$;
+
+-- the trigger: copy the row, then let the delete go on
+create or replace function public.roster_trash_archive() returns trigger
+language plpgsql security definer set search_path = public as $fn$
+declare k text := tg_argv[0]; j jsonb := to_jsonb(old); bid uuid;
+begin
+  if coalesce(current_setting('roster.purging', true), '') = 'on' then return old; end if;   -- an erase for good, or the retention job
+  bid := case when k = 'business' then (j ->> 'id')::uuid else (j ->> 'business_id')::uuid end;
+  insert into public.roster_trash (business_id, kind, payload, relinks, deleted_by, ref, parents)
+    values (bid, k, j, public.roster_trash_relinks(k, j), nullif(public.roster_email(), ''), j ->> 'id',
+            coalesce((select jsonb_agg(jsonb_build_object('k', d.parent_kind, 'id', j ->> d.child_field)) from public.roster_trash_dep() d
+                       where d.child_kind = k and (j ->> d.child_field) is not null), '[]'::jsonb));
+  return old;
+end $fn$;
+
+do $$
+declare p record;
+begin
+  for p in select * from (values
+    ('roster_businesses', 'business'), ('roster_business_settings', 'business_settings'), ('roster_business_users', 'business_user'),
+    ('roster_members', 'member'), ('roster_api_keys', 'api_key'), ('roster_mail_templates', 'mail_template'), ('roster_admin_prefs', 'admin_pref'),
+    ('roster_meeting_types', 'meeting_type'), ('roster_promoters', 'promoter'), ('roster_pay_methods', 'pay_method'), ('roster_statuses', 'status'),
+    ('roster_participants', 'participant'), ('roster_meetings', 'meeting'), ('roster_msg_templates', 'msg_template'),
+    ('roster_attendance', 'attendance'), ('roster_notes', 'note'), ('roster_payments', 'payment'), ('roster_promoter_payments', 'promoter_payment'),
+    ('roster_pass_requests', 'pass_request'), ('roster_finance', 'finance'), ('roster_finance_recurring', 'finance_recurring'),
+    ('roster_finance_transfers', 'finance_transfer'), ('roster_msg_sent', 'msg_sent')) v(t, k)
+  loop
+    execute format('drop trigger if exists roster_trash_archive on public.%I', p.t);
+    execute format('create trigger roster_trash_archive before delete on public.%I for each row execute function public.roster_trash_archive(%L)', p.t, p.k);
+  end loop;
+end $$;
+
+-- What went with a trash row when it was deleted: the rows that hang on it (roster_trash_dep) and were deleted together
+-- with it (the same transaction, or by the same account within two minutes: the admin page deletes the links of a meeting
+-- one by one, then the meeting). A deleted business takes everything that went in its transaction.
+create or replace function public.roster_trash_family(p_id uuid) returns setof public.roster_trash
+language sql stable security definer set search_path = public as $fn$
+  with recursive fam as (
+    select t.* from public.roster_trash t where t.id = p_id
+    union
+    select c.* from fam f join lateral (
+         select x.* from public.roster_trash x where x.business_id = f.business_id and x.id <> f.id and f.kind = 'business' and x.kind <> 'business' and x.xact = f.xact
+         union all
+         select x.* from public.roster_trash x where x.business_id = f.business_id and x.id <> f.id and f.ref is not null
+            and x.parents @> jsonb_build_array(jsonb_build_object('k', f.kind, 'id', f.ref))
+            and (x.xact = f.xact or (x.deleted_by is not distinct from f.deleted_by
+                 and x.deleted_at between f.deleted_at - interval '120 seconds' and f.deleted_at + interval '5 seconds'))
+    ) c on true
+  )
+  select * from fam;
+$fn$;
+
+-- the same walk for many roots at once (the list): how many rows went with each of them
+create or replace function public.roster_trash_counts(p_ids uuid[]) returns table (root_id uuid, n int)
+language sql stable security definer set search_path = public as $fn$
+  with recursive tree as (
+    select t.id as root_id, t.* from public.roster_trash t where t.id = any(p_ids)
+    union
+    select tr.root_id, c.* from tree tr join lateral (
+         select x.* from public.roster_trash x where x.business_id = tr.business_id and x.id <> tr.id and tr.kind = 'business' and x.kind <> 'business' and x.xact = tr.xact
+         union all
+         select x.* from public.roster_trash x where x.business_id = tr.business_id and x.id <> tr.id and tr.ref is not null
+            and x.parents @> jsonb_build_array(jsonb_build_object('k', tr.kind, 'id', tr.ref))
+            and (x.xact = tr.xact or (x.deleted_by is not distinct from tr.deleted_by
+                 and x.deleted_at between tr.deleted_at - interval '120 seconds' and tr.deleted_at + interval '5 seconds'))
+    ) c on true
+  )
+  select tree.root_id, count(distinct tree.id)::int - 1 from tree group by tree.root_id;
+$fn$;
+
+-- a readable name for a trash row (never the payload itself)
+create or replace function public.roster_trash_label(e public.roster_trash) returns text
+language plpgsql stable security definer set search_path = public as $fn$
+declare p jsonb := e.payload; pn text; md text;
+begin
+  case e.kind
+    when 'participant' then return coalesce(nullif(btrim(coalesce(p ->> 'first_name', '') || ' ' || coalesce(p ->> 'last_name', '')), ''), nullif(p ->> 'phone', ''), '');
+    when 'meeting' then return coalesce(to_char((p ->> 'meeting_date')::date, 'DD.MM.YYYY'), '') || coalesce(' ' || nullif(p ->> 'name', ''), '');
+    when 'meeting_type' then return coalesce(nullif(p ->> 'name', ''), '');
+    when 'note' then return case when coalesce(p ->> 'body', '') <> '' then left(p ->> 'body', 60) else 'צילום מסך' end;
+    when 'payment' then return coalesce(p ->> 'kind', '') || ' ' || coalesce(p ->> 'amount', '');
+    when 'promoter' then return coalesce(p ->> 'name', '');
+    when 'status' then return coalesce(p ->> 'label', '');
+    when 'pay_method' then return coalesce(p ->> 'name', '');
+    when 'msg_template' then return coalesce(p ->> 'name', '');
+    when 'business' then return coalesce(p ->> 'name', '');
+    when 'business_user' then return coalesce(p ->> 'email', '');
+    when 'mail_template' then return coalesce(p ->> 'key', '');
+    when 'promoter_payment' then return coalesce(p ->> 'amount', '');
+    when 'pass_request' then return coalesce(p ->> 'n', '') || '';
+    when 'finance' then return coalesce(nullif(p ->> 'title', ''), p ->> 'amount', '');
+    when 'finance_recurring' then return coalesce(nullif(p ->> 'title', ''), p ->> 'amount', '');
+    when 'finance_transfer' then return coalesce(p ->> 'amount', '');
+    when 'attendance' then
+      select name into pn from public.roster_participants x where x.business_id = e.business_id and x.id = (p ->> 'participant_id')::uuid;
+      select to_char(meeting_date, 'DD.MM.YYYY') into md from public.roster_meetings x where x.business_id = e.business_id and x.id = (p ->> 'meeting_id')::uuid;
+      return coalesce(pn, '') || ' · ' || coalesce(md, '');
+    else return e.kind;
+  end case;
+end $fn$;
+
+-- For the "recently deleted" screen. One row per thing the person deleted (what went with it is counted, not listed).
+-- Needs the business of the request (x-business) except for deleted businesses, which only the platform owner sees.
+-- A participant "deleted" in the page is only inactive: those are listed too (source = 'inactive', no time).
+create or replace function public.roster_trash_list(p_kind text default null)
+returns table (trash_id uuid, kind text, label text, deleted_at timestamptz, deleted_by text, dependents int, source text)
+language plpgsql stable security definer set search_path = public as $fn$
+declare cur uuid := public.roster_current_business();
+begin
+  if p_kind is not null and public.roster_trash_table(p_kind) is null then
+    raise exception 'unknown kind' using errcode = '22023';
+  end if;
+  if p_kind = 'business' or (p_kind is null and cur is null and public.roster_is_super()) then
+    if not public.roster_is_super() then raise exception 'forbidden' using errcode = '42501'; end if;
+    return query
+      with r as (select t.* from public.roster_trash t where t.kind = 'business' order by t.deleted_at desc limit 500)
+      select r.id, r.kind, public.roster_trash_label(r), r.deleted_at, r.deleted_by, coalesce(c.n, 0), 'trash'::text
+        from r left join public.roster_trash_counts((select array_agg(r2.id) from r r2)) c on c.root_id = r.id
+       order by r.deleted_at desc;
+    return;
+  end if;
+  if cur is null then raise exception 'business required' using errcode = '22023'; end if;
+  if not public.roster_can(cur) then raise exception 'forbidden' using errcode = '42501'; end if;
+  return query
+    with r as (
+      select t.* from public.roster_trash t
+       where t.business_id = cur and t.kind <> 'business'
+         and (p_kind is not null and t.kind = p_kind or p_kind is null and t.kind not in ('msg_sent', 'member', 'business_settings', 'admin_pref', 'api_key'))
+         and not exists (select 1 from public.roster_trash p
+                          where p.business_id = t.business_id and p.kind = 'business' and p.xact = t.xact)
+         and not exists (select 1 from jsonb_array_elements(t.parents) e
+                           join public.roster_trash p on p.business_id = t.business_id and p.kind = e ->> 'k' and p.ref = e ->> 'id' and p.id <> t.id
+                          where t.xact = p.xact or (t.deleted_by is not distinct from p.deleted_by
+                                and t.deleted_at between p.deleted_at - interval '120 seconds' and p.deleted_at + interval '5 seconds'))
+       order by t.deleted_at desc limit 500)
+    select r.id, r.kind, public.roster_trash_label(r), r.deleted_at, r.deleted_by, coalesce(c.n, 0), 'trash'::text
+      from r left join public.roster_trash_counts((select array_agg(r2.id) from r r2)) c on c.root_id = r.id
+     order by r.deleted_at desc;
+  if p_kind is null or p_kind = 'participant' then
+    return query
+      select x.id, 'participant'::text, x.name, null::timestamptz, null::text, 0, 'inactive'::text
+        from public.roster_participants x where x.business_id = cur and not x.active order by x.name limit 500;
+  end if;
+end $fn$;
+
+-- Put back what was deleted, with what went with it. p_id is the trash_id of the list (or the id of an inactive participant).
+-- 'ok' | 'not_found' | 'forbidden' | 'conflict' (the row cannot come back as it is: a phone, an address or a parent that is
+-- still deleted; nothing is changed). No event, mail or system note is made by a restore: the rows come back as they were.
+create or replace function public.roster_restore(p_kind text, p_id uuid) returns jsonb
+language plpgsql security definer set search_path = public as $fn$
+declare
+  cur uuid := public.roster_current_business();
+  e public.roster_trash; r public.roster_trash; b uuid; ok boolean;
+  fam uuid[]; done_ids uuid[] := '{}'; tabs text[] := '{}'; t text;
+  cols text; tbl text; pl jsonb; n int := 0; skipped int := 0; why text := null; rl jsonb; x jsonb; sets text;
+begin
+  select * into e from public.roster_trash where id = p_id;
+  if not found then
+    if p_kind = 'participant' then
+      select business_id into b from public.roster_participants where id = p_id and not active;
+      if found then
+        if not (public.roster_can(b) and (cur is null or b = cur)) then return jsonb_build_object('status', 'forbidden'); end if;
+        update public.roster_participants set active = true where id = p_id;
+        return jsonb_build_object('status', 'ok', 'restored', 1, 'skipped', 0);
+      end if;
+    end if;
+    return jsonb_build_object('status', 'not_found');
+  end if;
+  if e.kind is distinct from p_kind then return jsonb_build_object('status', 'not_found'); end if;
+  ok := case when e.kind = 'business' then public.roster_is_super()
+             else public.roster_can(e.business_id) and (cur is null or e.business_id = cur) end;
+  if not ok then return jsonb_build_object('status', 'forbidden'); end if;
+
+  select array_agg(f.id order by public.roster_trash_rank(f.kind), f.deleted_at) into fam from public.roster_trash_family(p_id) f;
+  select coalesce(array_agg(distinct public.roster_trash_table(f.kind)), '{}') into tabs from public.roster_trash_family(p_id) f;
+
+  set constraints all immediate;
+  foreach t in array tabs loop execute format('alter table public.%I disable trigger user', t); end loop;
+  for r in select * from public.roster_trash where id = any(fam) order by public.roster_trash_rank(kind), deleted_at loop
+    tbl := public.roster_trash_table(r.kind);
+    pl := r.payload;
+    -- a link that a delete set to NULL may point at something that is still deleted: it comes back empty (relinks put it back later)
+    if tbl = 'roster_participants' and pl ->> 'promoter_id' is not null and not exists (select 1 from public.roster_promoters z where z.business_id = r.business_id and z.id = (pl ->> 'promoter_id')::uuid) then pl := pl || '{"promoter_id": null}'; end if;
+    if tbl = 'roster_attendance' then
+      if pl ->> 'promoter_id' is not null and not exists (select 1 from public.roster_promoters z where z.business_id = r.business_id and z.id = (pl ->> 'promoter_id')::uuid) then pl := pl || '{"promoter_id": null}'; end if;
+      if pl ->> 'source_promoter_id' is not null and not exists (select 1 from public.roster_promoters z where z.business_id = r.business_id and z.id = (pl ->> 'source_promoter_id')::uuid) then pl := pl || '{"source_promoter_id": null}'; end if;
+    end if;
+    if tbl in ('roster_notes', 'roster_payments', 'roster_finance') and pl ->> 'meeting_id' is not null and not exists (select 1 from public.roster_meetings z where z.business_id = r.business_id and z.id = (pl ->> 'meeting_id')::uuid) then pl := pl || '{"meeting_id": null}'; end if;
+    if tbl = 'roster_payments' then
+      if pl ->> 'promoter_id' is not null and not exists (select 1 from public.roster_promoters z where z.business_id = r.business_id and z.id = (pl ->> 'promoter_id')::uuid) then pl := pl || '{"promoter_id": null}'; end if;
+      if pl ->> 'pass_type_id' is not null and not exists (select 1 from public.roster_meeting_types z where z.business_id = r.business_id and z.id = (pl ->> 'pass_type_id')::uuid) then pl := pl || '{"pass_type_id": null}'; end if;
+    end if;
+    if tbl = 'roster_pass_requests' and pl ->> 'type_id' is not null and not exists (select 1 from public.roster_meeting_types z where z.business_id = r.business_id and z.id = (pl ->> 'type_id')::uuid) then pl := pl || '{"type_id": null}'; end if;
+    if tbl = 'roster_members' and pl ->> 'participant_id' is not null and not exists (select 1 from public.roster_participants z where z.business_id = r.business_id and z.id = (pl ->> 'participant_id')::uuid) then pl := pl || '{"participant_id": null}'; end if;
+    select string_agg(quote_ident(c.column_name), ', ' order by c.ordinal_position) into cols
+      from information_schema.columns c where c.table_schema = 'public' and c.table_name = tbl and c.is_generated = 'NEVER' and pl ? c.column_name;
+    begin
+      execute format('insert into public.%I (%s) select %s from jsonb_populate_record(null::public.%I, $1)', tbl, cols, cols, tbl) using pl;
+      n := n + 1; done_ids := done_ids || r.id;
+    exception when unique_violation or foreign_key_violation or check_violation or not_null_violation then
+      if r.id = p_id then why := sqlerrm; exit; end if;
+      skipped := skipped + 1;
+    end;
+  end loop;
+  foreach t in array tabs loop execute format('alter table public.%I enable trigger user', t); end loop;
+  set constraints all deferred;
+  if why is not null then return jsonb_build_object('status', 'conflict', 'detail', why); end if;
+
+  -- the links that the delete had set to NULL come back where they are still empty
+  for r in select * from public.roster_trash where id = any(done_ids) loop
+    for x in select * from jsonb_array_elements(r.relinks) loop
+      if x ->> 'val' is not null then
+        select string_agg(format('%I = %L::uuid', k.key, k.value), ' and ') into sets from jsonb_each_text(x -> 'pk') k;
+        execute format('update public.%I set %I = %L::uuid where business_id = %L and %s and %I is null',
+                       x ->> 't', x ->> 'col', x ->> 'val', r.business_id, sets, x ->> 'col');
+      end if;
+    end loop;
+  end loop;
+  delete from public.roster_trash where id = any(done_ids);
+  return jsonb_build_object('status', 'ok', 'restored', n, 'skipped', skipped);
+end $fn$;
+
+-- Erase for good. The platform owner only. Takes the row and what went with it out of the trash for ever, and writes a line
+-- to the audit (what kind, how many rows, by whom: nothing about the person). For a participant it also erases every trash row
+-- that names them (notes, payments, links deleted on their own) and, if the participant still exists in the page (inactive or
+-- not), the participant itself, without a copy: that is the answer to "delete my data".
+create or replace function public.roster_purge(p_kind text, p_id uuid) returns jsonb
+language plpgsql security definer set search_path = public as $fn$
+declare e public.roster_trash; n int := 0; m int; b uuid; pid uuid; who text := nullif(public.roster_email(), '');
+begin
+  if not public.roster_is_super() then return jsonb_build_object('status', 'forbidden'); end if;
+  if public.roster_trash_table(p_kind) is null then raise exception 'unknown kind' using errcode = '22023'; end if;
+  select * into e from public.roster_trash where id = p_id;
+  if found then
+    if e.kind <> p_kind then return jsonb_build_object('status', 'not_found'); end if;
+    b := e.business_id;
+    if e.kind = 'participant' then pid := (e.payload ->> 'id')::uuid; end if;
+    delete from public.roster_trash where id in (select f.id from public.roster_trash_family(p_id) f);
+    get diagnostics n = row_count;
+  elsif p_kind = 'participant' then
+    select business_id into b from public.roster_participants where id = p_id;
+    if not found then return jsonb_build_object('status', 'not_found'); end if;
+    pid := p_id;
+    perform set_config('roster.purging', 'on', true);
+    delete from public.roster_participants where id = p_id;
+    perform set_config('roster.purging', 'off', true);
+    n := 1;
+  else
+    return jsonb_build_object('status', 'not_found');
+  end if;
+  if pid is not null then
+    delete from public.roster_trash where business_id = b and (payload ->> 'participant_id') = pid::text and kind <> 'business';
+    get diagnostics m = row_count; n := n + m;
+    delete from public.roster_trash where business_id = b and kind = 'participant' and (payload ->> 'id') = pid::text;
+    get diagnostics m = row_count; n := n + m;
+  end if;
+  insert into public.roster_trash_audit (business_id, kind, entry_id, rows_erased, by_email) values (b, p_kind, p_id, n, who);
+  return jsonb_build_object('status', 'ok', 'purged', n);
+end $fn$;
+
+revoke all on function public.roster_trash_table(text), public.roster_trash_rank(text), public.roster_trash_dep(),
+  public.roster_trash_relinks(text, jsonb), public.roster_trash_archive(), public.roster_trash_family(uuid), public.roster_trash_counts(uuid[]),
+  public.roster_trash_label(public.roster_trash) from public, anon, authenticated, service_role;
+revoke all on function public.roster_trash_list(text), public.roster_restore(text, uuid), public.roster_purge(text, uuid) from public, anon;
+grant execute on function public.roster_trash_list(text), public.roster_restore(text, uuid), public.roster_purge(text, uuid) to authenticated;
 
 notify pgrst, 'reload schema';
