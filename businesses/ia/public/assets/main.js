@@ -116,7 +116,13 @@
   var measure = function () {
     if (!tag) return;
     var t = tag.getBoundingClientRect(), cs = getComputedStyle(btn);
-    var restTop = window.innerHeight - parseFloat(cs.bottom) - btn.offsetHeight;
+    /* גובה המסך כשסרגל הכתובת מוצג (svh), לא innerHeight שמשתנה בגלילה: אחרת הכפתור קופץ גבוה מדי כשחוזרים מהר לראש הדף */
+    var probe = document.createElement("div");
+    probe.style.cssText = "position:fixed;top:0;height:100svh;width:0;visibility:hidden;pointer-events:none";
+    document.body.appendChild(probe);
+    var vh = probe.offsetHeight || window.innerHeight;
+    probe.remove();
+    var restTop = vh - parseFloat(cs.bottom) - btn.offsetHeight;
     dy = Math.min(0, (t.bottom + window.scrollY + 26) - restTop);
     dx = (t.left + t.width / 2) - window.innerWidth / 2;
     place();
