@@ -6,8 +6,7 @@
      dialog    <dialog> markup without the popup shell's direction (data-from) or title (data-title)
      native    alert( confirm( prompt( calls
      inline    style="" and on*="" attributes in markup (CSP forbids the handlers)
-   Scope: businesses/roster/public except me/ (out of scope), api/ (docs page) and ui.css itself. public/admin/* is BUILT OUTPUT (harpatka-derived, rebuilt by the
-   scratchpad pipeline): it is reported in its own section and is not in the allow-list; phase 4 replaces it, so only roster-owned admin sources (onboarding.*) count.
+   Scope: businesses/roster/public except me/ (out of scope), api/ (docs page) and ui.css itself. public/admin/* is roster's own source since phase 4b (the harpatka sync was stopped), like every other page.
    scripts/policy-allow.json is the legacy allow-list: the violations that exist today per file and rule. "beyond allow-list" is what is NEW since it was written.
    Usage:  node scripts/roster-policy.mjs --summary        counts per rule and per file (what npm test prints)
            node scripts/roster-policy.mjs --lines          every violation with file:line and the text
@@ -26,7 +25,7 @@ const rel = (p) => relative(ROOT, p).split(sep).join("/");
 const EXCLUDE_DIRS = new Set(["me", "api"]);
 const EXCLUDE_FILES = new Set(["businesses/roster/public/connect/mail-defaults.js"]);   // the default HTML of the participant mails: email markup needs inline styles, it is not a page
 const TOKEN_FILE = "businesses/roster/public/assets/ui.css";
-const BUILT_ADMIN = new Set(["admin.css", "admin.js", "index.html"]);   // inside public/admin: harpatka-derived build output
+const BUILT_ADMIN = new Set();   // since phase 4b public/admin is roster's own source (the harpatka sync was stopped), so nothing there is "built output" any more
 
 function walk(dir, out = []) {
   for (const n of readdirSync(dir)) {
@@ -106,7 +105,8 @@ function scanMarkup(file, raw, built) {
     const before = raw.slice(Math.max(0, m.index - 700), m.index);
     const open = before.lastIndexOf("<label"), close = before.lastIndexOf("</label>");
     const inside = open > close && /rfield/.test(before.slice(open));
-    if (!inside) add("field", file, lineOf(raw, m.index), m[0], built);
+    const inDiv = /<div\b[^>]*\brfield\b[^>]*>\s*<span>[^<]*<\/span>\s*$/.test(before);   // the same element written as <div class="rfield"> (the label span directly before the control)
+    if (!inside && !inDiv) add("field", file, lineOf(raw, m.index), m[0], built);
   }
   const DLG = /<dialog\b([^>]*)>/gi;
   while ((m = DLG.exec(raw))) {
@@ -139,7 +139,8 @@ const count = (list) => { const o = {}; for (const v of list) { o[v.rule] ??= {}
 const owned = violations.filter((v) => !v.built), built = violations.filter((v) => v.built);
 
 if (args.has("--write-allow")) {
-  const doc = { "//": "Legacy allow-list written by scripts/roster-policy.mjs --write-allow: violations that exist today, per rule and file. The lint reports only what goes BEYOND these counts as new. It must shrink to near empty by phase 6. public/admin built output is not listed here.", counts: count(owned) };
+  const old = existsSync(ALLOW_FILE) ? JSON.parse(readFileSync(ALLOW_FILE, "utf8")) : {};
+  const doc = { "//": "Allow-list written by scripts/roster-policy.mjs --write-allow: violations that exist today, per rule and file. The lint reports only what goes BEYOND these counts as new. Every entry needs a reason (see reasons, kept by --write-allow).", counts: count(owned), reasons: old.reasons || {} };
   writeFileSync(ALLOW_FILE, JSON.stringify(doc, null, 2) + "\n");
   console.log("wrote scripts/policy-allow.json (" + owned.length + " allowed violations)");
 }

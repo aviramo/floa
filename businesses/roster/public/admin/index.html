@@ -10,13 +10,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="onboarding.css?v=748bbc8d" />
+  <link rel="stylesheet" href="onboarding.css?v=b05a360f" />
   <link rel="stylesheet" href="../assets/field.css?v=1acbdf39" />
   <link rel="stylesheet" href="../assets/popup.css?v=ea530ced" />
-  <link data-legacy rel="stylesheet" href="admin.css?v=10524d9f" />
-  <link data-kit rel="stylesheet" href="../assets/ui.css?v=866831b0" />
-  <link data-kit rel="stylesheet" href="admin-kit.css?v=8102e5ff" />
-  <script src="kit-switch.js?v=08dbcafe"></script>
+  <link rel="stylesheet" href="../assets/ui.css?v=866831b0" />
+  <link rel="stylesheet" href="admin.css?v=f105ab6b" />
 </head>
 <body class="locked">
   <div class="gate" id="gate" hidden>
@@ -68,7 +66,7 @@
     <div class="chiprow"><div class="cq" id="chipRow" role="group" aria-label="סינון מהיר: משוריינים, גברים ונשים"></div></div>
     <div class="vbar" id="listTags" role="group" aria-label="חיפוש, סינון ומיון">   <!-- שורה אחת: מונה הרשומות (מימין, בעמודת הגיל), תיבת החיפוש, הסינון, המיון, זכר / נקבה (צמודים לאייקוני הסינון של העמודות), ואייקוני העמודות עצמם (נקבעים ב-JS מעל העמודות שלהם) -->
       <label class="search hsearch" title="חיפוש והוספה">
-          <span class="scount" id="listCountS" aria-hidden="true"></span><span class="sicon" aria-hidden="true"></span><input id="q" type="search" placeholder=" " autocomplete="off" aria-label="חיפוש והוספה" />
+          <span class="scount" id="listCountS" aria-hidden="true"></span><span class="sicon" aria-hidden="true"></span><input data-rf-bare id="q" type="search" placeholder=" " autocomplete="off" aria-label="חיפוש והוספה" />
           <button type="button" class="sclear" id="qClear" aria-label="ניקוי החיפוש" tabindex="-1">×</button>
         </label>
       <div id="listMore"></div>
@@ -82,7 +80,7 @@
 
 
   <!-- משתתף -->
-  <dialog id="pDlg" aria-labelledby="pTitle">
+  <dialog id="pDlg" data-from="bottom" aria-labelledby="pTitle">
     <form class="sheet" id="pForm" method="dialog" novalidate>
       <div class="sheet-head">
         <button type="button" class="hbtn hback" id="pBack" aria-label="חזרה" title="חזרה" hidden><svg data-i="back"></svg></button>
@@ -91,6 +89,7 @@
         <div id="pMsgs"></div>
         <a class="hbtn" id="pCall" aria-label="חיוג למשתתף" title="חיוג למשתתף" hidden><svg data-i="call"></svg></a>
         <span class="saved" id="savedMark">נשמר ✓</span>
+        <button class="btn hsave" id="pSubmit" type="submit">הוספה</button>
       </div>
       <p id="pSub" class="psub" hidden></p>
       <div class="ppanel" data-panel="main">
@@ -109,12 +108,12 @@
           </section>
           <section class="ppage" id="pgW" role="tabpanel" aria-labelledby="pTabW" inert>
         <div class="walsum" id="walSum"></div>
-        <div class="payact" style="margin:12px 0 4px"><button class="btn success" id="walAdd" type="button">קבלת תשלום</button><button class="btn danger" id="walRefund" type="button" hidden>החזרת כסף</button><button class="btn ghost" id="walZikuy" type="button" hidden>זיכוי</button></div>
+        <div class="payact payact--top"><button class="btn success" id="walAdd" type="button">קבלת תשלום</button><button class="btn danger" id="walRefund" type="button" hidden>החזרת כסף</button><button class="btn ghost" id="walZikuy" type="button" hidden>זיכוי</button></div>
         <div id="walHist"></div>
           </section>
           <section class="ppage" id="pgN" role="tabpanel" aria-labelledby="pTabN">
           <div class="nform">
-            <textarea id="nText" rows="1" maxlength="1000" enterkeyhint="enter" aria-label="הערה חדשה" placeholder="הערה חדשה"></textarea>
+            <textarea data-rf-bare id="nText" rows="1" maxlength="1000" enterkeyhint="enter" aria-label="הערה חדשה" placeholder="הערה חדשה"></textarea>
             <div class="nprev" id="nPrev" hidden><img id="nPrevImg" alt="תצוגה מקדימה" /><button type="button" id="nPrevX" aria-label="הסרת התמונה">×</button></div>
             <button type="button" class="nattach" id="nAttach" aria-label="צירוף צילום מסך" title="צירוף צילום מסך"><svg data-i="img"></svg></button>
             <input type="file" id="nFile" accept="image/*" hidden />
@@ -137,7 +136,7 @@
         </div>
         <div class="gacc" id="pGoogle" hidden></div>
         <label class="rfield field"><span>אימייל</span><input placeholder=" " name="email" type="email" inputmode="email" maxlength="254" autocomplete="off" /></label>
-        <div class="note" id="pRegLine" style="color:var(--muted);font-size:14px;margin:0 0 12px"></div>
+        <div class="note note--reg" id="pRegLine"></div>
         <button class="btn ghost danger" id="pDelete" type="button">מחיקת משתתף</button>
         <button class="btn ghost" id="pRestore" type="button" hidden>החזרה לפעילות</button>
           </section>
@@ -158,7 +157,7 @@
         <div class="metchips" id="depMode" role="radiogroup" aria-label="סוג ההקצאה" hidden></div>
         <h4 class="depsec" id="depAddTitle" hidden>הקצאה למפגש</h4>
         <div class="metchips" id="depMethods" role="radiogroup" aria-label="דרך העברה"></div>
-        <div id="depFree" hidden><p class="sthint" style="margin:12px 0">המפגש לא לתשלום. אפשר להחזיר אותו לתשלום בתפריט שבכותרת</p></div>
+        <div id="depFree" hidden><p class="sthint sthint--y">המפגש לא לתשלום. אפשר להחזיר אותו לתשלום בתפריט שבכותרת</p></div>
         <div id="depFields">
         <div class="payrow">
           <label class="rfield field money"><span>סכום</span><input placeholder=" " form="pForm" name="pay_dep" type="number" inputmode="decimal" min="0" step="10" /></label>
@@ -175,10 +174,10 @@
         <div id="depLines" class="deplines" hidden></div>
       </div>
       <div class="ppanel" data-panel="zikuy" hidden>
-        <p class="sthint" style="margin:0 0 12px">זיכוי של תשלום שהתקבל למפגש: הסכום יורד מהמפגש, ואפשר להשאיר אותו בקרדיט של המשתתף או להחזיר לו כסף</p>
+        <p class="sthint sthint--b">זיכוי של תשלום שהתקבל למפגש: הסכום יורד מהמפגש, ואפשר להשאיר אותו בקרדיט של המשתתף או להחזיר לו כסף</p>
         <label class="rfield field"><span>מפגש לזיכוי</span><select name="zk_meeting" id="zkMeeting"></select></label>
         <label class="rfield field money"><span>סכום לזיכוי</span><input placeholder=" " name="pay_zk" type="number" inputmode="decimal" min="0" step="any" /></label>
-        <div class="payact" style="flex-direction:column"><button class="btn soft-yel" id="zkCredit" type="button">זיכוי לקרדיט (בלי להחזיר כסף)</button><button class="btn soft-red" id="zkRefund" type="button">להחזיר כסף למשתתף</button></div>
+        <div class="payact payact--col"><button class="btn soft-yel" id="zkCredit" type="button">זיכוי לקרדיט (בלי להחזיר כסף)</button><button class="btn soft-red" id="zkRefund" type="button">להחזיר כסף למשתתף</button></div>
       </div>
       <div class="ppanel" data-panel="promoter" hidden>
         <div class="sopts" id="pPromoOpts"></div>
@@ -193,36 +192,35 @@
         </div>
       </div>
       <div class="ppanel" data-panel="refund" hidden>
-        <p style="margin:0 0 16px;line-height:1.55"></p>
-        <div class="payact" style="flex-direction:column"><button class="btn soft-red" id="refundYes" type="button">להחזיר תשלום</button><button class="btn soft-yel" id="creditYes" type="button">להשאיר כקרדיט (בלי להחזיר כסף)</button><button class="btn ghost" id="refundNo" type="button" style="color:var(--muted)">ביטול</button></div>
+        <p class="ptext"></p>
+        <div class="payact payact--col"><button class="btn soft-red" id="refundYes" type="button">להחזיר תשלום</button><button class="btn soft-yel" id="creditYes" type="button">להשאיר כקרדיט (בלי להחזיר כסף)</button><button class="btn ghost btn--quiet" id="refundNo" type="button">ביטול</button></div>
       </div>
-      <button class="btn" id="pSubmit" type="submit">הוספה</button>
     </form>
   </dialog>
 
   <!-- פופאפ הקצאה: עולה מלמטה מעל כרטיס המשתתף (או לבד כשנפתח מהרשימה). מסך ההקצאה עצמו, הצ'יף והשורה השנייה עוברים אליו בפתיחה וחוזרים לכרטיס בסגירה (allocMount / allocUnmount) -->
-  <dialog id="tplDlg" aria-labelledby="tplTitle">
+  <dialog id="tplDlg" data-from="bottom" aria-labelledby="tplTitle">
     <div class="sheet">
       <div class="sheet-head"><h2 id="tplTitle">תבנית הודעה</h2><button type="button" class="hbtn" id="tplView" aria-label="צפייה בהודעה עם נתונים לדוגמה" title="צפייה בהודעה עם נתונים לדוגמה"><svg data-i="eye"></svg></button></div>
       <p class="sthint stintro" id="tplIntro"></p>
       <div class="mtedit" id="tplFields"></div>
     </div>
   </dialog>
-  <dialog id="tplPrevDlg" aria-labelledby="tplPrevTitle">
+  <dialog id="tplPrevDlg" data-from="bottom" aria-labelledby="tplPrevTitle">
     <div class="sheet">
       <div class="sheet-head"><h2 id="tplPrevTitle">תצוגה מקדימה</h2></div>
       <p class="sthint stintro" id="tplPrevIntro"></p>
       <div class="tplprev" id="tplPrev"></div>
     </div>
   </dialog>
-  <dialog id="mailDlg" aria-labelledby="mailTitle">
+  <dialog id="mailDlg" data-from="bottom" aria-labelledby="mailTitle">
     <div class="sheet" id="mailSheet">
       <div class="sheet-head"><h2 id="mailTitle">מייל</h2><button type="button" class="hbtn" id="mailTheme" aria-pressed="false" aria-label="הדמיית מצב כהה" title="הדמיית מצב כהה"><svg data-i="moon"></svg></button></div>
       <div class="mailmeta" id="mailMeta"></div>
       <iframe id="mailFrame" title="המייל שנשלח" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" hidden></iframe>
     </div>
   </dialog>
-  <dialog id="ppDlg" aria-labelledby="ppTitle">
+  <dialog id="ppDlg" data-from="bottom" aria-labelledby="ppTitle">
     <div class="sheet">
       <div class="sheet-head"><h2 id="ppTitle">רישום תשלום</h2></div>
       <form id="ppForm" novalidate>
@@ -239,7 +237,7 @@
       </form>
     </div>
   </dialog>
-  <dialog id="allocDlg" aria-labelledby="allocTitle">
+  <dialog id="allocDlg" data-from="bottom" aria-labelledby="allocTitle">
     <div class="sheet" id="allocSheet">
       <div class="sheet-head" id="allocHead"><h2 id="allocTitle">תשלום</h2></div>
       <div id="allocSlot"></div>
@@ -247,11 +245,11 @@
   </dialog>
 
   <!-- מפגש -->
-  <dialog id="mDlg" aria-labelledby="mTitle">
+  <dialog id="mDlg" data-from="bottom" aria-labelledby="mTitle">
     <form class="sheet" id="mForm" method="dialog" novalidate>
       <div class="sheet-head">
         <h2 id="mTitle">מפגש חדש</h2>
-        <button class="btn" id="mSubmit" type="submit" disabled>יצירת מפגש</button>
+        <button class="btn hsave" id="mSubmit" type="submit" disabled>יצירת מפגש</button>
       </div>
       <label class="rfield field" id="mTypeF" hidden><span>סוג מפגש</span><select id="mType" aria-label="סוג מפגש"></select></label>
       <div class="mf" id="mMF"></div>   <!-- פרטי המפגש: אותו אלמנט כמו פרטי סוג המפגש (meetingFields) -->
@@ -259,7 +257,7 @@
     </form>
   </dialog>
 
-  <dialog id="stDlg" aria-labelledby="stTitle" style="max-width:760px">
+  <dialog id="stDlg" data-from="bottom" aria-labelledby="stTitle">
     <div class="sheet stsheet">
       <div class="sheet-head">
         <h2 id="stTitle">סטטיסטיקות</h2>
@@ -282,7 +280,7 @@
     </div>
   </dialog>
 
-  <dialog id="iDlg" aria-label="צילום מסך" style="max-width:520px">
+  <dialog id="iDlg" data-from="bottom" aria-labelledby="iTitle">
     <div class="sheet">
       <div class="sheet-head"><h2 id="iTitle">צילום מסך</h2></div><div class="idate" id="iDate"></div>
       <div class="iwrap" id="iWrap">
@@ -294,9 +292,9 @@
   </dialog>
 
 
-  <dialog id="setDlg" aria-labelledby="setTitle" style="max-width:480px">
+  <dialog id="setDlg" data-from="bottom" aria-labelledby="setTitle">
     <div class="sheet">
-      <div class="sheet-head"><button type="button" class="hbtn hback" id="setBack" aria-label="חזרה" title="חזרה" hidden><svg data-i="back"></svg></button><h2 id="setTitle">החשבון שלי</h2><button type="button" class="btn" id="tySave" hidden>שמירה</button></div>
+      <div class="sheet-head"><button type="button" class="hbtn hback" id="setBack" aria-label="חזרה" title="חזרה" hidden><svg data-i="back"></svg></button><h2 id="setTitle">החשבון שלי</h2><button type="button" class="btn hsave" id="tySave" hidden>שמירה</button></div>
       <div id="setMain">
         <div class="setgrp">
           <label class="rfield field"><span>השם שלי במערכת</span><input placeholder=" " class="setinp" id="setSender" maxlength="20" autocomplete="off" aria-label="שם השולח בהודעות" /></label>
@@ -309,16 +307,15 @@
         <button type="button" class="btn ghost danger" id="tyDelete">מחיקת סוג מפגש</button>
       </div>
       <div id="setEm" hidden>
-        <p class="sthint" style="margin:0 0 12px">הנוסח של הודעת פרטי המפגש (העיגול הכחול ברשימה ביום המפגש). {הוראות הגעה} מוחלף בהוראות ההגעה של המפגש, ו-{התכנסות}, {התחלה} ו-{סיום} בשעות של אותו מפגש</p>
-        <div class="settitle" style="padding-top:0">מתי הכפתור נפתח</div>
+        <p class="sthint sthint--b">הנוסח של הודעת פרטי המפגש (העיגול הכחול ברשימה ביום המפגש). {הוראות הגעה} מוחלף בהוראות ההגעה של המפגש, ו-{התכנסות}, {התחלה} ו-{סיום} בשעות של אותו מפגש</p>
+        <div class="settitle settitle--first">מתי הכפתור נפתח</div>
         <div class="attopts" id="emOpenOpts" role="radiogroup" aria-label="מתי הכפתור נפתח"></div>
-        <div class="settitle">נוסח ההודעה</div>
-        <textarea class="setinp" id="emText" rows="12" maxlength="800" aria-label="נוסח ההודעה לפני המפגש" style="height:auto;padding:12px;line-height:1.55;font-size:16px;font-weight:600;width:100%;box-sizing:border-box"></textarea>
+        <label class="rfield field"><span>נוסח ההודעה</span><textarea placeholder=" " id="emText" rows="12" maxlength="800" aria-label="נוסח ההודעה לפני המפגש"></textarea></label>
         <div class="emvars" id="emVars"><button type="button" data-v="{הוראות הגעה}">{הוראות הגעה}</button><button type="button" data-v="{התכנסות}">{התכנסות}</button><button type="button" data-v="{התחלה}">{התחלה}</button><button type="button" data-v="{סיום}">{סיום}</button></div>
-        <button type="button" class="btn ghost" id="emReset" style="height:40px;font-size:15px">שחזור נוסח ברירת מחדל</button>
+        <button type="button" class="btn ghost btn--compact" id="emReset">שחזור נוסח ברירת מחדל</button>
       </div>
       <div id="setPm" hidden>
-        <p class="sthint" style="margin:0 0 12px">הדרכים שמופיעות בקבלת תשלום (פייבוקס, ביט, מזומן...). אפשר להוסיף, לשנות שם ולמחוק</p>
+        <p class="sthint sthint--b">הדרכים שמופיעות בקבלת תשלום (פייבוקס, ביט, מזומן...). אפשר להוסיף, לשנות שם ולמחוק</p>
         <div id="pmList"></div>
         <button type="button" class="btn ghost" id="pmAdd">+ דרך תשלום חדשה</button>
       </div>
@@ -328,7 +325,7 @@
         <button type="button" class="btn ghost" id="srcPrAdd">+ שיווק ממומן חדש</button>
       </div>
       <div id="setDel" hidden>
-        <p id="setDelText" style="margin:0 0 16px;line-height:1.55"></p>
+        <p class="ptext" id="setDelText"></p>
         <div class="sopts" id="setDelOpts"></div>
       </div>
       <div id="setSt" hidden>
@@ -342,13 +339,13 @@
     </div>
   </dialog>
 
-  <dialog id="prDlg" aria-labelledby="prTitle" style="max-width:480px">
+  <dialog id="prDlg" data-from="bottom" aria-labelledby="prTitle">
     <div class="sheet">
       <div class="sheet-head"><button type="button" class="hbtn hback" id="prArrow" aria-label="חזרה" title="חזרה" hidden><svg data-i="back"></svg></button><h2 id="prTitle">שיווק ממומן</h2></div>
       <div id="prList" class="ppanel"></div>
       <div id="prDetail" class="ppanel" hidden>
         <div class="prsum" id="prSum"></div>
-        <div class="payact" style="margin:12px 0 4px"><button class="btn success" id="ppOpen" type="button">רישום תשלום</button></div>
+        <div class="payact payact--top"><button class="btn success" id="ppOpen" type="button">רישום תשלום</button></div>
         <div class="clabel" id="prMovesLbl"></div>
         <div id="prMoves"></div>
         <div class="clabel" id="prPaysLbl"></div>
@@ -361,7 +358,7 @@
     </div>
   </dialog>
 
-  <dialog id="finDlg" aria-labelledby="finTitle" style="max-width:520px">
+  <dialog id="finDlg" data-from="bottom" aria-labelledby="finTitle">
     <div class="sheet">
       <div class="sheet-head">
         <button type="button" class="hbtn hback" id="finArrow" aria-label="חזרה" title="חזרה" hidden><svg data-i="back"></svg></button>
@@ -396,44 +393,43 @@
           <label class="rfield field"><span>דרך מי עבר הכסף</span><select name="by"></select></label>
           <label class="rfield field" id="finRepF"><span>חזרתיות</span><select name="period"><option value="">חד פעמי</option><option value="weekly">כל שבוע</option><option value="monthly">כל חודש</option><option value="yearly">כל שנה</option></select></label>
         </div>
-        <button class="btn success" type="submit" id="finSave">שמירה</button>
         <button class="btn ghost danger" id="finDel" type="button" hidden>מחיקה</button>
       </form>
     </div>
   </dialog>
 
-  <dialog id="cDlg" aria-labelledby="cTitle" style="max-width:420px">
+  <dialog id="cDlg" data-from="bottom" aria-labelledby="cTitle">
     <form class="sheet" method="dialog" novalidate>
       <div class="sheet-head"><h2 id="cTitle"></h2></div>
-      <p id="cText" style="color:var(--muted);margin:0 0 16px"></p>
+      <p class="ctext" id="cText"></p>
       <button class="btn" id="cYes" type="button">אישור</button>
       <button class="btn ghost" id="cAlt" type="button" hidden>אפשרות נוספת</button>
-      <button class="btn ghost" id="cNo" type="button" style="color:var(--muted)">ביטול</button>
+      <button class="btn ghost btn--quiet" id="cNo" type="button">ביטול</button>
     </form>
   </dialog>
-  <dialog id="finFormDlg">
-    <div class="sheet"><div class="sheet-head"><h2 id="finFormTitle">הוצאה</h2></div><div id="finFormBody"></div></div>
+  <dialog id="finFormDlg" data-from="bottom" aria-labelledby="finFormTitle">
+    <div class="sheet"><div class="sheet-head"><h2 id="finFormTitle">הוצאה</h2><button class="btn success hsave" type="submit" form="finForm" id="finSave">שמירה</button></div><div id="finFormBody"></div></div>
   </dialog>
-  <dialog id="mfPopDlg" aria-labelledby="mfPopTitle">
+  <dialog id="mfPopDlg" data-from="bottom" aria-labelledby="mfPopTitle">
     <form class="sheet" method="dialog" novalidate>
       <div class="sheet-head"><h2 id="mfPopTitle"></h2></div>
       <div id="mfPopBody"></div>
     </form>
   </dialog>
-  <dialog id="lockDlg" aria-labelledby="lockTitle" style="max-width:420px">
+  <dialog id="lockDlg" data-from="bottom" aria-labelledby="lockTitle">
     <form class="sheet" method="dialog" novalidate>
       <div class="sheet-head"><h2 id="lockTitle">סגירת מחיר הכרטיס</h2></div>
-      <p id="lockText" style="color:var(--muted);margin:0 0 8px"></p>
+      <p class="ctext ctext--tight" id="lockText"></p>
       <label class="rfield field money"><span>מחיר הכרטיס</span><input placeholder=" " id="lockPrice" type="number" inputmode="numeric" min="1" step="10" /></label>
-      <p id="lockErr" class="msg" style="color:var(--red);margin:8px 0 0" hidden>צריך להזין מחיר גדול מאפס</p>
-      <button class="btn" id="lockYes" type="button" style="margin-top:16px">תשלום בהמשך</button>
+      <p id="lockErr" class="msg msg--err" hidden>צריך להזין מחיר גדול מאפס</p>
+      <button class="btn btn--gap" id="lockYes" type="button">תשלום בהמשך</button>
     </form>
   </dialog>
 
   <div class="qmenu" id="qMenu" role="menu" hidden></div>
-  <dialog id="viewDlg" class="mdlg" aria-label="סינון"><div class="sheet"><div class="sheet-head"><h2>סינון</h2></div><div class="qmenu" id="viewMenu" role="menu" hidden></div></div></dialog>
-  <dialog id="sortDlg" class="mdlg" aria-label="מיון"><div class="sheet"><div class="sheet-head"><h2>מיון</h2></div><div class="sortmenu" id="sortMenu" role="menu" hidden></div></div></dialog>
-  <dialog id="waDlg" class="mdlg" aria-label="וואטסאפ"><div class="sheet"><div class="sheet-head"><h2>וואטסאפ</h2></div><div class="sortmenu" id="waMenu" role="menu" hidden></div></div></dialog>
+  <dialog id="viewDlg" data-from="bottom" class="mdlg" aria-labelledby="viewTitle"><div class="sheet"><div class="sheet-head"><h2 id="viewTitle">סינון</h2></div><div class="qmenu" id="viewMenu" role="menu" hidden></div></div></dialog>
+  <dialog id="sortDlg" data-from="bottom" class="mdlg" aria-labelledby="sortTitle"><div class="sheet"><div class="sheet-head"><h2 id="sortTitle">מיון</h2></div><div class="sortmenu" id="sortMenu" role="menu" hidden></div></div></dialog>
+  <dialog id="waDlg" data-from="bottom" class="mdlg" aria-labelledby="waTitle"><div class="sheet"><div class="sheet-head"><h2 id="waTitle">וואטסאפ</h2></div><div class="sortmenu" id="waMenu" role="menu" hidden></div></div></dialog>
   <div class="qmenu" id="fMenu" role="menu" hidden></div>
   <div class="qmenu" id="chipMenu" role="menu" hidden></div>
   <div id="splitHandle" role="separator" aria-orientation="vertical" aria-label="רוחב הרשימה (גרירה, חצים במקלדת, לחיצה כפולה לברירת המחדל)" title="גרירה לשינוי הרוחב · לחיצה כפולה: ברירת מחדל" tabindex="0"></div>
@@ -445,10 +441,10 @@
   <script src="age.js?v=816fedce"></script>
   <script src="rt.js?v=9f0bd1e7"></script>
   <script src="../assets/field.js?v=6aeac99c"></script>
-  <script src="admin.js?v=56fb10bf"></script>
+  <script src="admin.js?v=e404ec12"></script>
   <script src="onboarding.js?v=544be310"></script>
-  <script src="/roster/assets/ui.js?v=d6340e02"></script>
+  <script src="/roster/assets/ui.js?v=af071d81"></script>
   <script src="/roster/assets/undo.js?v=6df1b937"></script>
-  <script src="/roster/admin/admin-kit.js?v=be65c52a"></script>
+  <script src="/roster/admin/admin-kit.js?v=43ad7a08"></script>
 </body>
 </html>

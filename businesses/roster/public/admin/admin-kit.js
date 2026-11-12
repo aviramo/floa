@@ -1,4 +1,4 @@
-/* admin-kit.js (roster's own, p14_kit): the kit behaviours of the admin page. Loaded after admin.js; does nothing unless <html data-kit="1">.
+/* admin-kit.js (roster's own, p14_kit): the kit behaviours of the admin page. Loaded after admin.js.
    It talks to the page only through window.ROSTER_KIT (two lines that the build adds to admin.js: the handles, and a call after every successful DELETE).
      1. UNDO FOR DELETES: every delete the page makes stays recoverable (the database moves a deleted row to roster_trash first), so the page offers "ביטול" in the shared
         undo toast: it finds what was just deleted (roster_trash_list) and puts it back (roster_restore). Deletes that come together (a meeting type with its meetings)
@@ -8,7 +8,6 @@
 (function () {
   "use strict";
   var doc = document, root = doc.documentElement;
-  if (root.getAttribute("data-kit") !== "1") return;
   var K = window.ROSTER_KIT;
   if (!K) return;
 
@@ -53,13 +52,24 @@
     return chain.then(function () { K.toast(bad ? "לא הכול הוחזר" : "הוחזר"); return K.load(true); });
   }
 
-  /* the meeting type editor saves from the header: as an icon it needs its words as a title */
-  var ty = doc.getElementById("tySave");
-  if (ty) { ty.setAttribute("title", "שמירה"); ty.setAttribute("aria-label", "שמירה"); }
+  /* every editor saves from the header as a check icon: its words become its tooltip and stay its name, and they follow the text the page sets ("שמירה", "יצירת מפגש", "הוספה") */
+  function hsaveTitle(b) { var t = (b.textContent || "").trim(); if (t) { b.setAttribute("title", t); b.setAttribute("aria-label", t); } }
+  Array.prototype.forEach.call(doc.querySelectorAll(".btn.hsave"), function (b) {
+    hsaveTitle(b);
+    new MutationObserver(function () { hsaveTitle(b); }).observe(b, { childList: true, characterData: true, subtree: true });
+  });
 
   /* ---------- 2. add button ---------- */
   var PLUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
   var list = doc.getElementById("list"), q = doc.getElementById("q"), fab = null;
+  /* on a wide screen the list is one pane of two: the add button belongs to the pane, so it sits in the pane's bottom corner, not in the window's */
+  function placeFab() {
+    if (!fab || !list) return;
+    var r = list.getBoundingClientRect();
+    if (r.width > 0) fab.style.setProperty("--fab-left", Math.round(r.left + 16) + "px");   // 16 = the gutter token
+  }
+  window.addEventListener("resize", placeFab);
+  if (window.ResizeObserver && list) new ResizeObserver(placeFab).observe(list);
   function showFab() {
     if (!list || !q) return;
     var live = !doc.body.classList.contains("locked") && list.offsetParent !== null;
@@ -69,7 +79,7 @@
       fab.addEventListener("click", function () { q.focus(); K.toast("הקלידו את שם המשתתף החדש בחיפוש"); });
       doc.body.appendChild(fab);
     }
-    if (fab) fab.hidden = !live;
+    if (fab) { fab.hidden = !live; placeFab(); }
   }
   new MutationObserver(showFab).observe(doc.body, { attributes: true, attributeFilter: ["class"] });
   showFab();
@@ -77,5 +87,32 @@
   /* ---------- 3. pull to refresh ---------- */
   if (list && window.RosterUI && RosterUI.ptr) {
     RosterUI.ptr.attach({ scroller: list, onRefresh: function () { return K.load(true); }, enabled: function () { return !doc.querySelector("dialog[open]"); } });
+  }
+
+  /* ---------- 4. swipe actions on the participants list ---------- */
+  /* a row slides to show "הסרה" (or "החזרה" for one already removed): the same remove and restore as the card, and the undo toast brings it back. A mouse has no swipe:
+     the card's own buttons are the path there. The first-use hint is the single system-wide one (rk.swipe.understood), shown only to a touch screen. */
+  if (list && window.RosterUI && RosterUI.swipe && window.RosterUndo) {
+    var swipeCtl = RosterUI.swipe.init(list), nudged = false, touch = (navigator.maxTouchPoints || 0) > 0;
+    var hintOn = function () {
+      if (!touch || !list.querySelector("[data-swipe]") || list.querySelector(".rhint")) return;
+      var c = swipeCtl.hint(false, nudged); if (c) nudged = true;   // the banner comes back after a redraw of the list, the nudge of the first row only once
+    };
+    new MutationObserver(hintOn).observe(list, { childList: true });
+    hintOn();
+    list.addEventListener("click", function (e) {
+      var b = e.target.closest && e.target.closest("[data-swipe-act]"); if (!b) return;
+      e.preventDefault(); e.stopPropagation();
+      var id = b.getAttribute("data-id"), p = K.partOf(id), on = b.getAttribute("data-swipe-act") === "restore";
+      if (!p) return;
+      swipeCtl.close();
+      K.quickActive(p, on).then(function () {
+        window.RosterUndo.delete({
+          kind: "person", itemId: id, label: (on ? "הוחזר: " : "הוסר: ") + p.name,
+          onUndo: function () { return K.quickActive(p, !on); },
+          onCommit: function () { /* already done: the window only offers the way back */ },
+        });
+      }).catch(function () { K.toast("הפעולה לא הצליחה"); });
+    }, true);
   }
 })();

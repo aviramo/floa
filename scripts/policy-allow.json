@@ -1,9 +1,15 @@
 {
-  "//": "Legacy allow-list written by scripts/roster-policy.mjs --write-allow: violations that exist today, per rule and file. The lint reports only what goes BEYOND these counts as new. It must shrink to near empty by phase 6. public/admin built output is not listed here.",
+  "//": "Allow-list written by scripts/roster-policy.mjs --write-allow: violations that exist today, per rule and file. The lint reports only what goes BEYOND these counts as new. Every entry needs a reason (see reasons, kept by --write-allow).",
   "counts": {
+    "inline": {
+      "businesses/roster/public/admin/admin.js": 11
+    },
     "spacing": {
-      "businesses/roster/public/admin/onboarding.css": 3,
       "businesses/roster/public/assets/field.css": 6
     }
+  },
+  "reasons": {
+    "inline|businesses/roster/public/admin/admin.js": "11 style attributes carry DATA, not design: tag and status palette colours chosen by the business (--sbg/--sfg, background, nameStyle), and chart bar widths and heights computed from the numbers. A class cannot hold a value that is only known at render time; the values are tokens of the palette tables in admin.js.",
+    "spacing|businesses/roster/public/assets/field.css": "field internals: the label offsets and the 46px field geometry (19px top, 3px bottom, 20px arrow side, 12px switch gap) that make the floating label work; they are the definition of the field element, not page spacing."
   }
 }

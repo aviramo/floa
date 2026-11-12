@@ -103,7 +103,7 @@
     list.addEventListener("keydown", function (e) { if (e.key === "Escape" && open) close(open); });
     /* first use hint: ONE time for the whole system (a single key, whatever the list), and it stays until the person confirms "הבנתי".
        A banner at the top of the list plus a short nudge of the first row. Never blocks: the banner is not a popup. */
-    function hint(force) {
+    function hint(force, quiet) {
       var seen = false; try { seen = store.getItem(key) === "1"; } catch (e) {}
       var row = list.querySelector("[data-swipe]"); if (!row || (seen && !force)) return null;
       if (list.querySelector(".rhint")) return null;
@@ -117,7 +117,7 @@
         cap.classList.add("is-gone"); setTimeout(function () { cap.remove(); }, 250);
         try { store.setItem(key, "1"); } catch (x) { /* no storage: it is shown again next visit */ }
       });
-      if (!reduced()) { openIt(row); setTimeout(function () { if (open === row) close(row); }, 900); }
+      if (!quiet && !reduced()) { openIt(row); setTimeout(function () { if (open === row) close(row); }, 900); }   /* quiet: the banner only (a page that redraws its list brings the banner back without nudging again) */
       return cap;
     }
     return { open: openIt, close: function () { close(open); }, hint: hint, isOpen: function () { return open; }, resetHint: function () { try { store.removeItem(key); } catch (e) {} } };
