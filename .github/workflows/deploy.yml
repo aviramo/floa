@@ -109,6 +109,31 @@ jobs:
       - if: steps.chords.outputs.run == 'true'
         run: npm run test:stack
 
+      # The roster pages keep one design: square popups, the X at the top left,
+      # no sideways scroll, an add button that floats. scripts/roster-policy.mjs
+      # already read the source (it runs inside npm test); this opens the built
+      # pages in a real browser and measures. Only when something roster is built
+      # from changed since the last publication, like the Chords tests above.
+      - name: did anything roster is built from change?
+        id: roster
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run=true
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            base=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/deploy.yml/runs?branch=main&status=success&per_page=1" --jq '.workflow_runs[0].head_sha // empty')
+            if [ -n "$base" ] && git cat-file -e "$base^{commit}" 2>/dev/null; then
+              if git diff --quiet "$base" HEAD -- businesses/roster src build.mjs package.json businesses/floa/domain scripts/roster-ui.test.mjs scripts/roster-policy.mjs scripts/policy-allow.json .github/workflows/deploy.yml; then
+                run=false
+              fi
+            fi
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+          echo "roster browser tests: $run (last publication: ${base:-none})"
+
+      - if: steps.roster.outputs.run == 'true'
+        run: npm run test:roster-ui
+
       # The generated Worker table must match what was committed. If it does
       # not, someone changed a business and pushed without rebuilding — and the
       # Worker deployed from this repo would be validating the wrong pages.

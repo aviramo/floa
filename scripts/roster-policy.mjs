@@ -1,4 +1,4 @@
-/* ROSTER POLICY LINT (phase 1: REPORT-ONLY, always exits 0).
+/* ROSTER POLICY LINT (BLOCKING since phase 6: exits 1 on any violation beyond the allow-list, so `npm test` and CI fail).
    Reports where the roster pages break the design rules (catalog: sync13/component-catalog.md, tokens: businesses/roster/public/assets/ui.css):
      spacing   raw px/rem/em numbers in margin, padding, gap, inset and offsets (only tokens and 0 are allowed), in CSS files and inline style="" text
      color     hex / rgb() / hsl() literals outside the token file (CSS files and inline style="")
@@ -7,7 +7,7 @@
      native    alert( confirm( prompt( calls
      inline    style="" and on*="" attributes in markup (CSP forbids the handlers)
    Scope: businesses/roster/public except me/ (out of scope), api/ (docs page) and ui.css itself. public/admin/* is roster's own source since phase 4b (the harpatka sync was stopped), like every other page.
-   scripts/policy-allow.json is the legacy allow-list: the violations that exist today per file and rule. "beyond allow-list" is what is NEW since it was written.
+   scripts/policy-allow.json is the legacy allow-list: the violations that exist today per file and rule. "beyond allow-list" is what is NEW since it was written, and it fails the run. An allow-list entry without a reason in `reasons` fails it too, so nothing is excused silently.
    Usage:  node scripts/roster-policy.mjs --summary        counts per rule and per file (what npm test prints)
            node scripts/roster-policy.mjs --lines          every violation with file:line and the text
            node scripts/roster-policy.mjs --write-allow    rewrite policy-allow.json from the current state (a deliberate act, review the diff)
@@ -152,17 +152,14 @@ const beyond = [];
 if (args.has("--json")) { console.log(JSON.stringify({ owned: count(owned), built: count(built), beyond: beyond.length }, null, 1)); process.exit(0); }
 
 const pad = (s, n) => String(s).padEnd(n);
-console.log("ROSTER POLICY LINT (report only)");
-console.log("rule      owned  built-admin");
-for (const r of RULES) console.log(pad(r, 9) + " " + pad(owned.filter((v) => v.rule === r).length, 6) + " " + built.filter((v) => v.rule === r).length);
+console.log("ROSTER POLICY LINT (blocking)");
+console.log("rule      violations");
+for (const r of RULES) console.log(pad(r, 9) + " " + owned.filter((v) => v.rule === r).length);
 console.log("new beyond the allow-list: " + beyond.length + (existsSync(ALLOW_FILE) ? "" : "  (no allow-list yet: run --write-allow)"));
 const cs = count(owned);
 console.log("\nper file (roster-owned):");
 const files = [...new Set(owned.map((v) => v.file))].sort();
 for (const f of files) console.log("  " + pad(f.replace("businesses/roster/public/", ""), 28) + RULES.map((r) => ((cs[r] || {})[f] ? r + " " + cs[r][f] : "")).filter(Boolean).join("  "));
-console.log("\nbuilt admin output (informational, replaced in phase 4):");
-const cb = count(built);
-for (const f of [...new Set(built.map((v) => v.file))].sort()) console.log("  " + pad(f.replace("businesses/roster/public/", ""), 28) + RULES.map((r) => ((cb[r] || {})[f] ? r + " " + cb[r][f] : "")).filter(Boolean).join("  "));
 if (args.has("--lines")) {
   console.log("\nEXACT LINES (roster-owned, then built admin):");
   for (const [title, list] of [["owned", owned], ["built admin", built]]) {
@@ -171,4 +168,13 @@ if (args.has("--lines")) {
   }
 }
 if (!args.has("--summary") && !args.has("--lines")) console.log("\n(add --lines for every violation, --write-allow to rewrite the allow-list)");
-process.exit(0);
+/* the gate: a violation beyond the allow-list, or an allowance nobody explained, stops the run */
+const reasons = existsSync(ALLOW_FILE) ? JSON.parse(readFileSync(ALLOW_FILE, "utf8")).reasons || {} : {};
+const unexplained = [];
+for (const [rule, byFile] of Object.entries(allow)) for (const f of Object.keys(byFile)) if (!reasons[rule + "|" + f]) unexplained.push(rule + "|" + f);
+if (beyond.length || unexplained.length) {
+  for (const v of beyond) console.log("VIOLATION  " + v.rule + "  " + v.file.replace("businesses/roster/public/", "") + ":" + v.line + "  " + v.text);
+  for (const u of unexplained) console.log("NO REASON in policy-allow.json for " + u);
+  console.log(String.fromCharCode(10) + "roster policy lint FAILED (" + beyond.length + " new violation(s), " + unexplained.length + " unexplained allowance(s)). Fix the code, or for a real exception add it with --write-allow and a reason.");
+  process.exit(1);
+}

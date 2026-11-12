@@ -3425,9 +3425,11 @@
     }, MSG[1], MSG[2], null, to === 'approved' ? { primary: true } : undefined);
   });
   /* מחיקת משתתף: פופאפ אישור מלמטה (לא חלון confirm של הדפדפן, שבטלפון עלול להיחסם בשקט ואז לא קורה כלום) */
-  $('#pDelete').addEventListener('click', () => {
+  $('#pDelete').addEventListener('click', async () => {   // בלי שאלה: ההסרה הפיכה (active=false), והודעת הביטול היא הדרך חזרה, כמו בהחלקה ברשימה
     const p = partOf(sheet.id); if (!p) return;
-    askConfirm(p, 'מחיקת משתתף', '<b>' + esc(p.name) + '</b> יוסר מרשימת כל המשתתפים ויופיע רק בחיפוש. השיוך שלו למפגשים, התשלומים, ההערות וההיסטוריה נשארים, ואפשר להחזיר אותו לפעילות בכל רגע.', 'כן, למחוק', () => deleteParticipant(p), true);
+    if (!(await deleteParticipant(p))) return;
+    if (window.RosterUndo) window.RosterUndo.delete({ kind: 'person', itemId: p.id, label: 'הוסר: ' + p.name, onUndo: () => quickActive(p, true), onCommit: () => {} });
+    else toast('הוסר');
   });
   /* the swipe actions of the participants list (admin-kit.js): the same remove and restore as the card, without touching the card's own buttons unless that card is the one open */
   async function quickActive(p, on) {
@@ -3442,8 +3444,8 @@
       await api(T.p + '?id=eq.' + p.id, { method: 'PATCH', body: { active: false } });
       p.active = false;   // נשאר ב-state (מפגשים, הערות, היסטוריה); מוסתר רק ברשימת כל המשתתפים
       if (state.inactiveNames) state.inactiveNames.set(p.id, p.name);
-      $('#pDelete').hidden = true; $('#pRestore').hidden = false; setTitle(p); render(); toast('הוסר');   // הכרטיס נשאר פתוח באותו מקום, ובמקום המחיקה "החזרה לפעילות"
-    } catch (err) { fail(err); }
+      $('#pDelete').hidden = true; $('#pRestore').hidden = false; setTitle(p); render(); return true;   // הכרטיס נשאר פתוח באותו מקום, ובמקום המחיקה "החזרה לפעילות"
+    } catch (err) { fail(err); return false; }
   }
   $('#pRestore').addEventListener('click', () => {   // משתתף מחוק חוזר להיות פעיל: חוזר לרשימת כל המשתתפים ולסינונים (הערת מערכת נרשמת בטריגר)
     const p = partOf(sheet.id); if (!p) return;

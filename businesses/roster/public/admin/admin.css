@@ -850,7 +850,7 @@ p.stline { margin: var(--sp-1) 0 0; font-size: var(--fs-s); }
 .iwrap { position: relative; flex: 1 1 auto; min-height: 0; touch-action: pan-y; }
 .iwrap img { display: block; width: 100%; height: 100%; object-fit: contain; border-radius: 0; }
 @media (min-width: 760px) {   /* בדסקטופ: במרכז המסך בגובה התמונה, עד 90% מהגובה */
-  #iDlg { height: auto; max-height: min(90vh, 920px); border-radius: var(--r); }
+  #iDlg { height: auto; max-height: min(90vh, 920px); border-radius: 0; }
   #iDlg .sheet { height: auto; padding: var(--sp-2) var(--gut); }
   .iwrap img { height: auto; max-height: calc(min(90vh, 920px) - 58px); border-radius: var(--r); }
 }
@@ -1067,7 +1067,7 @@ html.is-loading .vbar { display: none; }
 /* חריגים לרדיוס הפינות: אלמנט עם קו בצד אחד (הקו היה מתעקל בקצוות), שטח מקצה לקצה, ופופאפ שצמוד לקצוות המסך */
 .row, .wrap, .wrap > .vbar, .sheet-head, .finrow, .walrow, .logrow, #fMenu .fsep, .nform, #nList .nitem, .ptabs, .ptabi, .mmenu .maddrow, .srccard, .tb .tr, #waMenu .wbot, .hsearch, .hmi.out, .fsl.hd, .tokf, .nform textarea, .srccard .codein, .srccard .ratetype, #listTags .hsearch input { border-radius: 0; }
 @media (max-width: 699px) { #mMenu { border-radius: 0; } }   /* במובייל התפריט מקצה לקצה */
-dialog { border-radius: 0; }   /* במובייל הפופאפים עולים מלמטה וצמודים לקצה המסך: בלי פינות מעוגלות */
+dialog, dialog .sheet { border-radius: 0; }   /* במובייל הפופאפים עולים מלמטה וצמודים לקצה המסך: בלי פינות מעוגלות */
    /* בדסקטופ (5.11.26, לבקשת בעל האתר): כל הפופאפים הממורכזים עם פינות מעוגלות. הפאנלים שצמודים לקצה המסך (הגדרות, סטטיסטיקות, כספים, וכרטיס המשתתף שליד הרשימה) נשארים ישרים */
 /* רצועת המפגשים: האריח והכרטיס האחרון סוגרים את הפינות של הרצועה */
 
@@ -2054,7 +2054,7 @@ svg.ic, .cico svg, .hicon svg, .hbtn svg { overflow: visible; }   /* סמלים 
 dialog.drawer .grab, dialog.side .grab { display: none; }   /* a side panel is not a bottom sheet */
 @media (min-width: 760px) { .grab { display: none; } }   /* the bar and the swipe are touch affordances: on a computer a popup is a centered window with the fixed header and the X (owner rule 2026-11-12) */
 dialog .dclose { display: inline-grid; flex: 0 0 auto; width: 44px; min-width: 44px; height: 44px; margin-block: calc(var(--sp-hair) * -1); place-items: center; }   /* the X, in every head */
-dialog .dclose::before { inset: 0; }
+dialog .sheet-head .dclose::before { inset: 0; }   /* (same specificity as the head rule that gives the other header buttons a hit area 4px wider: a wider X pokes out of the dialog and makes it scroll sideways by 4px) */
 dialog { border-radius: 0 !important; }   /* iron rule: no rounded corners, wide screens included */
 dialog:not(.drawer):not(.side) { max-width: var(--pp-w-m); }
 #cDlg, #lockDlg { max-width: var(--pp-w-s); }   /* a short confirmation: the small width token */
