@@ -379,3 +379,7 @@ svg { display: block; }
 /* תמונת המעגל: קטנה, רכה ומתמזגת עם הרקע, כדי שירגישו את האווירה ולא את הפנים */
 .circle-photo { margin: -24px auto 28px; width: min(320px, 78%); }
 .circle-photo img { width: 100%; height: auto; opacity: .9; filter: blur(1.6px) saturate(.92); -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 52%, transparent 100%); mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 52%, transparent 100%); }
+
+/* סבב 5: כל התמונה נראית, בלי דעיכה בקצוות */
+.circle-photo { width: min(360px, 86%); margin-top: -8px; }
+.circle-photo img { -webkit-mask-image: none; mask-image: none; opacity: 1; filter: blur(1px) saturate(.95); border-radius: 22px; box-shadow: 0 22px 44px -26px rgba(23, 58, 42, .6); }
