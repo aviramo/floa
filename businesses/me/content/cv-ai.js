@@ -91,8 +91,8 @@ export const aiEn = {
       jobs: [
         {
           role: "Full Stack Systems and Applications Built with Generative AI",
-          org: "FLOA | Independent, partly in parallel with salaried work",
-          dates: "2025 - Present",
+          org: "FLOA | Independent",
+          dates: "2026 - Present",
           bullets: [
             "Own the whole cycle of each project: requirements, system and data design, UX, development, testing and release. Generative AI, mainly Claude, is the main development tool. Responsibility for quality control, testing and release",
             "Once, a social mobile app for Android and iOS (React Native, Expo, TypeScript, Supabase, PostgreSQL, Edge Functions): location-based matching and detection of nearby users, real-time communication, chat, groups, a credit system, and a permission model enforced in the database with Row Level Security. Testing and release to the app stores",
@@ -238,8 +238,8 @@ export const aiHe = {
       jobs: [
         {
           role: "מערכות ואפליקציות Full Stack שנבנו בשילוב Generative AI",
-          org: "FLOA | עצמאי, גם במקביל לעבודה כשכיר",
-          dates: "2025 - היום",
+          org: "FLOA | עצמאי",
+          dates: "2026 - היום",
           bullets: [
             "אחריות על מחזור החיים המלא של כל פרויקט: דרישות, תכנון המערכת והנתונים, UX, פיתוח, בדיקות והפצה. כלי ה-Generative AI, בעיקר Claude, הוא כלי הפיתוח המרכזי. אחריות על בקרת איכות, בדיקות והפצה",
             "Once, אפליקציית מובייל חברתית ל-Android ול-iOS (React Native, Expo, TypeScript, Supabase, PostgreSQL, Edge Functions): התאמות מבוססות מיקום וזיהוי משתמשים בקרבת מקום, תקשורת בזמן אמת, צ'אט, קבוצות, מערכת קרדיטים ומודל הרשאות שנאכף בבסיס הנתונים באמצעות Row Level Security. בדיקות והפצה לחנויות האפליקציות",
