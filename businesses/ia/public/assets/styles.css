@@ -431,3 +431,8 @@ html { background-color: #3F7F46; }
 body { background-color: var(--paper); }
 .hero { min-height: calc(100svh - 56px); }
 .sec--free { padding-top: 40px; }
+
+/* הפתיחה ופס המילים ממלאים יחד בדיוק את גובה המסך, והפס יושב בתחתית */
+:root { --mq: calc(clamp(2.6rem, 8vw, 5rem) * 1.1); }
+.sec--free { padding: 16px 0; }
+.hero { min-height: calc(100svh - var(--mq, 5rem) - 32px); }
