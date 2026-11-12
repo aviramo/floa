@@ -94,7 +94,7 @@ export const aiEn = {
           org: "FLOA | Independent",
           dates: "2026 - Present",
           bullets: [
-            "Own the whole cycle of each project: requirements, system and data design, UX, development, testing and release. Generative AI, mainly Claude, is the main development tool. Responsibility for quality control, testing and release",
+            "Own the whole cycle of each project: requirements, system and data design, UX and development. Generative AI, mainly Claude, is the main development tool. Responsibility for quality control, testing and release",
             "Once, a social mobile app for Android and iOS (React Native, Expo, TypeScript, Supabase, PostgreSQL, Edge Functions): location-based matching and detection of nearby users, real-time communication, chat, groups, a credit system, and a permission model enforced in the database with Row Level Security. Submission to the app stores",
             "Participants management system for several businesses, each isolated at the database level (multi-tenant, Row Level Security): participants, sessions, payments and subscriptions, an admin interface, a personal area for participants, email and WhatsApp communication, and a public API with keys and signed webhooks for external websites",
             "A chords and songs app: song index, a page per song and an editor, Google sign-in, reading songs from images with the Claude API, and pre-built song pages for organic search",
@@ -240,7 +240,7 @@ export const aiHe = {
           org: "FLOA | עצמאי",
           dates: "2026 - היום",
           bullets: [
-            "אחריות על מחזור החיים המלא של כל פרויקט: דרישות, תכנון המערכת והנתונים, UX, פיתוח, בדיקות והפצה. כלי ה-Generative AI, בעיקר Claude, הוא כלי הפיתוח המרכזי. אחריות על בקרת איכות, בדיקות והפצה",
+            "אחריות על מחזור החיים המלא של כל פרויקט: דרישות, תכנון המערכת והנתונים, UX ופיתוח. כלי ה-Generative AI, בעיקר Claude, הוא כלי הפיתוח המרכזי. אחריות על בקרת איכות, בדיקות והפצה",
             "Once, אפליקציית מובייל חברתית ל-Android ול-iOS (React Native, Expo, TypeScript, Supabase, PostgreSQL, Edge Functions): התאמות מבוססות מיקום וזיהוי משתמשים בקרבת מקום, תקשורת בזמן אמת, צ'אט, קבוצות, מערכת קרדיטים ומודל הרשאות שנאכף בבסיס הנתונים באמצעות Row Level Security. הגשה לחנויות האפליקציות",
             "מערכת Multi-tenant לניהול משתתפים לכמה עסקים, כל אחד מבודד ברמת בסיס הנתונים באמצעות Row Level Security: משתתפים, מפגשים, תשלומים ומנויים, ממשק ניהול, אזור אישי למשתתפים, תקשורת במייל ובוואטסאפ, ו-API ציבורי עם מפתחות ו-Webhooks חתומים לאתרים חיצוניים",
             "אפליקציית אקורדים ושירים: אינדקס שירים, דף לכל שיר ועורך, התחברות עם Google, קריאת שירים מתמונה באמצעות Claude API ובנייה מראש של דפי השירים לקידום אורגני",
