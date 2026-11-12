@@ -171,8 +171,6 @@ export const architectEn = {
           ],
         },
         {
-          /* the fold: page one ends with Brillix, page two opens here */
-          breakBefore: true,
           role: "Systems Analyst | Web Solutions & Process Automation",
           org: "Tel Aviv-Yafo Municipality",
           dates: "2020 - 2021",

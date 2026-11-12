@@ -35,8 +35,20 @@
      fourth group: squeezing that section alone recovered six of the eight
      millimetres needed to keep page one ending at Brillix, and this is the
      other two. */
-  --cv-gap: 1.6mm;
+  --cv-gap: 2.4mm;
   --cv-pad: 14mm;
+
+  /* ONE SPACING SCALE for the whole document. Every gap in it is one of these
+     four and nothing else, so the page keeps a single rhythm:
+       --cv-s   between lines of one thing (bullets, an org under its role)
+       --cv-m   between neighbours of one kind (paragraphs, keyword groups,
+                education entries) and between a heading and what it heads
+       --cv-l   between jobs
+       --cv-gap above and below a section rule
+     The screen and the phone change the four values, never the rules. */
+  --cv-s: .8mm;
+  --cv-m: 1.6mm;
+  --cv-l: 3mm;
 
   width: 210mm;
   max-width: 100%;
@@ -66,7 +78,7 @@
   letter-spacing: -.005em;
   text-transform: uppercase;
   color: var(--cv-navy);
-  margin-bottom: 2mm;
+  margin-bottom: var(--cv-m);
 }
 
 .cv-id__role {
@@ -81,7 +93,7 @@
 .cv-contact {
   list-style: none;
   padding: 0;
-  margin-top: 3mm;
+  margin-top: var(--cv-m);
   display: flex;
   flex-wrap: wrap;
   gap: 1mm 4mm;
@@ -110,19 +122,19 @@
   letter-spacing: .03em;
   text-transform: uppercase;
   color: var(--cv-navy);
-  margin-bottom: 1.8mm;
+  margin-bottom: var(--cv-m);
 }
 
-.cv-sec__body > p + p { margin-top: 1.4mm; }
+.cv-sec__body > p + p { margin-top: var(--cv-m); }
 
 /* --- bullets --------------------------------------------------------------- */
 .cv-list {
   list-style: disc;
   padding-inline-start: 4.6mm;
-  margin-top: 1.2mm;
+  margin-top: var(--cv-s);
 }
 
-.cv-list > li + li { margin-top: .6mm; }
+.cv-list > li + li { margin-top: var(--cv-s); }
 .cv-list > li::marker { color: var(--cv-slate); }
 
 /* --- one entry: the title on the line, its dates hard against the far edge -- */
@@ -152,12 +164,12 @@
 .cv-job__org {
   color: var(--cv-slate);
   font-weight: 600;
-  margin-top: .3mm;
+  margin-top: var(--cv-s);
 }
 
-.cv-job + .cv-job { margin-top: 2.6mm; }
+.cv-job + .cv-job { margin-top: var(--cv-l); }
 
-.cv-job__link { margin-top: 1.4mm; }
+.cv-job__link { margin-top: var(--cv-m); }
 
 .cv-job__link a {
   color: var(--cv-blue);
@@ -166,7 +178,7 @@
 }
 
 /* --- keyword groups: a run-in heading, then the terms after it ------------- */
-.cv-kw + .cv-kw { margin-top: 1.4mm; }
+.cv-kw + .cv-kw { margin-top: var(--cv-m); }
 
 .cv-kw__title {
   font-weight: 700;
@@ -176,7 +188,7 @@
 }
 
 /* --- education, military --------------------------------------------------- */
-.cv-entry + .cv-entry { margin-top: 2mm; }
+.cv-entry + .cv-entry { margin-top: var(--cv-m); }
 
 /* Set in the case the content is written in, never transformed: text-transform
    is all or nothing over a line, and over "B.Sc." it produces "B.SC.", which is
@@ -251,31 +263,23 @@
 @media screen {
   .cv-sheet {
     --cv-fs: 16px;
-    --cv-gap: 5mm;
+    --cv-gap: 6mm;
+    --cv-s: 1.6mm;
+    --cv-m: 3mm;
+    --cv-l: 6mm;
     line-height: 1.5;
   }
 
-  .cv-id__name { font-size: 40px; margin-bottom: 3mm; }
+  .cv-id__name { font-size: 40px; }
   .cv-id__role { line-height: 1.4; }
   /* Held below the body size, and tight, so the four items stay on ONE line.
      They are dividers, not bullets: wrapped, the second line opens with a rule
      that separates nothing from nothing. This is the one place on the page
      where the text does NOT grow with the rest. */
-  .cv-contact { margin-top: 4mm; gap: 2mm 3mm; font-size: 14px; }
+  .cv-contact { margin-top: var(--cv-m); gap: 2mm 3mm; font-size: 14px; }
   .cv-contact__item + .cv-contact__item { padding-inline-start: 3mm; }
 
-  .cv-sec__head { font-size: 22px; margin-bottom: 3mm; }
-  .cv-sec__body > p + p { margin-top: 3mm; }
-
-  .cv-list { margin-top: 2mm; }
-  .cv-list > li + li { margin-top: 1.6mm; }
-
-  .cv-job + .cv-job { margin-top: 6mm; }
-  .cv-job__org { margin-top: 1mm; }
-  .cv-job__link { margin-top: 2.5mm; }
-
-  .cv-kw + .cv-kw { margin-top: 3mm; }
-  .cv-entry + .cv-entry { margin-top: 3.5mm; }
+  .cv-sec__head { font-size: 22px; }
 }
 
 /* --- narrower than a sheet -------------------------------------------------
@@ -375,18 +379,6 @@
   .cv-kw,
   .cv-sec__head,
   .cv-list > li { break-inside: avoid; }
-
-  /* THE SQUEEZE, and it is confined to the keyword groups. Core Expertise
-     carries a fourth group now, three lines of it, and page one has to end at
-     Brillix — an employment entry is never cut, so anything that does not fit
-     takes the whole entry with it and costs a third sheet. Nothing else is
-     touched: not the summary, not a job, not the leading of the body.
-
-     It reaches Technical Skills too, which shares the class and sits on page
-     two with room to spare. Two keyword sections set differently would read as
-     an accident rather than a decision. */
-  .cv-kw { line-height: 1.1; }
-  .cv-kw + .cv-kw { margin-top: .5mm; }
 
   /* a heading with nothing under it is a heading on the wrong page */
   .cv-sec__head { break-after: avoid; }
