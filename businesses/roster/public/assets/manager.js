@@ -46,6 +46,8 @@
     slugChars: "במזהה אפשר רק אותיות לטיניות קטנות, ספרות ומקפים.",
     slugTaken: "כבר יש עסק עם המזהה הזה. כדאי לבחור מזהה אחר.",
     slugReserved: "המזהה הזה שמור למערכת. כדאי לבחור מזהה אחר.",
+    slugFree: "המזהה פנוי.",
+    dispLong: "השם שהמשתתפים רואים יכול להיות עד 60 תווים.",
     mailEmpty: "צריך לכתוב כתובת מייל של חשבון Google.",
     mailBad: "כתובת המייל לא נראית תקינה.",
     mailTaken: "החשבון הזה כבר מחובר לעסק.",
@@ -409,6 +411,9 @@
           '<p class="hint">אפשר לשנות. המזהה הוא הכתובת של דף הניהול: floa.co.il/roster/<bdi dir="ltr">' + esc(b.slug) + '</bdi>. אחרי שינוי הכתובת הישנה והקישורים שנוצרו איתה (חיבורים, אזור אישי שמוטמע באתר של העסק, קישורים במיילים שכבר נשלחו) יפסיקו לעבוד.</p>'
         : '<label class="field"><span>מזהה באותיות לטיניות</span><input id="bSlug" class="ltr" dir="ltr" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="dana-yoga"></label>' +
           '<p class="hint">אותיות לטיניות קטנות, ספרות ומקפים, 2 עד 40 תווים, ומתחיל באות. המזהה הוא הכתובת של דף הניהול של העסק: floa.co.il/roster/המזהה. אפשר לשנות אותו אחר כך, אבל אז הכתובת משתנה.</p>') +
+      (edit ? "" : '<p class="slugnote" id="bSlugNote" aria-live="polite"></p>' +
+        '<label class="field"><span>השם שהמשתתפים רואים (לא חובה)</span><input id="bDisp" maxlength="60" autocomplete="off"></label>' +
+        '<p class="hint">כך העסק מופיע בהודעות ובמיילים למשתתפים. אם משאירים ריק, זה שם העסק.</p>') +
       '<div class="ferr" id="bErr" role="alert"></div>' +
       '<button type="submit" class="btn block" id="bGo">' + (edit ? "שמירה" : "יצירת עסק") + "</button></form>");
 
@@ -422,22 +427,31 @@
     function ok() { $("#bErr").textContent = ""; name.removeAttribute("aria-invalid"); if (slug) slug.removeAttribute("aria-invalid"); }
     name.addEventListener("input", function () {
       ok();
-      if (slug && !edit && !ctx.touched) slug.value = slugFrom(name.value.trim());
+      if (slug && !edit && !ctx.touched) { slug.value = slugFrom(name.value.trim()); note(); }
     });
+    function note() {                                 /* the identifier is checked while typing: free, taken or reserved (the owner sees every business, so the list on the page is the truth) */
+      var el = $("#bSlugNote");
+      if (!el || !slug) return;
+      var v = lc(slug.value), m = v ? checkSlug(v, null) : "";
+      el.textContent = !v ? "" : m || T.slugFree;
+      el.className = "slugnote" + (!v ? "" : m ? " bad" : " good");
+    }
     if (slug) slug.addEventListener("input", function () {
       ok();
       var v = slug.value.toLowerCase();
       if (v !== slug.value) slug.value = v;
       ctx.touched = v !== "";                    /* clearing it hands the field back to the name */
+      note();
     });
 
     $("#bForm").addEventListener("submit", function (e) {
       e.preventDefault();
       var c = ctx;
       if (c.busy) return;
-      var nm = clean(name.value), sg = slug ? lc(slug.value) : "";
+      var nm = clean(name.value), sg = slug ? lc(slug.value) : "", disp = $("#bDisp") ? clean($("#bDisp").value) : "";
       var msg = checkName(nm);
       if (msg) return bad(msg, "bName");
+      if (disp.length > 60) return bad(T.dispLong, "bDisp");
       if (!edit || sg !== b.slug) { msg = checkSlug(sg, edit ? b.id : null); if (msg) return bad(msg, "bSlug"); }
       if (edit && nm === b.name && sg === b.slug) return dlg.close();
       c.busy = true; $("#bGo").disabled = true; ok();
@@ -465,12 +479,9 @@
         }
         S.biz.push({ id: row.id, slug: row.slug || sg, name: row.name || nm, created_at: row.created_at || "" });
         S.users[row.id] = [];
-        S.q = "";
-        var q = $("#q"); if (q) q.value = "";
-        renderList();
-        flash(row.id);
-        toast("העסק נוצר");
-        if (ctx === c) { afterClose = back(row.id, "menu"); dlg.close(); }
+        var enter = function () { toast("העסק נוצר"); location.href = "admin/?biz=" + encodeURIComponent(row.slug || sg); };   /* the guided setup starts there */
+        if (disp && disp !== nm) api("/rest/v1/roster_business_settings?business_id=eq." + encodeURIComponent(row.id), { method: "PATCH", json: { sender_name: disp } }).then(enter, enter);
+        else enter();
       }).catch(function (err) {
         if (err && err.signedOut) return;
         if (ctx !== c) return;

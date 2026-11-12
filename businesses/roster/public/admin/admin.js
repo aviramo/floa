@@ -4706,4 +4706,10 @@
   });
 
 
+  /* roster: מדריך ההקמה (onboarding.js) צריך כמה ידיות מתוך הסקריפט הזה. types() הוא null עד שקריאת סוגי המפגש הצליחה (כך שגיאת רשת לא נראית כעסק בלי סוגים) */
+  window.ROSTER_ONB = (() => { let tv = state.mtypes, ok = false; Object.defineProperty(state, 'mtypes', { get: () => tv, set: (x) => { tv = x; ok = true; }, enumerable: true });
+    return { slug: () => BIZ.slug, email: emailOf, types: () => (ok && Array.isArray(tv) ? tv.slice() : null), createType: () => createType(),
+      openTemplates: (id) => { openTypeEditor(id); setTimeout(() => { const b = $('#tyMF'); if (b && b.scrollIntoView) b.scrollIntoView({ block: 'center' }); }, 60); },
+      pref: { get: () => { const g = state.viewScopes._g; return (g && g.onb) || {}; }, set: (k, v) => { const g = state.viewScopes._g || (state.viewScopes._g = {}); (g.onb || (g.onb = {}))[k] = v; saveViewPrefs(); } } }; })();
+
   if (!FRAMED) startAuth();

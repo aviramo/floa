@@ -1,0 +1,6 @@
+/* roster: מדריך הקמה. הפופאפ משתמש בצורה של שאר הפופאפים (dialog, .sheet, .btn), כאן רק מה שמיוחד לו */
+#onbDlg .onbstep { margin: 0 0 6px; color: var(--text-2); font-size: 13px; font-weight: 600; }
+#onbDlg .sheet h2 { margin-bottom: 12px; }
+#onbDlg p { margin: 0 0 20px; color: var(--text-2); font-size: 16px; line-height: 1.65; overflow-wrap: anywhere; }
+#onbDlg .btn.ghost { color: var(--muted, var(--text-2)); }
+#hMenu #onbMenu svg { width: 20px; height: 20px; flex: none; }

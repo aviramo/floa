@@ -148,3 +148,28 @@ dialog.wide .sheet-body { overflow-y: auto; }
 .field input.ro:focus, .field textarea.ro:focus { border-color: var(--line-2); box-shadow: none; outline: 2px solid var(--text); outline-offset: 2px; }
 .twarn p.bad { background: var(--red-bg); color: var(--red); font-weight: 600; }
 .secstate { margin: 0 0 12px; color: var(--text); font-size: 14.5px; font-weight: 600; }
+
+/* ---------- the mail hub (sync 10) ---------- */
+.needs { display: grid; gap: 8px; margin: 0 0 8px; }
+.needs label { position: relative; display: block; }
+.needs input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.needs span { display: flex; flex-direction: column; gap: 2px; min-height: var(--ctl); padding: 10px 14px; border: 1px solid var(--line-2); border-radius: var(--r); background: var(--bg); }
+.needs b { font-size: 15.5px; font-weight: 700; line-height: 1.35; }
+.needs small { color: var(--text-2); font-size: 13.5px; line-height: 1.45; }
+.needs input:checked + span { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); }
+.needs input:focus-visible + span { outline: 2px solid var(--text); outline-offset: 2px; }
+@media (min-width: 640px) { .needs { grid-template-columns: repeat(3, 1fr); } }
+.marea { margin: 16px 0 0; padding-top: 16px; border-top: 1px solid var(--line); }
+.marea[hidden] { display: none; }
+.marea h3 { margin: 0 0 8px; font-size: 16px; font-weight: 800; line-height: 1.3; }
+.mstat { margin: 0 0 8px; }
+.mstat .tg { display: inline-block; }
+.mmiss, .mnotes { margin: 6px 0 0; padding: 0; list-style: none; font-size: 13.5px; line-height: 1.5; }
+.mmiss li { color: var(--red); }
+.mmiss li::before { content: "\2022\00a0"; }
+.mnotes li { color: var(--text-2); overflow-wrap: anywhere; }
+.mtypes { margin: 4px 0 0; }
+.mtype { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--line); }
+.mtype:last-child { border-bottom: 0; }
+.mtype .sw { flex: 1 1 auto; min-width: 0; }
+.mtype .btn { flex: 0 0 auto; }

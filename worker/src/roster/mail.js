@@ -14,6 +14,12 @@
      registration.cancelled  registration_cancelled  participant, future meeting
      participant.linked      admin_account_linked    to the notify list (internal event)
      participant.phone_conflict  admin_phone_conflict  to the notify list (internal event)
+     mail.test               any template            ONE mail with sample data to the address in the event (the signed-in
+                                                     manager's own), subject "ניסיון: ...", never to a participant,
+                                                     whatever the switches say (the point is to see it)
+
+   A business can turn off single mail types (settings.mail_off_types, the template keys): those are skipped
+   with reason type_off, for the participant mails and the notify-list mails alike.
 
    Everything that goes to a participant goes to an address a stranger typed, so
    it is limited (limits.js), it can be turned off per business, and it always
@@ -192,7 +198,9 @@ export function planMails(work) {
   const pay = paymentOf(work);
   const skip = (template, reason) => skipped.push({ template, reason });
 
+  const off = Array.isArray(business.settings.mail_off_types) ? business.settings.mail_off_types : [];
   const toAdmins = (template) => {
+    if (off.includes(template)) return skip(template, "type_off");
     const to = adminRecipients(work);
     if (to.length === 0) return skip(template, "no_recipients");
     plan.push({ template, audience: "admin", to });
@@ -203,6 +211,7 @@ export function planMails(work) {
      recorded as a failed mail (error no_address), the admin sees why. */
   const toParticipant = (template, silentWithoutEmail) => {
     if (!business.settings.participant_mail_enabled) return skip(template, "participant_mail_off");
+    if (off.includes(template)) return skip(template, "type_off");
     const addr = normalizeEmail(p.email);
     if (addr) return plan.push({ template, audience: "participant", to: addr });
     if (silentWithoutEmail) return skip(template, "no_email");
@@ -258,6 +267,18 @@ export function planMails(work) {
       else toParticipant("registration_cancelled", false);
       break;
 
+    /* A test mail: the manager asked (roster_mail_test), the address is their own, and the switches do not apply. The database
+       made the event, but the Worker checks it again: a known template, a plain address, one recipient. */
+    case "mail.test": {
+      const d = isObj(event.data) ? event.data : {};
+      const template = typeof d.template === "string" ? d.template : "";
+      const to = normalizeEmail(d.to);
+      if (!Object.prototype.hasOwnProperty.call(DEFAULT_TEMPLATES, template)) skip("mail.test", "unknown_template");
+      else if (!to) skip(template, "no_recipient");
+      else plan.push({ template, audience: "admin", to: [to], test: true });
+      break;
+    }
+
     default:
       break; /* ping and anything unknown: no mail */
   }
@@ -265,6 +286,29 @@ export function planMails(work) {
 }
 
 /* --- what it says ---------------------------------------------------------------- */
+
+/* The sample behind a test mail: the same shape as a real event (what buildVars reads), clearly not real. */
+export const TEST_SUBJECT_PREFIX = "ניסיון: ";
+export const TEST_BANNER = "זהו מייל ניסיון עם נתוני דוגמה. הוא נשלח רק אליך ולא נשלח לאף משתתף.";
+export function sampleWork(work) {
+  const to = normalizeEmail(work.event.data && work.event.data.to) || "";
+  const at = Date.parse(work.event.createdAt);
+  const date = new Date((Number.isNaN(at) ? Date.now() : at) + 3 * 86_400_000).toISOString().slice(0, 10);
+  const meeting = { name: "מפגש לדוגמה", date, time: "19:00", place: "מקום לדוגמה", city: "עיר לדוגמה", price: 80, directions: "הוראות הגעה לדוגמה", future: true, free: false, reported_amount: 80 };
+  return {
+    ...work,
+    event: { ...work.event, data: {
+      participant: { id: "", first_name: "דנה", last_name: "לדוגמה", phone: "050-0000000", email: to, age: 30, gender: "female" },
+      meeting, payment: { kind: "payment", amount: 80, method: "bit" }, account: { email: to, name: "דנה לדוגמה" },
+    } },
+    facts: { ...work.facts, meeting },
+    participant: null,
+  };
+}
+function markAsTest(composed) {
+  const html = composed.html.replace(/<body[^>]*>/i, (m) => `${m}<p dir="rtl" style="margin:0 0 16px;padding:10px 12px;background:#FFF4D6;border:1px solid #E8C65C;border-radius:8px;font-size:14px;direction:rtl;text-align:right"><strong>${TEST_BANNER}</strong></p>`);
+  return { subject: TEST_SUBJECT_PREFIX + composed.subject, html, text: htmlToText(html) };
+}
 
 const wrapFragment = (html) =>
   /<body[\s>]/i.test(html)
@@ -439,7 +483,9 @@ export async function deliverMails(work, deps) {
   const compose = (template) => {
     if (!memo.has(template)) {
       try {
-        memo.set(template, { ok: true, value: composeMail(work, template, buildVars(work, template)) });
+        const w = work.event.type === "mail.test" ? sampleWork(work) : work;
+        const value = composeMail(w, template, buildVars(w, template));
+        memo.set(template, { ok: true, value: work.event.type === "mail.test" ? markAsTest(value) : value });
       } catch (error) {
         memo.set(template, { ok: false, error });
       }

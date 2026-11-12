@@ -79,6 +79,8 @@ export function normalizeWork(raw, now = Date.now) {
         contact_email: nullableText(s.contact_email, 320),
         sender_name: nullableText(s.sender_name, 200),
         mail_from_address: nullableText(s.mail_from_address, 320),
+        /* the mail types this business turned off (sync 10); none off = today's behaviour */
+        mail_off_types: Array.isArray(s.mail_off_types) ? s.mail_off_types.filter((k) => typeof k === "string").slice(0, 20) : [],
         contact_whatsapp: nullableText(s.contact_whatsapp, 100),
         payment_url: nullableText(s.payment_url, 600),
       },

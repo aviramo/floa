@@ -80,7 +80,7 @@
   const TPL_ORDER = ["admin_signup", "admin_payment_reported", "admin_account_linked", "admin_phone_conflict", "registered", "payment_confirmed", "refund", "registration_cancelled"];
   /* a template is shown to the editor and rendered by the Worker: the same bounds as the database and the Worker */
   const MAX_TPL = 20000, MAX_DATA_IF = 50;
-  const SETTINGS_COLS = "registration_open,signup_required,personal_area_enabled,participant_mail_enabled,notify_emails,contact_email,sender_name,mail_from_address,contact_whatsapp,payment_url,webhook_url,webhook_events,webhook_secret_set,updated_at";
+  const SETTINGS_COLS = "registration_open,signup_required,personal_area_enabled,participant_mail_enabled,mail_off_types,notify_emails,contact_email,sender_name,mail_from_address,contact_whatsapp,payment_url,webhook_url,webhook_events,webhook_secret_set,updated_at";
   const KEY_COLS = "id,kind,prefix,label,allowed_origins,created_by,created_at,last_used_at,revoked_at";   /* never key_hash */
   const MAIL_RE = /^[^\s@,;<>()"]+@[^\s@,;<>()"]+\.[^\s@,;<>()"]{2,}$/;
 
@@ -406,9 +406,9 @@
     keys: () => rest("roster_api_keys?select=" + KEY_COLS + "&order=created_at.desc"),
     settings: async () => { const r = await rest("roster_business_settings?select=" + SETTINGS_COLS); if (!Array.isArray(r) || !r[0]) throw new Error("no settings row"); return r[0]; },
     templates: async () => { const r = await rest("roster_mail_templates?select=key,subject,html,updated_at"); const m = {}; (Array.isArray(r) ? r : []).forEach((x) => { m[x.key] = x; }); return m; },
-    events: () => rest("roster_events?select=id,type,created_at,status,attempts,next_attempt_at,last_error&order=created_at.desc&limit=60"),
+    events: () => rest("roster_events?select=id,type,created_at,status,attempts,next_attempt_at,last_error&type=neq.mail.test&order=created_at.desc&limit=60"),
     deliveries: () => rest("roster_webhook_deliveries?select=id,event_id,attempt,status,http_status,error,at&order=at.desc&limit=300"),
-    mails: () => rest("roster_mail_log?select=id,participant_id,template,to_addr,subject,status,error,created_at,sent_at&order=created_at.desc&limit=60"),
+    mails: () => rest("roster_mail_log?select=id,participant_id,template,to_addr,subject,status,error,created_at,sent_at,is_test&order=created_at.desc&limit=60"),
   };
   async function load(what) {
     const mine = epoch;
@@ -438,6 +438,7 @@
     const top = keepScroll ? panel.scrollTop : 0;
     const fn = { keys: panelKeys, hook: panelHook, mail: panelMail, reg: panelReg, log: panelLog }[S.tab];
     panel.innerHTML = fn();
+    if (S.tab === "mail") updateMail();
     panel.scrollTop = top;
     panel.setAttribute("aria-labelledby", "tab-" + S.tab);
     $$("[role=tab]").forEach((b) => { const on = b.dataset.tab === S.tab; b.setAttribute("aria-selected", on ? "true" : "false"); b.tabIndex = on ? 0 : -1; });
@@ -571,7 +572,7 @@
     return list.map((m) => {
       const st = tagOf(mailStatus, m.status);
       const tn = (DEF[m.template] && DEF[m.template].name) || m.template;
-      return '<button type="button" class="mrow" data-act="mail-open" data-id="' + esc(m.id) + '"><span class="mmain"><span class="msub">' + esc(m.subject || "ללא נושא") + '</span><span class="kmeta">' + esc(tn) + ", " + mono(m.to_addr || "") + ", " + esc(ago(m.sent_at || m.created_at)) + "</span>" +
+      return '<button type="button" class="mrow" data-act="mail-open" data-id="' + esc(m.id) + '"><span class="mmain"><span class="msub">' + esc(m.subject || "ללא נושא") + '</span><span class="kmeta">' + esc(tn) + (m.is_test ? " (ניסיון)" : "") + ", " + mono(m.to_addr || "") + ", " + esc(ago(m.sent_at || m.created_at)) + "</span>" +
         (m.status === "failed" && m.error ? '<span class="errl">' + esc(m.error) + "</span>" : "") + '</span><span class="tg ' + st[1] + '">' + st[0] + "</span></button>";
     }).join("");
   }
@@ -585,22 +586,101 @@
      so for everybody else the three fields are shown, read-only, with the reason. */
   const isOwner = () => { const row = MINE.find((b) => b.slug === BIZ.slug); return !!(row && row.is_super === true); };
   const OWNER_ONLY = "מוגדר על ידי בעל המערכת.";
+  /* ---- the mail hub: everything about mail in one place ----
+     1. what the business needs (participants, managers, both): sets the switches below, saved with the form
+     2. participants: the master switch and a switch per mail type; managers: the notify list and a switch per type
+     3. a status line per area ("מוגדר" or "לא מוגדר" and what is missing), updated while the form is edited
+     4. a test mail per type, to the signed-in manager's own address only (roster_mail_test) */
+  const PART_TYPES = ["registered", "payment_confirmed", "refund", "registration_cancelled"];
+  const ADM_TYPES = ["admin_signup", "admin_payment_reported", "admin_account_linked", "admin_phone_conflict"];
+  const TEST_ERR = {
+    forbidden: T.generic, unknown_template: T.generic,
+    no_email: "לחשבון שמחובר עכשיו אין כתובת מייל, ולכן אי אפשר לשלוח אליו מייל ניסיון.",
+    busy: "המערכת עסוקה כרגע. אפשר לנסות שוב בעוד רגע.",
+  };
+  const offOf = () => new Set(Array.isArray(D.settings && D.settings.mail_off_types) ? D.settings.mail_off_types : []);
+  function typeRow(k, off) {
+    const d = DEF[k] || { name: k, when: "" };
+    return '<div class="mtype"><label class="sw"><input type="checkbox" data-mtype="' + k + '" role="switch"' + (off.has(k) ? "" : " checked") + '><span class="trk" aria-hidden="true"></span><span class="swt"><b>' + esc(d.name) + "</b><small>" + esc(d.when) +
+      '</small></span></label><button type="button" class="btn ghost sm" data-act="mail-test" data-key="' + k + '" aria-label="שליחת מייל ניסיון: ' + esc(d.name) + '">מייל ניסיון</button></div>';
+  }
+  /* the values behind the status lines: the form while it is open, else what is saved */
+  function mailVals() {
+    const s = D.settings || {}, f = $("#mailForm");
+    if (!f) return { master: s.participant_mail_enabled !== false, off: offOf(), notify: s.notify_emails || [], contact: s.contact_email || "", from: s.mail_from_address || "", name: s.sender_name || "" };
+    const off = new Set($$("[data-mtype]", f).filter((c) => !c.checked).map((c) => c.dataset.mtype));
+    const pn = parseMails($("#mNotify").value, 10);
+    return { master: $("#mParticipant").checked, off: off, notify: pn.err ? (s.notify_emails || []) : pn.list, contact: lc($("#mContact").value), from: lc($("#mFrom").value), name: clean($("#mName").value) };
+  }
+  function areaStatus(area, v) {
+    const types = area === "p" ? PART_TYPES : ADM_TYPES, on = types.filter((k) => !v.off.has(k)), miss = [], notes = [];
+    if (area === "p") {
+      if (!v.master) miss.push("המתג של מיילים למשתתפים כבוי");
+      if (!on.length) miss.push("כל סוגי המיילים כבויים");
+      if (!v.contact) miss.push("לא הוגדרה כתובת מענה, ומשתתף שיענה למייל לא יגיע אל אף אחד");
+      notes.push("שם השולח: " + esc(v.name || BIZ.name) + (v.name ? "" : " (שם העסק, כי לא הוגדר שם שולח)"));
+      notes.push("כתובת השולח: " + mono(v.from || "no-reply@floa.co.il") + (v.from ? " (משלכם)" : " (ברירת מחדל)"));
+    } else {
+      if (!on.length) miss.push("כל סוגי ההתראות כבויים");
+      notes.push(v.notify.length ? "ההתראות נשלחות אל: " + v.notify.map(mono).join(", ") : "לא הוגדרה כתובת ייעודית, ולכן ההתראות נשלחות לכל חשבונות ה־Google של העסק");
+    }
+    const ok = miss.length === 0;
+    return '<span class="tg ' + (ok ? "ok" : "bad") + '">' + (ok ? "מוגדר" : "לא מוגדר") + "</span>" +
+      (miss.length ? '<ul class="mmiss">' + miss.map((x) => "<li>" + esc(x) + "</li>").join("") + "</ul>" : "") +
+      '<ul class="mnotes">' + notes.map((x) => "<li>" + x + "</li>").join("") + "</ul>";
+  }
+  function mailNeedOf(v) {
+    const p = v.master && PART_TYPES.some((k) => !v.off.has(k)), a = ADM_TYPES.some((k) => !v.off.has(k));
+    return p && a ? "both" : p ? "p" : a ? "a" : "";
+  }
+  function updateMail() {
+    const v = mailVals();
+    const sp = $("#mStatP"), sa = $("#mStatA");
+    if (sp) sp.innerHTML = areaStatus("p", v);
+    if (sa) sa.innerHTML = areaStatus("a", v);
+    const need = ($("input[name=mNeed]:checked") || {}).value || "";
+    const bp = $("#mAreaP"), ba = $("#mAreaA");
+    if (bp) bp.hidden = need === "a";
+    if (ba) ba.hidden = need === "p";
+  }
+  /* the answer to "what does the business need" sets the switches; nothing is saved until the form is */
+  function applyNeed(need) {
+    const p = need === "p" || need === "both", a = need === "a" || need === "both";
+    $("#mParticipant").checked = p;
+    $$("[data-mtype]").forEach((c) => { c.checked = PART_TYPES.includes(c.dataset.mtype) ? p : a; });
+  }
   function panelMail() {
     const bad = need(["settings", "templates", "mails"]);
     if (bad) return bad;
-    const s = D.settings, own = isOwner(), ro = own ? "" : ' readonly aria-readonly="true"', roCls = own ? "" : " ro";
+    const s = D.settings, own = isOwner(), ro = own ? "" : ' readonly aria-readonly="true"', roCls = own ? "" : " ro", off = offOf();
+    const cur = mailNeedOf(mailVals());
+    const needBtn = (v, label, hint) => '<label><input type="radio" name="mNeed" value="' + v + '"' + (cur === v ? " checked" : "") + "><span><b>" + label + "</b><small>" + hint + "</small></span></label>";
     return '<div class="pin">' +
-      '<form class="card" id="mailForm" novalidate>' + cardHead("שולח והתראות") +
+      '<form class="card" id="mailForm" novalidate>' + cardHead("מיילים") +
+      '<p class="lead">כל המיילים של העסק מוגדרים כאן: למי הם נשלחים, אילו סוגים, ומאיזו כתובת. כדי להתחיל, בחרו מה העסק צריך.</p>' +
+      '<div class="needs" role="radiogroup" aria-label="מה העסק צריך">' +
+        needBtn("p", "מיילים למשתתפים", "אישור הרשמה, תשלום, החזר וביטול") + needBtn("a", "התראות למנהלים", "משתתף חדש, דיווח תשלום וחיבורים") + needBtn("both", "שניהם", "המשתתפים והמנהלים") + "</div>" +
+      '<p class="hint">הבחירה מסמנת את המתגים למטה. אפשר לשנות כל מתג בנפרד לפני השמירה.</p>' +
+
+      '<div class="marea" id="mAreaP"><h3>מיילים למשתתפים</h3><div class="mstat" id="mStatP"></div>' +
+      sw("mParticipant", s.participant_mail_enabled !== false, "שליחת מיילים למשתתפים", "כל מייל נשלח רק לכתובת שהמשתתף הזין, ומסתיים בהסבר למה הוא קיבל אותו. כשהמתג כבוי לא נשלח אף מייל למשתתפים.") +
+      '<div class="mtypes">' + PART_TYPES.map((k) => typeRow(k, off)).join("") + "</div></div>" +
+
+      '<div class="marea" id="mAreaA"><h3>התראות למנהלים</h3><div class="mstat" id="mStatA"></div>' +
+      '<label class="field"><span>מי מקבל התראות</span><textarea id="mNotify" class="ltr' + roCls + '" dir="ltr" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false"' + ro + ' placeholder="manager@example.com">' + esc((s.notify_emails || []).join("\n")) + "</textarea></label>" +
+      '<p class="hint">' + (own ? "כתובת אחת בכל שורה." : OWNER_ONLY) + " אם הרשימה ריקה, ההתראות נשלחות לכל חשבונות ה־Google של העסק.</p>" +
+      '<div class="mtypes">' + ADM_TYPES.map((k) => typeRow(k, off)).join("") + "</div></div>" +
+
+      '<div class="marea"><h3>שולח</h3>' +
       '<p class="lead">המיילים יוצאים מהכתובת <bdi dir="ltr">' + esc(s.mail_from_address || "no-reply@floa.co.il") + '</bdi>, בשם שהוגדר לעסק.' + (own ? "" : " " + OWNER_ONLY) + "</p>" +
       '<label class="field"><span>שם השולח</span><input id="mName" maxlength="60" autocomplete="off"' + ro + ' class="' + roCls.trim() + '" placeholder="' + esc(BIZ.name) + '" value="' + esc(s.sender_name || "") + '"></label>' +
       '<p class="hint">' + (own ? "מופיע ליד הכתובת. אם משאירים ריק, יופיע שם העסק." : OWNER_ONLY + " אם הוא ריק, יופיע שם העסק.") + "</p>" +
       '<label class="field"><span>כתובת השולח</span><input id="mFrom" class="ltr' + roCls + '" dir="ltr" type="email" inputmode="email" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="120"' + ro + ' placeholder="no-reply@floa.co.il" value="' + esc(s.mail_from_address || "") + '"></label>' +
-      '<p class="hint">' + (own ? "הכתובת שהמשתתף רואה כשולח. אם משאירים ריק, המיילים יוצאים מ־no-reply@floa.co.il. הדומיין של הכתובת צריך להיות מאומת ב־Resend, אחרת המיילים לא יישלחו." : OWNER_ONLY + " אם היא ריקה, המיילים יוצאים מ־no-reply@floa.co.il.") + "</p>" +
+      '<p class="hint">' + (own ? "הכתובת שהמשתתף רואה כשולח. אם משאירים ריק, המיילים יוצאים מ־no-reply@floa.co.il. הדומיין של הכתובת צריך להיות מאומת ב־Resend, אחרת המייל לא יישלח." : OWNER_ONLY + " אם היא ריקה, המיילים יוצאים מ־no-reply@floa.co.il.") + "</p>" +
       '<label class="field"><span>כתובת למענה</span><input id="mContact" class="ltr' + roCls + '" dir="ltr" type="email" inputmode="email" autocomplete="off" autocapitalize="off" spellcheck="false"' + ro + ' placeholder="studio@example.com" value="' + esc(s.contact_email || "") + '"></label>' +
-      '<p class="hint">' + (own ? "כשמשתתף עונה למייל, התשובה מגיעה לכאן." : OWNER_ONLY + " כשמשתתף עונה למייל, התשובה מגיעה לכתובת הזאת.") + "</p>" +
-      '<label class="field"><span>מי מקבל התראות</span><textarea id="mNotify" class="ltr' + roCls + '" dir="ltr" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false"' + ro + ' placeholder="manager@example.com">' + esc((s.notify_emails || []).join("\n")) + "</textarea></label>" +
-      '<p class="hint">' + (own ? "כתובת אחת בכל שורה." : OWNER_ONLY) + " אם הרשימה ריקה, ההתראות נשלחות לכל חשבונות ה־Google של העסק.</p>" +
-      sw("mParticipant", s.participant_mail_enabled !== false, "מיילים למשתתפים", "אישור הרשמה, אישור תשלום, החזר וביטול. כל מייל נשלח רק לכתובת שהמשתתף הזין בטופס, ומסתיים בשורה שמסבירה למה קיבל אותו.") +
+      '<p class="hint">' + (own ? "כשמשתתף עונה למייל, התשובה מגיעה לכאן." : OWNER_ONLY + " כשמשתתף עונה למייל, התשובה מגיעה לכתובת הזאת.") + "</p></div>" +
+
+      '<p class="hint" id="mTestHint">"מייל ניסיון" שולח אליכם, ורק אליכם, את התבנית כפי שנשמרה, עם נתוני דוגמה. הוא מסומן בנושא ובגוף המייל וביומן. אם שיניתם משהו כאן, שמרו קודם.</p>' +
       '<div class="ferr" id="mErr" role="alert"></div>' +
       '<div class="savebar"><button type="submit" class="btn" id="mSave">שמירה</button></div></form>' +
       '<section class="card">' + cardHead("תבניות המיילים") +
@@ -611,6 +691,9 @@
   }
   async function saveMail() {
     const err = $("#mErr"), btn = $("#mSave"), s = D.settings;
+    const off = $$("[data-mtype]").filter((c) => !c.checked).map((c) => c.dataset.mtype).sort();
+    const base = { participant_mail_enabled: $("#mParticipant").checked, mail_off_types: off };
+    const sameBase = (s.participant_mail_enabled !== false) === base.participant_mail_enabled && JSON.stringify([...offOf()].sort()) === JSON.stringify(off);
     let patch;
     if (isOwner()) {
       const name = clean($("#mName").value);
@@ -621,16 +704,35 @@
       if (from && (from.length > 120 || from.indexOf("@") > 64 || !MAIL_RE.test(from))) { err.textContent = "כתובת השולח לא נראית תקינה."; $("#mFrom").setAttribute("aria-invalid", "true"); $("#mFrom").focus(); return; }
       const notify = parseMails($("#mNotify").value, 10);
       if (notify.err) { err.textContent = notify.err; $("#mNotify").setAttribute("aria-invalid", "true"); $("#mNotify").focus(); return; }
-      patch = { sender_name: name || null, mail_from_address: from || null, contact_email: contact || null, notify_emails: notify.list, participant_mail_enabled: $("#mParticipant").checked };
-      if ((s.sender_name || "") === (name || "") && (s.mail_from_address || "") === from && (s.contact_email || "") === contact && JSON.stringify(s.notify_emails || []) === JSON.stringify(notify.list) && (s.participant_mail_enabled !== false) === patch.participant_mail_enabled) { toast(T.noChange); return; }
+      patch = Object.assign({ sender_name: name || null, mail_from_address: from || null, contact_email: contact || null, notify_emails: notify.list }, base);
+      if (sameBase && (s.sender_name || "") === (name || "") && (s.mail_from_address || "") === from && (s.contact_email || "") === contact && JSON.stringify(s.notify_emails || []) === JSON.stringify(notify.list)) { toast(T.noChange); return; }
     } else {
       /* a member sends ONLY what a member may change: the database refuses a write to the other four */
-      patch = { participant_mail_enabled: $("#mParticipant").checked };
-      if ((s.participant_mail_enabled !== false) === patch.participant_mail_enabled) { toast(T.noChange); return; }
+      patch = base;
+      if (sameBase) { toast(T.noChange); return; }
     }
     err.textContent = ""; btn.disabled = true;
     try { await saveSettings(patch); toast(T.saved); renderPanel(true); }
     catch (e) { if (e && e.signedOut) return; btn.disabled = false; err.textContent = T.generic; }
+  }
+  /* a test mail: the saved template with sample data, to the signed-in manager only */
+  const testing2 = new Set();
+  async function mailTest(btn) {
+    const key = btn.dataset.key;
+    if (testing2.has(key)) return;
+    testing2.add(key); btn.disabled = true;
+    const mine = epoch;
+    try {
+      const r = await rpc("roster_mail_test", { p_template: key });
+      if (r && r.queued) {
+        toast("נשלח אליכם מייל ניסיון ל־" + r.to + ". הוא יגיע בעוד כדקה.");
+        [9000, 30000].forEach((ms) => setTimeout(async () => { if (epoch !== mine) return; await load("mails"); refreshLists(); }, ms));
+      } else if (r && r.error === "rate_limited") {
+        const min = Math.max(1, Math.ceil((Number(r.retry_in) || 60) / 60));
+        toast("נשלחו הרבה מיילי ניסיון. אפשר שוב בעוד " + (min === 1 ? "דקה" : min + " דקות") + ".");
+      } else toast(TEST_ERR[r && r.error] || T.generic);
+    } catch (e) { if (!(e && e.signedOut)) toast(T.generic); }
+    testing2.delete(key); btn.disabled = false;
   }
 
   /* ===== registration and the personal area ===== */
@@ -702,12 +804,20 @@
     else if (act === "hook-test") hookTest(t);
     else if (act === "tpl-open") openTemplate(t.dataset.key);
     else if (act === "mail-open") openMail(t.dataset.id);
+    else if (act === "mail-test") mailTest(t);
     else if (act === "refresh") refreshLogs();
     else if (act === "goto-log") { S.seg = t.dataset.seg; setTab("log"); }
     else if (act === "seg") { S.seg = t.dataset.seg; renderPanel(true); }
     else if (act === "copy") { toast((await copyText(t.dataset.text)) ? T.copied : T.copyFail); }
     else if (act === "retry") { const w = t.dataset.what; if (w === "events" || w === "deliveries") { await Promise.all([load("events"), load("deliveries")]); } else await load(w); renderPanel(true); }
   });
+  panel.addEventListener("change", (e) => {
+    const t = e.target;
+    if (!t.closest || !t.closest("#mailForm")) return;
+    if (t.name === "mNeed") applyNeed(t.value);
+    updateMail();
+  });
+  panel.addEventListener("input", (e) => { if (e.target.closest && e.target.closest("#mailForm") && ["mNotify", "mName", "mFrom", "mContact"].includes(e.target.id)) updateMail(); });
   panel.addEventListener("submit", (e) => {
     e.preventDefault();
     if (e.target.id === "hookForm") saveHook();

@@ -706,3 +706,73 @@ test("a template override cannot make the Worker throw", async () => {
   const { mails } = await deliverMails(w, depsFor(fakeNet()));
   assert.equal(mails[0].status, "sent");
 });
+
+/* --- sync 10: the mail hub (types turned off, test mails) ---------------------------------- */
+
+test("a mail type the business turned off is skipped (type_off), the others still go; none off changes nothing", () => {
+  const off = (types, ev = {}) => ({ settings: { mail_off_types: types }, ...ev });
+  assert.deepEqual(planned(work()), ["registered>participant"], "no list: as before");
+  assert.deepEqual(planned(work(off([]))), ["registered>participant"]);
+  const w = work(off(["registered"]));
+  assert.deepEqual(planMails(w).plan, []);
+  assert.deepEqual(skippedReasons(w), { registered: "type_off" });
+  assert.deepEqual(planned(work(off(["refund"]))), ["registered>participant"], "another type off: this one still goes");
+  const admin = work({ event: { type: "participant.created" }, settings: { mail_off_types: ["admin_signup"] } });
+  assert.deepEqual(planMails(admin).plan, []);
+  assert.deepEqual(skippedReasons(admin), { admin_signup: "type_off" });
+  assert.deepEqual(planned(work({ event: { type: "payment.reported" }, settings: { mail_off_types: ["admin_signup"] } })), ["admin_payment_reported>admin"]);
+});
+
+test("the work item parser keeps mail_off_types as a list of text, [] when missing or wrong", () => {
+  assert.deepEqual(work({ settings: { mail_off_types: ["refund", 5, "registered"] } }).business.settings.mail_off_types, ["refund", "registered"]);
+  assert.deepEqual(work().business.settings.mail_off_types, []);
+  assert.deepEqual(work({ settings: { mail_off_types: "refund" } }).business.settings.mail_off_types, []);
+});
+
+test("mail.test: one mail with sample data to the address in the event, whatever the switches say", async () => {
+  for (const key of ["registered", "payment_confirmed", "refund", "registration_cancelled", "admin_signup", "admin_payment_reported", "admin_account_linked", "admin_phone_conflict"]) {
+    const w = work({ event: { type: "mail.test", payload: { template: key, to: "Boss@Studio.example" } }, participant: null, facts: {},
+      settings: { participant_mail_enabled: false, mail_off_types: [key] }, business: { notify_emails: ["other@example.com"] } });
+    const p = planMails(w).plan;
+    assert.equal(p.length, 1, key);
+    assert.deepEqual([p[0].template, p[0].audience, p[0].to, p[0].test], [key, "admin", ["boss@studio.example"], true], key);
+  }
+});
+
+test("mail.test: an unknown template or a bad address makes no mail", () => {
+  const w = (payload) => work({ event: { type: "mail.test", payload }, participant: null, facts: {} });
+  assert.deepEqual(planMails(w({ template: "nope", to: "a@b.co" })).plan, []);
+  assert.deepEqual(planMails(w({ template: "registered", to: "not-an-email" })).plan, []);
+  assert.deepEqual(planMails(w({ template: "registered" })).plan, []);
+  assert.deepEqual(planMails(w({ to: "a@b.co" })).plan, []);
+});
+
+test("mail.test goes out through Resend to ONE address, the subject starts with ניסיון:, the body says it is a sample, no participant data", async () => {
+  const net = fakeNet();
+  const w = work({ event: { type: "mail.test", payload: { template: "payment_confirmed", to: "boss@studio.example" } }, participant: null, facts: {},
+    business: { notify_emails: ["a@x.com", "b@x.com"] } });
+  const r = await deliverMails(w, depsFor(net));
+  const sent = net.resend();
+  assert.equal(sent.length, 1);
+  assert.deepEqual(sent[0].json.to, ["boss@studio.example"]);
+  assert.match(sent[0].json.subject, /^ניסיון: /);
+  assert.match(sent[0].json.html, /מייל ניסיון עם נתוני דוגמה/);
+  assert.match(sent[0].json.html, /לדוגמה/);
+  assert.doesNotMatch(sent[0].json.html, /dana@example\.com/i);
+  assert.equal(r.mails.length, 1);
+  assert.equal(r.mails[0].to, "boss@studio.example");
+  assert.equal(r.mails[0].status, "sent");
+});
+
+test("mail.test uses the business's own template, and a normal event is not marked as a test", async () => {
+  const net = fakeNet();
+  const w = work({ event: { type: "mail.test", payload: { template: "refund", to: "boss@studio.example" } }, participant: null, facts: {},
+    templates: { refund: { subject: "החזר מ{{business_name}}", html: "<p>שלום {{first_name}}</p>" } } });
+  await deliverMails(w, depsFor(net));
+  assert.equal(net.resend()[0].json.subject, "ניסיון: החזר מסטודיו דנה");
+  assert.match(net.resend()[0].json.html, /שלום דנה/);
+  const net2 = fakeNet();
+  await deliverMails(work(), depsFor(net2));
+  assert.doesNotMatch(net2.resend()[0].json.subject, /ניסיון/);
+  assert.doesNotMatch(net2.resend()[0].json.html, /מייל ניסיון/);
+});

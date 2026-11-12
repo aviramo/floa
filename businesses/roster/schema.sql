@@ -1385,6 +1385,19 @@ begin
   end if;
 end $$;
 
+-- The mail types a business turned off (sync 10), as template keys: the four participant mails (registered, payment_confirmed, refund,
+-- registration_cancelled) and the four notify-list mails (admin_*). Empty = nothing is off = every business behaves exactly as before.
+-- The Worker skips a type that is listed (reason type_off). Any member of the business may change it, like participant_mail_enabled.
+alter table public.roster_business_settings add column if not exists mail_off_types text[] not null default '{}';
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conrelid = 'public.roster_business_settings'::regclass and conname = 'roster_settings_mail_off_known') then
+    alter table public.roster_business_settings add constraint roster_settings_mail_off_known
+      check (mail_off_types <@ array['registered', 'payment_confirmed', 'refund', 'registration_cancelled',
+                                     'admin_signup', 'admin_payment_reported', 'admin_account_linked', 'admin_phone_conflict']::text[]);
+  end if;
+end $$;
+
 -- contact_whatsapp is kept as international digits (the personal area builds wa.me/<digits> from it): a number typed the
 -- Israeli way or with a plus or 00 becomes digits with the country code; anything else keeps only its digits; text with
 -- no digits at all is left alone, so the check below refuses it instead of the trigger quietly dropping it.
@@ -1406,6 +1419,7 @@ begin
   new.payment_url      := nullif(btrim(new.payment_url), '');
   new.webhook_url      := nullif(btrim(new.webhook_url), '');
   new.notify_emails    := coalesce(array(select distinct lower(btrim(x)) from unnest(new.notify_emails) x where btrim(x) <> '' order by 1), '{}');
+  new.mail_off_types   := coalesce(array(select distinct x from unnest(new.mail_off_types) x where x is not null order by 1), '{}');
   -- Mail identity belongs to the owner. The four columns decide who the platform mails and under what name, address and
   -- reply address, so a business member must not be able to turn them into a spam or phishing relay. A change by a
   -- signed-in account that is not the owner is refused (42501); writing the value it already has is fine, and the
@@ -1651,6 +1665,9 @@ create index if not exists roster_events_business_idx     on public.roster_event
 create index if not exists roster_events_pending_idx      on public.roster_events (business_id) where status in ('pending', 'processing');   -- the per-business cap
 create index if not exists roster_events_finished_idx     on public.roster_events (created_at) where status in ('done', 'failed');           -- retention
 create index if not exists roster_events_participant_idx  on public.roster_events (business_id, (payload #>> '{participant,id}'));           -- deleting a participant
+-- A mail the manager asked for to see how a template looks (roster_mail_test): it goes to the manager's own address only, has no
+-- participant, and is marked here so no list mistakes it for a mail a participant got.
+alter table public.roster_mail_log add column if not exists is_test boolean not null default false;
 create index if not exists roster_mail_log_created_idx    on public.roster_mail_log (created_at);                                              -- retention
 create index if not exists roster_webhook_deliveries_idx  on public.roster_webhook_deliveries (business_id, event_id, attempt);
 create index if not exists roster_mail_log_business_idx   on public.roster_mail_log (business_id, created_at desc);
@@ -1699,9 +1716,9 @@ begin
   -- column except webhook_secret and the generated webhook_secret_set (updated_at is overwritten by the trigger and
   -- business_id cannot move to another business: the WITH CHECK below); no insert or delete
   revoke all on public.roster_business_settings from authenticated;
-  grant select (business_id, registration_open, signup_required, personal_area_enabled, participant_mail_enabled, notify_emails, contact_email,
+  grant select (business_id, registration_open, signup_required, personal_area_enabled, participant_mail_enabled, mail_off_types, notify_emails, contact_email,
                 sender_name, mail_from_address, contact_whatsapp, payment_url, webhook_url, webhook_events, webhook_secret_set, updated_at) on public.roster_business_settings to authenticated;
-  grant update (business_id, registration_open, signup_required, personal_area_enabled, participant_mail_enabled, notify_emails, contact_email,
+  grant update (business_id, registration_open, signup_required, personal_area_enabled, participant_mail_enabled, mail_off_types, notify_emails, contact_email,
                 sender_name, mail_from_address, contact_whatsapp, payment_url, webhook_url, webhook_events, updated_at) on public.roster_business_settings to authenticated;
   drop policy if exists "members read their business" on public.roster_business_settings;
   execute format('create policy "members read their business" on public.roster_business_settings for select to authenticated using (%s)', seen);
@@ -2768,7 +2785,7 @@ end $fn$;
 --                "created_at": "2026-11-04T10:00:00+00:00",
 --                "source": "api" | "admin" | "me" | "system" },   -- extra: who made the change (skip admin_signup for "admin")
 --     "business": { "id": "uuid", "slug": "studio", "name": "Studio",
---                   "settings": { webhook_url, webhook_secret, webhook_events, participant_mail_enabled, personal_area_enabled,
+--                   "settings": { webhook_url, webhook_secret, webhook_events, participant_mail_enabled, personal_area_enabled, mail_off_types,
 --                                 contact_email, sender_name, mail_from_address, contact_whatsapp, payment_url },
 --                   "notify_emails": ["a@x.com"] },   -- the RESOLVED list: the setting, else the accounts of the business
 --     "participant": { id, first_name, last_name, email, phone, age, gender } | null,   -- the CURRENT row, else payload.participant
@@ -2891,7 +2908,7 @@ begin
     'business', jsonb_build_object('id', bz.id, 'slug', bz.slug, 'name', bz.name,
       'settings', jsonb_build_object('webhook_url', case when ev.source = 'admin_mail' then null else s.webhook_url end,   -- a mail the admin asked for is never a webhook
         'webhook_secret', s.webhook_secret, 'webhook_events', to_jsonb(s.webhook_events),
-        'participant_mail_enabled', s.participant_mail_enabled, 'personal_area_enabled', s.personal_area_enabled,
+        'participant_mail_enabled', s.participant_mail_enabled, 'personal_area_enabled', s.personal_area_enabled, 'mail_off_types', to_jsonb(s.mail_off_types),
         'contact_email', s.contact_email, 'sender_name', s.sender_name, 'mail_from_address', s.mail_from_address, 'contact_whatsapp', s.contact_whatsapp, 'payment_url', s.payment_url),
       'notify_emails', to_jsonb(admins)),
     'participant', part,
@@ -2971,8 +2988,8 @@ begin
       err := case when st = 'failed' then left(coalesce(nullif(m->>'error', ''), 'failed'), 500) end;
       subj := left(coalesce(m->>'subject', ''), 300);
       aud := coalesce(nullif(m->>'audience', ''), case when (m->>'template') like 'admin\_%' then 'admin' else 'participant' end);
-      insert into public.roster_mail_log (business_id, participant_id, event_id, meeting_id, template, to_addr, subject, html, status, error, sent_at)
-        values (ev.business_id, pid, ev.id, mid, left(m->>'template', 60), left(coalesce(to_a, ''), 500), subj, left(m->>'html', 100000), st, err, case when st = 'sent' then now() end)
+      insert into public.roster_mail_log (business_id, participant_id, event_id, meeting_id, template, to_addr, subject, html, status, error, sent_at, is_test)
+        values (ev.business_id, pid, ev.id, mid, left(m->>'template', 60), left(coalesce(to_a, ''), 500), subj, left(m->>'html', 100000), st, err, case when st = 'sent' then now() end, ev.type = 'mail.test')
         returning id into mlid;
       if aud = 'participant' and pid is not null then
         insert into public.roster_notes (business_id, participant_id, body, system, event_type, meeting_id, mail_id, mail_failed, mail_noaddr)
@@ -3083,6 +3100,29 @@ begin
   return jsonb_build_object('queued', true, 'event_id', id);
 end $fn$;
 
+-- A test mail (sync 10): the signed-in member of the current business asks to receive one template, with sample data, at their OWN
+-- address (from the sign-in, never typed). It is an event of its own type, mail.test, so it goes through the same outbox and Worker as
+-- every real mail: the manager sees real delivery and the real look. It is never a webhook, never needs a participant or a payment,
+-- and its log row is marked is_test. At most 10 an hour per business.
+create or replace function public.roster_mail_test(p_template text)
+returns jsonb language plpgsql security definer set search_path = public as $fn$
+declare b uuid := public.roster_my_current(); me text := lower(btrim(coalesce(public.roster_email(), ''))); wait int; id bigint;
+begin
+  if b is null then return jsonb_build_object('error', 'forbidden'); end if;
+  if p_template is null or p_template not in ('registered', 'payment_confirmed', 'refund', 'registration_cancelled',
+                                              'admin_signup', 'admin_payment_reported', 'admin_account_linked', 'admin_phone_conflict') then
+    return jsonb_build_object('error', 'unknown_template');
+  end if;
+  if me = '' or not public.roster_valid_email(me) then return jsonb_build_object('error', 'no_email'); end if;
+  wait := public.roster_rate_take('mailtest:' || b, 60, 10);
+  if wait > 0 then return jsonb_build_object('error', 'rate_limited', 'retry_in', wait); end if;
+  if (select count(*) from public.roster_events where business_id = b and status in ('pending', 'processing')) >= 500 then
+    return jsonb_build_object('error', 'busy');
+  end if;
+  insert into public.roster_events (business_id, type, payload, source)
+    values (b, 'mail.test', jsonb_build_object('template', p_template, 'to', me), 'admin') returning roster_events.id into id;
+  return jsonb_build_object('queued', true, 'event_id', id, 'to', me);
+end $fn$;
 create or replace function public.roster_mail_template_reset(p_key text)
 returns jsonb language plpgsql security definer set search_path = public as $fn$
 declare b uuid := public.roster_my_current(); n int;
@@ -3404,7 +3444,8 @@ begin
     return 'already';
   end if;
   s := public.roster_settings_of(b);
-  if coalesce(a.no_pay, false) or a.pay_later_at is not null or not coalesce(s.participant_mail_enabled, false) then return 'no_mail'; end if;
+  if coalesce(a.no_pay, false) or a.pay_later_at is not null or not coalesce(s.participant_mail_enabled, false)
+     or 'payment_confirmed' = any (coalesce(s.mail_off_types, '{}'::text[])) then return 'no_mail'; end if;
   if coalesce(a.pay_due_amount, 0) > 0 then return 'skip'; end if;
   paid := public.roster_paid_for(b, p_pid, p_mid);
   if paid <= 0 then return 'unpaid'; end if;
@@ -3456,6 +3497,7 @@ revoke all on function public.roster_key_revoke(uuid)                           
 revoke all on function public.roster_webhook_secret_rotate()                          from public, anon;
 revoke all on function public.roster_webhook_test()                                   from public, anon;
 revoke all on function public.roster_mail_template_reset(text)                        from public, anon;
+revoke all on function public.roster_mail_test(text)                                  from public, anon;
 revoke all on function public.roster_me(text)                                         from public, anon;
 revoke all on function public.roster_me_phone(text, text, uuid)                       from public, anon;
 revoke all on function public.roster_me_complete(text, text, text, int, text, text)   from public, anon;
@@ -3471,6 +3513,7 @@ grant execute on function public.roster_key_revoke(uuid)                        
 grant execute on function public.roster_webhook_secret_rotate()                       to authenticated;
 grant execute on function public.roster_webhook_test()                                to authenticated;
 grant execute on function public.roster_mail_template_reset(text)                     to authenticated;
+grant execute on function public.roster_mail_test(text)                               to authenticated;
 grant execute on function public.roster_me(text)                                      to authenticated;
 grant execute on function public.roster_me_phone(text, text, uuid)                    to authenticated;
 grant execute on function public.roster_me_complete(text, text, text, int, text, text) to authenticated;
