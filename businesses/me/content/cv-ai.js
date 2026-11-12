@@ -336,8 +336,6 @@ export const aiHe = {
       ],
     },
 
-    { type: "lines", title: "שפות", lines: ["עברית: שפת אם", "אנגלית: רמה בינונית, קריאה וכתיבה טכנית"] },
-
     {
       type: "entries",
       title: "שירות צבאי",
