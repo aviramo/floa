@@ -70,15 +70,15 @@ export const aiEn = {
       groups: [
         {
           title: "Solution Architecture",
-          terms: ["End-to-End Solution Design", "Software Architecture", "Data Modeling", "APIs and Integrations", "Business Logic", "UX and UI Specification", "Security and Access Control"],
+          terms: ["Solution Architecture", "System Design", "Database Architecture", "API Integration", "UX/UI Design", "Business Process Automation", "Security and Access Control"],
         },
         {
           title: "AI-Assisted Development",
-          terms: ["Claude", "ChatGPT", "Directing AI Tools", "Prototyping", "Code Review", "Iterative Delivery"],
+          terms: ["AI-Assisted Software Development", "Claude", "ChatGPT", "Directing AI Tools", "Prototyping", "Code Review", "Iterative Delivery"],
         },
         {
           title: "Full Stack",
-          terms: ["React Native", "Expo", "TypeScript", "Node.js", "Deno", "Supabase", "Edge Functions", "PostgreSQL", "Row Level Security (RLS)", "Git"],
+          terms: ["Full Stack Development", "React Native", "Expo", "TypeScript", "Node.js", "Deno", "Supabase", "Edge Functions", "PostgreSQL", "Row Level Security (RLS)", "Git"],
         },
         {
           title: "Enterprise Systems",
@@ -93,39 +93,22 @@ export const aiEn = {
 
     {
       type: "roles",
-      title: "Independent Work",
+      title: "Independent Experience",
       jobs: [
         {
-          role: "Designer and Developer | Mobile App Built with AI",
-          org: "Once | Self-Employed",
-          dates: "2026 - Present",
+          role: "Entrepreneur and Software Solutions Developer | Architecture and End-to-End Development with AI, Mainly Claude",
+          org: "Independent | Once, FLOA and other projects",
+          dates: "2025 - Present",
           bullets: [
-            "Designed and built a mobile app for location-based social meetups, end to end: the architecture, the business processes, the user experience and the screens, through development, testing and builds for mobile test distribution",
-            "Developed with React Native and Expo, on Supabase, PostgreSQL, Edge Functions and TypeScript/Deno, and designed the data model and the access and security model with Row Level Security (RLS)",
-            "Implemented real-time flows, detection of nearby users, matching mechanisms and a credit system",
-            "Claude is the main tool in the process, and the work is directed by me: I define the requirements and the expected behavior, guide the AI in building it, review the output, solve problems and iterate",
+            "Lead projects alone from the business need to a working system: specification, architecture, data model, UX/UI, full-stack development, testing and release. Claude is the main development tool; I define the requirements and behavior, direct it, review every output and iterate",
+            "Once: a social mobile app for Android and iOS in React Native, Expo, TypeScript, Supabase and PostgreSQL. Location-based matching, detection of nearby users, real-time communication, chat, groups, credits and permissions with Row Level Security, including testing and release to the app stores",
+            "A system for managing participants, sessions, payments and subscriptions: multi-tenant for several businesses, with an admin interface, a personal area for participants, email and WhatsApp communication, and a public API with keys and signed webhooks that external websites are built on",
+            "A chords app for songs: a song index, a page per song and an editor, Google sign-in, reading songs from images with the Claude API, and pre-built song pages for organic search",
+            "Conversion-focused websites and landing pages for paid campaigns on Meta and Google Ads, with sign-up forms, lead creation, source tracking and performance measurement, plus a marketing site and sign-up flows for meetups and events (Yotzim LeHarpatka)",
+            "FLOA: digital solutions for businesses, from websites and admin interfaces to lead and customer management, integrations and business automations",
+            "Architecture design for a unified enterprise information platform connecting data, interfaces, processes and permissions, with integrations, webhooks, ETL and data mapping. A design project, not a completed system",
           ],
-          link: { label: "Live demo:", href: DEMO },
-        },
-        {
-          role: "Designer and Developer | Management Systems and Digital Solutions",
-          org: "Independent",
-          dates: "",
-          bullets: [
-            "Designed and developed Web systems tailored to business needs: admin interfaces, forms, workflows and reports",
-            "Designed the databases, the business logic and API integrations, in solutions for managing participants, sessions, payments, attendance and operational data",
-            "Used AI tools to accelerate development and to implement the solutions",
-          ],
-        },
-        {
-          role: "Founder | Websites, Digital Systems and Automations",
-          org: "FLOA | Self-Employed",
-          dates: "",
-          bullets: [
-            "Designed and built websites and landing pages, including the user experience and interfaces",
-            "Specified systems for managing leads, customers and business processes, and designed integrations and automations between services",
-            "Used AI tools in specification, development and the improvement of digital solutions",
-          ],
+          link: { label: "Once demo:", href: DEMO },
         },
       ],
     },
@@ -239,15 +222,15 @@ export const aiHe = {
       groups: [
         {
           title: "ארכיטקטורת פתרונות",
-          terms: ["תכנון פתרון מקצה לקצה", "ארכיטקטורת תוכנה", "מידול נתונים", "APIs ואינטגרציות", "לוגיקה עסקית", "אפיון UX ו-UI", "אבטחת מידע והרשאות"],
+          terms: ["Solution Architecture", "System Design", "Database Architecture", "API Integration", "UX/UI Design", "אוטומציה של תהליכים עסקיים", "אבטחת מידע והרשאות"],
         },
         {
           title: "פיתוח בסיוע AI",
-          terms: ["Claude", "ChatGPT", "הנחיית כלי AI", "אבות טיפוס", "סקירת קוד", "פיתוח איטרטיבי"],
+          terms: ["AI-Assisted Software Development", "Claude", "ChatGPT", "הנחיית כלי AI", "אבות טיפוס", "סקירת קוד", "פיתוח איטרטיבי"],
         },
         {
           title: "פיתוח Full Stack",
-          terms: ["React Native", "Expo", "TypeScript", "Node.js", "Deno", "Supabase", "Edge Functions", "PostgreSQL", "Row Level Security (RLS)", "Git"],
+          terms: ["Full Stack Development", "React Native", "Expo", "TypeScript", "Node.js", "Deno", "Supabase", "Edge Functions", "PostgreSQL", "Row Level Security (RLS)", "Git"],
         },
         {
           title: "מערכות ארגוניות",
@@ -262,39 +245,22 @@ export const aiHe = {
 
     {
       type: "roles",
-      title: "פעילות עצמאית",
+      title: "ניסיון עצמאי",
       jobs: [
         {
-          role: "מתכנן ומפתח | אפליקציית מובייל שנבנתה בעזרת AI",
-          org: "Once | עצמאי",
-          dates: "2026 - היום",
+          role: "יזם ומפתח פתרונות תוכנה | אפיון, ארכיטקטורה ופיתוח מקצה לקצה בעזרת AI, בעיקר Claude",
+          org: "פעילות עצמאית | Once, FLOA ופרויקטים נוספים",
+          dates: "2025 - היום",
           bullets: [
-            "תכנון ופיתוח מקצה לקצה של אפליקציית מובייל למפגשים חברתיים מבוססי מיקום: הארכיטקטורה, התהליכים העסקיים, חוויית המשתמש והמסכים, ועד פיתוח, בדיקות, פתרון תקלות והפצת גרסאות בדיקה במובייל",
-            "פיתוח ב-React Native וב-Expo, על גבי Supabase, PostgreSQL, Edge Functions ו-TypeScript/Deno, ותכנון מודל הנתונים ומודל ההרשאות והאבטחה באמצעות Row Level Security (RLS)",
-            "מימוש תהליכים בזמן אמת, זיהוי משתמשים בקרבת מקום, מנגנוני התאמה ומערכת קרדיטים",
-            "Claude הוא הכלי המרכזי בתהליך, והעבודה מונחית על ידי: אני מגדיר את הדרישות ואת ההתנהגות הרצויה, מנחה את כלי ה-AI בביצוע, בודק את התוצרים, פותר בעיות ומקדם את הפיתוח בצורה איטרטיבית",
+            "מוביל לבד פרויקטים מהצורך העסקי ועד מערכת עובדת: אפיון, ארכיטקטורה, מודל נתונים, UX/UI, פיתוח Full Stack, בדיקות והפצה. Claude הוא הכלי המרכזי בפיתוח, ואני מגדיר את הדרישות וההתנהגות, מנחה אותו, בודק כל תוצר ומקדם את העבודה בצורה איטרטיבית",
+            "Once: אפליקציית מובייל חברתית ל-Android ול-iOS ב-React Native, Expo, TypeScript, Supabase ו-PostgreSQL. התאמות מבוססות מיקום, זיהוי משתמשים בקרבת מקום, תקשורת בזמן אמת, צ'אט, קבוצות, קרדיטים והרשאות באמצעות Row Level Security, כולל ניהול הבדיקות וההפצה לחנויות האפליקציות",
+            "מערכת לניהול משתתפים, מפגשים, תשלומים ומנויים: מערכת Multi-tenant לכמה עסקים, עם ממשק ניהול, אזור אישי למשתתפים, תקשורת במייל ובוואטסאפ, ו-API ציבורי עם מפתחות ו-Webhooks חתומים שאתרים חיצוניים בנויים עליו",
+            "אפליקציית אקורדים לשירים: אינדקס שירים, דף לכל שיר ועורך, התחברות עם Google, קריאת שירים מתמונה באמצעות Claude API, ובנייה מראש של דפי השירים לקידום אורגני",
+            "אתרים ודפי נחיתה ממוקדי המרות לקמפיינים בפרסום ממומן ב-Meta וב-Google Ads, כולל טפסי הרשמה, יצירת לידים, מעקב אחר מקורות הגעה ומדידת ביצועים, וכן אתר שיווקי ותהליכי הצטרפות למפגשים ולאירועים (יוצאים להרפתקה)",
+            "FLOA: פתרונות דיגיטליים לעסקים, מאתרים וממשקי ניהול ועד ניהול לידים ולקוחות, אינטגרציות ואוטומציות עסקיות",
+            "תכנון ארכיטקטורה לפלטפורמת מידע ארגונית אחודה, המחברת נתונים, ממשקים, תהליכים והרשאות, עם אינטגרציות, Webhooks, ETL ומיפויי נתונים. זהו פרויקט תכנון, ולא מערכת שהושלמה",
           ],
-          link: { label: "הדגמה חיה:", href: DEMO },
-        },
-        {
-          role: "מתכנן ומפתח | מערכות ניהול ופתרונות דיגיטליים",
-          org: "פעילות עצמאית",
-          dates: "",
-          bullets: [
-            "תכנון ופיתוח מערכות Web בהתאמה לצרכים עסקיים: ממשקי ניהול, טפסים, תהליכי עבודה ודוחות",
-            "תכנון בסיסי נתונים, לוגיקה עסקית ואינטגרציות API, בפתרונות לניהול משתתפים, מפגשים, תשלומים, נוכחות ונתונים תפעוליים",
-            "שימוש בכלי AI להאצת הפיתוח ולמימוש הפתרונות",
-          ],
-        },
-        {
-          role: "מקים ומפתח | אתרים, מערכות דיגיטל ואוטומציות",
-          org: "FLOA | עצמאי",
-          dates: "",
-          bullets: [
-            "תכנון ובניית אתרים ודפי נחיתה, כולל חוויית המשתמש וממשקי המשתמש",
-            "אפיון מערכות לניהול לידים, לקוחות ותהליכים עסקיים, ותכנון אינטגרציות ואוטומציות בין שירותים ומערכות",
-            "שימוש בכלי AI בתהליכי אפיון, פיתוח ושיפור של פתרונות דיגיטליים",
-          ],
+          link: { label: "הדגמת Once:", href: DEMO },
         },
       ],
     },
