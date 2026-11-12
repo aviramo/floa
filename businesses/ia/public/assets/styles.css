@@ -505,3 +505,12 @@ html { color-scheme: light; background-color: #F2F8EC; }
 .reach .btn { flex: 1 1 220px; max-width: 280px; justify-content: center; background: var(--coral); color: #fff; min-height: 60px; font-size: 1.2rem; }
 .sec--awaits, .sec--for { overflow-x: clip; }
 html, body { overflow-x: clip; }
+
+/* הכפתור יורד קרוב לפס, והטקסטים יורדים איתו, כדי לתת לשמש יותר מקום */
+@media (max-width: 899px) {
+  .hero-inner { padding-bottom: 92px; gap: 14px; }
+  .hero { padding-top: 16px; }
+  .sun-stage { margin-top: 8px; width: min(340px, 78vw, max(170px, calc(100svh - 478px))); }
+  .hero-sub { margin: .5rem 0 .5rem; }
+  .hero-tag { margin-bottom: 0; }
+}
