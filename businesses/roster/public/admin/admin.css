@@ -2083,13 +2083,31 @@ svg.ic, .cico svg, .hicon svg, .hbtn svg { overflow: visible; }   /* סמלים 
 .grab i { width: 44px; height: 4px; background: #6B7280; }   /* the shell's bar: a square pill, 4.8:1 on white */
 .grab::before { content: ""; position: absolute; inset: 0 0 -16px; }   /* the touch target is taller than the pill */
 dialog.drawer .grab, dialog.side .grab { display: none; }   /* a side panel is not a bottom sheet */
+@media (min-width: 760px) { .grab { display: none; } }   /* the bar and the swipe are touch affordances: on a computer a popup is a centered window with the fixed header and the X (owner rule 2026-11-12) */
 dialog .dclose { display: inline-grid; flex: 0 0 auto; width: 44px; min-width: 44px; height: 44px; margin-block: -6px; place-items: center; }   /* the X, in every head */
 dialog .dclose::before { inset: 0; }
 dialog { border-radius: 0 !important; }   /* iron rule: no rounded corners, wide screens included */
-dialog:not(.drawer):not(.side) { max-width: 560px; }
+dialog:not(.drawer):not(.side) { max-width: var(--pp-w-m); }
+#cDlg, #lockDlg { max-width: var(--pp-w-s); }   /* a short confirmation: the small width token */
+dialog { box-shadow: var(--pp-shadow); }
+dialog.drawer, dialog.side { box-shadow: var(--pp-side-shadow); }
+dialog::backdrop { background: var(--pp-scrim); }
+dialog .sheet-head { min-height: var(--pp-head); align-items: center; }
+dialog .dclose { width: var(--pp-x); min-width: var(--pp-x); height: var(--pp-x); margin-block: 0; }
+dialog .sheet { padding-inline: var(--pp-px); }
+/* one anatomy for every popup that is a centered window on a computer and a bottom sheet on touch: the same paddings, header and gap (popup.css tokens) */
+:is(#pDlg, #allocDlg, #ppDlg, #mDlg, #mailDlg, #cDlg, #lockDlg, #tplDlg, #tplPrevDlg, #iDlg, #viewDlg, #sortDlg, #waDlg, #finFormDlg, #mfPopDlg, #onbDlg):not(.drawer):not(.side) .sheet { padding: var(--pp-pt) var(--pp-px) var(--pp-pb); }
+:is(#tplDlg, #tplPrevDlg, #mailDlg, #cDlg, #lockDlg, #mfPopDlg, #finFormDlg, #viewDlg, #sortDlg, #waDlg, #mDlg):not(.drawer):not(.side) .sheet-head { margin-top: calc(-1 * var(--pp-pt)); padding-top: var(--pp-pt); padding-bottom: 0; margin-bottom: var(--pp-head-gap); }   /* a sticky header: it starts at the very top of the scroller (the sheet padding above it is pulled in), its top spacing is part of it, the gap below it is painted too so content does not show through while scrolling */
+:is(#tplDlg, #tplPrevDlg, #mailDlg, #cDlg, #lockDlg, #mfPopDlg, #finFormDlg, #viewDlg, #sortDlg, #waDlg, #mDlg):not(.drawer):not(.side) .sheet-head::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: var(--pp-head-gap); background: var(--bg, #fff); pointer-events: none; }
+:is(#allocDlg, #ppDlg, #iDlg, #onbDlg):not(.drawer):not(.side) .sheet-head { margin-top: 0; padding-top: 0; }
+@media (max-width: 759px) { :is(#setDlg, #stDlg, #prDlg, #finDlg) .sheet { padding-top: var(--pp-pt); padding-bottom: var(--pp-pb); } }
 :is(#tplDlg, #tplPrevDlg, #prDlg, #mailDlg, #cDlg, #lockDlg, #mfPopDlg, #finFormDlg, #viewDlg, #sortDlg, #waDlg) .sheet-head { position: sticky; top: 0; z-index: 5; background: var(--bg, #fff); margin-top: -28px; padding-top: 28px; margin-bottom: 0; padding-bottom: 16px; }   /* the dialogs where the dialog itself is the scroller: the header stays (the others are flex columns with an inner scroller, or already sticky) */
 .grab { z-index: 6; }
 #tplDlg .sheet, #tplPrevDlg .sheet { max-height: none; }   /* the sheet is as tall as its content, the dialog scrolls and the sticky header stays (a capped sheet let the header scroll away with the overflow) */
 #cDlg .sheet-head h2, #lockDlg .sheet-head h2, #mfPopDlg .sheet-head h2 { margin-bottom: 0; }
-#iDlg .sheet-head { padding-inline: var(--gut); }
 .mdlg .sheet-head { margin-bottom: 8px; }
+/* touch: the bar is a strip of the header height ABOVE the header (not an overlay on its first 28px), like the shell, so the paddings can be the shared tokens; a sticky header sticks under it */
+@media (max-width: 759px) {
+  .grab { height: var(--pp-head); margin-bottom: 0; }
+  :is(#tplDlg, #tplPrevDlg, #prDlg, #mailDlg, #cDlg, #lockDlg, #mfPopDlg, #finFormDlg, #viewDlg, #sortDlg, #waDlg, #setDlg, #mDlg) .sheet-head { top: var(--pp-head); }
+}

@@ -1,0 +1,38 @@
+/* =====================================================================
+   Popup tokens: the ONE set of numbers every roster popup shares (owner rule 2026-11-12).
+   Loaded by every roster page (sheet.css reads them for the shell; the admin build reads them for its dialogs),
+   so a centered popup measures the same on every page: header, X, corners, backdrop, shadow, paddings, widths.
+   Presentations of the one element: touch or narrow = top or bottom sheet (data-from), computer = centered window,
+   a side drawer on a computer only with data-desktop="side".
+   Widths (data-size): s for a short confirmation, m the default, l only for a wide editor (code or long forms).
+   ===================================================================== */
+:root {
+  --pp-head: 44px;              /* the header row: title and X */
+  --pp-x: 44px;                 /* the X button: a 44px touch target */
+  --pp-radius: 0;               /* iron rule: square corners */
+  --pp-scrim: rgba(16, 20, 26, .55);
+  --pp-shadow: 0 14px 34px -10px rgba(16, 24, 40, .28), 0 2px 6px rgba(16, 24, 40, .08);
+  --pp-side-shadow: 0 0 34px -6px rgba(16, 24, 40, .32);
+  --pp-px: 16px;                /* side padding of the content */
+  --pp-pt: 16px;                /* above the header */
+  --pp-pb: 24px;                /* below the content */
+  --pp-head-gap: 12px;          /* header to content */
+  --pp-w-s: 400px;
+  --pp-w-m: 560px;
+  --pp-w-l: 960px;
+  --pp-side: 440px;             /* a side drawer opened by data-desktop="side" */
+}
+@media (min-width: 760px) { :root { --pp-px: 20px; } }
+
+/* ---- the X (owner rule 2026-11-12): in EVERY popup it is the LEFTMOST element of the header, at the physical top-left corner (RTL pages included: physical, not logical);
+   the visible cross (the glyph) lines up flush with the left edge of the content (the fields), while its 44px touch target reaches outward past the content edge
+   (a negative margin), so the hit area is not shrunk. Other header icon buttons (WhatsApp, phone, ...) sit to the right of the X with the same 44px targets. ---- */
+:root {
+  --pp-x-svg: 24px;                                          /* the icon box inside the X button */
+  --pp-x-glyph: 12px;                                        /* the visible cross inside that box (path from 6 to 18 of the 24 box) */
+  --pp-x-bleed: calc((var(--pp-x) - var(--pp-x-glyph)) / 2); /* how far the 44px target reaches past the glyph on every side */
+}
+dialog .sheet-head { direction: ltr; flex-direction: row-reverse; }    /* physical: the first child stays at the right like in an RTL row, the last child (the X, order 99) is the leftmost */
+dialog .sheet-head > * { direction: rtl; }
+dialog .sheet-head > .rs-x, dialog .sheet-head > .dclose { order: 99; margin-left: calc(-1 * var(--pp-x-bleed)); margin-right: 0; }
+dialog .sheet-head > .rs-x svg, dialog .sheet-head > .dclose svg { width: var(--pp-x-svg); height: var(--pp-x-svg); }

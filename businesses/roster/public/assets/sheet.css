@@ -11,15 +11,15 @@
 dialog.rsheet {
   --rs-bg: var(--bg, #fff);
   --rs-text: var(--text, #16191D);
-  --rs-scrim: var(--scrim, rgba(16, 20, 26, .55));
+  --rs-scrim: var(--pp-scrim, rgba(16, 20, 26, .55));
   --rs-pill: #6B7280;                      /* 4.8:1 on white, the grab bar must be seen */
   border: 0; padding: 0; margin-inline: auto;
-  width: 100%; max-width: 560px;
+  width: 100%; max-width: var(--pp-w-m, 560px);
   max-height: calc(var(--rs-vvh, 100dvh) - 12px);
   overflow: hidden; overscroll-behavior: contain;
   border-radius: 0 !important;             /* iron rule: no rounded corners, wide screens included */
   background: var(--rs-bg); color: var(--rs-text);
-  box-shadow: 0 14px 34px -10px rgba(16, 24, 40, .28), 0 2px 6px rgba(16, 24, 40, .08);
+  box-shadow: var(--pp-shadow);
   transform: translateY(var(--rs-dy, 0px));
   touch-action: pan-y;
 }
@@ -45,15 +45,19 @@ dialog.rsheet[data-from="bottom"] > .rs-grab, dialog.rsheet:not([data-from]) > .
 [data-rs-drag] { touch-action: none; }
 
 /* the shell: a FIXED header (title and X), ONE scrolling body, an optional fixed footer; the grab bar is the sheet's own free edge, none of these scroll away */
-dialog.rsheet .sheet { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: 16px var(--gut, 12px) var(--sheet-b, calc(24px + env(safe-area-inset-bottom, 0px))); }
+dialog.rsheet .sheet { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: var(--pp-pt, 16px) var(--pp-px, 16px) var(--sheet-b, calc(var(--pp-pb, 24px) + env(safe-area-inset-bottom, 0px))); }
 dialog.rsheet[data-from="top"] .sheet { padding-bottom: 8px; }
-dialog.rsheet .sheet-head { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; min-height: 44px; margin-bottom: 12px; }
+dialog.rsheet .sheet-head { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; min-height: var(--pp-head, 44px); margin-bottom: var(--pp-head-gap, 12px); }
 dialog.rsheet .sheet-head > :first-child:not(.hicon) { flex: 1 1 auto; min-width: 0; margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -.01em; line-height: 1.25; overflow-wrap: anywhere; }
-dialog.rsheet .sheet-head .hicon { flex: 0 0 auto; width: 44px; height: 44px; min-width: 44px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 0; background: transparent; color: inherit; cursor: pointer; }
+dialog.rsheet .sheet-head .hicon { flex: 0 0 auto; width: var(--pp-x, 44px); height: var(--pp-x, 44px); min-width: var(--pp-x, 44px); display: grid; place-items: center; padding: 0; border: 0; border-radius: 0; background: transparent; color: inherit; cursor: pointer; }
 dialog.rsheet .sheet-head .hicon:focus-visible { outline: 2px solid currentColor; outline-offset: -4px; }
 dialog.rsheet .sheet-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; overscroll-behavior-y: contain; margin: -4px; padding: 4px; }   /* the 4px keeps a focus ring from being clipped */
 dialog.rsheet .sheet-body > * { flex: 0 0 auto; }
 dialog.rsheet .sheet-foot { flex: 0 0 auto; display: flex; gap: 8px; align-items: center; padding-top: 12px; margin-top: 8px; border-top: 1px solid var(--line, #E5E7EB); }
+
+/* widths: m is the default; s for a short confirmation, l for a wide editor (data-size on the dialog) */
+dialog.rsheet[data-size="s"] { max-width: var(--pp-w-s, 400px); }
+dialog.rsheet[data-size="l"] { max-width: min(var(--pp-w-l, 960px), 94vw); }
 
 /* the page behind: locked while a sheet is open (sheet.js keeps the scroll position) */
 html.rs-lock { overflow: hidden; overscroll-behavior: none; }
@@ -68,3 +72,24 @@ dialog.rsheet[open]::backdrop { animation: rs-fade .24s ease-out; }
 @media (prefers-reduced-motion: reduce) {
   dialog.rsheet, dialog.rsheet[open], dialog.rsheet[open]::backdrop, dialog.rsheet.rs-settle { animation: none !important; transition: none !important; }
 }
+
+
+/* ---- wide screens (computer), from 760px (RosterSheet.WIDE): a popup is a CENTERED window (owner rule 2026-11-12): square corners, the fixed header with the X, the body scrolls inside,
+   height follows the content up to the window minus a margin, backdrop, no page scroll behind. The grab bar and the swipe are touch affordances, so they are hidden here; data-from
+   (top or bottom) applies to touch and narrow screens only. A popup that must be a SIDE DRAWER on a computer says so with data-desktop="side" (documented in roster-popup-rules.md). ---- */
+@media (min-width: 760px) {
+  dialog.rsheet, dialog.rsheet[data-from] {
+    margin: auto; transform: none; touch-action: auto; padding-top: 0;
+    max-height: calc(100dvh - 48px);
+  }
+  dialog.rsheet > .rs-grab { display: none; }
+  dialog.rsheet > :not(.rs-grab) { order: 0; }
+  dialog.rsheet[data-from] .sheet, dialog.rsheet .sheet { padding-bottom: var(--pp-pb, 24px); }   /* the same bottom padding on a computer, whichever way it opens on touch */
+  dialog.rsheet[open], dialog.rsheet[open][data-from], dialog.rsheet[open]:not([data-from]) { animation: rs-in-center .2s cubic-bezier(.2, .8, .2, 1); }
+  /* the side drawer, only when asked for: the same side as the admin drawers (the left edge), the full height of the window */
+  dialog.rsheet[data-desktop="side"] { position: fixed; inset: var(--envtop, 0px) auto 0 0; margin: 0; width: min(var(--pp-side, 440px), 92vw); max-width: none; max-height: none; height: auto; box-shadow: var(--pp-side-shadow); }
+  dialog.rsheet[open][data-desktop="side"] { animation: rs-in-side .26s cubic-bezier(.2, .8, .2, 1); }
+}
+@keyframes rs-in-center { from { opacity: 0; transform: translateY(12px); } }
+@keyframes rs-in-side { from { transform: translateX(-100%); } }
+@media (min-width: 760px) and (prefers-reduced-motion: reduce) { dialog.rsheet[open], dialog.rsheet[open][data-from] { animation: none !important; } }

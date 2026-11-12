@@ -16,6 +16,8 @@
   "use strict";
   var html = document.documentElement, body = document.body;
   var locks = 0, savedY = 0;
+  var WIDE = 760;   /* from this width (px) every popup comes in from the SIDE (owner rule); the same breakpoint as the admin drawers; sheet.css repeats it in its one @media (min-width: 760px) block */
+  var wide = function () { return window.matchMedia && window.matchMedia("(min-width: " + WIDE + "px)").matches; };
   var reduced = function () { return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; };
 
   function lock() {
@@ -36,6 +38,7 @@
   function viewport(dlg) {
     var v = window.visualViewport;
     if (!v) return;
+    if (wide()) { dlg.style.removeProperty("--rs-vvh"); dlg.style.removeProperty("--rs-top"); dlg.style.removeProperty("--rs-kb"); return; }   /* a side panel is the full height of the window: the keyboard does not move it */
     dlg.style.setProperty("--rs-vvh", Math.round(v.height) + "px");
     dlg.style.setProperty("--rs-top", Math.round(v.offsetTop) + "px");
     dlg.style.setProperty("--rs-kb", Math.max(0, Math.round(window.innerHeight - v.height - v.offsetTop)) + "px");
@@ -119,6 +122,8 @@
     attach(dlg, { from: o.from });
     dlg.className = (o.kind ? o.kind + " " : "") + "rsheet";
     if (o.from) dlg.setAttribute("data-from", o.from);
+    if (o.size) dlg.setAttribute("data-size", o.size); else dlg.removeAttribute("data-size");   /* s, m (default) or l: the width tokens of popup.css */
+    if (o.desktop) dlg.setAttribute("data-desktop", o.desktop); else dlg.removeAttribute("data-desktop");   /* "side": a left drawer on a computer */
     dlg.innerHTML = markup(o);
     ensureGrab(dlg);
     if (!dlg.open) dlg.showModal();
@@ -169,7 +174,7 @@
     /* swipe on the bar, on [data-rs-drag] areas (pointer events: finger and mouse) */
     var drag = null;
     dlg.addEventListener("pointerdown", function (e) {
-      if (e.button > 0 || drag) return;
+      if (e.button > 0 || drag || wide()) return;   /* no pointer drag on a side panel */
       var h = e.target.closest(".rs-grab, [data-rs-drag]");
       if (!h || !dlg.contains(h) || e.target.closest("button, a, input, select, textarea")) return;
       drag = { id: e.pointerId, y0: e.clientY, last: e.clientY, t0: e.timeStamp, lastT: e.timeStamp, v: 0, dy: 0, h: h };
@@ -195,7 +200,7 @@
     /* swipe on the content: only when the content cannot move further the way the finger pushes, so inner scrolling keeps working */
     var t = null;
     dlg.addEventListener("touchstart", function (e) {
-      if (e.touches.length !== 1 || drag || e.target.closest(".rs-grab, [data-rs-drag]")) { t = null; return; }
+      if (e.touches.length !== 1 || drag || wide() || e.target.closest(".rs-grab, [data-rs-drag]")) { t = null; return; }
       t = { x: e.touches[0].clientX, y: e.touches[0].clientY, sc: scroller(e.target, dlg), on: false, dy: 0, v: 0, last: e.touches[0].clientY, lastT: e.timeStamp };
     }, { passive: true });
     dlg.addEventListener("touchmove", function (e) {
@@ -227,5 +232,5 @@
     if (!dlg.open) dlg.showModal();
   }
 
-  window.RosterSheet = { attach: attach, open: open, render: render, shell: shell };
+  window.RosterSheet = { WIDE: WIDE, attach: attach, open: open, render: render, shell: shell };
 })();

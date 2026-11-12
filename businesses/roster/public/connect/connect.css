@@ -110,7 +110,6 @@ details.ev summary::-webkit-details-marker { display: none; }
 
 /* ---------- dialogs ---------- */
 dialog.wide .sheet-body { overflow-y: auto; }
-@media (min-width: 560px) { dialog.wide { max-width: min(1040px, 94vw); } }
 .vchips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
 .chip { height: 32px; line-height: 30px; background: var(--surface-2); color: var(--text); cursor: pointer; }
 @media (hover: hover) { .chip:hover { background: var(--line); } }

@@ -264,7 +264,7 @@
   /* ---------- dialogs ---------- */
   function openDialog(kind, titleHtml, bodyHtml) {
     /* the one shell (assets/sheet.js), from the bottom: fixed header with the X, one scrolling body, the grab bar at the top edge */
-    RosterSheet.render(dlg, { kind: kind, title: titleHtml, titleId: "dlgT", body: bodyHtml, from: "bottom", icon: icon("x") });
+    RosterSheet.render(dlg, { kind: kind, title: titleHtml, titleId: "dlgT", body: bodyHtml, from: "bottom", size: kind === "wide" ? "l" : "m", icon: icon("x") });
   }
   /* A secret that is shown once asks twice before it is closed without a copy. */
   function tryClose() {
