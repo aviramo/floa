@@ -406,7 +406,7 @@
         ? '<label class="rfield"><span>מזהה באותיות לטיניות</span><input id="bSlug" class="ltr" dir="ltr" placeholder=" " maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" value="' + esc(b.slug) + '"></label>' +
           '<p class="hint">אפשר לשנות. המזהה הוא הכתובת של דף הניהול: floa.co.il/roster/<bdi dir="ltr">' + esc(b.slug) + '</bdi>. אחרי שינוי הכתובת הישנה והקישורים שנוצרו איתה (חיבורים, אזור אישי שמוטמע באתר של העסק, קישורים במיילים שכבר נשלחו) יפסיקו לעבוד.</p>'
         : '<label class="rfield"><span>מזהה באותיות לטיניות</span><input id="bSlug" class="ltr" dir="ltr" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="dana-yoga" data-hint></label>' +
-          '<p class="hint">אותיות לטיניות קטנות, ספרות ומקפים, 2 עד 40 תווים, ומתחיל באות. המזהה הוא הכתובת של דף הניהול של העסק: floa.co.il/roster/המזהה. אפשר לשנות אותו אחר כך, אבל אז הכתובת משתנה.</p>') +
+          '<p class="hint">כתובת העסק במערכת: <bdi dir="ltr"><b>floa.co.il/roster/your-business-name</b></bdi><br>המזהה הוא החלק האחרון, באנגלית: אותיות קטנות, ספרות ומקפים (לא קו תחתון), 2 עד 40 תווים, ומתחיל באות. אפשר לשנות אותו אחר כך, אבל אז הכתובת משתנה.</p>') +
       (edit ? "" : '<p class="slugnote" id="bSlugNote" aria-live="polite"></p>' +
         '<label class="rfield"><span>השם שהמשתתפים רואים (לא חובה)</span><input id="bDisp" placeholder=" " maxlength="60" autocomplete="off"></label>' +
         '<p class="hint">כך העסק מופיע בהודעות ובמיילים למשתתפים. אם משאירים ריק, זה שם העסק.</p>') +
