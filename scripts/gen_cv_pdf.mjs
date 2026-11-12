@@ -41,14 +41,14 @@ const OUT = join(ROOT, "businesses/me/public");
    page it was printed from, under the same slug, which is the shape
    cv-shared.js writes the download link in. */
 const PAGES = [
-  { path: "/cv/architect/", file: "architect/ofir-aviram-cv.pdf" },
-  { path: "/cv/architect/he/", file: "architect/ofir-aviram-cv-he.pdf" },
-  { path: "/cv/analyst/", file: "analyst/ofir-aviram-cv.pdf" },
-  { path: "/cv/analyst/he/", file: "analyst/ofir-aviram-cv-he.pdf" },
-  { path: "/cv/ai/", file: "ai/ofir-aviram-cv.pdf" },
-  { path: "/cv/ai/he/", file: "ai/ofir-aviram-cv-he.pdf" },
-  { path: "/cv/developer/", file: "developer/ofir-aviram-cv.pdf" },
-  { path: "/cv/developer/he/", file: "developer/ofir-aviram-cv-he.pdf" },
+  { path: "/cv/", file: "ai/ofir-aviram-cv-he.pdf" },
+  { path: "/cv/en/", file: "ai/ofir-aviram-cv.pdf" },
+  { path: "/cv/architect/", file: "architect/ofir-aviram-cv-he.pdf" },
+  { path: "/cv/architect/en/", file: "architect/ofir-aviram-cv.pdf" },
+  { path: "/cv/analyst/", file: "analyst/ofir-aviram-cv-he.pdf" },
+  { path: "/cv/analyst/en/", file: "analyst/ofir-aviram-cv.pdf" },
+  { path: "/cv/developer/", file: "developer/ofir-aviram-cv-he.pdf" },
+  { path: "/cv/developer/en/", file: "developer/ofir-aviram-cv.pdf" },
 ];
 
 /* --- the browser ----------------------------------------------------------- */
@@ -74,7 +74,7 @@ if (!chrome) {
    actually live rather than from a rehearsal of it. */
 const TYPES = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".svg": "image/svg+xml", ".png": "image/png", ".webp": "image/webp", ".ico": "image/x-icon" };
 
-if (!existsSync(join(DIST, "cv/architect/index.html"))) {
+if (!existsSync(join(DIST, "cv/index.html"))) {
   console.error("gen_cv_pdf: dist/ has no CV in it. Run `node build.mjs` first.");
   process.exit(1);
 }

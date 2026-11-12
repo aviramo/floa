@@ -6,14 +6,15 @@ import { render as renderCv } from "./cv.js";
 /* ==========================================================================
    What this business emits, and where.
 
-     dist/cv/architect/index.html      floa.co.il/cv/architect/
-     dist/cv/architect/he/index.html   floa.co.il/cv/architect/he/
-     dist/cv/analyst/index.html        floa.co.il/cv/analyst/
-     dist/cv/analyst/he/index.html     floa.co.il/cv/analyst/he/
+     dist/cv/index.html                floa.co.il/cv/                (AI CV, Hebrew)
+     dist/cv/en/index.html             floa.co.il/cv/en/             (AI CV, English)
+     dist/cv/architect/index.html      floa.co.il/cv/architect/      (Hebrew)
+     dist/cv/architect/en/index.html   floa.co.il/cv/architect/en/   (English)
+     ...and the same pair for every other slug.
 
-   Nothing is emitted at /cv/ itself. On a static host an address exists only if
-   a file was written for it, so it 404s — which is the point: there is no index
-   of the résumés, and a shortened guess at one leads nowhere.
+   /cv/ is the AI CV, the one the domain hands out by default. There is no
+   index of the other résumés, and /cv/<slug>/ exists only for a slug that was
+   given to someone.
 
    Each page carries its own depth. `base` is how it reaches this business's
    stylesheet, `homeHref` how it would reach a homepage — there is none here, so

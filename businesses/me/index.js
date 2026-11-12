@@ -10,15 +10,16 @@ import { leadPages, pages, siteMap } from "./pages/index.js";
    it is a thing Ofir is, and mixing the two put a personal document inside a
    company's address space.
 
-     floa.co.il/cv/architect/           solution design first
-     floa.co.il/cv/architect/he/        the same document in Hebrew
-     floa.co.il/cv/analyst/             mobile and web analysis first
-     floa.co.il/cv/analyst/he/          the same document in Hebrew
+     floa.co.il/cv/                     the AI CV, Hebrew (the default)
+     floa.co.il/cv/en/                  the same document in English
+     floa.co.il/cv/architect/           solution design first, Hebrew
+     floa.co.il/cv/architect/en/        the same document in English
+     floa.co.il/cv/analyst/  (and /en/) mobile and web analysis first
 
    The key stays "me" — the folder is what the business is called on the
    domain, and the folder is `cv`, because that is what a person handed one of
-   these links is being handed. Nothing is emitted at /cv/ itself, so it 404s:
-   there is no index of Ofir's résumés, only the one whose address was given.
+   these links is being handed. /cv/ itself is the AI CV; the other
+   documents live under their slug and are only reached by their address.
 
    It collects no leads. `leadPages` is empty, so the Worker rejects anything
    claiming to come from here, and LEAD_TO_ME never needs to exist.

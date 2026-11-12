@@ -18,8 +18,9 @@
        systems are not stated in the source, so they carry none.
 
    WHERE THEY LAND
-     dist/cv/ai/index.html      ->  floa.co.il/cv/ai/
-     dist/cv/ai/he/index.html   ->  floa.co.il/cv/ai/he/
+     dist/cv/index.html         ->  floa.co.il/cv/      (Hebrew, the default)
+     dist/cv/en/index.html      ->  floa.co.il/cv/en/   (English)
+   Its PDFs sit in cv/ai/, which is a folder of files and not a page.
    ========================================================================== */
 import { CONTACT, DEMO, SHARE_IMAGE, SHARE_TITLE, address, pdf } from "./cv-shared.js";
 
@@ -37,7 +38,7 @@ const SUMMARY_HE = [
 
 /* --- English ---------------------------------------------------------------- */
 export const aiEn = {
-  ...address("ai", "en"),
+  ...address("", "en"),
   lang: "en",
   dir: "ltr",
 
@@ -189,7 +190,7 @@ export const aiEn = {
 
 /* --- Hebrew ----------------------------------------------------------------- */
 export const aiHe = {
-  ...address("ai", "he"),
+  ...address("", "he"),
   lang: "he",
   dir: "rtl",
 

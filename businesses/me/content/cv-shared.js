@@ -10,11 +10,12 @@
 
    The business folder is `cv/`, so a document is one slug inside it:
 
-     dist/cv/<slug>/index.html         ->  floa.co.il/cv/<slug>/
-     dist/cv/<slug>/he/index.html      ->  floa.co.il/cv/<slug>/he/
+     dist/cv/<slug>/index.html         ->  floa.co.il/cv/<slug>/      (Hebrew, the default)
+     dist/cv/<slug>/en/index.html      ->  floa.co.il/cv/<slug>/en/   (English)
 
-   Nothing is written for /cv/ itself, so it 404s: there is no index of Ofir's
-   résumés, only the one whose address was handed to someone.
+   The one document with an EMPTY slug, the AI CV, is the one at /cv/ itself:
+   floa.co.il/cv/ is Hebrew and floa.co.il/cv/en/ is English. Hebrew is always
+   the default, and English is always `en/` under the same address.
 
    `address()` works all of that out from the slug and the language, which is
    what keeps two documents from drifting into two sets of relative paths. A
@@ -53,19 +54,22 @@ export const SHARE_IMAGE = {
    it. Every href returned is relative to the business folder, which is what
    ctx.url() expects (see src/lib/context.js). */
 export const address = (slug, lang) => {
-  const en = `${slug}/`;
-  const he = `${slug}/he/`;
+  const dir = slug ? `${slug}/` : "";
+  const he = dir;
+  const en = `${dir}en/`;
   const self = lang === "he" ? he : en;
+  const depth = (slug ? 1 : 0) + (lang === "he" ? 0 : 1);
+  const up = "../".repeat(depth);
 
   return {
     out: `${self}index.html`,
     path: `cv/${self}`,
-    base: lang === "he" ? "../../" : "../",
-    homeHref: lang === "he" ? "../../" : "../",
-    alternates: [{ lang: "en", href: en }, { lang: "he", href: he }],
+    base: up,
+    homeHref: up,
+    alternates: [{ lang: "he", href: he || "./" }, { lang: "en", href: en }],
     altLang: lang === "he"
       ? { href: en, label: "English", lang: "en" }
-      : { href: he, label: "עברית", lang: "he" },
+      : { href: he || "./", label: "עברית", lang: "he" },
   };
 };
 

@@ -168,10 +168,10 @@ export const footerContent = (ctx) => ({
     /* Root-absolute, and it has to be: the CV is not one of FLOA's pages, it is
        another business of the domain (businesses/me/) sitting at /cv/. ctx.url()
        passes an absolute path through untouched, so this resolves the same from
-       the homepage as from a page two folders down. The Hebrew version, because
-       this footer is Hebrew; the document itself switches. The architect CV,
-       because that is the one a visitor to FLOA is looking for. */
-    { href: "/cv/architect/he/", label: "קורות חיים" },
+       the homepage as from a page two folders down. Hebrew, because this
+       footer is Hebrew: /cv/ is the default and carries a switch to English.
+       It is the AI CV, the one a visitor to FLOA is looking for. */
+    { href: "/cv/", label: "קורות חיים" },
     { href: ctx.url("privacy.html"), label: "מדיניות פרטיות" },
     { href: ctx.url("terms.html"), label: "תנאי שימוש" },
     { href: ctx.url("accessibility.html"), label: "הצהרת נגישות" },
