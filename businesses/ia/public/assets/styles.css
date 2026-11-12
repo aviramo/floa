@@ -425,3 +425,9 @@ button.btn { font-family: inherit; cursor: pointer; }
 .dock-p img { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 3px #fff, 0 8px 20px -8px rgba(23, 58, 42, .5); }
 .dock-p b { font-size: 1.2rem; color: var(--leaf); }
 .dock-sheet .dock-p .btn { width: 100%; padding-inline: 10px; background: #fff; }
+
+/* מתחת לאזור הבטוח ממשיך הדף (פס המילים), לא פס ריק */
+html { background-color: #3F7F46; }
+body { background-color: var(--paper); }
+.hero { min-height: calc(100svh - 56px); }
+.sec--free { padding-top: 40px; }
