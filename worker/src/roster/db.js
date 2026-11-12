@@ -166,6 +166,8 @@
             every event; an array = only those; ping is always delivered),
             "participant_mail_enabled": bool, "personal_area_enabled": bool,
             "contact_email": text|null, "sender_name": text|null,
+            "mail_from_address": text|null (the From address the business
+            chose; null = the platform default),
             "contact_whatsapp": text|null, "payment_url": text|null
           },
           "notify_emails": text[]   // the RESOLVED notify list: the notify_emails

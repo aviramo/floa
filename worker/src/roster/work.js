@@ -78,6 +78,7 @@ export function normalizeWork(raw, now = Date.now) {
         personal_area_enabled: s.personal_area_enabled !== false,
         contact_email: nullableText(s.contact_email, 320),
         sender_name: nullableText(s.sender_name, 200),
+        mail_from_address: nullableText(s.mail_from_address, 320),
         contact_whatsapp: nullableText(s.contact_whatsapp, 100),
         payment_url: nullableText(s.payment_url, 600),
       },

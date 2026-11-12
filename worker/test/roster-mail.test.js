@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  buildVars, composeMail, deliverMails, fromHeader, idempotencyKey, normalizeEmail, planMails, replyToOf, safeHttpUrl,
+  buildVars, composeMail, deliverMails, fromAddressOf, fromHeader, idempotencyKey, normalizeEmail, planMails, replyToOf, safeHttpUrl,
   senderName, sendViaResend, whatsappLink,
 } from "../src/roster/mail.js";
 import { checkMailLimits, createMailTally, MAIL_LIMITS } from "../src/roster/limits.js";
@@ -227,6 +227,36 @@ test("the sender name cannot add an address, a header or a line break", () => {
   assert.equal(senderName(work({ settings: { sender_name: "\u202eevil" } }).business), "evil", "bidi controls are removed");
   assert.equal(Array.from(senderName(work({ settings: { sender_name: "x".repeat(200) } }).business)).length, 60);
   assert.equal(senderName(work({ settings: { sender_name: "<>@" } }).business), "FLOA");
+});
+
+test("From address: the business's own when it set one (lowercased), the platform's when it did not", () => {
+  assert.equal(fromAddressOf(work().business), "no-reply@floa.co.il", "null or missing: the old default");
+  assert.equal(fromAddressOf(work({ settings: { mail_from_address: null } }).business), "no-reply@floa.co.il");
+  assert.equal(fromAddressOf(work({ settings: { mail_from_address: "No-Reply@Notify.Harpatka.co.il" } }).business), "no-reply@notify.harpatka.co.il");
+  assert.equal(fromHeader(work({ settings: { sender_name: "יוצאים להרפתקה", mail_from_address: "no-reply@notify.harpatka.co.il" } }).business), "יוצאים להרפתקה <no-reply@notify.harpatka.co.il>");
+});
+
+test("a From address that is not a plain address never reaches the header", () => {
+  for (const bad of ["evil@x.com>, Bcc: a@b.c", "a@b.com\r\nBcc: x@y.z", "<a@b.com>", "Name <a@b.com>", "a b@c.com", "nobody", "", "a@b", "x".repeat(130) + "@a.com"]) {
+    const h = fromHeader(work({ settings: { mail_from_address: bad } }).business);
+    assert.equal(h, "סטודיו דנה <no-reply@floa.co.il>", JSON.stringify(bad));
+  }
+});
+
+test("the mail that goes out to Resend carries the business's From address", async () => {
+  const net = fakeNet();
+  const w = work({ event: { type: "participant.created" }, business: { notify_emails: ["a@x.com"] }, settings: { sender_name: "יוצאים להרפתקה", mail_from_address: "no-reply@notify.harpatka.co.il" } });
+  await deliverMails(w, depsFor(net));
+  assert.deepEqual(net.resend().map((c) => c.json.from), ["יוצאים להרפתקה <no-reply@notify.harpatka.co.il>"]);
+  const net2 = fakeNet();
+  await deliverMails(work({ event: { type: "participant.created" }, business: { notify_emails: ["a@x.com"] } }), depsFor(net2));
+  assert.deepEqual(net2.resend().map((c) => c.json.from), ["סטודיו דנה <no-reply@floa.co.il>"]);
+});
+
+test("the work item parser keeps the From address as text or null", () => {
+  assert.equal(work({ settings: { mail_from_address: "a@b.co" } }).business.settings.mail_from_address, "a@b.co");
+  assert.equal(work().business.settings.mail_from_address, null);
+  assert.equal(work({ settings: { mail_from_address: 5 } }).business.settings.mail_from_address, null);
 });
 
 test("Reply-To is the contact email when it is a real address, otherwise absent", () => {

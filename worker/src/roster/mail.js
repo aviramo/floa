@@ -83,7 +83,13 @@ export function senderName(business) {
   return Array.from(clean).slice(0, 60).join("").trim() || "FLOA";
 }
 
-export const fromHeader = (business) => `${senderName(business)} <${MAIL_FROM_ADDRESS}>`;
+/* The address in `From`. The business may choose its own (settings.mail_from_address, owner only, a domain verified in Resend); it is checked here
+   again, so a value that is not a plain address never reaches the header, and without one the platform address is used, as before. */
+export function fromAddressOf(business) {
+  const a = normalizeEmail(business.settings.mail_from_address);   // the same limits as the database rule: 120 characters, 64 before the @
+  return a && a.length <= 120 && a.indexOf("@") <= 64 ? a : MAIL_FROM_ADDRESS;
+}
+export const fromHeader = (business) => `${senderName(business)} <${fromAddressOf(business)}>`;
 export const replyToOf = (business) => normalizeEmail(business.settings.contact_email);
 
 /* --- variables ------------------------------------------------------------------- */

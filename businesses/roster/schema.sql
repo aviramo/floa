@@ -1373,6 +1373,18 @@ create table if not exists public.roster_business_settings (
 -- True when a secret exists. The page cannot read the secret itself, so it reads this.
 alter table public.roster_business_settings add column if not exists webhook_secret_set boolean generated always as (webhook_secret is not null) stored;
 
+-- The address the participant sees in "From" (sync 9). NULL = the platform's own address (no-reply@floa.co.il), so a business that
+-- never sets it behaves exactly as before. The domain must be verified in the Resend account the Worker sends with; the Worker
+-- checks the value again before it uses it. Owner only, like the sender name (see roster_settings_trg).
+alter table public.roster_business_settings add column if not exists mail_from_address text;
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conrelid = 'public.roster_business_settings'::regclass and conname = 'roster_settings_mail_from') then
+    alter table public.roster_business_settings add constraint roster_settings_mail_from
+      check (mail_from_address is null or (char_length(mail_from_address) <= 120 and mail_from_address = lower(mail_from_address) and public.roster_valid_email(mail_from_address)));
+  end if;
+end $$;
+
 -- contact_whatsapp is kept as international digits (the personal area builds wa.me/<digits> from it): a number typed the
 -- Israeli way or with a plus or 00 becomes digits with the country code; anything else keeps only its digits; text with
 -- no digits at all is left alone, so the check below refuses it instead of the trigger quietly dropping it.
@@ -1383,6 +1395,7 @@ declare w text; d text;
 begin
   new.contact_email    := nullif(lower(btrim(new.contact_email)), '');
   new.sender_name      := nullif(btrim(new.sender_name), '');
+  new.mail_from_address := nullif(lower(btrim(new.mail_from_address)), '');
   w := btrim(coalesce(new.contact_whatsapp, ''));
   if w <> '' then
     d := regexp_replace(coalesce(nullif(public.roster_normalize_phone(w), ''), w), '[^0-9]', '', 'g');
@@ -1393,15 +1406,15 @@ begin
   new.payment_url      := nullif(btrim(new.payment_url), '');
   new.webhook_url      := nullif(btrim(new.webhook_url), '');
   new.notify_emails    := coalesce(array(select distinct lower(btrim(x)) from unnest(new.notify_emails) x where btrim(x) <> '' order by 1), '{}');
-  -- Mail identity belongs to the owner. The three columns decide who the platform mails and under what name and
+  -- Mail identity belongs to the owner. The four columns decide who the platform mails and under what name, address and
   -- reply address, so a business member must not be able to turn them into a spam or phishing relay. A change by a
   -- signed-in account that is not the owner is refused (42501); writing the value it already has is fine, and the
   -- owner, the service role and the database itself (no signed-in account) are never refused.
   if tg_op = 'UPDATE'
      and (new.sender_name is distinct from old.sender_name or new.contact_email is distinct from old.contact_email
-          or new.notify_emails is distinct from old.notify_emails)
+          or new.notify_emails is distinct from old.notify_emails or new.mail_from_address is distinct from old.mail_from_address)
      and public.roster_email() <> '' and not public.roster_is_super() then
-    raise exception 'sender_name, contact_email and notify_emails can be changed only by the owner' using errcode = '42501';
+    raise exception 'sender_name, contact_email, mail_from_address and notify_emails can be changed only by the owner' using errcode = '42501';
   end if;
   new.updated_at       := now();
   return new;
@@ -1687,9 +1700,9 @@ begin
   -- business_id cannot move to another business: the WITH CHECK below); no insert or delete
   revoke all on public.roster_business_settings from authenticated;
   grant select (business_id, registration_open, signup_required, personal_area_enabled, participant_mail_enabled, notify_emails, contact_email,
-                sender_name, contact_whatsapp, payment_url, webhook_url, webhook_events, webhook_secret_set, updated_at) on public.roster_business_settings to authenticated;
+                sender_name, mail_from_address, contact_whatsapp, payment_url, webhook_url, webhook_events, webhook_secret_set, updated_at) on public.roster_business_settings to authenticated;
   grant update (business_id, registration_open, signup_required, personal_area_enabled, participant_mail_enabled, notify_emails, contact_email,
-                sender_name, contact_whatsapp, payment_url, webhook_url, webhook_events, updated_at) on public.roster_business_settings to authenticated;
+                sender_name, mail_from_address, contact_whatsapp, payment_url, webhook_url, webhook_events, updated_at) on public.roster_business_settings to authenticated;
   drop policy if exists "members read their business" on public.roster_business_settings;
   execute format('create policy "members read their business" on public.roster_business_settings for select to authenticated using (%s)', seen);
   drop policy if exists "members change their business" on public.roster_business_settings;
@@ -2756,7 +2769,7 @@ end $fn$;
 --                "source": "api" | "admin" | "me" | "system" },   -- extra: who made the change (skip admin_signup for "admin")
 --     "business": { "id": "uuid", "slug": "studio", "name": "Studio",
 --                   "settings": { webhook_url, webhook_secret, webhook_events, participant_mail_enabled, personal_area_enabled,
---                                 contact_email, sender_name, contact_whatsapp, payment_url },
+--                                 contact_email, sender_name, mail_from_address, contact_whatsapp, payment_url },
 --                   "notify_emails": ["a@x.com"] },   -- the RESOLVED list: the setting, else the accounts of the business
 --     "participant": { id, first_name, last_name, email, phone, age, gender } | null,   -- the CURRENT row, else payload.participant
 --     "facts": { "meeting": { date, time, name, city, place, directions, future, price, free, reported_amount } | null,
@@ -2879,7 +2892,7 @@ begin
       'settings', jsonb_build_object('webhook_url', case when ev.source = 'admin_mail' then null else s.webhook_url end,   -- a mail the admin asked for is never a webhook
         'webhook_secret', s.webhook_secret, 'webhook_events', to_jsonb(s.webhook_events),
         'participant_mail_enabled', s.participant_mail_enabled, 'personal_area_enabled', s.personal_area_enabled,
-        'contact_email', s.contact_email, 'sender_name', s.sender_name, 'contact_whatsapp', s.contact_whatsapp, 'payment_url', s.payment_url),
+        'contact_email', s.contact_email, 'sender_name', s.sender_name, 'mail_from_address', s.mail_from_address, 'contact_whatsapp', s.contact_whatsapp, 'payment_url', s.payment_url),
       'notify_emails', to_jsonb(admins)),
     'participant', part,
     'facts', jsonb_build_object('meeting', mfacts, 'has_payment', has_pay, 'fully_paid', fully, 'confirmation_sent', conf),

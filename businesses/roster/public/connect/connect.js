@@ -80,7 +80,7 @@
   const TPL_ORDER = ["admin_signup", "admin_payment_reported", "admin_account_linked", "admin_phone_conflict", "registered", "payment_confirmed", "refund", "registration_cancelled"];
   /* a template is shown to the editor and rendered by the Worker: the same bounds as the database and the Worker */
   const MAX_TPL = 20000, MAX_DATA_IF = 50;
-  const SETTINGS_COLS = "registration_open,signup_required,personal_area_enabled,participant_mail_enabled,notify_emails,contact_email,sender_name,contact_whatsapp,payment_url,webhook_url,webhook_events,webhook_secret_set,updated_at";
+  const SETTINGS_COLS = "registration_open,signup_required,personal_area_enabled,participant_mail_enabled,notify_emails,contact_email,sender_name,mail_from_address,contact_whatsapp,payment_url,webhook_url,webhook_events,webhook_secret_set,updated_at";
   const KEY_COLS = "id,kind,prefix,label,allowed_origins,created_by,created_at,last_used_at,revoked_at";   /* never key_hash */
   const MAIL_RE = /^[^\s@,;<>()"]+@[^\s@,;<>()"]+\.[^\s@,;<>()"]{2,}$/;
 
@@ -591,9 +591,11 @@
     const s = D.settings, own = isOwner(), ro = own ? "" : ' readonly aria-readonly="true"', roCls = own ? "" : " ro";
     return '<div class="pin">' +
       '<form class="card" id="mailForm" novalidate>' + cardHead("שולח והתראות") +
-      '<p class="lead">המיילים יוצאים מהכתובת no-reply@floa.co.il, בשם שהוגדר לעסק.' + (own ? "" : " " + OWNER_ONLY) + "</p>" +
+      '<p class="lead">המיילים יוצאים מהכתובת <bdi dir="ltr">' + esc(s.mail_from_address || "no-reply@floa.co.il") + '</bdi>, בשם שהוגדר לעסק.' + (own ? "" : " " + OWNER_ONLY) + "</p>" +
       '<label class="field"><span>שם השולח</span><input id="mName" maxlength="60" autocomplete="off"' + ro + ' class="' + roCls.trim() + '" placeholder="' + esc(BIZ.name) + '" value="' + esc(s.sender_name || "") + '"></label>' +
       '<p class="hint">' + (own ? "מופיע ליד הכתובת. אם משאירים ריק, יופיע שם העסק." : OWNER_ONLY + " אם הוא ריק, יופיע שם העסק.") + "</p>" +
+      '<label class="field"><span>כתובת השולח</span><input id="mFrom" class="ltr' + roCls + '" dir="ltr" type="email" inputmode="email" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="120"' + ro + ' placeholder="no-reply@floa.co.il" value="' + esc(s.mail_from_address || "") + '"></label>' +
+      '<p class="hint">' + (own ? "הכתובת שהמשתתף רואה כשולח. אם משאירים ריק, המיילים יוצאים מ־no-reply@floa.co.il. הדומיין של הכתובת צריך להיות מאומת ב־Resend, אחרת המיילים לא יישלחו." : OWNER_ONLY + " אם היא ריקה, המיילים יוצאים מ־no-reply@floa.co.il.") + "</p>" +
       '<label class="field"><span>כתובת למענה</span><input id="mContact" class="ltr' + roCls + '" dir="ltr" type="email" inputmode="email" autocomplete="off" autocapitalize="off" spellcheck="false"' + ro + ' placeholder="studio@example.com" value="' + esc(s.contact_email || "") + '"></label>' +
       '<p class="hint">' + (own ? "כשמשתתף עונה למייל, התשובה מגיעה לכאן." : OWNER_ONLY + " כשמשתתף עונה למייל, התשובה מגיעה לכתובת הזאת.") + "</p>" +
       '<label class="field"><span>מי מקבל התראות</span><textarea id="mNotify" class="ltr' + roCls + '" dir="ltr" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false"' + ro + ' placeholder="manager@example.com">' + esc((s.notify_emails || []).join("\n")) + "</textarea></label>" +
@@ -615,12 +617,14 @@
       if (/[<>"\r\n]/.test($("#mName").value)) { err.textContent = "בשם השולח אי אפשר להשתמש בתווים < > או במרכאות."; $("#mName").focus(); return; }
       const contact = lc($("#mContact").value);
       if (contact && (contact.length > 254 || !MAIL_RE.test(contact))) { err.textContent = "כתובת המענה לא נראית תקינה."; $("#mContact").setAttribute("aria-invalid", "true"); $("#mContact").focus(); return; }
+      const from = lc($("#mFrom").value);
+      if (from && (from.length > 120 || from.indexOf("@") > 64 || !MAIL_RE.test(from))) { err.textContent = "כתובת השולח לא נראית תקינה."; $("#mFrom").setAttribute("aria-invalid", "true"); $("#mFrom").focus(); return; }
       const notify = parseMails($("#mNotify").value, 10);
       if (notify.err) { err.textContent = notify.err; $("#mNotify").setAttribute("aria-invalid", "true"); $("#mNotify").focus(); return; }
-      patch = { sender_name: name || null, contact_email: contact || null, notify_emails: notify.list, participant_mail_enabled: $("#mParticipant").checked };
-      if ((s.sender_name || "") === (name || "") && (s.contact_email || "") === contact && JSON.stringify(s.notify_emails || []) === JSON.stringify(notify.list) && (s.participant_mail_enabled !== false) === patch.participant_mail_enabled) { toast(T.noChange); return; }
+      patch = { sender_name: name || null, mail_from_address: from || null, contact_email: contact || null, notify_emails: notify.list, participant_mail_enabled: $("#mParticipant").checked };
+      if ((s.sender_name || "") === (name || "") && (s.mail_from_address || "") === from && (s.contact_email || "") === contact && JSON.stringify(s.notify_emails || []) === JSON.stringify(notify.list) && (s.participant_mail_enabled !== false) === patch.participant_mail_enabled) { toast(T.noChange); return; }
     } else {
-      /* a member sends ONLY what a member may change: the database refuses a write to the other three */
+      /* a member sends ONLY what a member may change: the database refuses a write to the other four */
       patch = { participant_mail_enabled: $("#mParticipant").checked };
       if ((s.participant_mail_enabled !== false) === patch.participant_mail_enabled) { toast(T.noChange); return; }
     }
