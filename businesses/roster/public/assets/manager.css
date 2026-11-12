@@ -1,213 +1,98 @@
 /* =====================================================================
    Roster, the owner's layer (/roster/).
-   Same visual language as the participant page: flat white with greys,
-   black as the action colour, red only for danger, 10px corners, Heebo.
-   Re-created here on purpose, not linked: this page never loads
-   admin/admin.css. The PAGE never scrolls; only a list inside its own box.
+   Phase 2 of the design rollout: the look is the KIT (assets/ui.css: tokens and the base elements, look B). This file is LAYOUT ONLY, written
+   with the kit's tokens: no raw spacing, no color literals. The popup is popup.css + sheet.css, the field is field.css.
+   The PAGE never scrolls; only the one list (.rlist) scrolls, and a popup scrolls inside itself.
    ===================================================================== */
 
-/* ---------- 1. tokens ---------- */
-:root {
-  color-scheme: light;
-  --bg: #FFFFFF;
-  --surface: #F5F6F8;
-  --surface-2: #ECEEF1;
-  --line: #E1E4E8;
-  --line-2: #C7CCD3;
-  --text: #16191D;
-  --text-2: #5A626C;
-  --text-3: #8A929B;
-  --red: #C81E3A;      --red-bg: #FCE7EB;
-  --green: #067647;    --green-bg: #DCF5E7;
-  --yellow: #8A5A00;   --yellow-bg: #FFF1C2;
-  --scrim: rgba(16, 20, 26, .55);
-  --pop: 0 14px 34px -10px rgba(16, 24, 40, .22), 0 2px 6px rgba(16, 24, 40, .06);
-  --font: "Heebo", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --gut: 12px;
-  --ctl: 44px;         /* height of a field and of a text button */
-  --ib: 40px;          /* icon button, one square for the whole page */
-  --r: 10px;
-  --tag: 28px;
-  --col: 760px;        /* the content column on a wide screen */
-  --safe-b: max(env(safe-area-inset-bottom, 0px), 28px);
-  --sheet-b: calc(24px + env(safe-area-inset-bottom, 0px));
-}
-@media (min-width: 760px) { :root { --gut: 20px; } }
-
-/* ---------- 2. base ---------- */
+/* ---------- base ---------- */
+:root { color-scheme: light; }
 *, *::before, *::after { box-sizing: border-box; }
 html, body { margin: 0; }
 html { scrollbar-width: none; }
 html::-webkit-scrollbar { display: none; }
-body { background: var(--bg); color: var(--text); font: 400 16px/1.45 var(--font); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
+body { background: var(--bg); color: var(--text); font: var(--fw-regular) var(--fs-m)/var(--lh-body) var(--font); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
 button, input { font: inherit; color: inherit; }
-button { cursor: pointer; border: 0; background: none; padding: 0; }
+button { cursor: pointer; }
 button:disabled { cursor: default; }
 a { color: var(--text); }
 h1, h2, p { margin: 0; }
 [hidden] { display: none !important; }
-:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 ::selection { background: var(--surface-2); }
 bdi { unicode-bidi: isolate; }
-.sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
-dialog, dialog *, .list, .acclist { scrollbar-width: none; -ms-overflow-style: none; }
-dialog::-webkit-scrollbar, dialog *::-webkit-scrollbar, .list::-webkit-scrollbar, .acclist::-webkit-scrollbar { display: none; width: 0; height: 0; }
+.sr { position: absolute; width: 1px; height: 1px; margin: 0; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+dialog, dialog *, .rlist, .acclist { scrollbar-width: none; -ms-overflow-style: none; }
+dialog::-webkit-scrollbar, dialog *::-webkit-scrollbar, .rlist::-webkit-scrollbar, .acclist::-webkit-scrollbar { display: none; width: 0; height: 0; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; } }
 
-.ic { flex: 0 0 auto; width: 20px; height: 20px; }
-.ic.i18 { width: 18px; height: 18px; }
-.ic.i22 { width: 22px; height: 22px; }
+.ic { flex: 0 0 auto; width: var(--icon-m); height: var(--icon-m); stroke-width: var(--icon-w); }
+.ic.i18 { width: var(--icon-s); height: var(--icon-s); }
 
-/* ---------- 3. building blocks ---------- */
+/* ---------- the gate (not signed in) ---------- */
+.gate { height: 100vh; height: 100dvh; display: flex; overflow-y: auto; padding: var(--gutter); text-align: center; }
+.gate-in { width: 100%; max-width: var(--w-s); margin: auto; padding: var(--gap-section) 0; }
+.mark { display: grid; place-items: center; width: 56px; height: 56px; margin: 0 auto var(--gap-section); border-radius: var(--r-card); background: var(--surface-2); color: var(--text); }
+.mark .ic { width: var(--icon-l); height: var(--icon-l); }
+.gate h1 { margin: 0 0 var(--gap-button); font: var(--fw-black) var(--fs-xl)/var(--lh-tight) var(--font); }
+.gate p { margin: 0 0 var(--gap-section); color: var(--text-2); }
+.gbtn svg { width: var(--icon-l); height: var(--icon-l); }
+.gnote { margin-top: var(--gap-field); min-height: 1.4em; color: var(--text-2); font-weight: var(--fw-bold); }
 
-/* button: black primary, grey secondary, red for danger */
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: var(--ctl); padding: 0 20px; border: 1px solid transparent; border-radius: var(--r); background: var(--text); color: #fff; font-weight: 700; font-size: 16px; line-height: 1; text-decoration: none; white-space: nowrap; }
-.btn:disabled { opacity: .45; }
-.btn.ghost { background: var(--surface-2); color: var(--text); font-weight: 600; }
-.btn.danger { background: var(--red); color: #fff; }
-.btn.sm { height: var(--ib); padding: 0 14px; font-size: 15px; }
-.btn.block { width: 100%; }
-@media (hover: hover) {
-  .btn:not(:disabled):hover { background: #000; }
-  .btn.ghost:not(:disabled):hover { background: var(--line); }
-  .btn.danger:not(:disabled):hover { background: #A8162F; }
-}
-
-/* icon button: one square for everything */
-.hicon { flex: 0 0 auto; display: inline-grid; place-items: center; width: var(--ib); height: var(--ib); border: 1px solid transparent; border-radius: var(--r); background: var(--bg); color: var(--text); }
-@media (hover: hover) { .hicon:hover { background: var(--surface); } .hicon.stdel:hover { background: var(--red-bg); color: var(--red); } }
-.hicon.stdel { background: transparent; color: var(--text-2); }
-
-/* tag: one height for every tag */
-.tg { display: inline-block; vertical-align: middle; max-width: 100%; height: var(--tag); padding: 0 8px; border: 1px solid transparent; border-radius: var(--r); background: var(--surface-2); color: var(--text-2); font-size: 14px; font-weight: 600; line-height: calc(var(--tag) - 2px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
-.tg.warn { background: var(--yellow-bg); color: var(--yellow); }
-button.tg { position: relative; overflow: visible; cursor: pointer; }
-button.tg::before { content: ""; position: absolute; inset: -8px -4px; }   /* the touch area stays 44px */
-@media (hover: hover) { button.tg:hover { background: var(--line); } button.tg.warn:hover { background: #FFE9A3; } }
-
-/* fields: the one shared element, field.css */
-.sinp-f { margin: 0; }
-.sinp::-webkit-search-cancel-button, .sinp::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
-.static { display: flex; align-items: center; min-height: var(--ctl); padding: 0 12px; border-radius: var(--r); background: var(--surface); color: var(--text); font-weight: 600; }
-.hint { margin: 0 0 12px; color: var(--text-2); font-size: 14px; line-height: 1.5; }
-.ferr { margin: 0 0 12px; color: var(--red); font-size: 14px; font-weight: 600; line-height: 1.4; }
-.ferr:empty { margin: 0; }
-.clabel { margin: 16px 0 4px; color: var(--text-2); font-size: 12.5px; font-weight: 700; letter-spacing: .02em; }
-.linkbtn { display: inline-block; padding: 6px 0; color: var(--text); font-size: 14.5px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-align: start; }
-
-/* floating menu */
-.menu { position: fixed; z-index: 300; min-width: 210px; max-width: calc(100vw - 16px); padding: 8px; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--pop); }
-.mhead { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin: 0 0 4px; padding: 8px 12px 12px; border-bottom: 1px solid var(--line); }
-.mhead b { font-size: 15.5px; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
-.mmail { color: var(--text-2); font-size: 13.5px; overflow-wrap: anywhere; }
-.mi { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 44px; padding: 0 12px; border-radius: var(--r); background: transparent; color: var(--text); font-size: 15.5px; font-weight: 500; text-align: start; text-decoration: none; }
-.mi:focus-visible { outline-offset: -2px; }
-.mi.danger { color: var(--red); }
-@media (hover: hover) { .mi:hover { background: var(--surface); } .mi.danger:hover { background: var(--red-bg); } }
-.mi:focus-visible { background: var(--surface); }
-.mi.danger:focus-visible { background: var(--red-bg); }
-
-/* toast */
-.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 400; max-width: calc(100% - 32px); padding: 12px 16px; border-radius: var(--r); background: var(--text); color: #fff; font-weight: 600; box-shadow: var(--pop); opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(16px); transition: opacity .2s, transform .2s; }
-.toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-/* ---------- 4. the gate ---------- */
-.gate { height: 100vh; height: 100dvh; display: flex; overflow-y: auto; padding: 20px; text-align: center; }
-.gate-in { width: 100%; max-width: 420px; margin: auto; padding: 24px 0; }
-.mark { display: grid; place-items: center; width: 56px; height: 56px; margin: 0 auto 20px; border-radius: 16px; background: var(--surface-2); color: var(--text); }
-.mark .ic { width: 28px; height: 28px; }
-.gate h1 { margin: 0 0 8px; font-size: 28px; font-weight: 800; letter-spacing: -.01em; line-height: 1.2; }
-.gate p { margin: 0 0 28px; color: var(--text-2); }
-.gbtn { display: inline-flex; align-items: center; gap: 8px; height: var(--ctl); padding: 0 24px; border: 1px solid transparent; border-radius: var(--r); background: var(--surface-2); color: var(--text); font-weight: 700; font-size: 16px; }
-.gbtn svg { width: 22px; height: 22px; }
-@media (hover: hover) { .gbtn:not(:disabled):hover { background: var(--line); } }
-.gnote { margin-top: 16px; min-height: 1.4em; color: var(--text-2); font-size: 15px; font-weight: 600; }
-
-/* ---------- 5. the page frame: the header stays, only a list scrolls ---------- */
+/* ---------- the page frame: the header stays, only the list scrolls ---------- */
 .wrap { width: 100%; height: 100vh; height: 100dvh; display: flex; flex-direction: column; }
-.top { flex: 0 0 auto; position: relative; z-index: 10; background: var(--bg); border-bottom: 1px solid var(--line); }
-.col { width: 100%; max-width: var(--col); margin-inline: auto; }
-.title-row { height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 var(--gut); }
-h1 { font-size: 22px; font-weight: 800; letter-spacing: -.01em; line-height: 1.2; }
-.userbtn { display: inline-flex; align-items: center; gap: 8px; height: var(--ib); max-width: 50vw; padding: 0 8px; border-radius: var(--r); background: var(--bg); color: var(--text); font-size: 15px; font-weight: 600; }
-.userbtn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: none; }
-@media (min-width: 560px) { .userbtn span { display: block; } .userbtn { padding: 0 12px; } }
-@media (hover: hover) { .userbtn:hover { background: var(--surface); } }
+.top { flex: 0 0 auto; position: relative; z-index: var(--z-sticky); }
+.rhead__in { width: 100%; max-width: var(--w-page); margin-inline: auto; display: flex; align-items: center; gap: var(--gap-button); }
+.rhead__text { flex: 1 1 auto; min-width: 0; }
+.rhead .rhead__title { flex: none; }
+#userBtn { min-width: var(--ib); max-width: 50vw; }
+#whoName { display: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (min-width: 560px) { #whoName { display: block; } }
 .view { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.view > .rlist { flex: 1 1 auto; }
 
-/* the owner's toolbar: fixed above the list */
-.bar { flex: 0 0 auto; }
-.bar-in { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px var(--gut); }
-.bar .add { flex: 1 1 100%; }
-.bar .sinp-f { flex: 1 1 100%; }
-@media (min-width: 560px) { .bar .add { flex: 0 0 auto; } .bar .sinp-f { flex: 1 1 200px; } }
+/* the list: rows run edge to edge, their content sits in the page column */
+.lbox { width: 100%; --side: max(var(--gutter), calc((100% - var(--w-page)) / 2 + var(--gutter))); }
+.lbox .rrow:not([data-swipe]), .lbox .rrow[data-swipe] > .rswipe-fg { padding-inline: var(--side); }
+.lbox__head { padding: var(--gap-field) var(--side); }
+.rrow--link .rrow__trail { display: inline-grid; place-items: center; color: var(--text-2); }
+.rrow .rrow__main bdi { direction: ltr; }
+.rrow.fresh::before { content: ""; position: absolute; inset: 0; background: var(--warn-bg); pointer-events: none; animation: fresh 2.4s ease-out forwards; }
+@keyframes fresh { 0%, 35% { opacity: 1; } 100% { opacity: 0; } }
 
-/* the one scrolling box */
-.list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; padding-bottom: var(--safe-b); }
-.list-in { width: 100%; max-width: var(--col); margin-inline: auto; }   /* the column of the sticky strip */
-.lbox { width: 100%; --side: max(var(--gut), calc((100% - var(--col)) / 2 + var(--gut))); }   /* rows run edge to edge, their content sits in the column */
-.group { position: sticky; top: 0; z-index: 1; background: var(--surface); border-bottom: 1px solid var(--line); color: var(--text-2); font-size: 12.5px; font-weight: 700; letter-spacing: .02em; }   /* full width, its text in the same column as the rows */
-.group .list-in { padding: 8px var(--gut); }
-.empty { padding: 48px 16px; text-align: center; color: var(--text-2); }
-.empty b { display: block; margin-bottom: 8px; color: var(--text); font-size: 18px; font-weight: 700; }
-.empty .btn { margin-top: 16px; }
-.center { flex: 1 1 auto; min-height: 0; display: flex; overflow-y: auto; padding: 24px var(--gut); }
-.cbox { width: 100%; max-width: 420px; margin: auto; text-align: center; }
-.cbox p { margin: 0 0 24px; color: var(--text-2); font-size: 17px; line-height: 1.6; }
-.cbox bdi { color: var(--text); font-weight: 700; overflow-wrap: anywhere; }
-.vhead { padding: 20px var(--side, var(--gut)) 12px; }
-.vhead h2 { font-size: 20px; font-weight: 800; letter-spacing: -.01em; line-height: 1.25; }
-.vhead p { margin-top: 4px; color: var(--text-2); font-size: 14.5px; }
+/* the search row, only when there are many businesses */
+.qrow { flex: 0 0 auto; width: 100%; max-width: var(--w-page); margin-inline: auto; padding: var(--gap-field) var(--gutter) 0; }
+.qrow .rfield { margin: 0; }
 
-/* a business: a flat row with a line under it */
-.row, .prow { display: flex; align-items: center; gap: 8px; min-height: 64px; padding: 10px var(--side, var(--gut)); border-bottom: 1px solid var(--line); background: var(--bg); }
-.prow { color: var(--text); text-decoration: none; padding-block: 12px; }
-.prow .ic { color: var(--text-2); }
-@media (hover: hover) { .row:hover, .prow:hover { background: var(--surface); } }
-.rmain { flex: 1 1 auto; min-width: 0; display: block; }
-.rname { display: block; font-size: 15.5px; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
-.rsub { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-top: 4px; color: var(--text-2); font-size: 13px; }
-.slug { display: inline-block; direction: ltr; unicode-bidi: isolate; color: var(--text-2); font-size: 13.5px; font-weight: 500; overflow-wrap: anywhere; }
-.row { position: relative; }
-.rlink { color: inherit; text-decoration: none; }
-.rlink::after { content: ""; position: absolute; inset: 0; }   /* כל הכרטיס הוא קישור לעסק, מלבד תפריט שלוש הנקודות שמעליו */
-.rlink:focus-visible { outline: none; }
-.rlink:focus-visible::after { outline: 2px solid var(--text); outline-offset: -2px; }
-@media (hover: hover) { .row:hover { background: var(--surface); } }
-.row .hicon { position: relative; z-index: 1; width: 44px; height: 44px; }   /* מטרת מגע של 44 פיקסלים */
-.row.fresh { animation: fresh 2.4s ease-out; }
-@keyframes fresh { 0%, 35% { background: var(--yellow-bg); } 100% { background: var(--bg); } }
+/* a centred message (not connected yet, loading, errors) */
+.rempty--fill { flex: 1 1 auto; justify-content: center; }
+.rempty bdi { color: var(--text); font-weight: var(--fw-bold); overflow-wrap: anywhere; }
+.rempty .rbtn { margin-top: var(--gap-field); }
 
-/* ---------- 6. dialogs: a sheet from the bottom on a phone, a window on a wide screen (the owner page's dialogs are .rsheet: assets/sheet.css overrides corners, margin and height there; connect/ still uses these rules as they are) ---------- */
-dialog { border: 0; padding: 0; width: 100%; max-width: 560px; max-height: 92vh; max-height: 92dvh; margin: auto auto 0; overflow: hidden; border-radius: var(--r) var(--r) 0 0; background: var(--bg); color: var(--text); box-shadow: var(--pop); }
-dialog[open] { display: flex; flex-direction: column; }
-dialog::backdrop { background: var(--scrim); }
-dialog:focus { outline: none; }
-@media (min-width: 560px) { dialog { margin: auto; border-radius: var(--r); max-height: min(90vh, 720px); } }
-.sheet { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: 16px var(--gut) var(--sheet-b); }
-dialog[data-from="top"] .sheet { padding-bottom: 8px; }
-.sheet-head { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; min-height: var(--ib); margin-bottom: 12px; }
-.sheet-head h2 { flex: 1 1 auto; min-width: 0; font-size: 20px; font-weight: 800; letter-spacing: -.01em; line-height: 1.25; overflow-wrap: anywhere; }
-.sheet-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; overscroll-behavior-y: contain; margin: -4px; padding: 4px; }   /* the 4px keeps a focus ring from being clipped */
-.sheet-body > * { flex: 0 0 auto; }
-.warnbox { margin: 0 0 16px; padding: 12px; border-radius: var(--r); background: var(--red-bg); color: var(--text); font-size: 15px; line-height: 1.55; }
-.warnbox b { font-weight: 800; overflow-wrap: anywhere; }
+/* ---------- floating menu: the kit's anchored menu, placed by the script next to its button ---------- */
+.rmenu { position: fixed; }
 
-/* the accounts sheet: the form stays, the list of emails scrolls inside itself */
+/* ---------- popups: the body is the kit's inline elements ---------- */
+.rmsg { margin: 0 0 var(--gap-field); }
+.rmsg b { overflow-wrap: anywhere; }
+.rmsg .rbtn { margin-inline-start: auto; }
+.sheet-foot .rbtn { flex: 1 1 0; }
+
+/* the accounts popup: the form stays, the list of emails scrolls inside itself */
 dialog.acc .sheet-body { overflow: hidden; }
-.addrow { display: flex; gap: 8px; align-items: flex-start; }
+.addrow { display: flex; gap: var(--gap-button); align-items: flex-start; }
 .addrow .rfield { flex: 1 1 auto; margin: 0; }
-.addrow .btn { flex: 0 0 auto; }
+.addrow .rbtn { flex: 0 0 auto; }
 .acclist { flex: 1 1 auto !important; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; border-top: 1px solid var(--line); }
-.arow { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 4px 0; border-bottom: 1px solid var(--line); }
-.aem { flex: 1 1 auto; min-width: 0; font-size: 15px; font-weight: 500; overflow-wrap: anywhere; text-align: start; }
-.aem bdi { direction: ltr; }
-.arow.ask { flex-direction: column; align-items: stretch; gap: 8px; padding: 12px 0; }
-.aq { font-size: 15px; line-height: 1.5; overflow-wrap: anywhere; }
-.abtns { display: flex; gap: 8px; }
-.abtns .btn { flex: 1 1 0; }
-.mnone { padding: 16px 0; color: var(--text-2); font-size: 14.5px; }
-.slugnote { margin: 0 0 12px; min-height: 1.4em; font-size: 14px; font-weight: 600; line-height: 1.4; color: var(--text-2); }
-.slugnote:empty { margin: 0; min-height: 0; }
-.slugnote.good { color: var(--green); }
-.slugnote.bad { color: var(--red); }
+.acclist .rrow { background: var(--bg); }
+.acclist .rrow__title { font-weight: var(--fw-medium); font-size: var(--fs-s); }
+.acclist .rrow__title bdi { direction: ltr; }
+.alabel { margin: var(--gap-field) 0 var(--gap-tight); }
+.agap { margin-top: var(--gap-field); }
+
+/* the trash popup: groups of deleted things, each with a restore button */
+.tgroup { margin: var(--gap-field) 0 var(--gap-tight); color: var(--text-2); font: var(--fw-bold) var(--fs-xs)/var(--lh-tight) var(--font); }
+.tgroup:first-child { margin-top: 0; }
+.trow .rrow__sub { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap-tight) var(--gap-button); }
+.trow .rbtn { flex: 0 0 auto; }
+.trow .rrow__trail { display: flex; align-items: center; gap: var(--gap-tight); }

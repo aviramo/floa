@@ -66,7 +66,7 @@
     function dirSign() { return rtl() ? 1 : -1; }
     function openX(row) { return dirSign() * (row.querySelectorAll(".rswipe__act").length || 1) * SW; }
     function openIt(row) { if (open && open !== row) close(open); row.style.setProperty("--sw-n", String(row.querySelectorAll(".rswipe__act").length || 1)); row.classList.add("is-open"); setX(row, openX(row)); open = row; }
-    var start = null;
+    var start = null, lastDrag = 0;
     list.addEventListener("pointerdown", function (e) {
       if (reduced() || e.pointerType === "mouse") return;
       var row = e.target.closest && e.target.closest("[data-swipe]");
@@ -85,10 +85,19 @@
       if (!start || (e && e.pointerId !== start.id)) return;
       var row = start.row, was = start.dragging; start = null; row.classList.remove("is-dragging");
       if (!was) return;
+      lastDrag = Date.now();
       var lim = openX(row), cur = parseFloat(row.style.getPropertyValue("--sw-x")) || 0;
       if (Math.abs(cur) > Math.abs(lim) / 2) openIt(row); else close(row);
     }
     list.addEventListener("pointerup", finish); list.addEventListener("pointercancel", finish);
+    /* a drag must never count as a tap (the whole row is a link), and while a row is open the first tap elsewhere only closes it */
+    list.addEventListener("click", function (e) {
+      var inTray = e.target.closest && e.target.closest(".rswipe");
+      if (!inTray && (Date.now() - lastDrag < 350 || open)) {
+        if (open) close(open);
+        e.preventDefault(); e.stopPropagation();
+      }
+    }, true);
     list.addEventListener("keydown", function (e) { if (e.key === "Escape" && open) close(open); });
     /* first use hint: once per user and per list kind, never blocking; a nudge of the first row and a caption that goes away on touch or after a few seconds */
     function hint(force) {

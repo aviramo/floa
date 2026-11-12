@@ -1,13 +1,13 @@
 /* ==========================================================================
    ROSTER UI KIT (look B "Warm Studio"). The ONE token file and the base elements of the roster pages. Detached from harpatka.
    Scope: owner page, connect page, admin page (through the build pipeline). The personal area public/me/ is NOT part of the design system.
-   STATUS: phase 1 of the rollout. Written and tested, NOT linked from any page yet (no visual change). Phase 2 links it from the owner page.
+   STATUS: phase 2 of the rollout: linked from the OWNER page (index.html). Connect and the admin page follow in phases 3 and 4.
    Catalog of every element and its parameters: scratchpad sync13/component-catalog.md. Rules of use: use an element as it is, else a documented
    variant (a modifier class); a new base element only with a catalog entry first. No raw colors, sizes, spacing, radii, durations or layers in feature
    code: they come from the tokens below (scripts/roster-policy.mjs reports violations, blocking from phase 6).
    RADIUS POLICY (iron rule): everything that FLOATS or covers the page is SQUARE (popup sheet, centered window, side drawer, anchored menu, grab bar);
    everything inline is ROUND (controls 14, cards 20, chips and counters pill, switch pill, FAB pill, toasts 14).
-   Popups: .rsheet here is the kit's definition of the popup. assets/sheet.css + sheet.js is the engine that ships today; reconciling the two is a phase 2 task.
+   Popups are NOT defined here: the popup is assets/popup.css (tokens --pp-*) + assets/sheet.css + sheet.js (the one shell, tested on every page). The kit only fixes the width names.
    ========================================================================== */
 
 :root {
@@ -82,6 +82,15 @@
 .rbtn--icon[aria-busy="true"] > svg { animation: rk-spin .8s linear infinite; }
 @keyframes rk-spin { to { transform: rotate(360deg); } }
 
+/* EDGE ALIGNMENT for glyph-only icon buttons at the edge of a header or row: the VISIBLE glyph sits flush with the content edge while the 44px hit
+   area reaches outward into the padding. Use: the row's trailing three-dots (.rbtn--edge-end), header back or actions (-start / -end), the popup X is done by popup.css. */
+:root { --edge-pull: calc((var(--ctl) - var(--icon-m)) / 2); }
+.rbtn--edge { width: var(--ctl); min-height: var(--ctl); }
+.rbtn--edge-left { margin-left: calc(var(--edge-pull) * -1); }
+.rbtn--edge-right { margin-right: calc(var(--edge-pull) * -1); }
+.rbtn--edge-start { margin-inline-start: calc(var(--edge-pull) * -1); }
+.rbtn--edge-end { margin-inline-end: calc(var(--edge-pull) * -1); }
+
 /* ============================ CHIP AND COUNTER ============================ */
 .rchip { display: inline-flex; align-items: center; gap: var(--gap-tight); height: var(--tag); padding: 0 var(--sp-1); border: 1px solid transparent; border-radius: var(--r-chip); background: var(--surface-2); color: var(--text-2); font: var(--fw-bold) var(--fs-xs)/1 var(--font); white-space: nowrap; }
 .rchip--ok { background: var(--success-bg); color: var(--success); }   .rchip--no { background: var(--danger-bg); color: var(--danger); }
@@ -103,8 +112,14 @@
 .rrow--link .rrow__main::after { content: ""; position: absolute; inset: 0; }
 .rrow--link .rrow__trail { position: relative; z-index: var(--z-raised); }
 .rrow[aria-current="true"], .rrow.is-selected { background: var(--surface); box-shadow: inset 3px 0 0 var(--accent); }
-@media (hover: hover) { .rrow--link:hover { background: var(--surface); } }
+@media (hover: hover) { .rrow--link:hover, .rrow--link:hover > .rswipe-fg { background: var(--surface); } }
+.rrow--link .rrow__main:focus-visible { outline: none; }
+.rrow--link .rrow__main:focus-visible::after { outline: 2px solid var(--accent); outline-offset: -2px; }   /* the ring is drawn around the whole row, the link covers it */
 
+/* a swipe row: the padding and the flex layout of the row live in the sliding foreground, the tray sits under it */
+.rrow[data-swipe] { display: block; padding: 0; min-height: var(--row); }
+.rrow[data-swipe] > .rswipe-fg { display: flex; align-items: center; gap: var(--gap-button); min-height: var(--row); padding: var(--sp-1) var(--gutter); }
+.rrow[data-swipe].rrow--link .rrow__main::after { inset: 0; }   /* the link covers the foreground (the nearest positioned box), so it slides with it */
 /* SWIPE ACTIONS (parameter of .rrow and .rcard): data-swipe="<list kind>". Up to TWO actions in .rswipe (icon + short label, destructive = danger tone).
    The foreground (.rswipe-fg) slides by --sw-x (transform only); the tray sits at the inline-end edge. Direction is RTL aware: swipe toward the
    inline-start edge (physical right in RTL) opens. Only one row open at a time. The three-dots menu with the SAME actions is always present (non-gesture path). */
@@ -150,6 +165,7 @@ html[dir="rtl"] .rswipe { inset-inline-end: auto; left: 0; }
 .rmsg--toast { position: fixed; inset-inline: var(--gutter); bottom: var(--safe-b); z-index: var(--z-toast); box-shadow: var(--sh-pop); }
 .rmsg--inline { background: var(--surface); color: var(--text); border-color: var(--line); }
 .rmsg--ok { background: var(--success-bg); color: var(--success); border-color: var(--success); }   .rmsg--no { background: var(--danger-bg); color: var(--danger); border-color: var(--danger); }   .rmsg--wait { background: var(--warn-bg); color: var(--warn); border-color: var(--warn); }
+.rmsg__text { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }   /* the words of a message are ONE item of its row, so a name inside them never gets squeezed into a column */
 .rmsg__act { margin-inline-start: auto; font-weight: var(--fw-bold); text-decoration: underline; background: none; border: 0; color: inherit; cursor: pointer; }   /* undo */
 .rempty { display: flex; flex-direction: column; align-items: center; gap: var(--gap-field); padding: var(--sp-3) var(--gutter); text-align: center; color: var(--text-2); font: var(--fw-regular) var(--fs-s)/var(--lh-body) var(--font); }
 .rempty > b { color: var(--text); font-size: var(--fs-m); }
@@ -165,7 +181,7 @@ html[dir="rtl"] .rswipe { inset-inline-end: auto; left: 0; }
 .rfab > svg { width: var(--icon-l); height: var(--icon-l); stroke-width: var(--icon-w); }
 .rfab:active { transform: translateY(1px); }   .rfab:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .rfab:disabled, .rfab[aria-disabled="true"] { opacity: .45; cursor: default; }   .rfab[hidden] { display: none; }
-html.dlg-lock .rfab, html.kb-open .rfab { opacity: 0; transform: translateY(calc(var(--fab) + var(--sp-3))); pointer-events: none; }   /* kb-open is set from the visual viewport */
+html.rs-lock .rfab, html.dlg-lock .rfab, html.kb-open .rfab { opacity: 0; transform: translateY(calc(var(--fab) + var(--sp-3))); pointer-events: none; }   /* kb-open is set from the visual viewport */
 
 /* ============================ PULL TO REFRESH ============================ */
 .rptr { position: fixed; inset-inline: 0; top: var(--rptr-top, 0); display: grid; place-items: center; height: 48px; pointer-events: none; z-index: var(--z-sticky); transform: translateY(calc(var(--rptr-pull, 0) * 1px - 48px)); opacity: var(--rptr-o, 0); }
@@ -173,33 +189,13 @@ html.dlg-lock .rfab, html.kb-open .rfab { opacity: 0; transform: translateY(calc
 .rptr[data-state="loading"] .rptr__dot { animation: rk-spin .8s linear infinite; }
 @media (prefers-reduced-motion: reduce) { .rptr[data-state="loading"] .rptr__dot, .rbtn--icon[aria-busy="true"] > svg { animation: none; } }
 
-/* ============================ POPUP .rsheet: ONE element, three presentations, ALWAYS SQUARE ============================
-   touch / narrow: sheet from the top or bottom (data-from); desktop (760px and up): centered window by default; side drawer with data-desktop="side"
-   (non-modal panel with data-modal="false"). Same anatomy and tokens: fixed header (title, optional PRIMARY ACTION icon button, X), one scroll body,
-   optional fixed foot, grab bar on touch only. Widths: data-size="sm|md|lg" = --w-s 400 / --w-m 560 / --w-l 760 (md default). */
-.rsheet { border: 0; padding: 0; border-radius: var(--r-float); background: var(--bg); color: var(--text); box-shadow: var(--sh-pop); max-width: none; display: flex; flex-direction: column; }
-.rsheet::backdrop { background: var(--scrim); }
-.rsheet__head { flex: none; display: flex; align-items: center; gap: var(--gap-button); min-height: 56px; padding: 0 var(--pad-popup); border-bottom: 1px solid var(--line); }
-.rsheet__title { flex: 1 1 auto; margin: 0; font: var(--fw-black) var(--fs-l)/var(--lh-tight) var(--font); }
-.rsheet__head .rbtn--icon.rbtn--primary { order: 2; }   .rsheet__head .rsheet__x { order: 3; }           /* title, then the primary action (check), then the X */
-.rsheet__body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; padding: var(--pad-popup); }
-.rsheet__foot { flex: none; display: flex; gap: var(--gap-button); padding: var(--pad-popup); padding-bottom: var(--sheet-b); border-top: 1px solid var(--line); }
-.rsheet__bar { flex: none; height: 28px; display: grid; place-items: center; }
-.rsheet__bar::before { content: ""; width: 44px; height: 4px; background: var(--line-strong); border-radius: 0; }
-.rsheet[data-from="top"] { inset: 0 0 auto 0; margin: 0; width: 100%; max-height: calc(100dvh - var(--sp-1)); }
-.rsheet[data-from="bottom"] { inset: auto 0 0 0; margin: 0; width: 100%; max-height: calc(100dvh - var(--sp-1)); }
-.rsheet[data-from="bottom"] .rsheet__bar { order: -1; }
-@media (min-width: 760px) {
-  .rsheet, .rsheet[data-from="top"], .rsheet[data-from="bottom"] { inset: 0; margin: auto; width: min(var(--w-m), 100%); max-height: calc(100dvh - var(--sp-3)); }   /* the from-rules above have higher specificity: repeat them here so desktop wins */
-  .rsheet[data-size="sm"] { width: min(var(--w-s), 100%); }   .rsheet[data-size="lg"] { width: min(var(--w-l), 100%); }
-  .rsheet__bar { display: none; }
-  .rsheet[data-desktop="side"] { inset: 0 auto 0 0; margin: 0; height: 100dvh; max-height: none; }
-}
-
 /* ============================ ANCHORED MENU: not a popup (no header, no bar), square, closes on outside tap and Escape ============================ */
 .rmenu { position: absolute; z-index: var(--z-menu); min-width: 200px; max-width: min(var(--w-s), calc(100vw - var(--sp-2) * 2)); padding: var(--sp-1) 0; border: 1px solid var(--line); border-radius: var(--r-float); background: var(--bg); box-shadow: var(--sh-pop); }
 .rmenu__item { display: flex; align-items: center; gap: var(--gap-button); width: 100%; min-height: var(--ctl); padding: 0 var(--sp-2); border: 0; background: transparent; color: var(--text); font: var(--fw-medium) var(--fs-m)/1 var(--font); text-align: start; text-decoration: none; cursor: pointer; }
 .rmenu__item > svg { width: var(--icon-m); height: var(--icon-m); flex: none; stroke-width: var(--icon-w); }
+.rmenu__head { display: flex; flex-direction: column; align-items: flex-start; gap: var(--gap-tight); padding: var(--sp-1) var(--sp-2) var(--sp-2); border-bottom: 1px solid var(--line); margin-bottom: var(--gap-tight); }
+.rmenu__head > b { font: var(--fw-bold) var(--fs-m)/var(--lh-tight) var(--font); overflow-wrap: anywhere; }
+.rmenu__mail { color: var(--text-2); font: var(--fw-regular) var(--fs-xs)/var(--lh-body) var(--font); overflow-wrap: anywhere; }
 .rmenu__item[data-tone="danger"] { color: var(--danger); }
 .rmenu__item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 @media (hover: hover) { .rmenu__item:hover { background: var(--surface); } }
@@ -210,3 +206,15 @@ html.dlg-lock .rfab, html.kb-open .rfab { opacity: 0; transform: translateY(calc
 .rskel--short { width: 60%; }
 @media (prefers-reduced-motion: no-preference) { .rskel { animation: rk-pulse 1.4s var(--ease) infinite; } }
 @keyframes rk-pulse { 50% { opacity: .35; } }
+
+/* ============================ UNDO TOAST (delayed delete), stacked ============================ */
+.rtoasts { position: fixed; inset-inline: var(--gutter); bottom: var(--safe-b); z-index: var(--z-toast); display: flex; flex-direction: column; gap: var(--gap-button); pointer-events: none; }
+.rtoasts .rmsg { position: relative; overflow: hidden; pointer-events: auto; box-shadow: var(--sh-pop); }
+@media (min-width: 760px) { .rtoasts { inset-inline: auto; left: var(--gutter); width: var(--w-s); } }
+html:has(.rfab) .rtoasts:not(.rtoasts--in), html:has(.rfab) .rmsg--toast { bottom: calc(var(--fab-clear) + env(safe-area-inset-bottom, 0px)); }   /* on a screen with the add button, messages float above it, never over it */
+.rtoasts--in { position: absolute; inset-inline: var(--gutter); bottom: var(--gutter); left: auto; width: auto; }   /* inside an open popup (the page behind is inert) */
+.rmsg--undo { padding-bottom: var(--sp-2); }
+.rmsg--undo::after { content: ""; position: absolute; inset-inline: 0; bottom: 0; height: 3px; background: var(--bg); opacity: .6; transform-origin: right center; transform: scaleX(var(--left, 1)); }   /* time left, scaleX only */
+.rmsg--undo[data-paused="true"]::after { opacity: .25; }
+@media (prefers-reduced-motion: reduce) { .rmsg--undo::after { display: none; } }
+.rmsg__act:focus-visible { outline: 2px solid var(--bg); outline-offset: 2px; }

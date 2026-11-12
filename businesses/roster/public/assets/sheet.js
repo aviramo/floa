@@ -112,8 +112,15 @@
   }
 
   /* header, body and footer from HTML strings (the pages build their dialogs this way: one call per opening) */
+  var CHECK_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  /* o.action = { label, icon, form (id of the form it submits), id }: the primary action as an icon button in the header, just right of the X (the catalog's "header save") */
+  function actionButton(a) {
+    var label = a.label || "שמירה";
+    return '<button type="' + (a.form ? "submit" : "button") + '" class="rbtn rbtn--icon rbtn--primary rs-act"' + (a.form ? ' form="' + a.form + '"' : "") + (a.id ? ' id="' + a.id + '"' : "") + ' aria-label="' + label + '" title="' + label + '">' + (a.icon || CHECK_ICON) + "</button>";
+  }
   function markup(o) {
     return '<div class="sheet"><div class="sheet-head" data-rs-drag><h2 id="' + (o.titleId || "dlgT") + '">' + (o.title || "") + "</h2>" +
+      (o.action ? actionButton(o.action) : "") +
       '<button type="button" class="hicon rs-x" data-close aria-label="' + (o.closeLabel || "סגירה") + '">' + (o.icon || X_ICON) + "</button></div>" +
       '<div class="sheet-body">' + (o.body || "") + "</div>" + (o.foot ? '<div class="sheet-foot">' + o.foot + "</div>" : "") + "</div>";
   }
@@ -128,6 +135,11 @@
     ensureGrab(dlg);
     if (!dlg.open) dlg.showModal();
   }
+
+  /* the header action: disabled until something changed (setDirty), loading while saving (busy). The button keeps its place in the header. */
+  function actBtn(dlg) { return dlg.querySelector(".sheet-head > .rs-act"); }
+  function setDirty(dlg, dirty) { var b = actBtn(dlg); if (!b) return; b.disabled = !dirty; b.setAttribute("aria-disabled", dirty ? "false" : "true"); }
+  function busy(dlg, on) { var b = actBtn(dlg); if (!b) return; if (on) { b.setAttribute("aria-busy", "true"); b.disabled = true; } else { b.removeAttribute("aria-busy"); b.disabled = false; b.removeAttribute("aria-disabled"); } }
 
   function attach(dlg, opts) {
     if (dlg.__rs) return; dlg.__rs = true;
@@ -232,5 +244,5 @@
     if (!dlg.open) dlg.showModal();
   }
 
-  window.RosterSheet = { WIDE: WIDE, attach: attach, open: open, render: render, shell: shell };
+  window.RosterSheet = { WIDE: WIDE, attach: attach, open: open, render: render, shell: shell, setDirty: setDirty, busy: busy };
 })();

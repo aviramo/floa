@@ -12,7 +12,8 @@ dialog.rsheet {
   --rs-bg: var(--bg, #fff);
   --rs-text: var(--text, #16191D);
   --rs-scrim: var(--pp-scrim, rgba(16, 20, 26, .55));
-  --rs-pill: #6B7280;                      /* 4.8:1 on white, the grab bar must be seen */
+  --rs-pill: var(--line-strong, #6B7280);  /* 4.8:1 on white, the grab bar must be seen */
+  --rs-line: var(--line, #E5E7EB);
   border: 0; padding: 0; margin-inline: auto;
   width: 100%; max-width: var(--pp-w-m, 560px);
   max-height: calc(var(--rs-vvh, 100dvh) - 12px);
@@ -39,25 +40,26 @@ dialog.rsheet .rs-scroll, dialog.rsheet .sheet-body { overflow-y: auto; overscro
 
 /* the grab bar: a 44px strip (the touch target) with a pill in it, at the free edge of the sheet */
 .rs-grab { flex: 0 0 auto; height: 44px; display: grid; place-items: center; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
-.rs-grab::before { content: ""; width: 44px; height: 4px; background: var(--rs-pill, #6B7280); }   /* square, like everything else */
+.rs-grab::before { content: ""; width: 44px; height: 4px; background: var(--rs-pill); }   /* square, like everything else */
 dialog.rsheet[data-from="top"] > .rs-grab { order: 2; }
 dialog.rsheet[data-from="bottom"] > .rs-grab, dialog.rsheet:not([data-from]) > .rs-grab { order: -1; }
 [data-rs-drag] { touch-action: none; }
 
 /* the shell: a FIXED header (title and X), ONE scrolling body, an optional fixed footer; the grab bar is the sheet's own free edge, none of these scroll away */
 dialog.rsheet .sheet { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: var(--pp-pt, 16px) var(--pp-px, 16px) var(--sheet-b, calc(var(--pp-pb, 24px) + env(safe-area-inset-bottom, 0px))); }
-dialog.rsheet[data-from="top"] .sheet { padding-bottom: 8px; }
-dialog.rsheet .sheet-head { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; min-height: var(--pp-head, 44px); margin-bottom: var(--pp-head-gap, 12px); }
-dialog.rsheet .sheet-head > :first-child:not(.hicon) { flex: 1 1 auto; min-width: 0; margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -.01em; line-height: 1.25; overflow-wrap: anywhere; }
+dialog.rsheet[data-from="top"] .sheet { padding-bottom: var(--pp-head-top); }
+dialog.rsheet .sheet-head { flex: 0 0 auto; display: flex; align-items: center; gap: var(--pp-gap); min-height: var(--pp-head, 44px); margin-bottom: var(--pp-head-gap, 12px); }
+dialog.rsheet .sheet-head > :first-child:not(.hicon) { flex: 1 1 auto; min-width: 0; margin: 0; font-size: var(--fs-l, var(--pp-title)); font-weight: var(--fw-black, 800); letter-spacing: -.01em; line-height: 1.25; overflow-wrap: anywhere; }
 dialog.rsheet .sheet-head .hicon { flex: 0 0 auto; width: var(--pp-x, 44px); height: var(--pp-x, 44px); min-width: var(--pp-x, 44px); display: grid; place-items: center; padding: 0; border: 0; border-radius: 0; background: transparent; color: inherit; cursor: pointer; }
 dialog.rsheet .sheet-head .hicon:focus-visible { outline: 2px solid currentColor; outline-offset: -4px; }
-dialog.rsheet .sheet-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; overscroll-behavior-y: contain; margin: -4px; padding: 4px; }   /* the 4px keeps a focus ring from being clipped */
+dialog.rsheet .sheet-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; overscroll-behavior-y: contain; margin: calc(var(--pp-hair) * -1); padding: var(--pp-hair); }   /* the hairline of room keeps a focus ring from being clipped */
 dialog.rsheet .sheet-body > * { flex: 0 0 auto; }
-dialog.rsheet .sheet-foot { flex: 0 0 auto; display: flex; gap: 8px; align-items: center; padding-top: 12px; margin-top: 8px; border-top: 1px solid var(--line, #E5E7EB); }
+dialog.rsheet .sheet-foot { flex: 0 0 auto; display: flex; gap: var(--pp-gap); align-items: center; padding-top: var(--pp-foot-pt); margin-top: var(--pp-foot-mt); border-top: 1px solid var(--rs-line); }
 
 /* widths: m is the default; s for a short confirmation, l for a wide editor (data-size on the dialog) */
-dialog.rsheet[data-size="s"] { max-width: var(--pp-w-s, 400px); }
-dialog.rsheet[data-size="l"] { max-width: min(var(--pp-w-l, 960px), 94vw); }
+dialog.rsheet[data-size="s"], dialog.rsheet[data-size="sm"] { max-width: var(--pp-w-s, 400px); }
+dialog.rsheet[data-size="m"], dialog.rsheet[data-size="md"] { max-width: var(--pp-w-m, 560px); }
+dialog.rsheet[data-size="l"], dialog.rsheet[data-size="lg"] { max-width: min(var(--pp-w-l, 960px), 94vw); }
 
 /* the page behind: locked while a sheet is open (sheet.js keeps the scroll position) */
 html.rs-lock { overflow: hidden; overscroll-behavior: none; }
@@ -93,3 +95,7 @@ dialog.rsheet[open]::backdrop { animation: rs-fade .24s ease-out; }
 @keyframes rs-in-center { from { opacity: 0; transform: translateY(12px); } }
 @keyframes rs-in-side { from { transform: translateX(-100%); } }
 @media (min-width: 760px) and (prefers-reduced-motion: reduce) { dialog.rsheet[open], dialog.rsheet[open][data-from] { animation: none !important; } }
+
+/* the header's primary action (an icon button, e.g. save): physically just to the right of the X; same 44px touch target as every header icon */
+dialog.rsheet .sheet-head > .rs-act { order: 98; flex: 0 0 auto; width: var(--pp-x, 44px); min-height: var(--pp-x, 44px); }
+dialog.rsheet .sheet-head > .rs-act[aria-busy="true"] { pointer-events: none; }

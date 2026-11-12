@@ -3,15 +3,13 @@
   "counts": {
     "spacing": {
       "businesses/roster/public/admin/onboarding.css": 3,
-      "businesses/roster/public/assets/field.css": 10,
-      "businesses/roster/public/assets/manager.css": 62,
-      "businesses/roster/public/assets/sheet.css": 7,
+      "businesses/roster/public/assets/field.css": 6,
+      "businesses/roster/public/assets/manager-legacy.css": 62,
       "businesses/roster/public/connect/connect.css": 72,
       "businesses/roster/public/connect/connect.js": 3
     },
     "color": {
-      "businesses/roster/public/assets/manager.css": 6,
-      "businesses/roster/public/assets/sheet.css": 2,
+      "businesses/roster/public/assets/manager-legacy.css": 6,
       "businesses/roster/public/connect/connect.css": 5,
       "businesses/roster/public/connect/connect.js": 2
     },
@@ -19,8 +17,7 @@
       "businesses/roster/public/connect/connect.js": 5
     },
     "dialog": {
-      "businesses/roster/public/connect/index.html": 1,
-      "businesses/roster/public/index.html": 1
+      "businesses/roster/public/connect/index.html": 1
     }
   }
 }

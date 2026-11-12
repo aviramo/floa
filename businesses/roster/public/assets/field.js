@@ -4,6 +4,10 @@
    - textarea grows with its text up to its max-height, then scrolls inside;
    - browser autofill is detected (label stays floated), including values filled without an input event;
    - RField.error(control, message) / RField.clear(control) set aria-invalid, the error line and aria-describedby;
+   - the HELP SLOT: a control with data-help="sentence" (plain text) gets <small class="rf-help"> under the line, linked by aria-describedby. data-help-ex="floa.co.il/roster/{value}"
+     adds an example after the sentence (bold, left to right); {value} follows the field as the person types, data-help-ex-empty is used while it is empty. RField.help(control, text, ex)
+     sets or changes it (a null text removes it). The text is only ever written with textContent;
+   - RField.note(control, text, tone): a small live line under the field ("good" or "bad"), e.g. the identifier is free or taken;
    - fields that a page builds later (innerHTML) are picked up by a MutationObserver. */
 (function () {
   "use strict";
@@ -33,9 +37,46 @@
     if (f && f.classList && f.classList.contains("rfield")) { var v = isEmpty(el) ? "e" : "v"; if (f.getAttribute("data-rf") !== v) f.setAttribute("data-rf", v); }
   }
 
+  /* ---- the help slot ---- */
+  function describe(el, id, first) {
+    var d = (el.getAttribute("aria-describedby") || "").split(/\s+/).filter(Boolean);
+    if (d.indexOf(id) < 0) { if (first) d.unshift(id); else d.push(id); el.setAttribute("aria-describedby", d.join(" ")); }
+  }
+  function paintHelp(el, h) {
+    var text = el.getAttribute("data-help") || "", ex = el.getAttribute("data-help-ex");
+    h.textContent = text;
+    if (ex) {
+      var emptyEx = el.getAttribute("data-help-ex-empty"), ph = el.getAttribute("placeholder");
+      var v = (el.value || "").trim();
+      var span = document.createElement("span");
+      span.className = "rf-ex";
+      /* empty field: the whole example from data-help-ex-empty, or the example with the placeholder in {value}'s place; otherwise the example with what was typed */
+      span.textContent = !v && emptyEx ? emptyEx : ex.split("{value}").join(v || (ph && ph !== " " ? ph : ""));
+      if (text) h.appendChild(document.createTextNode(" "));
+      h.appendChild(span);
+    }
+  }
+  function buildHelp(el) {
+    var f = el.parentNode;
+    if (!f || !f.classList || !f.classList.contains("rfield")) return;
+    var text = el.getAttribute("data-help"), ex = el.getAttribute("data-help-ex"), h = f.querySelector(":scope > .rf-help");
+    if (!text && !ex) { if (h) h.remove(); return; }
+    if (!h) {
+      h = document.createElement("small");
+      h.className = "rf-help";
+      h.id = (el.id || "rf" + (++uid)) + "-help";
+      var err = f.querySelector(":scope > .rf-err");
+      if (err) f.insertBefore(h, err); else f.appendChild(h);
+    }
+    paintHelp(el, h);
+    describe(el, h.id, true);
+    if (ex && ex.indexOf("{value}") > -1 && !el.__rfHelpLive) { el.__rfHelpLive = 1; el.addEventListener("input", function () { var hh = f.querySelector(":scope > .rf-help"); if (hh) paintHelp(el, hh); }); }
+  }
+
   function setup(el) {
     if (el.__rf) return;
     el.__rf = 1;
+    buildHelp(el);
     if (el.tagName !== "SELECT") {
       var ph = el.getAttribute("placeholder");
       if (ph == null || ph === "") el.setAttribute("placeholder", " ");
@@ -70,6 +111,29 @@
     scan: scan,
     sync: resync,
     grow: grow,
+    /* set, change or remove the help line of a field: help(el, "text", "example with {value}") ; help(el, null) removes it */
+    help: function (el, text, ex) {
+      if (text == null && ex == null) { el.removeAttribute("data-help"); el.removeAttribute("data-help-ex"); }
+      else { if (text != null) el.setAttribute("data-help", text); if (ex != null) el.setAttribute("data-help-ex", ex); }
+      buildHelp(el);
+    },
+    /* a small live line under the field: tone "good" or "bad"; an empty text removes it */
+    note: function (el, text, tone) {
+      var f = lineOf(el);
+      if (!f) return;
+      var n = f.querySelector(":scope > .rf-note");
+      if (!text) { if (n) { var d = (el.getAttribute("aria-describedby") || "").split(/\s+/).filter(function (x) { return x && x !== n.id; }); if (d.length) el.setAttribute("aria-describedby", d.join(" ")); else el.removeAttribute("aria-describedby"); n.remove(); } return; }
+      if (!n) {
+        n = document.createElement("small");
+        n.className = "rf-note";
+        n.id = (el.id || "rf" + (++uid)) + "-note";
+        n.setAttribute("aria-live", "polite");
+        f.appendChild(n);
+        describe(el, n.id, false);
+      }
+      n.textContent = text;
+      n.setAttribute("data-tone", tone || "info");
+    },
     /* show an error under the line; message "" or null clears it */
     error: function (el, message) {
       var f = lineOf(el);

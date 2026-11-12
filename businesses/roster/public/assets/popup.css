@@ -10,8 +10,8 @@
   --pp-head: 44px;              /* the header row: title and X */
   --pp-x: 44px;                 /* the X button: a 44px touch target */
   --pp-radius: 0;               /* iron rule: square corners */
-  --pp-scrim: rgba(16, 20, 26, .55);
-  --pp-shadow: 0 14px 34px -10px rgba(16, 24, 40, .28), 0 2px 6px rgba(16, 24, 40, .08);
+  --pp-scrim: var(--scrim, rgba(16, 20, 26, .55));            /* the kit's scrim when the page has the kit (owner), the old one otherwise */
+  --pp-shadow: var(--sh-pop, 0 14px 34px -10px rgba(16, 24, 40, .28), 0 2px 6px rgba(16, 24, 40, .08));
   --pp-side-shadow: 0 0 34px -6px rgba(16, 24, 40, .32);
   --pp-px: 16px;                /* side padding of the content */
   --pp-pt: 16px;                /* above the header */
@@ -21,6 +21,12 @@
   --pp-w-m: 560px;
   --pp-w-l: 960px;
   --pp-side: 440px;             /* a side drawer opened by data-desktop="side" */
+  --pp-gap: 8px;                /* between header items and footer items */
+  --pp-hair: 4px;               /* the room a focus ring needs around the scrolling body */
+  --pp-foot-pt: 12px;           /* footer: line to its first item */
+  --pp-foot-mt: 8px;            /* footer: content to the footer line */
+  --pp-title: 20px;             /* the title (the kit's --fs-l on a page that has the kit) */
+  --pp-head-top: 8px;           /* a top sheet: room under its content */
 }
 @media (min-width: 760px) { :root { --pp-px: 20px; } }
 
