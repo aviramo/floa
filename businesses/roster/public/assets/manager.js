@@ -315,11 +315,9 @@
   function rowHtml(b) {
     var n = (S.users[b.id] || []).length, id = esc(b.id);
     return '<div class="row" data-row="' + id + '">' +
-      '<div class="rmain"><span class="rname">' + esc(b.name) + "</span>" +
-      '<div class="rsub"><bdi class="slug" dir="ltr">' + esc(b.slug) + "</bdi>" +
-      '<button type="button" class="tg' + (n ? "" : " warn") + '" data-act="accounts" data-id="' + id + '" aria-label="ניהול חשבונות של ' + esc(b.name) + ", " + accCount(n) + '">' + accCount(n) + "</button></div></div>" +
-      '<a class="btn ghost sm open" href="admin/?biz=' + esc(encodeURIComponent(b.slug)) + '" aria-label="פתיחת ' + esc(b.name) + '">פתיחה' + icon("go", "i18") + "</a>" +
-      '<button type="button" class="hicon" data-act="menu" data-id="' + id + '" aria-haspopup="menu" aria-expanded="false" aria-label="עוד פעולות: ' + esc(b.name) + '">' + icon("dots") + "</button></div>";
+      '<a class="rmain rlink" href="admin/?biz=' + esc(encodeURIComponent(b.slug)) + '" aria-label="פתיחת ' + esc(b.name) + '"><span class="rname">' + esc(b.name) + '</span>' +
+      '<span class="rsub"><bdi class="slug" dir="ltr">' + esc(b.slug) + '</bdi></span></a>' +
+      '<button type="button" class="hicon" data-act="menu" data-id="' + id + '" aria-haspopup="menu" aria-expanded="false" aria-label="עוד פעולות: ' + esc(b.name) + '">' + icon('dots') + '</button></div>';
   }
 
   function renderList() {
