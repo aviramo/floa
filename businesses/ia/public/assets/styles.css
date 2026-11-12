@@ -466,3 +466,8 @@ body { background-color: var(--paper); }
   .cta-dock { animation: dock-glide linear both, dock-in .6s var(--ease) .5s both; animation-timeline: scroll(root block), auto; animation-range: 0 160px, normal; }
 }
 @media (prefers-reduced-motion: reduce) { .cta-dock { animation-delay: 0s, 0s; animation-duration: 1ms !important; } }
+
+/* בלי הבהוב כחול של הדפדפן בלחיצה (המקלדת עדיין מקבלת פוקוס נראה) */
+html { -webkit-tap-highlight-color: transparent; }
+a, button, summary { -webkit-tap-highlight-color: transparent; }
+button:focus:not(:focus-visible), a:focus:not(:focus-visible) { outline: none; }
