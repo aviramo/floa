@@ -26,13 +26,13 @@
 import { CONTACT, SHARE_IMAGE, SHARE_TITLE, address, pdf } from "./cv-shared.js";
 
 const SUMMARY_EN = [
-  "Solutions Architect with 15+ years in enterprise information systems across finance, healthcare, transportation and technology, and a B.Sc. in Industrial Engineering and Management.",
+  "Solutions Architect with experience in enterprise information systems across finance, healthcare, transportation and technology, and a B.Sc. in Industrial Engineering and Management.",
   "Combines business understanding, software architecture, data models and integrations with hands-on full-stack development: designing and building complex systems end to end, from the business need to production.",
   "Uses Generative AI as a tool for leading software development efficiently and independently, on top of years of architectural experience: a mobile app, management systems and websites built in practice.",
 ];
 
 const SUMMARY_HE = [
-  "ארכיטקט פתרונות עם למעלה מ-15 שנות ניסיון במערכות מידע ארגוניות בתחומי הפיננסים, הבריאות, התחבורה והטכנולוגיה, ובוגר B.Sc. בהנדסת תעשייה וניהול.",
+  "ארכיטקט פתרונות עם ניסיון במערכות מידע ארגוניות בתחומי הפיננסים, הבריאות, התחבורה והטכנולוגיה, ובוגר B.Sc. בהנדסת תעשייה וניהול.",
   "שילוב של הבנה עסקית, ארכיטקטורת תוכנה, מודלי נתונים ואינטגרציות עם יכולת פיתוח Full Stack מעשית: תכנון ומימוש של מערכות מורכבות מקצה לקצה, מהצורך העסקי ועד הפצה לייצור.",
   "שימוש ב-Generative AI ככלי להובלת פיתוח מערכות ביעילות ובעצמאות, על גבי ידע ארכיטקטוני וניסיון של שנים: אפליקציית מובייל, מערכות ניהול ואתרים שפותחו בפועל.",
 ];
@@ -94,7 +94,7 @@ export const aiEn = {
           org: "FLOA | Independent, partly in parallel with salaried work",
           dates: "2025 - Present",
           bullets: [
-            "Own the whole cycle of each project: requirements, system and data design, UX, development, testing and release. Generative AI, mainly Claude, is the main development tool, with every output reviewed before it ships",
+            "Own the whole cycle of each project: requirements, system and data design, UX, development, testing and release. Generative AI, mainly Claude, is the main development tool. Responsibility for quality control, testing and release",
             "Once, a social mobile app for Android and iOS (React Native, Expo, TypeScript, Supabase, PostgreSQL, Edge Functions): location-based matching and detection of nearby users, real-time communication, chat, groups, a credit system, and a permission model enforced in the database with Row Level Security. Testing and release to the app stores",
             "Participants management system for several businesses, each isolated at the database level (multi-tenant, Row Level Security): participants, sessions, payments and subscriptions, an admin interface, a personal area for participants, email and WhatsApp communication, and a public API with keys and signed webhooks for external websites",
             "A chords and songs app: song index, a page per song and an editor, Google sign-in, reading songs from images with the Claude API, and pre-built song pages for organic search",
@@ -106,10 +106,10 @@ export const aiEn = {
 
     {
       type: "roles",
+      breakBefore: true,
       title: "Professional Experience",
       jobs: [
         {
-          breakBefore: true,
           role: "Senior Systems Analyst | Web Applications and Core System Interfaces",
           org: "Tidhar Group | Israel | Hybrid",
           dates: "2025 - 2026",
@@ -241,9 +241,9 @@ export const aiHe = {
           org: "FLOA | עצמאי, גם במקביל לעבודה כשכיר",
           dates: "2025 - היום",
           bullets: [
-            "אחריות על מחזור החיים המלא של כל פרויקט: דרישות, תכנון המערכת והנתונים, UX, פיתוח, בדיקות והפצה. כלי ה-Generative AI, בעיקר Claude, הוא כלי הפיתוח המרכזי, וכל תוצר נבדק לפני שהוא יוצא",
+            "אחריות על מחזור החיים המלא של כל פרויקט: דרישות, תכנון המערכת והנתונים, UX, פיתוח, בדיקות והפצה. כלי ה-Generative AI, בעיקר Claude, הוא כלי הפיתוח המרכזי. אחריות על בקרת איכות, בדיקות והפצה",
             "Once, אפליקציית מובייל חברתית ל-Android ול-iOS (React Native, Expo, TypeScript, Supabase, PostgreSQL, Edge Functions): התאמות מבוססות מיקום וזיהוי משתמשים בקרבת מקום, תקשורת בזמן אמת, צ'אט, קבוצות, מערכת קרדיטים ומודל הרשאות שנאכף בבסיס הנתונים באמצעות Row Level Security. בדיקות והפצה לחנויות האפליקציות",
-            "מערכת לניהול משתתפים לכמה עסקים, כל אחד מבודד ברמת בסיס הנתונים (Multi-tenant, Row Level Security): משתתפים, מפגשים, תשלומים ומנויים, ממשק ניהול, אזור אישי למשתתפים, תקשורת במייל ובוואטסאפ, ו-API ציבורי עם מפתחות ו-Webhooks חתומים לאתרים חיצוניים",
+            "מערכת Multi-tenant לניהול משתתפים לכמה עסקים, כל אחד מבודד ברמת בסיס הנתונים באמצעות Row Level Security: משתתפים, מפגשים, תשלומים ומנויים, ממשק ניהול, אזור אישי למשתתפים, תקשורת במייל ובוואטסאפ, ו-API ציבורי עם מפתחות ו-Webhooks חתומים לאתרים חיצוניים",
             "אפליקציית אקורדים ושירים: אינדקס שירים, דף לכל שיר ועורך, התחברות עם Google, קריאת שירים מתמונה באמצעות Claude API ובנייה מראש של דפי השירים לקידום אורגני",
             "אתרים ודפי נחיתה ממוקדי המרות עם אינטגרציה לפרסום ממומן ב-Meta וב-Google Ads: טפסי הרשמה, יצירת לידים, מעקב אחר מקורות הגעה ומדידת קמפיינים",
           ],
@@ -253,10 +253,10 @@ export const aiHe = {
 
     {
       type: "roles",
+      breakBefore: true,
       title: "ניסיון תעסוקתי",
       jobs: [
         {
-          breakBefore: true,
           role: "מנתח מערכות בכיר | אפליקציות Web וממשקים למערכות ליבה",
           org: "קבוצת תדהר | היברידי",
           dates: "2025 - 2026",

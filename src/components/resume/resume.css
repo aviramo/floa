@@ -371,7 +371,8 @@
 
   /* The one boundary the document declares, and it is the author's: the fold
      falls here and nowhere else. */
-  .cv-job--page { break-before: page; }
+  .cv-job--page,
+  .cv-sec--page { break-before: page; }
 
   /* An employment entry is one thought and is never cut across a sheet. */
   .cv-job,

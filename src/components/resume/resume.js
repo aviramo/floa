@@ -113,7 +113,7 @@ const BLOCK = {
 };
 
 const section = (t) => (s) => html`
-    <section class="cv-sec">
+    <section class="${s.breakBefore ? "cv-sec cv-sec--page" : "cv-sec"}">
       <h2 class="cv-sec__head">${t(s.title)}</h2>
       <div class="cv-sec__body">${BLOCK[s.type](s, t)}
       </div>
