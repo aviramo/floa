@@ -22,7 +22,7 @@
      dist/cv/en/index.html      ->  floa.co.il/cv/en/   (English)
    Its PDFs sit in cv/ai/, which is a folder of files and not a page.
    ========================================================================== */
-import { CONTACT, DEMO, SHARE_IMAGE, SHARE_TITLE, address, pdf } from "./cv-shared.js";
+import { CONTACT, SHARE_IMAGE, SHARE_TITLE, address, pdf } from "./cv-shared.js";
 
 const SUMMARY_EN = [
   "Experienced information systems professional with 15+ years in large enterprises across finance, healthcare, transportation and technology, and a B.Sc. in Industrial Engineering and Management.",
@@ -109,7 +109,6 @@ export const aiEn = {
             "FLOA: digital solutions for businesses, from websites and admin interfaces to lead and customer management, integrations and business automations",
             "Architecture design for a unified enterprise information platform connecting data, interfaces, processes and permissions, with integrations, webhooks, ETL and data mapping. A design project, not a completed system",
           ],
-          link: { label: "Once demo:", href: DEMO },
         },
       ],
     },
@@ -261,7 +260,6 @@ export const aiHe = {
             "FLOA: פתרונות דיגיטליים לעסקים, מאתרים וממשקי ניהול ועד ניהול לידים ולקוחות, אינטגרציות ואוטומציות עסקיות",
             "תכנון ארכיטקטורה לפלטפורמת מידע ארגונית אחודה, המחברת נתונים, ממשקים, תהליכים והרשאות, עם אינטגרציות, Webhooks, ETL ומיפויי נתונים. זהו פרויקט תכנון, ולא מערכת שהושלמה",
           ],
-          link: { label: "הדגמת Once:", href: DEMO },
         },
       ],
     },
