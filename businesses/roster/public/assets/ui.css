@@ -125,7 +125,7 @@
 /* SWIPE ACTIONS (parameter of .rrow and .rcard): data-swipe="<list kind>". Up to TWO actions in .rswipe (icon + short label, destructive = danger tone).
    The foreground (.rswipe-fg) slides by --sw-x (transform only); the tray sits at the inline-end edge. Direction is RTL aware: swipe toward the
    inline-start edge (physical right in RTL) opens. Only one row open at a time. The three-dots menu with the SAME actions is always present (non-gesture path). */
-[data-swipe] { position: relative; overflow: hidden; touch-action: pan-y; }
+[data-swipe] { position: relative; overflow: hidden; touch-action: pan-y; min-height: min-content; }
 [data-swipe] > .rswipe-fg { position: relative; z-index: var(--z-raised); background: var(--bg); transform: translateX(var(--sw-x, 0px)); transition: transform var(--t-base) var(--ease); will-change: transform; }
 [data-swipe].is-dragging > .rswipe-fg { transition: none; }
 .rswipe { position: absolute; z-index: 0; inset-block: 0; inset-inline-end: 0; display: flex; width: calc(var(--sw-n, 2) * 88px); }
