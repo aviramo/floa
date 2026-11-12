@@ -8,14 +8,15 @@
    the salaried roles are the analyst CV's, which is the base document.
 
    WHAT IS CLAIMED, AND WHAT IS NOT
-     - The headline places him in solution architecture. It does not say he held
-       the title of AI Solutions Architect.
-     - Claude is presented as the tool he builds software WITH, directed by him.
-       Nothing here claims model training, LLM engineering, RAG or ML. Do not
-       add any of that unless it is true.
-     - Self-employed work sits in its own section, apart from salaried work.
-     - NO NUMBER IN HERE WAS INVENTED. Dates for FLOA and for the management
-       systems are not stated in the source, so they carry none.
+     - The headline names the specialisation. It does not say he held the title
+       of AI Solutions Architect.
+     - Claude is named ONCE, at the head of the independent section, as the tool
+       software is built with. Nothing here claims model training, LLM
+       engineering, RAG or ML. Do not add any of that unless it is true.
+     - Voice: nominal, no first person ("I define", "I direct") and no "alone".
+     - Only systems that were really built are listed. A design that never
+       became a system is not.
+     - NO NUMBER IN HERE WAS INVENTED.
 
    WHERE THEY LAND
      dist/cv/index.html         ->  floa.co.il/cv/      (Hebrew, the default)
@@ -25,15 +26,15 @@
 import { CONTACT, SHARE_IMAGE, SHARE_TITLE, address, pdf } from "./cv-shared.js";
 
 const SUMMARY_EN = [
-  "Experienced information systems professional with 15+ years in large enterprises across finance, healthcare, transportation and technology, and a B.Sc. in Industrial Engineering and Management.",
-  "Designs software solutions end to end: the problem, the user experience, the architecture, the data model, the business logic and the integrations, and now also leads the implementation, building full-stack systems and mobile apps with Claude and other generative AI tools.",
-  "Over the past year has independently built and shipped a mobile app and business systems: directing the AI tools, defining the behavior, reviewing every output and moving the work forward iteratively. Not an AI researcher or an ML engineer; the value is in turning a business need into a working system.",
+  "Solutions Architect with 15+ years in enterprise information systems across finance, healthcare, transportation and technology, and a B.Sc. in Industrial Engineering and Management.",
+  "Combines business understanding, software architecture, data models and integrations with hands-on full-stack development: designing and building complex systems end to end, from the business need to production.",
+  "Uses Generative AI as a tool for leading software development efficiently and independently, on top of years of architectural experience: a mobile app, management systems and websites built in practice.",
 ];
 
 const SUMMARY_HE = [
-  "איש מערכות מידע מנוסה עם למעלה מ-15 שנות ניסיון בארגונים גדולים בתחומי הפיננסים, הבריאות, התחבורה והטכנולוגיה, ובוגר B.Sc. בהנדסת תעשייה וניהול.",
-  "מתכנן פתרונות תוכנה מקצה לקצה: מהבנת הבעיה, דרך חוויית המשתמש, הארכיטקטורה, מודל הנתונים, הלוגיקה העסקית והאינטגרציות, ועד המימוש. היום מוביל גם את המימוש עצמו ובונה מערכות Full Stack ואפליקציות מובייל בעזרת Claude וכלי Generative AI נוספים.",
-  "בשנה האחרונה פיתח באופן עצמאי אפליקציית מובייל ומערכות עסקיות: מנחה את כלי ה-AI, מגדיר את ההתנהגות הרצויה, בודק כל תוצר ומקדם את העבודה בצורה איטרטיבית. לא חוקר AI ולא מהנדס Machine Learning. הערך הוא היכולת להפוך צורך עסקי למערכת עובדת.",
+  "ארכיטקט פתרונות עם למעלה מ-15 שנות ניסיון במערכות מידע ארגוניות בתחומי הפיננסים, הבריאות, התחבורה והטכנולוגיה, ובוגר B.Sc. בהנדסת תעשייה וניהול.",
+  "שילוב של הבנה עסקית, ארכיטקטורת תוכנה, מודלי נתונים ואינטגרציות עם יכולת פיתוח Full Stack מעשית: תכנון ומימוש של מערכות מורכבות מקצה לקצה, מהצורך העסקי ועד הפצה לייצור.",
+  "שימוש ב-Generative AI ככלי להובלת פיתוח תוכנה ביעילות ובעצמאות, על גבי ידע ארכיטקטוני וניסיון של שנים: אפליקציית מובייל, מערכות ניהול ואתרים שפותחו בפועל.",
 ];
 
 /* --- English ---------------------------------------------------------------- */
@@ -43,8 +44,8 @@ export const aiEn = {
   dir: "ltr",
 
   meta: {
-    title: "Ofir Aviram | Solutions Architect, Building Software End to End with AI",
-    description: "CV of Ofir Aviram. 15+ years designing enterprise systems and integrations, now architecting and building full-stack software and mobile apps end to end with Claude and generative AI tools.",
+    title: "Ofir Aviram | AI Solutions Architecture, Full Stack and AI-Assisted Development",
+    description: "CV of Ofir Aviram. Solutions Architect with 15+ years in enterprise information systems, designing and building complex software end to end with Generative AI: architecture, data models, integrations and full-stack development.",
   },
 
   share: { title: SHARE_TITLE, description: SUMMARY_EN[0], locale: "en_US", image: SHARE_IMAGE },
@@ -52,8 +53,8 @@ export const aiEn = {
 
   name: "Ofir Aviram",
   roles: [
-    "Solutions Architect | Software Built End to End with Generative AI",
-    "Systems Design, Full-Stack Development and Integrations",
+    "AI Solutions Architecture | Full Stack Development | AI-Assisted Software Development",
+    "Solutions Architect with 15+ years in enterprise information systems",
   ],
   contact: [
     { text: "Hod Hasharon, Israel" },
@@ -71,23 +72,15 @@ export const aiEn = {
       groups: [
         {
           title: "Solution Architecture",
-          terms: ["Solution Architecture", "System Design", "Database Architecture", "API Integration", "UX/UI Design", "Business Process Automation", "Security and Access Control"],
+          terms: ["System Design", "Database Architecture", "API Integration", "UX/UI Design", "Business Process Automation", "Security and Access Control"],
         },
         {
-          title: "AI-Assisted Development",
-          terms: ["AI-Assisted Software Development", "Claude", "ChatGPT", "Directing AI Tools", "Prototyping", "Code Review", "Iterative Delivery"],
-        },
-        {
-          title: "Full Stack",
-          terms: ["Full Stack Development", "React Native", "Expo", "TypeScript", "Node.js", "Deno", "Supabase", "Edge Functions", "PostgreSQL", "Row Level Security (RLS)", "Git"],
+          title: "AI-Assisted Development and Full Stack",
+          terms: ["Claude", "ChatGPT", "TypeScript", "React Native", "Expo", "Node.js", "Deno", "Supabase", "PostgreSQL", "Edge Functions", "Row Level Security (RLS)", "Git"],
         },
         {
           title: "Enterprise Systems",
-          terms: ["SQL", "Microsoft SQL Server", "Azure SQL", "Salesforce", "Priority ERP", "Workato", "ETL", "IAM", "IDM"],
-        },
-        {
-          title: "Analysis and Delivery",
-          terms: ["Functional and Technical Specifications", "HLD and DD", "UAT", "Agile", "Jira", "Stakeholder Management", "Production Deployment"],
+          terms: ["Microsoft SQL Server", "Azure SQL", "ETL", "IAM and IDM", "Systems Analysis", "HLD and DD", "Integration Design", "Salesforce", "Priority ERP", "Workato", "UAT"],
         },
       ],
     },
@@ -97,17 +90,16 @@ export const aiEn = {
       title: "Independent Experience",
       jobs: [
         {
-          role: "Entrepreneur and Software Solutions Developer | Architecture and End-to-End Development with AI, Mainly Claude",
-          org: "Independent | Once, FLOA and other projects",
+          role: "Design and Development of End-to-End Software Solutions",
+          org: "FLOA | Independent",
           dates: "2025 - Present",
           bullets: [
-            "Lead projects alone from the business need to a working system: specification, architecture, data model, UX/UI, full-stack development, testing and release. Claude is the main development tool; I define the requirements and behavior, direct it, review every output and iterate",
-            "Once: a social mobile app for Android and iOS in React Native, Expo, TypeScript, Supabase and PostgreSQL. Location-based matching, detection of nearby users, real-time communication, chat, groups, credits and permissions with Row Level Security, including testing and release to the app stores",
-            "A system for managing participants, sessions, payments and subscriptions: multi-tenant for several businesses, with an admin interface, a personal area for participants, email and WhatsApp communication, and a public API with keys and signed webhooks that external websites are built on",
-            "A chords app for songs: a song index, a page per song and an editor, Google sign-in, reading songs from images with the Claude API, and pre-built song pages for organic search",
-            "Conversion-focused websites and landing pages for paid campaigns on Meta and Google Ads, with sign-up forms, lead creation, source tracking and performance measurement, plus a marketing site and sign-up flows for meetups and events (Yotzim LeHarpatka)",
-            "FLOA: digital solutions for businesses, from websites and admin interfaces to lead and customer management, integrations and business automations",
-            "Architecture design for a unified enterprise information platform connecting data, interfaces, processes and permissions, with integrations, webhooks, ETL and data mapping. A design project, not a completed system",
+            "End-to-end design and development of systems, in full-stack work with Generative AI, mainly Claude: leading the development, specifying requirements and behavior, quality control of every output, and responsibility for architecture, testing and release",
+            "Once, a social mobile app for Android and iOS: system architecture, data model and permissions with Row Level Security, built in React Native, Expo, TypeScript, Supabase and PostgreSQL. Location-based matching, real-time communication, chat, groups and a credit system, through testing and release to the app stores",
+            "A multi-tenant system for managing participants, sessions, payments and subscriptions: data model and business logic, an admin interface and a personal area for participants, email and WhatsApp communication, and separation between businesses at the database level. A public API with keys and signed webhooks for integration with external websites",
+            "A chords and songs application: a song index, a page per song and an editor, Google sign-in, reading songs from images with the Claude API, and pre-built song pages for organic search",
+            "Conversion-focused websites and landing pages integrated with paid advertising on Meta and Google Ads: sign-up forms, lead creation, source tracking and campaign measurement, alongside a site and sign-up flows for meetups and events",
+            "Under FLOA: specification and development of digital solutions for businesses, admin interfaces, lead and customer management, and business automations",
           ],
         },
       ],
@@ -122,19 +114,21 @@ export const aiEn = {
           org: "Tidhar Group | Israel | Hybrid",
           dates: "2025 - 2026",
           bullets: [
-            "Responsible for the specification and delivery of cross-system business processes and automations across Priority ERP, Salesforce and Workato, from the business requirement through to production",
-            "Specified the interfaces between the core systems down to data mapping, business logic and validations, and designed data structures and scheduled SQL and ETL processes",
+            "Responsible for the design and delivery of cross-system business processes and automations across Priority ERP, Salesforce and Workato, from the business requirement through to production",
+            "Designed the integration architecture between the core systems: data mapping, business logic, validations and interfaces, with data structures and scheduled SQL and ETL processes",
             "Worked on the TQA quality management system, in an Azure SQL environment and in workflows that spanned enterprise systems and development tools",
+            "Worked with business owners, IT teams, developers and vendors through specification, testing and implementation",
           ],
         },
         {
+          breakBefore: true,
           role: "Senior Systems Analyst | Web Portals and Core Identity Systems",
           org: "Brillix | Israel | Remote",
           dates: "2021 - 2025",
           bullets: [
-            "Responsible for the specification and implementation of Web-based core Identity Management systems at Clalit Health Services, Migdal, Ayalon and LivePerson",
-            "Designed the solution end to end: identity processes, the interfaces and data transformations between the portal and the core systems, and the ETL and synchronization processes",
-            "Led delivery across cybersecurity, DevOps, DBA, infrastructure, IT and business teams, through acceptance testing and production support",
+            "Responsible for the design and implementation of Web-based core Identity Management systems at Clalit Health Services, Migdal, Ayalon and LivePerson",
+            "Designed the solution end to end: identity processes, the interfaces and data transformations between the portal and the core systems, data structures and ETL and synchronization processes",
+            "Led delivery across cybersecurity, DevOps, DBA, infrastructure, IT and business teams, through acceptance testing, implementation and production support",
           ],
         },
         {
@@ -142,7 +136,8 @@ export const aiEn = {
           org: "Tel Aviv-Yafo Municipality",
           dates: "2020 - 2021",
           bullets: [
-            "Led the specification of a Web solution connecting municipal departments and automating cross-organizational processes, with user journeys, UX and UI flows and the data structures behind them",
+            "Led the design of a Web solution connecting municipal departments and automating cross-organizational processes, with user journeys, UX and UI flows and the data structures behind them",
+            "Designed SQL and SSIS interfaces and worked with users, development, DBA and QA through acceptance testing",
           ],
         },
         {
@@ -150,7 +145,8 @@ export const aiEn = {
           org: "Amdocs | Israel",
           dates: "2017 - 2020",
           bullets: [
-            "Specified the organization's core Identity Management systems, from business and information-security requirements through to processes, interfaces and integrations, and guided a Java and JSP Web development team to production",
+            "Specified the organization's core Identity Management systems, from business and information-security requirements through to processes, interfaces and integrations",
+            "Designed system processes, data flows and data structures, and guided a Java and JSP Web development team through implementation and production delivery",
           ],
         },
         {
@@ -158,7 +154,8 @@ export const aiEn = {
           org: "ProLink Identity Management Architects | Israel",
           dates: "2014 - 2017",
           bullets: [
-            "Owned the application-layer specification and implementation of the Aveksa IAM and Identity Governance platform at Harel, Migdal, Phoenix and Amdocs, including workflows, approval processes, data mappings and the interfaces to enterprise systems and databases",
+            "Owned the application-layer design and implementation of the Aveksa IAM and Identity Governance platform at Harel, Migdal, Phoenix and Amdocs",
+            "Built business logic, workflows, approval processes, data mappings and synchronization processes, and the integrations to enterprise systems, databases and directory services",
           ],
         },
         {
@@ -166,7 +163,8 @@ export const aiEn = {
           org: "Varonis | Israel",
           dates: "2008 - 2014",
           bullets: [
-            "Specified and developed a core enterprise billing system on Microsoft SQL Server, Microsoft Access and VBA, working directly with finance and operations",
+            "Specified and developed a core enterprise billing system on Microsoft SQL Server, Microsoft Access and VBA",
+            "Turned business questions into SQL queries, reports and automations, working directly with finance and operations",
           ],
         },
       ],
@@ -194,8 +192,8 @@ export const aiHe = {
   dir: "rtl",
 
   meta: {
-    title: "אופיר אבירם | ארכיטקט פתרונות, בניית תוכנה מקצה לקצה בעזרת AI",
-    description: "קורות החיים של אופיר אבירם. מעל 15 שנות ניסיון בתכנון מערכות ארגוניות ואינטגרציות, והיום גם תכנון ובנייה של מערכות Full Stack ואפליקציות מובייל מקצה לקצה בעזרת Claude וכלי Generative AI.",
+    title: "אופיר אבירם | AI Solutions Architecture, Full Stack ופיתוח בסיוע AI",
+    description: "קורות החיים של אופיר אבירם. ארכיטקט פתרונות עם למעלה מ-15 שנות ניסיון במערכות מידע ארגוניות, שמתכנן ובונה מערכות תוכנה מורכבות מקצה לקצה בעזרת Generative AI: ארכיטקטורה, מודלי נתונים, אינטגרציות ופיתוח Full Stack.",
   },
 
   share: { title: SHARE_TITLE, description: SUMMARY_HE[0], locale: "he_IL", image: SHARE_IMAGE },
@@ -203,8 +201,8 @@ export const aiHe = {
 
   name: "אופיר אבירם",
   roles: [
-    "ארכיטקט פתרונות | בניית תוכנה מקצה לקצה בעזרת Generative AI",
-    "תכנון מערכות, פיתוח Full Stack ואינטגרציות",
+    "AI Solutions Architecture | Full Stack Development | AI-Assisted Software Development",
+    "ארכיטקט פתרונות עם למעלה מ-15 שנות ניסיון במערכות מידע ארגוניות",
   ],
   contact: [
     { text: "הוד השרון" },
@@ -222,23 +220,15 @@ export const aiHe = {
       groups: [
         {
           title: "ארכיטקטורת פתרונות",
-          terms: ["Solution Architecture", "System Design", "Database Architecture", "API Integration", "UX/UI Design", "אוטומציה של תהליכים עסקיים", "אבטחת מידע והרשאות"],
+          terms: ["System Design", "Database Architecture", "API Integration", "UX/UI Design", "אוטומציה של תהליכים עסקיים", "אבטחת מידע והרשאות"],
         },
         {
-          title: "פיתוח בסיוע AI",
-          terms: ["AI-Assisted Software Development", "Claude", "ChatGPT", "הנחיית כלי AI", "אבות טיפוס", "סקירת קוד", "פיתוח איטרטיבי"],
-        },
-        {
-          title: "פיתוח Full Stack",
-          terms: ["Full Stack Development", "React Native", "Expo", "TypeScript", "Node.js", "Deno", "Supabase", "Edge Functions", "PostgreSQL", "Row Level Security (RLS)", "Git"],
+          title: "פיתוח בסיוע AI ו-Full Stack",
+          terms: ["Claude", "ChatGPT", "TypeScript", "React Native", "Expo", "Node.js", "Deno", "Supabase", "PostgreSQL", "Edge Functions", "Row Level Security (RLS)", "Git"],
         },
         {
           title: "מערכות ארגוניות",
-          terms: ["SQL", "Microsoft SQL Server", "Azure SQL", "Salesforce", "Priority ERP", "Workato", "ETL", "IAM", "IDM"],
-        },
-        {
-          title: "ניתוח ואספקה",
-          terms: ["אפיון פונקציונלי וטכני", "HLD ו-DD", "UAT", "Agile", "Jira", "ניהול בעלי עניין", "עלייה לייצור"],
+          terms: ["Microsoft SQL Server", "Azure SQL", "ETL", "IAM ו-IDM", "ניתוח מערכות", "HLD ו-DD", "תכנון אינטגרציות", "Salesforce", "Priority ERP", "Workato", "UAT"],
         },
       ],
     },
@@ -248,17 +238,16 @@ export const aiHe = {
       title: "ניסיון עצמאי",
       jobs: [
         {
-          role: "יזם ומפתח פתרונות תוכנה | אפיון, ארכיטקטורה ופיתוח מקצה לקצה בעזרת AI, בעיקר Claude",
-          org: "פעילות עצמאית | Once, FLOA ופרויקטים נוספים",
+          role: "תכנון ופיתוח פתרונות תוכנה מקצה לקצה",
+          org: "FLOA | עצמאי",
           dates: "2025 - היום",
           bullets: [
-            "מוביל לבד פרויקטים מהצורך העסקי ועד מערכת עובדת: אפיון, ארכיטקטורה, מודל נתונים, UX/UI, פיתוח Full Stack, בדיקות והפצה. Claude הוא הכלי המרכזי בפיתוח, ואני מגדיר את הדרישות וההתנהגות, מנחה אותו, בודק כל תוצר ומקדם את העבודה בצורה איטרטיבית",
-            "Once: אפליקציית מובייל חברתית ל-Android ול-iOS ב-React Native, Expo, TypeScript, Supabase ו-PostgreSQL. התאמות מבוססות מיקום, זיהוי משתמשים בקרבת מקום, תקשורת בזמן אמת, צ'אט, קבוצות, קרדיטים והרשאות באמצעות Row Level Security, כולל ניהול הבדיקות וההפצה לחנויות האפליקציות",
-            "מערכת לניהול משתתפים, מפגשים, תשלומים ומנויים: מערכת Multi-tenant לכמה עסקים, עם ממשק ניהול, אזור אישי למשתתפים, תקשורת במייל ובוואטסאפ, ו-API ציבורי עם מפתחות ו-Webhooks חתומים שאתרים חיצוניים בנויים עליו",
-            "אפליקציית אקורדים לשירים: אינדקס שירים, דף לכל שיר ועורך, התחברות עם Google, קריאת שירים מתמונה באמצעות Claude API, ובנייה מראש של דפי השירים לקידום אורגני",
-            "אתרים ודפי נחיתה ממוקדי המרות לקמפיינים בפרסום ממומן ב-Meta וב-Google Ads, כולל טפסי הרשמה, יצירת לידים, מעקב אחר מקורות הגעה ומדידת ביצועים, וכן אתר שיווקי ותהליכי הצטרפות למפגשים ולאירועים (יוצאים להרפתקה)",
-            "FLOA: פתרונות דיגיטליים לעסקים, מאתרים וממשקי ניהול ועד ניהול לידים ולקוחות, אינטגרציות ואוטומציות עסקיות",
-            "תכנון ארכיטקטורה לפלטפורמת מידע ארגונית אחודה, המחברת נתונים, ממשקים, תהליכים והרשאות, עם אינטגרציות, Webhooks, ETL ומיפויי נתונים. זהו פרויקט תכנון, ולא מערכת שהושלמה",
+            "תכנון ופיתוח מערכות מקצה לקצה, בפיתוח Full Stack בשילוב Generative AI, בעיקר Claude: הובלת הפיתוח, אפיון הדרישות וההתנהגות, בקרת איכות על כל תוצר ואחריות על ארכיטקטורה, בדיקות והפצה",
+            "Once, אפליקציית מובייל חברתית ל-Android ול-iOS: ארכיטקטורת מערכת, מודל נתונים והרשאות באמצעות Row Level Security, ופיתוח ב-React Native, Expo, TypeScript, Supabase ו-PostgreSQL. מימוש התאמות מבוססות מיקום, תקשורת בזמן אמת, צ'אט, קבוצות ומערכת קרדיטים, עד בדיקות והפצה לחנויות האפליקציות",
+            "מערכת Multi-tenant לניהול משתתפים, מפגשים, תשלומים ומנויים: מודל נתונים ולוגיקה עסקית, ממשק ניהול ואזור אישי למשתתפים, תקשורת במייל ובוואטסאפ, והפרדה בין עסקים ברמת בסיס הנתונים. API ציבורי עם מפתחות ו-Webhooks חתומים לאינטגרציה עם אתרים חיצוניים",
+            "אפליקציית אקורדים ושירים: אינדקס שירים, דף לכל שיר ועורך, התחברות עם Google, קריאת שירים מתמונה באמצעות Claude API, ובנייה מראש של דפי השירים לקידום אורגני",
+            "אתרים ודפי נחיתה ממוקדי המרות עם אינטגרציה לפרסום ממומן ב-Meta וב-Google Ads: טפסי הרשמה, יצירת לידים, מעקב אחר מקורות הגעה ומדידת קמפיינים, לצד אתר ותהליכי הצטרפות למפגשים ולאירועים",
+            "במסגרת FLOA: אפיון ופיתוח פתרונות דיגיטליים לעסקים, ממשקי ניהול, ניהול לידים ולקוחות ואוטומציות עסקיות",
           ],
         },
       ],
@@ -273,9 +262,10 @@ export const aiHe = {
           org: "קבוצת תדהר | היברידי",
           dates: "2025 - 2026",
           bullets: [
-            "אחריות על האפיון והאספקה של תהליכים עסקיים ואוטומציות חוצי מערכות על גבי Priority ERP, Salesforce ו-Workato, מהדרישה העסקית ועד העלייה לייצור",
-            "אפיון הממשקים בין מערכות הליבה, עד לרמת ה-Data Mapping, הלוגיקה העסקית והוולידציות, ותכנון מבני נתונים ותהליכי SQL ו-ETL מתוזמנים",
+            "אחריות על התכנון והאספקה של תהליכים עסקיים ואוטומציות חוצי מערכות על גבי Priority ERP, Salesforce ו-Workato, מהדרישה העסקית ועד העלייה לייצור",
+            "תכנון ארכיטקטורת האינטגרציה בין מערכות הליבה: Data Mapping, לוגיקה עסקית, ולידציות וממשקים, לצד מבני נתונים ותהליכי SQL ו-ETL מתוזמנים",
             "עבודה על מערכת TQA לניהול איכות, בסביבת Azure SQL ובתהליכי עבודה שכללו מערכות ארגוניות וכלי פיתוח",
+            "עבודה מול גורמים עסקיים, צוותי IT, מפתחים וספקים לאורך האפיון, הבדיקות וההטמעה",
           ],
         },
         {
@@ -284,8 +274,8 @@ export const aiHe = {
           org: "בריליקס | מרחוק",
           dates: "2021 - 2025",
           bullets: [
-            "אחריות על האפיון וההטמעה של מערכות ליבה לניהול זהויות מבוססות Web בשירותי בריאות כללית, מגדל, איילון ו-LivePerson",
-            "תכנון הפתרון מקצה לקצה: תהליכי זהות, הממשקים וטרנספורמציות הנתונים בין הפורטל למערכות הליבה, ותהליכי ETL וסנכרון",
+            "אחריות על התכנון וההטמעה של מערכות ליבה לניהול זהויות מבוססות Web בשירותי בריאות כללית, מגדל, איילון ו-LivePerson",
+            "תכנון הפתרון מקצה לקצה: תהליכי זהות, הממשקים וטרנספורמציות הנתונים בין הפורטל למערכות הליבה, מבני נתונים ותהליכי ETL וסנכרון",
             "הובלת האספקה מול Cyber, DevOps, DBA, תשתיות, IT וגורמים עסקיים, עד בדיקות קבלה ותמיכה בייצור",
           ],
         },
@@ -294,7 +284,8 @@ export const aiHe = {
           org: "עיריית תל אביב-יפו",
           dates: "2020 - 2021",
           bullets: [
-            "הובלת האפיון של פתרון Web שחיבר בין יחידות עירוניות והפך תהליכים חוצי ארגון לאוטומטיים, כולל מסעות משתמשים, זרימות UX ו-UI ומבני הנתונים שמאחוריהם",
+            "הובלת התכנון של פתרון Web שחיבר בין יחידות עירוניות והפך תהליכים חוצי ארגון לאוטומטיים, כולל מסעות משתמשים, זרימות UX ו-UI ומבני הנתונים שמאחוריהם",
+            "תכנון ממשקי SQL ו-SSIS ועבודה מול משתמשים, פיתוח, DBA ו-QA עד בדיקות קבלה",
           ],
         },
         {
@@ -302,7 +293,8 @@ export const aiHe = {
           org: "אמדוקס",
           dates: "2017 - 2020",
           bullets: [
-            "אפיון מערכות הליבה לניהול זהויות בארגון, מדרישות עסקיות ודרישות אבטחת מידע ועד תהליכים, ממשקים ואינטגרציות, והנחיית צוות פיתוח Web ב-Java וב-JSP עד לעלייה לייצור",
+            "אפיון מערכות הליבה לניהול זהויות בארגון, מדרישות עסקיות ודרישות אבטחת מידע ועד תהליכים, ממשקים ואינטגרציות",
+            "תכנון תהליכי מערכת, זרימות נתונים ומבני נתונים, והנחיית צוות פיתוח Web ב-Java וב-JSP עד ליישום ולעלייה לייצור",
           ],
         },
         {
@@ -310,7 +302,8 @@ export const aiHe = {
           org: "פרולינק ניהול זהויות",
           dates: "2014 - 2017",
           bullets: [
-            "אחריות מלאה על האפיון והמימוש בשכבת האפליקציה של פלטפורמת Aveksa לניהול זהויות וממשל הרשאות בהראל, מגדל, הפניקס ואמדוקס, כולל תהליכי עבודה, תהליכי אישור, מיפויי נתונים וממשקים למערכות ארגוניות ובסיסי נתונים",
+            "אחריות מלאה על התכנון והמימוש בשכבת האפליקציה של פלטפורמת Aveksa לניהול זהויות וממשל הרשאות בהראל, מגדל, הפניקס ואמדוקס",
+            "בניית לוגיקה עסקית, תהליכי עבודה, תהליכי אישור, מיפויי נתונים ותהליכי סנכרון, ואינטגרציות למערכות ארגוניות, בסיסי נתונים ושירותי Directory",
           ],
         },
         {
@@ -318,7 +311,8 @@ export const aiHe = {
           org: "Varonis",
           dates: "2008 - 2014",
           bullets: [
-            "אפיון ופיתוח של מערכת ליבה לחיוב ארגוני ב-Microsoft SQL Server, Microsoft Access ו-VBA, בעבודה ישירה מול גורמי כספים ותפעול",
+            "אפיון ופיתוח של מערכת ליבה לחיוב ארגוני ב-Microsoft SQL Server, Microsoft Access ו-VBA",
+            "תרגום שאלות עסקיות לשאילתות SQL, דוחות ואוטומציות, בעבודה ישירה מול גורמי כספים ותפעול",
           ],
         },
       ],
