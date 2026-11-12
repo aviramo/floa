@@ -442,3 +442,7 @@ body { background-color: var(--paper); }
 .hero { min-height: calc(100svh - var(--mq, 5rem) - 32px - env(safe-area-inset-bottom, 0px)); }
 .sec--free { padding-bottom: calc(30px + env(safe-area-inset-bottom, 0px)); }
 .hero { min-height: calc(100svh - var(--mq, 5rem) - 46px - env(safe-area-inset-bottom, 0px)); }
+
+/* הכפתור הצף נכנס בטעינה מתחת לתגיות, וגולש עם הגלילה אל התחתית */
+.cta-dock { transform: translate3d(var(--dx, 0px), var(--dy, 0px), 0); transition: opacity .6s ease, scale .6s var(--ease); }
+.cta-dock.is-hidden { opacity: 0; scale: .7; transform: translate3d(var(--dx, 0px), var(--dy, 0px), 0); }

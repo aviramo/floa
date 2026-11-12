@@ -102,14 +102,35 @@
     if (e.target.closest && e.target.closest("[data-close-dock]")) close();
   });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape" && dock.classList.contains("open")) close(); });
-  var shown = false;
-  var check = function () {
-    var on = join.getBoundingClientRect().top <= 0;
-    if (on !== shown) { shown = on; btn.classList.toggle("is-hidden", !on); btn.tabIndex = on ? 0 : -1; }
+  /* נכנס מתחת ל"מוזיקה תנועה קהילה", ועם הגלילה גולש למקומו הקבוע בתחתית המסך */
+  var tag = document.querySelector(".hero-tag");
+  var calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var dx = 0, dy = 0, ticking = false;
+  var measure = function () {
+    btn.style.setProperty("--dx", "0px"); btn.style.setProperty("--dy", "0px");
+    var r = btn.getBoundingClientRect(), t = tag ? tag.getBoundingClientRect() : null;
+    if (!t) { dx = dy = 0; return; }
+    var scrolled = window.scrollY;
+    dy = (t.bottom + scrolled + 26) - (r.top + scrolled);   /* מרחק אנכי מהמקום הקבוע אל מתחת לתגיות */
+    dx = (t.left + t.width / 2) - (r.left + r.width / 2);
+    if (dy > 0) dy = 0;                                      /* מסך נמוך מאוד: נשאר למטה */
+    place();
   };
-  window.addEventListener("scroll", check, { passive: true });
-  window.addEventListener("resize", check);
-  check();
+  var place = function () {
+    var p = dy === 0 ? 1 : Math.min(1, Math.max(0, window.scrollY / Math.abs(dy)));
+    btn.style.setProperty("--dx", (dx * (1 - p)).toFixed(1) + "px");
+    btn.style.setProperty("--dy", (dy * (1 - p)).toFixed(1) + "px");
+    ticking = false;
+  };
+  var onScroll = function () { if (!ticking) { ticking = true; requestAnimationFrame(place); } };
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", measure);
+  btn.tabIndex = 0;
+  var start = function () {
+    measure();
+    setTimeout(function () { btn.classList.remove("is-hidden"); }, calm ? 0 : 500);
+  };
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(start); else start();
 })();
 
 /* כפתור הצטרפות: נכנס מלמטה כשפרטי המפגשים מגיע לקצה העליון, ופותח תפריט וואטסאפ */
@@ -156,7 +177,7 @@
   var box = track.parentNode;
   box.setAttribute("aria-label", w.join(", "));
   /* מהירות קבועה בפיקסלים לשנייה, בלי קשר לכמות המילים */
-  var speed = function () { track.style.setProperty("--t", Math.round(track.scrollWidth / 2 / 170) + "s"); };
+  var speed = function () { track.style.setProperty("--t", Math.round(track.scrollWidth / 2 / 110) + "s"); };
   speed();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(speed);
 })();
