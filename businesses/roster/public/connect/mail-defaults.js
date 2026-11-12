@@ -275,5 +275,13 @@
 </html>`,
   },
   };
+  /* the pieces of HTML that carry inline styles because a mail (and the iframe code a business pastes into its site) cannot use a stylesheet: kept here, with the mail
+     markup, so the page's own code has no inline styles. Every argument is already escaped by the caller. */
+  root.ROSTER_MAIL_FRAME = {
+    note: (escText) => '<body style="margin:0"><p dir="rtl" style="margin:0;padding:16px;font:15px/1.5 Arial,Helvetica,sans-serif;color:#5a626c">' + escText + "</p></body>",
+    wrap: (html) => '<!doctype html>\n<html lang="he" dir="rtl"><body dir="rtl" style="margin:0;padding:24px;font-family:Arial,Helvetica,sans-serif;direction:rtl;text-align:right">\n' + html + "\n</body></html>",
+    footer: (mark, escBiz) => '<p dir="rtl" style="margin:24px 0 0;font-size:12px;line-height:1.5;color:#6B7A78;direction:rtl;text-align:right">הודעה זו נשלחה כי הכתובת הזו ' + mark + " של " + escBiz + ". אם זו טעות, אפשר להתעלם מההודעה.</p>",
+    iframeCode: (url) => '<iframe src="' + url + '" title="האזור האישי" style="width:100%;height:720px;border:0"></iframe>',
+  };
   root.ROSTER_MAIL_FOOTER_MARK = "הוזנה בטופס ההרשמה";
 })(typeof window !== "undefined" ? window : globalThis);

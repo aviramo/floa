@@ -59,7 +59,7 @@ dialog.rsheet .sheet-foot { flex: 0 0 auto; display: flex; gap: var(--pp-gap); a
 /* widths: m is the default; s for a short confirmation, l for a wide editor (data-size on the dialog) */
 dialog.rsheet[data-size="s"], dialog.rsheet[data-size="sm"] { max-width: var(--pp-w-s, 400px); }
 dialog.rsheet[data-size="m"], dialog.rsheet[data-size="md"] { max-width: var(--pp-w-m, 560px); }
-dialog.rsheet[data-size="l"], dialog.rsheet[data-size="lg"] { max-width: min(var(--pp-w-l, 960px), 94vw); }
+dialog.rsheet[data-size="l"], dialog.rsheet[data-size="lg"] { max-width: min(var(--pp-w-l, 760px), 94vw); }
 
 /* the page behind: locked while a sheet is open (sheet.js keeps the scroll position) */
 html.rs-lock { overflow: hidden; overscroll-behavior: none; }

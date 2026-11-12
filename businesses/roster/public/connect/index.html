@@ -9,57 +9,61 @@
 <title>חיבורים</title>
 <meta name="description" content="מפתחות API, Webhook ומיילים של העסק">
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#ffffff">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%2316191D'/%3E%3Cpath d='M12 11l-5 5 5 5M20 11l5 5-5 5M17.5 9l-3 14' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#FBF8F3">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230F5F4F'/%3E%3Cpath d='M12 11l-5 5 5 5M20 11l5 5-5 5M17.5 9l-3 14' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="../assets/manager-legacy.css?v=91cb8c68">
-<link rel="stylesheet" href="../assets/popup.css?v=fb67a232">
-<link rel="stylesheet" href="../assets/sheet.css?v=f62a9b50">
+<link rel="stylesheet" href="../assets/ui.css?v=af952c6f">
 <link rel="stylesheet" href="../assets/field.css?v=1acbdf39">
-<link rel="stylesheet" href="connect.css?v=3a9dd444">
+<link rel="stylesheet" href="../assets/manager.css?v=930aa471">
+<link rel="stylesheet" href="../assets/popup.css?v=ea530ced">
+<link rel="stylesheet" href="../assets/sheet.css?v=b8cf9c66">
+<link rel="stylesheet" href="connect.css?v=6117ab92">
 </head>
 <body>
 
 <!-- Not signed in, no access, no business chosen: the gate (its content is drawn by connect.js) -->
 <div class="gate" id="gate" hidden><div class="gate-in" id="gateIn"></div></div>
 
-<!-- Signed in: the header and the tabs never move, the panel under them scrolls inside itself -->
+<!-- Signed in: the header and the tabs never move, the panel under them is the one scrolling list -->
 <div class="wrap" id="wrap" hidden>
   <header class="top">
-    <div class="col title-row">
-      <div class="ttl">
-        <span class="bizname" id="bizName"></span>
-        <h1>חיבורים</h1>
+    <div class="rhead">
+      <div class="rhead__in">
+        <div class="rhead__text">
+          <span class="rhead__sub bizname" id="bizName"></span>
+          <h1 class="rhead__title">חיבורים</h1>
+        </div>
+        <button type="button" class="rbtn rbtn--ghost rbtn--sm" id="userBtn" aria-haspopup="menu" aria-expanded="false" aria-label="החשבון שלי">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
+          <span id="whoName"></span>
+        </button>
       </div>
-      <button type="button" class="userbtn" id="userBtn" aria-haspopup="menu" aria-expanded="false" aria-label="החשבון שלי">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
-        <span id="whoName"></span>
-      </button>
     </div>
-    <div class="tabs-wrap">
-      <div class="col tabs" id="tabs" role="tablist" aria-label="חלקי הדף">
-        <button type="button" role="tab" id="tab-keys" data-tab="keys" aria-selected="true" aria-controls="panel">מפתחות</button>
-        <button type="button" role="tab" id="tab-hook" data-tab="hook" aria-selected="false" aria-controls="panel" tabindex="-1">Webhook</button>
-        <button type="button" role="tab" id="tab-mail" data-tab="mail" aria-selected="false" aria-controls="panel" tabindex="-1">מיילים</button>
-        <button type="button" role="tab" id="tab-reg" data-tab="reg" aria-selected="false" aria-controls="panel" tabindex="-1">הרשמה</button>
-        <button type="button" role="tab" id="tab-log" data-tab="log" aria-selected="false" aria-controls="panel" tabindex="-1">יומן</button>
-      </div>
+    <div class="rtabs tabs" id="tabs" role="tablist" aria-label="חלקי הדף">
+      <button type="button" class="rtab" role="tab" id="tab-keys" data-tab="keys" aria-selected="true" aria-controls="panel">מפתחות</button>
+      <button type="button" class="rtab" role="tab" id="tab-hook" data-tab="hook" aria-selected="false" aria-controls="panel" tabindex="-1">Webhook</button>
+      <button type="button" class="rtab" role="tab" id="tab-mail" data-tab="mail" aria-selected="false" aria-controls="panel" tabindex="-1">מיילים</button>
+      <button type="button" class="rtab" role="tab" id="tab-reg" data-tab="reg" aria-selected="false" aria-controls="panel" tabindex="-1">הרשמה</button>
+      <button type="button" class="rtab" role="tab" id="tab-log" data-tab="log" aria-selected="false" aria-controls="panel" tabindex="-1">יומן</button>
     </div>
   </header>
-  <main class="panel" id="panel" role="tabpanel" aria-labelledby="tab-keys" tabindex="0"></main>
+  <main class="rlist panel" id="panel" role="tabpanel" aria-labelledby="tab-keys" tabindex="0"></main>
+  <button type="button" class="rfab" id="keyNew" data-act="key-new" aria-label="מפתח חדש" title="מפתח חדש" hidden><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg></button>
 </div>
 
-<div class="menu" id="menu" role="menu" hidden></div>
-<dialog id="dlg" aria-labelledby="dlgT"></dialog>
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="rmenu" id="menu" role="menu" hidden></div>
+<dialog id="dlg" aria-labelledby="dlgT" data-from="bottom"></dialog>
+<div class="rmsg rmsg--toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script src="/supabase.js"></script>
 <script src="/auth.js"></script>
-<script src="../assets/sheet.js?v=56fd9da7"></script>
+<script src="../assets/ui.js?v=d6340e02"></script>
+<script src="../assets/undo.js?v=6df1b937"></script>
 <script src="../assets/field.js?v=6aeac99c"></script>
-<script src="mail-defaults.js?v=bda724a9"></script>
-<script src="connect.js?v=fc3d0a86"></script>
+<script src="../assets/sheet.js?v=56fd9da7"></script>
+<script src="mail-defaults.js?v=0241f70b"></script>
+<script src="connect.js?v=ffb66385"></script>
 </body>
 </html>

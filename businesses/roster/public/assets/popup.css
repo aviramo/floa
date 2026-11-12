@@ -19,7 +19,7 @@
   --pp-head-gap: 12px;          /* header to content */
   --pp-w-s: 400px;
   --pp-w-m: 560px;
-  --pp-w-l: 960px;
+  --pp-w-l: 760px;
   --pp-side: 440px;             /* a side drawer opened by data-desktop="side" */
   --pp-gap: 8px;                /* between header items and footer items */
   --pp-hair: 4px;               /* the room a focus ring needs around the scrolling body */

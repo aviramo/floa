@@ -58,8 +58,8 @@
   var SW = 88;
   function swipeInit(list, opt) {
     opt = opt || {};
-    var kind = opt.kind || "list", store = opt.store || localStorage;
-    var key = "rk.swipehint." + kind, open = null;
+    var store = opt.store || localStorage;
+    var key = "rk.swipe.understood", open = null;   /* one key for every list of every page: the person confirms once */
     function setX(row, x) { row.style.setProperty("--sw-x", x + "px"); }
     function close(row) { if (!row) return; row.classList.remove("is-open"); setX(row, 0); if (open === row) open = null; }
     /* RTL: the tray is at the physical left (see css), the foreground slides to the right; LTR: tray at the right, foreground slides left. */
@@ -92,6 +92,8 @@
     list.addEventListener("pointerup", finish); list.addEventListener("pointercancel", finish);
     /* a drag must never count as a tap (the whole row is a link), and while a row is open the first tap elsewhere only closes it */
     list.addEventListener("click", function (e) {
+      if (open && !list.contains(open)) open = null;   /* the row was redrawn away (a tab switch, a refresh): nothing is open any more */
+      if (e.target.closest && e.target.closest(".rhint")) { if (open) close(open); return; }   /* the hint's own button is never swallowed by the nudge */
       var inTray = e.target.closest && e.target.closest(".rswipe");
       if (!inTray && (Date.now() - lastDrag < 350 || open)) {
         if (open) close(open);
@@ -99,15 +101,23 @@
       }
     }, true);
     list.addEventListener("keydown", function (e) { if (e.key === "Escape" && open) close(open); });
-    /* first use hint: once per user and per list kind, never blocking; a nudge of the first row and a caption that goes away on touch or after a few seconds */
+    /* first use hint: ONE time for the whole system (a single key, whatever the list), and it stays until the person confirms "הבנתי".
+       A banner at the top of the list plus a short nudge of the first row. Never blocks: the banner is not a popup. */
     function hint(force) {
       var seen = false; try { seen = store.getItem(key) === "1"; } catch (e) {}
       var row = list.querySelector("[data-swipe]"); if (!row || (seen && !force)) return null;
-      var cap = doc.createElement("div"); cap.className = "rhint"; cap.setAttribute("role", "status"); cap.textContent = opt.caption || "אפשר להחליק שורה לפעולות";
+      if (list.querySelector(".rhint")) return null;
+      var cap = doc.createElement("div"); cap.className = "rhint"; cap.setAttribute("role", "status");
+      var tx = doc.createElement("span"); tx.className = "rhint__tx"; tx.textContent = opt.caption || "אפשר להחליק שורה לפעולות";
+      var ok = doc.createElement("button"); ok.type = "button"; ok.className = "rhint__ok"; ok.textContent = "הבנתי";
+      cap.appendChild(tx); cap.appendChild(ok);
       list.insertBefore(cap, list.firstChild);
-      var gone = function () { cap.classList.add("is-gone"); setTimeout(function () { cap.remove(); }, 250); try { store.setItem(key, "1"); } catch (e) {} };
-      if (!reduced()) { openIt(row); setTimeout(function () { if (open === row) close(row); }, 700); }
-      list.addEventListener("pointerdown", gone, { once: true }); setTimeout(gone, 5000);
+      ok.addEventListener("click", function (e) {
+        e.preventDefault(); e.stopPropagation();
+        cap.classList.add("is-gone"); setTimeout(function () { cap.remove(); }, 250);
+        try { store.setItem(key, "1"); } catch (x) { /* no storage: it is shown again next visit */ }
+      });
+      if (!reduced()) { openIt(row); setTimeout(function () { if (open === row) close(row); }, 900); }
       return cap;
     }
     return { open: openIt, close: function () { close(open); }, hint: hint, isOpen: function () { return open; }, resetHint: function () { try { store.removeItem(key); } catch (e) {} } };

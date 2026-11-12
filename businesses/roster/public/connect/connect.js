@@ -109,6 +109,9 @@
     return fmtDate(iso);
   }
   const mono = (s) => '<bdi class="mono" dir="ltr">' + esc(s) + "</bdi>";
+  /* a status chip (the kit's .rchip); a status the page does not know is shown as plain escaped text and never becomes a class */
+  const CHIP = { ok: " rchip--ok", bad: " rchip--no", wait: " rchip--wait", dark: " rchip--info", "": "" };
+  const chip = (cls, inner, extra) => '<span class="rchip' + (Object.prototype.hasOwnProperty.call(CHIP, cls) ? CHIP[cls] : "") + '"' + (extra || "") + ">" + inner + "</span>";
 
   const ICON = {
     plus: '<path d="M12 5v14"/><path d="M5 12h14"/>',
@@ -120,8 +123,9 @@
     users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"/><path d="M18.5 14.4c1.9.7 3 2.5 3 5.6"/>',
     user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/>',
     refresh: '<path d="M20 11a8 8 0 0 0-14.5-4.2L4 8.5"/><path d="M4 4v4.5h4.5"/><path d="M4 13a8 8 0 0 0 14.5 4.2L20 15.5"/><path d="M20 20v-4.5h-4.5"/>',
+    restore: '<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>',
   };
-  const icon = (n, cls) => '<svg class="ic' + (cls ? " " + cls : "") + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICON[n] + "</svg>";
+  const icon = (n, cls) => '<svg class="ic' + (cls ? " " + cls : "") + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICON[n] + "</svg>";
 
   /* ---------- state ---------- */
   const gate = $("#gate"), wrap = $("#wrap"), panel = $("#panel"), menu = $("#menu"), dlg = $("#dlg");
@@ -135,9 +139,10 @@
   function toast(msg) {
     const t = $("#toast");
     t.textContent = msg;
+    t.hidden = false;
     t.classList.add("on");
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove("on"), 2800);
+    toastTimer = setTimeout(() => { t.classList.remove("on"); t.hidden = true; }, 2800);
   }
 
   /* ---------- the database, as the person, for ONE business ---------- */
@@ -150,7 +155,7 @@
       if (!o.noBiz) h["x-business"] = BIZ.id;
       if (o.json !== undefined) h["content-type"] = "application/json";
       if (o.prefer) h.prefer = o.prefer;
-      const r = await fetch(SB.url + "/rest/v1/" + path, { method: o.method || "GET", headers: h, body: o.json !== undefined ? JSON.stringify(o.json) : undefined });
+      const r = await fetch(SB.url + "/rest/v1/" + path, { method: o.method || "GET", headers: h, body: o.json !== undefined ? JSON.stringify(o.json) : undefined, keepalive: !!o.keepalive });
       if (r.status === 401) throw signedOutError();
       const txt = await r.text();
       let data = null;
@@ -179,14 +184,14 @@
     const box = $("#gateIn");
     const mark = '<div class="mark" aria-hidden="true">' + icon("users") + "</div>";
     if (mode === "denied") {
-      box.innerHTML = mark + "<h1>אין גישה</h1><p>" + esc(note) + '</p><a class="gbtn" href="../">חזרה לבחירת עסק</a><br><button type="button" class="linkbtn" data-act="signout">יציאה והחלפת חשבון</button>';
+      box.innerHTML = mark + "<h1>אין גישה</h1><p>" + esc(note) + '</p><a class="rbtn rbtn--ghost gbtn" href="../">חזרה לבחירת עסק</a><br><button type="button" class="rbtn rbtn--link" data-act="signout">יציאה והחלפת חשבון</button>';
     } else if (mode === "nobiz") {
-      box.innerHTML = mark + "<h1>לא נבחר עסק</h1><p>" + esc(note) + '</p><a class="gbtn" href="../">לבחירת עסק</a><br><button type="button" class="linkbtn" data-act="signout">יציאה והחלפת חשבון</button>';
+      box.innerHTML = mark + "<h1>לא נבחר עסק</h1><p>" + esc(note) + '</p><a class="rbtn rbtn--ghost gbtn" href="../">לבחירת עסק</a><br><button type="button" class="rbtn rbtn--link" data-act="signout">יציאה והחלפת חשבון</button>';
     } else if (mode === "fail") {
-      box.innerHTML = mark + "<h1>" + TITLE + "</h1><p>" + esc(note) + '</p><button type="button" class="gbtn" data-act="retry-boot">ניסיון נוסף</button>';
+      box.innerHTML = mark + "<h1>" + TITLE + "</h1><p>" + esc(note) + '</p><button type="button" class="rbtn rbtn--ghost gbtn" data-act="retry-boot">ניסיון נוסף</button>';
     } else {
       box.innerHTML = mark + "<h1>" + TITLE + "</h1><p>מפתחות, Webhook ומיילים של העסק</p>" +
-        '<button type="button" class="gbtn" id="gLogin"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.3 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>כניסה עם גוגל</button>' +
+        '<button type="button" class="rbtn rbtn--ghost gbtn" id="gLogin"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.3 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>כניסה עם גוגל</button>' +
         '<div class="gnote" id="gNote" role="status">' + esc(note || "") + "</div>";
     }
     const f = $("#gLogin") || $("[data-act]", box) || $(".gbtn", box);
@@ -215,7 +220,7 @@
     menu.style.top = top + "px";
     btn.setAttribute("aria-expanded", "true");
     menuBtn = btn;
-    const first = $(".mi", menu);
+    const first = $(".rmenu__item", menu);
     if (first) first.focus({ preventScroll: true });
   }
   function closeMenu(back) {
@@ -232,7 +237,7 @@
     if (menu.hidden) return;
     if (e.key === "Escape") { e.preventDefault(); closeMenu(true); return; }
     if (e.key === "Tab") { const b = menuBtn; closeMenu(); if (b) b.focus(); return; }
-    const items = $$(".mi", menu), n = items.length, i = items.indexOf(document.activeElement);
+    const items = $$(".rmenu__item", menu), n = items.length, i = items.indexOf(document.activeElement);
     if (!n) return;
     const go = (k) => { e.preventDefault(); items[k].focus({ preventScroll: true }); };
     if (e.key === "ArrowDown") go((i + 1) % n);
@@ -248,23 +253,26 @@
     const name = A.name(), email = A.email(), row = MINE.find((b) => b.slug === BIZ.slug);
     const several = row && (row.is_super || MINE.length > 1);
     openMenu(this,
-      '<div class="mhead">' + (name ? "<b>" + esc(name) + "</b>" : "") + (email ? '<bdi class="mmail" dir="ltr">' + esc(email) + "</bdi>" : "") + "</div>" +
-      '<a class="mi" role="menuitem" href="../admin/?biz=' + enc(BIZ.slug) + '">' + icon("users") + "<span>ניהול המשתתפים</span></a>" +
-      '<a class="mi" role="menuitem" href="../api/">' + icon("book") + "<span>תיעוד ה־API</span></a>" +
-      (several ? '<a class="mi" role="menuitem" href="../">' + icon("swap") + "<span>החלפת עסק</span></a>" : "") +
-      '<button type="button" class="mi" role="menuitem" data-act="signout">' + icon("logout") + "<span>יציאה</span></button>");
+      '<div class="rmenu__head">' + (name ? "<b>" + esc(name) + "</b>" : "") + (email ? '<bdi class="rmenu__mail" dir="ltr">' + esc(email) + "</bdi>" : "") + "</div>" +
+      '<a class="rmenu__item" role="menuitem" href="../admin/?biz=' + enc(BIZ.slug) + '">' + icon("users") + "<span>ניהול המשתתפים</span></a>" +
+      '<a class="rmenu__item" role="menuitem" href="../api/">' + icon("book") + "<span>תיעוד ה־API</span></a>" +
+      (several ? '<a class="rmenu__item" role="menuitem" href="../">' + icon("swap") + "<span>החלפת עסק</span></a>" : "") +
+      '<button type="button" class="rmenu__item" role="menuitem" data-act="hints">' + icon("restore") + "<span>הצגת הדרכות מחדש</span></button>" +
+      '<button type="button" class="rmenu__item" role="menuitem" data-act="signout">' + icon("logout") + "<span>יציאה</span></button>");
   });
   menu.addEventListener("click", (e) => {
     const t = e.target.closest("[data-act]");
     if (!t) return;
     closeMenu();
     if (t.dataset.act === "signout") doSignOut();
+    else if (t.dataset.act === "hints") { try { localStorage.removeItem("rk.swipe.understood"); } catch (x) { /* nothing to clear */ } toast("ההדרכות יוצגו שוב."); renderPanel(true); }
   });
 
   /* ---------- dialogs ---------- */
-  function openDialog(kind, titleHtml, bodyHtml) {
-    /* the one shell (assets/sheet.js), from the bottom: fixed header with the X, one scrolling body, the grab bar at the top edge */
-    RosterSheet.render(dlg, { kind: kind, title: titleHtml, titleId: "dlgT", body: bodyHtml, from: "bottom", size: kind === "wide" ? "l" : "m", icon: icon("x") });
+  function openDialog(kind, titleHtml, bodyHtml, o) {
+    /* the one shell (assets/sheet.js), from the bottom: fixed header with the X, one scrolling body, the grab bar at the top edge; the primary action of an editor is the header check icon (o.action) */
+    o = o || {};
+    RosterSheet.render(dlg, { kind: kind, title: titleHtml, titleId: "dlgT", body: bodyHtml, from: "bottom", size: kind === "wide" ? "l" : "m", icon: icon("x"), action: o.action });
   }
   /* A secret that is shown once asks twice before it is closed without a copy. */
   function tryClose() {
@@ -283,6 +291,7 @@
   dlg.addEventListener("click", (e) => {
     if (e.target === dlg) { if (downOnBackdrop) tryClose(); return; }
     if (e.target.closest("[data-close]")) return tryClose();
+    if (e.target.closest("#tSave")) return saveTemplate();
     const t = e.target.closest("[data-d]");
     if (t) dialogAction(t);
   });
@@ -302,7 +311,7 @@
     try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* fall through */ }
     try {
       const ta = document.createElement("textarea");
-      ta.value = text; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;top:0;left:0;opacity:0";
+      ta.value = text; ta.setAttribute("readonly", ""); ta.className = "copy-sink";
       document.body.appendChild(ta); ta.select();
       const ok = document.execCommand("copy");
       ta.remove();
@@ -425,8 +434,8 @@
   const loadAll = () => Promise.all(Object.keys(LOADERS).map(load));
 
   /* ---------- panels ---------- */
-  const failBox = (what) => '<div class="pin"><div class="empty"><b>לא הצלחנו לטעון</b>' + esc(T.loadFail) + '<br><button type="button" class="btn ghost" data-act="retry" data-what="' + what + '">ניסיון נוסף</button></div></div>';
-  const loadingBox = () => '<div class="pin"><div class="empty" role="status">טוען…</div></div>';
+  const failBox = (what) => '<div class="pin"><div class="rempty"><b>לא הצלחנו לטעון</b>' + esc(T.loadFail) + '<button type="button" class="rbtn rbtn--ghost" data-act="retry" data-what="' + what + '">ניסיון נוסף</button></div></div>';
+  const loadingBox = () => '<div class="pin"><div class="rempty" role="status">טוען…</div></div>';
   function need(names) {
     for (const n of names) { if (D[n] === undefined) return loadingBox(); }
     for (const n of names) { if (D.err[n]) return failBox(n); }
@@ -441,6 +450,12 @@
     panel.scrollTop = top;
     panel.setAttribute("aria-labelledby", "tab-" + S.tab);
     $$("[role=tab]").forEach((b) => { const on = b.dataset.tab === S.tab; b.setAttribute("aria-selected", on ? "true" : "false"); b.tabIndex = on ? 0 : -1; });
+    /* the add button belongs to the list of keys only, and the list reserves room for it */
+    const fab = $("#keyNew"), showFab = S.tab === "keys" && !need(["keys"]);
+    fab.hidden = !showFab;
+    panel.toggleAttribute("data-fab", showFab);
+    /* the first-use swipe hint: until the person confirms "הבנתי" once, anywhere in the system */
+    if (swipeCtl && !dlg.open && panel.querySelector("[data-swipe]")) swipeCtl.hint();
   }
   /* A list inside the open panel, redrawn without touching the forms around it. */
   function refreshLists() {
@@ -452,38 +467,45 @@
     renderPanel(false);
   }
 
-  const sw = (id, on, label, hint) => '<label class="sw rfield rfield--switch"><input type="checkbox" id="' + id + '" role="switch"' + (on ? " checked" : "") + '><span class="trk" aria-hidden="true"></span><span class="swt"><b>' + label + "</b>" + (hint ? "<small>" + hint + "</small>" : "") + "</span></label>";
+  const sw = (id, on, label, hint) => '<label class="sw rfield rfield--switch"><input type="checkbox" id="' + id + '" role="switch"' + (on ? " checked" : "") + '><span class="rsw__trk" aria-hidden="true"></span><span class="rsw__txt"><b>' + label + "</b>" + (hint ? "<small>" + hint + "</small>" : "") + "</span></label>";
   const cardHead = (title, extra) => '<div class="chead"><h2>' + title + "</h2>" + (extra || "") + "</div>";
+  const REFRESH = '<button type="button" class="rbtn rbtn--icon rbtn--edge rbtn--edge-end" data-act="refresh" aria-label="רענון" title="רענון">' + icon("refresh") + "</button>";
+  const secHead = (title, extra) => '<div class="rsec"><h2>' + title + "</h2>" + (extra || "") + "</div>";
+  const errBox = (id) => '<div class="ferr rmsg rmsg--no" id="' + id + '" role="alert"></div>';
+  const warn = (html) => '<div class="warnbox rmsg rmsg--wait"><span class="rmsg__text">' + html + "</span></div>";
+  const trayBtn = (act, ic, label, data) => '<button type="button" class="rswipe__act" tabindex="-1" data-tone="danger" data-act="' + act + '" ' + data + ">" + icon(ic) + "<span>" + label + "</span></button>";
 
   /* ===== keys ===== */
   function keyRow(k) {
-    const revoked = !!k.revoked_at;
+    const revoked = !!k.revoked_at, id = esc(k.id);
     const org = k.kind === "public"
       ? (k.allowed_origins && k.allowed_origins.length ? k.allowed_origins.map(mono).join(" ") : "כל אתר")
       : "לשרת בלבד";
-    return '<div class="krow' + (revoked ? " off" : "") + '" data-key="' + esc(k.id) + '"><div class="kmain">' +
-      '<div class="kname"><span class="kl">' + esc(k.label || "ללא שם") + '</span><span class="tg ' + (k.kind === "secret" ? "dark" : "") + '">' + (k.kind === "secret" ? "סודי" : "ציבורי") + "</span>" + (revoked ? '<span class="tg bad">בוטל</span>' : "") + "</div>" +
-      '<div class="kmeta">' + mono(String(k.prefix || "") + "…") + "</div>" +
-      '<div class="kmeta">אתרים: ' + org + "</div>" +
-      '<div class="kmeta">נוצר ' + esc(fmtDate(k.created_at)) + (k.last_used_at ? ", שימוש אחרון " + esc(ago(k.last_used_at)) : ", עוד לא נעשה בו שימוש") + (revoked ? ", בוטל " + esc(fmtDate(k.revoked_at)) : "") + "</div></div>" +
-      (revoked ? "" : '<button type="button" class="btn ghost sm redtext" data-act="key-revoke" data-id="' + esc(k.id) + '">ביטול מפתח</button>') + "</div>";
+    const main = '<div class="rrow__main"><span class="rrow__title kname"><span class="kl">' + esc(k.label || "ללא שם") + "</span>" + chip(k.kind === "secret" ? "dark" : "", k.kind === "secret" ? "סודי" : "ציבורי") + (revoked ? chip("bad", "בוטל") : "") + "</span>" +
+      '<span class="kmeta">' + mono(String(k.prefix || "") + "…") + "</span>" +
+      '<span class="kmeta">אתרים: ' + org + "</span>" +
+      '<span class="kmeta">נוצר ' + esc(fmtDate(k.created_at)) + (k.last_used_at ? ", שימוש אחרון " + esc(ago(k.last_used_at)) : ", עוד לא נעשה בו שימוש") + (revoked ? ", בוטל " + esc(fmtDate(k.revoked_at)) : "") + "</span></div>";
+    if (revoked) return '<div class="rrow krow off" data-key="' + id + '">' + main + "</div>";
+    /* revoking is final (a key cannot come back), so the swipe action and the button both open the confirmation window, never an undo toast */
+    return '<div class="rrow krow" data-key="' + id + '" data-swipe="keys"><div class="rswipe-fg">' + main +
+      '<button type="button" class="rbtn rbtn--ghost rbtn--sm rbtn--danger rrow__trail" data-act="key-revoke" data-id="' + id + '">ביטול מפתח</button></div>' +
+      '<div class="rswipe" aria-hidden="true">' + trayBtn("key-revoke", "x", "ביטול מפתח", 'data-id="' + id + '"') + "</div></div>";
   }
   function keysList() {
-    if (D.err.keys) return '<div class="empty"><b>לא הצלחנו לטעון את המפתחות</b><button type="button" class="btn ghost" data-act="retry" data-what="keys">ניסיון נוסף</button></div>';
+    if (D.err.keys) return '<div class="rempty"><b>לא הצלחנו לטעון את המפתחות</b><button type="button" class="rbtn rbtn--ghost" data-act="retry" data-what="keys">ניסיון נוסף</button></div>';
     const ks = (D.keys || []).slice().sort((a, b) => (a.revoked_at ? 1 : 0) - (b.revoked_at ? 1 : 0));
-    if (!ks.length) return '<div class="empty"><b>עוד אין מפתחות</b>כדי לחבר אתר, צרו מפתח ציבורי.</div>';
+    if (!ks.length) return '<div class="rempty"><b>עוד אין מפתחות</b>כדי לחבר אתר, צרו מפתח ציבורי בכפתור הפלוס.</div>';
     return ks.map(keyRow).join("");
   }
   function panelKeys() {
     const bad = need(["keys"]);
     if (bad) return bad;
     return '<div class="pin">' +
-      '<section class="card">' + cardHead("מפתחות API") +
+      '<section class="rcard rcard--flat">' + cardHead("מפתחות API") +
       '<p class="lead">האתר או האפליקציה של העסק מתחברים למערכת באמצעות מפתח. אפשר להחזיק כמה מפתחות, למשל אחד לכל אתר, ולבטל כל אחד בנפרד. <a href="../api/">לתיעוד המלא</a></p>' +
       '<div class="kinds"><div><b>מפתח ציבורי</b> <bdi class="mono" dir="ltr">rk_pub_…</bdi><p>בטוח לשים בקוד שרץ בדפדפן. מאפשר רק לקרוא מפגשים, לקבל הרשמות וללחוץ על "שילמתי". אפשר להגביל אותו לאתרים מסוימים.</p></div>' +
-      '<div><b>מפתח סודי</b> <bdi class="mono" dir="ltr">rk_sec_…</bdi><p>רק לשרת שלכם, לעולם לא בדפדפן. מאפשר הכול: לקרוא משתתפים, לרשום, לתעד תשלומים.</p></div></div>' +
-      '<button type="button" class="btn" id="keyNew" data-act="key-new">' + icon("plus") + "מפתח חדש</button></section>" +
-      '<section class="card">' + cardHead("המפתחות שלכם") + '<div id="keysList">' + keysList() + "</div></section></div>";
+      '<div><b>מפתח סודי</b> <bdi class="mono" dir="ltr">rk_sec_…</bdi><p>רק לשרת שלכם, לעולם לא בדפדפן. מאפשר הכול: לקרוא משתתפים, לרשום, לתעד תשלומים.</p></div></div></section>' +
+      secHead("המפתחות שלכם") + '<div class="lbox" id="keysList">' + keysList() + "</div></div>";
   }
 
   /* ===== webhook ===== */
@@ -502,18 +524,18 @@
     return (D.events || []).filter((e) => deliveriesOf(e.id).length || (url && e.status !== "done"));
   }
   function hookLog(limit) {
-    if (D.err.events || D.err.deliveries) return '<div class="empty"><b>לא הצלחנו לטעון את היומן</b><button type="button" class="btn ghost" data-act="retry" data-what="events">ניסיון נוסף</button></div>';
+    if (D.err.events || D.err.deliveries) return '<div class="rempty"><b>לא הצלחנו לטעון את היומן</b><button type="button" class="rbtn rbtn--ghost" data-act="retry" data-what="events">ניסיון נוסף</button></div>';
     const list = hookEvents().slice(0, limit || 100);
-    if (!list.length) return '<div class="empty"><b>עוד אין משלוחים</b>אחרי שתגדירו כתובת, אפשר לשלוח אירוע בדיקה.</div>';
+    if (!list.length) return '<div class="rempty"><b>עוד אין משלוחים</b>אחרי שתגדירו כתובת, אפשר לשלוח אירוע בדיקה.</div>';
     return list.map((e) => {
       const st = tagOf(EV_STATUS, e.status);
       const ds = deliveriesOf(e.id);
       const rows = ds.map((d) => {
         const s = delStatus(d);
-        return '<li><span class="tg ' + s[1] + '" title="' + esc(d.status) + '">' + s[0] + "</span> ניסיון " + esc(d.attempt) + (d.http_status ? ", HTTP " + esc(d.http_status) : "") + ", " + esc(fmtDate(d.at)) + (d.error ? '<div class="errl">' + esc(d.error) + "</div>" : "") + "</li>";
+        return "<li>" + chip(s[1], s[0], ' title="' + esc(d.status) + '"') + " ניסיון " + esc(d.attempt) + (d.http_status ? ", HTTP " + esc(d.http_status) : "") + ", " + esc(fmtDate(d.at)) + (d.error ? '<div class="errl">' + esc(d.error) + "</div>" : "") + "</li>";
       }).join("");
       const next = e.status === "pending" && e.next_attempt_at && e.attempts ? '<div class="kmeta">הניסיון הבא: ' + esc(fmtDate(e.next_attempt_at)) + "</div>" : "";
-      return '<details class="ev"><summary><span class="evt">' + esc(TYPE_NAME[e.type] || e.type) + '</span><span class="tg ' + st[1] + '">' + st[0] + '</span><span class="when">' + esc(ago(e.created_at)) + "</span></summary>" +
+      return '<details class="ev"><summary><span class="evt">' + esc(TYPE_NAME[e.type] || e.type) + "</span>" + chip(st[1], st[0]) + '<span class="when">' + esc(ago(e.created_at)) + "</span></summary>" +
         '<div class="evbody">' + (rows ? "<ul>" + rows + "</ul>" : '<div class="kmeta">עוד לא נעשה ניסיון משלוח.</div>') + next + (e.last_error && !ds.length ? '<div class="errl">' + esc(e.last_error) + "</div>" : "") + "</div></details>";
     }).join("");
   }
@@ -522,23 +544,22 @@
     if (bad) return bad;
     const s = D.settings, on = s.webhook_events == null ? HOOK_EVENTS.map((e) => e[0]) : s.webhook_events;
     return '<div class="pin">' +
-      '<form class="card" id="hookForm" novalidate>' + cardHead("Webhook: עדכון לשרת שלכם") +
+      '<form class="rcard rcard--flat" id="hookForm" novalidate>' + cardHead("Webhook: עדכון לשרת שלכם") +
       '<p class="lead">על כל אירוע (משתתף חדש, הרשמה, תשלום) המערכת שולחת הודעה חתומה לכתובת שתגדירו, מכל מקור: האתר, הניהול והאזור האישי. אם השרת לא ענה, ההודעה נשלחת שוב כמה פעמים. <a href="../api/">איך מאמתים את החתימה</a></p>' +
-      '<label class="rfield"><span>כתובת לקבלת ההודעות</span><input id="hUrl" class="ltr" dir="ltr" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" data-hint placeholder="https://example.com/roster-hook" value="' + esc(s.webhook_url || "") + '"></label>' +
-      '<p class="hint">https בלבד, בפורט הרגיל, ובכתובת של אתר פומבי: לא כתובת IP, לא localhost, לא workers.dev ולא שירותי nip.io ודומיהם. אם משאירים ריק, לא נשלח כלום.</p>' +
+      '<label class="rfield"><span>כתובת לקבלת ההודעות</span><input id="hUrl" class="ltr" dir="ltr" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" data-hint placeholder="https://example.com/roster-hook" data-help="https בלבד, בפורט הרגיל, ובכתובת של אתר פומבי: לא כתובת IP, לא localhost, לא workers.dev ולא שירותי nip.io ודומיהם. אם משאירים ריק, לא נשלח כלום." value="' + esc(s.webhook_url || "") + '"></label>' +
       '<div class="clabel">האירועים שיישלחו</div><div class="chks" id="hEvents">' +
       HOOK_EVENTS.map((e) => '<label class="chk rfield rfield--check"><input type="checkbox" name="hev" value="' + e[0] + '"' + (on.includes(e[0]) ? " checked" : "") + '><span><b>' + e[1] + "</b><small>" + e[2] + " " + mono(e[0]) + "</small></span></label>").join("") + "</div>" +
-      '<div class="ferr" id="hErr" role="alert"></div>' +
-      '<div class="savebar"><button type="submit" class="btn" id="hSave">שמירה</button></div></form>' +
-      '<section class="card">' + cardHead("סוד החתימה") +
+      errBox("hErr") +
+      '<div class="savebar"><button type="submit" class="rbtn" id="hSave">שמירה</button></div></form>' +
+      '<section class="rcard rcard--flat">' + cardHead("סוד החתימה") +
       '<p class="lead">כל הודעה נושאת חתימה (HMAC) שמוכיחה שהיא באה מהמערכת. הסוד לא מוצג שוב אחרי שנוצר. אם איבדתם אותו, צרו סוד חדש: הסוד הישן יפסיק לעבוד מיד, ושרת שמאמת חתימות צריך לקבל את החדש.</p>' +
       '<p class="secstate" id="secState">' + (s.webhook_secret_set ? "יש סוד פעיל. הוא נשמר אצלנו ולא מוצג שוב." : "עוד לא נוצר סוד חתימה. בלי סוד אי אפשר לאמת את ההודעות.") + "</p>" +
-      '<button type="button" class="btn ghost" id="secretNew" data-act="secret-new">' + (s.webhook_secret_set ? "יצירת סוד חדש" : "יצירת סוד") + "</button></section>" +
-      '<section class="card">' + cardHead("אירוע בדיקה") +
+      '<button type="button" class="rbtn rbtn--ghost" id="secretNew" data-act="secret-new">' + (s.webhook_secret_set ? "יצירת סוד חדש" : "יצירת סוד") + "</button></section>" +
+      '<section class="rcard rcard--flat">' + cardHead("אירוע בדיקה") +
       '<p class="lead">שולח אירוע מסוג ping לכתובת השמורה, כדי לראות שהשרת שלכם מקבל ומאמת חתימה.</p>' +
-      '<button type="button" class="btn ghost" id="hookTest" data-act="hook-test"' + (s.webhook_url ? "" : " disabled") + ">שליחת בדיקה</button>" + (s.webhook_url ? "" : '<p class="hint">קודם צריך לשמור כתובת.</p>') + "</section>" +
-      '<section class="card">' + cardHead("משלוחים אחרונים", '<button type="button" class="hicon" data-act="refresh" aria-label="רענון" title="רענון">' + icon("refresh") + "</button>") +
-      '<div id="hookLog">' + hookLog(8) + '</div><button type="button" class="linkbtn" data-act="goto-log" data-seg="hook">לכל היומן</button></section></div>';
+      '<button type="button" class="rbtn rbtn--ghost" id="hookTest" data-act="hook-test"' + (s.webhook_url ? "" : " disabled") + ">שליחת בדיקה</button>" + (s.webhook_url ? "" : '<p class="hint">קודם צריך לשמור כתובת.</p>') + "</section>" +
+      secHead("משלוחים אחרונים", REFRESH) +
+      '<div class="lbox" id="hookLog">' + hookLog(8) + '</div><div class="lbox"><button type="button" class="rbtn rbtn--link" data-act="goto-log" data-seg="hook">לכל היומן</button></div></div>';
   }
   async function saveHook() {
     const err = $("#hErr"), btn = $("#hSave");
@@ -565,20 +586,25 @@
   /* ===== mails ===== */
   const mailStatus = { sent: ["נשלח", "ok"], failed: ["נכשל", "bad"], pending: ["ממתין", "wait"] };
   function mailLog(limit) {
-    if (D.err.mails) return '<div class="empty"><b>לא הצלחנו לטעון את יומן המיילים</b><button type="button" class="btn ghost" data-act="retry" data-what="mails">ניסיון נוסף</button></div>';
+    if (D.err.mails) return '<div class="rempty"><b>לא הצלחנו לטעון את יומן המיילים</b><button type="button" class="rbtn rbtn--ghost" data-act="retry" data-what="mails">ניסיון נוסף</button></div>';
     const list = (D.mails || []).slice(0, limit || 100);
-    if (!list.length) return '<div class="empty"><b>עוד לא נשלחו מיילים</b>מיילים שהמערכת שולחת בשם העסק יופיעו כאן.</div>';
+    if (!list.length) return '<div class="rempty"><b>עוד לא נשלחו מיילים</b>מיילים שהמערכת שולחת בשם העסק יופיעו כאן.</div>';
     return list.map((m) => {
       const st = tagOf(mailStatus, m.status);
       const tn = (DEF[m.template] && DEF[m.template].name) || m.template;
-      return '<button type="button" class="mrow" data-act="mail-open" data-id="' + esc(m.id) + '"><span class="mmain"><span class="msub">' + esc(m.subject || "ללא נושא") + '</span><span class="kmeta">' + esc(tn) + (m.is_test ? " (ניסיון)" : "") + ", " + mono(m.to_addr || "") + ", " + esc(ago(m.sent_at || m.created_at)) + "</span>" +
-        (m.status === "failed" && m.error ? '<span class="errl">' + esc(m.error) + "</span>" : "") + '</span><span class="tg ' + st[1] + '">' + st[0] + "</span></button>";
+      return '<div class="rrow rrow--link mrow"><button type="button" class="rrow__main" data-act="mail-open" data-id="' + esc(m.id) + '"><span class="rrow__title msub">' + esc(m.subject || "ללא נושא") + '</span><span class="kmeta">' + esc(tn) + (m.is_test ? " (ניסיון)" : "") + ", " + mono(m.to_addr || "") + ", " + esc(ago(m.sent_at || m.created_at)) + "</span>" +
+        (m.status === "failed" && m.error ? '<span class="errl">' + esc(m.error) + "</span>" : "") + '</button><span class="rrow__trail">' + chip(st[1], st[0]) + "</span></div>";
     }).join("");
   }
+  /* a template whose reset is waiting in its undo window already counts as default */
+  const isCustom = (k) => !!(D.templates && D.templates[k]) && !RosterUndo.isPending("template", k);
   function tplList() {
     return TPL_ORDER.filter((k) => DEF[k]).map((k) => {
-      const d = DEF[k], custom = !!(D.templates && D.templates[k]);
-      return '<button type="button" class="trow" data-act="tpl-open" data-key="' + k + '"><span class="mmain"><span class="msub">' + esc(d.name) + '</span><span class="kmeta">' + esc(d.when) + '</span></span><span class="tg ' + (custom ? "dark" : "") + '">' + (custom ? "מותאם" : "ברירת מחדל") + "</span></button>";
+      const d = DEF[k], custom = isCustom(k);
+      const main = '<button type="button" class="rrow__main" data-act="tpl-open" data-key="' + k + '"><span class="rrow__title msub">' + esc(d.name) + '</span><span class="kmeta">' + esc(d.when) + '</span></button><span class="rrow__trail">' + chip(custom ? "dark" : "", custom ? "מותאם" : "ברירת מחדל") + "</span>";
+      if (!custom) return '<div class="rrow rrow--link trow" data-key="' + k + '">' + main + "</div>";
+      /* a customized template can be reset to the default by a swipe: the same action as the button inside the editor, with the same undo toast */
+      return '<div class="rrow rrow--link trow" data-key="' + k + '" data-swipe="templates"><div class="rswipe-fg">' + main + '</div><div class="rswipe" aria-hidden="true">' + trayBtn("tpl-reset-row", "restore", "ברירת מחדל", 'data-key="' + k + '"') + "</div></div>";
     }).join("");
   }
   /* Who the mails are FROM and who gets the alerts is set by the owner of the system only (the database refuses anyone else),
@@ -600,8 +626,8 @@
   const offOf = () => new Set(Array.isArray(D.settings && D.settings.mail_off_types) ? D.settings.mail_off_types : []);
   function typeRow(k, off) {
     const d = DEF[k] || { name: k, when: "" };
-    return '<div class="mtype"><label class="sw rfield rfield--switch"><input type="checkbox" data-mtype="' + k + '" role="switch"' + (off.has(k) ? "" : " checked") + '><span class="trk" aria-hidden="true"></span><span class="swt"><b>' + esc(d.name) + "</b><small>" + esc(d.when) +
-      '</small></span></label><button type="button" class="btn ghost sm" data-act="mail-test" data-key="' + k + '" aria-label="שליחת מייל ניסיון: ' + esc(d.name) + '">מייל ניסיון</button></div>';
+    return '<div class="mtype"><label class="sw rfield rfield--switch"><input type="checkbox" data-mtype="' + k + '" role="switch"' + (off.has(k) ? "" : " checked") + '><span class="rsw__trk" aria-hidden="true"></span><span class="rsw__txt"><b>' + esc(d.name) + "</b><small>" + esc(d.when) +
+      '</small></span></label><button type="button" class="rbtn rbtn--ghost rbtn--sm" data-act="mail-test" data-key="' + k + '" aria-label="שליחת מייל ניסיון: ' + esc(d.name) + '">מייל ניסיון</button></div>';
   }
   /* the values behind the status lines: the form while it is open, else what is saved */
   function mailVals() {
@@ -624,7 +650,7 @@
       notes.push(v.notify.length ? "ההתראות נשלחות אל: " + v.notify.map(mono).join(", ") : "לא הוגדרה כתובת ייעודית, ולכן ההתראות נשלחות לכל חשבונות ה־Google של העסק");
     }
     const ok = miss.length === 0;
-    return '<span class="tg ' + (ok ? "ok" : "bad") + '">' + (ok ? "מוגדר" : "לא מוגדר") + "</span>" +
+    return chip(ok ? "ok" : "bad", ok ? "מוגדר" : "לא מוגדר") +
       (miss.length ? '<ul class="mmiss">' + miss.map((x) => "<li>" + esc(x) + "</li>").join("") + "</ul>" : "") +
       '<ul class="mnotes">' + notes.map((x) => "<li>" + x + "</li>").join("") + "</ul>";
   }
@@ -653,40 +679,37 @@
     if (bad) return bad;
     const s = D.settings, own = isOwner(), ro = own ? "" : ' readonly aria-readonly="true"', roCls = own ? "" : " ro", off = offOf();
     const cur = mailNeedOf(mailVals());
-    const needBtn = (v, label, hint) => '<label><input type="radio" name="mNeed" value="' + v + '"' + (cur === v ? " checked" : "") + "><span><b>" + label + "</b><small>" + hint + "</small></span></label>";
+    const needBtn = (v, label, hint) => '<label class="rchoice"><input type="radio" name="mNeed" value="' + v + '"' + (cur === v ? " checked" : "") + "><span><b>" + label + "</b><small>" + hint + "</small></span></label>";
+    const H = (t) => ' data-help="' + esc(t) + '"';
     return '<div class="pin">' +
-      '<form class="card" id="mailForm" novalidate>' + cardHead("מיילים") +
+      '<form class="rcard rcard--flat" id="mailForm" novalidate>' + cardHead("מיילים") +
       '<p class="lead">כל המיילים של העסק מוגדרים כאן: למי הם נשלחים, אילו סוגים, ומאיזו כתובת. כדי להתחיל, בחרו מה העסק צריך.</p>' +
-      '<div class="needs" role="radiogroup" aria-label="מה העסק צריך">' +
+      '<div class="rchoices rchoices--3 needs" role="radiogroup" aria-label="מה העסק צריך">' +
         needBtn("p", "מיילים למשתתפים", "אישור הרשמה, תשלום, החזר וביטול") + needBtn("a", "התראות למנהלים", "משתתף חדש, דיווח תשלום וחיבורים") + needBtn("both", "שניהם", "המשתתפים והמנהלים") + "</div>" +
-      '<p class="hint">הבחירה מסמנת את המתגים למטה. אפשר לשנות כל מתג בנפרד לפני השמירה.</p>' +
+      '<p class="hint agap">הבחירה מסמנת את המתגים למטה. אפשר לשנות כל מתג בנפרד לפני השמירה.</p>' +
 
       '<div class="marea" id="mAreaP"><h3>מיילים למשתתפים</h3><div class="mstat" id="mStatP"></div>' +
       sw("mParticipant", s.participant_mail_enabled !== false, "שליחת מיילים למשתתפים", "כל מייל נשלח רק לכתובת שהמשתתף הזין, ומסתיים בהסבר למה הוא קיבל אותו. כשהמתג כבוי לא נשלח אף מייל למשתתפים.") +
       '<div class="mtypes">' + PART_TYPES.map((k) => typeRow(k, off)).join("") + "</div></div>" +
 
       '<div class="marea" id="mAreaA"><h3>התראות למנהלים</h3><div class="mstat" id="mStatA"></div>' +
-      '<label class="rfield"><span>מי מקבל התראות</span><textarea id="mNotify" class="ltr' + roCls + '" dir="ltr" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false"' + ro + ' data-hint placeholder="manager@example.com">' + esc((s.notify_emails || []).join("\n")) + "</textarea></label>" +
-      '<p class="hint">' + (own ? "כתובת אחת בכל שורה." : OWNER_ONLY) + " אם הרשימה ריקה, ההתראות נשלחות לכל חשבונות ה־Google של העסק.</p>" +
+      '<label class="rfield"><span>מי מקבל התראות</span><textarea id="mNotify" class="ltr' + roCls + '" dir="ltr" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false"' + ro + ' data-hint placeholder="manager@example.com"' + H((own ? "כתובת אחת בכל שורה." : OWNER_ONLY) + " אם הרשימה ריקה, ההתראות נשלחות לכל חשבונות ה־Google של העסק.") + ">" + esc((s.notify_emails || []).join("\n")) + "</textarea></label>" +
       '<div class="mtypes">' + ADM_TYPES.map((k) => typeRow(k, off)).join("") + "</div></div>" +
 
       '<div class="marea"><h3>שולח</h3>' +
       '<p class="lead">המיילים יוצאים מהכתובת <bdi dir="ltr">' + esc(s.mail_from_address || "no-reply@floa.co.il") + '</bdi>, בשם שהוגדר לעסק.' + (own ? "" : " " + OWNER_ONLY) + "</p>" +
-      '<label class="rfield"><span>שם השולח</span><input id="mName" maxlength="60" autocomplete="off"' + ro + ' class="' + roCls.trim() + '" data-hint placeholder="' + esc(BIZ.name) + '" value="' + esc(s.sender_name || "") + '"></label>' +
-      '<p class="hint">' + (own ? "מופיע ליד הכתובת. אם משאירים ריק, יופיע שם העסק." : OWNER_ONLY + " אם הוא ריק, יופיע שם העסק.") + "</p>" +
-      '<label class="rfield"><span>כתובת השולח</span><input id="mFrom" class="ltr' + roCls + '" dir="ltr" type="email" inputmode="email" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="120"' + ro + ' data-hint placeholder="no-reply@floa.co.il" value="' + esc(s.mail_from_address || "") + '"></label>' +
-      '<p class="hint">' + (own ? "הכתובת שהמשתתף רואה כשולח. אם משאירים ריק, המיילים יוצאים מ־no-reply@floa.co.il. הדומיין של הכתובת צריך להיות מאומת ב־Resend, אחרת המייל לא יישלח." : OWNER_ONLY + " אם היא ריקה, המיילים יוצאים מ־no-reply@floa.co.il.") + "</p>" +
-      '<label class="rfield"><span>כתובת למענה</span><input id="mContact" class="ltr' + roCls + '" dir="ltr" type="email" inputmode="email" autocomplete="off" autocapitalize="off" spellcheck="false"' + ro + ' data-hint placeholder="studio@example.com" value="' + esc(s.contact_email || "") + '"></label>' +
-      '<p class="hint">' + (own ? "כשמשתתף עונה למייל, התשובה מגיעה לכאן." : OWNER_ONLY + " כשמשתתף עונה למייל, התשובה מגיעה לכתובת הזאת.") + "</p></div>" +
+      '<label class="rfield"><span>שם השולח</span><input id="mName" maxlength="60" autocomplete="off"' + ro + ' class="' + roCls.trim() + '" data-hint placeholder="' + esc(BIZ.name) + '"' + H(own ? "מופיע ליד הכתובת. אם משאירים ריק, יופיע שם העסק." : OWNER_ONLY + " אם הוא ריק, יופיע שם העסק.") + ' value="' + esc(s.sender_name || "") + '"></label>' +
+      '<label class="rfield"><span>כתובת השולח</span><input id="mFrom" class="ltr' + roCls + '" dir="ltr" type="email" inputmode="email" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="120"' + ro + ' data-hint placeholder="no-reply@floa.co.il"' + H(own ? "הכתובת שהמשתתף רואה כשולח. אם משאירים ריק, המיילים יוצאים מ־no-reply@floa.co.il. הדומיין של הכתובת צריך להיות מאומת ב־Resend, אחרת המייל לא יישלח." : OWNER_ONLY + " אם היא ריקה, המיילים יוצאים מ־no-reply@floa.co.il.") + ' value="' + esc(s.mail_from_address || "") + '"></label>' +
+      '<label class="rfield"><span>כתובת למענה</span><input id="mContact" class="ltr' + roCls + '" dir="ltr" type="email" inputmode="email" autocomplete="off" autocapitalize="off" spellcheck="false"' + ro + ' data-hint placeholder="studio@example.com"' + H(own ? "כשמשתתף עונה למייל, התשובה מגיעה לכאן." : OWNER_ONLY + " כשמשתתף עונה למייל, התשובה מגיעה לכתובת הזאת.") + ' value="' + esc(s.contact_email || "") + '"></label></div>' +
 
       '<p class="hint" id="mTestHint">"מייל ניסיון" שולח אליכם, ורק אליכם, את התבנית כפי שנשמרה, עם נתוני דוגמה. הוא מסומן בנושא ובגוף המייל וביומן. אם שיניתם משהו כאן, שמרו קודם.</p>' +
-      '<div class="ferr" id="mErr" role="alert"></div>' +
-      '<div class="savebar"><button type="submit" class="btn" id="mSave">שמירה</button></div></form>' +
-      '<section class="card">' + cardHead("תבניות המיילים") +
-      '<p class="lead">כל מייל נשלח לפי תבנית. אפשר להתאים נושא וגוף, והפרטים (שם פרטי, תאריך, קישורים) מתמלאים אוטומטית.</p>' +
-      '<div id="tplList">' + tplList() + "</div></section>" +
-      '<section class="card">' + cardHead("מיילים אחרונים", '<button type="button" class="hicon" data-act="refresh" aria-label="רענון" title="רענון">' + icon("refresh") + "</button>") +
-      '<div id="mailLog">' + mailLog(6) + '</div><button type="button" class="linkbtn" data-act="goto-log" data-seg="mail">לכל היומן</button></section></div>';
+      errBox("mErr") +
+      '<div class="savebar"><button type="submit" class="rbtn" id="mSave">שמירה</button></div></form>' +
+      '<section class="rcard rcard--flat">' + cardHead("תבניות המיילים") +
+      '<p class="lead">כל מייל נשלח לפי תבנית. אפשר להתאים נושא וגוף, והפרטים (שם פרטי, תאריך, קישורים) מתמלאים אוטומטית.</p></section>' +
+      '<div class="lbox" id="tplList">' + tplList() + "</div>" +
+      secHead("מיילים אחרונים", REFRESH) +
+      '<div class="lbox" id="mailLog">' + mailLog(6) + '</div><div class="lbox"><button type="button" class="rbtn rbtn--link" data-act="goto-log" data-seg="mail">לכל היומן</button></div></div>';
   }
   async function saveMail() {
     const err = $("#mErr"), btn = $("#mSave"), s = D.settings;
@@ -736,27 +759,27 @@
 
   /* ===== registration and the personal area ===== */
   const meUrl = () => ME_URL + "?biz=" + BIZ.slug;
-  const iframeCode = () => '<iframe src="' + meUrl() + '" title="האזור האישי" style="width:100%;height:720px;border:0"></iframe>';
+  const FRAME = window.ROSTER_MAIL_FRAME;
+  const iframeCode = () => FRAME.iframeCode(meUrl());
   function panelReg() {
     const bad = need(["settings"]);
     if (bad) return bad;
     const s = D.settings, req = new Set((s.signup_required && s.signup_required.length ? s.signup_required : ["first_name", "phone"]).concat(["first_name", "phone"]));
+    const H = (t) => ' data-help="' + esc(t) + '"';
     return '<div class="pin"><form id="regForm" novalidate>' +
-      '<section class="card">' + cardHead("הרשמה") +
+      '<section class="rcard rcard--flat">' + cardHead("הרשמה") +
       sw("rOpen", s.registration_open !== false, "הרשמה פתוחה", "כשהיא סגורה, טופס ההרשמה באתר מחזיר \"ההרשמה סגורה\".") +
       '<div class="clabel">שדות חובה בטופס ההרשמה</div><div class="chks">' +
       FIELDS.map((f) => '<label class="chk rfield rfield--check"><input type="checkbox" name="rf" value="' + f[0] + '"' + (req.has(f[0]) ? " checked" : "") + (f[2] ? " disabled" : "") + "><span><b>" + f[1] + "</b>" + (f[2] ? "<small>חובה תמיד</small>" : "") + "</span></label>").join("") + "</div></section>" +
-      '<section class="card">' + cardHead("אזור אישי") +
+      '<section class="rcard rcard--flat">' + cardHead("אזור אישי") +
       sw("rMe", s.personal_area_enabled !== false, "אזור אישי פעיל", "המשתתפים נכנסים עם Google, מקשרים את הטלפון שלהם ורואים את המפגשים והתשלומים שלהם.") +
-      '<div class="clabel">הכתובת של האזור האישי</div><div class="copybox"><bdi class="mono" dir="ltr">' + esc(meUrl()) + '</bdi><button type="button" class="hicon" data-act="copy" data-text="' + esc(meUrl()) + '" aria-label="העתקת הכתובת" title="העתקה">' + icon("copy") + "</button></div>" +
-      '<button type="button" class="linkbtn" data-act="copy" data-text="' + esc(iframeCode()) + '">העתקת קוד להטמעה באתר (iframe)</button></section>' +
-      '<section class="card">' + cardHead("תשלום וקשר") +
-      '<label class="rfield"><span>קישור לתשלום</span><input id="rPay" class="ltr" dir="ltr" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" data-hint placeholder="https://pay.example/studio" value="' + esc(s.payment_url || "") + '"></label>' +
-      '<p class="hint">הקישור שמשתתף פותח כדי לשלם (למשל Bit או PayBox). מופיע במייל ההרשמה ובאזור האישי.</p>' +
-      '<label class="rfield"><span>מספר וואטסאפ</span><input id="rWa" class="ltr" dir="ltr" type="tel" inputmode="tel" autocomplete="off" data-hint placeholder="050-1234567" value="' + esc(s.contact_whatsapp || "") + '"></label>' +
-      '<p class="hint">למי הכפתור "לשלם בדרך אחרת" והקישור לוואטסאפ במיילים פונים. אפשר לכתוב 050-1234567 או +972501234567.</p>' +
-      '<div class="ferr" id="rErr" role="alert"></div>' +
-      '<div class="savebar"><button type="submit" class="btn" id="rSave">שמירה</button></div></section></form></div>';
+      '<div class="clabel">הכתובת של האזור האישי</div><div class="copybox"><bdi class="mono" dir="ltr">' + esc(meUrl()) + '</bdi><button type="button" class="rbtn rbtn--icon" data-act="copy" data-text="' + esc(meUrl()) + '" aria-label="העתקת הכתובת" title="העתקה">' + icon("copy") + "</button></div>" +
+      '<button type="button" class="rbtn rbtn--link" data-act="copy" data-text="' + esc(iframeCode()) + '">העתקת קוד להטמעה באתר (iframe)</button></section>' +
+      '<section class="rcard rcard--flat">' + cardHead("תשלום וקשר") +
+      '<label class="rfield"><span>קישור לתשלום</span><input id="rPay" class="ltr" dir="ltr" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" data-hint placeholder="https://pay.example/studio"' + H("הקישור שמשתתף פותח כדי לשלם (למשל Bit או PayBox). מופיע במייל ההרשמה ובאזור האישי.") + ' value="' + esc(s.payment_url || "") + '"></label>' +
+      '<label class="rfield"><span>מספר וואטסאפ</span><input id="rWa" class="ltr" dir="ltr" type="tel" inputmode="tel" autocomplete="off" data-hint placeholder="050-1234567"' + H('למי הכפתור "לשלם בדרך אחרת" והקישור לוואטסאפ במיילים פונים. אפשר לכתוב 050-1234567 או +972501234567.') + ' value="' + esc(s.contact_whatsapp || "") + '"></label>' +
+      errBox("rErr") +
+      '<div class="savebar"><button type="submit" class="rbtn" id="rSave">שמירה</button></div></section></form></div>';
   }
   async function saveReg() {
     const err = $("#rErr"), btn = $("#rSave");
@@ -778,10 +801,9 @@
   function logBody() { return S.seg === "mail" ? mailLog(100) : hookLog(100); }
   function panelLog() {
     const bad = S.seg === "mail" ? need(["mails"]) : need(["events", "deliveries", "settings"]);
-    return '<div class="pin"><section class="card">' +
-      cardHead("יומן משלוחים", '<button type="button" class="hicon" data-act="refresh" aria-label="רענון" title="רענון">' + icon("refresh") + "</button>") +
-      '<div class="seg" role="group" aria-label="סוג היומן"><button type="button" data-act="seg" data-seg="hook" aria-pressed="' + (S.seg === "hook") + '">Webhook</button><button type="button" data-act="seg" data-seg="mail" aria-pressed="' + (S.seg === "mail") + '">מיילים</button></div>' +
-      (bad ? bad.replace('<div class="pin">', "<div>") : '<div id="logBody">' + logBody() + "</div>") + "</section></div>";
+    return '<div class="pin">' + secHead("יומן משלוחים", REFRESH) +
+      '<div class="rtabs rtabs--seg seg" role="group" aria-label="סוג היומן"><button type="button" class="rtab" data-act="seg" data-seg="hook" aria-pressed="' + (S.seg === "hook") + '">Webhook</button><button type="button" class="rtab" data-act="seg" data-seg="mail" aria-pressed="' + (S.seg === "mail") + '">מיילים</button></div>' +
+      (bad ? bad.replace('<div class="pin">', "<div>") : '<div class="lbox" id="logBody">' + logBody() + "</div>") + "</div>";
   }
 
   /* ===== actions ===== */
@@ -802,6 +824,7 @@
     else if (act === "secret-new") openSecretNew();
     else if (act === "hook-test") hookTest(t);
     else if (act === "tpl-open") openTemplate(t.dataset.key);
+    else if (act === "tpl-reset-row") resetTemplate(t.dataset.key);
     else if (act === "mail-open") openMail(t.dataset.id);
     else if (act === "mail-test") mailTest(t);
     else if (act === "refresh") refreshLogs();
@@ -847,16 +870,14 @@
     openDialog("form", "מפתח חדש",
       '<form id="nkForm" novalidate>' +
       '<div class="clabel" id="nkKindL">סוג המפתח</div>' +
-      '<div class="seg two" role="radiogroup" aria-labelledby="nkKindL"><label><input type="radio" name="nkKind" value="public" checked><span>ציבורי, לדפדפן</span></label><label><input type="radio" name="nkKind" value="secret"><span>סודי, לשרת</span></label></div>' +
-      '<p class="hint" id="nkKindHint">מותר להשתמש בו בקוד שרץ בדפדפן. מאפשר רק לקרוא מפגשים, לקבל הרשמות וללחוץ על "שילמתי".</p>' +
+      '<div class="rchoices rchoices--2" role="radiogroup" aria-labelledby="nkKindL"><label class="rchoice"><input type="radio" name="nkKind" value="public" checked><span>ציבורי, לדפדפן</span></label><label class="rchoice"><input type="radio" name="nkKind" value="secret"><span>סודי, לשרת</span></label></div>' +
+      '<p class="hint agap" id="nkKindHint">מותר להשתמש בו בקוד שרץ בדפדפן. מאפשר רק לקרוא מפגשים, לקבל הרשמות וללחוץ על "שילמתי".</p>' +
       '<label class="rfield"><span>שם למפתח</span><input id="nkLabel" maxlength="60" autocomplete="off" autofocus data-hint placeholder="האתר הראשי"></label>' +
-      '<label class="rfield" id="nkOriginsF"><span>אתרים מורשים</span><textarea id="nkOrigins" class="ltr" dir="ltr" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false" data-hint placeholder="https://studio.example"></textarea></label>' +
-      '<p class="hint" id="nkOriginsH">כתובת אחת בכל שורה, בלי נתיב ובלי כוכביות. אם משאירים ריק, כל אתר יוכל להשתמש במפתח.</p>' +
-      '<div class="ferr" id="nkErr" role="alert"></div>' +
-      '<button type="submit" class="btn block" id="nkGo">יצירת מפתח</button></form>');
+      '<label class="rfield" id="nkOriginsF"><span>אתרים מורשים</span><textarea id="nkOrigins" class="ltr" dir="ltr" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false" data-hint placeholder="https://studio.example" data-help="כתובת אחת בכל שורה, בלי נתיב ובלי כוכביות. אם משאירים ריק, כל אתר יוכל להשתמש במפתח."></textarea></label>' +
+      errBox("nkErr") + "</form>", { action: { label: "יצירת מפתח", form: "nkForm", id: "nkGo" } });
     const sync = () => {
       const pub = $("input[name=nkKind]:checked").value === "public";
-      $("#nkOriginsF").hidden = !pub; $("#nkOriginsH").hidden = !pub;
+      $("#nkOriginsF").hidden = !pub;
       $("#nkKindHint").textContent = pub
         ? 'מותר להשתמש בו בקוד שרץ בדפדפן. מאפשר רק לקרוא מפגשים, לקבל הרשמות וללחוץ על "שילמתי".'
         : "רק לשרת שלכם. לעולם לא בקוד שרץ בדפדפן ולא במאגר קוד ציבורי. מאפשר הכול, והמערכת תסרב לבקשות שלו שמגיעות מדפדפן.";
@@ -875,7 +896,7 @@
       if (o.err) { err.textContent = o.err; $("#nkOrigins").focus(); return; }
       origins = o.list;
     }
-    c.busy = true; $("#nkGo").disabled = true; err.textContent = "";
+    c.busy = true; RosterSheet.busy(dlg, true); err.textContent = "";
     try {
       const r = await rpc("roster_key_create", { p_kind: kind, p_label: label, p_origins: origins });
       if (!r || !r.key) throw new Error("no key");
@@ -885,7 +906,7 @@
     } catch (e) {
       if (e && e.signedOut) return;
       if (ctx !== c) return;
-      c.busy = false; $("#nkGo").disabled = false; err.textContent = T.generic;
+      c.busy = false; RosterSheet.busy(dlg, false); err.textContent = T.generic;
     }
   }
   /* The one place a secret is on screen. It lives in this closure and nowhere else. */
@@ -894,12 +915,12 @@
     const sec = what === "key-secret";
     const lead = what === "webhook" ? "זה הסוד לאימות החתימה של ה־Webhook." : sec ? "זה המפתח הסודי." : "זה המפתח הציבורי.";
     openDialog("form", title,
-      '<div class="warnbox"><b>זו הפעם היחידה שזה מוצג.</b> ' + lead + " אחרי שתסגרו את החלון אי אפשר יהיה לראות אותו שוב, אלא רק ליצור חדש." +
-      (sec ? " שמרו אותו רק בשרת, לעולם לא בקוד שרץ בדפדפן." : what === "webhook" ? " שמרו אותו בשרת שמקבל את ההודעות." : "") + "</div>" +
+      warn("<b>זו הפעם היחידה שזה מוצג.</b> " + lead + " אחרי שתסגרו את החלון אי אפשר יהיה לראות אותו שוב, אלא רק ליצור חדש." +
+      (sec ? " שמרו אותו רק בשרת, לעולם לא בקוד שרץ בדפדפן." : what === "webhook" ? " שמרו אותו בשרת שמקבל את ההודעות." : "")) +
       '<div class="secretbox"><bdi class="mono" dir="ltr" id="rvText">' + esc(secret) + '</bdi></div>' +
-      '<div class="btnrow"><button type="button" class="btn" data-d="reveal-copy" id="rvCopy">' + icon("copy") + "העתקה</button>" +
-      '<button type="button" class="btn ghost" data-d="reveal-done">שמרתי, סגירה</button></div>' +
-      '<div class="ferr" id="rvWarn" role="alert" hidden></div>');
+      '<div class="btnrow"><button type="button" class="rbtn" data-d="reveal-copy" id="rvCopy">' + icon("copy") + "העתקה</button>" +
+      '<button type="button" class="rbtn rbtn--ghost" data-d="reveal-done">שמרתי, סגירה</button></div>' +
+      '<div class="ferr rmsg rmsg--wait" id="rvWarn" role="alert" hidden></div>');
     $("#rvCopy").focus();
   }
   async function dialogAction(t) {
@@ -915,7 +936,7 @@
     else if (d === "tpl-save") saveTemplate();
     else if (d === "tpl-reset") { ctx.resetAsk = true; renderTplFoot(); }
     else if (d === "tpl-reset-no") { ctx.resetAsk = false; renderTplFoot(); }
-    else if (d === "tpl-reset-yes") resetTemplate();
+    else if (d === "tpl-reset-yes") resetTemplate(ctx.key);
     else if (d === "tpl-tab") { ctx.tab = t.dataset.tab; $("#tplGrid").dataset.tab = ctx.tab; $$("[data-d=tpl-tab]").forEach((b) => b.setAttribute("aria-pressed", String(b === t))); }
     else if (d === "var") insertVar(t.dataset.v);
   }
@@ -926,9 +947,9 @@
     ctx = { kind: "revoke", id, busy: false };
     afterClose = () => { const b = $("#keyNew"); if (b) b.focus(); };
     openDialog("form", "ביטול מפתח",
-      '<div class="warnbox">המפתח <b>' + esc(k.label || k.prefix) + "</b> יפסיק לעבוד מיד. אתרים ושרתים שמשתמשים בו יקבלו שגיאה. אי אפשר לבטל את הביטול, רק ליצור מפתח חדש.</div>" +
-      '<div class="ferr" id="rkErr" role="alert"></div>' +
-      '<div class="btnrow"><button type="button" class="btn danger" data-d="revoke-yes" id="rkGo">ביטול המפתח</button><button type="button" class="btn ghost" data-d="revoke-no">השארת המפתח</button></div>');
+      warn("המפתח <b>" + esc(k.label || k.prefix) + "</b> יפסיק לעבוד מיד. אתרים ושרתים שמשתמשים בו יקבלו שגיאה. אי אפשר לבטל את הביטול, רק ליצור מפתח חדש.") +
+      errBox("rkErr") +
+      '<div class="btnrow"><button type="button" class="rbtn rbtn--danger" data-d="revoke-yes" id="rkGo">ביטול המפתח</button><button type="button" class="rbtn rbtn--ghost" data-d="revoke-no">השארת המפתח</button></div>');
     $("[data-d=revoke-no]").focus();
   }
   async function revokeKey() {
@@ -953,9 +974,9 @@
     ctx = { kind: "secret", busy: false };
     afterClose = () => { const b = $("#secretNew"); if (b) b.focus(); };
     openDialog("form", "סוד חתימה חדש",
-      '<div class="warnbox">יוצרים סוד חדש והסוד הנוכחי מפסיק לעבוד מיד. שרת שמאמת חתימות יכשיל כל הודעה עד שתעדכנו אותו בסוד החדש.</div>' +
-      '<div class="ferr" id="scErr" role="alert"></div>' +
-      '<div class="btnrow"><button type="button" class="btn" data-d="secret-yes" id="scGo">יצירת סוד חדש</button><button type="button" class="btn ghost" data-d="secret-no">ביטול</button></div>');
+      warn("יוצרים סוד חדש והסוד הנוכחי מפסיק לעבוד מיד. שרת שמאמת חתימות יכשיל כל הודעה עד שתעדכנו אותו בסוד החדש.") +
+      errBox("scErr") +
+      '<div class="btnrow"><button type="button" class="rbtn" data-d="secret-yes" id="scGo">יצירת סוד חדש</button><button type="button" class="rbtn rbtn--ghost" data-d="secret-no">ביטול</button></div>');
     $("[data-d=secret-no]").focus();
   }
   async function rotateSecret() {
@@ -1097,22 +1118,22 @@
      pixel or a remote stylesheet in a template would otherwise tell its author when and from where somebody opened it. */
   const FRAME_CSP = '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'">';
   const inFrame = (html) => '<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8">' + FRAME_CSP + "</head>" + html;
-  const frameNote = (text) => inFrame('<body style="margin:0"><p dir="rtl" style="margin:0;padding:16px;font:15px/1.5 Arial,Helvetica,sans-serif;color:#5a626c">' + esc(text) + "</p></body>");
+  const frameNote = (text) => inFrame(FRAME.note(esc(text)));
   /* what the Worker does after rendering: a fragment gets a document around it, and a participant mail that
      lacks the why-you-got-this sentence gets it added at the end */
   function previewDoc(tplHtml, key) {
     const d = DEF[key], mark = window.ROSTER_MAIL_FOOTER_MARK || "הוזנה בטופס ההרשמה";
     let html = renderTpl(tplHtml, sampleVars(key));
-    if (!/<body[\s>]/i.test(html)) html = '<!doctype html>\n<html lang="he" dir="rtl"><body dir="rtl" style="margin:0;padding:24px;font-family:Arial,Helvetica,sans-serif;direction:rtl;text-align:right">\n' + html + "\n</body></html>";
+    if (!/<body[\s>]/i.test(html)) html = FRAME.wrap(html);
     if (d.who === "participant" && !plainText(html).includes(mark)) {
-      const foot = '<p dir="rtl" style="margin:24px 0 0;font-size:12px;line-height:1.5;color:#6B7A78;direction:rtl;text-align:right">הודעה זו נשלחה כי הכתובת הזו ' + mark + " של " + esc(BIZ.name) + ". אם זו טעות, אפשר להתעלם מההודעה.</p>";
+      const foot = FRAME.footer(mark, esc(BIZ.name));
       const at = html.search(/<\/body\s*>/i);
       html = at === -1 ? html + foot : html.slice(0, at) + foot + html.slice(at);
     }
     return inFrame(html);
   }
   function tplState(key) {
-    const d = DEF[key], row = D.templates && D.templates[key];
+    const d = DEF[key], row = isCustom(key) ? D.templates[key] : null;
     return { subject: row ? row.subject : d.subject, html: row ? row.html : d.html, custom: !!row };
   }
   function openTemplate(key) {
@@ -1125,26 +1146,26 @@
       '<label class="rfield"><span>נושא</span><input placeholder=" " id="tSubject" autocomplete="off" maxlength="200" value="' + esc(st.subject) + '"></label>' +
       '<p class="subprev" id="tSubPrev"></p>' +
       '<div class="clabel">משתנים: לחיצה מוסיפה למקום הסמן</div>' +
-      '<div class="vchips">' + d.vars.map((v) => '<button type="button" class="tg chip" data-d="var" data-v="' + v + '" title="{{' + v + '}}">' + esc(VAR_NAME[v] || v) + "</button>").join("") + "</div>" +
+      '<div class="vchips">' + d.vars.map((v) => '<button type="button" class="rchip rchip--button" data-d="var" data-v="' + v + '" title="{{' + v + '}}">' + esc(VAR_NAME[v] || v) + "</button>").join("") + "</div>" +
       '<details class="help"><summary>עזרה לכתיבת תבנית</summary><ul>' +
       "<li>משתנה בסוגריים כפולים, כמו <bdi dir=\"ltr\">{{first_name}}</bdi>, מוגן מ־HTML. בסוגריים משולשים, <bdi dir=\"ltr\">{{{x}}}</bdi>, הערך נכנס כמו שהוא. פרטים שהמשתתף הקליד (שם, טלפון, אימייל, גיל, מגדר) ודרך התשלום תמיד מוגנים, גם בסוגריים משולשים.</li>" +
       "<li>אלמנט <bdi dir=\"ltr\">p</bdi>, <bdi dir=\"ltr\">tr</bdi>, <bdi dir=\"ltr\">li</bdi>, <bdi dir=\"ltr\">a</bdi> או <bdi dir=\"ltr\">span</bdi> עם <bdi dir=\"ltr\">data-if=\"pay_link\"</bdi> נעלם מהמייל כשאין ערך לאותו משתנה, למשל כשלא הוגדר קישור תשלום.</li>" +
       "<li>במיילים למשתתפים, אם הטקסט לא כולל את המשפט \"הוזנה בטופס ההרשמה\", המערכת מוסיפה בעצמה בסוף שורה שמסבירה למה הגיע המייל. אי אפשר להסיר אותה.</li>" +
       "<li>התצוגה המקדימה משתמשת בנתוני דוגמה, ובהגדרות האמיתיות של העסק (קישור תשלום, וואטסאפ, אזור אישי).</li></ul></details>" +
-      '<div class="seg two tabsw" role="group" aria-label="עריכה או תצוגה"><button type="button" data-d="tpl-tab" data-tab="edit" aria-pressed="true">עריכה</button><button type="button" data-d="tpl-tab" data-tab="prev" aria-pressed="false">תצוגה מקדימה</button></div>' +
+      '<div class="rtabs rtabs--seg tabsw" role="group" aria-label="עריכה או תצוגה"><button type="button" class="rtab" data-d="tpl-tab" data-tab="edit" aria-pressed="true">עריכה</button><button type="button" class="rtab" data-d="tpl-tab" data-tab="prev" aria-pressed="false">תצוגה מקדימה</button></div>' +
       '<div class="edgrid" id="tplGrid" data-tab="edit">' +
       '<label class="rfield ed"><span>גוף המייל (HTML)</span><textarea placeholder=" " id="tHtml" class="ltr code" dir="ltr" spellcheck="false" autocomplete="off" autocapitalize="off">' + esc(st.html) + "</textarea></label>" +
       '<div class="pv"><span class="pvl">כך זה ייראה, עם דוגמה</span><iframe id="tPrev" title="תצוגה מקדימה של המייל" sandbox="" referrerpolicy="no-referrer"></iframe></div></div>' +
-      '<div class="ferr" id="tErr" role="alert"></div><div class="twarn" id="tWarn"></div>' +
-      '<div id="tFoot"></div>');
+      errBox("tErr") + '<div class="twarn" id="tWarn"></div>' +
+      '<div id="tFoot"></div>', { action: { label: "שמירה", id: "tSave" } });
     renderTplFoot();
     updatePreview();
   }
   function renderTplFoot() {
     const c = ctx;
     $("#tFoot").innerHTML = c.resetAsk
-      ? '<div class="warnbox">התבנית המותאמת תימחק והמייל יחזור לנוסח ברירת המחדל. להחזיר?</div><div class="btnrow"><button type="button" class="btn danger" data-d="tpl-reset-yes" id="tResetYes">כן, להחזיר לברירת מחדל</button><button type="button" class="btn ghost" data-d="tpl-reset-no">ביטול</button></div>'
-      : '<div class="btnrow"><button type="button" class="btn" data-d="tpl-save" id="tSave">שמירה</button><button type="button" class="btn ghost redtext" data-d="tpl-reset" id="tReset"' + (c.custom ? "" : " disabled") + ">החזרה לברירת מחדל</button></div>";
+      ? warn("התבנית המותאמת תחזור לנוסח ברירת המחדל. אפשר לבטל בהודעה שתופיע. להחזיר?") + '<div class="btnrow"><button type="button" class="rbtn rbtn--danger" data-d="tpl-reset-yes" id="tResetYes">כן, להחזיר לברירת מחדל</button><button type="button" class="rbtn rbtn--ghost" data-d="tpl-reset-no">ביטול</button></div>'
+      : '<div class="btnrow"><button type="button" class="rbtn rbtn--ghost rbtn--danger" data-d="tpl-reset" id="tReset"' + (c.custom ? "" : " disabled") + ">החזרה לברירת מחדל</button></div>";
     if (c.resetAsk) $("[data-d=tpl-reset-no]").focus();
   }
   function templateInput() { clearTimeout(ctx.pt); ctx.pt = setTimeout(updatePreview, 90); $("#tErr").textContent = ""; }
@@ -1157,7 +1178,7 @@
     ctx.problem = problem;
     if (problem) {                         /* nothing is parsed or rendered: that is the whole defence against a poisoned template */
       $("#tPrev").srcdoc = frameNote("התצוגה המקדימה לא זמינה. " + problem);
-      $("#tWarn").innerHTML = '<p class="bad">' + esc(problem) + "</p>";
+      $("#tWarn").innerHTML = '<p class="rmsg rmsg--no bad">' + esc(problem) + "</p>";
       return;
     }
     $("#tPrev").srcdoc = previewDoc(htmlSrc, key);
@@ -1174,7 +1195,7 @@
       directions: "הוראות הגעה זמינות רק באישור תשלום",
     };
     Object.keys(why).forEach((name) => { if (left.includes(name) && !v[name]) warns.push("{{" + name + "}} יוצא ריק: " + why[name] + ". כדי להסתיר את החלק הזה כשאין ערך, אפשר להוסיף data-if=\"" + name + "\" לאלמנט שעוטף אותו."); });
-    $("#tWarn").innerHTML = warns.map((w) => "<p>" + esc(w) + "</p>").join("");
+    $("#tWarn").innerHTML = warns.map((w) => '<p class="rmsg rmsg--wait">' + esc(w) + "</p>").join("");
   }
   function insertVar(code) {
     const tgt = ctx.last === "tSubject" ? $("#tSubject") : $("#tHtml");
@@ -1193,7 +1214,7 @@
     if (!html.trim()) { err.textContent = "גוף המייל ריק."; $("#tHtml").focus(); return; }
     const problem = tplProblem(html);
     if (problem) { err.textContent = problem; $("#tHtml").focus(); return; }
-    c.busy = true; $("#tSave").disabled = true; err.textContent = "";
+    c.busy = true; RosterSheet.busy(dlg, true); err.textContent = "";
     try {
       const res = await rest("roster_mail_templates?select=key,subject,html,updated_at", { method: "POST", json: { key: c.key, subject, html }, prefer: "resolution=merge-duplicates,return=representation" });
       const row = Array.isArray(res) && res[0] ? res[0] : { key: c.key, subject, html, updated_at: new Date().toISOString() };
@@ -1204,29 +1225,33 @@
     } catch (e) {
       if (e && e.signedOut) return;
       if (ctx !== c) return;
-      c.busy = false; $("#tSave").disabled = false; err.textContent = T.generic;
+      c.busy = false; RosterSheet.busy(dlg, false); err.textContent = T.generic;
     }
   }
-  async function resetTemplate() {
-    const c = ctx;
-    if (c.busy) return;
-    c.busy = true; $("#tResetYes").disabled = true;
-    try {
-      await rpc("roster_mail_template_reset", { p_key: c.key });
-      if (D.templates) delete D.templates[c.key];
-      refreshLists();
-      toast("הוחזר לברירת מחדל");
-      if (ctx === c) {
-        const d = DEF[c.key];
-        c.busy = false; c.resetAsk = false; c.custom = false;
-        $("#tSubject").value = d.subject; $("#tHtml").value = d.html;
-        renderTplFoot(); updatePreview();
-      }
-    } catch (e) {
-      if (e && e.signedOut) return;
-      if (ctx !== c) return;
-      c.busy = false; c.resetAsk = false; renderTplFoot(); $("#tErr").textContent = T.generic;
-    }
+  /* The reset of a customized template to the default is not final for 6 seconds: the row and the editor show the default at once, "ביטול" in the toast
+     brings the customized text back, and only when the time ends does the database forget it (roster_mail_template_reset). Both the swipe action on the
+     row and the button in the editor come here. */
+  function resetTemplate(key) {
+    const prev = D.templates && D.templates[key];
+    if (!prev || !DEF[key] || RosterUndo.isPending("template", key)) return;
+    const d = DEF[key];
+    const editing = () => ctx && ctx.kind === "tpl" && ctx.key === key;
+    if (editing()) { ctx.resetAsk = false; ctx.custom = false; $("#tSubject").value = d.subject; $("#tHtml").value = d.html; renderTplFoot(); updatePreview(); }
+    RosterUndo.delete({
+      kind: "template", itemId: key, label: 'התבנית "' + d.name + '" חזרה לברירת מחדל',
+      onUndo: () => {
+        refreshLists();
+        if (editing()) { ctx.custom = true; $("#tSubject").value = prev.subject; $("#tHtml").value = prev.html; renderTplFoot(); updatePreview(); }
+      },
+      onCommit: async (o) => {
+        await rest("rpc/roster_mail_template_reset", { method: "POST", json: { p_key: key }, keepalive: !!(o && o.keepalive) });
+        if (D.templates) delete D.templates[key];
+        refreshLists();
+      },
+      onFail: () => { refreshLists(); if (editing()) { ctx.custom = true; renderTplFoot(); } },
+      failText: "ההחזרה לברירת מחדל לא הושלמה, התבנית המותאמת נשארה.",
+    });
+    refreshLists();
   }
 
   /* ---------- a mail that was sent ---------- */
@@ -1236,7 +1261,7 @@
     ctx = { kind: "mail", id };
     const st = tagOf(mailStatus, m.status);
     openDialog("wide", esc(m.subject || "ללא נושא"),
-      '<div class="mmeta"><span class="tg ' + st[1] + '">' + st[0] + "</span> אל " + mono(m.to_addr || "") + ", " + esc(fmtDate(m.sent_at || m.created_at)) + "</div>" +
+      '<div class="mmeta">' + chip(st[1], st[0]) + " אל " + mono(m.to_addr || "") + ", " + esc(fmtDate(m.sent_at || m.created_at)) + "</div>" +
       (m.error ? '<div class="errl">' + esc(m.error) + "</div>" : "") +
       '<div class="pv full"><iframe id="mPrev" title="המייל כפי שנשלח" sandbox="" referrerpolicy="no-referrer"></iframe></div>');
     try {
@@ -1247,6 +1272,25 @@
       if (e && e.signedOut) return;
       if (ctx && ctx.id === id) $("#mPrev").srcdoc = frameNote(T.generic);
     }
+  }
+
+  /* ---------- the kit: add button, pull to refresh, swipe actions (set up once) ---------- */
+  let swipeCtl = null, ptrCtl = null;
+  /* what a refresh by pull reloads, per tab: forms are never redrawn (an unsaved edit must survive), only the lists and logs around them */
+  const REFRESH_OF = { keys: ["keys"], hook: ["events", "deliveries"], mail: ["mails", "templates"], reg: [], log: ["events", "deliveries", "mails"] };
+  async function pullRefresh() {
+    const mine = epoch;
+    await Promise.all(REFRESH_OF[S.tab].map(load));
+    if (epoch !== mine) return;
+    if (S.tab === "keys" || S.tab === "log") renderPanel(true); else refreshLists();
+  }
+  function startKit() {
+    if (swipeCtl) return;
+    RosterUI.kbWatch();
+    document.documentElement.style.setProperty("--rptr-top", $(".top").offsetHeight + "px");
+    swipeCtl = RosterUI.swipe.init(panel);
+    ptrCtl = RosterUI.ptr.attach({ scroller: panel, onRefresh: pullRefresh, enabled: () => !dlg.open && menu.hidden });
+    $("#keyNew").addEventListener("click", () => openNewKey());
   }
 
   /* ---------- go ---------- */
@@ -1276,6 +1320,7 @@
     gate.hidden = true; wrap.hidden = false;
     $("#whoName").textContent = A.name() || A.email();
     $("#userBtn").setAttribute("aria-label", "החשבון שלי" + (A.name() || A.email() ? ": " + (A.name() || A.email()) : ""));
+    startKit();
     renderPanel(false);          /* "loading" until the data is in */
     await loadAll();
     if (epoch !== mine) return;

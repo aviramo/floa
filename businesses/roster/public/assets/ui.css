@@ -134,8 +134,10 @@ html[dir="rtl"] .rswipe { inset-inline-end: auto; left: 0; }
 .rswipe__act:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
 [data-swipe]::after { content: ""; position: absolute; inset-block: 35%; inset-inline-end: 3px; width: 3px; background: var(--line-strong); opacity: .5; pointer-events: none; }   /* persistent edge cue */
 [data-swipe].is-open::after { display: none; }
-.rhint { position: sticky; top: 0; z-index: var(--z-raised); margin: 0 var(--gutter); padding: var(--sp-1) var(--sp-2); background: var(--info-bg); color: var(--info); font: var(--fw-medium) var(--fs-s)/var(--lh-body) var(--font); border-radius: var(--r-ctl); pointer-events: none; opacity: 1; transition: opacity var(--t-base) var(--ease); }
-.rhint[hidden], .rhint.is-gone { opacity: 0; }
+.rhint { position: sticky; top: 0; z-index: var(--z-raised); margin: 0 var(--gutter); padding: var(--sp-1) var(--sp-2); background: var(--info-bg); color: var(--info); font: var(--fw-medium) var(--fs-s)/var(--lh-body) var(--font); border-radius: var(--r-ctl); display: flex; align-items: center; gap: var(--sp-2); opacity: 1; transition: opacity var(--t-base) var(--ease); }
+.rhint[hidden], .rhint.is-gone { opacity: 0; pointer-events: none; }
+.rhint__tx { flex: 1; min-width: 0; }
+.rhint__ok { flex: none; min-height: 44px; padding-inline: var(--sp-2); border: 0; background: transparent; color: inherit; font: inherit; font-weight: var(--fw-bold, 700); text-decoration: underline; cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { [data-swipe] > .rswipe-fg { transition: none; } }   /* the module also disables dragging: the three-dots menu is the path */
 
 /* LIST CARD: a rich item (head: title + status chips; body: details, counters; foot: icon buttons or the primary action; optional expandable section).
@@ -156,9 +158,9 @@ html[dir="rtl"] .rswipe { inset-inline-end: auto; left: 0; }
 .rhead__sub { display: block; color: var(--text-2); font: var(--fw-medium) var(--fs-s)/var(--lh-body) var(--font); }
 .rtabs { display: flex; border-bottom: 1px solid var(--line); }
 .rtab { flex: 1 1 0; min-height: var(--ctl); border: 0; background: transparent; color: var(--text-2); font: var(--fw-bold) var(--fs-m)/1 var(--font); box-shadow: inset 0 -3px 0 transparent; cursor: pointer; }
-.rtab[aria-selected="true"] { color: var(--text); box-shadow: inset 0 -3px 0 var(--accent); }
+.rtab[aria-selected="true"], .rtab[aria-pressed="true"] { color: var(--text); box-shadow: inset 0 -3px 0 var(--accent); }
 .rtabs--seg { border: 1px solid var(--line-strong); border-radius: var(--r-ctl); overflow: hidden; }
-.rtabs--seg .rtab { box-shadow: none; }   .rtabs--seg .rtab[aria-selected="true"] { background: var(--primary); color: var(--on-primary); }
+.rtabs--seg .rtab { box-shadow: none; }   .rtabs--seg .rtab[aria-selected="true"], .rtabs--seg .rtab[aria-pressed="true"] { background: var(--primary); color: var(--on-primary); }
 
 /* ============================ MESSAGE, EMPTY ============================ */
 .rmsg { display: flex; align-items: center; gap: var(--gap-button); padding: var(--sp-2); border: 1px solid var(--text); border-radius: var(--r-ctl); background: var(--text); color: var(--bg); font: var(--fw-medium) var(--fs-s)/var(--lh-body) var(--font); }
@@ -218,3 +220,34 @@ html:has(.rfab) .rtoasts:not(.rtoasts--in), html:has(.rfab) .rmsg--toast { botto
 .rmsg--undo[data-paused="true"]::after { opacity: .25; }
 @media (prefers-reduced-motion: reduce) { .rmsg--undo::after { display: none; } }
 .rmsg__act:focus-visible { outline: 2px solid var(--bg); outline-offset: 2px; }
+
+/* ============================ SWITCH (extends .rfield--switch of field.css): label, optional help, track 48x28 ============================ */
+.rfield--switch > input[role="switch"] { position: absolute; inset-block-start: 0; inset-inline-start: 0; width: var(--ctl); height: var(--ctl); margin: 0; opacity: 0; cursor: pointer; }
+.rsw__trk { position: relative; flex: none; width: 48px; height: 28px; border-radius: var(--r-switch); background: var(--line-strong); transition: background var(--t-base) var(--ease); }
+.rsw__trk::after { content: ""; position: absolute; inset-block-start: var(--gap-tight); inset-inline-start: var(--gap-tight); width: 20px; height: 20px; border-radius: var(--r-switch); background: var(--bg); box-shadow: var(--sh-card); transition: transform var(--t-base) var(--ease); }
+.rfield--switch > input:checked ~ .rsw__trk { background: var(--primary); }
+.rfield--switch > input:checked ~ .rsw__trk::after { transform: translateX(-20px); }
+html[dir="ltr"] .rfield--switch > input:checked ~ .rsw__trk::after { transform: translateX(20px); }
+.rfield--switch > input:focus-visible ~ .rsw__trk { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rfield--switch > input:disabled ~ .rsw__trk { opacity: .45; }
+.rsw__txt { display: flex; flex-direction: column; gap: var(--gap-tight); min-width: 0; }
+.rsw__txt > b { font: var(--fw-bold) var(--fs-m)/var(--lh-tight) var(--font); }
+.rsw__txt > small { color: var(--text-2); font: var(--fw-regular) var(--fs-s)/var(--lh-body) var(--font); }
+.rfield--check > input { flex: none; width: var(--icon-m); height: var(--icon-m); accent-color: var(--primary); cursor: pointer; }
+.rfield--check > span { display: flex; flex-direction: column; gap: var(--gap-tight); min-width: 0; }
+.rfield--check > span > b { font: var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font); }
+@media (prefers-reduced-motion: reduce) { .rsw__trk, .rsw__trk::after { transition: none; } }
+
+/* ============================ CHOICE: one of a few options as a card (radio under the hood), 2 or 3 across on a wide screen ============================ */
+.rchoices { display: grid; gap: var(--gap-button); }
+.rchoices--2 { grid-template-columns: repeat(2, 1fr); }
+@media (min-width: 640px) { .rchoices--3 { grid-template-columns: repeat(3, 1fr); } }
+.rchoice { position: relative; display: block; }
+.rchoice > input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.rchoice > span { display: flex; flex-direction: column; gap: var(--gap-tight); min-height: var(--ctl); padding: var(--sp-1) var(--sp-2); border: 1px solid var(--line-strong); border-radius: var(--r-ctl); background: var(--bg); color: var(--text); font: var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font); }
+.rchoice > span > small { color: var(--text-2); font: var(--fw-regular) var(--fs-xs)/var(--lh-body) var(--font); }
+.rchoice > input:checked + span { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); background: var(--surface); }
+.rchoice > input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* a row whose main part is a button (opens a popup): same look as the link */
+button.rrow__main { appearance: none; border: 0; background: none; padding: 0; text-align: start; font: inherit; cursor: pointer; }

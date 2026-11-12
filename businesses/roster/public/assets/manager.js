@@ -150,19 +150,10 @@
   /* Only a conflict has words of its own; everything else is one calm sentence. */
   function problem(e, conflict) { return e && e.status === 409 && conflict ? conflict : T.generic; }
 
-  /* ---------- the person's own small memory: hints already shown (the swipe hint is shown ONCE per person and per kind of list) ---------- */
-  var HINT_PREFIX = "roster:";
-  function hintKey(k) { return HINT_PREFIX + lc(A && A.email ? A.email() : "") + ":" + k; }
-  var hintStore = {
-    getItem: function (k) { try { return localStorage.getItem(hintKey(k)); } catch (e) { return null; } },
-    setItem: function (k, v) { try { localStorage.setItem(hintKey(k), v); } catch (e) { /* no storage: the hint is simply shown again next time */ } },
-    removeItem: function (k) { try { localStorage.removeItem(hintKey(k)); } catch (e) { /* nothing to clear */ } },
-  };
+  /* ---------- the person's own small memory: the swipe hint is confirmed ONCE for the whole system (one key, set by the kit's "הבנתי" button) ---------- */
   function resetHints() {
-    try {
-      var pre = HINT_PREFIX + lc(A.email()) + ":";
-      Object.keys(localStorage).forEach(function (k) { if (k.indexOf(pre) === 0) localStorage.removeItem(k); });
-    } catch (e) { /* nothing to clear */ }
+    try { localStorage.removeItem("rk.swipe.understood"); } catch (e) { /* nothing to clear */ }
+    if (swipeEl) swipeEl.__hinted = false;
   }
 
   /* ---------- gate and sign-out ---------- */
@@ -380,7 +371,7 @@
     ptrCtl = RosterUI.ptr.attach({ scroller: $("#list"), onRefresh: function () { return loadManager(); },
       enabled: function () { return !dlg.open && !dlgC.open && menu.hidden; } });
     swipeEl = $("#list");
-    swipeCtl = RosterUI.swipe.init(swipeEl, { kind: "owner-businesses", store: hintStore });
+    swipeCtl = RosterUI.swipe.init(swipeEl);
     loadManager();
   }
 
@@ -620,7 +611,7 @@
       addAccount(lc($("#aEmail").value), true);
     });
     var list = $("#aList");
-    RosterUI.swipe.init(list, { kind: "owner-accounts", store: hintStore });
+    RosterUI.swipe.init(list);
     renderAcc();
   }
   function accErr(msg) { var e = $("#aErr"); if (!e) return; e.textContent = msg || ""; e.hidden = !msg; }
