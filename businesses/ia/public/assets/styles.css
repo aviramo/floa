@@ -386,3 +386,6 @@ svg { display: block; }
 
 /* סבב 6: חדה, בלי טשטוש */
 .circle-photo img { filter: none; }
+
+/* הערה מוצנעת בסוף נכיר */
+.meet-note{margin:28px 0 0;text-align:center;font-size:.85rem;opacity:.7}
