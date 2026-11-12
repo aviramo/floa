@@ -514,3 +514,8 @@ html, body { overflow-x: clip; }
   .hero-sub { margin: .5rem 0 .5rem; }
   .hero-tag { margin-bottom: 0; }
 }
+
+/* קצה המזלג: מיושר לימין, בלי מילה בודדת בשורה האחרונה */
+.sec--final .wrap.center { text-align: right; }
+.sec--final h2, .sec--final p { text-align: right; text-wrap: balance; }
+.sec--final p { text-wrap: pretty; }
