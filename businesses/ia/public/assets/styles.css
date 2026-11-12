@@ -414,3 +414,14 @@ button.btn { font-family: inherit; cursor: pointer; }
 .details div { flex-direction: column; align-items: flex-start; gap: 4px; padding: 16px 20px; border: 0; border-inline-start: 6px solid var(--coral); border-radius: 18px; background: #fff; box-shadow: 0 12px 28px -16px rgba(23, 58, 42, .35); }
 .details dt { flex: none; font-size: .85rem; letter-spacing: .06em; color: var(--coral); }
 .details dd { font-size: 1.25rem; line-height: 1.35; }
+
+/* קצה המזלג על רקע השקיעה */
+.sec--final h2 { font-size: clamp(2.2rem, 8vw, 3.6rem); margin-bottom: 1.2rem; }
+.sec--final p { color: #FFF4E2; font-size: 1.25rem; line-height: 1.7; text-shadow: 0 2px 16px rgba(20, 20, 40, .45); }
+
+/* תפריט: טל וטליה עם תמונה וכפתור */
+.dock-people { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.dock-p { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 10px; border-radius: 20px; background: var(--paper); }
+.dock-p img { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 3px #fff, 0 8px 20px -8px rgba(23, 58, 42, .5); }
+.dock-p b { font-size: 1.2rem; color: var(--leaf); }
+.dock-sheet .dock-p .btn { width: 100%; padding-inline: 10px; background: #fff; }
