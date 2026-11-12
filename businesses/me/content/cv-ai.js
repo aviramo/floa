@@ -246,7 +246,7 @@ export const aiHe = {
           terms: ["Claude", "ChatGPT", "הנחיית כלי AI", "אבות טיפוס", "סקירת קוד", "פיתוח איטרטיבי"],
         },
         {
-          title: "Full Stack",
+          title: "פיתוח Full Stack",
           terms: ["React Native", "Expo", "TypeScript", "Node.js", "Deno", "Supabase", "Edge Functions", "PostgreSQL", "Row Level Security (RLS)", "Git"],
         },
         {
