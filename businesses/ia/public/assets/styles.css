@@ -519,3 +519,7 @@ html, body { overflow-x: clip; }
 .sec--final .wrap.center { text-align: right; }
 .sec--final h2, .sec--final p { text-align: right; text-wrap: balance; }
 .sec--final p { text-wrap: pretty; }
+
+/* תמונת המעגל: לא נדחסת מתחת לכרטיס שלפניה, ברוחב הכרטיסים, עם מרווח */
+.circle-photo { margin: 28px auto 36px; width: 100%; }
+.circle-photo img { display: block; width: 100%; }
