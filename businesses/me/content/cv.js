@@ -13,10 +13,12 @@
    ========================================================================== */
 import { architectEn, architectHe } from "./cv-architect.js";
 import { analystEn, analystHe } from "./cv-analyst.js";
+import { aiEn, aiHe } from "./cv-ai.js";
 import { developerEn, developerHe } from "./cv-developer.js";
 
 export const cvPages = [
   architectEn, architectHe,
   analystEn, analystHe,
+  aiEn, aiHe,
   developerEn, developerHe,
 ];
