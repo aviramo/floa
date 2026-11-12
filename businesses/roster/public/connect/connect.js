@@ -263,11 +263,8 @@
 
   /* ---------- dialogs ---------- */
   function openDialog(kind, titleHtml, bodyHtml) {
-    dlg.className = kind;
-    dlg.innerHTML = '<div class="sheet"><div class="sheet-head"><h2 id="dlgT">' + titleHtml + "</h2>" +
-      '<button type="button" class="hicon" data-close aria-label="סגירה">' + icon("x") + "</button></div>" +
-      '<div class="sheet-body">' + bodyHtml + "</div></div>";
-    if (!dlg.open) dlg.showModal();
+    /* the one shell (assets/sheet.js), from the bottom: fixed header with the X, one scrolling body, the grab bar at the top edge */
+    RosterSheet.render(dlg, { kind: kind, title: titleHtml, titleId: "dlgT", body: bodyHtml, from: "bottom", icon: icon("x") });
   }
   /* A secret that is shown once asks twice before it is closed without a copy. */
   function tryClose() {
@@ -279,6 +276,8 @@
     }
     dlg.close();
   }
+  /* swipe and backdrop go through tryClose too (a secret shown once asks before it is closed without a copy); the shell does not close by itself here */
+  RosterSheet.attach(dlg, { from: "bottom", backdrop: false, beforeClose: () => { tryClose(); return false; } });
   let downOnBackdrop = false;
   dlg.addEventListener("mousedown", (e) => { downOnBackdrop = e.target === dlg; });
   dlg.addEventListener("click", (e) => {

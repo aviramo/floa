@@ -44,6 +44,17 @@ dialog.rsheet[data-from="top"] > .rs-grab { order: 2; }
 dialog.rsheet[data-from="bottom"] > .rs-grab, dialog.rsheet:not([data-from]) > .rs-grab { order: -1; }
 [data-rs-drag] { touch-action: none; }
 
+/* the shell: a FIXED header (title and X), ONE scrolling body, an optional fixed footer; the grab bar is the sheet's own free edge, none of these scroll away */
+dialog.rsheet .sheet { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: 16px var(--gut, 12px) var(--sheet-b, calc(24px + env(safe-area-inset-bottom, 0px))); }
+dialog.rsheet[data-from="top"] .sheet { padding-bottom: 8px; }
+dialog.rsheet .sheet-head { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; min-height: 44px; margin-bottom: 12px; }
+dialog.rsheet .sheet-head > :first-child:not(.hicon) { flex: 1 1 auto; min-width: 0; margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -.01em; line-height: 1.25; overflow-wrap: anywhere; }
+dialog.rsheet .sheet-head .hicon { flex: 0 0 auto; width: 44px; height: 44px; min-width: 44px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 0; background: transparent; color: inherit; cursor: pointer; }
+dialog.rsheet .sheet-head .hicon:focus-visible { outline: 2px solid currentColor; outline-offset: -4px; }
+dialog.rsheet .sheet-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; overscroll-behavior-y: contain; margin: -4px; padding: 4px; }   /* the 4px keeps a focus ring from being clipped */
+dialog.rsheet .sheet-body > * { flex: 0 0 auto; }
+dialog.rsheet .sheet-foot { flex: 0 0 auto; display: flex; gap: 8px; align-items: center; padding-top: 12px; margin-top: 8px; border-top: 1px solid var(--line, #E5E7EB); }
+
 /* the page behind: locked while a sheet is open (sheet.js keeps the scroll position) */
 html.rs-lock { overflow: hidden; overscroll-behavior: none; }
 body.rs-lock { position: fixed; left: 0; right: 0; width: 100%; overflow: hidden; }

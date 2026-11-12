@@ -203,13 +203,9 @@
 
   /* ---------- dialogs ---------- */
   function openDialog(kind, titleHtml, bodyHtml) {
-    dlg.className = kind + " rsheet";
-    dlg.setAttribute("data-from", ctx && ctx.kind === "biz" && !ctx.id ? "top" : "bottom");   /* "new business" comes down from the top, the rest from the bottom until the owner says otherwise */
-    dlg.innerHTML =
-      '<div class="sheet"><div class="sheet-head" data-rs-drag><h2 id="dlgT">' + titleHtml + "</h2>" +
-      '<button type="button" class="hicon" data-close aria-label="סגירה">' + icon("x") + "</button></div>" +
-      '<div class="sheet-body">' + bodyHtml + "</div></div>";
-    if (!dlg.open) dlg.showModal();
+    /* the one shell (assets/sheet.js): fixed header with the X, one scrolling body, the grab bar at the free edge.
+       "new business" comes down from the top, the rest from the bottom until the owner says otherwise */
+    RosterSheet.render(dlg, { kind: kind, title: titleHtml, titleId: "dlgT", body: bodyHtml, from: ctx && ctx.kind === "biz" && !ctx.id ? "top" : "bottom", icon: icon("x") });
   }
   /* Where focus goes after the dialog: the row's control, or "new business" if the row is gone. */
   function back(id, act) {
