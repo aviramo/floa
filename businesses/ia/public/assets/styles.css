@@ -535,3 +535,15 @@ html, body { overflow-x: clip; }
 
 /* צור קשר על רקע משלו, כדי שהרווח בין נכיר לבינו לא ייראה כחלל ריק */
 .sec--reach { background: #DCEFE6; }
+
+/* הכפתור בפתיחה: קבוע בתוך הדף. העותק הצף עולה מלמטה רק כשמגיעים לפרטי המפגשים */
+.hero-cta { display: inline-flex; align-items: center; gap: 10px; min-height: 54px; margin-top: 18px; padding: 12px 32px; border: 0; border-radius: 999px; background: var(--coral); color: #fff; font: 700 1.1rem/1.2 var(--font); cursor: pointer; box-shadow: 0 16px 34px -12px rgba(120, 20, 50, .6), 0 0 0 3px rgba(255, 255, 255, .9); max-width: 100%; }
+.hero-cta .wa { width: 24px; height: 24px; fill: currentColor; flex: none; }
+.cta-dock, .cta-dock.is-hidden { animation: none; scale: 1; opacity: 0; pointer-events: none; transform: translate3d(0, calc(100% + 40px), 0); transition: transform .6s var(--ease), opacity .4s ease; }
+.cta-dock.show { opacity: 1; pointer-events: auto; transform: none; }
+@media (max-width: 899px) {
+  .hero-inner { padding-bottom: 30px; }
+  .hero-tag { margin-bottom: 0; }
+  .sun-stage { width: min(340px, 78vw, max(170px, calc(100svh - 560px))); }
+}
+@media (prefers-reduced-motion: reduce) { .cta-dock { transition: none; } }

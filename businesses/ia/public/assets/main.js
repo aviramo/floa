@@ -102,36 +102,17 @@
     if (e.target.closest && e.target.closest("[data-close-dock]")) close();
   });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape" && dock.classList.contains("open")) close(); });
-  /* נקודת ההתחלה (מתחת לתגיות) נמדדת פעם אחת. הגלישה אל התחתית עצמה היא CSS (animation-timeline: scroll),
-     ורק בדפדפן שלא מכיר אותה (פיירפוקס, ספארי ישן) נשארת גרסת JS פשוטה */
-  var tag = document.querySelector(".hero-tag");
-  var css = window.CSS && CSS.supports && CSS.supports("animation-timeline: scroll()");
-  var RANGE = 160, dx = 0, dy = 0, ticking = false;
-  var place = function () {
-    var p = css ? 0 : Math.min(1, window.scrollY / RANGE);
-    btn.style.setProperty("--dx", (dx * (1 - p)).toFixed(1) + "px");
-    btn.style.setProperty("--dy", (dy * (1 - p)).toFixed(1) + "px");
+  /* הכפתור שבפתיחה נשאר במקומו. עותק שלו עולה מלמטה כשקצה העליון של פרטי המפגשים מגיע לראש המסך, ויורד כשחוזרים למעלה */
+  var shown = false, ticking = false;
+  var check = function () {
     ticking = false;
+    var on = join.getBoundingClientRect().top <= 1;
+    if (on !== shown) { shown = on; btn.classList.toggle("show", on); btn.tabIndex = on ? 0 : -1; }
   };
-  var measure = function () {
-    if (!tag) return;
-    var t = tag.getBoundingClientRect(), cs = getComputedStyle(btn);
-    /* גובה המסך כשסרגל הכתובת מוצג (svh), לא innerHeight שמשתנה בגלילה: אחרת הכפתור קופץ גבוה מדי כשחוזרים מהר לראש הדף */
-    var probe = document.createElement("div");
-    probe.style.cssText = "position:fixed;top:0;height:100svh;width:0;visibility:hidden;pointer-events:none";
-    document.body.appendChild(probe);
-    var vh = probe.offsetHeight || window.innerHeight;
-    probe.remove();
-    var restTop = vh - parseFloat(cs.bottom) - btn.offsetHeight;
-    dy = Math.min(0, (t.bottom + window.scrollY + 26) - restTop);
-    dx = (t.left + t.width / 2) - window.innerWidth / 2;
-    place();
-  };
-  if (!css) window.addEventListener("scroll", function () { if (!ticking) { ticking = true; requestAnimationFrame(place); } }, { passive: true });
-  window.addEventListener("resize", measure);
-  btn.tabIndex = 0;
-  measure();
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+  window.addEventListener("scroll", function () { if (!ticking) { ticking = true; requestAnimationFrame(check); } }, { passive: true });
+  window.addEventListener("resize", check);
+  btn.tabIndex = -1;
+  check();
 })();
 
 
