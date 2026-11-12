@@ -474,3 +474,8 @@ button:focus:not(:focus-visible), a:focus:not(:focus-visible) { outline: none; }
 
 /* מקום בסוף הדף כדי שהכפתור הקבוע לא יסתיר את הפוטר */
 .foot { padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px)); }
+
+/* החותמת קטנה ויושבת בפינה, כדי לא לכסות את התמונה */
+.sun-parallax .stamp { width: 96px; font-size: .85rem; inset-block-end: -3%; inset-inline-start: -8%; }
+.stamp b { font-size: 1.9rem; }
+@media (max-width: 899px) { .sun-parallax .stamp { width: 76px; font-size: .7rem; inset-block-end: -2%; inset-inline-start: -6%; } .stamp b { font-size: 1.5rem; } }
