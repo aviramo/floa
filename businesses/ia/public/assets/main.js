@@ -142,3 +142,21 @@
   window.addEventListener("resize", check);
   check();
 })();
+
+/* פס המילים: הרבה מילים, סדר אקראי בכל טעינה, ומהיר */
+(function () {
+  var track = document.querySelector(".marquee .track");
+  if (!track) return;
+  var first = track.querySelector("span");
+  var icon = first ? first.querySelector("svg").outerHTML : "";
+  var w = ["גוף","תנועה","מוזיקה","קהילה","חופש","שחרור","רגש","חיוניות","יצירתיות","התעלות","חיבור","אהבה","צחוק","נשימה","מבט","שייכות","חיוך","קצב","משחק","סקרנות","נוכחות","אמון","פתיחות","הקשבה","עדינות","שמחה","התחדשות","ביטחון","התרגשות","קלילות","הרפיה","איזון","חיים"];
+  for (var i = w.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = w[i]; w[i] = w[j]; w[j] = t; }
+  var one = w.map(function (x) { return "<span>" + x + icon + "</span>"; }).join("");
+  track.innerHTML = one + one;
+  var box = track.parentNode;
+  box.setAttribute("aria-label", w.join(", "));
+  /* מהירות קבועה בפיקסלים לשנייה, בלי קשר לכמות המילים */
+  var speed = function () { track.style.setProperty("--t", Math.round(track.scrollWidth / 2 / 170) + "s"); };
+  speed();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(speed);
+})();

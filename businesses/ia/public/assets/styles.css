@@ -436,3 +436,9 @@ body { background-color: var(--paper); }
 :root { --mq: calc(clamp(2.6rem, 8vw, 5rem) * 1.1); }
 .sec--free { padding: 16px 0; }
 .hero { min-height: calc(100svh - var(--mq, 5rem) - 32px); }
+
+/* פס המילים נשאר בתוך האזור הבטוח, מעל פס הניווט של המכשיר */
+.sec--free { padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+.hero { min-height: calc(100svh - var(--mq, 5rem) - 32px - env(safe-area-inset-bottom, 0px)); }
+.sec--free { padding-bottom: calc(30px + env(safe-area-inset-bottom, 0px)); }
+.hero { min-height: calc(100svh - var(--mq, 5rem) - 46px - env(safe-area-inset-bottom, 0px)); }
