@@ -446,3 +446,23 @@ body { background-color: var(--paper); }
 /* הכפתור הצף נכנס בטעינה מתחת לתגיות, וגולש עם הגלילה אל התחתית */
 .cta-dock { transform: translate3d(var(--dx, 0px), var(--dy, 0px), 0); transition: opacity .6s ease, scale .6s var(--ease); }
 .cta-dock.is-hidden { opacity: 0; scale: .7; transform: translate3d(var(--dx, 0px), var(--dy, 0px), 0); }
+
+/* המסך הראשון: מהפס למטה ועד "ביודנסה" והתגיות נכנס תמיד במסך, והשמש מצטמצמת לפי הגובה */
+@media (max-width: 899px) {
+  .sun-stage { width: min(300px, 70vw, max(150px, calc(100svh - 540px))); }
+}
+
+/* הגלישה של הכפתור אל התחתית בזמן גלילה: CSS בלבד */
+@keyframes dock-glide { from { transform: translate3d(var(--dx, 0px), var(--dy, 0px), 0); } to { transform: translate3d(0, 0, 0); } }
+@supports (animation-timeline: scroll()) {
+  .cta-dock { animation: dock-glide linear both; animation-timeline: scroll(root block); animation-range: 0 160px; }
+  .cta-dock.is-hidden { animation: dock-glide linear both; animation-timeline: scroll(root block); animation-range: 0 160px; }
+}
+
+/* הכפתור קבוע במסך תמיד: בלי הסתרה. כניסה בטעינה ב-CSS, ורק המיקום משתנה עם הגלילה */
+@keyframes dock-in { from { opacity: 0; scale: .7; } to { opacity: 1; scale: 1; } }
+.cta-dock, .cta-dock.is-hidden { opacity: 1; scale: 1; pointer-events: auto; }
+@supports (animation-timeline: scroll()) {
+  .cta-dock { animation: dock-glide linear both, dock-in .6s var(--ease) .5s both; animation-timeline: scroll(root block), auto; animation-range: 0 160px, normal; }
+}
+@media (prefers-reduced-motion: reduce) { .cta-dock { animation-delay: 0s, 0s; animation-duration: 1ms !important; } }

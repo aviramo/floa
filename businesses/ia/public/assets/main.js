@@ -79,7 +79,7 @@
   tick();
   setInterval(tick, 1000);
 })();
-
+/* כפתור ההצטרפות: קבוע במסך, פותח תפריט וואטסאפ */
 /* כפתור הצטרפות: נכנס מלמטה כשפרטי המפגשים מגיע לקצה העליון, ופותח תפריט וואטסאפ */
 (function () {
   var btn = document.getElementById("dockBtn"), dock = document.getElementById("dock"), join = document.getElementById("join");
@@ -102,67 +102,32 @@
     if (e.target.closest && e.target.closest("[data-close-dock]")) close();
   });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape" && dock.classList.contains("open")) close(); });
-  /* נכנס מתחת ל"מוזיקה תנועה קהילה", ועם הגלילה גולש למקומו הקבוע בתחתית המסך */
+  /* נקודת ההתחלה (מתחת לתגיות) נמדדת פעם אחת. הגלישה אל התחתית עצמה היא CSS (animation-timeline: scroll),
+     ורק בדפדפן שלא מכיר אותה (פיירפוקס, ספארי ישן) נשארת גרסת JS פשוטה */
   var tag = document.querySelector(".hero-tag");
-  var calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var dx = 0, dy = 0, ticking = false;
-  var measure = function () {
-    btn.style.setProperty("--dx", "0px"); btn.style.setProperty("--dy", "0px");
-    var r = btn.getBoundingClientRect(), t = tag ? tag.getBoundingClientRect() : null;
-    if (!t) { dx = dy = 0; return; }
-    var scrolled = window.scrollY;
-    dy = (t.bottom + scrolled + 26) - (r.top + scrolled);   /* מרחק אנכי מהמקום הקבוע אל מתחת לתגיות */
-    dx = (t.left + t.width / 2) - (r.left + r.width / 2);
-    if (dy > 0) dy = 0;                                      /* מסך נמוך מאוד: נשאר למטה */
-    place();
-  };
+  var css = window.CSS && CSS.supports && CSS.supports("animation-timeline: scroll()");
+  var RANGE = 160, dx = 0, dy = 0, ticking = false;
   var place = function () {
-    var p = dy === 0 ? 1 : Math.min(1, Math.max(0, window.scrollY / Math.abs(dy)));
+    var p = css ? 0 : Math.min(1, window.scrollY / RANGE);
     btn.style.setProperty("--dx", (dx * (1 - p)).toFixed(1) + "px");
     btn.style.setProperty("--dy", (dy * (1 - p)).toFixed(1) + "px");
     ticking = false;
   };
-  var onScroll = function () { if (!ticking) { ticking = true; requestAnimationFrame(place); } };
-  window.addEventListener("scroll", onScroll, { passive: true });
+  var measure = function () {
+    if (!tag) return;
+    var t = tag.getBoundingClientRect(), cs = getComputedStyle(btn);
+    var restTop = window.innerHeight - parseFloat(cs.bottom) - btn.offsetHeight;
+    dy = Math.min(0, (t.bottom + window.scrollY + 26) - restTop);
+    dx = (t.left + t.width / 2) - window.innerWidth / 2;
+    place();
+  };
+  if (!css) window.addEventListener("scroll", function () { if (!ticking) { ticking = true; requestAnimationFrame(place); } }, { passive: true });
   window.addEventListener("resize", measure);
   btn.tabIndex = 0;
-  var start = function () {
-    measure();
-    setTimeout(function () { btn.classList.remove("is-hidden"); }, calm ? 0 : 500);
-  };
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(start); else start();
+  measure();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
 })();
 
-/* כפתור הצטרפות: נכנס מלמטה כשפרטי המפגשים מגיע לקצה העליון, ופותח תפריט וואטסאפ */
-(function () {
-  var btn = document.getElementById("dockBtn"), dock = document.getElementById("dock"), join = document.getElementById("join");
-  if (!btn || !dock || !join) return;
-  var last = null;
-  var close = function () {
-    dock.classList.remove("open"); dock.setAttribute("aria-hidden", "true");
-    document.documentElement.style.overflow = "";
-    if (last) last.focus();
-  };
-  var open = function (from) {
-    last = from; dock.classList.add("open"); dock.setAttribute("aria-hidden", "false");
-    document.documentElement.style.overflow = "hidden";
-    var f = dock.querySelector("a"); if (f) f.focus();
-  };
-  document.addEventListener("click", function (e) {
-    var t = e.target.closest ? e.target : e.target.parentElement;
-    if (t.closest("#dockBtn, [data-open-dock]")) open(t.closest("#dockBtn, [data-open-dock]"));
-    else if (t.closest("[data-close-dock]")) close();
-  });
-  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && dock.classList.contains("open")) close(); });
-  var shown = false;
-  var check = function () {
-    var on = join.getBoundingClientRect().top <= 0;
-    if (on !== shown) { shown = on; btn.classList.toggle("is-hidden", !on); btn.tabIndex = on ? 0 : -1; }
-  };
-  window.addEventListener("scroll", check, { passive: true });
-  window.addEventListener("resize", check);
-  check();
-})();
 
 /* פס המילים: הרבה מילים, סדר אקראי בכל טעינה, ומהיר */
 (function () {
