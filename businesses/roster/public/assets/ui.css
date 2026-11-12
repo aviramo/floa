@@ -1,0 +1,212 @@
+/* ==========================================================================
+   ROSTER UI KIT (look B "Warm Studio"). The ONE token file and the base elements of the roster pages. Detached from harpatka.
+   Scope: owner page, connect page, admin page (through the build pipeline). The personal area public/me/ is NOT part of the design system.
+   STATUS: phase 1 of the rollout. Written and tested, NOT linked from any page yet (no visual change). Phase 2 links it from the owner page.
+   Catalog of every element and its parameters: scratchpad sync13/component-catalog.md. Rules of use: use an element as it is, else a documented
+   variant (a modifier class); a new base element only with a catalog entry first. No raw colors, sizes, spacing, radii, durations or layers in feature
+   code: they come from the tokens below (scripts/roster-policy.mjs reports violations, blocking from phase 6).
+   RADIUS POLICY (iron rule): everything that FLOATS or covers the page is SQUARE (popup sheet, centered window, side drawer, anchored menu, grab bar);
+   everything inline is ROUND (controls 14, cards 20, chips and counters pill, switch pill, FAB pill, toasts 14).
+   Popups: .rsheet here is the kit's definition of the popup. assets/sheet.css + sheet.js is the engine that ships today; reconciling the two is a phase 2 task.
+   ========================================================================== */
+
+:root {
+  /* ---- colors by role (B): warm paper, ink, deep green primary; all text roles 4.5:1, field lines 3:1 ---- */
+  --bg: #FBF8F3;  --surface: #F3EEE6;  --surface-2: #EAE3D8;
+  --line: #E2DACC;  --line-strong: #8C8372;                   /* line-strong: field underline, outlines of controls */
+  --text: #1F1B16;  --text-2: #5A5146;  --text-3: #6F6558;
+  --primary: #0F5F4F;  --on-primary: #FFFFFF;                  /* buttons, selected tab/chip, FAB */
+  --accent: #0F5F4F;                                           /* focus ring, links, active tab, field focus line */
+  --success: #1B6B3A;  --success-bg: #E1F3E6;
+  --danger: #B3261E;   --danger-bg: #FBE3E0;
+  --warn: #7F5300;     --warn-bg: #FBEBC4;
+  --info: #1D4F91;     --info-bg: #E3ECF8;
+  --scrim: rgba(31, 27, 22, .55);
+
+  /* ---- spacing: THREE values and one hairline ---- */
+  --sp-hair: 4px;   /* ONLY an icon next to its text inside the smallest components (chip, counter) and field label offsets */
+  --sp-1: 8px;      /* tight: between buttons, between chips, inside a chip, counter to its text */
+  --sp-2: 16px;     /* standard: between fields, screen sides, row and card padding, popup sides, between blocks */
+  --sp-3: 24px;     /* larger: below a title before content or fields, above and around big buttons, between sections */
+  /* semantic aliases: CODE USES THESE ONLY, never the primitives, never a raw number */
+  --gutter: var(--sp-2);   --gap-field: var(--sp-2);   --gap-button: var(--sp-1);   --gap-chip: var(--sp-1);   --gap-tight: var(--sp-hair);
+  --gap-title: var(--sp-3);   --gap-action: var(--sp-3);   --gap-section: var(--sp-3);   --pad-row: var(--sp-2);   --pad-popup: var(--sp-2);
+  --safe-b: max(env(safe-area-inset-bottom, 0px), 28px);
+  --sheet-b: calc(var(--sp-3) + env(safe-area-inset-bottom, 0px));
+
+  /* ---- sizes ---- */
+  --ctl: 44px;  --ib: 40px;  --tag: 28px;  --fld: 48px;  --row: 64px;
+  --fab: 56px;  --fab-clear: calc(var(--fab) + var(--sp-3) + var(--sp-2));    /* FAB size, and the bottom padding a list reserves for it */
+  --icon-s: 16px;  --icon-m: 20px;  --icon-l: 24px;  --icon-w: 2;             /* the existing icon set, ONE stroke width at every size */
+  --w-s: 400px;  --w-m: 560px;  --w-l: 760px;  --w-page: 760px;               /* popup widths: small, regular, wide; page content max width */
+
+  /* ---- shape ---- */
+  --r-ctl: 14px;  --r-card: 20px;  --r-chip: 999px;  --r-switch: 999px;  --r-fab: 999px;
+  --r-float: 0;                                                               /* popups, sheets, windows, drawers, anchored menus */
+  --sh-card: 0 4px 14px -4px rgba(63, 47, 20, .16);
+  --sh-pop: 0 18px 44px -12px rgba(63, 47, 20, .30), 0 3px 8px rgba(63, 47, 20, .08);
+
+  /* ---- type ---- */
+  --font: "Heebo", system-ui, -apple-system, "Segoe UI", sans-serif;   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --fs-xs: 13px;  --fs-s: 15px;  --fs-m: 17px;  --fs-l: 22px;  --fs-xl: 28px;
+  --fw-regular: 400;  --fw-medium: 500;  --fw-bold: 600;  --fw-black: 700;
+  --lh-tight: 1.25;  --lh-body: 1.55;
+
+  /* ---- motion: transform and opacity only ---- */
+  --t-fast: .12s;  --t-base: .22s;  --ease: cubic-bezier(.2, .8, .2, 1);
+  /* ---- layers ---- */
+  --z-raised: 1;  --z-sticky: 10;  --z-menu: 20;  --z-sheet: 300;  --z-toast: 400;
+}
+@media (prefers-reduced-motion: reduce) { :root { --t-fast: 0s; --t-base: 0s; } }
+
+/* ============================ BUTTONS ============================ */
+.rbtn { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: var(--gap-button); min-height: var(--ctl); padding: 0 var(--sp-2); border: 1px solid var(--primary); border-radius: var(--r-ctl);
+  background: var(--primary); color: var(--on-primary); font: var(--fw-bold) var(--fs-m)/1 var(--font); white-space: nowrap; cursor: pointer; text-decoration: none; transition: transform var(--t-fast) var(--ease), opacity var(--t-base) var(--ease); }
+.rbtn:active { transform: translateY(1px); }
+.rbtn:disabled, .rbtn[aria-disabled="true"] { opacity: .45; cursor: default; }
+.rbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rbtn > svg { width: var(--icon-m); height: var(--icon-m); flex: none; stroke-width: var(--icon-w); }
+.rbtn--block { display: flex; width: 100%; }
+.rbtn--ghost { background: var(--surface-2); border-color: var(--surface-2); color: var(--text); font-weight: var(--fw-medium); }
+.rbtn--outline { background: transparent; border-color: var(--line-strong); color: var(--text); font-weight: var(--fw-medium); }
+.rbtn--danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+.rbtn--ghost.rbtn--danger { background: var(--surface-2); border-color: var(--surface-2); color: var(--danger); }
+.rbtn--success { background: var(--success); border-color: var(--success); color: #fff; }
+.rbtn--sm { min-height: var(--ib); padding: 0 var(--sp-1); font-size: var(--fs-s); }
+.rbtn--link { background: transparent; border-color: transparent; color: var(--accent); font-weight: var(--fw-medium); text-decoration: underline; padding: 0 var(--sp-1); }
+/* icon button: neutral | --primary | disabled | loading. 40 visual, 44 touch. aria-label AND title required. */
+.rbtn--icon { width: var(--ib); min-height: var(--ib); padding: 0; background: transparent; border-color: transparent; color: var(--text); }
+.rbtn--icon::after { content: ""; position: absolute; inset: -2px; }
+.rbtn--icon.rbtn--primary { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.rbtn--icon[aria-busy="true"] { pointer-events: none; }
+.rbtn--icon[aria-busy="true"] > svg { animation: rk-spin .8s linear infinite; }
+@keyframes rk-spin { to { transform: rotate(360deg); } }
+
+/* ============================ CHIP AND COUNTER ============================ */
+.rchip { display: inline-flex; align-items: center; gap: var(--gap-tight); height: var(--tag); padding: 0 var(--sp-1); border: 1px solid transparent; border-radius: var(--r-chip); background: var(--surface-2); color: var(--text-2); font: var(--fw-bold) var(--fs-xs)/1 var(--font); white-space: nowrap; }
+.rchip--ok { background: var(--success-bg); color: var(--success); }   .rchip--no { background: var(--danger-bg); color: var(--danger); }
+.rchip--wait { background: var(--warn-bg); color: var(--warn); }       .rchip--info { background: var(--info-bg); color: var(--info); }
+.rchip--button { background: transparent; border-color: var(--line-strong); color: var(--text); cursor: pointer; }
+.rchip--button[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.rchip > svg { width: var(--icon-s); height: var(--icon-s); stroke-width: var(--icon-w); }
+.rcount { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 var(--gap-tight); border-radius: var(--r-chip); background: var(--text); color: var(--bg); font: var(--fw-bold) var(--fs-xs)/1 var(--font); font-variant-numeric: tabular-nums; }
+
+/* ============================ LIST, ROW, SWIPE ============================ */
+.rlist { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; padding-bottom: var(--safe-b); }   /* the ONE scroll region of a page */
+.rlist[data-fab] { padding-bottom: calc(var(--fab-clear) + env(safe-area-inset-bottom, 0px)); }
+/* LIST ROW: a simple line. slots: lead, main (title, meta), trail. variants: --link (whole row is the tap target), --compact. */
+.rrow { position: relative; display: flex; align-items: center; gap: var(--gap-button); min-height: var(--row); padding: var(--sp-1) var(--gutter); border-bottom: 1px solid var(--line); background: var(--bg); }
+.rrow--compact { min-height: 48px; }
+.rrow__main { flex: 1 1 auto; min-width: 0; color: inherit; text-decoration: none; }
+.rrow__title { display: block; font: var(--fw-bold) var(--fs-m)/var(--lh-tight) var(--font); overflow-wrap: anywhere; }
+.rrow__sub { display: block; margin-top: var(--gap-tight); color: var(--text-2); font: var(--fw-medium) var(--fs-s)/var(--lh-body) var(--font); }
+.rrow--link .rrow__main::after { content: ""; position: absolute; inset: 0; }
+.rrow--link .rrow__trail { position: relative; z-index: var(--z-raised); }
+.rrow[aria-current="true"], .rrow.is-selected { background: var(--surface); box-shadow: inset 3px 0 0 var(--accent); }
+@media (hover: hover) { .rrow--link:hover { background: var(--surface); } }
+
+/* SWIPE ACTIONS (parameter of .rrow and .rcard): data-swipe="<list kind>". Up to TWO actions in .rswipe (icon + short label, destructive = danger tone).
+   The foreground (.rswipe-fg) slides by --sw-x (transform only); the tray sits at the inline-end edge. Direction is RTL aware: swipe toward the
+   inline-start edge (physical right in RTL) opens. Only one row open at a time. The three-dots menu with the SAME actions is always present (non-gesture path). */
+[data-swipe] { position: relative; overflow: hidden; touch-action: pan-y; }
+[data-swipe] > .rswipe-fg { position: relative; z-index: var(--z-raised); background: var(--bg); transform: translateX(var(--sw-x, 0px)); transition: transform var(--t-base) var(--ease); will-change: transform; }
+[data-swipe].is-dragging > .rswipe-fg { transition: none; }
+.rswipe { position: absolute; z-index: 0; inset-block: 0; inset-inline-end: 0; display: flex; width: calc(var(--sw-n, 2) * 88px); }
+html[dir="rtl"] .rswipe { inset-inline-end: auto; left: 0; }
+.rswipe__act { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--gap-tight); border: 0; background: var(--surface-2); color: var(--text); font: var(--fw-bold) var(--fs-xs)/1.1 var(--font); cursor: pointer; }
+.rswipe__act[data-tone="danger"] { background: var(--danger); color: #fff; }
+.rswipe__act > svg { width: var(--icon-m); height: var(--icon-m); stroke-width: var(--icon-w); }
+.rswipe__act:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+[data-swipe]::after { content: ""; position: absolute; inset-block: 35%; inset-inline-end: 3px; width: 3px; background: var(--line-strong); opacity: .5; pointer-events: none; }   /* persistent edge cue */
+[data-swipe].is-open::after { display: none; }
+.rhint { position: sticky; top: 0; z-index: var(--z-raised); margin: 0 var(--gutter); padding: var(--sp-1) var(--sp-2); background: var(--info-bg); color: var(--info); font: var(--fw-medium) var(--fs-s)/var(--lh-body) var(--font); border-radius: var(--r-ctl); pointer-events: none; opacity: 1; transition: opacity var(--t-base) var(--ease); }
+.rhint[hidden], .rhint.is-gone { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { [data-swipe] > .rswipe-fg { transition: none; } }   /* the module also disables dragging: the three-dots menu is the path */
+
+/* LIST CARD: a rich item (head: title + status chips; body: details, counters; foot: icon buttons or the primary action; optional expandable section).
+   variants: --open, --popup (tap opens a popup or side card), --flat, --compact. Whole-card link OR expand button, never both. Also used standalone for page sections. */
+.rcard { position: relative; margin: 0 var(--gutter) var(--gap-button); padding: var(--pad-row); border: 1px solid var(--line); border-radius: var(--r-card); background: var(--bg); box-shadow: var(--sh-card); }
+.rcard__head { display: flex; align-items: center; gap: var(--gap-button); margin-bottom: var(--gap-button); }
+.rcard__title { flex: 1 1 auto; min-width: 0; font: var(--fw-bold) var(--fs-m)/var(--lh-tight) var(--font); }
+.rcard__body { color: var(--text-2); font: var(--fw-regular) var(--fs-s)/var(--lh-body) var(--font); }
+.rcard__foot { display: flex; align-items: center; justify-content: flex-end; gap: var(--gap-button); margin-top: var(--gap-button); }
+.rcard--flat { box-shadow: none; }   .rcard--compact { padding: var(--gap-button) var(--pad-row); }
+.rcard[aria-current="true"], .rcard.is-selected { border-color: var(--text); }
+.rcard--link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.rcard--link .rcard__foot, .rcard--link .rcard__head .rbtn { position: relative; z-index: var(--z-raised); }
+
+/* ============================ HEADER, TABS ============================ */
+.rhead { display: flex; align-items: center; gap: var(--gap-button); min-height: 56px; padding: 0 var(--gutter); background: var(--bg); border-bottom: 1px solid var(--line); }
+.rhead__title { flex: 1 1 auto; margin: 0; font: var(--fw-black) var(--fs-l)/var(--lh-tight) var(--font); }
+.rhead__sub { display: block; color: var(--text-2); font: var(--fw-medium) var(--fs-s)/var(--lh-body) var(--font); }
+.rtabs { display: flex; border-bottom: 1px solid var(--line); }
+.rtab { flex: 1 1 0; min-height: var(--ctl); border: 0; background: transparent; color: var(--text-2); font: var(--fw-bold) var(--fs-m)/1 var(--font); box-shadow: inset 0 -3px 0 transparent; cursor: pointer; }
+.rtab[aria-selected="true"] { color: var(--text); box-shadow: inset 0 -3px 0 var(--accent); }
+.rtabs--seg { border: 1px solid var(--line-strong); border-radius: var(--r-ctl); overflow: hidden; }
+.rtabs--seg .rtab { box-shadow: none; }   .rtabs--seg .rtab[aria-selected="true"] { background: var(--primary); color: var(--on-primary); }
+
+/* ============================ MESSAGE, EMPTY ============================ */
+.rmsg { display: flex; align-items: center; gap: var(--gap-button); padding: var(--sp-2); border: 1px solid var(--text); border-radius: var(--r-ctl); background: var(--text); color: var(--bg); font: var(--fw-medium) var(--fs-s)/var(--lh-body) var(--font); }
+.rmsg--toast { position: fixed; inset-inline: var(--gutter); bottom: var(--safe-b); z-index: var(--z-toast); box-shadow: var(--sh-pop); }
+.rmsg--inline { background: var(--surface); color: var(--text); border-color: var(--line); }
+.rmsg--ok { background: var(--success-bg); color: var(--success); border-color: var(--success); }   .rmsg--no { background: var(--danger-bg); color: var(--danger); border-color: var(--danger); }   .rmsg--wait { background: var(--warn-bg); color: var(--warn); border-color: var(--warn); }
+.rmsg__act { margin-inline-start: auto; font-weight: var(--fw-bold); text-decoration: underline; background: none; border: 0; color: inherit; cursor: pointer; }   /* undo */
+.rempty { display: flex; flex-direction: column; align-items: center; gap: var(--gap-field); padding: var(--sp-3) var(--gutter); text-align: center; color: var(--text-2); font: var(--fw-regular) var(--fs-s)/var(--lh-body) var(--font); }
+.rempty > b { color: var(--text); font-size: var(--fs-m); }
+
+/* ============================ FIELD HELP SLOT (extends .rfield in field.css) ============================ */
+.rfield .rf-help { display: block; margin-top: var(--gap-tight); color: var(--text-2); font: var(--fw-regular) var(--fs-s)/var(--lh-body) var(--font); }
+.rfield .rf-help .rf-ex { display: inline-block; font-weight: var(--fw-bold); color: var(--text); unicode-bidi: isolate; direction: ltr; }
+
+/* ============================ ADD BUTTON (FAB): one per list screen, physical LEFT, bottom ============================ */
+.rfab { position: fixed; left: max(var(--gutter), env(safe-area-inset-left, 0px)); bottom: calc(var(--gutter) + env(safe-area-inset-bottom, 0px)); z-index: var(--z-sticky);
+  display: grid; place-items: center; width: var(--fab); height: var(--fab); padding: 0; border: 1px solid var(--primary); border-radius: var(--r-fab); background: var(--primary); color: var(--on-primary);
+  box-shadow: var(--sh-pop); cursor: pointer; transition: transform var(--t-base) var(--ease), opacity var(--t-base) var(--ease); }
+.rfab > svg { width: var(--icon-l); height: var(--icon-l); stroke-width: var(--icon-w); }
+.rfab:active { transform: translateY(1px); }   .rfab:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.rfab:disabled, .rfab[aria-disabled="true"] { opacity: .45; cursor: default; }   .rfab[hidden] { display: none; }
+html.dlg-lock .rfab, html.kb-open .rfab { opacity: 0; transform: translateY(calc(var(--fab) + var(--sp-3))); pointer-events: none; }   /* kb-open is set from the visual viewport */
+
+/* ============================ PULL TO REFRESH ============================ */
+.rptr { position: fixed; inset-inline: 0; top: var(--rptr-top, 0); display: grid; place-items: center; height: 48px; pointer-events: none; z-index: var(--z-sticky); transform: translateY(calc(var(--rptr-pull, 0) * 1px - 48px)); opacity: var(--rptr-o, 0); }
+.rptr__dot { width: 24px; height: 24px; border: var(--icon-w) solid var(--line-strong); border-top-color: var(--text); border-radius: 50%; transform: rotate(calc(var(--rptr-pull, 0) * 4deg)); }
+.rptr[data-state="loading"] .rptr__dot { animation: rk-spin .8s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .rptr[data-state="loading"] .rptr__dot, .rbtn--icon[aria-busy="true"] > svg { animation: none; } }
+
+/* ============================ POPUP .rsheet: ONE element, three presentations, ALWAYS SQUARE ============================
+   touch / narrow: sheet from the top or bottom (data-from); desktop (760px and up): centered window by default; side drawer with data-desktop="side"
+   (non-modal panel with data-modal="false"). Same anatomy and tokens: fixed header (title, optional PRIMARY ACTION icon button, X), one scroll body,
+   optional fixed foot, grab bar on touch only. Widths: data-size="sm|md|lg" = --w-s 400 / --w-m 560 / --w-l 760 (md default). */
+.rsheet { border: 0; padding: 0; border-radius: var(--r-float); background: var(--bg); color: var(--text); box-shadow: var(--sh-pop); max-width: none; display: flex; flex-direction: column; }
+.rsheet::backdrop { background: var(--scrim); }
+.rsheet__head { flex: none; display: flex; align-items: center; gap: var(--gap-button); min-height: 56px; padding: 0 var(--pad-popup); border-bottom: 1px solid var(--line); }
+.rsheet__title { flex: 1 1 auto; margin: 0; font: var(--fw-black) var(--fs-l)/var(--lh-tight) var(--font); }
+.rsheet__head .rbtn--icon.rbtn--primary { order: 2; }   .rsheet__head .rsheet__x { order: 3; }           /* title, then the primary action (check), then the X */
+.rsheet__body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; padding: var(--pad-popup); }
+.rsheet__foot { flex: none; display: flex; gap: var(--gap-button); padding: var(--pad-popup); padding-bottom: var(--sheet-b); border-top: 1px solid var(--line); }
+.rsheet__bar { flex: none; height: 28px; display: grid; place-items: center; }
+.rsheet__bar::before { content: ""; width: 44px; height: 4px; background: var(--line-strong); border-radius: 0; }
+.rsheet[data-from="top"] { inset: 0 0 auto 0; margin: 0; width: 100%; max-height: calc(100dvh - var(--sp-1)); }
+.rsheet[data-from="bottom"] { inset: auto 0 0 0; margin: 0; width: 100%; max-height: calc(100dvh - var(--sp-1)); }
+.rsheet[data-from="bottom"] .rsheet__bar { order: -1; }
+@media (min-width: 760px) {
+  .rsheet, .rsheet[data-from="top"], .rsheet[data-from="bottom"] { inset: 0; margin: auto; width: min(var(--w-m), 100%); max-height: calc(100dvh - var(--sp-3)); }   /* the from-rules above have higher specificity: repeat them here so desktop wins */
+  .rsheet[data-size="sm"] { width: min(var(--w-s), 100%); }   .rsheet[data-size="lg"] { width: min(var(--w-l), 100%); }
+  .rsheet__bar { display: none; }
+  .rsheet[data-desktop="side"] { inset: 0 auto 0 0; margin: 0; height: 100dvh; max-height: none; }
+}
+
+/* ============================ ANCHORED MENU: not a popup (no header, no bar), square, closes on outside tap and Escape ============================ */
+.rmenu { position: absolute; z-index: var(--z-menu); min-width: 200px; max-width: min(var(--w-s), calc(100vw - var(--sp-2) * 2)); padding: var(--sp-1) 0; border: 1px solid var(--line); border-radius: var(--r-float); background: var(--bg); box-shadow: var(--sh-pop); }
+.rmenu__item { display: flex; align-items: center; gap: var(--gap-button); width: 100%; min-height: var(--ctl); padding: 0 var(--sp-2); border: 0; background: transparent; color: var(--text); font: var(--fw-medium) var(--fs-m)/1 var(--font); text-align: start; text-decoration: none; cursor: pointer; }
+.rmenu__item > svg { width: var(--icon-m); height: var(--icon-m); flex: none; stroke-width: var(--icon-w); }
+.rmenu__item[data-tone="danger"] { color: var(--danger); }
+.rmenu__item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (hover: hover) { .rmenu__item:hover { background: var(--surface); } }
+
+/* ============================ LOADING SKELETON: calm placeholder lines, no spinner on lists ============================ */
+.rskel { display: block; height: var(--sp-2); margin: var(--sp-1) var(--gutter); border-radius: var(--r-chip); background: var(--surface-2); opacity: .7; }
+.rskel--title { width: 40%; height: var(--sp-3); }
+.rskel--short { width: 60%; }
+@media (prefers-reduced-motion: no-preference) { .rskel { animation: rk-pulse 1.4s var(--ease) infinite; } }
+@keyframes rk-pulse { 50% { opacity: .35; } }
