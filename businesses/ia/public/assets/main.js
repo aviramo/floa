@@ -79,3 +79,66 @@
   tick();
   setInterval(tick, 1000);
 })();
+
+/* כפתור הצטרפות: נכנס מלמטה כשפרטי המפגשים מגיע לקצה העליון, ופותח תפריט וואטסאפ */
+(function () {
+  var btn = document.getElementById("dockBtn"), dock = document.getElementById("dock"), join = document.getElementById("join");
+  if (!btn || !dock || !join) return;
+  var last = null;
+  var close = function () {
+    dock.classList.remove("open"); dock.setAttribute("aria-hidden", "true");
+    document.documentElement.style.overflow = "";
+    if (last) last.focus();
+  };
+  var open = function (from) {
+    last = from; dock.classList.add("open"); dock.setAttribute("aria-hidden", "false");
+    document.documentElement.style.overflow = "hidden";
+    var f = dock.querySelector("a"); if (f) f.focus();
+  };
+  btn.addEventListener("click", function () { open(btn); });
+  document.addEventListener("click", function (e) {
+    var o = e.target.closest && e.target.closest("[data-open-dock]");
+    if (o) open(o);
+    if (e.target.closest && e.target.closest("[data-close-dock]")) close();
+  });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && dock.classList.contains("open")) close(); });
+  var shown = false;
+  var check = function () {
+    var on = join.getBoundingClientRect().top <= 0;
+    if (on !== shown) { shown = on; btn.classList.toggle("is-hidden", !on); btn.tabIndex = on ? 0 : -1; }
+  };
+  window.addEventListener("scroll", check, { passive: true });
+  window.addEventListener("resize", check);
+  check();
+})();
+
+/* כפתור הצטרפות: נכנס מלמטה כשפרטי המפגשים מגיע לקצה העליון, ופותח תפריט וואטסאפ */
+(function () {
+  var btn = document.getElementById("dockBtn"), dock = document.getElementById("dock"), join = document.getElementById("join");
+  if (!btn || !dock || !join) return;
+  var last = null;
+  var close = function () {
+    dock.classList.remove("open"); dock.setAttribute("aria-hidden", "true");
+    document.documentElement.style.overflow = "";
+    if (last) last.focus();
+  };
+  var open = function (from) {
+    last = from; dock.classList.add("open"); dock.setAttribute("aria-hidden", "false");
+    document.documentElement.style.overflow = "hidden";
+    var f = dock.querySelector("a"); if (f) f.focus();
+  };
+  document.addEventListener("click", function (e) {
+    var t = e.target.closest ? e.target : e.target.parentElement;
+    if (t.closest("#dockBtn, [data-open-dock]")) open(t.closest("#dockBtn, [data-open-dock]"));
+    else if (t.closest("[data-close-dock]")) close();
+  });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && dock.classList.contains("open")) close(); });
+  var shown = false;
+  var check = function () {
+    var on = join.getBoundingClientRect().top <= 0;
+    if (on !== shown) { shown = on; btn.classList.toggle("is-hidden", !on); btn.tabIndex = on ? 0 : -1; }
+  };
+  window.addEventListener("scroll", check, { passive: true });
+  window.addEventListener("resize", check);
+  check();
+})();
