@@ -375,3 +375,7 @@ svg { display: block; }
 .dotm { flex: none; width: 14px; height: 14px; margin-top: .55rem; border-radius: 80% 0 80% 0; background: #E8590C; transform: rotate(-20deg); }
 .list li:has(.dotm) { align-items: flex-start; }
 .steps b:not(.n) { font-weight: inherit; }
+
+/* תמונת המעגל: קטנה, רכה ומתמזגת עם הרקע, כדי שירגישו את האווירה ולא את הפנים */
+.circle-photo { margin: -24px auto 28px; width: min(320px, 78%); }
+.circle-photo img { width: 100%; height: auto; opacity: .9; filter: blur(1.6px) saturate(.92); -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 52%, transparent 100%); mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 52%, transparent 100%); }
