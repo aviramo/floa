@@ -523,3 +523,15 @@ html, body { overflow-x: clip; }
 /* תמונת המעגל: לא נדחסת מתחת לכרטיס שלפניה, ברוחב הכרטיסים, עם מרווח */
 .circle-photo { margin: 28px auto 36px; width: 100%; }
 .circle-photo img { display: block; width: 100%; }
+
+/* רווחים אחידים בין הסקשנים: אותו ריפוד למעלה ולמטה בכולם, ובלי שוליים מיותרים בקצה */
+:root { --gap: clamp(56px, 12vw, 80px); }
+.sec--when, .sec--what, .sec--awaits, .sec--after, .sec--for, .sec--meet, .sec--reach, .sec--quote { padding-block: var(--gap); }
+.sec--final { padding-top: var(--gap); }
+.sec--when .wrap > :last-child, .sec--what .wrap > :last-child, .sec--awaits .wrap > :last-child,
+.sec--after .wrap > :last-child, .sec--for .wrap > :last-child, .sec--meet .wrap > :last-child,
+.sec--reach .wrap > :last-child { margin-bottom: 0; }
+.sec--when .when-text > :last-child { margin-bottom: 0; }
+
+/* צור קשר על רקע משלו, כדי שהרווח בין נכיר לבינו לא ייראה כחלל ריק */
+.sec--reach { background: #DCEFE6; }
