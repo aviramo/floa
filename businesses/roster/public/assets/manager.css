@@ -180,13 +180,14 @@ h1 { font-size: 22px; font-weight: 800; letter-spacing: -.01em; line-height: 1.2
 .row.fresh { animation: fresh 2.4s ease-out; }
 @keyframes fresh { 0%, 35% { background: var(--yellow-bg); } 100% { background: var(--bg); } }
 
-/* ---------- 6. dialogs: a sheet from the bottom on a phone, a window on a wide screen ---------- */
+/* ---------- 6. dialogs: a sheet from the bottom on a phone, a window on a wide screen (the owner page's dialogs are .rsheet: assets/sheet.css overrides corners, margin and height there; connect/ still uses these rules as they are) ---------- */
 dialog { border: 0; padding: 0; width: 100%; max-width: 560px; max-height: 92vh; max-height: 92dvh; margin: auto auto 0; overflow: hidden; border-radius: var(--r) var(--r) 0 0; background: var(--bg); color: var(--text); box-shadow: var(--pop); }
 dialog[open] { display: flex; flex-direction: column; }
 dialog::backdrop { background: var(--scrim); }
 dialog:focus { outline: none; }
 @media (min-width: 560px) { dialog { margin: auto; border-radius: var(--r); max-height: min(90vh, 720px); } }
 .sheet { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: 16px var(--gut) var(--sheet-b); }
+dialog[data-from="top"] .sheet { padding-bottom: 8px; }
 .sheet-head { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; min-height: var(--ib); margin-bottom: 12px; }
 .sheet-head h2 { flex: 1 1 auto; min-width: 0; font-size: 20px; font-weight: 800; letter-spacing: -.01em; line-height: 1.25; overflow-wrap: anywhere; }
 .sheet-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; overscroll-behavior-y: contain; margin: -4px; padding: 4px; }   /* the 4px keeps a focus ring from being clipped */

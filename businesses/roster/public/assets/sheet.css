@@ -1,0 +1,59 @@
+/* =====================================================================
+   Roster sheet: the one popup every roster page uses (assets/sheet.js).
+   Iron rules (owner, 2026-11-12): square corners, a visible grab bar,
+   a finger swipe pulls it back and closes it, the page behind never
+   scrolls, the sheet scrolls inside itself, its height follows its content.
+   Markup: <dialog class="rsheet" data-from="top|bottom"> ... </dialog>
+   (sheet.js adds the class, the grab bar and everything else).
+   Only transform and opacity are animated.
+   ===================================================================== */
+
+dialog.rsheet {
+  --rs-bg: var(--bg, #fff);
+  --rs-text: var(--text, #16191D);
+  --rs-scrim: var(--scrim, rgba(16, 20, 26, .55));
+  --rs-pill: #6B7280;                      /* 4.8:1 on white, the grab bar must be seen */
+  border: 0; padding: 0; margin-inline: auto;
+  width: 100%; max-width: 560px;
+  max-height: calc(var(--rs-vvh, 100dvh) - 12px);
+  overflow: hidden; overscroll-behavior: contain;
+  border-radius: 0 !important;             /* iron rule: no rounded corners, wide screens included */
+  background: var(--rs-bg); color: var(--rs-text);
+  box-shadow: 0 14px 34px -10px rgba(16, 24, 40, .28), 0 2px 6px rgba(16, 24, 40, .08);
+  transform: translateY(var(--rs-dy, 0px));
+  touch-action: pan-y;
+}
+dialog.rsheet[open] { display: flex; flex-direction: column; }
+dialog.rsheet:focus { outline: none; }
+dialog.rsheet::backdrop { background: var(--rs-scrim); }
+dialog.rsheet[data-from="top"] { margin-block: var(--rs-top, 0px) auto; }
+dialog.rsheet[data-from="bottom"], dialog.rsheet:not([data-from]) { margin-block: auto var(--rs-kb, 0px); }
+dialog.rsheet.rs-dragging { transition: none; }
+dialog.rsheet.rs-settle { transition: transform .2s cubic-bezier(.2, .8, .2, 1); }
+
+/* the content: everything but the grab bar; it is the part that scrolls when it is taller than the screen */
+dialog.rsheet > :not(.rs-grab) { flex: 1 1 auto; min-height: 0; }
+dialog.rsheet[data-from="top"] { padding-top: env(safe-area-inset-top, 0px); }
+dialog.rsheet[data-from="top"] > :not(.rs-grab) { order: 1; }
+dialog.rsheet .rs-scroll, dialog.rsheet .sheet-body { overflow-y: auto; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; }
+
+/* the grab bar: a 44px strip (the touch target) with a pill in it, at the free edge of the sheet */
+.rs-grab { flex: 0 0 auto; height: 44px; display: grid; place-items: center; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+.rs-grab::before { content: ""; width: 44px; height: 4px; background: var(--rs-pill, #6B7280); }   /* square, like everything else */
+dialog.rsheet[data-from="top"] > .rs-grab { order: 2; }
+dialog.rsheet[data-from="bottom"] > .rs-grab, dialog.rsheet:not([data-from]) > .rs-grab { order: -1; }
+[data-rs-drag] { touch-action: none; }
+
+/* the page behind: locked while a sheet is open (sheet.js keeps the scroll position) */
+html.rs-lock { overflow: hidden; overscroll-behavior: none; }
+body.rs-lock { position: fixed; left: 0; right: 0; width: 100%; overflow: hidden; }
+
+@keyframes rs-in-top { from { transform: translateY(-100%); } }
+@keyframes rs-in-bottom { from { transform: translateY(100%); } }
+@keyframes rs-fade { from { opacity: 0; } }
+dialog.rsheet[open][data-from="top"] { animation: rs-in-top .24s cubic-bezier(.2, .8, .2, 1); }
+dialog.rsheet[open][data-from="bottom"], dialog.rsheet[open]:not([data-from]) { animation: rs-in-bottom .24s cubic-bezier(.2, .8, .2, 1); }
+dialog.rsheet[open]::backdrop { animation: rs-fade .24s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  dialog.rsheet, dialog.rsheet[open], dialog.rsheet[open]::backdrop, dialog.rsheet.rs-settle { animation: none !important; transition: none !important; }
+}

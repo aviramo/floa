@@ -81,6 +81,7 @@
 
   /* ---------- state ---------- */
   var gate = $("#gate"), wrap = $("#wrap"), view = $("#view"), menu = $("#menu"), dlg = $("#dlg");
+  RosterSheet.attach(dlg);   /* iron rules of every popup (assets/sheet.js): square, grab bar, swipe to close, page locked behind, inner scroll */
   function blank() { return { isSuper: false, biz: [], users: {}, q: "" }; }
   var S = blank();
   var epoch = 0;            /* bumped on every sign-out, so a late answer cannot repaint someone else's data */
@@ -202,9 +203,10 @@
 
   /* ---------- dialogs ---------- */
   function openDialog(kind, titleHtml, bodyHtml) {
-    dlg.className = kind;
+    dlg.className = kind + " rsheet";
+    dlg.setAttribute("data-from", ctx && ctx.kind === "biz" && !ctx.id ? "top" : "bottom");   /* "new business" comes down from the top, the rest from the bottom until the owner says otherwise */
     dlg.innerHTML =
-      '<div class="sheet"><div class="sheet-head"><h2 id="dlgT">' + titleHtml + "</h2>" +
+      '<div class="sheet"><div class="sheet-head" data-rs-drag><h2 id="dlgT">' + titleHtml + "</h2>" +
       '<button type="button" class="hicon" data-close aria-label="סגירה">' + icon("x") + "</button></div>" +
       '<div class="sheet-body">' + bodyHtml + "</div></div>";
     if (!dlg.open) dlg.showModal();
@@ -217,10 +219,8 @@
       if (el) el.focus();
     };
   }
-  var downOnBackdrop = false;
-  dlg.addEventListener("mousedown", function (e) { downOnBackdrop = e.target === dlg; });
-  dlg.addEventListener("click", function (e) {
-    if (e.target === dlg) { if (downOnBackdrop) dlg.close(); return; }
+  dlg.addEventListener("click", function (e) {   /* the backdrop is closed by sheet.js */
+    if (e.target === dlg) return;
     if (e.target.closest("[data-close]")) return dlg.close();
     var a = e.target.closest("[data-acc]");
     if (a) accAction(a);
