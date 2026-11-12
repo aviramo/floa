@@ -1,0 +1,84 @@
+/* The one field element of roster (owner rule, 2026-11-12). Same look and behaviour as the admin page's .field:
+   a line under the field, the field name sits on the line like a placeholder, and on focus or when there is a value
+   it floats up as a small label (transform and opacity only, no layout shift). Every other control is an EXTENSION of
+   this element (select, textarea, number, date, time, switch, check), never a separate style.
+
+   Markup:  <label class="rfield"><span>Name</span><input placeholder=" "></label>
+            a real example goes in placeholder with data-hint (shown only while focused); help/error line: <small class="rf-help">
+   Extensions are chosen by the control itself (select, textarea, input[type]) or by a modifier on the same element:
+            rfield--switch, rfield--check (row with a switch or a checkbox), rfield--ltr (value written left to right).
+   Needs the page tokens --bg --line --line-2 --text --text-2 --red --font (fallbacks below). */
+:root { --rf-h: 46px; --rf-line: var(--line-2, #C7CCD3); --rf-ink: var(--text, #16191D); --rf-ink-2: var(--text-2, #5A626C); --rf-red: var(--red, #C81E3A); --rf-bg: var(--bg, #FFFFFF); }
+
+.rfield[hidden], .rfield > [hidden] { display: none !important; }
+.rfield { position: relative; display: block; min-width: 0; margin: 0 0 8px; font-family: var(--font, "Heebo", system-ui, sans-serif); }
+
+/* the label: a span, first child. On the line when the field is empty and not focused, floated small otherwise */
+.rfield:has(> :is(input:where(:not([type="checkbox"], [type="radio"])), select, textarea, .rf-box)) > span:first-child {
+  position: absolute; z-index: 1; top: 3px; inset-inline: 0 -33%; margin: 0; font-size: 16px; line-height: 22px; font-weight: 400; color: var(--rf-ink-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;
+  transform: scale(.75); transform-origin: 100% 0; transition: transform .16s ease-out, color .16s ease-out; }
+html[dir="ltr"] .rfield:has(> :is(input:where(:not([type="checkbox"], [type="radio"])), select, textarea, .rf-box)) > span:first-child { transform-origin: 0 0; }
+.rfield:not([data-rf]):has(> :is(input:where(:not([type="checkbox"], [type="radio"])), textarea)[placeholder]:placeholder-shown:not(:focus):not(:-webkit-autofill)) > span:first-child { transform: translateY(16px); inset-inline-end: 0; }
+/* field.js keeps data-rf="e" (empty) or "v" (has a value) up to date, also when a script sets .value or the browser autofills, which Chrome's :has() does not always re-evaluate */
+.rfield[data-rf="e"]:not(:focus-within) > span:first-child { transform: translateY(16px); inset-inline-end: 0; }
+.rfield:focus-within > span:first-child { color: var(--rf-ink); }
+.rfield:has(> [aria-invalid="true"], > .bad) > span:first-child { color: var(--rf-red); }
+
+/* the control: borderless, only the line under it */
+.rfield > :is(input:where(:not([type="checkbox"], [type="radio"])), select, textarea) {
+  display: block; box-sizing: border-box; width: 100%; height: var(--rf-h); margin: 0; padding: 19px 0 3px; border: 0; border-bottom: 1px solid var(--rf-line); border-radius: 0; background-color: transparent; color: var(--rf-ink);
+  font: 400 16px/22px var(--font, "Heebo", system-ui, sans-serif); text-align: start; transition: border-color .16s ease-out, box-shadow .16s ease-out; }
+.rfield > :is(input:where(:not([type="checkbox"], [type="radio"])), select, textarea):focus { outline: none; border-bottom-color: var(--rf-ink); box-shadow: 0 1px 0 var(--rf-ink); }
+.rfield > :is(input:where(:not([type="checkbox"], [type="radio"])), textarea)::placeholder { color: var(--rf-ink-2); opacity: 1; }
+.rfield > :is(input:where(:not([type="checkbox"], [type="radio"])), textarea)[data-hint]:not(:focus)::placeholder { color: transparent; }   /* the example shows only while typing */
+.rfield > :is(input:where(:not([type="checkbox"], [type="radio"])), select, textarea)[aria-invalid="true"], .rfield > .bad { border-bottom-color: var(--rf-red); box-shadow: 0 1px 0 var(--rf-red); }
+
+/* left-to-right values (mail, phone, url, code) sit on the right edge like Hebrew text */
+.rfield > :is(input[type="tel"], input[type="email"], input[type="url"], input.ltr, textarea.ltr) { direction: ltr; text-align: right; }
+.rfield--ltr > :is(input, textarea) { direction: ltr; text-align: right; }
+.rfield > :is(input.ltr, textarea.ltr)::placeholder { text-align: right; }
+
+/* extension: textarea grows with its text up to a limit, then scrolls inside */
+.rfield > textarea { height: auto; min-height: var(--rf-h); max-height: 260px; resize: none; overflow-y: auto; }
+
+/* extension: select, with one arrow of ours on the left */
+.rfield > select { -webkit-appearance: none; appearance: none; cursor: pointer; padding-inline: 0 20px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.4l5 5.2 5-5.2z' fill='%235A626C'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-size: 11px 7px; background-position: left 2px bottom 10px; }
+html[dir="ltr"] .rfield > select { padding-inline: 0 20px; background-position: right 2px bottom 10px; }
+
+/* extension: number (no spinners) */
+.rfield > input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+.rfield > input[type="number"]::-webkit-outer-spin-button, .rfield > input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* extension: date and time (the browser always shows a format, so the label stays floated; the whole field opens the picker) */
+.rfield > :is(input[type="date"], input[type="time"]) { position: relative; -webkit-appearance: none; appearance: none; cursor: pointer; direction: ltr; text-align: right; padding: 19px 0 3px 20px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.4l5 5.2 5-5.2z' fill='%235A626C'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-size: 11px 7px; background-position: left 2px bottom 12px; }
+.rfield > :is(input[type="date"], input[type="time"])::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; opacity: 0; cursor: pointer; }
+.rfield > :is(input[type="date"], input[type="time"])::-webkit-date-and-time-value { text-align: right; margin: 0; }
+
+/* read-only and disabled */
+.rfield > :is(input:where(:not([type="checkbox"], [type="radio"])), textarea)[readonly], .rfield > .ro { color: var(--rf-ink-2); cursor: default; }
+.rfield > :is(input:where(:not([type="checkbox"], [type="radio"])), textarea)[readonly]:focus, .rfield > .ro:focus { border-bottom-color: var(--rf-line); box-shadow: none; outline: 2px solid var(--rf-ink); outline-offset: 2px; }
+.rfield > :is(input:where(:not([type="checkbox"], [type="radio"])), select, textarea):disabled { color: var(--rf-ink-2); cursor: default; border-bottom-style: dashed; }
+.rfield > :is(input:where(:not([type="checkbox"], [type="radio"])), select, textarea):disabled ~ * { opacity: 1; }
+.rfield:has(> :disabled) > span:first-child { color: var(--rf-ink-2); }
+
+/* help and error under the line (the control points to it with aria-describedby) */
+.rfield > .rf-help, .rfield > .rf-err { display: block; margin: 4px 0 0; font-size: 13px; line-height: 18px; color: var(--rf-ink-2); }
+.rfield > .rf-err { color: var(--rf-red); }
+.rfield > .rf-err:empty { display: none; }
+.rfield + .hint { margin-top: -4px; }
+
+/* extension: a row with a switch or a checkbox, same element, same type and focus, 44px target */
+.rfield--switch, .rfield--check { display: flex; align-items: flex-start; gap: 12px; min-height: 44px; padding: 8px 0; margin: 0; cursor: pointer; font-size: 16px; line-height: 22px; color: var(--rf-ink); }
+.rfield--switch > input, .rfield--check > input { margin: 0; }
+.rfield--switch:has(> input:disabled), .rfield--check:has(> input:disabled) { cursor: default; }
+.rfield--switch small, .rfield--check small { display: block; font-size: 13px; line-height: 18px; color: var(--rf-ink-2); }
+
+/* Chrome autofill signal for field.js (the label stays up through :-webkit-autofill in the CSS above) */
+.rfield > input:-webkit-autofill { animation: rf-autofill 1ms; }
+@keyframes rf-autofill { from { opacity: 1; } to { opacity: 1; } }
+.rfield:has(> input:-webkit-autofill) > span:first-child { transform: scale(.75); inset-inline-end: -33%; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rfield:has(> :is(input:where(:not([type="checkbox"], [type="radio"])), select, textarea, .rf-box)) > span:first-child, .rfield > :is(input:where(:not([type="checkbox"], [type="radio"])), select, textarea) { transition: none !important; }
+}

@@ -85,19 +85,11 @@ button.tg { position: relative; overflow: visible; cursor: pointer; }
 button.tg::before { content: ""; position: absolute; inset: -8px -4px; }   /* the touch area stays 44px */
 @media (hover: hover) { button.tg:hover { background: var(--line); } button.tg.warn:hover { background: #FFE9A3; } }
 
-/* field */
-.field { display: block; min-width: 0; margin: 0 0 12px; }
-.field > span { display: block; margin-bottom: 4px; font-size: 13px; font-weight: 600; color: var(--text-2); }
-.field input, .sinp { width: 100%; height: var(--ctl); padding: 0 12px; border: 1px solid var(--line-2); border-radius: var(--r); background: var(--bg); color: var(--text); font-size: 16px; font-family: var(--font); }
-.field input::placeholder, .sinp::placeholder { color: var(--text-3); }
-.field input:focus, .sinp:focus { outline: none; border-color: var(--text); box-shadow: 0 0 0 1px var(--text); }
-.field input[aria-invalid="true"] { border-color: var(--red); box-shadow: 0 0 0 1px var(--red); }
-.field input.ltr { direction: ltr; text-align: right; }
-.field input.ltr::placeholder { text-align: right; }
+/* fields: the one shared element, field.css */
+.sinp-f { margin: 0; }
 .sinp::-webkit-search-cancel-button, .sinp::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
 .static { display: flex; align-items: center; min-height: var(--ctl); padding: 0 12px; border-radius: var(--r); background: var(--surface); color: var(--text); font-weight: 600; }
 .hint { margin: 0 0 12px; color: var(--text-2); font-size: 14px; line-height: 1.5; }
-.field + .hint { margin-top: -6px; }
 .ferr { margin: 0 0 12px; color: var(--red); font-size: 14px; font-weight: 600; line-height: 1.4; }
 .ferr:empty { margin: 0; }
 .clabel { margin: 16px 0 4px; color: var(--text-2); font-size: 12.5px; font-weight: 700; letter-spacing: .02em; }
@@ -147,8 +139,8 @@ h1 { font-size: 22px; font-weight: 800; letter-spacing: -.01em; line-height: 1.2
 .bar { flex: 0 0 auto; border-bottom: 1px solid var(--line); }
 .bar-in { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px var(--gut); }
 .bar .add { flex: 1 1 100%; }
-.bar .sinp { flex: 1 1 100%; }
-@media (min-width: 560px) { .bar .add { flex: 0 0 auto; } .bar .sinp { flex: 1 1 200px; } }
+.bar .sinp-f { flex: 1 1 100%; }
+@media (min-width: 560px) { .bar .add { flex: 0 0 auto; } .bar .sinp-f { flex: 1 1 200px; } }
 
 /* the one scrolling box */
 .list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; padding-bottom: var(--safe-b); }
@@ -198,7 +190,7 @@ dialog[data-from="top"] .sheet { padding-bottom: 8px; }
 /* the accounts sheet: the form stays, the list of emails scrolls inside itself */
 dialog.acc .sheet-body { overflow: hidden; }
 .addrow { display: flex; gap: 8px; align-items: flex-start; }
-.addrow .field { flex: 1 1 auto; margin: 0; }
+.addrow .rfield { flex: 1 1 auto; margin: 0; }
 .addrow .btn { flex: 0 0 auto; }
 .acclist { flex: 1 1 auto !important; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; border-top: 1px solid var(--line); }
 .arow { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 4px 0; border-bottom: 1px solid var(--line); }

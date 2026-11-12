@@ -58,20 +58,7 @@ a { color: inherit; }
 :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 
 /* ---------- שדות פרטים: קו תחתון ותווית צפה ---------- */
-.pf-field { position: relative; display: block; margin: 8px 0 0; }
-.pf-field > span { position: absolute; z-index: 1; top: .15rem; inset-inline: 0 -33%; margin: 0; font-size: max(16px, .95rem); line-height: 1.3rem; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; transform: scale(.75); transform-origin: 100% 0; transition: transform .16s ease, color .16s ease; }
-.pf-field:has(> input:placeholder-shown:not(:focus):not(:-webkit-autofill)) > span { transform: translateY(1.15rem); inset-inline-end: 0; }
-.pf-field:has(> select:not(:focus) option[value=""]:checked) > span { transform: translateY(1.15rem); inset-inline-end: 0; }
-.pf-field:focus-within > span { color: var(--text); }
-.pf-field:has(> .bad) > span { color: var(--red); }
-.pf-input { display: block; width: 100%; height: 3.1rem; margin: 0; padding: 1.3rem 0 3px; border: 0; border-bottom: 1px solid var(--line-2); border-radius: 0; background: transparent; font-size: max(16px, 1.1rem); line-height: 22px; transition: border-color .16s ease; }
-.pf-input:focus { outline: none; border-bottom-color: var(--text); box-shadow: inset 0 -1px 0 var(--text); }
-.pf-input.bad { border-bottom-color: var(--red); box-shadow: inset 0 -1px 0 var(--red); }
-.pf-input[type="tel"], .pf-input[type="email"] { direction: ltr; text-align: right; }
-.pf-input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
-.pf-input[type="number"]::-webkit-outer-spin-button, .pf-input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.pf-input[readonly] { color: var(--text-2); }
-select.pf-input { -webkit-appearance: none; appearance: none; cursor: pointer; text-align: start; padding-inline: 0 20px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.4l5 5.2 5-5.2z' fill='%235A626C'/%3E%3C/svg%3E") no-repeat left 2px bottom 15px / 11px; }
+/* fields: the shared element, ../assets/field.css */
 .pf-err { margin-top: 4px; color: var(--red); font-size: 13.5px; font-weight: 600; }
 .pf-err:empty { display: none; }
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -120,4 +107,4 @@ select.pf-input { -webkit-appearance: none; appearance: none; cursor: pointer; t
 
 #toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 50; max-width: calc(100vw - 32px); padding: 10px 16px; border-radius: var(--r); background: var(--text); color: #fff; font-size: 15px; font-weight: 600; text-align: center; opacity: 0; transform: translate(-50%, 8px); pointer-events: none; transition: opacity .2s ease, transform .2s ease; }
 #toast.on { opacity: 1; transform: translate(-50%, 0); }
-@media (prefers-reduced-motion: reduce) { .pf-field > span, .pf-input, .dethead svg, .detfold, #toast { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .dethead svg, .detfold, #toast { transition: none; } }

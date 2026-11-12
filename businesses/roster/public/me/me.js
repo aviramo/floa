@@ -78,7 +78,7 @@
   const LABEL = { first: 'שם פרטי', last: 'שם משפחה', phone: 'טלפון', email: 'אימייל', age: 'גיל', gender: 'מגדר' };
   const AC = { first: 'given-name', last: 'family-name', phone: 'tel', email: 'email', age: 'off', gender: 'sex' };
   function field(kind, id, value, attr) {
-    const v = value == null ? '' : value, common = ' id="' + id + '" data-pf="' + kind + '" name="' + kind + '" autocomplete="' + AC[kind] + '" class="pf-input"' + (attr ? ' ' + attr : '');
+    const v = value == null ? '' : value, common = ' id="' + id + '" data-pf="' + kind + '" name="' + kind + '" autocomplete="' + AC[kind] + '"' + (attr ? ' ' + attr : '');
     let ctl;
     if (kind === 'gender') ctl = '<select' + common + '><option value=""' + (v ? '' : ' selected') + '></option><option value="male"' + (v === 'male' ? ' selected' : '') + '>זכר</option><option value="female"' + (v === 'female' ? ' selected' : '') + '>נקבה</option></select>';
     else {
@@ -86,7 +86,7 @@
       const extra = kind === 'phone' ? ' inputmode="tel" dir="ltr" maxlength="24"' : kind === 'email' ? ' inputmode="email" dir="ltr" maxlength="254"' : kind === 'age' ? ' inputmode="numeric" min="18" max="99"' : ' maxlength="40"';
       ctl = '<input type="' + type + '"' + common + extra + ' placeholder=" "' + (v !== '' ? ' value="' + esc(v) + '"' : '') + '>';
     }
-    return '<label class="pf-field" for="' + id + '"><span>' + LABEL[kind] + '</span>' + ctl + '</label>';
+    return '<label class="rfield" for="' + id + '"><span>' + LABEL[kind] + '</span>' + ctl + '</label>';
   }
   const errBox = (kind) => '<div class="pf-err" data-pf-err="' + kind + '" role="alert"></div>';
   const fEl = (root, kind) => root.querySelector('[data-pf="' + kind + '"]');

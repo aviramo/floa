@@ -453,7 +453,7 @@
     renderPanel(false);
   }
 
-  const sw = (id, on, label, hint) => '<label class="sw"><input type="checkbox" id="' + id + '" role="switch"' + (on ? " checked" : "") + '><span class="trk" aria-hidden="true"></span><span class="swt"><b>' + label + "</b>" + (hint ? "<small>" + hint + "</small>" : "") + "</span></label>";
+  const sw = (id, on, label, hint) => '<label class="sw rfield rfield--switch"><input type="checkbox" id="' + id + '" role="switch"' + (on ? " checked" : "") + '><span class="trk" aria-hidden="true"></span><span class="swt"><b>' + label + "</b>" + (hint ? "<small>" + hint + "</small>" : "") + "</span></label>";
   const cardHead = (title, extra) => '<div class="chead"><h2>' + title + "</h2>" + (extra || "") + "</div>";
 
   /* ===== keys ===== */
@@ -525,10 +525,10 @@
     return '<div class="pin">' +
       '<form class="card" id="hookForm" novalidate>' + cardHead("Webhook: עדכון לשרת שלכם") +
       '<p class="lead">על כל אירוע (משתתף חדש, הרשמה, תשלום) המערכת שולחת הודעה חתומה לכתובת שתגדירו, מכל מקור: האתר, הניהול והאזור האישי. אם השרת לא ענה, ההודעה נשלחת שוב כמה פעמים. <a href="../api/">איך מאמתים את החתימה</a></p>' +
-      '<label class="field"><span>כתובת לקבלת ההודעות</span><input id="hUrl" class="ltr" dir="ltr" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://example.com/roster-hook" value="' + esc(s.webhook_url || "") + '"></label>' +
+      '<label class="rfield"><span>כתובת לקבלת ההודעות</span><input id="hUrl" class="ltr" dir="ltr" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" data-hint placeholder="https://example.com/roster-hook" value="' + esc(s.webhook_url || "") + '"></label>' +
       '<p class="hint">https בלבד, בפורט הרגיל, ובכתובת של אתר פומבי: לא כתובת IP, לא localhost, לא workers.dev ולא שירותי nip.io ודומיהם. אם משאירים ריק, לא נשלח כלום.</p>' +
       '<div class="clabel">האירועים שיישלחו</div><div class="chks" id="hEvents">' +
-      HOOK_EVENTS.map((e) => '<label class="chk"><input type="checkbox" name="hev" value="' + e[0] + '"' + (on.includes(e[0]) ? " checked" : "") + '><span><b>' + e[1] + "</b><small>" + e[2] + " " + mono(e[0]) + "</small></span></label>").join("") + "</div>" +
+      HOOK_EVENTS.map((e) => '<label class="chk rfield rfield--check"><input type="checkbox" name="hev" value="' + e[0] + '"' + (on.includes(e[0]) ? " checked" : "") + '><span><b>' + e[1] + "</b><small>" + e[2] + " " + mono(e[0]) + "</small></span></label>").join("") + "</div>" +
       '<div class="ferr" id="hErr" role="alert"></div>' +
       '<div class="savebar"><button type="submit" class="btn" id="hSave">שמירה</button></div></form>' +
       '<section class="card">' + cardHead("סוד החתימה") +
@@ -601,7 +601,7 @@
   const offOf = () => new Set(Array.isArray(D.settings && D.settings.mail_off_types) ? D.settings.mail_off_types : []);
   function typeRow(k, off) {
     const d = DEF[k] || { name: k, when: "" };
-    return '<div class="mtype"><label class="sw"><input type="checkbox" data-mtype="' + k + '" role="switch"' + (off.has(k) ? "" : " checked") + '><span class="trk" aria-hidden="true"></span><span class="swt"><b>' + esc(d.name) + "</b><small>" + esc(d.when) +
+    return '<div class="mtype"><label class="sw rfield rfield--switch"><input type="checkbox" data-mtype="' + k + '" role="switch"' + (off.has(k) ? "" : " checked") + '><span class="trk" aria-hidden="true"></span><span class="swt"><b>' + esc(d.name) + "</b><small>" + esc(d.when) +
       '</small></span></label><button type="button" class="btn ghost sm" data-act="mail-test" data-key="' + k + '" aria-label="שליחת מייל ניסיון: ' + esc(d.name) + '">מייל ניסיון</button></div>';
   }
   /* the values behind the status lines: the form while it is open, else what is saved */
@@ -667,17 +667,17 @@
       '<div class="mtypes">' + PART_TYPES.map((k) => typeRow(k, off)).join("") + "</div></div>" +
 
       '<div class="marea" id="mAreaA"><h3>התראות למנהלים</h3><div class="mstat" id="mStatA"></div>' +
-      '<label class="field"><span>מי מקבל התראות</span><textarea id="mNotify" class="ltr' + roCls + '" dir="ltr" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false"' + ro + ' placeholder="manager@example.com">' + esc((s.notify_emails || []).join("\n")) + "</textarea></label>" +
+      '<label class="rfield"><span>מי מקבל התראות</span><textarea id="mNotify" class="ltr' + roCls + '" dir="ltr" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false"' + ro + ' data-hint placeholder="manager@example.com">' + esc((s.notify_emails || []).join("\n")) + "</textarea></label>" +
       '<p class="hint">' + (own ? "כתובת אחת בכל שורה." : OWNER_ONLY) + " אם הרשימה ריקה, ההתראות נשלחות לכל חשבונות ה־Google של העסק.</p>" +
       '<div class="mtypes">' + ADM_TYPES.map((k) => typeRow(k, off)).join("") + "</div></div>" +
 
       '<div class="marea"><h3>שולח</h3>' +
       '<p class="lead">המיילים יוצאים מהכתובת <bdi dir="ltr">' + esc(s.mail_from_address || "no-reply@floa.co.il") + '</bdi>, בשם שהוגדר לעסק.' + (own ? "" : " " + OWNER_ONLY) + "</p>" +
-      '<label class="field"><span>שם השולח</span><input id="mName" maxlength="60" autocomplete="off"' + ro + ' class="' + roCls.trim() + '" placeholder="' + esc(BIZ.name) + '" value="' + esc(s.sender_name || "") + '"></label>' +
+      '<label class="rfield"><span>שם השולח</span><input id="mName" maxlength="60" autocomplete="off"' + ro + ' class="' + roCls.trim() + '" data-hint placeholder="' + esc(BIZ.name) + '" value="' + esc(s.sender_name || "") + '"></label>' +
       '<p class="hint">' + (own ? "מופיע ליד הכתובת. אם משאירים ריק, יופיע שם העסק." : OWNER_ONLY + " אם הוא ריק, יופיע שם העסק.") + "</p>" +
-      '<label class="field"><span>כתובת השולח</span><input id="mFrom" class="ltr' + roCls + '" dir="ltr" type="email" inputmode="email" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="120"' + ro + ' placeholder="no-reply@floa.co.il" value="' + esc(s.mail_from_address || "") + '"></label>' +
+      '<label class="rfield"><span>כתובת השולח</span><input id="mFrom" class="ltr' + roCls + '" dir="ltr" type="email" inputmode="email" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="120"' + ro + ' data-hint placeholder="no-reply@floa.co.il" value="' + esc(s.mail_from_address || "") + '"></label>' +
       '<p class="hint">' + (own ? "הכתובת שהמשתתף רואה כשולח. אם משאירים ריק, המיילים יוצאים מ־no-reply@floa.co.il. הדומיין של הכתובת צריך להיות מאומת ב־Resend, אחרת המייל לא יישלח." : OWNER_ONLY + " אם היא ריקה, המיילים יוצאים מ־no-reply@floa.co.il.") + "</p>" +
-      '<label class="field"><span>כתובת למענה</span><input id="mContact" class="ltr' + roCls + '" dir="ltr" type="email" inputmode="email" autocomplete="off" autocapitalize="off" spellcheck="false"' + ro + ' placeholder="studio@example.com" value="' + esc(s.contact_email || "") + '"></label>' +
+      '<label class="rfield"><span>כתובת למענה</span><input id="mContact" class="ltr' + roCls + '" dir="ltr" type="email" inputmode="email" autocomplete="off" autocapitalize="off" spellcheck="false"' + ro + ' data-hint placeholder="studio@example.com" value="' + esc(s.contact_email || "") + '"></label>' +
       '<p class="hint">' + (own ? "כשמשתתף עונה למייל, התשובה מגיעה לכאן." : OWNER_ONLY + " כשמשתתף עונה למייל, התשובה מגיעה לכתובת הזאת.") + "</p></div>" +
 
       '<p class="hint" id="mTestHint">"מייל ניסיון" שולח אליכם, ורק אליכם, את התבנית כפי שנשמרה, עם נתוני דוגמה. הוא מסומן בנושא ובגוף המייל וביומן. אם שיניתם משהו כאן, שמרו קודם.</p>' +
@@ -746,15 +746,15 @@
       '<section class="card">' + cardHead("הרשמה") +
       sw("rOpen", s.registration_open !== false, "הרשמה פתוחה", "כשהיא סגורה, טופס ההרשמה באתר מחזיר \"ההרשמה סגורה\".") +
       '<div class="clabel">שדות חובה בטופס ההרשמה</div><div class="chks">' +
-      FIELDS.map((f) => '<label class="chk"><input type="checkbox" name="rf" value="' + f[0] + '"' + (req.has(f[0]) ? " checked" : "") + (f[2] ? " disabled" : "") + "><span><b>" + f[1] + "</b>" + (f[2] ? "<small>חובה תמיד</small>" : "") + "</span></label>").join("") + "</div></section>" +
+      FIELDS.map((f) => '<label class="chk rfield rfield--check"><input type="checkbox" name="rf" value="' + f[0] + '"' + (req.has(f[0]) ? " checked" : "") + (f[2] ? " disabled" : "") + "><span><b>" + f[1] + "</b>" + (f[2] ? "<small>חובה תמיד</small>" : "") + "</span></label>").join("") + "</div></section>" +
       '<section class="card">' + cardHead("אזור אישי") +
       sw("rMe", s.personal_area_enabled !== false, "אזור אישי פעיל", "המשתתפים נכנסים עם Google, מקשרים את הטלפון שלהם ורואים את המפגשים והתשלומים שלהם.") +
       '<div class="clabel">הכתובת של האזור האישי</div><div class="copybox"><bdi class="mono" dir="ltr">' + esc(meUrl()) + '</bdi><button type="button" class="hicon" data-act="copy" data-text="' + esc(meUrl()) + '" aria-label="העתקת הכתובת" title="העתקה">' + icon("copy") + "</button></div>" +
       '<button type="button" class="linkbtn" data-act="copy" data-text="' + esc(iframeCode()) + '">העתקת קוד להטמעה באתר (iframe)</button></section>' +
       '<section class="card">' + cardHead("תשלום וקשר") +
-      '<label class="field"><span>קישור לתשלום</span><input id="rPay" class="ltr" dir="ltr" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://pay.example/studio" value="' + esc(s.payment_url || "") + '"></label>' +
+      '<label class="rfield"><span>קישור לתשלום</span><input id="rPay" class="ltr" dir="ltr" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" data-hint placeholder="https://pay.example/studio" value="' + esc(s.payment_url || "") + '"></label>' +
       '<p class="hint">הקישור שמשתתף פותח כדי לשלם (למשל Bit או PayBox). מופיע במייל ההרשמה ובאזור האישי.</p>' +
-      '<label class="field"><span>מספר וואטסאפ</span><input id="rWa" class="ltr" dir="ltr" type="tel" inputmode="tel" autocomplete="off" placeholder="050-1234567" value="' + esc(s.contact_whatsapp || "") + '"></label>' +
+      '<label class="rfield"><span>מספר וואטסאפ</span><input id="rWa" class="ltr" dir="ltr" type="tel" inputmode="tel" autocomplete="off" data-hint placeholder="050-1234567" value="' + esc(s.contact_whatsapp || "") + '"></label>' +
       '<p class="hint">למי הכפתור "לשלם בדרך אחרת" והקישור לוואטסאפ במיילים פונים. אפשר לכתוב 050-1234567 או +972501234567.</p>' +
       '<div class="ferr" id="rErr" role="alert"></div>' +
       '<div class="savebar"><button type="submit" class="btn" id="rSave">שמירה</button></div></section></form></div>';
@@ -850,8 +850,8 @@
       '<div class="clabel" id="nkKindL">סוג המפתח</div>' +
       '<div class="seg two" role="radiogroup" aria-labelledby="nkKindL"><label><input type="radio" name="nkKind" value="public" checked><span>ציבורי, לדפדפן</span></label><label><input type="radio" name="nkKind" value="secret"><span>סודי, לשרת</span></label></div>' +
       '<p class="hint" id="nkKindHint">מותר להשתמש בו בקוד שרץ בדפדפן. מאפשר רק לקרוא מפגשים, לקבל הרשמות וללחוץ על "שילמתי".</p>' +
-      '<label class="field"><span>שם למפתח</span><input id="nkLabel" maxlength="60" autocomplete="off" autofocus placeholder="האתר הראשי"></label>' +
-      '<label class="field" id="nkOriginsF"><span>אתרים מורשים</span><textarea id="nkOrigins" class="ltr" dir="ltr" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://studio.example"></textarea></label>' +
+      '<label class="rfield"><span>שם למפתח</span><input id="nkLabel" maxlength="60" autocomplete="off" autofocus data-hint placeholder="האתר הראשי"></label>' +
+      '<label class="rfield" id="nkOriginsF"><span>אתרים מורשים</span><textarea id="nkOrigins" class="ltr" dir="ltr" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false" data-hint placeholder="https://studio.example"></textarea></label>' +
       '<p class="hint" id="nkOriginsH">כתובת אחת בכל שורה, בלי נתיב ובלי כוכביות. אם משאירים ריק, כל אתר יוכל להשתמש במפתח.</p>' +
       '<div class="ferr" id="nkErr" role="alert"></div>' +
       '<button type="submit" class="btn block" id="nkGo">יצירת מפתח</button></form>');
@@ -1123,7 +1123,7 @@
     ctx = { kind: "tpl", key, busy: false, resetAsk: false, tab: "edit", last: "tHtml", custom: st.custom };
     openDialog("wide", esc(d.name),
       '<p class="hint">' + esc(d.when) + "</p>" +
-      '<label class="field"><span>נושא</span><input id="tSubject" autocomplete="off" maxlength="200" value="' + esc(st.subject) + '"></label>' +
+      '<label class="rfield"><span>נושא</span><input placeholder=" " id="tSubject" autocomplete="off" maxlength="200" value="' + esc(st.subject) + '"></label>' +
       '<p class="subprev" id="tSubPrev"></p>' +
       '<div class="clabel">משתנים: לחיצה מוסיפה למקום הסמן</div>' +
       '<div class="vchips">' + d.vars.map((v) => '<button type="button" class="tg chip" data-d="var" data-v="' + v + '" title="{{' + v + '}}">' + esc(VAR_NAME[v] || v) + "</button>").join("") + "</div>" +
@@ -1134,7 +1134,7 @@
       "<li>התצוגה המקדימה משתמשת בנתוני דוגמה, ובהגדרות האמיתיות של העסק (קישור תשלום, וואטסאפ, אזור אישי).</li></ul></details>" +
       '<div class="seg two tabsw" role="group" aria-label="עריכה או תצוגה"><button type="button" data-d="tpl-tab" data-tab="edit" aria-pressed="true">עריכה</button><button type="button" data-d="tpl-tab" data-tab="prev" aria-pressed="false">תצוגה מקדימה</button></div>' +
       '<div class="edgrid" id="tplGrid" data-tab="edit">' +
-      '<label class="field ed"><span>גוף המייל (HTML)</span><textarea id="tHtml" class="ltr code" dir="ltr" spellcheck="false" autocomplete="off" autocapitalize="off">' + esc(st.html) + "</textarea></label>" +
+      '<label class="rfield ed"><span>גוף המייל (HTML)</span><textarea placeholder=" " id="tHtml" class="ltr code" dir="ltr" spellcheck="false" autocomplete="off" autocapitalize="off">' + esc(st.html) + "</textarea></label>" +
       '<div class="pv"><span class="pvl">כך זה ייראה, עם דוגמה</span><iframe id="tPrev" title="תצוגה מקדימה של המייל" sandbox="" referrerpolicy="no-referrer"></iframe></div></div>' +
       '<div class="ferr" id="tErr" role="alert"></div><div class="twarn" id="tWarn"></div>' +
       '<div id="tFoot"></div>');

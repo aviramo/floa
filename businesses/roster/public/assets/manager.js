@@ -288,7 +288,7 @@
   function showManager() {
     setView('<div class="bar"><div class="col bar-in">' +
       '<button type="button" class="btn add" id="newBiz" data-act="new">' + icon("plus") + "עסק חדש</button>" +
-      '<input type="search" class="sinp" id="q" placeholder="חיפוש עסק" aria-label="חיפוש עסק" autocomplete="off" hidden>' +
+      '<label class="rfield sinp-f" id="qF" hidden><span>חיפוש עסק</span><input type="search" class="sinp" id="q" placeholder=" " autocomplete="off" hidden></label>' +
       '</div></div><div class="list" id="list"><div class="group" hidden><div class="list-in" id="count"></div></div>' +
       '<div class="lbox" id="listIn"><div class="empty" role="status">טוען…</div></div></div>');
     $("#q").addEventListener("input", function () { S.q = this.value; renderList(); });
@@ -330,7 +330,7 @@
     var box = $("#listIn");
     if (!box) return;
     var q = $("#q"), many = S.biz.length > MANY;
-    q.hidden = !many;
+    q.hidden = !many; $("#qF").hidden = !many;
     var term = many ? lc(S.q) : "";
     var rows = S.biz.filter(function (b) { return !term || lc(b.name).indexOf(term) > -1 || b.slug.indexOf(term) > -1; });
     $("#count").textContent = term ? rows.length + " מתוך " + bizCount(S.biz.length) : bizCount(S.biz.length);
@@ -405,14 +405,14 @@
     afterClose = edit ? back(id, "menu") : null;
     openDialog("form", edit ? "עריכת עסק" : "עסק חדש",
       '<form id="bForm" novalidate>' +
-      '<label class="field"><span>שם העסק</span><input id="bName" maxlength="80" autocomplete="off" autofocus value="' + esc(b ? b.name : "") + '"></label>' +
+      '<label class="rfield"><span>שם העסק</span><input id="bName" placeholder=" " maxlength="80" autocomplete="off" autofocus value="' + esc(b ? b.name : "") + '"></label>' +
       (edit
-        ? '<label class="field"><span>מזהה באותיות לטיניות</span><input id="bSlug" class="ltr" dir="ltr" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" value="' + esc(b.slug) + '"></label>' +
+        ? '<label class="rfield"><span>מזהה באותיות לטיניות</span><input id="bSlug" class="ltr" dir="ltr" placeholder=" " maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" value="' + esc(b.slug) + '"></label>' +
           '<p class="hint">אפשר לשנות. המזהה הוא הכתובת של דף הניהול: floa.co.il/roster/<bdi dir="ltr">' + esc(b.slug) + '</bdi>. אחרי שינוי הכתובת הישנה והקישורים שנוצרו איתה (חיבורים, אזור אישי שמוטמע באתר של העסק, קישורים במיילים שכבר נשלחו) יפסיקו לעבוד.</p>'
-        : '<label class="field"><span>מזהה באותיות לטיניות</span><input id="bSlug" class="ltr" dir="ltr" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="dana-yoga"></label>' +
+        : '<label class="rfield"><span>מזהה באותיות לטיניות</span><input id="bSlug" class="ltr" dir="ltr" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="dana-yoga" data-hint></label>' +
           '<p class="hint">אותיות לטיניות קטנות, ספרות ומקפים, 2 עד 40 תווים, ומתחיל באות. המזהה הוא הכתובת של דף הניהול של העסק: floa.co.il/roster/המזהה. אפשר לשנות אותו אחר כך, אבל אז הכתובת משתנה.</p>') +
       (edit ? "" : '<p class="slugnote" id="bSlugNote" aria-live="polite"></p>' +
-        '<label class="field"><span>השם שהמשתתפים רואים (לא חובה)</span><input id="bDisp" maxlength="60" autocomplete="off"></label>' +
+        '<label class="rfield"><span>השם שהמשתתפים רואים (לא חובה)</span><input id="bDisp" placeholder=" " maxlength="60" autocomplete="off"></label>' +
         '<p class="hint">כך העסק מופיע בהודעות ובמיילים למשתתפים. אם משאירים ריק, זה שם העסק.</p>') +
       '<div class="ferr" id="bErr" role="alert"></div>' +
       '<button type="submit" class="btn block" id="bGo">' + (edit ? "שמירה" : "יצירת עסק") + "</button></form>");
@@ -509,7 +509,7 @@
     openDialog("acc", "חשבונות של <bdi>" + esc(b.name) + "</bdi>",
       '<p class="hint">מי שנכנס עם אחד מחשבונות ה־Google האלה מנהל את המשתתפים של העסק.</p>' +
       '<form class="addrow" id="aForm" novalidate>' +
-      '<label class="field"><span class="sr">כתובת מייל של חשבון Google</span><input id="aEmail" type="email" class="ltr" dir="ltr" placeholder="name@gmail.com" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="email"></label>' +
+      '<label class="rfield"><span>כתובת מייל של חשבון Google</span><input id="aEmail" type="email" class="ltr" dir="ltr" data-hint placeholder="name@gmail.com" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="email"></label>' +
       '<button type="submit" class="btn" id="aAdd">הוספה</button></form>' +
       '<div class="ferr" id="aErr" role="alert"></div>' +
       '<div id="aMine"></div><div class="clabel" id="aCount"></div><div class="acclist" id="aList"></div>');
@@ -636,7 +636,7 @@
     afterClose = back(id, "menu");
     openDialog("form", "מחיקת עסק",
       '<div class="warnbox">מחיקת העסק <b>' + esc(b.name) + "</b> תמחק גם את כל המשתתפים, המפגשים והתשלומים שלו. אי אפשר לבטל את זה.</div>" +
-      '<form id="dForm" novalidate><label class="field"><span>כדי לאשר, כתבו את שם העסק</span><input id="dName" autocomplete="off" autofocus></label>' +
+      '<form id="dForm" novalidate><label class="rfield"><span>כדי לאשר, כתבו את שם העסק</span><input id="dName" placeholder=" " autocomplete="off" autofocus></label>' +
       '<div class="ferr" id="dErr" role="alert"></div>' +
       '<button type="submit" class="btn danger block" id="dGo" disabled>מחיקת העסק</button></form>');
     var inp = $("#dName"), go = $("#dGo");
