@@ -2201,3 +2201,6 @@ body { font-family: var(--font); }
 #mailDlg .sheet-head, #mailDlg .mailmeta { flex: 0 0 auto; }
 #mailDlg .mailbody { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; }
 @media (min-width: 760px) { #mailDlg .sheet { height: auto; max-height: min(90dvh, 920px); } }
+
+/* a note's chip is as wide as its words (the row scrolls sideways): the chip core caps a chip at 100% of the row and clips it, and with the text centred that cut BOTH ends (the first letters vanished). !important because the chip core is built to win by specificity */
+#nList .ntext.chips .nch:not(.nago) { max-width: none !important; overflow: visible !important; text-overflow: clip !important; flex: 0 0 auto !important; }
