@@ -589,3 +589,8 @@ html, body { overflow-x: clip; }
 /* בלי מספרים */
 .list--five li > div::before { content: none; display: none; }
 .list--five .dotm { margin-top: .6rem; }
+
+/* בלי הקו שבין הכותרת לטקסט, והטקסט בגודל ובמרווח המקוריים */
+.list--five h3::after { content: none; display: none; }
+.list--five p { font-size: 1.2rem; margin: .25rem 0 0; }
+.list--five li { padding-block: 22px; }
