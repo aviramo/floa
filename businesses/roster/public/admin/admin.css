@@ -2190,3 +2190,7 @@ body { font-family: var(--font); }
 
 /* a selected card is marked by its frame alone: no "נבחר" word */
 .wrap > .list > .row.last::after, .wrap > .list > .row.sel::after, #pPager .mlist .mrow.hl::after, .ucard.last::after, .ucard.sel::after, .ucard.hl::after { content: none; }
+
+/* the participant card: the grey ground runs down to the very bottom of the screen; the safe-area room is padding INSIDE the grey, not a lighter strip of the dialog below it */
+#pDlg#pDlg:not(.newp) .sheet.sheet { padding-bottom: 0; }
+#pDlg:not(.newp) .ppanel[data-panel="main"] { padding-bottom: var(--sheet-b); }
