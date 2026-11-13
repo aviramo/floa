@@ -564,3 +564,18 @@ html, body { overflow-x: clip; }
 /* כותרות חמשת הכרטיסים והעלים שלהן באותו כתום אורנג' */
 .list--five h3 { color: #F26A0A; }
 .list--five .dotm { background: #F26A0A; }
+
+/* כותרות חמשת הכרטיסים צועקות: כתום העלים המקורי, גופן הכותרות של הדף, גדול, ופס כתום עבה בצד הכרטיס */
+.list--five h3 { color: #E8590C; font-family: var(--display); font-weight: 400; font-size: clamp(2.2rem, 9.4vw, 2.9rem); line-height: 1.08; letter-spacing: -.005em; }
+.list--five .dotm { background: #E8590C; width: 22px; height: 22px; margin-top: .75rem; }
+.list--five li { border-inline-start: 8px solid #E8590C; padding-block: 24px; }
+.list--five p { margin-top: .5rem; }
+
+/* עומק ורצינות: בלי פס עבה. מספר מאופק מעל הכותרת, קו דק מתחתיה, צל עמוק ופינות מרוסנות */
+.list--five { counter-reset: five; gap: 20px; }
+.list--five li { counter-increment: five; border-inline-start: 0; padding: 30px 26px 30px; border-radius: 20px; background: #fff; border: 1px solid rgba(23, 58, 42, .1); box-shadow: 0 30px 50px -34px rgba(23, 58, 42, .55), 0 2px 0 rgba(232, 89, 12, .9) inset; align-items: flex-start; }
+.list--five li > div::before { content: "0" counter(five); display: block; margin-bottom: .35rem; font: 700 .9rem/1 var(--font); letter-spacing: .28em; color: var(--leaf-2, #2F6B3A); opacity: .75; }
+.list--five h3 { font-weight: 400; font-size: clamp(2.1rem, 8.6vw, 2.7rem); line-height: 1.1; }
+.list--five h3::after { content: ""; display: block; width: 56px; height: 2px; margin-top: .7rem; background: #E8590C; opacity: .85; }
+.list--five .dotm { width: 18px; height: 18px; margin-top: 2.1rem; }
+.list--five p { margin-top: .85rem; color: var(--ink, #23362B); }
