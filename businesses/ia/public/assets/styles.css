@@ -547,3 +547,13 @@ html, body { overflow-x: clip; }
   .sun-stage { width: min(340px, 78vw, max(170px, calc(100svh - 560px))); }
 }
 @media (prefers-reduced-motion: reduce) { .cta-dock { transition: none; } }
+
+/* השמש מקבלת את כל המקום שנשאר: הטקסטים והכפתור נדחפים למטה, הרווחים מצומצמים */
+@media (max-width: 899px) {
+  .hero { padding-top: 10px; }
+  .hero-inner { align-content: end; gap: 6px; padding-bottom: 24px; }
+  .sun-stage { margin-top: 0; width: min(420px, 92vw, max(170px, calc(100svh - 432px))); }
+  .hero h1 { line-height: .9; }
+  .hero-sub { margin: .3rem 0 .4rem; }
+  .hero-cta { margin-top: 12px; }
+}
