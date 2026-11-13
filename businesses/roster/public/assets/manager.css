@@ -96,3 +96,7 @@ dialog.acc .sheet-body { overflow: hidden; }
 .trow .rrow__sub { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap-tight) var(--gap-button); }
 .trow .rbtn { flex: 0 0 auto; }
 .trow .rrow__trail { display: flex; align-items: center; gap: var(--gap-tight); }
+/* the swipe hint lives in the list itself (a sibling of .lbox), so it takes the same side room as the rows: on a wide screen it sits in the same centered column as the title and the rows, not edge to edge */
+.rlist > .rhint { margin-inline: max(var(--gutter), calc((100% - var(--w-page)) / 2 + var(--gutter))); }
+/* the ground under the header is the same grey as the list ground of the participants page */
+.view > .rlist { background: var(--surface); }

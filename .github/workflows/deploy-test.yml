@@ -1,0 +1,60 @@
+# =============================================================================
+# test.floa.co.il, published from the `test` branch.
+#
+# The same repo, the same build as the real site. Only two things differ: the
+# pages are adjusted by scripts/inject-test.mjs (every database call goes to
+# the `test` schema, an orange bar says so, noindex), and the result goes to
+# its own Cloudflare Pages project, `floa-test`, whose address is
+# test.floa.co.il. The real site is untouched by anything here.
+#
+# Needs two secrets on the repo: CLOUDFLARE_API_TOKEN (Cloudflare Pages: Edit)
+# and CLOUDFLARE_ACCOUNT_ID. The project is created on the first run.
+# =============================================================================
+name: Deploy test
+
+on:
+  push:
+    branches: [test]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-test
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # The same gate as the real deploy: if this fails, nothing is published.
+      - run: npm test
+
+      - run: node build.mjs
+
+      - name: the worker table is in step with the businesses
+        run: git diff --exit-code -- worker/src/businesses.js
+
+      - run: node scripts/inject-test.mjs dist
+
+      - name: publish to Cloudflare Pages (project floa-test)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          # This repo's logs are public: say what is missing or what failed, never a value, and never run
+          # anything that prints the account (no `wrangler whoami`). The failure is also written as an
+          # annotation (::error::) so it shows on the run's summary page.
+          fail() { echo "::error::$1"; exit 1; }
+          [ -n "$CLOUDFLARE_API_TOKEN" ] || fail "secret CLOUDFLARE_API_TOKEN is missing"
+          [ ${#CLOUDFLARE_ACCOUNT_ID} -eq 32 ] || fail "secret CLOUDFLARE_ACCOUNT_ID is missing or is not 32 characters (it is ${#CLOUDFLARE_ACCOUNT_ID})"
+          npx --yes wrangler@4 pages project create floa-test --production-branch main > create.log 2>&1 || echo "project create: $(tail -n 3 create.log | tr -s '[:space:]' ' ' | cut -c1-300)"
+          npx --yes wrangler@4 pages deploy dist --project-name floa-test --branch main --commit-dirty=true > deploy.log 2>&1 || fail "wrangler: $(grep -iE 'error|code|auth|permission|not found' deploy.log | head -n 4 | tr -s '[:space:]' ' ' | cut -c1-400)"
+          tail -n 3 deploy.log

@@ -13,8 +13,8 @@
   <link rel="stylesheet" href="onboarding.css?v=b05a360f" />
   <link rel="stylesheet" href="../assets/field.css?v=7e4c4a08" />
   <link rel="stylesheet" href="../assets/popup.css?v=75ae0a22" />
-  <link rel="stylesheet" href="../assets/ui.css?v=ce0bcc20" />
-  <link rel="stylesheet" href="admin.css?v=0c044192" />
+  <link rel="stylesheet" href="../assets/ui.css?v=ed7d7ef8" />
+  <link rel="stylesheet" href="admin.css?v=c7121718" />
 </head>
 <body class="locked">
   <div class="gate" id="gate" hidden>
@@ -34,12 +34,12 @@
 
         <div class="msel">
           <h1><button type="button" id="mSel" aria-haspopup="menu" aria-expanded="false"><span class="mldg" aria-hidden="true">טוען<b>.</b><b>.</b><b>.</b></span><span id="mSelTxt">הכל</span><svg data-i="chev"></svg></button></h1>
+          <small class="msub" id="mSub"></small>
           <button type="button" class="hicon nextm" id="nextMBtn" hidden><svg data-i="arrowl"></svg><svg data-i="calnext"></svg></button>   <!-- קיצור דרך למפגש הקרוב: משמאל לחץ בחירת המפגש, עם חץ שמוביל אליו -->
           
           <div class="sortmenu mmenu" id="mMenu" role="menu" hidden></div>
         </div>
         <div class="hgrp">
-        <button type="button" class="hicon" id="tagEditBtn" aria-label="מה מוצג בשורת הצ'יפים" title="מה מוצג בשורת הצ'יפים"><svg data-i="eye"></svg></button>   <!-- עריכת תגיות: מימין לכפתור התפריט -->
         <div class="hicons">
           <button type="button" class="hicon" id="menuBtn" aria-label="תפריט" title="תפריט" aria-haspopup="menu" aria-expanded="false"><svg data-i="grid"></svg></button>
           <div class="hmenu" id="hMenu" role="menu" hidden>
@@ -193,7 +193,7 @@
       </div>
       <div class="ppanel" data-panel="refund" hidden>
         <p class="ptext"></p>
-        <div class="payact payact--col"><button class="btn soft-red" id="refundYes" type="button">להחזיר תשלום</button><button class="btn soft-yel" id="creditYes" type="button">להשאיר כקרדיט (בלי להחזיר כסף)</button><button class="btn ghost btn--quiet" id="refundNo" type="button">ביטול</button></div>
+        <div class="payact payact--col"><button class="btn soft-red" id="refundYes" type="button">להחזיר תשלום</button><button class="btn soft-yel" id="creditYes" type="button">להשאיר כקרדיט (בלי להחזיר כסף)</button></div>
       </div>
     </form>
   </dialog>
@@ -330,14 +330,6 @@
         <p class="ptext" id="setDelText"></p>
         <div class="sopts" id="setDelOpts"></div>
       </div>
-      <div id="setSt" hidden>
-        <div id="stBoth">
-        <section class="stsec"><div id="stShow"></div></section>
-        <section class="stsec">
-        <div id="stList"></div>
-        <button type="button" id="stAdd" data-fab="תגית חדשה"></button></section>
-        </div>
-      </div>
     </div>
   </dialog>
 
@@ -406,7 +398,6 @@
       <p class="ctext" id="cText"></p>
       <button class="btn" id="cYes" type="button">אישור</button>
       <button class="btn ghost" id="cAlt" type="button" hidden>אפשרות נוספת</button>
-      <button class="btn ghost btn--quiet" id="cNo" type="button">ביטול</button>
     </form>
   </dialog>
   <dialog id="finFormDlg" data-from="bottom" aria-labelledby="finFormTitle">
@@ -429,11 +420,12 @@
   </dialog>
 
   <div class="qmenu" id="qMenu" role="menu" hidden></div>
-  <dialog id="viewDlg" data-from="bottom" class="mdlg" aria-labelledby="viewTitle"><div class="sheet"><div class="sheet-head"><h2 id="viewTitle">סינון</h2></div><div class="qmenu" id="viewMenu" role="menu" hidden></div></div></dialog>
+  <dialog id="viewDlg" data-from="bottom" class="mdlg" aria-labelledby="viewTitle"><div class="sheet"><div class="sheet-head"><h2 id="viewTitle">תצוגה סינון ומיון</h2><button type="button" class="vclear" id="viewClear" disabled>איפוס</button></div><div class="qmenu" id="viewMenu" role="menu" hidden></div></div></dialog>
   <dialog id="sortDlg" data-from="bottom" class="mdlg" aria-labelledby="sortTitle"><div class="sheet"><div class="sheet-head"><h2 id="sortTitle">מיון</h2></div><div class="sortmenu" id="sortMenu" role="menu" hidden></div></div></dialog>
-  <dialog id="waDlg" data-from="bottom" class="mdlg" aria-labelledby="waTitle"><div class="sheet"><div class="sheet-head"><h2 id="waTitle">וואטסאפ</h2></div><div class="sortmenu" id="waMenu" role="menu" hidden></div></div></dialog>
+  <dialog id="waDlg" data-from="bottom" class="mdlg" aria-labelledby="waTitle"><div class="sheet"><div class="sheet-head"><h2 id="waTitle">שליחת הודעות</h2></div><div class="sortmenu" id="waMenu" role="menu" hidden></div></div></dialog>
   <div class="qmenu" id="fMenu" role="menu" hidden></div>
   <div class="qmenu" id="chipMenu" role="menu" hidden></div>
+  <div class="qmenu" id="wmMenu" role="menu" hidden></div>
   <div id="splitHandle" role="separator" aria-orientation="vertical" aria-label="רוחב הרשימה (גרירה, חצים במקלדת, לחיצה כפולה לברירת המחדל)" title="גרירה לשינוי הרוחב · לחיצה כפולה: ברירת מחדל" tabindex="0"></div>
   <div id="splitEmpty" aria-hidden="true"><svg data-i="user"></svg><p>בחרו משתתף מהרשימה כדי לראות את הכרטיס שלו</p></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -443,10 +435,10 @@
   <script src="age.js?v=816fedce"></script>
   <script src="rt.js?v=9f0bd1e7"></script>
   <script src="../assets/field.js?v=3373b0b3"></script>
-  <script src="admin.js?v=5dcd8a95"></script>
+  <script src="admin.js?v=1b9524a2"></script>
   <script src="onboarding.js?v=544be310"></script>
-  <script src="/roster/assets/ui.js?v=a6cbba89"></script>
+  <script src="/roster/assets/ui.js?v=d259a570"></script>
   <script src="/roster/assets/undo.js?v=6df1b937"></script>
-  <script src="/roster/admin/admin-kit.js?v=166a74d0"></script>
+  <script src="/roster/admin/admin-kit.js?v=bf85a112"></script>
 </body>
 </html>

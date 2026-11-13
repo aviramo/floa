@@ -33,6 +33,7 @@ create policy "agents are the owner's" on public.job_agents
   with check (owner = auth.uid());
 
 -- Private storage for the CVs: a folder per account, and only that account in it.
+-- test-env:skip (the bucket is shared by the whole project)
 insert into storage.buckets (id, name, public)
 values ('job-cvs', 'job-cvs', false)
 on conflict (id) do nothing;
@@ -42,6 +43,7 @@ create policy "cvs are the owner's" on storage.objects
   for all to authenticated
   using (bucket_id = 'job-cvs' and (storage.foldername(name))[1] = auth.uid()::text)
   with check (bucket_id = 'job-cvs' and (storage.foldername(name))[1] = auth.uid()::text);
+-- test-env:end
 
 -- ==========================================================================
 -- What the agents find. A run is a request to scan ("שלח משרות"); the local

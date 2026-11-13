@@ -29,6 +29,8 @@
     plus: ['s', '<path d="M12 5v14"/><path d="M5 12h14"/>'],
     enter: ['s', '<path d="M4 12h11M11 7l5 5-5 5M20 5v14"/>'],
     eye: ['s', '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'],
+    palette: ['s', '<circle cx="12" cy="12" r="9"/><circle cx="8" cy="10" r="1.2"/><circle cx="12" cy="7.5" r="1.2"/><circle cx="16" cy="10" r="1.2"/><path d="M12 21c-1.5 0-1.5-2 0-3 1.5-1 1-3-1-3"/>'],
+    eyeoff: ['s', '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M4 4l16 16"/>'],
     free: ['s', '<circle cx="12" cy="12" r="8.5"/><path d="M6 18L18 6"/>'],
     go: ['s', '<path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/>'],
     grid: ['s', '<rect x="4" y="4" width="6.5" height="6.5" rx="1.8"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.8"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.8"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.8"/>'],
@@ -44,6 +46,7 @@
     sdown: ['s', '<path d="M12 5v14M6 13l6 6 6-6"/>'],
     sup: ['s', '<path d="M12 19V5M6 11l6-6 6 6"/>'],
     filter: ['s', '<path d="M4 5h16l-6.5 7.5V18l-3 1.5v-7z"/>'],
+    mixer: ['s', '<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>'],
     warn: ['s', '<path d="M12 4 2.5 20h19z"/><path d="M12 10v4.5"/><path d="M12 17.5h.01"/>'],   // אזהרה
     sun: ['s', '<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/>'],   // מצב בהיר
     moon: ['s', '<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>'],   // מצב כהה
@@ -173,7 +176,7 @@
     if (state.regF) sp.set('rg', state.regF);
     if (state.q.trim()) sp.set('q', state.q.trim());
     if (openPid) { sp.set('p', openPid); if (pTab && pTab !== 'main' && pTab !== 'contact' && pTab !== 'meets' && pTab !== 'deposit') { sp.set('pt', pTab); } if (sheet && sheet.mailId && document.getElementById('mailDlg').open) sp.set('ml', sheet.mailId); if (pTab === 'main' && PG.cur) sp.set('pg', PG_IDS[PG.cur]); }
-    if ($('#setDlg').open) sp.set('set', setView === 'main' ? '1' : setView === 'tydet' ? 'tydet:' + (tyId || '') : (setView === 'del' && setRoot === 'src') ? 'src' : (setView === 'st' || setView === 'del') ? ('st:' + (stType || '')) : setView === 'em' ? 'em:' + (stType || '') : setView);   // סוג מפגש: עריכת הסוג, התגיות וההודעה שלו
+    if ($('#setDlg').open) sp.set('set', setView === 'main' ? '1' : setView === 'tydet' ? 'tydet:' + (tyId || '') : (setView === 'del' && setRoot === 'src') ? 'src' : setView === 'del' ? ('st:' + (stType || '')) : setView === 'em' ? 'em:' + (stType || '') : setView);   // סוג מפגש: עריכת הסוג, התגיות וההודעה שלו
     if ($('#prDlg').open && prCur) sp.set('pr', prCur);
     if (mDlg.open) sp.set('em', editingMeeting ? editingMeeting.id : 'new');   // עריכת מפגש או מפגש חדש
     if ($('#tplDlg').open && tplEd && tplEd.id) { sp.set('tpl', tplEd.id); if ($('#tplPrevDlg').open) sp.set('tplv', '1'); }   // עריכת תבנית הודעה, והצפייה בה
@@ -702,7 +705,7 @@
         try { sessionStorage.removeItem('roster_deep'); } catch (e) {}
         if (d.m && state.meetings.some((x) => x.id === d.m)) state.filter = d.m;
         if (d.mt && typeById(d.mt) && !state.filter) state.mtype = d.mt;   // בחירה אחת: מפגש גובר על סוג
-        { const ks = payKeys(d.pay).filter((k) => k === '__none' || state.statuses.some((x) => x.key === k)); if (ks.length) state.pay = ks.join(','); }   // סינון לפי תגית אחת מהקישור
+        { const ks = payKeys(d.pay).filter((k0) => { const k = k0.replace(/^!/, ''); return k === '__none' || state.statuses.some((x) => x.key === k); }); if (ks.length) state.pay = ks.join(','); }   // סינון לפי תגית אחת מהקישור
         if (d.pd === '1' || d.pd === '0' || d.pd === 'n' || d.pd === 'x' || d.pd === 'l' || d.pd === 'r' || d.pd === 'u' || /^a\d+$/.test(d.pd || '') || /^m[A-Za-z0-9_]+$/.test(d.pd || '')) state.paidF = d.pd === 'x' ? 'n' : d.pd;   // x: קישור ישן של "לא שולם", שאוחד עם לא לתשלום
         if (d.at === '1' || d.at === '0') state.arrF = d.at;
         if (d.sv === '1' || d.sv === '0') state.sent = d.sv;
@@ -729,7 +732,7 @@
           renderSettings(); $('#setDlg').showModal();
           const v = d.set;
           if (d.pr && promoterOf(d.pr)) { setRoot = 'src'; showSetView('src'); showPromoterDetail(d.pr); $('#prDlg').showModal(); }
-          else if (/^(type|tydet|st|em):/.test(v || '') && typeById(v.split(':')[1])) { const id0 = v.split(':')[1], k0 = v.split(':')[0]; tyId = id0; stType = id0; if (k0 === 'st') { tyId = null; setRoot = 'st'; showSetView('st'); } else if (k0 === 'em') showSetView('em'); else { setRoot = 'tydet'; showSetView('tydet'); } }   // סוג מפגש: עריכה, פרטי ברירת המחדל, התגיות או ההודעה שלו
+          else if (/^(type|tydet|em):/.test(v || '') && typeById(v.split(':')[1])) { const id0 = v.split(':')[1], k0 = v.split(':')[0]; tyId = id0; stType = id0; if (k0 === 'st') { tyId = null; setRoot = 'st'; showSetView('st'); } else if (k0 === 'em') showSetView('em'); else { setRoot = 'tydet'; showSetView('tydet'); } }   // סוג מפגש: עריכה, פרטי ברירת המחדל, התגיות או ההודעה שלו
           else if (['src', 'pm'].includes(v)) { setRoot = v; showSetView(v); }
           if (document.activeElement && document.activeElement.closest('#setDlg')) document.activeElement.blur(); syncUrl();
         }
@@ -775,19 +778,14 @@
     const fxw = (txt, n) => '<span class="fx"><span>' + txt + ' <small>' + n + '</small></span><span class="ph" aria-hidden="true">' + txt + ' <small>' + w + '</small></span></span>';
     { const gOn = gk.length > 0; if (showChip('gen', gk.length > 0)) {   // צ'יף אחד למגדר: שני המונים, ותפריט לבחירה
         chipCnt = chipCnt || {}; chipCnt.gen = { all: men + wom, y: men, n: wom }; window.__chipCnt = Object.assign(window.__chipCnt || {}, { gen: chipCnt.gen });
-        h += btn('gen', '', false, '<span class="fx cm"><span class="gc' + (gk.includes('female') ? ' on' : '') + '" data-g="female" role="button" aria-pressed="' + gk.includes('female') + '" aria-label="נקבה ' + wom + '" title="נקבה">' + icon('female', 'i16') + '<small>' + wom + '</small></span><span class="gc' + (gk.includes('male') ? ' on' : '') + '" data-g="male" role="button" aria-pressed="' + gk.includes('male') + '" aria-label="זכר ' + men + '" title="זכר">' + icon('male', 'i16') + '<small>' + men + '</small></span></span>').replace('<button ', '<button role="group" aria-label="מגדר" '); } }
+        h += btn('gen', '', gk.length > 0, '<span class="fx cm"><span class="gc' + (gk.includes('female') ? ' on' : '') + '" data-g="female" role="button" aria-pressed="' + gk.includes('female') + '" aria-label="נקבה ' + wom + '" title="נקבה">' + icon('female', 'i16') + '<small>' + wom + '</small></span><span class="gc' + (gk.includes('male') ? ' on' : '') + '" data-g="male" role="button" aria-pressed="' + gk.includes('male') + '" aria-label="זכר ' + men + '" title="זכר">' + icon('male', 'i16') + '<small>' + men + '</small></span></span>').replace('<button ', '<button data-cm="gen" aria-haspopup="menu" aria-label="מגדר: נשים " + wom + ", גברים " + men + "" title="מגדר" '); } }
     h += filterBtnHtml();   // כפתור הסינון: אחרי המגדר
-    const pk = payKeys(state.pay);   // תגיות שקיימות: אחרי הנשים; המונה לפי הרשימה, בלי הסינון של התגית עצמה
-    const inScope = state.participants.filter((p) => (state.filter ? linkOf(p.id, state.filter) : p.active !== false) && mtypeOk(p));   // תגית שאף משתתף בתצוגה לא משויך אליה לא מוצגת (נבחרת נשארת, כדי שאפשר יהיה לבטל)
-    statusList(state.filter ? undefined : state.mtype || null).filter((t) => (pk.includes(t.key) || inScope.some((p) => stMatch(p, t.key))) && (!state.tagHide.includes(t.key) || pk.includes(t.key))).forEach((t) => {
-      const n = pool.filter((p) => paidOk(p) && genOk(p) && stMatch(p, t.key)).length, pc = PALETTE[t.color] || PALETTE.neutral;
-      h += '<button type="button" class="stc tagc' + (n ? '' : ' zero') + '" data-ct="' + esc(t.key) + '" data-sc="1" style="--sbg:' + pc[0] + ';--sfg:' + pc[1] + '" aria-pressed="' + pk.includes(t.key) + '">' + fxw(esc(t.label), n) + '</button>';
-    });
+    const pk = payKeys(state.pay);   // the tag chips are in the filter popup (mixer button), never in this row
     const edit = '';   // כפתור עריכת התגיות עבר לכותרת (#tagEditBtn)
     const fpI = h.lastIndexOf('<button type="button" class="fspair"'); let lastI = h.lastIndexOf('<button'); if (fpI >= 0 && h.indexOf('data-ct', fpI) < 0) lastI = fpI;   // בלי תגיות: הצ'יף האחרון הוא כפתור הסינון והמיון
     //   // אילוץ: העיפרון לא נשאר לבד בשורה, הצ'יף האחרון והעיפרון תמיד יחד
     h = lastI < 0 ? edit : h.slice(0, lastI) + '<span class="stlast">' + h.slice(lastI) + edit + '</span>';   // כניסה לעריכת התגיות (קודם בכותרת הקבוצה בתפריט הסינון)
-    el.innerHTML = h;
+    el.innerHTML = h; syncReset();
   }
   /* תפריט בחירת מצב לצ'יפים "משוריינים" ו"הגיעו": הכל, כן, לא (עם הכמות); הצ'יף סגור מציג רק סמל ומונה */
   const CHIP_DEF = { res: { lab: ['הכל', 'משוריינים', 'לא משוריינים'], cur: () => state.paidF === 'r' ? 1 : state.paidF === 'u' ? 2 : 0, set: (i) => { state.paidF = i === 1 ? 'r' : i === 2 ? 'u' : null; } },
@@ -799,20 +797,32 @@
     m.innerHTML = d.lab.map((t, i) => '<button type="button" role="menuitemradio" aria-checked="' + (i === cur) + '" class="cmi' + (i === cur ? ' on' : '') + '" data-ci="' + i + '">' + t + ' <small>' + (i === 0 ? n.all : i === 1 ? n.y : n.n) + '</small></button>').join('');
     m.hidden = false; m.style.left = menuX(m, anchor) + 'px'; placeMenuV(m, anchor.getBoundingClientRect().top, anchor.getBoundingClientRect().bottom, true);
   }
+  $('#wmMenu').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-wmk]'); if (!b) return; const k = b.dataset.wmk; $('#wmMenu').hidden = true;
+    if (k === 'msg') { if (!waSelected()) { const lt = waLast(); if (lt) { closeWa(); waSetSel(lt.id); waResetSent(''); render(); const nb = $('#waMsgBtn'); if (nb) toggleWa(nb); return; } } const nb = $('#waMsgBtn'); if (nb) toggleWa(nb); return; }
+    closeWa();
+    if (k === 'att') { if (!attMode()) { waSetSel(ATT_SEL); waResetSent(''); } }
+    else if (waSelected() || attMode()) { waSetSel(''); waResetSent(''); }
+    render();
+  });
   $('#chipMenu').addEventListener('click', (e) => { const b = e.target.closest('[data-ci]'); if (!b) return; CHIP_DEF[$('#chipMenu').dataset.kind].set(+b.dataset.ci); $('#chipMenu').hidden = true; render(); });
-  const filterBtnHtml = () => '<button type="button" class="fspair' + (panelOn() ? ' on' : '') + '" id="filtBtn" aria-pressed="' + !!panelOn() + '" aria-haspopup="menu" aria-expanded="' + !$('#viewMenu').hidden + '" aria-label="סינון ותצוגה' + (panelOn() ? ' (יש סינון פעיל)' : '') + '" title="סינון ותצוגה">' + icon('sort', 'i16') + icon('filter', 'i16') + '</button>';   // לחיצה אחת פותחת את פופאפ הסינון; שני הסמלים צמודים
+  /* the mixer button carries the same mark as every chosen button (the bar along its bottom edge) when a filter of the popup, a sort or a display choice is active */
+  /* ONE question for two things: is there anything to reset? The reset button is enabled, and the mixer shows its bar, exactly when the answer is yes. */
+  const rowChipPay = () => state.paidF === 'r' || state.paidF === 'u';   // "משוריינים" is a button of the row, not a filter of the popup
+  const canReset = () => !!(state.pay || (state.paidF && !rowChipPay()) || state.bal || state.srcF || state.ageF || state.mcF || state.updF || state.regF || state.sort !== 'last' || state.sortDir !== 'desc');   // the four buttons of the row (reserved, arrived, women, men) and the mark button have their own marks: they never count here
+  const mixOn = canReset;
+  const syncReset = () => { const vc = $('#viewClear'); if (vc) vc.disabled = !canReset(); };
+  const filterBtnHtml = () => '<button type="button" class="fspair' + (mixOn() ? ' on' : '') + '" id="filtBtn" aria-pressed="' + mixOn() + '" aria-haspopup="menu" aria-expanded="' + !$('#viewMenu').hidden + '" aria-label="תצוגה, סינון ומיון' + (mixOn() ? ' (יש בחירה פעילה)' : '') + '" title="תצוגה, סינון ומיון">' + icon('mixer') + '</button>';   // לחיצה אחת פותחת את פופאפ הסינון; שני הסמלים צמודים
   /* בלי סרגל המילוי האוטומטי של כרום (כתובת, כרטיס אשראי, סיסמאות והשם של החשבון) מעל המקלדת: הערך "off" מתעלמים ממנו, אז משתמשים בערך לא חוקי */
   { const noFill = (root) => (root.querySelectorAll ? root.querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=date]):not([type=time]), textarea') : []).forEach((el) => { if (el.getAttribute('autocomplete') !== 'nope') el.setAttribute('autocomplete', 'nope'); });
     noFill(document); new MutationObserver((ml) => ml.forEach((m) => m.addedNodes.forEach((n) => { if (n.nodeType === 1) { if (n.matches && n.matches('input, textarea')) noFill({ querySelectorAll: () => [n] }); else noFill(n); } }))).observe(document.body, { childList: true, subtree: true });
     document.addEventListener('focusin', (e) => { const t = e.target; if (t && t.matches && t.matches('input, textarea') && t.getAttribute('autocomplete') !== 'nope' && !/^(checkbox|radio|file|date|time)$/.test(t.type)) t.setAttribute('autocomplete', 'nope'); }, true); }
   $('#chipRow').addEventListener('click', (e) => {
-    if (e.target.closest('[data-edit-tags]')) { openStatusSettings(); return; }
     const t = e.target.closest('[data-ct]');
     if (t) { const k = t.dataset.ct; state.pay = payKeys(state.pay).includes(k) ? null : k; render(); return; }   // תגית אחת בכל פעם
-    const gb = e.target.closest('[data-g]'); if (gb) { state.gender = payKeys(state.gender).includes(gb.dataset.g) ? null : gb.dataset.g; render(); return; }   // מגדר: בחירה ישירה (לחיצה נוספת מבטלת), בלי תפריט
     const cmb = e.target.closest('[data-cm]'); if (cmb) { openChipMenu(cmb.dataset.cm, cmb); return; }   // משוריינים והגיעו: תפריט לבחירת המצב
     const b = e.target.closest('[data-cr]'); if (!b) return; const k = b.dataset.cr;
-    if (k === 'arr') { arrKeep = null; state.arrF = state.arrF === '1' ? '0' : state.arrF === '0' ? null : '1'; }   // הצ'יף מסנן בלבד: מצב המתג (וואטסאפ / הודעה / הגעה) לא משתנה   // הכל ← הגיעו ← לא הגיעו ← הכל; סימון מעביר את עמודת הסימון (כפתור הוואטסאפ) למצב הגעה, וחזרה ל"הכל" סוגרת אותו ומחזירה למה שהיה
+    if (k === 'arr') { arrKeep = null; state.arrF = state.arrF === '1' ? (notArrOk() ? '0' : null) : state.arrF === '0' ? null : '1'; }   // הצ'יף מסנן בלבד: מצב המתג (וואטסאפ / הודעה / הגעה) לא משתנה   // הכל ← הגיעו ← לא הגיעו ← הכל; סימון מעביר את עמודת הסימון (כפתור הוואטסאפ) למצב הגעה, וחזרה ל"הכל" סוגרת אותו ומחזירה למה שהיה
     else if (k === 'res') state.paidF = state.paidF === 'r' ? 'u' : state.paidF === 'u' ? null : 'r';   // הכל ← משוריינים ← לא משוריינים ← הכל
     else state.gender = payKeys(state.gender).includes(k) ? null : k;
     render();
@@ -835,6 +845,7 @@
     const actP = state.participants.filter((x) => x.active !== false);
     const pOfType = (tid) => { const ms = new Set(state.meetings.filter((m) => typeIdOf(m) === tid).map((m) => m.id)); const ids = new Set(state.att.filter((a) => ms.has(a.meeting_id)).map((a) => a.participant_id)); return actP.filter((x) => ids.has(x.id)).length; };
     /* בכותרת, בכל המצבים: סמל וכמות המשתתפים המשויכים, אותו מספר כמו בתפריט (לא תלוי בסינונים; מה שמוצג אחרי סינון הוא המונה שבשורת הסינון) */
+    { const sub = $('#mSub'); if (sub) sub.textContent = cur ? (meetName(cur) || (typeById(typeIdOf(cur)) || {}).name || 'מפגש') : (state.mtype && typeById(state.mtype) ? 'סוג מפגש' : 'בכל המפגשים'); }   // under the title, always a text: a meeting shows its name (else its type, else "מפגש"); a type shows "סוג מפגש"; all participants shows "בכל המפגשים"
     $('#mSel').setAttribute('aria-label', $('#mSelTxt').textContent);
     const mcell = (n, k, dim) => '<span class="mc' + (dim ? ' dim' : '') + '" title="' + MCI[k][1] + '" aria-label="' + MCI[k][1] + ' ' + n + '"><i class="mci" aria-hidden="true">' + MCI[k][0] + '</i>' + n + '</span>';   // הסמל מימין למספר, כל הסמלים בעמודה על אותו קו אנכי
     /* סוגי המפגשים לפי המפגש האחרון שלהם (התאריך והשעה המאוחרים ביותר, גם עתידי): הסוג של המפגש האחרון ראשון; סוג בלי מפגשים בסוף, לפי הסדר הקבוע */
@@ -842,7 +853,7 @@
     const typesByLast = state.mtypes.map((t, i) => ({ t, i, k: lastOfType(t.id) })).sort((x, y) => (y.k - x.k) || (x.i - y.i)).map((x) => x.t);
     const types = state.mtypes.length ? typesByLast.map((t) => '<div class="mtr mrow2 mtyrow" role="menuitemradio" tabindex="0" data-mt="' + t.id + '" aria-checked="' + (state.mtype === t.id && !state.filter) + '"><span>' + esc(t.name || 'ללא שם') + '</span>' + mcell(state.meetings.filter((m) => typeIdOf(m) === t.id).length, 'cal') + mcell(pOfType(t.id), 'user') +
         (state.mtype === t.id && !state.filter ? '<button type="button" class="medit" data-edit-t="' + t.id + '" aria-label="עריכת סוג המפגש" title="עריכת סוג המפגש">' + EDIT_ICON + '</button>' : '<span></span>') + '</div>').join('') +
-      '<div class="mtr maddrow addt" id="addType"><span>סוג מפגש חדש</span><button type="button" role="menuitem" class="medit madd" aria-label="סוג מפגש חדש">' + icon('plus') + '</button></div>' : '';   // השם בימין והפלוס מיד אחריו, וכל השורה לחיצה
+      '<div class="mtr maddrow addt" id="addType"><button type="button" role="menuitem" class="rbtn rbtn--sm madd2" aria-label="סוג מפגש חדש">' + icon('plus') + ' סוג מפגש</button></div>' : '';   // השם בימין והפלוס מיד אחריו, וכל השורה לחיצה
     const shownM = state.meetings.filter((m) => !state.mtype || typeIdOf(m) === state.mtype);
     /* "כל המשתתפים" ראשון: רמה מעל סוגי המפגשים והמפגשים */
     $('#mMenu').innerHTML = '<div class="mtop">' +
@@ -853,11 +864,11 @@
         return '<div class="mtr mrow2' + (isPast(m) ? ' past' : '') + (isNext ? ' next' : '') + '" role="menuitemradio" tabindex="0" data-filter="' + m.id + '" aria-checked="' + (state.filter === m.id) + '"><span>' + dayTime(m) + '</span>' + (isPast(m) ? mcell(ls.filter((l) => l.attended).length, 'came') : mcell(ls.filter((l) => allocatedOf(l.participant_id, m.id) > 0 && !(dueOf(l.participant_id, m.id) > 0)).length, 'paid')) + mcell(ls.length, 'reg') +
           (state.filter === m.id ? '<button type="button" class="medit" data-edit-m="' + m.id + '" aria-label="עריכת מפגש" title="עריכת מפגש">' + EDIT_ICON + '</button>' : '<span></span>') + (meetName(m) ? '<span class="mrname"><bdi>' + esc(meetName(m)) + '</bdi></span>' : '') + '</div>';
       }).join('') +
-      '<div class="mtr maddrow" id="addMeeting"><span>מפגש חדש</span><button type="button" role="menuitem" class="medit madd" aria-label="מפגש חדש">' + icon('plus') + '</button></div>';
+      '<div class="mtr maddrow" id="addMeeting"><button type="button" role="menuitem" class="rbtn rbtn--sm madd2" aria-label="מפגש חדש">' + icon('plus') + ' מפגש</button></div>';
     if (!$('#mMenu').hidden) placeMSel();   // התפריט נשאר פתוח בבחירה: הכותרת משנה רוחב והוא נשאר צמוד אליה
   }
   const closeMSel = () => { $('#mMenu').hidden = true; $('#mSel').setAttribute('aria-expanded', 'false'); };
-  const placeMSel = () => { const m = $('#mMenu'); if (window.innerWidth < 700) { m.style.left = m.style.right = ''; m.style.top = Math.round($('#mSel').getBoundingClientRect().bottom + 8) + 'px'; } else { m.style.top = ''; const host = m.offsetParent || m.parentElement, hr = host.getBoundingClientRect(); m.style.right = 'auto'; m.style.left = (menuX(m, $('#mSel')) - hr.left) + 'px'; } m.style.maxHeight = Math.max(240, Math.floor(window.innerHeight - m.getBoundingClientRect().top - 12)) + 'px'; };
+  const placeMSel = () => { const m = $('#mMenu'); if (window.innerWidth < 700) { m.style.left = m.style.right = ''; m.style.top = Math.round($('header.top').getBoundingClientRect().bottom) + 'px'; } else { m.style.top = ''; const host = m.offsetParent || m.parentElement, hr = host.getBoundingClientRect(); m.style.right = 'auto'; m.style.left = (menuX(m, $('#mSel')) - hr.left) + 'px'; } m.style.maxHeight = Math.max(240, Math.floor(window.innerHeight - m.getBoundingClientRect().top - 12)) + 'px'; };
   $('#mSel').addEventListener('click', (e) => { e.stopPropagation(); const m = $('#mMenu'); m.hidden = !m.hidden; $('#mSel').setAttribute('aria-expanded', String(!m.hidden)); if (!m.hidden) placeMSel(); });   // התפריט עד תחתית המסך, ונגלל בתוכו   // דסקטופ: הקצה הימני של התפריט בקו ישר עם הקצה הימני של הכותרת; במובייל ממורכז
   document.addEventListener('click', (e) => { if (e.target.isConnected && !e.target.closest('.msel')) closeMSel(); });   // (isConnected: שורה שהתפריט צייר מחדש כבר לא בדף, ואינה לחיצה בחוץ)
 
@@ -932,7 +943,7 @@
     return true;
   };
   const payKeys = (s) => s ? String(s).split(',').filter(Boolean) : [];   // state.pay: התגית שנבחרה בפס
-  const matchPay = (p, keys) => !keys.length || keys.some((k) => stMatch(p, k));
+  const matchPay = (p, keys) => { if (!keys.length) return true; const pos = keys.filter((k) => k[0] !== '!'), neg = keys.filter((k) => k[0] === '!').map((k) => k.slice(1)); return (!pos.length || pos.some((k) => stMatch(p, k))) && !neg.some((k) => stMatch(p, k)); };   // a key written !key means everyone who does NOT have that tag
   const effPay = () => state.q.trim() ? null : state.pay;
   /* העדפות תצוגה ברמת המשתמש ובמפגש (27.10.26): לכל מנהל, לכל מפגש ולתמונת המצב הכללית ("all") ערכים משלהם לטוגלים (תגיות, תשלום: true/false; שליחה, הגעה: null = אוטומטי לפי התזמונים של אותו מפגש). state.showTags וחבריו הם מאפיינים שמחזירים וכותבים את ערכי ההקשר הנוכחי (המפגש הנבחר או "all"), כך שבמעבר בין מפגשים התצוגה מתחלפת איתם. נשמר ב-roster_admin_prefs.view_scopes */
   const VIEW_DEF = { pay: true, sent: null, gender: true };   // gender: זכר / נקבה בשורת הסינון, מסומן כברירת מחדל
@@ -999,7 +1010,8 @@
   const paidOk0 = (p) => { const f = effPaidF(); return (!f || payF(p, f)) && sentOk(p); };
   /* הגיעו / לא הגיעו (הצ'יף בשורה העליונה, אחרי המשוריינים): לפי סימון ההגעה למפגש (attended), רק בתוך מפגש שהתחיל, ומושהה בזמן חיפוש כמו שאר הסינונים */
   const arrOpen = () => !!(state.filter && meetOf(state.filter));   // הצ'יף "הגיעו" והסינון שלו בכל מפגש נבחר, גם בכזה שעוד לא התחיל (7.11.26, לבקשת בעל האתר; קודם רק במפגש שהתחיל או במצב הגעה)
-  const effArrF = () => (state.q.trim() || !arrOpen()) ? null : state.arrF;
+  const notArrOk = () => { const m = meetOf(state.filter); return !!m && meetingStarted(m); };   // "לא הגיע" exists only once the meeting has started: before that nobody has missed it
+  const effArrF = () => (state.q.trim() || !arrOpen()) ? null : state.arrF;   // the list filter "not arrived" is always available (before the start it is simply everyone)
   /* סימון הגעה לא משנה את הצגת המשתתף ברשימה (7.11.26): כשסינון הגעה פעיל (הגיעו / לא הגיעו) וסימנו הגעה, מי שהיה ברשימה נשאר בה גם אם הסימון היה מוציא אותו, עד שהסינון מתחלף
      (הצ'יף, תפריט העמודה, איפוס סינונים, מפגש אחר או חיפוש). arrKeep: { f, m, ids } תמונת המשתתפים שהיו ברשימה ברגע הסימון הראשון */
   let arrKeep = null;
@@ -1007,7 +1019,7 @@
   const arrOk = (p) => { const f = effArrF(); if (!f) return true; if (arrKeep && arrKeep.f === f && arrKeep.m === state.filter && arrKeep.ids.has(p.id)) return true; return arrRaw(p); };
   const arrFreeze = () => { const f = effArrF(); if (!f) { arrKeep = null; return; } if (arrKeep && arrKeep.f === f && arrKeep.m === state.filter) return; arrKeep = { f, m: state.filter, ids: new Set(state.participants.filter(arrRaw).map((p) => p.id)) }; };
   const paidOk = (p) => paidOk0(p) && arrOk(p);
-  const normFilter = () => { if (state.pay) { const ks = payKeys(state.pay).filter((k) => k === '__none' || state.statuses.some((s) => s.key === k)); state.pay = ks.length ? ks.join(',') : null; } };   // בחירה מרובה: רק תגיות שקיימות
+  const normFilter = () => { if (state.pay) { const ks = payKeys(state.pay).filter((k0) => { const k = k0.replace(/^!/, ''); return k === '__none' || state.statuses.some((s) => s.key === k); }); state.pay = ks.length ? ks.join(',') : null; } };   // בחירה מרובה: רק תגיות שקיימות
   /* סוג מפגש שנבחר בתפריט (בלי מפגש מסוים): התצוגה היא כמו "כל המשתתפים", רק עם מי שמשויך לפחות למפגש אחד מהסוג */
   let mtSet = null;
   const mtypeOk = (p) => {
@@ -1071,8 +1083,9 @@
     { const ws = waSelected(), am = attMode(), cur = am ? 'הגעה' : ws ? String(ws.name || 'ללא שם') : 'וואטסאפ'; if (state.waSent && !waFilter() && !document.documentElement.classList.contains('is-loading')) waResetSent('');   // עמודת הסימון: הודעה ריקה, תבנית הודעה, או הגיע / לא הגיע
       $('#listWa').innerHTML = '';   // אייקון עמודת הסימון הוסר (הכפתור הצף בתחתית במקומו)
       const fab = $('#waFab'); if (fab && !state.filter) { fab.innerHTML = ''; fab.hidden = true; } else if (fab) { fab.hidden = false;   // מתג של שלושה מצבים: וואטסאפ רגיל, הודעה (תבנית), הגעה (רק בתוך מפגש); המסומן הוא הבולט
-        const mb = (k, ic, on, lab, id) => '<button type="button"' + (id ? ' id="' + id + '" aria-haspopup="menu" aria-expanded="false"' : '') + ' class="wm3b' + (on ? ' on' : '') + '" data-wm="' + k + '" aria-pressed="' + on + '" aria-label="' + lab + '" title="' + lab + '">' + ic + (k === 'msg' && on && waFilter() ? UI.fdot(waFilter() === '1' ? 'green' : 'red') : '') + '</button>';   // סינון נשלח / לא נשלח פעיל: נקודה ליד סמל ההודעה
-        fab.innerHTML = mb('wa', icon('wa'), !am && !ws, 'וואטסאפ רגיל') + mb('msg', icon('chat'), !!ws && !am, ws ? 'הודעה: ' + esc(ws.name) : 'הודעה מוכנה', 'waMsgBtn') + (state.filter ? mb('att', icon('check'), am, 'הגעה') : ''); }
+        const mb = (k, ic, on, lab, id) => '<button type="button"' + (id ? ' id="' + id + '" aria-haspopup="menu" aria-expanded="false"' : '') + ' class="wm3b' + (on ? ' on' : '') + (k === 'msg' && on && waFilter() ? ' filtered' : '') + '"' + (k === 'msg' && on && waFilter() ? ' data-wfv="' + waFilter() + '"' : '') + ' data-wm="' + k + '" aria-pressed="' + on + '" aria-label="' + lab + (k === 'msg' && on && waFilter() ? ' (יש סינון פעיל)' : '') + '" title="' + lab + '">' + ic + '</button>';   // an active sent / not sent filter is the same bar as every chosen button, not a dot   // סינון נשלח / לא נשלח פעיל: נקודה ליד סמל ההודעה
+        const curK = am ? 'att' : ws ? 'msg' : 'wa'; fab.dataset.mode = curK;   // the single button shows the mode that is on; a tap opens the three choices
+        fab.innerHTML = mb(curK, icon(curK === 'att' ? 'check' : curK === 'msg' ? 'chat' : 'wa'), true, curK === 'att' ? 'מצב הגעה' : ws ? 'הודעה: ' + esc(ws.name) : curK === 'msg' ? 'הודעה מוכנה' : 'וואטסאפ רגיל', 'waMsgBtn').replace('data-wm=', 'data-wmopen="1" data-wm='); }
     }
     $('#listSent').innerHTML = evOn ? fbtn('sent', effSent(), sentN('1'), sentN('0')) : '';
     $('#listBal').innerHTML = '';   // אייקון סינון הקרדיט הוסר (הצ'יף "קרדיט" בשורת הצ'יפים במקומו)
@@ -1182,7 +1195,7 @@
         const l = linkOf(p.id, state.filter);
         if (!l) side = UI.tag('הוספה למפגש', 'ptag none', { 'data-rowadd': p.id, role: 'button', tabindex: 0, title: 'לא משויך למפגש. לחיצה: הוספה למפגש' });   // עוד לא משויך: תגית "לא משויך" (לחיצה כמו על ה-+: שיוך עם אישור)
         else if (missedOf(p.id, meetOf(state.filter))) side = UI.tag('לא הגיע', 'ptag missed', { 'data-qs': p.id, role: 'button', tabindex: 0, title: 'משויך ולא הגיע (לחיצה לשינוי תגית)' });
-        else { const st = linkStatus(l); side = st ? UI.tag(esc(STATUS_LABEL[st]), 'ptag ' + st, { 'data-qs': p.id, role: 'button', tabindex: 0, title: 'תגית (לחיצה לשינוי)' }) : UI.tag(icon('tag'), 'ico ptag nolabel', { 'data-qs': p.id, role: 'button', tabindex: 0, 'aria-label': 'הוספת תגית', title: 'הוספת תגית' }); }
+        else { const st = linkStatus(l); const arrChip = l.attended ? UI.tag('הגיע', 'ptag arrived', { 'data-qa': p.id, role: 'button', tabindex: 0, title: 'הגיע. לחיצה: לא הגיע' }) : ''; side = (st ? UI.tag(esc(STATUS_LABEL[st]), 'ptag ' + st, { 'data-qs': p.id, role: 'button', tabindex: 0, title: 'תגית (לחיצה לשינוי)' }) : UI.tag(icon('plus'), 'ico ptag nolabel', { 'data-qs': p.id, role: 'button', tabindex: 0, 'aria-label': 'הוספת תגית', title: 'הוספת תגית' })) + arrChip; }   // "הגיע" is a tag like "לא הגיע"; the chosen tag, if any, comes after it
       }
       let payIc = '';
       if (state.showPay && state.filter && linkOf(p.id, state.filter)) { const al = allocatedOf(p.id, state.filter), mt = meetOf(state.filter), lk = linkOf(p.id, state.filter), need = mt ? (pkgNetFor(p.id, state.filter) > 0 ? al : expectedPrice(p.id, mt, ilDay(lk.created_at || new Date().toISOString()))) : 0;
@@ -1195,6 +1208,11 @@
       const evc = evCircle(p);
       const hasUn = !!state.filter, isLinked = !!(state.filter && linkOf(p.id, state.filter));   // בתוך מפגש: ✕ להסרת השיוך, באותו מקום של ה-✕ בשורת המפגש בכרטיס המשתתף
       const act = p.active === false ? ['restore', 'back', 'החזרה', ''] : (state.filter ? ['unlink', 'caloff', 'הסרה', 'danger'] : ['remove', 'trash', 'מחיקה', 'danger']);   // all participants or a meeting type: DELETE (trash icon); inside a meeting: REMOVE from it (calendar with a slash). Both ask first.   // swipe action (roster kit): remove with undo, or bring a removed one back
+      /* the tray under the card at the other side (swipe RIGHT): the card's send action, and what became of it. WhatsApp: opens the chat. A chosen message: sends it, or says it was already sent (by WhatsApp or by mail). Arrival: marks it. Pulling the card until the tray is fully showing does it; the round tile that used to hold this symbol is gone. */
+      let goTray = '';
+      { const attOn = attM && !!(linkOf(p.id, state.filter) || {}).attended;
+        const go = attM ? (attOn ? [icon('close'), 'לא הגיע', 'noarr'] : [icon('check'), 'הגיע', '']) : wa ? (wsel ? (wsent ? [WA_ICON, 'נשלח בוואטסאפ', 'sent'] : mailed ? [MAIL_ICON, 'נשלח במייל', 'sent'] : [WA_ICON, 'הודעה', '']) : [WA_ICON, 'וואטסאפ', '']) : null;
+        if (go) goTray = '<div class="rswipe rswipe--start" aria-hidden="true"><span class="rswipe__act" data-swipe-act="go" data-go="' + go[2] + '" data-mode="' + (attM ? 'att' : wsel ? 'msg' : 'wa') + '" data-id="' + esc(p.id) + '">' + go[0] + '<span>' + go[1] + '</span></span></div>'; }
       return '<li class="row ucard' + (hasUn ? ' hasun' : '') + '" data-swipe="people" data-pid="' + esc(p.id) + '"><div class="rswipe-fg">' +
         // בלי ✕ להסרה מהמפגש ובלי + להוספה ברשימת המשתתפים (11.11.26): ההסרה והשיוך רק מכרטיס המשתתף, ומהצ'יף "הוספה למפגש"
         (attM ? attTag(p) : wa ? UI.tag(wsel ? (wsent ? WA_ICON : mailed ? MAIL_ICON : '') : WA_ICON, 'ico rowwa' + (wsel ? ' ratt msgc ' + (wsent ? 'yes sent' : mailed ? 'yes' : 'no') : ''), Object.assign({ href: wa }, /^https?:/.test(wa) ? { target: '_blank', rel: 'noopener' } : {}, wsel ? { 'data-wsend': p.id } : {}, { 'aria-label': 'וואטסאפ ל' + esc(p.name) + (wsent ? ', ההודעה נשלחה' : mailed ? ', נשלח במייל' : ''), title: wsel ? esc(wsent ? 'נשלחה ההודעה "' + wsel.name + '" בוואטסאפ · ' + fmtDT(wsent.sent_at) + ' · לחיצה לביטול הסימון' : mailed ? 'נשלח במייל. לחיצה: וואטסאפ עם ההודעה' : 'וואטסאפ עם ההודעה: ' + wsel.name) : 'וואטסאפ' }), 'a') : UI.tag(WA_ICON, 'ico rowwa nophone', { role: 'img', 'aria-label': 'אין טלפון', title: 'אין טלפון' })) +
@@ -1206,7 +1224,7 @@
           evc +
           (!state.filter && state.showPay ? (() => { const b = Math.round(creditOf(p.id) * 100) / 100; const fa = b === 0 && freeAll(p), pk = pkgLeft(p.id), ses = pk > 0 ? '<span class="balic pos ses" title="זכאי: ' + pk + ' מפגשים בכרטיסייה">' + icon('cal', 'i14') + pk + '</span>' : ''; if (b === 0 && pk > 0) return ses; return ses + '<span class="balic ' + (b > 0 ? 'pos' : b < 0 ? 'neg' : fa ? 'fr' : 'zero') + '" title="' + (b > 0 ? 'זכאי: קרדיט לטובתו ₪' + nfm(b) : b < 0 ? 'חייב: יתרת חובה ₪' + nfm(-b) : fa ? 'לא לתשלום: בכל המפגשים שנרשם אליהם' : 'מאוזן') + '">₪' + (b > 0 ? nfm(b) : b < 0 ? nfm(-b) : '') + '</span>'; })() : '') +
         '</div>' +
-      '</div><div class="rswipe" aria-hidden="true"><button type="button" class="rswipe__act" tabindex="-1"' + (act[3] ? ' data-tone="danger"' : '') + ' data-swipe-act="' + act[0] + '" data-id="' + esc(p.id) + '">' + icon(act[1]) + '<span>' + act[2] + '</span></button></div></li>';
+      '</div><div class="rswipe" aria-hidden="true"><button type="button" class="rswipe__act" tabindex="-1"' + (act[3] ? ' data-tone="danger"' : '') + ' data-swipe-act="' + act[0] + '" data-id="' + esc(p.id) + '">' + icon(act[1]) + '<span>' + act[2] + '</span></button></div>' + goTray + '</li>';
     };
     const rowsHtml = rows.map(rowHtml).join('');
     const othersHtml = others.length ? '<li class="group">לא משויכים למפגש הזה</li>' + others.map(rowHtml).join('') : '';
@@ -1637,7 +1655,6 @@
     const dlg = $('#cDlg');
     $('#cAlt').hidden = !alt; if (alt) { $('#cAlt').textContent = alt.label; $('#cAlt').onclick = () => { dlg.close(); alt.fn(); }; }
     $('#cYes').onclick = () => { dlg.close(); fn(); };
-    $('#cNo').onclick = () => dlg.close();
     dlg.showModal();
   }
   /* שיוך למפגש: בחירת תגית במפגש לא משויך יוצרת את השיוך איתה; בלי תגית: st ריק */
@@ -1876,18 +1893,19 @@
     if (opts && opts.keep) setPTab('pay'); else goView('pay');
   }
   const closeQ = () => { const q = $('#qMenu'); q.hidden = true; q.className = 'qmenu'; q.style.width = ''; q.style.maxWidth = ''; q.style.maxHeight = ''; };
-  function openStatusSettings() {
-    closeQ(); setRoot = 'st'; renderSettings(); $('#setDlg').showModal(); tyId = null; stType = curTid() || state.mtype || firstTypeId(); showSetView('st');
-    blurIn('#setDlg');
+  /* the delete screen of a tag (move its people to another tag, or only remove) opens in the settings popup; there is no tags screen any more */
+  function openTagDeleteScreen(k) {
+    closeQ(); setRoot = 'st'; renderSettings(); $('#setDlg').showModal(); tyId = null; stType = curTid() || state.mtype || firstTypeId(); tagDelFromMenu = true;
+    blurIn('#setDlg'); askDeleteTag(k);
   }
   /* תפריט התגיות של משתתף במפגש (מהרשימה ומהכרטיס): התגיות של סוג המפגש, ולמי שעוד לא משויך גם "שיוך למפגש" מעליהן. בחירה בתגית מחליפה, ובנבחרת מסירה. הסרה מהמפגש: רק ב-✕ בשורת המפגש בכרטיס המשתתף */
-  function openQuickMenu(pid, anchor, mid) {
+  function openQuickMenu(pid, anchor, mid, fromArrChip) {
     const menu = $('#qMenu'), mId = mid || state.filter; if (!mId) return;
     /* בתוך פופאפ התפריט צריך לשבת בתוכו (שכבת העל של הדיאלוג), אחרת הוא מוסתר מאחוריו */
     const host = anchor.closest('dialog') || document.body; if (menu.parentNode !== host) host.appendChild(menu);
     const l = linkOf(pid, mId), cur = linkStatus(l), list = statusList(typeIdOf(meetOf(mId)));
-    if (l && !list.length) { openStatusSettings(); return; }   // אין עדיין תגיות לסוג המפגש: ישר להגדרת התגיות
-    const arr = !!(l && l.attended), arrBtn = '<button type="button" role="menuitem" class="qi qarr" data-qk="__arr" aria-pressed="' + arr + '"' + (arr ? ' aria-label="הסרת סימון ההגעה" title="הסרת סימון ההגעה"' : '') + '>הגיע' + (arr ? icon('close', 'i14') : '') + '</button>';   // ראשון בתפריט, מעל התגיות: סימון הגעה בירוק בהיר
+    if (l && !list.length) { toast('אין עדיין תגיות לסוג המפגש. אפשר להוסיף אותן מכפתור הסינון, בקבוצת תגיות'); return; }
+    const arr = !!(l && l.attended), arrBtn0 = '<button type="button" role="menuitem" class="qi qarr" data-qk="__arr" aria-pressed="' + arr + '"' + (arr ? ' aria-label="הסרת סימון ההגעה" title="הסרת סימון ההגעה"' : '') + '>הגיע' + (arr ? icon('close', 'i14') : '') + '</button>', arrBtn = arr ? (fromArrChip ? '<button type="button" role="menuitem" class="qi qarr notarr" data-qk="__arr" aria-pressed="false">לא הגיע</button>' : '') : arrBtn0;   // first in the menu, above the tags: marking an arrival (once arrived, the "הגיע" chip of the card is what opens "לא הגיע")
     menu.innerHTML = (l ? '' : '<div class="qtop"><button type="button" role="menuitem" class="qi tone-gray" data-qk="__link" aria-pressed="false">שיוך למפגש</button></div>') + arrBtn +
       list.map((s) => { const on = s.key === cur; return '<button type="button" role="menuitem" class="qi ' + esc(s.key) + '" data-qk="' + esc(s.key) + '" aria-pressed="' + on + '"' + (on ? ' aria-label="הסרת התגית ' + esc(s.label) + '" title="הסרת התגית"' : '') + '>' + esc(s.label) + (on ? icon('close', 'i14') : '') + '</button>'; }).join('');   // על התגית הנבחרת ✕: לחיצה עליה מסירה אותה
     menu.className = 'qmenu qlist'; menu.style.width = ''; menu.hidden = false;   // כל פריט בשורה משלו, מיושר לימין עם הכותרת, והרוחב לפי התוכן
@@ -3208,7 +3226,8 @@
   /* דסקטופ רחב (31.10.26): השורה של המשתתף שהכרטיס שלו פתוח בצד מסומנת ברשימה */
   let lastPid = null;   // המשתתף שהפופאפ שלו נסגר: הרשומה שלו באפור בהיר עד הלחיצה הבאה במסך
   function markSel() { const on = pDlg && pDlg.open && pDlg._side; document.querySelectorAll('#list li.row').forEach((r) => { const e = r.querySelector('[data-edit]'), id = e && e.dataset.edit; r.classList.toggle('sel', !!(on && id === openPid)); r.classList.toggle('last', !!(id && id === lastPid)); }); }
-  window.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('dialog')) return; const r = e.target.closest && e.target.closest('#list li.row')   // לחיצה בתוך פופאפ (אישור, סגירה) לא מבטלת את סימון "אחרון"
+  window.addEventListener('click', (e) => { if (e.target.closest && (e.target.closest('dialog') || e.target.closest('[role="menu"]') || e.target.closest('.chiprow') || e.target.closest('header.top'))) return; if (window.RosterUI && RosterUI.menuOpen && RosterUI.menuOpen()) return;   // a press inside a menu, or the press that only closes a menu, never takes the mark of the last card away
+    const r = e.target.closest && e.target.closest('#list li.row')   // לחיצה בתוך פופאפ (אישור, סגירה) לא מבטלת את סימון "אחרון"
     , ed = r && r.querySelector('[data-edit]'), id = ed ? ed.dataset.edit : null; if (id !== lastPid) { lastPid = id; markSel(); } }, true);   // לחיצה על כל אלמנט בכרטיס מסמנת אותו; לחיצה במקום אחר מבטלת   // לחיצה, לא נגיעה: גלילה ברשימה לא מבטלת את הסימון
   function openParticipant(id, tab, fromEl) {
     const p = id ? partOf(id) : null;
@@ -3248,6 +3267,8 @@
   const cntTxt = (n) => n == null || n === '' ? '' : String(n) === '1' ? 'משתתף אחד מוצג' : n + ' משתתפים מוצגים';   // שורת המונה מעל הכרטיסים
   const meetName = (m) => String(m.name || '').trim() || String((typeById(m.type_id) || {}).name || '').trim();
   /* העיר והמיקום של המפגש (מהמפגש, ואם ריק מסוג המפגש), בכרטיס המפגש בכרטיס המשתתף */
+  /* only the place (no city), for the line of the meeting card */
+  const meetPlace = (m) => String(m.place || (typeById(m.type_id) || {}).place || '').trim();
   const meetWhere = (m) => { const ty = typeById(m.type_id) || {}; return [m.city || ty.city, m.place || ty.place].map((x) => String(x || '').trim()).filter(Boolean).join(' · '); };
   const meetRow = (m) => {
       let on, st;
@@ -3255,13 +3276,15 @@
       else { on = sheet.links.has(m.id); st = null; }
       const miss = !!(sheet.id && on && missedOf(sheet.id, m));
       const freeL = !!(sheet.id && on && noPayOf(partOf(sheet.id), linkOf(sheet.id, m.id)));   // לא משלם על המפגש: מוצג "לא לתשלום" ולא "תשלום"
-      return '<div class="mrow ucard' + (on ? ' on' : '') + (sheet.hl === m.id ? ' hl' : '') + '" data-mrow="' + m.id + '">' +
-        '<div class="mwhen"><div class="mdt">' + UI.tag(dm(m), 'mlabel') + '<span class="mtm">' + esc(String(m.meeting_time || '').slice(0, 5)) + '</span>' + (meetName(m) ? '<span class="mnm mn1">' + esc(meetName(m)) + '</span>' : '') + '</div>' + (meetWhere(m) ? '<span class="mnm mwh">' + esc(meetWhere(m)) + '</span>' : '') + '</div>' +
+      const sw = !!(sheet.id && on);   // a meeting the person is in slides to "הסרה" (no corner button any more)
+      return '<div class="mrow ucard' + (on ? ' on' : '') + (sheet.hl === m.id ? ' hl' : '') + '" data-mrow="' + m.id + '"' + (sw ? ' data-swipe="meet"><div class="rswipe-fg"' : '') + '>' +
+        '<div class="mwhen"><div class="mdt">' + UI.tag(dm(m), 'mlabel') + '<span class="mtm">' + esc(String(m.meeting_time || '').slice(0, 5)) + '</span>' + (meetName(m) ? '<span class="mnm mn1">' + esc(meetName(m)) + '</span>' : '') + (meetPlace(m) ? '<span class="mnm mn1 mwh">' + esc(meetPlace(m)) + '</span>' : '') + '</div></div>' +   // the place joins the line of the date, time and name (a dot between them): no second line
         '<div class="mchips">' +
-        (!on && sheet.id ? UI.tag('הוספה למפגש', 'ptag none', { 'data-mp': m.id, role: 'button', tabindex: 0, title: 'לא משויך למפגש. לחיצה: הוספה למפגש' }) : '<button type="button" class="pay ' + esc(on ? (st || (miss ? 'missed' : 'nolabel')) : 'none') + '" data-mp="' + esc(m.id) + '" title="' + (on ? (st ? 'שינוי תגית' : 'הוספת תגית') : 'לא משויך למפגש. לחיצה: שיוך למפגש') + '"' + (on && !st ? ' aria-label="הוספת תגית"' : '') + '>' + (on ? (st ? esc(STATUS_LABEL[st]) : miss ? 'לא הגיע' : icon('tag', 'i14') + ' תגית') : sheet.id ? 'לא משויך' : '') + '</button>') +
-        '<div class="mline">' + (sheet.id && !on ? '<span></span>' : sheet.id ? '<button type="button" class="mmoney' + (laterOf(sheet.id, m.id) ? ' later' : dueOf(sheet.id, m.id) > 0 ? '' : allocatedOf(sheet.id, m.id) > 0 ? ' has' : freeL ? ' free' : '') + '" data-mm="' + m.id + '"' + (on ? '' : ' hidden') + ' title="תשלום למפגש">' + payTxt(sheet.id, m.id, freeL) + '</button>' : '') +
+                ((sheet.id && on && (linkOf(sheet.id, m.id) || {}).attended) ? UI.tag('הגיע', 'ptag arrived', { 'data-qa': sheet.id, 'data-qm': m.id, role: 'button', tabindex: 0, title: 'הגיע. לחיצה: לא הגיע' }) : '') +
+        (!on && sheet.id ? UI.tag('הוספה למפגש', 'ptag none', { 'data-mp': m.id, role: 'button', tabindex: 0, title: 'לא משויך למפגש. לחיצה: הוספה למפגש' }) : '<button type="button" class="pay ' + esc(on ? (st || (miss ? 'missed' : 'nolabel')) : 'none') + '" data-mp="' + esc(m.id) + '" title="' + (on ? (st ? 'שינוי תגית' : 'הוספת תגית') : 'לא משויך למפגש. לחיצה: שיוך למפגש') + '"' + (on && !st ? ' aria-label="הוספת תגית"' : '') + '>' + (on ? (st ? esc(STATUS_LABEL[st]) : miss ? 'לא הגיע' : icon('plus', 'i14') + ' תגית') : sheet.id ? 'לא משויך' : '') + '</button>') +
+                '<div class="mline">' + (sheet.id && !on ? '<span></span>' : sheet.id ? '<button type="button" class="mmoney' + (laterOf(sheet.id, m.id) ? ' later' : dueOf(sheet.id, m.id) > 0 ? '' : allocatedOf(sheet.id, m.id) > 0 ? ' has' : freeL ? ' free' : '') + '" data-mm="' + m.id + '"' + (on ? '' : ' hidden') + ' title="תשלום למפגש">' + payTxt(sheet.id, m.id, freeL) + '</button>' : '') +
         '</div></div>' +
-        (!sheet.id ? '<span></span>' : on ? '<button type="button" class="munl" data-mun="' + m.id + '" aria-label="הסרה מהמפגש" title="הסרה מהמפגש">' + icon('caloff', 'i16') + '</button>' : '<span></span>') +
+        (sw ? '</div><div class="rswipe" aria-hidden="true"><button type="button" class="rswipe__act" tabindex="-1" data-tone="danger" data-mun="' + m.id + '">' + icon('caloff') + '<span>הסרה</span></button></div>' : '') +
       '</div>';
   };
   /* פייג'ר בכרטיס המשתתף: מפגשים (מימין, הכרטיס תמיד נפתח עליו), קרדיט, הערות ופרטים. החלקה עם הצמדה, והאטבים והמחוון עוקבים אחרי הגלילה. בלי רשומות היסטוריה: "חזרה" סוגרת את הכרטיס */
@@ -3303,6 +3326,7 @@
   const meetClick = (e) => {
     const un = e.target.closest('[data-mun]');   // הסרה מהמפגש: בדיוק אותה פעולה כמו "הסרה מהמפגש" בתפריט התגיות
     if (un) { confirmLink(sheet.id, un.dataset.mun, false); return; }
+    { const qa = e.target.closest('[data-qa]'); if (qa) { e.stopPropagation(); if (!$('#qMenu').hidden) closeQ(); else openQuickMenu(qa.dataset.qa, qa, qa.dataset.qm, true); return; } }
     const mm = e.target.closest('[data-mm]'), pay = e.target.closest('[data-mp]');   // רק התגית או ה-+ (לא כל הכרטיס)
     const rw = sheet.id && pay ? pay.closest('.mrow:not(.on)') : null;   // עוד לא משויך: תגית "לא משויך" וה-+ מקפיצים אישור שיוך
     if (mm) {
@@ -3619,7 +3643,7 @@
       '<div class="rfield field"><span>הוראות הגעה</span><textarea placeholder=" " id="' + I('Dirs') + '" name="directions" rows="1"></textarea></div>' +
       '<small class="mfh" id="' + I('TplHead') + '"' + (isType ? '' : ' hidden') + '>הודעות</small>' +
       (isType ? '' : '<div class="mtinh2" id="' + I('TplInh') + '" hidden></div>') + '<div class="mtlist" id="' + I('Tpl') + '"></div>' +
-      '<button type="button" id="' + I('TplAdd') + '" data-fab="הוספת הודעה"></button>' +
+      '<button type="button" id="' + I('TplAdd') + '" hidden aria-hidden="true" tabindex="-1"></button>' +   /* the add chip lives in the chip row now (+ הודעה חדשה, green); this holds the one handler */
       '<button type="button" class="mfshort" id="' + I('PriceBtn') + '"><span>מחירים</span><small></small>' + icon('chev') + '</button>' +
       (isType ? '<button type="button" class="mfshort" id="' + I('PassBtn') + '"><span>כרטיסיות</span><small></small>' + icon('chev') + '</button>' : '') +
       '<div class="mfstore" hidden><div class="rfield field" id="' + I('PriceF') + '"><span class="mtl">מחירים' + (isType ? '' : '<button type="button" class="lnk" id="' + I('TierOwn') + '" hidden>שינוי למפגש הזה</button><button type="button" class="lnk" id="' + I('TierReset') + '" hidden>כמו בסוג המפגש</button>') + '</span>' +
@@ -3665,7 +3689,7 @@
     F.tpl.render = () => {
       if (!isType) { tplBox.innerHTML = ''; return; }   // אין הודעות למפגש עצמו, רק לסוג המפגש
       const l = F.tpl.list(), sys = state.tpls.find((x) => x.system_key === 'confirm');   // הכותרת "הודעות" תמיד מוצגת, וראשונה בה "אישור מקום" של המערכת
-      tplBox.innerHTML = '<div class="emvars">' + (sys ? '<button type="button" data-tplpop="' + esc(sys.id) + '">' + esc(sys.name) + '</button>' : '') + l.map((r, i) => '<button type="button" data-i="' + i + '">' + esc(r.name || 'תבנית חדשה') + '</button>').join('') + '</div>';
+      tplBox.innerHTML = '<div class="emvars">' + (sys ? '<button type="button" data-tplpop="' + esc(sys.id) + '">' + esc(sys.name) + '</button>' : '') + l.map((r, i) => '<button type="button" data-i="' + i + '">' + esc(r.name || 'תבנית חדשה') + '</button>').join('') + (F.tpl.ownerId || true ? '<button type="button" class="emadd" data-tpladd="1">' + icon('plus') + ' הודעה חדשה</button>' : '') + '</div>';
     };
     F.paintTplInh = () => {   // במפגש: תבניות הסוג. אותה שורה כמו תבנית של המפגש, ולחיצה פותחת את פופאפ עריכת ההודעה
       const box = q('TplInh'); if (!box) return;
@@ -3673,9 +3697,9 @@
       const head = q('TplHead'); if (head) head.hidden = !l.length;   // במפגש: הכותרת רק כשיש מה להציג
       box.hidden = !l.length; box.innerHTML = l.length ? '<div class="emvars">' + l.map((x) => '<button type="button" data-tplpop="' + esc(x.id) + '">' + esc(x.name) + '</button>').join('') + '</div>' : '';
     };
-    tplBox.addEventListener('click', (e) => { const sp = e.target.closest('[data-tplpop]'); if (sp) { openTplPop(sp.dataset.tplpop); return; } const b = e.target.closest('[data-i]'), r = b && F.tpl.list()[Number(b.dataset.i)]; if (!r) return; if (r.id) openTplPop(r.id); else openTplPop(null, { draft: F, row: r }); });
+    tplBox.addEventListener('click', (e) => { if (e.target.closest('[data-tpladd]')) { q('TplAdd').click(); return; } const sp = e.target.closest('[data-tplpop]'); if (sp) { openTplPop(sp.dataset.tplpop); return; } const b = e.target.closest('[data-i]'), r = b && F.tpl.list()[Number(b.dataset.i)]; if (!r) return; if (r.id) openTplPop(r.id); else openTplPop(null, { draft: F, row: r }); });
     if (q('TplInh')) q('TplInh').addEventListener('click', (e) => { const b = e.target.closest('[data-tplpop]'); if (b) openTplPop(b.dataset.tplpop); });
-    if (!isType) q('TplAdd').hidden = true;
+    q('TplAdd').hidden = true;
     q('TplAdd').addEventListener('click', () => { const sc = F.tpl.scope(); if (sc) { openTplPop(null, { scope: sc }); return; } const row = { id: null, name: '', body: '' }; F.tpl.rows.push(row); F.tpl.render(); openTplPop(null, { draft: F, row }); });
     F.paintTiers = () => {
       if (isType) return;
@@ -3892,7 +3916,11 @@
     // (מצב המתג לא עוקב אחרי הצ'יף "הגיעו")   // הסינונים נשמרים במעבר בין מפגשים, וגם מצב ההגעה של עמודת הסימון (לפי הצ'יף "הגיעו")
     render();
   };
-  $('#tagEditBtn').addEventListener('click', () => openStatusSettings());
+  /* the whole header opens the meetings menu (title, the line under it, the empty space beside them); its own buttons keep their own job */
+  $('header.top').addEventListener('click', (e) => {
+    if (document.documentElement.classList.contains('is-loading') || !e.target.isConnected || e.target.closest('#mMenu') || e.target.closest('button, a, input, select, textarea, .hmenu, .sortmenu, [role="menu"]')) return;
+    e.stopPropagation(); $('#mSel').click();   // the press is the menu's own: the outside-press closer must not see it
+  });
   $('#nextMBtn').addEventListener('click', () => { const nm = nextMeetingOf(); if (nm) pickFilter(nm.id); });   // קיצור דרך למפגש הקרוב
   /* פאנל הסינון והתצוגה (31.10.26): כל הסינונים והטוגלים במקום אחד, נפתח מתגית הסינון שבשורת "סינון ומיון".
      לכל נושא כותרת עם טוגל תצוגה ("בשורה" / "ברשימה") ומתחתיה האפשרויות כתגיות עם הכמות; לחיצה נוספת על תגית נבחרת מבטלת אותה */
@@ -3939,13 +3967,76 @@
   const panelOn = () => !!(state.updF || state.regF || state.srcF || state.ageF || (state.mcF && !state.filter) || state.bal || (state.paidF && state.paidF !== 'r' && state.paidF !== 'u'));   // כל מה שבתפריט הסינון (כולל תשלום וקרדיט); "משוריינים" נראה בצ'יף ולכן לא נספר; סינוני השליחה וההגעה נראים באייקונים שמעל העמודות
   /* סמל מיון בשלושה מצבים ליד כותרת קטגוריה: לא פעיל, יורד, עולה (לחיצה מחזורית; לא פעיל = חזרה למיון לפי הרשמה) */
   const sortTri = (k) => { const on = state.sort === k, asc = on && state.sortDir === 'asc', lab = on ? (asc ? 'מיון עולה' : 'מיון יורד') : 'מיון לא פעיל'; return '<button type="button" class="sorttri' + (on ? ' on' : '') + '" data-stri="' + k + '" aria-label="' + lab + '" title="' + lab + '">' + icon(on ? (asc ? 'sup' : 'sdown') : 'sort', 'i16') + '</button>'; };
-  function renderViewMenu() {
+  /* a choice in the filter popup fills its cell, and un-choosing empties it, with a short sweep. The cells are drawn anew on every change, so the old
+     state is put back for one frame and then switched: the CSS transition does the rest. One implementation for every cell of the popup. */
+  const vmKey = (c) => c.dataset.mk ? 'k' + c.dataset.mk + '|' + c.dataset.mv : c.dataset.mp ? 'p' + c.dataset.mp + '|' + c.dataset.mv : c.dataset.vct ? 't' + c.dataset.vct : null;
+  const vmState = (c) => c.classList.contains('inv') ? 'inv' : c.getAttribute('aria-pressed') === 'true' ? 'on' : 'off';
+  const vmSet = (c, st) => { c.classList.toggle('inv', st === 'inv'); c.setAttribute('aria-pressed', st === 'off' ? 'false' : 'true'); };
+  /* what is remembered about a cell before it is drawn anew: its choice state, the share its bar shows, whether it is faded (a zero), and its number */
+  const vmRead = (c) => ({ st: vmState(c), fill: c.style.getPropertyValue('--fill'), zero: c.classList.contains('zero'), n: (c.querySelector('small') || {}).textContent });
+  function vmSnapshot() { const o = {}; document.querySelectorAll('#viewMenu .mc').forEach((c) => { const k = vmKey(c); if (k) o[k] = vmRead(c); }); return o; }
+  /* every change of the popup moves: the chosen cell fills or empties, the bars of the OTHER cells grow or shrink to their new share, a cell fades in or out of "zero",
+     and a number that changed ticks. The cells are drawn anew, so the old values are put back for one frame and then the new ones: the CSS transitions do the rest. */
+  function vmAnimate(before) {
+    const ch = [];
+    document.querySelectorAll('#viewMenu .mc').forEach((c) => {
+      const k = vmKey(c), o = k && before[k]; if (!o) return;
+      const now = vmRead(c);
+      if (o.st !== now.st || o.fill !== now.fill || o.zero !== now.zero) ch.push([c, o, now]);
+      if (o.n !== now.n) { const sm = c.querySelector('small'); if (sm) { sm.classList.remove('tick'); void sm.offsetWidth; sm.classList.add('tick'); } }
+    });
+    if (!ch.length) return;
+    ch.forEach(([c, o]) => { vmSet(c, o.st); if (o.fill) c.style.setProperty('--fill', o.fill); c.classList.toggle('zero', o.zero); });
+    void document.body.offsetWidth;
+    ch.forEach(([c, , now]) => { vmSet(c, now.st); if (now.fill) c.style.setProperty('--fill', now.fill); c.classList.toggle('zero', now.zero); });
+  }
+  function renderViewMenu() { const b = vmSnapshot(); renderViewMenuNow(); vmAnimate(b); }
+  function renderViewMenuNow() {
     const m = curMeeting();
     /* בלי שורת מונה בראש התפריט (31.10.26): התפריט נפתח מתחת לשורת הסינון, והמונה שבה נשאר גלוי */
     const cols = moreSecs();   // 2x2: שתי קבוצות בשורה, כל אחת עם הכותרת והתוויות שלה זו מתחת לזו
     $('#viewMenu').style.gridTemplateColumns = '';
-    $('#viewMenu').innerHTML = cols.map((c) => { if (c.sk && c.sk !== 'upd' && c.sk !== 'new' && c.sk !== 'pay' && c.sk !== 'age' && c.sk !== 'meet' && state.sort === c.sk) { const n = (h) => +((h.match(/<small>(\d+)<\/small>/) || [])[1] || 0), d = state.sortDir === 'asc' ? 1 : -1; c.items = c.items.map((h, i) => [h, i]).sort((x, y) => d * (n(x[0]) - n(y[0])) || x[1] - y[1]).map((x) => x[0]); } return c; }).map((c) => '<div class="fsec"><div class="fsh"><b>' + c.t + '</b>' + (c.sk ? sortTri(c.sk) : '') + '</div><div class="mgc">' + c.items.join('') + '</div></div>').join('');
+    { const vc = $('#viewClear'); if (vc) vc.disabled = !canReset(); }   // nothing to reset (no filter, the default sort); the display is a preference and is not reset (no filter, the default sort, nothing hidden): the button rests
+    $('#viewMenu').innerHTML = viewDisplayHtml() + viewTagsHtml() + cols.map((c) => { if (c.sk && c.sk !== 'upd' && c.sk !== 'new' && c.sk !== 'pay' && c.sk !== 'age' && c.sk !== 'meet' && state.sort === c.sk) { const n = (h) => +((h.match(/<small>(\d+)<\/small>/) || [])[1] || 0), d = state.sortDir === 'asc' ? 1 : -1; c.items = c.items.map((h, i) => [h, i]).sort((x, y) => d * (n(x[0]) - n(y[0])) || x[1] - y[1]).map((x) => x[0]); } return c; }).map((c) => '<div class="fsec"><div class="fsh"><b>' + c.t + '</b>' + (c.sk ? sortTri(c.sk) : '') + '</div><div class="mgc">' + c.items.join('') + '</div></div>').join('');
   }
+  /* the display options come first in the popup */
+  function viewDisplayHtml() {
+    const hid = (k) => state.chipHide.some((x) => x === k || (k === 'gen' && (x === 'male' || x === 'female')));
+    const defs = (state.filter ? [['res', 'משוריינים', icon('bookmark', 'i16')], ['arr', 'הגיעו', icon('check', 'i16')]] : []).concat([['gen', 'מגדר', icon('male', 'i16') + icon('female', 'i16')]]);
+    /* a category like the tags: an eye at the right of each button of the row (shown / hidden), the button's own name beside it */
+    const rows = defs.map((c) => { const on = !hid(c[0]); return '<div class="vtrow' + (on ? '' : ' off') + '"><button type="button" class="mc vtlabel" data-vshow="' + c[0] + '" aria-pressed="' + on + '" title="' + (on ? 'מוצג בשורה. לחיצה: הסתרה' : 'מוסתר. לחיצה: הצגה') + '">' + c[2] + ' ' + c[1] + '</button></div>'; });   // the cell itself is the switch: faded = hidden from the row
+    return '<div class="fsec"><div class="fsh"><b>תצוגה</b></div><div class="mgc vtags">' + rows.join('') + '</div></div>';
+  }
+
+
+
+  /* the tags filter, inside the filter popup: one chip per existing tag (a selected one stays so it can be cleared) */
+  let vtAdding = false, vtRenaming = null;   // vtRenaming: the key of the tag whose name is being typed in place   // the inline "new tag" row of the tags category is open
+  function viewTagsHtml() {
+    const pk = payKeys(state.pay), pool = poolP(), eg = effGender(), genOk = (p) => !eg || payKeys(eg).includes(p.gender || 'none');
+    const inScope = state.participants.filter((p) => (state.filter ? linkOf(p.id, state.filter) : p.active !== false) && mtypeOk(p));
+    const rows = statusList(state.filter ? undefined : state.mtype || null).map((t) => {   // every tag of the view, also one nobody has yet (so a new tag shows up at once)
+      const n = pool.filter((p) => paidOk(p) && genOk(p) && stMatch(p, t.key)).length, pc = PALETTE[t.color] || PALETTE.neutral;
+      if (vtRenaming === t.key) return '<input data-rf-bare class="vtname vtren" data-k="' + esc(t.key) + '" maxlength="14" value="' + esc(t.label) + '" autocomplete="nope" enterkeyhint="done" aria-label="שם התגית" />';
+      const on = pk.includes(t.key), inv = pk.includes('!' + t.key);
+      return '<button type="button" class="mc' + (n || on || inv ? '' : ' zero') + (inv ? ' inv' : '') + '" data-sc="1" style="--fill:' + (pool.length ? Math.min(100, Math.round(n / pool.length * 100)) : 0) + '%;--sbg:' + pc[0] + ';--sfg:' + pc[1] + '" data-vct="' + esc(t.key) + '" aria-pressed="' + (on || inv) + '" title="לחיצה ארוכה: בחירה, בחירה הפוכה, צבע, שם ומחיקה' + (inv ? ' (כרגע: בחירה הפוכה)' : '') + '">' + esc(t.label) + ' <small>' + n + '</small></button>';
+    });
+    const add = vtAdding ? '<input data-rf-bare class="vtname" maxlength="14" placeholder="שם התגית" autocomplete="nope" enterkeyhint="done" aria-label="שם התגית החדשה" />' : '<button type="button" class="mc vtplus" data-vtadd="1">' + icon('plus', 'i16') + ' הוספת תגית</button>';
+    return '<div class="fsec"><div class="fsh"><b>תגיות</b></div><div class="mgc vtags">' + rows.join('') + add + '</div></div>';
+  }
+  /* a new tag typed in the tags category: the same row the settings popup used to make (same rules: a name that is not taken) */
+  async function addTagInline(inp) {
+    const v = inp.value.trim().replace(/s+/g, ' ').slice(0, 14); vtAdding = false;
+    if (!v) { renderViewMenu(); return; }
+    const key = 'm_' + Math.random().toString(36).slice(2, 7);
+    if (stNameTaken(v, key)) { toast(ST_DUP); renderViewMenu(); return; }
+    const row = { key, label: v, color: 'neutral', sort: Math.max(0, ...state.statuses.map((x) => x.sort)) + 1, scope: 'meeting' };
+    if (state.mtypes.length) row.type_id = curTid() || state.mtype || firstTypeId();
+    state.statuses.push(row); applyStatuses(); renderViewMenu(); render();
+    try { await api(T.st, { method: 'POST', body: row, prefer: 'return=minimal' }); }
+    catch (err) { state.statuses = state.statuses.filter((x) => x !== row); applyStatuses(); renderViewMenu(); render(); fail(err); }
+  }
+
   /* סינון לפי העמודות (תשלום, שליחת פרטי המפגש; בתצוגה הכללית קרדיט): אייקון מעל כל עמודה, לחיצה פותחת תפריט עם המצבים, אייקוניהם והכמות; הבחירה מבצעת את הסינון */
   let FC = {};   // ספירות לתפריטי הסינון, מתעדכן ב-renderFacets
   const fstate = (k) => k === 'sent' ? state.sent : k === 'bal' ? state.bal : state.paidF;
@@ -4008,8 +4099,18 @@
     const a = m.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-8px)' }], { duration: 160, easing: 'ease-in', fill: 'forwards' });
     a.onfinish = () => { m._closing = false; m.hidden = true; a.cancel(); };
   };
+  /* the mark mode: whatsapp / ready message / attendance (only inside a meeting) */
+  function openModeMenu(anchor) {
+    const m = $('#wmMenu'), cur = anchor.dataset.wm, inM = !!state.filter;
+    const it = (k, ic, t) => '<button type="button" role="menuitemradio" aria-checked="' + (k === cur) + '" class="cmi wmk-' + k + (k === cur ? ' on' : '') + '" data-wmk="' + k + '">' + icon(ic) + ' ' + t + '</button>';
+    m.innerHTML = it('wa', 'wa', 'וואטסאפ') + it('msg', 'chat', 'הודעה מוכנה') + (inM ? it('att', 'check', 'הגעה') : '');
+    if (!m.hidden) { m.hidden = true; return; }
+    m.hidden = false; m.style.left = menuX(m, anchor) + 'px'; placeMenuV(m, anchor.getBoundingClientRect().top, anchor.getBoundingClientRect().bottom, true);
+  }
   const listTagsClick = (e) => {
     const gb = e.target.closest('[data-stg]'); if (gb) { state.gender = state.gender === gb.dataset.stg ? null : gb.dataset.stg; render(); syncUrl(); return; }   // זכר / נקבה בשורת הסינון
+    const wo = e.target.closest('[data-wmopen]');
+    if (wo) { openModeMenu(wo); return; }
     const wm = e.target.closest('[data-wm]');
     if (wm) {   // מתג מצב העמודה: רק "הודעה" פותחת את הפופאפ של בחירת התבנית והסינון
       const k = wm.dataset.wm;
@@ -4038,7 +4139,7 @@
   function renderWaMenu() {
     const am = false, sel = waSelected(), f = waFilter(), item = (id, ic, name, tag, on) => '<button type="button" role="menuitemradio" data-wt="' + esc(id) + '" aria-checked="' + on + '"><span class="wmi">' + ic + '<span class="wmn">' + esc(name) + '</span>' + (tag ? '<small>' + esc(tag) + '</small>' : '') + '</span></button>';
     /* מתחת לקו: סינון (לפי הגעה, או לפי שליחה של התבנית שנבחרה; לא בהודעה ריקה) ואחריו הוספת תבנית */
-    const LB = am ? ['הגיע', 'לא הגיע'] : ['נשלח', 'לא נשלח'], cn = (am || sel) ? waCounts() : null, seg = cn ? '<div class="wseg" role="group" aria-label="' + (am ? 'סינון הרשימה לפי הגעה' : 'סינון הרשימה לפי שליחה של התבנית שנבחרה') + '">' + [['', 'הכל'], ['1', LB[0]], ['0', LB[1]]].map((o) => '<button type="button" class="wsf' + (cn[o[0]] || f === o[0] ? '' : ' zero') + '" data-wsf="' + o[0] + '" aria-pressed="' + (f === o[0]) + '"><span class="wmi"><span class="wdot">' + UI.fdot(f === o[0] && (o[0] === '1' ? 'green' : o[0] === '0' ? 'red' : 'yellow')) + '</span><span class="wmn">' + o[1] + ' <small>' + cn[o[0]] + '</small></span></span></button>').join('') + '</div>' : '', bot = seg + addRows();
+    const LB = am ? ['הגיע', 'לא הגיע'] : ['נשלח', 'לא נשלח'], cn = (am || sel) ? waCounts() : null, seg = cn ? '<div class="wseg" role="group" aria-label="' + (am ? 'סינון הרשימה לפי הגעה' : 'סינון הרשימה לפי שליחה של התבנית שנבחרה') + '">' + [['', 'הכל'], ['1', LB[0]], ['0', LB[1]]].map((o) => '<button type="button" class="wsf' + (cn[o[0]] || f === o[0] ? '' : ' zero') + '" data-wsf="' + o[0] + '" aria-pressed="' + (f === o[0]) + '"><span class="wmi"><span class="wdot"></span><span class="wmn">' + o[1] + ' <small>' + cn[o[0]] + '</small></span></span></button>').join('') + '</div>' : '', bot = seg + addRows();
     $('#waMenu').innerHTML =
       waList().map((x) => { const on = !!sel && sel.id === x.id, b = item(x.id, PIN_ICON, x.name || 'ללא שם', x.tag || '', on); return on ? '<div class="wrow">' + b + '<button type="button" class="wedit" role="menuitem" data-wedit="' + esc(x.id) + '" title="עריכת ההודעה" aria-label="עריכת ההודעה">' + icon('edit', 'i18') + '</button></div>' : b; }).join('') +
       (bot ? '<div class="wbot">' + bot + '</div>' : '');
@@ -4190,10 +4291,44 @@
     new MutationObserver(() => { if (!m.hidden) { if (!d.open) d.showModal(); } else if (d.open) d.close(); }).observe(m, { attributes: true, attributeFilter: ['hidden'] });
     d.addEventListener('close', () => { if (!m.hidden) cl(); });
   });
+  /* איפוס: the filters and the sort (back to the default: the last meeting, newest first). The display (which buttons the row shows) is a preference and stays. */
+  $('#viewClear').addEventListener('click', () => { { const keep = { g: state.gender, a: state.arrF, p: rowChipPay() ? state.paidF : null, w: waFilter() }; clearFilters(); state.gender = keep.g; state.arrF = keep.a; state.paidF = keep.p; if (keep.w) waSetFilter(keep.w); } state.sort = 'last'; state.sortDir = 'desc'; saveViewPrefs(); renderChipRow(); render(); syncUrl(); renderViewMenu(); });
+  /* a tag's actions: a tap on its cell opens a small menu: בחירה, בחירה הפוכה, צבע, שם, מחיקה */
+  function openTagMenu(key, cell) {
+    let m = document.getElementById('tagActMenu');
+    if (!m) { m = document.createElement('div'); m.id = 'tagActMenu'; m.className = 'tagmenu'; m.setAttribute('role', 'menu'); m.hidden = true; }
+    const host = cell.closest('dialog') || document.body; if (m.parentElement !== host) host.appendChild(m);
+    const it = (a, ic, t, danger, on) => '<button type="button" role="' + (on === undefined ? 'menuitem' : 'menuitemradio') + '"' + (on === undefined ? '' : ' aria-checked="' + on + '"') + ' class="cmi' + (danger ? ' danger' : '') + '" data-vtact="' + a + '" data-k="' + esc(key) + '">' + icon(ic) + ' ' + t + '</button>';   // the chosen item is marked like in every menu: aria-checked, a grey ground
+    const ks = payKeys(state.pay), curSel = ks.includes(key), curInv = ks.includes('!' + key);
+    m.innerHTML = it('select', 'check', 'בחירה', false, curSel) + it('invert', 'close', 'בחירה הפוכה', false, curInv) + '<div class="fsep" role="separator"></div>' + it('color', 'palette', 'שינוי צבע') + it('rename', 'edit', 'עריכת שם') + it('del', 'trash', 'מחיקה', true);
+    m.hidden = false;
+    const r = cell.getBoundingClientRect(), mw = m.offsetWidth, mh = m.offsetHeight;
+    m.style.setProperty('--mx', Math.min(Math.max(8, r.left + r.width / 2 - mw / 2), window.innerWidth - mw - 8) + 'px');
+    m.style.setProperty('--my', (r.bottom + 8 + mh > window.innerHeight - 8 ? Math.max(8, r.top - mh - 8) : r.bottom + 8) + 'px');
+    m.onclick = (ev) => {
+      const b = ev.target.closest('[data-vtact]'); if (!b) return; const k = b.dataset.k, a = b.dataset.vtact; m.hidden = true;
+      if (a === 'select' || a === 'invert') { const key2 = a === 'invert' ? '!' + k : k, ks2 = payKeys(state.pay); state.pay = ks2.includes(key2) ? null : key2; render(); syncUrl(); renderViewMenu(); return; }
+      if (a === 'color') { const cell2 = document.querySelector('#viewMenu [data-vct="' + k + '"]') || cell; openColorMenu(k, cell2); return; }
+      if (a === 'rename') { vtRenaming = k; renderViewMenu(); const i = $('#viewMenu .vtren'); if (i) { i.focus(); try { i.select(); } catch (x) {} } return; }
+      if (a === 'del') { closeView(); openTagDeleteScreen(k); }
+    };
+  }
+  const renameTagInline = (inp) => {
+    const k = vtRenaming; vtRenaming = null; const v = inp.value.trim().replace(/\s+/g, ' ').slice(0, 14), s0 = state.statuses.find((x) => x.key === k);
+    if (!s0 || !v || v === s0.label) { renderViewMenu(); return; }
+    if (stNameTaken(v, k)) { toast(ST_DUP); renderViewMenu(); return; }
+    saveStatus(k, { label: v });
+  };
+  $('#viewMenu').addEventListener('keydown', (e) => { const c = e.target.classList; if (!c || !c.contains('vtname')) return; if (e.key === 'Enter') { e.preventDefault(); c.contains('vtren') ? renameTagInline(e.target) : addTagInline(e.target); } else if (e.key === 'Escape' && c.contains('vtren')) { e.preventDefault(); e.stopPropagation(); vtRenaming = null; renderViewMenu(); } });
+  $('#viewMenu').addEventListener('focusout', (e) => { const i = e.target; if (i && i.classList && i.classList.contains('vtren') && vtRenaming) { setTimeout(() => { if (vtRenaming && document.activeElement !== i) renameTagInline(i); }, 120); return; } if (i && i.classList && i.classList.contains('vtname') && vtAdding) setTimeout(() => { if (vtAdding && document.activeElement !== i) addTagInline(i); }, 120); });
   $('#viewMenu').addEventListener('click', (e) => {
     const after = (prefs) => { render(); renderViewMenu(); if (sheet && sheet.id && pDlg.open) refreshSheetMeetings(); if (prefs) saveViewPrefs(); };
     const mk = e.target.closest('[data-mk]');
-    const st = e.target.closest('[data-stri]'); if (st) { updFrozen = null; const k = st.dataset.stri; if (state.sort !== k) { state.sort = k; state.sortDir = 'desc'; } else if (state.sortDir === 'desc') state.sortDir = 'asc'; else { state.sort = 'upd'; state.sortDir = 'desc'; } render(); saveViewPrefs(); renderViewMenu(); return; }
+    const vct = e.target.closest('[data-vct]'); if (vct) { openTagMenu(vct.dataset.vct, vct); return; }   // a tap on a tag opens its menu: בחירה, בחירה הפוכה, צבע, שם, מחיקה   // one tag at a time, like the chip row did
+    const vte = e.target.closest('[data-vtshow]'); if (vte && vte.dataset.vtshow) { const k = vte.dataset.vtshow, hid = state.tagHide.includes(k); state.tagHide = hid ? state.tagHide.filter((x) => x !== k) : state.tagHide.concat(k); saveViewPrefs(); renderViewMenu(); return; }
+    if (e.target.closest('[data-vtadd]')) { vtAdding = true; renderViewMenu(); const i = $('#viewMenu .vtname'); if (i) { i.focus(); try { i.scrollIntoView({ block: 'center' }); } catch (x) {} } return; }
+    const vs = e.target.closest('[data-vshow]'); if (vs) { const k = vs.dataset.vshow, cur = state.chipHide.filter((x) => x !== k && !(k === 'gen' && (x === 'male' || x === 'female'))); state.chipHide = vs.getAttribute('aria-pressed') === 'true' ? cur.concat(k) : cur; saveViewPrefs(); renderChipRow(); renderViewMenu(); return; }   // shown (pressed) -> hide it from the row
+    const st = e.target.closest('[data-stri]'); if (st) { updFrozen = null; const k = st.dataset.stri; if (state.sort !== k) { state.sort = k; state.sortDir = 'desc'; } else if (state.sortDir === 'desc') state.sortDir = 'asc'; else { state.sort = 'last'; state.sortDir = 'desc'; } render(); saveViewPrefs(); renderViewMenu(); return; }
     if (mk) { const f = FK[mk.dataset.mk], v = mk.dataset.mv; if (f) { const cur = payKeys(state[f]); state[f] = (cur.includes(v) ? cur.filter((x) => x !== v) : (f === 'gender' || f === 'updF' || f === 'regF' ? [v] : cur.concat(v))).join(',') || null; } syncUrl(); return after(); }
     const mp = e.target.closest('[data-mp]');
     if (mp) { const v = mp.dataset.mv; if (mp.dataset.mp === 'pay') state.paidF = state.paidF === v ? null : v; else state.bal = state.bal === v ? null : v; syncUrl(); return after(); }   // תשלום או קרדיט: בחירה אחת
@@ -4247,6 +4382,8 @@
     { const ra = e.target.closest('[data-rowadd]'); if (ra) { e.stopPropagation(); e.preventDefault(); confirmLink(ra.dataset.rowadd, state.filter, true); return; } }   // שיוך ישיר מהרשימה, בלי בחירת תגית
     { const ru = e.target.closest('[data-rowun]'); if (ru) { e.stopPropagation(); e.preventDefault(); confirmLink(ru.dataset.rowun, state.filter, false); return; } }   // הסרה מהמפגש מהכרטיס ברשימה: פופאפ אישור
     { const rw = e.target.closest('.rowwa'); if (rw) { e.stopPropagation(); const ws = rw.dataset.wsend && waSelected(); if (ws) { waAwait = { pid: rw.dataset.wsend, mid: ws.m.id, key: ws.id, name: ws.name }; if (rw.classList.contains('sent')) { e.preventDefault(); askMsgSent(); } } return; } }   // וואטסאפ מהרשימה: רק פותח את השיחה, לא את כרטיס המשתתף; עם תבנית: בחזרה מאשרים שנשלחה. הודעה שכבר סומנה כנשלחה: לא פותח וואטסאפ, רק פופאפ אישור לביטול הסימון
+    const qa = e.target.closest('[data-qa]');
+    if (qa) { e.stopPropagation(); e.preventDefault(); if (!$('#qMenu').hidden) { closeQ(); return; } openQuickMenu(qa.dataset.qa, qa, state.filter || undefined, true); return; }
     const qs = e.target.closest('[data-qs]');
     if (qs) { e.stopPropagation(); if (!$('#qMenu').hidden) { closeQ(); return; } openQuickMenu(qs.dataset.qs, qs, state.filter || undefined); return; }
     const eu = e.target.closest('[data-evun]');
@@ -4405,45 +4542,29 @@
   }
   const curSt = () => statusList(stType || firstTypeId());
   function showSetView(v) {
-    setView = v; if (v !== 'st') stDraft = null;
+    setView = v;
     if (v !== 'src') dropSrcDraft();
-    $('#setMain').hidden = v !== 'main'; $('#setTyDet').hidden = v !== 'tydet'; $('#tySave').hidden = v !== 'tydet'; $('#setSt').hidden = v !== 'st'; $('#setDel').hidden = v !== 'del'; $('#setSrc').hidden = v !== 'src'; $('#setPm').hidden = v !== 'pm'; $('#setEm').hidden = v !== 'em'; $('#setBack').hidden = setIsRoot(v);   // המסך שהפופאפ נפתח עליו, וסוג חדש (מסך הפרטים הוא הראשי): אין לאן לחזור
-    $('#setTitle').textContent = v === 'tydet' ? (tyId ? 'עריכת סוג מפגש' : 'סוג מפגש חדש') : v === 'st' ? ((typeById(stType) || typeById(firstTypeId()) || {}).name || 'תגיות') : v === 'del' ? (setRoot === 'src' ? 'מחיקת שיווק ממומן' : 'מחיקת תגית') : v === 'src' ? 'שיווק ממומן' : v === 'pm' ? 'דרכי תשלום' : v === 'em' ? 'הודעה לפני המפגש' : 'החשבון שלי';
+    $('#setMain').hidden = v !== 'main'; $('#setTyDet').hidden = v !== 'tydet'; $('#tySave').hidden = v !== 'tydet'; $('#setDel').hidden = v !== 'del'; $('#setSrc').hidden = v !== 'src'; $('#setPm').hidden = v !== 'pm'; $('#setEm').hidden = v !== 'em'; $('#setBack').hidden = setIsRoot(v) || (v === 'del' && tagDelFromMenu);   // המסך שהפופאפ נפתח עליו, וסוג חדש (מסך הפרטים הוא הראשי): אין לאן לחזור
+    $('#setTitle').textContent = v === 'tydet' ? (tyId ? 'עריכת סוג מפגש' : 'סוג מפגש חדש') : v === 'del' ? (setRoot === 'src' ? 'מחיקת שיווק ממומן' : 'מחיקת תגית') : v === 'src' ? 'שיווק ממומן' : v === 'pm' ? 'דרכי תשלום' : v === 'em' ? 'הודעה לפני המפגש' : 'החשבון שלי';
     if (v === 'src') renderSources();
     if (v === 'pm') renderPm();
     if (v === 'tydet') renderTyDet();
     if (v === 'em') { const ta = $('#emText'); if (document.activeElement !== ta) ta.value = eventTemplate(stType); renderEmOpen(); }
-    if (v === 'st') renderStSettings();
     navSync($('#setDlg')); syncUrl();
   }
-  let stDraft = null;   // תגית חדשה שעוד לא נשמרה: { key }. נשמרת רק אחרי שמקלידים שם (בלי שם אוטומטי)
+  let tagDelFromMenu = false;   // the delete screen was opened from the filter popup: it closes when done
   const normName = (v) => String(v == null ? '' : v).trim().replace(/\s+/g, ' ').toLowerCase();
   /* שם כבר קיים בתגיות של הסוג; לא כולל את התגית עצמה */
   const stNameTaken = (label, key) => { const n = normName(label); return curSt().some((x) => x.key !== key && normName(x.label) === n); };
   const ST_DUP = 'כבר יש תגית בשם הזה';
-  function renderStSettings() {
-    const dv0 = document.querySelector('#stBoth .strow.draft .stname'), dVal = dv0 ? dv0.value : '', dFoc = !!dv0 && document.activeElement === dv0;   // ציור מחדש (למשל מזמן אמת) לא מוחק שם שמוקלד
-    const list = curSt();
-    const nameStyle = (s) => 'color:' + (s.color === 'neutral' ? 'var(--gray)' : (PALETTE[s.color] || PALETTE.sky)[1]);   // שדה רגיל: קו תחתון, והצבע של התגית בטקסט בלבד
-    const dRow = { key: stDraft ? stDraft.key : '', label: '', color: 'neutral', _d: true };
-    $('#stList').innerHTML = (stDraft ? list.concat([dRow]) : list).map((s) => '<div class="strow' + (s._d ? ' draft' : '') + '" data-k="' + esc(s.key) + '"' + (s._d ? ' data-draft="1"' : '') + '>' +
-      '<button type="button" class="sthandle" aria-label="גרירה לשינוי הסדר (או חצים במקלדת)" title="גרירה לשינוי הסדר"' + (s._d ? ' disabled' : '') + '>' + icon('grip', 'i18') + '</button>' +
-      '<button type="button" class="swcur" data-c="' + esc(s.color) + '" aria-haspopup="menu" aria-label="צבע: ' + (PALETTE[s.color] || PALETTE.sky)[2] + ' (לחיצה לשינוי)" title="שינוי צבע" style="background:' + (PALETTE[s.color] || PALETTE.sky)[0] + '"></button>' +
-      '<input data-rf-bare class="stname" value="' + esc(s.label) + '" maxlength="14" aria-label="שם התגית"' + (s._d ? ' placeholder="שם התגית" autocomplete="nope" enterkeyhint="done"' : '') + ' style="' + nameStyle(s) + '" />' +
-      (s._d ? '' : '<button type="button" class="stshow eyebtn" data-showtag="' + esc(s.key) + '" aria-pressed="' + !state.tagHide.includes(s.key) + '" aria-label="' + (state.tagHide.includes(s.key) ? 'הצגה בשורת הצ\'יפים: ' : 'הסתרה משורת הצ\'יפים: ') + esc(s.label) + '" title="' + (state.tagHide.includes(s.key) ? 'מוסתר בשורת הצ\'יפים' : 'מוצג בשורת הצ\'יפים') + '">' + icon(state.tagHide.includes(s.key) ? 'eyeoff' : 'eye', 'i18') + '</button>') +
-      (s._d ? '<button type="button" class="stdel" data-dcancel="1" aria-label="ביטול" title="ביטול">×</button>' : '<button type="button" class="stdel" data-del="' + esc(s.key) + '" aria-label="מחיקת התגית" title="מחיקת התגית">×</button>') + '</div>').join('');
-    const hid = (k) => state.chipHide.some((x) => x === k || (k === 'gen' && (x === 'male' || x === 'female')));
-    $('#stShow').innerHTML = [['res', 'משוריינים', icon('bookmark', 'i16')], ['arr', 'הגיעו', icon('check', 'i16')], ['gen', 'מגדר', icon('male', 'i16') + icon('female', 'i16')]].map((c) => '<div class="shrow"><span class="stc tagc shchip" title="' + c[1] + '" aria-label="' + c[1] + '">' + c[2] + ' <span class="shname">' + c[1] + '</span></span><button type="button" class="eyebtn" data-showchip="' + c[0] + '" aria-pressed="' + !hid(c[0]) + '" aria-label="' + (hid(c[0]) ? 'הצגה בשורת הצ\'יפים: ' : 'הסתרה משורת הצ\'יפים: ') + c[1] + '" title="' + (hid(c[0]) ? 'מוסתר בשורת הצ\'יפים' : 'מוצג בשורת הצ\'יפים') + '">' + icon(hid(c[0]) ? 'eyeoff' : 'eye', 'i18') + '</button></div>').join('');   // צ'יפים של ברירת המחדל: סמל ועין (פקוחה = מוצג, עם אלכסון = מוסתר)
-    if (stDraft) { const dv = document.querySelector('#stBoth .strow.draft .stname'); if (dv) { if (dVal) dv.value = dVal; if (dFoc) dv.focus(); } }
-  }
   async function saveStatus(key, patch) {
     const s = state.statuses.find((x) => x.key === key); if (!s) return;
     const prev = Object.assign({}, s); Object.assign(s, patch);
-    applyStatuses(); renderStSettings(); render(); if (sheet && sheet.id) { refreshSheetMeetings(); renderContact(); }
+    applyStatuses(); render(); if (sheet && sheet.id) { refreshSheetMeetings(); renderContact(); } if (!$('#viewMenu').hidden) renderViewMenu();
     try { await api(T.st + '?key=eq.' + key, { method: 'PATCH', body: patch }); }
-    catch (err) { Object.assign(s, prev); applyStatuses(); renderStSettings(); render(); fail(err); }
+    catch (err) { Object.assign(s, prev); applyStatuses(); render(); fail(err); }
   }
-  $('#setBack').addEventListener('click', () => showSetView(setView === 'del' ? (setRoot === 'src' ? 'src' : 'st') : (tyId && setView === 'em') ? 'tydet' : setRoot));   // מחיקת תגית חוזרת לתגיות, והודעה לפני המפגש לעריכת הסוג
+  $('#setBack').addEventListener('click', () => showSetView(setView === 'del' ? (setRoot === 'src' ? 'src' : 'main') : (tyId && setView === 'em') ? 'tydet' : setRoot));   // מחיקת תגית חוזרת לתגיות, והודעה לפני המפגש לעריכת הסוג
   /* הגדרות תשלומים: מדרגות מחיר לפי ימים שנותרו עד המפגש */
   /* שיווק ממומן בהגדרות: ערוצי פרסום ממומן (שם, צבע, קוד) ושיווק ממומן (שם, צבע, עמלה), בעיצוב דומה לתגיות */
   const colDot = (c, who) => '<button type="button" class="swcur" data-who="' + esc(who) + '" data-c="' + esc(c) + '" aria-haspopup="menu" aria-label="צבע" title="שינוי צבע" style="background:' + (PALETTE[c] || PALETTE.sky)[0] + '"></button>';
@@ -4594,71 +4715,29 @@
   $('#srcPrAdd').addEventListener('click', startSrcDraft);
   $('#srcPrDraft').addEventListener('focusout', () => setTimeout(() => { if (!srcDraftOn) return; const b = $('#srcPrDraft'), n = b.querySelector('[data-f="name"]'), m = $('#colMenu'); if (n && !n.value.trim() && !b.contains(document.activeElement) && !(m && !m.hidden)) dropSrcDraft(); }, 150));   // יצאו בלי שם: הכרטיס נעלם, ושום דבר לא נשמר
   $('#setDlg').addEventListener('close', () => { tyF.edited = false; setRoot = 'main'; showSetView('main'); tyId = null; stType = null; tyNew = null; tyFormFor = null; syncUrl(); });
-  $('#stBoth').addEventListener('click', (e) => {
-    const cb = e.target.closest('[data-showchip], [data-showtag]'); if (!cb) return;
-    const prop = cb.dataset.showchip ? 'chipHide' : 'tagHide', key = cb.dataset.showchip || cb.dataset.showtag, cur = state[prop].filter((x) => x !== key && !(key === 'gen' && (x === 'male' || x === 'female')));
-    state[prop] = cb.getAttribute('aria-pressed') === 'true' ? cur.concat(key) : cur;   // עין פקוחה (מוצג) ← לחיצה מסתירה
-    saveViewPrefs(); renderChipRow(); renderStSettings();
-  });
-  /* "+ חדש": שורה ריקה עם סמן (בלי שם אוטומטי); הפריט נשמר רק כשמקלידים שם שלא קיים באותה רשימה, ובלי שם השורה נעלמת */
-  function startDraft() {
-    if (stDraft) { const i = document.querySelector('#stBoth .strow.draft .stname'); if (i) { i.focus(); return; } }
-    stDraft = { key: 'm_' + Math.random().toString(36).slice(2, 7) };
-    renderStSettings();
-    const inp = document.querySelector('#stBoth .strow.draft .stname'); if (inp) { inp.focus(); try { inp.scrollIntoView({ block: 'center' }); } catch (e) {} }
-  }
-  async function commitDraft(inp) {
-    const d = stDraft; if (!d) return;
-    const v = inp.value.trim().replace(/\s+/g, ' ').slice(0, 14);
-    if (!v) { stDraft = null; renderStSettings(); return; }
-    if (stNameTaken(v, d.key)) { toast(ST_DUP); setTimeout(() => { try { inp.focus(); inp.select(); } catch (e) {} }, 30); return; }
-    const row = { key: d.key, label: v, color: 'neutral', sort: Math.max(0, ...state.statuses.map((x) => x.sort)) + 1, scope: 'meeting' };
-    if (state.mtypes.length) row.type_id = stType || firstTypeId();   // שייכת לסוג המפגש שנערך
-    state.statuses.push(row); stDraft = null; applyStatuses(); renderStSettings();
-    try { await api(T.st, { method: 'POST', body: row, prefer: 'return=minimal' }); }
-    catch (err) { state.statuses = state.statuses.filter((x) => x !== row); applyStatuses(); renderStSettings(); fail(err); }
-  }
-  $('#stAdd').addEventListener('click', () => startDraft());
-  $('#stBoth').addEventListener('focusout', (e) => {   // יצאו משורה ריקה בלי להקליד שם: היא נעלמת
-    const inp = e.target; if (!inp || !inp.classList || !inp.classList.contains('stname') || !inp.closest('.strow.draft')) return;
-    if (e.relatedTarget && inp.closest('.strow').contains(e.relatedTarget)) return;
-    setTimeout(() => { const cur = document.querySelector('#stBoth .strow.draft .stname'); if (stDraft && cur && !cur.value.trim() && document.activeElement !== cur) { stDraft = null; renderStSettings(); } }, 150);
-  });
-  $('#stBoth').addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('stname') && e.target.closest('.strow.draft')) { e.preventDefault(); commitDraft(e.target); } });
-  $('#stBoth').addEventListener('click', (e) => { if (e.target.closest('[data-dcancel]')) { stDraft = null; renderStSettings(); } });
-  /* הצגה בשורת הצ'יפים: סימון = מוצג, ביטול הסימון = מוסתר (לכל מנהל, נשמר מיד) */
-  $('#stBoth').addEventListener('change', (e) => {
-    const cb = e.target.closest('[data-showchip], [data-showtag]'); if (!cb) return;
-    const prop = cb.dataset.showchip ? 'chipHide' : 'tagHide', key = cb.dataset.showchip || cb.dataset.showtag, cur = state[prop].filter((x) => x !== key && !(key === 'gen' && (x === 'male' || x === 'female')));
-    state[prop] = cb.checked ? cur : cur.concat(key);
-    saveViewPrefs(); renderChipRow();
-  });
   /* מחיקת תגית: מי שסומן בה עובר לתגית אחרת, או נשאר בלי תגית */
   async function removeStatus(k, to, used) {
     used.forEach((l) => { l.status_key = to || null; });
     state.statuses = state.statuses.filter((x) => x.key !== k);
-    applyStatuses(); showSetView('st'); render(); if (sheet && sheet.id) { refreshSheetMeetings(); renderContact(); }
+    applyStatuses(); if (tagDelFromMenu) { tagDelFromMenu = false; try { $('#setDlg').close(); } catch (e) {} if (!$('#viewMenu').hidden) renderViewMenu(); } else showSetView('st'); render(); if (sheet && sheet.id) { refreshSheetMeetings(); renderContact(); }
     try {
       for (const l of used) await api(T.a + attQs(l.participant_id, l.meeting_id), { method: 'PATCH', body: statusBody(to) });
       await api(T.st + '?key=eq.' + k, { method: 'DELETE' }); toast('התגית נמחקה');
     } catch (err) { fail(err); load(true); }
   }
-  $('#stBoth').addEventListener('click', async (e) => {
-    const del = e.target.closest('[data-del]');
-    if (del) {
-      const k = del.dataset.del, s = state.statuses.find((x) => x.key === k); if (!s) return;
+  async function askDeleteTag(k) {
+    {
+      const s = state.statuses.find((x) => x.key === k); if (!s) return;
       const used = state.att.filter((l) => l.status_key === k);
       if (!used.length) { await removeStatus(k, null, used); return; }
       /* יש משתתפים עם התגית: שואלים אם להחליף אותה בתגית אחרת, או רק להסיר (מסך בתוך הפופאפ) */
       $('#setDelText').innerHTML = 'יש <b>' + used.length + '</b> משתתפים במפגשים עם התגית <b>"' + esc(s.label) + '"</b>. להחליף אותה בתגית אחרת, או רק להסיר?';
-      $('#setDelOpts').innerHTML = curSt().filter((x) => x.key !== k).map((x) => '<button type="button" class="sopt ' + esc(x.key) + '" data-to="' + esc(x.key) + '">' + esc(x.label) + '</button>').join('') + '<button type="button" class="sopt psnone" data-to="">רק להסיר</button>';
+      $('#setDelOpts').innerHTML = curSt().filter((x) => x.key !== k).map((x) => '<button type="button" class="btn ghost" data-to="' + esc(x.key) + '">החלפה ב"' + esc(x.label) + '"</button>').join('') + '<button type="button" class="btn" data-to="">רק להסיר</button>';
       $('#setDelOpts').onclick = async (ev) => { const b = ev.target.closest('[data-to]'); if (!b) return; await removeStatus(k, b.dataset.to || null, used); };
       showSetView('del');
       return;
     }
-    const row = e.target.closest('.strow'); if (!row) return;
-    const cur = e.target.closest('.swcur'); if (cur) { openColorMenu(row.dataset.k, cur); return; }
-  });
+  }
   /* בחירת צבע: מציגים רק את הצבע הנוכחי, ובלחיצה נפתח תפריט קטן עם הפלטה */
   function openColorMenu(key, anchor, curOverride, onPickOverride) {
     let m = document.getElementById('colMenu');
@@ -4672,56 +4751,9 @@
     const r = anchor.getBoundingClientRect(), mw = m.offsetWidth, mh = m.offsetHeight;
     m.style.left = Math.min(Math.max(8, r.left + r.width / 2 - mw / 2), window.innerWidth - mw - 8) + 'px';
     m.style.top = (r.bottom + 8 + mh > menuBottom() ? Math.max(8, r.top - mh - 8) : r.bottom + 8) + 'px';
+    m.style.setProperty('--mx', m.style.left); m.style.setProperty('--my', m.style.top);   // (inside a bottom-sheet popup the CSS places it from these)
     m.onclick = (e) => { const sw = e.target.closest('.sw'); if (!sw) return; m.hidden = true; if (onPickOverride) onPickOverride(sw.dataset.c); else saveStatus(key, { color: sw.dataset.c }); };
   }
-  /* סדר התגיות: גוררים בידית (עכבר או מגע) ומחליפים מקום; נשמר ברגע הפיסול. במקלדת: חצים על הידית */
-  async function commitOrder(keys) {
-    const before = state.statuses.map((s) => ({ key: s.key, sort: s.sort }));
-    const changed = [];
-    keys.forEach((k, i) => { const s = state.statuses.find((x) => x.key === k); if (s && s.sort !== i + 1) { s.sort = i + 1; changed.push(s); } });
-    applyStatuses(); renderStSettings(); render(); if (sheet && sheet.id) { refreshSheetMeetings(); renderContact(); }
-    if (!changed.length) return;
-    try { await Promise.all(changed.map((s) => api(T.st + '?key=eq.' + s.key, { method: 'PATCH', body: { sort: s.sort } }))); }
-    catch (err) { before.forEach((b0) => { const s = state.statuses.find((x) => x.key === b0.key); if (s) s.sort = b0.sort; }); applyStatuses(); renderStSettings(); render(); fail(err); }
-  }
-  let stDrag = null;
-  $('#stBoth').addEventListener('pointerdown', (e) => {
-    const h = e.target.closest('.sthandle'); if (!h) return;
-    const row = h.closest('.strow'); e.preventDefault();
-    h.setPointerCapture(e.pointerId);
-    stDrag = { row, h, id: e.pointerId, grab: e.clientY - row.getBoundingClientRect().top };
-    row.classList.add('dragging');
-  });
-  const stFollow = (e) => {
-    const d = stDrag; if (!d || e.pointerId !== d.id) return;
-    const list = d.row.parentElement, row = d.row;
-    const place = () => { row.style.transform = 'none'; const nat = row.getBoundingClientRect().top; row.style.transform = 'translateY(' + (e.clientY - d.grab - nat) + 'px)'; };
-    place();
-    for (let guard = 0; guard < 8; guard++) {
-      const r = row.getBoundingClientRect(), prev = row.previousElementSibling, next = row.nextElementSibling;
-      if (prev && !prev.classList.contains('locked') && r.top + r.height / 2 < prev.getBoundingClientRect().top + prev.getBoundingClientRect().height / 2) { list.insertBefore(row, prev); place(); }
-      else if (next && !next.classList.contains('locked') && r.top + r.height / 2 > next.getBoundingClientRect().top + next.getBoundingClientRect().height / 2) { list.insertBefore(next, row); place(); }
-      else break;
-    }
-  };
-  $('#stBoth').addEventListener('pointermove', stFollow);
-  const stDrop = (e) => {
-    const d = stDrag; if (!d || e.pointerId !== d.id) return;
-    stDrag = null; d.row.classList.remove('dragging'); d.row.style.transform = '';
-    commitOrder([...d.row.parentElement.querySelectorAll('.strow')].map((r) => r.dataset.k));
-  };
-  $('#stBoth').addEventListener('pointerup', stDrop);
-  $('#stBoth').addEventListener('pointercancel', stDrop);
-  /* גרירה בתוך הפופאפ לא מזיזה או סוגרת אותו */
-  ['touchstart', 'touchmove'].forEach((ev) => $('#stBoth').addEventListener(ev, (e) => { if (e.target.closest('.sthandle')) { e.stopPropagation(); if (ev === 'touchmove' && e.cancelable) e.preventDefault(); } }, { passive: false }));
-  $('#stBoth').addEventListener('keydown', (e) => {
-    const h = e.target.closest('.sthandle'); if (!h || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
-    e.preventDefault();
-    const keys = [...h.closest('.strow').parentElement.querySelectorAll('.strow')].map((r) => r.dataset.k), k = h.closest('.strow').dataset.k, i = keys.indexOf(k), j = e.key === 'ArrowUp' ? i - 1 : i + 1;
-    if (j < 0 || j >= keys.length) return;
-    keys.splice(i, 1); keys.splice(j, 0, k);
-    commitOrder(keys).then(() => { const nh = document.querySelector('#stBoth .strow[data-k="' + k + '"] .sthandle'); if (nh) nh.focus(); });
-  });
 
 
   /* roster: מדריך ההקמה (onboarding.js) צריך כמה ידיות מתוך הסקריפט הזה. types() הוא null עד שקריאת סוגי המפגש הצליחה (כך שגיאת רשת לא נראית כעסק בלי סוגים) */

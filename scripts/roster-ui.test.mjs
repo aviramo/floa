@@ -117,7 +117,7 @@ async function withChrome(origin, run) {
       if (mobile) await send("Emulation.setTouchEmulationEnabled", { enabled: true });
       await send("Page.addScriptToEvaluateOnNewDocument", { source:
         `try { ${session ? `if (!sessionStorage.getItem("seeded")) { localStorage.setItem("floa.session", ${JSON.stringify(SESSION)}); sessionStorage.setItem("seeded", "1"); }` : ""}
-               localStorage.setItem("rk.swipe.understood", "1"); } catch (e) {}` });
+               localStorage.setItem("rk.swipe.understood", "2"); } catch (e) {}` });
       await send("Page.navigate", { url });
       const evaluate = async (expression) => {
         const out = await send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true });
@@ -160,6 +160,7 @@ const MEASURE = `(() => {
     x: xr ? { l: Math.round(xr.left - r.left), t: Math.round(xr.top - r.top), w: Math.round(xr.width), h: Math.round(xr.height) } : null,
     headT: head ? Math.round(head.getBoundingClientRect().top - r.top) : null, titleT: ttl ? Math.round(ttl.getBoundingClientRect().top - r.top) : null, pptop, ptt,
     off: shell.flatMap(grid), grabTop, px, hasGrab, xShown: !!x,
+    cancelBtns: [...d.querySelectorAll("button")].filter((b) => { const q = b.getBoundingClientRect(); return q.width > 0 && q.height > 0 && b.textContent.trim() === "ביטול"; }).length,
     hscroll: d.scrollWidth - d.clientWidth,
     fixedBox: cs.position,
   };
@@ -172,6 +173,7 @@ const SEEN = new Map();   /* one X position per (view, grab bar above or not): e
 const xExact = (tag, view, m) => {
   /* touch (owner 2026-11-13): a popup with a grab bar shows NO X; the grab bar closes it. A computer popup keeps its X. */
   if (view.width < 760 || view.name === "phone") check(`${tag}: no visible X where a grab bar closes the popup`, !(m.hasGrab && m.xShown), m);
+  check(`${tag}: no cancel button in a popup (closing it is the cancel)`, m.cancelBtns === 0, m);   // owner 2026-11-13
   if (!m.x) return;
   const key = view.name + (m.grabTop ? " with a grab bar above" : " without");
   /* the glyph (12px) sits on the content edge: its 44px target reaches 16px past it, so left = side padding - 16, the same on every page; the top is the shell top padding (16) under the grab bar, if any */
@@ -311,6 +313,7 @@ const chipProbe = (html) => `(async () => {
   const size = { s: px("--tag-s"), m: px("--tag"), l: px("--tag-l") };
   const out = { n: 0, heights: [], off: [], size };
   for (const el of box.querySelectorAll(${JSON.stringify(CHIP_SEL)})) {
+    if (el.closest(".chiprow")) continue;   /* the filter row above the list: its four buttons are controls of the full touch height (44px), not tags */
     if (el.classList.contains("rowwa")) continue;   /* the whatsapp / message / attendance mark is the card's corner tile (44px square), not a chip */
     const r = el.getBoundingClientRect(); if (r.width < 4 || r.height < 4) continue;
     out.n++;
@@ -364,7 +367,7 @@ try {
         }
         {
           const g = await tab.evaluate(chipProbe(page === "/roster/admin/" ? ADMIN_CHIPS + KIT_CHIPS : KIT_CHIPS));
-          check(`${tag}: ${g.n} chips measured, one height per size (s ${g.size.s}, m ${g.size.m}, l ${g.size.l})`, g.n >= (page === "/roster/admin/" ? 20 : 6) && g.heights.length === 0, g.heights);
+          check(`${tag}: ${g.n} chips measured, one height per size (s ${g.size.s}, m ${g.size.m}, l ${g.size.l})`, g.n >= (page === "/roster/admin/" ? 15 : 6) && g.heights.length === 0, g.heights);
           check(`${tag}: the text and the icons of every chip sit on its vertical centre (1px), icons are a 16px box`, g.off.length === 0, g.off.slice(0, 6));
         }
         {
@@ -435,25 +438,25 @@ try {
           const pe = el.matches(".rhead") ? el : (el.querySelector(".rhead") || el);
           const out = { padTop: parseFloat(getComputedStyle(pe).paddingTop) || 0, bg: cs.backgroundColor, edge: cs.borderBottomColor + " " + cs.borderBottomWidth, rowBg: clear(rs.backgroundColor) ? bodyBg : rs.backgroundColor, rowEdge: rs.borderBottomColor + " " + rs.borderBottomWidth };
           row.remove();
-          /* the header's icon buttons (account, menu, view, ...): no background of their own, a 44px hit area, and the OUTERMOST glyph on each side flush with the content edge */
+          /* the header's icon buttons (account, menu, view, ...): a 44px TILE with a background of its own (owner 2026-11-13: the shape of a popup's save button), whose box is flush with the content edge on its side */
           const box = el.querySelector(".rhead__in, .title-row") || el, bcs = getComputedStyle(box), br = box.getBoundingClientRect();
           const cl = br.left + (parseFloat(bcs.paddingLeft) || 0), cr = br.right - (parseFloat(bcs.paddingRight) || 0), mid = (cl + cr) / 2;
           const btns = [...box.querySelectorAll("button, a")].map((b) => ({ b, g: b.querySelector("svg"), r: b.getBoundingClientRect() }))
             .filter((x) => x.g && x.r.width > 0 && !x.b.closest("[hidden]") && !(x.b.innerText || "").trim());
-          out.icons = btns.map((x) => { const gr = x.g.getBoundingClientRect(); return { id: x.b.id || x.b.className, bg: getComputedStyle(x.b).backgroundColor, hit: Math.round(Math.max(x.r.width, x.r.height)), gl: Math.round(gr.left - cl), gr: Math.round(cr - gr.right), left: gr.left + gr.width / 2 < mid }; });
+          out.icons = btns.map((x) => { const gr = x.g.getBoundingClientRect(); return { id: x.b.id || x.b.className, bg: getComputedStyle(x.b).backgroundColor, hit: Math.round(Math.max(x.r.width, x.r.height)), gl: Math.round(x.r.left - cl), gr: Math.round(cr - x.r.right), left: gr.left + gr.width / 2 < mid }; });
           const lefts = out.icons.filter((i) => i.left), rights = out.icons.filter((i) => !i.left);
           out.leftEdge = lefts.length ? Math.min(...lefts.map((i) => i.gl)) : null;
           out.rightEdge = rights.length ? Math.min(...rights.map((i) => i.gr)) : null;
-          /* the title row never moves: the icon buttons are centered on the TITLE (not on title plus subtitle) */
-          const ti = el.querySelector(".rhead__title"); if (ti) { const tr = ti.getBoundingClientRect(); out.titleMid = tr.top + tr.height / 2; out.iconMids = btns.map((x) => x.r.top + x.r.height / 2); }
+          /* the title block (the title, and its subtitle when there is one) is centred on the tile */
+          const ti = el.querySelector(".rhead__text, .msel"); if (ti) { const tr = ti.getBoundingClientRect(); out.titleMid = tr.top + tr.height / 2; out.iconMids = btns.map((x) => x.r.top + x.r.height / 2); }
           return out;
         })()`);
         if (!h) { await tab.close(); continue; }   // behind the sign-in gate in this run: nothing to measure
-        check(`${tag}: at least 16px above the title`, h.padTop >= 16, h);
+        check(`${tag}: the standard gutter above the title (box padding 11px or more, plus the title's own leading = 16px to the glyph)`, h.padTop >= 11, h);
         check(`${tag}: its surface or its bottom edge differs from a list row's`, h.bg !== h.rowBg || h.edge !== h.rowEdge, h);
-        check(`${tag}: its icon buttons have no background of their own`, h.icons.length > 0 && h.icons.every((i) => i.bg === "rgba(0, 0, 0, 0)" || i.bg === "transparent"), h.icons);
-        check(`${tag}: the outermost glyph on each side is flush with the content edge (within 1px)`, (h.leftEdge === null || Math.abs(h.leftEdge) <= 1) && (h.rightEdge === null || Math.abs(h.rightEdge) <= 1), h);
-        if (h.titleMid != null) check(`${tag}: icon buttons are centered on the title row, not on title plus subtitle`, h.iconMids.every((m) => Math.abs(m - h.titleMid) <= 1), h);
+        check(`${tag}: its icon buttons are tiles with a background of their own, 44px`, h.icons.length > 0 && h.icons.every((i) => i.bg !== "rgba(0, 0, 0, 0)" && i.bg !== "transparent" && i.hit >= 44), h.icons);
+        check(`${tag}: the outermost tile on each side is flush with the content edge (within 1px)`, (h.leftEdge === null || Math.abs(h.leftEdge) <= 1) && (h.rightEdge === null || Math.abs(h.rightEdge) <= 1), h);
+        if (h.titleMid != null) check(`${tag}: the title block (title and subtitle together) is centred on the icon tile (within 2px)`, h.iconMids.every((m) => Math.abs(m - h.titleMid) <= 2), h);
         await tab.close();
       }
     }

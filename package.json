@@ -40,6 +40,8 @@
     "test:ear": "node businesses/chords/test/ear.page.test.mjs",
     "build": "node build.mjs",
     "dev": "node build.mjs --serve",
+    "dev:test": "node build.mjs --serve --test",
+    "test:env": "node scripts/test-env.mjs --apply",
     "watch": "node build.mjs --watch",
     "cv": "node build.mjs && node scripts/gen_cv_pdf.mjs && node build.mjs"
   }

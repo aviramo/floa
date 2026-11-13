@@ -112,7 +112,7 @@ dialog::-webkit-scrollbar, dialog *::-webkit-scrollbar { display: none; width: 0
 .stc[aria-pressed="true"], .qmenu .qi[aria-pressed="true"], .sopt[aria-pressed="true"] { border-color: currentColor; }
 #viewMenu .mc, .metchips button { background: transparent; color: var(--text); border-color: transparent; }   /* צ'יף לבחירה: רקע רק למה שמסומן (2.11.26) */
 @media (hover: hover) { :is(#viewMenu .mc, .metchips button):not([aria-pressed="true"]):hover { background: var(--surface-2); } }
-:is(#viewMenu .mc, .metchips button):not([aria-pressed="true"]):active { background: var(--surface-2); }
+.metchips button:not([aria-pressed="true"]):active { background: var(--surface-2); }   /* (the cells of the filter popup have no press flash: a tap on them only does what it does) */
 #viewMenu .mc[aria-pressed="true"], .metchips button[aria-pressed="true"] { background: var(--text); border-color: var(--text); color: var(--on-primary); }
 .stc[aria-pressed="true"] small, #viewMenu .mc[aria-pressed="true"] small { color: inherit; opacity: .8; }
 .frec { margin-inline-start: var(--sp-1); padding: 0; background: transparent; }   /* תווית בשורת תנועה בכספים: טקסט בלבד, בלי רקע */
@@ -258,7 +258,7 @@ body.locked .wrap, body.locked #statsBtn { display: none !important; }
 .wrap > .list { flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior-y: auto; scrollbar-width: none; padding-bottom: var(--end-pad); }   /* הרשימה מסתיימת מעל פס המחוות של המכשיר (31.10.26): השורה האחרונה נגללת עד אזור בטוח */
 .wrap > .list:has(~ .addbox:not(:empty)) { padding-bottom: 0; }   /* כשכרטיס "הוספת משתתף חדש" מתחתיה, האזור הבטוח נשאר מתחתיו */
 .wrap > .list::-webkit-scrollbar { display: none; }
-.wrap > .list:empty { display: none; }
+.wrap > .list:empty { display: block; }   /* an empty list keeps its grey ground to the bottom of the screen, like a full one */
 .wrap > .addbox { flex: 0 0 auto; }
 body:has(#status .empty) .vbar { display: none; }
 
@@ -278,7 +278,7 @@ h1 { margin: 0; font-size: var(--fs-l); font-weight: var(--fw-black); letter-spa
 .hgrp .hicon.nextm[hidden] { display: none; }   /* קיצור הדרך למפגש הקרוב: מוסתר כשכבר נמצאים בו */
 :is(.hgrp, .msel) .hicon::before { content: ''; position: absolute; inset: calc(calc(var(--sp-hair) * 2) * -1) calc(calc(var(--sp-hair) * 1) * -1); }   /* שטח הלחיצה נשאר גדול */
 /* כפתורי האייקון בכותרת הדף: סגנון אחד לכל הדפים (כמו .rhead .rbtn--icon בערכת העיצוב): בלי רקע, שטח לחיצה של 44px לכל כיוון, והסמל עצמו צמוד לקצה התוכן בצד שבו הוא יושב; לחוץ, ריחוף ופוקוס נראים */
-.wrap > header.top .hicon { background: transparent; }
+.wrap > header.top .hicon { background: var(--surface-2); }   /* the header icon is a symbol inside a background, like the save button of a popup */
 :is(.hgrp, .msel) .hicon::before { inset: auto; top: 50%; left: 50%; width: max(100%, var(--ctl)); height: var(--ctl); transform: translate(-50%, -50%); }   /* שטח הלחיצה: לפחות 44px לכל כיוון, ממורכז על הסמל */
 .hgrp > .hicons { margin-inline-end: calc((var(--tag) - var(--icon-m)) / -2); }
 @media (hover: hover) { .wrap > header.top .hicon:hover { background: var(--surface-2); } }
@@ -2113,7 +2113,7 @@ body { font-family: var(--font); }
 /* swipe rows (participants list): the foreground carries the row's own background and its states */
 .list .row[data-swipe], .wrap > .list > .row[data-swipe] { padding: 0; overflow: visible; touch-action: pan-y; }   /* the row card keeps its border and radius, its padding moves to the foreground */
 .list .row[data-swipe] > .rswipe-fg { padding: var(--sp-1); background: inherit; }   /* inherit: whatever background the row has (normal, last, selected) */
-.list .row[data-swipe]:not(.is-open):not(.is-dragging) > .rswipe { visibility: hidden; transition: visibility 0s linear var(--t-base); }   /* a closed tray never shows around the rounded corners */
+.list .row[data-swipe]:not(.is-open):not(.is-dragging):not(.is-demo) > .rswipe { visibility: hidden; transition: visibility 0s linear var(--t-base); }   /* a closed tray never shows around the rounded corners */
 .list > .rhint { margin-block: var(--sp-1); }
 
 /* ===== CHIP CORE: the kit's .rchip geometry for every chip this page draws (status, count, tag, mode, filter) =====
@@ -2156,8 +2156,8 @@ body { font-family: var(--font); }
 
 /* a meeting's date is plain text like its time and name: no frame, no fill */
 .mlist.mlist.mlist .mrow .mdt .mlabel.mlabel.mlabel { height: auto; min-width: 0; padding: 0; border: 0; border-radius: 0; background: transparent; font: inherit; line-height: inherit; color: inherit; }
-/* the selected meeting in the picker is marked like the selected participant card: its own surface, a soft edge and shadow, never a filled bar */
-.mtr.mrow2[aria-checked="true"] { background: var(--bg); box-shadow: 0 0 0 1px var(--line-2), 0 6px 18px color-mix(in srgb, var(--text) 14%, transparent); border-radius: var(--r-card); position: relative; z-index: 1; }
+/* the selected meeting in the picker is marked like every other selected menu item: grey surface, no frame, no shadow */
+.mtr.mrow2[aria-checked="true"] { background: var(--surface-2); box-shadow: none; border-radius: var(--r-card); }
 /* the participant card header: one row, name and age/gender together on the same centre line, the buttons on that line too */
 #pDlg .sheet-head { align-items: center; }
 #pDlg .sheet-head h2 { align-items: center; padding-top: 0; }
@@ -2224,3 +2224,368 @@ body { font-family: var(--font); }
 /* the border of the colored tile is the card's own line (grey), so the two read as one line; only the fill carries the color */
 .wrap > .list .row .rowwa.rowwa.rowwa.ratt, .wrap > .list .row .rowwa.rowwa.rowwa.ratt.msgc { border-color: var(--line); }
 .wrap > .list .row.sel .rowwa.rowwa.rowwa.ratt, .wrap > .list .row.last .rowwa.rowwa.rowwa.ratt { border-color: var(--line-2); }
+
+/* ===== the chip row: always the same buttons, equal in width, filling the row; the last one is the mixer (filter, sort, tags, display) ===== */
+.chiprow { flex-wrap: nowrap; }
+.chiprow .cq { flex: 1 1 100%; flex-wrap: nowrap; gap: var(--sp-1); min-width: 0; }
+.chiprow .stlast { display: contents; }
+.chiprow .cq > .stc, .chiprow .cq > .fspair { flex: 1 1 0; min-width: 0; justify-content: center; }
+.chiprow .fspair { position: relative; display: inline-flex; align-items: center; }
+.chiprow .fspair .ic { width: var(--icon-m); height: var(--icon-m); }
+.mxdot { position: absolute; top: var(--sp-hair); inset-inline-end: var(--sp-hair); width: var(--sp-1); height: var(--sp-1); border-radius: 50%; background: var(--yellow); }
+/* the mark mode (whatsapp / message / attendance) is ONE button the size of the corner tile of the cards, next to the search */
+#listTags .wm3 { width: var(--ctl); height: var(--ctl); padding: 0; gap: 0; border-radius: var(--r); justify-content: center; background: var(--surface-2); }
+#listTags .wm3 .wm3b { width: 100%; height: 100%; border-radius: inherit; background: transparent; color: var(--text); }
+#listTags .wm3 .wm3b[data-wm="msg"] { background: var(--yellow-bg); color: var(--yellow); }
+#listTags .wm3 .wm3b[data-wm="att"] { background: var(--green-bg); color: var(--green); }
+#listTags .wm3 .wm3b svg { width: 20px; height: 20px; }
+#wmMenu .cmi { display: flex; align-items: center; gap: var(--sp-1); width: 100%; }
+#wmMenu .cmi svg { width: 20px; height: 20px; }
+#wmMenu .wmk-msg svg { color: var(--yellow); }
+#wmMenu .wmk-att svg { color: var(--green); }
+.chiprow .cq > .stc, .chiprow .cq > .fspair, .chiprow .cq > .stlast > * { flex: 1 1 0 !important; min-width: 0 !important; width: auto !important; }   /* equal in width, whatever is inside */
+#viewMenu .fsec:has(> .mgc > [data-vct]), #viewMenu .fsec:has(> .mgc > [data-vdisp]) { grid-column: 1 / -1; }
+#viewMenu .mgc:has(> [data-vct]) { display: flex; flex-wrap: wrap; gap: var(--sp-1); }
+#viewMenu [data-vdisp] { display: inline-flex; align-items: center; gap: var(--sp-1); }
+/* the five buttons of the row: one height (44, like every control), one radius, the same inner space, so they are really equal */
+.chiprow .cq > .stc, .chiprow .cq > .fspair, .chiprow .cq > .stlast > * { height: var(--ctl) !important; min-height: 0 !important; border-radius: var(--r) !important; padding-inline: 0 !important; }
+.chiprow .cq > .stc .fx, .chiprow .cq > .stc .fx > span { white-space: nowrap; }
+/* the search is as high as the mark button beside it */
+#listTags .hsearch { height: var(--ctl); min-height: var(--ctl); }
+/* women and men are two separate buttons of the row (the container dissolves), each one as wide as the others; the active one has the dark outline */
+.chiprow .cq > .stc[data-cr="gen"] { display: contents !important; }
+.chiprow .stc[data-cr="gen"] .fx.cm { display: contents; }
+.chiprow .stc[data-cr="gen"] .gc, .chiprow .stc[data-cr="gen"] .gc + .gc { flex: 1 1 0; min-width: 0; height: var(--ctl); border-radius: var(--r); padding: 0; justify-content: center; gap: var(--sp-hair); background: var(--surface-2); background-image: none; color: var(--text-2); border: 1px solid transparent; }
+.chiprow .stc[data-cr="gen"] .gc.on { background: var(--surface-2); color: var(--text); border-color: var(--text); }
+/* the numbers of the row read clearly: dark and bold, like the weight of a name in a card */
+.chiprow .cq > .stc small, .chiprow .stc[data-cr="gen"] .gc small { color: var(--text); font-weight: var(--fw-black); font-size: var(--fs-m); opacity: 1; }
+.chiprow .cq > .stc, .chiprow .cq > .fspair { border: 1px solid transparent; }
+.chiprow .cq > .stc[aria-pressed="true"] { border-color: var(--text); }
+.chiprow { padding-bottom: var(--sp-1); }
+/* the mark-mode menu: as wide as its words, padded like every menu, one item = one control high */
+#wmMenu { width: max-content; min-width: calc(var(--ctl) * 4); max-width: calc(100vw - var(--gut) * 2); padding: var(--sp-1); border-radius: var(--r-card); }
+#wmMenu .cmi { height: var(--ctl); padding: 0 var(--sp-2); gap: var(--sp-2); border-radius: var(--r); justify-content: flex-start; font-weight: var(--fw-bold); }
+#wmMenu .cmi.on { background: var(--surface-2); }
+#wmMenu { flex-direction: column; flex-wrap: nowrap; align-content: stretch; justify-content: flex-start; gap: var(--sp-hair); width: max-content; }
+#wmMenu .cmi { width: auto; min-width: 100%; border: 0; background: transparent; font: inherit; font-weight: var(--fw-bold); }
+#wmMenu .cmi.on { background: var(--surface-2); }
+
+/* ===== the selected card: a white card with a thick bar on its right (reading-start) edge; no dark frame ===== */
+.wrap > .list > .row.sel, .wrap > .list > .row.last, .wrap > .list > .row.sel:hover, .ucard.sel, .ucard.last { background: var(--bg); border-color: var(--line); box-shadow: var(--card-shadow); }
+/* (the bar of the card touched last is gone: see --sel-glow) */
+.wrap > .list .row.sel .rowwa.rowwa.rowwa, .wrap > .list .row.last .rowwa.rowwa.rowwa, .wrap > .list .row.sel .rowwa.rowwa.rowwa.ratt, .wrap > .list .row.last .rowwa.rowwa.rowwa.ratt { border-color: var(--line); }
+/* the add button inside a popup: as far above the safe area as it is from the left edge (one gutter) */
+.maddw { padding-bottom: var(--gutter); }
+/* the date of a meeting row has no circle around it, in every meeting list */
+.mlist .mrow .mdt .mlabel.mlabel.mlabel { border: 0 !important; background: transparent !important; box-shadow: none !important; padding-inline: 0 !important; }
+
+/* ===== the selected card, ONE look for every card (participant, meeting): white card, a thin bar on the right edge, no dark frame, no "נבחר" word ===== */
+:root { --sel-bar: calc(var(--sp-hair) * 0.75); --sel-glow: radial-gradient(circle 24px at 24px 74%, color-mix(in srgb, var(--text) 6%, transparent), transparent); }   /* the card touched last: a soft smudge of grey inside its left part, 22px in from the edge in the LOWER half of the card, very faint, fading out on every side (a spot on the card, not a frame, not a bar). --sel-bar stays for the bars of the buttons */
+.wrap > .list > .row.sel > .rswipe-fg, .wrap > .list > .row.last > .rswipe-fg { background-image: var(--sel-glow); }
+.mlist .mrow.hl, #pPager .mlist .mrow.hl, .mlist .mrow.ucard.hl { background: var(--bg); border-color: var(--line); box-shadow: var(--card-shadow); background-image: var(--sel-glow); }
+.mlist .mrow.hl::after, #pPager .mlist .mrow.hl::after { content: none; }
+
+/* the meeting card of the participant popup, when it slides: the layout moves into the sliding layer, the card itself is only the frame */
+.mlist .mrow[data-swipe] { display: block; padding: 0; }
+.mlist .mrow[data-swipe] > .rswipe-fg { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "when" "chips"; gap: var(--sp-1); align-items: start; padding: var(--sp-1); background: inherit; }
+.mlist .mrow[data-swipe]:not(.is-open):not(.is-dragging):not(.is-demo) > .rswipe { visibility: hidden; transition: visibility 0s linear var(--t-base); }
+.mlist .mrow.hl[data-swipe] { box-shadow: var(--card-shadow); }
+.mlist .mrow.hl[data-swipe] > .rswipe-fg { background-image: var(--sel-glow); }
+
+/* the category grid of the filter popup: the two categories of a row are as tall as the taller one, and the cells of the shorter one grow to fill it (each cell's height follows how many options its category has) */
+#viewMenu { align-items: stretch; }
+#viewMenu .fsec { display: flex; flex-direction: column; }
+#viewMenu .fsec > .mgc:not(:has(> [data-vct])):not(:has(> [data-vdisp])) { flex: 1 1 auto; }
+#viewMenu .fsec > .mgc:not(:has(> [data-vct])):not(:has(> [data-vdisp])) > .mc { flex: 1 1 0; min-height: var(--ctl); }
+#viewMenu .fsec > .mgc > .mc { border-radius: var(--r) !important; }   /* a tall cell is a rounded rectangle, not a blob: the same radius as the buttons of the chip row */
+.wrap > .list > .rhint { margin-block: 0; }   /* the blue banner sits where a card would: the same space above it as above the first card, and the same gap below it as between cards */
+.wrap > .list > .rhint { margin-block-end: var(--sp-2); }   /* under the banner: the same space as above the first card (one padding) */
+/* every category title starts at the right edge of its column, the sort icon at the left edge */
+#viewMenu .fsec > .fsh { align-self: stretch; }
+/* the strip with the grab bar, at the top of every popup, is solid: whatever scrolls up under it is hidden, never shown through it (same colour as the popup itself) */
+.grab { background: inherit; }
+.rhint .rhint__ok { padding-inline: 0; }   /* the button's word sits as far from the left edge of the banner as the sentence from the right edge: symmetric */
+/* the tags are a category like the others (a column of cells), across the whole width, first when there are tags */
+#viewMenu .mgc:has(> [data-vct]) { display: flex; flex-direction: column; flex-wrap: nowrap; gap: var(--sp-hair); }
+#viewMenu .fsec > .mgc:has(> [data-vct]) > .mc { min-height: var(--ctl); }
+/* the display category (which tags are offered): its cells sit two to a row, an open eye = shown */
+#viewMenu .fsec:has(> .mgc > [data-vshow]) { grid-column: 1 / -1; }
+#viewMenu .mgc:has(> [data-vshow]) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-hair); }
+#viewMenu [data-vshow] { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-1); }
+#viewMenu .mgc:has(> [data-vshow]) { grid-template-columns: repeat(auto-fit, minmax(calc(var(--ctl) * 3), 1fr)); }
+#viewMenu [data-vshow][aria-pressed="true"], #viewMenu [data-vshow][aria-pressed="true"]:hover { background: var(--sbg); color: var(--sfg); border-color: transparent; }   /* shown: the tag's own light colour, like every other cell of the grid */
+#viewMenu [data-vshow][aria-pressed="false"] { opacity: .55; }
+#viewMenu .fsec > .mgc > [data-vshow][aria-pressed="true"] { background: var(--sbg) !important; color: var(--sfg) !important; border-color: transparent !important; }
+/* the display category: one cell per row button (משוריינים, הגיעו, מגדר), side by side; shown = the same light cell as the others, hidden = faded */
+#viewMenu .mgc:has(> [data-vshow]) { grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); }
+#viewMenu .fsec > .mgc > [data-vshow] { background: var(--surface-2) !important; color: var(--text) !important; border: 1px solid transparent !important; }
+#viewMenu .fsec > .mgc > [data-vshow][aria-pressed="true"] { border-color: var(--text) !important; }
+#viewMenu [data-vshow] .ic { flex: none; }
+#viewMenu .fsec:has(> .fsh > [data-vdisp]) { grid-column: 1 / -1; }
+/* the tags are one category of the grid like the others (half a row, cells that grow to fill it), the first one */
+#viewMenu .fsec:has(> .mgc > [data-vct]), #viewMenu .fsec:has(> .fsh > [data-vdisp]) { grid-column: auto; }
+#viewMenu .fsec > .mgc:has(> [data-vct]) { flex: 1 1 auto; }
+#viewMenu .fsec > .mgc:has(> [data-vct]) > .mc { flex: 1 1 0; min-height: var(--ctl); }
+
+/* ===== the tags category: an eye at the right of every tag (shown / hidden), the new-tag cell under all of them ===== */
+#viewMenu .mgc.vtags { display: flex; flex-direction: column; flex-wrap: nowrap; gap: var(--sp-hair); flex: 1 1 auto; }
+#viewMenu .vtrow { display: flex; align-items: stretch; gap: var(--sp-hair); flex: 1 1 0; min-height: var(--ctl); }
+#viewMenu .vtrow > .mc { flex: 1 1 0; min-width: 0; min-height: var(--ctl); border-radius: var(--r) !important; }
+#viewMenu .vteye { flex: 0 0 var(--ctl); width: var(--ctl); display: grid; place-items: center; padding: 0; border: 0; border-radius: var(--r); background: transparent; color: var(--text); cursor: pointer; }
+#viewMenu .vteye[aria-pressed="false"] { color: var(--text-3); }
+#viewMenu .vtrow.off > .mc { opacity: .5; }
+#viewMenu .vtadd > .mc, #viewMenu .vtadd > .vtname { flex: 1 1 auto; min-height: var(--ctl); border-radius: var(--r); background: var(--surface-2); color: var(--text); border: 1px dashed var(--line-2); display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-1); font-weight: var(--fw-bold); }
+#viewMenu .vtadd > .vtname { padding: 0 var(--sp-2); text-align: start; border-style: solid; border-color: var(--text); outline: none; font: inherit; font-weight: var(--fw-bold); }
+#viewMenu .vtrow { flex: 0 0 auto; }
+#viewMenu .vtrow > .mc { height: var(--ctl); }
+#viewMenu .mgc.vtags { flex: 0 0 auto; }
+/* the eye sits in a square with a fill and no border; "הוספת תגית" has no border either (the typing field keeps its outline: it is where you are typing) */
+#viewMenu .vteye { background: var(--surface-2); border: 0; }
+#viewMenu .vteye[aria-pressed="true"] { color: var(--text); }
+#viewMenu .vtadd > .vtplus { border: 0; }
+#viewMenu .vtadd > .vtplus, #viewMenu .vtrow > .vtplus { border: 0 !important; box-shadow: none !important; }
+/* the display category is a plain category of the grid, the first: rows like the tags (eye + cell), the cell is only the button's name */
+#viewMenu .vtlabel { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-1); background: var(--surface-2); color: var(--text); font-weight: var(--fw-bold); cursor: default; }
+#viewMenu .vtlabel .ic { flex: none; }
+#viewMenu .vtrow > .vteye[data-vshow], #viewMenu .vtrow > .vteye[data-vshow][aria-pressed="true"], #viewMenu .vtrow > .vteye[data-vshow][aria-pressed="false"] { background: var(--surface-2) !important; color: var(--text) !important; border: 0 !important; opacity: 1; }
+#viewMenu .vtrow > .vteye[data-vshow][aria-pressed="false"] { color: var(--text-3) !important; }
+/* the selected meeting card reads exactly like every other meeting card: only the bar on its edge tells it apart (no lighter weight, no grey place line) */
+.mlist .mrow.hl .mdt, .mlist .mrow.hl .mtm, .mlist .mrow.hl .mnm, .mlist .mrow.hl .mn1, .mlist .mrow.hl .mwh,
+#pPager .mlist .mrow.hl .mdt, #pPager .mlist .mrow.hl .mtm, #pPager .mlist .mrow.hl .mnm, #pPager .mlist .mrow.hl .mn1, #pPager .mlist .mrow.hl .mwh { font-weight: var(--fw-bold); color: var(--text); }
+/* every list of cards: the space above the first card and below the last one is the space at the sides of the cards (one gutter) */
+#pPager .ppage { padding-top: var(--gut); }
+#pMeetings { padding-bottom: var(--gut); }
+/* "ניקוי סינונים": at the top-left of the popup, level with the title */
+.vclear { margin-inline-start: auto; flex: 0 0 auto; height: var(--ctl); padding: 0 var(--sp-2); border: 0; border-radius: var(--r); background: var(--surface-2); color: var(--text); font-weight: var(--fw-bold); font-size: var(--fs-s); cursor: pointer; }
+.vclear:disabled { opacity: .45; cursor: default; }
+
+/* the page header of the manager has the standard rhythm of every roster page: one gutter above the title row, a title row one control high (44), one gutter below it (the same as /roster/ and the popups) */
+.title-row { height: var(--ctl); }
+.wrap > header.top { padding-bottom: var(--sp-2); }
+/* the fill gradient is drawn over the whole box, border included: otherwise it repeats into the 1px border and shows a thin dark line at the LEFT edge of a cell */
+#viewMenu .mc, #viewMenu .mc[data-sc] { background-origin: border-box; background-repeat: no-repeat; }
+
+/* the header of the manager: the space above and below the TITLE TEXT equals the space at its sides (one gutter): the title row keeps its 44px for the buttons, so the padding is a gutter minus the leading the row adds around the text */
+:root { --head-pad: calc(var(--sp-2) - (var(--ctl) - var(--fs-l) * 1.2) / 2); }
+.wrap > header.top { padding-top: calc(var(--head-pad) + var(--safe-t)); padding-bottom: var(--head-pad); }
+/* the new-tag field never widens its column: it takes the column's width, not the width an input asks for by default */
+#viewMenu .vtrow { min-width: 0; }
+#viewMenu .vtadd > .vtname { width: 100%; min-width: 0; box-sizing: border-box; }
+#viewMenu .fsec { min-width: 0; }
+#viewMenu .vtadd > .vtname { text-align: center; padding-inline: var(--sp-1); }   /* what is typed (and the hint) is centred like the words of the tags above it */
+#viewMenu .vtadd > .vtname::placeholder { text-align: center; }
+#viewMenu .vtadd > .vtname { font-size: var(--fs-s); }   /* the typed name is the size of an existing tag's name */
+
+/* ===== a tag of the filter popup slides to three actions (צבע, שם, מחיקה), 56px each ===== */
+#viewMenu .vtrow[data-swipe] { position: relative; border-radius: var(--r); }
+#viewMenu .vtrow[data-swipe] > .rswipe-fg { display: flex; flex: 1 1 auto; min-width: 0; padding: 0; background: transparent; border-radius: var(--r); }
+#viewMenu .vtrow[data-swipe] > .rswipe-fg > .mc { flex: 1 1 auto; }
+#viewMenu .vtrow[data-swipe]:not(.is-open):not(.is-dragging):not(.is-demo) > .rswipe { visibility: hidden; transition: visibility 0s linear var(--t-base); }
+#viewMenu .vtrow[data-swipe] > .rswipe { background: var(--surface-2); }
+#viewMenu .vtrow[data-swipe] .rswipe__act { font-size: var(--fs-xs); }
+#viewMenu .vtrow[data-swipe] .rswipe__act > svg { width: var(--icon-s, 18px); height: var(--icon-s, 18px); }
+/* the display cells are the switches themselves: tap = faded (hidden from the row), tap again = back */
+#viewMenu button.vtlabel { cursor: pointer; border: 0 !important; background: var(--surface-2) !important; color: var(--text) !important; }
+#viewMenu .vtrow.off > .vtlabel { opacity: .5; }
+
+/* ===== the tags are plain cells of the grid again (they fill the height of their column); a long press opens the tag's menu ===== */
+#viewMenu .mgc.vtags { flex: 1 1 auto; }
+#viewMenu .mgc.vtags > .mc, #viewMenu .mgc.vtags > .vtname { flex: 1 1 0; min-width: 0; min-height: var(--ctl); height: auto; border-radius: var(--r) !important; }
+#viewMenu .mgc.vtags > .vtplus { background: var(--surface-2) !important; color: var(--text); border: 0 !important; box-shadow: none !important; display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-1); font-weight: var(--fw-bold); }
+#viewMenu .mgc.vtags > .vtname { width: 100%; box-sizing: border-box; background: var(--surface-2); color: var(--text); border: 1px solid var(--text); outline: none; text-align: center; padding-inline: var(--sp-1); font: inherit; font-size: var(--fs-s); font-weight: var(--fw-bold); }
+#viewMenu [data-vct] { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: manipulation; }
+#tagActMenu { flex-direction: column; flex-wrap: nowrap; align-content: stretch; justify-content: flex-start; gap: var(--sp-hair); width: max-content; min-width: calc(var(--ctl) * 4); padding: var(--sp-1); border-radius: var(--r-card); }
+#tagActMenu .cmi { display: flex; align-items: center; gap: var(--sp-2); height: var(--ctl); padding: 0 var(--sp-2); border: 0; border-radius: var(--r); background: transparent; font: inherit; font-weight: var(--fw-bold); text-align: start; color: var(--text); }
+#tagActMenu .cmi.danger { color: var(--red); }
+#tagActMenu .cmi svg { width: 20px; height: 20px; flex: none; }
+/* inverse selection: the tag is struck through, as if crossed out (everyone WITHOUT it is shown) */
+#viewMenu [data-vct].inv { text-decoration: line-through; text-decoration-thickness: 2px; }
+#tagActMenu .fsep { height: 1px; background: var(--line); margin: var(--sp-hair) 0; flex: none; }
+/* the tag's menu (and the palette it opens) float over the popup: the popup's own rule turns every .qmenu into a plain block inside the sheet, so these two are placed explicitly */
+#tagActMenu { position: fixed; left: var(--mx, 8px); top: var(--my, 8px); z-index: var(--z-sheet); display: flex; background: var(--bg); border: 1px solid var(--line); box-shadow: var(--pop); }
+.mdlg #colMenu { position: fixed !important; inset: auto !important; left: var(--mx, 8px) !important; top: var(--my, 8px) !important; width: auto !important; padding: var(--sp-1) !important; border: 1px solid var(--line) !important; box-shadow: var(--pop) !important; background: var(--bg) !important; z-index: var(--z-sheet); }
+/* a tap on a tag only opens its menu: no press, hover or focus effect on the cell itself */
+#viewMenu [data-vct] { -webkit-tap-highlight-color: transparent; }   /* (the transitions of the fill stay: they are the animation of a choice, not a press effect) */
+#viewMenu [data-vct]:hover, #viewMenu [data-vct]:active, #viewMenu [data-vct]:focus { transform: none !important; filter: none !important; box-shadow: none !important; outline: none; }
+#viewMenu [data-vct]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }   /* keyboard users still see where they are */
+/* the chosen item of the tag menu: the one convention of every menu (a grey ground, bold), not a word */
+#tagActMenu .cmi[aria-checked="true"] { background: var(--surface-2); color: var(--text); font-weight: var(--fw-black); }
+/* "הגיע": a tag like "לא הגיע", in the green of every arrival mark; the tag that was chosen (if any) stands after it */
+.ptag.arrived { background: var(--green-bg); color: var(--green); border-color: transparent; cursor: pointer; }
+
+/* ===== the filter popup: choosing fills a cell, un-choosing empties it (a sweep from the right); an inverse choice is EMPTY with the line through its word ===== */
+#viewMenu .mc[data-mk], #viewMenu .mc[data-mp], #viewMenu .mc[data-vct] { position: relative; isolation: isolate; overflow: hidden; transition: color .22s var(--ease, ease); }
+#viewMenu .mc[data-mk]::after, #viewMenu .mc[data-mp]::after, #viewMenu .mc[data-vct]::after { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--sfg, var(--text)); transform: scaleX(0); transform-origin: right center; transition: transform .24s var(--ease, ease); pointer-events: none; }
+#viewMenu .mc[data-mk][aria-pressed="true"]::after, #viewMenu .mc[data-mp][aria-pressed="true"]::after, #viewMenu .mc[data-vct][aria-pressed="true"]::after { transform: scaleX(1); }
+/* under the sweep the cell keeps its own (unselected) look: the fill bar of its share */
+#viewMenu .mc[data-mk][aria-pressed="true"], #viewMenu .mc[data-mp][aria-pressed="true"], #viewMenu .mc[data-vct][aria-pressed="true"],
+#viewMenu .mc[data-sc][data-mk][aria-pressed="true"], #viewMenu .mc[data-sc][data-mp][aria-pressed="true"], #viewMenu .mc[data-sc][data-vct][aria-pressed="true"] {
+  background: linear-gradient(to left, color-mix(in srgb, var(--sfg, var(--text)) 24%, var(--sbg, var(--surface-2))) var(--fill, 0%), var(--sbg, var(--surface-2)) var(--fill, 0%)) !important; color: var(--on-primary); border-color: transparent; }
+/* inverse: no fill at all, an outline in the tag's colour, its word crossed out */
+#viewMenu .mc[data-vct].inv[aria-pressed="true"] { color: var(--sfg, var(--text)); box-shadow: inset 0 0 0 2px var(--sfg, var(--text)); }
+#viewMenu .mc[data-vct].inv[aria-pressed="true"]::after { transform: scaleX(0); }
+
+/* ===== a chosen button of the chip row: no frame; a thin neutral bar along its bottom edge (the card's bar, turned to the bottom) ===== */
+.chiprow .cq > .stc[aria-pressed="true"], .chiprow .stc[data-cr="gen"] .gc.on, .chiprow .cq > .stc[data-cr][aria-pressed="true"] { border-color: transparent !important; box-shadow: inset 0 calc(var(--sel-bar) * -1) 0 var(--text-3) !important; }
+.chiprow .cq > .fspair[aria-pressed="true"] { border-color: transparent !important; box-shadow: inset 0 calc(var(--sel-bar) * -1) 0 var(--text-3) !important; }
+.mxdot { display: none; }
+.chiprow .fspair[aria-pressed="true"], .chiprow .stlast > .fspair[aria-pressed="true"] { border-color: transparent !important; box-shadow: inset 0 calc(var(--sel-bar) * -1) 0 var(--text-3) !important; }
+
+/* the bar of a cell (its share of the people in view) is a registered percentage, so it can GROW and SHRINK instead of jumping; a number that changed ticks */
+@property --fill { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
+#viewMenu .mc[data-mk], #viewMenu .mc[data-mp], #viewMenu .mc[data-vct] { transition: color .22s var(--ease, ease), opacity .3s var(--ease, ease), --fill .35s var(--ease, ease); }
+@keyframes vmtick { 0% { opacity: .25; transform: translateY(5px); } 100% { opacity: 1; transform: none; } }
+#viewMenu .mc small.tick { display: inline-block; animation: vmtick .3s var(--ease, ease); }
+@media (prefers-reduced-motion: reduce) { #viewMenu .mc small.tick { animation: none; } }
+/* the mark-mode button with an active filter: the bar along its bottom edge (no dot) */
+#listTags .wm3 .wm3b.filtered { box-shadow: inset 0 calc(var(--sel-bar) * -1) 0 var(--text-3); }
+#listTags .wm3 { overflow: hidden; }
+.wm3 .wm3b .fdot { display: none; }
+/* the small chip of the way a person arrived (next to the name): smaller than a regular tag */
+.osrc.osrc { height: calc(var(--tag-s) - var(--sp-hair)); padding: 0 calc(var(--sp-hair) * 1.5); font-size: calc(var(--fs-xs) - 2px); border-radius: calc(var(--r) - var(--sp-hair)); }
+
+/* the date and time fields are wrapped by the page (dtField: the value is painted by .dtv), so the kit's rule for ".rfield > input[type=date]" does not reach them: they get the same look here: borderless, only the line under, the same height and the same padding as every field */
+.rfield > .dtbox > :is(input[type="date"], input[type="time"]) { display: block; box-sizing: border-box; width: 100%; height: var(--rf-h, var(--fld)); margin: 0; padding: calc(var(--sp-hair) * 4.75) 0 calc(var(--sp-hair) * 0.75); border: 0; border-bottom: 1px solid var(--rf-line, var(--line-strong)); border-radius: 0; background: transparent; -webkit-appearance: none; appearance: none; direction: ltr; text-align: right; cursor: pointer; position: relative; outline: none; box-shadow: none; }
+.rfield > .dtbox > :is(input[type="date"], input[type="time"]):focus { border-bottom-color: var(--rf-ink, var(--text)); box-shadow: 0 1px 0 var(--rf-ink, var(--text)); }
+.rfield > .dtbox > :is(input[type="date"], input[type="time"])::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; opacity: 0; cursor: pointer; }
+.rfield > .dtbox > :is(input[type="date"], input[type="time"])::-webkit-date-and-time-value { text-align: right; margin: 0; }
+
+/* the two lines inside a card (name / chips, in the participant card and the meeting card alike) sit closer: half the gap they had */
+.wrap > .list .row .main { row-gap: calc(var(--sp-hair) * 0.5); }
+.mlist .mrow, .mlist .mrow[data-swipe] > .rswipe-fg { row-gap: calc(var(--sp-1) / 2); }
+
+/* the subtitle of the header, under the title and at the same (right) edge: the title row keeps its place and the buttons stay on it; the subtitle is added below */
+.title-row { height: auto; min-height: var(--ctl); align-items: start; }
+.msel { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
+.msel .msub { display: block; max-width: 100%; margin-top: calc(var(--sp-hair) * -1); font-size: var(--fs-s); font-weight: var(--fw-regular); line-height: 1.25; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html.is-loading .msub { display: none; }
+.title-row > .hgrp { align-self: start; }
+
+/* names of meetings are plain text (the date and time stay bold): the picker's name line, and the name and place in a meeting card */
+.mtr .mrname, .mtr.mrow2 .mrname { font-weight: var(--fw-regular) !important; }
+#pPager .mlist .mrow .mdt .mn1, .mlist .mrow .mdt .mn1, .mlist .mrow.hl .mdt .mn1, .mlist .mrow .mnm, .mlist .mrow.hl .mnm, .mlist .mrow .mwh, .mlist .mrow.hl .mwh { font-weight: var(--fw-regular) !important; }
+/* under the date in the header: the name sits closer */
+.msel .msub { margin-top: calc(var(--sp-hair) * -2.5); }
+/* the amount chip in the header of the payment popup: space inside it on both sides, like a button of that height needs */
+.sheet-head .paychip { padding-inline: var(--sp-2); }
+.msel .msub { margin-top: calc(var(--sp-hair) * -3.5); }   /* closer still */
+/* the title row of the header: the title, and the "back to the next meeting" button beside it where it always was; the subtitle is a second line under both */
+.msel { display: grid; grid-template-columns: auto auto 1fr; column-gap: var(--sp-1); align-items: center; justify-items: start; }
+.msel > h1 { grid-column: 1; grid-row: 1; min-width: 0; }
+.msel > .nextm { grid-column: 2; grid-row: 1; }
+.msel > .msub { grid-column: 1 / -1; grid-row: 2; }
+/* the menu icon and the title sit at equal distances from the two edges (one gutter each) and on the same level: the icon is centred on the title's own height */
+.title-row > .msel { margin-inline-start: 0; }
+.title-row > .hgrp { height: var(--ib); align-items: center; }
+/* the header is the same height while loading and when loaded: the subtitle keeps its line (invisible) in the loading state */
+html.is-loading .msub { display: block; visibility: hidden; }
+.msel .msub { min-height: calc(var(--fs-s) * 1.25); }
+/* the line under the title is part of the title's button: the whole line (not only its text) opens the menu */
+.msel .msub { width: 100%; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.wrap > header.top { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.wrap > header.top :is(button, a, .hmenu) { cursor: pointer; }
+/* the place of a meeting: alone (no city), at the left end of the line, with no dot before it */
+.mdt .mn1.mwh { flex: 0 1 auto; margin-inline-start: auto; text-align: left; }
+.mdt .mn1.mwh::before { content: none; }
+/* in the menu of the "הגיע" chip the arrival option is "לא הגיע", drawn like the "לא הגיע" chip itself (the mirror of the "הגיע" option in the menu of that chip) */
+#qMenu .qi.qarr.notarr { background: var(--surface-2); color: var(--text-2); }
+
+/* gender is ONE box again, like "משוריינים" and "הגיעו": both counts together (women, a thin divider, men), and a tap opens its menu (all / women / men) */
+.chiprow .cq > .stc[data-cr="gen"] { display: inline-flex !important; }
+.chiprow .stc[data-cr="gen"] .fx.cm { display: inline-flex; align-items: center; justify-content: center; gap: 0; width: 100%; }
+.chiprow .stc[data-cr="gen"] .gc, .chiprow .stc[data-cr="gen"] .gc + .gc { flex: 1 1 0; height: auto; padding: 0; border: 0 !important; border-radius: 0; background: transparent; justify-content: center; gap: var(--sp-hair); color: var(--text); cursor: pointer; }
+.chiprow .stc[data-cr="gen"] .gc + .gc { background-image: linear-gradient(var(--line-2), var(--line-2)); background-size: 1px 16px; background-repeat: no-repeat; background-position: right center; }
+.chiprow .stc[data-cr="gen"] .gc.on { font-weight: var(--fw-black); }
+.chiprow .stc[data-cr="gen"] .gc.on { background-color: transparent; }
+.chiprow .stc[data-cr="gen"] .gc, .chiprow .stc[data-cr="gen"] .gc.on { box-shadow: none !important; }   /* only the chip carries the bar; inside it the chosen side is just bold */
+.chiprow .stc[data-cr="gen"] .gc + .gc { border-inline-start: 1px solid var(--line-2) !important; height: 16px; align-self: center; background-image: none; }
+/* the gender box holds two numbers: it is wider than the buttons that hold one */
+.chiprow .cq > .stc[data-cr="gen"] { flex: 1.6 1 0 !important; }
+/* hidden means hidden: the empty column switch no longer keeps its width at the start of the search row */
+#listTags #waFab[hidden] { display: none !important; }
+#listTags #listMore:empty { display: none; }
+/* the meetings menu spans the whole width: so does the selected row, edge to edge, and rows touch each other so the grey of one meets the grey of the next */
+#mMenu .mtr.mrow2 { margin-inline: calc(var(--sp-1) * -1); padding-inline: var(--sp-2); border-radius: 0 !important; }
+#mMenu .mtr.mrow2.mall, #mMenu .mtr.mrow2.mtyrow { margin-block: 0; }
+#mMenu .mtr.mrow2[aria-checked="true"] { border-radius: 0 !important; }
+#mMenu .mtop { padding: 0; margin-inline: calc(var(--sp-1) * -1); }   /* the sticky top has no padding of its own: its row spans the width and meets the next one */
+#mMenu .mtop .mtr.mrow2 { margin-inline: 0; }
+/* the age and gender in the participant header end exactly on the right edge of the content, like the name above the cards: no inner padding on the edge side */
+#pDlg .sheet-head h2 .tchip { padding-inline-end: 0; }
+#pDlg .sheet-head h2 .tchip { padding-inline: 0 !important; }
+#pDlg .sheet-head .cico.cb-wa { translate: -4px 0; }   /* the glyph, not its box, sits on the left edge of the content */
+/* the right and bottom edge of the corner tile (never the top or the left, which are the card's own edge) takes a soft tint of what it says: yellow for a message, green for an arrival */
+.wrap > .list .row .rowwa.rowwa.rowwa.ratt, .wrap > .list .row.sel .rowwa.rowwa.rowwa.ratt, .wrap > .list .row.last .rowwa.rowwa.rowwa.ratt { border-width: 0 1px 1px 0; border-color: color-mix(in srgb, var(--green) 40%, var(--line)); }
+.wrap > .list .row .rowwa.rowwa.rowwa.ratt.msgc, .wrap > .list .row.sel .rowwa.rowwa.rowwa.ratt.msgc, .wrap > .list .row.last .rowwa.rowwa.rowwa.ratt.msgc { border-color: color-mix(in srgb, var(--yellow) 45%, var(--line)); }
+.wrap > .list .row .rowwa.rowwa.rowwa.ratt { border-top-width: 0 !important; border-left-width: 0 !important; border-right-width: 1px !important; border-bottom-width: 1px !important; }   /* only the right and bottom edge: top and left are the card's own */
+/* the chosen option of all / sent / not sent is marked like the chosen message template above it: a grey background, no dot */
+#waMenu .wsf[aria-pressed="true"] { background: var(--surface-2); color: var(--text); font-weight: var(--fw-bold); }
+#waMenu .wsf::after { content: none; }
+/* the bar under the message button follows the chosen filter: green for sent, red for not sent (neutral stays for any other state) */
+#listTags .wm3 .wm3b.filtered[data-wfv="1"] { box-shadow: inset 0 calc(var(--sel-bar) * -1) 0 var(--green); }
+#listTags .wm3 .wm3b.filtered[data-wfv="0"] { box-shadow: inset 0 calc(var(--sel-bar) * -1) 0 var(--red); }
+/* the page header is a plain band on phone and on desktop: no rounded corners, top or bottom */
+.wrap > header.top, .wrap > header.top::before, .wrap > header.top::after { border-radius: 0 !important; }
+/* the header and the filter container are one surface: the same background, and no border or shadow between them */
+.wrap > header.top { background: var(--bg); border-bottom: 0; box-shadow: none; }
+/* the room between the header text and the filter buttons is the room under the search row (18px), not more */
+.wrap > .chiprow, .chiprow { padding-top: calc(var(--sp-2) - var(--sp-hair) * 1.25); }
+/* the blue banner: the same space above it, below it and at its sides (16px): the 8px grid gap plus an 8px margin below it */
+.wrap > .list > .rhint { margin-block-end: var(--sp-1); }
+/* the meetings menu: name, the two counts, and the edit pencil as the leftmost column (its slot is reserved on every row so the counts never move) */
+#mMenu .mtr.mrow2 { grid-template-columns: 46% 1fr 43px 43px 1fr var(--ib); }   /* name | space | count | count | space | pencil: the two counts sit in the MIDDLE of the room between the name and the pencil (the two spaces are equal) */   /* the two counts are as wide as their content plus 8px: the gap pencil / people count and the gap people count / meetings count are the same 12px */
+#mMenu .mtr.mrow2 > .mc { grid-column: 3; }
+#mMenu .mtr.mrow2 > .mc ~ .mc { grid-column: 4; }
+#mMenu .mtr.mrow2 > .medit, #mMenu .mtr.mrow2 > span:empty { grid-column: 6; grid-row: 1; justify-self: center; }   /* the edit pencil is the leftmost thing of the row again: its 44px box is the same square as the menu tile above it, so the two share one centre line */
+/* the add button of the finance popup sits where the add button of a page sits: the standard 16px gap above the safe area, all the way down. The popup's own bottom room (28px) moves from the sheet to the end of its content, so the last row still ends clear of the gesture bar */
+#finDlg .sheet { padding-bottom: var(--inset-b); }
+#finDlg #finLog, #finDlg #finSettle, #finDlg #finForm, #finDlg #finScroll { padding-bottom: calc(var(--safe-b) - var(--inset-b)); }   /* not on #finMain itself: a sticky button measures its gap from the padding edge of the scroller it sits in */
+/* the bar of the chosen card is on its left edge (the side the card slides to), for participant cards and meeting cards alike */
+/* the counts start at the left edge of the menu button above them (the cell is wider than its content, so the content is pushed to the physical left) */
+#mMenu .mtr.mrow2 > .mc { justify-self: left; }
+
+/* the two add rows of the meetings menu are a regular button each, in the colour of the add button, on the left: "+ סוג מפגש" and "+ מפגש" */
+#mMenu .mtr.maddrow { justify-content: left; padding-inline: var(--sp-1); min-height: 52px; }
+#mMenu .mtr.maddrow:hover { background: transparent; }
+#mMenu .mtr.maddrow .madd2 { flex: none; }
+#mMenu .mtr.maddrow .madd2 { background: var(--primary); border: 1px solid var(--primary); color: var(--on-primary); width: auto; min-height: var(--ib); padding: 0 var(--sp-2); }   /* beats the generic menu-button rule: a real button, in the colour of the add button */
+#mMenu .mtr.maddrow .madd2 svg { width: var(--icon-m); height: var(--icon-m); stroke-width: var(--icon-w); }
+/* "+ הודעה חדשה": a green chip at the end of the message chips of a meeting type (the add button, not the floating one) */
+.mtlist .emvars button.emadd { display: inline-flex; align-items: center; gap: var(--sp-hair); background: var(--primary); border-color: var(--primary); color: var(--on-primary); font-weight: var(--fw-bold); }
+.mtlist .emvars button.emadd svg { width: var(--icon-s, 16px); height: var(--icon-s, 16px); stroke-width: var(--icon-w); }
+/* the header menu button has the shape of the save button of a popup: a 44px square tile, here in the neutral colour of the other tiles */
+.wrap > header.top .hicons .hicon, .wrap > header.top > .title-row > .hgrp .hicon { width: var(--pp-x, 44px); height: var(--pp-x, 44px); border-radius: var(--r-ctl); background: var(--surface-2); color: var(--text); }
+/* ONE left line: the menu button, the numbers, the add buttons and the page add button all start 16px from the left edge of the screen (the gutter) */
+.wrap > header.top .hicons, .wrap > header.top .hicons .hicon { margin-left: 0; }   /* the tile has a box of its own: no optical pull to the left (the old -4px was for a bare glyph) */
+/* the standard room above the tile: the same 16px as at its left side */
+.wrap > header.top { padding-top: calc(var(--gutter) + var(--safe-t)); }
+/* the title block (date and its subtitle) and the menu tile share one centre line: the row centres them on each other, and the tile's top edge is the 16px gutter below the top of the screen */
+.wrap > header.top > .title-row { align-items: center; }
+.wrap > header.top { padding-top: calc(var(--gutter) + var(--sp-hair) / 2 + var(--safe-t)); }   /* the tile sits 2px above the row top: this puts its top edge at the 16px gutter */
+/* the date and its subtitle are centred AS ONE BLOCK on the menu tile (the subtitle hung below the tile before): the block is lifted until the space above the date and under the subtitle is the same */
+.wrap > header.top .msel { position: relative; top: calc(var(--sp-hair) * -2.4); }
+/* the room between the subtitle and the filter buttons is the standard 16px (the room between a card and the side of the screen), measured from the subtitle text itself */
+.wrap > header.top { padding-bottom: 0; }
+.wrap > .chiprow, .chiprow { padding-top: var(--sp-hair); }
+/* the room under each of the two add buttons is the standard 16px: under "+ סוג מפגש" down to the divider line, under "+ מפגש" down to the bottom of the menu */
+#mMenu .mtr.maddrow { min-height: 0; padding-block: var(--sp-1) 0; margin: 0; }
+#mMenu .mtr.maddrow.addt { padding-bottom: var(--sp-2); margin-bottom: 0; }
+#mMenu .mtr.maddrow:not(.addt) { padding-bottom: var(--sp-1); }
+/* the divider above the meetings and the two add buttons share the content edges (16px from both sides): the line used to start 7px outside the text, the buttons and the numbers */
+#mMenu .mtr.maddrow { margin-inline: var(--sp-1); padding-inline: 0; }
+/* the two add buttons ("+ סוג מפגש", "+ מפגש") are centred horizontally in the menu */
+#mMenu .mtr.maddrow { justify-content: center; }
+/* the round tile in the corner of a card (WhatsApp / message / arrival) is gone: a swipe to the right does its work, and the card says what became of it with a colour on its left edge, where the chosen-card bar was: yellow = the message was sent, green = arrived. The tile stays in the page only as the thing the swipe presses. */
+.wrap > .list .row .rowwa { display: none !important; }
+.wrap > .list .row .main.hasw { padding-inline-start: 0; }
+.wrap > .list > .row:has(.rowwa.msgc.yes) > .rswipe-fg { box-shadow: inset var(--sel-bar) 0 0 var(--yellow); }
+.wrap > .list > .row:has(.rowwa.ratt.yes:not(.msgc)) > .rswipe-fg { box-shadow: inset var(--sel-bar) 0 0 var(--green); }
+/* the mark mode button (message / arrival) is a SOLID dark colour: dark yellow for a message, dark green for arrival, a white symbol */
+#listTags .wm3 .wm3b.on[data-wm="msg"], #listTags .wm3 .wm3b[data-wm="msg"].on { background: var(--yellow); color: var(--on-primary); }
+#listTags .wm3 .wm3b.on[data-wm="att"], #listTags .wm3 .wm3b[data-wm="att"].on { background: var(--green); color: var(--on-primary); }
+/* the two counts and the pencil are centred on the WHOLE row (a meeting row is two lines: date, then name), not on its first line: they span both lines, and the name line keeps to the name column */
+#mMenu .mtr.mrow2 > .mc, #mMenu .mtr.mrow2 > .medit, #mMenu .mtr.mrow2 > span:empty { grid-row: 1 / span 2; align-self: center; }
+#mMenu .mtr.mrow2 > .mrname { grid-column: 1; }
+/* the shadow and the frame belong to the WHITE card that slides, not to the row it slides inside: the ground under it (red, green) has no shadow of its own, and wherever the card has moved from, the ground is flat. */
+.wrap > .list > .row[data-swipe], .wrap > .list > .row.last[data-swipe], .wrap > .list > .row.sel[data-swipe], .wrap > .list > .row.sel[data-swipe]:hover, #pPager .mlist .mrow[data-swipe], #pPager .mlist .mrow.hl[data-swipe], .mlist .mrow[data-swipe] { box-shadow: none; background-color: transparent; border-color: transparent; }
+.wrap > .list > .row[data-swipe] > .rswipe-fg, .mlist .mrow[data-swipe] > .rswipe-fg { background-color: var(--bg); border: 1px solid var(--line); box-shadow: var(--card-shadow); }
