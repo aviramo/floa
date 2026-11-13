@@ -26,7 +26,7 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createServer } from "node:http";
 import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
-import { watch } from "node:fs";
+import { readFileSync, watch } from "node:fs";
 import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -369,14 +369,24 @@ const TYPES = { ".html": "text/html", ".css": "text/css", ".js": "text/javascrip
    also what hands /chords/<song> back to the app that owns it. Answering
    "not found" here instead would make the one thing you cannot test locally
    be the routing. */
-function serve(port = 5173) {
+/* --test: the same dist/, talking to the TEST copy of the database. The test copy is a schema
+   named "test" inside the same Supabase project (like harpatka's), and the browser reaches it
+   by sending Accept-Profile / Content-Profile: test with every REST call. The injected script
+   does that for every fetch, so a page cannot forget it, and puts an orange bar on top.
+   Nothing on disk changes: the injection happens as the pages are served, so the build GitHub
+   publishes never knows this exists. */
+const TEST_ENV_JS = readFileSync(join(ROOT, "scripts", "test-env.client.js"), "utf8");
+
+function serve(port = 5173, test = false) {
   createServer(async (req, res) => {
+    if (test && req.url.split("?")[0] === "/__test-env.js") return res.writeHead(200, { "content-type": "text/javascript", "cache-control": "no-store" }).end(TEST_ENV_JS);
     let path = decodeURIComponent(new URL(req.url, "http://x").pathname);
     if (path.endsWith("/")) path += "index.html";
     const file = resolve(DIST, "." + path);
     if (!file.startsWith(DIST)) return res.writeHead(403).end();
     try {
-      const body = await readFile(file);
+      let body = await readFile(file);
+      if (test && extname(file) === ".html") body = Buffer.from(body.toString("utf8").replace(/<head[^>]*>/i, (m) => m + '<script src="/__test-env.js"></script>'));
       res.writeHead(200, { "content-type": TYPES[extname(file)] ?? "application/octet-stream", "cache-control": "no-store" }).end(body);
     } catch {
       try {
@@ -396,7 +406,7 @@ async function main() {
 
   await build(only);
 
-  if (flag("--serve")) serve();
+  if (flag("--serve")) serve(5173, flag("--test"));
   if (flag("--watch") || flag("--serve")) {
     let queued = null;
     const rebuild = (file) => {

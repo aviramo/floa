@@ -1253,6 +1253,7 @@ create policy "the key an account plays in is its own"
 --
 -- and to replace it later, vault.update_secret under the same name.
 -- ==========================================================================
+-- test-env:skip (the publish trigger calls GitHub: a test song must never start a deploy)
 create extension if not exists pg_net;
 
 create or replace function public.library_changed()
@@ -1328,6 +1329,7 @@ create trigger song_published_again
   after insert on public.song_versions
   for each row
   execute function public.library_changed();
+-- test-env:end
 
 -- ==========================================================================
 -- TAKES. Somebody playing the song, recorded.
@@ -1552,6 +1554,7 @@ drop function if exists public.song_of_take(uuid);
 -- bucket is private, only the owning account may write to it, and it can only
 -- write under its own uuid. A size limit is a useful rule; a guess at how a
 -- browser will spell its own container is not.
+-- test-env:skip (the bucket and its policies are shared by the whole project; the test copy has no storage of its own)
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('takes', 'takes', false, 26214400, null)
 on conflict (id) do update
@@ -1596,6 +1599,7 @@ drop policy if exists "a take sound is removed by its account" on storage.object
 create policy "a take sound is removed by its account"
   on storage.objects for delete to authenticated
   using (bucket_id = 'takes' and (storage.foldername(name))[1] = auth.uid()::text);
+-- test-env:end
 
 -- ==========================================================================
 -- OFFERS. How somebody who does not own a song changes it.
