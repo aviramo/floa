@@ -558,19 +558,5 @@ html, body { overflow-x: clip; }
   .hero-cta { margin-top: 12px; }
 }
 
-/* חמשת הכרטיסים המרכזיים: כל אחד בצבע משלו מהפלטה של הדף, גדולים, עם מספר ענק ברקע. נכנסים אחד אחרי השני */
-.list--five { gap: 18px; counter-reset: five; margin-top: 1.6rem; }
-.list--five li { --c1: #2F6B3A; --c2: #173A2A; counter-increment: five; position: relative; padding: 30px 26px 30px 24px; border-radius: 28px; color: #fff; background: linear-gradient(135deg, var(--c1), var(--c2)); box-shadow: 0 24px 44px -24px var(--c2); }
-.list--five li:nth-child(2) { --c1: #C72F59; --c2: #8E2748; }
-.list--five li:nth-child(3) { --c1: #C0532B; --c2: #8F3A1E; }
-.list--five li:nth-child(4) { --c1: #5A4170; --c2: #2A2140; }
-.list--five li:nth-child(5) { --c1: #1F6F5C; --c2: #14403A; }
-.list--five li::after { content: counter(five); position: absolute; inset-block-end: -.18em; inset-inline-start: 14px; font-family: var(--display); font-size: 7.5rem; line-height: 1; color: rgba(255, 255, 255, .13); pointer-events: none; }
-.list--five li > div { position: relative; z-index: 1; }
-.list--five h3 { color: #fff; font-size: 1.9rem; line-height: 1.2; }
-.list--five p { color: rgba(255, 255, 255, .96); font-size: 1.22rem; margin-top: .45rem; }
-.list--five .dotm { background: #FFD66B; margin-top: .55rem; }
-/* כניסה: עולה מלמטה בהדרגה, כל כרטיס אחרי הקודם */
-.js .list--five li.rv:nth-child(n):not(.in) { transform: translateY(54px) scale(.96); }
-.js .list--five li.rv.in { transition: opacity .9s var(--ease), transform 1s var(--ease); }
-@media (prefers-reduced-motion: reduce) { .js .list--five li.rv:not(.in) { transform: none; } }
+/* כותרות חמשת הכרטיסים בצבע העלים */
+.list--five h3 { color: #E8590C; }
