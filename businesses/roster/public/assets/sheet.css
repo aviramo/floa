@@ -34,19 +34,19 @@ dialog.rsheet.rs-settle { transition: transform .2s cubic-bezier(.2, .8, .2, 1);
 
 /* the content: everything but the grab bar; it is the part that scrolls when it is taller than the screen */
 dialog.rsheet > :not(.rs-grab) { flex: 1 1 auto; min-height: 0; }
-dialog.rsheet[data-from="top"] { padding-top: env(safe-area-inset-top, 0px); }
+dialog.rsheet[data-from="top"] { padding-top: var(--safe-t); }
 dialog.rsheet[data-from="top"] > :not(.rs-grab) { order: 1; }
 dialog.rsheet .rs-scroll, dialog.rsheet .sheet-body { overflow-y: auto; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; }
 
-/* the grab bar: a 44px strip (the touch target) with a pill in it, at the free edge of the sheet */
+/* the grab bar: a 44px strip with the pill in it at the free edge of a sheet; at the top of a bottom sheet it is only --pp-top tall (see below): the header under it is a swipe area too */
 .rs-grab { flex: 0 0 auto; height: 44px; display: grid; place-items: center; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
 .rs-grab::before { content: ""; width: 44px; height: 4px; background: var(--rs-pill); }   /* square, like everything else */
 dialog.rsheet[data-from="top"] > .rs-grab { order: 2; }
-dialog.rsheet[data-from="bottom"] > .rs-grab, dialog.rsheet:not([data-from]) > .rs-grab { order: -1; }
+dialog.rsheet[data-from="bottom"] > .rs-grab, dialog.rsheet:not([data-from]) > .rs-grab { order: -1; height: var(--pp-top, 16px); }   /* at the top of a bottom sheet the strip IS the top rhythm; at the bottom of a top sheet it stays a 44px target */
 [data-rs-drag] { touch-action: none; }
 
 /* the shell: a FIXED header (title and X), ONE scrolling body, an optional fixed footer; the grab bar is the sheet's own free edge, none of these scroll away */
-dialog.rsheet .sheet { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: var(--pp-pt, 16px) var(--pp-px, 16px) var(--sheet-b, calc(var(--pp-pb, 24px) + env(safe-area-inset-bottom, 0px))); }
+dialog.rsheet .sheet { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: var(--pp-pt-sheet, var(--pp-pt, 16px)) var(--pp-px, 16px) var(--sheet-b); }
 dialog.rsheet[data-from="top"] .sheet { padding-bottom: var(--pp-head-top); }
 dialog.rsheet .sheet-head { flex: 0 0 auto; display: flex; align-items: center; gap: var(--pp-gap); min-height: var(--pp-head, 44px); margin-bottom: var(--pp-head-gap, 12px); }
 dialog.rsheet .sheet-head > :first-child:not(.hicon) { flex: 1 1 auto; min-width: 0; margin: 0; font-size: var(--fs-l, var(--pp-title)); font-weight: var(--fw-black, 800); letter-spacing: -.01em; line-height: 1.25; overflow-wrap: anywhere; }
@@ -86,7 +86,7 @@ dialog.rsheet[open]::backdrop { animation: rs-fade .24s ease-out; }
   }
   dialog.rsheet > .rs-grab { display: none; }
   dialog.rsheet > :not(.rs-grab) { order: 0; }
-  dialog.rsheet[data-from] .sheet, dialog.rsheet .sheet { padding-bottom: var(--pp-pb, 24px); }   /* the same bottom padding on a computer, whichever way it opens on touch */
+  dialog.rsheet[data-from] .sheet, dialog.rsheet .sheet { padding-top: var(--pp-pt, 16px); padding-bottom: var(--sheet-b, var(--pp-pb, 24px)); }   /* the same bottom padding on a computer, whichever way it opens on touch */
   dialog.rsheet[open], dialog.rsheet[open][data-from], dialog.rsheet[open]:not([data-from]) { animation: rs-in-center .2s cubic-bezier(.2, .8, .2, 1); }
   /* the side drawer, only when asked for: the same side as the admin drawers (the left edge), the full height of the window */
   dialog.rsheet[data-desktop="side"] { position: fixed; inset: var(--envtop, 0px) auto 0 0; margin: 0; width: min(var(--pp-side, 440px), 92vw); max-width: none; max-height: none; height: auto; box-shadow: var(--pp-side-shadow); }

@@ -453,7 +453,7 @@
     /* the add button belongs to the list of keys only, and the list reserves room for it */
     const fab = $("#keyNew"), showFab = S.tab === "keys" && !need(["keys"]);
     fab.hidden = !showFab;
-    panel.toggleAttribute("data-fab", showFab);
+    panel.toggleAttribute("data-fab-room", showFab);
     /* the first-use swipe hint: until the person confirms "הבנתי" once, anywhere in the system */
     if (swipeCtl && !dlg.open && panel.querySelector("[data-swipe]")) swipeCtl.hint();
   }

@@ -3617,13 +3617,13 @@
       '<div class="rfield field"><span>הוראות הגעה</span><textarea placeholder=" " id="' + I('Dirs') + '" name="directions" rows="1"></textarea></div>' +
       '<small class="mfh" id="' + I('TplHead') + '"' + (isType ? '' : ' hidden') + '>הודעות</small>' +
       (isType ? '' : '<div class="mtinh2" id="' + I('TplInh') + '" hidden></div>') + '<div class="mtlist" id="' + I('Tpl') + '"></div>' +
-      '<button type="button" class="mtpladd" id="' + I('TplAdd') + '">הוספת הודעה</button>' +
+      '<button type="button" id="' + I('TplAdd') + '" data-fab="הוספת הודעה"></button>' +
       '<button type="button" class="mfshort" id="' + I('PriceBtn') + '"><span>מחירים</span><small></small>' + icon('chev') + '</button>' +
       (isType ? '<button type="button" class="mfshort" id="' + I('PassBtn') + '"><span>כרטיסיות</span><small></small>' + icon('chev') + '</button>' : '') +
       '<div class="mfstore" hidden><div class="rfield field" id="' + I('PriceF') + '"><span class="mtl">מחירים' + (isType ? '' : '<button type="button" class="lnk" id="' + I('TierOwn') + '" hidden>שינוי למפגש הזה</button><button type="button" class="lnk" id="' + I('TierReset') + '" hidden>כמו בסוג המפגש</button>') + '</span>' +
         (isType ? '' : '<div class="mtinh" id="' + I('TierInh') + '" hidden><span id="' + I('TierInhTxt') + '"></span></div>') +
-        '<div class="mfted" id="' + I('TierEd') + '"><div class="mt2" id="' + I('TierList') + '"></div><div class="mt2add"><button type="button" id="' + I('TierAdd') + '">הוספת מדרגה</button></div></div></div>' +
-      (isType ? '<div class="rfield field" id="' + I('PassF') + '"><span class="mtl">כרטיסיות</span><div class="mt2" id="' + I('PassList') + '"></div><div class="mt2add"><button type="button" id="' + I('PassAdd') + '">הוספת כרטיסייה</button></div></div>' : '') + '</div>';
+        '<div class="mfted" id="' + I('TierEd') + '"><div class="mt2" id="' + I('TierList') + '"></div><div class="mt2add"><button type="button" id="' + I('TierAdd') + '" data-fab="הוספת מדרגה"></button></div></div></div>' +
+      (isType ? '<div class="rfield field" id="' + I('PassF') + '"><span class="mtl">כרטיסיות</span><div class="mt2" id="' + I('PassList') + '"></div><div class="mt2add"><button type="button" id="' + I('PassAdd') + '" data-fab="הוספת כרטיסייה"></button></div></div>' : '') + '</div>';
     { const tf = !isType && $('#' + p + 'TypeF'), slot = q('TypeSlot'); if (slot) { if (tf) slot.replaceWith(tf); else slot.remove(); } }   // סוג המפגש באותה שורה עם שם המפגש
     const F = { te: tierEditor('#' + I('TierList'), '#' + I('TierAdd'), () => F.changed()), tiersInh: false, passes: [] };
     const ty = () => (typOf ? typOf() : null);

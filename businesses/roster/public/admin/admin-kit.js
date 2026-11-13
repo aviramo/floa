@@ -76,7 +76,10 @@
     if (live && !fab) {
       fab = doc.createElement("button"); fab.type = "button"; fab.className = "rfab"; fab.id = "kitFab";
       fab.setAttribute("aria-label", "הוספת משתתף"); fab.setAttribute("title", "הוספת משתתף"); fab.innerHTML = PLUS;
-      fab.addEventListener("click", function () { q.focus(); K.toast("הקלידו את שם המשתתף החדש בחיפוש"); });
+      /* one add button for the list: with a name typed in the search it adds that person (the list's own "add" row is hidden), without one it asks for the name */
+      fab.addEventListener("click", function () { var an = doc.getElementById("addNew"); if (q.value.trim() && an) { an.click(); return; } q.focus(); K.toast("הקלידו את שם המשתתף החדש בחיפוש"); });
+      var fabLabel = function () { var t = q.value.trim(), l = t ? "הוספת משתתף חדש: " + t : "הוספת משתתף"; fab.setAttribute("aria-label", l); fab.setAttribute("title", l); };
+      q.addEventListener("input", fabLabel); fabLabel();
       doc.body.appendChild(fab);
     }
     if (fab) { fab.hidden = !live; placeFab(); }

@@ -11,10 +11,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="onboarding.css?v=b05a360f" />
-  <link rel="stylesheet" href="../assets/field.css?v=1acbdf39" />
-  <link rel="stylesheet" href="../assets/popup.css?v=ea530ced" />
-  <link rel="stylesheet" href="../assets/ui.css?v=866831b0" />
-  <link rel="stylesheet" href="admin.css?v=bcdbc0af" />
+  <link rel="stylesheet" href="../assets/field.css?v=7e4c4a08" />
+  <link rel="stylesheet" href="../assets/popup.css?v=b7d0bed2" />
+  <link rel="stylesheet" href="../assets/ui.css?v=d357fa59" />
+  <link rel="stylesheet" href="admin.css?v=f15cbbad" />
 </head>
 <body class="locked">
   <div class="gate" id="gate" hidden>
@@ -103,7 +103,7 @@
         <div class="ppager" id="pPager">
           <section class="ppage" id="pgM" role="tabpanel" aria-labelledby="pTabM" inert>
             <div class="mlist" id="pMeetings"></div>
-            <div class="maddw"><button type="button" class="btn ghost" id="pAddMeet" hidden>+ שיוך למפגש</button></div>
+            <div class="maddw"><button type="button" id="pAddMeet" data-fab="שיוך למפגש" hidden></button></div>
             <div id="pMeetPad" aria-hidden="true"></div>
           </section>
           <section class="ppage" id="pgW" role="tabpanel" aria-labelledby="pTabW" inert>
@@ -181,7 +181,7 @@
       </div>
       <div class="ppanel" data-panel="promoter" hidden>
         <div class="sopts" id="pPromoOpts"></div>
-        <button type="button" class="prnew" id="pPromoNew">+ שיווק ממומן חדש</button>
+        <button type="button" id="pPromoNew" data-fab="שיווק ממומן חדש"></button>
       </div>
       <div class="ppanel" data-panel="credit" hidden>
         <div class="payrow">
@@ -317,12 +317,12 @@
       <div id="setPm" hidden>
         <p class="sthint sthint--b">הדרכים שמופיעות בקבלת תשלום (פייבוקס, ביט, מזומן...). אפשר להוסיף, לשנות שם ולמחוק</p>
         <div id="pmList"></div>
-        <button type="button" class="btn ghost" id="pmAdd">+ דרך תשלום חדשה</button>
+        <button type="button" id="pmAdd" data-fab="דרך תשלום חדשה"></button>
       </div>
       <div id="setSrc" hidden>
         <div id="srcPrList"></div>
         <div id="srcPrDraft"></div>
-        <button type="button" class="btn ghost" id="srcPrAdd">+ שיווק ממומן חדש</button>
+        <button type="button" id="srcPrAdd" data-fab="שיווק ממומן חדש"></button>
       </div>
       <div id="setDel" hidden>
         <p class="ptext" id="setDelText"></p>
@@ -333,7 +333,7 @@
         <section class="stsec"><div id="stShow"></div></section>
         <section class="stsec">
         <div id="stList"></div>
-        <button type="button" class="btn ghost" id="stAdd">+ תגית חדשה</button></section>
+        <button type="button" id="stAdd" data-fab="תגית חדשה"></button></section>
         </div>
       </div>
     </div>
@@ -372,12 +372,12 @@
       <div id="finMain">
         <div class="fscuts"><button type="button" class="fscut" id="finSrcBtn"><svg data-i="enter"></svg><span>שיווק ממומן</span></button><button type="button" class="fscut" id="finPmBtn"><svg data-i="card"></svg><span>דרכי תשלום</span></button></div>
         <div class="finsum" id="finSum"></div>
-        <div class="fincmds"><button type="button" class="btn success finc" data-fadd="income">+ הכנסה</button><button type="button" class="btn danger fexp" data-fadd="expense">+ הוצאה</button></div>
         <div id="finScroll">
           <div class="clabel" id="finRecLbl" hidden>מחזוריות</div>
           <div id="finRec"></div>
           <div class="clabel">תנועות</div>
           <div id="finList"></div>
+          <button type="button" data-fadd="income" data-fab="תנועה חדשה"></button>
         </div>
       </div>
       <div class="qmenu" id="finPerMenu" role="menu" hidden></div>
@@ -440,11 +440,11 @@
   <script src="/auth.js"></script>
   <script src="age.js?v=816fedce"></script>
   <script src="rt.js?v=9f0bd1e7"></script>
-  <script src="../assets/field.js?v=6aeac99c"></script>
-  <script src="admin.js?v=96752f65"></script>
+  <script src="../assets/field.js?v=3373b0b3"></script>
+  <script src="admin.js?v=6ee91d58"></script>
   <script src="onboarding.js?v=544be310"></script>
-  <script src="/roster/assets/ui.js?v=af071d81"></script>
+  <script src="/roster/assets/ui.js?v=34190d9e"></script>
   <script src="/roster/assets/undo.js?v=6df1b937"></script>
-  <script src="/roster/admin/admin-kit.js?v=43ad7a08"></script>
+  <script src="/roster/admin/admin-kit.js?v=8553ba64"></script>
 </body>
 </html>

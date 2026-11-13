@@ -45,9 +45,7 @@ dialog::-webkit-scrollbar, dialog *::-webkit-scrollbar, .rlist::-webkit-scrollba
 .rhead__in { width: 100%; max-width: var(--w-page); margin-inline: auto; display: flex; align-items: center; gap: var(--gap-button); }
 .rhead__text { flex: 1 1 auto; min-width: 0; }
 .rhead .rhead__title { flex: none; }
-#userBtn { min-width: var(--ib); max-width: 50vw; }
 #whoName { display: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-@media (min-width: 560px) { #whoName { display: block; } }
 .view { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
 .view > .rlist { flex: 1 1 auto; }
 

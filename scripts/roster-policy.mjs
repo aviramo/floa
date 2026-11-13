@@ -6,6 +6,7 @@
      dialog    <dialog> markup without the popup shell's direction (data-from) or title (data-title)
      native    alert( confirm( prompt( calls
      inline    style="" and on*="" attributes in markup (CSP forbids the handlers)
+     safe      env(safe-area-inset-*) anywhere but ui.css: use --safe-t, --safe-b, --end-pad, --end-pad-fab, --sheet-b
    Scope: businesses/roster/public except me/ (out of scope), api/ (docs page) and ui.css itself. public/admin/* is roster's own source since phase 4b (the harpatka sync was stopped), like every other page.
    scripts/policy-allow.json is the legacy allow-list: the violations that exist today per file and rule. "beyond allow-list" is what is NEW since it was written, and it fails the run. An allow-list entry without a reason in `reasons` fails it too, so nothing is excused silently.
    Usage:  node scripts/roster-policy.mjs --summary        counts per rule and per file (what npm test prints)
@@ -117,6 +118,13 @@ function scanMarkup(file, raw, built) {
   while ((m = ON.exec(raw))) add("inline", file, lineOf(raw, m.index), m[0].trim(), built);
 }
 
+function scanSafe(file, raw, built) {
+  /* the device insets are read in ONE place (--inset-* in ui.css); everything else uses --safe-t / --safe-b / --end-pad / --sheet-b, so the crawl can simulate a gesture bar and no page forgets it */
+  if (file.endsWith("assets/ui.css")) return;   // the one place that reads them
+  const re = /env\(\s*safe-area-inset/g; let m;
+  while ((m = re.exec(raw))) add("safe", file, lineOf(raw, m.index), "env(safe-area-inset", built);
+}
+
 function scanNative(file, raw, built) {
   const re = /(^|[^.\w$])(alert|confirm|prompt)\s*\(/g; let m;
   while ((m = re.exec(raw))) add("native", file, lineOf(raw, m.index), m[2] + "(", built);
@@ -128,13 +136,14 @@ for (const p of walk(PUB)) {
   const inAdmin = p.startsWith(join(PUB, "admin") + sep);
   const built = inAdmin && BUILT_ADMIN.has(name);
   const raw = readFileSync(p, "utf8").replace(/\r\n/g, "\n");
+  scanSafe(file, raw, built);
   if (name.endsWith(".css")) { scanCss(file, raw, built); }
   else if (name.endsWith(".js")) { const t = stripJs(raw); scanInlineStyles(file, t, built); scanMarkup(file, t, built); scanNative(file, t, built); }
   else { const t = stripHtml(raw); scanInlineStyles(file, t, built); scanMarkup(file, t, built); scanNative(file, t, built); }
 }
 
 /* ---------- allow-list ---------- */
-const RULES = ["spacing", "color", "field", "dialog", "native", "inline"];
+const RULES = ["spacing", "color", "field", "dialog", "native", "inline", "safe"];
 const count = (list) => { const o = {}; for (const v of list) { o[v.rule] ??= {}; o[v.rule][v.file] = (o[v.rule][v.file] || 0) + 1; } return o; };
 const owned = violations.filter((v) => !v.built), built = violations.filter((v) => v.built);
 

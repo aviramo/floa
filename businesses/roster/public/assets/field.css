@@ -67,7 +67,8 @@ html[dir="ltr"] .rfield > select { padding-inline: 0 20px; background-position: 
 .rfield > .rf-err { color: var(--rf-red); }
 .rfield > .rf-err:empty { display: none; }
 .rfield:has(> .rf-err) > .rf-help { display: none; }   /* an error takes the help's place until it is fixed */
-.rf-ex { display: inline-block; font-weight: 700; color: var(--rf-ink); unicode-bidi: isolate; direction: ltr; }   /* the example is Latin text inside Hebrew: it never scrambles */
+.rf-ex b { font-weight: 700; }
+.rf-ex { display: inline-block; font-weight: 400; color: var(--rf-ink); unicode-bidi: isolate; direction: ltr; }   /* the example is Latin text inside Hebrew: it never scrambles */
 .rfield > .rf-note { display: block; margin: var(--sp-hair, 4px) 0 0; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--rf-ink-2); }
 .rfield > .rf-note[data-tone="good"] { color: var(--rf-good); }
 .rfield > .rf-note[data-tone="bad"] { color: var(--rf-red); }

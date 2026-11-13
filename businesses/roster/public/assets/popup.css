@@ -27,6 +27,10 @@
   --pp-foot-mt: 8px;            /* footer: content to the footer line */
   --pp-title: 20px;             /* the title (the kit's --fs-l on a page that has the kit) */
   --pp-head-top: 8px;           /* a top sheet: room under its content */
+  --pp-top: var(--pp-pt);       /* THE top rhythm (owner 2026-11-13): from the popup's top edge to the top of the header row (title + X), the same in every popup, touch and computer.
+                                   On touch the grab strip IS this space (the pill sits in it), so the sheet adds no padding of its own above the header (--pp-pt-sheet) */
+  --pp-pt-sheet: var(--pp-pt);  /* the padding between the sheet's top and its header row: the full --pp-pt, or 0 where the grab strip above already provides it */
+  --pp-title-top: 32px;         /* the most the title text's top may sit below the popup's top edge (--pp-top + the half-leading of a 44px row); the Chrome crawl asserts it */
 }
 @media (min-width: 760px) { :root { --pp-px: 20px; } }
 
@@ -42,3 +46,8 @@ dialog .sheet-head { direction: ltr; flex-direction: row-reverse; }    /* physic
 dialog .sheet-head > * { direction: rtl; }
 dialog .sheet-head > .rs-x, dialog .sheet-head > .dclose { order: 99; margin-left: calc(-1 * var(--pp-x-bleed)); margin-right: 0; }
 dialog .sheet-head > .rs-x svg, dialog .sheet-head > .dclose svg { width: var(--pp-x-svg); height: var(--pp-x-svg); }
+
+/* touch: a bottom sheet has the grab strip above its header; the strip is the top space, so the sheet's own padding above the header is 0 (a sheet that opens from the top has the strip at its bottom and keeps the padding) */
+@media (max-width: 759px) {
+  dialog:has(> .grab), dialog.rsheet:has(> .rs-grab):not([data-from="top"]) { --pp-pt-sheet: 0px; }
+}

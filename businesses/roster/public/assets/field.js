@@ -51,7 +51,14 @@
       var span = document.createElement("span");
       span.className = "rf-ex";
       /* empty field: the whole example from data-help-ex-empty, or the example with the placeholder in {value}'s place; otherwise the example with what was typed */
-      span.textContent = !v && emptyEx ? emptyEx : ex.split("{value}").join(v || (ph && ph !== " " ? ph : ""));
+      /* only the part that is the person's own (the value, or the placeholder example) is bold; the fixed address around it is plain */
+      var cut = ex.indexOf("{value}"), pre = cut < 0 ? ex : ex.slice(0, cut), post = cut < 0 ? "" : ex.slice(cut + 7);
+      var shown = !v && emptyEx ? emptyEx : null, mine = v || (ph && ph !== " " ? ph : "");
+      if (shown !== null) { if (shown.indexOf(pre) === 0 && (!post || shown.slice(-post.length) === post)) { mine = shown.slice(pre.length, post ? shown.length - post.length : undefined); } else { pre = shown; mine = ""; post = ""; } }
+      if (cut < 0) { pre = ex; mine = ""; post = ""; }
+      span.appendChild(document.createTextNode(pre));
+      if (mine) { var b = document.createElement("b"); b.textContent = mine; span.appendChild(b); }
+      if (post) span.appendChild(document.createTextNode(post));
       if (text) h.appendChild(document.createTextNode(" "));
       h.appendChild(span);
     }

@@ -363,7 +363,7 @@
   /* ---------- the manager ---------- */
   function showManager() {
     setView('<div class="qrow" id="qRow" hidden><label class="rfield" id="qF"><span>חיפוש עסק</span><input type="search" id="q" placeholder=" " autocomplete="off"></label></div>' +
-      '<div class="rlist" id="list" data-fab><div class="lbox" id="listIn"><div class="rempty" role="status">טוען…</div></div></div>' +
+      '<div class="rlist" id="list" data-fab-room><div class="lbox" id="listIn"><div class="rempty" role="status">טוען…</div></div></div>' +
       '<button type="button" class="rfab" id="newBiz" data-act="new" aria-label="עסק חדש" title="עסק חדש">' + icon("plus") + "</button>");
     $("#q").addEventListener("input", function () { S.q = this.value; renderList(); });
     /* pull to refresh: a finger swipe down while the list is at its top (or has nothing to scroll) reloads the businesses; never under a popup */

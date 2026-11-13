@@ -35,21 +35,44 @@
         try { var r = opt.onRefresh(); if (r && r.then) r.then(done, done); else setTimeout(done, 400); } catch (e) { done(); }
       } else if (!busy) { set(0, "idle"); ind.hidden = true; }
     }
-    sc.addEventListener("touchstart", function (e) {
+    /* The gesture area is the whole page body the list lives in (the list's parent: header, list AND the empty space under a short list),
+       not only the scrolled element: a list of two rows is two rows tall, and a finger that lands on the empty part below it never touches the list.
+       A scrolled region inside the area (an inner list, a popup) keeps its own scroll: only an area whose scrolled ancestors are all at the top may pull. */
+    var area = opt.area || sc.parentElement || doc.body;
+    root.classList.add("rk-ptr");   /* css: no browser pull-to-refresh and no rubber band on the root, ours replaces it */
+    function scrolledAbove(t) {
+      for (var n = t; n && n !== doc.documentElement; n = n.parentNode) { if (n.nodeType === 1 && n.scrollTop > 0) return true; if (n === area) break; }
+      return sc.scrollTop > 0;
+    }
+    function onStart(e) {
       if (busy || !enabled() || doc.querySelector("dialog[open]") || e.touches.length !== 1) return;
-      var t = e.target; if (t.closest && t.closest("input,textarea,select,[data-swipe].is-dragging")) return;
-      if (sc.scrollTop > 0) return;
-      y0 = e.touches[0].clientY; x0 = e.touches[0].clientX; pulling = true;
-    }, { passive: true });
-    sc.addEventListener("touchmove", function (e) {
+      var t = e.target; if (t.closest && t.closest("input,textarea,select,[data-swipe].is-dragging,.rptr")) return;
+      if (scrolledAbove(t)) return;
+      y0 = e.touches[0].clientY; x0 = e.touches[0].clientX; pulling = true; decided = false;
+    }
+    function onMove(e) {
       if (!pulling) return;
       var dy = e.touches[0].clientY - y0, dx = e.touches[0].clientX - x0;
-      if (Math.abs(dx) > Math.abs(dy) || dy <= 0 || sc.scrollTop > 0) { if (dy <= 0) { pulling = false; set(0, "idle"); ind.hidden = true; } return; }
+      if (!decided) {   /* the first few pixels decide: a horizontal move or an upward move is not ours */
+        if (Math.max(Math.abs(dx), Math.abs(dy)) < 4) return;
+        if (Math.abs(dx) > Math.abs(dy) || dy <= 0) { pulling = false; return; }
+        decided = true;
+      }
+      if (dy <= 0 || scrolledAbove(e.target)) { pulling = false; set(0, "idle"); ind.hidden = true; return; }
+      if (e.cancelable) e.preventDefault();   /* needs a NON passive listener: otherwise the browser scrolls or refreshes the page by itself */
       ind.hidden = false; set(Math.min(PTR_MAX, dy * 0.5));
-    }, { passive: true });
-    sc.addEventListener("touchend", function () { if (pulling) end(pull >= PTR_TRIGGER); }, { passive: true });
-    sc.addEventListener("touchcancel", function () { if (pulling) end(false); }, { passive: true });
-    return { refresh: function () { ind.hidden = false; end(true); }, destroy: function () { ind.remove(); } };
+    }
+    function onEnd() { if (pulling) end(pull >= PTR_TRIGGER); }
+    function onCancel() { if (pulling) end(false); }
+    var decided = false;
+    area.addEventListener("touchstart", onStart, { passive: true });
+    area.addEventListener("touchmove", onMove, { passive: false });
+    area.addEventListener("touchend", onEnd, { passive: true });
+    area.addEventListener("touchcancel", onCancel, { passive: true });
+    return { refresh: function () { ind.hidden = false; end(true); }, destroy: function () {
+      area.removeEventListener("touchstart", onStart); area.removeEventListener("touchmove", onMove); area.removeEventListener("touchend", onEnd); area.removeEventListener("touchcancel", onCancel);
+      ind.remove();
+    } };
   }
 
   /* ---------- swipe actions ----------
@@ -123,5 +146,20 @@
     return { open: openIt, close: function () { close(open); }, hint: hint, isOpen: function () { return open; }, resetHint: function () { try { store.removeItem(key); } catch (e) {} } };
   }
 
-  window.RosterUI = { kbWatch: kbWatch, ptr: { attach: ptrAttach }, swipe: { init: swipeInit } };
+  /* ---- the in-popup add button: any control with data-fab="label" becomes the add button of the list it sits under (the kit FAB, in the popup's bottom-left corner) ---- */
+  var PLUS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+  function fabs(root) {
+    var all = (root || document).querySelectorAll("[data-fab]:not([data-fab-done])");
+    for (var i = 0; i < all.length; i++) {
+      var b = all[i], label = b.getAttribute("data-fab") || (b.textContent || "").trim();
+      b.setAttribute("data-fab-done", "1");
+      b.classList.add("rfab", "rfab--in");
+      if (label) { b.setAttribute("aria-label", label); b.setAttribute("title", label); }
+      b.innerHTML = PLUS_SVG;
+    }
+  }
+  fabs();
+  if (window.MutationObserver) new MutationObserver(function () { fabs(); }).observe(document.documentElement, { childList: true, subtree: true });
+
+  window.RosterUI = { fabs: fabs, kbWatch: kbWatch, ptr: { attach: ptrAttach }, swipe: { init: swipeInit } };
 })();
