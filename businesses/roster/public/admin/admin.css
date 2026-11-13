@@ -2221,3 +2221,6 @@ body { font-family: var(--font); }
 .wrap > .list .row .rowwa.rowwa.rowwa:not(.ratt):not(.nophone) { background: transparent; border-color: transparent; }
 .wrap > .list .row .rowwa.rowwa.rowwa.ratt { background: var(--green-bg); border-color: var(--green); }
 .wrap > .list .row .rowwa.rowwa.rowwa.ratt.msgc { background: var(--yellow-bg); border-color: var(--yellow); }
+/* the border of the colored tile is the card's own line (grey), so the two read as one line; only the fill carries the color */
+.wrap > .list .row .rowwa.rowwa.rowwa.ratt, .wrap > .list .row .rowwa.rowwa.rowwa.ratt.msgc { border-color: var(--line); }
+.wrap > .list .row.sel .rowwa.rowwa.rowwa.ratt, .wrap > .list .row.last .rowwa.rowwa.rowwa.ratt { border-color: var(--line-2); }
