@@ -2111,7 +2111,7 @@ body { font-family: var(--font); }
 /* the add button on a wide screen sits in the corner of the list pane (admin-kit.js sets --fab-left from the pane) */
 #kitFab { left: var(--fab-left, max(var(--gutter), var(--inset-l))); }
 /* swipe rows (participants list): the foreground carries the row's own background and its states */
-.list .row[data-swipe], .wrap > .list > .row[data-swipe] { padding: 0; overflow: hidden; touch-action: pan-y; }   /* the row card keeps its border and radius, its padding moves to the foreground */
+.list .row[data-swipe], .wrap > .list > .row[data-swipe] { padding: 0; overflow: visible; touch-action: pan-y; }   /* the row card keeps its border and radius, its padding moves to the foreground */
 .list .row[data-swipe] > .rswipe-fg { padding: var(--sp-1); background: inherit; }   /* inherit: whatever background the row has (normal, last, selected) */
 .list .row[data-swipe]:not(.is-open):not(.is-dragging) > .rswipe { visibility: hidden; transition: visibility 0s linear var(--t-base); }   /* a closed tray never shows around the rounded corners */
 .list > .rhint { margin-block: var(--sp-1); }
@@ -2176,3 +2176,6 @@ body { font-family: var(--font); }
 .wrap > .list > .rhint { margin-inline: 0; }
 /* the meeting picker: its first row starts one gap (--sp-1) below the header, the same air as above the gender chips (the sticky top no longer pulls up into the menu's own padding) */
 .mmenu .mtop { margin-top: 0; }
+
+/* the list's grey ground is a plain rectangle under the bars (no rounded top corners), and a row has no vertical edge cue where the delete tray is */
+.wrap > .list { border-radius: 0; }

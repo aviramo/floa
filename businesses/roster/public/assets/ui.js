@@ -23,6 +23,9 @@
   var PTR_MAX = 72, PTR_TRIGGER = 56;
   function ptrAttach(opt) {
     var sc = opt.scroller, enabled = opt.enabled || function () { return true; };
+    /* NATIVE pull to refresh (owner 2026-11-13: "like any regular site"): the page itself never scrolls, so the browser's own pull-down reloads it as soon as the list lets the pull chain up
+       (overscroll-behavior-y: auto on the list, no containment on the root). Our own gesture could not win on a real phone: Chrome marks touchmove as not cancelable once its scroll starts. */
+    if (opt.native !== false) return { refresh: function () { try { var r = opt.onRefresh(); return r; } catch (e) {} }, destroy: function () {} };
     var ind = doc.createElement("div"); ind.className = "rptr"; ind.setAttribute("role", "status"); ind.setAttribute("aria-live", "polite");
     ind.innerHTML = '<span class="rptr__dot"></span>'; ind.hidden = true; doc.body.appendChild(ind);
     var y0 = 0, x0 = 0, pulling = false, busy = false, pull = 0;

@@ -113,7 +113,7 @@
 .rcount { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 var(--gap-tight); border-radius: var(--r-chip); background: var(--text); color: var(--bg); font: var(--fw-bold) var(--fs-xs)/1 var(--font); font-variant-numeric: tabular-nums; }
 
 /* ============================ LIST, ROW, SWIPE ============================ */
-.rlist { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; padding-bottom: var(--end-pad); }   /* the ONE scroll region of a page */
+.rlist { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; overscroll-behavior-y: auto; padding-bottom: var(--end-pad); }   /* the ONE scroll region of a page */
 .rlist[data-fab-room] { padding-bottom: var(--end-pad-fab); }
 /* LIST ROW: a simple line. slots: lead, main (title, meta), trail. variants: --link (whole row is the tap target), --compact. */
 .rrow { position: relative; display: flex; align-items: center; gap: var(--gap-button); min-height: var(--row); padding: var(--sp-1) var(--gutter); border-bottom: 1px solid var(--line); background: var(--bg); }
@@ -135,16 +135,16 @@
 /* SWIPE ACTIONS (parameter of .rrow and .rcard): data-swipe="<list kind>". Up to TWO actions in .rswipe (icon + short label, destructive = danger tone).
    The foreground (.rswipe-fg) slides by --sw-x (transform only); the tray sits at the inline-end edge. Direction is RTL aware: swipe toward the
    inline-start edge (physical right in RTL) opens. Only one row open at a time. The three-dots menu with the SAME actions is always present (non-gesture path). */
-[data-swipe] { position: relative; overflow: hidden; touch-action: pan-y; min-height: min-content; }   /* overflow:hidden lets a grid or flex parent with a fixed height squash the item to its borders: the item never goes below its content */
-[data-swipe] > .rswipe-fg { position: relative; z-index: var(--z-raised); background: var(--bg); transform: translateX(var(--sw-x, 0px)); transition: transform var(--t-base) var(--ease); will-change: transform; }
+[data-swipe] { position: relative; overflow: visible; touch-action: pan-y; min-height: min-content; }   /* visible (owner 2026-11-13): the card slides on past its own edge, all the way to the screen's edge (the list clips there), it is not cut at the card's border */   /* overflow:hidden lets a grid or flex parent with a fixed height squash the item to its borders: the item never goes below its content */
+[data-swipe] > .rswipe-fg { position: relative; border-radius: inherit; z-index: var(--z-raised); background: var(--bg); transform: translateX(var(--sw-x, 0px)); transition: transform var(--t-base) var(--ease); will-change: transform; }
 [data-swipe].is-dragging > .rswipe-fg { transition: none; }
 .rswipe { position: absolute; z-index: 0; inset-block: 0; inset-inline-end: 0; display: flex; width: calc(var(--sw-n, 2) * 88px); }
-html[dir="rtl"] .rswipe { inset-inline-end: auto; left: 0; }
+html[dir="rtl"] .rswipe { inset-inline-end: auto; left: 0; border-radius: var(--r-card, 0) 0 0 var(--r-card, 0); overflow: hidden; }
 .rswipe__act { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--gap-tight); border: 0; background: var(--surface-2); color: var(--text); font: var(--fw-bold) var(--fs-xs)/1.1 var(--font); cursor: pointer; }
 .rswipe__act[data-tone="danger"] { background: var(--danger); color: #fff; }
 .rswipe__act > svg { width: var(--icon-m); height: var(--icon-m); stroke-width: var(--icon-w); }
 .rswipe__act:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
-[data-swipe]::after { content: ""; position: absolute; inset-block: 35%; inset-inline-end: 3px; width: 3px; background: var(--line-strong); opacity: .5; pointer-events: none; }   /* persistent edge cue */
+[data-swipe]::after { display: none; content: ""; position: absolute; inset-block: 35%; inset-inline-end: 3px; width: 3px; background: var(--line-strong); opacity: .5; pointer-events: none; }   /* persistent edge cue */
 [data-swipe].is-open::after { display: none; }
 .rhint { position: sticky; top: 0; z-index: var(--z-raised); margin: 0 var(--gutter); padding: var(--sp-1) var(--sp-2); background: var(--info-bg); color: var(--info); font: var(--fw-medium) var(--fs-s)/var(--lh-body) var(--font); border-radius: var(--r-ctl); display: flex; align-items: center; gap: var(--sp-2); opacity: 1; transition: opacity var(--t-base) var(--ease); }
 .rhint[hidden], .rhint.is-gone { opacity: 0; pointer-events: none; }
@@ -211,7 +211,7 @@ html.rs-lock .rfab:not(.rfab--in), html.dlg-lock .rfab:not(.rfab--in), html.kb-o
 
 /* ============================ PULL TO REFRESH ============================ */
 .rptr { position: fixed; inset-inline: 0; top: var(--rptr-top, 0); display: grid; place-items: center; height: 48px; pointer-events: none; z-index: var(--z-sticky); transform: translateY(calc(var(--rptr-pull, 0) * 1px - 48px)); opacity: var(--rptr-o, 0); }
-html.rk-ptr, html.rk-ptr body { overscroll-behavior-y: contain; }   /* our pull to refresh replaces the browser's (Android Chrome reloads the page by itself otherwise) */
+html.rk-ptr, html.rk-ptr body { overscroll-behavior-y: auto; }   /* our pull to refresh replaces the browser's (Android Chrome reloads the page by itself otherwise) */
 .rptr__dot { width: 24px; height: 24px; border: var(--icon-w) solid var(--line-strong); border-top-color: var(--text); border-radius: 50%; transform: rotate(calc(var(--rptr-pull, 0) * 4deg)); }
 .rptr[data-state="loading"] .rptr__dot { animation: rk-spin .8s linear infinite; }
 @media (prefers-reduced-motion: reduce) { .rptr[data-state="loading"] .rptr__dot, .rbtn--icon[aria-busy="true"] > svg { animation: none; } }
