@@ -42,9 +42,11 @@ dialog::-webkit-scrollbar, dialog *::-webkit-scrollbar, .rlist::-webkit-scrollba
 /* ---------- the page frame: the header stays, only the list scrolls ---------- */
 .wrap { width: 100%; height: 100vh; height: 100dvh; display: flex; flex-direction: column; }
 .top { flex: 0 0 auto; position: relative; z-index: var(--z-sticky); }
-.rhead__in { width: 100%; max-width: var(--w-page); margin-inline: auto; display: flex; align-items: center; gap: var(--gap-button); }
+.rhead__in { width: 100%; max-width: var(--w-page); margin-inline: auto; display: flex; align-items: flex-start; gap: var(--gap-button); }
 .rhead__text { flex: 1 1 auto; min-width: 0; }
 .rhead .rhead__title { flex: none; }
+/* the title row is always one control high (44px) and never moves: a subtitle is added BELOW it, and the icon button sits on the title row, not centered on the whole block */
+.rhead__text > .rhead__title { display: flex; align-items: center; min-height: var(--ctl); }
 #whoName { display: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .view { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
 .view > .rlist { flex: 1 1 auto; }

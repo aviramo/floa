@@ -440,6 +440,8 @@ try {
           const lefts = out.icons.filter((i) => i.left), rights = out.icons.filter((i) => !i.left);
           out.leftEdge = lefts.length ? Math.min(...lefts.map((i) => i.gl)) : null;
           out.rightEdge = rights.length ? Math.min(...rights.map((i) => i.gr)) : null;
+          /* the title row never moves: the icon buttons are centered on the TITLE (not on title plus subtitle) */
+          const ti = el.querySelector(".rhead__title"); if (ti) { const tr = ti.getBoundingClientRect(); out.titleMid = tr.top + tr.height / 2; out.iconMids = btns.map((x) => x.r.top + x.r.height / 2); }
           return out;
         })()`);
         if (!h) { await tab.close(); continue; }   // behind the sign-in gate in this run: nothing to measure
@@ -447,6 +449,7 @@ try {
         check(`${tag}: its surface or its bottom edge differs from a list row's`, h.bg !== h.rowBg || h.edge !== h.rowEdge, h);
         check(`${tag}: its icon buttons have no background of their own`, h.icons.length > 0 && h.icons.every((i) => i.bg === "rgba(0, 0, 0, 0)" || i.bg === "transparent"), h.icons);
         check(`${tag}: the outermost glyph on each side is flush with the content edge (within 1px)`, (h.leftEdge === null || Math.abs(h.leftEdge) <= 1) && (h.rightEdge === null || Math.abs(h.rightEdge) <= 1), h);
+        if (h.titleMid != null) check(`${tag}: icon buttons are centered on the title row, not on title plus subtitle`, h.iconMids.every((m) => Math.abs(m - h.titleMid) <= 1), h);
         await tab.close();
       }
     }
