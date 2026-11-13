@@ -216,7 +216,7 @@ const TALL_STATE = `(() => {
 })()`;
 async function scrollProbe(tab, v, tag) {
   if (/ #iDlg$/.test(tag)) return;   /* the screenshot viewer: one image sized to fit the window, nothing to scroll */
-  if (/ #(pDlg|stDlg)$/.test(tag)) return;   /* the participant card and the statistics drawer draw their pages only with data: the admin harness (harness.mjs, "popup body scrolls") measures them with the real pages */
+  if (/ #(pDlg|stDlg|mailDlg)$/.test(tag)) return;   /* the participant card and the statistics drawer draw their pages only with data: the admin harness (harness.mjs, "popup body scrolls") measures them with the real pages */
   const hostRect = await tab.evaluate(TALL); if (!hostRect) return;
   await sleep(250);
   const before = await tab.evaluate(TALL_STATE);
