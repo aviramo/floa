@@ -311,6 +311,7 @@ const chipProbe = (html) => `(async () => {
   const size = { s: px("--tag-s"), m: px("--tag"), l: px("--tag-l") };
   const out = { n: 0, heights: [], off: [], size };
   for (const el of box.querySelectorAll(${JSON.stringify(CHIP_SEL)})) {
+    if (el.classList.contains("rowwa")) continue;   /* the whatsapp / message / attendance mark is the card's corner tile (44px square), not a chip */
     const r = el.getBoundingClientRect(); if (r.width < 4 || r.height < 4) continue;
     out.n++;
     const want = el.matches(".rchip--s") ? size.s : el.matches(".rchip--l") ? size.l : size.m;
