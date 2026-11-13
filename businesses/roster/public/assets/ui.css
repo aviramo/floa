@@ -138,10 +138,11 @@
 [data-swipe] { position: relative; overflow: visible; touch-action: pan-y; min-height: min-content; }   /* visible (owner 2026-11-13): the card slides on past its own edge, all the way to the screen's edge (the list clips there), it is not cut at the card's border */   /* overflow:hidden lets a grid or flex parent with a fixed height squash the item to its borders: the item never goes below its content */
 [data-swipe] > .rswipe-fg { position: relative; border-radius: inherit; z-index: var(--z-raised); background: var(--bg); transform: translateX(var(--sw-x, 0px)); transition: transform var(--t-base) var(--ease); will-change: transform; }
 [data-swipe].is-dragging > .rswipe-fg { transition: none; }
-.rswipe { position: absolute; z-index: 0; inset-block: 0; inset-inline-end: 0; display: flex; width: calc(var(--sw-n, 2) * 88px); }
-html[dir="rtl"] .rswipe { inset-inline-end: auto; left: 0; border-radius: var(--r-card, 0) 0 0 var(--r-card, 0); overflow: hidden; }
-.rswipe__act { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--gap-tight); border: 0; background: var(--surface-2); color: var(--text); font: var(--fw-bold) var(--fs-xs)/1.1 var(--font); cursor: pointer; }
+.rswipe { position: absolute; z-index: 0; inset: 0; display: flex; justify-content: flex-end; border-radius: inherit; overflow: hidden; background: var(--surface-2); }   /* the tray is the card's WHOLE background (owner 2026-11-13): a white card slides over a plain coloured ground, the actions sit at the end edge of that ground, never a tile that can climb onto the card */
+.rswipe:has(> .rswipe__act:only-child[data-tone="danger"]) { background: var(--danger); }   /* one destructive action: the ground itself is red */
+.rswipe__act { flex: 0 0 88px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--gap-tight); border: 0; background: var(--surface-2); color: var(--text); font: var(--fw-bold) var(--fs-xs)/1.1 var(--font); cursor: pointer; }
 .rswipe__act[data-tone="danger"] { background: var(--danger); color: #fff; }
+.rswipe__act[data-tone="danger"]:only-child { background: transparent; }
 .rswipe__act > svg { width: var(--icon-m); height: var(--icon-m); stroke-width: var(--icon-w); }
 .rswipe__act:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
 [data-swipe]::after { display: none; content: ""; position: absolute; inset-block: 35%; inset-inline-end: 3px; width: 3px; background: var(--line-strong); opacity: .5; pointer-events: none; }   /* persistent edge cue */
