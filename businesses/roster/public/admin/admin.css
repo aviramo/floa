@@ -2217,3 +2217,7 @@ body { font-family: var(--font); }
 .wrap > .list .row.sel .rowwa.rowwa.rowwa, .wrap > .list .row.last .rowwa.rowwa.rowwa { border-color: var(--line-2); }
 .wrap > .list .row .rowwa.rowwa.rowwa svg, .wrap > .list .row .rowwa.ratt.rowwa.rowwa svg { width: 20px; height: 20px; }
 .wrap > .list .row .rowwa.rowwa.rowwa { height: var(--ctl) !important; min-height: 0 !important; width: var(--ctl) !important; border-radius: calc(var(--uc-r) - 1px) 0 calc(var(--uc-r) - 1px) 0 !important; }   /* wins over the chip core, which makes every tag a pill */
+/* the tile's colors are the old circle's: plain whatsapp has no fill and no border; a message (yellow) or attendance (green) tile has its fill and its border (right and bottom) in that color */
+.wrap > .list .row .rowwa.rowwa.rowwa:not(.ratt):not(.nophone) { background: transparent; border-color: transparent; }
+.wrap > .list .row .rowwa.rowwa.rowwa.ratt { background: var(--green-bg); border-color: var(--green); }
+.wrap > .list .row .rowwa.rowwa.rowwa.ratt.msgc { background: var(--yellow-bg); border-color: var(--yellow); }
