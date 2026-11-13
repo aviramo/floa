@@ -560,3 +560,7 @@ html, body { overflow-x: clip; }
 
 /* כותרות חמשת הכרטיסים בצבע העלים */
 .list--five h3 { color: #E8590C; }
+
+/* כותרות חמשת הכרטיסים והעלים שלהן באותו כתום אורנג' */
+.list--five h3 { color: #F26A0A; }
+.list--five .dotm { background: #F26A0A; }
