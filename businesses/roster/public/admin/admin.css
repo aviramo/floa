@@ -2155,7 +2155,7 @@ body { font-family: var(--font); }
 #listTags > :empty { display: none; }
 
 /* a meeting's date is plain text like its time and name: no frame, no fill */
-.mlist .mrow .mdt .mlabel.mlabel.mlabel { height: auto; min-width: 0; padding: 0; border: 0; border-radius: 0; background: transparent; font: inherit; line-height: inherit; color: inherit; }
+.mlist.mlist.mlist .mrow .mdt .mlabel.mlabel.mlabel { height: auto; min-width: 0; padding: 0; border: 0; border-radius: 0; background: transparent; font: inherit; line-height: inherit; color: inherit; }
 /* the selected meeting in the picker is marked like the selected participant card: its own surface, a soft edge and shadow, never a filled bar */
 .mtr.mrow2[aria-checked="true"] { background: var(--bg); box-shadow: 0 0 0 1px var(--line-2), 0 6px 18px color-mix(in srgb, var(--text) 14%, transparent); border-radius: var(--r-card); position: relative; z-index: 1; }
 /* the participant card header: one row, name and age/gender together on the same centre line, the buttons on that line too */
@@ -2179,3 +2179,19 @@ body { font-family: var(--font); }
 
 /* the list's grey ground is a plain rectangle under the bars (no rounded top corners), and a row has no vertical edge cue where the delete tray is */
 .wrap > .list { border-radius: 0; }
+
+/* the arrival route (paid channel / marketing): a SMALL chip at the end of the name row, in the channel's own colour (the age and gender stay plain) */
+.osrc { display: inline-flex; align-items: center; flex: 0 0 auto; max-width: 100%; height: var(--tag-s); padding: 0 var(--sp-1); margin-inline-start: var(--sp-1); border-radius: var(--r); font-size: var(--fs-xs); font-weight: var(--fw-bold); line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
+
+/* more air above the gender filter and below the search box (owner 2026-11-13): one standard step (--sp-2) there, --sp-1 between the chips and the search */
+.chiprow { padding-top: var(--sp-2); }
+.wrap > .vbar { padding-bottom: var(--sp-2); }
+
+/* a zero balance is not a chip on a card: the invisible placeholder pushed the count chip away from the card's right edge */
+@media (max-width: 639px) { .wrap > .list > .row .main .balic.zero { display: none !important; } }   /* a card (one column): no empty slot; the chip core above is built to win by specificity, so only !important can beat it here */
+
+/* cards: the air above the first card equals the air at the sides (--sp-2); below the last one the list keeps its end room (safe area and the add button) */
+.wrap > .list { padding-top: var(--sp-2); }
+
+/* a selected card is marked by its frame alone: no "נבחר" word */
+.wrap > .list > .row.last::after, .wrap > .list > .row.sel::after, #pPager .mlist .mrow.hl::after, .ucard.last::after, .ucard.sel::after, .ucard.hl::after { content: none; }

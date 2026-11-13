@@ -109,13 +109,16 @@
       var id = b.getAttribute("data-id"), p = K.partOf(id), on = b.getAttribute("data-swipe-act") === "restore";
       if (!p) return;
       swipeCtl.close();
-      K.quickActive(p, on).then(function () {
+      var kind = b.getAttribute("data-swipe-act");
+      if (kind === "unlink") { K.unlink(p); return; }   // inside a meeting: REMOVE from it, after a confirmation popup
+      var run = function () { return K.quickActive(p, on).then(function () {
         window.RosterUndo.delete({
-          kind: "person", itemId: id, label: (on ? "הוחזר: " : "הוסר: ") + p.name,
+          kind: "person", itemId: id, label: (on ? "הוחזר: " : "נמחק: ") + p.name,
           onUndo: function () { return K.quickActive(p, !on); },
           onCommit: function () { /* already done: the window only offers the way back */ },
         });
-      }).catch(function () { K.toast("הפעולה לא הצליחה"); });
+      }).catch(function () { K.toast("הפעולה לא הצליחה"); }); };
+      if (kind === "remove") K.askDelete(p, run); else run();   // everywhere else: DELETE, after a confirmation popup (a restore is direct)
     }, true);
   }
 })();

@@ -15,6 +15,7 @@
     arrowl: ['s', '<path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/>'],
     back: ['s', '<path d="M5 12h14"/><path d="M13 6l6 6-6 6"/>'],
     cal: ['s', '<rect x="4" y="5" width="16" height="15" rx="2.5"/><path d="M4 10h16"/><path d="M9 3v4"/><path d="M15 3v4"/>'],
+    caloff: ['s', '<rect x="4" y="5" width="16" height="15" rx="2.5"/><path d="M4 10h16"/><path d="M9 3v4"/><path d="M15 3v4"/><path d="M3 21L21 3"/>'],
     calnext: ['s', '<rect x="4" y="5" width="16" height="15" rx="2.5"/><path d="M4 10h16"/><path d="M9 3v4"/><path d="M15 3v4"/><circle cx="12" cy="15" r="2.5" fill="currentColor" stroke="none"/>'],   // המפגש הקרוב: לוח שנה עם נקודה
     call: ['s', '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/>'],
     mail: ['s', '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>'],
@@ -485,7 +486,8 @@
   const channelAt = (p, mid) => { if (!mid) return channelOf(p); const l = linkOf(p.id, mid); return (l && promoterOf(l.source_promoter_id)) || null; };
   const originOf = (p, mid) => { const x = channelAt(p, mid); if (x) return { kind: 'pr', name: x.name, color: x.color || 'red' }; return null; };
   const firstArrive = (pid) => { if (state.att.some((l) => l.participant_id === pid)) return {}; const p = partOf(pid), x = p && channelOf(p); return x ? { source_promoter_id: x.id } : {}; };   // ההרשמה הראשונה מקבלת את דרך ההגעה של המשתתף (כמו הטריגר, כדי שהצבע יופיע מיד)
-  const originAttr = (p, mid) => { const o = originOf(p, mid); if (!o) return ''; const c = PALETTE[o.color] || PALETTE.sky; return ' style="color:' + c[1] + '"'; };   // צבע דרך ההגעה: בטקסט בלבד, בלי רקע
+  const originAttr = () => '';   // the arrival route no longer colours the age and gender: it is a small chip at the end of the name row (srcChip)
+  const srcChip = (p, mid) => { const o = originOf(p, mid); if (!o) return ''; const c = PALETTE[o.color] || PALETTE.sky; return '<span class="osrc" style="background:' + c[0] + ';color:' + c[1] + '" title="' + esc(o.name) + '">' + esc(o.name) + '</span>'; };   // צבע דרך ההגעה: בטקסט בלבד, בלי רקע
   const promoterOf = (id) => state.promoters.find((x) => x.id === id);
   const calcCommission = () => '';   // העלות לא נחרטת על התשלום: היא מחושבת לפי התעריף הנוכחי על מה שעוד לא הוסדר (payCostOf)
   /* עמלה מתשלום: אחוז = על כל תשלום; ₪ קבוע = פעם אחת למשתתף (בתשלום הראשון) */
@@ -1192,12 +1194,12 @@
       if (false) { const c = meetCounts(p), n = c.came + c.next; if (n) mcntHtml = '<span class="mcnt" title="' + [c.came ? 'הגיע ל' + (c.came === 1 ? 'מפגש אחד' : '-' + c.came + ' מפגשים') : '', c.next ? 'משוריין ל' + (c.next === 1 ? 'מפגש הבא אחד' : '-' + c.next + ' מפגשים הבאים') : ''].filter(Boolean).join(' · ') + '">' + icon('bookmark', 'i14') + n + '</span>'; }   // בלי שיוך: התא ריק, והעמודה נשמרת
       const evc = evCircle(p);
       const hasUn = !!state.filter, isLinked = !!(state.filter && linkOf(p.id, state.filter));   // בתוך מפגש: ✕ להסרת השיוך, באותו מקום של ה-✕ בשורת המפגש בכרטיס המשתתף
-      const act = p.active === false ? ['restore', 'back', 'החזרה', ''] : ['remove', 'trash', 'הסרה', 'danger'];   // swipe action (roster kit): remove with undo, or bring a removed one back
+      const act = p.active === false ? ['restore', 'back', 'החזרה', ''] : (state.filter ? ['unlink', 'caloff', 'הסרה', 'danger'] : ['remove', 'trash', 'מחיקה', 'danger']);   // all participants or a meeting type: DELETE (trash icon); inside a meeting: REMOVE from it (calendar with a slash). Both ask first.   // swipe action (roster kit): remove with undo, or bring a removed one back
       return '<li class="row ucard' + (hasUn ? ' hasun' : '') + '" data-swipe="people" data-pid="' + esc(p.id) + '"><div class="rswipe-fg">' +
         // בלי ✕ להסרה מהמפגש ובלי + להוספה ברשימת המשתתפים (11.11.26): ההסרה והשיוך רק מכרטיס המשתתף, ומהצ'יף "הוספה למפגש"
         (attM ? attTag(p) : wa ? UI.tag(wsel ? (wsent ? WA_ICON : mailed ? MAIL_ICON : '') : WA_ICON, 'ico rowwa' + (wsel ? ' ratt msgc ' + (wsent ? 'yes sent' : mailed ? 'yes' : 'no') : ''), Object.assign({ href: wa }, /^https?:/.test(wa) ? { target: '_blank', rel: 'noopener' } : {}, wsel ? { 'data-wsend': p.id } : {}, { 'aria-label': 'וואטסאפ ל' + esc(p.name) + (wsent ? ', ההודעה נשלחה' : mailed ? ', נשלח במייל' : ''), title: wsel ? esc(wsent ? 'נשלחה ההודעה "' + wsel.name + '" בוואטסאפ · ' + fmtDT(wsent.sent_at) + ' · לחיצה לביטול הסימון' : mailed ? 'נשלח במייל. לחיצה: וואטסאפ עם ההודעה' : 'וואטסאפ עם ההודעה: ' + wsel.name) : 'וואטסאפ' }), 'a') : UI.tag(WA_ICON, 'ico rowwa nophone', { role: 'img', 'aria-label': 'אין טלפון', title: 'אין טלפון' })) +
         '<div class="main' + ' hasw' + (anyEv ? ' ev' : '') + (!state.filter && state.showPay ? ' bl' : '') + '" role="button" tabindex="0" data-edit="' + p.id + '">' +
-          '<div class="nm"><span class="name' + nameCls(p) + '" dir="rtl">' + nameMark(p) + mcntHtml + '</span>' + '</div>' +   // רק השם מבודד (שם באנגלית לא הופך את השורה), וסמל החשבון תמיד משמאל לשם
+          '<div class="nm"><span class="name' + nameCls(p) + '" dir="rtl">' + nameMark(p) + mcntHtml + srcChip(p, state.filter) + '</span>' + '</div>' +   // רק השם מבודד (שם באנגלית לא הופך את השורה), וסמל החשבון תמיד משמאל לשם
           (true ? '<div class="meta">' + (true ? '<span class="age' + (originOf(p, state.filter) ? ' ' + originOf(p, state.filter).kind : '') + '"' + originAttr(p, state.filter) + ' title="' + (p.gender ? (p.gender === 'male' ? 'זכר' : 'נקבה') + ' · ' : '') + 'גיל"><bdi dir="rtl">' + (age != null ? age : (p.gender ? '' : '-')) + (age != null || !p.gender ? ' ' : '') + '<b class="gl">' + (p.gender ? icon(p.gender === 'male' ? 'male' : 'female', 'i14') : '<span class="ic i14 ph" aria-hidden="true"></span>') + '</b>' + '</bdi></span>' : '') + '<span class="sidewrap">' + (state.filter ? mcntAll.replace('class="mcnt"', 'class="mcnt mcnt2 mcnt3"') : '') + side + payIc + '</span>' + '</div>' : '') +
           // הערה אחרונה וסימון צירוף תמונה לא מוצגים ברשימה (הערות רק בכרטיס המשתתף)
           mcntHtml.replace('class="mcnt"', 'class="mcnt mcnt2"') +   // עותק לכרטיס (טלפון וטאבלט): כמות המפגשים בשורה השנייה, ולא בשורת השם
@@ -3165,6 +3167,7 @@
     const src = o ? (o.kind === 'pr' ? ' · שיווק ממומן: ' : ' · פרסום: ') + o.name : '';
     h.title = src.replace(' · ', '');
     h.innerHTML = (age != null || p.gender ? '<span class="tchip' + cls + '"' + originAttr(p) + '><bdi dir="rtl">' + (age != null ? age : '') + (age != null ? ' ' : '') + '<b>' + (p.gender ? icon(p.gender === 'male' ? 'male' : 'female', 'i16') : '<span class="ic i16 ph" aria-hidden="true"></span>') + '</b>' + '</bdi></span>' : '') + '<span class="tname' + nameCls(p) + '" dir="rtl"><bdi>' + esc(p.name) + '</bdi></span>';
+    if (o) h.insertAdjacentHTML('beforeend', srcChip(p, sheet && sheet.hl));   // the arrival route: a small chip, last in the name row
     /* סמל המצב (מחובר לחשבון, חסום, מחוק) בטאב הפרטים */
     { const mk = stMark(p), tm = $('#pTabMark'); tm.innerHTML = mk ? icon(mk.k, 'i14') : ''; tm.className = 'ptm' + (mk && mk.red ? ' red' : ''); tm.title = mk ? mk.t : ''; }
     { const ca = $('#pCall'), tl = telLink(p.phone); ca.hidden = !(pTab === 'main' && tl); if (tl) ca.href = tl; }   // הטלפון השתנה: החיוג מתעדכן
@@ -3259,7 +3262,7 @@
         (!on && sheet.id ? UI.tag('הוספה למפגש', 'ptag none', { 'data-mp': m.id, role: 'button', tabindex: 0, title: 'לא משויך למפגש. לחיצה: הוספה למפגש' }) : '<button type="button" class="pay ' + esc(on ? (st || (miss ? 'missed' : 'nolabel')) : 'none') + '" data-mp="' + esc(m.id) + '" title="' + (on ? (st ? 'שינוי תגית' : 'הוספת תגית') : 'לא משויך למפגש. לחיצה: שיוך למפגש') + '"' + (on && !st ? ' aria-label="הוספת תגית"' : '') + '>' + (on ? (st ? esc(STATUS_LABEL[st]) : miss ? 'לא הגיע' : icon('tag', 'i14') + ' תגית') : sheet.id ? 'לא משויך' : '') + '</button>') +
         '<div class="mline">' + (sheet.id && !on ? '<span></span>' : sheet.id ? '<button type="button" class="mmoney' + (laterOf(sheet.id, m.id) ? ' later' : dueOf(sheet.id, m.id) > 0 ? '' : allocatedOf(sheet.id, m.id) > 0 ? ' has' : freeL ? ' free' : '') + '" data-mm="' + m.id + '"' + (on ? '' : ' hidden') + ' title="תשלום למפגש">' + payTxt(sheet.id, m.id, freeL) + '</button>' : '') +
         '</div></div>' +
-        (!sheet.id ? '<span></span>' : on ? '<button type="button" class="munl" data-mun="' + m.id + '" aria-label="הסרה מהמפגש" title="הסרה מהמפגש">' + icon('close', 'i16') + '</button>' : '<span></span>') +
+        (!sheet.id ? '<span></span>' : on ? '<button type="button" class="munl" data-mun="' + m.id + '" aria-label="הסרה מהמפגש" title="הסרה מהמפגש">' + icon('caloff', 'i16') + '</button>' : '<span></span>') +
       '</div>';
   };
   /* פייג'ר בכרטיס המשתתף: מפגשים (מימין, הכרטיס תמיד נפתח עליו), קרדיט, הערות ופרטים. החלקה עם הצמדה, והאטבים והמחוון עוקבים אחרי הגלילה. בלי רשומות היסטוריה: "חזרה" סוגרת את הכרטיס */
@@ -4728,5 +4731,7 @@
       openTemplates: (id) => { openTypeEditor(id); setTimeout(() => { const b = $('#tyMF'); if (b && b.scrollIntoView) b.scrollIntoView({ block: 'center' }); }, 60); },
       pref: { get: () => { const g = state.viewScopes._g; return (g && g.onb) || {}; }, set: (k, v) => { const g = state.viewScopes._g || (state.viewScopes._g = {}); (g.onb || (g.onb = {}))[k] = v; saveViewPrefs(); } } }; })();
 
-    window.ROSTER_KIT = { api, toast, load, deleted: null, partOf, quickActive };   // the handles admin-kit.js works through (roster kit, p14_kit)
+    window.ROSTER_KIT = { api, toast, load, deleted: null, partOf, quickActive,
+      askDelete: (p, onYes) => askConfirm(p, 'מחיקת משתתף', 'למחוק את ' + nameB(p.name) + '? אפשר לבטל מיד אחרי המחיקה.', 'כן, מחיקה', onYes, true),
+      unlink: (p) => { if (state.filter) confirmLink(p.id, state.filter, false); } };   // the handles admin-kit.js works through (roster kit, p14_kit)
 if (!FRAMED) startAuth();
