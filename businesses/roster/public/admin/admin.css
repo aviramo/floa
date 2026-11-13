@@ -2206,3 +2206,7 @@ body { font-family: var(--font); }
 
 /* a note's chip is as wide as its words (the row scrolls sideways): the chip core caps a chip at 100% of the row and clips it, and with the text centred that cut BOTH ends (the first letters vanished). !important because the chip core is built to win by specificity */
 #nList .ntext.chips .nch:not(.nago) { max-width: none !important; overflow: visible !important; text-overflow: clip !important; flex: 0 0 auto !important; }
+
+/* the first chip in a participant card is always the meetings count: the other chips (balance, sent messages) come after it */
+.wrap > .list .row .main .mcnt2 { order: 1; }
+.wrap > .list .row .main > :is(.balic, .evc, .ses) { order: 2; }

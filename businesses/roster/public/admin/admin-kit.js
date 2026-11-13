@@ -69,7 +69,6 @@
     if (r.width > 0) fab.style.setProperty("--fab-left", Math.round(r.left + 16) + "px");   // 16 = the gutter token
   }
   window.addEventListener("resize", placeFab);
-  if (window.ResizeObserver && list) new ResizeObserver(placeFab).observe(list);
   function showFab() {
     if (!list || !q) return;
     var live = !doc.body.classList.contains("locked") && list.offsetParent !== null;
@@ -86,6 +85,8 @@
   }
   new MutationObserver(showFab).observe(doc.body, { attributes: true, attributeFilter: ["class"] });
   showFab();
+  /* the list may be hidden when this script runs (still loading) and nothing on the body changes when it appears: its own size change is the cue that it is now on screen */
+  if (window.ResizeObserver && list) new ResizeObserver(showFab).observe(list);
 
   /* ---------- 3. pull to refresh ---------- */
   if (list && window.RosterUI && RosterUI.ptr) {
