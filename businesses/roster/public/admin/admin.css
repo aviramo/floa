@@ -866,9 +866,9 @@ p.stline { margin: var(--sp-1) 0 0; font-size: var(--fs-s); }
 /* מצב טעינה (31.10.26): בכותרת רק "טוען" ושלוש נקודות, בלי הקו של הכותרת ובלי שום דבר מתחתיה */
 #mSel .mldg { display: none; }
 html.is-loading #mSel .mldg { display: inline-flex; align-items: baseline; }
-html.is-loading #mSelTxt, html.is-loading #mSel svg{ display: none; }
+html.is-loading #mSelTxt { display: none; }
 html.is-loading #mSel { pointer-events: none; }
-html.is-loading .wrap > header.top { border-bottom-color: transparent; }
+/* the header while loading is the header after loading: same line, same buttons (not clickable yet), same chevron; only the title words are a placeholder */
 html.is-loading .wrap > :not(header) { display: none !important; }
 .mldg b { font-weight: inherit; animation: mldg 1.2s infinite ease-in-out; }
 .mldg b:nth-child(2) { animation-delay: .2s; }
@@ -894,7 +894,7 @@ html.menu-open body { -webkit-user-select: none; user-select: none; -webkit-touc
 html.menu-open body * { pointer-events: none !important; }
 html.menu-open .fm-open, html.menu-open .fm-open * { pointer-events: auto !important; }
 /* בזמן טעינה גם כפתורי הכותרת (תצוגה, מיון, תפריט) לא מוצגים */
-html.is-loading .hgrp { visibility: hidden; }
+html.is-loading .hgrp { pointer-events: none; }
 
 /* ---------- שורת החיפוש: מספר הרשומות במקום הזכוכית (עמודת הוואטסאפ), ומשמאלו תיבת חיפוש פתוחה תמיד בלי מסגרת (31.10.26) ---------- */
 
