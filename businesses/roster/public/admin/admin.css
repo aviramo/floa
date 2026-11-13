@@ -562,7 +562,7 @@ html.dlg-lock { overflow: hidden; overscroll-behavior: none; }
 #pgW > #walHist { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; padding-bottom: var(--end-pad); }   /* מהכפתור ומעלה קבוע, ורק ההיסטוריה נגללת */
 #pgI { padding-top: var(--sp-2); display: block; }
 #pDlg.newp .ptabs, #pDlg.newp #pgM, #pDlg.newp #pgW, #pDlg.newp #pgN { display: none; }   /* משתתף חדש: רק הפרטים */
-.maddw { flex: 0 0 auto; position: sticky; bottom: 0; z-index: var(--z-raised); display: flex; justify-content: flex-end; padding-top: var(--sp-1); padding-bottom: var(--safe-b); background: var(--bg); }   /* אחרי הרשימה, ועם הרבה מפגשים צמוד לתחתית ותמיד גלוי */
+.maddw { flex: 0 0 auto; margin-top: auto; position: sticky; bottom: 0; z-index: var(--z-raised); display: flex; justify-content: flex-end; padding-top: var(--sp-1); padding-bottom: var(--safe-b); background: var(--bg); }   /* אחרי הרשימה, ועם הרבה מפגשים צמוד לתחתית ותמיד גלוי */
 .maddw:has(> [hidden]) { display: none; }
 .more { display: block; width: 100%; height: var(--ctl); margin: var(--sp-hair) 0 var(--sp-1); border: 1px solid transparent; background: var(--surface-2); color: var(--text); font-weight: var(--fw-bold); font-size: var(--fs-s); }
 /* הערה חדשה: שדה וצירוף צילום מסך */
@@ -1298,7 +1298,7 @@ html.is-loading .hsearch { visibility: hidden; }
 #pPager { background: var(--surface); }
 #pPager .mlist .mrow.hl, #pPager .mlist .mrow .pay.none, #pPager .mlist .mrow .mmoney.free, #pPager .ptag.empty, #pPager .paychip.allocchip.free { background: var(--bg); }
 #pPager .mlist .mrow { background: var(--bg); }
-#pPager .maddw, #pPager #pMeetPad, #pPager .nattach, #pPager .nform, #pPager #pAddMeet { background: transparent; }   /* בלי בלוקים לבנים על הרקע האפור, בארבעת הדפים */
+#pPager .maddw, #pPager #pMeetPad, #pPager .nattach, #pPager .nform { background: transparent; }   /* בלי בלוקים לבנים על הרקע האפור, בארבעת הדפים */
 
 .mtr.mrow2:has(.mrname) { padding-block: var(--sp-1); }   /* מפגש עם שם: אותו ריפוד אנכי כמו בשורת סוג המפגש (3.11.26) */
 
