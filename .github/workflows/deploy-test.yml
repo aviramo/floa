@@ -55,8 +55,6 @@ jobs:
           fail() { echo "::error::$1"; exit 1; }
           [ -n "$CLOUDFLARE_API_TOKEN" ] || fail "secret CLOUDFLARE_API_TOKEN is missing"
           [ ${#CLOUDFLARE_ACCOUNT_ID} -eq 32 ] || fail "secret CLOUDFLARE_ACCOUNT_ID is missing or is not 32 characters (it is ${#CLOUDFLARE_ACCOUNT_ID})"
-          npx --yes wrangler@4 pages project create floa-test --production-branch main > create.log 2>&1 || echo "project create: $(tail -n 3 create.log | tr '
-' ' ' | cut -c1-300)"
-          npx --yes wrangler@4 pages deploy dist --project-name floa-test --branch main --commit-dirty=true > deploy.log 2>&1 || fail "wrangler: $(grep -iE 'error|code|auth|permission|not found' deploy.log | head -n 4 | tr '
-' ' ' | cut -c1-400)"
+          npx --yes wrangler@4 pages project create floa-test --production-branch main > create.log 2>&1 || echo "project create: $(tail -n 3 create.log | tr -s '[:space:]' ' ' | cut -c1-300)"
+          npx --yes wrangler@4 pages deploy dist --project-name floa-test --branch main --commit-dirty=true > deploy.log 2>&1 || fail "wrangler: $(grep -iE 'error|code|auth|permission|not found' deploy.log | head -n 4 | tr -s '[:space:]' ' ' | cut -c1-400)"
           tail -n 3 deploy.log
