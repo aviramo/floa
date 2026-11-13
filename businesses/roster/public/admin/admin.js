@@ -649,6 +649,13 @@
     if (!sh || !sh.id || pTab !== 'main') return;
     const p = partOf(sh.id); if (p) setTitle(p);
   }
+  /* pull to refresh (the same kit control as the owner and connect pages): the page never scrolls, so the browser's own refresh cannot fire; a finger pulling the list down reloads the data */
+  (function () {
+    const list = document.querySelector('.wrap > .list'), top = document.querySelector('.wrap > .top, .wrap > header.top');
+    if (!list || !window.RosterUI || !RosterUI.ptr) return;
+    document.documentElement.style.setProperty('--rptr-top', (top ? top.offsetHeight : 0) + 'px');
+    RosterUI.ptr.attach({ scroller: list, area: list.parentElement, onRefresh: () => load(true), enabled: () => !document.querySelector('.mmenu:not([hidden]), .fm-open') });
+  })();
   /* התאמה לחיפוש, אחת לכל המקומות: שם, טלפון (05... או 972...) וטקסט ההערות */
   const qMatch = (p, q, qd) => p.name.toLowerCase().includes(q) || (qd.length >= 2 && phoneHay(p).includes(qd)) || hasNote(p, q);
   async function load(silent) {

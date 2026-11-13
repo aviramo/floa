@@ -143,7 +143,8 @@ const MEASURE = `(() => {
   const cs = getComputedStyle(d), r = d.getBoundingClientRect();
   const sheet = d.querySelector(":scope > .sheet, :scope > form.sheet, :scope > .rs-body, :scope > .rs-sheet");
   const radii = (el) => ["borderTopLeftRadius", "borderTopRightRadius", "borderBottomLeftRadius", "borderBottomRightRadius"].map((k) => parseFloat(getComputedStyle(el)[k]) || 0);
-  const x = [...d.querySelectorAll('button[aria-label="סגירה"], .rs-x, .dclose')].find((b) => { const q = b.getBoundingClientRect(); return q.width > 0 && q.height > 0; });
+  const x = [...d.querySelectorAll('button[aria-label="סגירה"], .rs-x, .dclose')].find((b) => { const q = b.getBoundingClientRect(); return q.width >= 40 && q.height >= 40; });
+  const hasGrab = [...d.querySelectorAll(".grab, .rs-grab")].some((g) => { const q = g.getBoundingClientRect(); return q.width > 0 && q.height > 0 && getComputedStyle(g).display !== "none"; });
   const xr = x ? x.getBoundingClientRect() : null;
   const grabTop = !!xr && [...d.querySelectorAll(".grab, .rs-grab")].some((g) => { const q = g.getBoundingClientRect(); return q.width > 0 && q.height > 0 && getComputedStyle(g).display !== "none" && q.bottom <= xr.top + 1; });
   const px = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--pp-px")) || 16;
@@ -158,7 +159,7 @@ const MEASURE = `(() => {
     radius: Math.max(...radii(d), ...(sheet ? radii(sheet) : [0])),
     x: xr ? { l: Math.round(xr.left - r.left), t: Math.round(xr.top - r.top), w: Math.round(xr.width), h: Math.round(xr.height) } : null,
     headT: head ? Math.round(head.getBoundingClientRect().top - r.top) : null, titleT: ttl ? Math.round(ttl.getBoundingClientRect().top - r.top) : null, pptop, ptt,
-    off: shell.flatMap(grid), grabTop, px,
+    off: shell.flatMap(grid), grabTop, px, hasGrab, xShown: !!x,
     hscroll: d.scrollWidth - d.clientWidth,
     fixedBox: cs.position,
   };
@@ -169,6 +170,8 @@ const origin = `http://127.0.0.1:${port}`;
 /* the X sits in the first row of the header: below the grab bar (44px) of a sheet that opens from the bottom, at the very top of one that opens from the top */
 const SEEN = new Map();   /* one X position per (view, grab bar above or not): every dialog of every page must land on the same pixel */
 const xExact = (tag, view, m) => {
+  /* touch (owner 2026-11-13): a popup with a grab bar shows NO X; the grab bar closes it. A computer popup keeps its X. */
+  if (view.width < 760 || view.name === "phone") check(`${tag}: no visible X where a grab bar closes the popup`, !(m.hasGrab && m.xShown), m);
   if (!m.x) return;
   const key = view.name + (m.grabTop ? " with a grab bar above" : " without");
   /* the glyph (12px) sits on the content edge: its 44px target reaches 16px past it, so left = side padding - 16, the same on every page; the top is the shell top padding (16) under the grab bar, if any */
@@ -406,7 +409,7 @@ try {
           if (m) {
             check(`${tag}: the popup has square corners`, m.radius === 0, m.radius);
             check(`${tag}: the popup stays inside the window`, m.left >= -1 && m.right <= v.width + 1 && m.hscroll <= 0, m);
-            check(`${tag}: it has an X`, !!m.x, m.x); xExact(tag, v, m);
+            check(`${tag}: it has an X (a computer popup, or one with no grab bar)`, !!m.x || (v.mobile && m.hasGrab), m.x); xExact(tag, v, m);
             topRhythm(tag, m);
             check(`${tag}: the shell paddings are on the 4px grid`, m.off.length === 0, m.off);
           }
