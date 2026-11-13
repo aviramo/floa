@@ -2210,3 +2210,10 @@ body { font-family: var(--font); }
 /* the first chip in a participant card is always the meetings count: the other chips (balance, sent messages) come after it */
 .wrap > .list .row .main .mcnt2 { order: 1; }
 .wrap > .list .row .main > :is(.balic, .evc, .ses) { order: 2; }
+
+/* the whatsapp / message / attendance mark of a participant card is a square tile in the card's top-left corner: its top-left corner is the card's own corner (same radius, touching it), its bottom-right corner has the same radius, the other two are straight; no border on the left and top (that is the card's border), a border on the right and bottom in the card's line color so the two lines are one */
+.wrap > .list .row .rowwa.rowwa.rowwa { --chip-h: var(--ctl); top: 0; bottom: auto; margin-top: 0; inset-inline-start: auto; inset-inline-end: 0; width: var(--ctl); height: var(--ctl); border-radius: calc(var(--uc-r) - 1px) 0 calc(var(--uc-r) - 1px) 0; border-style: solid; border-width: 0 1px 1px 0; border-color: var(--line); }
+[dir="rtl"] .wrap > .list .row .rowwa.rowwa.rowwa { border-radius: calc(var(--uc-r) - 1px) 0 calc(var(--uc-r) - 1px) 0; }
+.wrap > .list .row.sel .rowwa.rowwa.rowwa, .wrap > .list .row.last .rowwa.rowwa.rowwa { border-color: var(--line-2); }
+.wrap > .list .row .rowwa.rowwa.rowwa svg, .wrap > .list .row .rowwa.ratt.rowwa.rowwa svg { width: 20px; height: 20px; }
+.wrap > .list .row .rowwa.rowwa.rowwa { height: var(--ctl) !important; min-height: 0 !important; width: var(--ctl) !important; border-radius: calc(var(--uc-r) - 1px) 0 calc(var(--uc-r) - 1px) 0 !important; }   /* wins over the chip core, which makes every tag a pill */
