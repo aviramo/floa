@@ -2163,12 +2163,6 @@ body { font-family: var(--font); }
 #pDlg .sheet-head h2 { align-items: center; padding-top: 0; }
 #pDlg .sheet-head h2 .tchip { margin-top: 0; }
 
-/* a note is ONE line (owner 2026-11-13): its chips shrink to fit it, a long chip ends with an ellipsis inside its own frame; no wrapping, no sideways dragging, no fade */
-#nList .ntext.chips { flex-wrap: nowrap; overflow: hidden; -webkit-mask-image: none; mask-image: none; cursor: auto; }
-#nList .ntext.chips > * { flex: 0 1 auto; min-width: 0; }
-#nList .ntext.chips > .narw { flex: none; }
-#nList .ntext.chips .nch:not(.nago) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-#nList .ntext.chips .nch.nw { white-space: nowrap; }
 
 /* the list's top bars use ONE gap everywhere (--sp-1): header to chips, chips to search, search to the first card. The bar is as tall as its content (the search box), not a fixed 45px that left uneven air around it */
 .wrap > .vbar { flex: 0 0 auto; height: auto; padding-top: 0; padding-bottom: var(--sp-1); align-items: flex-start; }
