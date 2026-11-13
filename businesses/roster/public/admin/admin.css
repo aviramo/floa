@@ -2194,3 +2194,10 @@ body { font-family: var(--font); }
 /* the participant card: the grey ground runs down to the very bottom of the screen; the safe-area room is padding INSIDE the grey, not a lighter strip of the dialog below it */
 #pDlg#pDlg:not(.newp) .sheet.sheet { padding-bottom: 0; }
 #pDlg:not(.newp) .ppanel[data-panel="main"] { padding-bottom: var(--sheet-b); }
+
+/* the mail popup: the header and the sent/payment lines stay in place, ONLY the body of the mail scrolls (owner 2026-11-13) */
+#mailDlg { overflow: hidden; }
+#mailDlg .sheet { display: flex; flex-direction: column; height: 100%; max-height: min(100dvh, 920px); overflow: hidden; }
+#mailDlg .sheet-head, #mailDlg .mailmeta { flex: 0 0 auto; }
+#mailDlg .mailbody { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; }
+@media (min-width: 760px) { #mailDlg .sheet { height: auto; max-height: min(90dvh, 920px); } }

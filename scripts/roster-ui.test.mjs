@@ -193,7 +193,7 @@ const topRhythm = (tag, m) => {
 const TALL = `(() => {
   const d = [...document.querySelectorAll("dialog[open]")].pop(); if (!d) return null;
   /* the body of a popup is the part that declares itself the scroller: the shell's .sheet-body, or the admin's own panes (listed here, so a new dialog with a new body class must be added: that is the point); else the .sheet */
-  const GROUPS = ["dialog.mdlg .sheet > [role=menu]", ".sheet-body, .rs-body", ".ppage", "#finMain, #finLog, #finSettle, #finForm, #ppForm", ".ppanel"];   /* in this order: the innermost scroller a dialog declares wins over the pane that holds it */
+  const GROUPS = ["dialog.mdlg .sheet > [role=menu]", ".sheet-body, .rs-body, .mailbody", ".ppage", "#finMain, #finLog, #finSettle, #finForm, #ppForm", ".ppanel"];   /* in this order: the innermost scroller a dialog declares wins over the pane that holds it */
   { const mn = d.matches(".mdlg") && d.querySelector(".sheet > [role=menu][hidden]"); if (mn) mn.hidden = false; }   /* the filter, sort and WhatsApp popups (class mdlg) keep their menu hidden until the page fills it: show it, it is what a finger touches (never another dialog's floating menu: an open floating menu blocks the whole page behind it) */
   const dr = d.getBoundingClientRect();
   const seen = (e) => { const r = e.getBoundingClientRect(); if (e.closest("[hidden]") || r.width <= 0 || r.right <= dr.left + 1 || r.left >= dr.right - 1) return false; const hit = document.elementFromPoint(r.left + r.width / 2, r.top + Math.min(r.height - 4, 160)); return !!hit && e.contains(hit); };   /* and it is the one a finger would touch (a pager stacks its pages; the inactive ones are covered) */   /* on screen, in this dialog (a pager keeps its other pages off to the side) */

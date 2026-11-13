@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="../assets/field.css?v=7e4c4a08" />
   <link rel="stylesheet" href="../assets/popup.css?v=75ae0a22" />
   <link rel="stylesheet" href="../assets/ui.css?v=ce0bcc20" />
-  <link rel="stylesheet" href="admin.css?v=612594a2" />
+  <link rel="stylesheet" href="admin.css?v=a3f4c72a" />
 </head>
 <body class="locked">
   <div class="gate" id="gate" hidden>
@@ -217,7 +217,9 @@
     <div class="sheet" id="mailSheet">
       <div class="sheet-head"><h2 id="mailTitle">מייל</h2><button type="button" class="hbtn" id="mailTheme" aria-pressed="false" aria-label="הדמיית מצב כהה" title="הדמיית מצב כהה"><svg data-i="moon"></svg></button></div>
       <div class="mailmeta" id="mailMeta"></div>
-      <iframe id="mailFrame" title="המייל שנשלח" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" hidden></iframe>
+      <div class="mailbody" id="mailBody">
+        <iframe id="mailFrame" title="המייל שנשלח" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" hidden></iframe>
+      </div>
     </div>
   </dialog>
   <dialog id="ppDlg" data-from="bottom" aria-labelledby="ppTitle">
