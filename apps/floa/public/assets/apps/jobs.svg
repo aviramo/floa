@@ -1,7 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" role="img" aria-label="">
-<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#56B4EE"/><stop offset="1" stop-color="#0E4A80"/></linearGradient></defs>
-<rect width="800" height="500" fill="url(#g)"/>
-<g fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" opacity=".95">
-<rect x="250" y="190" width="300" height="190" rx="28"/><path d="M335 190v-34a24 24 0 0 1 24-24h82a24 24 0 0 1 24 24v34"/><path d="M250 270h300"/><path d="M370 270v26h60v-26"/></g>
-<g fill="#fff" opacity=".35"><circle cx="150" cy="120" r="10"/><circle cx="660" cy="380" r="14"/><circle cx="620" cy="110" r="8"/></g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#56B4EE"/><stop offset="1" stop-color="#0E4A80"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#g)"/><g fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="11.5" width="18" height="12" rx="2.5"/><path d="M12.5 11.5V10a1.5 1.5 0 0 1 1.5-1.5h4a1.5 1.5 0 0 1 1.5 1.5v1.5"/><path d="M7 16.5h18"/></g></svg>
