@@ -26,6 +26,7 @@ const HOMES = Object.fromEntries(HOSTS.map((h) => [h.host, "/" + h.folder]));
 const CLEAN = new Set(HOSTS.filter((h) => h.clean).map((h) => h.host));
 const SLUGS = new Set(HOSTS.filter((h) => h.slugs).map((h) => h.host));
 const RESERVED = ["admin", "connect", "me", "api", "assets", "new", "index"];
+const DOMAIN_FILES = new Set(["/supabase.js", "/auth.js", "/favicon.ico", "/favicon.svg", "/apple-touch-icon.png", "/sw.js", "/robots.txt", "/404.html"]);
 const SLUG_PAGES = { "": "admin", connect: "connect", me: "me" };
 /* longest folder first, so /tal/ia is not taken for /tal */
 const OLD = HOSTS.flatMap((h) => [h.folder, ...(h.old || [])].map((f) => ["/" + f.replace(/\/$/, ""), h.host]))
@@ -76,10 +77,31 @@ export async function onRequest({ request, next, env }) {
   };
   const inApp = await at(home.slice(0, -1) + url.pathname);
   if (inApp.status !== 404) return inApp;
-  if (url.pathname !== "/") {
+
+  /* the few files that belong to the DOMAIN, not to an app */
+  if (DOMAIN_FILES.has(url.pathname) || url.pathname.startsWith("/floa/")) {
     const atRoot = await at(url.pathname);
     if (atRoot.status !== 404) return atRoot;
+  }
+
+  /* an address that belongs to ANOTHER app goes to that app's sub-domain
+     (a link on Roster to /tal/aum/ lands on aum.floa.co.il) */
+  for (const [folder, host] of OLD) {
+    if (host !== url.hostname && (url.pathname === folder || url.pathname.startsWith(folder + "/"))) {
+      const rest = url.pathname.slice(folder.length);
+      return Response.redirect("https://" + host + ((CLEAN.has(host) ? "" : folder) + rest || "/") + url.search, 301);
+    }
+  }
+
+  /* Chords: /<song> is looked up at the old path, where the domain's 404 router
+     knows what to do. A clean sub-domain has nothing more to try, and a
+     redirect here would only be sent back by the rule above: a loop. */
+  if (!CLEAN.has(url.hostname) && url.pathname !== "/") {
     return Response.redirect(url.origin + home.slice(0, -1) + url.pathname + url.search, 307);
+  }
+  if (CLEAN.has(url.hostname)) {
+    const page = await at("/404.html");
+    return new Response(page.body, { status: 404, headers: page.headers });
   }
   return inApp;
 }
