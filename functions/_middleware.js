@@ -26,12 +26,13 @@ const HOMES = Object.fromEntries(HOSTS.map((h) => [h.host, "/" + h.folder]));
 const CLEAN = new Set(HOSTS.filter((h) => h.clean).map((h) => h.host));
 const ICONS = Object.fromEntries(HOSTS.filter((h) => h.icons).map((h) => [h.host, h.icons]));
 const SPA = new Set(HOSTS.filter((h) => h.spa).map((h) => h.host));
+const TEST = new Set(HOSTS.filter((h) => h.test).map((h) => h.host));
 const SLUGS = new Set(HOSTS.filter((h) => h.slugs).map((h) => h.host));
 const RESERVED = ["admin", "connect", "me", "api", "assets", "new", "index"];
-const DOMAIN_FILES = new Set(["/supabase.js", "/auth.js", "/favicon.ico", "/favicon.svg", "/apple-touch-icon.png", "/sw.js", "/robots.txt", "/404.html"]);
+const DOMAIN_FILES = new Set(["/supabase.js", "/auth.js", "/favicon.ico", "/favicon.svg", "/apple-touch-icon.png", "/sw.js", "/robots.txt", "/404.html", "/__test-env.js"]);
 const SLUG_PAGES = { "": "admin", connect: "connect", me: "me" };
 /* longest folder first, so /tal/ia is not taken for /tal */
-const OLD = HOSTS.flatMap((h) => [h.folder, ...(h.old || [])].map((f) => ["/" + f.replace(/\/$/, ""), h.host]))
+const OLD = HOSTS.filter((h) => !h.test).flatMap((h) => [h.folder, ...(h.old || [])].map((f) => ["/" + f.replace(/\/$/, ""), h.host]))
   .sort((a, b) => b[0].length - a[0].length);
 
 export async function onRequest({ request, next, env }) {
@@ -53,6 +54,7 @@ export async function onRequest({ request, next, env }) {
   /* each sub-domain is a site of its own to a crawler: its own robots.txt,
      naming its own sitemap (the app's sitemap.xml, if it has one) */
   if (url.pathname === "/robots.txt") {
+    if (TEST.has(url.hostname)) return new Response("User-agent: *\nDisallow: /\n", { headers: { "content-type": "text/plain; charset=utf-8" } });
     const sm = await env.ASSETS.fetch(new Request(new URL(home + "sitemap.xml", url), request));
     return new Response("User-agent: *\nAllow: /\n" + (sm.status === 200 ? "\nSitemap: " + url.origin + "/sitemap.xml\n" : ""),
       { headers: { "content-type": "text/plain; charset=utf-8" } });

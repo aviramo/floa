@@ -1,5 +1,5 @@
 {
-  "_": "Every host that points at a Cloudflare Pages project, and the ONE place that maps an address to an app. Add a line here, push to main, and .github/workflows/domains.yml attaches the host to the project and creates its DNS record. Nothing here is ever deleted by the script: removing a line does NOT remove the host. `enabled: false` is written down but not applied yet. `folder` is where the app's files live in the site (the sub-domain's root shows it, functions/_middleware.js reads this file). `clean: true` also takes the folder out of any address that carries it. `old` lists extra old addresses of the same app. `redirectOld` (top level) sends every old floa.co.il address to its sub-domain: keep it false until the Worker has been deployed with the new origins. `slugs: true` (roster) also maps /<business> and /<business>/connect|me to that business's pages, the way the domain's 404 router does for /roster/<business>. `icons` maps a root file (/favicon.ico) to the app's own icon, so a link preview or a browser asking the host for its icon gets the app's and not the domain's. `spa: true` (chords): an address with no file behind it (a playlist, an editor) gets the app's front page with a 200, and the app routes by the address.",
+  "_": "Every host that points at a Cloudflare Pages project, and the ONE place that maps an address to an app. Add a line here, push to main, and .github/workflows/domains.yml attaches the host to the project and creates its DNS record. Nothing here is ever deleted by the script: removing a line does NOT remove the host. `enabled: false` is written down but not applied yet. `folder` is where the app's files live in the site (the sub-domain's root shows it, functions/_middleware.js reads this file). `clean: true` also takes the folder out of any address that carries it. `old` lists extra old addresses of the same app. `redirectOld` (top level) sends every old floa.co.il address to its sub-domain: keep it false until the Worker has been deployed with the new origins. `slugs: true` (roster) also maps /<business> and /<business>/connect|me to that business's pages, the way the domain's 404 router does for /roster/<business>. `icons` maps a root file (/favicon.ico) to the app's own icon, so a link preview or a browser asking the host for its icon gets the app's and not the domain's. `spa: true` (chords): an address with no file behind it (a playlist, an editor) gets the app's front page with a 200, and the app routes by the address. `test: true` marks the test copy of an app (project floa-test, deployed by hand with .github/workflows/deploy-test.yml): never a target of the old-address redirects, and its robots.txt closes it.",
   "zone": "floa.co.il",
   "hosts": [
     {
@@ -107,6 +107,18 @@
         "/favicon.ico": "favicon.png",
         "/favicon.svg": "favicon.svg",
         "/apple-touch-icon.png": "app-icon.png"
+      }
+    },
+    {
+      "host": "roster-test.floa.co.il",
+      "project": "floa-test",
+      "enabled": true,
+      "folder": "roster/",
+      "clean": true,
+      "slugs": true,
+      "test": true,
+      "icons": {
+        "/favicon.svg": "/floa/assets/apps/roster.svg"
       }
     }
   ],

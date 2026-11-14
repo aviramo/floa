@@ -77,6 +77,7 @@ export const BUSINESSES = {
       "https://floa.co.il",
       "https://www.floa.co.il",
       "https://roster.floa.co.il",
+      "https://roster-test.floa.co.il",
       "http://localhost:5173"
     ],
     "pages": []
