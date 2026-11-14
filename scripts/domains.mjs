@@ -107,17 +107,20 @@ for (const h of live) {
   const rec = await api(`/zones/${ZONE}/dns_records?name=${encodeURIComponent(h.host)}`);
   if (!rec.ok) { console.error(`::error::${h.host}: cannot read DNS (${rec.status}) ${rec.errors || "the token needs Zone / DNS: Edit"}`); bad++; continue; }
   const addr = rec.result.filter((r) => ["A", "AAAA", "CNAME"].includes(r.type)); /* MX, TXT and the rest (mail, verification) never block a host */
+  let mk;
   if (addr.length) {
     const same = addr.some((r) => r.type === "CNAME" && r.content === target);
     if (same) console.log(`${h.host}: DNS already points at ${target}`);
     else { console.error(`::warning::${h.host}: a different address record already exists (${addr.map((r) => r.type).join(", ")}); left alone. Remove it in Cloudflare if this is the intended cut-over, then run again.`); bad++; }
-    continue;
+    if (!(same && h.replaceGithub)) continue; /* a cut-over host still has to be waited for, even if its record is already there */
+    mk = { ok: true };
+  } else {
+    mk = await api(`/zones/${ZONE}/dns_records`, { method: "POST", body: JSON.stringify({ type: "CNAME", name: h.host, content: target, proxied: true, ttl: 1 }) });
+    if (mk.ok) console.log(`${h.host}: DNS record created -> ${target}`); else { console.error(`::error::${h.host}: could not create the DNS record (${mk.status}) ${mk.errors}`); bad++; }
   }
-  const mk = await api(`/zones/${ZONE}/dns_records`, { method: "POST", body: JSON.stringify({ type: "CNAME", name: h.host, content: target, proxied: true, ttl: 1 }) });
-  if (mk.ok) console.log(`${h.host}: DNS record created -> ${target}`); else { console.error(`::error::${h.host}: could not create the DNS record (${mk.status}) ${mk.errors}`); bad++; }
   /* the safety net, part 2: records were swapped in this run, so wait for Pages to call the host active.
      If it never does, put the old records back: a visitor must never be left on a host that answers with an error. */
-  if (removed.length) {
+  if (removed.length || h.replaceGithub) {
     let ok = false;
     for (let i = 0; i < 24 && mk.ok; i++) {
       const d = await api(`/accounts/${ACCOUNT}/pages/projects/${h.project}/domains/${encodeURIComponent(h.host)}`);
