@@ -6,7 +6,7 @@ import { appsPage } from "../content/apps.js";
 const card = (ctx, a) => html`
       <li class="apps-card">
         <a href="${a.href}" class="apps-link">
-          <span class="apps-media"><img src="${ctx.url(a.img)}" alt="" loading="lazy" decoding="async" width="96" height="96"></span>
+          <span class="apps-media"><img src="${ctx.url(a.img)}" alt="" loading="lazy" decoding="async" width="56" height="56"></span>
           <span class="apps-body">
             <span class="apps-name">${a.name}</span>
             <span class="apps-text">${a.text}</span>

@@ -683,26 +683,26 @@ body { overflow-x: clip; }                  /* the bands run edge to edge; nothi
 .approach-steps .timeline::before { background: linear-gradient(180deg, var(--water) 0%, #2E8FD6 50%, var(--teal) 100%); }
 .about + .cta-band { padding-top: var(--s-5); }     /* the face, then the ask: no empty stretch between them */
 
-/* ---- the apps index (floa.co.il/apps) ---------------------------------- */
-.apps-index { padding-block: var(--s-5, 32px) var(--s-7, 72px); }
-.apps-top { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 28px; }
+/* ---- the apps index (floa.co.il/apps) ----------------------------------
+   Compact: each app is a row, the icon beside the name and its line. */
+.apps-index { padding-block: var(--s-4, 24px) var(--s-6, 48px); }
+.apps-top { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 16px; }
 .apps-brand { font-weight: 800; color: var(--ink); text-decoration: none; }
 .apps-home { color: var(--teal-dark); text-decoration: none; font-weight: 600; }
 .apps-home:hover { text-decoration: underline; }
-.apps-index h1 { margin: 0 0 6px; color: var(--ink); }
-.apps-lead { margin: 0 0 8px; color: var(--ink-2); font-size: 1.125rem; }
-.apps-group { margin-top: 36px; }
-.apps-group h2 { margin: 0 0 4px; color: var(--ink); font-size: 1.375rem; }
-.apps-sub { margin: 0 0 16px; color: var(--muted); }
-.apps-group h2 + .apps-grid { margin-top: 16px; }
-.apps-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); }
+.apps-index h1 { margin: 0 0 4px; color: var(--ink); font-size: clamp(1.625rem, 5vw, 2.25rem); }
+.apps-lead { margin: 0; color: var(--ink-2); font-size: 1rem; }
+.apps-group { margin-top: 24px; }
+.apps-group h2 { margin: 0 0 4px; color: var(--ink); font-size: 1.125rem; }
+.apps-sub { margin: 0 0 8px; color: var(--muted); font-size: .9375rem; }
+.apps-grid { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
 .apps-card { margin: 0; }
-.apps-link { display: flex; flex-direction: column; height: 100%; text-decoration: none; color: inherit; background: #fff; border: 1px solid var(--hairline); border-radius: 20px; overflow: hidden; transition: transform .25s ease, box-shadow .25s ease; }
-.apps-link:hover, .apps-link:focus-visible { transform: translateY(-4px); box-shadow: 0 14px 30px rgba(15, 79, 127, .16); }
-.apps-link:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
-.apps-media { display: flex; align-items: center; justify-content: center; padding: 28px 0; background: linear-gradient(160deg, var(--water-tint), var(--teal-tint)); }
-.apps-media img { width: 96px; height: 96px; border-radius: 22px; box-shadow: 0 8px 20px rgba(12, 42, 69, .18); display: block; object-fit: cover; }
-.apps-body { display: flex; flex-direction: column; gap: 6px; padding: 16px 18px 20px; }
-.apps-name { font-weight: 800; font-size: 1.1875rem; color: var(--ink); }
-.apps-text { color: var(--ink-2); line-height: 1.55; }
+.apps-link { display: flex; align-items: center; gap: 14px; height: 100%; padding: 12px 14px; text-decoration: none; color: inherit; background: #fff; border: 1px solid var(--hairline); border-radius: 16px; transition: transform .2s ease, box-shadow .2s ease; }
+.apps-link:hover, .apps-link:focus-visible { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(15, 79, 127, .14); }
+.apps-link:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+.apps-media { flex: none; display: block; line-height: 0; }
+.apps-media img { width: 56px; height: 56px; border-radius: 14px; box-shadow: 0 3px 10px rgba(12, 42, 69, .16); display: block; object-fit: cover; }
+.apps-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.apps-name { font-weight: 800; font-size: 1.0625rem; color: var(--ink); }
+.apps-text { color: var(--ink-2); line-height: 1.4; font-size: .9375rem; }
 @media (prefers-reduced-motion: reduce) { .apps-link { transition: none; } .apps-link:hover { transform: none; } }
