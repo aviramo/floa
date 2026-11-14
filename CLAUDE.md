@@ -44,7 +44,7 @@
 
 ## הריפו מחזיק מקור בלבד. האתר נבנה בענן
 
-**אין קבצי HTML בנויים בגיט.** הכול נבנה ל-`dist/`, ש-`.gitignore` מתעלם ממנו, ו-GitHub Action (`.github/workflows/deploy.yml`) בונה ומפרסם אותו בכל פוש ל-main. הכתובות לא נגזרות ממבנה הריפו אלא ממבנה החבילה שמתפרסמת, ולכן `floa.co.il/business-systems/` עובד בלי שתהיה תיקייה כזאת בגיט.
+**אין קבצי HTML בנויים בגיט.** הכול נבנה ל-`dist/`, ש-`.gitignore` מתעלם ממנו, ו-GitHub Action (`.github/workflows/deploy-cloudflare.yml`) בונה ומפרסם אותו ל-Cloudflare Pages בכל פוש ל-main (פרויקט `floa-site`; `test.floa.co.il` הוא `floa-test` מהענף `test`). הדומיין והתת דומיינים מוגדרים ב-`domains.json` ומוחלים על ידי `.github/workflows/domains.yml`. GitHub Pages כבוי. הכתובות לא נגזרות ממבנה הריפו אלא ממבנה החבילה שמתפרסמת, ולכן `floa.co.il/business-systems/` עובד בלי שתהיה תיקייה כזאת בגיט.
 
 - **מקור האמת:** `src/` (המנוע) ו-`businesses/` (העסקים)
 - **לבנות:** `node build.mjs`, או `node build.mjs --only=floa` לעסק אחד
@@ -167,7 +167,7 @@ node build.mjs && git add -A && git commit -m "…" && git push origin main
 `npm run test:layout` ו-`npm run test:stack` פותחים Chrome אמיתי על `dist/` ובודקים שאקורד יושב על ההברה שלו, ושחזרה אחורה מחזירה דף כמו שהיה. הן נוגעות רק ב-Chords ועולות כחצי דקה.
 
 - **מי שמשנה משהו שקשור לתצוגה של Chords** (`businesses/chords/`, `src/`, `build.mjs`) מריץ לפני הקומיט: `node build.mjs && npm run test:layout`.
-- **ב-CI הן רצות רק כשמשהו ש-Chords בנוי ממנו השתנה** מאז הפריסה האחרונה שפורסמה, ולא בפוש שנוגע בעסק אחר. הרשימה המדויקת בשלב `did anything Chords is built from change?` ב-`deploy.yml`. **קובץ או תיקייה חדשים ש-Chords תלוי בהם חייבים להיכנס לרשימה הזאת**, אחרת שינוי בהם יעבור בלי בדיקה.
+- **ב-CI הן רצות רק כשמשהו ש-Chords בנוי ממנו השתנה** מאז הפריסה האחרונה שפורסמה, ולא בפוש שנוגע בעסק אחר. הרשימה המדויקת בשלב `did anything Chords is built from change?` ב-`deploy-cloudflare.yml`. **קובץ או תיקייה חדשים ש-Chords תלוי בהם חייבים להיכנס לרשימה הזאת**, אחרת שינוי בהם יעבור בלי בדיקה.
 - הבדיקה נמדדת מול הפריסה האחרונה ולא מול הקומיט הקודם, בכוונה: ריצה שבוטלה בגלל פוש חדש לא תעלים את השינוי שלה.
 
 ## שפה

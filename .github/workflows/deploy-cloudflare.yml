@@ -9,7 +9,7 @@
 # While both workflows exist, a push publishes to BOTH. The domain decides which
 # one people see: floa.co.il points at whichever the DNS says. When the domain
 # is attached to the Cloudflare project (see the cut-over steps in the repo
-# notes), deploy.yml can be deleted and this is the only deploy.
+# notes), this is the only deploy (deploy.yml, the GitHub Pages one, was deleted).
 #
 # Needs the same two secrets as deploy-test.yml: CLOUDFLARE_API_TOKEN (Cloudflare
 # Pages: Edit) and CLOUDFLARE_ACCOUNT_ID. The project is created on the first run.

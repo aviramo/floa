@@ -36,7 +36,7 @@ const BUSINESSES = join(ROOT, "businesses");
 
 /* Everything the build makes lands here and NOWHERE else. dist/ is not in git:
    it is thrown away and rebuilt, and GitHub Actions publishes it (see
-   .github/workflows/deploy.yml) — which is what lets the repo hold source only
+   .github/workflows/deploy-cloudflare.yml) — which is what lets the repo hold source only
    while floa.co.il keeps every URL it has ever had. The published package, not
    the repo's layout, is what a visitor's URL resolves against. */
 const DIST = join(ROOT, "dist");
