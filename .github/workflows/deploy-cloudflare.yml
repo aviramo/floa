@@ -1,5 +1,5 @@
 # =============================================================================
-# floa.co.il, published to CLOUDFLARE PAGES (project `floa`).
+# floa.co.il, published to CLOUDFLARE PAGES (project `floa-site`).
 #
 # The same build, the same tests and the same triggers as deploy.yml, but the
 # result goes to Cloudflare Pages instead of GitHub Pages, the way test.floa.co.il
@@ -142,7 +142,7 @@ jobs:
       - name: worker table is in step with the businesses
         run: git diff --exit-code -- worker/src/businesses.js
 
-      - name: publish to Cloudflare Pages (project floa)
+      - name: publish to Cloudflare Pages (project floa-site)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -151,6 +151,6 @@ jobs:
           fail() { echo "::error::$1"; exit 1; }
           [ -n "$CLOUDFLARE_API_TOKEN" ] || fail "secret CLOUDFLARE_API_TOKEN is missing"
           [ ${#CLOUDFLARE_ACCOUNT_ID} -eq 32 ] || fail "secret CLOUDFLARE_ACCOUNT_ID is missing or is not 32 characters (it is ${#CLOUDFLARE_ACCOUNT_ID})"
-          npx --yes wrangler@4 pages project create floa --production-branch main > create.log 2>&1 || echo "project create: $(tail -n 3 create.log | tr -s '[:space:]' ' ' | cut -c1-300)"
-          npx --yes wrangler@4 pages deploy dist --project-name floa --branch main --commit-dirty=true > deploy.log 2>&1 || fail "wrangler: $(grep -iE 'error|code|auth|permission|not found' deploy.log | head -n 4 | tr -s '[:space:]' ' ' | cut -c1-400)"
+          npx --yes wrangler@4 pages project create floa-site --production-branch main > create.log 2>&1 || echo "project create: $(tail -n 3 create.log | tr -s '[:space:]' ' ' | cut -c1-300)"
+          npx --yes wrangler@4 pages deploy dist --project-name floa-site --branch main --commit-dirty=true > deploy.log 2>&1 || fail "wrangler: $(grep -iE 'error|code|auth|permission|not found' deploy.log | head -n 4 | tr -s '[:space:]' ' ' | cut -c1-400)"
           tail -n 3 deploy.log
