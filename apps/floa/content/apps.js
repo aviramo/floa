@@ -20,7 +20,6 @@ export const appsPage = {
         { name: "טל אמיתי לביא", text: "אמנות, ריטריטים וביודנסה: האתר של טל בפרדס חנה.", img: "assets/apps/tal.png", href: "https://tal.floa.co.il/" },
         { name: "טל וטליה", text: "הדף של טל וטליה, עם כל מה שצריך לדעת ולהצטרף.", img: "assets/apps/taltalia.png", href: "https://taltalia.floa.co.il/" },
         { name: "ביודנסה למשפחה", text: "חוויה מחברת של תנועה ושמחה להורים ולילדים.", img: "assets/apps/biofamily.png", href: "https://biofamily.floa.co.il/" },
-        { name: "קורות חיים", text: "קורות החיים של אופיר אביר, בגרסה לכל תפקיד.", img: "assets/apps/cv.png", href: "https://cv.floa.co.il/" },
       ],
     },
     {

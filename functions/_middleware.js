@@ -13,7 +13,6 @@ const HOMES = {
   "tal.floa.co.il": "/tal/",
   "taltalia.floa.co.il": "/tal/ia/",
   "aum.floa.co.il": "/tal/aum/",
-  "cv.floa.co.il": "/cv/",
 };
 
 export async function onRequest({ request, next }) {

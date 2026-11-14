@@ -49,11 +49,6 @@
       "host": "aum.floa.co.il",
       "project": "floa-site",
       "enabled": true
-    },
-    {
-      "host": "cv.floa.co.il",
-      "project": "floa-site",
-      "enabled": true
     }
   ]
 }
