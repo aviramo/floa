@@ -1,0 +1,156 @@
+# =============================================================================
+# floa.co.il, published to CLOUDFLARE PAGES (project `floa`).
+#
+# The same build, the same tests and the same triggers as deploy.yml, but the
+# result goes to Cloudflare Pages instead of GitHub Pages, the way test.floa.co.il
+# already does (deploy-test.yml). This is what lets the repository be private:
+# GitHub Pages on a private repository is a paid feature, Cloudflare Pages is not.
+#
+# While both workflows exist, a push publishes to BOTH. The domain decides which
+# one people see: floa.co.il points at whichever the DNS says. When the domain
+# is attached to the Cloudflare project (see the cut-over steps in the repo
+# notes), deploy.yml can be deleted and this is the only deploy.
+#
+# Needs the same two secrets as deploy-test.yml: CLOUDFLARE_API_TOKEN (Cloudflare
+# Pages: Edit) and CLOUDFLARE_ACCOUNT_ID. The project is created on the first run.
+# =============================================================================
+name: Deploy to Cloudflare
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:          # so a deploy can be re-run without an empty commit
+
+  # THE LIBRARY CHANGED, AND NOBODY PUSHED ANYTHING.
+  #
+  # The songs of /chords/ are written to disk at build time, out of Supabase,
+  # so a song published this morning is not on the site until the site is built
+  # again. Worse the other way: a song taken off the shelf keeps its page, with
+  # its words in it, until the same moment.
+  #
+  # So the database says so itself. A trigger on the songs table posts here the
+  # moment a song is published, unpublished, deleted or restored, and this run
+  # is the same build as any other: it asks the library again and writes what it
+  # finds. See "התראה מהדאטהבייס" in businesses/chords/schema.sql.
+  #
+  # It fires on publication and NOT on saving. A song saves itself every second
+  # while it is being typed, and a build per keystroke is not a fresher site, it
+  # is a queue.
+  repository_dispatch:
+    types: [library-changed]
+
+permissions:
+  contents: read
+  actions: read             # to ask which run was the last one that published
+
+# One deploy at a time, and the newest push wins: a queued run for a commit that
+# has already been superseded has nothing to say.
+concurrency:
+  group: deploy-cloudflare
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0    # the step below diffs against an older commit
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # The lead endpoint decides which inbox a lead lands in. It is the one
+      # thing here that cannot be allowed to break quietly, so it is tested
+      # before anything is published.
+      - run: npm test
+
+      - run: node build.mjs
+
+      # THE TWO BROWSER TESTS BELOW ARE ABOUT CHORDS AND NOTHING ELSE, and they
+      # cost about half a minute, so they run when something Chords is built
+      # from has changed and not on a push that only touched another business.
+      #
+      # "Changed" is measured against the last run that PUBLISHED, not against
+      # the previous commit. The two differ when a run is cancelled by a newer
+      # push (see `concurrency` above): a Chords change in the cancelled push
+      # would then sit in neither push's own diff and ship untested. Against
+      # the last publication it is always in the diff, until something that
+      # tested it has published.
+      #
+      # Anything this cannot work out (a manual run, no earlier publication,
+      # a commit that is gone) runs them. Skipping is only ever the answer to
+      # "I looked, and nothing Chords depends on moved".
+      - name: did anything Chords is built from change?
+        id: chords
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run=true
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            base=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/deploy-cloudflare.yml/runs?branch=main&status=success&per_page=1" --jq '.workflow_runs[0].head_sha // empty')
+            if [ -n "$base" ] && git cat-file -e "$base^{commit}" 2>/dev/null; then
+              if git diff --quiet "$base" HEAD -- businesses/chords src build.mjs package.json businesses/floa/domain .github/workflows/deploy-cloudflare.yml; then
+                run=false
+              fi
+            fi
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+          echo "chords browser tests: $run (last publication: ${base:-none})"
+
+      # A chord that does not sit on its syllable is the one way this can be
+      # broken while every unit test still passes, and reading the code does
+      # not settle it. So a real browser opens the built page and measures.
+      - if: steps.chords.outputs.run == 'true'
+        run: npm run test:layout
+
+      # And the same browser presses back, because a page that was left has to
+      # come back as the page it was and not as a fresh one at the top of
+      # itself. Also unreadable from the code: it is all about the address.
+      - if: steps.chords.outputs.run == 'true'
+        run: npm run test:stack
+
+      # The roster pages keep one design: square popups, the X at the top left,
+      # no sideways scroll, an add button that floats. scripts/roster-policy.mjs
+      # already read the source (it runs inside npm test); this opens the built
+      # pages in a real browser and measures. Only when something roster is built
+      # from changed since the last publication, like the Chords tests above.
+      - name: did anything roster is built from change?
+        id: roster
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run=true
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            base=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/deploy-cloudflare.yml/runs?branch=main&status=success&per_page=1" --jq '.workflow_runs[0].head_sha // empty')
+            if [ -n "$base" ] && git cat-file -e "$base^{commit}" 2>/dev/null; then
+              if git diff --quiet "$base" HEAD -- businesses/roster src build.mjs package.json businesses/floa/domain scripts/roster-ui.test.mjs scripts/roster-policy.mjs scripts/policy-allow.json .github/workflows/deploy-cloudflare.yml; then
+                run=false
+              fi
+            fi
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+          echo "roster browser tests: $run (last publication: ${base:-none})"
+
+      - if: steps.roster.outputs.run == 'true'
+        run: npm run test:roster-ui
+
+      # The generated Worker table must match what was committed. If it does
+      # not, someone changed a business and pushed without rebuilding — and the
+      # Worker deployed from this repo would be validating the wrong pages.
+      - name: worker table is in step with the businesses
+        run: git diff --exit-code -- worker/src/businesses.js
+
+      - name: publish to Cloudflare Pages (project floa)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          # The logs of a public repo are public: say what is missing or what failed, never a value.
+          fail() { echo "::error::$1"; exit 1; }
+          [ -n "$CLOUDFLARE_API_TOKEN" ] || fail "secret CLOUDFLARE_API_TOKEN is missing"
+          [ ${#CLOUDFLARE_ACCOUNT_ID} -eq 32 ] || fail "secret CLOUDFLARE_ACCOUNT_ID is missing or is not 32 characters (it is ${#CLOUDFLARE_ACCOUNT_ID})"
+          npx --yes wrangler@4 pages project create floa --production-branch main > create.log 2>&1 || echo "project create: $(tail -n 3 create.log | tr -s '[:space:]' ' ' | cut -c1-300)"
+          npx --yes wrangler@4 pages deploy dist --project-name floa --branch main --commit-dirty=true > deploy.log 2>&1 || fail "wrangler: $(grep -iE 'error|code|auth|permission|not found' deploy.log | head -n 4 | tr -s '[:space:]' ' ' | cut -c1-400)"
+          tail -n 3 deploy.log
