@@ -117,7 +117,7 @@ async function withChrome(origin, run) {
       if (mobile) await send("Emulation.setTouchEmulationEnabled", { enabled: true });
       await send("Page.addScriptToEvaluateOnNewDocument", { source:
         `try { ${session ? `if (!sessionStorage.getItem("seeded")) { localStorage.setItem("floa.session", ${JSON.stringify(SESSION)}); sessionStorage.setItem("seeded", "1"); }` : ""}
-               localStorage.setItem("rk.swipe.understood", "1"); } catch (e) {}` });
+               localStorage.setItem("rk.swipe.understood", "2"); } catch (e) {}` });
       await send("Page.navigate", { url });
       const evaluate = async (expression) => {
         const out = await send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true });
@@ -158,8 +158,9 @@ const MEASURE = `(() => {
     id: d.id || "", w: Math.round(r.width), h: Math.round(r.height), left: Math.round(r.left), top: Math.round(r.top), right: Math.round(r.right), bottom: Math.round(r.bottom),
     radius: Math.max(...radii(d), ...(sheet ? radii(sheet) : [0])),
     x: xr ? { l: Math.round(xr.left - r.left), t: Math.round(xr.top - r.top), w: Math.round(xr.width), h: Math.round(xr.height) } : null,
-    headT: head ? Math.round(head.getBoundingClientRect().top - r.top) : null, titleT: ttl ? Math.round(ttl.getBoundingClientRect().top - r.top) : null, pptop, ptt,
+    headH: head ? Math.round(head.getBoundingClientRect().height + (parseFloat(getComputedStyle(head).marginBottom) || 0) - (parseFloat(getComputedStyle(head).paddingTop) || 0)) : null, headSheet: !!(head && head.classList.contains("sheet-head")), titleMid: ttl ? Math.round((ttl.getBoundingClientRect().top + ttl.getBoundingClientRect().bottom) / 2 - r.top) : null, headT: head ? Math.round(head.getBoundingClientRect().top - r.top) : null, titleT: ttl ? Math.round(ttl.getBoundingClientRect().top - r.top) : null, pptop, ptt,
     off: shell.flatMap(grid), grabTop, px, hasGrab, xShown: !!x,
+    cancelBtns: [...d.querySelectorAll("button")].filter((b) => { const q = b.getBoundingClientRect(); return q.width > 0 && q.height > 0 && b.textContent.trim() === "ביטול"; }).length,
     hscroll: d.scrollWidth - d.clientWidth,
     fixedBox: cs.position,
   };
@@ -172,6 +173,7 @@ const SEEN = new Map();   /* one X position per (view, grab bar above or not): e
 const xExact = (tag, view, m) => {
   /* touch (owner 2026-11-13): a popup with a grab bar shows NO X; the grab bar closes it. A computer popup keeps its X. */
   if (view.width < 760 || view.name === "phone") check(`${tag}: no visible X where a grab bar closes the popup`, !(m.hasGrab && m.xShown), m);
+  check(`${tag}: no cancel button in a popup (closing it is the cancel)`, m.cancelBtns === 0, m);   // owner 2026-11-13
   if (!m.x) return;
   const key = view.name + (m.grabTop ? " with a grab bar above" : " without");
   /* the glyph (12px) sits on the content edge: its 44px target reaches 16px past it, so left = side padding - 16, the same on every page; the top is the shell top padding (16) under the grab bar, if any */
@@ -186,6 +188,20 @@ const topRhythm = (tag, m) => {
   if (m.headT === null) return;
   check(`${tag}: the header row starts at the top rhythm (${m.pptop}px from the popup top), not lower`, m.headT >= 0 && m.headT <= m.pptop, { headT: m.headT, token: m.pptop });
   if (m.titleT !== null) check(`${tag}: the title text is at most ${m.ptt}px below the popup top`, m.titleT <= m.ptt, { titleT: m.titleT, token: m.ptt });
+  /* ONE popup shell (owner: no popup restyles its own header): every popup with a .sheet-head has the same header box (row + the gap under it) and the title centred in it, whatever the popup */
+  if (m.headSheet && m.headH !== null && !/pDlg$/.test(m.id || "")) {
+    const key = "shell" + (m.hasGrab ? " grab" : " nograb"), first = HEAD_SEEN.get(key);
+    if (!first) HEAD_SEEN.set(key, { tag, h: m.headH, mid: m.titleMid });
+    else { check(`${tag}: the header box is the same height as ${first.tag} (${first.h})`, m.headH === first.h, { headH: m.headH }); if (m.titleMid !== null && first.mid !== null) check(`${tag}: the title is centred at the same place as ${first.tag} (${first.mid})`, m.titleMid === first.mid, { titleMid: m.titleMid }); }
+  }
+};
+const HEAD_SEEN = new Map();
+/* ONE field (owner: every field is the shared field element, whatever popup or page it is in): every visible control directly inside a .rfield has the same row height, the same room above the value for the floating label, the same type size and weight */
+const FIELD_PROBE = `(() => [...document.querySelectorAll("dialog[open] .rfield > :is(input:not([type=checkbox],[type=radio],[type=hidden]), select)")].filter((e) => { const r = e.getBoundingClientRect(); return r.width > 4 && r.height > 4 && !e.closest("[hidden]"); }).map((e) => { const c = getComputedStyle(e); return { id: e.id || String(e.className) || e.tagName, h: Math.round(e.getBoundingClientRect().height), pt: c.paddingTop, fs: c.fontSize, fw: c.fontWeight }; }))()`;
+const fieldGuard = async (tab, tag) => {
+  const fl = await tab.evaluate(FIELD_PROBE); if (!fl || !fl.length) return;
+  const bad = fl.filter((q) => q.h !== 46 || q.pt !== "19px" || q.fs !== "16px" || String(q.fw) !== "400");
+  check(`${tag}: its ${fl.length} field(s) are all the one shared field (46px row, 19px above the value, 16px type, weight 400)`, bad.length === 0, bad);
 };
 /* Inner scroll (owner 2026-11-13: "inside a popup there is no scrolling"): a popup whose content is taller than the window must scroll its BODY, with a real finger (CDP touch sequence) or wheel, the
    header stays in place, the last thing in it becomes fully visible, the page behind does not move, a drag up never closes it, and the popup never leaves the window. A tall block is put at the end of the
@@ -311,6 +327,7 @@ const chipProbe = (html) => `(async () => {
   const size = { s: px("--tag-s"), m: px("--tag"), l: px("--tag-l") };
   const out = { n: 0, heights: [], off: [], size };
   for (const el of box.querySelectorAll(${JSON.stringify(CHIP_SEL)})) {
+    if (el.closest(".chiprow")) continue;   /* the filter row above the list: its four buttons are controls of the full touch height (44px), not tags */
     if (el.classList.contains("rowwa")) continue;   /* the whatsapp / message / attendance mark is the card's corner tile (44px square), not a chip */
     const r = el.getBoundingClientRect(); if (r.width < 4 || r.height < 4) continue;
     out.n++;
@@ -364,7 +381,7 @@ try {
         }
         {
           const g = await tab.evaluate(chipProbe(page === "/roster/admin/" ? ADMIN_CHIPS + KIT_CHIPS : KIT_CHIPS));
-          check(`${tag}: ${g.n} chips measured, one height per size (s ${g.size.s}, m ${g.size.m}, l ${g.size.l})`, g.n >= (page === "/roster/admin/" ? 20 : 6) && g.heights.length === 0, g.heights);
+          check(`${tag}: ${g.n} chips measured, one height per size (s ${g.size.s}, m ${g.size.m}, l ${g.size.l})`, g.n >= (page === "/roster/admin/" ? 15 : 6) && g.heights.length === 0, g.heights);
           check(`${tag}: the text and the icons of every chip sit on its vertical centre (1px), icons are a 16px box`, g.off.length === 0, g.off.slice(0, 6));
         }
         {
@@ -382,7 +399,7 @@ try {
             check(`${tag} #${id}: square corners`, m.radius === 0, m.radius);
             check(`${tag} #${id}: stays inside the window and has no horizontal scroll`, m.left >= -1 && m.right <= v.width + 1 && m.hscroll <= 0, { left: m.left, right: m.right, hscroll: m.hscroll });
             xExact(`${tag} #${id}`, v, m);
-            topRhythm(`${tag} #${id}`, m);
+            topRhythm(`${tag} #${id}`, m); await fieldGuard(tab, `${tag} #${id}`);
             check(`${tag} #${id}: the shell's own paddings are on the 4px grid`, m.off.length === 0, m.off);
             await scrollProbe(tab, v, `${tag} #${id}`);
             await endPadProbe(tab, `${tag} #${id}`, "dialog");
@@ -411,7 +428,7 @@ try {
             check(`${tag}: the popup has square corners`, m.radius === 0, m.radius);
             check(`${tag}: the popup stays inside the window`, m.left >= -1 && m.right <= v.width + 1 && m.hscroll <= 0, m);
             check(`${tag}: it has an X (a computer popup, or one with no grab bar)`, !!m.x || (v.mobile && m.hasGrab), m.x); xExact(tag, v, m);
-            topRhythm(tag, m);
+            topRhythm(tag, m); await fieldGuard(tab, tag);
             check(`${tag}: the shell paddings are on the 4px grid`, m.off.length === 0, m.off);
           }
           const hs = await tab.evaluate("document.documentElement.scrollWidth - window.innerWidth");
@@ -435,25 +452,25 @@ try {
           const pe = el.matches(".rhead") ? el : (el.querySelector(".rhead") || el);
           const out = { padTop: parseFloat(getComputedStyle(pe).paddingTop) || 0, bg: cs.backgroundColor, edge: cs.borderBottomColor + " " + cs.borderBottomWidth, rowBg: clear(rs.backgroundColor) ? bodyBg : rs.backgroundColor, rowEdge: rs.borderBottomColor + " " + rs.borderBottomWidth };
           row.remove();
-          /* the header's icon buttons (account, menu, view, ...): no background of their own, a 44px hit area, and the OUTERMOST glyph on each side flush with the content edge */
+          /* the header's icon buttons (account, menu, view, ...): a 44px TILE with a background of its own (owner 2026-11-13: the shape of a popup's save button), whose box is flush with the content edge on its side */
           const box = el.querySelector(".rhead__in, .title-row") || el, bcs = getComputedStyle(box), br = box.getBoundingClientRect();
           const cl = br.left + (parseFloat(bcs.paddingLeft) || 0), cr = br.right - (parseFloat(bcs.paddingRight) || 0), mid = (cl + cr) / 2;
           const btns = [...box.querySelectorAll("button, a")].map((b) => ({ b, g: b.querySelector("svg"), r: b.getBoundingClientRect() }))
             .filter((x) => x.g && x.r.width > 0 && !x.b.closest("[hidden]") && !(x.b.innerText || "").trim());
-          out.icons = btns.map((x) => { const gr = x.g.getBoundingClientRect(); return { id: x.b.id || x.b.className, bg: getComputedStyle(x.b).backgroundColor, hit: Math.round(Math.max(x.r.width, x.r.height)), gl: Math.round(gr.left - cl), gr: Math.round(cr - gr.right), left: gr.left + gr.width / 2 < mid }; });
+          out.icons = btns.map((x) => { const gr = x.g.getBoundingClientRect(); return { id: x.b.id || x.b.className, bg: getComputedStyle(x.b).backgroundColor, hit: Math.round(Math.max(x.r.width, x.r.height)), gl: Math.round(x.r.left - cl), gr: Math.round(cr - x.r.right), left: gr.left + gr.width / 2 < mid }; });
           const lefts = out.icons.filter((i) => i.left), rights = out.icons.filter((i) => !i.left);
           out.leftEdge = lefts.length ? Math.min(...lefts.map((i) => i.gl)) : null;
           out.rightEdge = rights.length ? Math.min(...rights.map((i) => i.gr)) : null;
-          /* the title row never moves: the icon buttons are centered on the TITLE (not on title plus subtitle) */
-          const ti = el.querySelector(".rhead__title"); if (ti) { const tr = ti.getBoundingClientRect(); out.titleMid = tr.top + tr.height / 2; out.iconMids = btns.map((x) => x.r.top + x.r.height / 2); }
+          /* the title block (the title, and its subtitle when there is one) is centred on the tile */
+          const ti = el.querySelector(".rhead__text, .msel"); if (ti) { const tr = ti.getBoundingClientRect(); out.titleMid = tr.top + tr.height / 2; out.iconMids = btns.map((x) => x.r.top + x.r.height / 2); }
           return out;
         })()`);
         if (!h) { await tab.close(); continue; }   // behind the sign-in gate in this run: nothing to measure
-        check(`${tag}: at least 16px above the title`, h.padTop >= 16, h);
+        check(`${tag}: the standard gutter above the title (box padding 11px or more, plus the title's own leading = 16px to the glyph)`, h.padTop >= 11, h);
         check(`${tag}: its surface or its bottom edge differs from a list row's`, h.bg !== h.rowBg || h.edge !== h.rowEdge, h);
-        check(`${tag}: its icon buttons have no background of their own`, h.icons.length > 0 && h.icons.every((i) => i.bg === "rgba(0, 0, 0, 0)" || i.bg === "transparent"), h.icons);
-        check(`${tag}: the outermost glyph on each side is flush with the content edge (within 1px)`, (h.leftEdge === null || Math.abs(h.leftEdge) <= 1) && (h.rightEdge === null || Math.abs(h.rightEdge) <= 1), h);
-        if (h.titleMid != null) check(`${tag}: icon buttons are centered on the title row, not on title plus subtitle`, h.iconMids.every((m) => Math.abs(m - h.titleMid) <= 1), h);
+        check(`${tag}: its icon buttons are tiles with a background of their own, 44px`, h.icons.length > 0 && h.icons.every((i) => i.bg !== "rgba(0, 0, 0, 0)" && i.bg !== "transparent" && i.hit >= 44), h.icons);
+        check(`${tag}: the outermost tile on each side is flush with the content edge (within 1px)`, (h.leftEdge === null || Math.abs(h.leftEdge) <= 1) && (h.rightEdge === null || Math.abs(h.rightEdge) <= 1), h);
+        if (h.titleMid != null) check(`${tag}: the title block (title and subtitle together) is centred on the icon tile (within 2px)`, h.iconMids.every((m) => Math.abs(m - h.titleMid) <= 2), h);
         await tab.close();
       }
     }

@@ -138,16 +138,28 @@
 [data-swipe] { position: relative; overflow: visible; touch-action: pan-y; min-height: min-content; }   /* visible (owner 2026-11-13): the card slides on past its own edge, all the way to the screen's edge (the list clips there), it is not cut at the card's border */   /* overflow:hidden lets a grid or flex parent with a fixed height squash the item to its borders: the item never goes below its content */
 [data-swipe] > .rswipe-fg { position: relative; border-radius: inherit; z-index: var(--z-raised); background: var(--bg); transform: translateX(var(--sw-x, 0px)); transition: transform var(--t-base) var(--ease); will-change: transform; }
 [data-swipe].is-dragging > .rswipe-fg { transition: none; }
-.rswipe { position: absolute; z-index: 0; inset: 0; display: flex; justify-content: flex-end; border-radius: inherit; overflow: hidden; background: var(--surface-2); }   /* the tray is the card's WHOLE background (owner 2026-11-13): a white card slides over a plain coloured ground, the actions sit at the end edge of that ground, never a tile that can climb onto the card */
+.rswipe { position: absolute; z-index: 0; inset: 0; display: flex; justify-content: flex-start; border-radius: inherit; overflow: hidden; background: var(--surface-2); }   /* the tray is the card's WHOLE background (owner 2026-11-13): a white card slides over a plain coloured ground, the actions sit at the end edge of that ground, never a tile that can climb onto the card */
 .rswipe:has(> .rswipe__act:only-child[data-tone="danger"]) { background: var(--danger); }   /* one destructive action: the ground itself is red */
 .rswipe__act { flex: 0 0 88px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--gap-tight); border: 0; background: var(--surface-2); color: var(--text); font: var(--fw-bold) var(--fs-xs)/1.1 var(--font); cursor: pointer; }
 .rswipe__act[data-tone="danger"] { background: var(--danger); color: #fff; }
 .rswipe__act[data-tone="danger"]:only-child { background: transparent; }
 .rswipe__act > svg { width: var(--icon-m); height: var(--icon-m); stroke-width: var(--icon-w); }
 .rswipe__act:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+/* a row with a SECOND tray: each tray is the half of the ground on its own side (the first at the start edge, this one at the end edge), so both can show under the card */
+/* both grounds run under the WHOLE card (so the rounded corners of the card slide over colour, with no gap), and only the one on the side being pulled is shown: the row says which side with data-swdir */
+.rswipe.rswipe--start { justify-content: flex-end; background: var(--green); color: #fff; }
+[data-swipe]:has(> .rswipe--start)[data-swdir="start"] > .rswipe:not(.rswipe--start), [data-swipe][data-swdir="end"] > .rswipe--start { visibility: hidden; }
+/* both trays of a row that has two: the label sits 28px from the OUTER edge (the box is the label plus 28px each side, 88px at least), so "הסרה" on one side and "וואטסאפ" on the other have the same room */
+.rswipe--start .rswipe__act, [data-swipe]:has(> .rswipe--start) > .rswipe:not(.rswipe--start) .rswipe__act { flex: 0 0 auto; min-width: 88px; padding-inline: 28px; white-space: nowrap; gap: var(--sp-hair); }
+.rswipe--start .rswipe__act { background: transparent; color: inherit; }   /* the send tray takes the ground's colours; the delete tray keeps its own (white on red) */
+.rswipe--start .rswipe__act > svg { width: 24px; height: 24px; }
+.rswipe--start:has(.rswipe__act[data-mode="msg"]), .rswipe--start:has(.rswipe__act[data-go="sent"]) { background: var(--yellow); color: #fff; }   /* the tray takes the colour of the mode: dark yellow for a message (sent or not), dark green for arrival and for WhatsApp */
+.rswipe--start:has(.rswipe__act[data-go="arr"]) { background: var(--green); color: #fff; }
+.rswipe--start:has(.rswipe__act[data-go="noarr"]) { background: var(--text-3); color: #fff; }   /* "לא הגיע": grey */
+.rswipe__act { pointer-events: none; cursor: default; }   /* the label under a swiped row ("הסרה") is not a button: pulling the row until it is fully showing IS the action, and a row never rests half open for a tap */
 [data-swipe]::after { display: none; content: ""; position: absolute; inset-block: 35%; inset-inline-end: 3px; width: 3px; background: var(--line-strong); opacity: .5; pointer-events: none; }   /* persistent edge cue */
 [data-swipe].is-open::after { display: none; }
-.rhint { position: sticky; top: 0; z-index: var(--z-raised); margin: 0 var(--gutter); padding: var(--sp-1) var(--sp-2); background: var(--info-bg); color: var(--info); font: var(--fw-medium) var(--fs-s)/var(--lh-body) var(--font); border-radius: var(--r-ctl); display: flex; align-items: center; gap: var(--sp-2); opacity: 1; transition: opacity var(--t-base) var(--ease); }
+.rhint { position: relative; margin: 0 var(--gutter); padding: var(--sp-1) var(--sp-2); background: var(--info-bg); color: var(--info); font: var(--fw-medium) var(--fs-s)/var(--lh-body) var(--font); border-radius: var(--r-ctl); display: flex; align-items: center; gap: var(--sp-2); opacity: 1; transition: opacity var(--t-base) var(--ease); }
 .rhint[hidden], .rhint.is-gone { opacity: 0; pointer-events: none; }
 .rhint__tx { flex: 1; min-width: 0; }
 .rhint__ok { flex: none; min-height: 44px; padding-inline: var(--sp-2); border: 0; background: transparent; color: inherit; font: inherit; font-weight: var(--fw-bold, 700); text-decoration: underline; cursor: pointer; }
@@ -169,7 +181,7 @@
 /* THE page header, one element for every roster page: its own surface tone (rows sit on --bg), room above the title (the status bar zone is added to it),
    a bigger title and its own strong bottom edge, so it never reads as one more row. Page-level only: popup headers belong to the shell. */
 .rhead, .wrap > header.top { background: var(--surface); border-bottom: 1px solid var(--line-strong); }
-.rhead { display: flex; align-items: center; gap: var(--gap-button); padding: calc(var(--sp-2) + var(--safe-t)) var(--gutter) var(--sp-2); }
+.rhead { --rh-pad: calc(var(--sp-2) - (var(--ctl) - var(--fs-xl) * var(--lh-tight)) / 2); display: flex; align-items: center; gap: var(--gap-button); padding: calc(var(--rh-pad) + var(--safe-t)) var(--gutter) var(--rh-pad); }   /* the space above and below the title text is the space at its sides: a gutter minus the leading of the 44px row around the text */
 .rhead__title { flex: 1 1 auto; margin: 0; font: var(--fw-black) var(--fs-xl)/var(--lh-tight) var(--font); }
 /* header icon buttons: ONE style on every page, no background (a ghost icon), 44px hit area, the glyph flush with the content edge on the side it sits (.rbtn--edge-start / -end).
    Pressed and hover read from the --surface-2 tone because the header itself is --surface; the focus ring is the kit's. Admin's own .hicon follows the same rules in admin.css. */
@@ -177,6 +189,11 @@
 @media (hover: hover) { .rhead .rbtn--icon:hover { background: var(--surface-2); } }
 .rhead .rbtn--icon:active, .rhead .rbtn--icon[aria-expanded="true"] { background: var(--surface-2); }
 .rhead__sub { display: block; color: var(--text-2); font: var(--fw-medium) var(--fs-s)/var(--lh-body) var(--font); }
+/* ONE header on every page (owner 2026-11-13, "identical, colour, page colour and all"): the same surface as the filter block of the participants page (--bg), a 2px --line under it, no shadow, no rounded corners; the icon button is a 44px tile in --surface-2, 16px from the top and the side; a subtitle is part of the title block, which is centred on the tile. The ground under the header is --surface (see manager.css). */
+.rhead.rhead, .wrap > .rhead.top { background: var(--bg); border-bottom: 2px solid var(--line); border-radius: 0; box-shadow: none; padding: calc(var(--gutter) + var(--safe-t)) var(--gutter) var(--gutter); }
+.rhead .rbtn--icon { width: var(--ctl); height: var(--ctl); min-width: var(--ctl); margin: 0; border-radius: var(--r-ctl); background: var(--surface-2); color: var(--text); }
+.rhead .rbtn--icon.rbtn--edge-start, .rhead .rbtn--icon.rbtn--edge-end { margin: 0; }
+.rhead__text:has(> .rhead__sub:not([hidden])) { position: relative; top: calc(var(--sp-hair) * -2.9); margin-bottom: calc(var(--sp-hair) * -2.9); }
 .rtabs { display: flex; border-bottom: 1px solid var(--line); }
 .rtab { flex: 1 1 0; min-height: var(--ctl); border: 0; background: transparent; color: var(--text-2); font: var(--fw-bold) var(--fs-m)/1 var(--font); box-shadow: inset 0 -3px 0 transparent; cursor: pointer; }
 .rtab[aria-selected="true"], .rtab[aria-pressed="true"] { color: var(--text); box-shadow: inset 0 -3px 0 var(--accent); }
@@ -240,8 +257,13 @@ html.rk-ptr, html.rk-ptr body { overscroll-behavior-y: auto; }   /* our pull to 
 .rtoasts .rmsg { position: relative; overflow: hidden; pointer-events: auto; box-shadow: var(--sh-pop); }
 @media (min-width: 760px) { :root { --sheet-b: max(var(--sp-3), var(--inset-b)); } }   /* a computer has no gesture bar to clear: the usual 24, more only where the device reports an inset */
 @media (min-width: 760px) { .rtoasts { inset-inline: auto; left: var(--gutter); width: var(--w-s); } }
-html:has(.rfab:not(.rfab--in)) .rtoasts:not(.rtoasts--in), html:has(.rfab:not(.rfab--in)) .rmsg--toast { bottom: var(--end-pad-fab); }   /* on a screen with the add button, messages float above it, never over it */
-.rtoasts--in { position: absolute; inset-inline: var(--gutter); bottom: var(--gutter); left: auto; width: auto; }   /* inside an open popup (the page behind is inert) */
+/* on a screen with the add button, a message sits in the BUTTON'S ROW: as tall as the button, level with it, one step to its right (never over it, never floating above the list) */
+html:has(.rfab:not(.rfab--in)) .rtoasts:not(.rtoasts--in), html:has(.rfab:not(.rfab--in)) .rmsg--toast { inset-inline: auto; left: calc(max(var(--gutter), var(--inset-l)) + var(--fab) + var(--sp-2)); right: var(--gutter); width: auto; bottom: calc(var(--gutter) + var(--inset-b)); }
+html:has(.rfab:not(.rfab--in)) .rtoasts .rmsg, html:has(.rfab:not(.rfab--in)) .rmsg--toast { box-sizing: border-box; min-height: var(--fab); align-items: center; }
+/* inside a popup: with no add button showing, the message is the full width, a gap above the safe area; with one showing, it takes the button's row (the active page of a tabbed popup counts, a page that is not shown does not) */
+.rtoasts--in { position: absolute; left: var(--gutter); right: var(--gutter); bottom: calc(var(--safe-b) + var(--sp-1)); width: auto; }
+dialog:has(.ppage:not([inert]) .rfab--in:not([hidden])) .rtoasts--in, dialog:not(:has(.ppage)):has(.rfab--in:not([hidden])) .rtoasts--in { left: calc(var(--gutter) + var(--fab) + var(--sp-2)); bottom: var(--gutter); }
+dialog:has(.ppage:not([inert]) .rfab--in:not([hidden])) .rtoasts--in .rmsg, dialog:not(:has(.ppage)):has(.rfab--in:not([hidden])) .rtoasts--in .rmsg { box-sizing: border-box; min-height: var(--fab); align-items: center; }   /* inside an open popup (the page behind is inert) */
 .rmsg--undo { padding-bottom: var(--sp-2); }
 .rmsg--undo::after { content: ""; position: absolute; inset-inline: 0; bottom: 0; height: 3px; background: var(--bg); opacity: .6; transform-origin: right center; transform: scaleX(var(--left, 1)); }   /* time left, scaleX only */
 .rmsg--undo[data-paused="true"]::after { opacity: .25; }

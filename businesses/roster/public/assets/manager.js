@@ -295,7 +295,7 @@
   function confirmHeavy(o) {
     RosterSheet.render(dlgC, { kind: "confirm", title: o.title, titleId: "dlgCT", from: "bottom", size: "sm", icon: icon("x"),
       body: '<div class="rmsg rmsg--no"><span class="rmsg__text">' + o.text + "</span></div>",
-      foot: '<button type="button" class="rbtn rbtn--danger" id="cYes">' + esc(o.confirmLabel) + '</button><button type="button" class="rbtn rbtn--ghost" data-close>ביטול</button>' });
+      foot: '<button type="button" class="rbtn rbtn--danger" id="cYes">' + esc(o.confirmLabel) + '</button>' });
     afterCloseC = o.back || null;
     var yes = $("#cYes", dlgC);
     yes.addEventListener("click", function () { var go = o.onConfirm; afterCloseC = null; dlgC.close(); if (go) go(); });

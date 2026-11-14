@@ -76,7 +76,7 @@
       fab = doc.createElement("button"); fab.type = "button"; fab.className = "rfab"; fab.id = "kitFab";
       fab.setAttribute("aria-label", "הוספת משתתף"); fab.setAttribute("title", "הוספת משתתף"); fab.innerHTML = PLUS;
       /* one add button for the list: with a name typed in the search it adds that person (the list's own "add" row is hidden), without one it asks for the name */
-      fab.addEventListener("click", function () { var an = doc.getElementById("addNew"); if (q.value.trim() && an) { an.click(); return; } q.focus(); K.toast("הקלידו את שם המשתתף החדש בחיפוש"); });
+      fab.addEventListener("click", function () { var an = doc.getElementById("addNew"); if (q.value.trim() && an) { an.click(); return; } q.placeholder = "שם משתתף חדש"; q.addEventListener("blur", function () { q.placeholder = " "; }, { once: true }); q.focus(); });   /* the hint lives in the field itself, short enough to fit */
       var fabLabel = function () { var t = q.value.trim(), l = t ? "הוספת משתתף חדש: " + t : "הוספת משתתף"; fab.setAttribute("aria-label", l); fab.setAttribute("title", l); };
       q.addEventListener("input", fabLabel); fabLabel();
       doc.body.appendChild(fab);
@@ -93,11 +93,15 @@
     RosterUI.ptr.attach({ scroller: list, onRefresh: function () { return K.load(true); }, enabled: function () { return !doc.querySelector("dialog[open]"); } });
   }
 
+  /* the meetings of the participant card slide to "הסרה" too: the tray button carries data-mun, which the page's own click handler of that list already answers (the confirmation popup) */
+  var pMeet = doc.getElementById("pMeetings");
+  if (pMeet && window.RosterUI && RosterUI.swipe) RosterUI.swipe.init(pMeet, { onAway: function (dir) { if (window.rkPagerSwipe) window.rkPagerSwipe(dir); } });   // a swipe on a meeting card that is not the delete swipe changes the tab of the participant card
+
   /* ---------- 4. swipe actions on the participants list ---------- */
   /* a row slides to show "הסרה" (or "החזרה" for one already removed): the same remove and restore as the card, and the undo toast brings it back. A mouse has no swipe:
      the card's own buttons are the path there. The first-use hint is the single system-wide one (rk.swipe.understood), shown only to a touch screen. */
   if (list && window.RosterUI && RosterUI.swipe && window.RosterUndo) {
-    var swipeCtl = RosterUI.swipe.init(list), nudged = false, touch = (navigator.maxTouchPoints || 0) > 0;
+    var swipeCtl = RosterUI.swipe.init(list, { caption: "החלקה שמאלה מוחקת, החלקה ימינה שולחת וואטסאפ", both: true }), nudged = false, touch = (navigator.maxTouchPoints || 0) > 0;
     var hintOn = function () {
       if (!touch || !list.querySelector("[data-swipe]") || list.querySelector(".rhint")) return;
       var c = swipeCtl.hint(false, nudged); if (c) nudged = true;   // the banner comes back after a redraw of the list, the nudge of the first row only once
@@ -111,6 +115,7 @@
       if (!p) return;
       swipeCtl.close();
       var kind = b.getAttribute("data-swipe-act");
+      if (kind === "go") { var row0 = b.closest("li.row"), tile = row0 && row0.querySelector(".rowwa"); if (tile) tile.click(); return; }   // the card's own send / arrival action, now reached by pulling the card to the right
       if (kind === "unlink") { K.unlink(p); return; }   // inside a meeting: REMOVE from it, after a confirmation popup
       var run = function () { return K.quickActive(p, on).then(function () {
         window.RosterUndo.delete({

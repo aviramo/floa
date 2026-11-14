@@ -930,12 +930,9 @@
       if (ok) { ctx.copied = true; $("#rvWarn").hidden = true; t.lastChild.textContent = "הועתק"; toast(T.copied); } else toast(T.copyFail);
     } else if (d === "reveal-done") tryClose();
     else if (d === "revoke-yes") revokeKey();
-    else if (d === "revoke-no") dlg.close();
     else if (d === "secret-yes") rotateSecret();
-    else if (d === "secret-no") dlg.close();
     else if (d === "tpl-save") saveTemplate();
     else if (d === "tpl-reset") { ctx.resetAsk = true; renderTplFoot(); }
-    else if (d === "tpl-reset-no") { ctx.resetAsk = false; renderTplFoot(); }
     else if (d === "tpl-reset-yes") resetTemplate(ctx.key);
     else if (d === "tpl-tab") { ctx.tab = t.dataset.tab; $("#tplGrid").dataset.tab = ctx.tab; $$("[data-d=tpl-tab]").forEach((b) => b.setAttribute("aria-pressed", String(b === t))); }
     else if (d === "var") insertVar(t.dataset.v);
@@ -949,8 +946,7 @@
     openDialog("form", "ביטול מפתח",
       warn("המפתח <b>" + esc(k.label || k.prefix) + "</b> יפסיק לעבוד מיד. אתרים ושרתים שמשתמשים בו יקבלו שגיאה. אי אפשר לבטל את הביטול, רק ליצור מפתח חדש.") +
       errBox("rkErr") +
-      '<div class="btnrow"><button type="button" class="rbtn rbtn--danger" data-d="revoke-yes" id="rkGo">ביטול המפתח</button><button type="button" class="rbtn rbtn--ghost" data-d="revoke-no">השארת המפתח</button></div>');
-    $("[data-d=revoke-no]").focus();
+      '<div class="btnrow"><button type="button" class="rbtn rbtn--danger" data-d="revoke-yes" id="rkGo">ביטול המפתח</button></div>');
   }
   async function revokeKey() {
     const c = ctx;
@@ -976,8 +972,7 @@
     openDialog("form", "סוד חתימה חדש",
       warn("יוצרים סוד חדש והסוד הנוכחי מפסיק לעבוד מיד. שרת שמאמת חתימות יכשיל כל הודעה עד שתעדכנו אותו בסוד החדש.") +
       errBox("scErr") +
-      '<div class="btnrow"><button type="button" class="rbtn" data-d="secret-yes" id="scGo">יצירת סוד חדש</button><button type="button" class="rbtn rbtn--ghost" data-d="secret-no">ביטול</button></div>');
-    $("[data-d=secret-no]").focus();
+      '<div class="btnrow"><button type="button" class="rbtn" data-d="secret-yes" id="scGo">יצירת סוד חדש</button></div>');
   }
   async function rotateSecret() {
     const c = ctx;
@@ -1164,9 +1159,8 @@
   function renderTplFoot() {
     const c = ctx;
     $("#tFoot").innerHTML = c.resetAsk
-      ? warn("התבנית המותאמת תחזור לנוסח ברירת המחדל. אפשר לבטל בהודעה שתופיע. להחזיר?") + '<div class="btnrow"><button type="button" class="rbtn rbtn--danger" data-d="tpl-reset-yes" id="tResetYes">כן, להחזיר לברירת מחדל</button><button type="button" class="rbtn rbtn--ghost" data-d="tpl-reset-no">ביטול</button></div>'
+      ? warn("התבנית המותאמת תחזור לנוסח ברירת המחדל. אפשר לבטל בהודעה שתופיע. להחזיר?") + '<div class="btnrow"><button type="button" class="rbtn rbtn--danger" data-d="tpl-reset-yes" id="tResetYes">כן, להחזיר לברירת מחדל</button></div>'
       : '<div class="btnrow"><button type="button" class="rbtn rbtn--ghost rbtn--danger" data-d="tpl-reset" id="tReset"' + (c.custom ? "" : " disabled") + ">החזרה לברירת מחדל</button></div>";
-    if (c.resetAsk) $("[data-d=tpl-reset-no]").focus();
   }
   function templateInput() { clearTimeout(ctx.pt); ctx.pt = setTimeout(updatePreview, 90); $("#tErr").textContent = ""; }
   function updatePreview() {
