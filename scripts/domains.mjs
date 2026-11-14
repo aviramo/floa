@@ -62,7 +62,11 @@ for (const h of live) {
   /* 1. the host on the Pages project */
   const cur = await api(`/accounts/${ACCOUNT}/pages/projects/${h.project}/domains`);
   if (!cur.ok) { console.error(`::error::${h.host}: cannot read the Pages project ${h.project} (${cur.status}) ${cur.errors}`); bad++; continue; }
-  if ((cur.result || []).some((d) => d.name === h.host)) console.log(`${h.host}: already on ${h.project}`);
+  const have = (cur.result || []).find((d) => d.name === h.host);
+  if (have) {
+    console.log(`${h.host}: already on ${h.project} (status: ${have.status}, certificate: ${(have.certificate_authority || "?")}/${(have.validation_data && have.validation_data.status) || "?"}, verification: ${(have.verification_data && have.verification_data.status) || "?"})`);
+    if (have.status !== "active") { const re = await api(`/accounts/${ACCOUNT}/pages/projects/${h.project}/domains/${encodeURIComponent(h.host)}`, { method: "PATCH" }); console.log(`${h.host}: asked Pages to check it again (${re.ok ? "ok" : re.status + " " + re.errors})`); }
+  }
   else {
     const add = await api(`/accounts/${ACCOUNT}/pages/projects/${h.project}/domains`, { method: "POST", body: JSON.stringify({ name: h.host }) });
     if (add.ok) console.log(`${h.host}: attached to ${h.project}`); else { console.error(`::error::${h.host}: could not attach (${add.status}) ${add.errors}`); bad++; continue; }
