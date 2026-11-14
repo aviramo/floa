@@ -51,6 +51,10 @@ if (!z.ok) fail(`could not read the zone ${cfg.zone} (${z.status}): ${z.errors |
 if (!z.result || !z.result.length) fail(`${cfg.zone} is not a zone on this Cloudflare account (are its nameservers on Cloudflare?)`);
 const ZONE = z.result[0].id;
 
+/* read-only: what the zone holds right now (DNS is public by nature; TXT bodies are cut short) */
+const all = await api(`/zones/${ZONE}/dns_records?per_page=200`);
+if (all.ok) { console.log(`zone records (${all.result.length}):`); for (const r of all.result) console.log(`  ${r.type.padEnd(6)} ${r.name}  ->  ${String(r.content).slice(0, 60)}  ${r.proxied ? "[proxied]" : "[dns only]"}`); }
+
 let bad = 0;
 for (const h of live) {
   const target = h.project + ".pages.dev";
