@@ -73,12 +73,17 @@ for (const h of live) {
   }
   /* 2a. cut-over only: a host marked "replaceGithub" first loses the records that point at GitHub Pages
          (A / AAAA to GitHub's addresses, CNAME to *.github.io), and nothing else, at exactly its own name */
+  const removed = [];
   if (h.replaceGithub) {
+    /* the safety net, part 1: do not touch the old records unless the new home answers right now */
+    const pre = await fetch(`https://${target}/`, { redirect: "manual" }).then((r) => r.status).catch(() => 0);
+    if (pre < 200 || pre >= 400) { console.error(`::error::${h.host}: ${target} does not answer (${pre}); the old records are left alone`); bad++; continue; }
     const isGh = (r) => (r.type === "A" && /^185.199.(108|109|110|111).153$/.test(r.content)) || (r.type === "AAAA" && /^2606:50c0:800[0-3]::153$/i.test(r.content)) || (r.type === "CNAME" && /.github.io.?$/i.test(r.content));
     const cur2 = await api(`/zones/${ZONE}/dns_records?name=${encodeURIComponent(h.host)}`);
     if (!cur2.ok) { console.error(`::error::${h.host}: cannot read DNS (${cur2.status}) ${cur2.errors}`); bad++; continue; }
     for (const r of cur2.result.filter(isGh)) {
       const del = await api(`/zones/${ZONE}/dns_records/${r.id}`, { method: "DELETE" });
+      if (del.ok) removed.push({ type: r.type, name: r.name, content: r.content, proxied: r.proxied, ttl: r.ttl });
       if (del.ok) console.log(`${h.host}: removed the GitHub Pages record ${r.type} -> ${r.content}`); else { console.error(`::error::${h.host}: could not remove ${r.type} ${r.content} (${del.status}) ${del.errors}`); bad++; }
     }
   }
@@ -93,5 +98,25 @@ for (const h of live) {
   }
   const mk = await api(`/zones/${ZONE}/dns_records`, { method: "POST", body: JSON.stringify({ type: "CNAME", name: h.host, content: target, proxied: true, ttl: 1 }) });
   if (mk.ok) console.log(`${h.host}: DNS record created -> ${target}`); else { console.error(`::error::${h.host}: could not create the DNS record (${mk.status}) ${mk.errors}`); bad++; }
+  /* the safety net, part 2: records were swapped in this run, so wait for Pages to call the host active.
+     If it never does, put the old records back: a visitor must never be left on a host that answers with an error. */
+  if (removed.length) {
+    let ok = false;
+    for (let i = 0; i < 36 && mk.ok; i++) {
+      const d = await api(`/accounts/${ACCOUNT}/pages/projects/${h.project}/domains/${encodeURIComponent(h.host)}`);
+      const st = d.ok && d.result ? d.result.status : "?";
+      if (st === "active") { ok = true; break; }
+      if (i % 3 === 0) console.log(`${h.host}: waiting for Pages to activate it (status: ${st})`);
+      if (i % 6 === 5) await api(`/accounts/${ACCOUNT}/pages/projects/${h.project}/domains/${encodeURIComponent(h.host)}`, { method: "PATCH" });
+      await new Promise((r) => setTimeout(r, 10000));
+    }
+    if (ok) console.log(`${h.host}: active on ${h.project}`);
+    else {
+      console.error(`::error::${h.host}: Pages did not activate it in time. Restoring the previous records.`);
+      if (mk.ok) { const cur3 = await api(`/zones/${ZONE}/dns_records?name=${encodeURIComponent(h.host)}&type=CNAME`); for (const r of (cur3.result || [])) await api(`/zones/${ZONE}/dns_records/${r.id}`, { method: "DELETE" }); }
+      for (const r of removed) { const back = await api(`/zones/${ZONE}/dns_records`, { method: "POST", body: JSON.stringify(r) }); console.log(`${h.host}: restored ${r.type} ${r.content} (${back.ok ? "ok" : back.errors})`); }
+      bad++;
+    }
+  }
 }
 process.exit(bad ? 1 : 0);
