@@ -2,7 +2,58 @@
   "_": "Every host that points at a Cloudflare Pages project. Add a line here, push to main, and .github/workflows/domains.yml attaches the host to the project and creates its DNS record. Nothing here is ever deleted by the script: removing a line does NOT remove the host. `enabled: false` is a line that is written down but not applied yet.",
   "zone": "floa.co.il",
   "hosts": [
-    { "host": "floa.co.il", "project": "floa-site", "enabled": true, "replaceGithub": true, "note": "the real site; swapped with a safety net: the old records come back by themselves if Pages does not activate the host in 4 minutes" },
-    { "host": "www.floa.co.il", "project": "floa-site", "enabled": true, "replaceGithub": true }
+    {
+      "host": "floa.co.il",
+      "project": "floa-site",
+      "enabled": true,
+      "replaceGithub": true,
+      "note": "the real site; swapped with a safety net: the old records come back by themselves if Pages does not activate the host in 4 minutes"
+    },
+    {
+      "host": "www.floa.co.il",
+      "project": "floa-site",
+      "enabled": true,
+      "replaceGithub": true
+    },
+    {
+      "host": "chords.floa.co.il",
+      "project": "floa-site",
+      "enabled": true
+    },
+    {
+      "host": "jobs.floa.co.il",
+      "project": "floa-site",
+      "enabled": true
+    },
+    {
+      "host": "roster.floa.co.il",
+      "project": "floa-site",
+      "enabled": true
+    },
+    {
+      "host": "biofamily.floa.co.il",
+      "project": "floa-site",
+      "enabled": true
+    },
+    {
+      "host": "tal.floa.co.il",
+      "project": "floa-site",
+      "enabled": true
+    },
+    {
+      "host": "taltalia.floa.co.il",
+      "project": "floa-site",
+      "enabled": true
+    },
+    {
+      "host": "aum.floa.co.il",
+      "project": "floa-site",
+      "enabled": true
+    },
+    {
+      "host": "cv.floa.co.il",
+      "project": "floa-site",
+      "enabled": true
+    }
   ]
 }

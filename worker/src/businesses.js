@@ -24,6 +24,7 @@ export const BUSINESSES = {
     "origins": [
       "https://floa.co.il",
       "https://www.floa.co.il",
+      "https://biofamily.floa.co.il",
       "http://localhost:5173"
     ],
     "pages": []
@@ -34,6 +35,7 @@ export const BUSINESSES = {
     "origins": [
       "https://floa.co.il",
       "https://www.floa.co.il",
+      "https://chords.floa.co.il",
       "http://localhost:5173"
     ],
     "pages": []
@@ -63,6 +65,7 @@ export const BUSINESSES = {
     "origins": [
       "https://floa.co.il",
       "https://www.floa.co.il",
+      "https://jobs.floa.co.il",
       "http://localhost:5173"
     ],
     "pages": []
@@ -79,6 +82,7 @@ export const BUSINESSES = {
     "origins": [
       "https://floa.co.il",
       "https://www.floa.co.il",
+      "https://roster.floa.co.il",
       "http://localhost:5173"
     ],
     "pages": []

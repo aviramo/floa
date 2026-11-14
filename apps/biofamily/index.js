@@ -16,7 +16,7 @@ export const business = {
 
   lead: {
     to: "LEAD_TO_BIOFAMILY",
-    origins: ["https://floa.co.il", "https://www.floa.co.il", "http://localhost:5173"],
+    origins: ["https://floa.co.il", "https://www.floa.co.il", "https://biofamily.floa.co.il", "http://localhost:5173"],
   },
 
   site,
