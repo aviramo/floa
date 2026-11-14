@@ -4382,7 +4382,7 @@
   $('#list').addEventListener('click', listClick);
   $('#addBox').addEventListener('click', listClick);
 
-  $('#gLogin').addEventListener('click', () => AUTH.signIn(location.origin + '/roster/admin/'));   // Google חוזרת רק לכתובת שמורשית ב-Supabase; העסק נשמר ב-roster_deep ומחזיר את הכתובת היפה
+  $('#gLogin').addEventListener('click', () => AUTH.signIn(location.origin + (location.pathname.indexOf('/roster/') === 0 ? '/roster/admin/' : '/admin/')));   // Google חוזרת רק לכתובת שמורשית ב-Supabase; העסק נשמר ב-roster_deep ומחזיר את הכתובת היפה
   const signOut = () => { try { if (rtWs) rtWs.close(); } catch (e) {} Promise.all([dropImages(), AUTH.signOut()]).then(() => location.reload()); };
   $('#gOut').addEventListener('click', signOut);
   $('#signOut').addEventListener('click', signOut);

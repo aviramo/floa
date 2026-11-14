@@ -68,5 +68,7 @@ window.CHORDS_CONFIG = {
   transcribeEndpoint: "https://floa-lead.floa-il.workers.dev/transcribe",
 
   /* Where the app is mounted. Every route is relative to this. */
-  base: "/chords",
+  /* on its own sub-domain the app is the ROOT (chords.floa.co.il/<song>/), anywhere
+     else it lives under /chords */
+  base: location.hostname.indexOf("chords.") === 0 ? "/" : "/chords",
 };

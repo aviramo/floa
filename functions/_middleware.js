@@ -25,6 +25,7 @@ const HOSTS = map.hosts.filter((h) => h.enabled !== false && h.folder);
 const HOMES = Object.fromEntries(HOSTS.map((h) => [h.host, "/" + h.folder]));
 const CLEAN = new Set(HOSTS.filter((h) => h.clean).map((h) => h.host));
 const ICONS = Object.fromEntries(HOSTS.filter((h) => h.icons).map((h) => [h.host, h.icons]));
+const SPA = new Set(HOSTS.filter((h) => h.spa).map((h) => h.host));
 const SLUGS = new Set(HOSTS.filter((h) => h.slugs).map((h) => h.host));
 const RESERVED = ["admin", "connect", "me", "api", "assets", "new", "index"];
 const DOMAIN_FILES = new Set(["/supabase.js", "/auth.js", "/favicon.ico", "/favicon.svg", "/apple-touch-icon.png", "/sw.js", "/robots.txt", "/404.html"]);
@@ -103,9 +104,13 @@ export async function onRequest({ request, next, env }) {
     }
   }
 
-  /* Chords: /<song> is looked up at the old path, where the domain's 404 router
-     knows what to do. A clean sub-domain has nothing more to try, and a
-     redirect here would only be sent back by the rule above: a loop. */
+  /* an app that routes by the address itself (Chords: a playlist, an editor, a
+     song written a minute ago) gets its front page, and reads the address */
+  if (SPA.has(url.hostname) && !/\.[a-z0-9]{1,8}$/i.test(url.pathname)) {
+    return at(home);
+  }
+  /* a clean sub-domain has nothing more to try, and a redirect here would only
+     be sent back by the strip rule above: a loop */
   if (!CLEAN.has(url.hostname) && url.pathname !== "/") {
     return Response.redirect(url.origin + home.slice(0, -1) + url.pathname + url.search, 307);
   }

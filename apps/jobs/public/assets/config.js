@@ -7,7 +7,7 @@ window.JOBS_CONFIG = {
   bucket: "job-cvs",
   parseEndpoint: "https://floa-lead.floa-il.workers.dev/parse-cv",
   /* the app lives at /jobs/ */
-  base: "/jobs/",
+  base: location.hostname.indexOf("jobs.") === 0 ? "/" : "/jobs/",
 
   /* The roles an agent is picked from are not written here: they are Drushim's
      own list of fields and roles, in assets/roles.json (made by
