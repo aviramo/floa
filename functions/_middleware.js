@@ -1,6 +1,11 @@
-/* Sub-domains of floa.co.il. Every one of them is served by THIS Pages project
-   (floa-site), and the old address (floa.co.il/chords/ and so on) keeps working
-   because the files have not moved.
+import map from "../domains.json";
+
+/* Sub-domains of floa.co.il. The mapping of a host to an app lives in ONE file,
+   domains.json (host, folder, clean, old); this only acts on it.
+
+   Every sub-domain is served by THIS Pages project (floa-site), and the old
+   address (floa.co.il/chords/ and so on) keeps working because the files have
+   not moved.
 
    On a sub-domain the ROOT is the app: chords.floa.co.il/ shows what is at
    /chords/, with no folder in the bar. It is a rewrite, not a redirect, so
@@ -8,31 +13,37 @@
    folder too. A file the app does not have falls back to the domain's own root
    files (/supabase.js, /auth.js, /favicon.ico). An address that is neither is
    handed to the old path (/chords/<song>), where the domain's 404 router
-   already knows what to do with it. Links the apps write with their folder in
-   them (/roster/admin/) keep working as they always did.
+   already knows what to do with it.
 
-   Keep in step with domains.json (a host added there needs a line here). */
-const HOMES = {
-  "chords.floa.co.il": "/chords/",
-  "jobs.floa.co.il": "/jobs/",
-  "roster.floa.co.il": "/roster/",
-  "biofamily.floa.co.il": "/biofamily/",
-  "tal.floa.co.il": "/tal/",
-  "taltalia.floa.co.il": "/tal/ia/",
-  "aum.floa.co.il": "/tal/aum/",
-};
+   `clean` hosts also lose the folder from any address that carries it
+   (aum.floa.co.il/tal/aum/ goes to aum.floa.co.il/). Chords and Roster route
+   /chords/<song> and /roster/<business> themselves, so they keep the folder
+   until their own routing learns to live at "/".
 
-/* Sub-domains where the folder is also taken OUT of an address that carries it
-   (aum.floa.co.il/tal/aum/ goes to aum.floa.co.il/). Only for apps whose pages
-   are all plain files. Chords and Roster route /chords/<song> and
-   /roster/<business> themselves, so for those the folder stays until their own
-   routing learns to live at "/". */
-const CLEAN = new Set(["jobs.floa.co.il", "biofamily.floa.co.il", "tal.floa.co.il", "taltalia.floa.co.il", "aum.floa.co.il"]);
+   `redirectOld` sends the old floa.co.il addresses on to the sub-domains. */
+const HOSTS = map.hosts.filter((h) => h.enabled !== false && h.folder);
+const HOMES = Object.fromEntries(HOSTS.map((h) => [h.host, "/" + h.folder]));
+const CLEAN = new Set(HOSTS.filter((h) => h.clean).map((h) => h.host));
+/* longest folder first, so /tal/ia is not taken for /tal */
+const OLD = HOSTS.flatMap((h) => [h.folder, ...(h.old || [])].map((f) => ["/" + f.replace(/\/$/, ""), h.host]))
+  .sort((a, b) => b[0].length - a[0].length);
 
 export async function onRequest({ request, next, env }) {
   const url = new URL(request.url);
+  const get = request.method === "GET" || request.method === "HEAD";
+
+  if (map.redirectOld && get && (url.hostname === "floa.co.il" || url.hostname === "www.floa.co.il")) {
+    for (const [folder, host] of OLD) {
+      if (url.pathname === folder || url.pathname.startsWith(folder + "/")) {
+        const rest = url.pathname.slice(folder.length);
+        const path = (CLEAN.has(host) ? "" : folder) + rest || "/";
+        return Response.redirect("https://" + host + path + url.search, 301);
+      }
+    }
+  }
+
   const home = HOMES[url.hostname];
-  if (!home || (request.method !== "GET" && request.method !== "HEAD")) return next();
+  if (!home || !get) return next();
   if (url.pathname.startsWith(home) || url.pathname === home.slice(0, -1)) {
     if (!CLEAN.has(url.hostname)) return next();
     const rest = url.pathname.slice(home.length - 1) || "/";
@@ -44,7 +55,7 @@ export async function onRequest({ request, next, env }) {
     u.pathname = path;
     return env.ASSETS.fetch(new Request(u, request));
   };
-  const inApp = await at(home.slice(0, -1) + (url.pathname === "/" ? "/" : url.pathname));
+  const inApp = await at(home.slice(0, -1) + url.pathname);
   if (inApp.status !== 404) return inApp;
   if (url.pathname !== "/") {
     const atRoot = await at(url.pathname);
