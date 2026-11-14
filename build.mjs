@@ -66,7 +66,7 @@ async function writeRepo(path, contents) {
    floa.co.il, not a free name — but those are not listed here: they are worked
    out from what each business actually emits, in claims() below, so this can
    never fall behind the pages that exist. */
-const RESERVED = new Set(["assets", "css", "js", "src", "apps", "businesses", "worker", "scripts", "node_modules"]);
+const RESERVED = new Set(["assets", "css", "js", "src", "worker", "scripts", "node_modules"]);
 
 /* Every top-level name a business writes into: its own folder, plus every folder
    it puts at the domain root (FLOA's homepage lands there). Two businesses may

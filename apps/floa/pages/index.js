@@ -8,6 +8,7 @@ import { terms } from "../content/terms.js";
 import { render as renderHome } from "./home.js";
 import { render as renderLegal } from "./legal-page.js";
 import { render as renderLandingOffer } from "./landing-offer.js";
+import { render as renderApps } from "./apps.js";
 
 /* ==========================================================================
    FLOA's pages, and where they land.
@@ -61,6 +62,16 @@ export const pages = [
       base: "floa/",                     // its files are still FLOA's
       homeHref: "",
       isHome: true,
+    })),
+  },
+
+  /* floa.co.il/apps, the index of every app: at the domain root like the homepage,
+     with its files still FLOA's */
+  {
+    out: "apps/index.html",
+    root: true,
+    render: (assets) => renderApps(context({
+      assets, site, footer: footerContent, base: "../floa/", homeHref: "../",
     })),
   },
 

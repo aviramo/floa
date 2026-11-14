@@ -682,3 +682,23 @@ body { overflow-x: clip; }                  /* the bands run edge to edge; nothi
 .approach-steps .tl-item:nth-child(2) { --accent: #2E8FD6; --accent-dark: #1B6FA8; }
 .approach-steps .timeline::before { background: linear-gradient(180deg, var(--water) 0%, #2E8FD6 50%, var(--teal) 100%); }
 .about + .cta-band { padding-top: var(--s-5); }     /* the face, then the ask: no empty stretch between them */
+
+/* ---- the apps index (floa.co.il/apps) ---------------------------------- */
+.apps-index { padding-block: var(--s-5, 32px) var(--s-7, 72px); }
+.apps-top { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 28px; }
+.apps-brand { font-weight: 800; color: var(--ink); text-decoration: none; }
+.apps-home { color: var(--teal-dark); text-decoration: none; font-weight: 600; }
+.apps-home:hover { text-decoration: underline; }
+.apps-index h1 { margin: 0 0 6px; color: var(--ink); }
+.apps-lead { margin: 0 0 32px; color: var(--ink-2); font-size: 1.125rem; }
+.apps-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); }
+.apps-card { margin: 0; }
+.apps-link { display: flex; flex-direction: column; height: 100%; text-decoration: none; color: inherit; background: #fff; border: 1px solid var(--hairline); border-radius: 20px; overflow: hidden; transition: transform .25s ease, box-shadow .25s ease; }
+.apps-link:hover, .apps-link:focus-visible { transform: translateY(-4px); box-shadow: 0 14px 30px rgba(15, 79, 127, .16); }
+.apps-link:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
+.apps-media { display: block; aspect-ratio: 16 / 10; background: var(--water-tint); overflow: hidden; }
+.apps-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.apps-body { display: flex; flex-direction: column; gap: 6px; padding: 16px 18px 20px; }
+.apps-name { font-weight: 800; font-size: 1.1875rem; color: var(--ink); }
+.apps-text { color: var(--ink-2); line-height: 1.55; }
+@media (prefers-reduced-motion: reduce) { .apps-link { transition: none; } .apps-link:hover { transform: none; } }
