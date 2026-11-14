@@ -7,7 +7,8 @@
    .env locally). The token needs: Zone / Zone: Read, Zone / DNS: Edit (for the zone only) and Account /
    Cloudflare Pages: Edit.
 
-   It only ever CREATES. It never deletes or changes a record that exists: a host whose name already has a
+   It only ever CREATES, with one exception: a host marked "replaceGithub": true first has the records that point
+   at GitHub Pages removed (see 2a below), for the cut-over. Otherwise it never deletes or changes a record that exists: a host whose name already has a
    different record is reported and left alone, so the live site cannot be cut over by accident.
    The logs of this repo may be public: no token, no account id and no zone id is ever printed. */
 import { readFileSync, existsSync } from "node:fs";
@@ -65,6 +66,17 @@ for (const h of live) {
   else {
     const add = await api(`/accounts/${ACCOUNT}/pages/projects/${h.project}/domains`, { method: "POST", body: JSON.stringify({ name: h.host }) });
     if (add.ok) console.log(`${h.host}: attached to ${h.project}`); else { console.error(`::error::${h.host}: could not attach (${add.status}) ${add.errors}`); bad++; continue; }
+  }
+  /* 2a. cut-over only: a host marked "replaceGithub" first loses the records that point at GitHub Pages
+         (A / AAAA to GitHub's addresses, CNAME to *.github.io), and nothing else, at exactly its own name */
+  if (h.replaceGithub) {
+    const isGh = (r) => (r.type === "A" && /^185.199.(108|109|110|111).153$/.test(r.content)) || (r.type === "AAAA" && /^2606:50c0:800[0-3]::153$/i.test(r.content)) || (r.type === "CNAME" && /.github.io.?$/i.test(r.content));
+    const cur2 = await api(`/zones/${ZONE}/dns_records?name=${encodeURIComponent(h.host)}`);
+    if (!cur2.ok) { console.error(`::error::${h.host}: cannot read DNS (${cur2.status}) ${cur2.errors}`); bad++; continue; }
+    for (const r of cur2.result.filter(isGh)) {
+      const del = await api(`/zones/${ZONE}/dns_records/${r.id}`, { method: "DELETE" });
+      if (del.ok) console.log(`${h.host}: removed the GitHub Pages record ${r.type} -> ${r.content}`); else { console.error(`::error::${h.host}: could not remove ${r.type} ${r.content} (${del.status}) ${del.errors}`); bad++; }
+    }
   }
   /* 2. its DNS record: create it only when the name is free */
   const rec = await api(`/zones/${ZONE}/dns_records?name=${encodeURIComponent(h.host)}`);
