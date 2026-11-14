@@ -12,7 +12,7 @@ import { runtime, site } from "./content/site.js";
    דבר שיטען שהוא בא מכאן.
    ========================================================================== */
 export const business = {
-  key: "ia",
+  key: "taltalia",
   out: "tal/ia",
   root: false,
 

@@ -166,7 +166,7 @@ export const footerContent = (ctx) => ({
     { href: ctx.home("#process"), label: "איך עובדים" },
     { href: ctx.home("#about"), label: "אודות" },
     /* Root-absolute, and it has to be: the CV is not one of FLOA's pages, it is
-       another business of the domain (apps/me/) sitting at /cv/. ctx.url()
+       another business of the domain (apps/cv/) sitting at /cv/. ctx.url()
        passes an absolute path through untouched, so this resolves the same from
        the homepage as from a page two folders down. Hebrew, because this
        footer is Hebrew: /cv/ is the default and carries a switch to English.

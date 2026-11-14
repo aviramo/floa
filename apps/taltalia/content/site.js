@@ -14,5 +14,5 @@ export const site = {
 };
 
 export const runtime = {
-  business: "ia",
+  business: "taltalia",
 };

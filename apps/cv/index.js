@@ -16,16 +16,15 @@ import { leadPages, pages, siteMap } from "./pages/index.js";
      floa.co.il/cv/architect/en/        the same document in English
      floa.co.il/cv/analyst/  (and /en/) mobile and web analysis first
 
-   The key stays "me" — the folder is what the business is called on the
-   domain, and the folder is `cv`, because that is what a person handed one of
-   these links is being handed. /cv/ itself is the AI CV; the other
+   The key and the folder are both `cv`, the name of its sub-domain and of what
+   a person handed one of these links is being handed. /cv/ itself is the AI CV; the other
    documents live under their slug and are only reached by their address.
 
    It collects no leads. `leadPages` is empty, so the Worker rejects anything
    claiming to come from here, and LEAD_TO_ME never needs to exist.
    ========================================================================== */
 export const business = {
-  key: "me",
+  key: "cv",
   out: "cv",
   root: false,
 

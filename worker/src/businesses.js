@@ -34,6 +34,12 @@ export const BUSINESSES = {
     ],
     "pages": []
   },
+  "cv": {
+    "brand": "Ofir Aviram",
+    "to": "LEAD_TO_ME",
+    "origins": [],
+    "pages": []
+  },
   "floa": {
     "brand": "FLOA",
     "to": "LEAD_TO",
@@ -47,12 +53,6 @@ export const BUSINESSES = {
       "דף נחיתה החל מ־500 ₪"
     ]
   },
-  "ia": {
-    "brand": "ביודנסה, ריקוד החיים",
-    "to": "LEAD_TO_IA",
-    "origins": [],
-    "pages": []
-  },
   "jobs": {
     "brand": "משרות",
     "to": "LEAD_TO",
@@ -62,12 +62,6 @@ export const BUSINESSES = {
       "https://jobs.floa.co.il",
       "http://localhost:5173"
     ],
-    "pages": []
-  },
-  "me": {
-    "brand": "Ofir Aviram",
-    "to": "LEAD_TO_ME",
-    "origins": [],
     "pages": []
   },
   "roster": {
@@ -84,6 +78,12 @@ export const BUSINESSES = {
   "tal": {
     "brand": "טל אמיתי-לביא",
     "to": "LEAD_TO_TAL",
+    "origins": [],
+    "pages": []
+  },
+  "taltalia": {
+    "brand": "ביודנסה, ריקוד החיים",
+    "to": "LEAD_TO_IA",
     "origins": [],
     "pages": []
   }

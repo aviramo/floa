@@ -33,5 +33,5 @@ export const site = {
    form here and no lead to route. It stays for the shape every business has,
    and the Worker validates against it. */
 export const runtime = {
-  business: "me",
+  business: "cv",
 };
