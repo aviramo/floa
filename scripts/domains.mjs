@@ -59,6 +59,18 @@ if (all.ok) { console.log(`zone records (${all.result.length}):`); for (const r 
 let bad = 0;
 for (const h of live) {
   const target = h.project + ".pages.dev";
+  /* the way back: "restoreGithub" puts a host on GitHub Pages again (its four A records, DNS only) and nothing else */
+  if (h.restoreGithub) {
+    const cur0 = await api(`/zones/${ZONE}/dns_records?name=${encodeURIComponent(h.host)}`);
+    if (!cur0.ok) { console.error(`::error::${h.host}: cannot read DNS (${cur0.status}) ${cur0.errors}`); bad++; continue; }
+    for (const r of cur0.result.filter((r) => r.type === "CNAME" && /.pages.dev$/.test(r.content))) { const d0 = await api(`/zones/${ZONE}/dns_records/${r.id}`, { method: "DELETE" }); console.log(`${h.host}: removed CNAME -> ${r.content} (${d0.ok ? "ok" : d0.errors})`); }
+    for (const ip of ["185.199.108.153", "185.199.109.153", "185.199.110.153", "185.199.111.153"]) {
+      if (cur0.result.some((r) => r.type === "A" && r.content === ip)) { console.log(`${h.host}: A ${ip} already there`); continue; }
+      const a = await api(`/zones/${ZONE}/dns_records`, { method: "POST", body: JSON.stringify({ type: "A", name: h.host, content: ip, proxied: false, ttl: 300 }) });
+      console.log(`${h.host}: A ${ip} (${a.ok ? "ok" : a.errors})`); if (!a.ok) bad++;
+    }
+    continue;
+  }
   /* 1. the host on the Pages project */
   const cur = await api(`/accounts/${ACCOUNT}/pages/projects/${h.project}/domains`);
   if (!cur.ok) { console.error(`::error::${h.host}: cannot read the Pages project ${h.project} (${cur.status}) ${cur.errors}`); bad++; continue; }

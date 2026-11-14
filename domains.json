@@ -3,7 +3,7 @@
   "zone": "floa.co.il",
   "hosts": [
     { "host": "test.floa.co.il", "project": "floa-test", "enabled": true },
-    { "host": "floa.co.il", "project": "floa-site", "enabled": true, "replaceGithub": true, "note": "the real site: its GitHub Pages records are removed, then it points at the Pages project" },
+    { "host": "floa.co.il", "project": "floa-site", "enabled": true, "restoreGithub": true, "note": "ROLLED BACK to GitHub Pages: Pages had not validated the apex (error 1016). Retry the cut-over only when the apex shows as active in the Pages project" },
     { "host": "www.floa.co.il", "project": "floa-site", "enabled": true, "replaceGithub": true }
   ]
 }
