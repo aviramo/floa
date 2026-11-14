@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#F1EEF8" />
+  <title>Once | היכרות כמו בחיים האמיתיים</title>
+  <meta name="description" content="היכרות כמו בחיים האמיתיים. אדם אחד שנמצא קרוב ופעיל עכשיו, 10 דקות להשיב להזמנה, ומשם נשארים בפוקוס" />
+  <link rel="canonical" href="https://once.floa.co.il/" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=12" />
+  <link rel="icon" type="image/png" href="favicon.png?v=12" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Once" />
+  <meta property="og:title" content="Once | היכרות כמו בחיים האמיתיים" />
+  <meta property="og:description" content="היכרות כמו בחיים האמיתיים. אדם אחד בכל פעם, 10 דקות להשיב להזמנה" />
+  <meta property="og:image" content="https://once.floa.co.il/og-image.png?v=2" />
+  <meta property="og:image:width" content="1024" />
+  <meta property="og:image:height" content="500" />
+  <meta property="og:image:alt" content="Once, אדם אחד בכל פעם" />
+  <meta property="og:url" content="https://once.floa.co.il/" />
+  <meta property="og:locale" content="he_IL" />
+  <meta property="og:locale:alternate" content="en_US" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Once | היכרות כמו בחיים האמיתיים" />
+  <meta name="twitter:description" content="היכרות כמו בחיים האמיתיים. אדם אחד בכל פעם, 10 דקות להשיב להזמנה" />
+  <meta name="twitter:image" content="https://once.floa.co.il/og-image.png?v=2" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- The motion vocabulary, and the banner picture's own build. -->
+  <link rel="stylesheet" href="entrance.css?v=1" />
+  <link rel="stylesheet" href="styles.css?v=61" />
+  <script>
+    /* Set BEFORE the first paint, so nothing is ever seen in its landed state
+       and then re-animated. Reduced motion opts out of the whole entrance
+       rather than playing a shortened version of it, and the timeout is the
+       backstop: whatever happens in the page script below, the content lands. */
+    (function () {
+      try {
+        if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        var root = document.documentElement;
+        root.className += " js-intro";
+        setTimeout(function () { root.classList.add("go"); }, 1200);
+      } catch (e) { /* no intro, no harm: the page is simply already there */ }
+    })();
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main" id="skip-link">דלג לתוכן</a>
+
+  <header class="header" id="header">
+    <div class="header-inner">
+      <a class="brand" href="./" aria-label="Once">
+        <span class="brand-name">Once</span>
+        <span class="brand-tag" id="brand-tag">בהרצה</span>
+      </a>
+
+      <nav class="nav" id="nav" aria-label="Primary"></nav>
+
+      <div class="header-actions">
+        <a class="login-link" id="login-link" href="/login">התחברות</a>
+        <div class="lang-switcher">
+          <button class="lang-btn" id="lang-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Language">
+            <span id="lang-label">HE</span>
+            <svg class="lang-chevron" width="10" height="6" viewBox="0 0 10 6" aria-hidden="true">
+              <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <ul class="lang-menu" id="lang-menu" role="listbox" hidden>
+            <li><button type="button" role="option" data-lang="he">עברית<svg class="lang-check" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
+            <li><button type="button" role="option" data-lang="en">English<svg class="lang-check" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
+          </ul>
+        </div>
+        <!-- href = the Play listing itself, and `data-dl` is what the script
+             finds these by. Without JS there is no dialog to open and no
+             platform to read, so the honest fallback is the store; with JS the
+             press is answered in place (see "Download press" below). -->
+        <a class="btn btn-primary header-cta" id="header-cta" data-dl href="https://play.google.com/store/apps/details?id=com.aviramo.once">להורדת האפליקציה</a>
+        <button class="menu-toggle" id="menu-toggle" type="button" aria-label="תפריט" aria-expanded="false">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile slide-in menu -->
+  <div class="mobile-menu" id="mobile-menu">
+    <div class="mobile-menu-backdrop" data-close-menu></div>
+    <div class="mobile-menu-panel" role="dialog" aria-modal="true" aria-label="תפריט">
+      <div class="mobile-menu-head">
+        <span class="brand-name">Once</span>
+        <button class="menu-close" id="menu-close" type="button" aria-label="סגירה">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <nav id="mobile-nav" aria-label="Mobile"></nav>
+      <!-- No download button in the drawer (user directive 2026-07-27): the
+           floating one at the bottom of the page is always there, so the menu
+           carries navigation and the login link only. -->
+      <a class="login-link" id="mobile-login" href="/login">התחברות</a>
+    </div>
+  </div>
+
+  <main id="main">
+    <!-- The Play listing's feature graphic, redrawn in art.js and run full bleed
+         under the header (user directive 2026-07-26): the elongated composition on
+         a wide screen, the store's own arrangement on a narrow one. -->
+    <section class="banner" id="sec-banner"></section>
+
+    <section class="hero">
+      <div class="container">
+        <div id="sec-hero"></div>
+      </div>
+    </section>
+
+    <!-- One question between the hero and the messages (user directive
+         2026-07-27): the only line on the page that asks the reader something
+         instead of describing the product. -->
+    <section class="ask">
+      <div class="container"><div id="sec-ask"></div></div>
+    </section>
+
+    <!-- The page carries FOUR messages and nothing else (user directive
+         2026-07-26): one person at a time, real time, shared circles, and a
+         schedule that respects parents. Each one is a band of its own with a
+         single illustration, built from T.pillars in the script below, so the
+         count and order live in one place. -->
+    <div id="sec-pillars"></div>
+
+    <section class="band band--tint" id="sec-final-wrap">
+      <div class="container"><div id="sec-final"></div></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-links" id="footer-links"></div>
+      <div class="footer-copy" id="footer-copy">© Once 2026</div>
+    </div>
+  </footer>
+
+  <!-- Sticky mobile download CTA. It is the page's ONLY download button on a
+       phone (user directive 2026-07-27), so it is always on screen: it never
+       hides for another button, because there is no other button. -->
+  <div class="mobile-cta" id="mobile-cta">
+    <a class="btn btn-primary btn-lg" data-dl href="https://play.google.com/store/apps/details?id=com.aviramo.once" id="mobile-cta-btn">להורדת האפליקציה</a>
+  </div>
+
+  <!-- What a download press answers with when the device cannot install: the
+       iPhone note, or the scan code for a desktop. On Android the buttons are
+       plain links to Play and this never opens. -->
+  <div class="dl" id="dl" hidden>
+    <div class="dl-backdrop" data-close-dl></div>
+    <div class="dl-card" role="dialog" aria-modal="true" aria-labelledby="dl-title">
+      <button class="menu-close dl-close" id="dl-close" type="button" aria-label="סגירה">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+      <div class="dl-title" id="dl-title">להורדת האפליקציה</div>
+      <p class="dl-note" id="dl-note"></p>
+      <!-- iPhone only. There is nothing to install today, so the one thing that
+           still works is offered instead: be told when there is. Wired below. -->
+      <a class="btn btn-primary dl-cta" id="dl-ios" hidden
+         href="mailto:once.app.support@gmail.com?subject=%D7%A2%D7%93%D7%9B%D7%A0%D7%95%20%D7%90%D7%95%D7%AA%D7%99%20%D7%9B%D7%A9%D7%99%D7%A9%20%D7%90%D7%99%D7%99%D7%A4%D7%95%D7%9F"></a>
+      <div class="dl-qr" id="dl-qr"></div>
+    </div>
+  </div>
+
+  <script src="store.js?v=2"></script>
+  <script src="art.js?v=10"></script>
+  <script>
+  (function () {
+    'use strict';
+
+    /* ---------- The counter ----------
+       The printed cards are handed out by hand and the site is passed around by
+       link, so the only way to know whether either works is for this page to say
+       what happened on it: a DEVICE opened it, and then that device pressed
+       something. A device is what is counted, not a visit — the same person
+       coming back is the same person — and the id below is kept so the second
+       visit finds the first. The rows land under `source = 'site'`, apart from
+       the card's own.
+       Everything is wrapped: a counter may never be what breaks the page. */
+    var VISIT_KEY = 'once.visit.device';
+    var visitDevice = null;
+    try {
+      visitDevice = localStorage.getItem(VISIT_KEY);
+      if (!visitDevice) {
+        /* A device with no crypto.randomUUID is old enough that time plus a
+           random tail is unique enough for a marketing counter. */
+        visitDevice = (window.crypto && crypto.randomUUID)
+          ? crypto.randomUUID()
+          : 'd-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+        localStorage.setItem(VISIT_KEY, visitDevice);
+      }
+    } catch (e) {
+      /* Storage blocked (private mode, a locked-down browser): send nothing and
+         let the route identify the visitor its own way. */
+      visitDevice = null;
+    }
+
+    function reportVisit(action) {
+      try {
+        var s = window.OnceStore;
+        var payload = JSON.stringify({
+          device: visitDevice,
+          platform: s.isIOS ? 'ios' : (s.isAndroid ? 'android' : 'desktop'),
+          action: action
+        });
+        /* sendBeacon is the whole reason a press can be counted at all: it
+           survives the page being left for the store or the mail app. fetch with
+           keepalive is the same promise where it is missing. Neither is waited
+           on — a press must never be delayed by a counter. */
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon('https://once-lake.vercel.app/api/visit', new Blob([payload], { type: 'application/json' }));
+        } else {
+          fetch('https://once-lake.vercel.app/api/visit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: payload,
+            keepalive: true
+          });
+        }
+      } catch (e) {}
+    }
+    reportVisit('open');
+
+    /* Illustrations live in art.js (window.ART), keyed per section. A media slot
+       whose builder passes a key renders the artwork; one without stays the
+       labelled placeholder. */
+    var SUPPORTED = ['he', 'en'];
+    var LANG_CODE = { he: 'HE', en: 'EN' };
+    var OG_LOCALE = { he: 'he_IL', en: 'en_US' };
+    /* The page's four messages, in order. Section ids, nav labels (T.nav.links)
+       and artwork keys (window.ART) are all indexed by this one list. */
+    var PILLARS = ['one', 'now', 'circles', 'parents'];
+
+    /* ---------- Custom icon set (not Lucide) ---------- */
+    var IC = {
+      image: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3" stroke="currentColor" stroke-width="1.6"/><circle cx="8.5" cy="9.5" r="1.6" fill="currentColor"/><path d="M4 17l4.5-4.5 3 3L15 12l5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      clock: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.4" stroke="currentColor" stroke-width="1.6"/><path d="M12 7.6V12l3 1.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      user: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><circle cx="12" cy="8.4" r="3.4" stroke="currentColor" stroke-width="1.6"/><path d="M5.5 19a6.5 6.5 0 0 1 13 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+      users: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><circle cx="9" cy="8.6" r="3" stroke="currentColor" stroke-width="1.6"/><path d="M3.6 18.4a5.4 5.4 0 0 1 10.8 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M15.6 6.2a3 3 0 0 1 0 5.9M17 18.4a5.4 5.4 0 0 0-2.2-4.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+      spark: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true"><path d="M12 3.5c.6 4 1.9 5.3 5.9 5.9-4 .6-5.3 1.9-5.9 5.9-.6-4-1.9-5.3-5.9-5.9 4-.6 5.3-1.9 5.9-5.9z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>',
+      check: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.6" stroke="currentColor" stroke-width="1.5"/><path d="M8.4 12.2l2.4 2.4 4.8-4.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      calendar: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><rect x="3.6" y="5.4" width="16.8" height="14" rx="3" stroke="currentColor" stroke-width="1.6"/><path d="M3.6 10h16.8M8.4 3.6v3.2M15.6 3.6v3.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><rect x="15.2" y="12.6" width="3" height="3" rx="1" fill="currentColor"/></svg>',
+      handshake: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path d="M12 8l2-1.6a2.4 2.4 0 0 1 3 .2l3 2.7M12 8l-2-1.6a2.4 2.4 0 0 0-3 .2L4 9.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 9.3v4.2l4 3.4a1.8 1.8 0 0 0 2.6-.3l.4-.5.7.5a1.7 1.7 0 0 0 2.4-.4l.3-.5.6.3a1.6 1.6 0 0 0 2-2.4L20 9.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      ban: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.4" stroke="currentColor" stroke-width="1.6"/><path d="M6.4 6.4l11.2 11.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+      flag: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true"><path d="M6 21V4M6 5h9l-1.5 3L15 11H6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      eyeOff: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true"><path d="M9.6 6.2A8.6 8.6 0 0 1 12 5.8c6 0 9.5 6.2 9.5 6.2a17 17 0 0 1-3 3.8M15.9 16.9a8.7 8.7 0 0 1-3.9.9c-6 0-9.5-6-9.5-6a17 17 0 0 1 4.2-4.7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.2 10.3a2.6 2.6 0 0 0 3.6 3.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M4.4 4.4l15.2 15.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+      forward: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true"><path d="M13 6l6 6-6 6M5 6l6 6-6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      pin: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path d="M12 21.2c3.8-4 5.7-7 5.7-9.7a5.7 5.7 0 1 0-11.4 0c0 2.7 1.9 5.7 5.7 9.7z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="11.2" r="2.3" stroke="currentColor" stroke-width="1.6"/></svg>',
+      pulse: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path d="M3 12.2h3.6L9 6.4l3.4 11.2 2.2-5.4H21" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    };
+
+    /* ---------- Translations (he = source) ---------- */
+    var STRINGS = {
+      he: {
+        dir: 'rtl',
+        title: 'Once | היכרות כמו בחיים האמיתיים',
+        metaDescription: 'היכרות כמו בחיים האמיתיים. אדם אחד שנמצא קרוב ופעיל עכשיו, 10 דקות להשיב להזמנה, ומשם נשארים בפוקוס',
+        ogDescription: 'היכרות כמו בחיים האמיתיים. אדם אחד בכל פעם, 10 דקות להשיב להזמנה',
+        ui: { tag: 'בהרצה', preview: 'תצוגה מקדימה', noteIOS: 'Once עדיין לא באייפון. היא בתהליך אישור בחנות של אפל, ותהיה כאן ברגע שנקבל אישור', iosNotify: 'עדכנו אותי כשיש אייפון', noteDesktop: 'פתחו את הדף מהטלפון, או סרקו את הקוד:', download: 'להורדת האפליקציה', menu: 'תפריט', close: 'סגירה', skip: 'דלג לתוכן' },
+        /* One label per pillar, in pillar order. */
+        nav: { links: ['אדם אחד', 'זמן אמת', 'מעגלים', 'הורים'], login: 'התחברות' },
+        hero: {
+          eyebrow: 'רק אחד. עכשיו',
+          /* הפתיח אומר מה המוצר כן. משפט הסירוב ירד לשורת המשנה — הוא הבדיחה
+             של המותג, לא הכותרת שלו — וזה אותו סדר בדיוק שבגלויה. */
+          title: { lines: ['היכרות כמו', 'בחיים האמיתיים'], accent: true },
+          sub: 'אפליקציית היכרויות שמסרבת להתנהג כמו עוד אפליקציית היכרויות. אין פיד, אין החלקות, אין עשרים שיחות פתוחות. אדם אחד על המסך, 10 דקות להשיב להזמנה, ומשם נשארים בפוקוס',
+          pills: ['אדם אחד בכל פעם', 'זמן אמת', 'מעגלים משותפים', 'לוז של הורים'],
+        },
+        ask: {
+          question: 'מתי בפעם האחרונה מישהו שם עליכם את כל הפוקוס?',
+          answer: 'באפליקציות אחרות אתם אחד מעשרים שמדברים איתו במקביל. ב-Once יש רק אדם אחד בצד השני, ובאותו רגע אתם היחידים שהוא רואה'
+        },
+        pillars: [
+          {
+            eyebrow: 'אדם אחד בכל פעם',
+            title: { lines: ['מסך אחד. אדם אחד', 'שיחה אחת'], accent: true },
+            body: 'גם באפליקציות אחרות רואים אדם אחד על המסך, ובכל זאת מנהלים עשרים שיחות במקביל. ב-Once גם ההיכרות עצמה היא עם אדם אחד: מזמינים אחד, מדברים עם אחד, והבא מגיע רק כשזה נגמר',
+            chips: [
+              { icon: 'user', label: 'אדם אחד על המסך' },
+              { icon: 'ban', label: 'בלי פיד ובלי החלקות' },
+              { icon: 'check', label: 'רק שיחה אחת פתוחה' }
+            ],
+            media: { name: 'אדם אחד בכל פעם', desc: 'שתי ערימות כרטיסים דהויות מונחות בצד, ובמרכז מסך אחד ברור שבו אדם אחד בלבד' }
+          },
+          {
+            eyebrow: 'זמן אמת, כאן ועכשיו',
+            title: { lines: ['לא מי שהיה פה פעם', 'מי שפנוי עכשיו'], accent: true },
+            body: 'כל חיפוש מביא מישהו שנמצא קרוב אליכם ופעיל עכשיו, ולא פרופיל שנרשם פעם ונעלם. המרחק והזמן שבו האדם היה כאן לאחרונה הם הבסיס, ומעליהם נכנסים המעגלים המשותפים והזמן הפנוי שלכם',
+            chips: [
+              { icon: 'pin', label: 'קרוב אליכם' },
+              { icon: 'pulse', label: 'פעיל עכשיו' },
+              { icon: 'ban', label: 'בלי פרופילים נטושים' }
+            ],
+            note: {
+              icon: 'clock',
+              title: 'ההזמנה חיה 10 דקות',
+              body: 'ההזמנה מגיעה בהתראה ברגע שנשלחת, ויש 10 דקות להשיב לה. כשהיא מתקבלת הצ׳אט נפתח מיד, ואם לא, היא נסגרת מעצמה. שום הזמנה לא נשארת תלויה שבוע',
+              chips: [
+                { icon: 'spark', label: 'התראה ברגע שנשלחת' },
+                { icon: 'check', label: 'הצ׳אט נפתח מיד' },
+                { icon: 'forward', label: 'בלי הזמנות תלויות' }
+              ]
+            },
+            media: { name: 'הזמנה בזמן אמת', desc: 'מסך הזמנה שהשעון רץ על הכרטיס שלו וחלון שמסביר מה ההזמנה פותחת, ולצידו טיימר של עשר דקות' }
+          },
+          {
+            eyebrow: 'חברים ומעגלים משותפים',
+            title: { lines: ['לא זרים אקראיים', 'אנשים מהעולם שלכם'], accent: true },
+            body: 'פותחים מעגל או מצטרפים לאחד: העבודה, הלימודים, תחביב או חוג החברים. מי שחולק איתכם מעגל עולה למעלה, וההיכרות מתחילה עם משהו במשותף ולא מאפס',
+            chips: [
+              { icon: 'users', label: 'מעגלים משלכם' },
+              { icon: 'handshake', label: 'החברים של החברים קודם' }
+            ],
+            media: { name: 'מעגלים משותפים', desc: 'מסך המעגלים, ולצידו מעגל של אנשים מאותו מעגל המחוברים זה לזה' }
+          },
+          {
+            eyebrow: 'ילדים, משפחה והזמן שלכם',
+            title: { lines: ['יודעים מה אתם מחפשים,', 'ומתי אתם פנויים'], accent: true },
+            body: 'רצון להקים משפחה הוא לא פרט קטן, ולכן הוא חלק מההתאמה. מסמנים פעם אחת אם אתם רוצים ילדים, לא רוצים, או שכבר יש לכם ואתם פתוחים לעוד, ו-Once מביאה קודם אנשים שמחפשים את אותו דבר',
+            note: {
+              icon: 'clock',
+              title: 'לוז הורים',
+              body: 'ולהורים יש גם לוז. מסמנים פעם אחת את הימים שהילדים איתכם, והלוז נשמר פרטי ולא מוצג לאף משתמש. Once מעלה למעלה אנשים שהזמן הפנוי שלהם נופל יחד עם שלכם, ואם תרצו אפשר לשתף את הימים הפנויים בצ׳אט',
+              chips: [
+                { icon: 'clock', label: 'התאמה לפי ימים פנויים' },
+                { icon: 'calendar', label: 'התאמה לפי סופי שבוע' },
+                { icon: 'eyeOff', label: 'הלו״ז לא מוצג לאף אחד' }
+              ]
+            },
+            media: { name: 'לוז משותף', desc: 'שני שבועות מסומנים זה מול זה, והיום שבו שני הצדדים פנויים מודגש' }
+          }
+        ],
+        finalCta: {
+          eyebrow: 'הגיע הזמן להרגל חדש',
+          title: { lines: ['אפשר להמשיך לגלול', 'ואפשר להכיר מישהו'], accent: true },
+          body: 'Once נבנתה לאנשים שנמאס להם לגלול ורוצים סוף סוף להכיר',
+          media: { name: 'מסכי האפליקציה', desc: 'שלושה מסכי אפליקציה המציגים מציאת אדם, הזמנה וצ׳אט' }
+        },
+        contact: { label: 'שאלות? אפשר לכתוב לנו:', subject: 'שאלה ל-Once' },
+        footer: { privacy: 'מדיניות פרטיות', terms: 'תנאי שימוש', safety: 'תקני בטיחות ילדים', copyright: '© Once 2026' }
+      },
+
+      en: {
+        dir: 'ltr',
+        title: 'Once | Meeting someone like in real life',
+        metaDescription: 'Meeting someone like in real life. One person who is nearby and active right now, 10 minutes to answer an invitation, and from there you stay focused',
+        ogDescription: 'Meeting someone like in real life. One person at a time, 10 minutes to answer an invitation',
+        ui: { tag: 'Beta', preview: 'Preview', noteIOS: 'Once is not on iPhone yet. It is in review at the App Store and will be here the moment it is approved', iosNotify: 'Tell me when iPhone is ready', noteDesktop: 'Open this page on your phone, or scan the code:', download: 'Download the app', menu: 'Menu', close: 'Close', skip: 'Skip to content' },
+        nav: { links: ['One at a time', 'Real time', 'Circles', 'Parents'], login: 'Login' },
+        hero: {
+          eyebrow: 'Just one. Right now',
+          title: { lines: ['Meeting someone', 'like in real life'], accent: true },
+          sub: "A dating app that refuses to behave like another dating app. No feed, no swiping, no twenty open chats. One person on the screen, 10 minutes to answer an invitation, and from there you stay focused",
+          pills: ['One person at a time', 'Real time', 'Shared circles', 'Parent schedules'],
+        },
+        ask: {
+          question: 'When was the last time someone gave you their whole attention?',
+          answer: 'On other apps you are one of twenty they are talking to at once. On Once there is a single person on the other side, and right now you are the only one they see'
+        },
+        pillars: [
+          {
+            eyebrow: 'One person at a time',
+            title: { lines: ['One screen. One person', 'One conversation'], accent: true },
+            body: 'Other apps also show one person at a time, and still leave you juggling twenty open chats. On Once the meeting itself is with one person: you invite one, you talk to one, and the next arrives only once that is over',
+            chips: [
+              { icon: 'user', label: 'One person on the screen' },
+              { icon: 'ban', label: 'No feed, no swiping' },
+              { icon: 'check', label: 'Only one open conversation' }
+            ],
+            media: { name: 'One person at a time', desc: 'Two faded piles of profile cards set aside, and in the middle one clear screen holding a single person' }
+          },
+          {
+            eyebrow: 'Real time, here and now',
+            title: { lines: ['Not whoever was here once', 'Whoever is free right now'], accent: true },
+            body: 'Every search brings up someone who is near you and here right now, not a profile that signed up once and vanished. Distance and how recently a person was around come first, and your shared circles and free time build on top of that',
+            chips: [
+              { icon: 'pin', label: 'Near you' },
+              { icon: 'pulse', label: 'Active right now' },
+              { icon: 'ban', label: 'No abandoned profiles' }
+            ],
+            note: {
+              icon: 'clock',
+              title: 'An invitation lives 10 minutes',
+              body: 'The invitation arrives as a notification the moment it is sent, and you have 10 minutes to answer it. When it is accepted the chat opens right away, and when it is not, it closes by itself. No invitation hangs for a week',
+              chips: [
+                { icon: 'spark', label: 'Notified the moment it is sent' },
+                { icon: 'check', label: 'The chat opens right away' },
+                { icon: 'forward', label: 'Nothing left hanging' }
+              ]
+            },
+            media: { name: 'A real-time invitation', desc: 'An invitation screen with the clock running on the card itself and a popup explaining what the invitation opens, beside a ten-minute timer' }
+          },
+          {
+            eyebrow: 'Friends and shared circles',
+            title: { lines: ['Not random strangers', 'People from your world'], accent: true },
+            body: 'Start a circle or join one: work, studies, a hobby, your circle of friends. Anyone who shares a circle with you moves up, so the introduction starts with something in common instead of from zero',
+            chips: [
+              { icon: 'users', label: 'Circles of your own' },
+              { icon: 'handshake', label: 'Friends of friends first' }
+            ],
+            media: { name: 'Shared circles', desc: 'The circles screen, beside a circle of people from the same circle linked to each other' }
+          },
+          {
+            eyebrow: 'Kids, family and your time',
+            title: { lines: ['You know what you want,', 'and when you are free'], accent: true },
+            body: 'Wanting a family is not a small detail, so it is part of the matching. Mark once whether you want kids, do not want them, or already have them and are open to more, and Once brings up the people looking for the same thing first',
+            note: {
+              icon: 'clock',
+              title: 'The parent schedule',
+              body: 'And parents get a schedule too. Mark the days the kids are with you once, and that schedule stays private and is never shown to any user. Once moves up people whose free time lands together with yours, and if you want to, you can share your free days in the chat',
+              chips: [
+                { icon: 'clock', label: 'Matched on free days' },
+                { icon: 'calendar', label: 'Matched on weekends' },
+                { icon: 'eyeOff', label: 'Your schedule is never shown' }
+              ]
+            },
+            media: { name: 'A schedule that lines up', desc: 'Two marked weeks facing each other, with the day both sides are free highlighted' }
+          }
+        ],
+        finalCta: {
+          eyebrow: 'Time for a new habit',
+          title: { lines: ['You can keep scrolling', 'Or you can meet someone'], accent: true },
+          body: 'Once was built for people who are done scrolling and finally want to meet someone',
+          media: { name: 'App screens', desc: 'Three app screens showing finding a person, an invitation, and a chat' }
+        },
+        contact: { label: 'Questions? Write to us:', subject: 'Question for Once' },
+        footer: { privacy: 'Privacy Policy', terms: 'Terms of Service', safety: 'Child Safety Standards', copyright: '© Once 2026' }
+      },
+
+    };
+
+    /* ---------- Helpers ---------- */
+    function esc(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+    /* A headline is a hard-broken stanza, and a long stanza set in ONE flat purple
+       reads as a wall (user directive 2026-07-28). The ONLY variation is the
+       FIRST line, set one step lighter (the artwork's ring purple) so the stanza
+       opens quiet and lands full strength — nothing else in it changes tone, and
+       nothing on the page goes darker than the reading purple. The tones live in
+       styles.css; this only labels the lines. */
+    function titleHTML(t) {
+      var lines = t.lines || [];
+      return lines.map(function (ln, i) {
+        var isLast = i === lines.length - 1;
+        var cls = 'tl' + (i === 0 && lines.length > 1 ? ' tl--soft' : '') +
+          ((t.accent && isLast) ? ' accent' : '');
+        return '<span class="' + cls + '">' + esc(ln) + '</span>';
+      }).join('<br>');
+    }
+    function paras(arr) { return (arr || []).map(function (p) { return '<p>' + esc(p) + '</p>'; }).join(''); }
+    function icon(name) { return IC[name] || IC.spark; }
+
+    var T; // active language block
+
+    /* Every illustration on the page is one wide scene; a slot whose artwork key
+       is missing falls back to the labelled placeholder. */
+    function media(m, art) {
+      var label = esc(m.name) + ': ' + esc(m.desc);
+      var draw = art && window.ART && window.ART[art];
+      var body = draw
+        ? draw()
+        : '<span class="media-tag">' + esc(T.ui.preview) + '</span>' +
+          '<span class="media-icon">' + IC.image + '</span>' +
+          '<span class="media-name">' + esc(m.name) + '</span>' +
+          '<span class="media-desc">' + esc(m.desc) + '</span>';
+      /* No `reveal` of its own: every call site puts this figure inside a
+         container that is already arriving (a pillar's visual side, the
+         callout, the closing card), and a figure that faded in on top of the
+         box carrying it was two motions saying one thing. */
+      return '<figure class="media media--wide' + (draw ? ' media--art' : '') +
+        '" role="img" aria-label="' + label + '">' + body + '</figure>';
+    }
+    /* ---------- Section builders ---------- */
+    /* Both compositions are rendered and CSS shows the one that fits the width:
+       the artwork is a drawing, so swapping it on a media query costs nothing and
+       keeps each layout drawn for the shape it has to fill. */
+    function buildBanner() {
+      if (!window.ART) return '';
+      var rtl = T.dir === 'rtl';
+      return '<div class="banner-art banner-art--long">' + window.ART.bannerLong(rtl) + '</div>' +
+        '<div class="banner-art banner-art--compact">' + window.ART.banner(rtl) + '</div>';
+    }
+
+    /* The hero carries NO illustration (user directive 2026-07-26): the stanza is
+       the first thing on the screen, with the artwork left to the four pillars.
+       It carries NO download button either (user directive 2026-07-27): the ask
+       is the header button on a wide screen and the floating one on a phone. */
+    /* The hero carries no `reveal`: it is the first screen, so it arrives on the
+       page's own clock (styles.css, .js-intro.go) rather than on a scroll that
+       has not happened, and it arrives PIECE BY PIECE — eyebrow, then the
+       stanza line by line, then the sentence, then the pills. */
+    function buildHero() {
+      var s = T.hero;
+      return '<div class="hero-copy">' +
+          '<div class="eyebrow">' + esc(s.eyebrow) + '</div>' +
+          '<h1>' + titleHTML(s.title) + '</h1>' +
+          '<p class="hero-sub">' + esc(s.sub) + '</p>' +
+          '<div class="hero-pills">' + s.pills.map(function (p) { return '<span class="pill">' + esc(p) + '</span>'; }).join('') + '</div>' +
+        '</div>';
+    }
+
+    /* The one question on the page. It speaks to the reader instead of
+       describing the product, so it gets the one treatment nothing else on the
+       page has: a filled purple slab, inverted out of the page, carrying the
+       focus drawing beside it. */
+    function buildAsk() {
+      var s = T.ask;
+      var art = (window.ART && window.ART.focus)
+        ? '<div class="ask-art">' + window.ART.focus() + '</div>' : '';
+      return '<div class="ask-slab reveal reveal--card">' +
+          '<div class="ask-copy">' +
+            '<p class="ask-q">' + esc(s.question) + '</p>' +
+            '<p class="ask-a">' + esc(s.answer) + '</p>' +
+          '</div>' + art +
+        '</div>';
+    }
+
+    /* Every pillar is the same section with the media on alternating sides, so
+       the four messages are one parameterised builder and never four near-copies.
+       PILLARS is the single source of order: nav labels, section ids and artwork
+       keys all read from it. A pillar may carry an optional `note`: a sub-message
+       that gets a headline of its own instead of being buried in the paragraph,
+       so it takes the visual side of the split and wraps the artwork in its own
+       card (title + text + drawing + its own chips as one block). Chips are the
+       same row either way, so a pillar and a note just hand it their own list. */
+    function chipRow(list) {
+      if (!list || !list.length) return '';
+      /* `reveal--stagger`: the row itself does not move, its chips do, one
+         after another. The class on the container is only what the observer
+         needs to know when to start them. */
+      return '<div class="chips reveal reveal--stagger">' + list.map(function (c) {
+        return '<span class="chip">' + icon(c.icon) + esc(c.label) + '</span>';
+      }).join('') + '</div>';
+    }
+    function buildPillars() {
+      return T.pillars.map(function (s, i) {
+        var flip = i % 2 === 1;
+        var art = media(s.media, PILLARS[i]);
+        var visual = s.note
+          ? '<div class="callout">' +
+              '<div class="callout-title">' + icon(s.note.icon) + esc(s.note.title) + '</div>' +
+              '<p>' + esc(s.note.body) + '</p>' +
+              art +
+              chipRow(s.note.chips) +
+            '</div>'
+          : art;
+        return '<section class="band' + (flip ? ' band--tint' : '') + '" id="' + PILLARS[i] + '">' +
+          '<div class="container">' +
+            '<div class="split' + (flip ? ' split--media-start' : '') + '">' +
+              '<div class="split-text">' +
+                '<div class="eyebrow reveal">' + esc(s.eyebrow) + '</div>' +
+                '<h2 class="reveal">' + titleHTML(s.title) + '</h2>' +
+                '<p class="lede reveal">' + esc(s.body) + '</p>' +
+                chipRow(s.chips) +
+              '</div>' +
+              '<div class="split-visual reveal reveal--side">' + visual + '</div>' +
+            '</div>' +
+          '</div>' +
+        '</section>';
+      }).join('');
+    }
+
+    /* The closing card states the case and shows the app; the download itself is
+       offered by the header and the floating button (user directive 2026-07-26),
+       so it repeats no button of its own. */
+    function buildFinal() {
+      var s = T.finalCta;
+      return '<div class="final reveal reveal--card">' +
+        '<div class="eyebrow" style="margin-inline:auto">' + esc(s.eyebrow) + '</div>' +
+        '<h2>' + titleHTML(s.title) + '</h2>' +
+        '<p class="lede">' + esc(s.body) + '</p>' +
+        '<div class="final-media">' + media(s.media, 'final') + '</div>' +
+        '<div class="contact"><span>' + esc(T.contact.label) + '</span> ' +
+          '<a href="mailto:once.app.support@gmail.com?subject=' + encodeURIComponent(T.contact.subject) + '">once.app.support@gmail.com</a>' +
+        '</div>' +
+      '</div>';
+    }
+
+    function set(id, html) { var el = document.getElementById(id); if (el) el.innerHTML = html; }
+
+    function buildNav() {
+      return PILLARS.map(function (id, i) {
+        return '<a class="nav-link" href="#' + id + '" data-nav>' + esc(T.nav.links[i]) + '</a>';
+      }).join('');
+    }
+
+    function buildFooter() {
+      var f = T.footer;
+      var suffix = '?lang=' + CURRENT;
+      return '<a href="privacy.html' + suffix + '">' + esc(f.privacy) + '</a>' +
+        '<span class="sep">·</span>' +
+        '<a href="terms.html' + suffix + '">' + esc(f.terms) + '</a>' +
+        '<span class="sep">·</span>' +
+        '<a href="child-safety.html' + suffix + '">' + esc(f.safety) + '</a>';
+    }
+
+    /* A dot divides two links standing on ONE line. Where the row wraps it
+       divides nothing: a dot at the head or the tail of a line is a mark
+       hanging off the words, so the BREAK is the division and the dot goes.
+       It has to be measured, because only the layout knows where the row broke
+       and the row breaks differently per language, width and font size. The
+       pass always starts from every dot showing, so it reads the same box on
+       every run and cannot chase its own result. */
+    function syncFooterSeps() {
+      var row = document.getElementById('footer-links');
+      if (!row) return;
+      var kids = row.children, i;
+      for (i = 0; i < kids.length; i++) kids[i].classList.remove('is-cut');
+      for (i = 1; i < kids.length - 1; i++) {
+        if (!kids[i].classList.contains('sep')) continue;
+        if (kids[i - 1].offsetTop !== kids[i + 1].offsetTop) kids[i].classList.add('is-cut');
+      }
+    }
+    var footerSyncFrame = null;
+    function scheduleFooterSync() {
+      if (footerSyncFrame) return;
+      footerSyncFrame = requestAnimationFrame(function () { footerSyncFrame = null; syncFooterSeps(); });
+    }
+    window.addEventListener('resize', scheduleFooterSync);
+    // A font landing re-measures every line, this row included.
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(scheduleFooterSync);
+
+    /* ---------- Render ---------- */
+    var CURRENT;
+    function render(lang) {
+      CURRENT = lang;
+      T = STRINGS[lang];
+
+      document.documentElement.lang = lang;
+      document.documentElement.dir = T.dir;
+      document.title = T.title;
+
+      var setMeta = function (sel, val) { var el = document.querySelector(sel); if (el) el.setAttribute('content', val); };
+      setMeta('meta[name="description"]', T.metaDescription);
+      setMeta('meta[property="og:title"]', T.title);
+      setMeta('meta[property="og:description"]', T.ogDescription);
+      setMeta('meta[property="og:locale"]', OG_LOCALE[lang]);
+      setMeta('meta[name="twitter:title"]', T.title);
+      setMeta('meta[name="twitter:description"]', T.ogDescription);
+
+      // header + menus
+      set('nav', buildNav());
+      set('mobile-nav', buildNav());
+      document.getElementById('login-link').textContent = T.nav.login;
+      document.getElementById('mobile-login').textContent = T.nav.login;
+      document.getElementById('brand-tag').textContent = T.ui.tag;
+      document.getElementById('dl-title').textContent = T.ui.download;
+      document.getElementById('header-cta').textContent = T.ui.download;
+      document.getElementById('mobile-cta-btn').textContent = T.ui.download;
+      document.getElementById('menu-toggle').setAttribute('aria-label', T.ui.menu);
+      document.getElementById('menu-close').setAttribute('aria-label', T.ui.close);
+      var skip = document.getElementById('skip-link'); if (skip) skip.textContent = T.ui.skip;
+
+      // sections
+      set('sec-banner', buildBanner());
+      set('sec-hero', buildHero());
+      set('sec-ask', buildAsk());
+      set('sec-pillars', buildPillars());
+      set('sec-final', buildFinal());
+
+      // footer
+      set('footer-links', buildFooter());
+      document.getElementById('footer-copy').textContent = T.footer.copyright;
+      syncFooterSeps();
+
+      // language switcher label + active state
+      document.getElementById('lang-label').textContent = LANG_CODE[lang];
+      Array.prototype.forEach.call(document.querySelectorAll('#lang-menu button'), function (b) {
+        var on = b.getAttribute('data-lang') === lang;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+
+      wireNavLinks();
+      wireDownloadButtons();
+      observeReveals();
+    }
+
+    /* ---------- Reveal on scroll ---------- */
+    var io = null;
+    function observeReveals() {
+      var els = document.querySelectorAll('.reveal:not(.in)');
+      if (!('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        Array.prototype.forEach.call(els, function (el) { el.classList.add('in'); });
+        return;
+      }
+      // Only now, with a working observer, do we allow .reveal to start hidden.
+      document.documentElement.classList.add('js-reveal');
+      if (!io) {
+        io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+        }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+      }
+      Array.prototype.forEach.call(els, function (el) { io.observe(el); });
+    }
+
+    /* ---------- Smooth-scroll nav links (close mobile menu) ---------- */
+    function wireNavLinks() {
+      Array.prototype.forEach.call(document.querySelectorAll('[data-nav]'), function (a) {
+        a.addEventListener('click', function () { closeMenu(); });
+      });
+    }
+
+    /* ---------- Language switcher ---------- */
+    var langBtn = document.getElementById('lang-btn');
+    var langMenu = document.getElementById('lang-menu');
+    function closeLangMenu() { langMenu.setAttribute('hidden', ''); langBtn.setAttribute('aria-expanded', 'false'); }
+    function openLangMenu() { langMenu.removeAttribute('hidden'); langBtn.setAttribute('aria-expanded', 'true'); }
+    langBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (langMenu.hasAttribute('hidden')) openLangMenu(); else closeLangMenu();
+    });
+    document.addEventListener('click', function (e) {
+      if (!langMenu.contains(e.target) && !langBtn.contains(e.target)) closeLangMenu();
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeLangMenu(); closeMenu(); closeDl(); } });
+    Array.prototype.forEach.call(langMenu.querySelectorAll('button'), function (btn) {
+      btn.addEventListener('click', function () {
+        var newLang = btn.getAttribute('data-lang');
+        if (newLang !== CURRENT) { history.replaceState(null, '', '?lang=' + newLang); render(newLang); }
+        closeLangMenu();
+      });
+    });
+
+    /* ---------- Download press ----------
+       A download press is answered HERE and never by travelling to a page about
+       it (user directive 2026-07-26): Android leaves for Play, and a device that
+       cannot install gets its answer in place — the scan code on a desktop, the
+       notify button on an iPhone. There was a /download page carrying a second
+       copy of exactly that, and every invite link in the app went through it; it
+       is deleted (2026-08-16) and this page is where they all land now, with
+       their invite in the query. The markup's own href is the Play listing, for
+       a visitor with no JS. */
+    var dl = document.getElementById('dl');
+    var dlNote = document.getElementById('dl-note');
+    var dlQr = document.getElementById('dl-qr');
+    var qrDrawn = false;
+
+    function closeDl() { dl.setAttribute('hidden', ''); document.body.style.overflow = ''; }
+    function openDl() {
+      dlNote.textContent = window.OnceStore.isIOS ? T.ui.noteIOS : T.ui.noteDesktop;
+      /* The iPhone state is the one this dialog is opened in most: the printed
+         card sends everybody to `/`, and most phones that scanned it were
+         iPhones. It may not be a dead end, so it carries the one action there
+         is. */
+      var dlIos = document.getElementById('dl-ios');
+      dlIos.textContent = T.ui.iosNotify;
+      dlIos.hidden = !window.OnceStore.isIOS;
+      if (!dlIos.dataset.wired) {
+        dlIos.dataset.wired = '1';
+        dlIos.addEventListener('click', function () { reportVisit('notify'); });
+      }
+      dl.removeAttribute('hidden');
+      document.body.style.overflow = 'hidden';
+      if (window.OnceStore.isIOS || qrDrawn) return;
+      /* The encoder is ~30KB and only a desktop ever needs it, so it is fetched on
+         the first press and never on load. The code points straight at Play: this
+         page carries no referral code to preserve. */
+      qrDrawn = true;
+      var s = document.createElement('script');
+      s.src = 'qr.js?v=1';
+      s.onload = function () {
+        /* Straight at Play, EXCEPT when this visit carries an invite: then the
+           code is THIS page's URL, so the invite survives the hop from screen to
+           phone and the phone's own platform is read there rather than here. A
+           code pointing at Play would hand an iPhone a listing it cannot use and
+           would drop a group token that only this page knows how to pass on. */
+        var target = window.OnceStore.referrer() ? location.href : window.OnceStore.url();
+        dlQr.innerHTML = window.OnceQR.svg(target, window.OnceStore.qrColors);
+      };
+      document.head.appendChild(s);
+    }
+
+    function wireDownloadButtons() {
+      Array.prototype.forEach.call(document.querySelectorAll('a[data-dl]'), function (a) {
+        if (a.dataset.dlWired) return;
+        a.dataset.dlWired = '1';
+        /* Counted on every route out of here, Android included — that one goes
+           straight to the store and never opens the dialog, so without this the
+           funnel would be missing exactly the visitors who converted. */
+        a.addEventListener('click', function () { reportVisit('download'); });
+        if (window.OnceStore.isAndroid) { a.href = window.OnceStore.url(); return; }
+        a.addEventListener('click', function (e) {
+          e.preventDefault();
+          closeMenu();
+          openDl();
+        });
+      });
+    }
+    document.getElementById('dl-close').addEventListener('click', closeDl);
+    Array.prototype.forEach.call(document.querySelectorAll('[data-close-dl]'), function (el) {
+      el.addEventListener('click', closeDl);
+    });
+
+    /* ---------- Mobile menu ---------- */
+    var mobileMenu = document.getElementById('mobile-menu');
+    var menuToggle = document.getElementById('menu-toggle');
+    function openMenu() { mobileMenu.classList.add('open'); menuToggle.setAttribute('aria-expanded', 'true'); document.body.style.overflow = 'hidden'; }
+    function closeMenu() { mobileMenu.classList.remove('open'); menuToggle.setAttribute('aria-expanded', 'false'); document.body.style.overflow = ''; }
+    menuToggle.addEventListener('click', openMenu);
+    document.getElementById('menu-close').addEventListener('click', closeMenu);
+    Array.prototype.forEach.call(document.querySelectorAll('[data-close-menu]'), function (el) { el.addEventListener('click', closeMenu); });
+
+    /* The floating download CTA has no show/hide logic any more (user directive
+       2026-07-27): it is the only download button on a phone, so it stays put.
+       The drawer paints over it when the menu is open, which is enough. */
+
+    /* ---------- Header scrolled state ---------- */
+    var header = document.getElementById('header');
+    function onScroll() { header.classList.toggle('scrolled', window.scrollY > 8); }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    document.body.classList.add('has-mobile-cta');
+
+    /* ---------- Initial language ---------- */
+    var params = new URLSearchParams(location.search);
+    var urlLang = params.get('lang');
+    // Read the browser's whole ordered preference list, not just navigator.language:
+    // on Windows a Hebrew UI often still reports navigator.language as "en-US" while
+    // listing Hebrew further down navigator.languages. If the browser knows Hebrew
+    // at all, honour it — 'iw' is the legacy Hebrew code some send.
+    var browserLang = (function () {
+      var list = (navigator.languages && navigator.languages.length)
+        ? navigator.languages
+        : [navigator.language || ''];
+      for (var i = 0; i < list.length; i++) {
+        var l = String(list[i]).toLowerCase();
+        if (l.indexOf('he') === 0 || l.indexOf('iw') === 0) return 'he';
+      }
+      return 'en';
+    })();
+    var initial = SUPPORTED.indexOf(urlLang) >= 0 ? urlLang : browserLang;
+    render(initial);
+
+    /* Start the entrance now that the first screen it stages is in the DOM.
+       Two frames, not one: the first is where the browser takes in the markup
+       render() just wrote, and only from the second is the from-state of every
+       animation a style its element has actually held. Adding the class in the
+       same tick can drop the opening pieces on a cold load. The head script's
+       timeout is the backstop and is idempotent. */
+    (function () {
+      var root = document.documentElement;
+      var start = function () { root.classList.add('go'); };
+      if (window.requestAnimationFrame) requestAnimationFrame(function () { requestAnimationFrame(start); });
+      else start();
+    })();
+  })();
+  </script>
+</body>
+</html>

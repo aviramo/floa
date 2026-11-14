@@ -15,6 +15,7 @@ export const appsPage = {
       apps: [
         { name: "אקורדים", text: "ספריית שירים עם האקורדים על ההברה שלהם, ועורך לשירים שלך.", img: "assets/apps/chords.png", href: "https://chords.floa.co.il/" },
         { name: "Roster", text: "ניהול משתתפים לכמה עסקים: הרשמה, הגעה, תשלום ותגיות, מהטלפון.", img: "assets/apps/roster.svg", href: "https://roster.floa.co.il/" },
+        { name: "Once", text: "אפליקציית היכרות בזמן אמת, והאתר שלה.", img: "assets/apps/once.png", href: "https://once.floa.co.il/" },
         { name: "חיפוש עבודה", text: "הגשת מועמדות אוטומטית למשרות שמתאימות לך, ומעקב אחרי כל אחת.", img: "assets/apps/jobs.svg", href: "https://jobs.floa.co.il/" },
         { name: "AUM", text: "ריטריט יומי של מדיטציה: דף הרשמה, ואדמין לנרשמים ולסימון הגעה.", img: "assets/apps/aum.png", href: "https://aum.floa.co.il/" },
         { name: "טל אמיתי לביא", text: "אמנות, ריטריטים וביודנסה: האתר של טל בפרדס חנה.", img: "assets/apps/tal.png", href: "https://tal.floa.co.il/" },
@@ -26,7 +27,6 @@ export const appsPage = {
       head: "מחוץ ל-FLOA",
       sub: "נבנו כאן, וחיים בכתובת משלהם",
       apps: [
-        { name: "Once", text: "אפליקציית היכרות בזמן אמת.", img: "assets/apps/once.png", href: "https://once-lake.vercel.app/" },
         { name: "יוצאים להרפתקה", text: "דף נחיתה ומערך הרשמה לאירועים.", img: "assets/apps/harpatka.png", href: "https://harpatka.co.il/" },
       ],
     },

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Once</title>
+
+  <!-- Link-preview card. A friend invite (/f/<CODE>) is rewritten here by
+       web/src/proxy.ts for every visitor, WhatsApp's crawler included. Same
+       feature-graphic art as the group invite (group.html) and the personal
+       invite and the home page, so every share unfurls the same card. Copy is
+       static (a crawler never runs the script). -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Once" />
+  <meta property="og:title" content="Once | מפגש אחד בזמן אמת" />
+  <meta property="og:description" content="היכרות כמו בחיים האמיתיים. אדם אחד בכל פעם, 10 דקות להשיב להזמנה" />
+  <meta property="og:image" content="https://once.floa.co.il/og-image.png?v=2" />
+  <meta property="og:image:width" content="1024" />
+  <meta property="og:image:height" content="500" />
+  <meta property="og:image:alt" content="Once — אדם אחד בכל פעם" />
+  <meta property="og:locale" content="he_IL" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Once | מפגש אחד בזמן אמת" />
+  <meta name="twitter:description" content="היכרות כמו בחיים האמיתיים. אדם אחד בכל פעם, 10 דקות להשיב להזמנה" />
+  <meta name="twitter:image" content="https://once.floa.co.il/og-image.png?v=2" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=12" />
+  <!-- The site palette, generated from the app's colors — same source as every
+       other page here, so this hand-off flashes the app's own page purple. -->
+  <link rel="stylesheet" href="/tokens.css?v=44" />
+  <style>
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg); color: var(--ink);
+      display: flex; align-items: center; justify-content: center;
+      text-align: center; padding: 24px;
+    }
+    .card { max-width: 320px; }
+    h1 { font-size: 23px; font-weight: 800; margin: 0 0 8px; }
+    p { font-size: 17px; color: var(--accent); margin: 0 0 20px; line-height: 1.5; }
+    a.btn {
+      display: inline-block; text-decoration: none;
+      background: var(--brand); color: var(--brand-ink); font-weight: 700;
+      padding: 13px 24px; border-radius: 14px; font-size: 17px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Once</h1>
+    <p>פותחים את האפליקציה…</p>
+    <!-- invite.js repoints this at the home page with the invite attached.
+         It is only the manual escape hatch: with no app to catch the link the
+         script forwards there on its own within a moment. -->
+    <a class="btn" id="fallback" href="/">להורדת האפליקציה</a>
+  </div>
+  <!-- Hand off to the installed app, else forward to the home page. Shared
+       with the group invite (/g/) — same behaviour, different link shape. -->
+  <script src="/invite.js?v=3"></script>
+</body>
+</html>

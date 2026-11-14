@@ -5,7 +5,7 @@ export const projects = {
     icon: "app",
     name: "Once",
     title: "אפליקציית היכרות בזמן אמת",
-    href: "https://once-lake.vercel.app/",
+    href: "https://once.floa.co.il/",
     ariaLabel: "האפליקציה Once",
     linkLabel: "לאתר האפליקציה",
     /* One capture that already holds both halves of the product: the app screen

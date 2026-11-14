@@ -1,0 +1,42 @@
+/* AUTO-GENERATED from mobile/src/colors.ts by scripts/build-icons.mjs — do not edit by hand. */
+:root {
+  /* Surfaces — the page purple, its sunk step, and white */
+  --bg: #F1EEF8;
+  --bg-2: #E2DEEC;
+  --surface: #FFFFFF;
+
+  /* Ink — the one purple, never black */
+  --ink: #5C4A94;
+  --ink-2: rgba(92,74,148,0.72);
+  --ink-3: rgba(92,74,148,0.48);
+
+  /* Brand — actions. The SAME purple: there is no separate brand hue. */
+  --brand: #5C4A94;
+  --brand-strong: #33265B;
+  --brand-ink: #FFFFFF;
+  --brand-soft: rgba(92,74,148,0.12);
+
+  /* Accent — reading + quiet decoration. Also the one purple. */
+  --accent: #5C4A94;
+  --accent-strong: #33265B;
+  --accent-soft: rgba(92,74,148,0.12);
+
+  /* Muted + pale steps */
+  --muted: #8A7DB2;
+  --ground: #DACFEC;
+  --art-tint: #DACFEC;
+  --art-ghost: #F1EEF8;
+
+  /* Lines */
+  --border: #E2DEEC;
+  --border-strong: rgba(92,74,148,0.32);
+
+  /* Selection + the one shadow black */
+  --selection: rgba(92,74,148,0.25);
+  --scrim: #000000;
+
+  /* Shadows — the app's ink at a soft alpha */
+  --shadow-sm: 0 1px 2px rgba(92, 74, 148, 0.08);
+  --shadow-md: 0 10px 30px rgba(92, 74, 148, 0.1);
+  --shadow-lg: 0 24px 60px rgba(92, 74, 148, 0.14);
+}

@@ -94,6 +94,18 @@
         "/favicon.svg": "assets/img/favicon.svg",
         "/apple-touch-icon.png": "assets/img/apple-touch-icon.png"
       }
+    },
+    {
+      "host": "once.floa.co.il",
+      "project": "floa-site",
+      "enabled": true,
+      "folder": "once/",
+      "clean": true,
+      "icons": {
+        "/favicon.ico": "favicon.png",
+        "/favicon.svg": "favicon.svg",
+        "/apple-touch-icon.png": "app-icon.png"
+      }
     }
   ],
   "redirectOld": true

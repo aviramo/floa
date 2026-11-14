@@ -1,0 +1,1071 @@
+/* ==========================================================================
+   Once — marketing landing page
+   Palette: THE APP'S, SHARED not copied. Every colour variable lives in
+   `tokens.css`, GENERATED from `mobile/src/colors.ts` (the single source of
+   truth) by `scripts/build-icons.mjs` and @imported just below — a LIGHT scheme
+   of PALE PURPLE pages and WHITE cards. There is no beige anywhere (user
+   directive 2026-07-28: the app and this site are purple + white, nothing
+   else), and there is only ONE purple:
+
+     BRAND (--brand)   = ACTION. Buttons, links, the accent word in a heading,
+                         the presence dot. Ink on it is WHITE.
+     ACCENT/INK        = the reading purple + quiet decoration. Everything you
+                         read, plus the line-art icons, chips and step numbers.
+
+   Both resolve to the SAME value now — the app's one INK purple. The two names
+   survive because the CSS below is written against them, and because they still
+   say which JOB a rule is doing; they are no longer two hues. Hover/pressed
+   steps down to the deep purple (--brand-strong / --accent-strong).
+
+   There are no greys: every muted step is a translucent ink purple, exactly as
+   in the app. Flat only — no gradients, no frosted fills. RTL/LTR: layout uses
+   logical properties so it mirrors automatically.
+
+   To change a colour, edit `mobile/src/colors.ts` and rebuild the icons
+   (`cd mobile && node scripts/build-icons.mjs`) — never hardcode a hex here.
+   ========================================================================== */
+
+@import "tokens.css";
+
+:root {
+  color-scheme: light;
+
+  /* --- Colour is SHARED with the app --------------------------------------
+     Every colour variable (--bg, --ink, --brand, --accent, --border, the
+     shadows, …) is defined in tokens.css, GENERATED from mobile/src/colors.ts
+     by scripts/build-icons.mjs and @imported at the top of this file. Do not
+     re-declare a colour here — change it in colors.ts and rebuild the icons.
+     Only web-specific aliases (which just point at a shared var) live below. */
+  /* THE SUNK STEP (--bg-2) IS NOT A FILL ON THIS SITE (user directive
+     2026-07-27). Every surface is either the pale purple page or white; a panel
+     that used to sink one step darker now sits on the page, and the alternating
+     band tint is dropped. Never point any of these back at --bg-2. (The token
+     still exists in tokens.css — it is the app's, and --border is the same
+     value as a hairline; only the FILLS are gone from this site.) */
+  --surface-sunk: var(--bg);    /* an inset panel: the page purple, never darker */
+  /* An illustration paints NO ground of its own (user directive 2026-07-27:
+     pictures sit straight on the surface, not in a shaded rectangle), so the
+     one full-bleed rect art.js draws is transparent and every drawing shows
+     whatever surface is behind it — the page purple in a band, white in a callout. */
+  --art-bg: transparent;        /* the surface an illustration sits on */
+  --art-line: var(--border);    /* drawn borders */
+
+  /* --- The purple ramp, from the artwork into the TYPE ---------------------
+     The banner's ringed "1" is already drawn on steps of the one purple: pale
+     rings (--ground), a mid arc (--muted), the numeral itself. The headlines
+     were not — a long stanza in a single flat purple reads as a wall beside
+     that drawing (user directive 2026-07-28: vary the tone, one purple is too
+     long a run). These aliases are that ramp, pointing at the shared tokens:
+     no new hex, no second hue.
+     THE DEEP STEP (--brand-strong) IS NOT A TONE HERE (user directive
+     2026-07-28: the dark purple was rejected) — the play is the reading purple
+     against the ring purple, and nothing on this page darkens past --ink.
+     SOFT is LARGE TYPE ONLY, and only on a heading's first line: it clears 3:1
+     on the page at headline size and nothing smaller may take it. */
+  --tone-mid: var(--ink);
+  --tone-soft: var(--muted);
+
+  /* --- Radii --- */
+  --r-xs: 10px;
+  --r-sm: 14px;
+  --r-md: 18px;
+  --r-lg: 24px;
+  --r-xl: 34px;
+  --r-pill: 999px;
+
+  /* --- Layout --- */
+  --maxw: 1120px;
+  --measure: 62ch;
+  --gap: clamp(20px, 4vw, 40px);
+  --ctl-h: 44px;            /* header control (tap target) height */
+
+  /* --- Motion --- */
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --dur: 0.5s;
+
+  --font: "Rubik", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* ---------- Reset ---------- */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+/* scroll-padding clears the sticky header, so a nav link to a pillar lands on
+   that band's eyebrow instead of parking it behind the bar. */
+/* The whole page is sized off ONE root step (user directive 2026-07-27: the small
+   text was hard to read). A PERCENTAGE, not a px value, so a reader who raised
+   their browser's font size still gets it multiplied instead of overridden: 112.5%
+   of the 16px default = an 18px rem. Every `rem` below therefore lands ~12% larger
+   than it reads, and no per-rule size has to be re-tuned to keep the scale. */
+html { font-size: 112.5%; -webkit-text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: 84px; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.6;
+  font-size: 1.06rem;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+img, svg, picture { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; cursor: pointer; background: none; border: none; }
+ul { list-style: none; }
+:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+/* The app's SELECTION: a translucent green wash, never an opaque block. */
+::selection { background: var(--selection); color: var(--ink); }
+
+/* ---------- Layout helpers ---------- */
+.container {
+  width: 100%;
+  max-width: var(--maxw);
+  margin-inline: auto;
+  padding-inline: clamp(18px, 5vw, 40px);
+}
+section { position: relative; }
+.band { padding-block: clamp(64px, 10vw, 120px); }
+/* The alternating tint is GONE with the sunk step: every band is the page
+   purple, and the white cards inside it are what separate one message from the
+   next. (Painting the band white instead would have swallowed those cards,
+   which are white themselves.) The class stays so the markup keeps working. */
+.band--tint { background: var(--bg); }
+
+/* ---------- Typography ---------- */
+h1, h2, h3 { line-height: 1.12; letter-spacing: -0.02em; font-weight: 700; color: var(--ink); }
+h1 { font-size: clamp(2.15rem, 5.6vw, 3.55rem); font-weight: 800; }
+h2 { font-size: clamp(1.7rem, 3.8vw, 2.6rem); }
+h3 { font-size: clamp(1.1rem, 2vw, 1.28rem); font-weight: 600; }
+/* A stanza line (index.html's titleHTML wraps every hard-broken line in one).
+   Only the FIRST line is toned, one step lighter in the artwork's ring purple
+   (user directive 2026-07-28: that line and nothing else); every other line,
+   the accent one included, stays the full reading purple. */
+.tl { color: var(--tone-mid); }
+.tl--soft { color: var(--tone-soft); }
+h1 .accent, h2 .accent { color: var(--tone-mid); }
+p { color: var(--ink-2); }
+strong { color: var(--ink); font-weight: 600; }
+.lede { font-size: clamp(1.12rem, 1.6vw, 1.26rem); color: var(--ink-2); max-width: var(--measure); }
+
+/* Eyebrow — small green label with a leading dot. Green because it is read,
+   not pressed; orange stays reserved for the actions. */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.eyebrow::before {
+  content: "";
+  inline-size: 7px; block-size: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex: 0 0 auto;
+}
+
+/* Section heading block */
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 54px;
+  padding-inline: 26px;
+  border-radius: var(--r-sm);
+  font-weight: 700;
+  font-size: 1.02rem;
+  letter-spacing: -0.01em;
+  transition: transform 0.18s var(--ease), background 0.18s var(--ease),
+              box-shadow 0.18s var(--ease), border-color 0.18s var(--ease), color 0.18s var(--ease);
+  text-align: center;
+}
+.btn:active { transform: translateY(1px) scale(0.99); }
+.btn-primary {
+  background: var(--brand);
+  color: var(--brand-ink);
+  box-shadow: var(--shadow-sm);
+}
+.btn-primary:hover { background: var(--brand-strong); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+/* Mirrors the app's secondary <Button>: a green outline with green ink. */
+.btn-lg { min-height: 58px; padding-inline: 32px; font-size: 1.08rem; }
+.btn svg { flex: 0 0 auto; }
+
+/* ---------- Header ---------- */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  background: var(--bg); /* flat, opaque — no frosted/blurred fill */
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.25s var(--ease), background 0.25s var(--ease);
+}
+.header.scrolled { border-bottom-color: var(--border); }
+.header-inner {
+  max-width: var(--maxw);
+  margin-inline: auto;
+  padding: 14px clamp(18px, 5vw, 40px);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.brand { display: inline-flex; align-items: center; }
+/* The "in trial" sign beside the wordmark: a solid tile so nobody misses it, in
+   the ACCENT purple rather than the brand purple, which keeps the action colour to
+   the download button alone. Small and quiet enough not to take the header over. */
+.brand-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-inline-start: 10px;
+  padding: 5px 11px;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  color: var(--brand-ink);
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+  box-shadow: var(--shadow-sm);
+  white-space: nowrap;
+}
+/* A single dot catches the eye without the sign having to shout. */
+.brand-tag::before {
+  content: "";
+  inline-size: 6px; block-size: 6px;
+  border-radius: 50%;
+  background: var(--brand-ink);
+  opacity: 0.9;
+  flex: 0 0 auto;
+}
+.brand-name {
+  font-weight: 800;
+  font-size: 1.5rem;
+  letter-spacing: -0.03em;
+  color: var(--brand); /* orange wordmark — the app's brand fill */
+}
+.nav { display: flex; align-items: center; gap: 6px; margin-inline-start: auto; }
+.nav-link {
+  padding: 9px 12px;
+  border-radius: var(--r-pill);
+  font-weight: 500;
+  font-size: 1.02rem;
+  color: var(--ink-2);
+  transition: color 0.18s var(--ease), background 0.18s var(--ease);
+}
+.nav-link:hover { color: var(--ink); background: var(--accent-soft); }
+.header-actions { display: flex; align-items: center; gap: 10px; margin-inline-start: 6px; }
+.login-link {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--ink-3);
+  padding: 8px 6px;
+}
+.login-link:hover { color: var(--ink-2); }
+.header-cta { min-height: 46px; padding-inline: 20px; font-size: 1rem; }
+
+/* Language switcher */
+.lang-switcher { position: relative; }
+.lang-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--ink-2);
+}
+.lang-btn:hover { border-color: var(--accent); color: var(--accent); }
+.lang-chevron { transition: transform 0.2s var(--ease); }
+.lang-btn[aria-expanded="true"] .lang-chevron { transform: rotate(180deg); }
+.lang-menu {
+  position: absolute;
+  inset-inline-end: 0;
+  top: calc(100% + 8px);
+  min-width: 150px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow-md);
+  padding: 6px;
+  z-index: 80;
+}
+.lang-menu[hidden] { display: none; }
+.lang-menu button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--r-xs);
+  font-weight: 500;
+  font-size: 1.02rem;
+  color: var(--ink-2);
+  text-align: start;
+}
+.lang-menu button:hover { background: var(--accent-soft); color: var(--ink); }
+.lang-menu button.active { color: var(--accent); font-weight: 600; }
+.lang-check { opacity: 0; }
+.lang-menu button.active .lang-check { opacity: 1; }
+
+/* Mobile menu toggle */
+.menu-toggle {
+  display: none;
+  inline-size: var(--ctl-h); block-size: var(--ctl-h);
+  align-items: center; justify-content: center;
+  border-radius: var(--r-xs);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--ink);
+}
+.menu-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ---------- Feature-graphic band ---------- */
+/* The Play listing's picture, full bleed under the header. The drawing paints no
+   ground of its own, so the band reads as one surface with the hero, and the two
+   compositions swap on width: the long one on a wide screen, the store's own 2:1
+   arrangement on a phone. */
+.banner { background: var(--bg); }
+.banner .art { inline-size: 100%; block-size: auto; display: block; }
+.banner-art--compact { display: none; }
+.banner + .hero { padding-block-start: clamp(20px, 3vw, 40px); }
+
+/* ---------- Hero ---------- */
+.hero { padding-block: clamp(48px, 8vw, 96px); overflow: clip; }
+.hero-copy { max-width: 640px; container-type: inline-size; }
+.hero h1 { margin-bottom: 18px; }
+/* The hero stanza is the longest run of type on the page, so it is where the
+   ramp does the most work: mid, then the ring purple, then deep on the line
+   that lands. (It used to be three lines of the one --brand purple.) */
+/* The hero headline is a hard-broken stanza whose repetition only lands while
+   every line keeps its own row, so it is sized off its OWN column (cqi) rather
+   than the viewport: the two-column band hands the copy a column much narrower
+   than the page, which is exactly where a vw-scaled headline re-wraps. The
+   coefficient is the widest line's measured width (he 8.25em, en 8.83em) with a
+   little margin. Browsers without container units fall back to the h1 clamp. */
+.hero h1 { font-size: min(3.55rem, 11cqi); }
+.hero-sub { font-size: clamp(1.12rem, 1.7vw, 1.3rem); color: var(--ink-2); max-width: 54ch; }
+/* No .hero-cta: the hero holds no download button (user directive 2026-07-27). */
+.hero-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 26px; }
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 0.98rem;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.pill::before {
+  content: "";
+  inline-size: 6px; block-size: 6px; border-radius: 50%;
+  background: var(--accent);
+}
+
+/* ---------- The question ----------
+   The one line on the page addressed to the reader, in the gap the hero used to
+   leave empty. It is a white card like every other card here (user directive
+   2026-07-27, reversing the filled purple slab): what makes it the odd one out
+   is what is IN it, not its colour, so the question is set at headline weight in
+   brand purple with the focus drawing beside it, and it carries no eyebrow, no
+   chips and no lede the four messages all have. */
+.ask { padding-block: clamp(24px, 4vw, 48px); }
+.ask-slab {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-md);
+  padding: clamp(28px, 4.5vw, 56px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr);
+  align-items: center;
+  gap: clamp(20px, 3vw, 44px);
+  overflow: hidden;
+}
+.ask-q {
+  font-size: clamp(1.5rem, 3.4vw, 2.35rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--brand);
+  max-width: 17ch;
+}
+.ask-a {
+  margin-top: 16px;
+  font-size: clamp(1.02rem, 1.4vw, 1.16rem);
+  color: var(--ink-2);
+  max-width: 44ch;
+}
+/* On white the drawing needs no re-pointing: it reads the page palette like
+   every other scene, and the card's own surface is the rim colour of the faces. */
+.ask-art {
+  aspect-ratio: 3 / 2;
+  align-self: center;
+  min-inline-size: 0;
+}
+[dir="rtl"] .ask-art .art { transform: scaleX(-1); }
+@media (max-width: 860px) {
+  .ask-slab { grid-template-columns: 1fr; }
+  .ask-q, .ask-a { max-width: none; }
+  .ask-art { aspect-ratio: 16 / 9; }
+}
+
+/* ---------- Media placeholder component ---------- */
+.media {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 14px;
+  padding: 26px;
+  overflow: hidden;
+}
+/* A slot that carries an illustration (art.js): the art fills the frame edge to
+   edge, so none of the placeholder chrome (tag, icon, caption) applies — AND
+   the frame itself is gone (user directive 2026-07-27). No card, no border, no
+   shadow, no fill: the drawing lies directly on the page. The chrome above is
+   kept for the labelled placeholder a missing artwork key falls back to. */
+.media--art {
+  padding: 0;
+  gap: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  border-radius: 0;
+}
+.art { inline-size: 100%; block-size: 100%; display: block; }
+/* App UI mirrors with the page like the rest of the layout does: in Hebrew the
+   menu, the cards and the invite swap edges. */
+[dir="rtl"] .media--art .art { transform: scaleX(-1); }
+
+.media--wide { aspect-ratio: 16 / 10; border-radius: var(--r-lg); width: 100%; }
+
+.media-icon {
+  inline-size: 56px; block-size: 56px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+  flex: 0 0 auto;
+}
+.media-name { font-weight: 700; font-size: 1.02rem; color: var(--ink); }
+.media-desc { font-size: 0.95rem; line-height: 1.5; color: var(--ink-2); max-width: 34ch; }
+.media-tag {
+  position: absolute;
+  inset-block-start: 12px;
+  inset-inline-end: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--accent);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 4px 9px;
+  border-radius: var(--r-pill);
+}
+
+/* ---------- Generic split (text + visual) ---------- */
+.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: clamp(28px, 5vw, 72px);
+}
+.split--media-start .split-visual { order: -1; }
+.split-visual { display: flex; justify-content: center; }
+.split-text .lede { margin-top: 16px; }
+
+/* ---------- Chips row (matching / hearts facets) ---------- */
+.chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-weight: 500;
+  font-size: 1rem;
+  color: var(--ink);
+}
+.chip svg { color: var(--accent); }
+
+/* ---------- Callout ---------- */
+/* A pillar's `note`: one sub-message lifted OUT of the body paragraph and given
+   a headline, a paragraph and the section's artwork inside a single card, so it
+   reads as a message of its own and not as a clause. It stands where the bare
+   media figure stands on the other pillars, so it carries that frame's chrome
+   (surface, border, shadow) plus a solid brand bar on the leading edge, and the
+   drawing inside it drops its own frame. Flat surface, no gradient. */
+.callout {
+  width: 100%;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-inline-start: 4px solid var(--brand);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+.callout-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+.callout-title svg { color: var(--brand); flex: 0 0 auto; }
+.callout p { font-size: 1.06rem; line-height: 1.6; }
+/* The drawing sits straight on the card's own surface: no frame of its own and
+   no panel behind it (user directive 2026-07-26). Nothing has to be re-pointed
+   here any more — --art-bg is transparent site-wide, so the drawing simply
+   shows the card's white. */
+.callout .media {
+  margin-top: 14px;
+  border: 0;
+  box-shadow: none;
+}
+/* The note's own chips close the card under the drawing. They sit on the card's
+   white, so they take the sunk step as their fill to stay legible tiles. */
+.callout .chips { margin-top: 14px; }
+.callout .chip { background: var(--surface-sunk); border-color: transparent; }
+
+
+/* ---------- Final CTA ----------
+   NOT a card (user directive 2026-07-27): the message right before it already
+   arrives in a white card, and a second one stacked under it read badly. The
+   closing block is plain centred copy on the page itself — no white surface, no
+   border, no radius, no shadow and no brand rule across the top. */
+.final {
+  padding: clamp(8px, 2vw, 20px) 0;
+  text-align: center;
+}
+.final .lede { margin-inline: auto; margin-top: 14px; }
+.final-media { margin-top: clamp(32px, 5vw, 48px); max-width: 720px; margin-inline: auto; }
+.final-media .media--wide { aspect-ratio: 16 / 9; }
+
+.contact { margin-top: clamp(36px, 5vw, 52px); text-align: center; font-size: 1.02rem; color: var(--ink-2); }
+.contact a { color: var(--brand); font-weight: 600; }
+.contact a:hover { color: var(--brand-strong); }
+
+/* ---------- Legal pages (privacy / terms / child safety) ----------
+   These pages carry only <main class="legal"> and plain prose, so the whole
+   page shell lives here: the same container width, the same ink ramp and the
+   same green/orange split as the landing page. */
+.legal {
+  max-width: 820px;
+  margin-inline: auto;
+  padding: clamp(28px, 6vw, 64px) clamp(18px, 5vw, 40px) clamp(48px, 8vw, 88px);
+}
+.legal h1 { margin-bottom: 6px; }
+.legal h2 {
+  font-size: clamp(1.15rem, 2.4vw, 1.5rem);
+  margin-top: clamp(28px, 4vw, 40px);
+  margin-bottom: 10px;
+}
+.legal p { margin-bottom: 12px; }
+.legal .updated { color: var(--ink-3); font-size: 1rem; margin-bottom: 8px; }
+.legal ul { display: grid; gap: 8px; margin-bottom: 12px; }
+.legal li {
+  position: relative;
+  color: var(--ink-2);
+  padding-inline-start: 20px;
+}
+.legal li::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 4px;
+  inset-block-start: 0.65em;
+  inline-size: 6px; block-size: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.legal a { color: var(--brand); font-weight: 600; }
+.legal a:hover { color: var(--brand-strong); }
+.legal .contact {
+  margin-top: clamp(32px, 5vw, 48px);
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  text-align: start;
+}
+
+/* ---------- Footer ---------- */
+.footer {
+  border-top: 1px solid var(--border);
+  padding-block: 40px;
+  text-align: center;
+  background: var(--bg);
+}
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 14px;
+  font-size: 1rem;
+}
+.footer-links a { color: var(--ink-2); }
+.footer-links a:hover { color: var(--brand); }
+.footer-links .sep { color: var(--ink-3); }
+/* A separator whose two links ended up on different lines (see syncFooterSeps):
+   it divides nothing there, and a dot at the start or the end of a line is a
+   mark hanging off the words. */
+.footer-links .sep.is-cut { display: none; }
+.footer-copy { margin-top: 14px; font-size: 0.95rem; color: var(--ink-3); }
+
+/* ---------- Sticky mobile CTA ----------
+   ALWAYS on screen on a phone (user directive 2026-07-27): it is the only
+   download button there, so it never slides away. No is-hidden state. */
+.mobile-cta {
+  position: fixed;
+  inset-inline: 12px;
+  inset-block-end: 12px;
+  z-index: 55;
+  display: none;      /* shown from the phone breakpoint down */
+  box-shadow: var(--shadow-lg);
+}
+.mobile-cta .btn { width: 100%; }
+
+/* ---------- Download answer ---------- */
+/* What a press gets on a device that cannot install: the same note (and, on a
+   desktop, the same scan code) the download page gives, without leaving the page.
+   Same surface language as every other tile here: flat purple-on-white, no glow. */
+.dl { position: fixed; inset: 0; z-index: 95; display: grid; place-items: center; padding: 20px; }
+.dl[hidden] { display: none; }
+.dl-backdrop { position: absolute; inset: 0; background: color-mix(in srgb, var(--ink) 42%, transparent); }
+.dl-card {
+  position: relative;
+  inline-size: min(360px, 100%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 26px 24px 28px;
+  text-align: center;
+}
+.dl-close { position: absolute; inset-block-start: 8px; inset-inline-end: 8px; }
+.dl-title { font-weight: 800; font-size: 1.2rem; color: var(--ink); }
+.dl-note { margin-top: 10px; color: var(--ink-2); font-weight: 500; line-height: 1.5; }
+/* The iPhone state's one action. Full width of the card, so it reads as the
+   thing to do rather than as a link inside the sentence above it. */
+.dl-cta { margin-top: 18px; width: 100%; }
+.dl-qr:not(:empty) { margin-top: 18px; display: flex; justify-content: center; }
+.dl-qr svg { inline-size: 190px; block-size: 190px; display: block; border-radius: var(--r-xs); }
+
+/* ---------- Skip link ---------- */
+.skip-link {
+  position: fixed;
+  top: 12px;
+  inset-inline-start: 12px;
+  transform: translateY(-150%);
+  background: var(--surface);
+  color: var(--brand);
+  padding: 10px 16px;
+  border-radius: var(--r-xs);
+  border: 1px solid var(--border);
+  font-weight: 600;
+  z-index: 100;
+  transition: transform 0.2s var(--ease);
+}
+.skip-link:focus { transform: none; }
+
+/* ==========================================================================
+   ARRIVAL
+   The page reads top to bottom, so it ARRIVES top to bottom, and the same
+   thing never arrives twice. Two clocks drive it and they do not overlap:
+
+     html.js-intro.go   the FIRST SCREEN, on load — the header, the picture
+                        (entrance.css) and the hero
+                        stanza. None of it is scroll-triggered, because none
+                        of it waits for a scroll that has already happened.
+     html.js-reveal     everything below the fold, on the IntersectionObserver,
+                        as each band comes up.
+
+   Both are set by JS and only when reduced motion is off, so a reader who has
+   asked for less, or whose JS never ran, meets the page fully painted and
+   still — never a blank box waiting for a class.
+
+   The vocabulary is deliberately small: text RISES, a card SETTLES (the same
+   lift with a touch of scale, over a longer beat), a visual comes in FROM THE
+   SIDE IT STANDS ON, and a row of chips does not move at all — its chips do,
+   one after another. Four arrivals, assigned by what a thing IS, which is what
+   makes the page varied without making it busy. Everything shares --in-ease
+   (entrance.css): one hand, many gestures.
+
+   Nothing here loops or drifts. A page that keeps moving after it has landed
+   is asking to be watched; this one is asking to be read.
+   ========================================================================== */
+
+/* ---------- Below the fold: reveal on scroll ----------
+   Hiding is gated behind html.js-reveal, which JS only adds when the
+   IntersectionObserver is actually driving the reveals. If JS fails or the
+   observer is unavailable, content is fully visible by default — never blank. */
+.js-reveal .reveal { opacity: 0; transform: translateY(16px); transition: opacity var(--dur) var(--in-ease), transform var(--dur) var(--in-ease); }
+.js-reveal .reveal.in { opacity: 1; transform: none; }
+
+/* A CARD settles rather than rises: a longer beat and a hair of scale, which is
+   what makes a big white tile read as coming to rest instead of sliding up. */
+.js-reveal .reveal--card { transform: translateY(22px) scale(0.985); transition-duration: 0.72s; }
+
+/* A VISUAL arrives from the edge it stands on, so the two-column band assembles
+   outwards from its text rather than everything drifting up together. The SIGN
+   is the variable, not the distance, so the mirror under RTL and the collapse to
+   one column are each stated once. */
+.split-visual { --side: 26px; --side-dir: 1; }
+.split--media-start .split-visual { --side-dir: -1; }
+[dir="rtl"] .split-visual { --side-dir: -1; }
+[dir="rtl"] .split--media-start .split-visual { --side-dir: 1; }
+.js-reveal .reveal--side {
+  transform: translateX(calc(var(--side, 0px) * var(--side-dir, 1))) translateY(10px);
+  transition-duration: 0.72s;
+}
+
+/* A STAGGER container is a starting gun, not a thing that moves: it exists so
+   the observer has something to mark, and its children carry the arrival. */
+.js-reveal .reveal--stagger { opacity: 1; transform: none; }
+
+/* The text column runs in reading order — eyebrow, heading, paragraph, chips —
+   each a step behind the one above it, so the band composes itself instead of
+   appearing all at once. */
+.js-reveal .split-text > .reveal.in:nth-child(2) { transition-delay: 0.08s; }
+.js-reveal .split-text > .reveal.in:nth-child(3) { transition-delay: 0.16s; }
+.js-reveal .split-text > .reveal.in:nth-child(4) { transition-delay: 0.24s; }
+
+/* Chips: the row holds still and the tiles land one by one. */
+.js-reveal .chips .chip {
+  opacity: 0;
+  transform: translateY(10px) scale(0.96);
+  transition: opacity 0.5s var(--in-ease), transform 0.5s var(--in-ease);
+}
+.js-reveal .chips.in .chip { opacity: 1; transform: none; }
+.js-reveal .chips.in .chip:nth-child(1) { transition-delay: 0.20s; }
+.js-reveal .chips.in .chip:nth-child(2) { transition-delay: 0.26s; }
+.js-reveal .chips.in .chip:nth-child(3) { transition-delay: 0.32s; }
+.js-reveal .chips.in .chip:nth-child(4) { transition-delay: 0.38s; }
+.js-reveal .chips.in .chip:nth-child(5) { transition-delay: 0.44s; }
+.js-reveal .chips.in .chip:nth-child(6) { transition-delay: 0.50s; }
+
+/* ---------- The first screen: on the clock ----------
+   The banner's own build is entrance.css's. What follows is the copy beside it.
+   The stanza is the page's signature: it arrives LINE BY LINE, which is the one
+   thing on the page that only the hero gets. */
+
+/* A transform on an INLINE box is ignored, so a stanza line has to be an
+   inline-block to be moved at all. `<br>` still ends every line and a line too
+   long for its column still wraps inside its own box, so the layout is
+   unchanged — checked against the pre-change render, not by eye. */
+.tl { display: inline-block; }
+
+.js-intro .header,
+.js-intro .hero-copy .eyebrow,
+.js-intro .hero h1 .tl,
+.js-intro .hero-sub,
+.js-intro .hero-pills .pill,
+.js-intro .mobile-cta { opacity: 0; }
+
+.js-intro.go .header { animation: fade-in 0.55s var(--in-ease) 0.06s both; }
+.js-intro.go .hero-copy .eyebrow { animation: rise-in 0.58s var(--in-ease) 0.40s both; }
+/* nth-of-type and not nth-child: the lines are separated by <br>, which is an
+   element child too, so counting children would skip every other line. */
+.js-intro.go .hero h1 .tl { animation: rise-in 0.66s var(--in-ease) both; }
+.js-intro.go .hero h1 .tl:nth-of-type(1) { animation-delay: 0.50s; }
+.js-intro.go .hero h1 .tl:nth-of-type(2) { animation-delay: 0.58s; }
+.js-intro.go .hero h1 .tl:nth-of-type(3) { animation-delay: 0.66s; }
+.js-intro.go .hero h1 .tl:nth-of-type(4) { animation-delay: 0.74s; }
+.js-intro.go .hero-sub { animation: rise-in 0.6s var(--in-ease) 0.82s both; }
+.js-intro.go .hero-pills .pill { animation: rise-in 0.52s var(--in-ease) both; }
+.js-intro.go .hero-pills .pill:nth-child(1) { animation-delay: 0.92s; }
+.js-intro.go .hero-pills .pill:nth-child(2) { animation-delay: 0.98s; }
+.js-intro.go .hero-pills .pill:nth-child(3) { animation-delay: 1.04s; }
+.js-intro.go .hero-pills .pill:nth-child(4) { animation-delay: 1.10s; }
+
+/* The floating button comes up from the edge it lives on — the one arrival on
+   the page that is a slide and not a rise, because it is the one thing that is
+   not part of the page's column. It is last: the reader is offered the app
+   after he has been told what it is. */
+@keyframes cta-rise { from { opacity: 0; transform: translateY(150%); }
+                        to { opacity: 1; transform: none; } }
+.js-intro.go .mobile-cta { animation: cta-rise 0.62s var(--in-ease) 1.18s both; }
+
+/* ==========================================================================
+   INSIDE THE PICTURES
+   Every illustration on this page builds itself when its band arrives, the way
+   the banner does on load — and each one builds in the order its OWN message is
+   made, which is why the timings live down here beside the sections and not in
+   the drawing. art.js states only what the PARTS are (`sc-*`, see `part`
+   there); this states when each of them shows up.
+
+   The vocabulary is the entrance's: something that is present RISES or POPS, a
+   stroke DRAWS itself, and a connector GROWS from the end it starts at — which
+   only the path knows, so the pivot is the one thing art.js states inline.
+
+   Same gate as everything else below the fold: hidden under html.js-reveal,
+   played when the container the observer is watching takes `.in`. Every rule
+   here therefore carries the .js-reveal prefix — without it a build would run
+   under reduced motion, where `.in` is put on everything at once and no gate
+   class is ever set.
+   ========================================================================== */
+
+@keyframes grow-x { from { opacity: 0; transform: scaleX(0); }
+                      to { opacity: 1; transform: none; } }
+
+/* A piece scales about its OWN middle. Not .sc-link: its pivot is an END, and
+   art.js states it inline in the drawing's coordinates. */
+.js-reveal .reveal .sc-lead,
+.js-reveal .reveal .sc-aside,
+.js-reveal .reveal .sc-face,
+.js-reveal .reveal .sc-member,
+.js-reveal .reveal .sc-hub,
+.js-reveal .reveal .sc-mark,
+.js-reveal .reveal .sc-ring,
+.js-reveal .reveal .sc-dial,
+.js-reveal .reveal .sc-cell { transform-box: fill-box; transform-origin: 50% 50%; }
+
+.js-reveal .reveal .sc-lead,
+.js-reveal .reveal .sc-aside,
+.js-reveal .reveal .sc-crowd,
+.js-reveal .reveal .sc-face,
+.js-reveal .reveal .sc-member,
+.js-reveal .reveal .sc-hub,
+.js-reveal .reveal .sc-mark,
+.js-reveal .reveal .sc-ring,
+.js-reveal .reveal .sc-dial,
+.js-reveal .reveal .sc-band,
+.js-reveal .reveal .sc-title,
+.js-reveal .reveal .sc-cell,
+.js-reveal .reveal .sc-link { opacity: 0; }
+/* Undrawn, not hidden: one dash the length of the line. */
+.js-reveal .reveal .sc-spoke,
+.js-reveal .reveal .sc-friend,
+.js-reveal .reveal .sc-sweep,
+.js-reveal .reveal .sc-hands { stroke-dasharray: 1; stroke-dashoffset: 1; }
+
+/* The subject of a picture is the first thing in it, always. */
+.js-reveal .reveal.in .sc-lead { animation: card-in 0.72s var(--in-ease) 0.08s both; }
+.js-reveal .reveal.in .sc-link { animation: grow-x 0.5s var(--in-ease) 0.34s both; }
+
+/* ---- The question: one person's whole attention ----
+   The two of them arrive and connect, the rings close around the one who is
+   being looked at, and the crowd outside turns up last and quietly — it is the
+   twenty other conversations, and none of them is looking at you. */
+.js-reveal .ask-slab.in .sc-lead { animation: pop-in 0.5s var(--pop-ease) 0.10s both; }
+.js-reveal .ask-slab.in .sc-face { animation: pop-in 0.5s var(--pop-ease) 0.22s both; }
+/* Outwards from the face, so the DOM order (widest ring first) is read back to
+   front: the innermost ring is the last of the three and goes first. */
+.js-reveal .ask-slab.in .sc-ring { animation: ring-in 0.6s var(--in-ease) 0.66s both; }
+.js-reveal .ask-slab.in .sc-ring ~ .sc-ring { animation-delay: 0.58s; }
+.js-reveal .ask-slab.in .sc-ring ~ .sc-ring ~ .sc-ring { animation-delay: 0.50s; }
+.js-reveal .ask-slab.in .sc-crowd { animation: fade-in 0.7s var(--in-ease) 0.80s both; }
+
+/* ---- One person at a time: the screen that is clear, and the piles set aside ---- */
+.js-reveal #one .in .sc-aside { animation: rise-in 0.6s var(--in-ease) 0.32s both; }
+.js-reveal #one .in .sc-aside ~ .sc-aside { animation-delay: 0.42s; }
+
+/* ---- Real time: the clock does not switch on, it STARTS ----
+   The dial appears, the spent sweep draws itself round, and only then do the
+   hands and their hub land on it. */
+.js-reveal #now .in .sc-dial  { animation: pop-in 0.5s var(--pop-ease) 0.46s both; }
+.js-reveal #now .in .sc-sweep { animation: draw-in 0.8s var(--in-ease) 0.58s both; }
+.js-reveal #now .in .sc-hands { animation: draw-in 0.5s var(--in-ease) 0.80s both; }
+.js-reveal #now .in .sc-hub   { animation: pop-in 0.4s var(--pop-ease) 0.95s both; }
+
+/* ---- Shared circles: the circle GROWS OUT OF ITS CENTRE ----
+   Hub, then a spoke at a time, each member landing just behind the spoke that
+   reached him, and the friend link last, which is the point of the picture. */
+.js-reveal #circles .in .sc-ring { animation: ring-in 0.6s var(--in-ease) 0.44s both; }
+.js-reveal #circles .in .sc-hub  { animation: pop-in 0.46s var(--pop-ease) 0.50s both; }
+.js-reveal #circles .in .sc-spoke { animation: draw-in 0.45s var(--in-ease) both; }
+.js-reveal #circles .in .sc-spoke:nth-child(1) { animation-delay: 0.56s; }
+.js-reveal #circles .in .sc-spoke:nth-child(2) { animation-delay: 0.62s; }
+.js-reveal #circles .in .sc-spoke:nth-child(3) { animation-delay: 0.68s; }
+.js-reveal #circles .in .sc-spoke:nth-child(4) { animation-delay: 0.74s; }
+.js-reveal #circles .in .sc-spoke:nth-child(5) { animation-delay: 0.80s; }
+.js-reveal #circles .in .sc-spoke:nth-child(6) { animation-delay: 0.86s; }
+.js-reveal #circles .in .sc-member { animation: pop-in 0.42s var(--pop-ease) both; }
+.js-reveal #circles .in .sc-member:nth-child(1) { animation-delay: 0.70s; }
+.js-reveal #circles .in .sc-member:nth-child(2) { animation-delay: 0.76s; }
+.js-reveal #circles .in .sc-member:nth-child(3) { animation-delay: 0.82s; }
+.js-reveal #circles .in .sc-member:nth-child(4) { animation-delay: 0.88s; }
+.js-reveal #circles .in .sc-member:nth-child(5) { animation-delay: 0.94s; }
+.js-reveal #circles .in .sc-member:nth-child(6) { animation-delay: 1.00s; }
+.js-reveal #circles .in .sc-friend { animation: draw-in 0.5s var(--in-ease) 1.06s both; }
+
+/* ---- Parents: the fortnight FILLS IN, and the one free day lights last ----
+   The card, its heading, the two of them, then the days along each row, and
+   only once the whole fortnight is on the table does the day they share light
+   up — the picture makes its point at the end of the sentence, not the start. */
+.js-reveal #parents .in .sc-title { animation: fade-in 0.5s var(--in-ease) 0.30s both; }
+.js-reveal #parents .in .sc-face  { animation: pop-in 0.46s var(--pop-ease) 0.36s both; }
+.js-reveal #parents .in .sc-face ~ .sc-face { animation-delay: 0.44s; }
+.js-reveal #parents .in .sc-cell  { animation: pop-in 0.4s var(--in-ease) both; }
+.js-reveal #parents .in .sc-cell:nth-child(1) { animation-delay: 0.42s; }
+.js-reveal #parents .in .sc-cell:nth-child(2) { animation-delay: 0.47s; }
+.js-reveal #parents .in .sc-cell:nth-child(3) { animation-delay: 0.52s; }
+.js-reveal #parents .in .sc-cell:nth-child(4) { animation-delay: 0.57s; }
+.js-reveal #parents .in .sc-cell:nth-child(5) { animation-delay: 0.62s; }
+.js-reveal #parents .in .sc-cell:nth-child(6) { animation-delay: 0.67s; }
+.js-reveal #parents .in .sc-cell:nth-child(7) { animation-delay: 0.72s; }
+/* The second row follows the first rather than racing it. */
+.js-reveal #parents .in .sc-week ~ .sc-week .sc-cell:nth-child(1) { animation-delay: 0.50s; }
+.js-reveal #parents .in .sc-week ~ .sc-week .sc-cell:nth-child(2) { animation-delay: 0.55s; }
+.js-reveal #parents .in .sc-week ~ .sc-week .sc-cell:nth-child(3) { animation-delay: 0.60s; }
+.js-reveal #parents .in .sc-week ~ .sc-week .sc-cell:nth-child(4) { animation-delay: 0.65s; }
+.js-reveal #parents .in .sc-week ~ .sc-week .sc-cell:nth-child(5) { animation-delay: 0.70s; }
+.js-reveal #parents .in .sc-week ~ .sc-week .sc-cell:nth-child(6) { animation-delay: 0.75s; }
+.js-reveal #parents .in .sc-week ~ .sc-week .sc-cell:nth-child(7) { animation-delay: 0.80s; }
+.js-reveal #parents .in .sc-band { animation: fade-in 0.55s var(--in-ease) 0.90s both; }
+.js-reveal #parents .in .sc-mark { animation: pop-in 0.5s var(--pop-ease) 1.02s both; }
+
+/* ---- The closing three: meet, invite, talk, in that order and no other ---- */
+.js-reveal .final.in .sc-lead ~ .sc-lead { animation-delay: 0.22s; }
+.js-reveal .final.in .sc-lead ~ .sc-lead ~ .sc-lead { animation-delay: 0.36s; }
+
+/* Gentle pulse (hero visual focus) */
+@keyframes soft-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.015); }
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+@media (max-width: 1024px) {
+}
+
+@media (max-width: 860px) {
+  .banner-art--long { display: none; }
+  .banner-art--compact { display: block; }
+
+  .nav, .header-actions .login-link { display: none; }
+  .menu-toggle { display: inline-flex; }
+  .header-cta { display: none; }
+
+  /* Header: wordmark on the start edge, controls pinned to the end edge.
+     Without the auto margin the actions bunch up against the brand and leave
+     the whole end half of the bar empty. */
+  .header-inner { gap: 12px; padding: 10px clamp(14px, 4vw, 24px); }
+  .header-actions { margin-inline-start: auto; gap: 8px; }
+  .lang-btn { min-height: var(--ctl-h); padding-inline: 14px; }
+
+
+  .split { grid-template-columns: 1fr; }
+  .split--media-start .split-visual, .split-visual { order: 0; }
+  /* One column: there is no side for the visual to stand on any more, so it
+     rises with the text instead of drifting in from an edge that is not there.
+     The DISTANCE is what goes to zero — the sign lives on other selectors, and
+     a media query adds no specificity to fight them with. */
+  .split-visual { --side: 0px; }
+
+
+  .mobile-cta { display: block; }
+  /* The floating button is 56px tall and sits 12px off the bottom edge, so the page
+     has to end at least 68px clear of the footer text or it covers it. The footer's
+     own bottom padding gives that room back, so the tail below the copyright stays
+     small instead of turning into an empty band. */
+  body.has-mobile-cta { padding-bottom: 76px; }
+  body.has-mobile-cta .footer { padding-block-end: 14px; }
+}
+
+@media (max-width: 560px) {
+  .brand-tag { font-size: 0.78rem; padding: 3px 8px; margin-inline-start: 8px; }
+
+  body { font-size: 1rem; }
+  :root { --ctl-h: 40px; }
+  .brand-name { font-size: 1.3rem; }
+  .header-actions { gap: 6px; }
+  .band { padding-block: clamp(48px, 12vw, 72px); }
+}
+
+/* ---------- Mobile slide-in menu ---------- */
+.mobile-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: none;
+}
+.mobile-menu.open { display: block; }
+.mobile-menu-backdrop {
+  position: absolute; inset: 0;
+  background: color-mix(in srgb, var(--ink) 42%, transparent);
+  opacity: 0; transition: opacity 0.25s var(--ease);
+}
+.mobile-menu.open .mobile-menu-backdrop { opacity: 1; }
+.mobile-menu-panel {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  inline-size: min(320px, 84vw);
+  background: var(--bg);
+  border-inline-start: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transform: translateX(6%);
+  opacity: 0;
+  transition: transform 0.28s var(--ease), opacity 0.28s var(--ease);
+}
+[dir="rtl"] .mobile-menu-panel { transform: translateX(-6%); }
+.mobile-menu.open .mobile-menu-panel { transform: none; opacity: 1; }
+.mobile-menu-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+/* The links share the header's .nav-link, which is an inline element: inside the
+   drawer they have to be a column, or they flow into each other and wrap in the
+   middle of a label. One per row, all starting on the same edge. */
+#mobile-nav { display: flex; flex-direction: column; align-items: stretch; }
+.mobile-menu-panel .nav-link {
+  font-size: 1.14rem;
+  padding: 14px 12px;
+  border-radius: var(--r-sm);
+  color: var(--ink);
+  text-align: start;
+}
+/* Aligned with the links above it, not indented by the panel's own padding. */
+.mobile-menu-panel .login-link { margin-top: 12px; display: block; text-align: start; padding-inline: 12px; }
+.menu-close {
+  inline-size: 40px; block-size: 40px;
+  display: grid; place-items: center;
+  border-radius: var(--r-xs);
+  color: var(--ink-2);
+}
+.menu-close:hover { color: var(--ink); background: var(--accent-soft); }
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  /* Neither gate class is ever set under reduce, so this is only reached by a
+     preference that changes after the page has loaded. Cutting the durations
+     does most of the work — every arrival fills `both`, so a zero-length
+     animation lands on its own `to` state — and the line under it covers the
+     pieces held back by a static rule rather than by an animation. */
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.001ms !important;
+    transition-delay: 0ms !important;
+  }
+  .js-reveal .reveal, .js-reveal .chips .chip { opacity: 1; transform: none; }
+}
