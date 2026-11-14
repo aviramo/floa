@@ -21,6 +21,11 @@ compatibility_date = "2025-01-01"
 # runtime.leadEndpoint in src/content/site.js.
 workers_dev = true
 
+# The API's own address, one for the whole domain: https://api.floa.co.il
+# (the Roster API is https://api.floa.co.il/roster/v1/). workers.dev above keeps
+# answering the same requests, so nobody who already uses it is cut off.
+routes = [{ pattern = "api.floa.co.il", custom_domain = true }]
+
 # Logs, so a failure that only happens with a real file can be read after the
 # fact instead of reproduced. Free, and off by default.
 [observability]

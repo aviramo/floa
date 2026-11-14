@@ -85,7 +85,7 @@
 
 <h2 id="base">כתובת הבסיס ועקרונות</h2>
 <p>כל הבקשות הולכות לכתובת הבסיס, ואחריה <code>/roster/v1</code>:</p>
-<figure class="code"><figcaption>כתובת הבסיס</figcaption><pre><code><span data-api-base>https://floa-lead.floa-il.workers.dev</span>/roster/v1</code></pre></figure>
+<figure class="code"><figcaption>כתובת הבסיס</figcaption><pre><code><span data-api-base>https://api.floa.co.il</span>/roster/v1</code></pre></figure>
 <ul>
   <li><b>JSON בשני הכיוונים</b>, בקידוד UTF-8. בקשת <code>POST</code> חייבת לשלוח <code>Content-Type: application/json</code>, אחרת התשובה <code>400 bad_request</code>. גוף בקשה עד 16KB (גדול מזה מחזיר <code>400 bad_request</code>), ושדות לא מוכרים מתעלמים מהם.</li>
   <li><b>כל בקשה נושאת מפתח</b>, בכותרת <code>Authorization: Bearer &lt;המפתח&gt;</code> (או בכותרת <code>X-Roster-Key</code>). המפתח קובע את העסק. מזהה עסק ששולחים בגוף הבקשה לא נקרא בכלל.</li>
@@ -172,7 +172,7 @@
 
 &lt;script&gt;
 (async function () {
-  const API = "<span data-api-base>https://floa-lead.floa-il.workers.dev</span>/roster/v1";
+  const API = "<span data-api-base>https://api.floa.co.il</span>/roster/v1";
   const KEY = "rk_pub_REPLACE_ME";   // המפתח הציבורי: בטוח בדפדפן
   const form = document.getElementById("roster-signup");
   const msg = document.getElementById("roster-msg");
@@ -244,7 +244,7 @@
 
 &lt;script&gt;
 (async function () {
-  const API = "<span data-api-base>https://floa-lead.floa-il.workers.dev</span>/roster/v1";
+  const API = "<span data-api-base>https://api.floa.co.il</span>/roster/v1";
   const KEY = "rk_pub_REPLACE_ME";
   const list = document.getElementById("roster-meetings");
 
@@ -277,7 +277,7 @@
 
 &lt;script&gt;
 document.getElementById("roster-paid").addEventListener("click", async () =&gt; {
-  const API = "<span data-api-base>https://floa-lead.floa-il.workers.dev</span>/roster/v1";
+  const API = "<span data-api-base>https://api.floa.co.il</span>/roster/v1";
   const KEY = "rk_pub_REPLACE_ME";
   const msg = document.getElementById("roster-paid-msg");
   const token = sessionStorage.getItem("roster_token");      // נשמר בהרשמה
@@ -311,7 +311,7 @@ document.getElementById("roster-paid").addEventListener("click", async () =&gt; 
 
 <h3 id="ep-meetings" class="endpoint-title"><span class="verb get">GET</span><span class="path">/meetings?limit=20</span><span class="kind pub">ציבורי</span><span class="kind sec">סודי</span></h3>
 <p>המפגשים הקרובים (מהיום ואילך, לפי שעון ישראל), מהמוקדם למאוחר. <code>limit</code> אופציונלי: מספר שלם מ־1 עד 100, וברירת המחדל 20. ערך גדול מ־100 נחתך ל־100, וערך שאינו מספר חיובי מחזיר <code>422 validation</code> עם <code>"field": "limit"</code>.</p>
-<figure class="code"><figcaption>curl</figcaption><pre><code>curl -s "<span data-api-base>https://floa-lead.floa-il.workers.dev</span>/roster/v1/meetings?limit=20" \
+<figure class="code"><figcaption>curl</figcaption><pre><code>curl -s "<span data-api-base>https://api.floa.co.il</span>/roster/v1/meetings?limit=20" \
   -H "Authorization: Bearer $ROSTER_KEY"</code></pre></figure>
 <figure class="code"><figcaption>200, JSON</figcaption><pre><code>{
   "business": { "name": "דנה יוגה" },
@@ -359,7 +359,7 @@ document.getElementById("roster-paid").addEventListener("click", async () =&gt; 
   </tbody>
 </table></div>
 <p>אילו שדות חובה נקבע לכל עסק בדף החיבורים (<code>signup_required</code>). ההרשמה חייבת להיות פתוחה, אחרת התשובה <code>409 closed</code>. כדי שלא יציפו עסק במשתתפים, מפתח ציבורי יכול ליצור <b>עד 120 משתתפים חדשים בשעה</b> לכל עסק. אחרי זה התשובה <code>429 rate_limited</code> עם <code>Retry-After</code>. הרשמה של טלפון שכבר רשום לא נספרת כמשתתף חדש.</p>
-<figure class="code"><figcaption>curl</figcaption><pre><code>curl -s -X POST "<span data-api-base>https://floa-lead.floa-il.workers.dev</span>/roster/v1/signup" \
+<figure class="code"><figcaption>curl</figcaption><pre><code>curl -s -X POST "<span data-api-base>https://api.floa.co.il</span>/roster/v1/signup" \
   -H "Authorization: Bearer $ROSTER_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -388,7 +388,7 @@ document.getElementById("roster-paid").addEventListener("click", async () =&gt; 
 
 <h3 id="ep-click" class="endpoint-title"><span class="verb post">POST</span><span class="path">/payments/click</span><span class="kind pub">ציבורי</span></h3>
 <p>דיווח של משתתף ש"שילמתי". לא רושם כסף: הוא מסמן אצל המנהל שיש תשלום שממתין לבדיקה. בגוף הבקשה: <code>participant_token</code> מההרשמה ו־<code>meeting_id</code>.</p>
-<figure class="code"><figcaption>curl</figcaption><pre><code>curl -s -X POST "<span data-api-base>https://floa-lead.floa-il.workers.dev</span>/roster/v1/payments/click" \
+<figure class="code"><figcaption>curl</figcaption><pre><code>curl -s -X POST "<span data-api-base>https://api.floa.co.il</span>/roster/v1/payments/click" \
   -H "Authorization: Bearer $ROSTER_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -408,7 +408,7 @@ document.getElementById("roster-paid").addEventListener("click", async () =&gt; 
 
 <h3 id="ep-participant" class="endpoint-title"><span class="verb get">GET</span><span class="path">/participants?phone=…</span><span class="kind sec">סודי</span></h3>
 <p>כרטיס של משתתף לפי טלפון, או לפי מזהה: <code>GET /participants/{id}</code>. מחזיר פרטים, יתרה ואת המפגשים שלו. הטלפון נכתב ספרות בלבד או עם <code>+ - ( )</code> ורווחים (3 עד 40 תווים), ו־<code>{id}</code> חייב להיות UUID.</p>
-<figure class="code"><figcaption>curl</figcaption><pre><code>curl -s "<span data-api-base>https://floa-lead.floa-il.workers.dev</span>/roster/v1/participants?phone=0501234567" \
+<figure class="code"><figcaption>curl</figcaption><pre><code>curl -s "<span data-api-base>https://api.floa.co.il</span>/roster/v1/participants?phone=0501234567" \
   -H "Authorization: Bearer $ROSTER_KEY"</code></pre></figure>
 <figure class="code"><figcaption>200, JSON</figcaption><pre><code>{
   "participant": {
@@ -448,7 +448,7 @@ document.getElementById("roster-paid").addEventListener("click", async () =&gt; 
 
 <h3 id="ep-registrations" class="endpoint-title"><span class="verb post">POST</span><span class="path">/participants/{id}/registrations</span><span class="kind sec">סודי</span></h3>
 <p>רושמת משתתף קיים למפגש. בגוף: <code>meeting_id</code>.</p>
-<figure class="code"><figcaption>curl</figcaption><pre><code>curl -s -X POST "<span data-api-base>https://floa-lead.floa-il.workers.dev</span>/roster/v1/participants/0f6d5c1e-8a47-4a6e-bd0b-5b7a9a3c2d10/registrations" \
+<figure class="code"><figcaption>curl</figcaption><pre><code>curl -s -X POST "<span data-api-base>https://api.floa.co.il</span>/roster/v1/participants/0f6d5c1e-8a47-4a6e-bd0b-5b7a9a3c2d10/registrations" \
   -H "Authorization: Bearer $ROSTER_KEY" \
   -H "Content-Type: application/json" \
   -d '{ "meeting_id": "6b0b3c2e-1f0a-4a3c-9d3e-2a5b7c8d9e01" }'</code></pre></figure>
@@ -456,7 +456,7 @@ document.getElementById("roster-paid").addEventListener("click", async () =&gt; 
 <p><code>status</code> הוא אחד מאלה: <code>registered</code> (נרשם), <code>exists</code> (כבר היה רשום), <code>past</code> (המפגש עבר), <code>full</code> (המפגש מלא). שימו לב להבדל מ־<a href="#ep-signup">הרשמה</a>: כאן מפגש מלא הוא קוד 200 עם <code>{ "status": "full" }</code>, ובהרשמה הוא <code>409 full</code>.</p>
 <h3 class="endpoint-title"><span class="verb delete">DELETE</span><span class="path">/participants/{id}/registrations/{meeting_id}</span><span class="kind sec">סודי</span></h3>
 <p>מבטלת הרשמה. תשלומים שכבר נרשמו לא נוגעים בהם.</p>
-<figure class="code"><figcaption>curl</figcaption><pre><code>curl -s -X DELETE "<span data-api-base>https://floa-lead.floa-il.workers.dev</span>/roster/v1/participants/0f6d5c1e-8a47-4a6e-bd0b-5b7a9a3c2d10/registrations/6b0b3c2e-1f0a-4a3c-9d3e-2a5b7c8d9e01" \
+<figure class="code"><figcaption>curl</figcaption><pre><code>curl -s -X DELETE "<span data-api-base>https://api.floa.co.il</span>/roster/v1/participants/0f6d5c1e-8a47-4a6e-bd0b-5b7a9a3c2d10/registrations/6b0b3c2e-1f0a-4a3c-9d3e-2a5b7c8d9e01" \
   -H "Authorization: Bearer $ROSTER_KEY"</code></pre></figure>
 <figure class="code"><figcaption>200, JSON</figcaption><pre><code>{ "status": "cancelled" }</code></pre></figure>
 <p><code>status</code>: <code>cancelled</code> (בוטלה), <code>not_registered</code> (לא היה רשום), <code>attended</code> (כבר סומן שהגיע, לא מבטלים), <code>past</code> (המפגש עבר). <b>שגיאות לשתי הנקודות:</b> <code>not_found</code> 404, <code>validation</code> 422, <code>wrong_key_kind</code> 403.</p>
@@ -475,7 +475,7 @@ document.getElementById("roster-paid").addEventListener("click", async () =&gt; 
     <tr><td><code>note</code></td><td>לא</td><td>הערה חופשית.</td></tr>
   </tbody>
 </table></div>
-<figure class="code"><figcaption>curl</figcaption><pre><code>curl -s -X POST "<span data-api-base>https://floa-lead.floa-il.workers.dev</span>/roster/v1/payments" \
+<figure class="code"><figcaption>curl</figcaption><pre><code>curl -s -X POST "<span data-api-base>https://api.floa.co.il</span>/roster/v1/payments" \
   -H "Authorization: Bearer $ROSTER_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -493,7 +493,7 @@ document.getElementById("roster-paid").addEventListener("click", async () =&gt; 
 
 <h3 id="ep-credit" class="endpoint-title"><span class="verb post">POST</span><span class="path">/participants/{id}/pay-from-credit</span><span class="kind sec">סודי</span></h3>
 <p>משלמת על מפגש מהיתרה של המשתתף. בגוף: <code>meeting_id</code>.</p>
-<figure class="code"><figcaption>curl</figcaption><pre><code>curl -s -X POST "<span data-api-base>https://floa-lead.floa-il.workers.dev</span>/roster/v1/participants/0f6d5c1e-8a47-4a6e-bd0b-5b7a9a3c2d10/pay-from-credit" \
+<figure class="code"><figcaption>curl</figcaption><pre><code>curl -s -X POST "<span data-api-base>https://api.floa.co.il</span>/roster/v1/participants/0f6d5c1e-8a47-4a6e-bd0b-5b7a9a3c2d10/pay-from-credit" \
   -H "Authorization: Bearer $ROSTER_KEY" \
   -H "Content-Type: application/json" \
   -d '{ "meeting_id": "6b0b3c2e-1f0a-4a3c-9d3e-2a5b7c8d9e01" }'</code></pre></figure>
@@ -837,7 +837,7 @@ def roster_hook():
   <li><b><code>secret_key_in_browser</code></b>: בבקשה מדפדפן נשלח מפתח סודי (<code>rk_sec_</code>). מעבירים את הקריאה לשרת שלכם, או משתמשים במפתח ציבורי אם הפעולה מותרת לו.</li>
 </ul>
 <p>כדי לראות את השגיאה עצמה, אפשר לשחזר את הבקשה עם curl, שיכול לקרוא את הגוף גם כשהדפדפן חוסם אותו:</p>
-<figure class="code"><figcaption>curl</figcaption><pre><code>curl -i "<span data-api-base>https://floa-lead.floa-il.workers.dev</span>/roster/v1/meetings" \
+<figure class="code"><figcaption>curl</figcaption><pre><code>curl -i "<span data-api-base>https://api.floa.co.il</span>/roster/v1/meetings" \
   -H "Authorization: Bearer $ROSTER_KEY" \
   -H "Origin: https://studio.example"</code></pre></figure>
 

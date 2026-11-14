@@ -12,7 +12,7 @@
      filled in with this value. The text already inside those spans is the same
      address, so the page reads correctly before, and without, this script.
      When the API moves, change this line and the text in the spans. */
-  const API_BASE = "https://floa-lead.floa-il.workers.dev";
+  const API_BASE = "https://api.floa.co.il";
 
   document.documentElement.classList.add("js");
   document.querySelectorAll("[data-api-base]").forEach((el) => { el.textContent = API_BASE; });

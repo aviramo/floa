@@ -79,6 +79,8 @@ export function validateWebhookUrl(input) {
   if (/^\d+$/.test(host.slice(host.lastIndexOf(".") + 1))) return fail("ip_literal");
   if (host === "localhost" || host.endsWith(".localhost")) return fail("localhost");
   if (host === "workers.dev" || host.endsWith(".workers.dev")) return fail("workers_dev");
+  /* the API's own address: a hook aimed at it would call this Worker back, the same loop as workers.dev */
+  if (host === "api.floa.co.il") return fail("own_host");
   if (!host.includes(".")) return fail("single_label");
   if (INTERNAL_SUFFIXES.some((s) => host.endsWith(s))) return fail("internal_host");
   if (WILDCARD_DNS.some((d) => host === d || host.endsWith(`.${d}`))) return fail("wildcard_dns");

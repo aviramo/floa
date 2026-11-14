@@ -70,6 +70,8 @@ const BAD = [
   ["https://X.WORKERS.DEV/", "workers_dev"],
   ["https://x.workers.dev./", "workers_dev"],
   ["https://workers.dev/", "workers_dev"],
+  ["https://api.floa.co.il/roster/v1/signup", "own_host"],
+  ["https://API.FLOA.CO.IL./x", "own_host"],
   ["https://intranet/x", "single_label"],
   ["https://printer.local/x", "internal_host"],
   ["https://db.internal/x", "internal_host"],

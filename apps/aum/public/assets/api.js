@@ -12,7 +12,7 @@
 (function () {
   "use strict";
 
-  var BASE = "https://floa-lead.floa-il.workers.dev/roster/v1";
+  var BASE = "https://api.floa.co.il/roster/v1";
   var KEY = "rk_pub_6ZK4VOFOC1kY6OrVMj8Yn7z8FloOWf0P";
   /* ל-roster אין שעת סיום למפגש (הוא מחשב כשעתיים מההתחלה), ובריטריט היום של AUM זה תמיד עד 16:00 */
   var END = "16:00";
