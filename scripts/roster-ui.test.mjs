@@ -158,7 +158,7 @@ const MEASURE = `(() => {
     id: d.id || "", w: Math.round(r.width), h: Math.round(r.height), left: Math.round(r.left), top: Math.round(r.top), right: Math.round(r.right), bottom: Math.round(r.bottom),
     radius: Math.max(...radii(d), ...(sheet ? radii(sheet) : [0])),
     x: xr ? { l: Math.round(xr.left - r.left), t: Math.round(xr.top - r.top), w: Math.round(xr.width), h: Math.round(xr.height) } : null,
-    headT: head ? Math.round(head.getBoundingClientRect().top - r.top) : null, titleT: ttl ? Math.round(ttl.getBoundingClientRect().top - r.top) : null, pptop, ptt,
+    headH: head ? Math.round(head.getBoundingClientRect().height + (parseFloat(getComputedStyle(head).marginBottom) || 0) - (parseFloat(getComputedStyle(head).paddingTop) || 0)) : null, headSheet: !!(head && head.classList.contains("sheet-head")), titleMid: ttl ? Math.round((ttl.getBoundingClientRect().top + ttl.getBoundingClientRect().bottom) / 2 - r.top) : null, headT: head ? Math.round(head.getBoundingClientRect().top - r.top) : null, titleT: ttl ? Math.round(ttl.getBoundingClientRect().top - r.top) : null, pptop, ptt,
     off: shell.flatMap(grid), grabTop, px, hasGrab, xShown: !!x,
     cancelBtns: [...d.querySelectorAll("button")].filter((b) => { const q = b.getBoundingClientRect(); return q.width > 0 && q.height > 0 && b.textContent.trim() === "ביטול"; }).length,
     hscroll: d.scrollWidth - d.clientWidth,
@@ -188,6 +188,20 @@ const topRhythm = (tag, m) => {
   if (m.headT === null) return;
   check(`${tag}: the header row starts at the top rhythm (${m.pptop}px from the popup top), not lower`, m.headT >= 0 && m.headT <= m.pptop, { headT: m.headT, token: m.pptop });
   if (m.titleT !== null) check(`${tag}: the title text is at most ${m.ptt}px below the popup top`, m.titleT <= m.ptt, { titleT: m.titleT, token: m.ptt });
+  /* ONE popup shell (owner: no popup restyles its own header): every popup with a .sheet-head has the same header box (row + the gap under it) and the title centred in it, whatever the popup */
+  if (m.headSheet && m.headH !== null && !/pDlg$/.test(m.id || "")) {
+    const key = "shell" + (m.hasGrab ? " grab" : " nograb"), first = HEAD_SEEN.get(key);
+    if (!first) HEAD_SEEN.set(key, { tag, h: m.headH, mid: m.titleMid });
+    else { check(`${tag}: the header box is the same height as ${first.tag} (${first.h})`, m.headH === first.h, { headH: m.headH }); if (m.titleMid !== null && first.mid !== null) check(`${tag}: the title is centred at the same place as ${first.tag} (${first.mid})`, m.titleMid === first.mid, { titleMid: m.titleMid }); }
+  }
+};
+const HEAD_SEEN = new Map();
+/* ONE field (owner: every field is the shared field element, whatever popup or page it is in): every visible control directly inside a .rfield has the same row height, the same room above the value for the floating label, the same type size and weight */
+const FIELD_PROBE = `(() => [...document.querySelectorAll("dialog[open] .rfield > :is(input:not([type=checkbox],[type=radio],[type=hidden]), select)")].filter((e) => { const r = e.getBoundingClientRect(); return r.width > 4 && r.height > 4 && !e.closest("[hidden]"); }).map((e) => { const c = getComputedStyle(e); return { id: e.id || String(e.className) || e.tagName, h: Math.round(e.getBoundingClientRect().height), pt: c.paddingTop, fs: c.fontSize, fw: c.fontWeight }; }))()`;
+const fieldGuard = async (tab, tag) => {
+  const fl = await tab.evaluate(FIELD_PROBE); if (!fl || !fl.length) return;
+  const bad = fl.filter((q) => q.h !== 46 || q.pt !== "19px" || q.fs !== "16px" || String(q.fw) !== "400");
+  check(`${tag}: its ${fl.length} field(s) are all the one shared field (46px row, 19px above the value, 16px type, weight 400)`, bad.length === 0, bad);
 };
 /* Inner scroll (owner 2026-11-13: "inside a popup there is no scrolling"): a popup whose content is taller than the window must scroll its BODY, with a real finger (CDP touch sequence) or wheel, the
    header stays in place, the last thing in it becomes fully visible, the page behind does not move, a drag up never closes it, and the popup never leaves the window. A tall block is put at the end of the
@@ -385,7 +399,7 @@ try {
             check(`${tag} #${id}: square corners`, m.radius === 0, m.radius);
             check(`${tag} #${id}: stays inside the window and has no horizontal scroll`, m.left >= -1 && m.right <= v.width + 1 && m.hscroll <= 0, { left: m.left, right: m.right, hscroll: m.hscroll });
             xExact(`${tag} #${id}`, v, m);
-            topRhythm(`${tag} #${id}`, m);
+            topRhythm(`${tag} #${id}`, m); await fieldGuard(tab, `${tag} #${id}`);
             check(`${tag} #${id}: the shell's own paddings are on the 4px grid`, m.off.length === 0, m.off);
             await scrollProbe(tab, v, `${tag} #${id}`);
             await endPadProbe(tab, `${tag} #${id}`, "dialog");
@@ -414,7 +428,7 @@ try {
             check(`${tag}: the popup has square corners`, m.radius === 0, m.radius);
             check(`${tag}: the popup stays inside the window`, m.left >= -1 && m.right <= v.width + 1 && m.hscroll <= 0, m);
             check(`${tag}: it has an X (a computer popup, or one with no grab bar)`, !!m.x || (v.mobile && m.hasGrab), m.x); xExact(tag, v, m);
-            topRhythm(tag, m);
+            topRhythm(tag, m); await fieldGuard(tab, tag);
             check(`${tag}: the shell paddings are on the 4px grid`, m.off.length === 0, m.off);
           }
           const hs = await tab.evaluate("document.documentElement.scrollWidth - window.innerWidth");

@@ -218,7 +218,7 @@ dialog::-webkit-scrollbar, dialog *::-webkit-scrollbar { display: none; width: 0
   background: var(--bg); color: var(--text); border: 1px solid var(--line); box-shadow: var(--pop); padding: var(--sp-1); }
 .qmenu { position: fixed; z-index: var(--z-sheet); display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; gap: var(--sp-1); width: min(330px, calc(100vw - 16px)); }
 .sortmenu { position: absolute; top: calc(100% + calc(var(--sp-hair) * 2)); left: 0; z-index: var(--z-sticky); min-width: 190px; }
-#sortMenu, #waMenu { position: fixed; top: 0; left: 0; z-index: var(--z-sheet); }
+#sortMenu { position: fixed; top: 0; left: 0; z-index: var(--z-sheet); }
 /* פריט תפריט בשורה: אותו מבנה בכל התפריטים (מיון, מפגשים, תקופה, תפריט הכותרת) */
 .sortmenu button, #finPerMenu .qi, .hmi { display: flex; align-items: center; gap: var(--sp-1); width: 100%; min-height: 44px; padding: 0 var(--sp-1); text-align: right; font-size: var(--fs-s); font-weight: var(--fw-medium); color: var(--text); background: transparent; border: 0; }
 @media (hover: hover) { .sortmenu button:hover, #finPerMenu .qi:hover, .hmi:hover, .mtr.mrow2:hover, .mtr.maddrow:hover, .fopt:hover{ background: var(--surface); } }
@@ -383,10 +383,10 @@ h1 { margin: 0; font-size: var(--fs-l); font-weight: var(--fw-black); letter-spa
 /* סינונים נוספים (⋯) */
 /* הסבר התמדה */
 /* תפריט שיוך למפגש ותפריט מצב ההקצאה */
-#qMenu.am { width: max-content; min-width: 0; max-width: calc(100vw - 16px); flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: var(--sp-1); padding: var(--sp-1);}
-#qMenu.am .qi { flex: 0 0 auto; height: var(--ctl); white-space: nowrap; border: 1px solid transparent; font-size: var(--fs-m); font-weight: var(--fw-bold);}
-#qMenu.am .qi { background: transparent; color: var(--text); }   /* תפריט בחירת מפגש: בלי רקע אפור (1.11.26); אפור רק בריחוף ובלחיצה */
-#qMenu.am .qi:active { background: var(--surface-2); }
+#qMenu.am, #amMenu.am { width: max-content; min-width: 0; max-width: calc(100vw - 16px); flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: var(--sp-1); padding: var(--sp-1);}
+#qMenu.am .qi, #amMenu.am .qi { flex: 0 0 auto; height: var(--ctl); white-space: nowrap; border: 1px solid transparent; font-size: var(--fs-m); font-weight: var(--fw-bold);}
+#qMenu.am .qi, #amMenu.am .qi { background: transparent; color: var(--text); }   /* תפריט בחירת מפגש: בלי רקע אפור (1.11.26); אפור רק בריחוף ובלחיצה */
+#qMenu.am .qi:active, #amMenu.am .qi:active { background: var(--surface-2); }
 @media (hover: hover) { #qMenu.am .qi:hover { background: var(--surface-2); } }
 /* תקופה בכספים */
 #finPerMenu { display: block; width: auto; min-width: 150px; max-width: 240px; max-height: 55vh; overflow-y: auto; }
@@ -576,7 +576,7 @@ html.dlg-lock { overflow: hidden; overscroll-behavior: none; }
 .nform:focus-within { border-bottom-color: var(--text); }
 .nform textarea { border-width: 0; background: transparent; flex: 1 1 auto; min-width: 0; height: auto; min-height: 24px; max-height: 140px; padding: 0; resize: none; line-height: 1.4; font-size: var(--fs-m); }
 .nattach { color: var(--text-2); }
-.nform .nattach { position: relative; height: 24px; margin-inline-end: calc(var(--sp-1) * -1); }   /* הסמל עצמו (לא הכפתור) בקצה השמאלי, בקו של הקו התחתון, היתרה והזמנים */
+.nform .nattach { position: relative; height: 24px; margin-inline-end: calc(var(--sp-1) * -1) !important; }   /* הסמל עצמו (לא הכפתור) בקצה השמאלי, בקו של הקו התחתון, היתרה והזמנים */
 .nform .nattach::before { content: ""; position: absolute; inset: calc(calc(var(--sp-hair) * 2.5) * -1) calc(calc(var(--sp-hair) * 0.5) * -1); }   /* שטח לחיצה של 44px, בלי להגביה את השורה */
 .nform .nsave { color: var(--text); }
 .nprev { position: relative; flex: 1 1 auto; min-width: 0; height: 60px; display: flex; align-items: center; }
@@ -708,7 +708,6 @@ html.dlg-lock { overflow: hidden; overscroll-behavior: none; }
 .mmenu .mtop { position: sticky; top: 0; z-index: var(--z-raised); margin: calc(var(--sp-1) * -1) calc(var(--sp-1) * -1) 0; padding: var(--sp-1) var(--sp-1) var(--sp-hair); background: var(--bg); }   /* the sticky top ends exactly where the next row begins: a taller bottom padding covered the top of a highlighted row below it */   /* בלי קו בין "כל המשתתפים" לסוג הראשון (31.10.26). "כל המשתתפים" בראש התפריט, מעל סוגי המפגשים, וקבוע בזמן גלילה */
 
 /* 6.4 הגדרות */
-#setDlg .sheet-head { position: relative; }
 #setDlg .setgrp { padding: 0; margin-bottom: var(--sp-2); }
 #setDlg .settitle { padding: var(--sp-1) 0 0; margin: 0; }
 #setDlg .setinp { font-weight: var(--fw-bold); }
@@ -920,7 +919,6 @@ html.is-loading .vbar { display: none; }
 #viewMenu .fsh b { flex: 0 1 auto; font-size: var(--fs-s); font-weight: var(--fw-bold); color: var(--text); }
 #viewMenu .mgc { display: flex; flex-wrap: wrap; gap: var(--sp-1); margin-top: var(--sp-1); margin-inline-start: calc(var(--sp-1) * -1); }   /* בלי רקע: הטקסט של הצ'יף הראשון בקו של הכותרת, והרקע של הנבחר נכנס לריפוד התפריט */
 #viewMenu .fsh .mgc { flex: 1 1 auto; margin: 0; }   /* שורת הטוגל והמונה בראש התפריט, בלי כותרת */
-#waMenu .wcap { padding: var(--sp-1) var(--sp-1) var(--sp-hair); font-size: var(--fs-xs); font-weight: var(--fw-bold); color: var(--text-2); }
 #viewMenu .mc[data-sc] { background: transparent; color: var(--sfg); }   /* דרך הגעה: בלי רקע, בצבע שלה; נבחרת: מתמלאת בגוון הכהה */
 #viewMenu .mc.zero { opacity: .45; }
 
@@ -1003,26 +1001,8 @@ html.is-loading .vbar { display: none; }
 /* ---------- תבניות הודעה לוואטסאפ (31.10.26) ---------- */
 .vbar #listWa { left: var(--gut); }   /* עמודת הוואטסאפ בקצה השמאלי, מעל כפתורי הוואטסאפ שבשורות */
 
-#waMenu { max-width: min(320px, calc(100vw - 16px)); overflow-y: auto; overscroll-behavior: contain; }
-#waMenu button { min-width: 0; }
-#waMenu .wmi { display: flex; align-items: center; gap: var(--sp-1); min-width: 0; }
-#waMenu .wmi svg { width: 18px; height: 18px; flex: none; }
-#waMenu .wmn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-#waMenu .wmi small { color: var(--text-2); font-size: var(--fs-xs); font-weight: var(--fw-bold); white-space: nowrap; }
 
-#waMenu .wseg { display: grid; padding: var(--sp-hair) 0; }   /* הכל / נשלח / לא נשלח זה מתחת לזה: שורות של התפריט, הטקסט בקו של שם התבנית */
-#waMenu .wdot { display: grid; place-items: center; width: 18px; height: 18px; flex: none; }   /* עמודת הסמלים של התפריט: הנקודה של הבחירה (UI.fdot) בקו של הסמלים */
-#waMenu .wdot .fdot { position: static; width: 8px; height: 8px; box-shadow: none; }
-#waMenu .wsf.zero { color: var(--text-2); }
-#waMenu .wbot { margin-top: var(--sp-hair); border-top: 1px solid var(--line); }   /* הקו האופקי: מתחתיו סינון השליחה (כשנבחרה תבנית) והוספת תבנית */
-#waMenu .wadd { font-weight: var(--fw-bold); }
 /* התבנית שנבחרה: במקום ה-✓ עיפרון שפותח את עריכת ההודעה; שורה וכפתור נפרדים, כדי ששטח הלחיצה של העיפרון לא יבחר שוב את התבנית */
-#waMenu .wrow { position: relative; }
-#waMenu .wrow > [data-wt] { padding-inline-end: calc(var(--sp-hair) * 11); }
-#waMenu [data-wt]::after { content: none; }   /* בלי וי: הנבחר מסומן ברקע */
-#waMenu .wedit { position: absolute; inset-block: 0; inset-inline-end: 0; width: 44px; padding: 0; justify-content: center; background: transparent; color: var(--text); }
-@media (hover: hover) { #waMenu .wedit:hover { background: var(--line); } }
-#waMenu .wedit:active { background: var(--line); }
 .mtlist { display: grid; gap: var(--sp-1); margin-bottom: var(--sp-1); }
 
 .mtedit { display: grid; gap: var(--sp-1); margin-bottom: var(--sp-1); }   /* רווח בין "מחיקת התבנית" לכפתור השמירה שאחריו */
@@ -1045,19 +1025,18 @@ html.is-loading .vbar { display: none; }
 #listTags .hsearch:focus-within .ic, #listTags .hsearch:has(input:not(:placeholder-shown)) .ic { display: none; }
 /* תפריטים צפים (תפריט ראשי, מיון, עריכה, תקופה, סינון עמודה, וואטסאפ): הרוחב לפי התוכן, וריפוד שווה משני הצדדים (1.11.26); בלי רוחב מינימלי קבוע */
 .hmenu, #sortMenu, #finPerMenu, #fMenu, #waMenu { width: max-content; min-width: 0; max-width: min(320px, calc(100vw - 16px)); }
-#waMenu { width: min(288px, calc(100vw - 16px)); }   /* אותו רוחב בכל המצבים, עם תבנית נבחרת ובלעדיה; שם ארוך נחתך */
 
 /* סמל תגית עם מונה ליד השם (רשימה וכותרת הכרטיס): כפתור שפותח תפריט בחירת תגיות; המונה צמוד לסמל, בלי אפס (1.11.26) */
 
 /* מתג (1.11.26, לפי הסקיל ui-ux-pro-max: role="switch" / aria-checked, המצב מוצג גם במיקום הידית ולא רק בצבע, שורה בגובה 44px, בלי הזזת פריסה). מרובע (בלי פינות מעוגלות); דולק = שחור, כבוי = אפור. בתפריט העריכה: "תגיות בשורה" */
 /* תווית "מפגשים" משמאל למפגש הכי ישן (1.11.26): טיפוגרפיה של כותרת הכרטיס (20px) באפור, ממורכזת אנכית ברצועה, עם רווח אופקי */
 /* תפריט "שיוך למפגש": ארוך מדי = גלילה פנימית (הגובה המרבי נקבע ב-placeMenuV); ליד המועד שם המפגש, שנחתך ב-"..." כשהוא ארוך (1.11.26) */
-#qMenu.am { overflow-y: auto; overscroll-behavior: contain; display: grid; grid-template-columns: max-content max-content minmax(0, 1fr); row-gap: var(--sp-1); align-content: start; }   /* שלוש עמודות משותפות לכל השורות (subgrid): התאריכים, השעות והשמות כל אחד על אותו קו אנכי */
-#qMenu.am .qi { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; align-items: center; justify-content: normal; column-gap: var(--sp-hair); min-width: 0; padding: 0 var(--sp-1); text-align: start; }   /* הכול מיושר לימין והרוחב לפי התוכן (השורה הרחבה ביותר קובעת) */
-#qMenu.am .qhd { grid-column: 1 / -1; padding: var(--sp-hair) var(--sp-1) 0; text-align: start; }   /* תת הכותרת "שיוך למפגש": בקו של הטקסט בשורות */
-#qMenu.am .amd, #qMenu.am .amh { text-align: start; font-variant-numeric: tabular-nums; }
-#qMenu.am .amh::before, #qMenu.am .amn::before { content: "·"; margin-inline-end: var(--sp-hair); }   /* נקודה מפרידה עם רווחים קטנים משני הצדדים (4px), והעמודות עדיין על אותו קו */
-#qMenu.am .amn { min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: start; color: var(--text-2); font-weight: var(--fw-medium); }
+#qMenu.am, #amMenu.am { overflow-y: auto; overscroll-behavior: contain; display: grid; grid-template-columns: max-content max-content minmax(0, 1fr); row-gap: var(--sp-1); align-content: start; }   /* שלוש עמודות משותפות לכל השורות (subgrid): התאריכים, השעות והשמות כל אחד על אותו קו אנכי */
+#qMenu.am .qi, #amMenu.am .qi { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; align-items: center; justify-content: normal; column-gap: var(--sp-hair); min-width: 0; padding: 0 var(--sp-1); text-align: start; }   /* הכול מיושר לימין והרוחב לפי התוכן (השורה הרחבה ביותר קובעת) */
+#qMenu.am .qhd, #amMenu.am .qhd { grid-column: 1 / -1; padding: var(--sp-hair) var(--sp-1) 0; text-align: start; }   /* תת הכותרת "שיוך למפגש": בקו של הטקסט בשורות */
+#qMenu.am .amd, #qMenu.am .amh, #amMenu.am .amd, #amMenu.am .amh { text-align: start; font-variant-numeric: tabular-nums; }
+#qMenu.am .amh::before, #qMenu.am .amn::before, #amMenu.am .amh::before, #amMenu.am .amn::before { content: "·"; margin-inline-end: var(--sp-hair); }   /* נקודה מפרידה עם רווחים קטנים משני הצדדים (4px), והעמודות עדיין על אותו קו */
+#qMenu.am .amn, #amMenu.am .amn { min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: start; color: var(--text-2); font-weight: var(--fw-medium); }
 /* תפריט המיון: בשורה הנבחרת חץ כיוון (למטה = ברירת המחדל, למעלה = הפוך) במקום ✓; לחיצה נוספת על הנבחרת הופכת (1.11.26) */
 #sortMenu button[aria-checked="true"]::after { content: none; }
 #sortMenu .sdir { display: inline-flex; margin-inline-start: auto; }
@@ -1521,8 +1500,6 @@ html.is-loading .hsearch { visibility: hidden; }
 #pPager .mlist .mrow.hl .mnm, .mlist .mrow.hl .mnm { font-weight: var(--fw-regular); color: var(--text-2); }
 /* כפתור היצירה בכותרת הפופאפ (משמאל), כבוי כשחסר שדה חובה */
 /* עריכת מפגש: הכותרת (עם כפתור היצירה) קבועה למעלה ולא נגללת עם הטופס */
-#mDlg .sheet-head { position: sticky; top: 0; z-index: var(--z-raised); background: var(--bg); margin-top: calc(var(--pp-pt-sheet) * -1); padding-top: var(--pp-pt-sheet); margin-bottom: 0; padding-bottom: var(--sp-2); }
-#mDlg .sheet-head { z-index: var(--z-raised); background: var(--bg); }   /* רקע אטום מעל שדות הטופס (שדות עם תווית צפה הם position: relative) */
 #mDlg .grab { z-index: var(--z-sticky); }
 /* שורת המדיה: כל הפריטים (תווית, פתיחה, הסרה, החלפה) באותו קו, במרכז האנכי */
 /* שחזור נוסח ברירת מחדל של "אישור מקום": כפתור טקסט שקט, ריחוף ולחיצה באפור ניטרלי */
@@ -1541,7 +1518,6 @@ html.is-loading .hsearch { visibility: hidden; }
 /* שדה טקסט עם תוויות (tokenField): ה-margin-top של העורך קרס החוצה מה-.field, ולכן השדה היה בגובה 27 פיקסל והתווית (עם הרקע המלא) כיסתה את הקו התחתון. flow-root מונע את הקריסה: גובה 46 והקו במקומו */
 .field:has(> .tokf) { display: flow-root; }
 /* עריכת סוג מפגש (5.11.26): כמו עריכת מפגש: כפתור השמירה בכותרת (משמאל), והכותרת קבועה למעלה ולא נגללת עם הטופס */
-#setDlg .sheet-head { position: sticky; top: 0; z-index: var(--z-raised); background: var(--bg); margin-top: calc(var(--pp-pt-sheet) * -1); padding-top: var(--pp-pt-sheet); margin-bottom: 0; padding-bottom: var(--sp-2); }
 #setDlg .grab { z-index: var(--z-sticky); }
 /* שדות סכום בשקלים (5.11.26): אותו דבר בכל המקומות: השקל בתוך השדה, צמוד לספרות (בצד ההתחלה, ימין), והספרות מיושרות לימין. בשדה רגיל הוא מופיע כשיש ערך או בפוקוס, כדי שלא יתנגש בתווית שיושבת על הקו בשדה ריק. שדה סכום חדש: class="field money" בלי (₪) בתווית */
 .field.money > input { padding-inline-start: var(--sp-2); text-align: start; }
@@ -1626,9 +1602,9 @@ a.hmi { text-decoration: none; }   /* "החלפת עסק" הוא קישור, ו�
 
 /* פופאפ הסינון, המיון והוואטסאפ: הדיאלוג עצמו הוא הגולל, ונפתח עד ראש המסך כשהתוכן ארוך.
    הסיבה לתקלה (13.11.26): התפריט שבתוכו היה גם הוא מיכל גלילה (overflow auto עם overscroll-behavior: contain). מיכל כזה שלא נגלל בפועל בולע את הנגיעה ולא מעביר אותה להורה, ולכן האצבע על הרשימה לא גללה כלום. הכלל: בתוך פופאפ יש מיכל גלילה אחד, והמיכלים שבתוכו הם מיכלי תוכן (overflow visible). הבדיקה: roster-ui.test.mjs, scrollProbe */
-:is(#viewDlg, #sortDlg, #waDlg) { max-height: calc(100dvh - var(--envtop, 0px)); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
-:is(#viewDlg, #sortDlg, #waDlg) .sheet { max-height: none; overflow: visible; }
-:is(#viewDlg, #sortDlg, #waDlg) :is(#viewMenu, #sortMenu, #waMenu) { max-height: none !important; overflow: visible !important; height: auto !important; top: auto !important; left: auto !important; }   /* גם מיקום וגובה שנשארו בסגנון inline מתפריט צף ישן לא נוגעים בו */
+:is(#viewDlg, #sortDlg, #waDlg, #amDlg) { max-height: calc(100dvh - var(--envtop, 0px)); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
+:is(#viewDlg, #sortDlg, #waDlg, #amDlg) .sheet { max-height: none; overflow: visible; }
+:is(#viewDlg, #sortDlg, #waDlg, #amDlg) :is(#viewMenu, #sortMenu, #waMenu) { max-height: none !important; overflow: visible !important; height: auto !important; top: auto !important; left: auto !important; }   /* גם מיקום וגובה שנשארו בסגנון inline מתפריט צף ישן לא נוגעים בו */
 
 /* המשתתף האחרון שנגענו בו: טקסט "אחרון" בפינה השמאלית התחתונה של הכרטיס, במקום פס הצל */
 .wrap > .list > .row.last, .wrap > .list > .row.sel, .wrap > .list > .row.sel:hover { box-shadow: none; }
@@ -2062,13 +2038,9 @@ dialog .sheet-head { min-height: var(--pp-head); align-items: center; }
 dialog .dclose { width: var(--pp-x); min-width: var(--pp-x); height: var(--pp-x); margin-block: 0; }
 dialog .sheet { padding-inline: var(--pp-px); }
 /* one anatomy for every popup that is a centered window on a computer and a bottom sheet on touch: the same paddings, header and gap (popup.css tokens) */
-:is(#pDlg, #allocDlg, #ppDlg, #mDlg, #mailDlg, #cDlg, #lockDlg, #tplDlg, #tplPrevDlg, #iDlg, #viewDlg, #sortDlg, #waDlg, #finFormDlg, #mfPopDlg, #onbDlg):not(.drawer):not(.side) .sheet { padding: var(--pp-pt-sheet) var(--pp-px) var(--sheet-b); }
-:is(#tplDlg, #tplPrevDlg, #mailDlg, #cDlg, #lockDlg, #mfPopDlg, #finFormDlg, #viewDlg, #sortDlg, #waDlg, #mDlg):not(.drawer):not(.side) .sheet-head { margin-top: calc(-1 * var(--pp-pt-sheet)); padding-top: var(--pp-pt-sheet); padding-bottom: 0; margin-bottom: var(--pp-head-gap); }   /* a sticky header: it starts at the very top of the scroller (the sheet padding above it is pulled in), its top spacing is part of it, the gap below it is painted too so content does not show through while scrolling */
-:is(#tplDlg, #tplPrevDlg, #mailDlg, #cDlg, #lockDlg, #mfPopDlg, #finFormDlg, #viewDlg, #sortDlg, #waDlg, #mDlg):not(.drawer):not(.side) .sheet-head::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: var(--pp-head-gap); background: var(--bg, var(--bg)); pointer-events: none; }
-:is(#allocDlg, #ppDlg, #iDlg, #onbDlg):not(.drawer):not(.side) .sheet-head { margin-top: 0; padding-top: 0; }
+:is(#pDlg, #allocDlg, #ppDlg, #mDlg, #mailDlg, #cDlg, #lockDlg, #tplDlg, #tplPrevDlg, #iDlg, #viewDlg, #sortDlg, #waDlg, #amDlg, #finFormDlg, #mfPopDlg, #onbDlg):not(.drawer):not(.side) .sheet { padding: var(--pp-pt-sheet) var(--pp-px) var(--sheet-b); }
 :is(#setDlg, #stDlg, #prDlg, #finDlg) .sheet { padding-top: var(--pp-pt-sheet); }
 @media (max-width: 759px) { :is(#setDlg, #stDlg, #prDlg, #finDlg) .sheet { padding-bottom: var(--sheet-b); } }
-:is(#tplDlg, #tplPrevDlg, #prDlg, #mailDlg, #cDlg, #lockDlg, #mfPopDlg, #finFormDlg, #viewDlg, #sortDlg, #waDlg) .sheet-head { position: sticky; top: 0; z-index: var(--z-raised); background: var(--bg, var(--bg)); margin-top: calc(var(--pp-pt-sheet) * -1); padding-top: var(--pp-pt-sheet); margin-bottom: 0; padding-bottom: var(--sp-2); }   /* the dialogs where the dialog itself is the scroller: the header stays (the others are flex columns with an inner scroller, or already sticky) */
 .grab { z-index: var(--z-sticky); }
 #tplDlg .sheet, #tplPrevDlg .sheet { max-height: none; }   /* the sheet is as tall as its content, the dialog scrolls and the sticky header stays (a capped sheet let the header scroll away with the overflow) */
 #cDlg .sheet-head h2, #lockDlg .sheet-head h2, #mfPopDlg .sheet-head h2 { margin-bottom: 0; }
@@ -2076,7 +2048,6 @@ dialog .sheet { padding-inline: var(--pp-px); }
 /* touch: the bar is a strip of the header height ABOVE the header (not an overlay on its first 28px), like the shell, so the paddings can be the shared tokens; a sticky header sticks under it */
 @media (max-width: 759px) {
   .grab { height: var(--pp-top); margin-bottom: 0; }
-  :is(#tplDlg, #tplPrevDlg, #prDlg, #mailDlg, #cDlg, #lockDlg, #mfPopDlg, #finFormDlg, #viewDlg, #sortDlg, #waDlg, #setDlg, #mDlg) .sheet-head { top: var(--pp-top); }
 }
 
 /* ===== kit extras (p14_kit) ===== */
@@ -2280,7 +2251,7 @@ body { font-family: var(--font); }
 .mlist .mrow .mdt .mlabel.mlabel.mlabel { border: 0 !important; background: transparent !important; box-shadow: none !important; padding-inline: 0 !important; }
 
 /* ===== the selected card, ONE look for every card (participant, meeting): white card, a thin bar on the right edge, no dark frame, no "נבחר" word ===== */
-:root { --sel-bar: calc(var(--sp-hair) * 0.75); --sel-glow: radial-gradient(circle 24px at 24px 74%, color-mix(in srgb, var(--text) 6%, transparent), transparent); }   /* the card touched last: a soft smudge of grey inside its left part, 22px in from the edge in the LOWER half of the card, very faint, fading out on every side (a spot on the card, not a frame, not a bar). --sel-bar stays for the bars of the buttons */
+:root { --sel-bar: calc(var(--sp-hair) * 0.75); --sel-glow: radial-gradient(circle 26px at 24px 72%, color-mix(in srgb, var(--text) 15%, transparent), transparent); }   /* the card touched last: a soft smudge of grey inside its left part, 22px in from the edge in the LOWER half of the card, very faint, fading out on every side (a spot on the card, not a frame, not a bar). --sel-bar stays for the bars of the buttons */
 .wrap > .list > .row.sel > .rswipe-fg, .wrap > .list > .row.last > .rswipe-fg { background-image: var(--sel-glow); }
 .mlist .mrow.hl, #pPager .mlist .mrow.hl, .mlist .mrow.ucard.hl { background: var(--bg); border-color: var(--line); box-shadow: var(--card-shadow); background-image: var(--sel-glow); }
 .mlist .mrow.hl::after, #pPager .mlist .mrow.hl::after { content: none; }
@@ -2500,7 +2471,7 @@ html.is-loading .msub { display: block; visibility: hidden; }
 .chiprow .stc[data-cr="gen"] .gc, .chiprow .stc[data-cr="gen"] .gc.on { box-shadow: none !important; }   /* only the chip carries the bar; inside it the chosen side is just bold */
 .chiprow .stc[data-cr="gen"] .gc + .gc { border-inline-start: 1px solid var(--line-2) !important; height: 16px; align-self: center; background-image: none; }
 /* the gender box holds two numbers: it is wider than the buttons that hold one */
-.chiprow .cq > .stc[data-cr="gen"] { flex: 1.6 1 0 !important; }
+.chiprow .cq > .stc[data-cr="gen"] { flex: 2 1 0 !important; }
 /* hidden means hidden: the empty column switch no longer keeps its width at the start of the search row */
 #listTags #waFab[hidden] { display: none !important; }
 #listTags #listMore:empty { display: none; }
@@ -2519,8 +2490,6 @@ html.is-loading .msub { display: block; visibility: hidden; }
 .wrap > .list .row .rowwa.rowwa.rowwa.ratt.msgc, .wrap > .list .row.sel .rowwa.rowwa.rowwa.ratt.msgc, .wrap > .list .row.last .rowwa.rowwa.rowwa.ratt.msgc { border-color: color-mix(in srgb, var(--yellow) 45%, var(--line)); }
 .wrap > .list .row .rowwa.rowwa.rowwa.ratt { border-top-width: 0 !important; border-left-width: 0 !important; border-right-width: 1px !important; border-bottom-width: 1px !important; }   /* only the right and bottom edge: top and left are the card's own */
 /* the chosen option of all / sent / not sent is marked like the chosen message template above it: a grey background, no dot */
-#waMenu .wsf[aria-pressed="true"] { background: var(--surface-2); color: var(--text); font-weight: var(--fw-bold); }
-#waMenu .wsf::after { content: none; }
 /* the bar under the message button follows the chosen filter: green for sent, red for not sent (neutral stays for any other state) */
 #listTags .wm3 .wm3b.filtered[data-wfv="1"] { box-shadow: inset 0 calc(var(--sel-bar) * -1) 0 var(--green); }
 #listTags .wm3 .wm3b.filtered[data-wfv="0"] { box-shadow: inset 0 calc(var(--sel-bar) * -1) 0 var(--red); }
@@ -2589,3 +2558,135 @@ html.is-loading .msub { display: block; visibility: hidden; }
 /* the shadow and the frame belong to the WHITE card that slides, not to the row it slides inside: the ground under it (red, green) has no shadow of its own, and wherever the card has moved from, the ground is flat. */
 .wrap > .list > .row[data-swipe], .wrap > .list > .row.last[data-swipe], .wrap > .list > .row.sel[data-swipe], .wrap > .list > .row.sel[data-swipe]:hover, #pPager .mlist .mrow[data-swipe], #pPager .mlist .mrow.hl[data-swipe], .mlist .mrow[data-swipe] { box-shadow: none; background-color: transparent; border-color: transparent; }
 .wrap > .list > .row[data-swipe] > .rswipe-fg, .mlist .mrow[data-swipe] > .rswipe-fg { background-color: var(--bg); border: 1px solid var(--line); box-shadow: var(--card-shadow); }
+/* the pinned "all participants" row of the meetings menu: flat, with the menu's own background, flush with the top edge (no strip above it for the list to show through, no rounded corners) */
+#mMenu { padding-top: 0; }
+#mMenu .mtop { border-radius: 0; margin-top: 0; background: var(--bg); }
+/* "add meeting type" / "add meeting" in the meetings menu: a row of text with a plus, like the rows around it, not a button */
+#mMenu .mtr.maddrow { justify-content: flex-start; margin-inline: calc(var(--sp-1) * -1); padding-inline: var(--sp-2); }   /* spans the menu like the rows above: the text starts where their names do */
+#mMenu .mtr.maddrow .madd2 { background: transparent; border: 0; color: var(--text); min-height: var(--ib); padding: 0; gap: var(--sp-1); font-weight: var(--fw-bold); }
+/* the head count of a meeting, before its date: a person symbol and the number, no chip, written like the age and gender mark of a participant card (the number grey, the symbol dark) */
+.mdt .mpc { flex: none; margin-inline-start: var(--sp-1); margin-inline-end: var(--sp-1); color: var(--text-2); font-weight: var(--fw-bold); }
+.mdt .mpc .gl { color: var(--text); font-weight: var(--fw-black); }
+.mdt .mpc .gl .ic { vertical-align: -2px; stroke-width: 2.4; }
+/* the participant card: the pages run to the bottom edge of the screen and scroll UNDER the safe area; the room at the end of the list is the pages own end padding (not a strip under the pager) */
+#pDlg .ppanel[data-panel="main"]:not([hidden]) { padding-bottom: 0; }
+#pDlg .ppanel[data-panel="main"] > .ppager { padding-bottom: 0; }
+#pDlg:not(.newp) .ppanel[data-panel="main"] .ppage { padding-bottom: var(--end-pad); }
+/* the meetings page: the add button sticks to the bottom edge and carries the end room itself (one gutter under it); without the button the page has its own end padding */
+#pDlg:not(.newp) .ppanel[data-panel="main"] #pgM:not(:has(#pAddMeet:not([hidden]))) { padding-bottom: var(--end-pad); }
+#pDlg:not(.newp) .ppanel[data-panel="main"] #pgM:has(#pAddMeet:not([hidden])) { padding-bottom: 0; }
+/* the filter / view button of the chip row is a SQUARE, as wide as the WhatsApp tile under it (one control size); the other chips share the rest (the gender chip grows) */
+.chiprow .cq > .fspair, .chiprow .cq > .stlast > .fspair { flex: 0 0 var(--ctl) !important; width: var(--ctl) !important; min-width: var(--ctl) !important; }
+/* the card touched last (a participant, or the meeting we came from): a BAR along its RIGHT edge instead of the smudge, the same bar the pressed chips carry */
+.wrap > .list > .row.sel > .rswipe-fg, .wrap > .list > .row.last > .rswipe-fg, .mlist .mrow.hl[data-swipe] > .rswipe-fg { background-image: none; box-shadow: var(--card-shadow), inset calc(var(--sel-bar) * -1) 0 0 var(--text-3); }
+.mlist .mrow.hl:not([data-swipe]), #pPager .mlist .mrow.hl:not([data-swipe]), .mlist .mrow.ucard.hl:not([data-swipe]) { background-image: none; box-shadow: var(--card-shadow), inset calc(var(--sel-bar) * -1) 0 0 var(--text-3); }
+.mlist .mrow.hl[data-swipe], #pPager .mlist .mrow.hl[data-swipe], .mlist .mrow.ucard.hl[data-swipe] { background-image: none; }
+/* the place on the date line of a meeting card sits a gutter in from the card's left edge, level with the age/gender mark on the right (18px from its edge) */
+.mlist .mrow .mdt .mwh { margin-inline-end: var(--sp-1); }
+/* a popup title is never see-through: the sticky header of every popup sits ABOVE the content that scrolls under it (fields, cards and chips that are positioned drew over it), with its own solid background; the grab bar stays above the header */
+.mdlg .sheet-head, :is(#tplDlg, #tplPrevDlg, #prDlg, #mailDlg, #cDlg, #lockDlg, #mfPopDlg, #finFormDlg, #viewDlg, #sortDlg, #waDlg, #amDlg, #setDlg, #mDlg, #stDlg, #finDlg, #pDlg) .sheet-head { z-index: var(--z-sticky); background: var(--bg); }
+.grab { z-index: calc(var(--z-sticky) + 1); }
+/* paid marketing in the settings: an ACCORDION. The closed row is the name, what it costs and the balance; opened, the whole card is there to edit */
+.srcacc { padding: 0; border-bottom: 1px solid var(--line); }
+.srchead { display: flex; align-items: center; gap: var(--sp-1); width: 100%; min-height: var(--ctl); padding: var(--sp-1) 0; border: 0; background: transparent; color: var(--text); text-align: start; cursor: pointer; }
+.srcdot { flex: none; width: var(--sp-2); height: var(--sp-2); border-radius: var(--r-chip); }
+.srcnm { flex: none; font-size: var(--fs-m); font-weight: var(--fw-bold); }
+.srcsum { flex: 1 1 auto; min-width: 0; margin-inline-start: var(--sp-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-2); font-size: var(--fs-s); font-weight: var(--fw-medium); }
+.srcsum i { font-style: normal; font-weight: var(--fw-bold); }
+.srcsum i.owe { color: var(--red); }
+.srcsum i.ok { color: var(--green); }
+.srchead > .ic { flex: none; color: var(--text-2); transition: transform .2s var(--ease, ease); }
+.srcacc.is-open > .srchead > .ic { transform: rotate(180deg); }
+/* opens and closes with motion: the body is a grid whose single row grows from 0 to its content (and fades in) */
+.srcbody { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .26s var(--ease, ease), opacity .2s var(--ease, ease); }
+.srcacc.is-open > .srcbody { grid-template-rows: 1fr; opacity: 1; }
+.srcinner { min-height: 0; overflow: hidden; }
+.srcacc.is-open > .srcbody .srcinner { padding-bottom: var(--sp-2); }
+@media (prefers-reduced-motion: reduce) { .srchead > .ic, .srcbody { transition: none; } }
+/* paid marketing: its fields are the shared field element (.rfield.field), laid out in two columns; only this grid and the settle button are card-specific */
+.srccard .srcgrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: var(--sp-1); row-gap: var(--sp-1); align-items: end; grid-auto-flow: row; }
+.srccard .srcgrid > .rfield { margin: 0; grid-column: auto; order: 0; }
+.srccard .srcgrid > .srccolf { grid-column: auto; align-self: end; }
+.srccard .srcgrid > .rfield.wide2 { grid-column: 1 / -1; }
+.srccard .srcgrid > .srcsettle { grid-column: auto; order: 0; }
+.srccard .srcsettle > .prsettle { display: flex; align-items: center; justify-content: space-between; width: 100%; height: var(--rf-h); padding: calc(var(--sp-hair) * 4.75) 0 calc(var(--sp-hair) * 0.75); border: 0; border-bottom: 1px solid var(--rf-line); background: transparent; color: var(--text); font: inherit; text-align: start; cursor: pointer; }
+.srccard .srcsettle > .prsettle b { font-weight: var(--fw-regular); }
+.srccard .srcsettle > .prsettle b.owe { color: var(--red); }
+.srccard .srcsettle > .prsettle b.ok { color: var(--green); }
+/* the closed row: the name at the right, the status or the amount at the left (beside the arrow) */
+.srcsum { text-align: end; }
+.srcsum i { font-size: var(--fs-m); }
+/* ONE popup header: the grab strip (--pp-top), then a 44px row with the title centred in it. These popups had their title at the top of the row, or an extra sheet padding above it */
+:is(#ppDlg, #allocDlg, #setDlg, #prDlg, #amDlg) .sheet-head { align-items: center; }
+:is(#ppDlg, #allocDlg, #setDlg, #prDlg, #amDlg) .sheet-head h2 { align-self: center; margin-block: 0; padding-block: 0; min-height: 0; }
+/* the room between the last card and the add button, scrolled to the end, is the same in a popup as on a page: the button's own margin (one standard step), nothing else */
+#pgM #pMeetPad { display: none; }
+#pgM .maddw { padding-top: 0; padding-bottom: var(--gutter); }   /* the wrapper carries the one gutter under the button (the scroller itself has no bottom padding here, a sticky box would rest above it) */
+/* the add rows sit above their lists: "add meeting type" under "all participants", "add meeting" between the types and the meetings, with the divider above it */
+#mMenu .mtr.maddrow.addm { border-top: 1px solid var(--line); margin-top: var(--sp-1); padding-top: var(--sp-1); }
+#mMenu .mtr.maddrow:not(.addm) { padding-bottom: var(--sp-hair); }
+/* the meetings menu: "all participants" scrolls with the list (nothing is pinned), and on a phone the menu runs to the bottom edge of the screen, safe area included, with the end padding under its last row so the last row rests above the safe area */
+#mMenu .mtop { position: static; }
+@media (max-width: 699px) { #mMenu { padding-bottom: var(--end-pad-fab); box-sizing: border-box; border-bottom: 0; } }   /* the end padding is the add button's clearance: the last row can be scrolled up above the floating button */
+/* ONE field, everywhere (owner rule: no screen restyles it): whatever card-only rule reaches a control inside the shared field element, its box is the field's own: the same row height, the same room above the value for the floating label, the same type size and weight. (The sides stay the field's own: the money sign, the select arrow, the date picker.) */
+.rfield.field > :is(input:not([type="checkbox"], [type="radio"], [type="hidden"]), select) { height: var(--rf-h) !important; padding-block: calc(var(--sp-hair) * 4.75) calc(var(--sp-hair) * 0.75) !important; font-size: var(--sp-2) !important; font-weight: var(--fw-regular) !important; line-height: calc(var(--sp-hair) * 5.5) !important; }   /* !important on purpose: the id-based rules of each popup (#setDlg .setinp, #ppDlg ...) were each restyling the field, and this one block is the field */
+.rfield.field > .dtbox, .rfield.field > .dtbox > input { font-size: var(--sp-2) !important; font-weight: var(--fw-regular) !important; }   /* the date and time fields (wrapped by the page) type at the field size too */
+/* ===== ONE POPUP SHELL (stage 1 of the clean-up). Every popup header is the same: the grab strip (--pp-top) on a phone, then a 44px row (--pp-head) with the title centred in it, then one step (--sp-2) of its own bottom padding. The row is the CONTENT box (so the padding does not eat it), the header is sticky with a solid background (the body scrolls under it and never shows through), and on a computer the sheet's top padding is pulled into the header. The participant card (#pDlg) keeps its own header: a name that wraps, with chips. ===== */
+:is(#tplDlg, #tplPrevDlg, #mailDlg, #ppDlg, #allocDlg, #mDlg, #stDlg, #iDlg, #setDlg, #prDlg, #finDlg, #cDlg, #finFormDlg, #mfPopDlg, #lockDlg, #viewDlg, #sortDlg, #waDlg, #amDlg, #onbDlg) .sheet-head { box-sizing: content-box; position: sticky; top: 0; z-index: var(--z-sticky); background: var(--bg); display: flex; align-items: center; min-height: var(--pp-head); margin: calc(var(--pp-pt-sheet) * -1) 0 0; padding: var(--pp-pt-sheet) 0 var(--sp-2); }
+@media (max-width: 759px) { :is(#tplDlg, #tplPrevDlg, #mailDlg, #ppDlg, #allocDlg, #mDlg, #stDlg, #iDlg, #setDlg, #prDlg, #finDlg, #cDlg, #finFormDlg, #mfPopDlg, #lockDlg, #viewDlg, #sortDlg, #waDlg, #amDlg, #onbDlg) .sheet-head { top: var(--pp-top); } }
+:is(#tplDlg, #tplPrevDlg, #mailDlg, #ppDlg, #allocDlg, #mDlg, #stDlg, #iDlg, #setDlg, #prDlg, #finDlg, #cDlg, #finFormDlg, #mfPopDlg, #lockDlg, #viewDlg, #sortDlg, #waDlg, #amDlg, #onbDlg) .sheet-head h2 { align-self: center; margin: 0; padding: 0; min-height: 0; line-height: 1.25; }
+/* תת כותרת בהדר של פופאפ: .htitle עוטף את הכותרת ואת השורה שמתחתיה (מפגש), וההדר נשאר שורה אחת */
+.sheet-head .htitle { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-self: center; }
+.sheet-head .htitle .psub { margin: 0; padding: 0; line-height: 1.3; }
+#allocDlg .sheet-head .htitle h2 { flex: 0 0 auto; }
+#allocDlg .htitle .psub { margin: 0; line-height: 1.3; }
+#setDlg .sheet-head .htitle h2 { flex: 0 0 auto; }
+#setDlg .htitle .psub { margin: var(--sp-hair) 0 0; }
+.sheet-head .htitle { align-items: stretch; text-align: start; }
+.sheet-head .htitle h2, .sheet-head .htitle .psub { text-align: start; align-self: stretch; }
+:is(#allocDlg, #setDlg) .sheet-head .htitle h2 { align-self: stretch; text-align: start; }
+/* תת כותרת: הכותרת נשארת במקומה (שורה של --pp-head, הכותרת באמצעה) והשורה מתחתיה מרחיבה את ההדר כלפי מטה. שאר הפריטים נשארים באותה שורה */
+:is(#allocDlg, #setDlg) .sheet-head:has(.htitle) { align-items: flex-start; }
+:is(#allocDlg, #setDlg) .sheet-head .htitle { align-self: flex-start; }
+:is(#allocDlg, #setDlg) .sheet-head .htitle h2 { display: flex; align-items: center; min-height: var(--pp-head); }
+:is(#allocDlg, #setDlg) .sheet-head:has(.htitle) > :not(.htitle) { align-self: flex-start; margin-block: 0; }
+:is(#allocDlg, #setDlg) .htitle .psub { margin-top: calc(var(--sp-1) * -1); }
+/* הצ'יף בהדר הוא אותו צ'יף של .sheet-head .paychip: אותו ריפוד (--sp-2) משני הצדדים, כך שהטקסט לא נדבק לשוליים */
+.sheet-head .paychip { --chip-px: var(--sp-2); }   /* ריפוד הצ'יף נקבע דרך --chip-px, לא דרך padding */
+/* תפריט ההודעות: רווח סטנדרטי אחד (--sp-2) משני צדי הקו שבין התבניות לסינון */
+/* שורת "מחירים"/"כרטיסייה" היא שדה: אותו גובה (--rf-h) ואותו מרחק בין הטקסט לקו כמו בכל שדה */
+.mfshort { box-sizing: border-box; height: var(--rf-h); min-height: 0; padding: calc(var(--sp-hair) * 4.75) var(--sp-hair) calc(var(--sp-hair) * 0.75); }
+/* תפריט מצב הסימון: שורת הודעה עם כפתור עריכה בקצה, כמו בפופאפ ההודעות */
+#wmMenu .wmrow { position: relative; }
+#wmMenu .wmrow > [data-wmk] { width: 100%; padding-inline-end: calc(var(--sp-hair) * 11); }
+#wmMenu .wmedit { position: absolute; inset-block: 0; inset-inline-end: 0; display: flex; align-items: center; justify-content: center; width: 44px; padding: 0; border: 0; background: transparent; color: var(--text); cursor: pointer; }
+#wmMenu .wmedit:active { background: var(--line); }
+/* צ'יף סינון הסימון (נשלחו / הגיעו): מארח שקוף שנותן ל-.chiprow .stc את אותו מראה של צ'יף המגדר, בשורת החיפוש */
+#waSF { display: contents; }
+#waSF[hidden] { display: none; }
+/* צ'יף סינון הסימון: אותו גובה, רקע, רדיוס ומונים של צ'יף המגדר (כללי המגדר חלים רק על .cq בשורת הצ'יפים) */
+/* תיבת החיפוש: אותן פינות כמו שאר הצ'יפים והסינונים (--r), לא גלולה */
+#listTags .hsearch, #listTags .hsearch:focus-within, #listTags .hsearch:has(input:not(:placeholder-shown)) { border-radius: var(--r) !important; }
+/* שני חצאי הצ'יף שווים בדיוק, כך שהחציצה באמצע */
+/* כל הכפתורים בשורות הסינון (חיפוש, סימון, צ'יפים) באותן פינות: --r */
+#listTags .wm3, #listTags .wm3 .wm3b { border-radius: var(--r) !important; }
+/* תפריט הצ'יפים: כל אפשרות בשורה אחת, גם כשהתפריט צר כמו הצ'יף */
+#chipMenu .cmi { white-space: nowrap; gap: var(--sp-hair); padding-inline: var(--sp-1); }
+/* מגדר: הפס מסמן רק את החצי שנבחר (זכר או נקבה), לא את כל הצ'יף */
+.chiprow .cq > .stc[data-cr="gen"][aria-pressed="true"], .chiprow .cq > .stc[data-cr="gen"] .fx { box-shadow: none !important; }
+.chiprow .stc[data-cr="gen"] .gc { align-self: stretch; }   /* כל חצי ממלא את גובה הצ'יף, כדי שהפס של החצי שנבחר ישב בתחתית הצ'יף */
+.chiprow .cq > .stc[data-cr="gen"] .gc { align-self: stretch !important; height: auto !important; }
+.chiprow .cq > .stc[data-cr="gen"] .gc.on { box-shadow: inset 0 calc(var(--sel-bar) * -1) 0 var(--text-3) !important; }
+/* החציצה של המגדר: קו של 16 פיקסלים באמצע, תמיד (גם כשחצי נבחר), בלי לכווץ את גובה החצי, כדי שהפס של החצי שנבחר ישב בתחתית הצ'יף */
+.chiprow .cq > .stc[data-cr="gen"] .gc + .gc { border-inline-start: 0 !important; background-image: linear-gradient(var(--line-2), var(--line-2)) !important; background-size: 1px 16px; background-repeat: no-repeat; background-position: right center; }
+/* כפתור הסימון וצ'יף סינון ההודעות הם יחידה אחת: אותו רקע (הצהוב של ההודעה), בלי רווח ביניהם ופינות מעוגלות רק בקצוות. הסמל (וי / איקס) מראה מה מסננים, ופס אחד משותף לשניים כשהסינון פעיל */
+#waSF .stc { background-color: var(--yellow) !important; color: var(--on-primary) !important; border-color: transparent !important; border-radius: 0 var(--r) var(--r) 0 !important; margin-inline-end: calc(var(--sp-1) * -1) !important; }
+#waSF .stc small { color: var(--on-primary) !important; opacity: 1; }
+#listTags #waFab.joined, #listTags #waFab.joined .wm3b { border-radius: var(--r) 0 0 var(--r) !important; }
+#listTags #waFab.joined .wm3b.filtered { box-shadow: none; }
+/* הפס בתחתית: רק מתחת לצ'יף (מהחציצה עד הקצה), בצבע לפי הסינון: ירוק לנשלחו, אדום ללא נשלחו */
+#waSF .stc[data-sfv="1"] { box-shadow: inset 0 calc(var(--sel-bar) * -1) 0 color-mix(in srgb, var(--green) 55%, white) !important; }
+#waSF .stc[data-sfv="0"] { box-shadow: inset 0 calc(var(--sel-bar) * -1) 0 color-mix(in srgb, var(--red) 55%, white) !important; }
+/* חציצה בין כפתור הסימון לצ'יף: קו של 16 פיקסלים בדיוק בנקודת החיבור, באמצע הגובה */
+#waSF .stc { background-image: linear-gradient(color-mix(in srgb, var(--on-primary) 45%, transparent), color-mix(in srgb, var(--on-primary) 45%, transparent)) !important; background-size: 1px 16px !important; background-repeat: no-repeat !important; background-position: left center !important; }
+#listTags #waFab.joined .wm3b { width: 100%; }

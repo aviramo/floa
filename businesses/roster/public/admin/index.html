@@ -70,6 +70,7 @@
           <button type="button" class="sclear" id="qClear" aria-label="ניקוי החיפוש" tabindex="-1">×</button>
         </label>
       <div id="listMore"></div>
+      <div id="waSF" class="chiprow" hidden></div>
       <div class="wm3" id="waFab" role="group" aria-label="מה מוצג בעמודה: וואטסאפ, הודעה או הגעה"></div>
       <div class="lbend" id="listWa"></div><div class="lbend" id="listPay"></div><div class="lbend" id="listSent"></div><div class="lbend" id="listBal"></div>
     </div>
@@ -103,8 +104,8 @@
         <div class="ppager" id="pPager">
           <section class="ppage" id="pgM" role="tabpanel" aria-labelledby="pTabM" inert>
             <div class="mlist" id="pMeetings"></div>
-            <div class="maddw"><button type="button" id="pAddMeet" data-fab="שיוך למפגש" hidden></button></div>
             <div id="pMeetPad" aria-hidden="true"></div>
+            <div class="maddw"><button type="button" id="pAddMeet" data-fab="שיוך למפגש" hidden></button></div>
           </section>
           <section class="ppage" id="pgW" role="tabpanel" aria-labelledby="pTabW" inert>
         <div class="walsum" id="walSum"></div>
@@ -241,7 +242,7 @@
   </dialog>
   <dialog id="allocDlg" data-from="bottom" aria-labelledby="allocTitle">
     <div class="sheet" id="allocSheet">
-      <div class="sheet-head" id="allocHead"><h2 id="allocTitle">תשלום</h2></div>
+      <div class="sheet-head" id="allocHead"><div class="htitle" id="allocTitleBox"><h2 id="allocTitle">תשלום</h2></div></div>
       <div id="allocSlot"></div>
     </div>
   </dialog>
@@ -296,7 +297,7 @@
 
   <dialog id="setDlg" data-from="bottom" aria-labelledby="setTitle">
     <div class="sheet">
-      <div class="sheet-head"><button type="button" class="hbtn hback" id="setBack" aria-label="חזרה" title="חזרה" hidden><svg data-i="back"></svg></button><h2 id="setTitle">החשבון שלי</h2><button type="button" class="btn hsave" id="tySave" hidden>שמירה</button></div>
+      <div class="sheet-head"><button type="button" class="hbtn hback" id="setBack" aria-label="חזרה" title="חזרה" hidden><svg data-i="back"></svg></button><div class="htitle"><h2 id="setTitle">החשבון שלי</h2><p class="psub" id="setSub" hidden></p></div><button type="button" class="btn hsave" id="tySave" hidden>שמירה</button></div>
       <div id="setMain">
         <div class="setgrp">
           <label class="rfield field"><span>השם שלי במערכת</span><input placeholder=" " class="setinp" id="setSender" maxlength="20" autocomplete="off" aria-label="שם השולח בהודעות" /></label>
@@ -317,7 +318,6 @@
         <button type="button" class="btn ghost btn--compact" id="emReset">שחזור נוסח ברירת מחדל</button>
       </div>
       <div id="setPm" hidden>
-        <p class="sthint sthint--b">הדרכים שמופיעות בקבלת תשלום (פייבוקס, ביט, מזומן...). אפשר להוסיף, לשנות שם ולמחוק</p>
         <div id="pmList"></div>
         <button type="button" id="pmAdd" data-fab="דרך תשלום חדשה"></button>
       </div>
@@ -420,9 +420,9 @@
   </dialog>
 
   <div class="qmenu" id="qMenu" role="menu" hidden></div>
-  <dialog id="viewDlg" data-from="bottom" class="mdlg" aria-labelledby="viewTitle"><div class="sheet"><div class="sheet-head"><h2 id="viewTitle">תצוגה סינון ומיון</h2><button type="button" class="vclear" id="viewClear" disabled>איפוס</button></div><div class="qmenu" id="viewMenu" role="menu" hidden></div></div></dialog>
+  <dialog id="viewDlg" data-from="bottom" class="mdlg" aria-labelledby="viewTitle"><div class="sheet"><div class="sheet-head"><h2 id="viewTitle">העדפות</h2><button type="button" class="vclear" id="viewClear" disabled>איפוס</button></div><div class="qmenu" id="viewMenu" role="menu" hidden></div></div></dialog>
   <dialog id="sortDlg" data-from="bottom" class="mdlg" aria-labelledby="sortTitle"><div class="sheet"><div class="sheet-head"><h2 id="sortTitle">מיון</h2></div><div class="sortmenu" id="sortMenu" role="menu" hidden></div></div></dialog>
-  <dialog id="waDlg" data-from="bottom" class="mdlg" aria-labelledby="waTitle"><div class="sheet"><div class="sheet-head"><h2 id="waTitle">שליחת הודעות</h2></div><div class="sortmenu" id="waMenu" role="menu" hidden></div></div></dialog>
+  <dialog id="amDlg" data-from="bottom" class="mdlg" aria-labelledby="amTitle"><div class="sheet"><div class="sheet-head"><h2 id="amTitle">שיוך למפגש</h2></div><div class="qmenu am" id="amMenu" role="menu" hidden></div></div></dialog>
   <div class="qmenu" id="fMenu" role="menu" hidden></div>
   <div class="qmenu" id="chipMenu" role="menu" hidden></div>
   <div class="qmenu" id="wmMenu" role="menu" hidden></div>

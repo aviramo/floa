@@ -159,7 +159,7 @@
 .rswipe__act { pointer-events: none; cursor: default; }   /* the label under a swiped row ("הסרה") is not a button: pulling the row until it is fully showing IS the action, and a row never rests half open for a tap */
 [data-swipe]::after { display: none; content: ""; position: absolute; inset-block: 35%; inset-inline-end: 3px; width: 3px; background: var(--line-strong); opacity: .5; pointer-events: none; }   /* persistent edge cue */
 [data-swipe].is-open::after { display: none; }
-.rhint { position: sticky; top: 0; z-index: var(--z-raised); margin: 0 var(--gutter); padding: var(--sp-1) var(--sp-2); background: var(--info-bg); color: var(--info); font: var(--fw-medium) var(--fs-s)/var(--lh-body) var(--font); border-radius: var(--r-ctl); display: flex; align-items: center; gap: var(--sp-2); opacity: 1; transition: opacity var(--t-base) var(--ease); }
+.rhint { position: relative; margin: 0 var(--gutter); padding: var(--sp-1) var(--sp-2); background: var(--info-bg); color: var(--info); font: var(--fw-medium) var(--fs-s)/var(--lh-body) var(--font); border-radius: var(--r-ctl); display: flex; align-items: center; gap: var(--sp-2); opacity: 1; transition: opacity var(--t-base) var(--ease); }
 .rhint[hidden], .rhint.is-gone { opacity: 0; pointer-events: none; }
 .rhint__tx { flex: 1; min-width: 0; }
 .rhint__ok { flex: none; min-height: 44px; padding-inline: var(--sp-2); border: 0; background: transparent; color: inherit; font: inherit; font-weight: var(--fw-bold, 700); text-decoration: underline; cursor: pointer; }
@@ -257,8 +257,13 @@ html.rk-ptr, html.rk-ptr body { overscroll-behavior-y: auto; }   /* our pull to 
 .rtoasts .rmsg { position: relative; overflow: hidden; pointer-events: auto; box-shadow: var(--sh-pop); }
 @media (min-width: 760px) { :root { --sheet-b: max(var(--sp-3), var(--inset-b)); } }   /* a computer has no gesture bar to clear: the usual 24, more only where the device reports an inset */
 @media (min-width: 760px) { .rtoasts { inset-inline: auto; left: var(--gutter); width: var(--w-s); } }
-html:has(.rfab:not(.rfab--in)) .rtoasts:not(.rtoasts--in), html:has(.rfab:not(.rfab--in)) .rmsg--toast { bottom: var(--end-pad-fab); }   /* on a screen with the add button, messages float above it, never over it */
-.rtoasts--in { position: absolute; left: var(--gutter); right: var(--gutter); bottom: var(--gutter); width: auto; }   /* inside an open popup (the page behind is inert) */
+/* on a screen with the add button, a message sits in the BUTTON'S ROW: as tall as the button, level with it, one step to its right (never over it, never floating above the list) */
+html:has(.rfab:not(.rfab--in)) .rtoasts:not(.rtoasts--in), html:has(.rfab:not(.rfab--in)) .rmsg--toast { inset-inline: auto; left: calc(max(var(--gutter), var(--inset-l)) + var(--fab) + var(--sp-2)); right: var(--gutter); width: auto; bottom: calc(var(--gutter) + var(--inset-b)); }
+html:has(.rfab:not(.rfab--in)) .rtoasts .rmsg, html:has(.rfab:not(.rfab--in)) .rmsg--toast { box-sizing: border-box; min-height: var(--fab); align-items: center; }
+/* inside a popup: with no add button showing, the message is the full width, a gap above the safe area; with one showing, it takes the button's row (the active page of a tabbed popup counts, a page that is not shown does not) */
+.rtoasts--in { position: absolute; left: var(--gutter); right: var(--gutter); bottom: calc(var(--safe-b) + var(--sp-1)); width: auto; }
+dialog:has(.ppage:not([inert]) .rfab--in:not([hidden])) .rtoasts--in, dialog:not(:has(.ppage)):has(.rfab--in:not([hidden])) .rtoasts--in { left: calc(var(--gutter) + var(--fab) + var(--sp-2)); bottom: var(--gutter); }
+dialog:has(.ppage:not([inert]) .rfab--in:not([hidden])) .rtoasts--in .rmsg, dialog:not(:has(.ppage)):has(.rfab--in:not([hidden])) .rtoasts--in .rmsg { box-sizing: border-box; min-height: var(--fab); align-items: center; }   /* inside an open popup (the page behind is inert) */
 .rmsg--undo { padding-bottom: var(--sp-2); }
 .rmsg--undo::after { content: ""; position: absolute; inset-inline: 0; bottom: 0; height: 3px; background: var(--bg); opacity: .6; transform-origin: right center; transform: scaleX(var(--left, 1)); }   /* time left, scaleX only */
 .rmsg--undo[data-paused="true"]::after { opacity: .25; }

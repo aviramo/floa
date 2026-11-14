@@ -95,7 +95,7 @@
 
   /* the meetings of the participant card slide to "הסרה" too: the tray button carries data-mun, which the page's own click handler of that list already answers (the confirmation popup) */
   var pMeet = doc.getElementById("pMeetings");
-  if (pMeet && window.RosterUI && RosterUI.swipe) RosterUI.swipe.init(pMeet);
+  if (pMeet && window.RosterUI && RosterUI.swipe) RosterUI.swipe.init(pMeet, { onAway: function (dir) { if (window.rkPagerSwipe) window.rkPagerSwipe(dir); } });   // a swipe on a meeting card that is not the delete swipe changes the tab of the participant card
 
   /* ---------- 4. swipe actions on the participants list ---------- */
   /* a row slides to show "הסרה" (or "החזרה" for one already removed): the same remove and restore as the card, and the undo toast brings it back. A mouse has no swipe:

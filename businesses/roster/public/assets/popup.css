@@ -16,7 +16,7 @@
   --pp-px: 16px;                /* side padding of the content */
   --pp-pt: 16px;                /* above the header */
   --pp-pb: 24px;                /* below the content */
-  --pp-head-gap: 12px;          /* header to content */
+  --pp-head-gap: 16px;          /* header to content: one step, the same in every popup (the admin shell block uses the same value) */
   --pp-w-s: 400px;
   --pp-w-m: 560px;
   --pp-w-l: 760px;

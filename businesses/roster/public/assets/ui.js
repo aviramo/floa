@@ -109,6 +109,8 @@
     list.addEventListener("pointermove", function (e) {
       if (!start || e.pointerId !== start.id) return;
       var dx = e.clientX - start.x, dy = e.clientY - start.y;
+      /* a swipe AWAY from the tray, on a closed row that has nothing there to show, is not ours: the page may take it (opt.onAway: a swipe on a card moves the tabs around it, like a swipe on the empty part of the list) */
+      if (!start.dragging && opt.onAway && !start.row.classList.contains("is-open") && !hasStart(start.row) && Math.abs(dx) >= 8 && Math.abs(dx) > Math.abs(dy) * 1.5 && dx * openX(start.row) < 0) { start = null; opt.onAway(dx > 0 ? "right" : "left"); return; }
       if (!start.dragging) { if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { start = null; return; } if (Math.abs(dx) < 8) return; start.dragging = true; start.row.classList.add("is-dragging"); try { list.setPointerCapture(e.pointerId); } catch (x) {} }
       var lim = openX(start.row), v = start.base + dx, far = fullX(start.row), fs = hasStart(start.row) ? farStart(start.row) : 0;   /* the row may be pulled past its tray: a long pull is the action itself */
       v = lim > 0 ? Math.max(-fs, Math.min(far, v)) : Math.min(fs, Math.max(-far, v));
