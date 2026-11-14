@@ -1,0 +1,8 @@
+{
+  "_": "Every host that points at a Cloudflare Pages project. Add a line here, push to main, and .github/workflows/domains.yml attaches the host to the project and creates its DNS record. Nothing here is ever deleted by the script: removing a line does NOT remove the host. `enabled: false` is a line that is written down but not applied yet.",
+  "zone": "floa.co.il",
+  "hosts": [
+    { "host": "test.floa.co.il", "project": "floa-test", "enabled": true },
+    { "host": "floa.co.il", "project": "floa-site", "enabled": false, "note": "the real site. Turn on only at the cut-over: it needs the old records that point at GitHub Pages removed first (the script will not remove them)" }
+  ]
+}

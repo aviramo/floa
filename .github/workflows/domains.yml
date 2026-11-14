@@ -1,0 +1,44 @@
+# =============================================================================
+# Hosts on Cloudflare: domains.json says which host belongs to which Pages
+# project, and this makes it so (attaches the host, creates its DNS record).
+#
+# Why a workflow: the Cloudflare token lives ONLY here, as a repo secret. Anyone
+# who can push a line to domains.json (a person at the computer, or an agent in
+# the cloud) can set up a sub-domain, and nobody ever has to hold the token.
+# It only creates; see scripts/domains.mjs.
+#
+# Needs: CLOUDFLARE_API_TOKEN (Zone: Read, DNS: Edit on floa.co.il, Cloudflare
+# Pages: Edit) and CLOUDFLARE_ACCOUNT_ID.
+# =============================================================================
+name: Domains
+
+on:
+  push:
+    branches: [main]
+    paths: [domains.json, scripts/domains.mjs, .github/workflows/domains.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: domains
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: node scripts/domains.mjs --check
+
+      - name: apply domains.json to Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/domains.mjs
