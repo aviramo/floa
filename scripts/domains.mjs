@@ -106,10 +106,11 @@ for (const h of live) {
   /* 2. its DNS record: create it only when the name is free */
   const rec = await api(`/zones/${ZONE}/dns_records?name=${encodeURIComponent(h.host)}`);
   if (!rec.ok) { console.error(`::error::${h.host}: cannot read DNS (${rec.status}) ${rec.errors || "the token needs Zone / DNS: Edit"}`); bad++; continue; }
-  if (rec.result.length) {
-    const same = rec.result.some((r) => r.type === "CNAME" && r.content === target);
+  const addr = rec.result.filter((r) => ["A", "AAAA", "CNAME"].includes(r.type)); /* MX, TXT and the rest (mail, verification) never block a host */
+  if (addr.length) {
+    const same = addr.some((r) => r.type === "CNAME" && r.content === target);
     if (same) console.log(`${h.host}: DNS already points at ${target}`);
-    else { console.error(`::warning::${h.host}: a different record already exists (${rec.result.map((r) => r.type).join(", ")}); left alone. Remove it in Cloudflare if this is the intended cut-over, then run again.`); bad++; }
+    else { console.error(`::warning::${h.host}: a different address record already exists (${addr.map((r) => r.type).join(", ")}); left alone. Remove it in Cloudflare if this is the intended cut-over, then run again.`); bad++; }
     continue;
   }
   const mk = await api(`/zones/${ZONE}/dns_records`, { method: "POST", body: JSON.stringify({ type: "CNAME", name: h.host, content: target, proxied: true, ttl: 1 }) });
@@ -135,6 +136,7 @@ for (const h of live) {
     else {
       console.error(`::error::${h.host}: Pages did not activate it in time. Restoring the previous records.`);
       if (mk.ok) { const cur3 = await api(`/zones/${ZONE}/dns_records?name=${encodeURIComponent(h.host)}&type=CNAME`); for (const r of (cur3.result || [])) await api(`/zones/${ZONE}/dns_records/${r.id}`, { method: "DELETE" }); }
+      if (!removed.length) for (const ip of ["185.199.108.153", "185.199.109.153", "185.199.110.153", "185.199.111.153"]) removed.push({ type: "A", name: h.host, content: ip, proxied: false, ttl: 300 });
       for (const r of removed) { const back = await api(`/zones/${ZONE}/dns_records`, { method: "POST", body: JSON.stringify(r) }); console.log(`::notice::${h.host}: restored ${r.type} ${r.content} (${back.ok ? "ok" : back.errors})`); }
       bad++;
     }
