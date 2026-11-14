@@ -46,11 +46,14 @@ npm start          # משאיר פתוח בזמן שעובדים באתר
 
 **1. שרת.** פותחים חשבון ב-https://www.oracle.com/cloud/free (דורש כרטיס אשראי לאימות בלבד). יוצרים Instance: Ubuntu 24.04, Shape `VM.Standard.A1.Flex` עם 2 OCPU ו-12GB. מורידים את מפתח ה-SSH. הסורק רק יוצא החוצה, אז לא צריך לפתוח שום פורט.
 
-**2. התקנה.** מתחברים (`ssh -i המפתח opc@הכתובת (או ubuntu, לפי ה-Image)`) ומריצים:
+**2. התקנה.** הריפו פרטי, ולכן הסקריפט לא מורד מהרשת אלא מועתק מהמחשב שלך:
 
 ```
-curl -fsSL https://raw.githubusercontent.com/aviramo/floa/main/businesses/jobs/runner/deploy/setup.sh | bash
+scp -i המפתח businesses/jobs/runner/deploy/setup.sh opc@הכתובת:
+ssh -i המפתח opc@הכתובת bash setup.sh      (או ubuntu, לפי ה-Image)
 ```
+
+ההרצה הראשונה יוצרת מפתח קריאה בלבד ונעצרת ומדפיסה את החצי הציבורי שלו. מוסיפים אותו ב-GitHub: ריפו floa, Settings, Deploy keys, Add deploy key, **בלי** Allow write access. מריצים שוב `bash setup.sh` וההתקנה ממשיכה.
 
 **3. `.env` בשרת.** יוצרים `~/floa/.env` עם `SUPABASE_ACCESS_TOKEN` ו-`SUPABASE_PROJECT_REF` (ואופציונלי `ANTHROPIC_API_KEY`). כדאי ליצור ב-Supabase טוקן נפרד לשרת (לדוגמה בשם `jobs-server`), כדי שאפשר יהיה לבטל אותו בלי לגעת בשלך. **הטוקן הזה יכול לנהל את מסד הנתונים כולו**, ולכן הוא יושב רק בשרת, לעולם לא בריפו.
 

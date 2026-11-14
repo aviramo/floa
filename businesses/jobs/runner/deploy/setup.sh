@@ -3,7 +3,11 @@
 # Oracle Linux / RHEL-family (dnf), ARM or x86. Run it ONCE as the normal user
 # (ubuntu or opc), not as root:
 #
-#   curl -fsSL https://raw.githubusercontent.com/aviramo/floa/main/businesses/jobs/runner/deploy/setup.sh | bash
+#   scp -i KEY businesses/jobs/runner/deploy/setup.sh USER@HOST:   (the repo is private, so the script
+#   is copied from your computer instead of downloaded), then on the server:  bash setup.sh
+#
+# The first run stops after making a read-only deploy key and printing its public half: add it at
+# GitHub, floa repo, Settings, Deploy keys (leave "Allow write access" OFF), then run it again.
 #
 # It installs Node, a virtual screen (xvfb) and Chromium, fetches the repo, and
 # registers the runner as a service that starts with the machine. It does NOT
@@ -11,7 +15,7 @@
 # ../README.md, "להעביר לשרת").
 set -euo pipefail
 
-REPO="https://github.com/aviramo/floa.git"
+REPO="git@github.com:aviramo/floa.git"
 DIR="$HOME/floa"
 
 if command -v apt-get >/dev/null; then
@@ -36,7 +40,21 @@ if [ "$(free -m | awk '/^Mem:/{print $2}')" -lt 4000 ] && ! swapon --show | grep
   echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab >/dev/null
 fi
 
-[ -d "$DIR/.git" ] || git clone "$REPO" "$DIR"
+# The repo is private: it is read with a deploy key that can read this one repo and write nothing.
+KEY="$HOME/.ssh/floa_deploy"
+mkdir -p "$HOME/.ssh" && chmod 700 "$HOME/.ssh"
+if [ ! -f "$KEY" ]; then ssh-keygen -t ed25519 -N "" -C "floa-jobs-runner" -f "$KEY" >/dev/null; fi
+ssh-keyscan -t ed25519 github.com >> "$HOME/.ssh/known_hosts" 2>/dev/null || true
+export GIT_SSH_COMMAND="ssh -i $KEY -o IdentitiesOnly=yes"
+if [ ! -d "$DIR/.git" ] && ! git clone "$REPO" "$DIR"; then
+  echo
+  echo "לא הצלחתי לקרוא את הריפו. מוסיפים את המפתח הציבורי הבא ב-GitHub:"
+  echo "ריפו floa, Settings, Deploy keys, Add deploy key (בלי Allow write access), ואז מריצים שוב:"
+  echo
+  cat "$KEY.pub"
+  exit 1
+fi
+cd "$DIR" && git config core.sshCommand "ssh -i $KEY -o IdentitiesOnly=yes"
 cd "$DIR/businesses/jobs/runner"
 git pull --ff-only
 npm install --omit=dev
