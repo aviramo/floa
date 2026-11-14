@@ -39,7 +39,7 @@ SS = 4                         # supersample: PIL fills polygons with NO anti-al
                                # so the smooth edge comes from drawing big and shrinking
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
-PUBLIC = os.path.join(ROOT, "businesses", "floa", "domain")
+PUBLIC = os.path.join(ROOT, "apps", "floa", "domain")
 
 # The F, in master units. The stem is a straight stroke; each arm is one period of a
 # sine that leaves the stem going UP, so the same four numbers draw the raster and the SVG.

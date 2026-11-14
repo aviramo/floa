@@ -46,8 +46,8 @@ from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-SRC = os.path.join(ROOT, "businesses", "chords", "art", "strip-source.png")
-OUT = os.path.join(ROOT, "businesses", "chords", "public", "assets", "strip.webp")
+SRC = os.path.join(ROOT, "apps", "chords", "art", "strip-source.png")
+OUT = os.path.join(ROOT, "apps", "chords", "public", "assets", "strip.webp")
 
 # Where the arcs are. A box rather than the whole picture, because the pink of
 # the notes is the same pink and the notes are staying.

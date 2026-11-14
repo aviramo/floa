@@ -18,7 +18,7 @@ import { join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = join(fileURLToPath(new URL(".", import.meta.url)), "..");
-const PUB = join(ROOT, "businesses", "roster", "public");
+const PUB = join(ROOT, "apps", "roster", "public");
 const ALLOW_FILE = join(ROOT, "scripts", "policy-allow.json");
 const args = new Set(process.argv.slice(2));
 

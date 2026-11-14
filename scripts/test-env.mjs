@@ -34,7 +34,7 @@ function toTest(sql) {
 
 const parts = ["drop schema if exists test cascade;", "create schema test;", "set search_path = test, extensions;"];
 for (const b of businesses) {
-  const f = join(ROOT, "businesses", b, "schema.sql");
+  const f = join(ROOT, "apps", b, "schema.sql");
   if (!existsSync(f)) { console.error("no schema.sql for", b); process.exit(1); }
   parts.push("-- " + b, toTest(readFileSync(f, "utf8")));
 }
