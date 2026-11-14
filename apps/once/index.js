@@ -25,6 +25,12 @@ export const business = {
   site,
   runtime,
   pages: [],
-  siteMap: [],
+  siteMap: [
+    {
+      loc: `${site.origin}/`,
+      title: "Once | היכרות כמו בחיים האמיתיים",
+      description: "Once: אפליקציית היכרות שמחברת בין אנשים קרובים אליך, בזמן אמת ובחיים האמיתיים.",
+    },
+  ],
   leadPages: [],
 };

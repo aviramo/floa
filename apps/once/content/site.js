@@ -8,8 +8,8 @@ export const site = {
   brand: "Once",
   lang: "he",
   dir: "rtl",
-  origin: "https://floa.co.il",
-  folder: "once/",
+  origin: "https://once.floa.co.il",
+  folder: "",
   tagline: "היכרות כמו בחיים האמיתיים",
   slogan: "היכרות כמו בחיים האמיתיים",
 };

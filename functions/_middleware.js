@@ -50,6 +50,14 @@ export async function onRequest({ request, next, env }) {
 
   const home = HOMES[url.hostname];
   if (!home || !get) return next();
+  /* each sub-domain is a site of its own to a crawler: its own robots.txt,
+     naming its own sitemap (the app's sitemap.xml, if it has one) */
+  if (url.pathname === "/robots.txt") {
+    const sm = await env.ASSETS.fetch(new Request(new URL(home + "sitemap.xml", url), request));
+    return new Response("User-agent: *\nAllow: /\n" + (sm.status === 200 ? "\nSitemap: " + url.origin + "/sitemap.xml\n" : ""),
+      { headers: { "content-type": "text/plain; charset=utf-8" } });
+  }
+
   /* the host's own icon at the root, where WhatsApp, Google and browsers ask for it */
   const icon = ICONS[url.hostname] && ICONS[url.hostname][url.pathname];
   if (icon) {

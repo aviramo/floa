@@ -5,8 +5,8 @@ export const site = {
   brand: "ביודנסה למשפחה",
   lang: "he",
   dir: "rtl",
-  origin: "https://floa.co.il",
-  folder: "biofamily/",
+  origin: "https://biofamily.floa.co.il",
+  folder: "",
   tagline: "חוויה מחברת עם המשפחה: ביודנסה להורים וילדים בגילאי 3 עד 10",
   slogan: "מפגשי תנועה, מוזיקה ומשחק להורים ולילדים",
 };

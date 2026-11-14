@@ -56,7 +56,9 @@ async function stamp(html) {
   return html.replace(ASSET, (whole, name) => whole + "?v=" + version.get(name));
 }
 
-const ORIGIN = "https://floa.co.il";
+/* the app lives on its own sub-domain, so a crawler is given THAT address: no
+   /chords in it, and no redirect for the crawler to follow */
+const ORIGIN = "https://chords.floa.co.il";
 const BASE = "/chords";
 
 /* --- text ------------------------------------------------------------------ */
@@ -68,7 +70,7 @@ export const esc = (s) => String(s == null ? "" : s)
    percent encoded, because a Hebrew slug is a Hebrew slug on disk and a run of
    percent signs in a sitemap. The trailing slash is the one GitHub Pages
    actually serves a folder at, so it is what the canonical says. */
-export const url = (...parts) => `${ORIGIN}${BASE}/${parts.map(encodeURIComponent).join("/")}${parts.length ? "/" : ""}`;
+export const url = (...parts) => `${ORIGIN}/${parts.map(encodeURIComponent).join("/")}${parts.length ? "/" : ""}`;
 export const href = (...parts) => `${BASE}/${parts.map(encodeURIComponent).join("/")}${parts.length ? "/" : ""}`;
 
 /* A description is read by a person in a list of results, so it is a sentence

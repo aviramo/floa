@@ -3,8 +3,8 @@ export const site = {
   brand: "משרות",
   lang: "he",
   dir: "rtl",
-  origin: "https://floa.co.il",
-  folder: "jobs/",
+  origin: "https://jobs.floa.co.il",
+  folder: "",
   tagline: "לוח משרות",
   slogan: "משרות פתוחות במקום אחד",
 };

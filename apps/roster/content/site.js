@@ -3,8 +3,8 @@ export const site = {
   brand: "Roster",
   lang: "he",
   dir: "rtl",
-  origin: "https://floa.co.il",
-  folder: "roster/",
+  origin: "https://roster.floa.co.il",
+  folder: "",
   tagline: "ניהול משתתפים",
   slogan: "משתתפים, מפגשים ותשלומים במקום אחד",
 };

@@ -7,8 +7,8 @@ export const site = {
   brand: "טל אמיתי-לביא",
   lang: "he",
   dir: "rtl",
-  origin: "https://floa.co.il",
-  folder: "tal/",
+  origin: "https://tal.floa.co.il",
+  folder: "",
   tagline: "אמנית, מנחת ריטריטים ומנחת ביודנסה",
   slogan: "אמנות, AUM וביודנסה",
 };

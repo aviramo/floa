@@ -7,8 +7,8 @@ export const site = {
   brand: "ביודנסה, ריקוד החיים",
   lang: "he",
   dir: "rtl",
-  origin: "https://floa.co.il",
-  folder: "tal/ia/",
+  origin: "https://taltalia.floa.co.il",
+  folder: "",
   tagline: "קבוצת ביודנסה שבועית בפרדס חנה",
   slogan: "בהנחיית טל אמיתי-לביא וטליה נועם פלד",
 };

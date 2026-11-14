@@ -10,8 +10,8 @@ export const site = {
   brand: "אקורדים",
   lang: "he",
   dir: "rtl",
-  origin: "https://floa.co.il",
-  folder: "chords/",
+  origin: "https://chords.floa.co.il",
+  folder: "",
   tagline: "אינדקס שירים עם אקורדים",
   slogan: "כל שיר בדף משלו, האקורדים בדיוק מעל המילים",
 };

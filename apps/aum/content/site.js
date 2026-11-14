@@ -9,8 +9,8 @@ export const site = {
   brand: "AUM",
   lang: "he",
   dir: "rtl",
-  origin: "https://floa.co.il",
-  folder: "tal/aum/",
+  origin: "https://aum.floa.co.il",
+  folder: "",
   tagline: "ריטריט יומי של מדיטציית AUM",
   slogan: "מכעס לאהבה, מבכי לצחוק, בהנחיית טל אמיתי-לביא",
 };
