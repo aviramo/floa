@@ -59,6 +59,10 @@ if (all.ok) { console.log(`zone records (${all.result.length}):`); for (const r 
 let bad = 0;
 for (const h of live) {
   const target = h.project + ".pages.dev";
+  /* read-only, always: what Pages itself says about this host */
+  { const st = await api(`/accounts/${ACCOUNT}/pages/projects/${h.project}/domains/${encodeURIComponent(h.host)}`);
+    if (st.ok && st.result) { const d = st.result; console.log(`${h.host}: Pages says status=${d.status}; verification=${JSON.stringify(d.verification_data || {})}; validation=${JSON.stringify(d.validation_data || {})}; ca=${d.certificate_authority || "?"}`); }
+    else console.log(`${h.host}: Pages has no record of it (${st.status} ${st.errors})`); }
   /* the way back: "restoreGithub" puts a host on GitHub Pages again (its four A records, DNS only) and nothing else */
   if (h.restoreGithub) {
     const cur0 = await api(`/zones/${ZONE}/dns_records?name=${encodeURIComponent(h.host)}`);
