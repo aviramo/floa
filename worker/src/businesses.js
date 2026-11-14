@@ -12,12 +12,6 @@ export const BUSINESSES = {
     "origins": [],
     "pages": []
   },
-  "aum-redirect": {
-    "brand": "AUM",
-    "to": "LEAD_TO_AUM",
-    "origins": [],
-    "pages": []
-  },
   "biofamily": {
     "brand": "ביודנסה למשפחה",
     "to": "LEAD_TO_BIOFAMILY",
