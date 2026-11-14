@@ -118,19 +118,24 @@ for (const h of live) {
      If it never does, put the old records back: a visitor must never be left on a host that answers with an error. */
   if (removed.length) {
     let ok = false;
-    for (let i = 0; i < 36 && mk.ok; i++) {
+    for (let i = 0; i < 24 && mk.ok; i++) {
       const d = await api(`/accounts/${ACCOUNT}/pages/projects/${h.project}/domains/${encodeURIComponent(h.host)}`);
       const st = d.ok && d.result ? d.result.status : "?";
       if (st === "active") { ok = true; break; }
-      if (i % 3 === 0) console.log(`${h.host}: waiting for Pages to activate it (status: ${st})`);
-      if (i % 6 === 5) await api(`/accounts/${ACCOUNT}/pages/projects/${h.project}/domains/${encodeURIComponent(h.host)}`, { method: "PATCH" });
+      if (i % 3 === 0) console.log(`::notice::${h.host}: waiting for Pages to activate it (status: ${st})`);
+      if (i === 2) {
+        /* Pages checked the host once, before its CNAME existed, and sits on "pending". Attach it again now that the record is there. */
+        const gone = await api(`/accounts/${ACCOUNT}/pages/projects/${h.project}/domains/${encodeURIComponent(h.host)}`, { method: "DELETE" });
+        const again = await api(`/accounts/${ACCOUNT}/pages/projects/${h.project}/domains`, { method: "POST", body: JSON.stringify({ name: h.host }) });
+        console.log(`::notice::${h.host}: attached again (detach ${gone.ok ? "ok" : gone.errors}; attach ${again.ok ? "ok" : again.errors})`);
+      } else if (i % 4 === 3) await api(`/accounts/${ACCOUNT}/pages/projects/${h.project}/domains/${encodeURIComponent(h.host)}`, { method: "PATCH" });
       await new Promise((r) => setTimeout(r, 10000));
     }
-    if (ok) console.log(`${h.host}: active on ${h.project}`);
+    if (ok) console.log(`::notice::${h.host}: active on ${h.project}`);
     else {
       console.error(`::error::${h.host}: Pages did not activate it in time. Restoring the previous records.`);
       if (mk.ok) { const cur3 = await api(`/zones/${ZONE}/dns_records?name=${encodeURIComponent(h.host)}&type=CNAME`); for (const r of (cur3.result || [])) await api(`/zones/${ZONE}/dns_records/${r.id}`, { method: "DELETE" }); }
-      for (const r of removed) { const back = await api(`/zones/${ZONE}/dns_records`, { method: "POST", body: JSON.stringify(r) }); console.log(`${h.host}: restored ${r.type} ${r.content} (${back.ok ? "ok" : back.errors})`); }
+      for (const r of removed) { const back = await api(`/zones/${ZONE}/dns_records`, { method: "POST", body: JSON.stringify(r) }); console.log(`::notice::${h.host}: restored ${r.type} ${r.content} (${back.ok ? "ok" : back.errors})`); }
       bad++;
     }
   }
