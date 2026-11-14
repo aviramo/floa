@@ -17,7 +17,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
 const apply = args.includes("--apply");
 const wanted = args.filter((a) => !a.startsWith("--"));
-const ALL = ["roster", "jobs", "quit"];   // aum is retired (its admin lives in roster); chords is not a fresh build yet: it reads people before creating it
+const ALL = ["roster", "jobs"];   // aum is retired (its admin lives in roster); chords is not a fresh build yet: it reads people before creating it
 const businesses = wanted.length ? wanted : ALL;
 
 /* public -> test, except where the word is the ROLE PUBLIC ("revoke ... from public",

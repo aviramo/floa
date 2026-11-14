@@ -50,7 +50,7 @@ preview_urls = false
 #
 # SUPABASE_URL and SUPABASE_ANON_KEY are how /transcribe checks that the caller
 # is a signed-in user before it spends money reading a picture. Both are public
-# (the anon key is printed in the page it came from, businesses/floa/domain/
+# (the anon key is printed in the page it came from, apps/floa/domain/
 # supabase.js) and neither grants anything on its own, so they belong here and
 # not in a secret. THE ANTHROPIC KEY IS NOT HERE either:
 #   npx wrangler secret put ANTHROPIC_API_KEY

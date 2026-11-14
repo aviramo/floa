@@ -19,7 +19,7 @@
      sb_secret_…          a Supabase secret key
      a JWT whose payload says role is anything but "anon"
 
-   That last rule is why the anon key in businesses/floa/domain/supabase.js
+   That last rule is why the anon key in apps/floa/domain/supabase.js
    still commits fine: it is a JWT, it is public on purpose, and it says anon.
    A service role key is the same shape and says service_role, so it is caught
    without having to keep a list of which files are allowed to hold which key.

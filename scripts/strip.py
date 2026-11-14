@@ -3,8 +3,8 @@ The band at the head of the chords library, prepared from the illustration.
 
   python scripts/strip.py
 
-Source:  businesses/chords/art/strip-source.png   (the illustration as drawn)
-Output:  businesses/chords/public/assets/strip.webp  (what the page loads)
+Source:  apps/chords/art/strip-source.png   (the illustration as drawn)
+Output:  apps/chords/public/assets/strip.webp  (what the page loads)
 
 The source is kept in the repo and the output is committed beside it, because
 the output is not a build product of the site: nothing in build.mjs makes it,

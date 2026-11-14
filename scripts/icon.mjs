@@ -1,7 +1,7 @@
 /* ==========================================================================
    The chords mark, as a bitmap.
 
-   The app's icon is an SVG (businesses/chords/public/favicon.svg) and that is
+   The app's icon is an SVG (apps/chords/public/favicon.svg) and that is
    the icon on every browser tab. Two places cannot read it: an iPhone putting
    the app on a home screen and an Android doing the same both want a raster,
    and without one they take the DOMAIN's icon, so the songs app ends up
@@ -18,13 +18,13 @@
 
      node scripts/icon.mjs
 
-   Writes businesses/chords/public/apple-touch-icon.png and prints the thing it
+   Writes apps/chords/public/apple-touch-icon.png and prints the thing it
    drew, in characters, so that whoever ran it can see what came out.
    ========================================================================== */
 import { deflateSync } from "node:zlib";
 import { writeFileSync } from "node:fs";
 
-const OUT = "businesses/chords/public/apple-touch-icon.png";
+const OUT = "apps/chords/public/apple-touch-icon.png";
 const SIZE = 180;
 
 /* --- the mark, in the SVG's own hundred units ------------------------------

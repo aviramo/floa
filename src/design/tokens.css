@@ -6,7 +6,7 @@
 
    This is the ENGINE's default look, for the businesses built from it. A
    business overrides any of it in its own theme.css, and FLOA does (see
-   businesses/floa/theme.css and "חופש עיצובי" in CLAUDE.md): the rules in this
+   apps/floa/theme.css and "חופש עיצובי" in CLAUDE.md): the rules in this
    file, including "colour is never decoration", do not bind it. */
 :root {
   /* --- colour: four hues, each with a job ---------------------------------

@@ -1,5 +1,5 @@
 /* ROSTER POLICY LINT (BLOCKING since phase 6: exits 1 on any violation beyond the allow-list, so `npm test` and CI fail).
-   Reports where the roster pages break the design rules (catalog: sync13/component-catalog.md, tokens: businesses/roster/public/assets/ui.css):
+   Reports where the roster pages break the design rules (catalog: sync13/component-catalog.md, tokens: apps/roster/public/assets/ui.css):
      spacing   raw px/rem/em numbers in margin, padding, gap, inset and offsets (only tokens and 0 are allowed), in CSS files and inline style="" text
      color     hex / rgb() / hsl() literals outside the token file (CSS files and inline style="")
      field     <input>, <select>, <textarea> not inside <label class="rfield"> (hidden, file, checkbox, radio and data-rf-bare are exempt)
@@ -7,7 +7,7 @@
      native    alert( confirm( prompt( calls
      inline    style="" and on*="" attributes in markup (CSP forbids the handlers)
      safe      env(safe-area-inset-*) anywhere but ui.css: use --safe-t, --safe-b, --end-pad, --end-pad-fab, --sheet-b
-   Scope: businesses/roster/public except me/ (out of scope), api/ (docs page) and ui.css itself. public/admin/* is roster's own source since phase 4b (the harpatka sync was stopped), like every other page.
+   Scope: apps/roster/public except me/ (out of scope), api/ (docs page) and ui.css itself. public/admin/* is roster's own source since phase 4b (the harpatka sync was stopped), like every other page.
    scripts/policy-allow.json is the legacy allow-list: the violations that exist today per file and rule. "beyond allow-list" is what is NEW since it was written, and it fails the run. An allow-list entry without a reason in `reasons` fails it too, so nothing is excused silently.
    Usage:  node scripts/roster-policy.mjs --summary        counts per rule and per file (what npm test prints)
            node scripts/roster-policy.mjs --lines          every violation with file:line and the text
@@ -24,8 +24,8 @@ const args = new Set(process.argv.slice(2));
 
 const rel = (p) => relative(ROOT, p).split(sep).join("/");
 const EXCLUDE_DIRS = new Set(["me", "api"]);
-const EXCLUDE_FILES = new Set(["businesses/roster/public/connect/mail-defaults.js"]);   // the default HTML of the participant mails: email markup needs inline styles, it is not a page
-const TOKEN_FILE = "businesses/roster/public/assets/ui.css";
+const EXCLUDE_FILES = new Set(["apps/roster/public/connect/mail-defaults.js"]);   // the default HTML of the participant mails: email markup needs inline styles, it is not a page
+const TOKEN_FILE = "apps/roster/public/assets/ui.css";
 const BUILT_ADMIN = new Set();   // since phase 4b public/admin is roster's own source (the harpatka sync was stopped), so nothing there is "built output" any more
 
 function walk(dir, out = []) {
@@ -168,12 +168,12 @@ console.log("new beyond the allow-list: " + beyond.length + (existsSync(ALLOW_FI
 const cs = count(owned);
 console.log("\nper file (roster-owned):");
 const files = [...new Set(owned.map((v) => v.file))].sort();
-for (const f of files) console.log("  " + pad(f.replace("businesses/roster/public/", ""), 28) + RULES.map((r) => ((cs[r] || {})[f] ? r + " " + cs[r][f] : "")).filter(Boolean).join("  "));
+for (const f of files) console.log("  " + pad(f.replace("apps/roster/public/", ""), 28) + RULES.map((r) => ((cs[r] || {})[f] ? r + " " + cs[r][f] : "")).filter(Boolean).join("  "));
 if (args.has("--lines")) {
   console.log("\nEXACT LINES (roster-owned, then built admin):");
   for (const [title, list] of [["owned", owned], ["built admin", built]]) {
     console.log("== " + title);
-    for (const v of list) console.log(v.rule + "  " + v.file.replace("businesses/roster/public/", "") + ":" + v.line + "  " + v.text);
+    for (const v of list) console.log(v.rule + "  " + v.file.replace("apps/roster/public/", "") + ":" + v.line + "  " + v.text);
   }
 }
 if (!args.has("--summary") && !args.has("--lines")) console.log("\n(add --lines for every violation, --write-allow to rewrite the allow-list)");
@@ -182,7 +182,7 @@ const reasons = existsSync(ALLOW_FILE) ? JSON.parse(readFileSync(ALLOW_FILE, "ut
 const unexplained = [];
 for (const [rule, byFile] of Object.entries(allow)) for (const f of Object.keys(byFile)) if (!reasons[rule + "|" + f]) unexplained.push(rule + "|" + f);
 if (beyond.length || unexplained.length) {
-  for (const v of beyond) console.log("VIOLATION  " + v.rule + "  " + v.file.replace("businesses/roster/public/", "") + ":" + v.line + "  " + v.text);
+  for (const v of beyond) console.log("VIOLATION  " + v.rule + "  " + v.file.replace("apps/roster/public/", "") + ":" + v.line + "  " + v.text);
   for (const u of unexplained) console.log("NO REASON in policy-allow.json for " + u);
   console.log(String.fromCharCode(10) + "roster policy lint FAILED (" + beyond.length + " new violation(s), " + unexplained.length + " unexplained allowance(s)). Fix the code, or for a real exception add it with --write-allow and a reason.");
   process.exit(1);

@@ -35,7 +35,7 @@ const DIST = join(ROOT, "dist");
 /* The PDFs are files of the BUSINESS, like its share cards (scripts/gen_og.mjs):
    they land in its public/ folder, the build copies them into its site, and the
    CV page links to them. So they are committed — generated source, but source. */
-const OUT = join(ROOT, "businesses/me/public");
+const OUT = join(ROOT, "apps/me/public");
 
 /* One row per page the business publishes. A document's PDF sits beside the
    page it was printed from, under the same slug, which is the shape
@@ -119,7 +119,7 @@ try {
   for (const page of PAGES) {
     const out = join(OUT, page.file);
     await print(origin + page.path, out);
-    console.log(`✓ businesses/me/public/${page.file}`);
+    console.log(`✓ apps/me/public/${page.file}`);
   }
 } finally {
   server.close();

@@ -37,11 +37,11 @@ import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const PUBLIC = join(ROOT, "businesses/floa/public");
+const PUBLIC = join(ROOT, "apps/floa/public");
 const load = (p) => import(pathToFileURL(join(ROOT, p)).href);
 
-const { home } = await load("businesses/floa/content/home.js");
-const { landingOffer } = await load("businesses/floa/content/landing-offer.js");
+const { home } = await load("apps/floa/content/home.js");
+const { landingOffer } = await load("apps/floa/content/landing-offer.js");
 const { icon } = await load("src/components/icon/icon.js");
 
 /* --- where Chrome is -------------------------------------------------------- */
@@ -61,7 +61,7 @@ const PYTHON = [process.env.PYTHON, "python", "python3", "py"].filter(Boolean).f
 });
 if (!PYTHON) throw new Error("No Python with Pillow found. Run: pip install pillow (or set PYTHON=/path/to/python).");
 
-/* --- the palette: the site's water (businesses/floa/theme.css) ---------------- */
+/* --- the palette: the site's water (apps/floa/theme.css) ---------------- */
 const INK = "#0C2A45", TEAL = "#1B74B3", DARK = "#0F4F7F", TINT = "#CFE6F5", LIGHT = "#4FAEE8", LINE = "#D4E3EE";
 
 /* --- fonts: Rubik 700, cut to exactly the glyphs the cards print ------------ */

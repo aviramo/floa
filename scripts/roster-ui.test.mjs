@@ -15,7 +15,7 @@
                follows the same rules
 
    No dependencies: a static server and Chrome over the DevTools protocol through
-   Node's built-in WebSocket, like businesses/chords/test/layout.test.mjs. The
+   Node's built-in WebSocket, like apps/chords/test/layout.test.mjs. The
    database is stubbed: every request to the Supabase host is answered here.
 
      node build.mjs && npm run test:roster-ui

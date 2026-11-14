@@ -6,7 +6,7 @@
    other door: the Management API, which takes the personal access token in .env
    and runs whatever SQL you hand it, as the owner. Reading a table someone
    else's policy hides, adding a column, writing a policy, checking what
-   businesses/chords/schema.sql actually became after three edits.
+   apps/chords/schema.sql actually became after three edits.
 
      node scripts/sql.mjs "select id, title from songs limit 5"
      node scripts/sql.mjs < some-migration.sql

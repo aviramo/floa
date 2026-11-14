@@ -31,7 +31,7 @@ on:
   # So the database says so itself. A trigger on the songs table posts here the
   # moment a song is published, unpublished, deleted or restored, and this run
   # is the same build as any other: it asks the library again and writes what it
-  # finds. See "התראה מהדאטהבייס" in businesses/chords/schema.sql.
+  # finds. See "התראה מהדאטהבייס" in apps/chords/schema.sql.
   #
   # It fires on publication and NOT on saving. A song saves itself every second
   # while it is being typed, and a build per keystroke is not a fresher site, it
@@ -91,7 +91,7 @@ jobs:
           if [ "$GITHUB_EVENT_NAME" = "push" ]; then
             base=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/deploy-cloudflare.yml/runs?branch=main&status=success&per_page=1" --jq '.workflow_runs[0].head_sha // empty')
             if [ -n "$base" ] && git cat-file -e "$base^{commit}" 2>/dev/null; then
-              if git diff --quiet "$base" HEAD -- businesses/chords src build.mjs package.json businesses/floa/domain .github/workflows/deploy-cloudflare.yml; then
+              if git diff --quiet "$base" HEAD -- apps/chords src build.mjs package.json apps/floa/domain .github/workflows/deploy-cloudflare.yml; then
                 run=false
               fi
             fi
@@ -125,7 +125,7 @@ jobs:
           if [ "$GITHUB_EVENT_NAME" = "push" ]; then
             base=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/deploy-cloudflare.yml/runs?branch=main&status=success&per_page=1" --jq '.workflow_runs[0].head_sha // empty')
             if [ -n "$base" ] && git cat-file -e "$base^{commit}" 2>/dev/null; then
-              if git diff --quiet "$base" HEAD -- businesses/roster src build.mjs package.json businesses/floa/domain scripts/roster-ui.test.mjs scripts/roster-policy.mjs scripts/policy-allow.json .github/workflows/deploy-cloudflare.yml; then
+              if git diff --quiet "$base" HEAD -- apps/roster src build.mjs package.json apps/floa/domain scripts/roster-ui.test.mjs scripts/roster-policy.mjs scripts/policy-allow.json .github/workflows/deploy-cloudflare.yml; then
                 run=false
               fi
             fi

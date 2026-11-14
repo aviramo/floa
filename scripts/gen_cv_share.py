@@ -23,8 +23,8 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT / "businesses/floa/public/assets/ofir.webp"
-OUT = ROOT / "businesses/me/public/assets/ofir-aviram.jpg"
+SRC = ROOT / "apps/floa/public/assets/ofir.webp"
+OUT = ROOT / "apps/me/public/assets/ofir-aviram.jpg"
 
 # 1200 on the side: above every platform's minimum, and still small enough that
 # a crawler on a slow fetch does not time out on it.

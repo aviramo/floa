@@ -20,7 +20,7 @@ POST https://floa-lead.<החשבון>.workers.dev/lead
 ה־origin לא יכול להבחין ביניהם, ולכן העסק אומר מי הוא וה־Worker מחפש את הנמען
 *שלו*.
 
-`src/businesses.js` **נוצר על ידי `build.mjs`** מתוך `businesses/<key>/index.js`.
+`src/businesses.js` **נוצר על ידי `build.mjs`** מתוך `apps/<key>/index.js`.
 אין לערוך אותו. זה מה שמונע את התקלה שקרתה כאן פעם: שם דף שהשתנה באתר ולא ברשימה
 של ה־Worker, וכל פנייה ממנו נדחתה בשקט. היום הרשימה נכתבת מחדש באותה בנייה.
 
@@ -74,7 +74,7 @@ https://floa-lead.<החשבון>.workers.dev
 
 ### 3. לחבר את האתר לכתובת הזאת
 
-ב־`businesses/floa/content/site.js`, `runtime.leadEndpoint` חייב להצביע בדיוק לשם:
+ב־`apps/floa/content/site.js`, `runtime.leadEndpoint` חייב להצביע בדיוק לשם:
 
 ```js
 leadEndpoint: "https://floa-lead.<החשבון>.workers.dev/lead",
@@ -88,7 +88,7 @@ leadEndpoint: "https://floa-lead.<החשבון>.workers.dev/lead",
 
 ## עסק חדש: לאן הפניות שלו הולכות
 
-ב־`businesses/<key>/index.js` מגדירים `lead.to`, שם המשתנה שיחזיק את התיבה שלו:
+ב־`apps/<key>/index.js` מגדירים `lead.to`, שם המשתנה שיחזיק את התיבה שלו:
 
 ```js
 lead: { to: "LEAD_TO_DANA", origins: ["https://floa.co.il"] },
@@ -118,7 +118,7 @@ npx wrangler secret put AUM_PUSH_TOKEN      # סיסמה אקראית ארוכה
 npx wrangler deploy
 ```
 
-המפתח הציבורי והטוקן נכנסים גם ל־`aum_settings` בדאטהבייס (ראו סוף `businesses/aum/schema.sql`). את זוג המפתחות עושים פעם אחת: דפדפנים נרשמים מול המפתח הציבורי, והחלפה אחר כך מנתקת את כולם בשקט.
+המפתח הציבורי והטוקן נכנסים גם ל־`aum_settings` בדאטהבייס (ראו סוף `apps/aum/schema.sql`). את זוג המפתחות עושים פעם אחת: דפדפנים נרשמים מול המפתח הציבורי, והחלפה אחר כך מנתקת את כולם בשקט.
 
 ## `/roster/v1/*`: ה־API הציבורי של Roster
 
@@ -182,7 +182,7 @@ npm test                    # מריץ את worker/test/lead.test.mjs
 npx wrangler dev            # מאזין על localhost:8787
 ```
 
-ואז ב־`businesses/floa/content/site.js` מפנים זמנית את `runtime.leadEndpoint`
+ואז ב־`apps/floa/content/site.js` מפנים זמנית את `runtime.leadEndpoint`
 ל־`http://localhost:8787/lead`, ומריצים `npm run dev` בשורש.
 
 ## חשוב

@@ -1067,7 +1067,7 @@ function clean(song) {
 /* The app's slugify, in the app's words. It lives in two runtimes because the
    browser names a song when it is created and this names it again when the
    real title is finally known; keep the two in step (see slugify() in
-   businesses/chords/public/assets/app.js). */
+   apps/chords/public/assets/app.js). */
 const RESERVED_SLUGS = new Set(["new", "edit"]);
 
 function slugify(name) {
