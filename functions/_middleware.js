@@ -24,6 +24,7 @@ import map from "../domains.json";
 const HOSTS = map.hosts.filter((h) => h.enabled !== false && h.folder);
 const HOMES = Object.fromEntries(HOSTS.map((h) => [h.host, "/" + h.folder]));
 const CLEAN = new Set(HOSTS.filter((h) => h.clean).map((h) => h.host));
+const ICONS = Object.fromEntries(HOSTS.filter((h) => h.icons).map((h) => [h.host, h.icons]));
 const SLUGS = new Set(HOSTS.filter((h) => h.slugs).map((h) => h.host));
 const RESERVED = ["admin", "connect", "me", "api", "assets", "new", "index"];
 const DOMAIN_FILES = new Set(["/supabase.js", "/auth.js", "/favicon.ico", "/favicon.svg", "/apple-touch-icon.png", "/sw.js", "/robots.txt", "/404.html"]);
@@ -48,6 +49,15 @@ export async function onRequest({ request, next, env }) {
 
   const home = HOMES[url.hostname];
   if (!home || !get) return next();
+  /* the host's own icon at the root, where WhatsApp, Google and browsers ask for it */
+  const icon = ICONS[url.hostname] && ICONS[url.hostname][url.pathname];
+  if (icon) {
+    const u = new URL(url);
+    u.pathname = icon.startsWith("/") ? icon : home + icon;
+    const r = await env.ASSETS.fetch(new Request(u, request));
+    if (r.status !== 404) return r;
+  }
+
   if (url.pathname.startsWith(home) || url.pathname === home.slice(0, -1)) {
     if (!CLEAN.has(url.hostname)) return next();
     /* a FILE (script, style, image) is served as it is: a redirect per file is a
