@@ -556,7 +556,7 @@
           var renamed = b.slug !== sg;
           b.name = nm; b.slug = sg;
           renderList();
-          toast(renamed ? "העסק עודכן. הכתובת החדשה: floa.co.il/roster/" + sg : "השם עודכן");
+          toast(renamed ? "העסק עודכן. הכתובת החדשה: " + (location.pathname.indexOf("/roster/") === 0 ? "floa.co.il/roster/" : location.host + "/") + sg : "השם עודכן");
           if (ctx === c) dlg.close();
           return;
         }

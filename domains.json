@@ -1,5 +1,5 @@
 {
-  "_": "Every host that points at a Cloudflare Pages project, and the ONE place that maps an address to an app. Add a line here, push to main, and .github/workflows/domains.yml attaches the host to the project and creates its DNS record. Nothing here is ever deleted by the script: removing a line does NOT remove the host. `enabled: false` is written down but not applied yet. `folder` is where the app's files live in the site (the sub-domain's root shows it, functions/_middleware.js reads this file). `clean: true` also takes the folder out of any address that carries it. `old` lists extra old addresses of the same app. `redirectOld` (top level) sends every old floa.co.il address to its sub-domain: keep it false until the Worker has been deployed with the new origins.",
+  "_": "Every host that points at a Cloudflare Pages project, and the ONE place that maps an address to an app. Add a line here, push to main, and .github/workflows/domains.yml attaches the host to the project and creates its DNS record. Nothing here is ever deleted by the script: removing a line does NOT remove the host. `enabled: false` is written down but not applied yet. `folder` is where the app's files live in the site (the sub-domain's root shows it, functions/_middleware.js reads this file). `clean: true` also takes the folder out of any address that carries it. `old` lists extra old addresses of the same app. `redirectOld` (top level) sends every old floa.co.il address to its sub-domain: keep it false until the Worker has been deployed with the new origins. `slugs: true` (roster) also maps /<business> and /<business>/connect|me to that business's pages, the way the domain's 404 router does for /roster/<business>.",
   "zone": "floa.co.il",
   "hosts": [
     {
@@ -32,7 +32,9 @@
       "host": "roster.floa.co.il",
       "project": "floa-site",
       "enabled": true,
-      "folder": "roster/"
+      "folder": "roster/",
+      "clean": true,
+      "slugs": true
     },
     {
       "host": "biofamily.floa.co.il",

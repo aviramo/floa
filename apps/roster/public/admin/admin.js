@@ -183,7 +183,7 @@
     if ($('#stDlg').open) { sp.set('st', '1'); if (stPg.cur) sp.set('stv', ST_IDS[stPg.cur]); }
     if ($('#finDlg').open) sp.set('fin', finV === 'log' ? 'log' : finV === 'settle' ? 'settle' : finV === 'form' ? (finEdit && finEdit.id ? 'edit-' + finEdit.type + '-' + finEdit.id : 'new-' + ((finEdit && finEdit.kind) || 'expense')) : '1');   // כל שלב בכספים: ראשי, יומן, התחשבנות, טופס חדש או עריכה
     const s = sp.toString();
-    try { history.replaceState(null, '', '/roster/' + encodeURIComponent(BIZ.slug) + (s ? '?' + s : '')); } catch (e) {}   // הכתובת היפה; רענון עובר דרך ה-404 של הדומיין, שמחזיר לכאן עם ?biz=
+    try { history.replaceState(null, '', (location.pathname.indexOf('/roster/') === 0 ? '/roster/' : '/') + encodeURIComponent(BIZ.slug) + (s ? '?' + s : '')); } catch (e) {}   // הכתובת היפה; רענון עובר דרך ה-404 של הדומיין, שמחזיר לכאן עם ?biz=
   }
 
   /* ---------- כניסה והעסק ----------
