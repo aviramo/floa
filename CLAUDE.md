@@ -44,7 +44,7 @@
 
 ## הריפו מחזיק מקור בלבד. האתר נבנה בענן
 
-**אין קבצי HTML בנויים בגיט.** הכול נבנה ל-`dist/`, ש-`.gitignore` מתעלם ממנו, ו-GitHub Action (`.github/workflows/deploy-cloudflare.yml`) בונה ומפרסם אותו ל-Cloudflare Pages בכל פוש ל-main (פרויקט `floa-site`; `test.floa.co.il` הוא `floa-test` מהענף `test`). הדומיין והתת דומיינים מוגדרים ב-`domains.json` ומוחלים על ידי `.github/workflows/domains.yml`. GitHub Pages כבוי. הכתובות לא נגזרות ממבנה הריפו אלא ממבנה החבילה שמתפרסמת, ולכן `floa.co.il/business-systems/` עובד בלי שתהיה תיקייה כזאת בגיט.
+**אין קבצי HTML בנויים בגיט.** הכול נבנה ל-`dist/`, ש-`.gitignore` מתעלם ממנו, ו-GitHub Action (`.github/workflows/deploy-cloudflare.yml`) בונה ומפרסם אותו ל-Cloudflare Pages בכל פוש ל-main (פרויקט `floa-site`; אין יותר סביבת בדיקות נפרדת). הדומיין והתת דומיינים מוגדרים ב-`domains.json` ומוחלים על ידי `.github/workflows/domains.yml`. GitHub Pages כבוי. הכתובות לא נגזרות ממבנה הריפו אלא ממבנה החבילה שמתפרסמת, ולכן `floa.co.il/business-systems/` עובד בלי שתהיה תיקייה כזאת בגיט.
 
 - **מקור האמת:** `src/` (המנוע) ו-`businesses/` (העסקים)
 - **לבנות:** `node build.mjs`, או `node build.mjs --only=floa` לעסק אחד

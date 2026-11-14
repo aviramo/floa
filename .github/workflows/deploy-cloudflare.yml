@@ -2,8 +2,8 @@
 # floa.co.il, published to CLOUDFLARE PAGES (project `floa-site`).
 #
 # The same build, the same tests and the same triggers as deploy.yml, but the
-# result goes to Cloudflare Pages instead of GitHub Pages, the way test.floa.co.il
-# already does (deploy-test.yml). This is what lets the repository be private:
+# result goes to Cloudflare Pages instead of GitHub Pages, 
+# (the old deploy-test.yml is gone, there is no test site any more). This is what lets the repository be private:
 # GitHub Pages on a private repository is a paid feature, Cloudflare Pages is not.
 #
 # While both workflows exist, a push publishes to BOTH. The domain decides which
@@ -11,7 +11,7 @@
 # is attached to the Cloudflare project (see the cut-over steps in the repo
 # notes), this is the only deploy (deploy.yml, the GitHub Pages one, was deleted).
 #
-# Needs the same two secrets as deploy-test.yml: CLOUDFLARE_API_TOKEN (Cloudflare
+# Needs two secrets: CLOUDFLARE_API_TOKEN (Cloudflare
 # Pages: Edit) and CLOUDFLARE_ACCOUNT_ID. The project is created on the first run.
 # =============================================================================
 name: Deploy to Cloudflare
