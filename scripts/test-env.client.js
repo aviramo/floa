@@ -1,14 +1,14 @@
 /* Injected into every page of the TEST environment (served by `node build.mjs --serve --test`, and copied into
    the test site by scripts/deploy-test.mjs). Never part of the real build. */
 (function () {
-  window.FLOA_ENV = { name: "test", schema: "test" };
+  window.FLOA_ENV = { name: "test", schema: "roster-test" };
   var of = window.fetch;
   window.fetch = function (input, init) {
     try {
       var url = typeof input === "string" ? input : (input && input.url) || "";
       if (url.indexOf(".supabase.co/rest/v1/") !== -1) {
         var h = new Headers((init && init.headers) || (input && input.headers) || {});
-        h.set("Accept-Profile", "test"); h.set("Content-Profile", "test");
+        h.set("Accept-Profile", "roster-test"); h.set("Content-Profile", "roster-test");
         init = Object.assign({}, init || {}, { headers: h });
       }
     } catch (e) {}

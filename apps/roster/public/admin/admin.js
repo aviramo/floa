@@ -1,10 +1,10 @@
   /* Supabase של הדומיין (/supabase.js) וההתחברות המשותפת שלו (/auth.js); המפתח ציבורי מעצם הגדרתו, ומה שמותר באמת נקבע במדיניות RLS של כל טבלה */
   const FRAMED = (() => { try { return window.top !== window.self; } catch (e) { return true; } })();   // בתוך מסגרת של דף אחר: לא מציגים כלום ולא פונים לשרת
   if (FRAMED) document.documentElement.hidden = true;
-  const AUTH = window.FLOA_AUTH, DB = { url: window.SUPABASE.url, key: window.SUPABASE.anonKey };
-  const T = { p: 'roster_participants', m: 'roster_meetings', a: 'roster_attendance', n: 'roster_notes', pr: 'roster_promoters', pp: 'roster_promoter_payments', pay: 'roster_payments', st: 'roster_statuses', pf: 'roster_admin_prefs', pm: 'roster_pay_methods', fin: 'roster_finance', finr: 'roster_finance_recurring', finlog: 'roster_finance_log', fintr: 'roster_finance_transfers', mt: 'roster_meeting_types', tpl: 'roster_msg_templates', sent: 'roster_msg_sent' };
+  const AUTH = window.FLOA_AUTH, DB = { url: window.SUPABASE.url, key: window.SUPABASE.anonKey, schema: window.SUPABASE.schema };
+  const T = { p: 'participants', m: 'meetings', a: 'attendance', n: 'notes', pr: 'promoters', pp: 'promoter_payments', pay: 'payments', st: 'statuses', pf: 'admin_prefs', pm: 'pay_methods', fin: 'finance', finr: 'finance_recurring', finlog: 'finance_log', fintr: 'finance_transfers', mt: 'meeting_types', tpl: 'msg_templates', sent: 'msg_sent' };
   const TABLES = Object.values(T);
-  const MEMBERS = 'roster_members', MAIL_LOG = 'roster_mail_log';   // נקראות לפי דרישה (כרטיס משתתף, פתיחת מייל), לא בזמן אמת
+  const MEMBERS = 'members', MAIL_LOG = 'mail_log';   // נקראות לפי דרישה (כרטיס משתתף, פתיחת מייל), לא בזמן אמת
 
   /* ===== ערכת רכיבים: כל אובייקט ויזואלי שחוזר בדף נבנה כאן, בקריאה אחת עם פרמטרים (העיצוב של כל אובייקט מוגדר פעם אחת ב-admin.css) =====
      icon(שם, מחלקה)            סמל מהמאגר (24×24, קו 2.2 או מילוי). בסימון הקבוע בדף: <svg data-i="שם"> ומתמלא בטעינה
@@ -187,7 +187,7 @@
   }
 
   /* ---------- כניסה והעסק ----------
-     הכניסה היא של הדומיין (/auth.js: אותה כניסה לכל האפליקציות, בלי שמירת הפעלה כאן); העסק שהדף עובד עליו נקבע ב-?biz=<שם> ומאומת מול roster_my_businesses.
+     הכניסה היא של הדומיין (/auth.js: אותה כניסה לכל האפליקציות, בלי שמירת הפעלה כאן); העסק שהדף עובד עליו נקבע ב-?biz=<שם> ומאומת מול my_businesses.
      כל בקשה ל-/rest/v1 נושאת x-business: מזהה העסק, ובסיס הנתונים ממלא ממנו את business_id ומצמצם בו את הקריאה. הדף לעולם לא כותב business_id בעצמו */
   let BIZ = { slug: (deep && deep.biz) || '', id: null, name: '' };
   const emailOf = () => String(AUTH.email() || '').toLowerCase();
@@ -217,7 +217,7 @@
       rtRetry = 1000;
       let tok; try { tok = await AUTH.token(); } catch (e) { try { ws.close(); } catch (x) {} return; }
       const scope = 'business_id=eq.' + BIZ.id, ch = [];
-      TABLES.forEach((table) => { ch.push({ event: 'INSERT', schema: 'public', table, filter: scope }, { event: 'UPDATE', schema: 'public', table, filter: scope }, { event: 'DELETE', schema: 'public', table }); });
+      TABLES.forEach((table) => { ch.push({ event: 'INSERT', schema: (DB.schema || 'public'), table, filter: scope }, { event: 'UPDATE', schema: (DB.schema || 'public'), table, filter: scope }, { event: 'DELETE', schema: (DB.schema || 'public'), table }); });
       rtSend({ topic: RT_TOPIC, event: 'phx_join', ref: '1', payload: { config: { broadcast: { ack: false, self: false }, presence: { key: '' }, private: false, postgres_changes: ch }, access_token: tok } });
       rtHb = setInterval(() => rtSend({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: String(Date.now()) }), 25000);
       rtTok = setInterval(() => { AUTH.token().then((t) => rtSend({ topic: RT_TOPIC, event: 'access_token', payload: { access_token: t }, ref: String(Date.now()) }), () => {}); }, 600000);   // הטוקן מתחדש אצל ההתחברות המשותפת, והחיבור הפתוח מקבל אותו
@@ -247,7 +247,7 @@
     if (!AUTH.signedIn()) { showGate(''); return; }
     let mine;
     try {
-      const r = await fetch(DB.url + '/rest/v1/rpc/roster_my_businesses', { method: 'POST', headers: { apikey: DB.key, Authorization: 'Bearer ' + await AUTH.token(), 'Content-Type': 'application/json' }, body: '{}' });
+      const r = await fetch(DB.url + '/rest/v1/rpc/my_businesses', { method: 'POST', headers: { apikey: DB.key, Authorization: 'Bearer ' + await AUTH.token(), 'Content-Type': 'application/json' }, body: '{}' });
       if (r.status === 401) { showGate(''); return; }
       if (!r.ok) throw new Error('HTTP ' + r.status);
       mine = await r.json();
@@ -524,7 +524,7 @@
     const [d, tm] = s.split(' '), [y, mo, da] = d.split('-').map(Number), [h, mi] = tm.split(':').map(Number);
     return Date.UTC(y, mo - 1, da, h % 24, mi);
   };
-  /* סוגי מפגשים (31.10.26): לכל מפגש סוג (roster_meetings.type_id); מפגש בלי סוג שייך לסוג הראשון. לסוג: פרטי ברירת מחדל למפגש חדש, תגיות משלו, מתי נפתח סימון ההגעה וההודעה לפני המפגש */
+  /* סוגי מפגשים (31.10.26): לכל מפגש סוג (meetings.type_id); מפגש בלי סוג שייך לסוג הראשון. לסוג: פרטי ברירת מחדל למפגש חדש, תגיות משלו, מתי נפתח סימון ההגעה וההודעה לפני המפגש */
   const firstTypeId = () => (state.mtypes[0] || {}).id || null;
   const typeIdOf = (m) => (m && m.type_id) || firstTypeId();
   const typeById = (id) => state.mtypes.find((t) => t.id === id) || null;
@@ -954,7 +954,7 @@
   const payKeys = (s) => s ? String(s).split(',').filter(Boolean) : [];   // state.pay: התגית שנבחרה בפס
   const matchPay = (p, keys) => { if (!keys.length) return true; const pos = keys.filter((k) => k[0] !== '!'), neg = keys.filter((k) => k[0] === '!').map((k) => k.slice(1)); return (!pos.length || pos.some((k) => stMatch(p, k))) && !neg.some((k) => stMatch(p, k)); };   // a key written !key means everyone who does NOT have that tag
   const effPay = () => state.q.trim() ? null : state.pay;
-  /* העדפות תצוגה ברמת המשתמש ובמפגש (27.10.26): לכל מנהל, לכל מפגש ולתמונת המצב הכללית ("all") ערכים משלהם לטוגלים (תגיות, תשלום: true/false; שליחה, הגעה: null = אוטומטי לפי התזמונים של אותו מפגש). state.showTags וחבריו הם מאפיינים שמחזירים וכותבים את ערכי ההקשר הנוכחי (המפגש הנבחר או "all"), כך שבמעבר בין מפגשים התצוגה מתחלפת איתם. נשמר ב-roster_admin_prefs.view_scopes */
+  /* העדפות תצוגה ברמת המשתמש ובמפגש (27.10.26): לכל מנהל, לכל מפגש ולתמונת המצב הכללית ("all") ערכים משלהם לטוגלים (תגיות, תשלום: true/false; שליחה, הגעה: null = אוטומטי לפי התזמונים של אותו מפגש). state.showTags וחבריו הם מאפיינים שמחזירים וכותבים את ערכי ההקשר הנוכחי (המפגש הנבחר או "all"), כך שבמעבר בין מפגשים התצוגה מתחלפת איתם. נשמר ב-admin_prefs.view_scopes */
   const VIEW_DEF = { pay: true, sent: null, gender: true };   // gender: זכר / נקבה בשורת הסינון, מסומן כברירת מחדל
   const MEETING_DEF = { pay: false, sent: false, gender: true };   // מפגש שעוד לא הוגדרה לו תצוגה: רק המגדר דלוק, והתשלום, שליחת פרטי המפגש וההגעה כבויים (המנהל מדליק מה שהוא צריך)
   const viewKey = () => state.filter || (state.mtype ? 'type:' + state.mtype : 'all');
@@ -2212,12 +2212,12 @@
     const it = mailOfferQ.shift(), p = partOf(it.pid), m = meetOf(it.mid);
     if (!p || !m) { mailOfferNext(); return; }
     { const t0 = state.tpls.find((x) => x.system_key === 'confirm'); if (t0 && sentRow(it.pid, it.mid, t0.id)) { mailOfferNext(); return; } }   // כבר סומן שנשלח אליו: בלי פופאפ
-    let st = ''; try { st = await api('rpc/roster_close_payment_mail', { method: 'POST', body: { p_pid: it.pid, p_mid: it.mid, p_dry: true }, ui: false }); } catch (e) { console.error(e); }
+    let st = ''; try { st = await api('rpc/close_payment_mail', { method: 'POST', body: { p_pid: it.pid, p_mid: it.mid, p_dry: true }, ui: false }); } catch (e) { console.error(e); }
     const nopay = noPayOf(p, linkOf(it.pid, it.mid)), hasPhone = !!String(p.phone || '').trim(), tpl = state.tpls.find((x) => x.system_key === 'confirm');
     const after = () => $('#cDlg').addEventListener('close', () => setTimeout(mailOfferNext, 350), { once: true });
     if (st === 'ready') {
       const send = async () => {
-        let r = ''; try { r = await api('rpc/roster_close_payment_mail', { method: 'POST', body: { p_pid: it.pid, p_mid: it.mid }, ui: false }); } catch (e) { fail(e); return; }
+        let r = ''; try { r = await api('rpc/close_payment_mail', { method: 'POST', body: { p_pid: it.pid, p_mid: it.mid }, ui: false }); } catch (e) { fail(e); return; }
         if (r === 'sent') { toast('המייל נשלח למשתתף'); refreshOpenSheet(); render(); }
         else if (r === 'no_email' || r === 'no_mail') waConfirmOffer(p, m);
         else toast(r === 'already' ? 'כבר נשלח למשתתף מייל על המפגש הזה' : 'המייל לא נשלח');
@@ -3443,7 +3443,7 @@
     btn.disabled = false; if (sheet) sheet.saving = false;
   });
 
-  /* חשבון גוגל מחובר למשתתף (roster_members): מייל, סטטוס, ניתוק וחסימה (blocked). ניתוק מסיר את הקישור למשתתף (participant_id = null) והחשבון נעלם מהכרטיס; חסימה משאירה אותו משויך ומונעת כניסה */
+  /* חשבון גוגל מחובר למשתתף (members): מייל, סטטוס, ניתוק וחסימה (blocked). ניתוק מסיר את הקישור למשתתף (participant_id = null) והחשבון נעלם מהכרטיס; חסימה משאירה אותו משויך ומונעת כניסה */
   async function loadGoogleAcc(p) {
     const box = $('#pGoogle'); if (!box) return; box.hidden = true; box.innerHTML = '';
     if (!p || !p.id) return;
@@ -4614,7 +4614,7 @@
     if (j < 0 || j >= keys.length) return; keys.splice(i, 1); keys.splice(j, 0, k);
     commitPmOrder(keys).then(() => { const nh = document.querySelector('#pmList .pmrow[data-k="' + k + '"] .sthandle'); if (nh) nh.focus(); });
   });
-  /* ההודעה לפני המפגש ומתי הכפתור שלה נפתח: לכל סוג מפגש (roster_meeting_types.event_msg / event_open), לכל המנהלים */
+  /* ההודעה לפני המפגש ומתי הכפתור שלה נפתח: לכל סוג מפגש (meeting_types.event_msg / event_open), לכל המנהלים */
   async function saveEventMsg(v) {
     const val = (v || '').trim() ? v : null;
     await saveType(stType || firstTypeId(), { event_msg: val }, val ? 'נוסח ההודעה עודכן' : 'חזר נוסח ברירת המחדל');
@@ -4654,7 +4654,7 @@
     try { const [r] = await api(T.pm, { method: 'POST', body: row, prefer: 'return=representation' }); state.payMethods.push(r || row); renderPm(); const inp = document.querySelector('#pmList [data-k="' + key + '"] .pmname'); if (inp) { inp.focus(); inp.select(); } }
     catch (err) { fail(err); }
   });
-  /* מחיקת שיווק ממומן: מסך בתוך הפופאפ. יש מקושרים: בוחרים לאן להעביר אותם, והכול עובר ונמחק בטרנזקציה אחת (roster_promoter_replace) */
+  /* מחיקת שיווק ממומן: מסך בתוך הפופאפ. יש מקושרים: בוחרים לאן להעביר אותם, והכול עובר ונמחק בטרנזקציה אחת (promoter_replace) */
   function askSrcDelete(id) {
     const x = promoterOf(id); if (!x) return;
     const ps = state.participants.filter((q) => q.promoter_id === x.id);
@@ -4664,7 +4664,7 @@
     if ((ps.length || money) && !others.length) { toast('זה השיווק הממומן היחיד שיש עליו נתונים, ולכן צריך קודם להוסיף שיווק אחר'); return; }
     const run = async (to) => {
       try {
-        const r = await api('rpc/roster_promoter_replace', { method: 'POST', body: { p_from: x.id, p_to: b.dataset.to || null } });
+        const r = await api('rpc/promoter_replace', { method: 'POST', body: { p_from: x.id, p_to: b.dataset.to || null } });
         if (r !== 'ok') { toast('דרך ההגעה לא נמחקה, אפשר לנסות שוב'); b.disabled = false; return; }
         toast(b.dataset.to ? 'הועברו ל"' + (promoterOf(b.dataset.to) || {}).name + '" ודרך ההגעה נמחקה' : 'דרך ההגעה נמחקה');
         state.promoters = state.promoters.filter((o) => o.id !== x.id); showSetView('src'); load(true);

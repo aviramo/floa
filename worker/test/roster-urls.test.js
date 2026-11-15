@@ -115,7 +115,7 @@ test("good webhook URLs are accepted and normalised", () => {
   }
 });
 
-/* The set the database refuses ANYWHERE in a URL (roster_valid_webhook_url, spelled out by code point, never by locale):
+/* The set the database refuses ANYWHERE in a URL (valid_webhook_url, spelled out by code point, never by locale):
    U+0001..U+001F, U+0020, U+007F, U+0085, U+00A0, U+1680, U+2000..U+200F, U+2028..U+202F, U+205F, U+2066..U+2069,
    U+3000, U+FEFF. This is the same list as section 74 of the database's own test, and the Worker must refuse exactly it. */
 const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);

@@ -21,18 +21,18 @@ const MEETINGS_DB = {
 function world(rpc = {}, extra = {}) {
   const net = fakeNet({
     rpc: {
-      roster_api_auth: () => ({ ok: true, kind: "public" }),
-      roster_events_claim: () => [],
-      roster_events_done: () => null,
+      api_auth: () => ({ ok: true, kind: "public" }),
+      events_claim: () => [],
+      events_done: () => null,
       ...rpc,
     },
     ...extra,
   });
   return { net, roster: makeRoster(net) };
 }
-const secretAuth = { roster_api_auth: () => ({ ok: true, kind: "secret" }) };
+const secretAuth = { api_auth: () => ({ ok: true, kind: "secret" }) };
 const dbCalls = (net) => net.calls.filter((c) => c.host === new URL(DB).host);
-const actionCalls = (net) => dbCalls(net).filter((c) => !/roster_(api_auth|events_)/.test(c.path));
+const actionCalls = (net) => dbCalls(net).filter((c) => !/rpc\/(api_auth|events_)/.test(c.path));
 
 /* --- plumbing -------------------------------------------------------------------------- */
 
@@ -112,12 +112,12 @@ test("every reply is JSON, uncacheable, nosniff; errors have exactly {code, mess
 });
 
 test("only /rest/v1/rpc/<known function> is ever requested from the database, with the service key", async () => {
-  const { net, roster } = world({ roster_api_meetings: () => MEETINGS_DB, roster_api_signup: () => ({ status: "ok", registered: false, participant_token: TOKEN }) });
+  const { net, roster } = world({ api_meetings: () => MEETINGS_DB, api_signup: () => ({ status: "ok", registered: false, participant_token: TOKEN }) });
   await call(roster, req("/meetings", { key: PUB }));
   await call(roster, req("/signup", { method: "POST", key: PUB, json: { first_name: "דנה", phone: "0501234567" } }));
   assert.ok(dbCalls(net).length >= 4);
   for (const c of dbCalls(net)) {
-    assert.match(c.path, /^\/rest\/v1\/rpc\/roster_(api_[a-z_]+|events_(claim|done))$/);
+    assert.match(c.path, /^\/rest\/v1\/rpc\/(api_[a-z_]+|events_(claim|done))$/);
     assert.equal(c.method, "POST");
     assert.equal(c.headers.apikey, SERVICE_KEY);
     assert.equal(c.headers.authorization, `Bearer ${SERVICE_KEY}`);
@@ -128,7 +128,7 @@ test("only /rest/v1/rpc/<known function> is ever requested from the database, wi
 /* --- keys ------------------------------------------------------------------------------------- */
 
 test("a missing, malformed or unknown key is 401 invalid_key; malformed ones never reach the database", async () => {
-  const { net, roster } = world({ roster_api_auth: () => ({ error: "invalid_key" }) });
+  const { net, roster } = world({ api_auth: () => ({ error: "invalid_key" }) });
   const bad = [undefined, "", "junk", `rk_pub_${"a".repeat(31)}`, `rk_pub_${"a".repeat(33)}`, `${PUB}x`, `rk_sec_${"a".repeat(32)}`, "x".repeat(300), "pt_" + "a".repeat(32)];
   for (const key of bad) {
     const r = await call(roster, req("/meetings", { key, headers: key === undefined ? {} : {} }));
@@ -139,14 +139,14 @@ test("a missing, malformed or unknown key is 401 invalid_key; malformed ones nev
   /* well formed, but not a real key: the database says so, and the answer is the same */
   const unknown = await call(roster, req("/meetings", { key: PUB }));
   assert.deepEqual([unknown.status, unknown.body.error.code], [401, "invalid_key"]);
-  assert.equal(net.rpc("roster_api_auth").length, 1);
+  assert.equal(net.rpc("api_auth").length, 1);
 });
 
 test("the key can come as X-Roster-Key", async () => {
-  const { net, roster } = world({ roster_api_meetings: () => MEETINGS_DB });
+  const { net, roster } = world({ api_meetings: () => MEETINGS_DB });
   const r = await call(roster, req("/meetings", { headers: { "x-roster-key": PUB } }));
   assert.equal(r.status, 200);
-  assert.equal(net.rpc("roster_api_auth")[0].json.p_key_hash, await sha256Hex(PUB));
+  assert.equal(net.rpc("api_auth")[0].json.p_key_hash, await sha256Hex(PUB));
 });
 
 test("the plaintext key reaches no database call, no log and no reply; only its hash does", async () => {
@@ -155,12 +155,12 @@ test("the plaintext key reaches no database call, no log and no reply; only its 
   console.error = (...a) => logged.push(a.join(" "));
   console.log = (...a) => logged.push(a.join(" "));
   try {
-    const { net, roster } = world({ roster_api_auth: () => ({ error: "invalid_key" }), roster_api_meetings: () => ({ status: 500 }) });
+    const { net, roster } = world({ api_auth: () => ({ error: "invalid_key" }), api_meetings: () => ({ status: 500 }) });
     const replies = [];
     for (const key of [PUB, SEC]) {
       for (const origin of [undefined, "https://studio.example"]) replies.push(await call(roster, req("/meetings", { key, origin })));
     }
-    const ok = world({ roster_api_meetings: () => MEETINGS_DB });
+    const ok = world({ api_meetings: () => MEETINGS_DB });
     replies.push(await call(ok.roster, req("/meetings", { key: PUB })));
     for (const c of [...net.calls, ...ok.net.calls]) {
       assert.ok(!c.raw?.includes(PUB) && !c.raw?.includes(SEC), "the key is in a database request body");
@@ -210,15 +210,15 @@ test("a secret key that comes with an Origin header is refused at once, and a br
 test("the database's auth step: what is asked, and every refusal it can give", async () => {
   const refusals = [["invalid_key", 401], ["wrong_key_kind", 403], ["origin_not_allowed", 403], ["secret_key_in_browser", 403], ["rate_limited", 429]];
   for (const [code, status] of refusals) {
-    const { net, roster } = world({ roster_api_auth: () => ({ error: code, retry_after: 12 }) });
+    const { net, roster } = world({ api_auth: () => ({ error: code, retry_after: 12 }) });
     const r = await call(roster, req("/meetings", { key: PUB, origin: "https://studio.example" }));
     assert.deepEqual([r.status, r.body.error.code], [status, code]);
     assert.equal(actionCalls(net).length, 0, "the action is not reached after a refused auth");
   }
 
-  const { net, roster } = world({ roster_api_meetings: () => MEETINGS_DB });
+  const { net, roster } = world({ api_meetings: () => MEETINGS_DB });
   await call(roster, req("/meetings", { key: PUB, origin: "https://studio.example", ip: "198.51.100.9" }));
-  const auth = net.rpc("roster_api_auth")[0].json;
+  const auth = net.rpc("api_auth")[0].json;
   assert.deepEqual(Object.keys(auth).sort(), ["p_bucket", "p_ip_hash", "p_key_hash", "p_origin", "p_required_kind"]);
   assert.equal(auth.p_key_hash, await sha256Hex(PUB));
   assert.equal(auth.p_required_kind, "any");
@@ -227,19 +227,19 @@ test("the database's auth step: what is asked, and every refusal it can give", a
   assert.match(auth.p_ip_hash, /^[0-9a-f]{64}$/);
   assert.ok(!JSON.stringify(auth).includes("198.51.100.9"), "the address is hashed");
 
-  const noOrigin = world({ roster_api_meetings: () => MEETINGS_DB });
+  const noOrigin = world({ api_meetings: () => MEETINGS_DB });
   await call(noOrigin.roster, req("/meetings", { key: PUB }));
-  assert.equal(noOrigin.net.rpc("roster_api_auth")[0].json.p_origin, null);
+  assert.equal(noOrigin.net.rpc("api_auth")[0].json.p_origin, null);
 });
 
 test("kind and bucket asked of the database, per route", async () => {
   const seen = [];
   const { roster } = world({
-    roster_api_auth: (a) => { seen.push([a.p_required_kind, a.p_bucket]); return { ok: true, kind: a.p_required_kind === "public" ? "public" : "secret" }; },
-    roster_api_meetings: () => MEETINGS_DB, roster_api_signup: () => ({ status: "ok", registered: false, participant_token: TOKEN }),
-    roster_api_payment_click: () => ({ status: "reported" }), roster_api_participant: () => ({ participant: {} }), roster_api_register: () => ({ status: "registered" }),
-    roster_api_unregister: () => ({ status: "cancelled" }), roster_api_record_payment: () => ({ status: "ok", payment_id: UUID_C, duplicate: false }),
-    roster_api_pay_from_credit: () => ({ status: "ok" }),
+    api_auth: (a) => { seen.push([a.p_required_kind, a.p_bucket]); return { ok: true, kind: a.p_required_kind === "public" ? "public" : "secret" }; },
+    api_meetings: () => MEETINGS_DB, api_signup: () => ({ status: "ok", registered: false, participant_token: TOKEN }),
+    api_payment_click: () => ({ status: "reported" }), api_participant: () => ({ participant: {} }), api_register: () => ({ status: "registered" }),
+    api_unregister: () => ({ status: "cancelled" }), api_record_payment: () => ({ status: "ok", payment_id: UUID_C, duplicate: false }),
+    api_pay_from_credit: () => ({ status: "ok" }),
   });
   const pay = { participant_id: UUID_A, meeting_id: UUID_B, amount: 80, external_ref: "r1" };
   const run = (...a) => call(roster, req(...a));
@@ -259,10 +259,10 @@ test("kind and bucket asked of the database, per route", async () => {
 /* --- GET /meetings ------------------------------------------------------------------------------- */
 
 test("GET /meetings: the call, the default limit and what a public key may see", async () => {
-  const { net, roster } = world({ roster_api_meetings: () => MEETINGS_DB });
+  const { net, roster } = world({ api_meetings: () => MEETINGS_DB });
   const r = await call(roster, req("/meetings", { key: PUB, origin: "https://studio.example" }));
   assert.equal(r.status, 200);
-  assert.deepEqual(net.rpc("roster_api_meetings")[0].json, { p_key_hash: await sha256Hex(PUB), p_limit: 20 });
+  assert.deepEqual(net.rpc("api_meetings")[0].json, { p_key_hash: await sha256Hex(PUB), p_limit: 20 });
   assert.deepEqual(r.body.business, { name: "סטודיו דנה" });
   assert.deepEqual(Object.keys(r.body.meetings[0]).sort(), ["capacity", "city", "date", "full", "id", "name", "place", "price", "price_tiers", "spots_left", "time"]);
   assert.ok(!r.raw.includes("directions") && !r.raw.includes("קומה 2"), "a public key never gets directions");
@@ -271,7 +271,7 @@ test("GET /meetings: the call, the default limit and what a public key may see",
 });
 
 test("GET /meetings with a secret key keeps directions, registered and type", async () => {
-  const { roster } = world({ ...secretAuth, roster_api_meetings: () => MEETINGS_DB });
+  const { roster } = world({ ...secretAuth, api_meetings: () => MEETINGS_DB });
   const r = await call(roster, req("/meetings", { key: SEC }));
   assert.equal(r.body.meetings[0].directions, "קומה 2");
   assert.equal(r.body.meetings[0].registered, 15);
@@ -279,16 +279,16 @@ test("GET /meetings with a secret key keeps directions, registered and type", as
 });
 
 test("a public key is shaped as public even if the database wrongly returned secret fields, or called the key secret", async () => {
-  const { roster } = world({ roster_api_meetings: () => MEETINGS_DB });
+  const { roster } = world({ api_meetings: () => MEETINGS_DB });
   assert.ok(!(await call(roster, req("/meetings", { key: PUB }))).raw.includes("directions"));
   /* the shape alone is not enough for a secret reply: the database must agree */
-  const { roster: r2 } = world({ roster_api_auth: () => ({ ok: true, kind: "public" }), roster_api_meetings: () => MEETINGS_DB });
+  const { roster: r2 } = world({ api_auth: () => ({ ok: true, kind: "public" }), api_meetings: () => MEETINGS_DB });
   assert.ok(!(await call(r2, req("/meetings", { key: SEC }))).raw.includes("directions"));
 });
 
 test("GET /meetings?limit: 1..100, clamped above, refused when it is not a positive integer", async () => {
-  const { net, roster } = world({ roster_api_meetings: () => MEETINGS_DB });
-  const limit = async (q) => { const before = net.rpc("roster_api_meetings").length; const r = await call(roster, req(`/meetings${q}`, { key: PUB })); return [r.status, net.rpc("roster_api_meetings").length > before ? net.rpc("roster_api_meetings").at(-1).json.p_limit : null, r.body?.error?.field]; };
+  const { net, roster } = world({ api_meetings: () => MEETINGS_DB });
+  const limit = async (q) => { const before = net.rpc("api_meetings").length; const r = await call(roster, req(`/meetings${q}`, { key: PUB })); return [r.status, net.rpc("api_meetings").length > before ? net.rpc("api_meetings").at(-1).json.p_limit : null, r.body?.error?.field]; };
   assert.deepEqual(await limit("?limit=5"), [200, 5, undefined]);
   assert.deepEqual(await limit("?limit=100"), [200, 100, undefined]);
   assert.deepEqual(await limit("?limit=1000"), [200, 100, undefined]);
@@ -300,7 +300,7 @@ test("GET /meetings?limit: 1..100, clamped above, refused when it is not a posit
 
 test("GET /meetings: a malformed answer from the database is a 500, not a guess", async () => {
   for (const answer of [null, [], "x", { meetings: "no" }, { business: {} }]) {
-    const { roster } = world({ roster_api_meetings: () => answer });
+    const { roster } = world({ api_meetings: () => answer });
     const r = await call(roster, req("/meetings", { key: PUB }));
     assert.equal(r.status, 500, JSON.stringify(answer));
   }
@@ -312,7 +312,7 @@ const SIGNUP_OK = { status: "ok", registered: true, participant_token: TOKEN, pa
 const signup = (roster, json, opts = {}) => call(roster, req("/signup", { method: "POST", key: PUB, json, ...opts }));
 
 test("signup: the exact call, a whitelist payload, and a reply that cannot reveal who is registered", async () => {
-  const { net, roster } = world({ roster_api_signup: () => SIGNUP_OK });
+  const { net, roster } = world({ api_signup: () => SIGNUP_OK });
   const body = {
     first_name: " דנה ", last_name: "לוי", phone: "050-123-4567", email: "Dana@Example.com", age: 34, gender: "FEMALE", meeting_id: UUID_A.toUpperCase(),
     /* things a caller must not be able to set */
@@ -322,17 +322,17 @@ test("signup: the exact call, a whitelist payload, and a reply that cannot revea
   assert.equal(r.status, 200);
   assert.deepEqual(r.body, { status: "ok", registered: true, participant_token: TOKEN }, "no participant_id, no created");
 
-  const [c] = net.rpc("roster_api_signup");
+  const [c] = net.rpc("api_signup");
   assert.deepEqual(Object.keys(c.json).sort(), ["p_ip_hash", "p_key_hash", "p_payload"]);
   assert.deepEqual(c.json.p_payload, { first_name: "דנה", last_name: "לוי", phone: "050-123-4567", email: "Dana@Example.com", age: 34, gender: "female", meeting_id: UUID_A });
   assert.equal(c.json.p_key_hash, await sha256Hex(PUB));
   assert.match(c.json.p_ip_hash, /^[0-9a-f]{64}$/);
-  assert.equal(net.rpc("roster_api_auth")[0].json.p_bucket, "signup");
-  assert.equal(net.rpc("roster_api_auth")[0].json.p_required_kind, "any");
+  assert.equal(net.rpc("api_auth")[0].json.p_bucket, "signup");
+  assert.equal(net.rpc("api_auth")[0].json.p_required_kind, "any");
 });
 
 test("signup with a secret key also returns participant_id and created", async () => {
-  const { roster } = world({ ...secretAuth, roster_api_signup: () => SIGNUP_OK });
+  const { roster } = world({ ...secretAuth, api_signup: () => SIGNUP_OK });
   const r = await call(roster, req("/signup", { method: "POST", key: SEC, json: { first_name: "דנה", phone: "0501234567" } }));
   assert.deepEqual(r.body, { status: "ok", registered: true, participant_token: TOKEN, participant_id: UUID_A, created: false });
 });
@@ -340,7 +340,7 @@ test("signup with a secret key also returns participant_id and created", async (
 test("signup: the reply for a new person and for an existing one has the same shape", async () => {
   const shapes = [];
   for (const created of [true, false]) {
-    const { roster } = world({ roster_api_signup: () => ({ ...SIGNUP_OK, created, registered: false }) });
+    const { roster } = world({ api_signup: () => ({ ...SIGNUP_OK, created, registered: false }) });
     shapes.push(Object.keys((await signup(roster, { first_name: "דנה", phone: "0501234567" })).body));
   }
   assert.deepEqual(shapes[0], shapes[1]);
@@ -348,13 +348,13 @@ test("signup: the reply for a new person and for an existing one has the same sh
 
 test("signup: a reply with a malformed token is a 500, a token is never invented", async () => {
   for (const answer of [{ ...SIGNUP_OK, participant_token: "pt_short" }, { status: "ok" }, { ...SIGNUP_OK, participant_token: 5 }]) {
-    const { roster } = world({ roster_api_signup: () => answer });
+    const { roster } = world({ api_signup: () => answer });
     assert.equal((await signup(roster, { first_name: "דנה", phone: "0501234567" })).status, 500);
   }
 });
 
 test("signup field checks: types, sizes and characters the database could not store", async () => {
-  const { net, roster } = world({ roster_api_signup: () => SIGNUP_OK });
+  const { net, roster } = world({ api_signup: () => SIGNUP_OK });
   const bad = [
     [{ first_name: 5 }, "first_name"], [{ first_name: ["a"] }, "first_name"], [{ first_name: { a: 1 } }, "first_name"], [{ first_name: true }, "first_name"],
     [{ first_name: "a".repeat(101) }, "first_name"], [{ last_name: "a".repeat(101) }, "last_name"],
@@ -369,22 +369,22 @@ test("signup field checks: types, sizes and characters the database could not st
     assert.deepEqual([r.status, r.body.error.code, r.body.error.field], [422, "validation", field], JSON.stringify(json));
   }
   assert.equal(actionCalls(net).length, 0, "nothing invalid reaches the database");
-  assert.equal(net.rpc("roster_api_auth").length, 0, "not even the auth step");
+  assert.equal(net.rpc("api_auth").length, 0, "not even the auth step");
 
   /* absent, null and empty values are simply not sent; the database decides what is required */
   for (const json of [{}, { first_name: null, phone: "", age: null, meeting_id: "", email: undefined }]) {
     const r = await signup(roster, json);
     assert.equal(r.status, 200);
-    assert.deepEqual(net.rpc("roster_api_signup").at(-1).json.p_payload, {});
+    assert.deepEqual(net.rpc("api_signup").at(-1).json.p_payload, {});
   }
   const strAge = await signup(roster, { age: " 41 " });
   assert.equal(strAge.status, 200);
-  assert.equal(net.rpc("roster_api_signup").at(-1).json.p_payload.age, 41);
+  assert.equal(net.rpc("api_signup").at(-1).json.p_payload.age, 41);
 });
 
 test("signup: what the database refuses is passed on with its code and nothing else", async () => {
   const refuse = async (answer) => {
-    const { roster } = world({ roster_api_signup: () => answer });
+    const { roster } = world({ api_signup: () => answer });
     return signup(roster, { first_name: "דנה", phone: "0501234567" });
   };
   let r = await refuse({ error: "closed" });
@@ -404,7 +404,7 @@ test("signup: what the database refuses is passed on with its code and nothing e
 });
 
 test("database failures are 500 server_error with a fixed sentence: no database text, no code, no stack", async () => {
-  const leaks = "relation roster_participants does not exist; password=hunter2";
+  const leaks = "relation participants does not exist; password=hunter2";
   const variants = [
     () => ({ status: 500, body: { message: leaks, hint: leaks, details: leaks } }),
     () => ({ status: 404, body: { message: leaks } }),
@@ -417,7 +417,7 @@ test("database failures are 500 server_error with a fixed sentence: no database 
     () => null,
   ];
   for (const answer of variants) {
-    const { roster } = world({ roster_api_signup: answer });
+    const { roster } = world({ api_signup: answer });
     const orig = console.error;
     console.error = () => {};
     let r;
@@ -437,7 +437,7 @@ test("database failures are 500 server_error with a fixed sentence: no database 
 
 test("rate_limited from the database: 429 with Retry-After, clamped, defaulted", async () => {
   const run = async (retry) => {
-    const { roster } = world({ roster_api_auth: () => ({ error: "rate_limited", ...(retry === undefined ? {} : { retry_after: retry }) }) });
+    const { roster } = world({ api_auth: () => ({ error: "rate_limited", ...(retry === undefined ? {} : { retry_after: retry }) }) });
     const r = await signup(roster, { first_name: "דנה" });
     return [r.status, r.body.error.code, r.headers.get("retry-after")];
   };
@@ -452,7 +452,7 @@ test("rate_limited from the database: 429 with Retry-After, clamped, defaulted",
 
 test("the Worker's own per-IP brake: 6 signups per IP per 10 minutes, then 429 with Retry-After; other IPs and the secret key are unaffected", async () => {
   let t = 1_800_000_000_000;
-  const net = fakeNet({ rpc: { roster_api_auth: () => ({ ok: true, kind: "public" }), roster_api_signup: () => SIGNUP_OK, roster_events_claim: () => [], roster_events_done: () => null } });
+  const net = fakeNet({ rpc: { api_auth: () => ({ ok: true, kind: "public" }), api_signup: () => SIGNUP_OK, events_claim: () => [], events_done: () => null } });
   const roster = makeRoster(net, { now: () => t });
   const go = (ip, key = PUB) => call(roster, req("/signup", { method: "POST", key, json: { first_name: "דנה" }, ip }));
 
@@ -461,19 +461,19 @@ test("the Worker's own per-IP brake: 6 signups per IP per 10 minutes, then 429 w
   assert.deepEqual([blocked.status, blocked.body.error.code], [429, "rate_limited"]);
   const wait = Number(blocked.headers.get("retry-after"));
   assert.ok(Number.isInteger(wait) && wait >= 1 && wait <= 600, String(wait));
-  assert.equal(net.rpc("roster_api_signup").length, 6, "the seventh never reached the database");
+  assert.equal(net.rpc("api_signup").length, 6, "the seventh never reached the database");
 
   assert.equal((await go("198.51.100.1")).status, 200, "another address");
   t += 601_000;
   assert.equal((await go(IP)).status, 200, "a new window");
 
-  const secretNet = fakeNet({ rpc: { roster_api_auth: () => ({ ok: true, kind: "secret" }), roster_api_signup: () => SIGNUP_OK, roster_events_claim: () => [], roster_events_done: () => null } });
+  const secretNet = fakeNet({ rpc: { api_auth: () => ({ ok: true, kind: "secret" }), api_signup: () => SIGNUP_OK, events_claim: () => [], events_done: () => null } });
   const sroster = makeRoster(secretNet);
   for (let i = 0; i < 10; i++) assert.equal((await call(sroster, req("/signup", { method: "POST", key: SEC, json: { first_name: "x" }, ip: IP }))).status, 200);
 });
 
 test("the click's per-IP brake is 30 per 10 minutes", async () => {
-  const net = fakeNet({ rpc: { roster_api_auth: () => ({ ok: true, kind: "public" }), roster_api_payment_click: () => ({ status: "reported" }), roster_events_claim: () => [], roster_events_done: () => null } });
+  const net = fakeNet({ rpc: { api_auth: () => ({ ok: true, kind: "public" }), api_payment_click: () => ({ status: "reported" }), events_claim: () => [], events_done: () => null } });
   const roster = makeRoster(net);
   const go = () => call(roster, req("/payments/click", { method: "POST", key: PUB, json: { participant_token: TOKEN, meeting_id: UUID_A }, ip: IP }));
   for (let i = 0; i < 30; i++) assert.equal((await go()).status, 200, `click ${i + 1}`);
@@ -483,7 +483,7 @@ test("the click's per-IP brake is 30 per 10 minutes", async () => {
 });
 
 test("the honeypot: a filled `website` gets a believable success and nothing happens", async () => {
-  const { net, roster } = world({ roster_api_signup: () => SIGNUP_OK });
+  const { net, roster } = world({ api_signup: () => SIGNUP_OK });
   const real = await signup(roster, { first_name: "דנה", phone: "0501234567" });
 
   for (const website of ["http://spam.example", "x", " x ", 1, true, {}, [1], ["x"]]) {
@@ -498,43 +498,43 @@ test("the honeypot: a filled `website` gets a believable success and nothing hap
   for (let i = 0; i < 5; i++) tokens.add((await signup(roster, { website: "x" })).body.participant_token);
   assert.equal(tokens.size, 5, "every fake token is different");
 
-  assert.equal(net.rpc("roster_api_signup").length, 1, "only the real signup reached the database");
+  assert.equal(net.rpc("api_signup").length, 1, "only the real signup reached the database");
   assert.equal(net.calls.filter((c) => c.json && JSON.stringify(c.json).includes("בוט")).length, 0);
 
   /* an empty or whitespace-only honeypot is a normal signup */
   for (const website of ["", "   ", null, false]) {
-    const before = net.rpc("roster_api_signup").length;
+    const before = net.rpc("api_signup").length;
     assert.equal((await signup(roster, { first_name: "דנה", website })).status, 200);
-    assert.equal(net.rpc("roster_api_signup").length, before + 1, JSON.stringify(website));
+    assert.equal(net.rpc("api_signup").length, before + 1, JSON.stringify(website));
   }
   /* the honeypot field itself is never forwarded */
-  assert.ok(!JSON.stringify(net.rpc("roster_api_signup").at(-1).json).includes("website"));
+  assert.ok(!JSON.stringify(net.rpc("api_signup").at(-1).json).includes("website"));
 
   const secret = await call(roster, req("/signup", { method: "POST", key: SEC, json: { website: "x", meeting_id: UUID_A } }));
   assert.deepEqual(Object.keys(secret.body).sort(), ["created", "participant_id", "participant_token", "registered", "status"]);
 });
 
 test("a signup that succeeds starts the outbox in the background; one that fails does not", async () => {
-  const { net, roster } = world({ roster_api_signup: () => SIGNUP_OK });
+  const { net, roster } = world({ api_signup: () => SIGNUP_OK });
   const ctx = ctxSpy();
   await roster.handle(req("/signup", { method: "POST", key: PUB, json: { first_name: "דנה" } }), makeEnv(), ctx);
   assert.equal(ctx.pending.length, 1);
   await ctx.settle();
-  assert.equal(net.rpc("roster_events_claim").length, 1);
+  assert.equal(net.rpc("events_claim").length, 1);
 
-  const refused = world({ roster_api_signup: () => ({ error: "closed" }) });
+  const refused = world({ api_signup: () => ({ error: "closed" }) });
   const ctx2 = ctxSpy();
   await refused.roster.handle(req("/signup", { method: "POST", key: PUB, json: { first_name: "דנה" } }), makeEnv(), ctx2);
   await ctx2.settle();
-  assert.equal(refused.net.rpc("roster_events_claim").length, 0);
+  assert.equal(refused.net.rpc("events_claim").length, 0);
 
-  const reads = world({ roster_api_meetings: () => MEETINGS_DB });
+  const reads = world({ api_meetings: () => MEETINGS_DB });
   const ctx3 = ctxSpy();
   await reads.roster.handle(req("/meetings", { key: PUB }), makeEnv(), ctx3);
   assert.equal(ctx3.pending.length, 0, "a read enqueues nothing");
 
   /* a crashing outbox cannot break the reply */
-  const noCtx = world({ roster_api_signup: () => SIGNUP_OK, roster_events_claim: () => ({ status: 500, body: {} }) });
+  const noCtx = world({ api_signup: () => SIGNUP_OK, events_claim: () => ({ status: 500, body: {} }) });
   const quiet = console.error;
   console.error = () => {};
   try {
@@ -546,7 +546,7 @@ test("a signup that succeeds starts the outbox in the background; one that fails
 /* --- the request body ---------------------------------------------------------------------------------- */
 
 test("body: size is limited to 16 KB before parsing, declared or not", async () => {
-  const { net, roster } = world({ roster_api_signup: () => SIGNUP_OK });
+  const { net, roster } = world({ api_signup: () => SIGNUP_OK });
   const text = (n) => JSON.stringify({ first_name: "a", pad: "x".repeat(n) });
   const pad = (total) => text(total - text(0).length);
 
@@ -567,11 +567,11 @@ test("body: size is limited to 16 KB before parsing, declared or not", async () 
   assert.deepEqual([r.status, r.body.error.code], [400, "bad_request"]);
   assert.ok(pulled < 1_000_000, `read ${pulled} bytes before stopping`);
 
-  assert.equal(net.rpc("roster_api_signup").length, 1);
+  assert.equal(net.rpc("api_signup").length, 1);
 });
 
 test("body: content type, strict UTF-8, strict JSON, an object", async () => {
-  const { net, roster } = world({ roster_api_signup: () => SIGNUP_OK });
+  const { net, roster } = world({ api_signup: () => SIGNUP_OK });
   const code = async (opts) => { const r = await call(roster, req("/signup", { method: "POST", key: PUB, ...opts })); return [r.status, r.body.error?.code]; };
 
   assert.deepEqual(await code({ body: '{"first_name":"a"}', contentType: "text/plain" }), [400, "bad_request"]);
@@ -593,8 +593,8 @@ test("body: content type, strict UTF-8, strict JSON, an object", async () => {
 
   assert.deepEqual(await code({ body: '{"first_name":"a"}', contentType: "application/json; charset=utf-8" }), [200, undefined]);
   assert.deepEqual(await code({ body: '{"first_name":"a"}', contentType: "Application/JSON" }), [200, undefined]);
-  assert.equal(net.rpc("roster_api_signup").length, 3);
-  assert.equal(net.rpc("roster_api_auth").length, 3, "refused bodies cost no database call");
+  assert.equal(net.rpc("api_signup").length, 3);
+  assert.equal(net.rpc("api_auth").length, 3, "refused bodies cost no database call");
 });
 
 test("body: a request with no body at all on a route that needs one", async () => {
@@ -606,27 +606,27 @@ test("body: a request with no body at all on a route that needs one", async () =
 /* --- POST /payments/click -------------------------------------------------------------------------------- */
 
 test("click: the token is hashed before it leaves the Worker; the reply is a plain ok", async () => {
-  const { net, roster } = world({ roster_api_payment_click: () => ({ status: "ok", amount: 80, participant_id: UUID_A }) });
+  const { net, roster } = world({ api_payment_click: () => ({ status: "ok", amount: 80, participant_id: UUID_A }) });
   const r = await call(roster, req("/payments/click", { method: "POST", key: PUB, origin: "https://studio.example", json: { participant_token: TOKEN, meeting_id: UUID_A, extra: 1 } }));
   assert.deepEqual([r.status, r.body], [200, { status: "ok" }]);
-  const [c] = net.rpc("roster_api_payment_click");
+  const [c] = net.rpc("api_payment_click");
   assert.deepEqual(c.json, { p_key_hash: await sha256Hex(PUB), p_token_hash: await sha256Hex(TOKEN), p_meeting: UUID_A, p_ip_hash: c.json.p_ip_hash });
   assert.match(c.json.p_ip_hash, /^[0-9a-f]{64}$/);
   for (const call2 of net.calls) assert.ok(!(call2.raw || "").includes(TOKEN), "the token is never sent in plain");
-  assert.equal(net.rpc("roster_api_auth")[0].json.p_bucket, "click");
-  assert.equal(net.rpc("roster_api_auth")[0].json.p_required_kind, "public");
+  assert.equal(net.rpc("api_auth")[0].json.p_bucket, "click");
+  assert.equal(net.rpc("api_auth")[0].json.p_required_kind, "public");
 });
 
 test("click is uniform (M3): whatever the database says about how it went, the caller gets the same {status: ok}", async () => {
   for (const answer of [{ status: "ok" }, { status: "reported" }, { status: "already_reported" }, { status: "already_paid" }, { status: "free" }, { status: "not_registered" }, { status: "past" }, { status: "ok", extra: "x" }, {}]) {
-    const { roster } = world({ roster_api_payment_click: () => answer });
+    const { roster } = world({ api_payment_click: () => answer });
     const r = await call(roster, req("/payments/click", { method: "POST", key: PUB, json: { participant_token: TOKEN, meeting_id: UUID_A } }));
     assert.deepEqual([r.status, r.body], [200, { status: "ok" }], JSON.stringify(answer));
     assert.equal(r.raw, '{"status":"ok"}', "byte for byte the same body");
   }
   /* an answer that is not an object at all is still a server error, not an ok */
   for (const answer of [null, "ok", [], 5]) {
-    const { roster } = world({ roster_api_payment_click: () => answer });
+    const { roster } = world({ api_payment_click: () => answer });
     const quiet = console.error;
     console.error = () => {};
     let r;
@@ -636,7 +636,7 @@ test("click is uniform (M3): whatever the database says about how it went, the c
 });
 
 test("click: a bad or unknown token is 401 invalid_token; a bad meeting is 422", async () => {
-  const { net, roster } = world({ roster_api_payment_click: () => ({ error: "invalid_token" }) });
+  const { net, roster } = world({ api_payment_click: () => ({ error: "invalid_token" }) });
   for (const token of [undefined, null, "", "pt_short", `pt_${"a".repeat(33)}`, `PT_${"a".repeat(32)}`, 5, [TOKEN], `${TOKEN}\n`, SEC]) {
     const r = await call(roster, req("/payments/click", { method: "POST", key: PUB, json: { participant_token: token, meeting_id: UUID_A } }));
     assert.deepEqual([r.status, r.body.error.code], [401, "invalid_token"], String(token));
@@ -657,69 +657,69 @@ test("click: a bad or unknown token is 401 invalid_token; a bad meeting is 422",
 const SUMMARY = { id: UUID_A, first_name: "דנה", last_name: "לוי", phone: "+972501234567", email: null, age: 34, gender: "female", active: true, balance: 0, meetings: [] };
 
 test("GET /participants?phone: the raw phone goes to the database, and only digits and phone punctuation are accepted", async () => {
-  const { net, roster } = world({ ...secretAuth, roster_api_participant: () => ({ participant: SUMMARY }) });
+  const { net, roster } = world({ ...secretAuth, api_participant: () => ({ participant: SUMMARY }) });
   const r = await call(roster, req("/participants?phone=%2B972%2050-123%204567", { key: SEC }));
   assert.deepEqual([r.status, r.body], [200, { participant: SUMMARY }]);
-  assert.deepEqual(net.rpc("roster_api_participant")[0].json, { p_key_hash: await sha256Hex(SEC), p_id: null, p_phone: "+972 50-123 4567" });
-  assert.equal(net.rpc("roster_api_auth")[0].json.p_bucket, "read");
+  assert.deepEqual(net.rpc("api_participant")[0].json, { p_key_hash: await sha256Hex(SEC), p_id: null, p_phone: "+972 50-123 4567" });
+  assert.equal(net.rpc("api_auth")[0].json.p_bucket, "read");
 
   for (const q of ["", "?phone=", "?phone=abc", `?phone=${"1".repeat(41)}`, "?phone=0501234567%0Ax", "?phone=0501234567;drop", "?phone=12", "?id=1"]) {
     const bad = await call(roster, req(`/participants${q}`, { key: SEC }));
     assert.deepEqual([bad.status, bad.body.error.field], [422, "phone"], q);
   }
-  assert.equal(net.rpc("roster_api_participant").length, 1);
+  assert.equal(net.rpc("api_participant").length, 1);
 });
 
 test("GET /participants/{id}: by id, 404 for a stranger and for an id that is not a uuid", async () => {
-  const { net, roster } = world({ ...secretAuth, roster_api_participant: (a) => (a.p_id === UUID_A ? { participant: SUMMARY } : { error: "not_found" }) });
+  const { net, roster } = world({ ...secretAuth, api_participant: (a) => (a.p_id === UUID_A ? { participant: SUMMARY } : { error: "not_found" }) });
   const ok = await call(roster, req(`/participants/${UUID_A.toUpperCase()}`, { key: SEC }));
   assert.equal(ok.status, 200);
-  assert.deepEqual(net.rpc("roster_api_participant")[0].json, { p_key_hash: await sha256Hex(SEC), p_id: UUID_A, p_phone: null });
+  assert.deepEqual(net.rpc("api_participant")[0].json, { p_key_hash: await sha256Hex(SEC), p_id: UUID_A, p_phone: null });
 
   const stranger = await call(roster, req(`/participants/${UUID_B}`, { key: SEC }));
   assert.deepEqual([stranger.status, stranger.body.error.code], [404, "not_found"]);
   const notUuid = await call(roster, req("/participants/12345", { key: SEC }));
   assert.equal(notUuid.status, 404);
-  assert.equal(net.rpc("roster_api_participant").length, 2);
+  assert.equal(net.rpc("api_participant").length, 2);
 });
 
 test("registrations: register and cancel, with exactly the ids the caller named", async () => {
-  const { net, roster } = world({ ...secretAuth, roster_api_register: () => ({ status: "full" }), roster_api_unregister: () => ({ status: "cancelled" }) });
+  const { net, roster } = world({ ...secretAuth, api_register: () => ({ status: "full" }), api_unregister: () => ({ status: "cancelled" }) });
   const reg = await call(roster, req(`/participants/${UUID_A}/registrations`, { method: "POST", key: SEC, json: { meeting_id: UUID_B } }));
   assert.deepEqual([reg.status, reg.body], [200, { status: "full" }]);
-  assert.deepEqual(net.rpc("roster_api_register")[0].json, { p_key_hash: await sha256Hex(SEC), p_participant: UUID_A, p_meeting: UUID_B });
+  assert.deepEqual(net.rpc("api_register")[0].json, { p_key_hash: await sha256Hex(SEC), p_participant: UUID_A, p_meeting: UUID_B });
 
   const cancel = await call(roster, req(`/participants/${UUID_A}/registrations/${UUID_B}`, { method: "DELETE", key: SEC }));
   assert.deepEqual([cancel.status, cancel.body], [200, { status: "cancelled" }]);
-  assert.deepEqual(net.rpc("roster_api_unregister")[0].json, { p_key_hash: await sha256Hex(SEC), p_participant: UUID_A, p_meeting: UUID_B });
+  assert.deepEqual(net.rpc("api_unregister")[0].json, { p_key_hash: await sha256Hex(SEC), p_participant: UUID_A, p_meeting: UUID_B });
 
   const missing = await call(roster, req(`/participants/${UUID_A}/registrations`, { method: "POST", key: SEC, json: {} }));
   assert.deepEqual([missing.status, missing.body.error.field], [422, "meeting_id"]);
   const badIds = await call(roster, req(`/participants/${UUID_A}/registrations/xyz`, { method: "DELETE", key: SEC }));
   assert.equal(badIds.status, 404);
-  assert.equal(net.rpc("roster_api_register").length + net.rpc("roster_api_unregister").length, 2);
+  assert.equal(net.rpc("api_register").length + net.rpc("api_unregister").length, 2);
 });
 
 test("registrations: statuses pass through, an unknown participant is 404, and both start the outbox", async () => {
-  const { net, roster } = world({ ...secretAuth, roster_api_register: () => ({ error: "not_found" }), roster_api_unregister: () => ({ status: "attended" }) });
+  const { net, roster } = world({ ...secretAuth, api_register: () => ({ error: "not_found" }), api_unregister: () => ({ status: "attended" }) });
   const ctx = ctxSpy();
   const r = await call(roster, req(`/participants/${UUID_A}/registrations`, { method: "POST", key: SEC, json: { meeting_id: UUID_B } }), makeEnv(), ctx);
   assert.deepEqual([r.status, r.body.error.code], [404, "not_found"]);
   const u = await call(roster, req(`/participants/${UUID_A}/registrations/${UUID_B}`, { method: "DELETE", key: SEC }), makeEnv(), ctx);
   assert.deepEqual([u.status, u.body], [200, { status: "attended" }]);
   await ctx.settle();
-  assert.equal(net.rpc("roster_events_claim").length, 1, "only the success started the outbox");
+  assert.equal(net.rpc("events_claim").length, 1, "only the success started the outbox");
 });
 
 test("pay-from-credit: ids, passthrough of the numbers, outbox", async () => {
   const answer = { status: "ok", allocated: 80, remaining: 0, credit_left: 20 };
-  const { net, roster } = world({ ...secretAuth, roster_api_pay_from_credit: () => answer });
+  const { net, roster } = world({ ...secretAuth, api_pay_from_credit: () => answer });
   const ctx = ctxSpy();
   const r = await call(roster, req(`/participants/${UUID_A}/pay-from-credit`, { method: "POST", key: SEC, json: { meeting_id: UUID_B } }), makeEnv(), ctx);
   assert.deepEqual([r.status, r.body], [200, answer]);
-  assert.deepEqual(net.rpc("roster_api_pay_from_credit")[0].json, { p_key_hash: await sha256Hex(SEC), p_participant: UUID_A, p_meeting: UUID_B });
+  assert.deepEqual(net.rpc("api_pay_from_credit")[0].json, { p_key_hash: await sha256Hex(SEC), p_participant: UUID_A, p_meeting: UUID_B });
   await ctx.settle();
-  assert.equal(net.rpc("roster_events_claim").length, 1);
+  assert.equal(net.rpc("events_claim").length, 1);
 });
 
 /* --- POST /payments ------------------------------------------------------------------------------------- */
@@ -727,22 +727,22 @@ test("pay-from-credit: ids, passthrough of the numbers, outbox", async () => {
 const PAY = { participant_id: UUID_A, meeting_id: UUID_B, amount: 80, external_ref: "bank-2027-001" };
 
 test("payments: the payload the database receives, defaults filled in, extras dropped", async () => {
-  const { net, roster } = world({ ...secretAuth, roster_api_record_payment: () => ({ status: "ok", payment_id: UUID_C, duplicate: false }) });
+  const { net, roster } = world({ ...secretAuth, api_record_payment: () => ({ status: "ok", payment_id: UUID_C, duplicate: false }) });
   const r = await call(roster, req("/payments", { method: "POST", key: SEC, json: { ...PAY, note: "  עבור חודש ינואר ", business_id: UUID_C, id: "x" } }));
   assert.deepEqual([r.status, r.body], [200, { status: "ok", payment_id: UUID_C, duplicate: false }]);
-  assert.deepEqual(net.rpc("roster_api_record_payment")[0].json, {
+  assert.deepEqual(net.rpc("api_record_payment")[0].json, {
     p_key_hash: await sha256Hex(SEC),
     p_payload: { participant_id: UUID_A, kind: "payment", amount: 80, method: "other", external_ref: "bank-2027-001", meeting_id: UUID_B, note: "עבור חודש ינואר" },
   });
 
   const deposit = await call(roster, req("/payments", { method: "POST", key: SEC, json: { participant_id: UUID_A, kind: "Deposit", amount: 12.5, method: "BIT", external_ref: "d1" } }));
   assert.equal(deposit.status, 200);
-  assert.deepEqual(net.rpc("roster_api_record_payment")[1].json.p_payload, { participant_id: UUID_A, kind: "deposit", amount: 12.5, method: "bit", external_ref: "d1" });
+  assert.deepEqual(net.rpc("api_record_payment")[1].json.p_payload, { participant_id: UUID_A, kind: "deposit", amount: 12.5, method: "bit", external_ref: "d1" });
 });
 
 test("payments: the same call twice returns the database's duplicate answer", async () => {
   let n = 0;
-  const { roster } = world({ ...secretAuth, roster_api_record_payment: () => ({ status: "ok", payment_id: UUID_C, duplicate: n++ > 0 }) });
+  const { roster } = world({ ...secretAuth, api_record_payment: () => ({ status: "ok", payment_id: UUID_C, duplicate: n++ > 0 }) });
   const first = await call(roster, req("/payments", { method: "POST", key: SEC, json: PAY }));
   const second = await call(roster, req("/payments", { method: "POST", key: SEC, json: PAY }));
   assert.equal(first.body.duplicate, false);
@@ -751,12 +751,12 @@ test("payments: the same call twice returns the database's duplicate answer", as
 });
 
 test("payments: the idempotency key may come as a header; both must agree; one is required", async () => {
-  const { net, roster } = world({ ...secretAuth, roster_api_record_payment: () => ({ status: "ok", payment_id: UUID_C, duplicate: false }) });
+  const { net, roster } = world({ ...secretAuth, api_record_payment: () => ({ status: "ok", payment_id: UUID_C, duplicate: false }) });
   const { external_ref, ...noRef } = PAY;
 
   const viaHeader = await call(roster, req("/payments", { method: "POST", key: SEC, json: noRef, headers: { "idempotency-key": "hdr-1" } }));
   assert.equal(viaHeader.status, 200);
-  assert.equal(net.rpc("roster_api_record_payment")[0].json.p_payload.external_ref, "hdr-1");
+  assert.equal(net.rpc("api_record_payment")[0].json.p_payload.external_ref, "hdr-1");
 
   const same = await call(roster, req("/payments", { method: "POST", key: SEC, json: PAY, headers: { "idempotency-key": PAY.external_ref } }));
   assert.equal(same.status, 200);
@@ -764,11 +764,11 @@ test("payments: the idempotency key may come as a header; both must agree; one i
   assert.deepEqual([differ.status, differ.body.error.field], [422, "external_ref"]);
   const none = await call(roster, req("/payments", { method: "POST", key: SEC, json: noRef }));
   assert.deepEqual([none.status, none.body.error.field], [422, "external_ref"]);
-  assert.equal(net.rpc("roster_api_record_payment").length, 2);
+  assert.equal(net.rpc("api_record_payment").length, 2);
 });
 
 test("payments: field checks", async () => {
-  const { net, roster } = world({ ...secretAuth, roster_api_record_payment: () => ({ status: "ok", payment_id: UUID_C, duplicate: false }) });
+  const { net, roster } = world({ ...secretAuth, api_record_payment: () => ({ status: "ok", payment_id: UUID_C, duplicate: false }) });
   const { meeting_id, ...noMeeting } = PAY;
   const bad = [
     [{ participant_id: undefined }, "participant_id"], [{ participant_id: "x" }, "participant_id"], [{ participant_id: 5 }, "participant_id"],
@@ -791,14 +791,14 @@ test("payments: field checks", async () => {
   for (const kind of ["deposit", "refund"]) {
     assert.equal((await call(roster, req("/payments", { method: "POST", key: SEC, json: { ...noMeeting, kind } }))).status, 200, kind);
   }
-  assert.equal(net.rpc("roster_api_record_payment").length, 2);
+  assert.equal(net.rpc("api_record_payment").length, 2);
   /* multi-line notes are allowed */
   assert.equal((await call(roster, req("/payments", { method: "POST", key: SEC, json: { ...PAY, note: "a\nb" } }))).status, 200);
 });
 
 test("payments: validation, not_found and conflict from the database", async () => {
   for (const [answer, status] of [[{ error: "validation", field: "amount" }, 422], [{ error: "not_found" }, 404], [{ error: "conflict" }, 409]]) {
-    const { roster } = world({ ...secretAuth, roster_api_record_payment: () => answer });
+    const { roster } = world({ ...secretAuth, api_record_payment: () => answer });
     const r = await call(roster, req("/payments", { method: "POST", key: SEC, json: PAY }));
     assert.deepEqual([r.status, r.body.error.code], [status, answer.error]);
   }
@@ -811,7 +811,7 @@ test("nothing the callers typed, no key, no token and no secret appears in any l
   const origErr = console.error, origLog = console.log, origWarn = console.warn;
   console.error = console.log = console.warn = (...a) => logged.push(a.map(String).join(" "));
   try {
-    const { roster } = world({ roster_api_signup: () => ({ status: 500, body: { message: "dana@example.com broke it" } }), roster_api_payment_click: () => ({ error: "invalid_token" }) });
+    const { roster } = world({ api_signup: () => ({ status: 500, body: { message: "dana@example.com broke it" } }), api_payment_click: () => ({ error: "invalid_token" }) });
     await signup(roster, { first_name: "UNIQUE_FIRST_NAME", phone: "0509998887", email: "unique@example.com" });
     await call(roster, req("/payments/click", { method: "POST", key: PUB, json: { participant_token: TOKEN, meeting_id: UUID_A } }));
     await call(roster, req("/signup", { method: "POST", key: PUB, body: "{UNIQUE_BAD_BODY", ip: "198.51.100.77" }));
@@ -832,14 +832,14 @@ test("the HMAC of a delivery made through the route-driven outbox verifies (the 
     business: { id: "b", slug: "studio", name: "סטודיו", notify_emails: [], settings: { webhook_url: "https://hooks.example.com/in", webhook_secret: "whsec_route", webhook_events: ["registration.created"] } },
     participant: null, facts: {}, templates: {}, mail_counters: { recipients: {}, business_day: 0 },
   };
-  const { net, roster } = world({ roster_api_signup: () => SIGNUP_OK, roster_events_claim: () => [item] });
+  const { net, roster } = world({ api_signup: () => SIGNUP_OK, events_claim: () => [item] });
   const ctx = ctxSpy();
   await roster.handle(req("/signup", { method: "POST", key: PUB, json: { first_name: "דנה" } }), makeEnv(), ctx);
   await ctx.settle();
   const [hook] = net.webhooks();
   const m = /^t=(\d+),v1=([0-9a-f]{64})$/.exec(hook.headers["x-roster-signature"]);
   assert.equal(m[2], createHmac("sha256", "whsec_route").update(`${m[1]}.${hook.raw}`).digest("hex"));
-  assert.equal(net.rpc("roster_events_done").length, 1);
+  assert.equal(net.rpc("events_done").length, 1);
 });
 
 /* --- the code to status table of the spec, end to end ------------------------------------------------------ */
@@ -851,7 +851,7 @@ test("every error code of the spec comes out with its status, a fixed sentence, 
   };
   const sentences = new Set();
   for (const [code, status] of Object.entries(table)) {
-    const { roster } = world({ ...secretAuth, roster_api_register: () => ({ error: code, field: "meeting_id", retry_after: 5, detail: "database text" }) });
+    const { roster } = world({ ...secretAuth, api_register: () => ({ error: code, field: "meeting_id", retry_after: 5, detail: "database text" }) });
     const quiet = console.error;
     console.error = () => {};
     let r;
@@ -868,7 +868,7 @@ test("every error code of the spec comes out with its status, a fixed sentence, 
 });
 
 test("`invalid_key` is the same answer whether the key is missing, malformed, unknown or revoked", async () => {
-  const unknown = world({ roster_api_auth: () => ({ error: "invalid_key" }) });
+  const unknown = world({ api_auth: () => ({ error: "invalid_key" }) });
   const answers = [];
   for (const request of [req("/meetings"), req("/meetings", { key: "junk" }), req("/meetings", { key: PUB })]) {
     const r = await call(unknown.roster, request);

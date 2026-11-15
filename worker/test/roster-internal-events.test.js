@@ -143,7 +143,7 @@ test("through the outbox: webhook configured, two internal events, two admin mai
     { ...rawItem("participant.linked", 41), mails_logged: [] },
     { ...rawItem("participant.phone_conflict", 42), mails_logged: [] },
   ];
-  const net = fakeNet({ rpc: { roster_events_claim: () => items, roster_events_done: () => null } });
+  const net = fakeNet({ rpc: { events_claim: () => items, events_done: () => null } });
   const summary = await processOutbox({ env: makeEnv(), fetch: net.fetch, now: () => 1_800_000_000_000, sleep: async () => {} });
   assert.deepEqual([summary.claimed, summary.processed, summary.reported], [2, 2, 2]);
   assert.equal(net.webhooks().length, 0, "nothing reached the customer's endpoint");
@@ -151,7 +151,7 @@ test("through the outbox: webhook configured, two internal events, two admin mai
     ["manager@studio.example", "חשבון Google חובר למשתתף"], ["manager@studio.example", "חשבון Google נוסף ניסה להתחבר"],
     ["owner@studio.example", "חשבון Google חובר למשתתף"], ["owner@studio.example", "חשבון Google נוסף ניסה להתחבר"],
   ].sort());
-  const done = net.rpc("roster_events_done").map((c) => c.json);
+  const done = net.rpc("events_done").map((c) => c.json);
   assert.deepEqual(done.map((d) => d.p_result.webhook), [null, null]);
   assert.deepEqual(done.flatMap((d) => d.p_result.mails.map((m) => [m.template, m.audience, m.status])).sort(), [
     ["admin_account_linked", "admin", "sent"], ["admin_account_linked", "admin", "sent"],

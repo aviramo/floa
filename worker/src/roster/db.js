@@ -16,7 +16,7 @@
    Transport. PostgREST named arguments: the JSON body is {p_name: value, ...}
    with EXACTLY the parameter names below. A function returning jsonb answers
    with that json as the body (an array for the claim). A void or null result is
-   an empty body or `null`; both are fine for roster_events_done.
+   an empty body or `null`; both are fine for events_done.
 
    Common error reply (every roster_api_* function, never an exception for an
    expected failure):  {"error": "<code>"}  with <code> one of
@@ -29,7 +29,7 @@
                    Retry-After header (default 60, clamped to 1..3600)
    Any other code, a non-object, or an HTTP failure becomes 500 server_error.
 
-   1. roster_api_auth(p_key_hash text, p_required_kind text, p_origin text,
+   1. api_auth(p_key_hash text, p_required_kind text, p_origin text,
                       p_ip_hash text, p_bucket text) -> jsonb
         p_required_kind  'public' | 'secret' | 'any' (any = either is allowed)
         p_origin         the raw Origin header (at most 300 chars), or null when
@@ -58,7 +58,7 @@
         malformed key (invalid_key), a secret key with an Origin header
         (secret_key_in_browser), a kind the route does not accept (wrong_key_kind).
 
-   2. roster_api_meetings(p_key_hash text, p_limit int) -> jsonb
+   2. api_meetings(p_key_hash text, p_limit int) -> jsonb
         p_limit 1..100 (the Worker clamps). ok:
         {"business":{"name":"..."}, "meetings":[ {id,date,time,name,city,place,
          capacity,spots_left,full,price,price_tiers} ... ]}
@@ -66,7 +66,7 @@
         Worker strips those three for a public key again, whatever the database
         returned.
 
-   3. roster_api_signup(p_key_hash text, p_payload jsonb, p_ip_hash text) -> jsonb
+   3. api_signup(p_key_hash text, p_payload jsonb, p_ip_hash text) -> jsonb
         p_payload: only these keys, only when present and non-empty, strings
         trimmed and control-character free: first_name, last_name, phone, email,
         gender (strings), age (integer), meeting_id (uuid string). The honeypot
@@ -78,7 +78,7 @@
         errors: closed, full (the participant IS created/reused, nothing
         attached, no token), validation+field, not_found (unknown meeting_id).
 
-   4. roster_api_payment_click(p_key_hash text, p_token_hash text, p_meeting uuid,
+   4. api_payment_click(p_key_hash text, p_token_hash text, p_meeting uuid,
                                p_ip_hash text) -> jsonb
         p_token_hash = sha256 hex of the participant token (the Worker checks the
         token's shape first and answers invalid_token 401 itself when it is not
@@ -87,19 +87,19 @@
         caller whatever it got here, so no status can come back through it. error
         invalid_token for an unknown/expired/other-business token.
 
-   5. roster_api_participant(p_key_hash text, p_id uuid, p_phone text) -> jsonb
+   5. api_participant(p_key_hash text, p_id uuid, p_phone text) -> jsonb
         exactly one of p_id / p_phone is non-null (the other is null). p_phone is
         the raw query value (at most 40 chars of digits, + - ( ) . space), the
         database normalises it. ok: {"participant":{...summary...}}; unknown:
         {"error":"not_found"}.
 
-   6. roster_api_register(p_key_hash text, p_participant uuid, p_meeting uuid)
-      roster_api_unregister(p_key_hash text, p_participant uuid, p_meeting uuid)
+   6. api_register(p_key_hash text, p_participant uuid, p_meeting uuid)
+      api_unregister(p_key_hash text, p_participant uuid, p_meeting uuid)
         ok: {"status":"registered"|"exists"|"past"|"full"}  /
             {"status":"cancelled"|"not_registered"|"attended"|"past"}
         unknown participant or meeting: {"error":"not_found"}
 
-   7. roster_api_record_payment(p_key_hash text, p_payload jsonb) -> jsonb
+   7. api_record_payment(p_key_hash text, p_payload jsonb) -> jsonb
         p_payload: {participant_id uuid, meeting_id uuid?, kind 'payment'|
         'deposit'|'refund' (default 'payment'), amount number (> 0, finite),
         method text (default 'other', lower case), note text? (up to 500 chars),
@@ -108,7 +108,7 @@
         ok: {"status":"ok","payment_id":"<uuid>","duplicate":bool}
         errors: validation+field, not_found, conflict.
 
-   8. roster_api_pay_from_credit(p_key_hash text, p_participant uuid,
+   8. api_pay_from_credit(p_key_hash text, p_participant uuid,
                                  p_meeting uuid) -> jsonb
         ok: {"status":"ok"|"already"|"free"|"no_credit"|"missing"|
         "not_registered","allocated":n,"remaining":n,"credit_left":n}
@@ -127,12 +127,12 @@
        delivery with invalid_url.
      * A public signup never modifies an existing participant (it creates, or
        reuses and reactivates, and attaches the meeting).
-     * The template keys of roster_mail_templates are the eight of mail-defaults.js.
+     * The template keys of mail_templates are the eight of mail-defaults.js.
        The Worker refuses an override of more than 20,000 chars or with more than 50
        data-if and sends the built-in default instead (log: template_rejected).
 
    OUTBOX
-   9. roster_events_claim(p_limit int) -> jsonb ARRAY of work items (a
+   9. events_claim(p_limit int) -> jsonb ARRAY of work items (a
       `setof jsonb` answer, which PostgREST also renders as an array, works too).
       Marks them processing with locked_until = now() + 2 min, skip locked.
       Work item (canonicalised by work.js; unknown extra keys are ignored):
@@ -152,7 +152,7 @@
                        the first database version said "google" for phone_conflict,
                        the Worker reads either) },
           "attempts": <int: webhook delivery attempts already RECORDED by
-                       roster_events_done before this claim; 0 on the first
+                       events_done before this claim; 0 on the first
                        claim>,
           "created_at": "<ISO timestamp>",
           "source": "api" | "admin" | "me" | "system"   // who made the change; the Worker sends
@@ -194,7 +194,7 @@
         },
         "templates": { "<key>": {"subject": text, "html": text} },  // the
                                     // business's overrides only
-        "mail_counters": {          // from roster_mail_log, status sent or pending
+        "mail_counters": {          // from mail_log, status sent or pending
           "recipients": { "<lower case address>": <int> },  // PARTICIPANT mails to that
                                     // address, last 24 h (only the addresses this
                                     // event can mail are needed)
@@ -222,7 +222,7 @@
       "webhook attempts that were really made": the Worker cannot read it as "the
       mails were already made". It reads the OPTIONAL key below instead.
         "mails_logged": [ { "template": "<key>", "to": "<address>"|"", "status":
-                            "sent"|"failed"|"pending" } ]   // roster_mail_log rows of THIS
+                            "sent"|"failed"|"pending" } ]   // mail_log rows of THIS
                             // event (event_id = the event's id), any status
       With it, the Worker makes every planned mail that has no row yet (so an event
       that comes back after a crash gets the mails that were never sent, and a
@@ -230,7 +230,7 @@
       "mails only when attempts == 0", which loses the mails of an event whose
       first claim was lost before anything went out.
 
-  10. roster_events_done(p_id bigint, p_result jsonb) -> anything (ignored)
+  10. events_done(p_id bigint, p_result jsonb) -> anything (ignored)
       p_result:
       {
         "webhook": null |               // null: nothing was due (no URL, filtered)
@@ -262,25 +262,25 @@
       }
       The database decides: event done (webhook ok or null), pending again at
       now() + retry_in_seconds (webhook failed with a delay), or failed (webhook
-      failed with retry_in_seconds null); writes roster_webhook_deliveries (event,
-      attempt, status, http_status, error), roster_mail_log rows for every
+      failed with retry_in_seconds null); writes webhook_deliveries (event,
+      attempt, status, http_status, error), mail_log rows for every
       entry of `mails` plus the participant timeline note for audience
       participant. A mail already logged for the event is not made again
       (mails_logged), so no mail entry repeats for a template and address.
    ========================================================================== */
 
 export const RPC = Object.freeze({
-  auth: "roster_api_auth",
-  meetings: "roster_api_meetings",
-  signup: "roster_api_signup",
-  click: "roster_api_payment_click",
-  participant: "roster_api_participant",
-  register: "roster_api_register",
-  unregister: "roster_api_unregister",
-  recordPayment: "roster_api_record_payment",
-  payFromCredit: "roster_api_pay_from_credit",
-  claim: "roster_events_claim",
-  done: "roster_events_done",
+  auth: "api_auth",
+  meetings: "api_meetings",
+  signup: "api_signup",
+  click: "api_payment_click",
+  participant: "api_participant",
+  register: "api_register",
+  unregister: "api_unregister",
+  recordPayment: "api_record_payment",
+  payFromCredit: "api_pay_from_credit",
+  claim: "events_claim",
+  done: "events_done",
 });
 
 const ALLOWED = new Set(Object.values(RPC));
@@ -296,6 +296,9 @@ function baseUrl(url) {
   } catch { /* falls through */ }
   return null;
 }
+
+/* the app's own schema in the shared database (named for its sub-domain; tables carry no prefix) */
+const SCHEMA = "roster";
 
 export function createDb({ url, serviceKey, fetch: doFetch, timeoutMs = DEFAULT_TIMEOUT_MS }) {
   const base = baseUrl(url);
@@ -315,6 +318,7 @@ export function createDb({ url, serviceKey, fetch: doFetch, timeoutMs = DEFAULT_
             authorization: `Bearer ${serviceKey}`,
             "content-type": "application/json",
             accept: "application/json",
+            "content-profile": SCHEMA,
           },
           body: JSON.stringify(args),
           signal: controller.signal,

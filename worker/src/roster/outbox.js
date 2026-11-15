@@ -1,7 +1,7 @@
 /* ==========================================================================
    The outbox processor. Events are written by database triggers; this claims
    them, delivers (webhook and mails, in parallel, they do not depend on each
-   other) and reports every outcome with roster_events_done.
+   other) and reports every outcome with events_done.
 
    It runs after every API call that can enqueue an event (ctx.waitUntil) and
    once a minute from the cron. Both can run at the same moment: the claim is
@@ -32,7 +32,7 @@ import { runWebhook } from "./webhook.js";
    have in flight or logged after this run began to claim, so overlapping runs cannot all read "0 so far". */
 const ISOLATE_TALLY = createMailTally();
 
-/* one event -> the result for roster_events_done */
+/* one event -> the result for events_done */
 export async function processItem(work, deps) {
   /* Mails are made when the database says it holds none yet for this event (mails_logged), per mail. A database that
      does not say falls back to "only on the first pass" (attempts == 0). That fallback is wrong after a crash: a lock

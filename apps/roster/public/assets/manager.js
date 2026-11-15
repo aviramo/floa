@@ -17,7 +17,7 @@
 
    Phase 2 of the design rollout: every element is the KIT's (assets/ui.css, ui.js, undo.js), the popup is the one shell (sheet.js), the field is
    the one field (field.js). Deleting anything is cancellable (RosterUndo, delayed commit) and nothing is really lost: the database keeps what was
-   deleted in the trash (roster_trash_list / roster_restore / roster_purge), shown on the "נמחקו לאחרונה" screen.
+   deleted in the trash (trash_list / restore / purge), shown on the "נמחקו לאחרונה" screen.
 
    The PAGE never scrolls. The header stays, and only the list inside its own
    box scrolls; a popup scrolls inside itself.
@@ -323,8 +323,8 @@
     setCount("");
     setView('<div class="rempty rempty--fill" role="status">טוען…</div>');
     Promise.all([
-      api("/rest/v1/rpc/roster_is_super", { method: "POST", json: {} }),
-      api("/rest/v1/rpc/roster_my_businesses", { method: "POST", json: {} }),
+      api("/rest/v1/rpc/is_super", { method: "POST", json: {} }),
+      api("/rest/v1/rpc/my_businesses", { method: "POST", json: {} }),
     ]).then(function (r) {
       if (epoch !== mine) return;
       var list = Array.isArray(r[1]) ? r[1] : [];
@@ -380,8 +380,8 @@
     var l = $("#listIn");
     if (l && !S.biz.length) l.innerHTML = '<div class="rempty" role="status">טוען…</div>';
     return Promise.all([
-      api("/rest/v1/roster_businesses?select=id,slug,name,created_at&order=created_at"),
-      api("/rest/v1/roster_business_users?select=business_id,email&order=email"),
+      api("/rest/v1/businesses?select=id,slug,name,created_at&order=created_at"),
+      api("/rest/v1/business_users?select=business_id,email&order=email"),
     ]).then(function (r) {
       if (epoch !== mine) return;
       S.biz = Array.isArray(r[0]) ? r[0] : [];
@@ -548,8 +548,8 @@
       var patch = {};
       if (edit) { if (nm !== b.name) patch.name = nm; if (sg !== b.slug) patch.slug = sg; }
       var req = edit
-        ? api("/rest/v1/roster_businesses?id=eq." + encodeURIComponent(b.id), { method: "PATCH", json: patch, prefer: "return=representation" })
-        : api("/rest/v1/roster_businesses", { method: "POST", json: { slug: sg, name: nm }, prefer: "return=representation" });
+        ? api("/rest/v1/businesses?id=eq." + encodeURIComponent(b.id), { method: "PATCH", json: patch, prefer: "return=representation" })
+        : api("/rest/v1/businesses", { method: "POST", json: { slug: sg, name: nm }, prefer: "return=representation" });
       req.then(function (res) {
         if (edit) {
           if (!Array.isArray(res) || !res.length) throw new Error("not saved");
@@ -569,7 +569,7 @@
         S.biz.push({ id: row.id, slug: row.slug || sg, name: row.name || nm, created_at: row.created_at || "" });
         S.users[row.id] = [];
         var enter = function () { toast("העסק נוצר"); location.href = "admin/?biz=" + encodeURIComponent(row.slug || sg); };   /* the guided setup starts there */
-        if (disp && disp !== nm) api("/rest/v1/roster_business_settings?business_id=eq." + encodeURIComponent(row.id), { method: "PATCH", json: { sender_name: disp } }).then(enter, enter);
+        if (disp && disp !== nm) api("/rest/v1/business_settings?business_id=eq." + encodeURIComponent(row.id), { method: "PATCH", json: { sender_name: disp } }).then(enter, enter);
         else enter();
       }).catch(function (err) {
         if (err && err.signedOut) return;
@@ -662,7 +662,7 @@
     }
     accErr("");
     accBusy(c, true);
-    api("/rest/v1/roster_business_users", { method: "POST", json: { business_id: b.id, email: email } })
+    api("/rest/v1/business_users", { method: "POST", json: { business_id: b.id, email: email } })
       .then(function () {
         var l = S.users[b.id] || (S.users[b.id] = []);
         if (l.indexOf(email) < 0) { l.push(email); l.sort(); }
@@ -698,7 +698,7 @@
           kind: "account", itemId: acctKey(bizId, email), label: "החשבון הוסר", duration: HEAVY_MS, heavy: true,
           onUndo: function () { renderAcc(); renderList(); },
           onCommit: function (o) {
-            return rest("/rest/v1/roster_business_users?business_id=eq." + encodeURIComponent(bizId) + "&email=eq." + encodeURIComponent(email),
+            return rest("/rest/v1/business_users?business_id=eq." + encodeURIComponent(bizId) + "&email=eq." + encodeURIComponent(email),
               { method: "DELETE", prefer: "return=representation", keepalive: o && o.keepalive }).then(function (res) {
               if (Array.isArray(res) && !res.length) throw new Error("nothing removed");
               var l = S.users[bizId] || [], i = l.indexOf(email);
@@ -727,7 +727,7 @@
           kind: "business", itemId: b.id, label: 'העסק "' + b.name + '" נמחק', duration: HEAVY_MS, heavy: true,
           onUndo: renderList,
           onCommit: function (o) {
-            return rest("/rest/v1/roster_businesses?id=eq." + encodeURIComponent(b.id), { method: "DELETE", prefer: "return=representation", keepalive: o && o.keepalive }).then(function (res) {
+            return rest("/rest/v1/businesses?id=eq." + encodeURIComponent(b.id), { method: "DELETE", prefer: "return=representation", keepalive: o && o.keepalive }).then(function (res) {
               if (Array.isArray(res) && !res.length) throw new Error("nothing deleted");
               S.biz = S.biz.filter(function (x) { return x.id !== b.id; });
               delete S.users[b.id];
@@ -743,7 +743,7 @@
 
   /* ---------- "נמחקו לאחרונה": what was deleted, with restore (and, for the platform owner, a permanent delete) ---------- */
   function trashRows(bizId) {
-    return rest("/rest/v1/rpc/roster_trash_list", { method: "POST", json: bizId ? {} : { p_kind: "business" }, biz: bizId || undefined });
+    return rest("/rest/v1/rpc/trash_list", { method: "POST", json: bizId ? {} : { p_kind: "business" }, biz: bizId || undefined });
   }
   function fmtDate(iso) {
     if (!iso) return "";
@@ -800,7 +800,7 @@
     if (!row) return;
     if (act === "restore") {
       c.busy = true; t.disabled = true;
-      rest("/rest/v1/rpc/roster_restore", { method: "POST", json: { p_kind: kind, p_id: id }, biz: c.id || undefined }).then(function (res) {
+      rest("/rest/v1/rpc/restore", { method: "POST", json: { p_kind: kind, p_id: id }, biz: c.id || undefined }).then(function (res) {
         c.busy = false;
         var st = res && (res.status || (typeof res === "string" ? res : ""));
         if (st === "ok") {
@@ -816,7 +816,7 @@
         text: "<b>" + esc(row.label || kind) + "</b> יימחק לצמיתות" + (Number(row.dependents) ? ", יחד עם " + Number(row.dependents) + " פריטים שנמחקו איתו" : "") + ". אי אפשר לשחזר אחרי זה.",
         confirmLabel: "מחיקה לצמיתות של " + (row.label || kind),
         onConfirm: function () {
-          rest("/rest/v1/rpc/roster_purge", { method: "POST", json: { p_kind: kind, p_id: id }, biz: c.id || undefined }).then(function () {
+          rest("/rest/v1/rpc/purge", { method: "POST", json: { p_kind: kind, p_id: id }, biz: c.id || undefined }).then(function () {
             c.rows = (c.rows || []).filter(function (r) { return r.trash_id !== id; });
             if (ctx === c) renderTrash();
             toast(T.purged);

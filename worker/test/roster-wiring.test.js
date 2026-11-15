@@ -45,8 +45,8 @@ test("wrangler.toml has the every-minute cron and names the secret without conta
 
 test("/roster/v1/* goes to the roster door through the real entry point", async () => {
   const net = stubFetch((url) => {
-    if (url.endsWith("/roster_api_auth")) return ok({ ok: true, kind: "public" });
-    if (url.endsWith("/roster_api_meetings")) return ok({ business: { name: "סטודיו" }, meetings: [] });
+    if (url.endsWith("/api_auth")) return ok({ ok: true, kind: "public" });
+    if (url.endsWith("/api_meetings")) return ok({ business: { name: "סטודיו" }, meetings: [] });
     return ok(null);
   });
   try {
@@ -54,7 +54,7 @@ test("/roster/v1/* goes to the roster door through the real entry point", async 
     assert.equal(res.status, 200);
     assert.deepEqual(await res.json(), { business: { name: "סטודיו" }, meetings: [] });
     assert.equal(res.headers.get("access-control-allow-origin"), "https://studio.example");
-    assert.deepEqual(net.calls.map((c) => c.url), [`${DB}/rest/v1/rpc/roster_api_auth`, `${DB}/rest/v1/rpc/roster_api_meetings`]);
+    assert.deepEqual(net.calls.map((c) => c.url), [`${DB}/rest/v1/rpc/api_auth`, `${DB}/rest/v1/rpc/api_meetings`]);
     assert.equal(net.calls[0].init.headers.apikey, SERVICE_KEY);
   } finally { net.restore(); }
 });
@@ -88,12 +88,12 @@ test("the old routes behave as before: an unknown origin is refused, an unknown 
 });
 
 test("scheduled: drains the outbox with the service key, and is silent without it", async () => {
-  const net = stubFetch((url) => (url.endsWith("/roster_events_claim") ? ok([]) : ok(null)));
+  const net = stubFetch((url) => (url.endsWith("/events_claim") ? ok([]) : ok(null)));
   try {
     const ctx = ctxSpy();
     await worker.scheduled({ cron: "* * * * *" }, makeEnv(), ctx);
     await ctx.settle();
-    assert.deepEqual(net.calls.map((c) => c.url), [`${DB}/rest/v1/rpc/roster_events_claim`]);
+    assert.deepEqual(net.calls.map((c) => c.url), [`${DB}/rest/v1/rpc/events_claim`]);
     assert.deepEqual(net.calls[0].json, { p_limit: 20 });
 
     net.calls.length = 0;

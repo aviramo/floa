@@ -4,7 +4,7 @@
    THIS IS AN EXACT COPY of DEFAULT_TEMPLATES in
    worker/src/roster/mail-defaults.js (every subject and every html, byte for
    byte). The Worker sends them whenever a business has not written its own (a
-   row in roster_mail_templates overrides one by key). The connect page cannot
+   row in mail_templates overrides one by key). The connect page cannot
    import from the Worker, so it carries this copy to show a template before it
    is customised, to preview it, and to start the editor from it.
 

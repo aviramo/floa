@@ -4,7 +4,7 @@
    fine when it was saved is not a promise about what it is now, and this is the
    one place where the Worker makes a request to an address a stranger chose.
 
-   The rules are the database's, to the letter (roster_valid_webhook_url, and the
+   The rules are the database's, to the letter (valid_webhook_url, and the
    connect page's client check, and the docs): a URL the database accepted and
    this refused would fail every attempt for ever, silently, and one this accepted
    and the database refused would pass a check here and then fail the trigger when
@@ -38,7 +38,7 @@ export const WILDCARD_DNS = Object.freeze([
   "nip.io", "sslip.io", "xip.io", "localtest.me", "lvh.me", "traefik.me", "local.gd", "vcap.me", "lacolhost.com", "1u.ms",
 ]);
 
-/* The characters no URL may hold anywhere: the same set, by code point, as the database's roster_valid_webhook_url
+/* The characters no URL may hold anywhere: the same set, by code point, as the database's valid_webhook_url
    (never \s or [[:space:]], whose answer depends on the engine or the locale): the ASCII control characters
    U+0001..U+001F, DEL U+007F, the space U+0020, U+0085, U+00A0, U+1680, the spaces, the zero-width characters and
    the two direction marks U+2000..U+200F, U+2028..U+202F (line and paragraph separators, the bidi embeddings and
@@ -47,7 +47,7 @@ export const WILDCARD_DNS = Object.freeze([
 const REFUSED = "\\u0001-\\u001f\\u007f \\u0085\\u00a0\\u1680\\u2000-\\u200f\\u2028-\\u202f\\u205f\\u2066-\\u2069\\u3000\\ufeff";
 const HAS_REFUSED = new RegExp(`[${REFUSED}]`);
 
-/* The database's patterns (roster_valid_webhook_url), the same text, case-insensitive like its ~*. */
+/* The database's patterns (valid_webhook_url), the same text, case-insensitive like its ~*. */
 const SHAPE = new RegExp(`^https://([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,24}(:443)?([/?#][^${REFUSED}]*)?$`, "i");
 const INTERNAL = /^https:\/\/([^/?#]*\.)?(workers\.dev|local|localhost|internal|invalid)(:[0-9]+)?([/?#]|$)/i;
 const WILDCARD = new RegExp(`^https://([^/?#]*\\.)?(${WILDCARD_DNS.map((d) => d.replace(/\./g, "\\.")).join("|")})(:[0-9]+)?([/?#]|$)`, "i");

@@ -7,7 +7,7 @@
    Same gate and same tenant handling as the admin page:
      * the sign-in is the domain's (/auth.js, FLOA_AUTH); this page keeps no
        session of its own
-     * ?biz=<slug> is resolved through roster_my_businesses, and every REST and
+     * ?biz=<slug> is resolved through my_businesses, and every REST and
        RPC call after that carries `x-business: <business id>`; the page never
        sends a business_id of its own
      * FLOA_AUTH.api cannot send an extra header, so this page has its own
@@ -320,7 +320,7 @@
   }
 
   /* ---------- validation (the server checks again) ---------- */
-  /* The webhook URL, by the rules the database checks on save (roster_valid_webhook_url) and the Worker checks again at send time
+  /* The webhook URL, by the rules the database checks on save (valid_webhook_url) and the Worker checks again at send time
      (worker/src/roster/urls.js): https, a real public hostname, port 443 (absent counts as 443), no credentials, 500 characters.
      Refused hostnames: IP literals in any spelling, localhost, *.workers.dev, a single label, .local .internal .invalid, and the
      wildcard-DNS services (a name like 127.0.0.1.nip.io resolves to a private address, so it would reach inside a network). */
@@ -411,12 +411,12 @@
 
   /* ---------- data ---------- */
   const LOADERS = {
-    keys: () => rest("roster_api_keys?select=" + KEY_COLS + "&order=created_at.desc"),
-    settings: async () => { const r = await rest("roster_business_settings?select=" + SETTINGS_COLS); if (!Array.isArray(r) || !r[0]) throw new Error("no settings row"); return r[0]; },
-    templates: async () => { const r = await rest("roster_mail_templates?select=key,subject,html,updated_at"); const m = {}; (Array.isArray(r) ? r : []).forEach((x) => { m[x.key] = x; }); return m; },
-    events: () => rest("roster_events?select=id,type,created_at,status,attempts,next_attempt_at,last_error&type=neq.mail.test&order=created_at.desc&limit=60"),
-    deliveries: () => rest("roster_webhook_deliveries?select=id,event_id,attempt,status,http_status,error,at&order=at.desc&limit=300"),
-    mails: () => rest("roster_mail_log?select=id,participant_id,template,to_addr,subject,status,error,created_at,sent_at,is_test&order=created_at.desc&limit=60"),
+    keys: () => rest("api_keys?select=" + KEY_COLS + "&order=created_at.desc"),
+    settings: async () => { const r = await rest("business_settings?select=" + SETTINGS_COLS); if (!Array.isArray(r) || !r[0]) throw new Error("no settings row"); return r[0]; },
+    templates: async () => { const r = await rest("mail_templates?select=key,subject,html,updated_at"); const m = {}; (Array.isArray(r) ? r : []).forEach((x) => { m[x.key] = x; }); return m; },
+    events: () => rest("events?select=id,type,created_at,status,attempts,next_attempt_at,last_error&type=neq.mail.test&order=created_at.desc&limit=60"),
+    deliveries: () => rest("webhook_deliveries?select=id,event_id,attempt,status,http_status,error,at&order=at.desc&limit=300"),
+    mails: () => rest("mail_log?select=id,participant_id,template,to_addr,subject,status,error,created_at,sent_at,is_test&order=created_at.desc&limit=60"),
   };
   async function load(what) {
     const mine = epoch;
@@ -577,7 +577,7 @@
   /* RETURNING * would need a privilege on webhook_secret, which nobody has: name the columns */
   async function saveSettings(patch) {
     const mine = epoch;
-    const res = await rest("roster_business_settings?business_id=eq." + enc(BIZ.id) + "&select=" + SETTINGS_COLS, { method: "PATCH", json: patch, prefer: "return=representation" });
+    const res = await rest("business_settings?business_id=eq." + enc(BIZ.id) + "&select=" + SETTINGS_COLS, { method: "PATCH", json: patch, prefer: "return=representation" });
     if (!Array.isArray(res) || !res[0]) throw new Error("not saved");
     if (epoch === mine) D.settings = res[0];
     return res[0];
@@ -615,7 +615,7 @@
      1. what the business needs (participants, managers, both): sets the switches below, saved with the form
      2. participants: the master switch and a switch per mail type; managers: the notify list and a switch per type
      3. a status line per area ("מוגדר" or "לא מוגדר" and what is missing), updated while the form is edited
-     4. a test mail per type, to the signed-in manager's own address only (roster_mail_test) */
+     4. a test mail per type, to the signed-in manager's own address only (mail_test) */
   const PART_TYPES = ["registered", "payment_confirmed", "refund", "registration_cancelled"];
   const ADM_TYPES = ["admin_signup", "admin_payment_reported", "admin_account_linked", "admin_phone_conflict"];
   const TEST_ERR = {
@@ -745,7 +745,7 @@
     testing2.add(key); btn.disabled = true;
     const mine = epoch;
     try {
-      const r = await rpc("roster_mail_test", { p_template: key });
+      const r = await rpc("mail_test", { p_template: key });
       if (r && r.queued) {
         toast("נשלח אליכם מייל ניסיון ל־" + r.to + ". הוא יגיע בעוד כדקה.");
         [9000, 30000].forEach((ms) => setTimeout(async () => { if (epoch !== mine) return; await load("mails"); refreshLists(); }, ms));
@@ -898,7 +898,7 @@
     }
     c.busy = true; RosterSheet.busy(dlg, true); err.textContent = "";
     try {
-      const r = await rpc("roster_key_create", { p_kind: kind, p_label: label, p_origins: origins });
+      const r = await rpc("key_create", { p_kind: kind, p_label: label, p_origins: origins });
       if (!r || !r.key) throw new Error("no key");
       await load("keys");
       refreshLists();
@@ -953,7 +953,7 @@
     if (c.busy) return;
     c.busy = true; $("#rkGo").disabled = true;
     try {
-      await rpc("roster_key_revoke", { p_id: c.id });
+      await rpc("key_revoke", { p_id: c.id });
       await load("keys");
       refreshLists();
       toast("המפתח בוטל");
@@ -979,7 +979,7 @@
     if (c.busy) return;
     c.busy = true; $("#scGo").disabled = true;
     try {
-      const secret = await rpc("roster_webhook_secret_rotate");
+      const secret = await rpc("webhook_secret_rotate");
       if (typeof secret !== "string" || !secret) throw new Error("no secret");
       if (D.settings) D.settings.webhook_secret_set = true;
       const st = $("#secState"), nb = $("#secretNew");
@@ -998,7 +998,7 @@
     testing = true; btn.disabled = true;
     const mine = epoch;
     try {
-      const r = await rpc("roster_webhook_test");
+      const r = await rpc("webhook_test");
       if (r && r.error) { toast(r.error === "no_webhook" ? "קודם צריך לשמור כתובת Webhook." : T.generic); }
       else {
         toast("אירוע בדיקה נשלח לתור. התוצאה תופיע ביומן בעוד רגע.");
@@ -1210,7 +1210,7 @@
     if (problem) { err.textContent = problem; $("#tHtml").focus(); return; }
     c.busy = true; RosterSheet.busy(dlg, true); err.textContent = "";
     try {
-      const res = await rest("roster_mail_templates?select=key,subject,html,updated_at", { method: "POST", json: { key: c.key, subject, html }, prefer: "resolution=merge-duplicates,return=representation" });
+      const res = await rest("mail_templates?select=key,subject,html,updated_at", { method: "POST", json: { key: c.key, subject, html }, prefer: "resolution=merge-duplicates,return=representation" });
       const row = Array.isArray(res) && res[0] ? res[0] : { key: c.key, subject, html, updated_at: new Date().toISOString() };
       if (D.templates) D.templates[c.key] = row;
       refreshLists();
@@ -1223,7 +1223,7 @@
     }
   }
   /* The reset of a customized template to the default is not final for 6 seconds: the row and the editor show the default at once, "ביטול" in the toast
-     brings the customized text back, and only when the time ends does the database forget it (roster_mail_template_reset). Both the swipe action on the
+     brings the customized text back, and only when the time ends does the database forget it (mail_template_reset). Both the swipe action on the
      row and the button in the editor come here. */
   function resetTemplate(key) {
     const prev = D.templates && D.templates[key];
@@ -1238,7 +1238,7 @@
         if (editing()) { ctx.custom = true; $("#tSubject").value = prev.subject; $("#tHtml").value = prev.html; renderTplFoot(); updatePreview(); }
       },
       onCommit: async (o) => {
-        await rest("rpc/roster_mail_template_reset", { method: "POST", json: { p_key: key }, keepalive: !!(o && o.keepalive) });
+        await rest("rpc/mail_template_reset", { method: "POST", json: { p_key: key }, keepalive: !!(o && o.keepalive) });
         if (D.templates) delete D.templates[key];
         refreshLists();
       },
@@ -1259,7 +1259,7 @@
       (m.error ? '<div class="errl">' + esc(m.error) + "</div>" : "") +
       '<div class="pv full"><iframe id="mPrev" title="המייל כפי שנשלח" sandbox="" referrerpolicy="no-referrer"></iframe></div>');
     try {
-      const r = await rest("roster_mail_log?id=eq." + enc(id) + "&select=html");
+      const r = await rest("mail_log?id=eq." + enc(id) + "&select=html");
       if (!ctx || ctx.id !== id) return;
       $("#mPrev").srcdoc = inFrame(((r && r[0] && r[0].html) || "") || "<body></body>");
     } catch (e) {
@@ -1301,7 +1301,7 @@
     if (!A || !SB) { gate.hidden = false; wrap.hidden = true; $("#gateIn").innerHTML = "<h1>" + TITLE + "</h1><p>" + esc(T.noAuth) + "</p>"; return; }
     if (!A.signedIn()) return showGate("", "in");
     let mineList;
-    try { mineList = await rest("rpc/roster_my_businesses", { method: "POST", json: {}, noBiz: true }); }
+    try { mineList = await rest("rpc/my_businesses", { method: "POST", json: {}, noBiz: true }); }
     catch (e) { if (e && e.signedOut) return; return showGate("אין חיבור לנתונים. נסו שוב בעוד רגע.", "fail"); }
     if (epoch !== mine) return;
     MINE = Array.isArray(mineList) ? mineList : [];

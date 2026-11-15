@@ -1,5 +1,5 @@
 /* ==========================================================================
-   One work item from roster_events_claim, checked and put in one canonical
+   One work item from events_claim, checked and put in one canonical
    shape. The database function and this Worker are written apart, so this is
    the single place that knows what an item may look like; everything after it
    (webhook, mail, outbox) reads the canonical form and never the raw one.

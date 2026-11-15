@@ -221,7 +221,7 @@ export function planMails(work) {
   switch (event.type) {
     case "participant.created":
       /* a participant the business's own people add by hand is not news to them: the database's rule is
-         "notify and source <> admin" (roster_emit), and the event exists anyway when a webhook wants it */
+         "notify and source <> admin" (emit), and the event exists anyway when a webhook wants it */
       if (event.source === "admin") skip("admin_signup", "added_by_admin");
       else toAdmins("admin_signup");
       break;
@@ -267,7 +267,7 @@ export function planMails(work) {
       else toParticipant("registration_cancelled", false);
       break;
 
-    /* A test mail: the manager asked (roster_mail_test), the address is their own, and the switches do not apply. The database
+    /* A test mail: the manager asked (mail_test), the address is their own, and the switches do not apply. The database
        made the event, but the Worker checks it again: a known template, a plain address, one recipient. */
     case "mail.test": {
       const d = isObj(event.data) ? event.data : {};

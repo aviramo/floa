@@ -47,9 +47,9 @@ test("hashIp: salted, and the same for every address of one /64", async () => {
 
 test("one IPv6 /64 is one bucket for the signup brake: rotating the last 64 bits buys nothing", async () => {
   const net = fakeNet({ rpc: {
-    roster_api_auth: () => ({ ok: true, kind: "public" }),
-    roster_api_signup: () => ({ status: "ok", registered: false, participant_token: TOKEN }),
-    roster_events_claim: () => [], roster_events_done: () => null,
+    api_auth: () => ({ ok: true, kind: "public" }),
+    api_signup: () => ({ status: "ok", registered: false, participant_token: TOKEN }),
+    events_claim: () => [], events_done: () => null,
   } });
   const roster = makeRoster(net);
   const go = (ip) => call(roster, req("/signup", { method: "POST", key: PUB, json: { first_name: "דנה" }, ip }));
@@ -57,7 +57,7 @@ test("one IPv6 /64 is one bucket for the signup brake: rotating the last 64 bits
   for (let i = 0; i < 8; i++) statuses.push((await go(`2001:db8:1234:5678:${(i + 1).toString(16)}:0:0:${i + 1}`)).status);
   assert.deepEqual(statuses, [200, 200, 200, 200, 200, 200, 429, 429], "eight addresses, one /64, six allowed");
   assert.equal((await go("2001:db8:1234:5679::1")).status, 200, "the next /64 is a fresh bucket");
-  const hashes = new Set(net.rpc("roster_api_auth").map((c) => c.json.p_ip_hash));
+  const hashes = new Set(net.rpc("api_auth").map((c) => c.json.p_ip_hash));
   assert.equal(hashes.size, 2, "the database was given one hash for the whole /64 (and one for the other)");
 });
 
@@ -93,7 +93,7 @@ test("without ROSTER_IP_SALT every route answers 503 with a log line, preflight 
 });
 
 test("with the salt set the Worker serves, and the cron does not need it", async () => {
-  const net = fakeNet({ rpc: { roster_api_auth: () => ({ ok: true, kind: "public" }), roster_api_meetings: () => ({ business: { name: "x" }, meetings: [] }), roster_events_claim: () => [], roster_events_done: () => null } });
+  const net = fakeNet({ rpc: { api_auth: () => ({ ok: true, kind: "public" }), api_meetings: () => ({ business: { name: "x" }, meetings: [] }), events_claim: () => [], events_done: () => null } });
   const roster = makeRoster(net);
   assert.equal((await call(roster, req("/meetings", { key: PUB }))).status, 200);
   const { ROSTER_IP_SALT, ...noSalt } = makeEnv();
@@ -101,15 +101,15 @@ test("with the salt set the Worker serves, and the cron does not need it", async
   const ctx = ctxSpy();
   await roster.scheduled(noSalt, ctx);
   await ctx.settle();
-  assert.equal(net.rpc("roster_events_claim").length, 1, "the outbox hashes no address");
+  assert.equal(net.rpc("events_claim").length, 1, "the outbox hashes no address");
 });
 
 /* --- the brake on bad keys ------------------------------------------------------------- */
 
 const DB = (over = {}) => fakeNet({ rpc: {
-  roster_api_auth: () => ({ error: "invalid_key" }),
-  roster_api_meetings: () => ({ business: { name: "x" }, meetings: [] }),
-  roster_events_claim: () => [], roster_events_done: () => null,
+  api_auth: () => ({ error: "invalid_key" }),
+  api_meetings: () => ({ business: { name: "x" }, meetings: [] }),
+  events_claim: () => [], events_done: () => null,
   ...over,
 } });
 
@@ -160,11 +160,11 @@ test("well-formed keys the database does not know: sixty database calls, then 42
     const r = await call(roster, req("/meetings", { key: guess(i), ip }));
     assert.deepEqual([r.status, r.body.error.code], [401, "invalid_key"], `guess ${i + 1}`);
   }
-  assert.equal(net.rpc("roster_api_auth").length, 60);
+  assert.equal(net.rpc("api_auth").length, 60);
   const over = await call(roster, req("/meetings", { key: guess(1000), ip }));
   assert.deepEqual([over.status, over.body.error.code], [429, "rate_limited"]);
   assert.ok(Number(over.headers.get("retry-after")) >= 1);
-  assert.equal(net.rpc("roster_api_auth").length, 60, "the 61st guess cost nothing");
+  assert.equal(net.rpc("api_auth").length, 60, "the 61st guess cost nothing");
   assert.equal(net.calls.length, 60);
   assert.equal(over.headers.get("access-control-allow-origin"), null, "(no Origin on this request)");
 });
@@ -173,7 +173,7 @@ test("a key the database vouched for is not held back by somebody else's guessin
   const known = (a) => a.p_key_hash === GOOD_HASH;
   let GOOD_HASH = "";
   GOOD_HASH = await sha256Hex(PUB);
-  const net = DB({ roster_api_auth: (a) => (known(a) ? { ok: true, kind: "public" } : { error: "invalid_key" }) });
+  const net = DB({ api_auth: (a) => (known(a) ? { ok: true, kind: "public" } : { error: "invalid_key" }) });
   const roster = makeRoster(net);
   const ip = "198.51.100.91";
   assert.equal((await call(roster, req("/meetings", { key: PUB, ip: "198.51.100.200" }))).status, 200, "seen working, from elsewhere");
@@ -186,7 +186,7 @@ test("a key the database vouched for is not held back by somebody else's guessin
 });
 
 test("what does not count as a bad key: a good one, a wrong kind, a refused origin, a rate limit, a participant token", async () => {
-  const net = DB({ roster_api_auth: (a, c) => {
+  const net = DB({ api_auth: (a, c) => {
     const key = c.headers.authorization;
     void key;
     return { error: "origin_not_allowed" };
@@ -199,10 +199,10 @@ test("what does not count as a bad key: a good one, a wrong kind, a refused orig
   }
   for (let i = 0; i < 70; i++) assert.equal((await call(roster, req("/participants?phone=0501234567", { key: PUB, ip }))).status, 403, "wrong kind is not a bad key");
   for (let i = 0; i < 70; i++) assert.equal((await call(roster, req("/meetings", { key: SEC, origin: "https://x.example", ip }))).status, 403, "secret in a browser is not a bad key");
-  const rl = DB({ roster_api_auth: () => ({ error: "rate_limited", retry_after: 5 }) });
+  const rl = DB({ api_auth: () => ({ error: "rate_limited", retry_after: 5 }) });
   const r2 = makeRoster(rl);
   for (let i = 0; i < 70; i++) assert.equal((await call(r2, req("/meetings", { key: PUB, ip }))).status, 429);
-  assert.equal(rl.rpc("roster_api_auth").length, 70, "a rate_limited answer from the database is passed on every time, none of them became a brake");
+  assert.equal(rl.rpc("api_auth").length, 70, "a rate_limited answer from the database is passed on every time, none of them became a brake");
 });
 
 test("the brake window rolls over, and preflight is never counted", async () => {
@@ -235,11 +235,11 @@ test("text.js: hasHidden finds exactly the bidi controls and the zero-width char
 
 test("every text field refuses a bidi control or a zero-width character, at the start, in the middle and at the end", async () => {
   const net = fakeNet({ rpc: {
-    roster_api_auth: () => ({ ok: true, kind: "secret" }),
-    roster_api_signup: () => ({ status: "ok", registered: false, participant_token: TOKEN, participant_id: UUID_A, created: true }),
-    roster_api_record_payment: () => ({ status: "ok", payment_id: UUID_B, duplicate: false }),
-    roster_api_participant: () => ({ participant: {} }),
-    roster_events_claim: () => [], roster_events_done: () => null,
+    api_auth: () => ({ ok: true, kind: "secret" }),
+    api_signup: () => ({ status: "ok", registered: false, participant_token: TOKEN, participant_id: UUID_A, created: true }),
+    api_record_payment: () => ({ status: "ok", payment_id: UUID_B, duplicate: false }),
+    api_participant: () => ({ participant: {} }),
+    events_claim: () => [], events_done: () => null,
   } });
   const roster = makeRoster(net, { limiter: { hit: async () => ({ ok: true }), peek: async () => ({ ok: true }) } });
   const signup = (json) => call(roster, req("/signup", { method: "POST", key: SEC, json }));
@@ -261,14 +261,14 @@ test("every text field refuses a bidi control or a zero-width character, at the 
   assert.deepEqual([q.status, q.body.error.field], [422, "phone"]);
   const hiddenOnly = await signup({ first_name: "\ufeff", phone: "0501234567" });
   assert.equal(hiddenOnly.status, 422, "a name that is only a BOM is not an empty name that slips through");
-  assert.equal(net.rpc("roster_api_signup").length, 0, "none of them reached the database");
+  assert.equal(net.rpc("api_signup").length, 0, "none of them reached the database");
 });
 
 test("the ordinary text of the product still passes: Hebrew, a left-to-right mark, accents", async () => {
   const net = fakeNet({ rpc: {
-    roster_api_auth: () => ({ ok: true, kind: "public" }),
-    roster_api_signup: () => ({ status: "ok", registered: false, participant_token: TOKEN }),
-    roster_events_claim: () => [], roster_events_done: () => null,
+    api_auth: () => ({ ok: true, kind: "public" }),
+    api_signup: () => ({ status: "ok", registered: false, participant_token: TOKEN }),
+    events_claim: () => [], events_done: () => null,
   } });
   const roster = makeRoster(net);
   const r = await call(roster, req("/signup", { method: "POST", key: PUB, json: { first_name: "דנה\u200f", last_name: "ז'בוטינסקי", phone: "050-123-4567", email: "dana@example.com" } }));

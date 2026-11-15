@@ -23,7 +23,7 @@
      7. Types and shapes of every field (prepare). Meaning (names, phone,
         required fields) is the database's.
      8. The per-IP brake for public signup and payment clicks.
-     9. roster_api_auth: the key, the origin against that key, the real rate
+     9. api_auth: the key, the origin against that key, the real rate
         limits. Only then the action itself.
     10. The reply is rebuilt from what the database returned: a public key can
         never receive more than its shape, whatever came back.

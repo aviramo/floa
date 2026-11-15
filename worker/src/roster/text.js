@@ -10,7 +10,7 @@
    with them can display as another name, an address as another address, and two
    people who look identical can be two different rows.
 
-   The database refuses the same set (roster_valid_name); the Worker says no
+   The database refuses the same set (valid_name); the Worker says no
    first, and cleans the same set out of anything it prints into a mail.
    ========================================================================== */
 

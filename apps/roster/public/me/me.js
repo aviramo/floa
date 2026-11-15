@@ -1,6 +1,6 @@
 /* האזור האישי של משתתף אצל עסק אחד (/roster/me/?biz=<שם העסק>).
    כניסה: ההתחברות המשותפת של הדומיין (/auth.js, מפתח "floa.session"), בכל חשבון גוגל. הנתונים: רק פונקציות roster_me_* (p_slug), בלי שום טבלה.
-   העסק, המותג והקישורים מגיעים מ-roster_me ולא כתובים כאן. עובד כדף עצמאי וכ-iframe: כניסה עם גוגל נפתחת בחלון קופץ שחוזר וסוגר את עצמו. */
+   העסק, המותג והקישורים מגיעים מ-me ולא כתובים כאן. עובד כדף עצמאי וכ-iframe: כניסה עם גוגל נפתחת בחלון קופץ שחוזר וסוגר את עצמו. */
 (() => {
   'use strict';
   const AUTH = window.FLOA_AUTH, S = window.SUPABASE;
@@ -64,7 +64,7 @@
 
   /* ---------- שדות פרטים (שם, טלפון, אימייל, גיל, מגדר) ---------- */
   const MSG = { name: 'נא למלא שם פרטי ושם משפחה', phone: 'מספר הטלפון לא תקין', email: 'כתובת האימייל לא תקינה', age: 'הגיל צריך להיות בין 18 ל-99', gender: 'נא לבחור מגדר' };
-  /* מספר ישראלי שמתחיל ב-0, או מספר עם + (E.164); מחזיר +972... או '' כשלא תקין. זהה ל-roster_normalize_phone */
+  /* מספר ישראלי שמתחיל ב-0, או מספר עם + (E.164); מחזיר +972... או '' כשלא תקין. זהה ל-normalize_phone */
   function normPhone(raw) {
     const s = String(raw || '').trim(); if (!s) return '';
     let plus = s[0] === '+', d = s.replace(/\D/g, ''); if (!d) return '';
@@ -196,7 +196,7 @@
       if (!normPhone(raw)) { setErr(app, 'phone', MSG.phone); return; }
       const b = $('#sgBtn'); b.disabled = true;
       try {
-        const r = await rpc('roster_me_phone', { p_phone: raw }), st = statusOf(r);
+        const r = await rpc('me_phone', { p_phone: raw }), st = statusOf(r);
         if (st === 'invalid_phone') { setErr(app, 'phone', MSG.phone); b.disabled = false; return; }
         if (st === 'phone_taken') { viewTaken(); return; }
         if (st === 'try_later') { viewTryLater(raw); return; }
@@ -275,11 +275,11 @@
     return { done: () => { pending--; }, fail: () => { pending--; load(true); } };
   }
   function bindMain(p, ms, credit, missing) {
-    app.querySelectorAll('[data-buypass]').forEach((a) => { a.addEventListener('click', () => { rpc('roster_me_buy_pass', { p_type: a.dataset.buypass, p_n: Number(a.dataset.n) }).catch(() => {}); }); });   // הקישור נפתח בלשונית חדשה; הבקשה נרשמת במקביל
+    app.querySelectorAll('[data-buypass]').forEach((a) => { a.addEventListener('click', () => { rpc('me_buy_pass', { p_type: a.dataset.buypass, p_n: Number(a.dataset.n) }).catch(() => {}); }); });   // הקישור נפתח בלשונית חדשה; הבקשה נרשמת במקביל
     app.querySelectorAll('[data-reg]').forEach((rb) => { rb.onclick = async () => {
       if (rb.disabled) return; const id = rb.dataset.reg, msg = app.querySelector('[data-rm="' + CSS.escape(id) + '"]'); rb.disabled = true;
       try {
-        const r = await rpc('roster_me_register', { p_meeting: id }), st = statusOf(r);
+        const r = await rpc('me_register', { p_meeting: id }), st = statusOf(r);
         if (st === 'registered' || st === 'exists') { optimistic(id, { registered: true }).done(); load(true); }
         else { say(msg, st === 'full' ? 'המפגש מלא' : st === 'past' ? 'המפגש כבר עבר' : 'אי אפשר לשמור מקום במפגש הזה', true); rb.disabled = false; }
       } catch (e) { if (e.signedOut) { viewLogin(); return; } say(msg, 'משהו השתבש, אפשר לנסות שוב', true); rb.disabled = false; }
@@ -293,7 +293,7 @@
       }
       unregSure = null; clearTimeout(unregT); ub.disabled = true;
       try {
-        const r = await rpc('roster_me_unregister', { p_meeting: id }), st = statusOf(r);
+        const r = await rpc('me_unregister', { p_meeting: id }), st = statusOf(r);
         if (st === 'cancelled' || st === 'not_registered') { optimistic(id, { registered: false, reported: false }).done(); load(true); }
         else { say(msg, st === 'attended' ? 'אי אפשר לבטל, ההגעה כבר סומנה' : st === 'past' ? 'המפגש כבר עבר' : 'אי אפשר לבטל את שמירת המקום למפגש הזה', true); ub.disabled = false; delete ub.dataset.sure; ub.textContent = 'ביטול שמירת המקום'; }
       } catch (e) { if (e.signedOut) { viewLogin(); return; } say(msg, 'משהו השתבש, אפשר לנסות שוב', true); ub.disabled = false; delete ub.dataset.sure; ub.textContent = 'ביטול שמירת המקום'; }
@@ -302,7 +302,7 @@
     app.querySelectorAll('[data-paycredit]').forEach((cb) => { cb.onclick = async () => {
       const id = cb.dataset.paycredit, msg = app.querySelector('[data-pm="' + CSS.escape(id) + '"]'), m = ms.find((x) => x.id === id); if (!m || cb.disabled) return; cb.disabled = true;
       try {
-        const r = await rpc('roster_me_pay_credit', { p_meeting: id }), st = statusOf(r);
+        const r = await rpc('me_pay_credit', { p_meeting: id }), st = statusOf(r);
         if (st === 'ok' || st === 'already') { const price = Number(m.price) || 0, amt = Math.min(credit, price); optimistic(id, { paid: amt, due: price > amt ? price - amt : null }, -amt).done(); load(true); }
         else { say(msg, st === 'no_credit' ? 'אין קרדיט זמין' : st === 'free' ? 'המפגש הזה לא לתשלום' : 'אי אפשר לשלם מהקרדיט', true); cb.disabled = false; }
       } catch (e) { if (e.signedOut) { viewLogin(); return; } say(msg, 'משהו השתבש, אפשר לנסות שוב', true); cb.disabled = false; }
@@ -310,7 +310,7 @@
     /* לחיצה על כפתור התשלום פותחת את קישור התשלום של העסק בלשונית חדשה, ובמקביל מדווחת עליה. המשתתף לא רואה כלום על הדיווח */
     app.querySelectorAll('[data-paynow]').forEach((pa) => { pa.addEventListener('click', async () => {
       if (pa.dataset.rep) return; pa.dataset.rep = '1'; const id = pa.dataset.paynow;
-      try { await rpc('roster_me_report_payment', { p_meeting: id }); }
+      try { await rpc('me_report_payment', { p_meeting: id }); }
       catch (e) { delete pa.dataset.rep; }   // הדיווח נכשל: ולחיצה נוספת מנסה שוב
     }); });
     app.querySelectorAll('[data-other]').forEach((ob) => { ob.onclick = () => {   // שמירת מקום בדרך אחרת: ישר לשיחת וואטסאפ עם העסק והודעה מוכנה, בלי חלון
@@ -324,8 +324,8 @@
       const chk = validate(app, { phone: !missing }); if (!chk.ok) return;
       const v = chk.v, b = $('#saveBtn'), sm = $('#sm'); b.disabled = true; pending++;
       try {
-        const r = missing ? await rpc('roster_me_complete', { p_first: v.first, p_last: v.last, p_age: v.age, p_gender: v.gender, p_email: v.email || null })
-          : await rpc('roster_me_update', { p_first: v.first, p_last: v.last, p_age: v.age, p_gender: v.gender, p_phone: v.phoneRaw, p_email: v.email || null });
+        const r = missing ? await rpc('me_complete', { p_first: v.first, p_last: v.last, p_age: v.age, p_gender: v.gender, p_email: v.email || null })
+          : await rpc('me_update', { p_first: v.first, p_last: v.last, p_age: v.age, p_gender: v.gender, p_phone: v.phoneRaw, p_email: v.email || null });
         const st = statusOf(r);
         if (serverError(app, st)) { /* השגיאה מוצגת ליד השדה */ }
         else if (st === 'phone_taken') say(sm, 'המספר הזה כבר רשום אצל משתתף אחר', true);
@@ -341,7 +341,7 @@
   async function load(silent) {
     const my = ++seq;
     let r;
-    try { r = await rpc('roster_me', {}); }
+    try { r = await rpc('me', {}); }
     catch (e) {
       if (my !== seq) return;
       if (e.signedOut) { viewLogin(); return; }

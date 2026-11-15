@@ -11,7 +11,7 @@ const PERSON = { id: "11111111-1111-4111-8111-111111111111", first_name: "דנה
 const MEETING = { id: "m1", date: "2027-01-20", time: "20:00", name: "מפגש ערב", city: "חיפה", place: "הסטודיו" };
 const HOOK = "https://hooks.example.com/roster";
 
-/* a raw work item as roster_events_claim would hand it over */
+/* a raw work item as events_claim would hand it over */
 const raw = (id, type, over = {}) => ({
   event: { id, type, attempts: 0, created_at: "2027-01-10T09:00:00Z", payload: { participant: PERSON, meeting: MEETING }, ...over.event },
   business: {
@@ -30,8 +30,8 @@ function setup({ items = [], claim, done, resend, webhook } = {}) {
   const claimed = [];
   const net = fakeNet({
     rpc: {
-      roster_events_claim: claim || (() => { claimed.push(...items); return items; }),
-      roster_events_done: done || (() => null),
+      events_claim: claim || (() => { claimed.push(...items); return items; }),
+      events_done: done || (() => null),
     },
     resend,
     webhook,
@@ -39,14 +39,14 @@ function setup({ items = [], claim, done, resend, webhook } = {}) {
   return { net, run: (extra = {}) => processOutbox({ env: makeEnv(), fetch: net.fetch, now: () => NOW, sleep: async () => {}, ...extra }) };
 }
 
-const doneCalls = (net) => net.rpc("roster_events_done").map((c) => c.json);
+const doneCalls = (net) => net.rpc("events_done").map((c) => c.json);
 
 test("claims a batch of 20, delivers, and reports every event exactly once with the documented shape", async () => {
   const { net, run } = setup({ items: [raw(1, "registration.created"), raw(2, "participant.created"), raw(3, "ping")] });
   const summary = await run();
   assert.deepEqual(summary, { claimed: 3, processed: 3, skipped: 0, reported: 3, reportFailed: 0 });
 
-  const [claim] = net.rpc("roster_events_claim");
+  const [claim] = net.rpc("events_claim");
   assert.deepEqual(claim.json, { p_limit: 20 });
   assert.equal(claim.headers.apikey, "service-role-key-for-tests");
   assert.equal(claim.headers.authorization, "Bearer service-role-key-for-tests");
@@ -205,7 +205,7 @@ const directDb = (items) => {
   return {
     reported,
     async rpc(name, args) {
-      if (name === "roster_events_claim") return { ok: true, status: 200, data: items };
+      if (name === "events_claim") return { ok: true, status: 200, data: items };
       reported.push(args);
       return { ok: true, status: 200, data: null };
     },
@@ -257,7 +257,7 @@ test("reporting is retried once; a report that cannot be made is counted, never 
   let calls = 0;
   let { net, run } = setup({ items: [raw(40, "ping")], done: () => (++calls === 1 ? { status: 500, body: { message: "db down" } } : null) });
   assert.equal((await run()).reported, 1);
-  assert.equal(net.rpc("roster_events_done").length, 2);
+  assert.equal(net.rpc("events_done").length, 2);
 
   ({ net, run } = setup({ items: [raw(41, "ping")], done: () => ({ status: 500, body: {} }) }));
   const s = await run();
@@ -269,7 +269,7 @@ test("a failing claim is harmless", async () => {
     const { net, run } = setup({ claim });
     const s = await run();
     assert.equal(s.claimed, 0);
-    assert.equal(net.rpc("roster_events_done").length, 0);
+    assert.equal(net.rpc("events_done").length, 0);
   }
 });
 
@@ -286,7 +286,7 @@ test("with too little time left, items are left claimed (their lock lapses) inst
   const s = await run({ deadlineMs: 5000 });
   assert.deepEqual([s.claimed, s.skipped, s.processed, s.reported], [1, 1, 0, 0]);
   assert.equal(net.webhooks().length + net.resend().length, 0);
-  assert.equal(net.rpc("roster_events_done").length, 0);
+  assert.equal(net.rpc("events_done").length, 0);
 });
 
 test("items are processed in parallel lanes and none is processed twice", async () => {
@@ -299,7 +299,7 @@ test("items are processed in parallel lanes and none is processed twice", async 
 });
 
 test("a missing RESEND_API_KEY fails the mails in the report, the webhook is unaffected", async () => {
-  const net = fakeNet({ rpc: { roster_events_claim: () => [raw(60, "registration.created")], roster_events_done: () => null } });
+  const net = fakeNet({ rpc: { events_claim: () => [raw(60, "registration.created")], events_done: () => null } });
   await processOutbox({ env: makeEnv({ RESEND_API_KEY: "" }), fetch: net.fetch, now: () => NOW });
   const [d] = doneCalls(net);
   assert.equal(d.p_result.webhook.status, "ok");
@@ -307,13 +307,13 @@ test("a missing RESEND_API_KEY fails the mails in the report, the webhook is una
 });
 
 test("the cron entry drains the outbox and does nothing without the service key", async () => {
-  const net = fakeNet({ rpc: { roster_events_claim: () => [raw(70, "ping")], roster_events_done: () => null } });
+  const net = fakeNet({ rpc: { events_claim: () => [raw(70, "ping")], events_done: () => null } });
   const roster = makeRoster(net, { now: () => NOW });
   const ctx = ctxSpy();
   await roster.scheduled(makeEnv(), ctx);
   await ctx.settle();
-  assert.equal(net.rpc("roster_events_claim").length, 1);
-  assert.equal(net.rpc("roster_events_done").length, 1);
+  assert.equal(net.rpc("events_claim").length, 1);
+  assert.equal(net.rpc("events_done").length, 1);
 
   const quiet = fakeNet();
   await createRoster({ fetch: quiet.fetch }).scheduled({ SUPABASE_URL: DB }, ctxSpy());

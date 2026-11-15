@@ -102,11 +102,11 @@ async function withChrome(origin, run) {
         if (m.method === "Runtime.exceptionThrown") onException((m.params.exceptionDetails.exception || {}).description || m.params.exceptionDetails.text);
         if (m.method === "Fetch.requestPaused") {
           const r = m.params.request, u = r.url;
-          const cors = { "access-control-allow-origin": origin, "access-control-allow-headers": "authorization, apikey, content-type, x-business, prefer", "access-control-allow-methods": "GET, POST, PATCH, DELETE, OPTIONS" };
+          const cors = { "access-control-allow-origin": origin, "access-control-allow-headers": "authorization, apikey, content-type, x-business, prefer, accept-profile, content-profile", "access-control-allow-methods": "GET, POST, PATCH, DELETE, OPTIONS" };
           if (r.method === "OPTIONS") fulfill(m.params.requestId, 204, cors, "").catch(() => {});
           else if (SBHOST.test(u)) {
             /* the database: no rows, and the one RPC the owner page asks (is this person the platform owner) says yes */
-            const body = /roster_is_super/.test(u) ? "true" : "[]";
+            const body = /is_super/.test(u) ? "true" : "[]";
             fulfill(m.params.requestId, 200, { ...cors, "content-type": "application/json" }, body).catch(() => {});
           } else fulfill(m.params.requestId, 200, { "content-type": "text/css" }, "").catch(() => {});   // fonts.googleapis.com: no network wanted
         }

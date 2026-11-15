@@ -70,10 +70,10 @@ test("OPTIONS is answered for every path, with no key, no body, no database", as
 
 test("an allowed origin: the reply echoes it, and so does an error that comes after the key was accepted", async () => {
   const net = fakeNet({ rpc: {
-    roster_api_auth: () => ({ ok: true, kind: "public" }),
-    roster_api_meetings: () => ({ business: { name: "x" }, meetings: [] }),
-    roster_api_signup: () => ({ error: "closed" }),
-    roster_events_claim: () => [], roster_events_done: () => null,
+    api_auth: () => ({ ok: true, kind: "public" }),
+    api_meetings: () => ({ business: { name: "x" }, meetings: [] }),
+    api_signup: () => ({ error: "closed" }),
+    events_claim: () => [], events_done: () => null,
   } });
   const roster = makeRoster(net);
 
@@ -86,32 +86,32 @@ test("an allowed origin: the reply echoes it, and so does an error that comes af
   const closed = await call(roster, req("/signup", { method: "POST", key: PUB, origin: SITE, json: { first_name: "דנה" } }));
   assert.deepEqual([closed.status, closed.body.error.code], [409, "closed"]);
   assert.equal(acao(closed), SITE, "a browser can read why the signup was refused");
-  assert.equal(net.rpc("roster_api_auth")[0].json.p_origin, SITE, "the database decided on this very origin");
+  assert.equal(net.rpc("api_auth")[0].json.p_origin, SITE, "the database decided on this very origin");
 });
 
 test("a disallowed origin: the database says no, and the reply carries no CORS headers at all", async () => {
-  const net = fakeNet({ rpc: { roster_api_auth: () => ({ error: "origin_not_allowed" }) } });
+  const net = fakeNet({ rpc: { api_auth: () => ({ error: "origin_not_allowed" }) } });
   const roster = makeRoster(net);
   const r = await call(roster, req("/meetings", { key: PUB, origin: "https://evil.example" }));
   assert.deepEqual([r.status, r.body.error.code], [403, "origin_not_allowed"]);
   assert.equal(acao(r), null);
   assert.equal(r.headers.get("access-control-expose-headers"), null);
-  assert.equal(net.rpc("roster_api_meetings").length, 0);
-  assert.equal(net.rpc("roster_api_auth")[0].json.p_origin, "https://evil.example");
+  assert.equal(net.rpc("api_meetings").length, 0);
+  assert.equal(net.rpc("api_auth")[0].json.p_origin, "https://evil.example");
 });
 
 test("no Origin header (a server calling): no CORS headers, and the database is told there was none", async () => {
-  const net = fakeNet({ rpc: { roster_api_auth: () => ({ ok: true, kind: "public" }), roster_api_meetings: () => ({ business: { name: "x" }, meetings: [] }) } });
+  const net = fakeNet({ rpc: { api_auth: () => ({ ok: true, kind: "public" }), api_meetings: () => ({ business: { name: "x" }, meetings: [] }) } });
   const roster = makeRoster(net);
   const r = await call(roster, req("/meetings", { key: PUB }));
   assert.equal(r.status, 200);
   assert.equal(acao(r), null);
   assert.equal(r.headers.get("vary"), null);
-  assert.equal(net.rpc("roster_api_auth")[0].json.p_origin, null);
+  assert.equal(net.rpc("api_auth")[0].json.p_origin, null);
 });
 
 test("a secret key with an Origin: refused before the database, unreadable by a browser; without one, fine", async () => {
-  const net = fakeNet({ rpc: { roster_api_auth: () => ({ ok: true, kind: "secret" }), roster_api_meetings: () => ({ business: { name: "x" }, meetings: [] }) } });
+  const net = fakeNet({ rpc: { api_auth: () => ({ ok: true, kind: "secret" }), api_meetings: () => ({ business: { name: "x" }, meetings: [] }) } });
   const roster = makeRoster(net);
   const browser = await call(roster, req("/meetings", { key: SEC, origin: SITE }));
   assert.deepEqual([browser.status, browser.body.error.code], [403, "secret_key_in_browser"]);
@@ -124,7 +124,7 @@ test("a secret key with an Origin: refused before the database, unreadable by a 
 });
 
 test("answers given before any key is consulted say `*`, so a developer can read the error instead of a CORS failure", async () => {
-  const net = fakeNet({ rpc: { roster_api_auth: () => ({ ok: true, kind: "public" }), roster_api_signup: () => ({ status: "ok", registered: false, participant_token: "pt_" + "x".repeat(32) }), roster_events_claim: () => [], roster_events_done: () => null } });
+  const net = fakeNet({ rpc: { api_auth: () => ({ ok: true, kind: "public" }), api_signup: () => ({ status: "ok", registered: false, participant_token: "pt_" + "x".repeat(32) }), events_claim: () => [], events_done: () => null } });
   const roster = makeRoster(net);
   const cases = [
     ["no key", req("/meetings", { origin: SITE }), 401],
@@ -149,13 +149,13 @@ test("answers given before any key is consulted say `*`, so a developer can read
 });
 
 test("a rate limit decided by the database before the origin was judged is readable too", async () => {
-  const net = fakeNet({ rpc: { roster_api_auth: () => ({ error: "rate_limited", retry_after: 20 }) } });
+  const net = fakeNet({ rpc: { api_auth: () => ({ error: "rate_limited", retry_after: 20 }) } });
   const r = await call(makeRoster(net), req("/meetings", { key: PUB, origin: SITE }));
   assert.deepEqual([r.status, acao(r), r.headers.get("retry-after")], [429, "*", "20"]);
 });
 
 test("an Origin that is not canonical is never reflected, even for a key whose origins the database accepted", async () => {
-  const net = fakeNet({ rpc: { roster_api_auth: () => ({ ok: true, kind: "public" }), roster_api_meetings: () => ({ business: { name: "x" }, meetings: [] }) } });
+  const net = fakeNet({ rpc: { api_auth: () => ({ ok: true, kind: "public" }), api_meetings: () => ({ business: { name: "x" }, meetings: [] }) } });
   const roster = makeRoster(net);
   for (const origin of ["null", "https://studio.example/with/path", "javascript:alert(1)"]) {
     const r = await call(roster, req("/meetings", { key: PUB, origin }));

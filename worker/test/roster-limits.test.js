@@ -90,9 +90,9 @@ test("on an address where the Cache API does nothing (workers.dev), the brake st
   globalThis.caches = { default: { match: async () => undefined, put: async () => {} } };
   try {
     const net = fakeNet({ rpc: {
-      roster_api_auth: () => ({ ok: true, kind: "public" }),
-      roster_api_signup: () => ({ status: "ok", registered: false, participant_token: `pt_${"z".repeat(32)}` }),
-      roster_events_claim: () => [], roster_events_done: () => null,
+      api_auth: () => ({ ok: true, kind: "public" }),
+      api_signup: () => ({ status: "ok", registered: false, participant_token: `pt_${"z".repeat(32)}` }),
+      events_claim: () => [], events_done: () => null,
     } });
     const roster = createRoster({ fetch: net.fetch, sleep: async () => {} });
     const go = () => call(roster, req("/signup", { method: "POST", key: PUB, json: { first_name: "דנה" }, ip: "192.0.2.55" }), makeEnv());

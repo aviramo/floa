@@ -32,3 +32,30 @@ window.SUPABASE = {
   anonKey:
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleG1uYXh2YWhibHZlZWpzYnVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5NzE5MjMsImV4cCI6MjEwMTU0NzkyM30.oXPojzklAqOl9pvH5R_GNGTda6OvYruDQjMLprcBA0Y",
 };
+
+/* One schema per app, named for its sub-domain (roster.floa.co.il -> roster, roster-test.floa.co.il ->
+   roster-test). An app listed in SCHEMAS gets its schema on every REST call without knowing about it: the
+   headers are added here, once, so no app repeats them. Tables inside a schema carry no app prefix
+   (roster.participants, not roster.roster_participants). An app that is not listed keeps `public`.
+   On localhost and the old floa.co.il/<app>/ address the first folder of the path stands in for the host. */
+(function () {
+  if (typeof location === "undefined") return;   /* the build reads this file too, with no browser */
+  var SCHEMAS = ["roster", "roster-test"];
+  var label = location.hostname.split(".")[0];
+  var folder = location.pathname.split("/")[1] || "";
+  var s = SCHEMAS.indexOf(label) >= 0 ? label : SCHEMAS.indexOf(folder) >= 0 ? folder : "";
+  window.SUPABASE.schema = s;
+  if (!s || !window.fetch) return;
+  var of = window.fetch;
+  window.fetch = function (input, init) {
+    try {
+      var url = typeof input === "string" ? input : (input && input.url) || "";
+      if (url.indexOf(window.SUPABASE.url + "/rest/v1/") === 0) {
+        var h = new Headers((init && init.headers) || (input && input.headers) || {});
+        h.set("Accept-Profile", s); h.set("Content-Profile", s);
+        init = Object.assign({}, init || {}, { headers: h });
+      }
+    } catch (e) {}
+    return of.call(this, input, init);
+  };
+})();

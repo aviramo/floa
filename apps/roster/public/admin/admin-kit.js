@@ -1,7 +1,7 @@
 /* admin-kit.js (roster's own, p14_kit): the kit behaviours of the admin page. Loaded after admin.js.
    It talks to the page only through window.ROSTER_KIT (two lines that the build adds to admin.js: the handles, and a call after every successful DELETE).
-     1. UNDO FOR DELETES: every delete the page makes stays recoverable (the database moves a deleted row to roster_trash first), so the page offers "ביטול" in the shared
-        undo toast: it finds what was just deleted (roster_trash_list) and puts it back (roster_restore). Deletes that come together (a meeting type with its meetings)
+     1. UNDO FOR DELETES: every delete the page makes stays recoverable (the database moves a deleted row to trash first), so the page offers "ביטול" in the shared
+        undo toast: it finds what was just deleted (trash_list) and puts it back (restore). Deletes that come together (a meeting type with its meetings)
         are one toast and one undo. The page's own confirm windows stay as they are.
      2. ADD BUTTON: the floating plus on the participants list (adding is typing the name into the search, so the plus puts the cursor there).
      3. PULL TO REFRESH on the participants list (the single scroll region of the page), never under a popup. */
@@ -12,9 +12,9 @@
   if (!K) return;
 
   /* ---------- 1. undo for deletes ---------- */
-  var KIND = { roster_notes: "note", roster_meetings: "meeting", roster_payments: "payment", roster_attendance: "attendance", roster_meeting_types: "meeting_type",
-    roster_pay_methods: "pay_method", roster_statuses: "status", roster_promoters: "promoter", roster_promoter_payments: "promoter_payment", roster_finance: "finance",
-    roster_finance_recurring: "finance_recurring", roster_finance_transfers: "finance_transfer", roster_msg_templates: "msg_template" };
+  var KIND = { notes: "note", meetings: "meeting", payments: "payment", attendance: "attendance", meeting_types: "meeting_type",
+    pay_methods: "pay_method", statuses: "status", promoters: "promoter", promoter_payments: "promoter_payment", finance: "finance",
+    finance_recurring: "finance_recurring", finance_transfers: "finance_transfer", msg_templates: "msg_template" };
   var batch = [], timer = 0;
   K.deleted = function (table) {
     var kind = KIND[table];
@@ -25,7 +25,7 @@
   };
   function flush() {
     var kinds = batch.slice(); batch = [];
-    K.api("rpc/roster_trash_list", { method: "POST", body: {}, ui: false }).then(function (rows) {
+    K.api("rpc/trash_list", { method: "POST", body: {}, ui: false }).then(function (rows) {
       if (!Array.isArray(rows)) return;
       var need = {}, ids = [], labels = [];
       kinds.forEach(function (k) { need[k] = (need[k] || 0) + 1; });
@@ -46,7 +46,7 @@
     /* the last delete first: a type comes back before the meetings that hung on it */
     var chain = Promise.resolve(), bad = 0;
     ids.forEach(function (x) {   // ids is newest first: the last deleted (the type) is restored first
-      chain = chain.then(function () { return K.api("rpc/roster_restore", { method: "POST", body: { p_kind: x.kind, p_id: x.id }, ui: false }); })
+      chain = chain.then(function () { return K.api("rpc/restore", { method: "POST", body: { p_kind: x.kind, p_id: x.id }, ui: false }); })
         .then(function (r) { if (!r || (r.status !== "ok")) bad++; }, function () { bad++; });
     });
     return chain.then(function () { K.toast(bad ? "לא הכול הוחזר" : "הוחזר"); return K.load(true); });

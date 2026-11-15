@@ -3,7 +3,7 @@
    (mail clients throw away <style> blocks and often <html>/<body> attributes,
    so every element that holds text carries its own dir and alignment).
 
-   A business overrides one by writing a row in roster_mail_templates; whatever
+   A business overrides one by writing a row in mail_templates; whatever
    it does not override comes from here. No external images, the business name
    is the brand, no em or en dash anywhere (the house rule for every text that
    reaches a reader).

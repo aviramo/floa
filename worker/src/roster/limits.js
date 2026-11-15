@@ -26,7 +26,7 @@ export const IP_LIMITS = Object.freeze({
 });
 
 /* Mail caps (addendum 2). The database counts what was SENT or is pending in
-   roster_mail_log and hands the counters over in every claim item; the Worker
+   mail_log and hands the counters over in every claim item; the Worker
    decides. Participant mails go to an address a stranger typed into a form.
    Admin mails go to the business's notify list, which a stranger can also make
    happen (a signup, a linked account), so they are capped too, and one cap sits
