@@ -120,33 +120,52 @@
   }
 
   var PREAMBLE = [
-    "# Roster API: instructions for an AI tool",
+    "# Roster: a file written for an AI tool",
     "",
-    "You are reading a file exported from the admin of one business in Roster, a participant-management system (people, meetings, registrations, payments).",
-    "Your job: help the person who gave you this file connect THEIR website or server to Roster. The sections below are, in order: 1. what to do and the security rules, 2. facts about this business, 3. an index of every endpoint, 4. the complete API documentation.",
+    "**This file is addressed to you, the AI tool reading it. Read it all, then follow section 1 exactly.**",
     "",
-    "## 1. What to do",
+    "It was exported by the owner of one business from Roster, a system that manages participants (people, meetings, registrations, payments). The person who handed you this file is not a developer. They want their own website or landing page to work together with Roster, and they expect you to guide them and then build it. The sections are: 1. how to talk to the person and what to do, 2. facts about this business, 3. an index of every endpoint, 4. the complete API documentation.",
     "",
-    "1. Read the whole file before writing code. Everything Roster offers over the API is here; do not invent endpoints, fields or error codes.",
-    "2. Tell the person what can be built and ask which parts they want. The options:",
-    "   - **Signup form** on their site that creates the participant and registers them for a meeting (`POST /signup`, public key).",
-    "   - **Meetings list** on the home page with price and free spots (`GET /meetings`, public key).",
-    "   - **\"I paid\" button** that reports a payment for the admin to check (`POST /payments/click`, public key, uses the `participant_token` from the signup).",
-    "   - **Personal area**: a ready-made page, embedded with one iframe, where participants sign in with Google and see their meetings, payments and balance.",
-    "   - **Server side** (secret key, on THEIR server only): read participants, register or cancel registrations, record payments from any payment processor, pay from a participant's credit.",
-    "   - **Webhooks**: a signed message to their server on every new participant, registration or payment.",
-    "3. Match the person's site: language (Hebrew, right to left unless they say otherwise), their framework, their design. Build with what they already use.",
-    "4. Handle every error code from the table in the docs with a message in the site's language. Show that message, never the raw JSON.",
+    "## 1. Start here: ask first, build after",
+    "",
+    "**Do not write code yet.** Your first message to the person is a short, warm greeting and your first question. Ask what they want to achieve, in the plain words of their business, and let them answer in their own words. Talk in the language the person writes to you in (Hebrew by default, right to left).",
+    "",
+    "How to ask:",
+    "",
+    "- **Human language only.** Never say API, endpoint, key, token, webhook, origin, CORS, JSON or iframe to the person. Say what it does for them (\"people sign up on your page and appear in your list\"), not how it works. Keep the technical words for the code you write.",
+    "- **One or two questions at a time**, short, friendly, answerable with a sentence or a yes. Wait for the answer before the next question. Never send the person a list of ten questions.",
+    "- **Offer, do not interrogate.** Where it helps, give two or three concrete choices in everyday words, so the person can say \"the second one\".",
+    "- **If they are unsure, suggest.** Tell them what most people in their situation choose, and why, in one sentence.",
+    "- **Confirm before building.** When you know enough, say back in a few plain lines what you are going to make and ask \"is that right?\". Only then start.",
+    "",
+    "What you are working out, in this order (the questions below are examples; phrase them in your own words and the person's language):",
+    "",
+    "1. **What the page is for.** \"What would you like people to be able to do on your page?\" Then offer what Roster can do for them, in plain words:",
+    "   - People **sign up** on the page, and they appear straight away in the business's participant list. (Technically: `POST /signup`, public key.) Question: \"Do you want people to sign up for a meeting from your page, or just leave their details?\"",
+    "   - The page **shows the upcoming meetings**, with date, place, price and how many spots are left. (`GET /meetings`, public key.) Question: \"Do you want your next meetings shown on the page, with the price and the free spots?\"",
+    "   - A **\"I paid\" button**, so a person who paid by Bit, PayBox or any other way can tell you, and you see it marked in your list. (`POST /payments/click`, public key.) Question: \"After someone pays you, do you want them to press a button so you know?\"",
+    "   - A **personal area**: each participant signs in with their Google account and sees their own meetings, payments and balance. It is ready-made and is added to the page in one line. (the `me` page in an iframe.) Question: \"Would you like each participant to have a personal corner where they see their meetings and what they paid?\"",
+    "   - **Things that happen by themselves in the background**, only if the person has a server or a developer: another system that records payments, reads the participant list, registers or cancels people (secret key, on THEIR server only), or gets a message whenever someone signs up or pays (webhooks). Ask this one last, and only if they have something like that: \"Do you have another system that should know when someone signs up or pays?\"",
+    "2. **Their page.** \"Do you already have a page or a site? What was it built with, or where do you manage it?\" If they do not know, ask them to describe how they edit it, and choose the simplest thing that works there (often one block of code to paste). If there is no page yet, offer to build a simple one.",
+    "3. **What a person sees.** \"What should we ask people when they sign up? Just name and phone, or also an email, age, gender?\" (The business already requires the fields listed in section 2; they can require more in Roster's settings.) \"What should the person see after they sign up?\"",
+    "4. **When something goes wrong.** In plain words: \"If a meeting is full, or signup is closed, what should the page say?\" Use the error table in the docs and answer every case in friendly sentences in the person's language, never as raw codes.",
+    "5. **Look and feel.** \"Should it look like your existing page? Any colours or a logo I should match?\"",
+    "",
+    "Then build exactly what they agreed to, test it as far as you can, and explain in simple words what to do next (where to paste, what to press). If the person wants something that is not on this list, say honestly that Roster does not offer it over its connection; do not invent endpoints, fields or error codes.",
+    "",
+    "### Keys, in human words",
+    "",
+    "The page needs a \"password\" that tells Roster which business it belongs to. If the file below includes one marked as the public key, use it silently. If not, tell the person: \"I need one thing from your Roster account: open the connections page, press the plus, choose a public key, give it your site's address, and send me the key it shows you.\" A public key is safe to send in the chat. Never ask for anything else.",
     "",
     "### Security rules (follow them without asking)",
     "",
     "- A **public key** (`rk_pub_…`) may be put in browser code. It can only read meetings, sign people up and press \"I paid\".",
-    "- A **secret key** (`rk_sec_…`) must NEVER appear in browser code, a mobile app, a public repository or a chat. It lives only in a server environment variable (for example `ROSTER_SECRET_KEY`). The system answers `403 secret_key_in_browser` to a secret key sent from a browser.",
-    "- This file does not contain a secret key and cannot: it is shown once, at creation, and Roster keeps only a hash. If you need one, ask the person to create it on the connections page and put it in the server's environment. Never ask them to paste it into this conversation.",
+    "- A **secret key** (`rk_sec_…`) must NEVER appear in browser code, a mobile app, a public repository or a chat. It lives only in a server environment variable (for example `ROSTER_SECRET_KEY`). The system answers `403 secret_key_in_browser` to a secret key sent from a browser. Never ask the person to paste a secret key to you.",
+    "- This file does not contain a secret key and cannot: it is shown once, at creation, and Roster keeps only a hash. If the server side is really needed, tell the person to create the key themselves and put it in their server's settings.",
     "- Restrict a public key to the person's site (allowed origins, exact `https://host`, no path, no wildcard). Use one key per place so a leaked key can be revoked alone.",
     "- Write texts that come from the system with `textContent`, never `innerHTML`.",
     "- Verify the webhook signature on the server before trusting a message (the algorithm is in the docs).",
-    "- Where the docs show `rk_pub_REPLACE_ME`, use the public key given below if there is one, otherwise ask the person for their public key.",
+    "- Where the docs show `rk_pub_REPLACE_ME`, use the public key given in section 2 if there is one.",
     "",
     ""
   ].join("\n");
@@ -177,7 +196,7 @@
     if (opt.publicKey && !/^rk_pub_[A-Za-z0-9]+$/.test(opt.publicKey)) throw new Error("only a public key may be written into the file");
     var keyNote = opt.publicKey
       ? "\n**Public key for this site: `" + opt.publicKey + "`** (safe in browser code; use it wherever the docs show `rk_pub_REPLACE_ME`).\n"
-      : "\nNo key is included in this file. Ask the person for their public key (`rk_pub_…`), and for a secret key only if the server side is needed (see the rules above).\n";
+      : "\nNo key is included in this file. Follow \"Keys, in human words\" in section 1 to get the public key from the person; a secret key only if a server side is really needed, and never through this conversation.\n";
     var docs = await docsMarkdown();
     if (opt.publicKey) docs = docs.split("rk_pub_REPLACE_ME").join(opt.publicKey);
     var stamp = "\n_Generated " + new Date().toISOString().slice(0, 10) + " from " + location.origin + ". Section 4 is the public documentation of the API (" + new URL("../api/", location.href).href + ")._\n";
