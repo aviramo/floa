@@ -91,7 +91,7 @@ export async function songs() {
   const where = "deleted_at=is.null&order=title.asc";
 
   const answer = await fetch(`${url}/rest/v1/songs?select=${FIELDS}&${where}`, {
-    headers: { apikey: anonKey, authorization: `Bearer ${anonKey}` },
+    headers: { apikey: anonKey, authorization: `Bearer ${anonKey}`, "accept-profile": "chords" },
   }).catch((err) => {
     throw new Error(`chords: could not reach the library at ${url} (${err.message})`);
   });

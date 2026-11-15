@@ -40,7 +40,7 @@ window.SUPABASE = {
    On localhost and the old floa.co.il/<app>/ address the first folder of the path stands in for the host. */
 (function () {
   if (typeof location === "undefined") return;   /* the build reads this file too, with no browser */
-  var SCHEMAS = ["roster", "roster-test"];
+  var SCHEMAS = ["roster", "roster-test", "chords", "jobs"];
   var label = location.hostname.split(".")[0];
   var folder = location.pathname.split("/")[1] || "";
   var s = SCHEMAS.indexOf(label) >= 0 ? label : SCHEMAS.indexOf(folder) >= 0 ? folder : "";

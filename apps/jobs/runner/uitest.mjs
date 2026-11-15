@@ -45,10 +45,10 @@ await page.route("**/rest/v1/**", (route) => {
   const u = route.request().url(), m = route.request().method();
   calls.push(m + " " + u.split("/rest/v1/")[1]);
   const json = (v) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(v) });
-  if (u.includes("job_connections")) return json(m === "GET" ? [{ owner: "u1", site: "alljobs", status: "connected", note: "" }] : [{}]);
-  if (u.includes("job_runs")) return json(m === "GET" ? [{ id: "r1", agent_id: "a1", status: "done", note: "נמצאו 54, נשמרו 40.", created_at: new Date().toISOString(), finished_at: new Date().toISOString() }] : [{ id: "r2" }]);
-  if (u.includes("job_applications")) return json(m === "GET" ? (u.includes("select=description") ? [{ description: "תיאור המשרה המלא כאן." }] : apps) : [{}]);
-  if (u.includes("job_agents")) return json(m === "GET" ? [agent] : [{ ...agent }]);
+  if (u.includes("connections")) return json(m === "GET" ? [{ owner: "u1", site: "alljobs", status: "connected", note: "" }] : [{}]);
+  if (u.includes("runs")) return json(m === "GET" ? [{ id: "r1", agent_id: "a1", status: "done", note: "נמצאו 54, נשמרו 40.", created_at: new Date().toISOString(), finished_at: new Date().toISOString() }] : [{ id: "r2" }]);
+  if (u.includes("applications")) return json(m === "GET" ? (u.includes("select=description") ? [{ description: "תיאור המשרה המלא כאן." }] : apps) : [{}]);
+  if (u.includes("agents")) return json(m === "GET" ? [agent] : [{ ...agent }]);
   return json([]);
 });
 await page.route("**/supabase.js", (r) => r.fulfill({ contentType: "text/javascript", body: 'window.SUPABASE={url:"http://localhost:5599/sb",anonKey:"k"}' }));

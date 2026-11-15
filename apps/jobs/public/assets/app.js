@@ -140,9 +140,9 @@
   function load() {
     return Promise.all([
       api(AGENTS + "?select=*&order=created_at.asc"),
-      api("/rest/v1/job_applications?select=id,agent_id,source,url,title,company,location,score,reason,status,note,created_at,sent_at&order=score.desc,created_at.desc&limit=1000"),
-      api("/rest/v1/job_connections?select=*"),
-      api("/rest/v1/job_runs?select=*&order=created_at.desc&limit=60"),
+      api("/rest/v1/applications?select=id,agent_id,source,url,title,company,location,score,reason,status,note,created_at,sent_at&order=score.desc,created_at.desc&limit=1000"),
+      api("/rest/v1/connections?select=*"),
+      api("/rest/v1/runs?select=*&order=created_at.desc&limit=60"),
     ]).then(function (r) {
       state.agents = r[0];
       state.apps = r[1];
@@ -370,7 +370,7 @@
       Array.prototype.forEach.call(box.querySelectorAll("[data-site]"), function (b) {
         b.onclick = function () {
           b.disabled = true;
-          api("/rest/v1/job_connections?on_conflict=owner,site", {
+          api("/rest/v1/connections?on_conflict=owner,site", {
             method: "POST",
             headers: { "content-type": "application/json", prefer: "resolution=merge-duplicates,return=representation" },
             body: JSON.stringify({ site: b.getAttribute("data-site"), status: "requested", note: "", updated_at: new Date().toISOString() }),
@@ -502,7 +502,7 @@
     box.querySelector("#scan").onclick = function () {
       if (!a.roles.length) { toast("בחר לפחות תפקיד אחד."); setTab("settings"); return; }
       if (!a.city) { toast("בחר עיר."); setTab("settings"); return; }
-      api("/rest/v1/job_runs", { method: "POST", headers: JSON_HEADERS, body: JSON.stringify({ agent_id: a.id }) })
+      api("/rest/v1/runs", { method: "POST", headers: JSON_HEADERS, body: JSON.stringify({ agent_id: a.id }) })
         .then(function () { setTab("jobs"); return tick(); })
         .catch(function () { toast("לא הצלחנו להתחיל סריקה."); });
     };
@@ -628,7 +628,7 @@
       bar.querySelector("#bs").onclick = function () { sendIds(ids); };
     }
     function sendIds(ids) {
-      api("/rest/v1/job_applications?id=in.(" + ids.join(",") + ")&status=eq.scored", {
+      api("/rest/v1/applications?id=in.(" + ids.join(",") + ")&status=eq.scored", {
         method: "PATCH", headers: JSON_HEADERS, body: JSON.stringify({ status: "queued" }),
       }).then(function () {
         picked.clear();
@@ -908,7 +908,7 @@
       show("text");
       if (text.getAttribute("data-loaded")) return;
       text.textContent = "טוען…";
-      api("/rest/v1/job_applications?id=eq." + j.id + "&select=description").then(function (rows) {
+      api("/rest/v1/applications?id=eq." + j.id + "&select=description").then(function (rows) {
         text.textContent = (rows[0] && rows[0].description) || "לא נשמר תיאור למשרה הזאת. פתח את הדף המקורי.";
         text.setAttribute("data-loaded", "1");
       }).catch(function () { text.textContent = "לא הצלחנו לטעון את התיאור."; });

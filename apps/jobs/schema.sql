@@ -1,3 +1,8 @@
+-- All of Jobs lives in the schema `jobs` (named for jobs.floa.co.il), without the old job_ prefix.
+create schema if not exists jobs;
+grant usage on schema jobs to anon, authenticated, service_role;
+set search_path = jobs, public;
+
 -- Jobs: the Supabase schema. Run once, whole:
 --   node scripts/sql.mjs < apps/jobs/schema.sql
 -- Every row belongs to the account that made it, and the database enforces
@@ -5,7 +10,7 @@
 
 drop table if exists public.jobs;  -- the placeholder board from the first scaffold
 
-create table if not exists public.job_agents (
+create table if not exists jobs.agents (
   id          uuid primary key default gen_random_uuid(),
   owner       uuid not null default auth.uid() references auth.users(id) on delete cascade,
   name        text not null default 'סוכן חדש',
@@ -24,10 +29,10 @@ create table if not exists public.job_agents (
   created_at  timestamptz not null default now()
 );
 
-alter table public.job_agents enable row level security;
+alter table jobs.agents enable row level security;
 
-drop policy if exists "agents are the owner's" on public.job_agents;
-create policy "agents are the owner's" on public.job_agents
+drop policy if exists "agents are the owner's" on jobs.agents;
+create policy "agents are the owner's" on jobs.agents
   for all to authenticated
   using (owner = auth.uid())
   with check (owner = auth.uid());
@@ -53,10 +58,10 @@ create policy "cvs are the owner's" on storage.objects
 -- One row per job per ACCOUNT, not per agent: two agents that find the same
 -- job must not send two applications.
 -- ==========================================================================
-create table if not exists public.job_runs (
+create table if not exists jobs.runs (
   id          uuid primary key default gen_random_uuid(),
   owner       uuid not null default auth.uid() references auth.users(id) on delete cascade,
-  agent_id    uuid not null references public.job_agents(id) on delete cascade,
+  agent_id    uuid not null references jobs.agents(id) on delete cascade,
   status      text not null default 'requested'
               check (status in ('requested', 'running', 'done', 'failed')),
   note        text not null default '',
@@ -64,10 +69,10 @@ create table if not exists public.job_runs (
   finished_at timestamptz
 );
 
-create table if not exists public.job_applications (
+create table if not exists jobs.applications (
   id          uuid primary key default gen_random_uuid(),
   owner       uuid not null default auth.uid() references auth.users(id) on delete cascade,
-  agent_id    uuid not null references public.job_agents(id) on delete cascade,
+  agent_id    uuid not null references jobs.agents(id) on delete cascade,
   source      text not null,
   url         text not null,
   title       text not null default '',
@@ -85,15 +90,15 @@ create table if not exists public.job_applications (
   unique (owner, url)
 );
 
-alter table public.job_runs enable row level security;
-alter table public.job_applications enable row level security;
+alter table jobs.runs enable row level security;
+alter table jobs.applications enable row level security;
 
-drop policy if exists "runs are the owner's" on public.job_runs;
-create policy "runs are the owner's" on public.job_runs
+drop policy if exists "runs are the owner's" on jobs.runs;
+create policy "runs are the owner's" on jobs.runs
   for all to authenticated using (owner = auth.uid()) with check (owner = auth.uid());
 
-drop policy if exists "applications are the owner's" on public.job_applications;
-create policy "applications are the owner's" on public.job_applications
+drop policy if exists "applications are the owner's" on jobs.applications;
+create policy "applications are the owner's" on jobs.applications
   for all to authenticated using (owner = auth.uid()) with check (owner = auth.uid());
 
 -- ==========================================================================
@@ -102,7 +107,7 @@ create policy "applications are the owner's" on public.job_applications
 -- Chrome window the local runner opens on the person's machine; only its
 -- STATUS lands here. No password and no cookie is ever stored in the database.
 -- ==========================================================================
-create table if not exists public.job_connections (
+create table if not exists jobs.connections (
   owner       uuid not null default auth.uid() references auth.users(id) on delete cascade,
   site        text not null check (site in ('alljobs', 'drushim', 'linkedin')),
   -- requested: the person pressed connect; connecting: the window is open;
@@ -114,17 +119,17 @@ create table if not exists public.job_connections (
   primary key (owner, site)
 );
 
-alter table public.job_connections enable row level security;
+alter table jobs.connections enable row level security;
 
-drop policy if exists "connections are the owner's" on public.job_connections;
-create policy "connections are the owner's" on public.job_connections
+drop policy if exists "connections are the owner's" on jobs.connections;
+create policy "connections are the owner's" on jobs.connections
   for all to authenticated using (owner = auth.uid()) with check (owner = auth.uid());
 
 -- What the person keeps of what the CV reader suggested: the skills and the
 -- languages, as tags they can switch off or add to. The reader's own list stays
 -- in profile; these are the person's choice, and what scoring uses.
-alter table public.job_agents add column if not exists skills    text[] not null default '{}';
-alter table public.job_agents add column if not exists languages text[] not null default '{}';
+alter table jobs.agents add column if not exists skills    text[] not null default '{}';
+alter table jobs.agents add column if not exists languages text[] not null default '{}';
 
 -- The ad's own text, kept so it can be read inside the app.
-alter table public.job_applications add column if not exists description text not null default '';
+alter table jobs.applications add column if not exists description text not null default '';

@@ -11,8 +11,11 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-const [src, dst, pfx] = process.argv.slice(2);
-if (!src || !dst || !pfx) { console.error("usage: db-split.mjs <from> <to> <prefix> [--run]"); process.exit(1); }
+const [src, dst, pfx0] = process.argv.slice(2).filter((a) => !a.startsWith("--"));
+const flag = (n) => { const a = process.argv.find((x) => x.startsWith("--" + n + "=")); return a ? a.slice(n.length + 3).split(",").filter(Boolean) : null; };
+const TABLES = flag("tables"), FUNCS = flag("functions");
+const pfx = pfx0 === "-" ? "" : pfx0;
+if (!src || !dst || pfx0 === undefined) { console.error("usage: db-split.mjs <from> <to> <prefix|-> [--tables=a,b] [--functions=x,y] [--run]"); process.exit(1); }
 const BS = String.fromCharCode(92);
 const q = (s) => "'" + s.replace(/'/g, "''") + "'";
 /* new names that would shadow a built-in or another schema's function */
@@ -21,15 +24,15 @@ const sql = `
 do $mig$
 declare
   src text := ${q(src)}; dst text := ${q(dst)}; pfx text := ${q(pfx)};
-  ren jsonb := ${q(JSON.stringify(OVERRIDE))}::jsonb;
+  ren jsonb := ${q(JSON.stringify(pfx ? OVERRIDE : {}))}::jsonb;
   r record; def text;
 begin
   create temp table _m(old text, new text, kind text) on commit drop;
   insert into _m select c.relname, coalesce(ren->>c.relname, substr(c.relname, length(pfx)+1)), 'table'
-    from pg_class c where c.relnamespace = src::regnamespace and c.relkind = 'r' and left(c.relname, length(pfx)) = pfx;
+    from pg_class c where c.relnamespace = src::regnamespace and c.relkind = 'r' and left(c.relname, length(pfx)) = pfx${TABLES ? ' and c.relname = any(' + q('{' + TABLES.join(',') + '}') + '::text[])' : ''};
   create temp table _f(oid oid, old text, new text) on commit drop;
   insert into _f select p.oid, p.proname, coalesce(ren->>p.proname, substr(p.proname, length(pfx)+1))
-    from pg_proc p where p.pronamespace = src::regnamespace and p.prokind = 'f' and left(p.proname, length(pfx)) = pfx;
+    from pg_proc p where p.pronamespace = src::regnamespace and p.prokind = 'f' and left(p.proname, length(pfx)) = pfx${FUNCS ? ' and p.proname = any(' + q('{' + FUNCS.join(',') + '}') + '::text[])' : ''};
   insert into _m select distinct old, new, 'function' from _f;
   if exists (select 1 from _m group by new having count(distinct kind) > 1) then raise exception 'a table and a function would share a name'; end if;
 
@@ -38,11 +41,11 @@ begin
 
   for r in select old, new from _m where kind = 'table' loop
     execute format('alter table %I.%I set schema %I', src, r.old, dst);
-    execute format('alter table %I.%I rename to %I', dst, r.old, r.new);
+    if r.old <> r.new then execute format('alter table %I.%I rename to %I', dst, r.old, r.new); end if;
   end loop;
   for r in select f.oid, f.old, f.new, pg_get_function_identity_arguments(f.oid) a from _f f loop
     execute format('alter function %I.%I(%s) set schema %I', src, r.old, r.a, dst);
-    execute format('alter function %I.%I(%s) rename to %I', dst, r.old, r.a, r.new);
+    if r.old <> r.new then execute format('alter function %I.%I(%s) rename to %I', dst, r.old, r.a, r.new); end if;
   end loop;
 
   /* the bodies are text: rewrite every old name (with or without its schema) to the new one */
@@ -51,7 +54,11 @@ begin
     def := pg_get_functiondef(r.oid);
     declare m record; begin
       for m in select old, new from _m order by length(old) desc loop
-        def := regexp_replace(def, '${BS}m(?:' || src || '${BS}.)?' || m.old || '${BS}M', m.new, 'g');
+        if m.old <> m.new then
+          def := regexp_replace(def, '${BS}m(?:' || src || '${BS}.)?' || m.old || '${BS}M', m.new, 'g');
+        else
+          def := regexp_replace(def, '${BS}m' || src || '${BS}.' || m.old || '${BS}M', m.new, 'g');
+        end if;
       end loop;
     end;
     /* dynamic SQL names the schema in the text of its format strings */

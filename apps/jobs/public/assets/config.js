@@ -3,7 +3,7 @@
 window.JOBS_CONFIG = {
   supabaseUrl: window.SUPABASE.url,
   supabaseAnonKey: window.SUPABASE.anonKey,
-  agentsTable: "job_agents",
+  agentsTable: "agents",
   bucket: "job-cvs",
   parseEndpoint: "https://floa-lead.floa-il.workers.dev/parse-cv",
   /* the app lives at /jobs/ */

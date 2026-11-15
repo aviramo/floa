@@ -36,15 +36,15 @@ async function signedIn(context, site) {
 
 const set = (owner, site, status, note = "") =>
   sql(
-    `update job_connections set status = ${lit(status)}, note = ${lit(note)}, updated_at = now() ` +
+    `update jobs.connections set status = ${lit(status)}, note = ${lit(note)}, updated_at = now() ` +
       `where owner = ${lit(owner)} and site = ${lit(site)}`,
   );
 
 /* One request, if there is one. Returns whether it did anything. */
 export async function connections(log) {
   const [row] = await sql(
-    `update job_connections set status = 'connecting', updated_at = now() ` +
-      `where (owner, site) = (select owner, site from job_connections where status = 'requested' order by updated_at limit 1) returning *`,
+    `update jobs.connections set status = 'connecting', updated_at = now() ` +
+      `where (owner, site) = (select owner, site from jobs.connections where status = 'requested' order by updated_at limit 1) returning *`,
   );
   if (!row) return false;
   const site = SITES[row.site];

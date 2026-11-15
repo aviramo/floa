@@ -1108,6 +1108,7 @@ async function patchSong(env, token, id, fields) {
       headers: {
         apikey: env.SUPABASE_ANON_KEY,
         authorization: `Bearer ${token}`,
+        "content-profile": "chords",
         "content-type": "application/json",
         prefer: "return=minimal",
       },
@@ -1185,6 +1186,7 @@ async function saveCost(env, token, songId, { cost, rate, kept, agreement }) {
       headers: {
         apikey: env.SUPABASE_ANON_KEY,
         authorization: `Bearer ${token}`,
+        "content-profile": "chords",
         "content-type": "application/json",
         prefer: "return=minimal,resolution=merge-duplicates",
       },
@@ -1240,7 +1242,7 @@ const READING_AT_ONCE = 3;
 
 async function readSongs(env, token, query) {
   const response = await fetch(`${env.SUPABASE_URL}/rest/v1/songs?${query}`, {
-    headers: { apikey: env.SUPABASE_ANON_KEY, authorization: `Bearer ${token}` },
+    headers: { apikey: env.SUPABASE_ANON_KEY, authorization: `Bearer ${token}`, "accept-profile": "chords" },
   });
   if (!response.ok) return null;
   return response.json().catch(() => null);

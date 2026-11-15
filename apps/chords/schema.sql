@@ -1,3 +1,9 @@
+-- All of Chords lives in the schema `chords` (named for chords.floa.co.il). The REST API reaches it through the
+-- Accept-Profile / Content-Profile headers (added by /supabase.js in the browser, by hand in the Worker and the build).
+create schema if not exists chords;
+grant usage on schema chords to anon, authenticated, service_role;
+set search_path = chords, public;
+
 -- ==========================================================================
 -- Chords — the Supabase schema.
 --
@@ -9,7 +15,7 @@
 -- key that ships in the page can select and nothing else.
 -- ==========================================================================
 
-create table if not exists public.songs (
+create table if not exists chords.songs (
   id          uuid primary key default gen_random_uuid(),
 
   -- the URL: floa.co.il/chords/<slug>. Hebrew is fine here.
@@ -84,10 +90,10 @@ create table if not exists public.songs (
 );
 
 -- added after the first version of this file; safe to re-run
-alter table public.songs add column if not exists status      text not null default 'ready';
-alter table public.songs add column if not exists status_note text not null default '';
-alter table public.songs add column if not exists lyrics_by   text not null default '';
-alter table public.songs add column if not exists music_by    text not null default '';
+alter table chords.songs add column if not exists status      text not null default 'ready';
+alter table chords.songs add column if not exists status_note text not null default '';
+alter table chords.songs add column if not exists lyrics_by   text not null default '';
+alter table chords.songs add column if not exists music_by    text not null default '';
 
 -- The price of a reading used to live here, in two columns on the song, and it
 -- lives in a table of its own now: a column on a row somebody may read is a
@@ -103,14 +109,14 @@ alter table public.songs add column if not exists music_by    text not null defa
 -- Not backfilled. Songs read before this column existed have been lived with
 -- for a while already, and labelling them all "unchecked" one morning would
 -- say something about them that nobody knows to be true.
-alter table public.songs add column if not exists review      boolean not null default false;
+alter table chords.songs add column if not exists review      boolean not null default false;
 
 -- Not finished, and said so by the person writing it. The other label is the
 -- machine's ("nobody has checked this"); this one is the author's ("I am not
 -- done with this"), and a song can easily be both. It is set and unset by hand
 -- and travels with the song when it is saved, because deciding a song is still
 -- a draft is a decision about the song, made while working on it.
-alter table public.songs add column if not exists draft       boolean not null default false;
+alter table chords.songs add column if not exists draft       boolean not null default false;
 
 -- Out in the world. The third of the three things an author can say about
 -- their own song, after "I am not done" and the silence that means "it is
@@ -119,7 +125,7 @@ alter table public.songs add column if not exists draft       boolean not null d
 -- IT IS ALSO THE ONLY THING THAT MAKES A SONG READABLE BY ANYBODY ELSE (see
 -- the read policy below). Not a label about a song, a fact about who can open
 -- it, which is why it is a column and not a tag in the browser.
-alter table public.songs add column if not exists published   boolean not null default false;
+alter table chords.songs add column if not exists published   boolean not null default false;
 
 -- WHOSE SONG THIS IS. Filled in by the database from the token the request
 -- carried, never by the browser, so it cannot be claimed: a song belongs to
@@ -130,7 +136,7 @@ alter table public.songs add column if not exists published   boolean not null d
 -- reason. The difference is what the two do with it: a playlist is its
 -- owner's and nobody else's ever, and a song is its owner's until they
 -- publish it.
-alter table public.songs add column if not exists owner uuid
+alter table chords.songs add column if not exists owner uuid
   default auth.uid() references auth.users (id) on delete cascade;
 
 -- A song written before there was an owner has none, and a row whose owner is
@@ -139,12 +145,12 @@ alter table public.songs add column if not exists owner uuid
 -- of the library. So it goes to the account that has been here longest, which
 -- in a project with one account is that account. This runs BEFORE the policy
 -- for exactly that reason.
-update public.songs
+update chords.songs
    set owner = (select id from auth.users order by created_at limit 1)
  where owner is null;
 
 -- who owns what, asked on every read
-create index if not exists songs_owner_idx on public.songs (owner);
+create index if not exists songs_owner_idx on chords.songs (owner);
 
 -- WHAT KIND OF SONG IT IS, in the words of whoever keeps the library. Several
 -- at once, because a song is a circle song and a prayer and a lullaby and
@@ -159,10 +165,10 @@ create index if not exists songs_owner_idx on public.songs (owner);
 -- An array rather than a table of its own, because a style has nothing to it
 -- but its name: there is no fact about "שירי מעגל" that is not a fact about
 -- the songs in it.
-alter table public.songs add column if not exists styles      text[] not null default '{}';
+alter table chords.songs add column if not exists styles      text[] not null default '{}';
 
 -- everything in one kind, asked as `styles=cs.{...}`
-create index if not exists songs_styles_idx on public.songs using gin (styles);
+create index if not exists songs_styles_idx on chords.songs using gin (styles);
 
 -- WHEN IT WAS DELETED, because deleting a song does not delete it. A song is
 -- an evening of typing and half of them are deleted by somebody
@@ -175,10 +181,10 @@ create index if not exists songs_styles_idx on public.songs using gin (styles);
 -- nobody can write again under that name. It is moved aside to a string
 -- nothing will ever ask for, and a restored song is given a fresh one from its
 -- title, the same way a new song gets its first.
-alter table public.songs add column if not exists deleted_at  timestamptz;
+alter table chords.songs add column if not exists deleted_at  timestamptz;
 
 -- the library asks for the living, newest change first, and that is the index
-create index if not exists songs_alive_idx on public.songs (updated_at desc)
+create index if not exists songs_alive_idx on chords.songs (updated_at desc)
   where deleted_at is null;
 
 -- EVERY READING THE SONG HAS HAD, kept side by side.
@@ -195,20 +201,20 @@ create index if not exists songs_alive_idx on public.songs (updated_at desc)
 -- Null on a song nobody read. Never shown to anybody: this is for measuring
 -- the reader, and it is dropped the moment the song is saved by hand, because
 -- by then the song IS the answer.
-alter table public.songs add column if not exists reads jsonb;
+alter table chords.songs add column if not exists reads jsonb;
 
 -- Dropped and recreated rather than added, because 'queued' arrived after the
 -- first version of this constraint and an "add if it is not there" would leave
 -- the old one in place and refuse every queued row.
-alter table public.songs drop constraint if exists songs_status_check;
-alter table public.songs add constraint songs_status_check
+alter table chords.songs drop constraint if exists songs_status_check;
+alter table chords.songs add constraint songs_status_check
   check (status in ('queued', 'ready', 'reading', 'failed'));
 
 -- the index page sorts by title
-create index if not exists songs_title_idx on public.songs (title);
+create index if not exists songs_title_idx on chords.songs (title);
 
 -- updated_at that cannot be forgotten
-create or replace function public.touch_updated_at()
+create or replace function chords.touch_updated_at()
 returns trigger language plpgsql as $$
 begin
   new.updated_at = now();
@@ -216,10 +222,10 @@ begin
 end;
 $$;
 
-drop trigger if exists songs_touch_updated_at on public.songs;
+drop trigger if exists songs_touch_updated_at on chords.songs;
 create trigger songs_touch_updated_at
-  before update on public.songs
-  for each row execute function public.touch_updated_at();
+  before update on chords.songs
+  for each row execute function chords.touch_updated_at();
 
 -- --------------------------------------------------------------------------
 -- Row level security.
@@ -239,36 +245,36 @@ create trigger songs_touch_updated_at
 -- permissive one still sitting underneath it. Postgres ORs its policies
 -- together, so a leftover `using (true)` would quietly undo all of this.
 -- --------------------------------------------------------------------------
-alter table public.songs enable row level security;
+alter table chords.songs enable row level security;
 
-drop policy if exists "songs are readable by everyone" on public.songs;
-drop policy if exists "signed in users may add songs" on public.songs;
-drop policy if exists "signed in users may edit songs" on public.songs;
-drop policy if exists "signed in users may delete songs" on public.songs;
+drop policy if exists "songs are readable by everyone" on chords.songs;
+drop policy if exists "signed in users may add songs" on chords.songs;
+drop policy if exists "signed in users may edit songs" on chords.songs;
+drop policy if exists "signed in users may delete songs" on chords.songs;
 
 -- Anybody at all, signed in or not, and the published ones only. A visitor
 -- has no uid, so the second half is false for them and the first is the whole
 -- of what they get.
-drop policy if exists "published songs are readable by everyone" on public.songs;
+drop policy if exists "published songs are readable by everyone" on chords.songs;
 create policy "published songs are readable by everyone"
-  on public.songs for select
+  on chords.songs for select
   using (published or owner = auth.uid());
 
 -- And writing is the author's alone. `with check` is what stops a song being
 -- written into somebody else's name, or handed to them afterwards.
-drop policy if exists "a song is written by its account" on public.songs;
+drop policy if exists "a song is written by its account" on chords.songs;
 create policy "a song is written by its account"
-  on public.songs for insert to authenticated
+  on chords.songs for insert to authenticated
   with check (owner = auth.uid());
 
-drop policy if exists "a song is edited by its account" on public.songs;
+drop policy if exists "a song is edited by its account" on chords.songs;
 create policy "a song is edited by its account"
-  on public.songs for update to authenticated
+  on chords.songs for update to authenticated
   using (owner = auth.uid()) with check (owner = auth.uid());
 
-drop policy if exists "a song is deleted by its account" on public.songs;
+drop policy if exists "a song is deleted by its account" on chords.songs;
 create policy "a song is deleted by its account"
-  on public.songs for delete to authenticated
+  on chords.songs for delete to authenticated
   using (owner = auth.uid());
 
 -- ==========================================================================
@@ -291,13 +297,13 @@ create policy "a song is deleted by its account"
 -- It carries a copy of the words rather than pointing at anything, which is
 -- the point: the song moves on and the version does not.
 -- ==========================================================================
-create table if not exists public.song_versions (
+create table if not exists chords.song_versions (
   id         uuid primary key default gen_random_uuid(),
 
   -- Which song. `on delete cascade` because a version of a song that no longer
   -- exists is not a version of anything, and the songs table already keeps a
   -- deleted song around (deleted_at); only a purge takes both.
-  song_id    uuid not null references public.songs (id) on delete cascade,
+  song_id    uuid not null references chords.songs (id) on delete cascade,
 
   -- Whose. Filled in by the database from the token the request carried, never
   -- by the browser, exactly as on the song itself. A HISTORY IS THE AUTHOR'S
@@ -332,27 +338,27 @@ create table if not exists public.song_versions (
 -- Null on every version written before this column existed, and on any change
 -- nobody can name. A row card with no name on it is a row that says when and
 -- what, which is what all of them said before.
-alter table public.song_versions add column if not exists made_by uuid
+alter table chords.song_versions add column if not exists made_by uuid
   references auth.users (id) on delete set null;
 
 -- one song's versions, newest first, which is the only question ever asked
 create index if not exists song_versions_song_idx
-  on public.song_versions (song_id, created_at desc);
+  on chords.song_versions (song_id, created_at desc);
 
-alter table public.song_versions enable row level security;
+alter table chords.song_versions enable row level security;
 
 -- Read by the account that wrote them. Not by a reader of the published song:
 -- what was published is one song, and how it got there is the author's own
 -- room. Not granted to anon at all, so a visitor is answered as though the
 -- table were empty, which for them it is.
-drop policy if exists "a history belongs to its author" on public.song_versions;
+drop policy if exists "a history belongs to its author" on chords.song_versions;
 create policy "a history belongs to its author"
-  on public.song_versions for select to authenticated
+  on chords.song_versions for select to authenticated
   using (owner = auth.uid());
 
-drop policy if exists "a version is written by its author" on public.song_versions;
+drop policy if exists "a version is written by its author" on chords.song_versions;
 create policy "a version is written by its author"
-  on public.song_versions for insert to authenticated
+  on chords.song_versions for insert to authenticated
   with check (owner = auth.uid());
 
 -- NO UPDATE POLICY AND NO DELETE POLICY, so there is neither. A version that
@@ -381,7 +387,7 @@ create policy "a version is written by its author"
 -- account does not see that it exists.
 -- ==========================================================================
 
-create table if not exists public.setlists (
+create table if not exists chords.setlists (
   id          uuid primary key default gen_random_uuid(),
 
   -- Whose list. Filled in by the database from the token the request carried,
@@ -426,9 +432,9 @@ create table if not exists public.setlists (
 );
 
 -- added after the first version of this table; safe to re-run
-alter table public.setlists add column if not exists owner uuid
+alter table chords.setlists add column if not exists owner uuid
   default auth.uid() references auth.users (id) on delete cascade;
-alter table public.setlists add column if not exists description text not null default '';
+alter table chords.setlists add column if not exists description text not null default '';
 
 -- --------------------------------------------------------------------------
 -- AND THE EVENING BECOMES A DESCRIPTION BEFORE THE TWO COLUMNS GO.
@@ -445,10 +451,10 @@ alter table public.setlists add column if not exists description text not null d
 do $$
 begin
   if exists (select 1 from information_schema.columns
-              where table_schema = 'public' and table_name = 'setlists'
+              where table_schema = 'chords' and table_name = 'setlists'
                 and column_name = 'venue') then
     execute $mv$
-      update public.setlists
+      update chords.setlists
          set description = btrim(
                coalesce(to_char(event_date, 'DD/MM/YYYY'), '') ||
                case when btrim(coalesce(venue, '')) <> ''
@@ -459,15 +465,15 @@ begin
   end if;
 end $$;
 
-alter table public.setlists drop column if exists event_date;
-alter table public.setlists drop column if exists venue;
+alter table chords.setlists drop column if exists event_date;
+alter table chords.setlists drop column if exists venue;
 
 -- A playlist written before there was an owner has none, and a row whose
 -- owner is null is invisible to everybody, because no uid equals null. So it
 -- goes to the account that has been here longest, which in a project with one
 -- account is that account. This is the difference between a list kept and a
 -- list lost, and it is why the backfill runs before the policy does.
-update public.setlists
+update chords.setlists
    set owner = (select id from auth.users order by created_at limit 1)
  where owner is null;
 
@@ -477,12 +483,12 @@ update public.setlists
 -- would only be able to fail this file on a project whose table predates the
 -- column and whose users table is empty.
 
-drop trigger if exists setlists_touch_updated_at on public.setlists;
+drop trigger if exists setlists_touch_updated_at on chords.setlists;
 create trigger setlists_touch_updated_at
-  before update on public.setlists
-  for each row execute function public.touch_updated_at();
+  before update on chords.setlists
+  for each row execute function chords.touch_updated_at();
 
-alter table public.setlists enable row level security;
+alter table chords.setlists enable row level security;
 
 -- The first version of this table was public the way the songs are. Those
 -- policies are dropped by name and the lines stay here forever: on a project
@@ -491,13 +497,13 @@ alter table public.setlists enable row level security;
 -- older, more permissive rule still sitting underneath it. Postgres ORs its
 -- policies together, so a leftover `using (true)` would quietly undo all of
 -- this.
-drop policy if exists "evenings are readable by everyone" on public.setlists;
-drop policy if exists "signed in users may add evenings" on public.setlists;
-drop policy if exists "signed in users may edit evenings" on public.setlists;
-drop policy if exists "signed in users may delete evenings" on public.setlists;
+drop policy if exists "evenings are readable by everyone" on chords.setlists;
+drop policy if exists "signed in users may add evenings" on chords.setlists;
+drop policy if exists "signed in users may edit evenings" on chords.setlists;
+drop policy if exists "signed in users may delete evenings" on chords.setlists;
 -- and the one that said the same thing this one says, under the word this
 -- table used before it was called a playlist
-drop policy if exists "an evening belongs to its account" on public.setlists;
+drop policy if exists "an evening belongs to its account" on chords.setlists;
 
 -- --------------------------------------------------------------------------
 -- AND A PLAYLIST IS SHARED BY HANDING SOMEBODY THE LINK.
@@ -529,17 +535,17 @@ drop policy if exists "an evening belongs to its account" on public.setlists;
 -- they pasted to each other; a value that opens a door has to be one that is
 -- only ever handed over on purpose. So the door has a key of its own, and the
 -- address of a playlist stays a name for it and nothing more.
-alter table public.setlists add column if not exists share uuid not null default gen_random_uuid();
+alter table chords.setlists add column if not exists share uuid not null default gen_random_uuid();
 
 -- gen_random_uuid() is volatile, so a table that already had rows gets a
 -- different value in each of them rather than one value in all of them, which
 -- is the difference between a key per playlist and one key to every playlist.
-create unique index if not exists setlists_share_idx on public.setlists (share);
+create unique index if not exists setlists_share_idx on chords.setlists (share);
 
 -- WHO IS ON A PLAYLIST. Two columns and a date, and the pair of them is the
 -- key: a person is on a list once or not at all.
-create table if not exists public.setlist_members (
-  setlist uuid not null references public.setlists (id) on delete cascade,
+create table if not exists chords.setlist_members (
+  setlist uuid not null references chords.setlists (id) on delete cascade,
   person  uuid not null references auth.users (id) on delete cascade,
 
   -- WHEN THEY CAME, and it is what the roster is ordered by, so the owner
@@ -551,9 +557,9 @@ create table if not exists public.setlist_members (
 
 -- The other direction, which is the one the app asks in most: every playlist
 -- this account is on. The primary key already indexes the first column.
-create index if not exists setlist_members_person_idx on public.setlist_members (person);
+create index if not exists setlist_members_person_idx on chords.setlist_members (person);
 
-alter table public.setlist_members enable row level security;
+alter table chords.setlist_members enable row level security;
 
 -- --------------------------------------------------------------------------
 -- AND THE ONE QUESTION EVERY RULE BELOW ASKS, ASKED WHERE RLS CANNOT SEE IT.
@@ -569,7 +575,7 @@ alter table public.setlist_members enable row level security;
 -- sides as arguments, so it tells the caller nothing they did not already
 -- name: given a list and a person, whether that person is on it.
 -- --------------------------------------------------------------------------
-create or replace function public.in_setlist(list uuid, who uuid)
+create or replace function chords.in_setlist(list uuid, who uuid)
 returns boolean
 language sql
 stable
@@ -577,7 +583,7 @@ security definer
 set search_path = public
 as $fn$
   select exists (
-    select 1 from public.setlist_members m
+    select 1 from chords.setlist_members m
      where m.setlist = list and m.person = who
   )
 $fn$;
@@ -586,7 +592,7 @@ $fn$;
 -- the browser remembered to. Security definer, because the row is written
 -- while the insert policy on that table refuses everything: joining is not
 -- something a client does directly, in either direction (see join_setlist).
-create or replace function public.setlist_owner_joins()
+create or replace function chords.setlist_owner_joins()
 returns trigger
 language plpgsql
 security definer
@@ -594,7 +600,7 @@ set search_path = public
 as $fn$
 begin
   if new.owner is not null then
-    insert into public.setlist_members (setlist, person)
+    insert into chords.setlist_members (setlist, person)
     values (new.id, new.owner)
     on conflict do nothing;
   end if;
@@ -602,17 +608,17 @@ begin
 end
 $fn$;
 
-drop trigger if exists setlists_owner_joins on public.setlists;
+drop trigger if exists setlists_owner_joins on chords.setlists;
 create trigger setlists_owner_joins
-  after insert on public.setlists
-  for each row execute function public.setlist_owner_joins();
+  after insert on chords.setlists
+  for each row execute function chords.setlist_owner_joins();
 
 -- And every playlist that existed before this table did. Without it the
 -- policies below would hide from an owner what the old one showed them: the
 -- roster of each would be empty, which is a list nobody is on, and the owner
 -- clause would be the only thing left holding those rows up.
-insert into public.setlist_members (setlist, person)
-select id, owner from public.setlists where owner is not null
+insert into chords.setlist_members (setlist, person)
+select id, owner from chords.setlists where owner is not null
 on conflict do nothing;
 
 -- --------------------------------------------------------------------------
@@ -629,7 +635,7 @@ on conflict do nothing;
 -- try. Everything a playlist is FOR, the name, the line and the songs, is
 -- left alone.
 -- --------------------------------------------------------------------------
-create or replace function public.setlist_holds_its_own()
+create or replace function chords.setlist_holds_its_own()
 returns trigger
 language plpgsql
 as $fn$
@@ -641,48 +647,48 @@ begin
 end
 $fn$;
 
-drop trigger if exists setlists_hold_own on public.setlists;
+drop trigger if exists setlists_hold_own on chords.setlists;
 create trigger setlists_hold_own
-  before update on public.setlists
-  for each row execute function public.setlist_holds_its_own();
+  before update on chords.setlists
+  for each row execute function chords.setlist_holds_its_own();
 
 -- The rule these replace, dropped by name. It said all four verbs at once and
 -- said "owner" in every one of them, so leaving it would quietly grant back
 -- exactly what the four below are being careful about: Postgres ORs its
 -- policies together.
-drop policy if exists "a playlist belongs to its account" on public.setlists;
+drop policy if exists "a playlist belongs to its account" on chords.setlists;
 
 -- Read by whoever is on it. The owner clause is not the same sentence twice:
 -- it is what a playlist written before this file ran leans on if the backfill
 -- above ever failed to reach it.
-drop policy if exists "a playlist is read by whoever is on it" on public.setlists;
+drop policy if exists "a playlist is read by whoever is on it" on chords.setlists;
 create policy "a playlist is read by whoever is on it"
-  on public.setlists for select to authenticated
-  using (owner = auth.uid() or public.in_setlist(id, auth.uid()));
+  on chords.setlists for select to authenticated
+  using (owner = auth.uid() or chords.in_setlist(id, auth.uid()));
 
 -- Written by the account it will belong to, and by nobody in anybody else's
 -- name. A playlist is made by one person; it becomes several people's after.
-drop policy if exists "a playlist is written by its account" on public.setlists;
+drop policy if exists "a playlist is written by its account" on chords.setlists;
 create policy "a playlist is written by its account"
-  on public.setlists for insert to authenticated
+  on chords.setlists for insert to authenticated
   with check (owner = auth.uid());
 
 -- AND CHANGED BY EVERYBODY ON IT, which is the whole of what sharing one
 -- means: the name, the line under it, the songs, their order, and who is
 -- singing each of them. What cannot be changed is pinned by the trigger
 -- above rather than by this rule.
-drop policy if exists "a playlist is changed by whoever is on it" on public.setlists;
+drop policy if exists "a playlist is changed by whoever is on it" on chords.setlists;
 create policy "a playlist is changed by whoever is on it"
-  on public.setlists for update to authenticated
-  using (owner = auth.uid() or public.in_setlist(id, auth.uid()))
-  with check (owner = auth.uid() or public.in_setlist(id, auth.uid()));
+  on chords.setlists for update to authenticated
+  using (owner = auth.uid() or chords.in_setlist(id, auth.uid()))
+  with check (owner = auth.uid() or chords.in_setlist(id, auth.uid()));
 
 -- And thrown away by one person, the one whose it is. Everybody else has a
 -- row of their own to take away, which takes the list off their screen and
 -- leaves it standing (see the delete rule on the members).
-drop policy if exists "a playlist is deleted by its account" on public.setlists;
+drop policy if exists "a playlist is deleted by its account" on chords.setlists;
 create policy "a playlist is deleted by its account"
-  on public.setlists for delete to authenticated
+  on chords.setlists for delete to authenticated
   using (owner = auth.uid());
 
 -- --------------------------------------------------------------------------
@@ -692,10 +698,10 @@ create policy "a playlist is deleted by its account"
 -- it says it in a uuid. A uuid that cannot be turned into one of the people
 -- here is a row that cannot draw itself.
 -- --------------------------------------------------------------------------
-drop policy if exists "the people on a playlist are read by them" on public.setlist_members;
+drop policy if exists "the people on a playlist are read by them" on chords.setlist_members;
 create policy "the people on a playlist are read by them"
-  on public.setlist_members for select to authenticated
-  using (public.in_setlist(setlist, auth.uid()));
+  on chords.setlist_members for select to authenticated
+  using (chords.in_setlist(setlist, auth.uid()));
 
 -- NO INSERT POLICY, AND THAT IS THE DESIGN. A row here is somebody gaining
 -- sight of a playlist, so it is never written by a browser saying so: it is
@@ -703,7 +709,7 @@ create policy "the people on a playlist are read by them"
 -- below when somebody follows a link. Both are security definer and both
 -- decide for themselves. With no policy the table refuses every insert that
 -- arrives through the API, which is every insert a client can make.
-drop policy if exists "somebody joins a playlist" on public.setlist_members;
+drop policy if exists "somebody joins a playlist" on chords.setlist_members;
 
 -- LEAVING, AND BEING TAKEN OFF. A person takes their own row away, and the
 -- owner may take anybody's; the owner's own row is not removable by either,
@@ -714,14 +720,14 @@ drop policy if exists "somebody joins a playlist" on public.setlist_members;
 -- what is wanted: somebody on the list can see whose it is. Where it answers
 -- nothing, the coalesce compares the person to themselves and the row stands.
 -- A rule that cannot see what it is deciding about refuses.
-drop policy if exists "somebody leaves a playlist, or is taken off it" on public.setlist_members;
+drop policy if exists "somebody leaves a playlist, or is taken off it" on chords.setlist_members;
 create policy "somebody leaves a playlist, or is taken off it"
-  on public.setlist_members for delete to authenticated
+  on chords.setlist_members for delete to authenticated
   using (
-    person <> coalesce((select s.owner from public.setlists s where s.id = setlist), person)
+    person <> coalesce((select s.owner from chords.setlists s where s.id = setlist), person)
     and (
       person = auth.uid()
-      or exists (select 1 from public.setlists s where s.id = setlist and s.owner = auth.uid())
+      or exists (select 1 from chords.setlists s where s.id = setlist and s.owner = auth.uid())
     )
   );
 
@@ -738,7 +744,7 @@ create policy "somebody leaves a playlist, or is taken off it"
 -- on the list gets the id back and nothing happens. A key that names nothing
 -- answers null, which the page turns into a sentence rather than an error.
 -- --------------------------------------------------------------------------
-create or replace function public.join_setlist(token uuid)
+create or replace function chords.join_setlist(token uuid)
 returns uuid
 language plpgsql
 volatile
@@ -752,12 +758,12 @@ begin
     raise exception 'a playlist is joined by an account' using errcode = '42501';
   end if;
 
-  select s.id into list from public.setlists s where s.share = token;
+  select s.id into list from chords.setlists s where s.share = token;
   if list is null then
     return null;
   end if;
 
-  insert into public.setlist_members (setlist, person)
+  insert into chords.setlist_members (setlist, person)
   values (list, auth.uid())
   on conflict do nothing;
 
@@ -765,8 +771,8 @@ begin
 end
 $fn$;
 
-revoke execute on function public.join_setlist(uuid) from public, anon;
-grant execute on function public.join_setlist(uuid) to authenticated;
+revoke execute on function chords.join_setlist(uuid) from public, anon;
+grant execute on function chords.join_setlist(uuid) to authenticated;
 
 -- --------------------------------------------------------------------------
 -- AND WHAT THE LINK SAYS BEFORE ANYBODY HAS SIGNED IN.
@@ -781,7 +787,7 @@ grant execute on function public.join_setlist(uuid) to authenticated;
 -- Deliberately not the songs. Those are the playlist, and reading the
 -- playlist is what joining is for.
 -- --------------------------------------------------------------------------
-create or replace function public.setlist_invite(token uuid)
+create or replace function chords.setlist_invite(token uuid)
 returns table (list uuid, named text, howmany integer, whose text)
 language sql
 stable
@@ -789,12 +795,12 @@ security definer
 set search_path = public
 as $fn$
   select s.id, s.title, jsonb_array_length(s.songs), coalesce(p.name, '')
-    from public.setlists s
-    left join public.people p on p.id = s.owner
+    from chords.setlists s
+    left join chords.people p on p.id = s.owner
    where s.share = token
 $fn$;
 
-grant execute on function public.setlist_invite(uuid) to anon, authenticated;
+grant execute on function chords.setlist_invite(uuid) to anon, authenticated;
 
 -- --------------------------------------------------------------------------
 -- WHAT STANDS BESIDE THESE SONGS, IN EVERYBODY'S LISTS.
@@ -823,7 +829,7 @@ grant execute on function public.setlist_invite(uuid) to anon, authenticated;
 -- not a suggestion, it is the existence of a draft, which is the one thing an
 -- id on its own could still have leaked.
 -- --------------------------------------------------------------------------
-create or replace function public.songs_beside(ids uuid[])
+create or replace function chords.songs_beside(ids uuid[])
 returns table (song uuid, together integer)
 language sql
 stable
@@ -840,9 +846,9 @@ as $fn$
   -- a list and not a song to suggest.
   placed as (
     select s.id as list, g.id as song
-      from public.setlists s
+      from chords.setlists s
       cross join lateral jsonb_array_elements(s.songs) as e(value)
-      join public.songs g on g.id::text = e.value ->> 'id'
+      join chords.songs g on g.id::text = e.value ->> 'id'
   ),
   -- Every place one of the songs asked about is standing: a list, and which
   -- of them is on it.
@@ -865,7 +871,7 @@ as $fn$
   select p.song, count(distinct b.seed)::int as together
     from placed p
     join beside b on b.list = p.list
-    join public.songs g on g.id = p.song
+    join chords.songs g on g.id = p.song
    where not exists (select 1 from wanted w where w.id = p.song)
      and g.published
      and g.deleted_at is null
@@ -877,8 +883,8 @@ $fn$;
 -- The page that asks is a playlist, and a playlist needs an account. Not
 -- granted to anon, which is one fewer door on a function that reads past every
 -- policy in the file.
-revoke execute on function public.songs_beside(uuid[]) from public, anon;
-grant execute on function public.songs_beside(uuid[]) to authenticated;
+revoke execute on function chords.songs_beside(uuid[]) from public, anon;
+grant execute on function chords.songs_beside(uuid[]) to authenticated;
 
 -- ==========================================================================
 -- What the readings cost.
@@ -895,8 +901,8 @@ grant execute on function public.songs_beside(uuid[]) to authenticated;
 -- is refused is a cost nobody ever knows about; read by the one address that
 -- gets the invoice.
 -- ==========================================================================
-create table if not exists public.song_costs (
-  song_id    uuid primary key references public.songs (id) on delete cascade,
+create table if not exists chords.song_costs (
+  song_id    uuid primary key references chords.songs (id) on delete cascade,
 
   -- in US cents, from the token counts the API itself reported
   read_cost  numeric,
@@ -919,9 +925,9 @@ create table if not exists public.song_costs (
 -- and everything else here. A song belongs to an account and goes with it; a
 -- price is money that was actually spent, and an account leaving does not
 -- unspend it. What goes is the name on the row.
-alter table public.song_costs add column if not exists reader uuid
+alter table chords.song_costs add column if not exists reader uuid
   references auth.users (id) on delete set null;
-alter table public.song_costs alter column reader set default auth.uid();
+alter table chords.song_costs alter column reader set default auth.uid();
 
 -- HOW THE READING WENT, in one word, put here rather than on the song for the
 -- same reason the price is: what came back is a fact about the reading, the
@@ -938,28 +944,28 @@ alter table public.song_costs alter column reader set default auth.uid();
 -- Null on a row written before this column existed. Not backfilled: nobody
 -- knows which of the four those readings were, and guessing would put a word
 -- on the page that is not true of anything.
-alter table public.song_costs add column if not exists kept text;
-alter table public.song_costs drop constraint if exists song_costs_kept_check;
-alter table public.song_costs add constraint song_costs_kept_check
+alter table chords.song_costs add column if not exists kept text;
+alter table chords.song_costs drop constraint if exists song_costs_kept_check;
+alter table chords.song_costs add constraint song_costs_kept_check
   check (kept is null or kept in ('measured', 'model', 'words', 'failed'));
 
 -- How much the ruler and the words agreed, 0 to 1, which is the number that
 -- chose between the two answers above. Null where there was no measuring to
 -- compare against.
-alter table public.song_costs add column if not exists agreement numeric;
+alter table chords.song_costs add column if not exists agreement numeric;
 
 -- A reading written before there was a reader has none, and it belongs to
 -- whoever the song belongs to: the Worker reads with the token of the account
 -- that made the row, and the row is made by the account that uploaded the
 -- picture. So this is not a guess about the past, it is the same fact read off
 -- the other table.
-update public.song_costs c
+update chords.song_costs c
    set reader = s.owner
-  from public.songs s
+  from chords.songs s
  where c.song_id = s.id and c.reader is null and s.owner is not null;
 
 -- the page groups by account and adds up what each one spent
-create index if not exists song_costs_reader_idx on public.song_costs (reader);
+create index if not exists song_costs_reader_idx on chords.song_costs (reader);
 
 -- Everything the two old columns held, copied across and THEN dropped, in that
 -- order and in one block. The copy stood at the bottom of this file while the
@@ -973,33 +979,33 @@ do $$
 begin
   if exists (
     select 1 from information_schema.columns
-     where table_schema = 'public' and table_name = 'songs' and column_name = 'read_cost'
+     where table_schema = 'chords' and table_name = 'songs' and column_name = 'read_cost'
   ) then
-    insert into public.song_costs (song_id, read_cost, usd_ils)
-    select id, read_cost, usd_ils from public.songs where read_cost is not null
+    insert into chords.song_costs (song_id, read_cost, usd_ils)
+    select id, read_cost, usd_ils from chords.songs where read_cost is not null
     on conflict (song_id) do nothing;
 
-    alter table public.songs drop column read_cost;
-    alter table public.songs drop column if exists usd_ils;
+    alter table chords.songs drop column read_cost;
+    alter table chords.songs drop column if exists usd_ils;
   end if;
 end $$;
 
-alter table public.song_costs enable row level security;
+alter table chords.song_costs enable row level security;
 
 -- The one address that pays. In the file rather than in a settings table
 -- because it is one fact that changes when the person changes, and a table of
 -- one row would be a second place to keep it true.
-drop policy if exists "the bill is the payer's" on public.song_costs;
+drop policy if exists "the bill is the payer's" on chords.song_costs;
 create policy "the bill is the payer's"
-  on public.song_costs for select to authenticated
+  on chords.song_costs for select to authenticated
   using (auth.jwt() ->> 'email' = 'ofir.aviram@gmail.com');
 
 -- Written by whoever did the reading, and never changed afterwards: a price is
 -- what it was. No update policy and no delete policy at all, so there are none
 -- of either; the row goes when its song does, by the cascade above.
-drop policy if exists "a reading records what it cost" on public.song_costs;
+drop policy if exists "a reading records what it cost" on chords.song_costs;
 create policy "a reading records what it cost"
-  on public.song_costs for insert to authenticated
+  on chords.song_costs for insert to authenticated
   with check (true);
 
 -- ==========================================================================
@@ -1022,16 +1028,16 @@ create policy "a reading records what it cost"
 -- read by anybody at all, and kept in step by the app the moment a name is
 -- set (see auth.announce).
 -- ==========================================================================
-create table if not exists public.people (
+create table if not exists chords.people (
   id         uuid primary key references auth.users (id) on delete cascade,
   name       text not null default '',
   updated_at timestamptz not null default now()
 );
 
-drop trigger if exists people_touch_updated_at on public.people;
+drop trigger if exists people_touch_updated_at on chords.people;
 create trigger people_touch_updated_at
-  before update on public.people
-  for each row execute function public.touch_updated_at();
+  before update on chords.people
+  for each row execute function chords.touch_updated_at();
 
 -- Everybody who signed in before this table existed, named the way the app
 -- names them: their own answer first, then whatever Google said, then the
@@ -1041,7 +1047,7 @@ create trigger people_touch_updated_at
 --
 -- `on conflict do nothing`, so this fills in what is missing and never writes
 -- over a name somebody has since given themselves.
-insert into public.people (id, name)
+insert into chords.people (id, name)
 select u.id,
        coalesce(nullif(u.raw_user_meta_data ->> 'display_name', ''),
                 nullif(u.raw_user_meta_data ->> 'full_name', ''),
@@ -1051,28 +1057,28 @@ select u.id,
   from auth.users u
 on conflict (id) do nothing;
 
-alter table public.people enable row level security;
+alter table chords.people enable row level security;
 
 -- Anybody, signed in or not. What is in here is a name somebody chose to put
 -- over their own songs, and the songs it names are readable by everybody: a
 -- row that said who wrote them but only to people with an account would be a
 -- credit that goes missing on exactly the page it belongs on.
-drop policy if exists "a person is readable by everyone" on public.people;
+drop policy if exists "a person is readable by everyone" on chords.people;
 create policy "a person is readable by everyone"
-  on public.people for select
+  on chords.people for select
   using (true);
 
 -- And it is written by the one account it is about. `with check` on both is
 -- what stops a row being written in somebody else's name, or handed over
 -- afterwards, which is the same rule the songs live under.
-drop policy if exists "a person names themselves" on public.people;
+drop policy if exists "a person names themselves" on chords.people;
 create policy "a person names themselves"
-  on public.people for insert to authenticated
+  on chords.people for insert to authenticated
   with check (id = auth.uid());
 
-drop policy if exists "a person renames themselves" on public.people;
+drop policy if exists "a person renames themselves" on chords.people;
 create policy "a person renames themselves"
-  on public.people for update to authenticated
+  on chords.people for update to authenticated
   using (id = auth.uid()) with check (id = auth.uid());
 
 -- No delete policy, so there is none. A row here is what a song's owner
@@ -1108,7 +1114,7 @@ create policy "a person renames themselves"
 -- this says where a reader has been, and it is not a second opinion about
 -- what is in the library or who may read it.
 -- ==========================================================================
-create table if not exists public.song_opens (
+create table if not exists chords.song_opens (
   -- WHOSE. The account itself, so there cannot be anything but one row per
   -- account. The default fills it in from the token the request carried when
   -- the browser does not send it, and the policy below refuses a row written
@@ -1123,12 +1129,12 @@ create table if not exists public.song_opens (
   updated_at timestamptz not null default now()
 );
 
-drop trigger if exists song_opens_touch_updated_at on public.song_opens;
+drop trigger if exists song_opens_touch_updated_at on chords.song_opens;
 create trigger song_opens_touch_updated_at
-  before update on public.song_opens
-  for each row execute function public.touch_updated_at();
+  before update on chords.song_opens
+  for each row execute function chords.touch_updated_at();
 
-alter table public.song_opens enable row level security;
+alter table chords.song_opens enable row level security;
 
 -- One rule for all four verbs, the same as a playlist: this is the account's
 -- own and nobody else's, ever. Not granted to anon at all, so a reader with no
@@ -1138,9 +1144,9 @@ alter table public.song_opens enable row level security;
 -- What is in here is a reading history, and it is the one thing in this
 -- project that says what a person did rather than what they made. It is never
 -- shown to anybody, including on a song they published.
-drop policy if exists "what an account has opened is its own" on public.song_opens;
+drop policy if exists "what an account has opened is its own" on chords.song_opens;
 create policy "what an account has opened is its own"
-  on public.song_opens for all to authenticated
+  on chords.song_opens for all to authenticated
   using (id = auth.uid())
   with check (id = auth.uid());
 
@@ -1181,7 +1187,7 @@ create policy "what an account has opened is its own"
 -- from the network is not there in the first frame. A reader with no account
 -- has exactly what they had before this, their own browser's.
 -- ==========================================================================
-create table if not exists public.song_keys (
+create table if not exists chords.song_keys (
   -- WHOSE, and the same argument as song_opens: the account itself, so there
   -- cannot be more than one row per account, filled in from the token when the
   -- browser leaves it out and refused by the policy when it names anybody else.
@@ -1194,12 +1200,12 @@ create table if not exists public.song_keys (
   updated_at timestamptz not null default now()
 );
 
-drop trigger if exists song_keys_touch_updated_at on public.song_keys;
+drop trigger if exists song_keys_touch_updated_at on chords.song_keys;
 create trigger song_keys_touch_updated_at
-  before update on public.song_keys
-  for each row execute function public.touch_updated_at();
+  before update on chords.song_keys
+  for each row execute function chords.touch_updated_at();
 
-alter table public.song_keys enable row level security;
+alter table chords.song_keys enable row level security;
 
 -- One rule for all four verbs: this is the account's own and nobody else's.
 -- Not granted to anon, so a reader with no account is answered as though the
@@ -1208,9 +1214,9 @@ alter table public.song_keys enable row level security;
 -- And never shown to anybody, including on a song they published. Which key
 -- somebody sings a song in says something about their voice, and it is theirs
 -- the same way the reading history above is.
-drop policy if exists "the key an account plays in is its own" on public.song_keys;
+drop policy if exists "the key an account plays in is its own" on chords.song_keys;
 create policy "the key an account plays in is its own"
-  on public.song_keys for all to authenticated
+  on chords.song_keys for all to authenticated
   using (id = auth.uid())
   with check (id = auth.uid());
 
@@ -1256,7 +1262,7 @@ create policy "the key an account plays in is its own"
 -- test-env:skip (the publish trigger calls GitHub: a test song must never start a deploy)
 create extension if not exists pg_net;
 
-create or replace function public.library_changed()
+create or replace function chords.library_changed()
 returns trigger
 language plpgsql
 security definer
@@ -1295,40 +1301,40 @@ $$;
 
 -- A song crossing the line between "mine" and "everybody's", in either
 -- direction, and a song leaving or coming back. Nothing else on the row.
-drop trigger if exists songs_library_changed on public.songs;
+drop trigger if exists songs_library_changed on chords.songs;
 create trigger songs_library_changed
-  after update on public.songs
+  after update on chords.songs
   for each row
   when (old.published is distinct from new.published
      or old.deleted_at is distinct from new.deleted_at)
-  execute function public.library_changed();
+  execute function chords.library_changed();
 
 -- A row that arrives already published, and one that is purged for good. A
 -- new song is written unpublished and is nobody's business yet, so an
 -- ordinary insert says nothing.
-drop trigger if exists songs_born_published on public.songs;
+drop trigger if exists songs_born_published on chords.songs;
 create trigger songs_born_published
-  after insert on public.songs
+  after insert on chords.songs
   for each row
   when (new.published and new.deleted_at is null)
-  execute function public.library_changed();
+  execute function chords.library_changed();
 
-drop trigger if exists songs_purged on public.songs;
+drop trigger if exists songs_purged on chords.songs;
 create trigger songs_purged
-  after delete on public.songs
+  after delete on chords.songs
   for each row
   when (old.published)
-  execute function public.library_changed();
+  execute function chords.library_changed();
 
 -- AND THE PRESS ITSELF. A version row is written the moment "פורסם" is
 -- pressed and at no other time, so it is exactly "this song is finished and
 -- it is out", said once however many times the song saved itself on the way
 -- there. It is what carries an EDIT to a song that was already published.
-drop trigger if exists song_published_again on public.song_versions;
+drop trigger if exists song_published_again on chords.song_versions;
 create trigger song_published_again
-  after insert on public.song_versions
+  after insert on chords.song_versions
   for each row
-  execute function public.library_changed();
+  execute function chords.library_changed();
 -- test-env:end
 
 -- ==========================================================================
@@ -1351,10 +1357,10 @@ create trigger song_published_again
 -- a megabyte, so the sound lives in the bucket set up at the bottom of this
 -- file and the row holds the path to it.
 -- ==========================================================================
-create table if not exists public.song_takes (
+create table if not exists chords.song_takes (
   id       uuid primary key default gen_random_uuid(),
 
-  song_id  uuid not null references public.songs (id) on delete cascade,
+  song_id  uuid not null references chords.songs (id) on delete cascade,
 
   -- Whose. Filled in by the database from the token the request carried, never
   -- by the browser, exactly as on a song and on a playlist: a take belongs to
@@ -1423,14 +1429,14 @@ create table if not exists public.song_takes (
 -- and onto the table as it already stands, since this file is made to be run
 -- again. The default is the honest one: a row that was written before the
 -- column existed is a take whose marks count the page.
-alter table public.song_takes add column if not exists marks_of smallint not null default 0;
+alter table chords.song_takes add column if not exists marks_of smallint not null default 0;
 
 -- one song's takes, newest first, which is the only question asked of it
 create index if not exists song_takes_song_idx
-  on public.song_takes (song_id, created_at desc);
-create index if not exists song_takes_owner_idx on public.song_takes (owner);
+  on chords.song_takes (song_id, created_at desc);
+create index if not exists song_takes_owner_idx on chords.song_takes (owner);
 
-alter table public.song_takes enable row level security;
+alter table chords.song_takes enable row level security;
 
 -- THE SONG IS THE CONDITION, AND THIS IS THE WHOLE OF THAT RULE.
 --
@@ -1457,13 +1463,13 @@ alter table public.song_takes enable row level security;
 -- A DELETED SONG IS OUT OF THE WORLD TOO. Its `published` is cleared when it
 -- goes into the wastebasket (see db.remove), so this would hold anyway; it is
 -- said out loud because the sound is the one thing a deletion cannot reach.
-drop policy if exists "a take that is out is readable" on public.song_takes;
+drop policy if exists "a take that is out is readable" on chords.song_takes;
 create policy "a take that is out is readable"
-  on public.song_takes for select
+  on chords.song_takes for select
   using (
     owner = auth.uid()
     or (published and exists (
-      select 1 from public.songs s
+      select 1 from chords.songs s
        where s.id = song_takes.song_id
          and s.published
          and s.deleted_at is null
@@ -1476,13 +1482,13 @@ create policy "a take that is out is readable"
 -- person told "published" about something nobody can reach. The button says
 -- the same thing before the request is made (see offerTake in app.js), and
 -- this is the half of it that does not depend on a browser.
-drop policy if exists "a take is recorded by its account" on public.song_takes;
+drop policy if exists "a take is recorded by its account" on chords.song_takes;
 create policy "a take is recorded by its account"
-  on public.song_takes for insert to authenticated
+  on chords.song_takes for insert to authenticated
   with check (
     owner = auth.uid()
     and (not published or exists (
-      select 1 from public.songs s
+      select 1 from chords.songs s
        where s.id = song_takes.song_id and s.published and s.deleted_at is null
     ))
   );
@@ -1490,21 +1496,21 @@ create policy "a take is recorded by its account"
 -- Taking one down is always allowed, whatever state the song is in: `not
 -- published` passes this on its own, and a person who wants their voice off
 -- the internet is never made to publish a song first.
-drop policy if exists "a take is changed by its account" on public.song_takes;
+drop policy if exists "a take is changed by its account" on chords.song_takes;
 create policy "a take is changed by its account"
-  on public.song_takes for update to authenticated
+  on chords.song_takes for update to authenticated
   using (owner = auth.uid())
   with check (
     owner = auth.uid()
     and (not published or exists (
-      select 1 from public.songs s
+      select 1 from chords.songs s
        where s.id = song_takes.song_id and s.published and s.deleted_at is null
     ))
   );
 
-drop policy if exists "a take is deleted by its account" on public.song_takes;
+drop policy if exists "a take is deleted by its account" on chords.song_takes;
 create policy "a take is deleted by its account"
-  on public.song_takes for delete to authenticated
+  on chords.song_takes for delete to authenticated
   using (owner = auth.uid());
 
 -- --------------------------------------------------------------------------
@@ -1575,12 +1581,12 @@ create policy "a take sound follows its row"
   on storage.objects for select
   using (
     bucket_id = 'takes' and exists (
-      select 1 from public.song_takes t
+      select 1 from chords.song_takes t
        where t.path = storage.objects.name
          and (
            t.owner = auth.uid()
            or (t.published and exists (
-             select 1 from public.songs s
+             select 1 from chords.songs s
               where s.id = t.song_id and s.published and s.deleted_at is null
            ))
          )
@@ -1624,10 +1630,10 @@ create policy "a take sound is removed by its account"
 -- pressed and not when a key is; here there is no press at all, so the row is
 -- rewritten in place and `state` is the whole of what became of it.
 -- ==========================================================================
-create table if not exists public.song_offers (
+create table if not exists chords.song_offers (
   id       uuid primary key default gen_random_uuid(),
 
-  song_id  uuid not null references public.songs (id) on delete cascade,
+  song_id  uuid not null references chords.songs (id) on delete cascade,
 
   -- WHOSE OFFER. Filled in by the database from the token the request carried,
   -- never by the browser, exactly as on a song, a playlist and a take: an
@@ -1669,34 +1675,34 @@ create table if not exists public.song_offers (
 -- "is anything waiting on this song", which is the question every song page
 -- and every row of the library asks
 create index if not exists song_offers_open_idx
-  on public.song_offers (song_id) where state = 'open';
-create index if not exists song_offers_owner_idx on public.song_offers (owner);
+  on chords.song_offers (song_id) where state = 'open';
+create index if not exists song_offers_owner_idx on chords.song_offers (owner);
 
-drop trigger if exists song_offers_touch_updated_at on public.song_offers;
+drop trigger if exists song_offers_touch_updated_at on chords.song_offers;
 create trigger song_offers_touch_updated_at
-  before update on public.song_offers
-  for each row execute function public.touch_updated_at();
+  before update on chords.song_offers
+  for each row execute function chords.touch_updated_at();
 
-alter table public.song_offers enable row level security;
+alter table chords.song_offers enable row level security;
 
 -- TWO PEOPLE AND NOBODY ELSE: the one who wrote it and the one who can take
 -- it. Not the world, even on a published song. What is published is the song;
 -- an offer is a half-finished sentence about it, and until it is taken it is
 -- between the two of them.
-drop policy if exists "an offer is read by the two it is between" on public.song_offers;
+drop policy if exists "an offer is read by the two it is between" on chords.song_offers;
 create policy "an offer is read by the two it is between"
-  on public.song_offers for select to authenticated
+  on chords.song_offers for select to authenticated
   using (
     owner = auth.uid()
-    or exists (select 1 from public.songs s where s.id = song_id and s.owner = auth.uid())
+    or exists (select 1 from chords.songs s where s.id = song_id and s.owner = auth.uid())
   );
 
 -- Written by the person making it, and it arrives open. An offer that could be
 -- written already taken would be a way of writing somebody else's song in one
 -- request.
-drop policy if exists "an offer is written by the one making it" on public.song_offers;
+drop policy if exists "an offer is written by the one making it" on chords.song_offers;
 create policy "an offer is written by the one making it"
-  on public.song_offers for insert to authenticated
+  on chords.song_offers for insert to authenticated
   with check (owner = auth.uid() and state = 'open');
 
 -- And rewritten by them for as long as they like, at the price of it being
@@ -1706,26 +1712,26 @@ create policy "an offer is written by the one making it"
 -- Without it the person making an offer could mark their own offer taken. What
 -- that would still not do is change the song, because nothing here can: the
 -- taking is a write to `songs`, and only its owner may make it.
-drop policy if exists "an offer is rewritten while it is open" on public.song_offers;
+drop policy if exists "an offer is rewritten while it is open" on chords.song_offers;
 create policy "an offer is rewritten while it is open"
-  on public.song_offers for update to authenticated
+  on chords.song_offers for update to authenticated
   using (owner = auth.uid())
   with check (owner = auth.uid() and state = 'open');
 
 -- ANSWERED BY THE ACCOUNT THE SONG BELONGS TO, which is the other half of it.
-drop policy if exists "an offer is answered by the song's account" on public.song_offers;
+drop policy if exists "an offer is answered by the song's account" on chords.song_offers;
 create policy "an offer is answered by the song's account"
-  on public.song_offers for update to authenticated
-  using (exists (select 1 from public.songs s where s.id = song_id and s.owner = auth.uid()))
-  with check (exists (select 1 from public.songs s where s.id = song_id and s.owner = auth.uid()));
+  on chords.song_offers for update to authenticated
+  using (exists (select 1 from chords.songs s where s.id = song_id and s.owner = auth.uid()))
+  with check (exists (select 1 from chords.songs s where s.id = song_id and s.owner = auth.uid()));
 
 -- Taken back by whoever made it, cleared away by whoever it was made to.
-drop policy if exists "an offer is withdrawn or cleared" on public.song_offers;
+drop policy if exists "an offer is withdrawn or cleared" on chords.song_offers;
 create policy "an offer is withdrawn or cleared"
-  on public.song_offers for delete to authenticated
+  on chords.song_offers for delete to authenticated
   using (
     owner = auth.uid()
-    or exists (select 1 from public.songs s where s.id = song_id and s.owner = auth.uid())
+    or exists (select 1 from chords.songs s where s.id = song_id and s.owner = auth.uid())
   );
 
 -- NO TRIGGER OF ITS OWN, and that is deliberate. Taking an offer into a

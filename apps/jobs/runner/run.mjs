@@ -25,7 +25,7 @@ const REFINE = 15; // how many of those a model re-reads, when there is a key
 const log = (...a) => console.log(new Date().toLocaleTimeString("he-IL"), ...a);
 
 async function scan(run) {
-  const [agent] = await sql(`select * from job_agents where id = ${lit(run.agent_id)}`);
+  const [agent] = await sql(`select * from jobs.agents where id = ${lit(run.agent_id)}`);
   if (!agent) throw new Error("הסוכן נמחק");
   if (!agent.roles.length) throw new Error("לא נבחרו תפקידים");
 
@@ -59,7 +59,7 @@ async function scan(run) {
     /* A job already written down for this account stays as it is: its status
        may be "sent" and a rescan must not forget that. */
     await sql(
-      `insert into job_applications (owner, agent_id, source, url, title, company, location, score, reason, description) values ` +
+      `insert into jobs.applications (owner, agent_id, source, url, title, company, location, score, reason, description) values ` +
         best
           .map((j) => `(${lit(agent.owner)}, ${lit(agent.id)}, ${lit(j.source)}, ${lit(j.url)}, ${lit(j.title)}, ${lit(j.company)}, ${lit(j.location)}, ${lit(j.score)}, ${lit(j.reason)}, ${lit((j.description || "").slice(0, 4000))})`)
           .join(",") +
@@ -71,16 +71,16 @@ async function scan(run) {
 
 async function runs() {
   const [run] = await sql(
-    `update job_runs set status = 'running' where id = (select id from job_runs where status = 'requested' order by created_at limit 1) returning *`,
+    `update jobs.runs set status = 'running' where id = (select id from jobs.runs where status = 'requested' order by created_at limit 1) returning *`,
   );
   if (!run) return false;
   log("סריקה", run.id);
   try {
     const note = await scan(run);
-    await sql(`update job_runs set status = 'done', note = ${lit(note)}, finished_at = now() where id = ${lit(run.id)}`);
+    await sql(`update jobs.runs set status = 'done', note = ${lit(note)}, finished_at = now() where id = ${lit(run.id)}`);
     log("הסתיים:", note);
   } catch (err) {
-    await sql(`update job_runs set status = 'failed', note = ${lit(err.message)}, finished_at = now() where id = ${lit(run.id)}`);
+    await sql(`update jobs.runs set status = 'failed', note = ${lit(err.message)}, finished_at = now() where id = ${lit(run.id)}`);
     log("נכשל:", err.message);
   }
   return true;
@@ -88,7 +88,7 @@ async function runs() {
 
 async function queue() {
   const [row] = await sql(
-    `select * from job_applications where status = 'queued' order by created_at limit 1`,
+    `select * from jobs.applications where status = 'queued' order by created_at limit 1`,
   );
   if (!row) return false;
   const site = SITES[row.source];
@@ -107,7 +107,7 @@ async function queue() {
     }
   }
   await sql(
-    `update job_applications set status = ${lit(result.status)}, note = ${lit(result.note)}, ` +
+    `update jobs.applications set status = ${lit(result.status)}, note = ${lit(result.note)}, ` +
       `sent_at = ${result.status === "sent" ? "now()" : "null"} where id = ${lit(row.id)}`,
   );
   log("תוצאה:", result.status, result.note);
