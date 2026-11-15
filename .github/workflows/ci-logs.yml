@@ -1,0 +1,69 @@
+# =============================================================================
+# Writes what a finished run said to the branch `ci-logs`, so an agent (on the
+# owner's computer or in the cloud) can read it with plain git, no token:
+#   git fetch origin ci-logs && git show origin/ci-logs:latest.txt
+#
+# One file per run: <workflow>-<run id>.log (the end of the failed steps' log,
+# or just the verdict if it passed), and latest.txt, one line per recent run.
+# The repo is private, so are these logs. Old files are pruned (last 40 kept).
+# It watches every workflow except itself.
+# =============================================================================
+name: CI logs
+
+on:
+  workflow_run:
+    workflows: ["Deploy to Cloudflare", "Deploy test", "Domains"]
+    types: [completed]
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: ci-logs
+  cancel-in-progress: false
+
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    steps:
+      - name: collect the run's log
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          NAME: ${{ github.event.workflow_run.name }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          URL: ${{ github.event.workflow_run.html_url }}
+        run: |
+          mkdir -p out
+          slug=$(echo "$NAME" | tr 'A-Z ' 'a-z-')
+          f="out/$slug-$RUN_ID.log"
+          {
+            echo "workflow:   $NAME"
+            echo "conclusion: $CONCLUSION"
+            echo "commit:     $SHA"
+            echo "run:        $URL"
+            echo "at:         $(date -u +%FT%TZ)"
+            echo
+            if [ "$CONCLUSION" != "success" ]; then
+              gh run view "$RUN_ID" --repo "$GITHUB_REPOSITORY" --log-failed 2>&1 | sed -E 's/^[^\t]*\t[^\t]*\t[0-9TZ:.-]+ //' | tail -n 400
+            fi
+          } > "$f"
+          echo "$(date -u +%FT%TZ) $CONCLUSION $NAME ${SHA:0:7} $slug-$RUN_ID.log" > out/line.txt
+
+      - name: commit to ci-logs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config --global user.name "ci-logs"
+          git config --global user.email "ci-logs@users.noreply.github.com"
+          git clone --quiet --branch ci-logs --single-branch "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY.git" branch 2>/dev/null \
+            || { mkdir branch && cd branch && git init -q -b ci-logs && git remote add origin "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY.git" && cd ..; }
+          cd branch
+          cp ../out/*.log .
+          { cat ../out/line.txt; cat latest.txt 2>/dev/null; } | head -n 40 > latest.new && mv latest.new latest.txt
+          ls -1t *.log | tail -n +41 | xargs -r rm -f
+          git add -A
+          git commit -q -m "log of $(cut -d' ' -f2- ../out/line.txt)"
+          git push -q origin ci-logs
