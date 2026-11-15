@@ -505,7 +505,10 @@
       '<p class="lead">האתר או האפליקציה של העסק מתחברים למערכת באמצעות מפתח. אפשר להחזיק כמה מפתחות, למשל אחד לכל אתר, ולבטל כל אחד בנפרד. <a href="../api/">לתיעוד המלא</a></p>' +
       '<div class="kinds"><div><b>מפתח ציבורי</b> <bdi class="mono" dir="ltr">rk_pub_…</bdi><p>בטוח לשים בקוד שרץ בדפדפן. מאפשר רק לקרוא מפגשים, לקבל הרשמות וללחוץ על "שילמתי". אפשר להגביל אותו לאתרים מסוימים.</p></div>' +
       '<div><b>מפתח סודי</b> <bdi class="mono" dir="ltr">rk_sec_…</bdi><p>רק לשרת שלכם, לעולם לא בדפדפן. מאפשר הכול: לקרוא משתתפים, לרשום, לתעד תשלומים.</p></div></div></section>' +
-      secHead("המפתחות שלכם") + '<div class="lbox" id="keysList">' + keysList() + "</div></div>";
+      secHead("המפתחות שלכם") + '<div class="lbox" id="keysList">' + keysList() + "</div>" +
+      '<section class="rcard rcard--flat">' + cardHead("קובץ לכלי AI") +
+      '<p class="lead">כלי AI אחר, שבונה את האתר או דף הנחיתה של העסק, יכול לקרוא קובץ אחד ולהבין בדיוק מה אפשר לחבר ל-Roster: כל הנקודות של ה־API, הרשאות, אבטחה, והנתונים של העסק הזה. הוא גם מציע לכם מה לבנות מכל זה. הקובץ בפורמט Markdown. הוא לא כולל מפתחות: מפתח סודי אי אפשר לשלוף (הוא מוצג פעם אחת ביצירה), ומפתח ציבורי חדש אפשר להוסיף לקובץ ברגע היצירה.</p>' +
+      '<div class="btnrow"><button type="button" class="rbtn" data-act="ai-doc" id="aiDoc">הורדת הקובץ</button></div></section></div>';
   }
 
   /* ===== webhook ===== */
@@ -831,6 +834,7 @@
     else if (act === "goto-log") { S.seg = t.dataset.seg; setTab("log"); }
     else if (act === "seg") { S.seg = t.dataset.seg; renderPanel(true); }
     else if (act === "copy") { toast((await copyText(t.dataset.text)) ? T.copied : T.copyFail); }
+    else if (act === "ai-doc") { downloadAiDoc(t, ""); }
     else if (act === "retry") { const w = t.dataset.what; if (w === "events" || w === "deliveries") { await Promise.all([load("events"), load("deliveries")]); } else await load(w); renderPanel(true); }
   });
   panel.addEventListener("change", (e) => {
@@ -909,6 +913,21 @@
       c.busy = false; RosterSheet.busy(dlg, false); err.textContent = T.generic;
     }
   }
+  /* The file for another AI tool (ai-doc.js). publicKey: "" for none, or a PUBLIC key to write into it. */
+  async function downloadAiDoc(btn, publicKey) {
+    if (btn) btn.disabled = true;
+    try {
+      await Promise.all([D.keys ? 0 : load("keys"), D.settings ? 0 : load("settings")]);
+      const text = await RosterAiDoc.build({ name: BIZ.name, slug: BIZ.slug, meUrl: meUrl(), settings: D.settings || {}, keys: D.keys || [] }, { publicKey: publicKey || "" });
+      const url = URL.createObjectURL(new Blob([text], { type: "text/markdown;charset=utf-8" }));
+      const a = document.createElement("a");
+      a.href = url; a.download = "roster-api-" + (BIZ.slug || "business") + ".md";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      toast("הקובץ ירד");
+    } catch (e) { toast("לא הצלחנו להכין את הקובץ. נסו שוב בעוד רגע."); }
+    if (btn) btn.disabled = false;
+  }
   /* The one place a secret is on screen. It lives in this closure and nowhere else. */
   function showReveal(title, secret, what) {
     ctx = { kind: "reveal", copied: false, warned: false, secret };
@@ -920,6 +939,7 @@
       '<div class="secretbox"><bdi class="mono" dir="ltr" id="rvText">' + esc(secret) + '</bdi></div>' +
       '<div class="btnrow"><button type="button" class="rbtn" data-d="reveal-copy" id="rvCopy">' + icon("copy") + "העתקה</button>" +
       '<button type="button" class="rbtn rbtn--ghost" data-d="reveal-done">שמרתי, סגירה</button></div>' +
+      (what === "key-public" ? '<div class="btnrow"><button type="button" class="rbtn rbtn--link" data-d="reveal-ai">הורדת קובץ לכלי AI עם המפתח הזה בפנים</button></div>' : "") +
       '<div class="ferr rmsg rmsg--wait" id="rvWarn" role="alert" hidden></div>');
     $("#rvCopy").focus();
   }
@@ -928,7 +948,8 @@
     if (d === "reveal-copy") {
       const ok = await copyText(ctx.secret);
       if (ok) { ctx.copied = true; $("#rvWarn").hidden = true; t.lastChild.textContent = "הועתק"; toast(T.copied); } else toast(T.copyFail);
-    } else if (d === "reveal-done") tryClose();
+    } else if (d === "reveal-ai") { await downloadAiDoc(t, ctx.secret); ctx.copied = true; $("#rvWarn").hidden = true; }
+    else if (d === "reveal-done") tryClose();
     else if (d === "revoke-yes") revokeKey();
     else if (d === "secret-yes") rotateSecret();
     else if (d === "tpl-save") saveTemplate();
