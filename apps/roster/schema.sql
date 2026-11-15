@@ -91,12 +91,12 @@ alter table roster.business_users enable row level security;
 -- ==========================================================================
 
 create or replace function roster.email_of()
-returns text language sql stable security definer set search_path = public as $$
+returns text language sql stable security definer set search_path = roster, public as $$
   select lower(coalesce(auth.jwt() ->> 'email', ''));
 $$;
 
 create or replace function roster.is_super()
-returns boolean language sql stable security definer set search_path = public as $$
+returns boolean language sql stable security definer set search_path = roster, public as $$
   select roster.email_of() <> ''
      and exists (select 1 from roster.superadmins s where s.email = roster.email_of());
 $$;
@@ -105,7 +105,7 @@ $$;
 -- Every policy calls this once per row, so it does its own lookups in one pass instead of
 -- going through is_super() and email_of() (twice as fast, same answer).
 create or replace function roster.can(b uuid)
-returns boolean language sql stable security definer set search_path = public as $$
+returns boolean language sql stable security definer set search_path = roster, public as $$
   with me as (select lower(coalesce(auth.jwt() ->> 'email', '')) as e)
   select b is not null and me.e <> ''
      and (exists (select 1 from roster.superadmins s where s.email = me.e)
@@ -117,7 +117,7 @@ $$;
 -- no setting, no header, or something that is not a uuid all give NULL.
 -- NULL means "unscoped", never "allowed": every policy still checks membership.
 create or replace function roster.current_business()
-returns uuid language plpgsql stable security definer set search_path = public as $$
+returns uuid language plpgsql stable security definer set search_path = roster, public as $$
 declare
   h text := nullif(current_setting('request.headers', true), '');
   v text;
@@ -137,7 +137,7 @@ end $$;
 -- The businesses the caller may open: the owner gets all, an account only its own.
 create or replace function roster.my_businesses()
 returns table (id uuid, slug text, name text, is_super boolean)
-language sql stable security definer set search_path = public as $$
+language sql stable security definer set search_path = roster, public as $$
   select b.id, b.slug, b.name, roster.is_super()
     from roster.businesses b
    where roster.can(b.id)
@@ -643,7 +643,7 @@ begin
 end $$;
 
 create or replace function roster.participants_phone_trg()
-returns trigger language plpgsql security definer set search_path = public as $$
+returns trigger language plpgsql security definer set search_path = roster, public as $$
 begin
   new.phone_norm := nullif(roster.normalize_phone(new.phone), '');
   return new;
@@ -660,7 +660,7 @@ create trigger roster_participants_phone
 --    meeting's own columns), and a change to a type reaches its future meetings.
 -- ==========================================================================
 create or replace function roster.meeting_inherit() returns trigger
-language plpgsql security definer set search_path = public as $fn$
+language plpgsql security definer set search_path = roster, public as $fn$
 declare t roster.meeting_types%rowtype;
 begin
   if new.type_id is null or coalesce(cardinality(new.inherit), 0) = 0 then return new; end if;
@@ -680,7 +680,7 @@ create trigger meeting_inherit before insert or update on roster.meetings
   for each row execute function roster.meeting_inherit();
 
 create or replace function roster.type_propagate() returns trigger
-language plpgsql security definer set search_path = public as $fn$
+language plpgsql security definer set search_path = roster, public as $fn$
 begin
   if (new.name, new.meeting_time, new.place, new.city, new.max_participants, new.directions, new.price_tiers::text)
      is not distinct from (old.name, old.meeting_time, old.place, old.city, old.max_participants, old.directions, old.price_tiers::text) then
@@ -702,7 +702,7 @@ create trigger type_propagate after update on roster.meeting_types
 --    source moves only that first meeting.
 -- ==========================================================================
 create or replace function roster.att_source() returns trigger
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = roster, public as $$
 begin
   if new.source_promoter_id is not null then return new; end if;
   if not exists (select 1 from roster.attendance a where a.participant_id = new.participant_id) then
@@ -716,7 +716,7 @@ create trigger att_source before insert on roster.attendance
   for each row execute function roster.att_source();
 
 create or replace function roster.participant_source_sync() returns trigger
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = roster, public as $$
 begin
   update roster.attendance a set source_promoter_id = new.promoter_id
    where a.business_id = new.business_id and a.participant_id = new.id
@@ -739,14 +739,14 @@ create trigger participant_source_sync after update of promoter_id on roster.par
 
 -- '9.11' (no leading zeros)
 create or replace function roster.meeting_short(p_business uuid, p_meeting uuid)
-returns text language sql stable security definer set search_path = public as $$
+returns text language sql stable security definer set search_path = roster, public as $$
   select ltrim(to_char(m.meeting_date, 'DD'), '0') || '.' || ltrim(to_char(m.meeting_date, 'MM'), '0')
     from roster.meetings m where m.id = p_meeting and m.business_id = p_business;
 $$;
 
 -- 'יום שבת 9.11 · 20:00'
 create or replace function roster.meeting_label(p_business uuid, p_meeting uuid)
-returns text language sql stable security definer set search_path = public as $$
+returns text language sql stable security definer set search_path = roster, public as $$
   select 'יום ' || (array['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'])[extract(dow from m.meeting_date)::int + 1] || ' '
     || ltrim(to_char(m.meeting_date, 'DD'), '0') || '.' || ltrim(to_char(m.meeting_date, 'MM'), '0') || ' · ' || to_char(m.meeting_time, 'HH24:MI')
     from roster.meetings m where m.id = p_meeting and m.business_id = p_business;
@@ -755,7 +755,7 @@ $$;
 -- the name of a payment method: the business's own list first, then the four the page falls back to.
 -- NULL for no method, so ' ב' || label disappears instead of dangling.
 create or replace function roster.method_label(p_business uuid, p_method text, p_note text)
-returns text language sql stable security definer set search_path = public as $$
+returns text language sql stable security definer set search_path = roster, public as $$
   select case when p_method is null or p_method = '' then null
     when p_method = 'other' then 'אחר' || coalesce(': ' || nullif(btrim(p_note), ''), '')
     else coalesce((select m.name from roster.pay_methods m where m.business_id = p_business and m.key = p_method),
@@ -765,7 +765,7 @@ $$;
 
 -- the name of a tag by key (the key itself when the tag no longer exists)
 create or replace function roster.status_label(p_business uuid, k text)
-returns text language sql stable security definer set search_path = public as $$
+returns text language sql stable security definer set search_path = roster, public as $$
   select coalesce((select s.label from roster.statuses s where s.business_id = p_business and s.key = k), k);
 $$;
 
@@ -780,7 +780,7 @@ $$;
 create or replace function roster.sys_note(
   p_business uuid, p_pid uuid, p_body text, p_event text default null, p_meeting uuid default null,
   p_new text default null, p_amount numeric default null)
-returns void language plpgsql security definer set search_path = public as $$
+returns void language plpgsql security definer set search_path = roster, public as $$
 declare
   mail  text := nullif(roster.email_of(), '');
   actor text := coalesce(nullif(auth.jwt() -> 'user_metadata' ->> 'full_name', ''), mail);
@@ -797,7 +797,7 @@ end $$;
 -- renamed or a meeting is changed (the date, the tag's name and colour), and settle the
 -- author's name (the manager's own display name when there is one).
 create or replace function roster.note_freeze() returns trigger
-language plpgsql security definer set search_path = public as $f$
+language plpgsql security definer set search_path = roster, public as $f$
 declare lb text; cl text;
 begin
   new.author_name := coalesce(
@@ -826,7 +826,7 @@ create trigger note_freeze before insert on roster.notes
 
 -- Participant x meeting: linked, removed, tag changed, arrived, not for payment, pay later, details sent.
 create or replace function roster.att_notes() returns trigger
-language plpgsql security definer set search_path = public as $fn$
+language plpgsql security definer set search_path = roster, public as $fn$
 begin
   if tg_op = 'INSERT' then
     if coalesce(new.attended, false) then
@@ -882,7 +882,7 @@ create trigger att_notes after insert or delete or update of status_key, attende
 
 -- A participant removed or brought back.
 create or replace function roster.part_notes() returns trigger
-language plpgsql security definer set search_path = public as $fn$
+language plpgsql security definer set search_path = roster, public as $fn$
 begin
   if new.active is distinct from old.active then
     perform roster.sys_note(new.business_id, new.id,
@@ -900,7 +900,7 @@ create trigger part_notes after update of active on roster.participants
 -- Payments: money received, refunds, and what is allocated to a meeting (added, changed, removed).
 -- A deposit made by removing an allocation (reason alloc_removed...) gets no "received" note.
 create or replace function roster.pay_notes() returns trigger
-language plpgsql security definer set search_path = public as $fn$
+language plpgsql security definer set search_path = roster, public as $fn$
 declare r roster.payments; lbl text;
 begin
   r := case when tg_op = 'DELETE' then old else new end;
@@ -954,7 +954,7 @@ create trigger pay_notes after insert or update or delete on roster.payments
 -- reason = 'partial_due:<amount>', and the amount is kept on the attendance row. A normal
 -- payment written later clears it. The page reads pay_due_amount, it never writes it for this.
 create or replace function roster.pay_due() returns trigger
-language plpgsql security definer set search_path = public as $fn$
+language plpgsql security definer set search_path = roster, public as $fn$
 declare rem numeric;
 begin
   if new.meeting_id is not null and new.kind = 'payment' then
@@ -980,7 +980,7 @@ create trigger pay_due after insert on roster.payments
 --    and parses the "עודכנה ... "<title>": <label> <old> ← <new>" form.
 -- ==========================================================================
 create or replace function roster.finance_log_fn() returns trigger
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = roster, public as $$
 declare
   tr  boolean := (tg_table_name = 'finance_transfers');
   rec boolean := (tg_table_name = 'finance_recurring');
@@ -1039,7 +1039,7 @@ create trigger roster_finance_log_t after insert or update or delete on roster.f
 --     policies above apply, and it never touches a business other than the one of p_from.
 -- ==========================================================================
 create or replace function roster.promoter_replace(p_from uuid, p_to uuid default null)
-returns text language plpgsql set search_path = public as $$
+returns text language plpgsql set search_path = roster, public as $$
 declare f roster.promoters; t roster.promoters;
 begin
   select * into f from roster.promoters where id = p_from;
@@ -1143,7 +1143,7 @@ $fn$;
 -- (the extensions schema on Supabase), without modulo bias. Where pgcrypto is missing
 -- (a bare Postgres) it falls back to gen_random_uuid(), skipping the uuid's fixed bits.
 create or replace function roster.random_text(n int)
-returns text language plpgsql volatile security definer set search_path = public as $fn$
+returns text language plpgsql volatile security definer set search_path = roster, public as $fn$
 declare
   alphabet constant text := 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   out text := '';
@@ -1410,7 +1410,7 @@ end $$;
 -- no digits at all is left alone, so the check below refuses it instead of the trigger quietly dropping it.
 -- signup_required always holds first_name and phone: a signup without them is not a signup.
 create or replace function roster.settings_trg()
-returns trigger language plpgsql security definer set search_path = public as $fn$
+returns trigger language plpgsql security definer set search_path = roster, public as $fn$
 declare w text; d text;
 begin
   new.contact_email    := nullif(lower(btrim(new.contact_email)), '');
@@ -1757,7 +1757,7 @@ end $$;
 -- The system message template of a business ("אישור מקום", system_key 'confirm'): made once, with the text it ships with.
 -- Run again it only refreshes default_body and leaves an edited body alone.
 create or replace function roster.msg_template_seed(b uuid)
-returns void language plpgsql security definer set search_path = public as $fn$
+returns void language plpgsql security definer set search_path = roster, public as $fn$
 declare txt constant text := E'שלום {שם} 🙂\n{תשלום}\n\n{פרטי המפגש}\n\n{איך מגיעים}\n\nנתראה,';
 begin
   insert into roster.msg_templates (business_id, system_key, name, body, default_body)
@@ -1789,7 +1789,7 @@ create trigger msg_template_guard before insert or update or delete on roster.ms
 
 -- every business has a settings row (a secret ready for the webhook) and its system message template, now and from here on
 create or replace function roster.business_settings_new()
-returns trigger language plpgsql security definer set search_path = public as $fn$
+returns trigger language plpgsql security definer set search_path = roster, public as $fn$
 begin
   begin
     insert into roster.business_settings (business_id, webhook_secret) values (new.id, 'whsec_' || roster.random_text(40)) on conflict do nothing;
@@ -1844,7 +1844,7 @@ end $$;
 --   * an advisory lock per bucket makes the sliding-window sum that follows atomic too: two parallel calls cannot
 --     both take the last place (they queue on the lock for the length of this one transaction).
 create or replace function roster.rate_take(p_bucket text, p_window_minutes int, p_limit int)
-returns int language plpgsql security definer set search_path = public as $fn$
+returns int language plpgsql security definer set search_path = roster, public as $fn$
 declare total bigint; oldest timestamptz; slot timestamptz := date_trunc('minute', now());
 begin
   perform pg_advisory_xact_lock(hashtextextended('rate:' || p_bucket, 0));
@@ -1861,12 +1861,12 @@ end $fn$;
 
 -- Undo one counted call of a bucket (a call that took a place in one bucket and was refused by a second one).
 create or replace function roster.rate_give_back(p_bucket text)
-returns void language sql security definer set search_path = public as $fn$
+returns void language sql security definer set search_path = roster, public as $fn$
   update roster.rate set hits = greatest(hits - 1, 0) where bucket = p_bucket and window_start = date_trunc('minute', now());
 $fn$;
 
 create or replace function roster.rate_cleanup()
-returns int language plpgsql security definer set search_path = public as $fn$
+returns int language plpgsql security definer set search_path = roster, public as $fn$
 declare n int;
 begin
   delete from roster.rate where window_start < now() - interval '2 hours';
@@ -1880,7 +1880,7 @@ end $fn$;
 -- (the recipient, subject and status stay); the mail log row itself after 90 days; keys revoked 90 days ago; then the old rate windows and tokens.
 -- At most 5000 rows of each kind per run, so one run is short.
 create or replace function roster.retention(p_force boolean default false)
-returns jsonb language plpgsql security definer set search_path = public as $fn$
+returns jsonb language plpgsql security definer set search_path = roster, public as $fn$
 declare slot timestamptz := date_trunc('hour', now()) + floor(extract(minute from now()) / 10) * interval '10 minutes'; n int; e int; h int; m int;
 begin
   insert into roster.rate (bucket, window_start, hits) values ('retention:run', slot, 1) on conflict do nothing;
@@ -1901,7 +1901,7 @@ end $fn$;
 
 -- The key behind a hash, or an all-null record when there is none or it was revoked.
 create or replace function roster.api_key_of(p_hash text)
-returns roster.api_keys language plpgsql stable security definer set search_path = public as $fn$
+returns roster.api_keys language plpgsql stable security definer set search_path = roster, public as $fn$
 declare k roster.api_keys;
 begin
   if p_hash is null or p_hash !~ '^[0-9a-f]{64}$' then return k; end if;
@@ -1918,7 +1918,7 @@ end $fn$;
 --   a secret key: 600 per key per minute whatever the bucket.
 --   a key that does not exist: 60 per ip per 10 min, then rate_limited (strangers guessing keys).
 create or replace function roster.api_auth(p_key_hash text, p_required_kind text, p_origin text, p_ip_hash text, p_bucket text)
-returns jsonb language plpgsql security definer set search_path = public as $fn$
+returns jsonb language plpgsql security definer set search_path = roster, public as $fn$
 declare
   k roster.api_keys;
   need text := coalesce(nullif(p_required_kind, ''), 'any');
@@ -1978,7 +1978,7 @@ end $fn$;
 -- ---- 12.6 settings and json builders ---------------------------------------
 
 create or replace function roster.settings_of(b uuid)
-returns roster.business_settings language plpgsql security definer set search_path = public as $fn$
+returns roster.business_settings language plpgsql security definer set search_path = roster, public as $fn$
 declare s roster.business_settings;
 begin
   select * into s from roster.business_settings where business_id = b;
@@ -2001,7 +2001,7 @@ $fn$;
 
 -- how many active participants hold a place in a meeting
 create or replace function roster.registered_count(b uuid, mid uuid)
-returns int language sql stable security definer set search_path = public as $fn$
+returns int language sql stable security definer set search_path = roster, public as $fn$
   select count(*)::int from roster.attendance a
     join roster.participants p on p.id = a.participant_id and p.business_id = a.business_id
    where a.business_id = b and a.meeting_id = mid and p.active;
@@ -2009,7 +2009,7 @@ $fn$;
 
 -- The meeting as the API shows it. secret = adds directions, registered and type.
 create or replace function roster.meeting_json(m roster.meetings, secret boolean, today date)
-returns jsonb language plpgsql stable security definer set search_path = public as $fn$
+returns jsonb language plpgsql stable security definer set search_path = roster, public as $fn$
 declare tname text; reg int; cap int := m.max_participants; o jsonb;
 begin
   select name into tname from roster.meeting_types where id = m.type_id and business_id = m.business_id;
@@ -2028,14 +2028,14 @@ end $fn$;
 
 -- credit = deposits and credits, minus refunds and payments paid from credit
 create or replace function roster.balance(b uuid, pid uuid)
-returns numeric language sql stable security definer set search_path = public as $fn$
+returns numeric language sql stable security definer set search_path = roster, public as $fn$
   select coalesce(sum(case when kind in ('credit', 'deposit') then amount
                            when kind in ('payment', 'refund') and coalesce(from_credit, false) then -amount else 0 end), 0)
     from roster.payments where business_id = b and participant_id = pid;
 $fn$;
 
 create or replace function roster.paid_for(b uuid, pid uuid, mid uuid)
-returns numeric language sql stable security definer set search_path = public as $fn$
+returns numeric language sql stable security definer set search_path = roster, public as $fn$
   select coalesce(sum(case when p.kind = 'payment' then p.amount when p.kind = 'credit' or (p.kind = 'refund' and not coalesce(p.from_credit, false)) then -p.amount else 0 end), 0)
     from roster.payments p where p.business_id = b and p.participant_id = pid and p.meeting_id = mid;
 $fn$;
@@ -2043,7 +2043,7 @@ $fn$;
 -- All future meetings (registered or not) and the past ones the person was registered to.
 -- for_me adds what the personal area shows (max, rejected, full, spots_left).
 create or replace function roster.person_meetings(b uuid, pid uuid, for_me boolean)
-returns jsonb language plpgsql stable security definer set search_path = public as $fn$
+returns jsonb language plpgsql stable security definer set search_path = roster, public as $fn$
 declare today date := roster.today(); out jsonb;
 begin
   select coalesce(jsonb_agg(x order by (x->>'date'), (x->>'time')), '[]'::jsonb) into out from (
@@ -2079,7 +2079,7 @@ begin
 end $fn$;
 
 create or replace function roster.person_json(b uuid, pid uuid)
-returns jsonb language plpgsql stable security definer set search_path = public as $fn$
+returns jsonb language plpgsql stable security definer set search_path = roster, public as $fn$
 declare p roster.participants;
 begin
   select * into p from roster.participants where id = pid and business_id = b;
@@ -2097,7 +2097,7 @@ end $fn$;
 -- credit in MONEY: a pass is not money. A deposit that bought a pass (pkg_n) and a meeting paid from a pass (pkg) are left out;
 -- they are counted as sessions (sessions).
 create or replace function roster.balance_money(b uuid, pid uuid)
-returns numeric language sql stable security definer set search_path = public as $fn$
+returns numeric language sql stable security definer set search_path = roster, public as $fn$
   select coalesce(sum(case when kind in ('credit', 'deposit') then amount
                            when kind in ('payment', 'refund') and coalesce(from_credit, false) then -amount else 0 end), 0)
     from roster.payments
@@ -2108,7 +2108,7 @@ $fn$;
 -- the sessions a participant has left on passes: a deposit with pkg_n adds them, a meeting paid from a pass (pkg) takes one,
 -- an allocation taken back (credit with pkg) gives one back, and the refund of a pass takes the sessions it was for.
 create or replace function roster.sessions(b uuid, pid uuid)
-returns int language sql stable security definer set search_path = public as $fn$
+returns int language sql stable security definer set search_path = roster, public as $fn$
   select coalesce(sum(case when p.kind = 'deposit' and coalesce(p.pkg_n, 0) > 0 then p.pkg_n
                            when p.kind = 'refund' and p.pkg then -coalesce(p.pkg_n, 0)
                            when p.pkg and p.kind = 'payment' then -1
@@ -2118,7 +2118,7 @@ $fn$;
 
 -- the passes the business sells: [{type_id, type_name, n, price}], by type order, then size. A malformed entry is skipped.
 create or replace function roster.passes_json(b uuid)
-returns jsonb language sql stable security definer set search_path = public as $fn$
+returns jsonb language sql stable security definer set search_path = roster, public as $fn$
   select coalesce(jsonb_agg(jsonb_build_object('type_id', mt.id, 'type_name', mt.name, 'n', (x->>'n')::int, 'price', (x->>'price')::numeric)
                             order by mt.sort, (x->>'n')::int), '[]'::jsonb)
     from roster.meeting_types mt,
@@ -2131,7 +2131,7 @@ $fn$;
 -- person_meetings(b, pid, true) with the personal area's new rules: the price a participant sees is the one closed for
 -- them in that meeting (attendance.ticket_price) when there is one, and paid_via says how the money came ("מהקרדיט · בפייבוקס").
 create or replace function roster.person_meetings_me(b uuid, pid uuid)
-returns jsonb language plpgsql stable security definer set search_path = public as $fn$
+returns jsonb language plpgsql stable security definer set search_path = roster, public as $fn$
 declare today date := roster.today(); out jsonb;
 begin
   select coalesce(jsonb_agg(x order by (x->>'date'), (x->>'time')), '[]'::jsonb) into out from (
@@ -2174,7 +2174,7 @@ end $fn$;
 -- Register a participant to a meeting. 'registered' | 'exists' | 'past' | 'full' | 'not_found'.
 -- A removed participant who registers is active again.
 create or replace function roster.attach(b uuid, pid uuid, mid uuid)
-returns text language plpgsql security definer set search_path = public as $fn$
+returns text language plpgsql security definer set search_path = roster, public as $fn$
 declare mt roster.meetings;
 begin
   select * into mt from roster.meetings where id = mid and business_id = b;
@@ -2191,7 +2191,7 @@ end $fn$;
 -- harpatka_report_payment_core: the participant clicked "I paid".
 -- 'reported' | 'already_reported' | 'already_paid' | 'free' | 'not_registered' | 'past' (the meeting does not exist)
 create or replace function roster.report_core(b uuid, pid uuid, mid uuid)
-returns text language plpgsql security definer set search_path = public as $fn$
+returns text language plpgsql security definer set search_path = roster, public as $fn$
 declare mt roster.meetings; a roster.attendance; paid numeric; due numeric; amt numeric;
 begin
   perform pg_advisory_xact_lock(hashtext(pid::text));   -- one report or spend of this participant at a time
@@ -2214,7 +2214,7 @@ end $fn$;
 
 -- harpatka_me_pay_credit: pay a meeting from the participant's credit.
 create or replace function roster.pay_credit_core(b uuid, pid uuid, mid uuid)
-returns jsonb language plpgsql security definer set search_path = public as $fn$
+returns jsonb language plpgsql security definer set search_path = roster, public as $fn$
 declare mt roster.meetings; a roster.attendance; pa roster.participants;
         price numeric; due numeric; bal numeric; amt numeric; rem numeric; st text;
 begin
@@ -2255,7 +2255,7 @@ end $fn$;
 -- the price is the one closed for this participant in this meeting (attendance.ticket_price) when there is one, and the credit
 -- that can be spent is the money credit (balance_money), never the money of a pass.
 create or replace function roster.report_core_me(b uuid, pid uuid, mid uuid)
-returns text language plpgsql security definer set search_path = public as $fn$
+returns text language plpgsql security definer set search_path = roster, public as $fn$
 declare mt roster.meetings; a roster.attendance; paid numeric; due numeric; amt numeric;
 begin
   perform pg_advisory_xact_lock(hashtext(pid::text));   -- one report or spend of this participant at a time
@@ -2277,7 +2277,7 @@ begin
 end $fn$;
 
 create or replace function roster.pay_credit_core_me(b uuid, pid uuid, mid uuid)
-returns jsonb language plpgsql security definer set search_path = public as $fn$
+returns jsonb language plpgsql security definer set search_path = roster, public as $fn$
 declare mt roster.meetings; a roster.attendance; pa roster.participants;
         price numeric; due numeric; bal numeric; amt numeric; rem numeric; st text;
 begin
@@ -2315,7 +2315,7 @@ end $fn$;
 -- A payment recorded: a payment that is a partial one (reason partial_due:<n>) leaves n to pay; any payment
 -- clears the "I paid" report and the rejection of that meeting. (Widens section 8's trigger function.)
 create or replace function roster.pay_due() returns trigger
-language plpgsql security definer set search_path = public as $fn$
+language plpgsql security definer set search_path = roster, public as $fn$
 declare rem numeric;
 begin
   if new.meeting_id is not null and new.kind = 'payment' then
@@ -2353,7 +2353,7 @@ end $fn$;
 -- queued but counted (rate bucket events_dropped:<business>), so one business cannot grow the outbox without
 -- bound. Never raises.
 create or replace function roster.emit(p_business uuid, p_type text, p_payload jsonb)
-returns void language plpgsql security definer set search_path = public as $fn$
+returns void language plpgsql security definer set search_path = roster, public as $fn$
 declare s roster.business_settings; wh boolean; ml boolean; notify boolean; src text := roster.event_source();
 begin
   if p_business is null or not exists (select 1 from roster.businesses where id = p_business) then return; end if;
@@ -2386,7 +2386,7 @@ end $fn$;
 -- participant.created is for a participant that has a name. A participant made by the personal area with just a phone
 -- has none yet: me_complete emits the event when the names are first filled in.
 create or replace function roster.ev_participant() returns trigger
-language plpgsql security definer set search_path = public as $fn$
+language plpgsql security definer set search_path = roster, public as $fn$
 begin
   if btrim(coalesce(new.first_name, '') || coalesce(new.last_name, '')) <> '' then
     perform roster.emit(new.business_id, 'participant.created', jsonb_build_object('participant', roster.participant_json(new)));
@@ -2400,7 +2400,7 @@ create trigger ev_participant after insert on roster.participants
   for each row execute function roster.ev_participant();
 
 create or replace function roster.ev_attendance() returns trigger
-language plpgsql security definer set search_path = public as $fn$
+language plpgsql security definer set search_path = roster, public as $fn$
 declare p roster.participants; mt roster.meetings; b uuid; pid uuid; mid uuid;
 begin
   b := case when tg_op = 'DELETE' then old.business_id else new.business_id end;
@@ -2418,7 +2418,7 @@ end $fn$;
 
 -- {id, date, time, name, city, place} of a meeting, for payloads
 create or replace function roster.meeting_brief(m roster.meetings)
-returns jsonb language sql stable security definer set search_path = public as $fn$
+returns jsonb language sql stable security definer set search_path = roster, public as $fn$
   select jsonb_build_object('id', m.id, 'date', to_char(m.meeting_date, 'YYYY-MM-DD'), 'time', to_char(m.meeting_time, 'HH24:MI'),
     'name', coalesce(nullif(btrim(m.name), ''), (select nullif(btrim(t.name), '') from roster.meeting_types t where t.id = m.type_id and t.business_id = m.business_id)),
     'city', m.city, 'place', m.place);
@@ -2432,7 +2432,7 @@ create trigger roster_ev_attendance_del after delete on roster.attendance
   for each row execute function roster.ev_attendance();
 
 create or replace function roster.ev_pay_reported() returns trigger
-language plpgsql security definer set search_path = public as $fn$
+language plpgsql security definer set search_path = roster, public as $fn$
 declare p roster.participants; mt roster.meetings;
 begin
   select * into p from roster.participants where id = new.participant_id and business_id = new.business_id;
@@ -2451,7 +2451,7 @@ create trigger ev_pay_reported after update of pay_reported_at on roster.attenda
   execute function roster.ev_pay_reported();
 
 create or replace function roster.ev_payment() returns trigger
-language plpgsql security definer set search_path = public as $fn$
+language plpgsql security definer set search_path = roster, public as $fn$
 declare p roster.participants; mt roster.meetings; pl jsonb;
 begin
   if new.kind not in ('payment', 'deposit', 'refund') then return null; end if;
@@ -2481,7 +2481,7 @@ create trigger ev_payment after insert on roster.payments
 -- participant in the admin page is only active = false and keeps the history; this is for a real delete, the way to
 -- erase a person.)
 create or replace function roster.participant_cleanup() returns trigger
-language plpgsql security definer set search_path = public as $fn$
+language plpgsql security definer set search_path = roster, public as $fn$
 begin
   delete from roster.events where business_id = old.business_id and (payload #>> '{participant,id}') = old.id::text;
   delete from roster.mail_log where business_id = old.business_id and participant_id = old.id;
@@ -2496,7 +2496,7 @@ create trigger participant_cleanup before delete on roster.participants
 -- a payment in the owner's or a colleague's name, neither when the row is made nor by changing it afterwards. Writes with
 -- no signed-in account (the database itself, the service role) keep what they carry.
 create or replace function roster.author_trg() returns trigger
-language plpgsql security definer set search_path = public as $fn$
+language plpgsql security definer set search_path = roster, public as $fn$
 declare e text := roster.email_of();
 begin
   if e <> '' then
@@ -2519,7 +2519,7 @@ create trigger roster_payments_author before insert or update of author_email on
 -- resolve the key again (invalid_key, wrong_key_kind) and do the work.
 
 create or replace function roster.api_meetings(p_key_hash text, p_limit int default 20)
-returns jsonb language plpgsql security definer set search_path = public as $fn$
+returns jsonb language plpgsql security definer set search_path = roster, public as $fn$
 declare k roster.api_keys; bz roster.businesses; today date := roster.today(); lim int := least(greatest(coalesce(p_limit, 20), 1), 100);
 begin
   k := roster.api_key_of(p_key_hash);
@@ -2533,7 +2533,7 @@ begin
 end $fn$;
 
 create or replace function roster.api_signup(p_key_hash text, p_payload jsonb, p_ip_hash text default null)
-returns jsonb language plpgsql security definer set search_path = public as $fn$
+returns jsonb language plpgsql security definer set search_path = roster, public as $fn$
 declare
   k roster.api_keys; s roster.business_settings; pl jsonb;
   req text[]; f text; fn text; ln text; ph text; norm text; em text; agt text; ag int; gd text; midt text; mid uuid;
@@ -2634,7 +2634,7 @@ end $fn$;
 -- recorded only when ALL of this holds: the meeting is the one the token was issued for, the participant is active and
 -- registered to it, the meeting is not past, the participant is not free and has not paid or already reported.
 create or replace function roster.api_payment_click(p_key_hash text, p_token_hash text, p_meeting uuid, p_ip_hash text default null)
-returns jsonb language plpgsql security definer set search_path = public as $fn$
+returns jsonb language plpgsql security definer set search_path = roster, public as $fn$
 declare k roster.api_keys; t roster.participant_tokens; pa roster.participants; mt roster.meetings;
 begin
   k := roster.api_key_of(p_key_hash);
@@ -2656,7 +2656,7 @@ end $fn$;
 
 -- GET /participants?phone= or /participants/{id} (secret key)
 create or replace function roster.api_participant(p_key_hash text, p_id uuid, p_phone text default null)
-returns jsonb language plpgsql security definer set search_path = public as $fn$
+returns jsonb language plpgsql security definer set search_path = roster, public as $fn$
 declare k roster.api_keys; pid uuid; norm text; j jsonb;
 begin
   k := roster.api_key_of(p_key_hash);
@@ -2677,7 +2677,7 @@ begin
 end $fn$;
 
 create or replace function roster.api_register(p_key_hash text, p_participant uuid, p_meeting uuid)
-returns jsonb language plpgsql security definer set search_path = public as $fn$
+returns jsonb language plpgsql security definer set search_path = roster, public as $fn$
 declare k roster.api_keys; st text;
 begin
   k := roster.api_key_of(p_key_hash);
@@ -2691,7 +2691,7 @@ begin
 end $fn$;
 
 create or replace function roster.api_unregister(p_key_hash text, p_participant uuid, p_meeting uuid)
-returns jsonb language plpgsql security definer set search_path = public as $fn$
+returns jsonb language plpgsql security definer set search_path = roster, public as $fn$
 declare k roster.api_keys; mt roster.meetings; a roster.attendance;
 begin
   k := roster.api_key_of(p_key_hash);
@@ -2712,7 +2712,7 @@ end $fn$;
 -- POST /payments (secret key). external_ref is the idempotency key, unique per business.
 -- Optional "remaining": what is still to pay after this payment (kind payment), kept like the admin's partial payment.
 create or replace function roster.api_record_payment(p_key_hash text, p_payload jsonb)
-returns jsonb language plpgsql security definer set search_path = public as $fn$
+returns jsonb language plpgsql security definer set search_path = roster, public as $fn$
 declare
   k roster.api_keys; pl jsonb; pidt text; pid uuid; midt text; mid uuid; kind text; amt text; amount numeric; meth text; note text;
   ref text; remt text; reason text; got roster.idempotency; pay uuid; gp uuid; gk text; ga numeric; gm uuid;
@@ -2771,7 +2771,7 @@ begin
 end $fn$;
 
 create or replace function roster.api_pay_from_credit(p_key_hash text, p_participant uuid, p_meeting uuid)
-returns jsonb language plpgsql security definer set search_path = public as $fn$
+returns jsonb language plpgsql security definer set search_path = roster, public as $fn$
 declare k roster.api_keys;
 begin
   k := roster.api_key_of(p_key_hash);
@@ -2830,7 +2830,7 @@ returns boolean language sql stable as $fn$
 $fn$;
 
 create or replace function roster.event_item(p_id bigint)
-returns jsonb language plpgsql security definer set search_path = public as $fn$
+returns jsonb language plpgsql security definer set search_path = roster, public as $fn$
 declare
   ev roster.events; bz roster.businesses; s roster.business_settings; pa roster.participants;
   mt roster.meetings; a roster.attendance;
@@ -2932,7 +2932,7 @@ end $fn$;
 -- (row_number per business, then by it), so one business with a backlog cannot keep the others waiting. Retention (see
 -- retention) runs here, at most once per ten minutes, and never stops a claim.
 create or replace function roster.events_claim(p_limit int default 20)
-returns jsonb language plpgsql security definer set search_path = public as $fn$
+returns jsonb language plpgsql security definer set search_path = roster, public as $fn$
 declare r record; out jsonb := '[]'::jsonb; ev roster.events; s roster.business_settings; att int;
 begin
   begin
@@ -2971,7 +2971,7 @@ begin
 end $fn$;
 
 create or replace function roster.events_done(p_id bigint, p_result jsonb)
-returns jsonb language plpgsql security definer set search_path = public as $fn$
+returns jsonb language plpgsql security definer set search_path = roster, public as $fn$
 declare
   ev roster.events; res jsonb; wh jsonb; ok boolean := true; att int; hs int; m jsonb; to_a text; st text; mlid uuid; pid uuid; mid uuid;
   pidt text; midt text; newstatus text := 'done'; nxt timestamptz; err text; subj text; aud text; rin int; pa roster.participants;
@@ -3044,12 +3044,12 @@ end $fn$;
 
 -- The business the caller may act for (the x-business header and membership), else null.
 create or replace function roster.my_current()
-returns uuid language sql stable security definer set search_path = public as $fn$
+returns uuid language sql stable security definer set search_path = roster, public as $fn$
   select case when roster.can(roster.current_business()) then roster.current_business() end;
 $fn$;
 
 create or replace function roster.key_create(p_kind text, p_label text default '', p_origins text[] default '{}')
-returns jsonb language plpgsql security definer set search_path = public as $fn$
+returns jsonb language plpgsql security definer set search_path = roster, public as $fn$
 declare b uuid := roster.my_current(); kind text := lower(btrim(coalesce(p_kind, ''))); label text := btrim(coalesce(p_label, ''));
         origins text[]; o text; plain text; kid uuid;
 begin
@@ -3075,7 +3075,7 @@ begin
 end $fn$;
 
 create or replace function roster.key_revoke(p_id uuid)
-returns jsonb language plpgsql security definer set search_path = public as $fn$
+returns jsonb language plpgsql security definer set search_path = roster, public as $fn$
 declare b uuid := roster.my_current(); n int;
 begin
   if b is null then return jsonb_build_object('error', 'forbidden'); end if;
@@ -3085,9 +3085,26 @@ begin
   return jsonb_build_object('revoked', true);
 end $fn$;
 
+-- the allowed sites of a PUBLIC key, changed after the fact (the connections page: "lock this key to my site"). Same rules as key_create.
+create or replace function roster.key_origins(p_id uuid, p_origins text[])
+returns jsonb language plpgsql security definer set search_path = roster, public as $fn$
+declare b uuid := roster.my_current(); origins text[]; o text; n int;
+begin
+  if b is null then return jsonb_build_object('error', 'forbidden'); end if;
+  origins := array(select distinct lower(btrim(x)) from unnest(coalesce(p_origins, '{}'::text[])) x where btrim(x) <> '' order by 1);
+  if coalesce(cardinality(origins), 0) > 20 then return jsonb_build_object('error', 'validation', 'field', 'origins'); end if;
+  foreach o in array origins loop
+    if o !~ '^https?://[a-z0-9]([a-z0-9.-]*[a-z0-9])?(:[0-9]{1,5})?$' or char_length(o) > 200 then return jsonb_build_object('error', 'validation', 'field', 'origins'); end if;
+  end loop;
+  update roster.api_keys set allowed_origins = origins where id = p_id and business_id = b and kind = 'public' and revoked_at is null;
+  get diagnostics n = row_count;
+  if n = 0 then return jsonb_build_object('error', 'not_found'); end if;
+  return jsonb_build_object('origins', to_jsonb(origins));
+end $fn$;
+
 -- a new webhook secret, returned once (the page can never read it again)
 create or replace function roster.webhook_secret_rotate()
-returns text language plpgsql security definer set search_path = public as $fn$
+returns text language plpgsql security definer set search_path = roster, public as $fn$
 declare b uuid := roster.my_current(); sec text;
 begin
   if b is null then raise exception 'forbidden' using errcode = '42501'; end if;
@@ -3099,7 +3116,7 @@ end $fn$;
 
 -- a "ping" event, delivered to the webhook like any other
 create or replace function roster.webhook_test()
-returns jsonb language plpgsql security definer set search_path = public as $fn$
+returns jsonb language plpgsql security definer set search_path = roster, public as $fn$
 declare b uuid := roster.my_current(); s roster.business_settings; id bigint;
 begin
   if b is null then return jsonb_build_object('error', 'forbidden'); end if;
@@ -3114,7 +3131,7 @@ end $fn$;
 -- every real mail: the manager sees real delivery and the real look. It is never a webhook, never needs a participant or a payment,
 -- and its log row is marked is_test. At most 10 an hour per business.
 create or replace function roster.mail_test(p_template text)
-returns jsonb language plpgsql security definer set search_path = public as $fn$
+returns jsonb language plpgsql security definer set search_path = roster, public as $fn$
 declare b uuid := roster.my_current(); me text := lower(btrim(coalesce(roster.email_of(), ''))); wait int; id bigint;
 begin
   if b is null then return jsonb_build_object('error', 'forbidden'); end if;
@@ -3133,7 +3150,7 @@ begin
   return jsonb_build_object('queued', true, 'event_id', id, 'to', me);
 end $fn$;
 create or replace function roster.mail_template_reset(p_key text)
-returns jsonb language plpgsql security definer set search_path = public as $fn$
+returns jsonb language plpgsql security definer set search_path = roster, public as $fn$
 declare b uuid := roster.my_current(); n int;
 begin
   if b is null then return jsonb_build_object('error', 'forbidden'); end if;
@@ -3149,7 +3166,7 @@ end $fn$;
 -- No function raises for an expected failure; a text answer is the status word.
 
 create or replace function roster.me_resolve(p_slug text, p_member boolean)
-returns jsonb language plpgsql security definer set search_path = public as $fn$
+returns jsonb language plpgsql security definer set search_path = roster, public as $fn$
 declare uid uuid := auth.uid(); bz roster.businesses; s roster.business_settings; m roster.members;
 begin
   if uid is null then return jsonb_build_object('status', 'auth'); end if;
@@ -3172,7 +3189,7 @@ $fn$;
 
 -- everything about me: status ok | none | blocked | disabled | not_found | auth
 create or replace function roster.me(p_slug text)
-returns jsonb language plpgsql security definer set search_path = public as $fn$
+returns jsonb language plpgsql security definer set search_path = roster, public as $fn$
 declare
   r jsonb := roster.me_resolve(p_slug, true); st text := r->>'status'; b uuid := nullif(r->>'business_id', '')::uuid; pid uuid := nullif(r->>'participant_id', '')::uuid;
   bz roster.businesses; s roster.business_settings; pa roster.participants; binfo jsonb;
@@ -3202,7 +3219,7 @@ end $fn$;
 -- names arrive); linking to an EXISTING participant emits participant.linked, and a phone another account holds emits
 -- participant.phone_conflict. Both are internal: they only mail the business's admins.
 create or replace function roster.me_phone(p_slug text, p_phone text, p_meeting uuid default null)
-returns jsonb language plpgsql security definer set search_path = public as $fn$
+returns jsonb language plpgsql security definer set search_path = roster, public as $fn$
 declare
   r jsonb := roster.me_resolve(p_slug, false); st text := r->>'status'; b uuid := nullif(r->>'business_id', '')::uuid; uid uuid := auth.uid();
   norm text := roster.normalize_phone(p_phone);
@@ -3280,7 +3297,7 @@ end $fn$;
 -- The first time the names are filled in for a participant made by me_phone (no name yet), participant.created is emitted
 -- (source me): that is when the business learns about the person.
 create or replace function roster.me_complete(p_slug text, p_first text, p_last text, p_age int default null, p_gender text default null, p_email text default null)
-returns text language plpgsql security definer set search_path = public as $fn$
+returns text language plpgsql security definer set search_path = roster, public as $fn$
 declare
   r jsonb := roster.me_resolve(p_slug, true); st text := r->>'status'; b uuid := nullif(r->>'business_id', '')::uuid; pid uuid := nullif(r->>'participant_id', '')::uuid;
   fn text := btrim(regexp_replace(coalesce(p_first, ''), '[\u0009-\u000d \u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+', ' ', 'g')); ln text := btrim(regexp_replace(coalesce(p_last, ''), '[\u0009-\u000d \u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+', ' ', 'g'));
@@ -3311,7 +3328,7 @@ end $fn$;
 
 -- register to a meeting: registered | exists | past | full (| none, forbidden, disabled, blocked, auth)
 create or replace function roster.me_register(p_slug text, p_meeting uuid)
-returns text language plpgsql security definer set search_path = public as $fn$
+returns text language plpgsql security definer set search_path = roster, public as $fn$
 declare r jsonb := roster.me_resolve(p_slug, true); st text := r->>'status'; b uuid := nullif(r->>'business_id', '')::uuid; pid uuid := nullif(r->>'participant_id', '')::uuid; a text;
 begin
   if st <> 'ok' then return roster.me_text(st); end if;
@@ -3322,7 +3339,7 @@ end $fn$;
 
 -- cancel a registration: cancelled | not_registered | attended | past. Payments are not touched.
 create or replace function roster.me_unregister(p_slug text, p_meeting uuid)
-returns text language plpgsql security definer set search_path = public as $fn$
+returns text language plpgsql security definer set search_path = roster, public as $fn$
 declare r jsonb := roster.me_resolve(p_slug, true); st text := r->>'status'; b uuid := nullif(r->>'business_id', '')::uuid; pid uuid := nullif(r->>'participant_id', '')::uuid;
         mt roster.meetings; a roster.attendance;
 begin
@@ -3339,7 +3356,7 @@ end $fn$;
 
 -- edit my details: ok | invalid_name | invalid_age | invalid_gender | invalid_phone | invalid_email | phone_taken (| forbidden ...)
 create or replace function roster.me_update(p_slug text, p_first text, p_last text, p_age int default null, p_gender text default null, p_phone text default null, p_email text default null)
-returns text language plpgsql security definer set search_path = public as $fn$
+returns text language plpgsql security definer set search_path = roster, public as $fn$
 declare
   r jsonb := roster.me_resolve(p_slug, true); st text := r->>'status'; b uuid := nullif(r->>'business_id', '')::uuid; pid uuid := nullif(r->>'participant_id', '')::uuid;
   norm text := roster.normalize_phone(p_phone); em text := lower(btrim(coalesce(p_email, ''))); gd text := lower(btrim(coalesce(p_gender, '')));
@@ -3377,7 +3394,7 @@ end $fn$;
 
 -- pay a meeting from my credit
 create or replace function roster.me_pay_credit(p_slug text, p_meeting uuid)
-returns jsonb language plpgsql security definer set search_path = public as $fn$
+returns jsonb language plpgsql security definer set search_path = roster, public as $fn$
 declare r jsonb := roster.me_resolve(p_slug, true); st text := r->>'status'; b uuid := nullif(r->>'business_id', '')::uuid; pid uuid := nullif(r->>'participant_id', '')::uuid;
 begin
   if st <> 'ok' then return jsonb_build_object('status', roster.me_text(st)); end if;
@@ -3387,7 +3404,7 @@ end $fn$;
 
 -- "I paid" click from the personal area: ok | reported | already | not_registered | past (harpatka's words)
 create or replace function roster.me_report_payment(p_slug text, p_meeting uuid)
-returns text language plpgsql security definer set search_path = public as $fn$
+returns text language plpgsql security definer set search_path = roster, public as $fn$
 declare r jsonb := roster.me_resolve(p_slug, true); st text := r->>'status'; b uuid := nullif(r->>'business_id', '')::uuid; pid uuid := nullif(r->>'participant_id', '')::uuid; c text;
 begin
   if st <> 'ok' then return roster.me_text(st); end if;
@@ -3401,7 +3418,7 @@ end $fn$;
 -- with the pass. ok | not_found (no such pass) | exists (the same request is already waiting, 24 hours) | rate_limited
 -- (| none, forbidden, disabled, blocked, auth). A stranger can link any phone, so 10 requests an hour per participant.
 create or replace function roster.me_buy_pass(p_slug text, p_type uuid, p_n int)
-returns text language plpgsql security definer set search_path = public as $fn$
+returns text language plpgsql security definer set search_path = roster, public as $fn$
 declare r jsonb := roster.me_resolve(p_slug, true); st text := r->>'status'; b uuid := nullif(r->>'business_id', '')::uuid; pid uuid := nullif(r->>'participant_id', '')::uuid;
         pr numeric;
 begin
@@ -3437,7 +3454,7 @@ end $fn$;
 --   already (a confirmation was mailed, or is waiting) | unpaid | skip (not registered, a remainder is still due, or the outbox is
 --   full) | past (the meeting is over or gone).
 create or replace function roster.close_payment_mail(p_pid uuid, p_mid uuid, p_dry boolean default false)
-returns text language plpgsql security definer set search_path = public as $fn$
+returns text language plpgsql security definer set search_path = roster, public as $fn$
 declare b uuid := roster.my_current(); s roster.business_settings; a roster.attendance; mt roster.meetings;
         pa roster.participants; paid numeric;
 begin
@@ -3503,6 +3520,7 @@ grant execute on function roster.rate_cleanup()                                t
 -- signed-in accounts: the connections page (scoped to the business of the x-business header) and the personal area
 revoke all on function roster.key_create(text, text, text[])                   from public, anon;
 revoke all on function roster.key_revoke(uuid)                                 from public, anon;
+revoke all on function roster.key_origins(uuid, text[])                           from public, anon;
 revoke all on function roster.webhook_secret_rotate()                          from public, anon;
 revoke all on function roster.webhook_test()                                   from public, anon;
 revoke all on function roster.mail_template_reset(text)                        from public, anon;
@@ -3519,6 +3537,7 @@ revoke all on function roster.me_buy_pass(text, uuid, int)                     f
 revoke all on function roster.close_payment_mail(uuid, uuid, boolean)          from public, anon;
 grant execute on function roster.key_create(text, text, text[])                to authenticated;
 grant execute on function roster.key_revoke(uuid)                              to authenticated;
+grant execute on function roster.key_origins(uuid, text[])                        to authenticated;
 grant execute on function roster.webhook_secret_rotate()                       to authenticated;
 grant execute on function roster.webhook_test()                                to authenticated;
 grant execute on function roster.mail_template_reset(text)                     to authenticated;
@@ -3620,7 +3639,7 @@ revoke all on roster.trash_audit from anon, authenticated;
 
 -- kind -> table, and the order rows go back in (parents before children)
 create or replace function roster.trash_table(k text) returns text
-language sql immutable set search_path = public as $fn$
+language sql immutable set search_path = roster, public as $fn$
   select case k
     when 'business' then 'businesses' when 'business_settings' then 'business_settings'
     when 'business_user' then 'business_users' when 'member' then 'members'
@@ -3634,7 +3653,7 @@ language sql immutable set search_path = public as $fn$
 $fn$;
 
 create or replace function roster.trash_rank(k text) returns int
-language sql immutable set search_path = public as $fn$
+language sql immutable set search_path = roster, public as $fn$
   select coalesce(array_position(array['business', 'business_settings', 'business_user', 'meeting_type', 'promoter', 'pay_method', 'status',
     'participant', 'meeting', 'msg_template', 'attendance', 'note', 'payment', 'promoter_payment', 'pass_request', 'finance',
     'finance_recurring', 'finance_transfer', 'msg_sent', 'mail_template', 'api_key', 'admin_pref', 'member'], k), 99);
@@ -3642,7 +3661,7 @@ $fn$;
 
 -- what hangs on what: a row of child_kind whose child_field names a row of parent_kind goes with it
 create or replace function roster.trash_dep() returns table (child_kind text, child_field text, parent_kind text)
-language sql immutable set search_path = public as $fn$
+language sql immutable set search_path = roster, public as $fn$
   select * from (values
     ('attendance', 'participant_id', 'participant'), ('attendance', 'meeting_id', 'meeting'),
     ('note', 'participant_id', 'participant'), ('payment', 'participant_id', 'participant'),
@@ -3656,7 +3675,7 @@ $fn$;
 
 -- the links a delete would set to NULL on other rows (the foreign keys with ON DELETE SET NULL), taken BEFORE the delete
 create or replace function roster.trash_relinks(k text, r jsonb) returns jsonb
-language plpgsql security definer set search_path = public as $fn$
+language plpgsql security definer set search_path = roster, public as $fn$
 declare b uuid := (r ->> 'business_id')::uuid; i uuid := (r ->> 'id')::uuid; out jsonb := '[]'::jsonb;
 begin
   if k = 'promoter' then
@@ -3689,7 +3708,7 @@ end $fn$;
 
 -- the trigger: copy the row, then let the delete go on
 create or replace function roster.trash_archive() returns trigger
-language plpgsql security definer set search_path = public as $fn$
+language plpgsql security definer set search_path = roster, public as $fn$
 declare k text := tg_argv[0]; j jsonb := to_jsonb(old); bid uuid;
 begin
   if coalesce(current_setting('roster.purging', true), '') = 'on' then return old; end if;   -- an erase for good, or the retention job
@@ -3722,7 +3741,7 @@ end $$;
 -- with it (the same transaction, or by the same account within two minutes: the admin page deletes the links of a meeting
 -- one by one, then the meeting). A deleted business takes everything that went in its transaction.
 create or replace function roster.trash_family(p_id uuid) returns setof roster.trash
-language sql stable security definer set search_path = public as $fn$
+language sql stable security definer set search_path = roster, public as $fn$
   with recursive fam as (
     select t.* from roster.trash t where t.id = p_id
     union
@@ -3740,7 +3759,7 @@ $fn$;
 
 -- the same walk for many roots at once (the list): how many rows went with each of them
 create or replace function roster.trash_counts(p_ids uuid[]) returns table (root_id uuid, n int)
-language sql stable security definer set search_path = public as $fn$
+language sql stable security definer set search_path = roster, public as $fn$
   with recursive tree as (
     select t.id as root_id, t.* from roster.trash t where t.id = any(p_ids)
     union
@@ -3758,7 +3777,7 @@ $fn$;
 
 -- a readable name for a trash row (never the payload itself)
 create or replace function roster.trash_label(e roster.trash) returns text
-language plpgsql stable security definer set search_path = public as $fn$
+language plpgsql stable security definer set search_path = roster, public as $fn$
 declare p jsonb := e.payload; pn text; md text;
 begin
   case e.kind
@@ -3792,7 +3811,7 @@ end $fn$;
 -- A participant "deleted" in the page is only inactive: those are listed too (source = 'inactive', no time).
 create or replace function roster.trash_list(p_kind text default null)
 returns table (trash_id uuid, kind text, label text, deleted_at timestamptz, deleted_by text, dependents int, source text)
-language plpgsql stable security definer set search_path = public as $fn$
+language plpgsql stable security definer set search_path = roster, public as $fn$
 declare cur uuid := roster.current_business();
 begin
   if p_kind is not null and roster.trash_table(p_kind) is null then
@@ -3835,7 +3854,7 @@ end $fn$;
 -- 'ok' | 'not_found' | 'forbidden' | 'conflict' (the row cannot come back as it is: a phone, an address or a parent that is
 -- still deleted; nothing is changed). No event, mail or system note is made by a restore: the rows come back as they were.
 create or replace function roster.restore(p_kind text, p_id uuid) returns jsonb
-language plpgsql security definer set search_path = public as $fn$
+language plpgsql security definer set search_path = roster, public as $fn$
 declare
   cur uuid := roster.current_business();
   e roster.trash; r roster.trash; b uuid; ok boolean;
@@ -3913,7 +3932,7 @@ end $fn$;
 -- that names them (notes, payments, links deleted on their own) and, if the participant still exists in the page (inactive or
 -- not), the participant itself, without a copy: that is the answer to "delete my data".
 create or replace function roster.purge(p_kind text, p_id uuid) returns jsonb
-language plpgsql security definer set search_path = public as $fn$
+language plpgsql security definer set search_path = roster, public as $fn$
 declare e roster.trash; n int := 0; m int; b uuid; pid uuid; who text := nullif(roster.email_of(), '');
 begin
   if not roster.is_super() then return jsonb_build_object('status', 'forbidden'); end if;

@@ -302,7 +302,7 @@
     dlg.textContent = "";
     if (f) f();
   });
-  dlg.addEventListener("submit", (e) => { e.preventDefault(); if (ctx && ctx.kind === "newkey") submitNewKey(); });
+  dlg.addEventListener("submit", (e) => { e.preventDefault(); if (ctx && ctx.kind === "newkey") submitNewKey(); else if (ctx && ctx.kind === "lock") submitLock(); });
   dlg.addEventListener("input", (e) => { if (ctx && ctx.kind === "tpl") templateInput(e); });
   dlg.addEventListener("focusin", (e) => { if (ctx && ctx.kind === "tpl" && (e.target.id === "tSubject" || e.target.id === "tHtml")) ctx.last = e.target.id; });
 
@@ -488,6 +488,7 @@
     if (revoked) return '<div class="rrow krow off" data-key="' + id + '">' + main + "</div>";
     /* revoking is final (a key cannot come back), so the swipe action and the button both open the confirmation window, never an undo toast */
     return '<div class="rrow krow" data-key="' + id + '" data-swipe="keys"><div class="rswipe-fg">' + main +
+      (k.kind === "public" ? '<button type="button" class="rbtn rbtn--ghost rbtn--sm" data-act="key-origins" data-id="' + id + '">' + ((k.allowed_origins || []).length ? "שינוי אתרים" : "נעילה לאתר") + "</button>" : "") +
       '<button type="button" class="rbtn rbtn--ghost rbtn--sm rbtn--danger rrow__trail" data-act="key-revoke" data-id="' + id + '">ביטול מפתח</button></div>' +
       '<div class="rswipe" aria-hidden="true">' + trayBtn("key-revoke", "x", "ביטול מפתח", 'data-id="' + id + '"') + "</div></div>";
   }
@@ -824,6 +825,7 @@
     const act = t.dataset.act;
     if (act === "key-new") openNewKey();
     else if (act === "key-revoke") openRevoke(t.dataset.id);
+    else if (act === "key-origins") openLock(t.dataset.id);
     else if (act === "secret-new") openSecretNew();
     else if (act === "hook-test") hookTest(t);
     else if (act === "tpl-open") openTemplate(t.dataset.key);
@@ -834,7 +836,7 @@
     else if (act === "goto-log") { S.seg = t.dataset.seg; setTab("log"); }
     else if (act === "seg") { S.seg = t.dataset.seg; renderPanel(true); }
     else if (act === "copy") { toast((await copyText(t.dataset.text)) ? T.copied : T.copyFail); }
-    else if (act === "ai-doc") { downloadAiDoc(t, ""); }
+    else if (act === "ai-doc") { downloadAiDoc(t, "", ""); }
     else if (act === "retry") { const w = t.dataset.what; if (w === "events" || w === "deliveries") { await Promise.all([load("events"), load("deliveries")]); } else await load(w); renderPanel(true); }
   });
   panel.addEventListener("change", (e) => {
@@ -906,31 +908,78 @@
       if (!r || !r.key) throw new Error("no key");
       await load("keys");
       refreshLists();
-      if (ctx === c) { afterClose = () => { const b = $("#keyNew"); if (b) b.focus(); }; showReveal("המפתח החדש", r.key, kind === "secret" ? "key-secret" : "key-public"); }
+      if (ctx === c) { afterClose = () => { const b = $("#keyNew"); if (b) b.focus(); }; showReveal("המפתח החדש", r.key, kind === "secret" ? "key-secret" : "key-public", r.id); }
     } catch (e) {
       if (e && e.signedOut) return;
       if (ctx !== c) return;
       c.busy = false; RosterSheet.busy(dlg, false); err.textContent = T.generic;
     }
   }
-  /* The file for another AI tool (ai-doc.js). publicKey: "" for none, or a PUBLIC key to write into it. */
-  async function downloadAiDoc(btn, publicKey) {
+  /* The file for another AI tool (ai-doc.js). With no publicKey it makes a NEW public key (open to any site: the person asked for one click, and a
+     public key can only read meetings, sign up and press "I paid", within rate limits) and writes it into the file; with a publicKey it writes that
+     one. A secret key never goes in. After the download a notice offers to lock the key to the site once the site has an address. */
+  async function downloadAiDoc(btn, publicKey, keyId) {
     if (btn) btn.disabled = true;
+    let made = null;
     try {
-      await Promise.all([D.keys ? 0 : load("keys"), D.settings ? 0 : load("settings")]);
-      const text = await RosterAiDoc.build({ name: BIZ.name, slug: BIZ.slug, meUrl: meUrl(), settings: D.settings || {}, keys: D.keys || [] }, { publicKey: publicKey || "" });
+      if (!publicKey) {
+        const day = new Date().toISOString().slice(0, 10);
+        const r = await rpc("key_create", { p_kind: "public", p_label: "קובץ AI " + day, p_origins: [] });
+        if (!r || !r.key) throw new Error("no key");
+        publicKey = r.key; keyId = r.id; made = true;
+      }
+      await Promise.all([load("keys"), D.settings ? 0 : load("settings")]);
+      if (made) refreshLists();
+      const text = await RosterAiDoc.build({ name: BIZ.name, slug: BIZ.slug, meUrl: meUrl(), settings: D.settings || {}, keys: D.keys || [] }, { publicKey: publicKey });
       const url = URL.createObjectURL(new Blob([text], { type: "text/markdown;charset=utf-8" }));
       const a = document.createElement("a");
       a.href = url; a.download = "roster-api-" + (BIZ.slug || "business") + ".md";
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 4000);
-      toast("הקובץ ירד");
-    } catch (e) { toast("לא הצלחנו להכין את הקובץ. נסו שוב בעוד רגע."); }
+      const row = (D.keys || []).find((x) => x.id === keyId);
+      if (keyId && (!row || !(row.allowed_origins || []).length)) { showAiDone(keyId); } else toast("הקובץ ירד");
+    } catch (e) { if (e && e.signedOut) return; toast("לא הצלחנו להכין את הקובץ. נסו שוב בעוד רגע."); }
     if (btn) btn.disabled = false;
   }
+  function showAiDone(keyId) {
+    ctx = { kind: "aidone", id: keyId };
+    openDialog("form", "הקובץ ירד",
+      warn("<b>המפתח שבתוך הקובץ פתוח לכל אתר.</b> זה בסדר כדי להתחיל. כשהאתר שלכם עולה לאוויר ויש לו כתובת, כדאי לנעול את המפתח לכתובת הזאת, כך שרק האתר שלכם ישתמש בו. את זה עושים בדף המפתחות, בכפתור \"נעילה לאתר\" שליד המפתח.") +
+      '<p class="lead agap">העבירו את הקובץ לכלי ה־AI שבונה את האתר. הוא ישאל אתכם מה אתם רוצים לבנות.</p>' +
+      '<div class="btnrow"><button type="button" class="rbtn" data-d="lock-open" data-id="' + esc(keyId) + '">נעילת המפתח לאתר עכשיו</button>' +
+      '<button type="button" class="rbtn rbtn--ghost" data-close>אחר כך</button></div>');
+  }
+  /* the allowed sites of one public key: "lock it to my site" */
+  function openLock(id) {
+    const k = (D.keys || []).find((x) => x.id === id);
+    ctx = { kind: "lock", id: id, busy: false };
+    openDialog("form", "נעילת המפתח לאתר",
+      '<form id="loForm" novalidate>' +
+      '<p class="lead">רק האתר שתכתבו כאן יוכל להשתמש במפתח הזה. כתבו את הכתובת כמו שהיא מופיעה בשורת הדפדפן, עד השם של האתר בלבד: למשל <bdi class="mono" dir="ltr">https://dana.co.il</bdi>. אפשר כמה כתובות, אחת בכל שורה (למשל גם כתובת הבדיקה של האתר). רשימה ריקה פותחת את המפתח לכל אתר.</p>' +
+      '<label class="rfield"><span>האתרים של המפתח</span><textarea id="loOrigins" class="ltr" dir="ltr" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://studio.example">' + esc(k && k.allowed_origins ? k.allowed_origins.join(String.fromCharCode(10)) : "") + "</textarea></label>" +
+      errBox("loErr") + "</form>", { action: { label: "שמירה", form: "loForm", id: "loGo" } });
+    const t = $("#loOrigins"); if (t) t.focus();
+  }
+  async function submitLock() {
+    const c = ctx;
+    if (c.busy) return;
+    const o = parseOrigins($("#loOrigins").value), err = $("#loErr");
+    if (o.err) { err.textContent = o.err; $("#loOrigins").focus(); return; }
+    c.busy = true; RosterSheet.busy(dlg, true); err.textContent = "";
+    try {
+      const r = await rpc("key_origins", { p_id: c.id, p_origins: o.list });
+      if (r && r.error) throw new Error(r.error);
+      await load("keys"); refreshLists();
+      if (ctx === c) { dlg.close(); toast(o.list.length ? "המפתח ננעל לאתר" : "המפתח פתוח לכל אתר"); }
+    } catch (e) {
+      if (e && e.signedOut) return;
+      if (ctx !== c) return;
+      c.busy = false; RosterSheet.busy(dlg, false); err.textContent = T.generic;
+    }
+  }
   /* The one place a secret is on screen. It lives in this closure and nowhere else. */
-  function showReveal(title, secret, what) {
-    ctx = { kind: "reveal", copied: false, warned: false, secret };
+  function showReveal(title, secret, what, keyId) {
+    ctx = { kind: "reveal", copied: false, warned: false, secret, keyId };
     const sec = what === "key-secret";
     const lead = what === "webhook" ? "זה הסוד לאימות החתימה של ה־Webhook." : sec ? "זה המפתח הסודי." : "זה המפתח הציבורי.";
     openDialog("form", title,
@@ -948,7 +997,8 @@
     if (d === "reveal-copy") {
       const ok = await copyText(ctx.secret);
       if (ok) { ctx.copied = true; $("#rvWarn").hidden = true; t.lastChild.textContent = "הועתק"; toast(T.copied); } else toast(T.copyFail);
-    } else if (d === "reveal-ai") { await downloadAiDoc(t, ctx.secret); ctx.copied = true; $("#rvWarn").hidden = true; }
+    } else if (d === "reveal-ai") { const c = ctx; c.copied = true; $("#rvWarn").hidden = true; await downloadAiDoc(t, c.secret, c.keyId); }
+    else if (d === "lock-open") { openLock(t.dataset.id); }
     else if (d === "reveal-done") tryClose();
     else if (d === "revoke-yes") revokeKey();
     else if (d === "secret-yes") rotateSecret();

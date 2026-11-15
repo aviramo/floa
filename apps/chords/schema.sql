@@ -580,7 +580,7 @@ returns boolean
 language sql
 stable
 security definer
-set search_path = public
+set search_path = chords, public
 as $fn$
   select exists (
     select 1 from chords.setlist_members m
@@ -596,7 +596,7 @@ create or replace function chords.setlist_owner_joins()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = chords, public
 as $fn$
 begin
   if new.owner is not null then
@@ -749,7 +749,7 @@ returns uuid
 language plpgsql
 volatile
 security definer
-set search_path = public
+set search_path = chords, public
 as $fn$
 declare
   list uuid;
@@ -792,7 +792,7 @@ returns table (list uuid, named text, howmany integer, whose text)
 language sql
 stable
 security definer
-set search_path = public
+set search_path = chords, public
 as $fn$
   select s.id, s.title, jsonb_array_length(s.songs), coalesce(p.name, '')
     from chords.setlists s
@@ -834,7 +834,7 @@ returns table (song uuid, together integer)
 language sql
 stable
 security definer
-set search_path = public
+set search_path = chords, public
 as $fn$
   with wanted as (
     select distinct unnest(ids) as id
