@@ -145,6 +145,73 @@
       }
     }, true);
     list.addEventListener("keydown", function (e) { if (e.key === "Escape" && open) close(open); });
+
+    /* THE MOUSE PATH (owner 2026-11-15): a desktop has no swipe, so a card shows three dots at its top corner on hover (or keyboard focus); they open a
+       menu with exactly the actions the swipe trays hold, and a choice presses the same tray button the swipe would. Written once, for every list that
+       swipes. A row that brings its own dots menu (data-act="menu") keeps it. CSS shows the button only to a mouse. */
+    var DOTS = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>';
+    var moreMenu = null, moreBtn = null;
+    function trayActs(row) {
+      var out = [], nodes = row.querySelectorAll(".rswipe--start .rswipe__act, .rswipe:not(.rswipe--start) .rswipe__act");
+      for (var i = 0; i < nodes.length; i++) {
+        var a = nodes[i], lab = a.querySelector("span"), svg = a.querySelector("svg");
+        out.push({ el: a, label: ((lab || a).textContent || "").trim(), icon: svg ? svg.outerHTML : "", tone: a.getAttribute("data-tone") || "" });
+      }
+      out.sort(function (x, y) { return (x.tone === "danger") - (y.tone === "danger"); });   /* the destructive one last */
+      return out;
+    }
+    function closeMore(back) {
+      if (!moreMenu || moreMenu.hidden) return;
+      var b = moreBtn; moreMenu.hidden = true; moreMenu.innerHTML = ""; moreBtn = null;
+      if (b) { b.setAttribute("aria-expanded", "false"); if (back) b.focus(); }
+    }
+    function openMore(btn, row) {
+      var acts = trayActs(row); if (!acts.length) return;
+      if (!moreMenu) {
+        moreMenu = document.createElement("div"); moreMenu.className = "rmenu rmenu--fixed"; moreMenu.setAttribute("role", "menu"); moreMenu.hidden = true;
+        moreMenu.addEventListener("rk:menuclose", function () { moreMenu.innerHTML = ""; moreBtn = null; });
+        moreMenu.addEventListener("keydown", function (e) {
+          var items = Array.prototype.slice.call(moreMenu.querySelectorAll(".rmenu__item")), i = items.indexOf(document.activeElement), n = items.length;
+          if (e.key === "Escape") { e.preventDefault(); closeMore(true); }
+          else if (e.key === "Tab") { var b = moreBtn; closeMore(); if (b) b.focus(); }
+          else if (e.key === "ArrowDown") { e.preventDefault(); items[(i + 1) % n].focus(); }
+          else if (e.key === "ArrowUp") { e.preventDefault(); items[(i - 1 + n) % n].focus(); }
+        });
+        document.body.appendChild(moreMenu);
+      }
+      moreMenu.innerHTML = "";
+      acts.forEach(function (a) {
+        var it = document.createElement("button"); it.type = "button"; it.className = "rmenu__item"; it.setAttribute("role", "menuitem");
+        if (a.tone) it.setAttribute("data-tone", a.tone);
+        it.innerHTML = a.icon; var sp = document.createElement("span"); sp.textContent = a.label; it.appendChild(sp);
+        it.addEventListener("click", function () { closeMore(); try { a.el.click(); } catch (x) {} });
+        moreMenu.appendChild(it);
+      });
+      moreMenu.hidden = false;
+      var r = btn.getBoundingClientRect(), w = moreMenu.offsetWidth, h = moreMenu.offsetHeight;
+      var left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8)), top = r.bottom + 4;
+      if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 4);
+      moreMenu.style.left = left + "px"; moreMenu.style.top = top + "px";
+      btn.setAttribute("aria-expanded", "true"); moreBtn = btn;
+      var first = moreMenu.querySelector(".rmenu__item"); if (first) first.focus({ preventScroll: true });
+    }
+    function decorate() {
+      var rows = list.querySelectorAll("[data-swipe]");
+      for (var i = 0; i < rows.length; i++) {
+        var row = rows[i], fg = row.querySelector(":scope > .rswipe-fg");
+        if (!fg || fg.querySelector(":scope > .rswipe-more") || row.querySelector('[data-act="menu"]') || !row.querySelector(".rswipe__act")) continue;
+        var b = document.createElement("button"); b.type = "button"; b.className = "rswipe-more"; b.setAttribute("aria-haspopup", "menu"); b.setAttribute("aria-expanded", "false"); b.setAttribute("aria-label", "פעולות"); b.title = "פעולות"; b.tabIndex = 0;
+        b.innerHTML = DOTS;
+        b.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); var r = e.currentTarget.closest("[data-swipe]"); if (moreBtn === e.currentTarget) closeMore(true); else openMore(e.currentTarget, r); });
+        fg.appendChild(b);
+      }
+    }
+    var decorating = 0;
+    function later() { if (decorating) return; decorating = requestAnimationFrame(function () { decorating = 0; decorate(); }); }
+    decorate();
+    if (window.MutationObserver) new MutationObserver(later).observe(list, { childList: true, subtree: true });
+    window.addEventListener("resize", function () { closeMore(); });
+    document.addEventListener("scroll", function (e) { if (moreMenu && !moreMenu.hidden && !moreMenu.contains(e.target)) closeMore(); }, true);
     /* first use hint: ONE time for the whole system (a single key, whatever the list), and it stays until the person confirms "הבנתי".
        A banner at the top of the list plus a short nudge of the first row. Never blocks: the banner is not a popup. */
     function hint(force, quiet) {
