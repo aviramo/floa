@@ -508,7 +508,7 @@
       '<div><b>מפתח סודי</b> <bdi class="mono" dir="ltr">rk_sec_…</bdi><p>רק לשרת שלכם, לעולם לא בדפדפן. מאפשר הכול: לקרוא משתתפים, לרשום, לתעד תשלומים.</p></div></div></section>' +
       secHead("המפתחות שלכם") + '<div class="lbox" id="keysList">' + keysList() + "</div>" +
       '<section class="rcard rcard--flat">' + cardHead("קובץ לכלי AI") +
-      '<p class="lead">כלי AI אחר, שבונה את האתר או דף הנחיתה של העסק, יכול לקרוא קובץ אחד ולהבין בדיוק מה אפשר לחבר ל-Roster: כל הנקודות של ה־API, הרשאות, אבטחה, והנתונים של העסק הזה. הוא גם מציע לכם מה לבנות מכל זה. הקובץ בפורמט Markdown. הוא לא כולל מפתחות: מפתח סודי אי אפשר לשלוף (הוא מוצג פעם אחת ביצירה), ומפתח ציבורי חדש אפשר להוסיף לקובץ ברגע היצירה.</p>' +
+      '<p class="lead">כלי AI אחר, שבונה את האתר או דף הנחיתה של העסק, יכול לקרוא קובץ אחד ולהבין בדיוק מה אפשר לחבר ל-Roster: כל הנקודות של ה־API, הרשאות, אבטחה, והנתונים של העסק הזה. הוא גם מציע לכם מה לבנות מכל זה. הקובץ בפורמט Markdown. הוא לא כולל מפתחות: מפתח סודי אי אפשר לשלוף (הוא מוצג פעם אחת ביצירה), ומפתח ציבורי חדש אפשר להוסיף לקובץ ברגע היצירה. לקובץ יש תמיד מפתח אחד: הורדה חדשה יוצרת מפתח חדש ומבטלת את הקודם.</p>' +
       '<div class="btnrow"><button type="button" class="rbtn" data-act="ai-doc" id="aiDoc">הורדת הקובץ</button></div></section></div>';
   }
 
@@ -918,15 +918,25 @@
   /* The file for another AI tool (ai-doc.js). With no publicKey it makes a NEW public key (open to any site: the person asked for one click, and a
      public key can only read meetings, sign up and press "I paid", within rate limits) and writes it into the file; with a publicKey it writes that
      one. A secret key never goes in. After the download a notice offers to lock the key to the site once the site has an address. */
-  async function downloadAiDoc(btn, publicKey, keyId) {
+  const AI_LABEL = "קובץ AI";
+  const aiKeys = () => (D.keys || []).filter((k) => k.kind === "public" && !k.revoked_at && String(k.label || "").indexOf(AI_LABEL) === 0);
+  async function downloadAiDoc(btn, publicKey, keyId, replaced) {
+    /* ONE key for the file: a new download makes a new key and cancels the previous one. If the previous one was already in use on a site,
+       say so first: the site stops working until it gets the new file */
+    if (!publicKey && !replaced) {
+      if (!D.keys) await load("keys");
+      if (aiKeys().some((k) => k.last_used_at)) { showAiReplace(); return; }
+    }
     if (btn) btn.disabled = true;
     let made = null;
     try {
       if (!publicKey) {
+        const old = aiKeys();
         const day = new Date().toISOString().slice(0, 10);
-        const r = await rpc("key_create", { p_kind: "public", p_label: "קובץ AI " + day, p_origins: [] });
+        const r = await rpc("key_create", { p_kind: "public", p_label: AI_LABEL + " " + day, p_origins: [] });
         if (!r || !r.key) throw new Error("no key");
         publicKey = r.key; keyId = r.id; made = true;
+        for (const k of old) { try { await rpc("key_revoke", { p_id: k.id }); } catch (e) { if (e && e.signedOut) throw e; } }
       }
       await Promise.all([load("keys"), D.settings ? 0 : load("settings")]);
       if (made) refreshLists();
@@ -940,6 +950,13 @@
       if (keyId && (!row || !(row.allowed_origins || []).length)) { showAiDone(keyId); } else toast("הקובץ ירד");
     } catch (e) { if (e && e.signedOut) return; toast("לא הצלחנו להכין את הקובץ. נסו שוב בעוד רגע."); }
     if (btn) btn.disabled = false;
+  }
+  function showAiReplace() {
+    ctx = { kind: "aireplace" };
+    openDialog("form", "קובץ חדש מחליף את הקודם",
+      warn("<b>המפתח שבקובץ הקודם כבר בשימוש באתר.</b> הורדה חדשה יוצרת מפתח חדש ומבטלת את הקודם, ולכן האתר יפסיק לעבוד עד שיקבל את המפתח החדש (דרך הקובץ החדש). יש רק מפתח אחד לקובץ.") +
+      '<div class="btnrow"><button type="button" class="rbtn" data-d="ai-replace">להחליף ולהוריד</button>' +
+      '<button type="button" class="rbtn rbtn--ghost" data-close>ביטול</button></div>');
   }
   function showAiDone(keyId) {
     ctx = { kind: "aidone", id: keyId };
@@ -999,6 +1016,7 @@
       if (ok) { ctx.copied = true; $("#rvWarn").hidden = true; t.lastChild.textContent = "הועתק"; toast(T.copied); } else toast(T.copyFail);
     } else if (d === "reveal-ai") { const c = ctx; c.copied = true; $("#rvWarn").hidden = true; await downloadAiDoc(t, c.secret, c.keyId); }
     else if (d === "lock-open") { openLock(t.dataset.id); }
+    else if (d === "ai-replace") { dlg.close(); downloadAiDoc($("#aiDoc"), "", "", true); }
     else if (d === "reveal-done") tryClose();
     else if (d === "revoke-yes") revokeKey();
     else if (d === "secret-yes") rotateSecret();
