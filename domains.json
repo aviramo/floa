@@ -122,5 +122,6 @@
       }
     }
   ],
-  "redirectOld": true
+  "redirectOld": true,
+  "removeDns": ["test.floa.co.il", "cv.floa.co.il"]
 }

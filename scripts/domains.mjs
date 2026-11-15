@@ -57,6 +57,16 @@ const all = await api(`/zones/${ZONE}/dns_records?per_page=200`);
 if (all.ok) { console.log(`zone records (${all.result.length}):`); for (const r of all.result) console.log(`  ${r.type.padEnd(6)} ${r.name}  ->  ${String(r.content).slice(0, 60)}  ${r.proxied ? "[proxied]" : "[dns only]"}`); }
 
 let bad = 0;
+/* "removeDns" (top level of domains.json): names that are retired. Only a CNAME that points at a *.pages.dev
+   project is removed, only at exactly that name, never the zone itself, www, or a host still listed above. */
+for (const name of Array.isArray(cfg.removeDns) ? cfg.removeDns : []) {
+  if (name === cfg.zone || name === "www." + cfg.zone || !name.endsWith("." + cfg.zone) || hosts.some((h) => h.host === name)) { console.error(`::warning::removeDns ${name}: refused (not a retired sub-domain)`); continue; }
+  const r = await api(`/zones/${ZONE}/dns_records?name=${encodeURIComponent(name)}&type=CNAME`);
+  const recs = (r.result || []).filter((x) => /\.pages\.dev$/.test(x.content));
+  if (!recs.length) { console.log(`${name}: no Pages record to remove`); continue; }
+  for (const x of recs) { const d = await api(`/zones/${ZONE}/dns_records/${x.id}`, { method: "DELETE" }); console.log(`${name}: removed CNAME -> ${x.content} (${d.ok ? "ok" : d.errors})`); }
+  for (const proj of new Set(hosts.map((h) => h.project))) { const d = await api(`/accounts/${ACCOUNT}/pages/projects/${proj}/domains/${encodeURIComponent(name)}`, { method: "DELETE" }); if (d.ok) console.log(`${name}: detached from ${proj}`); }
+}
 for (const h of live) {
   const target = h.project + ".pages.dev";
   /* read-only, always: what Pages itself says about this host */

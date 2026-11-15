@@ -14,6 +14,10 @@ name: Deploy test
 
 on:
   workflow_dispatch:
+  # also runnable without the Actions page (an agent has no token to dispatch with): a push of the
+  # branch `test-deploy` runs it. Pushing main does not.
+  push:
+    branches: [test-deploy]
 
 permissions:
   contents: read
