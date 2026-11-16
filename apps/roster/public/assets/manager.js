@@ -84,6 +84,7 @@
     edit: ["s", '<path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z"/><path d="M14 7l3 3"/>'],
     trash: ["s", '<path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/>'],
     users: ["s", '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"/><path d="M18.5 14.4c1.9.7 3 2.5 3 5.6"/>'],
+    person: ["s", '<circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.8 3.1-6.2 7-6.2s7 2.4 7 6.2"/>'],
     logout: ["s", '<path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="M15 8l4 4-4 4M19 12H9"/>'],
     go: ["s", '<path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/>'],
     dots: ["f", '<circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>'],
@@ -377,6 +378,7 @@
       api("/rest/v1/businesses?select=id,slug,name,created_at&order=created_at"),
       api("/rest/v1/business_users?select=business_id,email&order=email"),
       api("/rest/v1/meetings?select=business_id").catch(function () { return []; }),   /* only to count them: the chip of a business row; a failed count never blocks the list */
+      api("/rest/v1/participants?select=business_id&active=eq.true&limit=100000").catch(function () { return []; }),   /* the participants of each business: the count at the start of its row */
     ]).then(function (r) {
       if (epoch !== mine) return;
       S.biz = Array.isArray(r[0]) ? r[0] : [];
@@ -385,6 +387,8 @@
       (Array.isArray(r[1]) ? r[1] : []).forEach(function (u) { if (S.users[u.business_id]) S.users[u.business_id].push(lc(u.email)); });
       S.meets = {};
       (Array.isArray(r[2]) ? r[2] : []).forEach(function (m) { S.meets[m.business_id] = (S.meets[m.business_id] || 0) + 1; });
+      S.parts = {};
+      (Array.isArray(r[3]) ? r[3] : []).forEach(function (m) { S.parts[m.business_id] = (S.parts[m.business_id] || 0) + 1; });
       renderList();
     }).catch(function (e) {
       if ((e && e.signedOut) || epoch !== mine) return;
@@ -395,12 +399,12 @@
   /* a business is a row of the participants list, same anatomy: the accounts count in the age column, the name, the identifier at the end.
      The whole row opens its summary, and every action lives there: there is no swipe on this list. */
   function rowHtml(b) {
-    var id = esc(b.id), n = accList(b).length, mc = (S.meets && S.meets[b.id]) || 0;
+    var id = esc(b.id), n = accList(b).length, mc = (S.meets && S.meets[b.id]) || 0, pc = (S.parts && S.parts[b.id]) || 0;
     /* two lines of its own (the participants row's flow could not keep the identifier on the first line): the accounts count and the name at the start,
        the identifier at the top-left of the card; under them, at the start, the meetings chip (the calendar symbol of "meetings", the one the meetings menu uses, and their number) */
     return '<li class="row ucard bizrow" data-row="' + id + '">' +
       '<div class="main nobadge" role="button" tabindex="0" data-open="' + id + '" aria-label="סיכום העסק ' + esc(b.name) + '">' +
-      '<div class="brow"><span class="age n" title="' + esc(accCount(n)) + '"><bdi dir="rtl">' + n + ' <b class="gl">' + icon("users", "i14") + '</b></bdi></span>' +
+      '<div class="brow"><span class="age n" title="' + esc(pc === 0 ? "אין משתתפים" : pc === 1 ? "משתתף אחד" : pc + " משתתפים") + '"><bdi dir="rtl">' + pc + ' <b class="gl">' + icon("person", "i14") + '</b></bdi></span>' +
       '<span class="bname" dir="rtl">' + esc(b.name) + '</span>' +
       '<span class="bslug"><bdi dir="ltr">' + esc(b.slug) + '</bdi></span></div>' +
       '<div class="brow brow--2"><span class="mcnt mcnt2" title="' + esc(mc === 1 ? "מפגש אחד" : mc + " מפגשים") + '">' + icon("cal", "i14") + mc + "</span></div></div></li>";
