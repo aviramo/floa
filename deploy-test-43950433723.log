@@ -1,6 +1,0 @@
-workflow:   Deploy test
-conclusion: success
-commit:     5b246e3f54a3e038795c0e7b1fa378bd7f8a545d
-run:        https://github.com/aviramo/floa/actions/runs/43950433723
-at:         2026-11-16T20:31:06Z
-
