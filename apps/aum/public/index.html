@@ -4,6 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+  <script>
+    /* אום חי בכתובת אחת: aum.floa.co.il. כניסה מכתובת אחרת של הדומיין (למשל tal.floa.co.il/aum) עוברת אליה, עם ?s= וה-#, כי ה-API מאשר הרשמה רק משם */
+    (function () {
+      var h = location.hostname;
+      if (/(^|\.)floa\.co\.il$/.test(h) && h !== "aum.floa.co.il" && h !== "floa.co.il" && h !== "www.floa.co.il") location.replace("https://aum.floa.co.il/" + location.search + location.hash);
+    })();
+  </script>
+
   <title>ריטריט AUM בגדרה | 12 שלבים מכעס לאהבה</title>
   <meta name="description" content="ריטריט יומי של מדיטציית AUM בגדרה, בהנחיית טל אמיתי-לביא: 12 שלבים בתנועה ובקול, מכעס לאהבה ומבכי לצחוק. מרחב בטוח, מנחה מקצועית וצוות הלפרים." />
   <meta name="theme-color" content="#C1191F" />
