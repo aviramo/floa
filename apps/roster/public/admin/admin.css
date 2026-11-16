@@ -2707,3 +2707,6 @@ html.is-loading .msub { display: block; visibility: hidden; }
 #mMenu .maddw > .rfab { display: grid; place-items: center; width: var(--fab); height: var(--fab); min-height: 0; padding: 0; border: 1px solid var(--primary); border-radius: var(--r-fab); background: var(--primary); color: var(--on-primary); box-shadow: var(--sh-pop); pointer-events: auto; position: static; margin: 0; flex: none; }
 #mMenu .maddw > .rfab::after { content: none; }
 @media (hover: hover) { #mMenu .maddw > .rfab:hover { background: var(--primary); } }
+#mMenu { padding-bottom: 0; }   /* the menu ends with its add button: no extra room under it */
+#mMenu .maddw { padding: var(--sp-1) var(--gutter); }
+body:has(#mMenu:not([hidden])) #kitFab { display: none; }   /* one plus at a time: while the meetings menu is open its own plus is the add button */
