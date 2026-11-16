@@ -6,18 +6,25 @@
    Tokens only: no raw spacing, no color literals. The PAGE never scrolls: the header and the tabs stay, the panel (.rlist) scrolls inside itself.
    ===================================================================== */
 
-/* ---------- header and tabs ---------- */
-.top { background: var(--surface); border-bottom: 1px solid var(--line-strong); }
-.top > .rhead { border-bottom: 0; }
+/* ---------- the popup, its head and its tabs ---------- */
+/* The popup is the participant card's kind (sheet.js shell, sheet.css: full height on a phone, centred on a computer). Its body is not a scroller: the tabs stay, each page scrolls inside itself. */
+dialog.connect { height: min(920px, calc(100dvh - 48px)); }
+dialog.connect .sheet { display: flex; flex-direction: column; height: 100%; overflow: hidden; padding-bottom: 0; }
+dialog.connect .sheet-head h2 { display: flex; flex-direction: column; align-items: flex-start; gap: 0; }
+dialog.connect .sheet-head h2 .msub { font: var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font); color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+dialog.connect .sheet-body { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; overflow: hidden; margin: 0; padding: 0; }   /* (the kit gives the body a few px of negative margin for focus rings: here the tabs run edge to edge, by the sheet's own side padding) */
 .bizname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.top > .rtabs { width: 100%; max-width: var(--w-page); margin-inline: auto; padding-inline: var(--gutter); border-bottom: 0; overflow-x: auto; scrollbar-width: none; }
-.top > .rtabs::-webkit-scrollbar { display: none; }
-.top .rtab { flex: 1 0 auto; padding-inline: var(--sp-1); white-space: nowrap; }
-.top .rtab:focus-visible { outline-offset: -3px; }
+/* The tabs are the participant card's (admin.css .ptabs, .ptabi, .ppager, .ppage; assets/pager.js), five of them instead of four: five equal columns, the underline a fifth wide, the same 2px line and soft shadow. */
+dialog.connect .ptabs { flex: 0 0 auto; grid-template-columns: repeat(5, 1fr); margin-inline: calc(var(--pp-px) * -1); background: var(--bg); border-bottom: 2px solid var(--line); box-shadow: 0 3px 8px -2px color-mix(in srgb, var(--text) 12%, transparent); z-index: var(--z-raised); }
+dialog.connect .ptabs .ptabi { width: 20%; }
+dialog.connect .ppager { flex: 1 1 auto; min-height: 0; margin-inline: calc(var(--pp-px) * -1); }
+.ppage.panel { display: block; flex: 0 0 100%; padding: 0; overflow-y: auto; overscroll-behavior-y: contain; }
+.ppage.panel:focus-visible { outline-offset: -3px; }
+/* the add button (the kit's round plus, in the flow after the last card) takes no background of its own, and the end of every page clears the gesture bar */
+dialog.connect .maddw { padding: var(--sp-1) var(--gutter) calc(var(--gutter) + var(--inset-b)); background: transparent; }   /* the plus: one gutter from the side and from the bottom, as everywhere */
+dialog.connect .pin { padding-bottom: calc(var(--gap-section) + var(--inset-b)); }
 
-/* ---------- the one scrolling list ---------- */
-.panel { flex: 1 1 auto; min-height: 0; }
-.panel:focus-visible { outline-offset: -3px; }
+/* ---------- the pages: one scrolling list each ---------- */
 .pin { width: 100%; max-width: var(--w-page); margin-inline: auto; padding-block: var(--gap-field) var(--gap-section); }
 .pin .rcard { margin: 0 var(--gutter) var(--gap-field); }
 .rsec { display: flex; align-items: center; justify-content: space-between; gap: var(--gap-button); margin: var(--gap-section) var(--gutter) var(--gap-button); font: var(--fw-black) var(--fs-m)/var(--lh-tight) var(--font); }

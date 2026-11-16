@@ -232,6 +232,7 @@ const TALL_STATE = `(() => {
 })()`;
 async function scrollProbe(tab, v, tag) {
   if (/ #iDlg$/.test(tag)) return;   /* the screenshot viewer: one image sized to fit the window, nothing to scroll */
+  if (/ #conn$/.test(tag)) return;   /* the connections popup is the participant card's kind: tabs over pages that each scroll INSIDE themselves (its body does not scroll); checked in Chrome by scrolling every tab to its end and measuring the last element against the plus */
   if (/ #(pDlg|stDlg|mailDlg)$/.test(tag)) return;   /* the participant card and the statistics drawer draw their pages only with data: the admin harness (harness.mjs, "popup body scrolls") measures them with the real pages */
   const hostRect = await tab.evaluate(TALL); if (!hostRect) return;
   await sleep(250);

@@ -128,7 +128,18 @@
   const icon = (n, cls) => '<svg class="ic' + (cls ? " " + cls : "") + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICON[n] + "</svg>";
 
   /* ---------- state ---------- */
-  const gate = $("#gate"), wrap = $("#wrap"), panel = $("#panel"), menu = $("#menu"), dlg = $("#dlg");
+  const gate = $("#gate"), conn = $("#conn"), menu = $("#menu"), dlg = $("#dlg");
+  /* This page IS a popup, the participant card's kind (assets/sheet.js: grab bar, header with the title and the X, swipe, Escape and backdrop close it). It lives above the admin page of the
+     same business; closing it (any way) goes back there. */
+  RosterSheet.attach(conn, { from: "bottom" });
+  let quiet = false;     /* true while the page closes the popup itself (the gate takes over): that is not a person leaving */
+  const openApp = () => { if (!conn.open) { conn.showModal(); if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur(); } };   /* no focus ring on the first control at opening, like the participant card */
+  const closeApp = () => { if (conn.open) { quiet = true; conn.close(); quiet = false; } };
+  /* the five tabs are five PAGES side by side (the participant card's pager, assets/pager.js); `panel` is the page of the open tab */
+  const TABS = ["keys", "hook", "mail", "reg", "log"];
+  const pages = TABS.map((k) => $("#pg-" + k));
+  const pageOf = (k) => pages[TABS.indexOf(k)];
+  let panel = pages[0];
   let BIZ = { slug: "", id: "", name: "" };
   let MINE = [];
   let D = blankData();
@@ -177,8 +188,8 @@
     closeMenu();
     if (dlg.open) dlg.close();
     D = blankData();
-    panel.textContent = ""; $("#bizName").textContent = ""; $("#whoName").textContent = "";   /* nothing of the last person stays in the page */
-    wrap.hidden = true;
+    pages.forEach((pg) => { pg.textContent = ""; delete pg.dataset.drawn; }); $("#bizName").textContent = "";   /* nothing of the last person stays in the page */
+    closeApp();
     gate.hidden = false;
     document.title = TITLE;
     const box = $("#gateIn");
@@ -248,18 +259,6 @@
   window.addEventListener("resize", () => closeMenu());
   document.addEventListener("scroll", (e) => { if (!menu.hidden && !menu.contains(e.target)) closeMenu(); }, true);
 
-  $("#userBtn").addEventListener("click", function () {
-    if (menuBtn === this) return closeMenu(true);
-    const name = A.name(), email = A.email(), row = MINE.find((b) => b.slug === BIZ.slug);
-    const several = row && (row.is_super || MINE.length > 1);
-    openMenu(this,
-      '<div class="rmenu__head">' + (name ? "<b>" + esc(name) + "</b>" : "") + (email ? '<bdi class="rmenu__mail" dir="ltr">' + esc(email) + "</bdi>" : "") + "</div>" +
-      '<a class="rmenu__item" role="menuitem" href="../admin/?biz=' + enc(BIZ.slug) + '">' + icon("users") + "<span>ניהול המשתתפים</span></a>" +
-      '<a class="rmenu__item" role="menuitem" href="../api/">' + icon("book") + "<span>תיעוד ה־API</span></a>" +
-      (several ? '<a class="rmenu__item" role="menuitem" href="../">' + icon("swap") + "<span>החלפת עסק</span></a>" : "") +
-      '<button type="button" class="rmenu__item" role="menuitem" data-act="hints">' + icon("restore") + "<span>הצגת הדרכות מחדש</span></button>" +
-      '<button type="button" class="rmenu__item" role="menuitem" data-act="signout">' + icon("logout") + "<span>יציאה</span></button>");
-  });
   menu.addEventListener("click", (e) => {
     const t = e.target.closest("[data-act]");
     if (!t) return;
@@ -442,18 +441,19 @@
     return "";
   }
 
+  /* one tab's page, drawn into its own box */
+  function drawPage(key) {
+    const fn = { keys: panelKeys, hook: panelHook, mail: panelMail, reg: panelReg, log: panelLog }[key];
+    const pg = pageOf(key);
+    pg.innerHTML = fn();
+    pg.dataset.drawn = "1";
+    if (key === "mail") updateMail();
+  }
   function renderPanel(keepScroll) {
+    panel = pageOf(S.tab);
     const top = keepScroll ? panel.scrollTop : 0;
-    const fn = { keys: panelKeys, hook: panelHook, mail: panelMail, reg: panelReg, log: panelLog }[S.tab];
-    panel.innerHTML = fn();
-    if (S.tab === "mail") updateMail();
+    drawPage(S.tab);
     panel.scrollTop = top;
-    panel.setAttribute("aria-labelledby", "tab-" + S.tab);
-    $$("[role=tab]").forEach((b) => { const on = b.dataset.tab === S.tab; b.setAttribute("aria-selected", on ? "true" : "false"); b.tabIndex = on ? 0 : -1; });
-    /* the add button belongs to the list of keys only, and the list reserves room for it */
-    const fab = $("#keyNew"), showFab = S.tab === "keys" && !need(["keys"]);
-    fab.hidden = !showFab;
-    panel.toggleAttribute("data-fab-room", showFab);
     /* the first-use swipe hint: until the person confirms "הבנתי" once, anywhere in the system */
     if (swipeCtl && !dlg.open && panel.querySelector("[data-swipe]")) swipeCtl.hint();
   }
@@ -462,10 +462,8 @@
     const m = { keysList: keysList, hookLog: () => hookLog(8), tplList: tplList, mailLog: () => mailLog(6), logBody: logBody };
     for (const id in m) { const el = document.getElementById(id); if (el) el.innerHTML = m[id](); }
   }
-  function setTab(t) {
-    S.tab = t;
-    renderPanel(false);
-  }
+  /* a tab is chosen by the pager (a tap, a swipe, the arrow keys): the page that became current is drawn afresh */
+  function setTab(t) { PG.go(TABS.indexOf(t)); }
 
   const sw = (id, on, label, hint) => '<label class="sw rfield rfield--switch"><input type="checkbox" id="' + id + '" role="switch"' + (on ? " checked" : "") + '><span class="rsw__trk" aria-hidden="true"></span><span class="rsw__txt"><b>' + label + "</b>" + (hint ? "<small>" + hint + "</small>" : "") + "</span></label>";
   const cardHead = (title, extra) => '<div class="chead"><h2>' + title + "</h2>" + (extra || "") + "</div>";
@@ -509,7 +507,22 @@
       secHead("המפתחות שלכם") + '<div class="lbox" id="keysList">' + keysList() + "</div>" +
       '<section class="rcard rcard--flat">' + cardHead("קובץ לכלי AI") +
       '<p class="lead">כלי AI אחר, שבונה את האתר או דף הנחיתה של העסק, יכול לקרוא קובץ אחד ולהבין בדיוק מה אפשר לחבר ל-Roster: כל הנקודות של ה־API, הרשאות, אבטחה, והנתונים של העסק הזה. הוא גם מציע לכם מה לבנות מכל זה. הקובץ בפורמט Markdown. הוא לא כולל מפתחות: מפתח סודי אי אפשר לשלוף (הוא מוצג פעם אחת ביצירה), ומפתח ציבורי חדש אפשר להוסיף לקובץ ברגע היצירה. לקובץ יש תמיד מפתח אחד: הורדה חדשה יוצרת מפתח חדש ומבטלת את הקודם.</p>' +
-      '<div class="btnrow"><button type="button" class="rbtn" data-act="ai-doc" id="aiDoc">הורדת הקובץ</button></div></section></div>';
+      '<div class="btnrow"><button type="button" class="rbtn" data-act="ai-doc" id="aiDoc">הורדת הקובץ</button></div></section>' +
+      accountCard() + "</div>" +
+      /* the add button: the kit's round plus at the bottom-left of the popup, IN the flow after the last card, so the last card scrolls completely clear of it */
+      '<div class="maddw"><button type="button" id="keyNew" data-act="key-new" data-fab="מפתח חדש"></button></div>';
+  }
+  /* the account: what the account tile's menu used to carry (this page has no header tile, it is a popup) */
+  function accountCard() {
+    const name = A.name(), email = A.email(), row = MINE.find((b) => b.slug === BIZ.slug);
+    const several = row && (row.is_super || MINE.length > 1);
+    return '<section class="rcard rcard--flat">' + cardHead("החשבון") +
+      '<p class="lead">' + (name ? "<b>" + esc(name) + "</b> " : "") + (email ? '<bdi class="mono" dir="ltr">' + esc(email) + "</bdi>" : "") + "</p>" +
+      '<div class="btnrow">' +
+      '<a class="rbtn rbtn--ghost" href="../api/">תיעוד ה־API</a>' +
+      (several ? '<a class="rbtn rbtn--ghost" href="../">החלפת עסק</a>' : "") +
+      '<button type="button" class="rbtn rbtn--ghost" data-act="hints">הצגת הדרכות מחדש</button>' +
+      '<button type="button" class="rbtn rbtn--ghost" data-act="signout">יציאה</button></div></section>';
   }
 
   /* ===== webhook ===== */
@@ -819,11 +832,13 @@
     btns.forEach((b) => { b.disabled = false; });
   }
 
-  panel.addEventListener("click", async (e) => {
+  $("#pager").addEventListener("click", async (e) => {
     const t = e.target.closest("[data-act]");
     if (!t || t.disabled) return;
     const act = t.dataset.act;
     if (act === "key-new") openNewKey();
+    else if (act === "signout") doSignOut();
+    else if (act === "hints") { try { localStorage.removeItem("rk.swipe.understood"); } catch (x) { /* nothing to clear */ } toast("ההדרכות יוצגו שוב."); renderPanel(true); }
     else if (act === "key-revoke") openRevoke(t.dataset.id);
     else if (act === "key-origins") openLock(t.dataset.id);
     else if (act === "secret-new") openSecretNew();
@@ -839,35 +854,43 @@
     else if (act === "ai-doc") { downloadAiDoc(t, "", ""); }
     else if (act === "retry") { const w = t.dataset.what; if (w === "events" || w === "deliveries") { await Promise.all([load("events"), load("deliveries")]); } else await load(w); renderPanel(true); }
   });
-  panel.addEventListener("change", (e) => {
+  $("#pager").addEventListener("change", (e) => {
     const t = e.target;
     if (!t.closest || !t.closest("#mailForm")) return;
     if (t.name === "mNeed") applyNeed(t.value);
     updateMail();
   });
-  panel.addEventListener("input", (e) => { if (e.target.closest && e.target.closest("#mailForm") && ["mNotify", "mName", "mFrom", "mContact"].includes(e.target.id)) updateMail(); });
-  panel.addEventListener("submit", (e) => {
+  $("#pager").addEventListener("input", (e) => { if (e.target.closest && e.target.closest("#mailForm") && ["mNotify", "mName", "mFrom", "mContact"].includes(e.target.id)) updateMail(); });
+  $("#pager").addEventListener("submit", (e) => {
     e.preventDefault();
     if (e.target.id === "hookForm") saveHook();
     else if (e.target.id === "mailForm") saveMail();
     else if (e.target.id === "regForm") saveReg();
   });
-  panel.addEventListener("input", (e) => { if (e.target.hasAttribute && e.target.hasAttribute("aria-invalid")) e.target.removeAttribute("aria-invalid"); const er = e.target.closest("form") && $(".ferr", e.target.closest("form")); if (er) er.textContent = ""; });
+  $("#pager").addEventListener("input", (e) => { if (e.target.hasAttribute && e.target.hasAttribute("aria-invalid")) e.target.removeAttribute("aria-invalid"); const er = e.target.closest("form") && $(".ferr", e.target.closest("form")); if (er) er.textContent = ""; });
 
-  /* tabs */
+  /* closing the popup, any way (the X, Escape, a swipe down, the backdrop): back to the admin page of this business. history.back() when the person came from there (the page behind
+     is then exactly as it was), else straight to it. */
+  let left = false;
+  conn.addEventListener("close", () => {
+    if (quiet || left || !BIZ.slug) return;
+    left = true;
+    /* the admin page shows itself as /roster/<slug> (or /<slug> on the sub-domain), so "came from the admin page" is: the same site, and the last part of the path is this business */
+    let fromAdmin = false;
+    try {
+      const ref = document.referrer ? new URL(document.referrer) : null;
+      const last = ref ? ref.pathname.replace(/\/(index\.html)?$/, "").split("/").pop().toLowerCase() : "";
+      fromAdmin = !!ref && ref.origin === location.origin && (last === BIZ.slug || last === "admin") && history.length > 1;
+    } catch (e) { /* no referrer */ }
+    if (fromAdmin) history.back(); else location.href = "../admin/?biz=" + enc(BIZ.slug);
+  });
+
+  /* tabs: the participant card's pager. A page next to the open one is drawn (once) while it slides into view, so no blank page passes by. */
   const tabs = $("#tabs");
-  tabs.addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (b) setTab(b.dataset.tab); });
-  tabs.addEventListener("keydown", (e) => {
-    const list = $$("[data-tab]", tabs), i = list.findIndex((b) => b.dataset.tab === S.tab);
-    let n = -1;
-    if (e.key === "ArrowLeft") n = (i + 1) % list.length;        /* RTL: left is "next" */
-    else if (e.key === "ArrowRight") n = (i - 1 + list.length) % list.length;
-    else if (e.key === "Home") n = 0;
-    else if (e.key === "End") n = list.length - 1;
-    if (n < 0) return;
-    e.preventDefault();
-    setTab(list[n].dataset.tab);
-    $$("[data-tab]", tabs)[n].focus();
+  const PG = RosterPager.attach({
+    tabsEl: tabs, box: $("#pager"), tabs: TABS.map((k) => $("#tab-" + k)), pages: pages,
+    onChange: (i) => { S.tab = TABS[i]; renderPanel(false); },
+    onNear: (i) => { const pg = pages[i]; if (pg && !pg.dataset.drawn && conn.open) drawPage(TABS[i]); },
   });
 
   /* ---------- keys: create, show once, revoke ---------- */
@@ -1370,10 +1393,11 @@
   function startKit() {
     if (swipeCtl) return;
     RosterUI.kbWatch();
-    document.documentElement.style.setProperty("--rptr-top", $(".top").offsetHeight + "px");
-    swipeCtl = RosterUI.swipe.init(panel);
-    ptrCtl = RosterUI.ptr.attach({ scroller: panel, onRefresh: pullRefresh, enabled: () => !dlg.open && menu.hidden });
-    $("#keyNew").addEventListener("click", () => openNewKey());
+    document.documentElement.style.setProperty("--rptr-top", Math.round($("#tabs").getBoundingClientRect().bottom) + "px");
+    const swipes = pages.map((pg) => RosterUI.swipe.init(pg));
+    swipeCtl = { hint: () => swipes[TABS.indexOf(S.tab)].hint() };
+    ptrCtl = pages.map((pg, k) => RosterUI.ptr.attach({ scroller: pg, onRefresh: pullRefresh, enabled: () => S.tab === TABS[k] && !dlg.open && menu.hidden }));
+    PG.apply();                  /* the underline and the pages that are not shown (inert) start where the open tab is */
   }
 
   /* ---------- go ---------- */
@@ -1387,7 +1411,7 @@
       history.replaceState(null, "", location.pathname + location.search);
       return showGate("הכניסה לא הצליחה. אפשר לנסות שוב.", "in");
     }
-    if (!A || !SB) { gate.hidden = false; wrap.hidden = true; $("#gateIn").innerHTML = "<h1>" + TITLE + "</h1><p>" + esc(T.noAuth) + "</p>"; return; }
+    if (!A || !SB) { gate.hidden = false; closeApp(); $("#gateIn").innerHTML = "<h1>" + TITLE + "</h1><p>" + esc(T.noAuth) + "</p>"; return; }
     if (!A.signedIn()) return showGate("", "in");
     let mineList;
     try { mineList = await rest("rpc/my_businesses", { method: "POST", json: {}, noBiz: true }); }
@@ -1400,17 +1424,16 @@
     BIZ = { slug: row.slug, id: row.id, name: row.name || row.slug };
     document.title = TITLE + " · " + BIZ.name;
     $("#bizName").textContent = BIZ.name;
-    gate.hidden = true; wrap.hidden = false;
-    $("#whoName").textContent = A.name() || A.email();
-    $("#userBtn").setAttribute("aria-label", "החשבון שלי" + (A.name() || A.email() ? ": " + (A.name() || A.email()) : ""));
+    gate.hidden = true; openApp();
     startKit();
     renderPanel(false);          /* "loading" until the data is in */
     await loadAll();
     if (epoch !== mine) return;
     renderPanel(false);
+    pages.forEach((pg) => { if (pg !== panel) { pg.textContent = ""; delete pg.dataset.drawn; } });   /* the other pages are drawn from the data as it is now, when the scroll reaches them */
   }
 
   /* a second tab changed the session */
-  window.addEventListener("storage", (e) => { if (e.key === "floa.session" && !e.newValue && !wrap.hidden) sessionLost(); });
+  window.addEventListener("storage", (e) => { if (e.key === "floa.session" && !e.newValue && conn.open) sessionLost(); });
   boot();
 })();

@@ -16,42 +16,37 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="../assets/ui.css?v=65bdce33">
 <link rel="stylesheet" href="../assets/field.css?v=7e4c4a08">
+<link rel="stylesheet" href="../admin/admin.css?v=ba8548b3">
 <link rel="stylesheet" href="../assets/manager.css?v=282d246b">
 <link rel="stylesheet" href="../assets/popup.css?v=3cced8f3">
-<link rel="stylesheet" href="../assets/sheet.css?v=0d8d9a2d">
-<link rel="stylesheet" href="connect.css?v=a2b436b2">
+<link rel="stylesheet" href="../assets/sheet.css?v=34b80b2d">
+<link rel="stylesheet" href="connect.css?v=5edbe11e">
 </head>
 <body>
 
 <!-- Not signed in, no access, no business chosen: the gate (its content is drawn by connect.js) -->
 <div class="gate" id="gate" hidden><div class="gate-in" id="gateIn"></div></div>
 
-<!-- Signed in: the header and the tabs never move, the panel under them is the one scrolling list -->
-<div class="wrap" id="wrap" hidden>
-  <header class="top">
-    <div class="rhead">
-      <div class="rhead__in">
-        <div class="rhead__text">
-          <h1 class="rhead__title">חיבורים</h1>
-          <span class="rhead__sub bizname" id="bizName"></span>
-        </div>
-        <button type="button" class="rbtn rbtn--icon rbtn--edge rbtn--edge-end" id="userBtn" aria-haspopup="menu" aria-expanded="false" aria-label="החשבון שלי">
-          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
-          <span id="whoName"></span>
-        </button>
-      </div>
-    </div>
-    <div class="rtabs tabs" id="tabs" role="tablist" aria-label="חלקי הדף">
-      <button type="button" class="rtab" role="tab" id="tab-keys" data-tab="keys" aria-selected="true" aria-controls="panel">מפתחות</button>
-      <button type="button" class="rtab" role="tab" id="tab-hook" data-tab="hook" aria-selected="false" aria-controls="panel" tabindex="-1">Webhook</button>
-      <button type="button" class="rtab" role="tab" id="tab-mail" data-tab="mail" aria-selected="false" aria-controls="panel" tabindex="-1">מיילים</button>
-      <button type="button" class="rtab" role="tab" id="tab-reg" data-tab="reg" aria-selected="false" aria-controls="panel" tabindex="-1">הרשמה</button>
-      <button type="button" class="rtab" role="tab" id="tab-log" data-tab="log" aria-selected="false" aria-controls="panel" tabindex="-1">יומן</button>
-    </div>
-  </header>
-  <main class="rlist panel" id="panel" role="tabpanel" aria-labelledby="tab-keys" tabindex="0"></main>
-  <button type="button" class="rfab" id="keyNew" data-act="key-new" aria-label="מפתח חדש" title="מפתח חדש" hidden><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg></button>
-</div>
+<!-- Signed in: a POPUP, the participant card's kind (assets/sheet.js builds its shell: grab bar, header with the title and the X). The tabs are the participant card's (.ptabs over the
+     side-by-side pages of .ppager); each page scrolls inside itself. Closing it, any way, goes back to the admin page of the business (connect.js). -->
+<dialog id="conn" class="connect" data-title="חיבורים" data-from="bottom" data-size="l" aria-labelledby="connT">
+  <h2 id="connT" data-rs-title>חיבורים<small class="msub bizname" id="bizName"></small></h2>
+  <div class="ptabs" id="tabs" role="tablist" aria-label="חלקי הדף">
+    <button type="button" role="tab" id="tab-keys" data-tab="keys" aria-selected="true" aria-controls="pg-keys">מפתחות</button>
+    <button type="button" role="tab" id="tab-hook" data-tab="hook" aria-selected="false" aria-controls="pg-hook" tabindex="-1">Webhook</button>
+    <button type="button" role="tab" id="tab-mail" data-tab="mail" aria-selected="false" aria-controls="pg-mail" tabindex="-1">מיילים</button>
+    <button type="button" role="tab" id="tab-reg" data-tab="reg" aria-selected="false" aria-controls="pg-reg" tabindex="-1">הרשמה</button>
+    <button type="button" role="tab" id="tab-log" data-tab="log" aria-selected="false" aria-controls="pg-log" tabindex="-1">יומן</button>
+    <span class="ptabi" aria-hidden="true"></span>
+  </div>
+  <div class="ppager" id="pager">
+    <section class="ppage rlist panel" id="pg-keys" role="tabpanel" aria-labelledby="tab-keys" tabindex="0"></section>
+    <section class="ppage rlist panel" id="pg-hook" role="tabpanel" aria-labelledby="tab-hook" tabindex="0" inert></section>
+    <section class="ppage rlist panel" id="pg-mail" role="tabpanel" aria-labelledby="tab-mail" tabindex="0" inert></section>
+    <section class="ppage rlist panel" id="pg-reg" role="tabpanel" aria-labelledby="tab-reg" tabindex="0" inert></section>
+    <section class="ppage rlist panel" id="pg-log" role="tabpanel" aria-labelledby="tab-log" tabindex="0" inert></section>
+  </div>
+</dialog>
 
 <div class="rmenu" id="menu" role="menu" hidden></div>
 <dialog id="dlg" aria-labelledby="dlgT" data-from="bottom"></dialog>
@@ -63,8 +58,9 @@
 <script src="../assets/undo.js?v=82b1da96"></script>
 <script src="../assets/field.js?v=3373b0b3"></script>
 <script src="../assets/sheet.js?v=56fd9da7"></script>
+<script src="../assets/pager.js?v=83aa7c12"></script>
 <script src="ai-doc.js?v=e784ad3c"></script>
 <script src="mail-defaults.js?v=a34a32c9"></script>
-<script src="connect.js?v=ef3530bd"></script>
+<script src="connect.js?v=3b86ac68"></script>
 </body>
 </html>
