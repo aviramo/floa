@@ -2699,7 +2699,7 @@ html.is-loading .msub { display: block; visibility: hidden; }
 .chiprow #filtBtn.filtchip, .chiprow #filtBtn.fspair, .chiprow .fspair,
 .chiprow .stc:not([aria-pressed="true"]):not([data-sc]), .chiprow .stc[data-cr="gen"] .gc:not(.on) { background-color: var(--hdr-ctl); }
 @media (hover: hover) { .wrap > header.top .hicon:hover { background: var(--hdr-ctl); } }
-#listTags .hsearch, #listTags .hsearch:focus-within, #listTags .hsearch:has(input:not(:placeholder-shown)) { background: #fff; box-shadow: inset 0 0 0 1px var(--line); }
+#listTags .hsearch, #listTags .hsearch:focus-within, #listTags .hsearch:has(input:not(:placeholder-shown)) { background: var(--on-primary); box-shadow: inset 0 0 0 1px var(--line); }
 #listTags .hsearch input, #listTags .hsearch input#q { background: transparent; }
 
 /* the add-meeting button of the meetings menu: the kit's round floating plus in the menu's bottom-left corner (the menu's own button rule made it a full-width row) */
@@ -2717,7 +2717,7 @@ body:has(#mMenu:not([hidden])) #kitFab { display: none; }   /* one plus at a tim
 .hmtitle { border-radius: 0; }   /* the business name that heads the main menu is a flat label with a straight line under it (a rounded corner bent the line into a raised pill) */
 
 /* the clear "x" of the search field is centred on the field: its box is 20px high, so the offset up is half of that (it was 8px, which left it 2px low) */
-.sclear, .hsearch .sclear, #qClear { margin-top: -11px; height: 20px; line-height: 20px; padding: 0 0 3px; }
+.sclear, .hsearch .sclear, #qClear { margin-top: calc(var(--sp-1) * -1.375); height: 20px; line-height: 20px; padding: 0 0 calc(var(--sp-1) * 0.375); }
 
 /* the participant card's details tab: four rows of two equal columns (name, gender and age, phone and email, address and source) */
 .prow { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-1); align-items: end; }
