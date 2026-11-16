@@ -2726,3 +2726,6 @@ body:has(#mMenu:not([hidden])) #kitFab { display: none; }   /* one plus at a tim
 /* the participant card's details tab: room above "added on" (a clear gap under the last field row), the delete button tight under it */
 #pRegLine.note--reg { margin: var(--sp-2) 0 0; }
 #pgI #pDelete { margin-top: var(--sp-1); }
+
+/* the details tab: a row with one field gives it the whole width (the address) */
+.prow > .field:only-of-type { grid-column: 1 / -1; }

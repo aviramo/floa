@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="../assets/field.css?v=7e4c4a08" />
   <link rel="stylesheet" href="../assets/popup.css?v=3cced8f3" />
   <link rel="stylesheet" href="../assets/ui.css?v=65bdce33" />
-  <link rel="stylesheet" href="admin.css?v=a042aed4" />
+  <link rel="stylesheet" href="admin.css?v=64d532d4" />
 </head>
 <body class="locked">
   <div class="gate" id="gate" hidden>
@@ -133,11 +133,11 @@
         </div>
         <div class="prow">
           <label class="rfield field"><span>טלפון</span><input placeholder=" " name="phone" type="tel" inputmode="tel" maxlength="20" autocomplete="off" /></label>
-          <label class="rfield field"><span>אימייל</span><input placeholder=" " name="email" type="email" inputmode="email" maxlength="254" autocomplete="off" /></label>
+          <label class="rfield field"><span>מקור הגעה</span><select name="promoter_sel" id="pPromoSel"></select></label>
         </div>
         <div class="prow">
           <label class="rfield field"><span>כתובת</span><input placeholder=" " name="address" maxlength="200" autocomplete="street-address" /></label>
-          <label class="rfield field"><span>מקור הגעה</span><select name="promoter_sel" id="pPromoSel"></select></label>
+          <input type="hidden" name="email" />   <!-- no field for it: the email comes from the linked Google account (or the signup) and is kept as it is -->
         </div>
         <div class="gacc" id="pGoogle" hidden></div>
         <div class="note note--reg" id="pRegLine"></div>
