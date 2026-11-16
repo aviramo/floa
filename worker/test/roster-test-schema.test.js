@@ -119,3 +119,16 @@ test("ROSTER_TEST_ADMIN_FROM: in the test schema the mails to the admins come fr
   const r = await run("roster", env);
   for (const m of r) assert.ok(m.json.from !== "admins@example.com" && m.json.from !== "Biz <biz@example.com>");
 });
+
+test("the links in a mail point at the site of its schema: test mails to roster-test.floa.co.il, real mails to floa.co.il", async () => {
+  const run = async (schema) => {
+    const net = fakeNet({ rpc: { events_claim: () => [item(8)], events_done: () => null } });
+    await processOutbox({ env: makeEnv({ ROSTER_TEST_MAIL_TO: "me@example.com" }), fetch: net.fetch, now: () => NOW, sleep: async () => {}, schema });
+    return net.resend().map((m) => String(m.json.html) + String(m.json.text)).join(" ");
+  };
+  const t = await run("roster-test");
+  assert.ok(t.includes("https://roster-test.floa.co.il/roster/"), "test mail links to the test site");
+  assert.ok(!t.includes("https://floa.co.il/roster/"), "and never to the real one");
+  const r = await run("roster");
+  assert.ok(r.includes("https://floa.co.il/roster/") && !r.includes("roster-test.floa.co.il"));
+});

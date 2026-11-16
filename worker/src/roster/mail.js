@@ -43,6 +43,8 @@ export const MAIL_DOMAIN = "floa.co.il";
 const SHARED_LOCALS = new Set(["admin", "administrator", "postmaster", "abuse", "hostmaster", "webmaster", "info", "hello", "contact", "support", "sales", "mail", "email", "noreply", "no-reply", "root", "security", "billing", "ofir", "test"]);
 const SLUG_RE = /^[a-z][a-z0-9-]{1,39}$/;
 export const SITE_ORIGIN = "https://floa.co.il";
+/* the test schema links to the test copy of the site, so a click from a test mail never lands on the real admin */
+export const TEST_SITE_ORIGIN = "https://roster-test.floa.co.il";
 export const RESEND_URL = "https://api.resend.com/emails";
 const MAX_HTML = 200_000;
 const MAX_ADMIN_RECIPIENTS = 20;
@@ -148,6 +150,7 @@ const accountOf = (work) => {
 
 export function buildVars(work, templateKey) {
   const { business } = work;
+  const origin = work.siteOrigin || SITE_ORIGIN;
   const s = business.settings;
   const p = participantOf(work);
   const m = meetingOf(work);
@@ -179,10 +182,10 @@ export function buildVars(work, templateKey) {
     amount: formatAmount(pay.amount ?? m.reported_amount ?? (templateKey === "admin_payment_reported" ? m.price : undefined)),
     method: method === "other" ? "" : (METHOD_LABELS[method] || line(pay.method, 40)),
     directions: templateKey === "payment_confirmed" ? block(m.directions) : "",
-    my_link: s.personal_area_enabled ? `${SITE_ORIGIN}/roster/me/?biz=${slug}` : "",
+    my_link: s.personal_area_enabled ? `${origin}/roster/me/?biz=${slug}` : "",
     pay_link: safeHttpUrl(s.payment_url),
     whatsapp_link: whatsappLink(s.contact_whatsapp),
-    admin_link: `${SITE_ORIGIN}/roster/admin/?biz=${slug}${pid ? `&p=${pid}` : ""}`,
+    admin_link: `${origin}/roster/admin/?biz=${slug}${pid ? `&p=${pid}` : ""}`,
   };
 }
 

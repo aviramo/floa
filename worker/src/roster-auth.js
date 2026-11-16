@@ -35,13 +35,13 @@ export async function handleRosterAuth(request, env, doFetch = fetch) {
   const base = env.SUPABASE_URL, key = env.SUPABASE_SERVICE_KEY;
   const h = { apikey: key, authorization: "Bearer " + key, "content-type": "application/json" };
   const link = await doFetch(base + "/auth/v1/admin/generate_link", { method: "POST", headers: h, body: JSON.stringify({ type: "magiclink", email }) });
-  if (!link.ok) return reply({ error: "auth_failed" }, 502, okOrigin);
+  if (!link.ok) { console.log("roster-auth generate_link", link.status, (await link.text()).slice(0, 300)); return reply({ error: "auth_failed", stage: "generate_link", status: link.status }, 502, okOrigin); }
   const l = await link.json();
   const hashed = l.hashed_token || l.properties?.hashed_token, uid = l.id || l.user?.id;
-  if (!hashed) return reply({ error: "auth_failed" }, 502, okOrigin);
+  if (!hashed) { console.log("roster-auth no hashed_token", JSON.stringify(Object.keys(l))); return reply({ error: "auth_failed", stage: "no_token" }, 502, okOrigin); }
   const name = String(t.name || "").slice(0, 120);
   if (uid) await doFetch(base + "/auth/v1/admin/users/" + uid, { method: "PUT", headers: h, body: JSON.stringify({ user_metadata: { full_name: name, name, picture: t.picture || null }, email_confirm: true }) }).catch(() => {});
   const v = await doFetch(base + "/auth/v1/verify", { method: "POST", headers: { apikey: key, "content-type": "application/json" }, body: JSON.stringify({ type: "magiclink", token_hash: hashed }) });
-  if (!v.ok) return reply({ error: "auth_failed" }, 502, okOrigin);
+  if (!v.ok) { console.log("roster-auth verify", v.status, (await v.text()).slice(0, 300)); return reply({ error: "auth_failed", stage: "verify", status: v.status }, 502, okOrigin); }
   return reply(await v.json(), 200, okOrigin);
 }

@@ -23,7 +23,7 @@
    ========================================================================== */
 import { createDb, DEFAULT_SCHEMA, RPC, TEST_SCHEMA } from "./db.js";
 import { createMailTally, OUTBOX } from "./limits.js";
-import { deliverMails } from "./mail.js";
+import { deliverMails, TEST_SITE_ORIGIN } from "./mail.js";
 import { normalizeWork } from "./work.js";
 import { runWebhook } from "./webhook.js";
 
@@ -83,6 +83,7 @@ export async function processOutbox(deps) {
         summary.skipped++;
         continue;
       }
+      if (schema === TEST_SCHEMA) work.siteOrigin = TEST_SITE_ORIGIN;   /* links in test mails go to the test site */
       /* not enough time to finish it properly: leave it claimed, its lock
          lapses and the next run takes it. Nothing has been sent. */
       if (deadlineAt - now() < OUTBOX.webhookTimeoutMs + 1000) {
