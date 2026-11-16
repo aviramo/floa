@@ -2205,11 +2205,36 @@
     if (!pid || !mid || mailOfferQ.some((x) => x.pid === pid && x.mid === mid)) return;
     mailOfferQ.push({ pid, mid }); clearTimeout(mailOfferT); mailOfferT = setTimeout(mailOfferNext, 800);
   }
+  /* שיוך שהורד בידי מנהל: לא נשלח מייל ביטול אוטומטית. פופאפ שואל איך להודיע למשתתף: מייל (אם יש לו כתובת מייל) או וואטסאפ */
+  function offerCancelMail(pid, mid) {
+    if (!pid || !mid || mailOfferQ.some((x) => x.pid === pid && x.mid === mid && x.kind === 'cancel')) return;
+    mailOfferQ.push({ pid, mid, kind: 'cancel' }); clearTimeout(mailOfferT); mailOfferT = setTimeout(mailOfferNext, 800);
+  }
+  async function cancelOffer(p, m) {
+    let st = ''; try { st = await api('rpc/cancel_mail', { method: 'POST', body: { p_pid: p.id, p_mid: m.id, p_dry: true }, ui: false }); } catch (e) { console.error(e); }
+    const hasPhone = !!String(p.phone || '').trim();
+    const after = () => $('#cDlg').addEventListener('close', () => setTimeout(mailOfferNext, 350), { once: true });
+    const first = String(p.first_name || p.name || '').trim().split(/\s+/)[0] || '';
+    const waText = 'שלום' + (first ? ' ' + first : '') + ', שמירת המקום שלך ל' + meetingLabel(m, true) + ' בוטלה. אם זו טעות, או כדי לשמור מקום שוב, אפשר לפנות אלינו.';
+    const wa = hasPhone ? { label: 'שליחה בוואטסאפ', fn: () => openWaUrl(waLink(p.phone, waText)) } : null;
+    if (st === 'ready') {
+      const send = async () => {
+        let r = ''; try { r = await api('rpc/cancel_mail', { method: 'POST', body: { p_pid: p.id, p_mid: m.id }, ui: false }); } catch (e) { fail(e); return; }
+        if (r === 'sent') toast('המייל נשלח למשתתף'); else toast(r === 'already' ? 'כבר נשלח למשתתף מייל על הביטול' : 'המייל לא נשלח');
+      };
+      confirmAct('להודיע למשתתף על הביטול?', p.id, m.id, send, 'השיוך למפגש הוסר. איך להודיע למשתתף?', 'שליחה במייל', wa, { primary: true });
+      after();
+    } else if ((st === 'no_email' || st === 'no_mail') && hasPhone) {
+      confirmAct('להודיע למשתתף על הביטול?', p.id, m.id, () => openWaUrl(waLink(p.phone, waText)), (st === 'no_email' ? 'אין למשתתף כתובת מייל.' : 'המיילים למשתתפים כבויים.') + ' לשלוח הודעת ביטול בוואטסאפ?', 'כן, פתיחת וואטסאפ', null, { primary: true });
+      after();
+    } else mailOfferNext();
+  }
   async function mailOfferNext() {
     if (!mailOfferQ.length) return;
     if ($('#cDlg').open) { mailOfferT = setTimeout(mailOfferNext, 500); return; }
     const it = mailOfferQ.shift(), p = partOf(it.pid), m = meetOf(it.mid);
     if (!p || !m) { mailOfferNext(); return; }
+    if (it.kind === 'cancel') { await cancelOffer(p, m); return; }
     { const t0 = state.tpls.find((x) => x.system_key === 'confirm'); if (t0 && sentRow(it.pid, it.mid, t0.id)) { mailOfferNext(); return; } }   // כבר סומן שנשלח אליו: בלי פופאפ
     let st = ''; try { st = await api('rpc/close_payment_mail', { method: 'POST', body: { p_pid: it.pid, p_mid: it.mid, p_dry: true }, ui: false }); } catch (e) { console.error(e); }
     const nopay = noPayOf(p, linkOf(it.pid, it.mid)), hasPhone = !!String(p.phone || '').trim(), tpl = state.tpls.find((x) => x.system_key === 'confirm');
@@ -2234,7 +2259,8 @@
     try {
       const q = new URLSearchParams(path.indexOf('?') < 0 ? '' : path.slice(path.indexOf('?') + 1));
       const eq = (k) => { const v = q.get(k); return v && v.indexOf('eq.') === 0 ? v.slice(3) : null; };
-      if (table === T.a && method === 'PATCH' && body && body.no_pay === true) offerCloseMail(eq('participant_id'), eq('meeting_id'));
+      if (table === T.a && method === 'DELETE') offerCancelMail(eq('participant_id'), eq('meeting_id'));
+      else if (table === T.a && method === 'PATCH' && body && body.no_pay === true) offerCloseMail(eq('participant_id'), eq('meeting_id'));
       else if (table === T.pay && method === 'POST' && body && !Array.isArray(body) && body.kind === 'payment' && body.participant_id && body.meeting_id && String(body.reason || '').indexOf('partial_due:') !== 0) offerCloseMail(body.participant_id, body.meeting_id);
     } catch (e) {}
   };

@@ -40,7 +40,10 @@ export async function handleRosterAuth(request, env, doFetch = fetch) {
   const hashed = l.hashed_token || l.properties?.hashed_token, uid = l.id || l.user?.id;
   if (!hashed) { console.log("roster-auth no hashed_token", JSON.stringify(Object.keys(l))); return reply({ error: "auth_failed", stage: "no_token" }, 502, okOrigin); }
   const name = String(t.name || "").slice(0, 120);
-  if (uid) await doFetch(base + "/auth/v1/admin/users/" + uid, { method: "PUT", headers: h, body: JSON.stringify({ user_metadata: { full_name: name, name, picture: t.picture || null }, email_confirm: true }) }).catch(() => {});
+  /* the account is shared by every floa app: its display name and picture are filled ONLY when it has none yet, never overwritten */
+  const md = l.user_metadata || l.user?.user_metadata || {};
+  const hasName = !!(md.full_name || md.name);
+  if (uid && !hasName && name) await doFetch(base + "/auth/v1/admin/users/" + uid, { method: "PUT", headers: h, body: JSON.stringify({ user_metadata: { ...md, full_name: name, name, ...(md.picture || !t.picture ? {} : { picture: t.picture }) } }) }).catch(() => {});
   const v = await doFetch(base + "/auth/v1/verify", { method: "POST", headers: { apikey: key, "content-type": "application/json" }, body: JSON.stringify({ type: "magiclink", token_hash: hashed }) });
   if (!v.ok) { console.log("roster-auth verify", v.status, (await v.text()).slice(0, 300)); return reply({ error: "auth_failed", stage: "verify", status: v.status }, 502, okOrigin); }
   return reply(await v.json(), 200, okOrigin);

@@ -43,3 +43,20 @@ test("the CORS preflight answers 204 without a body (a body on a 204 threw and b
   const bad = new Request("https://api.example/roster-auth/google", { method: "OPTIONS", headers: { origin: "https://evil.example" } });
   assert.equal((await handleRosterAuth(bad, env, net(good))).status, 403);
 });
+
+test("the shared account's name is only filled when empty, never overwritten", async () => {
+  const run = async (meta) => {
+    const puts = [];
+    const f = async (url, init) => {
+      if (String(url).includes("tokeninfo")) return new Response(JSON.stringify(good));
+      if (String(url).includes("generate_link")) return new Response(JSON.stringify({ id: "u1", hashed_token: "h", user_metadata: meta }));
+      if (String(url).includes("/admin/users/")) { puts.push(JSON.parse(init.body)); return new Response("{}"); }
+      return new Response(JSON.stringify({ access_token: "a", refresh_token: "r" }));
+    };
+    const r = await handleRosterAuth(req(), env, f); assert.equal(r.status, 200); return puts;
+  };
+  assert.equal((await run({ full_name: "Existing Name" })).length, 0);
+  const puts = await run({});
+  assert.equal(puts.length, 1); assert.equal(puts[0].user_metadata.full_name, good.name);
+  assert.equal("email_confirm" in puts[0], false);
+});

@@ -138,9 +138,9 @@ test("registered and registration_cancelled say \"saving a place\", the way harp
   assert.ok(!/\{\{meeting_name\}\}/.test(registered.subject + cancelled.subject), "the subjects name no variable now");
 });
 
-test("the eight templates exist and the participant ones are marked", () => {
-  assert.deepEqual([...TEMPLATE_KEYS].sort(), ["admin_account_linked", "admin_payment_reported", "admin_phone_conflict", "admin_signup", "payment_confirmed", "refund", "registered", "registration_cancelled"]);
-  assert.deepEqual([...PARTICIPANT_TEMPLATES].sort(), ["payment_confirmed", "refund", "registered", "registration_cancelled"]);
+test("the nine templates exist and the participant ones are marked", () => {
+  assert.deepEqual([...TEMPLATE_KEYS].sort(), ["admin_account_linked", "admin_payment_reported", "admin_phone_conflict", "admin_signup", "payment_confirmed", "refund", "registered", "registration_cancelled", "registration_confirmed"]);
+  assert.deepEqual([...PARTICIPANT_TEMPLATES].sort(), ["payment_confirmed", "refund", "registered", "registration_cancelled", "registration_confirmed"]);
   for (const key of TEMPLATE_KEYS) {
     assert.ok(DEFAULT_TEMPLATES[key].subject.length > 0);
     assert.ok(DEFAULT_TEMPLATES[key].html.length > 200);

@@ -77,7 +77,7 @@
   };
   /* what a participant typed, and the payment method: escaped even inside {{{x}}} (the Worker's rule) */
   const UNTRUSTED = new Set(["first_name", "last_name", "full_name", "phone", "email", "age", "gender", "method", "account_email", "account_name"]);
-  const TPL_ORDER = ["admin_signup", "admin_payment_reported", "admin_account_linked", "admin_phone_conflict", "registered", "payment_confirmed", "refund", "registration_cancelled"];
+  const TPL_ORDER = ["admin_signup", "admin_payment_reported", "admin_account_linked", "admin_phone_conflict", "registered", "payment_confirmed", "refund", "registration_cancelled", "registration_confirmed"];
   /* a template is shown to the editor and rendered by the Worker: the same bounds as the database and the Worker */
   const MAX_TPL = 20000, MAX_DATA_IF = 50;
   const SETTINGS_COLS = "registration_open,signup_required,personal_area_enabled,participant_mail_enabled,mail_off_types,notify_emails,contact_email,sender_name,mail_from_address,contact_whatsapp,payment_url,webhook_url,webhook_events,webhook_secret_set,updated_at";
@@ -633,7 +633,7 @@
      2. participants: the master switch and a switch per mail type; managers: the notify list and a switch per type
      3. a status line per area ("מוגדר" or "לא מוגדר" and what is missing), updated while the form is edited
      4. a test mail per type, to the signed-in manager's own address only (mail_test) */
-  const PART_TYPES = ["registered", "payment_confirmed", "refund", "registration_cancelled"];
+  const PART_TYPES = ["registered", "payment_confirmed", "refund", "registration_cancelled", "registration_confirmed"];
   const ADM_TYPES = ["admin_signup", "admin_payment_reported", "admin_account_linked", "admin_phone_conflict"];
   const TEST_ERR = {
     forbidden: T.generic, unknown_template: T.generic,
@@ -1192,7 +1192,7 @@
       business_name: BIZ.name, first_name: "דנה", last_name: "כהן", full_name: "דנה כהן", phone: "050-1234567", email: "dana@example.com", age: "34", gender: "אישה",
       account_email: key === "admin_account_linked" || key === "admin_phone_conflict" ? "dana.cohen@gmail.com" : "", account_name: key === "admin_account_linked" || key === "admin_phone_conflict" ? "Dana Cohen" : "",
       meeting_name: "ערב יוגה", meeting_date: "יום חמישי, 12.11", meeting_time: "20:00", place: "הסטודיו", city: "תל אביב",
-      price: "80", amount: "80", method: "ביט", directions: key === "payment_confirmed" ? "קומה 2, הכניסה מהחצר.\nאפשר לחנות ברחוב הסמוך." : "",
+      price: "80", amount: "80", method: "ביט", directions: key === "payment_confirmed" || key === "registration_confirmed" ? "קומה 2, הכניסה מהחצר.\nאפשר לחנות ברחוב הסמוך." : "",
       my_link: s.personal_area_enabled !== false ? meUrl() : "", pay_link: httpLink(s.payment_url), whatsapp_link: waLink(s.contact_whatsapp),
       admin_link: "https://floa.co.il/roster/admin/?biz=" + BIZ.slug + "&p=00000000-0000-4000-8000-000000000000",
     };

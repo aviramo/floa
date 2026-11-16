@@ -30,8 +30,8 @@ function work(type, over = {}) {
 }
 const depsFor = (net) => ({ fetch: net.fetch, apiKey: "re_k", tally: createMailTally(), sleep: async () => {} });
 
-test("the template list is eight, and the two new ones are admin templates (no footer line, no participant counters)", () => {
-  assert.equal(TEMPLATE_KEYS.length, 8);
+test("the template list is nine, and the two admin ones added earlier are admin templates (no footer line, no participant counters)", () => {
+  assert.equal(TEMPLATE_KEYS.length, 9);
   assert.ok(TEMPLATE_KEYS.includes("admin_account_linked") && TEMPLATE_KEYS.includes("admin_phone_conflict"));
   assert.ok(!PARTICIPANT_TEMPLATES.has("admin_account_linked") && !PARTICIPANT_TEMPLATES.has("admin_phone_conflict"));
   for (const key of ["admin_account_linked", "admin_phone_conflict"]) {

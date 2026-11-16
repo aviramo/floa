@@ -181,7 +181,7 @@ export function buildVars(work, templateKey) {
     price: formatAmount(m.price),
     amount: formatAmount(pay.amount ?? m.reported_amount ?? (templateKey === "admin_payment_reported" ? m.price : undefined)),
     method: method === "other" ? "" : (METHOD_LABELS[method] || line(pay.method, 40)),
-    directions: templateKey === "payment_confirmed" ? block(m.directions) : "",
+    directions: templateKey === "payment_confirmed" || templateKey === "registration_confirmed" ? block(m.directions) : "",
     my_link: s.personal_area_enabled ? `${origin}/roster/me/?biz=${slug}` : "",
     pay_link: safeHttpUrl(s.payment_url),
     whatsapp_link: whatsappLink(s.contact_whatsapp),
@@ -281,7 +281,18 @@ export function planMails(work) {
       break;
     }
 
+    case "registration.confirmed":   /* a place with no payment due: a manager's "send the confirmation" for a "no payment" registration, only ever made by the admin page */
+      if (m.future !== true) skip("registration_confirmed", "meeting_not_future");
+      else toParticipant("registration_confirmed", false);
+      break;
+
     case "registration.cancelled":
+      if (event.source === "admin") skip("registration_cancelled", "removed_by_admin");   /* removed by hand: the admin page asks the manager whether to mail or WhatsApp */
+      else if (m.future !== true) skip("registration_cancelled", "meeting_not_future");
+      else toParticipant("registration_cancelled", false);
+      break;
+
+    case "registration.cancel_notice":   /* the manager chose "mail" after removing a registration by hand: the same mail, and no webhook (the removal already sent its own) */
       if (m.future !== true) skip("registration_cancelled", "meeting_not_future");
       else toParticipant("registration_cancelled", false);
       break;

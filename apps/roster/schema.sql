@@ -1409,7 +1409,7 @@ do $$
 begin
   if not exists (select 1 from pg_constraint where conrelid = 'roster.business_settings'::regclass and conname = 'roster_settings_mail_off_known') then
     alter table roster.business_settings add constraint roster_settings_mail_off_known
-      check (mail_off_types <@ array['registered', 'payment_confirmed', 'refund', 'registration_cancelled',
+      check (mail_off_types <@ array['registered', 'payment_confirmed', 'refund', 'registration_cancelled', 'registration_confirmed',
                                      'admin_signup', 'admin_payment_reported', 'admin_account_linked', 'admin_phone_conflict']::text[]);
   end if;
 end $$;
@@ -1599,7 +1599,7 @@ begin
   if not exists (select 1 from pg_constraint where conname = 'roster_mail_templates_key_known' and conrelid = 'roster.mail_templates'::regclass) then
     alter table roster.mail_templates add constraint roster_mail_templates_key_known check (key in (
       'admin_signup', 'admin_payment_reported', 'admin_account_linked', 'admin_phone_conflict',
-      'registered', 'payment_confirmed', 'refund', 'registration_cancelled'));
+      'registered', 'payment_confirmed', 'refund', 'registration_cancelled', 'registration_confirmed'));
   end if;
   if not exists (select 1 from pg_constraint where conname = 'roster_mail_templates_html_size' and conrelid = 'roster.mail_templates'::regclass) then
     alter table roster.mail_templates add constraint roster_mail_templates_html_size check (
@@ -3158,7 +3158,7 @@ returns jsonb language plpgsql security definer set search_path = roster, public
 declare b uuid := roster.my_current(); me text := lower(btrim(coalesce(roster.email_of(), ''))); wait int; id bigint;
 begin
   if b is null then return jsonb_build_object('error', 'forbidden'); end if;
-  if p_template is null or p_template not in ('registered', 'payment_confirmed', 'refund', 'registration_cancelled',
+  if p_template is null or p_template not in ('registered', 'payment_confirmed', 'refund', 'registration_cancelled', 'registration_confirmed',
                                               'admin_signup', 'admin_payment_reported', 'admin_account_linked', 'admin_phone_conflict') then
     return jsonb_build_object('error', 'unknown_template');
   end if;
@@ -3540,27 +3540,37 @@ end $fn$;
 create or replace function roster.close_payment_mail(p_pid uuid, p_mid uuid, p_dry boolean default false)
 returns text language plpgsql security definer set search_path = roster, public as $fn$
 declare b uuid := roster.my_current(); s roster.business_settings; a roster.attendance; mt roster.meetings;
-        pa roster.participants; paid numeric;
+        pa roster.participants; paid numeric; nopay boolean; tkey text;
 begin
   if b is null then raise exception 'forbidden' using errcode = '42501'; end if;
   select * into a from roster.attendance where business_id = b and participant_id = p_pid and meeting_id = p_mid;
   if not found then return 'skip'; end if;
   select * into mt from roster.meetings where id = p_mid and business_id = b;
   if not found or mt.meeting_date < roster.today() then return 'past'; end if;
+  nopay := coalesce(a.no_pay, false);
+  tkey := case when nopay then 'registration_confirmed' else 'payment_confirmed' end;
   if exists (select 1 from roster.mail_log l where l.business_id = b and l.participant_id = p_pid and l.meeting_id = p_mid
-               and l.template = 'payment_confirmed' and l.status in ('sent', 'pending'))
-     or exists (select 1 from roster.events e where e.business_id = b and e.type = 'payment.recorded' and e.source = 'admin_mail'
+               and l.template = tkey and l.status in ('sent', 'pending'))
+     or exists (select 1 from roster.events e where e.business_id = b and e.type = case when nopay then 'registration.confirmed' else 'payment.recorded' end and e.source = 'admin_mail'
                   and e.status in ('pending', 'processing') and (e.payload #>> '{participant,id}') = p_pid::text and (e.payload #>> '{meeting,id}') = p_mid::text) then
     return 'already';
   end if;
   s := roster.settings_of(b);
-  if coalesce(a.no_pay, false) or a.pay_later_at is not null or not coalesce(s.participant_mail_enabled, false)
-     or 'payment_confirmed' = any (coalesce(s.mail_off_types, '{}'::text[])) then return 'no_mail'; end if;
+  if a.pay_later_at is not null or not coalesce(s.participant_mail_enabled, false)
+     or tkey = any (coalesce(s.mail_off_types, '{}'::text[])) then return 'no_mail'; end if;
+  select * into pa from roster.participants where id = p_pid and business_id = b;
+  if not found then return 'skip'; end if;
+  if nopay then
+    if coalesce(btrim(pa.email), '') = '' then return 'no_email'; end if;
+    if p_dry then return 'ready'; end if;
+    if (select count(*) from roster.events where business_id = b and status in ('pending', 'processing')) >= 500 then return 'skip'; end if;
+    insert into roster.events (business_id, type, payload, source)
+      values (b, 'registration.confirmed', jsonb_build_object('participant', roster.participant_json(pa), 'meeting', roster.meeting_brief(mt)), 'admin_mail');
+    return 'sent';
+  end if;
   if coalesce(a.pay_due_amount, 0) > 0 then return 'skip'; end if;
   paid := roster.paid_for(b, p_pid, p_mid);
   if paid <= 0 then return 'unpaid'; end if;
-  select * into pa from roster.participants where id = p_pid and business_id = b;
-  if not found then return 'skip'; end if;
   if coalesce(btrim(pa.email), '') = '' then return 'no_email'; end if;
   if p_dry then return 'ready'; end if;
   if (select count(*) from roster.events where business_id = b and status in ('pending', 'processing')) >= 500 then return 'skip'; end if;
@@ -3569,6 +3579,34 @@ begin
               'payment', jsonb_build_object('id', null, 'kind', 'payment', 'amount', paid, 'method', null, 'meeting_id', p_mid)), 'admin_mail');
   return 'sent';
 end $fn$;
+
+create or replace function roster.cancel_mail(p_pid uuid, p_mid uuid, p_dry boolean default false)
+returns text language plpgsql security definer set search_path = roster, public as $fn$
+declare b uuid := roster.my_current(); s roster.business_settings; mt roster.meetings; pa roster.participants;
+begin
+  if b is null then raise exception 'forbidden' using errcode = '42501'; end if;
+  select * into mt from roster.meetings where id = p_mid and business_id = b;
+  if not found or mt.meeting_date < roster.today() then return 'past'; end if;
+  if exists (select 1 from roster.attendance where business_id = b and participant_id = p_pid and meeting_id = p_mid) then return 'skip'; end if;   -- still registered: nothing was cancelled
+  select * into pa from roster.participants where id = p_pid and business_id = b;
+  if not found then return 'skip'; end if;
+  s := roster.settings_of(b);
+  if not coalesce(s.participant_mail_enabled, false) or 'registration_cancelled' = any (coalesce(s.mail_off_types, '{}'::text[])) then return 'no_mail'; end if;
+  if exists (select 1 from roster.mail_log l where l.business_id = b and l.participant_id = p_pid and l.meeting_id = p_mid
+               and l.template = 'registration_cancelled' and l.status in ('sent', 'pending') and l.created_at > now() - interval '10 minutes')
+     or exists (select 1 from roster.events e where e.business_id = b and e.type = 'registration.cancel_notice' and e.status in ('pending', 'processing')
+                  and (e.payload #>> '{participant,id}') = p_pid::text and (e.payload #>> '{meeting,id}') = p_mid::text) then
+    return 'already';
+  end if;
+  if coalesce(btrim(pa.email), '') = '' then return 'no_email'; end if;
+  if p_dry then return 'ready'; end if;
+  if (select count(*) from roster.events where business_id = b and status in ('pending', 'processing')) >= 500 then return 'skip'; end if;
+  insert into roster.events (business_id, type, payload, source)
+    values (b, 'registration.cancel_notice', jsonb_build_object('participant', roster.participant_json(pa), 'meeting', roster.meeting_brief(mt)), 'admin_mail');
+  return 'sent';
+end $fn$;
+revoke all on function roster.cancel_mail(uuid, uuid, boolean) from public, anon;
+grant execute on function roster.cancel_mail(uuid, uuid, boolean) to authenticated;
 
 -- The two counters of the earlier version (check, then add, not atomic) are gone: rate_take does both in one step.
 drop function if exists public.roster_rate_check(text, integer, integer);

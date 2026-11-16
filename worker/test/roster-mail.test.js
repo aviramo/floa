@@ -93,6 +93,21 @@ test("registration.cancelled: only for a future meeting", () => {
   assert.deepEqual(skippedReasons(work({ event: ev, facts: { meeting: { future: false } } })), { registration_cancelled: "meeting_not_future" });
 });
 
+test("registration.cancelled made by an admin is NOT mailed (the admin page asks); the manager's own cancel_notice is, for a future meeting only", () => {
+  assert.deepEqual(planned(work({ event: { type: "registration.cancelled", source: "admin" } })), []);
+  assert.deepEqual(skippedReasons(work({ event: { type: "registration.cancelled", source: "admin" } })), { registration_cancelled: "removed_by_admin" });
+  assert.deepEqual(planned(work({ event: { type: "registration.cancelled", source: "me" } })), ["registration_cancelled>participant"]);
+  const ev = { type: "registration.cancel_notice", source: "admin_mail" };
+  assert.deepEqual(planned(work({ event: ev })), ["registration_cancelled>participant"]);
+  assert.deepEqual(skippedReasons(work({ event: ev, facts: { meeting: { future: false } } })), { registration_cancelled: "meeting_not_future" });
+});
+
+test("registration.confirmed (a no-payment registration the manager chose to mail): registration_confirmed, a future meeting only", () => {
+  const ev = { type: "registration.confirmed", source: "admin_mail" };
+  assert.deepEqual(planned(work({ event: ev })), ["registration_confirmed>participant"]);
+  assert.deepEqual(skippedReasons(work({ event: ev, facts: { meeting: { future: false } } })), { registration_confirmed: "meeting_not_future" });
+});
+
 test("a participant mail without an address: recorded as failed (no_address) except for `registered`, which says 'when it has an email'", () => {
   const noMail = { ...PERSON, email: "" };
   const ev = (type) => ({ type, payload: { participant: noMail, meeting: MEETING, payment: { kind: "refund", amount: 5 } } });

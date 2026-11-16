@@ -193,6 +193,19 @@ export const DEFAULT_TEMPLATES = Object.freeze({
       linkLine("יש שאלה? אפשר לכתוב לנו ב־WhatsApp:", "לשיחה ב־WhatsApp", "whatsapp_link"),
     ].join("\n"), PARTICIPANT_FOOTER),
   }),
+  registration_confirmed: Object.freeze({
+    subject: "ההרשמה שלך למפגש אושרה: {{meeting_name}}",
+    html: shell([
+      para("שלום {{first_name}},", 'data-if="first_name"'),
+      title("ההרשמה שלך למפגש אושרה"),
+      para("המקום שלך שמור, ולא נדרש תשלום. מחכים לראות אותך."),
+      table(...meetingRows),
+      para("איך מגיעים", 'data-if="directions"', `font-weight:bold;margin-bottom:4px`),
+      para("{{directions}}", 'data-if="directions"', "white-space:pre-line"),
+      linkLine("את ההרשמה אפשר לראות באזור האישי:", "לאזור האישי", "my_link"),
+      linkLine("יש שאלה? אפשר לכתוב לנו ב־WhatsApp:", "לשיחה ב־WhatsApp", "whatsapp_link"),
+    ].join("\n"), PARTICIPANT_FOOTER),
+  }),
 });
 
 export const TEMPLATE_KEYS = Object.freeze(Object.keys(DEFAULT_TEMPLATES));
@@ -200,5 +213,5 @@ export const TEMPLATE_KEYS = Object.freeze(Object.keys(DEFAULT_TEMPLATES));
 /* which of them go to a participant, and so carry the footer line and count
    against the abuse limits; the rest go to the business's notify list */
 export const PARTICIPANT_TEMPLATES = Object.freeze(new Set([
-  "registered", "payment_confirmed", "refund", "registration_cancelled",
+  "registered", "payment_confirmed", "refund", "registration_cancelled", "registration_confirmed",
 ]));

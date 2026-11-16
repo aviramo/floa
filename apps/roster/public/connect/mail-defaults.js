@@ -274,6 +274,39 @@
 </body>
 </html>`,
   },
+  registration_confirmed: {
+    name: "אישור הרשמה בלי תשלום",
+    who: "participant",
+    when: "נשלח למשתתף כשהמנהל סוגר הקצאה שסומנה לא לתשלום ובוחר לשלוח מייל.",
+    vars: VARS,
+    subject: "ההרשמה שלך למפגש אושרה: {{meeting_name}}",
+    html: `<!doctype html>
+<html lang="he" dir="rtl">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{business_name}}</title></head>
+<body dir="rtl" style="margin:0;padding:24px;background:#F3F6F5;font-family:Arial,Helvetica,sans-serif;color:#1B2B2E;direction:rtl;text-align:right">
+<table role="presentation" dir="rtl" align="center" width="100%" style="max-width:560px;margin:0 auto;direction:rtl">
+<tr><td dir="rtl" style="direction:rtl;text-align:right;padding:0 4px 12px;font-size:18px;font-weight:bold;color:#0A6C61">{{business_name}}</td></tr>
+<tr><td dir="rtl" style="direction:rtl;text-align:right;background:#FFFFFF;border:1px solid #DCE6E3;border-radius:14px;padding:24px;font-size:15px;line-height:1.6">
+<p data-if="first_name" dir="rtl" style="direction:rtl;text-align:right;margin:0 0 14px;">שלום {{first_name}},</p>
+<h1 dir="rtl" style="direction:rtl;text-align:right;margin:0 0 12px;font-size:20px;line-height:1.3;color:#1B2B2E">ההרשמה שלך למפגש אושרה</h1>
+<p dir="rtl" style="direction:rtl;text-align:right;margin:0 0 14px;">המקום שלך שמור, ולא נדרש תשלום. מחכים לראות אותך.</p>
+<table role="presentation" dir="rtl" width="100%" style="margin:0 0 16px;border-collapse:collapse;direction:rtl">
+<tr><td dir="rtl" style="direction:rtl;text-align:right;padding:6px 0;width:96px;color:#6B7A78;vertical-align:top">מפגש</td><td dir="rtl" style="direction:rtl;text-align:right;padding:6px 0;font-weight:bold;vertical-align:top">{{meeting_name}}</td></tr>
+<tr data-if="meeting_date"><td dir="rtl" style="direction:rtl;text-align:right;padding:6px 0;width:96px;color:#6B7A78;vertical-align:top">תאריך</td><td dir="rtl" style="direction:rtl;text-align:right;padding:6px 0;font-weight:bold;vertical-align:top">{{meeting_date}}</td></tr>
+<tr data-if="meeting_time"><td dir="rtl" style="direction:rtl;text-align:right;padding:6px 0;width:96px;color:#6B7A78;vertical-align:top">שעה</td><td dir="rtl" style="direction:rtl;text-align:right;padding:6px 0;font-weight:bold;vertical-align:top">{{meeting_time}}</td></tr>
+<tr data-if="place"><td dir="rtl" style="direction:rtl;text-align:right;padding:6px 0;width:96px;color:#6B7A78;vertical-align:top">מקום</td><td dir="rtl" style="direction:rtl;text-align:right;padding:6px 0;font-weight:bold;vertical-align:top">{{place}}</td></tr>
+<tr data-if="city"><td dir="rtl" style="direction:rtl;text-align:right;padding:6px 0;width:96px;color:#6B7A78;vertical-align:top">עיר</td><td dir="rtl" style="direction:rtl;text-align:right;padding:6px 0;font-weight:bold;vertical-align:top">{{city}}</td></tr>
+</table>
+<p data-if="directions" dir="rtl" style="direction:rtl;text-align:right;margin:0 0 14px;font-weight:bold;margin-bottom:4px">איך מגיעים</p>
+<p data-if="directions" dir="rtl" style="direction:rtl;text-align:right;margin:0 0 14px;white-space:pre-line">{{directions}}</p>
+<p data-if="my_link" dir="rtl" style="direction:rtl;text-align:right;margin:0 0 10px">את ההרשמה אפשר לראות באזור האישי: <a href="{{my_link}}" style="color:#0A6C61;font-weight:bold">לאזור האישי</a></p>
+<p data-if="whatsapp_link" dir="rtl" style="direction:rtl;text-align:right;margin:0 0 10px">יש שאלה? אפשר לכתוב לנו ב־WhatsApp: <a href="{{whatsapp_link}}" style="color:#0A6C61;font-weight:bold">לשיחה ב־WhatsApp</a></p>
+</td></tr>
+<tr><td dir="rtl" style="direction:rtl;text-align:right;padding:14px 4px 0;font-size:12px;line-height:1.5;color:#6B7A78">הודעה זו נשלחה כי הכתובת הזו הוזנה בטופס ההרשמה של {{business_name}}. אם זו טעות, אפשר להתעלם מההודעה.</td></tr>
+</table>
+</body>
+</html>`,
+  },
   };
   /* the pieces of HTML that carry inline styles because a mail (and the iframe code a business pastes into its site) cannot use a stylesheet: kept here, with the mail
      markup, so the page's own code has no inline styles. Every argument is already escaped by the caller. */
