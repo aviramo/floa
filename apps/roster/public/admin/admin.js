@@ -865,7 +865,7 @@
     /* "כל המשתתפים" ראשון: רמה מעל סוגי המפגשים והמפגשים */
     $('#mMenu').innerHTML = '<div class="mtop">' +
       '<div class="mtr mrow2 mall" role="menuitemradio" tabindex="0" data-filter="" aria-checked="' + (state.filter === null && !state.mtype) + '"><span>כל המשתתפים</span>' + mcell(state.meetings.length, 'cal') + mcell(actP.length, 'user') + '<span></span></div></div>' +   // קבוע בראש התפריט בזמן גלילה
-      types +
+      (types ? '<div class="msep" role="separator"></div>' : '') + types + (types && shownM.length ? '<div class="msep" role="separator"></div>' : '') +
       shownM.map((m) => {
         const ls = state.att.filter((a) => a.meeting_id === m.id), isNext = nextM === m;
         return '<div class="mtr mrow2' + (isPast(m) ? ' past' : '') + (isNext ? ' next' : '') + '" role="menuitemradio" tabindex="0" data-filter="' + m.id + '" aria-checked="' + (state.filter === m.id) + '"><span>' + dayTime(m) + '</span>' + (isPast(m) ? mcell(ls.filter((l) => l.attended).length, 'came') : mcell(ls.filter((l) => allocatedOf(l.participant_id, m.id) > 0 && !(dueOf(l.participant_id, m.id) > 0)).length, 'paid')) + mcell(ls.length, 'reg') +

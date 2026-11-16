@@ -2710,3 +2710,8 @@ html.is-loading .msub { display: block; visibility: hidden; }
 #mMenu { padding-bottom: 0; }   /* the menu ends with its add button: no extra room under it */
 #mMenu .maddw { margin-inline: calc(var(--sp-1) * -1); padding: var(--sp-1) var(--gutter) var(--gutter); }   /* the menu has 8px of its own on each side: the plus sits one standard gutter from the side and from the bottom, like every other plus */
 body:has(#mMenu:not([hidden])) #kitFab { display: none; }   /* one plus at a time: while the meetings menu is open its own plus is the add button */
+
+/* a quiet line between all participants, the meeting types and the meetings in the meetings menu */
+#mMenu .msep { height: 0; margin: var(--sp-1) calc(var(--sp-1) * -1); border-top: 1px solid var(--line); }
+
+.hmtitle { border-radius: 0; }   /* the business name that heads the main menu is a flat label with a straight line under it (a rounded corner bent the line into a raised pill) */

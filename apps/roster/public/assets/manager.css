@@ -104,12 +104,11 @@ dialog.acc .sheet-body { overflow: hidden; }
   .bside .bsum__acts { margin-inline: calc(var(--sp-hair) * -8); }
 }
 
-/* the title block (the title and the count under it) and the icon tile share one centre line, whatever the block's height */
-.title-row { align-items: center; }
-.title-row > .hgrp { align-self: center; }
-.msel > h1 { display: flex; align-items: center; height: 24px; }
-.wrap > header.top .msel { top: 0; }   /* the participants page nudges its own title block up; this one is centred by the row */
+/* the header is the participants page's own (admin.css: the title block nudged up beside the icon tile, the count tucked under the title). Only the title's box is set to the height of
+   the participants page's title button (40px), so the two headers measure the same; the search row starts one chip row's padding lower, the room the participants page keeps for its chips */
+.msel > h1 { display: flex; align-items: center; height: 40px; margin: 0; }
+.wrap > .vbar { padding-top: var(--sp-1); box-sizing: content-box; }
+.wrap > header.top .msel { top: -6px; }   /* the same gap between title and count as the participants page, the block centred on the icon tile (the participants page keeps it a few px higher) */
 
 /* the add button: the participants page's floating one, in the corner of the list pane (manager.js sets --fab-left from the pane) */
 #newBiz { left: var(--fab-left, max(var(--gutter), var(--inset-l))); }
-.msel > .msub { margin-top: 0; }   /* the count sits right under the title, not over it */

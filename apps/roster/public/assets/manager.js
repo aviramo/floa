@@ -548,7 +548,7 @@
   fab.addEventListener("click", function () {
     var an = $("#addNew");
     if (clean(S.q) && an) { an.click(); return; }
-    var q = $("#q"); q.placeholder = "שם העסק החדש"; q.addEventListener("blur", function () { q.placeholder = " "; }, { once: true }); q.focus();
+    var q = $("#q"); q.placeholder = "שם העסק החדש"; q.addEventListener("blur", function () { q.placeholder = "חיפוש או הוספת עסק"; }, { once: true }); q.focus();
   });
   fabLabel();
   window.addEventListener("resize", placeFab);
