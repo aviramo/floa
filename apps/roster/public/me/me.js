@@ -17,7 +17,7 @@
   const IN_FRAME = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
   const IN_APP = /FBAN|FBAV|FB_IAB|Instagram|Line\/|TikTok|musical_ly|Snapchat|Messenger|MicroMessenger/i.test(navigator.userAgent);   // דפדפנים בתוך אפליקציות: גוגל חוסמת בהם כניסה
 
-  let data = null, biz = {}, seq = 0, pending = 0, detOpen = null, dirOpen = new Set(), unregSure = null, unregT = 0, signedAtLoad = false, reloading = false, rtT = 0, rtDirty = false;
+  let data = null, biz = {}, seq = 0, pending = 0, detOpen = null, dirOpen = new Set(), signedAtLoad = false, reloading = false, rtT = 0, rtDirty = false;
 
   /* ---------- קריאה לשרת ---------- */
   async function rpc(name, body) {
@@ -28,7 +28,6 @@
     if (!res.ok) { const e = new Error('HTTP ' + res.status); e.code = String((out && (out.message || out.hint || out.code)) || ''); throw e; }
     return out;
   }
-  const UNREG_SURE = 'לחיצה נוספת לביטול שמירת המקום';
   const statusOf = (r) => typeof r === 'string' ? r : (r && (r.status || r.error)) || '';   // טקסט (register, update...) או אובייקט {status}
 
   /* ---------- עזרים ---------- */
@@ -237,7 +236,6 @@
           (waNum() ? '<div class="paylinks"><button type="button" class="lnk" data-other="' + esc(m.id) + '"' + (url ? ' data-pay="1"' : '') + '>' + (url ? 'רוצים להעביר תשלום בדרך אחרת?' : 'לשמירת מקום בוואטסאפ') + '</button></div>' : '') + '<div class="msg" data-pm="' + esc(m.id) + '"></div></div>';
       }
       if (m.future) foot += dirFold(m);
-      if (m.future) { const sure = unregSure === m.id; foot += '<button type="button" class="lnk sm" data-unreg="' + esc(m.id) + '"' + (sure ? ' data-sure="1"' : '') + '>' + (sure ? UNREG_SURE : 'ביטול שמירת המקום') + '</button><div class="msg" data-um="' + esc(m.id) + '"></div>'; }
       return '<div class="mtg">' + meetingBox(m.future ? m : Object.assign({}, m, { max: 0, capacity: 0 }), '<div class="mts">' + pay + '</div>' + (foot ? '<div class="mtfoot">' + foot + '</div>' : '')) + '</div>';
     };
     /* מפגש עתידי שעוד לא שמרו בו מקום: כפתור שמירת מקום, עם המחיר */
@@ -283,20 +281,6 @@
         if (st === 'registered' || st === 'exists') { optimistic(id, { registered: true }).done(); load(true); }
         else { say(msg, st === 'full' ? 'המפגש מלא' : st === 'past' ? 'המפגש כבר עבר' : 'אי אפשר לשמור מקום במפגש הזה', true); rb.disabled = false; }
       } catch (e) { if (e.signedOut) { viewLogin(); return; } say(msg, 'משהו השתבש, אפשר לנסות שוב', true); rb.disabled = false; }
-    }; });
-    app.querySelectorAll('[data-unreg]').forEach((ub) => { ub.onclick = async () => {   // שני שלבים: לחיצה ראשונה מבקשת אישור
-      const id = ub.dataset.unreg, msg = app.querySelector('[data-um="' + CSS.escape(id) + '"]');
-      if (!ub.dataset.sure) {
-        unregSure = id; ub.dataset.sure = '1'; ub.textContent = UNREG_SURE;
-        clearTimeout(unregT); unregT = setTimeout(() => { if (unregSure !== id) return; unregSure = null; const b = app.querySelector('[data-unreg="' + CSS.escape(id) + '"]'); if (b && !b.disabled) { delete b.dataset.sure; b.textContent = 'ביטול שמירת המקום'; } }, 8000);
-        return;
-      }
-      unregSure = null; clearTimeout(unregT); ub.disabled = true;
-      try {
-        const r = await rpc('me_unregister', { p_meeting: id }), st = statusOf(r);
-        if (st === 'cancelled' || st === 'not_registered') { optimistic(id, { registered: false, reported: false }).done(); load(true); }
-        else { say(msg, st === 'attended' ? 'אי אפשר לבטל, ההגעה כבר סומנה' : st === 'past' ? 'המפגש כבר עבר' : 'אי אפשר לבטל את שמירת המקום למפגש הזה', true); ub.disabled = false; delete ub.dataset.sure; ub.textContent = 'ביטול שמירת המקום'; }
-      } catch (e) { if (e.signedOut) { viewLogin(); return; } say(msg, 'משהו השתבש, אפשר לנסות שוב', true); ub.disabled = false; delete ub.dataset.sure; ub.textContent = 'ביטול שמירת המקום'; }
     }; });
     /* תשלום מהקרדיט: הקרדיט מכסה את מחיר המפגש (או את חלקו), ומוקצה לו */
     app.querySelectorAll('[data-paycredit]').forEach((cb) => { cb.onclick = async () => {
