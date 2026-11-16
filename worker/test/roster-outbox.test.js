@@ -307,12 +307,12 @@ test("a missing RESEND_API_KEY fails the mails in the report, the webhook is una
 });
 
 test("the cron entry drains the outbox and does nothing without the service key", async () => {
-  const net = fakeNet({ rpc: { events_claim: () => [raw(70, "ping")], events_done: () => null } });
+  const net = fakeNet({ rpc: { events_claim: (a, c) => (c.headers["content-profile"] === "roster" ? [raw(70, "ping")] : []), events_done: () => null } });
   const roster = makeRoster(net, { now: () => NOW });
   const ctx = ctxSpy();
   await roster.scheduled(makeEnv(), ctx);
   await ctx.settle();
-  assert.equal(net.rpc("events_claim").length, 1);
+  assert.equal(net.rpc("events_claim").length, 2, "the real schema and the test schema (api-test) are each drained");
   assert.equal(net.rpc("events_done").length, 1);
 
   const quiet = fakeNet();

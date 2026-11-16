@@ -12,7 +12,9 @@
      filled in with this value. The text already inside those spans is the same
      address, so the page reads correctly before, and without, this script.
      When the API moves, change this line and the text in the spans. */
-  const API_BASE = "https://api.floa.co.il";
+  /* The test versions (roster-test, a local copy) show the test API, which answers on the test schema; the real site shows the real one. */
+  const TEST = /^(roster-test\.floa\.co\.il|localhost|127\.|\[::1\]|192\.168\.|10\.)/.test(location.hostname);
+  const API_BASE = TEST ? "https://api-test.floa.co.il" : "https://api.floa.co.il";
 
   document.documentElement.classList.add("js");
   document.querySelectorAll("[data-api-base]").forEach((el) => { el.textContent = API_BASE; });

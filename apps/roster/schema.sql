@@ -1263,6 +1263,15 @@ begin
   end if;
 end $$;
 
+-- the participant's address (street and city, one free line). Optional, at most 200 characters.
+alter table roster.participants add column if not exists address text;
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'roster_participants_address_len' and conrelid = 'roster.participants'::regclass) then
+    alter table roster.participants add constraint roster_participants_address_len check (address is null or char_length(address) <= 200);
+  end if;
+end $$;
+
 create or replace function roster.participants_email_trg()
 returns trigger language plpgsql as $fn$
 begin
@@ -1995,7 +2004,7 @@ end $fn$;
 
 create or replace function roster.participant_json(p roster.participants)
 returns jsonb language sql stable as $fn$
-  select jsonb_build_object('id', p.id, 'first_name', p.first_name, 'last_name', p.last_name, 'phone', p.phone, 'email', p.email,
+  select jsonb_build_object('id', p.id, 'first_name', p.first_name, 'last_name', p.last_name, 'phone', p.phone, 'email', p.email, 'address', p.address,
     'age', roster.current_age(p.age, p.age_set_at), 'gender', p.gender);
 $fn$;
 
@@ -2535,6 +2544,7 @@ end $fn$;
 create or replace function roster.api_signup(p_key_hash text, p_payload jsonb, p_ip_hash text default null)
 returns jsonb language plpgsql security definer set search_path = roster, public as $fn$
 declare
+  addr text;
   k roster.api_keys; s roster.business_settings; pl jsonb;
   req text[]; f text; fn text; ln text; ph text; norm text; em text; agt text; ag int; gd text; midt text; mid uuid;
   pa roster.participants; pid uuid; created boolean := false; reg boolean := false; st text; tok text; mt roster.meetings; r int;
@@ -2550,6 +2560,7 @@ begin
   ln := btrim(regexp_replace(coalesce(pl->>'last_name', ''), '[\u0009-\u000d \u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+', ' ', 'g'));
   ph := btrim(coalesce(pl->>'phone', ''));
   em := lower(btrim(coalesce(pl->>'email', '')));
+  addr := btrim(coalesce(pl->>'address', ''));
   agt := btrim(coalesce(pl->>'age', ''));
   gd := lower(btrim(coalesce(pl->>'gender', '')));
   midt := btrim(coalesce(pl->>'meeting_id', ''));
@@ -2571,6 +2582,7 @@ begin
   end if;
   if gd <> '' and gd not in ('male', 'female') then return jsonb_build_object('error', 'validation', 'field', 'gender'); end if;
   if em <> '' and not roster.valid_email(em) then return jsonb_build_object('error', 'validation', 'field', 'email'); end if;
+  if addr <> '' and (char_length(addr) > 200 or addr ~ '[[:cntrl:]]') then return jsonb_build_object('error', 'validation', 'field', 'address'); end if;
   if midt <> '' then
     if midt !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' then return jsonb_build_object('error', 'validation', 'field', 'meeting_id'); end if;
     mid := midt::uuid;
@@ -2586,8 +2598,8 @@ begin
     r := roster.rate_take('newpub:' || k.business_id, 60, 120);
     if r > 0 then return jsonb_build_object('error', 'rate_limited', 'retry_after', r); end if;
     begin
-      insert into roster.participants (business_id, first_name, last_name, phone, age, age_set_at, gender, email)
-        values (k.business_id, fn, ln, norm, ag, roster.today(), nullif(gd, ''), nullif(em, ''))
+      insert into roster.participants (business_id, first_name, last_name, phone, age, age_set_at, gender, email, address)
+        values (k.business_id, fn, ln, norm, ag, roster.today(), nullif(gd, ''), nullif(em, ''), nullif(addr, ''))
         returning id into pid;
       created := true;
       perform roster.sys_note(k.business_id, pid, 'נרשם/ה דרך האתר', 'registered');
@@ -2875,7 +2887,7 @@ begin
   -- (skipped: already_confirmed). Payments of the participant (source me) and of the secret API (source api) are untouched.
   if ev.type = 'payment.recorded' and ev.source = 'admin' then conf := true; end if;
   if pa.id is not null then
-    part := jsonb_build_object('id', pa.id, 'first_name', pa.first_name, 'last_name', pa.last_name, 'email', pa.email, 'phone', pa.phone,
+    part := jsonb_build_object('id', pa.id, 'first_name', pa.first_name, 'last_name', pa.last_name, 'email', pa.email, 'address', pa.address, 'phone', pa.phone,
       'age', roster.current_age(pa.age, pa.age_set_at), 'gender', pa.gender);
   elsif jsonb_typeof(ev.payload -> 'participant') = 'object' then
     part := ev.payload -> 'participant';
@@ -3203,7 +3215,7 @@ begin
   select * into pa from roster.participants where id = pid and business_id = b;   -- a removed participant still sees the area, and stays removed
   if not found then return jsonb_build_object('status', 'none', 'business', binfo); end if;
   return jsonb_build_object('status', 'ok', 'business', binfo,
-    'participant', jsonb_build_object('id', pa.id, 'first_name', pa.first_name, 'last_name', pa.last_name, 'phone', pa.phone, 'email', pa.email,
+    'participant', jsonb_build_object('id', pa.id, 'first_name', pa.first_name, 'last_name', pa.last_name, 'phone', pa.phone, 'email', pa.email, 'address', pa.address,
                                       'age', roster.current_age(pa.age, pa.age_set_at), 'gender', pa.gender),
     'balance', roster.balance_money(b, pid), 'sessions', roster.sessions(b, pid), 'passes', roster.passes_json(b),
     'meetings', roster.person_meetings_me(b, pid));

@@ -24,7 +24,12 @@ workers_dev = true
 # The API's own address, one for the whole domain: https://api.floa.co.il
 # (the Roster API is https://api.floa.co.il/roster/v1/). workers.dev above keeps
 # answering the same requests, so nobody who already uses it is cut off.
-routes = [{ pattern = "api.floa.co.il", custom_domain = true }]
+routes = [
+  { pattern = "api.floa.co.il", custom_domain = true },
+  # The same API for every test version (roster-test, localhost): it answers on the roster-test schema, runs
+  # the webhooks of that schema and sends no mail. See worker/src/roster/db.js (schemaOfHost).
+  { pattern = "api-test.floa.co.il", custom_domain = true },
+]
 
 # Logs, so a failure that only happens with a real file can be read after the
 # fact instead of reproduced. Free, and off by default.

@@ -631,7 +631,7 @@
     const pid = sheet.id, pp = partOf(pid) || {};
     const sig = notesOf(pid).map((n) => n.id + (n.mail_id || '') + (n.mail_failed ? (n.mail_noaddr ? '?' : '!') : '')).join(',') + '|' + state.att.filter((a) => a.participant_id === pid).map((a) => [a.meeting_id, a.attended, a.paid_amount, a.details_sent_at, a.status_key, a.no_pay, a.pay_later_at, a.pay_due_amount, a.pay_closed_at].join(':')).join(',')
       + '|' + state.payments.filter((x) => x.participant_id === pid).map((x) => [x.id, x.kind, x.amount, x.method, x.meeting_id, x.from_credit].join(':')).join(',')
-      + '|' + [pp.name, pp.phone, pp.email, pp.age, pp.gender, pp.promoter_id, pp.active].join(':');
+      + '|' + [pp.name, pp.phone, pp.email, pp.address, pp.age, pp.gender, pp.promoter_id, pp.active].join(':');
     if (sig === sheetSig) return; sheetSig = sig;
     renderNotes(); refreshSheetMeetings(); renderContact();
     renderWallet();   // דף הקרדיט
@@ -655,7 +655,7 @@
     const p = partOf(sh.id); if (p) setTitle(p);
   }
   /* התאמה לחיפוש, אחת לכל המקומות: שם, טלפון (05... או 972...) וטקסט ההערות */
-  const qMatch = (p, q, qd) => p.name.toLowerCase().includes(q) || (qd.length >= 2 && phoneHay(p).includes(qd)) || hasNote(p, q);
+  const qMatch = (p, q, qd) => p.name.toLowerCase().includes(q) || (qd.length >= 2 && phoneHay(p).includes(qd)) || String(p.address || '').toLowerCase().includes(q) || hasNote(p, q);
   async function load(silent) {
     if (!silent) { $('#status').innerHTML = '<div class="empty">טוען…</div>'; document.documentElement.classList.add('is-loading'); }   // מצב טעינה: "טוען..." בכותרת בלבד, בלי הקו ובלי מה שמתחתיו
     const myLoad = ++loadSeq;
@@ -864,7 +864,7 @@
     const shownM = state.meetings.filter((m) => !state.mtype || typeIdOf(m) === state.mtype);
     /* "כל המשתתפים" ראשון: רמה מעל סוגי המפגשים והמפגשים */
     $('#mMenu').innerHTML = '<div class="mtop">' +
-      '<div class="mtr mrow2 mall" role="menuitemradio" tabindex="0" data-filter="" aria-checked="' + (state.filter === null && !state.mtype) + '"><span>כל המשתתפים</span>' + mcell(state.meetings.length, 'cal') + mcell(actP.length, 'user') + '<span></span></div></div>' +   // קבוע בראש התפריט בזמן גלילה
+      '<div class="mtr mrow2 mall" role="menuitemradio" tabindex="0" data-filter="" aria-checked="' + (state.filter === null && !state.mtype) + '"><span>כל המפגשים</span>' + mcell(state.meetings.length, 'cal') + mcell(actP.length, 'user') + '<span></span></div></div>' +   // קבוע בראש התפריט בזמן גלילה
       (types ? '<div class="msep" role="separator"></div>' : '') + types + (types && shownM.length ? '<div class="msep" role="separator"></div>' : '') +
       shownM.map((m) => {
         const ls = state.att.filter((a) => a.meeting_id === m.id), isNext = nextM === m;
@@ -3250,6 +3250,7 @@
     pForm.phone.value = p ? localPhone(p.phone) : '';
     pForm.age.value = p ? (shownAge(p) ?? '') : '';
     pForm.email.value = p ? (p.email || '') : '';
+    pForm.address.value = p ? (p.address || '') : '';
     pForm.gender.value = p && p.gender ? p.gender : '';
     fillPromoSel(p);
     setTitle(p);
@@ -3366,6 +3367,7 @@
       last_name: pForm.last_name.value.trim().replace(/\s+/g, ' '),
       phone: pForm.phone.value.trim(),
       email: pForm.email.value.trim(),
+      address: pForm.address.value.trim().split(/\s+/).join(' '),
       age: Number.isFinite(age) ? age : null,
       gender: pForm.gender.value || null,
     };
@@ -3397,6 +3399,7 @@
       if (em === null) { badEmail(true); return; }
       v.email = em || null; pForm.email.value = em;
     }
+    if (field === 'address') { v.address = v.address || null; pForm.address.value = v.address || ''; }
     const patch = isName ? { first_name: v.first_name, last_name: v.last_name } : { [field]: v[field] };
     if (isName) patch.name = (v.first_name + ' ' + v.last_name).trim();   // השם המלא מחושב בשרת; כאן רק לתצוגה מיידית
     if (field === 'age') patch.age_set_at = todayISO();
@@ -3421,6 +3424,7 @@
     if (ph === null) { badPhone(true); return; }
     v.phone = ph;
     { const em = emailToSave(pForm.email.value); if (em === null) { badEmail(true); return; } if (em) v.email = em; else delete v.email; }
+    if (!v.address) delete v.address;
     if (sheet.saving) return; sheet.saving = true;   /* מונע שליחה כפולה (כפתור וגם אנטר) שיוצרת את המשתתף פעמיים */
     const btn = $('#pSubmit'); btn.disabled = true;
     try {

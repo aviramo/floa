@@ -314,7 +314,7 @@ const signup = (roster, json, opts = {}) => call(roster, req("/signup", { method
 test("signup: the exact call, a whitelist payload, and a reply that cannot reveal who is registered", async () => {
   const { net, roster } = world({ api_signup: () => SIGNUP_OK });
   const body = {
-    first_name: " דנה ", last_name: "לוי", phone: "050-123-4567", email: "Dana@Example.com", age: 34, gender: "FEMALE", meeting_id: UUID_A.toUpperCase(),
+    first_name: " דנה ", last_name: "לוי", phone: "050-123-4567", email: "Dana@Example.com", address: "  הרצל 5, תל אביב ", age: 34, gender: "FEMALE", meeting_id: UUID_A.toUpperCase(),
     /* things a caller must not be able to set */
     business_id: UUID_B, participant_id: UUID_C, is_admin: true, active: false, __proto__: { admin: true }, website: "", extra: { a: 1 },
   };
@@ -324,7 +324,7 @@ test("signup: the exact call, a whitelist payload, and a reply that cannot revea
 
   const [c] = net.rpc("api_signup");
   assert.deepEqual(Object.keys(c.json).sort(), ["p_ip_hash", "p_key_hash", "p_payload"]);
-  assert.deepEqual(c.json.p_payload, { first_name: "דנה", last_name: "לוי", phone: "050-123-4567", email: "Dana@Example.com", age: 34, gender: "female", meeting_id: UUID_A });
+  assert.deepEqual(c.json.p_payload, { first_name: "דנה", last_name: "לוי", phone: "050-123-4567", email: "Dana@Example.com", address: "הרצל 5, תל אביב", age: 34, gender: "female", meeting_id: UUID_A });
   assert.equal(c.json.p_key_hash, await sha256Hex(PUB));
   assert.match(c.json.p_ip_hash, /^[0-9a-f]{64}$/);
   assert.equal(net.rpc("api_auth")[0].json.p_bucket, "signup");
@@ -360,7 +360,9 @@ test("signup field checks: types, sizes and characters the database could not st
     [{ first_name: "a".repeat(101) }, "first_name"], [{ last_name: "a".repeat(101) }, "last_name"],
     [{ first_name: "a\u0000b" }, "first_name"], [{ first_name: "a\nb" }, "first_name"], [{ first_name: "a\u2028b" }, "first_name"],
     [{ first_name: "\ud800" }, "first_name"], [{ phone: 501234567 }, "phone"], [{ phone: "0".repeat(41) }, "phone"],
-    [{ email: ["a@b.co"] }, "email"], [{ email: "a".repeat(321) }, "email"], [{ gender: 1 }, "gender"], [{ gender: "x".repeat(21) }, "gender"],
+    [{ email: ["a@b.co"] }, "email"], [{ email: "a".repeat(321) }, "email"],
+    [{ address: "a".repeat(201) }, "address"], [{ address: ["x"] }, "address"], [{ address: 5 }, "address"], [{ address: "a\nb" }, "address"], [{ address: "a\u0000b" }, "address"],
+    [{ gender: 1 }, "gender"], [{ gender: "x".repeat(21) }, "gender"],
     [{ age: "abc" }, "age"], [{ age: 17.5 }, "age"], [{ age: -1 }, "age"], [{ age: 151 }, "age"], [{ age: "1000" }, "age"], [{ age: {} }, "age"], [{ age: true }, "age"],
     [{ meeting_id: "nope" }, "meeting_id"], [{ meeting_id: 5 }, "meeting_id"], [{ meeting_id: `${UUID_A}x` }, "meeting_id"], [{ meeting_id: [UUID_A] }, "meeting_id"],
   ];
@@ -654,7 +656,7 @@ test("click: a bad or unknown token is 401 invalid_token; a bad meeting is 422",
 
 /* --- the secret routes ----------------------------------------------------------------------------------- */
 
-const SUMMARY = { id: UUID_A, first_name: "דנה", last_name: "לוי", phone: "+972501234567", email: null, age: 34, gender: "female", active: true, balance: 0, meetings: [] };
+const SUMMARY = { id: UUID_A, first_name: "דנה", last_name: "לוי", phone: "+972501234567", email: null, address: "הרצל 5, תל אביב", age: 34, gender: "female", active: true, balance: 0, meetings: [] };
 
 test("GET /participants?phone: the raw phone goes to the database, and only digits and phone punctuation are accepted", async () => {
   const { net, roster } = world({ ...secretAuth, api_participant: () => ({ participant: SUMMARY }) });
@@ -828,7 +830,7 @@ test("nothing the callers typed, no key, no token and no secret appears in any l
 
 test("the HMAC of a delivery made through the route-driven outbox verifies (the pieces fit together)", async () => {
   const item = {
-    event: { id: 900, type: "registration.created", attempts: 0, created_at: "2027-01-10T09:00:00Z", payload: { participant: { id: UUID_A, first_name: "דנה", email: null }, meeting: { id: UUID_B, date: "2027-01-20", time: "20:00", name: "מפגש" } } },
+    event: { id: 900, type: "registration.created", attempts: 0, created_at: "2027-01-10T09:00:00Z", payload: { participant: { id: UUID_A, first_name: "דנה", email: null, address: "הרצל 5, תל אביב" }, meeting: { id: UUID_B, date: "2027-01-20", time: "20:00", name: "מפגש" } } },
     business: { id: "b", slug: "studio", name: "סטודיו", notify_emails: [], settings: { webhook_url: "https://hooks.example.com/in", webhook_secret: "whsec_route", webhook_events: ["registration.created"] } },
     participant: null, facts: {}, templates: {}, mail_counters: { recipients: {}, business_day: 0 },
   };
@@ -840,6 +842,7 @@ test("the HMAC of a delivery made through the route-driven outbox verifies (the 
   const m = /^t=(\d+),v1=([0-9a-f]{64})$/.exec(hook.headers["x-roster-signature"]);
   assert.equal(m[2], createHmac("sha256", "whsec_route").update(`${m[1]}.${hook.raw}`).digest("hex"));
   assert.equal(net.rpc("events_done").length, 1);
+  assert.equal(JSON.parse(hook.raw).data.participant.address, "הרצל 5, תל אביב", "the address is in the webhook payload");
 });
 
 /* --- the code to status table of the spec, end to end ------------------------------------------------------ */

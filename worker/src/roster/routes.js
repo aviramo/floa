@@ -34,7 +34,7 @@
 
    No import of `cloudflare:workers` here, so plain node can run all of it.
    ========================================================================== */
-import { createDb, RPC } from "./db.js";
+import { createDb, DEFAULT_SCHEMA, RPC, schemaOfHost, TEST_SCHEMA } from "./db.js";
 import { corsHeaders, corsModeForError, preflightHeaders } from "./cors.js";
 import { extractKey, hashIp, hashKey, hashToken, keyKind, TOKEN_RE, UUID_RE } from "./keys.js";
 import { cacheStore, createIpLimiter, layeredStore, MAX_BODY_BYTES, memoryStore, OUTBOX } from "./limits.js";
@@ -81,7 +81,7 @@ const MESSAGES = Object.freeze({
 
 /* the only field names a reply may name, whoever asks for them */
 const FIELDS = new Set([
-  "first_name", "last_name", "phone", "email", "age", "gender", "meeting_id", "participant_id",
+  "first_name", "last_name", "phone", "email", "address", "age", "gender", "meeting_id", "participant_id",
   "participant_token", "amount", "kind", "method", "note", "external_ref", "limit",
 ]);
 
@@ -130,7 +130,7 @@ function prepMeetings({ query }) {
   return good({ p_limit: limit });
 }
 
-const SIGNUP_TEXT = [["first_name", 100], ["last_name", 100], ["phone", 40], ["email", 320], ["gender", 20]];
+const SIGNUP_TEXT = [["first_name", 100], ["last_name", 100], ["phone", 40], ["email", 320], ["address", 200], ["gender", 20]];
 
 function prepSignup({ body }) {
   const payload = {};
@@ -430,7 +430,7 @@ export function createRoster(deps = {}) {
      is not held back by the per-address brake for bad keys, so a visitor with a real key is not locked out by
      somebody else behind the same address guessing wrong ones */
   const goodKeys = new Map();
-  const isGood = (hash) => {
+  const isGood = (hash) => {   /* the hash is prefixed by the schema: a key the test database vouched for says nothing about the real one */
     const until = goodKeys.get(hash);
     if (until === undefined) return false;
     if (until < now()) { goodKeys.delete(hash); return false; }
@@ -441,9 +441,11 @@ export function createRoster(deps = {}) {
     goodKeys.set(hash, now() + 120_000);
   };
 
-  function runOutbox(env, ctx, deadlineMs) {
-    const job = processOutbox({ env, fetch: getFetch(), now, sleep: deps.sleep, deadlineMs })
-      .catch((err) => { console.error("roster outbox crashed", err && err.name); });
+  /* the outbox of ONE schema (see schemaOfHost): after an API call, the schema that call used; from the cron, both */
+  function runOutbox(env, ctx, deadlineMs, schemas = [DEFAULT_SCHEMA]) {
+    const job = Promise.all(schemas.map((schema) =>
+      processOutbox({ env, fetch: getFetch(), now, sleep: deps.sleep, deadlineMs, schema })
+        .catch((err) => { console.error("roster outbox crashed", schema, err && err.name); })));
     if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(job);
     return job;
   }
@@ -451,6 +453,9 @@ export function createRoster(deps = {}) {
   async function handle(request, env, ctx) {
     const rawOrigin = request.headers.get("origin");
     const url = new URL(request.url);
+    /* api-test.floa.co.il is the same API on the test schema; every other host is the real one */
+    const schema = schemaOfHost(url.hostname);
+    const ipScope = (hash) => (schema === DEFAULT_SCHEMA ? hash : `${schema}:${hash}`);   /* the per-address counters of the two schemas never mix */
 
     const respond = (status, body, mode = "star", extra = {}) =>
       new Response(JSON.stringify(body), {
@@ -494,9 +499,10 @@ export function createRoster(deps = {}) {
     const key = extractKey(request.headers);
     const kind = keyKind(key);
     const ipHash = await hashIp(request.headers.get("cf-connecting-ip"), env.ROSTER_IP_SALT);
+    const ipKey = ipScope(ipHash);
     const slowDown = (verdict) => fail("rate_limited", { headers: { "retry-after": String(verdict.retryAfter) } });
     if (!kind) {
-      const verdict = await getLimiter().hit("badkey", ipHash);
+      const verdict = await getLimiter().hit("badkey", ipKey);
       return verdict.ok ? fail("invalid_key") : slowDown(verdict);
     }
     if (kind === "secret" && rawOrigin !== null) return fail("secret_key_in_browser", { mode: "none" });
@@ -506,8 +512,8 @@ export function createRoster(deps = {}) {
        address that has used up its bad-key budget is not served until the window ends (a key it has recently
        been seen to use successfully is exempt). */
     const keyHash = await hashKey(key);
-    if (!isGood(keyHash)) {
-      const verdict = await getLimiter().peek("badkey", ipHash);
+    if (!isGood(`${schema}:${keyHash}`)) {
+      const verdict = await getLimiter().peek("badkey", ipKey);
       if (!verdict.ok) return slowDown(verdict);
     }
 
@@ -530,12 +536,12 @@ export function createRoster(deps = {}) {
 
     /* 8. the cheap per-IP brake, public keys only */
     if (route.ipLimit && kind === "public") {
-      const verdict = await getLimiter().hit(route.ipLimit, ipHash);
+      const verdict = await getLimiter().hit(route.ipLimit, ipKey);
       if (!verdict.ok) return fail("rate_limited", { headers: { "retry-after": String(verdict.retryAfter) } });
     }
 
     /* 9. the database: who is this, may they, from here, how often; then the act */
-    const db = createDb({ url: env.SUPABASE_URL, serviceKey: env.SUPABASE_SERVICE_KEY, fetch: getFetch() });
+    const db = createDb({ url: env.SUPABASE_URL, serviceKey: env.SUPABASE_SERVICE_KEY, fetch: getFetch(), schema });
 
     const auth = await db.rpc(RPC.auth, {
       p_key_hash: keyHash,
@@ -551,10 +557,10 @@ export function createRoster(deps = {}) {
     };
     if (!auth.ok) return fail("server_error");
     if (!isObj(auth.data) || typeof auth.data.error === "string" || auth.data.ok !== true) {
-      if (isObj(auth.data) && auth.data.error === "invalid_key") await getLimiter().hit("badkey", ipHash);
+      if (isObj(auth.data) && auth.data.error === "invalid_key") await getLimiter().hit("badkey", ipKey);
       return failure(auth.data);
     }
-    markGood(keyHash);
+    markGood(`${schema}:${keyHash}`);
     /* a secret reply needs both the shape and the database to say secret */
     const secret = kind === "secret" && (auth.data.kind === undefined || auth.data.kind === "secret");
 
@@ -577,14 +583,14 @@ export function createRoster(deps = {}) {
       console.error("roster: unexpected answer from", route.rpc);
       return fail("server_error", { mode: "echo" });
     }
-    if (route.outbox) runOutbox(env, ctx, OUTBOX.apiDeadlineMs);
+    if (route.outbox) runOutbox(env, ctx, OUTBOX.apiDeadlineMs, [schema]);
     return respond(200, shaped, "echo");
   }
 
   return {
     handle,
     /* the cron: drain the outbox, with the longer time budget */
-    scheduled: (env, ctx) => runOutbox(env, ctx, OUTBOX.cronDeadlineMs),
+    scheduled: (env, ctx) => runOutbox(env, ctx, OUTBOX.cronDeadlineMs, [DEFAULT_SCHEMA, TEST_SCHEMA]),
     processOutbox: (env, extra = {}) => processOutbox({ env, fetch: getFetch(), now, sleep: deps.sleep, ...extra }),
   };
 }

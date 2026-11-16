@@ -93,7 +93,7 @@ test("scheduled: drains the outbox with the service key, and is silent without i
     const ctx = ctxSpy();
     await worker.scheduled({ cron: "* * * * *" }, makeEnv(), ctx);
     await ctx.settle();
-    assert.deepEqual(net.calls.map((c) => c.url), [`${DB}/rest/v1/rpc/events_claim`]);
+    assert.deepEqual(net.calls.map((c) => c.url), [`${DB}/rest/v1/rpc/events_claim`, `${DB}/rest/v1/rpc/events_claim`]);   // the real schema, then the test schema (api-test)
     assert.deepEqual(net.calls[0].json, { p_limit: 20 });
 
     net.calls.length = 0;

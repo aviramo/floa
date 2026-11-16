@@ -297,10 +297,14 @@ function baseUrl(url) {
   return null;
 }
 
-/* the app's own schema in the shared database (named for its sub-domain; tables carry no prefix) */
-const SCHEMA = "roster";
+/* the app's own schema in the shared database (named for its sub-domain; tables carry no prefix).
+   api-test.floa.co.il is the same API on the test schema: that host, and only that host, uses it. */
+export const DEFAULT_SCHEMA = "roster";
+export const TEST_SCHEMA = "roster-test";
+export const TEST_API_HOST = "api-test.floa.co.il";
+export const schemaOfHost = (hostname) => (String(hostname || "").toLowerCase() === TEST_API_HOST ? TEST_SCHEMA : DEFAULT_SCHEMA);
 
-export function createDb({ url, serviceKey, fetch: doFetch, timeoutMs = DEFAULT_TIMEOUT_MS }) {
+export function createDb({ url, serviceKey, fetch: doFetch, timeoutMs = DEFAULT_TIMEOUT_MS, schema = DEFAULT_SCHEMA }) {
   const base = baseUrl(url);
   return {
     /* -> { ok: true, status, data } | { ok: false, status } ; never throws on a bad answer */
@@ -318,7 +322,7 @@ export function createDb({ url, serviceKey, fetch: doFetch, timeoutMs = DEFAULT_
             authorization: `Bearer ${serviceKey}`,
             "content-type": "application/json",
             accept: "application/json",
-            "content-profile": SCHEMA,
+            "content-profile": schema,
           },
           body: JSON.stringify(args),
           signal: controller.signal,

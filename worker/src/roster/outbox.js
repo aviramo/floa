@@ -21,7 +21,7 @@
    An item that cannot be understood, or one that throws, is reported (or
    dropped from this run) by id only. Nothing about a participant is logged.
    ========================================================================== */
-import { createDb, RPC } from "./db.js";
+import { createDb, DEFAULT_SCHEMA, RPC, TEST_SCHEMA } from "./db.js";
 import { createMailTally, OUTBOX } from "./limits.js";
 import { deliverMails } from "./mail.js";
 import { normalizeWork } from "./work.js";
@@ -37,7 +37,7 @@ export async function processItem(work, deps) {
   /* Mails are made when the database says it holds none yet for this event (mails_logged), per mail. A database that
      does not say falls back to "only on the first pass" (attempts == 0). That fallback is wrong after a crash: a lock
      that ran out counts as an attempt, and a mail that was never sent would never be. */
-  const mailsDue = work.mailsLogged !== null || work.event.attempts === 0;
+  const mailsDue = !deps.noMail && (work.mailsLogged !== null || work.event.attempts === 0);
   const [webhook, mail] = await Promise.all([
     runWebhook(work, deps),
     mailsDue ? deliverMails(work, deps) : Promise.resolve({ mails: [], skipped: [] }),
@@ -46,7 +46,7 @@ export async function processItem(work, deps) {
 }
 
 /* Claim and process one batch.
-   deps: { db?, env, fetch, now?, sleep?, deadlineMs?, limit?, concurrency? }
+   deps: { db?, env, fetch, now?, sleep?, deadlineMs?, limit?, concurrency?, schema? ("roster" by default, or "roster-test") }
    -> { claimed, processed, skipped, reported, reportFailed } (counts, for logs and tests) */
 export async function processOutbox(deps) {
   const env = deps.env;
@@ -54,7 +54,8 @@ export async function processOutbox(deps) {
   if (!env || !env.SUPABASE_SERVICE_KEY || !env.SUPABASE_URL) return summary;
 
   const now = deps.now || Date.now;
-  const db = deps.db || createDb({ url: env.SUPABASE_URL, serviceKey: env.SUPABASE_SERVICE_KEY, fetch: deps.fetch });
+  const schema = deps.schema || DEFAULT_SCHEMA;
+  const db = deps.db || createDb({ url: env.SUPABASE_URL, serviceKey: env.SUPABASE_SERVICE_KEY, fetch: deps.fetch, schema });
   const deadlineAt = now() + (deps.deadlineMs ?? OUTBOX.apiDeadlineMs);
 
   const shared = deps.tally || ISOLATE_TALLY;
@@ -64,7 +65,8 @@ export async function processOutbox(deps) {
   summary.claimed = claim.data.length;
   if (claim.data.length === 0) return summary;
 
-  const itemDeps = { ...deps, deadlineAt, apiKey: env.RESEND_API_KEY || "" };
+  /* the test schema (api-test) delivers webhooks and sends NO mail: its participants are made up, and mail to made-up addresses would hurt the sender's reputation. No mail is made, so none is logged. */
+  const itemDeps = { ...deps, deadlineAt, apiKey: env.RESEND_API_KEY || "", noMail: schema === TEST_SCHEMA };
   const queue = [...claim.data];
 
   async function worker() {

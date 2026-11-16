@@ -101,7 +101,7 @@ test("with the salt set the Worker serves, and the cron does not need it", async
   const ctx = ctxSpy();
   await roster.scheduled(noSalt, ctx);
   await ctx.settle();
-  assert.equal(net.rpc("events_claim").length, 1, "the outbox hashes no address");
+  assert.equal(net.rpc("events_claim").length, 2, "the outbox hashes no address (one drain per schema)");
 });
 
 /* --- the brake on bad keys ------------------------------------------------------------- */

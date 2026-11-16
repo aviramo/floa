@@ -2715,3 +2715,6 @@ body:has(#mMenu:not([hidden])) #kitFab { display: none; }   /* one plus at a tim
 #mMenu .msep { height: 0; margin: var(--sp-1) calc(var(--sp-1) * -1); border-top: 1px solid var(--line); }
 
 .hmtitle { border-radius: 0; }   /* the business name that heads the main menu is a flat label with a straight line under it (a rounded corner bent the line into a raised pill) */
+
+/* the clear "x" of the search field is centred on the field: its box is 20px high, so the offset up is half of that (it was 8px, which left it 2px low) */
+.sclear, .hsearch .sclear, #qClear { margin-top: -11px; height: 20px; line-height: 20px; padding: 0 0 3px; }

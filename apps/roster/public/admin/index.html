@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="../assets/field.css?v=7e4c4a08" />
   <link rel="stylesheet" href="../assets/popup.css?v=3cced8f3" />
   <link rel="stylesheet" href="../assets/ui.css?v=08ef9cb7" />
-  <link rel="stylesheet" href="admin.css?v=a9c18588" />
+  <link rel="stylesheet" href="admin.css?v=df95b142" />
 </head>
 <body class="locked">
   <div class="gate" id="gate" hidden>
@@ -137,6 +137,7 @@
         </div>
         <div class="gacc" id="pGoogle" hidden></div>
         <label class="rfield field"><span>אימייל</span><input placeholder=" " name="email" type="email" inputmode="email" maxlength="254" autocomplete="off" /></label>
+        <label class="rfield field"><span>כתובת</span><input placeholder=" " name="address" maxlength="200" autocomplete="street-address" /></label>
         <div class="note note--reg" id="pRegLine"></div>
         <button class="btn ghost danger" id="pDelete" type="button">מחיקת משתתף</button>
         <button class="btn ghost" id="pRestore" type="button" hidden>החזרה לפעילות</button>
@@ -430,12 +431,12 @@
   <div id="splitEmpty" aria-hidden="true"><svg data-i="user"></svg><p>בחרו משתתף מהרשימה כדי לראות את הכרטיס שלו</p></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="/supabase.js"></script>
-  <script src="/auth.js"></script>
+  <script src="/supabase.js?v=34864f05"></script>
+  <script src="/auth.js?v=64740567"></script>
   <script src="age.js?v=816fedce"></script>
   <script src="rt.js?v=9f0bd1e7"></script>
   <script src="../assets/field.js?v=3373b0b3"></script>
-  <script src="admin.js?v=b1bc3add"></script>
+  <script src="admin.js?v=e74ddf54"></script>
   <script src="onboarding.js?v=544be310"></script>
   <script src="/roster/assets/ui.js?v=0e4b73f3"></script>
   <script src="/roster/assets/undo.js?v=6df1b937"></script>
