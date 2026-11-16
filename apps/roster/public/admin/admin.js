@@ -861,19 +861,17 @@
     const typesByLast = state.mtypes.map((t, i) => ({ t, i, k: lastOfType(t.id) })).sort((x, y) => (y.k - x.k) || (x.i - y.i)).map((x) => x.t);
     const types = state.mtypes.length ? typesByLast.map((t) => '<div class="mtr mrow2 mtyrow" role="menuitemradio" tabindex="0" data-mt="' + t.id + '" aria-checked="' + (state.mtype === t.id && !state.filter) + '"><span>' + esc(t.name || 'ללא שם') + '</span>' + mcell(state.meetings.filter((m) => typeIdOf(m) === t.id).length, 'cal') + mcell(pOfType(t.id), 'user') +
         (state.mtype === t.id && !state.filter ? '<button type="button" class="medit" data-edit-t="' + t.id + '" aria-label="עריכת סוג המפגש" title="עריכת סוג המפגש">' + EDIT_ICON + '</button>' : '<span></span>') + '</div>').join('') : '';
-    /* "add" is a row ABOVE the list it adds to: above the meeting types, and above the meetings */
-    const addTypeRow = '<div class="mtr maddrow" id="addType"><button type="button" role="menuitem" class="rbtn rbtn--sm madd2" aria-label="הוספת סוג מפגש">הוספת סוג מפגש ' + icon('plus') + '</button></div>';
-    const addMeetRow = '<div class="mtr maddrow addm" id="addMeeting"><button type="button" role="menuitem" class="rbtn rbtn--sm madd2" aria-label="הוספת מפגש">הוספת מפגש ' + icon('plus') + '</button></div>';
     const shownM = state.meetings.filter((m) => !state.mtype || typeIdOf(m) === state.mtype);
     /* "כל המשתתפים" ראשון: רמה מעל סוגי המפגשים והמפגשים */
     $('#mMenu').innerHTML = '<div class="mtop">' +
       '<div class="mtr mrow2 mall" role="menuitemradio" tabindex="0" data-filter="" aria-checked="' + (state.filter === null && !state.mtype) + '"><span>כל המשתתפים</span>' + mcell(state.meetings.length, 'cal') + mcell(actP.length, 'user') + '<span></span></div></div>' +   // קבוע בראש התפריט בזמן גלילה
-      addTypeRow + types + addMeetRow +
+      types +
       shownM.map((m) => {
         const ls = state.att.filter((a) => a.meeting_id === m.id), isNext = nextM === m;
         return '<div class="mtr mrow2' + (isPast(m) ? ' past' : '') + (isNext ? ' next' : '') + '" role="menuitemradio" tabindex="0" data-filter="' + m.id + '" aria-checked="' + (state.filter === m.id) + '"><span>' + dayTime(m) + '</span>' + (isPast(m) ? mcell(ls.filter((l) => l.attended).length, 'came') : mcell(ls.filter((l) => allocatedOf(l.participant_id, m.id) > 0 && !(dueOf(l.participant_id, m.id) > 0)).length, 'paid')) + mcell(ls.length, 'reg') +
           (state.filter === m.id ? '<button type="button" class="medit" data-edit-m="' + m.id + '" aria-label="עריכת מפגש" title="עריכת מפגש">' + EDIT_ICON + '</button>' : '<span></span>') + (meetName(m) ? '<span class="mrname"><bdi>' + esc(meetName(m)) + '</bdi></span>' : '') + '</div>';
-      }).join('');
+      }).join('') +
+      '<div class="maddw"><button type="button" role="menuitem" id="addMeeting" data-fab="הוספת מפגש"></button></div>';   // one add button for the menu: the kit's floating plus in its bottom-left corner. A new meeting type is added from inside the new meeting
     if (!$('#mMenu').hidden) placeMSel();   // התפריט נשאר פתוח בבחירה: הכותרת משנה רוחב והוא נשאר צמוד אליה
   }
   const closeMSel = () => { $('#mMenu').hidden = true; $('#mSel').setAttribute('aria-expanded', 'false'); };
@@ -3815,19 +3813,26 @@
     const prev = state.meetings.slice().sort(meetDesc)[0] || {};
     mf.fill(Object.assign({}, prev, { id: null, meeting_time: prev.meeting_time || '20:00' }), null);
   }
-  function fillTypeSel(tid) {
+  const NEW_TYPE = '__new';
+  let typeAskedFrom = null, mTypePrev = '';   // typeAskedFrom: the type that was selected when "new meeting type" was chosen (null: not waiting for a new type)
+  function fillTypeSel(tid, canAdd) {
     const sel = $('#mType');
-    sel.innerHTML = state.mtypes.map((t) => '<option value="' + t.id + '"' + (t.id === tid ? ' selected' : '') + '>' + esc(t.name || 'ללא שם') + '</option>').join('');
+    sel.innerHTML = state.mtypes.map((t) => '<option value="' + t.id + '"' + (t.id === tid ? ' selected' : '') + '>' + esc(t.name || 'ללא שם') + '</option>').join('') +
+      (canAdd ? '<option value="' + NEW_TYPE + '">+ סוג מפגש חדש</option>' : '');   // only for a meeting that is being created: a type is then made on the spot and the meeting takes it
+    mTypePrev = sel.value;
     $('#mTypeF').hidden = !state.mtypes.length;   // תמיד מוצג כשיש סוגים (גם סוג אחד), כדי שיהיה ברור לאיזה סוג המפגש שייך
   }
-  $('#mType').addEventListener('change', () => mf.paint());   // החלפת סוג: השדות שנשארו ריקים מציגים את ברירות המחדל של הסוג החדש
+  $('#mType').addEventListener('change', () => {
+    if ($('#mType').value === NEW_TYPE) { typeAskedFrom = mTypePrev; createType(); return; }   // the new type's own form opens above this one; the meeting takes it when it is created
+    mTypePrev = $('#mType').value; mf.paint();
+  });   // החלפת סוג: השדות שנשארו ריקים מציגים את ברירות המחדל של הסוג החדש
   function openMeeting(id) {
     const m = id ? meetOf(id) : null;
     editingMeeting = m;
     $('#mDate').value = m ? m.meeting_date : '';
     const latest = state.meetings.slice().sort(meetDesc)[0] || null;
     const tid = m ? typeIdOf(m) : (state.mtype || typeIdOf(latest));   // מפגש חדש: מהסוג שנבחר בתפריט, אחרת מהסוג של המפגש האחרון
-    fillTypeSel(tid);
+    fillTypeSel(tid, !m);
     fillMeetingForm(m);
     $('#mTitle').textContent = m ? 'עריכת מפגש' : 'מפגש חדש';
     $('#mSubmit').hidden = false; $('#mSubmit').textContent = m ? 'שמירה' : 'יצירת מפגש'; mf.edited = false;   // מפגש קיים נשמר רק בלחיצה על שמירה (כבוי עד שינוי)
@@ -3846,6 +3851,7 @@
     if (!date) { $('#mDate').focus(); toast('חסר תאריך'); return null; }
     const r = mf.read(); if (r.err) { toast(r.err); if (r.el) r.el.focus(); return null; }
     const body = Object.assign({ meeting_date: date }, r.body), inherit = r.inherit;
+    if ($('#mType').value === NEW_TYPE) { toast('צריך לבחור סוג מפגש'); return null; }
     if (state.mtypes.length) { body.type_id = $('#mType').value || firstTypeId(); body.inherit = inherit; }   // סוג המפגש, והשדות שנלקחים ממנו
     return body;
   }
@@ -3914,7 +3920,6 @@
   $('#mMenu').addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-filter], [data-mt]')) { e.preventDefault(); const d = e.target.dataset, sel = d.mt ? '[data-mt="' + d.mt + '"]' : '[data-filter="' + d.filter + '"]'; e.target.click(); const again = $('#mMenu').hidden ? $('#mSel') : $('#mMenu').querySelector(sel); if (again) again.focus(); } });   // התפריט צויר מחדש: הפוקוס נשאר על אותה שורה
   $('#mMenu').addEventListener('click', (e) => {
     if (e.target.closest('#addMeeting')) { closeMSel(); return openMeeting(null); }
-    if (e.target.closest('#addType')) { closeMSel(); return createType(); }
     const et = e.target.closest('[data-edit-t]');
     if (et) { closeMSel(); return openTypeEditor(et.dataset.editT); }
     { const picked = e.target.closest('[data-filter], [data-mt]'); if (picked && !e.target.closest('[data-edit-t], [data-edit-m]') && picked.getAttribute('aria-checked') === 'true') { closeMSel(); return; } }   // לחיצה נוספת על מה שכבר נבחר סוגרת את התפריט
@@ -4479,7 +4484,9 @@
       if (n && !typeById(n.id)) state.mtypes.push(n);
       await saveTemplates({ type_id: n.id }, tyF.tpl.rows);
       tyNew = null; tyId = stType = n.id; tyFormFor = null;
-      tyF.dirty = false; render(); $('#setDlg').close(); toast('סוג המפגש נוצר');
+      tyF.dirty = false; render();
+      if (typeAskedFrom !== null) { typeAskedFrom = null; fillTypeSel(n.id, true); mf.paint(); }   // started from a new meeting: the meeting is of the new type
+      $('#setDlg').close(); toast('סוג המפגש נוצר');
     } catch (err) { fail(err); }
     btn.disabled = false;
   });
@@ -4702,7 +4709,8 @@
   [$('#setSrc'), $('#prForm')].forEach((box) => { box.addEventListener('change', srcChange); box.addEventListener('click', srcClick); });
   $('#srcPrAdd').addEventListener('click', startSrcDraft);
   $('#srcPrDraft').addEventListener('focusout', () => setTimeout(() => { if (!srcDraftOn) return; const b = $('#srcPrDraft'), n = b.querySelector('[data-f="name"]'), m = $('#colMenu'); if (n && !n.value.trim() && !b.contains(document.activeElement) && !(m && !m.hidden)) dropSrcDraft(); }, 150));   // יצאו בלי שם: הכרטיס נעלם, ושום דבר לא נשמר
-  $('#setDlg').addEventListener('close', () => { tyF.edited = false; setRoot = 'main'; showSetView('main'); tyId = null; stType = null; tyNew = null; tyFormFor = null; syncUrl(); });
+  $('#setDlg').addEventListener('close', () => { if (typeAskedFrom !== null) { const back = typeAskedFrom; typeAskedFrom = null; if (mDlg.open) { fillTypeSel(typeById(back) ? back : '', true); mf.paint(); } }   /* closed without creating: the meeting keeps the type it had */
+    tyF.edited = false; setRoot = 'main'; showSetView('main'); tyId = null; stType = null; tyNew = null; tyFormFor = null; syncUrl(); });
   /* מחיקת תגית: מי שסומן בה עובר לתגית אחרת, או נשאר בלי תגית */
   async function removeStatus(k, to, used) {
     used.forEach((l) => { l.status_key = to || null; });

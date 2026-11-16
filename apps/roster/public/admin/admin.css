@@ -2690,3 +2690,20 @@ html.is-loading .msub { display: block; visibility: hidden; }
 /* חציצה בין כפתור הסימון לצ'יף: קו של 16 פיקסלים בדיוק בנקודת החיבור, באמצע הגובה */
 #waSF .stc { background-image: linear-gradient(color-mix(in srgb, var(--on-primary) 45%, transparent), color-mix(in srgb, var(--on-primary) 45%, transparent)) !important; background-size: 1px 16px !important; background-repeat: no-repeat !important; background-position: left center !important; }
 #listTags #waFab.joined .wm3b { width: 100%; }
+
+/* ---------- header controls light blue, search white (owner 2026-11-16: "too dark", then "light blue?") ----------
+   The buttons and chips of the header band (menu, filter, counts, tags) were the page's darkest beige (--surface-2) on a
+   light band. They take the light blue "info" tint, and the search field is white. Pressed chips keep their own colours. */
+.wrap { --hdr-ctl: var(--info-bg); }   /* light blue, the page's own "info" tint (the selected card uses it too) */
+.wrap > header.top .hicon, .wrap > header.top .hicon:active, .wrap > header.top .hicon[aria-expanded="true"],
+.chiprow #filtBtn.filtchip, .chiprow #filtBtn.fspair, .chiprow .fspair,
+.chiprow .stc:not([aria-pressed="true"]):not([data-sc]), .chiprow .stc[data-cr="gen"] .gc:not(.on) { background-color: var(--hdr-ctl); }
+@media (hover: hover) { .wrap > header.top .hicon:hover { background: var(--hdr-ctl); } }
+#listTags .hsearch, #listTags .hsearch:focus-within, #listTags .hsearch:has(input:not(:placeholder-shown)) { background: #fff; box-shadow: inset 0 0 0 1px var(--line); }
+#listTags .hsearch input, #listTags .hsearch input#q { background: transparent; }
+
+/* the add-meeting button of the meetings menu: the kit's round floating plus in the menu's bottom-left corner (the menu's own button rule made it a full-width row) */
+#mMenu .maddw { padding: var(--sp-1) var(--gutter) var(--gutter); background: transparent; pointer-events: none; }
+#mMenu .maddw > .rfab { display: grid; place-items: center; width: var(--fab); height: var(--fab); min-height: 0; padding: 0; border: 1px solid var(--primary); border-radius: var(--r-fab); background: var(--primary); color: var(--on-primary); box-shadow: var(--sh-pop); pointer-events: auto; position: static; margin: 0; flex: none; }
+#mMenu .maddw > .rfab::after { content: none; }
+@media (hover: hover) { #mMenu .maddw > .rfab:hover { background: var(--primary); } }
