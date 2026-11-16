@@ -22,8 +22,11 @@
                   '<label class="pf-field"><span>שם פרטי</span><input id="suName" data-autofocus data-su="first" name="first_name" type="text" class="pf-input" autocomplete="given-name" maxlength="30" placeholder=" " aria-label="שם פרטי" required></label>' +
                   '<label class="pf-field"><span>שם משפחה</span><input data-su="last" name="last_name" type="text" class="pf-input" autocomplete="family-name" maxlength="30" placeholder=" " aria-label="שם משפחה" required></label>' +
                 '</div><div data-su="nameErr" class="su-err" role="alert"></div></div>' +
-                '<div class="su-cell" style="grid-column:1/-1"><div style="display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr);gap:.5rem">' +
+                '<div class="su-cell" style="grid-column:1/-1"><div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:.5rem">' +
+                  '<div class="su-cell"><label class="pf-field"><span>עיר</span><input id="suCity" data-su="city" name="address-level2" type="text" class="pf-input" autocomplete="address-level2" maxlength="40" placeholder=" " aria-label="עיר"></label><div data-su="cityErr" class="su-err" role="alert"></div></div>' +
                   '<div class="su-cell"><label class="pf-field"><span>טלפון</span><input id="suPhone" data-su="phone" name="phone" type="tel" dir="ltr" inputmode="tel" class="pf-input" autocomplete="tel" maxlength="24" placeholder=" " aria-label="טלפון" required></label><div data-su="phoneErr" class="su-err" role="alert"></div></div>' +
+                '</div></div>' +
+                '<div class="su-cell" style="grid-column:1/-1"><div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:.5rem">' +
                   '<div class="su-cell"><label class="pf-field"><span>גיל</span><input id="suAge" data-su="age" name="age" type="number" inputmode="numeric" min="18" max="99" class="pf-input" autocomplete="off" placeholder=" " aria-label="גיל" required></label><div data-su="ageErr" class="su-err" role="alert"></div></div>' +
                   '<div class="su-cell"><label class="pf-field"><span>מגדר</span><select data-su="gender" name="gender" class="pf-input" aria-label="מגדר" required><option value="" selected disabled hidden></option><option value="male">גבר</option><option value="female">אישה</option></select></label><div data-su="genderErr" class="su-err" role="alert"></div></div>' +
                 '</div></div>' +
@@ -121,7 +124,7 @@
 
   var root = modal.querySelector("[data-su-root]");
   function q(k) { return root.querySelector('[data-su="' + k + '"]'); }
-  var form = q("form"), nameI = q("first"), lastI = q("last"), phoneI = q("phone"), ageI = q("age"), genderI = q("gender"), btn = q("btn");
+  var form = q("form"), nameI = q("first"), lastI = q("last"), cityI = q("city"), phoneI = q("phone"), ageI = q("age"), genderI = q("gender"), btn = q("btn");
   var t0 = Date.now(), saved = false;
 
   function setErr(input, errEl, msg) { errEl.textContent = msg || ""; input.classList.toggle("bad", !!msg); }
@@ -136,6 +139,7 @@
   function clearName() { setErr(nameI, q("nameErr"), ""); lastI.classList.remove("bad"); }
   nameI.addEventListener("input", clearName);
   lastI.addEventListener("input", clearName);
+  cityI.addEventListener("input", function () { setErr(cityI, q("cityErr"), ""); });
   phoneI.addEventListener("input", function () { setErr(phoneI, q("phoneErr"), ""); });
   ageI.addEventListener("input", function () { setErr(ageI, q("ageErr"), ""); });
   genderI.addEventListener("change", function () { setErr(genderI, q("genderErr"), ""); });
@@ -150,6 +154,8 @@
     var gender = genderI.value || null;
     if (!gender) { setErr(genderI, q("genderErr"), "נא לבחור"); ok = false; }
     if (!norm) { setErr(phoneI, q("phoneErr"), "מספר לא תקין"); ok = false; }
+    var city = cityI.value.trim().replace(/\s+/g, " ");
+    if (city.length > 40) { setErr(cityI, q("cityErr"), "שם ארוך מדי"); ok = false; }
     var age = parseInt(ageI.value, 10);
     if (!(age >= 18 && age <= 99)) { setErr(ageI, q("ageErr"), "גיל לא תקין"); ok = false; }
     if (!ok) return;
@@ -157,6 +163,7 @@
 
     btn.disabled = true; btn.textContent = "שולחים...";
     var body = { p_first: first, p_last: last, p_phone: norm, p_age: age, p_gender: gender };
+    if (city) body.p_address = city;   /* העיר נשלחת בשדה הכתובת של ה-API (אופציונלי) */
     send(body).then(function (out) {
       /* כפילות: אותה הודעה, בלי לחשוף שהמספר כבר רשום */
       if (out === "created" || out === "exists") return showDone();
@@ -164,6 +171,7 @@
       else if (out === "invalid_name") setErr(nameI, q("nameErr"), "נא למלא שם פרטי ושם משפחה");
       else if (out === "invalid_age") setErr(ageI, q("ageErr"), "גיל לא תקין");
       else if (out === "invalid_gender") setErr(genderI, q("genderErr"), "נא לבחור");
+      else if (out === "invalid_address") setErr(cityI, q("cityErr"), "עיר לא תקינה");
       else throw new Error("signup failed");
       btn.disabled = false; btn.textContent = "הרשמה";
     }).catch(function () {

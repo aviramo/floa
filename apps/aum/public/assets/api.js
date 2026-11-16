@@ -58,12 +58,13 @@
     return cached;
   }
 
-  var FIELD_ERR = { first_name: "invalid_name", last_name: "invalid_name", phone: "invalid_phone", age: "invalid_age", gender: "invalid_gender" };
+  var FIELD_ERR = { first_name: "invalid_name", last_name: "invalid_name", phone: "invalid_phone", age: "invalid_age", gender: "invalid_gender", address: "invalid_address" };
 
-  /* body: { p_first, p_last, p_phone, p_age, p_gender }, כמו שהטופס כבר בונה אותו */
+  /* body: { p_first, p_last, p_phone, p_age, p_gender, p_address (עיר, לא חובה) }, כמו שהטופס כבר בונה אותו */
   function signup(body) {
     return next().catch(function () { return null; }).then(function (ev) {
       var payload = { first_name: body.p_first, last_name: body.p_last, phone: body.p_phone, age: body.p_age, gender: body.p_gender };
+      if (body.p_address) payload.address = body.p_address;   /* עיר, בשדה הכתובת של ה-API */
       if (ev && ev.id) payload.meeting_id = ev.id;
       return call("POST", "/signup", payload);
     }).then(function (r) {
