@@ -99,3 +99,9 @@ dialog.rsheet[open]::backdrop { animation: rs-fade .24s ease-out; }
 /* the header's primary action (an icon button, e.g. save): physically just to the right of the X; same 44px touch target as every header icon */
 dialog.rsheet .sheet-head > .rs-act { order: 98; flex: 0 0 auto; width: var(--pp-x, 44px); min-height: var(--pp-x, 44px); }
 dialog.rsheet .sheet-head > .rs-act[aria-busy="true"] { pointer-events: none; }
+
+/* ---- a phone: an editor popup is the participant popup's kind: full width and ALL the way up (owner 2026-11-16). Only a short confirmation (data-size s / sm) keeps its own height. ---- */
+@media (max-width: 759px) {
+  dialog.rsheet:not([data-size="s"]):not([data-size="sm"]) { height: var(--rs-vvh, 100dvh); max-height: var(--rs-vvh, 100dvh); max-width: none; }
+  dialog.rsheet:not([data-size="s"]):not([data-size="sm"])[data-from="top"] { margin-block: 0; }
+}
