@@ -15,7 +15,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="assets/ui.css?v=08ef9cb7">
 <link rel="stylesheet" href="assets/field.css?v=7e4c4a08">
-<link rel="stylesheet" href="assets/manager.css?v=fcdee73e">
+<link rel="stylesheet" href="admin/admin.css?v=cb3930d5">
+<link rel="stylesheet" href="assets/manager.css?v=09330236">
 <link rel="stylesheet" href="assets/popup.css?v=3cced8f3">
 <link rel="stylesheet" href="assets/sheet.css?v=0d8d9a2d">
 </head>
@@ -37,22 +38,36 @@
   </div>
 </div>
 
-<!-- Signed in: the header never moves, the view under it fills the rest -->
+<!-- Signed in: the SAME frame as the participants page (admin/): the header, the search bar, the list and what the bottom of the list adds never move. On a wide screen the list takes the right part and the business's summary the left, like a participant's card. -->
 <div class="wrap" id="wrap" hidden>
-  <header class="rhead top">
-    <div class="rhead__in">
-      <div class="rhead__text">
-        <h1 class="rhead__title">ניהול משתתפים</h1>
-        <span class="rhead__sub" id="count" hidden></span>
+  <header class="top">
+    <div class="title-row">
+      <div class="msel">
+        <h1>ניהול משתתפים</h1>
+        <small class="msub" id="count" hidden></small>
       </div>
-      <button type="button" class="rbtn rbtn--icon rbtn--edge rbtn--edge-end" id="userBtn" aria-haspopup="menu" aria-expanded="false" aria-label="החשבון שלי">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
-        <span id="whoName"></span>
-      </button>
+      <div class="hgrp">
+        <div class="hicons">
+          <button type="button" class="hicon" id="userBtn" aria-haspopup="menu" aria-expanded="false" aria-label="החשבון שלי"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button>
+        </div>
+      </div>
     </div>
   </header>
-  <main class="view" id="view"></main>
+  <div id="status"></div>
+  <div class="vbar" id="listTags" role="group" aria-label="חיפוש והוספה" hidden>
+    <label class="search hsearch" title="חיפוש והוספה">
+      <span class="scount" id="listCountS" aria-hidden="true"></span><span class="sicon" aria-hidden="true"></span><input data-rf-bare id="q" type="search" placeholder=" " autocomplete="off" aria-label="חיפוש והוספה" />
+      <button type="button" class="sclear" id="qClear" aria-label="ניקוי החיפוש" tabindex="-1">×</button>
+    </label>
+  </div>
+  <ul class="list" id="list"></ul>
+  <div class="addbox" id="addBox"></div>
 </div>
+
+<!-- wide screen: the summary of the open business sits beside the list, as the participant's card does -->
+<aside class="bside" id="bSide" aria-label="סיכום העסק"></aside>
+<div id="splitHandle" role="separator" aria-orientation="vertical" aria-label="רוחב הרשימה (גרירה, חצים במקלדת, לחיצה כפולה לברירת המחדל)" title="גרירה לשינוי הרוחב · לחיצה כפולה: ברירת מחדל" tabindex="0"></div>
+<div id="splitEmpty" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6"/></svg><p>בחרו עסק מהרשימה כדי לראות את הסיכום שלו</p></div>
 
 <div class="rmenu" id="menu" role="menu" hidden></div>
 <dialog id="dlg" aria-labelledby="dlgT" data-from="bottom"></dialog>
@@ -65,6 +80,6 @@
 <script src="assets/undo.js?v=6df1b937"></script>
 <script src="assets/field.js?v=3373b0b3"></script>
 <script src="assets/sheet.js?v=56fd9da7"></script>
-<script src="assets/manager.js?v=85f33da1"></script>
+<script src="assets/manager.js?v=7221779b"></script>
 </body>
 </html>

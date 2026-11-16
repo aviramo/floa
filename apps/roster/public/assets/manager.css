@@ -22,8 +22,8 @@ h1, h2, p { margin: 0; }
 ::selection { background: var(--surface-2); }
 bdi { unicode-bidi: isolate; }
 .sr { position: absolute; width: 1px; height: 1px; margin: 0; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
-dialog, dialog *, .rlist, .acclist { scrollbar-width: none; -ms-overflow-style: none; }
-dialog::-webkit-scrollbar, dialog *::-webkit-scrollbar, .rlist::-webkit-scrollbar, .acclist::-webkit-scrollbar { display: none; width: 0; height: 0; }
+dialog, dialog *, .acclist { scrollbar-width: none; -ms-overflow-style: none; }
+dialog::-webkit-scrollbar, dialog *::-webkit-scrollbar, .acclist::-webkit-scrollbar { display: none; width: 0; height: 0; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; } }
 
 .ic { flex: 0 0 auto; width: var(--icon-m); height: var(--icon-m); stroke-width: var(--icon-w); }
@@ -39,30 +39,15 @@ dialog::-webkit-scrollbar, dialog *::-webkit-scrollbar, .rlist::-webkit-scrollba
 .gbtn svg { width: var(--icon-l); height: var(--icon-l); }
 .gnote { margin-top: var(--gap-field); min-height: 1.4em; color: var(--text-2); font-weight: var(--fw-bold); }
 
-/* ---------- the page frame: the header stays, only the list scrolls ---------- */
-.wrap { width: 100%; height: 100vh; height: 100dvh; display: flex; flex-direction: column; }
-.top { flex: 0 0 auto; position: relative; z-index: var(--z-sticky); }
-.rhead__in { width: 100%; max-width: var(--w-page); margin-inline: auto; display: flex; align-items: flex-start; gap: var(--gap-button); }
-.rhead__text { flex: 1 1 auto; min-width: 0; }
-.rhead .rhead__title { flex: none; }
-/* the title row is always one control high (44px) and never moves: a subtitle is added BELOW it, and the icon button sits on the title row, not centered on the whole block */
-.rhead__text > .rhead__title { display: flex; align-items: center; min-height: var(--ctl); }
-#whoName { display: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.view { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-.view > .rlist { flex: 1 1 auto; }
-
-/* the list: rows run edge to edge, their content sits in the page column */
-.lbox { width: 100%; --side: max(var(--gutter), calc((100% - var(--w-page)) / 2 + var(--gutter))); }
-.lbox .rrow:not([data-swipe]), .lbox .rrow[data-swipe] > .rswipe-fg { padding-inline: var(--side); }
-.lbox__head { padding: var(--gap-field) var(--side); }
-.rrow--link .rrow__trail { display: inline-grid; place-items: center; color: var(--text-2); }
-.rrow .rrow__main bdi { direction: ltr; }
-.rrow.fresh::before { content: ""; position: absolute; inset: 0; background: var(--warn-bg); pointer-events: none; animation: fresh 2.4s ease-out forwards; }
+/* ---------- the page frame: the SAME as the participants page (admin/admin.css: .wrap, header.top, .title-row, .vbar, .list, .row, .addbox) ----------
+   Nothing of the frame is written here, so the two pages cannot drift apart. What follows is only what a business adds to it. */
+.row.fresh::before { content: ""; position: absolute; inset: 0; background: var(--warn-bg); pointer-events: none; animation: fresh 2.4s ease-out forwards; }
 @keyframes fresh { 0%, 35% { opacity: 1; } 100% { opacity: 0; } }
-
-/* the search row, only when there are many businesses */
-.qrow { flex: 0 0 auto; width: 100%; max-width: var(--w-page); margin-inline: auto; padding: var(--gap-field) var(--gutter) 0; }
-.qrow .rfield { margin: 0; }
+/* the accounts count takes the age column, the identifier the other end of the row */
+.row .meta .age.n { font-variant-numeric: tabular-nums; }
+.row .main .sidewrap bdi { direction: ltr; color: var(--text-2); font-size: var(--fs-s); font-weight: var(--fw-medium); }
+.row .main.nobadge { padding-inline-end: var(--gut); }
+.list .rhint { margin-inline: var(--gut); }
 
 /* a centred message (not connected yet, loading, errors) */
 .rempty--fill { flex: 1 1 auto; justify-content: center; }
@@ -96,7 +81,35 @@ dialog.acc .sheet-body { overflow: hidden; }
 .trow .rrow__sub { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap-tight) var(--gap-button); }
 .trow .rbtn { flex: 0 0 auto; }
 .trow .rrow__trail { display: flex; align-items: center; gap: var(--gap-tight); }
-/* the swipe hint lives in the list itself (a sibling of .lbox), so it takes the same side room as the rows: on a wide screen it sits in the same centered column as the title and the rows, not edge to edge */
-.rlist > .rhint { margin-inline: max(var(--gutter), calc((100% - var(--w-page)) / 2 + var(--gutter))); }
-/* the ground under the header is the same grey as the list ground of the participants page */
-.view > .rlist { background: var(--surface); }
+
+/* ---------- the business summary: a card beside the list on a wide screen (as #pDlg.side), a popup under it (RosterSheet) ---------- */
+.bsum { display: flex; flex-direction: column; min-height: 0; }
+.bsum__head { padding: 0 0 var(--gap-button); }
+.bsum__slug { display: block; margin-top: var(--gap-tight); color: var(--text-2); font: var(--fw-medium) var(--fs-s)/var(--lh-body) var(--font); }
+.bsum__slug bdi { direction: ltr; }
+.bsum__facts { display: flex; flex-wrap: wrap; gap: var(--gap-button); margin: 0 0 var(--gap-field); }
+.bsum__acts { margin-inline: calc(var(--pp-px, var(--gutter)) * -1); border-top: 1px solid var(--line); }
+.bsum__acts .rrow { width: 100%; background: var(--bg); border-inline: 0; border-top: 0; text-align: start; font: inherit; color: inherit; cursor: pointer; text-decoration: none; }
+.bsum__acts .rrow .rrow__title { font-weight: var(--fw-medium); }
+.bsum__acts .rrow[data-tone="danger"] { color: var(--danger); }
+.bsum__acts .rrow .ic { color: var(--text-2); }
+.bsum__acts .rrow[data-tone="danger"] .ic { color: var(--danger); }
+@media (hover: hover) { .bsum__acts .rrow:hover { background: var(--surface); } }
+.bside { display: none; }
+@media (min-width: 1024px) {
+  html.split-open .bside { display: flex; }
+  .bside { position: fixed; inset: var(--envtop, 0px) var(--listw) 0 0; z-index: var(--z-sticky); flex-direction: column; overflow-y: auto; overscroll-behavior-y: contain; background: var(--bg); padding: var(--sp-3) calc(var(--sp-hair) * 8) var(--sp-2); }
+  .bside .bsum__head { padding-top: 0; }
+  .bside .bside__x { position: absolute; top: var(--sp-2); inset-inline-end: var(--sp-1); }
+  .bside .bsum__acts { margin-inline: calc(var(--sp-hair) * -8); }
+}
+
+/* the title block (the title and the count under it) and the icon tile share one centre line, whatever the block's height */
+.title-row { align-items: center; }
+.title-row > .hgrp { align-self: center; }
+.msel > h1 { display: flex; align-items: center; height: 24px; }
+.wrap > header.top .msel { top: 0; }   /* the participants page nudges its own title block up; this one is centred by the row */
+
+/* the add button: the participants page's floating one, in the corner of the list pane (manager.js sets --fab-left from the pane) */
+#newBiz { left: var(--fab-left, max(var(--gutter), var(--inset-l))); }
+.msel > .msub { margin-top: 0; }   /* the count sits right under the title, not over it */

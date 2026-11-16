@@ -418,8 +418,10 @@ try {
         const tab = await open(origin + "/roster/", { ...v, session: true, onException: (e) => errs.push(e) });
         check(`${tag}: no uncaught exception`, errs.length === 0, errs.slice(0, 2));
         await endPadProbe(tab, `${tag} page`, "page");   // the businesses list with the add button over its corner: it reserves --end-pad-fab
-        const fab = await tab.evaluate(`(() => { const f = document.getElementById("newBiz"); if (!f) return null; const r = f.getBoundingClientRect(); return { l: Math.round(r.left), b: Math.round(window.innerHeight - r.bottom), w: Math.round(r.width), pos: getComputedStyle(f).position }; })()`);
-        check(`${tag}: the add button floats at the bottom left`, !!fab && fab.pos === "fixed" && fab.l < v.width / 2 && fab.l <= 32 && fab.b <= 40 && fab.w >= 44, fab);
+        /* the add button is the participants page's: the floating one, in the bottom corner of the list pane (the window's corner when the list is the whole window) */
+        const fab = await tab.evaluate(`(() => { const f = document.getElementById("newBiz"); if (!f) return null; const r = f.getBoundingClientRect(), l = document.getElementById("list").getBoundingClientRect(); return { l: Math.round(r.left), listLeft: Math.round(l.left), b: Math.round(window.innerHeight - r.bottom), w: Math.round(r.width), pos: getComputedStyle(f).position }; })()`);
+        check(`${tag}: the add button floats at the bottom left of the list`, !!fab && fab.pos === "fixed" && fab.l >= fab.listLeft - 1 && fab.l <= fab.listLeft + 32 && fab.b <= 40 && fab.w >= 44, fab);
+        await tab.evaluate(`(() => { const q = document.getElementById("q"); q.value = "דנה"; q.dispatchEvent(new Event("input", { bubbles: true })); })()`); await sleep(200);
         if (fab) {
           await tab.evaluate(`document.getElementById("newBiz").click()`); await sleep(600);
           const m = await tab.evaluate(MEASURE);

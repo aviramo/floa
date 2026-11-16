@@ -98,21 +98,27 @@
   }
 
   /* ---------- state ---------- */
-  var gate = $("#gate"), wrap = $("#wrap"), view = $("#view"), menu = $("#menu"), dlg = $("#dlg"), dlgC = $("#dlgC");
+  var gate = $("#gate"), wrap = $("#wrap"), list = $("#list"), statusEl = $("#status"), vbar = $("#listTags"), side = $("#bSide"), menu = $("#menu"), dlg = $("#dlg"), dlgC = $("#dlgC");
+  var root = document.documentElement;
+  var wideMQ = window.matchMedia ? window.matchMedia("(min-width: 1024px)") : null;
+  function wide() { return !!(wideMQ && wideMQ.matches); }
   RosterSheet.attach(dlg);    /* the one popup shell (assets/sheet.js): square, grab bar, swipe to close, page locked behind, inner scroll */
   RosterSheet.attach(dlgC);   /* the small confirmation window, opened above the other one */
-  function blank() { return { isSuper: false, biz: [], users: {}, q: "" }; }
+  function blank() { return { isSuper: false, biz: [], users: {}, q: "", open: "" }; }
   var S = blank();
   var epoch = 0;            /* bumped on every sign-out, so a late answer cannot repaint someone else's data */
   var ctx = null;           /* the open dialog's context */
   var afterClose = null;    /* where focus goes when the dialog closes */
   var afterCloseC = null;
-  var menuBtn = null, menuId = "";
+  var menuBtn = null;
   var toastTimer = 0;
-  var ptrCtl = null, swipeCtl = null, swipeEl = null;
+  var ptrCtl = null;
+  var lastOpen = "";        /* the business whose card was closed last: its row stays a light grey until the next press, like a participant's */
 
   function byId(id) { for (var i = 0; i < S.biz.length; i++) if (S.biz[i].id === id) return S.biz[i]; return null; }
-  function setView(html) { view.innerHTML = html; }
+  /* a message under the header (loading, error, not connected): the list and the search step aside, as on the participants page */
+  function setStatus(html) { statusEl.innerHTML = html; list.innerHTML = ""; vbar.hidden = true; $("#addBox").innerHTML = ""; closeSummary(); }
+  function clearStatus() { statusEl.innerHTML = ""; }
   function setCount(text) { var c = $("#count"); c.textContent = text || ""; c.hidden = !text; }
 
   function toast(msg) {
@@ -150,22 +156,16 @@
   /* Only a conflict has words of its own; everything else is one calm sentence. */
   function problem(e, conflict) { return e && e.status === 409 && conflict ? conflict : T.generic; }
 
-  /* ---------- the person's own small memory: the swipe hint is confirmed ONCE for the whole system (one key, set by the kit's "הבנתי" button) ---------- */
-  function resetHints() {
-    try { localStorage.removeItem("rk.swipe.understood"); } catch (e) { /* nothing to clear */ }
-    if (swipeEl) swipeEl.__hinted = false;
-  }
-
   /* ---------- gate and sign-out ---------- */
   function showGate(note) {
     epoch++;
     afterClose = null; afterCloseC = null; ctx = null;
     closeMenu();
+    closeSummary();
     if (dlgC.open) dlgC.close();
     if (dlg.open) dlg.close();
     S = blank();
     if (ptrCtl) { ptrCtl.destroy(); ptrCtl = null; }
-    swipeCtl = null; swipeEl = null;
     wrap.hidden = true;
     gate.hidden = false;
     $("#gNote").textContent = note || "";
@@ -176,7 +176,6 @@
     gate.hidden = true;
     wrap.hidden = false;
     var who = A.name() || A.email();
-    $("#whoName").textContent = who;
     $("#userBtn").setAttribute("aria-label", "החשבון שלי" + (who ? ": " + who : ""));
     document.documentElement.style.setProperty("--rptr-top", $(".top").offsetHeight + "px");
     if (RosterUI && RosterUI.kbWatch) RosterUI.kbWatch();
@@ -238,19 +237,16 @@
       (email ? '<bdi class="rmenu__mail" dir="ltr">' + esc(email) + "</bdi>" : "") +
       (S.isSuper ? '<span class="rchip">מנהל המערכת</span>' : "") + "</div>" +
       (S.isSuper ? '<button type="button" class="rmenu__item" role="menuitem" data-act="trash-all">' + icon("restore") + "<span>נמחקו לאחרונה</span></button>" : "") +
-      '<button type="button" class="rmenu__item" role="menuitem" data-act="hints">' + icon("help") + "<span>הצגת הדרכות מחדש</span></button>" +
       '<button type="button" class="rmenu__item" role="menuitem" data-act="signout">' + icon("logout") + "<span>יציאה</span></button>");
   });
 
   menu.addEventListener("click", function (e) {
     var t = e.target.closest("[data-act]");
     if (!t) return;
-    var act = t.dataset.act, id = menuId;
+    var act = t.dataset.act;
     closeMenu();
     if (act === "signout") return doSignOut();
-    if (act === "hints") { resetHints(); return toast("ההדרכות יוצגו שוב."); }
     if (act === "trash-all") return openTrash("");
-    rowAct(act, id);
   });
 
   function rowAct(act, id) {
@@ -271,9 +267,9 @@
   /* Where focus goes after the dialog: the row's control, or the add button if the row is gone. */
   function back(id, act) {
     return function () {
-      var el = id ? view.querySelector('[data-act="' + act + '"][data-id="' + CSS.escape(id) + '"]') : null;
-      if (!el) el = $("#newBiz");
-      if (el) el.focus();
+      var el = id ? list.querySelector('[data-open="' + CSS.escape(id) + '"]') : null;
+      if (!el) el = $("#q");
+      if (el) el.focus({ preventScroll: true });
     };
   }
   dlg.addEventListener("click", function (e) {   /* the backdrop is closed by sheet.js */
@@ -321,7 +317,7 @@
     var mine = epoch;
     showApp();
     setCount("");
-    setView('<div class="rempty rempty--fill" role="status">טוען…</div>');
+    setStatus('<div class="empty" role="status">טוען…</div>');
     Promise.all([
       api("/rest/v1/rpc/is_super", { method: "POST", json: {} }),
       api("/rest/v1/rpc/my_businesses", { method: "POST", json: {} }),
@@ -332,53 +328,49 @@
       if (S.isSuper) return showManager();
       if (list.length === 0) return showNone();
       if (list.length === 1) {
-        setView('<div class="rempty rempty--fill" role="status">מעביר לעסק…</div>');
+        setStatus('<div class="empty" role="status">מעביר לעסק…</div>');
         return location.replace("admin/?biz=" + encodeURIComponent(list[0].slug));
       }
       showPicker(list);
     }).catch(function (e) {
       if (e && e.signedOut) return;
       if (epoch !== mine) return;
-      setView('<div class="rempty rempty--fill"><b>לא הצלחנו לטעון</b>' + esc(T.loadFail) + '<button type="button" class="rbtn rbtn--ghost" data-act="retry">ניסיון נוסף</button></div>');
+      setStatus('<div class="empty"><b>לא הצלחנו לטעון</b>' + esc(T.loadFail) + '<br><button type="button" class="rbtn rbtn--ghost" data-act="retry">ניסיון נוסף</button></div>');
     });
   }
 
   function showNone() {
     var em = A.email();
-    setView('<div class="rempty rempty--fill"><div class="mark" aria-hidden="true">' + icon("users") + "</div>" +
-      "<p>" + (em ? 'החשבון <bdi dir="ltr">' + esc(em) + "</bdi>" : "החשבון הזה") +
-      " עוד לא מחובר לאף עסק. מי שמנהל את המערכת יכול לחבר אותו.</p>" +
+    setStatus('<div class="empty"><b>' + (em ? 'החשבון <bdi dir="ltr">' + esc(em) + "</bdi>" : "החשבון הזה") + " עוד לא מחובר לאף עסק</b>" +
+      "מי שמנהל את המערכת יכול לחבר אותו.<br>" +
       '<button type="button" class="rbtn rbtn--ghost" data-act="signout">יציאה והחלפת חשבון</button></div>');
   }
 
-  function showPicker(list) {
+  function showPicker(mine) {
     setCount("");
-    setView('<div class="rlist"><div class="lbox"><div class="rhead__sub lbox__head"><b>בחרו עסק</b><br>החשבון הזה מחובר ליותר מעסק אחד.</div>' +
-      list.map(function (b) {
-        return '<div class="rrow rrow--link"><a class="rrow__main" href="admin/?biz=' + esc(encodeURIComponent(b.slug)) + '"><span class="rrow__title">' + esc(b.name) +
-          '</span><span class="rrow__sub"><bdi dir="ltr">' + esc(b.slug) + '</bdi></span></a><span class="rrow__trail" aria-hidden="true">' + icon("go") + "</span></div>";
-      }).join("") + "</div></div>");
+    setStatus("");
+    list.innerHTML = '<li class="group">בחרו עסק: החשבון הזה מחובר ליותר מעסק אחד</li>' + mine.map(function (b) {
+      return '<li class="row ucard"><a class="main nobadge" href="admin/?biz=' + esc(encodeURIComponent(b.slug)) + '"><div class="nm"><span class="name" dir="rtl">' + esc(b.name) + '</span></div>' +
+        '<div class="meta"><span class="sidewrap"><bdi dir="ltr">' + esc(b.slug) + "</bdi></span></div></a></li>";
+    }).join("");
   }
 
   /* ---------- the manager ---------- */
   function showManager() {
-    setView('<div class="qrow" id="qRow" hidden><label class="rfield" id="qF"><span>חיפוש עסק</span><input type="search" id="q" placeholder=" " autocomplete="off"></label></div>' +
-      '<div class="rlist" id="list" data-fab-room><div class="lbox" id="listIn"><div class="rempty" role="status">טוען…</div></div></div>' +
-      '<button type="button" class="rfab" id="newBiz" data-act="new" aria-label="עסק חדש" title="עסק חדש">' + icon("plus") + "</button>");
-    $("#q").addEventListener("input", function () { S.q = this.value; renderList(); });
+    clearStatus();
+    vbar.hidden = false;
+    $("#q").value = S.q;
     /* pull to refresh: a finger swipe down while the list is at its top (or has nothing to scroll) reloads the businesses; never under a popup */
     if (ptrCtl) ptrCtl.destroy();
-    ptrCtl = RosterUI.ptr.attach({ scroller: $("#list"), onRefresh: function () { return loadManager(); },
+    ptrCtl = RosterUI.ptr.attach({ scroller: list, onRefresh: function () { return loadManager(); },
       enabled: function () { return !dlg.open && !dlgC.open && menu.hidden; } });
-    swipeEl = $("#list");
-    swipeCtl = RosterUI.swipe.init(swipeEl);
+    renderList();
     loadManager();
   }
 
   function loadManager() {
     var mine = epoch;
-    var l = $("#listIn");
-    if (l && !S.biz.length) l.innerHTML = '<div class="rempty" role="status">טוען…</div>';
+    if (!S.biz.length) list.innerHTML = '<li class="empty" role="status">טוען…</li>';
     return Promise.all([
       api("/rest/v1/businesses?select=id,slug,name,created_at&order=created_at"),
       api("/rest/v1/business_users?select=business_id,email&order=email"),
@@ -391,78 +383,204 @@
       renderList();
     }).catch(function (e) {
       if ((e && e.signedOut) || epoch !== mine) return;
-      var l2 = $("#listIn");
-      if (l2) l2.innerHTML = '<div class="rempty"><b>לא הצלחנו לטעון את העסקים</b>' + esc(T.loadFail) + '<button type="button" class="rbtn rbtn--ghost" data-act="reload">ניסיון נוסף</button></div>';
+      list.innerHTML = '<li class="empty"><b>לא הצלחנו לטעון את העסקים</b>' + esc(T.loadFail) + '<br><button type="button" class="rbtn rbtn--ghost" data-act="reload">ניסיון נוסף</button></li>';
     });
   }
 
-  /* a business is a LIST ROW: the whole row opens it, the three dots carry every action, and a swipe shows rename and delete (the same two) */
+  /* a business is a row of the participants list, same anatomy: the accounts count in the age column, the name, the identifier at the end.
+     The whole row opens its summary, and every action lives there: there is no swipe on this list. */
   function rowHtml(b) {
-    var id = esc(b.id);
-    return '<div class="rrow rrow--link" data-row="' + id + '" data-swipe="owner-businesses"><div class="rswipe-fg">' +
-      '<a class="rrow__main" href="admin/?biz=' + esc(encodeURIComponent(b.slug)) + '" aria-label="פתיחת ' + esc(b.name) + '"><span class="rrow__title">' + esc(b.name) + '</span>' +
-      '<span class="rrow__sub"><bdi dir="ltr">' + esc(b.slug) + '</bdi></span></a>' +
-      '<button type="button" class="rbtn rbtn--icon rbtn--edge rbtn--edge-end rrow__trail" data-act="menu" data-id="' + id + '" aria-haspopup="menu" aria-expanded="false" aria-label="עוד פעולות: ' + esc(b.name) + '" title="עוד פעולות">' + icon("dots") + "</button></div>" +
-      '<div class="rswipe" aria-hidden="true">' +
-      '<button type="button" class="rswipe__act" tabindex="-1" data-act="rename" data-id="' + id + '">' + icon("edit") + "<span>עריכה</span></button>" +
-      '<button type="button" class="rswipe__act" tabindex="-1" data-tone="danger" data-act="delete" data-id="' + id + '">' + icon("trash") + "<span>מחיקה</span></button></div></div>";
+    var id = esc(b.id), n = accList(b).length;
+    return '<li class="row ucard" data-row="' + id + '">' +
+      '<div class="main nobadge" role="button" tabindex="0" data-open="' + id + '" aria-label="סיכום העסק ' + esc(b.name) + '">' +
+      '<div class="nm"><span class="name" dir="rtl">' + esc(b.name) + '</span></div>' +
+      '<div class="meta"><span class="age n" title="' + esc(accCount(n)) + '"><bdi dir="rtl">' + n + ' <b class="gl">' + icon("users", "i14") + '</b></bdi></span>' +
+      '<span class="sidewrap"><bdi dir="ltr">' + esc(b.slug) + "</bdi></span></div></div></li>";
   }
 
   function visibleBiz() { return S.biz.filter(function (b) { return !RosterUndo.isPending("business", b.id); }); }
 
   function renderList() {
-    var box = $("#listIn");
-    if (!box) return;
+    if (vbar.hidden) return;
     var all = visibleBiz();
-    var many = all.length > MANY;
-    $("#qRow").hidden = !many;
-    var term = many ? lc(S.q) : "";
+    var term = lc(S.q);
     var rows = all.filter(function (b) { return !term || lc(b.name).indexOf(term) > -1 || b.slug.indexOf(term) > -1; });
     setCount(term ? rows.length + " מתוך " + bizCount(all.length) : bizCount(all.length));
     var html = "";
-    if (!all.length) {
-      html += '<div class="rempty"><b>עוד אין עסקים</b>כל עסק מקבל מזהה משלו, ורשימה של חשבונות Google שמנהלים אותו. אפשר להתחיל מהכפתור הצף.</div>';
-    } else if (!rows.length) {
-      html += '<div class="rempty"><b>לא נמצא עסק</b>אין עסק שהשם או המזהה שלו מכילים את מה שכתבתם.</div>';
-    } else {
-      html += rows.map(rowHtml).join("");
-    }
-    box.innerHTML = html;
-    if (swipeCtl && swipeEl && !swipeEl.__hinted && rows.length && !dlg.open && !dlgC.open) { swipeEl.__hinted = true; swipeCtl.hint(); }   /* the first time only, per person (and once per screen) */
+    if (rows.length) html += rows.map(rowHtml).join("");
+    else if (!all.length) html += '<li class="empty"><b>עוד אין עסקים</b>כל עסק מקבל מזהה משלו, ורשימה של חשבונות Google שמנהלים אותו. כדי להתחיל, כותבים שם בשורת החיפוש ולוחצים על ההוספה.</li>';
+    /* the end of the list adds: what was typed in the search becomes a new business (the participants page does the same with a new participant) */
+    var q = clean(S.q);
+    if (q) html += '<li class="addli"><button type="button" class="newbtn" id="addNew" data-act="new" aria-label="הוספת עסק חדש: ' + esc(q) + '" title="הוספת עסק חדש"><span class="tg ico plus" aria-hidden="true">+</span><b dir="auto">' + esc(q) + "</b></button></li>";
+    var keep = list.scrollTop;
+    list.innerHTML = html;
+    if (keep && list.scrollTop !== keep) list.scrollTop = keep;
+    if (S.open && !all.some(function (b) { return b.id === S.open; })) closeSummary();
+    else if (S.open) paintSummary();
+    markSel();
   }
 
+  function markSel() {
+    var on = !!(S.open && wide());
+    list.querySelectorAll("li.row[data-row]").forEach(function (r) {
+      r.classList.toggle("sel", on && r.dataset.row === S.open);
+      r.classList.toggle("last", !!lastOpen && r.dataset.row === lastOpen);
+    });
+  }
+  /* a press on a row takes the mark of "the last one" to that row; a press anywhere else (not in a popup, a menu or the header) takes it away */
+  window.addEventListener("click", function (e) {
+    if (e.target.closest && (e.target.closest("dialog") || e.target.closest("[role='menu']") || e.target.closest("header.top") || e.target.closest("#bSide"))) return;
+    if (!menu.hidden) return;
+    var r = e.target.closest && e.target.closest("#list li.row[data-row]"), id = r ? r.dataset.row : "";
+    if (id !== lastOpen) { lastOpen = id; markSel(); }
+  }, true);
+
   function flash(id) {
-    var el = view.querySelector('[data-row="' + CSS.escape(id) + '"]');
+    var el = list.querySelector('[data-row="' + CSS.escape(id) + '"]');
     if (!el) return;
     el.scrollIntoView({ block: "nearest" });
     el.classList.add("fresh");
     setTimeout(function () { el.classList.remove("fresh"); }, 2600);
   }
 
-  view.addEventListener("click", function (e) {
+  /* ---------- the summary of one business: a card beside the list on a wide screen, a popup otherwise. The same body in both. ---------- */
+  function summaryBody(b, forSide) {
+    var id = esc(b.id), n = accList(b).length;
+    var head = forSide
+      ? '<button type="button" class="rbtn rbtn--icon rbtn--ghost bside__x" data-act="close-side" aria-label="סגירה" title="סגירה">' + icon("x") + "</button>" +
+        '<div class="bsum__head"><h2 class="rhead__title">' + esc(b.name) + '</h2><span class="bsum__slug"><bdi dir="ltr">' + esc(b.slug) + "</bdi></span></div>"
+      : '<div class="bsum__head"><span class="bsum__slug"><bdi dir="ltr">' + esc(b.slug) + "</bdi></span></div>";
+    return '<div class="bsum">' + head +
+      '<div class="bsum__facts">' + (n ? '<span class="rchip">' + esc(accCount(n)) + "</span>" : '<span class="rchip rchip--wait">אין חשבונות</span>') + "</div>" +
+      '<div class="bsum__acts">' +
+      '<a class="rrow" href="admin/?biz=' + esc(encodeURIComponent(b.slug)) + '">' + icon("go") + '<span class="rrow__main"><span class="rrow__title">פתיחת העסק</span></span></a>' +
+      '<button type="button" class="rrow" data-act="rename" data-id="' + id + '">' + icon("edit") + '<span class="rrow__main"><span class="rrow__title">עריכה</span></span></button>' +
+      '<button type="button" class="rrow" data-act="accounts" data-id="' + id + '">' + icon("users") + '<span class="rrow__main"><span class="rrow__title">ניהול חשבונות</span></span>' +
+        (n ? '<span class="rcount" aria-label="' + esc(accCount(n)) + '">' + n + "</span>" : '<span class="rchip rchip--wait">אין חשבונות</span>') + "</button>" +
+      '<button type="button" class="rrow" data-act="trash" data-id="' + id + '">' + icon("restore") + '<span class="rrow__main"><span class="rrow__title">נמחקו לאחרונה</span></span></button>' +
+      '<button type="button" class="rrow" data-tone="danger" data-act="delete" data-id="' + id + '">' + icon("trash") + '<span class="rrow__main"><span class="rrow__title">מחיקה</span></span></button>' +
+      "</div></div>";
+  }
+
+  function openSummary(id) {
+    var b = byId(id);
+    if (!b) return;
+    S.open = id;
+    if (wide()) {
+      if (dlg.open && ctx && ctx.kind === "sum") dlg.close();
+      paintSummary();
+      root.classList.add("split-open");
+      markSel();
+      return;
+    }
+    ctx = { kind: "sum", id: id };
+    afterClose = function () { S.open = ""; markSel(); var el = list.querySelector('[data-open="' + CSS.escape(id) + '"]'); if (el) el.focus({ preventScroll: true }); };
+    openDialog("sum", esc(b.name), summaryBody(b, false), { size: "md" });
+  }
+  function paintSummary() {
+    var b = byId(S.open);
+    if (!b) return;
+    if (wide()) side.innerHTML = summaryBody(b, true);
+    else if (dlg.open && ctx && ctx.kind === "sum") {
+      var body = dlg.querySelector(".sheet-body"), t = dlg.querySelector("#dlgT");
+      if (body) body.innerHTML = summaryBody(b, false);
+      if (t) t.innerHTML = esc(b.name);
+    }
+  }
+  function closeSummary() {
+    if (!S.open) return;
+    var wasSide = root.classList.contains("split-open");
+    S.open = "";
+    root.classList.remove("split-open");
+    side.innerHTML = "";
+    if (dlg.open && ctx && ctx.kind === "sum") dlg.close();
+    if (wasSide) markSel();
+  }
+  /* across the 1024px line the card becomes a popup or back: close it rather than carry it over half drawn */
+  if (wideMQ && wideMQ.addEventListener) wideMQ.addEventListener("change", function () {
+    if (S.open) { var id = S.open; closeSummary(); lastOpen = id; markSel(); }
+  });
+
+  /* a business's action. In the popup the summary closes first and the action opens after it; beside the list it opens above the card. */
+  function summaryAct(act, id) {
+    if (dlg.open && ctx && ctx.kind === "sum") {
+      afterClose = function () { S.open = ""; markSel(); rowAct(act, id); };
+      dlg.close();
+      return;
+    }
+    rowAct(act, id);
+  }
+
+  wrap.addEventListener("click", wrapClick);
+  side.addEventListener("click", wrapClick);
+  function wrapClick(e) {
+    var o = e.target.closest("[data-open]");
+    if (o && !e.target.closest("[data-act]")) { openSummary(o.dataset.open); return; }
     var t = e.target.closest("[data-act]");
     if (!t) return;
     var act = t.dataset.act, id = t.dataset.id;
-    if (act === "menu") {
-      if (menuBtn === t) return closeMenu(true);
-      var b = byId(id);
-      if (!b) return;
-      menuId = id;
-      var n = (S.users[id] || []).length;
-      openMenu(t,
-        '<a class="rmenu__item" role="menuitem" href="admin/?biz=' + esc(encodeURIComponent(b.slug)) + '">' + icon("go") + "<span>פתיחה</span></a>" +
-        '<button type="button" class="rmenu__item" role="menuitem" data-act="rename">' + icon("edit") + "<span>עריכה</span></button>" +
-        '<button type="button" class="rmenu__item" role="menuitem" data-act="accounts">' + icon("users") + "<span>ניהול חשבונות</span>" +
-        (n ? '<span class="rcount" aria-label="' + esc(accCount(n)) + '">' + n + "</span>" : '<span class="rchip rchip--wait">אין חשבונות</span>') + "</button>" +
-        '<button type="button" class="rmenu__item" role="menuitem" data-act="trash">' + icon("restore") + "<span>נמחקו לאחרונה</span></button>" +
-        '<button type="button" class="rmenu__item" role="menuitem" data-tone="danger" data-act="delete">' + icon("trash") + "<span>מחיקה</span></button>");
-    }
-    else if (act === "rename" || act === "delete") { if (swipeCtl) swipeCtl.close(); rowAct(act, id); }
+    if (act === "rename" || act === "delete" || act === "accounts" || act === "trash") rowAct(act, id);
+    else if (act === "close-side") { lastOpen = S.open; closeSummary(); }
     else if (act === "new") openBiz("");
     else if (act === "reload") loadManager();
     else if (act === "retry") boot();
     else if (act === "signout") doSignOut();
+  }
+  /* a row is a button: Enter and Space open it, like the participants rows */
+  wrap.addEventListener("keydown", function (e) {
+    var o = e.target.closest && e.target.closest("[data-open]");
+    if (o && o === e.target && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openSummary(o.dataset.open); }
   });
+  $("#q").addEventListener("input", function () { S.q = this.value; renderList(); fabLabel(); });
+  /* one add button for the list, as on the participants page: with a name typed in the search it adds that business, without one it asks for the name.
+     On a wide screen the list is one pane of two, so the button sits in the pane's bottom corner (the list's own add row stays in the DOM for it to click, never visible). */
+  var fab = document.createElement("button");
+  fab.type = "button"; fab.className = "rfab"; fab.id = "newBiz"; fab.hidden = true;
+  fab.innerHTML = icon("plus");
+  document.body.appendChild(fab);
+  function fabLabel() { var t = clean(S.q), l = t ? "הוספת עסק חדש: " + t : "עסק חדש"; fab.setAttribute("aria-label", l); fab.setAttribute("title", l); }
+  function placeFab() {
+    var live = !wrap.hidden && !vbar.hidden;
+    fab.hidden = !live;
+    var r = list.getBoundingClientRect();
+    if (r.width > 0) fab.style.setProperty("--fab-left", Math.round(r.left + 16) + "px");   /* 16 = the gutter token */
+  }
+  fab.addEventListener("click", function () {
+    var an = $("#addNew");
+    if (clean(S.q) && an) { an.click(); return; }
+    var q = $("#q"); q.placeholder = "שם העסק החדש"; q.addEventListener("blur", function () { q.placeholder = " "; }, { once: true }); q.focus();
+  });
+  fabLabel();
+  window.addEventListener("resize", placeFab);
+  if (window.ResizeObserver) new ResizeObserver(placeFab).observe(list);
+  new MutationObserver(placeFab).observe(wrap, { attributes: true, attributeFilter: ["hidden"] });
+  new MutationObserver(placeFab).observe(vbar, { attributes: true, attributeFilter: ["hidden"] });
+  $("#qClear").addEventListener("click", function () { var q = $("#q"); q.value = ""; S.q = ""; renderList(); q.focus(); });
+  /* the actions inside the summary popup */
+  dlg.addEventListener("click", function (e) {
+    var t = e.target.closest(".bsum [data-act]");
+    if (t) summaryAct(t.dataset.act, t.dataset.id);
+  });
+
+  /* wide screen: the width of the list can be changed by dragging the line between it and the card (arrows on the keyboard, a double click returns it); kept in this browser */
+  (function () {
+    var KEY = "roster_admin_listw", h = $("#splitHandle");
+    function clampW(w) { return Math.round(Math.max(360, Math.min(w, window.innerWidth - 420))); }
+    function curW() { return wrap.getBoundingClientRect().width; }
+    function setW(w) { root.style.setProperty("--listw", clampW(w) + "px"); }
+    function save() { try { localStorage.setItem(KEY, String(Math.round(curW()))); } catch (e) { /* not kept */ } }
+    var saved = null; try { saved = Number(localStorage.getItem(KEY)) || null; } catch (e) { /* none */ }
+    if (saved) setW(saved);
+    window.addEventListener("resize", function () { var w = parseFloat(root.style.getPropertyValue("--listw")); if (w) setW(w); });
+    if (!h) return;
+    var drag = false;
+    h.addEventListener("pointerdown", function (e) { if (!wide() || e.button > 0) return; drag = true; h.setPointerCapture(e.pointerId); root.classList.add("split-drag"); e.preventDefault(); });
+    h.addEventListener("pointermove", function (e) { if (drag) setW(window.innerWidth - e.clientX); });
+    function end() { if (!drag) return; drag = false; root.classList.remove("split-drag"); save(); }
+    h.addEventListener("pointerup", end); h.addEventListener("pointercancel", end);
+    h.addEventListener("dblclick", function () { root.style.removeProperty("--listw"); try { localStorage.removeItem(KEY); } catch (e) { /* none */ } });
+    h.addEventListener("keydown", function (e) { if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return; e.preventDefault(); setW(curW() + (e.key === "ArrowLeft" ? 24 : -24)); save(); });
+  })();
 
   /* ---------- new business, and rename ---------- */
   /* A latin name suggests a latin identifier. A Hebrew name suggests nothing. */
@@ -507,6 +625,7 @@
     RField.scan(dlg);
 
     var name = $("#bName"), slug = $("#bSlug");
+    if (!edit && clean(S.q)) { name.value = clean(S.q).slice(0, 80); if (slug) slug.value = slugFrom(name.value); }   /* what was typed in the search becomes the name */
     if (edit) RosterSheet.setDirty(dlg, false);
     function dirty() { if (edit) RosterSheet.setDirty(dlg, clean(name.value) !== b.name || lc(slug.value) !== b.slug); }
     function bad(msg, field) {
