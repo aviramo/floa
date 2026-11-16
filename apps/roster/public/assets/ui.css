@@ -253,21 +253,27 @@ html.rk-ptr, html.rk-ptr body { overscroll-behavior-y: auto; }   /* our pull to 
 @keyframes rk-pulse { 50% { opacity: .35; } }
 
 /* ============================ UNDO TOAST (delayed delete), stacked ============================ */
-.rtoasts { position: fixed; inset-inline: var(--gutter); bottom: var(--safe-b); z-index: var(--z-toast); display: flex; flex-direction: column; gap: var(--gap-button); pointer-events: none; }
-.rtoasts .rmsg { position: relative; overflow: hidden; pointer-events: auto; box-shadow: var(--sh-pop); }
+/* A delete's timer is a ROUND button the size of the add button (--fab), level with it on the OTHER side of the screen (the add button is at the left, this is at the right):
+   the undo symbol inside, the time left as a ring around it. It replaces the wide bar. Several deletions stack upward; a message that is not an undo (a failure) is still a bar. */
+.rtoasts { position: fixed; inset-inline: auto; right: max(var(--gutter), var(--inset-r)); bottom: calc(var(--gutter) + var(--inset-b)); width: auto; z-index: var(--z-toast); display: flex; flex-direction: column; align-items: flex-end; gap: var(--gap-button); pointer-events: none; }
+.rtoasts .rmsg { position: relative; pointer-events: auto; box-shadow: var(--sh-pop); }
+.rtoasts .rmsg:not(.rmsg--undo) { box-sizing: border-box; max-width: min(22rem, calc(100vw - 2 * var(--gutter))); }
 @media (min-width: 760px) { :root { --sheet-b: max(var(--sp-3), var(--inset-b)); } }   /* a computer has no gesture bar to clear: the usual 24, more only where the device reports an inset */
-@media (min-width: 760px) { .rtoasts { inset-inline: auto; left: var(--gutter); width: var(--w-s); } }
-/* on a screen with the add button, a message sits in the BUTTON'S ROW: as tall as the button, level with it, one step to its right (never over it, never floating above the list) */
-html:has(.rfab:not(.rfab--in)) .rtoasts:not(.rtoasts--in), html:has(.rfab:not(.rfab--in)) .rmsg--toast { inset-inline: auto; left: calc(max(var(--gutter), var(--inset-l)) + var(--fab) + var(--sp-2)); right: var(--gutter); width: auto; bottom: calc(var(--gutter) + var(--inset-b)); }
-html:has(.rfab:not(.rfab--in)) .rtoasts .rmsg, html:has(.rfab:not(.rfab--in)) .rmsg--toast { box-sizing: border-box; min-height: var(--fab); align-items: center; }
-/* inside a popup: with no add button showing, the message is the full width, a gap above the safe area; with one showing, it takes the button's row (the active page of a tabbed popup counts, a page that is not shown does not) */
-.rtoasts--in { position: absolute; left: var(--gutter); right: var(--gutter); bottom: calc(var(--safe-b) + var(--sp-1)); width: auto; }
-dialog:has(.ppage:not([inert]) .rfab--in:not([hidden])) .rtoasts--in, dialog:not(:has(.ppage)):has(.rfab--in:not([hidden])) .rtoasts--in { left: calc(var(--gutter) + var(--fab) + var(--sp-2)); bottom: var(--gutter); }
-dialog:has(.ppage:not([inert]) .rfab--in:not([hidden])) .rtoasts--in .rmsg, dialog:not(:has(.ppage)):has(.rfab--in:not([hidden])) .rtoasts--in .rmsg { box-sizing: border-box; min-height: var(--fab); align-items: center; }   /* inside an open popup (the page behind is inert) */
-.rmsg--undo { padding-bottom: var(--sp-2); }
-.rmsg--undo::after { content: ""; position: absolute; inset-inline: 0; bottom: 0; height: 3px; background: var(--bg); opacity: .6; transform-origin: right center; transform: scaleX(var(--left, 1)); }   /* time left, scaleX only */
-.rmsg--undo[data-paused="true"]::after { opacity: .25; }
-@media (prefers-reduced-motion: reduce) { .rmsg--undo::after { display: none; } }
+/* a plain message (not an undo) on a screen with the add button sits in the BUTTON'S ROW: as tall as the button, level with it, one step to its right */
+html:has(.rfab:not(.rfab--in)) .rmsg--toast { inset-inline: auto; left: calc(max(var(--gutter), var(--inset-l)) + var(--fab) + var(--sp-2)); right: var(--gutter); width: auto; bottom: calc(var(--gutter) + var(--inset-b)); }
+html:has(.rfab:not(.rfab--in)) .rmsg--toast { box-sizing: border-box; min-height: var(--fab); align-items: center; }
+/* inside a popup the stack lives in the popup, at its bottom-right corner, level with the popup's own add button at the bottom-left */
+.rtoasts--in { position: absolute; right: var(--gutter); left: auto; bottom: var(--gutter); width: auto; }
+.rmsg--undo { box-sizing: border-box; width: var(--fab); height: var(--fab); min-height: var(--fab); padding: 0; border: 1px solid var(--text); border-radius: var(--r-fab); display: grid; place-items: center; overflow: visible; background: var(--text); color: var(--bg); }
+.rmsg--undo .rmsg__text { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; flex: none; }   /* the words are for a screen reader and the tooltip: the circle shows only the symbol */
+.rmsg--undo .rmsg__act { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; display: grid; place-items: center; border-radius: var(--r-fab); text-decoration: none; font-size: 0; color: inherit; }
+.rmsg--undo .rmsg__act svg { width: var(--icon-l); height: var(--icon-l); stroke-width: var(--icon-w); }
+.rmsg--undo .rundo__n { position: absolute; top: -4px; inset-inline-start: -4px; min-width: 20px; height: 20px; padding: 0 5px; box-sizing: border-box; border-radius: 999px; background: var(--bg); color: var(--text); border: 1px solid var(--text); font: var(--fw-bold) var(--fs-xs)/18px var(--font); text-align: center; pointer-events: none; }
+.rmsg--undo::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; pointer-events: none; opacity: .85;
+  background: conic-gradient(var(--bg) calc(var(--left, 1) * 360deg), transparent 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px)); mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px)); }   /* the time left, a ring that empties clockwise */
+.rmsg--undo[data-paused="true"]::after { opacity: .35; }
+@media (prefers-reduced-motion: reduce) { .rmsg--undo::after { --left: 1; } }   /* no countdown animation: a still, full ring */
 .rmsg__act:focus-visible { outline: 2px solid var(--bg); outline-offset: 2px; }
 
 /* ============================ SWITCH (extends .rfield--switch of field.css): label, optional help, track 48x28 ============================ */

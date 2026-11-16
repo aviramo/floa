@@ -7,7 +7,7 @@
    Leaving the page (pagehide, tab hidden): every pending delete is committed at once with { keepalive: true }, so the request survives the page.
    RosterUndo.isPending(kind, itemId): true while the window is open or the commit is still on its way (a refresh must keep such an item hidden).
    The timer pauses while a toast is hovered, focused or touched; Ctrl+Z cancels the newest pending delete while no text field has focus.
-   No inline handlers, no framework, no business names; the look is ui.css (.rtoasts, .rmsg, .rmsg--undo). */
+   No inline handlers, no framework, no business names; the look is ui.css (.rtoasts, .rmsg, .rmsg--undo): a round button the size of the add button, at the right, the undo symbol inside and the time left as a ring. */
 (function () {
   "use strict";
   var doc = document;
@@ -89,12 +89,18 @@
     render();
   }
 
-  function el(rec, text, actLabel, onAct) {
+  /* the undo symbol: a curved arrow back */
+  var UNDO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>';
+  /* a ROUND button the size of the add button: the symbol inside, the time left as a ring (ui.css .rmsg--undo). The words stay for a screen reader and the tooltip. */
+  function el(rec, text, actLabel, onAct, count) {
     var d = doc.createElement("div");
     d.className = "rmsg rmsg--undo";
     d.setAttribute("data-undo", String(rec ? rec.id : "all"));
     var t = doc.createElement("span"); t.className = "rmsg__text"; t.textContent = text; d.appendChild(t);
-    var b = doc.createElement("button"); b.type = "button"; b.className = "rmsg__act"; b.textContent = actLabel; d.appendChild(b);
+    var b = doc.createElement("button"); b.type = "button"; b.className = "rmsg__act"; b.innerHTML = UNDO_SVG;
+    b.setAttribute("aria-label", text + ". " + actLabel); b.setAttribute("title", text + " · " + actLabel);
+    d.appendChild(b);
+    if (count) { var n = doc.createElement("span"); n.className = "rundo__n"; n.textContent = String(count); n.setAttribute("aria-hidden", "true"); d.appendChild(n); }
     b.addEventListener("click", onAct);
     return d;
   }
@@ -105,7 +111,7 @@
     var vis = pending.slice(), merged = [];
     if (vis.length > MAX) { merged = vis.slice(0, vis.length - (MAX - 1)); vis = vis.slice(vis.length - (MAX - 1)); }
     if (merged.length) {
-      var s = el(null, "נמחקו " + (merged.length) + " פריטים", "ביטול הכל", function () { merged.slice().forEach(undo); });
+      var s = el(null, "נמחקו " + (merged.length) + " פריטים", "ביטול הכל", function () { merged.slice().forEach(undo); }, merged.length);
       s.setAttribute("data-undo", "summary");
       merged.forEach(function (r) { r.el = s; });
       b.appendChild(s);
@@ -126,7 +132,7 @@
     node.addEventListener("touchstart", p, { passive: true }); node.addEventListener("touchend", r); node.addEventListener("touchcancel", r);
   }
 
-  /* the thin progress line: --left is the share of time left (scaleX only) */
+  /* the ring: --left is the share of time left */
   function tick() {
     if (reduced() || raf) return;
     raf = requestAnimationFrame(function loop() {
