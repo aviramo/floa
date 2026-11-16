@@ -596,7 +596,7 @@ html, body { overflow-x: clip; }
 .list--five li { padding-block: 22px; }
 
 /* האנפה, סמל הביודנסה, חולפת לאט על פני השמש. תנועה רק ב-transform וב-opacity */
-.heron { position: absolute; left: 50%; inset-block-end: calc(6% + min(360px, 62vw) * .5); width: min(230px, 46vw); height: auto; margin-left: calc(min(230px, 46vw) / -2); opacity: 0; pointer-events: none; filter: drop-shadow(0 10px 26px rgba(60, 20, 40, .35)); animation: heron-pass 34s linear infinite; will-change: transform, opacity; }
+.heron { position: absolute; left: 50%; inset-block-end: calc(6% + min(360px, 62vw) * .5); width: min(170px, 36vw); height: auto; margin-left: calc(min(170px, 36vw) / -2); opacity: 0; pointer-events: none; filter: drop-shadow(0 10px 26px rgba(60, 20, 40, .35)); animation: heron-pass 34s linear infinite; will-change: transform, opacity; }
 @keyframes heron-pass {
   0%   { transform: translate3d(-75vw, 18px, 0) rotate(-3deg); opacity: 0; }
   8%   { opacity: 1; }
