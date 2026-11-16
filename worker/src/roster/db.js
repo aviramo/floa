@@ -254,7 +254,7 @@
                               "counters_missing" |
                               "mail_not_configured" | "render_error" |
                               "too_large" | "timeout" | "network_error" |
-                              "resend_<status>[:<resend error name>]" } ],
+                              "resend_<status>[:<resend error name>]" | "cf_e_<cloudflare error code>" } ],
         "skipped": [ { "template": "<key>", "reason": text } ],   // optional,
                                         // for the log only, may be ignored
         "error": "internal"             // present only when processing threw;

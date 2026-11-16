@@ -14,7 +14,8 @@
        that comes back after a crash gets the mails that never went out.
      * a mail carries Idempotency-Key = event + template + recipient, which
        Resend honours for 24 hours: a crash after sending and before reporting
-       cannot send it twice.
+       cannot send it twice. (Cloudflare Email Service has no such key: with
+       MAIL_PROVIDER=cloudflare that one crash window is open, the rest holds.)
      * a webhook carries X-Roster-Delivery = the event id on every attempt, so
        a receiver can drop a repeat, and the number of attempts is capped.
 
@@ -22,6 +23,7 @@
    dropped from this run) by id only. Nothing about a participant is logged.
    ========================================================================== */
 import { createDb, RPC } from "./db.js";
+import { useCloudflare } from "../cf-mail.js";
 import { createMailTally, OUTBOX } from "./limits.js";
 import { deliverMails } from "./mail.js";
 import { normalizeWork } from "./work.js";
@@ -64,7 +66,7 @@ export async function processOutbox(deps) {
   summary.claimed = claim.data.length;
   if (claim.data.length === 0) return summary;
 
-  const itemDeps = { ...deps, deadlineAt, apiKey: env.RESEND_API_KEY || "" };
+  const itemDeps = { ...deps, deadlineAt, apiKey: env.RESEND_API_KEY || "", binding: useCloudflare(env) ? env.EMAIL : null };
   const queue = [...claim.data];
 
   async function worker() {

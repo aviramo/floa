@@ -35,9 +35,12 @@ import { esc, formatAmount, formatMeetingDate, formatMeetingTime, htmlToText, re
 import { OUTBOX, reserveMail } from "./limits.js";
 import { sha256Hex, UUID_RE } from "./keys.js";
 import { stripHidden } from "./text.js";
+import { sendWithBinding } from "../cf-mail.js";
 import { isObj } from "./work.js";
 
 export const MAIL_FROM_ADDRESS = "no-reply@floa.co.il";
+export const MAIL_DOMAIN = "roster.floa.co.il";
+const SLUG_RE = /^[a-z][a-z0-9-]{1,39}$/;
 export const SITE_ORIGIN = "https://floa.co.il";
 export const RESEND_URL = "https://api.resend.com/emails";
 const MAX_HTML = 200_000;
@@ -91,12 +94,25 @@ export function senderName(business) {
 
 /* The address in `From`. The business may choose its own (settings.mail_from_address, owner only, a domain verified in Resend); it is checked here
    again, so a value that is not a plain address never reaches the header, and without one the platform address is used, as before. */
-export function fromAddressOf(business) {
+export function fromAddressOf(business, legacy = false) {
   const a = normalizeEmail(business.settings.mail_from_address);   // the same limits as the database rule: 120 characters, 64 before the @
-  return a && a.length <= 120 && a.indexOf("@") <= 64 ? a : MAIL_FROM_ADDRESS;
+  if (a && a.length <= 120 && a.indexOf("@") <= 64) return a;
+  /* no address of its own: the business's own address on the platform's mail domain (aum@roster.floa.co.il) */
+  /* legacy: the Resend route, where only floa.co.il is verified, keeps the platform address */
+  return !legacy && SLUG_RE.test(business.slug || "") ? `${business.slug}@${MAIL_DOMAIN}` : MAIL_FROM_ADDRESS;
 }
-export const fromHeader = (business) => `${senderName(business)} <${fromAddressOf(business)}>`;
-export const replyToOf = (business) => normalizeEmail(business.settings.contact_email);
+export const fromHeader = (business, legacy = false) => `${senderName(business)} <${fromAddressOf(business, legacy)}>`;
+/* Who answers when the reader presses Reply: the address the owner set as the business's contact, else the
+   business's accounts (the notify list is the setting, or those accounts). One address, the first. */
+export function replyToOf(business) {
+  const own = normalizeEmail(business.settings.contact_email);
+  if (own) return own;
+  for (const raw of business.notifyEmails || []) {
+    const a = normalizeEmail(raw);
+    if (a) return a;
+  }
+  return null;
+}
 
 /* --- variables ------------------------------------------------------------------- */
 
@@ -425,6 +441,21 @@ export async function sendViaResend({ apiKey, payload, key }, deps) {
   return { status: "failed", error };
 }
 
+/* The same result shape through Cloudflare Email Service. There is no Idempotency-Key, so only an error that
+   means "nothing was accepted" is tried once more; any other failure is final, and an unrecognised one keeps
+   its slot (it may have gone out). The error is Cloudflare's short code in lower case: cf_e_sender_not_verified. */
+export async function sendViaCloudflare({ binding, message }, deps = {}) {
+  const sleep = deps.sleep || defaultSleep;
+  let last = null;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    last = await sendWithBinding(binding, message);
+    if (last.ok) return { status: "sent", error: null };
+    if (!last.clean) break;
+    if (attempt === 1) await sleep(500);
+  }
+  return { status: "failed", error: last.code === "E_UNKNOWN" ? "network_error" : `cf_${last.code.toLowerCase()}` };
+}
+
 /* Mails that were reserved against a limit and then failed: the slot goes back unless the mail may
    have been delivered all the same. A timeout or a dropped connection may have reached Resend (the
    Idempotency-Key makes a repeat harmless, but the first request could have gone out), so those keep their
@@ -443,7 +474,7 @@ async function sendOne(work, item, to, composed, deps) {
   const shown = { ...base, subject: composed.value.subject, html: composed.value.html };
 
   if (item.noAddress) return { ...shown, status: "failed", error: "no_address" };
-  if (!deps.apiKey) return { ...shown, status: "failed", error: "mail_not_configured" };
+  if (!deps.binding && !deps.apiKey) return { ...shown, status: "failed", error: "mail_not_configured" };
 
   /* The place against the limits is TAKEN here, in the same synchronous step as the check and before anything
      is awaited: eight lanes started together each see the others' reservations, so a limit of 3 means 3. */
@@ -454,7 +485,7 @@ async function sendOne(work, item, to, composed, deps) {
 
   try {
     const payload = {
-      from: fromHeader(work.business),
+      from: fromHeader(work.business, true),
       to: [to],
       subject: composed.value.subject,
       html: composed.value.html,
@@ -463,8 +494,14 @@ async function sendOne(work, item, to, composed, deps) {
     const reply = replyToOf(work.business);
     if (reply) payload.reply_to = reply;
 
-    const key = await idempotencyKey(work.event.id, item.template, to);
-    const sent = await sendViaResend({ apiKey: deps.apiKey, payload, key }, deps);
+    let sent;
+    if (deps.binding) {
+      const message = { from: fromHeader(work.business, false), to: [to], subject: payload.subject, html: payload.html, text: payload.text, replyTo: reply || undefined };
+      sent = await sendViaCloudflare({ binding: deps.binding, message }, deps);
+    } else {
+      const key = await idempotencyKey(work.event.id, item.template, to);
+      sent = await sendViaResend({ apiKey: deps.apiKey, payload, key }, deps);
+    }
     if (sent.status === "failed" && !MAY_HAVE_BEEN_SENT.has(sent.error)) gate.release();
     return { ...shown, status: sent.status, error: sent.error };
   } catch (err) {

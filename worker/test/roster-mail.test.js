@@ -213,9 +213,9 @@ test("buildVars: strings are single-line and bounded, control characters removed
 /* --- the sender ----------------------------------------------------------------------------- */
 
 test("From: the business's sender name, else its name, on the verified address", () => {
-  assert.equal(fromHeader(work().business), "סטודיו דנה <no-reply@floa.co.il>");
-  assert.equal(fromHeader(work({ settings: { sender_name: "דנה מהסטודיו" } }).business), "דנה מהסטודיו <no-reply@floa.co.il>");
-  assert.equal(fromHeader(work({ business: { name: "" } }).business), "FLOA <no-reply@floa.co.il>");
+  assert.equal(fromHeader(work().business), "סטודיו דנה <studio@roster.floa.co.il>");
+  assert.equal(fromHeader(work({ settings: { sender_name: "דנה מהסטודיו" } }).business), "דנה מהסטודיו <studio@roster.floa.co.il>");
+  assert.equal(fromHeader(work({ business: { name: "" } }).business), "FLOA <studio@roster.floa.co.il>");
 });
 
 test("the sender name cannot add an address, a header or a line break", () => {
@@ -223,15 +223,15 @@ test("the sender name cannot add an address, a header or a line break", () => {
   const name = senderName(work({ settings: { sender_name: hostile } }).business);
   assert.ok(!/["<>\[\]()\\,;:@\r\n]/.test(name), name);
   assert.equal(fromHeader(work({ settings: { sender_name: hostile } }).business).split("<").length, 2, "exactly one address");
-  assert.ok(fromHeader(work({ settings: { sender_name: hostile } }).business).endsWith("<no-reply@floa.co.il>"));
+  assert.ok(fromHeader(work({ settings: { sender_name: hostile } }).business).endsWith("<studio@roster.floa.co.il>"));
   assert.equal(senderName(work({ settings: { sender_name: "\u202eevil" } }).business), "evil", "bidi controls are removed");
   assert.equal(Array.from(senderName(work({ settings: { sender_name: "x".repeat(200) } }).business)).length, 60);
   assert.equal(senderName(work({ settings: { sender_name: "<>@" } }).business), "FLOA");
 });
 
-test("From address: the business's own when it set one (lowercased), the platform's when it did not", () => {
-  assert.equal(fromAddressOf(work().business), "no-reply@floa.co.il", "null or missing: the old default");
-  assert.equal(fromAddressOf(work({ settings: { mail_from_address: null } }).business), "no-reply@floa.co.il");
+test("From address: the business's own when it set one (lowercased), the business's own on roster.floa.co.il when it did not", () => {
+  assert.equal(fromAddressOf(work().business), "studio@roster.floa.co.il", "null or missing: the business's own address on the platform domain");
+  assert.equal(fromAddressOf(work({ settings: { mail_from_address: null } }).business), "studio@roster.floa.co.il");
   assert.equal(fromAddressOf(work({ settings: { mail_from_address: "No-Reply@Notify.Harpatka.co.il" } }).business), "no-reply@notify.harpatka.co.il");
   assert.equal(fromHeader(work({ settings: { sender_name: "יוצאים להרפתקה", mail_from_address: "no-reply@notify.harpatka.co.il" } }).business), "יוצאים להרפתקה <no-reply@notify.harpatka.co.il>");
 });
@@ -239,7 +239,7 @@ test("From address: the business's own when it set one (lowercased), the platfor
 test("a From address that is not a plain address never reaches the header", () => {
   for (const bad of ["evil@x.com>, Bcc: a@b.c", "a@b.com\r\nBcc: x@y.z", "<a@b.com>", "Name <a@b.com>", "a b@c.com", "nobody", "", "a@b", "x".repeat(130) + "@a.com"]) {
     const h = fromHeader(work({ settings: { mail_from_address: bad } }).business);
-    assert.equal(h, "סטודיו דנה <no-reply@floa.co.il>", JSON.stringify(bad));
+    assert.equal(h, "סטודיו דנה <studio@roster.floa.co.il>", JSON.stringify(bad));
   }
 });
 
@@ -261,9 +261,11 @@ test("the work item parser keeps the From address as text or null", () => {
 
 test("Reply-To is the contact email when it is a real address, otherwise absent", () => {
   assert.equal(replyToOf(work().business), "hello@studio.example");
-  assert.equal(replyToOf(work({ settings: { contact_email: null } }).business), null);
-  assert.equal(replyToOf(work({ settings: { contact_email: "nope" } }).business), null);
-  assert.equal(replyToOf(work({ settings: { contact_email: "a@b.co\r\nBcc: x@y.z" } }).business), null);
+  assert.equal(replyToOf(work({ settings: { contact_email: null } }).business), "owner@example.com", "no contact email: the business's account");
+  assert.equal(replyToOf(work({ settings: { contact_email: null }, business: { notify_emails: [] } }).business), null);
+  assert.equal(replyToOf(work({ settings: { contact_email: "nope" } }).business), "owner@example.com");
+  assert.equal(replyToOf(work({ settings: { contact_email: "a@b.co\r\nBcc: x@y.z" } }).business), "owner@example.com");
+  assert.equal(replyToOf(work({ settings: { contact_email: "a@b.co\r\nBcc: x@y.z" }, business: { notify_emails: ["c@d.co\r\nBcc: x@y.z"] } }).business), null, "a header can never come through");
   assert.equal(normalizeEmail("  Dana@Example.COM "), "dana@example.com");
   for (const bad of [null, 5, "", "a", "a@b", "a@@b.co", "a b@c.co", "a@b.c o", "<a@b.co>", `${"a".repeat(250)}@b.co`]) assert.equal(normalizeEmail(bad), null, String(bad));
 });
@@ -503,6 +505,51 @@ test("deliverMails: one separate Resend call per admin recipient, each with its 
     assert.ok(c.json.html.includes("<html") && c.json.text.length > 0);
   }
   assert.equal(mails[0].html, calls[0].json.html, "what is logged is exactly what was sent");
+});
+
+/* --- Cloudflare Email Service (MAIL_PROVIDER=cloudflare) ------------------------------------------- */
+
+const fakeBinding = (...outcomes) => {
+  const sent = [];
+  return {
+    sent,
+    send: async (message) => {
+      sent.push(message);
+      const o = outcomes.length > 1 ? outcomes.shift() : outcomes[0];
+      if (o && o.code) throw Object.assign(new Error("provider text that must never be stored"), { code: o.code });
+      return { messageId: "m1" };
+    },
+  };
+};
+
+test("cloudflare: the mail goes through the binding, not through Resend, with a named sender and reply-to", async () => {
+  const net = fakeNet();
+  const binding = fakeBinding({});
+  const w = work({ event: { type: "participant.created" }, business: { notify_emails: ["a@x.com"] } });
+  const { mails } = await deliverMails(w, depsFor(net, { apiKey: "", binding }));
+  assert.deepEqual(mails.map((m) => [m.to, m.status, m.error]), [["a@x.com", "sent", null]]);
+  assert.equal(net.resend().length, 0, "Resend is not called");
+  assert.deepEqual(binding.sent[0].to, ["a@x.com"]);
+  assert.deepEqual(binding.sent[0].from, { email: "studio@roster.floa.co.il", name: "סטודיו דנה" });
+  assert.equal(binding.sent[0].replyTo, "hello@studio.example");
+  assert.ok(binding.sent[0].html.includes("<html") && binding.sent[0].text.length > 0);
+});
+
+test("cloudflare: a refusal is final and reported as a code, an internal error is retried once, an unknown one is not", async () => {
+  const run = async (binding) => (await deliverMails(work(), depsFor(fakeNet(), { apiKey: "", binding }))).mails[0];
+
+  const refused = fakeBinding({ code: "E_SENDER_NOT_VERIFIED" });
+  const a = await run(refused);
+  assert.deepEqual([a.status, a.error, refused.sent.length], ["failed", "cf_e_sender_not_verified", 1]);
+  assert.ok(!JSON.stringify(a).includes("provider text"), "the provider's own message is never kept");
+
+  const flaky = fakeBinding({ code: "E_INTERNAL_SERVER_ERROR" }, {});
+  const b = await run(flaky);
+  assert.deepEqual([b.status, flaky.sent.length], ["sent", 2]);
+
+  const odd = fakeBinding({ code: "weird" });
+  const c = await run(odd);
+  assert.deepEqual([c.status, c.error, odd.sent.length], ["failed", "network_error", 1], "it may have gone out: no second attempt");
 });
 
 test("deliverMails: a participant mail is sent once, with the right key, and counted", async () => {

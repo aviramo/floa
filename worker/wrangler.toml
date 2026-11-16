@@ -79,6 +79,15 @@ SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 # every /roster/v1 route answers 503 (with a log line naming it):
 #   npx wrangler secret put ROSTER_IP_SALT     (any long random string)
 
+# Mail. Two providers, one switch. MAIL_PROVIDER = "cloudflare" sends through
+# the EMAIL binding below (Cloudflare Email Service: no API key, the sender
+# domain is onboarded in the dashboard); any other value sends through Resend.
+# Flip it only after floa.co.il shows as onboarded for Email Sending and one
+# real mail has arrived, and flip it back to return. Once nobody needs the way
+# back, remove RESEND_API_KEY and the Resend code.
+[[send_email]]
+name = "EMAIL"
+
 # Once a minute the roster outbox is drained: webhooks and mails that an API
 # call did not already deliver, and retries that have come due.
 [triggers]
