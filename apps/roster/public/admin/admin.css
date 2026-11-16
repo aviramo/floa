@@ -2718,3 +2718,11 @@ body:has(#mMenu:not([hidden])) #kitFab { display: none; }   /* one plus at a tim
 
 /* the clear "x" of the search field is centred on the field: its box is 20px high, so the offset up is half of that (it was 8px, which left it 2px low) */
 .sclear, .hsearch .sclear, #qClear { margin-top: -11px; height: 20px; line-height: 20px; padding: 0 0 3px; }
+
+/* the participant card's details tab: four rows of two equal columns (name, gender and age, phone and email, address and source) */
+.prow { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-1); align-items: end; }
+.prow > .field { min-width: 0; flex: none !important; }
+
+/* the participant card's details tab: room above "added on" (a clear gap under the last field row), the delete button tight under it */
+#pRegLine.note--reg { margin: var(--sp-2) 0 0; }
+#pgI #pDelete { margin-top: var(--sp-1); }

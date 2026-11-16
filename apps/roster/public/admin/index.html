@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="../assets/field.css?v=7e4c4a08" />
   <link rel="stylesheet" href="../assets/popup.css?v=3cced8f3" />
   <link rel="stylesheet" href="../assets/ui.css?v=08ef9cb7" />
-  <link rel="stylesheet" href="admin.css?v=df95b142" />
+  <link rel="stylesheet" href="admin.css?v=ba8548b3" />
 </head>
 <body class="locked">
   <div class="gate" id="gate" hidden>
@@ -123,21 +123,23 @@
             <div id="nList"></div>
           </section>
           <section class="ppage" id="pgI" role="tabpanel" aria-labelledby="pTabI" inert>
-        <div class="name-row">
-          <div class="two">
-            <label class="rfield field"><span>שם פרטי</span><input placeholder=" " name="first_name" required maxlength="40" autocomplete="off" /></label>
-            <label class="rfield field"><span>שם משפחה</span><input placeholder=" " name="last_name" maxlength="40" autocomplete="off" /></label>
-          </div>
-          <label class="rfield field gfield"><span>מגדר</span><select name="gender"><option value="">לא צוין</option><option value="male">זכר</option><option value="female">נקבה</option></select></label>
+        <div class="prow">
+          <label class="rfield field"><span>שם פרטי</span><input placeholder=" " name="first_name" required maxlength="40" autocomplete="off" /></label>
+          <label class="rfield field"><span>שם משפחה</span><input placeholder=" " name="last_name" maxlength="40" autocomplete="off" /></label>
         </div>
-        <div class="three">
-          <label class="rfield field"><span>טלפון</span><input placeholder=" " name="phone" type="tel" inputmode="tel" maxlength="20" autocomplete="off" /></label>
+        <div class="prow">
+          <label class="rfield field gfield"><span>מגדר</span><select name="gender"><option value="">לא צוין</option><option value="male">זכר</option><option value="female">נקבה</option></select></label>
           <label class="rfield field"><span>גיל</span><input placeholder=" " name="age" type="number" inputmode="numeric" min="18" max="99" /></label>
-          <label class="rfield field"><span>מקור</span><select name="promoter_sel" id="pPromoSel"></select></label>
+        </div>
+        <div class="prow">
+          <label class="rfield field"><span>טלפון</span><input placeholder=" " name="phone" type="tel" inputmode="tel" maxlength="20" autocomplete="off" /></label>
+          <label class="rfield field"><span>אימייל</span><input placeholder=" " name="email" type="email" inputmode="email" maxlength="254" autocomplete="off" /></label>
+        </div>
+        <div class="prow">
+          <label class="rfield field"><span>כתובת</span><input placeholder=" " name="address" maxlength="200" autocomplete="street-address" /></label>
+          <label class="rfield field"><span>מקור הגעה</span><select name="promoter_sel" id="pPromoSel"></select></label>
         </div>
         <div class="gacc" id="pGoogle" hidden></div>
-        <label class="rfield field"><span>אימייל</span><input placeholder=" " name="email" type="email" inputmode="email" maxlength="254" autocomplete="off" /></label>
-        <label class="rfield field"><span>כתובת</span><input placeholder=" " name="address" maxlength="200" autocomplete="street-address" /></label>
         <div class="note note--reg" id="pRegLine"></div>
         <button class="btn ghost danger" id="pDelete" type="button">מחיקת משתתף</button>
         <button class="btn ghost" id="pRestore" type="button" hidden>החזרה לפעילות</button>
