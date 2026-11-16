@@ -135,26 +135,5 @@ r = await call("/transcribe", { authorization: "Bearer good" }, { song_id: "s1",
 check("transcribe with a bad file type -> 400, nothing started",
   r.status === 400 && r.body.error === "type" && r.started === 0, JSON.stringify(r));
 
-/* 14. MAIL_PROVIDER=cloudflare: the lead goes through the EMAIL binding and Resend is not called */
-{
-  const bound = [];
-  const cfEnv = { ...env, MAIL_PROVIDER: "cloudflare", EMAIL: { send: async (m) => { bound.push(m); return { messageId: "m1" }; } } };
-  sent = null;
-  const res = await worker.fetch(new Request("https://x/lead", {
-    method: "POST", headers: { origin: "https://floa.co.il", "content-type": "application/json" },
-    body: JSON.stringify({ ...lead, business: "floa", page: "דף הבית" }),
-  }), cfEnv);
-  check("cloudflare provider -> 200 through the binding, Resend untouched",
-    res.status === 200 && bound.length === 1 && sent === null && bound[0].to[0] === env.LEAD_TO
-      && bound[0].from.email === "no-reply@floa.co.il" && bound[0].replyTo === env.LEAD_TO, JSON.stringify(bound));
-
-  const failing = { ...cfEnv, EMAIL: { send: async () => { throw Object.assign(new Error("x"), { code: "E_SENDER_NOT_VERIFIED" }); } } };
-  const bad = await worker.fetch(new Request("https://x/lead", {
-    method: "POST", headers: { origin: "https://floa.co.il", "content-type": "application/json" },
-    body: JSON.stringify({ ...lead, business: "floa", page: "דף הבית" }),
-  }), failing);
-  check("cloudflare refusal -> 502, the visitor is not told thank you", bad.status === 502, String(bad.status));
-}
-
 console.log(failed ? `\n${failed} failed` : "\nall passed");
 process.exit(failed ? 1 : 0);

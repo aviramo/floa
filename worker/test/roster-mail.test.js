@@ -512,51 +512,6 @@ test("deliverMails: one separate Resend call per admin recipient, each with its 
   assert.equal(mails[0].html, calls[0].json.html, "what is logged is exactly what was sent");
 });
 
-/* --- Cloudflare Email Service (MAIL_PROVIDER=cloudflare) ------------------------------------------- */
-
-const fakeBinding = (...outcomes) => {
-  const sent = [];
-  return {
-    sent,
-    send: async (message) => {
-      sent.push(message);
-      const o = outcomes.length > 1 ? outcomes.shift() : outcomes[0];
-      if (o && o.code) throw Object.assign(new Error("provider text that must never be stored"), { code: o.code });
-      return { messageId: "m1" };
-    },
-  };
-};
-
-test("cloudflare: the mail goes through the binding, not through Resend, with a named sender and reply-to", async () => {
-  const net = fakeNet();
-  const binding = fakeBinding({});
-  const w = work({ event: { type: "participant.created" }, business: { notify_emails: ["a@x.com"] } });
-  const { mails } = await deliverMails(w, depsFor(net, { apiKey: "", binding }));
-  assert.deepEqual(mails.map((m) => [m.to, m.status, m.error]), [["a@x.com", "sent", null]]);
-  assert.equal(net.resend().length, 0, "Resend is not called");
-  assert.deepEqual(binding.sent[0].to, ["a@x.com"]);
-  assert.deepEqual(binding.sent[0].from, { email: "studio@floa.co.il", name: "סטודיו דנה" });
-  assert.equal(binding.sent[0].replyTo, "hello@studio.example");
-  assert.ok(binding.sent[0].html.includes("<html") && binding.sent[0].text.length > 0);
-});
-
-test("cloudflare: a refusal is final and reported as a code, an internal error is retried once, an unknown one is not", async () => {
-  const run = async (binding) => (await deliverMails(work(), depsFor(fakeNet(), { apiKey: "", binding }))).mails[0];
-
-  const refused = fakeBinding({ code: "E_SENDER_NOT_VERIFIED" });
-  const a = await run(refused);
-  assert.deepEqual([a.status, a.error, refused.sent.length], ["failed", "cf_e_sender_not_verified", 1]);
-  assert.ok(!JSON.stringify(a).includes("provider text"), "the provider's own message is never kept");
-
-  const flaky = fakeBinding({ code: "E_INTERNAL_SERVER_ERROR" }, {});
-  const b = await run(flaky);
-  assert.deepEqual([b.status, flaky.sent.length], ["sent", 2]);
-
-  const odd = fakeBinding({ code: "weird" });
-  const c = await run(odd);
-  assert.deepEqual([c.status, c.error, odd.sent.length], ["failed", "network_error", 1], "it may have gone out: no second attempt");
-});
-
 test("deliverMails: a participant mail is sent once, with the right key, and counted", async () => {
   const net = fakeNet();
   const deps = depsFor(net);

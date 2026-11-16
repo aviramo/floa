@@ -30,9 +30,7 @@
    address itself is never in the repo.
 
    Secrets and vars (see worker/README.md):
-     MAIL_PROVIDER    "cloudflare" sends through the EMAIL binding (Cloudflare
-                      Email Service); anything else sends through Resend
-     RESEND_API_KEY   the Resend key (only while MAIL_PROVIDER is not cloudflare)
+     RESEND_API_KEY   the Resend key
      LEAD_FROM        the verified sender          (FLOA <no-reply@floa.co.il>)
      LEAD_TO          FLOA's own inbox — and one var per client, as named by
                       its `to` in the table
@@ -42,7 +40,6 @@ import { CV_MEDIA, parseCv } from "./cv.js";
 import { MEDIA_TYPES, readChordSheet } from "./transcribe.js";
 import { measure } from "./ocr.js";          // temporary, for /boxes
 import { sendPush } from "./webpush.js";
-import { sendWithBinding, useCloudflare } from "./cf-mail.js";
 import { handleRoster, isRosterPath, runRosterScheduled } from "./roster/routes.js";
 
 /* A lead sent before the sites were rebuilt carries no `business` field. It can
@@ -374,31 +371,32 @@ async function handleLead(request, env, origin) {
 
   const { subject, text, html } = email(lead, business.brand);
 
-  /* Always FLOA's verified sender: floa.co.il is the domain with SPF and DKIM
-     at the mail provider, and it is the only one it will send as. The mail is
-     ABOUT the client's business (subject, heading) but it is delivered by ours,
-     which is also what makes a client need no mail setup at all. */
-  let accepted;
-  if (useCloudflare(env)) {
-    const sent = await sendWithBinding(env.EMAIL, { from: env.LEAD_FROM, to: [to], replyTo: to, subject, text, html });
-    accepted = sent.ok;
-    if (!accepted) console.error("cloudflare mail rejected the lead", sent.code);
-  } else {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        authorization: `Bearer ${env.RESEND_API_KEY}`,
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({ from: env.LEAD_FROM, to: [to], reply_to: to, subject, text, html }),
-    });
-    accepted = res.ok;
-    if (!accepted) console.error("resend rejected the lead", res.status, await res.text());
-  }
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${env.RESEND_API_KEY}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      /* Always FLOA's verified sender: floa.co.il is the domain with SPF and
+         DKIM in Resend, and it is the only one it will send as. The mail is
+         ABOUT the client's business (subject, heading) but it is delivered by
+         ours, which is also what makes a client need no mail setup at all. */
+      from: env.LEAD_FROM,
+      to: [to],
+      reply_to: to,
+      subject,
+      text,
+      html,
+    }),
+  });
 
   /* The visitor is told "thank you" ONLY if the mail provider accepted it. If
-     it refused, the browser gets a failure and keeps the typed fields. */
-  if (!accepted) return json({ ok: false, error: "send" }, 502, origin);
+     Resend refused, the browser gets a failure and keeps the typed fields. */
+  if (!res.ok) {
+    console.error("resend rejected the lead", res.status, await res.text());
+    return json({ ok: false, error: "send" }, 502, origin);
+  }
 
   return json({ ok: true }, 200, origin);
 }

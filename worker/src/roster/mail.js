@@ -35,7 +35,6 @@ import { esc, formatAmount, formatMeetingDate, formatMeetingTime, htmlToText, re
 import { OUTBOX, reserveMail } from "./limits.js";
 import { sha256Hex, UUID_RE } from "./keys.js";
 import { stripHidden } from "./text.js";
-import { sendWithBinding } from "../cf-mail.js";
 import { isObj } from "./work.js";
 
 export const MAIL_FROM_ADDRESS = "no-reply@floa.co.il";
@@ -442,21 +441,6 @@ export async function sendViaResend({ apiKey, payload, key }, deps) {
   return { status: "failed", error };
 }
 
-/* The same result shape through Cloudflare Email Service. There is no Idempotency-Key, so only an error that
-   means "nothing was accepted" is tried once more; any other failure is final, and an unrecognised one keeps
-   its slot (it may have gone out). The error is Cloudflare's short code in lower case: cf_e_sender_not_verified. */
-export async function sendViaCloudflare({ binding, message }, deps = {}) {
-  const sleep = deps.sleep || defaultSleep;
-  let last = null;
-  for (let attempt = 1; attempt <= 2; attempt++) {
-    last = await sendWithBinding(binding, message);
-    if (last.ok) return { status: "sent", error: null };
-    if (!last.clean) break;
-    if (attempt === 1) await sleep(500);
-  }
-  return { status: "failed", error: last.code === "E_UNKNOWN" ? "network_error" : `cf_${last.code.toLowerCase()}` };
-}
-
 /* Mails that were reserved against a limit and then failed: the slot goes back unless the mail may
    have been delivered all the same. A timeout or a dropped connection may have reached Resend (the
    Idempotency-Key makes a repeat harmless, but the first request could have gone out), so those keep their
@@ -475,7 +459,7 @@ async function sendOne(work, item, to, composed, deps) {
   const shown = { ...base, subject: composed.value.subject, html: composed.value.html };
 
   if (item.noAddress) return { ...shown, status: "failed", error: "no_address" };
-  if (!deps.binding && !deps.apiKey) return { ...shown, status: "failed", error: "mail_not_configured" };
+  if (!deps.apiKey) return { ...shown, status: "failed", error: "mail_not_configured" };
 
   /* The place against the limits is TAKEN here, in the same synchronous step as the check and before anything
      is awaited: eight lanes started together each see the others' reservations, so a limit of 3 means 3. */
@@ -495,14 +479,8 @@ async function sendOne(work, item, to, composed, deps) {
     const reply = replyToOf(work.business);
     if (reply) payload.reply_to = reply;
 
-    let sent;
-    if (deps.binding) {
-      const message = { from: fromHeader(work.business), to: [to], subject: payload.subject, html: payload.html, text: payload.text, replyTo: reply || undefined };
-      sent = await sendViaCloudflare({ binding: deps.binding, message }, deps);
-    } else {
-      const key = await idempotencyKey(work.event.id, item.template, to);
-      sent = await sendViaResend({ apiKey: deps.apiKey, payload, key }, deps);
-    }
+    const key = await idempotencyKey(work.event.id, item.template, to);
+    const sent = await sendViaResend({ apiKey: deps.apiKey, payload, key }, deps);
     if (sent.status === "failed" && !MAY_HAVE_BEEN_SENT.has(sent.error)) gate.release();
     return { ...shown, status: sent.status, error: sent.error };
   } catch (err) {
