@@ -36,7 +36,21 @@
             '<div data-su="fail" class="su-err su-fail" role="alert"></div>' +
             '<div class="su-fold su-after shut" data-su="after"><div>' +
               '<p class="su-thanks">קיבלנו את הפרטים</p>' +
-              '<p class="su-thanks-sub">טל תיצור קשר בקרוב כדי לשמור לכם.ן מקום.</p>' +
+              '<p class="su-thanks-sub" data-su="afterSub">טל תיצור קשר בקרוב כדי לשמור לכם.ן מקום.</p>' +
+              '<div class="pay" data-su="pay" hidden>' +
+                '<p class="pay-note">המקום נשמר רק לאחר תשלום. לפני שממשיכים, צריך לקרוא ולאשר את מדיניות הביטולים:</p>' +
+                '<div class="pol" data-su="pol" tabindex="0" role="region" aria-label="מדיניות ביטולים"></div>' +
+                '<p class="pol-hint" data-su="polhint">יש לגלול ולקרוא עד הסוף כדי שאפשר יהיה לאשר</p>' +
+                '<label class="pol-ok"><input type="checkbox" data-su="polok" disabled><span>קראתי ואני מאשר.ת את מדיניות הביטולים</span></label>' +
+                '<div class="paychoose" data-su="paywrap" hidden>' +
+                  '<button type="button" class="btn su-send pc-open" data-su="payopen" aria-expanded="false"><span data-su="paylabel">לתשלום</span><svg class="pm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>' +
+                  '<div class="pm-list">' +
+                    '<a class="pm-item" data-su="paybox" href="https://links.payboxapp.com/VpbYFnoI67b" target="_blank" rel="noopener"><img src="assets/img/pay-paybox.png" alt="" width="32" height="32"><span>פייבוקס</span><b data-su="amt"></b></a>' +
+                    '<a class="pm-item" data-su="bit" href="https://www.bitpay.co.il/app/share-info?i=oNtm50fV&j=true" target="_blank" rel="noopener"><img src="assets/img/pay-bit.png" alt="" width="32" height="32"><span>ביט</span><b data-su="amt"></b></a>' +
+                    '<a class="pm-item pm-other" data-su="other" href="#" target="_blank" rel="noopener"><span>דרך אחרת</span></a>' +
+                  '</div>' +
+                '</div>' +
+              '</div>' +
               '<a href="#" target="_blank" rel="noopener" data-wa-form class="btn btn--wa">כתבו לטל בוואטסאפ</a>' +
             '</div></div>' +
           '</form>' +
@@ -128,12 +142,55 @@
   var t0 = Date.now(), saved = false;
 
   function setErr(input, errEl, msg) { errEl.textContent = msg || ""; input.classList.toggle("bad", !!msg); }
+
+  /* ----- המשך אחרי הרשמה: מדיניות ביטולים (התאריכים לפי המפגש הקרוב במסד הנתונים), אישור, ואז שלוש דרכי תשלום ----- */
+  function fmtDate(iso, shift) {
+    var p = String(iso).split("-").map(Number), d = new Date(Date.UTC(p[0], p[1] - 1, p[2] + (shift || 0)));
+    return d.getUTCDate() + "." + (d.getUTCMonth() + 1) + "." + String(d.getUTCFullYear()).slice(2);
+  }
+  function policyHtml(date) {
+    var d1 = fmtDate(date, -28), d2 = fmtDate(date, -27), d3 = fmtDate(date, -14), d4 = fmtDate(date, -13);
+    return "<p>אשמח מאוד בכל אחד ואחת מכם.ן.<br>עם זאת, אם משהו קורה בדרך, זוהי מדיניות הביטולים שאתם.ן חתומים.ות עליה:</p>" +
+      "<ul>" +
+      "<li>ביטול עד לתאריך " + d1 + " (כולל): יגבו דמי ביטול בסך ₪50 בלבד.</li>" +
+      "<li>ביטול החל מתאריך " + d2 + " ועד " + d3 + " (כולל): יחויב ב-50% מעלות ההשתתפות.</li>" +
+      "<li>ביטול החל מתאריך " + d4 + ": מכל סיבה שהיא, יחויב בתשלום מלא אלא אם המשתתפ.ת ידאג למחליפ.ה.</li>" +
+      "<li>במקרה של מצב ביטחוני שלא יאפשר את קיום הסדנה, היא תבוטל ללא דמי ביטול.</li>" +
+      "</ul>";
+  }
+  function initPay(ev) {
+    var pay = q("pay");
+    if (!ev || !ev.date) return;   /* אין מפגש במסד: אין מה לשלם עליו, נשארת ההודעה הרגילה */
+    if (ev.capacity && ev.taken >= ev.capacity) { q("afterSub").textContent = "המפגש מלא כרגע. הפרטים נשמרו וטל תחזור אליכם."; return; }
+    var pol = q("pol"), ok = q("polok"), hint = q("polhint"), wrap = q("paywrap"), open = q("payopen");
+    pol.innerHTML = policyHtml(ev.date);
+    var price = ev.price ? "₪" + ev.price : "";
+    q("paylabel").textContent = price ? "לתשלום " + price : "לתשלום";
+    root.querySelectorAll('[data-su="amt"]').forEach(function (el) { el.textContent = price; });
+    var when = "ביום " + HE_DAYS[new Date(ev.date + "T12:00:00Z").getUTCDay()] + " " + fmtDate(ev.date).split(".").slice(0, 2).join(".");
+    q("other").href = "https://wa.me/" + PHONE + "?text=" + encodeURIComponent("היי טל, אני רוצה להעביר תשלום בדרך אחרת לריטריט " + when);
+    q("afterSub").textContent = "כדי לשמור את המקום נשאר להסדיר תשלום.";
+    pay.hidden = false;
+    function reached() { return pol.scrollTop + pol.clientHeight >= pol.scrollHeight - 4; }
+    function unlock() { if (!ok.disabled || !reached()) return; ok.disabled = false; hint.hidden = true; }
+    pol.addEventListener("scroll", unlock);
+    setTimeout(function () { pol.scrollHeight <= pol.clientHeight + 4 ? (ok.disabled = false, hint.hidden = true) : unlock(); }, 800);
+    ok.addEventListener("change", function () {
+      wrap.hidden = !ok.checked;
+      if (!ok.checked) { wrap.classList.remove("open"); open.setAttribute("aria-expanded", "false"); }
+    });
+    open.addEventListener("click", function () {
+      var on = !wrap.classList.contains("open"); wrap.classList.toggle("open", on); open.setAttribute("aria-expanded", on ? "true" : "false");
+    });
+  }
+
   function showDone() {
     if (saved) return; saved = true;
     root.querySelectorAll(".su-fold:not(.su-after)").forEach(function (f) { f.classList.add("shut"); });
     btn.disabled = true; btn.classList.add("swap");
     setTimeout(function () { btn.textContent = "ההרשמה נקלטה"; btn.classList.remove("swap"); btn.classList.add("saved"); }, 260);
     setTimeout(function () { q("after").classList.remove("shut"); }, 700);
+    if (window.AUM_API) window.AUM_API.next().then(initPay).catch(function () {});
   }
 
   function clearName() { setErr(nameI, q("nameErr"), ""); lastI.classList.remove("bad"); }
