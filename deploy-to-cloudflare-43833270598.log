@@ -1,0 +1,406 @@
+workflow:   Deploy to Cloudflare
+conclusion: failure
+commit:     49858579bc0195a377fca86e5ade365339850292
+run:        https://github.com/aviramo/floa/actions/runs/43833270598
+at:         2026-11-16T08:41:47Z
+
+  ---
+  duration_ms: 50.125304
+  type: 'test'
+  ...
+# Subtest: without ROSTER_IP_SALT every route answers 503 with a log line, preflight still works, nothing is asked of the database
+ok 209 - without ROSTER_IP_SALT every route answers 503 with a log line, preflight still works, nothing is asked of the database
+  ---
+  duration_ms: 5.190338
+  type: 'test'
+  ...
+# Subtest: with the salt set the Worker serves, and the cron does not need it
+ok 210 - with the salt set the Worker serves, and the cron does not need it
+  ---
+  duration_ms: 6.345903
+  type: 'test'
+  ...
+# Subtest: badkey is 60 per 10 minutes per address
+ok 211 - badkey is 60 per 10 minutes per address
+  ---
+  duration_ms: 0.211418
+  type: 'test'
+  ...
+# Subtest: limiter.peek reads the budget without spending it
+ok 212 - limiter.peek reads the budget without spending it
+  ---
+  duration_ms: 1.270168
+  type: 'test'
+  ...
+# Subtest: no key and malformed keys: 401 sixty times from one address, then 429 with Retry-After, never a database call
+ok 213 - no key and malformed keys: 401 sixty times from one address, then 429 with Retry-After, never a database call
+  ---
+  duration_ms: 63.430572
+  type: 'test'
+  ...
+# Subtest: well-formed keys the database does not know: sixty database calls, then 429 without one
+ok 214 - well-formed keys the database does not know: sixty database calls, then 429 without one
+  ---
+  duration_ms: 28.638353
+  type: 'test'
+  ...
+# Subtest: a key the database vouched for is not held back by somebody else's guessing from the same address
+ok 215 - a key the database vouched for is not held back by somebody else's guessing from the same address
+  ---
+  duration_ms: 23.488017
+  type: 'test'
+  ...
+# Subtest: what does not count as a bad key: a good one, a wrong kind, a refused origin, a rate limit, a participant token
+ok 216 - what does not count as a bad key: a good one, a wrong kind, a refused origin, a rate limit, a participant token
+  ---
+  duration_ms: 82.581813
+  type: 'test'
+  ...
+# Subtest: the brake window rolls over, and preflight is never counted
+ok 217 - the brake window rolls over, and preflight is never counted
+  ---
+  duration_ms: 15.115829
+  type: 'test'
+  ...
+# Subtest: text.js: hasHidden finds exactly the bidi controls and the zero-width characters
+ok 218 - text.js: hasHidden finds exactly the bidi controls and the zero-width characters
+  ---
+  duration_ms: 0.400862
+  type: 'test'
+  ...
+# Subtest: every text field refuses a bidi control or a zero-width character, at the start, in the middle and at the end
+ok 219 - every text field refuses a bidi control or a zero-width character, at the start, in the middle and at the end
+  ---
+  duration_ms: 113.01944
+  type: 'test'
+  ...
+# Subtest: the ordinary text of the product still passes: Hebrew, a left-to-right mark, accents
+ok 220 - the ordinary text of the product still passes: Hebrew, a left-to-right mark, accents
+  ---
+  duration_ms: 1.806193
+  type: 'test'
+  ...
+# Subtest: a hidden character is also refused inside a webhook URL, at send time
+ok 221 - a hidden character is also refused inside a webhook URL, at send time
+  ---
+  duration_ms: 0.552
+  type: 'test'
+  ...
+# Subtest: a customer verifying with plain node crypto accepts what the Worker sends
+ok 222 - a customer verifying with plain node crypto accepts what the Worker sends
+  ---
+  duration_ms: 23.280405
+  type: 'test'
+  ...
+# Subtest: the signature covers the exact raw bytes: re-serialised or edited JSON fails
+ok 223 - the signature covers the exact raw bytes: re-serialised or edited JSON fails
+  ---
+  duration_ms: 2.35645
+  type: 'test'
+  ...
+# Subtest: a wrong secret fails
+ok 224 - a wrong secret fails
+  ---
+  duration_ms: 3.207088
+  type: 'test'
+  ...
+# Subtest: non-ASCII bodies (Hebrew names) verify byte for byte
+ok 225 - non-ASCII bodies (Hebrew names) verify byte for byte
+  ---
+  duration_ms: 4.020921
+  type: 'test'
+  ...
+# Subtest: the timestamp is part of what is signed: replaying an old delivery is caught by the tolerance
+ok 226 - the timestamp is part of what is signed: replaying an old delivery is caught by the tolerance
+  ---
+  duration_ms: 2.04325
+  type: 'test'
+  ...
+# Subtest: malformed headers are rejected, never thrown on
+ok 227 - malformed headers are rejected, never thrown on
+  ---
+  duration_ms: 1.592762
+  type: 'test'
+  ...
+# Subtest: the header has exactly the documented shape
+ok 228 - the header has exactly the documented shape
+  ---
+  duration_ms: 1.620184
+  type: 'test'
+  ...
+# Subtest: only api-test.floa.co.il is the test schema; every other host is the real one
+ok 229 - only api-test.floa.co.il is the test schema; every other host is the real one
+  ---
+  duration_ms: 0.664839
+  type: 'test'
+  ...
+# Subtest: createDb sends the schema it was given, roster by default
+ok 230 - createDb sends the schema it was given, roster by default
+  ---
+  duration_ms: 20.032275
+  type: 'test'
+  ...
+# Subtest: a request to api-test sends content-profile roster-test; one to api.floa.co.il sends roster
+ok 231 - a request to api-test sends content-profile roster-test; one to api.floa.co.il sends roster
+  ---
+  duration_ms: 12.867721
+  type: 'test'
+  ...
+# Subtest: the cron drains both schemas, each with its own profile
+ok 232 - the cron drains both schemas, each with its own profile
+  ---
+  duration_ms: 1.759273
+  type: 'test'
+  ...
+# Subtest: the test schema delivers the webhook and sends NO mail, and reports no mail rows; the real one sends both
+ok 233 - the test schema delivers the webhook and sends NO mail, and reports no mail rows; the real one sends both
+  ---
+  duration_ms: 12.352328
+  type: 'test'
+  ...
+# Subtest: a key the test database accepted does not exempt it from the real schema's bad-key brake
+ok 234 - a key the test database accepted does not exempt it from the real schema's bad-key brake
+  ---
+  duration_ms: 52.795565
+  type: 'test'
+  ...
+# Subtest: good webhook URLs are accepted and normalised
+ok 235 - good webhook URLs are accepted and normalised
+  ---
+  duration_ms: 2.55587
+  type: 'test'
+  ...
+# Subtest: the characters refused anywhere in a URL are EXACTLY the database's set, over every code point from U+0001 to U+3200 and the astral and high ones
+ok 236 - the characters refused anywhere in a URL are EXACTLY the database's set, over every code point from U+0001 to U+3200 and the astral and high ones
+  ---
+  duration_ms: 165.825829
+  type: 'test'
+  ...
+# Subtest: what sits right next to the refused set is still accepted: ordinary text, percent-encoding and neighbouring code points
+ok 237 - what sits right next to the refused set is still accepted: ordinary text, percent-encoding and neighbouring code points
+  ---
+  duration_ms: 0.219209
+  type: 'test'
+  ...
+# Subtest: the three marks that read as text but turn it around or hide it are named: LRM, RLM and the zero-width characters, in the path
+ok 238 - the three marks that read as text but turn it around or hide it are named: LRM, RLM and the zero-width characters, in the path
+  ---
+  duration_ms: 0.394182
+  type: 'test'
+  ...
+# Subtest: the length is counted in characters, like the database, not in UTF-16 units
+ok 239 - the length is counted in characters, like the database, not in UTF-16 units
+  ---
+  duration_ms: 0.235333
+  type: 'test'
+  ...
+# Subtest: a URL of exactly 500 characters is allowed, 501 is not
+ok 240 - a URL of exactly 500 characters is allowed, 501 is not
+  ---
+  duration_ms: 0.116805
+  type: 'test'
+  ...
+# Subtest: every bad URL is refused, with the reason
+ok 241 - every bad URL is refused, with the reason
+  ---
+  duration_ms: 0.418439
+  type: 'test'
+  ...
+# Subtest: names that merely END like a wildcard-DNS domain are not refused (the boundary is a dot)
+ok 242 - names that merely END like a wildcard-DNS domain are not refused (the boundary is a dot)
+  ---
+  duration_ms: 0.149194
+  type: 'test'
+  ...
+# Subtest: the fragment is dropped and the host is lower-cased
+ok 243 - the fragment is dropped and the host is lower-cased
+  ---
+  duration_ms: 0.233682
+  type: 'test'
+  ...
+# Subtest: signWebhook: t=<unix>,v1=<hex hmac sha256 of t + '.' + body>
+ok 244 - signWebhook: t=<unix>,v1=<hex hmac sha256 of t + '.' + body>
+  ---
+  duration_ms: 6.053745
+  type: 'test'
+  ...
+# Subtest: the signature changes with the secret, the time and every byte of the body
+ok 245 - the signature changes with the secret, the time and every byte of the body
+  ---
+  duration_ms: 2.392484
+  type: 'test'
+  ...
+# Subtest: the body: id, type, created_at, business.slug, data
+ok 246 - the body: id, type, created_at, business.slug, data
+  ---
+  duration_ms: 1.339372
+  type: 'test'
+  ...
+# Subtest: a payload stored as the whole body still yields the right data
+ok 247 - a payload stored as the whole body still yields the right data
+  ---
+  duration_ms: 0.299039
+  type: 'test'
+  ...
+# Subtest: deliverWebhook: the request carries the headers of the spec and a verifiable signature
+ok 248 - deliverWebhook: the request carries the headers of the spec and a verifiable signature
+  ---
+  duration_ms: 19.624895
+  type: 'test'
+  ...
+# Subtest: any 2xx is success, anything else is a failure with a coded error
+ok 249 - any 2xx is success, anything else is a failure with a coded error
+  ---
+  duration_ms: 11.595813
+  type: 'test'
+  ...
+# Subtest: an opaque redirect (status 0) counts as a redirect failure
+ok 250 - an opaque redirect (status 0) counts as a redirect failure
+  ---
+  duration_ms: 1.068375
+  type: 'test'
+  ...
+# Subtest: a response that never comes is cut off by the timeout
+ok 251 - a response that never comes is cut off by the timeout
+  ---
+  duration_ms: 41.915567
+  type: 'test'
+  ...
+# Subtest: the default timeout is 10 seconds
+ok 252 - the default timeout is 10 seconds
+  ---
+  duration_ms: 1.858152
+  type: 'test'
+  ...
+# Subtest: a network error is reported as a code, never as the exception text
+ok 253 - a network error is reported as a code, never as the exception text
+  ---
+  duration_ms: 1.321706
+  type: 'test'
+  ...
+# Subtest: the URL is validated again at send time: nothing is fetched for a bad one
+ok 254 - the URL is validated again at send time: nothing is fetched for a bad one
+  ---
+  duration_ms: 0.570036
+  type: 'test'
+  ...
+# Subtest: a webhook without a secret is never sent unsigned
+ok 255 - a webhook without a secret is never sent unsigned
+  ---
+  duration_ms: 0.189896
+  type: 'test'
+  ...
+# Subtest: the retry schedule: +1 min, +5 min, +30 min, +2 h, +12 h, then failed
+ok 256 - the retry schedule: +1 min, +5 min, +30 min, +2 h, +12 h, then failed
+  ---
+  duration_ms: 0.218649
+  type: 'test'
+  ...
+# Subtest: webhookWanted: no URL, filters, and the test event
+ok 257 - webhookWanted: no URL, filters, and the test event
+  ---
+  duration_ms: 0.237998
+  type: 'test'
+  ...
+# Subtest: webhookWanted: only the events of the public contract, whatever the filter says (participant.phone_conflict is for mail only)
+ok 258 - webhookWanted: only the events of the public contract, whatever the filter says (participant.phone_conflict is for mail only)
+  ---
+  duration_ms: 0.185509
+  type: 'test'
+  ...
+# Subtest: runWebhook: attempt numbers and what is reported at each stage of the schedule
+ok 259 - runWebhook: attempt numbers and what is reported at each stage of the schedule
+  ---
+  duration_ms: 12.803747
+  type: 'test'
+  ...
+# Subtest: runWebhook: success has no retry, no webhook configured is null
+ok 260 - runWebhook: success has no retry, no webhook configured is null
+  ---
+  duration_ms: 1.347334
+  type: 'test'
+  ...
+# Subtest: the Worker exports fetch and scheduled; the entry point re-exports the same default
+ok 261 - the Worker exports fetch and scheduled; the entry point re-exports the same default
+  ---
+  duration_ms: 0.704278
+  type: 'test'
+  ...
+# Subtest: worker.js (what wrangler deploys) re-exports index.js's default, so `scheduled` is exported
+ok 262 - worker.js (what wrangler deploys) re-exports index.js's default, so `scheduled` is exported
+  ---
+  duration_ms: 5.60425
+  type: 'test'
+  ...
+# Subtest: wrangler.toml has the every-minute cron and names the secret without containing it
+ok 263 - wrangler.toml has the every-minute cron and names the secret without containing it
+  ---
+  duration_ms: 1.30427
+  type: 'test'
+  ...
+# Subtest: /roster/v1/* goes to the roster door through the real entry point
+ok 264 - /roster/v1/* goes to the roster door through the real entry point
+  ---
+  duration_ms: 26.177992
+  type: 'test'
+  ...
+# Subtest: the roster's own CORS applies under /roster/v1/, the old global one still applies everywhere else
+ok 265 - the roster's own CORS applies under /roster/v1/, the old global one still applies everywhere else
+  ---
+  duration_ms: 1.185151
+  type: 'test'
+  ...
+# Subtest: the old routes behave as before: an unknown origin is refused, an unknown path is 404, GET is 405
+ok 266 - the old routes behave as before: an unknown origin is refused, an unknown path is 404, GET is 405
+  ---
+  duration_ms: 2.152574
+  type: 'test'
+  ...
+# Subtest: scheduled: drains the outbox with the service key, and is silent without it
+ok 267 - scheduled: drains the outbox with the service key, and is silent without it
+  ---
+  duration_ms: 1.507956
+  type: 'test'
+  ...
+# Subtest: with the secret missing, the roster answers 503 and the old routes are unaffected
+ok 268 - with the secret missing, the roster answers 503 and the old routes are unaffected
+  ---
+  duration_ms: 0.61905
+  type: 'test'
+  ...
+# Subtest: the module exposes the handler the Worker uses
+ok 269 - the module exposes the handler the Worker uses
+  ---
+  duration_ms: 0.340231
+  type: 'test'
+  ...
+1..269
+# tests 269
+# suites 0
+# pass 269
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2942.809735
+ROSTER POLICY LINT (blocking)
+rule      violations
+spacing   8
+color     1
+field     0
+dialog    0
+native    0
+inline    11
+safe      0
+new beyond the allow-list: 3
+
+per file (roster-owned):
+  admin/admin.css             spacing 2  color 1
+  admin/admin.js              inline 11
+  assets/field.css            spacing 6
+VIOLATION  color  admin/admin.css:2702  background: #fff
+VIOLATION  spacing  admin/admin.css:2720  margin-top: -11px  [-11px]
+VIOLATION  spacing  admin/admin.css:2720  padding: 0 0 3px  [3px]
+
+roster policy lint FAILED (3 new violation(s), 0 unexplained allowance(s)). Fix the code, or for a real exception add it with --write-allow and a reason.
+##[error]Process completed with exit code 1.
