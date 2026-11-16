@@ -80,6 +80,7 @@
 
   var ICONS = {
     plus: ["s", '<path d="M12 5v14"/><path d="M5 12h14"/>'],
+    cal: ["s", '<rect x="4" y="5" width="16" height="15" rx="2.5"/><path d="M4 10h16"/><path d="M9 3v4"/><path d="M15 3v4"/>'],
     edit: ["s", '<path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z"/><path d="M14 7l3 3"/>'],
     trash: ["s", '<path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/>'],
     users: ["s", '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"/><path d="M18.5 14.4c1.9.7 3 2.5 3 5.6"/>'],
@@ -375,12 +376,15 @@
     return Promise.all([
       api("/rest/v1/businesses?select=id,slug,name,created_at&order=created_at"),
       api("/rest/v1/business_users?select=business_id,email&order=email"),
+      api("/rest/v1/meetings?select=business_id").catch(function () { return []; }),   /* only to count them: the chip of a business row; a failed count never blocks the list */
     ]).then(function (r) {
       if (epoch !== mine) return;
       S.biz = Array.isArray(r[0]) ? r[0] : [];
       S.users = {};
       S.biz.forEach(function (b) { S.users[b.id] = []; });
       (Array.isArray(r[1]) ? r[1] : []).forEach(function (u) { if (S.users[u.business_id]) S.users[u.business_id].push(lc(u.email)); });
+      S.meets = {};
+      (Array.isArray(r[2]) ? r[2] : []).forEach(function (m) { S.meets[m.business_id] = (S.meets[m.business_id] || 0) + 1; });
       renderList();
     }).catch(function (e) {
       if ((e && e.signedOut) || epoch !== mine) return;
@@ -391,13 +395,17 @@
   /* a business is a row of the participants list, same anatomy: the accounts count in the age column, the name, the identifier at the end.
      The whole row opens its summary, and every action lives there: there is no swipe on this list. */
   function rowHtml(b) {
-    var id = esc(b.id), n = accList(b).length;
-    return '<li class="row ucard" data-row="' + id + '">' +
+    var id = esc(b.id), n = accList(b).length, mc = (S.meets && S.meets[b.id]) || 0;
+    /* two lines of its own (the participants row's flow could not keep the identifier on the first line): the accounts count and the name at the start,
+       the identifier at the top-left of the card; under them, at the start, the meetings chip (the calendar symbol of "meetings", the one the meetings menu uses, and their number) */
+    return '<li class="row ucard bizrow" data-row="' + id + '">' +
       '<div class="main nobadge" role="button" tabindex="0" data-open="' + id + '" aria-label="סיכום העסק ' + esc(b.name) + '">' +
-      '<div class="nm"><span class="name" dir="rtl">' + esc(b.name) + '</span></div>' +
-      '<div class="meta"><span class="age n" title="' + esc(accCount(n)) + '"><bdi dir="rtl">' + n + ' <b class="gl">' + icon("users", "i14") + '</b></bdi></span>' +
-      '<span class="sidewrap"><bdi dir="ltr">' + esc(b.slug) + "</bdi></span></div></div></li>";
+      '<div class="brow"><span class="age n" title="' + esc(accCount(n)) + '"><bdi dir="rtl">' + n + ' <b class="gl">' + icon("users", "i14") + '</b></bdi></span>' +
+      '<span class="bname" dir="rtl">' + esc(b.name) + '</span>' +
+      '<span class="bslug"><bdi dir="ltr">' + esc(b.slug) + '</bdi></span></div>' +
+      '<div class="brow brow--2"><span class="mcnt mcnt2" title="' + esc(mc === 1 ? "מפגש אחד" : mc + " מפגשים") + '">' + icon("cal", "i14") + mc + "</span></div></div></li>";
   }
+
 
   function visibleBiz() { return S.biz.filter(function (b) { return !RosterUndo.isPending("business", b.id); }); }
 

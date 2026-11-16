@@ -112,3 +112,13 @@ dialog.acc .sheet-body { overflow: hidden; }
 
 /* the add button: the participants page's floating one, in the corner of the list pane (manager.js sets --fab-left from the pane) */
 #newBiz { left: var(--fab-left, max(var(--gutter), var(--inset-l))); }
+
+/* a business row: two lines. First: the accounts count and the name at the start, the identifier at the end (the top-left of the card). Second: the meetings chip. */
+.bizrow .main { flex: 1 1 100%; width: 100%; display: flex; flex-direction: column; align-items: stretch; gap: var(--sp-hair); min-width: 0; }
+.bizrow .brow { display: flex; align-items: center; gap: var(--sp-1); min-width: 0; }
+.bizrow .brow--2 { justify-content: flex-start; }
+.bizrow .bname { flex: 1 1 0; min-width: 0; font-size: var(--fs-s); font-weight: var(--fw-bold); line-height: 1.25; text-align: start; overflow-wrap: anywhere; }
+.bizrow .bslug { flex: 0 0 auto; font-size: var(--fs-s); color: var(--text-2); }
+.bizrow .main .mcnt2 { display: inline-flex; order: 0; margin: 0; }
+.wrap > .list .bizrow .main { align-items: stretch; justify-content: flex-start; }   /* (the participants row centres its parts; this one's two lines run the full width) */
+.wrap > .list .bizrow .brow { width: 100%; }
