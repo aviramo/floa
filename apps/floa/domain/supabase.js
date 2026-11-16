@@ -56,7 +56,7 @@ window.SUPABASE = {
       var d = document.createElement("div");
       d.id = "floaTestEnv"; d.setAttribute("role", "note");
       d.textContent = "סביבת בדיקות · נתונים נפרדים מהאמיתיים";
-      d.style.cssText = "position:fixed;top:0;left:0;right:0;height:13px;z-index:2147483647;background:#3F382F;color:#fff;font:600 10px/13px system-ui,sans-serif;text-align:center;pointer-events:none";
+      d.style.cssText = "position:fixed;top:0;left:0;right:0;height:13px;z-index:2147483647;background:#3F382F;color:#fff;font:600 10px/13px system-ui,sans-serif;text-align:center;pointer-events:none;border:0;border-radius:0;box-shadow:none";
       document.body.appendChild(d);
     };
     if (document.body) strip(); else document.addEventListener("DOMContentLoaded", strip);
