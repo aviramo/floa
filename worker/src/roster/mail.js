@@ -39,7 +39,9 @@ import { sendWithBinding } from "../cf-mail.js";
 import { isObj } from "./work.js";
 
 export const MAIL_FROM_ADDRESS = "no-reply@floa.co.il";
-export const MAIL_DOMAIN = "roster.floa.co.il";
+export const MAIL_DOMAIN = "floa.co.il";
+/* names a person may really be mailing at floa.co.il: a business with one of these as its identifier keeps the platform address */
+const SHARED_LOCALS = new Set(["admin", "administrator", "postmaster", "abuse", "hostmaster", "webmaster", "info", "hello", "contact", "support", "sales", "mail", "email", "noreply", "no-reply", "root", "security", "billing", "ofir", "test"]);
 const SLUG_RE = /^[a-z][a-z0-9-]{1,39}$/;
 export const SITE_ORIGIN = "https://floa.co.il";
 export const RESEND_URL = "https://api.resend.com/emails";
@@ -94,14 +96,13 @@ export function senderName(business) {
 
 /* The address in `From`. The business may choose its own (settings.mail_from_address, owner only, a domain verified in Resend); it is checked here
    again, so a value that is not a plain address never reaches the header, and without one the platform address is used, as before. */
-export function fromAddressOf(business, legacy = false) {
+export function fromAddressOf(business) {
   const a = normalizeEmail(business.settings.mail_from_address);   // the same limits as the database rule: 120 characters, 64 before the @
   if (a && a.length <= 120 && a.indexOf("@") <= 64) return a;
-  /* no address of its own: the business's own address on the platform's mail domain (aum@roster.floa.co.il) */
-  /* legacy: the Resend route, where only floa.co.il is verified, keeps the platform address */
-  return !legacy && SLUG_RE.test(business.slug || "") ? `${business.slug}@${MAIL_DOMAIN}` : MAIL_FROM_ADDRESS;
+  /* no address of its own: the business's own address on the platform's mail domain (aum@floa.co.il) */
+  return SLUG_RE.test(business.slug || "") && !SHARED_LOCALS.has(business.slug) ? `${business.slug}@${MAIL_DOMAIN}` : MAIL_FROM_ADDRESS;
 }
-export const fromHeader = (business, legacy = false) => `${senderName(business)} <${fromAddressOf(business, legacy)}>`;
+export const fromHeader = (business) => `${senderName(business)} <${fromAddressOf(business)}>`;
 /* Who answers when the reader presses Reply: the address the owner set as the business's contact, else the
    business's accounts (the notify list is the setting, or those accounts). One address, the first. */
 export function replyToOf(business) {
@@ -485,7 +486,7 @@ async function sendOne(work, item, to, composed, deps) {
 
   try {
     const payload = {
-      from: fromHeader(work.business, true),
+      from: fromHeader(work.business),
       to: [to],
       subject: composed.value.subject,
       html: composed.value.html,
@@ -496,7 +497,7 @@ async function sendOne(work, item, to, composed, deps) {
 
     let sent;
     if (deps.binding) {
-      const message = { from: fromHeader(work.business, false), to: [to], subject: payload.subject, html: payload.html, text: payload.text, replyTo: reply || undefined };
+      const message = { from: fromHeader(work.business), to: [to], subject: payload.subject, html: payload.html, text: payload.text, replyTo: reply || undefined };
       sent = await sendViaCloudflare({ binding: deps.binding, message }, deps);
     } else {
       const key = await idempotencyKey(work.event.id, item.template, to);
