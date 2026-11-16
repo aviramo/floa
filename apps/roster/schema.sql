@@ -3210,13 +3210,74 @@ returns text language sql immutable as $fn$
   select case st when 'not_found' then 'none' when 'none' then 'forbidden' else st end;
 $fn$;
 
--- everything about me: status ok | none | blocked | disabled | not_found | auth
+-- (the member_links table, me_link_email and me: the same text as apps/roster/me-email.sql)
+create table if not exists roster.member_links (
+  business_id    uuid not null references roster.businesses(id) on delete cascade,
+  email          text not null check (email = lower(btrim(email)) and email <> ''),
+  participant_id uuid not null,
+  status         text not null default 'approved' check (status in ('approved', 'blocked')),
+  created_at     timestamptz not null default now(),
+  primary key (business_id, email),
+  constraint roster_member_links_participant_fk foreign key (business_id, participant_id) references roster.participants (business_id, id) on delete cascade
+);
+alter table roster.member_links enable row level security;
+revoke all on roster.member_links from public, anon, authenticated;
+
+create or replace function roster.me_link_email(p_business uuid)
+returns uuid language plpgsql security definer set search_path = roster, public as $fn$
+declare
+  uid uuid := auth.uid(); em text := lower(btrim(coalesce(auth.jwt() ->> 'email', '')));
+  gname text := left(coalesce(nullif(auth.jwt() -> 'user_metadata' ->> 'full_name', ''), nullif(auth.jwt() -> 'user_metadata' ->> 'name', ''), ''), 120);
+  m roster.members; ln roster.member_links; pid uuid; n int; pa roster.participants; acct text; pre boolean := false;
+begin
+  if uid is null or em = '' or p_business is null then return null; end if;
+  if not exists (select 1 from auth.users u where u.id = uid and u.email_confirmed_at is not null and lower(u.email) = em) then return null; end if;
+  select * into m from roster.members where business_id = p_business and user_id = uid;
+  if m.user_id is not null and (m.status in ('blocked', 'removed') or m.participant_id is not null) then return null; end if;
+  select * into ln from roster.member_links where business_id = p_business and email = em;
+  if found then
+    if ln.status <> 'approved' then return null; end if;
+    pid := ln.participant_id; pre := true;
+  else
+    select count(*), min(id::text)::uuid into n, pid from roster.participants where business_id = p_business and active and lower(btrim(email)) = em;
+    if n <> 1 then return null; end if;
+  end if;
+  select * into pa from roster.participants where id = pid and business_id = p_business;
+  if not found then return null; end if;
+  perform set_config('roster.source', 'me', true);
+  acct := jsonb_build_object('email', em, 'name', gname)::text;
+  if exists (select 1 from roster.members x where x.business_id = p_business and x.participant_id = pid and x.user_id <> uid and x.status in ('approved', 'blocked')) then
+    if roster.rate_take('me_email_conflict:' || uid || ':' || p_business, 60, 1) = 0 then
+      perform roster.emit(p_business, 'participant.phone_conflict', jsonb_build_object('participant', roster.participant_json(pa), 'google', acct::jsonb, 'account', acct::jsonb));
+      perform roster.sys_note(p_business, pid, 'חשבון גוגל נוסף ניסה להתחבר עם האימייל הזה (' || em || ') ולא חובר', 'phone_conflict');
+    end if;
+    return null;
+  end if;
+  begin
+    insert into roster.members (business_id, user_id, email, google_name, participant_id, status) values (p_business, uid, em, gname, pid, 'approved')
+      on conflict (business_id, user_id) do update set participant_id = excluded.participant_id, status = 'approved', email = excluded.email, google_name = excluded.google_name;
+  exception when unique_violation then
+    return null;
+  end;
+  if pre then delete from roster.member_links where business_id = p_business and email = em; end if;
+  perform roster.sys_note(p_business, pid, 'חשבון גוגל חובר לפי אימייל: ' || em, 'google_linked');
+  perform roster.emit(p_business, 'participant.linked', jsonb_build_object('participant', roster.participant_json(pa), 'account', acct::jsonb));
+  return pid;
+end $fn$;
+revoke all on function roster.me_link_email(uuid) from public, anon, authenticated;
+
+-- everything about me: status ok | none | blocked | disabled | not_found | auth (a verified email may link an account first: see apps/roster/me-email.sql)
+
 create or replace function roster.me(p_slug text)
 returns jsonb language plpgsql security definer set search_path = roster, public as $fn$
 declare
   r jsonb := roster.me_resolve(p_slug, true); st text := r->>'status'; b uuid := nullif(r->>'business_id', '')::uuid; pid uuid := nullif(r->>'participant_id', '')::uuid;
-  bz roster.businesses; s roster.business_settings; pa roster.participants; binfo jsonb;
+  bz roster.businesses; s roster.business_settings; pa roster.participants; binfo jsonb; linked uuid;
 begin
+  if st = 'none' and b is not null then   -- a signed-in account with no participant yet: its verified email may find exactly one
+    linked := roster.me_link_email(b);
+    if linked is not null then r := roster.me_resolve(p_slug, true); st := r->>'status'; pid := nullif(r->>'participant_id', '')::uuid; end if;
+  end if;
   if st = 'auth' then return jsonb_build_object('status', 'auth'); end if;
   if st = 'not_found' then return jsonb_build_object('status', 'unknown_business'); end if;
   select * into bz from roster.businesses where id = b;
@@ -3995,3 +4056,29 @@ revoke all on function roster.trash_list(text), roster.restore(text, uuid), rost
 grant execute on function roster.trash_list(text), roster.restore(text, uuid), roster.purge(text, uuid) to authenticated;
 
 notify pgrst, 'reload schema';
+
+-- ---- one email, one participant (the same text as apps/roster/email-unique.sql) ----
+-- One email, one participant (per business): no two participants (phone numbers) may have the same email (owner's rule, 2026-11-16).
+-- The index is the guarantee. The trigger decides what happens to a write that would break it:
+--   * from the public API and the personal area (roster.source = 'api' or 'me'): the email is NOT stored (an insert gets none, an update keeps the old one),
+--     and the call succeeds as before. A visitor is never told that an email already belongs to someone (no way to probe emails), and no API answer changes.
+--   * from anywhere else (the admin page, direct writes): the write fails with 'email_taken' (SQLSTATE 23505), the page shows it next to the field.
+create or replace function roster.participants_email_guard()
+returns trigger language plpgsql set search_path = roster, public as $fn$
+declare src text := coalesce(current_setting('roster.source', true), '');
+begin
+  if new.email is null or btrim(new.email) = '' then new.email := null; return new; end if;
+  if tg_op = 'UPDATE' and new.email is not distinct from old.email then return new; end if;
+  if exists (select 1 from roster.participants x where x.business_id = new.business_id and x.id <> new.id and x.email = new.email) then
+    if src in ('api', 'me') then
+      new.email := case when tg_op = 'UPDATE' then old.email else null end;
+      return new;
+    end if;
+    raise exception 'email_taken' using errcode = '23505', detail = 'another participant of this business has this email';
+  end if;
+  return new;
+end $fn$;
+drop trigger if exists roster_participants_email_guard on roster.participants;
+create trigger roster_participants_email_guard before insert or update of email on roster.participants
+  for each row execute function roster.participants_email_guard();
+create unique index if not exists roster_participants_email_uq on roster.participants (business_id, email) where email is not null and btrim(email) <> '';

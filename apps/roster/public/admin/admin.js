@@ -551,6 +551,7 @@
     if (err && err.signedOut) return;   // הכניסה פגה: מסך הכניסה כבר מוצג
     console.error(err);
     if (/promoter_code_taken/.test(String((err && (err.message || err.details || err.hint)) || err))) { toast('הקוד כבר קיים אצל שיווק ממומן אחר. כל קוד חייב להיות ייחודי'); return; }
+    if (/email_taken/.test(String((err && (err.message || err.details || err.hint)) || err))) { toast('האימייל הזה כבר שייך למשתתף אחר. אימייל אחד, משתתף אחד'); return; }
     toast('משהו השתבש, לא נשמר. נסו שוב');
   }
 
