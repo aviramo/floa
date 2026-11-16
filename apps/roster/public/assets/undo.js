@@ -67,6 +67,25 @@
     rec.done = true; clearTimeout(rec.timer); remove(pending, rec);
     try { if (rec.onUndo) rec.onUndo(); } catch (e) { /* the page's problem */ }
     render();
+    markRestored(rec);
+  }
+
+  /* A restored item is MARKED: once the page has drawn it again, its row is tinted for a moment (ui.css .rk-restored) and brought into view, so the eye finds what came back.
+     The row is found by the item's id on the attributes the lists use (data-pid, data-row, data-id); a page that draws it late is waited for, up to a second. */
+  function markRestored(rec) {
+    String(rec.itemId || "").split(",").forEach(function (id) {
+      if (!id) return;
+      var sel = ["data-pid", "data-row", "data-id"].map(function (a) { return "li.row[" + a + '="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]'; }).join(",");
+      var tries = 0;
+      (function look() {
+        var row = null;
+        try { row = doc.querySelector(sel); } catch (e) { return; }
+        if (!row) { if (++tries < 40) requestAnimationFrame(look); return; }
+        row.classList.remove("rk-restored"); void row.offsetWidth; row.classList.add("rk-restored");
+        try { row.scrollIntoView({ block: "nearest" }); } catch (e) { /* an old browser */ }
+        setTimeout(function () { row.classList.remove("rk-restored"); }, 2600);
+      })();
+    });
   }
 
   function failMsg(rec) {

@@ -273,6 +273,11 @@ html:has(.rfab:not(.rfab--in)) .rmsg--toast { box-sizing: border-box; min-height
   background: conic-gradient(var(--bg) calc(var(--left, 1) * 360deg), transparent 0);
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px)); mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px)); }   /* the time left, a ring that empties clockwise */
 .rmsg--undo[data-paused="true"]::after { opacity: .35; }
+/* a restored row (after "undo") is tinted for a moment, so it is easy to find */
+.rk-restored { position: relative; }
+.rk-restored::before { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: inherit; background: var(--warn-bg); mix-blend-mode: multiply; pointer-events: none; animation: rk-restored 2.4s ease-out forwards; }
+@keyframes rk-restored { 0%, 35% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .rk-restored::before { animation: none; } }
 @media (prefers-reduced-motion: reduce) { .rmsg--undo::after { --left: 1; } }   /* no countdown animation: a still, full ring */
 .rmsg__act:focus-visible { outline: 2px solid var(--bg); outline-offset: 2px; }
 
