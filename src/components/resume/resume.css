@@ -13,6 +13,10 @@
    own. Everything on the paper is selectable text, in one column, in the order
    it should be read.
    ========================================================================== */
+/* The selection highlight was the engine's default teal, a colour from nowhere
+   on a navy page. It is the sheet's own navy now. */
+.cv ::selection { background: var(--cv-navy); color: #fff; }
+
 .cv {
   --cv-navy: #16356b;
   --cv-blue: #1d4e8f;

@@ -62,8 +62,13 @@ const isolate = (text) => {
   let out = "";
   let last = 0;
   for (const m of s.matchAll(LATIN)) {
-    out += escape(s.slice(last, m.index)) + `<bdi dir="ltr">${escape(m[0])}</bdi>`;
-    last = m.index + m[0].length;
+    /* A ")" that closes a "(" which stayed outside the run belongs to the
+       Hebrew sentence. Left inside, the pair lands on two sides of an isolate
+       and renders "Security))". Trim it until the run is balanced. */
+    let run = m[0];
+    while (run.endsWith(")") && run.split("(").length < run.split(")").length) run = run.slice(0, -1);
+    out += escape(s.slice(last, m.index)) + `<bdi dir="ltr">${escape(run)}</bdi>`;
+    last = m.index + run.length;
   }
   return raw(out + escape(s.slice(last)));
 };
