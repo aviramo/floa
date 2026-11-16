@@ -5,7 +5,7 @@
    Safety: the token is verified by Google (tokeninfo), its audience must be one of ROSTER_GOOGLE_CLIENT_IDS, the email must be
    verified, and the browser origin must be one of ROSTER_AUTH_ORIGINS. Off (404) when ROSTER_GOOGLE_CLIENT_IDS is not set. */
 const list = (v) => String(v || "").split(",").map((s) => s.trim()).filter(Boolean);
-const reply = (body, status, origin) => new Response(JSON.stringify(body), {
+const reply = (body, status, origin) => new Response(status === 204 ? null : JSON.stringify(body), {
   status,
   headers: { "content-type": "application/json", "cache-control": "no-store", ...(origin ? { "access-control-allow-origin": origin, vary: "Origin", "access-control-allow-headers": "content-type", "access-control-allow-methods": "POST, OPTIONS" } : {}) },
 });

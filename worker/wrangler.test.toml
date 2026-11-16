@@ -24,7 +24,7 @@ ROSTER_TEST_MAIL_TO = "ofir.aviram@gmail.com"
 # ROSTER_TEST_FROM unset: every mail goes out as the business (<slug>@floa.co.il, under its own name) like the real Worker; test mail still reaches only ROSTER_TEST_MAIL_TO
 # ROSTER_TEST_ADMIN_FROM unset: admins and participants are mailed by the same sender (ROSTER_TEST_FROM)
 ROSTER_GOOGLE_CLIENT_IDS = "459432002435-349ppd8r1qqe9tkcdm2v3f6rpp48i1ni.apps.googleusercontent.com"   # the business's own Google app (harpatka); sign-in without the Supabase Google provider
-ROSTER_AUTH_ORIGINS = "https://test.harpatka.co.il"
+ROSTER_AUTH_ORIGINS = "https://test.harpatka.co.il,http://localhost:8080,http://localhost:8099"
 
 # the Workflow binding the shared source declares (chords); unused here
 [[workflows]]

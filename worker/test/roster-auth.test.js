@@ -33,3 +33,13 @@ test("wrong audience, unverified email, wrong origin, bad token: refused, no ses
   assert.equal((await handleRosterAuth(req({ body: { id_token: "short" } }), env, net(good))).status, 400);
   assert.equal((await handleRosterAuth(req(), env, net(null))).status, 401);
 });
+
+test("the CORS preflight answers 204 without a body (a body on a 204 threw and blocked every sign-in)", async () => {
+  const pre = new Request("https://api.example/roster-auth/google", { method: "OPTIONS", headers: { origin: "https://site.example" } });
+  const r = await handleRosterAuth(pre, env, net(good));
+  assert.equal(r.status, 204);
+  assert.equal(r.headers.get("access-control-allow-origin"), "https://site.example");
+  assert.equal(await r.text(), "");
+  const bad = new Request("https://api.example/roster-auth/google", { method: "OPTIONS", headers: { origin: "https://evil.example" } });
+  assert.equal((await handleRosterAuth(bad, env, net(good))).status, 403);
+});
