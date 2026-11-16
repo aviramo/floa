@@ -9,8 +9,8 @@ export const site = {
   dir: "rtl",
   origin: "https://tal.floa.co.il",
   folder: "",
-  tagline: "אמנית, מנחת ריטריטים ומנחת ביודנסה",
-  slogan: "אמנות, AUM וביודנסה",
+  tagline: "מנחת ריטריטים ומנחת ביודנסה",
+  slogan: "AUM וביודנסה",
 };
 
 export const runtime = {
