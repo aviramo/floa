@@ -37,13 +37,16 @@ window.SUPABASE = {
    roster-test). An app listed in SCHEMAS gets its schema on every REST call without knowing about it: the
    headers are added here, once, so no app repeats them. Tables inside a schema carry no app prefix
    (roster.participants, not roster.roster_participants). An app that is not listed keeps `public`.
-   On localhost and the old floa.co.il/<app>/ address the first folder of the path stands in for the host. */
+   On localhost and the old floa.co.il/<app>/ address the first folder of the path stands in for the host;
+   on localhost the roster app is pointed at roster-test, so local work never changes real data. */
 (function () {
   if (typeof location === "undefined") return;   /* the build reads this file too, with no browser */
   var SCHEMAS = ["roster", "roster-test", "chords", "jobs"];
   var label = location.hostname.split(".")[0];
   var folder = location.pathname.split("/")[1] || "";
   var s = SCHEMAS.indexOf(label) >= 0 ? label : SCHEMAS.indexOf(folder) >= 0 ? folder : "";
+  /* a local copy of the page (npm run dev) never touches the real roster: it works on the test schema */
+  if (s === "roster" && /^(localhost|127\.|\[::1\]|192\.168\.|10\.)/.test(location.hostname)) s = "roster-test";
   window.SUPABASE.schema = s;
   if (!s || !window.fetch) return;
   var of = window.fetch;
