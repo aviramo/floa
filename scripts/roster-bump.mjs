@@ -15,7 +15,11 @@ const walk = (d) => readdirSync(d).flatMap((f) => { const p = join(d, f); return
 let changed = 0;
 for (const page of walk(ROOT).filter((f) => f.endsWith(".html"))) {
   const html = readFileSync(page, "utf8");
-  const out = html.replace(/((?:src|href)=")([^"?#]+)\?v=([a-z0-9]+)(")/g, (m, a, ref, v, z) => {
+  /* the domain's two shared scripts live outside this folder (apps/floa/domain/): they get the same ?v=, so a changed shim (the test strip, the schema) reaches a browser that cached the old one */
+  const DOMAIN = join(ROOT, "..", "..", "floa", "domain");
+  const withDomain = html.replace(/(src=")(\/(?:supabase|auth)\.js)(?:\?v=[a-z0-9]+)?(")/g, (m, a, ref, z) =>
+    a + ref + "?v=" + createHash("md5").update(readFileSync(join(DOMAIN, ref.slice(1)))).digest("hex").slice(0, 8) + z);
+  const out = withDomain.replace(/((?:src|href)=")([^"?#]+)\?v=([a-z0-9]+)(")/g, (m, a, ref, v, z) => {
     const file = ref.startsWith("/roster/") ? join(ROOT, ref.slice(8)) : ref.startsWith("/") ? null : resolve(dirname(page), ref);
     if (!file || !existsSync(file)) return m;
     const h = createHash("md5").update(readFileSync(file)).digest("hex").slice(0, 8);

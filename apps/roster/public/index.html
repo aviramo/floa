@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="assets/ui.css?v=08ef9cb7">
 <link rel="stylesheet" href="assets/field.css?v=7e4c4a08">
 <link rel="stylesheet" href="admin/admin.css?v=a9c18588">
-<link rel="stylesheet" href="assets/manager.css?v=6724593a">
+<link rel="stylesheet" href="assets/manager.css?v=4e6e7e7e">
 <link rel="stylesheet" href="assets/popup.css?v=3cced8f3">
 <link rel="stylesheet" href="assets/sheet.css?v=0d8d9a2d">
 </head>
@@ -44,7 +44,6 @@
     <div class="title-row">
       <div class="msel">
         <h1>ניהול משתתפים</h1>
-        <small class="msub" id="count" hidden></small>
       </div>
       <div class="hgrp">
         <div class="hicons">
@@ -56,7 +55,7 @@
   <div id="status"></div>
   <div class="vbar" id="listTags" role="group" aria-label="חיפוש והוספה" hidden>
     <label class="search hsearch" title="חיפוש והוספה">
-      <span class="scount" id="listCountS" aria-hidden="true"></span><span class="sicon" aria-hidden="true"></span><input data-rf-bare id="q" type="search" placeholder="חיפוש או הוספת עסק" autocomplete="off" aria-label="חיפוש או הוספת עסק" />
+      <span class="scount" id="listCountS" aria-hidden="true"></span><span class="sicon" aria-hidden="true"></span><input data-rf-bare id="q" type="search" placeholder=" " autocomplete="off" aria-label="חיפוש או הוספת עסק" />
       <button type="button" class="sclear" id="qClear" aria-label="ניקוי החיפוש" tabindex="-1">×</button>
     </label>
   </div>
@@ -74,12 +73,12 @@
 <dialog id="dlgC" aria-labelledby="dlgCT" data-from="bottom" data-size="sm"></dialog>
 <div class="rmsg rmsg--toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-<script src="/supabase.js"></script>
-<script src="/auth.js"></script>
+<script src="/supabase.js?v=34864f05"></script>
+<script src="/auth.js?v=64740567"></script>
 <script src="assets/ui.js?v=0e4b73f3"></script>
 <script src="assets/undo.js?v=6df1b937"></script>
 <script src="assets/field.js?v=3373b0b3"></script>
 <script src="assets/sheet.js?v=56fd9da7"></script>
-<script src="assets/manager.js?v=c5dafc64"></script>
+<script src="assets/manager.js?v=0ce08884"></script>
 </body>
 </html>

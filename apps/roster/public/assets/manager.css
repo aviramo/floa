@@ -108,7 +108,7 @@ dialog.acc .sheet-body { overflow: hidden; }
    the participants page's title button (40px), so the two headers measure the same; the search row starts one chip row's padding lower, the room the participants page keeps for its chips */
 .msel > h1 { display: flex; align-items: center; height: 40px; margin: 0; }
 .wrap > .vbar { padding-top: var(--sp-1); box-sizing: content-box; }
-.wrap > header.top .msel { top: -6px; }   /* the same gap between title and count as the participants page, the block centred on the icon tile (the participants page keeps it a few px higher) */
+.wrap > header.top .msel { top: 0; }   /* the same gap between title and count as the participants page, the block centred on the icon tile (the participants page keeps it a few px higher) */
 
 /* the add button: the participants page's floating one, in the corner of the list pane (manager.js sets --fab-left from the pane) */
 #newBiz { left: var(--fab-left, max(var(--gutter), var(--inset-l))); }

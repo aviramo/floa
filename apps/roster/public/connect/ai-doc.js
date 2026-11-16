@@ -11,7 +11,9 @@
    ========================================================================== */
 (function () {
   "use strict";
-  var BASE = "https://api.floa.co.il/roster/v1";
+  /* the test versions (roster-test, a local copy) write the test API into the file: it answers on the test schema */
+  var TEST = /^(roster-test\.floa\.co\.il|localhost|127\.|\[::1\]|192\.168\.|10\.)/.test(location.hostname);
+  var BASE = (TEST ? "https://api-test.floa.co.il" : "https://api.floa.co.il") + "/roster/v1";
   var DOC_URL = location.href;
 
   /* ---------- the docs page, as Markdown ---------- */

@@ -119,7 +119,8 @@
   /* a message under the header (loading, error, not connected): the list and the search step aside, as on the participants page */
   function setStatus(html) { statusEl.innerHTML = html; list.innerHTML = ""; vbar.hidden = true; $("#addBox").innerHTML = ""; closeSummary(); }
   function clearStatus() { statusEl.innerHTML = ""; }
-  function setCount(text) { var c = $("#count"); c.textContent = text || ""; c.hidden = !text; }
+  /* the number of businesses lives in the search field, written the way the participants page writes its own (admin.js paintCnt): a bold number and the word, or "one" in words. It goes while the field is used. */
+  function setCount(n) { var c = $("#listCountS"); if (c) c.innerHTML = n == null || n === "" ? "" : n === 1 ? "עסק אחד" : "<b>" + n + "</b> עסקים"; }
 
   function toast(msg) {
     var t = $("#toast");
@@ -405,7 +406,7 @@
     var all = visibleBiz();
     var term = lc(S.q);
     var rows = all.filter(function (b) { return !term || lc(b.name).indexOf(term) > -1 || b.slug.indexOf(term) > -1; });
-    setCount(term ? rows.length + " מתוך " + bizCount(all.length) : bizCount(all.length));
+    setCount(rows.length);
     var html = "";
     if (rows.length) html += rows.map(rowHtml).join("");
     else if (!all.length) html += '<li class="empty"><b>עוד אין עסקים</b>כל עסק מקבל מזהה משלו, ורשימה של חשבונות Google שמנהלים אותו. כדי להתחיל, כותבים שם בשורת החיפוש ולוחצים על ההוספה.</li>';
@@ -548,7 +549,7 @@
   fab.addEventListener("click", function () {
     var an = $("#addNew");
     if (clean(S.q) && an) { an.click(); return; }
-    var q = $("#q"); q.placeholder = "שם העסק החדש"; q.addEventListener("blur", function () { q.placeholder = "חיפוש או הוספת עסק"; }, { once: true }); q.focus();
+    var q = $("#q"); q.placeholder = "שם העסק החדש"; q.addEventListener("blur", function () { q.placeholder = " "; }, { once: true }); q.focus();
   });
   fabLabel();
   window.addEventListener("resize", placeFab);
