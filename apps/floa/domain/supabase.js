@@ -48,6 +48,19 @@ window.SUPABASE = {
   /* a local copy of the page (npm run dev) never touches the real roster: it works on the test schema */
   if (s === "roster" && /^(localhost|127\.|\[::1\]|192\.168\.|10\.)/.test(location.hostname)) s = "roster-test";
   window.SUPABASE.schema = s;
+  /* every test environment (roster-test.floa.co.il, and any local copy) wears a thin strip at the very top, so nobody mistakes it for the real thing.
+     It sits in the empty padding above the header, takes no room of its own and never takes a tap. */
+  if (s === "roster-test") {
+    var strip = function () {
+      if (document.getElementById("floaTestEnv")) return;
+      var d = document.createElement("div");
+      d.id = "floaTestEnv"; d.setAttribute("role", "note");
+      d.textContent = "סביבת בדיקות · נתונים נפרדים מהאמיתיים";
+      d.style.cssText = "position:fixed;top:0;left:0;right:0;height:13px;z-index:2147483647;background:#3F382F;color:#fff;font:600 10px/13px system-ui,sans-serif;text-align:center;pointer-events:none";
+      document.body.appendChild(d);
+    };
+    if (document.body) strip(); else document.addEventListener("DOMContentLoaded", strip);
+  }
   if (!s || !window.fetch) return;
   var of = window.fetch;
   window.fetch = function (input, init) {
