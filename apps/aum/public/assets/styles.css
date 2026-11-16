@@ -254,3 +254,4 @@ a { color: inherit; }
 .voices__arrow { width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(248, 224, 166, .4); background: none; color: var(--cream); font-size: 1.6rem; line-height: 1; cursor: pointer; }
 .voices :focus-visible { outline-color: var(--gold); }
 @media (prefers-reduced-motion: reduce) { .js .voices__track { transition: none; } }
+.join__more { margin: 6px auto 16px; font-size: 1.05rem; }
