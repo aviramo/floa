@@ -15,8 +15,8 @@
   --leaf-2: #2F6B3A;
   --sky: #BFE2F0;
   --font: "Assistant", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --display: "Amatic SC", "Assistant", sans-serif;
-  --hand: "Gveret Levin", "Assistant", cursive;
+  --display: "Assistant", system-ui, sans-serif;
+  --hand: "Assistant", system-ui, sans-serif;
   --ease: cubic-bezier(.2, .7, .2, 1);
 }
 *, *::before, *::after { box-sizing: border-box; }
@@ -182,3 +182,10 @@ svg { display: block; }
 .cta-float .wa { width: 22px; height: 22px; fill: currentColor; }
 .cta-float:hover { background: #1F7A4D; }
 .cta-float.is-hidden { opacity: 0; transform: translateY(24px); pointer-events: none; }
+
+/* פונט Assistant בכל הדף */
+h1, h2 { font-weight: 800; line-height: 1.05; letter-spacing: 0; }
+.hero h1 { font-size: clamp(3.4rem, 14vw, 6.6rem); }
+.hero-lead { font-weight: 700; font-size: clamp(1.7rem, 6vw, 2.4rem); margin: 1rem 0 1rem; }
+.hero-bio p { margin: 0 0 .9em; }
+.door-body b { font-weight: 800; font-size: 1.9rem; line-height: 1.1; }
