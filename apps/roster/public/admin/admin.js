@@ -656,7 +656,7 @@
     const p = partOf(sh.id); if (p) setTitle(p);
   }
   /* התאמה לחיפוש, אחת לכל המקומות: שם, טלפון (05... או 972...) וטקסט ההערות */
-  const qMatch = (p, q, qd) => p.name.toLowerCase().includes(q) || (qd.length >= 2 && phoneHay(p).includes(qd)) || String(p.address || '').toLowerCase().includes(q) || hasNote(p, q);
+  const qMatch = (p, q, qd) => p.name.toLowerCase().includes(q) || (qd.length >= 2 && phoneHay(p).includes(qd)) || String(p.address || '').toLowerCase().includes(q) || String(p.email || '').toLowerCase().includes(q) || hasNote(p, q);
   async function load(silent) {
     if (!silent) { $('#status').innerHTML = '<div class="empty">טוען…</div>'; document.documentElement.classList.add('is-loading'); }   // מצב טעינה: "טוען..." בכותרת בלבד, בלי הקו ובלי מה שמתחתיו
     const myLoad = ++loadSeq;
