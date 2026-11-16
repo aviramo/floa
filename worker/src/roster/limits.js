@@ -21,6 +21,7 @@ export const MAX_BODY_BYTES = 16 * 1024;
    address, then 429 instead of one more database call per guess. */
 export const IP_LIMITS = Object.freeze({
   signup: Object.freeze({ max: 6, windowSec: 600 }),
+  complete: Object.freeze({ max: 20, windowSec: 600 }),   // the second step of the two-step signup
   click: Object.freeze({ max: 30, windowSec: 600 }),
   badkey: Object.freeze({ max: 60, windowSec: 600 }),
 });

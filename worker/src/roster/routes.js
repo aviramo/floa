@@ -287,7 +287,7 @@ const ROUTES = [
   { name: "meetings", method: "GET", path: ["meetings"], kinds: BOTH, bucket: "read", rpc: RPC.meetings, prepare: prepMeetings },
   { name: "signup", method: "POST", path: ["signup"], body: true, kinds: BOTH, bucket: "signup", ipLimit: "signup", rpc: RPC.signup, outbox: true, hash: "ip", prepare: prepSignup },
   { name: "signup_phone", method: "POST", path: ["signup", "phone"], body: true, kinds: BOTH, bucket: "signup", ipLimit: "signup", rpc: RPC.signupPhone, outbox: true, hash: "ip", prepare: prepSignupPhone },
-  { name: "signup_complete", method: "POST", path: ["signup", "complete"], body: true, kinds: BOTH, bucket: "signup", ipLimit: "signup", rpc: RPC.signupComplete, outbox: true, hash: "ip", prepare: prepSignupComplete },
+  { name: "signup_complete", method: "POST", path: ["signup", "complete"], body: true, kinds: BOTH, bucket: "complete", ipLimit: "complete", rpc: RPC.signupComplete, outbox: true, hash: "ip", prepare: prepSignupComplete },
   { name: "click", method: "POST", path: ["payments", "click"], body: true, kinds: ["public"], bucket: "click", ipLimit: "click", rpc: RPC.click, outbox: true, hash: "ip", prepare: prepClick },
   { name: "payments", method: "POST", path: ["payments"], body: true, kinds: ["secret"], bucket: "write", rpc: RPC.recordPayment, outbox: true, prepare: prepRecordPayment },
   { name: "participant_by_phone", method: "GET", path: ["participants"], kinds: ["secret"], bucket: "read", rpc: RPC.participant, prepare: prepParticipantByPhone },

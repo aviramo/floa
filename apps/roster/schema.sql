@@ -1962,6 +1962,11 @@ begin
       if iph is not null then perform roster.rate_give_back('signup:ip:' || iph); end if;
       return jsonb_build_object('error', 'rate_limited', 'retry_after', r2);
     end if;
+  elsif p_bucket = 'complete' then   -- the second step of a two-step signup (the details, by token): its own allowance, so the first step does not eat it
+    if iph is not null then
+      r1 := roster.rate_take('complete:ip:' || iph, 10, 20);
+      if r1 > 0 then return jsonb_build_object('error', 'rate_limited', 'retry_after', r1); end if;
+    end if;
   elsif p_bucket = 'click' then
     if iph is not null then
       r1 := roster.rate_take('click:ip:' || iph, 10, 30);
