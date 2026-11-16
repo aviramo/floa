@@ -67,6 +67,10 @@ const isolate = (text) => {
        and renders "Security))". Trim it until the run is balanced. */
     let run = m[0];
     while (run.endsWith(")") && run.split("(").length < run.split(")").length) run = run.slice(0, -1);
+    /* A full stop that ends the sentence ("בעזרת AI.") is the Hebrew's, and
+       inside the run it lands on the wrong side of the word. One that sits
+       inside an abbreviation ("B.Sc.") is the word's, so it stays. */
+    if (run.endsWith(".") && !run.slice(0, -1).includes(".")) run = run.slice(0, -1);
     out += escape(s.slice(last, m.index)) + `<bdi dir="ltr">${escape(run)}</bdi>`;
     last = m.index + run.length;
   }
