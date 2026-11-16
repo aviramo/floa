@@ -88,3 +88,34 @@ test("a key the test database accepted does not exempt it from the real schema's
   const real = await call(roster, request("api.floa.co.il", "198.51.100.9"));
   assert.equal(real.status, 401, "the real host is untouched by the test host's counter");
 });
+
+test("with ROSTER_TEST_MAIL_TO the test schema mails ONLY that address, with a test mark; without it, nothing; the real schema never redirects", async () => {
+  const run = async (schema, extra) => {
+    const net = fakeNet({ rpc: { events_claim: () => [item(8)], events_done: () => null } });
+    await processOutbox({ env: makeEnv(extra), fetch: net.fetch, now: () => NOW, sleep: async () => {}, schema });
+    return net;
+  };
+  const t = await run("roster-test", { ROSTER_TEST_MAIL_TO: "me@example.com" });
+  const sent = t.resend();
+  assert.equal(sent.length, 1);
+  assert.deepEqual(sent[0].json.to, ["me@example.com"]);
+  assert.ok(String(sent[0].json.subject).startsWith("[בדיקות] "));
+  assert.equal((await run("roster-test", {})).resend().length, 0);
+  const r = await run("roster", { ROSTER_TEST_MAIL_TO: "me@example.com" });
+  assert.deepEqual(r.resend()[0].json.to, ["owner@example.com"]);
+  assert.ok(!String(r.resend()[0].json.subject).startsWith("[בדיקות]"));
+});
+
+test("ROSTER_TEST_ADMIN_FROM: in the test schema the mails to the admins come from that address, the others from ROSTER_TEST_FROM; the real schema never uses either", async () => {
+  const run = async (schema, extra) => {
+    const net = fakeNet({ rpc: { events_claim: () => [item(8)], events_done: () => null } });
+    await processOutbox({ env: makeEnv(extra), fetch: net.fetch, now: () => NOW, sleep: async () => {}, schema });
+    return net.resend();
+  };
+  const env = { ROSTER_TEST_MAIL_TO: "me@example.com", ROSTER_TEST_FROM: "Biz <biz@example.com>", ROSTER_TEST_ADMIN_FROM: "admins@example.com" };
+  const t = await run("roster-test", env);
+  assert.ok(t.length >= 1);
+  for (const m of t) assert.ok([ "admins@example.com", "Biz <biz@example.com>" ].includes(m.json.from), m.json.from);
+  const r = await run("roster", env);
+  for (const m of r) assert.ok(m.json.from !== "admins@example.com" && m.json.from !== "Biz <biz@example.com>");
+});

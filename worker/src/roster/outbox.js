@@ -66,7 +66,7 @@ export async function processOutbox(deps) {
   if (claim.data.length === 0) return summary;
 
   /* the test schema (api-test) delivers webhooks and sends NO mail: its participants are made up, and mail to made-up addresses would hurt the sender's reputation. No mail is made, so none is logged. */
-  const itemDeps = { ...deps, deadlineAt, apiKey: env.RESEND_API_KEY || "", noMail: schema === TEST_SCHEMA };
+  const itemDeps = { ...deps, deadlineAt, apiKey: env.RESEND_API_KEY || "", noMail: schema === TEST_SCHEMA && !env.ROSTER_TEST_MAIL_TO, redirectTo: schema === TEST_SCHEMA ? (env.ROSTER_TEST_MAIL_TO || "") : "", fromOverride: schema === TEST_SCHEMA ? (env.ROSTER_TEST_FROM || "") : "", adminFromOverride: schema === TEST_SCHEMA ? (env.ROSTER_TEST_ADMIN_FROM || "") : "" };
   const queue = [...claim.data];
 
   async function worker() {

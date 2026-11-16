@@ -470,9 +470,9 @@ async function sendOne(work, item, to, composed, deps) {
 
   try {
     const payload = {
-      from: fromHeader(work.business),
-      to: [to],
-      subject: composed.value.subject,
+      from: (item.audience === "admin" && deps.adminFromOverride) || deps.fromOverride || fromHeader(work.business),   /* the test schema: mails to the admins can come from their own address */
+      to: [deps.redirectTo || to],   /* the test schema, when it is given an address: every mail goes to it alone, never to the participant */
+      subject: (deps.redirectTo ? "[בדיקות] " : "") + composed.value.subject,
       html: composed.value.html,
       text: composed.value.text,
     };
@@ -480,7 +480,12 @@ async function sendOne(work, item, to, composed, deps) {
     if (reply) payload.reply_to = reply;
 
     const key = await idempotencyKey(work.event.id, item.template, to);
-    const sent = await sendViaResend({ apiKey: deps.apiKey, payload, key }, deps);
+    let sent = await sendViaResend({ apiKey: deps.apiKey, payload, key }, deps);
+    /* a test sender address that Resend does not allow yet (403): the mail goes out from the business's own address instead, never lost */
+    const own = fromHeader(work.business);
+    if (sent.status === "failed" && sent.error.startsWith("resend_403") && payload.from !== own) {
+      sent = await sendViaResend({ apiKey: deps.apiKey, payload: { ...payload, from: own }, key: key + "-own" }, deps);
+    }
     if (sent.status === "failed" && !MAY_HAVE_BEEN_SENT.has(sent.error)) gate.release();
     return { ...shown, status: sent.status, error: sent.error };
   } catch (err) {

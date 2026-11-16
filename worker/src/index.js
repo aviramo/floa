@@ -41,6 +41,7 @@ import { MEDIA_TYPES, readChordSheet } from "./transcribe.js";
 import { measure } from "./ocr.js";          // temporary, for /boxes
 import { sendPush } from "./webpush.js";
 import { handleRoster, isRosterPath, runRosterScheduled } from "./roster/routes.js";
+import { handleRosterAuth, isRosterAuthPath } from "./roster-auth.js";
 
 /* A lead sent before the sites were rebuilt carries no `business` field. It can
    only have come from FLOA, because FLOA is the only business that existed then. */
@@ -538,6 +539,7 @@ export default {
     /* /roster/v1/* is the roster product's public API: its own door, its own
        CORS, its own tests (src/roster/). Nothing below applies to it. */
     if (isRosterPath(new URL(request.url).pathname)) return handleRoster(request, env, ctx);
+    if (isRosterAuthPath(new URL(request.url).pathname)) return handleRosterAuth(request, env);
 
     const origin = request.headers.get("origin") || "";
 

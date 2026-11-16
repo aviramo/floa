@@ -26,9 +26,7 @@ workers_dev = true
 # answering the same requests, so nobody who already uses it is cut off.
 routes = [
   { pattern = "api.floa.co.il", custom_domain = true },
-  # The same API for every test version (roster-test, localhost): it answers on the roster-test schema, runs
-  # the webhooks of that schema and sends no mail. See worker/src/roster/db.js (schemaOfHost).
-  { pattern = "api-test.floa.co.il", custom_domain = true },
+  # api-test.floa.co.il (the roster-test schema) is served by its own Worker, floa-lead-test (wrangler.test.toml).
 ]
 
 # Logs, so a failure that only happens with a real file can be read after the
@@ -66,6 +64,7 @@ preview_urls = false
 #   npx wrangler secret put ANTHROPIC_API_KEY
 [vars]
 LEAD_TO = "ofir.aviram@gmail.com"
+ROSTER_ONLY_SCHEMA = "roster"   # this Worker drains only the real schema; roster-test belongs to floa-lead-test
 LEAD_FROM = "FLOA <no-reply@floa.co.il>"
 SUPABASE_URL = "https://aexmnaxvahblveejsbup.supabase.co"
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleG1uYXh2YWhibHZlZWpzYnVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5NzE5MjMsImV4cCI6MjEwMTU0NzkyM30.oXPojzklAqOl9pvH5R_GNGTda6OvYruDQjMLprcBA0Y"

@@ -2019,15 +2019,17 @@ $fn$;
 -- The meeting as the API shows it. secret = adds directions, registered and type.
 create or replace function roster.meeting_json(m roster.meetings, secret boolean, today date)
 returns jsonb language plpgsql stable security definer set search_path = roster, public as $fn$
-declare tname text; reg int; cap int := m.max_participants; o jsonb;
+declare tname text; timg text; reg int; cap int := m.max_participants; o jsonb;
 begin
-  select name into tname from roster.meeting_types where id = m.type_id and business_id = m.business_id;
+  select name, nullif(btrim(image_url), '') into tname, timg from roster.meeting_types where id = m.type_id and business_id = m.business_id;
   reg := roster.registered_count(m.business_id, m.id);
   o := jsonb_build_object('id', m.id, 'date', to_char(m.meeting_date, 'YYYY-MM-DD'), 'time', to_char(m.meeting_time, 'HH24:MI'),
     'name', coalesce(nullif(btrim(m.name), ''), nullif(btrim(tname), '')), 'city', m.city, 'place', m.place,
     'capacity', cap, 'spots_left', case when cap is null then null else greatest(cap - reg, 0) end,
     'full', coalesce(cap is not null and reg >= cap, false),
     'price', roster.meeting_price(m.price_tiers, greatest(m.meeting_date - today, 0)), 'price_tiers', m.price_tiers);
+  -- the picture of the meeting, else of its type; the key is there only when there is one (a business without pictures answers exactly as before)
+  if coalesce(nullif(btrim(m.image_url), ''), timg) is not null then o := o || jsonb_build_object('image', coalesce(nullif(btrim(m.image_url), ''), timg)); end if;
   if secret then
     o := o || jsonb_build_object('directions', m.directions, 'registered', reg,
       'type', tname);   -- the meeting type's NAME, or null
@@ -2527,9 +2529,11 @@ create trigger roster_payments_author before insert or update of author_email on
 -- api_auth (above) is the gate the Worker calls first (key, kind, origin, rate limits); these only
 -- resolve the key again (invalid_key, wrong_key_kind) and do the work.
 
-create or replace function roster.api_meetings(p_key_hash text, p_limit int default 20)
+-- p_past: also the latest N meetings that already happened (0 = none, the default: a caller that does not ask gets exactly what it always got)
+drop function if exists roster.api_meetings(text, int);
+create or replace function roster.api_meetings(p_key_hash text, p_limit int default 20, p_past int default 0)
 returns jsonb language plpgsql security definer set search_path = roster, public as $fn$
-declare k roster.api_keys; bz roster.businesses; today date := roster.today(); lim int := least(greatest(coalesce(p_limit, 20), 1), 100);
+declare k roster.api_keys; bz roster.businesses; today date := roster.today(); lim int := least(greatest(coalesce(p_limit, 20), 1), 100); pst int := least(greatest(coalesce(p_past, 0), 0), 10);
 begin
   k := roster.api_key_of(p_key_hash);
   if k.id is null then return jsonb_build_object('error', 'invalid_key'); end if;
@@ -2538,7 +2542,9 @@ begin
     select jsonb_agg(roster.meeting_json(m, k.kind = 'secret', today) order by m.meeting_date, m.meeting_time)
       from roster.meetings m
      where m.id in (select x.id from roster.meetings x where x.business_id = k.business_id and x.meeting_date >= today
-                     order by x.meeting_date, x.meeting_time limit lim)), '[]'::jsonb));
+                     order by x.meeting_date, x.meeting_time limit lim)
+        or (pst > 0 and m.id in (select y.id from roster.meetings y where y.business_id = k.business_id and y.meeting_date < today
+                     order by y.meeting_date desc, y.meeting_time desc limit pst))), '[]'::jsonb));
 end $fn$;
 
 create or replace function roster.api_signup(p_key_hash text, p_payload jsonb, p_ip_hash text default null)
@@ -3505,7 +3511,7 @@ drop function if exists public.roster_rate_add(text);
 -- ---- 12.13 who may run what --------------------------------------------------
 -- service_role only: the API and the outbox
 revoke all on function roster.api_auth(text, text, text, text, text)           from public, anon, authenticated;
-revoke all on function roster.api_meetings(text, int)                          from public, anon, authenticated;
+revoke all on function roster.api_meetings(text, int, int)                          from public, anon, authenticated;
 revoke all on function roster.api_signup(text, jsonb, text)                    from public, anon, authenticated;
 revoke all on function roster.api_payment_click(text, text, uuid, text)        from public, anon, authenticated;
 revoke all on function roster.api_participant(text, uuid, text)                from public, anon, authenticated;
@@ -3517,7 +3523,7 @@ revoke all on function roster.events_claim(int)                                f
 revoke all on function roster.events_done(bigint, jsonb)                       from public, anon, authenticated;
 revoke all on function roster.rate_cleanup()                                   from public, anon, authenticated;
 grant execute on function roster.api_auth(text, text, text, text, text)        to service_role;
-grant execute on function roster.api_meetings(text, int)                       to service_role;
+grant execute on function roster.api_meetings(text, int, int)                       to service_role;
 grant execute on function roster.api_signup(text, jsonb, text)                 to service_role;
 grant execute on function roster.api_payment_click(text, text, uuid, text)     to service_role;
 grant execute on function roster.api_participant(text, uuid, text)             to service_role;

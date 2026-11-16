@@ -273,6 +273,8 @@ export const RPC = Object.freeze({
   auth: "api_auth",
   meetings: "api_meetings",
   signup: "api_signup",
+  signupPhone: "api_signup_phone",
+  signupComplete: "api_signup_complete",
   click: "api_payment_click",
   participant: "api_participant",
   register: "api_register",

@@ -127,7 +127,13 @@ function prepMeetings({ query }) {
     if (!/^\d{1,4}$/.test(raw) || Number(raw) < 1) return bad("limit");
     limit = Math.min(Number(raw), 100);
   }
-  return good({ p_limit: limit });
+  const args = { p_limit: limit };
+  const past = query.get("past");   // the latest N meetings that already happened; absent = the call is exactly what it always was
+  if (past !== null) {
+    if (!/^\d{1,2}$/.test(past)) return bad("past");
+    args.p_past = Math.min(Number(past), 10);
+  }
+  return good(args);
 }
 
 const SIGNUP_TEXT = [["first_name", 100], ["last_name", 100], ["phone", 40], ["email", 320], ["address", 200], ["gender", 20]];
@@ -150,6 +156,42 @@ function prepSignup({ body }) {
     const m = uuid(body.meeting_id);
     if (!m) return bad("meeting_id");
     payload.meeting_id = m;
+  }
+  return good({ p_payload: payload });
+}
+
+/* the two-step signup: the phone first (a participant with the phone only), the details after, by the token the first step returned */
+function prepSignupPhone({ body }) {
+  const payload = {};
+  for (const [field, max] of [["phone", 40], ["email", 320], ["source_code", 40]]) {
+    if (absent(body[field])) continue;
+    const v = line(body[field], max);
+    if (v === null) return bad(field);
+    if (v !== "") payload[field] = field === "source_code" ? v.toLowerCase() : v;
+  }
+  if (!absent(body.meeting_id)) {
+    const m = uuid(body.meeting_id);
+    if (!m) return bad("meeting_id");
+    payload.meeting_id = m;
+  }
+  return good({ p_payload: payload });
+}
+
+function prepSignupComplete({ body }) {
+  const token = typeof body.participant_token === "string" ? body.participant_token : "";
+  if (!TOKEN_RE.test(token)) return { ok: false, code: "invalid_token" };
+  const payload = { participant_token: token };
+  for (const [field, max] of [["first_name", 100], ["last_name", 100], ["email", 320], ["gender", 20]]) {
+    if (absent(body[field])) continue;
+    const v = line(body[field], max);
+    if (v === null) return bad(field);
+    if (v !== "") payload[field] = field === "gender" ? v.toLowerCase() : v;
+  }
+  if (!absent(body.age)) {
+    const a = body.age;
+    if (typeof a === "number" && Number.isInteger(a) && a >= 0 && a <= 150) payload.age = a;
+    else if (typeof a === "string" && /^\d{1,3}$/.test(a.trim())) payload.age = Number(a.trim());
+    else return bad("age");
   }
   return good({ p_payload: payload });
 }
@@ -244,6 +286,8 @@ const BOTH = ["public", "secret"];
 const ROUTES = [
   { name: "meetings", method: "GET", path: ["meetings"], kinds: BOTH, bucket: "read", rpc: RPC.meetings, prepare: prepMeetings },
   { name: "signup", method: "POST", path: ["signup"], body: true, kinds: BOTH, bucket: "signup", ipLimit: "signup", rpc: RPC.signup, outbox: true, hash: "ip", prepare: prepSignup },
+  { name: "signup_phone", method: "POST", path: ["signup", "phone"], body: true, kinds: BOTH, bucket: "signup", ipLimit: "signup", rpc: RPC.signupPhone, outbox: true, hash: "ip", prepare: prepSignupPhone },
+  { name: "signup_complete", method: "POST", path: ["signup", "complete"], body: true, kinds: BOTH, bucket: "signup", ipLimit: "signup", rpc: RPC.signupComplete, outbox: true, hash: "ip", prepare: prepSignupComplete },
   { name: "click", method: "POST", path: ["payments", "click"], body: true, kinds: ["public"], bucket: "click", ipLimit: "click", rpc: RPC.click, outbox: true, hash: "ip", prepare: prepClick },
   { name: "payments", method: "POST", path: ["payments"], body: true, kinds: ["secret"], bucket: "write", rpc: RPC.recordPayment, outbox: true, prepare: prepRecordPayment },
   { name: "participant_by_phone", method: "GET", path: ["participants"], kinds: ["secret"], bucket: "read", rpc: RPC.participant, prepare: prepParticipantByPhone },
@@ -335,7 +379,7 @@ export async function readJsonBody(request, maxBytes = MAX_BODY_BYTES) {
 
 const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 
-const PUBLIC_MEETING_KEYS = ["id", "date", "time", "name", "city", "place", "capacity", "spots_left", "full", "price", "price_tiers"];
+const PUBLIC_MEETING_KEYS = ["id", "date", "time", "name", "city", "place", "capacity", "spots_left", "full", "price", "price_tiers", "image"];
 
 function shapeMeetings(data, secret) {
   if (!isObj(data) || !Array.isArray(data.meetings)) return null;
@@ -370,6 +414,8 @@ function shapeSuccess(route, data, secret) {
   switch (route.name) {
     case "meetings": return shapeMeetings(data, secret);
     case "signup": return shapeSignup(data, secret);
+    case "signup_phone": { const o = shapeSignup(data, secret); if (o) o.complete = isObj(data) && data.complete === true; return o; }
+    case "signup_complete": return isObj(data) && data.status === "ok" ? { status: "ok" } : null;
     case "click": return shapeClick(data);
     default: return isObj(data) ? data : null;
   }
@@ -526,9 +572,10 @@ export function createRoster(deps = {}) {
     }
 
     /* 6. the honeypot: believed, thanked, ignored */
-    if (route.name === "signup" && filled(body.website)) {
+    if ((route.name === "signup" || route.name === "signup_phone") && filled(body.website)) {
       return respond(200, fakeSignup(body, kind === "secret"));
     }
+    if (route.name === "signup_complete" && filled(body.website)) return respond(200, { status: "ok" });
 
     /* 7. types and sizes */
     const prepared = await route.prepare({ body, query: url.searchParams, params, headers: request.headers });
@@ -590,7 +637,7 @@ export function createRoster(deps = {}) {
   return {
     handle,
     /* the cron: drain the outbox, with the longer time budget */
-    scheduled: (env, ctx) => runOutbox(env, ctx, OUTBOX.cronDeadlineMs, [DEFAULT_SCHEMA, TEST_SCHEMA]),
+    scheduled: (env, ctx) => runOutbox(env, ctx, OUTBOX.cronDeadlineMs, env.ROSTER_ONLY_SCHEMA ? [env.ROSTER_ONLY_SCHEMA] : [DEFAULT_SCHEMA, TEST_SCHEMA]),
     processOutbox: (env, extra = {}) => processOutbox({ env, fetch: getFetch(), now, sleep: deps.sleep, ...extra }),
   };
 }
