@@ -21,7 +21,7 @@ LEAD_FROM = "FLOA <no-reply@floa.co.il>"
 SUPABASE_URL = "https://aexmnaxvahblveejsbup.supabase.co"
 ROSTER_ONLY_SCHEMA = "roster-test"
 ROSTER_TEST_MAIL_TO = "ofir.aviram@gmail.com"
-ROSTER_TEST_FROM = "יוצאים להרפתקה <no-reply@notify.harpatka.co.il>"   # the only domain the Worker key (the harpatka Resend account) may send from; one sender for admins and participants
+# ROSTER_TEST_FROM unset: every mail goes out as the business (<slug>@floa.co.il, under its own name) like the real Worker; test mail still reaches only ROSTER_TEST_MAIL_TO
 # ROSTER_TEST_ADMIN_FROM unset: admins and participants are mailed by the same sender (ROSTER_TEST_FROM)
 ROSTER_GOOGLE_CLIENT_IDS = "459432002435-349ppd8r1qqe9tkcdm2v3f6rpp48i1ni.apps.googleusercontent.com"   # the business's own Google app (harpatka); sign-in without the Supabase Google provider
 ROSTER_AUTH_ORIGINS = "https://test.harpatka.co.il"
