@@ -139,12 +139,12 @@ export const analystEn = {
     {
       type: "roles",
       title: "Professional Experience",
+      breakBefore: true,
       jobs: [
         {
           role: "Senior Systems Analyst",
           org: "Tidhar Group | Israel | Hybrid",
           dates: "2025 - 2026",
-          breakBefore: true,
           bullets: [
             "Specified cross-system business processes and automations and the interfaces between the systems: data mapping, business logic and validations, with partial hands-on work on Workato",
             "Designed data models and scheduled SQL and ETL processes in an Azure SQL environment, based on analysis of the source data",
@@ -320,12 +320,12 @@ export const analystHe = {
     {
       type: "roles",
       title: "ניסיון תעסוקתי",
+      breakBefore: true,
       jobs: [
         {
           role: "מנתח מערכות בכיר",
           org: "קבוצת תדהר | היברידי",
           dates: "2025 - 2026",
-          breakBefore: true,
           bullets: [
             "אפיון תהליכים עסקיים ואוטומציות חוצי מערכות והממשקים ביניהן: Data Mapping, לוגיקה עסקית וולידציות, עם עבודה חלקית ב-Workato",
             "תכנון מודלי נתונים ותהליכי SQL ו-ETL מתוזמנים בסביבת Azure SQL, על בסיס ניתוח נתוני המקור",
