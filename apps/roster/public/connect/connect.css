@@ -18,10 +18,10 @@ dialog.connect .sheet-body { display: flex; flex-direction: column; flex: 1 1 au
 dialog.connect .ptabs { flex: 0 0 auto; grid-template-columns: repeat(5, 1fr); margin-inline: calc(var(--pp-px) * -1); background: var(--bg); border-bottom: 2px solid var(--line); box-shadow: 0 3px 8px -2px color-mix(in srgb, var(--text) 12%, transparent); z-index: var(--z-raised); }
 dialog.connect .ptabs .ptabi { width: 20%; }
 dialog.connect .ppager { flex: 1 1 auto; min-height: 0; margin-inline: calc(var(--pp-px) * -1); }
-.ppage.panel { display: block; flex: 0 0 100%; padding: 0; overflow-y: auto; overscroll-behavior-y: contain; }
+.ppage.panel { display: block; flex: 0 0 100%; padding: 0 0 var(--end-pad); overflow-y: auto; overscroll-behavior-y: contain; }
 .ppage.panel:focus-visible { outline-offset: -3px; }
-/* the add button (the kit's round plus, in the flow after the last card) takes no background of its own, and the end of every page clears the gesture bar */
-dialog.connect .maddw { padding: var(--sp-1) var(--gutter) calc(var(--gutter) + var(--inset-b)); background: transparent; }   /* the plus: one gutter from the side and from the bottom, as everywhere */
+/* the add button (the kit's round plus, in the flow after the last card) takes no background of its own, and the end of every page clears the gesture bar (the page's own bottom padding, --end-pad) */
+dialog.connect .maddw { padding: var(--sp-1) var(--gutter) var(--gutter); background: transparent; }   /* the plus: one gutter from the side and from the bottom, as everywhere */
 dialog.connect .pin { padding-bottom: calc(var(--gap-section) + var(--inset-b)); }
 
 /* ---------- the pages: one scrolling list each ---------- */
