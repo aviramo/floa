@@ -58,6 +58,14 @@
     return cached;
   }
 
+  var paid = null, lastMeeting = null;
+  /* לחיצה על דרך תשלום: מדווחת ל-roster פעם אחת (POST /payments/click, מפתח ציבורי), וטל מקבלת על זה מייל. הדיווח לא רושם כסף, הוא רק מסמן אצלה שיש תשלום שממתין */
+  function reportPayment() {
+    if (!paid || paid.sent) return Promise.resolve();
+    paid.sent = true;
+    return call("POST", "/payments/click", { participant_token: paid.token, meeting_id: paid.meeting }).catch(function () { paid.sent = false; });
+  }
+
   var FIELD_ERR = { first_name: "invalid_name", last_name: "invalid_name", phone: "invalid_phone", age: "invalid_age", gender: "invalid_gender", address: "invalid_address" };
 
   /* body: { p_first, p_last, p_phone, p_age, p_gender, p_address (עיר, לא חובה) }, כמו שהטופס כבר בונה אותו */
@@ -66,9 +74,14 @@
       var payload = { first_name: body.p_first, last_name: body.p_last, phone: body.p_phone, age: body.p_age, gender: body.p_gender };
       if (body.p_address) payload.address = body.p_address;   /* עיר, בשדה הכתובת של ה-API */
       if (ev && ev.id) payload.meeting_id = ev.id;
+      lastMeeting = ev && ev.id ? ev.id : null;
       return call("POST", "/signup", payload);
     }).then(function (r) {
-      if (r.status === 200 && r.data && r.data.status === "ok") return "created";
+      if (r.status === 200 && r.data && r.data.status === "ok") {
+        /* הטוקן של המשתתף (pt_...) מאפשר לדווח על לחיצת תשלום ב-30 הימים הקרובים, למפגש שאליו נרשם */
+        if (r.data.participant_token && lastMeeting) paid = { token: r.data.participant_token, meeting: lastMeeting, sent: false };
+        return "created";
+      }
       var e = r.data && r.data.error;
       /* ריטריט מלא: האדם נרשם כמשתתף וטל רואה אותו ומקבלת מייל, אבל לא נשמר לו מקום. כמו רשימת המתנה אצלה */
       if (e && e.code === "full") return "created";
@@ -77,5 +90,5 @@
     });
   }
 
-  window.AUM_API = { next: next, signup: signup };
+  window.AUM_API = { next: next, signup: signup, reportPayment: reportPayment };
 })();

@@ -45,8 +45,8 @@
                 '<div class="paychoose" data-su="paywrap" hidden>' +
                   '<button type="button" class="btn su-send pc-open" data-su="payopen" aria-expanded="false"><span data-su="paylabel">לתשלום</span><svg class="pm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>' +
                   '<div class="pm-list">' +
-                    '<a class="pm-item" data-su="paybox" href="https://links.payboxapp.com/VpbYFnoI67b" target="_blank" rel="noopener"><img src="assets/img/pay-paybox.png" alt="" width="32" height="32"><span>פייבוקס</span><b data-su="amt"></b></a>' +
-                    '<a class="pm-item" data-su="bit" href="https://www.bitpay.co.il/app/share-info?i=oNtm50fV&j=true" target="_blank" rel="noopener"><img src="assets/img/pay-bit.png" alt="" width="32" height="32"><span>ביט</span><b data-su="amt"></b></a>' +
+                    '<a class="pm-item" aria-label="פייבוקס" title="פייבוקס" data-su="paybox" href="https://links.payboxapp.com/VpbYFnoI67b" target="_blank" rel="noopener"><img src="assets/img/pay-paybox.png" alt="" width="32" height="32"><span>פייבוקס</span><b data-su="amt"></b></a>' +
+                    '<a class="pm-item" aria-label="ביט" title="ביט" data-su="bit" href="https://www.bitpay.co.il/app/share-info?i=oNtm50fV&j=true" target="_blank" rel="noopener"><img src="assets/img/pay-bit.png" alt="" width="32" height="32"><span>ביט</span><b data-su="amt"></b></a>' +
                     '<a class="pm-item pm-other" data-su="other" href="#" target="_blank" rel="noopener"><span>דרך אחרת</span></a>' +
                   '</div>' +
                 '</div>' +
@@ -178,6 +178,9 @@
     ok.addEventListener("change", function () {
       wrap.hidden = !ok.checked;
       if (!ok.checked) { wrap.classList.remove("open"); open.setAttribute("aria-expanded", "false"); }
+    });
+    root.querySelectorAll(".pm-item").forEach(function (it) {
+      it.addEventListener("click", function () { if (window.AUM_API && window.AUM_API.reportPayment) window.AUM_API.reportPayment(); });
     });
     open.addEventListener("click", function () {
       var on = !wrap.classList.contains("open"); wrap.classList.toggle("open", on); open.setAttribute("aria-expanded", on ? "true" : "false");

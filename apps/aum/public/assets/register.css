@@ -91,10 +91,11 @@ select.pf-input option{ color:var(--ink, #4A2514); }
 .paychoose .pm-chev { width: 1.2rem; height: 1.2rem; transition: transform .25s ease; }
 .paychoose.open .pm-chev { transform: rotate(180deg); }
 .paychoose .pm-list { display: none; gap: .5rem; margin-top: .6rem; }
-.paychoose.open .pm-list { display: grid; }
-.pm-item { display: flex; align-items: center; gap: .8rem; padding: .7rem 1rem; border: 2px solid var(--line); border-radius: 16px; background: #fff; color: var(--ink); text-decoration: none; font-weight: 700; font-size: 1.05rem; }
-.pm-item img { width: 32px; height: 32px; border-radius: 8px; flex: none; }
-.pm-item b { margin-inline-start: auto; color: var(--red); }
+.paychoose.open .pm-list { display: flex; }
+/* שלוש דרכי תשלום באותה שורה, ברוחב שווה: סמל פייבוקס, סמל ביט, ו"דרך אחרת" (כמו בהרפתקה) */
+.pm-item { flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: center; padding: .55rem; border: 2px solid var(--line); border-radius: 16px; background: #fff; color: var(--ink); text-decoration: none; font-weight: 700; font-size: .95rem; line-height: 1.2; text-align: center; }
+.pm-item img { width: 40px; height: 40px; border-radius: 8px; flex: none; }
+.pm-item span, .pm-item b { display: none; }
+.pm-other span { display: inline; }
 .pm-item:hover, .pm-item:focus-visible { border-color: var(--red); }
-.pm-other { justify-content: center; }
 @media (prefers-reduced-motion: reduce) { .paychoose .pm-chev { transition: none; } }
