@@ -378,6 +378,7 @@ const TYPES = { ".html": "text/html", ".css": "text/css", ".js": "text/javascrip
 const TEST_ENV_JS = readFileSync(join(ROOT, "scripts", "test-env.client.js"), "utf8");
 
 function serve(port = 5173, test = false) {
+  const DEV_SPA = (() => { try { return JSON.parse(readFileSync(join(ROOT, "domains.json"), "utf8")).hosts.filter((h) => h.devSpa && h.folder).map((h) => h.folder.replace(/\/$/, "")); } catch { return []; } })();
   createServer(async (req, res) => {
     if (test && req.url.split("?")[0] === "/__test-env.js") return res.writeHead(200, { "content-type": "text/javascript", "cache-control": "no-store" }).end(TEST_ENV_JS);
     let path = decodeURIComponent(new URL(req.url, "http://x").pathname);
@@ -389,6 +390,14 @@ function serve(port = 5173, test = false) {
       if (test && extname(file) === ".html") body = Buffer.from(body.toString("utf8").replace(/<head[^>]*>/i, (m) => m + '<script src="/__test-env.js"></script>'));
       res.writeHead(200, { "content-type": TYPES[extname(file)] ?? "application/octet-stream", "cache-control": "no-store" }).end(body);
     } catch {
+      /* an app that routes by its own address (domains.json devSpa) gets its front page for any address under its folder, as its host does in production */
+      const spa = DEV_SPA.find((f) => path === "/" + f || path.startsWith("/" + f + "/"));
+      if (spa && !extname(path)) {
+        try {
+          const body = await readFile(join(DIST, spa, "index.html"));
+          return res.writeHead(200, { "content-type": "text/html", "cache-control": "no-store" }).end(body);
+        } catch { /* fall through to the 404 */ }
+      }
       try {
         const body = await readFile(join(DIST, "404.html"));
         res.writeHead(404, { "content-type": "text/html", "cache-control": "no-store" }).end(body);
