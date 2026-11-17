@@ -124,7 +124,7 @@
     var st = document.createElement("style");
     st.textContent = ".bio-stop, .bio-stop-in { " + face + "; " + vis + " } " +
       ".bio-stop { position: fixed; right: max(var(--gutter), var(--inset-r)); bottom: calc(var(--gutter) + var(--inset-b)); z-index: var(--z-sticky) } " +
-      ".bio-stop-in { position: absolute; right: var(--pp-px, 16px); bottom: var(--sheet-b, 24px); z-index: 5 } " +
+      ".bio-stop-in { position: fixed; inset: auto max(var(--gutter), var(--inset-r)) calc(var(--gutter) + var(--inset-b)) auto; margin: 0; overflow: visible } " +   /* a popover inside the open popup: it is shown in the top layer, above the popup, and is not clipped by it */
       ".bio-stop.on, .bio-stop-in.on { opacity: 1; transform: none; pointer-events: auto } " +
       ".bio-stop > svg, .bio-stop-in > svg { width: var(--icon-l); height: var(--icon-l) } " +
       "html.rs-lock .bio-stop, html.dlg-lock .bio-stop, html.kb-open .bio-stop { " + vis + " } " +
@@ -142,7 +142,11 @@
     document.addEventListener("bioaudio", function (ev) {
       playing = !!(ev.detail && ev.detail.playing);
       if (playing) document.querySelectorAll("dialog[open]").forEach(function (d) {
-        if (!d.querySelector(".bio-stop-in")) { d.appendChild(make("bio-stop-in")); requestAnimationFrame(function () { requestAnimationFrame(sync); }); }
+        if (!d.querySelector(".bio-stop-in")) {
+          var b = make("bio-stop-in"); b.setAttribute("popover", "manual"); d.appendChild(b);
+          try { b.showPopover(); } catch (x) { /* an old browser: no button in this popup */ }
+          requestAnimationFrame(function () { requestAnimationFrame(sync); });
+        }
       });
       sync();
     });
