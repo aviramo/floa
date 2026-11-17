@@ -12,6 +12,17 @@ export const BUSINESSES = {
     "origins": [],
     "pages": []
   },
+  "biodanza": {
+    "brand": "ביודנסה",
+    "to": "LEAD_TO_BIODANZA",
+    "origins": [
+      "https://floa.co.il",
+      "https://www.floa.co.il",
+      "https://biodanza.floa.co.il",
+      "http://localhost:5173"
+    ],
+    "pages": []
+  },
   "biofamily": {
     "brand": "ביודנסה למשפחה",
     "to": "LEAD_TO_BIOFAMILY",

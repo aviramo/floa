@@ -110,6 +110,13 @@
       }
     },
     {
+      "host": "biodanza.floa.co.il",
+      "project": "floa-site",
+      "enabled": true,
+      "folder": "biodanza/",
+      "clean": true
+    },
+    {
       "host": "roster-test.floa.co.il",
       "project": "floa-test",
       "enabled": true,
@@ -123,5 +130,8 @@
     }
   ],
   "redirectOld": true,
-  "removeDns": ["test.floa.co.il", "cv.floa.co.il"]
+  "removeDns": [
+    "test.floa.co.il",
+    "cv.floa.co.il"
+  ]
 }
