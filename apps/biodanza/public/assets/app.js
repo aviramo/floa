@@ -531,13 +531,13 @@
     var hd = itemHead(!!prevIt, !!nextIt, (k + 1) + "/" + state.items.length);   /* the middle button says where we are, and still opens the list */
     show(hd + '<style>#ipg, #ipg * { touch-action: pan-y }</style><div id="ipg" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0"><div class="pad" style="padding-bottom:0">' +
       '<div style="display:flex;align-items:flex-end;gap:var(--gap-button)">' + '<label class="rfield" style="flex:1 1 auto;margin:0"><span>שם התרגיל</span><input id="ina" style="font-weight: var(--fw-black); font-size: var(--fs-m)" placeholder=" " autocomplete="off" value="' + esc(itemName(it)) + '"></label>' + facChip(it) + '</div>' +
-      '</div><div class="rlist" style="flex:1 1 auto"><div class="pad">' +
-      '<div class="rrow rrow--link" data-act="pickMusic" role="button" tabindex="0" style="margin-inline:calc(var(--sp-2) * -1);padding-inline:var(--sp-2);padding-block:var(--sp-2);border-top:1px solid var(--line);cursor:pointer"><div style="flex:1 1 auto;min-width:0">' +
+      '</div>' +
+      '<div class="rrow rrow--link" data-act="pickMusic" role="button" tabindex="0" style="flex:none;padding-inline:var(--sp-2);padding-block:var(--sp-2);border-top:1px solid var(--line);cursor:pointer"><div style="flex:1 1 auto;min-width:0">' +
         (it.music ? songLines(it.music) : '<span class="rrow__title">לחצו לבחירת מוזיקה</span>') + '</div>' + (it.music ? playCol(it.music, true) : '') + '</div>' +   /* a strip across the width, like the music chooser's rows */
-      '<label class="rfield"><span>פואטיקה</span><textarea id="ipo" rows="1" placeholder=" "' + (isDraft(it, "poetics") ? DRAFT : "") + '>' + esc(txt(it, "poetics")) + '</textarea></label>' +
-      '<label class="rfield"><span>הנחיה</span><textarea id="igu" rows="1" placeholder=" "' + (isDraft(it, "guidance") ? DRAFT : "") + '>' + esc(txt(it, "guidance")) + '</textarea></label>' +
-      '<label class="rfield"><span>הערות</span><textarea id="it" rows="1" placeholder=" ">' + esc(it.notes || "") + '</textarea></label>' +
-      '<div style="display:flex;gap:var(--gap-button)"><button class="rbtn rbtn--ghost rbtn--block" style="flex:1 1 0" data-act="swap">החלפה בתרגיל אחר</button><button class="rbtn rbtn--ghost rbtn--danger rbtn--block" style="flex:1 1 0" data-act="del">הסרה מהוויוונסיה</button></div></div></div></div>', function (r) {
+      '<div id="ifields" style="flex:1 1 auto;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:var(--gap-field);padding:var(--gutter) var(--gutter) 0"><label class="rfield" style="flex:none"><span>פואטיקה</span><textarea id="ipo" rows="1" placeholder=" "' + (isDraft(it, "poetics") ? DRAFT : "") + '>' + esc(txt(it, "poetics")) + '</textarea></label>' +
+      '<label class="rfield" style="flex:none"><span>הנחיה</span><textarea id="igu" rows="1" placeholder=" "' + (isDraft(it, "guidance") ? DRAFT : "") + '>' + esc(txt(it, "guidance")) + '</textarea></label>' +
+      '<label class="rfield" style="flex:none"><span>הערות</span><textarea id="it" rows="1" placeholder=" ">' + esc(it.notes || "") + '</textarea></label></div>' +
+      '<div style="flex:none;display:flex;gap:var(--gap-button);padding:var(--gutter)"><button class="rbtn rbtn--ghost rbtn--block" style="flex:1 1 0" data-act="swap">החלפה בתרגיל אחר</button><button class="rbtn rbtn--ghost rbtn--danger rbtn--block" style="flex:1 1 0" data-act="del">הסרה מהוויוונסיה</button></div></div>', function (r) {
       var sf = state.slideFrom || 0, pg = r.querySelector("#ipg"); state.slideFrom = 0;
       r.style.overflowX = "clip";   /* a page sliding in from the side must not make the window scroll sideways */
       if (pg && sf && !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)) {
@@ -553,7 +553,22 @@
       function toMusic() { if (wide()) musicScreen(it); else musicSheet(it); }   /* beside the list, the pane; on a narrow screen, a popup from the bottom */
       on(r, "pickMusic", function (b, ev) { if (ev.target.closest("a,[data-audio]")) return; toMusic(); });
       r.querySelectorAll('[data-act="pickMusic"]').forEach(function (c) { c.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toMusic(); } }); });
-      ["#ipo", "#igu", "#it"].forEach(function (s) { var t = r.querySelector(s); grow(t); t.addEventListener("input", function () { grow(t); }); });
+      /* the three fields share the height that is left, by how many lines each has: all of it if it fits; if not, each gets its share and scrolls on its own */
+      var box = r.querySelector("#ifields"), tas = ["#ipo", "#igu", "#it"].map(function (q) { return r.querySelector(q); });
+      function layoutFields() {
+        if (!box || !box.isConnected) return;
+        tas.forEach(function (t) { t.style.height = "auto"; t.style.overflowY = "hidden"; });
+        var nat = tas.map(function (t) { return t.scrollHeight + t.offsetHeight - t.clientHeight; });
+        var over = tas.map(function (t, i) { return t.parentElement.offsetHeight - t.offsetHeight; });
+        var cs = getComputedStyle(box), gap = parseFloat(cs.rowGap) || 0, room = box.clientHeight - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0) - gap * (tas.length - 1);
+        var need = nat.reduce(function (a, b, i) { return a + b + over[i]; }, 0);
+        if (need <= room) { tas.forEach(function (t, i) { t.style.height = nat[i] + "px"; }); return; }
+        var free = room - over.reduce(function (a, b) { return a + b; }, 0), total = nat.reduce(function (a, b) { return a + b; }, 0), line = parseFloat(getComputedStyle(tas[0]).lineHeight) || 24;
+        tas.forEach(function (t, i) { t.style.height = Math.max(line * 2, Math.floor(free * nat[i] / total)) + "px"; t.style.overflowY = "auto"; });
+      }
+      tas.forEach(function (t) { t.addEventListener("input", layoutFields); });
+      layoutFields(); if (document.fonts && document.fonts.ready) document.fonts.ready.then(layoutFields);
+      if (window.ResizeObserver && box) new ResizeObserver(layoutFields).observe(box);
       function own(k, v) { return v === baseTxt(it, k) ? null : v; }   /* the same as the catalog: keep inheriting it */
       function save() {
         var nm = r.querySelector("#ina").value.trim();
