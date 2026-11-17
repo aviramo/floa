@@ -342,7 +342,7 @@
     show(head(v.title || "ויוונסיה חדשה", "", true, v.role === "view" ? '' : '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="more" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>') +
       '<div class="rlist" data-fab-room id="list"><div class="rskel rskel--title"></div></div>' +
       (v.role === "view" ? '' : '<button class="rfab" data-act="add" aria-label="הוספת תרגיל" title="הוספת תרגיל">' + I.plus + '</button>'), function (r) {
-      on(r, "back", back); on(r, "add", function () { go(picker); });
+      on(r, "back", back); on(r, "add", function () { resetPk(); go(picker); });
       on(r, "more", function (b) {
         menu(b, [{ label: "עריכת שם", icon: I.pen, fn: function () { namePopup(v, false); } }].concat(v.role === "owner" ? [{ label: "שיתוף", icon: I.share, fn: function () { sharePopup(v); } }, { label: "מחיקה", icon: I.trash, tone: "danger", fn: function () { confirmDelete(v); } }] : []));
       });
@@ -504,7 +504,7 @@
       }
       ["#ina", "#ipo", "#igu", "#it"].forEach(function (s) { r.querySelector(s).addEventListener("change", save); });
       on(r, "del", function () { confirmRemoveItem(it); });
-      on(r, "swap", function () { go(function () { picker(it); }); });   /* the catalog, to put another exercise in this place */
+      on(r, "swap", function () { resetPk(); go(function () { picker(it); }); });   /* the catalog, to put another exercise in this place */
     }, "d");
   }
 
@@ -557,6 +557,8 @@
   }
 
   /* ---------- picker: the catalog ---------- */
+  var pk = { q: "", ln: "", cg: "" };   /* the catalog's search, line and category */
+  function resetPk() { pk = { q: "", ln: "", cg: "" }; }
   function picker(swapIt) {
     show(head(swapIt ? "החלפת תרגיל" : "קטלוג התרגילים", "", true) +
       '<div class="pad"><div style="display:flex;gap:var(--gap-button);align-items:flex-end"><label class="rfield" style="flex:1 1 0;min-width:0;margin:0"><span>חיפוש</span><input id="q" placeholder=" "></label>' +
@@ -565,7 +567,8 @@
       '<div class="rlist" id="list"><div class="rskel rskel--title"></div></div>', function (r) {
       on(r, "back", !wide() ? back : swapIt ? function () { pending = { item: swapIt.id }; back(); }   /* leaving a replacement: the same exercise is open again on the left */
         : function () { show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); back(); });
-      var catSel = "";   /* the key of the chosen category, "" = all */
+      var catSel = pk.cg;   /* the key of the chosen category, "" = all */
+      r.querySelector("#q").value = pk.q; r.querySelector("#ln").value = pk.ln; r.querySelector("#cg").value = catSel ? catName(catSel) : "הכול";
       /* a field you can type in that also opens its options when you click it: the options are the kit's menu, placed under the field */
       function wireCat() {
         var inp = r.querySelector("#cg"), pop = null, active = -1, shown = [];
@@ -600,6 +603,7 @@
       }
       function paintCat() {
         var q = r.querySelector("#q").value.trim().toLowerCase(), ln = r.querySelector("#ln").value, cg = catSel, l = r.querySelector("#list");
+        pk = { q: r.querySelector("#q").value, ln: ln, cg: cg };   /* what was typed and chosen is kept while an exercise is looked at and back again */
         var rows = (state.cat || []).filter(function (e) {
           return (!cg || e.category === cg) && (!ln || (e.exercise_lines || []).some(function (x) { return x.line_key === ln; })) && (!q || (name(e) + " " + e.title_en + " " + e.category).toLowerCase().indexOf(q) >= 0);
         });
@@ -608,11 +612,10 @@
         }).join("") : ph("לא נמצא תרגיל", "");
         l.querySelectorAll("[data-ex]").forEach(function (b) { b.addEventListener("click", function () {
           var ex = state.cat.filter(function (x) { return x.id === b.dataset.ex; })[0];
-          if (wide()) {   /* adding or replacing: the exercise is shown on the left first, and the action is its own button */
-            l.querySelectorAll(".rrow").forEach(function (w) { w.removeAttribute("aria-current"); });
-            b.closest(".rrow").setAttribute("aria-current", "true");
-            previewEx(ex, swapIt);
-          } else if (swapIt) confirmSwap(ex, swapIt); else addEx(ex);
+          l.querySelectorAll(".rrow").forEach(function (w) { w.removeAttribute("aria-current"); });
+          b.closest(".rrow").setAttribute("aria-current", "true");
+          if (wide()) previewEx(ex, swapIt);   /* adding or replacing: the exercise is shown first (on the left, or alone on a narrow screen), and the action is its own button in its header */
+          else go(function () { previewEx(ex, swapIt); });
         }); });
       }
       r.querySelector("#q").addEventListener("input", paintCat); r.querySelector("#ln").addEventListener("change", paintCat); wireCat();
@@ -642,7 +645,7 @@
       var card = function (k, label) { return txt(fake, k) ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">' + label + '</span></div><div class="rcard__body"' + (isDraft(fake, k) ? DRAFT : "") + '>' + esc(txt(fake, k)) + '</div></div>' : ""; };
       var body = card("poetics", "פואטיקה") + card("guidance", "הנחיה");
       var act = '<button class="rbtn" type="button" style="margin-inline-end:var(--sp-2)" data-act="doswap">' + (swapIt ? "החלפה בתרגיל הזה" : "הוספה") + '</button>';   /* the action is in the header, on the left */
-      show(head(name(e), "", false, act) + '<div class="rlist"><div class="pad">' + (body || ph("אין עדיין תיאור לתרגיל", "")) + '</div></div>', function (r) { on(r, "doswap", function () { if (swapIt) confirmSwap(e, swapIt); else addEx(e); }); }, "d");
+      show(head(name(e), "", !wide(), act) + '<div class="rlist"><div class="pad">' + (body || ph("אין עדיין תיאור לתרגיל", "")) + '</div></div>', function (r) { on(r, "back", back); on(r, "doswap", function () { if (swapIt) confirmSwap(e, swapIt); else addEx(e); }); }, "d");
     }, fail);
   }
   /* replacing is asked in the kit's popup, one action: closing it is the cancel */
@@ -661,12 +664,12 @@
       return api("/rest/v1/exercise_music?exercise_id=eq." + e.id + "&select=music_id&limit=1").then(function (m) {
         return api("/rest/v1/vivencia_items?id=eq." + swapIt.id, { method: "PATCH", prefer: "return=minimal", json: { exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, title: null, poetics: null, guidance: null } });
       }).then(function () { toast("התרגיל הוחלף"); pending = { item: swapIt.id };   /* back to the list, which then opens this same place again with the new exercise */
-        stack().pop(); if (!wide()) stack().pop(); var f = stack()[stack().length - 1]; if (f) f(); }, fail);
+        stack().pop(); if (!wide()) { stack().pop(); stack().pop(); } var f = stack()[stack().length - 1]; if (f) f(); }, fail);   /* narrow: also the exercise screen and the one just seen */
     }
     var pos = state.items.reduce(function (m, i) { return Math.max(m, i.position); }, 0) + 1;
     api("/rest/v1/exercise_music?exercise_id=eq." + e.id + "&select=music_id&limit=1").then(function (m) {
       return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=minimal", json: { vivencia_id: state.viv.id, position: pos, exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null } });
-    }).then(function () { toast("התרגיל נוסף"); if (wide()) show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); back(); }, fail);
+    }).then(function () { toast("התרגיל נוסף"); if (wide()) show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); else stack().pop(); back(); }, fail);
   }
 
   /* ---------- player: the session, one exercise at a time ---------- */
