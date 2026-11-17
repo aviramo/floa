@@ -38,6 +38,12 @@
     return '<header class="rhead">' + (back ? '<button class="rbtn rbtn--icon rbtn--edge-start" data-act="back" aria-label="חזרה" title="חזרה">' + I.back + '</button>' : '') +
       '<div class="rhead__text"><h1 class="rhead__title">' + esc(title) + '</h1>' + (sub ? '<span class="rhead__sub">' + esc(sub) + '</span>' : '') + '</div>' + (trail || '') + '</header>';
   }
+  /* the header that walks a sequence: previous on the right, next on the left, the name centred between them */
+  function walkHead(title, hasPrev, hasNext) {
+    return '<header class="rhead"><button class="rbtn rbtn--icon rbtn--edge-start" data-act="prevW" aria-label="הקודם" title="הקודם"' + (hasPrev ? "" : " disabled") + '>' + I.back + '</button>' +
+      '<div class="rhead__text"><h1 class="rhead__title" style="text-align:center">' + esc(title) + '</h1></div>' +
+      '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="nextW" aria-label="הבא" title="הבא"' + (hasNext ? "" : " disabled") + '>' + I.fwd + '</button></header>';
+  }
   function toast(msg) {
     var t = document.createElement("div");
     t.className = "rmsg rmsg--toast"; t.setAttribute("role", "status"); t.innerHTML = '<span class="rmsg__text">' + esc(msg) + '</span>';
@@ -107,8 +113,9 @@
     RosterSheet.render(dlg, {
       title: isNew ? "ויוונסיה חדשה" : "שינוי שם", from: "bottom", size: "s",
       body: '<div class="pad"><label class="rfield"><span>נושא</span><input id="nt" placeholder=" " autocomplete="off" value="' + esc(v.title) + '"></label></div>',
-      foot: '<button class="rbtn rbtn--block" type="button" id="nsave">שמירה</button>'
+      foot: '<button class="rbtn rbtn--block" type="button" id="nsave">שמירה</button>' + (isNew ? '' : '<button class="rbtn rbtn--ghost rbtn--danger rbtn--block" type="button" id="ndel">מחיקת הוויוונסיה</button>')
     });
+    var nd = dlg.querySelector("#ndel"); if (nd) nd.addEventListener("click", function () { dlg.close(); confirmDelete(v); });
     var inp = dlg.querySelector("#nt"); inp.focus();
     function save() {
       var t = inp.value.trim(); if (!t) return toast("חסר נושא");
@@ -131,11 +138,15 @@
   }
   function editor() {
     var v = state.viv;
-    show(head(v.title || "ויוונסיה חדשה", "", true, '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="del" aria-label="מחיקת הוויוונסיה" title="מחיקת הוויוונסיה">' + I.trash + '</button><button class="rbtn rbtn--icon rbtn--edge-end" data-act="play" aria-label="הפעלה" title="הפעלה">' + I.play + '</button>') +
+    var vk = state.vivs.map(function (x) { return x.id; }).indexOf(v.id), pv = state.vivs[vk - 1], nv = state.vivs[vk + 1];
+    show(walkHead(v.title || "ויוונסיה חדשה", !!pv, !!nv) +
+      '<div class="pad"><button class="rbtn rbtn--block" data-act="play">הפעלה</button>' + (wide() ? '' : '<button class="rbtn rbtn--ghost rbtn--block" data-act="back">חזרה לרשימת הוויוונסיות</button>') + '</div>' +
       '<div class="rlist" data-fab-room id="list"><div class="rskel rskel--title"></div></div>' +
       '<button class="rfab" data-act="add" aria-label="הוספת תרגיל" title="הוספת תרגיל">' + I.plus + '</button>', function (r) {
       on(r, "back", back); on(r, "add", function () { go(picker); });
-      on(r, "del", function () { confirmDelete(v); });
+      function walkV(to) { if (wide()) stack().length = 0; else stack().pop(); state.viv = to; go(editor); paintSel(); }
+      on(r, "prevW", function () { if (pv) walkV(pv); });
+      on(r, "nextW", function () { if (nv) walkV(nv); });
       on(r, "play", function () { if (!state.items.length) return toast("אין עדיין תרגילים"); go(function () { player(0); }); });
     }, "d");
     loadItems().then(paint, fail);
@@ -253,9 +264,7 @@
     var e = it.exercises || {};
     var k = state.items.indexOf(it), prevIt = state.items[k - 1], nextIt = state.items[k + 1];
     /* the header walks the sequence: the right button to the previous exercise, the left one to the next, the name between them */
-    var hd = '<header class="rhead"><button class="rbtn rbtn--icon rbtn--edge-start" data-act="prevItem" aria-label="התרגיל הקודם" title="התרגיל הקודם"' + (prevIt ? "" : " disabled") + '>' + I.back + '</button>' +
-      '<div class="rhead__text"><h1 class="rhead__title" style="text-align:center">' + esc(itemName(it)) + '</h1></div>' +
-      '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="nextItem" aria-label="התרגיל הבא" title="התרגיל הבא"' + (nextIt ? "" : " disabled") + '>' + I.fwd + '</button></header>';
+    var hd = walkHead(itemName(it), !!prevIt, !!nextIt);
     show(hd + '<div class="rlist"><div class="pad">' +
       '<label class="rfield"><span>שם התרגיל</span><input id="ina" placeholder=" " autocomplete="off" value="' + esc(itemName(it)) + '"></label>' +
       '<label class="rfield"><span>מוזיקה</span><select id="im"><option value="">בלי מוזיקה</option></select></label>' +
@@ -266,8 +275,8 @@
       '<button class="rbtn rbtn--ghost rbtn--danger rbtn--block" data-act="del">הסרה מהוויוונסיה</button></div></div>', function (r) {
       on(r, "list", back);
       function walk(to) { stack().pop(); go(function () { itemScreen(to); }); }
-      on(r, "prevItem", function () { if (prevIt) walk(prevIt); });
-      on(r, "nextItem", function () { if (nextIt) walk(nextIt); });
+      on(r, "prevW", function () { if (prevIt) walk(prevIt); });
+      on(r, "nextW", function () { if (nextIt) walk(nextIt); });
       api("/rest/v1/exercise_music?exercise_id=eq." + it.exercise_id + "&select=music(id,name,collection)").then(function (rows) {
         var sel = r.querySelector("#im"), seen = {};
         (rows || []).forEach(function (x) { if (x.music && !seen[x.music.id]) { seen[x.music.id] = 1; var o = document.createElement("option"); o.value = x.music.id; o.textContent = x.music.name + (x.music.collection ? " (" + x.music.collection + ")" : ""); sel.appendChild(o); } });
