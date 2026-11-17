@@ -882,7 +882,7 @@
       const last = ref ? ref.pathname.replace(/\/(index\.html)?$/, "").split("/").pop().toLowerCase() : "";
       fromAdmin = !!ref && ref.origin === location.origin && (last === BIZ.slug || last === "admin") && history.length > 1;
     } catch (e) { /* no referrer */ }
-    if (fromAdmin) history.back(); else location.href = "../admin/?biz=" + enc(BIZ.slug);
+    if (fromAdmin) history.back(); else location.href = /^roster(-test)?\.floa\.co\.il$/.test(location.hostname) ? "/" + enc(BIZ.slug) : "../admin/?biz=" + enc(BIZ.slug);
   });
 
   /* tabs: the participant card's pager. A page next to the open one is drawn (once) while it slides into view, so no blank page passes by. */

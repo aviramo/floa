@@ -29,6 +29,8 @@
   if (window.top !== window.self) { document.documentElement.hidden = true; return; }
 
   var A = window.FLOA_AUTH;
+  /* the address of a business: on the roster sub-domains the clean one (/aum, which the domain sends on to the admin page), elsewhere (the old floa.co.il/roster/ and localhost) the plain admin page */
+  function bizHref(slug) { return /^roster(-test)?\.floa\.co\.il$/.test(location.hostname) ? "/" + encodeURIComponent(slug) : "admin/?biz=" + encodeURIComponent(slug); }
   var TITLE = "ניהול משתתפים";
   var MANY = 7;                                   /* above this many businesses the list gets a search field */
   var SLUG_RE = /^[a-z][a-z0-9-]{1,39}$/;
@@ -332,7 +334,7 @@
       if (list.length === 0) return showNone();
       if (list.length === 1) {
         setStatus('<div class="empty" role="status">מעביר לעסק…</div>');
-        return location.replace("admin/?biz=" + encodeURIComponent(list[0].slug));
+        return location.replace(bizHref(list[0].slug));
       }
       showPicker(list);
     }).catch(function (e) {
@@ -353,7 +355,7 @@
     setCount("");
     setStatus("");
     list.innerHTML = '<li class="group">בחרו עסק: החשבון הזה מחובר ליותר מעסק אחד</li>' + mine.map(function (b) {
-      return '<li class="row ucard"><a class="main nobadge" href="admin/?biz=' + esc(encodeURIComponent(b.slug)) + '"><div class="nm"><span class="name" dir="rtl">' + esc(b.name) + '</span></div>' +
+      return '<li class="row ucard"><a class="main nobadge" href="' + esc(bizHref(b.slug)) + '"><div class="nm"><span class="name" dir="rtl">' + esc(b.name) + '</span></div>' +
         '<div class="meta"><span class="sidewrap"><bdi dir="ltr">' + esc(b.slug) + "</bdi></span></div></a></li>";
     }).join("");
   }
@@ -466,7 +468,7 @@
     return '<div class="bsum">' + head +
       '<div class="bsum__facts">' + (n ? '<span class="rchip">' + esc(accCount(n)) + "</span>" : '<span class="rchip rchip--wait">אין חשבונות</span>') + "</div>" +
       '<div class="bsum__acts">' +
-      '<a class="rrow" href="admin/?biz=' + esc(encodeURIComponent(b.slug)) + '">' + icon("go") + '<span class="rrow__main"><span class="rrow__title">פתיחת העסק</span></span></a>' +
+      '<a class="rrow" href="' + esc(bizHref(b.slug)) + '">' + icon("go") + '<span class="rrow__main"><span class="rrow__title">פתיחת העסק</span></span></a>' +
       '<button type="button" class="rrow" data-act="rename" data-id="' + id + '">' + icon("edit") + '<span class="rrow__main"><span class="rrow__title">עריכה</span></span></button>' +
       '<button type="button" class="rrow" data-act="accounts" data-id="' + id + '">' + icon("users") + '<span class="rrow__main"><span class="rrow__title">ניהול חשבונות</span></span>' +
         (n ? '<span class="rcount" aria-label="' + esc(accCount(n)) + '">' + n + "</span>" : '<span class="rchip rchip--wait">אין חשבונות</span>') + "</button>" +
@@ -700,7 +702,7 @@
         }
         S.biz.push({ id: row.id, slug: row.slug || sg, name: row.name || nm, created_at: row.created_at || "" });
         S.users[row.id] = [];
-        var enter = function () { toast("העסק נוצר"); location.href = "admin/?biz=" + encodeURIComponent(row.slug || sg); };   /* the guided setup starts there */
+        var enter = function () { toast("העסק נוצר"); location.href = bizHref(row.slug || sg); };   /* the guided setup starts there */
         if (disp && disp !== nm) api("/rest/v1/business_settings?business_id=eq." + encodeURIComponent(row.id), { method: "PATCH", json: { sender_name: disp } }).then(enter, enter);
         else enter();
       }).catch(function (err) {
