@@ -116,7 +116,11 @@
       "folder": "biodanza/",
       "clean": true,
       "spa": true,
-      "devSpa": true
+      "devSpa": true,
+      "icons": {
+        "/favicon.ico": "favicon.ico",
+        "/apple-touch-icon.png": "apple-touch-icon.png"
+      }
     },
     {
       "host": "roster-test.floa.co.il",
