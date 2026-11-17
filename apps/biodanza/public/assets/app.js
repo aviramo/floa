@@ -67,6 +67,13 @@
     return pick(LANG) || pick("en") || e[k] || "";
   }
   function txt(it, k) { return it[k] != null ? it[k] : baseTxt(it, k); }
+  /* a text nobody has checked yet: the catalog has none for this exercise, so the one shown was drafted from its name. It stays marked until the facilitator writes their own. */
+  function isDraft(it, k) {
+    if (it[k] != null) return false;
+    var ts = (it.exercises || {}).exercise_texts || [], t = ts.filter(function (x) { return x.lang === LANG && x[k]; })[0];
+    return !!t && t.source === "draft";
+  }
+  var DRAFT = ' style="color:var(--warn);background:var(--warn-bg)" title="טיוטה: נכתבה מהשם בלבד, ללא תיאור בקטלוג"';
   function grow(t) { t.style.height = "auto"; t.style.height = (t.scrollHeight + t.offsetHeight - t.clientHeight) + "px"; var mh = parseFloat(getComputedStyle(t).maxHeight); t.style.overflowY = mh && t.scrollHeight > mh ? "auto" : "hidden"; }   /* rows=1: the height is the text's own, plus the line under it */
   /* the placeholder of an empty list or pane: the curve icon, a title and one line */
   function ph(title, text) { return '<div class="rempty">' + I.curve + '<b>' + esc(title) + '</b>' + (text ? '<span>' + esc(text) + '</span>' : '') + '</div>'; }
@@ -318,7 +325,7 @@
   /* ---------- the vivencia: plan along the curve ---------- */
   function openViv(id) { if (!state.viv || state.viv.id !== id) state.lastItem = null; state.filter = ""; state.viv = state.vivs.filter(function (v) { return v.id === id; })[0] || { id: id, title: "" }; if (wide()) stack().length = 0; go(editor); paintSel(); }
   function loadItems() {
-    return api("/rest/v1/vivencia_items?vivencia_id=eq." + state.viv.id + "&select=id,position,exercise_id,music_id,notes,title,poetics,guidance,exercises(title_he,title_en,poetics,guidance,objective,exercise_texts(lang,poetics,guidance)),music(id,name,title,artist,duration_sec),vivencia_item_facilitators(email)&order=position").then(function (r) { state.items = r || []; });
+    return api("/rest/v1/vivencia_items?vivencia_id=eq." + state.viv.id + "&select=id,position,exercise_id,music_id,notes,title,poetics,guidance,exercises(title_he,title_en,poetics,guidance,objective,exercise_texts(lang,poetics,guidance,source)),music(id,name,title,artist,duration_sec),vivencia_item_facilitators(email)&order=position").then(function (r) { state.items = r || []; });
   }
   function editor() {
     var v = state.viv; setUrl(BASE + v.id);
@@ -463,8 +470,8 @@
       '<div class="rcard rcard--flat rcard--link" data-act="pickMusic" role="button" tabindex="0" style="margin:0;cursor:pointer"><div class="rcard__head"><span class="rcard__title">מוזיקה</span>' +
         (it.music ? ytLink(it.music) : '') + '</div><div class="rcard__body">' +
         (it.music ? '<b>' + esc(songName(it.music)) + '</b>' + (songBy(it.music) ? '<br>' + esc(songBy(it.music)) : '') : 'לחצו לבחירת מוזיקה') + '</div></div>' +
-      '<label class="rfield"><span>פואטיקה</span><textarea id="ipo" rows="1" placeholder=" ">' + esc(txt(it, "poetics")) + '</textarea></label>' +
-      '<label class="rfield"><span>הנחיה</span><textarea id="igu" rows="1" placeholder=" ">' + esc(txt(it, "guidance")) + '</textarea></label>' +
+      '<label class="rfield"><span>פואטיקה</span><textarea id="ipo" rows="1" placeholder=" "' + (isDraft(it, "poetics") ? DRAFT : "") + '>' + esc(txt(it, "poetics")) + '</textarea></label>' +
+      '<label class="rfield"><span>הנחיה</span><textarea id="igu" rows="1" placeholder=" "' + (isDraft(it, "guidance") ? DRAFT : "") + '>' + esc(txt(it, "guidance")) + '</textarea></label>' +
       '<label class="rfield"><span>הערות</span><textarea id="it" rows="1" placeholder=" ">' + esc(it.notes || "") + '</textarea></label>' +
       '<button class="rbtn rbtn--ghost rbtn--danger rbtn--block" data-act="del">הסרה מהוויוונסיה</button></div></div>', function (r) {
       on(r, "list", back);
@@ -544,8 +551,8 @@
       '<div class="rlist"><div class="pad">' +
       '<span class="rchip rchip--s">' + (k + 1) + ' מתוך ' + state.items.length + '</span>' +
       (it.music ? '<span class="rchip rchip--info rchip--l">' + esc(it.music.name) + '</span>' : '') +
-      (txt(it, "poetics") ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">פואטיקה</span></div><div class="rcard__body">' + esc(txt(it, "poetics")) + '</div></div>' : '') +
-      (txt(it, "guidance") ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">הנחיה</span></div><div class="rcard__body">' + esc(txt(it, "guidance")) + '</div></div>' : '') +
+      (txt(it, "poetics") ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">פואטיקה</span></div><div class="rcard__body"' + (isDraft(it, "poetics") ? DRAFT : "") + '>' + esc(txt(it, "poetics")) + '</div></div>' : '') +
+      (txt(it, "guidance") ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">הנחיה</span></div><div class="rcard__body"' + (isDraft(it, "guidance") ? DRAFT : "") + '>' + esc(txt(it, "guidance")) + '</div></div>' : '') +
       (it.notes ? '<div class="rhint"><span class="rhint__tx">' + esc(it.notes) + '</span></div>' : '') +
       '</div></div><div class="bar">' + (last ? '' : '<button class="rbtn rbtn--block" data-act="next">התרגיל הבא</button>') + (k ? '<button class="rbtn rbtn--ghost rbtn--block" data-act="prev">התרגיל הקודם</button>' : '') + '</div>', function (r) {
       on(r, "back", back);
