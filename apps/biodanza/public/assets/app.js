@@ -172,7 +172,7 @@
   }
   /* a song as a row to choose from: the same element, a row of its own */
   function songRow(m, cur, attr) {
-    return '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-2);flex-wrap:wrap"' + (cur ? ' aria-current="true"' : '') + '><button type="button" class="rrow__main" ' + attr + '="' + m.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit">' + songLines(m) + '</button>' + playCol(m, true) + songBar(m) + '</div>';
+    return '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-2);flex-wrap:wrap"' + (cur ? ' aria-current="true"' : '') + '><button type="button" class="rrow__main" ' + attr + '="' + m.id + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit">' + songLines(m) + '</button>' + playCol(m, true) + songBar(m) + '</div>';   /* the text takes what is left, so a long name never pushes the play tile to a line of its own */
   }
   window.toast = window.toast || toast;
   document.addEventListener("click", function (e) {
