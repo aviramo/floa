@@ -108,6 +108,24 @@
       var txt = clock(left); if (sp.textContent !== txt) sp.textContent = txt;
     });
   });
+  /* the song's bar: ONE element everywhere. A song with a file keeps its room for it, the bar shows while that song plays, follows it, and a drag moves the song. */
+  function songBar(m, extra) {
+    if (!m || !m.audio_object) return "";
+    return '<div class="bio-bar" data-for="' + esc(m.audio_object) + '" style="visibility:hidden;' + (extra || "flex:0 0 100%;order:3;padding-top:var(--sp-1)") + ';position:relative;z-index:var(--z-raised)"><input type="range" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר" style="display:block;width:100%;margin:0;direction:ltr;accent-color:var(--primary)"></div>';
+  }
+  var barDrag = false;
+  document.addEventListener("bioaudio", function (ev) {
+    var d = ev.detail || {};
+    document.querySelectorAll(".bio-bar").forEach(function (b) {
+      var mine = d.name && b.dataset.for === d.name && d.d > 0;
+      if (!mine) { b.style.visibility = "hidden"; return; }
+      b.style.visibility = "visible";
+      var r = b.querySelector("input"); if (!barDrag) r.value = Math.round(d.t / d.d * 1000);
+    });
+  });
+  document.addEventListener("pointerdown", function (e) { if (e.target.closest && e.target.closest(".bio-bar")) barDrag = true; }, true);
+  ["pointerup", "pointercancel", "change"].forEach(function (n) { document.addEventListener(n, function () { barDrag = false; }, true); });
+  document.addEventListener("input", function (e) { var b = e.target.closest && e.target.closest(".bio-bar"); if (b && window.BioAudio && BioAudio.seek) BioAudio.seek(e.target.value / 1000); });
   function playCol(m, trail) {
     var tile = songBtn(m, trail).replace(/width:var\(--fab\);height:var\(--fab\);min-height:var\(--fab\);/, "width:var(--ctl);height:var(--ctl);min-height:var(--ctl);border-radius:var(--r-ctl);background:var(--surface-2);");
     return '<div style="flex:none;display:flex;flex-direction:column;align-items:center;gap:var(--gap-button)">' + tile +
@@ -115,7 +133,7 @@
   }
   /* a song as a row to choose from: the same element, a row of its own */
   function songRow(m, cur, attr) {
-    return '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-2)"' + (cur ? ' aria-current="true"' : '') + '><button type="button" class="rrow__main" ' + attr + '="' + m.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit">' + songLines(m) + '</button>' + playCol(m, true) + '</div>';
+    return '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-2);flex-wrap:wrap"' + (cur ? ' aria-current="true"' : '') + '><button type="button" class="rrow__main" ' + attr + '="' + m.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit">' + songLines(m) + '</button>' + playCol(m, true) + songBar(m) + '</div>';
   }
   window.toast = window.toast || toast;
   document.addEventListener("click", function (e) {
@@ -172,14 +190,14 @@
   }
   (function () {
     var st = document.createElement("style");
-    st.textContent = "@keyframes bioNum { from { opacity: 0; transform: translateX(var(--nx, 0)) } to { opacity: 1; transform: none } } @media (prefers-reduced-motion: reduce) { .bio-num { animation: none !important } }";
+    st.textContent = "@keyframes bioNum { from { opacity: 0; transform: translateX(var(--nx, 0)) } to { opacity: 1; transform: none } } @media (prefers-reduced-motion: reduce) { .bio-num { animation: none !important } } .bio-bar, .bio-bar * { touch-action: none }";
     document.head.appendChild(st);
   })();
   /* the exercise as a pager: drag the page sideways to go to the next or the previous one (to the right = the next, as in a right to left book); the page follows the finger, a short drag springs back */
   function attachPager(pg, to) {
     var x0 = 0, y0 = 0, t0 = 0, dx = 0, mode = 0;
     pg.addEventListener("pointerdown", function (e) {
-      if (e.target.closest && e.target.closest("#ibar")) return;   /* a drag on the song's bar moves the song, never the page */
+      if (e.target.closest && e.target.closest(".bio-bar")) return;   /* a drag on the song's bar moves the song, never the page */
       if (e.pointerType !== "touch" && (e.button > 0 || (e.target.closest && e.target.closest("input, textarea, select, a, button")))) return;   /* a finger anywhere; a mouse (a narrow window) only off the fields and buttons */
       x0 = e.clientX; y0 = e.clientY; t0 = performance.now(); dx = 0; mode = 1; });
     pg.addEventListener("pointermove", function (e) {
@@ -583,12 +601,12 @@
     var k = state.items.indexOf(it), prevIt = state.items[k - 1], nextIt = state.items[k + 1];
     /* the header walks the sequence: the right button to the previous exercise, the left one to the next, the name between them */
     var hd = itemHead(!!prevIt, !!nextIt, (k + 1) + "/" + state.items.length);   /* the middle button says where we are, and still opens the list */
-    show(hd + '<style>#ipg, #ipg * { touch-action: pan-y } #ipg textarea { max-height: none } #ibar, #ibar * { touch-action: none } #ifields > .rfield { margin: 0 } #ipg .rfield:has(> textarea)::before { content: ""; position: absolute; z-index: 1; top: 0; inset-inline: 0; height: 19px; background: var(--bg); pointer-events: none }</style><div id="ipg" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0"><div class="pad" style="padding-bottom:0">' +
+    show(hd + '<style>#ipg, #ipg * { touch-action: pan-y } #ipg textarea { max-height: none } #ifields > .rfield { margin: 0 } #ipg .rfield:has(> textarea)::before { content: ""; position: absolute; z-index: 1; top: 0; inset-inline: 0; height: 19px; background: var(--bg); pointer-events: none }</style><div id="ipg" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0"><div class="pad" style="padding-bottom:0">' +
       '<div style="display:flex;align-items:flex-end;gap:var(--gap-button)">' + '<label class="rfield" style="flex:1 1 auto;margin:0"><span>שם התרגיל</span><input id="ina" style="font-weight: var(--fw-black); font-size: var(--fs-m)" placeholder=" " autocomplete="off" value="' + esc(itemName(it)) + '"></label>' + facChip(it) + '</div>' +
       '</div>' +
       '<div class="rrow rrow--link" data-act="pickMusic" role="button" tabindex="0" style="flex:none;padding-inline:var(--sp-2);padding-block:var(--sp-2);border-bottom:0;cursor:pointer"><div style="flex:1 1 auto;min-width:0">' +
         (it.music ? songLines(it.music) : '<span class="rrow__title">לחצו לבחירת מוזיקה</span>') + '</div>' + (it.music ? playCol(it.music, true) : '') + '</div>' +   /* a strip across the width, like the music chooser's rows */
-      (it.music && it.music.audio_object ? '<div id="ibar" style="visibility:hidden;flex:none;padding:var(--sp-1) var(--sp-2) 0"><input type="range" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר" style="display:block;width:100%;margin:0;direction:ltr;accent-color:var(--primary)"></div>' : '') +   /* a song with a file keeps this room under it all the time, the bar only appears in it while the song plays, so nothing around it moves */
+      songBar(it.music, "flex:none;padding:var(--sp-1) var(--sp-2) 0") +
       '<div id="ifields" style="flex:1 1 auto;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:var(--gap-field);padding:var(--gutter) var(--gutter) 0"><label class="rfield" style="flex:none"><span>פואטיקה</span><textarea id="ipo" rows="1" placeholder=" "' + (isDraft(it, "poetics") ? DRAFT_FIELD : "") + '>' + esc(txt(it, "poetics")) + '</textarea></label>' +
       '<label class="rfield" style="flex:none"><span>הנחיה</span><textarea id="igu" rows="1" placeholder=" "' + (isDraft(it, "guidance") ? DRAFT_FIELD : "") + '>' + esc(txt(it, "guidance")) + '</textarea></label>' +
       '<label class="rfield" style="flex:none"><span>הערות</span><textarea id="it" rows="1" placeholder=" ">' + esc(it.notes || "") + '</textarea></label></div>' +
@@ -609,20 +627,6 @@
       on(r, "pickMusic", function (b, ev) { if (ev.target.closest("a,[data-audio]")) return; toMusic(); });
       r.querySelectorAll('[data-act="pickMusic"]').forEach(function (c) { c.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toMusic(); } }); });
       /* the three fields share the height that is left, by how many lines each has: all of it if it fits; if not, each gets its share and scrolls on its own */
-      /* the song's own bar: shown while this exercise's song has the player, follows it, and a drag on it moves the song */
-      var bar = r.querySelector("#ibar"), rng = bar && bar.querySelector("input"), dragging = false;
-      if (bar && rng) {
-        var onAudio = function (ev) {
-          if (!bar.isConnected) { document.removeEventListener("bioaudio", onAudio); return; }
-          var d = ev.detail || {}, mine = it.music && it.music.audio_object && d.name === it.music.audio_object && d.d > 0;
-          if (!mine) { bar.style.visibility = "hidden"; return; }
-          bar.style.visibility = "visible"; if (!dragging) rng.value = Math.round(d.t / d.d * 1000);
-        };
-        document.addEventListener("bioaudio", onAudio);
-        rng.addEventListener("pointerdown", function () { dragging = true; });
-        ["pointerup", "pointercancel", "change"].forEach(function (n) { rng.addEventListener(n, function () { dragging = false; }); });
-        rng.addEventListener("input", function () { if (window.BioAudio && BioAudio.seek) BioAudio.seek(rng.value / 1000); });
-      }
       var box = r.querySelector("#ifields"), tas = ["#ipo", "#igu", "#it"].map(function (q) { return r.querySelector(q); });
       function layoutFields() {
         if (!box || !box.isConnected) return;
