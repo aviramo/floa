@@ -342,7 +342,7 @@
     show(head(v.title || "ויוונסיה חדשה", "", true, v.role === "view" ? '' : '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="more" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>') +
       '<div class="rlist" data-fab-room id="list"><div class="rskel rskel--title"></div></div>' +
       (v.role === "view" ? '' : '<button class="rfab" data-act="add" aria-label="הוספת תרגיל" title="הוספת תרגיל">' + I.plus + '</button>'), function (r) {
-      on(r, "back", back); on(r, "add", function () { resetPk(); go(picker); });
+      on(r, "back", back); on(r, "add", function () { resetPk(); if (wide()) go(picker); else pickerSheet(); });
       on(r, "more", function (b) {
         menu(b, [{ label: "עריכת שם", icon: I.pen, fn: function () { namePopup(v, false); } }].concat(v.role === "owner" ? [{ label: "שיתוף", icon: I.share, fn: function () { sharePopup(v); } }, { label: "מחיקה", icon: I.trash, tone: "danger", fn: function () { confirmDelete(v); } }] : []));
       });
@@ -510,7 +510,7 @@
       }
       ["#ina", "#ipo", "#igu", "#it"].forEach(function (s) { r.querySelector(s).addEventListener("change", save); });
       on(r, "del", function () { confirmRemoveItem(it); });
-      on(r, "swap", function () { resetPk(); go(function () { picker(it); }); });   /* the catalog, to put another exercise in this place */
+      on(r, "swap", function () { resetPk(); if (wide()) go(function () { picker(it); }); else pickerSheet(it); });   /* the catalog, to put another exercise in this place */
     }, "d");
   }
 
@@ -565,14 +565,14 @@
   /* ---------- picker: the catalog ---------- */
   var pk = { q: "", ln: "", cg: "" };   /* the catalog's search, line and category */
   function resetPk() { pk = { q: "", ln: "", cg: "" }; }
-  function picker(swapIt) {
-    show(head(swapIt ? "החלפת תרגיל" : "קטלוג התרגילים", "", true) +
-      '<div class="pad"><div style="display:flex;gap:var(--gap-button);align-items:flex-end"><label class="rfield" style="flex:1 1 0;min-width:0;margin:0"><span>חיפוש</span><input id="q" placeholder=" "></label>' +
+  /* the catalog picker: the filters and the list. On a wide screen it is a pane; on a narrow one it is a popup from the bottom. */
+  function pickerBody() {
+    return '<div class="pad" data-pickhead><div style="display:flex;gap:var(--gap-button);align-items:flex-end"><label class="rfield" style="flex:1 1 0;min-width:0;margin:0"><span>חיפוש</span><input id="q" placeholder=" "></label>' +
       '<label class="rfield" style="flex:1 1 0;min-width:0;margin:0"><span>קו</span><select id="ln"><option value="">הכול</option>' + state.lines.map(function (l) { return '<option value="' + l.key + '">' + esc(l.name_he) + '</option>'; }).join("") + '</select></label></div>' +
       '<label class="rfield"><span>קטגוריה</span><input id="cg" placeholder=" " autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox" value="הכול"></label></div>' +
-      '<div class="rlist" id="list"><div class="rskel rskel--title"></div></div>', function (r) {
-      on(r, "back", !wide() ? back : swapIt ? function () { pending = { item: swapIt.id }; back(); }   /* leaving a replacement: the same exercise is open again on the left */
-        : function () { show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); back(); });
+      '<div class="rlist" id="list"><div class="rskel rskel--title"></div></div>';
+  }
+  function pickerWire(r, swapIt, sheet) {
       var catSel = pk.cg;   /* the key of the chosen category, "" = all */
       r.querySelector("#q").value = pk.q; r.querySelector("#ln").value = pk.ln; r.querySelector("#cg").value = catSel ? catName(catSel) : "הכול";
       /* a field you can type in that also opens its options when you click it: the options are the kit's menu, placed under the field */
@@ -589,9 +589,12 @@
           active = -1;
           pop = document.createElement("div"); pop.className = "rmenu rmenu--fixed"; pop.setAttribute("role", "listbox");
           pop.innerHTML = shown.map(function (c, k) { return '<button type="button" class="rmenu__item" role="option" tabindex="-1" data-k="' + k + '"' + (c.key === catSel ? ' aria-selected="true" style="font-weight:var(--fw-bold)"' : '') + '><span>' + esc(c.name_he) + '</span></button>'; }).join("");
-          document.body.appendChild(pop);
+          (inp.closest("dialog") || document.body).appendChild(pop);
           var b = inp.getBoundingClientRect();
           pop.style.top = Math.round(b.bottom + 2) + "px"; pop.style.left = Math.round(b.left) + "px"; pop.style.width = Math.round(b.width) + "px"; pop.style.maxHeight = "40vh"; pop.style.overflowY = "auto";
+          var got = pop.getBoundingClientRect();   /* inside a popup that is moved by a transform, fixed is measured from the popup: correct by what is off */
+          if (Math.abs(got.top - (b.bottom + 2)) > 1) pop.style.top = Math.round(b.bottom + 2 - (got.top - (b.bottom + 2))) + "px";
+          if (Math.abs(got.left - b.left) > 1) pop.style.left = Math.round(b.left - (got.left - b.left)) + "px";
           pop.querySelectorAll("[data-k]").forEach(function (o) { o.addEventListener("mousedown", function (e) { e.preventDefault(); choose(shown[+o.dataset.k].key); }); });
           inp.setAttribute("aria-expanded", "true");
         }
@@ -620,15 +623,44 @@
           var ex = state.cat.filter(function (x) { return x.id === b.dataset.ex; })[0];
           l.querySelectorAll(".rrow").forEach(function (w) { w.removeAttribute("aria-current"); });
           b.closest(".rrow").setAttribute("aria-current", "true");
-          if (wide()) previewEx(ex, swapIt);   /* adding or replacing: the exercise is shown first (on the left, or alone on a narrow screen), and the action is its own button in its header */
-          else go(function () { previewEx(ex, swapIt); });
+          if (sheet) previewSheet(ex, swapIt);   /* adding or replacing: the exercise is shown first, and the action is its own button in its header: on the left on a wide screen, in a second popup on a narrow one */
+          else previewEx(ex, swapIt);
         }); });
       }
       r.querySelector("#q").addEventListener("input", paintCat); r.querySelector("#ln").addEventListener("change", paintCat); wireCat();
       (state.cats ? Promise.resolve() : api("/rest/v1/categories?select=key,name_he&order=sort").then(function (c) {
         state.cats = c || [];
       })).then(function () { return state.cat ? null : loadCatalog().then(function (c) { state.cat = c; }); }).then(paintCat, fail);
+  }
+  function picker(swapIt) {
+    show(head(swapIt ? "החלפת תרגיל" : "קטלוג התרגילים", "", true) + pickerBody(), function (r) {
+      on(r, "back", !wide() ? back : swapIt ? function () { pending = { item: swapIt.id }; back(); }   /* leaving a replacement: the same exercise is open again on the left */
+        : function () { show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); back(); });
+      pickerWire(r, swapIt, false);
     });
+  }
+  /* narrow screen: the catalog is a popup from the bottom, and a chosen exercise opens in a second popup on top of it, with the action as a green check in its header; closing it is back to the list */
+  function pickerSheet(swapIt) {
+    var dlg = document.getElementById("catDlg");
+    if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "catDlg"; document.body.appendChild(dlg); }
+    RosterSheet.render(dlg, { title: swapIt ? "החלפת תרגיל" : "קטלוג התרגילים", from: "bottom", body: pickerBody() });
+    var r = dlg.querySelector(".sheet-body"), hd = r.querySelector("[data-pickhead]");
+    if (hd) hd.style.cssText += ";position:sticky;top:0;z-index:1;background:var(--bg)";   /* the search stays while the list scrolls */
+    pickerWire(r, swapIt, true);
+  }
+  function previewSheet(e, swapIt) {
+    var tok = ++previewTok;
+    api("/rest/v1/exercise_texts?exercise_id=eq." + e.id + "&select=lang,poetics,guidance,source").then(function (rows) {
+      if (tok !== previewTok) return;
+      var fake = { exercises: { exercise_texts: rows || [] } };
+      var card = function (k, label) { return txt(fake, k) ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">' + label + '</span></div><div class="rcard__body"' + (isDraft(fake, k) ? DRAFT : "") + '>' + esc(txt(fake, k)) + '</div></div>' : ""; };
+      var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה";
+      var dlg = document.getElementById("exDlg");
+      if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "exDlg"; document.body.appendChild(dlg); }
+      RosterSheet.render(dlg, { title: name(e), from: "bottom", action: { label: word, icon: I.check, id: "exgo" },
+        body: '<div style="padding-block:var(--sp-2)">' + ((card("poetics", "פואטיקה") + card("guidance", "הנחיה")) || ph("אין עדיין תיאור לתרגיל", "")) + '</div>' });
+      dlg.querySelector("#exgo").addEventListener("click", function () { if (swapIt) confirmSwap(e, swapIt, true); else addEx(e, undefined, true); });
+    }, fail);
   }
   /* the catalog is over a thousand exercises and the server hands out at most a thousand rows at a time: read it page by page */
   function loadCatalog() {
@@ -657,7 +689,7 @@
     }, fail);
   }
   /* replacing is asked in the kit's popup, one action: closing it is the cancel */
-  function confirmSwap(e, swapIt) {
+  function confirmSwap(e, swapIt, sheet) {
     var dlg = document.getElementById("confirmDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
     RosterSheet.render(dlg, {
@@ -665,19 +697,21 @@
       body: '<div class="pad"><span>להחליף את "' + esc(itemName(swapIt)) + '" ב"' + esc(name(e)) + '"? השם, הפואטיקה וההנחיה שכתבתם בתרגיל הנוכחי יימחקו. ההערות נשארות.</span></div>',
       foot: '<button class="rbtn rbtn--block" type="button" id="cswap">החלפה</button>'
     });
-    dlg.querySelector("#cswap").addEventListener("click", function () { dlg.close(); addEx(e, swapIt); });
+    dlg.querySelector("#cswap").addEventListener("click", function () { dlg.close(); addEx(e, swapIt, sheet); });
   }
-  function addEx(e, swapIt) {
+  function closeSheets() { ["exDlg", "catDlg"].forEach(function (id) { var d = document.getElementById(id); if (d && d.open) d.close(); }); }
+  function addEx(e, swapIt, sheet) {
     if (swapIt) {   /* the same place in the curve, another exercise: its first song, and none of the old exercise's own wording */
       return api("/rest/v1/exercise_music?exercise_id=eq." + e.id + "&select=music_id&limit=1").then(function (m) {
         return api("/rest/v1/vivencia_items?id=eq." + swapIt.id, { method: "PATCH", prefer: "return=minimal", json: { exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, title: null, poetics: null, guidance: null } });
-      }).then(function () { toast("התרגיל הוחלף"); pending = { item: swapIt.id };   /* back to the list, which then opens this same place again with the new exercise */
+      }).then(function () { toast("התרגיל הוחלף"); pending = { item: swapIt.id }; if (sheet) { closeSheets(); stack().pop(); var top = stack()[stack().length - 1]; if (top) top(); return; }   /* back to the list, which then opens this same place again with the new exercise */
         stack().pop(); if (!wide()) { stack().pop(); stack().pop(); } var f = stack()[stack().length - 1]; if (f) f(); }, fail);   /* narrow: also the exercise screen and the one just seen */
     }
     var pos = state.items.reduce(function (m, i) { return Math.max(m, i.position); }, 0) + 1;
     api("/rest/v1/exercise_music?exercise_id=eq." + e.id + "&select=music_id&limit=1").then(function (m) {
       return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=minimal", json: { vivencia_id: state.viv.id, position: pos, exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null } });
-    }).then(function () { toast("התרגיל נוסף"); if (wide()) show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); else stack().pop(); back(); }, fail);
+    }).then(function () { toast("התרגיל נוסף"); if (sheet) { closeSheets(); return loadItems().then(paint, fail); }
+      if (wide()) show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); else stack().pop(); back(); }, fail);
   }
 
   /* ---------- player: the session, one exercise at a time ---------- */
