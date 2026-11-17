@@ -383,7 +383,7 @@
       return '<div class="rrow rrow--link" style="padding-inline:var(--gutter)"' + (state.lastItem === i.id ? ' aria-current="true"' : '') + '><span aria-hidden="true" style="flex:none;display:flex;align-items:center;justify-content:center;width:var(--ctl);height:var(--ctl);border-radius:var(--r-ctl);background:var(--surface-2);font:var(--fw-bold) var(--fs-m)/1 var(--font)">' + (k + 1) + '</span><button type="button" class="rrow__main" data-edit="' + i.id + '" style="background:none;border:0;padding:0;margin-inline-start:var(--sp-1);text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(itemName(i)) + '</span>' +
         (i.music ? (function () {
           var dur = i.music.duration_sec ? '<span style="flex:none">' + clock(i.music.duration_sec) + '</span>' : '';
-          var line = function (t, d) { return '<span class="rrow__sub" style="display:flex;justify-content:space-between;gap:var(--gap-button)"><span style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(t) + '</span>' + (d || '') + '</span>'; };
+          var line = function (t, d) { return '<span class="rrow__sub" style="display:flex;justify-content:space-between;gap:var(--gap-button);margin:0;line-height:var(--lh-tight)"><span style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(t) + '</span>' + (d || '') + '</span>'; };
           return songBy(i.music) ? line(songName(i.music)) + line(songBy(i.music), dur) : line(songName(i.music), dur);   /* the time at the left, on the performer's line */
         })() : '<span class="rrow__sub">בלי מוזיקה</span>') + '</span></button>' + facChip(i, ' rrow__trail') + '</div>';
     }).join("");
