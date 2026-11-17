@@ -457,7 +457,7 @@
     state.lastItem = it.id;   /* the strip of the exercise last opened stays marked in the list, like the vivencia in its list */
     var k = state.items.indexOf(it), prevIt = state.items[k - 1], nextIt = state.items[k + 1];
     /* the header walks the sequence: the right button to the previous exercise, the left one to the next, the name between them */
-    var hd = itemHead(!!prevIt, !!nextIt, "תרגיל " + (k + 1) + " מתוך " + state.items.length);   /* the middle button says where we are, and still opens the list */
+    var hd = itemHead(!!prevIt, !!nextIt, (k + 1) + "/" + state.items.length);   /* the middle button says where we are, and still opens the list */
     show(hd + '<div class="rlist"><div class="pad">' +
       '<div style="display:flex;align-items:flex-end;gap:var(--gap-button)">' + '<label class="rfield" style="flex:1 1 auto;margin:0"><span>שם התרגיל</span><input id="ina" style="font-weight: var(--fw-black); font-size: var(--fs-m)" placeholder=" " autocomplete="off" value="' + esc(itemName(it)) + '"></label>' + facChip(it) + '</div>' +
       '<div class="rcard rcard--flat rcard--link" data-act="pickMusic" role="button" tabindex="0" style="margin:0;cursor:pointer"><div class="rcard__head"><span class="rcard__title">מוזיקה</span>' +

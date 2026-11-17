@@ -337,6 +337,8 @@ c14 = text('catalog-2014-en.pdf')
 by14, dance = collections.OrderedDict(), None
 first = next(i for i, l in enumerate(c14) if l.strip().startswith('Abdominal Breathing'))
 ENTRY = re.compile(r'^(.*?)\.{3,}\s*(\d+)[,.](\d\d)\s*\.*\s*([A-Za-z]*\s?[\d\-]*)\s*$')
+CONT = re.compile(r'^[-–(\[a-z]|/|\w-\w.{36,}| � ')
+ENTRY_NODOTS = re.compile(r'^(.*?\D)\s*(\d+)[,.](\d\d)\s+([A-Z]{2,5}C?\d{1,2}-\d{1,3})\s*$')
 held, prev_blank = [], True      # a line without its time is a wrapped title when it follows a line, a dance heading when it follows a blank
 for l in c14[first:]:
     s = l.strip().lstrip('!').strip()
@@ -345,7 +347,7 @@ for l in c14[first:]:
         continue
     if re.match(r'^[\d! ]+$', s):
         continue
-    m = ENTRY.match(s)
+    m = ENTRY.match(s) or ENTRY_NODOTS.match(s)
     if m and dance:
         raw = clean(' '.join(held + [m.group(1)]))
         held = []
@@ -353,10 +355,15 @@ for l in c14[first:]:
         if not ttl:
             ttl, art = raw, ''
         by14[dance].append((raw.replace(' - ', ', '), int(m.group(2)) * 60 + int(m.group(3)), clean(m.group(4)), ttl, art))
+    elif dance and by14[dance] and not held and re.match(r'^[A-Z]{2,5}C?\d{1,2}-\d{1,3}$', s):
+        # a collection code that wrapped onto its own line belongs to the song before it, never a heading
+        last = by14[dance][-1]
+        if not last[2]:
+            by14[dance][-1] = last[:2] + (s,) + last[3:]
     elif '....' not in s and len(s) < 160:
         if 'SECONDPART' in s.upper().replace(' ', ''):
             break
-        if prev_blank and ' - ' not in s:
+        if prev_blank and ' - ' not in s and not CONT.search(s):   # a line that only finishes a title or an artist list (page break) is not a new dance
             held = []
             dance = s
             by14.setdefault(dance, [])
