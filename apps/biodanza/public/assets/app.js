@@ -53,6 +53,7 @@
   function parseUrl() { var seg = location.pathname.slice(BASE.length).split("/").filter(Boolean); return { viv: seg[0] || "", item: seg[1] || "" }; }
   function wide() { return window.matchMedia("(min-width: 1024px)").matches; }
   var api = function (p, o) { return FLOA_AUTH.api(p, o); };
+  var liveItem = null;   /* the open exercise screen, so a change that comes from another person can be written into it */
   var state = { members: [], me: null, lines: [], phases: [], cat: null, vivs: [], viv: null, items: [], filter: "" };
 
   var I = {
@@ -302,8 +303,12 @@
       on(r, "allow", allowPopup);
       on(r, "new", newViv);
     });
+    loadVivs().then(renderVivs, fail);
+  }
+  /* my vivencias, with my role and my order in each */
+  function loadVivs() {
     var uid = FLOA_AUTH.userId();
-    Promise.all([api("/rest/v1/vivencias?select=id,title,updated_at,vivencia_items(count)"), api("/rest/v1/vivencia_owners?user_id=eq." + uid + "&select=vivencia_id,position"),
+    return Promise.all([api("/rest/v1/vivencias?select=id,title,updated_at,vivencia_items(count)"), api("/rest/v1/vivencia_owners?user_id=eq." + uid + "&select=vivencia_id,position"),
       api("/rest/v1/vivencia_shares?email=eq." + encodeURIComponent(FLOA_AUTH.email().toLowerCase()) + "&select=vivencia_id,role,position")]).then(function (r) {
       var pos = {}, role = {};
       (r[2] || []).forEach(function (o) { pos[o.vivencia_id] = o.position; role[o.vivencia_id] = o.role; });   /* shared with me */
@@ -311,8 +316,7 @@
       state.vivs = (r[0] || []).map(function (v) { v.pos = pos[v.id]; v.role = role[v.id] || "view"; return v; });
       /* my own order; a vivencia I have not placed yet (a new one) comes first, newest first */
       state.vivs.sort(function (a, b) { var pa = a.pos == null ? -1 : a.pos, pb = b.pos == null ? -1 : b.pos; return pa - pb || (a.updated_at < b.updated_at ? 1 : -1); });
-      renderVivs();
-    }, fail);
+    });
   }
   function renderVivs() {
     var l = document.getElementById("hl"); if (!l) return;
@@ -690,16 +694,43 @@
       layoutFields(); if (document.fonts && document.fonts.ready) document.fonts.ready.then(layoutFields);
       if (window.ResizeObserver && box) new ResizeObserver(layoutFields).observe(box);
       function own(k, v) { return v === baseTxt(it, k) ? null : v; }   /* the same as the catalog: keep inheriting it */
-      function save() {
-        var nm = r.querySelector("#ina").value.trim();
-        var body = { title: !nm || nm === name(e) ? null : nm, poetics: own("poetics", r.querySelector("#ipo").value), guidance: own("guidance", r.querySelector("#igu").value), notes: r.querySelector("#it").value };
+      /* The four fields are shared with everyone who has this vivencia open. Each keeps `data-base`, the value the server last had for it: only a field I
+         changed is sent (so my save never puts back an old copy of a field somebody else changed), it is saved while I type, and a change that comes
+         from somebody else is written into the fields I am not changing. */
+      var fld = { title: r.querySelector("#ina"), poetics: r.querySelector("#ipo"), guidance: r.querySelector("#igu"), notes: r.querySelector("#it") };
+      function remoteVal(k, item) { return k === "title" ? itemName(item) : k === "notes" ? (item.notes || "") : txt(item, k); }
+      Object.keys(fld).forEach(function (k) { fld[k].dataset.base = fld[k].value; });
+      function save(quiet) {
+        var body = {}, any = false;
+        if (fld.title.value !== fld.title.dataset.base) { var nm = fld.title.value.trim(); body.title = !nm || nm === name(e) ? null : nm; any = true; }
+        if (fld.poetics.value !== fld.poetics.dataset.base) { body.poetics = own("poetics", fld.poetics.value); any = true; }
+        if (fld.guidance.value !== fld.guidance.dataset.base) { body.guidance = own("guidance", fld.guidance.value); any = true; }
+        if (fld.notes.value !== fld.notes.dataset.base) { body.notes = fld.notes.value; any = true; }
+        if (!any) return;
+        Object.keys(fld).forEach(function (k) { fld[k].dataset.base = fld[k].value; });
         api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: body }).then(function () {
           Object.assign(it, body);
-          toast("נשמר");
+          if (quiet !== true) toast("נשמר");
           if (wide()) paint();
         }, fail);
       }
-      ["#ina", "#ipo", "#igu", "#it"].forEach(function (s) { r.querySelector(s).addEventListener("change", save); });
+      var typing = 0;
+      Object.keys(fld).forEach(function (k) {
+        fld[k].addEventListener("input", function () { clearTimeout(typing); typing = setTimeout(function () { save(true); }, 700); });   /* saved while you type, quietly */
+        fld[k].addEventListener("change", function () { clearTimeout(typing); save(); });
+      });
+      liveItem = { id: it.id, root: fld.title, prev: prevIt && prevIt.id, next: nextIt && nextIt.id, apply: function (fresh) {
+        var inField = r.contains(document.activeElement) && /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName), k2 = fresh.id === it.id ? state.items.indexOf(fresh) : -1;
+        var pid = state.items[k2 - 1] && state.items[k2 - 1].id, nid = state.items[k2 + 1] && state.items[k2 + 1].id;
+        if (!inField && (fresh.music_id !== it.music_id || fresh.exercise_id !== it.exercise_id || pid !== liveItem.prev || nid !== liveItem.next)) { itemScreen(fresh); return; }   /* the song, the exercise or the neighbours changed and nobody is typing: draw it again */
+        Object.keys(fld).forEach(function (k) {
+          var el = fld[k], rv = remoteVal(k, fresh);
+          if (el === document.activeElement && el.value !== el.dataset.base) return;   /* I am in the middle of changing this one: mine stays */
+          if (el.value !== rv) { el.value = rv; el.style.color = ""; el.style.background = ""; }
+          el.dataset.base = rv;
+        });
+        layoutFields(); it = fresh;
+      } };
       on(r, "del", function () { confirmRemoveItem(it); });
       on(r, "swap", function () { resetPk(); if (wide()) go(function () { picker(it); }); else pickerSheet(it); });   /* the catalog, to put another exercise in this place */
     }, "d");
@@ -1064,6 +1095,71 @@
     load();
   }
 
+  /* ---------- live: what somebody else changes in a vivencia you both have open appears here, like a shared document ----------
+     Supabase Realtime over a plain WebSocket (no SDK, as in roster's admin): a change in one of the five vivencia tables reaches everyone who may read
+     the row. The page reloads what it shows: the list of vivencias, the exercises of the open vivencia, and the fields of the open exercise (written in
+     place, never over a field I am in the middle of changing). A save of my own comes back too and changes nothing, because nothing differs. */
+  var rt = { ws: null, hb: 0, tk: 0, retry: 1000, timer: 0, v: false, i: false, on: false };
+  var RT_TABLES = ["vivencias", "vivencia_items", "vivencia_owners", "vivencia_shares", "vivencia_item_facilitators"];
+  function rtSend(o) { if (rt.ws && rt.ws.readyState === 1) rt.ws.send(JSON.stringify(o)); }
+  function rtChange(table) {
+    if (table === "vivencia_items" || table === "vivencia_item_facilitators") rt.i = true; else rt.v = true;
+    if (table === "vivencia_shares" || table === "vivencia_owners") rt.i = true;   /* who may do what: the exercises screen redraws with the role */
+    clearTimeout(rt.timer); rt.timer = setTimeout(rtFlush, 300);
+  }
+  function rtFlush() {
+    var v = rt.v, i = rt.i; rt.v = rt.i = false;
+    if (v) loadVivs().then(function () {
+      if (state.viv) {
+        var cur = state.vivs.filter(function (x) { return x.id === state.viv.id; })[0];
+        if (!cur) { toast("הוויוונסיה כבר לא זמינה"); if (wide()) homeWide(); else { stack().length = 0; home(); } return; }
+        var roleChanged = cur.role !== state.viv.role, titleChanged = cur.title !== state.viv.title;
+        state.viv.role = cur.role; state.viv.title = cur.title;
+        if ((roleChanged || titleChanged) && document.getElementById("list") && document.getElementById("list").hasAttribute("data-fab-room") && !(liveItem && liveItem.root.isConnected)) editor();
+      }
+      renderVivs();
+    }, function () { /* the next change will try again */ });
+    if (i && state.viv) {
+      api("/rest/v1/rpc/vivencia_members", { method: "POST", json: { v: state.viv.id } }).then(function (mm) { state.members = mm || []; }, function () { /* kept as it was */ });
+      loadItems().then(function () {
+        paint();
+        if (liveItem && liveItem.root.isConnected) {
+          var f = state.items.filter(function (x) { return x.id === liveItem.id; })[0];
+          if (f) liveItem.apply(f);
+          else { toast("התרגיל הוסר"); liveItem = null; if (wide()) { show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); state.lastItem = null; paint(); } else back(); }
+        }
+      }, function () { /* the next change will try again */ });
+    }
+  }
+  function startRealtime() {
+    if (rt.ws || !FLOA_AUTH.signedIn() || !window.WebSocket) return;
+    var ws, cfg = window.SUPABASE;
+    try { ws = new WebSocket(cfg.url.replace(/^http/, "ws") + "/realtime/v1/websocket?apikey=" + encodeURIComponent(cfg.anonKey) + "&vsn=1.0.0"); } catch (x) { return; }
+    rt.ws = ws;
+    var TOPIC = "realtime:biodanza";
+    ws.onopen = function () {
+      rt.retry = 1000;
+      Promise.resolve(FLOA_AUTH.token()).then(function (tok) {
+        var ch = []; RT_TABLES.forEach(function (tb) { ["INSERT", "UPDATE", "DELETE"].forEach(function (ev) { ch.push({ event: ev, schema: "biodanza", table: tb }); }); });
+        rtSend({ topic: TOPIC, event: "phx_join", ref: "1", payload: { config: { broadcast: { ack: false, self: false }, presence: { key: "" }, private: false, postgres_changes: ch }, access_token: tok } });
+        rt.hb = setInterval(function () { rtSend({ topic: "phoenix", event: "heartbeat", payload: {}, ref: String(Date.now()) }); }, 25000);
+        rt.tk = setInterval(function () { Promise.resolve(FLOA_AUTH.token()).then(function (tk) { rtSend({ topic: TOPIC, event: "access_token", payload: { access_token: tk }, ref: String(Date.now()) }); }, function () {}); }, 600000);
+      }, function () { try { ws.close(); } catch (x) { /* closed */ } });
+    };
+    ws.onmessage = function (e) {
+      var m; try { m = JSON.parse(e.data); } catch (x) { return; }
+      if (m.event === "phx_reply" && m.topic === TOPIC && m.ref === "1") { rt.on = !!(m.payload && m.payload.status === "ok"); if (rt.on) { rt.v = rt.i = true; rtFlush(); } }   /* what was missed while the connection was closed */
+      else if (m.event === "postgres_changes") rtChange(m.payload && m.payload.data && m.payload.data.table);
+      else if (m.event === "system" && m.payload && m.payload.status === "error") rt.on = false;
+    };
+    ws.onclose = function () {
+      clearInterval(rt.hb); clearInterval(rt.tk); rt.ws = null; rt.on = false;
+      if (FLOA_AUTH.signedIn()) { setTimeout(startRealtime, rt.retry); rt.retry = Math.min(rt.retry * 2, 30000); }
+    };
+    ws.onerror = function () { try { ws.close(); } catch (x) { /* closed */ } };
+  }
+  document.addEventListener("visibilitychange", function () { if (!document.hidden && state.me) { if (!rt.ws) startRealtime(); else { rt.v = rt.i = true; rtFlush(); } } });
+
   /* ---------- start ---------- */
   function start() {
     if (!FLOA_AUTH.signedIn()) return gate("כניסה למאפשרי ביודנסה", false);
@@ -1071,7 +1167,7 @@
     api("/rest/v1/rpc/me", { method: "POST", json: {} }).then(function (me) {
       state.me = me;
       if (!me || !me.allowed) return gate("לחשבון " + FLOA_AUTH.email() + " אין הרשאה להיכנס. אפשר לבקש מהמנהל להוסיף אותו.", true);
-      return Promise.all([api("/rest/v1/lines?select=key,name_he&order=sort"), api("/rest/v1/phases?select=key,name_he&order=sort")]).then(function (r) { state.lines = r[0]; state.phases = r[1]; home(); });
+      return Promise.all([api("/rest/v1/lines?select=key,name_he&order=sort"), api("/rest/v1/phases?select=key,name_he&order=sort")]).then(function (r) { state.lines = r[0]; state.phases = r[1]; home(); startRealtime(); });
     }).catch(function (e) { console.error(e); gate("לא הצלחנו להתחבר. נסו שוב.", false); });
   }
   /* wide screen: drag the line between the list and the vivencia to change the width (arrows on the keyboard, double click resets); kept in this browser */
