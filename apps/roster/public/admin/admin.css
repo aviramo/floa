@@ -489,7 +489,7 @@ html.dlg-lock { overflow: hidden; overscroll-behavior: none; }
 /* השורה השנייה במסך משנה (שם המפגש ומועדו): מיושרת לטקסט הכותרת (אחרי חץ החזרה) וצמודה אליה */
 #pDlg .sheet-head:has(+ .psub:not([hidden])) { margin-bottom: 0; }
 #pDlg .psub { margin-top: calc(var(--sp-1) * -1); padding-inline-start: calc(var(--tag) + var(--sp-2)); line-height: 1.3; }
-/* שורת הכפתורים מימין לשמאל: צפייה כמשתתף, תגית, חיוג, וואטסאפ */
+/* שורת הכפתורים מימין לשמאל: תגית, חיוג, וואטסאפ */
 #pDlg .sheet-head #pAllocChip { order: 3; }
 #pDlg .sheet-head #pMsgs .ctop { order: 5; display: flex; margin: 0; }
 #pCall { order: 4; }
