@@ -152,6 +152,9 @@
     const sp = new URLSearchParams(location.search);
     if (DEEP_KEYS.some((k) => sp.get(k))) { deep = {}; DEEP_KEYS.forEach((k) => { deep[k] = sp.get(k); }); sessionStorage.setItem('roster_deep', JSON.stringify(deep)); }
     else { deep = JSON.parse(sessionStorage.getItem('roster_deep') || 'null'); }
+    /* the business is the address itself (/aum): served in place by the domain, with no ?biz=; it wins over a saved link */
+    { const ps = (location.pathname.match(/^\/([a-z][a-z0-9-]{1,39})\/?$/) || [])[1];
+      if (ps && !['admin', 'connect', 'me', 'api', 'assets', 'new', 'index'].includes(ps) && !sp.get('biz')) { deep = Object.assign({}, DEEP_KEYS.some((k) => sp.get(k)) ? deep : {}, { biz: ps }); sessionStorage.setItem('roster_deep', JSON.stringify(deep)); } }
   } catch (e) {}
   const $ = (s) => document.querySelector(s);
 

@@ -87,6 +87,15 @@ export async function onRequest({ request, next, env }) {
     if (/^[a-z][a-z0-9-]{1,39}$/.test(slug) && !RESERVED.includes(slug) && seg.length <= 2
         && Object.prototype.hasOwnProperty.call(SLUG_PAGES, sub)) {
       const qs = url.search.replace(/^\?/, "");
+      /* the business's own page (/<business>) is served IN PLACE: the admin page under this address, with the
+         address kept (no hop through /admin/?biz= and back). A <base> pins every relative address (assets,
+         ../assets, links) to /admin/, exactly where the page lives; the page reads the business from the path. */
+      if (sub === "") {
+        const page = await env.ASSETS.fetch(new Request(new URL(home + "admin/", url), request));
+        if (page.status === 200) {
+          return new HTMLRewriter().on("head", { element(el) { el.prepend('<base href="/admin/">', { html: true }); } }).transform(page);
+        }
+      }
       return Response.redirect(url.origin + "/" + SLUG_PAGES[sub] + "/?biz=" + slug + (qs ? "&" + qs : ""), 307);
     }
   }
