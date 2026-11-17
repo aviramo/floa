@@ -564,7 +564,7 @@
   function sheetOf(id, title, body) {
     var dlg = document.getElementById(id);
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = id; document.body.appendChild(dlg); }
-    RosterSheet.render(dlg, { title: title, from: "bottom", body: '<style>#' + id + ' .rrow { padding-inline: 0 }</style>' + body });
+    RosterSheet.render(dlg, { title: title, from: "bottom", body: '<style>#' + id + ' .rrow { margin-inline: calc(var(--pp-px) * -1); padding-inline: var(--pp-px) }</style>' + body });
     return dlg.querySelector(".sheet-body");
   }
   function musicSheet(it) {
@@ -698,7 +698,7 @@
   function pickerSheet(swapIt) {
     var dlg = document.getElementById("catDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "catDlg"; document.body.appendChild(dlg); }
-    RosterSheet.render(dlg, { title: swapIt ? "החלפת תרגיל" : "קטלוג התרגילים", from: "bottom", body: '<style>#catDlg .rrow { padding-inline: 0 }</style>' + pickerBody() });   /* the content sits on the title's own edges, the same on both sides */
+    RosterSheet.render(dlg, { title: swapIt ? "החלפת תרגיל" : "קטלוג התרגילים", from: "bottom", body: '<style>#catDlg .rrow { margin-inline: calc(var(--pp-px) * -1); padding-inline: var(--pp-px) }</style>' + pickerBody() });   /* the content sits on the title's own edges, the same on both sides */
     var r = dlg.querySelector(".sheet-body"), ls = r.querySelector("#list");
     var ph0 = r.querySelector("[data-pickhead]"); if (ph0) { ph0.style.paddingTop = "0"; ph0.style.paddingInline = "0"; }   /* the popup already leaves its standard step under the title */
     r.style.overflowY = "hidden";   /* the search stays where it is and only the list scrolls, so nothing shows through above it */
@@ -715,7 +715,7 @@
       var dlg = document.getElementById("exDlg");
       if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "exDlg"; document.body.appendChild(dlg); }
       RosterSheet.render(dlg, { title: name(e), from: "bottom", action: { label: word, icon: I.check, id: "exgo" },
-        body: '<style>#exDlg .rrow { padding-inline: 0 }</style><div style="padding-block:var(--sp-2)">' + ((card("poetics", "פואטיקה") + card("guidance", "הנחיה")) || ph("אין עדיין תיאור לתרגיל", "")) + musicRows(songs) + '</div>' });
+        body: '<style>#exDlg .rrow { margin-inline: calc(var(--pp-px) * -1); padding-inline: var(--pp-px) }</style><div style="padding-block:var(--sp-2)">' + ((card("poetics", "פואטיקה") + card("guidance", "הנחיה")) || ph("אין עדיין תיאור לתרגיל", "")) + musicRows(songs) + '</div>' });
       dlg.querySelector("#exgo").addEventListener("click", function () { if (swapIt) confirmSwap(e, swapIt, true); else addEx(e, undefined, true); });
     }, fail);
   }
