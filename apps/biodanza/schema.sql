@@ -315,3 +315,101 @@ insert into biodanza.categories (key, name_he, sort) values
   ('Dances Of The Angels', 'ריקודי המלאכים', 19), ('Elements', 'יסודות', 20), ('Procedures Of Facilitation', 'פרוצדורות של אפשור', 21)
 on conflict (key) do update set name_he = excluded.name_he, sort = excluded.sort;
 grant select on biodanza.categories to authenticated, service_role;
+
+-- ---------- sharing a vivencia: view or edit, with accounts of the allowlist only ----------
+-- OWNERS (vivencia_owners) can do everything, share and delete included. A SHARE gives one allowed account (by email, so it works before
+-- that person ever signs in) either 'view' (read only) or 'edit' (change the vivencia and its items, not delete or share it).
+create table if not exists biodanza.vivencia_shares (
+  vivencia_id uuid not null references biodanza.vivencias(id) on delete cascade,
+  email       text not null check (email = lower(email)),
+  role        text not null check (role in ('view', 'edit')),
+  position    int,    -- the order of THIS person's list; changed through set_share_position()
+  created_at  timestamptz not null default now(),
+  primary key (vivencia_id, email)
+);
+alter table biodanza.vivencia_shares enable row level security;
+
+create or replace function biodanza.can_view(v uuid) returns boolean
+  language sql stable security definer set search_path = biodanza, public as $$
+  select biodanza.is_allowed() and (
+    exists (select 1 from biodanza.vivencia_owners where vivencia_id = v and user_id = auth.uid())
+    or exists (select 1 from biodanza.vivencia_shares where vivencia_id = v and email = biodanza.jwt_email())) $$;
+create or replace function biodanza.can_edit(v uuid) returns boolean
+  language sql stable security definer set search_path = biodanza, public as $$
+  select biodanza.is_allowed() and (
+    exists (select 1 from biodanza.vivencia_owners where vivencia_id = v and user_id = auth.uid())
+    or exists (select 1 from biodanza.vivencia_shares where vivencia_id = v and email = biodanza.jwt_email() and role = 'edit')) $$;
+
+-- the accounts a vivencia can be shared with: the allowlist, nothing else (every allowed account may see it, to choose from)
+create or replace function biodanza.share_candidates() returns table (email text, note text)
+  language sql stable security definer set search_path = biodanza, public as $$
+  select a.email, a.note from biodanza.allowed a where biodanza.is_allowed() and a.email <> biodanza.jwt_email() order by a.note, a.email $$;
+
+-- a person with a share orders their own list
+create or replace function biodanza.set_share_position(v uuid, pos int) returns void
+  language sql security definer set search_path = biodanza, public as $$
+  update biodanza.vivencia_shares set position = pos where vivencia_id = v and email = biodanza.jwt_email() and biodanza.is_allowed() $$;
+
+-- a share only goes to an account that is on the allowlist
+create or replace function biodanza.share_check() returns trigger
+  language plpgsql security definer set search_path = biodanza, public as $$
+begin
+  if not exists (select 1 from biodanza.allowed where email = new.email) then raise exception 'not_allowed_account'; end if;
+  return new;
+end $$;
+drop trigger if exists share_check on biodanza.vivencia_shares;
+create trigger share_check before insert or update on biodanza.vivencia_shares for each row execute function biodanza.share_check();
+
+drop policy if exists vivencias_read on biodanza.vivencias;
+create policy vivencias_read on biodanza.vivencias for select to authenticated using (biodanza.can_view(id));
+drop policy if exists vivencias_update on biodanza.vivencias;
+create policy vivencias_update on biodanza.vivencias for update to authenticated using (biodanza.can_edit(id)) with check (biodanza.can_edit(id));
+-- delete stays with the owners (vivencias_delete uses owns())
+
+drop policy if exists vivencia_owners_read on biodanza.vivencia_owners;
+create policy vivencia_owners_read on biodanza.vivencia_owners for select to authenticated using (biodanza.owns(vivencia_id) or user_id = auth.uid());
+
+drop policy if exists vivencia_shares_read on biodanza.vivencia_shares;
+create policy vivencia_shares_read on biodanza.vivencia_shares for select to authenticated using (biodanza.owns(vivencia_id) or email = biodanza.jwt_email());
+drop policy if exists vivencia_shares_write on biodanza.vivencia_shares;
+create policy vivencia_shares_write on biodanza.vivencia_shares for all to authenticated using (biodanza.owns(vivencia_id)) with check (biodanza.owns(vivencia_id));
+
+drop policy if exists vivencia_items_all on biodanza.vivencia_items;
+drop policy if exists vivencia_items_read on biodanza.vivencia_items;
+create policy vivencia_items_read on biodanza.vivencia_items for select to authenticated using (biodanza.can_view(vivencia_id));
+drop policy if exists vivencia_items_write on biodanza.vivencia_items;
+create policy vivencia_items_write on biodanza.vivencia_items for all to authenticated using (biodanza.can_edit(vivencia_id)) with check (biodanza.can_edit(vivencia_id));
+
+grant select, insert, update, delete on biodanza.vivencia_shares to authenticated, service_role;
+grant execute on all functions in schema biodanza to authenticated, service_role;
+revoke execute on all functions in schema biodanza from anon;
+
+-- ---------- who guides an exercise (optional, any number of people), when a vivencia has more than two editors ----------
+-- The people to choose from are the vivencia's members: its owners and the accounts shared with edit rights.
+create or replace function biodanza.vivencia_members(v uuid) returns table (email text, note text, role text)
+  language sql stable security definer set search_path = biodanza, public as $$
+  select lower(u.email)::text, coalesce(a.note, '')::text, 'owner'::text
+    from biodanza.vivencia_owners o join auth.users u on u.id = o.user_id left join biodanza.allowed a on a.email = lower(u.email)
+   where o.vivencia_id = v and biodanza.can_view(v)
+  union all
+  select s.email, coalesce(a.note, '')::text, 'edit'::text
+    from biodanza.vivencia_shares s left join biodanza.allowed a on a.email = s.email
+   where s.vivencia_id = v and s.role = 'edit' and biodanza.can_view(v) $$;
+
+create table if not exists biodanza.vivencia_item_facilitators (
+  item_id uuid not null references biodanza.vivencia_items(id) on delete cascade,
+  email   text not null check (email = lower(email)),
+  primary key (item_id, email)
+);
+alter table biodanza.vivencia_item_facilitators enable row level security;
+drop policy if exists item_fac_read on biodanza.vivencia_item_facilitators;
+create policy item_fac_read on biodanza.vivencia_item_facilitators for select to authenticated
+  using (exists (select 1 from biodanza.vivencia_items i where i.id = item_id and biodanza.can_view(i.vivencia_id)));
+drop policy if exists item_fac_write on biodanza.vivencia_item_facilitators;
+create policy item_fac_write on biodanza.vivencia_item_facilitators for all to authenticated
+  using (exists (select 1 from biodanza.vivencia_items i where i.id = item_id and biodanza.can_edit(i.vivencia_id)))
+  with check (exists (select 1 from biodanza.vivencia_items i where i.id = item_id and biodanza.can_edit(i.vivencia_id)
+                      and exists (select 1 from biodanza.vivencia_members(i.vivencia_id) m where m.email = vivencia_item_facilitators.email)));
+grant select, insert, update, delete on biodanza.vivencia_item_facilitators to authenticated, service_role;
+grant execute on all functions in schema biodanza to authenticated, service_role;
+revoke execute on all functions in schema biodanza from anon;

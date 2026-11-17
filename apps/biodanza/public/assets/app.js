@@ -12,7 +12,7 @@
   function parseUrl() { var seg = location.pathname.slice(BASE.length).split("/").filter(Boolean); return { viv: seg[0] || "", item: seg[1] || "" }; }
   function wide() { return window.matchMedia("(min-width: 1024px)").matches; }
   var api = function (p, o) { return FLOA_AUTH.api(p, o); };
-  var state = { me: null, lines: [], phases: [], cat: null, vivs: [], viv: null, items: [], filter: "" };
+  var state = { members: [], me: null, lines: [], phases: [], cat: null, vivs: [], viv: null, items: [], filter: "" };
 
   var I = {
     back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>',
@@ -27,6 +27,10 @@
     list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"/></svg>',
     grip: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>',
     yt: '<svg viewBox="0 0 24 24" stroke="none" aria-hidden="true" style="width:calc(var(--icon-l) * 1.6);height:calc(var(--icon-l) * 1.6)"><rect x="1" y="5" width="22" height="14" rx="4.500" fill="currentColor"/><path d="M10 9l5.500 3-5.500 3z" style="fill:var(--bg)"/></svg>',
+    dots: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>',
+    share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.3 10.8l7.4-3.6M8.3 13.2l7.4 3.6"/></svg>',
+    x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.500 4.500L19 7"/></svg>',
     pen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4"/></svg>',
     out: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 5H5v14h5M15 8l4 4-4 4M19 12H9"/></svg>'
   };
@@ -38,6 +42,7 @@
   /* a song is two things: its name and who plays it */
   function songName(m) { return m ? (m.title || m.name || "") : ""; }
   function songBy(m) { return m ? (m.artist || "") : ""; }
+  function canEdit() { return !state.viv || state.viv.role !== "view"; }   /* a share for viewing changes nothing; the database enforces it too */
   /* the same button wherever a song is shown: it searches the song and its artist on YouTube, in a new tab */
   /* the YouTube button of the song played last is red, the others are muted (kept in this browser, so it is still marked tomorrow) */
   var played = (function () { try { return localStorage.getItem("biodanza.played") || ""; } catch (e) { return ""; } })();
@@ -124,9 +129,12 @@
       on(r, "new", newViv);
     });
     var uid = FLOA_AUTH.userId();
-    Promise.all([api("/rest/v1/vivencias?select=id,title,updated_at,vivencia_items(count)"), api("/rest/v1/vivencia_owners?user_id=eq." + uid + "&select=vivencia_id,position")]).then(function (r) {
-      var pos = {}; (r[1] || []).forEach(function (o) { pos[o.vivencia_id] = o.position; });
-      state.vivs = (r[0] || []).map(function (v) { v.pos = pos[v.id]; return v; });
+    Promise.all([api("/rest/v1/vivencias?select=id,title,updated_at,vivencia_items(count)"), api("/rest/v1/vivencia_owners?user_id=eq." + uid + "&select=vivencia_id,position"),
+      api("/rest/v1/vivencia_shares?email=eq." + encodeURIComponent(FLOA_AUTH.email().toLowerCase()) + "&select=vivencia_id,role,position")]).then(function (r) {
+      var pos = {}, role = {};
+      (r[2] || []).forEach(function (o) { pos[o.vivencia_id] = o.position; role[o.vivencia_id] = o.role; });   /* shared with me */
+      (r[1] || []).forEach(function (o) { pos[o.vivencia_id] = o.position; role[o.vivencia_id] = "owner"; });   /* mine: an owner is above any share */
+      state.vivs = (r[0] || []).map(function (v) { v.pos = pos[v.id]; v.role = role[v.id] || "view"; return v; });
       /* my own order; a vivencia I have not placed yet (a new one) comes first, newest first */
       state.vivs.sort(function (a, b) { var pa = a.pos == null ? -1 : a.pos, pb = b.pos == null ? -1 : b.pos; return pa - pb || (a.updated_at < b.updated_at ? 1 : -1); });
       renderVivs();
@@ -136,7 +144,7 @@
     var l = document.getElementById("hl"); if (!l) return;
     l.innerHTML = state.vivs.length ? state.vivs.map(function (v) {
       var n = v.vivencia_items && v.vivencia_items[0] ? v.vivencia_items[0].count : 0;
-      return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-id="' + v.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub" data-n="' + v.id + '">' + n + ' תרגילים</span></button></div>';
+      return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-id="' + v.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub" data-n="' + v.id + '">' + n + ' תרגילים' + (v.role === "owner" ? "" : " · משותף" + (v.role === "view" ? " (צפייה)" : " (עריכה)")) + '</span></button></div>';
     }).join("") : ph("עוד אין ויוונסיות", "לחצו על + כדי ליצור את הראשונה");
     l.querySelectorAll("[data-id]").forEach(function (b) { b.addEventListener("click", function () { openViv(b.dataset.id); }); });
     if (state.vivs.length) enableDrag(l, "[data-id]", persistVivs);
@@ -150,6 +158,125 @@
   }
 
   function newViv() { namePopup({ id: uuid(), title: "" }, true); }
+  /* Who guides an exercise: optional, any number of people, offered only when a vivencia has more than two editors (owners and accounts shared with edit rights). */
+  function facOn() { return state.members.length > 2; }
+  function facName(e) { var m = state.members.filter(function (x) { return x.email === e; })[0]; return m && m.note ? m.note : e.split("@")[0]; }
+  function facEmails(it) { return (it.vivencia_item_facilitators || []).map(function (x) { return x.email; }); }
+  function facLabel(it) {
+    var es = facEmails(it);
+    return !es.length ? "מנחה" : es.length === 1 ? facName(es[0]) : facName(es[0]) + " +" + (es.length - 1);
+  }
+  function facChip(it, extra) {
+    if (!facOn()) return "";
+    var has = facEmails(it).length > 0;
+    if (!canEdit()) return has ? '<span class="rchip' + (extra || "") + '" data-fac-label="' + it.id + '">' + esc(facLabel(it)) + '</span>' : "";
+    return '<button type="button" class="rchip rchip--button' + (extra || "") + '" data-fac="' + it.id + '" aria-haspopup="menu" aria-pressed="' + has + '">' + esc(facLabel(it)) + '</button>';
+  }
+  function facRefresh(it) {
+    document.querySelectorAll('[data-fac="' + it.id + '"]').forEach(function (b) { b.textContent = facLabel(it); b.setAttribute("aria-pressed", String(facEmails(it).length > 0)); });
+  }
+  /* the menu of people: a tick adds or removes one, the menu stays open so several can be ticked */
+  function facMenu(btn, it) {
+    var old = document.getElementById("moreMenu"); if (old) old.remove();
+    var m = document.createElement("div"); m.id = "moreMenu"; m.className = "rmenu rmenu--fixed"; m.setAttribute("role", "menu");
+    var blank = '<svg viewBox="0 0 24 24" aria-hidden="true"></svg>';
+    function paintM() {
+      var on = facEmails(it);
+      m.innerHTML = state.members.map(function (x, k) {
+        return '<button type="button" class="rmenu__item" role="menuitemcheckbox" aria-checked="' + (on.indexOf(x.email) >= 0) + '" data-k="' + k + '">' + (on.indexOf(x.email) >= 0 ? I.check : blank) + '<span>' + esc(x.note || x.email) + '</span></button>';
+      }).join("");
+      m.querySelectorAll("[data-k]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var mem = state.members[+b.dataset.k], has = facEmails(it).indexOf(mem.email) >= 0;
+          var req = has ? api("/rest/v1/vivencia_item_facilitators?item_id=eq." + it.id + "&email=eq." + encodeURIComponent(mem.email), { method: "DELETE" })
+                        : api("/rest/v1/vivencia_item_facilitators", { method: "POST", prefer: "return=minimal", json: { item_id: it.id, email: mem.email } });
+          req.then(function () {
+            it.vivencia_item_facilitators = has ? (it.vivencia_item_facilitators || []).filter(function (x) { return x.email !== mem.email; }) : (it.vivencia_item_facilitators || []).concat([{ email: mem.email }]);
+            paintM(); facRefresh(it);
+          }, fail);
+        });
+      });
+    }
+    paintM();
+    document.body.appendChild(m);
+    var r = btn.getBoundingClientRect();
+    m.style.top = Math.round(r.bottom + 4) + "px"; m.style.left = Math.max(8, Math.min(Math.round(r.left), window.innerWidth - m.offsetWidth - 8)) + "px";
+    function close() { m.remove(); document.removeEventListener("click", away, true); document.removeEventListener("keydown", onKey, true); }
+    function away(e) { if (!m.contains(e.target) && e.target !== btn) close(); }
+    function onKey(e) { if (e.key === "Escape") close(); }
+    setTimeout(function () { document.addEventListener("click", away, true); document.addEventListener("keydown", onKey, true); }, 0);
+  }
+  /* a chip's click is its own: it never opens the strip, and it is not the start of a drag */
+  function wireFac(root) {
+    root.querySelectorAll("[data-fac]").forEach(function (b) {
+      b.addEventListener("pointerdown", function (e) { e.stopPropagation(); });
+      b.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var it = state.items.filter(function (x) { return x.id === b.dataset.fac; })[0];
+        if (it) facMenu(b, it);
+      });
+    });
+  }
+
+  /* the kit's anchored menu: opens under its button, closes on a tap outside or Escape */
+  function menu(btn, items) {
+    var old = document.getElementById("moreMenu"); if (old) old.remove();
+    var m = document.createElement("div"); m.id = "moreMenu"; m.className = "rmenu rmenu--fixed"; m.setAttribute("role", "menu");
+    m.innerHTML = items.map(function (it, k) { return '<button type="button" class="rmenu__item" role="menuitem" data-k="' + k + '">' + it.icon + '<span>' + esc(it.label) + '</span></button>'; }).join("");
+    document.body.appendChild(m);
+    var r = btn.getBoundingClientRect();
+    m.style.top = Math.round(r.bottom + 4) + "px"; m.style.left = Math.max(8, Math.round(r.left)) + "px";
+    function close() { m.remove(); document.removeEventListener("click", away, true); document.removeEventListener("keydown", onKey, true); }
+    function away(e) { if (!m.contains(e.target)) close(); }
+    function onKey(e) { if (e.key === "Escape") close(); }
+    setTimeout(function () { document.addEventListener("click", away, true); document.addEventListener("keydown", onKey, true); }, 0);
+    m.querySelectorAll("[data-k]").forEach(function (b) { b.addEventListener("click", function () { var f = items[+b.dataset.k].fn; close(); f(); }); });
+    var first = m.querySelector(".rmenu__item"); if (first) first.focus({ preventScroll: true });
+  }
+
+  /* sharing: only with accounts of the allowlist (chosen from it, never typed), as a viewer or an editor */
+  function sharePopup(v) {
+    var dlg = document.getElementById("shareDlg");
+    if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "shareDlg"; document.body.appendChild(dlg); }
+    var shares = [], cands = [];
+    RosterSheet.render(dlg, {
+      title: "שיתוף", from: "bottom",
+      body: '<div class="pad"><label class="rfield"><span>חיפוש (אימייל או שם)</span><input id="sq" type="search" placeholder=" " autocomplete="off"></label></div><div id="slist"></div>'
+    });
+    function who(e) { var c = cands.filter(function (x) { return x.email === e; })[0]; return c && c.note ? c.note : e; }
+    function paintS() {
+      var q = dlg.querySelector("#sq").value.trim().toLowerCase(), l = dlg.querySelector("#slist");
+      var have = {}; shares.forEach(function (x) { have[x.email] = 1; });
+      var mine = shares.filter(function (x) { return !q || (x.email + " " + who(x.email)).toLowerCase().indexOf(q) >= 0; });
+      var rest = cands.filter(function (c) { return !have[c.email] && (!q || (c.email + " " + (c.note || "")).toLowerCase().indexOf(q) >= 0); });
+      var title2 = function (t) { return '<div class="rrow rrow--compact"><span class="rrow__sub">' + t + '</span></div>'; };
+      var html = "";
+      if (mine.length) {
+        html += title2("משותף עם") + mine.map(function (x) {
+          return '<div class="rrow"><div class="rrow__main"><span class="rrow__title">' + esc(who(x.email)) + '</span>' + (who(x.email) !== x.email ? '<span class="rrow__sub" dir="ltr">' + esc(x.email) + '</span>' : '') + '</div>' +
+            '<button type="button" class="rchip rchip--button" data-role="view" data-e="' + esc(x.email) + '" aria-pressed="' + (x.role === "view") + '">צפייה</button>' +
+            '<button type="button" class="rchip rchip--button" data-role="edit" data-e="' + esc(x.email) + '" aria-pressed="' + (x.role === "edit") + '">עריכה</button>' +
+            '<button type="button" class="rbtn rbtn--icon" data-rm="' + esc(x.email) + '" aria-label="הסרה" title="הסרה">' + I.x + '</button></div>';
+        }).join("");
+      }
+      if (rest.length) {
+        html += title2("אפשר לשתף עם") + rest.map(function (c) {
+          return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-add="' + esc(c.email) + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(c.note || c.email) + '</span>' + (c.note ? '<span class="rrow__sub" dir="ltr">' + esc(c.email) + '</span>' : '') + '</button></div>';
+        }).join("");
+      }
+      l.innerHTML = html || ph("אין חשבונות", "אפשר לשתף רק עם חשבונות מרשימת המורשים. את הרשימה מנהל המנהל.");
+      l.querySelectorAll("[data-role]").forEach(function (b) { b.addEventListener("click", function () { setRole(b.dataset.e, b.dataset.role); }); });
+      l.querySelectorAll("[data-rm]").forEach(function (b) { b.addEventListener("click", function () { api("/rest/v1/vivencia_shares?vivencia_id=eq." + v.id + "&email=eq." + encodeURIComponent(b.dataset.rm), { method: "DELETE" }).then(load, fail); }); });
+      l.querySelectorAll("[data-add]").forEach(function (b) { b.addEventListener("click", function () { api("/rest/v1/vivencia_shares", { method: "POST", prefer: "return=minimal", json: { vivencia_id: v.id, email: b.dataset.add, role: "view" } }).then(load, fail); }); });
+    }
+    function setRole(e, role) { api("/rest/v1/vivencia_shares?vivencia_id=eq." + v.id + "&email=eq." + encodeURIComponent(e), { method: "PATCH", json: { role: role } }).then(load, fail); }
+    function load() {
+      return Promise.all([api("/rest/v1/vivencia_shares?vivencia_id=eq." + v.id + "&select=email,role&order=created_at"), api("/rest/v1/rpc/share_candidates", { method: "POST", json: {} })]).then(function (r) { shares = r[0] || []; cands = r[1] || []; paintS(); }, fail);
+    }
+    dlg.querySelector("#sq").addEventListener("input", paintS);
+    load();
+  }
+
   /* removing an exercise from a vivencia is asked in the kit's popup, one action; the catalog's exercise is untouched */
   function confirmRemoveItem(it) {
     var dlg = document.getElementById("confirmDlg");
@@ -170,7 +297,7 @@
     RosterSheet.render(dlg, {
       title: isNew ? "ויוונסיה חדשה" : "שינוי שם", from: "bottom", size: "s",
       body: '<div class="pad"><label class="rfield"><span>נושא</span><input id="nt" placeholder=" " autocomplete="off" value="' + esc(v.title) + '"></label></div>',
-      foot: '<button class="rbtn rbtn--block" type="button" id="nsave">שמירה</button>' + (isNew ? '' : '<button class="rbtn rbtn--ghost rbtn--danger rbtn--block" type="button" id="ndel">מחיקת הוויוונסיה</button>')
+      foot: '<button class="rbtn rbtn--block" type="button" id="nsave">שמירה</button>' + (isNew || v.role !== "owner" ? '' : '<button class="rbtn rbtn--ghost rbtn--danger rbtn--block" type="button" id="ndel">מחיקת הוויוונסיה</button>')
     });
     var nd = dlg.querySelector("#ndel"); if (nd) nd.addEventListener("click", function () { dlg.close(); confirmDelete(v); });
     var inp = dlg.querySelector("#nt"); inp.focus();
@@ -191,16 +318,19 @@
   /* ---------- the vivencia: plan along the curve ---------- */
   function openViv(id) { if (!state.viv || state.viv.id !== id) state.lastItem = null; state.filter = ""; state.viv = state.vivs.filter(function (v) { return v.id === id; })[0] || { id: id, title: "" }; if (wide()) stack().length = 0; go(editor); paintSel(); }
   function loadItems() {
-    return api("/rest/v1/vivencia_items?vivencia_id=eq." + state.viv.id + "&select=id,position,exercise_id,music_id,notes,title,poetics,guidance,exercises(title_he,title_en,poetics,guidance,objective,exercise_texts(lang,poetics,guidance)),music(id,name,title,artist,duration_sec)&order=position").then(function (r) { state.items = r || []; });
+    return api("/rest/v1/vivencia_items?vivencia_id=eq." + state.viv.id + "&select=id,position,exercise_id,music_id,notes,title,poetics,guidance,exercises(title_he,title_en,poetics,guidance,objective,exercise_texts(lang,poetics,guidance)),music(id,name,title,artist,duration_sec),vivencia_item_facilitators(email)&order=position").then(function (r) { state.items = r || []; });
   }
   function editor() {
     var v = state.viv; setUrl(BASE + v.id);
-    show(head(v.title || "ויוונסיה חדשה", "", !wide(), '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="rename" aria-label="שינוי שם" title="שינוי שם">' + I.pen + '</button>') +
+    show(head(v.title || "ויוונסיה חדשה", "", !wide(), v.role === "view" ? '' : '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="more" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>') +
       '<div class="rlist" data-fab-room id="list"><div class="rskel rskel--title"></div></div>' +
-      '<button class="rfab" data-act="add" aria-label="הוספת תרגיל" title="הוספת תרגיל">' + I.plus + '</button>', function (r) {
+      (v.role === "view" ? '' : '<button class="rfab" data-act="add" aria-label="הוספת תרגיל" title="הוספת תרגיל">' + I.plus + '</button>'), function (r) {
       on(r, "back", back); on(r, "add", function () { go(picker); });
-      on(r, "rename", function () { namePopup(v, false); });
+      on(r, "more", function (b) {
+        menu(b, [{ label: "עריכת שם", icon: I.pen, fn: function () { namePopup(v, false); } }].concat(v.role === "owner" ? [{ label: "שיתוף", icon: I.share, fn: function () { sharePopup(v); } }] : []));
+      });
     }, "d");
+    api("/rest/v1/rpc/vivencia_members", { method: "POST", json: { v: v.id } }).then(function (mm) { state.members = mm || []; if (document.getElementById("list")) paint(); }, function () { state.members = []; });
     loadItems().then(function () {
       paint();
       if (pending && pending.item) {   /* opened on an exercise's own address */
@@ -234,10 +364,11 @@
     if (!vis.length) { l.innerHTML = ph("הוויוונסיה ריקה", "לחצו על + כדי להוסיף תרגיל מהקטלוג"); return; }
     l.innerHTML = vis.map(function (i, k) {
       var e = i.exercises || {};
-      return '<div class="rrow rrow--link"' + (state.lastItem === i.id ? ' aria-current="true"' : '') + '><span class="rchip rchip--s" aria-hidden="true">' + (k + 1) + '</span><button type="button" class="rrow__main" data-edit="' + i.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(itemName(i)) + '</span><span class="rrow__sub">' + esc([songName(i.music), songBy(i.music), i.music && i.music.duration_sec ? clock(i.music.duration_sec) : ""].filter(Boolean).join(" · ") || "בלי מוזיקה") + '</span></button></div>';
+      return '<div class="rrow rrow--link"' + (state.lastItem === i.id ? ' aria-current="true"' : '') + '><span class="rchip rchip--s" aria-hidden="true">' + (k + 1) + '</span><button type="button" class="rrow__main" data-edit="' + i.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(itemName(i)) + '</span><span class="rrow__sub">' + esc([songName(i.music), songBy(i.music), i.music && i.music.duration_sec ? clock(i.music.duration_sec) : ""].filter(Boolean).join(" · ") || "בלי מוזיקה") + '</span></button>' + facChip(i, ' rrow__trail') + '</div>';
     }).join("");
     l.querySelectorAll("[data-edit]").forEach(function (b) { b.addEventListener("click", function () { var it = state.items.filter(function (x) { return x.id === b.dataset.edit; })[0]; go(function () { itemScreen(it); }); }); });
-    enableDrag(l, "[data-edit]", persistItems);
+    wireFac(l);
+    if (canEdit()) enableDrag(l, "[data-edit]", persistItems);
   }
   function persistItems(from, to) {
     var moved = state.items.splice(from, 1)[0]; state.items.splice(to, 0, moved);
@@ -253,7 +384,8 @@
     Promise.all(state.vivs.map(function (v, k) {
       if (v.pos === k + 1) return null;
       v.pos = k + 1;
-      return api("/rest/v1/vivencia_owners?vivencia_id=eq." + v.id + "&user_id=eq." + uid, { method: "PATCH", json: { position: k + 1 } });
+      return v.role === "owner" ? api("/rest/v1/vivencia_owners?vivencia_id=eq." + v.id + "&user_id=eq." + uid, { method: "PATCH", json: { position: k + 1 } })
+                                : api("/rest/v1/rpc/set_share_position", { method: "POST", json: { v: v.id, pos: k + 1 } });
     })).then(function () { renderVivs(); }, fail);
   }
 
@@ -327,7 +459,7 @@
     /* the header walks the sequence: the right button to the previous exercise, the left one to the next, the name between them */
     var hd = itemHead(!!prevIt, !!nextIt);
     show(hd + '<div class="rlist"><div class="pad">' +
-      '<label class="rfield"><span>שם התרגיל</span><input id="ina" style="font-weight: var(--fw-black); font-size: var(--fs-m)" placeholder=" " autocomplete="off" value="' + esc(itemName(it)) + '"></label>' +
+      '<div style="display:flex;align-items:flex-end;gap:var(--gap-button)">' + '<label class="rfield" style="flex:1 1 auto;margin:0"><span>שם התרגיל</span><input id="ina" style="font-weight: var(--fw-black); font-size: var(--fs-m)" placeholder=" " autocomplete="off" value="' + esc(itemName(it)) + '"></label>' + facChip(it) + '</div>' +
       '<div class="rcard rcard--flat rcard--link" data-act="pickMusic" role="button" tabindex="0" style="margin:0;cursor:pointer"><div class="rcard__head"><span class="rcard__title">מוזיקה</span>' +
         (it.music ? ytLink(it.music) : '') + '</div><div class="rcard__body">' +
         (it.music ? '<b>' + esc(songName(it.music)) + '</b>' + (songBy(it.music) ? '<br>' + esc(songBy(it.music)) : '') : 'לחצו לבחירת מוזיקה') + '</div></div>' +
@@ -336,6 +468,7 @@
       '<label class="rfield"><span>הערות</span><textarea id="it" rows="1" placeholder=" ">' + esc(it.notes || "") + '</textarea></label>' +
       '<button class="rbtn rbtn--ghost rbtn--danger rbtn--block" data-act="del">הסרה מהוויוונסיה</button></div></div>', function (r) {
       on(r, "list", back);
+      wireFac(r);
       function walk(to) { stack().pop(); go(function () { itemScreen(to); }); }
       on(r, "prevW", function () { if (prevIt) walk(prevIt); });
       on(r, "nextW", function () { if (nextIt) walk(nextIt); });

@@ -597,3 +597,11 @@ dialog.rsheet .sheet-head > .rs-act[aria-busy="true"] { pointer-events: none; }
   dialog.rsheet:not([data-size="s"]):not([data-size="sm"]) { height: var(--rs-vvh, 100dvh); max-height: var(--rs-vvh, 100dvh); max-width: none; }
   dialog.rsheet:not([data-size="s"]):not([data-size="sm"])[data-from="top"] { margin-block: 0; }
 }
+
+/* a sheet on a narrow screen (touch) opens the full width of the window, whatever its size parameter (owner 2026-11-17) */
+@media (max-width: 759px) {
+  dialog.rsheet, dialog.rsheet[data-size] { width: 100%; max-width: none; margin-inline: 0; }
+}
+
+/* a search field has no native clear button (the browser draws a box with an x at its edge); typing and deleting is enough (owner 2026-11-17) */
+.rfield > input[type="search"]::-webkit-search-cancel-button, .rfield > input[type="search"]::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
