@@ -1,7 +1,9 @@
-/* Roster ships a hand-built app from public/. No engine pages, so nothing
-   enters any sitemap, and it is private (noindex) on purpose. */
+/* Roster ships a hand-built app from public/. Only its front page enters the
+   sitemap; /admin, /connect and /me stay noindex. */
 export const pages = [];
-export const siteMap = [];
+export const siteMap = [
+  { loc: "https://roster.floa.co.il/", title: "ניהול משתתפים", description: "ניהול העסקים והחשבונות שמנהלים אותם" },
+];
 
 /* No form, no leads: an empty list matches nothing in the Worker. */
 export const leadPages = [];
