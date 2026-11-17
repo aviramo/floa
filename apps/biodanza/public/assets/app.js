@@ -645,9 +645,9 @@
       var card = function (k, label) { return txt(fake, k) ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">' + label + '</span></div><div class="rcard__body"' + (isDraft(fake, k) ? DRAFT : "") + '>' + esc(txt(fake, k)) + '</div></div>' : ""; };
       var body = card("poetics", "פואטיקה") + card("guidance", "הנחיה");
       var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה";
-      var act = wide() ? '<button class="rbtn" type="button" style="margin-inline-end:var(--sp-2)" data-act="doswap">' + word + '</button>'   /* the action is in the header, on the left; on a narrow screen a plain check, like the kit's popups */
+      var act = wide() ? '<button class="rbtn" type="button" data-act="doswap">' + word + '</button>'   /* the action is in the header, on the left; on a narrow screen a plain check, like the kit's popups */
                        : '<button class="rbtn rbtn--icon rbtn--edge-end" type="button" data-act="doswap" aria-label="' + word + '" title="' + word + '">' + I.check + '</button>';
-      show(head(name(e), "", !wide(), act) + '<div class="rlist"><div class="pad">' + (body || ph("אין עדיין תיאור לתרגיל", "")) + '</div></div>', function (r) { on(r, "back", back); on(r, "doswap", function () { if (swapIt) confirmSwap(e, swapIt); else addEx(e); }); }, "d");
+      show(head(name(e), "", !wide(), act) + '<div class="rlist"><div style="padding-block:var(--sp-2)">' + (body || ph("אין עדיין תיאור לתרגיל", "")) + '</div></div>', function (r) { on(r, "back", back); on(r, "doswap", function () { if (swapIt) confirmSwap(e, swapIt); else addEx(e); }); }, "d");
     }, fail);
   }
   /* replacing is asked in the kit's popup, one action: closing it is the cancel */
