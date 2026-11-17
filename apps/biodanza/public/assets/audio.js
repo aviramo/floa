@@ -64,6 +64,12 @@
     });
   }
   el.addEventListener("pause", paint); el.addEventListener("play", paint); el.addEventListener("ended", paint);
+  /* the time left of the song that plays, told to the page (app.js counts it down under the song's button) */
+  function tell(name, t, d) { document.dispatchEvent(new CustomEvent("bioaudio", { detail: { name: name, t: t, d: d, playing: !el.paused && !el.ended } })); }
+  el.addEventListener("timeupdate", function () { tell(now, el.currentTime, el.duration || 0); });
+  el.addEventListener("play", function () { tell(now, el.currentTime, el.duration || 0); });
+  el.addEventListener("pause", function () { tell(now, el.currentTime, el.duration || 0); });
+  el.addEventListener("ended", function () { tell("", 0, 0); });
   new MutationObserver(paint).observe(document.documentElement, { childList: true, subtree: true });
 
   function toggle(name) {
@@ -87,6 +93,9 @@
     button: function (name, trail) {
       return '<button type="button" class="rbtn rbtn--icon' + (trail ? ' rrow__trail' : '') + '" data-audio="' + name + '" data-st="sound" aria-label="השמעה" title="השמעה" style="width:var(--fab);height:var(--fab);min-height:var(--fab);color:var(--text-3)">' + ICON.sound + '</button>';
     },
+    /* move the playing song to a place in it: a fraction from 0 to 1 */
+    pause: function () { el.pause(); },
+    seek: function (f) { if (el.duration) el.currentTime = Math.max(0, Math.min(1, f)) * el.duration; },
     kept: isKept
   };
 })();
