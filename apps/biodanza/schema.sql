@@ -452,3 +452,17 @@ drop policy if exists music_files_write on biodanza.music_files;
 create policy music_files_write on biodanza.music_files for all to authenticated
   using (biodanza.is_admin()) with check (biodanza.is_admin());
 grant select, insert, update, delete on biodanza.music_files to authenticated, service_role;
+-- the songs a facilitator loved: each person's own list, nobody else sees it
+create table if not exists biodanza.song_likes (
+  user_id    uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  music_id   uuid not null references biodanza.music(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (user_id, music_id)
+);
+alter table biodanza.song_likes enable row level security;
+drop policy if exists song_likes_read on biodanza.song_likes;
+create policy song_likes_read on biodanza.song_likes for select to authenticated using (user_id = auth.uid());
+drop policy if exists song_likes_write on biodanza.song_likes;
+create policy song_likes_write on biodanza.song_likes for all to authenticated
+  using (user_id = auth.uid() and biodanza.is_allowed()) with check (user_id = auth.uid() and biodanza.is_allowed());
+grant select, insert, update, delete on biodanza.song_likes to authenticated, service_role;
