@@ -120,7 +120,7 @@
   function durOf(m) { return (m && (m.duration_sec || durKnown[m.audio_object])) || 0; }
   /* while a song plays, a button at the bottom right (the add button is at the left) stops it, from any screen and from inside any popup (a popup is above the page, so it gets a button of its own); it slides away when the song stops */
   (function () {
-    var vis = "opacity: 0; transform: translateY(calc(var(--fab) + var(--sp-3))); pointer-events: none", face = "display: grid; place-items: center; width: var(--fab); height: var(--fab); padding: 0; border: 1px solid var(--primary); border-radius: var(--r-fab); background: var(--primary); color: var(--on-primary); box-shadow: var(--sh-pop); cursor: pointer; transition: transform var(--t-base) var(--ease), opacity var(--t-base) var(--ease)";
+    var vis = "opacity: 0; transform: translateY(calc(var(--fab) + var(--sp-3))); pointer-events: none", face = "display: grid; place-items: center; width: var(--fab); height: var(--fab); padding: 0; border: 1px solid var(--danger); border-radius: var(--r-fab); background: var(--danger); color: var(--on-primary); box-shadow: var(--sh-pop); cursor: pointer; transition: transform var(--t-base) var(--ease), opacity var(--t-base) var(--ease)";
     var st = document.createElement("style");
     st.textContent = ".bio-stop, .bio-stop-in { " + face + "; " + vis + " } " +
       ".bio-stop { position: fixed; right: max(var(--gutter), var(--inset-r)); bottom: calc(var(--gutter) + var(--inset-b)); z-index: var(--z-sticky) } " +
