@@ -1,9 +1,10 @@
-/* Import Harpatka's history (a backup made by harpatka/tools/backup-prod.py) into Roster, business "harpatka", TEST SCHEMA ONLY.
+/* Import Harpatka's history (a backup made by harpatka/tools/backup-prod.py) into Roster, business "harpatka": roster-test by default, the real schema (roster, bucket roster-media) only with --prod (a write also needs --i-confirm-production).
 
    node scripts/harpatka-import.mjs <backup-dir>            dry run: every table is inserted inside a transaction that is rolled back; prints what WOULD be added
    node scripts/harpatka-import.mjs <backup-dir> --run      writes (only what is missing), then prints the real counts
 
-   - The schema is fixed to roster-test. The real schema is refused on purpose: the move to production is a separate, owner-approved step.
+   - The schema is roster-test unless --prod is given (then roster). A real write needs --prod --run --i-confirm-production, each one deliberate: the move to
+     production is a separate, owner-approved step, after a fresh Harpatka backup the same day and the business "harpatka" created in roster by hand.
    - Non-destructive: nothing is deleted or updated. Every insert is "on conflict do nothing", so a second run adds nothing, and a row that
      already exists in Roster (same id, same phone, same key) wins.
    - Ids are kept as they are in Harpatka (they are uuids, and the two systems share no ids), so there is no id map to lose: payments, notes
@@ -23,8 +24,15 @@ import { join } from "node:path";
 const args = process.argv.slice(2);
 const dir = args.find((a) => !a.startsWith("--"));
 const run = args.includes("--run");
-const SCHEMA = "roster-test", SLUG = "harpatka";
-if (args.some((a) => a.startsWith("--schema") || a.startsWith("--business"))) { console.error("the schema and the business are fixed (roster-test, harpatka)"); process.exit(2); }
+/* PRODUCTION: only with --prod (then the schema is roster and the media bucket roster-media). Even then a WRITE (--run) needs the second, explicit flag
+   --i-confirm-production, so a typo or a habit can never write the real schema. Without --prod nothing about this script changed: roster-test only.
+   A dry run with --prod writes nothing (every insert is rolled back), but it does read the real schema. The business "harpatka" must already exist
+   there: this script never creates it. */
+const PROD = args.includes("--prod");
+const SCHEMA = PROD ? "roster" : "roster-test", SLUG = "harpatka";
+if (args.some((a) => a.startsWith("--schema") || a.startsWith("--business"))) { console.error("the schema and the business are fixed (roster-test, or roster with --prod; business harpatka)"); process.exit(2); }
+if (run && PROD && !args.includes("--i-confirm-production")) { console.error("--run on the real schema needs --prod AND --i-confirm-production: nothing was written"); process.exit(2); }
+if (args.includes("--i-confirm-production") && !PROD) { console.error("--i-confirm-production only goes with --prod"); process.exit(2); }
 if (!dir || !existsSync(dir)) { console.error("usage: node scripts/harpatka-import.mjs <backup-dir> [--run]"); process.exit(2); }
 
 const SQLJS = fileURLToPath(new URL("./sql.mjs", import.meta.url));
@@ -51,7 +59,7 @@ const readRaw = (t) => { const f = join(dir, `harpatka_${t}.json`); return exist
    A file already there is not uploaded again. The dry run only lists what it would copy. Uploading needs the project's service key, fetched from the
    Management API with the token in .env (never printed, never written anywhere). */
 const OLD_STORAGE = /https:\/\/ezakarwqstnldqixgreb\.supabase\.co\/storage\/v1\/object\/public\/(meeting-images|meeting-media)\/([A-Za-z0-9._\/-]+)/g;
-const MEDIA_BUCKET = "roster-test-media";   // the test bucket: this script is test-only, so it never writes the real one (roster-media)
+const MEDIA_BUCKET = PROD ? "roster-media" : "roster-test-media";   // the real bucket only with --prod; the default is the test bucket
 const MEDIA_TABLES = ["meeting_types", "meetings", "msg_templates"];
 const env = (k) => { const m = new RegExp(`^${k}=(.*)$`, "m").exec(readFileSync(fileURLToPath(new URL("../.env", import.meta.url)), "utf8")); return m ? m[1].trim().replace(/^["']|["']$/g, "") : ""; };
 const REF = env("SUPABASE_PROJECT_REF"), ORIGIN = `https://${REF}.supabase.co`;
