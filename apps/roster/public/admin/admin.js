@@ -3848,10 +3848,10 @@
   let typeAskedFrom = null, mTypePrev = '';   // typeAskedFrom: the type that was selected when "new meeting type" was chosen (null: not waiting for a new type)
   function fillTypeSel(tid, canAdd) {
     const sel = $('#mType');
-    sel.innerHTML = state.mtypes.map((t) => '<option value="' + t.id + '"' + (t.id === tid ? ' selected' : '') + '>' + esc(t.name || 'ללא שם') + '</option>').join('') +
+    sel.innerHTML = (!state.mtypes.length && canAdd ? '<option value="" selected>ללא סוג</option>' : '') + state.mtypes.map((t) => '<option value="' + t.id + '"' + (t.id === tid ? ' selected' : '') + '>' + esc(t.name || 'ללא שם') + '</option>').join('') +
       (canAdd ? '<option value="' + NEW_TYPE + '">+ סוג מפגש חדש</option>' : '');   // only for a meeting that is being created: a type is then made on the spot and the meeting takes it
     mTypePrev = sel.value;
-    $('#mTypeF').hidden = !state.mtypes.length;   // תמיד מוצג כשיש סוגים (גם סוג אחד), כדי שיהיה ברור לאיזה סוג המפגש שייך
+    $('#mTypeF').hidden = !state.mtypes.length && !canAdd;   // תמיד מוצג כשיש סוגים (גם סוג אחד), וגם במפגש חדש בעסק בלי סוגים: שם אפשר ליצור את הסוג הראשון
   }
   $('#mType').addEventListener('change', () => {
     if ($('#mType').value === NEW_TYPE) { typeAskedFrom = mTypePrev; createType(); return; }   // the new type's own form opens above this one; the meeting takes it when it is created
