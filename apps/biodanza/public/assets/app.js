@@ -38,6 +38,10 @@
   /* a song is two things: its name and who plays it */
   function songName(m) { return m ? (m.title || m.name || "") : ""; }
   function songBy(m) { return m ? (m.artist || "") : ""; }
+  /* the same button wherever a song is shown: it searches the song and its artist on YouTube, in a new tab */
+  function ytLink(m, trail) {
+    return '<a class="rbtn rbtn--icon' + (trail ? ' rrow__trail' : '') + '" href="https://www.youtube.com/results?search_query=' + encodeURIComponent((songName(m) + " " + songBy(m)).trim()) + '" target="_blank" rel="noopener" aria-label="ניגון ביוטיוב" title="ניגון ביוטיוב">' + I.yt + '</a>';
+  }
   function clock(sec) { return Math.floor(sec / 60) + ":" + ("0" + (sec % 60)).slice(-2); }
   /* poetics and guidance: this item's own text if the facilitator changed it, else the catalog's (the catalog itself is never touched) */
   function itemName(it) { return it.title || name(it.exercises || {}); }
@@ -314,7 +318,7 @@
     show(hd + '<div class="rlist"><div class="pad">' +
       '<label class="rfield"><span>שם התרגיל</span><input id="ina" style="font-weight: var(--fw-black); font-size: var(--fs-m)" placeholder=" " autocomplete="off" value="' + esc(itemName(it)) + '"></label>' +
       '<div class="rcard rcard--flat rcard--link" data-act="pickMusic" role="button" tabindex="0" style="margin:0;cursor:pointer"><div class="rcard__head"><span class="rcard__title">מוזיקה</span>' +
-        (it.music ? '<a class="rbtn rbtn--icon" href="https://www.youtube.com/results?search_query=' + encodeURIComponent((songName(it.music) + " " + songBy(it.music)).trim()) + '" target="_blank" rel="noopener" aria-label="ניגון ביוטיוב" title="ניגון ביוטיוב">' + I.yt + '</a>' : '') + '</div><div class="rcard__body">' +
+        (it.music ? ytLink(it.music) : '') + '</div><div class="rcard__body">' +
         (it.music ? '<b>' + esc(songName(it.music)) + '</b>' + (songBy(it.music) ? '<br>' + esc(songBy(it.music)) : '') : 'לחצו לבחירת מוזיקה') + '</div></div>' +
       '<label class="rfield"><span>פואטיקה</span><textarea id="ipo" rows="1" placeholder=" ">' + esc(txt(it, "poetics")) + '</textarea></label>' +
       '<label class="rfield"><span>הנחיה</span><textarea id="igu" rows="1" placeholder=" ">' + esc(txt(it, "guidance")) + '</textarea></label>' +
@@ -348,9 +352,9 @@
       api("/rest/v1/exercise_music?exercise_id=eq." + it.exercise_id + "&select=music(id,name,title,artist,duration_sec)").then(function (rows) {
         var seen = {}, list = [];
         (rows || []).forEach(function (x) { if (x.music && !seen[x.music.id]) { seen[x.music.id] = 1; list.push(x.music); } });
-        var row = function (id, t, sub, cur) { return '<div class="rrow rrow--link"' + (cur ? ' aria-current="true"' : '') + '><button type="button" class="rrow__main" data-m="' + id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(t) + '</span>' + (sub ? '<span class="rrow__sub">' + esc(sub) + '</span>' : '') + '</button></div>'; };
+        var row = function (id, t, sub, cur, m) { return '<div class="rrow rrow--link"' + (cur ? ' aria-current="true"' : '') + '><button type="button" class="rrow__main" data-m="' + id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(t) + '</span>' + (sub ? '<span class="rrow__sub">' + esc(sub) + '</span>' : '') + '</button>' + (m ? ytLink(m, true) : '') + '</div>'; };
         var l = r.querySelector("#mlist");
-        l.innerHTML = row("", "בלי מוזיקה", "", !it.music_id) + list.map(function (m) { return row(m.id, songName(m), songBy(m), it.music_id === m.id); }).join("");
+        l.innerHTML = row("", "בלי מוזיקה", "", !it.music_id) + list.map(function (m) { return row(m.id, songName(m), songBy(m), it.music_id === m.id, m); }).join("");
         l.querySelectorAll("[data-m]").forEach(function (b) {
           b.addEventListener("click", function () {
             var m = list.filter(function (x) { return x.id === b.dataset.m; })[0] || null;
