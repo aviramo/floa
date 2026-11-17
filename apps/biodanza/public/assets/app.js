@@ -36,7 +36,13 @@
   function clock(sec) { return Math.floor(sec / 60) + ":" + ("0" + (sec % 60)).slice(-2); }
   /* poetics and guidance: this item's own text if the facilitator changed it, else the catalog's (the catalog itself is never touched) */
   function itemName(it) { return it.title || name(it.exercises || {}); }
-  function txt(it, k) { return it[k] != null ? it[k] : ((it.exercises || {})[k] || ""); }
+  var LANG = "he";   /* the language of the texts: the catalog's text in this language, else English, else what the exercise itself holds */
+  function baseTxt(it, k) {
+    var e = it.exercises || {}, ts = e.exercise_texts || [];
+    var pick = function (l) { var t = ts.filter(function (x) { return x.lang === l && x[k]; })[0]; return t ? t[k] : ""; };
+    return pick(LANG) || pick("en") || e[k] || "";
+  }
+  function txt(it, k) { return it[k] != null ? it[k] : baseTxt(it, k); }
   function grow(t) { t.style.height = "auto"; t.style.height = (t.scrollHeight + t.offsetHeight - t.clientHeight) + "px"; }   /* rows=1: the height is the text's own, plus the line under it */
   /* the placeholder of an empty list or pane: the curve icon, a title and one line */
   function ph(title, text) { return '<div class="rempty">' + I.curve + '<b>' + esc(title) + '</b>' + (text ? '<span>' + esc(text) + '</span>' : '') + '</div>'; }
@@ -148,7 +154,7 @@
   /* ---------- the vivencia: plan along the curve ---------- */
   function openViv(id) { state.filter = ""; state.viv = state.vivs.filter(function (v) { return v.id === id; })[0] || { id: id, title: "" }; if (wide()) stack().length = 0; go(editor); paintSel(); }
   function loadItems() {
-    return api("/rest/v1/vivencia_items?vivencia_id=eq." + state.viv.id + "&select=id,position,exercise_id,music_id,notes,title,poetics,guidance,exercises(title_he,title_en,poetics,guidance,objective),music(name,duration_sec)&order=position").then(function (r) { state.items = r || []; });
+    return api("/rest/v1/vivencia_items?vivencia_id=eq." + state.viv.id + "&select=id,position,exercise_id,music_id,notes,title,poetics,guidance,exercises(title_he,title_en,poetics,guidance,objective,exercise_texts(lang,poetics,guidance)),music(name,duration_sec)&order=position").then(function (r) { state.items = r || []; });
   }
   function editor() {
     var v = state.viv; setUrl(BASE + v.id);
@@ -303,7 +309,7 @@
         sel.value = it.music_id || "";
       }, fail);
       ["#ipo", "#igu", "#it"].forEach(function (s) { var t = r.querySelector(s); grow(t); t.addEventListener("input", function () { grow(t); }); });
-      function own(k, v) { return v === ((e[k]) || "") ? null : v; }   /* the same as the catalog: keep inheriting it */
+      function own(k, v) { return v === baseTxt(it, k) ? null : v; }   /* the same as the catalog: keep inheriting it */
       function save() {
         var nm = r.querySelector("#ina").value.trim();
         var body = { title: !nm || nm === name(e) ? null : nm, music_id: r.querySelector("#im").value || null, poetics: own("poetics", r.querySelector("#ipo").value), guidance: own("guidance", r.querySelector("#igu").value), notes: r.querySelector("#it").value };
