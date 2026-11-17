@@ -1,0 +1,6 @@
+workflow:   Domains
+conclusion: success
+commit:     197dd8cb50b1448491cc5a97740914110c0cbb4b
+run:        https://github.com/aviramo/floa/actions/runs/44061585146
+at:         2026-11-17T10:06:45Z
+
