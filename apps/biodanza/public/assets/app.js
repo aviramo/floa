@@ -498,8 +498,8 @@
     var hd = itemHead(!!prevIt, !!nextIt, (k + 1) + "/" + state.items.length);   /* the middle button says where we are, and still opens the list */
     show(hd + '<div class="rlist"><div class="pad">' +
       '<div style="display:flex;align-items:flex-end;gap:var(--gap-button)">' + '<label class="rfield" style="flex:1 1 auto;margin:0"><span>שם התרגיל</span><input id="ina" style="font-weight: var(--fw-black); font-size: var(--fs-m)" placeholder=" " autocomplete="off" value="' + esc(itemName(it)) + '"></label>' + facChip(it) + '</div>' +
-      '<div class="rcard rcard--flat rcard--link" data-act="pickMusic" role="button" tabindex="0" style="margin:0;cursor:pointer;display:flex;align-items:center;gap:var(--gap-button)"><div class="rcard__body" style="flex:1 1 auto;min-width:0">' +
-        (it.music ? songLines(it.music) : 'לחצו לבחירת מוזיקה') + '</div>' + (it.music ? playCol(it.music) : '') + '</div>' +
+      '<div class="rrow rrow--link" data-act="pickMusic" role="button" tabindex="0" style="margin-inline:calc(var(--sp-2) * -1);padding-inline:var(--sp-2);padding-block:var(--sp-2);border-top:1px solid var(--line);cursor:pointer"><div style="flex:1 1 auto;min-width:0">' +
+        (it.music ? songLines(it.music) : '<span class="rrow__title">לחצו לבחירת מוזיקה</span>') + '</div>' + (it.music ? playCol(it.music, true) : '') + '</div>' +   /* a strip across the width, like the music chooser's rows */
       '<label class="rfield"><span>פואטיקה</span><textarea id="ipo" rows="1" placeholder=" "' + (isDraft(it, "poetics") ? DRAFT : "") + '>' + esc(txt(it, "poetics")) + '</textarea></label>' +
       '<label class="rfield"><span>הנחיה</span><textarea id="igu" rows="1" placeholder=" "' + (isDraft(it, "guidance") ? DRAFT : "") + '>' + esc(txt(it, "guidance")) + '</textarea></label>' +
       '<label class="rfield"><span>הערות</span><textarea id="it" rows="1" placeholder=" ">' + esc(it.notes || "") + '</textarea></label>' +
