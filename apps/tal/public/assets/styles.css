@@ -190,3 +190,12 @@ h1, h2 { font-weight: 800; line-height: 1.05; letter-spacing: 0; }
 .hero-bio p { margin: 0 0 .9em; }
 .door-body b { font-weight: 800; font-size: 1.9rem; line-height: 1.1; }
 @media (max-width: 899px) { .hero h1 { margin-top: calc(-2em - 30px); padding-bottom: 30px; } }
+
+/* AUM: צהוב ואדום, כמו בדף הסדנה */
+.sec--aum { background: linear-gradient(160deg, #C1191F 0%, #8E1A14 55%, #5A2410 100%); color: var(--cream); }
+.aum-text h2 { color: var(--gold); }
+.aum-text .lead { color: #FFE9B8; font-weight: 600; }
+.aum-text p { color: #FFF6DC; }
+.steps { gap: 10px; margin: 1.8rem 0 2.2rem; }
+.steps li { padding: 10px 20px; border: 0; background: var(--gold); color: #3A170C; font-family: var(--font); font-weight: 800; font-size: 1.3rem; line-height: 1.2; box-shadow: 0 6px 16px rgba(58, 23, 12, .35); }
+.steps li:nth-child(even) { background: #FFE9B8; }
