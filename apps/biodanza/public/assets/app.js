@@ -38,6 +38,7 @@
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   function name(e) { return e.title_he || e.title_en || ""; }
   function phaseName(k) { var p = state.phases.filter(function (x) { return x.key === k; })[0]; return p ? p.name_he : ""; }
+  function catName(k) { var c = (state.cats || []).filter(function (x) { return x.key === k; })[0]; return c ? c.name_he : ""; }
   function lineName(k) { var l = state.lines.filter(function (x) { return x.key === k; })[0]; return l ? l.name_he : k; }
   /* a song is two things: its name and who plays it */
   function songName(m) { return m ? (m.title || m.name || "") : ""; }
@@ -529,22 +530,37 @@
   function picker(swapIt) {
     show(head(swapIt ? "החלפת תרגיל" : "קטלוג התרגילים", "", true) +
       '<div class="pad"><label class="rfield"><span>חיפוש</span><input id="q" placeholder=" "></label>' +
-      '<label class="rfield"><span>קו</span><select id="ln"><option value="">הכול</option>' + state.lines.map(function (l) { return '<option value="' + l.key + '">' + esc(l.name_he) + '</option>'; }).join("") + '</select></label></div>' +
+      '<label class="rfield"><span>קו</span><select id="ln"><option value="">הכול</option>' + state.lines.map(function (l) { return '<option value="' + l.key + '">' + esc(l.name_he) + '</option>'; }).join("") + '</select></label>' +
+      '<label class="rfield"><span>קטגוריה</span><select id="cg"><option value="">הכול</option>' + (state.cats || []).map(function (c) { return '<option value="' + esc(c.key) + '">' + esc(c.name_he) + '</option>'; }).join("") + '</select></label></div>' +
       '<div class="rlist" id="list"><div class="rskel rskel--title"></div></div>', function (r) {
       on(r, "back", back);
       function paintCat() {
-        var q = r.querySelector("#q").value.trim().toLowerCase(), ln = r.querySelector("#ln").value, l = r.querySelector("#list");
+        var q = r.querySelector("#q").value.trim().toLowerCase(), ln = r.querySelector("#ln").value, cg = r.querySelector("#cg").value, l = r.querySelector("#list");
         var rows = (state.cat || []).filter(function (e) {
-          return (!ln || (e.exercise_lines || []).some(function (x) { return x.line_key === ln; })) && (!q || (name(e) + " " + e.title_en + " " + e.category).toLowerCase().indexOf(q) >= 0);
-        }).slice(0, 120);
+          return (!cg || e.category === cg) && (!ln || (e.exercise_lines || []).some(function (x) { return x.line_key === ln; })) && (!q || (name(e) + " " + e.title_en + " " + e.category).toLowerCase().indexOf(q) >= 0);
+        });
         l.innerHTML = rows.length ? rows.map(function (e) {
-          return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-ex="' + e.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(name(e)) + '</span><span class="rrow__sub">' + esc((e.exercise_lines || []).map(function (x) { return lineName(x.line_key); }).join(" · ")) + '</span></button></div>';
+          return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-ex="' + e.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(name(e)) + '</span><span class="rrow__sub">' + esc([catName(e.category)].concat((e.exercise_lines || []).map(function (x) { return lineName(x.line_key); })).filter(Boolean).join(" · ")) + '</span></button></div>';
         }).join("") : ph("לא נמצא תרגיל", "");
         l.querySelectorAll("[data-ex]").forEach(function (b) { b.addEventListener("click", function () { addEx(state.cat.filter(function (x) { return x.id === b.dataset.ex; })[0], swapIt); }); });
       }
-      r.querySelector("#q").addEventListener("input", paintCat); r.querySelector("#ln").addEventListener("change", paintCat);
-      (state.cat ? Promise.resolve() : api("/rest/v1/exercises?select=id,title_he,title_en,category,phase_hint,exercise_lines(line_key)&order=title_en&limit=1000").then(function (c) { state.cat = c || []; })).then(paintCat, fail);
+      r.querySelector("#q").addEventListener("input", paintCat); r.querySelector("#ln").addEventListener("change", paintCat); r.querySelector("#cg").addEventListener("change", paintCat);
+      (state.cats ? Promise.resolve() : api("/rest/v1/categories?select=key,name_he&order=sort").then(function (c) {
+        state.cats = c || [];
+        var sel = r.querySelector("#cg"); if (sel) sel.innerHTML = '<option value="">הכול</option>' + state.cats.map(function (x) { return '<option value="' + esc(x.key) + '">' + esc(x.name_he) + '</option>'; }).join("");
+      })).then(function () { return state.cat ? null : loadCatalog().then(function (c) { state.cat = c; }); }).then(paintCat, fail);
     });
+  }
+  /* the catalog is over a thousand exercises and the server hands out at most a thousand rows at a time: read it page by page */
+  function loadCatalog() {
+    var all = [], PAGE = 1000;
+    function page(off) {
+      return api("/rest/v1/exercises?select=id,title_he,title_en,category,phase_hint,exercise_lines(line_key)&order=title_en,id&limit=" + PAGE + "&offset=" + off).then(function (rows) {
+        rows = rows || []; all = all.concat(rows);
+        return rows.length === PAGE ? page(off + PAGE) : all;
+      });
+    }
+    return page(0);
   }
   function addEx(e, swapIt) {
     if (swapIt) {   /* the same place in the curve, another exercise: its first song, and none of the old exercise's own wording */
