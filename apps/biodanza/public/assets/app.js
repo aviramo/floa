@@ -4,6 +4,12 @@
 (function () {
   "use strict";
   var pl = document.getElementById("pl"), pd = document.getElementById("pd");
+  /* Every vivencia and every exercise has an address of its own, in the path (no # in the bar): /<vivencia> and /<vivencia>/<exercise>.
+     On localhost the app lives under /biodanza/, so the same addresses carry that prefix there. */
+  var BASE = /^(localhost|127[.])/.test(location.hostname) ? "/biodanza/" : "/";
+  var popping = false, pending = null;   /* pending: an address the page was opened on, waiting for the list to load */
+  function setUrl(u) { if (!popping && location.pathname !== u) history.pushState(null, "", u); }
+  function parseUrl() { var seg = location.pathname.slice(BASE.length).split("/").filter(Boolean); return { viv: seg[0] || "", item: seg[1] || "" }; }
   function wide() { return window.matchMedia("(min-width: 1024px)").matches; }
   var api = function (p, o) { return FLOA_AUTH.api(p, o); };
   var state = { me: null, lines: [], phases: [], cat: null, vivs: [], viv: null, items: [], filter: "" };
@@ -57,7 +63,7 @@
   function show(html, wire, pane) { var t = wide() && pane === "d" ? pd : pl; t.innerHTML = html; if (wire) wire(t); }
   function emptyDetail() {
     if (wide()) show(ph("בחרו ויוונסיה", "התרגילים שלה יופיעו כאן"), null, "d");
-    state.viv = null; paintSel();
+    state.viv = null; paintSel(); setUrl(BASE);
   }
   function paintSel() { pl.querySelectorAll("[data-id]").forEach(function (b) { b.closest(".rrow").setAttribute("aria-current", state.viv && b.dataset.id === state.viv.id ? "true" : "false"); }); }
   function on(root, act, fn) { root.querySelectorAll('[data-act="' + act + '"]').forEach(function (b) { b.addEventListener("click", function (ev) { fn(b, ev); }); }); }
@@ -69,14 +75,14 @@
   function gate(msg, signedIn) {
     show('<div class="rempty" style="margin-block:auto"><b>ביודנסה</b><span>' + esc(msg) + '</span>' +
       (signedIn ? '<button class="rbtn rbtn--ghost" data-act="out">יציאה</button>' : '<button class="rbtn" data-act="in">כניסה עם גוגל</button>') + '</div>', function (r) {
-      on(r, "in", function () { FLOA_AUTH.signIn(location.origin + location.pathname); });
+      on(r, "in", function () { FLOA_AUTH.signIn(location.origin + BASE); });
       on(r, "out", function () { Promise.resolve(FLOA_AUTH.signOut()).then(function () { location.reload(); }); });
     });
   }
 
   /* ---------- home: my vivencias ---------- */
   function home() {
-    if (!wide()) { stack().length = 0; stack().push(home); }
+    if (!wide()) { stack().length = 0; stack().push(home); setUrl(BASE); }
     show(head("הוויוונסיות שלי", "", false,
       (state.me.admin ? '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="allow" aria-label="מורשים" title="מורשים">' + I.users + '</button>' : '') +
       '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="out" aria-label="יציאה" title="יציאה">' + I.out + '</button>') +
@@ -105,6 +111,11 @@
     l.querySelectorAll("[data-ren]").forEach(function (b) { b.addEventListener("click", function () { namePopup(state.vivs.filter(function (v) { return v.id === b.dataset.ren; })[0], false); }); });
     if (state.vivs.length) enableDrag(l, "[data-id]", persistVivs);
     paintSel();
+    if (pending && pending.viv) {   /* opened on a vivencia's own address */
+      var vv = state.vivs.filter(function (x) { return x.id === pending.viv; })[0];
+      if (vv) { openViv(vv.id); return; }
+      pending = null;
+    }
     if (wide() && !state.viv) emptyDetail();
   }
 
@@ -140,7 +151,7 @@
     return api("/rest/v1/vivencia_items?vivencia_id=eq." + state.viv.id + "&select=id,position,exercise_id,music_id,notes,title,poetics,guidance,exercises(title_he,title_en,poetics,guidance,objective),music(name,duration_sec)&order=position").then(function (r) { state.items = r || []; });
   }
   function editor() {
-    var v = state.viv;
+    var v = state.viv; setUrl(BASE + v.id);
     var vk = state.vivs.map(function (x) { return x.id; }).indexOf(v.id), pv = state.vivs[vk - 1], nv = state.vivs[vk + 1];
     show(walkHead(v.title || "ויוונסיה חדשה", !!pv, !!nv) +
       (wide() ? '' : '<div class="pad"><button class="rbtn rbtn--ghost rbtn--block" data-act="back">חזרה לרשימת הוויוונסיות</button></div>') +
@@ -151,7 +162,14 @@
       on(r, "prevW", function () { if (pv) walkV(pv); });
       on(r, "nextW", function () { if (nv) walkV(nv); });
     }, "d");
-    loadItems().then(paint, fail);
+    loadItems().then(function () {
+      paint();
+      if (pending && pending.item) {   /* opened on an exercise's own address */
+        var want = pending.item; pending = null;
+        var it = state.items.filter(function (x) { return x.id === want; })[0];
+        if (it) go(function () { itemScreen(it); });
+      }
+    }, fail);
   }
   /* a confirmation is the kit's popup with ONE action: closing it is the cancel */
   function confirmDelete(v) {
@@ -264,6 +282,7 @@
   /* ---------- one item: music, poetics, guidance, notes ---------- */
   function itemScreen(it) {
     var e = it.exercises || {};
+    setUrl(BASE + state.viv.id + "/" + it.id);
     var k = state.items.indexOf(it), prevIt = state.items[k - 1], nextIt = state.items[k + 1];
     /* the header walks the sequence: the right button to the previous exercise, the left one to the next, the name between them */
     var hd = walkHead(itemName(it), !!prevIt, !!nextIt, true);
@@ -411,5 +430,16 @@
     h.addEventListener("dblclick", function () { root.style.removeProperty("--listw"); try { localStorage.removeItem(KEY); } catch (e) { /* none */ } });
     h.addEventListener("keydown", function (e) { if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return; e.preventDefault(); setW(curW() + (e.key === "ArrowLeft" ? 24 : -24)); save(); });
   })();
+  /* back and forward: show what the address says, without writing it again */
+  window.addEventListener("popstate", function () {
+    if (!state.me) return;
+    var u = parseUrl(); popping = true;
+    try {
+      stack().length = 0;
+      if (!u.viv) { if (wide()) emptyDetail(); else home(); }
+      else { if (!wide()) stack().push(home); pending = u.item ? { item: u.item } : null; openViv(u.viv); }
+    } finally { popping = false; }
+  });
+  pending = parseUrl().viv ? parseUrl() : null;
   start();
 })();

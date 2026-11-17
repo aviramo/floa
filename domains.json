@@ -114,7 +114,8 @@
       "project": "floa-site",
       "enabled": true,
       "folder": "biodanza/",
-      "clean": true
+      "clean": true,
+      "spa": true
     },
     {
       "host": "roster-test.floa.co.il",
