@@ -25,6 +25,7 @@
     fwd: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>',
     curve: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 16c2.5-9 5-9 7.5-1s5 8 7.5 0c1-3 2.500-5 5-6"/></svg>',
     list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"/></svg>',
+    grip: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>',
     pen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4"/></svg>',
     out: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 5H5v14h5M15 8l4 4-4 4M19 12H9"/></svg>'
   };
@@ -33,6 +34,8 @@
   function name(e) { return e.title_he || e.title_en || ""; }
   function phaseName(k) { var p = state.phases.filter(function (x) { return x.key === k; })[0]; return p ? p.name_he : ""; }
   function lineName(k) { var l = state.lines.filter(function (x) { return x.key === k; })[0]; return l ? l.name_he : k; }
+  /* the grip of a row: the kit's icon button with a grip icon. A finger that starts on it drags at once (no scrolling there); the rest of the row drags on a mouse or after a short hold */
+  function gripBtn() { return '<button type="button" class="rbtn rbtn--icon rrow__trail" data-grip aria-label="גרירה לסידור" title="גרירה לסידור" style="touch-action:none;cursor:grab">' + I.grip + '</button>'; }
   /* a song is two things: its name and who plays it */
   function songName(m) { return m ? (m.title || m.name || "") : ""; }
   function songBy(m) { return m ? (m.artist || "") : ""; }
@@ -119,10 +122,9 @@
     var l = document.getElementById("hl"); if (!l) return;
     l.innerHTML = state.vivs.length ? state.vivs.map(function (v) {
       var n = v.vivencia_items && v.vivencia_items[0] ? v.vivencia_items[0].count : 0;
-      return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-id="' + v.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub" data-n="' + v.id + '">' + n + ' תרגילים</span></button><button type="button" class="rbtn rbtn--icon rrow__trail" data-ren="' + v.id + '" aria-label="שינוי שם" title="שינוי שם">' + I.pen + '</button></div>';
+      return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-id="' + v.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub" data-n="' + v.id + '">' + n + ' תרגילים</span></button>' + gripBtn() + '</div>';
     }).join("") : ph("עוד אין ויוונסיות", "לחצו על + כדי ליצור את הראשונה");
     l.querySelectorAll("[data-id]").forEach(function (b) { b.addEventListener("click", function () { openViv(b.dataset.id); }); });
-    l.querySelectorAll("[data-ren]").forEach(function (b) { b.addEventListener("click", function () { namePopup(state.vivs.filter(function (v) { return v.id === b.dataset.ren; })[0], false); }); });
     if (state.vivs.length) enableDrag(l, "[data-id]", persistVivs);
     paintSel();
     if (pending && pending.viv) {   /* opened on a vivencia's own address */
@@ -166,10 +168,11 @@
   }
   function editor() {
     var v = state.viv; setUrl(BASE + v.id);
-    show(head(v.title || "ויוונסיה חדשה", "", !wide()) +
+    show(head(v.title || "ויוונסיה חדשה", "", !wide(), '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="rename" aria-label="שינוי שם" title="שינוי שם">' + I.pen + '</button>') +
       '<div class="rlist" data-fab-room id="list"><div class="rskel rskel--title"></div></div>' +
       '<button class="rfab" data-act="add" aria-label="הוספת תרגיל" title="הוספת תרגיל">' + I.plus + '</button>', function (r) {
       on(r, "back", back); on(r, "add", function () { go(picker); });
+      on(r, "rename", function () { namePopup(v, false); });
     }, "d");
     loadItems().then(function () {
       paint();
@@ -204,7 +207,7 @@
     if (!vis.length) { l.innerHTML = ph("הוויוונסיה ריקה", "לחצו על + כדי להוסיף תרגיל מהקטלוג"); return; }
     l.innerHTML = vis.map(function (i, k) {
       var e = i.exercises || {};
-      return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-edit="' + i.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(itemName(i)) + '</span><span class="rrow__sub">' + esc([songName(i.music), songBy(i.music), i.music && i.music.duration_sec ? clock(i.music.duration_sec) : ""].filter(Boolean).join(" · ") || "בלי מוזיקה") + '</span></button></div>';
+      return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-edit="' + i.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(itemName(i)) + '</span><span class="rrow__sub">' + esc([songName(i.music), songBy(i.music), i.music && i.music.duration_sec ? clock(i.music.duration_sec) : ""].filter(Boolean).join(" · ") || "בלי מוזיקה") + '</span></button>' + gripBtn() + '</div>';
     }).join("");
     l.querySelectorAll("[data-edit]").forEach(function (b) { b.addEventListener("click", function () { var it = state.items.filter(function (x) { return x.id === b.dataset.edit; })[0]; go(function () { itemScreen(it); }); }); });
     enableDrag(l, "[data-edit]", persistItems);
@@ -244,8 +247,8 @@
       });
       row.addEventListener("pointerdown", function (e) {
         if (e.button > 0) return;
-        d = { row: row, k: k, y0: e.clientY, pid: e.pointerId, live: false, timer: null, tops: rows.map(function (r) { var b = r.getBoundingClientRect(); return b.top + b.height / 2; }), h: row.getBoundingClientRect().height, to: k };
-        if (e.pointerType === "touch") d.timer = setTimeout(function () { if (d && !d.live) begin(); }, 280);
+        d = { grip: !!e.target.closest("[data-grip]"), row: row, k: k, y0: e.clientY, pid: e.pointerId, live: false, timer: null, tops: rows.map(function (r) { var b = r.getBoundingClientRect(); return b.top + b.height / 2; }), h: row.getBoundingClientRect().height, to: k };
+        if (e.pointerType === "touch" && !d.grip) d.timer = setTimeout(function () { if (d && !d.live) begin(); }, 280);
       });
     });
     function begin() {
@@ -257,7 +260,7 @@
       if (!d) return;
       var dy = e.clientY - d.y0;
       if (!d.live) {
-        if (e.pointerType === "touch") { if (Math.abs(dy) > 8) { clearTimeout(d.timer); d = null; } return; }
+        if (e.pointerType === "touch" && !d.grip) { if (Math.abs(dy) > 8) { clearTimeout(d.timer); d = null; } return; }
         if (Math.abs(dy) < 6) return;
         begin();
       }
