@@ -1223,6 +1223,7 @@ dialog, dialog .sheet { border-radius: 0; }   /* במובייל הפופאפים
 
 /* תשלום בהמשך: כחול, בכל מקום שמוצג מצב התשלום של מפגש */
 .row .payic.later, .hfilt.later, .paychip.allocchip.later, .mlist .mrow .mmoney.later { background: var(--sky-bg); color: var(--sky); }
+.row .payic.rep, .mlist .mrow .mmoney.rep { background: var(--yellow-bg); color: var(--yellow); }   /* a reported payment (how and how much), waiting for the admin: the yellow of every "waiting" state */
 .fdot.blue { background: var(--sky); }
 
 /* ---------- בהירות הרשימה (3.11.26, לפי הסקיל ui-ux-pro-max) ---------- */

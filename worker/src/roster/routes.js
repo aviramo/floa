@@ -202,7 +202,11 @@ async function prepClick({ body }) {
   if (!TOKEN_RE.test(token)) return { ok: false, code: "invalid_token" };
   const meeting = uuid(body.meeting_id);
   if (!meeting) return bad("meeting_id");
-  return good({ p_token_hash: await hashToken(token), p_meeting: meeting });
+  const args = { p_token_hash: await hashToken(token), p_meeting: meeting };
+  /* how they paid (bit, paybox ...): optional and never an error. Anything that is not a plain key is dropped, a key the business does not have is ignored by the database; only a call that carries one reaches the overload that takes p_method */
+  const method = typeof body.method === "string" ? body.method.trim().toLowerCase() : "";
+  if (/^[a-z0-9_]{1,40}$/.test(method)) args.p_method = method;
+  return good(args);
 }
 
 function prepParticipantByPhone({ query }) {

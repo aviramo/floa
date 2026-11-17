@@ -619,6 +619,17 @@ test("click: the token is hashed before it leaves the Worker; the reply is a pla
   assert.equal(net.rpc("api_auth")[0].json.p_required_kind, "public");
 });
 
+test("click with a method: p_method is passed only when it is a plain key, and the reply is the same plain ok", async () => {
+  for (const [sent, passed] of [["bit", "bit"], ["PayBox", "paybox"], [" bit ", "bit"], ["x_tenyg", "x_tenyg"], ["no such", undefined], ["", undefined], [5, undefined], [null, undefined], ["a".repeat(41), undefined], ["bit;drop", undefined]]) {
+    const { net, roster } = world({ api_payment_click: () => ({ status: "ok" }) });
+    const r = await call(roster, req("/payments/click", { method: "POST", key: PUB, json: { participant_token: TOKEN, meeting_id: UUID_A, method: sent } }));
+    assert.deepEqual([r.status, r.raw], [200, '{"status":"ok"}'], String(sent));
+    const [c] = net.rpc("api_payment_click");
+    assert.equal(c.json.p_method, passed, String(sent));
+    assert.equal("p_method" in c.json, passed !== undefined, "a call without a usable method is exactly the old call");
+  }
+});
+
 test("click is uniform (M3): whatever the database says about how it went, the caller gets the same {status: ok}", async () => {
   for (const answer of [{ status: "ok" }, { status: "reported" }, { status: "already_reported" }, { status: "already_paid" }, { status: "free" }, { status: "not_registered" }, { status: "past" }, { status: "ok", extra: "x" }, {}]) {
     const { roster } = world({ api_payment_click: () => answer });
