@@ -1126,7 +1126,7 @@
         if (liveItem && liveItem.root.isConnected) {
           var f = state.items.filter(function (x) { return x.id === liveItem.id; })[0];
           if (f) liveItem.apply(f);
-          else { toast("התרגיל הוסר"); liveItem = null; if (wide()) { show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); state.lastItem = null; paint(); } else back(); }
+          else { toast("התרגיל הוסר"); liveItem = null; if (wide()) { show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); state.lastItem = null; setUrl(BASE + state.viv.id); paint(); } else back(); }
         }
       }, function () { /* the next change will try again */ });
     }
