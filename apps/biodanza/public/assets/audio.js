@@ -98,7 +98,7 @@
     },
     /* move the playing song to a place in it: a fraction from 0 to 1 */
     /* the volume, kept in this browser: a step up or down (in fractions of 1), the new level back */
-    volume: function (d) { vol = Math.max(0, Math.min(1, Math.round((vol + d) * 20) / 20)); el.volume = vol; try { localStorage.setItem("biodanza.volume", String(vol)); } catch (e) { /* not kept */ } return vol; },
+    volume: function (d) { vol = Math.max(0, Math.min(1, Math.round((vol + d) * 100) / 100)); el.volume = vol; try { localStorage.setItem("biodanza.volume", String(vol)); } catch (e) { /* not kept */ } return vol; },
     pause: function () { el.pause(); },
     seek: function (f) { if (el.duration) el.currentTime = Math.max(0, Math.min(1, f)) * el.duration; },
     kept: isKept

@@ -148,7 +148,7 @@
       var tg = e.target; if (tg && (tg.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName))) return;
       if (document.querySelector("dialog[open], #moreMenu, .rmenu") || !window.BioAudio || !BioAudio.volume) return;
       e.preventDefault();
-      volState.v = BioAudio.volume(e.key === "ArrowUp" ? 0.05 : -0.05); paintVol();   /* the sound and the gauge in the header are the answer: no message */
+      volState.v = BioAudio.volume(e.key === "ArrowUp" ? 0.01 : -0.01); paintVol();   /* the sound and the gauge in the header are the answer: no message */
     });
     document.addEventListener("bioaudio", function (ev) {
       playing = !!(ev.detail && ev.detail.playing);
