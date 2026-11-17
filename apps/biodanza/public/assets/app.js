@@ -8,7 +8,48 @@
      On localhost the app lives under /biodanza/, so the same addresses carry that prefix there. */
   var BASE = /^(localhost|127[.])/.test(location.hostname) ? "/biodanza/" : "/";
   var popping = false, pending = null;   /* pending: an address the page was opened on, waiting for the list to load */
-  function setUrl(u) { if (!popping && location.pathname !== u) history.pushState(null, "", u); }
+  /* HISTORY. One entry per screen (home, vivencia, exercise), each carrying its depth in history.state.d (home is 0), and one marker entry
+     (same address, state.bk) per open popup or menu, so the browser's Back closes the top popup only and goes one level up otherwise.
+     Walking between exercises replaces the entry. A popup closed from code gives its marker entry back with history.go(-n). */
+  var layers = [], jump = null, repNext = false;   /* layers: the open popups, top last ({el, own}: own = it holds a marker entry); jump: a history.go() of ours, its popstate is not the user's */
+  function curD() { return (history.state && history.state.d) || 0; }
+  function ownCount() { return layers.filter(function (l) { return l.own; }).length; }
+  function applyUrl(u, rep) {
+    if (location.pathname === u) return;
+    if (rep) history.replaceState({ d: curD() }, "", u); else history.pushState({ d: curD() + 1 }, "", u);
+  }
+  function startJump(n, render) {   /* leave n entries in one step; the popstate that follows renders the screen only if render */
+    var j = jump = { render: render, then: null };
+    setTimeout(function () { if (jump === j) { jump = null; if (j.then) j.then(); } }, 1500);   /* safety: never stay waiting */
+    history.go(-n);
+  }
+  /* leave the markers of the open popups (and `extra` screen entries below them) in one step */
+  function unwind(extra) {
+    var n = ownCount() + (extra || 0);
+    layers.forEach(function (l) { l.own = false; });
+    if (n) startJump(n, !!extra);
+    return n;
+  }
+  function setUrl(u) {
+    var rep = repNext; repNext = false;
+    if (popping || location.pathname === u) return;
+    if (jump) { jump.then = function () { applyUrl(u, rep); }; return; }   /* an unwind is under way: write the address when it is done */
+    if (ownCount()) { unwind(0); jump.then = function () { applyUrl(u, rep); }; return; }   /* popups still hold their entries: give them back first */
+    applyUrl(u, rep);
+  }
+  function syncLayers() {   /* a popup or menu opened or closed, by the user or by code: its marker entry follows */
+    var live = [].slice.call(document.querySelectorAll("dialog[open], #moreMenu"));
+    var gone = layers.filter(function (l) { return live.indexOf(l.el) < 0; });
+    var fresh = live.filter(function (el) { return !layers.some(function (l) { return l.el === el; }); });
+    if (!gone.length && !fresh.length) return;
+    var lost = gone.filter(function (l) { return l.own; }).length;
+    layers = layers.filter(function (l) { return live.indexOf(l.el) >= 0; });
+    var pairs = Math.min(lost, fresh.length);   /* one closes as another opens (a menu choice): the entry is handed over */
+    fresh.forEach(function (el) { layers.push({ el: el, own: !jump }); });
+    if (!jump) for (var i = 0; i < fresh.length - pairs; i++) history.pushState({ d: curD(), bk: 1 }, "", location.href);
+    if (lost - pairs > 0) startJump(lost - pairs, false);
+  }
+  function closeLayer(el) { if (el.id === "moreMenu") el.remove(); else slideClose(el); }
   function parseUrl() { var seg = location.pathname.slice(BASE.length).split("/").filter(Boolean); return { viv: seg[0] || "", item: seg[1] || "" }; }
   function wide() { return window.matchMedia("(min-width: 1024px)").matches; }
   var api = function (p, o) { return FLOA_AUTH.api(p, o); };
@@ -170,7 +211,8 @@
   function on(root, act, fn) { root.querySelectorAll('[data-act="' + act + '"]').forEach(function (b) { b.addEventListener("click", function (ev) { fn(b, ev); }); }); }
   function stack() { return stack.s || (stack.s = []); }
   function go(fn) { stack().push(fn); fn(); }
-  function back() { stack().pop(); var f = stack()[stack().length - 1]; if (f) f(); else if (wide()) homeWide(); else home(); }
+  function back() { if (!wide() && curD() > 0) { unwind(1); return; }   /* narrow: one level up IS the browser's Back, so the arrow and the button never differ */
+    stack().pop(); var f = stack()[stack().length - 1]; if (f) f(); else if (wide()) homeWide(); else home(); }
 
   /* ---------- gate ---------- */
   function gate(msg, signedIn) {
@@ -372,7 +414,7 @@
       var done = function () {
         dlg.close();
         if (isNew) { state.vivs.unshift({ id: v.id, title: t }); if (wide()) home(); openViv(v.id); }
-        else { v.title = t; if (state.viv && state.viv.id === v.id) state.viv.title = t; home(); if (state.viv && state.viv.id === v.id) editor(); }
+        else { v.title = t; if (state.viv && state.viv.id === v.id) state.viv.title = t; if (wide()) home(); if (state.viv && state.viv.id === v.id) editor(); }   /* narrow: the vivencia's own screen is redrawn in place, the address stays */
       };
       (isNew ? api("/rest/v1/vivencias", { method: "POST", json: { id: v.id, title: t }, prefer: "return=minimal" })
              : api("/rest/v1/vivencias?id=eq." + v.id, { method: "PATCH", json: { title: t, updated_at: new Date().toISOString() } })).then(done, fail);
@@ -417,8 +459,8 @@
     });
     dlg.querySelector("#cdel").addEventListener("click", function () {
       api("/rest/v1/vivencias?id=eq." + v.id, { method: "DELETE" }).then(function () {
-        dlg.close(); toast("הוויוונסיה נמחקה"); state.viv = null; stack().length = 0;
-        if (wide()) homeWide(); else home();
+        dlg.close(); toast("הוויוונסיה נמחקה"); state.viv = null;
+        if (wide()) { stack().length = 0; homeWide(); } else back();
       }, fail);
     });
   }
@@ -548,7 +590,7 @@
       }
       on(r, "list", function () { if (!wide()) back(); });   /* beside the list there is nowhere to go back to */
       wireFac(r);
-      function walk(to) { state.slideFrom = to === nextIt ? -1 : 1; if (wide()) return itemScreen(to); stack().pop(); go(function () { itemScreen(to); }); }
+      function walk(to) { repNext = true; state.slideFrom = to === nextIt ? -1 : 1; if (wide()) return itemScreen(to); stack().pop(); go(function () { itemScreen(to); }); }
       on(r, "prevW", function () { if (prevIt) walk(prevIt); });
       on(r, "nextW", function () { if (nextIt) walk(nextIt); });
       if (pg) attachPager(pg, { next: nextIt ? function () { walk(nextIt); } : null, prev: prevIt ? function () { walk(prevIt); } : null });
@@ -869,7 +911,12 @@
     if (swapIt) {   /* the same place in the curve, another exercise: its first song, and none of the old exercise's own wording */
       return api("/rest/v1/exercise_music?exercise_id=eq." + e.id + "&select=music_id&limit=1").then(function (m) {
         return api("/rest/v1/vivencia_items?id=eq." + swapIt.id, { method: "PATCH", prefer: "return=minimal", json: { exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, title: null, poetics: null, guidance: null } });
-      }).then(function () { toast("התרגיל הוחלף"); pending = { item: swapIt.id }; if (sheet) { closeSheets(); stack().pop(); var top = stack()[stack().length - 1]; if (top) top(); return; }   /* back to the list, which then opens this same place again with the new exercise */
+      }).then(function () { toast("התרגיל הוחלף");
+        if (sheet) {   /* the popups slide out and the same place opens again with the new exercise: no new address, so no entry */
+          closeSheets();
+          return loadItems().then(function () { var it = state.items.filter(function (x) { return x.id === swapIt.id; })[0]; if (it) { stack().pop(); go(function () { itemScreen(it); }); } else back(); }, fail);
+        }
+        pending = { item: swapIt.id };
         stack().pop(); if (!wide()) { stack().pop(); stack().pop(); } var f = stack()[stack().length - 1]; if (f) f(); }, fail);   /* narrow: also the exercise screen and the one just seen */
     }
     var pos = state.items.reduce(function (m, i) { return Math.max(m, i.position); }, 0) + 1;
@@ -965,7 +1012,15 @@
   })();
   /* back and forward: show what the address says, without writing it again */
   window.addEventListener("popstate", function () {
+    if (jump) {   /* our own history.go(): no screen change unless we asked for one */
+      var j = jump; jump = null;
+      if (!j.render) { if (j.then) j.then(); return; }
+    } else {
+      for (var i = layers.length - 1; i >= 0; i--) if (layers[i].own) { layers[i].own = false; closeLayer(layers[i].el); return; }   /* Back closes the top popup only */
+      if (history.state && history.state.bk) { startJump(1, false); return; }   /* Forward onto the entry of a popup that is closed: step over it */
+    }
     if (!state.me) return;
+    layers.forEach(function (l) { l.own = false; if (l.el.id !== "moreMenu" && l.el.open) l.el.close(); else if (l.el.id === "moreMenu") l.el.remove(); });
     var u = parseUrl(); popping = true;
     try {
       stack().length = 0;
@@ -974,5 +1029,7 @@
     } finally { popping = false; }
   });
   pending = parseUrl().viv ? parseUrl() : null;
+  history.replaceState({ d: 0 }, "", pending ? BASE : location.pathname + location.search);   /* an exercise's own address is entered as home, then the vivencia, then the exercise: Back walks them up */
+  new MutationObserver(syncLayers).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["open"] });
   start();
 })();
