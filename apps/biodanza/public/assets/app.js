@@ -483,7 +483,7 @@
       var t = inp.value.trim(); if (!t) return toast("חסר נושא");
       var done = function () {
         dlg.close();
-        if (isNew) { state.vivs.unshift({ id: v.id, title: t }); if (wide()) home(); openViv(v.id); }
+        if (isNew) { state.vivs.unshift({ id: v.id, title: t, role: "owner", updated_at: new Date().toISOString() });   /* the one who made it owns it: the menu has share and delete at once, not only after a reload */ if (wide()) home(); openViv(v.id); }
         else { v.title = t; if (state.viv && state.viv.id === v.id) state.viv.title = t; if (wide()) home(); if (state.viv && state.viv.id === v.id) editor(); }   /* narrow: the vivencia's own screen is redrawn in place, the address stays */
       };
       (isNew ? api("/rest/v1/vivencias", { method: "POST", json: { id: v.id, title: t }, prefer: "return=minimal" })
