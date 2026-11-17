@@ -574,6 +574,8 @@
         tas.forEach(function (t, i) { t.style.height = Math.floor(h[i]) + "px"; t.style.overflowY = h[i] < nat[i] - 1 ? "auto" : "hidden"; });
       }
       tas.forEach(function (t) { t.addEventListener("input", layoutFields); });
+      /* a text the facilitator edits is theirs: it stops being marked as a draft the moment they type */
+      ["#ipo", "#igu"].forEach(function (q) { var t = r.querySelector(q); t.addEventListener("input", function () { t.style.color = ""; t.style.background = ""; t.removeAttribute("title"); }); });
       layoutFields(); if (document.fonts && document.fonts.ready) document.fonts.ready.then(layoutFields);
       if (window.ResizeObserver && box) new ResizeObserver(layoutFields).observe(box);
       function own(k, v) { return v === baseTxt(it, k) ? null : v; }   /* the same as the catalog: keep inheriting it */
