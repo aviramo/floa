@@ -293,3 +293,25 @@ revoke execute on all functions in schema biodanza from anon;
 -- The first admin. Everyone else is added from the admin screen.
 insert into biodanza.allowed (email, is_admin, note) values ('ofir.aviram@gmail.com', true, 'owner')
 on conflict (email) do update set is_admin = true;
+
+-- ---------- the categories of the 2012 catalog (circles, walks, games, ...) ----------
+-- A category is NOT a line of vivencia: the five lines are `lines`. `exercises.category` holds the key (the catalog's English name) of one of these.
+create table if not exists biodanza.categories (
+  key      text primary key,
+  name_he  text not null,
+  sort     int  not null default 0
+);
+alter table biodanza.categories enable row level security;
+drop policy if exists categories_read on biodanza.categories;
+create policy categories_read on biodanza.categories for select to authenticated using (biodanza.is_allowed());
+insert into biodanza.categories (key, name_he, sort) values
+  ('Circles', 'מעגלים', 1), ('Walking', 'הליכות', 2), ('Games', 'משחקים', 3), ('Breathing In Biodanza', 'נשימה בביודנסה', 4),
+  ('Fluidity', 'זרימה', 5), ('Eutony', 'יוטוניה', 6), ('Segmentary Movements', 'תנועות סגמנטריות', 7),
+  ('Integration Of The Three Centers', 'אינטגרציה של שלושת המרכזים', 8), ('The Encounter', 'המפגש', 9),
+  ('Contact And Caresses', 'מגע וליטוף', 10), ('Undifferenciated Contact', 'מגע לא מובחן', 11),
+  ('Yin Dance And Yang Dance', 'ריקוד יין וריקוד יאנג', 12), ('Dances Of The Four Animals', 'ריקודי ארבע החיות', 13),
+  ('Dances Of Shiva, Brahma And Vishnu', 'ריקודי שיווה, ברהמה ווישנו', 14), ('Exercices Without Music', 'תרגילים ללא מוזיקה', 15),
+  ('Danses Specifiques', 'ריקודים ייחודיים', 16), ('Generative Postures', 'תנוחות מכוננות', 17), ('Sequential Dances', 'ריקודי רצף', 18),
+  ('Dances Of The Angels', 'ריקודי המלאכים', 19), ('Elements', 'יסודות', 20), ('Procedures Of Facilitation', 'פרוצדורות של אפשור', 21)
+on conflict (key) do update set name_he = excluded.name_he, sort = excluded.sort;
+grant select on biodanza.categories to authenticated, service_role;

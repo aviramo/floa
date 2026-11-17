@@ -18,7 +18,8 @@ def rows(items):
     out = []
     for e in items:
         out.append(dict(
-            source=e['source'], category=e.get('category', ''),
+            source=e['source'], category='' if e['source'] == 'cimeb2018' else e.get('category', ''),   # a 2018 dance's section is its LINE (kept in exercise_lines), not a category
+            
             title_he=e.get('title_he', ''), title_en=e['title_en'],
             summary=pick(e.get('summary_he', ''), e.get('summary_en', '')),
             poetics=pick(e.get('poetics_he', ''), e.get('poetics_en', '')),

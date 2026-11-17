@@ -389,7 +389,7 @@
           return (!ln || (e.exercise_lines || []).some(function (x) { return x.line_key === ln; })) && (!q || (name(e) + " " + e.title_en + " " + e.category).toLowerCase().indexOf(q) >= 0);
         }).slice(0, 120);
         l.innerHTML = rows.length ? rows.map(function (e) {
-          return '<div class="rrow"><div class="rrow__main"><button class="rrow__title" data-ex="' + e.id + '" style="all:unset;cursor:pointer">' + esc(name(e)) + '</button><span class="rrow__sub">' + esc([e.category, e.phase_hint ? "בקטלוג: " + phaseName(e.phase_hint) : "", (e.exercise_lines || []).map(function (x) { return lineName(x.line_key); }).join(", ")].filter(Boolean).join(" · ")) + '</span></div></div>';
+          return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-ex="' + e.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(name(e)) + '</span><span class="rrow__sub">' + esc((e.exercise_lines || []).map(function (x) { return lineName(x.line_key); }).join(" · ")) + '</span></button></div>';
         }).join("") : ph("לא נמצא תרגיל", "");
         l.querySelectorAll("[data-ex]").forEach(function (b) { b.addEventListener("click", function () { addEx(state.cat.filter(function (x) { return x.id === b.dataset.ex; })[0]); }); });
       }

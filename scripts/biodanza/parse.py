@@ -15,8 +15,29 @@ def text(name):
 
 
 
+def fix_brackets(s):
+    """pdftotext hands back Hebrew brackets mirrored: ")text(" for "(text)". An unmatched ")" is an opener and the "(" that closes it
+    a closer. Balanced brackets, and every English text, are left as they are."""
+    out, stack = list(s), []
+    for i, ch in enumerate(out):
+        if ch == '(':
+            if stack and stack[-1][0] == 'rev':
+                out[i] = ')'
+                stack.pop()
+            else:
+                stack.append(('norm', i))
+        elif ch == ')':
+            if stack and stack[-1][0] == 'norm':
+                stack.pop()
+            else:
+                out[i] = '('
+                stack.append(('rev', i))
+    return ''.join(out)
+
+
 def clean(s):
-    return re.sub(r'\s+', ' ', s).strip()
+    s = re.sub(r'\s+', ' ', s).strip()
+    return fix_brackets(s) if re.search('[א-ת]', s) else s
 
 
 def norm(s):
@@ -267,6 +288,24 @@ for n, (d, k, title_he) in enumerate(found):
     d['level_he'] = clean(' '.join(f['רמה']))
     d['authors_he'] = clean(' '.join(f['מחברי הריקוד'] + f['מחבר הריקוד']))
 
+# The Hebrew titles come from the contents list, in the order of the English one: the headings of some dances carry no Hebrew at all.
+he_toc, started = [], False
+for l in h18[:400]:
+    st = l.strip()
+    if st.startswith(chr(0x05d0) + chr(0x05d9) + chr(0x05d5) + chr(0x05e8)):   # the figure's line closes the front matter
+        started = True
+        continue
+    m = re.match(r'^(.*[א-ת].*?)\s+(\d+)\s*\.{3,}', st)
+    if started and m:
+        t = re.sub(r'\s*\[.*?\]\s*', ' ', m.group(1))
+        t = re.sub(r'\s:(?=\S)', ': ', t)
+        he_toc.append(clean(t))
+if len(he_toc) == len(dances):
+    for d, t in zip(dances, he_toc):
+        d['title_he'] = t
+else:
+    print('WARNING: Hebrew contents list has', len(he_toc), 'titles for', len(dances), 'dances; headings kept')
+
 # ---------------------------------------------------------------- 2014: music by dance name
 c14 = text('catalog-2014-en.pdf')
 by14, dance = collections.OrderedDict(), None
@@ -287,6 +326,14 @@ for l in c14[first:]:
             break
         dance = s
         by14.setdefault(dance, [])
+
+# no long dash in a text that reaches the page (owner rule); a range like 1860-1911 is untouched. Titles used as KEYS above are left alone.
+TEXT_KEYS = ('title_he', 'description_en', 'description_he', 'objective_en', 'objective_he', 'poetics_en', 'poetics_he', 'emphasis_en', 'emphasis_he',
+             'summary_en', 'summary_he', 'semantic_en', 'semantic_he', 'level_en', 'level_he', 'authors', 'authors_he')
+for e in exercises + dances:
+    for k in TEXT_KEYS:
+        if isinstance(e.get(k), str):
+            e[k] = re.sub(r'\s+[–—]\s+', ', ', e[k])
 
 report = dict(toc2012=len(order), found2012=len(heads), he2012=len(hh), toc2018=len(order18), found2018=len(heads18),
               he2018=len(found), unmatched2018=unmatched, music2012=sum(len(e['music']) for e in exercises),
