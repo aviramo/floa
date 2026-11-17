@@ -845,13 +845,14 @@
       if (tok !== previewTok) return;
       var fake = { exercises: { exercise_texts: rows || [] } };
       var card = function (k, label) { return txt(fake, k) ? '<div class="rcard rcard--flat" style="margin-inline:0"><div class="rcard__head"><span class="rcard__title">' + label + '</span></div><div class="rcard__body"' + (isDraft(fake, k) ? DRAFT : "") + '>' + esc(txt(fake, k)) + '</div></div>' : ""; };
-      var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה";
+      var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה", sel = songs.length ? songs[0].id : null;
       var dlg = document.getElementById("exDlg");
       if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "exDlg"; document.body.appendChild(dlg); }
       RosterSheet.render(dlg, { title: name(e), from: "bottom", action: { label: word, icon: I.check, id: "exgo" },
-        body: bleedCss("exDlg") + '<div style="padding-block:var(--sp-2)">' + ((card("poetics", "פואטיקה") + card("guidance", "הנחיה")) || ph("אין עדיין תיאור לתרגיל", "")) + musicRows(songs) + '</div>' });
+        body: bleedCss("exDlg") + '<div style="padding-block:var(--sp-2)">' + ((card("poetics", "פואטיקה") + card("guidance", "הנחיה")) || ph("אין עדיין תיאור לתרגיל", "")) + musicRows(songs, sel) + '</div>' });
       bleedSet(dlg);
-      dlg.querySelector("#exgo").addEventListener("click", function () { if (swapIt) confirmSwap(e, swapIt, true); else addEx(e, undefined, true); });
+      wirePick(dlg, function (id) { sel = id; });
+      dlg.querySelector("#exgo").addEventListener("click", function () { if (swapIt) confirmSwap(e, swapIt, true, sel); else addEx(e, undefined, true, sel); });
     }, fail);
   }
   /* the catalog is over a thousand exercises and the server hands out at most a thousand rows at a time: read it page by page */
@@ -875,12 +876,26 @@
       return { rows: r[0] || [], songs: songs };
     });
   }
-  function musicRows(songs) {
+  function musicRows(songs, sel) {
     if (!songs.length) return "";
-    /* each song the same way as in the exercise list: its name and performer, and the play tile with the time under it */
-    return '<div style="margin-top:var(--sp-2);border-top:1px solid var(--line);min-width:0">' + songs.map(function (m) {
-      return '<div class="rrow" style="padding-block:var(--sp-2)"><div class="rrow__main">' + songLines(m) + '</div>' + playCol(m, true) + '</div>';
-    }).join("") + '</div>';
+    /* each song the same way as everywhere (songRow); one of them is the one the exercise comes with */
+    return '<div style="margin-top:var(--sp-2);border-top:1px solid var(--line);min-width:0">' + songs.map(function (m) { return songRow(m, m.id === sel, "data-pk"); }).join("") + '</div>';
+  }
+  /* choosing the song an exercise is added with: a tap marks it, a tap on the marked one takes the mark off (no music) */
+  function wirePick(root, onPick) {
+    var bs = [].slice.call(root.querySelectorAll("[data-pk]"));
+    bs.forEach(function (b) {
+      b.addEventListener("click", function () {
+        var row = b.closest(".rrow"), was = row.getAttribute("aria-current") === "true";
+        bs.forEach(function (x) { x.closest(".rrow").setAttribute("aria-current", "false"); });
+        if (!was) row.setAttribute("aria-current", "true");
+        onPick(was ? null : b.dataset.pk);
+      });
+    });
+  }
+  function firstMusic(exId, mid) {   /* the song an exercise is added with: the chosen one (or none), else the catalog's first */
+    if (mid !== undefined) return Promise.resolve(mid ? [{ music_id: mid }] : []);
+    return api("/rest/v1/exercise_music?exercise_id=eq." + exId + "&select=music_id&limit=1");
   }
   function previewEx(e, swapIt) {
     var tok = ++previewTok;
@@ -889,14 +904,14 @@
       var fake = { exercises: { exercise_texts: rows || [] } };
       var card = function (k, label) { return txt(fake, k) ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">' + label + '</span></div><div class="rcard__body"' + (isDraft(fake, k) ? DRAFT : "") + '>' + esc(txt(fake, k)) + '</div></div>' : ""; };
       var body = card("poetics", "פואטיקה") + card("guidance", "הנחיה");
-      var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה";
+      var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה", sel = songs.length ? songs[0].id : null;
       var act = wide() ? '<button class="rbtn" type="button" data-act="doswap">' + word + '</button>'   /* the action is in the header, on the left; on a narrow screen a plain check, like the kit's popups */
                        : '<button class="rbtn" type="button" style="flex:none;width:var(--ctl);padding:0" data-act="doswap" aria-label="' + word + '" title="' + word + '">' + I.check + '</button>';   /* the green button, with a check */
-      show(head(name(e), "", !wide(), act) + '<div class="rlist" style="overflow-x:hidden"><div style="padding-block:var(--sp-2)">' + (body || ph("אין עדיין תיאור לתרגיל", "")) + musicRows(songs) + '</div></div>', function (r) { on(r, "back", back); on(r, "doswap", function () { if (swapIt) confirmSwap(e, swapIt); else addEx(e); }); }, "d");
+      show(head(name(e), "", !wide(), act) + '<div class="rlist" style="overflow-x:hidden"><div style="padding-block:var(--sp-2)">' + (body || ph("אין עדיין תיאור לתרגיל", "")) + musicRows(songs, sel) + '</div></div>', function (r) { on(r, "back", back); wirePick(r, function (id) { sel = id; }); on(r, "doswap", function () { if (swapIt) confirmSwap(e, swapIt, undefined, sel); else addEx(e, undefined, undefined, sel); }); }, "d");
     }, fail);
   }
   /* replacing is asked in the kit's popup, one action: closing it is the cancel */
-  function confirmSwap(e, swapIt, sheet) {
+  function confirmSwap(e, swapIt, sheet, mid) {
     var dlg = document.getElementById("confirmDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
     RosterSheet.render(dlg, { kind: "confirm",
@@ -904,12 +919,12 @@
       body: '<div class="pad"><span>להחליף את "' + esc(itemName(swapIt)) + '" ב"' + esc(name(e)) + '"? השם, הפואטיקה וההנחיה שכתבתם בתרגיל הנוכחי יימחקו. ההערות נשארות.</span></div>',
       foot: '<button class="rbtn rbtn--block" type="button" id="cswap">החלפה</button>'
     });
-    dlg.querySelector("#cswap").addEventListener("click", function () { dlg.close(); addEx(e, swapIt, sheet); });
+    dlg.querySelector("#cswap").addEventListener("click", function () { dlg.close(); addEx(e, swapIt, sheet, mid); });
   }
   function closeSheets() { ["exDlg", "catDlg"].forEach(function (id) { slideClose(document.getElementById(id)); }); }
-  function addEx(e, swapIt, sheet) {
+  function addEx(e, swapIt, sheet, mid) {
     if (swapIt) {   /* the same place in the curve, another exercise: its first song, and none of the old exercise's own wording */
-      return api("/rest/v1/exercise_music?exercise_id=eq." + e.id + "&select=music_id&limit=1").then(function (m) {
+      return firstMusic(e.id, mid).then(function (m) {
         return api("/rest/v1/vivencia_items?id=eq." + swapIt.id, { method: "PATCH", prefer: "return=minimal", json: { exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, title: null, poetics: null, guidance: null } });
       }).then(function () { toast("התרגיל הוחלף");
         if (sheet) {   /* the popups slide out and the same place opens again with the new exercise: no new address, so no entry */
@@ -920,7 +935,7 @@
         stack().pop(); if (!wide()) { stack().pop(); stack().pop(); } var f = stack()[stack().length - 1]; if (f) f(); }, fail);   /* narrow: also the exercise screen and the one just seen */
     }
     var pos = state.items.reduce(function (m, i) { return Math.max(m, i.position); }, 0) + 1;
-    api("/rest/v1/exercise_music?exercise_id=eq." + e.id + "&select=music_id&limit=1").then(function (m) {
+    firstMusic(e.id, mid).then(function (m) {
       return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=minimal", json: { vivencia_id: state.viv.id, position: pos, exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null } });
     }).then(function () { toast("התרגיל נוסף"); if (sheet) { closeSheets(); return loadItems().then(paint, fail); }
       if (wide()) show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); else stack().pop(); back(); }, fail);
