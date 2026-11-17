@@ -527,7 +527,7 @@
 
   /* ---------- picker: the catalog ---------- */
   function picker(swapIt) {
-    show(head(swapIt ? "החלפת תרגיל" : "קטלוג התרגילים", swapIt ? "במקום " + itemName(swapIt) : "בחרו תרגיל להוספה", true) +
+    show(head(swapIt ? "החלפת תרגיל" : "קטלוג התרגילים", "", true) +
       '<div class="pad"><label class="rfield"><span>חיפוש</span><input id="q" placeholder=" "></label>' +
       '<label class="rfield"><span>קו</span><select id="ln"><option value="">הכול</option>' + state.lines.map(function (l) { return '<option value="' + l.key + '">' + esc(l.name_he) + '</option>'; }).join("") + '</select></label></div>' +
       '<div class="rlist" id="list"><div class="rskel rskel--title"></div></div>', function (r) {
