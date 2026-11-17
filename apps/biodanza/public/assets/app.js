@@ -559,8 +559,8 @@
   /* ---------- picker: the catalog ---------- */
   function picker(swapIt) {
     show(head(swapIt ? "החלפת תרגיל" : "קטלוג התרגילים", "", true) +
-      '<div class="pad"><label class="rfield"><span>חיפוש</span><input id="q" placeholder=" "></label>' +
-      '<label class="rfield"><span>קו</span><select id="ln"><option value="">הכול</option>' + state.lines.map(function (l) { return '<option value="' + l.key + '">' + esc(l.name_he) + '</option>'; }).join("") + '</select></label>' +
+      '<div class="pad"><div style="display:flex;gap:var(--gap-button);align-items:flex-end"><label class="rfield" style="flex:1 1 0;min-width:0;margin:0"><span>חיפוש</span><input id="q" placeholder=" "></label>' +
+      '<label class="rfield" style="flex:1 1 0;min-width:0;margin:0"><span>קו</span><select id="ln"><option value="">הכול</option>' + state.lines.map(function (l) { return '<option value="' + l.key + '">' + esc(l.name_he) + '</option>'; }).join("") + '</select></label></div>' +
       '<label class="rfield"><span>קטגוריה</span><select id="cg"><option value="">הכול</option>' + (state.cats || []).map(function (c) { return '<option value="' + esc(c.key) + '">' + esc(c.name_he) + '</option>'; }).join("") + '</select></label></div>' +
       '<div class="rlist" id="list"><div class="rskel rskel--title"></div></div>', function (r) {
       on(r, "back", !wide() ? back : swapIt ? function () { pending = { item: swapIt.id }; back(); }   /* leaving a replacement: the same exercise is open again on the left */
