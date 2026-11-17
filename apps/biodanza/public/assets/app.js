@@ -641,7 +641,7 @@
       var fake = { exercises: { exercise_texts: rows || [] } };
       var card = function (k, label) { return txt(fake, k) ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">' + label + '</span></div><div class="rcard__body"' + (isDraft(fake, k) ? DRAFT : "") + '>' + esc(txt(fake, k)) + '</div></div>' : ""; };
       var body = card("poetics", "פואטיקה") + card("guidance", "הנחיה");
-      var act = '<button class="rbtn" type="button" data-act="doswap">' + (swapIt ? "החלפה בתרגיל הזה" : "הוספה") + '</button>';   /* the action is in the header, on the left */
+      var act = '<button class="rbtn" type="button" style="margin-inline-end:var(--sp-2)" data-act="doswap">' + (swapIt ? "החלפה בתרגיל הזה" : "הוספה") + '</button>';   /* the action is in the header, on the left */
       show(head(name(e), "", false, act) + '<div class="rlist"><div class="pad">' + (body || ph("אין עדיין תיאור לתרגיל", "")) + '</div></div>', function (r) { on(r, "doswap", function () { addEx(e, swapIt); }); }, "d");
     }, fail);
   }
