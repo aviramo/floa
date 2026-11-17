@@ -294,7 +294,7 @@ revoke execute on all functions in schema biodanza from anon;
 insert into biodanza.allowed (email, is_admin, note) values ('ofir.aviram@gmail.com', true, 'owner')
 on conflict (email) do update set is_admin = true;
 
--- ---------- the categories of the 2012 catalog (circles, walks, games, ...) ----------
+-- ---------- the categories of the catalogs (circles, walks, games, ...) ----------
 -- A category is NOT a line of vivencia: the five lines are `lines`. `exercises.category` holds the key (the catalog's English name) of one of these.
 create table if not exists biodanza.categories (
   key      text primary key,
@@ -312,7 +312,10 @@ insert into biodanza.categories (key, name_he, sort) values
   ('Yin Dance And Yang Dance', 'ריקוד יין וריקוד יאנג', 12), ('Dances Of The Four Animals', 'ריקודי ארבע החיות', 13),
   ('Dances Of Shiva, Brahma And Vishnu', 'ריקודי שיווה, ברהמה ווישנו', 14), ('Exercices Without Music', 'תרגילים ללא מוזיקה', 15),
   ('Danses Specifiques', 'ריקודים ייחודיים', 16), ('Generative Postures', 'תנוחות מכוננות', 17), ('Sequential Dances', 'ריקודי רצף', 18),
-  ('Dances Of The Angels', 'ריקודי המלאכים', 19), ('Elements', 'יסודות', 20), ('Procedures Of Facilitation', 'פרוצדורות של אפשור', 21)
+  ('Dances Of The Angels', 'ריקודי המלאכים', 19), ('Elements', 'יסודות', 20), ('Procedures Of Facilitation', 'פרוצדורות של אפשור', 21),
+  -- from the 2014 catalog and the Buenos Aires CD table (their own groupings)
+  ('Dance In Pairs', 'ריקוד בזוגות', 22), ('Synchronization', 'סינכרוניזציה', 23), ('Activation', 'אקטיבציה', 24),
+  ('Rhythmic Dances', 'ריקודי קצב', 25), ('Expressive Dances', 'ריקודים אקספרסיביים', 26)
 on conflict (key) do update set name_he = excluded.name_he, sort = excluded.sort;
 grant select on biodanza.categories to authenticated, service_role;
 

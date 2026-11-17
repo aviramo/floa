@@ -89,18 +89,30 @@ for l in en[310:638]:
     if m:
         cat = m.group(1).title()
         continue
-    m = re.match(r'^([A-Z0-9].*?)\s*\.{3,}\s*\d*\s*$', s)
+    m = re.match(r'^(["A-Z0-9].*?)\s*\.{3,}\s*\d*\s*$', s)
     if m and cat and not s.startswith(('PART', 'Appendix')):
         order.append((clean(m.group(1)), cat))
 
-heads, pos = [], 639
+heads, pos = [], 599
 for title, cat in order:
     for k in range(pos, len(en)):
         s = en[k].strip()
-        if s == title:
+        if s == title or (len(s) > 6 and norm(s) == norm(title)):
             heads.append((title, cat, k))
             pos = k + 1
             break
+
+# a title can sit in the body before the heading that precedes it in the contents list (Walk in Slow Motion): look for it anywhere
+_have = {t for t, _, _ in heads}
+for title, cat in order:
+    if title in _have:
+        continue
+    for k in range(599, len(en)):
+        s = en[k].strip()
+        if s == title or (len(s) > 6 and norm(s) == norm(title)):
+            heads.append((title, cat, k))
+            break
+heads.sort(key=lambda h: h[2])
 
 LABEL = re.compile(r'^\s*(Description|Objective|Observation|Notice|Stages of the Dance|Poetic element|Definition|Existential Projection|CIMEB Note|Music)\s*:?\s*$')
 exercises = []
@@ -132,23 +144,30 @@ for n, (title, cat, k) in enumerate(heads):
 
 # Hebrew text for the same exercises, from the bilingual catalog
 he = text('ibf-2012-he.pdf')
-HL = re.compile(r'^\s*(תיאור|מטרה|דגש|הגדרה|הערה|התבוננות|אלמנט פואטי|הטלה קיומית|השלכה קיומית)\s*:\s*$')
+HL = re.compile(r'^\s*:?\s*(תיאור|מטרה|דגש|הגדרה|הערה|התבוננות|אלמנט פואטי|הטלה קיומית|השלכה קיומית)\s*:?\s*$')
 hs = next((i for i in range(300, len(he)) if he[i].strip().startswith('CIRCLE OF INITIATION')
            and any(x.strip().startswith('Music') for x in he[i:i + 40])), 0)
-hh, pos = [], hs
+# every line that is an English heading (capitals, no running prose), in any order: the Hebrew volume does not follow the contents list
+cand = []
+for k in range(hs, len(he)):
+    ln = he[k].strip()
+    if not re.search('[A-Z]{3,}', ln) or ln.startswith('Music') or re.search('[a-z]{4,}', ln):
+        continue
+    latin = norm(re.sub('[א-ת]', ' ', ln).lstrip(' )-').split('(')[0])
+    if latin:
+        cand.append((k, latin))
+hh, used = [], set()
 for ex in exercises:
     t = norm(ex['title_en'].split('(')[0])
-    for k in range(pos, len(he)):
-        ln = he[k].strip()
-        if not re.search('[A-Z]{3,}', ln) or ln.startswith('Music') or re.search('[a-z]{4,}', ln):
-            continue
-        latin = norm(re.sub('[א-ת]', ' ', ln).lstrip(' )-').split('(')[0])
-        if latin and difflib.SequenceMatcher(None, latin, t).ratio() >= 0.9:
+    for k, latin in cand:
+        if k not in used and difflib.SequenceMatcher(None, latin, t).ratio() >= 0.9:
             hh.append((ex, k))
-            pos = k + 1
+            used.add(k)
             break
+hh.sort(key=lambda x: x[1])
+bounds = sorted(k for k, _ in cand)
 for n, (ex, k) in enumerate(hh):
-    end = hh[n + 1][1] if n + 1 < len(hh) else len(he)
+    end = next((q for q in bounds if q > k), len(he))
     cur, f, sub = None, collections.defaultdict(list), ''
     for l in he[k + 1:end]:
         m = HL.match(l)
@@ -251,25 +270,32 @@ for n, (title, ln, k) in enumerate(heads18):
 
 h18 = text('cimeb-2018-he.pdf')
 HF = re.compile(r'^\s*(תקציר|קו ויונסיה עיקרי|מטרות|מטרה|השלכה קיומית|תיאור|שדה סמנטי לשוני|מיקום נכון בעקומה|רמה|מחברי הריקוד|מחבר הריקוד|מוזיקה)\s*:(.*)$')
-hb, pos, found = [], 0, []
+hb, found = [], []
+cands18 = []     # every English heading line of the Hebrew volume; its order need not follow the English contents list
+for k in range(380, len(h18)):
+    ln = h18[k].strip()
+    if not re.search('[A-Z]{3,}', ln) or ln.startswith('•'):
+        continue
+    ln_nohe = re.sub(r'[(][^()]*[א-ת][^()]*[)]|[)][^()]*[א-ת][^()]*[(]', ' ', ln)    # a Hebrew bracket in front of the English heading
+    latin = norm(re.sub('[א-ת]', ' ', ln_nohe.rstrip('-')).lstrip(' )-').split('(')[0])
+    he_part = clean(re.sub(r"[A-Z0-9 ,.'`\"()!&:/\-’‘–]+$", ' ', ln.rstrip('-')))
+    if not he_part:
+        prev = [x.strip() for x in h18[max(0, k - 4):k] if x.strip()]
+        if prev and re.search('[א-ת]', prev[-1]) and not re.search('[A-Za-z]', prev[-1]) and len(prev[-1]) < 50:
+            he_part = prev[-1]
+    cands18.append((k, latin, he_part))
+used18 = set()
 for d in dances:
-    for k in range(pos, len(h18)):
-        ln = h18[k].strip()
-        if k < 380 or not re.search('[A-Z]{3,}', ln) or ln.startswith('•'):
-            continue
-        latin = norm(re.sub('[א-ת]', ' ', ln.rstrip('-')).lstrip(' )-').split('(')[0])
-        if difflib.SequenceMatcher(None, latin, d['key']).ratio() >= 0.85:
-            he_part = clean(re.sub(r"[A-Z0-9 ,.'`\"()!&:/\-’‘–]+$", ' ', ln.rstrip('-')))
-            if not he_part:
-                prev = [x.strip() for x in h18[max(0, k - 4):k] if x.strip()]
-                if prev and re.search('[א-ת]', prev[-1]) and not re.search('[A-Za-z]', prev[-1]) and len(prev[-1]) < 50:
-                    he_part = prev[-1]
+    for k, latin, he_part in cands18:
+        if k not in used18 and difflib.SequenceMatcher(None, latin, d['key']).ratio() >= 0.85:
             found.append((d, k, he_part))
-            pos = k + 1
+            used18.add(k)
             break
+found.sort(key=lambda x: x[1])
+bounds18 = sorted(k for k, _, _ in cands18)
 unmatched = [d['title_en'] for d in dances if d not in [x[0] for x in found]]
 for n, (d, k, title_he) in enumerate(found):
-    end = found[n + 1][1] if n + 1 < len(found) else len(h18)
+    end = next((q for q in bounds18 if q > k), len(h18))
     sec, f = None, collections.defaultdict(list)
     for l in h18[k + 1:end]:
         m = HF.match(l)
