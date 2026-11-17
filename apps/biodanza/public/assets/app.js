@@ -698,8 +698,9 @@
   }
   function musicRows(songs) {
     if (!songs.length) return "";
+    /* each song the same way as in the exercise list: its name and performer, and the play tile with the time under it */
     return '<div style="margin-top:var(--sp-2);border-top:1px solid var(--line)">' + songs.map(function (m) {
-      return '<div class="rrow"><div class="rrow__main"><span class="rrow__title">' + esc(songName(m)) + '</span><span class="rrow__sub">' + esc([songBy(m), m.duration_sec ? clock(m.duration_sec) : ""].filter(Boolean).join(" · ")) + '</span></div>' + ytLink(m, true) + '</div>';
+      return '<div class="rrow" style="padding-inline:0;padding-block:var(--sp-2)"><div class="rrow__main">' + songLines(m) + '</div>' + playCol(m, true) + '</div>';
     }).join("") + '</div>';
   }
   function previewEx(e, swapIt) {
