@@ -298,7 +298,7 @@
   function confirmRemoveItem(it) {
     var dlg = document.getElementById("confirmDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
-    RosterSheet.render(dlg, {
+    RosterSheet.render(dlg, { kind: "confirm",
       title: "הסרת תרגיל", from: "bottom", size: "s",
       body: '<div class="pad"><span>להסיר את "' + esc(itemName(it)) + '" מהוויוונסיה? התרגיל נשאר בקטלוג.</span></div>',
       foot: '<button class="rbtn rbtn--danger rbtn--block" type="button" id="cdel">הסרה</button>'
@@ -361,7 +361,7 @@
   function confirmDelete(v) {
     var dlg = document.getElementById("confirmDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
-    RosterSheet.render(dlg, {
+    RosterSheet.render(dlg, { kind: "confirm",
       title: "מחיקת ויוונסיה", from: "bottom", size: "s",
       body: '<div class="pad"><span>למחוק את "' + esc(v.title || "ויוונסיה ללא שם") + '" ואת כל התרגילים שבה? אי אפשר לשחזר.</span></div>',
       foot: '<button class="rbtn rbtn--danger rbtn--block" type="button" id="cdel">מחיקה</button>'
@@ -706,7 +706,7 @@
   function confirmSwap(e, swapIt, sheet) {
     var dlg = document.getElementById("confirmDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
-    RosterSheet.render(dlg, {
+    RosterSheet.render(dlg, { kind: "confirm",
       title: "החלפת תרגיל", from: "bottom", size: "s",
       body: '<div class="pad"><span>להחליף את "' + esc(itemName(swapIt)) + '" ב"' + esc(name(e)) + '"? השם, הפואטיקה וההנחיה שכתבתם בתרגיל הנוכחי יימחקו. ההערות נשארות.</span></div>',
       foot: '<button class="rbtn rbtn--block" type="button" id="cswap">החלפה</button>'
