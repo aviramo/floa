@@ -61,9 +61,8 @@
   }
   /* the header of one exercise: buttons only, each with its word. Previous and the list on the right, next on the left. The name is the field below. */
   function itemHead(hasPrev, hasNext) {
-    var b = function (act, ico, label, off, after) { return '<button class="rbtn rbtn--ghost" data-act="' + act + '" title="' + label + '"' + (off ? " disabled" : "") + '>' + (after ? '<span>' + label + '</span>' + ico : ico + '<span>' + label + '</span>') + '</button>'; };
-    return '<header class="rhead">' + b("prevW", I.back, "הקודם", !hasPrev) + b("list", I.list, "לרשימה", false) +
-      '<span style="flex:1 1 auto"></span>' + b("nextW", I.fwd, "הבא", !hasNext, true) + '</header>';
+    var b = function (act, ico, label, off, after) { return '<button class="rbtn rbtn--ghost" data-act="' + act + '" title="' + label + '"' + (act === "list" ? ' style="flex:1 1 auto"' : "") + (off ? " disabled" : "") + '>' + (after ? '<span>' + label + '</span>' + ico : ico + '<span>' + label + '</span>') + '</button>'; };
+    return '<header class="rhead">' + b("prevW", I.back, "הקודם", !hasPrev) + b("list", I.list, "לרשימה", false) + b("nextW", I.fwd, "הבא", !hasNext, true) + '</header>';
   }
   function toast(msg) {
     var t = document.createElement("div");
