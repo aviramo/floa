@@ -60,3 +60,29 @@ test("the shared account's name is only filled when empty, never overwritten", a
   assert.equal(puts.length, 1); assert.equal(puts[0].user_metadata.full_name, good.name);
   assert.equal("email_confirm" in puts[0], false);
 });
+
+test("a brand-new account (link type signup) gets its session: verify uses the type the link reports", async () => {
+  const seen = [];
+  const f = async (url, init) => {
+    if (String(url).includes("tokeninfo")) return new Response(JSON.stringify(good));
+    if (String(url).includes("generate_link")) return new Response(JSON.stringify({ id: "u1", hashed_token: "h", verification_type: "signup" }));
+    if (String(url).includes("/verify")) { const t = JSON.parse(init.body).type; seen.push(t); return t === "signup" ? new Response(JSON.stringify({ access_token: "a", refresh_token: "r" })) : new Response("{}", { status: 403 }); }
+    return new Response("{}");
+  };
+  const r = await handleRosterAuth(req(), env, f);
+  assert.equal(r.status, 200);
+  assert.deepEqual(seen, ["signup"]);
+});
+
+test("when the link does not say its type, the other type is tried once", async () => {
+  const seen = [];
+  const f = async (url, init) => {
+    if (String(url).includes("tokeninfo")) return new Response(JSON.stringify(good));
+    if (String(url).includes("generate_link")) return new Response(JSON.stringify({ id: "u1", hashed_token: "h" }));
+    if (String(url).includes("/verify")) { const t = JSON.parse(init.body).type; seen.push(t); return t === "signup" ? new Response(JSON.stringify({ access_token: "a" })) : new Response("{}", { status: 403 }); }
+    return new Response("{}");
+  };
+  const r = await handleRosterAuth(req(), env, f);
+  assert.equal(r.status, 200);
+  assert.deepEqual(seen, ["magiclink", "signup"]);
+});
