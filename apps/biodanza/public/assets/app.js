@@ -83,25 +83,23 @@
     var v = state.viv;
     show(head(v.title || "ויוונסיה חדשה", "", true, '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="play" aria-label="הפעלה" title="הפעלה">' + I.play + '</button>') +
       '<div class="pad"><label class="rfield"><span>שם הוויוונסיה</span><input id="vt" placeholder=" " value="' + esc(v.title) + '"></label>' +
-      '<label class="rfield"><span>נושא</span><input id="vh" placeholder=" " value="' + esc(v.theme || "") + '"></label>' +
-      '<label class="rfield"><span>שלב בעקומה</span><select id="vf"><option value="">הכול</option>' + state.phases.map(function (p) { return '<option value="' + p.key + '"' + (state.filter === p.key ? " selected" : "") + '>' + esc(p.name_he) + '</option>'; }).join("") + '</select></label></div>' +
+      '<label class="rfield"><span>נושא</span><input id="vh" placeholder=" " value="' + esc(v.theme || "") + '"></label></div>' +
       '<div class="rlist" data-fab-room id="list"><div class="rskel rskel--title"></div></div>' +
       '<button class="rfab" data-act="add" aria-label="הוספת תרגיל" title="הוספת תרגיל">' + I.plus + '</button>', function (r) {
       on(r, "back", back); on(r, "add", function () { go(picker); });
       on(r, "play", function () { if (!state.items.length) return toast("אין עדיין תרגילים"); go(function () { player(0); }); });
       function save() { var t = r.querySelector("#vt").value, h = r.querySelector("#vh").value; v.title = t; v.theme = h; api("/rest/v1/vivencias?id=eq." + v.id, { method: "PATCH", json: { title: t, theme: h, updated_at: new Date().toISOString() } }).catch(fail); }
       r.querySelector("#vt").addEventListener("change", save); r.querySelector("#vh").addEventListener("change", save);
-      r.querySelector("#vf").addEventListener("change", function (e) { state.filter = e.target.value; paint(); });
     });
     loadItems().then(paint, fail);
   }
   function paint() {
     var l = document.getElementById("list"); if (!l) return;
-    var vis = state.items.filter(function (i) { return !state.filter || i.phase_key === state.filter; });
-    if (!vis.length) { l.innerHTML = '<div class="rempty"><b>' + (state.items.length ? "אין תרגילים בשלב הזה" : "הוויוונסיה ריקה") + '</b><span>לחצו על + כדי להוסיף תרגיל מהקטלוג</span></div>'; return; }
+    var vis = state.items;   /* the order of the list IS the curve: no phase is kept on an item */
+    if (!vis.length) { l.innerHTML = '<div class="rempty"><b>הוויוונסיה ריקה</b><span>לחצו על + כדי להוסיף תרגיל מהקטלוג</span></div>'; return; }
     l.innerHTML = vis.map(function (i, k) {
       var e = i.exercises || {};
-      return '<div class="rrow"><div class="rrow__main"><button class="rrow__title" data-edit="' + i.id + '" style="all:unset;cursor:pointer">' + esc(name(e)) + '</button><span class="rrow__sub">' + esc([phaseName(i.phase_key), i.music && i.music.name, i.minutes ? i.minutes + " דק׳" : ""].filter(Boolean).join(" · ") || "בלי מוזיקה") + '</span></div>' +
+      return '<div class="rrow"><div class="rrow__main"><button class="rrow__title" data-edit="' + i.id + '" style="all:unset;cursor:pointer">' + esc(name(e)) + '</button><span class="rrow__sub">' + esc([i.music && i.music.name, i.minutes ? i.minutes + " דק׳" : ""].filter(Boolean).join(" · ") || "בלי מוזיקה") + '</span></div>' +
         '<button class="rbtn rbtn--icon" data-up="' + k + '" aria-label="הזזה למעלה" title="הזזה למעלה"' + (k === 0 ? " disabled" : "") + '>' + I.up + '</button>' +
         '<button class="rbtn rbtn--icon" data-down="' + k + '" aria-label="הזזה למטה" title="הזזה למטה"' + (k === vis.length - 1 ? " disabled" : "") + '>' + I.down + '</button></div>';
     }).join("");
@@ -118,7 +116,6 @@
   function itemScreen(it) {
     var e = it.exercises || {};
     show(head(name(e), "פריט בוויוונסיה", true) + '<div class="rlist"><div class="pad">' +
-      '<label class="rfield"><span>שלב בעקומה</span><select id="ip">' + state.phases.map(function (p) { return '<option value="' + p.key + '"' + (it.phase_key === p.key ? " selected" : "") + '>' + esc(p.name_he) + '</option>'; }).join("") + '</select></label>' +
       '<label class="rfield"><span>מוזיקה</span><select id="im"><option value="">בלי מוזיקה</option></select></label>' +
       '<label class="rfield"><span>משך בדקות</span><input id="in" type="number" min="1" placeholder=" " value="' + (it.minutes || "") + '"></label>' +
       '<label class="rfield"><span>הערות</span><textarea id="it" placeholder=" ">' + esc(it.notes || "") + '</textarea></label>' +
@@ -132,10 +129,10 @@
         sel.value = it.music_id || "";
       }, fail);
       function save() {
-        var body = { phase_key: r.querySelector("#ip").value, music_id: r.querySelector("#im").value || null, minutes: +r.querySelector("#in").value || null, notes: r.querySelector("#it").value };
+        var body = { music_id: r.querySelector("#im").value || null, minutes: +r.querySelector("#in").value || null, notes: r.querySelector("#it").value };
         api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: body }).then(function () { Object.assign(it, body); toast("נשמר"); }, fail);
       }
-      ["#ip", "#im", "#in", "#it"].forEach(function (s) { r.querySelector(s).addEventListener("change", save); });
+      ["#im", "#in", "#it"].forEach(function (s) { r.querySelector(s).addEventListener("change", save); });
       on(r, "del", function () { api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "DELETE" }).then(function () { back(); }, fail); });
     });
   }
@@ -153,7 +150,7 @@
           return (!ln || (e.exercise_lines || []).some(function (x) { return x.line_key === ln; })) && (!q || (name(e) + " " + e.title_en + " " + e.category).toLowerCase().indexOf(q) >= 0);
         }).slice(0, 120);
         l.innerHTML = rows.length ? rows.map(function (e) {
-          return '<div class="rrow"><div class="rrow__main"><button class="rrow__title" data-ex="' + e.id + '" style="all:unset;cursor:pointer">' + esc(name(e)) + '</button><span class="rrow__sub">' + esc([e.category, (e.exercise_lines || []).map(function (x) { return lineName(x.line_key); }).join(", ")].filter(Boolean).join(" · ")) + '</span></div></div>';
+          return '<div class="rrow"><div class="rrow__main"><button class="rrow__title" data-ex="' + e.id + '" style="all:unset;cursor:pointer">' + esc(name(e)) + '</button><span class="rrow__sub">' + esc([e.category, e.phase_hint ? "בקטלוג: " + phaseName(e.phase_hint) : "", (e.exercise_lines || []).map(function (x) { return lineName(x.line_key); }).join(", ")].filter(Boolean).join(" · ")) + '</span></div></div>';
         }).join("") : '<div class="rempty"><b>לא נמצא תרגיל</b></div>';
         l.querySelectorAll("[data-ex]").forEach(function (b) { b.addEventListener("click", function () { addEx(state.cat.filter(function (x) { return x.id === b.dataset.ex; })[0]); }); });
       }
@@ -164,14 +161,14 @@
   function addEx(e) {
     var pos = state.items.reduce(function (m, i) { return Math.max(m, i.position); }, 0) + 1;
     api("/rest/v1/exercise_music?exercise_id=eq." + e.id + "&select=music_id&limit=1").then(function (m) {
-      return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=minimal", json: { vivencia_id: state.viv.id, position: pos, exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, phase_key: state.filter || e.phase_hint || "activation" } });
+      return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=minimal", json: { vivencia_id: state.viv.id, position: pos, exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null } });
     }).then(function () { toast("התרגיל נוסף"); back(); }, fail);
   }
 
   /* ---------- player: the session, one exercise at a time ---------- */
   function player(k) {
     var it = state.items[k], e = it.exercises || {}, last = k === state.items.length - 1;
-    show(head(name(e), (k + 1) + " מתוך " + state.items.length + " · " + phaseName(it.phase_key), true) +
+    show(head(name(e), (k + 1) + " מתוך " + state.items.length, true) +
       '<div class="rlist"><div class="pad">' +
       (it.music ? '<span class="rchip rchip--info rchip--l">' + esc(it.music.name) + '</span>' : '') +
       (e.poetics ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">פואטיקה</span></div><div class="rcard__body">' + esc(e.poetics) + '</div></div>' : '') +

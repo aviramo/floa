@@ -20,10 +20,11 @@ set search_path = biodanza, public;
 -- exercise means making a copy (base_id points back at the original), so the
 -- original is never lost.
 --
--- A VIVENCIA is a list of items. Each item is one exercise, the ONE music
--- chosen for it, and the phase of the curve it sits in (the same exercise can
--- sit in different phases with different music). A vivencia has any number of
--- owners, all equal. Sharing for view and copy comes later.
+-- A VIVENCIA is an ordered list of items. Each item is one exercise and the ONE
+-- music chosen for it. The ORDER of the list is the curve of the session: an
+-- item keeps no phase of its own, its place in the sequence says where on the
+-- curve it sits. A vivencia has any number of owners, all equal. Sharing for
+-- view and copy comes later.
 --
 -- Run: node scripts/sql.mjs < apps/biodanza/schema.sql   (safe to run again)
 -- ==========================================================================
@@ -160,10 +161,10 @@ create table if not exists biodanza.vivencia_items (
   position    int  not null,
   exercise_id uuid references biodanza.exercises(id) on delete restrict,
   music_id    uuid references biodanza.music(id) on delete set null,   -- the ONE chosen music
-  phase_key   text references biodanza.phases(key),
   minutes     int,
   notes       text not null default ''
 );
+alter table biodanza.vivencia_items drop column if exists phase_key;
 create index if not exists vivencia_items_viv_idx on biodanza.vivencia_items (vivencia_id, position);
 
 create or replace function biodanza.owns(v uuid) returns boolean
