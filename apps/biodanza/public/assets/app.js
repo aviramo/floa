@@ -563,14 +563,13 @@
         var cs = getComputedStyle(box), gap = parseFloat(cs.rowGap) || 0, room = box.clientHeight - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0) - gap * (tas.length - 1);
         var need = nat.reduce(function (a, b, i) { return a + b + over[i]; }, 0);
         if (need <= room) { tas.forEach(function (t, i) { t.style.height = nat[i] + "px"; }); return; }
-        /* it does not fit: every field gets what is left, divided by its lines, none below three lines (or its own length if shorter), none above its own length; what a short one does not use goes to the long ones, down to the buttons */
-        var free = room - over.reduce(function (a, b) { return a + b; }, 0), line = parseFloat(getComputedStyle(tas[0]).lineHeight) || 24;
-        var h = nat.map(function (n) { return Math.min(n, line * 3); });
+        /* it does not fit: the aim is a third each; a field that needs less keeps only what it needs, and what it leaves is shared equally by the others, down to the buttons */
+        var free = room - over.reduce(function (a, b) { return a + b; }, 0);
+        var h = nat.map(function () { return 0; });
         for (var it2 = 0; it2 < 6; it2++) {
           var rem = free - h.reduce(function (a, b) { return a + b; }, 0), idx = h.map(function (v, i) { return v < nat[i] - 0.5 ? i : -1; }).filter(function (i) { return i >= 0; });
           if (rem < 1 || !idx.length) break;
-          var wsum = idx.reduce(function (a, i) { return a + nat[i]; }, 0);
-          idx.forEach(function (i) { h[i] = Math.min(nat[i], h[i] + rem * nat[i] / wsum); });
+          idx.forEach(function (i) { h[i] = Math.min(nat[i], h[i] + rem / idx.length); });
         }
         tas.forEach(function (t, i) { t.style.height = Math.floor(h[i]) + "px"; t.style.overflowY = h[i] < nat[i] - 1 ? "auto" : "hidden"; });
       }
