@@ -645,6 +645,7 @@
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "catDlg"; document.body.appendChild(dlg); }
     RosterSheet.render(dlg, { title: swapIt ? "החלפת תרגיל" : "קטלוג התרגילים", from: "bottom", body: pickerBody() });
     var r = dlg.querySelector(".sheet-body"), ls = r.querySelector("#list");
+    var ph0 = r.querySelector("[data-pickhead]"); if (ph0) ph0.style.paddingTop = "0";   /* the popup already leaves its standard step under the title */
     r.style.overflowY = "hidden";   /* the search stays where it is and only the list scrolls, so nothing shows through above it */
     if (ls) ls.style.cssText += ";flex:1 1 auto;min-height:0;overflow-y:auto";
     pickerWire(r, swapIt, true);
