@@ -1,6 +1,0 @@
-workflow:   Deploy to Cloudflare
-conclusion: cancelled
-commit:     bca99346136febf06a25b6dfd68d3693dba92017
-run:        https://github.com/aviramo/floa/actions/runs/44067555132
-at:         2026-11-17T10:45:44Z
-
