@@ -562,7 +562,12 @@
     }, fail);
   }
   /* rows in a popup run from edge to edge: the popup's own side room (measured from its title) is pulled out and given back as padding, and the chosen row has the green stripe at its left */
-  function bleedCss(id) { return '<style>#' + id + ' .sheet-body { overflow-x: hidden } #' + id + ' .rrow { margin-inline: calc(var(--bleed, var(--pp-px)) * -1); padding-inline: var(--bleed, var(--pp-px)) } #' + id + ' .rrow[aria-current="true"] { background: var(--surface); box-shadow: inset 3px 0 0 var(--accent) }</style>'; }
+  function bleedCss(id) {
+    var v = 'var(--bleed, var(--pp-px))', q = '#' + id;
+    /* the body is as wide as the popup, its content keeps the title's side room, and a row pulls back out to the edges, so its background and stripe reach the popup's walls */
+    return '<style>' + q + ' .sheet-body { overflow-x: hidden; margin-inline: calc(' + v + ' * -1); padding-inline: 0 } ' + q + ' .sheet-body > * { padding-inline: ' + v + ' } ' +
+      q + ' .rrow { margin-inline: calc(' + v + ' * -1); padding-inline: ' + v + ' } ' + q + ' .rrow[aria-current="true"] { background: var(--surface); box-shadow: inset 3px 0 0 var(--accent) }</style>';
+  }
   function bleedSet(dlg) {
     var sh = dlg.querySelector(".sheet"), h = dlg.querySelector(".sheet-head h2"); if (!sh || !h) return;
     var off = Math.round(sh.getBoundingClientRect().right - h.getBoundingClientRect().right);
@@ -711,7 +716,7 @@
     RosterSheet.render(dlg, { title: swapIt ? "החלפת תרגיל" : "קטלוג התרגילים", from: "bottom", body: bleedCss("catDlg") + pickerBody() });
     bleedSet(dlg);   /* the content sits on the title's own edges, the same on both sides */
     var r = dlg.querySelector(".sheet-body"), ls = r.querySelector("#list");
-    var ph0 = r.querySelector("[data-pickhead]"); if (ph0) { ph0.style.paddingTop = "0"; ph0.style.paddingInline = "0"; }   /* the popup already leaves its standard step under the title */
+    var ph0 = r.querySelector("[data-pickhead]"); if (ph0) ph0.style.paddingTop = "0";   /* the popup already leaves its standard step under the title */
     r.style.overflowY = "hidden";   /* the search stays where it is and only the list scrolls, so nothing shows through above it */
     if (ls) ls.style.cssText += ";flex:1 1 auto;min-height:0;overflow-y:auto";
     pickerWire(r, swapIt, true);
