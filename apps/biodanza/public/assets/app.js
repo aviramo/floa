@@ -563,7 +563,8 @@
       '<label class="rfield"><span>קו</span><select id="ln"><option value="">הכול</option>' + state.lines.map(function (l) { return '<option value="' + l.key + '">' + esc(l.name_he) + '</option>'; }).join("") + '</select></label>' +
       '<label class="rfield"><span>קטגוריה</span><select id="cg"><option value="">הכול</option>' + (state.cats || []).map(function (c) { return '<option value="' + esc(c.key) + '">' + esc(c.name_he) + '</option>'; }).join("") + '</select></label></div>' +
       '<div class="rlist" id="list"><div class="rskel rskel--title"></div></div>', function (r) {
-      on(r, "back", swapIt && wide() ? function () { pending = { item: swapIt.id }; back(); } : back);   /* leaving a replacement: the same exercise is open again on the left */
+      on(r, "back", !wide() ? back : swapIt ? function () { pending = { item: swapIt.id }; back(); }   /* leaving a replacement: the same exercise is open again on the left */
+        : function () { show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); back(); });
       function paintCat() {
         var q = r.querySelector("#q").value.trim().toLowerCase(), ln = r.querySelector("#ln").value, cg = r.querySelector("#cg").value, l = r.querySelector("#list");
         var rows = (state.cat || []).filter(function (e) {
@@ -574,7 +575,7 @@
         }).join("") : ph("לא נמצא תרגיל", "");
         l.querySelectorAll("[data-ex]").forEach(function (b) { b.addEventListener("click", function () {
           var ex = state.cat.filter(function (x) { return x.id === b.dataset.ex; })[0];
-          if (swapIt && wide()) {   /* replacing: the exercise is shown on the left first, and the replacing is its own button */
+          if (wide()) {   /* adding or replacing: the exercise is shown on the left first, and the action is its own button */
             l.querySelectorAll(".rrow").forEach(function (w) { w.removeAttribute("aria-current"); });
             b.closest(".rrow").setAttribute("aria-current", "true");
             previewEx(ex, swapIt);
@@ -599,7 +600,7 @@
     }
     return page(0);
   }
-  /* a catalog exercise shown on the left while one is being replaced: its own words, and one button that does the replacing */
+  /* a catalog exercise shown on the left while one is being added or replaced: its own words, and one button that does it */
   var previewTok = 0;
   function previewEx(e, swapIt) {
     var tok = ++previewTok;
@@ -609,7 +610,7 @@
       var card = function (k, label) { return txt(fake, k) ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">' + label + '</span></div><div class="rcard__body"' + (isDraft(fake, k) ? DRAFT : "") + '>' + esc(txt(fake, k)) + '</div></div>' : ""; };
       var body = card("poetics", "פואטיקה") + card("guidance", "הנחיה");
       show(head(name(e), "", false) + '<div class="rlist"><div class="pad">' + (body || ph("אין עדיין תיאור לתרגיל", "")) +
-        '<button class="rbtn rbtn--block" data-act="doswap">החלפה בתרגיל הזה</button></div></div>', function (r) { on(r, "doswap", function () { addEx(e, swapIt); }); }, "d");
+        '<button class="rbtn rbtn--block" data-act="doswap">' + (swapIt ? "החלפה בתרגיל הזה" : "הוספה") + '</button></div></div>', function (r) { on(r, "doswap", function () { addEx(e, swapIt); }); }, "d");
     }, fail);
   }
   function addEx(e, swapIt) {
@@ -622,7 +623,7 @@
     var pos = state.items.reduce(function (m, i) { return Math.max(m, i.position); }, 0) + 1;
     api("/rest/v1/exercise_music?exercise_id=eq." + e.id + "&select=music_id&limit=1").then(function (m) {
       return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=minimal", json: { vivencia_id: state.viv.id, position: pos, exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null } });
-    }).then(function () { toast("התרגיל נוסף"); back(); }, fail);
+    }).then(function () { toast("התרגיל נוסף"); if (wide()) show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); back(); }, fail);
   }
 
   /* ---------- player: the session, one exercise at a time ---------- */
