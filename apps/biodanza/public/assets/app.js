@@ -386,6 +386,11 @@
     wireFac(l);
     if (canEdit()) enableDrag(l, "[data-edit]", persistItems);
   }
+  /* beside the list the open exercise's strip is marked at once, wherever it was opened from (a click, the arrows, a swap) */
+  function markItem() {
+    var l = document.getElementById("list"); if (!l || !l.hasAttribute("data-fab-room")) return;
+    l.querySelectorAll("[data-edit]").forEach(function (b) { b.closest(".rrow").setAttribute("aria-current", b.dataset.edit === state.lastItem ? "true" : "false"); });
+  }
   function persistItems(from, to) {
     var moved = state.items.splice(from, 1)[0]; state.items.splice(to, 0, moved);
     Promise.all(state.items.map(function (it, k) {
@@ -471,6 +476,7 @@
     var e = it.exercises || {};
     setUrl(BASE + state.viv.id + "/" + it.id);
     state.lastItem = it.id;   /* the strip of the exercise last opened stays marked in the list, like the vivencia in its list */
+    markItem();
     var k = state.items.indexOf(it), prevIt = state.items[k - 1], nextIt = state.items[k + 1];
     /* the header walks the sequence: the right button to the previous exercise, the left one to the next, the name between them */
     var hd = itemHead(!!prevIt, !!nextIt, (k + 1) + "/" + state.items.length);   /* the middle button says where we are, and still opens the list */
