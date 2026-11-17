@@ -201,8 +201,7 @@
     if (!vis.length) { l.innerHTML = ph("הוויוונסיה ריקה", "לחצו על + כדי להוסיף תרגיל מהקטלוג"); return; }
     l.innerHTML = vis.map(function (i, k) {
       var e = i.exercises || {};
-      return '<div class="rrow"><div class="rrow__main"><button class="rrow__title" data-edit="' + i.id + '" style="all:unset;cursor:pointer">' + esc(itemName(i)) + '</button><span class="rrow__sub">' + esc([i.music && i.music.name, i.music && i.music.duration_sec ? clock(i.music.duration_sec) : ""].filter(Boolean).join(" · ") || "בלי מוזיקה") + '</span></div>' +
-        '</div>';
+      return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-edit="' + i.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(itemName(i)) + '</span><span class="rrow__sub">' + esc([i.music && i.music.name, i.music && i.music.duration_sec ? clock(i.music.duration_sec) : ""].filter(Boolean).join(" · ") || "בלי מוזיקה") + '</span></button></div>';
     }).join("");
     l.querySelectorAll("[data-edit]").forEach(function (b) { b.addEventListener("click", function () { var it = state.items.filter(function (x) { return x.id === b.dataset.edit; })[0]; go(function () { itemScreen(it); }); }); });
     enableDrag(l, "[data-edit]", persistItems);
