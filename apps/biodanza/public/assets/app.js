@@ -102,10 +102,11 @@
   /* while a song plays, the time under its button counts down to 0 (audio.js tells the page); the others show their whole length */
   document.addEventListener("bioaudio", function (ev) {
     var d = ev.detail || {};
+    if (d.name && d.d > 0 && durKnown[d.name] !== Math.round(d.d)) { durKnown[d.name] = Math.round(d.d); try { localStorage.setItem("biodanza.dur", JSON.stringify(durKnown)); } catch (x) { /* not kept */ } }
     document.querySelectorAll(".bio-time").forEach(function (sp) {
-      var full = +sp.dataset.dur || 0, left = full;
+      var full = +sp.dataset.dur || durKnown[sp.dataset.for] || 0, left = full;
       if (d.name && sp.dataset.for === d.name) left = Math.max(0, Math.ceil((full || Math.round(d.d || 0)) - d.t));
-      var txt = clock(left); if (sp.textContent !== txt) sp.textContent = txt;
+      var txt = left ? clock(left) : ""; if (sp.textContent !== txt) sp.textContent = txt;
     });
   });
   /* the song's bar: ONE element everywhere. A song with a file keeps its room for it, the bar shows while that song plays, follows it, and a drag moves the song. */
@@ -113,6 +114,10 @@
     if (!m || !m.audio_object) return "";
     return '<div class="bio-bar" data-for="' + esc(m.audio_object) + '" style="visibility:hidden;' + (extra || "flex:0 0 100%;order:3;padding-top:var(--sp-1)") + ';position:relative;z-index:var(--z-raised)"><input type="range" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר" style="display:block;width:100%;margin:0;direction:ltr;accent-color:var(--primary)"></div>';
   }
+  /* a song's length: the catalog's, else what its own file told the player the first time (kept in this browser) */
+  var durKnown = {};
+  try { durKnown = JSON.parse(localStorage.getItem("biodanza.dur") || "{}") || {}; } catch (x) { durKnown = {}; }
+  function durOf(m) { return (m && (m.duration_sec || durKnown[m.audio_object])) || 0; }
   var barDrag = false;
   document.addEventListener("bioaudio", function (ev) {
     var d = ev.detail || {};
@@ -129,7 +134,7 @@
   function playCol(m, trail) {
     var tile = songBtn(m, trail).replace(/width:var\(--fab\);height:var\(--fab\);min-height:var\(--fab\);/, "width:var(--ctl);height:var(--ctl);min-height:var(--ctl);border-radius:var(--r-ctl);background:var(--surface-2);");
     return '<div style="flex:none;display:flex;flex-direction:column;align-items:center;gap:var(--gap-button)">' + tile +
-      (m.duration_sec ? '<span class="bio-time" data-dur="' + m.duration_sec + '"' + (m.audio_object ? ' data-for="' + esc(m.audio_object) + '"' : '') + ' style="color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/1 var(--font);font-variant-numeric:tabular-nums">' + clock(m.duration_sec) + '</span>' : '') + '</div>';
+      (durOf(m) || m.audio_object ? '<span class="bio-time" data-dur="' + (m.duration_sec || "") + '"' + (m.audio_object ? ' data-for="' + esc(m.audio_object) + '"' : '') + ' style="display:block;min-height:1em;color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/1 var(--font);font-variant-numeric:tabular-nums">' + (durOf(m) ? clock(durOf(m)) : '') + '</span>' : '') + '</div>';
   }
   /* a song as a row to choose from: the same element, a row of its own */
   function songRow(m, cur, attr) {
