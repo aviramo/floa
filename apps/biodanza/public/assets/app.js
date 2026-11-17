@@ -134,6 +134,19 @@
   }
 
   function newViv() { namePopup({ id: uuid(), title: "" }, true); }
+  /* removing an exercise from a vivencia is asked in the kit's popup, one action; the catalog's exercise is untouched */
+  function confirmRemoveItem(it) {
+    var dlg = document.getElementById("confirmDlg");
+    if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
+    RosterSheet.render(dlg, {
+      title: "הסרת תרגיל", from: "bottom", size: "s",
+      body: '<div class="pad"><span>להסיר את "' + esc(itemName(it)) + '" מהוויוונסיה? התרגיל נשאר בקטלוג.</span></div>',
+      foot: '<button class="rbtn rbtn--danger rbtn--block" type="button" id="cdel">הסרה</button>'
+    });
+    dlg.querySelector("#cdel").addEventListener("click", function () {
+      api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "DELETE" }).then(function () { dlg.close(); toast("התרגיל הוסר"); state.lastItem = null; back(); }, fail);
+    });
+  }
   /* the name (the theme) of a vivencia is set here, from the list: the kit's popup with a header check to save */
   function namePopup(v, isNew) {
     var dlg = document.getElementById("nameDlg");
@@ -320,7 +333,7 @@
         }, fail);
       }
       ["#ina", "#ipo", "#igu", "#it"].forEach(function (s) { r.querySelector(s).addEventListener("change", save); });
-      on(r, "del", function () { api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "DELETE" }).then(function () { back(); }, fail); });
+      on(r, "del", function () { confirmRemoveItem(it); });
     }, "d");
   }
 
