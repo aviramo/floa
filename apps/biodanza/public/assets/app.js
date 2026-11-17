@@ -1,0 +1,223 @@
+/* Biodanza: a facilitator builds a vivencia, plans it along the curve, plays it in the session.
+   Built ONLY from the kit's elements (/kit.css): rhead, rlist, rrow, rcard, rbtn, rchip, rfield, rempty, rmsg, rfab.
+   Data: schema `biodanza` (apps/biodanza/schema.sql), through FLOA_AUTH.api. Row level security decides who sees what. */
+(function () {
+  "use strict";
+  var app = document.getElementById("app");
+  var api = function (p, o) { return FLOA_AUTH.api(p, o); };
+  var state = { me: null, lines: [], phases: [], cat: null, vivs: [], viv: null, items: [], filter: "" };
+
+  var I = {
+    back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>',
+    plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+    play: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg>',
+    up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>',
+    down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>',
+    users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M16 5a3 3 0 010 6M18 15c2 .6 3 2.2 3 5"/></svg>',
+    out: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 5H5v14h5M15 8l4 4-4 4M19 12H9"/></svg>'
+  };
+
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function name(e) { return e.title_he || e.title_en || ""; }
+  function phaseName(k) { var p = state.phases.filter(function (x) { return x.key === k; })[0]; return p ? p.name_he : ""; }
+  function lineName(k) { var l = state.lines.filter(function (x) { return x.key === k; })[0]; return l ? l.name_he : k; }
+  function uuid() { return crypto.randomUUID(); }
+  function head(title, sub, back, trail) {
+    return '<header class="rhead">' + (back ? '<button class="rbtn rbtn--icon rbtn--edge-start" data-act="back" aria-label="חזרה" title="חזרה">' + I.back + '</button>' : '') +
+      '<div class="rhead__text"><h1 class="rhead__title">' + esc(title) + '</h1>' + (sub ? '<span class="rhead__sub">' + esc(sub) + '</span>' : '') + '</div>' + (trail || '') + '</header>';
+  }
+  function toast(msg) {
+    var t = document.createElement("div");
+    t.className = "rmsg rmsg--toast"; t.setAttribute("role", "status"); t.innerHTML = '<span class="rmsg__text">' + esc(msg) + '</span>';
+    document.body.appendChild(t); setTimeout(function () { t.remove(); }, 2400);
+  }
+  function fail(e) { console.error(e); toast("משהו השתבש, נסו שוב"); }
+  function show(html, wire) { app.innerHTML = html; if (wire) wire(app); }
+  function on(root, act, fn) { root.querySelectorAll('[data-act="' + act + '"]').forEach(function (b) { b.addEventListener("click", function (ev) { fn(b, ev); }); }); }
+  function stack() { return stack.s || (stack.s = []); }
+  function go(fn) { stack().push(fn); fn(); }
+  function back() { stack().pop(); var f = stack()[stack().length - 1]; if (f) f(); else home(); }
+
+  /* ---------- gate ---------- */
+  function gate(msg, signedIn) {
+    show('<div class="rempty" style="margin-block:auto"><b>ביודנסה</b><span>' + esc(msg) + '</span>' +
+      (signedIn ? '<button class="rbtn rbtn--ghost" data-act="out">יציאה</button>' : '<button class="rbtn" data-act="in">כניסה עם גוגל</button>') + '</div>', function (r) {
+      on(r, "in", function () { FLOA_AUTH.signIn(location.origin + location.pathname); });
+      on(r, "out", function () { Promise.resolve(FLOA_AUTH.signOut()).then(function () { location.reload(); }); });
+    });
+  }
+
+  /* ---------- home: my vivencias ---------- */
+  function home() {
+    stack().length = 0; stack().push(home);
+    show(head("הוויוונסיות שלי", FLOA_AUTH.email(), false,
+      (state.me.admin ? '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="allow" aria-label="מורשים" title="מורשים">' + I.users + '</button>' : '') +
+      '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="out" aria-label="יציאה" title="יציאה">' + I.out + '</button>') +
+      '<div class="rlist" data-fab-room id="list"><div class="rskel rskel--title"></div></div>' +
+      '<button class="rfab" data-act="new" aria-label="ויוונסיה חדשה" title="ויוונסיה חדשה">' + I.plus + '</button>', function (r) {
+      on(r, "out", function () { Promise.resolve(FLOA_AUTH.signOut()).then(function () { location.reload(); }); });
+      on(r, "allow", function () { go(allowScreen); });
+      on(r, "new", newViv);
+    });
+    api("/rest/v1/vivencias?select=id,title,theme,updated_at,vivencia_items(count)&order=updated_at.desc").then(function (rows) {
+      state.vivs = rows || [];
+      var l = document.getElementById("list"); if (!l) return;
+      l.innerHTML = state.vivs.length ? state.vivs.map(function (v) {
+        var n = v.vivencia_items && v.vivencia_items[0] ? v.vivencia_items[0].count : 0;
+        return '<div class="rrow rrow--link"><div class="rrow__main"><button class="rrow__title" data-id="' + v.id + '" style="all:unset;cursor:pointer">' + esc(v.title || "ויוונסיה ללא שם") + '</button><span class="rrow__sub">' + n + ' תרגילים' + (v.theme ? ' · ' + esc(v.theme) : '') + '</span></div></div>';
+      }).join("") : '<div class="rempty"><b>עוד אין ויוונסיות</b><span>לחצו על + כדי ליצור את הראשונה</span></div>';
+      l.querySelectorAll("[data-id]").forEach(function (b) { b.addEventListener("click", function () { openViv(b.dataset.id); }); });
+    }, fail);
+  }
+  function newViv() {
+    var id = uuid();
+    api("/rest/v1/vivencias", { method: "POST", json: { id: id, title: "" }, prefer: "return=minimal" }).then(function () { openViv(id); }, fail);
+  }
+
+  /* ---------- the vivencia: plan along the curve ---------- */
+  function openViv(id) { state.filter = ""; state.viv = state.vivs.filter(function (v) { return v.id === id; })[0] || { id: id, title: "" }; go(editor); }
+  function loadItems() {
+    return api("/rest/v1/vivencia_items?vivencia_id=eq." + state.viv.id + "&select=id,position,exercise_id,music_id,phase_key,minutes,notes,exercises(title_he,title_en,poetics,guidance,objective),music(name)&order=position").then(function (r) { state.items = r || []; });
+  }
+  function editor() {
+    var v = state.viv;
+    show(head(v.title || "ויוונסיה חדשה", "", true, '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="play" aria-label="הפעלה" title="הפעלה">' + I.play + '</button>') +
+      '<div class="pad"><label class="rfield"><span>שם הוויוונסיה</span><input id="vt" placeholder=" " value="' + esc(v.title) + '"></label>' +
+      '<label class="rfield"><span>נושא</span><input id="vh" placeholder=" " value="' + esc(v.theme || "") + '"></label>' +
+      '<label class="rfield"><span>שלב בעקומה</span><select id="vf"><option value="">הכול</option>' + state.phases.map(function (p) { return '<option value="' + p.key + '"' + (state.filter === p.key ? " selected" : "") + '>' + esc(p.name_he) + '</option>'; }).join("") + '</select></label></div>' +
+      '<div class="rlist" data-fab-room id="list"><div class="rskel rskel--title"></div></div>' +
+      '<button class="rfab" data-act="add" aria-label="הוספת תרגיל" title="הוספת תרגיל">' + I.plus + '</button>', function (r) {
+      on(r, "back", back); on(r, "add", function () { go(picker); });
+      on(r, "play", function () { if (!state.items.length) return toast("אין עדיין תרגילים"); go(function () { player(0); }); });
+      function save() { var t = r.querySelector("#vt").value, h = r.querySelector("#vh").value; v.title = t; v.theme = h; api("/rest/v1/vivencias?id=eq." + v.id, { method: "PATCH", json: { title: t, theme: h, updated_at: new Date().toISOString() } }).catch(fail); }
+      r.querySelector("#vt").addEventListener("change", save); r.querySelector("#vh").addEventListener("change", save);
+      r.querySelector("#vf").addEventListener("change", function (e) { state.filter = e.target.value; paint(); });
+    });
+    loadItems().then(paint, fail);
+  }
+  function paint() {
+    var l = document.getElementById("list"); if (!l) return;
+    var vis = state.items.filter(function (i) { return !state.filter || i.phase_key === state.filter; });
+    if (!vis.length) { l.innerHTML = '<div class="rempty"><b>' + (state.items.length ? "אין תרגילים בשלב הזה" : "הוויוונסיה ריקה") + '</b><span>לחצו על + כדי להוסיף תרגיל מהקטלוג</span></div>'; return; }
+    l.innerHTML = vis.map(function (i, k) {
+      var e = i.exercises || {};
+      return '<div class="rrow"><div class="rrow__main"><button class="rrow__title" data-edit="' + i.id + '" style="all:unset;cursor:pointer">' + esc(name(e)) + '</button><span class="rrow__sub">' + esc([phaseName(i.phase_key), i.music && i.music.name, i.minutes ? i.minutes + " דק׳" : ""].filter(Boolean).join(" · ") || "בלי מוזיקה") + '</span></div>' +
+        '<button class="rbtn rbtn--icon" data-up="' + k + '" aria-label="הזזה למעלה" title="הזזה למעלה"' + (k === 0 ? " disabled" : "") + '>' + I.up + '</button>' +
+        '<button class="rbtn rbtn--icon" data-down="' + k + '" aria-label="הזזה למטה" title="הזזה למטה"' + (k === vis.length - 1 ? " disabled" : "") + '>' + I.down + '</button></div>';
+    }).join("");
+    l.querySelectorAll("[data-edit]").forEach(function (b) { b.addEventListener("click", function () { var it = state.items.filter(function (x) { return x.id === b.dataset.edit; })[0]; go(function () { itemScreen(it); }); }); });
+    function swap(a, b) {
+      var pa = a.position, pb = b.position;
+      Promise.all([api("/rest/v1/vivencia_items?id=eq." + a.id, { method: "PATCH", json: { position: pb } }), api("/rest/v1/vivencia_items?id=eq." + b.id, { method: "PATCH", json: { position: pa } })]).then(loadItems).then(paint, fail);
+    }
+    l.querySelectorAll("[data-up]").forEach(function (b) { b.addEventListener("click", function () { var k = +b.dataset.up; swap(vis[k], vis[k - 1]); }); });
+    l.querySelectorAll("[data-down]").forEach(function (b) { b.addEventListener("click", function () { var k = +b.dataset.down; swap(vis[k], vis[k + 1]); }); });
+  }
+
+  /* ---------- one item: phase, music, minutes, notes ---------- */
+  function itemScreen(it) {
+    var e = it.exercises || {};
+    show(head(name(e), "פריט בוויוונסיה", true) + '<div class="rlist"><div class="pad">' +
+      '<label class="rfield"><span>שלב בעקומה</span><select id="ip">' + state.phases.map(function (p) { return '<option value="' + p.key + '"' + (it.phase_key === p.key ? " selected" : "") + '>' + esc(p.name_he) + '</option>'; }).join("") + '</select></label>' +
+      '<label class="rfield"><span>מוזיקה</span><select id="im"><option value="">בלי מוזיקה</option></select></label>' +
+      '<label class="rfield"><span>משך בדקות</span><input id="in" type="number" min="1" placeholder=" " value="' + (it.minutes || "") + '"></label>' +
+      '<label class="rfield"><span>הערות</span><textarea id="it" placeholder=" ">' + esc(it.notes || "") + '</textarea></label>' +
+      (e.poetics ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">פואטיקה</span></div><div class="rcard__body">' + esc(e.poetics) + '</div></div>' : '') +
+      (e.guidance ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">הנחיה</span></div><div class="rcard__body">' + esc(e.guidance) + '</div></div>' : '') +
+      '<button class="rbtn rbtn--ghost rbtn--danger rbtn--block" data-act="del">הסרה מהוויוונסיה</button></div></div>', function (r) {
+      on(r, "back", back);
+      api("/rest/v1/exercise_music?exercise_id=eq." + it.exercise_id + "&select=music(id,name,collection)").then(function (rows) {
+        var sel = r.querySelector("#im"), seen = {};
+        (rows || []).forEach(function (x) { if (x.music && !seen[x.music.id]) { seen[x.music.id] = 1; var o = document.createElement("option"); o.value = x.music.id; o.textContent = x.music.name + (x.music.collection ? " (" + x.music.collection + ")" : ""); sel.appendChild(o); } });
+        sel.value = it.music_id || "";
+      }, fail);
+      function save() {
+        var body = { phase_key: r.querySelector("#ip").value, music_id: r.querySelector("#im").value || null, minutes: +r.querySelector("#in").value || null, notes: r.querySelector("#it").value };
+        api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: body }).then(function () { Object.assign(it, body); toast("נשמר"); }, fail);
+      }
+      ["#ip", "#im", "#in", "#it"].forEach(function (s) { r.querySelector(s).addEventListener("change", save); });
+      on(r, "del", function () { api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "DELETE" }).then(function () { back(); }, fail); });
+    });
+  }
+
+  /* ---------- picker: the catalog ---------- */
+  function picker() {
+    show(head("קטלוג התרגילים", "בחרו תרגיל להוספה", true) +
+      '<div class="pad"><label class="rfield"><span>חיפוש</span><input id="q" placeholder=" "></label>' +
+      '<label class="rfield"><span>קו</span><select id="ln"><option value="">הכול</option>' + state.lines.map(function (l) { return '<option value="' + l.key + '">' + esc(l.name_he) + '</option>'; }).join("") + '</select></label></div>' +
+      '<div class="rlist" id="list"><div class="rskel rskel--title"></div></div>', function (r) {
+      on(r, "back", back);
+      function paintCat() {
+        var q = r.querySelector("#q").value.trim().toLowerCase(), ln = r.querySelector("#ln").value, l = r.querySelector("#list");
+        var rows = (state.cat || []).filter(function (e) {
+          return (!ln || (e.exercise_lines || []).some(function (x) { return x.line_key === ln; })) && (!q || (name(e) + " " + e.title_en + " " + e.category).toLowerCase().indexOf(q) >= 0);
+        }).slice(0, 120);
+        l.innerHTML = rows.length ? rows.map(function (e) {
+          return '<div class="rrow"><div class="rrow__main"><button class="rrow__title" data-ex="' + e.id + '" style="all:unset;cursor:pointer">' + esc(name(e)) + '</button><span class="rrow__sub">' + esc([e.category, (e.exercise_lines || []).map(function (x) { return lineName(x.line_key); }).join(", ")].filter(Boolean).join(" · ")) + '</span></div></div>';
+        }).join("") : '<div class="rempty"><b>לא נמצא תרגיל</b></div>';
+        l.querySelectorAll("[data-ex]").forEach(function (b) { b.addEventListener("click", function () { addEx(state.cat.filter(function (x) { return x.id === b.dataset.ex; })[0]); }); });
+      }
+      r.querySelector("#q").addEventListener("input", paintCat); r.querySelector("#ln").addEventListener("change", paintCat);
+      (state.cat ? Promise.resolve() : api("/rest/v1/exercises?select=id,title_he,title_en,category,phase_hint,exercise_lines(line_key)&order=title_en&limit=1000").then(function (c) { state.cat = c || []; })).then(paintCat, fail);
+    });
+  }
+  function addEx(e) {
+    var pos = state.items.reduce(function (m, i) { return Math.max(m, i.position); }, 0) + 1;
+    api("/rest/v1/exercise_music?exercise_id=eq." + e.id + "&select=music_id&limit=1").then(function (m) {
+      return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=minimal", json: { vivencia_id: state.viv.id, position: pos, exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, phase_key: state.filter || e.phase_hint || "activation" } });
+    }).then(function () { toast("התרגיל נוסף"); back(); }, fail);
+  }
+
+  /* ---------- player: the session, one exercise at a time ---------- */
+  function player(k) {
+    var it = state.items[k], e = it.exercises || {}, last = k === state.items.length - 1;
+    show(head(name(e), (k + 1) + " מתוך " + state.items.length + " · " + phaseName(it.phase_key), true) +
+      '<div class="rlist"><div class="pad">' +
+      (it.music ? '<span class="rchip rchip--info rchip--l">' + esc(it.music.name) + '</span>' : '') +
+      (e.poetics ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">פואטיקה</span></div><div class="rcard__body">' + esc(e.poetics) + '</div></div>' : '') +
+      (e.guidance ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">הנחיה</span></div><div class="rcard__body">' + esc(e.guidance) + '</div></div>' : '') +
+      (it.notes ? '<div class="rhint"><span class="rhint__tx">' + esc(it.notes) + '</span></div>' : '') +
+      '</div></div><div class="bar">' + (last ? '' : '<button class="rbtn rbtn--block" data-act="next">התרגיל הבא</button>') + (k ? '<button class="rbtn rbtn--ghost rbtn--block" data-act="prev">התרגיל הקודם</button>' : '') + '</div>', function (r) {
+      on(r, "back", back);
+      on(r, "next", function () { stack().push(function () { player(k + 1); }); player(k + 1); });
+      on(r, "prev", function () { stack().push(function () { player(k - 1); }); player(k - 1); });
+    });
+  }
+
+  /* ---------- allowlist (admin only) ---------- */
+  function allowScreen() {
+    show(head("מי מורשה להיכנס", "רק מי שברשימה רואה את המערכת והקטלוג", true) +
+      '<div class="pad"><label class="rfield rfield--ltr"><span>אימייל של חשבון גוגל</span><input id="em" type="email" placeholder=" "></label><button class="rbtn" data-act="addm">הוספה</button></div>' +
+      '<div class="rlist" id="list"><div class="rskel rskel--title"></div></div>', function (r) {
+      on(r, "back", back);
+      function paintA() {
+        api("/rest/v1/allowed?select=email,is_admin,note&order=added_at").then(function (rows) {
+          var l = r.querySelector("#list");
+          l.innerHTML = (rows || []).map(function (a) {
+            return '<div class="rrow"><div class="rrow__main"><span class="rrow__title">' + esc(a.email) + '</span>' + (a.is_admin ? '<span class="rrow__sub">מנהל</span>' : '') + '</div>' +
+              (a.is_admin ? '' : '<button class="rbtn rbtn--sm rbtn--ghost rbtn--danger" data-rm="' + esc(a.email) + '">הסרה</button>') + '</div>';
+          }).join("");
+          l.querySelectorAll("[data-rm]").forEach(function (b) { b.addEventListener("click", function () { api("/rest/v1/allowed?email=eq." + encodeURIComponent(b.dataset.rm), { method: "DELETE" }).then(paintA, fail); }); });
+        }, fail);
+      }
+      on(r, "addm", function () {
+        var em = r.querySelector("#em").value.trim().toLowerCase();
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) return toast("אימייל לא תקין");
+        api("/rest/v1/allowed", { method: "POST", prefer: "return=minimal", json: { email: em } }).then(function () { r.querySelector("#em").value = ""; paintA(); }, fail);
+      });
+      paintA();
+    });
+  }
+
+  /* ---------- start ---------- */
+  function start() {
+    if (!FLOA_AUTH.signedIn()) return gate("כניסה למאפשרי ביודנסה", false);
+    show('<div class="rlist"><div class="rskel rskel--title"></div></div>');
+    api("/rest/v1/rpc/me", { method: "POST", json: {} }).then(function (me) {
+      state.me = me;
+      if (!me || !me.allowed) return gate("לחשבון " + FLOA_AUTH.email() + " אין הרשאה להיכנס. אפשר לבקש מהמנהל להוסיף אותו.", true);
+      return Promise.all([api("/rest/v1/lines?select=key,name_he&order=sort"), api("/rest/v1/phases?select=key,name_he&order=sort")]).then(function (r) { state.lines = r[0]; state.phases = r[1]; home(); });
+    }).catch(function (e) { console.error(e); gate("לא הצלחנו להתחבר. נסו שוב.", false); });
+  }
+  start();
+})();

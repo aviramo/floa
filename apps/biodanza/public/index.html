@@ -2,13 +2,26 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ביודנסה</title>
 <meta name="robots" content="noindex">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="/kit.css">
+<style>
+/* The page shell: a column the height of the window, so the page never scrolls and only .rlist does.
+   Tokens only. Awaiting the owner's approval as part of the kit. */
+html, body { height: 100%; }
+body { margin: 0; display: flex; flex-direction: column; height: 100dvh; background: var(--bg); color: var(--text); font: var(--fw-regular) var(--fs-m)/var(--lh-body) var(--font); }
+#app { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+#app > .rlist { flex: 1 1 auto; }
+.pad { padding: var(--gutter); display: flex; flex-direction: column; gap: var(--gap-field); }
+.bar { display: flex; flex-direction: column; gap: var(--gap-button); padding: var(--gutter) var(--gutter) var(--end-pad); border-top: 1px solid var(--line); }
+</style>
 </head>
 <body>
-<main class="rempty"><b>ביודנסה</b>האפליקציה בדרך</main>
+<div id="app"></div>
+<script src="/supabase.js"></script>
+<script src="/auth.js"></script>
+<script src="assets/app.js"></script>
 </body>
 </html>
