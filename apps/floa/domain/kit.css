@@ -1,0 +1,320 @@
+/* ==========================================================================
+   FLOA KIT, the domain's ONE token file and base elements, served at /kit.css.
+   Every app loads this and builds screens ONLY from these elements, by inheritance (modifier classes) or their parameters.
+   Rules (owner, 2026-11-17): no new element without the owner's approval; sizes and colors only as tokens, never raw values in feature code.
+   STATUS: seeded from apps/roster/public/assets/ui.css (same content). Roster still loads its own copy until the owner approves moving it here.
+   ========================================================================== */
+
+:root {
+  /* ---- colors by role (B): warm paper, ink, deep green primary; all text roles 4.5:1, field lines 3:1 ---- */
+  --bg: #FBF8F3;  --surface: #F3EEE6;  --surface-2: #EAE3D8;
+  --line: #E2DACC;  --line-strong: #8C8372;                   /* line-strong: field underline, outlines of controls */
+  --text: #1F1B16;  --text-2: #5A5146;  --text-3: #6F6558;
+  --primary: #0F5F4F;  --on-primary: #FFFFFF;                  /* buttons, selected tab/chip, FAB */
+  --accent: #0F5F4F;                                           /* focus ring, links, active tab, field focus line */
+  --success: #1B6B3A;  --success-bg: #E1F3E6;
+  --danger: #B3261E;   --danger-bg: #FBE3E0;
+  --warn: #7F5300;     --warn-bg: #FBEBC4;
+  --info: #1D4F91;     --info-bg: #E3ECF8;
+  --scrim: rgba(31, 27, 22, .55);
+  /* inverse set: a rule that swaps the page palette (the dark mail preview) cannot read the variable it defines, so it reads these, resolved at :root */
+  --inv-bg: var(--text);  --inv-text: var(--bg);  --inv-mid: var(--text-2);  --inv-soft: var(--line-strong);  --inv-low: var(--text-3);
+
+  /* ---- spacing: THREE values and one hairline ---- */
+  --sp-hair: 4px;   /* ONLY an icon next to its text inside the smallest components (chip, counter) and field label offsets */
+  --sp-1: 8px;      /* tight: between buttons, between chips, inside a chip, counter to its text */
+  --sp-2: 16px;     /* standard: between fields, screen sides, row and card padding, popup sides, between blocks */
+  --sp-3: 24px;     /* larger: below a title before content or fields, above and around big buttons, between sections */
+  /* semantic aliases: CODE USES THESE ONLY, never the primitives, never a raw number */
+  --gutter: var(--sp-2);   --gap-field: var(--sp-2);   --gap-button: var(--sp-1);   --gap-chip: var(--sp-1);   --gap-tight: var(--sp-hair);
+  --gap-title: var(--sp-3);   --gap-action: var(--sp-3);   --gap-section: var(--sp-3);   --pad-row: var(--sp-2);   --pad-popup: var(--sp-2);
+  /* the SAFE AREA, one token set (owner 2026-11-13: "content must end inside the safe area"): the device's raw insets are read in ONE place (--inset-*, the crawl overrides --inset-b to
+     simulate a phone with a gesture bar); everything else reads the tokens below, never env() itself. A browser that draws edge to edge but reports no inset still gets the 28px floor */
+  --inset-t: env(safe-area-inset-top, 0px);   --inset-b: env(safe-area-inset-bottom, 0px);   --inset-l: env(safe-area-inset-left, 0px);   --inset-r: env(safe-area-inset-right, 0px);
+  --safe-t: var(--inset-t);                   /* the room a page or popup that touches the top keeps clear of the status bar / notch */
+  --safe-b: max(var(--inset-b), 28px);        /* the room under the last thing, clear of the gesture bar and the browser's bottom bar */
+  --end-pad: var(--safe-b);                   /* the padding at the END of every scrolling region: the last row comes to rest at least this far above the bottom edge of the screen */
+  --sheet-b: max(var(--sp-3), var(--safe-b)); /* the bottom padding of a popup sheet: the usual 24, or the safe area when that is more */
+
+  /* ---- sizes ---- */
+  --ctl: 44px;  --ib: 40px;  --tag: 28px;  --tag-s: 24px;  --tag-l: 40px;  --fld: 48px;  --row: 64px;
+  --fab: 56px;  --fab-clear: calc(var(--fab) + var(--sp-3) + var(--sp-2));    /* FAB size, and the bottom padding a list reserves for it */
+  --end-pad-fab: calc(var(--fab-clear) + var(--inset-b));                      /* the end padding of a list that has the add button over its corner: the button, its gap, and the inset under it */
+  --icon-s: 16px;  --icon-m: 20px;  --icon-l: 24px;  --icon-w: 2;             /* the existing icon set, ONE stroke width at every size */
+  --w-s: 400px;  --w-m: 560px;  --w-l: 760px;  --w-page: 760px;               /* popup widths: small, regular, wide; page content max width */
+
+  /* ---- shape ---- */
+  --r-ctl: 14px;  --r-card: 20px;  --r-chip: 999px;  --r-switch: 999px;  --r-fab: 999px;
+  --r-float: 0;                                                               /* popups, sheets, windows, drawers, anchored menus */
+  --sh-card: 0 4px 14px -4px rgba(63, 47, 20, .16);
+  --sh-pop: 0 18px 44px -12px rgba(63, 47, 20, .30), 0 3px 8px rgba(63, 47, 20, .08);
+
+  /* ---- type ---- */
+  --font: "Heebo", system-ui, -apple-system, "Segoe UI", sans-serif;   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --fs-xs: 13px;  --fs-s: 15px;  --fs-m: 17px;  --fs-l: 22px;  --fs-xl: 28px;
+  --fw-regular: 400;  --fw-medium: 500;  --fw-bold: 600;  --fw-black: 700;
+  --lh-tight: 1.25;  --lh-body: 1.55;
+
+  /* ---- motion: transform and opacity only ---- */
+  --t-fast: .12s;  --t-base: .22s;  --ease: cubic-bezier(.2, .8, .2, 1);
+  /* ---- layers ---- */
+  --z-raised: 1;  --z-sticky: 10;  --z-menu: 20;  --z-sheet: 300;  --z-toast: 400;
+}
+@media (prefers-reduced-motion: reduce) { :root { --t-fast: 0s; --t-base: 0s; } }
+
+/* ============================ BUTTONS ============================ */
+.rbtn { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: var(--gap-button); min-height: var(--ctl); padding: 0 var(--sp-2); border: 1px solid var(--primary); border-radius: var(--r-ctl);
+  background: var(--primary); color: var(--on-primary); font: var(--fw-bold) var(--fs-m)/1 var(--font); white-space: nowrap; cursor: pointer; text-decoration: none; transition: transform var(--t-fast) var(--ease), opacity var(--t-base) var(--ease); }
+.rbtn:active { transform: translateY(1px); }
+.rbtn:disabled, .rbtn[aria-disabled="true"] { opacity: .45; cursor: default; }
+.rbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rbtn > svg { width: var(--icon-m); height: var(--icon-m); flex: none; stroke-width: var(--icon-w); }
+.rbtn--block { display: flex; width: 100%; }
+.rbtn--ghost { background: var(--surface-2); border-color: var(--surface-2); color: var(--text); font-weight: var(--fw-medium); }
+.rbtn--outline { background: transparent; border-color: var(--line-strong); color: var(--text); font-weight: var(--fw-medium); }
+.rbtn--danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+.rbtn--ghost.rbtn--danger { background: var(--surface-2); border-color: var(--surface-2); color: var(--danger); }
+.rbtn--success { background: var(--success); border-color: var(--success); color: #fff; }
+.rbtn--sm { min-height: var(--ib); padding: 0 var(--sp-1); font-size: var(--fs-s); }
+.rbtn--link { background: transparent; border-color: transparent; color: var(--accent); font-weight: var(--fw-medium); text-decoration: underline; padding: 0 var(--sp-1); }
+/* icon button: neutral | --primary | disabled | loading. 40 visual, 44 touch. aria-label AND title required. */
+.rbtn--icon { width: var(--ib); min-height: var(--ib); padding: 0; background: transparent; border-color: transparent; color: var(--text); }
+.rbtn--icon::after { content: ""; position: absolute; inset: -2px; }
+.rbtn--icon.rbtn--primary { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.rbtn--icon[aria-busy="true"] { pointer-events: none; }
+.rbtn--icon[aria-busy="true"] > svg { animation: rk-spin .8s linear infinite; }
+@keyframes rk-spin { to { transform: rotate(360deg); } }
+
+/* EDGE ALIGNMENT for glyph-only icon buttons at the edge of a header or row: the VISIBLE glyph sits flush with the content edge while the 44px hit
+   area reaches outward into the padding. Use: the row's trailing three-dots (.rbtn--edge-end), header back or actions (-start / -end), the popup X is done by popup.css. */
+:root { --edge-pull: calc((var(--ctl) - var(--icon-m)) / 2); }
+.rbtn--edge { width: var(--ctl); min-height: var(--ctl); }
+.rbtn--edge-left { margin-left: calc(var(--edge-pull) * -1); }
+.rbtn--edge-right { margin-right: calc(var(--edge-pull) * -1); }
+.rbtn--edge-start { margin-inline-start: calc(var(--edge-pull) * -1); }
+.rbtn--edge-end { margin-inline-end: calc(var(--edge-pull) * -1); }
+
+/* ============================ CHIP AND COUNTER ============================ */
+/* CHIP: the ONE small pill (status, count, tag, filter, mode). Sizes: s 24, m 28 (default), l 40 (popup header). Everything inside (text, digits, icon) sits on the vertical centre:
+   inline-flex + align-items:center + line-height:1, icons are a fixed 16px box with no margin, digits are tabular. A page that has its own chip classes gives them this same geometry (admin.css, block CHIP CORE) and the Chrome crawl measures it. */
+.rchip { display: inline-flex; align-items: center; justify-content: center; gap: var(--gap-tight); box-sizing: border-box; height: var(--chip-h, var(--tag)); min-width: 0; padding: 0 var(--sp-1); border: 1px solid transparent; border-radius: var(--r-chip); background: var(--surface-2); color: var(--text-2); font: var(--fw-bold) var(--fs-s)/1 var(--font); font-variant-numeric: tabular-nums; white-space: nowrap; vertical-align: middle; }
+.rchip--s { --chip-h: var(--tag-s); font-size: var(--fs-xs); }   .rchip--l { --chip-h: var(--tag-l); }
+.rchip--ok { background: var(--success-bg); color: var(--success); }   .rchip--no { background: var(--danger-bg); color: var(--danger); }
+.rchip--wait { background: var(--warn-bg); color: var(--warn); }       .rchip--info { background: var(--info-bg); color: var(--info); }
+.rchip--button { background: transparent; border-color: var(--line-strong); color: var(--text); cursor: pointer; }
+.rchip--button[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.rchip > svg { display: block; flex: none; width: var(--icon-s); height: var(--icon-s); margin: 0; stroke-width: var(--icon-w); }
+.rchip small, .rchip b { display: inline-block; line-height: 1; }
+.rcount { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 var(--gap-tight); border-radius: var(--r-chip); background: var(--text); color: var(--bg); font: var(--fw-bold) var(--fs-xs)/1 var(--font); font-variant-numeric: tabular-nums; }
+
+/* ============================ LIST, ROW, SWIPE ============================ */
+.rlist { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; overscroll-behavior-y: auto; padding-bottom: var(--end-pad); }   /* the ONE scroll region of a page */
+.rlist[data-fab-room] { padding-bottom: var(--end-pad-fab); }
+/* LIST ROW: a simple line. slots: lead, main (title, meta), trail. variants: --link (whole row is the tap target), --compact. */
+.rrow { position: relative; display: flex; align-items: center; gap: var(--gap-button); min-height: var(--row); padding: var(--sp-1) var(--gutter); border-bottom: 1px solid var(--line); background: var(--bg); }
+.rrow--compact { min-height: 48px; }
+.rrow__main { flex: 1 1 auto; min-width: 0; color: inherit; text-decoration: none; }
+.rrow__title { display: block; font: var(--fw-bold) var(--fs-m)/var(--lh-tight) var(--font); overflow-wrap: anywhere; }
+.rrow__sub { display: block; margin-top: var(--gap-tight); color: var(--text-2); font: var(--fw-medium) var(--fs-s)/var(--lh-body) var(--font); }
+.rrow--link .rrow__main::after { content: ""; position: absolute; inset: 0; }
+.rrow--link .rrow__trail { position: relative; z-index: var(--z-raised); }
+.rrow[aria-current="true"], .rrow.is-selected { background: var(--surface); box-shadow: inset 3px 0 0 var(--accent); }
+@media (hover: hover) { .rrow--link:hover, .rrow--link:hover > .rswipe-fg { background: var(--surface); } }
+.rrow--link .rrow__main:focus-visible { outline: none; }
+.rrow--link .rrow__main:focus-visible::after { outline: 2px solid var(--accent); outline-offset: -2px; }   /* the ring is drawn around the whole row, the link covers it */
+
+/* a swipe row: the padding and the flex layout of the row live in the sliding foreground, the tray sits under it */
+.rrow[data-swipe] { display: block; padding: 0; min-height: var(--row); }
+.rrow[data-swipe] > .rswipe-fg { display: flex; align-items: center; gap: var(--gap-button); min-height: var(--row); padding: var(--sp-1) var(--gutter); }
+.rrow[data-swipe].rrow--link .rrow__main::after { inset: 0; }   /* the link covers the foreground (the nearest positioned box), so it slides with it */
+/* SWIPE ACTIONS (parameter of .rrow and .rcard): data-swipe="<list kind>". Up to TWO actions in .rswipe (icon + short label, destructive = danger tone).
+   The foreground (.rswipe-fg) slides by --sw-x (transform only); the tray sits at the inline-end edge. Direction is RTL aware: swipe toward the
+   inline-start edge (physical right in RTL) opens. Only one row open at a time. The three-dots menu with the SAME actions is always present (non-gesture path). */
+[data-swipe] { position: relative; overflow: visible; touch-action: pan-y; min-height: min-content; }   /* visible (owner 2026-11-13): the card slides on past its own edge, all the way to the screen's edge (the list clips there), it is not cut at the card's border */   /* overflow:hidden lets a grid or flex parent with a fixed height squash the item to its borders: the item never goes below its content */
+[data-swipe] > .rswipe-fg { position: relative; border-radius: inherit; z-index: var(--z-raised); background: var(--bg); transform: translateX(var(--sw-x, 0px)); transition: transform var(--t-base) var(--ease); will-change: transform; }
+[data-swipe].is-dragging > .rswipe-fg { transition: none; }
+.rswipe { position: absolute; z-index: 0; inset: 0; display: flex; justify-content: flex-start; border-radius: inherit; overflow: hidden; background: var(--surface-2); }   /* the tray is the card's WHOLE background (owner 2026-11-13): a white card slides over a plain coloured ground, the actions sit at the end edge of that ground, never a tile that can climb onto the card */
+.rswipe:has(> .rswipe__act:only-child[data-tone="danger"]) { background: var(--danger); }   /* one destructive action: the ground itself is red */
+.rswipe__act { flex: 0 0 88px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--gap-tight); border: 0; background: var(--surface-2); color: var(--text); font: var(--fw-bold) var(--fs-xs)/1.1 var(--font); cursor: pointer; }
+.rswipe__act[data-tone="danger"] { background: var(--danger); color: #fff; }
+.rswipe__act[data-tone="danger"]:only-child { background: transparent; }
+.rswipe__act > svg { width: var(--icon-m); height: var(--icon-m); stroke-width: var(--icon-w); }
+.rswipe__act:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+/* a row with a SECOND tray: each tray is the half of the ground on its own side (the first at the start edge, this one at the end edge), so both can show under the card */
+/* both grounds run under the WHOLE card (so the rounded corners of the card slide over colour, with no gap), and only the one on the side being pulled is shown: the row says which side with data-swdir */
+.rswipe.rswipe--start { justify-content: flex-end; background: var(--green); color: #fff; }
+[data-swipe]:has(> .rswipe--start)[data-swdir="start"] > .rswipe:not(.rswipe--start), [data-swipe][data-swdir="end"] > .rswipe--start { visibility: hidden; }
+/* both trays of a row that has two: the label sits 28px from the OUTER edge (the box is the label plus 28px each side, 88px at least), so "הסרה" on one side and "וואטסאפ" on the other have the same room */
+.rswipe--start .rswipe__act, [data-swipe]:has(> .rswipe--start) > .rswipe:not(.rswipe--start) .rswipe__act { flex: 0 0 auto; min-width: 88px; padding-inline: 28px; white-space: nowrap; gap: var(--sp-hair); }
+.rswipe--start .rswipe__act { background: transparent; color: inherit; }   /* the send tray takes the ground's colours; the delete tray keeps its own (white on red) */
+.rswipe--start .rswipe__act > svg { width: 24px; height: 24px; }
+.rswipe--start:has(.rswipe__act[data-mode="msg"]), .rswipe--start:has(.rswipe__act[data-go="sent"]) { background: var(--yellow); color: #fff; }   /* the tray takes the colour of the mode: dark yellow for a message (sent or not), dark green for arrival and for WhatsApp */
+.rswipe--start:has(.rswipe__act[data-go="arr"]) { background: var(--green); color: #fff; }
+.rswipe--start:has(.rswipe__act[data-go="noarr"]) { background: var(--text-3); color: #fff; }   /* "לא הגיע": grey */
+.rswipe__act { pointer-events: none; cursor: default; }   /* the label under a swiped row ("הסרה") is not a button: pulling the row until it is fully showing IS the action, and a row never rests half open for a tap */
+[data-swipe]::after { display: none; content: ""; position: absolute; inset-block: 35%; inset-inline-end: 3px; width: 3px; background: var(--line-strong); opacity: .5; pointer-events: none; }   /* persistent edge cue */
+[data-swipe].is-open::after { display: none; }
+.rhint { position: relative; margin: 0 var(--gutter); padding: var(--sp-1) var(--sp-2); background: var(--info-bg); color: var(--info); font: var(--fw-medium) var(--fs-s)/var(--lh-body) var(--font); border-radius: var(--r-ctl); display: flex; align-items: center; gap: var(--sp-2); opacity: 1; transition: opacity var(--t-base) var(--ease); }
+.rhint[hidden], .rhint.is-gone { opacity: 0; pointer-events: none; }
+.rhint__tx { flex: 1; min-width: 0; }
+.rhint__ok { flex: none; min-height: 44px; padding-inline: var(--sp-2); border: 0; background: transparent; color: inherit; font: inherit; font-weight: var(--fw-bold, 700); text-decoration: underline; cursor: pointer; }
+@media (prefers-reduced-motion: reduce) { [data-swipe] > .rswipe-fg { transition: none; } }   /* the module also disables dragging: the three-dots menu is the path */
+
+/* LIST CARD: a rich item (head: title + status chips; body: details, counters; foot: icon buttons or the primary action; optional expandable section).
+   variants: --open, --popup (tap opens a popup or side card), --flat, --compact. Whole-card link OR expand button, never both. Also used standalone for page sections. */
+.rcard { position: relative; margin: 0 var(--gutter) var(--gap-button); padding: var(--pad-row); border: 1px solid var(--line); border-radius: var(--r-card); background: var(--bg); box-shadow: var(--sh-card); }
+.rcard__head { display: flex; align-items: center; gap: var(--gap-button); margin-bottom: var(--gap-button); }
+.rcard__title { flex: 1 1 auto; min-width: 0; font: var(--fw-bold) var(--fs-m)/var(--lh-tight) var(--font); }
+.rcard__body { color: var(--text-2); font: var(--fw-regular) var(--fs-s)/var(--lh-body) var(--font); }
+.rcard__foot { display: flex; align-items: center; justify-content: flex-end; gap: var(--gap-button); margin-top: var(--gap-button); }
+.rcard--flat { box-shadow: none; }   .rcard--compact { padding: var(--gap-button) var(--pad-row); }
+.rcard[aria-current="true"], .rcard.is-selected { border-color: var(--text); }
+.rcard--link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.rcard--link .rcard__foot, .rcard--link .rcard__head .rbtn { position: relative; z-index: var(--z-raised); }
+
+/* ============================ HEADER, TABS ============================ */
+/* THE page header, one element for every roster page: its own surface tone (rows sit on --bg), room above the title (the status bar zone is added to it),
+   a bigger title and its own strong bottom edge, so it never reads as one more row. Page-level only: popup headers belong to the shell. */
+.rhead, .wrap > header.top { background: var(--surface); border-bottom: 1px solid var(--line-strong); }
+.rhead { --rh-pad: calc(var(--sp-2) - (var(--ctl) - var(--fs-xl) * var(--lh-tight)) / 2); display: flex; align-items: center; gap: var(--gap-button); padding: calc(var(--rh-pad) + var(--safe-t)) var(--gutter) var(--rh-pad); }   /* the space above and below the title text is the space at its sides: a gutter minus the leading of the 44px row around the text */
+.rhead__title { flex: 1 1 auto; margin: 0; font: var(--fw-black) var(--fs-xl)/var(--lh-tight) var(--font); }
+/* header icon buttons: ONE style on every page, no background (a ghost icon), 44px hit area, the glyph flush with the content edge on the side it sits (.rbtn--edge-start / -end).
+   Pressed and hover read from the --surface-2 tone because the header itself is --surface; the focus ring is the kit's. Admin's own .hicon follows the same rules in admin.css. */
+.rhead .rbtn--icon { background: transparent; border-color: transparent; }
+@media (hover: hover) { .rhead .rbtn--icon:hover { background: var(--surface-2); } }
+.rhead .rbtn--icon:active, .rhead .rbtn--icon[aria-expanded="true"] { background: var(--surface-2); }
+.rhead__sub { display: block; color: var(--text-2); font: var(--fw-medium) var(--fs-s)/var(--lh-body) var(--font); }
+/* ONE header on every page (owner 2026-11-13, "identical, colour, page colour and all"): the same surface as the filter block of the participants page (--bg), a 2px --line under it, no shadow, no rounded corners; the icon button is a 44px tile in --surface-2, 16px from the top and the side; a subtitle is part of the title block, which is centred on the tile. The ground under the header is --surface (see manager.css). */
+.rhead.rhead, .wrap > .rhead.top { background: var(--bg); border-bottom: 2px solid var(--line); border-radius: 0; box-shadow: none; padding: calc(var(--gutter) + var(--safe-t)) var(--gutter) var(--gutter); }
+.rhead .rbtn--icon { width: var(--ctl); height: var(--ctl); min-width: var(--ctl); margin: 0; border-radius: var(--r-ctl); background: var(--surface-2); color: var(--text); }
+.rhead .rbtn--icon.rbtn--edge-start, .rhead .rbtn--icon.rbtn--edge-end { margin: 0; }
+.rhead__text:has(> .rhead__sub:not([hidden])) { position: relative; top: calc(var(--sp-hair) * -2.9); margin-bottom: calc(var(--sp-hair) * -2.9); }
+.rtabs { display: flex; border-bottom: 1px solid var(--line); }
+.rtab { flex: 1 1 0; min-height: var(--ctl); border: 0; background: transparent; color: var(--text-2); font: var(--fw-bold) var(--fs-m)/1 var(--font); box-shadow: inset 0 -3px 0 transparent; cursor: pointer; }
+.rtab[aria-selected="true"], .rtab[aria-pressed="true"] { color: var(--text); box-shadow: inset 0 -3px 0 var(--accent); }
+.rtabs--seg { border: 1px solid var(--line-strong); border-radius: var(--r-ctl); overflow: hidden; }
+.rtabs--seg .rtab { box-shadow: none; }   .rtabs--seg .rtab[aria-selected="true"], .rtabs--seg .rtab[aria-pressed="true"] { background: var(--primary); color: var(--on-primary); }
+
+/* ============================ MESSAGE, EMPTY ============================ */
+.rmsg { display: flex; align-items: center; gap: var(--gap-button); padding: var(--sp-2); border: 1px solid var(--text); border-radius: var(--r-ctl); background: var(--text); color: var(--bg); font: var(--fw-medium) var(--fs-s)/var(--lh-body) var(--font); }
+.rmsg--toast { position: fixed; inset-inline: var(--gutter); bottom: var(--safe-b); z-index: var(--z-toast); box-shadow: var(--sh-pop); }
+.rmsg--inline { background: var(--surface); color: var(--text); border-color: var(--line); }
+.rmsg--ok { background: var(--success-bg); color: var(--success); border-color: var(--success); }   .rmsg--no { background: var(--danger-bg); color: var(--danger); border-color: var(--danger); }   .rmsg--wait { background: var(--warn-bg); color: var(--warn); border-color: var(--warn); }
+.rmsg__text { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }   /* the words of a message are ONE item of its row, so a name inside them never gets squeezed into a column */
+.rmsg__act { margin-inline-start: auto; font-weight: var(--fw-bold); text-decoration: underline; background: none; border: 0; color: inherit; cursor: pointer; }   /* undo */
+.rempty { display: flex; flex-direction: column; align-items: center; gap: var(--gap-field); padding: var(--sp-3) var(--gutter); text-align: center; color: var(--text-2); font: var(--fw-regular) var(--fs-s)/var(--lh-body) var(--font); }
+.rempty > b { color: var(--text); font-size: var(--fs-m); }
+
+/* ============================ FIELD HELP SLOT (extends .rfield in field.css) ============================ */
+.rfield .rf-help { display: block; margin-top: var(--gap-tight); color: var(--text-2); font: var(--fw-regular) var(--fs-s)/var(--lh-body) var(--font); }
+.rfield .rf-help .rf-ex b { font-weight: var(--fw-bold); }
+.rfield .rf-help .rf-ex { display: inline-block; font-weight: var(--fw-regular); color: var(--text); unicode-bidi: isolate; direction: ltr; }
+
+/* ============================ ADD BUTTON (FAB): one per list screen, physical LEFT, bottom ============================ */
+.rfab { position: fixed; left: max(var(--gutter), var(--inset-l)); bottom: calc(var(--gutter) + var(--inset-b)); z-index: var(--z-sticky);
+  display: grid; place-items: center; width: var(--fab); height: var(--fab); padding: 0; border: 1px solid var(--primary); border-radius: var(--r-fab); background: var(--primary); color: var(--on-primary);
+  box-shadow: var(--sh-pop); cursor: pointer; transition: transform var(--t-base) var(--ease), opacity var(--t-base) var(--ease); }
+.rfab > svg { width: var(--icon-l); height: var(--icon-l); stroke-width: var(--icon-w); }
+.rfab:active { transform: translateY(1px); }   .rfab:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.rfab:disabled, .rfab[aria-disabled="true"] { opacity: .45; cursor: default; }   .rfab[hidden] { display: none; }
+/* the add button of a list inside a popup: the same button, kept in the popup's bottom-left corner while its body scrolls (sticky), after the list so it never covers the last row */
+.rfab.rfab--in { position: sticky; left: auto; bottom: var(--gutter); inset-inline: auto; margin-block: var(--sp-3) 0; margin-inline-start: auto; margin-inline-end: 0; flex: none; }
+.rfab--in:disabled { opacity: .45; }
+html.rs-lock .rfab:not(.rfab--in), html.dlg-lock .rfab:not(.rfab--in), html.kb-open .rfab { opacity: 0; transform: translateY(calc(var(--fab) + var(--sp-3))); pointer-events: none; }   /* kb-open is set from the visual viewport */
+
+/* ============================ PULL TO REFRESH ============================ */
+.rptr { position: fixed; inset-inline: 0; top: var(--rptr-top, 0); display: grid; place-items: center; height: 48px; pointer-events: none; z-index: var(--z-sticky); transform: translateY(calc(var(--rptr-pull, 0) * 1px - 48px)); opacity: var(--rptr-o, 0); }
+html.rk-ptr, html.rk-ptr body { overscroll-behavior-y: auto; }   /* our pull to refresh replaces the browser's (Android Chrome reloads the page by itself otherwise) */
+.rptr__dot { width: 24px; height: 24px; border: var(--icon-w) solid var(--line-strong); border-top-color: var(--text); border-radius: 50%; transform: rotate(calc(var(--rptr-pull, 0) * 4deg)); }
+.rptr[data-state="loading"] .rptr__dot { animation: rk-spin .8s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .rptr[data-state="loading"] .rptr__dot, .rbtn--icon[aria-busy="true"] > svg { animation: none; } }
+
+/* ============================ ANCHORED MENU: not a popup (no header, no bar), square, closes on outside tap and Escape ============================ */
+.rmenu { position: absolute; z-index: var(--z-menu); min-width: 200px; max-width: min(var(--w-s), calc(100vw - var(--sp-2) * 2)); padding: var(--sp-1) 0; border: 1px solid var(--line); border-radius: var(--r-float); background: var(--bg); box-shadow: var(--sh-pop); }
+.rmenu__item { display: flex; align-items: center; gap: var(--gap-button); width: 100%; min-height: var(--ctl); padding: 0 var(--sp-2); border: 0; background: transparent; color: var(--text); font: var(--fw-medium) var(--fs-m)/1 var(--font); text-align: start; text-decoration: none; cursor: pointer; }
+.rmenu__item > svg { width: var(--icon-m); height: var(--icon-m); flex: none; stroke-width: var(--icon-w); }
+.rmenu__head { display: flex; flex-direction: column; align-items: flex-start; gap: var(--gap-tight); padding: var(--sp-1) var(--sp-2) var(--sp-2); border-bottom: 1px solid var(--line); margin-bottom: var(--gap-tight); }
+.rmenu__head > b { font: var(--fw-bold) var(--fs-m)/var(--lh-tight) var(--font); overflow-wrap: anywhere; }
+.rmenu__mail { color: var(--text-2); font: var(--fw-regular) var(--fs-xs)/var(--lh-body) var(--font); overflow-wrap: anywhere; }
+.rmenu__item[data-tone="danger"] { color: var(--danger); }
+.rmenu__item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (hover: hover) { .rmenu__item:hover { background: var(--surface); } }
+
+/* ============================ LOADING SKELETON: calm placeholder lines, no spinner on lists ============================ */
+.rskel { display: block; height: var(--sp-2); margin: var(--sp-1) var(--gutter); border-radius: var(--r-chip); background: var(--surface-2); opacity: .7; }
+.rskel--title { width: 40%; height: var(--sp-3); }
+.rskel--short { width: 60%; }
+@media (prefers-reduced-motion: no-preference) { .rskel { animation: rk-pulse 1.4s var(--ease) infinite; } }
+@keyframes rk-pulse { 50% { opacity: .35; } }
+
+/* ============================ UNDO TOAST (delayed delete), stacked ============================ */
+/* A delete's timer is a ROUND button the size of the add button (--fab), level with it on the OTHER side of the screen (the add button is at the left, this is at the right):
+   the undo symbol inside, the time left as a ring around it. It replaces the wide bar. Several deletions stack upward; a message that is not an undo (a failure) is still a bar. */
+.rtoasts { position: fixed; inset-inline: auto; right: max(var(--gutter), var(--inset-r)); bottom: calc(var(--gutter) + var(--inset-b)); width: auto; z-index: var(--z-toast); display: flex; flex-direction: column; align-items: flex-end; gap: var(--gap-button); pointer-events: none; }
+.rtoasts .rmsg { position: relative; pointer-events: auto; box-shadow: var(--sh-pop); }
+.rtoasts .rmsg:not(.rmsg--undo) { box-sizing: border-box; max-width: min(22rem, calc(100vw - 2 * var(--gutter))); }
+@media (min-width: 760px) { :root { --sheet-b: max(var(--sp-3), var(--inset-b)); } }   /* a computer has no gesture bar to clear: the usual 24, more only where the device reports an inset */
+/* a plain message (not an undo) on a screen with the add button sits in the BUTTON'S ROW: as tall as the button, level with it, one step to its right */
+html:has(.rfab:not(.rfab--in)) .rmsg--toast { inset-inline: auto; left: calc(max(var(--gutter), var(--inset-l)) + var(--fab) + var(--sp-2)); right: var(--gutter); width: auto; bottom: calc(var(--gutter) + var(--inset-b)); }
+html:has(.rfab:not(.rfab--in)) .rmsg--toast { box-sizing: border-box; min-height: var(--fab); align-items: center; }
+/* inside a popup the stack lives in the popup, at its bottom-right corner, level with the popup's own add button at the bottom-left */
+.rtoasts--in { position: absolute; right: var(--gutter); left: auto; bottom: var(--gutter); width: auto; }
+.rmsg--undo { box-sizing: border-box; width: var(--fab); height: var(--fab); min-height: var(--fab); padding: 0; border: 1px solid var(--text); border-radius: var(--r-fab); display: grid; place-items: center; overflow: visible; background: var(--text); color: var(--bg); }
+.rmsg--undo .rmsg__text { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; flex: none; }   /* the words are for a screen reader and the tooltip: the circle shows only the symbol */
+.rmsg--undo .rmsg__act { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; display: grid; place-items: center; border-radius: var(--r-fab); text-decoration: none; font-size: 0; color: inherit; }
+.rmsg--undo .rmsg__act svg { width: var(--icon-l); height: var(--icon-l); stroke-width: var(--icon-w); }
+.rmsg--undo .rundo__n { position: absolute; top: -4px; inset-inline-start: -4px; min-width: 20px; height: 20px; padding: 0 5px; box-sizing: border-box; border-radius: 999px; background: var(--bg); color: var(--text); border: 1px solid var(--text); font: var(--fw-bold) var(--fs-xs)/18px var(--font); text-align: center; pointer-events: none; }
+.rmsg--undo::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; pointer-events: none; opacity: .85;
+  background: conic-gradient(var(--bg) calc(var(--left, 1) * 360deg), transparent 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px)); mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px)); }   /* the time left, a ring that empties clockwise */
+.rmsg--undo[data-paused="true"]::after { opacity: .35; }
+/* a restored row (after "undo") is tinted for a moment, so it is easy to find */
+.rk-restored { position: relative; }
+.rk-restored::before { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: inherit; background: var(--warn-bg); mix-blend-mode: multiply; pointer-events: none; animation: rk-restored 2.4s ease-out forwards; }
+@keyframes rk-restored { 0%, 35% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .rk-restored::before { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .rmsg--undo::after { --left: 1; } }   /* no countdown animation: a still, full ring */
+.rmsg__act:focus-visible { outline: 2px solid var(--bg); outline-offset: 2px; }
+
+/* ============================ SWITCH (extends .rfield--switch of field.css): label, optional help, track 48x28 ============================ */
+.rfield--switch > input[role="switch"] { position: absolute; inset-block-start: 0; inset-inline-start: 0; width: var(--ctl); height: var(--ctl); margin: 0; opacity: 0; cursor: pointer; }
+.rsw__trk { position: relative; flex: none; width: 48px; height: 28px; border-radius: var(--r-switch); background: var(--line-strong); transition: background var(--t-base) var(--ease); }
+.rsw__trk::after { content: ""; position: absolute; inset-block-start: var(--gap-tight); inset-inline-start: var(--gap-tight); width: 20px; height: 20px; border-radius: var(--r-switch); background: var(--bg); box-shadow: var(--sh-card); transition: transform var(--t-base) var(--ease); }
+.rfield--switch > input:checked ~ .rsw__trk { background: var(--primary); }
+.rfield--switch > input:checked ~ .rsw__trk::after { transform: translateX(-20px); }
+html[dir="ltr"] .rfield--switch > input:checked ~ .rsw__trk::after { transform: translateX(20px); }
+.rfield--switch > input:focus-visible ~ .rsw__trk { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rfield--switch > input:disabled ~ .rsw__trk { opacity: .45; }
+.rsw__txt { display: flex; flex-direction: column; gap: var(--gap-tight); min-width: 0; }
+.rsw__txt > b { font: var(--fw-bold) var(--fs-m)/var(--lh-tight) var(--font); }
+.rsw__txt > small { color: var(--text-2); font: var(--fw-regular) var(--fs-s)/var(--lh-body) var(--font); }
+.rfield--check > input { flex: none; width: var(--icon-m); height: var(--icon-m); accent-color: var(--primary); cursor: pointer; }
+.rfield--check > span { display: flex; flex-direction: column; gap: var(--gap-tight); min-width: 0; }
+.rfield--check > span > b { font: var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font); }
+@media (prefers-reduced-motion: reduce) { .rsw__trk, .rsw__trk::after { transition: none; } }
+
+/* ============================ CHOICE: one of a few options as a card (radio under the hood), 2 or 3 across on a wide screen ============================ */
+.rchoices { display: grid; gap: var(--gap-button); }
+.rchoices--2 { grid-template-columns: repeat(2, 1fr); }
+@media (min-width: 640px) { .rchoices--3 { grid-template-columns: repeat(3, 1fr); } }
+.rchoice { position: relative; display: block; }
+.rchoice > input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.rchoice > span { display: flex; flex-direction: column; gap: var(--gap-tight); min-height: var(--ctl); padding: var(--sp-1) var(--sp-2); border: 1px solid var(--line-strong); border-radius: var(--r-ctl); background: var(--bg); color: var(--text); font: var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font); }
+.rchoice > span > small { color: var(--text-2); font: var(--fw-regular) var(--fs-xs)/var(--lh-body) var(--font); }
+.rchoice > input:checked + span { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); background: var(--surface); }
+.rchoice > input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* a row whose main part is a button (opens a popup): same look as the link */
+button.rrow__main { appearance: none; border: 0; background: none; padding: 0; text-align: start; font: inherit; cursor: pointer; }
+
+/* THE MOUSE PATH OF THE SWIPE ACTIONS (owner 2026-11-15): no swipe on a desktop, so the card shows three dots at its top-left corner on hover or keyboard focus, and they open a menu with the swipe actions. Only for a mouse: a touch screen has the swipe. */
+.rswipe-more { display: none; }
+.rmenu--fixed { position: fixed; }
+@media (hover: hover) and (pointer: fine) {
+  .rswipe-more { display: grid; place-items: center; position: absolute; top: var(--sp-1); left: var(--sp-1); z-index: var(--z-raised); width: var(--ib); height: var(--ib); padding: 0; border: 0; border-radius: var(--r-ctl); background: transparent; color: var(--text-2); cursor: pointer; opacity: 0; transition: opacity var(--t-base) var(--ease); }
+  [data-swipe]:hover > .rswipe-fg > .rswipe-more, .rswipe-more:focus-visible, .rswipe-more[aria-expanded="true"] { opacity: 1; }
+  .rswipe-more:hover { background: transparent; color: var(--text); }
+  .rswipe-more:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .rswipe-more > svg { width: var(--icon-m); height: var(--icon-m); }
+}
+@media (prefers-reduced-motion: reduce) { .rswipe-more { transition: none; } }
