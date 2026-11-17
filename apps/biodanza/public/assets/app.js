@@ -125,8 +125,8 @@
     paintSel();
     if (pending && pending.viv) {   /* opened on a vivencia's own address */
       var vv = state.vivs.filter(function (x) { return x.id === pending.viv; })[0];
+      var want = pending; pending = want.item ? { item: want.item } : null;   /* the address is used once: going back to the list must not open it again */
       if (vv) { openViv(vv.id); return; }
-      pending = null;
     }
     if (wide() && !state.viv) emptyDetail();
   }

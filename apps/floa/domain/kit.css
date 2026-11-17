@@ -177,7 +177,7 @@
    a bigger title and its own strong bottom edge, so it never reads as one more row. Page-level only: popup headers belong to the shell. */
 .rhead, .wrap > header.top { background: var(--surface); border-bottom: 1px solid var(--line-strong); }
 .rhead { --rh-pad: calc(var(--sp-2) - (var(--ctl) - var(--fs-xl) * var(--lh-tight)) / 2); display: flex; align-items: center; gap: var(--gap-button); padding: calc(var(--rh-pad) + var(--safe-t)) var(--gutter) var(--rh-pad); }   /* the space above and below the title text is the space at its sides: a gutter minus the leading of the 44px row around the text */
-.rhead__text { flex: 1 1 auto; min-width: 0; min-height: var(--ctl); display: flex; flex-direction: column; justify-content: center; }   /* the title is centred vertically on the icon tiles, in every header, so headers side by side line up */
+.rhead__text { padding-inline: var(--sp-1); flex: 1 1 auto; min-width: 0; min-height: var(--ctl); display: flex; flex-direction: column; justify-content: center; }   /* the title is centred vertically on the icon tiles, in every header, so headers side by side line up */
 .rhead__title { flex: 1 1 auto; margin: 0; font: var(--fw-black) var(--fs-xl)/var(--lh-tight) var(--font); }
 .rhead__text > .rhead__title { flex: 0 0 auto; }   /* inside the centred text block the title keeps its own height, so it sits on the tiles' centre line */
 /* header icon buttons: ONE style on every page, no background (a ghost icon), 44px hit area, the glyph flush with the content edge on the side it sits (.rbtn--edge-start / -end).
