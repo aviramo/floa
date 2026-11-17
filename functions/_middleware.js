@@ -29,7 +29,7 @@ const SPA = new Set(HOSTS.filter((h) => h.spa).map((h) => h.host));
 const TEST = new Set(HOSTS.filter((h) => h.test).map((h) => h.host));
 const SLUGS = new Set(HOSTS.filter((h) => h.slugs).map((h) => h.host));
 const RESERVED = ["admin", "connect", "me", "api", "assets", "new", "index"];
-const DOMAIN_FILES = new Set(["/supabase.js", "/auth.js", "/favicon.ico", "/favicon.svg", "/apple-touch-icon.png", "/sw.js", "/robots.txt", "/404.html", "/__test-env.js"]);
+const DOMAIN_FILES = new Set(["/supabase.js", "/auth.js", "/kit.css", "/sheet.js", "/favicon.ico", "/favicon.svg", "/apple-touch-icon.png", "/sw.js", "/robots.txt", "/404.html", "/__test-env.js"]);
 const SLUG_PAGES = { "": "admin", connect: "connect", me: "me" };
 /* longest folder first, so /tal/ia is not taken for /tal */
 const OLD = HOSTS.filter((h) => !h.test).flatMap((h) => [h.folder, ...(h.old || [])].map((f) => ["/" + f.replace(/\/$/, ""), h.host]))
