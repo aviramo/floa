@@ -37,7 +37,7 @@
   /* poetics and guidance: this item's own text if the facilitator changed it, else the catalog's (the catalog itself is never touched) */
   function itemName(it) { return it.title || name(it.exercises || {}); }
   function txt(it, k) { return it[k] != null ? it[k] : ((it.exercises || {})[k] || ""); }
-  function grow(t) { t.style.height = "auto"; t.style.height = t.scrollHeight + "px"; }
+  function grow(t) { t.style.height = "auto"; t.style.height = (t.scrollHeight + t.offsetHeight - t.clientHeight) + "px"; }   /* rows=1: the height is the text's own, plus the line under it */
   /* the placeholder of an empty list or pane: the curve icon, a title and one line */
   function ph(title, text) { return '<div class="rempty">' + I.curve + '<b>' + esc(title) + '</b>' + (text ? '<span>' + esc(text) + '</span>' : '') + '</div>'; }
   function uuid() { return crypto.randomUUID(); }
@@ -289,9 +289,9 @@
     show(hd + '<div class="rlist"><div class="pad">' +
       '<label class="rfield"><span>שם התרגיל</span><input id="ina" placeholder=" " autocomplete="off" value="' + esc(itemName(it)) + '"></label>' +
       '<label class="rfield"><span>מוזיקה</span><select id="im"><option value="">בלי מוזיקה</option></select></label>' +
-      '<label class="rfield"><span>פואטיקה</span><textarea id="ipo" placeholder=" ">' + esc(txt(it, "poetics")) + '</textarea></label>' +
-      '<label class="rfield"><span>הנחיה</span><textarea id="igu" placeholder=" ">' + esc(txt(it, "guidance")) + '</textarea></label>' +
-      '<label class="rfield"><span>הערות</span><textarea id="it" placeholder=" ">' + esc(it.notes || "") + '</textarea></label>' +
+      '<label class="rfield"><span>פואטיקה</span><textarea id="ipo" rows="1" placeholder=" ">' + esc(txt(it, "poetics")) + '</textarea></label>' +
+      '<label class="rfield"><span>הנחיה</span><textarea id="igu" rows="1" placeholder=" ">' + esc(txt(it, "guidance")) + '</textarea></label>' +
+      '<label class="rfield"><span>הערות</span><textarea id="it" rows="1" placeholder=" ">' + esc(it.notes || "") + '</textarea></label>' +
       '<button class="rbtn rbtn--ghost rbtn--danger rbtn--block" data-act="del">הסרה מהוויוונסיה</button></div></div>', function (r) {
       on(r, "list", back);
       function walk(to) { stack().pop(); go(function () { itemScreen(to); }); }

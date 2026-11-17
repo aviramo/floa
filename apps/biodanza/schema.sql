@@ -138,6 +138,29 @@ create table if not exists biodanza.exercise_music (
   primary key (exercise_id, music_id)
 );
 
+
+-- ---------- the texts of an exercise, per language ----------
+-- poetics and guidance live here, one row per exercise and language. The original wording of the catalog is never overwritten:
+-- `source` says where a text came from ('catalog' = the catalog's own words in that language, 'translation' = a translation made
+-- for this app). More languages are more rows. A facilitator's own edit goes on the vivencia's item, not here.
+create table if not exists biodanza.exercise_texts (
+  exercise_id uuid not null references biodanza.exercises(id) on delete cascade,
+  lang        text not null,
+  poetics     text not null default '',
+  guidance    text not null default '',
+  source      text not null default 'catalog',
+  updated_at  timestamptz not null default now(),
+  primary key (exercise_id, lang)
+);
+alter table biodanza.exercise_texts enable row level security;
+drop policy if exists exercise_texts_read on biodanza.exercise_texts;
+create policy exercise_texts_read on biodanza.exercise_texts for select to authenticated
+  using (exists (select 1 from biodanza.exercises e where e.id = exercise_id));   -- the exercises policy decides
+drop policy if exists exercise_texts_write on biodanza.exercise_texts;
+create policy exercise_texts_write on biodanza.exercise_texts for all to authenticated
+  using (exists (select 1 from biodanza.exercises e where e.id = exercise_id and biodanza.is_allowed() and (e.owner_id = auth.uid() or (e.owner_id is null and biodanza.is_admin()))))
+  with check (exists (select 1 from biodanza.exercises e where e.id = exercise_id and biodanza.is_allowed() and (e.owner_id = auth.uid() or (e.owner_id is null and biodanza.is_admin()))));
+
 -- ---------- vivencias ----------
 create table if not exists biodanza.vivencias (
   id         uuid primary key default gen_random_uuid(),
