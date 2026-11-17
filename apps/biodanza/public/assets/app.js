@@ -383,9 +383,9 @@
       /* the play tile (the number's size): with the YouTube pill the song's time is part of the tile, under the pill; the sound button keeps the time in the text */
       var pb = i.music ? songBtn(i.music, true) : "", merged = pb.indexOf("data-yt") >= 0;
       if (merged) {
-        pb = pb.replace(/width:var\(--fab\);height:var\(--fab\);min-height:var\(--fab\);/, "width:var(--ctl);height:var(--ctl);min-height:var(--ctl);flex-direction:column;gap:2px;border-radius:var(--r-ctl);background:var(--surface-2);")
-               
-               .replace("</a>", (i.music.duration_sec ? '<span style="color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/1 var(--font);font-variant-numeric:tabular-nums">' + clock(i.music.duration_sec) + '</span>' : "") + "</a>");
+        pb = pb.replace(/width:var\(--fab\);height:var\(--fab\);min-height:var\(--fab\);/, "width:var(--ctl);height:var(--ctl);min-height:var(--ctl);border-radius:var(--r-ctl);background:var(--surface-2);");
+        pb = '<div style="flex:none;display:flex;flex-direction:column;align-items:center;gap:var(--gap-button)">' + pb +
+          (i.music.duration_sec ? '<span style="color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/1 var(--font);font-variant-numeric:tabular-nums">' + clock(i.music.duration_sec) + '</span>' : "") + '</div>';
       } else if (pb) pb = pb.replace(/width:var\(--fab\);height:var\(--fab\);min-height:var\(--fab\);/, "width:var(--ctl);height:var(--ctl);min-height:var(--ctl);border-radius:var(--r-ctl);background:var(--surface-2);");
       return '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-2)"' + (state.lastItem === i.id ? ' aria-current="true"' : '') + '><span aria-hidden="true" style="flex:none;display:flex;align-items:center;justify-content:center;width:var(--ctl);height:var(--ctl);border-radius:var(--r-ctl);background:var(--surface-2);font:var(--fw-bold) var(--fs-m)/1 var(--font)">' + (k + 1) + '</span><button type="button" class="rrow__main" data-edit="' + i.id + '" style="background:none;border:0;padding:0;margin-inline-start:var(--sp-1);text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(itemName(i)) + '</span>' +
         (i.music ? (function () {
