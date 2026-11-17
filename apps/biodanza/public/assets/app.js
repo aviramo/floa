@@ -292,6 +292,7 @@
 
   /* ---------- home: my vivencias ---------- */
   function home() {
+    curLeave();
     if (!wide()) { stack().length = 0; stack().push(home); setUrl(BASE); }
     show(head("הוויוונסיות שלי", "", false,
       (state.me.admin ? '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="allow" aria-label="מורשים" title="מורשים">' + I.users + '</button>' : '') +
@@ -499,7 +500,7 @@
     return api("/rest/v1/vivencia_items?vivencia_id=eq." + state.viv.id + "&select=id,position,exercise_id,music_id,notes,title,poetics,guidance,exercises(title_he,title_en,poetics,guidance,objective,exercise_texts(lang,poetics,guidance,source)),music(id,name,title,artist,duration_sec,audio_object,in_catalog),vivencia_item_facilitators(email)&order=position").then(function (r) { state.items = r || []; });
   }
   function editor() {
-    var v = state.viv; setUrl(BASE + v.id);
+    var v = state.viv; setUrl(BASE + v.id); curJoin(v.id);
     show(head(v.title || "ויוונסיה חדשה", "", true, '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="more" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>') +
       '<div class="rlist" data-fab-room id="list"><div class="rskel rskel--title"></div></div>' +
       (v.role === "view" ? '' : '<button class="rfab" data-act="add" aria-label="הוספת תרגיל" title="הוספת תרגיל">' + I.plus + '</button>'), function (r) {
@@ -735,11 +736,18 @@
         }, fail);
       }
       var typing = 0;
+      ["poetics", "guidance", "notes"].forEach(function (k) {   /* my cursor and selection, to the others */
+        var el = fld[k];
+        ["focus", "keyup", "mouseup", "select", "input", "touchend"].forEach(function (n) { el.addEventListener(n, curThrottled); });
+        el.addEventListener("blur", function () { clearTimeout(cur.trail); curMine(); });
+        el.addEventListener("scroll", paintGhosts);
+      });
+      setTimeout(paintGhosts, 0);
       Object.keys(fld).forEach(function (k) {
         fld[k].addEventListener("input", function () { clearTimeout(typing); typing = setTimeout(function () { save(true); }, 700); });   /* saved while you type, quietly */
         fld[k].addEventListener("change", function () { clearTimeout(typing); save(); });
       });
-      liveItem = { id: it.id, root: fld.title, prev: prevIt && prevIt.id, next: nextIt && nextIt.id, apply: function (fresh) {
+      liveItem = { id: it.id, root: fld.title, fld: fld, prev: prevIt && prevIt.id, next: nextIt && nextIt.id, apply: function (fresh) {
         var inField = r.contains(document.activeElement) && /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName), k2 = fresh.id === it.id ? state.items.indexOf(fresh) : -1;
         var pid = state.items[k2 - 1] && state.items[k2 - 1].id, nid = state.items[k2 + 1] && state.items[k2 + 1].id;
         if (!inField && (fresh.music_id !== it.music_id || fresh.exercise_id !== it.exercise_id || pid !== liveItem.prev || nid !== liveItem.next)) { itemScreen(fresh); return; }   /* the song, the exercise or the neighbours changed and nobody is typing: draw it again */
@@ -1169,8 +1177,13 @@
     };
     ws.onmessage = function (e) {
       var m; try { m = JSON.parse(e.data); } catch (x) { return; }
-      if (m.event === "phx_reply" && m.topic === TOPIC && m.ref === "1") { rt.on = !!(m.payload && m.payload.status === "ok"); if (rt.on) { rt.v = rt.i = true; rtFlush(); } }   /* what was missed while the connection was closed */
+      if (m.event === "phx_reply" && m.topic === TOPIC && m.ref === "1") { rt.on = !!(m.payload && m.payload.status === "ok"); if (rt.on) { rt.v = rt.i = true; rtFlush(); cur.id = ""; if (cur.want) curJoin(cur.want); } }   /* what was missed while the connection was closed, and the cursors' channel again */
       else if (m.event === "postgres_changes") rtChange(m.payload && m.payload.data && m.payload.data.table);
+      else if (m.event === "broadcast" && cur.topic && m.topic === cur.topic) {   /* somebody's cursor */
+        var pl = m.payload && m.payload.payload; if (!pl || !pl.email || pl.email === FLOA_AUTH.email().toLowerCase()) return;
+        if (!pl.field) delete cur.peers[pl.email]; else cur.peers[pl.email] = { item: pl.item, field: pl.field, a: pl.a | 0, b: pl.b | 0, name: whoName(pl.email), at: Date.now() };
+        paintGhosts();
+      }
       else if (m.event === "system" && m.payload && m.payload.status === "error") rt.on = false;
     };
     ws.onclose = function () {
@@ -1180,6 +1193,63 @@
     ws.onerror = function () { try { ws.close(); } catch (x) { /* closed */ } };
   }
   document.addEventListener("visibilitychange", function () { if (!document.hidden && state.me) { if (!rt.ws) startRealtime(); else { rt.v = rt.i = true; rtFlush(); } } });
+
+  /* ---------- who is where: the others' cursors, as in a shared document ----------
+     While I am in a text field, where my cursor is (and what I have selected) is sent, as numbers only, on a Realtime broadcast channel of this
+     vivencia; everyone with the same exercise open sees a marker with my name at that place, and my selection coloured. Nothing of the text travels.
+     A marker not renewed for a few seconds goes away. */
+  var cur = { topic: "", id: "", want: "", peers: {}, last: 0, trail: 0, hb: 0 };
+  function curSend(payload) {
+    if (!cur.topic || !rt.ws) return;
+    rtSend({ topic: cur.topic, event: "broadcast", ref: String(Date.now()), payload: { type: "broadcast", event: "cur", payload: payload } });
+  }
+  function curJoin(vivId) {
+    cur.want = vivId;
+    if (!rt.ws || rt.ws.readyState !== 1 || cur.id === vivId) return;
+    if (cur.topic) rtSend({ topic: cur.topic, event: "phx_leave", ref: "c0", payload: {} });
+    cur.id = vivId; cur.topic = "realtime:biodanza-cur:" + vivId; cur.peers = {};
+    Promise.resolve(FLOA_AUTH.token()).then(function (tok) {
+      rtSend({ topic: cur.topic, event: "phx_join", ref: "c1", payload: { config: { broadcast: { ack: false, self: false }, presence: { key: "" }, private: false, postgres_changes: [] }, access_token: tok } });
+    }, function () { /* no markers this time */ });
+  }
+  function curLeave() { cur.want = ""; if (cur.topic && rt.ws) rtSend({ topic: cur.topic, event: "phx_leave", ref: "c0", payload: {} }); cur.topic = ""; cur.id = ""; cur.peers = {}; paintGhosts(); }
+  function whoName(email) { var m = (state.members || []).filter(function (x) { return x.email === email; })[0]; return (m && m.note) || String(email || "").split("@")[0]; }
+  function whoHue(email) { var h = 0; for (var i = 0; i < email.length; i++) h = (h * 31 + email.charCodeAt(i)) % 360; return h; }
+  function curMine() {   /* my place, to everyone else */
+    if (!liveItem || !liveItem.fld) return;
+    var el = document.activeElement, k = Object.keys(liveItem.fld).filter(function (x) { return liveItem.fld[x] === el; })[0];
+    if (!k || k === "title") return curSend({ item: liveItem.id, email: FLOA_AUTH.email().toLowerCase(), field: null });
+    curSend({ item: liveItem.id, email: FLOA_AUTH.email().toLowerCase(), field: k, a: el.selectionStart, b: el.selectionEnd });
+  }
+  function curThrottled() { var d = Date.now() - cur.last; clearTimeout(cur.trail); if (d >= 120) { cur.last = Date.now(); curMine(); } else cur.trail = setTimeout(function () { cur.last = Date.now(); curMine(); }, 120 - d); }
+  function paintGhosts() {
+    document.querySelectorAll(".bio-ghost").forEach(function (g) { g.dataset.keep = ""; });
+    var now = Date.now();
+    if (liveItem && liveItem.fld && liveItem.root.isConnected) {
+      Object.keys(cur.peers).forEach(function (email) {
+        var pr = cur.peers[email];
+        if (now - pr.at > 6000) { delete cur.peers[email]; return; }
+        if (pr.item !== liveItem.id || !pr.field || !liveItem.fld[pr.field]) return;
+        var ta = liveItem.fld[pr.field], host = ta.parentElement, id = "g-" + email + "-" + pr.field, g = host.querySelector('[data-gid="' + id + '"]');
+        if (!g) { g = document.createElement("div"); g.className = "bio-ghost"; g.dataset.gid = id; g.innerHTML = "<div></div>"; host.appendChild(g); }
+        g.dataset.keep = "1";
+        var cs = getComputedStyle(ta), inner = g.firstChild, text = ta.value, a = Math.min(pr.a, text.length), b = Math.min(pr.b, text.length), hue = whoHue(email);
+        inner.style.cssText = "position:absolute;top:0;left:0;white-space:pre-wrap;overflow-wrap:break-word;color:transparent;box-sizing:border-box;width:" + ta.clientWidth + "px;font:" + cs.font + ";letter-spacing:" + cs.letterSpacing + ";padding:" + cs.padding + ";direction:" + cs.direction + ";text-align:" + cs.textAlign + ";transform:translateY(" + (-ta.scrollTop) + "px)";
+        var caret = '<span class="bio-caret" style="--c:hsl(' + hue + ' 62% 38%)"><i>' + esc(pr.name) + '</i></span>';
+        inner.innerHTML = a === b ? esc(text.slice(0, a)) + caret + esc(text.slice(a)) : esc(text.slice(0, a)) + '<mark style="background:hsl(' + hue + ' 70% 78% / .75)">' + esc(text.slice(a, b)) + '</mark>' + caret + esc(text.slice(b));
+      });
+    }
+    document.querySelectorAll(".bio-ghost").forEach(function (g) { if (!g.dataset.keep) g.remove(); });
+  }
+  (function () {
+    var st = document.createElement("style");
+    st.textContent = ".bio-ghost { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 2 } .bio-ghost mark { color: transparent; border-radius: 2px } .bio-caret { display: inline-block; width: 0; height: 1.1em; vertical-align: text-bottom; border-inline-start: 2px solid var(--c); position: relative } .bio-caret > i { position: absolute; bottom: 100%; inset-inline-start: -2px; padding: 0 5px; border-radius: 4px 4px 4px 0; background: var(--c); color: #fff; font: 600 11px/16px var(--font); font-style: normal; white-space: nowrap }";
+    document.head.appendChild(st);
+    setInterval(paintGhosts, 1500);   /* a marker that was not renewed goes */
+    function inMyField() { var el = document.activeElement; return !!(liveItem && liveItem.fld && liveItem.root.isConnected && el && el.tagName === "TEXTAREA" && ["poetics", "guidance", "notes"].some(function (k) { return liveItem.fld[k] === el; })); }
+    setInterval(function () { if (cur.topic && inMyField()) curMine(); }, 2500);   /* standing still in a field is still being there */
+    document.addEventListener("selectionchange", function () { if (cur.topic && inMyField()) curThrottled(); });
+  })();
 
   /* ---------- start ---------- */
   function start() {
