@@ -72,19 +72,28 @@
       on(r, "allow", allowPopup);
       on(r, "new", newViv);
     });
-    api("/rest/v1/vivencias?select=id,title,updated_at,vivencia_items(count)&order=updated_at.desc").then(function (rows) {
-      state.vivs = rows || [];
-      var l = document.getElementById("hl"); if (!l) return;
-      l.innerHTML = state.vivs.length ? state.vivs.map(function (v) {
-        var n = v.vivencia_items && v.vivencia_items[0] ? v.vivencia_items[0].count : 0;
-        return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-id="' + v.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub" data-n="' + v.id + '">' + n + ' תרגילים</span></button><button type="button" class="rbtn rbtn--icon rrow__trail" data-ren="' + v.id + '" aria-label="שינוי שם" title="שינוי שם">' + I.pen + '</button></div>';
-      }).join("") : '<div class="rempty"><b>עוד אין ויוונסיות</b><span>לחצו על + כדי ליצור את הראשונה</span></div>';
-      l.querySelectorAll("[data-id]").forEach(function (b) { b.addEventListener("click", function () { openViv(b.dataset.id); }); });
-      l.querySelectorAll("[data-ren]").forEach(function (b) { b.addEventListener("click", function () { namePopup(state.vivs.filter(function (v) { return v.id === b.dataset.ren; })[0], false); }); });
-      paintSel();
-      if (wide() && !state.viv) emptyDetail();
+    var uid = FLOA_AUTH.userId();
+    Promise.all([api("/rest/v1/vivencias?select=id,title,updated_at,vivencia_items(count)"), api("/rest/v1/vivencia_owners?user_id=eq." + uid + "&select=vivencia_id,position")]).then(function (r) {
+      var pos = {}; (r[1] || []).forEach(function (o) { pos[o.vivencia_id] = o.position; });
+      state.vivs = (r[0] || []).map(function (v) { v.pos = pos[v.id]; return v; });
+      /* my own order; a vivencia I have not placed yet (a new one) comes first, newest first */
+      state.vivs.sort(function (a, b) { var pa = a.pos == null ? -1 : a.pos, pb = b.pos == null ? -1 : b.pos; return pa - pb || (a.updated_at < b.updated_at ? 1 : -1); });
+      renderVivs();
     }, fail);
   }
+  function renderVivs() {
+    var l = document.getElementById("hl"); if (!l) return;
+    l.innerHTML = state.vivs.length ? state.vivs.map(function (v) {
+      var n = v.vivencia_items && v.vivencia_items[0] ? v.vivencia_items[0].count : 0;
+      return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-id="' + v.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub" data-n="' + v.id + '">' + n + ' תרגילים</span></button><button type="button" class="rbtn rbtn--icon rrow__trail" data-ren="' + v.id + '" aria-label="שינוי שם" title="שינוי שם">' + I.pen + '</button></div>';
+    }).join("") : '<div class="rempty"><b>עוד אין ויוונסיות</b><span>לחצו על + כדי ליצור את הראשונה</span></div>';
+    l.querySelectorAll("[data-id]").forEach(function (b) { b.addEventListener("click", function () { openViv(b.dataset.id); }); });
+    l.querySelectorAll("[data-ren]").forEach(function (b) { b.addEventListener("click", function () { namePopup(state.vivs.filter(function (v) { return v.id === b.dataset.ren; })[0], false); }); });
+    if (state.vivs.length) enableDrag(l, "[data-id]", persistVivs);
+    paintSel();
+    if (wide() && !state.viv) emptyDetail();
+  }
+
   function newViv() { namePopup({ id: uuid(), title: "" }, true); }
   /* the name (the theme) of a vivencia is set here, from the list: the kit's popup with a header check to save */
   function namePopup(v, isNew) {
@@ -153,31 +162,40 @@
         '</div>';
     }).join("");
     l.querySelectorAll("[data-edit]").forEach(function (b) { b.addEventListener("click", function () { var it = state.items.filter(function (x) { return x.id === b.dataset.edit; })[0]; go(function () { itemScreen(it); }); }); });
-    enableDrag(l);
+    enableDrag(l, "[data-edit]", persistItems);
+  }
+  function persistItems(from, to) {
+    var moved = state.items.splice(from, 1)[0]; state.items.splice(to, 0, moved);
+    Promise.all(state.items.map(function (it, k) {
+      if (it.position === k + 1) return null;
+      it.position = k + 1;
+      return api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { position: k + 1 } });
+    })).then(loadItems).then(paint, fail);
+  }
+  function persistVivs(from, to) {
+    var moved = state.vivs.splice(from, 1)[0]; state.vivs.splice(to, 0, moved);
+    var uid = FLOA_AUTH.userId();
+    Promise.all(state.vivs.map(function (v, k) {
+      if (v.pos === k + 1) return null;
+      v.pos = k + 1;
+      return api("/rest/v1/vivencia_owners?vivencia_id=eq." + v.id + "&user_id=eq." + uid, { method: "PATCH", json: { position: k + 1 } });
+    })).then(function () { renderVivs(); }, fail);
   }
 
   /* Reorder by dragging a row (no arrows). A mouse drags after a few pixels; a finger after a short hold, so scrolling still works.
      Only transform is animated. Keyboard: Alt + Arrow up/down on the focused row title. The order of the list is the curve. */
-  function enableDrag(l) {
+  function enableDrag(l, keySel, onMove) {
     if (l._dragOff) l._dragOff();   /* the list element is reused: drop the previous paint's listeners */
     var rows = [].slice.call(l.querySelectorAll(".rrow"));
     var d = null, blockTouch = function (e) { if (d && d.live) e.preventDefault(); };
     l.addEventListener("touchmove", blockTouch, { passive: false });
-    function persist(from, to) {
-      var moved = state.items.splice(from, 1)[0]; state.items.splice(to, 0, moved);
-      Promise.all(state.items.map(function (it, k) {
-        if (it.position === k + 1) return null;
-        it.position = k + 1;
-        return api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { position: k + 1 } });
-      })).then(loadItems).then(paint, fail);
-    }
     rows.forEach(function (row, k) {
-      var title = row.querySelector("[data-edit]");
+      var title = row.querySelector(keySel);
       title.addEventListener("keydown", function (e) {
         if (!e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
         var to = k + (e.key === "ArrowUp" ? -1 : 1);
         if (to < 0 || to >= rows.length) return;
-        e.preventDefault(); persist(k, to);
+        e.preventDefault(); onMove(k, to);
       });
       row.addEventListener("pointerdown", function (e) {
         if (e.button > 0) return;
@@ -218,7 +236,7 @@
       if (!was.live) return;
       rows.forEach(function (r) { r.style.transform = ""; r.style.transition = ""; r.style.zIndex = ""; r.style.boxShadow = ""; r.style.position = ""; });
       l.addEventListener("click", function eat(ev) { ev.stopPropagation(); ev.preventDefault(); }, { capture: true, once: true });   /* the drag is not a tap on the title */
-      if (was.to !== was.k) persist(was.k, was.to);
+      if (was.to !== was.k) onMove(was.k, was.to);
     }
     l.addEventListener("pointerup", finish); l.addEventListener("pointercancel", finish);
     l._dragOff = function () { l.removeEventListener("touchmove", blockTouch); l.removeEventListener("pointermove", move); l.removeEventListener("pointerup", finish); l.removeEventListener("pointercancel", finish); l._dragOff = null; };

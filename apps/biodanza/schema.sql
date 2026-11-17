@@ -151,6 +151,7 @@ create table if not exists biodanza.vivencias (
 create table if not exists biodanza.vivencia_owners (
   vivencia_id uuid not null references biodanza.vivencias(id) on delete cascade,
   user_id     uuid not null references auth.users(id) on delete cascade,
+  position    int,     -- THIS owner's own order of their list; null = newest, shown first
   primary key (vivencia_id, user_id)
 );
 
@@ -166,6 +167,7 @@ create table if not exists biodanza.vivencia_items (
 );
 alter table biodanza.vivencia_items drop column if exists phase_key;
 alter table biodanza.vivencias drop column if exists theme;
+alter table biodanza.vivencia_owners add column if not exists position int;
 alter table biodanza.vivencia_items add column if not exists poetics text, add column if not exists guidance text, drop column if exists minutes;
 create index if not exists vivencia_items_viv_idx on biodanza.vivencia_items (vivencia_id, position);
 
