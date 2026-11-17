@@ -310,22 +310,33 @@ else:
 c14 = text('catalog-2014-en.pdf')
 by14, dance = collections.OrderedDict(), None
 first = next(i for i, l in enumerate(c14) if l.strip().startswith('Abdominal Breathing'))
+ENTRY = re.compile(r'^(.*?)\.{3,}\s*(\d+)[,.](\d\d)\s*\.*\s*([A-Za-z]*\s?[\d\-]*)\s*$')
+held, prev_blank = [], True      # a line without its time is a wrapped title when it follows a line, a dance heading when it follows a blank
 for l in c14[first:]:
     s = l.strip().lstrip('!').strip()
     if not s:
+        prev_blank = True
         continue
-    m = re.match(r'^(.*?)\.{3,}\s*(\d+)[,.](\d\d)\s*\.*\s*([A-Za-z]*\s?[\d\-]*)\s*$', s)
+    if re.match(r'^[\d! ]+$', s):
+        continue
+    m = ENTRY.match(s)
     if m and dance:
-        raw = clean(m.group(1))
+        raw = clean(' '.join(held + [m.group(1)]))
+        held = []
         ttl, _, art = raw.rpartition(' - ')
         if not ttl:
             ttl, art = raw, ''
         by14[dance].append((raw.replace(' - ', ', '), int(m.group(2)) * 60 + int(m.group(3)), clean(m.group(4)), ttl, art))
-    elif '....' not in s and len(s) < 90 and not re.match(r'^\d+$', s):
+    elif '....' not in s and len(s) < 160:
         if 'SECONDPART' in s.upper().replace(' ', ''):
             break
-        dance = s
-        by14.setdefault(dance, [])
+        if prev_blank and ' - ' not in s:
+            held = []
+            dance = s
+            by14.setdefault(dance, [])
+        else:
+            held.append(s)
+    prev_blank = False
 
 # no long dash in a text that reaches the page (owner rule); a range like 1860-1911 is untouched. Titles used as KEYS above are left alone.
 TEXT_KEYS = ('title_he', 'description_en', 'description_he', 'objective_en', 'objective_he', 'poetics_en', 'poetics_he', 'emphasis_en', 'emphasis_he',
