@@ -99,10 +99,19 @@
     return '<span style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin-top:var(--gap-tight);color:var(--text-2);font:var(--fw-medium) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(songName(m)) + '</span>' +
       (songBy(m) ? '<span style="display:block;margin-top:var(--gap-tight);color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(songBy(m)) + '</span>' : '');
   }
+  /* while a song plays, the time under its button counts down to 0 (audio.js tells the page); the others show their whole length */
+  document.addEventListener("bioaudio", function (ev) {
+    var d = ev.detail || {};
+    document.querySelectorAll(".bio-time").forEach(function (sp) {
+      var full = +sp.dataset.dur || 0, left = full;
+      if (d.name && sp.dataset.for === d.name) left = Math.max(0, Math.ceil((full || Math.round(d.d || 0)) - d.t));
+      var txt = clock(left); if (sp.textContent !== txt) sp.textContent = txt;
+    });
+  });
   function playCol(m, trail) {
     var tile = songBtn(m, trail).replace(/width:var\(--fab\);height:var\(--fab\);min-height:var\(--fab\);/, "width:var(--ctl);height:var(--ctl);min-height:var(--ctl);border-radius:var(--r-ctl);background:var(--surface-2);");
     return '<div style="flex:none;display:flex;flex-direction:column;align-items:center;gap:var(--gap-button)">' + tile +
-      (m.duration_sec ? '<span style="color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/1 var(--font);font-variant-numeric:tabular-nums">' + clock(m.duration_sec) + '</span>' : '') + '</div>';
+      (m.duration_sec ? '<span class="bio-time" data-dur="' + m.duration_sec + '"' + (m.audio_object ? ' data-for="' + esc(m.audio_object) + '"' : '') + ' style="color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/1 var(--font);font-variant-numeric:tabular-nums">' + clock(m.duration_sec) + '</span>' : '') + '</div>';
   }
   /* a song as a row to choose from: the same element, a row of its own */
   function songRow(m, cur, attr) {
