@@ -612,7 +612,7 @@
             l.querySelectorAll(".rrow").forEach(function (w) { w.removeAttribute("aria-current"); });
             b.closest(".rrow").setAttribute("aria-current", "true");
             previewEx(ex, swapIt);
-          } else addEx(ex, swapIt);
+          } else if (swapIt) confirmSwap(ex, swapIt); else addEx(ex);
         }); });
       }
       r.querySelector("#q").addEventListener("input", paintCat); r.querySelector("#ln").addEventListener("change", paintCat); wireCat();
@@ -642,8 +642,19 @@
       var card = function (k, label) { return txt(fake, k) ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">' + label + '</span></div><div class="rcard__body"' + (isDraft(fake, k) ? DRAFT : "") + '>' + esc(txt(fake, k)) + '</div></div>' : ""; };
       var body = card("poetics", "פואטיקה") + card("guidance", "הנחיה");
       var act = '<button class="rbtn" type="button" style="margin-inline-end:var(--sp-2)" data-act="doswap">' + (swapIt ? "החלפה בתרגיל הזה" : "הוספה") + '</button>';   /* the action is in the header, on the left */
-      show(head(name(e), "", false, act) + '<div class="rlist"><div class="pad">' + (body || ph("אין עדיין תיאור לתרגיל", "")) + '</div></div>', function (r) { on(r, "doswap", function () { addEx(e, swapIt); }); }, "d");
+      show(head(name(e), "", false, act) + '<div class="rlist"><div class="pad">' + (body || ph("אין עדיין תיאור לתרגיל", "")) + '</div></div>', function (r) { on(r, "doswap", function () { if (swapIt) confirmSwap(e, swapIt); else addEx(e); }); }, "d");
     }, fail);
+  }
+  /* replacing is asked in the kit's popup, one action: closing it is the cancel */
+  function confirmSwap(e, swapIt) {
+    var dlg = document.getElementById("confirmDlg");
+    if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
+    RosterSheet.render(dlg, {
+      title: "החלפת תרגיל", from: "bottom", size: "s",
+      body: '<div class="pad"><span>להחליף את "' + esc(itemName(swapIt)) + '" ב"' + esc(name(e)) + '"? השם, הפואטיקה וההנחיה שכתבתם בתרגיל הנוכחי יימחקו. ההערות נשארות.</span></div>',
+      foot: '<button class="rbtn rbtn--block" type="button" id="cswap">החלפה</button>'
+    });
+    dlg.querySelector("#cswap").addEventListener("click", function () { dlg.close(); addEx(e, swapIt); });
   }
   function addEx(e, swapIt) {
     if (swapIt) {   /* the same place in the curve, another exercise: its first song, and none of the old exercise's own wording */
