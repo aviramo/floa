@@ -874,9 +874,10 @@
   function resetPk() { pk = { q: "", ln: "", cg: "" }; }
   /* the catalog picker: the filters and the list. On a wide screen it is a pane; on a narrow one it is a popup from the bottom. */
   function pickerBody() {
-    return '<div class="pad" data-pickhead><div style="display:flex;gap:var(--gap-button);align-items:flex-end"><label class="rfield" style="flex:1 1 0;min-width:0;margin:0"><span>חיפוש</span><input id="q" placeholder=" "></label>' +
-      '<label class="rfield" style="flex:1 1 0;min-width:0;margin:0"><span>קו</span><select id="ln"><option value="">הכול</option>' + state.lines.map(function (l) { return '<option value="' + l.key + '">' + esc(l.name_he) + '</option>'; }).join("") + '</select></label></div>' +
-      '<label class="rfield"><span>קטגוריה</span><input id="cg" placeholder=" " autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox" value="הכול"></label></div>' +
+    var cat = '<label class="rfield"><span>קטגוריה</span><input id="cg" placeholder=" " autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox" value="הכול"></label>';
+    var row = '<div style="display:flex;gap:var(--gap-button);align-items:flex-end"><label class="rfield" style="flex:1 1 0;min-width:0;margin:0"><span>חיפוש</span><input id="q" placeholder=" "></label>' +
+      '<label class="rfield" style="flex:1 1 0;min-width:0;margin:0"><span>קו</span><select id="ln"><option value="">הכול</option>' + state.lines.map(function (l) { return '<option value="' + l.key + '">' + esc(l.name_he) + '</option>'; }).join("") + '</select></label></div>';
+    return '<div class="pad" data-pickhead>' + cat + row + '</div>' +   /* the category first, then the search and the line */
       '<div class="rlist" id="list"><div class="rskel rskel--title"></div></div>';
   }
   function pickerWire(r, swapIt, sheet) {
