@@ -49,6 +49,13 @@ class_name = "ReadSong"
 # live site) and only widens what has to be reasoned about.
 preview_urls = false
 
+# The Biodanza app's music. A private bucket: no public address, random object
+# names, served only by /biodanza/audio/<name> to a signed-in account that is on
+# the allowlist (src/biodanza-audio.js).
+[[r2_buckets]]
+binding = "AUDIO"
+bucket_name = "biodanza-audio"
+
 # Non-secret configuration. The API KEY IS NOT HERE. It is a secret, set with
 # `wrangler secret put` and never committed. See README.md.
 #

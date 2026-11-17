@@ -417,3 +417,31 @@ create policy item_fac_write on biodanza.vivencia_item_facilitators for all to a
 grant select, insert, update, delete on biodanza.vivencia_item_facilitators to authenticated, service_role;
 grant execute on all functions in schema biodanza to authenticated, service_role;
 revoke execute on all functions in schema biodanza from anon;
+
+-- THE MUSIC FILES (2026-11-17). The songs of the catalog now have files, kept in a
+-- PRIVATE R2 bucket (biodanza-audio) and served only by the Worker at
+-- /biodanza/audio/<object> to a signed-in account on the allowlist.
+--
+-- `music_files` is the index of what is in the bucket: one row per FILE, so a song
+-- that several catalog rows name (the same song in two collections) is stored once.
+-- `music.audio_object` points a catalog row at its file; no file means the app shows
+-- the YouTube button, as before. `in_catalog` is false for a file the catalogs do not
+-- list: the app shows it among "other music", with a tag.
+create table if not exists biodanza.music_files (
+  object     text primary key,                 -- random name in the bucket, with its extension
+  code       text not null default '',         -- the catalog code (BA01-06, IBF17-11, BsAs 36.04), when it has one
+  collection text not null default '',
+  format     text not null,                    -- flac, mp3, m4a, wav, aiff
+  size_bytes bigint not null default 0,
+  created_at timestamptz not null default now()
+);
+alter table biodanza.music add column if not exists audio_object text references biodanza.music_files(object) on delete set null;
+alter table biodanza.music add column if not exists in_catalog boolean not null default true;
+create index if not exists music_audio_idx on biodanza.music (audio_object) where audio_object is not null;
+alter table biodanza.music_files enable row level security;
+drop policy if exists music_files_read on biodanza.music_files;
+create policy music_files_read on biodanza.music_files for select to authenticated using (biodanza.is_allowed());
+drop policy if exists music_files_write on biodanza.music_files;
+create policy music_files_write on biodanza.music_files for all to authenticated
+  using (biodanza.is_admin()) with check (biodanza.is_admin());
+grant select, insert, update, delete on biodanza.music_files to authenticated, service_role;
