@@ -67,12 +67,12 @@
       on(r, "allow", allowPopup);
       on(r, "new", newViv);
     });
-    api("/rest/v1/vivencias?select=id,title,theme,updated_at,vivencia_items(count)&order=updated_at.desc").then(function (rows) {
+    api("/rest/v1/vivencias?select=id,title,updated_at,vivencia_items(count)&order=updated_at.desc").then(function (rows) {
       state.vivs = rows || [];
       var l = document.getElementById("hl"); if (!l) return;
       l.innerHTML = state.vivs.length ? state.vivs.map(function (v) {
         var n = v.vivencia_items && v.vivencia_items[0] ? v.vivencia_items[0].count : 0;
-        return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-id="' + v.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub">' + n + ' תרגילים' + (v.theme ? ' · ' + esc(v.theme) : '') + '</span></button></div>';
+        return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-id="' + v.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub">' + n + ' תרגילים</span></button></div>';
       }).join("") : '<div class="rempty"><b>עוד אין ויוונסיות</b><span>לחצו על + כדי ליצור את הראשונה</span></div>';
       l.querySelectorAll("[data-id]").forEach(function (b) { b.addEventListener("click", function () { openViv(b.dataset.id); }); });
       paintSel();
@@ -92,15 +92,14 @@
   function editor() {
     var v = state.viv;
     show(head(v.title || "ויוונסיה חדשה", "", true, '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="del" aria-label="מחיקת הוויוונסיה" title="מחיקת הוויוונסיה">' + I.trash + '</button><button class="rbtn rbtn--icon rbtn--edge-end" data-act="play" aria-label="הפעלה" title="הפעלה">' + I.play + '</button>') +
-      '<div class="pad"><label class="rfield"><span>שם הוויוונסיה</span><input id="vt" placeholder=" " value="' + esc(v.title) + '"></label>' +
-      '<label class="rfield"><span>נושא</span><input id="vh" placeholder=" " value="' + esc(v.theme || "") + '"></label></div>' +
+      '<div class="pad"><label class="rfield"><span>נושא</span><input id="vt" placeholder=" " value="' + esc(v.title) + '"></label></div>' +
       '<div class="rlist" data-fab-room id="list"><div class="rskel rskel--title"></div></div>' +
       '<button class="rfab" data-act="add" aria-label="הוספת תרגיל" title="הוספת תרגיל">' + I.plus + '</button>', function (r) {
       on(r, "back", back); on(r, "add", function () { go(picker); });
       on(r, "del", function () { confirmDelete(v); });
       on(r, "play", function () { if (!state.items.length) return toast("אין עדיין תרגילים"); go(function () { player(0); }); });
-      function save() { var t = r.querySelector("#vt").value, h = r.querySelector("#vh").value; v.title = t; v.theme = h; api("/rest/v1/vivencias?id=eq." + v.id, { method: "PATCH", json: { title: t, theme: h, updated_at: new Date().toISOString() } }).catch(fail); }
-      r.querySelector("#vt").addEventListener("change", save); r.querySelector("#vh").addEventListener("change", save);
+      function save() { var t = r.querySelector("#vt").value; v.title = t; api("/rest/v1/vivencias?id=eq." + v.id, { method: "PATCH", json: { title: t, updated_at: new Date().toISOString() } }).catch(fail); }
+      r.querySelector("#vt").addEventListener("change", save);
     }, "d");
     loadItems().then(paint, fail);
   }

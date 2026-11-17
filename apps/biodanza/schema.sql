@@ -141,8 +141,7 @@ create table if not exists biodanza.exercise_music (
 -- ---------- vivencias ----------
 create table if not exists biodanza.vivencias (
   id         uuid primary key default gen_random_uuid(),
-  title      text not null default '',
-  theme      text not null default '',
+  title      text not null default '',   -- the theme of the session IS its name
   notes      text not null default '',
   created_by uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now(),
@@ -165,6 +164,7 @@ create table if not exists biodanza.vivencia_items (
   notes       text not null default ''
 );
 alter table biodanza.vivencia_items drop column if exists phase_key;
+alter table biodanza.vivencias drop column if exists theme;
 create index if not exists vivencia_items_viv_idx on biodanza.vivencia_items (vivencia_id, position);
 
 create or replace function biodanza.owns(v uuid) returns boolean
