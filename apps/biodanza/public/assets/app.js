@@ -148,10 +148,11 @@
       var tg = e.target; if (tg && (tg.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName))) return;
       if (document.querySelector("dialog[open], #moreMenu, .rmenu") || !window.BioAudio || !BioAudio.volume) return;
       e.preventDefault();
-      BioAudio.volume(e.key === "ArrowUp" ? 0.05 : -0.05);   /* the sound itself is the answer: no message */
+      volState.v = BioAudio.volume(e.key === "ArrowUp" ? 0.05 : -0.05); paintVol();   /* the sound and the gauge in the header are the answer: no message */
     });
     document.addEventListener("bioaudio", function (ev) {
       playing = !!(ev.detail && ev.detail.playing);
+      volState.on = playing; if (window.BioAudio && BioAudio.volume) volState.v = BioAudio.volume(0); paintVol();
       if (playing) document.querySelectorAll("dialog[open]").forEach(function (d) {
         if (!d.querySelector(".bio-stop-in")) {
           var b = make("bio-stop-in"); b.setAttribute("popover", "manual"); d.appendChild(b);
@@ -238,9 +239,14 @@
   /* the placeholder of an empty list or pane: the curve icon, a title and one line */
   function ph(title, text) { return '<div class="rempty">' + I.curve + '<b>' + esc(title) + '</b>' + (text ? '<span>' + esc(text) + '</span>' : '') + '</div>'; }
   function uuid() { return crypto.randomUUID(); }
+  var volState = { on: false, v: 1 };   /* the volume gauge in the headers: shown while a song plays */
+  function paintVol() {
+    document.querySelectorAll(".bio-vol").forEach(function (g) { g.classList.toggle("on", volState.on); g.style.setProperty("--v", volState.v); g.setAttribute("aria-valuenow", Math.round(volState.v * 100)); });
+  }
   function head(title, sub, back, trail, lead) {
     return '<header class="rhead">' + (lead || '') + (back ? '<button class="rbtn rbtn--icon rbtn--edge-start" data-act="back" aria-label="חזרה" title="חזרה">' + I.back + '</button>' : '') +
-      '<div class="rhead__text"><h1 class="rhead__title">' + esc(title) + '</h1>' + (sub ? '<span class="rhead__sub">' + esc(sub) + '</span>' : '') + '</div>' + (trail || '') + '</header>';
+      '<div class="rhead__text"><h1 class="rhead__title">' + esc(title) + '</h1>' + (sub ? '<span class="rhead__sub">' + esc(sub) + '</span>' : '') + '</div>' +
+      '<div class="bio-vol' + (volState.on ? ' on' : '') + '" role="meter" aria-label="עוצמת שמע" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(volState.v * 100) + '" style="--v:' + volState.v + '"><b><i></i></b></div>' + (trail || '') + '</header>';   /* the volume, while a song plays: a bar across the free room of the header */
   }
   /* the header that walks a sequence: previous on the right, next on the left, the name centred between them */
   function walkHead(title, hasPrev, hasNext, withList) {
@@ -262,7 +268,7 @@
   }
   (function () {
     var st = document.createElement("style");
-    st.textContent = "@keyframes bioNum { from { opacity: 0; transform: translateX(var(--nx, 0)) } to { opacity: 1; transform: none } } @media (prefers-reduced-motion: reduce) { .bio-num { animation: none !important } } .bio-bar, .bio-bar * { touch-action: none }";
+    st.textContent = "@keyframes bioNum { from { opacity: 0; transform: translateX(var(--nx, 0)) } to { opacity: 1; transform: none } } @media (prefers-reduced-motion: reduce) { .bio-num { animation: none !important } } .bio-bar, .bio-bar * { touch-action: none } .bio-vol { display: none; flex: 1 1 0; min-width: 40px; align-items: center; height: var(--ctl); margin-inline-end: var(--sp-1) } .bio-vol.on { display: flex } .rhead:has(.bio-vol.on) .rhead__text { flex: 0 1 auto } .bio-vol > b { display: block; width: 100%; height: 8px; border-radius: var(--r-chip); background: var(--line-strong); overflow: hidden } .bio-vol > b > i { display: block; height: 100%; width: calc(var(--v) * 100%); border-radius: inherit; background: var(--primary); transition: width var(--t-fast) var(--ease) }";
     document.head.appendChild(st);
   })();
   /* the exercise as a pager: drag the page sideways to go to the next or the previous one (to the right = the next, as in a right to left book); the page follows the finger, a short drag springs back */
