@@ -75,14 +75,16 @@ test("a secret key gets the same reply shape on signup/phone plus the participan
 
 test("meetings: ?past=N asks for the meetings that already happened, and a call without it is exactly what it always was", async () => {
   const rows = { business: { name: "x" }, meetings: [{ id: UUID_A, date: "2020-01-01", time: "20:00", name: "m", price: 80, price_tiers: { base: 80, steps: [] }, image: "https://x.example/a.jpg" }] };
-  const a = world({ api_meetings: () => rows });
+  const a = world({ api_meetings_past: () => rows, api_meetings: () => rows });
   const r = await call(a.roster, req("/meetings?past=3", { key: PUB }));
   assert.equal(r.status, 200);
   assert.equal(r.body.meetings[0].image, "https://x.example/a.jpg", "the picture is part of a public meeting when there is one");
-  assert.deepEqual(Object.keys(a.net.rpc("api_meetings")[0].json).sort(), ["p_key_hash", "p_limit", "p_past"]);
-  assert.equal(a.net.rpc("api_meetings")[0].json.p_past, 3);
+  assert.deepEqual(Object.keys(a.net.rpc("api_meetings_past")[0].json).sort(), ["p_key_hash", "p_limit", "p_past"]);
+  assert.equal(a.net.rpc("api_meetings_past")[0].json.p_past, 3);
+  assert.equal(a.net.rpc("api_meetings").length, 0, "?past uses the new function only; the old two-argument one is not called");
   const b = world({ api_meetings: () => rows });
   await call(b.roster, req("/meetings", { key: PUB }));
   assert.deepEqual(Object.keys(b.net.rpc("api_meetings")[0].json).sort(), ["p_key_hash", "p_limit"], "no ?past: the arguments are unchanged");
+  assert.equal(b.net.rpc("api_meetings_past").length, 0, "no ?past: the new function is never called");
   assert.equal((await call(a.roster, req("/meetings?past=x", { key: PUB }))).status, 422);
 });

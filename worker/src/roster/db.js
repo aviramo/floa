@@ -272,6 +272,7 @@
 export const RPC = Object.freeze({
   auth: "api_auth",
   meetings: "api_meetings",
+  meetingsPast: "api_meetings_past",   // the same answer plus the latest N past meetings; a separate name so the old two-argument api_meetings is never replaced
   signup: "api_signup",
   signupPhone: "api_signup_phone",
   signupComplete: "api_signup_complete",

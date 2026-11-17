@@ -132,6 +132,7 @@ function prepMeetings({ query }) {
   if (past !== null) {
     if (!/^\d{1,2}$/.test(past)) return bad("past");
     args.p_past = Math.min(Number(past), 10);
+    return { ok: true, args, rpc: RPC.meetingsPast };   // only a call that asks for past meetings uses the new function
   }
   return good(args);
 }
@@ -613,7 +614,7 @@ export function createRoster(deps = {}) {
 
     const args = { p_key_hash: keyHash, ...prepared.args };
     if (route.hash === "ip") args.p_ip_hash = ipHash;
-    const out = await db.rpc(route.rpc, args);
+    const out = await db.rpc(prepared.rpc || route.rpc, args);
     if (!out.ok) return fail("server_error", { mode: "echo" });
     if (isObj(out.data) && typeof out.data.error === "string") {
       const e = fromDb(out.data);
@@ -627,7 +628,7 @@ export function createRoster(deps = {}) {
     /* 10. the reply is rebuilt, never forwarded */
     const shaped = shapeSuccess(route, out.data, secret);
     if (!shaped) {
-      console.error("roster: unexpected answer from", route.rpc);
+      console.error("roster: unexpected answer from", prepared.rpc || route.rpc);
       return fail("server_error", { mode: "echo" });
     }
     if (route.outbox) runOutbox(env, ctx, OUTBOX.apiDeadlineMs, [schema]);
