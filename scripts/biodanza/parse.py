@@ -54,7 +54,7 @@ def music_lines(block):
             cols = cols[:-1]
         name = clean(', '.join(cols[:2]))
         if name:
-            out.append((name, d, 'IBF ' + cd))
+            out.append((name, d, 'IBF ' + cd, clean(cols[0]), clean(cols[1]) if len(cols) > 1 else ''))
         i = j + 1
     return out
 
@@ -218,7 +218,7 @@ for n, (title, ln, k) in enumerate(heads18):
         d, mm = None, re.match(r'(\d+)[.,](\d+)', m.get('duration', ''))
         if mm:
             d = int(mm.group(1)) * 60 + int(mm.group(2))
-        musics.append((clean(m['title'] + (', ' + m['artist'] if m.get('artist') else '')), d, m.get('collection', '')))
+        musics.append((clean(m['title'] + (', ' + m['artist'] if m.get('artist') else '')), d, m.get('collection', ''), clean(m['title']), clean(m.get('artist', ''))))
     dances.append(dict(
         source='cimeb2018', category=ln.title(), title_en=title.title(), key=norm(title),
         description_en=clean(' '.join(f['Description'])), objective_en=clean(' '.join(f['Objectives'] + f['Objective'])),
@@ -277,7 +277,11 @@ for l in c14[first:]:
         continue
     m = re.match(r'^(.*?)\.{3,}\s*(\d+)[,.](\d\d)\s*\.*\s*([A-Za-z]*\s?[\d\-]*)\s*$', s)
     if m and dance:
-        by14[dance].append((clean(m.group(1)).replace(' - ', ', '), int(m.group(2)) * 60 + int(m.group(3)), clean(m.group(4))))
+        raw = clean(m.group(1))
+        ttl, _, art = raw.rpartition(' - ')
+        if not ttl:
+            ttl, art = raw, ''
+        by14[dance].append((raw.replace(' - ', ', '), int(m.group(2)) * 60 + int(m.group(3)), clean(m.group(4)), ttl, art))
     elif '....' not in s and len(s) < 90 and not re.match(r'^\d+$', s):
         if 'SECONDPART' in s.upper().replace(' ', ''):
             break

@@ -29,7 +29,7 @@ def rows(items):
             level=pick(e.get('level_he', ''), e.get('level_en', '')),
             authors=pick(e.get('authors_he', ''), e.get('authors', '')),
             phase=e.get('phase'), lines=e.get('lines', []),
-            music=[dict(name=m[0], sec=m[1], coll=m[2]) for m in e.get('music', [])]))
+            music=[dict(name=m[0], sec=m[1], coll=m[2], title=m[3], artist=m[4]) for m in e.get('music', [])]))
     return out
 
 
@@ -52,10 +52,10 @@ from _j, jsonb_array_elements(j) e
 join biodanza.exercises x on x.source = e->>'source' and x.title_en = e->>'title_en' and x.owner_id is null
 cross join lateral jsonb_array_elements_text(e->'lines') with ordinality as l(key, ord)
 on conflict do nothing;
-insert into biodanza.music (name, duration_sec, collection)
-select distinct on (lower(m->>'name'), m->>'coll') m->>'name', (m->>'sec')::int, coalesce(m->>'coll', '')
+insert into biodanza.music (name, duration_sec, collection, title, artist)
+select distinct on (lower(m->>'name'), m->>'coll') m->>'name', (m->>'sec')::int, coalesce(m->>'coll', ''), m->>'title', m->>'artist'
 from _j, jsonb_array_elements(j) e, jsonb_array_elements(e->'music') m
-on conflict (lower(name), collection) where owner_id is null do nothing;
+on conflict (lower(name), collection) where owner_id is null do update set title = excluded.title, artist = excluded.artist;
 insert into biodanza.exercise_music (exercise_id, music_id, phase_hint, source)
 select distinct x.id, mu.id, nullif(e->>'phase', ''), e->>'source'
 from _j, jsonb_array_elements(j) e
@@ -89,15 +89,15 @@ for dance, music in J['c2014'].items():
         hit = next((e for kk, e in ex if kk == m[0]), None) if m else None
     if hit and music:
         attach.append(dict(source=hit['source'], title_en=hit['title_en'].title() if hit['title_en'].isupper() else hit['title_en'],
-                           music=[dict(name=m[0], sec=m[1], coll=m[2]) for m in music]))
+                           music=[dict(name=m[0], sec=m[1], coll=m[2], title=m[3], artist=m[4]) for m in music]))
     elif music:
         miss.append(dance)
 sql14 = f"""
 create temp table _j on commit drop as select $j${json.dumps(attach, ensure_ascii=False)}$j$::jsonb as j;
-insert into biodanza.music (name, duration_sec, collection)
-select distinct on (lower(m->>'name'), m->>'coll') m->>'name', (m->>'sec')::int, coalesce(m->>'coll', '')
+insert into biodanza.music (name, duration_sec, collection, title, artist)
+select distinct on (lower(m->>'name'), m->>'coll') m->>'name', (m->>'sec')::int, coalesce(m->>'coll', ''), m->>'title', m->>'artist'
 from _j, jsonb_array_elements(j) e, jsonb_array_elements(e->'music') m
-on conflict (lower(name), collection) where owner_id is null do nothing;
+on conflict (lower(name), collection) where owner_id is null do update set title = excluded.title, artist = excluded.artist;
 insert into biodanza.exercise_music (exercise_id, music_id, source)
 select distinct x.id, mu.id, 'catalog2014'
 from _j, jsonb_array_elements(j) e
