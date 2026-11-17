@@ -3311,7 +3311,6 @@
   const meetName = (m) => String(m.name || '').trim() || String((typeById(m.type_id) || {}).name || '').trim();
   /* העיר והמיקום של המפגש (מהמפגש, ואם ריק מסוג המפגש), בכרטיס המפגש בכרטיס המשתתף */
   /* only the place (no city), for the line of the meeting card */
-  const meetPlace = (m) => String(m.place || (typeById(m.type_id) || {}).place || '').trim();
   const meetWhere = (m) => { const ty = typeById(m.type_id) || {}; return [m.city || ty.city, m.place || ty.place].map((x) => String(x || '').trim()).filter(Boolean).join(' · '); };
   const meetRow = (m) => {
       let on, st;
@@ -3326,7 +3325,7 @@
                 ((sheet.id && on && (linkOf(sheet.id, m.id) || {}).attended) ? UI.tag('הגיע', 'ptag arrived', { 'data-qa': sheet.id, 'data-qm': m.id, role: 'button', tabindex: 0, title: 'הגיע. לחיצה: לא הגיע' }) : '') +
         (!on && sheet.id ? UI.tag('הוספה למפגש', 'ptag none', { 'data-mp': m.id, role: 'button', tabindex: 0, title: 'לא משויך למפגש. לחיצה: הוספה למפגש' }) : '<button type="button" class="pay ' + esc(on ? (st || (miss ? 'missed' : 'nolabel')) : 'none') + '" data-mp="' + esc(m.id) + '" title="' + (on ? (st ? 'שינוי תגית' : 'הוספת תגית') : 'לא משויך למפגש. לחיצה: שיוך למפגש') + '"' + (on && !st ? ' aria-label="הוספת תגית"' : '') + '>' + (on ? (st ? esc(STATUS_LABEL[st]) : miss ? 'לא הגיע' : icon('plus', 'i14') + ' תגית') : sheet.id ? 'לא משויך' : '') + '</button>') +
                 '<div class="mline">' + (sheet.id && !on ? '<span></span>' : sheet.id ? '<button type="button" class="mmoney' + (laterOf(sheet.id, m.id) ? ' later' : dueOf(sheet.id, m.id) > 0 ? '' : allocatedOf(sheet.id, m.id) > 0 ? ' has' : freeL ? ' free' : '') + '" data-mm="' + m.id + '"' + (on ? '' : ' hidden') + ' title="תשלום למפגש">' + payTxt(sheet.id, m.id, freeL) + '</button>' : '') +
-        '</div>' + (meetPlace(m) ? '<span class="mnm mwp">' + esc(meetPlace(m)) + '</span>' : '') + '</div>' +
+        '</div></div>' +
         (sw ? '</div><div class="rswipe" aria-hidden="true"><button type="button" class="rswipe__act" tabindex="-1" data-tone="danger" data-mun="' + m.id + '">' + icon('caloff') + '<span>הסרה</span></button></div>' : '') +
       '</div>';
   };
