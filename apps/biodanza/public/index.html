@@ -8,18 +8,32 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="/kit.css">
 <style>
-/* The page shell: a column the height of the window, so the page never scrolls and only .rlist does.
+/* The page shell: a column the height of the window, so the page never scrolls and only .rlist does. On a wide screen the list of
+   vivencias is the right pane and the open vivencia the left one, with a line between them that can be dragged (roster's split).
    Tokens only. Awaiting the owner's approval as part of the kit. */
 html, body { height: 100%; }
 body { margin: 0; display: flex; flex-direction: column; height: 100dvh; background: var(--bg); color: var(--text); font: var(--fw-regular) var(--fs-m)/var(--lh-body) var(--font); }
-#app { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
-#app > .rlist { flex: 1 1 auto; }
+#app { position: relative; display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+#pl, #pd { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; min-width: 0; }
+#pl > .rlist, #pd > .rlist { flex: 1 1 auto; }
+#pd, #sh { display: none; }
 .pad { padding: var(--gutter); display: flex; flex-direction: column; gap: var(--gap-field); }
 .bar { display: flex; flex-direction: column; gap: var(--gap-button); padding: var(--gutter) var(--gutter) var(--end-pad); border-top: 1px solid var(--line); }
+@media (min-width: 1024px) {
+  :root { --listw: 50vw; }
+  #app { display: grid; grid-template-columns: var(--listw) 1fr; }
+  #pl { border-inline-end: 1px solid var(--line); }
+  #pd { display: flex; }
+  #sh { display: block; position: absolute; top: 0; bottom: 0; right: var(--listw); z-index: var(--z-menu); width: calc(var(--sp-hair) * 2.5); margin-right: calc(var(--sp-hair) * -1); cursor: col-resize; touch-action: none; }
+  #sh::after { content: ""; position: absolute; top: 0; bottom: 0; right: var(--sp-hair); width: 2px; background: transparent; transition: background var(--t-base); }
+  #sh:hover::after, #sh:focus-visible::after, html.split-drag #sh::after { background: var(--line-strong); }
+  #sh:focus-visible { outline: none; }
+  html.split-drag, html.split-drag * { cursor: col-resize !important; user-select: none !important; }
+}
 </style>
 </head>
 <body>
-<div id="app"></div>
+<div id="app"><div id="pl"></div><div id="pd"></div><div id="sh" role="separator" aria-orientation="vertical" aria-label="רוחב הרשימה (גרירה, חצים במקלדת, לחיצה כפולה לברירת המחדל)" title="גרירה לשינוי הרוחב · לחיצה כפולה: ברירת מחדל" tabindex="0"></div></div>
 <script src="/supabase.js"></script>
 <script src="/auth.js"></script>
 <script src="assets/app.js"></script>

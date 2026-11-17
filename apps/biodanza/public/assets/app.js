@@ -3,7 +3,8 @@
    Data: schema `biodanza` (apps/biodanza/schema.sql), through FLOA_AUTH.api. Row level security decides who sees what. */
 (function () {
   "use strict";
-  var app = document.getElementById("app");
+  var pl = document.getElementById("pl"), pd = document.getElementById("pd");
+  function wide() { return window.matchMedia("(min-width: 1024px)").matches; }
   var api = function (p, o) { return FLOA_AUTH.api(p, o); };
   var state = { me: null, lines: [], phases: [], cat: null, vivs: [], viv: null, items: [], filter: "" };
 
@@ -32,11 +33,17 @@
     document.body.appendChild(t); setTimeout(function () { t.remove(); }, 2400);
   }
   function fail(e) { console.error(e); toast("משהו השתבש, נסו שוב"); }
-  function show(html, wire) { app.innerHTML = html; if (wire) wire(app); }
+  /* pane "d" is the detail pane (the vivencia), on a wide screen beside the list; on a narrow one every screen takes the single pane. */
+  function show(html, wire, pane) { var t = wide() && pane === "d" ? pd : pl; t.innerHTML = html; if (wire) wire(t); }
+  function emptyDetail() {
+    if (wide()) show('<div class="rempty" style="margin-block:auto"><span>בחרו ויוונסיה מהרשימה כדי לראות את התרגילים שלה</span></div>', null, "d");
+    state.viv = null; paintSel();
+  }
+  function paintSel() { pl.querySelectorAll("[data-id]").forEach(function (b) { b.closest(".rrow").setAttribute("aria-current", state.viv && b.dataset.id === state.viv.id ? "true" : "false"); }); }
   function on(root, act, fn) { root.querySelectorAll('[data-act="' + act + '"]').forEach(function (b) { b.addEventListener("click", function (ev) { fn(b, ev); }); }); }
   function stack() { return stack.s || (stack.s = []); }
   function go(fn) { stack().push(fn); fn(); }
-  function back() { stack().pop(); var f = stack()[stack().length - 1]; if (f) f(); else home(); }
+  function back() { stack().pop(); var f = stack()[stack().length - 1]; if (f) f(); else if (wide()) emptyDetail(); else home(); }
 
   /* ---------- gate ---------- */
   function gate(msg, signedIn) {
@@ -49,24 +56,26 @@
 
   /* ---------- home: my vivencias ---------- */
   function home() {
-    stack().length = 0; stack().push(home);
+    if (!wide()) { stack().length = 0; stack().push(home); }
     show(head("הוויוונסיות שלי", FLOA_AUTH.email(), false,
       (state.me.admin ? '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="allow" aria-label="מורשים" title="מורשים">' + I.users + '</button>' : '') +
       '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="out" aria-label="יציאה" title="יציאה">' + I.out + '</button>') +
-      '<div class="rlist" data-fab-room id="list"><div class="rskel rskel--title"></div></div>' +
-      '<button class="rfab" data-act="new" aria-label="ויוונסיה חדשה" title="ויוונסיה חדשה">' + I.plus + '</button>', function (r) {
+      '<div class="rlist" data-fab-room id="hl"><div class="rskel rskel--title"></div></div>' +
+      '<button class="rfab' + (wide() ? ' rfab--in' : '') + '" data-act="new" aria-label="ויוונסיה חדשה" title="ויוונסיה חדשה">' + I.plus + '</button>', function (r) {
       on(r, "out", function () { Promise.resolve(FLOA_AUTH.signOut()).then(function () { location.reload(); }); });
       on(r, "allow", function () { go(allowScreen); });
       on(r, "new", newViv);
     });
     api("/rest/v1/vivencias?select=id,title,theme,updated_at,vivencia_items(count)&order=updated_at.desc").then(function (rows) {
       state.vivs = rows || [];
-      var l = document.getElementById("list"); if (!l) return;
+      var l = document.getElementById("hl"); if (!l) return;
       l.innerHTML = state.vivs.length ? state.vivs.map(function (v) {
         var n = v.vivencia_items && v.vivencia_items[0] ? v.vivencia_items[0].count : 0;
         return '<div class="rrow rrow--link"><div class="rrow__main"><button class="rrow__title" data-id="' + v.id + '" style="all:unset;cursor:pointer">' + esc(v.title || "ויוונסיה ללא שם") + '</button><span class="rrow__sub">' + n + ' תרגילים' + (v.theme ? ' · ' + esc(v.theme) : '') + '</span></div></div>';
       }).join("") : '<div class="rempty"><b>עוד אין ויוונסיות</b><span>לחצו על + כדי ליצור את הראשונה</span></div>';
       l.querySelectorAll("[data-id]").forEach(function (b) { b.addEventListener("click", function () { openViv(b.dataset.id); }); });
+      paintSel();
+      if (wide() && !state.viv) emptyDetail();
     }, fail);
   }
   function newViv() {
@@ -75,9 +84,9 @@
   }
 
   /* ---------- the vivencia: plan along the curve ---------- */
-  function openViv(id) { state.filter = ""; state.viv = state.vivs.filter(function (v) { return v.id === id; })[0] || { id: id, title: "" }; go(editor); }
+  function openViv(id) { state.filter = ""; state.viv = state.vivs.filter(function (v) { return v.id === id; })[0] || { id: id, title: "" }; if (wide()) stack().length = 0; go(editor); paintSel(); }
   function loadItems() {
-    return api("/rest/v1/vivencia_items?vivencia_id=eq." + state.viv.id + "&select=id,position,exercise_id,music_id,phase_key,minutes,notes,exercises(title_he,title_en,poetics,guidance,objective),music(name)&order=position").then(function (r) { state.items = r || []; });
+    return api("/rest/v1/vivencia_items?vivencia_id=eq." + state.viv.id + "&select=id,position,exercise_id,music_id,minutes,notes,exercises(title_he,title_en,poetics,guidance,objective),music(name)&order=position").then(function (r) { state.items = r || []; });
   }
   function editor() {
     var v = state.viv;
@@ -90,7 +99,7 @@
       on(r, "play", function () { if (!state.items.length) return toast("אין עדיין תרגילים"); go(function () { player(0); }); });
       function save() { var t = r.querySelector("#vt").value, h = r.querySelector("#vh").value; v.title = t; v.theme = h; api("/rest/v1/vivencias?id=eq." + v.id, { method: "PATCH", json: { title: t, theme: h, updated_at: new Date().toISOString() } }).catch(fail); }
       r.querySelector("#vt").addEventListener("change", save); r.querySelector("#vh").addEventListener("change", save);
-    });
+    }, "d");
     loadItems().then(paint, fail);
   }
   function paint() {
@@ -134,7 +143,7 @@
       }
       ["#im", "#in", "#it"].forEach(function (s) { r.querySelector(s).addEventListener("change", save); });
       on(r, "del", function () { api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "DELETE" }).then(function () { back(); }, fail); });
-    });
+    }, "d");
   }
 
   /* ---------- picker: the catalog ---------- */
@@ -156,7 +165,7 @@
       }
       r.querySelector("#q").addEventListener("input", paintCat); r.querySelector("#ln").addEventListener("change", paintCat);
       (state.cat ? Promise.resolve() : api("/rest/v1/exercises?select=id,title_he,title_en,category,phase_hint,exercise_lines(line_key)&order=title_en&limit=1000").then(function (c) { state.cat = c || []; })).then(paintCat, fail);
-    });
+    }, "d");
   }
   function addEx(e) {
     var pos = state.items.reduce(function (m, i) { return Math.max(m, i.position); }, 0) + 1;
@@ -178,7 +187,7 @@
       on(r, "back", back);
       on(r, "next", function () { stack().push(function () { player(k + 1); }); player(k + 1); });
       on(r, "prev", function () { stack().push(function () { player(k - 1); }); player(k - 1); });
-    });
+    }, "d");
   }
 
   /* ---------- allowlist (admin only) ---------- */
@@ -203,7 +212,7 @@
         api("/rest/v1/allowed", { method: "POST", prefer: "return=minimal", json: { email: em } }).then(function () { r.querySelector("#em").value = ""; paintA(); }, fail);
       });
       paintA();
-    });
+    }, "d");
   }
 
   /* ---------- start ---------- */
@@ -216,5 +225,24 @@
       return Promise.all([api("/rest/v1/lines?select=key,name_he&order=sort"), api("/rest/v1/phases?select=key,name_he&order=sort")]).then(function (r) { state.lines = r[0]; state.phases = r[1]; home(); });
     }).catch(function (e) { console.error(e); gate("לא הצלחנו להתחבר. נסו שוב.", false); });
   }
+  /* wide screen: drag the line between the list and the vivencia to change the width (arrows on the keyboard, double click resets); kept in this browser */
+  (function () {
+    var KEY = "biodanza_listw", h = document.getElementById("sh"), root = document.documentElement;
+    function clampW(w) { return Math.round(Math.max(320, Math.min(w, window.innerWidth - 420))); }
+    function curW() { return pl.getBoundingClientRect().width; }
+    function setW(w) { root.style.setProperty("--listw", clampW(w) + "px"); }
+    function save() { try { localStorage.setItem(KEY, String(Math.round(curW()))); } catch (e) { /* not kept */ } }
+    var saved = null; try { saved = Number(localStorage.getItem(KEY)) || null; } catch (e) { /* none */ }
+    if (saved) setW(saved);
+    window.addEventListener("resize", function () { var w = parseFloat(root.style.getPropertyValue("--listw")); if (w) setW(w); });
+    if (!h) return;
+    var drag = false;
+    h.addEventListener("pointerdown", function (e) { if (!wide() || e.button > 0) return; drag = true; h.setPointerCapture(e.pointerId); root.classList.add("split-drag"); e.preventDefault(); });
+    h.addEventListener("pointermove", function (e) { if (drag) setW(window.innerWidth - e.clientX); });
+    function end() { if (!drag) return; drag = false; root.classList.remove("split-drag"); save(); }
+    h.addEventListener("pointerup", end); h.addEventListener("pointercancel", end);
+    h.addEventListener("dblclick", function () { root.style.removeProperty("--listw"); try { localStorage.removeItem(KEY); } catch (e) { /* none */ } });
+    h.addEventListener("keydown", function (e) { if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return; e.preventDefault(); setW(curW() + (e.key === "ArrowLeft" ? 24 : -24)); save(); });
+  })();
   start();
 })();
