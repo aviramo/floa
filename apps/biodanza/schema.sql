@@ -160,11 +160,13 @@ create table if not exists biodanza.vivencia_items (
   position    int  not null,
   exercise_id uuid references biodanza.exercises(id) on delete restrict,
   music_id    uuid references biodanza.music(id) on delete set null,   -- the ONE chosen music
-  minutes     int,
+  poetics     text,    -- null: the catalog's text; a text here changes this item in this vivencia only
+  guidance    text,    -- same
   notes       text not null default ''
 );
 alter table biodanza.vivencia_items drop column if exists phase_key;
 alter table biodanza.vivencias drop column if exists theme;
+alter table biodanza.vivencia_items add column if not exists poetics text, add column if not exists guidance text, drop column if exists minutes;
 create index if not exists vivencia_items_viv_idx on biodanza.vivencia_items (vivencia_id, position);
 
 create or replace function biodanza.owns(v uuid) returns boolean
