@@ -650,7 +650,7 @@
   }
   function previewSheet(e, swapIt) {
     var tok = ++previewTok;
-    api("/rest/v1/exercise_texts?exercise_id=eq." + e.id + "&select=lang,poetics,guidance,source").then(function (rows) {
+    loadPreview(e.id).then(function (res) { var rows = res.rows, songs = res.songs;
       if (tok !== previewTok) return;
       var fake = { exercises: { exercise_texts: rows || [] } };
       var card = function (k, label) { return txt(fake, k) ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">' + label + '</span></div><div class="rcard__body"' + (isDraft(fake, k) ? DRAFT : "") + '>' + esc(txt(fake, k)) + '</div></div>' : ""; };
@@ -658,7 +658,7 @@
       var dlg = document.getElementById("exDlg");
       if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "exDlg"; document.body.appendChild(dlg); }
       RosterSheet.render(dlg, { title: name(e), from: "bottom", action: { label: word, icon: I.check, id: "exgo" },
-        body: '<div style="padding-block:var(--sp-2)">' + ((card("poetics", "פואטיקה") + card("guidance", "הנחיה")) || ph("אין עדיין תיאור לתרגיל", "")) + '</div>' });
+        body: '<div style="padding-block:var(--sp-2)">' + ((card("poetics", "פואטיקה") + card("guidance", "הנחיה")) || ph("אין עדיין תיאור לתרגיל", "")) + musicRows(songs) + '</div>' });
       dlg.querySelector("#exgo").addEventListener("click", function () { if (swapIt) confirmSwap(e, swapIt, true); else addEx(e, undefined, true); });
     }, fail);
   }
@@ -675,9 +675,23 @@
   }
   /* a catalog exercise shown on the left while one is being added or replaced: its own words, and one button that does it */
   var previewTok = 0;
+  /* what a catalog exercise shows before it is added: its words and every song linked to it */
+  function loadPreview(id) {
+    return Promise.all([api("/rest/v1/exercise_texts?exercise_id=eq." + id + "&select=lang,poetics,guidance,source"), api("/rest/v1/exercise_music?exercise_id=eq." + id + "&select=music(id,name,title,artist,duration_sec)")]).then(function (r) {
+      var seen = {}, songs = [];
+      (r[1] || []).forEach(function (x) { if (x.music && !seen[x.music.id]) { seen[x.music.id] = 1; songs.push(x.music); } });
+      return { rows: r[0] || [], songs: songs };
+    });
+  }
+  function musicRows(songs) {
+    if (!songs.length) return "";
+    return '<div style="margin-top:var(--sp-2);border-top:1px solid var(--line)">' + songs.map(function (m) {
+      return '<div class="rrow"><div class="rrow__main"><span class="rrow__title">' + esc(songName(m)) + '</span><span class="rrow__sub">' + esc([songBy(m), m.duration_sec ? clock(m.duration_sec) : ""].filter(Boolean).join(" · ")) + '</span></div>' + ytLink(m, true) + '</div>';
+    }).join("") + '</div>';
+  }
   function previewEx(e, swapIt) {
     var tok = ++previewTok;
-    api("/rest/v1/exercise_texts?exercise_id=eq." + e.id + "&select=lang,poetics,guidance,source").then(function (rows) {
+    loadPreview(e.id).then(function (res) { var rows = res.rows, songs = res.songs;
       if (tok !== previewTok) return;   /* a later row was chosen meanwhile */
       var fake = { exercises: { exercise_texts: rows || [] } };
       var card = function (k, label) { return txt(fake, k) ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">' + label + '</span></div><div class="rcard__body"' + (isDraft(fake, k) ? DRAFT : "") + '>' + esc(txt(fake, k)) + '</div></div>' : ""; };
@@ -685,7 +699,7 @@
       var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה";
       var act = wide() ? '<button class="rbtn" type="button" data-act="doswap">' + word + '</button>'   /* the action is in the header, on the left; on a narrow screen a plain check, like the kit's popups */
                        : '<button class="rbtn" type="button" style="flex:none;width:var(--ctl);padding:0" data-act="doswap" aria-label="' + word + '" title="' + word + '">' + I.check + '</button>';   /* the green button, with a check */
-      show(head(name(e), "", !wide(), act) + '<div class="rlist"><div style="padding-block:var(--sp-2)">' + (body || ph("אין עדיין תיאור לתרגיל", "")) + '</div></div>', function (r) { on(r, "back", back); on(r, "doswap", function () { if (swapIt) confirmSwap(e, swapIt); else addEx(e); }); }, "d");
+      show(head(name(e), "", !wide(), act) + '<div class="rlist"><div style="padding-block:var(--sp-2)">' + (body || ph("אין עדיין תיאור לתרגיל", "")) + musicRows(songs) + '</div></div>', function (r) { on(r, "back", back); on(r, "doswap", function () { if (swapIt) confirmSwap(e, swapIt); else addEx(e); }); }, "d");
     }, fail);
   }
   /* replacing is asked in the kit's popup, one action: closing it is the cancel */
