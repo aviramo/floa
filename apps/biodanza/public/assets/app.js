@@ -164,15 +164,10 @@
   }
   function editor() {
     var v = state.viv; setUrl(BASE + v.id);
-    var vk = state.vivs.map(function (x) { return x.id; }).indexOf(v.id), pv = state.vivs[vk - 1], nv = state.vivs[vk + 1];
-    show(walkHead(v.title || "ויוונסיה חדשה", !!pv, !!nv) +
-      (wide() ? '' : '<div class="pad"><button class="rbtn rbtn--ghost rbtn--block" data-act="back">חזרה לרשימת הוויוונסיות</button></div>') +
+    show(head(v.title || "ויוונסיה חדשה", "", !wide()) +
       '<div class="rlist" data-fab-room id="list"><div class="rskel rskel--title"></div></div>' +
       '<button class="rfab" data-act="add" aria-label="הוספת תרגיל" title="הוספת תרגיל">' + I.plus + '</button>', function (r) {
       on(r, "back", back); on(r, "add", function () { go(picker); });
-      function walkV(to) { if (wide()) stack().length = 0; else stack().pop(); state.viv = to; go(editor); paintSel(); }
-      on(r, "prevW", function () { if (pv) walkV(pv); });
-      on(r, "nextW", function () { if (nv) walkV(nv); });
     }, "d");
     loadItems().then(function () {
       paint();
