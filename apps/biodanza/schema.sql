@@ -105,6 +105,7 @@ create table if not exists biodanza.exercises (
   updated_at     timestamptz not null default now()
 );
 create index if not exists exercises_owner_idx on biodanza.exercises (owner_id);
+create index if not exists exercises_category_idx on biodanza.exercises (category);   -- the picker filters by category
 create unique index if not exists exercises_catalog_uq on biodanza.exercises (source, title_en) where owner_id is null and source <> '';
 
 -- Which lines an exercise stresses. `main` marks the leading one.
