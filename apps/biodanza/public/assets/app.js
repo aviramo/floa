@@ -34,8 +34,6 @@
   function name(e) { return e.title_he || e.title_en || ""; }
   function phaseName(k) { var p = state.phases.filter(function (x) { return x.key === k; })[0]; return p ? p.name_he : ""; }
   function lineName(k) { var l = state.lines.filter(function (x) { return x.key === k; })[0]; return l ? l.name_he : k; }
-  /* the grip of a row: the kit's icon button with a grip icon. A finger that starts on it drags at once (no scrolling there); the rest of the row drags on a mouse or after a short hold */
-  function gripBtn() { return '<button type="button" class="rbtn rbtn--icon rrow__trail" data-grip aria-label="גרירה לסידור" title="גרירה לסידור" style="touch-action:none;cursor:grab">' + I.grip + '</button>'; }
   /* a song is two things: its name and who plays it */
   function songName(m) { return m ? (m.title || m.name || "") : ""; }
   function songBy(m) { return m ? (m.artist || "") : ""; }
@@ -122,7 +120,7 @@
     var l = document.getElementById("hl"); if (!l) return;
     l.innerHTML = state.vivs.length ? state.vivs.map(function (v) {
       var n = v.vivencia_items && v.vivencia_items[0] ? v.vivencia_items[0].count : 0;
-      return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-id="' + v.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub" data-n="' + v.id + '">' + n + ' תרגילים</span></button>' + gripBtn() + '</div>';
+      return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-id="' + v.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub" data-n="' + v.id + '">' + n + ' תרגילים</span></button></div>';
     }).join("") : ph("עוד אין ויוונסיות", "לחצו על + כדי ליצור את הראשונה");
     l.querySelectorAll("[data-id]").forEach(function (b) { b.addEventListener("click", function () { openViv(b.dataset.id); }); });
     if (state.vivs.length) enableDrag(l, "[data-id]", persistVivs);
@@ -207,7 +205,7 @@
     if (!vis.length) { l.innerHTML = ph("הוויוונסיה ריקה", "לחצו על + כדי להוסיף תרגיל מהקטלוג"); return; }
     l.innerHTML = vis.map(function (i, k) {
       var e = i.exercises || {};
-      return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-edit="' + i.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(itemName(i)) + '</span><span class="rrow__sub">' + esc([songName(i.music), songBy(i.music), i.music && i.music.duration_sec ? clock(i.music.duration_sec) : ""].filter(Boolean).join(" · ") || "בלי מוזיקה") + '</span></button>' + gripBtn() + '</div>';
+      return '<div class="rrow rrow--link"><span class="rchip rchip--s" aria-hidden="true">' + (k + 1) + '</span><button type="button" class="rrow__main" data-edit="' + i.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(itemName(i)) + '</span><span class="rrow__sub">' + esc([songName(i.music), songBy(i.music), i.music && i.music.duration_sec ? clock(i.music.duration_sec) : ""].filter(Boolean).join(" · ") || "בלי מוזיקה") + '</span></button></div>';
     }).join("");
     l.querySelectorAll("[data-edit]").forEach(function (b) { b.addEventListener("click", function () { var it = state.items.filter(function (x) { return x.id === b.dataset.edit; })[0]; go(function () { itemScreen(it); }); }); });
     enableDrag(l, "[data-edit]", persistItems);
@@ -248,7 +246,7 @@
       row.addEventListener("pointerdown", function (e) {
         if (e.button > 0) return;
         d = { grip: !!e.target.closest("[data-grip]"), row: row, k: k, y0: e.clientY, pid: e.pointerId, live: false, timer: null, tops: rows.map(function (r) { var b = r.getBoundingClientRect(); return b.top + b.height / 2; }), h: row.getBoundingClientRect().height, to: k };
-        if (e.pointerType === "touch" && !d.grip) d.timer = setTimeout(function () { if (d && !d.live) begin(); }, 280);
+        if (e.pointerType === "touch" && !d.grip) d.timer = setTimeout(function () { if (d && !d.live) begin(); }, 160);
       });
     });
     function begin() {
