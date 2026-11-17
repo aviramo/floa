@@ -15,6 +15,7 @@
     up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>',
     down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>',
     users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M16 5a3 3 0 010 6M18 15c2 .6 3 2.2 3 5"/></svg>',
+    trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
     out: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 5H5v14h5M15 8l4 4-4 4M19 12H9"/></svg>'
   };
 
@@ -90,17 +91,35 @@
   }
   function editor() {
     var v = state.viv;
-    show(head(v.title || "ויוונסיה חדשה", "", true, '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="play" aria-label="הפעלה" title="הפעלה">' + I.play + '</button>') +
+    show(head(v.title || "ויוונסיה חדשה", "", true, '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="del" aria-label="מחיקת הוויוונסיה" title="מחיקת הוויוונסיה">' + I.trash + '</button><button class="rbtn rbtn--icon rbtn--edge-end" data-act="play" aria-label="הפעלה" title="הפעלה">' + I.play + '</button>') +
       '<div class="pad"><label class="rfield"><span>שם הוויוונסיה</span><input id="vt" placeholder=" " value="' + esc(v.title) + '"></label>' +
       '<label class="rfield"><span>נושא</span><input id="vh" placeholder=" " value="' + esc(v.theme || "") + '"></label></div>' +
       '<div class="rlist" data-fab-room id="list"><div class="rskel rskel--title"></div></div>' +
       '<button class="rfab" data-act="add" aria-label="הוספת תרגיל" title="הוספת תרגיל">' + I.plus + '</button>', function (r) {
       on(r, "back", back); on(r, "add", function () { go(picker); });
+      on(r, "del", function () { confirmDelete(v); });
       on(r, "play", function () { if (!state.items.length) return toast("אין עדיין תרגילים"); go(function () { player(0); }); });
       function save() { var t = r.querySelector("#vt").value, h = r.querySelector("#vh").value; v.title = t; v.theme = h; api("/rest/v1/vivencias?id=eq." + v.id, { method: "PATCH", json: { title: t, theme: h, updated_at: new Date().toISOString() } }).catch(fail); }
       r.querySelector("#vt").addEventListener("change", save); r.querySelector("#vh").addEventListener("change", save);
     }, "d");
     loadItems().then(paint, fail);
+  }
+  /* a confirmation is the kit's popup with ONE action: closing it is the cancel */
+  function confirmDelete(v) {
+    var dlg = document.getElementById("confirmDlg");
+    if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
+    RosterSheet.render(dlg, {
+      title: "מחיקת ויוונסיה", from: "bottom", size: "s",
+      body: '<div class="pad"><span>למחוק את "' + esc(v.title || "ויוונסיה ללא שם") + '" ואת כל התרגילים שבה? אי אפשר לשחזר.</span></div>',
+      foot: '<button class="rbtn rbtn--danger rbtn--block" type="button" id="cdel">מחיקה</button>'
+    });
+    dlg.querySelector("#cdel").addEventListener("click", function () {
+      api("/rest/v1/vivencias?id=eq." + v.id, { method: "DELETE" }).then(function () {
+        dlg.close(); toast("הוויוונסיה נמחקה"); state.viv = null; stack().length = 0;
+        if (wide()) { emptyDetail(); }
+        home();
+      }, fail);
+    });
   }
   function paint() {
     var l = document.getElementById("list"); if (!l) return;
