@@ -205,6 +205,8 @@
 .rmsg__act { margin-inline-start: auto; font-weight: var(--fw-bold); text-decoration: underline; background: none; border: 0; color: inherit; cursor: pointer; }   /* undo */
 .rempty { display: flex; flex-direction: column; align-items: center; gap: var(--gap-field); padding: var(--sp-3) var(--gutter); text-align: center; color: var(--text-2); font: var(--fw-regular) var(--fs-s)/var(--lh-body) var(--font); }
 .rempty > b { color: var(--text); font-size: var(--fs-m); }
+.rempty:only-child { margin-block: auto; }   /* alone in its pane or list: centred vertically */
+.rempty > svg { width: calc(var(--icon-l) * 2); height: calc(var(--icon-l) * 2); color: var(--line-strong); stroke-width: var(--icon-w); }   /* the placeholder icon (a parameter of the empty state) */
 
 /* ============================ FIELD HELP SLOT (extends .rfield in field.css) ============================ */
 .rfield .rf-help { display: block; margin-top: var(--gap-tight); color: var(--text-2); font: var(--fw-regular) var(--fs-s)/var(--lh-body) var(--font); }
