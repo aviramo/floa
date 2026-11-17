@@ -386,7 +386,7 @@
           var m = i.music, dur = m.duration_sec ? '<span style="flex:none;font-variant-numeric:tabular-nums">' + clock(m.duration_sec) + '</span>' : '';
           return '<span style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin-top:var(--gap-tight);color:var(--text-2);font:var(--fw-medium) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(songName(m)) + '</span>' +
             (songBy(m) || dur ? '<span style="display:flex;justify-content:space-between;align-items:baseline;gap:var(--gap-button);margin-top:var(--gap-tight);color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font)"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(songBy(m)) + '</span>' + dur + '</span>' : '');
-        })() : '<span class="rrow__sub">בלי מוזיקה</span>') + '</span></button>' + facChip(i, ' rrow__trail') + '</div>';
+        })() : '<span class="rrow__sub">בלי מוזיקה</span>') + '</span></button>' + (i.music ? songBtn(i.music, true) : '') + facChip(i, ' rrow__trail') + '</div>';
     }).join("");
     l.querySelectorAll("[data-edit]").forEach(function (b) { b.addEventListener("click", function () { var it = state.items.filter(function (x) { return x.id === b.dataset.edit; })[0]; if (wide()) itemScreen(it); else go(function () { itemScreen(it); }); }); });
     wireFac(l);
