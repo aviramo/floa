@@ -64,9 +64,9 @@
     dlg.classList.remove("rs-dragging");
     if ((moved > Math.min(120, h * 0.25) || v > 0.55) && !(dlg.__rsVeto && dlg.__rsVeto() === false)) {   /* a page may veto a user close (it then asks its own question): the sheet springs back */
       if (reduced()) { dlg.style.removeProperty("--rs-dy"); dlg.close(); return; }
-      dlg.classList.add("rs-settle");
+      dlg.classList.add("rs-settle", "rs-closing");
       dlg.style.setProperty("--rs-dy", (dir * (h + 24)) + "px");
-      var done = false, end = function () { if (done) return; done = true; dlg.removeEventListener("transitionend", end); dlg.classList.remove("rs-settle"); dlg.style.removeProperty("--rs-dy"); if (dlg.open) dlg.close(); };
+      var done = false, end = function () { if (done) return; done = true; dlg.removeEventListener("transitionend", end); dlg.classList.remove("rs-settle"); dlg.style.removeProperty("--rs-dy"); if (dlg.open) dlg.close(); dlg.classList.remove("rs-closing"); };
       dlg.addEventListener("transitionend", end); setTimeout(end, 320);
     } else {
       dlg.classList.add("rs-settle");

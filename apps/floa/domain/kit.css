@@ -519,6 +519,8 @@ dialog.rsheet {
 dialog.rsheet[open] { display: flex; flex-direction: column; }
 dialog.rsheet:focus { outline: none; }
 dialog.rsheet::backdrop { background: var(--rs-scrim); }
+dialog.rsheet::backdrop { transition: opacity .2s cubic-bezier(.2, .8, .2, 1); }   /* the scrim fades in step with the sheet sliding out (the same .2s as .rs-settle) */
+dialog.rsheet.rs-closing::backdrop { opacity: 0; }
 dialog.rsheet[data-from="top"] { margin-block: var(--rs-top, 0px) auto; }
 dialog.rsheet[data-from="bottom"], dialog.rsheet:not([data-from]) { margin-block: auto var(--rs-kb, 0px); }
 dialog.rsheet.rs-dragging { transition: none; }

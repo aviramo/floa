@@ -567,8 +567,8 @@
     if (!d || !d.open) return;
     if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return d.close();
     var h = d.getBoundingClientRect().height, done = false;
-    var end = function () { if (done) return; done = true; d.removeEventListener("transitionend", end); d.classList.remove("rs-settle"); d.style.removeProperty("--rs-dy"); if (d.open) d.close(); };
-    d.classList.add("rs-settle"); d.style.setProperty("--rs-dy", (h + 24) + "px");
+    var end = function () { if (done) return; done = true; d.removeEventListener("transitionend", end); d.classList.remove("rs-settle"); d.style.removeProperty("--rs-dy"); if (d.open) d.close(); d.classList.remove("rs-closing"); };
+    d.classList.add("rs-settle", "rs-closing"); d.style.setProperty("--rs-dy", (h + 24) + "px");
     d.addEventListener("transitionend", end); setTimeout(end, 320);
   }
   function bleedCss(id) {
