@@ -509,7 +509,7 @@
       function walk(to) { if (wide()) return itemScreen(to); stack().pop(); go(function () { itemScreen(to); }); }
       on(r, "prevW", function () { if (prevIt) walk(prevIt); });
       on(r, "nextW", function () { if (nextIt) walk(nextIt); });
-      function toMusic() { if (wide()) musicScreen(it); else go(function () { musicScreen(it); }); }
+      function toMusic() { if (wide()) musicScreen(it); else musicSheet(it); }   /* beside the list, the pane; on a narrow screen, a popup from the bottom */
       on(r, "pickMusic", function (b, ev) { if (ev.target.closest("a,[data-audio]")) return; toMusic(); });
       r.querySelectorAll('[data-act="pickMusic"]').forEach(function (c) { c.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toMusic(); } }); });
       ["#ipo", "#igu", "#it"].forEach(function (s) { var t = r.querySelector(s); grow(t); t.addEventListener("input", function () { grow(t); }); });
@@ -553,6 +553,46 @@
   }
 
   /* ---------- other music: files the catalogs do not list. Same rows as the songs, with a tag ---------- */
+  /* narrow screen: choosing the song is a popup from the bottom; "other music" is a second popup on top of it, closing it is back */
+  function chooseSong(it, m) {
+    return api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { music_id: m ? m.id : null } }).then(function () {
+      it.music_id = m ? m.id : null; it.music = m;
+      ["otherDlg", "musicDlg"].forEach(function (id) { var d = document.getElementById(id); if (d && d.open) d.close(); });
+      itemScreen(it);
+    }, fail);
+  }
+  function sheetOf(id, title, body) {
+    var dlg = document.getElementById(id);
+    if (!dlg) { dlg = document.createElement("dialog"); dlg.id = id; document.body.appendChild(dlg); }
+    RosterSheet.render(dlg, { title: title, from: "bottom", body: '<style>#' + id + ' .rrow { padding-inline: 0 }</style>' + body });
+    return dlg.querySelector(".sheet-body");
+  }
+  function musicSheet(it) {
+    var r = sheetOf("musicDlg", "מוזיקה", '<div id="mlist"><div class="rskel rskel--title"></div></div>');
+    api("/rest/v1/exercise_music?exercise_id=eq." + it.exercise_id + "&select=music(id,name,title,artist,duration_sec,audio_object,in_catalog)").then(function (rows) {
+      var seen = {}, list = [];
+      (rows || []).forEach(function (x) { if (x.music && !seen[x.music.id]) { seen[x.music.id] = 1; list.push(x.music); } });
+      var plain = function (attr, t, sub, cur) { return '<div class="rrow rrow--link"' + (cur ? ' aria-current="true"' : '') + '><button type="button" class="rrow__main" ' + attr + ' style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(t) + '</span>' + (sub ? '<span class="rrow__sub">' + esc(sub) + '</span>' : '') + '</button></div>'; };
+      var l = r.querySelector("#mlist");
+      l.innerHTML = plain('data-m=""', "בלי מוזיקה", "", !it.music_id) + list.map(function (m) { return songRow(m, it.music_id === m.id, "data-m"); }).join("") + plain('data-act="other"', "מוזיקות אחרות", "שירים שאינם בקטלוג", false);
+      on(l, "other", function () { otherSheet(it); });
+      l.querySelectorAll("[data-m]").forEach(function (b) { b.addEventListener("click", function () { chooseSong(it, list.filter(function (x) { return x.id === b.dataset.m; })[0] || null); }); });
+    }, fail);
+  }
+  function otherSheet(it) {
+    var r = sheetOf("otherDlg", "מוזיקות אחרות", '<label class="rfield"><span>חיפוש</span><input id="oq" placeholder=" " autocomplete="off"></label><div id="olist" style="flex:1 1 auto;min-height:0;overflow-y:auto"><div class="rskel rskel--title"></div></div>');
+    r.style.overflowY = "hidden";   /* the search stays, only the list scrolls */
+    api("/rest/v1/music?in_catalog=eq.false&select=id,name,title,artist,duration_sec,audio_object,in_catalog&order=title&limit=1000").then(function (rows) {
+      var all = rows || [], l = r.querySelector("#olist");
+      function draw() {
+        var q = r.querySelector("#oq").value.trim().toLowerCase();
+        var vis = all.filter(function (m) { return !q || (songName(m) + " " + songBy(m)).toLowerCase().indexOf(q) >= 0; });
+        l.innerHTML = vis.length ? vis.map(function (m) { return songRow(m, it.music_id === m.id, "data-o"); }).join("") : ph("לא נמצא", "");
+        l.querySelectorAll("[data-o]").forEach(function (b) { b.addEventListener("click", function () { chooseSong(it, all.filter(function (x) { return x.id === b.dataset.o; })[0]); }); });
+      }
+      r.querySelector("#oq").addEventListener("input", draw); draw();
+    }, fail);
+  }
   function otherMusic(it, out) {
     show(head("מוזיקות אחרות", "", true) + '<div class="pad" style="padding-block-end:0"><label class="rfield"><span>חיפוש</span><input id="oq" placeholder=" " autocomplete="off"></label></div><div class="rlist" id="olist"><div class="rskel rskel--title"></div></div>', function (r) {
       on(r, "back", function () { musicScreen(it); });
