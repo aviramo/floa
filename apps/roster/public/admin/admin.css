@@ -952,6 +952,7 @@ html.is-loading .vbar { display: none; }
   #splitEmpty svg { width: 40px; height: 40px; color: var(--line-2); }
   #splitEmpty p { margin: 0; }
   html.split-open #splitEmpty, html.is-loading #splitEmpty { display: none; }
+  html:has(#gate:not([hidden])) #splitEmpty { display: none; }   /* signed out: the sign-in screen alone, no empty-state hint beside it */
   .row.sel, .row.sel:hover { background: var(--surface-2); }   /* המשתתף שהכרטיס שלו פתוח */
 }
 
