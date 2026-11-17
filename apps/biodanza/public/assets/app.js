@@ -529,7 +529,7 @@
     var k = state.items.indexOf(it), prevIt = state.items[k - 1], nextIt = state.items[k + 1];
     /* the header walks the sequence: the right button to the previous exercise, the left one to the next, the name between them */
     var hd = itemHead(!!prevIt, !!nextIt, (k + 1) + "/" + state.items.length);   /* the middle button says where we are, and still opens the list */
-    show(hd + '<style>#ipg, #ipg * { touch-action: pan-y } #ipg .rfield:has(> textarea)::before { content: ""; position: absolute; z-index: 1; top: 0; inset-inline: 0; height: 19px; background: var(--bg); pointer-events: none } #ipg .rfield:has(> textarea[style*="warn-bg"])::before { background: var(--warn-bg) }</style><div id="ipg" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0"><div class="pad" style="padding-bottom:0">' +
+    show(hd + '<style>#ipg, #ipg * { touch-action: pan-y } #ipg textarea { max-height: none } #ipg .rfield:has(> textarea)::before { content: ""; position: absolute; z-index: 1; top: 0; inset-inline: 0; height: 19px; background: var(--bg); pointer-events: none } #ipg .rfield:has(> textarea[style*="warn-bg"])::before { background: var(--warn-bg) }</style><div id="ipg" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0"><div class="pad" style="padding-bottom:0">' +
       '<div style="display:flex;align-items:flex-end;gap:var(--gap-button)">' + '<label class="rfield" style="flex:1 1 auto;margin:0"><span>שם התרגיל</span><input id="ina" style="font-weight: var(--fw-black); font-size: var(--fs-m)" placeholder=" " autocomplete="off" value="' + esc(itemName(it)) + '"></label>' + facChip(it) + '</div>' +
       '</div>' +
       '<div class="rrow rrow--link" data-act="pickMusic" role="button" tabindex="0" style="flex:none;padding-inline:var(--sp-2);padding-block:var(--sp-2);border-top:1px solid var(--line);cursor:pointer"><div style="flex:1 1 auto;min-width:0">' +
@@ -563,8 +563,16 @@
         var cs = getComputedStyle(box), gap = parseFloat(cs.rowGap) || 0, room = box.clientHeight - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0) - gap * (tas.length - 1);
         var need = nat.reduce(function (a, b, i) { return a + b + over[i]; }, 0);
         if (need <= room) { tas.forEach(function (t, i) { t.style.height = nat[i] + "px"; }); return; }
-        var free = room - over.reduce(function (a, b) { return a + b; }, 0), total = nat.reduce(function (a, b) { return a + b; }, 0), line = parseFloat(getComputedStyle(tas[0]).lineHeight) || 24;
-        tas.forEach(function (t, i) { t.style.height = Math.max(line * 2, Math.floor(free * nat[i] / total)) + "px"; t.style.overflowY = "auto"; });
+        /* it does not fit: every field gets what is left, divided by its lines, none below three lines (or its own length if shorter), none above its own length; what a short one does not use goes to the long ones, down to the buttons */
+        var free = room - over.reduce(function (a, b) { return a + b; }, 0), line = parseFloat(getComputedStyle(tas[0]).lineHeight) || 24;
+        var h = nat.map(function (n) { return Math.min(n, line * 3); });
+        for (var it2 = 0; it2 < 6; it2++) {
+          var rem = free - h.reduce(function (a, b) { return a + b; }, 0), idx = h.map(function (v, i) { return v < nat[i] - 0.5 ? i : -1; }).filter(function (i) { return i >= 0; });
+          if (rem < 1 || !idx.length) break;
+          var wsum = idx.reduce(function (a, i) { return a + nat[i]; }, 0);
+          idx.forEach(function (i) { h[i] = Math.min(nat[i], h[i] + rem * nat[i] / wsum); });
+        }
+        tas.forEach(function (t, i) { t.style.height = Math.floor(h[i]) + "px"; t.style.overflowY = h[i] < nat[i] - 1 ? "auto" : "hidden"; });
       }
       tas.forEach(function (t) { t.addEventListener("input", layoutFields); });
       layoutFields(); if (document.fonts && document.fonts.ready) document.fonts.ready.then(layoutFields);
