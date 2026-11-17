@@ -339,7 +339,7 @@
         if (ov) { ov.doneAt = Date.now(); ov.exp = Date.now() + 15000; }
         if (mailFailHook && (table === T.pay || table === T.a)) mailFailHook();   // תשלום או שיוך נכתבו: אולי המערכת ניסתה לשלוח מייל
         if (mailOfferHook && (table === T.pay || table === T.a)) mailOfferHook(table, method, path, body);   // מנהל סגר תשלום או סימן "לא לתשלום": פופאפ לשליחה (מייל או וואטסאפ), בלי שליחה אוטומטית
-        if (method === 'DELETE' && window.ROSTER_KIT && window.ROSTER_KIT.deleted) window.ROSTER_KIT.deleted(table, path);   // roster kit: offers the undo of this delete (admin-kit.js)
+        if (method === 'DELETE' && table !== T.a && window.ROSTER_KIT && window.ROSTER_KIT.deleted) window.ROSTER_KIT.deleted(table, path);   // roster kit: offers the undo of this delete (admin-kit.js); NOT for removing a participant from a meeting (owner 2026-11-17: no undo there; the cancel-mail question is the follow-up)
         return data;
       }
       if (Array.isArray(data)) {
