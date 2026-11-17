@@ -561,12 +561,45 @@
     show(head(swapIt ? "החלפת תרגיל" : "קטלוג התרגילים", "", true) +
       '<div class="pad"><div style="display:flex;gap:var(--gap-button);align-items:flex-end"><label class="rfield" style="flex:1 1 0;min-width:0;margin:0"><span>חיפוש</span><input id="q" placeholder=" "></label>' +
       '<label class="rfield" style="flex:1 1 0;min-width:0;margin:0"><span>קו</span><select id="ln"><option value="">הכול</option>' + state.lines.map(function (l) { return '<option value="' + l.key + '">' + esc(l.name_he) + '</option>'; }).join("") + '</select></label></div>' +
-      '<label class="rfield"><span>קטגוריה</span><select id="cg"><option value="">הכול</option>' + (state.cats || []).map(function (c) { return '<option value="' + esc(c.key) + '">' + esc(c.name_he) + '</option>'; }).join("") + '</select></label></div>' +
+      '<label class="rfield"><span>קטגוריה</span><input id="cg" placeholder=" " autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox" value="הכול"></label></div>' +
       '<div class="rlist" id="list"><div class="rskel rskel--title"></div></div>', function (r) {
       on(r, "back", !wide() ? back : swapIt ? function () { pending = { item: swapIt.id }; back(); }   /* leaving a replacement: the same exercise is open again on the left */
         : function () { show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); back(); });
+      var catSel = "";   /* the key of the chosen category, "" = all */
+      /* a field you can type in that also opens its options when you click it: the options are the kit's menu, placed under the field */
+      function wireCat() {
+        var inp = r.querySelector("#cg"), pop = null, active = -1, shown = [];
+        function label() { return catSel ? catName(catSel) : "הכול"; }
+        function close(revert) { if (pop) { pop.remove(); pop = null; } inp.setAttribute("aria-expanded", "false"); if (revert) inp.value = label(); }
+        function choose(k) { catSel = k; close(true); paintCat(); }
+        function open(filter) {
+          close(false);
+          var f = (filter || "").trim();
+          shown = [{ key: "", name_he: "הכול" }].concat((state.cats || []).filter(function (c) { return !f || c.name_he.indexOf(f) >= 0; }));
+          if (!shown.length) return;
+          active = -1;
+          pop = document.createElement("div"); pop.className = "rmenu rmenu--fixed"; pop.setAttribute("role", "listbox");
+          pop.innerHTML = shown.map(function (c, k) { return '<button type="button" class="rmenu__item" role="option" tabindex="-1" data-k="' + k + '"' + (c.key === catSel ? ' aria-selected="true" style="font-weight:var(--fw-bold)"' : '') + '><span>' + esc(c.name_he) + '</span></button>'; }).join("");
+          document.body.appendChild(pop);
+          var b = inp.getBoundingClientRect();
+          pop.style.top = Math.round(b.bottom + 2) + "px"; pop.style.left = Math.round(b.left) + "px"; pop.style.width = Math.round(b.width) + "px"; pop.style.maxHeight = "40vh"; pop.style.overflowY = "auto";
+          pop.querySelectorAll("[data-k]").forEach(function (o) { o.addEventListener("mousedown", function (e) { e.preventDefault(); choose(shown[+o.dataset.k].key); }); });
+          inp.setAttribute("aria-expanded", "true");
+        }
+        function mark(n) { if (!pop) return; var all = pop.querySelectorAll("[data-k]"); active = Math.max(0, Math.min(n, all.length - 1)); all.forEach(function (o, k) { o.style.background = k === active ? "var(--surface)" : ""; }); if (all[active]) all[active].scrollIntoView({ block: "nearest" }); }
+        inp.addEventListener("focus", function () { inp.select(); open(""); });
+        inp.addEventListener("click", function () { if (!pop) { inp.select(); open(""); } });
+        inp.addEventListener("input", function () { open(inp.value); });
+        inp.addEventListener("blur", function () { setTimeout(function () { close(true); }, 0); });
+        inp.addEventListener("keydown", function (e) {
+          if (e.key === "ArrowDown") { e.preventDefault(); if (!pop) open(""); mark(active + 1); }
+          else if (e.key === "ArrowUp") { e.preventDefault(); mark(active - 1); }
+          else if (e.key === "Enter") { e.preventDefault(); if (pop && shown.length) choose(shown[active >= 0 ? active : (shown.length > 1 ? 1 : 0)].key); }
+          else if (e.key === "Escape") { close(true); inp.blur(); }
+        });
+      }
       function paintCat() {
-        var q = r.querySelector("#q").value.trim().toLowerCase(), ln = r.querySelector("#ln").value, cg = r.querySelector("#cg").value, l = r.querySelector("#list");
+        var q = r.querySelector("#q").value.trim().toLowerCase(), ln = r.querySelector("#ln").value, cg = catSel, l = r.querySelector("#list");
         var rows = (state.cat || []).filter(function (e) {
           return (!cg || e.category === cg) && (!ln || (e.exercise_lines || []).some(function (x) { return x.line_key === ln; })) && (!q || (name(e) + " " + e.title_en + " " + e.category).toLowerCase().indexOf(q) >= 0);
         });
@@ -582,10 +615,9 @@
           } else addEx(ex, swapIt);
         }); });
       }
-      r.querySelector("#q").addEventListener("input", paintCat); r.querySelector("#ln").addEventListener("change", paintCat); r.querySelector("#cg").addEventListener("change", paintCat);
+      r.querySelector("#q").addEventListener("input", paintCat); r.querySelector("#ln").addEventListener("change", paintCat); wireCat();
       (state.cats ? Promise.resolve() : api("/rest/v1/categories?select=key,name_he&order=sort").then(function (c) {
         state.cats = c || [];
-        var sel = r.querySelector("#cg"); if (sel) sel.innerHTML = '<option value="">הכול</option>' + state.cats.map(function (x) { return '<option value="' + esc(x.key) + '">' + esc(x.name_he) + '</option>'; }).join("");
       })).then(function () { return state.cat ? null : loadCatalog().then(function (c) { state.cat = c; }); }).then(paintCat, fail);
     });
   }
