@@ -182,7 +182,7 @@ export function buildVars(work, templateKey) {
     amount: formatAmount(pay.amount ?? m.reported_amount ?? (templateKey === "admin_payment_reported" ? m.price : undefined)),
     method: method === "other" ? "" : (METHOD_LABELS[method] || line(pay.method, 40)),
     directions: templateKey === "payment_confirmed" || templateKey === "registration_confirmed" ? block(m.directions) : "",
-    my_link: s.personal_area_enabled ? `${origin}/roster/me/?biz=${slug}` : "",
+    my_link: s.personal_area_enabled && !(work.noMyLink || []).includes(business.slug) ? `${origin}/roster/me/?biz=${slug}` : "",
     pay_link: safeHttpUrl(s.payment_url),
     whatsapp_link: whatsappLink(s.contact_whatsapp),
     admin_link: `${origin}/roster/admin/?biz=${slug}${pid ? `&p=${pid}` : ""}`,

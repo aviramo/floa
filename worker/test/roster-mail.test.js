@@ -798,3 +798,12 @@ test("mail.test uses the business's own template, and a normal event is not mark
   assert.doesNotMatch(net2.resend()[0].json.subject, /ניסיון/);
   assert.doesNotMatch(net2.resend()[0].json.html, /מייל ניסיון/);
 });
+
+test("buildVars: a business listed in ROSTER_MAIL_NO_MY_LINK gets no personal-area link, the others keep theirs", () => {
+  const w = work();
+  w.noMyLink = ["studio"];
+  assert.equal(buildVars(w, "registered").my_link, "");
+  const o = work();
+  o.noMyLink = ["other"];
+  assert.equal(buildVars(o, "registered").my_link, "https://floa.co.il/roster/me/?biz=studio");
+});

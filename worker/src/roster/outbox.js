@@ -83,6 +83,7 @@ export async function processOutbox(deps) {
         summary.skipped++;
         continue;
       }
+      work.noMyLink = String(env.ROSTER_MAIL_NO_MY_LINK || "").split(",").map((x) => x.trim()).filter(Boolean);   /* businesses whose mails say nothing about the personal area */
       if (schema === TEST_SCHEMA) work.siteOrigin = TEST_SITE_ORIGIN;   /* links in test mails go to the test site */
       /* not enough time to finish it properly: leave it claimed, its lock
          lapses and the next run takes it. Nothing has been sent. */
