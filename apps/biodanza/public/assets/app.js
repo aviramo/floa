@@ -644,8 +644,9 @@
     var dlg = document.getElementById("catDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "catDlg"; document.body.appendChild(dlg); }
     RosterSheet.render(dlg, { title: swapIt ? "החלפת תרגיל" : "קטלוג התרגילים", from: "bottom", body: pickerBody() });
-    var r = dlg.querySelector(".sheet-body"), hd = r.querySelector("[data-pickhead]");
-    if (hd) hd.style.cssText += ";position:sticky;top:0;z-index:1;margin-top:0;padding-top:0;background:var(--bg)";   /* the search stays while the list scrolls */
+    var r = dlg.querySelector(".sheet-body"), ls = r.querySelector("#list");
+    r.style.overflowY = "hidden";   /* the search stays where it is and only the list scrolls, so nothing shows through above it */
+    if (ls) ls.style.cssText += ";flex:1 1 auto;min-height:0;overflow-y:auto";
     pickerWire(r, swapIt, true);
   }
   function previewSheet(e, swapIt) {
