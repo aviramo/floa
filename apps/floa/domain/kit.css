@@ -62,6 +62,10 @@
 }
 @media (prefers-reduced-motion: reduce) { :root { --t-fast: 0s; --t-base: 0s; } }
 
+/* no blue flash on a tap, in every app that loads the kit (owner 2026-11-17); a row is not text to select, so dragging it never paints a selection */
+* { -webkit-tap-highlight-color: transparent; }
+.rrow { -webkit-user-select: none; user-select: none; }
+
 /* ============================ BUTTONS ============================ */
 .rbtn { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: var(--gap-button); min-height: var(--ctl); padding: 0 var(--sp-2); border: 1px solid var(--primary); border-radius: var(--r-ctl);
   background: var(--primary); color: var(--on-primary); font: var(--fw-bold) var(--fs-m)/1 var(--font); white-space: nowrap; cursor: pointer; text-decoration: none; transition: transform var(--t-fast) var(--ease), opacity var(--t-base) var(--ease); }
