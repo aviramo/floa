@@ -587,7 +587,7 @@
       '</div>' +
       '<div class="rrow rrow--link" data-act="pickMusic" role="button" tabindex="0" style="flex:none;padding-inline:var(--sp-2);padding-block:var(--sp-2);border-bottom:0;cursor:pointer"><div style="flex:1 1 auto;min-width:0">' +
         (it.music ? songLines(it.music) : '<span class="rrow__title">לחצו לבחירת מוזיקה</span>') + '</div>' + (it.music ? playCol(it.music, true) : '') + '</div>' +   /* a strip across the width, like the music chooser's rows */
-      '<div id="ibar" hidden style="flex:none;padding:var(--sp-1) var(--sp-2) 0"><input type="range" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר" style="display:block;width:100%;margin:0;direction:ltr;accent-color:var(--primary)"></div>' +   /* opens while the song of this exercise plays: where we are in it, and a drag moves it */
+      (it.music && it.music.audio_object ? '<div id="ibar" style="visibility:hidden;flex:none;padding:var(--sp-1) var(--sp-2) 0"><input type="range" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר" style="display:block;width:100%;margin:0;direction:ltr;accent-color:var(--primary)"></div>' : '') +   /* a song with a file keeps this room under it all the time, the bar only appears in it while the song plays, so nothing around it moves */
       '<div id="ifields" style="flex:1 1 auto;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:var(--gap-field);padding:var(--gutter) var(--gutter) 0"><label class="rfield" style="flex:none"><span>פואטיקה</span><textarea id="ipo" rows="1" placeholder=" "' + (isDraft(it, "poetics") ? DRAFT_FIELD : "") + '>' + esc(txt(it, "poetics")) + '</textarea></label>' +
       '<label class="rfield" style="flex:none"><span>הנחיה</span><textarea id="igu" rows="1" placeholder=" "' + (isDraft(it, "guidance") ? DRAFT_FIELD : "") + '>' + esc(txt(it, "guidance")) + '</textarea></label>' +
       '<label class="rfield" style="flex:none"><span>הערות</span><textarea id="it" rows="1" placeholder=" ">' + esc(it.notes || "") + '</textarea></label></div>' +
@@ -614,8 +614,8 @@
         var onAudio = function (ev) {
           if (!bar.isConnected) { document.removeEventListener("bioaudio", onAudio); return; }
           var d = ev.detail || {}, mine = it.music && it.music.audio_object && d.name === it.music.audio_object && d.d > 0;
-          if (!mine) { bar.hidden = true; return; }
-          bar.hidden = false; if (!dragging) rng.value = Math.round(d.t / d.d * 1000);
+          if (!mine) { bar.style.visibility = "hidden"; return; }
+          bar.style.visibility = "visible"; if (!dragging) rng.value = Math.round(d.t / d.d * 1000);
         };
         document.addEventListener("bioaudio", onAudio);
         rng.addEventListener("pointerdown", function () { dragging = true; });
