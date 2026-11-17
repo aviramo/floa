@@ -646,7 +646,7 @@
       var body = card("poetics", "פואטיקה") + card("guidance", "הנחיה");
       var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה";
       var act = wide() ? '<button class="rbtn" type="button" data-act="doswap">' + word + '</button>'   /* the action is in the header, on the left; on a narrow screen a plain check, like the kit's popups */
-                       : '<button class="rbtn rbtn--icon rbtn--edge-end" type="button" data-act="doswap" aria-label="' + word + '" title="' + word + '">' + I.check + '</button>';
+                       : '<button class="rbtn" type="button" style="flex:none;width:var(--ctl);padding:0" data-act="doswap" aria-label="' + word + '" title="' + word + '">' + I.check + '</button>';   /* the green button, with a check */
       show(head(name(e), "", !wide(), act) + '<div class="rlist"><div style="padding-block:var(--sp-2)">' + (body || ph("אין עדיין תיאור לתרגיל", "")) + '</div></div>', function (r) { on(r, "back", back); on(r, "doswap", function () { if (swapIt) confirmSwap(e, swapIt); else addEx(e); }); }, "d");
     }, fail);
   }
