@@ -71,9 +71,9 @@
   function isDraft(it, k) {
     if (it[k] != null) return false;
     var ts = (it.exercises || {}).exercise_texts || [], t = ts.filter(function (x) { return x.lang === LANG && x[k]; })[0];
-    return !!t && t.source === "draft";
+    return !!t && (t.source === "draft" || t.source === "translation");
   }
-  var DRAFT = ' style="color:var(--warn);background:var(--warn-bg)" title="טיוטה: נכתבה מהשם בלבד, ללא תיאור בקטלוג"';
+  var DRAFT = ' style="color:var(--warn);background:var(--warn-bg)" title="טיוטה: תרגום או טקסט שנכתב מהשם, ולא נבדק"';
   function grow(t) { t.style.height = "auto"; t.style.height = (t.scrollHeight + t.offsetHeight - t.clientHeight) + "px"; var mh = parseFloat(getComputedStyle(t).maxHeight); t.style.overflowY = mh && t.scrollHeight > mh ? "auto" : "hidden"; }   /* rows=1: the height is the text's own, plus the line under it */
   /* the placeholder of an empty list or pane: the curve icon, a title and one line */
   function ph(title, text) { return '<div class="rempty">' + I.curve + '<b>' + esc(title) + '</b>' + (text ? '<span>' + esc(text) + '</span>' : '') + '</div>'; }
