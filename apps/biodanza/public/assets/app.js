@@ -834,8 +834,8 @@
   function musicRows(songs) {
     if (!songs.length) return "";
     /* each song the same way as in the exercise list: its name and performer, and the play tile with the time under it */
-    return '<div style="margin-top:var(--sp-2);border-top:1px solid var(--line)">' + songs.map(function (m) {
-      return '<div class="rrow" style="padding-inline:0;padding-block:var(--sp-2)"><div class="rrow__main">' + songLines(m) + '</div>' + playCol(m, true) + '</div>';
+    return '<div style="margin-top:var(--sp-2);border-top:1px solid var(--line);min-width:0">' + songs.map(function (m) {
+      return '<div class="rrow" style="padding-block:var(--sp-2)"><div class="rrow__main">' + songLines(m) + '</div>' + playCol(m, true) + '</div>';
     }).join("") + '</div>';
   }
   function previewEx(e, swapIt) {
@@ -848,7 +848,7 @@
       var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה";
       var act = wide() ? '<button class="rbtn" type="button" data-act="doswap">' + word + '</button>'   /* the action is in the header, on the left; on a narrow screen a plain check, like the kit's popups */
                        : '<button class="rbtn" type="button" style="flex:none;width:var(--ctl);padding:0" data-act="doswap" aria-label="' + word + '" title="' + word + '">' + I.check + '</button>';   /* the green button, with a check */
-      show(head(name(e), "", !wide(), act) + '<div class="rlist"><div style="padding-block:var(--sp-2)">' + (body || ph("אין עדיין תיאור לתרגיל", "")) + musicRows(songs) + '</div></div>', function (r) { on(r, "back", back); on(r, "doswap", function () { if (swapIt) confirmSwap(e, swapIt); else addEx(e); }); }, "d");
+      show(head(name(e), "", !wide(), act) + '<div class="rlist" style="overflow-x:hidden"><div style="padding-block:var(--sp-2)">' + (body || ph("אין עדיין תיאור לתרגיל", "")) + musicRows(songs) + '</div></div>', function (r) { on(r, "back", back); on(r, "doswap", function () { if (swapIt) confirmSwap(e, swapIt); else addEx(e); }); }, "d");
     }, fail);
   }
   /* replacing is asked in the kit's popup, one action: closing it is the cancel */
