@@ -16,6 +16,7 @@
     down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>',
     users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M16 5a3 3 0 010 6M18 15c2 .6 3 2.2 3 5"/></svg>',
     trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+    pen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4"/></svg>',
     out: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 5H5v14h5M15 8l4 4-4 4M19 12H9"/></svg>'
   };
 
@@ -76,16 +77,36 @@
       var l = document.getElementById("hl"); if (!l) return;
       l.innerHTML = state.vivs.length ? state.vivs.map(function (v) {
         var n = v.vivencia_items && v.vivencia_items[0] ? v.vivencia_items[0].count : 0;
-        return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-id="' + v.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub">' + n + ' תרגילים</span></button></div>';
+        return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-id="' + v.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub" data-n="' + v.id + '">' + n + ' תרגילים</span></button><button type="button" class="rbtn rbtn--icon rrow__trail" data-ren="' + v.id + '" aria-label="שינוי שם" title="שינוי שם">' + I.pen + '</button></div>';
       }).join("") : '<div class="rempty"><b>עוד אין ויוונסיות</b><span>לחצו על + כדי ליצור את הראשונה</span></div>';
       l.querySelectorAll("[data-id]").forEach(function (b) { b.addEventListener("click", function () { openViv(b.dataset.id); }); });
+      l.querySelectorAll("[data-ren]").forEach(function (b) { b.addEventListener("click", function () { namePopup(state.vivs.filter(function (v) { return v.id === b.dataset.ren; })[0], false); }); });
       paintSel();
       if (wide() && !state.viv) emptyDetail();
     }, fail);
   }
-  function newViv() {
-    var id = uuid();
-    api("/rest/v1/vivencias", { method: "POST", json: { id: id, title: "" }, prefer: "return=minimal" }).then(function () { openViv(id); }, fail);
+  function newViv() { namePopup({ id: uuid(), title: "" }, true); }
+  /* the name (the theme) of a vivencia is set here, from the list: the kit's popup with a header check to save */
+  function namePopup(v, isNew) {
+    var dlg = document.getElementById("nameDlg");
+    if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "nameDlg"; document.body.appendChild(dlg); }
+    RosterSheet.render(dlg, {
+      title: isNew ? "ויוונסיה חדשה" : "שינוי שם", from: "bottom", size: "s", action: { id: "nsave", label: "שמירה" },
+      body: '<div class="pad"><label class="rfield"><span>נושא</span><input id="nt" placeholder=" " autocomplete="off" value="' + esc(v.title) + '"></label></div>'
+    });
+    var inp = dlg.querySelector("#nt"); inp.focus();
+    function save() {
+      var t = inp.value.trim(); if (!t) return toast("חסר נושא");
+      var done = function () {
+        dlg.close();
+        if (isNew) { state.vivs.unshift({ id: v.id, title: t }); if (wide()) home(); openViv(v.id); }
+        else { v.title = t; if (state.viv && state.viv.id === v.id) state.viv.title = t; home(); if (state.viv && state.viv.id === v.id) editor(); }
+      };
+      (isNew ? api("/rest/v1/vivencias", { method: "POST", json: { id: v.id, title: t }, prefer: "return=minimal" })
+             : api("/rest/v1/vivencias?id=eq." + v.id, { method: "PATCH", json: { title: t, updated_at: new Date().toISOString() } })).then(done, fail);
+    }
+    dlg.querySelector("#nsave").addEventListener("click", save);
+    inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); save(); } });
   }
 
   /* ---------- the vivencia: plan along the curve ---------- */
@@ -96,14 +117,11 @@
   function editor() {
     var v = state.viv;
     show(head(v.title || "ויוונסיה חדשה", "", true, '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="del" aria-label="מחיקת הוויוונסיה" title="מחיקת הוויוונסיה">' + I.trash + '</button><button class="rbtn rbtn--icon rbtn--edge-end" data-act="play" aria-label="הפעלה" title="הפעלה">' + I.play + '</button>') +
-      '<div class="pad"><label class="rfield"><span>נושא</span><input id="vt" placeholder=" " value="' + esc(v.title) + '"></label></div>' +
       '<div class="rlist" data-fab-room id="list"><div class="rskel rskel--title"></div></div>' +
       '<button class="rfab" data-act="add" aria-label="הוספת תרגיל" title="הוספת תרגיל">' + I.plus + '</button>', function (r) {
       on(r, "back", back); on(r, "add", function () { go(picker); });
       on(r, "del", function () { confirmDelete(v); });
       on(r, "play", function () { if (!state.items.length) return toast("אין עדיין תרגילים"); go(function () { player(0); }); });
-      function save() { var t = r.querySelector("#vt").value; v.title = t; api("/rest/v1/vivencias?id=eq." + v.id, { method: "PATCH", json: { title: t, updated_at: new Date().toISOString() } }).catch(fail); }
-      r.querySelector("#vt").addEventListener("change", save);
     }, "d");
     loadItems().then(paint, fail);
   }
@@ -126,6 +144,7 @@
   }
   function paint() {
     var l = document.getElementById("list"); if (!l) return;
+    var cnt = state.viv && pl.querySelector('[data-n="' + state.viv.id + '"]'); if (cnt) cnt.textContent = state.items.length + " תרגילים";
     var vis = state.items;   /* the order of the list IS the curve: no phase is kept on an item */
     if (!vis.length) { l.innerHTML = '<div class="rempty"><b>הוויוונסיה ריקה</b><span>לחצו על + כדי להוסיף תרגיל מהקטלוג</span></div>'; return; }
     l.innerHTML = vis.map(function (i, k) {
