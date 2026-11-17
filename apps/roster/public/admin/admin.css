@@ -2733,3 +2733,11 @@ body:has(#mMenu:not([hidden])) #kitFab { display: none; }   /* one plus at a tim
 /* the meeting row in the participant card: the place sits at the bottom, at the left end of the chips line */
 .mlist .mrow .mwp { margin: 0; margin-inline-start: auto; flex: 0 1 auto; min-width: 0; max-width: 50%; }
 .chiprow .stc[data-cr="gen"] .gc.on { background-color: var(--hdr-ctl); }   /* the gender chosen keeps the background of the chip (the underline shows it is on) */
+
+/* the mark mode button and the message filter chip beside it are LIGHT, not solid (owner 2026-11-17): light yellow for a message, light green for arrival, light blue for plain WhatsApp; the symbol takes the colour */
+#listTags .wm3 .wm3b.on[data-wm="msg"], #listTags .wm3 .wm3b[data-wm="msg"].on { background: var(--yellow-bg); color: var(--yellow); }
+#listTags .wm3 .wm3b.on[data-wm="att"], #listTags .wm3 .wm3b[data-wm="att"].on { background: var(--green-bg); color: var(--green); }
+#listTags .wm3 .wm3b.on[data-wm="wa"], #listTags .wm3 .wm3b[data-wm="wa"].on { background: var(--sky-bg); color: var(--sky); }
+#waSF .stc { background-color: var(--yellow-bg) !important; color: var(--yellow) !important; }
+#waSF .stc small { color: var(--yellow) !important; }
+#waSF .stc { background-image: linear-gradient(color-mix(in srgb, var(--yellow) 45%, transparent), color-mix(in srgb, var(--yellow) 45%, transparent)) !important; }
