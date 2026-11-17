@@ -34,3 +34,6 @@ Thumbs.db
 apps/jobs/runner/.profile/
 apps/jobs/runner/sessions.json
 apps/jobs/runner/*.sessions.json
+
+# Biodanza catalogs: facilitators-only material, this repo is public. Never commit.
+apps/biodanza/catalog-source/
