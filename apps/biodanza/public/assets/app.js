@@ -113,7 +113,7 @@
     var b = function (act, ico, label, off, after) {
       var shown = esc(label);
       var m = act === "list" && where && String(where).match(/^(\d+)\/(\d+)$/);
-      if (m) shown = '<span style="display:inline-flex;align-items:baseline;gap:2px"><b class="bio-num" style="display:inline-block;font:var(--fw-black) var(--fs-xl)/1 var(--font);--nx:' + ((state.slideFrom || 0) * 24) + 'px' + (state.slideFrom ? ';animation:bioNum .26s cubic-bezier(.2,.8,.2,1) both' : '') + '">' + m[1] + '</b><span style="color:var(--text-2);font:var(--fw-regular) var(--fs-s)/1 var(--font)">/' + m[2] + '</span></span>';   /* the number of this exercise is big, and rolls in from the side the page came from */
+      if (m) shown = '<span style="display:inline-flex;align-items:baseline;gap:2px;direction:ltr"><b class="bio-num" style="display:inline-block;font:var(--fw-black) var(--fs-xl)/1 var(--font);--nx:' + ((state.slideFrom || 0) * 24) + 'px' + (state.slideFrom ? ';animation:bioNum .26s cubic-bezier(.2,.8,.2,1) both' : '') + '">' + m[1] + '</b><span style="color:var(--text-2);font:var(--fw-regular) var(--fs-s)/1 var(--font)">/' + m[2] + '</span></span>';   /* the number of this exercise is big, and rolls in from the side the page came from */
       return '<button class="rbtn' + (act === "nextW" ? "" : " rbtn--ghost") + '" data-act="' + act + '" title="' + esc(label) + '"' + (act === "list" ? ' style="flex:1 1 auto"' : "") + (off ? " disabled" : "") + '>' + (after ? '<span>' + shown + '</span>' + ico : ico + '<span>' + shown + '</span>') + '</button>';
     };
     return '<header class="rhead">' + b("prevW", I.back, "הקודם", !hasPrev) + b("list", I.list, where || "לרשימה", false) + b("nextW", I.fwd, "הבא", !hasNext, true) + '</header>';
@@ -126,7 +126,9 @@
   /* the exercise as a pager: drag the page sideways to go to the next or the previous one (to the right = the next, as in a right to left book); the page follows the finger, a short drag springs back */
   function attachPager(pg, to) {
     var x0 = 0, y0 = 0, t0 = 0, dx = 0, mode = 0;
-    pg.addEventListener("pointerdown", function (e) { if (e.pointerType !== "touch") return; x0 = e.clientX; y0 = e.clientY; t0 = performance.now(); dx = 0; mode = 1; });
+    pg.addEventListener("pointerdown", function (e) {
+      if (e.pointerType !== "touch" && (e.button > 0 || (e.target.closest && e.target.closest("input, textarea, select, a, button")))) return;   /* a finger anywhere; a mouse (a narrow window) only off the fields and buttons */
+      x0 = e.clientX; y0 = e.clientY; t0 = performance.now(); dx = 0; mode = 1; });
     pg.addEventListener("pointermove", function (e) {
       if (mode === 0 || mode === 3) return;
       var mx = e.clientX - x0, my = e.clientY - y0;
@@ -527,7 +529,7 @@
     var k = state.items.indexOf(it), prevIt = state.items[k - 1], nextIt = state.items[k + 1];
     /* the header walks the sequence: the right button to the previous exercise, the left one to the next, the name between them */
     var hd = itemHead(!!prevIt, !!nextIt, (k + 1) + "/" + state.items.length);   /* the middle button says where we are, and still opens the list */
-    show(hd + '<div id="ipg" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0;touch-action:pan-y"><div class="pad" style="padding-bottom:0">' +
+    show(hd + '<style>#ipg, #ipg * { touch-action: pan-y }</style><div id="ipg" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0"><div class="pad" style="padding-bottom:0">' +
       '<div style="display:flex;align-items:flex-end;gap:var(--gap-button)">' + '<label class="rfield" style="flex:1 1 auto;margin:0"><span>שם התרגיל</span><input id="ina" style="font-weight: var(--fw-black); font-size: var(--fs-m)" placeholder=" " autocomplete="off" value="' + esc(itemName(it)) + '"></label>' + facChip(it) + '</div>' +
       '</div><div class="rlist" style="flex:1 1 auto"><div class="pad">' +
       '<div class="rrow rrow--link" data-act="pickMusic" role="button" tabindex="0" style="margin-inline:calc(var(--sp-2) * -1);padding-inline:var(--sp-2);padding-block:var(--sp-2);border-top:1px solid var(--line);cursor:pointer"><div style="flex:1 1 auto;min-width:0">' +
