@@ -500,12 +500,16 @@
   }
   function editor() {
     var v = state.viv; setUrl(BASE + v.id);
-    show(head(v.title || "ויוונסיה חדשה", "", true, v.role === "view" ? '' : '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="more" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>') +
+    show(head(v.title || "ויוונסיה חדשה", "", true, '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="more" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>') +
       '<div class="rlist" data-fab-room id="list"><div class="rskel rskel--title"></div></div>' +
       (v.role === "view" ? '' : '<button class="rfab" data-act="add" aria-label="הוספת תרגיל" title="הוספת תרגיל">' + I.plus + '</button>'), function (r) {
       on(r, "back", back); on(r, "add", function () { resetPk(); if (wide()) go(picker); else pickerSheet(); });
       on(r, "more", function (b) {
-        menu(b, [{ label: "עריכת שם", icon: I.pen, fn: function () { namePopup(v, false); } }].concat(v.role === "owner" ? [{ label: "שיתוף", icon: I.share, fn: function () { sharePopup(v); } }, { label: "מחיקה", icon: I.trash, tone: "danger", fn: function () { confirmDelete(v); } }] : []));
+        /* the owner: rename, share, delete; somebody it is shared with: rename (with edit rights) and taking themselves off it */
+        var items = v.role === "view" ? [] : [{ label: "עריכת שם", icon: I.pen, fn: function () { namePopup(v, false); } }];
+        if (v.role === "owner") items.push({ label: "שיתוף", icon: I.share, fn: function () { sharePopup(v); } }, { label: "מחיקה", icon: I.trash, tone: "danger", fn: function () { confirmDelete(v); } });
+        else items.push({ label: "הסרה שלי מהוויוונסיה", icon: I.out, tone: "danger", fn: function () { confirmLeave(v); } });
+        menu(b, items);
       });
     });
     api("/rest/v1/rpc/vivencia_members", { method: "POST", json: { v: v.id } }).then(function (mm) { state.members = mm || []; if (document.getElementById("list")) paint(); }, function () { state.members = []; });
@@ -519,6 +523,22 @@
     }, fail);
   }
   /* a confirmation is the kit's popup with ONE action: closing it is the cancel */
+  /* somebody a vivencia was shared with takes themselves off it; it stays with its owner and the others */
+  function confirmLeave(v) {
+    var dlg = document.getElementById("confirmDlg");
+    if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
+    RosterSheet.render(dlg, { kind: "confirm",
+      title: "הסרה מהוויוונסיה", from: "bottom", size: "s",
+      body: '<div class="pad"><span>להסיר את עצמך מ"' + esc(v.title || "ויוונסיה ללא שם") + '"? היא נשארת אצל הבעלים ואצל מי שהיא משותפת איתו. כדי לחזור צריך שישתפו אותה איתך שוב.</span></div>',
+      foot: '<button class="rbtn rbtn--danger rbtn--block" type="button" id="cleave">הסרה</button>'
+    });
+    dlg.querySelector("#cleave").addEventListener("click", function () {
+      api("/rest/v1/rpc/leave_vivencia", { method: "POST", json: { v: v.id } }).then(function () {
+        dlg.close(); toast("הוסרת מהוויוונסיה"); state.viv = null;
+        if (wide()) { stack().length = 0; homeWide(); } else back();
+      }, fail);
+    });
+  }
   function confirmDelete(v) {
     var dlg = document.getElementById("confirmDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }

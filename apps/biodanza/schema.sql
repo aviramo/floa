@@ -354,6 +354,13 @@ create or replace function biodanza.set_share_position(v uuid, pos int) returns 
   language sql security definer set search_path = biodanza, public as $$
   update biodanza.vivencia_shares set position = pos where vivencia_id = v and email = biodanza.jwt_email() and biodanza.is_allowed() $$;
 
+-- somebody a vivencia was shared with can take themselves off it (an owner does that for others through the table's own policy)
+create or replace function biodanza.leave_vivencia(v uuid) returns void
+  language sql security definer set search_path = biodanza, public as $$
+  delete from biodanza.vivencia_shares where vivencia_id = v and email = biodanza.jwt_email() and biodanza.is_allowed() $$;
+revoke all on function biodanza.leave_vivencia(uuid) from public, anon;
+grant execute on function biodanza.leave_vivencia(uuid) to authenticated;
+
 -- a share only goes to an account that is on the allowlist
 create or replace function biodanza.share_check() returns trigger
   language plpgsql security definer set search_path = biodanza, public as $$
