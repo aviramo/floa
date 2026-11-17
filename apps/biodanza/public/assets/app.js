@@ -16,6 +16,7 @@
     down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>',
     users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M16 5a3 3 0 010 6M18 15c2 .6 3 2.2 3 5"/></svg>',
     trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+    fwd: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>',
     pen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4"/></svg>',
     out: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 5H5v14h5M15 8l4 4-4 4M19 12H9"/></svg>'
   };
@@ -247,14 +248,23 @@
   /* ---------- one item: music, poetics, guidance, notes ---------- */
   function itemScreen(it) {
     var e = it.exercises || {};
-    show(head(itemName(it), "", true) + '<div class="rlist"><div class="pad">' +
+    var k = state.items.indexOf(it), prevIt = state.items[k - 1], nextIt = state.items[k + 1];
+    /* the header walks the sequence: the right button to the previous exercise, the left one to the next, the name between them */
+    var hd = '<header class="rhead"><button class="rbtn rbtn--icon rbtn--edge-start" data-act="prevItem" aria-label="התרגיל הקודם" title="התרגיל הקודם"' + (prevIt ? "" : " disabled") + '>' + I.back + '</button>' +
+      '<div class="rhead__text"><h1 class="rhead__title" style="text-align:center">' + esc(itemName(it)) + '</h1></div>' +
+      '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="nextItem" aria-label="התרגיל הבא" title="התרגיל הבא"' + (nextIt ? "" : " disabled") + '>' + I.fwd + '</button></header>';
+    show(hd + '<div class="rlist"><div class="pad">' +
       '<label class="rfield"><span>שם התרגיל</span><input id="ina" placeholder=" " autocomplete="off" value="' + esc(itemName(it)) + '"></label>' +
       '<label class="rfield"><span>מוזיקה</span><select id="im"><option value="">בלי מוזיקה</option></select></label>' +
       '<label class="rfield"><span>פואטיקה</span><textarea id="ipo" placeholder=" ">' + esc(txt(it, "poetics")) + '</textarea></label>' +
       '<label class="rfield"><span>הנחיה</span><textarea id="igu" placeholder=" ">' + esc(txt(it, "guidance")) + '</textarea></label>' +
       '<label class="rfield"><span>הערות</span><textarea id="it" placeholder=" ">' + esc(it.notes || "") + '</textarea></label>' +
+      '<button class="rbtn rbtn--ghost rbtn--block" data-act="list">חזרה לרשימת התרגילים</button>' +
       '<button class="rbtn rbtn--ghost rbtn--danger rbtn--block" data-act="del">הסרה מהוויוונסיה</button></div></div>', function (r) {
-      on(r, "back", back);
+      on(r, "list", back);
+      function walk(to) { stack().pop(); go(function () { itemScreen(to); }); }
+      on(r, "prevItem", function () { if (prevIt) walk(prevIt); });
+      on(r, "nextItem", function () { if (nextIt) walk(nextIt); });
       api("/rest/v1/exercise_music?exercise_id=eq." + it.exercise_id + "&select=music(id,name,collection)").then(function (rows) {
         var sel = r.querySelector("#im"), seen = {};
         (rows || []).forEach(function (x) { if (x.music && !seen[x.music.id]) { seen[x.music.id] = 1; var o = document.createElement("option"); o.value = x.music.id; o.textContent = x.music.name + (x.music.collection ? " (" + x.music.collection + ")" : ""); sel.appendChild(o); } });
