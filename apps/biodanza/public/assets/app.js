@@ -645,7 +645,7 @@
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "catDlg"; document.body.appendChild(dlg); }
     RosterSheet.render(dlg, { title: swapIt ? "החלפת תרגיל" : "קטלוג התרגילים", from: "bottom", body: pickerBody() });
     var r = dlg.querySelector(".sheet-body"), hd = r.querySelector("[data-pickhead]");
-    if (hd) hd.style.cssText += ";position:sticky;top:0;z-index:1;background:var(--bg)";   /* the search stays while the list scrolls */
+    if (hd) hd.style.cssText += ";position:sticky;top:0;z-index:1;margin-top:0;padding-top:0;background:var(--bg)";   /* the search stays while the list scrolls */
     pickerWire(r, swapIt, true);
   }
   function previewSheet(e, swapIt) {
