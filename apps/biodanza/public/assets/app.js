@@ -298,7 +298,7 @@
     var hd = itemHead(!!prevIt, !!nextIt);
     show(hd + '<div class="rlist"><div class="pad">' +
       '<label class="rfield"><span>שם התרגיל</span><input id="ina" style="font-weight: var(--fw-black); font-size: var(--fs-m)" placeholder=" " autocomplete="off" value="' + esc(itemName(it)) + '"></label>' +
-      '<button type="button" class="rcard rcard--flat rcard--link" data-act="pickMusic" style="display:block;width:calc(100% - 2 * var(--gutter));margin:0;text-align:start;font:inherit;color:inherit"><div class="rcard__head"><span class="rcard__title">מוזיקה</span></div><div class="rcard__body">' + (it.music ? '<b>' + esc(songName(it.music)) + '</b>' + (songBy(it.music) ? '<br>' + esc(songBy(it.music)) : '') : 'לחצו לבחירת מוזיקה') + '</div></button>' +
+      '<button type="button" class="rcard rcard--flat rcard--link" data-act="pickMusic" style="display:block;box-sizing:border-box;width:100%;margin:0;text-align:start;font:inherit;color:inherit"><div class="rcard__head"><span class="rcard__title">מוזיקה</span></div><div class="rcard__body">' + (it.music ? '<b>' + esc(songName(it.music)) + '</b>' + (songBy(it.music) ? '<br>' + esc(songBy(it.music)) : '') : 'לחצו לבחירת מוזיקה') + '</div></button>' +
       '<label class="rfield"><span>פואטיקה</span><textarea id="ipo" rows="1" placeholder=" ">' + esc(txt(it, "poetics")) + '</textarea></label>' +
       '<label class="rfield"><span>הנחיה</span><textarea id="igu" rows="1" placeholder=" ">' + esc(txt(it, "guidance")) + '</textarea></label>' +
       '<label class="rfield"><span>הערות</span><textarea id="it" rows="1" placeholder=" ">' + esc(it.notes || "") + '</textarea></label>' +
