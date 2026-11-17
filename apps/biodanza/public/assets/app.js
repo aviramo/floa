@@ -112,10 +112,41 @@
   function itemHead(hasPrev, hasNext, where) {
     var b = function (act, ico, label, off, after) {
       var shown = esc(label);
-      if (act === "list" && where) shown = shown.replace(/^(\d+)/, '<b style="font-weight:var(--fw-black)">$1</b>');   /* the number of this exercise stands out from the total */
+      var m = act === "list" && where && String(where).match(/^(\d+)\/(\d+)$/);
+      if (m) shown = '<span style="display:inline-flex;align-items:baseline;gap:2px"><b class="bio-num" style="display:inline-block;font:var(--fw-black) var(--fs-xl)/1 var(--font);--nx:' + ((state.slideFrom || 0) * 24) + 'px' + (state.slideFrom ? ';animation:bioNum .26s cubic-bezier(.2,.8,.2,1) both' : '') + '">' + m[1] + '</b><span style="color:var(--text-2);font:var(--fw-regular) var(--fs-s)/1 var(--font)">/' + m[2] + '</span></span>';   /* the number of this exercise is big, and rolls in from the side the page came from */
       return '<button class="rbtn' + (act === "nextW" ? "" : " rbtn--ghost") + '" data-act="' + act + '" title="' + esc(label) + '"' + (act === "list" ? ' style="flex:1 1 auto"' : "") + (off ? " disabled" : "") + '>' + (after ? '<span>' + shown + '</span>' + ico : ico + '<span>' + shown + '</span>') + '</button>';
     };
     return '<header class="rhead">' + b("prevW", I.back, "הקודם", !hasPrev) + b("list", I.list, where || "לרשימה", false) + b("nextW", I.fwd, "הבא", !hasNext, true) + '</header>';
+  }
+  (function () {
+    var st = document.createElement("style");
+    st.textContent = "@keyframes bioNum { from { opacity: 0; transform: translateX(var(--nx, 0)) } to { opacity: 1; transform: none } } @media (prefers-reduced-motion: reduce) { .bio-num { animation: none !important } }";
+    document.head.appendChild(st);
+  })();
+  /* the exercise as a pager: drag the page sideways to go to the next or the previous one (to the right = the next, as in a right to left book); the page follows the finger, a short drag springs back */
+  function attachPager(pg, to) {
+    var x0 = 0, y0 = 0, t0 = 0, dx = 0, mode = 0;
+    pg.addEventListener("pointerdown", function (e) { if (e.pointerType !== "touch") return; x0 = e.clientX; y0 = e.clientY; t0 = performance.now(); dx = 0; mode = 1; });
+    pg.addEventListener("pointermove", function (e) {
+      if (mode === 0 || mode === 3) return;
+      var mx = e.clientX - x0, my = e.clientY - y0;
+      if (mode === 1) {
+        if (Math.abs(mx) > 10 && Math.abs(mx) > Math.abs(my) * 1.4) { mode = 2; try { pg.setPointerCapture(e.pointerId); } catch (x) { /* none */ } pg.style.transition = "none"; }
+        else { if (Math.abs(my) > 10) mode = 3; return; }
+      }
+      dx = mx;
+      pg.style.transform = "translateX(" + ((dx > 0 ? to.next : to.prev) ? dx : dx * 0.3) + "px)";   /* no page that way: it only gives a little */
+    });
+    function end() {
+      if (mode !== 2) { mode = 0; return; }
+      mode = 0;
+      var w = pg.getBoundingClientRect().width || 320, v = Math.abs(dx) / Math.max(1, performance.now() - t0), go = dx > 0 ? to.next : to.prev;
+      if (go && (Math.abs(dx) > w * 0.22 || v > 0.5)) {
+        pg.style.transition = "transform .16s ease-in, opacity .16s"; pg.style.transform = "translateX(" + (dx > 0 ? w : -w) + "px)"; pg.style.opacity = "0";
+        setTimeout(go, 150);
+      } else { pg.style.transition = "transform .22s cubic-bezier(.2, .8, .2, 1)"; pg.style.transform = ""; }
+    }
+    pg.addEventListener("pointerup", end); pg.addEventListener("pointercancel", end);
   }
   function toast(msg) {
     var t = document.createElement("div");
@@ -496,19 +527,27 @@
     var k = state.items.indexOf(it), prevIt = state.items[k - 1], nextIt = state.items[k + 1];
     /* the header walks the sequence: the right button to the previous exercise, the left one to the next, the name between them */
     var hd = itemHead(!!prevIt, !!nextIt, (k + 1) + "/" + state.items.length);   /* the middle button says where we are, and still opens the list */
-    show(hd + '<div class="rlist"><div class="pad">' +
+    show(hd + '<div id="ipg" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0;touch-action:pan-y"><div class="pad" style="padding-bottom:0">' +
       '<div style="display:flex;align-items:flex-end;gap:var(--gap-button)">' + '<label class="rfield" style="flex:1 1 auto;margin:0"><span>שם התרגיל</span><input id="ina" style="font-weight: var(--fw-black); font-size: var(--fs-m)" placeholder=" " autocomplete="off" value="' + esc(itemName(it)) + '"></label>' + facChip(it) + '</div>' +
+      '</div><div class="rlist" style="flex:1 1 auto"><div class="pad">' +
       '<div class="rrow rrow--link" data-act="pickMusic" role="button" tabindex="0" style="margin-inline:calc(var(--sp-2) * -1);padding-inline:var(--sp-2);padding-block:var(--sp-2);border-top:1px solid var(--line);cursor:pointer"><div style="flex:1 1 auto;min-width:0">' +
         (it.music ? songLines(it.music) : '<span class="rrow__title">לחצו לבחירת מוזיקה</span>') + '</div>' + (it.music ? playCol(it.music, true) : '') + '</div>' +   /* a strip across the width, like the music chooser's rows */
       '<label class="rfield"><span>פואטיקה</span><textarea id="ipo" rows="1" placeholder=" "' + (isDraft(it, "poetics") ? DRAFT : "") + '>' + esc(txt(it, "poetics")) + '</textarea></label>' +
       '<label class="rfield"><span>הנחיה</span><textarea id="igu" rows="1" placeholder=" "' + (isDraft(it, "guidance") ? DRAFT : "") + '>' + esc(txt(it, "guidance")) + '</textarea></label>' +
       '<label class="rfield"><span>הערות</span><textarea id="it" rows="1" placeholder=" ">' + esc(it.notes || "") + '</textarea></label>' +
-      '<div style="display:flex;gap:var(--gap-button)"><button class="rbtn rbtn--ghost rbtn--block" style="flex:1 1 0" data-act="swap">החלפה בתרגיל אחר</button><button class="rbtn rbtn--ghost rbtn--danger rbtn--block" style="flex:1 1 0" data-act="del">הסרה מהוויוונסיה</button></div></div></div>', function (r) {
+      '<div style="display:flex;gap:var(--gap-button)"><button class="rbtn rbtn--ghost rbtn--block" style="flex:1 1 0" data-act="swap">החלפה בתרגיל אחר</button><button class="rbtn rbtn--ghost rbtn--danger rbtn--block" style="flex:1 1 0" data-act="del">הסרה מהוויוונסיה</button></div></div></div></div>', function (r) {
+      var sf = state.slideFrom || 0, pg = r.querySelector("#ipg"); state.slideFrom = 0;
+      r.style.overflowX = "clip";   /* a page sliding in from the side must not make the window scroll sideways */
+      if (pg && sf && !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)) {
+        pg.style.transform = "translateX(" + (sf * 100) + "%)"; pg.style.opacity = "0";
+        requestAnimationFrame(function () { requestAnimationFrame(function () { pg.style.transition = "transform .26s cubic-bezier(.2, .8, .2, 1), opacity .26s"; pg.style.transform = ""; pg.style.opacity = ""; }); });
+      }
       on(r, "list", function () { if (!wide()) back(); });   /* beside the list there is nowhere to go back to */
       wireFac(r);
-      function walk(to) { if (wide()) return itemScreen(to); stack().pop(); go(function () { itemScreen(to); }); }
+      function walk(to) { state.slideFrom = to === nextIt ? -1 : 1; if (wide()) return itemScreen(to); stack().pop(); go(function () { itemScreen(to); }); }
       on(r, "prevW", function () { if (prevIt) walk(prevIt); });
       on(r, "nextW", function () { if (nextIt) walk(nextIt); });
+      if (pg) attachPager(pg, { next: nextIt ? function () { walk(nextIt); } : null, prev: prevIt ? function () { walk(prevIt); } : null });
       function toMusic() { if (wide()) musicScreen(it); else musicSheet(it); }   /* beside the list, the pane; on a narrow screen, a popup from the bottom */
       on(r, "pickMusic", function (b, ev) { if (ev.target.closest("a,[data-audio]")) return; toMusic(); });
       r.querySelectorAll('[data-act="pickMusic"]').forEach(function (c) { c.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toMusic(); } }); });
