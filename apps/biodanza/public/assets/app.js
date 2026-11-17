@@ -71,7 +71,7 @@
       var l = document.getElementById("hl"); if (!l) return;
       l.innerHTML = state.vivs.length ? state.vivs.map(function (v) {
         var n = v.vivencia_items && v.vivencia_items[0] ? v.vivencia_items[0].count : 0;
-        return '<div class="rrow rrow--link"><div class="rrow__main"><button class="rrow__title" data-id="' + v.id + '" style="all:unset;cursor:pointer">' + esc(v.title || "ויוונסיה ללא שם") + '</button><span class="rrow__sub">' + n + ' תרגילים' + (v.theme ? ' · ' + esc(v.theme) : '') + '</span></div></div>';
+        return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-id="' + v.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub">' + n + ' תרגילים' + (v.theme ? ' · ' + esc(v.theme) : '') + '</span></button></div>';
       }).join("") : '<div class="rempty"><b>עוד אין ויוונסיות</b><span>לחצו על + כדי ליצור את הראשונה</span></div>';
       l.querySelectorAll("[data-id]").forEach(function (b) { b.addEventListener("click", function () { openViv(b.dataset.id); }); });
       paintSel();
