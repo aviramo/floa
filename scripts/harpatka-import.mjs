@@ -43,7 +43,38 @@ const biz = one(`select id from ${S}.businesses where slug = '${SLUG}'`);
 if (!biz.length) { console.error(`no business "${SLUG}" in ${SCHEMA}: nothing is created by this script`); process.exit(1); }
 const B = biz[0].id;
 
-const read = (t) => { const f = join(dir, `harpatka_${t}.json`); return existsSync(f) ? JSON.parse(readFileSync(f, "utf8")) : []; };
+const readRaw = (t) => { const f = join(dir, `harpatka_${t}.json`); return existsSync(f) ? JSON.parse(readFileSync(f, "utf8")) : []; };
+
+/* PICTURES AND VIDEOS: Harpatka kept them in its own Supabase storage (buckets meeting-images, meeting-media). Roster must not point there, so every such
+   link found in the meeting types, meetings and message templates is copied into Roster's own storage (test bucket roster-test-media, folder = the business,
+   file <bucket>-<path with - for />, the same names the earlier moves used) and the link is rewritten in the rows before they are inserted.
+   A file already there is not uploaded again. The dry run only lists what it would copy. Uploading needs the project's service key, fetched from the
+   Management API with the token in .env (never printed, never written anywhere). */
+const OLD_STORAGE = /https:\/\/ezakarwqstnldqixgreb\.supabase\.co\/storage\/v1\/object\/public\/(meeting-images|meeting-media)\/([A-Za-z0-9._\/-]+)/g;
+const MEDIA_BUCKET = "roster-test-media";   // the test bucket: this script is test-only, so it never writes the real one (roster-media)
+const MEDIA_TABLES = ["meeting_types", "meetings", "msg_templates"];
+const env = (k) => { const m = new RegExp(`^${k}=(.*)$`, "m").exec(readFileSync(fileURLToPath(new URL("../.env", import.meta.url)), "utf8")); return m ? m[1].trim().replace(/^["']|["']$/g, "") : ""; };
+const REF = env("SUPABASE_PROJECT_REF"), ORIGIN = `https://${REF}.supabase.co`;
+const newUrl = (bucket, rest) => `${ORIGIN}/storage/v1/object/public/${MEDIA_BUCKET}/${B}/${bucket}-${rest.replace(/\//g, "-")}`;
+const mediaFound = new Map();   // old url -> new url
+for (const t of MEDIA_TABLES) for (const r of readRaw(t)) for (const v of Object.values(r)) if (typeof v === "string") for (const m of v.matchAll(OLD_STORAGE)) mediaFound.set(m[0], newUrl(m[1], m[2]));
+const rewriteMedia = (v) => (typeof v === "string" ? v.replace(OLD_STORAGE, (u, b, r) => newUrl(b, r)) : v);
+const read = (t) => { const rows = readRaw(t); return MEDIA_TABLES.includes(t) ? rows.map((r) => Object.fromEntries(Object.entries(r).map(([k, v]) => [k, rewriteMedia(v)]))) : rows; };
+const mediaReport = { found: mediaFound.size, copied: 0, already: 0, failed: 0 };
+for (const [from, to] of mediaFound) {
+  const have = await fetch(to, { method: "HEAD" }).then((x) => x.ok, () => false);
+  if (have) { mediaReport.already++; continue; }
+  if (!run) { mediaReport.copied++; continue; }   // dry run: counted as "would copy"
+  try {
+    const key = (env.key ??= (await (await fetch(`https://api.supabase.com/v1/projects/${REF}/api-keys`, { headers: { authorization: `Bearer ${env("SUPABASE_ACCESS_TOKEN")}` } })).json()).find((k) => k.name === "service_role")?.api_key);
+    const src = await fetch(from); if (!src.ok) throw new Error(`download ${src.status}`);
+    const up = await fetch(`${ORIGIN}/storage/v1/object/${MEDIA_BUCKET}/${to.split(`/${MEDIA_BUCKET}/`)[1]}`, { method: "POST", headers: { authorization: `Bearer ${key}`, apikey: key, "content-type": src.headers.get("content-type") || "application/octet-stream" }, body: Buffer.from(await src.arrayBuffer()) });
+    if (!up.ok) throw new Error(`upload ${up.status}`);
+    mediaReport.copied++;
+  } catch (e) { mediaReport.failed++; console.error("media copy failed:", from.slice(-40), String(e.message || e)); }
+}
+console.log(`media: ${mediaReport.found} link(s) to the old storage; ${mediaReport.already} already in Roster storage, ${mediaReport.copied} ${run ? "copied" : "would be copied"}, ${mediaReport.failed} failed`);
+if (mediaReport.failed) process.exit(1);
 const tcols = {}, tdef = {};
 for (const r of one(`select table_name t, column_name c, is_generated g, column_default d from information_schema.columns where table_schema = '${SCHEMA}'`)) if (r.g === "NEVER") { (tcols[r.t] ??= new Set()).add(r.c); if (r.d) tdef[`${r.t}.${r.c}`] = r.d; }
 
