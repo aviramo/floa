@@ -898,7 +898,7 @@
           pop.innerHTML = shown.map(function (c, k) { return '<button type="button" class="rmenu__item" role="option" tabindex="-1" data-k="' + k + '"' + (c.key === catSel ? ' aria-selected="true" style="font-weight:var(--fw-bold)"' : '') + '><span>' + esc(c.name_he) + '</span></button>'; }).join("");
           (inp.closest("dialog") || document.body).appendChild(pop);
           var b = inp.getBoundingClientRect();
-          pop.style.top = Math.round(b.bottom + 2) + "px"; pop.style.left = Math.round(b.left) + "px"; pop.style.width = Math.round(b.width) + "px"; pop.style.maxHeight = "40vh"; pop.style.overflowY = "auto";
+          pop.style.top = Math.round(b.bottom + 2) + "px"; pop.style.left = Math.round(b.left) + "px"; pop.style.width = Math.round(b.width) + "px"; pop.style.maxWidth = "none"; pop.style.maxHeight = "40vh"; pop.style.overflowY = "auto";   /* the menu is as wide as the field, whatever the menu's own cap */
           var got = pop.getBoundingClientRect();   /* inside a popup that is moved by a transform, fixed is measured from the popup: correct by what is off */
           if (Math.abs(got.top - (b.bottom + 2)) > 1) pop.style.top = Math.round(b.bottom + 2 - (got.top - (b.bottom + 2))) + "px";
           if (Math.abs(got.left - b.left) > 1) pop.style.left = Math.round(b.left - (got.left - b.left)) + "px";
@@ -906,8 +906,8 @@
           inp.setAttribute("aria-expanded", "true");
         }
         function mark(n) { if (!pop) return; var all = pop.querySelectorAll("[data-k]"); active = Math.max(0, Math.min(n, all.length - 1)); all.forEach(function (o, k) { o.style.background = k === active ? "var(--surface)" : ""; }); if (all[active]) all[active].scrollIntoView({ block: "nearest" }); }
-        inp.addEventListener("focus", function () { inp.select(); open(""); });
-        inp.addEventListener("click", function () { if (!pop) { inp.select(); open(""); } });
+        inp.addEventListener("focus", function () { inp.value = ""; open(""); });   /* the field empties when you enter it: you type or choose; leaving without a choice puts the chosen name back */
+        inp.addEventListener("click", function () { if (!pop) { inp.value = ""; open(""); } });
         inp.addEventListener("input", function () { open(inp.value); });
         inp.addEventListener("blur", function () { setTimeout(function () { close(true); }, 0); });
         inp.addEventListener("keydown", function (e) {
