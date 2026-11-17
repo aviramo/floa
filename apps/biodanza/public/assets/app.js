@@ -118,6 +118,18 @@
   var durKnown = {};
   try { durKnown = JSON.parse(localStorage.getItem("biodanza.dur") || "{}") || {}; } catch (x) { durKnown = {}; }
   function durOf(m) { return (m && (m.duration_sec || durKnown[m.audio_object])) || 0; }
+  /* while a song plays, a button at the bottom right (the add button is at the left) stops it, from any screen; it slides away when the song stops */
+  (function () {
+    var st = document.createElement("style");
+    st.textContent = ".bio-stop { position: fixed; right: max(var(--gutter), var(--inset-r)); bottom: calc(var(--gutter) + var(--inset-b)); z-index: var(--z-sticky); display: grid; place-items: center; width: var(--fab); height: var(--fab); padding: 0; border: 1px solid var(--primary); border-radius: var(--r-fab); background: var(--primary); color: var(--on-primary); box-shadow: var(--sh-pop); cursor: pointer; opacity: 0; transform: translateY(calc(var(--fab) + var(--sp-3))); pointer-events: none; transition: transform var(--t-base) var(--ease), opacity var(--t-base) var(--ease) } .bio-stop.on { opacity: 1; transform: none; pointer-events: auto } .bio-stop > svg { width: var(--icon-l); height: var(--icon-l) } html.rs-lock .bio-stop, html.dlg-lock .bio-stop, html.kb-open .bio-stop { opacity: 0; transform: translateY(calc(var(--fab) + var(--sp-3))); pointer-events: none } @media (prefers-reduced-motion: reduce) { .bio-stop { transition: none } }";
+    document.head.appendChild(st);
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "bio-stop"; b.setAttribute("aria-label", "עצירת השיר"); b.title = "עצירת השיר";
+    b.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+    document.body.appendChild(b);
+    b.addEventListener("click", function () { if (window.BioAudio && BioAudio.pause) BioAudio.pause(); });
+    document.addEventListener("bioaudio", function (ev) { b.classList.toggle("on", !!(ev.detail && ev.detail.playing)); });
+  })();
   var barDrag = false;
   document.addEventListener("bioaudio", function (ev) {
     var d = ev.detail || {};
