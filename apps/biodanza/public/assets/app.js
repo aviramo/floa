@@ -51,6 +51,9 @@
   function ytLink(m, trail) {
     return '<a class="rbtn rbtn--icon' + (trail ? ' rrow__trail' : '') + '" data-yt="' + esc(m.id || "") + '" href="https://www.youtube.com/results?search_query=' + encodeURIComponent((songName(m) + " " + songBy(m)).trim()) + '" target="_blank" rel="noopener" aria-label="ניגון ביוטיוב" title="ניגון ביוטיוב" style="width:var(--fab);height:var(--fab);min-height:var(--fab);color:' + ytColor(m.id) + '">' + I.yt + '</a>';
   }
+  /* a song with a file in the bucket gets the sound button (assets/audio.js); one without keeps the YouTube button */
+  function songBtn(m, trail) { return m.audio_object && window.BioAudio ? BioAudio.button(m.audio_object, trail) : ytLink(m, trail); }
+  window.toast = window.toast || toast;
   document.addEventListener("click", function (e) {
     var a = e.target.closest && e.target.closest("a[data-yt]"); if (!a) return;
     played = a.dataset.yt;
@@ -332,7 +335,7 @@
   /* ---------- the vivencia: plan along the curve ---------- */
   function openViv(id) { if (!state.viv || state.viv.id !== id) state.lastItem = null; state.filter = ""; state.viv = state.vivs.filter(function (v) { return v.id === id; })[0] || { id: id, title: "" }; if (wide()) { stack().length = 0; show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); } go(editor); paintSel(); }
   function loadItems() {
-    return api("/rest/v1/vivencia_items?vivencia_id=eq." + state.viv.id + "&select=id,position,exercise_id,music_id,notes,title,poetics,guidance,exercises(title_he,title_en,poetics,guidance,objective,exercise_texts(lang,poetics,guidance,source)),music(id,name,title,artist,duration_sec),vivencia_item_facilitators(email)&order=position").then(function (r) { state.items = r || []; });
+    return api("/rest/v1/vivencia_items?vivencia_id=eq." + state.viv.id + "&select=id,position,exercise_id,music_id,notes,title,poetics,guidance,exercises(title_he,title_en,poetics,guidance,objective,exercise_texts(lang,poetics,guidance,source)),music(id,name,title,artist,duration_sec,audio_object,in_catalog),vivencia_item_facilitators(email)&order=position").then(function (r) { state.items = r || []; });
   }
   function editor() {
     var v = state.viv; setUrl(BASE + v.id);
@@ -475,7 +478,7 @@
       '<div style="display:flex;align-items:flex-end;gap:var(--gap-button)">' + '<label class="rfield" style="flex:1 1 auto;margin:0"><span>שם התרגיל</span><input id="ina" style="font-weight: var(--fw-black); font-size: var(--fs-m)" placeholder=" " autocomplete="off" value="' + esc(itemName(it)) + '"></label>' + facChip(it) + '</div>' +
       '<div class="rcard rcard--flat rcard--link" data-act="pickMusic" role="button" tabindex="0" style="margin:0;cursor:pointer;display:flex;align-items:center;gap:var(--gap-button)"><div class="rcard__body" style="flex:1 1 auto;min-width:0">' +
         (it.music ? '<b>' + esc(songName(it.music)) + '</b>' + (songBy(it.music) ? '<br>' + esc(songBy(it.music)) : '') : 'לחצו לבחירת מוזיקה') + '</div>' +
-        (it.music ? ytLink(it.music) : '') + '</div>' +
+        (it.music ? songBtn(it.music) : '') + '</div>' +
       '<label class="rfield"><span>פואטיקה</span><textarea id="ipo" rows="1" placeholder=" "' + (isDraft(it, "poetics") ? DRAFT : "") + '>' + esc(txt(it, "poetics")) + '</textarea></label>' +
       '<label class="rfield"><span>הנחיה</span><textarea id="igu" rows="1" placeholder=" "' + (isDraft(it, "guidance") ? DRAFT : "") + '>' + esc(txt(it, "guidance")) + '</textarea></label>' +
       '<label class="rfield"><span>הערות</span><textarea id="it" rows="1" placeholder=" ">' + esc(it.notes || "") + '</textarea></label>' +
@@ -486,7 +489,7 @@
       on(r, "prevW", function () { if (prevIt) walk(prevIt); });
       on(r, "nextW", function () { if (nextIt) walk(nextIt); });
       function toMusic() { if (wide()) musicScreen(it); else go(function () { musicScreen(it); }); }
-      on(r, "pickMusic", function (b, ev) { if (ev.target.closest("a")) return; toMusic(); });
+      on(r, "pickMusic", function (b, ev) { if (ev.target.closest("a,[data-audio]")) return; toMusic(); });
       r.querySelectorAll('[data-act="pickMusic"]').forEach(function (c) { c.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toMusic(); } }); });
       ["#ipo", "#igu", "#it"].forEach(function (s) { var t = r.querySelector(s); grow(t); t.addEventListener("input", function () { grow(t); }); });
       function own(k, v) { return v === baseTxt(it, k) ? null : v; }   /* the same as the catalog: keep inheriting it */
@@ -510,18 +513,45 @@
     var out = wide() ? function () { itemScreen(it); } : back;   /* beside the list, back is the same exercise */
     show(head("מוזיקה", "", true) + '<div class="rlist" id="mlist"><div class="rskel rskel--title"></div></div>', function (r) {
       on(r, "back", out);
-      api("/rest/v1/exercise_music?exercise_id=eq." + it.exercise_id + "&select=music(id,name,title,artist,duration_sec)").then(function (rows) {
+      api("/rest/v1/exercise_music?exercise_id=eq." + it.exercise_id + "&select=music(id,name,title,artist,duration_sec,audio_object,in_catalog)").then(function (rows) {
         var seen = {}, list = [];
         (rows || []).forEach(function (x) { if (x.music && !seen[x.music.id]) { seen[x.music.id] = 1; list.push(x.music); } });
-        var row = function (id, t, sub, cur, m) { return '<div class="rrow rrow--link"' + (cur ? ' aria-current="true"' : '') + '><button type="button" class="rrow__main" data-m="' + id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(t) + '</span>' + (sub ? '<span class="rrow__sub">' + esc(sub) + '</span>' : '') + '</button>' + (m ? ytLink(m, true) : '') + '</div>'; };
+        var row = function (id, t, sub, cur, m) { return '<div class="rrow rrow--link"' + (cur ? ' aria-current="true"' : '') + '><button type="button" class="rrow__main" data-m="' + id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(t) + '</span>' + (sub ? '<span class="rrow__sub">' + esc(sub) + '</span>' : '') + '</button>' + (m ? songBtn(m, true) : '') + '</div>'; };
         var l = r.querySelector("#mlist");
-        l.innerHTML = row("", "בלי מוזיקה", "", !it.music_id) + list.map(function (m) { return row(m.id, songName(m), songBy(m), it.music_id === m.id, m); }).join("");
+        l.innerHTML = row("", "בלי מוזיקה", "", !it.music_id) + list.map(function (m) { return row(m.id, songName(m), songBy(m), it.music_id === m.id, m); }).join("") +
+          '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-act="other" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">מוזיקות אחרות</span><span class="rrow__sub">שירים שאינם בקטלוג</span></button></div>';
+        on(l, "other", function () { otherMusic(it, out); });
         l.querySelectorAll("[data-m]").forEach(function (b) {
           b.addEventListener("click", function () {
             var m = list.filter(function (x) { return x.id === b.dataset.m; })[0] || null;
             api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { music_id: m ? m.id : null } }).then(function () { it.music_id = m ? m.id : null; it.music = m; if (wide()) paint(); out(); }, fail);
           });
         });
+      }, fail);
+    }, "d");
+  }
+
+  /* ---------- other music: files the catalogs do not list. Same rows as the songs, with a tag ---------- */
+  function otherMusic(it, out) {
+    show(head("מוזיקות אחרות", "", true) + '<div class="pad" style="padding-block-end:0"><label class="rfield"><span>חיפוש</span><input id="oq" placeholder=" " autocomplete="off"></label></div><div class="rlist" id="olist"><div class="rskel rskel--title"></div></div>', function (r) {
+      on(r, "back", function () { musicScreen(it); });
+      api("/rest/v1/music?in_catalog=eq.false&select=id,name,title,artist,duration_sec,audio_object,in_catalog&order=title&limit=1000").then(function (rows) {
+        var all = rows || [], l = r.querySelector("#olist");
+        function draw() {
+          var q = r.querySelector("#oq").value.trim().toLowerCase();
+          var vis = all.filter(function (m) { return !q || (songName(m) + " " + songBy(m)).toLowerCase().indexOf(q) >= 0; });
+          l.innerHTML = vis.length ? vis.map(function (m) {
+            return '<div class="rrow rrow--link"' + (it.music_id === m.id ? ' aria-current="true"' : '') + '><button type="button" class="rrow__main" data-o="' + m.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(songName(m)) + '</span><span class="rrow__sub">' + (songBy(m) ? esc(songBy(m)) + ' ' : '') + '<span class="rchip rchip--s">לא בקטלוג</span></span></button>' + songBtn(m, true) + '</div>';
+          }).join("") : ph("לא נמצא", "");
+          l.querySelectorAll("[data-o]").forEach(function (b) {
+            b.addEventListener("click", function () {
+              var m = all.filter(function (x) { return x.id === b.dataset.o; })[0];
+              api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { music_id: m.id } }).then(function () { it.music_id = m.id; it.music = m; if (wide()) paint(); out(); }, fail);
+            });
+          });
+        }
+        r.querySelector("#oq").addEventListener("input", draw);
+        draw();
       }, fail);
     }, "d");
   }
@@ -533,7 +563,7 @@
       '<label class="rfield"><span>קו</span><select id="ln"><option value="">הכול</option>' + state.lines.map(function (l) { return '<option value="' + l.key + '">' + esc(l.name_he) + '</option>'; }).join("") + '</select></label>' +
       '<label class="rfield"><span>קטגוריה</span><select id="cg"><option value="">הכול</option>' + (state.cats || []).map(function (c) { return '<option value="' + esc(c.key) + '">' + esc(c.name_he) + '</option>'; }).join("") + '</select></label></div>' +
       '<div class="rlist" id="list"><div class="rskel rskel--title"></div></div>', function (r) {
-      on(r, "back", back);
+      on(r, "back", swapIt && wide() ? function () { pending = { item: swapIt.id }; back(); } : back);   /* leaving a replacement: the same exercise is open again on the left */
       function paintCat() {
         var q = r.querySelector("#q").value.trim().toLowerCase(), ln = r.querySelector("#ln").value, cg = r.querySelector("#cg").value, l = r.querySelector("#list");
         var rows = (state.cat || []).filter(function (e) {
@@ -542,7 +572,14 @@
         l.innerHTML = rows.length ? rows.map(function (e) {
           return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-ex="' + e.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(name(e)) + '</span><span class="rrow__sub">' + esc([catName(e.category)].concat((e.exercise_lines || []).map(function (x) { return lineName(x.line_key); })).filter(Boolean).join(" · ")) + '</span></button></div>';
         }).join("") : ph("לא נמצא תרגיל", "");
-        l.querySelectorAll("[data-ex]").forEach(function (b) { b.addEventListener("click", function () { addEx(state.cat.filter(function (x) { return x.id === b.dataset.ex; })[0], swapIt); }); });
+        l.querySelectorAll("[data-ex]").forEach(function (b) { b.addEventListener("click", function () {
+          var ex = state.cat.filter(function (x) { return x.id === b.dataset.ex; })[0];
+          if (swapIt && wide()) {   /* replacing: the exercise is shown on the left first, and the replacing is its own button */
+            l.querySelectorAll(".rrow").forEach(function (w) { w.removeAttribute("aria-current"); });
+            b.closest(".rrow").setAttribute("aria-current", "true");
+            previewEx(ex, swapIt);
+          } else addEx(ex, swapIt);
+        }); });
       }
       r.querySelector("#q").addEventListener("input", paintCat); r.querySelector("#ln").addEventListener("change", paintCat); r.querySelector("#cg").addEventListener("change", paintCat);
       (state.cats ? Promise.resolve() : api("/rest/v1/categories?select=key,name_he&order=sort").then(function (c) {
@@ -561,6 +598,19 @@
       });
     }
     return page(0);
+  }
+  /* a catalog exercise shown on the left while one is being replaced: its own words, and one button that does the replacing */
+  var previewTok = 0;
+  function previewEx(e, swapIt) {
+    var tok = ++previewTok;
+    api("/rest/v1/exercise_texts?exercise_id=eq." + e.id + "&select=lang,poetics,guidance,source").then(function (rows) {
+      if (tok !== previewTok) return;   /* a later row was chosen meanwhile */
+      var fake = { exercises: { exercise_texts: rows || [] } };
+      var card = function (k, label) { return txt(fake, k) ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">' + label + '</span></div><div class="rcard__body"' + (isDraft(fake, k) ? DRAFT : "") + '>' + esc(txt(fake, k)) + '</div></div>' : ""; };
+      var body = card("poetics", "פואטיקה") + card("guidance", "הנחיה");
+      show(head(name(e), "", false) + '<div class="rlist"><div class="pad">' + (body || ph("אין עדיין תיאור לתרגיל", "")) +
+        '<button class="rbtn rbtn--block" data-act="doswap">החלפה בתרגיל הזה</button></div></div>', function (r) { on(r, "doswap", function () { addEx(e, swapIt); }); }, "d");
+    }, fail);
   }
   function addEx(e, swapIt) {
     if (swapIt) {   /* the same place in the curve, another exercise: its first song, and none of the old exercise's own wording */
