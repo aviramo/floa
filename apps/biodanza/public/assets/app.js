@@ -562,7 +562,7 @@
     }, fail);
   }
   /* rows in a popup run from edge to edge: the popup's own side room (measured from its title) is pulled out and given back as padding, and the chosen row has the green stripe at its left */
-  function bleedCss(id) { return '<style>#' + id + ' .rrow { margin-inline: calc(var(--bleed, var(--pp-px)) * -1); padding-inline: var(--bleed, var(--pp-px)) } #' + id + ' .rrow[aria-current="true"] { background: var(--surface); box-shadow: inset 3px 0 0 var(--accent) }</style>'; }
+  function bleedCss(id) { return '<style>#' + id + ' .sheet-body { overflow-x: hidden } #' + id + ' .rrow { margin-inline: calc(var(--bleed, var(--pp-px)) * -1); padding-inline: var(--bleed, var(--pp-px)) } #' + id + ' .rrow[aria-current="true"] { background: var(--surface); box-shadow: inset 3px 0 0 var(--accent) }</style>'; }
   function bleedSet(dlg) {
     var sh = dlg.querySelector(".sheet"), h = dlg.querySelector(".sheet-head h2"); if (!sh || !h) return;
     var off = Math.round(sh.getBoundingClientRect().right - h.getBoundingClientRect().right);
