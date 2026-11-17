@@ -46,13 +46,21 @@ export async function handleRosterAuth(request, env, doFetch = fetch) {
   const md = l.user_metadata || l.user?.user_metadata || {};
   const hasName = !!(md.full_name || md.name);
   if (uid && !hasName && name) await doFetch(base + "/auth/v1/admin/users/" + uid, { method: "PUT", headers: h, body: JSON.stringify({ user_metadata: { ...md, full_name: name, name, ...(md.picture || !t.picture ? {} : { picture: t.picture }) } }) }).catch(() => {});
-  const ver = (th) => doFetch(base + "/auth/v1/verify", { method: "POST", headers: { apikey: key, "content-type": "application/json" }, body: JSON.stringify({ type: "magiclink", token_hash: th }) });
-  let v = await ver(hashed);
+  /* a brand-new email: generate_link CREATES the user and the link is of type "signup", which "magiclink" refuses (so a first sign-in failed and the second, now an existing user, worked) */
+  const typeOf = (x) => x?.verification_type || x?.properties?.verification_type || "magiclink";
+  const ver = (th, type) => doFetch(base + "/auth/v1/verify", { method: "POST", headers: { apikey: key, "content-type": "application/json" }, body: JSON.stringify({ type, token_hash: th }) });
+  let vtype = typeOf(l);
+  let v = await ver(hashed, vtype);
+  if (!v.ok && v.status >= 400 && v.status < 500) {   /* the other type, once, with the same token */
+    const alt = vtype === "signup" ? "magiclink" : "signup";
+    const v2 = await ver(hashed, alt);
+    if (v2.ok) v = v2;
+  }
   if (v.status >= 500) {   /* the token may be spent: ask for a fresh one, once */
     const again = await gen();
     const l2 = again.ok ? await again.json().catch(() => null) : null;
     const h2 = l2 && (l2.hashed_token || l2.properties?.hashed_token);
-    if (h2) v = await ver(h2);
+    if (h2) v = await ver(h2, typeOf(l2));
   }
   if (!v.ok) { console.log("roster-auth verify", v.status, (await v.text()).slice(0, 300)); return reply({ error: "auth_failed", stage: "verify", status: v.status }, 502, okOrigin); }
   return reply(await v.json(), 200, okOrigin);
