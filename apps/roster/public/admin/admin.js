@@ -4603,6 +4603,7 @@
         (ct ? '' : fp ? fld('', 'יחידה', sel('rate_type', '', 'סוג', opt('fixed', '₪ שקלים', !pct) + opt('percent', '% אחוז', pct))) : '') +
         (ct ? '' : fld('', fp ? (pct ? 'אחוז מהתשלום' : 'סכום מהתשלום, בשקלים') : 'כמה עולה ליד, בשקלים', '<input data-rf-bare data-f="rate" type="number" inputmode="decimal" min="0" value="' + (isNew && !Number(x.rate) ? '' : Number(x.rate || 0)) + '" placeholder=" " aria-label="עלות" />')) +
         fld(' srccp', 'טלפון', '<input data-rf-bare data-f="contact_phone" type="tel" inputmode="tel" dir="ltr" value="' + esc(x.contact_phone || '') + '" maxlength="20" aria-label="טלפון איש הקשר" placeholder=" " autocomplete="off" />') +
+        fld(' srccodes wide2', 'קודים בקישור (s=)', '<input data-rf-bare data-f="codes" dir="ltr" value="' + esc((Array.isArray(x.codes) ? x.codes : (x.code ? [x.code] : [])).join(', ')) + '" maxlength="60" placeholder="p, pm" aria-label="קודים בקישור, מופרדים בפסיק" autocomplete="off" autocapitalize="off" spellcheck="false" />') +
         (isNew ? '' : '<div class="rfield field srcf srcsettle"><span>' + (!ct && bal > 0 ? 'לתשלום' : 'התחשבנות') + '</span><button type="button" class="prsettle rf-box" data-settle="' + x.id + '" aria-label="' + esc('התחשבנות עם ' + x.name + ': ' + (ct ? 'תשלומים' : bal > 0 ? nfx(bal) + ' שקלים לתשלום' : 'מסולק')) + '"><b' + (ct ? '' : ' class="' + (bal > 0 ? 'owe' : 'ok') + '"') + '>' + (ct ? 'תשלומים' : bal > 0 ? '₪' + nfx(bal) : 'מסולק') + '</b>' + icon('next', 'i14') + '</button></div>') +
       '</div>' + (isNew ? '' : '<button type="button" class="srcdelbtn" data-sdel="' + w + '">מחיקה</button>');
     if (isNew) return '<div class="srccard" data-w="' + w + '">' + inner + '</div>';
@@ -4733,6 +4734,12 @@
     }
     else if (f === 'rate_type') { const c = w === 'new' ? null : costRateFor(tg.row, inp.value === 'percent' ? 'percent' : 'fixed'); saveSrc(w, Object.assign({ rate_type: inp.value }, c ? { rate: c.rate } : {})); if (c && c.kept) toast('הסכום לתשלום נשאר ₪' + nfm(c.kept)); }
     else if (f === 'rate') saveSrc(w, { rate: Math.max(0, Number(inp.value) || 0) });
+    else if (f === 'codes') {   // the codes that come in the link (?s=p): comma separated, letters and digits; the first is also kept as `code`
+      const arr = []; inp.value.toLowerCase().split(/[\s,;]+/).forEach((t) => { const v = t.replace(/[^a-z0-9_-]/g, '').slice(0, 20); if (v && !arr.includes(v)) arr.push(v); });
+      const mine = w === 'new' ? null : tg.row, taken = arr.find((cd) => state.promoters.some((o) => o !== mine && (Array.isArray(o.codes) ? o.codes : (o.code ? [o.code] : [])).includes(cd)));
+      if (taken) { toast('הקוד ' + taken + ' כבר קיים אצל שיווק ממומן אחר. כל קוד חייב להיות ייחודי'); if (mine) renderSources(); return; }
+      if (w === 'new') { prDraft.codes = arr; prDraft.code = arr[0] || null; } else saveSrc(w, { codes: arr, code: arr[0] || null });
+    }
     else if (f === 'contact_phone') { const v = inp.value.trim(); if (v && digits(v).length < 9) { toast('מספר טלפון לא תקין'); return; } saveSrc(w, { contact_phone: v || null }); }
   };
   const srcClick = async (e) => {
