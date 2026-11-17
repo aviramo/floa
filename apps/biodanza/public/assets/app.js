@@ -127,16 +127,78 @@
     l.innerHTML = vis.map(function (i, k) {
       var e = i.exercises || {};
       return '<div class="rrow"><div class="rrow__main"><button class="rrow__title" data-edit="' + i.id + '" style="all:unset;cursor:pointer">' + esc(name(e)) + '</button><span class="rrow__sub">' + esc([i.music && i.music.name, i.minutes ? i.minutes + " דק׳" : ""].filter(Boolean).join(" · ") || "בלי מוזיקה") + '</span></div>' +
-        '<button class="rbtn rbtn--icon" data-up="' + k + '" aria-label="הזזה למעלה" title="הזזה למעלה"' + (k === 0 ? " disabled" : "") + '>' + I.up + '</button>' +
-        '<button class="rbtn rbtn--icon" data-down="' + k + '" aria-label="הזזה למטה" title="הזזה למטה"' + (k === vis.length - 1 ? " disabled" : "") + '>' + I.down + '</button></div>';
+        '</div>';
     }).join("");
     l.querySelectorAll("[data-edit]").forEach(function (b) { b.addEventListener("click", function () { var it = state.items.filter(function (x) { return x.id === b.dataset.edit; })[0]; go(function () { itemScreen(it); }); }); });
-    function swap(a, b) {
-      var pa = a.position, pb = b.position;
-      Promise.all([api("/rest/v1/vivencia_items?id=eq." + a.id, { method: "PATCH", json: { position: pb } }), api("/rest/v1/vivencia_items?id=eq." + b.id, { method: "PATCH", json: { position: pa } })]).then(loadItems).then(paint, fail);
+    enableDrag(l);
+  }
+
+  /* Reorder by dragging a row (no arrows). A mouse drags after a few pixels; a finger after a short hold, so scrolling still works.
+     Only transform is animated. Keyboard: Alt + Arrow up/down on the focused row title. The order of the list is the curve. */
+  function enableDrag(l) {
+    if (l._dragOff) l._dragOff();   /* the list element is reused: drop the previous paint's listeners */
+    var rows = [].slice.call(l.querySelectorAll(".rrow"));
+    var d = null, blockTouch = function (e) { if (d && d.live) e.preventDefault(); };
+    l.addEventListener("touchmove", blockTouch, { passive: false });
+    function persist(from, to) {
+      var moved = state.items.splice(from, 1)[0]; state.items.splice(to, 0, moved);
+      Promise.all(state.items.map(function (it, k) {
+        if (it.position === k + 1) return null;
+        it.position = k + 1;
+        return api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { position: k + 1 } });
+      })).then(loadItems).then(paint, fail);
     }
-    l.querySelectorAll("[data-up]").forEach(function (b) { b.addEventListener("click", function () { var k = +b.dataset.up; swap(vis[k], vis[k - 1]); }); });
-    l.querySelectorAll("[data-down]").forEach(function (b) { b.addEventListener("click", function () { var k = +b.dataset.down; swap(vis[k], vis[k + 1]); }); });
+    rows.forEach(function (row, k) {
+      var title = row.querySelector("[data-edit]");
+      title.addEventListener("keydown", function (e) {
+        if (!e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
+        var to = k + (e.key === "ArrowUp" ? -1 : 1);
+        if (to < 0 || to >= rows.length) return;
+        e.preventDefault(); persist(k, to);
+      });
+      row.addEventListener("pointerdown", function (e) {
+        if (e.button > 0) return;
+        d = { row: row, k: k, y0: e.clientY, pid: e.pointerId, live: false, timer: null, tops: rows.map(function (r) { var b = r.getBoundingClientRect(); return b.top + b.height / 2; }), h: row.getBoundingClientRect().height, to: k };
+        if (e.pointerType === "touch") d.timer = setTimeout(function () { if (d && !d.live) begin(); }, 280);
+      });
+    });
+    function begin() {
+      d.live = true; d.row.setPointerCapture && d.row.setPointerCapture(d.pid);
+      d.row.style.transition = "none"; d.row.style.zIndex = "var(--z-raised)"; d.row.style.boxShadow = "var(--sh-card)"; d.row.style.position = "relative";
+      rows.forEach(function (r) { if (r !== d.row) r.style.transition = "transform var(--t-base) var(--ease)"; });
+    }
+    function move(e) {
+      if (!d) return;
+      var dy = e.clientY - d.y0;
+      if (!d.live) {
+        if (e.pointerType === "touch") { if (Math.abs(dy) > 8) { clearTimeout(d.timer); d = null; } return; }
+        if (Math.abs(dy) < 6) return;
+        begin();
+      }
+      d.row.style.transform = "translateY(" + dy + "px)";
+      var c = d.tops[d.k] + dy, to = 0;
+      d.tops.forEach(function (t, i) { if (i !== d.k && t < c) to++; });
+      d.to = to;
+      rows.forEach(function (r, i) {
+        if (r === d.row) return;
+        var shift = 0;
+        if (d.k < to && i > d.k && i <= to) shift = -d.h;
+        if (d.k > to && i >= to && i < d.k) shift = d.h;
+        r.style.transform = shift ? "translateY(" + shift + "px)" : "";
+      });
+    }
+    l.addEventListener("pointermove", move);
+    function finish() {
+      if (!d) return;
+      clearTimeout(d.timer);
+      var was = d; d = null;
+      if (!was.live) return;
+      rows.forEach(function (r) { r.style.transform = ""; r.style.transition = ""; r.style.zIndex = ""; r.style.boxShadow = ""; r.style.position = ""; });
+      l.addEventListener("click", function eat(ev) { ev.stopPropagation(); ev.preventDefault(); }, { capture: true, once: true });   /* the drag is not a tap on the title */
+      if (was.to !== was.k) persist(was.k, was.to);
+    }
+    l.addEventListener("pointerup", finish); l.addEventListener("pointercancel", finish);
+    l._dragOff = function () { l.removeEventListener("touchmove", blockTouch); l.removeEventListener("pointermove", move); l.removeEventListener("pointerup", finish); l.removeEventListener("pointercancel", finish); l._dragOff = null; };
   }
 
   /* ---------- one item: phase, music, minutes, notes ---------- */
