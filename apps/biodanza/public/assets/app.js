@@ -160,7 +160,7 @@
   }
 
   /* ---------- the vivencia: plan along the curve ---------- */
-  function openViv(id) { state.filter = ""; state.viv = state.vivs.filter(function (v) { return v.id === id; })[0] || { id: id, title: "" }; if (wide()) stack().length = 0; go(editor); paintSel(); }
+  function openViv(id) { if (!state.viv || state.viv.id !== id) state.lastItem = null; state.filter = ""; state.viv = state.vivs.filter(function (v) { return v.id === id; })[0] || { id: id, title: "" }; if (wide()) stack().length = 0; go(editor); paintSel(); }
   function loadItems() {
     return api("/rest/v1/vivencia_items?vivencia_id=eq." + state.viv.id + "&select=id,position,exercise_id,music_id,notes,title,poetics,guidance,exercises(title_he,title_en,poetics,guidance,objective,exercise_texts(lang,poetics,guidance)),music(name,title,artist,duration_sec)&order=position").then(function (r) { state.items = r || []; });
   }
@@ -205,7 +205,7 @@
     if (!vis.length) { l.innerHTML = ph("הוויוונסיה ריקה", "לחצו על + כדי להוסיף תרגיל מהקטלוג"); return; }
     l.innerHTML = vis.map(function (i, k) {
       var e = i.exercises || {};
-      return '<div class="rrow rrow--link"><span class="rchip rchip--s" aria-hidden="true">' + (k + 1) + '</span><button type="button" class="rrow__main" data-edit="' + i.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(itemName(i)) + '</span><span class="rrow__sub">' + esc([songName(i.music), songBy(i.music), i.music && i.music.duration_sec ? clock(i.music.duration_sec) : ""].filter(Boolean).join(" · ") || "בלי מוזיקה") + '</span></button></div>';
+      return '<div class="rrow rrow--link"' + (state.lastItem === i.id ? ' aria-current="true"' : '') + '><span class="rchip rchip--s" aria-hidden="true">' + (k + 1) + '</span><button type="button" class="rrow__main" data-edit="' + i.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(itemName(i)) + '</span><span class="rrow__sub">' + esc([songName(i.music), songBy(i.music), i.music && i.music.duration_sec ? clock(i.music.duration_sec) : ""].filter(Boolean).join(" · ") || "בלי מוזיקה") + '</span></button></div>';
     }).join("");
     l.querySelectorAll("[data-edit]").forEach(function (b) { b.addEventListener("click", function () { var it = state.items.filter(function (x) { return x.id === b.dataset.edit; })[0]; go(function () { itemScreen(it); }); }); });
     enableDrag(l, "[data-edit]", persistItems);
@@ -293,6 +293,7 @@
   function itemScreen(it) {
     var e = it.exercises || {};
     setUrl(BASE + state.viv.id + "/" + it.id);
+    state.lastItem = it.id;   /* the strip of the exercise last opened stays marked in the list, like the vivencia in its list */
     var k = state.items.indexOf(it), prevIt = state.items[k - 1], nextIt = state.items[k + 1];
     /* the header walks the sequence: the right button to the previous exercise, the left one to the next, the name between them */
     var hd = itemHead(!!prevIt, !!nextIt);
