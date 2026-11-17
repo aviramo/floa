@@ -335,6 +335,7 @@ button.rrow__main { appearance: none; border: 0; background: none; padding: 0; t
 :root { --rf-h: 46px; --rf-line: var(--line-strong, var(--line-2, #C7CCD3)); --rf-ink: var(--text, #16191D); --rf-ink-2: var(--text-2, #5A626C); --rf-red: var(--danger, var(--red, #C81E3A)); --rf-good: var(--success, #067647); --rf-bg: var(--bg, #FFFFFF); }
 
 .rfield[hidden], .rfield > [hidden] { display: none !important; }
+.rfield { overflow-x: clip; }   /* the floating label's box is 133% wide (it is scaled to fit); its overflow must never make a scrollbar appear when the field is focused */
 .rfield { position: relative; display: block; min-width: 0; margin: 0 0 var(--sp-1, 8px); font-family: var(--font, "Heebo", system-ui, sans-serif); }
 
 /* the label: a span, first child. On the line when the field is empty and not focused, floated small otherwise */
