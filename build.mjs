@@ -152,11 +152,32 @@ async function theme(key) {
    public/ folder, which meant it stopped being at the root of what GitHub
    served, which meant GitHub concluded there was no custom domain and unbound
    floa.co.il. The site was fine; the domain simply no longer pointed at it. */
+/* A hand-written page names its scripts and styles as `assets/app.js`, with no stamp, and the host hands such a file out with a four hour cache:
+   a phone kept the old app for hours after a publish. Every local `assets/…js|css` an HTML page of the business's own (at its top level) names
+   gets `?v=` and eight characters of the file's contents, so the address changes when the file does and the browser asks again. An address that
+   already has a `?` is left alone. */
+async function stampAssets(dir) {
+  let names;
+  try { names = await readdir(dir); } catch { return; }
+  for (const name of names.filter((n) => n.endsWith(".html"))) {
+    const file = join(dir, name), html = await readFile(file, "utf8");
+    const refs = [...new Set([...html.matchAll(/(?:src|href)="(assets\/[^"?#]+\.(?:js|css))"/g)].map((m) => m[1]))];
+    let out = html;
+    for (const ref of refs) {
+      let body;
+      try { body = await readFile(join(dir, ref)); } catch { continue; }
+      out = out.split(`"${ref}"`).join(`"${ref}?v=${fingerprint(body)}"`);
+    }
+    if (out !== html) await writeFile(file, out, "utf8");
+  }
+}
+
 async function statics(key, out, root) {
   const copied = [];
   for (const [folder, into] of [["public", out], ...(root ? [["domain", ""]] : [])]) {
     try {
       await cp(join(BUSINESSES, key, folder), join(DIST, into), { recursive: true });
+      if (folder === "public") await stampAssets(join(DIST, into));
       copied.push(`${into || "."}/  (${folder})`);
     } catch (err) {
       if (err.code !== "ENOENT") throw err;      // a business with no files of that kind
