@@ -189,7 +189,7 @@
 .rhead.rhead, .wrap > .rhead.top { background: var(--bg); border-bottom: 2px solid var(--line); border-radius: 0; box-shadow: none; padding: calc(var(--gutter) + var(--safe-t)) var(--gutter) var(--gutter); }
 .rhead .rbtn--icon { width: var(--ctl); height: var(--ctl); min-width: var(--ctl); margin: 0; border-radius: var(--r-ctl); background: var(--surface-2); color: var(--text); }
 .rhead .rbtn--icon.rbtn--edge-start, .rhead .rbtn--icon.rbtn--edge-end { margin: 0; }
-.rhead__text:has(> .rhead__sub:not([hidden])) { position: relative; top: calc(var(--sp-hair) * -2.9); margin-bottom: calc(var(--sp-hair) * -2.9); }
+/* a title with a sub line keeps the same 16px above it as a title alone, level with the icon tiles (owner 2026-11-17): no upward shift */
 .rtabs { display: flex; border-bottom: 1px solid var(--line); }
 .rtab { flex: 1 1 0; min-height: var(--ctl); border: 0; background: transparent; color: var(--text-2); font: var(--fw-bold) var(--fs-m)/1 var(--font); box-shadow: inset 0 -3px 0 transparent; cursor: pointer; }
 .rtab[aria-selected="true"], .rtab[aria-pressed="true"] { color: var(--text); box-shadow: inset 0 -3px 0 var(--accent); }

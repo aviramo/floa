@@ -247,7 +247,7 @@
   /* ---------- one item: music, poetics, guidance, notes ---------- */
   function itemScreen(it) {
     var e = it.exercises || {};
-    show(head(itemName(it), "פריט בוויוונסיה", true) + '<div class="rlist"><div class="pad">' +
+    show(head(itemName(it), "", true) + '<div class="rlist"><div class="pad">' +
       '<label class="rfield"><span>שם התרגיל</span><input id="ina" placeholder=" " autocomplete="off" value="' + esc(itemName(it)) + '"></label>' +
       '<label class="rfield"><span>מוזיקה</span><select id="im"><option value="">בלי מוזיקה</option></select></label>' +
       '<label class="rfield"><span>פואטיקה</span><textarea id="ipo" placeholder=" ">' + esc(txt(it, "poetics")) + '</textarea></label>' +
