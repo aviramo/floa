@@ -568,21 +568,23 @@
     var off = Math.round(sh.getBoundingClientRect().right - h.getBoundingClientRect().right);
     if (off > 0 && off < 80) dlg.style.setProperty("--bleed", off + "px");
   }
-  function sheetOf(id, title, body) {
+  function sheetOf(id, title, body, action) {
     var dlg = document.getElementById(id);
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = id; document.body.appendChild(dlg); }
-    RosterSheet.render(dlg, { title: title, from: "bottom", body: bleedCss(id) + body });
+    RosterSheet.render(dlg, { title: title, from: "bottom", action: action, body: bleedCss(id) + body });
     bleedSet(dlg);
     return dlg.querySelector(".sheet-body");
   }
   function musicSheet(it) {
-    var r = sheetOf("musicDlg", "מוזיקה", '<div id="mlist"><div class="rskel rskel--title"></div></div>');
+    var r = sheetOf("musicDlg", "מוזיקה", '<div id="mlist"><div class="rskel rskel--title"></div></div>', { label: "ניקוי המוזיקה", icon: I.trash, id: "mclear" });   /* "no music" is the icon at the header's left: it clears the song */
+    var dlg0 = document.getElementById("musicDlg"), clr = dlg0.querySelector("#mclear");
+    if (clr) { if (!it.music_id) RosterSheet.setDirty(dlg0, false); else RosterSheet.setDirty(dlg0, true); clr.addEventListener("click", function () { chooseSong(it, null); }); }
     api("/rest/v1/exercise_music?exercise_id=eq." + it.exercise_id + "&select=music(id,name,title,artist,duration_sec,audio_object,in_catalog)").then(function (rows) {
       var seen = {}, list = [];
       (rows || []).forEach(function (x) { if (x.music && !seen[x.music.id]) { seen[x.music.id] = 1; list.push(x.music); } });
       var plain = function (attr, t, sub, cur) { return '<div class="rrow rrow--link"' + (cur ? ' aria-current="true"' : '') + '><button type="button" class="rrow__main" ' + attr + ' style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(t) + '</span>' + (sub ? '<span class="rrow__sub">' + esc(sub) + '</span>' : '') + '</button></div>'; };
       var l = r.querySelector("#mlist");
-      l.innerHTML = plain('data-m=""', "בלי מוזיקה", "", !it.music_id) + list.map(function (m) { return songRow(m, it.music_id === m.id, "data-m"); }).join("") + plain('data-act="other"', "מוזיקות אחרות", "שירים שאינם בקטלוג", false);
+      l.innerHTML = list.map(function (m) { return songRow(m, it.music_id === m.id, "data-m"); }).join("") + plain('data-act="other"', "מוזיקות אחרות", "שירים שאינם בקטלוג", false);
       on(l, "other", function () { otherSheet(it); });
       l.querySelectorAll("[data-m]").forEach(function (b) { b.addEventListener("click", function () { chooseSong(it, list.filter(function (x) { return x.id === b.dataset.m; })[0] || null); }); });
     }, fail);
