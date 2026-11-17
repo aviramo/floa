@@ -451,6 +451,12 @@ html[dir="ltr"] .rfield > select { padding-inline: 0 20px; background-position: 
   --pp-title-top: 32px;         /* the most the title text's top may sit below the popup's top edge (--pp-top + the half-leading of a 44px row); the Chrome crawl asserts it */
 }
 @media (min-width: 760px) { :root { --pp-px: 20px; } }
+/* On a computer a popup has ROUNDED corners (the card radius) and NO visible X: Escape or a click outside closes it, and the confirm button sits under the fields.
+   The X stays in the DOM, visually hidden, for screen readers and keyboards (owner 2026-11-17, for the kit; roster keeps its own copy). */
+@media (min-width: 760px) {
+  :root { --pp-radius: var(--r-card); }
+  dialog.rsheet .sheet-head > .rs-x { position: absolute; width: 1px; height: 1px; margin: 0; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+}
 
 /* ---- the X (owner rule 2026-11-12): in EVERY popup it is the LEFTMOST element of the header, at the physical top-left corner (RTL pages included: physical, not logical);
    the visible cross (the glyph) lines up flush with the left edge of the content (the fields), while its 44px touch target reaches outward past the content edge
@@ -497,7 +503,7 @@ dialog.rsheet {
   width: 100%; max-width: var(--pp-w-m, 560px);
   max-height: calc(var(--rs-vvh, 100dvh) - 12px);
   overflow: hidden; overscroll-behavior: contain;
-  border-radius: 0 !important;             /* iron rule: no rounded corners, wide screens included */
+  border-radius: var(--pp-radius) !important;   /* square on touch; rounded on a computer (owner 2026-11-17, see below) */
   background: var(--rs-bg); color: var(--rs-text);
   box-shadow: var(--pp-shadow);
   transform: translateY(var(--rs-dy, 0px));

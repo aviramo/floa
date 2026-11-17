@@ -101,8 +101,9 @@
     var dlg = document.getElementById("nameDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "nameDlg"; document.body.appendChild(dlg); }
     RosterSheet.render(dlg, {
-      title: isNew ? "ויוונסיה חדשה" : "שינוי שם", from: "bottom", size: "s", action: { id: "nsave", label: "שמירה" },
-      body: '<div class="pad"><label class="rfield"><span>נושא</span><input id="nt" placeholder=" " autocomplete="off" value="' + esc(v.title) + '"></label></div>'
+      title: isNew ? "ויוונסיה חדשה" : "שינוי שם", from: "bottom", size: "s",
+      body: '<div class="pad"><label class="rfield"><span>נושא</span><input id="nt" placeholder=" " autocomplete="off" value="' + esc(v.title) + '"></label></div>',
+      foot: '<button class="rbtn rbtn--block" type="button" id="nsave">שמירה</button>'
     });
     var inp = dlg.querySelector("#nt"); inp.focus();
     function save() {
