@@ -26,6 +26,7 @@
   function lineName(k) { var l = state.lines.filter(function (x) { return x.key === k; })[0]; return l ? l.name_he : k; }
   function clock(sec) { return Math.floor(sec / 60) + ":" + ("0" + (sec % 60)).slice(-2); }
   /* poetics and guidance: this item's own text if the facilitator changed it, else the catalog's (the catalog itself is never touched) */
+  function itemName(it) { return it.title || name(it.exercises || {}); }
   function txt(it, k) { return it[k] != null ? it[k] : ((it.exercises || {})[k] || ""); }
   function grow(t) { t.style.height = "auto"; t.style.height = t.scrollHeight + "px"; }
   function uuid() { return crypto.randomUUID(); }
@@ -121,7 +122,7 @@
   /* ---------- the vivencia: plan along the curve ---------- */
   function openViv(id) { state.filter = ""; state.viv = state.vivs.filter(function (v) { return v.id === id; })[0] || { id: id, title: "" }; if (wide()) stack().length = 0; go(editor); paintSel(); }
   function loadItems() {
-    return api("/rest/v1/vivencia_items?vivencia_id=eq." + state.viv.id + "&select=id,position,exercise_id,music_id,notes,poetics,guidance,exercises(title_he,title_en,poetics,guidance,objective),music(name,duration_sec)&order=position").then(function (r) { state.items = r || []; });
+    return api("/rest/v1/vivencia_items?vivencia_id=eq." + state.viv.id + "&select=id,position,exercise_id,music_id,notes,title,poetics,guidance,exercises(title_he,title_en,poetics,guidance,objective),music(name,duration_sec)&order=position").then(function (r) { state.items = r || []; });
   }
   function editor() {
     var v = state.viv;
@@ -158,7 +159,7 @@
     if (!vis.length) { l.innerHTML = '<div class="rempty"><b>הוויוונסיה ריקה</b><span>לחצו על + כדי להוסיף תרגיל מהקטלוג</span></div>'; return; }
     l.innerHTML = vis.map(function (i, k) {
       var e = i.exercises || {};
-      return '<div class="rrow"><div class="rrow__main"><button class="rrow__title" data-edit="' + i.id + '" style="all:unset;cursor:pointer">' + esc(name(e)) + '</button><span class="rrow__sub">' + esc([i.music && i.music.name, i.music && i.music.duration_sec ? clock(i.music.duration_sec) : ""].filter(Boolean).join(" · ") || "בלי מוזיקה") + '</span></div>' +
+      return '<div class="rrow"><div class="rrow__main"><button class="rrow__title" data-edit="' + i.id + '" style="all:unset;cursor:pointer">' + esc(itemName(i)) + '</button><span class="rrow__sub">' + esc([i.music && i.music.name, i.music && i.music.duration_sec ? clock(i.music.duration_sec) : ""].filter(Boolean).join(" · ") || "בלי מוזיקה") + '</span></div>' +
         '</div>';
     }).join("");
     l.querySelectorAll("[data-edit]").forEach(function (b) { b.addEventListener("click", function () { var it = state.items.filter(function (x) { return x.id === b.dataset.edit; })[0]; go(function () { itemScreen(it); }); }); });
@@ -245,7 +246,8 @@
   /* ---------- one item: music, poetics, guidance, notes ---------- */
   function itemScreen(it) {
     var e = it.exercises || {};
-    show(head(name(e), "פריט בוויוונסיה", true) + '<div class="rlist"><div class="pad">' +
+    show(head(itemName(it), "פריט בוויוונסיה", true) + '<div class="rlist"><div class="pad">' +
+      '<label class="rfield"><span>שם התרגיל</span><input id="ina" placeholder=" " autocomplete="off" value="' + esc(itemName(it)) + '"></label>' +
       '<label class="rfield"><span>מוזיקה</span><select id="im"><option value="">בלי מוזיקה</option></select></label>' +
       '<label class="rfield"><span>פואטיקה</span><textarea id="ipo" placeholder=" ">' + esc(txt(it, "poetics")) + '</textarea></label>' +
       '<label class="rfield"><span>הנחיה</span><textarea id="igu" placeholder=" ">' + esc(txt(it, "guidance")) + '</textarea></label>' +
@@ -260,14 +262,15 @@
       ["#ipo", "#igu", "#it"].forEach(function (s) { var t = r.querySelector(s); grow(t); t.addEventListener("input", function () { grow(t); }); });
       function own(k, v) { return v === ((e[k]) || "") ? null : v; }   /* the same as the catalog: keep inheriting it */
       function save() {
-        var body = { music_id: r.querySelector("#im").value || null, poetics: own("poetics", r.querySelector("#ipo").value), guidance: own("guidance", r.querySelector("#igu").value), notes: r.querySelector("#it").value };
+        var nm = r.querySelector("#ina").value.trim();
+        var body = { title: !nm || nm === name(e) ? null : nm, music_id: r.querySelector("#im").value || null, poetics: own("poetics", r.querySelector("#ipo").value), guidance: own("guidance", r.querySelector("#igu").value), notes: r.querySelector("#it").value };
         api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: body }).then(function () {
           Object.assign(it, body);
           var m = r.querySelector("#im"); it.music = m.value ? { name: m.options[m.selectedIndex].textContent.replace(/ [(][^)]*[)]$/, "") } : null;
           toast("נשמר");
         }, fail);
       }
-      ["#im", "#ipo", "#igu", "#it"].forEach(function (s) { r.querySelector(s).addEventListener("change", save); });
+      ["#ina", "#im", "#ipo", "#igu", "#it"].forEach(function (s) { r.querySelector(s).addEventListener("change", save); });
       on(r, "del", function () { api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "DELETE" }).then(function () { back(); }, fail); });
     }, "d");
   }
@@ -303,7 +306,7 @@
   /* ---------- player: the session, one exercise at a time ---------- */
   function player(k) {
     var it = state.items[k], e = it.exercises || {}, last = k === state.items.length - 1;
-    show(head(name(e), (k + 1) + " מתוך " + state.items.length, true) +
+    show(head(itemName(it), (k + 1) + " מתוך " + state.items.length, true) +
       '<div class="rlist"><div class="pad">' +
       (it.music ? '<span class="rchip rchip--info rchip--l">' + esc(it.music.name) + '</span>' : '') +
       (txt(it, "poetics") ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">פואטיקה</span></div><div class="rcard__body">' + esc(txt(it, "poetics")) + '</div></div>' : '') +
