@@ -26,6 +26,7 @@
     curve: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 16c2.5-9 5-9 7.5-1s5 8 7.5 0c1-3 2.500-5 5-6"/></svg>',
     list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"/></svg>',
     grip: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>',
+    yt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="4"/><path d="M10 9.5l5 2.500-5 2.500z"/></svg>',
     pen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4"/></svg>',
     out: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 5H5v14h5M15 8l4 4-4 4M19 12H9"/></svg>'
   };
@@ -47,7 +48,7 @@
     return pick(LANG) || pick("en") || e[k] || "";
   }
   function txt(it, k) { return it[k] != null ? it[k] : baseTxt(it, k); }
-  function grow(t) { t.style.height = "auto"; t.style.height = (t.scrollHeight + t.offsetHeight - t.clientHeight) + "px"; }   /* rows=1: the height is the text's own, plus the line under it */
+  function grow(t) { t.style.height = "auto"; t.style.height = (t.scrollHeight + t.offsetHeight - t.clientHeight) + "px"; var mh = parseFloat(getComputedStyle(t).maxHeight); t.style.overflowY = mh && t.scrollHeight > mh ? "auto" : "hidden"; }   /* rows=1: the height is the text's own, plus the line under it */
   /* the placeholder of an empty list or pane: the curve icon, a title and one line */
   function ph(title, text) { return '<div class="rempty">' + I.curve + '<b>' + esc(title) + '</b>' + (text ? '<span>' + esc(text) + '</span>' : '') + '</div>'; }
   function uuid() { return crypto.randomUUID(); }
@@ -312,7 +313,9 @@
     var hd = itemHead(!!prevIt, !!nextIt);
     show(hd + '<div class="rlist"><div class="pad">' +
       '<label class="rfield"><span>שם התרגיל</span><input id="ina" style="font-weight: var(--fw-black); font-size: var(--fs-m)" placeholder=" " autocomplete="off" value="' + esc(itemName(it)) + '"></label>' +
-      '<button type="button" class="rcard rcard--flat rcard--link" data-act="pickMusic" style="display:block;box-sizing:border-box;width:100%;margin:0;text-align:start;font:inherit;color:inherit"><div class="rcard__head"><span class="rcard__title">מוזיקה</span></div><div class="rcard__body">' + (it.music ? '<b>' + esc(songName(it.music)) + '</b>' + (songBy(it.music) ? '<br>' + esc(songBy(it.music)) : '') : 'לחצו לבחירת מוזיקה') + '</div></button>' +
+      '<div class="rcard rcard--flat rcard--link" data-act="pickMusic" role="button" tabindex="0" style="margin:0;cursor:pointer"><div class="rcard__head"><span class="rcard__title">מוזיקה</span>' +
+        (it.music ? '<a class="rbtn rbtn--icon" href="https://www.youtube.com/results?search_query=' + encodeURIComponent((songName(it.music) + " " + songBy(it.music)).trim()) + '" target="_blank" rel="noopener" aria-label="ניגון ביוטיוב" title="ניגון ביוטיוב">' + I.yt + '</a>' : '') + '</div><div class="rcard__body">' +
+        (it.music ? '<b>' + esc(songName(it.music)) + '</b>' + (songBy(it.music) ? '<br>' + esc(songBy(it.music)) : '') : 'לחצו לבחירת מוזיקה') + '</div></div>' +
       '<label class="rfield"><span>פואטיקה</span><textarea id="ipo" rows="1" placeholder=" ">' + esc(txt(it, "poetics")) + '</textarea></label>' +
       '<label class="rfield"><span>הנחיה</span><textarea id="igu" rows="1" placeholder=" ">' + esc(txt(it, "guidance")) + '</textarea></label>' +
       '<label class="rfield"><span>הערות</span><textarea id="it" rows="1" placeholder=" ">' + esc(it.notes || "") + '</textarea></label>' +
@@ -321,7 +324,8 @@
       function walk(to) { stack().pop(); go(function () { itemScreen(to); }); }
       on(r, "prevW", function () { if (prevIt) walk(prevIt); });
       on(r, "nextW", function () { if (nextIt) walk(nextIt); });
-      on(r, "pickMusic", function () { go(function () { musicScreen(it); }); });
+      on(r, "pickMusic", function (b, ev) { if (ev.target.closest("a")) return; go(function () { musicScreen(it); }); });
+      r.querySelectorAll('[data-act="pickMusic"]').forEach(function (c) { c.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(function () { musicScreen(it); }); } }); });
       ["#ipo", "#igu", "#it"].forEach(function (s) { var t = r.querySelector(s); grow(t); t.addEventListener("input", function () { grow(t); }); });
       function own(k, v) { return v === baseTxt(it, k) ? null : v; }   /* the same as the catalog: keep inheriting it */
       function save() {
