@@ -483,9 +483,9 @@
     var hd = itemHead(!!prevIt, !!nextIt, (k + 1) + "/" + state.items.length);   /* the middle button says where we are, and still opens the list */
     show(hd + '<div class="rlist"><div class="pad">' +
       '<div style="display:flex;align-items:flex-end;gap:var(--gap-button)">' + '<label class="rfield" style="flex:1 1 auto;margin:0"><span>שם התרגיל</span><input id="ina" style="font-weight: var(--fw-black); font-size: var(--fs-m)" placeholder=" " autocomplete="off" value="' + esc(itemName(it)) + '"></label>' + facChip(it) + '</div>' +
-      '<div class="rcard rcard--flat rcard--link" data-act="pickMusic" role="button" tabindex="0" style="margin:0;cursor:pointer;display:flex;align-items:center;gap:var(--gap-button)"><div class="rcard__body" style="flex:1 1 auto;min-width:0">' +
+      '<div class="rcard rcard--flat rcard--link" data-act="pickMusic" role="button" tabindex="0" style="margin:0;cursor:pointer;display:flex;align-items:stretch;gap:var(--gap-button)"><div class="rcard__body" style="flex:1 1 auto;min-width:0">' +
         (it.music ? '<b>' + esc(songName(it.music)) + '</b>' + (songBy(it.music) ? '<br>' + esc(songBy(it.music)) : '') : 'לחצו לבחירת מוזיקה') + '</div>' +
-        (it.music ? songBtn(it.music) : '') + '</div>' +
+        (it.music ? '<div style="flex:none;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start">' + songBtn(it.music) + (it.music.duration_sec ? '<span style="color:var(--text-2);font:var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font)">' + clock(it.music.duration_sec) + '</span>' : '') + '</div>' : '') + '</div>' +   /* the play button at the top left of the card, the song's time at the bottom left */
       '<label class="rfield"><span>פואטיקה</span><textarea id="ipo" rows="1" placeholder=" "' + (isDraft(it, "poetics") ? DRAFT : "") + '>' + esc(txt(it, "poetics")) + '</textarea></label>' +
       '<label class="rfield"><span>הנחיה</span><textarea id="igu" rows="1" placeholder=" "' + (isDraft(it, "guidance") ? DRAFT : "") + '>' + esc(txt(it, "guidance")) + '</textarea></label>' +
       '<label class="rfield"><span>הערות</span><textarea id="it" rows="1" placeholder=" ">' + esc(it.notes || "") + '</textarea></label>' +
