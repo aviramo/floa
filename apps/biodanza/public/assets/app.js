@@ -118,17 +118,34 @@
   var durKnown = {};
   try { durKnown = JSON.parse(localStorage.getItem("biodanza.dur") || "{}") || {}; } catch (x) { durKnown = {}; }
   function durOf(m) { return (m && (m.duration_sec || durKnown[m.audio_object])) || 0; }
-  /* while a song plays, a button at the bottom right (the add button is at the left) stops it, from any screen; it slides away when the song stops */
+  /* while a song plays, a button at the bottom right (the add button is at the left) stops it, from any screen and from inside any popup (a popup is above the page, so it gets a button of its own); it slides away when the song stops */
   (function () {
+    var vis = "opacity: 0; transform: translateY(calc(var(--fab) + var(--sp-3))); pointer-events: none", face = "display: grid; place-items: center; width: var(--fab); height: var(--fab); padding: 0; border: 1px solid var(--primary); border-radius: var(--r-fab); background: var(--primary); color: var(--on-primary); box-shadow: var(--sh-pop); cursor: pointer; transition: transform var(--t-base) var(--ease), opacity var(--t-base) var(--ease)";
     var st = document.createElement("style");
-    st.textContent = ".bio-stop { position: fixed; right: max(var(--gutter), var(--inset-r)); bottom: calc(var(--gutter) + var(--inset-b)); z-index: var(--z-sticky); display: grid; place-items: center; width: var(--fab); height: var(--fab); padding: 0; border: 1px solid var(--primary); border-radius: var(--r-fab); background: var(--primary); color: var(--on-primary); box-shadow: var(--sh-pop); cursor: pointer; opacity: 0; transform: translateY(calc(var(--fab) + var(--sp-3))); pointer-events: none; transition: transform var(--t-base) var(--ease), opacity var(--t-base) var(--ease) } .bio-stop.on { opacity: 1; transform: none; pointer-events: auto } .bio-stop > svg { width: var(--icon-l); height: var(--icon-l) } html.rs-lock .bio-stop, html.dlg-lock .bio-stop, html.kb-open .bio-stop { opacity: 0; transform: translateY(calc(var(--fab) + var(--sp-3))); pointer-events: none } @media (prefers-reduced-motion: reduce) { .bio-stop { transition: none } }";
+    st.textContent = ".bio-stop, .bio-stop-in { " + face + "; " + vis + " } " +
+      ".bio-stop { position: fixed; right: max(var(--gutter), var(--inset-r)); bottom: calc(var(--gutter) + var(--inset-b)); z-index: var(--z-sticky) } " +
+      ".bio-stop-in { position: absolute; right: var(--pp-px, 16px); bottom: var(--sheet-b, 24px); z-index: 5 } " +
+      ".bio-stop.on, .bio-stop-in.on { opacity: 1; transform: none; pointer-events: auto } " +
+      ".bio-stop > svg, .bio-stop-in > svg { width: var(--icon-l); height: var(--icon-l) } " +
+      "html.rs-lock .bio-stop, html.dlg-lock .bio-stop, html.kb-open .bio-stop { " + vis + " } " +
+      "@media (prefers-reduced-motion: reduce) { .bio-stop, .bio-stop-in { transition: none } }";
     document.head.appendChild(st);
-    var b = document.createElement("button");
-    b.type = "button"; b.className = "bio-stop"; b.setAttribute("aria-label", "עצירת השיר"); b.title = "עצירת השיר";
-    b.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
-    document.body.appendChild(b);
-    b.addEventListener("click", function () { if (window.BioAudio && BioAudio.pause) BioAudio.pause(); });
-    document.addEventListener("bioaudio", function (ev) { b.classList.toggle("on", !!(ev.detail && ev.detail.playing)); });
+    var ICON = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>', playing = false;
+    function make(cls) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = cls; b.setAttribute("aria-label", "עצירת השיר"); b.title = "עצירת השיר"; b.innerHTML = ICON;
+      b.addEventListener("click", function () { if (window.BioAudio && BioAudio.pause) BioAudio.pause(); });
+      return b;
+    }
+    document.body.appendChild(make("bio-stop"));
+    function sync() { document.querySelectorAll(".bio-stop, .bio-stop-in").forEach(function (b) { b.classList.toggle("on", playing); }); }
+    document.addEventListener("bioaudio", function (ev) {
+      playing = !!(ev.detail && ev.detail.playing);
+      if (playing) document.querySelectorAll("dialog[open]").forEach(function (d) {
+        if (!d.querySelector(".bio-stop-in")) { d.appendChild(make("bio-stop-in")); requestAnimationFrame(function () { requestAnimationFrame(sync); }); }
+      });
+      sync();
+    });
   })();
   var barDrag = false;
   document.addEventListener("bioaudio", function (ev) {
