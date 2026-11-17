@@ -34,7 +34,9 @@ export async function handleRosterAuth(request, env, doFetch = fetch) {
 
   const base = env.SUPABASE_URL, key = env.SUPABASE_SERVICE_KEY;
   const h = { apikey: key, authorization: "Bearer " + key, "content-type": "application/json" };
-  const link = await doFetch(base + "/auth/v1/admin/generate_link", { method: "POST", headers: h, body: JSON.stringify({ type: "magiclink", email }) });
+  const gen = () => doFetch(base + "/auth/v1/admin/generate_link", { method: "POST", headers: h, body: JSON.stringify({ type: "magiclink", email }) });
+  let link = await gen();
+  if (link.status >= 500) link = await gen();   /* one retry: a passing Supabase hiccup */
   if (!link.ok) { console.log("roster-auth generate_link", link.status, (await link.text()).slice(0, 300)); return reply({ error: "auth_failed", stage: "generate_link", status: link.status }, 502, okOrigin); }
   const l = await link.json();
   const hashed = l.hashed_token || l.properties?.hashed_token, uid = l.id || l.user?.id;
@@ -44,7 +46,14 @@ export async function handleRosterAuth(request, env, doFetch = fetch) {
   const md = l.user_metadata || l.user?.user_metadata || {};
   const hasName = !!(md.full_name || md.name);
   if (uid && !hasName && name) await doFetch(base + "/auth/v1/admin/users/" + uid, { method: "PUT", headers: h, body: JSON.stringify({ user_metadata: { ...md, full_name: name, name, ...(md.picture || !t.picture ? {} : { picture: t.picture }) } }) }).catch(() => {});
-  const v = await doFetch(base + "/auth/v1/verify", { method: "POST", headers: { apikey: key, "content-type": "application/json" }, body: JSON.stringify({ type: "magiclink", token_hash: hashed }) });
+  const ver = (th) => doFetch(base + "/auth/v1/verify", { method: "POST", headers: { apikey: key, "content-type": "application/json" }, body: JSON.stringify({ type: "magiclink", token_hash: th }) });
+  let v = await ver(hashed);
+  if (v.status >= 500) {   /* the token may be spent: ask for a fresh one, once */
+    const again = await gen();
+    const l2 = again.ok ? await again.json().catch(() => null) : null;
+    const h2 = l2 && (l2.hashed_token || l2.properties?.hashed_token);
+    if (h2) v = await ver(h2);
+  }
   if (!v.ok) { console.log("roster-auth verify", v.status, (await v.text()).slice(0, 300)); return reply({ error: "auth_failed", stage: "verify", status: v.status }, 502, okOrigin); }
   return reply(await v.json(), 200, okOrigin);
 }
