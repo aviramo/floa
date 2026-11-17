@@ -59,6 +59,12 @@
       (withList ? '<span aria-hidden="true" style="flex:none;width:var(--ctl)"></span>' : '') +
       '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="nextW" aria-label="הבא" title="הבא"' + (hasNext ? "" : " disabled") + '>' + I.fwd + '</button></header>';
   }
+  /* the header of one exercise: buttons only, each with its word. Previous and the list on the right, next on the left. The name is the field below. */
+  function itemHead(hasPrev, hasNext) {
+    var b = function (act, ico, label, off) { return '<button class="rbtn rbtn--ghost" data-act="' + act + '" title="' + label + '"' + (off ? " disabled" : "") + '>' + ico + '<span>' + label + '</span></button>'; };
+    return '<header class="rhead">' + b("prevW", I.back, "הקודם", !hasPrev) + b("list", I.list, "לרשימה", false) +
+      '<span style="flex:1 1 auto"></span>' + b("nextW", I.fwd, "הבא", !hasNext) + '</header>';
+  }
   function toast(msg) {
     var t = document.createElement("div");
     t.className = "rmsg rmsg--toast"; t.setAttribute("role", "status"); t.innerHTML = '<span class="rmsg__text">' + esc(msg) + '</span>';
@@ -291,9 +297,9 @@
     setUrl(BASE + state.viv.id + "/" + it.id);
     var k = state.items.indexOf(it), prevIt = state.items[k - 1], nextIt = state.items[k + 1];
     /* the header walks the sequence: the right button to the previous exercise, the left one to the next, the name between them */
-    var hd = walkHead(itemName(it), !!prevIt, !!nextIt, true);
+    var hd = itemHead(!!prevIt, !!nextIt);
     show(hd + '<div class="rlist"><div class="pad">' +
-      '<label class="rfield"><span>שם התרגיל</span><input id="ina" placeholder=" " autocomplete="off" value="' + esc(itemName(it)) + '"></label>' +
+      '<label class="rfield"><span>שם התרגיל</span><input id="ina" style="font-weight: var(--fw-black); font-size: var(--fs-m)" placeholder=" " autocomplete="off" value="' + esc(itemName(it)) + '"></label>' +
       '<label class="rfield"><span>מוזיקה</span><select id="im"><option value="">בלי מוזיקה</option></select></label>' +
       '<label class="rfield"><span>פואטיקה</span><textarea id="ipo" rows="1" placeholder=" ">' + esc(txt(it, "poetics")) + '</textarea></label>' +
       '<label class="rfield"><span>הנחיה</span><textarea id="igu" rows="1" placeholder=" ">' + esc(txt(it, "guidance")) + '</textarea></label>' +
