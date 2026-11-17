@@ -233,7 +233,7 @@
   function menu(btn, items) {
     var old = document.getElementById("moreMenu"); if (old) old.remove();
     var m = document.createElement("div"); m.id = "moreMenu"; m.className = "rmenu rmenu--fixed"; m.setAttribute("role", "menu");
-    m.innerHTML = items.map(function (it, k) { return '<button type="button" class="rmenu__item" role="menuitem" data-k="' + k + '">' + it.icon + '<span>' + esc(it.label) + '</span></button>'; }).join("");
+    m.innerHTML = items.map(function (it, k) { return '<button type="button" class="rmenu__item" role="menuitem" data-k="' + k + '"' + (it.tone ? ' data-tone="' + it.tone + '"' : '') + '>' + it.icon + '<span>' + esc(it.label) + '</span></button>'; }).join("");
     document.body.appendChild(m);
     var r = btn.getBoundingClientRect();
     m.style.top = Math.round(r.bottom + 4) + "px"; m.style.left = Math.max(8, Math.round(r.left)) + "px";
@@ -308,9 +308,8 @@
     RosterSheet.render(dlg, {
       title: isNew ? "ויוונסיה חדשה" : "שינוי שם", from: "bottom", size: "s",
       body: '<div class="pad"><label class="rfield"><span>נושא</span><input id="nt" placeholder=" " autocomplete="off" value="' + esc(v.title) + '"></label></div>',
-      foot: '<button class="rbtn rbtn--block" type="button" id="nsave">שמירה</button>' + (isNew || v.role !== "owner" ? '' : '<button class="rbtn rbtn--ghost rbtn--danger rbtn--block" type="button" id="ndel">מחיקת הוויוונסיה</button>')
+      foot: '<button class="rbtn rbtn--block" type="button" id="nsave">שמירה</button>'
     });
-    var nd = dlg.querySelector("#ndel"); if (nd) nd.addEventListener("click", function () { dlg.close(); confirmDelete(v); });
     var inp = dlg.querySelector("#nt"); inp.focus();
     function save() {
       var t = inp.value.trim(); if (!t) return toast("חסר נושא");
@@ -338,7 +337,7 @@
       (v.role === "view" ? '' : '<button class="rfab" data-act="add" aria-label="הוספת תרגיל" title="הוספת תרגיל">' + I.plus + '</button>'), function (r) {
       on(r, "back", back); on(r, "add", function () { go(picker); });
       on(r, "more", function (b) {
-        menu(b, [{ label: "עריכת שם", icon: I.pen, fn: function () { namePopup(v, false); } }].concat(v.role === "owner" ? [{ label: "שיתוף", icon: I.share, fn: function () { sharePopup(v); } }] : []));
+        menu(b, [{ label: "עריכת שם", icon: I.pen, fn: function () { namePopup(v, false); } }].concat(v.role === "owner" ? [{ label: "שיתוף", icon: I.share, fn: function () { sharePopup(v); } }, { label: "מחיקה", icon: I.trash, tone: "danger", fn: function () { confirmDelete(v); } }] : []));
       });
     }, "d");
     api("/rest/v1/rpc/vivencia_members", { method: "POST", json: { v: v.id } }).then(function (mm) { state.members = mm || []; if (document.getElementById("list")) paint(); }, function () { state.members = []; });
