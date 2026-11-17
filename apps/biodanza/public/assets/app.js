@@ -74,7 +74,7 @@
   /* ---------- home: my vivencias ---------- */
   function home() {
     if (!wide()) { stack().length = 0; stack().push(home); }
-    show(head("הוויוונסיות שלי", FLOA_AUTH.email(), false,
+    show(head("הוויוונסיות שלי", "", false,
       (state.me.admin ? '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="allow" aria-label="מורשים" title="מורשים">' + I.users + '</button>' : '') +
       '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="out" aria-label="יציאה" title="יציאה">' + I.out + '</button>') +
       '<div class="rlist" data-fab-room id="hl"><div class="rskel rskel--title"></div></div>' +
@@ -329,8 +329,9 @@
   /* ---------- player: the session, one exercise at a time ---------- */
   function player(k) {
     var it = state.items[k], e = it.exercises || {}, last = k === state.items.length - 1;
-    show(head(itemName(it), (k + 1) + " מתוך " + state.items.length, true) +
+    show(head(itemName(it), "", true) +
       '<div class="rlist"><div class="pad">' +
+      '<span class="rchip rchip--s">' + (k + 1) + ' מתוך ' + state.items.length + '</span>' +
       (it.music ? '<span class="rchip rchip--info rchip--l">' + esc(it.music.name) + '</span>' : '') +
       (txt(it, "poetics") ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">פואטיקה</span></div><div class="rcard__body">' + esc(txt(it, "poetics")) + '</div></div>' : '') +
       (txt(it, "guidance") ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">הנחיה</span></div><div class="rcard__body">' + esc(txt(it, "guidance")) + '</div></div>' : '') +
