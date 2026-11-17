@@ -61,9 +61,9 @@
       (state.me.admin ? '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="allow" aria-label="מורשים" title="מורשים">' + I.users + '</button>' : '') +
       '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="out" aria-label="יציאה" title="יציאה">' + I.out + '</button>') +
       '<div class="rlist" data-fab-room id="hl"><div class="rskel rskel--title"></div></div>' +
-      '<button class="rfab' + (wide() ? ' rfab--in' : '') + '" data-act="new" aria-label="ויוונסיה חדשה" title="ויוונסיה חדשה">' + I.plus + '</button>', function (r) {
+      '<button class="rfab" data-act="new" aria-label="ויוונסיה חדשה" title="ויוונסיה חדשה">' + I.plus + '</button>', function (r) {
       on(r, "out", function () { Promise.resolve(FLOA_AUTH.signOut()).then(function () { location.reload(); }); });
-      on(r, "allow", function () { go(allowScreen); });
+      on(r, "allow", allowPopup);
       on(r, "new", newViv);
     });
     api("/rest/v1/vivencias?select=id,title,theme,updated_at,vivencia_items(count)&order=updated_at.desc").then(function (rows) {
@@ -190,29 +190,42 @@
     }, "d");
   }
 
-  /* ---------- allowlist (admin only) ---------- */
-  function allowScreen() {
-    show(head("מי מורשה להיכנס", "רק מי שברשימה רואה את המערכת והקטלוג", true) +
-      '<div class="pad"><label class="rfield rfield--ltr"><span>אימייל של חשבון גוגל</span><input id="em" type="email" placeholder=" "></label><button class="rbtn" data-act="addm">הוספה</button></div>' +
-      '<div class="rlist" id="list"><div class="rskel rskel--title"></div></div>', function (r) {
-      on(r, "back", back);
-      function paintA() {
-        api("/rest/v1/allowed?select=email,is_admin,note&order=added_at").then(function (rows) {
-          var l = r.querySelector("#list");
-          l.innerHTML = (rows || []).map(function (a) {
-            return '<div class="rrow"><div class="rrow__main"><span class="rrow__title">' + esc(a.email) + '</span>' + (a.is_admin ? '<span class="rrow__sub">מנהל</span>' : '') + '</div>' +
-              (a.is_admin ? '' : '<button class="rbtn rbtn--sm rbtn--ghost rbtn--danger" data-rm="' + esc(a.email) + '">הסרה</button>') + '</div>';
-          }).join("");
-          l.querySelectorAll("[data-rm]").forEach(function (b) { b.addEventListener("click", function () { api("/rest/v1/allowed?email=eq." + encodeURIComponent(b.dataset.rm), { method: "DELETE" }).then(paintA, fail); }); });
-        }, fail);
-      }
-      on(r, "addm", function () {
-        var em = r.querySelector("#em").value.trim().toLowerCase();
-        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) return toast("אימייל לא תקין");
-        api("/rest/v1/allowed", { method: "POST", prefer: "return=minimal", json: { email: em } }).then(function () { r.querySelector("#em").value = ""; paintA(); }, fail);
+  /* ---------- allowlist (admin only): the kit's popup, from the left on a computer ---------- */
+  function allowPopup() {
+    var dlg = document.getElementById("allowDlg");
+    if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "allowDlg"; document.body.appendChild(dlg); }
+    var rows = [];
+    RosterSheet.render(dlg, {
+      title: "מי מורשה להיכנס", from: "bottom",
+      body: '<div class="pad">' +
+        '<label class="rfield"><span>חיפוש</span><input id="aq" type="search" placeholder=" " autocomplete="off"></label>' +
+        '<label class="rfield rfield--ltr"><span>אימייל של חשבון גוגל</span><input id="em" type="email" placeholder=" " autocomplete="off"></label>' +
+        '<label class="rfield"><span>שם (לא חובה)</span><input id="en" placeholder=" " autocomplete="off"></label>' +
+        '<button class="rbtn" id="addm" type="button">הוספה</button></div><div id="alist"></div>'
+    });
+    function paintA() {
+      var q = dlg.querySelector("#aq").value.trim().toLowerCase(), l = dlg.querySelector("#alist");
+      var vis = rows.filter(function (a) { return !q || (a.email + " " + (a.note || "")).toLowerCase().indexOf(q) >= 0; });
+      l.innerHTML = vis.length ? vis.map(function (a) {
+        return '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title" dir="ltr">' + esc(a.email) + '</span>' + (a.is_admin ? '<span class="rchip rchip--info rchip--s">מנהל</span>' : '') + '</div>' +
+          '<label class="rfield"><span>שם</span><input data-note="' + esc(a.email) + '" placeholder=" " value="' + esc(a.note || "") + '"></label>' +
+          (a.is_admin ? '' : '<div class="rcard__foot"><button class="rbtn rbtn--sm rbtn--ghost rbtn--danger" type="button" data-rm="' + esc(a.email) + '">הסרה</button></div>') + '</div>';
+      }).join("") : '<div class="rempty"><b>' + (rows.length ? "לא נמצא" : "הרשימה ריקה") + '</b></div>';
+      l.querySelectorAll("[data-rm]").forEach(function (b) { b.addEventListener("click", function () { api("/rest/v1/allowed?email=eq." + encodeURIComponent(b.dataset.rm), { method: "DELETE" }).then(load, fail); }); });
+      l.querySelectorAll("[data-note]").forEach(function (i) {
+        i.addEventListener("change", function () {
+          api("/rest/v1/allowed?email=eq." + encodeURIComponent(i.dataset.note), { method: "PATCH", json: { note: i.value.trim() } }).then(function () { rows.forEach(function (a) { if (a.email === i.dataset.note) a.note = i.value.trim(); }); toast("נשמר"); }, fail);
+        });
       });
-      paintA();
-    }, "d");
+    }
+    function load() { return api("/rest/v1/allowed?select=email,is_admin,note&order=added_at").then(function (r) { rows = r || []; paintA(); }, fail); }
+    dlg.querySelector("#aq").addEventListener("input", paintA);
+    dlg.querySelector("#addm").addEventListener("click", function () {
+      var em = dlg.querySelector("#em").value.trim().toLowerCase(), nm = dlg.querySelector("#en").value.trim();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) return toast("אימייל לא תקין");
+      api("/rest/v1/allowed", { method: "POST", prefer: "return=minimal", json: { email: em, note: nm } }).then(function () { dlg.querySelector("#em").value = ""; dlg.querySelector("#en").value = ""; return load(); }, fail);
+    });
+    load();
   }
 
   /* ---------- start ---------- */
