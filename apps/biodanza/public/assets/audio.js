@@ -54,6 +54,9 @@
   /* ---- one player for the whole app ---- */
   var el = new Audio(), now = "", url = "", busy = "";
   el.preload = "none";
+  var vol = 1;
+  try { var sv = parseFloat(localStorage.getItem("biodanza.volume")); if (sv >= 0 && sv <= 1) vol = sv; } catch (e) { /* the default */ }
+  el.volume = vol;
   function paint() {
     document.querySelectorAll("[data-audio]").forEach(function (b) {
       var me = b.dataset.audio, st = busy === me ? "wait" : (now === me && !el.paused ? "pause" : "sound");
@@ -94,6 +97,8 @@
       return '<button type="button" class="rbtn rbtn--icon' + (trail ? ' rrow__trail' : '') + '" data-audio="' + name + '" data-st="sound" aria-label="השמעה" title="השמעה" style="width:var(--fab);height:var(--fab);min-height:var(--fab);color:var(--text-3)">' + ICON.sound + '</button>';
     },
     /* move the playing song to a place in it: a fraction from 0 to 1 */
+    /* the volume, kept in this browser: a step up or down (in fractions of 1), the new level back */
+    volume: function (d) { vol = Math.max(0, Math.min(1, Math.round((vol + d) * 20) / 20)); el.volume = vol; try { localStorage.setItem("biodanza.volume", String(vol)); } catch (e) { /* not kept */ } return vol; },
     pause: function () { el.pause(); },
     seek: function (f) { if (el.duration) el.currentTime = Math.max(0, Math.min(1, f)) * el.duration; },
     kept: isKept

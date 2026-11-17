@@ -140,6 +140,16 @@
     }
     document.body.appendChild(make("bio-stop"));
     function sync() { document.querySelectorAll(".bio-stop, .bio-stop-in").forEach(function (b) { b.classList.toggle("on", playing); }); }
+    /* the arrow keys are the volume while a song plays (up, down; outside a field, a menu or a popup, where they keep their own job) */
+    document.addEventListener("keydown", function (e) {
+      if (!playing || (e.key !== "ArrowUp" && e.key !== "ArrowDown") || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+      var tg = e.target; if (tg && (tg.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName))) return;
+      if (document.querySelector("dialog[open], #moreMenu, .rmenu") || !window.BioAudio || !BioAudio.volume) return;
+      e.preventDefault();
+      var v = BioAudio.volume(e.key === "ArrowUp" ? 0.05 : -0.05), old = document.querySelector(".rmsg--toast.bio-vol"); if (old) old.remove();
+      toast("עוצמת שמע " + Math.round(v * 100) + "%");
+      var ts = document.querySelectorAll(".rmsg--toast"); if (ts.length) ts[ts.length - 1].classList.add("bio-vol");
+    });
     document.addEventListener("bioaudio", function (ev) {
       playing = !!(ev.detail && ev.detail.playing);
       if (playing) document.querySelectorAll("dialog[open]").forEach(function (d) {
