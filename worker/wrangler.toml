@@ -68,6 +68,8 @@ ROSTER_ONLY_SCHEMA = "roster"   # this Worker drains only the real schema; roste
 LEAD_FROM = "FLOA <no-reply@floa.co.il>"
 SUPABASE_URL = "https://aexmnaxvahblveejsbup.supabase.co"
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleG1uYXh2YWhibHZlZWpzYnVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5NzE5MjMsImV4cCI6MjEwMTU0NzkyM30.oXPojzklAqOl9pvH5R_GNGTda6OvYruDQjMLprcBA0Y"
+ROSTER_GOOGLE_CLIENT_IDS = "459432002435-349ppd8r1qqe9tkcdm2v3f6rpp48i1ni.apps.googleusercontent.com"   # the Google app of harpatka.co.il: sign-in to Roster without the Supabase Google provider (Harpatka move, 2026-11-17)
+ROSTER_AUTH_ORIGINS = "https://harpatka.co.il,https://www.harpatka.co.il"   # browser origins allowed to call /roster-auth/google
 
 # The roster API (/roster/v1/*, src/roster/) is the only door to the roster
 # tables for the outside world. It calls the database's SECURITY DEFINER
