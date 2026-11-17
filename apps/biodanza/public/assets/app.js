@@ -557,11 +557,20 @@
   function chooseSong(it, m) {
     return api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { music_id: m ? m.id : null } }).then(function () {
       it.music_id = m ? m.id : null; it.music = m;
-      ["otherDlg", "musicDlg"].forEach(function (id) { var d = document.getElementById(id); if (d && d.open) d.close(); });
+      ["otherDlg", "musicDlg"].forEach(function (id) { slideClose(document.getElementById(id)); });
       itemScreen(it);
     }, fail);
   }
   /* rows in a popup run from edge to edge: the popup's own side room (measured from its title) is pulled out and given back as padding, and the chosen row has the green stripe at its left */
+  /* closing a popup from code slides it out the way a swipe does, then closes it */
+  function slideClose(d) {
+    if (!d || !d.open) return;
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return d.close();
+    var h = d.getBoundingClientRect().height, done = false;
+    var end = function () { if (done) return; done = true; d.removeEventListener("transitionend", end); d.classList.remove("rs-settle"); d.style.removeProperty("--rs-dy"); if (d.open) d.close(); };
+    d.classList.add("rs-settle"); d.style.setProperty("--rs-dy", (h + 24) + "px");
+    d.addEventListener("transitionend", end); setTimeout(end, 320);
+  }
   function bleedCss(id) {
     var v = 'var(--bleed, var(--pp-px))', q = '#' + id;
     /* the body is as wide as the popup, its content keeps the title's side room, and a row pulls back out to the edges, so its background and stripe reach the popup's walls */
@@ -788,7 +797,7 @@
     });
     dlg.querySelector("#cswap").addEventListener("click", function () { dlg.close(); addEx(e, swapIt, sheet); });
   }
-  function closeSheets() { ["exDlg", "catDlg"].forEach(function (id) { var d = document.getElementById(id); if (d && d.open) d.close(); }); }
+  function closeSheets() { ["exDlg", "catDlg"].forEach(function (id) { slideClose(document.getElementById(id)); }); }
   function addEx(e, swapIt, sheet) {
     if (swapIt) {   /* the same place in the curve, another exercise: its first song, and none of the old exercise's own wording */
       return api("/rest/v1/exercise_music?exercise_id=eq." + e.id + "&select=music_id&limit=1").then(function (m) {
