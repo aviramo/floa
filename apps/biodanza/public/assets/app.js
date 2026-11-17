@@ -63,6 +63,10 @@
     return '<div style="flex:none;display:flex;flex-direction:column;align-items:center;gap:var(--gap-button)">' + tile +
       (m.duration_sec ? '<span style="color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/1 var(--font);font-variant-numeric:tabular-nums">' + clock(m.duration_sec) + '</span>' : '') + '</div>';
   }
+  /* a song as a row to choose from: the same element, a row of its own */
+  function songRow(m, cur, attr) {
+    return '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-2)"' + (cur ? ' aria-current="true"' : '') + '><button type="button" class="rrow__main" ' + attr + '="' + m.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit">' + songLines(m) + '</button>' + playCol(m, true) + '</div>';
+  }
   window.toast = window.toast || toast;
   document.addEventListener("click", function (e) {
     var a = e.target.closest && e.target.closest("a[data-yt]"); if (!a) return;
@@ -535,7 +539,7 @@
         (rows || []).forEach(function (x) { if (x.music && !seen[x.music.id]) { seen[x.music.id] = 1; list.push(x.music); } });
         var row = function (id, t, sub, cur, m) { return '<div class="rrow rrow--link"' + (cur ? ' aria-current="true"' : '') + '><button type="button" class="rrow__main" data-m="' + id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(t) + '</span>' + (sub ? '<span class="rrow__sub">' + esc(sub) + '</span>' : '') + '</button>' + (m ? songBtn(m, true) : '') + '</div>'; };
         var l = r.querySelector("#mlist");
-        l.innerHTML = row("", "בלי מוזיקה", "", !it.music_id) + list.map(function (m) { return row(m.id, songName(m), songBy(m), it.music_id === m.id, m); }).join("") +
+        l.innerHTML = row("", "בלי מוזיקה", "", !it.music_id) + list.map(function (m) { return songRow(m, it.music_id === m.id, "data-m"); }).join("") +
           '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-act="other" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">מוזיקות אחרות</span><span class="rrow__sub">שירים שאינם בקטלוג</span></button></div>';
         on(l, "other", function () { otherMusic(it, out); });
         l.querySelectorAll("[data-m]").forEach(function (b) {
@@ -558,7 +562,7 @@
           var q = r.querySelector("#oq").value.trim().toLowerCase();
           var vis = all.filter(function (m) { return !q || (songName(m) + " " + songBy(m)).toLowerCase().indexOf(q) >= 0; });
           l.innerHTML = vis.length ? vis.map(function (m) {
-            return '<div class="rrow rrow--link"' + (it.music_id === m.id ? ' aria-current="true"' : '') + '><button type="button" class="rrow__main" data-o="' + m.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(songName(m)) + '</span><span class="rrow__sub">' + (songBy(m) ? esc(songBy(m)) + ' ' : '') + '<span class="rchip rchip--s">לא בקטלוג</span></span></button>' + songBtn(m, true) + '</div>';
+            return songRow(m, it.music_id === m.id, "data-o");
           }).join("") : ph("לא נמצא", "");
           l.querySelectorAll("[data-o]").forEach(function (b) {
             b.addEventListener("click", function () {
