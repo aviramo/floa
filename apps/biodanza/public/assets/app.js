@@ -53,6 +53,16 @@
   }
   /* a song with a file in the bucket gets the sound button (assets/audio.js); one without keeps the YouTube button */
   function songBtn(m, trail) { return m.audio_object && window.BioAudio ? BioAudio.button(m.audio_object, trail) : ytLink(m, trail); }
+  /* ONE way to show a song, in the exercise list and in the exercise's own card: the song's name (up to two lines) and the performer on the left of the text, and at the left the play tile (the size of the number tile) with the song's time under it */
+  function songLines(m) {
+    return '<span style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin-top:var(--gap-tight);color:var(--text-2);font:var(--fw-medium) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(songName(m)) + '</span>' +
+      (songBy(m) ? '<span style="display:block;margin-top:var(--gap-tight);color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(songBy(m)) + '</span>' : '');
+  }
+  function playCol(m, trail) {
+    var tile = songBtn(m, trail).replace(/width:var\(--fab\);height:var\(--fab\);min-height:var\(--fab\);/, "width:var(--ctl);height:var(--ctl);min-height:var(--ctl);border-radius:var(--r-ctl);background:var(--surface-2);");
+    return '<div style="flex:none;display:flex;flex-direction:column;align-items:center;gap:var(--gap-button)">' + tile +
+      (m.duration_sec ? '<span style="color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/1 var(--font);font-variant-numeric:tabular-nums">' + clock(m.duration_sec) + '</span>' : '') + '</div>';
+  }
   window.toast = window.toast || toast;
   document.addEventListener("click", function (e) {
     var a = e.target.closest && e.target.closest("a[data-yt]"); if (!a) return;
@@ -380,20 +390,9 @@
     if (!vis.length) { l.innerHTML = ph("הוויוונסיה ריקה", "לחצו על + כדי להוסיף תרגיל מהקטלוג"); return; }
     l.innerHTML = vis.map(function (i, k) {
       var e = i.exercises || {};
-      /* the play tile (the number's size): with the YouTube pill the song's time is part of the tile, under the pill; the sound button keeps the time in the text */
-      var pb = i.music ? songBtn(i.music, true) : "", merged = pb.indexOf("data-yt") >= 0;
-      if (merged) {
-        pb = pb.replace(/width:var\(--fab\);height:var\(--fab\);min-height:var\(--fab\);/, "width:var(--ctl);height:var(--ctl);min-height:var(--ctl);border-radius:var(--r-ctl);background:var(--surface-2);");
-        pb = '<div style="flex:none;display:flex;flex-direction:column;align-items:center;gap:var(--gap-button)">' + pb +
-          (i.music.duration_sec ? '<span style="color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/1 var(--font);font-variant-numeric:tabular-nums">' + clock(i.music.duration_sec) + '</span>' : "") + '</div>';
-      } else if (pb) pb = pb.replace(/width:var\(--fab\);height:var\(--fab\);min-height:var\(--fab\);/, "width:var(--ctl);height:var(--ctl);min-height:var(--ctl);border-radius:var(--r-ctl);background:var(--surface-2);");
+      var pb = i.music ? playCol(i.music, true) : "";
       return '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-2)"' + (state.lastItem === i.id ? ' aria-current="true"' : '') + '><span aria-hidden="true" style="flex:none;display:flex;align-items:center;justify-content:center;width:var(--ctl);height:var(--ctl);border-radius:var(--r-ctl);background:var(--surface-2);font:var(--fw-bold) var(--fs-m)/1 var(--font)">' + (k + 1) + '</span><button type="button" class="rrow__main" data-edit="' + i.id + '" style="background:none;border:0;padding:0;margin-inline-start:var(--sp-1);text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(itemName(i)) + '</span>' +
-        (i.music ? (function () {
-          /* three steps of weight: the exercise (bold), the song (regular, up to two lines: a song's name is not cut), the performer and the time (small); the time in figures of one width, at the left */
-          var m = i.music, dur = m.duration_sec && !merged ? '<span style="flex:none;font-variant-numeric:tabular-nums">' + clock(m.duration_sec) + '</span>' : '';
-          return '<span style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin-top:var(--gap-tight);color:var(--text-2);font:var(--fw-medium) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(songName(m)) + '</span>' +
-            (songBy(m) || dur ? '<span style="display:flex;justify-content:space-between;align-items:baseline;gap:var(--gap-button);margin-top:var(--gap-tight);color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font)"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(songBy(m)) + '</span>' + dur + '</span>' : '');
-        })() : '<span class="rrow__sub">בלי מוזיקה</span>') + '</span></button>' + pb + facChip(i, ' rrow__trail')   /* the same tile as the number's */ + '</div>';
+        (i.music ? songLines(i.music) : '<span class="rrow__sub">בלי מוזיקה</span>') + '</span></button>' + pb + facChip(i, ' rrow__trail')   /* the same tile as the number's */ + '</div>';
     }).join("");
     l.querySelectorAll("[data-edit]").forEach(function (b) { b.addEventListener("click", function () { var it = state.items.filter(function (x) { return x.id === b.dataset.edit; })[0]; if (wide()) itemScreen(it); else go(function () { itemScreen(it); }); }); });
     wireFac(l);
@@ -495,10 +494,8 @@
     var hd = itemHead(!!prevIt, !!nextIt, (k + 1) + "/" + state.items.length);   /* the middle button says where we are, and still opens the list */
     show(hd + '<div class="rlist"><div class="pad">' +
       '<div style="display:flex;align-items:flex-end;gap:var(--gap-button)">' + '<label class="rfield" style="flex:1 1 auto;margin:0"><span>שם התרגיל</span><input id="ina" style="font-weight: var(--fw-black); font-size: var(--fs-m)" placeholder=" " autocomplete="off" value="' + esc(itemName(it)) + '"></label>' + facChip(it) + '</div>' +
-      '<div class="rcard rcard--flat rcard--link" data-act="pickMusic" role="button" tabindex="0" style="margin:0;cursor:pointer"><div class="rcard__body">' +
-        (it.music ? '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:var(--gap-button)"><b style="min-width:0;display:block;text-box:trim-both cap alphabetic">' + esc(songName(it.music)) + '</b>' + songBtn(it.music).replace(/width:var\(--fab\);height:var\(--fab\);min-height:var\(--fab\);/, "width:auto;height:auto;min-height:0;") + '</div>' +   /* the button hugs the play pill, so the pill itself sits at the top left corner of the content */
-          (songBy(it.music) || it.music.duration_sec ? '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:var(--gap-button);margin-top:var(--sp-1)"><span style="min-width:0;display:block;text-box:trim-both cap alphabetic">' + esc(songBy(it.music)) + '</span>' + (it.music.duration_sec ? '<span style="flex:none;display:block;text-box:trim-both cap alphabetic">' + clock(it.music.duration_sec) + '</span>' : '') + '</div>' : '')   /* the play button at the top left, level with the song's name; the time at the bottom left, on the performer's line; one padding all round */
-          : 'לחצו לבחירת מוזיקה') + '</div></div>' +
+      '<div class="rcard rcard--flat rcard--link" data-act="pickMusic" role="button" tabindex="0" style="margin:0;cursor:pointer;display:flex;align-items:center;gap:var(--gap-button)"><div class="rcard__body" style="flex:1 1 auto;min-width:0">' +
+        (it.music ? songLines(it.music) : 'לחצו לבחירת מוזיקה') + '</div>' + (it.music ? playCol(it.music) : '') + '</div>' +
       '<label class="rfield"><span>פואטיקה</span><textarea id="ipo" rows="1" placeholder=" "' + (isDraft(it, "poetics") ? DRAFT : "") + '>' + esc(txt(it, "poetics")) + '</textarea></label>' +
       '<label class="rfield"><span>הנחיה</span><textarea id="igu" rows="1" placeholder=" "' + (isDraft(it, "guidance") ? DRAFT : "") + '>' + esc(txt(it, "guidance")) + '</textarea></label>' +
       '<label class="rfield"><span>הערות</span><textarea id="it" rows="1" placeholder=" ">' + esc(it.notes || "") + '</textarea></label>' +
