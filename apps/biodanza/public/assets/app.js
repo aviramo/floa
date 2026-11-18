@@ -571,7 +571,16 @@
       });
       on(r, "new", newViv);
     });
-    loadVivs().then(renderVivs, fail);
+    /* the list is asked for again when an answer fails (a refresh can hit a moment the connection or the token is not ready); only if it still fails, the copies kept on the device are shown, else a line that says so: never an empty list that looks like "no vivencias" */
+    var tries = function (n) { return loadVivs().catch(function (e) { if (n <= 0) throw e; return new Promise(function (r) { setTimeout(r, 800); }).then(function () { return tries(n - 1); }); }); };
+    tries(3).then(renderVivs, function (e) {
+      console.error(e);
+      var l = document.getElementById("hl"); if (!l || state.vivsLoaded) return;
+      (window.BioOffline ? BioOffline.list() : Promise.resolve([])).then(function (recs) {
+        if (recs && recs.length) { state.vivs = recs.map(function (x) { return Object.assign({}, x.row, { role: x.role, pos: x.pos }); }); state.vivs.sort(function (a, b) { var pa = a.pos == null ? -1 : a.pos, pb = b.pos == null ? -1 : b.pos; return pa - pb; }); renderVivs(); }
+        else l.innerHTML = ph("לא הצלחנו לטעון את הוויוונסיות", "רעננו את הדף כדי לנסות שוב");
+      });
+    });
   }
   /* my vivencias, with my role and my order in each */
   function loadVivs() {
@@ -1652,7 +1661,7 @@
       state.me = me;
       if (!me || !me.allowed) return gate("לחשבון " + FLOA_AUTH.email() + " אין הרשאה להיכנס. אפשר לבקש מהמנהל להוסיף אותו.", true);
       return Promise.all([api("/rest/v1/lines?select=key,name_he&order=sort"), api("/rest/v1/phases?select=key,name_he&order=sort")]).then(function (r) { state.lines = r[0]; state.phases = r[1]; home(); startRealtime(); api("/rest/v1/song_likes?select=music_id").then(function (ls) { likes = {}; (ls || []).forEach(function (x) { likes[x.music_id] = true; }); }, function () { /* no hearts this time */ });
-        api("/rest/v1/vivencia_likes?select=vivencia_id").then(function (ls) { likesViv = {}; (ls || []).forEach(function (x) { likesViv[x.vivencia_id] = true; }); renderVivs(); }, function () { /* no hearts this time */ });
+        api("/rest/v1/vivencia_likes?select=vivencia_id").then(function (ls) { likesViv = {}; (ls || []).forEach(function (x) { likesViv[x.vivencia_id] = true; }); if (state.vivsLoaded) renderVivs(); }, function () { /* no hearts this time */ });
         api("/rest/v1/exercise_likes?select=exercise_id").then(function (ls) { likesEx = {}; (ls || []).forEach(function (x) { likesEx[x.exercise_id] = true; }); }, function () { /* no hearts this time */ }); });
     }).catch(function (e) {
       console.error(e);
