@@ -202,62 +202,59 @@
   var durKnown = {};
   try { durKnown = JSON.parse(localStorage.getItem("biodanza.dur") || "{}") || {}; } catch (x) { durKnown = {}; }
   function durOf(m) { return (m && (m.duration_sec || durKnown[m.audio_object])) || 0; }
-  /* while a song plays, a button at the bottom right (the add button is at the left) stops it, from any screen and from inside any popup (a popup is above the page, so it gets a button of its own); it slides away when the song stops */
+  /* the player: ONE pill at the bottom right, always there once signed in. Play/pause, the time left and the song's bar are one thing; with no song loaded it says so. Inside an open popup it has a copy of its own (a popup is above the page). */
   (function () {
-    var vis = "opacity: 0; transform: translateY(calc(var(--fab) + var(--sp-3))); pointer-events: none", face = "display: grid; place-items: center; width: var(--fab); height: var(--fab); padding: 0; border: 1px solid var(--danger); border-radius: var(--r-fab); background: var(--danger); color: var(--on-primary); box-shadow: var(--sh-pop); cursor: pointer; transition: transform var(--t-base) var(--ease), opacity var(--t-base) var(--ease)";
+    var up = "calc(var(--gutter) + var(--inset-b))", left = "calc(max(var(--gutter), var(--inset-l)) + var(--fab) + var(--sp-2))", right = "max(var(--gutter), var(--inset-r))";
+    var vis = "opacity: 0; transform: translateY(calc(var(--fab) + var(--sp-3))); pointer-events: none";
     var st = document.createElement("style");
-    st.textContent = ".bio-stop, .bio-stop-in { " + face + "; " + vis + " } " +
-      ".bio-stop { position: fixed; right: max(var(--gutter), var(--inset-r)); bottom: calc(var(--gutter) + var(--inset-b)); z-index: var(--z-sticky) } " +
-      ".bio-stop-in { position: fixed; inset: auto max(var(--gutter), var(--inset-r)) calc(var(--gutter) + var(--inset-b)) auto; margin: 0; overflow: visible } " +   /* a popover inside the open popup: it is shown in the top layer, above the popup, and is not clipped by it */
-      ".bio-stop.on, .bio-stop-in.on { opacity: 1; transform: none; pointer-events: auto } " +
-      ".bio-stop > svg, .bio-stop-in > svg { width: var(--icon-l); height: var(--icon-l) } " +
-      "html.rs-lock .bio-stop, html.dlg-lock .bio-stop, html.kb-open .bio-stop { " + vis + " } " +
-      "@media (prefers-reduced-motion: reduce) { .bio-stop, .bio-stop-in { transition: none } }";
-    /* the second button, above the stop button: it shows the time left, and opens the song's bar over everything (at the stop button's own level) */
-    var face2 = face.replace(/border: 1px solid var\(--danger\)/, "border: 1px solid var(--line-strong)").replace("background: var(--danger)", "background: var(--bg)").replace("color: var(--on-primary)", "color: var(--text)");
-    var up = "calc(var(--gutter) + var(--inset-b))", side = "calc(max(var(--gutter), var(--inset-r)) + var(--fab) + var(--sp-2))";
-    st.textContent += " .bio-seekfab, .bio-seekfab-in { " + face2 + "; " + vis + "; font: var(--fw-bold) var(--fs-xs)/1 var(--font); font-variant-numeric: tabular-nums } " +
-      ".bio-seekfab { position: fixed; right: " + side + "; bottom: " + up + "; z-index: var(--z-sticky) } " +
-      ".bio-seekfab-in { position: fixed; inset: auto " + side + " " + up + " auto; margin: 0; overflow: visible } " +
-      ".bio-seekfab.on, .bio-seekfab-in.on { opacity: 1; transform: none; pointer-events: auto } " +
-      ".bio-seekpan, .bio-seekpan-in { position: fixed; left: max(var(--gutter), var(--inset-l)); right: calc(max(var(--gutter), var(--inset-r)) + 2 * (var(--fab) + var(--sp-2))); top: auto; bottom: " + up + "; width: auto; height: var(--fab); margin: 0; box-sizing: border-box; display: flex; align-items: center; padding: 0 var(--sp-3); overflow: visible; background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-fab); box-shadow: var(--sh-pop); z-index: var(--z-sticky); opacity: 0; transform: translateX(16px) scale(.98); transform-origin: right center; pointer-events: none; transition: transform var(--t-base) var(--ease), opacity var(--t-base) var(--ease) } " +
-      ".bio-seekpan.open, .bio-seekpan-in.open { opacity: 1; transform: none; pointer-events: auto } " +
-      ".bio-seekpan > input, .bio-seekpan-in > input { display: block; width: 100%; margin: 0; direction: ltr; accent-color: var(--primary); touch-action: none } " +
-      "html.rs-lock .bio-seekfab, html.dlg-lock .bio-seekfab, html.kb-open .bio-seekfab, html.rs-lock .bio-seekpan, html.dlg-lock .bio-seekpan { opacity: 0; pointer-events: none } " +
-      "@media (min-width: 1024px) { .bio-seekpan, .bio-seekpan-in { left: calc(100vw - var(--listw) + var(--gutter)) } } " +
-      "@media (prefers-reduced-motion: reduce) { .bio-seekfab, .bio-seekfab-in, .bio-seekpan, .bio-seekpan-in { transition: none } }";
+    st.textContent = ".bio-dock, .bio-dock-in { position: fixed; inset: auto " + right + " " + up + " " + left + "; margin: 0; padding: 0; box-sizing: border-box; height: var(--fab); display: flex; align-items: center; gap: var(--sp-3); overflow: visible; color: var(--text); background: var(--bg); border: 1px solid var(--line-strong); border-radius: var(--r-fab); box-shadow: var(--sh-pop); z-index: var(--z-sticky); " + vis + "; transition: transform var(--t-base) var(--ease), opacity var(--t-base) var(--ease) } " +
+      ".bio-dock.on, .bio-dock-in.on { opacity: 1; transform: none; pointer-events: auto } " +
+      "html.rs-lock .bio-dock, html.dlg-lock .bio-dock, html.kb-open .bio-dock { " + vis + " } " +
+      ".bio-dock__btn { flex: none; display: grid; place-items: center; width: calc(var(--fab) - 2px); height: calc(var(--fab) - 2px); padding: 0; border: 0; border-radius: var(--r-fab); background: var(--danger); color: var(--on-primary); cursor: pointer } " +
+      ".bio-dock__btn[data-st=\"paused\"] { background: var(--primary) } .bio-dock__btn:disabled { background: var(--surface-2); color: var(--text-3); cursor: default } " +
+      ".bio-dock__btn > svg { width: var(--icon-l); height: var(--icon-l) } " +
+      ".bio-dock__time { flex: none; min-width: 3.2em; text-align: center; font: var(--fw-bold) var(--fs-xs)/1 var(--font); font-variant-numeric: tabular-nums } " +
+      ".bio-dock__bar { flex: 1 1 auto; min-width: 0; display: block; margin: 0 var(--sp-3) 0 0; direction: ltr; accent-color: var(--primary); touch-action: none } " +
+      ".bio-dock__none { flex: 1 1 auto; min-width: 0; padding-inline-end: var(--sp-3); color: var(--text-2); font: var(--fw-regular) var(--fs-xs)/1.2 var(--font) } " +
+      ".bio-dock:not(.idle) .bio-dock__none, .bio-dock.idle .bio-dock__bar, .bio-dock.idle .bio-dock__time, .bio-dock-in:not(.idle) .bio-dock__none, .bio-dock-in.idle .bio-dock__bar, .bio-dock-in.idle .bio-dock__time { display: none } " +
+      "@media (min-width: 1024px) { .bio-dock, .bio-dock-in { left: calc(100vw - var(--listw) + var(--gutter) + var(--fab) + var(--sp-2)) } } " +
+      "@media (prefers-reduced-motion: reduce) { .bio-dock, .bio-dock-in { transition: none } }";
     document.head.appendChild(st);
-    var ICON = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>', playing = false;
+    var PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+    var PLAY = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>';
+    var playing = false, loaded = false, seekDrag = false, leftNow = 0, frac = 0;
     function make(cls) {
-      var b = document.createElement("button");
-      b.type = "button"; b.className = cls; b.setAttribute("aria-label", "עצירת השיר"); b.title = "עצירת השיר"; b.innerHTML = ICON;
-      b.addEventListener("click", function () { if (window.BioAudio && BioAudio.pause) BioAudio.pause(); });
-      return b;
-    }
-    document.body.appendChild(make("bio-stop"));
-    var seekOpen = false, seekDrag = false, leftNow = 0;
-    function makeFab(cls) {
-      var b = document.createElement("button");
-      b.type = "button"; b.className = cls; b.setAttribute("aria-label", "סרגל התקדמות"); b.title = "סרגל התקדמות"; b.textContent = clock(leftNow);
-      b.addEventListener("click", function () { seekOpen = !seekOpen; sync(); });
-      return b;
-    }
-    function makePan(cls) {
-      var p = document.createElement("div"); p.className = cls;
-      p.innerHTML = '<input type="range" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר">';
-      var r = p.firstChild;
+      var d = document.createElement("div"); d.className = cls + " idle";
+      d.innerHTML = '<button type="button" class="bio-dock__btn" disabled aria-label="השמעה">' + PLAY + '</button><span class="bio-dock__time">0:00</span>' +
+        '<input class="bio-dock__bar" type="range" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר"><span class="bio-dock__none">לא נבחרה מוזיקה</span>';
+      d.querySelector("button").addEventListener("click", function () { if (window.BioAudio && BioAudio.playPause) BioAudio.playPause(); });
+      var r = d.querySelector("input");
       r.addEventListener("pointerdown", function () { seekDrag = true; });
       ["pointerup", "pointercancel", "change"].forEach(function (n) { r.addEventListener(n, function () { seekDrag = false; }); });
       r.addEventListener("input", function () { if (window.BioAudio && BioAudio.seek) BioAudio.seek(r.value / 1000); });
-      return p;
+      return d;
     }
-    document.body.appendChild(makePan("bio-seekpan")); document.body.appendChild(makeFab("bio-seekfab"));
+    document.body.appendChild(make("bio-dock"));
     function sync() {
-      document.querySelectorAll(".bio-stop, .bio-stop-in, .bio-seekfab, .bio-seekfab-in").forEach(function (b) { b.classList.toggle("on", playing); });
-      document.querySelectorAll(".bio-seekpan, .bio-seekpan-in").forEach(function (p) { p.classList.toggle("open", playing && seekOpen); });
+      var on = !!(window.FLOA_AUTH && FLOA_AUTH.signedIn());
+      document.querySelectorAll(".bio-dock, .bio-dock-in").forEach(function (d) {
+        d.classList.toggle("on", on); d.classList.toggle("idle", !loaded);
+        var b = d.querySelector("button"), t = d.querySelector(".bio-dock__time"), r = d.querySelector("input"), s = clock(leftNow);
+        b.disabled = !loaded; b.dataset.st = playing ? "playing" : "paused";
+        var lab = playing ? "השהיית השיר" : "השמעה"; if (b.getAttribute("aria-label") !== lab) { b.setAttribute("aria-label", lab); b.title = lab; b.innerHTML = playing ? PAUSE : PLAY; }
+        if (t.textContent !== s) t.textContent = s;
+        if (!seekDrag) r.value = Math.round(frac * 1000);
+      });
     }
-    document.addEventListener("click", function (e) { if (seekOpen && !(e.target.closest && e.target.closest(".bio-seekpan, .bio-seekpan-in, .bio-seekfab, .bio-seekfab-in"))) { seekOpen = false; sync(); } }, true);
-    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && seekOpen) { seekOpen = false; sync(); } });
+    function ensureIn() {   /* a copy of the pill inside every open popup, shown in the top layer above it */
+      document.querySelectorAll("dialog[open]").forEach(function (d) {
+        if (d.querySelector(".bio-dock-in")) return;
+        var c = make("bio-dock-in"); c.setAttribute("popover", "manual"); d.appendChild(c);
+        try { c.showPopover(); } catch (x) { /* an old browser: no player in this popup */ }
+        requestAnimationFrame(function () { requestAnimationFrame(sync); });
+      });
+    }
+    setInterval(function () { ensureIn(); sync(); }, 400);
     /* the up and down arrow keys are the volume, always (outside a field, a menu or a popup, where they keep their own job); Shift for steps of five */
     document.addEventListener("keydown", function (e) {
       if ((e.key !== "ArrowUp" && e.key !== "ArrowDown") || e.ctrlKey || e.metaKey || e.altKey) return;
@@ -274,25 +271,11 @@
       e.preventDefault(); BioAudio.skip((e.key === "ArrowRight" ? 1 : -1) * (e.shiftKey ? 15 : 5));
     });
     document.addEventListener("bioaudio", function (ev) {
-      playing = !!(ev.detail && ev.detail.playing); document.documentElement.classList.toggle("bio-playing", playing);   /* the stop button takes the bottom right: the buttons of the exercise leave it room */
-      if (window.BioAudio && BioAudio.volume) volState.v = BioAudio.volume(0); paintVol();
       var dd = ev.detail || {};
-      if (dd.name && dd.d > 0) {   /* the time left on the button, the place on the bar */
-        leftNow = Math.max(0, Math.ceil(dd.d - dd.t));
-        document.querySelectorAll(".bio-seekfab, .bio-seekfab-in").forEach(function (b) { var s = clock(leftNow); if (b.textContent !== s) b.textContent = s; });
-        if (!seekDrag) document.querySelectorAll(".bio-seekpan > input, .bio-seekpan-in > input").forEach(function (r) { r.value = Math.round(dd.t / dd.d * 1000); });
-      }
-      if (!playing) seekOpen = false;
-      if (playing) document.querySelectorAll("dialog[open]").forEach(function (d) {
-        if (!d.querySelector(".bio-stop-in")) {
-          [makePan("bio-seekpan-in"), makeFab("bio-seekfab-in"), make("bio-stop-in")].forEach(function (b) {
-            b.setAttribute("popover", "manual"); d.appendChild(b);
-            try { b.showPopover(); } catch (x) { /* an old browser: no button in this popup */ }
-          });
-          requestAnimationFrame(function () { requestAnimationFrame(sync); });
-        }
-      });
-      sync();
+      playing = !!dd.playing; loaded = !!dd.name;
+      if (loaded && dd.d > 0) { leftNow = Math.max(0, Math.ceil(dd.d - dd.t)); frac = dd.t / dd.d; } else { leftNow = 0; frac = 0; }
+      if (window.BioAudio && BioAudio.volume) volState.v = BioAudio.volume(0); paintVol();
+      ensureIn(); sync();
     });
   })();
   var barDrag = false;
