@@ -217,23 +217,21 @@
   var durKnown = {};
   try { durKnown = JSON.parse(localStorage.getItem("biodanza.dur") || "{}") || {}; } catch (x) { durKnown = {}; }
   function durOf(m) { return (m && (m.duration_sec || durKnown[m.audio_object])) || 0; }
-  /* the player: ONE pill at the bottom right, always there once signed in. Play/pause, the time left and the song's bar are one thing; with no song loaded it says so. Inside an open popup it has a copy of its own (a popup is above the page). */
+  /* the player: ONE pill at the bottom right, always there once signed in. Play/pause, the time left and the song's bar are one thing; with no song loaded it says so. It lives in the top layer and is never hidden: a popup that opens is put under it. */
   (function () {
     var up = "calc(var(--gutter) + var(--inset-b))", left = "calc(max(var(--gutter), var(--inset-l)) + var(--fab) + var(--sp-2))", right = "max(var(--gutter), var(--inset-r))";
-    var vis = "opacity: 0; transform: translateY(calc(var(--fab) + var(--sp-3))); pointer-events: none";
     var st = document.createElement("style");
-    st.textContent = ".bio-dock, .bio-dock-in { position: fixed; inset: auto " + right + " " + up + " " + left + "; margin: 0; width: auto; max-width: none; box-sizing: border-box; height: var(--fab); display: flex; align-items: center; gap: var(--sp-2); padding: 0 0 0 var(--sp-2); overflow: visible; color: var(--text); background: var(--bg); border: 0; border-radius: var(--r-fab); box-shadow: var(--sh-pop); z-index: var(--z-sticky); " + vis + "; transition: transform var(--t-base) var(--ease), opacity var(--t-base) var(--ease) } " +
-      ".bio-dock.on, .bio-dock-in.on { opacity: 1; transform: none; pointer-events: auto } " +
-      "html.rs-lock .bio-dock, html.dlg-lock .bio-dock, html.kb-open .bio-dock { " + vis + " } " +
+    st.textContent = ".bio-dock { position: fixed; inset: auto " + right + " " + up + " " + left + "; margin: 0; width: auto; max-width: none; box-sizing: border-box; height: var(--fab); display: flex; align-items: center; gap: var(--sp-2); padding: 0 0 0 var(--sp-2); overflow: visible; color: var(--text); background: var(--bg); border: 0; border-radius: var(--r-fab); box-shadow: var(--sh-pop); z-index: var(--z-sticky); } " +
+      ".bio-dock:not(.on) { display: none } " +
       ".bio-dock__btn { flex: none; display: grid; place-items: center; width: var(--fab); height: var(--fab); padding: 0; border: 0; border-radius: var(--r-fab); background: var(--danger); color: var(--on-primary); cursor: pointer } " +
       ".bio-dock__btn[data-st=\"paused\"] { background: var(--primary) } .bio-dock__btn:disabled { background: var(--surface-2); color: var(--text-3); cursor: default } " +
       ".bio-dock__btn > svg { width: var(--icon-l); height: var(--icon-l) } " +
       ".bio-dock__time { flex: none; min-width: 2.6em; text-align: center; font: var(--fw-bold) var(--fs-xs)/1 var(--font); font-variant-numeric: tabular-nums } " +
       ".bio-dock__bar { flex: 1 1 0; width: auto; max-width: none; min-width: 0; display: block; margin: 0; padding: 0; direction: ltr; accent-color: var(--primary); touch-action: none } " +
       ".bio-dock__none { flex: 1 1 auto; min-width: 0; text-align: center; color: var(--text-2); font: var(--fw-regular) var(--fs-xs)/1.2 var(--font) } " +
-      ".bio-dock:not(.idle) .bio-dock__none, .bio-dock.idle .bio-dock__bar, .bio-dock.idle .bio-dock__time, .bio-dock-in:not(.idle) .bio-dock__none, .bio-dock-in.idle .bio-dock__bar, .bio-dock-in.idle .bio-dock__time { display: none } " +
-      "@media (min-width: 1024px) { .bio-dock, .bio-dock-in { left: calc(100vw - var(--listw) + var(--gutter) + var(--fab) + var(--sp-2)) } } " +
-      "@media (prefers-reduced-motion: reduce) { .bio-dock, .bio-dock-in { transition: none } }";
+      ".bio-dock:not(.idle) .bio-dock__none, .bio-dock.idle .bio-dock__bar, .bio-dock.idle .bio-dock__time { display: none } " +
+      "@media (min-width: 1024px) { .bio-dock { left: calc(100vw - var(--listw) + var(--gutter) + var(--fab) + var(--sp-2)) } } " +
+      "";
     document.head.appendChild(st);
     var PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
     var PLAY = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>';
@@ -249,10 +247,12 @@
       r.addEventListener("input", function () { if (window.BioAudio && BioAudio.seek) BioAudio.seek(r.value / 1000); });
       return d;
     }
-    document.body.appendChild(make("bio-dock"));
+    var dock = make("bio-dock"); dock.setAttribute("popover", "manual"); document.body.appendChild(dock);
+    function top() { try { dock.hidePopover(); } catch (x) { /* not shown yet */ } try { dock.showPopover(); } catch (x) { /* an old browser: the pill is an ordinary fixed element */ } }   /* the top layer keeps what was shown last on top: showing it again puts it over a popup that has just opened */
+    top();
     function sync() {
       var on = !!(window.FLOA_AUTH && FLOA_AUTH.signedIn());
-      document.querySelectorAll(".bio-dock, .bio-dock-in").forEach(function (d) {
+      [dock].forEach(function (d) {
         d.classList.toggle("on", on); d.classList.toggle("idle", !loaded);
         var b = d.querySelector("button"), t = d.querySelector(".bio-dock__time"), r = d.querySelector("input"), s = clock(leftNow);
         b.disabled = !loaded; b.dataset.st = playing ? "playing" : "paused";
@@ -261,15 +261,13 @@
         if (!seekDrag) r.value = Math.round(frac * 1000);
       });
     }
-    function ensureIn() {   /* a copy of the pill inside every open popup, shown in the top layer above it */
-      document.querySelectorAll("dialog[open]").forEach(function (d) {
-        if (d.querySelector(".bio-dock-in")) return;
-        var c = make("bio-dock-in"); c.setAttribute("popover", "manual"); d.appendChild(c);
-        try { c.showPopover(); } catch (x) { /* an old browser: no player in this popup */ }
-        requestAnimationFrame(function () { requestAnimationFrame(sync); });
-      });
+    var topKey = "";
+    function ensureIn() {   /* the pill is never hidden or moved: when a popup opens it is put over it again, with no change to see */
+      var key = Array.prototype.map.call(document.querySelectorAll("dialog[open]"), function (d) { return d.id || "?"; }).join("|");
+      if (key !== topKey) { topKey = key; top(); }
     }
-    setInterval(function () { ensureIn(); sync(); }, 400);
+    try { new MutationObserver(ensureIn).observe(document.body, { attributes: true, attributeFilter: ["open"], subtree: true }); } catch (x) { /* the timer below does it */ }
+    setInterval(function () { ensureIn(); sync(); }, 200);
     /* the up and down arrow keys are the volume, always (outside a field, a menu or a popup, where they keep their own job); Shift for steps of five */
     document.addEventListener("keydown", function (e) {
       if ((e.key !== "ArrowUp" && e.key !== "ArrowDown") || e.ctrlKey || e.metaKey || e.altKey) return;
