@@ -1404,7 +1404,8 @@
   }
   function otherWire(r, it, pick) {
     var l = r.querySelector("#olist"), all = [], me = FLOA_AUTH.userId(), up = r.querySelector("#oup");
-    var pen = function (m) { return m.owner_id && m.owner_id === me ? '<button type="button" class="rbtn rbtn--icon rrow__trail" data-ed="' + esc(m.id) + '" aria-label="עריכת שם ומבצע" title="עריכת שם ומבצע" style="width:var(--fab);height:var(--fab);min-height:var(--fab);color:var(--text-3)">' + I.pen + '</button>' : ''; };
+    var vid = state.viv && state.viv.id, canEd = state.viv && (state.viv.role === "owner" || state.viv.role === "edit");   /* a song made in this vivencia can be renamed by whoever can edit it */
+    var pen = function (m) { return (m.owner_id && m.owner_id === me) || (canEd && vid && m.vivencia_id === vid) ? '<button type="button" class="rbtn rbtn--icon rrow__trail" data-ed="' + esc(m.id) + '" aria-label="עריכת שם ומבצע" title="עריכת שם ומבצע" style="width:var(--fab);height:var(--fab);min-height:var(--fab);color:var(--text-3)">' + I.pen + '</button>' : ''; };
     function draw() {
       var q = fold(r.querySelector("#oq").value.trim());
       var vis = all.filter(function (m) { return !q || fold(songName(m) + " " + songBy(m)).indexOf(q) >= 0; });
@@ -1426,9 +1427,9 @@
         var back = function (t, ms) { up.textContent = t; setTimeout(function () { up.textContent = label; delete up.dataset.busy; }, ms || 0); };
         putAudio(f, function (pc) { up.textContent = pc + "%"; }).then(function (o) {
           var title = f.name.replace(/\.[^.]+$/, "").replace(/[_]+/g, " ").trim();
-          return api("/rest/v1/rpc/add_upload", { method: "POST", json: { p_object: o.object, p_format: o.format, p_size: o.size, p_title: title, p_artist: "" } });
+          return api("/rest/v1/rpc/add_upload", { method: "POST", json: { p_object: o.object, p_format: o.format, p_size: o.size, p_title: title, p_artist: "", p_vivencia: state.viv ? state.viv.id : null } });
         }).then(function (id) {
-          return api("/rest/v1/music?id=eq." + id + "&select=id,name,title,artist,duration_sec,audio_object,in_catalog,owner_id");
+          return api("/rest/v1/music?id=eq." + id + "&select=id,name,title,artist,duration_sec,audio_object,in_catalog,owner_id,vivencia_id");
         }).then(function (rows) {
           back(label);
           if (rows && rows[0]) { all.unshift(rows[0]); r.querySelector("#oq").value = ""; draw(); songEdit(rows[0], draw); }   /* it is in the list at once, and its name and performer are asked for */
@@ -1436,8 +1437,8 @@
       });
       inp.click();
     });
-    api("/rest/v1/music?in_catalog=eq.false&select=id,name,title,artist,duration_sec,audio_object,in_catalog,owner_id&order=title&limit=1000").then(function (rows) {
-      all = (rows || []).filter(function (m) { return !m.owner_id || m.owner_id === me; });   /* the catalogs' loose files, and my own uploads */
+    api("/rest/v1/music?in_catalog=eq.false&select=id,name,title,artist,duration_sec,audio_object,in_catalog,owner_id,vivencia_id&order=title&limit=1000").then(function (rows) {
+      all = (rows || []).filter(function (m) { return !m.owner_id || m.owner_id === me || (vid && m.vivencia_id === vid); });   /* the catalogs' loose files, my own uploads, and the songs made in this vivencia by the others who work on it */
       draw();
     }, fail);
   }

@@ -708,3 +708,34 @@ begin
 end $$;
 revoke all on function biodanza.add_upload(text, text, bigint, text, text) from public, anon;
 grant execute on function biodanza.add_upload(text, text, bigint, text, text) to authenticated;
+-- A song uploaded while working on a vivencia belongs to that vivencia too: everyone who can see it sees the song in "other music"
+-- there and can play it, and whoever can edit the vivencia can rename it.
+alter table biodanza.music add column if not exists vivencia_id uuid references biodanza.vivencias(id) on delete set null;
+create index if not exists music_viv_idx on biodanza.music (vivencia_id) where vivencia_id is not null;
+drop policy if exists music_read on biodanza.music;
+create policy music_read on biodanza.music for select to authenticated
+  using (biodanza.is_allowed() and (owner_id is null or owner_id = auth.uid()
+    or (vivencia_id is not null and biodanza.can_view(vivencia_id))
+    or exists (select 1 from biodanza.vivencia_items i where i.music_id = music.id and biodanza.can_view(i.vivencia_id))));
+drop policy if exists music_update_viv on biodanza.music;
+create policy music_update_viv on biodanza.music for update to authenticated
+  using (biodanza.is_allowed() and not in_catalog and vivencia_id is not null and biodanza.can_edit(vivencia_id))
+  with check (biodanza.is_allowed() and not in_catalog and vivencia_id is not null and biodanza.can_edit(vivencia_id));
+drop function if exists biodanza.add_upload(text, text, bigint, text, text);
+create or replace function biodanza.add_upload(p_object text, p_format text, p_size bigint, p_title text, p_artist text, p_vivencia uuid default null) returns uuid
+language plpgsql security definer set search_path = biodanza, public as $$
+declare t text := nullif(btrim(coalesce(p_title, '')), '');
+  a text := btrim(coalesce(p_artist, ''));
+  id uuid;
+begin
+  if not biodanza.is_allowed() then raise exception 'not allowed' using errcode = '42501'; end if;
+  if p_object !~ '^[a-f0-9]{32}\.(mp3|flac|wav|aiff|aif|m4a)$' then raise exception 'bad object'; end if;
+  if p_vivencia is not null and not biodanza.can_edit(p_vivencia) then raise exception 'not allowed' using errcode = '42501'; end if;
+  if t is null then t := 'ללא שם'; end if;
+  insert into biodanza.music_files (object, code, collection, format, size_bytes) values (p_object, '', '', p_format, coalesce(p_size, 0)) on conflict (object) do nothing;
+  insert into biodanza.music (owner_id, name, title, artist, in_catalog, audio_object, vivencia_id)
+    values (auth.uid(), t || case when a <> '' then ', ' || a else '' end, t, a, false, p_object, p_vivencia) returning biodanza.music.id into id;
+  return id;
+end $$;
+revoke all on function biodanza.add_upload(text, text, bigint, text, text, uuid) from public, anon;
+grant execute on function biodanza.add_upload(text, text, bigint, text, text, uuid) to authenticated;
