@@ -1371,8 +1371,8 @@
           (host || document.body).appendChild(pop);
           pop.setAttribute("popover", "manual"); pop.style.inset = "auto"; pop.style.margin = "0"; pop.style.boxSizing = "border-box";
           try { pop.showPopover(); } catch (x) { /* an old browser: an ordinary fixed menu */ }
-          var b = inp.getBoundingClientRect(), vw = window.innerWidth, w = Math.min(Math.round(b.width), vw - 16), l = Math.max(8, Math.min(Math.round(b.left), vw - 8 - w));
-          pop.style.top = Math.round(b.bottom + 2) + "px"; pop.style.left = l + "px"; pop.style.width = w + "px"; pop.style.maxWidth = "none"; pop.style.maxHeight = Math.max(120, Math.round((window.visualViewport ? window.visualViewport.height : window.innerHeight) - b.bottom - 16)) + "px"; pop.style.overflowY = "auto";   /* as wide as the field, inside the window, above the keyboard */
+          var b = inp.getBoundingClientRect(), full = (r.querySelector("#q") || inp).closest("label").getBoundingClientRect(), vw = window.innerWidth, w = Math.min(Math.round(full.width), vw - 16), l = Math.max(8, Math.min(Math.round(full.left), vw - 8 - w));   /* the width of the search field under it: the whole page between its side paddings */
+          pop.style.top = Math.round(b.bottom + 2) + "px"; pop.style.left = l + "px"; pop.style.width = w + "px"; pop.style.maxWidth = "none"; pop.style.maxHeight = Math.max(120, Math.round((window.visualViewport ? window.visualViewport.height : window.innerHeight) - b.bottom - 16)) + "px"; pop.style.overflowY = "auto";   /* inside the window, above the keyboard */
           pop.querySelectorAll("[data-k]").forEach(function (o) { o.addEventListener("mousedown", function (e) { e.preventDefault(); choose(shown[+o.dataset.k].key); }); });
           inp.setAttribute("aria-expanded", "true");
         }
