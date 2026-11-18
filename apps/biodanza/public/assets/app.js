@@ -1303,7 +1303,7 @@
     show(head(itemName(it) || "מוזיקה", "", true, clr) + '<div class="rlist" id="mlist"><div class="rskel rskel--title"></div></div>', function (r) {
       on(r, "back", out);
       on(r, "mclear", function () { chooseSongHere(it, null, out); });
-      api("/rest/v1/exercise_music?exercise_id=eq." + it.exercise_id + "&select=music(id,name,title,artist,duration_sec,audio_object,in_catalog)").then(function (rows) {
+      (it.exercise_id ? api("/rest/v1/exercise_music?exercise_id=eq." + it.exercise_id + "&select=music(id,name,title,artist,duration_sec,audio_object,in_catalog)") : Promise.resolve([])).then(function (rows) {
         var seen = {}, list = [];
         (rows || []).forEach(function (x) { if (x.music && !seen[x.music.id]) { seen[x.music.id] = 1; list.push(x.music); } });
         var row = function (id, t, sub, cur, m) { return '<div class="rrow rrow--link"' + (cur ? ' aria-current="true"' : '') + '><button type="button" class="rrow__main" data-m="' + id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(t) + '</span>' + (sub ? '<span class="rrow__sub">' + esc(sub) + '</span>' : '') + '</button>' + (m ? songBtn(m, true) : '') + '</div>'; };
@@ -1357,7 +1357,7 @@
     var dlg0 = document.getElementById("musicDlg"), clr = dlg0.querySelector("#mclear");
     if (clr) { clr.classList.remove("rbtn--primary"); clr.style.cssText += ";background:var(--surface-2);border-color:var(--surface-2);color:var(--text)";   /* clearing is not the main action: the header's neutral tile, not the green one */
       if (!it.music_id) RosterSheet.setDirty(dlg0, false); else RosterSheet.setDirty(dlg0, true); clr.addEventListener("click", function () { chooseSong(it, null); }); }
-    api("/rest/v1/exercise_music?exercise_id=eq." + it.exercise_id + "&select=music(id,name,title,artist,duration_sec,audio_object,in_catalog)").then(function (rows) {
+    (it.exercise_id ? api("/rest/v1/exercise_music?exercise_id=eq." + it.exercise_id + "&select=music(id,name,title,artist,duration_sec,audio_object,in_catalog)") : Promise.resolve([])).then(function (rows) {
       var seen = {}, list = [];
       (rows || []).forEach(function (x) { if (x.music && !seen[x.music.id]) { seen[x.music.id] = 1; list.push(x.music); } });
       var plain = function (attr, t, sub, cur) { return '<div class="rrow rrow--link"' + (cur ? ' aria-current="true"' : '') + '><button type="button" class="rrow__main" ' + attr + ' style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(t) + '</span>' + (sub ? '<span class="rrow__sub">' + esc(sub) + '</span>' : '') + '</button></div>'; };
@@ -1494,6 +1494,20 @@
           if (sheet) previewSheet(ex, swapIt);   /* adding or replacing: the exercise is shown first, and the action is its own button in its header: on the left on a wide screen, in a second popup on a narrow one */
           else previewEx(ex, swapIt);
         }); });
+        /* a typed search also finds songs (any exercise's); choosing one adds an exercise with no name and that song */
+        if (q && !swapIt) {
+          var box = document.createElement("div"); box.innerHTML = '<div class="rrow__sub" style="padding:var(--sp-3) 0 var(--sp-1)">מוזיקות</div><div data-sgs></div>'; l.appendChild(box);
+          var tok = ++sgTok;
+          loadExMusic().then(function (gs) {
+            if (tok !== sgTok || !box.isConnected) return;
+            var seen = {}, songs = [];
+            gs.forEach(function (g) { g.songs.forEach(function (m) { if (!seen[m.id] && fold(songName(m) + " " + songBy(m)).indexOf(q) >= 0) { seen[m.id] = 1; songs.push(m); } }); });
+            var sl = box.querySelector("[data-sgs]");
+            if (!songs.length) { box.remove(); return; }
+            sl.innerHTML = songs.slice(0, 60).map(function (m) { return songRow(m, false, "data-sg"); }).join("");
+            sl.addEventListener("click", function (ev) { var bt = ev.target.closest("[data-sg]"); if (!bt) return; var m = songs.filter(function (x) { return x.id === bt.dataset.sg; })[0]; if (m) addSongOnly(m, sheet); });
+          }, function () { box.remove(); });
+        }
       }
       r.querySelector("#q").addEventListener("input", paintCat); r.querySelector("#ln").addEventListener("change", paintCat); r.querySelector("#lv").addEventListener("change", paintCat); r.querySelector("#cv").addEventListener("change", paintCat); wireCat(); wireHide();
       (state.cats ? Promise.resolve() : api("/rest/v1/categories?select=key,name_he&order=sort").then(function (c) {
@@ -1626,6 +1640,15 @@
     dlg.querySelector("#cswap").addEventListener("click", function () { dlg.close(); addEx(e, swapIt, sheet, mid); });
   }
   function closeSheets() { ["exDlg", "catDlg"].forEach(function (id) { slideClose(document.getElementById(id)); }); }
+  var sgTok = 0;
+  /* a song chosen in the catalog's search: an exercise with no name, only that song */
+  function addSongOnly(m, sheet) {
+    var pos = state.items.reduce(function (x, i) { return Math.max(x, i.position); }, 0) + 1;
+    api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=minimal", json: { vivencia_id: state.viv.id, position: pos, exercise_id: null, music_id: m.id } }).then(function () {
+      if (sheet) { closeSheets(); return loadItems().then(paint, fail); }
+      if (wide()) show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); else stack().pop(); back();
+    }, fail);
+  }
   function addEx(e, swapIt, sheet, mid) {
     if (swapIt) {   /* the same place in the curve, another exercise: its first song, and none of the old exercise's own wording */
       return firstMusic(e.id, mid).then(function (m) {
