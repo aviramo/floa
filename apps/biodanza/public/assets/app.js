@@ -287,9 +287,10 @@
     });
     /* while a song plays, on a wide screen, the right and left arrows move it forward and back (5 seconds, Shift 15), whatever page of the app is open */
     document.addEventListener("keydown", function (e) {
-      if (!playing || (e.key !== "ArrowRight" && e.key !== "ArrowLeft") || e.ctrlKey || e.metaKey || e.altKey) return;
-      var tg = e.target; if (tg && (tg.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName) || (tg.closest && tg.closest(".bio-vol")))) return;
-      if (document.querySelector("dialog[open], #moreMenu") || !window.BioAudio || !BioAudio.skip || !window.matchMedia("(min-width: 1024px)").matches) return;
+      if (!loaded || (e.key !== "ArrowRight" && e.key !== "ArrowLeft") || e.ctrlKey || e.metaKey || e.altKey) return;
+      var tg = e.target, onBar = tg && tg.closest && tg.closest(".bio-dock__bar");   /* the player's own bar keeps no arrow job of its own: they skip, as everywhere */
+      if (tg && !onBar && (tg.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName) || (tg.closest && tg.closest(".bio-vol")))) return;
+      if (document.querySelector("#moreMenu") || !window.BioAudio || !BioAudio.skip) return;
       e.preventDefault(); BioAudio.skip((e.key === "ArrowRight" ? 1 : -1) * (e.shiftKey ? 15 : 5));
     });
     document.addEventListener("bioaudio", function (ev) {
