@@ -241,6 +241,20 @@
   function uuid() { return crypto.randomUUID(); }
   var volState = { on: true, v: 1 };   /* the volume gauge in the headers: always shown */
   try { var sv0 = parseFloat(localStorage.getItem("biodanza.volume")); if (sv0 >= 0 && sv0 <= 1) volState.v = sv0; } catch (x) { /* full */ }
+  /* the wedge with its three corners rounded: a polygon cannot round, so the shape is drawn as a path in the real pixels of the bar and drawn again when it changes size */
+  function wedgeFit(b) {
+    var w = b.clientWidth, h = b.clientHeight, r = 3; if (!w || !h) return;
+    var L = Math.sqrt(w * w + h * h), f = function (n) { return Math.round(n * 100) / 100; };
+    var d = "M" + r + " " + h + " L" + f(w - r) + " " + h + " Q" + w + " " + h + " " + w + " " + f(h - r) + " L" + w + " " + r +
+      " Q" + w + " 0 " + f(w - w * r / L) + " " + f(h * r / L) + " L" + f(w * r / L) + " " + f(h - h * r / L) + " Q0 " + h + " " + r + " " + h + " Z";
+    b.style.clipPath = 'path("' + d + '")';
+  }
+  function fitWedges() {
+    document.querySelectorAll(".bio-vol > b").forEach(function (b) {
+      if (!b.__ro && window.ResizeObserver) { b.__ro = new ResizeObserver(function () { wedgeFit(b); }); b.__ro.observe(b); }
+      wedgeFit(b);
+    });
+  }
   function paintVol() {
     document.querySelectorAll(".bio-vol").forEach(function (g) { g.classList.toggle("on", volState.on); g.style.setProperty("--v", volState.v); g.setAttribute("aria-valuenow", Math.round(volState.v * 100)); });
   }
@@ -326,7 +340,7 @@
   }
   function fail(e) { console.error(e); toast("משהו השתבש, נסו שוב"); }
   /* pane "d" is the detail pane (the vivencia), on a wide screen beside the list; on a narrow one every screen takes the single pane. */
-  function show(html, wire, pane) { var t = wide() && pane === "d" ? pd : pl; t.innerHTML = html; if (wire) wire(t); }
+  function show(html, wire, pane) { var t = wide() && pane === "d" ? pd : pl; t.innerHTML = html; if (wire) wire(t); fitWedges(); }
   /* wide screen: the vivencia list on the right, and after choosing one its exercises take that place and the open exercise is on the left. Back from the exercises is the vivencia list again. */
   function homeWide() { state.viv = null; state.lastItem = null; emptyDetail(); home(); }
   function emptyDetail() {
