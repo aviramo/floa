@@ -524,7 +524,7 @@
     });
   }
   /* the arrow of an empty list, drawn in the real places: it leaves just under the words, goes down and bends left, and ends beside the + button */
-  function arrowTo(l) {
+  function arrowTo(l) { return; /* the arrows were removed by the owner's word */
     var old = l.querySelector(".bio-arrow"); if (old) old.remove();
     var box = l.querySelector(".rempty"), host = l.closest("#pl, #pd") || l.parentElement, fab = host && host.querySelector(".rfab");
     if (!box || !fab) return;
