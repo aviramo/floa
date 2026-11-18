@@ -900,11 +900,13 @@
   function openTrash(bizId) {
     var b = bizId ? byId(bizId) : null;
     if (bizId && !b) return;
-    ctx = { kind: "trash", id: bizId, rows: null, busy: false };
+    ctx = { kind: "trash", id: bizId, rows: null, busy: false, q: "" };
     afterClose = bizId ? back(bizId, "menu") : null;
     openDialog("trash", b ? "נמחקו לאחרונה: <bdi>" + esc(b.name) + "</bdi>" : "נמחקו לאחרונה",
-      '<div class="rmsg rmsg--inline">שום דבר לא נמחק באמת: אפשר לשחזר מכאן. מחיקה לצמיתות מוחקת גם את מה שנשמר.</div><div id="tList"><div class="rempty" role="status">טוען…</div></div>', { size: "md" });
+      '<div class="rmsg rmsg--inline">שום דבר לא נמחק באמת: אפשר לשחזר מכאן. מחיקה לצמיתות מוחקת גם את מה שנשמר.</div><label class="rfield field"><span>חיפוש</span><input placeholder=" " id="tSearch" autocomplete="off" aria-label="חיפוש בנמחקו לאחרונה" /></label><div id="tList"><div class="rempty" role="status">טוען…</div></div>', { size: "md" });
     var c = ctx;
+    var ts = $("#tSearch");
+    if (ts) ts.addEventListener("input", function () { c.q = ts.value; renderTrash(); });
     trashRows(bizId).then(function (rows) {
       if (ctx !== c) return;
       c.rows = Array.isArray(rows) ? rows : [];
@@ -920,13 +922,19 @@
     if (!c || c.kind !== "trash") return;
     var rows = c.rows || [], box = $("#tList");
     if (!rows.length) { box.innerHTML = '<div class="rempty"><b>אין כלום בפח</b>מה שיימחק יופיע כאן.</div>'; return; }
-    /* grouped by what it is, the groups in the order the newest item of each appears */
-    var order = [], by = {};
-    rows.forEach(function (r) { var k = KIND[r.kind] || r.kind; if (!by[k]) { by[k] = []; order.push(k); } by[k].push(r); });
+    /* the search looks at the name, the kind and the date; the categories come in a fixed order (people and their meetings first), each with its count */
+    var q = lc(c.q);
+    if (q) rows = rows.filter(function (r) { return lc((r.label || "") + " " + (KIND[r.kind] || r.kind) + " " + fmtDate(r.deleted_at)).indexOf(q) > -1; });
+    if (!rows.length) { box.innerHTML = '<div class="rempty"><b>לא נמצא</b>אין בנמחקו לאחרונה משהו שמתאים לחיפוש.</div>'; return; }
+    var by = {}, present = [];
+    rows.forEach(function (r) { if (!by[r.kind]) { by[r.kind] = []; present.push(r.kind); } by[r.kind].push(r); });
+    var ORDER = ["business", "participant", "attendance", "meeting", "meeting_type", "payment", "note", "promoter", "promoter_payment", "status", "pay_method", "msg_template", "mail_template", "finance", "finance_recurring", "finance_transfer", "pass_request", "business_user", "member", "api_key", "msg_sent", "business_settings", "admin_pref"];
+    var order = ORDER.filter(function (k) { return by[k]; }).concat(present.filter(function (k) { return ORDER.indexOf(k) < 0; }));
     var html = "";
-    order.forEach(function (k) {
-      html += '<div class="tgroup">' + esc(k) + "</div>";
-      by[k].forEach(function (r) {
+    order.forEach(function (kk) {
+      var k = KIND[kk] || kk;
+      html += '<div class="tgroup">' + esc(k) + ' <span class="tgroup__n">' + by[kk].length + "</span></div>";
+      by[kk].forEach(function (r) {
       var n = Number(r.dependents) || 0, id = esc(r.trash_id);
       html += '<div class="rrow trow" data-trash-row="' + id + '"><span class="rrow__main"><span class="rrow__title">' + esc(r.label || k) + "</span>" +
         '<span class="rrow__sub">' + (r.deleted_at ? '<span class="rchip">' + esc(fmtDate(r.deleted_at)) + "</span>" : "") +

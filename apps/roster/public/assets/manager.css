@@ -79,6 +79,7 @@ dialog.acc .sheet-body { overflow: hidden; }
 /* the trash popup: groups of deleted things, each with a restore button */
 .tgroup { margin: var(--gap-field) 0 var(--gap-tight); color: var(--text-2); font: var(--fw-bold) var(--fs-xs)/var(--lh-tight) var(--font); }
 .tgroup:first-child { margin-top: 0; }
+.tgroup__n { font-weight: var(--fw-regular); }   /* how many in the category */
 .trow .rrow__sub { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap-tight) var(--gap-button); }
 .trow .rbtn { flex: 0 0 auto; }
 .trow .rrow__trail { display: flex; align-items: center; gap: var(--gap-tight); }
