@@ -241,22 +241,11 @@
   function uuid() { return crypto.randomUUID(); }
   var volState = { on: true, v: 1 };   /* the volume gauge in the headers: always shown */
   try { var sv0 = parseFloat(localStorage.getItem("biodanza.volume")); if (sv0 >= 0 && sv0 <= 1) volState.v = sv0; } catch (x) { /* full */ }
-  /* the wedge with its three corners rounded: a polygon cannot round, so the shape is drawn as a path in the real pixels of the bar and drawn again when it changes size */
-  function wedgeFit(b) {
-    var w = b.clientWidth, h = b.clientHeight, r = 3; if (!w || !h) return;
-    var L = Math.sqrt(w * w + h * h), f = function (n) { return Math.round(n * 100) / 100; };
-    var d = "M" + r + " " + h + " L" + f(w - r) + " " + h + " Q" + w + " " + h + " " + w + " " + f(h - r) + " L" + w + " " + r +
-      " Q" + w + " 0 " + f(w - w * r / L) + " " + f(h * r / L) + " L" + f(w * r / L) + " " + f(h - h * r / L) + " Q0 " + h + " " + r + " " + h + " Z";
-    b.style.clipPath = 'path("' + d + '")';
-  }
-  function fitWedges() {
-    document.querySelectorAll(".bio-vol > b").forEach(function (b) {
-      if (!b.__ro && window.ResizeObserver) { b.__ro = new ResizeObserver(function () { wedgeFit(b); }); b.__ro.observe(b); }
-      wedgeFit(b);
-    });
-  }
   function paintVol() {
-    document.querySelectorAll(".bio-vol").forEach(function (g) { g.classList.toggle("on", volState.on); g.style.setProperty("--v", volState.v); g.setAttribute("aria-valuenow", Math.round(volState.v * 100)); });
+    document.querySelectorAll(".bio-vol").forEach(function (g) {
+      g.classList.toggle("on", volState.on); g.style.setProperty("--v", volState.v); g.setAttribute("aria-valuenow", Math.round(volState.v * 100));
+      var n = g.querySelector("b"); if (n) n.textContent = Math.round(volState.v * 100);
+    });
   }
   /* the gauge moves with a drag or a click (mouse or finger) along it, and with the arrow keys when it has focus */
   function setVol(v) {
@@ -264,14 +253,17 @@
     if (window.BioAudio && BioAudio.volume) volState.v = BioAudio.volume(v - BioAudio.volume(0)); else volState.v = Math.round(v * 100) / 100;
     paintVol();
   }
-  var volDrag = null;
-  function volFrom(e) { var r = volDrag.querySelector("b").getBoundingClientRect(); setVol((e.clientX - r.left) / (r.width || 1)); }
+  var volDrag = null;   /* { g, y0, v0 } */
   document.addEventListener("pointerdown", function (e) {
     var g = e.target.closest && e.target.closest(".bio-vol"); if (!g || e.button > 0) return;
-    e.preventDefault(); volDrag = g; try { g.setPointerCapture(e.pointerId); } catch (x) { /* none */ } volFrom(e);
+    e.preventDefault(); volDrag = { g: g, y0: e.clientY, v0: volState.v }; try { g.setPointerCapture(e.pointerId); } catch (x) { /* none */ }
   });
-  document.addEventListener("pointermove", function (e) { if (volDrag) volFrom(e); });
+  document.addEventListener("pointermove", function (e) { if (volDrag) setVol(volDrag.v0 + (volDrag.y0 - e.clientY) / 120); });   /* up is louder: 120px is the whole range */
   ["pointerup", "pointercancel"].forEach(function (n) { document.addEventListener(n, function () { volDrag = null; }); });
+  document.addEventListener("wheel", function (e) {
+    var g = e.target.closest && e.target.closest(".bio-vol"); if (!g) return;
+    e.preventDefault(); setVol(volState.v + (e.deltaY < 0 ? 1 : -1) * (e.shiftKey ? 0.05 : 0.01));
+  }, { passive: false });
   document.addEventListener("keydown", function (e) {
     var g = e.target.closest && e.target.closest(".bio-vol"); if (!g || e.ctrlKey || e.metaKey || e.altKey) return;
     var d = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1 }[e.key]; if (!d) return;
@@ -280,7 +272,7 @@
   function head(title, sub, back, trail, lead) {
     return '<header class="rhead">' + (lead || '') + (back ? '<button class="rbtn rbtn--icon rbtn--edge-start" data-act="back" aria-label="חזרה" title="חזרה">' + I.back + '</button>' : '') +
       '<div class="rhead__text"><h1 class="rhead__title">' + esc(title) + '</h1>' + (sub ? '<span class="rhead__sub">' + esc(sub) + '</span>' : '') + '</div>' +
-      '<div class="bio-vol' + (volState.on ? ' on' : '') + '" role="slider" tabindex="0" aria-label="עוצמת שמע" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(volState.v * 100) + '" style="--v:' + volState.v + '"><b><i></i></b><s></s></div>' + (trail || '') + '</header>';   /* the volume, while a song plays: a bar across the free room of the header */
+      '<div class="bio-vol' + (volState.on ? ' on' : '') + '" role="slider" tabindex="0" aria-label="עוצמת שמע" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(volState.v * 100) + '" style="--v:' + volState.v + '"><i></i><b>' + Math.round(volState.v * 100) + '</b></div>' + (trail || '') + '</header>';   /* the volume, while a song plays: a bar across the free room of the header */
   }
   /* the header that walks a sequence: previous on the right, next on the left, the name centred between them */
   function walkHead(title, hasPrev, hasNext, withList) {
@@ -302,7 +294,7 @@
   }
   (function () {
     var st = document.createElement("style");
-    st.textContent = "@keyframes bioNum { from { opacity: 0; transform: translateX(var(--nx, 0)) } to { opacity: 1; transform: none } } @media (prefers-reduced-motion: reduce) { .bio-num { animation: none !important } } .bio-bar, .bio-bar * { touch-action: none } .bio-vol { display: none; position: relative; padding-inline: 9px; touch-action: none; cursor: pointer; user-select: none; flex: 1 1 0; min-width: 40px; align-items: center; height: var(--ctl); margin-inline-end: var(--sp-1) } .bio-vol.on { display: flex } html.bio-playing #ibtns { padding-inline-start: calc(max(var(--gutter), var(--inset-r)) + var(--fab) + var(--sp-2)) } @media (max-width: 1023px) { .bio-vol, .bio-vol.on { display: none } } .bio-vol > s { position: absolute; width: 18px; height: 18px; box-sizing: border-box; border-radius: 50%; background: var(--bg); border: 2px solid var(--primary); box-shadow: 0 1px 4px rgba(16, 24, 40, .25); left: calc(9px + (100% - 18px) * var(--v)); top: calc(50% + 11px - var(--v) * 11px); transform: translate(-50%, -50%); pointer-events: none; transition: left var(--t-fast) var(--ease), top var(--t-fast) var(--ease) } .bio-vol:focus { outline: none } .bio-vol:focus-visible > b { outline: 2px solid var(--accent); outline-offset: 3px } @media (min-width: 1024px) { .rhead:has(.bio-vol.on) .rhead__text { flex: 0 1 auto } } .bio-vol > b { display: block; position: relative; direction: ltr; width: 100%; height: 22px; background: var(--line-strong); clip-path: polygon(0 100%, 100% 100%, 100% 0) } .bio-vol > b > i { position: absolute; inset: 0; background: linear-gradient(90deg, var(--primary) 0%, var(--primary) 55%, var(--warn) 80%, var(--danger) 100%); clip-path: inset(0 calc((1 - var(--v)) * 100%) 0 0); transition: clip-path var(--t-fast) var(--ease) }";
+    st.textContent = "@keyframes bioNum { from { opacity: 0; transform: translateX(var(--nx, 0)) } to { opacity: 1; transform: none } } @media (prefers-reduced-motion: reduce) { .bio-num { animation: none !important } } .bio-bar, .bio-bar * { touch-action: none } .bio-vol { display: none; position: relative; flex: none; place-items: center; width: var(--ctl); height: var(--ctl); border-radius: var(--r-ctl); background: var(--surface-2); overflow: hidden; touch-action: none; cursor: ns-resize; user-select: none; margin-inline-end: var(--sp-1) } .bio-vol.on { display: grid } @media (max-width: 1023px) { .bio-vol, .bio-vol.on { display: none } } .bio-vol > i { position: absolute; inset: auto 0 0 0; height: calc(var(--v) * 100%); background: color-mix(in srgb, var(--primary) 32%, transparent); transition: height var(--t-fast) var(--ease) } .bio-vol > b { position: relative; font: var(--fw-bold) var(--fs-s)/1 var(--font); font-variant-numeric: tabular-nums; color: var(--text) } .bio-vol:focus { outline: none } .bio-vol:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }";
     document.head.appendChild(st);
   })();
   /* the exercise as a pager: drag the page sideways to go to the next or the previous one (to the right = the next, as in a right to left book); the page follows the finger, a short drag springs back */
@@ -340,7 +332,7 @@
   }
   function fail(e) { console.error(e); toast("משהו השתבש, נסו שוב"); }
   /* pane "d" is the detail pane (the vivencia), on a wide screen beside the list; on a narrow one every screen takes the single pane. */
-  function show(html, wire, pane) { var t = wide() && pane === "d" ? pd : pl; t.innerHTML = html; if (wire) wire(t); fitWedges(); }
+  function show(html, wire, pane) { var t = wide() && pane === "d" ? pd : pl; t.innerHTML = html; if (wire) wire(t); }
   /* wide screen: the vivencia list on the right, and after choosing one its exercises take that place and the open exercise is on the left. Back from the exercises is the vivencia list again. */
   function homeWide() { state.viv = null; state.lastItem = null; emptyDetail(); home(); }
   function emptyDetail() {
@@ -820,10 +812,21 @@
         fld[k].addEventListener("input", function () { clearTimeout(typing); typing = setTimeout(function () { save(true); }, 700); });   /* saved while you type, quietly */
         fld[k].addEventListener("change", function () { clearTimeout(typing); save(); });
       });
+      if (pg) pg.addEventListener("focusout", function () { setTimeout(function () { if (liveItem && liveItem.pending && pg.isConnected && !pg.contains(document.activeElement)) { var f = liveItem.pending; liveItem.pending = null; itemScreen(f); } }, 0); });
       liveItem = { id: it.id, root: fld.title, fld: fld, prev: prevIt && prevIt.id, next: nextIt && nextIt.id, apply: function (fresh) {
         var inField = r.contains(document.activeElement) && /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName), k2 = fresh.id === it.id ? state.items.indexOf(fresh) : -1;
         var pid = state.items[k2 - 1] && state.items[k2 - 1].id, nid = state.items[k2 + 1] && state.items[k2 + 1].id;
-        if (!inField && (fresh.music_id !== it.music_id || fresh.exercise_id !== it.exercise_id || pid !== liveItem.prev || nid !== liveItem.next)) { itemScreen(fresh); return; }   /* the song, the exercise or the neighbours changed and nobody is typing: draw it again */
+        var strip = r.querySelector('[data-act="pickMusic"]');
+        if (fresh.music_id !== it.music_id && strip && fresh.exercise_id === it.exercise_id) {   /* the song changed: the strip and its bar are written anew in place, so it shows even while I am typing */
+          strip.innerHTML = '<div style="flex:1 1 auto;min-width:0">' + (fresh.music ? songLines(fresh.music) : '<span class="rrow__title">לחצו לבחירת מוזיקה</span>') + '</div>' + (fresh.music ? playCol(fresh.music, true) : '');
+          var nb = strip.nextElementSibling, bar = songBar(fresh.music, "flex:none;padding:var(--sp-1) var(--sp-2) 0");
+          if (nb && nb.classList.contains("bio-bar")) { if (bar) nb.outerHTML = bar; else nb.remove(); } else if (bar) strip.insertAdjacentHTML("afterend", bar);
+          it.music_id = fresh.music_id; it.music = fresh.music;
+        }
+        if (fresh.exercise_id !== it.exercise_id || pid !== liveItem.prev || nid !== liveItem.next) {   /* another exercise or other neighbours: the screen is drawn again, as soon as nobody is typing in it */
+          if (!inField) { itemScreen(fresh); return; }
+          liveItem.pending = fresh;
+        }
         Object.keys(fld).forEach(function (k) {
           var el = fld[k], rv = remoteVal(k, fresh);
           if (el === document.activeElement && el.value !== el.dataset.base) return;   /* I am in the middle of changing this one: mine stays */
