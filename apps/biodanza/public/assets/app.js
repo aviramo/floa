@@ -207,15 +207,15 @@
     var up = "calc(var(--gutter) + var(--inset-b))", left = "calc(max(var(--gutter), var(--inset-l)) + var(--fab) + var(--sp-2))", right = "max(var(--gutter), var(--inset-r))";
     var vis = "opacity: 0; transform: translateY(calc(var(--fab) + var(--sp-3))); pointer-events: none";
     var st = document.createElement("style");
-    st.textContent = ".bio-dock, .bio-dock-in { position: fixed; inset: auto " + right + " " + up + " " + left + "; margin: 0; padding: 0; box-sizing: border-box; height: var(--fab); display: flex; align-items: center; gap: var(--sp-3); overflow: visible; color: var(--text); background: var(--bg); border: 1px solid var(--line-strong); border-radius: var(--r-fab); box-shadow: var(--sh-pop); z-index: var(--z-sticky); " + vis + "; transition: transform var(--t-base) var(--ease), opacity var(--t-base) var(--ease) } " +
+    st.textContent = ".bio-dock, .bio-dock-in { position: fixed; inset: auto " + right + " " + up + " " + left + "; margin: 0; box-sizing: border-box; height: var(--fab); display: flex; align-items: center; gap: var(--sp-2); padding: 0 var(--sp-2) 0 0; overflow: visible; color: var(--text); background: var(--bg); border: 1px solid var(--line-strong); border-radius: var(--r-fab); box-shadow: var(--sh-pop); z-index: var(--z-sticky); " + vis + "; transition: transform var(--t-base) var(--ease), opacity var(--t-base) var(--ease) } " +
       ".bio-dock.on, .bio-dock-in.on { opacity: 1; transform: none; pointer-events: auto } " +
       "html.rs-lock .bio-dock, html.dlg-lock .bio-dock, html.kb-open .bio-dock { " + vis + " } " +
       ".bio-dock__btn { flex: none; display: grid; place-items: center; width: calc(var(--fab) - 2px); height: calc(var(--fab) - 2px); padding: 0; border: 0; border-radius: var(--r-fab); background: var(--danger); color: var(--on-primary); cursor: pointer } " +
       ".bio-dock__btn[data-st=\"paused\"] { background: var(--primary) } .bio-dock__btn:disabled { background: var(--surface-2); color: var(--text-3); cursor: default } " +
       ".bio-dock__btn > svg { width: var(--icon-l); height: var(--icon-l) } " +
-      ".bio-dock__time { flex: none; min-width: 3.2em; text-align: center; font: var(--fw-bold) var(--fs-xs)/1 var(--font); font-variant-numeric: tabular-nums } " +
-      ".bio-dock__bar { flex: 1 1 auto; min-width: 0; display: block; margin: 0 var(--sp-3) 0 0; direction: ltr; accent-color: var(--primary); touch-action: none } " +
-      ".bio-dock__none { flex: 1 1 auto; min-width: 0; padding-inline-end: var(--sp-3); color: var(--text-2); font: var(--fw-regular) var(--fs-xs)/1.2 var(--font) } " +
+      ".bio-dock__time { flex: none; min-width: 2.6em; text-align: center; font: var(--fw-bold) var(--fs-xs)/1 var(--font); font-variant-numeric: tabular-nums } " +
+      ".bio-dock__bar { flex: 1 1 0; width: auto; max-width: none; min-width: 0; display: block; margin: 0; padding: 0; direction: ltr; accent-color: var(--primary); touch-action: none } " +
+      ".bio-dock__none { flex: 1 1 auto; min-width: 0; text-align: center; color: var(--text-2); font: var(--fw-regular) var(--fs-xs)/1.2 var(--font) } " +
       ".bio-dock:not(.idle) .bio-dock__none, .bio-dock.idle .bio-dock__bar, .bio-dock.idle .bio-dock__time, .bio-dock-in:not(.idle) .bio-dock__none, .bio-dock-in.idle .bio-dock__bar, .bio-dock-in.idle .bio-dock__time { display: none } " +
       "@media (min-width: 1024px) { .bio-dock, .bio-dock-in { left: calc(100vw - var(--listw) + var(--gutter) + var(--fab) + var(--sp-2)) } } " +
       "@media (prefers-reduced-motion: reduce) { .bio-dock, .bio-dock-in { transition: none } }";
