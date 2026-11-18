@@ -69,7 +69,23 @@
   function closeLayer(el) { if (el.id === "moreMenu") el.remove(); else slideClose(el); }
   function parseUrl() { var seg = location.pathname.slice(BASE.length).split("/").filter(Boolean); return { viv: seg[0] || "", item: seg[1] || "" }; }
   function wide() { return window.matchMedia("(min-width: 1024px)").matches; }
-  var api = function (p, o) { return FLOA_AUTH.api(p, o); };
+  var api = function (p, o) { return state.offline ? offlineApi(p, o) : FLOA_AUTH.api(p, o); };
+  /* With no internet the app reads the copies kept on the device (assets/offline.js): the same questions, answered from them. Anything that would
+     change something, or that is not in a copy, is refused the way a lost connection is. */
+  var offlineRecs = {};
+  function offlineApi(path, o) {
+    var no = function () { var e = new Error("offline"); e.offline = true; return Promise.reject(e); };
+    var recs = Object.keys(offlineRecs).map(function (k) { return offlineRecs[k]; });
+    if (/\/rpc\/vivencia_members$/.test(path)) return Promise.resolve(offlineRecs[o && o.json && o.json.v] ? offlineRecs[o.json.v].members : []);
+    if (o && o.method && o.method !== "GET") return no();
+    if (/^\/rest\/v1\/vivencias\?/.test(path)) return Promise.resolve(recs.map(function (r) { return r.row; }));
+    if (/^\/rest\/v1\/vivencia_owners\?/.test(path)) return Promise.resolve(recs.filter(function (r) { return r.role === "owner"; }).map(function (r) { return { vivencia_id: r.id, position: r.pos }; }));
+    if (/^\/rest\/v1\/vivencia_shares\?/.test(path)) return Promise.resolve(recs.filter(function (r) { return r.role !== "owner"; }).map(function (r) { return { vivencia_id: r.id, role: r.role, position: r.pos }; }));
+    var m = path.match(/^\/rest\/v1\/vivencia_items\?vivencia_id=eq\.([^&]+)/);
+    if (m) return Promise.resolve(offlineRecs[m[1]] ? offlineRecs[m[1]].items : []);
+    if (/^\/rest\/v1\/(lines|phases)\?/.test(path)) return Promise.resolve([]);
+    return no();
+  }
   var likes = {};   /* the songs I loved (their ids), mine alone */
   var likesViv = {};   /* the vivencias I loved */
   var likesEx = {};   /* the exercises I loved (their ids), mine alone */
@@ -149,7 +165,7 @@
   /* a song is two things: its name and who plays it */
   function songName(m) { return m ? (m.title || m.name || "") : ""; }
   function songBy(m) { return m ? (m.artist || "") : ""; }
-  function canEdit() { return !state.viv || state.viv.role !== "view"; }   /* a share for viewing changes nothing; the database enforces it too */
+  function canEdit() { return !state.offline && (!state.viv || state.viv.role !== "view"); }   /* a share for viewing changes nothing; the database enforces it too */
   /* the same button wherever a song is shown: it searches the song and its artist on YouTube, in a new tab */
   /* the YouTube button of the song played last is red, the others are muted (kept in this browser, so it is still marked tomorrow) */
   var played = (function () { try { return localStorage.getItem("biodanza.played") || ""; } catch (e) { return ""; } })();
@@ -565,7 +581,7 @@
       '<div class="rlist" data-fab-room id="hl"><div class="rskel rskel--title"></div></div>' +
       '<button class="rfab" data-act="new" aria-label="ויוונסיה חדשה" title="ויוונסיה חדשה">' + I.plus + '</button>', function (r) {
       on(r, "homemore", function (b) {   /* one menu: the songs I loved, who may enter (the manager), leaving */
-        var items = [{ label: "ויוונסיות שאהבתי", icon: I.heart, fn: function () { goSub(likedVivScreen); } }, { label: "תרגילים שאהבתי", icon: I.heart, fn: function () { goSub(likedExScreen); } }, { label: "שירים שאהבתי", icon: I.heart, fn: function () { goSub(likedScreen); } }];   /* in the order of the app: vivencias, exercises, songs */
+        var items = state.offline ? [] : [{ label: "ויוונסיות שאהבתי", icon: I.heart, fn: function () { goSub(likedVivScreen); } }, { label: "תרגילים שאהבתי", icon: I.heart, fn: function () { goSub(likedExScreen); } }, { label: "שירים שאהבתי", icon: I.heart, fn: function () { goSub(likedScreen); } }];   /* in the order of the app: vivencias, exercises, songs */
         if (state.me.admin) items.push({ label: "מורשים", icon: I.users, fn: allowPopup });
         items.push({ label: "יציאה", icon: I.out, tone: "danger", fn: function () { Promise.resolve(FLOA_AUTH.signOut()).then(function () { location.reload(); }); } });
         menu(b, items);
@@ -586,6 +602,8 @@
       state.vivs = (r[0] || []).map(function (v) { v.pos = pos[v.id]; v.role = role[v.id] || "view"; return v; });
       /* my own order; a vivencia I have not placed yet (a new one) comes first, newest first */
       state.vivs.sort(function (a, b) { var pa = a.pos == null ? -1 : a.pos, pb = b.pos == null ? -1 : b.pos; return pa - pb || (a.updated_at < b.updated_at ? 1 : -1); });
+      /* a copy kept on the device of a vivencia that is no longer here for this person goes (never judged from an empty list) */
+      if (!state.offline && window.BioOffline && state.vivs.length) BioOffline.reconcile(state.vivs.map(function (v) { return v.id; })).then(function (gone) { if (gone && gone.length) renderVivs(); });
     });
   }
   /* the arrow of an empty list, drawn in the real places: it leaves just under the words, goes down and bends left, and ends beside the + button */
@@ -611,8 +629,8 @@
     var l = document.getElementById("hl"); if (!l) return;
     l.innerHTML = state.vivs.length ? state.vivs.map(function (v) {
       var n = v.vivencia_items && v.vivencia_items[0] ? v.vivencia_items[0].count : 0;
-      return '<div class="rrow rrow--link">' + heartBtnViv(v.id, "rrow__trail") + '<button type="button" class="rrow__main" data-id="' + v.id + '" style="margin-inline-start:var(--sp-1);background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub" data-n="' + v.id + '">' + n + ' תרגילים' + (v.role === "owner" ? "" : " · משותף" + (v.role === "view" ? " (צפייה)" : " (עריכה)")) + '</span></button></div>';
-    }).join("") : ph("עוד אין ויוונסיות", "לחצו על + כדי ליצור את הראשונה");
+      return '<div class="rrow rrow--link">' + heartBtnViv(v.id, "rrow__trail") + '<button type="button" class="rrow__main" data-id="' + v.id + '" style="margin-inline-start:var(--sp-1);background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub" data-n="' + v.id + '">' + n + ' תרגילים' + (v.role === "owner" ? "" : " · משותף" + (v.role === "view" ? " (צפייה)" : " (עריכה)")) + (window.BioOffline && BioOffline.isSaved(v.id) ? " · זמין אופליין" : "") + '</span></button></div>';
+    }).join("") : (state.offline ? ph("אין ויוונסיות שמורות", "שמרו ויוונסיה מהתפריט שלה כשיש חיבור, והיא תהיה כאן גם בלי אינטרנט") : ph("עוד אין ויוונסיות", "לחצו על + כדי ליצור את הראשונה"));
     if (!state.vivs.length) { l.style.position = "relative"; if (l.firstElementChild) l.firstElementChild.style.marginBlock = "auto"; arrowTo(l); setTimeout(function () { arrowTo(l); }, 350); }   /* the arrow is a second child, so the words are centred by hand (the kit does it only for an only child) */
     l.querySelectorAll("[data-id]").forEach(function (b) { b.addEventListener("click", function () { openViv(b.dataset.id); }); });
     if (state.vivs.length) enableDrag(l, "[data-id]", persistVivs);
@@ -698,7 +716,7 @@
     function away(e) { if (!m.contains(e.target)) close(); }
     function onKey(e) { if (e.key === "Escape") close(); }
     setTimeout(function () { document.addEventListener("click", away, true); document.addEventListener("keydown", onKey, true); }, 0);
-    m.querySelectorAll("[data-k]").forEach(function (b) { b.addEventListener("click", function () { var f = items[+b.dataset.k].fn; close(); f(); }); });
+    m.querySelectorAll("[data-k]").forEach(function (b) { b.addEventListener("click", function () { var it = items[+b.dataset.k]; if (it.keep) { it.fn(b, close); return; } var f = it.fn; close(); f(); }); });   /* an item with `keep` leaves the menu open: it shows its own progress */
     var first = m.querySelector(".rmenu__item"); if (first) first.focus({ preventScroll: true });
   }
 
@@ -786,8 +804,10 @@
 
   /* ---------- the vivencia: plan along the curve ---------- */
   function openViv(id) { if (!state.viv || state.viv.id !== id) state.lastItem = null; state.filter = ""; state.viv = state.vivs.filter(function (v) { return v.id === id; })[0] || { id: id, title: "" }; if (wide()) { stack().length = 0; show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); } go(editor); paintSel(); }
+  var ITEM_SELECT = "&select=id,position,exercise_id,music_id,notes,title,poetics,guidance,exercises(title_he,title_en,poetics,guidance,objective,exercise_texts(lang,poetics,guidance,source)),music(id,name,title,artist,duration_sec,audio_object,in_catalog),vivencia_item_facilitators(email)&order=position";
+  function itemsOf(id) { return api("/rest/v1/vivencia_items?vivencia_id=eq." + id + ITEM_SELECT); }
   function loadItems() {
-    return api("/rest/v1/vivencia_items?vivencia_id=eq." + state.viv.id + "&select=id,position,exercise_id,music_id,notes,title,poetics,guidance,exercises(title_he,title_en,poetics,guidance,objective,exercise_texts(lang,poetics,guidance,source)),music(id,name,title,artist,duration_sec,audio_object,in_catalog),vivencia_item_facilitators(email)&order=position").then(function (r) { state.items = r || []; });
+    return itemsOf(state.viv.id).then(function (r) { state.items = r || []; });
   }
   function editor() {
     var v = state.viv; setUrl(BASE + v.id); curJoin(v.id);
@@ -800,12 +820,15 @@
         var items = v.role === "view" ? [] : [{ label: "עריכת שם", icon: I.pen, fn: function () { namePopup(v, false); } }];
         if (v.role === "owner") items.push({ label: "שיתוף", icon: I.share, fn: function () { sharePopup(v); } }, { label: "מחיקה", icon: I.trash, tone: "danger", fn: function () { confirmDelete(v); } });
         else items.push({ label: "הסרה שלי מהוויוונסיה", icon: I.out, tone: "danger", fn: function () { confirmLeave(v); } });
+        if (state.offline) items.length = 0;   /* with no internet nothing changes: only the copy on the device can be taken off it */
+        if (window.BioOffline) items.push(offlineItem(v));
         menu(b, items);
       });
     });
     api("/rest/v1/rpc/vivencia_members", { method: "POST", json: { v: v.id } }).then(function (mm) { state.members = mm || []; if (document.getElementById("list")) paint(); }, function () { state.members = []; });
     loadItems().then(function () {
       paint();
+      refreshOffline(v);
       if (pending && pending.item) {   /* opened on an exercise's own address */
         var want = pending.item; pending = null;
         var it = state.items.filter(function (x) { return x.id === want; })[0];
@@ -815,6 +838,39 @@
   }
   /* a confirmation is the kit's popup with ONE action: closing it is the cancel */
   /* somebody a vivencia was shared with takes themselves off it; it stays with its owner and the others */
+  /* "available offline": a copy of this vivencia on the device, with its songs; the item shows its own progress and the menu stays open */
+  function offlineItem(v) {
+    var saved = BioOffline.isSaved(v.id);
+    return { label: saved ? "זמין אופליין" : "שמירה לאופליין", icon: saved ? I.check : I.down, keep: true, fn: function (btn, close) { toggleOffline(v, btn, close); } };
+  }
+  function toggleOffline(v, btn, close) {
+    if (btn.dataset.busy) return;
+    var show1 = function (label, ico) { btn.innerHTML = ico + '<span>' + esc(label) + '</span>'; };
+    if (BioOffline.isSaved(v.id)) {   /* saved: tapping takes the copy off the device */
+      btn.dataset.busy = "1";
+      BioOffline.remove(v.id).then(function () {
+        delete btn.dataset.busy; show1("שמירה לאופליין", I.down); renderVivs();
+        if (state.offline) { close(); state.viv = null; if (wide()) { stack().length = 0; homeWide(); } else back(); }   /* its copy was all there was to see */
+      });
+      return;
+    }
+    if (state.offline) return;
+    btn.dataset.busy = "1"; btn.setAttribute("aria-busy", "true"); show1("שומר…", I.down);
+    Promise.all([itemsOf(v.id), api("/rest/v1/rpc/vivencia_members", { method: "POST", json: { v: v.id } })]).then(function (r) {
+      var items = r[0] || [];
+      return BioOffline.save({ id: v.id, row: { id: v.id, title: v.title, updated_at: v.updated_at, vivencia_items: [{ count: items.length }] }, role: v.role, pos: v.pos, items: items, members: r[1] || [] }, function (d, n) {
+        show1(n ? "שומר " + d + " מתוך " + n : "שומר…", I.down);
+      });
+    }).then(function () { show1("זמין אופליין", I.check); renderVivs(); }, function (e) { console.error(e); show1("השמירה לא הצליחה, נסו שוב", I.down); })
+      .then(function () { delete btn.dataset.busy; btn.removeAttribute("aria-busy"); });
+  }
+  /* a saved vivencia that is opened online has its copy made current, quietly */
+  function refreshOffline(v) {
+    if (state.offline || !window.BioOffline || !BioOffline.isSaved(v.id)) return;
+    api("/rest/v1/rpc/vivencia_members", { method: "POST", json: { v: v.id } }).then(function (mm) {
+      return BioOffline.update({ id: v.id, row: { id: v.id, title: v.title, updated_at: v.updated_at, vivencia_items: [{ count: state.items.length }] }, role: v.role, pos: v.pos, items: state.items, members: mm || [] });
+    }, function () { /* the old copy stays */ });
+  }
   function confirmLeave(v) {
     var dlg = document.getElementById("confirmDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
@@ -825,7 +881,7 @@
     });
     dlg.querySelector("#cleave").addEventListener("click", function () {
       api("/rest/v1/rpc/leave_vivencia", { method: "POST", json: { v: v.id } }).then(function () {
-        dlg.close(); toast("הוסרת מהוויוונסיה"); state.viv = null;
+        dlg.close(); if (window.BioOffline) BioOffline.remove(v.id); toast("הוסרת מהוויוונסיה"); state.viv = null;
         if (wide()) { stack().length = 0; homeWide(); } else back();
       }, fail);
     });
@@ -840,7 +896,7 @@
     });
     dlg.querySelector("#cdel").addEventListener("click", function () {
       api("/rest/v1/vivencias?id=eq." + v.id, { method: "DELETE" }).then(function () {
-        dlg.close(); toast("הוויוונסיה נמחקה"); state.viv = null;
+        dlg.close(); if (window.BioOffline) BioOffline.remove(v.id); toast("הוויוונסיה נמחקה"); state.viv = null;
         if (wide()) { stack().length = 0; homeWide(); } else back();
       }, fail);
     });
@@ -1024,6 +1080,7 @@
       /* the three fields share the height that is left, by how many lines each has: all of it if it fits; if not, each gets its share and scrolls on its own */
       var box = r.querySelector("#ifields"), tas = ["#ipo", "#igu", "#it"].map(function (q) { return r.querySelector(q); });
       tas.forEach(rtInit);
+      if (state.offline) { tas.forEach(function (t) { t.setAttribute("contenteditable", "false"); }); var nm0 = r.querySelector("#ina"); if (nm0) nm0.readOnly = true; }   /* with no internet it is only read */
       function layoutFields() {
         if (!box || !box.isConnected) return;
         tas.forEach(function (t) { t.style.height = ""; t.style.overflowY = "visible"; });   /* each text is as tall as its words: no scroll of its own */
@@ -1607,8 +1664,21 @@
   })();
 
   /* ---------- start ---------- */
+  /* No internet: the vivencias saved on this device, to see and play. Nothing is asked of the network, nothing is changed. */
+  function startOffline() {
+    if (state.offline) return;
+    state.offline = true; document.documentElement.classList.add("bio-offline");
+    /* back online: the app as usual, once the server really answers (the browser's own word that it is online is not enough to leave a page that works) */
+    window.addEventListener("online", function () { FLOA_AUTH.api("/rest/v1/rpc/me", { method: "POST", json: {} }).then(function () { location.reload(); }, function () { /* still no connection */ }); });
+    Promise.all([window.BioOffline ? BioOffline.list() : [], window.BioAudio && BioAudio.offline ? BioAudio.offline() : null]).then(function (r) {
+      offlineRecs = {}; (r[0] || []).forEach(function (x) { offlineRecs[x.id] = x; });
+      state.me = { allowed: true, admin: false };
+      home();
+    });
+  }
   function start() {
     if (!FLOA_AUTH.signedIn()) return gate("כניסה למאפשרי ביודנסה", false);
+    if (navigator.onLine === false) return startOffline();
     show('<div class="rlist"><div class="rskel rskel--title"></div></div>');
     api("/rest/v1/rpc/me", { method: "POST", json: {} }).then(function (me) {
       state.me = me;
@@ -1616,7 +1686,11 @@
       return Promise.all([api("/rest/v1/lines?select=key,name_he&order=sort"), api("/rest/v1/phases?select=key,name_he&order=sort")]).then(function (r) { state.lines = r[0]; state.phases = r[1]; home(); startRealtime(); api("/rest/v1/song_likes?select=music_id").then(function (ls) { likes = {}; (ls || []).forEach(function (x) { likes[x.music_id] = true; }); }, function () { /* no hearts this time */ });
         api("/rest/v1/vivencia_likes?select=vivencia_id").then(function (ls) { likesViv = {}; (ls || []).forEach(function (x) { likesViv[x.vivencia_id] = true; }); renderVivs(); }, function () { /* no hearts this time */ });
         api("/rest/v1/exercise_likes?select=exercise_id").then(function (ls) { likesEx = {}; (ls || []).forEach(function (x) { likesEx[x.exercise_id] = true; }); }, function () { /* no hearts this time */ }); });
-    }).catch(function (e) { console.error(e); gate("לא הצלחנו להתחבר. נסו שוב.", false); });
+    }).catch(function (e) {
+      console.error(e);
+      if (e && !e.status && !e.signedOut) return startOffline();   /* no answer at all: the network is gone */
+      gate("לא הצלחנו להתחבר. נסו שוב.", false);
+    });
   }
   /* wide screen: drag the line between the list and the vivencia to change the width (arrows on the keyboard, double click resets); kept in this browser */
   (function () {

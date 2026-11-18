@@ -43,6 +43,12 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
 <script src="/auth.js"></script>
 <script src="/sheet.js"></script>
 <!-- The two scripts are written by a script, like the base tag above: the browser looks ahead in the page for scripts and fetches them before that tag exists, from the wrong folder on an address like /<vivencia>/<exercise> (a 404 in the console). -->
-<script>document.write('<script src="assets/audio.js"><\/script><script src="assets/app.js"><\/script>')</script>
+<script>document.write('<script src="assets/audio.js"><\/script><script src="assets/offline.js"><\/script><script src="assets/app.js"><\/script>')</script>
+<script>
+/* The app opens with no internet: a worker keeps the shell (sw.js, at the host's root on biodanza.floa.co.il, under /biodanza/ on localhost). */
+if ("serviceWorker" in navigator) window.addEventListener("load", function () {
+  navigator.serviceWorker.register((/^(localhost|127[.])/.test(location.hostname) ? "/biodanza/" : "/") + "sw.js").catch(function () { /* no offline shell this time */ });
+});
+</script>
 </body>
 </html>

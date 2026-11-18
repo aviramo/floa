@@ -38,6 +38,16 @@
     return db().then(function (d) { if (!d) return; try { d.transaction("files", "readwrite").objectStore("files").put(blob, name); } catch (e) { /* the file still plays; it is only not kept */ } });
   }
   function isKept(name) { return kept(name).then(function (b) { return !!b; }); }
+  function drop(name) {
+    return db().then(function (d) { if (!d) return; try { d.transaction("files", "readwrite").objectStore("files").delete(name); } catch (e) { /* it stays */ } });
+  }
+  function keptNames() {   /* every song on this device, for the offline page */
+    return db().then(function (d) {
+      if (!d) return [];
+      return new Promise(function (res) { try { var g = d.transaction("files").objectStore("files").getAllKeys(); g.onsuccess = function () { res(g.result || []); }; g.onerror = function () { res([]); }; } catch (e) { res([]); } });
+    });
+  }
+  var haveOnly = null;   /* with no internet: the names that can play (a Set), the other buttons are off */
 
   function bytes(name) {
     return kept(name).then(function (b) {
@@ -62,6 +72,7 @@
   function paint() {
     document.querySelectorAll("[data-audio]").forEach(function (b) {
       var me = b.dataset.audio, st = busy === me ? "wait" : (now === me && !el.paused ? "pause" : "sound");
+      if (haveOnly) { var no = !haveOnly[me]; if (b.disabled !== no) { b.disabled = no; b.style.opacity = no ? ".45" : ""; } }
       if (b.dataset.st === st) return;
       b.dataset.st = st; b.innerHTML = ICON[st];
       b.setAttribute("aria-label", st === "pause" ? "עצירה" : "השמעה"); b.title = st === "pause" ? "עצירה" : "השמעה";
@@ -152,6 +163,15 @@
     },
     /* the name a song's file is shown by on the phone's lock screen */
     info: function (name, title, artist) { if (name) infos[name] = { title: title || "", artist: artist || "" }; if (name === now) showMeta(); },
-    kept: isKept
+    kept: isKept,
+    /* put the song on this device (downloaded now if it is not here yet): resolves when it is stored */
+    save: function (name) {
+      return bytes(name).then(function (b) { return keep(name, b); });
+    },
+    drop: drop,
+    /* no internet: only the songs that are on the device can play; the others' buttons are off */
+    offline: function () {
+      return keptNames().then(function (names) { haveOnly = {}; names.forEach(function (n) { haveOnly[n] = true; }); paint(); });
+    }
   };
 })();

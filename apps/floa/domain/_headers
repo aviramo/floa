@@ -6,3 +6,5 @@
   Cache-Control: public, max-age=0, must-revalidate
 /sheet.js
   Cache-Control: public, max-age=0, must-revalidate
+/sw.js
+  Cache-Control: public, max-age=0, must-revalidate
