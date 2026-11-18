@@ -535,7 +535,8 @@
       if (m) shown = '<span style="display:inline-flex;align-items:baseline;gap:2px;direction:ltr"><b class="bio-num" style="display:inline-block;font:var(--fw-black) var(--fs-xl)/1 var(--font);--nx:' + ((state.slideFrom || 0) * 24) + 'px' + (state.slideFrom ? ';animation:bioNum .26s cubic-bezier(.2,.8,.2,1) both' : '') + '">' + m[1] + '</b><span style="color:var(--text-2);font:var(--fw-regular) var(--fs-s)/1 var(--font)">/' + m[2] + '</span></span>';   /* the number of this exercise is big, and rolls in from the side the page came from */
       return '<button class="rbtn' + (act === "nextW" || act === "prevW" ? "" : " rbtn--ghost") + (act === "list" ? " bio-flat" : "") + '" data-act="' + act + '" title="' + esc(label) + '"' + (act === "list" ? ' style="flex:none;min-width:0;padding-inline:var(--sp-1)"' : "") + (off ? " disabled" : "") + '>' + (after ? '<span>' + shown + '</span>' + ico : ico + '<span>' + shown + '</span>') + '</button>';
     };
-    return '<header class="rhead">' + b("prevW", I.back, "הקודם", !hasPrev) + '<span class="bio-pair" style="flex:1 1 auto;min-width:0;display:flex;align-items:center;justify-content:center;gap:0">' + b("list", "", where || "לרשימה", false) + (exId ? heartBtnEx(exId, "bio-flat") : "") + '</span>' + b("nextW", I.fwd, "הבא", !hasNext, true) + '</header>';
+    var nav = !wide();   /* beside the list there are no previous and next buttons: the list is the way around */
+    return '<header class="rhead">' + (nav ? b("prevW", I.back, "הקודם", !hasPrev) : "") + '<span class="bio-pair" style="flex:1 1 auto;min-width:0;display:flex;align-items:center;justify-content:center;gap:0">' + b("list", "", where || "לרשימה", false) + (exId ? heartBtnEx(exId, "bio-flat") : "") + '</span>' + (nav ? b("nextW", I.fwd, "הבא", !hasNext, true) : "") + '</header>';
   }
   (function () {
     var st = document.createElement("style");
@@ -1679,9 +1680,9 @@
       var card = function (k, label) { return txt(fake, k) ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">' + label + '</span></div><div class="rcard__body"' + (isDraft(fake, k) ? DRAFT : "") + '>' + rtHtml(txt(fake, k)) + '</div></div>' : ""; };
       var body = placementCards(e, card) + card("poetics", "פואטיקה") + card("guidance", "הנחיה");
       var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה", sel = songs.length ? songs[0].id : null;
-      var act = wide() ? '<button class="rbtn" type="button" data-act="doswap">' + word + '</button>'   /* the action is in the header, on the left; on a narrow screen a plain check, like the kit's popups */
+      var act = wide() ? ""   /* beside the list the action is the round button at the bottom left; on a narrow screen a plain check in the header, like the kit's popups */
                        : '<button class="rbtn" type="button" style="flex:none;width:var(--ctl);padding:0" data-act="doswap" aria-label="' + word + '" title="' + word + '">' + I.check + '</button>';   /* the green button, with a check */
-      show(head(name(e), "", !wide(), act) + '<div class="rlist" style="overflow-x:hidden"><div style="padding-block:var(--sp-2)">' + (body || ph("אין עדיין תיאור לתרגיל", "")) + musicRows(songs, sel) + '</div></div>', function (r) { on(r, "back", back); wirePick(r, function (id) { sel = id; }); on(r, "doswap", function () { if (swapIt) confirmSwap(e, swapIt, undefined, sel); else addEx(e, undefined, undefined, sel); }); }, "d");
+      show(head(name(e), "", !wide(), act) + '<div class="rlist" data-fab-room style="overflow-x:hidden"><div style="padding-block:var(--sp-2)">' + (body || ph("אין עדיין תיאור לתרגיל", "")) + musicRows(songs, sel) + '</div></div>' + (wide() ? '<button class="rfab" type="button" data-act="doswap" aria-label="' + word + '" title="' + word + '">' + I.check + '</button>' : ""), function (r) { on(r, "back", back); wirePick(r, function (id) { sel = id; }); on(r, "doswap", function () { if (swapIt) confirmSwap(e, swapIt, undefined, sel); else addEx(e, undefined, undefined, sel); }); }, "d");
     }, fail);
   }
   /* replacing is asked in the kit's popup, one action: closing it is the cancel */
