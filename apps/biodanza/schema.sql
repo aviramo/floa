@@ -567,3 +567,11 @@ begin
 end $$;
 revoke all on function biodanza.attach_audio(uuid, text, text, bigint) from public, anon;
 grant execute on function biodanza.attach_audio(uuid, text, text, bigint) to authenticated;
+
+-- Curve positions assigned by inference are NOT shown: a blind test against the 90 exercises whose catalog states a phase got only 49% right
+-- (56% with the catalog's own examples), so the guess is kept apart. phase_hint / phase_keys hold only what the catalog, the exercise's text or a
+-- person (curve_basis catalog, text, manual) states; the inferred phase waits in phase_guess / phase_keys_guess, as a suggestion for whoever sets it.
+alter table biodanza.exercises add column if not exists phase_guess text;
+alter table biodanza.exercises add column if not exists phase_keys_guess text[] not null default '{}';
+update biodanza.exercises e set phase_guess = e.phase_hint, phase_keys_guess = e.phase_keys, phase_hint = null, phase_keys = '{}'
+  from biodanza.exercise_texts t where t.exercise_id = e.id and t.lang = 'he' and t.curve_basis = 'inferred' and e.owner_id is null and e.phase_guess is null;

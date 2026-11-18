@@ -456,7 +456,7 @@
   var LANG = "he";   /* the language of the texts: the catalog's text in this language, else English, else what the exercise itself holds */
   function baseTxt(it, k) {
     var e = it.exercises || {}, ts = e.exercise_texts || [];
-    var pick = function (l) { var t = ts.filter(function (x) { return x.lang === l && x[k]; })[0]; return t ? t[k] : ""; };
+    var pick = function (l) { var t = ts.filter(function (x) { return x.lang === l && x[k] && !(k === "curve" && x.curve_basis === "inferred"); })[0]; return t ? t[k] : ""; };   /* a curve position that was only guessed is not shown (see schema.sql) */
     return pick(LANG) || pick("en") || e[k] || "";
   }
   function txt(it, k) { return it[k] != null ? it[k] : baseTxt(it, k); }
