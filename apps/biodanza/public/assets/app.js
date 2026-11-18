@@ -973,16 +973,17 @@
     var k = state.items.indexOf(it), prevIt = state.items[k - 1], nextIt = state.items[k + 1];
     /* the header walks the sequence: the right button to the previous exercise, the left one to the next, the name between them */
     var hd = itemHead(!!prevIt, !!nextIt, (k + 1) + "/" + state.items.length, it.exercise_id);   /* the middle button says where we are, and still opens the list */
-    show(hd + '<style>#ipg, #ipg * { touch-action: pan-y } #ipg textarea, #ipg .rf-rich { max-height: none } #ifields > .rfield { margin: 0 } #ipg .rfield:has(> textarea, > .rf-rich)::before { content: ""; position: absolute; z-index: 1; top: 0; inset-inline: 0; height: 19px; background: var(--bg); pointer-events: none }</style><div id="ipg" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0"><div class="pad" style="padding-bottom:0">' +
+    show(hd + '<style>#ipg, #ipg * { touch-action: pan-y } #ipg textarea, #ipg .rf-rich { max-height: none } #ifields > .rfield { margin: 0 }</style><div id="ipg" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0"><div class="pad" style="padding-bottom:0">' +
       '<div style="display:flex;align-items:flex-end;gap:var(--gap-button)">' + '<label class="rfield" style="flex:1 1 auto;margin:0"><span>שם התרגיל</span><input id="ina" style="font-weight: var(--fw-black); font-size: var(--fs-m)" placeholder=" " autocomplete="off" value="' + esc(itemName(it)) + '"></label>' + facChip(it) + '</div>' +
       '</div>' +
+      '<div id="iscroll" style="flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain">' +   /* everything under the name scrolls together; the texts are open to the end */
       '<div class="rrow rrow--link" data-act="pickMusic" role="button" tabindex="0" style="flex:none;padding-inline:var(--sp-2);padding-block:var(--sp-2);border-bottom:0;cursor:pointer"><div style="flex:1 1 auto;min-width:0">' +
         (it.music ? songLines(it.music) : '<span class="rrow__title">לחצו לבחירת מוזיקה</span>') + '</div>' + (it.music ? playCol(it.music, true) : '') + '</div>' +   /* a strip across the width, like the music chooser's rows */
       songBar(it.music, "flex:none;padding:var(--sp-1) var(--sp-2) 0", true) +
-      '<div id="ifields" style="flex:1 1 auto;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:var(--gap-field);padding:var(--gutter) var(--gutter) 0"><label class="rfield" style="flex:none"><span>פואטיקה</span><div id="ipo" class="rf-rich" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true"' + (isDraft(it, "poetics") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "poetics")) + '</div></label>' +
+      '<div id="ifields" style="flex:none;display:flex;flex-direction:column;gap:var(--gap-field);padding:var(--gutter) var(--gutter) 0"><label class="rfield" style="flex:none"><span>פואטיקה</span><div id="ipo" class="rf-rich" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true"' + (isDraft(it, "poetics") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "poetics")) + '</div></label>' +
       '<label class="rfield" style="flex:none"><span>הנחיה</span><div id="igu" class="rf-rich" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true"' + (isDraft(it, "guidance") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "guidance")) + '</div></label>' +
       '<label class="rfield" style="flex:none"><span>הערות</span><div id="it" class="rf-rich" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true">' + rtHtml(it.notes || "") + '</div></label></div>' +
-      '<div id="ibtns" style="flex:none;height:calc(var(--fab) + 2 * var(--gutter) + var(--inset-b))"></div></div>' +
+      '<div id="ibtns" style="flex:none;height:calc(var(--fab) + 2 * var(--gutter) + var(--inset-b))"></div></div></div>' +
       '<button class="rfab" data-act="swap" aria-label="החלפת תרגיל" title="החלפת תרגיל" style="left:calc(max(var(--gutter), var(--inset-l)) + var(--fab) + var(--sp-2))">' + I.swap + '</button>' +   /* the two actions are buttons at the left, so the right is free for the music's */
       '<button class="rfab" data-act="del" aria-label="הסרה מהוויוונסיה" title="הסרה מהוויוונסיה" style="border-color:var(--surface-2);background:var(--surface-2);color:var(--text)">' + I.trash + '</button>', function (r) {
       var sf = state.slideFrom || 0, pg = r.querySelector("#ipg"); state.slideFrom = 0;
@@ -1005,6 +1006,8 @@
       tas.forEach(rtInit);
       function layoutFields() {
         if (!box || !box.isConnected) return;
+        tas.forEach(function (t) { t.style.height = ""; t.style.overflowY = "visible"; });   /* each text is as tall as its words: no scroll of its own */
+        return;
         tas.forEach(function (t) { t.style.height = "auto"; t.style.overflowY = "hidden"; });
         var nat = tas.map(function (t) { return t.scrollHeight + t.offsetHeight - t.clientHeight; });
         var over = tas.map(function (t, i) { return t.parentElement.offsetHeight - t.offsetHeight; });
